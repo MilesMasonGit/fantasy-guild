@@ -4,6 +4,7 @@ import { EventBus } from '../core/EventBus.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import { logger } from '../../utils/Logger.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
+import * as GameClock from '../core/GameClock.js';
 
 /**
  * WoundedSystem - drains wounded heroes' recovery timers; a recovered hero
@@ -23,7 +24,7 @@ const WoundedSystem = {
 
     /**
      * Main tick function - called by the engine each tick
-     * @param {number} deltaMs - Time-scaled game time in milliseconds
+     * @param {number} deltaMs - Game time in milliseconds
      */
     tick(deltaMs) {
         const woundedHeroes = this.getWoundedHeroes();
@@ -36,17 +37,16 @@ const WoundedSystem = {
     /**
      * Process recovery tick for a wounded hero.
      *
-     * Recovery counts game time (the time-scaled tick delta), not wall-clock
-     * time, so it speeds up under Time Bank fast-forward and offline time
-     * reaches heroes by replaying the bank through the live engine.
+     * Recovery counts game time (the tick delta), not wall-clock time, so a
+     * catch-up of time away reaches heroes like live play.
      * @param {Object} hero - Wounded hero object
-     * @param {number} deltaMs - Time-scaled game time in milliseconds
+     * @param {number} deltaMs - Game time in milliseconds
      */
     processWoundedTick(hero, deltaMs) {
         if (typeof hero.woundedRemainingMs !== 'number') {
             // Legacy saves stored a wall-clock deadline in woundedUntil: convert
             // whatever is left on it; fresh wounds get the full timer.
-            const legacyRemaining = hero.woundedUntil ? hero.woundedUntil - Date.now() : BASE_RECOVERY_TIME_MS;
+            const legacyRemaining = hero.woundedUntil ? hero.woundedUntil - GameClock.now() : BASE_RECOVERY_TIME_MS;
             hero.woundedRemainingMs = Math.max(0, Math.min(BASE_RECOVERY_TIME_MS, legacyRemaining));
             hero.woundedUntil = null;
             logger.debug('WoundedSystem', `Set recovery timer for ${hero.name}: ${hero.woundedRemainingMs}ms`);

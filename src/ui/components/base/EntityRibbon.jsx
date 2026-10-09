@@ -14,6 +14,9 @@ import { Sparkles, HelpCircle } from 'lucide-react';
  * what a loot table *drops*.
  * Layout: [ Sprite (32px, scales to 64px on hover overflowing) | Name + Subtitle | Quantity /
  * Chance (crossfades on hover) ]
+ * `amount` shows a count abbreviated (`+5.9k`, after `sign`) that crossfades to the exact number
+ * (`+5,900`) on hover; `countText` shows its text as given. `icon` replaces the sprite (a skill's
+ * icon). Other props (data attributes, `style`) go on the bar.
  */
 export const EntityRibbon = ({
     kind,
@@ -38,7 +41,12 @@ export const EntityRibbon = ({
     variant = 'default',
     onClick,
     onInspect,
-    className
+    amount,
+    sign = '×',
+    countText,
+    icon,
+    className,
+    ...rest
 }) => {
     const rawId = id || refId || itemId || typeId;
 
@@ -107,6 +115,7 @@ export const EntityRibbon = ({
     // Always enable the hover chance transition if chance is provided (even for 100% /
     // guaranteed drops).
     const hasHoverChance = chance !== undefined && chance !== null && qtyDisplay !== null;
+    const hasAmount = typeof amount === 'number' && Number.isFinite(amount);
 
     // Size configs: all display standard 32px sprites inside a 32px box.
     const sizeConfig = {
@@ -141,6 +150,8 @@ export const EntityRibbon = ({
 
     return (
         <div
+            data-item-bar
+            {...rest}
             onClick={isInteractive ? handleClick : undefined}
             className={cn(
                 'group relative flex items-center rounded-lg border transition-all select-none overflow-visible hover:z-30',
@@ -163,8 +174,8 @@ export const EntityRibbon = ({
                     'relative rounded-md bg-black border border-white/10 flex items-center justify-center shrink-0 shadow-inner group-hover:border-white/25 transition-colors overflow-visible z-10'
                 )}
             >
-                <div className="relative flex items-center justify-center w-8 h-8 transition-transform duration-200 ease-out group-hover:scale-[2] group-hover:z-50 group-hover:drop-shadow-[0_6px_14px_rgba(0,0,0,0.95)] pointer-events-none origin-center">
-                    {!isDiscovered ? (
+                <div data-item-bar-sprite className="relative flex items-center justify-center w-8 h-8 transition-transform duration-200 ease-out group-hover:scale-[2] group-hover:z-50 group-hover:drop-shadow-[0_6px_14px_rgba(0,0,0,0.95)] pointer-events-none origin-center">
+                    {icon ?? (!isDiscovered ? (
                         <HelpCircle size={18} className="text-gi-muted/50" />
                     ) : resolvedKind === 'xp' ? (
                         <Sparkles size={20} className="text-amber-400" />
@@ -180,12 +191,13 @@ export const EntityRibbon = ({
                             size={32}
                             isDiscovered={isDiscovered}
                         />
-                    )}
+                    ))}
                 </div>
             </div>
 
             <div className="flex-1 min-w-0 flex flex-col justify-center">
                 <span
+                    data-item-bar-name
                     className={cn(
                         sizeConfig.text,
                         'font-bold truncate leading-tight transition-colors group-hover:text-white',
@@ -202,7 +214,27 @@ export const EntityRibbon = ({
             </div>
 
             <div className="relative flex flex-col items-end justify-center shrink-0 tabular-nums font-mono min-w-[3.5rem]">
-                {hasHoverChance ? (
+                {hasAmount ? (
+                    // Both counts share one grid cell, so the column is as wide as the longer one.
+                    <div className="grid justify-items-end">
+                        <span
+                            data-item-bar-count
+                            className={cn(sizeConfig.text, 'col-start-1 row-start-1 font-bold tracking-tight text-gi-text transition-all duration-200 group-hover:opacity-0 group-hover:-translate-y-1')}
+                        >
+                            {sign}{formatCompact(amount, 1)}
+                        </span>
+                        <span
+                            data-item-bar-count-exact
+                            className={cn(sizeConfig.text, 'col-start-1 row-start-1 font-bold tracking-tight text-white opacity-0 translate-y-1 transition-all duration-200 group-hover:opacity-100 group-hover:translate-y-0')}
+                        >
+                            {sign}{Math.round(amount).toLocaleString('en-US')}
+                        </span>
+                    </div>
+                ) : countText != null ? (
+                    <span data-item-bar-count className={cn(sizeConfig.text, 'font-bold tracking-tight text-gi-text whitespace-nowrap')}>
+                        {countText}
+                    </span>
+                ) : hasHoverChance ? (
                     <div className="relative flex items-center justify-end w-full">
                         <span
                             className={cn(

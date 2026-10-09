@@ -15,7 +15,7 @@ const LIMP_FILTER = 'grayscale(0.7) brightness(0.8) sepia(0.25)';
 const LIMP_FRAME_MS = 250;
 import { resolveSpritePath, resolveAnimationPath } from '../../../utils/AssetManager.js';
 import { isElementOpaqueAtPoint } from '../../utils/alphaHitTest.js';
-import { EventBus } from '../../../systems/core/EventBus.js';
+import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { useMatFit } from './MatFitContext.jsx';
 import { isRealAttack } from './hitAnimations.js';
 import { COMBAT_ATTACK_EVENT } from './TokenHitArt.jsx';
@@ -82,7 +82,7 @@ function useLastAttackAt(heroId, listening) {
         return EventBus.subscribe(COMBAT_ATTACK_EVENT, (p) => {
             if (p?.heroId !== heroId || !isRealAttack(p)) return;
             setAt(typeof performance !== 'undefined' ? performance.now() : Date.now());
-        });
+        }, UI_LISTENER);
     }, [heroId, listening]);
     return listening ? at : null;
 }
@@ -186,7 +186,7 @@ const MatHeroBody = memo(function MatHeroBody({
             if (at && boxRef.current) boxRef.current.style.transform = `translate(${at.left}px, ${at.top}px)`;
         };
         follow();
-        return EventBus.subscribe(BOARD_EVENTS.HEROES_WALKED, follow);
+        return EventBus.subscribe(BOARD_EVENTS.HEROES_WALKED, follow, UI_LISTENER);
     }, [followsItself, heroId]);
 
     const activeAnimation = isWalking ? 'walk' : animationState;

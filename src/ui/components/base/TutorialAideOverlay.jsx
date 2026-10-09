@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { EventBus } from '../../../systems/core/EventBus.js';
+import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import * as QuestTokens from '../../../systems/quests/QuestTokens.js';
 import { ENGINE_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
@@ -208,10 +208,10 @@ export const TutorialAideOverlay = () => {
     useEffect(() => {
         const subHover = EventBus.subscribe(TUTORIAL_AIDE_EVENTS.HOVER, ({ questId }) => {
             setActiveQuestId(questId);
-        });
+        }, UI_LISTENER);
         const subUnhover = EventBus.subscribe(TUTORIAL_AIDE_EVENTS.UNHOVER, () => {
             setActiveQuestId(null);
-        });
+        }, UI_LISTENER);
 
         return () => {
             subHover?.();

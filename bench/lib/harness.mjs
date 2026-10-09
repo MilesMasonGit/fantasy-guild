@@ -81,8 +81,8 @@ export function boot(seed) {
         // every Mat Tuner value is its shipped default.
         SettingsManager.init();
         EngineBootstrap.init();
-        if (GameLoop.tickHandlers.length !== 9) {
-            throw new Error(`expected the 9 engine tick handlers, found ${GameLoop.tickHandlers.length}: ${GameLoop.tickHandlers.map(h => h.name).join(', ')}`);
+        if (GameLoop.tickHandlers.length !== 8) {
+            throw new Error(`expected the 8 engine tick handlers, found ${GameLoop.tickHandlers.length}: ${GameLoop.tickHandlers.map(h => h.name).join(', ')}`);
         }
         engineReady = true;
     }
@@ -325,9 +325,10 @@ export async function run(opts) {
         if (profiler) result.profile = profiler.report(plan.measure);
     }
 
-    // A non-tick scenario (S4) adds its own checkpoints and counts — the
-    // position hashes after each stage — to the end-of-run fingerprint.
-    result.fingerprint = { ...fingerprint(), ...(result.custom?.identity || {}) };
+    // A non-tick scenario (S4, S8) adds its own checkpoints and counts — the
+    // position hashes after each stage — to the end-of-run fingerprint, and may
+    // ask for its own fingerprint options (S8: ids without their time).
+    result.fingerprint = { ...fingerprint(scenario.fingerprint), ...(result.custom?.identity || {}) };
     result.structures = structureSizes();
     result.logger = { ...loggerCounts };
     result.console = { ...consoleCounts };

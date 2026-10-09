@@ -101,7 +101,9 @@ the first outside playtest, modding.
 
 ### Tools that speed everything after
 
-- **Agents author content through the CMS**: let an agent quickly create and
+- **Agents author content through the CMS** → designed 2026-10-09,
+  [concept_cms_agent_authoring.md](concept_cms_agent_authoring.md), ticket
+  **T-133** (includes CMS autosave). Original note: let an agent quickly create and
   manage items and Tokens. *quick to medium* · `data/` is only written by the
   CMS (its workspace lives in the browser; Sync to Game writes `data/`), so
   this likely means a CMS-side import or scripting path the owner reviews and
@@ -113,7 +115,9 @@ the first outside playtest, modding.
 
 ### Read-only research (any time, in parallel)
 
-- **Owner art list**: one to-draw list, so art is ready before the code.
+- **Owner art list** → done 2026-10-09: [owner_art_list.md](owner_art_list.md)
+  (terrain decided: same-size pixels, muted; plus the picked effect
+  animations). One to-draw list, so art is ready before the code.
   - **Terrain**: brief 80's research phase (what of the old terrain system
     survives, the look questions) run early to produce its art list.
     ⚠️ reorders brief 80's first phase only; the code still follows the Atlas.
@@ -123,7 +127,9 @@ the first outside playtest, modding.
   as a menu to pick from with a rough cost each. Starts from today's hit
   animations and transform glow (T-011); crunch rule: no expensive mat
   effects without a cost-log line.
-- **Pixel-style UI borders**: how to make borders look pixel-like to match the
+- **Pixel-style UI borders** → researched and decided 2026-10-09: nine-slice
+  frames, studs for big panels, chamfer for small pop-ups, one colour, hard
+  shadow (UI_STYLE "Pixel frames"); build ticket **T-136**. Original note: how to make borders look pixel-like to match the
   art, within UI_STYLE.md's "no thick borders, no frames inside frames".
   Related: T-013 (switch the remaining glows and text-shadows to the
   hard-pixel style).

@@ -146,7 +146,7 @@ export const MAT_TUNABLES = Object.freeze([
         key: 'questEverySec',
         group: 'Quests',
         label: 'Quest every',
-        hint: 'Game time between bounty quests while the mat has fewer than the cap (TL-18: 3 min). The clock only runs below the cap, and the time bank speeds it up.',
+        hint: 'Game time between bounty quests while the mat has fewer than the cap (TL-18: 3 min). The clock only runs below the cap.',
         min: 10, max: 1800, step: 10, def: 180,
         format: (v) => `${Math.floor(v / 60)} min ${Math.round(v % 60)} s`
     }

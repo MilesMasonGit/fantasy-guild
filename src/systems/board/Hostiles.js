@@ -9,12 +9,12 @@ import * as EnemyMotion from './EnemyMotion.js';
 import * as Flags from './Flags.js';
 import * as FlagRules from './FlagRules.js';
 import * as HeroMotion from './HeroMotion.js';
-import * as TimedChanges from './TimedChanges.js';
+import * as Hand from './Hand.js';
 
 /**
  * An enemy authored `enemy.hostile: true` (see `isHostileEnemy`) attacks a hero who comes inside
- * the live flag radius (`Flags.flagRadius()`) around its spawner (`EnemyMotion.spawnerOf`); with no
- * live spawner it watches the radius around itself.
+ * the live flag radius (`Flags.flagRadius()`) around its spawner (`EnemyMotion.spawnerOf`), or around
+ * the node it ambushed from; with neither it watches the radius around itself.
  *
  * Attacking is `Flags.ambush`: the hero drops their work and claims the enemy, walks up, and
  * `BoardCombat.tickToken` begins the fight on arrival; they fight back whatever their rules say. A
@@ -29,7 +29,7 @@ import * as TimedChanges from './TimedChanges.js';
  * attack while a hero holds it, while it is in the player's hand, or while the player has marked it
  * as not for heroes to work: a forced fight there would be let go on the next pass.
  *
- * One look every {@link SCAN_MS} of game time, advanced by the tick's `delta` (so the time bank
+ * One look every {@link SCAN_MS} of game time, advanced by the tick's `delta` (so a catch-up
  * speeds it up).
  */
 
@@ -39,10 +39,14 @@ export const SCAN_MS = 250;
 /** `board → ms until the next look`. Runtime only, per board, like EnemyMotion's bodies. */
 const clocks = new WeakMap();
 
-/** The point a hostile enemy watches around: its live spawner's centre, else its own. */
+/**
+ * The point a hostile enemy watches around: its live spawner's centre; else the Token it is
+ * tethered to, while that is on the mat (an ambusher's node, tethered by `TriggerSystem`); else its
+ * own.
+ */
 export function watchCentreOf(enemy) {
-    const spawner = EnemyMotion.spawnerOf(enemy.id);
-    return spawner ? { x: spawner.x, y: spawner.y } : { x: enemy.x, y: enemy.y };
+    const home = EnemyMotion.spawnerOf(enemy.id) || BoardState.getTokenById(EnemyMotion.tetherOf(enemy.id));
+    return home ? { x: home.x, y: home.y } : { x: enemy.x, y: enemy.y };
 }
 
 /** Whether a hero is wounded (read without rehydrating, like `FlagRules.heroRecord`). */
@@ -77,7 +81,7 @@ function targets() {
 function canAttack(enemy) {
     return !BoardCombat.getFight(enemy.id)
         && !BoardState.heroOfInstance(enemy.id)
-        && !TimedChanges.isInHand(enemy.id)
+        && !Hand.isInHand(enemy.id)
         && !Flags.isDisallowed(enemy);
 }
 

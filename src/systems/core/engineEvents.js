@@ -46,7 +46,8 @@ export const ENGINE_EVENTS = Object.freeze({
      * or the dev time-skip ran. Payload: `{ reason }` — `'new_game'`,
      * `'load'`, `'dev_time_skip'` or `'dev_stress'`. A surface that reads
      * state no specific event names listens to this instead of
-     * `state_changed`.
+     * `state_changed`. Also `'catch_up'`: time the loop could not deliver was
+     * caught up with the UI's listeners quiet.
      */
     GAME_RESET: 'game_reset',
 
@@ -98,10 +99,29 @@ export const ENGINE_EVENTS = Object.freeze({
     /** Payload: `{ instanceId, typeId, addedCharges, currentCharges }`. */
     TOKEN_RESTOCKED: 'token_restocked',
 
-    /** The loop could not keep up and dropped time. Payload: `{ overflowMs }`. */
+    /**
+     * The loop could not deliver all the time since its last tick (a sleep, a throttled
+     * background tab); `CatchUp` plays it. Payload: `{ overflowMs, deltaMs }` (`deltaMs`: what
+     * the tick itself delivers).
+     */
     TIME_OVERFLOW: 'time_overflow',
-    /** Payload: `{ bankedMs, isSpending, multiplier }`. */
-    TIME_BANK_UPDATED: 'time_bank_updated',
+
+    /**
+     * A catch-up began playing time the game was not running. Payload: `{ awayMs, playMs, show }`;
+     * `show` is true for a gap long enough for the loading bar and the summary. ⚠️ Delivered to UI
+     * listeners even though the bus is quiet while a catch-up runs.
+     */
+    CATCH_UP_STARTED: 'catch_up_started',
+    /**
+     * Between a catch-up's slices. Payload: `{ fraction, playedMs, targetMs, show }`. ⚠️ Delivered
+     * to UI listeners even though the bus is quiet while a catch-up runs.
+     */
+    CATCH_UP_PROGRESS: 'catch_up_progress',
+    /**
+     * A catch-up finished. Payload: the result, `{ awayMs, simulatedMs, droppedMs, steps, wallMs,
+     * show, summary }` (`CatchUp.js` describes the summary).
+     */
+    CATCH_UP_FINISHED: 'catch_up_finished',
 
     /** Payload: the notification object. */
     NOTIFICATION_ADDED: 'notification_added',
@@ -139,6 +159,12 @@ export const ENGINE_EVENTS = Object.freeze({
     /** Shared engine/UI channel: play a sound. Payload: `{ clip, options? }`. */
     AUDIO_PLAY: 'audio:play',
 });
+
+/**
+ * The events a quiet bus (a catch-up) still delivers to UI listeners: the catch-up's own start and
+ * progress, for the loading bar.
+ */
+export const HEARD_WHILE_QUIET = Object.freeze([ENGINE_EVENTS.CATCH_UP_STARTED, ENGINE_EVENTS.CATCH_UP_PROGRESS]);
 
 export const UI_EVENTS = Object.freeze({
     /** ⭐ UI → engine notice: a save slot was chosen. Payload: `{ index, isNewGame }`. The engine boots on it. */

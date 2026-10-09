@@ -10,6 +10,7 @@ import {
     CHARGE_MOMENT, chargeDeltaOf,
 } from '../../config/registries/chargeMomentRegistry.js';
 import * as BoardState from './BoardState.js';
+import * as Hand from './Hand.js';
 
 /**
  * The one place a Token's charge pool is read, moved, or spent. Three axes spend against that pool:
@@ -123,6 +124,16 @@ export function canFireStatement(instance, statement) {
  * `instanceId` and, because it has just left the mat, by the point `x`, `y` it stood on.
  */
 export function destroyToken(instance, { heroId = null, exhaustedBy = heroId } = {}) {
+    // In the player's hand it stays, empty, until it is put down, and goes from where it lands.
+    // Skipped then if the drop took it off the mat (the bin) or something refilled it meanwhile.
+    if (instance?.id != null && Hand.isInHand(instance.id)) {
+        Hand.whenPutDown(instance.id, () => {
+            const still = BoardState.getTokenById(instance.id);
+            if (still && !isUnlimited(still) && still.usesRemaining <= 0) destroyToken(still, { heroId, exhaustedBy });
+        });
+        return;
+    }
+
     const typeId = instance?.typeId || null;
     const name = getTokenType(typeId)?.name || tokenName(typeId) || typeId || 'Token';
     const instanceId = instance?.id ?? null;

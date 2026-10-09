@@ -1,6 +1,6 @@
 import {
     KEYWORD, KEYWORDS, WHEN, getKeyword, paletteForKeyword, makeStatement, DEFAULT_STATEMENT_CHARGE_DELTA,
-    rolesForKeyword
+    rolesForKeyword, firingChanceOf
 } from './statements.js';
 import {
     CHARGE_MOMENT, chargeMomentsFor, chargeMomentOf, chargeDeltaOf
@@ -236,6 +236,12 @@ function payloadSlots(statement, ctx) {
                     value: placementOf(payload),
                     options: PLACEMENTS.map(pl => option(pl.id, pl.label, pl.hint)),
                     patch: v => ({ payload: { ...payload, placement: v } })
+                },
+                {
+                    id: 'chance', kind: SLOT_KIND.NUMBER, label: 'chance (%)', min: 1, max: 100, optional: true,
+                    value: payload.chance ?? 100,
+                    hint: 'Rolled each time the rule could fire. A miss does nothing at all: no charge, no cooldown.',
+                    patch: v => ({ payload: { ...payload, chance: clampChance(v) } })
                 }
             ];
 
@@ -754,8 +760,8 @@ export function slotsWithoutWords(slots, segments) {
  */
 export const FINE_PRINT_SLOTS = Object.freeze(['cooldown']);
 
-/** What a charge cost means, in words. */
-function chargeHint(delta, moment) {
+/** What a charge cost means, in words. `rolls`: the rule rolls a chance before it fires. */
+function chargeHint(delta, moment, rolls = false) {
     const firing = moment === CHARGE_MOMENT.ON_FIRE;
     const n = Math.abs(delta);
     const charges = `${n} charge${n === 1 ? '' : 's'}`;
@@ -769,7 +775,7 @@ function chargeHint(delta, moment) {
     }
     const body = delta < 0
         ? firing
-            ? `Spends ${charges} each time it fires, and cannot fire at all with fewer left.`
+            ? `Spends ${charges} each time it fires, and cannot fire at all with fewer left.${rolls ? ' A missed roll is not a firing: it spends nothing.' : ''}`
             : `Spends ${charges} every cycle this Token completes, on top of its own work cost.`
         : delta === 0
             ? 'Free — this rule never wears the Token down. This is how an always-on effect is authored.'
@@ -807,7 +813,7 @@ export function costSlots(statement) {
         {
             id: 'charge', kind: SLOT_KIND.NUMBER, label: 'charges spent',
             value: delta === 0 ? 0 : -delta,
-            hint: chargeHint(delta, moment),
+            hint: chargeHint(delta, moment, firingChanceOf(statement) != null),
             patch: v => {
                 const n = Math.round(Number(v));
                 const spend = Number.isFinite(n) ? n : 0;

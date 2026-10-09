@@ -1,7 +1,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import isEqual from 'fast-deep-equal/es6';
-import { EventBus } from '../../../systems/core/EventBus.js';
+import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 
 /**
  * One EventBus subscription per event type, however many Tokens are drawn.
@@ -40,7 +40,7 @@ export function subscribeBy(event, field, key, handler) {
             if (!set || set.size === 0) return;
             // A copy: a handler may unsubscribe itself while being told.
             for (const fn of [...set]) fn(payload);
-        });
+        }, UI_LISTENER);
         route = { unsub, handlers };
         routes.set(routeKey, route);
     }
@@ -135,7 +135,7 @@ export function useTokenState(id, selector, routesOf) {
         const offs = [];
         for (const event of routes.byId || []) offs.push(subscribeBy(event, 'instanceId', id, refresh));
         for (const r of routes.byKey || []) if (r?.key) offs.push(subscribeBy(r.event, r.field, r.key, refresh));
-        for (const event of routes.broadcast || []) offs.push(EventBus.subscribe(event, refresh));
+        for (const event of routes.broadcast || []) offs.push(EventBus.subscribe(event, refresh, UI_LISTENER));
         return () => offs.forEach(off => off());
         // `key` is `id` + `routes`, by value.
         // eslint-disable-next-line react-hooks/exhaustive-deps

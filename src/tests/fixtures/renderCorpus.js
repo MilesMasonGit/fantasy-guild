@@ -184,6 +184,11 @@ export function buildCorpus() {
         addS(`spawns:${placement}`, S(KEYWORD.SPAWNS, { payload: { typeId: FIX.token, placement } }), shippedNames);
     }
     addS('spawns:blank', S(KEYWORD.SPAWNS, { payload: {} }));
+    // An ambush: the chance is said first, when it is not "always".
+    for (const chance of [5, 0.5, 50, 100]) {
+        addS(`spawns:chance:${chance}`, S(KEYWORD.SPAWNS, { payload: { typeId: FIX.token, placement: 'nearest_free', chance } }), shippedNames);
+    }
+    addS('spawns:chance:no-moment', S(KEYWORD.SPAWNS, { payload: { typeId: FIX.token, placement: 'nearest_free', chance: 5 }, when: null }), shippedNames);
     addS('transforms', S(KEYWORD.TRANSFORMS, { payload: { typeId: FIX.token } }), shippedNames);
     addS('transforms:blank', S(KEYWORD.TRANSFORMS, { payload: {} }));
 

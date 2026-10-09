@@ -1,3 +1,5 @@
+import * as GameClock from '../core/GameClock.js';
+
 /**
  * XpRateTracker
  * Calculates rolling XP gain rates and estimated time to next level per hero & skill.
@@ -26,7 +28,7 @@ export const XpRateTracker = {
             history.set(key, []);
         }
         const entries = history.get(key);
-        entries.push({ amount, timestamp: Date.now() });
+        entries.push({ amount, timestamp: GameClock.now() });
         this.prune(key);
     },
 
@@ -37,7 +39,7 @@ export const XpRateTracker = {
     prune(key) {
         const entries = history.get(key);
         if (!entries) return;
-        const now = Date.now();
+        const now = GameClock.now();
         while (entries.length > 0 && (now - entries[0].timestamp) > WINDOW_MS) {
             entries.shift();
         }
@@ -60,7 +62,7 @@ export const XpRateTracker = {
 
         const totalAmount = entries.reduce((sum, e) => sum + e.amount, 0);
         const first = entries[0].timestamp;
-        const now = Date.now();
+        const now = GameClock.now();
         const durationMs = Math.max(now - first, MIN_WINDOW_MS);
         const durationHours = durationMs / (1000 * 60 * 60);
 

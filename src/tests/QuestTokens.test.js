@@ -98,7 +98,7 @@ describe('the Guild Hall spawns bounties up to the cap on a game-time clock (TL-
         expect(QuestTokens.nextBountyInMs()).toBeNull();
     });
 
-    it('one big tick equals many small ones (a time-bank replay)', () => {
+    it('one big tick equals many small ones (a catch-up step)', () => {
         QuestManager.tick(6 * MIN);
         expect(bounties()).toHaveLength(2);
         expect(QuestTokens.clockMs()).toBe(0);

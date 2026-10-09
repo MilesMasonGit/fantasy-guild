@@ -10,10 +10,11 @@ import { AnimatedEnemySprite } from './AnimatedEnemySprite.jsx';
 import { resolveEnemyAnimationPath } from '../../../utils/AssetManager.js';
 import { useMatFit } from './MatFitContext.jsx';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
-import { EventBus } from '../../../systems/core/EventBus.js';
+import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as Flags from '../../../systems/board/Flags.js';
 import * as TimedChanges from '../../../systems/board/TimedChanges.js';
+import * as Hand from '../../../systems/board/Hand.js';
 import { useTokenEvent } from './tokenEvents.js';
 import { useTokenDetail } from './useTokenDetail.js';
 import { TokenBubbles } from './TokenBubbles.jsx';
@@ -59,7 +60,7 @@ function useWalkerFollow(on, id, boxHalf, artRef, overlayRef) {
             if (overlayRef.current) overlayRef.current.style.transform = transform;
         };
         follow();
-        return EventBus.subscribe(BOARD_EVENTS.ENEMIES_WALKED, follow);
+        return EventBus.subscribe(BOARD_EVENTS.ENEMIES_WALKED, follow, UI_LISTENER);
     }, [on, id, artRef, overlayRef]);
 }
 
@@ -189,14 +190,14 @@ export const MatToken = React.memo(function MatToken({
         if (dragging) onClearInspect?.();
     }, [dragging, onClearInspect]);
 
-    // While it is in the player's hand, a Token does not grow or turn into something else:
-    // that would swap it for a new instance mid-drag and lose the move. The change waits and
-    // happens where it is put down. Released after the drop has been handled, which runs
-    // before this clean-up.
+    // While it is in the player's hand, a Token is paused (see `Hand.js`): it does not work,
+    // fight, grow or run out, any of which could take it off the mat mid-drag and lose the move.
+    // Released after the drop has been handled, which runs before this clean-up, so whatever
+    // waited happens where it was put down.
     React.useEffect(() => {
         if (!dragging) return undefined;
-        TimedChanges.setInHand(id, true);
-        return () => TimedChanges.setInHand(id, false);
+        Hand.setInHand(id, true);
+        return () => Hand.setInHand(id, false);
     }, [dragging, id]);
 
     // A Token the player moved simply IS where they let it go. The `left`/`top` slide exists
@@ -361,7 +362,7 @@ export const MatToken = React.memo(function MatToken({
             setReceived(true);
             clearTimeout(receivedTimer.current);
             receivedTimer.current = setTimeout(() => setReceived(false), RECEIVED_MS);
-        });
+        }, UI_LISTENER);
         return () => { unsub?.(); clearTimeout(receivedTimer.current); };
     }, [isHall]);
 

@@ -68,6 +68,13 @@ class AudioSystemClass {
         this.GLOBAL_MIXER_GAIN = 0.2;
 
         this._sfxCache = new Map();
+        /** While true (a catch-up), no sound effect plays. */
+        this.silenced = false;
+    }
+
+    /** Silence sound effects, or bring them back. The music plays on. */
+    setSilenced(on) {
+        this.silenced = !!on;
     }
 
     /**
@@ -238,6 +245,9 @@ class AudioSystemClass {
             logger.warn('AudioSystem', `No path found for clip: ${clipName}`);
             return;
         }
+        // ⚠️ After the variant pick, not before: it draws from the game's shared random stream,
+        // so a silenced catch-up draws exactly as many numbers as play at volume 0 does.
+        if (this.silenced) return;
 
         const masterVol = SettingsManager.get('audio.masterVolume') ?? 0;
         const sfxVol = SettingsManager.get('audio.sfxVolume') ?? 50;

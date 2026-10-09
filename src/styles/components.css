@@ -100,3 +100,40 @@ gi-slot-label {
 [data-summary-highlight="true"] {
     filter: drop-shadow(0 0 2px #fde047) drop-shadow(0 0 6px #fde047);
 }
+
+/* === Catch-up loading bar ====================================================
+   Moved only by transform, so the compositor keeps it going while a slice of
+   catch-up work holds the page's script. */
+.catch-up-fill {
+    transform-origin: left center;
+    transition: transform 300ms linear;
+}
+
+.catch-up-sheen {
+    animation: catch-up-sheen 1.6s linear infinite;
+}
+
+@keyframes catch-up-sheen {
+    0% { transform: translateX(-100%) skewX(-20deg); }
+    100% { transform: translateX(400%) skewX(-20deg); }
+}
+
+/* The summary's rows come in from the left, one after another (each row's
+   delay and duration are inline). Opacity and transform only: nothing is
+   laid out again. */
+.catch-up-row-in {
+    animation-name: catch-up-row-in;
+    animation-timing-function: ease-out;
+    animation-fill-mode: both;
+}
+
+@keyframes catch-up-row-in {
+    from { opacity: 0; transform: translateX(-12px); }
+    to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .catch-up-fill { transition: none; }
+    .catch-up-sheen { animation: none; opacity: 0; }
+    .catch-up-row-in { animation: none; }
+}

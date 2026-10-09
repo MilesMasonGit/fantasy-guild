@@ -270,6 +270,8 @@ export function wearNearbySupport(instanceId, onDeplete, exclude = null) {
 
         // Unlimited-use support never wears: `null` is not a number.
         if (support.usesRemaining == null) continue;
+        // Already spent and waiting in the player's hand to be removed on the drop.
+        if (support.usesRemaining <= 0) continue;
 
         support.usesRemaining -= 1;
         EventBus.publish(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, {

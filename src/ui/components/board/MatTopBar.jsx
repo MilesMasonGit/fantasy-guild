@@ -12,7 +12,7 @@ export const MAT_TOP_BAR_PX = 30;
  * mat's brown frame. Three parts:
  * * **left**: information (the Token cap; Upkeep),
  * * a **flexible middle**, empty, kept for future mat controls,
- * * **right**: controls (disallow mode and *Allow all*; the Time Bank).
+ * * **right**: controls (disallow mode and *Allow all*).
  * Only drawn on the playmat, never on the Guild Hall upgrade screen ({@link showsMatTopBar}).
  * @param {{ left?: React.ReactNode, right?: React.ReactNode }} props
  */

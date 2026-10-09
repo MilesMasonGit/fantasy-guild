@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { EventBus } from '../../../systems/core/EventBus.js';
+import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { SettingsManager } from '../../../systems/core/SettingsManager.js';
@@ -99,9 +99,9 @@ export const ParticleOverlay = ({ disabled }) => {
             system.spawnCollected(data);
             if (system.particles.length) wakeRef.current?.();
         };
-        const subCollected = EventBus.subscribe(BOARD_EVENTS.SPRITE_COLLECTED, onCollected);
+        const subCollected = EventBus.subscribe(BOARD_EVENTS.SPRITE_COLLECTED, onCollected, UI_LISTENER);
         // The same flight for the eye only (a hero lifted from the dock).
-        const subFly = EventBus.subscribe(UI_EVENTS.UI_PARTICLE_FLY, onCollected);
+        const subFly = EventBus.subscribe(UI_EVENTS.UI_PARTICLE_FLY, onCollected, UI_LISTENER);
 
         return () => {
             window.removeEventListener('resize', handleResize);

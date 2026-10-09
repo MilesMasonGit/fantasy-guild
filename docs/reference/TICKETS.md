@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-133**
+**Next free number: T-139**
 
 ---
 
@@ -41,8 +41,6 @@ here.
 | T-013 | **The last ~65 alert-icon glows and ~105 label text-shadows**: switch them to the hard-pixel style too? | CR3 summary |
 | T-014 | **Starting and quest content is written in engine code**, not the CMS. Move it to content? (Design call, never asked.) | CR3-515 |
 | T-127 | **Markets are cut for now** (owner 2026-10-09, D2): the Shrimp Market Token runs but pays nothing. Retire or repurpose it in the CMS (it turns up from Shrimp Coast content). The GDD §16 question is closed. | concept_progression.md |
-| T-129 | **A Token in your hand can vanish**: a goblin your hero is fighting can die while you carry it, and a Token worked down to its last charge can be used up mid-drag; the drop then lands nothing (seen once in 100 bin drags by the drag bench, 2026-10-09). Pause work and fights on a carried Token, as growing already waits (recommended), or leave it? The bench now passes over enemies in a fight. | brief 50 D2 |
-| T-130 | **A flag's cloth now beats a Token under it** (brief 50 D2, built, partly reverses ruling B5 that a Token's round body always wins): a flag standing wholly over Tokens could not be picked up on the mat at all. Now the coloured banner of a flag drawn in front of a Token takes the press; its pole, grass and empty corners still give way. Keep (recommended), go back to B5 (such a flag moves only by its hero or the hero bar), or let the whole drawn flag win (its grass tuft then covers the centre of a Token it is planted on)? Either way a flag wholly under things drawn in front of it (a worked Token is drawn above every resting flag) is pressed nowhere on the mat; the drag bench passes such a flag over. | brief 50 D2 |
 
 ## 2. Open work
 
@@ -61,8 +59,6 @@ here.
 | T-021 | P3 | open | Two ways into the engine; settle on one (R5-Q2 ruling A). | CR3-512 |
 | T-022 | P3 | open | Rate trackers never cleared on load (clear only; "count at drop time" is a separate design call). | CR3-263 |
 | T-023 | P3 | open | `GLOBAL_COMBAT_XP_MULTIPLIER` wired to nothing (value is 1.0, so wiring it is invisible). | CR3-261 |
-| T-024 | P3 | open | `map_burst` and `map_opened` both report `map_burst` (double count, hidden by the cap). *Unverified since 2026-09-21.* | FMR |
-| T-025 | P3 | open | `buyMap` ignores the Shop's `sourceRect`. *Unverified since 2026-09-21.* | FMR |
 | T-026 | P3 | ride-along | Small per-tick allocations in combat and statuses. | CR3-032 |
 | T-027 | P3 | ride-along | Motion ticks allocate small objects per walker. | CR3-153 |
 | T-097 | P2 | open | *(Token cap done in T-102: `MatCap.BASE_TOKEN_CAP`.)* Move the mat size and quest cap/interval out of the dev Mat Tuner into fixed game values (Hall upgrades may raise them later); hide Debug Mode and the QA tools in shipped builds. Owner 2026-10-06. | GDD §16.1 |
@@ -72,6 +68,11 @@ here.
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
+| T-137 | P2 | open | **Code-only animation batch** (owner picks 2026-10-09, `docs/active/research/animation_menu.md` "Owner picks"): effects 1, 2, 3, 4, 5, 6, 7, 10, 12, 13, 14 (every hit), 15, 17 now; 18 after the Atlas. Whole art pixels, stepped timing, no blur or fractional scaling; effect 1 also fixes T-135; effect 5 should make loot bursts cheaper (measure before/after). New hooks: `COMBAT_RESOLVED`, `HERO_LEVELED`; 7 needs the effect payload to name the source Token. Builder (engineer for 5). After brief 60; cost-log line per effect group; changes the look: owner eye-check. | research/animation_menu.md |
+| T-138 | P3 | owner | **Sprite-strip player for owner-drawn effects**: play a horizontal strip once at a mat point on the strike frame / event (like `AnimatedHeroSprite.jsx:57-76`); a new `assets/fx/` folder added to the spriteFx generator's skip list (`spriteFx.js:77-80`). Waits for the owner's first effect art (owner_art_list.md). | research/animation_menu.md |
+| T-136 | P2 | open | **Pixel frames on every panel** (owner 2026-10-09, UI_STYLE "Pixel frames"): one shared frame class with `border-image` nine-slice, **studs** for big docked panels, **chamfer** for small floating ones, one colour, hard 2-art-pixel shadow; the two 7×7 pictures are the ones in `docs/active/research/pixel_borders_demo.html` (extract the data URIs to PNGs in `public/assets/ui/`; new files, not the owner's uncommitted art). Replace rounded corners, translucent hairlines and blurred shadows; unbox the rows UI_STYLE forbids (`TokenInspection.jsx:132,147,221`, `ShopDrawer.jsx:299`, `HeroSkillSheet.jsx:93`); tooltips first (`Bubble.jsx`, `TopBarTip.jsx`, `QuestTooltip.jsx`, `MatCapBadge.jsx` share classes), then sidebars, Token inspect, drawers, modals, toasts. Builder. Run when no crunch brief is editing those components; cost-log line (`bench:draw --compare`); changes the look: owner eye-check. | research/pixel_borders.md |
+| T-134 | P3 | open | The bubble menu's `ui_bar.png` (32×32) is stretched to the menu's width (`BubbleMenu.jsx:92-96`, `backgroundSize: '100% auto'`), about 2.5–4.7×, so its pixels come out uneven. Found by the pixel-borders research. Changes the look: eye-check. | research/pixel_borders.md |
+| T-135 | P3 | open | Token hit reactions break the no-scale rule: the `squash` reaction scales by 0.82–1.1 (`hitAnimations.js:90-99`) while `tailwind.css:347-352` says never scale pixel art (non-whole scaling blurs it); and `lootArc.js`'s comment claims a densely sampled arc while the code is a short keyframe slide. Fix the code or the comment. Found by the animation research. | research/animation_menu.md |
 | T-028 | P2 | open | Toast types look alike and "×N" never shows. Ruling: a coloured edge per type, "×3" for merged repeats. | CR3-452 |
 | T-029 | P2 | open | Every surface closes differently. Ruling: Escape closes the top layer only; click-outside closes light pop-ups only; drawers never close on a stray click. | CR3-454 |
 | T-030 | P2 | open | Five tooltip implementations. Ruling: one shared gold-bordered tooltip; plain browser tips only on icon buttons. | CR3-455 |
@@ -117,7 +118,7 @@ here.
 | T-062 | P3 | open | `statementText.js` contains a literal NUL byte, so git treats it as binary (no diffs). | FMR (still true 2026-10-06) |
 | T-063 | P3 | open | `resolveAnimationPath` hard-codes an id map and uses a relative `assets/` path. *Unverified since 2026-09-21.* | FMR |
 | T-064 | P3 | open | Dead clock surfaces and write-only fields (R1-Q4 ruling A). | CR3-105 |
-| T-093 | P3 | open | Stale comments found by the GDD survey (2026-10-06): skill/job headers say 27 skills and 6 held (29; 9/11/13 held); `RegenSystem` says only idle heroes regen (also working and fighting); `BoardCombat.tickToken` says enemies never aggro (hostiles do); `reachRegistry` says Near = 8 tiles on a 6×6 board (164 u, 4 sides); `MatCap.js` says nothing enforces the cap (Shop and recipes do); `Restrictions.js` mentions the Vault; `constants.js` says yield/work-time/input-cost axes are unread; `recipePoolRegistry` says 3 recipes; `tempoBands`/`dials` say nothing reads them; `BubbleMenu` says 5 bubbles; `TimeBankWidget` says it is mounted; `ConsumptionSystem` describes the deck loop; `loopConstants` mentions 100×. | GDD survey |
+| T-093 | P3 | open | Stale comments found by the GDD survey (2026-10-06): skill/job headers say 27 skills and 6 held (29; 9/11/13 held); `RegenSystem` says only idle heroes regen (also working and fighting); `BoardCombat.tickToken` says enemies never aggro (hostiles do); `reachRegistry` says Near = 8 tiles on a 6×6 board (164 u, 4 sides); `MatCap.js` says nothing enforces the cap (Shop and recipes do); `Restrictions.js` mentions the Vault; `constants.js` says yield/work-time/input-cost axes are unread; `recipePoolRegistry` says 3 recipes; `tempoBands`/`dials` say nothing reads them; `BubbleMenu` says 5 bubbles; `ConsumptionSystem` describes the deck loop; `loopConstants` mentions 100×. | GDD survey |
 | T-094 | P3 | open | Dead-code leftovers after hygiene W3 (2026-10-07): functions now used only by tests (`resolveYield`, `getYieldMultiplier`, the other two `EffectAxes` helpers); Villager remnants (`isVillager` branches in `EquipmentValidator`, `HeroRehydration`, `PromotionSystem`, `SkillSystem`); `HeroDockTab`'s unused `onClick` prop; inert `effectFilesGlob`/`recipePoolFilesGlob` in `DatabaseManager.js`. `Placement.removePlacedToken` is kept (benches and tests use it). | GDD survey, W3 |
 | T-108 | P3 | open | `cardUseCounts` (counts completed cycles per Token type; `GameState.js`, `BoardRunner.js`) is a deck-era name; rename it after the parked `atlas-wip` branch is merged or dropped (its `StateSchema.js` edit declares the field). | hygiene W4 |
 | T-095 | P3 | open | The tutorial beacon for "Plant a Flag" probably targets nothing: its selectors (`#rightmost-hero-dock`, `#hero-dock`) match no element in the bottom dock. *Unverified — check in the game.* | GDD survey |
@@ -127,6 +128,7 @@ here.
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
+| T-133 | P2 | open | **CMS change packs for agent-authored content** (owner 2026-10-09): autosave the workspace to disk every few minutes (the server's last-5 rotation exists, nothing calls it); an inbox (`cms/incoming/`) of change packs reviewed per entry with before/after, edit-before-accept, conflict flags, per-pack undo, notes, placeholder-art flags. Design: `docs/active/concept_cms_agent_authoring.md`. Builder; CMS only, no game code. | concept_cms_agent_authoring.md |
 | T-065 | P2 | open | 3 of 7 test fixtures still borrow real `item_` ids — their rename changes the bench fingerprint, so land it as its own accepted commit. | CR3-551 |
 | T-067 | P3 | open | Skipped tests: the Map-burst rule skips still need a ruling or deletion. | CR3-554 |
 | T-068 | P3 | open | Build ships and preloads scrap art (`archive`/`maybe`/`waste`); keep it out of the build and the preload list. | CR3-508 |
@@ -137,9 +139,9 @@ here.
 | T-116 | P3 | open | The CMS content generator still writes the retired task/area effect vocabulary (`targetCategory` enum ALL/COMBAT/MELEE/MINING/INDUSTRY/NATURE/CRAFTING in `contentGenerator.js`); only its skill list follows the registry. Revisit if the generator is revived. | brief 20 R3 |
 | T-117 | P2 | open | The desktop app keeps drawing at ~165 fps while minimised (measured 2026-10-08: WebView2 is never told); pause drawing on Tauri's minimise event. Battery and GPU waste. | brief 40 O1 |
 | T-118 | P3 | open | `npm run bench -- --cpu-prof` writes the module-loader thread's idle profile on Node 24 (`bench/run.mjs` `runWorker` uses a fixed `--cpu-prof-name`); drop the name or add the thread id. Workaround: plain `node --cpu-prof` (bench/README.md). | brief 40 O1 |
-| T-120 | P2 | open | Feed the hero bar's level-up bubbles from a catch-up: `heroBarBubbles.js` adds one bubble per `CatchUp.lastResult().summary.levelUps` row after the load's `GAME_RESET` (which clears bubbles; exempt reason `catch_up` like `dev_time_skip`). Needs `crunch/offline` and `crunch/hero-ui` both merged. | brief 40 O3 |
 | T-121 | P3 | open | Slot card playtime reads hours for seconds: `formatPlaytime(seconds)` in `SlotSelectionModal.jsx` is handed milliseconds (76 s shows as 21h 6m). | brief 40 O4 |
 | T-122 | P3 | open | `HeroEditModal` still embeds `HeroSkillSheet` with its own skill list, duplicating the H2 hero panel; `VitalBar.jsx` may have no consumers left. | brief 30 H2 |
+| T-124 | P2 | open | Speech bubbles from different sources (a hero's bubble and the Token's bubble while the hero works it) can cover each other; they should stack smoothly like the bubbles of one source. Owner 2026-10-09. | eye-check B |
 | T-114 | P3 | open | Remove `migrateSkillIds` (the `logging` → `forestry` content migration in the game loaders and the CMS store) once the owner has synced `data/` with `forestry`. | brief 20 R0 |
 
 ## 3. Parked — don't work on these without a reason
@@ -159,12 +161,10 @@ first, when content that uses it is authored.*
 | T-077 | latent | Timed effects lose combat numbers on reload; use game time, not the wall clock. | CR3-252 |
 | T-078 | latent | Loadout re-expanded on every axis read. | CR3-253 |
 | T-079 | latent | Loading rewrites the Guild Hall's definition. | CR3-257 |
-| T-080 | superseded | Time Bank fast-forward doubles tick cost. The Time Bank is being replaced by real offline progress (crunch track, owner 2026-10-06). | CR3-104 |
 | T-081 | latent | Engine init isn't safe to run twice — only matters with a "back to title" feature. | CR3-108 |
 | T-082 | latent | Shop's unreachable refund path skips mat events. | CR3-206 |
 | T-083 | re-check | Synchronous subscribers; several whole-mat rebuilds per tick. Probably closed by Wave 3b — re-measure before working on it. | CR3-102 |
 | T-084 | not needed | Push solver all-pairs (S4 worst push ~15 ms vs 8). Only matters past ~250 Tokens; T-035 may make it moot. | CR3-152 |
-| T-085 | contract note | Loot timing uses the wall clock. | CR3-014 |
 | T-086 | needs a Codex screen | Enemy kill counts never recorded. | CR3-035 |
 | T-087 | owner-deferred | Desktop-shell group (save export, `src-tauri`). | CR3-046 |
 | T-088 | Stage 2 | Randomness is unseeded and has no injectable source. | CR3-044 |

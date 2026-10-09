@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { EventBus } from '../../../systems/core/EventBus.js';
+import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { computeUpkeepSummary, formatRate, formatRunsOut } from '../../../systems/board/UpkeepSummary.js';
 import { cn } from '../../utils/cn.js';
@@ -28,7 +28,7 @@ export const UpkeepSummaryPanel = ({ className = 'h-full' } = {}) => {
 
     useEffect(() => {
         const refresh = () => setSummary(computeUpkeepSummary());
-        const unsubs = REFRESH_EVENTS.map(e => EventBus.subscribe(e, refresh));
+        const unsubs = REFRESH_EVENTS.map(e => EventBus.subscribe(e, refresh, UI_LISTENER));
         const timer = setInterval(refresh, POLL_MS);
         return () => { unsubs.forEach(u => u()); clearInterval(timer); };
     }, []);

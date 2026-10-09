@@ -31,7 +31,6 @@ import {
     spawnerCountText, gearStateOf, isGearOnlyAlert
 } from '../ui/components/board/centreAlert.js';
 import { matW, matH } from '../config/matGeometry.js';
-import { TimeBankManager } from '../systems/core/TimeBankManager.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -198,24 +197,6 @@ describe('a spawner announces the Token it just spawned', () => {
         expect(seen).toEqual([{
             spawnerId: forest.id, instanceId: sapling.id, typeId: 'fixture_q2_sapling', name: 'Fixture Q2 Sapling'
         }]);
-    });
-
-    it('is silent while the time bank replays time away; speaks again afterwards', () => {
-        InventoryManager.addItem('fixture_q2_seed', 5);
-        put('fixture_q2_forest');
-        const { seen, unsub } = spawns();
-        TimeBankManager.isSpending = true;
-        try {
-            for (let t = 0; t < 1200; t += 100) BoardRunner.tick(100);
-        } finally {
-            TimeBankManager.isSpending = false;
-        }
-        expect(BoardState.tokens().filter(t => t.typeId === 'fixture_q2_sapling').length).toBe(1);
-        expect(seen).toEqual([]);
-
-        for (let t = 0; t < 1200; t += 100) BoardRunner.tick(100);
-        unsub();
-        expect(seen.length).toBe(1);
     });
 });
 

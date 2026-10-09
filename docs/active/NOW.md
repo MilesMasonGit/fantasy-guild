@@ -22,40 +22,61 @@ changelog and `docs/archive/`).*
    4. Still open from brief 10: Foundation **Tier** on each Foundation, Shop
       group labels, minimum Foundation tier on building recipes, higher anvils'
       "Acts as: anvil, tool tier N".
-2. **Owner eye-check, batch A: brief 30 on `crunch/hero-ui`** (H1–H4
-   built and gate-green; nothing merges until seen). Run the branch:
-   `git switch crunch/hero-ui` then `npm run dev`, your save or S2.
-   1. Bottom bar: eight-hero spacing, one thin edge, no heavy shadow. Heroes
-      collect "Leveled up X to N! (+n)" bubbles that stay; click a bubble to
-      clear that hero's, click the hero to clear and open the panel.
-   2. Hero panel: full height on the notification side, same place from the
-      bar and from the Bank. Skills read "Mining 25/99" with a thin bar;
-      class skills on top, Starting skills in a drawer, set-aside greyed,
-      level-99 Advanced/Master skills starred. Esc or a mat click closes it.
-   3. Hover a hero in the bar: a small gold gear. It opens that hero's work
-      rules in the same box (one line per skill, Copy rules to… with a
-      skipped-skills line). Opening a hero replaces the rules and vice versa.
-   4. The flag: no gear, no "…" chip; hover shows outline, name and reach
-      ring; "No work in range." still appears.
-   Parked choices (built as listed; say if you want another): newest 3
-   bubbles + "+N more"; bubbles clickable; panel overlays the mat edge
-   (no mat refit); never-held skills not listed; gold ★ for mastered;
-   rules replace the hero panel; long skill names truncate at narrow widths
-   (the rules list cuts every name at 1024 wide).
-3. **Owner eye-check, batch B: brief 40 on `crunch/offline`** (O1–O4
-   built and gate-green; the engine half could merge alone but the bar is
-   player-visible). Run the branch, then in a dev slot play a minute, close,
-   and either wait or set the save's `savedAt` back a few hours: a
-   "Catching up on 3 h away" bar covers the mat and fills; then the "While
-   you were away" panel (Into the Bank, Made waiting on the mat, Spent,
-   Level-ups, Tokens used up); Esc or the button closes it; under 2 min
-   away shows nothing. The Time Bank is gone. Director rulings to confirm:
-   cycle leftover carried (≈ +0.5 % live production); background browser
-   tab keeps time quietly; mat loot shown under "Made, waiting on the mat".
-4. **After the eye-checks:** merge both (T-120 then feeds the bar's bubbles
-   from a catch-up), then brief 50 (drag deep-dive).
+2. **Eye-check summary for the owner's return** (everything below is on
+   `main`; look in your save, then tell the director what to change):
+   - **Brief 40, third pass of the away summary** (not yet seen): Item Bars
+     with the hover zoom and `5.9k` → `5,900` on hover; headings Items
+     produced / Items banked / Items spent / Level-ups / Tokens used up /
+     Heroes wounded / Fights won; "Return to the Guild" above "Load as I
+     left it"; a Confirm / Cancel question before the undo.
+   - **Brief 30** merged as seen (2026-10-08); your held-back tweaks go to
+     the design pass.
+   - **T-120 merged** (director ruling): the hero bar shows the level-ups a
+     catch-up produced, background-tab catch-ups included.
+   - **Brief 70 A0, the Atlas roadmap** ([atlas_roadmap.md](atlas_roadmap.md))
+     is on `main` with **12 owner questions in its §D** (Starter Camp sites
+     and the cap, who lays out the Starter Camp, first Base Maps and
+     Modifiers, where Maps are authored, old saves, what moves and demolishes,
+     vein refill, returning to a Region, Cartography numbers, upcycling,
+     tools-as-gear timing, the parked `atlas-wip` work). **Answered by the
+     owner 2026-10-09** (table at the top of §D; D-1, D-4, D-6 and D-9 differ
+     from the recommendations). The Atlas builds after brief 60 per the crunch
+     order.
+   - **Brief 50 merged** (owner felt the drag 2026-10-09 and kept the flag
+     cloth rule, T-130 closed). Still parked: **T-129** should a carried
+     Token pause work and fights so it cannot vanish in your hand?
+   - Entries are added here as overnight phases land.
+3. **Overnight run (owner asleep, 2026-10-08):** the director continues the
+   crunch order (50 drag → 60 optimization → 70 Atlas → 80 terrain → 90
+   Envelope). Anything look-changing stays on its branch until seen, except
+   what the owner already ruled on in words.
+4. **After the crunch (owner, 2026-10-08):** a review of how this director /
+   subagent workflow is working, and whether to fold in the planning docs the
+   owner has been writing with another agent for the next pass. Discuss once
+   the current work is wrapped up.
 5. **Brief 20 live-game check** once the Academies and master Tokens exist.
 6. **T-111**: engine bench timings are load-sensitive; trust the work check.
+
+**Handoff (2026-10-09, director session hit its usage limit):**
+- Merged to `main` today: brief 50 (drag), T-129 (carried Token pauses),
+  brief 70 A9 (ambush rules). Suite green except `TerrainRegistry.test.js`,
+  which reads the owner's half-moved terrain art on disk (owner's area).
+- **Ready to verify and merge, unmerged:** Atlas **A1** on `crunch/atlas-a1`
+  (worktree `.claude/worktrees/atlas-a1`): Regions, travel, save schema
+  0.8.1, cap 128; the agent reports 4297 tests green and same work. Run the
+  gate yourself, merge, push. Its parked questions: bump the app version to
+  0.8.1 at the Atlas milestone (recommended) and loot banked on leaving
+  counts for collect quests (built).
+- **Still running when the session ended:** Atlas **A4** pure modules on
+  `crunch/atlas-a4` (worktree `atlas-a4`; told to record node biomes and a
+  cell terrain map per the terrain-grid ruling f39323f8) and brief **60 P1**
+  on `crunch/optimize` (worktree `o6`; told to plan for caps 128 and 256).
+  Their reports land in their worktrees' branches; read the branch log and
+  verify as usual.
+- Next after those: A2 (respawning fixtures) then A3a (demolition job) on
+  the A1 line; brief 60 P2 fixes in ranked order; the Atlas UI slices need
+  eye-checks. Leftover worktree folders `d`, `t129`, `atlas-a9` are pruned
+  from git but busy on disk; delete when free.
 
 **Director notes (2026-10-08):** brief 20's four slices ran as one engineer
 (R1) then three parallel builders in worktrees (R2a, R2b, R3) on Opus; every
@@ -68,10 +89,10 @@ straight onto `main`; expect its commits between yours.
 - **Version** 0.8.x on `main`. Crunch prep is done: GDD, tickets, measuring
   tools and baseline ([PERFORMANCE.md](../reference/PERFORMANCE.md)), design
   interviews, and the briefs.
-- **Crunch order:** UI rework ✓ → class rework v2 ✓ (engine) → hero bar and panel (built, eye-check) →
-  offline progress (built, eye-check) → drag deep-dive → deep optimization → Atlas → terrain →
+- **Crunch order:** UI rework ✓ → class rework v2 ✓ (engine) → hero bar and panel ✓ →
+  offline progress ✓ → drag deep-dive → deep optimization → Atlas → terrain →
   Performance Envelope ([briefs](briefs/README.md)).
-- **Tests:** all green (4095 passed, 3 skipped). Anything red is new.
+- **Tests:** all green (4211 passed, 3 skipped). Anything red is new.
 
 ## Ground rules during the crunch
 

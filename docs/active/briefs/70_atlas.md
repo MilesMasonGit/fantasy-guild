@@ -37,6 +37,12 @@ interview D2, 2026-10-09). It adds to the Atlas; where it differs from
 - **The Starter Camp tutorial** is the cartographer's quests, one at a time,
   ending in the first maps; bounties reward maps and modifiers (D8,
   [`concept_quests_tutorial.md`](../concept_quests_tutorial.md)).
+- **A terrain grid** (owner, 2026-10-09): the ground is cells with terrain
+  types, the ground follows the nodes, and some Tokens require a terrain (a
+  Dock on the coast). Generation (A4) should record each node's biome and a
+  cell terrain map brief 80 can paint; see
+  [`../research/terrain_art_list.md`](../research/terrain_art_list.md) "Owner
+  answers".
 - **No tier labels**: tiers are implicit in the chains (Fir → Iron Pickaxe →
   Gold), never "Tier 2" in the game.
 

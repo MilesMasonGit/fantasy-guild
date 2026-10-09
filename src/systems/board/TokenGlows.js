@@ -7,8 +7,8 @@
  * Kept in a store, not an event: a transform makes a NEW instance and React draws it after the
  * tick, so an event would reach nobody. The Token reads the glow when it mounts.
  *
- * Wall clock (`Date.now()`): a glow is presentation, never saved, and does not speed up with the
- * time bank.
+ * Wall clock (`Date.now()`): a glow is presentation, never saved, and does not speed up with a
+ * catch-up.
  */
 
 /** How long the glow plays, in ms. */

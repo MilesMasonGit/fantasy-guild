@@ -9,6 +9,8 @@ import { validateSaveData } from '../../state/StateSchema.js';
 import { ENGINE_EVENTS } from './engineEvents.js';
 
 const LAST_SLOT_KEY = 'fantasy_guild_last_slot';
+/** sessionStorage: the slot the next page load opens by itself, without a catch-up. */
+const RESUME_SLOT_KEY = 'fantasy_guild_resume_slot';
 const MAX_SLOTS = 3;
 // A placeholder until `syncSettings()` reads `gameplay.autoSaveIntervalMinutes`
 // at init. The real default is 10 minutes (SettingsManager's defaults).
@@ -23,6 +25,21 @@ export const SaveManager = {
     currentSlot: null, // Track which slot is active (0, 1, or 2)
     _beforeUnloadBound: false, // Track if beforeunload listener is registered
     _settingsUnsubscribe: null,
+    /** While true (a catch-up), nothing is written: the slot keeps the save it had. */
+    savingSuspended: false,
+    /** When the loaded save was written (epoch ms): the catch-up on load plays from here. */
+    loadedSavedAt: null,
+    /** The save text the last load read, until the catch-up on load takes it (`takeLoadedJson`). */
+    loadedJson: null,
+
+    /** Refuse every save (autosave, closing the window, a button) until `resumeSaving`. */
+    suspendSaving() {
+        this.savingSuspended = true;
+    },
+
+    resumeSaving() {
+        this.savingSuspended = false;
+    },
 
     // Proxy SlotHelper methods for backward compatibility
     getSlotKey: SlotHelper.getSlotKey,
@@ -110,7 +127,7 @@ export const SaveManager = {
             return false;
         }
 
-        if (!GameState.getIsInitialized() || this.isResetting) {
+        if (!GameState.getIsInitialized() || this.isResetting || this.savingSuspended) {
             return false;
         }
 
@@ -198,7 +215,7 @@ export const SaveManager = {
      * @param {number} slotIndex 
      * @returns {boolean} Success
      */
-    async loadSlot(slotIndex, { fromBackup = false } = {}) {
+    async loadSlot(slotIndex, { fromBackup = false, catchUp = true } = {}) {
         try {
             const key = fromBackup ? SlotHelper.getBackupKey(slotIndex) : this.getSlotKey(slotIndex);
             const json = localStorage.getItem(key);
@@ -225,7 +242,7 @@ export const SaveManager = {
                 // telling the player their save is damaged.
                 if (!fromBackup && localStorage.getItem(SlotHelper.getBackupKey(slotIndex))) {
                     console.warn(`[SaveManager] Retrying slot ${slotIndex} from its backup`);
-                    const recovered = await this.loadSlot(slotIndex, { fromBackup: true });
+                    const recovered = await this.loadSlot(slotIndex, { fromBackup: true, catchUp });
                     if (recovered) {
                         NotificationSystem.notify('Your latest save was damaged — restored the previous one.', 'warning');
                         return true;
@@ -237,11 +254,12 @@ export const SaveManager = {
 
             await GameState.initFromSave(state);
             this.currentSlot = slotIndex;
+            this.loadedSavedAt = catchUp ? (Number(data.savedAt) || null) : null;
+            this.loadedJson = catchUp ? json : null;
             localStorage.setItem(LAST_SLOT_KEY, slotIndex);
             this.startAutoSave();
 
-            // savedAt is when this save was written — the Time Bank
-            // uses it to accrue closed-only offline time on load.
+            // savedAt is when this save was written: the catch-up on load plays from it.
             EventBus.publish(ENGINE_EVENTS.GAME_LOADED, { slot: slotIndex, savedAt: data.savedAt });
             return true;
         } catch (err) {
@@ -256,6 +274,74 @@ export const SaveManager = {
         }
     },
 
+    /** The save text the last load read, once; the catch-up on load keeps it for an undo. */
+    takeLoadedJson() {
+        const json = this.loadedJson;
+        this.loadedJson = null;
+        return json;
+    },
+
+    /**
+     * "Load as I left it": write `json` (a whole save, as stored) back to `slotIndex`, dated now so
+     * the next load does not catch the same time up again, and reload the page, which opens that
+     * slot by itself without a catch-up (`takeResumeSlot`). Nothing is saved after this: the game
+     * still running is the one being thrown away.
+     * @returns {boolean} false if the save could not be read or written (the page is not reloaded)
+     */
+    restoreAndReload(slotIndex, json) {
+        try {
+            const data = JSON.parse(json);
+            const now = Date.now();
+            if (data.state) {
+                data.savedAt = now;
+                if (data.state.meta) data.state.meta.lastSavedAt = now;
+            } else if (data.meta) {
+                data.meta.lastSavedAt = now;
+            }
+            this.suspendSaving();
+            if (this.autoSaveTimer) {
+                clearInterval(this.autoSaveTimer);
+                this.autoSaveTimer = null;
+            }
+            const slotKey = this.getSlotKey(slotIndex);
+            const previous = localStorage.getItem(slotKey);
+            if (previous) {
+                try {
+                    localStorage.setItem(SlotHelper.getBackupKey(slotIndex), previous);
+                } catch {
+                    // Backup is best-effort, as in `save`.
+                }
+            }
+            localStorage.setItem(slotKey, JSON.stringify(data));
+            sessionStorage.setItem(RESUME_SLOT_KEY, String(slotIndex));
+        } catch (err) {
+            console.error('[SaveManager] Could not put the save from before the catch-up back:', err);
+            this.resumeSaving();
+            this.startAutoSave();
+            NotificationSystem.notify('Could not load the game as you left it.', 'error');
+            return false;
+        }
+        this.reloadPage();
+        return true;
+    },
+
+    /** The slot `restoreAndReload` asked this page load to open, once; null if none or empty. */
+    takeResumeSlot() {
+        let raw;
+        try {
+            raw = sessionStorage.getItem(RESUME_SLOT_KEY);
+            sessionStorage.removeItem(RESUME_SLOT_KEY);
+        } catch {
+            return null;
+        }
+        const slot = raw === null ? NaN : Number(raw);
+        return Number.isInteger(slot) && this.hasSlot(slot) ? slot : null;
+    },
+
+    reloadPage() {
+        location.reload();
+    },
+
     /**
      * Start a new game in a specific slot
      * @param {number} slotIndex 
@@ -266,6 +352,8 @@ export const SaveManager = {
         // Initialize fresh state
         GameState.initNew();
         this.currentSlot = slotIndex;
+        this.loadedSavedAt = null;
+        this.loadedJson = null;
         localStorage.setItem(LAST_SLOT_KEY, slotIndex);
 
         // Save immediately to claim the slot

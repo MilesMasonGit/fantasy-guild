@@ -12,7 +12,7 @@ import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as Flags from '../../../systems/board/Flags.js';
 import { flagColourOf } from '../../../systems/board/FlagColours.js';
-import { EventBus } from '../../../systems/core/EventBus.js';
+import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { GameState } from '../../../state/GameState.js';
 import { tokenSizeFor, TOKEN_SURFACE, boardScaleAt } from '../base/TokenSprite.jsx';
 import { FlagMark } from './FlagMark.jsx';
@@ -63,7 +63,7 @@ function useFlagRadius() {
     useEffect(() => {
         const refresh = () => setRadius(Flags.flagRadius());
         const offTuning = onMatTuningChanged(refresh);
-        const offUpgrade = EventBus.subscribe(ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, refresh);
+        const offUpgrade = EventBus.subscribe(ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, refresh, UI_LISTENER);
         return () => { offTuning?.(); offUpgrade?.(); };
     }, []);
     return radius;

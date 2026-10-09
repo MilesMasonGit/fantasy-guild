@@ -1,7 +1,6 @@
-import { EventBus } from '../../../systems/core/EventBus.js';
+import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
-import { TimeBankManager } from '../../../systems/core/TimeBankManager.js';
 
 /** How long a spawned Token takes to pop out and settle. */
 export const SPAWN_MS = 300;
@@ -16,11 +15,10 @@ const pending = new Map();
 
 /**
  * Remember where a new Token came from. The event fires when the engine lands the Token, before
- * React has drawn it, so the mat's Token reads this when it mounts (`takeSpawn`). Skipped while
- * the time bank replays time away, like the spawn callout.
+ * React has drawn it, so the mat's Token reads this when it mounts (`takeSpawn`).
  */
 export function recordSpawn(payload, now = Date.now()) {
-    if (!payload?.instanceId || !payload.spawnerId || TimeBankManager.isSpending) return;
+    if (!payload?.instanceId || !payload.spawnerId) return;
     const from = BoardState.getTokenById(payload.spawnerId);
     if (!from || !Number.isFinite(from.x) || !Number.isFinite(from.y)) return;
     for (const [id, p] of pending) if (now - p.at > STALE_MS) pending.delete(id);
@@ -37,7 +35,7 @@ export function takeSpawn(instanceId, now = Date.now()) {
 
 /** Listen for spawns (the mat calls this once). Returns the unsubscribe. */
 export function watchSpawns() {
-    return EventBus.subscribe(BOARD_EVENTS.TOKEN_SPAWNED, (p) => recordSpawn(p));
+    return EventBus.subscribe(BOARD_EVENTS.TOKEN_SPAWNED, (p) => recordSpawn(p), UI_LISTENER);
 }
 
 export function resetSpawnMotion() {

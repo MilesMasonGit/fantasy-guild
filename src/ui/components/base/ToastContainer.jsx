@@ -1,7 +1,7 @@
 import { startTransition, useEffect, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence } from 'framer-motion';
-import { EventBus } from '../../../systems/core/EventBus.js';
+import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import { SettingsManager } from '../../../systems/core/SettingsManager.js';
 import { cn } from '../../utils/cn.js';
@@ -49,10 +49,10 @@ const ToastContainer = ({ floating = false }) => {
 
         sync();
 
-        EventBus.subscribe(ENGINE_EVENTS.NOTIFICATION_ADDED, sync);
-        EventBus.subscribe(ENGINE_EVENTS.NOTIFICATION_UPDATED, sync);
-        EventBus.subscribe(ENGINE_EVENTS.NOTIFICATION_DISMISSED, sync);
-        EventBus.subscribe(ENGINE_EVENTS.SETTINGS_UPDATED, handleSettings);
+        EventBus.subscribe(ENGINE_EVENTS.NOTIFICATION_ADDED, sync, UI_LISTENER);
+        EventBus.subscribe(ENGINE_EVENTS.NOTIFICATION_UPDATED, sync, UI_LISTENER);
+        EventBus.subscribe(ENGINE_EVENTS.NOTIFICATION_DISMISSED, sync, UI_LISTENER);
+        EventBus.subscribe(ENGINE_EVENTS.SETTINGS_UPDATED, handleSettings, UI_LISTENER);
 
         return () => {
             EventBus.unsubscribe(ENGINE_EVENTS.NOTIFICATION_ADDED, sync);

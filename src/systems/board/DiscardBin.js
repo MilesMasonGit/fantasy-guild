@@ -9,7 +9,7 @@ import * as BoardState from './BoardState.js';
 import * as Placement from './Placement.js';
 import * as Shop from './Shop.js';
 import * as Foundations from './Foundations.js';
-import * as TimedChanges from './TimedChanges.js';
+import * as Hand from './Hand.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
@@ -170,7 +170,7 @@ export function canBin(instanceId, options = {}) {
     // no refund).
     if (instance.quest?.tutorial) return refuse('Tutorial quests cannot be discarded.');
     if (BoardState.binTokens().length >= BIN_SIZE) return refuse(`The bin is full (${BIN_SIZE} Tokens)`);
-    if (!options.fromHand && TimedChanges.isInHand(instanceId)) return refuse('That Token is being carried');
+    if (!options.fromHand && Hand.isInHand(instanceId)) return refuse('That Token is being carried');
     return { success: true, instance };
 }
 

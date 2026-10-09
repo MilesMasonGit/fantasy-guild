@@ -14,6 +14,7 @@ import {
 import { BOARD_EVENTS } from '../../systems/board/boardEvents.js';
 import { PerfDevSection } from '../dev/perf/PerfDevSection.jsx';
 import { ENGINE_EVENTS, ORPHAN_EVENTS } from '../../systems/core/engineEvents.js';
+import { UI_LISTENER } from '../../systems/core/EventBus.js';
 
 const DEV_ADVANCE_MAX_MINUTES = (DEV_ADVANCE_STEP_MS * DEV_ADVANCE_MAX_STEPS) / 60_000;
 const devInputClass = 'min-w-0 px-2 py-1 rounded bg-gi-base border border-gi-border text-xs text-gi-text focus:outline-none focus:border-gi-primary/50';
@@ -51,8 +52,8 @@ export const TestDashboard = React.memo(() => {
         if (!engine || !isOpen) return;
         const bump = () => setKindTick(n => n + 1);
         const offs = [
-            engine.EventBus.subscribe(BOARD_EVENTS.TILE_CHANGED, bump),
-            engine.EventBus.subscribe(BOARD_EVENTS.TOKEN_DEPLETED, bump)
+            engine.EventBus.subscribe(BOARD_EVENTS.TILE_CHANGED, bump, UI_LISTENER),
+            engine.EventBus.subscribe(BOARD_EVENTS.TOKEN_DEPLETED, bump, UI_LISTENER)
         ];
         return () => offs.forEach(off => off?.());
     }, [engine, isOpen]);
@@ -61,7 +62,7 @@ export const TestDashboard = React.memo(() => {
         if (!engine) return;
         const unsub = engine.EventBus.subscribe(ORPHAN_EVENTS.DEV_OPEN_ANIMATION_STUDIO, () => {
             setShowAnimationStudio(true);
-        });
+        }, UI_LISTENER);
         const handleKeyDown = (e) => {
             if (e.shiftKey && (e.key === 'A' || e.key === 'a') && !['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
                 setShowAnimationStudio(prev => !prev);

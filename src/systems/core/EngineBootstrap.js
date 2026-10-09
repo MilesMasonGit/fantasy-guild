@@ -2,7 +2,7 @@ import { logger } from '../../utils/Logger.js';
 import { EventBus } from './EventBus.js';
 import { GameLoop } from './GameLoop.js';
 import { TimeManager } from './TimeManager.js';
-import { TimeBankManager } from './TimeBankManager.js';
+import * as CatchUp from './CatchUp.js';
 import { GuildUpgradeManager } from '../progression/GuildUpgradeManager.js';
 import { SaveManager } from './SaveManager.js';
 import { GameState } from '../../state/GameState.js';
@@ -117,9 +117,9 @@ export const EngineBootstrap = {
             EnemyMotion,
             Hostiles,
             TimeManager,
-            TimeBankManager,
             GuildUpgradeManager,
-            GameLoop
+            GameLoop,
+            CatchUp
         };
     },
 
@@ -131,7 +131,7 @@ export const EngineBootstrap = {
         
         // 1. System Subscriptions
         LootSystem.init();
-        TimeBankManager.init();     // offline time bank + fast-forward
+        CatchUp.init();             // gaps the live loop could not deliver
         GuildUpgradeManager.init(); // Guild Hall upgrade tree
 
         // Unified status effect engine (buffs/debuffs on the 5s global clock)
@@ -208,11 +208,6 @@ export const EngineBootstrap = {
             if (GameState.getIsInitialized()) BoardRunner.tick(delta);
         }, 40);
 
-        // 45: the time bank, between the board and the quest manager.
-        GameLoop.onTick('time_bank', (delta) => {
-            if (GameState.getIsInitialized()) TimeBankManager.tick(delta);
-        }, 45);
-
         // 50: bounty quests. Must run AFTER `board_runner` (40) — see there.
         GameLoop.onTick('quest_manager', (delta) => {
             if (GameState.getIsInitialized()) QuestManager.tick(delta);
@@ -232,6 +227,24 @@ export const EngineBootstrap = {
         GameLoop.onTick('status_effects', (delta) => {
             if (GameState.getIsInitialized()) StatusEffectSystem.tick(delta);
         }, 80);
+    },
+
+    /**
+     * Play the time the game was closed (`CatchUp.run`, up to 24 h), then save once. A failure is
+     * reported and the game goes on from where it is; the slot still holds the save it loaded.
+     * @returns {Promise<object|null>} the catch-up's result, or null
+     */
+    async catchUpOnLoad() {
+        const savedAt = SaveManager.loadedSavedAt;
+        // The untouched save, for "Load as I left it"; taken either way so it is not held on to.
+        const before = SaveManager.takeLoadedJson();
+        if (!savedAt) return null;
+        try {
+            return await CatchUp.run({ savedAt, reset: false, before });
+        } catch (err) {
+            console.error('[Engine] Catching up the time away failed', err);
+            return null;
+        }
     },
 
     /** Create the default game data for a new game. */
@@ -272,9 +285,12 @@ export const EngineBootstrap = {
     },
 
     /**
-     * Finalize game preparation once a slot is selected
+     * Finalize game preparation once a slot is selected. A loaded save first catches up the time
+     * since it was written, before the loop starts.
+     *
+     * ⚠️ Async only for a load: a new game runs to the end synchronously.
      */
-    onSlotSelected(slotIndex, isNewGame) {
+    async onSlotSelected(slotIndex, isNewGame) {
         logger.info('Engine', `Slot ${slotIndex + 1} finalized (New: ${isNewGame})`);
 
         // 1. Critical System Startups
@@ -290,6 +306,8 @@ export const EngineBootstrap = {
             // items existed, so a game that died before the next autosave loaded
             // as an empty table with no Guild Hall.
             SaveManager.save(false);
+        } else {
+            await this.catchUpOnLoad();
         }
 
         // 3. State Sync

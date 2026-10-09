@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { EventBus } from '../../../systems/core/EventBus.js';
+import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { computeUpkeepSummary } from '../../../systems/board/UpkeepSummary.js';
 import { UpkeepSummaryPanel, REFRESH_EVENTS, POLL_MS } from '../drawer/UpkeepSummaryPanel.jsx';
@@ -83,7 +83,7 @@ export const MatUpkeepBadge = ({ readTotal = liveUpkeepTotal }) => {
     useEffect(() => {
         const refresh = () => setTotal(readTotal());
         refresh();
-        const unsubs = UPKEEP_EVENTS.map(e => EventBus.subscribe(e, refresh));
+        const unsubs = UPKEEP_EVENTS.map(e => EventBus.subscribe(e, refresh, UI_LISTENER));
         const timer = setInterval(refresh, POLL_MS);
         return () => { unsubs.forEach(u => u?.()); clearInterval(timer); };
     }, [readTotal]);

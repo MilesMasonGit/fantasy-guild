@@ -118,7 +118,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 7. Handle Post-UI Lifecycle Events
     EventBus.subscribe(UI_EVENTS.REACT_SLOT_SELECTED, (data) => {
-        EngineBootstrap.onSlotSelected(data.index, data.isNewGame);
+        EngineBootstrap.onSlotSelected(data.index, data.isNewGame)
+            .catch(err => console.error('[main] Starting the chosen slot failed', err));
     });
 
 
