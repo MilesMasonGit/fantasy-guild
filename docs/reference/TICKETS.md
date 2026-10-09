@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-133**
+**Next free number: T-136**
 
 ---
 
@@ -69,6 +69,8 @@ here.
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
+| T-134 | P3 | open | The bubble menu's `ui_bar.png` (32×32) is stretched to the menu's width (`BubbleMenu.jsx:92-96`, `backgroundSize: '100% auto'`), about 2.5–4.7×, so its pixels come out uneven. Found by the pixel-borders research. Changes the look: eye-check. | research/pixel_borders.md |
+| T-135 | P3 | open | Token hit reactions break the no-scale rule: the `squash` reaction scales by 0.82–1.1 (`hitAnimations.js:90-99`) while `tailwind.css:347-352` says never scale pixel art (non-whole scaling blurs it); and `lootArc.js`'s comment claims a densely sampled arc while the code is a short keyframe slide. Fix the code or the comment. Found by the animation research. | research/animation_menu.md |
 | T-028 | P2 | open | Toast types look alike and "×N" never shows. Ruling: a coloured edge per type, "×3" for merged repeats. | CR3-452 |
 | T-029 | P2 | open | Every surface closes differently. Ruling: Escape closes the top layer only; click-outside closes light pop-ups only; drawers never close on a stray click. | CR3-454 |
 | T-030 | P2 | open | Five tooltip implementations. Ruling: one shared gold-bordered tooltip; plain browser tips only on icon buttons. | CR3-455 |
@@ -124,6 +126,7 @@ here.
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
+| T-133 | P2 | open | **CMS change packs for agent-authored content** (owner 2026-10-09): autosave the workspace to disk every few minutes (the server's last-5 rotation exists, nothing calls it); an inbox (`cms/incoming/`) of change packs reviewed per entry with before/after, edit-before-accept, conflict flags, per-pack undo, notes, placeholder-art flags. Design: `docs/active/concept_cms_agent_authoring.md`. Builder; CMS only, no game code. | concept_cms_agent_authoring.md |
 | T-065 | P2 | open | 3 of 7 test fixtures still borrow real `item_` ids — their rename changes the bench fingerprint, so land it as its own accepted commit. | CR3-551 |
 | T-067 | P3 | open | Skipped tests: the Map-burst rule skips still need a ruling or deletion. | CR3-554 |
 | T-068 | P3 | open | Build ships and preloads scrap art (`archive`/`maybe`/`waste`); keep it out of the build and the preload list. | CR3-508 |

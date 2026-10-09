@@ -101,7 +101,9 @@ the first outside playtest, modding.
 
 ### Tools that speed everything after
 
-- **Agents author content through the CMS**: let an agent quickly create and
+- **Agents author content through the CMS** → designed 2026-10-09,
+  [concept_cms_agent_authoring.md](concept_cms_agent_authoring.md), ticket
+  **T-133** (includes CMS autosave). Original note: let an agent quickly create and
   manage items and Tokens. *quick to medium* · `data/` is only written by the
   CMS (its workspace lives in the browser; Sync to Game writes `data/`), so
   this likely means a CMS-side import or scripting path the owner reviews and
