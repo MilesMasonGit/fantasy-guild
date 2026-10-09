@@ -16,6 +16,7 @@ import * as NotificationSystem from '../core/NotificationSystem.js';
 import * as RecipeResolver from './RecipeResolver.js';
 import * as TileModifiers from './TileModifiers.js';
 import * as BoardState from './BoardState.js';
+import * as Hand from './Hand.js';
 import { momentSupplies } from '../../config/registries/triggerRegistry.js';
 import { ROLE, opponentSeekerOf } from '../../config/registries/roleRegistry.js';
 import { logger } from '../../utils/Logger.js';
@@ -430,7 +431,15 @@ function resolveVictory(instance, fight, enemy, heroId) {
     }
 
     // Support Tokens beside the enemy wear per kill, by instance id.
-    RecipeResolver.wearNearbySupport(id, (supportId, supportInstance) => {
+    RecipeResolver.wearNearbySupport(id, function exhaustSupport(supportId, supportInstance) {
+        // In the player's hand it stays, empty, until it is put down, and goes from where it lands.
+        if (Hand.isInHand(supportId)) {
+            Hand.whenPutDown(supportId, () => {
+                const still = BoardState.getTokenById(supportId);
+                if (still && still.usesRemaining != null && still.usesRemaining <= 0) exhaustSupport(supportId, still);
+            });
+            return;
+        }
         const support = supportInstance || BoardState.getTokenById(supportId);
         const sTypeId = support?.typeId;
         const sName = getTokenType(sTypeId)?.name || sTypeId || 'Support';

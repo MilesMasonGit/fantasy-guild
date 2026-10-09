@@ -41,7 +41,6 @@ here.
 | T-013 | **The last ~65 alert-icon glows and ~105 label text-shadows**: switch them to the hard-pixel style too? | CR3 summary |
 | T-014 | **Starting and quest content is written in engine code**, not the CMS. Move it to content? (Design call, never asked.) | CR3-515 |
 | T-127 | **Markets are cut for now** (owner 2026-10-09, D2): the Shrimp Market Token runs but pays nothing. Retire or repurpose it in the CMS (it turns up from Shrimp Coast content). The GDD §16 question is closed. | concept_progression.md |
-| T-129 | **A Token in your hand can vanish**: a goblin your hero is fighting can die while you carry it, and a Token worked down to its last charge can be used up mid-drag; the drop then lands nothing (seen once in 100 bin drags by the drag bench, 2026-10-09). Pause work and fights on a carried Token, as growing already waits (recommended), or leave it? The bench now passes over enemies in a fight. | brief 50 D2 |
 
 ## 2. Open work
 

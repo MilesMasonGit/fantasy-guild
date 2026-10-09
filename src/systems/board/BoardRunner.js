@@ -35,6 +35,7 @@ import * as HeroEffects from '../hero/HeroEffects.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
 import { centreOf } from './nearby.js';
+import * as Hand from './Hand.js';
 import { logger } from '../../utils/Logger.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
@@ -484,6 +485,14 @@ export function tick(delta) {
         // must run before every guard below: a purely triggered Token has no config and no hero at
         // all.
         TriggerSystem.tickCooldowns(instance, delta);
+
+        // A Token in the player's hand is paused: no cycle, no fight, no charge spent, so nothing
+        // can take it off the mat mid-drag. Its hero keeps the claim and stands by, and the cycle
+        // (any carried-over leftover included) resumes where it stopped once it is put down.
+        if (Hand.isInHand(id)) {
+            if (carryIn.has(id)) carryOut.set(id, carryIn.get(id));
+            continue;
+        }
 
         // Enemy Tokens run on the combat engine rather than a work cycle. A tile with no hero on it
         // does nothing here and raises no alert, for the same reason an unstaffed Forest doesn't; a
