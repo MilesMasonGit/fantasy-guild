@@ -41,13 +41,17 @@ changelog and `docs/archive/`).*
      tools-as-gear timing, the parked `atlas-wip` work). Answer them as a
      batch; the Atlas builds after brief 60 per the crunch order.
    - **Brief 50, drag deep-dive, on `crunch/drag` (not merged: feel-check
-     needed).** D1 (the bench times frames; drag baseline re-taken) and D2
-     (100 % on every drag kind, plain and with bubbles) are done; D3 (no
-     stall at pickup or drop) is building. Two questions parked as tickets:
+     needed).** D1 (the bench times frames; drag baseline re-taken), D2
+     (100 % on every drag kind, plain and with bubbles) and D3 (pickups and
+     drops stalled almost every time, now rarely: median longest frame
+     24–30 ms → 6–12 ms on S2; S3 still stalls, numbers in PERFORMANCE.md,
+     T-033 stays open) are done. Brief 60 builds on top of this branch
+     (`crunch/optimize`); both merge after your feel-check. Two questions parked as tickets:
      **T-130** a flag lying wholly over a Token is now grabbed by its cloth
      (partly reverses ruling B5); **T-129** a carried Token can vanish
      mid-drag (a fought goblin dies), pause work and fights on a carried
-     Token? Also fixed: the mat no longer scrolls 30 px under the top bar
+     Token? **T-132** a press where a hero overlaps a flag sometimes grabs
+     nothing or the neighbour's flag (0–4 of 50). Also fixed: the mat no longer scrolls 30 px under the top bar
      after a drag. Feel-check: drag heroes, flags and Tokens in your save
      and say whether it is smooth and always grabs what you meant.
    - Entries are added here as overnight phases land.
