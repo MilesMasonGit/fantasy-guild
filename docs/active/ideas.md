@@ -125,7 +125,9 @@ the first outside playtest, modding.
   as a menu to pick from with a rough cost each. Starts from today's hit
   animations and transform glow (T-011); crunch rule: no expensive mat
   effects without a cost-log line.
-- **Pixel-style UI borders**: how to make borders look pixel-like to match the
+- **Pixel-style UI borders** → researched and decided 2026-10-09: nine-slice
+  frames, studs for big panels, chamfer for small pop-ups, one colour, hard
+  shadow (UI_STYLE "Pixel frames"); build ticket **T-136**. Original note: how to make borders look pixel-like to match the
   art, within UI_STYLE.md's "no thick borders, no frames inside frames".
   Related: T-013 (switch the remaining glows and text-shadows to the
   hard-pixel style).

@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-136**
+**Next free number: T-137**
 
 ---
 
@@ -69,6 +69,7 @@ here.
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
+| T-136 | P2 | open | **Pixel frames on every panel** (owner 2026-10-09, UI_STYLE "Pixel frames"): one shared frame class with `border-image` nine-slice, **studs** for big docked panels, **chamfer** for small floating ones, one colour, hard 2-art-pixel shadow; the two 7×7 pictures are the ones in `docs/active/research/pixel_borders_demo.html` (extract the data URIs to PNGs in `public/assets/ui/`; new files, not the owner's uncommitted art). Replace rounded corners, translucent hairlines and blurred shadows; unbox the rows UI_STYLE forbids (`TokenInspection.jsx:132,147,221`, `ShopDrawer.jsx:299`, `HeroSkillSheet.jsx:93`); tooltips first (`Bubble.jsx`, `TopBarTip.jsx`, `QuestTooltip.jsx`, `MatCapBadge.jsx` share classes), then sidebars, Token inspect, drawers, modals, toasts. Builder. Run when no crunch brief is editing those components; cost-log line (`bench:draw --compare`); changes the look: owner eye-check. | research/pixel_borders.md |
 | T-134 | P3 | open | The bubble menu's `ui_bar.png` (32×32) is stretched to the menu's width (`BubbleMenu.jsx:92-96`, `backgroundSize: '100% auto'`), about 2.5–4.7×, so its pixels come out uneven. Found by the pixel-borders research. Changes the look: eye-check. | research/pixel_borders.md |
 | T-135 | P3 | open | Token hit reactions break the no-scale rule: the `squash` reaction scales by 0.82–1.1 (`hitAnimations.js:90-99`) while `tailwind.css:347-352` says never scale pixel art (non-whole scaling blurs it); and `lootArc.js`'s comment claims a densely sampled arc while the code is a short keyframe slide. Fix the code or the comment. Found by the animation research. | research/animation_menu.md |
 | T-028 | P2 | open | Toast types look alike and "×N" never shows. Ruling: a coloured edge per type, "×3" for merged repeats. | CR3-452 |

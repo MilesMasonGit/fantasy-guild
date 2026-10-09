@@ -25,6 +25,16 @@ clunky labels like "LVL 03" where "3/99" says it better.
 - **Rows are never boxed.** Inside a panel, separate sections with spacing or a
   faint divider line, not borders.
 - No thick borders, no frames inside frames.
+- **Pixel frames: nine-slice pictures** (owner, 2026-10-09; research in
+  `docs/active/research/pixel_borders.md`, demo approach B). A tiny 7×7
+  picture (3 px corners, 1 px edge, 1 px centre, 1 px = 1 art pixel) drawn
+  with `border-image` and `image-rendering: pixelated`. **Two styles**:
+  **studs** on big docked panels (drawers such as Bank and Shop, the hero
+  panel, sidebars) and **chamfer** on small floating ones (tooltips, info
+  pop-ups, Token inspect, toasts). **One colour everywhere.** A **hard shadow
+  under every panel**: a solid black copy 2 art pixels down-right, like a
+  carried Token's. The demo's chamfer and stud pictures are the shipping art,
+  not placeholders (owner). The drawn line stays 1 pixel (no thick borders).
 
 ```
 +--------------------------+
