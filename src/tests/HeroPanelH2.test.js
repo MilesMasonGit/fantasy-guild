@@ -16,10 +16,13 @@ import { BottomHeroDock } from '../ui/components/dock/BottomHeroDock.jsx';
 import { BankHeroPanel } from '../ui/components/dock/BankHeroPanel.jsx';
 import { setLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
 import {
-    groupHeroSkills, skillLevelText, skillXpView, setStartingDrawerOpen
+    heroSkillList, skillLevelText, skillXpView, skillDetail, formatEta, setLockedListOpen
 } from '../ui/components/dock/heroPanelSkills.js';
 import { getSkillIdsByLayer, SKILL_LAYERS } from '../config/registries/skillRegistry.js';
 import { xpForLevel } from '../utils/XPCurve.js';
+import { XpRateTracker } from '../systems/hero/XpRateTracker.js';
+import { ART_PX } from '../config/matGeometry.js';
+import { boardArtSteps } from '../ui/components/base/TokenSprite.jsx';
 
 const h = React.createElement;
 
@@ -61,9 +64,10 @@ beforeEach(() => {
     GameState.initNew();
     GameState.state.heroes = [master('h1', 'Aldric'), recruit('h2', 'Brenna')];
     setLiveMatFit(1);
-    setStartingDrawerOpen(null);
+    setLockedListOpen(false);
+    XpRateTracker.clearAll();
 });
-afterEach(() => { cleanup(); vi.useRealTimers(); vi.clearAllMocks(); setStartingDrawerOpen(null); });
+afterEach(() => { cleanup(); vi.useRealTimers(); vi.clearAllMocks(); setLockedListOpen(false); });
 
 describe('H2: one hero panel, in one place', () => {
     it('opens in the same box from the bar (Bank shut) as from the Bank', () => {
@@ -114,13 +118,33 @@ describe('H2: one hero panel, in one place', () => {
             h(BankHeroPanel, { menuRight: false, showTabs: false, selectedHeroId: 'h1', onCloseHero }),
             h('div', { 'data-testid': 'mat' }, 'mat')
         ));
-        fireEvent.pointerDown(view.container.querySelector('[data-hero-panel-body] [data-starting-toggle]'));
+        fireEvent.pointerDown(view.container.querySelector('[data-hero-panel-body] [data-locked-toggle]'));
         fireEvent.pointerDown(view.container.querySelector('[data-dock-hero="h2"]'));
         expect(onCloseHero).not.toHaveBeenCalled();
         fireEvent.pointerDown(view.container.querySelector('[data-testid="mat"]'));
         expect(onCloseHero).toHaveBeenCalledTimes(1);
         act(() => fireEvent.keyDown(document, { key: 'Escape' }));
         expect(onCloseHero).toHaveBeenCalledTimes(2);
+    });
+});
+
+describe('H2: the panel stays open when the Bank opens', () => {
+    it('a press on the Bank button does not close it, and opening the Bank keeps it', () => {
+        const onCloseHero = vi.fn();
+        const bankButton = h('div', { id: 'bank-bubble-target' }, h('button', { 'data-testid': 'bank' }, 'Bank'));
+        const r = render(wrap(
+            h(BankHeroPanel, { menuRight: false, showTabs: false, selectedHeroId: 'h1', onCloseHero }),
+            bankButton
+        ));
+        fireEvent.pointerDown(r.getByTestId('bank'));
+        expect(onCloseHero).not.toHaveBeenCalled();
+        r.rerender(wrap(
+            h(BankHeroPanel, { menuRight: false, showTabs: true, selectedHeroId: 'h1', onCloseHero }),
+            bankButton
+        ));
+        act(() => { vi.advanceTimersByTime(1000); });
+        expect(r.container.querySelector('[data-hero-panel] [data-hero-panel-body="h1"]')).not.toBeNull();
+        expect(onCloseHero).not.toHaveBeenCalled();
     });
 });
 
@@ -146,12 +170,23 @@ describe('H2: a closed panel registers no drop targets (T-104)', () => {
 });
 
 describe('H2: skills', () => {
-    it('orders class skills by layer on top, then the Starting nine in registry order', () => {
-        const g = groupHeroSkills(master('x', 'X'));
-        expect(g.classRows.map(r => r.id)).toEqual(['melee', 'leadership', 'fletching', 'faith']);
-        expect(g.startingRows.map(r => r.id)).toEqual(STARTING);
+    const ALL = [
+        ...getSkillIdsByLayer(SKILL_LAYERS.COMBAT), ...STARTING,
+        ...getSkillIdsByLayer(SKILL_LAYERS.ADVANCED), ...getSkillIdsByLayer(SKILL_LAYERS.MASTER)
+    ];
+
+    it('lists held skills in one list: combat, then the Starting nine, then the specialist layers', () => {
+        const g = heroSkillList(master('x', 'X'));
+        expect(g.rows.map(r => r.id)).toEqual(['melee', ...STARTING, 'leadership', 'fletching', 'faith']);
         expect(STARTING.length).toBe(9);
         expect(g.bankedRows.map(r => [r.id, r.level])).toEqual([['ranged', 30]]);
+    });
+
+    it('lists every skill never held as locked, in the same order', () => {
+        const g = heroSkillList(master('x', 'X'));
+        const held = new Set(['melee', ...STARTING, 'leadership', 'fletching', 'faith', 'ranged']);
+        expect(g.lockedRows.map(r => r.id)).toEqual(ALL.filter(id => !held.has(id)));
+        expect(g.lockedRows.length).toBeGreaterThan(0);
     });
 
     it('reads levels as 25/99 and keeps the XP number for the hover', () => {
@@ -165,21 +200,53 @@ describe('H2: skills', () => {
         expect(skillXpView(xpForLevel(99)).title).toBe(`${xpForLevel(99).toLocaleString('en-US')} XP`);
     });
 
-    it('draws each skill as icon, name and n/99 with a thin bar, the XP on hover', () => {
+    it('writes times as 0:34, 4:05 and 1:04:05', () => {
+        expect(formatEta(34)).toBe('0:34');
+        expect(formatEta(245)).toBe('4:05');
+        expect(formatEta(3845)).toBe('1:04:05');
+        expect(formatEta(0.2)).toBe('0:01');
+    });
+
+    it('works out a row\'s detail: exact XP, what is left, the rate and the time to the next level', () => {
+        const span = xpForLevel(41) - xpForLevel(40);
+        const left = span - 1154;
+        const d = skillDetail(xpForLevel(40) + 1154, 3600);
+        expect(d.level).toBe(`1,154 / ${span.toLocaleString('en-US')}`);
+        expect(d.toNext).toBe(left.toLocaleString('en-US'));
+        expect(d.nextLevel).toBe('41/99');
+        expect(d.total).toBe((xpForLevel(40) + 1154).toLocaleString('en-US'));
+        expect(d.rate).toBe('+3,600');
+        expect(d.eta).toBe(formatEta(left));
+        const idle = skillDetail(xpForLevel(40), 0);
+        expect(idle.rate).toBeNull();
+        expect(idle.eta).toBeNull();
+        expect(skillDetail(xpForLevel(99), 500)).toMatchObject({ level: null, rate: null, eta: null });
+    });
+
+    it('draws each skill as icon, name and n/99 with a thin bar, the XP in the game\'s own tooltip', () => {
         const r = render(panel({ selectedHeroId: 'h1', showTabs: false }));
         const row = r.container.querySelector('[data-skill-row="melee"]');
         expect(row.textContent).toContain('Melee');
         expect(row.querySelector('[data-skill-level]').textContent).toBe('25/99');
-        expect(row.getAttribute('title')).toMatch(/^Melee: 10 \/ [\d,]+ XP$/);
         expect(r.container.textContent).not.toMatch(/Lv\.|LVL|Level/);
+        // Never the browser's own title tooltip.
+        expect(r.container.querySelector('[data-skill-row][title], [data-skill-row] [title]')).toBeNull();
+        expect(document.body.querySelector('[data-top-bar-tip]')).toBeNull();
+        fireEvent.mouseEnter(row);
+        const tip = document.body.querySelector('[data-top-bar-tip]');
+        expect(tip.textContent).toContain('Melee');
+        expect(tip.textContent).toMatch(/10 \/ [\d,]+ XP/);
+        fireEvent.mouseLeave(row);
+        expect(document.body.querySelector('[data-top-bar-tip]')).toBeNull();
     });
 
-    it('groups the panel: class skills on top, Starting in a drawer, banked set aside, mastered marked', () => {
+    it('shows one flat list with no Starting drawer, set aside skills, then the locked list shut', () => {
         const r = render(panel({ selectedHeroId: 'h1', showTabs: false }));
         const root = r.container;
-        expect(rowIds(root, 'class')).toEqual(['melee', 'leadership', 'fletching', 'faith']);
+        expect(root.querySelector('[data-starting-toggle]')).toBeNull();
+        expect(rowIds(root, 'held')).toEqual(['melee', ...STARTING, 'leadership', 'fletching', 'faith']);
         const groups = [...root.querySelectorAll('[data-skill-group]')].map(el => el.getAttribute('data-skill-group'));
-        expect(groups).toEqual(['class', 'starting', 'banked']);
+        expect(groups).toEqual(['held', 'banked', 'locked']);
 
         const banked = root.querySelector('[data-skill-group="banked"]');
         expect(banked.textContent).toContain('Set aside');
@@ -187,34 +254,58 @@ describe('H2: skills', () => {
         expect(ranged.getAttribute('data-skill-banked')).toBe('true');
         expect(ranged.querySelector('[data-skill-level]').textContent).toBe('30/99');
 
-        const fletching = root.querySelector('[data-skill-group="class"] [data-skill-row="fletching"]');
-        expect(fletching.querySelector('[data-skill-mark="mastered"]')).not.toBeNull();
-        expect(root.querySelector('[data-skill-row="melee"] [data-skill-mark]')).toBeNull();
+        const toggle = root.querySelector('[data-locked-toggle]');
+        expect(toggle.getAttribute('aria-expanded')).toBe('false');
+        expect(rowIds(root, 'locked')).toEqual([]);
     });
 
-    it('starts the Starting drawer shut under class skills, open for a Recruit, and remembers a toggle', () => {
+    it('opens the locked list on a click and remembers it for the session', () => {
         const r = render(panel({ selectedHeroId: 'h1', showTabs: false }));
-        const toggle = () => r.container.querySelector('[data-starting-toggle]');
-        expect(toggle().getAttribute('aria-expanded')).toBe('false');
-        expect(rowIds(r.container, 'starting')).toEqual([]);
-        expect(toggle().textContent).toContain('9');
-
-        fireEvent.click(toggle());
-        expect(rowIds(r.container, 'starting')).toEqual(STARTING);
-
-        r.rerender(panel({ selectedHeroId: 'h2', showTabs: false }));
-        expect(rowIds(r.container, 'starting')).toEqual(STARTING);
-        fireEvent.click(toggle());
+        const locked = heroSkillList(GameState.state.heroes[0]).lockedRows.map(x => x.id);
+        expect(r.container.querySelector('[data-locked-toggle]').textContent).toContain(String(locked.length));
+        fireEvent.click(r.container.querySelector('[data-locked-toggle]'));
+        expect(rowIds(r.container, 'locked')).toEqual(locked);
+        expect(r.container.querySelector(`[data-skill-row="${locked[0]}"]`).getAttribute('data-skill-locked')).toBe('true');
         cleanup();
-
         const again = render(panel({ selectedHeroId: 'h2', showTabs: false }));
-        expect(again.container.querySelector('[data-starting-toggle]').getAttribute('aria-expanded')).toBe('false');
-        expect(again.container.querySelector('[data-skill-group="class"]')).toBeNull();
+        expect(again.container.querySelector('[data-locked-toggle]').getAttribute('aria-expanded')).toBe('true');
     });
 
-    it('opens the Starting drawer by default for a Recruit', () => {
-        const r = render(panel({ selectedHeroId: 'h2', showTabs: false }));
-        expect(rowIds(r.container, 'starting')).toEqual(STARTING);
+    it('gives Advanced and Master rows their own background and draws no mastered star', () => {
+        const r = render(panel({ selectedHeroId: 'h1', showTabs: false }));
+        const row = (id) => r.container.querySelector(`[data-skill-group="held"] [data-skill-row="${id}"]`);
+        expect(row('leadership').getAttribute('data-skill-tier')).toBe('advanced');
+        expect(row('fletching').getAttribute('data-skill-tier')).toBe('advanced');
+        expect(row('faith').getAttribute('data-skill-tier')).toBe('master');
+        expect(row('melee').getAttribute('data-skill-tier')).toBeNull();
+        const bg = (el) => el.className.split(' ').filter(c => c.startsWith('bg-')).join(' ');
+        expect(bg(row('leadership'))).not.toBe('');
+        expect(bg(row('faith'))).not.toBe('');
+        expect(bg(row('faith'))).not.toBe(bg(row('leadership')));
+        expect(bg(row('melee'))).toBe('');
+        expect(r.container.querySelector('[data-skill-mark]')).toBeNull();
+        expect(r.container.textContent).not.toContain('★');
+    });
+
+    it('expands a row on click to its exact XP numbers and rate, and folds it on a second click', () => {
+        XpRateTracker.recordGain('h1', 'melee', 1000);
+        const r = render(panel({ selectedHeroId: 'h1', showTabs: false }));
+        const row = () => r.container.querySelector('[data-skill-row="melee"]');
+        expect(row().querySelector('[data-skill-detail]')).toBeNull();
+        fireEvent.click(row());
+        const detail = row().querySelector('[data-skill-detail]');
+        expect(row().getAttribute('aria-expanded')).toBe('true');
+        const d = skillDetail(GameState.state.heroes[0].skills.melee.xp, 1000 / (15 / 3600));
+        expect(detail.textContent).toContain(d.level);
+        expect(detail.textContent).toContain(d.total);
+        expect(detail.textContent).toContain('XP/h+240,000');
+        expect(detail.textContent).toContain(d.eta);
+        expect(detail.textContent).toMatch(/\d+:\d\d/);
+        // Only one row open at a time.
+        fireEvent.click(r.container.querySelector('[data-skill-row="mining"]'));
+        expect(row().querySelector('[data-skill-detail]')).toBeNull();
+        fireEvent.click(r.container.querySelector('[data-skill-row="mining"]'));
+        expect(r.container.querySelector('[data-skill-detail]')).toBeNull();
     });
 
     it('has an Edit control that opens the hero editor', () => {
@@ -222,5 +313,62 @@ describe('H2: skills', () => {
         const r = render(panel({ selectedHeroId: 'h1', showTabs: false, onEditHero }));
         fireEvent.click(r.container.querySelector('[data-hero-panel-edit]'));
         expect(onEditHero).toHaveBeenCalledWith('h1');
+    });
+});
+
+describe('H2: the panel header', () => {
+    it('draws the hero at twice the mat size, idling, with their flag behind', () => {
+        setLiveMatFit(1);
+        const r = render(panel({ selectedHeroId: 'h1', showTabs: false }));
+        const box = r.container.querySelector('[data-hero-panel-sprite]');
+        const size = 2 * ART_PX * boardArtSteps(1);
+        expect(Number(box.getAttribute('data-hero-panel-sprite-px'))).toBe(size);
+        const flag = box.querySelector('[data-hero-panel-flag]');
+        const hero = box.querySelector('[data-hero-panel-figure]');
+        expect(flag).not.toBeNull();
+        expect(hero).not.toBeNull();
+        // The flag comes first, so the hero draws over it.
+        expect(flag.compareDocumentPosition(hero) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        // The idle row of the sheet, as the mat's idle hero.
+        expect(hero.querySelector('[data-hero-row]').getAttribute('data-hero-row')).toBe('idle');
+    });
+
+    it('shows the HP numbers on the bar', () => {
+        const r = render(panel({ selectedHeroId: 'h1', showTabs: false }));
+        expect(r.container.querySelector('[data-hero-panel-hp-text]').textContent).toBe('80 / 100');
+    });
+
+    it('closes with the game\'s red X icon', () => {
+        const onCloseHero = vi.fn();
+        const r = render(panel({ selectedHeroId: 'h1', showTabs: false, onCloseHero }));
+        const close = r.container.querySelector('[data-hero-panel-close]');
+        expect(close.querySelector('img').getAttribute('src')).toBe('/assets/ui/ui_cancel_red.png');
+        fireEvent.click(close);
+        expect(onCloseHero).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe('H2: the hero tabs beside the Bank', () => {
+    it('hovering a tab grows nothing; the hero\'s name, job, status and HP show in the game\'s tooltip', () => {
+        const r = render(panel({ selectedHeroId: null, showTabs: true }));
+        const tab = r.container.querySelector('[data-dock-hero-id="h1"] [data-hero-tab-face]');
+        const before = tab.className;
+        const textBefore = tab.textContent;
+        fireEvent.mouseEnter(tab);
+        expect(tab.className).toBe(before);
+        expect(tab.textContent).toBe(textBefore);
+        const tip = document.body.querySelector('[data-top-bar-tip]');
+        expect(tip.textContent).toContain('Aldric');
+        expect(tip.textContent).toContain('80 / 100 HP');
+        fireEvent.mouseLeave(tab);
+        expect(document.body.querySelector('[data-top-bar-tip]')).toBeNull();
+    });
+
+    it('reads each tab as portrait, name and a thin HP bar, with no level text', () => {
+        const r = render(panel({ selectedHeroId: null, showTabs: true }));
+        const tab = r.container.querySelector('[data-dock-hero-id="h1"]');
+        expect(tab.textContent).toContain('Aldric');
+        expect(tab.textContent).not.toMatch(/Lv|LVL|Level/);
+        expect(tab.querySelector('[data-hero-tab-hp]').style.width).toBe('80%');
     });
 });

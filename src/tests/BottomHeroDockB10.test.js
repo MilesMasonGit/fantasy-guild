@@ -250,11 +250,11 @@ describe('B10 horizontal hero dock', () => {
                 h(DeckDndProvider, null, h(BankHeroPanel, { menuRight: false })))
         );
         const tab = view.container.querySelector('[data-dock-hero-id="h1"]');
-        const fill = () => tab.querySelector('.bg-emerald-500, .bg-amber-500, .bg-red-500');
-        expect(fill().style.height).toBe('100%');
+        const fill = () => tab.querySelector('[data-hero-tab-hp]');
+        expect(fill().style.width).toBe('100%');
         const h1 = GameState.state.heroes.find(h => h.id === 'h1');
         h1.hp.current = 43;
         await act(async () => { EventBus.publish('heroes_updated', {}); await Promise.resolve(); });
-        expect(fill().style.height).toBe('43%');
+        expect(fill().style.width).toBe('43%');
     });
 });

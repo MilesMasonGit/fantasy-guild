@@ -62,7 +62,9 @@ export const BankHeroPanel = ({
                 e.target.closest('[data-dnd-surface="drawer"]') ||
                 e.target.closest('[data-dnd-region="drawer"]') ||
                 e.target.closest('[data-item-id]') ||
-                e.target.closest('[data-bank-tab]')
+                e.target.closest('[data-bank-tab]') ||
+                // Opening the Bank keeps the panel: it stays in the same place beside it.
+                e.target.closest('#bank-bubble-target')
             ) {
                 return;
             }
@@ -149,7 +151,6 @@ export const BankHeroPanel = ({
                                 isSelected={selectedHeroId === heroId}
                                 onSelect={onSelectHero}
                                 onDoubleClick={onDoubleClickHero}
-                                onEdit={onEditHero}
                                 onReorder={handleReorderHero}
                                 isDockLeft={isLeft}
                             />

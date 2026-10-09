@@ -13,13 +13,16 @@ import { cn } from '../../utils/cn.js';
  * @param {number} [props.size=32] - Display size in pixels (standard: 32)
  * @param {string} [props.className] - Additional CSS classes
  * @param {string} [props.alt] - Alt text for accessibility
+ * @param {string|null} [props.title] - The emoji fallback's hover text; `null` for none, where the
+ *   caller shows its own tooltip
  */
 export const SkillIcon = ({
     skill,
     skillId,
     size = 32,
     className = '',
-    alt
+    alt,
+    title
 }) => {
     const [hasError, setHasError] = useState(false);
 
@@ -82,7 +85,7 @@ export const SkillIcon = ({
         <span
             style={{ width: `${size}px`, height: `${size}px`, fontSize: `${Math.max(12, Math.round(size * 0.62))}px` }}
             className={cn('inline-flex items-center justify-center shrink-0 leading-none select-none align-middle', className)}
-            title={alt || name}
+            title={title === null ? undefined : (title || alt || name)}
         >
             {emoji}
         </span>
