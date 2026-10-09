@@ -72,7 +72,10 @@ chopping Fir.
   player can farm safely, plus quest rewards, enough for a new Region every
   few days.
 - **Showing what can move**: movable Tokens carry a **faint marker at rest**
-  and **lift on hover** (with the grab cursor); fixed Tokens do neither.
+  and **lift on hover** (with the grab cursor); fixed Tokens do neither. Map
+  nodes, planted trees, the endgame sites and the Hall are fixed, and **map
+  nodes can't be demolished**: rerolling before settling is the only way to
+  make room (Atlas roadmap D-6).
 
 ## What grows with level — deferred
 
@@ -152,9 +155,8 @@ rare finds, perks) is a new design problem. Settled so far:
     it shows the skill, level and items**;
   - **the ritual's great construction happens here too**: the guild comes
     home to the old guild hall for the finale.
-  - ⚠️ 25 sites plus tutorial nodes in one Region against the Token cap (80
-    for testing): brief 70 must size the Starter Camp for this (sites exempt
-    from the cap, a larger Starter Camp, or small sites).
+  - the sites **don't count toward the Token cap and stand full size**; the
+    owner lays out the Starter Camp (Atlas roadmap D-1, D-2).
 - **Heroes**: 2–3 during the first day so the mat feels busy, the rest over
   the first couple of weeks; each new hero is a felt jump in output.
 - **The first hour should leave the player wanting** a visible next unlock

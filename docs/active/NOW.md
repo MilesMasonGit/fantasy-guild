@@ -38,8 +38,10 @@ changelog and `docs/archive/`).*
      and the cap, who lays out the Starter Camp, first Base Maps and
      Modifiers, where Maps are authored, old saves, what moves and demolishes,
      vein refill, returning to a Region, Cartography numbers, upcycling,
-     tools-as-gear timing, the parked `atlas-wip` work). Answer them as a
-     batch; the Atlas builds after brief 60 per the crunch order.
+     tools-as-gear timing, the parked `atlas-wip` work). **Answered by the
+     owner 2026-10-09** (table at the top of §D; D-1, D-4, D-6 and D-9 differ
+     from the recommendations). The Atlas builds after brief 60 per the crunch
+     order.
    - **Brief 50, drag deep-dive, on `crunch/drag` (not merged: feel-check
      needed).** D1 (the bench times frames; drag baseline re-taken), D2
      (100 % on every drag kind, plain and with bubbles) and D3 (pickups and
