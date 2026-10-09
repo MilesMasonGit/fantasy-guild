@@ -105,6 +105,7 @@ before and after, S2 at 4× (perf build). Measure, don't fix.
 | U6 Top bar, Token Summary, Upkeep | 2026-10-08 | 55.4 → 46.7 / 60.3 | 19.5 → 23.5 / 17.6 | Two after-runs disagree; read as noise (the summary does nothing per frame while shut). Bench boards lift the new 80-Token cap so they keep measuring the same load. |
 | U7 Token inspection | 2026-10-08 | 50.9 → 57.3 | 22.1 → 19.6 | No change (popup closed in S2; the before run was noisy, 47–66 fps). |
 | U8 Motion and polish | 2026-10-08 | 41.7 → 59.9 | 26.21 → 18.51 | No change; the before run was a slow outlier. S2 has almost no spawns, so the spawn pop-out's own cost isn't measured here (`spawnMotion` switch exists for that). |
+| O3 Catch-up bar and summary | 2026-10-08 | 61.6 → 49.0 | 18.15 → 24.41 | No change expected or claimable: neither is on any scene (both exist only during and after a catch-up). Back-to-back A/B with two other agents' draw benches running the whole time; the after run's two S2 repeats were 29.5 and 68.5 fps. The bar is a translucent full-screen cover (`bg-black/75`) over a mat that is not animating (the UI is quiet during a catch-up), moved only by `transform`; in the dev page it drew ~18 frames a second during a catch-up, one per 50 ms slice. The summary keeps the same cover over the live mat until closed. |
 
 ## Drag baseline (`npm run bench:drag`, 50 drags per kind)
 
