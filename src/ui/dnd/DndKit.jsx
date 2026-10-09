@@ -331,6 +331,7 @@ export const DeckDndProvider = ({ children }) => {
     const pointerRef = useRef({ x: 0, y: 0 });
     const glideTargetRef = useRef(null);
     const regionsRef = useRef([]);
+    const startPayloadRef = useRef(null);
 
     const sensors = useSensors(useSensor(AlphaPointerSensor, SENSOR_OPTIONS));
 
@@ -348,7 +349,10 @@ export const DeckDndProvider = ({ children }) => {
     }, [activePayload]);
 
     const handleDragStart = useCallback((event) => {
-        const payload = event.active?.data?.current || null;
+        // A copy as it is now: a shared source's payload reads what was pressed (`MatTokenGrab`).
+        const live = event.active?.data?.current;
+        const payload = live ? { ...live } : null;
+        startPayloadRef.current = payload;
         const a = event.activatorEvent;
         if (a && 'clientX' in a) pointerRef.current = { x: a.clientX, y: a.clientY };
         setSurface(payload?.sourceSurface || DND_SURFACE.BOARD);
@@ -384,6 +388,7 @@ export const DeckDndProvider = ({ children }) => {
     }, []);
 
     const finishDrag = useCallback(() => {
+        startPayloadRef.current = null;
         setActivePayload(null);
         // dragPointer itself is cleared by DragPointerProvider's own effect, which re-runs the
         // moment activePayload goes null.
@@ -393,7 +398,7 @@ export const DeckDndProvider = ({ children }) => {
 
     const handleDragEnd = useCallback((event) => {
         const { active, over } = event;
-        const payload = active?.data?.current;
+        const payload = startPayloadRef.current || active?.data?.current;
         let success = false;
 
         // A live target under the release point wins over dnd-kit's `over`, which can be stale.

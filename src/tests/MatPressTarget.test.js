@@ -17,6 +17,7 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { EngineContext } from '../ui/context/EngineContext';
 import { matW, matH, artRadiusOf } from '../config/matGeometry.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
+import { MAT_TOKEN_DRAG_ID } from '../ui/components/board/MatToken.jsx';
 import { setDisallowMode } from '../ui/hooks/useDisallowMode.js';
 import { MatFitProvider } from '../ui/components/board/MatFitContext.jsx';
 import { HERO_HIT_PX } from '../ui/components/board/boardConstants.js';
@@ -65,6 +66,8 @@ function mountAt(fit, props = {}) {
 }
 
 const artOf = (container, id) => container.querySelector(`[data-token-art][data-token-id="${id}"]`);
+/** What a drag picked up: a flag or hero by its drag id, a mat Token (one shared source) by its own id. */
+const startedName = (active) => (active.id === MAT_TOKEN_DRAG_ID ? `token-${active.data.current.from.instanceId}` : active.id);
 const hitOf = (container, id) => container.querySelector(`[data-token-hit="${id}"]`);
 
 beforeAll(() => Flags.init());
@@ -221,7 +224,7 @@ describe('⭐ a press through a hero\'s see-through pixel reaches what is beneat
     /** What started, by draggable id, in the real drag provider (8 px activation, alpha test). */
     function mountWithDrag() {
         const started = [];
-        const Spy = () => { useDndMonitor({ onDragStart: (e) => started.push(e.active.id) }); return null; };
+        const Spy = () => { useDndMonitor({ onDragStart: (e) => started.push(startedName(e.active)) }); return null; };
         const view = render(
             h(EngineContext.Provider, { value: { GameState, EventBus } },
                 h(DeckDndProvider, null,
@@ -348,7 +351,7 @@ describe('⭐ a flag\'s cloth drawn in front of a Token takes the pointer there'
     }
     function mountWithDrag() {
         const started = [];
-        const Spy = () => { useDndMonitor({ onDragStart: (e) => started.push(e.active.id) }); return null; };
+        const Spy = () => { useDndMonitor({ onDragStart: (e) => started.push(startedName(e.active)) }); return null; };
         const view = render(
             h(EngineContext.Provider, { value: { GameState, EventBus } },
                 h(DeckDndProvider, null,

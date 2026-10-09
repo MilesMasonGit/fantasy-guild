@@ -5,7 +5,7 @@ import { createStackWriter } from './stackWriter.js';
 import { pointerToMat } from './matPoint.js';
 import { installPressRouting } from './pressRouting.js';
 import { flagClothOver } from './flagCloth.js';
-import { MatToken } from './MatToken.jsx';
+import { MatToken, MatTokenGrab } from './MatToken.jsx';
 import { MatHero, heroBoxAt } from './MatHero.jsx';
 import { MatRings } from './MatRings.jsx';
 import { CalloutLayer } from './CalloutLayer.jsx';
@@ -19,6 +19,7 @@ import { TERRAIN_ENABLED } from '../../../config/registries/terrainRegistry.js';
 import { announce } from './dropOnMat.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { useActiveDrag } from '../../dnd/DndKit.jsx';
+import { DRAG_KIND } from '../../dnd/dragConstants.js';
 import { useDisallowMode, flipDisallowed } from '../../hooks/useDisallowMode.js';
 import { useMatFit } from './MatFitContext.jsx';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
@@ -72,7 +73,21 @@ export const MatBoard = React.memo(function MatBoard({
     const [hoverHeroId, setHoverHeroId] = useState(null);
     /** The pointer is on a Token's art circle, so every flag lets it through. */
     const [flagsYield, setFlagsYield] = useState(false);
-    const { isDragging } = useActiveDrag();
+    const { isDragging, activePayload } = useActiveDrag();
+    // The mat Token in the hand, if one is: it stays where it is, hidden, while it is carried.
+    const carriedId = isDragging && activePayload?.kind === DRAG_KIND.TOKEN ? (activePayload.from?.instanceId ?? null) : null;
+
+    // Every Token is picked up through one shared drag source (`MatTokenGrab`): a press says
+    // which Token, points the source at its art, and hands the press on.
+    const pressedRef = useRef(null);
+    const grabRef = useRef(null);
+    const handleTokenPress = useCallback((e, token, artEl) => {
+        pressedRef.current = token;
+        const grab = grabRef.current;
+        if (!grab) return;
+        grab.setNodeRef(artEl);
+        grab.listeners?.onPointerDown?.(e);
+    }, []);
 
     // Disallow mode. Read once here and handed to each Token as a prop, so a Token holds no
     // subscription of its own for it.
@@ -369,8 +384,11 @@ export const MatBoard = React.memo(function MatBoard({
                     onRecallHero={handleRecallHero}
                     disallowMode={disallowMode}
                     onFlipDisallow={handleFlipDisallow}
+                    dragging={carriedId === t.id}
+                    onPress={handleTokenPress}
                 />
             ))}
+            <MatTokenGrab pressedRef={pressedRef} grabRef={grabRef} />
 
             {heroes.map(h => {
                 // A moving hero's point is MatHero's own.

@@ -13,6 +13,7 @@ import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
+import { UI_EVENTS } from '../systems/core/engineEvents.js';
 import { EngineContext } from '../ui/context/EngineContext';
 import { resetMatTuning } from '../config/matTuning.js';
 import { matW, matH } from '../config/matGeometry.js';
@@ -55,6 +56,12 @@ vi.mock('framer-motion', async (orig) => {
     });
     const motion = new Proxy(real.motion, { get: (t, k) => (k === 'div' ? SlotDiv : t[k]) });
     return { ...real, motion };
+});
+// Every drag hook dnd-kit is asked for, by the draggable's id.
+const dragHooks = vi.hoisted(() => new Map());
+vi.mock('@dnd-kit/core', async (orig) => {
+    const real = await orig();
+    return { ...real, useDraggable: (args) => { dragHooks.set(args.id, (dragHooks.get(args.id) || 0) + 1); return real.useDraggable(args); } };
 });
 // Drawn on every render of the mat itself (MatBoard), and of nothing else.
 vi.mock('../ui/components/board/HeroBubbleLayer.jsx', async (orig) => {
@@ -110,7 +117,7 @@ afterEach(async () => {
 });
 
 describe('⭐ a Token drag on a full mat redraws the Token in the hand and nothing else on the mat', () => {
-    function scene() {
+    function scene(placeMore = () => {}) {
         GameState.state.heroes = [{
             id: 'h1', name: 'h1', spriteId: 'recruit', status: 'idle', level: 50,
             skills: { forestry: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 }
@@ -120,6 +127,7 @@ describe('⭐ a Token drag on a full mat redraws the Token in the hand and nothi
         const a = placeAt('fixture_producer', 600, 400);
         const b = placeAt('fixture_producer', 1000, 500);
         const c = placeAt('fixture_producer', 600, 900);
+        placeMore();
         const view = render(
             h(EngineContext.Provider, { value: { GameState, EventBus } },
                 h(DeckDndProvider, null,
@@ -155,6 +163,41 @@ describe('⭐ a Token drag on a full mat redraws the Token in the hand and nothi
         expect(d[b.id]).toBe(0);
         expect(d[c.id]).toBe(0);
         act(() => { fireEvent.pointerUp(document, ptr(630, 400)); });
+    });
+
+    it('the Tokens share one drag source: no Token holds a drag hook of its own', () => {
+        const { a, container } = scene();
+        dragHooks.clear();
+        act(() => {
+            fireEvent.pointerDown(hitOf(container, a.id), ptr(600, 400));
+            fireEvent.pointerMove(document, ptr(630, 400));
+        });
+        act(() => { fireEvent.pointerMove(document, ptr(700, 380)); });
+        expect(document.body.classList.contains('gi-dnd-active')).toBe(true);
+        expect([...dragHooks.keys()].filter(id => String(id).startsWith('token-'))).toEqual([]);
+        expect(dragHooks.get('mat-token')).toBeGreaterThan(0);
+        act(() => { fireEvent.pointerUp(document, ptr(700, 380)); });
+    });
+
+    it('through the shared source, each Token carries its own payload: the Guild Hall still flies back and says why', () => {
+        let hall;
+        const { container } = scene(() => { hall = placeAt('token_guild_hall', 900, 800); });
+        const alerts = [];
+        const off = EventBus.subscribe(UI_EVENTS.UI_TOKEN_ALERT, (p) => alerts.push(p));
+        try {
+            act(() => {
+                fireEvent.pointerDown(hitOf(container, hall.id), ptr(900, 800));
+                fireEvent.pointerMove(document, ptr(930, 800));
+            });
+            // Off the mat, into the target beside it, which refuses it.
+            act(() => { fireEvent.pointerMove(document, ptr(matW() + 200, 200)); });
+            act(() => { fireEvent.pointerUp(document, ptr(matW() + 200, 200)); });
+        } finally {
+            off();
+        }
+        expect(alerts).toHaveLength(1);
+        expect(alerts[0]).toMatchObject({ instanceId: hall.id, type: 'drop_rejected' });
+        expect(BoardState.getTokenById(hall.id)).toMatchObject({ x: 900, y: 800 });
     });
 
     it('carrying: no Token redraws, the one in the hand included', () => {
