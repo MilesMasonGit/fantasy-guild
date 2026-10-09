@@ -37,6 +37,7 @@ import PlaymatTuner from './components/PlaymatTuner.jsx';
 import MatTuner from './components/MatTuner.jsx';
 import { TERRAIN_ENABLED } from '../config/registries/terrainRegistry.js';
 import TimeBankWidget from './components/hud/TimeBankWidget.jsx';
+import CatchUpOverlay from './components/hud/CatchUpOverlay.jsx';
 import MatTopBar, { showsMatTopBar } from './components/board/MatTopBar.jsx';
 import MatCapBadge from './components/board/MatCapBadge.jsx';
 import MatUpkeepBadge from './components/board/MatUpkeepBadge.jsx';
@@ -479,6 +480,9 @@ export const ReactRoot = ({ engine }) => {
                         onClose={ui.dock.closePromotion}
                     />
                 )}
+
+                {/* Over everything: the loading bar while time away is caught up, then the summary. */}
+                <CatchUpOverlay />
 
                 </DeckDndProvider>
             </ViewportProvider>

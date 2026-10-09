@@ -260,7 +260,4 @@ export const NO_LISTENER = Object.freeze({
     [ENGINE_EVENTS.STATUS_DOT_TICK]: 'status moment (Effects Grammar v2 will listen)',
     [ENGINE_EVENTS.STATUS_PURGED]: 'status moment (Effects Grammar v2 will listen)',
     [ENGINE_EVENTS.BGM_TRACK_CHANGED]: 'console affordance for the music system',
-    [ENGINE_EVENTS.CATCH_UP_STARTED]: 'the catch-up loading bar will listen',
-    [ENGINE_EVENTS.CATCH_UP_PROGRESS]: 'the catch-up loading bar will listen',
-    [ENGINE_EVENTS.CATCH_UP_FINISHED]: 'the "While you were away" summary will listen',
 });
