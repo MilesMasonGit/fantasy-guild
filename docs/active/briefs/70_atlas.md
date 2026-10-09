@@ -34,6 +34,9 @@ interview D2, 2026-10-09). It adds to the Atlas; where it differs from
   growing places (Farmland, Forest Foundations) keep spawning; ore veins
   refill in place. Amends "spawners only for enemies and lures"; see
   [`concept_skill_loops.md`](../concept_skill_loops.md).
+- **The Starter Camp tutorial** is the cartographer's quests, one at a time,
+  ending in the first maps; bounties reward maps and modifiers (D8,
+  [`concept_quests_tutorial.md`](../concept_quests_tutorial.md)).
 - **No tier labels**: tiers are implicit in the chains (Fir → Iron Pickaxe →
   Gold), never "Tier 2" in the game.
 

@@ -97,5 +97,5 @@ straight onto `main`; expect its commits between yours.
   `concept_progression`, `concept_combat`, `concept_skill_loops`,
   `concept_knowledge`, `concept_guild_hall`, `concept_living_game`,
   `concept_quests_tutorial`, `concept_release`). Not for the crunch, except:
-  brief 70 must read `concept_progression.md` and `concept_skill_loops.md`
-  first (its top lists what they change), and Stage A's small items.
+  brief 70 must read `concept_progression.md`, `concept_skill_loops.md` and
+  `concept_quests_tutorial.md` first (its top lists what they change), and Stage A's small items.
