@@ -171,10 +171,19 @@ export function isElementOpaqueAtPoint(element, clientX, clientY, threshold = 25
 
     if (targetRect.width <= 0 || targetRect.height <= 0) return false;
 
-    const u = (clientX - targetRect.left) / targetRect.width;
+    const across = (clientX - targetRect.left) / targetRect.width;
+    // A mirrored sprite (a hero facing left) has the same box as an unmirrored one, so the box
+    // cannot tell which pixel is drawn where: whoever mirrors it says so on the element.
+    const u = element.getAttribute?.('data-alpha-flip') === 'x' ? 1 - across : across;
     const v = (clientY - targetRect.top) / targetRect.height;
 
     return isPointOpaque(src, u, v, threshold);
+}
+
+/** Put a mask in the cache, as a loaded image would. Tests only: jsdom loads no images. */
+export function setAlphaMaskForTests(src, mask) {
+    alphaMaskCache.set(normalizeSrc(src), mask);
+    alphaMaskCache.set(src, mask);
 }
 
 /**
@@ -223,16 +232,17 @@ function compareStackOrder(a, b) {
  * Bypasses transparent regions of [data-alpha-test] elements under the cursor
  * by dynamically setting `pointer-events: none` on transparent areas so that
  * underlying tokens can be hovered, clicked, and dragged seamlessly.
+ * Returns whether any [data-alpha-test] element's box holds the point.
  */
 export function updateAlphaPointerEvents(clientX, clientY) {
-    if (typeof document === 'undefined') return;
+    if (typeof document === 'undefined') return false;
 
     if (document.body.classList.contains('gi-dnd-active')) {
         for (const el of activeDisabledElements) {
             el.style.pointerEvents = '';
         }
         activeDisabledElements.clear();
-        return;
+        return false;
     }
 
     const allAlpha = document.querySelectorAll('[data-alpha-test]');
@@ -259,7 +269,7 @@ export function updateAlphaPointerEvents(clientX, clientY) {
             el.style.pointerEvents = '';
         }
         activeDisabledElements.clear();
-        return;
+        return false;
     }
 
     intersecting.sort(compareStackOrder);
@@ -287,6 +297,7 @@ export function updateAlphaPointerEvents(clientX, clientY) {
             }
         }
     }
+    return true;
 }
 
 /**

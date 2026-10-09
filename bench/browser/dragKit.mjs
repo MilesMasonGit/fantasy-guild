@@ -285,56 +285,96 @@ export function installDragKit() {
         const el = document.querySelector(`[data-token-art][data-token-id="${t.id}"]`);
         return el && !el.hasAttribute('data-guild-hall') && !t.quest?.tutorial && !G.BoardPlacement.isPermanentToken(t.typeId, t);
     });
+    // ---- Where the game gives a press: the bench's own copy of the rules, read from the page ----
+    // A flag's cloth inside its drawn box, as shares of its size (the flag art, `flagGeometry.js`).
+    const CLOTH = { left: 12 / 64, top: 11 / 64, right: 62 / 64, bottom: 36 / 64 };
+    const zOf = (el) => Number(el?.style?.zIndex) || 0;
+    const onCloth = (flagEl, p) => {
+        const r = flagEl.getBoundingClientRect();
+        const u = (p.x - r.left) / r.width, v = (p.y - r.top) / r.height;
+        return u >= CLOTH.left && u <= CLOTH.right && v >= CLOTH.top && v <= CLOTH.bottom;
+    };
+    /** A flag whose cloth is drawn in front of a Token at `p` (over a Token, only a cloth keeps a press). */
+    const clothInFront = (p, tokenZ) => [...document.querySelectorAll('button[data-flag]')]
+        .some(f => zOf(f) > tokenZ && onCloth(f, p));
+    /** Token hit circles on screen: each Token's own round body, the only part that takes a press. */
+    const tokenCircles = () => [...document.querySelectorAll('[data-token-hit]')].map(e => {
+        const r = e.getBoundingClientRect();
+        return { id: e.getAttribute('data-token-hit'), x: r.left + r.width / 2, y: r.top + r.height / 2, r: Math.min(r.width, r.height) / 2 };
+    });
+    const onScreen = (p) => p.x >= 0 && p.y >= 0 && p.x < innerWidth && p.y < innerHeight;
+
     /**
-     * Where to press a Token: its centre, or another point of its art circle when a DIFFERENT
-     * Token's art lies on top there (overlapping Tokens: the player sees and grabs the top one).
-     * Anything else on top (a ring, an alert, a bubble, a flag) is kept: that is what the bench
-     * is looking for.
+     * Where to press a Token, as the game's rules give a press to it: its centre, or another
+     * point of its own round body, where the game says the pointer is on THIS Token (where circles
+     * overlap, the nearest centre: `Flags.tokenAtPoint`) and no flag's cloth is drawn in front.
+     * The point must be on the mat as drawn, not under the screen's own furniture outside it (the
+     * hero bar's figures, a drawer). Anything on the mat drawn on top (a ring, a callout, a bubble,
+     * another hero) is kept: that is what the bench is looking for.
      */
     const tokenPress = (id, { clearOfHeroes = false } = {}) => {
-        const el = document.querySelector(`[data-token-art][data-token-id="${id}"]`);
-        const c = visibleCentre(el);
-        if (!c) return null;
-        const r = el.getBoundingClientRect();
-        const rad = Math.min(r.width, r.height) / 2;
+        const hit = document.querySelector(`[data-token-hit="${id}"]`);
+        const art = document.querySelector(`[data-token-art][data-token-id="${id}"]`);
+        if (!hit || !art) return null;
+        const r = hit.getBoundingClientRect();
+        if (r.width < 2) return null;
+        const c = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+        const rad = r.width / 2;
+        const board = document.querySelector('[data-mat-board]');
         const pts = [c];
-        for (let k = 0; k < 8; k++) pts.push({ x: Math.round(c.x + Math.cos(k * Math.PI / 4) * rad * 0.45), y: Math.round(c.y + Math.sin(k * Math.PI / 4) * rad * 0.45) });
-        for (const p of pts) {
+        for (let k = 0; k < 8; k++) pts.push({ x: c.x + Math.cos(k * Math.PI / 4) * rad * 0.45, y: c.y + Math.sin(k * Math.PI / 4) * rad * 0.45 });
+        for (const q of pts) {
+            const p = { x: Math.round(q.x), y: Math.round(q.y) };
+            if (!onScreen(p)) continue;
+            if (G.Flags.tokenAtPoint(kit.screenToMat(p))?.id !== id) continue;
+            if (clothInFront(p, zOf(art))) continue;
             const top = document.elementFromPoint(p.x, p.y);
-            // `clearOfHeroes`: for kinds testing what happens AFTER the press (the bin), where
-            // a hero standing on the Token is not what is being measured, and the game must
-            // grab THIS Token: the one whose centre is nearest the pointer, which can differ
-            // from the one drawn on top where art boxes overlap. Other kinds keep such presses,
-            // since "pressed near a Token, a different one was grabbed" is what they measure.
-            if (clearOfHeroes && top?.closest?.('[data-board-hero]')) continue;
-            if (clearOfHeroes && G.Flags.tokenAtPoint(kit.screenToMat(p))?.id !== id) continue;
-            const art = top?.closest?.('[data-token-art]');
-            if (!art || art === el) return p;
+            if (!top || !board?.contains(top)) continue;
+            // `clearOfHeroes`: for kinds testing what happens AFTER the press (the bin), where a
+            // hero standing on the Token is not what is being measured.
+            if (clearOfHeroes && top.closest('[data-board-hero]')) continue;
+            return p;
         }
         return null;
     };
-    /** Token art circles on screen, for "is this point over a Token?". */
-    const tokenCircles = () => [...document.querySelectorAll('[data-token-art][data-token-id]')].map(e => {
-        const r = e.getBoundingClientRect();
-        return { x: r.left + r.width / 2, y: r.top + r.height / 2, r: Math.min(r.width, r.height) / 2 };
-    });
     /**
-     * Where to press a flag. By design a flag is grabbed by the part of it over bare mat: over a
-     * Token's art circle the pointer goes to the Token. So: the highest point of the flag's
-     * circle that is clear of every Token circle, or its centre when none is (reported).
+     * Whether a press at `p` lands on this flag as drawn: past the flag's own hero (a press on the
+     * hero drags the same flag), the first thing the browser finds there is the flag. Anything
+     * else drawn on top there (a Token's bubble, another flag or hero, the mat's top bar over a
+     * clipped edge) is what the player would be pressing instead.
+     */
+    const flagOnTop = (el, heroId, p) => {
+        for (const top of document.elementsFromPoint(p.x, p.y)) {
+            if (top.closest(`[data-board-hero="${heroId}"]`)) continue;
+            return el.contains(top);
+        }
+        return false;
+    };
+    /**
+     * Where to press a flag, as the game's rules give a press to it: over bare mat, any point of
+     * its round area; over a Token's round body, only its cloth where it is drawn in front of that
+     * Token. So: the highest point of the flag clear of every Token's body where the flag is what
+     * is drawn on top; else a point of its cloth drawn on top; else its centre (reported).
      */
     const flagPress = (el) => {
+        const heroId = el.getAttribute('data-flag');
         const r = el.getBoundingClientRect();
         const c = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
         const rad = Math.min(r.width, r.height) / 2;
         const circles = tokenCircles();
+        const grid = [];
         for (let gy = -0.7; gy <= 0.71; gy += 0.175) {
             for (let gx = -0.7; gx <= 0.71; gx += 0.175) {
                 if (gx * gx + gy * gy > 0.5) continue;
-                const p = { x: Math.round(c.x + gx * rad), y: Math.round(c.y + gy * rad) };
-                if (p.x < 0 || p.y < 0 || p.x >= innerWidth || p.y >= innerHeight) continue;
-                if (!circles.some(t => Math.hypot(t.x - p.x, t.y - p.y) <= t.r)) return { ...p, bare: true };
+                grid.push({ x: Math.round(c.x + gx * rad), y: Math.round(c.y + gy * rad) });
             }
+        }
+        for (const p of grid) {
+            if (!onScreen(p) || circles.some(t => Math.hypot(t.x - p.x, t.y - p.y) <= t.r)) continue;
+            if (flagOnTop(el, heroId, p)) return { ...p, bare: true };
+        }
+        for (const p of grid) {
+            if (onScreen(p) && onCloth(el, p) && flagOnTop(el, heroId, p)) return { ...p, bare: false, cloth: true };
         }
         return { x: Math.round(c.x), y: Math.round(c.y), bare: false };
     };
@@ -347,7 +387,7 @@ export function installDragKit() {
         const r = el.getBoundingClientRect();
         const m = matEl().getBoundingClientRect();
         const bar = document.querySelector('[data-mat-top-bar]')?.getBoundingClientRect();
-        const cell = matEl().closest('.overflow-hidden')?.getBoundingClientRect();
+        const cell = matEl().parentElement?.parentElement?.getBoundingClientRect();
         // Whether any part of the flag is clear of every Token's own hit circle (not its art box).
         const hits = [...document.querySelectorAll('[data-token-hit]')].map(e => {
             const b = e.getBoundingClientRect();
@@ -386,13 +426,23 @@ export function installDragKit() {
         flag() {
             const els = [...document.querySelectorAll('button[data-flag]')].filter(visibleCentre);
             if (!els.length) return { skip: 'no flag visible' };
-            const el = pickRandom(els);
+            // A flag with no part a press could reach (all of it lies under Tokens, flags or heroes
+            // drawn in front of it) cannot be picked up on the mat by anyone: the player moves it
+            // by its hero or from the hero bar. Such flags are passed over, and named in the scene.
+            const pressable = [];
+            const hidden = [];
+            for (const f of els) {
+                const p = flagPress(f);
+                (p.bare || p.cloth ? pressable : hidden).push({ el: f, at: p });
+            }
+            if (!pressable.length) return { skip: `every flag is hidden under things drawn in front of it (${hidden.length})` };
+            const { el, at } = pickRandom(pressable);
             const heroId = el.getAttribute('data-flag');
             const to = kit.freeSpot();
             if (!to) return { skip: 'no free spot' };
-            const at = flagPress(el);
+            const scene = { ...flagScene(el, heroId), hiddenFlags: hidden.map(h => h.el.getAttribute('data-flag')) };
             return {
-                source: { x: at.x, y: at.y, what: `flag ${heroId}${at.bare ? '' : ' (no part of it over bare mat)'}`, hand: `flag ${heroId}`, scene: flagScene(el, heroId) },
+                source: { x: at.x, y: at.y, what: `flag ${heroId}${at.bare ? '' : ' (by its cloth, over a Token)'}`, hand: `flag ${heroId}`, scene },
                 target: to.screen, expect: { kind: 'flag', heroId, before: flagAt(heroId), mat: to.mat }
             };
         },

@@ -423,14 +423,24 @@ drop targets there" note on a failure tells such a cause apart from the bubbles.
 
 Fairness rules, so that a failure is the game's and not the bench's:
 
-- **A Token** is pressed at its centre, or at another point of its art when a
-  *different Token* lies on top there (overlapping Tokens: the player grabs the
-  top one). Anything else on top, a ring, a callout, a bubble, is kept: that is
-  what the bench is looking for.
-- **A flag** is pressed at its highest point clear of every Token's art circle:
-  by design a flag over a Token lets the pointer through to the Token
-  (`FlagLayer.jsx`, `yieldToTokens`). A flag with no part over bare mat is still
-  tried at its centre, and says so.
+The press points follow the game's own press rules (the owner's), read from the
+page with the bench's own copy of them:
+
+- **A Token** is pressed at its centre, or at another point of its round body
+  (`data-token-hit`, its only part that takes a press), where the game gives the
+  press to *this* Token: where round bodies overlap, the nearest centre
+  (`Flags.tokenAtPoint`), and not where a flag's cloth is drawn in front. The point
+  must be on the mat as drawn, not under the screen's furniture outside it (the
+  hero bar's figures, a drawer). Anything on the mat drawn on top there, a ring, a
+  callout, a bubble, another hero, is kept: that is what the bench is looking for.
+- **A flag** is pressed at its highest point clear of every Token's round body
+  (by design a flag over a Token lets the pointer through to the Token,
+  `FlagLayer.jsx`, `yieldToTokens`), where the flag, or its own hero, is what is
+  drawn on top; when it has no such point, on its cloth where the flag is drawn in
+  front (the cloth keeps a press over a Token, `flagCloth.js`). A flag with
+  neither lies wholly under Tokens, flags or heroes drawn in front of it: nobody
+  can press it on the mat (the player moves it by its hero or from the hero bar),
+  so the bench passes it over and names it in the attempt's `scene.hiddenFlags`.
 
 Per kind and pass it reports attempts, successes, success %, **pickup delay**
 p50/p95, **frame stalls** per drag phase and the grouped **failure causes**:

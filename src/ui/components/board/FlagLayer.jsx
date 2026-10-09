@@ -42,9 +42,11 @@ import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
  * - **Reach ring**: a dashed gold circle of the live flag radius, only while that flag or its
  * hero is hovered, dragged or inspected, or while a dragged Token would land inside it. While a
  * flag is dragged, every Token inside it the hero could work shows a green dot at its centre.
- * - **No hitbox over Tokens**: wherever the pointer is on a Token's art circle, every flag
- * lets it through (`yieldToTokens`, set by `MatBoard`), so a flag never eats a Token's hover,
- * click or grab. A flag is grabbed by the part of it that stands over bare mat.
+ * - **No hitbox over Tokens, but the cloth**: wherever the pointer is on a Token's art circle,
+ * every flag lets it through (`yieldToTokens`, set by `MatBoard`), so a flag never eats a
+ * Token's hover, click or grab with its pole or empty corners. A flag is grabbed by the part
+ * of it over bare mat, or by its cloth where it is drawn in front of the Token (`flagCloth.js`),
+ * so a flag standing among Tokens can always be picked up.
  * - **Pinned**: a flag pinned to a Token is drawn with its pole planted at the top of that
  * Token (`pinnedFlagPoint`), carries `data-flag-pinned`, shows no reach ring (the radius does
  * not apply) and says 'Working only X' on hover.

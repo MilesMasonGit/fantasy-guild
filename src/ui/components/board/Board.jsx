@@ -101,9 +101,13 @@ export const Board = ({ onInspectToken, onClearInspect, inspectedHeroId = null, 
         // `min-w-0` / `min-h-0` are load-bearing: without them this box grows to
         // its natural content size instead of reporting the space it actually
         // has, and the measurement below would always say "everything fits".
+        // ⚠️ `overflow-clip`, not `overflow-hidden`: the mat is fitted to this box with its
+        // padding, so it can overhang the padding a little, and a hidden box is still a scroll
+        // container. Focus handed back to a flag or hero partly in the overhang scrolled it, and
+        // the whole mat jumped up under the top bar.
         <div
             ref={fit.ref}
-            className="w-full h-full min-w-0 min-h-0 flex items-center justify-center p-8 overflow-hidden"
+            className="w-full h-full min-w-0 min-h-0 flex items-center justify-center p-8 overflow-clip"
         >
             {/* Outer box reserves the mat's ON-SCREEN size, so the surrounding
                 layout centres the scaled mat rather than the natural one. */}

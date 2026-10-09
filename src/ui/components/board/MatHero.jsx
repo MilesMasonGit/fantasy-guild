@@ -177,6 +177,7 @@ export const MatHero = memo(function MatHero({
             {...drag.handleProps}
             type="button"
             data-alpha-test="true"
+            data-alpha-flip={facingLeft ? 'x' : undefined}
             data-board-hero={heroId}
             data-hero-limp={limp ? 'true' : undefined}
             data-outline={outline || undefined}

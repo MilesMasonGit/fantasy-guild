@@ -3,6 +3,7 @@ import { useMatSize } from '../../hooks/useMatSize.js';
 import { MAT_Z, matStackOrder, sameStackOrder, heroZ, walkerSortY } from './matLayers.js';
 import { pointerToMat } from './matPoint.js';
 import { installPressRouting } from './pressRouting.js';
+import { flagClothOver } from './flagCloth.js';
 import { MatToken } from './MatToken.jsx';
 import { MatHero, heroBoxAt } from './MatHero.jsx';
 import { MatRings } from './MatRings.jsx';
@@ -228,13 +229,19 @@ export const MatBoard = ({
         const el = rootRef.current;
         if (!el) return;
         /**
-         * Flags have no hitbox over Tokens. A point on a Token's art circle is that Token's,
-         * even when a flag is drawn in front of it: the Token is hovered (and so raised to the
-         * front), and every flag lets the pointer through until it leaves the circle. A flag
-         * is grabbed by the part of it standing over bare mat.
+         * Flags have no hitbox over Tokens, except their cloth. A point on a Token's art circle
+         * is that Token's, even when a flag is drawn in front of it: the Token is hovered (and
+         * so raised to the front), and every flag lets the pointer through until it leaves the
+         * circle. Only the cloth of a flag drawn in front of that Token keeps the pointer, so a
+         * flag standing among Tokens can always be picked up by its banner.
          */
         const point = pointerToMat({ x: e.clientX, y: e.clientY }, el.getBoundingClientRect());
         let id = point ? (Flags.tokenAtPoint(point)?.id ?? null) : null;
+        if (id && flagClothOver(el, e.clientX, e.clientY, id)) {
+            setFlagsYield(prev => (prev === false ? prev : false));
+            setHoveredId(prev => (prev === null ? prev : null));
+            return;
+        }
         const onToken = !!id;
         setFlagsYield(prev => (prev === onToken ? prev : onToken));
         if (!id) {
