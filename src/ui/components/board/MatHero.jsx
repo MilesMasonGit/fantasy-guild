@@ -103,7 +103,34 @@ export function heroBoxAt(point) {
     return { left: point.x - HERO_HIT_PX / 2, top: point.y - FLAG_PX / 2 };
 }
 
-export const MatHero = memo(function MatHero({
+/**
+ * ⚠️ Two components on purpose. dnd-kit re-renders every component holding a drag hook at each
+ * drag start, end and change of target; the hook lives in this thin shell, and the figure
+ * (`MatHeroBody`) is memoised on what it draws, so a drag elsewhere does not redraw it.
+ */
+export const MatHero = memo(function MatHero(props) {
+    const { heroId, name } = props;
+    const drag = useEntityDrag({
+        id: `hero-${heroId}`,
+        kind: DRAG_KIND.FLAG,
+        payload: { heroId, name, from: { hero: true } },
+        sourceSurface: DND_SURFACE.BOARD
+    });
+    // This hero carried out of the hero bar or the hero sheet: the figure on the mat steps aside.
+    const { activePayload, isDragging } = useActiveDrag();
+    const heroCarried = isDragging && activePayload?.kind === DRAG_KIND.HERO && activePayload?.heroId === heroId;
+    return (
+        <MatHeroBody
+            {...props}
+            heroCarried={heroCarried}
+            flagHeld={drag.isDragging}
+            dragRef={drag.setNodeRef}
+            dragProps={drag.handleProps}
+        />
+    );
+});
+
+const MatHeroBody = memo(function MatHeroBody({
     heroId,
     name,
     sprite,
@@ -118,17 +145,12 @@ export const MatHero = memo(function MatHero({
     moving = false,
     facing = 1,
     limp = false,
-    fighting = false
+    fighting = false,
+    heroCarried = false,
+    flagHeld = false,
+    dragRef,
+    dragProps
 }) {
-    const drag = useEntityDrag({
-        id: `hero-${heroId}`,
-        kind: DRAG_KIND.FLAG,
-        payload: { heroId, name, from: { hero: true } },
-        sourceSurface: DND_SURFACE.BOARD
-    });
-
-    const { activePayload, isDragging } = useActiveDrag();
-    const isThisHeroDragging = isDragging && activePayload?.kind === DRAG_KIND.HERO && activePayload?.heroId === heroId;
 
     const animArt = sprite ? resolveAnimationPath(sprite) : null;
     const staticArt = sprite ? resolveSpritePath(sprite) : null;
@@ -154,8 +176,7 @@ export const MatHero = memo(function MatHero({
     const boxLeft = live ? live.left : (left ?? 0);
     const boxTop = live ? live.top : (top ?? 0);
     const boxRef = useRef(null);
-    const setNodeRef = drag.setNodeRef;
-    const setBoxRef = useCallback((el) => { boxRef.current = el; setNodeRef(el); }, [setNodeRef]);
+    const setBoxRef = useCallback((el) => { boxRef.current = el; dragRef?.(el); }, [dragRef]);
     // A layout effect, so it is listening from the commit on, and it catches
     // up at once on any step taken between the render and now.
     useLayoutEffect(() => {
@@ -174,7 +195,7 @@ export const MatHero = memo(function MatHero({
     return (
         <button
             ref={setBoxRef}
-            {...drag.handleProps}
+            {...dragProps}
             type="button"
             data-alpha-test="true"
             data-alpha-flip={facingLeft ? 'x' : undefined}
@@ -212,14 +233,14 @@ export const MatHero = memo(function MatHero({
             className={cn(
                 'absolute p-0 m-0 bg-transparent border-0 outline-none',
                 'pointer-events-auto cursor-grab active:cursor-grabbing',
-                isThisHeroDragging && 'opacity-0 pointer-events-none'
+                heroCarried && 'opacity-0 pointer-events-none'
             )}
         >
             {(animArt || staticArt) && (
                 <div
                     className={cn(
                         'w-full h-full flex items-center justify-center transition-[filter] duration-150',
-                        hovered && !drag.isDragging && 'gi-token-hover-hop'
+                        hovered && !flagHeld && 'gi-token-hover-hop'
                     )}
                     // The art is wider than the hero's box and takes no pointer: a press beside
                     // the figure reaches the flag or Token behind it.

@@ -188,6 +188,23 @@ describe('⭐ a Token drag on a full mat redraws the Token in the hand and nothi
         act(() => { fireEvent.pointerUp(document, ptr(700, 420)); });
     });
 
+    it('pickup, carry and drop of a Token redraw no hero and no flag on the mat', async () => {
+        const { container } = scene();
+        const a = BoardState.tokens().find(t => t.x === 600 && t.y === 400);
+        const before = snap();
+        act(() => {
+            fireEvent.pointerDown(hitOf(container, a.id), ptr(600, 400));
+            fireEvent.pointerMove(document, ptr(630, 400));
+        });
+        act(() => { fireEvent.pointerMove(document, ptr(700, 380)); });
+        act(() => { fireEvent.pointerMove(document, ptr(matW() + 200, 200)); });
+        act(() => { fireEvent.pointerMove(document, ptr(700, 380)); });
+        await act(async () => { fireEvent.pointerUp(document, ptr(700, 380)); });
+        expect(BoardState.getTokenById(a.id).x).toBeCloseTo(700, 0);
+        expect(Object.values(delta(drawn.flag, before.flag))).toEqual([0]);
+        expect(Object.values(delta(drawn.matHero, before.matHero))).toEqual([0]);
+    });
+
     it('drop: only the moved Token redraws, and it stands where it was let go', async () => {
         const { a, b, c, container } = scene();
         act(() => {

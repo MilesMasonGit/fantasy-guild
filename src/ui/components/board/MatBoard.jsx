@@ -92,11 +92,12 @@ export const MatBoard = React.memo(function MatBoard({
     }, [isDragging]);
 
     // A no-op while dragging, so a hero/flag crossing mid-drag does not reinstate a stray
-    // hover ring (and the commit it would cost).
-    const handleHoverHero = useCallback(
-        (id) => { if (!isDragging) setHoverHeroId(id); },
-        [isDragging]
-    );
+    // hover ring (and the commit it would cost). Read from the page rather than `isDragging`, so
+    // the handler stays the same and no hero or flag is redrawn for a new one at each drag.
+    const handleHoverHero = useCallback((id) => {
+        if (typeof document !== 'undefined' && document.body.classList.contains('gi-dnd-active')) return;
+        setHoverHeroId(id);
+    }, []);
 
     /**
      * Every Token on the mat: where it is, and nothing about how it is doing.

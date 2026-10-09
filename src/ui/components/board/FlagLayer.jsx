@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
@@ -246,9 +246,15 @@ export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverH
     );
 };
 
-/** One hero's flag: drag to move it, hover for why. */
-const Flag = memo(function Flag({ flag, z = 0, artPx, onHover, boardHovered = false, inspected = false, yieldToTokens = false }) {
-    const ref = useRef(null);
+/**
+ * One hero's flag: drag to move it, hover for why.
+ * ⚠️ Two components on purpose. dnd-kit re-renders every component holding a drag hook at each
+ * drag start, end and change of target; the hook lives in this thin shell, which works out what
+ * the flag draws from a drag (carried, its tooltip), and the flag (`FlagBody`) is memoised on
+ * those, so a drag elsewhere does not redraw it.
+ */
+const Flag = memo(function Flag(props) {
+    const { flag } = props;
     const [hovered, setHovered] = useState(false);
     const { isDragging: anyDrag, activePayload } = useActiveDrag();
 
@@ -267,10 +273,28 @@ const Flag = memo(function Flag({ flag, z = 0, artPx, onHover, boardHovered = fa
         if (carried) setHovered(false);
     }, [carried]);
 
-    const setRefs = (node) => {
+    return (
+        <FlagBody
+            {...props}
+            hovered={hovered}
+            onHoverChange={setHovered}
+            carried={carried}
+            tipShown={hovered && !anyDrag}
+            dragRef={drag.setNodeRef}
+            dragProps={drag.handleProps}
+        />
+    );
+});
+
+const FlagBody = memo(function FlagBody({
+    flag, z = 0, artPx, onHover, boardHovered = false, inspected = false, yieldToTokens = false,
+    hovered, onHoverChange, carried, tipShown, dragRef, dragProps
+}) {
+    const ref = useRef(null);
+    const setRefs = useCallback((node) => {
         ref.current = node;
-        drag.setNodeRef(node);
-    };
+        dragRef?.(node);
+    }, [dragRef]);
 
     const scaleFactor = artPx / 128;
     const originLeft = (flag.drawX ?? flag.x ?? 0) - POLE_BASE.x * scaleFactor;
@@ -284,15 +308,15 @@ const Flag = memo(function Flag({ flag, z = 0, artPx, onHover, boardHovered = fa
         <>
             <button
                 ref={setRefs}
-                {...drag.handleProps}
+                {...dragProps}
                 type="button"
                 data-flag={flag.heroId}
                 data-flag-state={flag.state}
                 data-flag-colour={flag.colour || 'base'}
                 data-flag-pinned={flag.pinnedTo || undefined}
                 aria-label={`${flag.name}’s flag`}
-                onMouseEnter={() => { setHovered(true); onHover?.(flag.heroId); }}
-                onMouseLeave={() => { setHovered(false); onHover?.(null); }}
+                onMouseEnter={() => { onHoverChange(true); onHover?.(flag.heroId); }}
+                onMouseLeave={() => { onHoverChange(false); onHover?.(null); }}
                 onClick={handleClick}
                 className={cn(
                     'absolute p-0 m-0 bg-transparent border-0 outline-none',
@@ -319,7 +343,7 @@ const Flag = memo(function Flag({ flag, z = 0, artPx, onHover, boardHovered = fa
                 />
             </button>
 
-            {hovered && !anyDrag && <FlagTooltip anchor={ref.current} heroId={flag.heroId} />}
+            {tipShown && <FlagTooltip anchor={ref.current} heroId={flag.heroId} />}
         </>
     );
 });
