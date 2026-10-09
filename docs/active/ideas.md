@@ -153,27 +153,13 @@ the details (numbers, style traits, statuses, roster, gear slots) are
 deferred to a later design pass. Covered: combat system, gear, enemy
 variety, status effects.
 
-### D4 — Skill loops and the board as a puzzle
+### D4 — Skill loops and the board as a puzzle ✅
 
-- **One core loop per skill**: so each skill feels different, and to prototype
-  how they'll work. The first content to build (owner, 2026-10-08).
-  - **Occult / magic / enchanting sketch (very loose)**: Tokens need to be
-    **charged with elements**. An enchanting table has **three slots** that
-    take context from other placed Tokens; charge comes from **leyline map
-    features** or **support Tokens** the player builds; **different
-    combinations give different outputs**. · builds on the existing `nearby`
-    reach (164 u, the four side neighbours); leylines would be an Atlas map
-    feature or modifier (raise in D2 if it changes brief 70).
-- **Tokens hardly interact**: pillars 1 and 3 promise a self-feeding ecosystem
-  and mechanically different skills; the rules grammar can do far more (16
-  verbs, 12 moments, neighbour modifiers) than the handful that ships. With a
-  fixed post-Atlas board, **layout and adjacency** could be the main thing
-  players think about: a theme across all loops.
-- **Show neighbour effects while placing**: while a Token is held over the mat,
-  the Tokens it would help or be helped by light up ("+5 % speed from Coast").
-  Without it, adjacency is invisible maths.
-- **Skill list scope**: 25 skills, 12 of them placeholders. Always open to
-  rework; the owner will evaluate it later. Revisit here if loops need it.
+Done 2026-10-09 → [concept_skill_loops.md](concept_skill_loops.md): the nine
+Starting skills' loops, adjacency as a theme and how it's shown, gathering
+tools as hero gear (T-126); specialist skills are sketches (incl. the
+Enchanting sketch); skill list scope stays open. Prototyping waits for the
+Atlas.
 
 ### D5 — Knowledge: dependency map, encyclopedia, collection log
 
@@ -261,6 +247,9 @@ variety, status effects.
 
 ## Moved on
 
+- **D4 Skill loops and the board as a puzzle** → [concept_skill_loops.md](concept_skill_loops.md),
+  done 2026-10-09. Changes the Atlas (growing places keep spawning; noted on
+  brief 70) and tools (T-126: gathering tools become hero gear).
 - **D3 Combat and gear** (general direction: Hearts as HP, everyone fights,
   bosses and party fights, gear crafted plus rare drops, potions from Alchemy)
   → [concept_combat.md](concept_combat.md), 2026-10-09; details deferred.

@@ -1,7 +1,8 @@
 # Skill loops and the board as a puzzle
 
 *D4 of the post-crunch plan ([ideas.md](ideas.md)). Owner interview, started
-2026-10-09. **In progress.** Builds on [concept_progression.md](concept_progression.md)
+2026-10-09. **Done** (owner closed it 2026-10-09); specialist skills are
+sketches only. Builds on [concept_progression.md](concept_progression.md)
 (implicit tiers, chains across skills) and [concept_combat.md](concept_combat.md).*
 
 ## Approach
@@ -17,7 +18,12 @@
   Their loops set the pattern and the Starter Camp and Atlas need them first.
 - **Prototype**: sketch every loop's rule here, build the most promising one
   or two quickly in the game (CMS content plus small engine rules), the owner
-  plays them, then the rest follow.
+  plays them, then the rest follow. **Prototyping waits for the Atlas**
+  (brief 70), since node behaviour changes there.
+- **Seeing adjacency**: **while placing** (holding a Token over the mat lights
+  up the Tokens it would help or be helped by, with the effect), **on
+  inspect** (a Token lists what boosts it and what it boosts), and **quiet
+  pops** when a bonus applies (D1).
 
 - **The rule: gathering skills differ by how their nodes behave** (groves,
   long-burst fields, refilling veins); **station skills differ by what they
@@ -160,3 +166,19 @@
 - **Produces**: healing and buff potions for fights (D3), work potions like
   the Birdwatcher, **transmutation** (turning surplus into something useful),
   and **ingredients for magic** (inks, essences for Enchanting).
+
+## Specialist skills — sketches only
+
+The 12 specialist skills (Advanced: Leadership, Fletching, Enchanting, Crime;
+Master: Faith, Trapping, Summoning, Taming, Commerce, Science, Armory,
+Shadowcraft) are placeholders, and the skill list is open to rework (owner).
+Full loops come with the skill list review; sketches are kept here.
+
+- **Enchanting (very loose)**: Tokens need to be **charged with elements**. An
+  enchanting table has **three slots** that take context from other placed
+  Tokens; charge comes from **leyline map features** or **support Tokens** the
+  player builds; **different combinations give different outputs**. Builds on
+  the `nearby` reach (164 u, the four side neighbours); leylines would be an
+  Atlas map feature or modifier.
+- **Fletching**: bows and arrows from Forestry's wood and Crafting's string
+  (from the Forestry and Crafting answers).
