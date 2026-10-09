@@ -57,7 +57,14 @@ changelog and `docs/archive/`).*
 5. **Brief 20 live-game check** once the Academies and master Tokens exist.
 6. **T-111**: engine bench timings are load-sensitive; trust the work check.
 
-**Handoff (2026-10-09, director session hit its usage limit):**
+**Status (2026-10-09, later):** the director session resumed. Atlas **A1**
+is merged (Regions, travel, save schema 0.8.1, cap 128). **A2** (respawning
+fixtures) is building on `crunch/atlas-a2`; A4 and brief 60 P1 resumed in
+their worktrees. On `main` two test files depend on the owner's uncommitted
+art move under `public/assets` (TerrainRegistry, AssetManager's tool
+sprites) and three file-scan tests time out only under bench load.
+
+**Handoff (2026-10-09, director session hit its usage limit; superseded above):**
 - Merged to `main` today: brief 50 (drag), T-129 (carried Token pauses),
   brief 70 A9 (ambush rules). Suite green except `TerrainRegistry.test.js`,
   which reads the owner's half-moved terrain art on disk (owner's area).
