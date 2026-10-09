@@ -8,6 +8,9 @@ import { GameState } from '../state/GameState.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import * as CatchUp from '../systems/core/CatchUp.js';
 import { resetMatTuning } from '../config/matTuning.js';
+import React from 'react';
+import { render, cleanup, fireEvent, act } from '@testing-library/react';
+import { CatchUpOverlay } from '../ui/components/hud/CatchUpOverlay.jsx';
 
 /**
  * "Load as I left it": the summary's undo. The catch-up keeps the save from before it played;
@@ -196,5 +199,39 @@ describe('SaveManager: writing the old save back and reloading', () => {
         expect(SaveManager.loadedSavedAt).toBe(null);
         expect(await SaveManager.loadSlot(0)).toBe(true);
         expect(SaveManager.loadedSavedAt).toBe(NOW - 3 * HOUR);
+    });
+});
+
+describe('the summary: only a confirmed Load as I left it writes the old save back', () => {
+    afterEach(() => cleanup());
+
+    it('cancelling keeps the catch-up and its undo; confirming restores the save from before', async () => {
+        emptyGame(5000);
+        SaveManager.currentSlot = 0;
+        const before = JSON.parse(GameState.serializeJson());
+        render(React.createElement(CatchUpOverlay));
+        await act(async () => { await run({ savedAt: NOW - 3 * HOUR }); });
+        const q = (sel) => document.querySelector(sel);
+        expect(q('[data-catch-up-summary]')).not.toBeNull();
+
+        const restore = vi.spyOn(SaveManager, 'restoreAndReload').mockImplementation(() => true);
+        try {
+            act(() => { fireEvent.click(q('[data-summary-undo]')); });
+            act(() => { fireEvent.click(q('[data-summary-confirm-no]')); });
+            act(() => { fireEvent.click(q('[data-summary-undo]')); });
+            act(() => { fireEvent.keyDown(window, { key: 'Escape' }); });
+            expect(restore).not.toHaveBeenCalled();
+            expect(CatchUp.canUndo()).toBe(true);
+            expect(GameState.state.time.gameTimeMs).toBe(5000 + 3 * HOUR);
+
+            act(() => { fireEvent.click(q('[data-summary-undo]')); });
+            act(() => { fireEvent.click(q('[data-summary-confirm-yes]')); });
+            expect(restore).toHaveBeenCalledTimes(1);
+            const [slot, json] = restore.mock.calls[0];
+            expect(slot).toBe(0);
+            expect(JSON.parse(json)).toEqual(before);
+        } finally {
+            restore.mockRestore();
+        }
     });
 });

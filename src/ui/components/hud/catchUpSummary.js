@@ -14,9 +14,6 @@ export function formatAway(ms) {
     return m ? `${h} h ${m} min` : `${h} h`;
 }
 
-/** Whole numbers with thousands separators (`1,154`), the same on every machine. */
-export const formatCount = (n) => Math.round(Number(n) || 0).toLocaleString('en-US');
-
 /** A readable name for an id nothing names (`enemy_wolf` → `Wolf`). */
 function fallbackName(id) {
     const words = String(id || '').replace(/^(item|enemy|token)_/, '').split('_').filter(Boolean);
@@ -65,7 +62,7 @@ export function summaryView(result) {
     return {
         awayText: formatAway(result?.awayMs),
         droppedText: result?.droppedMs >= MINUTE
-            ? `${formatAway(result.droppedMs)} of it, beyond the ${formatAway(CATCH_UP.CAP_MS)} cap, was not played.`
+            ? `${formatAway(result.droppedMs)} past the ${formatAway(CATCH_UP.CAP_MS)} limit was skipped.`
             : null,
         gained: rows(bankSide(items.gained, items.net, 1), itemName, 'itemId'),
         waiting: rows(items.floor, itemName, 'itemId'),
