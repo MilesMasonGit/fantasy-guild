@@ -225,9 +225,30 @@ describe('reroll: a new seed, and nothing else', () => {
             expect(moved.length).toBeGreaterThan(next.layout.nodes.length / 2);
             plan = next;
         }
-        // Rerolling takes nothing and leaves the guild seed where the preview left it.
-        expect(GameState.state.atlas.seed).toBe(guildSeed);
+        // Rerolling takes nothing; the guild seed has followed it to the last seed shown.
+        expect(guildSeed).toBe(first.seed);
+        expect(GameState.state.atlas.seed).toBe(plan.seed);
         expect(Atlas.held().map(h => h.count)).toEqual([1, 1, 1]);
+    });
+
+    it('a later preview never shows a seed already shown, so two Regions never share a seed', () => {
+        Cartography.grant([WOOD, HILLS], 1);
+        const shown = [];
+        let plan = Atlas.preview([WOOD]);
+        shown.push(plan.seed);
+        for (let i = 0; i < 3; i++) shown.push((plan = Atlas.reroll(plan)).seed);
+        const first = Atlas.settle({ ingredients: [WOOD], seed: plan.seed }).region;
+        // The table opens again, for another map.
+        let again = Atlas.preview([HILLS]);
+        expect(shown).not.toContain(again.seed);
+        shown.push(again.seed);
+        // Closed without settling, opened once more: still nothing shown before.
+        again = Atlas.reroll(again);
+        shown.push(again.seed);
+        const fresh = Atlas.preview([HILLS]);
+        expect(shown).not.toContain(fresh.seed);
+        const second = Atlas.settle({ ingredients: [HILLS], seed: fresh.seed }).region;
+        expect(second.seed).not.toBe(first.seed);
     });
 
     it('takes only a preview', () => {

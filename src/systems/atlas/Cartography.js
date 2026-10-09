@@ -166,7 +166,9 @@ export function preview(ingredients, { seed } = {}) {
 
 /**
  * The next layout of a preview: the seed after its seed, and the same Node Summary (the very
- * object; a reroll never re-reads the cap or the ingredients). Changes nothing.
+ * object; a reroll never re-reads the cap or the ingredients). Changes nothing but the guild seed,
+ * which moves on to the seed shown: the next preview then starts past every layout already shown,
+ * so a Region settled after a reroll never shares its seed (or its flavour name) with the next.
  *
  * @param {object} plan  a {@link preview} or an earlier reroll
  */
@@ -174,7 +176,10 @@ export function reroll(plan) {
     if (!isPlainObject(plan) || !isPlainObject(plan.summary) || !Array.isArray(plan.recipes) || !isSeed(plan.seed)) {
         throw new TypeError('Atlas.reroll takes a preview: the result of Atlas.preview or of an earlier reroll');
     }
-    return planOf(plan.recipes, plan.summary, nextSeed(plan.seed));
+    const seed = nextSeed(plan.seed);
+    const atlas = GameState.state?.atlas;
+    if (isPlainObject(atlas)) atlas.seed = seed;
+    return planOf(plan.recipes, plan.summary, seed);
 }
 
 // ---------------------------------------------------------------------------
