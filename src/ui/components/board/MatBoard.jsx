@@ -1,6 +1,7 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useMatSize } from '../../hooks/useMatSize.js';
 import { MAT_Z, matStackOrder, sameStackOrder, heroZ, walkerSortY } from './matLayers.js';
+import { createStackWriter } from './stackWriter.js';
 import { pointerToMat } from './matPoint.js';
 import { installPressRouting } from './pressRouting.js';
 import { flagClothOver } from './flagCloth.js';
@@ -308,7 +309,10 @@ export const MatBoard = ({
         return sameStackOrder(lastOrderRef.current, next) ? lastOrderRef.current : next;
     }, [tokens, flagPoints, workedKey, hoveredId]);
     lastOrderRef.current = order;
-    const zById = order.tokenZ;
+    // Each Token's z goes straight onto its boxes, so a re-rank redraws no Token. A layout
+    // effect: written in the same commit, before anything is painted.
+    const stack = useMemo(() => createStackWriter(), []);
+    useLayoutEffect(() => { stack.apply(order.tokenZ); }, [stack, order]);
 
     return (
         <div
@@ -352,7 +356,7 @@ export const MatBoard = ({
                     x={t.x}
                     y={t.y}
                     walkFacing={t.walkFacing}
-                    z={zById.get(t.id)}
+                    stack={stack}
                     isHovered={hoveredId === t.id}
                     selected={inspectedTokenId != null && inspectedTokenId === t.id}
                     hasHero={workedBy.has(t.id)}

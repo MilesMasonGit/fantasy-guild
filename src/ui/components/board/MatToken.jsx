@@ -93,7 +93,8 @@ const SLIDE_EASE = 'cubic-bezier(0.2, 0.8, 0.2, 1)';
  * Two boxes, not one: the art and the badges are siblings with explicit z, not parent and
  * child. A hero stands beside the Token, and the bubbles have to stay
  * readable in front of that hero. A single box would make its own stacking context and bury
- * them under the hero's feet.
+ * them under the hero's feet. That z is written onto the boxes by the mat (`stack`,
+ * `stackWriter.js`), not rendered here.
  * ⚠️ Two components on purpose. dnd-kit re-renders every component that holds a drag hook
  * whenever any drag starts, ends or crosses into another drop target, and while this Token is
  * the one carried, on every pointer move. The hook lives in this thin shell; the Token itself
@@ -145,7 +146,7 @@ const MatTokenBody = React.memo(function MatTokenBody({
     x,
     y,
     walkFacing = null,
-    z,
+    stack = null,
     isHovered = false,
     selected = false,
     hasHero = false,
@@ -339,7 +340,15 @@ const MatTokenBody = React.memo(function MatTokenBody({
 
     const artRef = React.useRef(null);
     const overlayRef = React.useRef(null);
-    const setArtRef = React.useCallback((el) => { artRef.current = el; dragRef?.(el); }, [dragRef]);
+    const setArtRef = React.useCallback((el) => {
+        artRef.current = el;
+        dragRef?.(el);
+        stack?.attach(id, 'art', el);
+    }, [dragRef, stack, id]);
+    const setOverlayRef = React.useCallback((el) => {
+        overlayRef.current = el;
+        stack?.attach(id, 'badges', el);
+    }, [stack, id]);
     useWalkerFollow(walker && walking && x == null, id, boxHalf, artRef, overlayRef);
 
     // Just spawned: pops out of its spawner and slides to its spot, on both boxes alike. Read once,
@@ -452,7 +461,6 @@ const MatTokenBody = React.memo(function MatTokenBody({
                 }}
                 style={{
                     ...boxStyle,
-                    zIndex: z,
                     // The drawing takes no pointer; presses reach these listeners from the hit
                     // circle inside.
                     pointerEvents: 'none',
@@ -538,13 +546,13 @@ const MatTokenBody = React.memo(function MatTokenBody({
             </div>
 
             <div
-                ref={overlayRef}
+                ref={setOverlayRef}
                 data-token-id={id}
                 data-token-overlay={id}
                 data-quest-token={quest ? id : undefined}
                 data-quest-done={quest ? String(questDone) : undefined}
                 className="absolute pointer-events-none"
-                style={{ ...boxStyle, zIndex: z + 2, visibility: hidden ? 'hidden' : 'visible' }}
+                style={{ ...boxStyle, visibility: hidden ? 'hidden' : 'visible' }}
             >
                 <TokenNameBadge name={label} isDragging={hidden} isHovered={isHovered} lift={Math.max(small ? SMALL_OVERHANG_U : 0, def?.enemy ? HEALTH_BAR_LIFT_U : 0)} />
 

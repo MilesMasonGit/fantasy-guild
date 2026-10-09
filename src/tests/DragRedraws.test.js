@@ -151,7 +151,7 @@ describe('⭐ a Token drag on a full mat redraws the Token in the hand and nothi
         act(() => { fireEvent.pointerUp(document, ptr(702, 382)); });
     });
 
-    it('drop: only the moved Token redraws, and it stands where it was let go', () => {
+    it('drop: only the moved Token redraws, and it stands where it was let go', async () => {
         const { a, b, c, container } = scene();
         act(() => {
             fireEvent.pointerDown(hitOf(container, a.id), ptr(600, 400));
@@ -160,7 +160,8 @@ describe('⭐ a Token drag on a full mat redraws the Token in the hand and nothi
         // Its own act: the drop point is read by a listener the drag start attaches.
         act(() => { fireEvent.pointerMove(document, ptr(700, 380)); });
         const before = snap();
-        act(() => { fireEvent.pointerUp(document, ptr(700, 380)); });
+        // Async: the mat hears of the move through the engine's events, a microtask later.
+        await act(async () => { fireEvent.pointerUp(document, ptr(700, 380)); });
         expect(document.body.classList.contains('gi-dnd-active')).toBe(false);
         const moved = BoardState.getTokenById(a.id);
         expect(moved.x).toBeCloseTo(700, 0);
@@ -171,5 +172,89 @@ describe('⭐ a Token drag on a full mat redraws the Token in the hand and nothi
         expect(d[a.id]).toBeGreaterThan(0);
         expect(d[b.id]).toBe(0);
         expect(d[c.id]).toBe(0);
+    });
+});
+
+describe('⭐ re-ranking the stack redraws no Token: their z is written, not rendered', () => {
+    // Back to front: the flag, A, B, D, C. Hovering A lifts it to the front, which moves every
+    // Token after it down a rank; dropping A lower on the mat moves B and D down a rank.
+    function scene() {
+        // A hero who cannot work these Tokens, so none rises into the worked band.
+        GameState.state.heroes = [{
+            id: 'h1', name: 'h1', spriteId: 'recruit', status: 'idle', level: 50,
+            skills: { mining: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 }
+        }];
+        Flags.plant('h1', { x: 250, y: 150 });
+        const a = placeAt('fixture_producer', 600, 400);
+        const b = placeAt('fixture_producer', 1000, 500);
+        const d = placeAt('fixture_producer', 900, 700);
+        const c = placeAt('fixture_producer', 600, 900);
+        const view = render(
+            h(EngineContext.Provider, { value: { GameState, EventBus } },
+                h(DeckDndProvider, null,
+                    h(Board, { onInspectToken: () => {}, onClearInspect: () => {} })))
+        );
+        view.container.querySelector('[data-board-origin]').getBoundingClientRect = () => box(0, 0, matW(), matH());
+        view.container.querySelector('[data-mat-board]').getBoundingClientRect = () => box(0, 0, matW(), matH());
+        expect(Flags.statusOf('h1').state).toBe('idle');
+        return { a, b, c, d, ...view };
+    }
+    const hitOf = (container, id) => container.querySelector(`[data-token-hit="${id}"]`);
+    const zOf = (container, id) => Number(container.querySelector(`[data-token-art][data-token-id="${id}"]`).style.zIndex);
+    const zOfBadges = (container, id) => Number(container.querySelector(`[data-token-overlay="${id}"]`).style.zIndex);
+
+    it('hovering a Token lifts it to the front and redraws only it', () => {
+        const { a, b, c, d, container } = scene();
+        const before = snap();
+        act(() => { fireEvent.pointerMove(container.querySelector('[data-mat-board]'), { clientX: 600, clientY: 400 }); });
+        expect(container.querySelector(`[data-token-art][data-token-id="${a.id}"]`).getAttribute('data-outline')).toBe('hover');
+        for (const t of [b, c, d]) expect(zOf(container, a.id)).toBeGreaterThan(zOf(container, t.id));
+        const dd = delta(drawn.token, before.token);
+        expect(dd[b.id]).toBe(0);
+        expect(dd[c.id]).toBe(0);
+        expect(dd[d.id]).toBe(0);
+    });
+
+    it('picking up the hovered Token redraws only it, though every Token after it changes rank', () => {
+        const { a, b, c, d, container } = scene();
+        act(() => { fireEvent.pointerMove(container.querySelector('[data-mat-board]'), { clientX: 600, clientY: 400 }); });
+        const zBefore = [b, d, c].map(t => zOf(container, t.id));
+        const before = snap();
+        act(() => {
+            fireEvent.pointerDown(hitOf(container, a.id), ptr(600, 400));
+            fireEvent.pointerMove(document, ptr(630, 400));
+        });
+        expect(document.body.classList.contains('gi-dnd-active')).toBe(true);
+        // The hover is gone, so A is back in its place and B, D and C each moved up a rank.
+        expect(zOf(container, a.id)).toBeLessThan(zOf(container, b.id));
+        expect([b, d, c].map(t => zOf(container, t.id))).not.toEqual(zBefore);
+        const dd = delta(drawn.token, before.token);
+        expect(dd[b.id]).toBe(0);
+        expect(dd[c.id]).toBe(0);
+        expect(dd[d.id]).toBe(0);
+        act(() => { fireEvent.pointerUp(document, ptr(630, 400)); });
+    });
+
+    it('dropping a Token lower on the mat redraws only it, and the stack is in the new order', async () => {
+        const { a, b, c, d, container } = scene();
+        act(() => {
+            fireEvent.pointerDown(hitOf(container, a.id), ptr(600, 400));
+            fireEvent.pointerMove(document, ptr(630, 400));
+        });
+        act(() => { fireEvent.pointerMove(document, ptr(700, 800)); });
+        const before = snap();
+        // Async: the mat hears of the move through the engine's events, a microtask later.
+        await act(async () => { fireEvent.pointerUp(document, ptr(700, 800)); });
+        expect(BoardState.getTokenById(a.id).y).toBeCloseTo(800, 0);
+        // Back to front now: B, D, A, C; each Token's badges two above its art.
+        expect(zOf(container, b.id)).toBeLessThan(zOf(container, d.id));
+        expect(zOf(container, d.id)).toBeLessThan(zOf(container, a.id));
+        expect(zOf(container, a.id)).toBeLessThan(zOf(container, c.id));
+        for (const t of [a, b, c, d]) expect(zOfBadges(container, t.id)).toBe(zOf(container, t.id) + 2);
+        const dd = delta(drawn.token, before.token);
+        expect(dd[a.id]).toBeGreaterThan(0);
+        expect(dd[b.id]).toBe(0);
+        expect(dd[c.id]).toBe(0);
+        expect(dd[d.id]).toBe(0);
     });
 });
