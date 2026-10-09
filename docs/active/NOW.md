@@ -57,6 +57,27 @@ changelog and `docs/archive/`).*
 5. **Brief 20 live-game check** once the Academies and master Tokens exist.
 6. **T-111**: engine bench timings are load-sensitive; trust the work check.
 
+**Handoff (2026-10-09, director session hit its usage limit):**
+- Merged to `main` today: brief 50 (drag), T-129 (carried Token pauses),
+  brief 70 A9 (ambush rules). Suite green except `TerrainRegistry.test.js`,
+  which reads the owner's half-moved terrain art on disk (owner's area).
+- **Ready to verify and merge, unmerged:** Atlas **A1** on `crunch/atlas-a1`
+  (worktree `.claude/worktrees/atlas-a1`): Regions, travel, save schema
+  0.8.1, cap 128; the agent reports 4297 tests green and same work. Run the
+  gate yourself, merge, push. Its parked questions: bump the app version to
+  0.8.1 at the Atlas milestone (recommended) and loot banked on leaving
+  counts for collect quests (built).
+- **Still running when the session ended:** Atlas **A4** pure modules on
+  `crunch/atlas-a4` (worktree `atlas-a4`; told to record node biomes and a
+  cell terrain map per the terrain-grid ruling f39323f8) and brief **60 P1**
+  on `crunch/optimize` (worktree `o6`; told to plan for caps 128 and 256).
+  Their reports land in their worktrees' branches; read the branch log and
+  verify as usual.
+- Next after those: A2 (respawning fixtures) then A3a (demolition job) on
+  the A1 line; brief 60 P2 fixes in ranked order; the Atlas UI slices need
+  eye-checks. Leftover worktree folders `d`, `t129`, `atlas-a9` are pruned
+  from git but busy on disk; delete when free.
+
 **Director notes (2026-10-08):** brief 20's four slices ran as one engineer
 (R1) then three parallel builders in worktrees (R2a, R2b, R3) on Opus; every
 report was checked against the code and the running game before merging, and
