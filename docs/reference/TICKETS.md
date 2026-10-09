@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-124**
+**Next free number: T-125**
 
 ---
 
@@ -83,6 +83,7 @@ here.
 | T-042 | P3 | open | Settings toggle "Item Fly Particles" still says "between cards and inventory". | FB §5 |
 | T-043 | P3 | open | Empty-string duplicate React key logged on save load. *Unverified since 2026-09-21.* | FMR |
 | T-119 | P2 | open | **The game will be translated** (owner 2026-10-08). Pick how player-facing text is stored (a strings file per language and a lookup), then new UI keeps its text there; converting existing text waits for after the crunch. Until it exists, keep each new screen's text together, not scattered through logic. | ideas.md |
+| T-124 | P2 | open | **Credits register** (owner 2026-10-08): a `CREDITS.md` listing every third-party asset pack in `public/assets/` (today Kenney RPG audio and three ZapSplat packs in `audio/sfx/`, plus `audio/bgm/`), its licence file and the exact attribution wording the licence asks for. Whoever adds an asset adds its line. An in-game Credits screen comes before release. | concept_tone_and_world.md |
 
 ### Cleanup — dead code, vestiges, lint *(safe, invisible; delete tests only with the code they test)*
 

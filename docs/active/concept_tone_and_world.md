@@ -116,7 +116,7 @@ to look at.
 - **Sources**: placeholder SFX and BGM already exist; SFX come from
   free-with-attribution packs (Kenney RPG audio, three ZapSplat packs, in
   `public/assets/audio/`). **Keep track of every asset used, to credit it
-  properly**: a credits register now (T-120), an in-game Credits screen in
+  properly**: a credits register now (T-124), an in-game Credits screen in
   Settings before release.
 - **Music**: a friend is writing the soundtrack; maybe a few tracks, maybe
   one. Many players will turn music off.

@@ -94,7 +94,7 @@ the first outside playtest, modding.
   the game. Today: up to 40 % overlap, 164 u flag radius.
 - **Translation** setup: ticket **T-119** (the game will be translated, owner
   2026-10-08). Pick how text is stored; new UI uses it.
-- **Credits register**: T-120. List every asset pack, its licence and the
+- **Credits register**: T-124. List every asset pack, its licence and the
   attribution wording, so nothing used goes uncredited.
 - **"No work in range." bubble goes** (D1 pops rule): with the brief 30
   follow-up.
