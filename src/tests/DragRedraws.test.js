@@ -2,7 +2,7 @@
 import { describe, it, expect, beforeEach, beforeAll, afterAll, afterEach, vi } from 'vitest';
 import React from 'react';
 import { render, cleanup, fireEvent, act } from '@testing-library/react';
-import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
+import { DeckDndProvider, DropTarget } from '../ui/dnd/DndKit.jsx';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
@@ -33,7 +33,7 @@ vi.mock('../ui/components/drawer/HeroInspectionSheet.jsx', () => ({
 
 // Render counters: each wraps a part drawn once per render of the thing it belongs to. A Token's
 // art, a flag's mark and a hero's figure are not redrawn unless their owner rendered.
-const drawn = { token: new Map(), flag: new Map(), matHero: new Map(), dockHero: new Map() };
+const drawn = { token: new Map(), flag: new Map(), matHero: new Map(), dockHero: new Map(), mat: new Map() };
 const bump = (map, key) => map.set(key, (map.get(key) || 0) + 1);
 vi.mock('../ui/components/board/TokenHitArt.jsx', async (orig) => {
     const real = await orig();
@@ -44,6 +44,12 @@ vi.mock('../ui/components/board/FlagMark.jsx', async (orig) => {
     const real = await orig();
     const FlagMark = (props) => { if (props.alt) bump(drawn.flag, props.alt); return real.FlagMark(props); };
     return { ...real, FlagMark, default: FlagMark };
+});
+// Drawn on every render of the mat itself (MatBoard), and of nothing else.
+vi.mock('../ui/components/board/HeroBubbleLayer.jsx', async (orig) => {
+    const real = await orig();
+    const HeroBubbleLayer = (props) => { bump(drawn.mat, 'MatBoard'); return real.HeroBubbleLayer(props); };
+    return { ...real, HeroBubbleLayer, default: HeroBubbleLayer };
 });
 vi.mock('../ui/components/board/AnimatedHeroSprite.jsx', async (orig) => {
     const real = await orig();
@@ -67,7 +73,7 @@ const delta = (map, before) => {
     for (const [k, n] of map) out[k] = n - (before.get(k) || 0);
     return out;
 };
-const snap = () => ({ token: new Map(drawn.token), flag: new Map(drawn.flag), matHero: new Map(drawn.matHero), dockHero: new Map(drawn.dockHero) });
+const snap = () => ({ token: new Map(drawn.token), flag: new Map(drawn.flag), matHero: new Map(drawn.matHero), dockHero: new Map(drawn.dockHero), mat: new Map(drawn.mat) });
 const ptr = (x, y, extra = {}) => ({ pointerId: 1, clientX: x, clientY: y, isPrimary: true, button: 0, ...extra });
 
 beforeAll(() => Flags.init());
@@ -106,12 +112,15 @@ describe('⭐ a Token drag on a full mat redraws the Token in the hand and nothi
         const view = render(
             h(EngineContext.Provider, { value: { GameState, EventBus } },
                 h(DeckDndProvider, null,
-                    h(Board, { onInspectToken: () => {}, onClearInspect: () => {} })))
+                    h(Board, { onInspectToken: () => {}, onClearInspect: () => {} }),
+                    // Another drop target, beside the mat.
+                    h(DropTarget, { id: 'beside', accepts: () => true, onDrop: () => false, 'data-testid': 'beside' })))
         );
         // jsdom lays nothing out: the mat's drop target and its board both stand at the
         // viewport's corner at their natural size, so a client point IS a mat point.
         view.container.querySelector('[data-board-origin]').getBoundingClientRect = () => box(0, 0, matW(), matH());
         view.container.querySelector('[data-mat-board]').getBoundingClientRect = () => box(0, 0, matW(), matH());
+        view.getByTestId('beside').getBoundingClientRect = () => box(matW() + 100, 100, 200, 200);
         return { a, b, c, ...view };
     }
     const hitOf = (container, id) => container.querySelector(`[data-token-hit="${id}"]`);
@@ -149,6 +158,23 @@ describe('⭐ a Token drag on a full mat redraws the Token in the hand and nothi
         }
         expect(Object.values(delta(drawn.token, before.token)).every(n => n === 0)).toBe(true);
         act(() => { fireEvent.pointerUp(document, ptr(702, 382)); });
+    });
+
+    it('a target change: carrying a Token off the mat into another drop target redraws nothing on the mat', () => {
+        const { container } = scene();
+        const a = BoardState.tokens().find(t => t.x === 600 && t.y === 400);
+        act(() => {
+            fireEvent.pointerDown(hitOf(container, a.id), ptr(600, 400));
+            fireEvent.pointerMove(document, ptr(630, 400));
+        });
+        act(() => { fireEvent.pointerMove(document, ptr(700, 400)); });
+        const before = snap();
+        // Off the mat and into the other target, then back onto the mat.
+        act(() => { fireEvent.pointerMove(document, ptr(matW() + 200, 200)); });
+        act(() => { fireEvent.pointerMove(document, ptr(700, 420)); });
+        expect(Object.values(delta(drawn.token, before.token)).every(n => n === 0)).toBe(true);
+        expect(delta(drawn.mat, before.mat).MatBoard || 0).toBe(0);
+        act(() => { fireEvent.pointerUp(document, ptr(700, 420)); });
     });
 
     it('drop: only the moved Token redraws, and it stands where it was let go', async () => {

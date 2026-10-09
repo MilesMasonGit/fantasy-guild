@@ -46,14 +46,16 @@ import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
  * still be clicked.
  * The hover pass steps aside entirely while a drag is live: dnd-kit owns the pointer then, and
  * re-ordering Tokens under a drag made the ghost flicker.
+ * ⚠️ Memoised: its parent holds the mat's drop target, which dnd-kit re-renders at every drag
+ * start, end and change of target.
  */
-export const MatBoard = ({
+export const MatBoard = React.memo(function MatBoard({
     onInspectToken,
     onClearInspect,
     onOpenRecipes,
     inspectedHeroId = null,
     inspectedTokenId = null
-}) => {
+}) {
     // Dev only (an empty function in production): MatBoard's OWN renders for the Perf HUD,
     // beside Board.jsx's subtree Profiler.
     usePerfRenderCount('MatBoard');
@@ -453,7 +455,7 @@ export const MatBoard = ({
             )}
         </div>
     );
-};
+});
 
 /**
  * Disallow mode's edge and hint: above the speech bubbles (`MAT_Z.HERO_BUBBLE`, 860).
