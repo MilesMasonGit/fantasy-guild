@@ -162,7 +162,8 @@ says what it writes: a Base Map has a biome, points, weighted nodes, its own
 enemy camps and treasures, and its ground; a Modifier has effects (more of a
 node, a better node instead, an enemy camp, a treasure). The generation engine
 reads it (`systems/atlas/mapItems.js` → `Budget.js`); inspecting one in the Bank
-lists what it writes. A claimed bounty pays a map 25 % of the time, drawn at the
+lists what it writes. Settling a Region takes the slotted maps from the Bank
+(`Cartography.js`). A claimed bounty pays a map 25 % of the time, drawn at the
 claim, weighted by each map's bounty weight. The simulator prices no map. Map
 bursts, the Map shop, the Explore skill and the old Map catalogue
 (`data/maps.json`) are retired; the last Map Token, **Volcanic Island**, does

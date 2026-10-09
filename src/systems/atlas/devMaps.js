@@ -4,7 +4,7 @@ import { HALL_CLEARING } from './Layout.js';
 import { terrainAt } from './TerrainMap.js';
 
 /**
- * Map recipes for trying the Atlas from the dev console before maps are items (brief 70 A5):
+ * Map recipes for trying the Atlas from the dev console in a game with no authored map items:
  * `Game.Atlas.devGrantMaps()`, `devPreview(['forest', 'overgrown'])`, `devSettle(...)`. They name
  * today's Tokens; every number is a placeholder, not content.
  *

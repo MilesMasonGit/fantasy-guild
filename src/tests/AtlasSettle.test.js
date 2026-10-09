@@ -13,6 +13,7 @@ import * as BoardState from '../systems/board/BoardState.js';
 import * as MatCap from '../systems/board/MatCap.js';
 import * as EffectActions from '../systems/board/EffectActions.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
+import { registerItems } from '../config/registries/itemRegistry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { matW, matH } from '../config/matGeometry.js';
 import * as Atlas from '../systems/atlas/Atlas.js';
@@ -79,6 +80,23 @@ const GIANT = Object.freeze({
     nodes: [{ typeId: COLOSSUS, weight: 1 }]
 });
 
+/** WOOD and THICKET as the Map editor authors them: items, banked like any item. */
+const WOOD_ITEM = 'map_test_wood';
+const THICKET_ITEM = 'mod_test_thicket';
+const NOT_A_MAP = 'fixture_atlas_plank';
+registerItems({
+    [WOOD_ITEM]: {
+        id: WOOD_ITEM, name: 'Wood Map', type: 'map', stackable: true,
+        cartography: { biome: WOOD.biome, points: WOOD.points, nodes: WOOD.nodes.map(n => ({ ...n })), camps: [], treasures: [] }
+    },
+    [THICKET_ITEM]: {
+        id: THICKET_ITEM, name: 'Thicket', type: 'modifier', stackable: true,
+        cartography: { effects: THICKET.effects.map(e => ({ ...e })) }
+    },
+    [NOT_A_MAP]: { id: NOT_A_MAP, name: 'Atlas Plank', type: 'material', stackable: true }
+});
+const bank = (id) => InventoryManager.getItemCount(id);
+
 const copy = (v) => JSON.parse(JSON.stringify(v));
 const centre = () => ({ x: Math.round(matW() / 2), y: Math.round(matH() / 2) });
 const regionCount = () => Object.keys(GameState.state.atlas.regions).length;
@@ -123,17 +141,81 @@ afterAll(() => {
     resetMatTuning();
 });
 
-describe('recipeOf: the seam an authored map item will come through', () => {
+describe('recipeOf: a recipe as it is, a map item as the recipe its Cartography block describes', () => {
     it('a recipe comes back as it is', () => {
         expect(Atlas.recipeOf(WOOD)).toBe(WOOD);
         expect(Atlas.recipeOf(THICKET)).toBe(THICKET);
     });
 
-    it('anything else is refused loudly, naming what it was and where maps will come from', () => {
-        expect(() => Atlas.recipeOf('item_forest_map')).toThrow(/"item_forest_map" is not a map recipe.*A5/);
-        expect(() => Atlas.recipeOf({ id: 'item_forest_map', type: 'map' })).toThrow(TypeError);
+    it('a map item, by id or as the item, becomes its recipe', () => {
+        const { name: _name, ...wood } = WOOD;
+        expect(Atlas.recipeOf(WOOD_ITEM)).toEqual({ ...wood, id: WOOD_ITEM });
+        expect(Atlas.recipeOf({ id: 'item_blank_map', type: 'map' }))
+            .toEqual({ id: 'item_blank_map', kind: 'base', biome: null, points: 0, nodes: [] });
+        expect(Atlas.recipeOf(THICKET_ITEM)).toEqual({ id: THICKET_ITEM, kind: 'modifier', effects: THICKET.effects });
+    });
+
+    it('anything else is refused loudly, naming what it was', () => {
+        expect(() => Atlas.recipeOf('item_forest_map')).toThrow(/"item_forest_map" is not a map recipe or a map item/);
+        expect(() => Atlas.recipeOf(NOT_A_MAP)).toThrow(TypeError);
+        expect(() => Atlas.recipeOf({ id: NOT_A_MAP, type: 'material' })).toThrow(TypeError);
         expect(() => Atlas.recipeOf({ id: 'x', kind: 'plains' })).toThrow(/kind "plains"/);
         expect(() => Atlas.recipeOf(null)).toThrow(TypeError);
+    });
+});
+
+describe('maps in the Bank: what the table may slot, and what Settle takes', () => {
+    it('the Bank\'s map items are held, by id; other items are not', () => {
+        InventoryManager.addItem(WOOD_ITEM, 2);
+        InventoryManager.addItem(NOT_A_MAP, 5);
+        Cartography.grant([HILLS], 1);
+        expect(Atlas.heldCount(WOOD_ITEM)).toBe(2);
+        expect(Atlas.heldCount(THICKET_ITEM)).toBe(0);
+        expect(Atlas.held().map(h => [h.recipe.id, h.count])).toEqual([[WOOD_ITEM, 2], [HILLS.id, 1]]);
+        // A map item granted from the console goes where map items live.
+        Cartography.grant([WOOD_ITEM], 1);
+        expect(bank(WOOD_ITEM)).toBe(3);
+    });
+
+    it('settling from Bank-held map items takes exactly those items, and nothing else', () => {
+        InventoryManager.addItem(WOOD_ITEM, 2);
+        InventoryManager.addItem(THICKET_ITEM, 1);
+        InventoryManager.addItem(NOT_A_MAP, 5);
+        Cartography.grant([WOOD], 1);
+        const result = Atlas.settle({ ingredients: [WOOD_ITEM, THICKET_ITEM], seed: 9 });
+        expect(result.success).toBe(true);
+        expect([bank(WOOD_ITEM), bank(THICKET_ITEM), bank(NOT_A_MAP)]).toEqual([1, 0, 5]);
+        expect(Atlas.heldCount(WOOD)).toBe(1);
+        expect(result.region).toMatchObject({ ingredients: [WOOD_ITEM, THICKET_ITEM], practicalName: 'Thicket Wood' });
+    });
+
+    it('a Region settled from an authored Forest Map item gets the same layout as from the fixture recipe', () => {
+        InventoryManager.addItem(WOOD_ITEM, 1);
+        const fromRecipe = Atlas.preview([WOOD], { seed: 13 });
+        const { region, preview } = Atlas.settle({ ingredients: [WOOD_ITEM], seed: 13 });
+        expect(preview.layout).toEqual(fromRecipe.layout);
+        expect(preview.summary.entries).toEqual(fromRecipe.summary.entries);
+        expect(tokensOf(region.board).map(t => [t.typeId, t.x, t.y]))
+            .toEqual(fromRecipe.layout.nodes.map(n => [n.typeId, n.x, n.y]));
+    });
+
+    it('a map the Bank lacks a copy of is refused, taking nothing and writing nothing', () => {
+        InventoryManager.addItem(WOOD_ITEM, 1);
+        const before = regionCount();
+        const twice = Atlas.settle({ ingredients: [WOOD_ITEM, WOOD_ITEM], seed: 1 });
+        expect(twice).toMatchObject({ success: false, reason: TEXT.REFUSE_NOT_HELD });
+        expect(twice.missing).toEqual([{ id: WOOD_ITEM, needed: 2, held: 1 }]);
+        const none = Atlas.settle({ ingredients: [WOOD_ITEM, THICKET_ITEM], seed: 1 });
+        expect(none.missing).toEqual([{ id: THICKET_ITEM, needed: 1, held: 0 }]);
+        expect(bank(WOOD_ITEM)).toBe(1);
+        expect(regionCount()).toBe(before);
+    });
+
+    it('a Bank map and a dev-console recipe settle together, each taken from where it is held', () => {
+        InventoryManager.addItem(WOOD_ITEM, 1);
+        Cartography.grant([THICKET], 1);
+        expect(Atlas.settle({ ingredients: [WOOD_ITEM, THICKET], seed: 2 }).success).toBe(true);
+        expect([bank(WOOD_ITEM), Atlas.heldCount(THICKET)]).toEqual([0, 0]);
     });
 });
 
