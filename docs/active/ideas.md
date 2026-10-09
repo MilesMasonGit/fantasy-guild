@@ -280,7 +280,8 @@ the first outside playtest, modding.
 
 ## Being interviewed
 
-*(none)*
+- **D1 Ground rules** → [concept_tone_and_world.md](concept_tone_and_world.md):
+  tone, words and story settled 2026-10-08; "pops of activity" and sound next.
 
 ## Moved on
 
