@@ -77,9 +77,10 @@ the first outside playtest, modding.
 - **Accessibility**: heroes are told apart by 8 flag colours; add
   colour-blind-safe colours and a second cue (pattern or initial). Text size
   settings already exist. · could ride with the flag change above.
-- **The return experience, first pass**: brief 40 (running) is building the
-  "While you were away" summary now. At its eye-check, judge it as a present,
-  problems framed as "what to fix next". The full design is in D7.
+- **The return experience, first pass**: brief 40 built the "While you were
+  away" summary. Owner (D7): a plain report focused on items and XP gained,
+  a small notable-events section, enemies defeated. See
+  [concept_living_game.md](concept_living_game.md).
 
 ### Quick changes and rulings
 
@@ -175,20 +176,12 @@ constellations (Hearth, Vault, Compass, Well), ranked stars, neighbour and
 material gates, camera-move transitions. The starter upgrade list is written
 later, with the content work.
 
-### D7 — A living game
+### D7 — A living game ✅
 
-- **Events system**: random events that keep the player engaged, e.g. a
-  **shooting star** that lands and can be mined, a visit from a **frog
-  prince**. Ask: what happens to events while offline, and should they only be
-  treats (the Atlas concept: combat isn't a "random chaotic event")?
-- **The return experience**: offline runs "same rules as playing" (fights,
-  wounds, empty seeds). Design the return as a whole: the summary should feel
-  like a present, problems framed as "what to fix next".
-- **Hero identity**: every recruit is identical with a random name, max 8. A
-  quirk, a favourite task or their own bubble lines would make heroes worth
-  caring about.
-- **Effects speak through bubbles**: effects and rules firing show up through
-  the speech bubble system (applies D1's "pops of activity").
+Done 2026-10-09 → [concept_living_game.md](concept_living_game.md): events
+(treats, a few per hour, landings, visitors, Region happenings), dialogue in
+bubbles with requests as quest Tokens, the return summary as a plain report,
+hero recolouring.
 
 ### D8 — Quests and the tutorial
 
@@ -238,6 +231,8 @@ later, with the content work.
 
 ## Moved on
 
+- **D7 A living game** (events, dialogue, the return, hero identity) →
+  [concept_living_game.md](concept_living_game.md), done 2026-10-09.
 - **D6 The Guild Hall** (constellation screen, upgrade content, transitions)
   → [concept_guild_hall.md](concept_guild_hall.md), done 2026-10-09.
 - **D5 Knowledge** (dependency map, encyclopedia, collection log, Bank at
