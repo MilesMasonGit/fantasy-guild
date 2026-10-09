@@ -7,7 +7,8 @@
 //   npm run bench:draw -- --only=S2,bank  some scenes
 //   npm run bench:draw -- --cpu=4         CPU slowdowns to run (default 1,4)
 //   npm run bench:draw -- --switches      the cost table: S2 all-on, then once per switch off
-//                                         (perf, 1× unless --cpu is given)
+//                                         (perf, 1× unless --cpu is given; --only=cap128 for
+//                                         another board)
 //   npm run bench:draw -- --repeats=3     runs per scene (the median is reported, with the spread)
 //   npm run bench:draw -- --compare       compare with bench/draw-baseline.json
 //   npm run bench:draw -- --save-baseline write this run as bench/draw-baseline.json
@@ -102,7 +103,9 @@ async function main() {
         args
     };
 
-    const scenes = (args.switches ? ['S2'] : (args.only || SCENE_IDS)).map(id => SCENES[id]);
+    // The cost table runs on one board: S2, or the one `--only` names (a cap board, say).
+    const switchScene = SCENES[args.only?.[0] ?? 'S2'];
+    const scenes = (args.switches ? [switchScene.id] : (args.only || SCENE_IDS)).map(id => SCENES[id]);
     console.log(`Fantasy Guild drawing bench — ${meta.commit} on ${meta.branch}${meta.dirty && Object.values(meta.dirty).some(Boolean) ? ` (uncommitted: ${Object.entries(meta.dirty).filter(([, v]) => v).map(([k]) => k).join(', ')})` : ''} · ${meta.machine} · ${meta.cpu}`);
 
     const servers = {};
@@ -157,15 +160,15 @@ async function main() {
                     for (let r = 0; r < args.repeats; r++) {
                         for (const sw of plan) {
                             const lbl = sw ? `${sw} off` : 'all on';
-                            process.stdout.write(`  S2 ${lbl}…`);
-                            const m = await measureWithRetry(chrome, baseUrl, SCENES.S2, cpu, args, sw ? [sw] : []);
+                            process.stdout.write(`  ${switchScene.name} ${lbl}…`);
+                            const m = await measureWithRetry(chrome, baseUrl, switchScene, cpu, args, sw ? [sw] : []);
                             console.log(` ${m.fps} fps, work p50 ${m.workP50} ms${m.reject ? ` ✗ ${m.reject}` : ''}`);
                             if (m.reject) failed = true;
                             if (sw) (offRuns[sw] ||= []).push(m); else allOn.push(m);
                         }
                     }
                     cost = { cond, ...costTable(allOn, offRuns), raw: { allOn, offRuns } };
-                    all[cond].S2 = allOn;
+                    all[cond][switchScene.id] = allOn;
                     continue;
                 }
 
@@ -223,7 +226,7 @@ async function main() {
     }
 
     if (cost) {
-        console.log(`\nCost table, ${cost.cond}: S2 with one system's drawing switched off. Positive saved = that system's cost.\n${costTableText(cost)}`);
+        console.log(`\nCost table, ${cost.cond}: ${switchScene.name} with one system's drawing switched off. Positive saved = that system's cost.\n${costTableText(cost)}`);
     }
 
     const abSummary = {};

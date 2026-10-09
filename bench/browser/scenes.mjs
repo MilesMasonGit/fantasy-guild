@@ -109,10 +109,14 @@ export const SCENES = {
     shop: { id: 'shop', name: 'S2 + Shop open', stress: 'realistic', ui: openShop },
     notify: { id: 'notify', name: 'S2 + notification burst', stress: 'realistic', ui: notifyBurst },
     loot: { id: 'loot', name: 'S2 + loot burst', stress: 'realistic', ui: lootBurst },
-    inspect: { id: 'inspect', name: 'S2 + hero sheet open', stress: 'realistic', ui: openInspect }
+    inspect: { id: 'inspect', name: 'S2 + hero sheet open', stress: 'realistic', ui: openInspect },
+    // Not in the default run (`--only=cap128,camp128,cap256`): S2's mix filled to the Token cap.
+    cap128: { id: 'cap128', name: 'S2 mix at cap 128', stress: 'cap128' },
+    camp128: { id: 'camp128', name: 'Starter Camp at 128', stress: 'camp128' },
+    cap256: { id: 'cap256', name: 'S2 mix at cap 256', stress: 'cap256' }
 };
 
-const STRESS_IDS = { quiet: 'S1', realistic: 'S2', torture: 'S3' };
+const STRESS_IDS = { quiet: 'S1', realistic: 'S2', torture: 'S3', cap128: 'C128', camp128: 'K128', cap256: 'C256' };
 
 export function sceneUrl(base, scene, offSwitches = []) {
     const q = new URLSearchParams({ stress: scene.stress });

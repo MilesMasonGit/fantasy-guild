@@ -22,6 +22,7 @@ describe('drag bench options', () => {
     it('runs on S2 unless --board=S3 asks for the torture board', () => {
         expect(parseArgs([]).board).toBe('S2');
         expect(parseArgs(['--board=S3']).board).toBe('S3');
+        expect(parseArgs(['--board=cap128']).board).toBe('cap128');
         expect(() => parseArgs(['--board=S9'])).toThrow(/--board/);
     });
 

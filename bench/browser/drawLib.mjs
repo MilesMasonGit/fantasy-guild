@@ -14,6 +14,9 @@ export const DRAW_SWITCHES = [
 /** Scene ids, in run order. The UI scenes are all on the S2 board. */
 export const SCENE_IDS = ['S1', 'S2', 'S3', 'bank', 'shop', 'notify', 'loot', 'inspect'];
 
+/** Scenes run only when `--only` names them: S2's mix filled to a Token cap (brief 60). */
+export const EXTRA_SCENE_IDS = ['cap128', 'camp128', 'cap256'];
+
 export const DEFAULTS = {
     settleS: 20,
     windowS: 20,
@@ -84,10 +87,11 @@ export function parseArgs(argv) {
         }
     }
     if (args.only) {
-        const known = new Set([...SCENE_IDS.map(s => s.toLowerCase())]);
+        const ids = [...SCENE_IDS, ...EXTRA_SCENE_IDS];
+        const known = new Set(ids.map(s => s.toLowerCase()));
         const bad = args.only.filter(s => !known.has(s.toLowerCase()));
-        if (bad.length) throw new Error(`unknown scene ${bad.join(', ')}; known: ${SCENE_IDS.join(', ')}`);
-        args.only = args.only.map(s => SCENE_IDS.find(id => id.toLowerCase() === s.toLowerCase()));
+        if (bad.length) throw new Error(`unknown scene ${bad.join(', ')}; known: ${ids.join(', ')}`);
+        args.only = args.only.map(s => ids.find(id => id.toLowerCase() === s.toLowerCase()));
     }
     // The cost table is one condition: the plan's "perf build, 1×" unless --cpu says otherwise.
     if (args.switches && !args.cpuGiven) args.cpus = [1];
@@ -98,6 +102,7 @@ export function parseArgs(argv) {
     args.settleS ??= args.quick ? DEFAULTS.quickSettleS : DEFAULTS.settleS;
     args.windowS ??= args.quick ? DEFAULTS.quickWindowS : DEFAULTS.windowS;
     if (args.saveBaseline && (args.ab || args.switches)) throw new Error('--save-baseline cannot be combined with --ab or --switches');
+    if (args.switches && args.only && args.only.length !== 1) throw new Error('--switches runs on one board: --only names at most one scene');
     return args;
 }
 
@@ -131,8 +136,14 @@ export function metricsOf(report) {
         intervalP95: f.p95 ?? null,
         intervalP99: f.p99 ?? null,
         workP50: w.p50 ?? null,
+        workP95: w.p95 ?? null,
         workP99: w.p99 ?? null,
+        workMax: w.max ?? null,
         inBudgetPct: w.pctAtOrUnder?.['6.06ms'] ?? null,
+        // A 60 Hz screen's budget: what a slow laptop (the 4x condition) has per frame.
+        in16Pct: w.pctAtOrUnder?.['16.7ms'] ?? null,
+        intervalP999: f.p999 ?? null,
+        intervalMax: f.max ?? null,
         loafCount: report?.longAnimationFrames?.count ?? null,
         loafMaxMs: report?.longAnimationFrames?.maxMs ?? null,
         tickP50: report?.tick?.p50 ?? null,
@@ -160,6 +171,7 @@ export function rejectReason(m) {
 
 export const NUMERIC_KEYS = [
     'fps', 'intervalP50', 'intervalP95', 'intervalP99', 'workP50', 'workP99', 'inBudgetPct',
+    'workP95', 'workMax', 'in16Pct', 'intervalP999', 'intervalMax',
     'loafCount', 'loafMaxMs', 'tickP50', 'tickP99', 'ticksPerS', 'matOwnPerS', 'matSubtreePerS',
     'dockPerS', 'drawerPerS', 'domNodes', 'heapMb', 'tokens'
 ];
@@ -169,7 +181,7 @@ export function aggregate(runs) {
     const out = { n: runs.length };
     for (const k of NUMERIC_KEYS) out[k] = median(runs.map(r => r[k]).filter(v => v !== null && v !== undefined));
     out.spread = {};
-    for (const k of ['fps', 'workP50', 'workP99', 'inBudgetPct']) {
+    for (const k of ['fps', 'workP50', 'workP99', 'inBudgetPct', 'in16Pct', 'intervalP999']) {
         const v = runs.map(r => r[k]).filter(Number.isFinite);
         out.spread[k] = v.length ? { min: Math.min(...v), max: Math.max(...v) } : null;
     }
@@ -194,7 +206,7 @@ export function costTable(allOnRuns, offBySwitch) {
         const workSavedMs = base.workP50 - off.workP50;
         const p99SavedMs = base.workP99 - off.workP99;
         return {
-            switch: name, fps: off.fps, workP50: off.workP50, workP99: off.workP99, inBudgetPct: off.inBudgetPct,
+            switch: name, fps: off.fps, workP50: off.workP50, workP99: off.workP99, inBudgetPct: off.inBudgetPct, in16Pct: off.in16Pct,
             fpsGain: round(fpsGain, 1), workSavedMs: round(workSavedMs, 3), p99SavedMs: round(p99SavedMs, 2),
             matSubtreePerS: off.matSubtreePerS, domNodes: off.domNodes,
             // Frame work is the sensitive number (fps sits at the frame clock's cap until frames
@@ -281,18 +293,21 @@ export function table(header, lines) {
 }
 
 export function sceneTable(rows) {
-    const header = ['scene', 'fps', 'interval p50/p95/p99 ms', 'work p50/p99 ms', '≤6.06 %', 'LoAF n/max', 'tick p50/p99 ms', 'Mat own/s', 'mat sub/s', 'dock/s', 'DOM', 'heap MB'];
+    const header = ['scene', 'fps', 'interval p50/p95/p99 ms', 'interval p99.9/max', 'work p50/p95/p99 ms', '≤6.06 %', '≤16.7 %', 'LoAF n/max', 'tick p50/p99 ms', 'Mat own/s', 'mat sub/s', 'dock/s', 'Tokens', 'DOM', 'heap MB'];
     const lines = rows.map(({ label, m }) => [
         label,
         fmt(m.fps) + (m.n > 1 && m.spread?.fps ? ` (${fmt(m.spread.fps.min)}–${fmt(m.spread.fps.max)})` : ''),
         `${fmt(m.intervalP50, 2)}/${fmt(m.intervalP95, 2)}/${fmt(m.intervalP99, 2)}`,
-        `${fmt(m.workP50, 2)}/${fmt(m.workP99, 2)}`,
+        `${fmt(m.intervalP999, 1)}/${fmt(m.intervalMax, 1)}`,
+        `${fmt(m.workP50, 2)}/${fmt(m.workP95, 2)}/${fmt(m.workP99, 2)}`,
         fmt(m.inBudgetPct),
+        fmt(m.in16Pct),
         `${fmt(m.loafCount, 0)}/${fmt(m.loafMaxMs, 0)}`,
         `${fmt(m.tickP50, 2)}/${fmt(m.tickP99, 2)}`,
         fmt(m.matOwnPerS),
         fmt(m.matSubtreePerS),
         fmt(m.dockPerS),
+        fmt(m.tokens, 0),
         fmt(m.domNodes, 0),
         fmt(m.heapMb)
     ]);
@@ -300,13 +315,13 @@ export function sceneTable(rows) {
 }
 
 export function costTableText(ct) {
-    const header = ['switch off', 'fps', 'fps gain', 'work p50 ms', 'saved p50 ms', 'work p99 ms', 'saved p99 ms', '≤6.06 %', 'mat sub/s', 'DOM', 'above noise'];
+    const header = ['switch off', 'fps', 'fps gain', 'work p50 ms', 'saved p50 ms', 'work p99 ms', 'saved p99 ms', '≤6.06 %', '≤16.7 %', 'mat sub/s', 'DOM', 'above noise'];
     const a = ct.allOn;
     const lines = [[
-        `(all on, n=${a.n})`, fmt(a.fps), '', fmt(a.workP50, 2), '', fmt(a.workP99, 2), '', fmt(a.inBudgetPct), fmt(a.matSubtreePerS), fmt(a.domNodes, 0), ''
+        `(all on, n=${a.n})`, fmt(a.fps), '', fmt(a.workP50, 2), '', fmt(a.workP99, 2), '', fmt(a.inBudgetPct), fmt(a.in16Pct), fmt(a.matSubtreePerS), fmt(a.domNodes, 0), ''
     ]];
     for (const r of ct.rows) {
-        lines.push([r.switch, fmt(r.fps), fmt(r.fpsGain), fmt(r.workP50, 2), fmt(r.workSavedMs, 2), fmt(r.workP99, 2), fmt(r.p99SavedMs, 2), fmt(r.inBudgetPct), fmt(r.matSubtreePerS), fmt(r.domNodes, 0), r.aboveNoise ? 'yes' : 'no']);
+        lines.push([r.switch, fmt(r.fps), fmt(r.fpsGain), fmt(r.workP50, 2), fmt(r.workSavedMs, 2), fmt(r.workP99, 2), fmt(r.p99SavedMs, 2), fmt(r.inBudgetPct), fmt(r.in16Pct), fmt(r.matSubtreePerS), fmt(r.domNodes, 0), r.aboveNoise ? 'yes' : 'no']);
     }
     return table(header, lines) + `\nnoise = the spread (max − min) of the all-on runs: fps ${fmt(ct.noise.fps)}, work p50 ${fmt(ct.noise.workP50, 2)} ms, work p99 ${fmt(ct.noise.workP99, 2)} ms. "above noise" = the p50 saving is wider than that spread.`;
 }

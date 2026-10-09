@@ -73,33 +73,41 @@ export function benchCacheDir(checkoutRoot) {
     return path.join(checkoutRoot, 'node_modules', `.vite-bench-${path.basename(checkoutRoot)}-${key}`);
 }
 
-/** `vite build --mode perf` into dist-perf/. Returns how long it took. */
-export function buildPerf() {
+/**
+ * `vite build --mode perf` into dist-perf/. Returns how long it took.
+ * `profile`: unminified, with source maps, into its own dist-perf-prof/ (`bench/profile.mjs`), so
+ * a profile names the game's functions and files and the measuring build is never replaced.
+ */
+export function buildPerf({ profile = false } = {}) {
     const t0 = Date.now();
-    const res = spawnSync(process.execPath, [path.join(root, 'node_modules', 'vite', 'bin', 'vite.js'), 'build', '--mode', 'perf', '--logLevel', 'error'], {
+    const extra = profile ? ['--minify', 'false', '--sourcemap', '--outDir', PROFILE_OUT_DIR] : [];
+    const res = spawnSync(process.execPath, [path.join(root, 'node_modules', 'vite', 'bin', 'vite.js'), 'build', '--mode', 'perf', '--logLevel', 'error', ...extra], {
         cwd: root, stdio: ['ignore', 'inherit', 'inherit'], windowsHide: true
     });
     if (res.status !== 0) throw new Error(`vite build --mode perf failed (exit ${res.status})`);
     return (Date.now() - t0) / 1000;
 }
 
-/** How old dist-perf/ is, for `--no-build`. */
-export function perfBuildInfo() {
-    const index = path.join(root, 'dist-perf', 'index.html');
+/** The profiling build's folder (git-ignored). */
+export const PROFILE_OUT_DIR = 'dist-perf-prof';
+
+/** How old dist-perf/ (or another build folder) is, for `--no-build`. */
+export function perfBuildInfo(outDir = 'dist-perf') {
+    const index = path.join(root, outDir, 'index.html');
     if (!fs.existsSync(index)) return null;
     return { builtAt: fs.statSync(index).mtime };
 }
 
-/** Serve dist-perf/ (the production build plus the measuring harness). */
-export async function startPerfServer({ port } = {}) {
-    if (!perfBuildInfo()) throw new Error('dist-perf/ is missing: run without --no-build (or npm run build:perf)');
+/** Serve dist-perf/ (the production build plus the measuring harness), or another build folder. */
+export async function startPerfServer({ port, outDir = 'dist-perf' } = {}) {
+    if (!perfBuildInfo(outDir)) throw new Error(`${outDir}/ is missing: run without --no-build (or npm run build:perf)`);
     const { preview } = await import('vite');
     port = port || await freePort();
     const server = await preview({
         root,
         configFile: path.join(root, 'vite.config.js'),
         mode: 'perf',
-        build: { outDir: 'dist-perf' },
+        build: { outDir },
         preview: { port, strictPort: true, host: 'localhost', open: false },
         logLevel: 'warn',
         clearScreen: false
