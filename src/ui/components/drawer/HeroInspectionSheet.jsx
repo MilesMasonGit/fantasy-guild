@@ -3,6 +3,7 @@ import { useGameState } from '../../hooks/useGameState.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { getJob } from '../../../config/registries/jobRegistry.js';
 import { DockEquipmentGrid } from '../dock/DockEquipmentGrid.jsx';
+import { WorkRulesLink } from '../dock/WorkRulesDrawer.jsx';
 import { SkillIcon } from '../base/SkillIcon.jsx';
 import { useEntityDrag } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
@@ -110,6 +111,7 @@ export const HeroInspectionSheet = ({ heroId, onClose, onEdit }) => {
                         </button>
                     </div>
                     <span data-hero-panel-job className="text-xs text-gi-muted truncate">{jobTitle}</span>
+                    <WorkRulesLink heroId={heroId} />
                     <div
                         data-hero-panel-hp
                         className="h-1.5 w-full bg-black/60 rounded-full overflow-hidden"

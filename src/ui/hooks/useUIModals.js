@@ -85,7 +85,8 @@ export const useUIModals = (engine) => {
     // (`standingPromotionOffer`) rather than lost with the tab.
     const [promotionOffer, setPromotionOffer] = useState(null);
 
-    const [flagRulesHeroId, setFlagRulesHeroId] = useState(null);
+    // The work rules drawer, and the hero whose row it opened lit (the hero panel's link).
+    const [flagRules, setFlagRules] = useState({ isOpen: false, heroId: null });
 
     const [inspectByPane, setInspectByPane] = useState({
         bank: null,
@@ -255,9 +256,11 @@ export const useUIModals = (engine) => {
             closePromotion: useCallback(() => setPromotionOffer(null), [])
         },
         flagRules: {
-            heroId: flagRulesHeroId,
-            open: useCallback((heroId) => setFlagRulesHeroId(heroId || null), []),
-            close: useCallback(() => setFlagRulesHeroId(null), [])
+            isOpen: flagRules.isOpen,
+            heroId: flagRules.heroId,
+            open: useCallback((heroId) => setFlagRules({ isOpen: true, heroId: heroId || null }), []),
+            toggle: useCallback(() => setFlagRules(s => ({ isOpen: !s.isOpen, heroId: null })), []),
+            close: useCallback(() => setFlagRules({ isOpen: false, heroId: null }), [])
         },
         inspect,
         nav: {
@@ -277,7 +280,7 @@ export const useUIModals = (engine) => {
                 openDrawerTab(tab, data?.filter);
             }),
             engine.EventBus.subscribe(UI_EVENTS.UI_OPEN_FLAG_RULES, (data) => {
-                if (data?.heroId) setFlagRulesHeroId(data.heroId);
+                setFlagRules({ isOpen: true, heroId: data?.heroId || null });
             }),
             // Nothing has happened to the hero yet: the tile holds the offer open and this
             // only decides to draw it.
