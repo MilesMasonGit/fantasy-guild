@@ -74,11 +74,6 @@ the first outside playtest, modding.
 - **Hero flags**: smaller, and fade to half opacity while work is happening on
   them. *quick* · follow-up after brief 30 (owner, 2026-10-08: don't
   interrupt the running session; there will be several design passes).
-- **Master allow / disallow all per hero**: most players leave every skill on
-  and steer by moving the flag; per-skill controls are only for players who
-  want to micromanage (owner). One switch per hero to allow or disallow
-  everything. *quick* · ⚠️ brief 30's H3 (work rules) not reached yet; may be
-  what the top bar's "hero control button" becomes.
 - **Accessibility**: heroes are told apart by 8 flag colours; add
   colour-blind-safe colours and a second cue (pattern or initial). Text size
   settings already exist. · could ride with the flag change above.
@@ -272,8 +267,8 @@ the first outside playtest, modding.
   simulator's model**: it prices in an abstract "gold per hour", built before
   items-only currency, Hearts and the Atlas. Review, then tickets.
 - **Top bar visuals**: the bar with Token upkeep and the disallow controls;
-  perhaps a hero control button (see the allow-all switch in Stage A). Brief 10
-  just reworked it, so after the crunch.
+  (the hero control button became brief 30's Work Rules button). Brief 10 just
+  reworked the bar, so after the crunch.
 - **Faster drawing for static Tokens**: if a Token can't move, it may be drawn
   more cheaply. Fits brief 90 (the Performance Envelope) or a follow-up; brief
   60 runs before the Atlas, so it can't use this.
@@ -290,7 +285,10 @@ the first outside playtest, modding.
 
 ## Moved on
 
-*(none)*
+- **Master allow / disallow all per hero** and the **hero control button** →
+  brief 30's work rules grid (owner eye-check, 2026-10-09): a Work Rules
+  button on the hero bar; clicking a hero's row header allows or disallows
+  the whole row.
 
 ## Dropped
 
