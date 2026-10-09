@@ -353,6 +353,17 @@ export function installDragKit() {
         }
         return false;
     };
+    /** For a report: what is drawn on top of a flag's cloth, at its middle and four corners. */
+    const coverOf = (el) => {
+        const heroId = el.getAttribute('data-flag');
+        const r = el.getBoundingClientRect();
+        const at = (u, v) => ({ x: Math.round(r.left + u * r.width), y: Math.round(r.top + v * r.height) });
+        return [at(0.58, 0.37), at(0.25, 0.2), at(0.94, 0.2), at(0.25, 0.54), at(0.94, 0.54)].map(p => {
+            const top = document.elementsFromPoint(p.x, p.y).find(e => !e.closest(`[data-board-hero="${heroId}"]`));
+            const art = top?.closest?.('[data-token-art]');
+            return { p, top: top ? identityOf(top) : null, tokenZ: art ? zOf(art) : null, flagZ: zOf(el), worked: art ? art.getAttribute('data-tile-staffed') === 'true' : null };
+        });
+    };
     /**
      * Where to press a flag, as the game's rules give a press to it: over bare mat, any point of
      * its round area; over a Token's round body, only its cloth where it is drawn in front of that
@@ -443,7 +454,7 @@ export function installDragKit() {
             const heroId = el.getAttribute('data-flag');
             const to = kit.freeSpot();
             if (!to) return { skip: 'no free spot' };
-            const scene = { ...flagScene(el, heroId), hiddenFlags: hidden.map(h => h.el.getAttribute('data-flag')) };
+            const scene = { ...flagScene(el, heroId), hiddenFlags: hidden.map(h => ({ heroId: h.el.getAttribute('data-flag'), coveredBy: coverOf(h.el) })) };
             return {
                 source: { x: at.x, y: at.y, what: `flag ${heroId}${at.bare ? '' : ' (by its cloth, over a Token)'}`, hand: `flag ${heroId}`, scene },
                 target: to.screen, expect: { kind: 'flag', heroId, before: flagAt(heroId), mat: to.mat }

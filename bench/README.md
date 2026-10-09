@@ -474,7 +474,7 @@ p50/p95, **frame stalls** per drag phase and the grouped **failure causes**:
 
 | Command | What it does | Time |
 |---|---|---|
-| `npm run bench:drag` | perf build, 50 drags per kind, both passes (700 drags) | ~13 min |
+| `npm run bench:drag` | perf build, 50 drags per kind, both passes (700 drags) | ~19 min |
 | `npm run bench:drag -- --n=10` | drags per kind and pass | |
 | `npm run bench:drag -- --kinds=token,flag` | some kinds: `dockHero`, `flag`, `token`, `tokenToBin`, `binToMat`, `shop`, `equip` | |
 | `npm run bench:drag -- --no-overlays` | the plain pass only | |
