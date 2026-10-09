@@ -161,19 +161,12 @@ tools as hero gear (T-126); specialist skills are sketches (incl. the
 Enchanting sketch); skill list scope stays open. Prototyping waits for the
 Atlas.
 
-### D5 — Knowledge: dependency map, encyclopedia, collection log
+### D5 — Knowledge ✅
 
-- **CMS dependency map**: the CMS understands the progression chain laid out
-  through items and enemies, e.g. Oak Wood → fight the Tree Ent → Fir Forest
-  map → Fir Wood. Build it once and use it in both the CMS and the encyclopedia.
-- **Encyclopedia**: search every entity, Token and item. A **provenance** view
-  shows, for any item, the items and sources needed to produce it. Goal: the
-  player never needs an outside wiki. Reads sources from the game data, so it
-  stays current as the Atlas adds maps and modifiers.
-- **Collection log / achievements**: entries unlock as things are discovered,
-  so the encyclopedia doubles as a "what have I found" goal list.
-- **The Bank at scale**: maybe several hundred items after loops and gear;
-  design search and filters, perhaps shared with the encyclopedia.
+Done 2026-10-09 → [concept_knowledge.md](concept_knowledge.md): one automatic
+"what comes from where" graph for the CMS dependency map, the encyclopedia
+(spoiler hints, 2–3 steps back, uses one step ahead), map previews, the
+collection log and Bank search.
 
 ### D6 — The Guild Hall
 
@@ -247,6 +240,8 @@ Atlas.
 
 ## Moved on
 
+- **D5 Knowledge** (dependency map, encyclopedia, collection log, Bank at
+  scale) → [concept_knowledge.md](concept_knowledge.md), done 2026-10-09.
 - **D4 Skill loops and the board as a puzzle** → [concept_skill_loops.md](concept_skill_loops.md),
   done 2026-10-09. Changes the Atlas (growing places keep spawning; noted on
   brief 70) and tools (T-126: gathering tools become hero gear).
