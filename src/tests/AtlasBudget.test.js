@@ -256,10 +256,10 @@ group('the node budget', () => {
                 mod('c', { kind: 'threat', typeId: 'den' })
             ], { cap: CAP });
             expect(summary.entries).toEqual([
-                { typeId: 'many', role: ROLE.NODE, count: 8 },
-                { typeId: 'few', role: ROLE.NODE, count: 2 },
-                { typeId: 'den', role: ROLE.CAMP, count: 1 },
-                { typeId: 'ruins', role: ROLE.TREASURE, count: 1 }
+                { typeId: 'many', role: ROLE.NODE, count: 8, biome: 'b' },
+                { typeId: 'few', role: ROLE.NODE, count: 2, biome: 'b' },
+                { typeId: 'den', role: ROLE.CAMP, count: 1, biome: null },
+                { typeId: 'ruins', role: ROLE.TREASURE, count: 1, biome: null }
             ]);
         });
 
@@ -269,6 +269,61 @@ group('the node budget', () => {
             expect(summary.total).toBe(0);
             expect(summary.biomes).toEqual({});
         });
+    });
+});
+
+group('biomes and ground', () => {
+    const biomeOf = (summary, typeId) => summary.entries.find(e => e.typeId === typeId)?.biome;
+    const forest = base('forest', 40, [{ typeId: 'oak', weight: 3 }, { typeId: 'berry', weight: 1 }], { biome: 'forest' });
+    const mountain = base('mountain', 40, [{ typeId: 'copper', weight: 1 }, { typeId: 'stone', weight: 1 }], { biome: 'mountain' });
+    const coast = base('coast', 20, [{ typeId: 'coast', weight: 1 }, { typeId: 'stone', weight: 1 }], { biome: 'coast' });
+
+    it('each node carries the biome of the Base Map that writes it', () => {
+        const summary = budget([forest, mountain], { cap: CAP });
+        expect(biomeOf(summary, 'oak')).toBe('forest');
+        expect(biomeOf(summary, 'copper')).toBe('mountain');
+    });
+
+    it('a node two maps write takes the biome that writes most of it', () => {
+        // Stone: 10 from the Mountain's half, 5 from the Coast's half.
+        expect(biomeOf(budget([mountain, coast], { cap: CAP }), 'stone')).toBe('mountain');
+    });
+
+    it('a replaced node keeps its source\'s biome; a density node with no map takes the main biome', () => {
+        const summary = budget([forest, forest, mountain,
+            mod('fir_grove', { kind: 'replace', from: 'oak', to: 'fir' }),
+            mod('veins', { kind: 'density', typeId: 'gold', points: 4 })
+        ], { cap: CAP });
+        expect(biomeOf(summary, 'fir')).toBe('forest');
+        expect(biomeOf(summary, 'gold')).toBe('forest');
+        expect(summary.ground.main).toBe('forest');
+    });
+
+    it('the main biome is the one writing the most nodes, not the one slotted first', () => {
+        // One Forest (40) and one Coast (20): the Forest writes twice the nodes.
+        expect(budget([coast, forest], { cap: CAP }).ground.main).toBe('forest');
+        // Two Coasts and a Forest: 2 × 20/3 Coast nodes against 40/3 Forest ones.
+        expect(budget([coast, coast, forest], { cap: CAP }).ground.main).toBe('coast');
+    });
+
+    it('camps and treasures take the ground where they land, so the budget gives them none', () => {
+        const summary = budget([forest, GOBLIN_CAMP, RUINS], { cap: CAP });
+        expect(summary.entries.filter(e => e.role !== ROLE.NODE).every(e => e.biome === null)).toBe(true);
+    });
+
+    it('says each biome\'s ground, and how much water the maps bring, blended like points', () => {
+        const { water, ...rest } = budget([forest, mountain, coast], { cap: CAP }).ground;
+        expect(rest).toEqual({ main: 'forest', terrains: { coast: 'sand', forest: 'grass', mountain: 'rock' }, shore: ['coast'] });
+        expect(water).toBeCloseTo(0.1, 12);
+        expect(budget([coast], { cap: CAP }).ground.water).toBe(0.3);
+        expect(budget([forest], { cap: CAP }).ground).toEqual({ main: 'forest', terrains: { forest: 'grass' }, water: 0, shore: [] });
+    });
+
+    it('a Base Map may name its own ground and water', () => {
+        const marsh = base('marsh', 20, [{ typeId: 'reed', weight: 1 }], { biome: 'marsh', terrain: 'mud', water: 0.2 });
+        expect(budget([marsh], { cap: CAP }).ground).toEqual({ main: 'marsh', terrains: { marsh: 'mud' }, water: 0.2, shore: ['marsh'] });
+        // An unknown biome with no ground of its own is grass, and dry.
+        expect(budget([base('plains', 10, [{ typeId: 'tuft', weight: 1 }])], { cap: CAP }).ground.terrains).toEqual({ plains: 'grass' });
     });
 });
 

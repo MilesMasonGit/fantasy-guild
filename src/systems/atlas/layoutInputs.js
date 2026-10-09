@@ -61,7 +61,11 @@ export function cannotCheck(typeIds) {
     };
 }
 
-/** Everything `Layout.layout` needs besides the budget, as the game supplies it. */
+/**
+ * Everything `Layout.layout` needs besides the budget, as the game supplies it. No `terrainAllows`
+ * yet, so every Token may stand anywhere dry; per-Token terrain needs (a Dock on the coast), set in
+ * the CMS, plug in here when they exist.
+ */
 export function layoutOptions(summary, seed) {
     const entries = Array.isArray(summary) ? summary : (summary?.entries || []);
     return {

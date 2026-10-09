@@ -15,7 +15,8 @@ import { mulberry32, nextSeed, seedFromText } from '../systems/atlas/seededRando
 import { layoutOptions, shippedMat, shippedCrowding, cannotCheck } from '../systems/atlas/layoutInputs.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 import { SRC, codeOf } from './fixtures/sourceScan.js';
-import { FOREST, MOUNTAIN, OVERGROWN, GOBLIN_CAMP } from './fixtures/atlasMaps.js';
+import { FOREST, MOUNTAIN, COAST, OVERGROWN, GOBLIN_CAMP } from './fixtures/atlasMaps.js';
+import { terrainAt } from '../systems/atlas/TerrainMap.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -367,7 +368,7 @@ describe('the game\'s side of the layout (layoutInputs)', () => {
 });
 
 describe('purity guards', () => {
-    const FILES = ['Budget.js', 'Layout.js', 'seededRandom.js', 'layoutInputs.js'];
+    const FILES = ['Budget.js', 'Layout.js', 'TerrainMap.js', 'seededRandom.js', 'layoutInputs.js'];
     const code = (file) => codeOf(fs.readFileSync(`${SRC}/systems/atlas/${file}`, 'utf8'));
 
     it('no module of the generation engine draws from Math.random', () => {
@@ -375,16 +376,17 @@ describe('purity guards', () => {
     });
 
     it('Budget and Layout use no maths whose last bit may differ between browser engines', () => {
-        for (const file of ['Budget.js', 'Layout.js', 'seededRandom.js']) {
+        for (const file of ['Budget.js', 'Layout.js', 'TerrainMap.js', 'seededRandom.js']) {
             expect(code(file), file).not.toMatch(/\*\*|Math\s*\.\s*(hypot|pow|sin|cos|tan|atan2?|exp|log\w*|cbrt)\b/);
         }
     });
 
-    it('Budget and Layout read no clock, no board and no Mat Tuner', () => {
+    it('Budget, Layout and TerrainMap read no clock, no board and no Mat Tuner', () => {
         const imports = (file) => [...code(file).matchAll(/from\s*['"]([^'"]+)['"]/g)].map(m => m[1]);
-        expect(imports('Layout.js')).toEqual(['./seededRandom.js']);
-        expect(imports('Budget.js')).toEqual(['../../config/registries/tokenRegistry.js']);
-        for (const file of ['Budget.js', 'Layout.js']) {
+        expect(imports('Layout.js')).toEqual(['./seededRandom.js', './TerrainMap.js']);
+        expect(imports('Budget.js')).toEqual(['../../config/registries/tokenRegistry.js', './TerrainMap.js']);
+        expect(imports('TerrainMap.js')).toEqual([]);
+        for (const file of ['Budget.js', 'Layout.js', 'TerrainMap.js']) {
             expect(code(file), file).not.toMatch(/Date\s*\.\s*now|performance\s*\.\s*now|new Date/);
         }
     });
@@ -397,7 +399,7 @@ describe('purity guards', () => {
 describe('ASCII preview', () => {
     const GLYPH = {
         token_oak_tree: 'O', token_fir_tree: 'F', token_redberry_bush: 'R', token_blackberry_bush: 'B',
-        token_copper_ore_vein: 'C', token_coal_vein: 'K', token_stone_outcrop: 'S', token_goblin_camp: 'G'
+        token_copper_ore_vein: 'C', token_coal_vein: 'K', token_stone_outcrop: 'S', token_goblin_camp: 'G', token_coast: 'W'
     };
 
     /**
@@ -437,11 +439,36 @@ describe('ASCII preview', () => {
         return out.join('\n');
     }
 
-    it('prints a Forest + Overgrown and a Mountain + Goblin Camp layout', () => {
-        const legend = 'H Hall · O Oak · R Redberry · B Blackberry · C Copper · K Coal · S Stone · G Goblin Camp '
+    /** The terrain map, one character per 32 u cell: , grass ^ rock : sand ~ water, Tokens' centres on top. */
+    function groundPicture(result) {
+        const GROUND = { grass: ',', rock: '^', sand: ':', water: '~' };
+        const { cols, rows, cell } = result.terrain;
+        const out = [];
+        for (let r = 0; r < rows; r++) {
+            let line = '';
+            for (let c = 0; c < cols; c++) {
+                let ch = GROUND[terrainAt(result.terrain, (c + 0.5) * cell, (r + 0.5) * cell)] ?? '?';
+                for (const n of result.nodes) {
+                    if (Math.floor(n.x / cell) === c && Math.floor(n.y / cell) === r) ch = GLYPH[n.typeId] ?? '?';
+                }
+                if (Math.floor(result.hall.x / cell) === c && Math.floor(result.hall.y / cell) === r) ch = 'H';
+                line += ch;
+            }
+            out.push(line);
+        }
+        return out.join('\n');
+    }
+
+    it('prints a Forest + Overgrown and a Mountain + Goblin Camp layout, and a Coast\'s ground', () => {
+        const legend = 'H Hall · O Oak · R Redberry · B Blackberry · C Copper · K Coal · S Stone · G Goblin Camp · W Coast '
             + '(capital = centre, lower case = the rest of its art, blank = the Hall\'s clearing)';
         const out = [legend];
-        for (const [label, slots] of [['Forest + Overgrown', [FOREST, OVERGROWN]], ['Mountain + Goblin Camp', [MOUNTAIN, GOBLIN_CAMP]]]) {
+        const cases = [
+            ['Forest + Overgrown', [FOREST, OVERGROWN], false],
+            ['Mountain + Goblin Camp', [MOUNTAIN, GOBLIN_CAMP], false],
+            ['Coast + Forest + Goblin Camp', [COAST, FOREST, GOBLIN_CAMP], true]
+        ];
+        for (const [label, slots, withGround] of cases) {
             const summary = budget(slots, { cap: 128 });
             const seed = seedFromText(label);
             const result = layout(summary, options(seed));
@@ -449,6 +476,7 @@ describe('ASCII preview', () => {
             const picture = ascii(result);
             expect(picture.split('\n')).toHaveLength(18);
             out.push(`\n${label} (seed ${seed}; ${summary.entries.map(e => `${e.count} ${e.typeId}`).join(', ')})\n${picture}`);
+            if (withGround) out.push(`\n${label}, its ground (, grass ^ rock : sand ~ water; one character per 32 u cell)\n${groundPicture(result)}`);
         }
         console.log(out.join('\n'));
     });
