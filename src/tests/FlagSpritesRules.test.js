@@ -374,35 +374,8 @@ describe('the flag answers clicks on its round area (owner, 2026-09-21)', () => 
     });
 });
 
-describe('FP-73 — the gear badge', () => {
-    it('shows while the flag is hovered or its hero inspected, and not at rest', () => {
-        Flags.plant('h1', C(20));
-        const { container, rerender } = mount(h(FlagLayer));
-        const gear = () => container.querySelector('[data-flag-gear="h1"]');
-        expect(gear().className).toContain('pointer-events-none');
-
-        rerender(h(EngineContext.Provider, { value: engine }, h(DndContext, null, h(FlagLayer, { inspectedHeroId: 'h1' }))));
-        expect(gear().className).toContain('pointer-events-auto');
-    });
-
-    it('clicking it asks for that hero’s rules panel and never starts a drag', () => {
-        Flags.plant('h1', C(20));
-        Flags.plant('h2', C(8));
-        const opened = [];
-        const unsub = EventBus.subscribe('ui:open_flag_rules', (p) => opened.push(p.heroId));
-        const { container } = mount(h(FlagLayer, { hoverHeroId: 'h2' }));
-        const gear = container.querySelector('[data-flag-gear="h2"]');
-
-        fireEvent.pointerDown(gear);
-        fireEvent.click(gear);
-        unsub();
-
-        expect(opened).toEqual(['h2']);
-        expect(dnd.pointerDowns).toEqual([]);
-        expect(gear.closest('[data-flag]')).toBeNull();
-    });
-
-    it('the UI opens the rules panel for the hero whose gear was clicked, and another gear swaps hero', () => {
+describe('opening the rules panel (FP-73)', () => {
+    it('the UI opens the rules panel for the hero asked for, and another request swaps hero', () => {
         const { result } = renderHook(() => useUIModals(engine));
         expect(result.current.flagRules.heroId).toBeNull();
         act(() => { EventBus.publish('ui:open_flag_rules', { heroId: 'h1' }); });

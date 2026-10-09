@@ -1,6 +1,5 @@
 import { memo, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Settings } from 'lucide-react';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { useEntityDrag, useActiveDrag, useDragPointer } from '../../dnd/DndKit.jsx';
@@ -23,25 +22,21 @@ import { placeUnder } from './tooltipPlacement.js';
 import { pointerToMat, matRectForDrag } from './matPoint.js';
 import { useMatFit } from './MatFitContext.jsx';
 import { useTokenDragLanding } from './MatRings.jsx';
-import {
-    GEAR_PX, GEAR_OFFSET,
-    IDLE_CHIP_OFFSET, POLE_BASE, pinnedFlagPoint
-} from './flagGeometry.js';
-import { ENGINE_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
+import { POLE_BASE, pinnedFlagPoint } from './flagGeometry.js';
+import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
  * FlagLayer: flags standing freely on the playmat, an absolute overlay in mat units.
  * - **Flag**: the hero's sprite in their lasting colour, 128 px, its pole base standing
- * exactly on the flag's point. Drag it to move the flag (`DRAG_KIND.FLAG`); hover for status
- * and skips. It answers on a round area the size of its art (there is no opaque-pixel test),
- * except over a Token (below). Flags may stand very close together or overlap, and never push,
- * nudge or hide each other; later flags draw in front of earlier ones.
- * - **Gear badge**: top-right of the cloth, shown while the flag or its hero is hovered or the
- * hero is inspected. Opens that hero's rules panel (`ui:open_flag_rules`); it is not part of
- * the drag handle, so a click on it never starts a drag. The only way into the rules.
- * - **Idle**: the flag keeps its colour and a '…' chip sits near the top of the pole. The hero
- * standing beside it, like every hero on the mat in every state, is drawn by `MatBoard`, so a
- * hero walking back to their flag is never handed from one layer to another.
+ * exactly on the flag's point. Drag it to move the flag (`DRAG_KIND.FLAG`); hover for the hard
+ * outline, the hero's name, status and skips, and the reach ring. Nothing else sits on it: the
+ * work rules open from the hero bar, and an idle hero says 'No work in range.' themselves. It
+ * answers on a round area the size of its art (there is no opaque-pixel test), except over a
+ * Token (below). Flags may stand very close together or overlap, and never push, nudge or hide
+ * each other; later flags draw in front of earlier ones.
+ * - **Idle**: the flag looks the same. The hero standing beside it, like every hero on the mat
+ * in every state, is drawn by `MatBoard`, so a hero walking back to their flag is never handed
+ * from one layer to another.
  * - **The player never moves a hero**: dragging any hero drags their FLAG.
  * - **Reach ring**: a dashed gold circle of the live flag radius, only while that flag or its
  * hero is hovered, dragged or inspected, or while a dragged Token would land inside it.
@@ -220,30 +215,11 @@ export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverH
     );
 };
 
-/** How long the gear stays up after the pointer leaves, so it can be reached. */
-const GEAR_LINGER_MS = 250;
-
-/**
- * Whether the gear is showing: at once when wanted, and for a moment after —
- * the pointer has to cross from the cloth or the hero onto the gear itself.
- */
-function useLingering(wanted) {
-    const [shown, setShown] = useState(wanted);
-    useEffect(() => {
-        if (wanted) { setShown(true); return undefined; }
-        const timer = setTimeout(() => setShown(false), GEAR_LINGER_MS);
-        return () => clearTimeout(timer);
-    }, [wanted]);
-    return shown;
-}
-
-/** One hero's flag: drag to move it, hover for why, gear for the rules. */
+/** One hero's flag: drag to move it, hover for why. */
 const Flag = memo(function Flag({ flag, z = 0, artPx, onHover, boardHovered = false, inspected = false, yieldToTokens = false }) {
     const ref = useRef(null);
     const [hovered, setHovered] = useState(false);
-    const [gearHovered, setGearHovered] = useState(false);
     const { isDragging: anyDrag, activePayload } = useActiveDrag();
-    const idle = flag.state === 'idle';
 
     const drag = useEntityDrag({
         id: `flag-${flag.heroId}`,
@@ -259,8 +235,6 @@ const Flag = memo(function Flag({ flag, z = 0, artPx, onHover, boardHovered = fa
     useEffect(() => {
         if (carried) setHovered(false);
     }, [carried]);
-
-    const gearShown = useLingering(!anyDrag && (hovered || gearHovered || boardHovered || inspected));
 
     const setRefs = (node) => {
         ref.current = node;
@@ -312,44 +286,6 @@ const Flag = memo(function Flag({ flag, z = 0, artPx, onHover, boardHovered = fa
                     outline={flagOutline({ hovered: hovered || boardHovered, selected: inspected, carried })}
                     className="absolute left-0 top-0"
                 />
-                {idle && (
-                    <span
-                        data-flag-idle-chip
-                        className="absolute px-1 rounded bg-black/85 border border-white/20 text-[11px] leading-[11px] font-bold text-stone-300 pointer-events-none"
-                        style={{ left: IDLE_CHIP_OFFSET.left * scaleFactor, top: IDLE_CHIP_OFFSET.top * scaleFactor }}
-                    >
-                        …
-                    </span>
-                )}
-            </button>
-
-            <button
-                type="button"
-                data-flag-gear={flag.heroId}
-                aria-label={`${flag.name}’s rules`}
-                title="Rules"
-                onPointerDown={(e) => e.stopPropagation()}
-                onMouseEnter={() => { setGearHovered(true); onHover?.(flag.heroId); }}
-                onMouseLeave={() => { setGearHovered(false); onHover?.(null); }}
-                onClick={(e) => {
-                    e.stopPropagation();
-                    EventBus.publish(UI_EVENTS.UI_OPEN_FLAG_RULES, { heroId: flag.heroId });
-                }}
-                className={cn(
-                    'absolute flex items-center justify-center rounded p-0',
-                    'bg-black/95 border border-gi-gold/50 text-gi-gold',
-                    'hover:scale-110 active:scale-95 transition-all duration-150 cursor-pointer',
-                    gearShown ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-90 pointer-events-none'
-                )}
-                style={{
-                    left: originLeft + GEAR_OFFSET.left * scaleFactor,
-                    top: originTop + GEAR_OFFSET.top * scaleFactor,
-                    width: GEAR_PX * scaleFactor,
-                    height: GEAR_PX * scaleFactor,
-                    zIndex: z + 2
-                }}
-            >
-                <Settings size={16} />
             </button>
 
             {hovered && !anyDrag && <FlagTooltip anchor={ref.current} heroId={flag.heroId} />}
