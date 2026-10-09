@@ -22,38 +22,19 @@ changelog and `docs/archive/`).*
    4. Still open from brief 10: Foundation **Tier** on each Foundation, Shop
       group labels, minimum Foundation tier on building recipes, higher anvils'
       "Acts as: anvil, tool tier N".
-2. **Owner eye-check, batch A: brief 30 on `crunch/hero-ui`** (H1–H4
-   built and gate-green; nothing merges until seen). Run the branch:
-   `git switch crunch/hero-ui` then `npm run dev`, your save or S2.
-   1. Bottom bar: eight-hero spacing, one thin edge, no heavy shadow. Heroes
-      collect "Leveled up X to N! (+n)" bubbles that stay; click a bubble to
-      clear that hero's, click the hero to clear and open the panel.
-   2. Hero panel: full height on the notification side, same place from the
-      bar and from the Bank. Skills read "Mining 25/99" with a thin bar;
-      class skills on top, Starting skills in a drawer, set-aside greyed,
-      level-99 Advanced/Master skills starred. Esc or a mat click closes it.
-   3. Hover a hero in the bar: a small gold gear. It opens that hero's work
-      rules in the same box (one line per skill, Copy rules to… with a
-      skipped-skills line). Opening a hero replaces the rules and vice versa.
-   4. The flag: no gear, no "…" chip; hover shows outline, name and reach
-      ring; "No work in range." still appears.
-   Parked choices (built as listed; say if you want another): newest 3
-   bubbles + "+N more"; bubbles clickable; panel overlays the mat edge
-   (no mat refit); never-held skills not listed; gold ★ for mastered;
-   rules replace the hero panel; long skill names truncate at narrow widths
-   (the rules list cuts every name at 1024 wide).
-3. **Owner eye-check, batch B: brief 40 on `crunch/offline`** (O1–O4
-   built and gate-green; the engine half could merge alone but the bar is
-   player-visible). Run the branch, then in a dev slot play a minute, close,
-   and either wait or set the save's `savedAt` back a few hours: a
-   "Catching up on 3 h away" bar covers the mat and fills; then the "While
-   you were away" panel (Into the Bank, Made waiting on the mat, Spent,
-   Level-ups, Tokens used up); Esc or the button closes it; under 2 min
-   away shows nothing. The Time Bank is gone. Director rulings to confirm:
-   cycle leftover carried (≈ +0.5 % live production); background browser
-   tab keeps time quietly; mat loot shown under "Made, waiting on the mat".
-4. **After the eye-checks:** merge both (T-120 then feeds the bar's bubbles
-   from a catch-up), then brief 50 (drag deep-dive).
+2. **Brief 30 merged** (owner eye-check 2026-10-08; tweaks deferred to the
+   design pass). **Brief 40** seen and approved functionally; its third
+   visual pass (Item Bars, wording, stacked buttons, confirm on "Load as I
+   left it") is on `crunch/offline-fixes2`, then merges with `crunch/offline`.
+3. **Overnight run (owner asleep, 2026-10-08):** the director continues the
+   crunch order (50 drag → 60 optimization → 70 Atlas → 80 terrain → 90
+   Envelope) and keeps an **eye-check summary** for the owner's return.
+   Anything look-changing stays on its branch until seen, except what the
+   owner already ruled on in words.
+4. **After the crunch (owner, 2026-10-08):** a review of how this director /
+   subagent workflow is working, and whether to fold in the planning docs the
+   owner has been writing with another agent for the next pass. Discuss once
+   the current work is wrapped up.
 5. **Brief 20 live-game check** once the Academies and master Tokens exist.
 6. **T-111**: engine bench timings are load-sensitive; trust the work check.
 
@@ -68,10 +49,10 @@ straight onto `main`; expect its commits between yours.
 - **Version** 0.8.x on `main`. Crunch prep is done: GDD, tickets, measuring
   tools and baseline ([PERFORMANCE.md](../reference/PERFORMANCE.md)), design
   interviews, and the briefs.
-- **Crunch order:** UI rework ✓ → class rework v2 ✓ (engine) → hero bar and panel (built, eye-check) →
-  offline progress (built, eye-check) → drag deep-dive → deep optimization → Atlas → terrain →
+- **Crunch order:** UI rework ✓ → class rework v2 ✓ (engine) → hero bar and panel ✓ →
+  offline progress (built, eye-check done, last fixes) → drag deep-dive → deep optimization → Atlas → terrain →
   Performance Envelope ([briefs](briefs/README.md)).
-- **Tests:** all green (4095 passed, 3 skipped). Anything red is new.
+- **Tests:** all green (4146 passed, 3 skipped). Anything red is new.
 
 ## Ground rules during the crunch
 

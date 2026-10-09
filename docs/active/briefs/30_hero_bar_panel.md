@@ -55,7 +55,7 @@ Cost log line per phase.
 **Done when:** each phase seen in the game in the owner's save and on S2;
 `bench:drag` hero and flag drags no worse than the baseline; T-044 closed.
 
-## Owner eye-check A (2026-10-09): fixes on `crunch/hero-ui` before merging
+## Owner eye-check A (2026-10-08): fixes on `crunch/hero-ui` before merging
 
 H1–H4 as built were seen. Rulings:
 
@@ -91,7 +91,7 @@ H1–H4 as built were seen. Rulings:
   owner will draw** (placeholder until then, flagged).
 
 **H3**: rebuilt as the work rules grid, see `ui_rework_list.md` "Work rules
-grid — locked (2026-10-09)". H3's gear, side panel and Copy list go.
+grid — locked (2026-10-08)". H3's gear, side panel and Copy list go.
 
 **H4 fix (flag)**: looks good. Add: while a flag is being dragged, every
 workable Token inside its radius shows a **green dot at its centre**.

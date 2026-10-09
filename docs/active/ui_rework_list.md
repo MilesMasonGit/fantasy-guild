@@ -128,7 +128,7 @@ the flag**.
   hero's name and its reach ring, as today. It is otherwise just something to
   drag.
 
-## Work rules grid — locked (owner eye-check and interview, 2026-10-09)
+## Work rules grid — locked (owner eye-check and interview, 2026-10-08)
 
 Supersedes the side-panel rules above (H3 as first built). The owner saw the
 gear-and-side-panel version and ruled it should work like Rimworld's work tab:

@@ -19,6 +19,9 @@ line each is enough.
   (owner, 2026-10-08).
 
 ## Hero bar and panels
+- Brief 30 (bar, panel, rules grid, flag) was seen and merged 2026-10-08 with
+  the owner holding back "lots of little tweaks" for the polishing passes; ask
+  for that list when the design pass starts.
 - The hero bars and inspect panels still need their overhaul (owner,
   2026-10-08). Brief 30 covers the hero bar and panel; check the Token
   inspection popup (brief 10 U7) against the same style then.
