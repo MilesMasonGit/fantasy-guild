@@ -4,7 +4,7 @@ import { cn } from '../../utils/cn.js';
 import { useEngine } from '../../hooks/useEngine.js';
 import { useEntityDrop } from '../../dnd/DndKit.jsx';
 import { DND_SURFACE } from '../../dnd/dragConstants.js';
-import { EventBus } from '../../../systems/core/EventBus.js';
+import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { ENGINE_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import * as FlagRules from '../../../systems/board/FlagRules.js';
 import { GameState } from '../../../state/GameState.js';
@@ -81,7 +81,7 @@ function useHeroesRefresh() {
     useEffect(() => {
         const tick = () => bump(n => n + 1);
         const events = [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.STATE_CHANGED, ENGINE_EVENTS.HERO_LEVELED, ENGINE_EVENTS.HERO_PROMOTED];
-        const unsubs = events.filter(Boolean).map(e => EventBus.subscribe(e, tick));
+        const unsubs = events.filter(Boolean).map(e => EventBus.subscribe(e, tick, UI_LISTENER));
         return () => unsubs.forEach(u => u());
     }, []);
 }

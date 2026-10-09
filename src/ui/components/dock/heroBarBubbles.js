@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react';
-import { EventBus } from '../../../systems/core/EventBus.js';
+import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 import { momentText } from '../board/heroSpeech.js';
 
@@ -87,11 +87,11 @@ const offs = [
         byHero = new Map(byHero);
         byHero.set(heroId, addLevelUp(byHero.get(heroId) || NONE, { skillName, oldLevel, newLevel }));
         emit();
-    }),
+    }, UI_LISTENER),
     // Another save's heroes; a dev time-skip keeps them, it is the same game moved on.
     EventBus.subscribe(ENGINE_EVENTS.GAME_RESET, ({ reason } = {}) => {
         if (reason !== 'dev_time_skip') clearAllHeroBubbles();
-    })
+    }, UI_LISTENER)
 ];
 
 if (import.meta.hot) import.meta.hot.dispose(() => offs.forEach(off => off()));
