@@ -62,7 +62,10 @@ afterEach(() => {
     if (SaveManager.autoSaveTimer) clearInterval(SaveManager.autoSaveTimer);
     SaveManager.autoSaveTimer = null;
     SaveManager.currentSlot = null;
+    SaveManager.resumeSaving();
+    CatchUp.forgetUndo();
     localStorage.clear();
+    sessionStorage.clear();
     vi.mocked(Date.now).mockRestore();
 });
 
@@ -97,6 +100,49 @@ describe('catching up on load', () => {
         expect(GameState.state.time.gameTimeMs).toBe(PLAYED_BEFORE + CATCH_UP.CAP_MS);
         expect(CatchUp.lastResult()).toMatchObject({ simulatedMs: 24 * HOUR, droppedMs: 6 * HOUR });
     }, 30_000);
+
+    it('"Load as I left it" puts the untouched save back, and the reload does not catch up again', async () => {
+        writeSlot(NOW - 2 * HOUR);
+        const original = JSON.parse(localStorage.getItem(SaveManager.getSlotKey(0)));
+        await SaveManager.loadSlot(0);
+        await EngineBootstrap.onSlotSelected(0, false);
+        expect(GameState.state.time.gameTimeMs).toBe(PLAYED_BEFORE + 2 * HOUR);
+        expect(CatchUp.canUndo()).toBe(true);
+
+        // A minute later the player turns it down.
+        vi.mocked(Date.now).mockReturnValue(NOW + MIN);
+        const reload = vi.spyOn(SaveManager, 'reloadPage').mockImplementation(() => {});
+        try {
+            expect(CatchUp.undoLast()).toBe(true);
+            expect(reload).toHaveBeenCalledTimes(1);
+        } finally {
+            reload.mockRestore();
+        }
+        // The very save it loaded, only dated now.
+        expect(stored()).toEqual({
+            ...original, savedAt: NOW + MIN,
+            state: { ...original.state, meta: { ...original.state.meta, lastSavedAt: NOW + MIN } }
+        });
+        expect(CatchUp.canUndo()).toBe(false);
+
+        // The page that loads next: the same slot, as it was, and no catch-up.
+        GameLoop.stop();
+        SaveManager.resumeSaving();
+        const caughtUp = CatchUp.lastResult();
+        vi.mocked(Date.now).mockReturnValue(NOW + MIN + 5000);
+        const slot = SaveManager.takeResumeSlot();
+        expect(slot).toBe(0);
+        expect(await SaveManager.loadSlot(slot, { catchUp: false })).toBe(true);
+        await EngineBootstrap.onSlotSelected(slot, false);
+        expect(GameState.state.time.gameTimeMs).toBe(PLAYED_BEFORE);
+        expect(CatchUp.lastResult()).toBe(caughtUp);
+
+        // And an ordinary load of it later catches up only from the moment it was put back.
+        GameLoop.stop();
+        vi.mocked(Date.now).mockReturnValue(NOW + MIN + 30_000);
+        await SaveManager.loadSlot(0);
+        expect(SaveManager.loadedSavedAt).toBe(NOW + MIN);
+    });
 
     it('a new game does not catch up', () => {
         const before = CatchUp.lastResult();
@@ -172,5 +218,32 @@ describe('a gap the live loop could not deliver', () => {
         expect(GameState.state.time.gameTimeMs).toBe(PLAYED_BEFORE + 10 * MIN + 1000);
         await vi.waitFor(() => expect(GameLoop.getIsRunning()).toBe(true));
         expect(TimeManager.consumeOverflow()).toBe(0);
+    });
+
+    it('after a sleeping PC, "Load as I left it" goes back to the game as it was when it slept', async () => {
+        SaveManager.currentSlot = 0;
+        tickAfter(1000);                                     // one ordinary second, unsaved
+        const asLeft = JSON.parse(GameState.serializeJson());
+        expect(asLeft.state.time.gameTimeMs).toBe(PLAYED_BEFORE + 1000);
+        const done = new Promise(resolve => {
+            const off = EventBus.subscribe(ENGINE_EVENTS.CATCH_UP_FINISHED, (r) => { off(); resolve(r); });
+        });
+        tickAfter(3 * HOUR + 1000);
+        await done;
+        expect(GameState.state.time.gameTimeMs).toBe(PLAYED_BEFORE + 1000 + 3 * HOUR + 1000);
+        expect(CatchUp.canUndo()).toBe(true);
+
+        const reload = vi.spyOn(SaveManager, 'reloadPage').mockImplementation(() => {});
+        try {
+            expect(CatchUp.undoLast()).toBe(true);
+            expect(reload).toHaveBeenCalledTimes(1);
+        } finally {
+            reload.mockRestore();
+            SaveManager.resumeSaving();
+        }
+        // Not the slot's older save: the game as it stood when the gap began, dated now.
+        expect(stored()).toEqual(asLeft);
+        expect(stored().savedAt).toBe(NOW);
+        expect(SaveManager.takeResumeSlot()).toBe(0);
     });
 });

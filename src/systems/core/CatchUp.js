@@ -40,6 +40,8 @@ import { logger } from '../../utils/Logger.js';
 
 let running = false;
 let last = null;
+/** The save to go back to if the player turns the last shown catch-up down: `{ slot, json }`. */
+let undo = null;
 let initialized = false;
 /** Overflow the live loop handed over that is still less than one step. */
 let pendingMs = 0;
@@ -52,6 +54,28 @@ export function isRunning() {
 /** The last catch-up that played anything (its result, summary included), or null. */
 export function lastResult() {
     return last;
+}
+
+/** Whether the last shown catch-up can still be turned down ("Load as I left it"). */
+export function canUndo() {
+    return undo !== null;
+}
+
+/**
+ * Turn the last shown catch-up down: write the save from before it back to its slot and reload
+ * (`SaveManager.restoreAndReload`), so the game opens as the player left it. False when there is
+ * nothing to go back to.
+ */
+export function undoLast() {
+    if (!undo) return false;
+    const { slot, json } = undo;
+    undo = null;
+    return SaveManager.restoreAndReload(slot, json);
+}
+
+/** Let the save kept for an undo go (the player kept the catch-up). */
+export function forgetUndo() {
+    undo = null;
 }
 
 /**
@@ -221,6 +245,9 @@ function enterQuiet(startMs) {
  * @param {boolean} [options.save]   save once at the end (the bench passes false)
  * @param {boolean} [options.reset]  announce at the end what a load does (`GAME_RESET`, then the
  *        broad updates), once, for everything that was quiet
+ * @param {string} [options.before]  the save "Load as I left it" goes back to (a load passes the one
+ *        it read). Without it, the game as it stands before playing. Kept only for a catch-up that
+ *        shows and saves, in a game with a slot.
  * @param {() => Promise<void>} [options.yieldFn]
  * @returns {Promise<{awayMs: number, simulatedMs: number, droppedMs: number, steps: number,
  *          wallMs: number, show: boolean, summary: object|null}>}
@@ -234,6 +261,7 @@ export async function run({
     onProgress = null,
     save = true,
     reset = true,
+    before = null,
     yieldFn = yieldToEventLoop
 } = {}) {
     const readNow = typeof now === 'function' ? now : () => now;
@@ -245,6 +273,12 @@ export async function run({
     };
     // Under one step, a savedAt in the future (the clock moved back), or already running: nothing.
     if (running || !GameState.getIsInitialized() || !Number.isFinite(startAway) || startAway < stepMs) return result;
+
+    // Taken before anything plays: on a sleeping PC the slot holds an older autosave, not this.
+    const slot = SaveManager.currentSlot;
+    const keep = save && result.show && slot !== null && slot !== undefined
+        ? { slot, json: before ?? GameState.serializeJson() }
+        : null;
 
     running = true;
     // The live loop is paused while the catch-up plays, and picks up from the real clock after.
@@ -303,6 +337,8 @@ export async function run({
     if (save) SaveManager.save(false);
     result.wallMs = performance.now() - wallStart;
     last = result;
+    // A summary still open was never accepted: its save stays the one "as I left it" goes back to.
+    if (keep && !undo) undo = keep;
     logger.info('CatchUp', `Played ${Math.round(played / 1000)} s of game in ${Math.round(result.wallMs)} ms`
         + `${result.droppedMs > 0 ? `, dropped ${Math.round(result.droppedMs / 1000)} s past the cap` : ''}`,
     result.summary);
