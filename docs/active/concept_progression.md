@@ -67,8 +67,95 @@ chopping Fir.
 - **Some modifiers change how a base is built**, beyond contents: a dense
   forest leaves little room, a leyline gives free charge, a curse makes enemies
   hit harder. Each layout is a fresh small puzzle (ties to D4's adjacency).
+- **Map supply is steady**: maps and modifiers drop reliably from enemies the
+  player can farm safely, plus quest rewards, enough for a new Region every
+  few days.
+- **Showing what can move**: movable Tokens carry a **faint marker at rest**
+  and **lift on hover** (with the grab cursor); fixed Tokens do neither.
 
-## Still to cover
+## What grows with level — deferred
 
-What grows with level · economy and item sinks · endgame and prestige ·
-showing what can move.
+**Not finished; picked up later in development** (owner, 2026-10-09). The
+game should stay relatively simple, and each kind of growth (yield, speed,
+rare finds, perks) is a new design problem. Settled so far:
+
+- **Levels unlock higher-level work**: new Tokens and recipes. That may be
+  all they do.
+- **Remove the +0.5 % speed per level** (invisible, one more number to
+  balance). → ticket when D2 closes.
+- **Possibly larger boosts at milestones**, e.g. "+10 % chance to double
+  Copper Ore at Mining 50", so a flat bonus doesn't overpower later, rarer
+  resources. A sample, not a commitment.
+- **Mastery** (getting better at one specific Token or recipe): a later idea.
+- **A craftable 99 cape for each skill**, uniquely powerful. A separate goal
+  from the skill's final challenge (see Endgame).
+
+## Economy and item sinks
+
+- **Items stay the only currency.** **Markets are cut for now** (the Shrimp
+  Market's open question in GDD §16): no exchange rates to balance; revisit if
+  a real need appears.
+- **The stockpile always has a use**: surplus of any material eventually has
+  somewhere to go, so hoarding never feels pointless and numbers going up feels
+  good.
+- **Sinks**: **building and rebuilding** (Region-specific buildings, better
+  versions, on every move), **gear** (crafting better weapons and armour is the
+  main gear sink), and **Guild Hall upgrades**.
+- **Ongoing drains**: **food and potions** used up in fights, and **building
+  upkeep** (lures and other buildings that consume items to run, on the
+  existing upkeep system).
+- **No wear**: **tools last forever** (a placed pickaxe never wears out; a
+  better one unlocks better work) ⚠️ today some recipes spend tool charges, so
+  content and possibly code change; **gear never breaks** (no durability).
+- **Map upcycling stays**: surplus maps turn into better maps (the Atlas
+  concept's plan). It clears map clutter; it isn't a material sink.
+
+## Endgame and new game plus
+
+- **Each skill has a final challenge: a legendary job at the top.** A unique,
+  demanding Token or recipe near level 99 (Forestry: fell a World Tree;
+  Smithing: forge a masterwork; Cooking: a feast). Long, needs inputs from other
+  skills, gives a one-of-a-kind output for the ritual. Uses the existing Token
+  and recipe machinery.
+- **Combat challenges**: **bosses per combat style** (each best beaten by one
+  style, so a guild needs variety) and **party fights** (bosses that need
+  several heroes at once, tied to classes). Designed in D3.
+- **The 99 cape** is a separate goal (see What grows with level).
+- **The ritual is a great construction at the Hall**: a multi-stage build that
+  takes the final challenges' outputs and the bosses' drops piece by piece,
+  with visible progress on the mat. The last piece completes the
+  cartographer's work and offers new game plus.
+- After the ritual the player **keeps playing indefinitely**, or starts
+  **new game plus**:
+  - the **same 8 heroes** (names, looks, identity), **levels reset**;
+    nothing else carries over;
+  - the player picks any number of **Skulls** from a list: modifiers that
+    radically change how the game plays. They are **not balanced and give no
+    reward**: just a wacky, different way through the same game.
+  - In the story, this is the loop turning (the cartographer half-remembers
+    past guildmasters).
+
+## The Starter Camp and the first hour
+
+- **The Starter Camp lasts about 30–60 minutes** before the first map: long
+  enough to learn gathering, building, crafting and a first fight.
+- **It holds an assortment of essential tutorial nodes and special sites.**
+- **The endgame sites live in the Starter Camp**, visible from the first
+  minute, so the player sees the final goal from the beginning:
+  - **one site per skill, all 25**; each **is that skill's final challenge**
+    (the legendary job);
+  - a site needs **the skill at 99** and **specific late-game items** (e.g.
+    100 of an item an endgame boss drops one of per kill);
+  - early on a site looks like **a ruin** (an overgrown ancient anvil, the
+    stump of a world tree): clearly special, clearly not ready; **inspecting
+    it shows the skill, level and items**;
+  - **the ritual's great construction happens here too**: the guild comes
+    home to the old guild hall for the finale.
+  - ⚠️ 25 sites plus tutorial nodes in one Region against the Token cap (80
+    for testing): brief 70 must size the Starter Camp for this (sites exempt
+    from the cap, a larger Starter Camp, or small sites).
+- **Heroes**: 2–3 during the first day so the mat feels busy, the rest over
+  the first couple of weeks; each new hero is a felt jump in output.
+- **The first hour should leave the player wanting** a visible next unlock
+  ("Fir needs Forestry 15") and their guild to grow (the next hero, the next
+  Hall upgrade).
