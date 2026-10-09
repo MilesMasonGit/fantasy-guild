@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, useState, useCallback } from 'react';
+import { memo, startTransition, useEffect, useRef, useState, useCallback } from 'react';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 import { cn } from '../../utils/cn.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
@@ -84,7 +84,9 @@ function useShopRefresh(active) {
     const [, bump] = useState(0);
     useEffect(() => {
         if (!active) return undefined;
-        const refresh = () => bump(n => n + 1);
+        // A transition: a purchase is a drop, and the whole catalogue redrawn in the drop's own
+        // frame made it the drag's longest. The prices follow a frame later at most.
+        const refresh = () => startTransition(() => bump(n => n + 1));
         const unsubs = SHOP_EVENTS.map(e => EventBus.subscribe(e, refresh));
         // Spawns and depletions change the Token count too; only a changed count re-renders.
         let count = Shop.capStatus().count;

@@ -9,6 +9,8 @@
 
 const counts = new Map();
 let counting = false;
+/** Each commit since `start`: the names that rendered in it. */
+let commits = [];
 
 // The bundler renames a memo's inner function that shares its outer name (`MatToken2`).
 const plain = (name) => (name ? name.replace(/\d+$/, '') : null);
@@ -27,17 +29,20 @@ const COMPONENT_TAGS = new Set([0, 1, 11, 14, 15]);
 // React marks a fiber whose render function ran in this commit.
 const PERFORMED_WORK = 1;
 
-function visit(fiber, mounting) {
+function visit(fiber, mounting, names) {
     const prev = fiber.alternate;
     if (COMPONENT_TAGS.has(fiber.tag) && (mounting || !prev || (fiber.flags & PERFORMED_WORK))) {
         const name = nameOf(fiber);
-        if (name) counts.set(name, (counts.get(name) || 0) + 1);
+        if (name) {
+            counts.set(name, (counts.get(name) || 0) + 1);
+            names.add(name);
+        }
     }
     // A subtree React did not touch keeps the children of the last commit: skip it.
     if (mounting || !prev) {
-        for (let c = fiber.child; c; c = c.sibling) visit(c, true);
+        for (let c = fiber.child; c; c = c.sibling) visit(c, true, names);
     } else if (fiber.child !== prev.child) {
-        for (let c = fiber.child; c; c = c.sibling) visit(c, !c.alternate);
+        for (let c = fiber.child; c; c = c.sibling) visit(c, !c.alternate, names);
     }
 }
 
@@ -57,16 +62,20 @@ globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__ = {
     setStrictMode() {},
     onCommitFiberRoot(_id, root) {
         if (!counting) return;
-        for (let c = root.current.child; c; c = c.sibling) visit(c, !c.alternate);
+        const names = new Set();
+        for (let c = root.current.child; c; c = c.sibling) visit(c, !c.alternate, names);
+        if (names.size) commits.push(names);
     }
 };
 
 export const renders = {
     /** Start counting from zero. */
-    start() { counts.clear(); counting = true; },
+    start() { counts.clear(); commits = []; counting = true; },
     stop() { counting = false; },
     /** How many commits `name` rendered in since `start`. */
     of(name) { return counts.get(name) || 0; },
     /** Every name counted since `start`, for a failing test to show. */
-    all() { return Object.fromEntries(counts); }
+    all() { return Object.fromEntries(counts); },
+    /** The commits since `start`, in order, each the set of names that rendered in it. */
+    commits() { return commits.slice(); }
 };
