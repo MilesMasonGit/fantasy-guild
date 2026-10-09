@@ -1,12 +1,13 @@
-# Ideas inbox
+# Ideas and the post-crunch plan
 
-The owner's raw ideas for future features and improvements, waiting to be
-interviewed. **Nothing here is decided or ready to build.** Directors don't act
-on this page.
+The owner's ideas for future features and improvements, sorted into the order
+they'll be designed and built. **Nothing here is decided or ready to build**
+until its interview is done and it has moved on to a ticket, concept or brief.
+Directors don't act on this page.
 
 ## How an idea moves on
 
-1. **Inbox**: one line, as the owner said it, plus a tag if one is obvious.
+1. **Listed** here, as the owner said it, in the stage it belongs to.
 2. **Interview**: multiple-choice questions until it's clear what the owner
    wants and how it sits with the GDD and the crunch briefs.
 3. **Write-up, by size**:
@@ -16,101 +17,282 @@ on this page.
      numbered brief in [briefs/](briefs/README.md)
 4. The idea's line leaves this page and points to where it went.
 
-Tags: **⚠️ overlaps** = touches an area a crunch brief is about to rebuild ·
-**after-crunch** = waits for the crunch to finish · **quick** = likely just a ticket.
+Tags: **⚠️ overlaps** = touches an area a crunch brief is rebuilding ·
+**quick** = likely just a ticket · **research** = read-only investigation.
 
-## Inbox
+---
 
-### Look and feel
+## The plan at a glance
 
-- **Top bar visuals**: improve the bar holding Token upkeep and the disallow
-  controls; perhaps add a **hero control button** there. *after-crunch* ·
-  ⚠️ overlaps brief 30 (hero bar) for the button; brief 10 just reworked the
-  top bar.
-- **Guild Hall upgrade screen**: complete overhaul in a **star / constellation**
-  style. *after-crunch* · the Atlas adds new global Guild upgrades (Token cap,
-  crafting slots), so the tree will grow.
-- **Screen transitions**: better animations between screens; "look up" at the
-  stars for Hall upgrades, down or to the side for the Atlas. *after-crunch* ·
-  needs the Atlas (brief 70) and the constellation screen; pairs with both.
+The order follows three rules (owner, 2026-10-08): small and simple changes
+early; design docs that later work depends on are finished first; each piece
+comes after the things it builds on, so planning stays clean.
 
-- **In-engine animation brainstorm**: explore light animation effects done in
-  code (no new art), for a menu of options to pick from. *research first* ·
-  today's Token hit animations and transform glow (T-011) are the starting
-  point; crunch rule: no expensive mat effects without a cost-log line, and
-  brief 60 (deep optimization) sets the budget.
-- **True animations with owner art**: e.g. falling leaves when a tree is hit.
-  *after-crunch for the code* · plan early so the owner can draw the frames;
-  belongs on the same owner art list as the terrain art.
+**Stage A — now, alongside the crunch.** Small changes, quick rulings and
+read-only research. None needs a design doc, none blocks a crunch brief.
 
-### Minor changes
+**Stage B — design interviews, in this order.** Each ends in a concept doc
+(or a section of an existing one). Interviews only need the owner's time, so
+they run while the crunch builds.
 
-- **Widen the playmat.** *quick* · ⚠️ overlaps T-097 (mat size becomes a fixed
-  game value) and the Atlas/terrain briefs (maps are generated around the Hall).
-- **Tuner baselines**: Tokens overlap less; heroes get a larger base work
-  radius. *quick* · ⚠️ overlaps T-097; today up to 40 % overlap and a 164 u flag
-  radius (GDD). Needs numbers picked in the game.
+| # | Design doc | Why here | Deadline |
+|---|---|---|---|
+| D1 | **Ground rules**: tone and world, "pops of activity", sound | Short; guides every later doc and all agent-written text | — |
+| D2 | **Progression, pacing and the Atlas loop** | Everything else needs a pacing curve; some questions change the Atlas | **before brief 70 (Atlas)** |
+| D3 | **Combat and gear** | Hearts resets every HP and damage number; the Atlas places enemies, ambushes and lures | ideally before brief 70 |
+| D4 | **Skill loops and the board as a puzzle** | The biggest content job; needs D2's pacing and D3's numbers | before post-crunch content |
+| D5 | **Knowledge: dependency map, encyclopedia, collection log** | Same "what comes from where" data; the CMS map should exist before D4's content is authored | with or right after D4 |
+| D6 | **The Guild Hall**: constellation screen, upgrades, transitions | Upgrades are progression (D2); transitions need the Atlas screen | after D2 |
+| D7 | **A living game**: events, the return, hero identity, bubbles | Builds on D1's principle and brief 40's summary | after D4 |
+| D8 | **Quests and the tutorial** | Teaches what D2–D7 settle; the Atlas replaces today's opening | after the Atlas |
+| D9 | **Release package**: saves, playtest, distribution, modding | Last before outside players | pre-release |
+
+**Stage C — build after the crunch, in this order.**
+
+1. Dormant code clean-out (clears the ground for everything after it).
+2. CMS dependency map and agent authoring at full strength (tools first, so
+   content goes faster).
+3. Combat and gear (sets the number scale content uses).
+4. Skill loops and adjacency content, neighbour previews, movable markers.
+5. Full CMS review and the simulator's model (owner: once loops and the Atlas
+   are in).
+6. The Guild Hall: constellation screen, upgrade content, transitions.
+7. Encyclopedia, collection log, Bank search.
+8. Events, hero identity, effects through bubbles.
+9. Quests and the tutorial rewrite.
+10. Look polish: top bar, pixel borders, animations, faster static Tokens.
+
+**Stage D — before release.** Saves, distribution, translating existing text,
+the first outside playtest, modding.
+
+---
+
+## Stage A — now, alongside the crunch
+
+### Follow-ups after the running briefs
+
 - **Hero flags**: smaller, and fade to half opacity while work is happening on
-  them. *quick* · ⚠️ overlaps brief 30 H4 (the flag), which hasn't run yet.
+  them. *quick* · follow-up after brief 30 (owner, 2026-10-08: don't
+  interrupt the running session; there will be several design passes).
+- **Master allow / disallow all per hero**: most players leave every skill on
+  and steer by moving the flag; per-skill controls are only for players who
+  want to micromanage (owner). One switch per hero to allow or disallow
+  everything. *quick* · ⚠️ brief 30's H3 (work rules) not reached yet; may be
+  what the top bar's "hero control button" becomes.
+- **Accessibility**: heroes are told apart by 8 flag colours; add
+  colour-blind-safe colours and a second cue (pattern or initial). Text size
+  settings already exist. · could ride with the flag change above.
+- **The return experience, first pass**: brief 40 (running) is building the
+  "While you were away" summary now. At its eye-check, judge it as a present,
+  problems framed as "what to fix next". The full design is in D7.
 
-### New features
+### Quick changes and rulings
 
-- **Encyclopedia**: search every entity, Token and item in the game. A
-  **provenance** view shows, for any item, the items and sources needed to
-  produce it. Goal: the player never needs an outside wiki. *after-crunch* ·
-  feature-sized · the Atlas adds new sources (maps, modifiers), so build it
-  after brief 70 or make it read sources from the game data so it stays
-  current. Nothing like it exists in the docs today.
+- **Widen the playmat** and **tuner baselines** (Tokens overlap less; heroes
+  get a larger base work radius). *quick* · do with **T-097**, which turns the
+  Mat Tuner's numbers into fixed game values; the owner picks the numbers in
+  the game. Today: up to 40 % overlap, 164 u flag radius.
+- **Translation** setup: ticket **T-119** (the game will be translated, owner
+  2026-10-08). Pick how text is stored; new UI uses it.
+- **Leftover rough edges**: the slot screen's "SYSTEM BOOT" (already T-039),
+  nine "coming soon" Settings controls, no gameplay hotkeys. *quick* · tickets.
+
+### Tools that speed everything after
+
+- **Agents author content through the CMS**: let an agent quickly create and
+  manage items and Tokens. *quick to medium* · `data/` is only written by the
+  CMS (its workspace lives in the browser; Sync to Game writes `data/`), so
+  this likely means a CMS-side import or scripting path the owner reviews and
+  syncs. Helps the owner's brief 20 content (Academies) too. Short interview:
+  how the owner wants to review agent-made content.
+- **CMS saving**: unsynced CMS work lives only in the browser ("Restore from
+  Game" rebuilds synced content). Backups; may grow into the modding system.
+  Pairs with agent authoring.
+
+### Read-only research (any time, in parallel)
+
+- **Owner art list**: one to-draw list, so art is ready before the code.
+  - **Terrain**: brief 80's research phase (what of the old terrain system
+    survives, the look questions) run early to produce its art list.
+    ⚠️ reorders brief 80's first phase only; the code still follows the Atlas.
+  - **True animations** with owner art, e.g. falling leaves when a tree is
+    hit: plan which and how many frames.
+- **In-engine animation brainstorm**: light effects done in code, no new art,
+  as a menu to pick from with a rough cost each. Starts from today's hit
+  animations and transform glow (T-011); crunch rule: no expensive mat
+  effects without a cost-log line.
+- **Pixel-style UI borders**: how to make borders look pixel-like to match the
+  art, within UI_STYLE.md's "no thick borders, no frames inside frames".
+
+---
+
+## Stage B — design interviews
+
+### D1 — Ground rules
+
+- **Tone and world guide**: the GDD has mechanics but no world, mood, humour
+  or naming style. Agents will soon write item names, bubble lines and event
+  text; a one-page guide keeps them consistent.
+- **"Pops of activity"** as a rule for the whole game: the board is **largely
+  static, with pops of activity**, so the player is never oversaturated but
+  always has the next thing to look at. Likely lands in UI_STYLE.md or the GDD.
+- **Sound**: no audio section in the GDD; the game starts at volume 0. Will
+  there be sound, and who makes it? If yes, it joins the asset lists early.
+
+### D2 — Progression, pacing and the Atlas loop
+
+- **Progression and pacing**: what the player chases at 10 minutes, an hour,
+  a week. Today "no unlocks"; progress is skill levels (99 ≈ 13 M XP), Hall
+  upgrades and affording things, with *placeholder* prices (mostly 10 Oak
+  Wood).
+- **Something else that improves with level**: levels are mainly for
+  unlocking new Tokens and recipes (owner); each level's +0.5 % speed is
+  invisible. The owner agrees something more should grow with level.
+- **Endgame**: nothing says what the player does at the top, or whether there's
+  a fresh-start-for-a-bonus loop ("prestige"). Does the curve end or loop?
+- **Economy and item sinks**: items are the only currency, nothing can be sold,
+  Markets undecided (GDD §16), few things to spend surplus on.
+- **Moving day**: under the Atlas, moving Region is the main progression and
+  means rebuilding from scratch with no refund. Pillar 2 ("set up, don't
+  micromanage") vs rebuilding the same layout every move: should the tenth
+  move be faster than the first (saved layouts, packing up, rebuild-speed
+  upgrades)? ⚠️ touches locked Atlas decisions; raise, don't re-decide.
+- **Show what can move**: after the Atlas, most Tokens are static, so mark the
+  movable ones: a different outline, or only movable Tokens get the bob/lift.
+  Cheap to decide before brief 70 builds static Tokens.
+
+### D3 — Combat and gear
 
 - **Combat system, built out properly**: today it's "a glorified slap fight".
-  *after-crunch* · feature-sized · GDD §6 has the current rules (four combat
-  skills, one per promoted hero); brief 20's class rework decides who holds
-  which.
+  Owner's direction: **keep it simple**; try **Hearts instead of HP points**;
+  **low numbers**, so one or two extra damage is a noticeable boost.
+  ⚠️ today HP runs from 50 at level 1 to ~3,700 at 99, so this reworks the
+  whole HP and damage scale. GDD §6 has the current rules.
+- **Gear**: the loadout grid exists but no gear ships. Under Hearts, weapons and
+  armour are where the +1s come from.
+- **Enemy variety**: 4 enemies, all melee; the Cow and Thorn Elemental are
+  really nodes you hit. The combat cycle (melee > ranged > magic > stealth)
+  has nothing to act on. Plan the roster, including Atlas spawners, ambushes
+  and lures.
+- **Status effects**: 7 built (Poison, Burning, Bleed, Stun, …), none used.
+  Decide what survives "keep combat simple", or move them to magic.
+
+### D4 — Skill loops and the board as a puzzle
+
+- **One core loop per skill**: so each skill feels different, and to prototype
+  how they'll work. The first content to build (owner, 2026-10-08).
+  - **Occult / magic / enchanting sketch (very loose)**: Tokens need to be
+    **charged with elements**. An enchanting table has **three slots** that
+    take context from other placed Tokens; charge comes from **leyline map
+    features** or **support Tokens** the player builds; **different
+    combinations give different outputs**. · builds on the existing `nearby`
+    reach (164 u, the four side neighbours); leylines would be an Atlas map
+    feature or modifier (raise in D2 if it changes brief 70).
+- **Tokens hardly interact**: pillars 1 and 3 promise a self-feeding ecosystem
+  and mechanically different skills; the rules grammar can do far more (16
+  verbs, 12 moments, neighbour modifiers) than the handful that ships. With a
+  fixed post-Atlas board, **layout and adjacency** could be the main thing
+  players think about: a theme across all loops.
+- **Show neighbour effects while placing**: while a Token is held over the mat,
+  the Tokens it would help or be helped by light up ("+5 % speed from Coast").
+  Without it, adjacency is invisible maths.
+- **Skill list scope**: 25 skills, 12 of them placeholders. Always open to
+  rework; the owner will evaluate it later. Revisit here if loops need it.
+
+### D5 — Knowledge: dependency map, encyclopedia, collection log
+
+- **CMS dependency map**: the CMS understands the progression chain laid out
+  through items and enemies, e.g. Oak Wood → fight the Tree Ent → Fir Forest
+  map → Fir Wood. Build it once and use it in both the CMS and the encyclopedia.
+- **Encyclopedia**: search every entity, Token and item. A **provenance** view
+  shows, for any item, the items and sources needed to produce it. Goal: the
+  player never needs an outside wiki. Reads sources from the game data, so it
+  stays current as the Atlas adds maps and modifiers.
+- **Collection log / achievements**: entries unlock as things are discovered,
+  so the encyclopedia doubles as a "what have I found" goal list.
+- **The Bank at scale**: maybe several hundred items after loops and gear;
+  design search and filters, perhaps shared with the encyclopedia.
+
+### D6 — The Guild Hall
+
+- **Guild Hall upgrade screen**: complete overhaul in a **star /
+  constellation** style. The Atlas adds global Guild upgrades (Token cap,
+  crafting slots), so the tree will grow.
+- **Guild upgrade content**: build out the Hall upgrades (follows D2's pacing).
+- **Screen transitions**: "look up" at the stars for Hall upgrades, down or to
+  the side for the Atlas.
+
+### D7 — A living game
 
 - **Events system**: random events that keep the player engaged, e.g. a
   **shooting star** that lands and can be mined, a visit from a **frog
-  prince**. *after-crunch* · feature-sized · ask: what happens to events
-  while the player is offline (brief 40), and the Atlas concept's line that
-  combat isn't a "random chaotic event" (events should probably be treats,
-  not punishments, in an idle game).
-- **Pixel-style UI borders**: make UI borders look pixel-like to match the
-  game's art; investigate how first. *research first* · must sit with
-  UI_STYLE.md's "no thick borders, no frames inside frames"; the
-  investigation is read-only and could run any time; anything new drawn on
-  the mat gets a cost-log line.
+  prince**. Ask: what happens to events while offline, and should they only be
+  treats (the Atlas concept: combat isn't a "random chaotic event")?
+- **The return experience**: offline runs "same rules as playing" (fights,
+  wounds, empty seeds). Design the return as a whole: the summary should feel
+  like a present, problems framed as "what to fix next".
+- **Hero identity**: every recruit is identical with a random name, max 8. A
+  quirk, a favourite task or their own bubble lines would make heroes worth
+  caring about.
+- **Effects speak through bubbles**: effects and rules firing show up through
+  the speech bubble system (applies D1's "pops of activity").
 
-### Tools and process
+### D8 — Quests and the tutorial
 
-- **Agents author content through the CMS**: let an agent quickly create and
-  manage items and Tokens. *quick to medium* · must respect the hard rule that
-  `data/` is only written by the CMS: the CMS keeps its workspace in the
-  browser and Sync to Game writes `data/`, so this likely means a CMS-side
-  import or scripting path rather than an agent editing files.
-- **Full CMS review** once the new Token loops and the Atlas are in.
-  *after-crunch* · review, then tickets.
-- **CMS dependency map**: the CMS understands the progression chain we lay out
-  through items and enemies, e.g. Oak Wood → fight the Tree Ent → Fir Forest
-  map → Fir Wood. Part of the CMS rework. · same underlying "what comes from
-  where" graph as the encyclopedia's provenance view; build it once, use it in
-  both (CMS for authoring checks, encyclopedia for players).
-- **Terrain art early**: terrain needs a lot of owner art, so work out what art
-  it needs well before brief 80 runs, giving the owner time to draw it.
-  ⚠️ reorders brief 80 · its research phase (what of the old terrain system
-  survives, the look questions) is read-only and could run early to produce an
-  art list.
+- **Quests and the tutorial**: bounties are "collect N" or "defeat N Goblins"
+  for 10 Oak Wood; the tutorial teaches today's opening, which the Atlas
+  replaces (Starter Camp, buildings-only Shop). Quests could also carry events.
 
-### Post-Atlas content
+### D9 — Release package
 
-- **One core loop per skill**: so each skill feels different, and to prototype
-  how they'll work. *after-crunch* · feature-sized; builds on brief 20's new
-  skill list (in flight now). First content to build; owner, 2026-10-08.
-- **Guild upgrade content**: build out the Guild Hall upgrades. Pairs with the
-  constellation screen above and the Atlas's new global upgrades.
+- **First outside playtest as a milestone**: decide what must be true before
+  someone else plays (tutorial, saves, first-hour pacing). *process* · may be
+  worth deciding earlier, as a target for Stage C.
+- **Saves before release**: saves live in the desktop app's browser storage,
+  and other versions are refused until 1.0. Real save files and carrying saves
+  across updates.
+- **Release readiness**: how updates reach players, readable crash logs, where
+  it's sold (itch.io, Steam, …; Steam has requirements and lead times).
+- **Translating existing text** (after T-119's setup).
+- **Modding system**: let players make their own content. Leans on the CMS and
+  its saving, translation and the encyclopedia's data.
+
+---
+
+## Stage C notes — build items without their own interview
+
+- **Dormant code clean-out**: Time Bank, energy (ruled to go), Villager heroes,
+  Map bursts, the unloaded `stations.json`. Leftovers breed misleading comments
+  and slow every agent. First after the crunch.
+- **Full CMS review** once the new loops and the Atlas are in, including **the
+  simulator's model**: it prices in an abstract "gold per hour", built before
+  items-only currency, Hearts and the Atlas. Review, then tickets.
+- **Top bar visuals**: the bar with Token upkeep and the disallow controls;
+  perhaps a hero control button (see the allow-all switch in Stage A). Brief 10
+  just reworked it, so after the crunch.
+- **Faster drawing for static Tokens**: if a Token can't move, it may be drawn
+  more cheaply. Fits brief 90 (the Performance Envelope) or a follow-up; brief
+  60 runs before the Atlas, so it can't use this.
+- Implementing the Stage A research: pixel borders, chosen in-engine effects,
+  true animations once the owner's art exists.
+
+---
 
 ## Being interviewed
 
-*(none)*
+- **D1 Ground rules** → [concept_tone_and_world.md](concept_tone_and_world.md):
+  tone, words and story settled 2026-10-08; "pops of activity" and sound next.
 
 ## Moved on
 
 *(none)*
+
+## Dropped
+
+Suggestions the owner turned down, so they aren't raised again.
+
+- **Automated progression bot** (a headless playthrough to check pacing): the
+  owner would rather understand and control the dependencies directly (the CMS
+  dependency map). 2026-10-08.
+- **Stations at scale** (stations suggesting or cycling recipes): not a
+  concern. 2026-10-08.

@@ -22,7 +22,7 @@ layout/paint cost are Tier B (the in-game Perf HUD). `npm run bench:draw` and
 | `npm run bench -- --long` | S6 for the full 8 game-hours (288,000 ticks) | ~8 min more |
 | `npm run bench -- --repeats=5` | more timing runs per scenario (the median is reported) | |
 | `npm run bench -- --no-profile` | skip the profile passes | faster |
-| `npm run bench -- --cpu-prof` | also write V8 `.cpuprofile` files to `bench/results/prof/` (open in Chrome DevTools → Performance) | |
+| `npm run bench -- --cpu-prof` | also write V8 `.cpuprofile` files to `bench/results/prof/` (open in Chrome DevTools → Performance). ⚠️ On Node 24 the file written is the module-loader thread's idle profile, not the engine's (both threads get the same fixed name; checked 2026-10-08). Until fixed, profile with `node --cpu-prof --cpu-prof-dir=<dir>` and no name, and read the `.0.` file (see Catch-up timing below) | |
 | `npm run bench -- --inject-slow=0.5` | add a tick handler that busy-waits 0.5 ms — for proving `--compare` catches a slowdown | |
 | `npm run bench:micro` | micro-benchmarks at 40 / 150 / 300 Tokens (Vitest `bench`, node environment) | ~15 s |
 
@@ -231,6 +231,29 @@ suspect, not the engine. Keep them boring.
   certify with `--long`.
 - **Anything the fixtures don't exercise** — shipped content with unusual
   rules (triggers, `Cannot`, statuses, promotions) is not on these boards.
+
+## Catch-up timing (offline progress)
+
+Two scripts in `bench/catchup/` time a long run of game time, for offline progress
+(brief 40; the numbers and the plan are in `docs/active/concept_offline_progress.md`,
+"Catch-up plan"). Neither is part of `npm run bench` or its `--compare`.
+
+| Command | What | Time |
+|---|---|---|
+| `node --expose-gc bench/catchup/time.mjs` | S2 headless for 1, 6 and 24 game-hours at 1000 ms steps: wall time, ms per step and the readable fingerprint totals at each checkpoint | ~1 min |
+| `… time.mjs --step=100 --hours=1,6` | today's tick, or any step (`--out=run.json` keeps the full fingerprints) | 24 h at 100 ms: ~4 min |
+| `node --expose-gc --cpu-prof --cpu-prof-dir=<dir> bench/catchup/time.mjs --hours=6` | a V8 profile of the engine (the `.0.` file; the other is the module loader's thread) | |
+| `node bench/catchup/page.mjs` | the same in the **real page**: perf build, headless Chrome, S2 with the whole UI listening, 1 game-hour at 1000 ms, alternating `ui` and `muted` × 3 | ~4 min |
+| `… page.mjs --hours=24 --modes=muted,ui --no-build` | a full 24 h in the page | ~2 min |
+
+- ⚠️ The headless numbers are about **twice** the page's for the same board (Vite's SSR
+  loader turns every imported call into a property lookup; the shipped build is bundled).
+  Judge "under 30 s" with `page.mjs`; use `time.mjs` for comparisons and fingerprints.
+- `muted` in `page.mjs` is an **estimate** of a catch-up with the UI's listeners muted: each
+  event keeps only as many listeners as the engine registers headless (`time.mjs --listeners`),
+  the first ones in subscription order. Its work is not proven identical; replace it with the
+  engine's own mute once that exists.
+- Both put a virtual wall clock in place (Date.now() moves with game time), as the bench does.
 
 ## Drawing and drag benches
 
