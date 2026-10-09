@@ -26,7 +26,7 @@ import { FlagLayer } from '../ui/components/board/FlagLayer.jsx';
 import { matAccepts } from '../ui/components/board/Board.jsx';
 import { dropOnMat } from '../ui/components/board/dropOnMat.js';
 import { FlagGhost } from '../ui/dnd/DragGhost.jsx';
-import { FlagRulesPanel } from '../ui/components/drawer/FlagRulesPanel.jsx';
+import { WorkRulesDrawer } from '../ui/components/dock/WorkRulesDrawer.jsx';
 import { HeroEditModal } from '../ui/modals/HeroEditModal.jsx';
 import { useUIModals } from '../ui/hooks/useUIModals.js';
 import { isRecallDrop, recallFromDrop } from '../ui/components/dock/dockRecall.js';
@@ -374,101 +374,73 @@ describe('the flag answers clicks on its round area (owner, 2026-09-21)', () => 
     });
 });
 
-describe('opening the rules panel (FP-73)', () => {
-    it('the UI opens the rules panel for the hero asked for, and another request swaps hero', () => {
+describe('opening the rules drawer (FP-73)', () => {
+    it('a request opens the drawer with that hero lit, another swaps hero; the button toggles it', () => {
         const { result } = renderHook(() => useUIModals(engine));
-        expect(result.current.flagRules.heroId).toBeNull();
+        expect(result.current.flagRules.isOpen).toBe(false);
         act(() => { EventBus.publish('ui:open_flag_rules', { heroId: 'h1' }); });
+        expect(result.current.flagRules.isOpen).toBe(true);
         expect(result.current.flagRules.heroId).toBe('h1');
         act(() => { EventBus.publish('ui:open_flag_rules', { heroId: 'fighter' }); });
         expect(result.current.flagRules.heroId).toBe('fighter');
         act(() => { result.current.flagRules.close(); });
+        expect(result.current.flagRules.isOpen).toBe(false);
         expect(result.current.flagRules.heroId).toBeNull();
+
+        act(() => { result.current.flagRules.toggle(); });
+        expect(result.current.flagRules.isOpen).toBe(true);
+        expect(result.current.flagRules.heroId).toBeNull();
+        act(() => { result.current.flagRules.toggle(); });
+        expect(result.current.flagRules.isOpen).toBe(false);
     });
 });
 
-describe('the rules panel (FP-71, FP-79, FPP-17, FPP-21)', () => {
-    const panel = (heroId, onClose = () => {}) => mount(h(FlagRulesPanel, { heroId, onClose }));
-    const row = (container, ruleId) => container.querySelector(`[data-rule-row="${ruleId}"]`);
+/**
+ * The rules grid replaced the per-hero rules panel. The panel's status line and skip reasons
+ * live on the flag's hover tooltip; its working-row tint, Reset and "Hero gone" have no place in
+ * a grid of the roster's heroes.
+ */
+describe('the rules grid (FP-71, FP-79, FPP-17)', () => {
+    const grid = () => mount(h(WorkRulesDrawer, { open: true, litHeroId: null, onClose: () => {} }));
+    const cell = (container, heroId, ruleId) => container.querySelector(`[data-rules-cell="${heroId}:${ruleId}"]`);
 
-    it('lists one row per held work skill, and a Fight row only for a hero who can fight', () => {
-        const a = panel('h1').container;
-        expect(row(a, 'forestry')).toBeTruthy();
-        expect(row(a, 'mining')).toBeTruthy();
-        expect(row(a, FlagRules.FIGHT)).toBeNull();
-        cleanup();
-
-        const b = panel('fighter').container;
-        expect(row(b, FlagRules.FIGHT)).toBeTruthy();
-        expect(row(b, 'melee')).toBeNull();                      // combat skills are one Fight row
-        expect(row(b, FlagRules.FIGHT).textContent).toContain('Fight');
+    it('a rule cell per held work skill, and a Fight rule only for a hero who can fight', () => {
+        const { container } = grid();
+        expect(cell(container, 'h1', 'forestry').getAttribute('data-cell')).toBe('rule');
+        expect(cell(container, 'h1', 'mining').getAttribute('data-cell')).toBe('rule');
+        expect(cell(container, 'h1', FlagRules.FIGHT).getAttribute('data-cell')).toBe('missing');
+        expect(cell(container, 'fighter', FlagRules.FIGHT).getAttribute('data-cell')).toBe('rule');
+        expect(cell(container, 'fighter', 'melee').getAttribute('data-cell')).toBe('level');   // combat skills are one Fight rule
     });
 
-    it('shows name, level and the default rule: allowed, priority 3', () => {
-        const { container } = panel('h1');
-        const forestry = row(container, 'forestry');
-        expect(forestry.textContent).toContain('50/99');
-        expect(forestry.querySelector('[data-rule-allowed]').checked).toBe(true);
-        expect(forestry.querySelector('[data-rule-priority="3"]').getAttribute('aria-pressed')).toBe('true');
-        expect(forestry.querySelectorAll('[data-rule-priority]')).toHaveLength(5);
+    it('shows the level and the default rule: allowed, priority 3', () => {
+        const { container } = grid();
+        const forestry = () => cell(container, 'h1', 'forestry');
+        expect(forestry().getAttribute('data-cell-on')).toBe('true');
+        fireEvent.mouseEnter(forestry());
+        expect(document.querySelector('[data-top-bar-tip]').textContent).toContain('50/99');
+        fireEvent.click(container.querySelector('[data-rules-mode]'));
+        expect(forestry().textContent).toBe('3');
     });
 
-    it('the Allowed toggle and the priority chips set the hero’s rule', async () => {
-        const { container } = panel('h1');
-        await act(async () => { fireEvent.click(row(container, 'mining').querySelector('[data-rule-allowed]')); });
+    it('clicks set the hero’s rule', async () => {
+        const { container } = grid();
+        await act(async () => { fireEvent.click(cell(container, 'h1', 'mining')); });
         expect(FlagRules.ruleOf('h1', 'mining')).toEqual({ allowed: false, priority: 3 });
 
-        await act(async () => { fireEvent.click(row(container, 'forestry').querySelector('[data-rule-priority="1"]')); });
-        expect(FlagRules.ruleOf('h1', 'forestry')).toEqual({ allowed: true, priority: 1 });
-        expect(row(container, 'forestry').querySelector('[data-rule-priority="1"]').getAttribute('aria-pressed')).toBe('true');
-
-        await act(async () => { fireEvent.click(row(container, 'forestry').querySelector('[data-rule-priority="5"]')); });
-        expect(FlagRules.ruleOf('h1', 'forestry').priority).toBe(5);
+        await act(async () => { fireEvent.click(container.querySelector('[data-rules-mode]')); });
+        await act(async () => { fireEvent.click(cell(container, 'h1', 'forestry')); });
+        expect(FlagRules.ruleOf('h1', 'forestry')).toEqual({ allowed: true, priority: 4 });
+        expect(cell(container, 'h1', 'forestry').textContent).toBe('4');
     });
 
-    it('highlights the row of the job the hero is working now', () => {
+    it('a recalled hero’s row stays editable', async () => {
         put(15, FOREST);
         Placement.plantFlagAt('h1', C(15));
-        const { container } = panel('h1');
-        expect(row(container, 'forestry').getAttribute('data-rule-working')).toBe('true');
-        expect(row(container, 'mining').getAttribute('data-rule-working')).toBeNull();
-    });
-
-    it('"Reset to defaults" puts every rule back', async () => {
-        Flags.setRule('h1', 'forestry', { priority: 1 });
-        Flags.setRule('h1', 'mining', { allowed: false });
-        const { container } = panel('h1');
-        await act(async () => { fireEvent.click(container.querySelector('[data-flag-rules-reset]')); });
-        expect(GameState.state.heroes.find(x => x.id === 'h1').flagRules).toEqual({});
-        expect(FlagRules.ruleOf('h1', 'mining')).toEqual({ allowed: true, priority: 3 });
-    });
-
-    it('the header shows the status and every skip reason (FPP-21), including skills the hero lacks', () => {
-        put(15, 'fixture_producer_alt');                   // mining — h2 has no mining
-        Flags.plant('h2', C(15));
-        const { container } = panel('h2');
-        expect(container.querySelector('[data-flag-rules-name]').textContent).toBe('h2');
-        expect(container.querySelector('[data-flag-rules-status]').textContent).toBe('Nothing to do');
-        expect(container.querySelector('[data-flag-rules-skips]').textContent).toMatch(/skill/i);
-    });
-
-    it('a recalled hero’s panel stays editable and reads "In the Guild"', async () => {
-        put(15, FOREST);
-        Placement.plantFlagAt('h1', C(15));
-        const { container } = panel('h1');
+        const { container } = grid();
         await act(async () => { Placement.recallHeroById('h1'); });
-        expect(container.querySelector('[data-flag-rules-status]').textContent).toBe('In the Guild');
-        await act(async () => { fireEvent.click(row(container, 'forestry').querySelector('[data-rule-priority="2"]')); });
-        expect(FlagRules.ruleOf('h1', 'forestry').priority).toBe(2);
-    });
-
-    it('a hero who no longer exists shows "Hero gone" and a Close', () => {
-        const onClose = vi.fn();
-        const { container } = panel('nobody', onClose);
-        const gone = container.querySelector('[data-flag-rules-gone]');
-        expect(gone.textContent).toContain('Hero gone');
-        fireEvent.click([...gone.querySelectorAll('button')].find(b => b.textContent === 'Close'));
-        expect(onClose).toHaveBeenCalled();
+        await act(async () => { fireEvent.click(cell(container, 'h1', 'forestry')); });
+        expect(FlagRules.ruleOf('h1', 'forestry').allowed).toBe(false);
     });
 });
 

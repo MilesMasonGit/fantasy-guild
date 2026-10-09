@@ -9,6 +9,7 @@ import { SkillIcon } from '../base/SkillIcon.jsx';
 import { boardArtSteps } from '../base/TokenSprite.jsx';
 import { AnimatedHeroSprite } from '../board/AnimatedHeroSprite.jsx';
 import { FlagMark } from '../board/FlagMark.jsx';
+import { WorkRulesLink } from '../dock/WorkRulesDrawer.jsx';
 import { TopBarTip } from '../board/TopBarTip.jsx';
 import { useLiveMatFit } from '../board/MatFitContext.jsx';
 import { useEntityDrag } from '../../dnd/DndKit.jsx';
@@ -126,6 +127,7 @@ export const HeroInspectionSheet = ({ heroId, onClose, onEdit }) => {
                         <h3 className="min-w-0 text-sm font-bold text-white truncate">{hero.name}</h3>
                         <span data-hero-panel-job className="ml-auto shrink-0 text-xs text-gi-muted truncate">{jobTitle}</span>
                     </div>
+                    <WorkRulesLink heroId={heroId} />
                     <div className="flex items-center gap-2">
                         <div data-hero-panel-hp className="h-1.5 flex-1 bg-black/60 rounded-full overflow-hidden">
                             <div className={cn('h-full transition-all duration-300', hpTone)} style={{ width: `${hpPct}%` }} />
