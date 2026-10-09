@@ -115,7 +115,9 @@ the first outside playtest, modding.
 
 ### Read-only research (any time, in parallel)
 
-- **Owner art list**: one to-draw list, so art is ready before the code.
+- **Owner art list** → done 2026-10-09: [owner_art_list.md](owner_art_list.md)
+  (terrain decided: same-size pixels, muted; plus the picked effect
+  animations). One to-draw list, so art is ready before the code.
   - **Terrain**: brief 80's research phase (what of the old terrain system
     survives, the look questions) run early to produce its art list.
     ⚠️ reorders brief 80's first phase only; the code still follows the Atlas.

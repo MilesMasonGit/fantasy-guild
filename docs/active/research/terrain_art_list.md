@@ -211,7 +211,7 @@ goes.
 
 | Q | Answer |
 |---|---|
-| L-1 | **Undecided: mockup first.** Past terrain attempts looked off; the owner suspects the chunky pixels and a too-bright palette. A static side-by-side page (chunky vs same-as-Tokens, current vs muted colours, real Tokens on top) decides it: `docs/active/research/terrain_mockup.html`. |
+| L-1 | **B, same as Tokens, with muted colours** (decided from `terrain_mockup.html`, 2026-10-09): one ground pixel = one Token pixel (the 16 px / `ter_*.png` set), muted to about `brightness(0.85) saturate(0.7)` of today's colours. Past attempts looked off from chunky pixels and a too-bright palette. The chunky (8 px) set is retired. |
 | L-2 | **A**: one seamless sheet per ground, plus 1–2 alternates. |
 | L-3 | **A**: computed wiggly edges (the September tuning). |
 | L-4 | **A**: the ground follows the nodes. |
