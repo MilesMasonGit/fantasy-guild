@@ -118,6 +118,13 @@ export function surfaceWithinRegions(x, y, regions) {
 const AUTO_SCROLL = { enabled: true, threshold: { x: 0, y: 0.18 } };
 
 /**
+ * ⚠️ Static too: a fresh options object on each provider render gives dnd-kit a new sensor, so
+ * every drag source gets new listeners, and every memoised one redraws, at each drag start
+ * and end.
+ */
+const SENSOR_OPTIONS = { activationConstraint: { distance: 8 } };
+
+/**
  * Whatever is carried casts the hard pixel shadow `PixelArt` draws for `lifted`; a soft
  * drop-shadow on top would be a second, blurred shadow, so the overlay only brightens.
  */
@@ -226,9 +233,7 @@ export const DeckDndProvider = ({ children }) => {
     const glideTargetRef = useRef(null);
     const regionsRef = useRef([]);
 
-    const sensors = useSensors(
-        useSensor(AlphaPointerSensor, { activationConstraint: { distance: 8 } })
-    );
+    const sensors = useSensors(useSensor(AlphaPointerSensor, SENSOR_OPTIONS));
 
     // While a drag is live, track which surface the cursor is over so the ghost can bloom bold
     // over the board and stay compact over a drawer.
@@ -421,11 +426,13 @@ export function useEntityDrag({
         disabled,
         data: { kind, sourceSurface, ...payload }
     });
-    return {
-        setNodeRef,
-        isDragging,
-        handleProps: keyboardAccessible ? { ...listeners, ...attributes } : { ...listeners }
-    };
+    // The same object until the listeners themselves change, so a memoised drag source is not
+    // redrawn for a fresh copy of the same handlers.
+    const handleProps = React.useMemo(
+        () => (keyboardAccessible ? { ...listeners, ...attributes } : { ...listeners }),
+        [listeners, attributes, keyboardAccessible]
+    );
+    return { setNodeRef, isDragging, handleProps };
 }
 
 /**

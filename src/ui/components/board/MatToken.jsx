@@ -94,8 +94,52 @@ const SLIDE_EASE = 'cubic-bezier(0.2, 0.8, 0.2, 1)';
  * child. A hero stands beside the Token, and the bubbles have to stay
  * readable in front of that hero. A single box would make its own stacking context and bury
  * them under the hero's feet.
+ * ⚠️ Two components on purpose. dnd-kit re-renders every component that holds a drag hook
+ * whenever any drag starts, ends or crosses into another drop target, and while this Token is
+ * the one carried, on every pointer move. The hook lives in this thin shell; the Token itself
+ * (`MatTokenBody`) is memoised on what it draws, so a drag elsewhere costs each Token a hook
+ * call, not a redraw of its art, badges and bubbles.
  */
-export const MatToken = React.memo(function MatToken({
+export const MatToken = React.memo(function MatToken(props) {
+    const { id, typeId } = props;
+    const def = getTokenType(typeId);
+    const isPermanent = !!(def?.cannotLeaveBoard || def?.isGuildHall || typeId === 'token_guild_hall');
+    const drag = useEntityDrag({
+        id: `token-${id}`,
+        kind: DRAG_KIND.TOKEN,
+        payload: {
+            typeId,
+            from: { instanceId: id },
+            onMiss: isPermanent ? () => {
+                // A UI-only alert: TILE_EVENT_ALERT is the engine's.
+                EventBus?.publish(UI_EVENTS.UI_TOKEN_ALERT, {
+                    instanceId: id,
+                    severity: 'disallow',
+                    type: 'drop_rejected',
+                    name: 'Guild Hall',
+                    title: 'Guild Hall cannot be removed from the playmat.',
+                    rulesText: null,
+                    message: 'Guild Hall cannot be removed from the playmat.'
+                });
+                return null;
+            } : undefined
+        },
+        sourceSurface: DND_SURFACE.BOARD,
+        // No keyboard sensor exists, so dnd-kit's tabIndex/role/press-space text would be dead
+        // on every mat Token. A plain div with neither is not a Tab stop.
+        keyboardAccessible: false
+    });
+    return (
+        <MatTokenBody
+            {...props}
+            dragging={drag.isDragging}
+            dragRef={drag.setNodeRef}
+            dragProps={drag.handleProps}
+        />
+    );
+});
+
+const MatTokenBody = React.memo(function MatTokenBody({
     id,
     typeId,
     x,
@@ -110,7 +154,10 @@ export const MatToken = React.memo(function MatToken({
     onOpenRecipes,
     onRecallHero,
     disallowMode = false,
-    onFlipDisallow
+    onFlipDisallow,
+    dragging = false,
+    dragRef,
+    dragProps
 }) {
     // Perf draw switches: each only stops DRAWING (see drawSwitches.js).
     const bubblesDrawn = useDrawn('bubbles');
@@ -140,7 +187,6 @@ export const MatToken = React.memo(function MatToken({
     const def = getTokenType(typeId);
     const label = tokenName(typeId);
     const isGuildHallToken = typeId === 'token_guild_hall';
-    const isPermanent = !!(def?.cannotLeaveBoard || def?.isGuildHall || isGuildHallToken);
 
     // A Token with a registered sheet animates on the board only; everything else, and every
     // other surface, keeps the plain static sprite.
@@ -180,45 +226,19 @@ export const MatToken = React.memo(function MatToken({
     const staffed = hasHero || !!heroId;
     const isFiniteToken = !isGuildHallToken && usesRemaining != null;
 
-    const drag = useEntityDrag({
-        id: `token-${id}`,
-        kind: DRAG_KIND.TOKEN,
-        payload: {
-            typeId,
-            from: { instanceId: id },
-            onMiss: isPermanent ? () => {
-                // A UI-only alert: TILE_EVENT_ALERT is the engine's.
-                EventBus?.publish(UI_EVENTS.UI_TOKEN_ALERT, {
-                    instanceId: id,
-                    severity: 'disallow',
-                    type: 'drop_rejected',
-                    name: 'Guild Hall',
-                    title: 'Guild Hall cannot be removed from the playmat.',
-                    rulesText: null,
-                    message: 'Guild Hall cannot be removed from the playmat.'
-                });
-                return null;
-            } : undefined
-        },
-        sourceSurface: DND_SURFACE.BOARD,
-        // No keyboard sensor exists, so dnd-kit's tabIndex/role/press-space text would be dead
-        // on every mat Token. A plain div with neither is not a Tab stop.
-        keyboardAccessible: false
-    });
-
     React.useEffect(() => {
-        if (drag.isDragging) onClearInspect?.();
-    }, [drag.isDragging, onClearInspect]);
+        if (dragging) onClearInspect?.();
+    }, [dragging, onClearInspect]);
 
     // While it is in the player's hand, a Token does not grow or turn into something else:
     // that would swap it for a new instance mid-drag and lose the move. The change waits and
     // happens where it is put down. Released after the drop has been handled, which runs
     // before this clean-up.
     React.useEffect(() => {
-        if (!drag.isDragging) return undefined;
+        if (!dragging) return undefined;
         TimedChanges.setInHand(id, true);
         return () => TimedChanges.setInHand(id, false);
-    }, [drag.isDragging, id]);
+    }, [dragging, id]);
 
     // A Token the player moved simply IS where they let it go. The `left`/`top` slide exists
     // for moves the game makes (a push); on a drop it would make the Token visibly bounce over
@@ -226,13 +246,13 @@ export const MatToken = React.memo(function MatToken({
     // ends, which covers the drop's own re-render.
     const [skipSlide, setSkipSlide] = React.useState(false);
     React.useEffect(() => {
-        if (drag.isDragging) {
+        if (dragging) {
             setSkipSlide(true);
             return undefined;
         }
         const timer = setTimeout(() => setSkipSlide(false), SLIDE_MS + 80);
         return () => clearTimeout(timer);
-    }, [drag.isDragging]);
+    }, [dragging]);
 
     const [landing, setLanding] = React.useState(false);
     const landingTimer = React.useRef(null);
@@ -315,12 +335,11 @@ export const MatToken = React.memo(function MatToken({
                 ? `left ${TICK_INTERVAL_MS}ms linear, top ${TICK_INTERVAL_MS}ms linear`
                 : `left ${SLIDE_MS}ms ${SLIDE_EASE}, top ${SLIDE_MS}ms ${SLIDE_EASE}`
     };
-    const hidden = drag.isDragging;
+    const hidden = dragging;
 
     const artRef = React.useRef(null);
     const overlayRef = React.useRef(null);
-    const setNodeRef = drag.setNodeRef;
-    const setArtRef = React.useCallback((el) => { artRef.current = el; setNodeRef(el); }, [setNodeRef]);
+    const setArtRef = React.useCallback((el) => { artRef.current = el; dragRef?.(el); }, [dragRef]);
     useWalkerFollow(walker && walking && x == null, id, boxHalf, artRef, overlayRef);
 
     // Just spawned: pops out of its spawner and slides to its spot, on both boxes alike. Read once,
@@ -394,7 +413,7 @@ export const MatToken = React.memo(function MatToken({
         <>
             <div
                 ref={setArtRef}
-                {...drag.handleProps}
+                {...dragProps}
                 data-token-id={id}
                 data-token-art="true"
                 data-token-type={typeId}
@@ -410,7 +429,7 @@ export const MatToken = React.memo(function MatToken({
                 data-tile-finite-token={isFiniteToken ? 'true' : undefined}
                 onContextMenu={handleContextMenu}
                 onClick={(e) => {
-                    if (drag.isDragging) return;
+                    if (dragging) return;
                     // In disallow mode a click flips the Token allowed/disallowed and does
                     // nothing else; it never claims a quest.
                     if (disallowMode) { onFlipDisallow?.(id); return; }
@@ -546,7 +565,7 @@ export const MatToken = React.memo(function MatToken({
                     readTimer={detail?.turns || detail?.grows ? readTimer : null}
                     gear={gear}
                     disallowed={!!detail?.disallowed}
-                    dragProps={drag.handleProps}
+                    dragProps={dragProps}
                 />}
 
             </div>
