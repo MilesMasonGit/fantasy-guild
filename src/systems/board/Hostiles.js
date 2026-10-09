@@ -13,8 +13,8 @@ import * as TimedChanges from './TimedChanges.js';
 
 /**
  * An enemy authored `enemy.hostile: true` (see `isHostileEnemy`) attacks a hero who comes inside
- * the live flag radius (`Flags.flagRadius()`) around its spawner (`EnemyMotion.spawnerOf`); with no
- * live spawner it watches the radius around itself.
+ * the live flag radius (`Flags.flagRadius()`) around its spawner (`EnemyMotion.spawnerOf`), or around
+ * the node it ambushed from; with neither it watches the radius around itself.
  *
  * Attacking is `Flags.ambush`: the hero drops their work and claims the enemy, walks up, and
  * `BoardCombat.tickToken` begins the fight on arrival; they fight back whatever their rules say. A
@@ -39,10 +39,14 @@ export const SCAN_MS = 250;
 /** `board → ms until the next look`. Runtime only, per board, like EnemyMotion's bodies. */
 const clocks = new WeakMap();
 
-/** The point a hostile enemy watches around: its live spawner's centre, else its own. */
+/**
+ * The point a hostile enemy watches around: its live spawner's centre; else the Token it is
+ * tethered to, while that is on the mat (an ambusher's node, tethered by `TriggerSystem`); else its
+ * own.
+ */
 export function watchCentreOf(enemy) {
-    const spawner = EnemyMotion.spawnerOf(enemy.id);
-    return spawner ? { x: spawner.x, y: spawner.y } : { x: enemy.x, y: enemy.y };
+    const home = EnemyMotion.spawnerOf(enemy.id) || BoardState.getTokenById(EnemyMotion.tetherOf(enemy.id));
+    return home ? { x: home.x, y: home.y } : { x: enemy.x, y: enemy.y };
 }
 
 /** Whether a hero is wounded (read without rehydrating, like `FlagRules.heroRecord`). */
