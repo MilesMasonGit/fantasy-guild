@@ -29,6 +29,10 @@ interview D2, 2026-10-09). It adds to the Atlas; where it differs from
   Tokens do neither.
 - **Map supply is steady** from farmable enemies plus quests; **upcycling
   stays**. **Tools last forever** (T-126); the Shop's tools are bought once.
+- **Spawners stay where they suit the skill** (D4, 2026-10-09): player-built
+  growing places (Farmland, Forest Foundations) keep spawning; ore veins
+  refill in place. Amends "spawners only for enemies and lures"; see
+  [`concept_skill_loops.md`](../concept_skill_loops.md).
 - **No tier labels**: tiers are implicit in the chains (Fir → Iron Pickaxe →
   Gold), never "Tier 2" in the game.
 
