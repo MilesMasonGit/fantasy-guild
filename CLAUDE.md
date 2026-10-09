@@ -46,6 +46,17 @@ files may run in parallel, each in its own short-path git worktree
 so the owner's CMS syncs land there. Read-only work (reviews, research) may
 run in parallel freely. Checks in the running game are one at a time.
 
+**Planning sessions** (owner interviews, ideas, concept docs, answering a
+roadmap's owner questions) work on the long-lived **`planning`** branch in its
+own worktree, `.claude/worktrees/pp`, never in the main checkout. They write
+docs only. After each step: merge `main` in first (`git merge --ff-only main`,
+or a normal merge if it has moved on), commit, then fast-forward `main` with
+`git fetch . planning:main` and push. If `main` is checked out in the main
+folder that fetch is refused: check that folder's branch, then
+`git merge --ff-only planning` there. The flow is
+[`docs/active/ideas.md`](docs/active/ideas.md): listed → interview → ticket,
+concept doc or brief.
+
 ## Where things are written down
 
 - **`docs/active/NOW.md`**: what's in flight and what's next. Start here; update
