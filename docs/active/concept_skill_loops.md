@@ -19,6 +19,9 @@
   or two quickly in the game (CMS content plus small engine rules), the owner
   plays them, then the rest follow.
 
+- **The rule: gathering skills differ by how their nodes behave** (groves,
+  long-burst fields, refilling veins); **station skills differ by what they
+  produce** and who needs it (owner, 2026-10-09).
 - **Node behaviour is another way skills differ.** Spawners will still be used
   often where they fit (Forests spawn trees); they make less sense for ore
   veins, which refill in place. ⚠️ Amends the Atlas decision "spawners only
@@ -91,3 +94,29 @@
   rock elemental is dropped for Mining; ambushes live elsewhere.
 - **Rare finds**: gems (for crafting, enchanting) and occasionally a map
   fragment, as loud pops.
+
+### Smithing
+
+- **Station skills are distinct by what they produce**, not by a special
+  mechanic (owner). Smithing makes **ingots** (smelting at the furnace),
+  **gathering tools** (woodaxes, pickaxes: hero gear), **melee gear** (weapons
+  and metal armour) and **construction materials** (nails, fittings).
+- **Neighbours**: a **furnace and anvil together** work better; otherwise
+  Smithing's layout stays simple.
+- **Better stations are new buildings**: a Copper Anvil, an Iron Anvil… (the
+  D2 "better versions worth building", which fits moving day).
+- **Specialised stations**: different station types boost different
+  production: a **Smelter** is better at ingots, a **Weapon Forge** at weapons.
+  A specialised Region builds the stations its purpose needs.
+
+### Fishing
+
+- **Signature: shifting fish spots.** Water Tokens change what's biting over
+  time (as Coast ⇄ Shrimp Coast already does): a spot cycles between catches,
+  and a rare fish shows up briefly. Fishing is about being there at the right
+  time, gently; offline, heroes catch whatever is biting. **No signal** for a
+  rare bite: whoever is fishing there catches it.
+- **Fishing rods are hero gear** (see Approach).
+- **Neighbours**: a **dock or jetty** at the water **adds a fishing spot**.
+- **Feeds**: Cooking (fish dishes, the main fight food), Crafting and
+  Enchanting (shells, pearls), Farming (fish as fertiliser).
