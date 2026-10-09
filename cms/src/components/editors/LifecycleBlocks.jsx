@@ -1,12 +1,12 @@
 import { useMemo } from 'react';
 import { Plus, X, Sprout } from 'lucide-react';
 import { useEntityStore, makeLifecycleBlock, makeWeightedTokenEntry, makeTrickleEntry, TOKEN_LIFECYCLE_BLOCKS } from '../../stores/useEntityStore';
-import { FOUNDATION_KINDS, TURN_DEFAULTS, skillsByLayer } from '../../utils/constants';
+import { FOUNDATION_KINDS, TURN_DEFAULTS, RESPAWN_MODES, RESPAWN_DEFAULTS, RESPAWN_MIN_MS, skillsByLayer } from '../../utils/constants';
 import { Section, Field } from '../shared/EditorLayout';
 import { ItemPicker, ItemList } from './Statements';
 
 /**
- * The Token Lifecycle blocks: spawner, grows, turns, foundation, shop and trickle, each added or removed as a whole.
+ * The Token Lifecycle blocks: spawner, grows, turns, foundation, shop, trickle and respawn, each added or removed as a whole.
  * ⚠️ Removing a block writes `undefined`, which JSON.stringify omits, so an absent block stays absent in the file.
  */
 
@@ -17,6 +17,7 @@ const BLOCK_INFO = {
   foundation: { title: 'Foundation', what: 'Bought at the Shop and built on with a recipe.' },
   shop: { title: 'Shop', what: 'Sold at the Shop, priced in items.' },
   trickle: { title: 'Passive Production', what: 'Drops these items beside the Token every 5 minutes, all on one timer, no hero needed (Guild Hall only, for now). The Wishing Well adds its Water to the Hall’s.' },
+  respawn: { title: 'Respawns', what: 'Comes back after it runs out instead of leaving the mat: refills where it stands after a rest, or regrows from another Token (Tree → Sapling → Tree).' },
 };
 
 export default function LifecycleBlocks({ token, onChange }) {
@@ -83,6 +84,9 @@ export default function LifecycleBlocks({ token, onChange }) {
                   )}
                   {key === 'trickle' && (
                     <TrickleBlock lines={token.trickle} items={items} onChange={(v) => set('trickle', v)} />
+                  )}
+                  {key === 'respawn' && (
+                    <RespawnBlock block={token.respawn} selfId={token.id} tokens={tokens} tokenOptions={tokenOptions} onChange={(v) => set('respawn', v)} />
                   )}
                 </div>
               )}
@@ -236,6 +240,72 @@ function TrickleBlock({ lines, items, onChange }) {
   );
 }
 
+/** Seconds as the note says them: `30 s`. */
+const seconds = (ms) => `${Math.round((Number(ms) || 0) / 1000)} s`;
+
+/** How long `fromId` takes to grow back into `toId` along its Grows chain, or null when it never does. */
+function regrowTime(fromId, toId, tokens) {
+  const seen = new Set();
+  let id = fromId;
+  let total = 0;
+  while (id && tokens[id]?.grows && !seen.has(id)) {
+    seen.add(id);
+    total += Number(tokens[id].grows.afterMs) || 0;
+    id = tokens[id].grows.into;
+    if (id === toId) return total;
+  }
+  return null;
+}
+
+/**
+ * How a Token comes back after it runs out. A refill rests where it stands for its time, then refills to its starting charges all at once. A regrow becomes another Token at 0, whose own Grows block brings it back, so its time is set there and only shown here.
+ * Switching the mode rewrites the block, so a file never carries a refill's time on a regrow or the other way round.
+ */
+function RespawnBlock({ block, selfId, tokens, tokenOptions, onChange }) {
+  const mode = RESPAWN_MODES.includes(block.mode) ? block.mode : RESPAWN_DEFAULTS.mode;
+  const switchTo = (next) => {
+    if (next === block.mode) return;
+    onChange(next === 'regrow' ? { mode: 'regrow', into: '' } : { mode: 'refill', afterMs: RESPAWN_DEFAULTS.afterMs });
+  };
+  const into = mode === 'regrow' && block.into ? tokens[block.into] : null;
+  const back = into ? regrowTime(block.into, selfId, tokens) : null;
+  let note;
+  if (mode === 'refill') note = 'At 0 charges it stays where it stands, resting, then refills to its starting charges all at once.';
+  else if (!block.into) note = 'Pick the Token it becomes at 0 charges; that Token’s Grows block brings it back.';
+  else if (!into) note = `${block.into} does not exist.`;
+  else if (back === null) note = `${into.name || block.into} never grows back into this Token: give it a Grows block that ends here.`;
+  else note = `At 0 charges it becomes ${into.name || block.into}, which grows back in ${seconds(back)} (set on its Grows block).`;
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Comes back by">
+          <select aria-label="Comes back by" value={mode} onChange={(e) => switchTo(e.target.value)} className="w-full">
+            <option value="refill">Refilling where it stands</option>
+            <option value="regrow">Regrowing from another Token</option>
+          </select>
+        </Field>
+        {mode === 'refill' ? (
+          <IntField
+            label="Rests for (ms)" min={RESPAWN_MIN_MS} step={1000}
+            value={block.afterMs ?? RESPAWN_DEFAULTS.afterMs}
+            onChange={(afterMs) => onChange({ mode: 'refill', afterMs })}
+          />
+        ) : (
+          <Field label="Regrows from">
+            <TokenSelect
+              ariaLabel="Regrows from"
+              value={block.into}
+              tokenOptions={tokenOptions.filter((t) => t.id !== selfId)}
+              onChange={(next) => onChange({ mode: 'regrow', into: next })}
+            />
+          </Field>
+        )}
+      </div>
+      <p className="text-[10px] text-gray-600">{note}</p>
+    </div>
+  );
+}
+
 function WeightedTokenList({ label, entries, tokenOptions, onChange }) {
   const patchRow = (i, p) => onChange(entries.map((e, idx) => (idx === i ? { ...e, ...p } : e)));
   return (
@@ -265,10 +335,10 @@ function WeightedTokenList({ label, entries, tokenOptions, onChange }) {
 }
 
 /** Picks a Token id. A value that names no Token is still shown, not dropped. */
-function TokenSelect({ value, tokenOptions, onChange }) {
+function TokenSelect({ value, tokenOptions, onChange, ariaLabel }) {
   const known = tokenOptions.some((t) => t.id === value);
   return (
-    <select value={value || ''} onChange={(e) => onChange(e.target.value)} className="w-full" style={{ fontSize: 11 }}>
+    <select aria-label={ariaLabel} value={value || ''} onChange={(e) => onChange(e.target.value)} className="w-full" style={{ fontSize: 11 }}>
       <option value="">— pick a Token —</option>
       {value && !known && <option value={value}>{value} (missing)</option>}
       {tokenOptions.map((t) => (
