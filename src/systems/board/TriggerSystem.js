@@ -2,13 +2,16 @@
 
 import { EventBus } from '../core/EventBus.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
-import { statementsOf, stationSkillOf } from '../effects/statements.js';
+import { isEnemyDef } from '../../config/registries/enemyProfile.js';
+import { PLACEMENT, placementOf } from '../../config/registries/placementRegistry.js';
+import { statementsOf, stationSkillOf, firingChanceOf } from '../effects/statements.js';
 import { TRIGGER_EVENTS, TRIGGER_SCOPES, getTriggerEvent } from '../../config/registries/triggerRegistry.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { centreOf, distanceSq, nearRadius, tokensWithin } from './nearby.js';
 import { matchesTokenTarget, filterTargets } from './TileModifiers.js';
 import { KEYWORD } from '../effects/statements.js';
+import * as MatCap from './MatCap.js';
 import * as StatusApplication from './StatusApplication.js';
 import * as DealDamage from './DealDamage.js';
 import * as EffectActions from './EffectActions.js';
@@ -36,7 +39,8 @@ import { logger } from '../../utils/Logger.js';
  * something actually happened, and reacting to a stuck neighbour reads as a bug.
  * - The charge burns on service, not on luck: a Triggered Token that fires spends its charge
  * whether or not its proc rolled a hit, so a Token serving 100 events wears out in 100 events
- * regardless of luck.
+ * regardless of luck. ⚠️ Except a `Spawns` chance (`firingChance`), the ambush: it is rolled before
+ * the rule fires, so a miss is no firing and costs nothing.
  * - How much it burns is per statement: each statement carries its own `chargeDelta` (negative
  * spends and gates the effect, zero is free, positive restores up to the Token's starting charges).
  * The arithmetic is `Charges.applyDelta`; an unauthored delta spends 1.
@@ -154,6 +158,45 @@ function isReady(instance, statementId) {
 }
 
 /**
+ * Whether a rule-fired spawn has room under the mat's Token cap; true for every other statement. A
+ * held spawn waits for the next moment, as a spawner waits for its next attempt.
+ *
+ * ⚠️ Asked here, never inside `EffectActions.spawn`: the Spawner System asks the cap itself before
+ * calling it, and the bench's push storm (S4) drives it past the cap on purpose, so a check there
+ * would change that scenario's work.
+ *
+ * A spawn that takes its bearer's place (`here`) adds nothing to the count, so it is never held.
+ */
+function spawnHasRoom(instance, statement) {
+    if (statement.keyword !== KEYWORD.SPAWNS) return true;
+    if (placementOf(statement.payload) === PLACEMENT.HERE && MatCap.countsTowardCap(instance)) return true;
+    return MatCap.canPlaceMore(1);
+}
+
+/**
+ * The chance a statement rolls before it fires (`firingChanceOf`), rolled with the game's shared
+ * `Math.random`, which the bench seeds and counts. ⚠️ A statement that always fires draws nothing:
+ * every existing rule must consume the same random numbers it did before chances existed.
+ */
+function rolledToFire(statement) {
+    const chance = firingChanceOf(statement);
+    return chance == null || Math.random() * 100 < chance;
+}
+
+/**
+ * An enemy a rule spawns belongs to the Token that made it, as a spawner's enemies belong to their
+ * spawner: it watches for heroes around that Token (`Hostiles.watchCentreOf`), so an ambusher
+ * attacks whoever is working its node. Saved with the enemy. A bearer that has already left the mat
+ * holds nothing.
+ */
+function tetherToBearer(spawnedId, bearer) {
+    const spawned = BoardState.getTokenById(spawnedId);
+    if (!spawned || !isEnemyDef(getTokenType(spawned.typeId))) return;
+    if (!BoardState.getTokenById(bearer?.id)) return;
+    spawned.tether = bearer.id;
+}
+
+/**
  * Run one triggered statement's action. Returns true if the statement actually fired, which is what
  * spends the charge. A statement that was on cooldown, or whose condition was not met, has not
  * served and costs nothing.
@@ -183,6 +226,11 @@ function fireStatement(instance, statement, payload = null, { settled = false } 
         }
         return false;
     }
+
+    // Both before the cooldown is set and the charge spent: a held spawn and a missed roll are no
+    // firing. The cap first, so a full mat draws no random number.
+    if (!spawnHasRoom(instance, statement)) return false;
+    if (!rolledToFire(statement)) return false;
 
     // Set the cooldown BEFORE running actions. An action that publishes an
     // event this same Token listens for would otherwise re-enter and fire
@@ -245,7 +293,9 @@ function runStatementActions(instance, statement, payload = null, { settled = fa
         EffectActions.remove(statement, roles());
     }
     if (statement.keyword === KEYWORD.SPAWNS) {
-        bearerReplaced = !!EffectActions.spawn(statement, roles())?.replacedBearer;
+        const landed = EffectActions.spawn(statement, roles());
+        bearerReplaced = !!landed?.replacedBearer;
+        if (landed && !bearerReplaced) tetherToBearer(landed.instanceId, instance);
     }
     if (statement.keyword === KEYWORD.TRANSFORMS) {
         bearerReplaced = EffectActions.transform(statement, roles());
@@ -262,7 +312,9 @@ function runStatementActions(instance, statement, payload = null, { settled = fa
     }
 
     for (const modifier of [statement.payload].filter(Boolean)) {
-        const chance = modifier.chance ?? 100;
+        // A chance rolled before the rule fired (`rolledToFire`) is not rolled again here, which
+        // would draw a second number for nothing.
+        const chance = firingChanceOf(statement) != null ? 100 : (modifier.chance ?? 100);
         const hit = chance >= 100 || Math.random() * 100 < chance;
         if (!hit) continue;
 

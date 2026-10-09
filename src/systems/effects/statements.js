@@ -237,6 +237,12 @@ export const KEYWORDS = Object.freeze([
         id: KEYWORD.SPAWNS,
         label: 'Spawns',
         blurb: 'Puts a Token on the board — where this one stands, or on a free tile.',
+        /**
+         * ⚠️ Its chance is rolled BEFORE the rule fires, unlike a `Grants` proc, which rolls after
+         * the charge is spent. An ambush is a risk of working the node, not a service the node
+         * performs, so a miss is no firing at all: no charge, no cooldown.
+         */
+        firingChance: true,
         filter: false,
         targetsRole: false,
         when: WHEN.REQUIRED,
@@ -314,6 +320,16 @@ export function keywordAllowsRole(keywordId, role) {
 }
 
 /**
+ * The chance (%) a statement rolls before it may fire, or null when it always fires: a keyword
+ * without `firingChance`, or a chance left out or at 100.
+ */
+export function firingChanceOf(statement) {
+    if (!getKeyword(statement?.keyword)?.firingChance) return null;
+    const chance = statement?.payload?.chance ?? 100;
+    return chance >= 100 ? null : chance;
+}
+
+/**
  * Whether an `Applies` aims at a role instead of its filter.
  *
  */
@@ -374,7 +390,7 @@ export function blankPayload(keywordId) {
         case KEYWORD.CANNOT:
             return blankRestriction();
         case KEYWORD.SPAWNS:
-            return { typeId: '', placement: 'here' };
+            return { typeId: '', placement: 'here', chance: 100 };
         case KEYWORD.TRANSFORMS:
             return { typeId: '' };
         case KEYWORD.HEALS:
