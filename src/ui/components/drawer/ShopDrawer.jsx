@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { memo, useEffect, useRef, useState, useCallback } from 'react';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 import { cn } from '../../utils/cn.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
@@ -99,13 +99,9 @@ function useShopRefresh(active) {
 }
 
 export const ShopDrawer = ({ isOpen, onClose, menuRight = false }) => {
-    useShopRefresh(isOpen);
     const { activePayload } = useActiveDrag();
     const surface = useDragSurface();
     const state = shopDrawerState(isOpen, activePayload, surface);
-
-    const shop = isOpen ? Shop.catalogue() : [];
-    const cap = Shop.capStatus();
 
     return (
         <aside
@@ -130,6 +126,34 @@ export const ShopDrawer = ({ isOpen, onClose, menuRight = false }) => {
                     : 'transform 250ms cubic-bezier(0.16,1,0.3,1), opacity 200ms'
             }}
         >
+            <ShopContents isOpen={isOpen} onClose={onClose} />
+
+            {/* The lip: the strip left showing while a Shop Token is carried. */}
+            <div
+                aria-hidden
+                className={cn(
+                    'absolute inset-y-0 right-0 border-l-2 border-gi-gold/60 bg-gi-base/90 transition-opacity duration-200 pointer-events-none',
+                    state === 'lip' ? 'opacity-100' : 'opacity-0'
+                )}
+                style={{ width: SHOP_LIP_PX }}
+            />
+        </aside>
+    );
+};
+
+/**
+ * What the drawer shows: its header and the rows for sale.
+ * ⚠️ Apart from the drawer on purpose: the drawer redraws at every drag start, end and crossing
+ * between the mat and a drawer (it slides to a lip for a Shop row), and the catalogue is worked
+ * out afresh each time this draws.
+ */
+const ShopContents = memo(function ShopContents({ isOpen, onClose }) {
+    useShopRefresh(isOpen);
+    const shop = isOpen ? Shop.catalogue() : [];
+    const cap = Shop.capStatus();
+
+    return (
+        <>
             <div className="shrink-0 flex items-center justify-between px-3.5 py-1.5 border-b border-gi-border/40 bg-gi-base/80 min-h-[44px]">
                 <span className="text-sm md:text-base font-bold tracking-wide text-gi-text">Shop</span>
                 <div className="flex items-center gap-2.5">
@@ -163,19 +187,9 @@ export const ShopDrawer = ({ isOpen, onClose, menuRight = false }) => {
                     </section>
                 ))}
             </ShopList>
-
-            {/* The lip: the strip left showing while a Shop Token is carried. */}
-            <div
-                aria-hidden
-                className={cn(
-                    'absolute inset-y-0 right-0 border-l-2 border-gi-gold/60 bg-gi-base/90 transition-opacity duration-200 pointer-events-none',
-                    state === 'lip' ? 'opacity-100' : 'opacity-0'
-                )}
-                style={{ width: SHOP_LIP_PX }}
-            />
-        </aside>
+        </>
     );
-};
+});
 
 /** Every Shop row is exactly this tall: the 128 px sprite plus the row's padding. */
 export const SHOP_ART_PX = 128;
@@ -251,9 +265,28 @@ export const ShopRow = ({ item }) => {
         disabled: !ok
     });
     return (
+        <ShopRowBody
+            item={item}
+            chosen={chosen}
+            ok={ok}
+            onPick={setPicked}
+            held={drag.isDragging}
+            dragRef={drag.setNodeRef}
+            dragProps={ok ? drag.handleProps : NO_HANDLE}
+        />
+    );
+};
+
+const NO_HANDLE = Object.freeze({});
+
+// ⚠️ Apart from its drag hook on purpose: dnd-kit redraws the hook's holder at every drag start,
+// end and change of target; the row is memoised on what it draws.
+const ShopRowBody = memo(function ShopRowBody({ item, chosen, ok, onPick, held, dragRef, dragProps }) {
+    const options = item.options || null;
+    return (
         <div
-            ref={drag.setNodeRef}
-            {...(ok ? drag.handleProps : {})}
+            ref={dragRef}
+            {...dragProps}
             data-shop-item={chosen.typeId}
             data-shop-row={chosen.typeId}
             data-shop-group={item.group || undefined}
@@ -263,7 +296,7 @@ export const ShopRow = ({ item }) => {
             className={cn(
                 'shrink-0 overflow-hidden rounded-lg border border-gi-border/50 bg-gi-base/50 p-2 flex items-stretch gap-2 select-none transition-opacity',
                 ok ? 'cursor-grab touch-none hover:border-gi-gold/60' : 'opacity-50 cursor-not-allowed',
-                drag.isDragging && 'opacity-30'
+                held && 'opacity-30'
             )}
         >
             <div className="flex-1 min-w-0 flex flex-col gap-1">
@@ -272,7 +305,7 @@ export const ShopRow = ({ item }) => {
                         <select
                             data-shop-select
                             value={chosen.typeId}
-                            onChange={e => setPicked(e.target.value)}
+                            onChange={e => onPick(e.target.value)}
                             onPointerDown={e => e.stopPropagation()}
                             onKeyDown={e => e.stopPropagation()}
                             aria-label={`${item.name}: pick one`}
@@ -315,6 +348,6 @@ export const ShopRow = ({ item }) => {
             </div>
         </div>
     );
-};
+});
 
 export default ShopDrawer;

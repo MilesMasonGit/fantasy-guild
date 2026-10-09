@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { memo, useRef, useState } from 'react';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { resolveSpritePath, resolveAnimationPath } from '../../../utils/AssetManager.js';
@@ -37,7 +37,9 @@ const TIER_BG = {
  * A banked level is still the hero's: it shows with its level, because promotion is reversible
  * and the player has no other way to see it here.
  */
-export const HeroInspectionSheet = ({ heroId, onClose, onEdit }) => {
+// Memoised: the panel around it holds a drop target, which dnd-kit redraws at every drag start,
+// end and change of target.
+export const HeroInspectionSheet = memo(function HeroInspectionSheet({ heroId, onClose, onEdit }) {
     // Flat projection, per the useGameState selector contract: a string that changes only when
     // something drawn here changes.
     const signature = useGameState(
@@ -62,19 +64,6 @@ export const HeroInspectionSheet = ({ heroId, onClose, onEdit }) => {
     const lockedOpen = useLockedListOpen();
     const [expandedId, setExpandedId] = useState(null);
     const fit = useLiveMatFit();
-
-    const drag = useEntityDrag({
-        id: `inspect-hero-drag-${heroId}`,
-        sourceSurface: DND_SURFACE.DRAWER,
-        kind: DRAG_KIND.HERO,
-        payload: {
-            kind: DRAG_KIND.HERO,
-            heroId,
-            name: hero?.name,
-            spriteId: hero?.spriteId || hero?.icon,
-            from: { dock: true, inspection: true }
-        }
-    });
 
     if (!hero) return null;
 
@@ -119,7 +108,6 @@ export const HeroInspectionSheet = ({ heroId, onClose, onEdit }) => {
                     hero={hero}
                     heroId={heroId}
                     size={2 * ART_PX * boardArtSteps(fit)}
-                    drag={drag}
                 />
 
                 <div className="flex flex-col gap-1 pb-2.5">
@@ -186,13 +174,27 @@ export const HeroInspectionSheet = ({ heroId, onClose, onEdit }) => {
             </div>
         </div>
     );
-};
+});
 
 /**
  * The hero idling at `size` (twice the mat's art), their flag standing behind them. The figure
  * is the drag handle that sends the hero out, as the bar's figure is.
  */
-const HeroFigure = ({ hero, heroId, size, drag }) => {
+// The sheet's drag source, in its own component: dnd-kit redraws the holder of a drag hook at
+// every drag start, end and change of target, and the sheet around it is long.
+const HeroFigure = ({ hero, heroId, size }) => {
+    const drag = useEntityDrag({
+        id: `inspect-hero-drag-${heroId}`,
+        sourceSurface: DND_SURFACE.DRAWER,
+        kind: DRAG_KIND.HERO,
+        payload: {
+            kind: DRAG_KIND.HERO,
+            heroId,
+            name: hero?.name,
+            spriteId: hero?.spriteId || hero?.icon,
+            from: { dock: true, inspection: true }
+        }
+    });
     const sprite = hero.spriteId || hero.classId || null;
     const animArt = sprite ? resolveAnimationPath(sprite) : null;
     const staticArt = animArt ? null : resolveSpritePath(sprite || hero.icon || 'hero_recruit_0');

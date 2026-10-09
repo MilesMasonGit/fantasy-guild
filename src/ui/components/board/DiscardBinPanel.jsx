@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import { cn } from '../../utils/cn.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
@@ -124,10 +124,13 @@ const EmptySlot = () => (
     <div data-bin-slot="" className="aspect-square rounded-full border-2 border-dashed border-white/15" />
 );
 
+/**
+ * ⚠️ Two components on purpose: dnd-kit re-renders the holder of a drop hook at every drag
+ * start, end and change of target. The hook lives in this thin shell, which works out the one
+ * thing the bin draws from a drag (whether the Token over it would be refused); the bin itself
+ * (`BinContents`) is memoised on that.
+ */
 export const DiscardBinPanel = ({ className, dropDisabled = false }) => {
-    useBinRefresh();
-    const [hoverId, setHoverId] = useState(null);
-
     const drop = useEntityDrop({
         id: BIN_DROP_ID,
         surface: DND_SURFACE.DRAWER,
@@ -138,6 +141,19 @@ export const DiscardBinPanel = ({ className, dropDisabled = false }) => {
     // The cue says what the engine will say: red for a Token the bin refuses.
     const carried = drop.isOver && binAccepts(drop.activePayload) ? drop.activePayload : null;
     const refusal = carried ? DiscardBin.canBin(carried.from.instanceId, { fromHand: true }) : null;
+    return (
+        <BinContents
+            className={className}
+            dropRef={drop.setNodeRef}
+            droppableProps={drop.droppableProps}
+            refusal={refusal}
+        />
+    );
+};
+
+const BinContents = memo(function BinContents({ className, dropRef, droppableProps, refusal }) {
+    useBinRefresh();
+    const [hoverId, setHoverId] = useState(null);
 
     const contents = DiscardBin.binContents();
     const refund = named(DiscardBin.binRefundTotal());
@@ -160,8 +176,8 @@ export const DiscardBinPanel = ({ className, dropDisabled = false }) => {
 
     return (
         <section
-            ref={drop.setNodeRef}
-            {...drop.droppableProps}
+            ref={dropRef}
+            {...droppableProps}
             data-discard-bin
             data-bin-count={contents.length}
             className={cn(
@@ -220,6 +236,6 @@ export const DiscardBinPanel = ({ className, dropDisabled = false }) => {
             </button>
         </section>
     );
-};
+});
 
 export default DiscardBinPanel;
