@@ -29,7 +29,7 @@ Still to write (T-069): the mat-era guide to *keeping* it fast (draft in
 | `npm run bench:draw -- --compare` | Drawing, perf build, 1× and 4×, all scenes | ~35 min |
 | `npm run bench:draw -- --quick` | One quick S2 check (not comparable with full runs) | ~1 min |
 | `npm run bench:draw -- --switches --cpu=4` | Cost of each system: S2 with one switch off at a time | ~13 min |
-| `npm run bench:drag` | Drag reliability, real mouse input | ~13 min |
+| `npm run bench:drag` | Drag reliability, real mouse input, and frame stalls at pickup, carry and drop | ~19 min |
 | `npm run check:perf-build` | Proves the shipped build has no measuring code | ~1 min |
 
 Details, options and exit codes: [`bench/README.md`](../../bench/README.md).
@@ -111,24 +111,63 @@ before and after, S2 at 4× (perf build). Measure, don't fix.
 | H4 The flag | 2026-10-08 | 62.5 → 59.5 | 17.65 → 19.05 | No change: the flag lost two elements (gear, idle chip; 36 fewer DOM nodes in S2), which cannot add cost; other agents kept the CPU at ~46 % with the benches idle. Drag bench after, two runs (plain / overlays): flag → mat 94 / 68 % and 86 / 74 %, hero dock → mat 100 / 100 %; every flag miss was a Token or a neighbouring hero picked up (T-105, T-106). |
 | H1/H2/H4 eye-check fixes | 2026-10-09 | 48.1 → 64.8 | 22.25 → 16.70 | No change: both runs were far below the baseline (84 fps) on every 4× scene with another builder's benches loading the machine; S2 + hero sheet open 54.3 → 51.3 / 20.61 → 22.36 and S2 + Bank open both noise-sized. The flag drag's green dots are worked out once per pointer move (one pass over the mat's Tokens through `Flags.pinRefusal`): 0.011 ms a call with 11 Tokens in the game, so about 0.1 ms at the 80-Token cap. Drag bench after, two runs (plain / overlays): flag → mat 94 / (run aborted) and 90 / 84 %, hero dock → mat 100 / 100 %; every flag miss was a Token or a neighbouring hero picked up at the press (T-105, T-106), before any dot is drawn. The first run aborted because the bench took the hero panel, now left open beside the Bank, for the Bank itself; `BANK_OPEN` in `bench/browser/scenes.mjs` now leaves the hero panel out. |
 | H3 v2 Work rules grid | 2026-10-08 | 51.9 → 74.7 | 20.81 → 15.00 | No change: the drawer is shut in every draw scene and renders nothing while shut (no drop target, no subscriptions); both runs shared the machine with other agents' benches (the before run was cut short after S2 at 4×; the after run's S3 at 1× read 107 fps, 154 fps on a lone re-run). Drag bench after (plain / overlays): hero dock → mat 100 / 100 % with 8 heroes beside the new button, flag → mat 90 / 88 %, Token → mat 84 / 96 %, Token → bin 100 / 96 %, all else 100 %; no miss touched the button or the drawer (neighbouring Tokens or heroes picked up, or a press under a bar hero's head). |
+| D2 Hit-testing (brief 50) | 2026-10-09 | 76.7 → 55.0 | 14.41 → 20.95 | No change. The after run read slower on every busy scene at 4× alike (S3, Bank, Shop, notify, loot too) on a busier machine (it took 40 min against 23); an interleaved A/B minutes later (`--ab`, A,B,B,A, at 4×) read D2 58.8 fps / 18.95 ms against the build before it 59.0 / 19.16 ms on S2 (S3 17.4 / 16.3 fps, Bank 64.5 / 63.1 fps). At 1× nothing moved (S2 work 2.00 → 2.01 ms). D2 changes the press path (once per press) and the mat cell's overflow (clip, not hidden); the last press fix (`2a60ee69`) is press-only and was not in the measured build. |
 
-## Drag baseline (`npm run bench:drag`, 50 drags per kind)
+## Drag baseline (`npm run bench:drag`, perf build, S2, 50 drags per kind and pass)
 
-| Drag | Plain | With bubbles and alerts showing |
+Re-taken 2026-10-09 in the drag deep-dive (brief 50): after briefs 10 and 30,
+before its hit-testing fixes (D1, `5207889e`), and after them (D2: `c1d32ef2`,
+then `2a60ee69` and a diagnostics re-run, 100 % every time).
+
+| Drag | Plain: D1 → D2 | With bubbles showing: D1 → D2 |
 |---|---|---|
-| hero dock → mat | 100 % | 90 % |
-| flag → mat | **94 %** | **74 %** |
-| Token → mat | 100 % | 82 % |
-| Token → bin | 98 % | 100 % |
-| bin → mat | 100 % | 98 % |
-| Shop row → mat | 100 % | 82 % |
-| Bank item → hero | 100 % | 100 % |
+| hero dock → mat | 100 → 100 % | 100 → 100 % |
+| flag → mat | **92** → 100 % | **86** → 100 % |
+| Token → mat | **86** → 100 % | **98** → 100 % |
+| Token → bin | 100 → 100 % | 100 → 100 % |
+| bin → mat | 100 → 100 % | 100 → 100 % |
+| Shop row → mat | 100 → 100 % | 100 → 100 % |
+| Bank item → hero | 100 → 100 % | 100 → 100 % |
 
-The drag *starts* within a millisecond of the pointer moving 8 px, but see the
-certification below: a redraw stall follows it. Almost every failure is one of
-the drag tickets: the closed hero sheet's invisible drop slots (T-104, most
-failures), a hero sprite blocking its flag (T-105), a flag grabbing a Token
-(T-106), an alert mark blocking a Token (T-107). Goal: 100 % everywhere.
+The first baseline (2026-10-07, before the UI rework), plain / bubbles: hero dock
+100 / 90, flag 94 / 74, Token → mat 100 / 82, Token → bin 98 / 100, bin → mat
+100 / 98, Shop 100 / 82, Bank 100 / 100 %.
+
+The D1 misses: a hero's see-through pixels refusing the press (T-105); flags
+wholly over Token bodies, which ruling B5 left with nothing to press (now their
+cloth takes it, T-130); the mat scrolled 30 px under the top bar by focus; and
+the bench pressing where the game's rules give the press to something else
+(Token bodies measured by their art box, bigger since brief 10; the top Token
+rather than the nearest centre; bubbles, flags and heroes drawn over a flag).
+D2 fixed the first three in the game and brought the bench's press points in
+line with the game's rules ([`bench/README.md`](../../bench/README.md), fairness
+rules). A flag wholly under things drawn in front of it (a worked Token is drawn
+above every resting flag) cannot be pressed on the mat by anyone; the bench
+passes it over and names what covers it. Seen with bubbles showing in each D2 run
+(8, 20 and 14 of the 50 picks passed one flag over); in the run that recorded it,
+a worked Token's round body, drawn in front of the flag, covered all of its cloth.
+
+**Frames per drag phase** (D2 run, plain pass): the longest frame of 50 drags /
+the median drag's longest, in ms, and in brackets how many of the 50 drags had a
+frame over 16.7 ms.
+
+| Drag | pickup | carry | drop |
+|---|---|---|---|
+| hero dock → mat | 55 / 24 (50) | 36 / 6 (1) | 36 / 24 (50) |
+| flag → mat | 42 / 24 (50) | 12 / 6 (0) | 37 / 18 (49) |
+| Token → mat | 42 / 30 (50) | 12 / 6 (0) | 43 / 24 (50) |
+| Token → bin | 43 / 30 (50) | 36 / 12 (3) | 42 / 24 (50) |
+| bin → mat | 36 / 30 (50) | 6 / 6 (0) | 49 / 30 (50) |
+| Shop row → mat | 43 / 30 (50) | 18 / 12 (2) | 49 / 36 (50) |
+| Bank item → hero | 49 / 36 (50) | 42 / 12 (5) | 55 / 24 (50) |
+
+Reading: every pickup and nearly every drop has a frame over 16.7 ms, typically
+24–36 ms and up to ~55 ms, in the perf build at 1× (T-033, the drag deep-dive's
+D3). Carrying is smooth. The bubbles pass reads the same. In the D1 run carrying
+stuttered more over the bin, the Shop and the Bank (a frame over 16.7 ms in 19,
+29 and 47 of 50 plain drags; 34, 31 and 28 with bubbles); in the three D2 runs it
+fell to 0–10. Not explained: D2's only change on that path is the mat's cell no
+longer being a scroll container (`overflow-clip`). Re-measure before relying on it.
 
 ## Owner certification run (2026-10-07)
 
@@ -156,5 +195,5 @@ the hero sheet **lands on the mat underneath**; that is the intended behaviour.
 
 The pickup/drop stalls are dev-build numbers (React's development build
 re-renders several times slower than players see), so players get a smaller
-hitch. `bench:drag` doesn't see them yet, because it times the drag start, not
-the frames after it; add frame timing to it when the drag deep-dive starts.
+hitch: in the perf build `bench:drag` measures ~24–36 ms frames at pickup and
+drop (Drag baseline, above).

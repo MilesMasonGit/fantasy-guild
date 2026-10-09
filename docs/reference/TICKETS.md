@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-128**
+**Next free number: T-131**
 
 ---
 
@@ -41,6 +41,8 @@ here.
 | T-013 | **The last ~65 alert-icon glows and ~105 label text-shadows**: switch them to the hard-pixel style too? | CR3 summary |
 | T-014 | **Starting and quest content is written in engine code**, not the CMS. Move it to content? (Design call, never asked.) | CR3-515 |
 | T-127 | **Markets are cut for now** (owner 2026-10-09, D2): the Shrimp Market Token runs but pays nothing. Retire or repurpose it in the CMS (it turns up from Shrimp Coast content). The GDD §16 question is closed. | concept_progression.md |
+| T-129 | **A Token in your hand can vanish**: a goblin your hero is fighting can die while you carry it, and a Token worked down to its last charge can be used up mid-drag; the drop then lands nothing (seen once in 100 bin drags by the drag bench, 2026-10-09). Pause work and fights on a carried Token, as growing already waits (recommended), or leave it? The bench now passes over enemies in a fight. | brief 50 D2 |
+| T-130 | **A flag's cloth now beats a Token under it** (brief 50 D2, built, partly reverses ruling B5 that a Token's round body always wins): a flag standing wholly over Tokens could not be picked up on the mat at all. Now the coloured banner of a flag drawn in front of a Token takes the press; its pole, grass and empty corners still give way. Keep (recommended), go back to B5 (such a flag moves only by its hero or the hero bar), or let the whole drawn flag win (its grass tuft then covers the centre of a Token it is planted on)? Either way a flag wholly under things drawn in front of it (a worked Token is drawn above every resting flag) is pressed nowhere on the mat; the drag bench passes such a flag over. | brief 50 D2 |
 
 ## 2. Open work
 
@@ -75,7 +77,7 @@ here.
 | T-030 | P2 | open | Five tooltip implementations. Ruling: one shared gold-bordered tooltip; plain browser tips only on icon buttons. | CR3-455 |
 | T-031 | P2 | open | z-index: one table for the mat, ~20 literal values elsewhere; unify. | CR3-456 |
 | T-032 | P2 | open | Typography window is boxed inside Settings; Escape leaves its preview applied. *Suspected.* | CR3-453 |
-| T-033 | P1 | open | **Picking up, dropping and carrying redraw every draggable.** Measured by the owner 2026-10-07 (dev build, S2): ~90 ms pause at every pickup (seen as a hitch), ~60 ms at every drop, the mat redraws ~115×/s while carrying (6 % of frames over 16.7 ms); S3: 226 ms pickup. Fix in the drag deep-dive (a memoised Token grab); see `docs/reference/PERFORMANCE.md`. | CR3-400 |
+| T-033 | P1 | open | **Picking up, dropping and carrying redraw every draggable.** Measured by the owner 2026-10-07 (dev build, S2): ~90 ms pause at every pickup (seen as a hitch), ~60 ms at every drop, the mat redraws ~115×/s while carrying (6 % of frames over 16.7 ms); S3: 226 ms pickup. The drag bench now measures it per phase (perf build, S2, 2026-10-09: the longest pickup frame ~24–30 ms in a typical drag, one frame over 16.7 ms in nearly every pickup and drop). Fix in the drag deep-dive (a memoised Token grab); see `docs/reference/PERFORMANCE.md`. | CR3-400 |
 | T-035 | P2 | open | A push shoves overlapping Tokens anywhere on the mat. Ruling: move only what the newcomer crowds (and what that pushes into). ⚠ The bench will report WORK CHANGED for S4 — expected, accept it here. | CR3-151 |
 | T-036 | P3 | open | One close-button look: the red pixel-art cancel icon everywhere. | R8-Q3 |
 | T-037 | P3 | open | Two ways to hide notifications; keep only "Collapse". | R8-Q8 |
@@ -87,6 +89,7 @@ here.
 | T-043 | P3 | open | Empty-string duplicate React key logged on save load. *Unverified since 2026-09-21.* | FMR |
 | T-119 | P2 | open | **The game will be translated** (owner 2026-10-08). Pick how player-facing text is stored (a strings file per language and a lookup), then new UI keeps its text there; converting existing text waits for after the crunch. Until it exists, keep each new screen's text together, not scattered through logic. | ideas.md |
 | T-124 | P2 | open | **Credits register** (owner 2026-10-08): a `CREDITS.md` listing every third-party asset pack in `public/assets/` (today Kenney RPG audio and three ZapSplat packs in `audio/sfx/`, plus `audio/bgm/`), its licence file and the exact attribution wording the licence asks for. Whoever adds an asset adds its line. An in-game Credits screen comes before release. | concept_tone_and_world.md |
+| T-128 | P3 | open | The Guild Hall upgrade screen fits its web into a box that hides its overflow (`GuildHallBoard.jsx`, `overflow-hidden`), the pattern that let focus scroll the playmat 30 px under the top bar (fixed on the mat with `overflow-clip`, brief 50 D2). Check whether a node there can scroll it; if so, the same one-class fix. *Unverified.* | brief 50 D2 |
 
 ### Cleanup — dead code, vestiges, lint *(safe, invisible; delete tests only with the code they test)*
 
@@ -117,13 +120,6 @@ here.
 | T-108 | P3 | open | `cardUseCounts` (counts completed cycles per Token type; `GameState.js`, `BoardRunner.js`) is a deck-era name; rename it after the parked `atlas-wip` branch is merged or dropped (its `StateSchema.js` edit declares the field). | hygiene W4 |
 | T-095 | P3 | open | The tutorial beacon for "Plant a Flag" probably targets nothing: its selectors (`#rightmost-hero-dock`, `#hero-dock`) match no element in the bottom dock. *Unverified — check in the game.* | GDD survey |
 | T-103 | P3 | open | Comment-slimming leftovers: `src/state/StateSchema.js` (held back, owner's Atlas edit uncommitted), 2 comments in `cms/src/components/editors/RulesLine.jsx`, `cms/src/engine/sim/dryRun.mjs` header, `filterTargetTiles` named in `reachRegistry.js:26,136` (now `filterTargets`), ~15 test comments clipped by the ID stripper (e.g. `AdjacencyEffects.test.js:82`), and trailing string text carrying IDs (`workSkillRule.js` WORK_SKILL_WHY, `lifecycleAudit.js`, `matTuning.js` hints). Also dead exports found: `PERSONALITY_TAGS`, the three tutorial selectors in T-095. | Slimming pass |
-
-### Drag (found by `npm run bench:drag`, 2026-10-07; fix in the drag deep-dive, then re-run the bench to 100 %)
-
-| ID | Pri | Status | Summary | Origin |
-|---|---|---|---|---|
-| T-105 | P2 | open | A hero sprite's transparent pixels block grabbing the flag behind it (`MatHero` alpha test refuses the press; nothing starts). | bench:drag |
-| T-106 | P2 | open | Some flags can't be grabbed or grab a nearby Token instead, even at a point clear of Token art: Token hit areas may be larger than their art circles. *Cause unverified.* | bench:drag |
 
 ### Build, tests, docs
 
