@@ -146,21 +146,12 @@ Done 2026-10-09 → [concept_progression.md](concept_progression.md). Covered
 progression and pacing, endgame, economy and item sinks, moving day, showing
 what can move; "something else that improves with level" is deferred there.
 
-### D3 — Combat and gear
+### D3 — Combat and gear ✅ (general)
 
-- **Combat system, built out properly**: today it's "a glorified slap fight".
-  Owner's direction: **keep it simple**; try **Hearts instead of HP points**;
-  **low numbers**, so one or two extra damage is a noticeable boost.
-  ⚠️ today HP runs from 50 at level 1 to ~3,700 at 99, so this reworks the
-  whole HP and damage scale. GDD §6 has the current rules.
-- **Gear**: the loadout grid exists but no gear ships. Under Hearts, weapons and
-  armour are where the +1s come from.
-- **Enemy variety**: 4 enemies, all melee; the Cow and Thorn Elemental are
-  really nodes you hit. The combat cycle (melee > ranged > magic > stealth)
-  has nothing to act on. Plan the roster, including Atlas spawners, ambushes
-  and lures.
-- **Status effects**: 7 built (Poison, Burning, Bleed, Stun, …), none used.
-  Decide what survives "keep combat simple", or move them to magic.
+General direction done 2026-10-09 → [concept_combat.md](concept_combat.md);
+the details (numbers, style traits, statuses, roster, gear slots) are
+deferred to a later design pass. Covered: combat system, gear, enemy
+variety, status effects.
 
 ### D4 — Skill loops and the board as a puzzle
 
@@ -247,7 +238,8 @@ what can move; "something else that improves with level" is deferred there.
 ## Stage C notes — build items without their own interview
 
 - **Dormant code clean-out**: Time Bank, energy (ruled to go), Villager heroes,
-  Map bursts, the unloaded `stations.json`. Leftovers breed misleading comments
+  Map bursts, the unloaded `stations.json`, the old status engine (D3:
+  statuses move to the Rules system). Leftovers breed misleading comments
   and slow every agent. First after the crunch.
 - **Full CMS review** once the new loops and the Atlas are in, including **the
   simulator's model**: it prices in an abstract "gold per hour", built before
@@ -269,6 +261,9 @@ what can move; "something else that improves with level" is deferred there.
 
 ## Moved on
 
+- **D3 Combat and gear** (general direction: Hearts as HP, everyone fights,
+  bosses and party fights, gear crafted plus rare drops, potions from Alchemy)
+  → [concept_combat.md](concept_combat.md), 2026-10-09; details deferred.
 - **D2 Progression, pacing and the Atlas loop** (pacing, implicit tiers, moving
   day, economy, endgame and new game plus, the Starter Camp, movable markers)
   → [concept_progression.md](concept_progression.md), done 2026-10-09;
