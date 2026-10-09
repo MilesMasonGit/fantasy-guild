@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 import {
     DndContext, DragOverlay, PointerSensor, useSensor, useSensors,
-    useDraggable, useDroppable, pointerWithin
+    useDraggable, useDroppable, getClientRect, getScrollableAncestors
 } from '@dnd-kit/core';
 import { snapCenterToCursor } from '@dnd-kit/modifiers';
 import { CSS } from '@dnd-kit/utilities';
@@ -22,12 +22,87 @@ import { displayPointOf } from '../../systems/board/BoardState.js';
 const sfx = (clip) => EventBus.publish(ENGINE_EVENTS.AUDIO_PLAY, { clip });
 
 /**
+ * Drop-target boxes without reading the page's layout while the pointer moves.
+ * ⚠️ dnd-kit's own boxes re-read the scroll position of every scrolling box around a target
+ * each time one of its sides is asked for, and the target under the pointer is worked out on
+ * every pointer move and on every render of the drag system: hundreds of `scrollTop` reads per
+ * pickup, any of which can force the whole page's layout. So a target's scrolling boxes and
+ * their scroll positions are noted once, when the target is measured (`measureDropTarget`), and
+ * their scrolling is followed from their own scroll events while a drag is live.
+ */
+const measuredScroll = new WeakMap();   // target node → { boxes, at: [{x, y}] }
+const scrolledTo = new WeakMap();       // scrolling box → {x, y}, as of its last scroll event
+
+const scrollOf = (el) => (el === window ? { x: el.scrollX, y: el.scrollY } : { x: el.scrollLeft, y: el.scrollTop });
+
+/** dnd-kit's own measure for a drop target (its box, transforms ignored), noting its scrolling boxes. */
+export function measureDropTarget(node) {
+    const boxes = getScrollableAncestors(node);
+    const at = boxes.map((el) => {
+        const s = scrollOf(el);
+        scrolledTo.set(el, s);
+        return s;
+    });
+    measuredScroll.set(node, { boxes, at });
+    return getClientRect(node, { ignoreTransform: true });
+}
+
+function followScroll(e) {
+    const el = e.target === document ? document.scrollingElement : e.target;
+    if (el && scrolledTo.has(el)) scrolledTo.set(el, scrollOf(el));
+}
+
+/** Follow scrolling (for `dropBox`) while a drag is live. */
+export function followDropTargetScroll(on) {
+    if (typeof document === 'undefined') return;
+    if (on) document.addEventListener('scroll', followScroll, { capture: true, passive: true });
+    else document.removeEventListener('scroll', followScroll, { capture: true });
+}
+
+/**
+ * A drop target's box as it is drawn now, as plain numbers: the box measured at drag start,
+ * moved by however far its scrolling boxes have scrolled since. A box measured some other way
+ * (or a plain one) is returned as it is.
+ */
+function dropBox(container, rect) {
+    const raw = rect?.rect;
+    const info = raw ? measuredScroll.get(container?.node?.current) : null;
+    if (!info) return rect;
+    let dx = 0;
+    let dy = 0;
+    info.boxes.forEach((el, i) => {
+        const now = scrolledTo.get(el) || info.at[i];
+        dx += info.at[i].x - now.x;
+        dy += info.at[i].y - now.y;
+    });
+    return {
+        left: raw.left + dx, right: raw.right + dx, top: raw.top + dy, bottom: raw.bottom + dy,
+        width: raw.width, height: raw.height
+    };
+}
+
+/** dnd-kit's `pointerWithin`, on `dropBox`es: the targets under the pointer, nearest corners first. */
+function pointerWithinBoxes({ droppableContainers, droppableRects, pointerCoordinates }) {
+    if (!pointerCoordinates) return [];
+    const { x, y } = pointerCoordinates;
+    const hits = [];
+    for (const container of droppableContainers) {
+        const r = dropBox(container, droppableRects.get(container.id));
+        if (!r || !(r.top <= y && y <= r.bottom && r.left <= x && x <= r.right)) continue;
+        const corners = [[r.left, r.top], [r.left + r.width, r.top], [r.left, r.top + r.height], [r.left + r.width, r.top + r.height]];
+        const distances = corners.reduce((sum, [cx, cy]) => sum + Math.sqrt((x - cx) ** 2 + (y - cy) ** 2), 0);
+        hits.push({ id: container.id, data: { droppableContainer: container, value: Number((distances / 4).toFixed(4)) } });
+    }
+    return hits.sort((a, b) => a.data.value - b.data.value);
+}
+
+/**
  * Collision: the pointer's containing targets, smallest-area first, so a nested child target
  * (e.g. a card tile) wins over its parent while the parent still resolves over its own empty
  * space.
  */
 export function smallestWithin(args) {
-    const hits = pointerWithin(args);
+    const hits = pointerWithinBoxes(args);
     if (hits.length > 0) {
         if (hits.length === 1) return hits;
 
@@ -59,7 +134,7 @@ export function smallestWithin(args) {
     let minDistanceSq = Number.POSITIVE_INFINITY;
 
     for (const c of candidates) {
-        const r = c.rect.current;
+        const r = dropBox(c, c.rect.current);
         const dx = Math.max(r.left - px, 0, px - r.right);
         const dy = Math.max(r.top - py, 0, py - r.bottom);
         const distSq = dx * dx + dy * dy;
@@ -114,8 +189,20 @@ export function surfaceWithinRegions(x, y, regions) {
 }
 
 
+/**
+ * Static, so passing it to <DndContext> never counts as a changed prop.
+ * ⚠️ The page itself never scrolls (`body` is `overflow: hidden`; panels scroll inside), yet
+ * dnd-kit counts it among every target's scrolling boxes and asks it, on every pointer move,
+ * whether it can scroll: a layout read per move. Only the panels are asked.
+ */
+const AUTO_SCROLL = {
+    enabled: true,
+    threshold: { x: 0, y: 0.18 },
+    canScroll: (el) => typeof document === 'undefined' || el !== document.scrollingElement
+};
+
 // Static, so passing it to <DndContext> never counts as a changed prop.
-const AUTO_SCROLL = { enabled: true, threshold: { x: 0, y: 0.18 } };
+const MEASURING = { droppable: { measure: measureDropTarget } };
 
 /**
  * ⚠️ Static too: a fresh options object on each provider render gives dnd-kit a new sensor, so
@@ -256,6 +343,7 @@ export const DeckDndProvider = ({ children }) => {
         setActivePayload(payload);
         glideTargetRef.current = null;
         if (typeof document !== 'undefined') document.body.classList.add('gi-dnd-active');
+        followDropTargetScroll(true);
         sfx(DRAG_SFX.pickup);
 
         // Starting a hero drag from the dock tab or inspection panel while the hero is already
@@ -288,6 +376,7 @@ export const DeckDndProvider = ({ children }) => {
         // dragPointer itself is cleared by DragPointerProvider's own effect, which re-runs the
         // moment activePayload goes null.
         if (typeof document !== 'undefined') document.body.classList.remove('gi-dnd-active');
+        followDropTargetScroll(false);
     }, []);
 
     const handleDragEnd = useCallback((event) => {
@@ -380,6 +469,7 @@ export const DeckDndProvider = ({ children }) => {
             <DndContext
                 sensors={sensors}
                 collisionDetection={smallestWithin}
+                measuring={MEASURING}
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
                 onDragCancel={handleDragCancel}
