@@ -33,7 +33,9 @@ read-only research. None needs a design doc, none blocks a crunch brief.
 
 **Stage B — design interviews, in this order.** Each ends in a concept doc
 (or a section of an existing one). Interviews only need the owner's time, so
-they run while the crunch builds.
+they run while the crunch builds. **All nine done 2026-10-09** (first pass;
+combat details and "what grows with level" deferred; more design passes
+expected).
 
 | # | Design doc | Why here | Deadline |
 |---|---|---|---|
@@ -130,16 +132,10 @@ the first outside playtest, modding.
 
 ## Stage B — design interviews
 
-### D1 — Ground rules
+### D1 — Ground rules ✅
 
-- **Tone and world guide**: the GDD has mechanics but no world, mood, humour
-  or naming style. Agents will soon write item names, bubble lines and event
-  text; a one-page guide keeps them consistent.
-- **"Pops of activity"** as a rule for the whole game: the board is **largely
-  static, with pops of activity**, so the player is never oversaturated but
-  always has the next thing to look at. Likely lands in UI_STYLE.md or the GDD.
-- **Sound**: no audio section in the GDD; the game starts at volume 0. Will
-  there be sound, and who makes it? If yes, it joins the asset lists early.
+Done 2026-10-09 → [concept_tone_and_world.md](concept_tone_and_world.md):
+tone and world, the story hook, pops of activity, sound.
 
 ### D2 — Progression, pacing and the Atlas loop ✅
 
@@ -187,19 +183,12 @@ hero recolouring.
 
 Done 2026-10-09 → [concept_quests_tutorial.md](concept_quests_tutorial.md).
 
-### D9 — Release package
+### D9 — Release package ✅
 
-- **First outside playtest as a milestone**: decide what must be true before
-  someone else plays (tutorial, saves, first-hour pacing). *process* · may be
-  worth deciding earlier, as a target for Stage C.
-- **Saves before release**: saves live in the desktop app's browser storage,
-  and other versions are refused until 1.0. Real save files and carrying saves
-  across updates.
-- **Release readiness**: how updates reach players, readable crash logs, where
-  it's sold (itch.io, Steam, …; Steam has requirements and lead times).
-- **Translating existing text** (after T-119's setup).
-- **Modding system**: let players make their own content. Leans on the CMS and
-  its saving, translation and the encyclopedia's data.
+Done 2026-10-09 → [concept_release.md](concept_release.md): playtest after the
+Atlas and first loops, Steam (store page once the Atlas looks good), real
+save files, automatic crash reports, languages decided near release, content
+mods via the CMS after release.
 
 ---
 
@@ -229,6 +218,8 @@ Done 2026-10-09 → [concept_quests_tutorial.md](concept_quests_tutorial.md).
 
 ## Moved on
 
+- **D9 Release package** → [concept_release.md](concept_release.md), done
+  2026-10-09. **All nine design interviews are done.**
 - **D8 Quests and the tutorial** → [concept_quests_tutorial.md](concept_quests_tutorial.md),
   done 2026-10-09.
 - **D7 A living game** (events, dialogue, the return, hero identity) →

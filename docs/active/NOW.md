@@ -92,3 +92,10 @@ straight onto `main`; expect its commits between yours.
 - [concept_offline_progress.md](concept_offline_progress.md).
 - [concept_atlas.md](concept_atlas.md): read its owner decisions first. The
   unfinished Atlas code is parked on branch `atlas-wip`.
+- **Post-crunch plan** ([ideas.md](ideas.md)): the owner's ideas in stages, and
+  nine design interviews done 2026-10-09 (`concept_tone_and_world`,
+  `concept_progression`, `concept_combat`, `concept_skill_loops`,
+  `concept_knowledge`, `concept_guild_hall`, `concept_living_game`,
+  `concept_quests_tutorial`, `concept_release`). Not for the crunch, except:
+  brief 70 must read `concept_progression.md` and `concept_skill_loops.md`
+  first (its top lists what they change), and Stage A's small items.
