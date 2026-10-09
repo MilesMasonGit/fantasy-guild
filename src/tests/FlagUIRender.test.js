@@ -113,7 +113,7 @@ describe('the idle mark (FP-29)', () => {
         expect(hero.className).not.toContain('gi-glow-active');
     });
 
-    it('an idle flag keeps its colour, has a "…" chip, and its hero stands beside it at 128 px with no glow', () => {
+    it('an idle flag keeps its colour, has no chip, and its hero stands beside it at 128 px with no glow', () => {
         GameState.state.heroes[0].spriteId = 'hero_recruit_0';   // rehydration's default portrait
         Flags.plant('h1', BARE);                             // bare ground, nothing in range
         expect(Flags.statusOf('h1').state).toBe('idle');
@@ -123,7 +123,7 @@ describe('the idle mark (FP-29)', () => {
         expect(flag.getAttribute('data-flag-state')).toBe('idle');
         expect(flag.getAttribute('data-flag-colour')).not.toBe('base');
         expect(flag.querySelector('img').getAttribute('src')).toContain(`hero_flag_${flag.getAttribute('data-flag-colour')}.png`);
-        expect(flag.querySelector('[data-flag-idle-chip]').textContent).toContain('…');
+        expect(flag.querySelector('[data-flag-idle-chip]')).toBeNull();
 
         // ⭐ The hero is drawn by MatBoard, like every hero in every state
         // (Hero Movement M2) — never by the flag layer.
@@ -203,6 +203,52 @@ describe('the reach ring (FP-64, A-4)', () => {
     });
 });
 
+describe('the flag is just something to drag (brief 30 H4)', () => {
+    /**
+     * The work rules open from the hero bar; the flag carries no gear and no idle chip (the
+     * hero's own 'No work in range.' line says it, `Callouts.test.js`).
+     */
+    const extras = () => document.body.querySelector('[data-flag-gear], [data-flag-idle-chip]');
+
+    it('draws no gear and no idle chip, idle, hovered or inspected', () => {
+        Flags.plant('h1', BARE);
+        expect(Flags.statusOf('h1').state).toBe('idle');
+        const { container } = mount(h(FlagLayer, { hoverHeroId: 'h1', inspectedHeroId: 'h1' }));
+        const flag = container.querySelector('[data-flag="h1"]');
+        expect(extras()).toBeNull();
+        fireEvent.mouseEnter(flag);
+        expect(extras()).toBeNull();
+        expect(container.querySelectorAll('button')).toHaveLength(1);
+    });
+
+    it('on hover shows the hard outline, the hero name and the reach ring, and clears them on leave', () => {
+        GameState.state.heroes[0].name = 'Aela';
+        Flags.plant('h1', BESIDE);
+        const Hovering = () => {
+            const [id, setId] = React.useState(null);
+            return h(FlagLayer, { hoverHeroId: id, onHoverHero: setId });
+        };
+        const { container } = mount(h(Hovering));
+        const flag = container.querySelector('[data-flag="h1"]');
+        const tip = () => document.body.querySelector('[data-flag-tooltip="h1"]');
+        const ring = () => container.querySelector('[data-flag-ring="h1"]');
+        expect(flag.querySelector('[data-sprite-outline]')).toBeNull();
+        expect(tip()).toBeNull();
+        expect(ring()).toBeNull();
+
+        fireEvent.mouseEnter(flag);
+        expect(flag.querySelector('[data-sprite-outline="hover"]')).toBeTruthy();
+        expect(flag.innerHTML).not.toContain('gi-glow');
+        expect(tip().querySelector('.text-gi-gold').textContent).toBe('Aela');
+        expect(ring()).toBeTruthy();
+
+        fireEvent.mouseLeave(flag);
+        expect(flag.querySelector('[data-sprite-outline]')).toBeNull();
+        expect(tip()).toBeNull();
+        expect(ring()).toBeNull();
+    });
+});
+
 describe('the flag has no skill since slice 1.5b (FP-71)', () => {
     it('draws no skill disc, clicking it opens nothing, and its tooltip title is the hero name', () => {
         Flags.plant('h1', BARE);
@@ -215,7 +261,7 @@ describe('the flag has no skill since slice 1.5b (FP-71)', () => {
         fireEvent.click(flag);
         unsub();
         expect(document.querySelector('[role="menu"]')).toBeNull();
-        // Rules open only from the gear, never from the flag itself.
+        // The rules never open from the flag.
         expect(opened).toEqual([]);
 
         expect(flagTooltip('h1').title).toBe('h1');

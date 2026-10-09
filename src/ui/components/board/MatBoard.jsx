@@ -227,12 +227,6 @@ export const MatBoard = ({
         if (typeof document !== 'undefined' && document.body.classList.contains('gi-dnd-active')) return;
         const el = rootRef.current;
         if (!el) return;
-        // The gear is a control, not part of the flag's body: on it, nothing is hovered.
-        if (e.target?.closest?.('[data-flag-gear]')) {
-            setHoveredId(prev => (prev === null ? prev : null));
-            setFlagsYield(false);
-            return;
-        }
         /**
          * Flags have no hitbox over Tokens. A point on a Token's art circle is that Token's,
          * even when a flag is drawn in front of it: the Token is hovered (and so raised to the
