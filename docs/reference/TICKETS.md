@@ -142,7 +142,6 @@ here.
 | T-120 | P2 | open | Feed the hero bar's level-up bubbles from a catch-up: `heroBarBubbles.js` adds one bubble per `CatchUp.lastResult().summary.levelUps` row after the load's `GAME_RESET` (which clears bubbles; exempt reason `catch_up` like `dev_time_skip`). Needs `crunch/offline` and `crunch/hero-ui` both merged. | brief 40 O3 |
 | T-121 | P3 | open | Slot card playtime reads hours for seconds: `formatPlaytime(seconds)` in `SlotSelectionModal.jsx` is handed milliseconds (76 s shows as 21h 6m). | brief 40 O4 |
 | T-122 | P3 | open | `HeroEditModal` still embeds `HeroSkillSheet` with its own skill list, duplicating the H2 hero panel; `VitalBar.jsx` may have no consumers left. | brief 30 H2 |
-| T-123 | P3 | open | `bench/browser/servers.mjs` puts every bench's Vite cache in `node_modules/.vite-bench`, shared through the junction by all worktrees; parallel benches share one cache. Key it by worktree path. | brief 30 H4 |
 | T-114 | P3 | open | Remove `migrateSkillIds` (the `logging` → `forestry` content migration in the game loaders and the CMS store) once the owner has synced `data/` with `forestry`. | brief 20 R0 |
 
 ## 3. Parked — don't work on these without a reason

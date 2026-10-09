@@ -267,7 +267,9 @@ any server the bench started are removed on every way out, Ctrl+C included.
 Both serve the game themselves on a free port (never 5173/5174): the **perf
 build** by default (`vite build --mode perf` → `dist-perf/`, served by Vite's
 preview), or the **dev build** (a Vite dev server with its own dependency cache,
-`node_modules/.vite-bench`, so it never fights the owner's server).
+`node_modules/.vite-bench-<checkout>-<hash>`, one per checkout because worktrees
+share `node_modules` through a junction, so it never fights the owner's server or
+another worktree's bench).
 
 ⚠️ **Drawing numbers are machine-specific.** `bench/draw-baseline.json` is the
 owner's PC, taken on a quiet machine. A number from another machine, or from a
@@ -388,8 +390,9 @@ a compare fails, run it again before believing it.
 On a busy S2 mat, N **real drags** of each kind, sent as browser input
 (`Input.dispatchMouseEvent`): the pointer rests on the source for 80 ms (as a
 hand does), presses, makes one move under and one past the 8 px activation
-distance, eases to the target in 10 steps a frame apart, wiggles, releases, and
-waits 450 ms. Because it is real input, the browser's own hit-testing decides
+distance, eases to the target in 10 steps a frame apart, wiggles, holds still for
+50 ms after its own reads of the page, releases, and waits 450 ms. Because it is
+real input, the browser's own hit-testing decides
 what the press lands on, which is where "something is blocking the drag" bugs
 live. Sources and targets are picked from the live DOM and state for every drag
 (things move); targets are the best-cleared of 40 random points on the mat,
@@ -430,12 +433,22 @@ Fairness rules, so that a failure is the game's and not the bench's:
   tried at its centre, and says so.
 
 Per kind and pass it reports attempts, successes, success %, **pickup delay**
-p50/p95 and the grouped **failure causes**:
+p50/p95, **frame stalls** per drag phase and the grouped **failure causes**:
 
 - **press→start**: the press to the drag provider's start (`gi-dnd-active` on
   `<body>`, `DndKit.jsx`). It includes the bench's own 16 ms wait and two moves.
 - **8px move→start**: from the move that crossed the activation distance to the
   start: the game's own pickup delay.
+- **frames per drag phase**: every animation-frame interval (rAF to rAF, from a
+  frame loop the bench runs in the page; the Perf HUD is off during this bench),
+  in three phases that share no frame. **pickup**: the press to 100 ms after the
+  drag starts; **carry**: from then to the last move, before the bench reads the
+  page; **drop**: the frame the release lands in to 300 ms after it. Per phase:
+  the longest frame of all drags / the median drag's longest frame, and the
+  frames over **16.7 ms** (a missed frame at 60 Hz) out of all frames, with how
+  many drags had one in brackets. A stall anywhere on the main thread (a React
+  commit, a forced layout) shows as one long interval. In the overlays pass the
+  level-up bursts add stalls of their own.
 - a failure is one of: *never picked up* (with what `document.elementFromPoint`
   found at the press point after the hover: the nearest element with an
   identifying `data-` attribute, and in the dev build the React component names),

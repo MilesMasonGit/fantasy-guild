@@ -2,7 +2,9 @@
 // The drag bench's pure parts (bench/browser/dragLib.mjs): options, the pointer path, the per-kind
 // summary, the failure causes and the exit code. The bench itself drives Chrome and is not run here.
 import { describe, it, expect } from 'vitest';
-import { parseArgs, dragPath, summarise, failureCause, exitCode, KINDS, EXIT } from '../../bench/browser/dragLib.mjs';
+import path from 'node:path';
+import { parseArgs, dragPath, summarise, failureCause, exitCode, KINDS, EXIT, PHASES, STALL_MS, stallCells } from '../../bench/browser/dragLib.mjs';
+import { benchCacheDir } from '../../bench/browser/servers.mjs';
 
 describe('drag bench options', () => {
     it('defaults to 50 drags per kind on the perf build at CPU 1x, with the overlay pass', () => {
@@ -66,6 +68,43 @@ describe('summarising attempts', () => {
         expect(failureCause({ pickedUp: true, dropSound: 'unassign', underTarget: { identity: '[data-board-origin=true]' } }))
             .toMatch(/^dropped, no target took it/);
         expect(failureCause({ pickedUp: true, detail: 'the flag did not move' })).toMatch(/state not as intended: the flag did not move/);
+    });
+});
+
+describe('frame stalls per drag phase', () => {
+    const drag = (pickup, carry, drop) => ({ ok: true, pickedUp: true, frames: { pickup, carry, drop } });
+    const f = (frames, maxMs, over16) => ({ frames, maxMs, over16 });
+
+    it('takes the longest frame of all, the median drag\'s longest, and counts frames and drags over 16.7 ms', () => {
+        const s = summarise([
+            drag(f(10, 90, 2), f(40, 8, 0), f(30, 60, 1)),
+            drag(f(12, 20, 1), f(38, 7, 0), f(31, 9, 0)),
+            drag(f(11, 6, 0), f(41, 30, 1), null),
+            { ok: false, pickedUp: false, frames: null }
+        ]);
+        expect(s.stalls.pickup).toEqual({ drags: 3, frames: 33, worstMs: 90, medianMaxMs: 20, over16: 3, dragsWithStall: 2 });
+        expect(s.stalls.carry).toMatchObject({ drags: 3, frames: 119, worstMs: 30, over16: 1, dragsWithStall: 1 });
+        // A drag with no drop frames (it never let go) is left out of the drop, not counted as smooth.
+        expect(s.stalls.drop).toMatchObject({ drags: 2, frames: 61, worstMs: 60, over16: 1, dragsWithStall: 1 });
+    });
+
+    it('prints a phase as two cells, and a dash for a phase no drag reached', () => {
+        expect(stallCells({ drags: 3, frames: 33, worstMs: 90.4, medianMaxMs: 20, over16: 3, dragsWithStall: 2 })).toEqual(['90 / 20', '3 / 33 (2)']);
+        expect(stallCells({ drags: 0 })).toEqual(['—', '—']);
+        expect(PHASES).toEqual(['pickup', 'carry', 'drop']);
+        expect(STALL_MS).toBe(16.7);
+    });
+});
+
+describe('the bench dev server\'s dependency cache', () => {
+    it('is one per checkout: worktrees share node_modules through a junction, so the name carries the path', () => {
+        const main = benchCacheDir('C:/Users/x/Projects/fantasy_guild_v2');
+        const wt = benchCacheDir('C:/Users/x/Projects/fantasy_guild_v2/.claude/worktrees/d');
+        expect(main).not.toBe(wt);
+        expect(path.basename(wt)).toMatch(/^\.vite-bench-d-[0-9a-f]{8}$/);
+        expect(path.dirname(wt)).toBe(path.join('C:/Users/x/Projects/fantasy_guild_v2/.claude/worktrees/d', 'node_modules'));
+        // The same checkout always gets the same cache, however its path is spelled.
+        expect(benchCacheDir('c:/users/x/projects/fantasy_guild_v2')).toBe(path.join('c:/users/x/projects/fantasy_guild_v2', 'node_modules', path.basename(main)));
     });
 });
 

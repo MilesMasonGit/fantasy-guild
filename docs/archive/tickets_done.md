@@ -27,3 +27,4 @@ T-107 — Alert marks blocking presses: the marks were removed in brief 10 U3 �
 T-066 — CMS-importing tests run in a worktree once both node_modules are junction-linked; docs fixed, no code change — chore/max-plan-tiers — 2026-10-08
 T-113 — Brief 20 R1 bench work change (heroHash only: logging to forestry, explore gone) accepted and merged — crunch/class-rework — 2026-10-08
 T-044 — Remnants removed: the unused dock pin and body-view state in useUIModals with its test, HeroDockTab's ignored props and dead horizontal layout, the stale Promotion test comments (the two components themselves went in hygiene W3) — crunch/hero-ui — 2026-10-08
+T-123 — The drag and draw benches' dev server keeps its Vite cache per checkout (node_modules/.vite-bench-<checkout>-<hash>), so worktrees no longer share one — crunch/drag — 2026-10-08

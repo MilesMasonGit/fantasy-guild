@@ -3,14 +3,51 @@
 // It only reads the game and does set-up (resources, room on the mat, unequipping before an
 // equip); every drag itself is real browser input sent from Node.
 
-/* global window, document, MutationObserver, getComputedStyle, innerWidth, innerHeight */
+/* global window, document, MutationObserver, getComputedStyle, innerWidth, innerHeight, requestAnimationFrame */
 export function installDragKit() {
     const G = window.__perf.game;
     const kit = {};
     window.__dragKit = kit;
 
+    // ---- Frame timing: every frame's interval (rAF to rAF), kept for the last ~25 s ----
+    // A stall anywhere on the main thread (a React commit, a forced layout) delays the next
+    // animation frame, so it shows here as one long interval: what the player sees as a hitch.
+    const RING = 4096;
+    const frameEnd = new Float64Array(RING);
+    const frameGap = new Float64Array(RING);
+    let frameCount = 0;
+    let lastFrameTs = 0;
+    const onFrame = (ts) => {
+        if (lastFrameTs) {
+            const i = frameCount % RING;
+            frameEnd[i] = ts;
+            frameGap[i] = ts - lastFrameTs;
+            frameCount++;
+        }
+        lastFrameTs = ts;
+        requestAnimationFrame(onFrame);
+    };
+    requestAnimationFrame(onFrame);
+    /** Frames whose interval [end − gap, end] passes `keep(start, end)`: count, longest, over 16.7 ms. */
+    const framesWhere = (keep) => {
+        let n = 0, maxMs = 0, over = 0;
+        for (let k = Math.max(0, frameCount - RING); k < frameCount; k++) {
+            const i = k % RING;
+            const end = frameEnd[i], gap = frameGap[i];
+            if (!keep(end - gap, end)) continue;
+            n++;
+            if (gap > maxMs) maxMs = gap;
+            if (gap > 16.7) over++;
+        }
+        return n ? { frames: n, maxMs: Math.round(maxMs * 10) / 10, over16: over } : null;
+    };
+    // How long after the drag starts still counts as the pickup: its commits and the ghost's mount.
+    const PICKUP_TAIL_MS = 100;
+    // How long after the release counts as the drop: the drop's commits and the landing.
+    const DROP_TAIL_MS = 300;
+
     // ---- Pickup probe: press time, the move that crossed the 8 px threshold, drag start ----
-    const probe = { downAt: null, downPt: null, activateAt: null, startAt: null, upAt: null, notes: [], sounds: [] };
+    const probe = { downAt: null, downPt: null, activateAt: null, startAt: null, upAt: null, carryEndAt: null, notes: [], sounds: [] };
     kit.probe = probe;
     window.addEventListener('pointerdown', (e) => {
         probe.downAt = performance.now();
@@ -30,10 +67,30 @@ export function installDragKit() {
     // no target took it; `drop` = flown back; a kind's own clip = a target accepted it.
     G.EventBus.subscribe('audio:play', (p) => { if (probe.downAt != null) probe.sounds.push(p?.clip); });
     kit.resetProbe = () => {
-        probe.downAt = null; probe.downPt = null; probe.activateAt = null; probe.startAt = null; probe.upAt = null; probe.notes = []; probe.sounds = [];
+        probe.downAt = null; probe.downPt = null; probe.activateAt = null; probe.startAt = null; probe.upAt = null; probe.carryEndAt = null; probe.notes = []; probe.sounds = [];
+    };
+    /**
+     * The frames of one drag, in three phases that share no frame:
+     * - **pickup**: from the press to `PICKUP_TAIL_MS` after the drag started (a frame that
+     * starts inside that and runs on past it is the pickup's);
+     * - **carry**: every whole frame after that, up to the moment the bench first reads the
+     * page before the release (`inHand`), so the bench's own reads are never counted;
+     * - **drop**: from the frame the release lands in to `DROP_TAIL_MS` after it. The bench holds
+     * still for a few frames between its reads and the release, so this frame is the game's.
+     */
+    const dragFrames = () => {
+        const { downAt, startAt, upAt, carryEndAt } = probe;
+        if (downAt == null || startAt == null) return null;
+        const pickupEnd = startAt + PICKUP_TAIL_MS;
+        return {
+            pickup: framesWhere((s, e) => e > downAt && s < pickupEnd),
+            carry: carryEndAt == null ? null : framesWhere((s, e) => s >= pickupEnd && e <= carryEndAt),
+            drop: upAt == null ? null : framesWhere((s, e) => e > upAt && s < upAt + DROP_TAIL_MS)
+        };
     };
     kit.readProbe = () => ({
         pickedUp: probe.startAt != null,
+        frames: dragFrames(),
         pressToStartMs: probe.startAt != null && probe.downAt != null ? probe.startAt - probe.downAt : null,
         thresholdToStartMs: probe.startAt != null && probe.activateAt != null ? Math.max(0, probe.startAt - probe.activateAt) : null,
         stillDragging: document.body.classList.contains('gi-dnd-active'),
@@ -46,6 +103,8 @@ export function installDragKit() {
 
     /** What is in the hand right now, read from what each source draws while it is carried. */
     kit.inHand = () => {
+        // The carry's frames end here: from now on the bench is reading the page.
+        if (probe.carryEndAt == null) probe.carryEndAt = performance.now();
         if (!document.body.classList.contains('gi-dnd-active')) return null;
         const g = document.querySelector('[data-flag-ghost]');
         if (g) return `flag ${g.getAttribute('data-flag-ghost')}`;
@@ -100,9 +159,27 @@ export function installDragKit() {
             attrs: attrs(el),
             identity: identity || `${el.tagName.toLowerCase()} (no identified ancestor)`,
             ownerAttrs: owner && owner !== el ? attrs(owner) : [],
-            react: reactNames(el)
+            react: reactNames(el),
+            // Everything at the point that takes the pointer, top first, by identity.
+            stack: stackAt(x, y)
         };
     };
+    function identityOf(el) {
+        for (let n = el; n && n !== document.body; n = n.parentElement) {
+            const a = IDENT.find(k => n.hasAttribute?.(k));
+            if (a) return `[${a}${n.getAttribute(a) ? '=' + String(n.getAttribute(a)).slice(0, 40) : ''}]`;
+        }
+        return el.tagName.toLowerCase();
+    }
+    function stackAt(x, y) {
+        const out = [];
+        for (const el of document.elementsFromPoint(x, y)) {
+            const id = identityOf(el);
+            if (!out.includes(id)) out.push(id);
+            if (out.length >= 5) break;
+        }
+        return out;
+    }
 
     /**
      * Every registered drop target whose box contains the point, other than the mat itself, with
@@ -265,6 +342,18 @@ export function installDragKit() {
         const f = G.BoardState.flagOf(heroId);
         return f ? { x: f.x, y: f.y, pinnedTo: f.pinnedTo ?? null, plantedAt: f.plantedAt ?? null } : null;
     };
+    /** For a failure report: what the flag's own button looks like on screen, and the mat's box. */
+    const flagScene = (el, heroId) => {
+        const r = el.getBoundingClientRect();
+        const m = matEl().getBoundingClientRect();
+        const bar = document.querySelector('[data-mat-top-bar]')?.getBoundingClientRect();
+        return {
+            flag: flagAt(heroId),
+            box: { left: Math.round(r.left), top: Math.round(r.top), w: Math.round(r.width) },
+            matTop: Math.round(m.top),
+            barBottom: bar ? Math.round(bar.bottom) : null
+        };
+    };
 
     kit.pick = {
         dockHero() {
@@ -285,7 +374,7 @@ export function installDragKit() {
             if (!to) return { skip: 'no free spot' };
             const at = flagPress(el);
             return {
-                source: { x: at.x, y: at.y, what: `flag ${heroId}${at.bare ? '' : ' (no part of it over bare mat)'}`, hand: `flag ${heroId}` },
+                source: { x: at.x, y: at.y, what: `flag ${heroId}${at.bare ? '' : ' (no part of it over bare mat)'}`, hand: `flag ${heroId}`, scene: flagScene(el, heroId) },
                 target: to.screen, expect: { kind: 'flag', heroId, before: flagAt(heroId), mat: to.mat }
             };
         },
@@ -297,7 +386,9 @@ export function installDragKit() {
             if (!at) return { skip: 'Token off screen or under other Tokens' };
             const to = kit.freeSpot();
             if (!to) return { skip: 'no free spot' };
-            return { source: { ...at, what: `Token ${t.typeId} ${t.id}`, hand: `Token ${t.id}` }, target: to.screen, expect: { kind: 'token', id: t.id, before: { x: t.x, y: t.y }, mat: to.mat } };
+            const pressMat = kit.screenToMat(at);
+            const scene = { token: { x: Math.round(t.x), y: Math.round(t.y) }, pressMat: { x: Math.round(pressMat.x), y: Math.round(pressMat.y) }, gameSays: G.Flags.tokenAtPoint(pressMat)?.id ?? null };
+            return { source: { ...at, what: `Token ${t.typeId} ${t.id}`, hand: `Token ${t.id}`, scene }, target: to.screen, expect: { kind: 'token', id: t.id, before: { x: t.x, y: t.y }, mat: to.mat } };
         },
         shop() {
             const rows = [...document.querySelectorAll('[data-shop-row][data-shop-affordable="true"]')];
