@@ -466,6 +466,7 @@ p50/p95, **frame stalls** per drag phase and the grouped **failure causes**:
 | `npm run bench:drag -- --kinds=token,flag` | some kinds: `dockHero`, `flag`, `token`, `tokenToBin`, `binToMat`, `shop`, `equip` | |
 | `npm run bench:drag -- --no-overlays` | the plain pass only | |
 | `npm run bench:drag -- --dev` | the dev build: React component names for the blockers | |
+| `npm run bench:drag -- --board=S3` | the torture board (~320 Tokens) instead of S2: carry stalls on a crowded mat | |
 | `npm run bench:drag -- --cpu=4` | CPU slowdown | |
 | `npm run bench:drag -- --no-build` | reuse `dist-perf/` | |
 

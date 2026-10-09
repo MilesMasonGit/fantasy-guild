@@ -11,6 +11,7 @@
 //   npm run bench:drag -- --dev         the dev build instead (React component names for blockers)
 //   npm run bench:drag -- --no-build    reuse dist-perf/
 //   npm run bench:drag -- --cpu=4       CPU slowdown
+//   npm run bench:drag -- --board=S3    the torture board instead of S2
 //
 // Exit codes: 0 every kind 100 % · 1 any kind below 100 % · 3 the bench failed.
 // It reports drag bugs; it does not fix them.
@@ -138,7 +139,7 @@ async function main() {
     const meta = { ...gitInfo(), date: new Date().toISOString(), node: process.version, machine: os.hostname(), cpu: os.cpus()[0]?.model?.trim(), args };
     const kinds = KINDS.filter(k => !args.kinds || args.kinds.includes(k.id));
     const passes = args.overlays ? ['plain', 'overlays'] : ['plain'];
-    console.log(`Fantasy Guild drag bench — ${meta.commit} on ${meta.branch} · ${args.build} build · CPU ${args.cpu}× · ${args.n} drags per kind and pass · ${meta.machine}`);
+    console.log(`Fantasy Guild drag bench — ${meta.commit} on ${meta.branch} · ${args.board} board · ${args.build} build · CPU ${args.cpu}× · ${args.n} drags per kind and pass · ${meta.machine}`);
 
     let server = null;
     let chrome = null;
@@ -154,7 +155,7 @@ async function main() {
         }
         chrome = await launchChrome({ width: 1600, height: 1000 });
         meta.chrome = { product: chrome.info.product, gpu: chrome.info.gpu };
-        const page = await openBoard(chrome, sceneUrl(server.url, SCENES.S2), { cpu: args.cpu, stress: 'realistic' });
+        const page = await openBoard(chrome, sceneUrl(server.url, SCENES[args.board]), { cpu: args.cpu, stress: SCENES[args.board].stress });
         try {
             await sleep(5000);
             // The Perf HUD is the harness's own overlay (bottom left), not part of the game: it would

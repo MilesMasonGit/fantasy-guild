@@ -19,6 +19,12 @@ describe('drag bench options', () => {
         expect(() => parseArgs(['--wat'])).toThrow(/unknown option/);
     });
 
+    it('runs on S2 unless --board=S3 asks for the torture board', () => {
+        expect(parseArgs([]).board).toBe('S2');
+        expect(parseArgs(['--board=S3']).board).toBe('S3');
+        expect(() => parseArgs(['--board=S9'])).toThrow(/--board/);
+    });
+
     it('covers the six drags the plan names (the bin round trip as two)', () => {
         expect(KINDS.map(k => k.id)).toEqual(['dockHero', 'flag', 'token', 'tokenToBin', 'binToMat', 'shop', 'equip']);
     });

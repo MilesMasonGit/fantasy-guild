@@ -17,7 +17,7 @@ export const KINDS = [
 export const EXIT = { OK: 0, BELOW_100: 1, BENCH_FAILED: 3 };
 
 export function parseArgs(argv) {
-    const args = { n: 50, build: 'perf', buildFirst: true, cpu: 1, overlays: true, kinds: null, port: null };
+    const args = { n: 50, build: 'perf', buildFirst: true, cpu: 1, overlays: true, kinds: null, port: null, board: 'S2' };
     for (const a of argv) {
         const [key, ...rest] = a.replace(/^--/, '').split('=');
         const value = rest.join('=');
@@ -42,6 +42,11 @@ export function parseArgs(argv) {
                 const bad = ids.filter(id => !KINDS.some(k => k.id === id));
                 if (bad.length) throw new Error(`unknown kind ${bad.join(', ')}; known: ${KINDS.map(k => k.id).join(', ')}`);
                 args.kinds = ids;
+                break;
+            }
+            case 'board': {
+                if (value !== 'S2' && value !== 'S3') throw new Error('--board is S2 (realistic, the default) or S3 (torture)');
+                args.board = value;
                 break;
             }
             case 'port': args.port = Math.floor(Number(value)) || null; break;
