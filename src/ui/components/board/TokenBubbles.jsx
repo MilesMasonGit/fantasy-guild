@@ -81,7 +81,7 @@ export function useChangeFlash(value, ms = BUBBLE_RECENT_MS) {
  * - **Charges** (bottom-right), **quest progress** (bottom-centre), **spawner count** (middle
  * row): for {@link BUBBLE_RECENT_MS} after the number changes, and while hovered. Their rings
  * glide when the number jumps.
- * - **Timer** (top-left, `TimerBubble`): a growing or turning Token's countdown, hovered or in
+ * - **Timer** (top-left, `TimerBubble`): a growing, turning or resting Token's countdown, hovered or in
  * its last seconds.
  * - **Gear** (middle row): always while a choice is needed (nothing chosen), otherwise hovered.
  * - **Disallow mark** (middle row): the whole time it is disallowed.

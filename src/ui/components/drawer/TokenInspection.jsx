@@ -15,6 +15,7 @@ import * as Flags from '../../../systems/board/Flags.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as SpawnerSystem from '../../../systems/board/SpawnerSystem.js';
 import * as PassiveProduction from '../../../systems/board/PassiveProduction.js';
+import * as Respawn from '../../../systems/board/Respawn.js';
 import * as StationRecipe from '../../../systems/board/StationRecipe.js';
 import { SettingsManager } from '../../../systems/core/SettingsManager.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
@@ -261,6 +262,7 @@ function liveLifecycleSources() {
         itemName: (itemId) => getItem(itemId)?.name || itemId,
         spawnerStatus: SpawnerSystem.spawnerStatus,
         passive: (instance) => ({ lines: PassiveProduction.linesOf(instance), nextInMs: PassiveProduction.nextInMs(instance) }),
+        respawn: Respawn.respawnState,
         selectedRecipe: StationRecipe.selectedRecipe,
         poolFor: StationRecipe.poolFor,
         originOf: BoardState.originOf,
@@ -270,7 +272,8 @@ function liveLifecycleSources() {
 
 /**
  * Lifecycle lines: a spawner's family, next spawn and upkeep; time to grow, turn or turn back;
- * a Foundation's build; Passive Production; origin in dev mode. Plain rows; the wording lives in
+ * how it respawns, or how long it rests; a Foundation's build; Passive Production; origin in dev
+ * mode. Plain rows; the wording lives in
  * `lifecycleLines.js`. Clocks move without events, so it re-reads every second while open.
  */
 const LifecycleLines = ({ instanceId }) => {

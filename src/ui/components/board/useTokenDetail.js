@@ -7,6 +7,7 @@ import * as Flags from '../../../systems/board/Flags.js';
 import * as StationRecipe from '../../../systems/board/StationRecipe.js';
 import * as SpawnerSystem from '../../../systems/board/SpawnerSystem.js';
 import * as TimedChanges from '../../../systems/board/TimedChanges.js';
+import * as Respawn from '../../../systems/board/Respawn.js';
 import * as QuestTokens from '../../../systems/quests/QuestTokens.js';
 import { stationSkillOf } from '../../../systems/effects/statements.js';
 
@@ -72,6 +73,8 @@ export function tokenDetailOf(id, def) {
         turns: !!TimedChanges.nextTurnRoll(instance),
         // A Token that grows (a Sapling) counts down to the change.
         grows: !!TimedChanges.nextGrowth(instance),
+        // Out of charges and waiting to respawn: drawn resting, a refill counting down.
+        resting: Respawn.isResting(instance, def),
         // A quest Token's quest: ring, glow, tooltip, click to claim.
         quest: questProjection(instance)
     };
@@ -82,7 +85,7 @@ const BY_ID = Object.freeze([
     BOARD_EVENTS.TILE_CHANGED,              // disallowed, a recipe picked, moved, transformed
     BOARD_EVENTS.ALERT_CHANGED,             // alert
     BOARD_EVENTS.HERO_MOVED,                // a hero arrived here: heroId, heroSide
-    BOARD_EVENTS.TOKEN_CHARGES_CHANGED,     // usesRemaining
+    BOARD_EVENTS.TOKEN_CHARGES_CHANGED,     // usesRemaining, and with it resting
     BOARD_EVENTS.TOKEN_PLACED,
     ENGINE_EVENTS.QUESTS_UPDATED            // a quest Token's progress
 ]);

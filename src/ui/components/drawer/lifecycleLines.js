@@ -4,8 +4,8 @@ import { turnTiming, PASSIVE_PRODUCTION_MS } from '../../../config/registries/to
 /**
  * What a board Token's lifecycle blocks are doing right now, as plain rows for the inspection
  * panel: a spawner's family and cap, its next spawn and upkeep; time left to grow; the next
- * chance to turn or to turn back; a Foundation's build; Passive Production; and, in dev mode, the
- * Token's origin.
+ * chance to turn or to turn back; how it respawns, or how long it rests; a Foundation's build;
+ * Passive Production; and, in dev mode, the Token's origin.
  * Pure: every engine read comes in through `sources`, so the panel stays thin and the tests
  * need no engine.
  * @typedef {{ label: string, value: string, tone?: 'good'|'warning'|'danger'|'muted' }}
@@ -127,6 +127,21 @@ function foundationLines(instance, def, src) {
     return out;
 }
 
+/** A Token that comes back after it runs out: while it rests, when; otherwise, how. */
+function respawnLines(instance, src) {
+    const r = src.respawn?.(instance);
+    if (!r) return [];
+    if (r.mode === 'refill') {
+        return [r.resting
+            ? { label: 'Resting', value: `Refills in ${formatDuration(r.inMs)}` }
+            : { label: 'Respawns', value: `Rests ${formatDuration(r.afterMs)} when it runs out, then refills`, tone: TONE.MUTED }];
+    }
+    const into = src.tokenName(r.into);
+    return [r.resting
+        ? { label: 'Resting', value: `Becomes ${into}, which grows back` }
+        : { label: 'Respawns', value: `Becomes ${into} when it runs out, which grows back`, tone: TONE.MUTED }];
+}
+
 /** A countdown as the UI writes it: `4:57`, rounded up to the second. */
 export function formatClock(ms) {
     const total = Math.max(0, Math.ceil((Number(ms) || 0) / 1000));
@@ -185,6 +200,7 @@ export function passiveHoverLines(instance, src) {
  *   poolFor?: (def: object) => object[],
  *   originOf: (instance: object) => string,
  *   passive?: (instance: object) => { lines: object[], nextInMs: number }|null,
+ *   respawn?: (instance: object) => { mode: string, into: string|null, afterMs: number, resting: boolean, inMs: number|null }|null,
  *   dev?: boolean
  * }} src
  * @returns {LifecycleLine[]}
@@ -226,6 +242,7 @@ export function lifecycleLines(instance, src) {
         }
     }
 
+    out.push(...respawnLines(instance, src));
     if (def.foundation) out.push(...foundationLines(instance, def, src));
     // A station waits for the player to pick a recipe, as a Foundation waits for 'what to
     // build'. Only said while nothing is picked.

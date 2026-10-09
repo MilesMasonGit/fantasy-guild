@@ -201,6 +201,31 @@ describe('lifecycleLines', () => {
         }]);
     });
 
+    describe('a Token that respawns', () => {
+        const vein = { id: 'v1', typeId: 'tree' };
+        const state = (s) => ({ respawn: () => s });
+
+        it('a refill, working: how long it will rest', () => {
+            const lines = lifecycleLines(vein, src(state({ mode: 'refill', into: null, afterMs: 12000, resting: false, inMs: null })));
+            expect(byLabel(lines, 'Respawns')).toEqual({ label: 'Respawns', value: 'Rests 12 s when it runs out, then refills', tone: TONE.MUTED });
+        });
+
+        it('a refill, resting: when it refills', () => {
+            const lines = lifecycleLines(vein, src(state({ mode: 'refill', into: null, afterMs: 12000, resting: true, inMs: 11500 })));
+            expect(byLabel(lines, 'Resting')).toEqual({ label: 'Resting', value: 'Refills in 12 s' });
+            expect(byLabel(lines, 'Respawns')).toBeUndefined();
+        });
+
+        it('a regrow names the Token it becomes', () => {
+            const lines = lifecycleLines(vein, src(state({ mode: 'regrow', into: 'sapling', afterMs: 0, resting: false, inMs: null })));
+            expect(byLabel(lines, 'Respawns').value).toBe('Becomes Oak Sapling when it runs out, which grows back');
+        });
+
+        it('a Token whose type does not respawn says nothing', () => {
+            expect(lifecycleLines(vein, src(state(null)))).toEqual([]);
+        });
+    });
+
     it('origin shows in dev mode only', () => {
         const spawned = { id: 't', typeId: 'tree', origin: 'spawned' };
         expect(lifecycleLines(spawned, src())).toEqual([]);

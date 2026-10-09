@@ -87,6 +87,7 @@ export const SKIP_HINT = {
     [ALERT.SPAWN_NEEDS_ITEM]: 'can’t pay its upkeep',
     [ALERT.SPAWN_NO_ROOM]: 'no room to spawn',
     [ALERT.SPAWN_MAT_FULL]: 'Token cap full',
+    [ALERT.RESTING]: 'resting, it comes back soon',
     no_skill: 'names no skill',
     disallowed: 'heroes not allowed',
     claimed: 'being worked by {holder}',

@@ -396,6 +396,14 @@
   .gi-token-land { animation: none; }
 }
 
+/* A resting Token (out of charges, waiting to refill): greyed and dimmed. A
+ * filter is affordable here, unlike on the landing hop, because only the few
+ * Tokens resting at any moment carry it. */
+.gi-token-resting {
+  filter: grayscale(0.85) brightness(0.7);
+  opacity: 0.85;
+}
+
 /* A Token that has just become another one (feedback Q4, FB-11): a white-gold
  * flash of the art and a soft glow that swells out and fades, ~1 s
  * (`TokenGlows.GLOW_MS`). The glow is its own layer over the art box; the
