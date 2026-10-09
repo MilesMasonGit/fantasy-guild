@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Terrain Look Mockup</title>
+<!--
+  Static mockup for look question L-1 (terrain_art_list.md): ground pixel size and palette.
+  Open straight from disk (file://). Art loads from ../../../public/assets/ by relative path;
+  nothing else is fetched. The ground is built by the small script at the bottom.
+-->
+<style>
+:root {
+  --bg: #26262a; --panel: #34343a; --ink: #e8e6e1; --dim: #a9a6a0; --rule: #4a4a52; --accent: #e2c27a;
+  --u: 1px; /* screen pixels per mat unit; the toggle sets 1px or 0.5px */
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink);
+  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 1400px; margin: 0 auto; padding: 24px 16px 48px; }
+h1 { font-size: 22px; margin: 0 0 6px; }
+h2 { font-size: 18px; margin: 36px 0 4px; }
+p { margin: 6px 0; max-width: 75ch; }
+.dim { color: var(--dim); }
+code { background: #1b1b1e; padding: 1px 5px; border-radius: 3px; font-size: 13px; }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 14px 0 6px; }
+.controls button { font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--rule);
+  border-radius: 6px; padding: 5px 12px; cursor: pointer; }
+.controls button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+
+.grid { display: grid; grid-template-columns: auto repeat(2, max-content); gap: 10px 18px; margin-top: 14px;
+  overflow-x: auto; padding-bottom: 6px; }
+.colhead, .rowhead { font-weight: 600; color: var(--accent); }
+.colhead { align-self: end; }
+.rowhead { writing-mode: vertical-rl; transform: rotate(180deg); text-align: center; align-self: center; }
+.cell { display: flex; flex-direction: column; gap: 6px; }
+.cap { font-size: 14px; max-width: calc(640 * var(--u)); min-width: 300px; }
+.cap b { color: var(--ink); }
+
+.scene { position: relative; overflow: hidden; outline: 1px solid var(--rule); }
+.ground { position: absolute; inset: 0; }
+.ground div, .scene .art { position: absolute; image-rendering: pixelated; image-rendering: crisp-edges; }
+.ground div { background-repeat: repeat; }
+.ground.muted { filter: brightness(0.85) saturate(0.7); }
+.art { background-repeat: no-repeat; }
+
+.notes { margin-top: 36px; border-top: 1px solid var(--rule); padding-top: 12px; }
+.notes li { margin: 4px 0; max-width: 85ch; }
+@media (max-width: 720px) {
+  .grid { grid-template-columns: 1fr; }
+  .rowhead { writing-mode: horizontal-tb; transform: none; text-align: left; }
+  .colhead.blank { display: none; }
+}
+</style>
+</head>
+<body>
+<main>
+  <h1>Terrain look: pixel size and colours</h1>
+  <p>Each picture is the same small patch of mat with real game art on top: an Oak Tree, a Copper Ore
+     Vein, a fighter, an Oak Sapling and two dropped loot items. Only the <b>ground</b> changes between
+     pictures. Pick the one where the ground sits quietly behind the Tokens and still looks like a place.</p>
+  <p class="dim">Rows: how big the ground's pixels are. Columns: today's colours, or the same art made darker
+     and greyer. The Tokens are never changed.</p>
+
+  <div class="controls" role="group" aria-label="Zoom">
+    <span class="dim">Zoom:</span>
+    <button type="button" data-u="1" aria-pressed="true">Close-up (Tokens 128 px)</button>
+    <button type="button" data-u="0.5" aria-pressed="false">Game size (Tokens 64 px, as on a usual screen)</button>
+  </div>
+
+  <h2>Forest edge: grass meeting rock</h2>
+  <p class="dim">Patch is 640 &times; 416 mat units, about a third of the mat's width and height.</p>
+  <div class="grid" id="forest"></div>
+
+  <h2>Coast: sand meeting the sea</h2>
+  <p class="dim">Same patch size. The Coast fishing spot Token sits on the sand.</p>
+  <div class="grid" id="coast"></div>
+
+  <div class="notes">
+    <b>Notes for whoever draws or codes this next</b>
+    <ul>
+      <li><b>Muted filter</b>, applied to the ground layer only:
+        <code>filter: brightness(0.85) saturate(0.7)</code>. To bake it into art: multiply every ground colour's
+        brightness by 0.85 and pull its saturation 30&nbsp;% toward grey.</li>
+      <li><b>Chunky</b> = the 8&nbsp;px set: <code>terrain/template/ter_grassb.png</code>, <code>ter_stoneb.png</code>,
+        <code>ter_dirtb.png</code>, <code>ter_waterb.png</code> (64&nbsp;&times;&nbsp;64 sheets) drawn at 4&times;, so one ground
+        pixel = 4 mat units = 2 Token pixels. There is no chunky sand sheet, so chunky sand is the four cut pieces
+        <code>terrain/ter_sandb0</code>&ndash;<code>3</code> (8&nbsp;&times;&nbsp;8), one per 32-unit square, picked at random.</li>
+      <li><b>Same-as-Tokens</b> = the 16&nbsp;px set: <code>terrain/template/ter_grass.png</code>, <code>ter_stone.png</code>,
+        <code>ter_dirt.png</code>, <code>ter_sand.png</code>, <code>ter_water.png</code> drawn at 2&times;, so one ground pixel =
+        2 mat units = 1 Token pixel.</li>
+      <li><b>The edges here are a stand-in.</b> Ground changes on a plain 32-unit staircase. The game would work out a
+        wiggly, natural edge instead (look answer L-3 A); judge the pixel size and colours, not the edge shape.</li>
+      <li>Colours are the raw art files. The game may lay a small per-biome tint over the grass too
+        (<code>terrainRegistry.js</code>); it is not shown here.</li>
+      <li>All scaling is whole-number with hard pixels (<code>image-rendering: pixelated</code>). At game size a
+        same-as-Tokens ground pixel is one screen pixel, the same as a Token pixel.</li>
+      <li>Art used: <code>tokens/nature/tree/token_tree_oak.png</code>, <code>tokens/ore/token_ore_vein_copper.png</code>,
+        <code>heroes/animations/ani_fighter_0.png</code> and <code>ani_ranger_0.png</code> (first standing frame),
+        <code>playmat/props/prop_tree_oak.png</code> (the Oak Sapling's art, 16&nbsp;px drawn at 4 units a pixel),
+        <code>items/ore/ore_copper.png</code>, <code>items/wood/wood_oak.png</code>, <code>tokens/fish/token_coast.png</code>,
+        <code>items/fish/fish_trout_raw.png</code>, <code>items/fish/fish_shrimp_raw.png</code>.</li>
+    </ul>
+  </div>
+</main>
+
+<script>
+(function () {
+  var A = '../../../public/assets/';
+  var T = A + 'playmat/terrain/';
+  var CELL = 32;            // ground square, mat units
+  var W = 20, H = 13;       // squares across and down: 640 x 416 units
+
+  // Ground sheets per pixel size. Scale is mat units per art pixel.
+  var SETS = {
+    chunky: { scale: 4, grass: T + 'template/ter_grassb.png', rock: T + 'template/ter_stoneb.png',
+              earth: T + 'template/ter_dirtb.png', water: T + 'template/ter_waterb.png',
+              sandPieces: [0, 1, 2, 3].map(function (i) { return T + 'ter_sandb' + i + '.png'; }) },
+    fine:   { scale: 2, grass: T + 'template/ter_grass.png', rock: T + 'template/ter_stone.png',
+              earth: T + 'template/ter_dirt.png', water: T + 'template/ter_water.png',
+              sand: T + 'template/ter_sand.png' }
+  };
+
+  // Stepped stand-in edges: for each column, the first row of the second ground.
+  var ROCK_FROM = [13, 13, 13, 13, 13, 13, 13, 12, 11, 10, 9, 9, 8, 7, 7, 6, 6, 5, 5, 4];
+  var EARTH = [[3, 7], [4, 7], [5, 7], [3, 8], [4, 8], [5, 8], [6, 8], [4, 9], [5, 9]];
+  var WATER_FROM = [13, 13, 13, 12, 12, 11, 11, 10, 10, 9, 9, 8, 8, 8, 7, 7, 6, 6, 6, 5];
+
+  // Art on top, in mat units: x, y = top-left; size = drawn width and height.
+  var FOREST_ART = [
+    { src: A + 'tokens/nature/tree/token_tree_oak.png', x: 96, y: 96, size: 128 },
+    { src: A + 'tokens/ore/token_ore_vein_copper.png', x: 448, y: 224, size: 128 },
+    { sheet: A + 'heroes/animations/ani_fighter_0.png', x: 272, y: 160, size: 128 },
+    { src: A + 'playmat/props/prop_tree_oak.png', x: 32, y: 304, size: 64 },
+    { src: A + 'items/ore/ore_copper.png', x: 384, y: 336, size: 64 },
+    { src: A + 'items/wood/wood_oak.png', x: 208, y: 288, size: 64 }
+  ];
+  var COAST_ART = [
+    { src: A + 'tokens/fish/token_coast.png', x: 160, y: 128, size: 128 },
+    { sheet: A + 'heroes/animations/ani_ranger_0.png', x: 320, y: 96, size: 128 },
+    { src: A + 'items/fish/fish_trout_raw.png', x: 96, y: 288, size: 64 },
+    { src: A + 'items/fish/fish_shrimp_raw.png', x: 224, y: 304, size: 64 }
+  ];
+
+  var COLS = [
+    { muted: false, head: 'Current colours' },
+    { muted: true, head: 'Muted: darker, less saturated' }
+  ];
+  var ROWS = [
+    { set: 'chunky', head: 'Chunky ground' },
+    { set: 'fine', head: 'Same as Tokens' }
+  ];
+
+  var CAPTIONS = {
+    'chunky-false': '<b>Chunky, current colours.</b> Each ground pixel is twice the size of a Token pixel. This is the terrain code\'s current default.',
+    'chunky-true':  '<b>Chunky, muted.</b> Same big ground pixels, darker and greyer so the Tokens stand out more.',
+    'fine-false':   '<b>Same size as Tokens, current colours.</b> Ground pixels match the Tokens\' pixels exactly; the ground shows finer detail.',
+    'fine-true':    '<b>Same size as Tokens, muted.</b> Matching pixels, darker and greyer: the quietest ground of the four.'
+  };
+
+  // Small fixed random so the chunky sand looks the same on every load.
+  function rng(seed) { return function () { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; }; }
+
+  function px(n, u) { return (n * u) + 'px'; }
+
+  function square(ground, col, row, img, sheetUnits, u) {
+    var d = document.createElement('div');
+    d.style.left = px(col * CELL, u); d.style.top = px(row * CELL, u);
+    d.style.width = px(CELL, u); d.style.height = px(CELL, u);
+    d.style.backgroundImage = 'url(' + img + ')';
+    if (sheetUnits) {
+      // Line the sheet up with the patch's corner so neighbouring squares join seamlessly.
+      d.style.backgroundSize = px(sheetUnits, u) + ' ' + px(sheetUnits, u);
+      d.style.backgroundPosition = px(-col * CELL, u) + ' ' + px(-row * CELL, u);
+    } else {
+      d.style.backgroundSize = px(CELL, u) + ' ' + px(CELL, u);
+    }
+    ground.appendChild(d);
+  }
+
+  function buildScene(kind, setName, muted, u) {
+    var s = SETS[setName];
+    var sheetUnits = 64 * s.scale;
+    var scene = document.createElement('div');
+    scene.className = 'scene';
+    scene.style.width = px(W * CELL, u); scene.style.height = px(H * CELL, u);
+    var ground = document.createElement('div');
+    ground.className = 'ground' + (muted ? ' muted' : '');
+    scene.appendChild(ground);
+    var r = rng(7);
+
+    for (var c = 0; c < W; c++) {
+      for (var row = 0; row < H; row++) {
+        if (kind === 'forest') {
+          var isRock = row >= ROCK_FROM[c];
+          var isEarth = EARTH.some(function (e) { return e[0] === c && e[1] === row; });
+          square(ground, c, row, isRock ? s.rock : isEarth ? s.earth : s.grass, sheetUnits, u);
+        } else if (row >= WATER_FROM[c]) {
+          square(ground, c, row, s.water, sheetUnits, u);
+        } else if (s.sand) {
+          square(ground, c, row, s.sand, sheetUnits, u);
+        } else {
+          square(ground, c, row, s.sandPieces[Math.floor(r() * s.sandPieces.length)], 0, u);
+        }
+      }
+    }
+
+    (kind === 'forest' ? FOREST_ART : COAST_ART).forEach(function (a) {
+      var el = document.createElement('div');
+      el.className = 'art';
+      el.style.left = px(a.x, u); el.style.top = px(a.y, u);
+      el.style.width = px(a.size, u); el.style.height = px(a.size, u);
+      if (a.sheet) {
+        // Hero sheet: 8 frames x 3 rows of 64 px (attack, walk, idle). Show idle, first frame.
+        var k = a.size / 64;
+        el.style.backgroundImage = 'url(' + a.sheet + ')';
+        el.style.backgroundSize = px(512 * k, u) + ' ' + px(192 * k, u);
+        el.style.backgroundPosition = '0 ' + px(-2 * a.size, u);
+      } else {
+        el.style.backgroundImage = 'url(' + a.src + ')';
+        el.style.backgroundSize = '100% 100%';
+      }
+      scene.appendChild(el);
+    });
+    return scene;
+  }
+
+  function buildGrid(id, kind, u) {
+    var grid = document.getElementById(id);
+    grid.innerHTML = '';
+    var blank = document.createElement('div'); blank.className = 'colhead blank'; grid.appendChild(blank);
+    COLS.forEach(function (col) {
+      var h = document.createElement('div'); h.className = 'colhead'; h.textContent = col.head; grid.appendChild(h);
+    });
+    ROWS.forEach(function (rowDef) {
+      var rh = document.createElement('div'); rh.className = 'rowhead'; rh.textContent = rowDef.head; grid.appendChild(rh);
+      COLS.forEach(function (col) {
+        var cell = document.createElement('div'); cell.className = 'cell';
+        cell.appendChild(buildScene(kind, rowDef.set, col.muted, u));
+        var cap = document.createElement('p'); cap.className = 'cap dim';
+        cap.innerHTML = CAPTIONS[rowDef.set + '-' + col.muted];
+        cell.appendChild(cap);
+        grid.appendChild(cell);
+      });
+    });
+  }
+
+  function render(u) {
+    document.documentElement.style.setProperty('--u', u + 'px');
+    buildGrid('forest', 'forest', u);
+    buildGrid('coast', 'coast', u);
+  }
+
+  var buttons = document.querySelectorAll('.controls button');
+  buttons.forEach(function (b) {
+    b.addEventListener('click', function () {
+      buttons.forEach(function (o) { o.setAttribute('aria-pressed', String(o === b)); });
+      render(Number(b.getAttribute('data-u')));
+    });
+  });
+  render(1);
+})();
+</script>
+</body>
+</html>
