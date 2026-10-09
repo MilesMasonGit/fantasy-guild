@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { memo, useMemo, useState, useEffect } from 'react';
 import { useGameState } from '../../hooks/useGameState.js';
 import { cn } from '../../utils/cn.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
@@ -292,7 +292,6 @@ export const BankTab = ({ filter, selectedItemId, onInspect, searchQuery = '' })
 /** One banked item — a native drag source (kind 'item') and a reorder drop target.
  *  In select mode a checked tile drags the WHOLE selection (payload.selection). */
 const ItemTile = ({ entry, selected, onSelect, checked = false, selectMode = false, selectionIds = null, canReorder = false, onReorderDrop }) => {
-    const { template, count } = entry;
     const drag = useEntityDrag({
         id: `item-src-${entry.id}`,
         kind: DRAG_KIND.ITEM,
@@ -308,12 +307,33 @@ const ItemTile = ({ entry, selected, onSelect, checked = false, selectMode = fal
         accepts: p => p.kind === DRAG_KIND.ITEM && (p.fromHeroId != null || (canReorder && p.itemId !== entry.id)),
         onDrop: p => onReorderDrop(p, entry.id)
     });
+    const nodeRef = useMemo(() => mergeRefs(drag.setNodeRef, drop.setNodeRef), [drag.setNodeRef, drop.setNodeRef]);
+    return (
+        <ItemTileBody
+            entry={entry}
+            selected={selected}
+            onSelect={onSelect}
+            checked={checked}
+            selectMode={selectMode}
+            cue={drop.valid}
+            held={drag.isDragging}
+            nodeRef={nodeRef}
+            handleProps={drag.handleProps}
+            droppableProps={drop.droppableProps}
+        />
+    );
+};
+
+// ⚠️ Apart from its drag hooks on purpose: dnd-kit redraws their holder at every drag start, end
+// and change of target; the tile is memoised on what it draws.
+const ItemTileBody = memo(function ItemTileBody({ entry, selected, onSelect, checked, selectMode, cue, held, nodeRef, handleProps, droppableProps }) {
+    const { template, count } = entry;
     return (
         <button
-            ref={mergeRefs(drag.setNodeRef, drop.setNodeRef)}
+            ref={nodeRef}
             onClick={onSelect}
-            {...drag.handleProps}
-            {...drop.droppableProps}
+            {...handleProps}
+            {...droppableProps}
             title={selectMode
                 ? `${template.name} ×${count} — click to ${checked ? 'deselect' : 'select'}`
                 : `${template.name} ×${count} — drag to sort, or onto a hero to equip`}
@@ -321,8 +341,8 @@ const ItemTile = ({ entry, selected, onSelect, checked = false, selectMode = fal
                 'relative flex flex-col items-center justify-center p-3 rounded-lg border transition-all duration-200 cursor-grab active:cursor-grabbing text-center min-w-0 min-h-0 aspect-square',
                 selected && !selectMode ? 'border-gi-primary bg-gi-primary/10' : 'border-gi-border bg-gi-base/60 hover:border-gi-muted',
                 checked && 'border-gi-primary bg-gi-primary/15 ring-1 ring-gi-primary/60',
-                drop.valid && 'ring-2 ring-gi-primary border-gi-primary',
-                drag.isDragging && 'opacity-40'
+                cue && 'ring-2 ring-gi-primary border-gi-primary',
+                held && 'opacity-40'
             )}
         >
             {checked && (
@@ -336,7 +356,7 @@ const ItemTile = ({ entry, selected, onSelect, checked = false, selectMode = fal
             </span>
         </button>
     );
-};
+});
 
 /**
  * BankTabStrip: the fixed, system-owned bank tabs. Always BANK_TAB_CAP slots; unlocked tabs
@@ -380,15 +400,32 @@ const BankTabButton = ({ tab, index, first, active, onSelect, onDropToTab }) => 
         onDrop: p => onDropToTab(tab.id, p)
     });
     return (
+        <BankTabButtonBody
+            tab={tab}
+            index={index}
+            first={first}
+            active={active}
+            onSelect={onSelect}
+            cue={drop.valid}
+            dropRef={drop.setNodeRef}
+            droppableProps={drop.droppableProps}
+        />
+    );
+};
+
+// ⚠️ Apart from its drop hook on purpose: dnd-kit redraws the hook's holder at every drag start,
+// end and change of target; the tab is memoised on what it draws.
+const BankTabButtonBody = memo(function BankTabButtonBody({ tab, index, first, active, onSelect, cue, dropRef, droppableProps }) {
+    return (
         <button
-            ref={drop.setNodeRef}
+            ref={dropRef}
             onClick={() => onSelect(tab.id)}
-            {...drop.droppableProps}
+            {...droppableProps}
             title={first ? `Tab ${index + 1} — ${first.name}` : `Tab ${index + 1} (empty)`}
             className={cn(
                 'w-10 h-10 rounded border flex items-center justify-center transition-colors shrink-0',
                 active ? 'border-gi-primary bg-gi-primary/15' : 'border-gi-border bg-black/40 hover:border-gi-muted',
-                drop.valid && 'ring-2 ring-gi-primary border-gi-primary'
+                cue && 'ring-2 ring-gi-primary border-gi-primary'
             )}
         >
             {first
@@ -396,7 +433,7 @@ const BankTabButton = ({ tab, index, first, active, onSelect, onDropToTab }) => 
                 : <span className="text-[10px] font-bold text-gi-muted">{index + 1}</span>}
         </button>
     );
-};
+});
 
 /**
  * Item details, rendered by the shared InspectionPanel. `showSell` is still accepted but

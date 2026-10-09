@@ -3,6 +3,7 @@
 // Both run inside the bench process, so they cannot outlive it.
 
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import net from 'node:net';
 import path from 'node:path';
@@ -41,7 +42,7 @@ async function waitForHttp(url, timeoutMs = 120000) {
 /**
  * The dev server. ⚠️ Its own dependency cache: two Vite servers sharing `node_modules/.vite`
  * rewrite each other's pre-bundled dependencies and the owner's server starts answering
- * 504 "Outdated Optimize Dep".
+ * 504 "Outdated Optimize Dep". One per checkout ({@link benchCacheDir}).
  */
 export async function startDevServer({ port } = {}) {
     const { createServer } = await import('vite');
@@ -49,7 +50,7 @@ export async function startDevServer({ port } = {}) {
     const server = await createServer({
         root,
         configFile: path.join(root, 'vite.config.js'),
-        cacheDir: path.join(root, 'node_modules', '.vite-bench'),
+        cacheDir: benchCacheDir(root),
         server: { port, strictPort: true, host: 'localhost', open: false },
         logLevel: 'warn',
         clearScreen: false
@@ -60,6 +61,16 @@ export async function startDevServer({ port } = {}) {
     const url = `http://localhost:${port}`;
     await waitForHttp(url);
     return { url, build: 'dev', close: async () => { unregister(); await close(); } };
+}
+
+/**
+ * The bench dev server's dependency cache for the checkout at `checkoutRoot`. ⚠️ Every worktree
+ * reaches the same `node_modules` through its junction, so one fixed name there would be shared
+ * by every worktree's bench; the name carries the checkout's path.
+ */
+export function benchCacheDir(checkoutRoot) {
+    const key = createHash('sha1').update(path.resolve(checkoutRoot).toLowerCase()).digest('hex').slice(0, 8);
+    return path.join(checkoutRoot, 'node_modules', `.vite-bench-${path.basename(checkoutRoot)}-${key}`);
 }
 
 /** `vite build --mode perf` into dist-perf/. Returns how long it took. */

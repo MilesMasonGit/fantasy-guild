@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { isPointOpaque, isElementOpaqueAtPoint, resolveTopOpaqueElement } from '../ui/utils/alphaHitTest.js';
+import { isPointOpaque, isElementOpaqueAtPoint, resolveTopOpaqueElement, setAlphaMaskForTests } from '../ui/utils/alphaHitTest.js';
 
 describe('Pixel-Perfect Alpha Hit-Testing (alphaHitTest.js)', () => {
     it('returns true optimistically if image mask is not yet cached or src is missing', () => {
@@ -43,5 +43,37 @@ describe('Pixel-Perfect Alpha Hit-Testing (alphaHitTest.js)', () => {
 
     it('handles null / missing element gracefully', () => {
         expect(isElementOpaqueAtPoint(null, 100, 100)).toBe(false);
+    });
+});
+
+describe('a sprite drawn mirrored is tested where it is drawn', () => {
+    // A 4 × 1 sprite whose only solid pixel is its leftmost one, drawn 40 px wide.
+    const SRC = 'mirror_test_sprite.png';
+    beforeEach(() => setAlphaMaskForTests(SRC, { width: 4, height: 1, data: Uint8Array.from([255, 0, 0, 0]) }));
+
+    function sprite(flip) {
+        const img = {
+            tagName: 'IMG',
+            complete: false,
+            getAttribute: (k) => (k === 'src' ? SRC : null),
+            getBoundingClientRect: () => ({ left: 0, top: 0, right: 40, bottom: 10, width: 40, height: 10 })
+        };
+        return {
+            tagName: 'BUTTON',
+            dataset: {},
+            hasAttribute: () => false,
+            getAttribute: (k) => (k === 'data-alpha-flip' ? flip : null),
+            querySelector: () => img
+        };
+    }
+
+    it('facing right: solid on the left, see-through on the right', () => {
+        expect(isElementOpaqueAtPoint(sprite(null), 5, 5)).toBe(true);
+        expect(isElementOpaqueAtPoint(sprite(null), 35, 5)).toBe(false);
+    });
+
+    it('facing left (data-alpha-flip="x"): the solid pixel is drawn on the right, and only there takes the press', () => {
+        expect(isElementOpaqueAtPoint(sprite('x'), 35, 5)).toBe(true);
+        expect(isElementOpaqueAtPoint(sprite('x'), 5, 5)).toBe(false);
     });
 });

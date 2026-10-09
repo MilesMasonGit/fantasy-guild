@@ -1,9 +1,11 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useMatSize } from '../../hooks/useMatSize.js';
 import { MAT_Z, matStackOrder, sameStackOrder, heroZ, walkerSortY } from './matLayers.js';
+import { createStackWriter } from './stackWriter.js';
 import { pointerToMat } from './matPoint.js';
 import { installPressRouting } from './pressRouting.js';
-import { MatToken } from './MatToken.jsx';
+import { flagClothOver } from './flagCloth.js';
+import { MatToken, MatTokenGrab } from './MatToken.jsx';
 import { MatHero, heroBoxAt } from './MatHero.jsx';
 import { MatRings } from './MatRings.jsx';
 import { CalloutLayer } from './CalloutLayer.jsx';
@@ -17,6 +19,7 @@ import { TERRAIN_ENABLED } from '../../../config/registries/terrainRegistry.js';
 import { announce } from './dropOnMat.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { useActiveDrag } from '../../dnd/DndKit.jsx';
+import { DRAG_KIND } from '../../dnd/dragConstants.js';
 import { useDisallowMode, flipDisallowed } from '../../hooks/useDisallowMode.js';
 import { useMatFit } from './MatFitContext.jsx';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
@@ -44,14 +47,16 @@ import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
  * still be clicked.
  * The hover pass steps aside entirely while a drag is live: dnd-kit owns the pointer then, and
  * re-ordering Tokens under a drag made the ghost flicker.
+ * ⚠️ Memoised: its parent holds the mat's drop target, which dnd-kit re-renders at every drag
+ * start, end and change of target.
  */
-export const MatBoard = ({
+export const MatBoard = React.memo(function MatBoard({
     onInspectToken,
     onClearInspect,
     onOpenRecipes,
     inspectedHeroId = null,
     inspectedTokenId = null
-}) => {
+}) {
     // Dev only (an empty function in production): MatBoard's OWN renders for the Perf HUD,
     // beside Board.jsx's subtree Profiler.
     usePerfRenderCount('MatBoard');
@@ -68,7 +73,21 @@ export const MatBoard = ({
     const [hoverHeroId, setHoverHeroId] = useState(null);
     /** The pointer is on a Token's art circle, so every flag lets it through. */
     const [flagsYield, setFlagsYield] = useState(false);
-    const { isDragging } = useActiveDrag();
+    const { isDragging, activePayload } = useActiveDrag();
+    // The mat Token in the hand, if one is: it stays where it is, hidden, while it is carried.
+    const carriedId = isDragging && activePayload?.kind === DRAG_KIND.TOKEN ? (activePayload.from?.instanceId ?? null) : null;
+
+    // Every Token is picked up through one shared drag source (`MatTokenGrab`): a press says
+    // which Token, points the source at its art, and hands the press on.
+    const pressedRef = useRef(null);
+    const grabRef = useRef(null);
+    const handleTokenPress = useCallback((e, token, artEl) => {
+        pressedRef.current = token;
+        const grab = grabRef.current;
+        if (!grab) return;
+        grab.setNodeRef(artEl);
+        grab.listeners?.onPointerDown?.(e);
+    }, []);
 
     // Disallow mode. Read once here and handed to each Token as a prop, so a Token holds no
     // subscription of its own for it.
@@ -88,11 +107,12 @@ export const MatBoard = ({
     }, [isDragging]);
 
     // A no-op while dragging, so a hero/flag crossing mid-drag does not reinstate a stray
-    // hover ring (and the commit it would cost).
-    const handleHoverHero = useCallback(
-        (id) => { if (!isDragging) setHoverHeroId(id); },
-        [isDragging]
-    );
+    // hover ring (and the commit it would cost). Read from the page rather than `isDragging`, so
+    // the handler stays the same and no hero or flag is redrawn for a new one at each drag.
+    const handleHoverHero = useCallback((id) => {
+        if (typeof document !== 'undefined' && document.body.classList.contains('gi-dnd-active')) return;
+        setHoverHeroId(id);
+    }, []);
 
     /**
      * Every Token on the mat: where it is, and nothing about how it is doing.
@@ -228,13 +248,19 @@ export const MatBoard = ({
         const el = rootRef.current;
         if (!el) return;
         /**
-         * Flags have no hitbox over Tokens. A point on a Token's art circle is that Token's,
-         * even when a flag is drawn in front of it: the Token is hovered (and so raised to the
-         * front), and every flag lets the pointer through until it leaves the circle. A flag
-         * is grabbed by the part of it standing over bare mat.
+         * Flags have no hitbox over Tokens, except their cloth. A point on a Token's art circle
+         * is that Token's, even when a flag is drawn in front of it: the Token is hovered (and
+         * so raised to the front), and every flag lets the pointer through until it leaves the
+         * circle. Only the cloth of a flag drawn in front of that Token keeps the pointer, so a
+         * flag standing among Tokens can always be picked up by its banner.
          */
         const point = pointerToMat({ x: e.clientX, y: e.clientY }, el.getBoundingClientRect());
         let id = point ? (Flags.tokenAtPoint(point)?.id ?? null) : null;
+        if (id && flagClothOver(el, e.clientX, e.clientY, id)) {
+            setFlagsYield(prev => (prev === false ? prev : false));
+            setHoveredId(prev => (prev === null ? prev : null));
+            return;
+        }
         const onToken = !!id;
         setFlagsYield(prev => (prev === onToken ? prev : onToken));
         if (!id) {
@@ -301,7 +327,10 @@ export const MatBoard = ({
         return sameStackOrder(lastOrderRef.current, next) ? lastOrderRef.current : next;
     }, [tokens, flagPoints, workedKey, hoveredId]);
     lastOrderRef.current = order;
-    const zById = order.tokenZ;
+    // Each Token's z goes straight onto its boxes, so a re-rank redraws no Token. A layout
+    // effect: written in the same commit, before anything is painted.
+    const stack = useMemo(() => createStackWriter(), []);
+    useLayoutEffect(() => { stack.apply(order.tokenZ); }, [stack, order]);
 
     return (
         <div
@@ -345,7 +374,7 @@ export const MatBoard = ({
                     x={t.x}
                     y={t.y}
                     walkFacing={t.walkFacing}
-                    z={zById.get(t.id)}
+                    stack={stack}
                     isHovered={hoveredId === t.id}
                     selected={inspectedTokenId != null && inspectedTokenId === t.id}
                     hasHero={workedBy.has(t.id)}
@@ -355,8 +384,11 @@ export const MatBoard = ({
                     onRecallHero={handleRecallHero}
                     disallowMode={disallowMode}
                     onFlipDisallow={handleFlipDisallow}
+                    dragging={carriedId === t.id}
+                    onPress={handleTokenPress}
                 />
             ))}
+            <MatTokenGrab pressedRef={pressedRef} grabRef={grabRef} />
 
             {heroes.map(h => {
                 // A moving hero's point is MatHero's own.
@@ -442,7 +474,7 @@ export const MatBoard = ({
             )}
         </div>
     );
-};
+});
 
 /**
  * Disallow mode's edge and hint: above the speech bubbles (`MAT_Z.HERO_BUBBLE`, 860).

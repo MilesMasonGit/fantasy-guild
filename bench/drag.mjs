@@ -11,6 +11,7 @@
 //   npm run bench:drag -- --dev         the dev build instead (React component names for blockers)
 //   npm run bench:drag -- --no-build    reuse dist-perf/
 //   npm run bench:drag -- --cpu=4       CPU slowdown
+//   npm run bench:drag -- --board=S3    the torture board instead of S2
 //
 // Exit codes: 0 every kind 100 % · 1 any kind below 100 % · 3 the bench failed.
 // It reports drag bugs; it does not fix them.
@@ -24,7 +25,7 @@ import { launchChrome, sleep, runCleanups } from './browser/cdp.mjs';
 import { startDevServer, startPerfServer, buildPerf, perfBuildInfo } from './browser/servers.mjs';
 import { SCENES, sceneUrl, openBoard, clickUntil, BANK_OPEN, SHOP_OPEN } from './browser/scenes.mjs';
 import { installDragKit } from './browser/dragKit.mjs';
-import { parseArgs, KINDS, summarise, exitCode, dragPath, EXIT } from './browser/dragLib.mjs';
+import { parseArgs, KINDS, summarise, exitCode, dragPath, EXIT, PHASES, STALL_MS, stallCells } from './browser/dragLib.mjs';
 import { table } from './browser/drawLib.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -33,6 +34,7 @@ const resultsDir = path.join(here, 'results', 'drag');
 
 const STEP_MS = 16;          // one pointer move per frame, roughly
 const HOVER_MS = 80;         // the pointer rests on the source before the press, as a hand does
+const QUIET_MS = 50;         // still, between the bench's reads and the release, so the drop's frames are the game's
 const SETTLE_MS = 450;       // after the release: the drop handler, the state, the re-render
 
 function gitInfo() {
@@ -74,6 +76,7 @@ async function realDrag(page, from, to, via = null) {
     await sleep(40);
     const inHand = await page.evaluate('window.__dragKit.inHand()');
     const underTarget = await page.evaluate(`({ ...window.__dragKit.describeAt(${to.x}, ${to.y}), droppables: window.__dragKit.droppablesAt(${to.x}, ${to.y}) })`);
+    await sleep(QUIET_MS);
     await page.mouse('mouseReleased', to.x, to.y, { button: 'left', buttons: 0, clickCount: 1 });
     await sleep(SETTLE_MS);
     return { under, inHand, underTarget };
@@ -124,7 +127,7 @@ async function attempt(page, kind) {
     const check = await page.evaluate(`window.__dragKit.check(${JSON.stringify(pick.expect)})`);
     return {
         source: pick.source, target: pick.target, under, inHand, wrongThing: !!inHand && inHand !== pick.source.hand,
-        pickedUp: probe.pickedUp, pressToStartMs: probe.pressToStartMs, thresholdToStartMs: probe.thresholdToStartMs,
+        pickedUp: probe.pickedUp, pressToStartMs: probe.pressToStartMs, thresholdToStartMs: probe.thresholdToStartMs, frames: probe.frames,
         notes: probe.notes, stuck, dropSound: probe.dropSound, underTarget, msSinceOverlayBurst: probe.msSinceOverlayBurst,
         ok: !!check.ok && probe.pickedUp && inHand === pick.source.hand, detail: check.detail
     };
@@ -136,7 +139,7 @@ async function main() {
     const meta = { ...gitInfo(), date: new Date().toISOString(), node: process.version, machine: os.hostname(), cpu: os.cpus()[0]?.model?.trim(), args };
     const kinds = KINDS.filter(k => !args.kinds || args.kinds.includes(k.id));
     const passes = args.overlays ? ['plain', 'overlays'] : ['plain'];
-    console.log(`Fantasy Guild drag bench — ${meta.commit} on ${meta.branch} · ${args.build} build · CPU ${args.cpu}× · ${args.n} drags per kind and pass · ${meta.machine}`);
+    console.log(`Fantasy Guild drag bench — ${meta.commit} on ${meta.branch} · ${args.board} board · ${args.build} build · CPU ${args.cpu}× · ${args.n} drags per kind and pass · ${meta.machine}`);
 
     let server = null;
     let chrome = null;
@@ -152,7 +155,7 @@ async function main() {
         }
         chrome = await launchChrome({ width: 1600, height: 1000 });
         meta.chrome = { product: chrome.info.product, gpu: chrome.info.gpu };
-        const page = await openBoard(chrome, sceneUrl(server.url, SCENES.S2), { cpu: args.cpu, stress: 'realistic' });
+        const page = await openBoard(chrome, sceneUrl(server.url, SCENES[args.board]), { cpu: args.cpu, stress: SCENES[args.board].stress });
         try {
             await sleep(5000);
             // The Perf HUD is the harness's own overlay (bottom left), not part of the game: it would
@@ -220,6 +223,11 @@ async function main() {
                 `${ms(s.pickupP50)} / ${ms(s.pickupP95)}`, `${ms(s.thresholdP50)} / ${ms(s.thresholdP95)}`, s.skipped || '']);
         }
         console.log(`\n${pass}\n${table(['kind', 'attempts', 'ok', 'success', 'press→start p50/p95 ms', '8px move→start p50/p95 ms', 'skipped'], lines)}`);
+        const stallLines = kinds.filter(k => summaries[`${pass}/${k.id}`]).map(k => {
+            const st = summaries[`${pass}/${k.id}`].stalls;
+            return [k.label, ...PHASES.flatMap(p => stallCells(st[p]))];
+        });
+        console.log(`\n${pass}: frames per drag phase (longest / median drag's longest, ms · frames over ${STALL_MS} ms / frames (drags))\n${table(['kind', ...PHASES.flatMap(p => [`${p} ms`, `${p} >${STALL_MS}`])], stallLines)}`);
         for (const kind of kinds) {
             const s = summaries[`${pass}/${kind.id}`];
             if (!s?.failures.length) continue;
@@ -232,6 +240,7 @@ async function main() {
         }
     }
     console.log(`\npress→start includes the bench's own ${STEP_MS} ms wait and two pointer moves before the 8 px threshold is crossed; 8px move→start is the game's own pickup delay after it is crossed.`);
+    console.log('Frames are animation-frame intervals. pickup: the press to 100 ms after the drag starts; carry: from then to the last move; drop: the release to 300 ms after it.');
 
     const elapsedS = (Date.now() - started) / 1000;
     fs.mkdirSync(resultsDir, { recursive: true });

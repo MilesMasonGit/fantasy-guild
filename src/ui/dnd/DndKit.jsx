@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 import {
     DndContext, DragOverlay, PointerSensor, useSensor, useSensors,
-    useDraggable, useDroppable, pointerWithin
+    useDraggable, useDroppable, getClientRect
 } from '@dnd-kit/core';
 import { snapCenterToCursor } from '@dnd-kit/modifiers';
 import { CSS } from '@dnd-kit/utilities';
@@ -22,12 +22,99 @@ import { displayPointOf } from '../../systems/board/BoardState.js';
 const sfx = (clip) => EventBus.publish(ENGINE_EVENTS.AUDIO_PLAY, { clip });
 
 /**
+ * Drop-target boxes without reading the page's layout, neither while the pointer moves nor
+ * while the targets are measured.
+ * ⚠️ dnd-kit's own boxes re-read the scroll position of every scrolling box around a target
+ * each time one of its sides is asked for, and the target under the pointer is worked out on
+ * every pointer move and on every render of the drag system: hundreds of `scrollTop` reads per
+ * pickup, any of which can force the whole page's layout. Instead the boxes are used as
+ * measured, moved only by the boxes that actually scroll during the drag, which are followed
+ * from their own scroll events. A box that scrolls during a drag moves every target inside it.
+ * Nothing scrolls in most drags, and then nothing is added at all.
+ */
+const ZERO = Object.freeze({ x: 0, y: 0 });
+/** Every box that has ever scrolled: where it was left. A box never seen has not scrolled. */
+const lastScroll = new WeakMap();
+/** Boxes scrolled during the live drag: box → { start, now }. */
+const dragScrolled = new Map();
+/** Each target as measured: where the boxes scrolled so far in the drag stood then. */
+const measuredAt = new WeakMap();
+let dragLive = false;
+
+function noteScroll(e) {
+    const el = e.target === document ? document.scrollingElement : e.target;
+    if (!el || el.nodeType !== 1) return;
+    const now = { x: el.scrollLeft, y: el.scrollTop };
+    if (dragLive) {
+        const seen = dragScrolled.get(el);
+        if (seen) seen.now = now;
+        else dragScrolled.set(el, { start: lastScroll.get(el) || ZERO, now });
+    }
+    lastScroll.set(el, now);
+}
+if (typeof document !== 'undefined') document.addEventListener('scroll', noteScroll, { capture: true, passive: true });
+
+/** Whether a drag is live, for `dropBox`: its scrolling is counted from its start. */
+export function followDropTargetScroll(on) {
+    dragLive = on;
+    dragScrolled.clear();
+}
+
+/** dnd-kit's own measure for a drop target (its box, transforms ignored), noting the drag's scrolling so far. */
+export function measureDropTarget(node) {
+    measuredAt.set(node, dragScrolled.size ? new Map([...dragScrolled].map(([el, at]) => [el, at.now])) : null);
+    return getClientRect(node, { ignoreTransform: true });
+}
+
+/**
+ * A drop target's box as it is drawn now, as plain numbers: the box measured at drag start,
+ * moved by however far the boxes around it have scrolled since.
+ */
+function dropBox(container, rect) {
+    // dnd-kit keeps the box as measured under `rect`, beside its scroll-reading getters.
+    const raw = rect?.rect || rect;
+    if (!raw) return null;
+    const node = container?.node?.current;
+    if (!dragScrolled.size || !node) return raw;
+    const at = measuredAt.get(node);
+    let dx = 0;
+    let dy = 0;
+    for (const [el, { start, now }] of dragScrolled) {
+        // A target that scrolls itself does not move; only the boxes around it move it.
+        if (el === node || !el.contains(node)) continue;
+        const from = at?.get(el) || start;
+        dx += from.x - now.x;
+        dy += from.y - now.y;
+    }
+    if (!dx && !dy) return raw;
+    return {
+        left: raw.left + dx, right: raw.right + dx, top: raw.top + dy, bottom: raw.bottom + dy,
+        width: raw.width, height: raw.height
+    };
+}
+
+/** dnd-kit's `pointerWithin`, on `dropBox`es: the targets under the pointer, nearest corners first. */
+function pointerWithinBoxes({ droppableContainers, droppableRects, pointerCoordinates }) {
+    if (!pointerCoordinates) return [];
+    const { x, y } = pointerCoordinates;
+    const hits = [];
+    for (const container of droppableContainers) {
+        const r = dropBox(container, droppableRects.get(container.id));
+        if (!r || !(r.top <= y && y <= r.bottom && r.left <= x && x <= r.right)) continue;
+        const corners = [[r.left, r.top], [r.left + r.width, r.top], [r.left, r.top + r.height], [r.left + r.width, r.top + r.height]];
+        const distances = corners.reduce((sum, [cx, cy]) => sum + Math.sqrt((x - cx) ** 2 + (y - cy) ** 2), 0);
+        hits.push({ id: container.id, data: { droppableContainer: container, value: Number((distances / 4).toFixed(4)) } });
+    }
+    return hits.sort((a, b) => a.data.value - b.data.value);
+}
+
+/**
  * Collision: the pointer's containing targets, smallest-area first, so a nested child target
  * (e.g. a card tile) wins over its parent while the parent still resolves over its own empty
  * space.
  */
 export function smallestWithin(args) {
-    const hits = pointerWithin(args);
+    const hits = pointerWithinBoxes(args);
     if (hits.length > 0) {
         if (hits.length === 1) return hits;
 
@@ -59,7 +146,7 @@ export function smallestWithin(args) {
     let minDistanceSq = Number.POSITIVE_INFINITY;
 
     for (const c of candidates) {
-        const r = c.rect.current;
+        const r = dropBox(c, c.rect.current);
         const dx = Math.max(r.left - px, 0, px - r.right);
         const dy = Math.max(r.top - py, 0, py - r.bottom);
         const distSq = dx * dx + dy * dy;
@@ -114,8 +201,27 @@ export function surfaceWithinRegions(x, y, regions) {
 }
 
 
+/**
+ * Static, so passing it to <DndContext> never counts as a changed prop.
+ * ⚠️ The page itself never scrolls (`body` is `overflow: hidden`; panels scroll inside), yet
+ * dnd-kit counts it among every target's scrolling boxes and asks it, on every pointer move,
+ * whether it can scroll: a layout read per move. Only the panels are asked.
+ */
+const AUTO_SCROLL = {
+    enabled: true,
+    threshold: { x: 0, y: 0.18 },
+    canScroll: (el) => typeof document === 'undefined' || el !== document.scrollingElement
+};
+
 // Static, so passing it to <DndContext> never counts as a changed prop.
-const AUTO_SCROLL = { enabled: true, threshold: { x: 0, y: 0.18 } };
+const MEASURING = { droppable: { measure: measureDropTarget } };
+
+/**
+ * ⚠️ Static too: a fresh options object on each provider render gives dnd-kit a new sensor, so
+ * every drag source gets new listeners, and every memoised one redraws, at each drag start
+ * and end.
+ */
+const SENSOR_OPTIONS = { activationConstraint: { distance: 8 } };
 
 /**
  * Whatever is carried casts the hard pixel shadow `PixelArt` draws for `lifted`; a soft
@@ -225,10 +331,9 @@ export const DeckDndProvider = ({ children }) => {
     const pointerRef = useRef({ x: 0, y: 0 });
     const glideTargetRef = useRef(null);
     const regionsRef = useRef([]);
+    const startPayloadRef = useRef(null);
 
-    const sensors = useSensors(
-        useSensor(AlphaPointerSensor, { activationConstraint: { distance: 8 } })
-    );
+    const sensors = useSensors(useSensor(AlphaPointerSensor, SENSOR_OPTIONS));
 
     // While a drag is live, track which surface the cursor is over so the ghost can bloom bold
     // over the board and stay compact over a drawer.
@@ -244,13 +349,17 @@ export const DeckDndProvider = ({ children }) => {
     }, [activePayload]);
 
     const handleDragStart = useCallback((event) => {
-        const payload = event.active?.data?.current || null;
+        // A copy as it is now: a shared source's payload reads what was pressed (`MatTokenGrab`).
+        const live = event.active?.data?.current;
+        const payload = live ? { ...live } : null;
+        startPayloadRef.current = payload;
         const a = event.activatorEvent;
         if (a && 'clientX' in a) pointerRef.current = { x: a.clientX, y: a.clientY };
         setSurface(payload?.sourceSurface || DND_SURFACE.BOARD);
         setActivePayload(payload);
         glideTargetRef.current = null;
         if (typeof document !== 'undefined') document.body.classList.add('gi-dnd-active');
+        followDropTargetScroll(true);
         sfx(DRAG_SFX.pickup);
 
         // Starting a hero drag from the dock tab or inspection panel while the hero is already
@@ -279,15 +388,17 @@ export const DeckDndProvider = ({ children }) => {
     }, []);
 
     const finishDrag = useCallback(() => {
+        startPayloadRef.current = null;
         setActivePayload(null);
         // dragPointer itself is cleared by DragPointerProvider's own effect, which re-runs the
         // moment activePayload goes null.
         if (typeof document !== 'undefined') document.body.classList.remove('gi-dnd-active');
+        followDropTargetScroll(false);
     }, []);
 
     const handleDragEnd = useCallback((event) => {
         const { active, over } = event;
-        const payload = active?.data?.current;
+        const payload = startPayloadRef.current || active?.data?.current;
         let success = false;
 
         // A live target under the release point wins over dnd-kit's `over`, which can be stale.
@@ -375,6 +486,7 @@ export const DeckDndProvider = ({ children }) => {
             <DndContext
                 sensors={sensors}
                 collisionDetection={smallestWithin}
+                measuring={MEASURING}
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
                 onDragCancel={handleDragCancel}
@@ -421,11 +533,13 @@ export function useEntityDrag({
         disabled,
         data: { kind, sourceSurface, ...payload }
     });
-    return {
-        setNodeRef,
-        isDragging,
-        handleProps: keyboardAccessible ? { ...listeners, ...attributes } : { ...listeners }
-    };
+    // The same object until the listeners themselves change, so a memoised drag source is not
+    // redrawn for a fresh copy of the same handlers.
+    const handleProps = React.useMemo(
+        () => (keyboardAccessible ? { ...listeners, ...attributes } : { ...listeners }),
+        [listeners, attributes, keyboardAccessible]
+    );
+    return { setNodeRef, isDragging, handleProps };
 }
 
 /**
@@ -473,13 +587,19 @@ export function useEntityDrop({ id, surface = DND_SURFACE.BOARD, accepts, onDrop
     });
     const payload = active?.data?.current || null;
     const canAccept = !!(payload && accepts?.(payload));
+    // The same object while the id and surface hold, so a memoised drop target is not redrawn
+    // for a fresh copy.
+    const droppableProps = React.useMemo(
+        () => ({ 'data-dnd-droppable-id': id, 'data-dnd-surface': surface }),
+        [id, surface]
+    );
     return {
         setNodeRef,
         isOver,
         valid: isOver && canAccept,
         invalid: isOver && !canAccept,
         activePayload: payload,
-        droppableProps: { 'data-dnd-droppable-id': id, 'data-dnd-surface': surface }
+        droppableProps
     };
 }
 

@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
@@ -42,9 +42,11 @@ import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
  * - **Reach ring**: a dashed gold circle of the live flag radius, only while that flag or its
  * hero is hovered, dragged or inspected, or while a dragged Token would land inside it. While a
  * flag is dragged, every Token inside it the hero could work shows a green dot at its centre.
- * - **No hitbox over Tokens**: wherever the pointer is on a Token's art circle, every flag
- * lets it through (`yieldToTokens`, set by `MatBoard`), so a flag never eats a Token's hover,
- * click or grab. A flag is grabbed by the part of it that stands over bare mat.
+ * - **No hitbox over Tokens, but the cloth**: wherever the pointer is on a Token's art circle,
+ * every flag lets it through (`yieldToTokens`, set by `MatBoard`), so a flag never eats a
+ * Token's hover, click or grab with its pole or empty corners. A flag is grabbed by the part
+ * of it over bare mat, or by its cloth where it is drawn in front of the Token (`flagCloth.js`),
+ * so a flag standing among Tokens can always be picked up.
  * - **Pinned**: a flag pinned to a Token is drawn with its pole planted at the top of that
  * Token (`pinnedFlagPoint`), carries `data-flag-pinned`, shows no reach ring (the radius does
  * not apply) and says 'Working only X' on hover.
@@ -244,9 +246,15 @@ export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverH
     );
 };
 
-/** One hero's flag: drag to move it, hover for why. */
-const Flag = memo(function Flag({ flag, z = 0, artPx, onHover, boardHovered = false, inspected = false, yieldToTokens = false }) {
-    const ref = useRef(null);
+/**
+ * One hero's flag: drag to move it, hover for why.
+ * ⚠️ Two components on purpose. dnd-kit re-renders every component holding a drag hook at each
+ * drag start, end and change of target; the hook lives in this thin shell, which works out what
+ * the flag draws from a drag (carried, its tooltip), and the flag (`FlagBody`) is memoised on
+ * those, so a drag elsewhere does not redraw it.
+ */
+const Flag = memo(function Flag(props) {
+    const { flag } = props;
     const [hovered, setHovered] = useState(false);
     const { isDragging: anyDrag, activePayload } = useActiveDrag();
 
@@ -265,10 +273,28 @@ const Flag = memo(function Flag({ flag, z = 0, artPx, onHover, boardHovered = fa
         if (carried) setHovered(false);
     }, [carried]);
 
-    const setRefs = (node) => {
+    return (
+        <FlagBody
+            {...props}
+            hovered={hovered}
+            onHoverChange={setHovered}
+            carried={carried}
+            tipShown={hovered && !anyDrag}
+            dragRef={drag.setNodeRef}
+            dragProps={drag.handleProps}
+        />
+    );
+});
+
+const FlagBody = memo(function FlagBody({
+    flag, z = 0, artPx, onHover, boardHovered = false, inspected = false, yieldToTokens = false,
+    hovered, onHoverChange, carried, tipShown, dragRef, dragProps
+}) {
+    const ref = useRef(null);
+    const setRefs = useCallback((node) => {
         ref.current = node;
-        drag.setNodeRef(node);
-    };
+        dragRef?.(node);
+    }, [dragRef]);
 
     const scaleFactor = artPx / 128;
     const originLeft = (flag.drawX ?? flag.x ?? 0) - POLE_BASE.x * scaleFactor;
@@ -282,15 +308,15 @@ const Flag = memo(function Flag({ flag, z = 0, artPx, onHover, boardHovered = fa
         <>
             <button
                 ref={setRefs}
-                {...drag.handleProps}
+                {...dragProps}
                 type="button"
                 data-flag={flag.heroId}
                 data-flag-state={flag.state}
                 data-flag-colour={flag.colour || 'base'}
                 data-flag-pinned={flag.pinnedTo || undefined}
                 aria-label={`${flag.name}’s flag`}
-                onMouseEnter={() => { setHovered(true); onHover?.(flag.heroId); }}
-                onMouseLeave={() => { setHovered(false); onHover?.(null); }}
+                onMouseEnter={() => { onHoverChange(true); onHover?.(flag.heroId); }}
+                onMouseLeave={() => { onHoverChange(false); onHover?.(null); }}
                 onClick={handleClick}
                 className={cn(
                     'absolute p-0 m-0 bg-transparent border-0 outline-none',
@@ -317,7 +343,7 @@ const Flag = memo(function Flag({ flag, z = 0, artPx, onHover, boardHovered = fa
                 />
             </button>
 
-            {hovered && !anyDrag && <FlagTooltip anchor={ref.current} heroId={flag.heroId} />}
+            {tipShown && <FlagTooltip anchor={ref.current} heroId={flag.heroId} />}
         </>
     );
 });

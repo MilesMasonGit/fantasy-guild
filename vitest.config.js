@@ -31,7 +31,9 @@ export default defineConfig({
             // by the rules above. Both apps use lucide for icons, so tests run
             // the game's copy for both. Icons are presentational — nothing this
             // suite asserts depends on which version drew them.
-            { find: /^lucide-react$/, replacement: rootModule('lucide-react') }
+            { find: /^lucide-react$/, replacement: rootModule('lucide-react') },
+            // The app's own `@` for `src/` (vite.config.js), so a component importing by it loads.
+            { find: /^@\/(.*)$/, replacement: `${fileURLToPath(new URL('./src', import.meta.url)).split('\\').join('/')}/$1` }
         ]
     },
 

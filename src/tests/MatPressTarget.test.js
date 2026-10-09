@@ -1,8 +1,11 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, beforeAll, afterAll, afterEach, vi } from 'vitest';
 import React from 'react';
-import { render, cleanup, fireEvent } from '@testing-library/react';
-import { DndContext } from '@dnd-kit/core';
+import { render, cleanup, fireEvent, act } from '@testing-library/react';
+import { DndContext, useDndMonitor } from '@dnd-kit/core';
+import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
+import { MatHero } from '../ui/components/board/MatHero.jsx';
+import { setAlphaMaskForTests, updateAlphaPointerEvents } from '../ui/utils/alphaHitTest.js';
 import './fixtures/testTokens.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { GameState } from '../state/GameState.js';
@@ -14,6 +17,7 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { EngineContext } from '../ui/context/EngineContext';
 import { matW, matH, artRadiusOf } from '../config/matGeometry.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
+import { MAT_TOKEN_DRAG_ID } from '../ui/components/board/MatToken.jsx';
 import { setDisallowMode } from '../ui/hooks/useDisallowMode.js';
 import { MatFitProvider } from '../ui/components/board/MatFitContext.jsx';
 import { HERO_HIT_PX } from '../ui/components/board/boardConstants.js';
@@ -62,6 +66,8 @@ function mountAt(fit, props = {}) {
 }
 
 const artOf = (container, id) => container.querySelector(`[data-token-art][data-token-id="${id}"]`);
+/** What a drag picked up: a flag or hero by its drag id, a mat Token (one shared source) by its own id. */
+const startedName = (active) => (active.id === MAT_TOKEN_DRAG_ID ? `token-${active.data.current.from.instanceId}` : active.id);
 const hitOf = (container, id) => container.querySelector(`[data-token-hit="${id}"]`);
 
 beforeAll(() => Flags.init());
@@ -193,6 +199,262 @@ describe('⭐ where two circles overlap, the press goes where hovering would', (
         } finally {
             setDisallowMode(false);
         }
+    });
+});
+
+/**
+ * ⭐ **A hero takes a press only on a pixel drawn at that moment.** A hero's figure box stands in
+ * front of their own flag (and sometimes a neighbour's). Through a see-through pixel the press
+ * goes to whatever is drawn beneath, decided at the press itself: the figure animates, so the
+ * pixel under a still pointer is not the one the last pointer move saw.
+ */
+describe('⭐ a press through a hero\'s see-through pixel reaches what is beneath', () => {
+    const P = { x: 560, y: 850 };
+    const box = { left: P.x - 30, top: P.y - 60, right: P.x + 30, bottom: P.y + 60, width: 60, height: 120, x: P.x - 30, y: P.y - 60 };
+    let realElementFromPoint;
+
+    function heroAt(id, flagPoint) {
+        GameState.state.heroes = [...(GameState.state.heroes || []), {
+            id, name: id, spriteId: 'hero_knight', status: 'idle', level: 50,
+            skills: { forestry: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 }
+        }];
+        Flags.plant(id, flagPoint);
+    }
+
+    /** What started, by draggable id, in the real drag provider (8 px activation, alpha test). */
+    function mountWithDrag() {
+        const started = [];
+        const Spy = () => { useDndMonitor({ onDragStart: (e) => started.push(startedName(e.active)) }); return null; };
+        const view = render(
+            h(EngineContext.Provider, { value: { GameState, EventBus } },
+                h(DeckDndProvider, null,
+                    h(MatFitProvider, { value: OWNER_FIT }, h(MatBoard), h(Spy))))
+        );
+        const mat = view.container.querySelector('[data-mat-board]');
+        mat.getBoundingClientRect = () => ({ left: 0, top: 0, x: 0, y: 0, width: matW(), height: matH(), right: matW(), bottom: matH() });
+        return { ...view, started };
+    }
+
+    /** A hero figure whose drawing is solid or see-through everywhere, boxed over `P`. */
+    function figure(container, id, solid) {
+        const el = container.querySelector(`[data-board-hero="${id}"]`);
+        const img = el.querySelector('img');
+        setAlphaMaskForTests(img.getAttribute('src'), { width: 8, height: 3, data: new Uint8Array(24).fill(solid ? 255 : 0) });
+        el.getBoundingClientRect = () => box;
+        img.getBoundingClientRect = () => box;
+        return el;
+    }
+
+    /** The browser's own hit test at `P`: the first of `stack` (top first) that takes the pointer. */
+    function stackAtP(...stack) {
+        document.elementFromPoint = (x, y) => (x === P.x && y === P.y
+            ? stack.find(el => el.style.pointerEvents !== 'none') ?? null
+            : null);
+    }
+
+    function pressAndPull(el) {
+        act(() => {
+            fireEvent.pointerDown(el, { pointerId: 1, clientX: P.x, clientY: P.y, isPrimary: true, button: 0 });
+            fireEvent.pointerMove(document, { pointerId: 1, clientX: P.x + 30, clientY: P.y, isPrimary: true });
+        });
+    }
+
+    beforeEach(() => {
+        realElementFromPoint = document.elementFromPoint;
+        GameState.state.heroes = [];
+    });
+    afterEach(async () => {
+        fireEvent.pointerUp(document, { pointerId: 1, clientX: P.x + 30, clientY: P.y });
+        await new Promise(r => setTimeout(r, 80));
+        if (realElementFromPoint) document.elementFromPoint = realElementFromPoint; else delete document.elementFromPoint;
+        document.body.classList.remove('gi-dnd-active');
+    });
+
+    it('the hero\'s own flag, pressed through the hero\'s see-through pixel, is picked up', () => {
+        heroAt('h1', { x: 500, y: 900 });
+        const { container, started } = mountWithDrag();
+        const hero = figure(container, 'h1', false);
+        const flag = container.querySelector('button[data-flag="h1"]');
+        stackAtP(hero, flag);
+        // The last pointer move saw a solid pixel, so the press itself lands on the figure.
+        hero.style.pointerEvents = '';
+        pressAndPull(hero);
+        expect(started).toEqual(['flag-h1']);
+    });
+
+    it('a neighbour\'s see-through pixel over a flag gives up the press to that flag', () => {
+        heroAt('h1', { x: 500, y: 900 });
+        heroAt('h2', { x: 420, y: 980 });
+        const { container, started } = mountWithDrag();
+        const h2 = figure(container, 'h2', false);
+        const flag = container.querySelector('button[data-flag="h1"]');
+        stackAtP(h2, flag);
+        pressAndPull(h2);
+        expect(started).toEqual(['flag-h1']);
+    });
+
+    it('a neighbour drawn solid at the press takes it, even when the last move found the pixel see-through', () => {
+        heroAt('h1', { x: 500, y: 900 });
+        heroAt('h2', { x: 420, y: 980 });
+        const { container, started } = mountWithDrag();
+        const flag = container.querySelector('button[data-flag="h1"]');
+        // The last pointer move saw a see-through pixel and let the pointer through the figure...
+        const h2 = figure(container, 'h2', false);
+        stackAtP(h2, flag);
+        updateAlphaPointerEvents(P.x, P.y);
+        expect(h2.style.pointerEvents).toBe('none');
+        // ...then the figure stepped to a frame drawn solid there, so the browser hands the press to the flag.
+        figure(container, 'h2', true);
+        pressAndPull(flag);
+        expect(started).toEqual(['hero-h2']);
+    });
+
+    it('a hero drawn facing left says so, so its pixels are tested where they are drawn', () => {
+        const draw = (facing) => render(
+            h(DndContext, null,
+                h(MatFitProvider, { value: OWNER_FIT },
+                    h(MatHero, { heroId: 'h1', name: 'h1', sprite: 'hero_knight', left: 0, top: 0, facing })))
+        ).container.querySelector('[data-board-hero="h1"]');
+        expect(draw(1).hasAttribute('data-alpha-flip')).toBe(false);
+        cleanup();
+        expect(draw(-1).getAttribute('data-alpha-flip')).toBe('x');
+    });
+});
+
+/**
+ * ⭐ **A flag among Tokens can always be picked up by its cloth.** Over a Token's round body a
+ * flag lets the pointer through to the Token, except on the flag's cloth where the flag is drawn
+ * in front of that Token. Its pole, its grass and its empty corners still give way.
+ */
+describe('⭐ a flag\'s cloth drawn in front of a Token takes the pointer there', () => {
+    // At the owner's fit the flag is drawn 147 u across, its pole base on its point.
+    const FLAG_PX_HERE = 147;
+    const boxOf = (point) => {
+        const s = FLAG_PX_HERE / 128;
+        const left = point.x - 40 * s, top = point.y - 116 * s;
+        return { left, top, right: left + FLAG_PX_HERE, bottom: top + FLAG_PX_HERE, width: FLAG_PX_HERE, height: FLAG_PX_HERE, x: left, y: top };
+    };
+    const ON_CLOTH = { x: 620, y: 620 };
+    let realElementFromPoint;
+
+    function scene(flagPoint) {
+        const tok = placeAt('fixture_producer', 600, 600);
+        // A hero who cannot work it, so the Token stays at rest (a worked Token is drawn in front of every flag).
+        GameState.state.heroes = [{ id: 'h1', name: 'h1', spriteId: 'hero_knight', status: 'idle', level: 50, skills: { mining: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 } }];
+        Flags.plant('h1', flagPoint);
+        return tok;
+    }
+    function boxFlag(container, flagPoint) {
+        const flag = container.querySelector('button[data-flag="h1"]');
+        flag.getBoundingClientRect = () => boxOf(flagPoint);
+        return flag;
+    }
+    function mountWithDrag() {
+        const started = [];
+        const Spy = () => { useDndMonitor({ onDragStart: (e) => started.push(startedName(e.active)) }); return null; };
+        const view = render(
+            h(EngineContext.Provider, { value: { GameState, EventBus } },
+                h(DeckDndProvider, null,
+                    h(MatFitProvider, { value: OWNER_FIT }, h(MatBoard), h(Spy))))
+        );
+        const mat = view.container.querySelector('[data-mat-board]');
+        mat.getBoundingClientRect = () => ({ left: 0, top: 0, x: 0, y: 0, width: matW(), height: matH(), right: matW(), bottom: matH() });
+        return { ...view, started };
+    }
+    const outlined = (container, id) => container.querySelector(`[data-token-art][data-token-id="${id}"]`).getAttribute('data-outline');
+
+    beforeEach(() => { realElementFromPoint = document.elementFromPoint; });
+    afterEach(async () => {
+        fireEvent.pointerUp(document, { pointerId: 1, clientX: 700, clientY: 620 });
+        await new Promise(r => setTimeout(r, 80));
+        if (realElementFromPoint) document.elementFromPoint = realElementFromPoint; else delete document.elementFromPoint;
+        document.body.classList.remove('gi-dnd-active');
+    });
+
+    it('hovering the cloth over the Token keeps the pointer on the flag, and the Token is not hovered', () => {
+        const flagPoint = { x: 600, y: 690 };
+        const tok = scene(flagPoint);
+        const { container } = mountWithDrag();
+        const flag = boxFlag(container, flagPoint);
+        expect(Number(flag.style.zIndex)).toBeGreaterThan(Number(artOf(container, tok.id).style.zIndex));
+        expect(Flags.tokenAtPoint(ON_CLOTH)?.id).toBe(tok.id);              // inside the Token's circle
+        fireEvent.pointerMove(hitOf(container, tok.id), { clientX: ON_CLOTH.x, clientY: ON_CLOTH.y });
+        expect(flag.className).toContain('pointer-events-auto');
+        expect(outlined(container, tok.id)).not.toBe('hover');
+        // Off the cloth, still on the Token: the flag gives way again.
+        fireEvent.pointerMove(hitOf(container, tok.id), { clientX: 600, clientY: 660 });
+        expect(flag.className).toContain('pointer-events-none');
+        expect(outlined(container, tok.id)).toBe('hover');
+    });
+
+    it('a press on the cloth with no pointer move before it picks up the flag, not the Token', () => {
+        const flagPoint = { x: 600, y: 690 };
+        const tok = scene(flagPoint);
+        const other = placeAt('fixture_producer', 1000, 600);
+        const { container, started } = mountWithDrag();
+        boxFlag(container, flagPoint);
+        // The give-way is stale: the last move was on another Token, so every flag lets the
+        // pointer through, and the press comes with no move of its own.
+        fireEvent.pointerMove(hitOf(container, other.id), { clientX: 1000, clientY: 600 });
+        expect(container.querySelector('button[data-flag="h1"]').className).toContain('pointer-events-none');
+        act(() => {
+            fireEvent.pointerDown(hitOf(container, tok.id), { pointerId: 1, clientX: ON_CLOTH.x, clientY: ON_CLOTH.y, isPrimary: true, button: 0 });
+            fireEvent.pointerMove(document, { pointerId: 1, clientX: ON_CLOTH.x + 30, clientY: ON_CLOTH.y, isPrimary: true });
+        });
+        expect(started).toEqual(['flag-h1']);
+    });
+
+    it('a flag planted on the Token\'s centre: its pole and grass there leave the Token its press', () => {
+        const flagPoint = { x: 600, y: 600 };
+        const tok = scene(flagPoint);
+        const { container, started } = mountWithDrag();
+        boxFlag(container, flagPoint);
+        act(() => {
+            fireEvent.pointerDown(hitOf(container, tok.id), { pointerId: 1, clientX: 600, clientY: 600, isPrimary: true, button: 0 });
+            fireEvent.pointerMove(document, { pointerId: 1, clientX: 630, clientY: 600, isPrimary: true });
+        });
+        expect(started).toEqual([`token-${tok.id}`]);
+    });
+
+    it('pressed on the flag itself, before any pointer move has made it give way, the pole over the Token still leaves it the press', () => {
+        const flagPoint = { x: 600, y: 600 };
+        const tok = scene(flagPoint);
+        const { container, started } = mountWithDrag();
+        const flag = boxFlag(container, flagPoint);
+        // No pointer move yet: the flag has not given way, so the browser hands it the press.
+        expect(flag.className).toContain('pointer-events-auto');
+        act(() => {
+            fireEvent.pointerDown(flag, { pointerId: 1, clientX: 600, clientY: 600, isPrimary: true, button: 0 });
+            fireEvent.pointerMove(document, { pointerId: 1, clientX: 630, clientY: 600, isPrimary: true });
+        });
+        expect(started).toEqual([`token-${tok.id}`]);
+    });
+
+    it('and a click there inspects the Token, the same as a click after a pointer move would', () => {
+        const flagPoint = { x: 600, y: 600 };
+        const tok = scene(flagPoint);
+        const onInspectToken = vi.fn();
+        const { container } = mountAt(OWNER_FIT, { onInspectToken });
+        const flag = boxFlag(container, flagPoint);
+        fireEvent.click(flag, { clientX: 600, clientY: 600 });
+        expect(onInspectToken).toHaveBeenCalledTimes(1);
+        expect(onInspectToken.mock.calls[0][2]).toBe(tok.id);
+    });
+
+    it('a flag drawn behind the Token (standing higher on the mat) leaves it the press, cloth or not', () => {
+        const flagPoint = { x: 600, y: 599 };
+        const tok = scene(flagPoint);
+        const { container, started } = mountWithDrag();
+        const flag = boxFlag(container, flagPoint);
+        expect(Number(flag.style.zIndex)).toBeLessThan(Number(artOf(container, tok.id).style.zIndex));
+        // On this flag's cloth, and inside the Token's circle.
+        const p = { x: 605, y: 545 };
+        expect(Flags.tokenAtPoint(p)?.id).toBe(tok.id);
+        act(() => {
+            fireEvent.pointerDown(hitOf(container, tok.id), { pointerId: 1, clientX: p.x, clientY: p.y, isPrimary: true, button: 0 });
+            fireEvent.pointerMove(document, { pointerId: 1, clientX: p.x + 30, clientY: p.y, isPrimary: true });
+        });
+        expect(started).toEqual([`token-${tok.id}`]);
     });
 });
 

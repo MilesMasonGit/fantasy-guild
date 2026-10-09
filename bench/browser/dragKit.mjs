@@ -3,14 +3,51 @@
 // It only reads the game and does set-up (resources, room on the mat, unequipping before an
 // equip); every drag itself is real browser input sent from Node.
 
-/* global window, document, MutationObserver, getComputedStyle, innerWidth, innerHeight */
+/* global window, document, MutationObserver, getComputedStyle, innerWidth, innerHeight, requestAnimationFrame */
 export function installDragKit() {
     const G = window.__perf.game;
     const kit = {};
     window.__dragKit = kit;
 
+    // ---- Frame timing: every frame's interval (rAF to rAF), kept for the last ~25 s ----
+    // A stall anywhere on the main thread (a React commit, a forced layout) delays the next
+    // animation frame, so it shows here as one long interval: what the player sees as a hitch.
+    const RING = 4096;
+    const frameEnd = new Float64Array(RING);
+    const frameGap = new Float64Array(RING);
+    let frameCount = 0;
+    let lastFrameTs = 0;
+    const onFrame = (ts) => {
+        if (lastFrameTs) {
+            const i = frameCount % RING;
+            frameEnd[i] = ts;
+            frameGap[i] = ts - lastFrameTs;
+            frameCount++;
+        }
+        lastFrameTs = ts;
+        requestAnimationFrame(onFrame);
+    };
+    requestAnimationFrame(onFrame);
+    /** Frames whose interval [end − gap, end] passes `keep(start, end)`: count, longest, over 16.7 ms. */
+    const framesWhere = (keep) => {
+        let n = 0, maxMs = 0, over = 0;
+        for (let k = Math.max(0, frameCount - RING); k < frameCount; k++) {
+            const i = k % RING;
+            const end = frameEnd[i], gap = frameGap[i];
+            if (!keep(end - gap, end)) continue;
+            n++;
+            if (gap > maxMs) maxMs = gap;
+            if (gap > 16.7) over++;
+        }
+        return n ? { frames: n, maxMs: Math.round(maxMs * 10) / 10, over16: over } : null;
+    };
+    // How long after the drag starts still counts as the pickup: its commits and the ghost's mount.
+    const PICKUP_TAIL_MS = 100;
+    // How long after the release counts as the drop: the drop's commits and the landing.
+    const DROP_TAIL_MS = 300;
+
     // ---- Pickup probe: press time, the move that crossed the 8 px threshold, drag start ----
-    const probe = { downAt: null, downPt: null, activateAt: null, startAt: null, upAt: null, notes: [], sounds: [] };
+    const probe = { downAt: null, downPt: null, activateAt: null, startAt: null, upAt: null, carryEndAt: null, notes: [], sounds: [] };
     kit.probe = probe;
     window.addEventListener('pointerdown', (e) => {
         probe.downAt = performance.now();
@@ -30,10 +67,30 @@ export function installDragKit() {
     // no target took it; `drop` = flown back; a kind's own clip = a target accepted it.
     G.EventBus.subscribe('audio:play', (p) => { if (probe.downAt != null) probe.sounds.push(p?.clip); });
     kit.resetProbe = () => {
-        probe.downAt = null; probe.downPt = null; probe.activateAt = null; probe.startAt = null; probe.upAt = null; probe.notes = []; probe.sounds = [];
+        probe.downAt = null; probe.downPt = null; probe.activateAt = null; probe.startAt = null; probe.upAt = null; probe.carryEndAt = null; probe.notes = []; probe.sounds = [];
+    };
+    /**
+     * The frames of one drag, in three phases that share no frame:
+     * - **pickup**: from the press to `PICKUP_TAIL_MS` after the drag started (a frame that
+     * starts inside that and runs on past it is the pickup's);
+     * - **carry**: every whole frame after that, up to the moment the bench first reads the
+     * page before the release (`inHand`), so the bench's own reads are never counted;
+     * - **drop**: from the frame the release lands in to `DROP_TAIL_MS` after it. The bench holds
+     * still for a few frames between its reads and the release, so this frame is the game's.
+     */
+    const dragFrames = () => {
+        const { downAt, startAt, upAt, carryEndAt } = probe;
+        if (downAt == null || startAt == null) return null;
+        const pickupEnd = startAt + PICKUP_TAIL_MS;
+        return {
+            pickup: framesWhere((s, e) => e > downAt && s < pickupEnd),
+            carry: carryEndAt == null ? null : framesWhere((s, e) => s >= pickupEnd && e <= carryEndAt),
+            drop: upAt == null ? null : framesWhere((s, e) => e > upAt && s < upAt + DROP_TAIL_MS)
+        };
     };
     kit.readProbe = () => ({
         pickedUp: probe.startAt != null,
+        frames: dragFrames(),
         pressToStartMs: probe.startAt != null && probe.downAt != null ? probe.startAt - probe.downAt : null,
         thresholdToStartMs: probe.startAt != null && probe.activateAt != null ? Math.max(0, probe.startAt - probe.activateAt) : null,
         stillDragging: document.body.classList.contains('gi-dnd-active'),
@@ -46,6 +103,8 @@ export function installDragKit() {
 
     /** What is in the hand right now, read from what each source draws while it is carried. */
     kit.inHand = () => {
+        // The carry's frames end here: from now on the bench is reading the page.
+        if (probe.carryEndAt == null) probe.carryEndAt = performance.now();
         if (!document.body.classList.contains('gi-dnd-active')) return null;
         const g = document.querySelector('[data-flag-ghost]');
         if (g) return `flag ${g.getAttribute('data-flag-ghost')}`;
@@ -100,9 +159,27 @@ export function installDragKit() {
             attrs: attrs(el),
             identity: identity || `${el.tagName.toLowerCase()} (no identified ancestor)`,
             ownerAttrs: owner && owner !== el ? attrs(owner) : [],
-            react: reactNames(el)
+            react: reactNames(el),
+            // Everything at the point that takes the pointer, top first, by identity.
+            stack: stackAt(x, y)
         };
     };
+    function identityOf(el) {
+        for (let n = el; n && n !== document.body; n = n.parentElement) {
+            const a = IDENT.find(k => n.hasAttribute?.(k));
+            if (a) return `[${a}${n.getAttribute(a) ? '=' + String(n.getAttribute(a)).slice(0, 40) : ''}]`;
+        }
+        return el.tagName.toLowerCase();
+    }
+    function stackAt(x, y) {
+        const out = [];
+        for (const el of document.elementsFromPoint(x, y)) {
+            const id = identityOf(el);
+            if (!out.includes(id)) out.push(id);
+            if (out.length >= 5) break;
+        }
+        return out;
+    }
 
     /**
      * Every registered drop target whose box contains the point, other than the mat itself, with
@@ -206,64 +283,148 @@ export function installDragKit() {
     // ---- Pickers: a source to press, a target to drop on, and what should be true after ----
     const draggableTokens = () => G.BoardState.tokens().filter(t => {
         const el = document.querySelector(`[data-token-art][data-token-id="${t.id}"]`);
-        return el && !el.hasAttribute('data-guild-hall') && !t.quest?.tutorial && !G.BoardPlacement.isPermanentToken(t.typeId, t);
+        // An enemy in a fight can be killed before the drop, and then nothing lands: not a press
+        // fault, so it is passed over (an owner question: should a Token in the hand be safe?).
+        return el && !el.hasAttribute('data-guild-hall') && !t.quest?.tutorial && !G.BoardPlacement.isPermanentToken(t.typeId, t)
+            && !G.BoardCombat?.getFight?.(t.id);
     });
+    // ---- Where the game gives a press: the bench's own copy of the rules, read from the page ----
+    // A flag's cloth inside its drawn box, as shares of its size (the flag art, `flagGeometry.js`).
+    const CLOTH = { left: 12 / 64, top: 11 / 64, right: 62 / 64, bottom: 36 / 64 };
+    const zOf = (el) => Number(el?.style?.zIndex) || 0;
+    const onCloth = (flagEl, p) => {
+        const r = flagEl.getBoundingClientRect();
+        const u = (p.x - r.left) / r.width, v = (p.y - r.top) / r.height;
+        return u >= CLOTH.left && u <= CLOTH.right && v >= CLOTH.top && v <= CLOTH.bottom;
+    };
+    /** A flag whose cloth is drawn in front of a Token at `p` (over a Token, only a cloth keeps a press). */
+    const clothInFront = (p, tokenZ) => [...document.querySelectorAll('button[data-flag]')]
+        .some(f => zOf(f) > tokenZ && onCloth(f, p));
+    /** Token hit circles on screen: each Token's own round body, the only part that takes a press. */
+    const tokenCircles = () => [...document.querySelectorAll('[data-token-hit]')].map(e => {
+        const r = e.getBoundingClientRect();
+        return { id: e.getAttribute('data-token-hit'), x: r.left + r.width / 2, y: r.top + r.height / 2, r: Math.min(r.width, r.height) / 2 };
+    });
+    const onScreen = (p) => p.x >= 0 && p.y >= 0 && p.x < innerWidth && p.y < innerHeight;
+
     /**
-     * Where to press a Token: its centre, or another point of its art circle when a DIFFERENT
-     * Token's art lies on top there (overlapping Tokens: the player sees and grabs the top one).
-     * Anything else on top (a ring, an alert, a bubble, a flag) is kept: that is what the bench
-     * is looking for.
+     * Where to press a Token, as the game's rules give a press to it: its centre, or another
+     * point of its own round body, where the game says the pointer is on THIS Token (where circles
+     * overlap, the nearest centre: `Flags.tokenAtPoint`) and no flag's cloth is drawn in front.
+     * The point must be on the mat as drawn, not under the screen's own furniture outside it (the
+     * hero bar's figures, a drawer), nor under a hero figure. Anything else on the mat drawn on
+     * top (a ring, a callout, a bubble) is kept: that is what the bench is looking for.
      */
-    const tokenPress = (id, { clearOfHeroes = false } = {}) => {
-        const el = document.querySelector(`[data-token-art][data-token-id="${id}"]`);
-        const c = visibleCentre(el);
-        if (!c) return null;
-        const r = el.getBoundingClientRect();
-        const rad = Math.min(r.width, r.height) / 2;
+    const tokenPress = (id) => {
+        const hit = document.querySelector(`[data-token-hit="${id}"]`);
+        const art = document.querySelector(`[data-token-art][data-token-id="${id}"]`);
+        if (!hit || !art) return null;
+        const r = hit.getBoundingClientRect();
+        if (r.width < 2) return null;
+        const c = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+        const rad = r.width / 2;
+        const board = document.querySelector('[data-mat-board]');
         const pts = [c];
-        for (let k = 0; k < 8; k++) pts.push({ x: Math.round(c.x + Math.cos(k * Math.PI / 4) * rad * 0.45), y: Math.round(c.y + Math.sin(k * Math.PI / 4) * rad * 0.45) });
-        for (const p of pts) {
+        for (let k = 0; k < 8; k++) pts.push({ x: c.x + Math.cos(k * Math.PI / 4) * rad * 0.45, y: c.y + Math.sin(k * Math.PI / 4) * rad * 0.45 });
+        for (const q of pts) {
+            const p = { x: Math.round(q.x), y: Math.round(q.y) };
+            if (!onScreen(p)) continue;
+            if (G.Flags.tokenAtPoint(kit.screenToMat(p))?.id !== id) continue;
+            if (clothInFront(p, zOf(art))) continue;
             const top = document.elementFromPoint(p.x, p.y);
-            // `clearOfHeroes`: for kinds testing what happens AFTER the press (the bin), where
-            // a hero standing on the Token is not what is being measured, and the game must
-            // grab THIS Token: the one whose centre is nearest the pointer, which can differ
-            // from the one drawn on top where art boxes overlap. Other kinds keep such presses,
-            // since "pressed near a Token, a different one was grabbed" is what they measure.
-            if (clearOfHeroes && top?.closest?.('[data-board-hero]')) continue;
-            if (clearOfHeroes && G.Flags.tokenAtPoint(kit.screenToMat(p))?.id !== id) continue;
-            const art = top?.closest?.('[data-token-art]');
-            if (!art || art === el) return p;
+            if (!top || !board?.contains(top)) continue;
+            // A hero figure in front takes the press where it is drawn solid, by design, and which
+            // of its pixels are solid changes frame by frame: the bench presses beside it.
+            if (top.closest('[data-board-hero]')) continue;
+            return p;
         }
         return null;
     };
-    /** Token art circles on screen, for "is this point over a Token?". */
-    const tokenCircles = () => [...document.querySelectorAll('[data-token-art][data-token-id]')].map(e => {
-        const r = e.getBoundingClientRect();
-        return { x: r.left + r.width / 2, y: r.top + r.height / 2, r: Math.min(r.width, r.height) / 2 };
-    });
     /**
-     * Where to press a flag. By design a flag is grabbed by the part of it over bare mat: over a
-     * Token's art circle the pointer goes to the Token. So: the highest point of the flag's
-     * circle that is clear of every Token circle, or its centre when none is (reported).
+     * Whether a press at `p` lands on this flag as drawn: past the flag's own hero (a press on the
+     * hero drags the same flag), the first thing the browser finds there is the flag. Anything
+     * else drawn on top there (a Token's bubble, another flag or hero, the mat's top bar over a
+     * clipped edge) is what the player would be pressing instead.
+     */
+    const flagOnTop = (el, heroId, p) => {
+        for (const top of document.elementsFromPoint(p.x, p.y)) {
+            if (top.closest(`[data-board-hero="${heroId}"]`)) continue;
+            return el.contains(top);
+        }
+        return false;
+    };
+    /** For a report: what is drawn on top of a flag's cloth, at its middle and four corners. */
+    const coverOf = (el) => {
+        const heroId = el.getAttribute('data-flag');
+        const r = el.getBoundingClientRect();
+        const at = (u, v) => ({ x: Math.round(r.left + u * r.width), y: Math.round(r.top + v * r.height) });
+        return [at(0.58, 0.37), at(0.25, 0.2), at(0.94, 0.2), at(0.25, 0.54), at(0.94, 0.54)].map(p => {
+            const top = document.elementsFromPoint(p.x, p.y).find(e => !e.closest(`[data-board-hero="${heroId}"]`));
+            const art = top?.closest?.('[data-token-art]');
+            return { p, top: top ? identityOf(top) : null, tokenZ: art ? zOf(art) : null, flagZ: zOf(el), worked: art ? art.getAttribute('data-tile-staffed') === 'true' : null };
+        });
+    };
+    /**
+     * Where to press a flag, as the game's rules give a press to it: over bare mat, any point of
+     * its round area; over a Token's round body, only its cloth where it is drawn in front of that
+     * Token. So: the highest point of the flag clear of every Token's body where the flag is what
+     * is drawn on top; else a point of its cloth drawn on top; else its centre (reported).
      */
     const flagPress = (el) => {
+        const heroId = el.getAttribute('data-flag');
         const r = el.getBoundingClientRect();
         const c = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
         const rad = Math.min(r.width, r.height) / 2;
         const circles = tokenCircles();
+        const grid = [];
         for (let gy = -0.7; gy <= 0.71; gy += 0.175) {
             for (let gx = -0.7; gx <= 0.71; gx += 0.175) {
                 if (gx * gx + gy * gy > 0.5) continue;
-                const p = { x: Math.round(c.x + gx * rad), y: Math.round(c.y + gy * rad) };
-                if (p.x < 0 || p.y < 0 || p.x >= innerWidth || p.y >= innerHeight) continue;
-                if (!circles.some(t => Math.hypot(t.x - p.x, t.y - p.y) <= t.r)) return { ...p, bare: true };
+                grid.push({ x: Math.round(c.x + gx * rad), y: Math.round(c.y + gy * rad) });
             }
+        }
+        for (const p of grid) {
+            if (!onScreen(p) || circles.some(t => Math.hypot(t.x - p.x, t.y - p.y) <= t.r)) continue;
+            if (flagOnTop(el, heroId, p)) return { ...p, bare: true };
+        }
+        for (const p of grid) {
+            if (onScreen(p) && onCloth(el, p) && flagOnTop(el, heroId, p)) return { ...p, bare: false, cloth: true };
         }
         return { x: Math.round(c.x), y: Math.round(c.y), bare: false };
     };
     const flagAt = (heroId) => {
         const f = G.BoardState.flagOf(heroId);
         return f ? { x: f.x, y: f.y, pinnedTo: f.pinnedTo ?? null, plantedAt: f.plantedAt ?? null } : null;
+    };
+    /** For a failure report: what the flag's own button looks like on screen, and the mat's box. */
+    const flagScene = (el, heroId) => {
+        const r = el.getBoundingClientRect();
+        const m = matEl().getBoundingClientRect();
+        const bar = document.querySelector('[data-mat-top-bar]')?.getBoundingClientRect();
+        const cell = matEl().parentElement?.parentElement?.getBoundingClientRect();
+        // Whether any part of the flag is clear of every Token's own hit circle (not its art box).
+        const hits = [...document.querySelectorAll('[data-token-hit]')].map(e => {
+            const b = e.getBoundingClientRect();
+            return { x: b.left + b.width / 2, y: b.top + b.height / 2, r: b.width / 2 };
+        });
+        const c = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+        const rad = Math.min(r.width, r.height) / 2;
+        let bareOfHitCircles = false;
+        for (let gy = -0.7; gy <= 0.71 && !bareOfHitCircles; gy += 0.175) {
+            for (let gx = -0.7; gx <= 0.71; gx += 0.175) {
+                if (gx * gx + gy * gy > 0.5) continue;
+                const p = { x: c.x + gx * rad, y: c.y + gy * rad };
+                if (!hits.some(t => Math.hypot(t.x - p.x, t.y - p.y) <= t.r)) { bareOfHitCircles = true; break; }
+            }
+        }
+        return {
+            flag: flagAt(heroId),
+            box: { left: Math.round(r.left), top: Math.round(r.top), w: Math.round(r.width) },
+            matTop: Math.round(m.top),
+            cellTop: cell ? Math.round(cell.top) : null,
+            barBottom: bar ? Math.round(bar.bottom) : null,
+            bareOfHitCircles
+        };
     };
 
     kit.pick = {
@@ -279,13 +440,23 @@ export function installDragKit() {
         flag() {
             const els = [...document.querySelectorAll('button[data-flag]')].filter(visibleCentre);
             if (!els.length) return { skip: 'no flag visible' };
-            const el = pickRandom(els);
+            // A flag with no part a press could reach (all of it lies under Tokens, flags or heroes
+            // drawn in front of it) cannot be picked up on the mat by anyone: the player moves it
+            // by its hero or from the hero bar. Such flags are passed over, and named in the scene.
+            const pressable = [];
+            const hidden = [];
+            for (const f of els) {
+                const p = flagPress(f);
+                (p.bare || p.cloth ? pressable : hidden).push({ el: f, at: p });
+            }
+            if (!pressable.length) return { skip: `every flag is hidden under things drawn in front of it (${hidden.length})` };
+            const { el, at } = pickRandom(pressable);
             const heroId = el.getAttribute('data-flag');
             const to = kit.freeSpot();
             if (!to) return { skip: 'no free spot' };
-            const at = flagPress(el);
+            const scene = { ...flagScene(el, heroId), hiddenFlags: hidden.map(h => ({ heroId: h.el.getAttribute('data-flag'), coveredBy: coverOf(h.el) })) };
             return {
-                source: { x: at.x, y: at.y, what: `flag ${heroId}${at.bare ? '' : ' (no part of it over bare mat)'}`, hand: `flag ${heroId}` },
+                source: { x: at.x, y: at.y, what: `flag ${heroId}${at.bare ? '' : ' (by its cloth, over a Token)'}`, hand: `flag ${heroId}`, scene },
                 target: to.screen, expect: { kind: 'flag', heroId, before: flagAt(heroId), mat: to.mat }
             };
         },
@@ -297,7 +468,15 @@ export function installDragKit() {
             if (!at) return { skip: 'Token off screen or under other Tokens' };
             const to = kit.freeSpot();
             if (!to) return { skip: 'no free spot' };
-            return { source: { ...at, what: `Token ${t.typeId} ${t.id}`, hand: `Token ${t.id}` }, target: to.screen, expect: { kind: 'token', id: t.id, before: { x: t.x, y: t.y }, mat: to.mat } };
+            const pressMat = kit.screenToMat(at);
+            const drawn = kit.screenToMat(visibleCentre(document.querySelector(`[data-token-art][data-token-id="${t.id}"]`)));
+            const scene = {
+                token: { x: Math.round(t.x), y: Math.round(t.y) }, pressMat: { x: Math.round(pressMat.x), y: Math.round(pressMat.y) },
+                gameSays: G.Flags.tokenAtPoint(pressMat)?.id ?? null,
+                // How far the drawn Token is from where the game has it (a slide or a spawn pop-out still playing).
+                drawnOffU: Math.round(Math.hypot(drawn.x - t.x, drawn.y - t.y))
+            };
+            return { source: { ...at, what: `Token ${t.typeId} ${t.id}`, hand: `Token ${t.id}`, scene }, target: to.screen, expect: { kind: 'token', id: t.id, before: { x: t.x, y: t.y }, mat: to.mat } };
         },
         shop() {
             const rows = [...document.querySelectorAll('[data-shop-row][data-shop-affordable="true"]')];
@@ -341,7 +520,7 @@ export function installDragKit() {
             const list = draggableTokens().filter(t => G.DiscardBin.canBin(t.id).success);
             if (!list.length) return { skip: 'no Token the bin takes' };
             const t = pickRandom(list);
-            const at = tokenPress(t.id, { clearOfHeroes: true });
+            const at = tokenPress(t.id);
             const bin = visibleCentre(document.querySelector('[data-discard-bin]'));
             if (!at || !bin) return { skip: 'Token or bin off screen' };
             // The bin is a sidebar that opens as a carried Token nears its tab: go to the tab first.

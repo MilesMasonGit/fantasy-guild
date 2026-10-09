@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { startTransition, useEffect, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence } from 'framer-motion';
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
@@ -35,7 +35,10 @@ const ToastContainer = ({ floating = false }) => {
          * queue is the single source of truth; re-snapshotting on every change makes drift
          * structurally impossible.
          */
-        const sync = () => setToasts(NotificationSystem.getQueue());
+        // A transition: notifications arrive in the middle of other work (a drop that spends
+        // items, a burst of level-ups), and every toast re-measures its layout when the column
+        // redraws. The column follows a frame later at most.
+        const sync = () => startTransition(() => setToasts(NotificationSystem.getQueue()));
 
         const handleSettings = (settings) => {
             if (settings.notifications?.position) {

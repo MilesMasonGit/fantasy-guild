@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
@@ -46,35 +47,13 @@ export const BottomHeroDock = ({
         [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.STATE_CHANGED]
     ) || [];
 
-    const handleReorderHero = (sourceHeroId, targetHeroId) =>
-        reorderHeroInDock(HeroManager, heroIds, sourceHeroId, targetHeroId);
-
-    const engine = useEngine();
-
-    const recall = useEntityDrop({
-        id: 'bottom-dock-recall',
-        surface: DND_SURFACE.DRAWER,
-        accepts: isRecallDrop,
-        onDrop: p => recallFromDrop(engine.BoardPlacement, p)
-    });
+    const handleReorderHero = useCallback(
+        (sourceHeroId, targetHeroId) => reorderHeroInDock(HeroManager, heroIds, sourceHeroId, targetHeroId),
+        [heroIds]
+    );
 
     return (
-        // Overflow stays VISIBLE upward: the heroes' heads, names and HP bars may stand over
-        // the bottom of the mat. z-40 keeps them above the mat (z-0) and under the drawers and
-        // modals.
-        <aside
-            ref={recall.setNodeRef}
-            data-dnd-region={DND_SURFACE.DRAWER}
-            data-bottom-hero-dock="true"
-            data-dock-art-px={artPx}
-            style={{ height: DOCK_STRIP_PX }}
-            className={cn(
-                'w-full shrink-0 pointer-events-auto select-none relative z-40 overflow-visible',
-                'border-t border-white/15',
-                recall.valid && 'ring-2 ring-gi-success/70 bg-gi-success/5'
-            )}
-            {...recall.droppableProps}
-        >
+        <DockRecallStrip artPx={artPx}>
             {onToggleRules && <WorkRulesButton open={rulesOpen} onToggle={onToggleRules} />}
             {/**
              * The heroes, one row. On a narrow window each slot shrinks (`DOCK_SLOT_PX` down to `DOCK_SLOT_MIN_PX`)
@@ -103,6 +82,43 @@ export const BottomHeroDock = ({
                     </motion.div>
                 ))}
             </div>
+        </DockRecallStrip>
+    );
+};
+
+/**
+ * The bar's strip, and its drop target for recalls (a flag, or a hero dragged off the mat).
+ * ⚠️ Its own component on purpose: dnd-kit re-renders the holder of a drop hook at every drag
+ * start, end and change of target. Here that is only this strip; the heroes come in as
+ * `children`, an element the strip did not make, so they are not redrawn with it, and their
+ * slots do not re-measure their layout for the reorder animation each time.
+ */
+const DockRecallStrip = ({ artPx, children }) => {
+    const engine = useEngine();
+    const recall = useEntityDrop({
+        id: 'bottom-dock-recall',
+        surface: DND_SURFACE.DRAWER,
+        accepts: isRecallDrop,
+        onDrop: p => recallFromDrop(engine.BoardPlacement, p)
+    });
+    return (
+        // Overflow stays VISIBLE upward: the heroes' heads, names and HP bars may stand over
+        // the bottom of the mat. z-40 keeps them above the mat (z-0) and under the drawers and
+        // modals.
+        <aside
+            ref={recall.setNodeRef}
+            data-dnd-region={DND_SURFACE.DRAWER}
+            data-bottom-hero-dock="true"
+            data-dock-art-px={artPx}
+            style={{ height: DOCK_STRIP_PX }}
+            className={cn(
+                'w-full shrink-0 pointer-events-auto select-none relative z-40 overflow-visible',
+                'border-t border-white/15',
+                recall.valid && 'ring-2 ring-gi-success/70 bg-gi-success/5'
+            )}
+            {...recall.droppableProps}
+        >
+            {children}
         </aside>
     );
 };

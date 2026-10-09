@@ -3,7 +3,7 @@ import { cn } from '../../utils/cn.js';
 import { artRadiusOf, isSmallToken } from '../../../config/matGeometry.js';
 import { tokenSkipLines } from './flagText.js';
 import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
-import { useEntityDrag } from '../../dnd/DndKit.jsx';
+import { useDraggable } from '@dnd-kit/core';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { TokenSprite, TOKEN_SURFACE, boardScaleAt, tokenSizeFor } from '../base/TokenSprite.jsx';
 import { AnimatedEnemySprite } from './AnimatedEnemySprite.jsx';
@@ -93,7 +93,10 @@ const SLIDE_EASE = 'cubic-bezier(0.2, 0.8, 0.2, 1)';
  * Two boxes, not one: the art and the badges are siblings with explicit z, not parent and
  * child. A hero stands beside the Token, and the bubbles have to stay
  * readable in front of that hero. A single box would make its own stacking context and bury
- * them under the hero's feet.
+ * them under the hero's feet. That z is written onto the boxes by the mat (`stack`,
+ * `stackWriter.js`), not rendered here.
+ * - **Picked up through the mat's one Token drag source** (`MatTokenGrab`): a press hands this
+ * Token to it (`onPress`), and the mat says which Token is in the hand (`dragging`).
  */
 export const MatToken = React.memo(function MatToken({
     id,
@@ -101,7 +104,7 @@ export const MatToken = React.memo(function MatToken({
     x,
     y,
     walkFacing = null,
-    z,
+    stack = null,
     isHovered = false,
     selected = false,
     hasHero = false,
@@ -110,7 +113,9 @@ export const MatToken = React.memo(function MatToken({
     onOpenRecipes,
     onRecallHero,
     disallowMode = false,
-    onFlipDisallow
+    onFlipDisallow,
+    dragging = false,
+    onPress
 }) {
     // Perf draw switches: each only stops DRAWING (see drawSwitches.js).
     const bubblesDrawn = useDrawn('bubbles');
@@ -180,45 +185,19 @@ export const MatToken = React.memo(function MatToken({
     const staffed = hasHero || !!heroId;
     const isFiniteToken = !isGuildHallToken && usesRemaining != null;
 
-    const drag = useEntityDrag({
-        id: `token-${id}`,
-        kind: DRAG_KIND.TOKEN,
-        payload: {
-            typeId,
-            from: { instanceId: id },
-            onMiss: isPermanent ? () => {
-                // A UI-only alert: TILE_EVENT_ALERT is the engine's.
-                EventBus?.publish(UI_EVENTS.UI_TOKEN_ALERT, {
-                    instanceId: id,
-                    severity: 'disallow',
-                    type: 'drop_rejected',
-                    name: 'Guild Hall',
-                    title: 'Guild Hall cannot be removed from the playmat.',
-                    rulesText: null,
-                    message: 'Guild Hall cannot be removed from the playmat.'
-                });
-                return null;
-            } : undefined
-        },
-        sourceSurface: DND_SURFACE.BOARD,
-        // No keyboard sensor exists, so dnd-kit's tabIndex/role/press-space text would be dead
-        // on every mat Token. A plain div with neither is not a Tab stop.
-        keyboardAccessible: false
-    });
-
     React.useEffect(() => {
-        if (drag.isDragging) onClearInspect?.();
-    }, [drag.isDragging, onClearInspect]);
+        if (dragging) onClearInspect?.();
+    }, [dragging, onClearInspect]);
 
     // While it is in the player's hand, a Token does not grow or turn into something else:
     // that would swap it for a new instance mid-drag and lose the move. The change waits and
     // happens where it is put down. Released after the drop has been handled, which runs
     // before this clean-up.
     React.useEffect(() => {
-        if (!drag.isDragging) return undefined;
+        if (!dragging) return undefined;
         TimedChanges.setInHand(id, true);
         return () => TimedChanges.setInHand(id, false);
-    }, [drag.isDragging, id]);
+    }, [dragging, id]);
 
     // A Token the player moved simply IS where they let it go. The `left`/`top` slide exists
     // for moves the game makes (a push); on a drop it would make the Token visibly bounce over
@@ -226,13 +205,13 @@ export const MatToken = React.memo(function MatToken({
     // ends, which covers the drop's own re-render.
     const [skipSlide, setSkipSlide] = React.useState(false);
     React.useEffect(() => {
-        if (drag.isDragging) {
+        if (dragging) {
             setSkipSlide(true);
             return undefined;
         }
         const timer = setTimeout(() => setSkipSlide(false), SLIDE_MS + 80);
         return () => clearTimeout(timer);
-    }, [drag.isDragging]);
+    }, [dragging]);
 
     const [landing, setLanding] = React.useState(false);
     const landingTimer = React.useRef(null);
@@ -315,12 +294,23 @@ export const MatToken = React.memo(function MatToken({
                 ? `left ${TICK_INTERVAL_MS}ms linear, top ${TICK_INTERVAL_MS}ms linear`
                 : `left ${SLIDE_MS}ms ${SLIDE_EASE}, top ${SLIDE_MS}ms ${SLIDE_EASE}`
     };
-    const hidden = drag.isDragging;
+    const hidden = dragging;
 
     const artRef = React.useRef(null);
     const overlayRef = React.useRef(null);
-    const setNodeRef = drag.setNodeRef;
-    const setArtRef = React.useCallback((el) => { artRef.current = el; setNodeRef(el); }, [setNodeRef]);
+    const setArtRef = React.useCallback((el) => {
+        artRef.current = el;
+        stack?.attach(id, 'art', el);
+    }, [stack, id]);
+    // A press anywhere this Token takes one (its circle, a bubble) picks it up.
+    const dragProps = React.useMemo(
+        () => ({ onPointerDown: (e) => onPress?.(e, { id, typeId, permanent: isPermanent }, artRef.current) }),
+        [onPress, id, typeId, isPermanent]
+    );
+    const setOverlayRef = React.useCallback((el) => {
+        overlayRef.current = el;
+        stack?.attach(id, 'badges', el);
+    }, [stack, id]);
     useWalkerFollow(walker && walking && x == null, id, boxHalf, artRef, overlayRef);
 
     // Just spawned: pops out of its spawner and slides to its spot, on both boxes alike. Read once,
@@ -394,7 +384,7 @@ export const MatToken = React.memo(function MatToken({
         <>
             <div
                 ref={setArtRef}
-                {...drag.handleProps}
+                {...dragProps}
                 data-token-id={id}
                 data-token-art="true"
                 data-token-type={typeId}
@@ -410,7 +400,7 @@ export const MatToken = React.memo(function MatToken({
                 data-tile-finite-token={isFiniteToken ? 'true' : undefined}
                 onContextMenu={handleContextMenu}
                 onClick={(e) => {
-                    if (drag.isDragging) return;
+                    if (dragging) return;
                     // In disallow mode a click flips the Token allowed/disallowed and does
                     // nothing else; it never claims a quest.
                     if (disallowMode) { onFlipDisallow?.(id); return; }
@@ -433,7 +423,6 @@ export const MatToken = React.memo(function MatToken({
                 }}
                 style={{
                     ...boxStyle,
-                    zIndex: z,
                     // The drawing takes no pointer; presses reach these listeners from the hit
                     // circle inside.
                     pointerEvents: 'none',
@@ -519,13 +508,13 @@ export const MatToken = React.memo(function MatToken({
             </div>
 
             <div
-                ref={overlayRef}
+                ref={setOverlayRef}
                 data-token-id={id}
                 data-token-overlay={id}
                 data-quest-token={quest ? id : undefined}
                 data-quest-done={quest ? String(questDone) : undefined}
                 className="absolute pointer-events-none"
-                style={{ ...boxStyle, zIndex: z + 2, visibility: hidden ? 'hidden' : 'visible' }}
+                style={{ ...boxStyle, visibility: hidden ? 'hidden' : 'visible' }}
             >
                 <TokenNameBadge name={label} isDragging={hidden} isHovered={isHovered} lift={Math.max(small ? SMALL_OVERHANG_U : 0, def?.enemy ? HEALTH_BAR_LIFT_U : 0)} />
 
@@ -546,7 +535,7 @@ export const MatToken = React.memo(function MatToken({
                     readTimer={detail?.turns || detail?.grows ? readTimer : null}
                     gear={gear}
                     disallowed={!!detail?.disallowed}
-                    dragProps={drag.handleProps}
+                    dragProps={dragProps}
                 />}
 
             </div>
@@ -556,5 +545,52 @@ export const MatToken = React.memo(function MatToken({
         </>
     );
 });
+
+/**
+ * A Guild Hall let go anywhere but the mat flies back and says why. A UI-only alert:
+ * TILE_EVENT_ALERT is the engine's.
+ */
+function guildHallMiss(id) {
+    return () => {
+        EventBus?.publish(UI_EVENTS.UI_TOKEN_ALERT, {
+            instanceId: id,
+            severity: 'disallow',
+            type: 'drop_rejected',
+            name: 'Guild Hall',
+            title: 'Guild Hall cannot be removed from the playmat.',
+            rulesText: null,
+            message: 'Guild Hall cannot be removed from the playmat.'
+        });
+        return null;
+    };
+}
+
+/**
+ * The one drag source every Token on the mat shares. A press on a Token says which Token it is
+ * (`pressedRef`) and points the source at that Token's art; the drag that may follow carries
+ * that Token.
+ * ⚠️ One for all on purpose: dnd-kit re-renders every holder of a drag hook at each drag start,
+ * end and change of target (several times per pickup and per drop), and on a busy mat a hook
+ * per Token was a hundred components, three hundred on the torture board. This draws nothing.
+ * The payload reads the pressed Token when dnd-kit asks for it; the drag provider keeps a copy
+ * of it at the drag's start (`DeckDndProvider`).
+ * No keyboard sensor exists, so dnd-kit's tabIndex, role and press-space text are not handed
+ * to the Tokens: a mat Token is not a Tab stop.
+ */
+export function MatTokenGrab({ pressedRef, grabRef }) {
+    const data = React.useMemo(() => ({
+        kind: DRAG_KIND.TOKEN,
+        sourceSurface: DND_SURFACE.BOARD,
+        get typeId() { return pressedRef.current?.typeId; },
+        get from() { return { instanceId: pressedRef.current?.id }; },
+        get onMiss() { return pressedRef.current?.permanent ? guildHallMiss(pressedRef.current.id) : undefined; }
+    }), [pressedRef]);
+    const { setNodeRef, listeners } = useDraggable({ id: MAT_TOKEN_DRAG_ID, data });
+    grabRef.current = { setNodeRef, listeners };
+    return null;
+}
+
+/** The mat Tokens' shared drag source's id. */
+export const MAT_TOKEN_DRAG_ID = 'mat-token';
 
 export default MatToken;

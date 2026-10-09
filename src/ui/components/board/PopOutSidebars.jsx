@@ -146,6 +146,10 @@ function useToastCount() {
     return count;
 }
 
+// The toasts redraw only for their own reasons: the sidebar redraws at every drag start and end
+// (it opens for some drags), and each toast re-measures its layout for its slide when it redraws.
+const ToastColumn = React.memo(ToastContainer);
+
 export const NotificationsSidebar = ({ towardMat }) => {
     const [listHidden, setListHidden] = useState(false);
     const toastsDrawn = useDrawn('notifications');
@@ -175,7 +179,7 @@ export const NotificationsSidebar = ({ towardMat }) => {
                 </button>
                 {!listHidden && toastsDrawn && (
                     <div className="min-h-0 overflow-y-auto gi-scrollbar">
-                        <ToastContainer />
+                        <ToastColumn />
                     </div>
                 )}
             </section>

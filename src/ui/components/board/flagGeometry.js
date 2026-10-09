@@ -14,6 +14,9 @@ export const FLAG_PX = 128;
 /** The pole's base inside the 128 px box (art (20, 58) × 2). */
 export const POLE_BASE = Object.freeze({ x: 40, y: 116 });
 
+/** The cloth inside the flag's box, as shares of its size (art x 12–62, y 11–36 of 64). */
+export const FLAG_CLOTH = Object.freeze({ left: 12 / 64, top: 11 / 64, right: 62 / 64, bottom: 36 / 64 });
+
 /**
  * Where an idle hero stands beside their flag is `HeroMotion.IDLE_SPOT`: a place they walk to,
  * not a drawing offset here.

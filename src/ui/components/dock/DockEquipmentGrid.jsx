@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { memo, useMemo, useState, useEffect } from 'react';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { useEngine } from '../../hooks/useEngine.js';
@@ -85,12 +85,6 @@ export const DockEquipmentGrid = ({ heroId }) => {
 /** One slot: right-click to unequip, drag to hand the item to another hero or bank, drop to equip. */
 const EquipSlotCell = ({ heroId, slot, itemId, quantity, justEquipped = false }) => {
     const engine = useEngine();
-    const item = itemId ? getItem(itemId) : null;
-    const category = itemId ? categoryOfItem(itemId) : null;
-    const info = getCategoryInfo(category);
-    const slotLabel = category ? info.label : 'Empty';
-    const showQuantity = item && info.kind && info.kind !== CATEGORY_KINDS.GEAR;
-
     const drag = useEntityDrag({
         id: `dock-equip-${heroId}-${slot}`,
         kind: DRAG_KIND.ITEM,
@@ -107,10 +101,36 @@ const EquipSlotCell = ({ heroId, slot, itemId, quantity, justEquipped = false })
             if (p.itemId) return equipOrAnnounce(engine, heroId, p.itemId, slot);
         }
     });
+    const nodeRef = useMemo(() => mergeRefs(drag.setNodeRef, drop.setNodeRef), [drag.setNodeRef, drop.setNodeRef]);
+
+    return (
+        <EquipSlotBody
+            heroId={heroId}
+            slot={slot}
+            itemId={itemId}
+            quantity={quantity}
+            justEquipped={justEquipped}
+            cue={drop.valid}
+            held={drag.isDragging}
+            nodeRef={nodeRef}
+            handleProps={drag.handleProps}
+            droppableProps={drop.droppableProps}
+        />
+    );
+};
+
+// ⚠️ Apart from its drag hooks on purpose: dnd-kit redraws their holder at every drag start, end
+// and change of target; the slot is memoised on what it draws.
+const EquipSlotBody = memo(function EquipSlotBody({ heroId, slot, itemId, quantity, justEquipped, cue, held, nodeRef, handleProps, droppableProps }) {
+    const engine = useEngine();
+    const item = itemId ? getItem(itemId) : null;
+    const category = itemId ? categoryOfItem(itemId) : null;
+    const info = getCategoryInfo(category);
+    const showQuantity = item && info.kind && info.kind !== CATEGORY_KINDS.GEAR;
 
     return (
         <div
-            ref={mergeRefs(drag.setNodeRef, drop.setNodeRef)}
+            ref={nodeRef}
             onContextMenu={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -124,11 +144,11 @@ const EquipSlotCell = ({ heroId, slot, itemId, quantity, justEquipped = false })
                 item
                     ? (!justEquipped && 'border-gi-primary/50 bg-gi-primary/10 cursor-grab active:cursor-grabbing hover:border-gi-danger hover:bg-red-950/30')
                     : (!justEquipped && 'border-dashed border-gi-border/50 bg-black/40 hover:border-gi-gold/40'),
-                drop.valid && 'ring-2 ring-emerald-400 border-emerald-400 bg-emerald-950/40',
-                drag.isDragging && 'opacity-40'
+                cue && 'ring-2 ring-emerald-400 border-emerald-400 bg-emerald-950/40',
+                held && 'opacity-40'
             )}
-            {...drag.handleProps}
-            {...drop.droppableProps}
+            {...handleProps}
+            {...droppableProps}
         >
             {item ? (
                 <span style={{ imageRendering: 'pixelated' }} className="flex items-center justify-center pointer-events-none">
@@ -149,6 +169,6 @@ const EquipSlotCell = ({ heroId, slot, itemId, quantity, justEquipped = false })
             )}
         </div>
     );
-};
+});
 
 export default DockEquipmentGrid;

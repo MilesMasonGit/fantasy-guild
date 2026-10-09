@@ -17,7 +17,7 @@ export const KINDS = [
 export const EXIT = { OK: 0, BELOW_100: 1, BENCH_FAILED: 3 };
 
 export function parseArgs(argv) {
-    const args = { n: 50, build: 'perf', buildFirst: true, cpu: 1, overlays: true, kinds: null, port: null };
+    const args = { n: 50, build: 'perf', buildFirst: true, cpu: 1, overlays: true, kinds: null, port: null, board: 'S2' };
     for (const a of argv) {
         const [key, ...rest] = a.replace(/^--/, '').split('=');
         const value = rest.join('=');
@@ -42,6 +42,11 @@ export function parseArgs(argv) {
                 const bad = ids.filter(id => !KINDS.some(k => k.id === id));
                 if (bad.length) throw new Error(`unknown kind ${bad.join(', ')}; known: ${KINDS.map(k => k.id).join(', ')}`);
                 args.kinds = ids;
+                break;
+            }
+            case 'board': {
+                if (value !== 'S2' && value !== 'S3') throw new Error('--board is S2 (realistic, the default) or S3 (torture)');
+                args.board = value;
                 break;
             }
             case 'port': args.port = Math.floor(Number(value)) || null; break;
@@ -70,7 +75,42 @@ export function failureCause(a) {
     return `dropped, state not as intended: ${a.detail ?? '?'}${a.dropSound ? ` (drop sound ${a.dropSound})` : ''}`;
 }
 
-/** Per kind: attempts, successes, %, pickup delay p50/p95, and grouped failure causes. */
+/** The three phases of a drag whose frames are timed (`dragKit.mjs`, `dragFrames`). */
+export const PHASES = ['pickup', 'carry', 'drop'];
+
+/** A frame longer than this is a visible hitch: a missed frame at 60 Hz. */
+export const STALL_MS = 16.7;
+
+/**
+ * Per phase, over every drag that has that phase's frames: the longest frame of all, the median
+ * of each drag's longest frame, how many frames ran over {@link STALL_MS} out of how many, and in
+ * how many drags.
+ */
+export function stallSummary(attempts) {
+    const out = {};
+    for (const phase of PHASES) {
+        const per = attempts.map(a => a.frames?.[phase]).filter(Boolean);
+        const maxes = per.map(p => p.maxMs).sort((x, y) => x - y);
+        out[phase] = {
+            drags: per.length,
+            frames: per.reduce((s, p) => s + p.frames, 0),
+            worstMs: maxes.length ? maxes[maxes.length - 1] : null,
+            medianMaxMs: maxes.length ? quantile(maxes, 0.5) : null,
+            over16: per.reduce((s, p) => s + p.over16, 0),
+            dragsWithStall: per.filter(p => p.over16 > 0).length
+        };
+    }
+    return out;
+}
+
+/** One phase's two report cells: `worst / median-of-longest ms` and `over / frames (drags)`. */
+export function stallCells(phase) {
+    if (!phase?.drags) return ['—', '—'];
+    const ms = (v) => (Number.isFinite(v) ? v.toFixed(0) : '—');
+    return [`${ms(phase.worstMs)} / ${ms(phase.medianMaxMs)}`, `${phase.over16} / ${phase.frames} (${phase.dragsWithStall})`];
+}
+
+/** Per kind: attempts, successes, %, pickup delay p50/p95, frame stalls per phase, and grouped failure causes. */
 export function summarise(attempts) {
     const tried = attempts.filter(a => !a.skipped);
     const ok = tried.filter(a => a.ok);
@@ -94,6 +134,7 @@ export function summarise(attempts) {
         pickupP95: delays.length ? quantile(delays, 0.95) : null,
         thresholdP50: fromThreshold.length ? quantile(fromThreshold, 0.5) : null,
         thresholdP95: fromThreshold.length ? quantile(fromThreshold, 0.95) : null,
+        stalls: stallSummary(tried),
         failures: [...causes.values()].sort((a, b) => b.count - a.count)
     };
 }

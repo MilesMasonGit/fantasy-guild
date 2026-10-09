@@ -298,7 +298,9 @@ any server the bench started are removed on every way out, Ctrl+C included.
 Both serve the game themselves on a free port (never 5173/5174): the **perf
 build** by default (`vite build --mode perf` → `dist-perf/`, served by Vite's
 preview), or the **dev build** (a Vite dev server with its own dependency cache,
-`node_modules/.vite-bench`, so it never fights the owner's server).
+`node_modules/.vite-bench-<checkout>-<hash>`, one per checkout because worktrees
+share `node_modules` through a junction, so it never fights the owner's server or
+another worktree's bench).
 
 ⚠️ **Drawing numbers are machine-specific.** `bench/draw-baseline.json` is the
 owner's PC, taken on a quiet machine. A number from another machine, or from a
@@ -419,8 +421,9 @@ a compare fails, run it again before believing it.
 On a busy S2 mat, N **real drags** of each kind, sent as browser input
 (`Input.dispatchMouseEvent`): the pointer rests on the source for 80 ms (as a
 hand does), presses, makes one move under and one past the 8 px activation
-distance, eases to the target in 10 steps a frame apart, wiggles, releases, and
-waits 450 ms. Because it is real input, the browser's own hit-testing decides
+distance, eases to the target in 10 steps a frame apart, wiggles, holds still for
+50 ms after its own reads of the page, releases, and waits 450 ms. Because it is
+real input, the browser's own hit-testing decides
 what the press lands on, which is where "something is blocking the drag" bugs
 live. Sources and targets are picked from the live DOM and state for every drag
 (things move); targets are the best-cleared of 40 random points on the mat,
@@ -451,22 +454,45 @@ drop targets there" note on a failure tells such a cause apart from the bubbles.
 
 Fairness rules, so that a failure is the game's and not the bench's:
 
-- **A Token** is pressed at its centre, or at another point of its art when a
-  *different Token* lies on top there (overlapping Tokens: the player grabs the
-  top one). Anything else on top, a ring, a callout, a bubble, is kept: that is
-  what the bench is looking for.
-- **A flag** is pressed at its highest point clear of every Token's art circle:
-  by design a flag over a Token lets the pointer through to the Token
-  (`FlagLayer.jsx`, `yieldToTokens`). A flag with no part over bare mat is still
-  tried at its centre, and says so.
+The press points follow the game's own press rules (the owner's), read from the
+page with the bench's own copy of them:
+
+- **A Token** is pressed at its centre, or at another point of its round body
+  (`data-token-hit`, its only part that takes a press), where the game gives the
+  press to *this* Token: where round bodies overlap, the nearest centre
+  (`Flags.tokenAtPoint`), and not where a flag's cloth is drawn in front. The point
+  must be on the mat as drawn, not under the screen's furniture outside it (the
+  hero bar's figures, a drawer), nor under a hero figure on the mat (one drawn
+  solid there takes the press, by design, and which pixels are solid changes frame
+  by frame). Anything else on the mat drawn on top there, a ring, a callout, a
+  bubble, is kept: that is what the bench is looking for. An enemy in a fight is
+  not picked: it can be killed while carried, and then nothing lands.
+- **A flag** is pressed at its highest point clear of every Token's round body
+  (by design a flag over a Token lets the pointer through to the Token,
+  `FlagLayer.jsx`, `yieldToTokens`), where the flag, or its own hero, is what is
+  drawn on top; when it has no such point, on its cloth where the flag is drawn in
+  front (the cloth keeps a press over a Token, `flagCloth.js`). A flag with
+  neither lies wholly under Tokens, flags or heroes drawn in front of it: nobody
+  can press it on the mat (the player moves it by its hero or from the hero bar),
+  so the bench passes it over and names it in the attempt's `scene.hiddenFlags`.
 
 Per kind and pass it reports attempts, successes, success %, **pickup delay**
-p50/p95 and the grouped **failure causes**:
+p50/p95, **frame stalls** per drag phase and the grouped **failure causes**:
 
 - **press→start**: the press to the drag provider's start (`gi-dnd-active` on
   `<body>`, `DndKit.jsx`). It includes the bench's own 16 ms wait and two moves.
 - **8px move→start**: from the move that crossed the activation distance to the
   start: the game's own pickup delay.
+- **frames per drag phase**: every animation-frame interval (rAF to rAF, from a
+  frame loop the bench runs in the page; the Perf HUD is off during this bench),
+  in three phases that share no frame. **pickup**: the press to 100 ms after the
+  drag starts; **carry**: from then to the last move, before the bench reads the
+  page; **drop**: the frame the release lands in to 300 ms after it. Per phase:
+  the longest frame of all drags / the median drag's longest frame, and the
+  frames over **16.7 ms** (a missed frame at 60 Hz) out of all frames, with how
+  many drags had one in brackets. A stall anywhere on the main thread (a React
+  commit, a forced layout) shows as one long interval. In the overlays pass the
+  level-up bursts add stalls of their own.
 - a failure is one of: *never picked up* (with what `document.elementFromPoint`
   found at the press point after the hover: the nearest element with an
   identifying `data-` attribute, and in the dev build the React component names),
@@ -479,11 +505,12 @@ p50/p95 and the grouped **failure causes**:
 
 | Command | What it does | Time |
 |---|---|---|
-| `npm run bench:drag` | perf build, 50 drags per kind, both passes (700 drags) | ~13 min |
+| `npm run bench:drag` | perf build, 50 drags per kind, both passes (700 drags) | ~19 min |
 | `npm run bench:drag -- --n=10` | drags per kind and pass | |
 | `npm run bench:drag -- --kinds=token,flag` | some kinds: `dockHero`, `flag`, `token`, `tokenToBin`, `binToMat`, `shop`, `equip` | |
 | `npm run bench:drag -- --no-overlays` | the plain pass only | |
 | `npm run bench:drag -- --dev` | the dev build: React component names for the blockers | |
+| `npm run bench:drag -- --board=S3` | the torture board (~320 Tokens) instead of S2: carry stalls on a crowded mat | |
 | `npm run bench:drag -- --cpu=4` | CPU slowdown | |
 | `npm run bench:drag -- --no-build` | reuse `dist-perf/` | |
 
