@@ -91,8 +91,9 @@ function addLevelUps(rows) {
 }
 
 /**
- * A shown catch-up's level-ups, waiting for the `GAME_RESET` that follows it: a catch-up plays
- * with the bus quiet, so they never arrive as `HERO_LEVELED`. ⚠️ Added on that reset, not on
+ * A catch-up's level-ups (a silent one's too: a background tab plays its hours in them),
+ * waiting for the `GAME_RESET` that follows it: a catch-up plays with the bus quiet, so they
+ * never arrive as `HERO_LEVELED`. ⚠️ Added on that reset, not on
  * `CATCH_UP_FINISHED`: a load's catch-up finishes before the load's own reset, which would wipe
  * them. Taken once, so a later reset cannot add them again.
  */
@@ -103,8 +104,8 @@ const offs = [
         if (!heroId || !skillName || !Number.isFinite(newLevel)) return;
         addLevelUps([{ heroId, skillName, oldLevel, newLevel }]);
     }, UI_LISTENER),
-    EventBus.subscribe(ENGINE_EVENTS.CATCH_UP_FINISHED, ({ show, summary } = {}) => {
-        const rows = show ? (summary?.levelUps || []).filter(r => r.heroId && r.skillName && Number.isFinite(r.to)) : [];
+    EventBus.subscribe(ENGINE_EVENTS.CATCH_UP_FINISHED, ({ summary } = {}) => {
+        const rows = (summary?.levelUps || []).filter(r => r.heroId && r.skillName && Number.isFinite(r.to));
         pendingCatchUp = rows.length ? rows : null;
     }, UI_LISTENER),
     // Another save's heroes. A dev time-skip or a sleeping PC's catch-up keeps them: the same game
