@@ -9,7 +9,7 @@ import * as EnemyMotion from './EnemyMotion.js';
 import * as Flags from './Flags.js';
 import * as FlagRules from './FlagRules.js';
 import * as HeroMotion from './HeroMotion.js';
-import * as TimedChanges from './TimedChanges.js';
+import * as Hand from './Hand.js';
 
 /**
  * An enemy authored `enemy.hostile: true` (see `isHostileEnemy`) attacks a hero who comes inside
@@ -77,7 +77,7 @@ function targets() {
 function canAttack(enemy) {
     return !BoardCombat.getFight(enemy.id)
         && !BoardState.heroOfInstance(enemy.id)
-        && !TimedChanges.isInHand(enemy.id)
+        && !Hand.isInHand(enemy.id)
         && !Flags.isDisallowed(enemy);
 }
 

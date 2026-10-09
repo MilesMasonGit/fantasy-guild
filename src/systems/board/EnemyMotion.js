@@ -9,7 +9,7 @@ import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import * as BoardState from './BoardState.js';
 import * as BoardCombat from './BoardCombat.js';
 import * as SpawnerSystem from './SpawnerSystem.js';
-import * as TimedChanges from './TimedChanges.js';
+import * as Hand from './Hand.js';
 import { ARRIVE_EPS, stepToward, randomOffset, randomPauseMs } from './walking.js';
 
 /**
@@ -173,7 +173,7 @@ export function walkFacingOf(instanceId) {
 export function isHeld(instanceId) {
     return !!BoardCombat.getFight(instanceId)
         || !!BoardState.heroOfInstance(instanceId)
-        || TimedChanges.isInHand(instanceId);
+        || Hand.isInHand(instanceId);
 }
 
 /** The ring an enemy potters in around `spawner`: `{ centre, inner, outer }`. */

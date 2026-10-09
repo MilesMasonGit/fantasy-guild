@@ -6,6 +6,7 @@ import * as BoardState from './BoardState.js';
 import * as EffectActions from './EffectActions.js';
 import * as SpawnerSystem from './SpawnerSystem.js';
 import * as PassiveProduction from './PassiveProduction.js';
+import * as Hand from './Hand.js';
 import { pickWeighted } from './weightedPick.js';
 import { logger } from '../../utils/Logger.js';
 
@@ -63,12 +64,10 @@ export { pickWeighted };
 export const MAX_CHANGES_PER_TICK = 64;
 
 /**
- * Instance ids of Tokens the player is dragging right now. Runtime only, never saved: a drag does
- * not outlive the page.
- *
- * Why a change waits while a Token is in the hand: a change is a transform, so the Token is
- * replaced by a new instance with a new id. The drag is keyed by the old id, so a Sapling that grew
- * while carried would vanish from under the cursor and the drop would find no Token.
+ * Why a change waits while a Token is in the player's hand ({@link Hand}): a change is a
+ * transform, so the Token is replaced by a new instance with a new id. The drag is keyed by the old
+ * id, so a Sapling that grew while carried would vanish from under the cursor and the drop would
+ * find no Token.
  *
  * So a change that falls due while its Token is in the hand is held, exactly as a change with
  * nowhere to stand is: its clock stays full and it fires on the first tick after the Token is put
@@ -76,19 +75,7 @@ export const MAX_CHANGES_PER_TICK = 64;
  * the handlers that replace the Token wait ({@link HANDLERS} `replaces`); a spawner in the hand
  * still spawns.
  */
-const inHand = new Set();
-
-/** Mark Token `id` as in the player's hand (`true`) or put down (`false`). */
-export function setInHand(id, held) {
-    if (id == null) return;
-    if (held) inHand.add(id);
-    else inHand.delete(id);
-}
-
-/** Whether Token `id` is in the player's hand. */
-export function isInHand(id) {
-    return inHand.has(id);
-}
+export { setInHand, isInHand } from './Hand.js';
 
 /**
  * The roll cycle and chance a Token turns by: its own `turns` block, or, on a turned Token, the
@@ -258,7 +245,7 @@ export function advance(instance, delta, random = Math.random) {
 
         // In the player's hand: a change that would replace it waits, clock held full, until it is
         // put down.
-        if (due.h.replaces && inHand.has(current.id)) {
+        if (due.h.replaces && Hand.isInHand(current.id)) {
             clocks[due.h.clock] = due.at;
             return;
         }
