@@ -2,7 +2,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import React from 'react';
 import { render, cleanup, fireEvent, act } from '@testing-library/react';
-import { DeckDndProvider, DropTarget, useEntityDrag } from '../ui/dnd/DndKit.jsx';
+import { DeckDndProvider, DropTarget, useEntityDrag, measureDropTarget } from '../ui/dnd/DndKit.jsx';
 import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
 
 /**
@@ -112,5 +112,34 @@ describe('⭐ a drop target in a box scrolled mid-drag is found where it is draw
         act(() => { fireEvent.pointerMove(document, ptr(550, 750)); });
         act(() => { fireEvent.pointerUp(document, ptr(550, 750)); });
         expect(onInside).not.toHaveBeenCalled();
+    });
+});
+
+describe('⭐ measuring a drop target reads only its own box', () => {
+    it('no scroll position and no style of the boxes around it, however deep it sits', () => {
+        const outer = document.createElement('div');
+        outer.style.overflow = 'auto';
+        let node = outer;
+        for (let i = 0; i < 6; i++) {
+            const child = document.createElement('div');
+            node.appendChild(child);
+            node = child;
+        }
+        document.body.appendChild(outer);
+        node.getBoundingClientRect = () => box(10, 20, 30, 40);
+        const realStyle = window.getComputedStyle;
+        let styles = 0;
+        window.getComputedStyle = (...args) => { styles++; return realStyle(...args); };
+        try {
+            reads = 0;
+            const r = measureDropTarget(node);
+            expect(r).toMatchObject({ left: 10, top: 20, width: 30, height: 40 });
+            expect(reads).toBe(0);
+            // Its own style, for a transform to ignore; none of the six boxes around it.
+            expect(styles).toBe(1);
+        } finally {
+            window.getComputedStyle = realStyle;
+            outer.remove();
+        }
     });
 });

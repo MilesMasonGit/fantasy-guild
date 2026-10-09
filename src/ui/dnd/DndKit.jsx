@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 import {
     DndContext, DragOverlay, PointerSensor, useSensor, useSensors,
-    useDraggable, useDroppable, getClientRect, getScrollableAncestors
+    useDraggable, useDroppable, getClientRect
 } from '@dnd-kit/core';
 import { snapCenterToCursor } from '@dnd-kit/modifiers';
 import { CSS } from '@dnd-kit/utilities';
@@ -22,59 +22,71 @@ import { displayPointOf } from '../../systems/board/BoardState.js';
 const sfx = (clip) => EventBus.publish(ENGINE_EVENTS.AUDIO_PLAY, { clip });
 
 /**
- * Drop-target boxes without reading the page's layout while the pointer moves.
+ * Drop-target boxes without reading the page's layout, neither while the pointer moves nor
+ * while the targets are measured.
  * ⚠️ dnd-kit's own boxes re-read the scroll position of every scrolling box around a target
  * each time one of its sides is asked for, and the target under the pointer is worked out on
  * every pointer move and on every render of the drag system: hundreds of `scrollTop` reads per
- * pickup, any of which can force the whole page's layout. So a target's scrolling boxes and
- * their scroll positions are noted once, when the target is measured (`measureDropTarget`), and
- * their scrolling is followed from their own scroll events while a drag is live.
+ * pickup, any of which can force the whole page's layout. Instead the boxes are used as
+ * measured, moved only by the boxes that actually scroll during the drag, which are followed
+ * from their own scroll events. A box that scrolls during a drag moves every target inside it.
+ * Nothing scrolls in most drags, and then nothing is added at all.
  */
-const measuredScroll = new WeakMap();   // target node → { boxes, at: [{x, y}] }
-const scrolledTo = new WeakMap();       // scrolling box → {x, y}, as of its last scroll event
+const ZERO = Object.freeze({ x: 0, y: 0 });
+/** Every box that has ever scrolled: where it was left. A box never seen has not scrolled. */
+const lastScroll = new WeakMap();
+/** Boxes scrolled during the live drag: box → { start, now }. */
+const dragScrolled = new Map();
+/** Each target as measured: where the boxes scrolled so far in the drag stood then. */
+const measuredAt = new WeakMap();
+let dragLive = false;
 
-const scrollOf = (el) => (el === window ? { x: el.scrollX, y: el.scrollY } : { x: el.scrollLeft, y: el.scrollTop });
-
-/** dnd-kit's own measure for a drop target (its box, transforms ignored), noting its scrolling boxes. */
-export function measureDropTarget(node) {
-    const boxes = getScrollableAncestors(node);
-    const at = boxes.map((el) => {
-        const s = scrollOf(el);
-        scrolledTo.set(el, s);
-        return s;
-    });
-    measuredScroll.set(node, { boxes, at });
-    return getClientRect(node, { ignoreTransform: true });
-}
-
-function followScroll(e) {
+function noteScroll(e) {
     const el = e.target === document ? document.scrollingElement : e.target;
-    if (el && scrolledTo.has(el)) scrolledTo.set(el, scrollOf(el));
+    if (!el || el.nodeType !== 1) return;
+    const now = { x: el.scrollLeft, y: el.scrollTop };
+    if (dragLive) {
+        const seen = dragScrolled.get(el);
+        if (seen) seen.now = now;
+        else dragScrolled.set(el, { start: lastScroll.get(el) || ZERO, now });
+    }
+    lastScroll.set(el, now);
+}
+if (typeof document !== 'undefined') document.addEventListener('scroll', noteScroll, { capture: true, passive: true });
+
+/** Whether a drag is live, for `dropBox`: its scrolling is counted from its start. */
+export function followDropTargetScroll(on) {
+    dragLive = on;
+    dragScrolled.clear();
 }
 
-/** Follow scrolling (for `dropBox`) while a drag is live. */
-export function followDropTargetScroll(on) {
-    if (typeof document === 'undefined') return;
-    if (on) document.addEventListener('scroll', followScroll, { capture: true, passive: true });
-    else document.removeEventListener('scroll', followScroll, { capture: true });
+/** dnd-kit's own measure for a drop target (its box, transforms ignored), noting the drag's scrolling so far. */
+export function measureDropTarget(node) {
+    measuredAt.set(node, dragScrolled.size ? new Map([...dragScrolled].map(([el, at]) => [el, at.now])) : null);
+    return getClientRect(node, { ignoreTransform: true });
 }
 
 /**
  * A drop target's box as it is drawn now, as plain numbers: the box measured at drag start,
- * moved by however far its scrolling boxes have scrolled since. A box measured some other way
- * (or a plain one) is returned as it is.
+ * moved by however far the boxes around it have scrolled since.
  */
 function dropBox(container, rect) {
-    const raw = rect?.rect;
-    const info = raw ? measuredScroll.get(container?.node?.current) : null;
-    if (!info) return rect;
+    // dnd-kit keeps the box as measured under `rect`, beside its scroll-reading getters.
+    const raw = rect?.rect || rect;
+    if (!raw) return null;
+    const node = container?.node?.current;
+    if (!dragScrolled.size || !node) return raw;
+    const at = measuredAt.get(node);
     let dx = 0;
     let dy = 0;
-    info.boxes.forEach((el, i) => {
-        const now = scrolledTo.get(el) || info.at[i];
-        dx += info.at[i].x - now.x;
-        dy += info.at[i].y - now.y;
-    });
+    for (const [el, { start, now }] of dragScrolled) {
+        // A target that scrolls itself does not move; only the boxes around it move it.
+        if (el === node || !el.contains(node)) continue;
+        const from = at?.get(el) || start;
+        dx += from.x - now.x;
+        dy += from.y - now.y;
+    }
+    if (!dx && !dy) return raw;
     return {
         left: raw.left + dx, right: raw.right + dx, top: raw.top + dy, bottom: raw.bottom + dy,
         width: raw.width, height: raw.height
