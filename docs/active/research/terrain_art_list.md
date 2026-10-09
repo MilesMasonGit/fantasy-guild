@@ -207,6 +207,37 @@ Later planes reuse the same recipe: one ground sheet or two, a colour tint and
 a handful of scatter per biome, with stranger palettes the deeper the guild
 goes.
 
+## Owner answers (2026-10-09)
+
+| Q | Answer |
+|---|---|
+| L-1 | **Undecided: mockup first.** Past terrain attempts looked off; the owner suspects the chunky pixels and a too-bright palette. A static side-by-side page (chunky vs same-as-Tokens, current vs muted colours, real Tokens on top) decides it: `docs/active/research/terrain_mockup.html`. |
+| L-2 | **A**: one seamless sheet per ground, plus 1–2 alternates. |
+| L-3 | **A**: computed wiggly edges (the September tuning). |
+| L-4 | **A**: the ground follows the nodes. |
+| L-5 | **Replaced by a terrain grid** (below). |
+| L-6 | **A**: small flat bits only (flowers, pebbles, shells, tufts). |
+| L-7 | **A**: muted and a little dark. |
+| L-8 | **A**: still at first; a little water shimmer later if the cost log allows. |
+| L-9 | **A**: a worn-earth clearing round the Hall. |
+| L-10 | **A**: the Starter Camp is meadow (grass with worn earth). |
+
+**The terrain grid (owner idea, 2026-10-09, "thinking out loud" but answered
+as below):**
+- **The ground is a grid of cells, each with a terrain type** (grass, rock,
+  sand, water…), drawn from the cells. **Tokens stay freely placed** on top
+  (not a return to the tile board); the cell under a Token's centre is its
+  terrain.
+- **Some Tokens require a terrain**, set per Token in the CMS: a Dock on the
+  coast, a Sailboat on water, a Mineshaft in the mountains. Everything else
+  goes anywhere dry.
+- **The grid shows only while placing**: allowed cells light up, forbidden ones
+  dim (alongside D4's adjacency preview).
+- ⚠️ For brief 70 (A4 generation) and brief 80: a generated Region needs a
+  terrain cell map that the nodes and the ground agree on (L-4), and placement
+  must check it. The dormant code's cell lattice (`TerrainLattice.js`) may be
+  the starting point.
+
 ## 5. Look questions for the owner
 
 Recommendation first in each. Answer L-1 first: it decides which existing
