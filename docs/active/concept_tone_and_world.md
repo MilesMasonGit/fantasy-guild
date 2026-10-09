@@ -1,8 +1,7 @@
 # Tone and world
 
 *D1 of the post-crunch plan ([ideas.md](ideas.md)). Owner interview,
-2026-10-08. Tone, words, story, pops of activity and sound: settled, pending
-the owner's final read.*
+2026-10-08 to 09. **Done**; the owner closed it 2026-10-09.*
 
 This is the guide for anyone writing player-facing text (names, speech
 bubbles, events, quests, UI) and for the story around the Atlas.

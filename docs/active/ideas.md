@@ -279,12 +279,12 @@ the first outside playtest, modding.
 
 ## Being interviewed
 
-- **D1 Ground rules** → [concept_tone_and_world.md](concept_tone_and_world.md):
-  tone, words, story, pops of activity and sound written 2026-10-08;
-  awaiting the owner's "done".
+- **D2 Progression, pacing and the Atlas loop**: started 2026-10-09.
 
 ## Moved on
 
+- **D1 Ground rules** (tone and world, story hook, pops of activity, sound) →
+  [concept_tone_and_world.md](concept_tone_and_world.md), done 2026-10-09.
 - **Master allow / disallow all per hero** and the **hero control button** →
   brief 30's work rules grid (owner eye-check, 2026-10-09): a Work Rules
   button on the hero bar; clicking a hero's row header allows or disallows
