@@ -283,7 +283,10 @@ export function installDragKit() {
     // ---- Pickers: a source to press, a target to drop on, and what should be true after ----
     const draggableTokens = () => G.BoardState.tokens().filter(t => {
         const el = document.querySelector(`[data-token-art][data-token-id="${t.id}"]`);
-        return el && !el.hasAttribute('data-guild-hall') && !t.quest?.tutorial && !G.BoardPlacement.isPermanentToken(t.typeId, t);
+        // An enemy in a fight can be killed before the drop, and then nothing lands: not a press
+        // fault, so it is passed over (an owner question: should a Token in the hand be safe?).
+        return el && !el.hasAttribute('data-guild-hall') && !t.quest?.tutorial && !G.BoardPlacement.isPermanentToken(t.typeId, t)
+            && !G.BoardCombat?.getFight?.(t.id);
     });
     // ---- Where the game gives a press: the bench's own copy of the rules, read from the page ----
     // A flag's cloth inside its drawn box, as shares of its size (the flag art, `flagGeometry.js`).
@@ -309,10 +312,10 @@ export function installDragKit() {
      * point of its own round body, where the game says the pointer is on THIS Token (where circles
      * overlap, the nearest centre: `Flags.tokenAtPoint`) and no flag's cloth is drawn in front.
      * The point must be on the mat as drawn, not under the screen's own furniture outside it (the
-     * hero bar's figures, a drawer). Anything on the mat drawn on top (a ring, a callout, a bubble,
-     * another hero) is kept: that is what the bench is looking for.
+     * hero bar's figures, a drawer), nor under a hero figure. Anything else on the mat drawn on
+     * top (a ring, a callout, a bubble) is kept: that is what the bench is looking for.
      */
-    const tokenPress = (id, { clearOfHeroes = false } = {}) => {
+    const tokenPress = (id) => {
         const hit = document.querySelector(`[data-token-hit="${id}"]`);
         const art = document.querySelector(`[data-token-art][data-token-id="${id}"]`);
         if (!hit || !art) return null;
@@ -330,9 +333,9 @@ export function installDragKit() {
             if (clothInFront(p, zOf(art))) continue;
             const top = document.elementFromPoint(p.x, p.y);
             if (!top || !board?.contains(top)) continue;
-            // `clearOfHeroes`: for kinds testing what happens AFTER the press (the bin), where a
-            // hero standing on the Token is not what is being measured.
-            if (clearOfHeroes && top.closest('[data-board-hero]')) continue;
+            // A hero figure in front takes the press where it is drawn solid, by design, and which
+            // of its pixels are solid changes frame by frame: the bench presses beside it.
+            if (top.closest('[data-board-hero]')) continue;
             return p;
         }
         return null;
@@ -506,7 +509,7 @@ export function installDragKit() {
             const list = draggableTokens().filter(t => G.DiscardBin.canBin(t.id).success);
             if (!list.length) return { skip: 'no Token the bin takes' };
             const t = pickRandom(list);
-            const at = tokenPress(t.id, { clearOfHeroes: true });
+            const at = tokenPress(t.id);
             const bin = visibleCentre(document.querySelector('[data-discard-bin]'));
             if (!at || !bin) return { skip: 'Token or bin off screen' };
             // The bin is a sidebar that opens as a carried Token nears its tab: go to the tab first.

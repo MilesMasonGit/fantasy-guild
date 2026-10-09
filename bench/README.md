@@ -431,8 +431,11 @@ page with the bench's own copy of them:
   press to *this* Token: where round bodies overlap, the nearest centre
   (`Flags.tokenAtPoint`), and not where a flag's cloth is drawn in front. The point
   must be on the mat as drawn, not under the screen's furniture outside it (the
-  hero bar's figures, a drawer). Anything on the mat drawn on top there, a ring, a
-  callout, a bubble, another hero, is kept: that is what the bench is looking for.
+  hero bar's figures, a drawer), nor under a hero figure on the mat (one drawn
+  solid there takes the press, by design, and which pixels are solid changes frame
+  by frame). Anything else on the mat drawn on top there, a ring, a callout, a
+  bubble, is kept: that is what the bench is looking for. An enemy in a fight is
+  not picked: it can be killed while carried, and then nothing lands.
 - **A flag** is pressed at its highest point clear of every Token's round body
   (by design a flag over a Token lets the pointer through to the Token,
   `FlagLayer.jsx`, `yieldToTokens`), where the flag, or its own hero, is what is
