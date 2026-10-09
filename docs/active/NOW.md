@@ -22,15 +22,20 @@ changelog and `docs/archive/`).*
    4. Still open from brief 10: Foundation **Tier** on each Foundation, Shop
       group labels, minimum Foundation tier on building recipes, higher anvils'
       "Acts as: anvil, tool tier N".
-2. **Brief 30 merged** (owner eye-check 2026-10-08; tweaks deferred to the
-   design pass). **Brief 40** seen and approved functionally; its third
-   visual pass (Item Bars, wording, stacked buttons, confirm on "Load as I
-   left it") is on `crunch/offline-fixes2`, then merges with `crunch/offline`.
+2. **Eye-check summary for the owner's return** (everything below is on
+   `main`; look in your save, then tell the director what to change):
+   - **Brief 40, third pass of the away summary** (not yet seen): Item Bars
+     with the hover zoom and `5.9k` → `5,900` on hover; headings Items
+     produced / Items banked / Items spent / Level-ups / Tokens used up /
+     Heroes wounded / Fights won; "Return to the Guild" above "Load as I
+     left it"; a Confirm / Cancel question before the undo.
+   - **Brief 30** merged as seen (2026-10-08); your held-back tweaks go to
+     the design pass.
+   - Entries are added here as overnight phases land.
 3. **Overnight run (owner asleep, 2026-10-08):** the director continues the
    crunch order (50 drag → 60 optimization → 70 Atlas → 80 terrain → 90
-   Envelope) and keeps an **eye-check summary** for the owner's return.
-   Anything look-changing stays on its branch until seen, except what the
-   owner already ruled on in words.
+   Envelope). Anything look-changing stays on its branch until seen, except
+   what the owner already ruled on in words.
 4. **After the crunch (owner, 2026-10-08):** a review of how this director /
    subagent workflow is working, and whether to fold in the planning docs the
    owner has been writing with another agent for the next pass. Discuss once
@@ -50,9 +55,9 @@ straight onto `main`; expect its commits between yours.
   tools and baseline ([PERFORMANCE.md](../reference/PERFORMANCE.md)), design
   interviews, and the briefs.
 - **Crunch order:** UI rework ✓ → class rework v2 ✓ (engine) → hero bar and panel ✓ →
-  offline progress (built, eye-check done, last fixes) → drag deep-dive → deep optimization → Atlas → terrain →
+  offline progress ✓ → drag deep-dive → deep optimization → Atlas → terrain →
   Performance Envelope ([briefs](briefs/README.md)).
-- **Tests:** all green (4146 passed, 3 skipped). Anything red is new.
+- **Tests:** all green (4211 passed, 3 skipped). Anything red is new.
 
 ## Ground rules during the crunch
 
