@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-120**
+**Next free number: T-124**
 
 ---
 
@@ -136,6 +136,10 @@ here.
 | T-116 | P3 | open | The CMS content generator still writes the retired task/area effect vocabulary (`targetCategory` enum ALL/COMBAT/MELEE/MINING/INDUSTRY/NATURE/CRAFTING in `contentGenerator.js`); only its skill list follows the registry. Revisit if the generator is revived. | brief 20 R3 |
 | T-117 | P2 | open | The desktop app keeps drawing at ~165 fps while minimised (measured 2026-10-08: WebView2 is never told); pause drawing on Tauri's minimise event. Battery and GPU waste. | brief 40 O1 |
 | T-118 | P3 | open | `npm run bench -- --cpu-prof` writes the module-loader thread's idle profile on Node 24 (`bench/run.mjs` `runWorker` uses a fixed `--cpu-prof-name`); drop the name or add the thread id. Workaround: plain `node --cpu-prof` (bench/README.md). | brief 40 O1 |
+| T-120 | P2 | open | Feed the hero bar's level-up bubbles from a catch-up: `heroBarBubbles.js` adds one bubble per `CatchUp.lastResult().summary.levelUps` row after the load's `GAME_RESET` (which clears bubbles; exempt reason `catch_up` like `dev_time_skip`). Needs `crunch/offline` and `crunch/hero-ui` both merged. | brief 40 O3 |
+| T-121 | P3 | open | Slot card playtime reads hours for seconds: `formatPlaytime(seconds)` in `SlotSelectionModal.jsx` is handed milliseconds (76 s shows as 21h 6m). | brief 40 O4 |
+| T-122 | P3 | open | `HeroEditModal` still embeds `HeroSkillSheet` with its own skill list, duplicating the H2 hero panel; `VitalBar.jsx` may have no consumers left. | brief 30 H2 |
+| T-123 | P3 | open | `bench/browser/servers.mjs` puts every bench's Vite cache in `node_modules/.vite-bench`, shared through the junction by all worktrees; parallel benches share one cache. Key it by worktree path. | brief 30 H4 |
 | T-114 | P3 | open | Remove `migrateSkillIds` (the `logging` → `forestry` content migration in the game loaders and the CMS store) once the owner has synced `data/` with `forestry`. | brief 20 R0 |
 
 ## 3. Parked — don't work on these without a reason
