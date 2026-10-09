@@ -120,3 +120,43 @@
 - **Neighbours**: a **dock or jetty** at the water **adds a fishing spot**.
 - **Feeds**: Cooking (fish dishes, the main fight food), Crafting and
   Enchanting (shells, pearls), Farming (fish as fertiliser).
+
+### Cooking
+
+- **Produces**: **fight food** (healing in fights, combat's main supply) and
+  **drinks** (heal from their own slot, T-098, or short buffs). Not chosen:
+  work-buff meals, ingredients for other skills.
+- **Stations**: **Campfire** (cheap, quick, simple; good on moving day),
+  **Kitchen / oven** (better meals; Grandma's Kitchen is one), **Brewery**
+  (drinks and beer).
+
+### Crafting
+
+- **The hub skill**: Crafting feeds many skills with diverse items used in many
+  places. Crafted String goes into Leather Armour, strung Bows and more. It may
+  make some Tokens as well.
+- **Produces**: **construction materials** (rope, cloth, glass, bricks),
+  **light and fuel** (charcoal, torches), **non-metal gear** (leather and cloth
+  armour, trinkets, jewellery), **everyday items** (containers, ceramics,
+  wooden parts).
+- **Stations**: **Workbench** (general), **Kiln** (ceramics, bricks, glass),
+  **Tannery / loom** (leather and cloth).
+
+### Construction
+
+- **Builds a lot of the core buildings and stations** (on Foundations, as
+  today: buy a Foundation, choose what to build; Foundation tiers gate higher
+  buildings), and demolishes (Atlas).
+- **Also builds temporary Tokens** meant to be used up: e.g. a **Guard Tower**
+  that prevents enemy spawns nearby until it's exhausted.
+
+### Alchemy
+
+- **Makes magical consumables.** A hero carries them (equipped) and one is
+  **used automatically when a work cycle or a fight starts**, applying its
+  effect for that cycle. Example: a **Birdwatcher** potion gives a 25 % chance
+  of a Bird Nest when a Forestry cycle completes; a player who wants seeds
+  during a wood grind brews Birdwatchers and equips them to their woodcutters.
+- **Produces**: healing and buff potions for fights (D3), work potions like
+  the Birdwatcher, **transmutation** (turning surplus into something useful),
+  and **ingredients for magic** (inks, essences for Enchanting).
