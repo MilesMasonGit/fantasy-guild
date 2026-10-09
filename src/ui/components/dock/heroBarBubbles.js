@@ -7,13 +7,16 @@ import { momentText } from '../board/heroSpeech.js';
  * The hero bar's level-up bubbles. Unlike the mat's (`heroSpeech.js`, gone in a few seconds)
  * these stay until the player clears them, so after a long AFK session the bar shows every
  * level gained. One bubble per skill: a later level-up of the same skill rewrites it, counting
- * from the level the bubble started at, so the wording matches the mat's ("Leveled up Mining
- * to 25! (+4)").
+ * from the level the bubble started at, so the wording matches the mat's ("LVL UP! 25 Mining!
+ * (+4)").
  * UI memory only: never saved, emptied when a game is started or loaded.
  */
 
-/** Bubbles drawn per hero; the rest are counted in a "+N more" line. */
+/** Bubbles drawn per hero at once; arrows page through the rest. */
 export const BAR_BUBBLES_SHOWN = 3;
+
+/** How long a clicked bubble takes to fade before it is cleared. */
+export const BAR_BUBBLE_FADE_MS = 250;
 
 /**
  * Add a level-up to one hero's list (oldest first). A skill already up keeps its starting
@@ -47,6 +50,17 @@ export function clearHeroBubbles(heroId) {
     if (!byHero.has(heroId)) return;
     byHero = new Map(byHero);
     byHero.delete(heroId);
+    emit();
+}
+
+/** Clear one bubble (`key`, e.g. `level:Mining`) from one hero's list. */
+export function clearHeroBubble(heroId, key) {
+    const list = byHero.get(heroId);
+    if (!list || !list.some(b => b.key === key)) return;
+    const rest = list.filter(b => b.key !== key);
+    byHero = new Map(byHero);
+    if (rest.length) byHero.set(heroId, rest);
+    else byHero.delete(heroId);
     emit();
 }
 

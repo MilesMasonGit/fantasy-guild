@@ -21,7 +21,8 @@ export function showsBottomHeroDock(fullscreenView) {
 }
 
 /**
- * The horizontal hero dock: a dark strip with the heroes standing in it. No ledge, no tabs:
+ * The horizontal hero dock: the mat's bottom edge, one thin line and no fill, with the heroes
+ * standing on it. No ledge, no tabs:
  * each hero idles at the mat's own art size, cut off at the waist by the strip's bottom edge,
  * with a name and HP bar over the head (`DockHeroFigure`). Heroes out on the mat are darkened
  * and sunk.
@@ -65,7 +66,7 @@ export const BottomHeroDock = ({
             style={{ height: DOCK_STRIP_PX }}
             className={cn(
                 'w-full shrink-0 pointer-events-auto select-none relative z-40 overflow-visible',
-                'bg-[#0a0705]/95 border-t border-white/10',
+                'border-t border-white/15',
                 recall.valid && 'ring-2 ring-gi-success/70 bg-gi-success/5'
             )}
             {...recall.droppableProps}

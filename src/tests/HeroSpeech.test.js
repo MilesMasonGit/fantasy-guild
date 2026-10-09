@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { addMoment, liveMoments, stackOf, momentText, MAX_BUBBLES, MOMENT_TTL_MS, speaksMoment, MOMENT_SPOKEN } from '../ui/components/board/heroSpeech.js';
+import { addMoment, liveMoments, stackOf, momentText, MAX_BUBBLES, MOMENT_TTL_MS, speaksMoment, MOMENT_SPOKEN, splitNumbers } from '../ui/components/board/heroSpeech.js';
 
 describe('A hero’s stack of speech bubbles', () => {
     it('keeps a moment until its time is up, then lets it go', () => {
@@ -35,9 +35,9 @@ describe('A hero’s stack of speech bubbles', () => {
     it('words the moments plainly', () => {
         expect(momentText.arrived('Campfire')).toBe('Working at Campfire.');
         expect(momentText.idle()).toBe('No work in range.');
-        expect(momentText.levelUp('Mining', 25, 4)).toBe('Leveled up Mining to 25! (+4)');
-        expect(momentText.levelUp('Mining', 25, 2)).toBe('Leveled up Mining to 25! (+2)');
-        expect(momentText.levelUp('Mining', 25, 1)).toBe('Leveled up Mining to 25!');
+        expect(momentText.levelUp('Mining', 25, 4)).toBe('LVL UP! 25 Mining! (+4)');
+        expect(momentText.levelUp('Mining', 25, 2)).toBe('LVL UP! 25 Mining! (+2)');
+        expect(momentText.levelUp('Mining', 25, 1)).toBe('LVL UP! 25 Mining!');
         expect(momentText.depleted('Oak Tree')).toBe('Oak Tree Depleted');
     });
 
@@ -48,5 +48,17 @@ describe('A hero’s stack of speech bubbles', () => {
         expect(speaksMoment('depleted')).toBe(true);
         expect(speaksMoment('something_new')).toBe(false);
         expect(Object.keys(MOMENT_SPOKEN).sort()).toEqual(Object.keys(momentText).sort());
+    });
+});
+
+describe('bubble numbers', () => {
+    it('cuts a level-up line into words and numbers, the merged count as one number', () => {
+        expect(splitNumbers('LVL UP! 50 Melee! (+49)')).toEqual([
+            { text: 'LVL UP! ', num: false },
+            { text: '50', num: true },
+            { text: ' Melee! ', num: false },
+            { text: '(+49)', num: true }
+        ]);
+        expect(splitNumbers('No work in range.')).toEqual([{ text: 'No work in range.', num: false }]);
     });
 });
