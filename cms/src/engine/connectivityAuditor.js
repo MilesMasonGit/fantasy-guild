@@ -1,4 +1,5 @@
 import { SKILLS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, auditLifecycleBlocks, findUnknownRefs } from '../utils/constants';
+import { isMapItem, mapItemFindings } from '../../../src/systems/atlas/mapItems.js';
 
 /** Connectivity & Graph Auditor: audits the Token, Recipe and Item graph in three pillars: Data Integrity (missing references, invalid IDs, solver refusals), Economic Blockers (orphaned inputs, unreachable items, dead ends) and Pacing Gaps (level gaps in skills). */
 
@@ -10,7 +11,7 @@ const tokenSkill = (token) => token?.config?.skill ?? token?.skill ?? token?.ski
 const tokenLevel = (token) => token?.config?.skillRequired ?? token?.skillRequirement ?? 1;
 
 export function auditConnectivity(entities, solverRefusals = []) {
-  const { items = {}, tokens = {}, recipes = {}, enemies = {}, maps = {}, effects = {} } = entities;
+  const { items = {}, tokens = {}, recipes = {}, enemies = {}, effects = {} } = entities;
   const issues = [];
 
   const allItems = Object.values(items || {});
@@ -135,6 +136,21 @@ export function auditConnectivity(entities, solverRefusals = []) {
     });
   }
 
+  // A map item: the Tokens it names and whether it writes anything. The game's own rule (`mapItems.js`), so this tab and the boot audit say the same thing.
+  for (const item of allItems) {
+    if (!isMapItem(item)) continue;
+    for (const details of mapItemFindings(item, { tokenExists: (id) => !!tokens[id], itemOf: (id) => items[id] || null })) {
+      issues.push({
+        entityId: item.id,
+        entityName: item.name || item.id,
+        entityType: 'Item',
+        issueType: 'Data Integrity',
+        severity: 'Warning',
+        details,
+      });
+    }
+  }
+
   for (const recipe of allRecipes) {
     for (const input of (recipe.inputs || [])) {
       const iid = input.id || input.itemId;
@@ -190,7 +206,9 @@ export function auditConnectivity(entities, solverRefusals = []) {
     });
   }
 
+  // A map comes from bounties and the tutorial as well as drops, which this graph cannot see, so it is never unreachable.
   for (const item of allItems) {
+    if (isMapItem(item)) continue;
     const producers = producedBy[item.id] || [];
     if (producers.length === 0 && !item.isRoot && !simReportedOrphans.has(item.id)) {
       issues.push({
@@ -227,7 +245,7 @@ export function auditConnectivity(entities, solverRefusals = []) {
     const isProduced = producedBy[item.id];
     const isConsumed = consumedBy[item.id];
     if (isProduced && !isConsumed) {
-      const finalTypesAndTags = ['consumable', 'treasure', 'food', 'drink', 'weapon', 'armor', 'tool', 'fuel', 'drop'];
+      const finalTypesAndTags = ['consumable', 'treasure', 'food', 'drink', 'weapon', 'armor', 'tool', 'fuel', 'drop', 'map', 'modifier'];
       const itemTypeLower = (item.type || '').toLowerCase();
       const itemTagsLower = (item.tags || []).map((t) => t.toLowerCase());
 

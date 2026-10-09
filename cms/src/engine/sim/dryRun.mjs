@@ -37,9 +37,8 @@ const load = (name) => JSON.parse(readFileSync(fileURLToPath(new URL(`data/${nam
 const tokens = load('tokens.json');
 const recipes = load('tokenRecipes.json');
 const items = load('items.json');
-const maps = load('maps.json');
 
-const result = runSim({ tokens, recipes, items, maps });
+const result = runSim({ tokens, recipes, items });
 
 const pad = (s, n) => String(s).padEnd(n);
 const line = (ch = '─') => console.log(ch.repeat(78));
@@ -118,17 +117,6 @@ for (const entity of result.entities) {
     console.log(`  ${pad(entity.id, 26)}${pad(entity.level, 5)}${pad(entity.purpose, 9)}${pad(`${ms / 1000}s`, 8)}${pad(xp, 10)}${pad(perHour.toFixed(0), 10)}${target.toFixed(0)}`);
 }
 console.log(`\n  one focused skill climbs 1→99 in ${result.masteryHours.toFixed(1)} board-hours (plan §13.2 says 50–60).`);
-
-console.log('\n\nDAY IN REACH — THE PACING LADDER (gross income at the assumed hours/day)\n');
-console.log(`  ${pad('map', 30)}${pad('cost', 12)}day`);
-line();
-const ladder = [...result.maps.values()]
-    .filter(m => !m.skipped)
-    .sort((a, b) => (a.cost ?? 0) - (b.cost ?? 0));
-for (const m of ladder) {
-    console.log(`  ${pad(m.name, 30)}${pad(`${Math.round(m.cost).toLocaleString()}g`, 12)}${Number.isFinite(m.dayInReach) ? `day ${m.dayInReach}` : '—'}`);
-}
-console.log(`\n  assuming ${result.dials.hoursPerDay}h/day. ⚠️ Gross income, no spending — an ordering, not a forecast.`);
 
 // ── The churn report ─────────────────────────────────────────────────────────
 // Run twice: the first run has nothing to diff against, the second shows what a

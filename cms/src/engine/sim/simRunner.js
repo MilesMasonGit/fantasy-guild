@@ -1,6 +1,7 @@
 /**
- * Economic simulator: the runner. Orchestrates the assembly line adapt → TIME → ANCHOR → PRICE → TUNE → MAP + XP → CHECK, so one Recalculate settles cycle times, item values, output quantities, tuning, the Map check and XP.
- * ⚠️ XP runs last and reads only settled numbers (the cycle time TUNE may have moved, the Map costs).
+ * Economic simulator: the runner. Orchestrates the assembly line adapt → TIME → ANCHOR → PRICE → TUNE → XP → CHECK, so one Recalculate settles cycle times, item values, output quantities, tuning and XP.
+ * ⚠️ XP runs last and reads only settled numbers (the cycle time TUNE may have moved).
+ * ⚠️ Map and Modifier items are priced by nothing: no value, no refusal, and a Token that drops one is neither priced nor tuned on that drop (`fieldAdapter.adaptCorpus`'s `exempt`).
  * ⚠️ TUNE runs after PRICE and never writes a value: it moves what a source produces and how often, and item values are read-only by then. That ordering keeps the line one-way.
  */
 
@@ -10,10 +11,10 @@ import { runTempoPass } from './tempoPass.js';
 import { runAnchorPass } from './anchorPass.js';
 import { runPricingPass } from './pricingPass.js';
 import { runTuningPass } from './tuningPass.js';
-import { runMapPass } from './mapPass.js';
 import { runXpPass } from './xpPass.js';
 import { runCheckPass } from './checkPass.js';
 import { sortRows } from './rows.js';
+import { isMapItem } from '../../../../src/systems/atlas/mapItems.js';
 
 /** Every id in a keyed object or an array of records. */
 function idsOf(collection) {
@@ -22,19 +23,32 @@ function idsOf(collection) {
     return Object.keys(collection).map(k => collection[k]?.id ?? k);
 }
 
+/** The items the simulator prices: every item but the maps, and the map ids it leaves alone. */
+function splitMapItems(items) {
+    const priced = {};
+    const exempt = new Set();
+    const list = Array.isArray(items) ? items.map((def, i) => [def?.id ?? String(i), def]) : Object.entries(items || {});
+    for (const [key, def] of list) {
+        if (isMapItem(def)) exempt.add(def?.id ?? key);
+        else priced[key] = def;
+    }
+    return { priced, exempt };
+}
+
 /**
  * Run the whole line over a corpus.
  * @param {object} corpus  `{ tokens, recipes, items }`, keyed objects or arrays
  * @param {object} dialOverrides  the dials; defaults in `dials.js`
  * Re-running on identical input returns identical output: every pass iterates sorted collections and nothing reads its own previous output, except a stored anchor election.
  */
-export function runSim({ tokens = {}, recipes = {}, items = {}, maps = {}, enemies = {} } = {}, dialOverrides = {}) {
+export function runSim({ tokens = {}, recipes = {}, items = {} } = {}, dialOverrides = {}) {
     const dials = normaliseDials(dialOverrides);
-    const entities = adaptCorpus({ tokens, recipes });
+    const { priced, exempt } = splitMapItems(items);
+    const entities = adaptCorpus({ tokens, recipes, exempt });
     const tokenIds = new Set(idsOf(tokens));
 
     const time = runTempoPass(entities);
-    const anchor = runAnchorPass(entities, { skipped: time.skipped, items, tokenIds });
+    const anchor = runAnchorPass(entities, { skipped: time.skipped, items: priced, tokenIds });
     const price = runPricingPass(entities, {
         timing: time.timing,
         elections: anchor.elections,
@@ -58,32 +72,12 @@ export function runSim({ tokens = {}, recipes = {}, items = {}, maps = {}, enemi
     const cycleTimes = new Map(time.cycleTimes);
     for (const [id, ms] of tune.cycleTimes) cycleTimes.set(id, ms);
 
-    // Pass 5, the Map check: it reads the tuned cycle times and settled item values and writes nothing back to a Map's authored fields.
-    const mapPass = runMapPass(maps, {
-        entities,
-        values: price.values,
-        cycleTimes,
-        items,
-        tokens,
-        enemies,
-        dials,
-    });
-
-    // Pass 5's XP half, the last derivation: it reads the tuned cycle times and the Map check's costs and writes nothing.
+    // The XP pass, the last derivation: it reads the tuned cycle times and writes nothing.
     const xpPass = runXpPass(entities, {
         cycleTimes,
         skipped: time.skipped,
-        mapReports: mapPass.reports,
         dials,
     });
-
-    // The Map reports gain their estimated day in reach here rather than inside either pass: the Map check knows the cost and the XP pass knows the pacing curves.
-    const mapReports = new Map();
-    for (const [id, report] of mapPass.reports) {
-        mapReports.set(id, report.skipped
-            ? report
-            : { ...report, dayInReach: xpPass.mapDays.get(id) ?? null });
-    }
 
     // The check pass derives nothing and writes nothing: it reads the settled line and the dial set. It runs last because the charge half needs the cycle times TUNE may have moved.
     const check = runCheckPass(entities, { cycleTimes, skipped: time.skipped, tokens, dials });
@@ -102,15 +96,12 @@ export function runSim({ tokens = {}, recipes = {}, items = {}, maps = {}, enemi
         values: price.values,
         details: price.details,
         downcycles: price.downcycles,
-        maps: mapReports,
-        mapWeights: mapPass.weights,
-        scrapValues: mapPass.scrapValues,
         xp: xpPass.xp,
         projection: xpPass.projection,
         masteryHours: xpPass.masteryHours,
         rows: sortRows([
             ...time.rows, ...anchor.rows, ...price.rows, ...tune.rows,
-            ...mapPass.rows, ...xpPass.rows, ...check.rows,
+            ...xpPass.rows, ...check.rows,
         ]),
     };
 }

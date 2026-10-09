@@ -4,6 +4,7 @@
 import { SKILLS as GAME_SKILLS, SKILL_CATEGORIES as GAME_SKILL_CATEGORIES } from '../../../src/config/registries/skillRegistry.js';
 import { EQUIPMENT_CATEGORY_DEFS } from '../../../src/config/registries/equipmentCategories.js';
 import { ITEM_TYPES as GAME_ITEM_TYPES } from '../../../src/config/registries/itemRegistry.js';
+import { MAP_ITEM_TYPES } from '../../../src/systems/atlas/mapItems.js';
 import {
   TOKEN_TYPES as GAME_TOKEN_TYPES,
   TOKEN_RARITIES as GAME_TOKEN_RARITIES,
@@ -231,7 +232,14 @@ export {
   isInBand,
 } from '../../../src/config/registries/tempoBands.js';
 
-export const ITEM_TYPES = Object.values(GAME_ITEM_TYPES);
+/** The types an ordinary item can take. Maps and modifiers are items too, but only the Map editor makes them. */
+export const ITEM_TYPES = Object.values(GAME_ITEM_TYPES).filter((type) => !MAP_ITEM_TYPES.includes(type));
+
+/**
+ * The Token cap a new guild starts with, for the Map editor's preview of what a map writes.
+ * ⚠️ Mirrors `BASE_TOKEN_CAP` in `src/systems/board/MatCap.js`, which the CMS cannot import (it reads the live board); `CMSMapEditor.test.js` pins the two together.
+ */
+export const STARTING_TOKEN_CAP = 128;
 
 export const RESTORE_TYPES = ['HP', 'Energy'];
 

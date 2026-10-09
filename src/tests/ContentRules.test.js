@@ -1,9 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
-    getAllTokenTypes, getTokenType, getProvidedTagsWithTiers, productionRoutes, toolContextTags, tokenName,
+    getAllTokenTypes, getProvidedTagsWithTiers, productionRoutes, toolContextTags, tokenName,
     expectedOutputQuantity
 } from '../config/registries/tokenRegistry.js';
-import { getMap, listMaps } from '../config/registries/mapRegistry.js';
 import { enemyProfileOf, isEnemyDef } from '../config/registries/enemyProfile.js';
 import { getItem } from '../config/registries/itemRegistry.js';
 import { STARTING_SKILL_IDS, getAllSkillIds } from '../config/registries/skillRegistry.js';
@@ -393,13 +392,7 @@ describe('Registry integrity', () => {
             const def = TOKENS[id];
             expect(isTokenType(def.tokenType), `${id} has unknown tokenType "${def.tokenType}"`).toBe(true);
 
-            // Maps sit outside the rarity system entirely, so a missing rarity
-            // is correct for them and only for them.
-            if (def.rarity !== undefined) {
-                expect(isTokenRarity(def.rarity), `${id} has unknown rarity "${def.rarity}"`).toBe(true);
-            } else {
-                expect(def.tokenType, `${id} omits rarity but is not a Map`).toBe('map');
-            }
+            expect(isTokenRarity(def.rarity), `${id} has unknown rarity "${def.rarity}"`).toBe(true);
 
             // The `isTokenTheme(def.theme)` assertion that used to close this
             // loop was removed. It was the source of the "unknown theme \"\""
@@ -512,43 +505,7 @@ describe('Registry integrity', () => {
 
 });
 
-describe("A Map's pool is a complete kit (D-139)", () => {
-    /**
-     * Producers, their context, their buffs, **their Manager** and the enemies
-     * that belong there. Buying a Map is buying access to a self-contained set
-     * — one purchase eventually yields everything needed to run that theme
-     * properly, including the automation that lets it survive unattended.
-     */
-    const maps = listMaps();
-
-    it.each(maps.map(m => m.id))('%s points only at real content', (mapId) => {
-        for (const entry of getMap(mapId).pool) {
-            if (entry.kind === 'token') {
-                expect(getTokenType(entry.refId), `${mapId} → ${entry.refId}`).toBeTruthy();
-            }
-            expect(entry.weight).toBeGreaterThan(0);
-        }
-    });
-
-    it.skipIf(maps.length === 0)('⚠️ the FIRST Map may demand only the Starting skills (D-261)', () => {
-        // A Recruit holds the Starting skills and nothing else, so a Token in
-        // the opening kit that wants a specialist is a Token nobody can work
-        // for hours. This is the rule that sent the Bramble Patch (Nature), the
-        // Woodland Still (Alchemy) and the Lumber Market (Commerce) to the
-        // Riverlands pool.
-        const firstMap = listMaps()[0];       // price order
-        const starting = new Set(STARTING_SKILL_IDS);
-
-        for (const entry of firstMap.pool) {
-            if (entry.kind !== 'token') continue;
-            const skill = TOKENS[entry.refId]?.config?.skill;
-            if (!skill) continue;             // context, buff, Manager, enemy
-            expect(starting.has(skill),
-                `${entry.refId} in ${firstMap.id} demands "${skill}", which no Recruit holds`
-            ).toBe(true);
-        }
-    });
-
+describe('The opening', () => {
     it('the opening Tray is workable by the one hero the player starts with', () => {
         // A Token in that tray demanding a specialist would be the first thing
         // a new player tried and the first thing that refused them.
@@ -560,27 +517,6 @@ describe("A Map's pool is a complete kit (D-139)", () => {
             expect(starting.has(skill),
                 `opening Tray Token ${typeId} demands "${skill}"`
             ).toBe(true);
-        }
-    });
-
-    it('sells a tool in the same Map as the Token it gates', () => {
-        // A kit that gated a resource behind a tool from a different Map would
-        // make that resource unobtainable until two purchases happened to line
-        // up — which reads as broken rather than as scarce.
-        for (const map of maps) {
-            const ids = map.pool.filter(e => e.kind === 'token').map(e => e.refId);
-            const toolTags = new Set();
-            for (const id of ids) {
-                if (TOKENS[id].isTool) for (const tag of TOKENS[id].provides || []) toolTags.add(tag);
-            }
-            for (const id of ids) {
-                for (const route of productionRoutes(id)) {
-                    for (const tag of route.requiresContext) {
-                        if (!toolContextTags().has(tag)) continue;
-                        expect(toolTags.has(tag), `${map.id} gates ${id} behind ${tag} it does not sell`).toBe(true);
-                    }
-                }
-            }
         }
     });
 });

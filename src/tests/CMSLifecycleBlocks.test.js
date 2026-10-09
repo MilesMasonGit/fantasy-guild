@@ -30,7 +30,7 @@ import TokenEditor from '../../cms/src/components/editors/TokenEditor.jsx';
  */
 
 const DATA = path.resolve(__dirname, '../../data');
-const FILES = ['items.json', 'tokens.json', 'maps.json', 'tokenRecipes.json', 'effects.json'];
+const FILES = ['items.json', 'tokens.json', 'tokenRecipes.json', 'effects.json'];
 // git may check these out with CRLF; JSON.stringify always emits LF.
 const read = (file) => fs.readFileSync(path.join(DATA, file), 'utf8').replace(/\r\n/g, '\n');
 // ⚠️ As the CMS holds the files once loaded: it renames retired skill ids, so until the
@@ -46,7 +46,6 @@ function workspaceFromFiles(files) {
     return {
         items: files['items.json'],
         tokens: files['tokens.json'],
-        maps: files['maps.json'],
         effects: files['effects.json'],
         recipePools,
     };
@@ -111,12 +110,12 @@ describe('Today’s data round-trips unchanged', () => {
         for (const key of ['spawner', 'grows', 'shop', 'trickle']) expect(used).toContain(key);
     });
 
-    it('load → export writes all five files back byte-identical', () => {
+    it('load → export writes all four files back byte-identical', () => {
         const files = syncFiles(useEntityStore.getState());
         for (const f of FILES) expect(JSON.stringify(files[f], null, 2)).toBe(raw[f].trimEnd());
     });
 
-    it('load → Recalculate → Sync payload is byte-identical to data/ for all five files', () => {
+    it('load → Recalculate → Sync payload is byte-identical to data/ for all four files', () => {
         const files = syncPayload();
         for (const f of FILES) expect(JSON.stringify(files[f], null, 2)).toBe(raw[f].trimEnd());
     });

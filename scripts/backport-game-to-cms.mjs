@@ -10,7 +10,6 @@ const backupsDir = path.join(rootDir, 'cms', 'backups');
 export function buildWorkspaceFromGameData() {
   const items = JSON.parse(fs.readFileSync(path.join(dataDir, 'items.json'), 'utf8'));
   const tokens = JSON.parse(fs.readFileSync(path.join(dataDir, 'tokens.json'), 'utf8'));
-  const maps = JSON.parse(fs.readFileSync(path.join(dataDir, 'maps.json'), 'utf8'));
   const effects = fs.existsSync(path.join(dataDir, 'effects.json'))
     ? JSON.parse(fs.readFileSync(path.join(dataDir, 'effects.json'), 'utf8'))
     : {};
@@ -28,7 +27,6 @@ export function buildWorkspaceFromGameData() {
   return {
     items,
     tokens,
-    maps,
     effects,
     recipePools,
   };

@@ -21,7 +21,6 @@ import { xpForLevel } from '../utils/XPCurve.js';
 import tokenData from '../../data/tokens.json';
 import recipeData from '../../data/tokenRecipes.json';
 import itemData from '../../data/items.json';
-import mapData from '../../data/maps.json';
 
 const DIALS = normaliseDials();
 
@@ -225,7 +224,7 @@ describe('the non-finite guard (the P7 lesson, applied ahead of time)', () => {
     });
 
     it('never returns a non-finite value for any entity it does answer for', () => {
-        const sim = runSim({ tokens: tokenData, recipes: recipeData, items: itemData, maps: mapData });
+        const sim = runSim({ tokens: tokenData, recipes: recipeData, items: itemData });
         expect(sim.xp.size).toBeGreaterThan(0);
         for (const [id, value] of sim.xp) {
             expect(Number.isFinite(value), `${id} produced ${value}`).toBe(true);
@@ -354,27 +353,13 @@ describe('the day-in-reach ladder', () => {
         }
         expect(hoursSoFar).toBeCloseTo(projection.masteryHours, 5);
     });
-
-    it('gives every priced Map a whole-number day, and skipped Maps none', () => {
-        const sim = runSim({ tokens: tokenData, recipes: recipeData, items: itemData, maps: mapData });
-        for (const report of sim.maps.values()) {
-            if (report.skipped) {
-                expect('dayInReach' in report).toBe(false);
-                continue;
-            }
-            const day = report.dayInReach;
-            if (day === null) continue;
-            expect(Number.isInteger(day)).toBe(true);
-            expect(day).toBeGreaterThanOrEqual(1);
-        }
-    });
 });
 
 // === Write-back ==============================================================
 
 describe('write-back — only the fields the runtime reads (finding S18)', () => {
     it('writes a recipe’s `xp` and a Token’s `config.xp`', () => {
-        const sim = runSim({ tokens: tokenData, recipes: recipeData, items: itemData, maps: mapData });
+        const sim = runSim({ tokens: tokenData, recipes: recipeData, items: itemData });
         const tokens = applyTokenResults(tokenData, sim);
         let written = 0;
         for (const [id, token] of Object.entries(tokens)) {
@@ -392,7 +377,7 @@ describe('write-back — only the fields the runtime reads (finding S18)', () =>
         // deliberately NOT deleted here: removing it is a content migration for
         // its own sitting, and writing it would create a second, disagreeing
         // number where the game reads one.
-        const sim = runSim({ tokens: tokenData, recipes: recipeData, items: itemData, maps: mapData });
+        const sim = runSim({ tokens: tokenData, recipes: recipeData, items: itemData });
         const tokens = applyTokenResults(tokenData, sim);
         for (const [id, before] of Object.entries(tokenData)) {
             const after = tokens[id];
@@ -423,18 +408,16 @@ describe('write-back — only the fields the runtime reads (finding S18)', () =>
 // === Idempotence =============================================================
 
 describe('idempotence (plan §11)', () => {
-    it('derives byte-identical XP and days on two consecutive runs', () => {
-        const corpus = { tokens: tokenData, recipes: recipeData, items: itemData, maps: mapData };
+    it('derives byte-identical XP on two consecutive runs', () => {
+        const corpus = { tokens: tokenData, recipes: recipeData, items: itemData };
         const first = runSim(corpus);
         const second = runSim(corpus);
         expect([...second.xp.entries()]).toEqual([...first.xp.entries()]);
         expect(second.masteryHours).toBe(first.masteryHours);
-        expect([...second.maps.values()].map((m) => m.dayInReach ?? null))
-            .toEqual([...first.maps.values()].map((m) => m.dayInReach ?? null));
     });
 
     it('is stable when a run is fed its own written-back output', () => {
-        const corpus = { tokens: tokenData, recipes: recipeData, items: itemData, maps: mapData };
+        const corpus = { tokens: tokenData, recipes: recipeData, items: itemData };
         const first = runSim(corpus);
         const tokens = applyTokenResults(tokenData, first);
         const second = runSim({ ...corpus, tokens });
@@ -448,7 +431,7 @@ describe('idempotence (plan §11)', () => {
 // number that authoring could legitimately change.
 
 describe('rules that hold over whatever the corpus contains', () => {
-    const sim = runSim({ tokens: tokenData, recipes: recipeData, items: itemData, maps: mapData });
+    const sim = runSim({ tokens: tokenData, recipes: recipeData, items: itemData });
     const entities = adaptCorpus({ tokens: tokenData, recipes: recipeData });
 
     it('derives XP for exactly the entities that got a solved cycle and a Purpose tag', () => {

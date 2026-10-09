@@ -81,8 +81,8 @@ export function buildSimAnswers(sim, { tokens = {}, recipes = {} } = {}, ranAt =
 }
 
 /**
- * The lifetime line, hours first. Lives is what the check pass computed from `uses` and the settled cycle, never `charges`. Returns compares what one copy earns over that life against what a Map's burst charged for it (the Token's `scrapValue`).
- * ⚠️ Both halves are optional: a Recipe has no lifetime, and a Token no Map hands over prints hours alone. `null` means the sim has not said, which the panel renders as silence.
+ * The lifetime line, hours first. Lives is what the check pass computed from `uses` and the settled cycle, never `charges`, and what one copy earns over that life.
+ * ⚠️ A Recipe has no lifetime. `null` means the sim has not said, which the panel renders as silence.
  */
 function lifetimeLine(sim, entity, tuning) {
     if (entity.kind !== 'token') return null;
@@ -92,7 +92,6 @@ function lifetimeLine(sim, entity, tuning) {
     const profitPerHour = tuning && !tuning.skippedReason
         ? (tuning.after ?? tuning.before)?.profitPerHour ?? null
         : null;
-    const findCost = sim.scrapValues?.get(entity.id) ?? null;
     const lifetimeValue = Number.isFinite(profitPerHour) ? profitPerHour * life.hours : null;
 
     return {
@@ -104,9 +103,5 @@ function lifetimeLine(sim, entity, tuning) {
         // rather than presenting a dial as a measurement.
         assumed: life.assumed === true,
         lifetimeValue,
-        findCost: Number.isFinite(findCost) && findCost > 0 ? findCost : null,
-        returnFactor: Number.isFinite(lifetimeValue) && Number.isFinite(findCost) && findCost > 0
-            ? lifetimeValue / findCost
-            : null,
     };
 }

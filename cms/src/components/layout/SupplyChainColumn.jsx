@@ -3,13 +3,13 @@ import { useEntityStore } from '../../stores/useEntityStore';
 import IOEntryList from '../shared/IOEntryList';
 
 /**
- * One side column: what feeds the selected entity, or what it feeds. Reference mode (Items) is a read-only, clickable list of the Tokens and Maps on either side of the item; editable mode (Tokens and Recipes) is `IOEntryList` inside this column chrome.
+ * One side column: what feeds the selected entity, or what it feeds. Reference mode (Items and maps) is a read-only, clickable list of the Tokens on either side of the item; editable mode (Tokens and Recipes) is `IOEntryList` inside this column chrome.
  * ⚠️ `onAddToken` is forwarded because only a recipe can output a Token and only a Token can pay out currency; each caller passes the one that applies.
  */
 const TYPE_META = {
   item: { icon: Package, collection: 'items', color: 'var(--color-item)' },
   token: { icon: Boxes, collection: 'tokens', color: 'var(--color-accent)' },
-  map: { icon: MapIcon, collection: 'maps', color: 'var(--color-area)' },
+  map: { icon: MapIcon, collection: 'items', color: 'var(--color-area)' },
 };
 
 export default function SupplyChainColumn({
@@ -28,8 +28,7 @@ export default function SupplyChainColumn({
   const setActiveEntity = useEntityStore((s) => s.setActiveEntity);
   const items = useEntityStore((s) => s.items);
   const tokens = useEntityStore((s) => s.tokens);
-  const maps = useEntityStore((s) => s.maps);
-  const collections = { items, tokens, maps };
+  const collections = { items, tokens };
 
   const nameOf = (id, type = 'item') => {
     const meta = TYPE_META[type] || TYPE_META.item;

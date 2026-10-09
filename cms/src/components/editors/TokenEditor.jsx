@@ -99,10 +99,7 @@ export default function TokenEditor() {
               value={token.rarity ?? ''}
               onChange={(e) => update('rarity', e.target.value || undefined)}
               className="w-full"
-              disabled={token.tokenType === 'map'}
-              title={token.tokenType === 'map' ? 'Maps sit outside the rarity system entirely' : undefined}
             >
-              {token.tokenType === 'map' && <option value="">n/a</option>}
               {TOKEN_RARITIES.map((r) => (
                 <option key={r} value={r}>{r}</option>
               ))}
@@ -113,7 +110,6 @@ export default function TokenEditor() {
             </p>
           </Field>
 
-          {/* The Map link is authored from the Map editor, not here; a Map Token still carries `mapId`. */}
           <Field label="Grid Size">
             <select
               value={token.size ?? 1}
@@ -529,13 +525,11 @@ export default function TokenEditor() {
   );
 }
 
-/** What the last Recalculate decided about this Token: a derivation warning when its shape is broken (no rules and no work cycle, or a Market paying no currency), the simulator's answer, and the derived scrap value. ⚠️ Returns null when it has nothing to say, heading included. */
+/** What the last Recalculate decided about this Token: a derivation warning when its shape is broken (no rules and no work cycle, or a Market paying no currency), and the simulator's answer. ⚠️ Returns null when it has nothing to say, heading included. */
 function TokenSummary({ token, derived, needsSkill }) {
   const answer = useSimulationStore((s) => s.simAnswers[token.id]);
-  const scrap = token.scrapValue;
-  const hasScrap = Number.isFinite(scrap);
 
-  if (!answer && !derived?.warn && !needsSkill && !hasScrap) return null;
+  if (!answer && !derived?.warn && !needsSkill) return null;
 
   return (
     <Section title="What the simulator decided" icon={<Gauge size={14} />}>
@@ -552,15 +546,6 @@ function TokenSummary({ token, derived, needsSkill }) {
       )}
 
       <SimAnswer entityId={token.id} record={token} />
-
-      {hasScrap && (
-        <div className="flex items-baseline gap-2">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Scraps for</span>
-          <span className="text-xs font-mono font-bold" style={{ color: 'var(--color-text-primary)' }}>
-            {scrap}g
-          </span>
-        </div>
-      )}
     </Section>
   );
 }
