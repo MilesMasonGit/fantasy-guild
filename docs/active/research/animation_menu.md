@@ -21,6 +21,22 @@ No numbers here were measured for this note: the game, dev server and benches
 were not run. Costs marked **measured** come from `PERFORMANCE.md`; the rest
 are reasoned from the code.
 
+## Owner picks (2026-10-09)
+
+- **Code-only, first batch**: 1 crisp hit reactions, 2 strike chips, 3
+  completion blink, 4 loot hop, 5 crisp Hall flight, 6 rule number, 7
+  neighbour spark, 10 rare drop twinkle, 12 level-up hop and burst, 13 white
+  hit frame, 14 damage number (**every hit**), 15 knockout blink, 17 crisp
+  transform flash (replaces the gold glow ruled in FB-11; the owner chose it
+  here). **After the Atlas**: 18 Region settle. Ticket T-137.
+- **Not picked**: 8 bubble drop-in, 9 station problem nudge, 11 first-ever
+  showcase, 16 build drop.
+- **Art, first batch** (owner draws): falling leaves, rock chips and sparks,
+  dust puff, water splash, anvil sparks, wood chips, steam or smoke, hit
+  spark, knockout poof, grain puff, level-up sparkle, rare shine. **Later**:
+  loot glint, used-up crumble. On the owner's art list
+  (`docs/active/owner_art_list.md`); the sprite-strip player is T-138.
+
 ## 1. What exists today
 
 | Effect | What the player sees | How it's drawn | Evidence | Cost |
