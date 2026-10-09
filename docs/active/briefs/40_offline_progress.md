@@ -63,3 +63,16 @@ plus one option:
   still always runs first (owner ruling: undo on the summary, not a prompt
   before).
 
+**Second look (owner, same day):** definitely an improvement; remaining
+rulings:
+- **Item Bars.** Items are shown with the Token inspection panel's **Item
+  Bar** (the Outputs design): the item sprite with its hover zoom, the count
+  abbreviated by default (`5.9k`) and switching to the exact number on
+  hover (`5,900`). Wider here than in the inspection panel. Not a bespoke row.
+- **Simpler wording.** "Items produced" instead of "Made, waiting on the
+  mat"; the other headings simplified in the same spirit (e.g. "Items
+  banked", "Items spent"). Button: **"Return to the Guild"**.
+- **Buttons stacked**, one above the other (side by side pushed out of the
+  window): "Return to the Guild" first as the primary choice, "Load as I
+  left it" below it, **with a confirmation** before it discards the catch-up.
+
