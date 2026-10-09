@@ -150,6 +150,8 @@ export const ReactRoot = ({ engine }) => {
     }, [handleOpenGuildHall, handleCloseGuildHall, ui.fullscreen.view]);
 
     const [inspectHeroId, setInspectHeroId] = React.useState(null);
+    const toggleInspectHero = React.useCallback((id) => setInspectHeroId(prev => (prev === id ? null : id)), []);
+    const closeInspectHero = React.useCallback(() => setInspectHeroId(null), []);
 
     React.useEffect(() => {
         const unsub1 = EventBus.subscribe(ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, (data) => {
@@ -246,25 +248,11 @@ export const ReactRoot = ({ engine }) => {
                                 </aside>
                             ) : (
                                 isBankOpen ? (
+                                    // The Bank's hero column: the hero panel (below) draws over it.
                                     <aside
                                         style={{ width: columnWidthCss(NOTIFICATION_COLUMN) }}
-                                        className="shrink-0 h-full flex flex-col pointer-events-none relative z-[100]"
-                                    >
-                                        {/**
-                                         * A crash in the Bank's hero panel stays local to this
-                                         * aside.
-                                         */}
-                                        <ErrorBoundary label="BankHeroPanel">
-                                            <BankHeroPanel
-                                                menuRight={menuRight}
-                                                selectedHeroId={inspectHeroId}
-                                                onSelectHero={(id) => setInspectHeroId(prev => (prev === id ? null : id))}
-                                                onDoubleClickHero={(id) => setInspectHeroId(prev => (prev === id ? null : id))}
-                                                onCloseHero={() => setInspectHeroId(null)}
-                                                onEditHero={(id) => ui.dock.openEdit(id)}
-                                            />
-                                        </ErrorBoundary>
-                                    </aside>
+                                        className="shrink-0 h-full pointer-events-none"
+                                    />
                                 ) : (
                                     <NotificationSidebars menuRight flagRules={ui.flagRules} />
                                 )
@@ -328,12 +316,9 @@ export const ReactRoot = ({ engine }) => {
                                 <ErrorBoundary label="HeroDock">
                                     <PerfProfiler id="HeroDock">
                                         <BottomHeroDock
-                                            isBankOpen={isBankOpen}
                                             selectedHeroId={inspectHeroId}
-                                            onSelectHero={(id) => setInspectHeroId(prev => (prev === id ? null : id))}
-                                            onDoubleClickHero={(id) => setInspectHeroId(prev => (prev === id ? null : id))}
-                                            onCloseHero={() => setInspectHeroId(null)}
-                                            onEditHero={(id) => ui.dock.openEdit(id)}
+                                            onSelectHero={toggleInspectHero}
+                                            onDoubleClickHero={toggleInspectHero}
                                         />
                                     </PerfProfiler>
                                 </ErrorBoundary>
@@ -370,31 +355,34 @@ export const ReactRoot = ({ engine }) => {
                                 </aside>
                             ) : (
                                 isBankOpen ? (
+                                    // The Bank's hero column: the hero panel (below) draws over it.
                                     <aside
                                         style={{ width: columnWidthCss(NOTIFICATION_COLUMN) }}
-                                        className="shrink-0 h-full flex flex-col pointer-events-none relative z-[100]"
-                                    >
-                                        {/**
-                                         * A crash in the Bank's hero panel stays local to this
-                                         * aside.
-                                         */}
-                                        <ErrorBoundary label="BankHeroPanel">
-                                            <BankHeroPanel
-                                                menuRight={menuRight}
-                                                selectedHeroId={inspectHeroId}
-                                                onSelectHero={(id) => setInspectHeroId(prev => (prev === id ? null : id))}
-                                                onDoubleClickHero={(id) => setInspectHeroId(prev => (prev === id ? null : id))}
-                                                onCloseHero={() => setInspectHeroId(null)}
-                                                onEditHero={(id) => ui.dock.openEdit(id)}
-                                            />
-                                        </ErrorBoundary>
-                                    </aside>
+                                        className="shrink-0 h-full pointer-events-none"
+                                    />
                                 ) : (
                                     <NotificationSidebars flagRules={ui.flagRules} />
                                 )
                             )
                         )}
                         {menuRight && <BubbleMenu ui={ui} side="right" />}
+                        {/**
+                         * The hero panel: one full-height panel on the notification side,
+                         * opened from the hero bar or from the Bank. A crash in it stays local.
+                         */}
+                        {!isGuildView && (
+                            <ErrorBoundary label="BankHeroPanel">
+                                <BankHeroPanel
+                                    menuRight={menuRight}
+                                    showTabs={isBankOpen}
+                                    selectedHeroId={inspectHeroId}
+                                    onSelectHero={toggleInspectHero}
+                                    onDoubleClickHero={toggleInspectHero}
+                                    onCloseHero={closeInspectHero}
+                                    onEditHero={(id) => ui.dock.openEdit(id)}
+                                />
+                            </ErrorBoundary>
+                        )}
                         {/**
                          * The bank drawer: a sibling of the nav rather than a child of the
                          * board column, because it has to reach across the notifications
