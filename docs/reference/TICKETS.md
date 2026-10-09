@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-125**
+**Next free number: T-128**
 
 ---
 
@@ -40,6 +40,7 @@ here.
 | T-012 | **Transforms now push neighbouring Tokens** (the playmat plan said only bursts and spawns push). Keep or change? | FMR |
 | T-013 | **The last ~65 alert-icon glows and ~105 label text-shadows**: switch them to the hard-pixel style too? | CR3 summary |
 | T-014 | **Starting and quest content is written in engine code**, not the CMS. Move it to content? (Design call, never asked.) | CR3-515 |
+| T-127 | **Markets are cut for now** (owner 2026-10-09, D2): the Shrimp Market Token runs but pays nothing. Retire or repurpose it in the CMS (it turns up from Shrimp Coast content). The GDD §16 question is closed. | concept_progression.md |
 
 ## 2. Open work
 
@@ -48,6 +49,8 @@ here.
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
 | T-015 | P2 | open | Retire `state_changed`, stages 2–3 (stage 1 = `GAME_RESET`, merged). | CR3-305 |
+| T-125 | P2 | open | **Remove the +0.5 % work speed per skill level** (owner 2026-10-09, D2: invisible, one more number to balance). `SKILL_SPEED_FACTOR` in `src/config/FormulaRegistry.js`; check the CMS simulator's tempo maths (GDD §11: slower by `1 + (level−1)/70`) and the GDD's Skills section. Changes play: eye-check; the bench will show WORK CHANGED, accept under this ticket. | concept_progression.md |
+| T-126 | P2 | open | **Tools last forever** (owner 2026-10-09, D2): a placed tool (pickaxe, axe, net, anvil) never wears out; a better one unlocks better work. Today some recipes and rules spend a context Token's charges (`Charges.js`, `requiresContext`). Decide content (CMS: tools' uses unlimited) vs code (stop spending context charges), then do it. Changes play: eye-check. | concept_progression.md |
 | T-016 | P2 | open | A loot sweep publishes one event per sprite; batch it. | CR3-255 |
 | T-017 | P2 | open | Kill loot ignores yield / double-loot / bonus-drop rules — reachable, `BONUS_DROP` and `LOOT_MULT` ship. **Owner 2026-10-06: yes, apply them exactly as for work.** | CR3-256 |
 | T-018 | P2 | open | A crafted Token can arrive with unlimited charges — reachable (Copper Woodaxe). Ruling (A) per R3-Q1. | CR3-045 |

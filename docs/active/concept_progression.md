@@ -1,7 +1,8 @@
 # Progression, pacing and the Atlas loop
 
 *D2 of the post-crunch plan ([ideas.md](ideas.md)). Owner interview, started
-2026-10-09. **In progress.** Story context (the cartographer, maps that write
+2026-10-09. **Done** (owner closed it 2026-10-09); "What grows with level" is
+deferred. Story context (the cartographer, maps that write
 worlds, the ritual, prestige as the loop) is in
 [concept_tone_and_world.md](concept_tone_and_world.md).*
 
@@ -82,7 +83,7 @@ rare finds, perks) is a new design problem. Settled so far:
 - **Levels unlock higher-level work**: new Tokens and recipes. That may be
   all they do.
 - **Remove the +0.5 % speed per level** (invisible, one more number to
-  balance). → ticket when D2 closes.
+  balance). → T-125.
 - **Possibly larger boosts at milestones**, e.g. "+10 % chance to double
   Copper Ore at Mining 50", so a flat bonus doesn't overpower later, rarer
   resources. A sample, not a commitment.
@@ -93,7 +94,7 @@ rare finds, perks) is a new design problem. Settled so far:
 ## Economy and item sinks
 
 - **Items stay the only currency.** **Markets are cut for now** (the Shrimp
-  Market's open question in GDD §16): no exchange rates to balance; revisit if
+  Market's open question in GDD §16, now closed; T-127): no exchange rates to balance; revisit if
   a real need appears.
 - **The stockpile always has a use**: surplus of any material eventually has
   somewhere to go, so hoarding never feels pointless and numbers going up feels
@@ -106,7 +107,7 @@ rare finds, perks) is a new design problem. Settled so far:
   existing upkeep system).
 - **No wear**: **tools last forever** (a placed pickaxe never wears out; a
   better one unlocks better work) ⚠️ today some recipes spend tool charges, so
-  content and possibly code change; **gear never breaks** (no durability).
+  content and possibly code change (T-126); **gear never breaks** (no durability).
 - **Map upcycling stays**: surplus maps turn into better maps (the Atlas
   concept's plan). It clears map clutter; it isn't a material sink.
 

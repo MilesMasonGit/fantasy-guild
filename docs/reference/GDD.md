@@ -284,7 +284,7 @@ and armour will be authored as content.
 
 - **Items are the only currency** *(`GoldRetired.test.js`)*. Every price is a
   list of items. Nothing can be sold. The Shrimp Market Token runs but pays
-  nothing; what markets become is undecided (§16).
+  nothing; markets are cut for now (§16, T-127).
 - **Item sinks**: surplus and high-tier items are meant to be spent on
   **upgrades and construction** (Hall upgrades, stations, recipes), not sold
   (owner 2026-10-06).
@@ -604,8 +604,4 @@ crunch plan):
 | Drops over a drawer | A mat Token or flag dropped over the Shop drawer or the hero sheet lands on the mat underneath; intended (owner, certification 2026-10-07). |
 | Token cap | 80 for testing, and spawned Tokens count too; binned Tokens count toward spawner caps (T-101, T-102). |
 | Trickle | Renamed **Passive Production**, one 5-minute timer; the Wishing Well joins it, about 10 Water per 5 min (T-099). |
-
-Still open:
-
-1. **Markets** (Shrimp Market): undecided. Options the owner is weighing:
-   trade for items, or pay a new "gold coin" item. Not essential; may be cut.
+| Markets | **Cut for now**: items stay the only currency, no exchange rates; revisit if a real need appears (owner 2026-10-09, T-127). |

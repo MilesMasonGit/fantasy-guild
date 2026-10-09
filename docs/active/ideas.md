@@ -122,6 +122,8 @@ the first outside playtest, modding.
   effects without a cost-log line.
 - **Pixel-style UI borders**: how to make borders look pixel-like to match the
   art, within UI_STYLE.md's "no thick borders, no frames inside frames".
+  Related: T-013 (switch the remaining glows and text-shadows to the
+  hard-pixel style).
 
 ---
 
@@ -138,27 +140,11 @@ the first outside playtest, modding.
 - **Sound**: no audio section in the GDD; the game starts at volume 0. Will
   there be sound, and who makes it? If yes, it joins the asset lists early.
 
-### D2 — Progression, pacing and the Atlas loop
+### D2 — Progression, pacing and the Atlas loop ✅
 
-- **Progression and pacing**: what the player chases at 10 minutes, an hour,
-  a week. Today "no unlocks"; progress is skill levels (99 ≈ 13 M XP), Hall
-  upgrades and affording things, with *placeholder* prices (mostly 10 Oak
-  Wood).
-- **Something else that improves with level**: levels are mainly for
-  unlocking new Tokens and recipes (owner); each level's +0.5 % speed is
-  invisible. The owner agrees something more should grow with level.
-- **Endgame**: nothing says what the player does at the top, or whether there's
-  a fresh-start-for-a-bonus loop ("prestige"). Does the curve end or loop?
-- **Economy and item sinks**: items are the only currency, nothing can be sold,
-  Markets undecided (GDD §16), few things to spend surplus on.
-- **Moving day**: under the Atlas, moving Region is the main progression and
-  means rebuilding from scratch with no refund. Pillar 2 ("set up, don't
-  micromanage") vs rebuilding the same layout every move: should the tenth
-  move be faster than the first (saved layouts, packing up, rebuild-speed
-  upgrades)? ⚠️ touches locked Atlas decisions; raise, don't re-decide.
-- **Show what can move**: after the Atlas, most Tokens are static, so mark the
-  movable ones: a different outline, or only movable Tokens get the bob/lift.
-  Cheap to decide before brief 70 builds static Tokens.
+Done 2026-10-09 → [concept_progression.md](concept_progression.md). Covered
+progression and pacing, endgame, economy and item sinks, moving day, showing
+what can move; "something else that improves with level" is deferred there.
 
 ### D3 — Combat and gear
 
@@ -279,10 +265,16 @@ the first outside playtest, modding.
 
 ## Being interviewed
 
-- **D2 Progression, pacing and the Atlas loop**: started 2026-10-09.
+*(none)*
 
 ## Moved on
 
+- **D2 Progression, pacing and the Atlas loop** (pacing, implicit tiers, moving
+  day, economy, endgame and new game plus, the Starter Camp, movable markers)
+  → [concept_progression.md](concept_progression.md), done 2026-10-09;
+  brief 70 points to it; tickets T-125 (level speed), T-126 (tools last
+  forever), T-127 (markets cut). **What grows with level** stays open there,
+  deferred.
 - **D1 Ground rules** (tone and world, story hook, pops of activity, sound) →
   [concept_tone_and_world.md](concept_tone_and_world.md), done 2026-10-09.
 - **Master allow / disallow all per hero** and the **hero control button** →

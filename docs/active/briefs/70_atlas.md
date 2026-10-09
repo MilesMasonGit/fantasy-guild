@@ -11,6 +11,27 @@ the Token cap; a hand-made Starter Camp; the Guild Hall on every Region;
 per-Token ambush rules; Maps as special items from enemy drops and quest
 rewards; Regions frozen while away; terrain paints biomes (brief 80).
 
+**Also read [`concept_progression.md`](../concept_progression.md)** (owner
+interview D2, 2026-10-09). It adds to the Atlas; where it differs from
+`concept_atlas.md`, it wins:
+- **The Starter Camp holds one endgame site per skill (all 25)**, each that
+  skill's final challenge, shown as a ruin from the first minute, plus the
+  ritual's great construction. Size the Starter Camp for this against the
+  Token cap (exempt sites, a bigger Starter Camp, or small sites). It lasts
+  about 30–60 minutes before the first map.
+- **Moves every few days** (20+ Regions in a first run); **going back to
+  specialised Regions is intended play**. Travel stays free and instant; the
+  whole guild moves together.
+- **One-time treasures** in a fresh Region: ruins and caches, a rare node.
+- **Some modifiers change how a base is built** (little room, free charge,
+  harder enemies), not only contents.
+- **Movable Tokens show a faint marker at rest and lift on hover**; fixed
+  Tokens do neither.
+- **Map supply is steady** from farmable enemies plus quests; **upcycling
+  stays**. **Tools last forever** (T-126); the Shop's tools are bought once.
+- **No tier labels**: tiers are implicit in the chains (Fir → Iron Pickaxe →
+  Gold), never "Tier 2" in the game.
+
 **Uncommitted Atlas work** sits in the owner's folder (`src/state/StateSchema.js`
 adds an `atlas` save section; `data/items/maps.json` was written outside the
 CMS): T-005. Resolve it with the owner before A1.
