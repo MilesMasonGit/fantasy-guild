@@ -368,7 +368,10 @@ describe('the game\'s side of the layout (layoutInputs)', () => {
 });
 
 describe('purity guards', () => {
-    const FILES = ['Budget.js', 'Layout.js', 'TerrainMap.js', 'seededRandom.js', 'layoutInputs.js'];
+    const FILES = [
+        'Budget.js', 'Layout.js', 'TerrainMap.js', 'seededRandom.js', 'layoutInputs.js',
+        'Cartography.js', 'Atlas.js', 'RegionRules.js', 'devMaps.js'
+    ];
     const code = (file) => codeOf(fs.readFileSync(`${SRC}/systems/atlas/${file}`, 'utf8'));
 
     it('no module of the generation engine draws from Math.random', () => {

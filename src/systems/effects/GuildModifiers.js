@@ -2,8 +2,8 @@ import { ModifierAggregator } from './ModifierAggregator.js';
 
 /**
  * ONE runtime-only ModifierAggregator for the whole guild, for modifiers that reach
- * across every scope (Guild Hall global upgrades). `TileModifiers.resolveAxis` reads it;
- * nothing registers into it yet outside tests.
+ * across every scope. `TileModifiers.resolveAxis` reads it; the active Region's own rules
+ * register into it (`atlas/RegionRules.js`), and Guild Hall global upgrades may later.
  *
  * ⚠️ Stack additively: each installed copy must register under a DISTINCT source id
  * (`auraSourceId`, e.g. `<tileIndex>:<tokenTypeId>`, never the bare type id). Otherwise

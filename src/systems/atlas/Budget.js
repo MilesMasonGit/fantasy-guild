@@ -30,6 +30,10 @@ import { TERRAIN, DEFAULT_TERRAIN } from './TerrainMap.js';
  * `share` (0–1, default 1) and `count` (default 1) are optional. Ids must be unique per distinct
  * ingredient: two slots holding the same map carry the same id.
  *
+ * Either kind may also carry a `name` (what the Region's practical name calls it: "Forest",
+ * "Overgrown") and `rules`, statements in force all over the Region while the guild is there
+ * (`RegionRules.js`; today a `Provides`). Neither changes the budget.
+ *
  * ## The rules
  * 1. **Base Maps blend.** Each writes `points / (number of Base Maps)` nodes, split by its weights,
  *    so a hybrid keeps the density of one map and two copies of a map write what one does. Their
