@@ -286,4 +286,7 @@ The pickup/drop stalls are dev-build numbers (React's development build
 re-renders several times slower than players see), so players get a smaller
 hitch: in the perf build `bench:drag` measured ~24–36 ms frames at pickup and
 drop before D3, and after it a typical S2 pickup or drop has no frame over 12 ms
-(Drag baseline, above).
+(Drag baseline, above). In the dev build itself (`bench:drag -- --dev`, S2, 15
+drags per kind, back to back, 2026-10-09) the median drag's longest pickup frame
+went from 164–212 ms before D3 to 12–24 ms after, and the drop's from 55–127 ms
+to 18–36 ms.
