@@ -5,6 +5,7 @@ import * as RecipeResolver from './RecipeResolver.js';
 import { RECIPE } from './RecipeResolver.js';
 import * as InputAllocator from './InputAllocator.js';
 import * as Charges from './Charges.js';
+import * as Respawn from './Respawn.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
 
 /**
@@ -47,13 +48,20 @@ export function heroReason(heroId, config) {
 
 /**
  * Why the Token itself cannot run a cycle right now — whoever works it — as
- * `{ reason, io, inputCheck? }`. `reason` is null when it can.
+ * `{ reason, io, inputCheck? }`. `reason` is null when it can. Every reason but `resting` is
+ * fixable.
  *
- * In the runner's order: the recipe must resolve, then the inputs must be
- * available, then the charges must be affordable. `io` is returned so the
- * runner does not resolve the recipe twice.
+ * In the runner's order: the Token must not be resting, the recipe must resolve, then the inputs
+ * must be available, then the charges must be affordable. `io` is returned so the runner does
+ * not resolve the recipe twice (null for a resting Token, which resolves nothing).
+ *
+ * Resting comes first: a Token that ran out and is waiting to respawn cannot run whatever else
+ * is true of it, and it is not a problem to fix, so it must not surface as one of the reasons
+ * below (`ALERT.RESTING` is not in {@link FIXABLE}).
  */
 export function fixableReason(instanceId, instance) {
+    if (Respawn.isResting(instance)) return { reason: ALERT.RESTING, io: null };
+
     const io = RecipeResolver.effectiveIO(instanceId, instance);
 
     if (io.status === RECIPE.NONE) {

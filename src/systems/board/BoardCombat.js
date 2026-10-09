@@ -17,6 +17,7 @@ import * as RecipeResolver from './RecipeResolver.js';
 import * as TileModifiers from './TileModifiers.js';
 import * as BoardState from './BoardState.js';
 import * as Hand from './Hand.js';
+import * as Respawn from './Respawn.js';
 import { momentSupplies } from '../../config/registries/triggerRegistry.js';
 import { ROLE, opponentSeekerOf } from '../../config/registries/roleRegistry.js';
 import { logger } from '../../utils/Logger.js';
@@ -432,6 +433,8 @@ function resolveVictory(instance, fight, enemy, heroId) {
 
     // Support Tokens beside the enemy wear per kill, by instance id.
     RecipeResolver.wearNearbySupport(id, function exhaustSupport(supportId, supportInstance) {
+        // A support whose type respawns rests where it stands instead, in the player's hand too.
+        if (Respawn.restInstead(supportInstance || BoardState.getTokenById(supportId), { exhaustedBy: heroId })) return;
         // In the player's hand it stays, empty, until it is put down, and goes from where it lands.
         if (Hand.isInHand(supportId)) {
             Hand.whenPutDown(supportId, () => {

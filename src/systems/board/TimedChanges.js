@@ -7,6 +7,7 @@ import * as EffectActions from './EffectActions.js';
 import * as SpawnerSystem from './SpawnerSystem.js';
 import * as PassiveProduction from './PassiveProduction.js';
 import * as Hand from './Hand.js';
+import * as Respawn from './Respawn.js';
 import { pickWeighted } from './weightedPick.js';
 import { logger } from '../../utils/Logger.js';
 
@@ -25,7 +26,8 @@ export { pickWeighted };
  * are `TURN_DEFAULTS` in `tokenConstants.js`.
  *
  * Spawner intervals are one more row of the {@link HANDLERS} table; the attempt itself lives in
- * `SpawnerSystem.js`. Passive Production pays several lines on its own clock, so {@link tick} runs
+ * `SpawnerSystem.js`. So is a resting Token's way back (`respawn`, refill or regrow), whose rules
+ * live in `Respawn.js`. Passive Production pays several lines on its own clock, so {@link tick} runs
  * it beside the table (`PassiveProduction.advance`).
  *
  * State (saved, on the instance): `instance.clocks = { growMs, turnMs, … }`, elapsed ms, created
@@ -147,6 +149,8 @@ export function nextGrowth(instance) {
  * * `clock` — the key in `instance.clocks` it counts on;
  * * `replaces` — true when firing puts a new instance in the Token's place, so
  *   it waits while the Token is in the player's hand ({@link setInHand});
+ * * `once` — true when the clock is done once it acts (a refill), rather than
+ *   starting another lap;
  * * `applies(instance, def)` — whether this Token runs it;
  * * `dueMs(instance, def)` — when it fires;
  * * `fire(instance, def, random, ctx)` — what happens. `ctx` is
@@ -204,6 +208,30 @@ export const HANDLERS = [
         applies: (instance, def) => !instance.turnedFrom && SpawnerSystem.isSpawner(def),
         dueMs: (instance, def) => SpawnerSystem.intervalOf(def),
         fire: (instance, def, random, ctx) => SpawnerSystem.attemptSpawn(instance, def, random, ctx)
+    },
+    {
+        // A resting Token refills in place after its rest. One-shot: the clock is gone once it
+        // refills, and the next rest starts it afresh (`Respawn.restInstead`).
+        id: 'refill',
+        clock: Respawn.CLOCK,
+        once: true,
+        applies: (instance, def) => !!def?.respawn && Respawn.restingMode(instance, def) === 'refill',
+        dueMs: (instance, def) => Respawn.restMsOf(instance, def),
+        fire: (instance) => Respawn.refill(instance)
+    },
+    {
+        // A resting Token becomes the Token it regrows from, on the next tick, which grows back
+        // into it on its own `grows` clock.
+        id: 'regrow',
+        clock: Respawn.CLOCK,
+        replaces: true,
+        applies: (instance, def) => !!def?.respawn && Respawn.restingMode(instance, def) === 'regrow',
+        dueMs: () => 0,
+        fire: (instance, def) => {
+            const next = EffectActions.transformInstance(instance, Respawn.respawnOf(def).into, { fixPlaced: true });
+            if (next) Respawn.regrown(instance, next);
+            return next;
+        }
     }
 ];
 
@@ -258,8 +286,10 @@ export function advance(instance, delta, random = Math.random) {
         }
 
         if (next === current) {
-            // Acted without replacing the Token: this clock starts its next lap.
-            clocks[due.h.clock] -= Math.max(due.at, 1);
+            // Acted without replacing the Token: this clock starts its next lap, or, for a
+            // one-shot clock, is done.
+            if (due.h.once) delete clocks[due.h.clock];
+            else clocks[due.h.clock] -= Math.max(due.at, 1);
             continue;
         }
 
