@@ -347,11 +347,29 @@ export function installDragKit() {
         const r = el.getBoundingClientRect();
         const m = matEl().getBoundingClientRect();
         const bar = document.querySelector('[data-mat-top-bar]')?.getBoundingClientRect();
+        const cell = matEl().closest('.overflow-hidden')?.getBoundingClientRect();
+        // Whether any part of the flag is clear of every Token's own hit circle (not its art box).
+        const hits = [...document.querySelectorAll('[data-token-hit]')].map(e => {
+            const b = e.getBoundingClientRect();
+            return { x: b.left + b.width / 2, y: b.top + b.height / 2, r: b.width / 2 };
+        });
+        const c = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+        const rad = Math.min(r.width, r.height) / 2;
+        let bareOfHitCircles = false;
+        for (let gy = -0.7; gy <= 0.71 && !bareOfHitCircles; gy += 0.175) {
+            for (let gx = -0.7; gx <= 0.71; gx += 0.175) {
+                if (gx * gx + gy * gy > 0.5) continue;
+                const p = { x: c.x + gx * rad, y: c.y + gy * rad };
+                if (!hits.some(t => Math.hypot(t.x - p.x, t.y - p.y) <= t.r)) { bareOfHitCircles = true; break; }
+            }
+        }
         return {
             flag: flagAt(heroId),
             box: { left: Math.round(r.left), top: Math.round(r.top), w: Math.round(r.width) },
             matTop: Math.round(m.top),
-            barBottom: bar ? Math.round(bar.bottom) : null
+            cellTop: cell ? Math.round(cell.top) : null,
+            barBottom: bar ? Math.round(bar.bottom) : null,
+            bareOfHitCircles
         };
     };
 
@@ -387,7 +405,13 @@ export function installDragKit() {
             const to = kit.freeSpot();
             if (!to) return { skip: 'no free spot' };
             const pressMat = kit.screenToMat(at);
-            const scene = { token: { x: Math.round(t.x), y: Math.round(t.y) }, pressMat: { x: Math.round(pressMat.x), y: Math.round(pressMat.y) }, gameSays: G.Flags.tokenAtPoint(pressMat)?.id ?? null };
+            const drawn = kit.screenToMat(visibleCentre(document.querySelector(`[data-token-art][data-token-id="${t.id}"]`)));
+            const scene = {
+                token: { x: Math.round(t.x), y: Math.round(t.y) }, pressMat: { x: Math.round(pressMat.x), y: Math.round(pressMat.y) },
+                gameSays: G.Flags.tokenAtPoint(pressMat)?.id ?? null,
+                // How far the drawn Token is from where the game has it (a slide or a spawn pop-out still playing).
+                drawnOffU: Math.round(Math.hypot(drawn.x - t.x, drawn.y - t.y))
+            };
             return { source: { ...at, what: `Token ${t.typeId} ${t.id}`, hand: `Token ${t.id}`, scene }, target: to.screen, expect: { kind: 'token', id: t.id, before: { x: t.x, y: t.y }, mat: to.mat } };
         },
         shop() {
