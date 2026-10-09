@@ -413,6 +413,31 @@ describe('⭐ a flag\'s cloth drawn in front of a Token takes the pointer there'
         expect(started).toEqual([`token-${tok.id}`]);
     });
 
+    it('pressed on the flag itself, before any pointer move has made it give way, the pole over the Token still leaves it the press', () => {
+        const flagPoint = { x: 600, y: 600 };
+        const tok = scene(flagPoint);
+        const { container, started } = mountWithDrag();
+        const flag = boxFlag(container, flagPoint);
+        // No pointer move yet: the flag has not given way, so the browser hands it the press.
+        expect(flag.className).toContain('pointer-events-auto');
+        act(() => {
+            fireEvent.pointerDown(flag, { pointerId: 1, clientX: 600, clientY: 600, isPrimary: true, button: 0 });
+            fireEvent.pointerMove(document, { pointerId: 1, clientX: 630, clientY: 600, isPrimary: true });
+        });
+        expect(started).toEqual([`token-${tok.id}`]);
+    });
+
+    it('and a click there inspects the Token, the same as a click after a pointer move would', () => {
+        const flagPoint = { x: 600, y: 600 };
+        const tok = scene(flagPoint);
+        const onInspectToken = vi.fn();
+        const { container } = mountAt(OWNER_FIT, { onInspectToken });
+        const flag = boxFlag(container, flagPoint);
+        fireEvent.click(flag, { clientX: 600, clientY: 600 });
+        expect(onInspectToken).toHaveBeenCalledTimes(1);
+        expect(onInspectToken.mock.calls[0][2]).toBe(tok.id);
+    });
+
     it('a flag drawn behind the Token (standing higher on the mat) leaves it the press, cloth or not', () => {
         const flagPoint = { x: 600, y: 599 };
         const tok = scene(flagPoint);

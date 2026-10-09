@@ -1,6 +1,6 @@
 import { pointerToMat } from './matPoint.js';
 import { updateAlphaPointerEvents } from '../../utils/alphaHitTest.js';
-import { flagClothOver } from './flagCloth.js';
+import { flagClothOver, onFlagCloth } from './flagCloth.js';
 
 /** Everything a press on a Token is made of, routed alike so a click lands where its press did. */
 export const PRESS_EVENTS = Object.freeze(['pointerdown', 'click', 'dblclick', 'contextmenu']);
@@ -53,11 +53,10 @@ function throughHeroes(e, matEl) {
 export function routePress(e, matEl, tokenAtPoint) {
     if (routed.has(e) || !matEl) return null;
     const landed = throughHeroes(e, matEl);
-    const token = tokenOwning(landed, e, matEl, tokenAtPoint);
-    // The flags' give-way is set on pointer moves; a press with none before it asks afresh.
-    const cloth = token && e.type === 'pointerdown'
-        ? flagClothOver(matEl, e.clientX, e.clientY, token.getAttribute('data-token-hit'))
-        : null;
+    // The flags' give-way over Tokens is set on pointer moves; a press with none before it (just
+    // after a drop, or a tap) asks afresh, both ways.
+    const token = tokenOwning(landed, e, matEl, tokenAtPoint) ?? tokenUnderFlag(landed, e, matEl, tokenAtPoint);
+    const cloth = token ? flagClothOver(matEl, e.clientX, e.clientY, token.getAttribute('data-token-hit')) : null;
     const to = cloth ?? token ?? landed;
     if (!to || to === e.target) return null;
 
@@ -72,11 +71,26 @@ export function routePress(e, matEl, tokenAtPoint) {
 function tokenOwning(landed, e, matEl, tokenAtPoint) {
     const hit = landed?.closest?.('[data-token-hit]');
     if (!hit) return null;
-    const point = pointerToMat({ x: e.clientX, y: e.clientY }, matEl.getBoundingClientRect());
-    const id = point ? (tokenAtPoint(point)?.id ?? null) : null;
+    const id = tokenIdAt(e, matEl, tokenAtPoint);
     if (!id || id === hit.getAttribute('data-token-hit')) return hit;
-    return [...matEl.querySelectorAll('[data-token-hit]')].find(el => el.getAttribute('data-token-hit') === id) ?? hit;
+    return hitCircleOf(matEl, id) ?? hit;
 }
+
+/** The hit circle of the Token under a press that landed on a flag off its cloth, or null. */
+function tokenUnderFlag(landed, e, matEl, tokenAtPoint) {
+    const flag = landed?.closest?.('[data-flag]');
+    if (!flag || onFlagCloth(flag, e.clientX, e.clientY)) return null;
+    const id = tokenIdAt(e, matEl, tokenAtPoint);
+    return id ? hitCircleOf(matEl, id) : null;
+}
+
+/** The id of the Token the game says is under the press, or null. */
+function tokenIdAt(e, matEl, tokenAtPoint) {
+    const point = pointerToMat({ x: e.clientX, y: e.clientY }, matEl.getBoundingClientRect());
+    return point ? (tokenAtPoint(point)?.id ?? null) : null;
+}
+
+const hitCircleOf = (matEl, id) => [...matEl.querySelectorAll('[data-token-hit]')].find(el => el.getAttribute('data-token-hit') === id) ?? null;
 
 /** Route every press on `matEl` (see {@link routePress}). Returns the undo. */
 export function installPressRouting(matEl, tokenAtPoint) {
