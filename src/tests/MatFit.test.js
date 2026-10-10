@@ -164,7 +164,7 @@ describe('⭐ a Token sprite is only ever drawn at a whole multiple of ART_PX (F
     });
 
     it('every other surface is left completely alone', () => {
-        expect(tokenSizeFor(TOKEN_SURFACE.BIN, 1)).toBe(64);
+        expect(tokenSizeFor(TOKEN_SURFACE.BANK, 1)).toBe(64);
         expect(tokenSizeFor(TOKEN_SURFACE.CARRY, 1)).toBe(128);
         expect(tokenSizeFor(TOKEN_SURFACE.CATALOGUE, 1)).toBe(32);
     });

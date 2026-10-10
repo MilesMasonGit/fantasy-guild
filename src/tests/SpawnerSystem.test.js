@@ -10,7 +10,7 @@ import * as Charges from '../systems/board/Charges.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as TriggerSystem from '../systems/board/TriggerSystem.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
-import * as DiscardBin from '../systems/board/DiscardBin.js';
+import * as Demolition from '../systems/board/Demolition.js';
 import * as MatPlacement from '../systems/board/MatPlacement.js';
 import * as MatCap from '../systems/board/MatCap.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
@@ -203,43 +203,33 @@ describe('⭐ a Forest spawns its family up to its allowance', () => {
         expect(seeds()).toBe(94);
     });
 
-    // A Tree the Forest planted is fixed (Atlas D-6 B) and cannot be binned; one placed by hand
-    // counts toward the family just the same, and can.
-    it('a binned family Token still counts: binning one does not free a slot, discarding it does', () => {
+    it('a demolished family Token frees its slot at once', () => {
         give(SEED, 100);
-        const victim = placeAt('fixture_sp_tree', 200, 200);
         const forest = placeAt('fixture_sp_forest', 800, 500);
         run(10 * 60000);
         expect(family()).toHaveLength(5);
 
-        const planted = family().find(t => t.id !== victim.id);
-        expect(DiscardBin.binToken(planted.id).success).toBe(false);
-        expect(DiscardBin.binToken(victim.id).success).toBe(true);
-        expect(family()).toHaveLength(4);
+        const victim = family()[0];
+        expect(Demolition.mark(victim.id).success).toBe(true);
         expect(SpawnerSystem.spawnerStatus(forest.id)).toMatchObject({ state: 'at_cap', count: 5, cap: 5 });
         const seedsBefore = seeds();
-
-        run(5 * 60000);
-        expect(family()).toHaveLength(4);
-        expect(seeds()).toBe(seedsBefore);
-
-        // Discarding the bin for good frees the slot.
-        DiscardBin.discardAll();
+        expect(Demolition.finish(victim)).toBe(true);
         expect(SpawnerSystem.spawnerStatus(forest.id)).toMatchObject({ count: 4, cap: 5 });
         run(100);
         expect(family()).toHaveLength(5);
         expect(seeds()).toBe(seedsBefore - 1);
     });
 
-    it('taking a binned Token back onto the mat does not double count it', () => {
+    it('a Token left in an old save board.bin counts toward no family', () => {
         give(SEED, 100);
-        const victim = placeAt('fixture_sp_tree', 200, 200);
         const forest = placeAt('fixture_sp_forest', 800, 500);
         run(10 * 60000);
-        expect(DiscardBin.binToken(victim.id).success).toBe(true);
-        expect(SpawnerSystem.spawnerCounts(forest.id).count).toBe(5);
-        expect(DiscardBin.unbinToken(victim.id, { x: 300, y: 300 }).success).toBe(true);
-        expect(SpawnerSystem.spawnerCounts(forest.id).count).toBe(5);
+        const victim = family()[0];
+        BoardState.removeToken(victim.id);
+        GameState.state.board.bin = [victim];
+        expect(SpawnerSystem.spawnerCounts(forest.id).count).toBe(4);
+        run(100);
+        expect(family()).toHaveLength(5);
     });
 
     it('a Tree placed by hand counts toward the family too, whatever its origin', () => {
@@ -714,18 +704,14 @@ describe('⭐ a spawner waits while the mat is at its Token cap (T-102)', () => 
         off();
     });
 
-    it('a binned spawned Token still counts toward the mat cap until discarded', () => {
-        const camp = placeAt('fixture_sp_camp', 800, 500);
+    it('a Token left in an old save board.bin does not count toward the mat cap', () => {
+        placeAt('fixture_sp_camp', 800, 500);
         setMatTuning('tokenCap', 2);
         run(5000);
         const [spawned] = BoardState.tokens().filter(t => t.typeId === 'fixture_passive');
-        expect(DiscardBin.binToken(spawned.id).success).toBe(true);
-        expect(MatCap.tokenCount()).toBe(2);
-        run(20000);
-        expect(BoardState.tokens().filter(t => t.typeId === 'fixture_passive')).toHaveLength(0);
-        expect(SpawnerSystem.spawnerStatus(camp.id).state).toBe('mat_full');
-
-        DiscardBin.discardAll();
+        BoardState.removeToken(spawned.id);
+        GameState.state.board.bin = [spawned];
+        expect(MatCap.tokenCount()).toBe(1);
         run(5000);
         expect(BoardState.tokens().filter(t => t.typeId === 'fixture_passive')).toHaveLength(1);
     });

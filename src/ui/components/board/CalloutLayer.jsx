@@ -4,6 +4,7 @@ import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import { artRadiusOf } from '../../../config/matGeometry.js';
+import { tokenName } from '../../../config/registries/tokenRegistry.js';
 import { MAT_Z } from './matLayers.js';
 import { CALLOUT_MS, addCallout, anchorKeyOf, calloutText } from './callouts.js';
 
@@ -14,7 +15,8 @@ let nextId = 1;
 
 /**
  * Quick popups over the mat, one style: "! Spawned Oak Tree" over the spawner, an effect's name
- * over the Token it fired on, and the reason for a refused drop over the spot it was aimed at.
+ * over the Token it fired on, "Demolished Oak Tree" where a demolished Token stood, and the reason
+ * for a refused drop over the spot it was aimed at.
  * They appear, hold for a moment and fade (`callout-pop` in `components.css`); nothing to click,
  * and the pointer passes straight through. One layer and one subscription per event for the
  * whole mat, however many Tokens are drawn.
@@ -26,10 +28,10 @@ export const CalloutLayer = memo(function CalloutLayer() {
 
     useEffect(() => {
         const pending = timers.current;
-        const say = ({ anchorId = null, x = null, y = null, text }) => {
+        const say = ({ anchorId = null, x = null, y = null, typeId = null, text }) => {
             if (!text) return;
             const anchor = anchorId ? BoardState.getTokenById(anchorId) : null;
-            const at = anchor ? { x: anchor.x, y: anchor.y, typeId: anchor.typeId } : { x, y, typeId: null };
+            const at = anchor ? { x: anchor.x, y: anchor.y, typeId: anchor.typeId } : { x, y, typeId };
             if (!Number.isFinite(at.x) || !Number.isFinite(at.y)) return;
             const id = nextId++;
             const entry = { id, key: anchorKeyOf({ anchorId: anchor ? anchorId : null, ...at }), anchorId: anchor ? anchorId : null, ...at, text };
@@ -45,6 +47,10 @@ export const CalloutLayer = memo(function CalloutLayer() {
             }, UI_LISTENER),
             EventBus.subscribe(BOARD_EVENTS.EFFECT_FIRED, (p) => {
                 if (p?.instanceId && p.title) say({ anchorId: p.instanceId, text: calloutText.effect(p.title) });
+            }, UI_LISTENER),
+            // The Token is gone by now: said where it stood, over where its art was.
+            EventBus.subscribe(BOARD_EVENTS.TOKEN_DEMOLISHED, (p) => {
+                if (p?.typeId) say({ x: p.x, y: p.y, typeId: p.typeId, text: calloutText.demolished(tokenName(p.typeId)) });
             }, UI_LISTENER),
             // A drop the mat refused names a point, not a Token: say why where it was aimed.
             EventBus.subscribe(BOARD_EVENTS.TILE_EVENT_ALERT, (p) => {

@@ -558,6 +558,7 @@ export const MatToken = React.memo(function MatToken({
                     readTimer={detail?.turns || detail?.grows || resting ? readTimer : null}
                     gear={gear}
                     disallowed={!!detail?.disallowed}
+                    marked={!!detail?.marked}
                     dragProps={dragProps}
                 />}
 

@@ -17,11 +17,16 @@ import * as SpawnerSystem from '../../../systems/board/SpawnerSystem.js';
 import * as PassiveProduction from '../../../systems/board/PassiveProduction.js';
 import * as Respawn from '../../../systems/board/Respawn.js';
 import * as StationRecipe from '../../../systems/board/StationRecipe.js';
+import * as Demolition from '../../../systems/board/Demolition.js';
+import * as Landmarks from '../../../systems/board/Landmarks.js';
+import * as Placement from '../../../systems/board/Placement.js';
+import * as QuestTokens from '../../../systems/quests/QuestTokens.js';
 import { SettingsManager } from '../../../systems/core/SettingsManager.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { lifecycleLines } from './lifecycleLines.js';
 import { LandmarkBlock } from './LandmarkBlock.jsx';
 import { InspectBubbles } from './InspectBubbles.jsx';
+import { useTokenDetail } from '../board/useTokenDetail.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
@@ -41,6 +46,7 @@ export const TokenInspection = ({
     instanceId = null
 }) => {
     const def = getTokenType(typeId);
+    const marked = !!useTokenDetail(instanceId, def)?.marked;
 
     if (!def) return null;
 
@@ -80,10 +86,12 @@ export const TokenInspection = ({
     // top-level copy. This panel must read `config` and only `config`, so that it and the
     // engine read the same field; a top-level fallback would promise XP the engine cannot
     // award. (`??` stops at 0, so a Token with `config.xp: 0` shows correctly.)
-    const skillId = def.config?.skill;
+    // A marked Token is demolition work, whatever it was (`StationRecipe.workConfigOf`).
+    const work = marked ? Demolition.DEMOLITION_CONFIG : def.config;
+    const skillId = work?.skill;
     const skillDef = skillId ? getSkill(skillId) : null;
     const skillName = skillDef?.name || (skillId ? skillId.charAt(0).toUpperCase() + skillId.slice(1) : null);
-    const skillReq = def.config?.skillRequired ?? (skillName ? 1 : 0);
+    const skillReq = work?.skillRequired ?? (skillName ? 1 : 0);
 
     return (
         <div className="p-4 flex flex-col gap-4 text-xs text-gi-text">
@@ -132,7 +140,7 @@ export const TokenInspection = ({
             <div className="flex flex-col gap-2 pt-1 border-t border-gi-border/30">
                 <LandmarkBlock def={def} />
                 {skillName && (
-                    <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-[#181412] border border-white/10 text-xs">
+                    <div data-skill-req={skillId} className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-[#181412] border border-white/10 text-xs">
                         <div className="flex items-center gap-1.5 text-gi-muted">
                             <span>Skill Req</span>
                         </div>
@@ -157,6 +165,7 @@ export const TokenInspection = ({
 
                 {instanceId != null && <DisallowSwitch instanceId={instanceId} />}
                 {instanceId != null && <LifecycleLines instanceId={instanceId} />}
+                {instanceId != null && <DemolishControl instanceId={instanceId} />}
             </div>
 
 
@@ -246,6 +255,90 @@ const DisallowSwitch = ({ instanceId }) => {
     );
 };
 
+const ACTION_CLS = 'w-full px-3 py-2 rounded-lg border text-xs font-bold transition-colors cursor-pointer';
+
+/**
+ * How a board Token leaves the mat for good. A bounty: Dismiss (no reward; a tutorial step never
+ * leaves this way). Anything the engine lets the player mark (`Demolition.refusalOf` is null):
+ * Demolish, then Cancel demolition while marked; a hero holding Construction does the work, with
+ * no refund. Otherwise the engine's reason, as a plain line. While the dev layout tool is on, a
+ * placed Token (a landmark included) can also be removed at once.
+ */
+const DemolishControl = ({ instanceId }) => {
+    const view = useGameState(
+        () => {
+            const instance = BoardState.getTokenById(instanceId);
+            if (!instance) return null;
+            if (QuestTokens.isQuestToken(instance)) return { id: instance.id, bounty: QuestTokens.canDismiss(instance) };
+            const refusal = Demolition.refusalOf(instance);
+            return {
+                id: instance.id,
+                marked: Demolition.isMarked(instance),
+                refusal: refusal ? Demolition.REFUSAL_TEXT[refusal] : null,
+                devRemove: Landmarks.isLayoutEditing() && Demolition.canDemolish(instance)
+                    && BoardState.originOf(instance) === BoardState.ORIGIN.PLACED
+            };
+        },
+        [BOARD_EVENTS.TILE_CHANGED, ENGINE_EVENTS.STATE_CHANGED],
+        null,
+        { deps: [instanceId] }
+    );
+    if (!view) return null;
+
+    if ('bounty' in view) {
+        if (!view.bounty) return null;
+        return (
+            <button
+                type="button"
+                data-dismiss-bounty={view.id}
+                title="Take this bounty off the mat. No reward; a new one comes in its place."
+                onClick={() => QuestTokens.dismissBounty(view.id)}
+                className={cn(ACTION_CLS, 'bg-[#181412] border-white/10 text-gi-muted hover:text-gi-text hover:border-gi-gold/40')}
+            >
+                Dismiss bounty
+            </button>
+        );
+    }
+
+    return (
+        <>
+            {view.refusal ? (
+                <p data-demolish="refused" className="px-1 text-[11px] text-gi-muted leading-snug">{view.refusal}</p>
+            ) : view.marked ? (
+                <button
+                    type="button"
+                    data-demolish="cancel"
+                    title="Keep this Token. Its demolition so far is lost."
+                    onClick={() => Demolition.unmark(view.id)}
+                    className={cn(ACTION_CLS, 'bg-[#181412] border-gi-warning/60 text-gi-warning hover:border-gi-warning')}
+                >
+                    Cancel demolition
+                </button>
+            ) : (
+                <button
+                    type="button"
+                    data-demolish="mark"
+                    title="A hero with Construction takes it away. Nothing is refunded."
+                    onClick={() => Demolition.mark(view.id)}
+                    className={cn(ACTION_CLS, 'bg-[#181412] border-white/10 text-gi-danger hover:border-gi-danger/60')}
+                >
+                    Demolish
+                </button>
+            )}
+            {view.devRemove && (
+                <button
+                    type="button"
+                    data-dev-remove={view.id}
+                    onClick={() => Placement.removePlacedToken(view.id)}
+                    className={cn(ACTION_CLS, 'bg-[#181412] border-sky-400/40 text-sky-200 hover:border-sky-300')}
+                >
+                    Remove now (layout tool)
+                </button>
+            )}
+        </>
+    );
+};
+
 /** How often the lifecycle lines re-read their clocks while the panel is open. */
 const LIFECYCLE_REFRESH_MS = 1000;
 
@@ -268,6 +361,8 @@ function liveLifecycleSources() {
         selectedRecipe: StationRecipe.selectedRecipe,
         poolFor: StationRecipe.poolFor,
         originOf: BoardState.originOf,
+        demolishMs: Demolition.DEMOLISH_MS,
+        workerOf: BoardState.workerOf,
         dev: !!(import.meta.env?.DEV || SettingsManager.get('debugMode'))
     };
 }

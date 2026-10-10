@@ -49,12 +49,12 @@ export { QUEST_TOKEN_TYPE };
  * ## Two kinds, two rules
  * * **Tutorial quests**: one at a time, a hidden cap of its own. The first
  *   stands on the mat in a new game, and claiming one brings the next. They
- *   ignore the bounty cap and the timer, and cannot be binned
- *   (`DiscardBin.canBin`).
+ *   ignore the bounty cap and the timer, and cannot be dismissed.
  * * **Bounties**: QuestManager's random hunts and collections. At most
  *   {@link questCap} on the mat; below the cap a new one arrives every
- *   {@link questIntervalMs} of game time. Binning one (no refund: it was
- *   spawned) frees its place, so the timer can bring another.
+ *   {@link questIntervalMs} of game time. Dismissing one
+ *   ({@link dismissBounty}, no reward) frees its place, so the timer can bring
+ *   another.
  *
  * ## ⚠️ The clock runs on the tick's `delta`
  * `state.quests.clockMs`, saved, advanced by {@link tick} from the game loop's
@@ -523,6 +523,26 @@ export function claimQuest(instanceId, random = Math.random) {
     EventBus.publish(ENGINE_EVENTS.QUEST_CLAIMED, { questId: quest.id, instanceId, tutorial: !!quest.tutorial, rewardItems });
     publishChanged(instanceId);
     return { success: true, rewardItems };
+}
+
+/** Whether a quest Token may be dismissed: a bounty, never a tutorial step. */
+export function canDismiss(instance) {
+    return isQuestToken(instance) && !instance.quest.tutorial;
+}
+
+/**
+ * **Dismiss bounty `instanceId`**: it leaves the mat with no reward, and its
+ * place is free for the timer's next bounty.
+ *
+ * @returns {{success: boolean, reason?: string}}
+ */
+export function dismissBounty(instanceId) {
+    const instance = BoardState.getTokenById(instanceId);
+    if (!isQuestToken(instance)) return refuse('No quest there');
+    if (!canDismiss(instance)) return refuse('Tutorial quests cannot be dismissed.');
+    removeQuestToken(instance);
+    publishChanged(instanceId);
+    return { success: true };
 }
 
 /** Forget the runtime check state (tests). */

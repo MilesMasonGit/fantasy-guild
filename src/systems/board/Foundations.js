@@ -52,8 +52,7 @@ export function hasRoomToBuild(instance, typeId) {
 /**
  * What a built Token remembers of how it was built: `{ foundationTypeId, buildCost: [{ itemId,
  * quantity }] }`, the Foundation's type and the build cost the cycle actually paid, merged per
- * item. The discard bin's refund is half of both, and nothing else keeps it once the Foundation has
- * become the station. Only item inputs are kept; a zero or unnamed line is dropped.
+ * item. Nothing else keeps it once the Foundation has become the station. Only item inputs are kept; a zero or unnamed line is dropped.
  */
 export function builtFromRecord(foundationTypeId, paidInputs = []) {
     const merged = new Map();

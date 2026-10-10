@@ -6,18 +6,14 @@ import React from 'react';
 import { render, cleanup, fireEvent, act } from '@testing-library/react';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
-import * as BoardState from '../systems/board/BoardState.js';
-import * as DiscardBin from '../systems/board/DiscardBin.js';
-import * as TimedChanges from '../systems/board/TimedChanges.js';
 import * as NotificationSystem from '../systems/core/NotificationSystem.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { EngineContext } from '../ui/context/EngineContext';
-import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { DeckDndProvider, useEntityDrag } from '../ui/dnd/DndKit.jsx';
 import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
-import { NotificationsSidebar, BinSidebar } from '../ui/components/board/PopOutSidebars.jsx';
+import { NotificationsSidebar } from '../ui/components/board/PopOutSidebars.jsx';
 import { ShopDrawer } from '../ui/components/drawer/ShopDrawer.jsx';
 import { BankTab } from '../ui/components/drawer/BankTab.jsx';
 import { BankHeroPanel } from '../ui/components/dock/BankHeroPanel.jsx';
@@ -102,26 +98,6 @@ describe('⭐ the sidebars', () => {
         dragAbout(view.getByTestId);
         expect(renders.of('NotificationsSidebar')).toBeGreaterThan(0);
         expect(renders.of('ToastContainer')).toBe(0);
-    });
-
-    it('the bin: a drag that is not headed for it redraws the bin\'s contents not at all', () => {
-        for (const x of [300, 500]) {
-            const t = BoardState.addToken(BoardState.createTokenInstance('fixture_producer', tokenStartingUses('fixture_producer')), x, 300);
-            TimedChanges.setInHand(t.id, true);
-            expect(DiscardBin.binToken(t.id, { fromHand: true })?.success).toBe(true);
-            TimedChanges.setInHand(t.id, false);
-        }
-        const view = render(
-            h(EngineContext.Provider, { value: { GameState, EventBus } },
-                h(DeckDndProvider, null, h(Item), h(BinSidebar, { towardMat: 'right' })))
-        );
-        view.getByTestId('item').getBoundingClientRect = () => box(2000, 2000, 50, 50);
-        expect(view.container.querySelectorAll('[data-bin-slot-type]').length).toBe(2);
-        renders.start();
-        dragAbout(view.getByTestId);
-        expect(renders.of('DiscardBinPanel')).toBeGreaterThan(0);
-        // The empty slots are drawn by the bin itself and hold no drag hook of their own.
-        expect(renders.of('EmptySlot')).toBe(0);
     });
 });
 

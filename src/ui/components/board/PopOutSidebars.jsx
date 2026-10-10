@@ -2,94 +2,29 @@ import React, { useEffect, useRef, useState } from 'react';
 import { cn } from '../../utils/cn.js';
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
-import * as DiscardBin from '../../../systems/board/DiscardBin.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 import { useDrawn } from '../../dev/perf/drawSwitches.js';
-import { useActiveDrag, useLiveDropTarget } from '../../dnd/DndKit.jsx';
+import { useActiveDrag } from '../../dnd/DndKit.jsx';
 import ToastContainer from '../base/ToastContainer.jsx';
-import DiscardBinPanel, { binAccepts, dropIntoBin, useBinRefresh } from './DiscardBinPanel.jsx';
 import { SIDE_COLUMN_PX, NOTIFICATION_COLUMN, NOTIFICATION_STRIP_PX, columnWidthCss } from './boardConstants.js';
 
 /**
- * The Notifications and Bin sidebars. On the playmat each is a slim tab on the screen edge that
- * pops out over the mat while the pointer is on it, and closes when the pointer leaves; the mat
- * itself keeps the width the old column took.
- * ⚠️ The bin's panel stays mounted whether open or closed: closing only fades it, because its
- * slots are drag sources that must not vanish under a drag in progress. Its drop target is
- * switched off while it is closed, since dnd-kit ignores opacity and pointer-events and a hidden
- * target would otherwise still catch drops.
- * The notifications' toast list is put away once its panel has faded out: each toast is a
- * composited layer (its backdrop blur) and measures its layout whenever it redraws, which an
- * invisible panel would pay for on every notification. The tab's count follows the queue on
- * its own.
+ * The Notifications sidebar. On the playmat it is a slim tab on the screen edge that pops out over
+ * the mat while the pointer is on it, and closes when the pointer leaves; the mat itself keeps the
+ * width the old column took. It stays shut while anything is dragged.
+ * The toast list is put away once its panel has faded out: each toast is a composited layer (its
+ * backdrop blur) and measures its layout whenever it redraws, which an invisible panel would pay
+ * for on every notification. The tab's count follows the queue on its own.
  */
 
-/** How far from a sidebar's tab, towards the mat, a carried Token must come to open the bin. */
-export const SIDEBAR_APPROACH_PX = 64;
-
-const inside = (p, r) => p.x >= r.left && p.x <= r.right && p.y >= r.top && p.y <= r.bottom;
-
-/**
- * Whether a dragged pointer is at a sidebar. While it is shut: within `margin` of its tab on
- * the mat's side, anywhere along the height the open panel would cover. Once open: anywhere on
- * the tab or the panel. Rects are `{left, right, top, bottom}`; `towardMat` is the side of the
- * tab the mat is on.
- */
-export function pointerAtSidebar(point, { strip, panel, towardMat, open, margin = SIDEBAR_APPROACH_PX }) {
-    if (!point || !strip) return false;
-    const top = Math.min(strip.top, panel?.top ?? strip.top);
-    const bottom = Math.max(strip.bottom, panel?.bottom ?? strip.bottom);
-    if (open && panel) {
-        return inside(point, {
-            left: Math.min(strip.left, panel.left), right: Math.max(strip.right, panel.right), top, bottom
-        });
-    }
-    return inside(point, {
-        left: towardMat === 'left' ? strip.left - margin : strip.left,
-        right: towardMat === 'left' ? strip.right : strip.right + margin,
-        top, bottom
-    });
-}
-
-/**
- * Open state for one sidebar. Without a drag it follows the pointer over the tab or panel; during
- * a drag that `watches` it follows where the dragged pointer is instead (enter and leave are not
- * reported while a drag has the pointer).
- */
-function usePopOut({ towardMat, watches = null }) {
+/** Open state for one sidebar: it follows the pointer over the tab or panel, shut during a drag. */
+function usePopOut() {
     const wrapRef = useRef(null);
     const stripRef = useRef(null);
     const panelRef = useRef(null);
     const [hovered, setHovered] = useState(false);
-    const hoveredRef = useRef(false);
-    const [near, setNear] = useState(false);
-    const nearRef = useRef(false);
     const { activePayload } = useActiveDrag();
     const dragging = !!activePayload;
-    const followsDrag = dragging && !!watches?.(activePayload);
-
-    useEffect(() => { hoveredRef.current = hovered; }, [hovered]);
-
-    // Listens to the window itself rather than `DragPointerContext`, which rides on animation
-    // frames and so stalls whenever frames do; only a change of answer re-renders.
-    useEffect(() => {
-        const set = (next) => {
-            if (next === nearRef.current) return;
-            nearRef.current = next;
-            setNear(next);
-        };
-        if (!followsDrag) { set(false); return undefined; }
-        // A drag that starts on the open panel (a binned Token) finds it already open.
-        set(hoveredRef.current);
-        const onMove = (e) => set(pointerAtSidebar({ x: e.clientX, y: e.clientY }, {
-            strip: stripRef.current?.getBoundingClientRect(),
-            panel: panelRef.current?.getBoundingClientRect(),
-            towardMat,
-            open: nearRef.current
-        }));
-        window.addEventListener('pointermove', onMove, { passive: true });
-        return () => window.removeEventListener('pointermove', onMove);
-    }, [followsDrag, towardMat]);
 
     // Once the drag lets go, ask the page again where the pointer is.
     useEffect(() => {
@@ -97,11 +32,8 @@ function usePopOut({ towardMat, watches = null }) {
         setHovered(!!wrapRef.current?.matches?.(':hover'));
     }, [activePayload]);
 
-    const open = followsDrag ? near : (!dragging && hovered);
     return {
-        open, wrapRef, stripRef, panelRef,
-        /** Whether a watched drag has it open, as of the latest pointer move (before React redraws). */
-        openNow: () => followsDrag && nearRef.current,
+        open: !dragging && hovered, wrapRef, stripRef, panelRef,
         hoverProps: { onMouseEnter: () => setHovered(true), onMouseLeave: () => setHovered(false) }
     };
 }
@@ -174,7 +106,7 @@ export const NotificationsSidebar = ({ towardMat }) => {
     const [collapsed, setCollapsed] = useState(false);
     const toastsDrawn = useDrawn('notifications');
     const count = useToastCount();
-    const pop = usePopOut({ towardMat });
+    const pop = usePopOut();
     const listLive = useListLive(pop.open);
     return (
         <div
@@ -208,54 +140,7 @@ export const NotificationsSidebar = ({ towardMat }) => {
     );
 };
 
-/** What the bin sidebar opens for: a Token carried off the mat, or one carried out of the bin. */
-const watchesBin = (payload) => binAccepts(payload) || payload?.from?.binnedId != null;
-
-// The bin panel redraws only for its own reasons, not for the sidebar's per-frame drag checks.
-const BinPanel = React.memo(DiscardBinPanel);
-
-export const BinSidebar = ({ towardMat }) => {
-    const binDrawn = useDrawn('bin');
-    useBinRefresh();
-    const pop = usePopOut({ towardMat, watches: watchesBin });
-    const { activePayload } = useActiveDrag();
-    // Only a Token headed for the bin is dropped on it. A binned Token dragged back out must
-    // find the mat under the panel, so the target stays off while it is in the hand.
-    const dropsOpen = pop.open && !!activePayload && binAccepts(activePayload);
-    // A release on the open bin bins the Token even before dnd-kit has caught up with the bin
-    // opening (`useLiveDropTarget`). The same rule: only a Token headed for the bin.
-    const binEl = () => pop.panelRef.current?.querySelector('[data-discard-bin]') || null;
-    useLiveDropTarget({
-        accepts: binAccepts,
-        contains: (p) => {
-            const el = pop.openNow() ? binEl() : null;
-            return !!el && inside(p, el.getBoundingClientRect());
-        },
-        onDrop: (payload) => dropIntoBin(payload),
-        node: binEl
-    });
-    return (
-        <div
-            ref={pop.wrapRef}
-            data-sidebar="bin"
-            data-open={pop.open}
-            className="relative shrink-0 h-28"
-            {...pop.hoverProps}
-        >
-            <Tab label="Bin" count={`${DiscardBin.binContents().length}/${DiscardBin.BIN_SIZE}`} stripRef={pop.stripRef} open={pop.open} data-sidebar-tab />
-            <div
-                ref={pop.panelRef}
-                inert={!pop.open}
-                style={{ ...panelPlace(towardMat), bottom: 0 }}
-                className={cn(PANEL_CLS, 'p-1', pop.open ? 'opacity-100' : 'opacity-0 pointer-events-none')}
-            >
-                {binDrawn && <BinPanel dropDisabled={!dropsOpen} />}
-            </div>
-        </div>
-    );
-};
-
-/** The notification side's strip on the playmat: the Notifications and Bin tabs. */
+/** The notification side's strip on the playmat: the Notifications tab. */
 export const NotificationSidebars = ({ menuRight = false }) => {
     // The column sits beside the nav, so with the nav on the right it is on the left edge.
     const towardMat = menuRight ? 'right' : 'left';
@@ -269,7 +154,6 @@ export const NotificationSidebars = ({ menuRight = false }) => {
                 style={{ height: SIDE_COLUMN_PX, maxHeight: '100%' }}
             >
                 <NotificationsSidebar towardMat={towardMat} />
-                <BinSidebar towardMat={towardMat} />
             </div>
         </aside>
     );

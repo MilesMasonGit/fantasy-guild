@@ -17,7 +17,7 @@ import './fixtures/fixtureItems.js';
 /**
  * The quest machinery QuestManager keeps since B6.1: the event reports,
  * bounty content, rewards and counting one action once — now counted on quest
- * Tokens on the mat. The Tokens' own rules (cap, clock, tutorial chain, bin,
+ * Tokens on the mat. The Tokens' own rules (cap, clock, tutorial chain, dismiss,
  * saves) are `QuestTokens.test.js`; the tutorial's steps are driven through
  * the real systems in `QuestTutorialChain.test.js`.
  */
@@ -174,7 +174,7 @@ describe('Quest System (quest Tokens since B6.1)', () => {
         }
     });
 
-    it('abandoning is retired: tutorials refuse as before, bounties point at the bin (B6.1)', () => {
+    it('abandoning is retired: tutorials refuse as before, bounties point at Dismiss', () => {
         const tutorialRes = QuestManager.abandonQuest('tut_recruit');
         expect(tutorialRes.success).toBe(false);
         expect(tutorialRes.reason).toBe('Tutorial quests cannot be abandoned');
@@ -182,7 +182,7 @@ describe('Quest System (quest Tokens since B6.1)', () => {
         const b = bounty({ type: 'hunt', targetType: 'enemy_hunted', enemyId: 'token_goblin', requiredCount: 3 });
         const res = QuestManager.abandonQuest(b.id);
         expect(res.success).toBe(false);
-        expect(res.reason).toMatch(/bin/);
+        expect(res.reason).toMatch(/Dismiss/);
         expect(find(b.id)).toBe(b);   // still on the mat, no cooldown slot
         expect(GameState.state.quests.active).toEqual([]);
     });

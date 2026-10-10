@@ -187,6 +187,17 @@ export function passiveHoverLines(instance, src) {
     ];
 }
 
+/** A marked Token's countdown, once a hero is on it. */
+function demolitionLine(instance, src) {
+    const worked = !!src.workerOf?.(instance.id);
+    const left = (Number(src.demolishMs) || 0) - (Number(instance.cycleElapsedMs) || 0);
+    return {
+        label: 'Marked for demolition',
+        value: worked ? `${formatDuration(Math.max(0, left))} left` : 'Waiting for a hero with Construction',
+        tone: TONE.WARNING
+    };
+}
+
 /**
  * The lifecycle rows for one board Token.
  *
@@ -201,6 +212,8 @@ export function passiveHoverLines(instance, src) {
  *   originOf: (instance: object) => string,
  *   passive?: (instance: object) => { lines: object[], nextInMs: number }|null,
  *   respawn?: (instance: object) => { mode: string, into: string|null, afterMs: number, resting: boolean, inMs: number|null }|null,
+ *   demolishMs?: number,
+ *   workerOf?: (instanceId: string) => string|null,
  *   dev?: boolean
  * }} src
  * @returns {LifecycleLine[]}
@@ -209,6 +222,13 @@ export function lifecycleLines(instance, src) {
     const def = instance ? src.typeOf(instance.typeId) : null;
     if (!instance || !def) return [];
     const out = [];
+
+    // A marked Token is demolition work and nothing else: its own clocks stand still.
+    if (instance.demolish === true) {
+        out.push(demolitionLine(instance, src));
+        if (src.dev) out.push({ label: 'Origin (dev)', value: src.originOf(instance), tone: TONE.MUTED });
+        return out;
+    }
 
     if (instance.turnedFrom) {
         // A turned Token runs only its turn back (TimedChanges): it rolls on the

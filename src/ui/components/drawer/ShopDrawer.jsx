@@ -24,7 +24,7 @@ import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
  * back over the drawer, not just when the drag ends. A Shop Token let go over the lip (or the
  * reopened drawer) is a plain cancel ({@link pointerOverShopDrawer}).
  * - **Rows that cannot be bought are dimmed, say why in red, and cannot be picked up.** They
- * re-read on every Bank, cap or bin change, and on a Mat Tuner cap change.
+ * re-read on every Bank or cap change, and on a Mat Tuner cap change.
  * No inspect panel. Prices use the standard `EntityRibbon` item row, have / need, short in
  * red.
  */
@@ -74,10 +74,10 @@ export function shopDrawerTransform(state) {
 
 export const shopRowPayload = (typeId) => ({ typeId, from: { shop: typeId } });
 
-/** What re-reads the catalogue: the Bank, the cap and the bin (binned Tokens count). */
+/** What re-reads the catalogue: the Bank and the cap. */
 const SHOP_EVENTS = Object.freeze([
     ENGINE_EVENTS.TOKEN_PURCHASED, ENGINE_EVENTS.INVENTORY_UPDATED, ENGINE_EVENTS.STATE_CHANGED, ENGINE_EVENTS.GAME_LOADED,
-    BOARD_EVENTS.BIN_CHANGED, BOARD_EVENTS.TOKEN_PLACED, BOARD_EVENTS.TOKEN_DEPLETED
+    BOARD_EVENTS.TOKEN_PLACED, BOARD_EVENTS.TOKEN_DEPLETED
 ]);
 
 function useShopRefresh(active) {

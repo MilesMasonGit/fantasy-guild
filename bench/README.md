@@ -73,7 +73,9 @@ names every field that differs and shows both values. The fingerprint is:
   order and cycle progress, in arrival order;
 - `bankHash` (every item and quantity), `heroHash` (each hero's status, HP,
   energy, skills and XP, statuses, equipment, flag, claimed Token and walking
-  body), `spriteHash` (every loot sprite, exact point included), `binHash`;
+  body), `spriteHash` (every loot sprite, exact point included), `binHash`
+  (the discard bin's; the bin is gone, so it always reads the empty hash
+  `811c9dc5`, kept so the baseline compares unchanged);
 - **`randomDraws`** — how many numbers the seeded `Math.random` handed out
   (`lib/prelude.mjs`). The most sensitive single number: a change that consumes
   randomness in a different order changes it even when the end state happens
@@ -489,8 +491,6 @@ away from open drawers.
 | hero dock → mat | a dock hero → an open spot | the hero's flag planted within 60 u of the aim (or pinned) |
 | flag → mat | a planted flag → an open spot | the same |
 | Token → mat | a Token on the mat → an open spot | the Token stands within 150 u of the aim |
-| Token → bin | a Token → the discard bin | the Token is in the bin |
-| bin → mat | a bin slot → an open spot | the Token is back on the mat |
 | Shop row → mat | an affordable Shop row → an open spot | a new Token of that type stands there (it is then removed, so the mat cap never fills) |
 | Bank item → dock hero | an equippable Bank item → a hero who can wear it | the hero wears it (their gear is cleared first) |
 
@@ -500,8 +500,7 @@ fills the notification column) on top of any callouts S2 is showing. In both, ev
 must also pick up the right thing. The Perf HUD is hidden first (it is the
 harness's own overlay and would cover the Shop's lower rows). Set-up is done
 through the game's functions, never as a drag: Bank stock for the Shop's prices
-and equippable items, unequipping before an equip, refilling or emptying the
-bin, removing a bought Token. Both passes run on one page, kinds in the order
+and equippable items, unequipping before an equip, removing a bought Token. Both passes run on one page, kinds in the order
 of the table, so the overlays pass starts with whatever the plain pass left
 behind (for example a hero sheet opened and closed by the equip drops). That is
 deliberate: leftovers like that are how a player meets a drag bug. The "other
@@ -560,9 +559,9 @@ p50/p95, **frame stalls** per drag phase and the grouped **failure causes**:
 
 | Command | What it does | Time |
 |---|---|---|
-| `npm run bench:drag` | perf build, 50 drags per kind, both passes (700 drags) | ~19 min |
+| `npm run bench:drag` | perf build, 50 drags per kind, both passes (500 drags) | ~14 min |
 | `npm run bench:drag -- --n=10` | drags per kind and pass | |
-| `npm run bench:drag -- --kinds=token,flag` | some kinds: `dockHero`, `flag`, `token`, `tokenToBin`, `binToMat`, `shop`, `equip` | |
+| `npm run bench:drag -- --kinds=token,flag` | some kinds: `dockHero`, `flag`, `token`, `shop`, `equip` | |
 | `npm run bench:drag -- --no-overlays` | the plain pass only | |
 | `npm run bench:drag -- --dev` | the dev build: React component names for the blockers | |
 | `npm run bench:drag -- --board=S3` | the torture board (~320 Tokens) instead of S2: carry stalls on a crowded mat | |

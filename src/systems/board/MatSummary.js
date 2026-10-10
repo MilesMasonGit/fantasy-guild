@@ -17,7 +17,7 @@ export const TOKEN_STATUS = Object.freeze({
  *
  * Rows with a Token missing items (`missing`) come first; the rest are grouped by skill section
  * the way the Shop is (sections by name, General last), a spawner placed right before the Tokens
- * it spawns. Binned Tokens still count in `MatCap` until Discard all, so they get their own count.
+ * it spawns.
  *
  * Pure: the caller hands in the Tokens and every reader. Ties sort by name then type id, so the
  * list never shuffles between refreshes.
@@ -28,21 +28,19 @@ export const TOKEN_STATUS = Object.freeze({
  *   isExcluded?: (instance: object) => boolean,
  *   statusOf?: (instance: object) => { status: string, missing?: boolean },
  *   layoutOf?: (typeId: string) => { section: string, anchor: string, rank: number },
- *   sectionName?: (section: string) => string,
- *   binned?: object[]
+ *   sectionName?: (section: string) => string
  * }} readers  `layoutOf`: the section a type is listed under, the name it sorts beside (a spawned
  *   type sorts under its spawner's name) and `rank` (0 spawner or alone, 1 spawned).
  * @returns {{
  *   total: number,
  *   pinned: Row[],
- *   sections: { section: string, name: string, rows: Row[] }[],
- *   binned: { count: number }
+ *   sections: { section: string, name: string, rows: Row[] }[]
  * }} where Row is `{ typeId, name, count, working, idle, blocked, off, missing }`
  */
 export function summariseMat(tokens = [], {
     nameOf, isExcluded, statusOf = () => ({ status: TOKEN_STATUS.IDLE }),
     layoutOf = () => ({ section: GENERAL_SECTION, anchor: '', rank: 0 }),
-    sectionName = (s) => s, binned = []
+    sectionName = (s) => s
 } = {}) {
     const byType = new Map();
     for (const t of tokens) {
@@ -88,8 +86,7 @@ export function summariseMat(tokens = [], {
     return {
         total: rows.reduce((n, r) => n + r.count, 0),
         pinned,
-        sections: sectionList,
-        binned: { count: (binned || []).filter(t => t?.typeId && !isExcluded?.(t)).length }
+        sections: sectionList
     };
 }
 

@@ -82,7 +82,7 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
  * (inputs, charges, no recipe) does not refuse: the hero can work it once it is fixed.
  * - While pinned the flag's point is the Token's centre: `BoardState` moves it with the Token, so a
  * moved Token carries its flag and the hero walks after it.
- * - When the pinned Token leaves the mat (used up, removed, binned, or turned into something else:
+ * - When the pinned Token leaves the mat (used up, removed, demolished, or turned into something else:
  * a transform is a fresh instance, so a tree becoming a stump counts) the pin lapses at the start
  * of the next `assign`: the flag stays at the Token's last spot as a normal area flag and the hero
  * chooses again that same pass. Never re-pinned by itself.
@@ -618,7 +618,7 @@ function keepOrRelease(r, heroId, dirty) {
 }
 
 /**
- * A pin lapses when its Token leaves the mat: used up, removed, binned, or transformed (a fresh
+ * A pin lapses when its Token leaves the mat: used up, removed, demolished, or transformed (a fresh
  * instance, `EffectActions.transformInstance`). The flag stays where it stands (the Token's last
  * spot, since a pinned flag's point follows its Token) as a normal area flag, and the hero looks
  * for other work in its radius on this same pass. Never re-pinned by itself.

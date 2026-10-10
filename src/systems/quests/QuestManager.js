@@ -238,13 +238,13 @@ export const QuestManager = {
     },
 
     /**
-     * ⚠️ Retired with the sidebar: a bounty is discarded by dragging its Token
-     * to the bin, with no cooldown. This only returns a refusal and has no caller.
+     * ⚠️ Retired with the sidebar: a bounty is dismissed from its Token's
+     * inspection (`QuestTokens.dismissBounty`). This only returns a refusal and has no caller.
      */
     abandonQuest(questId) {
         const token = findQuestToken(questId);
         if (token?.quest?.tutorial) return { success: false, reason: 'Tutorial quests cannot be abandoned' };
-        return { success: false, reason: 'Drag a quest to the bin to discard it' };
+        return { success: false, reason: 'Dismiss a bounty from its quest Token' };
     },
 
     /**

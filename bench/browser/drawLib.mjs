@@ -7,7 +7,7 @@ import { median } from '../lib/stats.mjs';
 export const DRAW_SWITCHES = [
     'rings', 'bubbles', 'alerts', 'speech', 'tooltips',
     'heroAnim', 'enemyAnim', 'walkDraw', 'itemFlight',
-    'notifications', 'bin', 'dock', 'drawers',
+    'notifications', 'dock', 'drawers',
     'spriteFx', 'background', 'particles', 'spawnMotion'
 ];
 

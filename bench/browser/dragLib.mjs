@@ -8,8 +8,6 @@ export const KINDS = [
     { id: 'dockHero', label: 'hero dock → mat', needs: 'mat' },
     { id: 'flag', label: 'flag → mat', needs: 'mat' },
     { id: 'token', label: 'Token → mat', needs: 'mat' },
-    { id: 'tokenToBin', label: 'Token → bin', needs: 'mat' },
-    { id: 'binToMat', label: 'bin → mat', needs: 'mat' },
     { id: 'shop', label: 'Shop row → mat', needs: 'shop' },
     { id: 'equip', label: 'Bank item → dock hero', needs: 'bank' }
 ];
