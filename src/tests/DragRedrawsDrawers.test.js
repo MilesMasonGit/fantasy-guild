@@ -95,6 +95,8 @@ describe('⭐ the sidebars', () => {
                 h(DeckDndProvider, null, h(Item), h(NotificationsSidebar, { towardMat: 'right' })))
         );
         view.getByTestId('item').getBoundingClientRect = () => box(2000, 2000, 50, 50);
+        // Open, so the toast list is drawn (a shut panel draws none); the drag then closes it.
+        fireEvent.mouseEnter(view.container.querySelector('[data-sidebar="notifications"]'));
         expect(view.container.querySelector('[data-toasts]')).not.toBeNull();
         renders.start();
         dragAbout(view.getByTestId);
