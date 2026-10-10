@@ -122,6 +122,7 @@ before and after, S2 at 4× (perf build). Measure, don't fix.
 | O3 second look | 2026-10-08 | 56.2 → 63.1 | 19.61 → 17.70 | No change expected or claimable: the summary is on no scene (it exists only after a shown catch-up). Back-to-back A/B in a worktree while other sessions loaded the machine (CPU ~36 % busy with nothing of ours running); both runs REGRESSED against the baseline at 4×, the before run worse. The summary now draws Item Bars (EntityRibbon): a hovered bar scales its 32 px sprite to 2× and crossfades two count spans, opacity and transform only; the confirmation swaps the two buttons for two others. Same translucent cover over the live mat until closed. |
 | D2 Hit-testing (brief 50) | 2026-10-09 | 76.7 → 55.0 | 14.41 → 20.95 | No change. The after run read slower on every busy scene at 4× alike (S3, Bank, Shop, notify, loot too) on a busier machine (it took 40 min against 23); an interleaved A/B minutes later (`--ab`, A,B,B,A, at 4×) read D2 58.8 fps / 18.95 ms against the build before it 59.0 / 19.16 ms on S2 (S3 17.4 / 16.3 fps, Bank 64.5 / 63.1 fps). At 1× nothing moved (S2 work 2.00 → 2.01 ms). D2 changes the press path (once per press) and the mat cell's overflow (clip, not hidden); the last press fix (`2a60ee69`) is press-only and was not in the measured build. |
 | D3 Redraws (brief 50) | 2026-10-09 | 55.0 → 62.0 | 20.95 → 18.11 | No change. The compare run flagged S2, S3, Bank, Shop, loot and hero sheet at 4× against the 2026-10-07 baseline (84 fps on S2, which no run this week has read), and S3's in-budget share at 1× (79.3 %; D2's run read 80.9 %). Interleaved A/Bs straight after against the build before D3 (`e25a0b2d`; `--ab`, A,B,B,A, at 4×), D3 / before: S2 60.3 / 60.0 fps (work 19.05 / 19.01 ms), Shop open 57.0 / 60.8 fps and on a second A/B 57.3 / 57.2, loot 32.3 / 30.5, notifications 53.1 / 52.0. At 1× S2 work 2.06 ms, 99.6 % in budget. No draw scene drags. |
+| P2-1 Cycle ring (brief 60) | 2026-10-10 | 55.3 → 68.0 | 21.30 → 16.15 | cap128 at 4×, not S2: interleaved A/B against the build before (`86fbf8ad`), A,B,B,A twice, every window at a delivered 4.07–4.89×; within 16.7 ms 35.3 → 51.8 %. At 1× 2.65 → 2.35 ms, 98.7 % within 6.06 ms both. The rings step together ten times a second instead of each on its own frames; the `bubbles` switch still saves ~1 ms at 1× (see "P2-1 result"). |
 
 ## Drag baseline (`npm run bench:drag`, perf build, S2, 50 drags per kind and pass)
 
@@ -529,6 +530,50 @@ the other. P2-5 and P2-7 both touch the mat's stacking: one after the other.
 bench, a test suite or a build moves every number, and the 4× throttle with
 them), and every slice's A/B serves the build before it from its own worktree
 and port.
+
+### P2-1 result: the cycle ring (2026-10-10)
+
+**What changed** (`f737c422`): a running cycle ring is written only on the shared
+step clock (`frameClock.onStep`: a timer, then one animation frame; ten steps a
+second, every ring in the same frame). An engine progress event only moves the
+ring's model, so a time-skip draws once, where its last progress put it. Blocked
+rings freeze, `CYCLE_COMPLETE` restarts, and a ring that remounts mid-cycle
+(after a drag) is drawn at once. The inspection's Time and XP rings read the mat
+ring's cycle (`cycleShare.js`) and step with it; they used to jump every 300 ms on
+the engine's progress while the mat ring swept. The look is the same ring: a still
+of the same Token mid-cycle differs in 3 of 2,025 pixels (the arc's end, 0.511
+against 0.512); the motion is ten steps a second (a 12 s cycle moves under a pixel
+a step at play size, a 3 s cycle about 3 px). Guards: `CycleRingSteps.test.js`
+(each guard fails when its part is neutered), `FrameClock.test.js`.
+
+**Measured** (`bench:draw --only=cap128 --ab`, the build before served from its own
+worktree, A,B,B,A twice, quiet PC; before → after):
+
+| | fps | Frame work p50 / p95 / p99 | ≤ 6.06 ms | ≤ 16.7 ms | Interval p99.9 |
+|---|---|---|---|---|---|
+| 1× | 164.9 → 165.0 | 2.65 / 5.11 / 6.31 → 2.35 / 4.95 / 6.21 ms | 98.7 → 98.7 % | 100 → 100 % | 6.3 → 6.3 ms |
+| 4× (all 8 windows at a delivered 4.07–4.89×) | 55.3 → 68.0 | 21.30 / 42.6 / 53.3 → 16.15 / 39.0 / 50.1 ms | 0.2 → 14.0 % | **35.3 → 51.8 %** | 54.6 → 51.6 ms |
+
+A second sample of the same after-build (the B side of a later A/B): 1× 2.21 ms,
+4× 15.66 ms, 53.1 % within 16.7 ms. S2 at 1× (A,B,B,A): 2.26 → 2.11 ms (noise-sized).
+The Perf HUD on the dev build (cap128, 1×, A,B,B,A): 2.61 → 2.31 ms, 97.9 → 98.3 %
+within 6.06 ms. **The mechanism** (`bench:profile --scene=cap128 --cpu=4`, one traced
+window each): the frame clock's 18.8 ms a second at 41.5 calls (every frame) became
+6.5 ms at 10.2 steps plus a 1.0 ms timer; Paint events 597 → 401 a second; the main
+thread's cost a frame 24.0 → 17.6 ms.
+
+**Not done by it: the bubbles still cost about 1 ms at 1×.** The cost table
+(`--switches --only=cap128`, 1×) read `bubbles` saving 1.01 ms of 2.41 before (noise
+0.11) and 0.99 ms of 2.30 after (noise 0.21). Cause #1 put the bubbles' cost on the
+sweep; at 1× the sweep was ~0.3 ms of it. The rest is the bubbles being there on every
+frame something else changes (hero sprites, hit loops: P2-3, P2-5): with them off
+(after-build, traced at 4×) a frame's Layerize is 2.8 ms against 3.6, Paint 0.9 against
+1.8 ms, and layouts 5.5 against 11.7 a second (each worked ring's number changes once
+a second). Making each ring a relayout boundary (`contain: size layout`) halved the
+dirty objects per layout and cut traced layout time by a third, but an A/B (A,B,B,A
+twice, 1× and 4×) showed no change (1× 2.31 against 2.21 ms, 4× 15.2 against 15.7 ms),
+so it was dropped. Against "smooth" the 128 board at 4× is now at ~52 % of frames
+within 16.7 ms (the line is 95 %).
 
 ### Owner questions
 
