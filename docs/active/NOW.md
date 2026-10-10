@@ -109,9 +109,34 @@ disposable: remove junctions first, never `rm -rf` through one.
 *Owner CMS to-do:* see the "Owner CMS to-do" lines below (maps and
 modifiers, respawn blocks, the 25 endgame sites and the Starter Camp layout).
 
-*After the crunch:* the workflow review (done in chat 2026-10-10; the owner's
-decisions to be recorded here) and folding in the planning session's docs
-(branch `planning`, worktree `pp`).
+*Testing branch for the owner (2026-10-10):* `crunch/preview` = `main` +
+A6 + A10 + A3b + A11, gate green (4651 tests, build), checked out in the
+owner's folder for play-testing while the director is away. Two seams were
+fixed on it (fixed Tokens respect the dev layout tool for landmarks; the
+fixed-Token tests no longer import the removed bin): **carry those two
+commits over when A10 and A3b merge** (`git log main..crunch/preview`).
+Don't CMS-sync while on it. The owner's testing notes go to the eye-check
+batches.
+
+*Process review (owner, 2026-10-10; a second review with a fresh-eyes agent
+on Tuesday):*
+- Keep a **separate planning agent** for concepts; the director focuses on
+  implementation and verification.
+- **Cheaper subagents**: the director already briefs fully and checks; use
+  lighter models and lower thinking for menial or well-specified work, spot-
+  checked after. Reconsider the tiers in CLAUDE.md.
+- **Spread the work over five days, not three**: fewer subagents at once;
+  smooth consumption so session limits are not hit; a weekly handoff rhythm
+  (one director session used a week's tokens at 75 % context).
+- **Benches only in the owner's downtime**: weekdays 13:00–17:00 (at work)
+  and 01:00–07:00 (asleep), Vancouver time. Cheaper laptops arrive in a
+  month or two.
+- **Communication**: a living Gantt-style view of the implementations, and
+  an executive summary morning and night (where we are, what is next, what
+  the owner needs to do).
+- **Eye-checks**: a short checklist file per batch in `docs/active/eyecheck/`.
+- **Planning docs**: finish this wave, regroup, plan the next, apply lessons,
+  start fresh; don't fold the `planning` branch in mid-wave.
 
 **Status (2026-10-10):****Status (2026-10-10):** merged to `main`: Atlas A1, A2, A3a (demolition
 engine), A4, A5, A7 (Starter Camp as content; its sites count toward the cap),
