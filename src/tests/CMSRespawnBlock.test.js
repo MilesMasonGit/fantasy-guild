@@ -23,7 +23,7 @@ import TokenEditor from '../../cms/src/components/editors/TokenEditor.jsx';
  */
 
 const DATA = path.resolve(__dirname, '../../data');
-const FILES = ['items.json', 'tokens.json', 'maps.json', 'tokenRecipes.json', 'effects.json'];
+const FILES = ['items.json', 'tokens.json', 'tokenRecipes.json', 'effects.json'];
 const read = (file) => fs.readFileSync(path.join(DATA, file), 'utf8').replace(/\r\n/g, '\n');
 const raw = Object.fromEntries(FILES.map((f) => [f, asLoaded(f, read(f))]));
 
@@ -34,7 +34,7 @@ function workspaceFromFiles(files) {
     const recipePools = {};
     for (const recipe of files['tokenRecipes.json']) (recipePools[recipe.skill || 'general'] ||= []).push(recipe);
     return {
-        items: files['items.json'], tokens: files['tokens.json'], maps: files['maps.json'],
+        items: files['items.json'], tokens: files['tokens.json'],
         effects: files['effects.json'], recipePools,
     };
 }
