@@ -14,6 +14,8 @@ import { RESTRICTION_KINDS } from '../../config/registries/restrictionPalette.js
 import { getAllStatusEffects } from '../../config/registries/statusRegistry.js';
 import { getAllTokenTypes } from '../../config/registries/tokenRegistry.js';
 import { registerEffects } from '../../config/registries/effectRegistry.js';
+import { expandBearer } from '../../systems/effects/effectLibrary.js';
+import { toolNamer } from '../../systems/effects/toolNames.js';
 
 /**
  * ⭐ **Every rules sentence the game can print, as a list of cases** (Rules Line
@@ -48,6 +50,14 @@ export const shippedNames = {
     token: (id) => shippedTokens[id]?.name || getAllTokenTypes?.()?.[id]?.name || id,
     item: (id) => shippedItems[id]?.name || id,
     effect: (id) => shippedEffects[id]?.name || id
+};
+
+/** The player's names: the shipped ones plus tool requirements in words ("an Iron Pickaxe or better"), never a tier. */
+export const playerNames = {
+    ...shippedNames,
+    tool: toolNamer(Object.fromEntries(
+        Object.entries(shippedTokens).map(([id, def]) => [id, expandBearer(def, shippedEffects)])
+    ))
 };
 
 /** Something stable to name a Token, an item and an effect by in synthetic cases. */
@@ -230,6 +240,15 @@ export function buildCorpus() {
     addS('requires:tag', S(KEYWORD.REQUIRES, { payload: { tag: 'net', minTier: 3 } }));
     addS('requires:tag-no-tier', S(KEYWORD.REQUIRES, { payload: { tag: 'net' } }));
     addS('requires:blank', S(KEYWORD.REQUIRES, { payload: {} }));
+    // The same tool sentences as the player reads them.
+    addS('acts-as:player', S(KEYWORD.ACTS_AS, { payload: { tag: 'pickaxe', tier: 2 } }), playerNames);
+    addS('acts-as:player:vowel', S(KEYWORD.ACTS_AS, { payload: { tag: 'anvil' } }), playerNames);
+    addS('acts-as:player:blank', S(KEYWORD.ACTS_AS, { payload: {} }), playerNames);
+    for (const minTier of [1, 2, 3, 4, 5, 9]) {
+        addS(`requires:tag:player:${minTier}`, S(KEYWORD.REQUIRES, { payload: { tag: 'pickaxe', minTier } }), playerNames);
+    }
+    addS('requires:tag:player:unknown-tool', S(KEYWORD.REQUIRES, { payload: { tag: 'fishing_net', minTier: 2 } }), playerNames);
+    addS('requires:blank:player', S(KEYWORD.REQUIRES, { payload: {} }), playerNames);
     addS('restocks', S(KEYWORD.RESTOCKS, { payload: { tokenIds: [FIX.token, 'fixture_seafood_producer'] } }), shippedNames);
     addS('restocks:blank', S(KEYWORD.RESTOCKS, { payload: {} }));
     addS('converts:blank', S(KEYWORD.CONVERTS, { payload: {} }));

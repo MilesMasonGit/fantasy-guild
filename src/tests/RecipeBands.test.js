@@ -182,7 +182,8 @@ describe('StationGearBadge', () => {
         expect(container.textContent).toContain('Roast');
         expect(container.textContent).toContain('Makes 1× Carrot');
         expect(container.textContent).toContain('Needs 2× Carrot');
-        expect(container.textContent).toContain('ctx_pie_tin (tier 2)');
+        // Nothing in the fixtures offers a pie tin above the bottom rung, so there is no name to give.
+        expect(container.textContent).toContain('Beside a stronger ctx pie tin');
     });
 
     it('opens the picker when clicked', () => {
