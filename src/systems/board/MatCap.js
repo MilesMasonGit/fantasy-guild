@@ -9,8 +9,8 @@ import * as BoardState from './BoardState.js';
  * How many Tokens the mat may hold. Every Token counts, placed or spawned, on the mat or waiting in
  * the discard bin (a binned Token counts until it is discarded, so the bin cannot dodge the cap).
  * The Guild Hall and quest Tokens never count: the Hall is always there, and quests are bounded by
- * the quest cap. Landmarks (the endgame sites) never count either. The cap is the guild's, but it
- * counts only the Region the guild is in: the others are frozen in the Atlas, off the mat.
+ * the quest cap. Landmarks (the endgame sites) count like any placed Token. The cap is the guild's,
+ * but it counts only the Region the guild is in: the others are frozen in the Atlas, off the mat.
  *
  * Who asks: the Shop and a station making a Token (`Placement.hasRoomForProduct`) ask {@link
  * canPlaceMore} before adding one; a spawner waits while it says no (`SpawnerSystem`). Nothing is
@@ -26,17 +26,16 @@ export function isGuildHall(instance) {
     return instance?.typeId === 'token_guild_hall' || !!getTokenType(instance?.typeId)?.isGuildHall;
 }
 
-/** Whether a Token is a landmark: a type marked `landmark`, standing outside the cap. */
+/** Whether a Token is a landmark: a type marked `landmark` (an endgame site). */
 export function isLandmark(instance) {
     return isLandmarkType(instance?.typeId);
 }
 
-/** Whether a Token counts toward the cap: not a quest, the Guild Hall or a landmark. One type lookup. */
+/** Whether a Token counts toward the cap: not a quest or the Guild Hall. One type lookup. */
 export function countsTowardCap(instance) {
     const typeId = instance?.typeId;
     if (!typeId || typeId === QUEST_TOKEN_TYPE || typeId === 'token_guild_hall') return false;
-    const def = getTokenType(typeId);
-    return !def?.isGuildHall && def?.landmark !== true;
+    return !getTokenType(typeId)?.isGuildHall;
 }
 
 /**

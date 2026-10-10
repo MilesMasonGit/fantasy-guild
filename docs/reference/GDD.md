@@ -86,11 +86,11 @@ Today the pull is skill levels, Guild Hall upgrades and promotions.
 - **Token cap: 128 Tokens** to start (owner, Atlas D-9: a Guild Hall upgrade
   will add 16 a rank, up to 256; not built yet). The cap is the guild's but
   counts only the Region the guild is in (§10): every Token there, placed or
-  spawned, including any in the discard bin; not quests, the Hall, or
-  **landmarks** (Token types marked `landmark`: the endgame sites, Atlas D-1;
-  none are authored yet; a landmark is also never pushed, cannot be moved by
-  the player or demolished, and its inspection shows what its challenge needs,
-  `Landmarks.js`). Enforced by the Shop and by recipes that make Tokens;
+  spawned, including any in the discard bin, and the **landmarks** (Token
+  types marked `landmark`: the endgame sites, Atlas D-1; none are authored
+  yet); not quests or the Hall. A landmark is never pushed, cannot be moved by
+  the player or demolished, and its inspection shows what its challenge needs
+  (`Landmarks.js`). Enforced by the Shop and by recipes that make Tokens;
   a spawner waits while the mat is at the cap (as well as at its family cap).
   A save already over the cap keeps everything; adding waits until it is
   under. *(`MatCap.js`)*
@@ -650,6 +650,6 @@ crunch plan):
 | Terrain | Returns for the Atlas after a major rework, later in the crunch once the Atlas works. |
 | Atlas timing | Moves into the crunch, after deep optimization. |
 | Drops over a drawer | A mat Token or flag dropped over the Shop drawer or the hero sheet lands on the mat underneath; intended (owner, certification 2026-10-07). |
-| Token cap | 128 to start, +16 per Guild Hall rank up to 256 (Atlas D-9); spawned Tokens count, endgame sites don't (D-1); binned Tokens count toward spawner caps (T-101, T-102). |
+| Token cap | 128 to start, +16 per Guild Hall rank up to 256 (Atlas D-9); spawned Tokens and endgame sites count (D-1); binned Tokens count toward spawner caps (T-101, T-102). |
 | Trickle | Renamed **Passive Production**, one 5-minute timer; the Wishing Well joins it, about 10 Water per 5 min (T-099). |
 | Markets | **Cut for now**: items stay the only currency, no exchange rates; revisit if a real need appears (owner 2026-10-09, T-127). |

@@ -4,9 +4,9 @@ import { isLandmarkType, tokenName } from '../../config/registries/tokenRegistry
 
 /**
  * A landmark is a Token whose type is marked `landmark` in the CMS: one of the endgame sites, one
- * per skill, standing in the Starter Camp from the first minute. It stands outside the Token cap
- * (`MatCap`), is never pushed by an arrival (`MatPlacement`), cannot be moved by the player
- * (`Placement.moveTokenTo`) and cannot be demolished (`Demolition.canDemolish`).
+ * per skill, standing in the Starter Camp from the first minute. It counts toward the Token cap like
+ * any placed Token (`MatCap`), is never pushed by an arrival (`MatPlacement`), cannot be moved by the
+ * player (`Placement.moveTokenTo`) and cannot be demolished (`Demolition.canDemolish`).
  *
  * The one exception is the owner laying out the Starter Camp: the dev layout tool
  * ({@link setLayoutEditing}) lets landmarks be moved and taken off while it is on. Never saved.
