@@ -78,6 +78,14 @@ screens (eye-check M1), **A10** fixed vs movable Tokens (eye-check M2), **A7**
 Starter Camp as content (eye-check M3), brief **60 P1** measurement. **A11**
 waits on its branch for the eye-check. Then A3b (the bin goes), A8 (the
 cartographer's tutorial), A12 (upcycling).
+**A7** (Starter Camp as content, landmarks) is merged; its look joins eye-check
+M3 once the sites exist. **Owner to-do from A7:** author the 25 endgame-site
+Tokens (name, ruin art, Work Cycle with the skill at 99 and the items it
+needs; tick "Landmark (endgame site)" in the Token editor's Lifecycle
+section) and Sync; then in a dev game use the QA panel's Starter Camp tools
+(Place Token, "Move and remove landmarks", Give item) to lay out the camp,
+press "Save this mat as the Starter Camp", open the CMS Starter Camp tab,
+"Use this layout", review, Sync.
 **Owner CMS to-do from A2:** Respawns refill (10–15 s) on Copper Ore Vein,
 Coal Vein, Stone Outcrop, Clay Deposit, Quartz Deposit; Oak Tree regrows
 from Oak Sapling; the Shrimp Coast gets a block too.
