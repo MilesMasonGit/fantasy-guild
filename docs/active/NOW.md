@@ -66,34 +66,26 @@ changelog and `docs/archive/`).*
 5. **Brief 20 live-game check** once the Academies and master Tokens exist.
 6. **T-111**: engine bench timings are load-sensitive; trust the work check.
 
-**Status (2026-10-09, evening):** merged today: Atlas **A1** (Regions,
-travel, schema 0.8.1, cap 128), **A4** (budget, seeded layout, terrain map,
-settle, reroll, Region rules), **A5** (maps and modifiers as items, the CMS
-Map editor rewritten, Regions settle from Bank-held maps, old Map code
-retired, T-110 closed), **A9** (ambush rules), **T-129**, brief **50**.
-**A2** respawning fixtures (refill and regrow) is merged too; its resting
-look joins the eye-check once a shipped vein carries a respawn block.
-Building: **A3a** demolition as a job, **A6** the Atlas and Cartography
-screens (eye-check M1), **A10** fixed vs movable Tokens (eye-check M2), **A7**
-Starter Camp as content (eye-check M3), brief **60 P1** measurement. **A11**
-waits on its branch for the eye-check. Then A3b (the bin goes), A8 (the
-cartographer's tutorial), A12 (upcycling).
-**A7** (Starter Camp as content, landmarks) is merged; its look joins eye-check
-M3 once the sites exist. **Owner to-do from A7:** author the 25 endgame-site
-Tokens (name, ruin art, Work Cycle with the skill at 99 and the items it
-needs; tick "Landmark (endgame site)" in the Token editor's Lifecycle
-section) and Sync; then in a dev game use the QA panel's Starter Camp tools
-(Place Token, "Move and remove landmarks", Give item) to lay out the camp,
-press "Save this mat as the Starter Camp", open the CMS Starter Camp tab,
-"Use this layout", review, Sync.
-**Owner CMS to-do from A2:** Respawns refill (10–15 s) on Copper Ore Vein,
-Coal Vein, Stone Outcrop, Clay Deposit, Quartz Deposit; Oak Tree regrows
-from Oak Sapling; the Shrimp Coast gets a block too.
+**Status (2026-10-10):** merged to `main`: Atlas A1, A2, A3a (demolition
+engine), A4, A5, A7 (Starter Camp as content; its sites count toward the cap),
+A9, T-129, brief 50, brief 60 P1 (plan) and P2-1 (cycle ring: cap128 at 4×
+from 35 % to 52 % of frames in budget). **Awaiting the owner's eye-check on
+their branches:** A6 Atlas screens (`crunch/atlas-a6`, M1), A10 fixed vs
+movable Tokens with the marker (`crunch/atlas-a10`, M2), A11 no tier labels
+(`crunch/atlas-a11`, needs the owner's CMS sync on the branch). **Building:**
+brief 60 P2-2 (beacon), P2-3 (sprite clock), P2-4 (shut notification
+column). **Then:** P2-5 hit-loop layers (spike), P2-6 loot, P2-7 sparse
+stack order, P2-8, P2-9; Atlas A3b (the bin goes), A8 (cartographer's
+tutorial), A12 (upcycling); brief 80 terrain; brief 90 Envelope.
 `data/maps.json` is read by nothing now: delete it in a data-only commit.
-**Owner CMS to-do from A5:** author the 3 Base Maps (Forest, Mountain,
-Coast) and 4 Modifiers (Overgrown, Fir Grove, Goblin Camp, Ruins) in the
-Maps tab; put maps on enemy Drops; delete the Volcanic Island Map Token;
-commit the two edited map pictures from `atlas-wip`.
+**Owner CMS to-do:** from A5, author the 3 Base Maps and 4 Modifiers in the
+Maps tab, put maps on enemy Drops, delete the Volcanic Island Map Token,
+commit the two edited map pictures from `atlas-wip`; from A2, Respawns
+refill (10–15 s) on the veins and outcrops, Oak Tree regrows from Oak
+Sapling, the Shrimp Coast too; from A7, author the 25 endgame-site Tokens
+(Landmark checkbox in the Token editor's Lifecycle section), lay out the camp
+with the QA panel's Starter Camp tools, "Save this mat as the Starter Camp",
+accept it on the CMS Starter Camp tab, Sync.
 
 **Handoff (2026-10-09, director session hit its usage limit; superseded above):**
 - Merged to `main` today: brief 50 (drag), T-129 (carried Token pauses),
