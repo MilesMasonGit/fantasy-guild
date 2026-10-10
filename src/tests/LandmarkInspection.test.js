@@ -40,6 +40,10 @@ describe('what a landmark\'s inspection says', () => {
         });
     });
 
+    it('the note says it is fixed, and nothing about the Token cap (the sites count toward it)', () => {
+        expect(LANDMARK_TEXT.FIXED).toBe('It cannot be moved or demolished.');
+    });
+
     it('placeholder lines where the site is not written yet', () => {
         const { lines } = landmarkLines(BARE, names);
         expect(lines).toEqual([

@@ -175,7 +175,11 @@ describe('⭐ Token Summary (MatCapBadge)', () => {
     it('hover shows a short tooltip and does not open the summary', () => {
         const { container } = render(React.createElement(MatCapBadge));
         fireEvent.mouseEnter(badgeOf(container));
-        expect(document.body.querySelector('[data-top-bar-tip]').textContent).toContain('Click for the list.');
+        const tip = document.body.querySelector('[data-top-bar-tip]').textContent;
+        expect(tip).toContain('Click for the list.');
+        expect(tip).toContain('The Guild Hall and quests do not.');
+        // Endgame sites count toward the cap like any placed Token.
+        expect(tip).not.toMatch(/endgame/i);
         expect(panel()).toBeNull();
     });
 

@@ -6,6 +6,7 @@ import { RECIPE } from './RecipeResolver.js';
 import * as InputAllocator from './InputAllocator.js';
 import * as Charges from './Charges.js';
 import * as Respawn from './Respawn.js';
+import * as Demolition from './Demolition.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
 
 /**
@@ -58,8 +59,13 @@ export function heroReason(heroId, config) {
  * Resting comes first: a Token that ran out and is waiting to respawn cannot run whatever else
  * is true of it, and it is not a problem to fix, so it must not surface as one of the reasons
  * below (`ALERT.RESTING` is not in {@link FIXABLE}).
+ *
+ * ⚠️ Before even that, a Token marked for demolition always can: demolishing needs no recipe,
+ * inputs or charges, and a resting Token can still be cleared away. `io` is null; the runner
+ * advances a demolition on its own path and never reads it.
  */
 export function fixableReason(instanceId, instance) {
+    if (Demolition.isMarked(instance)) return { reason: null, io: null };
     if (Respawn.isResting(instance)) return { reason: ALERT.RESTING, io: null };
 
     const io = RecipeResolver.effectiveIO(instanceId, instance);

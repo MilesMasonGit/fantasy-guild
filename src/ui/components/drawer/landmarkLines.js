@@ -9,7 +9,7 @@ export const LANDMARK_TEXT = Object.freeze({
     NEEDS: 'Needs',
     NO_SKILL: 'The skill it needs is not written yet',
     NO_ITEMS: 'The items it needs are not written yet',
-    FIXED: 'It stands outside the Token cap, and cannot be moved or demolished.'
+    FIXED: 'It cannot be moved or demolished.'
 });
 
 /**

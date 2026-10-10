@@ -280,7 +280,7 @@ export default function TokenEditor() {
             </label>
             <label
               className="flex items-center gap-2 cursor-pointer select-none"
-              title="An endgame site: it stands outside the Token cap, and the player cannot move or demolish it"
+              title="An endgame site: it counts toward the Token cap, and the player cannot move or demolish it"
             >
               <input
                 type="checkbox"
@@ -292,8 +292,8 @@ export default function TokenEditor() {
             </label>
             {token.landmark === true && (
               <p className="text-[10px] leading-relaxed text-gray-500">
-                Outside the Token cap; never moved, pushed or demolished. Its inspection shows the
-                skill, level and items from the Work Cycle.
+                Counts toward the Token cap; never moved, pushed or demolished. Its inspection shows
+                the skill, level and items from the Work Cycle.
               </p>
             )}
           </div>

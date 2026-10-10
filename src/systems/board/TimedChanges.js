@@ -8,6 +8,7 @@ import * as SpawnerSystem from './SpawnerSystem.js';
 import * as PassiveProduction from './PassiveProduction.js';
 import * as Hand from './Hand.js';
 import * as Respawn from './Respawn.js';
+import * as Demolition from './Demolition.js';
 import { pickWeighted } from './weightedPick.js';
 import { logger } from '../../utils/Logger.js';
 
@@ -312,6 +313,10 @@ export function tick(delta, random = Math.random) {
     for (const instance of BoardState.tokens()) {
         // A Token taken off the mat earlier in this same pass is skipped.
         if (!BoardState.getTokenById(instance.id)) continue;
+        // ⚠️ A Token marked for demolition stands still, its clocks held where they are: a growth
+        // or turn would put a new, unmarked instance in its place, and a spawner, refill or Passive
+        // Production would keep working a Token the player asked to be rid of.
+        if (Demolition.isMarked(instance)) continue;
         // Passive Production first: it only grants items, and a Token that changes below starts its
         // new self with fresh clocks.
         PassiveProduction.advance(instance, delta);

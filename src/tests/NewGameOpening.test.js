@@ -146,9 +146,24 @@ describe('a new game opens in the Starter Camp the owner laid out', () => {
         expect(Object.keys(GameState.state.inventory.items).sort()).toEqual(['fixture_ngo_ore', 'fixture_ngo_wood']);
     });
 
-    it('the endgame sites stand outside the Token cap: only the two producers count', () => {
+    it('the endgame sites count toward the Token cap: the two sites and the two producers', () => {
         expect(BoardState.tokens()).toHaveLength(5);
-        expect(MatCap.tokenCount()).toBe(2);
+        expect(MatCap.tokenCount()).toBe(4);
+    });
+
+    it('a camp with all 25 endgame sites and its opening producers leaves room to build', () => {
+        // Four rows along the top and bottom edges, clear of the Hall and the producers.
+        const sites = [];
+        for (const y of [100, 260, 866, 1026]) {
+            for (let x = 100; x <= 1500 && sites.length < 25; x += 200) sites.push({ typeId: 'fixture_ngo_site', x, y });
+        }
+        setStarterCampForTests({ ...CAMP, tokens: [...sites, ...CAMP.tokens.filter(t => t.typeId !== 'fixture_ngo_site')] });
+        newGame();
+        expect(BoardState.tokens().filter(t => t.typeId === 'fixture_ngo_site')).toHaveLength(25);
+        expect(MatCap.tokenCount()).toBe(27);
+        expect(MatCap.matCap()).toBe(128);
+        expect(MatCap.matCap() - MatCap.tokenCount()).toBeGreaterThanOrEqual(90);
+        expect(MatCap.canPlaceMore(90)).toBe(true);
     });
 
     it('it is the guild\'s first Region, the Starter Camp, and it can never be abandoned', () => {

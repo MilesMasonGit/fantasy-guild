@@ -235,19 +235,19 @@ describe('the Atlas announces its changes and never touches the random stream', 
     });
 });
 
-describe('the Token cap: 128, and endgame sites stand outside it', () => {
+describe('the Token cap: 128, and endgame sites count toward it', () => {
     it('the base cap is 128', () => {
         expect(MatCap.BASE_TOKEN_CAP).toBe(128);
         expect(MatCap.matCap()).toBe(128);
     });
 
-    it('a landmark Token does not count toward the cap', () => {
+    it('a landmark Token counts toward the cap like any placed Token', () => {
         const before = MatCap.tokenCount();
         const site = placeAt('fixture_atlas_site', 200, 200);
         expect(MatCap.isLandmark(site)).toBe(true);
-        expect(MatCap.countsTowardCap(site)).toBe(false);
-        expect(MatCap.tokenCount()).toBe(before);
-        placeAt('fixture_producer', 400, 200);
+        expect(MatCap.countsTowardCap(site)).toBe(true);
         expect(MatCap.tokenCount()).toBe(before + 1);
+        placeAt('fixture_producer', 400, 200);
+        expect(MatCap.tokenCount()).toBe(before + 2);
     });
 });
