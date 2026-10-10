@@ -147,7 +147,7 @@ describe('the picker', () => {
             isOpen: true, onClose: () => {}, tokenName: 'T3', banding, selectedRecipeId: null, onSelect: () => {}
         }));
         const row = (id) => document.body.querySelector(`[data-recipe-id="${id}"]`).textContent;
-        expect(row(HALL)).toContain('Foundation tier 2 or higher');
-        expect(row(CABIN)).not.toContain('Foundation tier');
+        expect(row(HALL)).toContain('Needs a fixture_tier_2 or better');
+        expect(row(CABIN)).not.toContain('or better');
     });
 });

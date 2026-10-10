@@ -119,7 +119,7 @@ describe('A station whose recipe names its context as a bare string', () => {
 
     it('the recipe picker, the inspection drawer and the reach ring read it too', () => {
         expect(contextSummary(StationRecipe.selectedRecipe(place(STATION, 'fx_bare_station'))))
-            .toBe('ctx_fixture_a (tier 1)');
+            .toBe('a ctx fixture a');
         expect(productionRoutes('fx_bare_station').map((r) => r.requiresContext)).toEqual([['ctx_fixture_a']]);
         expect(showsNearRing('fx_bare_station')).toBe(true);
     });

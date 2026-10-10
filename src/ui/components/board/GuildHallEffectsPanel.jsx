@@ -1,9 +1,10 @@
 import React from 'react';
 import { useGameState } from '../../hooks/useGameState.js';
 import { SIDE_COLUMN_PX, EFFECTS_COLUMN, columnWidthCss } from './boardConstants.js';
-import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
+import { getTokenType, tokenName, getAllTokenTypes } from '../../../config/registries/tokenRegistry.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { renderStatement } from '../../../systems/effects/statementText.js';
+import { toolNamer } from '../../../systems/effects/toolNames.js';
 import { EntityRibbon } from '../base/EntityRibbon.jsx';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { Package, Sparkles } from 'lucide-react';
@@ -93,7 +94,8 @@ export const GuildHallEffectsPanel = () => {
                                     {statements.map((statement, idx) => {
                                         const sentence = renderStatement(statement, {
                                             token: id => tokenName(id) || id,
-                                            item: id => getItem(id)?.name || id
+                                            item: id => getItem(id)?.name || id,
+                                            tool: toolNamer(getAllTokenTypes())
                                         });
 
                                         return (

@@ -5,10 +5,11 @@ import { GIModal } from '../base/GIModal.jsx';
 import { ItemIcon } from '../base/ItemIcon.jsx';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { getSkill } from '../../../config/registries/skillRegistry.js';
-import { tokenName } from '../../../config/registries/tokenRegistry.js';
+import { tokenName, getAllTokenTypes } from '../../../config/registries/tokenRegistry.js';
 import { contextRequirementsOf } from '../../../config/registries/recipePoolRegistry.js';
 import { foundationMinTierOf } from '../../../config/registries/tokenConstants.js';
 import { BAND } from '../../../systems/board/RecipeBands.js';
+import { toolNamer, foundationPhrase, withArticle } from '../../../systems/effects/toolNames.js';
 
 /** An item's display name, falling back to its id so an unauthored item still reads. */
 export const itemLabel = (itemId) => getItem(itemId)?.name || itemId;
@@ -22,19 +23,19 @@ export function inputSummary(recipe) {
     return parts.length ? parts.join(', ') : null;
 }
 
-/** "Anvil (tier 1)" — the context Tokens a recipe needs beside it, or null. */
+/** "an anvil, an Iron Pickaxe or better" — the context Tokens a recipe needs beside it, or null. */
 export function contextSummary(recipe) {
-    const parts = contextRequirementsOf(recipe).map(c => (
-        c.minTier ? `${c.tag} (tier ${c.minTier})` : c.tag
-    ));
-    return parts.length ? parts.join(', ') : null;
+    const requirements = contextRequirementsOf(recipe);
+    if (!requirements.length) return null;
+    const tool = toolNamer(getAllTokenTypes());
+    return requirements.map(c => withArticle(tool(c.tag, c.minTier))).join(', ');
 }
 
-/** "Foundation tier 2 or higher" for a building recipe that needs more than tier 1, or null. */
+/** "Needs a Stone Foundation or better" for a building recipe above the bottom Foundation rung, or null. */
 export function foundationTierSummary(recipe) {
     if (!recipe?.foundationKinds?.length) return null;
-    const min = foundationMinTierOf(recipe);
-    return min > 1 ? `Foundation tier ${min} or higher` : null;
+    const phrase = foundationPhrase(getAllTokenTypes(), recipe, foundationMinTierOf(recipe));
+    return phrase ? `Needs ${phrase}` : null;
 }
 
 /** "1× Charcoal" — a recipe's outputs, chances included when they are not certain. */
