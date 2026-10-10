@@ -164,6 +164,17 @@ price; bought consumable = price × charges left ÷ (starting × 2); spawned =
 nothing. Rounded down per item. The Hall and tutorial quests can't be binned.
 *(`DiscardBin.js`)*
 
+### Demolition — Engine built (Atlas A3a); no button yet, the bin still there
+Mark a Token for demolition and a hero holding Construction (level 1) removes
+it in 10 s of work: no refund, no loot, no XP, never a depletion. While marked
+it is only that job: its recipe, build, training, spawning, growth, refill and
+Passive Production stop (what it gives its neighbours by standing there
+carries on until it is gone). Unmarking makes it itself again and loses the
+half-done demolition. Anything bought, built, spawned or planted can be marked,
+a resting Token included; the Guild Hall, landmarks, a map's nodes, quests and
+enemies can't. Marked from the console for now (`Game.Demolition.mark(id)`);
+the button and the bin's removal are A3b. *(`Demolition.js`)*
+
 ### Maps — Items (Atlas A5); no map content yet
 A map is an item: a **Base Map** (type `map`) or a **Modifier** (type
 `modifier`), authored in the CMS's Map editor and written into `data/items.json`
