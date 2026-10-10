@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from '../../utils/cn.js';
 import {
-    Castle, Landmark, Map as MapIcon,
+    Castle, Compass, Landmark, Map as MapIcon,
     Settings
 } from 'lucide-react';
 import { EventBus } from '../../../systems/core/EventBus.js';
@@ -11,9 +11,9 @@ import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
  * BubbleMenu: the vertical column of glassmorphic bubble buttons used for navigation.
  * Default-docked on the left; a Settings toggle (`ui.bubbleMenuRight`) swaps it to the right
  * edge (side is decided in ReactRoot and passed down).
- * Four bubbles: Guild Hall, the Item Bank, the Shop (its own drawer) and Settings. They share
- * one 'only one view open at once' rule (`ui.nav`): clicking a bubble closes whatever any of
- * the others has open, and clicking the active one closes it. This applies only to the bubbles
+ * Five bubbles: Guild Hall, the Item Bank, the Shop (its own drawer), the Atlas (an overlay over
+ * the mat) and Settings. They share one 'only one view open at once' rule (`ui.nav`): clicking a
+ * bubble closes whatever any of the others has open, and clicking the active one closes it. This applies only to the bubbles
  * themselves; a contextual 'open the drawer' prompt still opens the Bank pane independently,
  * without closing anything else. Heroes live in the always-visible Hero Dock and have no
  * bubble.
@@ -108,6 +108,7 @@ export const BubbleMenu = ({ ui, side = 'left' }) => {
              * permanently consumed a spot AND a hero purely to keep progression ticking.
              */}
             <Bubble id="shop-bubble-target" icon={MapIcon} label="Shop" color="green" active={nav.isActive('shop')} onClick={() => nav.toggle('shop')} />
+            <Bubble id="atlas-bubble-target" icon={Compass} label="Atlas" color="blue" active={nav.isActive('atlas')} onClick={() => nav.toggle('atlas')} />
 
             <div className="mt-auto" />
             <Bubble icon={Settings} label="Settings" color="red" active={nav.isActive('settings')} onClick={() => nav.toggle('settings')} />
