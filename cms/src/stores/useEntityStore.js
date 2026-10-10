@@ -22,6 +22,7 @@ import {
 } from '../utils/constants';
 import { seedSimIntent } from './simIntentNormaliser';
 import { isMapItem, blankCartography } from '../../../src/systems/atlas/mapItems.js';
+import { normaliseStarterCamp, emptyStarterCamp, withBankCount, withoutToken } from '../engine/starterCamp';
 
 /** The CMS's authored content, in one store: the keyed collections `items` and `tokens`, the named effect library, and the per-skill recipe pools. Enemy is a filtered view of the Token list, and a Map or Modifier is an item (type `map` / `modifier`) that only the Map editor edits: one record, so nothing keeps two copies in step. */
 
@@ -727,11 +728,19 @@ export const useEntityStore = create(
             /** Shared recipe pools, keyed by skill id. Not an entity collection: a recipe is owned by its skill rather than by any Token. A station names a skill in its `Works as` statement and draws all of it. */
             recipePools: {},
 
+            /** The Starter Camp (`engine/starterCamp.js`). ⚠️ Null means this workspace never held one, and Sync then leaves `data/starterCamp.json` alone; Clear sets an empty camp instead. */
+            starterCamp: null,
+
             activeEntityId: null,
             activeEntityType: null,
 
             setActiveEntity: (id, type) => set({ activeEntityId: id, activeEntityType: type }),
             clearActiveEntity: () => set({ activeEntityId: null, activeEntityType: null }),
+
+            setStarterCamp: (camp) => set({ starterCamp: normaliseStarterCamp(camp) || emptyStarterCamp() }),
+            setStarterCampBankCount: (itemId, count) => set((s) => ({ starterCamp: withBankCount(s.starterCamp, itemId, count) })),
+            removeStarterCampToken: (index) => set((s) => ({ starterCamp: withoutToken(s.starterCamp, index) })),
+            clearStarterCamp: () => set({ starterCamp: emptyStarterCamp() }),
 
             ...collectionActions('items', set, get),
             ...collectionActions('tokens', set, get),
@@ -945,6 +954,7 @@ export const useEntityStore = create(
                     tokens: seeded.tokens,
                     effects: seeded.effects,
                     recipePools: seeded.recipePools,
+                    starterCamp: normaliseStarterCamp(data.starterCamp),
                     activeEntityId: null,
                     activeEntityType: null,
                 });
@@ -1050,7 +1060,7 @@ export const useEntityStore = create(
 
                 set({ items, tokens: finalTokens, recipePools, effects: library });
 
-                return { items, tokens: finalTokens, recipePools, recipes, sim, effects: library };
+                return { items, tokens: finalTokens, recipePools, recipes, sim, effects: library, starterCamp: state.starterCamp };
             },
 
             /**
@@ -1078,6 +1088,7 @@ export const useEntityStore = create(
                     items: {},
                     tokens: {},
                     recipePools: {},
+                    starterCamp: null,
                     activeEntityId: null,
                     activeEntityType: null,
                 }),
@@ -1106,6 +1117,7 @@ export const useEntityStore = create(
                 tokens: state.tokens,
                 effects: state.effects,
                 recipePools: state.recipePools,
+                starterCamp: state.starterCamp,
                 activeEntityId: state.activeEntityId,
                 activeEntityType: state.activeEntityType,
             }),
