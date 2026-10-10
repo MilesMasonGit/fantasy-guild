@@ -372,13 +372,14 @@ All-on is measured at the start, the middle and the end; its spread is the
 **noise**, and a system's cost is all-on minus switch-off. A cost inside the
 noise is printed but marked "above noise: no".
 
-⚠️ **Slow windows.** Now and then one window at 4× runs three to eight times slower than its
-twins: every frame a long animation frame, the engine tick too (tick p99 45–102 ms, 4–5 ticks a
-second instead of 10), while MatBoard's own renders stay normal. It is the whole renderer getting
-less CPU time, not a loop in the game; the throttle magnifies it. Seen in 3 of ~40 windows at 4×
-on 2026-10-09 (Shop open, hero sheet open, and an all-on window of the cost table, whose noise it
-made too wide to read). Judge one-off windows against their twins, and re-run a scene whose
-windows disagree by that much.
+⚠️ **Chrome's CPU throttle does not always deliver what it is asked.** On the owner's PC, asked
+for 4×, it delivered anywhere from 3.4× to 12.8× (2026-10-09), sometimes changing inside one
+window: such a window runs three to eight times slower (or faster) than its twins, the engine tick
+too (4–5 ticks a second instead of 10), while MatBoard's own renders stay normal. So each throttled
+window times a fixed piece of JavaScript at 1× and at the throttle, before and after the window,
+and prints the slowdown Chrome delivered (`slowdown 4.24× → 4.61×`); a window more than 25 % off
+the slowdown asked is rejected and measured again, twice at most (then it counts as failed, exit
+3). The delivered slowdowns are kept in the results JSON (`slowdown`) for every window.
 
 **A/B** (`--ab=<url>`): for comparing two branches. The director starts the
 second branch's server (its own worktree, port and Vite `cacheDir`); this

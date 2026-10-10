@@ -101,6 +101,24 @@ async function lootBurst(page) {
     return `SpriteLayer.addSprite × 30 every 3 s from a page timer (${n} sprites after the first)`;
 }
 
+// A fixed piece of JavaScript, timed in the page: the same work at 1× and at the throttle says what
+// slowdown Chrome actually delivered. The best of three, so a task that slipped in between does
+// not count.
+const FIXED_WORK = `(() => { let best = Infinity, x = 0; for (let r = 0; r < 3; r++) { const t0 = performance.now(); for (let i = 0; i < 2e6; i++) x += Math.sqrt(i); best = Math.min(best, performance.now() - t0); } return [best, x]; })()`;
+
+/**
+ * The slowdown Chrome is delivering right now: the fixed work at `cpu` over the same at 1×.
+ * ⚠️ Not always what was asked (bench/README.md, "Chrome's CPU throttle").
+ */
+export async function deliveredSlowdown(page, cpu) {
+    if (cpu === 1) return 1;
+    await page.setCpuThrottling(1);
+    const [full] = await page.evaluate(FIXED_WORK);
+    await page.setCpuThrottling(cpu);
+    const [slowed] = await page.evaluate(FIXED_WORK);
+    return full > 0 ? Math.round((slowed / full) * 100) / 100 : null;
+}
+
 export const SCENES = {
     S1: { id: 'S1', name: 'S1 quiet', stress: 'quiet' },
     S2: { id: 'S2', name: 'S2 realistic', stress: 'realistic' },

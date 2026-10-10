@@ -25,7 +25,7 @@ import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
 import { launchChrome, sleep, runCleanups } from './browser/cdp.mjs';
 import { startPerfServer, buildPerf, PROFILE_OUT_DIR } from './browser/servers.mjs';
-import { SCENES, sceneUrl, openBoard } from './browser/scenes.mjs';
+import { SCENES, sceneUrl, openBoard, deliveredSlowdown } from './browser/scenes.mjs';
 import { metricsOf, DRAW_SWITCHES } from './browser/drawLib.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -505,13 +505,15 @@ async function main() {
         const how = scene.ui ? await scene.ui(page) : null;
         if (how) console.log(`  ${how}`);
         await sleep(args.settleS * 1000);
+        const slowdownBefore = await deliveredSlowdown(page, args.cpu);
         const t = await trace(page, args.traceS, { invalidations: args.invalidations });
+        const slowdownAfter = await deliveredSlowdown(page, args.cpu);
         const hud = metricsOf(t.report);
         const tr = analyseTrace(t.events, maps, args.traceS);
         const prof = await cpuProfile(page, args.sampleS);
         const layers = await layerCensus(page);
         const cp = analyseProfile(prof, maps, args.top);
-        const result = { meta: { commit, date: new Date().toISOString(), args, chrome: chrome.info.product }, hud, events: t.report?.events?.top || [], trace: tr, cpu: cp, layers };
+        const result = { meta: { commit, date: new Date().toISOString(), args, chrome: chrome.info.product, slowdown: [slowdownBefore, slowdownAfter] }, hud, events: t.report?.events?.top || [], trace: tr, cpu: cp, layers };
 
         fs.mkdirSync(outDir, { recursive: true });
         const stamp = `${result.meta.date.replace(/[:.]/g, '-')}-${args.scene}-${args.cpu}x${args.off.length ? '-off-' + args.off.join('+') : ''}`;
@@ -520,6 +522,7 @@ async function main() {
         fs.writeFileSync(path.join(outDir, `${stamp}.summary.json`), JSON.stringify(result, null, 2));
         await page.close();
 
+        if (args.cpu !== 1) console.log(`\nSlowdown Chrome delivered (asked ${args.cpu}×): ${slowdownBefore}× before the trace, ${slowdownAfter}× after`);
         console.log(`\nPerf HUD over the trace window: ${f1(hud.fps)} fps, frame work p50/p95/p99 ${f2(hud.workP50)}/${f2(hud.workP95)}/${f2(hud.workP99)} ms, ≤16.7 ms ${f1(hud.in16Pct)} %, ${hud.tokens} Tokens, ${hud.domNodes} DOM nodes`);
         const evTop = (t.report?.events?.top || []).slice(0, 10).map(e => `${e.name} ${f1(e.perSecond)}`).join(' · ');
         console.log(`Engine events per second: ${evTop}`);
