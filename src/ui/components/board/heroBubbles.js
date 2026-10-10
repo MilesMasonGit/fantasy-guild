@@ -86,7 +86,7 @@ export function blockedLineFor(tokenId, alert) {
     const missing = (alert === ALERT.INPUTS || alert === ALERT.NO_RECIPE)
         ? RecipeResolver.getMissingRequirements(token.id, token)
         : null;
-    const skillId = workConfigOf(def)?.skill;
+    const skillId = workConfigOf(def, token)?.skill;
     return blockedText(alert, {
         token: def?.name || tokenName(token.typeId) || token.typeId,
         missing,
@@ -106,7 +106,7 @@ export function pinRefusedLineFor(tokenId, reason) {
     const token = BoardState.getTokenById(tokenId);
     if (!token) return null;
     const def = getTokenType(token.typeId);
-    const skillId = workConfigOf(def)?.skill;
+    const skillId = workConfigOf(def, token)?.skill;
     return blockedText(reason, {
         token: def?.name || tokenName(token.typeId) || token.typeId,
         skill: skillId ? (getSkill(skillId)?.name || skillId) : undefined

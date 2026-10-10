@@ -156,6 +156,22 @@ describe('The Atlas section: Regions keyed by id, each a declared record', () =>
     });
 });
 
+describe('A Token marked for demolition is saved marked', () => {
+    it('keeps `demolish` and its progress through a save and the migration', async () => {
+        playALittle();
+        const BoardState = await import('../systems/board/BoardState.js');
+        const Demolition = await import('../systems/board/Demolition.js');
+        const forest = BoardState.addToken(BoardState.createTokenInstance('token_oak_forest'), 560, 563);
+        expect(Demolition.mark(forest.id).success).toBe(true);
+        forest.cycleElapsedMs = 4321;
+
+        const saved = JSON.parse(GameState.serializeJson());
+        expect(validateSaveData(saved).errors).toEqual([]);
+        const migrated = migrateState(saved.state, saved.version);
+        expect(migrated.board.tokens[forest.id]).toMatchObject({ demolish: true, cycleElapsedMs: 4321 });
+    });
+});
+
 describe('One definition of an empty board (CR2-049)', () => {
     it('is the shape INITIAL_STATE declares', () => {
         expect(Object.keys(INITIAL_STATE.board).sort())

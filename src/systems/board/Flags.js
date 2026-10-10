@@ -11,6 +11,7 @@ import * as HeroMotion from './HeroMotion.js';
 import { centreOf, distanceSq } from './nearby.js';
 import * as WorkCheck from './WorkCheck.js';
 import * as Respawn from './Respawn.js';
+import * as Demolition from './Demolition.js';
 import { workConfigOf } from './StationRecipe.js';
 import * as BoardCombat from './BoardCombat.js';
 import * as BoardPromotion from './BoardPromotion.js';
@@ -191,10 +192,10 @@ function announceMoved(heroId) {
  * here only after enemies and Promotion Tokens (its two exemptions) are sorted
  * out — which is why it can be this cheap on the chooser's hot path.
  */
-function hasWorkSkill(def) {
+function hasWorkSkill(def, instance) {
     // `workConfigOf`: a Foundation is worked with its `foundation.skill` though it authors no
-    // `config`.
-    const skill = workConfigOf(def)?.skill;
+    // `config`, and a Token marked for demolition with Construction.
+    const skill = workConfigOf(def, instance)?.skill;
     return typeof skill === 'string' && skill.trim() !== '';
 }
 
@@ -204,11 +205,15 @@ function hasWorkSkill(def) {
  * 'hall': the Guild Hall has no work of its own today (its income is Passive Production, no hero
  * needed). Should it be given a work cycle, it is treated like a Promotion Token: worked only when
  * a flag is planted on it, whatever the flag's skill.
+ *
+ * A Token marked for demolition is 'work' whatever it was (a spawner, a Promotion Token, a Passive
+ * Generator): the same order the runner checks in.
  */
 function kindOf(instance, def) {
     if (BoardCombat.isEnemyToken(instance)) return 'enemy';
+    if (Demolition.isMarked(instance)) return 'work';
     if (BoardPromotion.isPromotionToken(instance)) return 'promotion';
-    if (!workConfigOf(def) || def.requiresHero === false) return null;
+    if (!workConfigOf(def, instance) || def.requiresHero === false) return null;
     if (instance.typeId === 'token_guild_hall' || def.isGuildHall) return 'hall';
     return 'work';
 }
@@ -244,9 +249,9 @@ export function tokenAtPoint(point) {
  * enemy. Null for kinds the rules never touch (promotion, hall) and for a work
  * Token naming no skill.
  */
-function ruleIdOf(kind, def) {
+function ruleIdOf(kind, def, instance) {
     if (kind === 'enemy') return FlagRules.FIGHT;
-    if (kind === 'work' && hasWorkSkill(def)) return workConfigOf(def).skill;
+    if (kind === 'work' && hasWorkSkill(def, instance)) return workConfigOf(def, instance).skill;
     return null;
 }
 
@@ -254,9 +259,9 @@ function ruleIdOf(kind, def) {
  * Where a claim ranks when looking for better work: 0 for anything under the flag's point (it
  * outranks every priority), else the priority of its rule. Lower is better.
  */
-function rankOf(heroId, kind, def) {
+function rankOf(heroId, kind, def, instance) {
     if (UNDER_POINT.has(kind)) return 0;
-    const ruleId = ruleIdOf(kind, def);
+    const ruleId = ruleIdOf(kind, def, instance);
     return ruleId ? FlagRules.ruleOf(heroId, ruleId).priority : FlagRules.PRIORITY_MAX + 1;
 }
 
@@ -408,7 +413,7 @@ function evaluate(heroId, flag, excludeInstanceId = null, belowRank = Infinity) 
         const def = instance ? getTokenType(instance.typeId) : null;
         const kind = instance ? kindOf(instance, def) : null;
         if (kind) {
-            const ruleId = ruleIdOf(kind, def);
+            const ruleId = ruleIdOf(kind, def, instance);
             const rank = ruleId ? FlagRules.ruleOf(heroId, ruleId).priority : FlagRules.PRIORITY_DEFAULT;
             inRange.push({ instance, def, kind, d: 0, ruleId, rank });
         }
@@ -432,7 +437,7 @@ function evaluate(heroId, flag, excludeInstanceId = null, belowRank = Infinity) 
         if (!centre || !flagReaches(flag, centre)) continue;
         // Reach is measured from the flag; nearest from the hero.
         const d = distanceSq(from, centre);
-        const ruleId = ruleIdOf(kind, def);
+        const ruleId = ruleIdOf(kind, def, instance);
         const rank = ruleId ? FlagRules.ruleOf(heroId, ruleId).priority : FlagRules.PRIORITY_DEFAULT;
         inRange.push({ instance, def, kind, d, ruleId, rank });
     }
@@ -540,10 +545,11 @@ function keepOrRelease(r, heroId, dirty) {
             (kind === 'hall')
             || (kind === 'promotion' && !promotionRefusal(heroId, instance))
             || (kind === 'enemy' && ruleAllows(heroId, FlagRules.FIGHT))
-            || (kind === 'work' && hasWorkSkill(def) && ruleAllows(heroId, workConfigOf(def).skill)
+            || (kind === 'work' && hasWorkSkill(def, instance) && ruleAllows(heroId, workConfigOf(def, instance).skill)
                 // A Token that ran out and rests until it respawns is let go at once, with no
-                // badge: the hero works the next thing, or a pinned hero waits by it.
-                && !Respawn.isResting(instance, def))
+                // badge: the hero works the next thing, or a pinned hero waits by it. Unless it is
+                // marked for demolition, which a resting Token can still be.
+                && (Demolition.isMarked(instance) || !Respawn.isResting(instance, def)))
         );
 
         if (!eligible) {
@@ -558,7 +564,7 @@ function keepOrRelease(r, heroId, dirty) {
         // here, at the start of the next pass and before any Token ticks, so the Token left behind
         // is still at zero.
         if (r.cycleEnded.delete(heroId)) {
-            const { pick, skips } = evaluate(heroId, flag, instance.id, rankOf(heroId, kind, def));
+            const { pick, skips } = evaluate(heroId, flag, instance.id, rankOf(heroId, kind, def, instance));
             if (pick) {
                 switchTo(r, heroId, pick, skips);
                 return;
@@ -700,14 +706,14 @@ export function assignHero(heroId) {
 export function pinRefusal(heroId, instance) {
     if (!heroId || !instance?.typeId) return { reason: null, silent: true };
     const def = getTokenType(instance.typeId);
-    // Heroes never work a spawner itself.
-    if (def?.spawner) return { reason: null, silent: true };
+    // Heroes never work a spawner itself, except to demolish it.
+    if (def?.spawner && !Demolition.isMarked(instance)) return { reason: null, silent: true };
     const kind = kindOf(instance, def);
     if (kind !== 'work' && kind !== 'enemy') return { reason: null, silent: true };
     // A worked Token naming no skill is unfinished content: no pin, nothing said.
-    if (kind === 'work' && !hasWorkSkill(def)) return { reason: SKIP.NO_SKILL, silent: true };
+    if (kind === 'work' && !hasWorkSkill(def, instance)) return { reason: SKIP.NO_SKILL, silent: true };
     if (isDisallowed(instance)) return { reason: SKIP.DISALLOWED, silent: false };
-    const ruleId = ruleIdOf(kind, def);
+    const ruleId = ruleIdOf(kind, def, instance);
     if (!FlagRules.holdsRule(heroId, ruleId)) return { reason: ALERT.UNSKILLED, silent: false };
     if (!FlagRules.ruleOf(heroId, ruleId).allowed) return { reason: SKIP.RULE_OFF, silent: false };
     if (kind === 'work') {
@@ -862,7 +868,7 @@ function releaseIfWorking(heroId, ruleId) {
     const instance = BoardState.getTokenById(claim.instanceId);
     if (!instance) return;
     const def = getTokenType(instance.typeId);
-    if (ruleIdOf(kindOf(instance, def), def) !== ruleId) return;
+    if (ruleIdOf(kindOf(instance, def), def, instance) !== ruleId) return;
     const r = rt();
     r?.cycleEnded.delete(heroId);
     release(heroId);
@@ -879,7 +885,7 @@ export function isHeroWorkable(instance) {
     if (!instance?.typeId) return false;
     const def = getTokenType(instance.typeId);
     const kind = kindOf(instance, def);
-    if (kind === 'work') return hasWorkSkill(def);
+    if (kind === 'work') return hasWorkSkill(def, instance);
     return kind !== null;
 }
 
@@ -1075,7 +1081,7 @@ export function workingRuleOf(heroId) {
     const instance = BoardState.getTokenById(claim.instanceId);
     if (!instance) return null;
     const def = getTokenType(instance.typeId);
-    return ruleIdOf(kindOf(instance, def), def);
+    return ruleIdOf(kindOf(instance, def), def, instance);
 }
 
 /** Drop every runtime record (claims, skips) for the current board. */
