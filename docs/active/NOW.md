@@ -66,7 +66,54 @@ changelog and `docs/archive/`).*
 5. **Brief 20 live-game check** once the Academies and master Tokens exist.
 6. **T-111**: engine bench timings are load-sensitive; trust the work check.
 
-**Status (2026-10-10):** merged to `main`: Atlas A1, A2, A3a (demolition
+**Handoff for the next director session (2026-10-10; the owner starts a
+fresh session after the weekly reset on Tuesday, and does art and play-testing
+meanwhile).**
+
+*On `main`, all pushed:* briefs 20, 30, 40, 50; brief 60 P1 (plan) and P2-1,
+P2-2, P2-4 (cap128 at 4×: 35 % → ~68 % of frames in budget); Atlas A1, A2,
+A3a, A4, A5, A7 (sites count toward the cap), A9; T-129. Suite green
+(4625 tests at 3db9b85f; two file-scan tests time out only under bench load).
+
+*Built, unmerged, awaiting the owner's eye-check (branch, worktree):*
+- **A6** Atlas and Cartography screens, M1: `crunch/atlas-a6`, checked out
+  in the owner's folder right now (switch it back to `main` first:
+  `git switch main`).
+- **A10** fixed vs movable Tokens with the marker, M2: `crunch/atlas-a10`
+  (worktree `atlas-a10`).
+- **A3b** the bin goes, demolition UI, M2: `crunch/atlas-a3b` (worktree
+  `atlas-a3b`). Its drag-bench baseline (`npm run bench:drag`, 5 kinds now)
+  is not re-taken: do it on a quiet machine and record it in PERFORMANCE.md.
+- **A11** no tier labels: `crunch/atlas-a11` (worktree `atlas-a11`); the
+  CMS description patch is committed on the branch; the owner must apply it
+  and Sync on that branch before it merges.
+
+*Interrupted by the usage limit, work left in worktrees (verify before
+trusting; the agents never reported):*
+- **P2-3** sprite clock: 2 commits on `crunch/p2-3` (worktree `p2-3`); the
+  agent was mid "enemy float-boundary fix". Run the gate and read the diff.
+- **P2-5** hit-loop layers: uncommitted `TokenHitArt.jsx` + a new
+  `HitLoopLayers.test.js` in worktree `p2-5`; the spike's findings were never
+  reported. Either resume the agent from its transcript or restart P2-5.
+- **P2-6** loot flights: uncommitted `ParticleOverlay.jsx`, `SpriteLayerView.jsx`,
+  two new tests and a CHANGELOG line in worktree `p2-6`. Same.
+
+*Then:* P2-7 sparse stack order, P2-8, P2-9; Atlas A8 (the cartographer's
+tutorial; needs A6, A7; T-144 the Plant-a-Flag beacon), A12 upcycling; brief
+80 terrain (the owner's new terrain spritesheets and the terrain-grid ruling,
+f39323f8); brief 90 Envelope. `data/maps.json` is read by nothing: delete it
+in a data-only commit. Worktree folders `d`, `t129`, `atlas-a9`, `atlas-a4b`,
+`atlas-a6`, `m` (the director's temporary `main` worktree) are pruned or
+disposable: remove junctions first, never `rm -rf` through one.
+
+*Owner CMS to-do:* see the "Owner CMS to-do" lines below (maps and
+modifiers, respawn blocks, the 25 endgame sites and the Starter Camp layout).
+
+*After the crunch:* the workflow review (done in chat 2026-10-10; the owner's
+decisions to be recorded here) and folding in the planning session's docs
+(branch `planning`, worktree `pp`).
+
+**Status (2026-10-10):****Status (2026-10-10):** merged to `main`: Atlas A1, A2, A3a (demolition
 engine), A4, A5, A7 (Starter Camp as content; its sites count toward the cap),
 A9, T-129, brief 50, brief 60 P1 (plan) and P2-1 (cycle ring: cap128 at 4×
 from 35 % to 52 % of frames in budget). **Awaiting the owner's eye-check on
