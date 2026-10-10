@@ -1,6 +1,6 @@
 // the mat-wide Token cap
 
-import { getTokenType, registryVersion } from '../../config/registries/tokenRegistry.js';
+import { getTokenType, registryVersion, isLandmarkType } from '../../config/registries/tokenRegistry.js';
 import { QUEST_TOKEN_TYPE } from '../../config/registries/engineTokens.js';
 import { matTuning } from '../../config/matTuning.js';
 import * as BoardState from './BoardState.js';
@@ -28,7 +28,7 @@ export function isGuildHall(instance) {
 
 /** Whether a Token is a landmark: a type marked `landmark`, standing outside the cap. */
 export function isLandmark(instance) {
-    return getTokenType(instance?.typeId)?.landmark === true;
+    return isLandmarkType(instance?.typeId);
 }
 
 /** Whether a Token counts toward the cap: not a quest, the Guild Hall or a landmark. One type lookup. */

@@ -19,6 +19,7 @@ import * as StationRecipe from '../../../systems/board/StationRecipe.js';
 import { SettingsManager } from '../../../systems/core/SettingsManager.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { lifecycleLines } from './lifecycleLines.js';
+import { LandmarkBlock } from './LandmarkBlock.jsx';
 import { InspectBubbles } from './InspectBubbles.jsx';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
@@ -128,6 +129,7 @@ export const TokenInspection = ({
             )}
 
             <div className="flex flex-col gap-2 pt-1 border-t border-gi-border/30">
+                <LandmarkBlock def={def} />
                 {skillName && (
                     <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-[#181412] border border-white/10 text-xs">
                         <div className="flex items-center gap-1.5 text-gi-muted">

@@ -138,6 +138,15 @@ export function listTokenTypeIds() {
     return Object.keys(TOKENS);
 }
 
+/**
+ * Whether a Token type is a landmark (an endgame site): authored `landmark: true` in the CMS. A
+ * landmark stands outside the Token cap (`MatCap`), is never pushed (`MatPlacement`), cannot be
+ * moved by the player (`Placement.moveTokenTo`) and cannot be demolished (`Demolition`).
+ */
+export function isLandmarkType(typeId) {
+    return getTokenType(typeId)?.landmark === true;
+}
+
 /** A Token's display name, falling back to its id so the UI never renders blank. */
 export function tokenName(typeId) {
     return getTokenType(typeId)?.name || typeId || 'Unknown Token';

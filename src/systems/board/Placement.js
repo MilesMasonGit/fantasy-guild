@@ -9,6 +9,8 @@ import * as BoardState from './BoardState.js';
 import * as MatPlacement from './MatPlacement.js';
 import * as MatCap from './MatCap.js';
 import * as StationRecipe from './StationRecipe.js';
+import * as Landmarks from './Landmarks.js';
+import * as Demolition from './Demolition.js';
 import { warnMissingContent } from '../../utils/missingContent.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
@@ -280,11 +282,12 @@ function restock(instance, decision) {
  *
  * A moved Token keeps its progress and carries its hero. The hero's claim is keyed by the Token
  * instance, so it follows on its own, even outside their flag's radius; this only has to stop the
- * forfeit and say that the hero moved.
+ * forfeit and say that the hero moved. A landmark refuses (`Landmarks.canMove`).
  */
 export function moveTokenTo(id, point) {
     const moving = BoardState.getTokenById(id);
     if (!moving) return refuse('No Token there');
+    if (!Landmarks.canMove(moving)) return refuse(Landmarks.cannotMoveReason(moving));
 
     const from = pointOf(moving);
     const heroId = BoardState.workerOf(id);
@@ -355,6 +358,7 @@ export function removePlacedToken(id) {
     const instance = BoardState.getTokenById(id);
     if (!instance) return refuse('No Token there');
     if (isPermanentToken(instance.typeId, instance)) return refuse('Guild Hall cannot be removed from the playmat.');
+    if (!Demolition.canDemolish(instance)) return refuse(`${tokenName(instance.typeId)} cannot be removed`);
     if (BoardState.originOf(instance) !== BoardState.ORIGIN.PLACED) {
         return refuse('Spawned Tokens are worked out, not removed.');
     }
