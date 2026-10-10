@@ -323,6 +323,7 @@ For each scene: a fresh tab at **1600 × 1000, DPR 1**, the CPU slowdown set
 | `cap128` | S2's mix filled to the base Token cap, 128 (Atlas D-9), on the shipped mat: 130 on the mat with the Hall and a quest. Only with `--only` |
 | `camp128` | The Starter Camp at the base cap: 128 plus its 25 uncounted endgame sites (Atlas D-1 B), drawn as S2's mix at 153. Only with `--only` |
 | `cap256` | S2's mix at the top cap, 256, on the shipped mat: every free cell built, and more Forests and Quarries so the spawners can fill the rest. Only with `--only` |
+| `hall` | S2 with the Guild Hall open in place of the mat (a real click on the Guild Hall bubble), its roster upgrade picked: the stress boards are still at the tutorial's recruit-hero step, so its two standing beacons show (on the roster node and the inspection's upgrade button). On every other scene they are mounted but their targets are missing. Only with `--only` |
 
 The cap boards (`bench/scenarios/cap.mjs`) keep S2's share of placed Tokens (39 of the 105
 that count) and its order, set the Token cap to the number, and let the spawners fill the mat
