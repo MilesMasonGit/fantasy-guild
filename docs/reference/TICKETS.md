@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-139**
+**Next free number: T-140**
 
 ---
 
@@ -98,6 +98,7 @@ here.
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
+| T-139 | P3 | open | `sprite-manifest.js` has ~61 entries pointing at files missing since before the 2026-10-09 art reorganisation (old `assets/sprites/implemented/...`, `pm_test_*`, `bg_table_*` and similar), and `AssetManager.js` still maps `pm_table_*` / `pm_board_*` ids to the gone `assets/playmat/tables` and `tiles` folders. Remove entries nothing in data/ or src uses (check with the AssetManager on-disk guard). Runner. | art/asset-reorg report |
 | T-045 | P3 | open | Dead combat, wound and loot code. | CR3-036 |
 | T-046 | P3 | open | A second hero-creation route. | CR3-037 |
 | T-047 | P3 | open | 8 retired `collection` fields in the save schema (keep `TOKEN_TYPES`). | CR3-038 |
