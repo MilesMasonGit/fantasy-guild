@@ -47,47 +47,21 @@ import * as SpawnerSystem from '../board/SpawnerSystem.js';
 // The guild's Regions and travel (`Game.Atlas`).
 import * as Atlas from '../atlas/Atlas.js';
 import * as RegionRules from '../atlas/RegionRules.js';
-import { tokenStartingUses } from '../../config/registries/tokenRegistry.js';
-import { matW, matH } from '../../config/matGeometry.js';
+import * as StarterCamp from '../atlas/StarterCamp.js';
 import { reportContentIntegrity, reportSaveContent } from './ContentAudit.js';
 import { ENGINE_EVENTS } from './engineEvents.js';
 
 /**
- * The opening state of a new game: the Guild Hall in the middle of the mat with
- * a starter Oak Forest (left) and Copper Mine (right), and zero Heroes. The
- * Bank's opening items are `OPENING_ITEMS`. `OPENING_OFFSET` keeps the starters
- * clear of the Hall's art and close enough that one flag between them reaches
- * both.
+ * The Tokens a new game opens with, at their points on the mat as it is now: the Starter Camp's
+ * (`StarterCamp.js`), the Guild Hall first. A new game opens with zero Heroes.
  *
- * ⚠️ A function, not a constant: the mat's size is live (`matGeometry.js`), so a
- * module-level array would pin the opening spot to whatever size the mat had
- * when this file was first imported.
+ * ⚠️ A function, not a constant: the mat's size is live (`matGeometry.js`).
  *
  * @returns {Array<{typeId: string, x: number, y: number}>}
  */
 export function openingMat() {
-    const x = Math.round(matW() / 2);
-    const y = Math.round(matH() / 2);
-    return [
-        { typeId: 'token_guild_hall', x, y },
-        { typeId: 'token_oak_forest', x: x - OPENING_OFFSET, y },
-        { typeId: 'token_copper_mine', x: x + OPENING_OFFSET, y }
-    ];
+    return StarterCamp.placementsOf();
 }
-
-/** How far the starter Forest and Mine stand from the Hall's centre, in mat units. */
-export const OPENING_OFFSET = 320;
-
-/**
- * What a new game's Bank holds: Oak Seeds so the Forest spawns trees at once
- * (it pays one seed per spawn), a little Oak Wood towards the first Shop
- * purchase, and two Wheat Seeds for the first Farmland.
- */
-export const OPENING_ITEMS = Object.freeze([
-    Object.freeze({ itemId: 'item_oak_seed', quantity: 3 }),
-    Object.freeze({ itemId: 'item_oak_wood', quantity: 10 }),
-    Object.freeze({ itemId: 'item_wheat_seed', quantity: 2 })
-]);
 
 /** EngineBootstrap - Orchestrates game lifecycle and system registration. */
 export const EngineBootstrap = {
@@ -167,8 +141,7 @@ export const EngineBootstrap = {
         // 2. Register Game Loop Intervals
         this._registerTickHandlers();
 
-        // `openingTokens` is the audit's name for "the Tokens a new game starts with".
-        reportContentIntegrity({ openingTokens: openingMat().map(t => t.typeId) });
+        reportContentIntegrity({ starterCamp: StarterCamp.starterCamp() });
 
         // The same audit over the loaded SAVE, on every load: the content audit above
         // cannot see a Token renamed after the save was written. Reports only.
@@ -262,11 +235,12 @@ export const EngineBootstrap = {
 
         const state = GameState.state;
         if (!state) return;
+        const camp = StarterCamp.starterCamp();
 
-        // The Bank starts with the opening items only. Through
+        // The Bank starts with the Starter Camp's items only. Through
         // `InventoryManager`, like every other gain.
         if (state.inventory) state.inventory.items = {};
-        for (const { itemId, quantity } of OPENING_ITEMS) {
+        for (const { itemId, quantity } of StarterCamp.openingBank(camp)) {
             InventoryManager.addItem(itemId, quantity, 'opening');
         }
 
@@ -275,24 +249,18 @@ export const EngineBootstrap = {
             state.heroes = [];
         }
 
-        // The opening Tokens stand on the mat.
-        for (const { typeId, x, y } of openingMat()) {
-            BoardState.addToken(
-                BoardState.createTokenInstance(typeId, tokenStartingUses(typeId)), x, y
-            );
-        }
+        // The Starter Camp's Tokens stand on the mat, and it becomes the guild's first Region.
+        Atlas.createStarterRegion(camp);
         // What a loaded save gets on `game_loaded`: the tile caches built for
         // the Tokens already standing on the mat.
         TileModifiers.rebuildAll();
-        // The opening mat is the guild's first Region.
-        Atlas.createStarterRegion();
 
         // Initialize exploration tracking
         if (!GameState.exploration) {
             GameState.exploration = { count: 0 };
         }
 
-        logger.info('Engine', 'New game: 0 heroes, the starter Tokens on the mat, the opening items in the Bank.');
+        logger.info('Engine', `New game: 0 heroes, the ${StarterCamp.isBuiltIn() ? 'built-in' : 'synced'} Starter Camp on the mat, its items in the Bank.`);
     },
 
     /**
