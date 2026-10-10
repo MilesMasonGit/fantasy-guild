@@ -45,7 +45,7 @@ export const TOKEN_TYPES = Object.freeze([
     'manager',    // restocks its neighbours, never depletes (D-140)
     'market',     // output is currency (D-141)
     'enemy',      // runs the combat engine; still just a Token (D-104)
-    'map',        // a consumable that bursts into a kit (D-155)
+    'map',        // ⚠️ derived by nothing now (maps are items); kept while a Token in data/ still stores it
     'promotion',  // trains the hero on it into one job, and IS that job's price (PR-6)
     'spawner',    // puts other Tokens on the mat on a clock (Token lifecycle §3.1)
 ]);

@@ -17,7 +17,6 @@ import * as Placement from '../systems/board/Placement.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import { FIXTURE_TOKENS } from './fixtures/testTokens.js';
 import { getAllTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
-import { listMaps } from '../config/registries/mapRegistry.js';
 import { resetMissingContentWarnings } from '../utils/missingContent.js';
 
 /**
@@ -139,23 +138,6 @@ describe('CR2-107: the inventory sort survives half-authored content', () => {
         expect(warned.length).toBeGreaterThan(0);
         expect(warned[0].join(' ')).toMatch(/item_no_such_thing_at_all/);
         spy.mockRestore();
-    });
-});
-
-// ---------------------------------------------------------------------------
-// a Map's materials come from one projection
-// ---------------------------------------------------------------------------
-
-describe('CR2-196: Map materials have one display shape', () => {
-    const withMaterials = listMaps().filter(m => (m.materials || []).length > 0);
-
-    it('the raw registry shape has no `id` — which is why `m.id` drew Unknown', () => {
-        for (const def of withMaterials) {
-            for (const m of def.materials) {
-                expect(m.id).toBeUndefined();
-                expect(m.itemId).toBeTruthy();
-            }
-        }
     });
 });
 

@@ -37,6 +37,27 @@ are reasoned from the code.
   loot glint, used-up crumble. On the owner's art list
   (`docs/active/owner_art_list.md`); the sprite-strip player is T-138.
 
+### Tinted copies (owner idea, 2026-10-09)
+
+Effects built from copies of the sprite in a solid colour, the way the hard
+shadow and outlines already are (`spriteFx.js`). All four picked, folded into
+T-137:
+- **Afterimage trail**: 2–3 tinted copies trail fast movement (hops,
+  knockbacks, loot hops, a hero dashing to work) at whole-pixel steps and
+  vanish one by one.
+- **Colour flash**: a tinted copy over the sprite for 1–2 frames: white hit
+  (effect 13), green heal, gold rare find, an element's colour for
+  Enchanting's charges.
+- **Echo ring**: the outline copied 1, 2, 3 pixels out in all four directions,
+  a pulse without scaling (a cycle finishing, a charge firing).
+- **Pixel dissolve and ground shadow**: fade by swapping 2–3 checkerboard-
+  dithered copies (100 → 50 → 25 % of the pixels) instead of transparency; the
+  black shadow stays on the ground while the sprite hops.
+- **How the copies are made: measure both, then choose**: generated pictures
+  (extend the spriteFx generator; known cheap, more files) vs a live CSS tint
+  (the sprite as a mask over a solid colour; any colour, cost unmeasured).
+  Build one effect both ways and compare in the cost log first.
+
 ## 1. What exists today
 
 | Effect | What the player sees | How it's drawn | Evidence | Cost |

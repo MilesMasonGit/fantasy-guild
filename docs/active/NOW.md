@@ -57,10 +57,13 @@ changelog and `docs/archive/`).*
 5. **Brief 20 live-game check** once the Academies and master Tokens exist.
 6. **T-111**: engine bench timings are load-sensitive; trust the work check.
 
-**Status (2026-10-09, later):** the director session resumed. Atlas **A1**
-is merged (Regions, travel, save schema 0.8.1, cap 128). **A2** (respawning
-fixtures) is building on `crunch/atlas-a2`; A4 and brief 60 P1 resumed in
-their worktrees. On `main` two test files depend on the owner's uncommitted
+**Status (2026-10-09, afternoon):** Atlas **A1** (Regions, travel, save
+schema 0.8.1, cap 128) and **A4's pure half** (budget, seeded layout, terrain
+map) are merged. Building in parallel worktrees: **A2** respawning fixtures
+(`crunch/atlas-a2`), **A4b** settle/reroll/Region rules (`crunch/atlas-a4b`),
+**A5** maps as items with the rewritten Map editor (`crunch/atlas-a5`), and
+brief **60 P1** measurement (`crunch/optimize`). Then A3a (demolition) on the
+A2 line, A6 (Cartography screens), A7 (Starter Camp), A10, A11. On `main` two test files depend on the owner's uncommitted
 art move under `public/assets` (TerrainRegistry, AssetManager's tool
 sprites) and three file-scan tests time out only under bench load.
 

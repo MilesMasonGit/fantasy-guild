@@ -41,7 +41,6 @@ export default function FileManagerModal({ isOpen, onClose }) {
       const backupData = {
         items: state.items,
         tokens: state.tokens,
-        maps: state.maps,
         effects: state.effects,
         recipePools: state.recipePools,
       };
@@ -73,7 +72,7 @@ export default function FileManagerModal({ isOpen, onClose }) {
   };
 
   const requestRestoreFromGame = () => {
-    setConfirmState({ type: 'restoreFromGame', data: null, message: 'Restore workspace directly from game files (data/*.json)? This will load all current tokens, items, maps, recipes, and effects.' });
+    setConfirmState({ type: 'restoreFromGame', data: null, message: 'Restore workspace directly from game files (data/*.json)? This will load all current tokens, items (maps included), recipes, and effects.' });
   };
 
   const executeConfirm = async () => {

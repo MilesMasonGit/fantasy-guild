@@ -124,7 +124,7 @@ describe('The Atlas section: Regions keyed by id, each a declared record', () =>
     }
 
     it('declares the section and its fields', () => {
-        expect(Object.keys(INITIAL_STATE.atlas).sort()).toEqual(['activeRegionId', 'nextRegionNumber', 'regions']);
+        expect(Object.keys(INITIAL_STATE.atlas).sort()).toEqual(['activeRegionId', 'nextRegionNumber', 'regions', 'seed']);
     });
 
     it('every saved Region carries only the declared record fields, and a frozen board only the board fields', async () => {

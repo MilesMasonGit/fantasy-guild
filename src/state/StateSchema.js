@@ -105,10 +105,18 @@ export function createRegionRecord(id = null) {
         flavourName: '',
         // The item ids written into it, in slot order.
         ingredients: [],
+        // The seed its layout was settled with.
         seed: 0,
-        // Biome weights for the terrain rework; null until generation writes them.
+        // Biome weights, `{ forest: 1, mountain: 1 }`: how many of its Base Maps were of each biome.
+        // Null for a Region no map wrote.
         biome: null,
-        // Region-wide rules, in force only while the guild is here.
+        // Its ground as the maps describe it (`Budget.budget().ground`): `{ main, terrains, water,
+        // shore }`. Null for a Region no map wrote.
+        ground: null,
+        // The terrain grid under it, as `TerrainMap.encodeTerrain` stores it (read with
+        // `terrainAt`). Null for a Region no map wrote.
+        terrain: null,
+        // Region-wide rules, in force only while the guild is here (`RegionRules.js`).
         rules: [],
         // Game time (ms) it was written at.
         settledAt: 0,
@@ -271,7 +279,8 @@ export const INITIAL_STATE = {
     // === The Board (the playmat) ===
     //   tokens      { [id]: { id, typeId, x, y, placedAt, usesRemaining, cycleElapsedMs, selectedRecipeId? } }  (Free Playmat 1.6a)
     //               + origin 'placed'|'spawned' (absent reads as placed), clocks? { growMs, turnMs, turnWon?, ... },
-    //                 turnedFrom? typeId  (Token Lifecycle 3.1 / 3.2, roadmap §3.1)
+    //                 turnedFrom? typeId  (Token Lifecycle 3.1 / 3.2, roadmap §3.1),
+    //                 fixture? true and biome? string on a node a map wrote (`BoardState.isFixture`)
     //   nextTokenOrder number               the next Token's placedAt
     //   flags       { [heroId]: { x, y, plantedAt, pinnedTo? } }  each hero's flag (Free Playmat 1.4b; no skill since 1.5b — the hero's rules live on the hero;
     //                 pinnedTo = the Token instance id it is pinned to, absent on an area flag and in older saves — B5, FB-45)
@@ -309,7 +318,11 @@ export const INITIAL_STATE = {
         activeRegionId: null,
         // Region ids are `region_<n>`, never reused, so an abandoned Region's id stays dead.
         nextRegionNumber: 1,
-        regions: {}
+        regions: {},
+        // The guild's layout seed: each new Cartography preview steps it and lays out with the
+        // result, so layouts vary without the game ever drawing from `Math.random`. Null until the
+        // first preview, which starts it from `meta.createdAt`.
+        seed: null
     },
 
     // === Cartographer (Maps) ===

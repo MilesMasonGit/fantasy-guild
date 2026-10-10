@@ -10,8 +10,6 @@ import {
     applyItemResults,
     applyTokenResults,
     applyRecipePoolResults,
-    applyMapResults,
-    applyScrapValues,
 } from '../engine/sim/writeBack';
 import { auditConnectivity } from '../engine/connectivityAuditor';
 import { useSimulationStore } from './useSimulationStore';
@@ -23,10 +21,11 @@ import {
     normaliseScale, FOUNDATION_KINDS, TURN_DEFAULTS, RESPAWN_DEFAULTS,
 } from '../utils/constants';
 import { seedSimIntent } from './simIntentNormaliser';
+import { isMapItem, blankCartography } from '../../../src/systems/atlas/mapItems.js';
 
-/** The CMS's authored content, in one store: the keyed collections `items`, `tokens` and `maps`, the named effect library, and the per-skill recipe pools. Enemy is a filtered view of the Token list, not a separate collection. */
+/** The CMS's authored content, in one store: the keyed collections `items` and `tokens`, the named effect library, and the per-skill recipe pools. Enemy is a filtered view of the Token list, and a Map or Modifier is an item (type `map` / `modifier`) that only the Map editor edits: one record, so nothing keeps two copies in step. */
 
-// Cross-references, in one place: renaming an entity has to chase its id everywhere else, so every reference site is listed here rather than open-coded in each rename branch. An item id can appear in a Token's production inputs/outputs, pooled recipes, a Map's material cost and a Map's pool. A token id can appear in a Map's pool, a `tokenId` output on a recipe or a Token's config, and a Token's lifecycle blocks. A map id can appear in a Token's `mapId`.
+// Cross-references, in one place: renaming an entity has to chase its id everywhere else, so every reference site is listed here rather than open-coded in each rename branch. An item id can appear in a Token's production inputs/outputs, pooled recipes and a map's upcycle target. A token id can appear in a map's Cartography block, a `tokenId` output on a recipe or a Token's config, and a Token's lifecycle blocks.
 
 /**
  * Fields anywhere in an entity that hold an item id.
@@ -274,25 +273,35 @@ function renameInRecipePools(pools, oldId, newId) {
     return touched ? next : pools;
 }
 
-function renameInMap(map, oldId, newId, kind) {
+/** Repoint the Token ids a map item's Cartography block names: node, camp and treasure rows, and a modifier effect's `typeId`, `from` and `to`. Named explicitly: `typeId` is not an item slot. */
+function renameTokenInCartography(item, oldId, newId) {
+    const c = item?.cartography;
+    if (!isMapItem(item) || !c || typeof c !== 'object') return item;
     let touched = false;
-    const next = { ...map };
-
-    if (kind === 'item') {
-        next.materials = (next.materials || []).map((entry) => {
-            if (entry.itemId !== oldId) return entry;
-            touched = true;
-            return { ...entry, itemId: newId };
+    const next = { ...c };
+    for (const key of ['nodes', 'camps', 'treasures']) {
+        const list = c[key];
+        if (!Array.isArray(list) || !list.some((row) => row?.typeId === oldId)) continue;
+        touched = true;
+        next[key] = list.map((row) => (row?.typeId === oldId ? { ...row, typeId: newId } : row));
+    }
+    if (Array.isArray(c.effects) && c.effects.some((e) => e?.typeId === oldId || e?.from === oldId || e?.to === oldId)) {
+        touched = true;
+        next.effects = c.effects.map((effect) => {
+            if (!effect || typeof effect !== 'object') return effect;
+            const out = { ...effect };
+            for (const key of ['typeId', 'from', 'to']) if (out[key] === oldId) out[key] = newId;
+            return out;
         });
     }
+    return touched ? { ...item, cartography: next } : item;
+}
 
-    next.pool = (next.pool || []).map((entry) => {
-        if (entry.kind !== kind || entry.refId !== oldId) return entry;
-        touched = true;
-        return { ...entry, refId: newId };
-    });
-
-    return touched ? next : map;
+/** Repoint a map item's upcycle target after an item rename. */
+function renameItemInCartography(item, oldId, newId) {
+    const upcycle = item?.cartography?.upcycle;
+    if (!isMapItem(item) || upcycle?.itemId !== oldId) return item;
+    return { ...item, cartography: { ...item.cartography, upcycle: { ...upcycle, itemId: newId } } };
 }
 
 /**
@@ -301,8 +310,10 @@ function renameInMap(map, oldId, newId, kind) {
  * Returns a partial state patch, or `{}` when the rename is impossible (the
  * target id is taken by a different entity) so the caller can leave state alone.
  */
-function performRename(state, oldId, newId, entityType) {
-    const collectionFor = { item: 'items', token: 'tokens', map: 'maps', effect: 'effects' };
+function performRename(state, oldId, newId, kind) {
+    // A map is an item, renamed as one, so Token drops and upcycle targets follow it.
+    const entityType = kind === 'map' ? 'item' : kind;
+    const collectionFor = { item: 'items', token: 'tokens', effect: 'effects' };
     const collectionKey = collectionFor[entityType];
     if (!collectionKey) return {};
 
@@ -332,6 +343,9 @@ function performRename(state, oldId, newId, entityType) {
                 ])
             );
             patch.recipePools = renameInRecipePools(state.recipePools, oldId, newId);
+            patch.items = Object.fromEntries(
+                Object.entries(renamed).map(([id, item]) => [id, renameItemInCartography(item, oldId, newId)])
+            );
         }
         if (entityType === 'token') {
             // Walks the RENAMED collection, so a Token whose spawner lists
@@ -343,13 +357,10 @@ function performRename(state, oldId, newId, entityType) {
                 ])
             );
             patch.recipePools = renameTokenInRecipePools(state.recipePools, oldId, newId);
+            patch.items = Object.fromEntries(
+                Object.entries(state.items || {}).map(([id, item]) => [id, renameTokenInCartography(item, oldId, newId)])
+            );
         }
-        patch.maps = Object.fromEntries(
-            Object.entries(state.maps || {}).map(([id, map]) => [
-                id,
-                renameInMap(map, oldId, newId, entityType),
-            ])
-        );
     }
 
     /** Renaming a library entry repoints every bearer that uses it. The id is derived from the name (`autoSyncId`), so a rename changes the id underneath, and a bearer left on the old id would quietly lose that rule. */
@@ -368,15 +379,6 @@ function performRename(state, oldId, newId, entityType) {
 
         patch.tokens = repoint(state.tokens);
         patch.items = repoint(state.items);
-    }
-
-    if (entityType === 'map') {
-        patch.tokens = Object.fromEntries(
-            Object.entries(state.tokens || {}).map(([id, token]) => [
-                id,
-                token.mapId === oldId ? { ...token, mapId: newId } : token,
-            ])
-        );
     }
 
     return patch;
@@ -543,15 +545,27 @@ export function makeRecipe(data = {}) {
     };
 }
 
-function makeMap(data = {}) {
+/** A Base Map (`type: 'map'`) or a Modifier (`type: 'modifier'`): an item with a Cartography block. No `value`: the simulator prices no map, and an absent field never claims one. */
+export function makeMapItem(type = 'map', data = {}) {
+    const kind = type === 'modifier' ? 'modifier' : 'map';
     return {
-        name: 'New Map',
-        price: 0,
-        materials: [],
-        pool: [],
+        name: kind === 'modifier' ? 'New Modifier' : 'New Map',
+        description: '',
+        type: kind,
+        tags: [],
+        sprite: '',
+        stackable: true,
         autoSyncId: true,
+        cartography: blankCartography(kind),
         ...data,
     };
+}
+
+/** The id prefix an item's name slugifies under: a map keeps `map_` and a modifier `mod_`, so a map's id says what it is. */
+function itemPrefix(item) {
+    if (item?.type === 'map') return 'map';
+    if (item?.type === 'modifier') return 'mod';
+    return 'item';
 }
 
 /**
@@ -633,23 +647,31 @@ function seedSkillIds(state) {
     return next;
 }
 
+/** A workspace saved before maps were items carries the retired `maps` collection; it is dropped on load, never read. */
+function dropRetiredCollections(state) {
+    if (!state || typeof state !== 'object' || !('maps' in state)) return state;
+    const rest = { ...state };
+    delete rest.maps;
+    return rest;
+}
+
 const FACTORIES = {
-    items: { make: makeItem, prefix: 'item', type: 'item' },
+    items: { make: makeItem, prefix: itemPrefix, type: 'item' },
     tokens: { make: makeToken, prefix: 'token', type: 'token' },
-    maps: { make: makeMap, prefix: 'map', type: 'map' },
     effects: { make: makeEffect, prefix: 'effect', type: 'effect' },
 };
 
 /** Build the add/update/delete trio for a collection; the collections differ only in their factory and id prefix. */
 function collectionActions(collectionKey, set, get) {
     const { make, prefix, type } = FACTORIES[collectionKey];
+    const prefixOf = (entity) => (typeof prefix === 'function' ? prefix(entity) : prefix);
     const capitalized = collectionKey.charAt(0).toUpperCase() + collectionKey.slice(1, -1);
 
     return {
         [`add${capitalized}`]: (data = {}) => {
             const state = get();
             const entity = make(data);
-            const id = uniqueId(state[collectionKey], slugify(entity.name, prefix));
+            const id = uniqueId(state[collectionKey], slugify(entity.name, prefixOf(entity)));
             entity.id = id;
             set((s) => ({ [collectionKey]: { ...s[collectionKey], [id]: entity } }));
             return id;
@@ -665,7 +687,7 @@ function collectionActions(collectionKey, set, get) {
 
                 // Renaming keeps the id in step unless the author has pinned it by editing the id directly (which clears autoSyncId).
                 if ('name' in patch && next.autoSyncId) {
-                    const desired = uniqueId(collection, slugify(patch.name, prefix), id);
+                    const desired = uniqueId(collection, slugify(patch.name, prefixOf(next)), id);
                     if (desired && desired !== id) {
                         const renamePatch = performRename(
                             { ...s, [collectionKey]: { ...collection, [id]: next } },
@@ -702,7 +724,6 @@ export const useEntityStore = create(
         (set, get) => ({
             items: {},
             tokens: {},
-            maps: {},
 
             /**
              * The named effect library.
@@ -721,8 +742,32 @@ export const useEntityStore = create(
 
             ...collectionActions('items', set, get),
             ...collectionActions('tokens', set, get),
-            ...collectionActions('maps', set, get),
             ...collectionActions('effects', set, get),
+
+            /** Author a new Base Map (`'map'`) or Modifier (`'modifier'`): an item, which the Map editor edits and Sync writes into `items.json`. Returns its id. */
+            addMap: (type = 'map', data = {}) => {
+                const entity = makeMapItem(type, data);
+                const id = uniqueId(get().items, slugify(entity.name, itemPrefix(entity)));
+                entity.id = id;
+                set((s) => ({ items: { ...s.items, [id]: entity } }));
+                return id;
+            },
+
+            /** Turn a Base Map into a Modifier or back: the other kind's blank block, keeping what both kinds carry (upcycling, bounty weight), and the id prefix that goes with it. Returns the id it ends up under. */
+            setMapKind: (id, type) => {
+                const item = get().items[id];
+                if (!isMapItem(item) || item.type === type || (type !== 'map' && type !== 'modifier')) return id;
+                const { upcycle, bountyWeight } = item.cartography || {};
+                const cartography = blankCartography(type);
+                if (upcycle !== undefined) cartography.upcycle = upcycle;
+                if (bountyWeight !== undefined) cartography.bountyWeight = bountyWeight;
+                const desired = item.autoSyncId
+                    ? uniqueId(get().items, slugify(item.name, itemPrefix({ type })), id)
+                    : id;
+                // Passing the name runs the rename, so the id takes the new kind's prefix.
+                get().updateItem(id, { type, cartography, name: item.name });
+                return get().items[desired]?.type === type ? desired : id;
+            },
 
             /**
              * Move an entity to an explicitly chosen id.
@@ -905,7 +950,6 @@ export const useEntityStore = create(
                 set({
                     items: seeded.items,
                     tokens: seeded.tokens,
-                    maps: data.maps || {},
                     effects: seeded.effects,
                     recipePools: seeded.recipePools,
                     activeEntityId: null,
@@ -950,18 +994,13 @@ export const useEntityStore = create(
                         items: state.items,
                         tokens: migrated.tokens,
                         recipes: flatten(migrated.recipePools),
-                        // The Map check reads these two and writes back only derived pool weights. `enemies` is empty here: this store does not load `data/enemies.json`.
-                        maps: state.maps,
-                        enemies: state.enemies || {},
                     },
                     globals?.simDials || {}
                 );
 
                 const items = applyItemResults(state.items, sim);
-                // ⚠️ `applyScrapValues` runs over the result rather than inside it: `applyTokenResults` returns a config-less Token untouched, and a Map Token or a pickaxe has no config but still takes a scrap value.
-                const tokens = applyScrapValues(applyTokenResults(migrated.tokens, sim), sim);
+                const tokens = applyTokenResults(migrated.tokens, sim);
                 const recipePools = applyRecipePoolResults(migrated.recipePools, sim);
-                const maps = applyMapResults(state.maps, sim);
                 const recipes = flatten(recipePools);
 
                 // Every Token's type and description are DERIVED here, on the way to the file: a description is its rules, rendered, so the two cannot drift.
@@ -982,7 +1021,6 @@ export const useEntityStore = create(
                     items,
                     tokens: finalTokens,
                     recipes,
-                    maps,
                     // For the skill check, which must expand a Token to recognise a Promotion Token. Read-only; nothing is written.
                     effects: library,
                 }, sim.rows.map(describeRow));
@@ -1012,15 +1050,14 @@ export const useEntityStore = create(
                         recipes: byId(Object.values(recipePools).flat().filter(Boolean)),
                     }, ranAt),
                     churnReport,
-                    mapReports: [...sim.maps.values()],
                     // The rows with their structure intact, for the anchor re-elect card; the audit channel flattens them.
                     simRows: sim.rows,
                     simChains: Object.fromEntries(buildChainTrails(sim)),
                 });
 
-                set({ items, tokens: finalTokens, maps, recipePools, effects: library });
+                set({ items, tokens: finalTokens, recipePools, effects: library });
 
-                return { items, tokens: finalTokens, maps, recipePools, recipes, sim, effects: library };
+                return { items, tokens: finalTokens, recipePools, recipes, sim, effects: library };
             },
 
             /**
@@ -1047,7 +1084,6 @@ export const useEntityStore = create(
                 set({
                     items: {},
                     tokens: {},
-                    maps: {},
                     recipePools: {},
                     activeEntityId: null,
                     activeEntityType: null,
@@ -1064,10 +1100,10 @@ export const useEntityStore = create(
             /** The default merge plus the seeding. The spread order is zustand's own default (persisted wins over the fresh store, so actions survive and data is replaced); only `seedSimIntent` is added. */
             merge: (persistedState, currentState) => ({
                 ...currentState,
-                ...seedAppliesTargets(seedPromotionRules(seedEffectLibrary(seedSkillIds(seedSimIntent(persistedState))))),
+                ...seedAppliesTargets(seedPromotionRules(seedEffectLibrary(seedSkillIds(seedSimIntent(dropRetiredCollections(persistedState)))))),
             }),
             /** Reached only by a numbered version that is not 1. Seeds anyway: the normaliser is idempotent, and a future migration should never be the reason intent went missing. */
-            migrate: (persistedState) => seedAppliesTargets(seedPromotionRules(seedEffectLibrary(seedSkillIds(seedSimIntent(persistedState))))),
+            migrate: (persistedState) => seedAppliesTargets(seedPromotionRules(seedEffectLibrary(seedSkillIds(seedSimIntent(dropRetiredCollections(persistedState)))))),
             /**
              * What survives a reload.
              * ⚠️ `activeEntityId` is in here deliberately: without it, anything that re-created this module (registering a sprite writes `sprite-manifest.js`, which the editors import, so Vite reloaded them) dropped the selection and closed the editor.
@@ -1075,7 +1111,6 @@ export const useEntityStore = create(
             partialize: (state) => ({
                 items: state.items,
                 tokens: state.tokens,
-                maps: state.maps,
                 effects: state.effects,
                 recipePools: state.recipePools,
                 activeEntityId: state.activeEntityId,

@@ -4,13 +4,12 @@ import { makeTokenConfig, makeInputEntry, makeOutputEntry, makeCurrencyOutputEnt
 import SupplyChainColumn from './SupplyChainColumn';
 import { derivedTokenType, expandBearer } from '../../utils/constants';
 
-/** The 3-column shape: origins on the left, the editor in the middle, products on the right. Tokens get editable Inputs and Outputs; Items get a read-only dependency view of which Tokens and Maps produce or consume them. */
+/** The 3-column shape: origins on the left, the editor in the middle, products on the right. Tokens get editable Inputs and Outputs; Items and maps get a read-only dependency view of which Tokens produce (drop) or consume them. */
 export default function SupplyChainLayout({ children }) {
   const activeId = useEntityStore((s) => s.activeEntityId);
   const activeType = useEntityStore((s) => s.activeEntityType);
   const tokens = useEntityStore((s) => s.tokens);
   const effects = useEntityStore((s) => s.effects);
-  const maps = useEntityStore((s) => s.maps);
   const updateToken = useEntityStore((s) => s.updateToken);
 
   const token = activeType === 'token' ? tokens[activeId] : null;
@@ -40,7 +39,7 @@ export default function SupplyChainLayout({ children }) {
   }, [token]);
 
   const itemSidebars = useMemo(() => {
-    if (activeType !== 'item' || !activeId) return null;
+    if ((activeType !== 'item' && activeType !== 'map') || !activeId) return null;
 
     const producers = [];
     const consumers = [];
@@ -56,18 +55,8 @@ export default function SupplyChainLayout({ children }) {
       }
     }
 
-    // A Map produces an item by dropping it from its pool and consumes one by charging it as part of the purchase price.
-    for (const m of Object.values(maps || {})) {
-      if ((m.pool || []).some((e) => e.kind === 'item' && e.refId === activeId)) {
-        producers.push({ id: m.id, type: 'map' });
-      }
-      if ((m.materials || []).some((mat) => mat.itemId === activeId)) {
-        consumers.push({ id: m.id, type: 'map' });
-      }
-    }
-
     return { producers, consumers };
-  }, [activeType, activeId, tokens, maps]);
+  }, [activeType, activeId, tokens]);
 
   if (!activeId) return <div className="h-full w-full">{children}</div>;
 

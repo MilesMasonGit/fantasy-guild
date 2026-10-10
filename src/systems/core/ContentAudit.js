@@ -14,7 +14,7 @@ import { isEnemyDef } from '../../config/registries/enemyProfile.js';
 import { EFFECTS, getEffect } from '../../config/registries/effectRegistry.js';
 import { effectRefsOf, duplicateRefsOf, hasWorkingStatements, usedBy } from '../effects/effectLibrary.js';
 import { ITEMS, getItem } from '../../config/registries/itemRegistry.js';
-import { allMaps, getMap } from '../../config/registries/mapRegistry.js';
+import { isMapItem, mapItemFindings } from '../atlas/mapItems.js';
 import { listPooledSkillIds } from '../../config/registries/recipePoolRegistry.js';
 import { SPRITE_MANIFEST } from '../../config/registries/sprite-manifest.js';
 import { RANDOM_HUNTS } from '../quests/QuestManager.js';
@@ -46,7 +46,6 @@ const RESOLVERS = {
     item: id => !!getItem(id),
     // `enemy` resolves through the Token registry: an enemy IS a Token, so its id is a Token id.
     enemy: id => !!getTokenType(id),
-    map: id => !!getMap(id),
     sprite: id => !!SPRITE_MANIFEST[id],
     status: id => !!getStatusEffect(id),
     'recipe pool': id => listPooledSkillIds().includes(id)
@@ -119,7 +118,6 @@ function auditTokens(out) {
         }
 
         checkRef(out, where, 'sprite', def.sprite, 'Its artwork');
-        checkRef(out, where, 'map', def.mapId, 'The Map it opens');
         checkRef(out, where, 'recipe pool', stationSkillOf(def), 'The skill it works as');
 
         // A hero-worked Token must name a skill. Reported only.
@@ -530,21 +528,16 @@ function auditItems(out) {
 // Enemy drops are not audited here: enemies are Tokens, so the Token walk
 // already checks their outputs, and a second pass would report each finding twice.
 
-/** Maps: everything in their loot pools. */
-function auditMaps(out) {
-    // Every authored Map, the Guild Hall ones included.
-    for (const [mapId, def] of Object.entries(allMaps())) {
-        const where = `Map "${mapId}"`;
-        if (!def) {
-            out.push(finding(where, 'has no definition behind it'));
-            continue;
-        }
-        for (const entry of def.pool || []) {
-            const kind = entry?.kind === 'item' ? 'item' : 'Token';
-            checkRef(out, where, kind, entry?.refId, 'Something in its loot pool');
-        }
-        for (const material of def.materials || []) {
-            checkRef(out, where, 'item', material?.itemId, 'A material it costs');
+/**
+ * Map and Modifier items: the Tokens their Cartography block names, and a map that writes nothing.
+ * The rule lives in `mapItems.js`, shared with the CMS Economy Audit.
+ */
+function auditMapItems(out) {
+    const tokenExists = id => !!getTokenType(id);
+    for (const [itemId, def] of Object.entries(ITEMS || {})) {
+        if (!isMapItem(def)) continue;
+        for (const what of mapItemFindings(def, { tokenExists, itemOf: getItem })) {
+            out.push(finding(`Item "${itemId}"`, what));
         }
     }
 }
@@ -605,7 +598,7 @@ function auditUnknownRefs(out) {
  */
 export function auditContent({ openingTokens = [] } = {}) {
     const out = [];
-    const steps = [auditTokens, auditEffects, auditItems, auditItemEffects, auditLifecycle, auditUnknownRefs, auditMaps, auditHardcodedLists];
+    const steps = [auditTokens, auditEffects, auditItems, auditItemEffects, auditLifecycle, auditUnknownRefs, auditMapItems, auditHardcodedLists];
     for (const step of steps) {
         try {
             step(out, openingTokens);

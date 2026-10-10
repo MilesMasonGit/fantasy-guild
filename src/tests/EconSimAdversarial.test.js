@@ -12,6 +12,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { useEntityStore } from '../../cms/src/stores/useEntityStore';
 import { useSimulationStore } from '../../cms/src/stores/useSimulationStore';
 import { syncFiles } from '../../cms/src/engine/recipeSync';
+import { isMapItem } from '../systems/atlas/mapItems.js';
 
 // ── The workspace ────────────────────────────────────────────────────────────
 
@@ -41,6 +42,12 @@ function adversarialWorkspace() {
             item_adv_hoard: { id: 'item_adv_hoard', name: 'Adv Hoard', type: 'material', value: null },
             item_adv_relic_dust: { id: 'item_adv_relic_dust', name: 'Adv Relic Dust', type: 'material', value: null },
             item_adv_fang: { id: 'item_adv_fang', name: 'Adv Fang', type: 'material', value: null },
+            // Map items: never priced, never refused, whatever drops them. One is malformed.
+            map_adv_forest: {
+                id: 'map_adv_forest', name: 'Adv Forest Map', type: 'map', stackable: true,
+                cartography: { biome: 'forest', points: 30, nodes: [{ typeId: 'token_adv_surface', weight: 1 }] },
+            },
+            mod_adv_junk: { id: 'mod_adv_junk', name: 'Adv Junk Modifier', type: 'modifier', cartography: { effects: [null, { kind: 'leyline' }] } },
         },
         tokens: {
             // The healthy anchor everything else is measured against. If this
@@ -91,39 +98,6 @@ function adversarialWorkspace() {
             // No config at all — the silent structural skip, in the same
             // workspace as everything noisy.
             token_adv_inert: { id: 'token_adv_inert', name: 'Adv Inert', rarity: 'common', tokenType: 'map', uses: null, config: null },
-        },
-        maps: {
-            // A pool with no Token entry at all: slot one has nothing to draw
-            // from and falls back to a free draw ( renormalisation).
-            map_adv_tokenless: {
-                id: 'map_adv_tokenless', name: 'Adv Tokenless', price: 400, materials: [],
-                pool: [
-                    { kind: 'item', refId: 'item_adv_ore', quantity: 3 },
-                    { kind: 'gold', amount: 250 },
-                ],
-            },
-            // Gold and raw items worth far more than the scrap budget.
-            map_adv_heavy: {
-                id: 'map_adv_heavy', name: 'Adv Item Heavy', price: 300, materials: [],
-                pool: [
-                    { kind: 'item', refId: 'item_adv_hoard', quantity: 20 },
-                    { kind: 'gold', amount: 9000 },
-                    { kind: 'token', refId: 'token_adv_surface' },
-                ],
-            },
-            // A pool with a Token, an enemy and a support-shaped entry.
-            map_adv_mixed: {
-                id: 'map_adv_mixed', name: 'Adv Mixed', price: 1200,
-                materials: [{ itemId: 'item_adv_ore', quantity: 2 }],
-                pool: [
-                    { kind: 'token', refId: 'token_adv_surface' },
-                    { kind: 'token', refId: 'token_adv_extreme' },
-                    { kind: 'enemy', refId: 'enemy_adv_wolf' },
-                ],
-            },
-            // Empty pool, and a guild-hall map: the two skips.
-            map_adv_empty: { id: 'map_adv_empty', name: 'Adv Empty', price: 100, materials: [], pool: [] },
-            map_guild_hall_adv: { id: 'map_guild_hall_adv', name: 'Adv Hall', price: 0, materials: [], pool: [{ kind: 'token', refId: 'token_adv_surface' }] },
         },
         recipePools: {
             smithing: [
@@ -181,20 +155,9 @@ function adversarialWorkspace() {
     };
 }
 
-/** Enemies, which the store keeps outside its four persisted collections. */
-function adversarialEnemies() {
-    return {
-        enemy_adv_wolf: {
-            id: 'enemy_adv_wolf', name: 'Adv Wolf', level: 6,
-            drops: [{ itemId: 'item_adv_fang', minQty: 1, maxQty: 3, chance: 50 }],
-        },
-    };
-}
-
 function load() {
     useEntityStore.setState({
         ...adversarialWorkspace(),
-        enemies: adversarialEnemies(),
         activeEntityId: null,
         activeEntityType: null,
     });
@@ -204,12 +167,10 @@ function load() {
 const snapshot = (result) => JSON.stringify({
     items: result.items,
     tokens: result.tokens,
-    maps: result.maps,
     recipePools: result.recipePools,
     rows: result.sim.rows,
     values: [...result.sim.values.entries()].sort(),
     elections: [...result.sim.elections.entries()].map(([k, v]) => [k, v.sourceId, v.reason]).sort(),
-    scrapValues: [...result.sim.scrapValues.entries()].sort(),
 });
 
 /**
@@ -259,11 +220,12 @@ describe('⚠️ The adversarial content set — every hard case in one workspac
         expect(result.items.item_adv_bar.valueSource).toBe('recipe_adv_smelt');
     });
 
-    it('gives every item either a value or a row saying why not', () => {
+    it('gives every item but the maps either a value or a row saying why not', () => {
         const result = useEntityStore.getState().recalculateEconomy();
         const explained = new Set(result.sim.rows.filter((r) => r.itemId).map((r) => r.itemId));
         for (const itemId of Object.keys(result.items)) {
-            if (result.sim.values.has(itemId)) continue;
+            // A map is priced by nothing, by design: the map items case below.
+            if (result.sim.values.has(itemId) || isMapItem(result.items[itemId])) continue;
             expect(explained.has(itemId), `${itemId} is neither priced nor explained`).toBe(true);
         }
     });
@@ -354,19 +316,10 @@ describe('⚠️ The adversarial content set — every hard case in one workspac
 
     it('handles the extreme-tag Token without a NaN or an infinity anywhere', () => {
         const result = useEntityStore.getState().recalculateEconomy();
-        const written = JSON.stringify({ items: result.items, tokens: result.tokens, maps: result.maps });
+        const written = JSON.stringify({ items: result.items, tokens: result.tokens });
         expect(written.includes('null,null')).toBe(false);
         expect(written.toLowerCase().includes('nan')).toBe(false);
         expect(written.includes('Infinity')).toBe(false);
-
-        // ⚠️ P7's lesson: `NaN < bound` is false, so an unguarded NaN reads as
-        // PASSING. Every number the Map table prints must be finite.
-        for (const report of result.sim.maps.values()) {
-            if (report.skipped) continue;
-            for (const key of ['level', 'cost', 'scrapSide', 'scrapBound', 'productiveSide', 'productiveBound']) {
-                expect(Number.isFinite(report[key]), `${report.id}.${key} is not finite`).toBe(true);
-            }
-        }
     });
 
     it('flags the extreme Token\'s absurd lifetime rather than swallowing it', () => {
@@ -378,53 +331,32 @@ describe('⚠️ The adversarial content set — every hard case in one workspac
         expect(life.unlimited).toBe(false);
     });
 
-    // ── The Map pools ────────────────────────────────────────────────────────
+    // ── Map items ────────────────────────────────────────────────────────────
 
-    it('handles a pool with no Token in it at all', () => {
-        const result = useEntityStore.getState().recalculateEconomy();
-        const report = result.sim.maps.get('map_adv_tokenless');
-        expect(report.skipped).toBeUndefined();
-        // Slot one has no Tokens to renormalise over, so it falls back to a free
-        // draw — the same thing `rollBurst` does, and it must not divide by zero.
-        const total = report.entries.reduce((s, e) => s + e.expectedCount, 0);
-        expect(Number.isFinite(total)).toBe(true);
-        expect(total).toBeCloseTo(report.burstSize, 6);
-    });
-
-    it('refuses the gold-and-raw-item-heavy pool', () => {
-        const result = useEntityStore.getState().recalculateEconomy();
-        const heavy = rowsOf(result, 'map-item-heavy');
-        expect(heavy.some((r) => r.entityId === 'map_adv_heavy')).toBe(true);
-        // Gold and raw items count at face value and eat the budget before any
-        // Token is priced, so every Token in that pool scraps for nothing.
-        const report = result.sim.maps.get('map_adv_heavy');
-        expect(report.overflow).toBe(true);
-        const tokenEntry = report.entries.find((e) => e.kind === 'token');
-        expect(tokenEntry.scrapValue).toBe(0);
-    });
-
-    it('prices the enemy entry off its drop table, one kill = one charge', () => {
-        const result = useEntityStore.getState().recalculateEconomy();
-        const report = result.sim.maps.get('map_adv_mixed');
-        const enemy = report.entries.find((e) => e.kind === 'enemy');
-        expect(enemy).toBeTruthy();
-        expect(enemy.basis).toContain('one kill');
-        expect(Number.isFinite(enemy.productiveValue)).toBe(true);
-    });
-
-    it('skips the guild-hall Map and the empty pool, and says which is which', () => {
-        const result = useEntityStore.getState().recalculateEconomy();
-        expect(result.sim.maps.get('map_guild_hall_adv').skipped).toBe('guild-hall');
-        expect(result.sim.maps.get('map_adv_empty').skipped).toBe('empty-pool');
-    });
-
-    it('derives a weight for every entry of every unskipped pool', () => {
-        const result = useEntityStore.getState().recalculateEconomy();
-        for (const [id, map] of Object.entries(result.maps)) {
-            const report = result.sim.maps.get(id);
-            if (!report || report.skipped) continue;
-            for (const entry of map.pool) expect(Number.isFinite(entry.weight)).toBe(true);
+    it('prices no map and refuses none, malformed or dropped, and the drop moves nothing else', () => {
+        const plain = useEntityStore.getState().recalculateEconomy();
+        load();
+        const tokens = useEntityStore.getState().tokens;
+        const surface = tokens.token_adv_surface;
+        useEntityStore.setState({
+            tokens: {
+                ...tokens,
+                token_adv_surface: {
+                    ...surface,
+                    config: { ...surface.config, outputs: [...surface.config.outputs, { itemId: 'map_adv_forest', chance: 5, minQty: 1, maxQty: 1 }] },
+                },
+            },
+        });
+        const dropped = useEntityStore.getState().recalculateEconomy();
+        for (const result of [plain, dropped]) {
+            for (const id of ['map_adv_forest', 'mod_adv_junk']) {
+                expect(result.sim.values.has(id)).toBe(false);
+                expect(result.sim.rows.filter((r) => r.itemId === id)).toEqual([]);
+                expect(result.items[id]).toEqual(adversarialWorkspace().items[id]);
+            }
         }
+        expect([...dropped.sim.values.entries()].sort()).toEqual([...plain.sim.values.entries()].sort());
+        expect(dropped.tokens.token_adv_surface.config.outputs[1]).toEqual({ itemId: 'map_adv_forest', chance: 5, minQty: 1, maxQty: 1 });
     });
 
     // ── 3. It is idempotent ──────────────────────────────────────────────────
@@ -509,7 +441,7 @@ describe('authored tokenType is corrected before the passes read it', () => {
                     outputs: [{ itemId: 'item_adv_shrine_relic', chance: 100, minQty: 1, maxQty: 1 }],
                 }, { tokenType: 'passive', requiresHero: true, sim: { tempo: 'slow', purpose: 'iph' } }),
             },
-            maps: {}, recipePools: {}, activeEntityId: null, activeEntityType: null,
+            recipePools: {}, activeEntityId: null, activeEntityType: null,
         });
     });
     afterEach(() => useSimulationStore.getState().clearResults());

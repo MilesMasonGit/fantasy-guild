@@ -589,7 +589,6 @@ export default function cmsFileApi() {
             const dataDir = path.resolve(projectRoot, 'data');
             const items = JSON.parse(fs.readFileSync(path.join(dataDir, 'items.json'), 'utf8'));
             const tokens = JSON.parse(fs.readFileSync(path.join(dataDir, 'tokens.json'), 'utf8'));
-            const maps = JSON.parse(fs.readFileSync(path.join(dataDir, 'maps.json'), 'utf8'));
             const effects = fs.existsSync(path.join(dataDir, 'effects.json'))
               ? JSON.parse(fs.readFileSync(path.join(dataDir, 'effects.json'), 'utf8'))
               : {};
@@ -608,7 +607,6 @@ export default function cmsFileApi() {
             res.end(JSON.stringify({
               items,
               tokens,
-              maps,
               effects,
               recipePools,
             }));
@@ -656,12 +654,13 @@ export default function cmsFileApi() {
 
               // Count what went in, so the commit message says what changed
               // rather than just "sync". Shapes differ per file: tokens and
-              // items are keyed objects, maps and recipes are arrays.
+              // items are keyed objects, recipes an array; maps are items.
               const size = (v) => (Array.isArray(v) ? v.length : v && typeof v === 'object' ? Object.keys(v).length : 0);
+              const isMap = (def) => def?.type === 'map' || def?.type === 'modifier';
               const counts = {
                 tokens: size(files['tokens.json']),
                 items: size(files['items.json']),
-                maps: size(files['maps.json']),
+                maps: Object.values(files['items.json'] || {}).filter(isMap).length,
                 recipes: size(files['tokenRecipes.json'])
               };
 

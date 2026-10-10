@@ -242,7 +242,8 @@ describe('The Token type is read off the rules, never picked', () => {
         // enemies fold into Tokens, so there is no separate creature
         // entity left to point at.
         expect(derive({ enemy: { level: 3, style: 'melee' } })).toBe('enemy');
-        expect(derive({ mapId: 'map_x' })).toBe('map');
+        // A leftover `mapId` says nothing: maps are items.
+        expect(derive({ mapId: 'map_x' })).not.toBe('map');
         expect(derive({ statements: [{ keyword: KEYWORD.STATION, payload: { skill: 'cooking' } }] })).toBe('station');
         expect(derive({ statements: [{ keyword: KEYWORD.RESTOCKS, payload: { tokenIds: ['a'] } }] })).toBe('manager');
         expect(derive({ statements: [{ keyword: KEYWORD.ACTS_AS, payload: { tag: 'axe' } }] })).toBe('context');

@@ -13,8 +13,6 @@ export const useSimulationStore = create((set) => ({
   /** The economic simulator's own output. `simAnswers` is one record per Token/Recipe for the Simulator panel's answer half. `churnReport` is the last run's report and also the input to the next run's refusal diff through its `refusalKeys`; it is not persisted, so a reload starts the diff over and the report claims nothing new on a first run. */
   simAnswers: {},
   churnReport: null,
-  /** The Map check's table, one report per Map. A skipped Map (guild-hall, empty pool) stays in the list with a `skipped` reason rather than missing, so the table can say why. */
-  mapReports: [],
   /** The last run's rows, as the passes produced them. The audit panel gets rows flattened into prose, which loses the structure the anchor re-elect card needs (which item, which stored election, which candidate would win), so they are kept here as well. */
   simRows: [],
   /** One chain trail per item, keyed by item id for the Item editor. */
@@ -45,10 +43,9 @@ export const useSimulationStore = create((set) => ({
       lastRunTimestamp: Date.now(),
     }),
   /** Land the simulator's own output. Kept separate from `setAuditResults` so its legacy signature does not have to grow again. */
-  setSimResults: ({ simAnswers, churnReport, mapReports, simRows, simChains }) => set({
+  setSimResults: ({ simAnswers, churnReport, simRows, simChains }) => set({
     simAnswers: simAnswers || {},
     churnReport: churnReport || null,
-    mapReports: mapReports || [],
     simRows: simRows || [],
     simChains: simChains || {},
   }),
@@ -59,7 +56,6 @@ export const useSimulationStore = create((set) => ({
     auditResults: [],
     simAnswers: {},
     churnReport: null,
-    mapReports: [],
     simRows: [],
     simChains: {},
     dismissedElections: {},

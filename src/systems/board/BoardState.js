@@ -85,12 +85,22 @@ export function originOf(instance) {
 }
 
 /**
- * A fresh Token instance. `origin` defaults to `placed`: every route that makes a Token except a
- * spawn is the player's, so only `EffectActions.spawn` passes `spawned`.
+ * A map's node: a Token a map wrote into its Region when the Region was settled (`Atlas.settle`),
+ * saved as `fixture: true` beside the `biome` it stands in. Always `placed`, so no spawn pushes it.
+ * A transform keeps the mark (`EffectActions.transformInstance`), as it keeps `origin`.
  */
-export function createTokenInstance(typeId, uses = null, terrain = null, origin = ORIGIN.PLACED) {
+export function isFixture(instance) {
+    return instance?.fixture === true;
+}
+
+/**
+ * A fresh Token instance. `origin` defaults to `placed`: every route that makes a Token except a
+ * spawn is the player's, so only `EffectActions.spawn` passes `spawned`. `id` is drawn fresh unless
+ * given: a settled Region names its Tokens itself, so writing one draws no random number.
+ */
+export function createTokenInstance(typeId, uses = null, terrain = null, origin = ORIGIN.PLACED, id = null) {
     const instance = {
-        id: newTokenId(),
+        id: id || newTokenId(),
         typeId,
         usesRemaining: uses,
         cycleElapsedMs: 0,
@@ -108,6 +118,27 @@ export function placedTokenIds() {
 /** Stamp `placedAt` from the board's counter, unless the instance already has one. */
 function stampOrder(b, instance) {
     if (!Number.isInteger(instance.placedAt)) instance.placedAt = b.nextTokenOrder++;
+}
+
+/**
+ * A board that is not the live one, holding `placements` in order, each instance given its point
+ * and arrival order exactly as {@link addToken} gives them on the mat. ⚠️ Every other writer here
+ * writes only the live board (`state.board`); this is how a Region is built before the guild goes
+ * there (`Atlas.settle`), with nothing live read or touched. No rules, as `addToken`.
+ *
+ * @param {{instance: object, x: number, y: number}[]} placements  instances with their ids
+ * @returns {object} a board in the shape of `createEmptyBoard()`
+ */
+export function detachedBoard(placements = []) {
+    const b = createEmptyBoard();
+    for (const { instance, x, y } of placements) {
+        if (!instance?.id || !instance.typeId || !Number.isFinite(x) || !Number.isFinite(y)) continue;
+        instance.x = x;
+        instance.y = y;
+        stampOrder(b, instance);
+        b.tokens[instance.id] = instance;
+    }
+    return b;
 }
 
 /**

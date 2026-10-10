@@ -39,11 +39,13 @@ Tokens' art; don't redraw them as scenery.
 
 ## 2. Effect animations
 
-Horizontal strips, one frame per cell, about 80–125 ms a frame (hero frames
-are 125 ms). Token art is 64 × 64, items 32 × 32. The player for these is
-T-138 (built when the first strips exist).
+**Owner's format (2026-10-09): 8 fps (125 ms a frame, like the hero
+animations), 64 × 64 cells** to match the Tokens they play over, as a
+horizontal strip. The cell sizes below were the research's suggestion; the
+owner's 64 × 64 replaces them. Progress is slow and nothing is ready yet; the
+player for these is T-138 (built when the first strips exist).
 
-| Effect | When it plays | Frames | Cell size |
+| Effect | When it plays | Frames | Research cell size (superseded: 64 × 64) |
 |---|---|---|---|
 | Falling leaves | Forestry strikes on trees | 6 | 16 × 16 (or 3 leaf variants 8 × 8) |
 | Rock chips and sparks | Mining strikes | 4 | 16 × 16 |

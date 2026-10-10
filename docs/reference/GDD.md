@@ -164,11 +164,20 @@ price; bought consumable = price × charges left ÷ (starting × 2); spawned =
 nothing. Rounded down per item. The Hall and tutorial quests can't be binned.
 *(`DiscardBin.js`)*
 
-### Maps — Retired, pending the Atlas
-Map bursts, the Map shop and the Explore skill are gone. The Oak Forest Map and
-the other Map Tokens were retired from `data/` (T-002), and `data/maps.json` is
-empty. One Map Token, **Volcanic Island**, is left; it points at a map that no
-longer exists, so it does nothing. The Atlas gets fresh Map content.
+### Maps — Items (Atlas A5); no map content yet
+A map is an item: a **Base Map** (type `map`) or a **Modifier** (type
+`modifier`), authored in the CMS's Map editor and written into `data/items.json`
+by Sync, so it banks, drops and pays out like any item. Its Cartography block
+says what it writes: a Base Map has a biome, points, weighted nodes, its own
+enemy camps and treasures, and its ground; a Modifier has effects (more of a
+node, a better node instead, an enemy camp, a treasure). The generation engine
+reads it (`systems/atlas/mapItems.js` → `Budget.js`); inspecting one in the Bank
+lists what it writes. Settling a Region takes the slotted maps from the Bank
+(`Cartography.js`). A claimed bounty pays a map 25 % of the time, drawn at the
+claim, weighted by each map's bounty weight. The simulator prices no map. Map
+bursts, the Map shop, the Explore skill and the old Map catalogue
+(`data/maps.json`) are retired; the last Map Token, **Volcanic Island**, does
+nothing and is the owner's to delete in the CMS.
 
 ---
 
@@ -499,8 +508,8 @@ drawers**. The menu can be flipped to the right.
 - **The CMS** (`cms/`, a separate local app): the **only** way to author
   content (Tokens, items, recipes, Maps, effects). Its **Recalculate** runs the
   economic simulator (Tempo bands → anchor items → prices → tuning → XP →
-  checks) and writes numbers back. **Sync to Game** overwrites `data/items.json`,
-  `tokens.json`, `maps.json`, `tokenRecipes.json` and `effects.json` from the
+  checks) and writes numbers back. **Sync to Game** overwrites `data/items.json`
+  (maps included), `tokens.json`, `tokenRecipes.json` and `effects.json` from the
   CMS's own store and auto-commits `data/`. Never hand-edit those files.
   - **Tempo bands** (cycle time at level 1): quick 2–4 s, fast 4–12 s, medium
     12–20 s, slow 20–30 s, heavy 30–120 s; slower by `1 + (level−1)/70`.

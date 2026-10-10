@@ -8,6 +8,8 @@ import { useEntityDrag, useEntityDrop, DropTarget, mergeRefs } from '../../dnd/D
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { ItemIcon } from '../base/ItemIcon.jsx';
 import { formatCompact } from '../../../utils/Formatters.js';
+import { matCap } from '../../../systems/board/MatCap.js';
+import { isMapItem, whatItWrites, MAP_TEXT } from '../../../systems/atlas/mapItems.js';
 import { Landmark, X, Lock, Check, AlertTriangle, BoxSelect } from 'lucide-react';
 
 import { EventBus } from '../../../systems/core/EventBus.js';
@@ -442,6 +444,7 @@ const BankTabButtonBody = memo(function BankTabButtonBody({ tab, index, first, a
 // eslint-disable-next-line no-unused-vars
 export const ItemInspection = ({ entry, showSell = true, showViewInBank = false }) => {
     const { template, count } = entry;
+    const writes = isMapItem(template) ? whatItWrites(template, { cap: matCap() }) : null;
     return (
         <div className="p-4 flex flex-col gap-4 text-xs text-gi-text">
             <div className="flex flex-col items-center text-center">
@@ -452,7 +455,7 @@ export const ItemInspection = ({ entry, showSell = true, showViewInBank = false 
                     {template.name}
                 </h3>
                 <span className="text-xs text-gi-muted uppercase tracking-wider mt-1 select-text">
-                    {template.type || 'item'}
+                    {MAP_TEXT.typeLabel[template.type] || template.type || 'item'}
                 </span>
 
                 {template.tags?.length > 0 && (
@@ -474,6 +477,26 @@ export const ItemInspection = ({ entry, showSell = true, showViewInBank = false 
                     <p className="text-xs text-gi-text/85 leading-relaxed select-text font-medium">
                         {template.description.replace(/^["']|["']$/g, '')}
                     </p>
+                </div>
+            )}
+
+            {writes && (
+                <div data-map-writes className="flex flex-col gap-2 pt-1 border-t border-gi-border/30">
+                    <div className="flex items-baseline justify-between gap-2">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-gi-muted">{MAP_TEXT.whatItWrites}</span>
+                        <span className="text-xs font-bold text-gi-text text-right">{writes.headline}</span>
+                    </div>
+                    <ul className="flex flex-col gap-1">
+                        {writes.lines.map((line, i) => (
+                            <li
+                                key={`${line.role}-${line.typeId}-${i}`}
+                                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#181412] border border-white/10 text-xs"
+                            >
+                                <ItemIcon item={line.typeId} size={16} className="shrink-0" />
+                                <span className="font-medium text-gi-text tabular-nums">{line.text}</span>
+                            </li>
+                        ))}
+                    </ul>
                 </div>
             )}
 
