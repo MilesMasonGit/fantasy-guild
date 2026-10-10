@@ -38,7 +38,7 @@ describe('Guild Hall Mobile Token (New Token System)', () => {
         expect(openingMat().map(t => t.typeId)).toContain('token_guild_hall');
     });
 
-    it('can be placed anywhere on the mat, and moved anywhere else', () => {
+    it('can be placed anywhere on the mat, and then stays there (fixed, Atlas D-6 B)', () => {
         const gh = BoardState.createTokenInstance('token_guild_hall');
 
         const resCentre = put(21, gh);
@@ -46,9 +46,9 @@ describe('Guild Hall Mobile Token (New Token System)', () => {
         expect(tokenAt(21).typeId).toBe('token_guild_hall');
 
         const resMove = Placement.moveTokenTo(gh.id, C(10));
-        expect(resMove.success).toBe(true);
-        expect(tokenAt(21)).toBeNull();
-        expect(tokenAt(10).typeId).toBe('token_guild_hall');
+        expect(resMove.success).toBe(false);
+        expect(tokenAt(21).typeId).toBe('token_guild_hall');
+        expect(tokenAt(10)).toBeNull();
     });
 
     // Was 'cannot be removed from the playmat to the Vault once placed, and

@@ -203,13 +203,17 @@ describe('⭐ a Forest spawns its family up to its allowance', () => {
         expect(seeds()).toBe(94);
     });
 
+    // A Tree the Forest planted is fixed (Atlas D-6 B) and cannot be binned; one placed by hand
+    // counts toward the family just the same, and can.
     it('a binned family Token still counts: binning one does not free a slot, discarding it does', () => {
         give(SEED, 100);
+        const victim = placeAt('fixture_sp_tree', 200, 200);
         const forest = placeAt('fixture_sp_forest', 800, 500);
         run(10 * 60000);
         expect(family()).toHaveLength(5);
 
-        const victim = family()[0];
+        const planted = family().find(t => t.id !== victim.id);
+        expect(DiscardBin.binToken(planted.id).success).toBe(false);
         expect(DiscardBin.binToken(victim.id).success).toBe(true);
         expect(family()).toHaveLength(4);
         expect(SpawnerSystem.spawnerStatus(forest.id)).toMatchObject({ state: 'at_cap', count: 5, cap: 5 });
@@ -229,10 +233,10 @@ describe('⭐ a Forest spawns its family up to its allowance', () => {
 
     it('taking a binned Token back onto the mat does not double count it', () => {
         give(SEED, 100);
+        const victim = placeAt('fixture_sp_tree', 200, 200);
         const forest = placeAt('fixture_sp_forest', 800, 500);
         run(10 * 60000);
-        const victim = family()[0];
-        DiscardBin.binToken(victim.id);
+        expect(DiscardBin.binToken(victim.id).success).toBe(true);
         expect(SpawnerSystem.spawnerCounts(forest.id).count).toBe(5);
         expect(DiscardBin.unbinToken(victim.id, { x: 300, y: 300 }).success).toBe(true);
         expect(SpawnerSystem.spawnerCounts(forest.id).count).toBe(5);

@@ -11,6 +11,7 @@ import * as MatCap from './MatCap.js';
 import * as StationRecipe from './StationRecipe.js';
 import * as Landmarks from './Landmarks.js';
 import * as Demolition from './Demolition.js';
+import { isFixed } from './FixedTokens.js';
 import { warnMissingContent } from '../../utils/missingContent.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
@@ -79,6 +80,11 @@ function mythicAlreadyPlaced(typeId, exceptId = null) {
     }
     return false;
 }
+
+export { isFixed };
+
+/** Why a fixed Token refuses to move (`FixedTokens.isFixed`). */
+export const FIXED_IN_PLACE = 'That stays where it is';
 
 /** Check if a token cannot be removed from the playmat once placed. */
 export function isPermanentToken(typeId, instance) {
@@ -280,6 +286,8 @@ function restock(instance, decision) {
 /**
  * Move the Token with id `id` to a mat point.
  *
+ * A fixed Token (a map's node, a landmark, the Hall, a planted tree) refuses.
+ *
  * A moved Token keeps its progress and carries its hero. The hero's claim is keyed by the Token
  * instance, so it follows on its own, even outside their flag's radius; this only has to stop the
  * forfeit and say that the hero moved. A landmark refuses (`Landmarks.canMove`).
@@ -288,6 +296,7 @@ export function moveTokenTo(id, point) {
     const moving = BoardState.getTokenById(id);
     if (!moving) return refuse('No Token there');
     if (!Landmarks.canMove(moving)) return refuse(Landmarks.cannotMoveReason(moving));
+    if (isFixed(moving)) return refuse(FIXED_IN_PLACE);
 
     const from = pointOf(moving);
     const heroId = BoardState.workerOf(id);
