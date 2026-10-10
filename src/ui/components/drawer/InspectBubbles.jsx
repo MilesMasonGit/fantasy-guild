@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react';
-import { RingBadge } from '../board/RingBadge.jsx';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { RingBadge, paintRing } from '../board/RingBadge.jsx';
+import { onStep } from '../board/frameClock.js';
+import { readCycle } from '../board/cycleShare.js';
 import { subscribeToken } from '../board/tokenEvents.js';
 import { useTokenDetail } from '../board/useTokenDetail.js';
 import { chargesFraction, cycleSecondsText, ringCount } from '../board/ringRow.js';
@@ -64,39 +66,81 @@ function useCycleProgress(instanceId, working) {
     return working ? progress : null;
 }
 
-const InspectBubble = ({ name, label, bubble }) => (
+/** `rootRef` set: a live ring, painted on the step (`paintRing`) rather than by React. */
+const InspectBubble = ({ name, label, bubble, rootRef = null }) => (
     <div data-inspect-bubble={name} className="flex flex-col items-center gap-1" title={bubble.title}>
-        <RingBadge kind={bubble.kind} fraction={bubble.fraction} text={bubble.text} title={bubble.title} />
+        {rootRef
+            ? <RingBadge key="live" kind={bubble.kind} title={bubble.title} rootRef={rootRef} />
+            : <RingBadge key="still" kind={bubble.kind} fraction={bubble.fraction} text={bubble.text} title={bubble.title} />}
         <span className="text-[10px] uppercase tracking-wider text-gi-muted">{label}</span>
     </div>
 );
 
 /**
+ * While a hero works the Token, its time and XP rings are painted on the mat ring's step from
+ * the mat ring's own cycle (`readCycle`), so the two always show the same fraction, frozen
+ * together when it is blocked. With no mat ring to read (its bubbles not drawn), the engine's
+ * last progress (`fallbackRef`).
+ */
+function useLiveCycleRings(instanceId, live, fallbackRef) {
+    const timeRef = useRef(null);
+    const xpRef = useRef(null);
+    useLayoutEffect(() => {
+        if (!live) return undefined;
+        let last = null;
+        let lastRoots = [];
+        const paint = (now) => {
+            const fallback = fallbackRef.current;
+            const c = readCycle(instanceId, now) ?? fallback;
+            const f = c.cycleMs > 0 ? Math.max(0, Math.min(1, c.elapsedMs / c.cycleMs)) : 0;
+            const text = cycleSecondsText(c.elapsedMs, c.cycleMs);
+            const key = `${f.toFixed(3)}|${text}|${fallback.xpText}`;
+            const roots = [timeRef.current, xpRef.current];
+            if (key === last && roots[0] === lastRoots[0] && roots[1] === lastRoots[1]) return;
+            last = key;
+            lastRoots = roots;
+            paintRing(roots[0], f, text);
+            paintRing(roots[1], f, fallback.xpText);
+        };
+        paint(performance.now());
+        return onStep(paint);
+    }, [instanceId, live, fallbackRef]);
+    return { timeRef, xpRef };
+}
+
+/**
  * Charges, time and XP as the same ring bubbles the mat draws. Opened from a board Token
  * (`instanceId`) they are live: charges follow the Token's charges, and while a hero works it the
- * time bubble counts down and the XP bubble fills with the cycle. Opened from the Shop they show
- * the Token type's starting values.
+ * time bubble counts down and the XP bubble fills with the cycle, in step with the mat's ring.
+ * Opened from the Shop they show the Token type's starting values.
  */
 export const InspectBubbles = ({ def, instanceId = null }) => {
     const detail = useTokenDetail(instanceId, def);
     const instance = instanceId ? BoardState.getTokenById(instanceId) : null;
-    const progress = useCycleProgress(instanceId, !!detail?.heroId);
+    const working = !!detail?.heroId;
+    const progress = useCycleProgress(instanceId, working);
 
     // ⚠️ The recipe a station is running changes its time and XP, so ask the engine, not the def.
     const io = instance ? effectiveIO(instanceId, instance) : null;
+    const cycleMs = progress?.cycleMs ?? io?.cycleTimeMs ?? def.config?.cycleTimeMs ?? 0;
     const bubbles = inspectBubbles({
         uses: instance ? (detail?.usesRemaining ?? null) : (def.uses ?? null),
         startingUses: def.uses ?? null,
-        cycleMs: progress?.cycleMs ?? io?.cycleTimeMs ?? def.config?.cycleTimeMs ?? 0,
+        cycleMs,
         elapsedMs: progress?.elapsedMs ?? 0,
         xp: io?.xp ?? def.config?.xp ?? 0
     });
 
+    const fallbackRef = useRef(null);
+    fallbackRef.current = { elapsedMs: progress?.elapsedMs ?? 0, cycleMs, xpText: bubbles.xp?.text ?? null };
+    const live = !!instance && working && !!bubbles.time;
+    const { timeRef, xpRef } = useLiveCycleRings(instanceId, live, fallbackRef);
+
     return (
         <div data-inspect-bubbles className="flex items-start justify-center gap-4 px-3 py-2 rounded-lg bg-[#181412] border border-white/10">
             <InspectBubble name="charges" label="Charges" bubble={bubbles.charges} />
-            {bubbles.time && <InspectBubble name="time" label="Time" bubble={bubbles.time} />}
-            {bubbles.xp && <InspectBubble name="xp" label="XP" bubble={bubbles.xp} />}
+            {bubbles.time && <InspectBubble name="time" label="Time" bubble={bubbles.time} rootRef={live ? timeRef : null} />}
+            {bubbles.xp && <InspectBubble name="xp" label="XP" bubble={bubbles.xp} rootRef={live ? xpRef : null} />}
         </div>
     );
 };

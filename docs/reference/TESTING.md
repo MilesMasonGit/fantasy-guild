@@ -49,7 +49,8 @@ synchronously: `for (let i=0;i<400;i++) window.Game.GameLoop.runHandlers(100)`.
 - **Screenshots usually time out** (the particle overlay never goes idle). Use
   text tools and say what you verified.
 - **A hidden Browser pane stops `requestAnimationFrame`** and reports a 0×0
-  viewport. Drawers won't open; layout measurements are junk. Set a size with
+  viewport. Drawers won't open; layout measurements are junk; the Token cycle
+  rings never move (they draw only on animation frames). Set a size with
   `resize_window` before measuring, or test the function the control calls.
 - **Keys**: send `"Enter"`, not `"Return"` (arrives empty). `ctrl+a` arrives
   empty too; `triple_click` a box to replace its value.
