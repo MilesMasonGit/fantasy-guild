@@ -54,6 +54,18 @@ function clean() {
                 config: { skill: 'forestry', cycleTimeMs: 12000, inputs: [], outputs: [] },
                 shop: { price: [{ itemId: 'item_oak_wood', quantity: 2 }], section: 'forestry' },
             },
+            token_birch_sapling: {
+                id: 'token_birch_sapling', name: 'Birch Sapling',
+                grows: { into: 'token_birch_tree', afterMs: 30000 },
+            },
+            token_birch_tree: {
+                id: 'token_birch_tree', name: 'Birch Tree', uses: 5,
+                respawn: { mode: 'regrow', into: 'token_birch_sapling' },
+            },
+            token_copper_vein: {
+                id: 'token_copper_vein', name: 'Copper Ore Vein', uses: 5,
+                respawn: { mode: 'refill', afterMs: 12000 },
+            },
             token_coast: {
                 id: 'token_coast', name: 'Coast',
                 turns: { into: [{ typeId: 'token_shrimp_coast', weight: 1 }], everyMs: 60000, chance: 30 },
@@ -337,6 +349,75 @@ describe('Lifecycle audit — errors: shape rules', () => {
                 upkeep: [{ itemId: 'item_oak_seed', quantity: 1 }],
             };
         }, { id: 'token_shrimp_coast', field: 'spawner, foundation', includes: 'at most one of spawner, turns and foundation' });
+    });
+});
+
+describe('Lifecycle audit — respawn', () => {
+    it('the clean world carries both kinds and says nothing about them', () => {
+        const w = clean();
+        expect(w.tokens.token_birch_tree.respawn.mode).toBe('regrow');
+        expect(w.tokens.token_copper_vein.respawn.mode).toBe('refill');
+        expect(auditLifecycleBlocks(w)).toEqual([]);
+    });
+
+    it('a mode the game does not know', () => {
+        expectOne((w) => { w.tokens.token_copper_vein.respawn.mode = 'trickle'; },
+            { id: 'token_copper_vein', field: 'respawn.mode', includes: ['Copper Ore Vein (token_copper_vein)', 'trickle', 'refill, regrow'] });
+    });
+
+    it('a refill shorter than a second, or with no time at all', () => {
+        expectOne((w) => { w.tokens.token_copper_vein.respawn.afterMs = 500; },
+            { id: 'token_copper_vein', field: 'respawn.afterMs', includes: 'at least 1000 ms' });
+        expectOne((w) => { delete w.tokens.token_copper_vein.respawn.afterMs; },
+            { id: 'token_copper_vein', field: 'respawn.afterMs', includes: 'at least 1000 ms' });
+    });
+
+    it('a regrow from a Token that does not exist, or from nothing', () => {
+        expectOne((w) => { w.tokens.token_birch_tree.respawn.into = 'token_ghost'; },
+            { id: 'token_birch_tree', field: 'respawn.into', includes: ['token_ghost', 'does not exist'] });
+        expectOne((w) => { w.tokens.token_birch_tree.respawn.into = ''; },
+            { id: 'token_birch_tree', field: 'respawn.into', includes: 'names no Token' });
+    });
+
+    it('a regrow from itself', () => {
+        expectOne((w) => { w.tokens.token_birch_tree.respawn.into = 'token_birch_tree'; },
+            { id: 'token_birch_tree', field: 'respawn.into', includes: 'regrows from itself' });
+    });
+
+    it('a regrow from a Token that never grows back into it', () => {
+        expectOne((w) => { w.tokens.token_birch_tree.respawn.into = 'token_furnace'; },
+            { id: 'token_birch_tree', field: 'respawn.into', includes: ['Furnace (token_furnace)', 'never grows back'] });
+    });
+
+    it('a regrow through a longer chain that does come back is fine', () => {
+        const w = clean();
+        w.tokens.token_birch_stump = { id: 'token_birch_stump', name: 'Birch Stump', grows: { into: 'token_birch_sapling', afterMs: 10000 } };
+        w.tokens.token_birch_tree.respawn.into = 'token_birch_stump';
+        expect(auditLifecycleBlocks(w)).toEqual([]);
+    });
+
+    it('never on an enemy, a spawner or a Foundation', () => {
+        const block = { mode: 'refill', afterMs: 12000 };
+        expectOne((w) => { Object.assign(w.tokens.token_shrimp_coast, { uses: 5, enemy: { level: 2 }, respawn: block }); },
+            { id: 'token_shrimp_coast', field: 'respawn', includes: 'an enemy never respawns' });
+        expectOne((w) => { w.tokens.token_oak_forest.uses = 5; w.tokens.token_oak_forest.respawn = block; },
+            { id: 'token_oak_forest', field: 'respawn', includes: 'a spawner never respawns' });
+        expectOne((w) => { w.tokens.token_stone_foundation.uses = 5; w.tokens.token_stone_foundation.respawn = block; },
+            { id: 'token_stone_foundation', field: 'respawn', includes: 'a Foundation never respawns' });
+    });
+
+    it('a Token that never runs out is warned that it never rests (allowed)', () => {
+        expectOne((w) => { delete w.tokens.token_copper_vein.uses; },
+            { severity: 'warning', id: 'token_copper_vein', field: 'respawn', includes: 'never runs out' });
+    });
+
+    it('a family counts the Token a spawned tree regrows from', () => {
+        const w = clean();
+        w.tokens.token_oak_forest.spawner.spawns = [{ typeId: 'token_birch_tree', weight: 1 }];
+        w.tokens.token_birch_stump = { id: 'token_birch_stump', name: 'Birch Stump', grows: { into: 'token_birch_tree', afterMs: 10000 } };
+        w.tokens.token_birch_tree.respawn.into = 'token_birch_stump';
+        expect([...spawnerFamily(w.tokens.token_oak_forest.spawner, w.tokens)]).toEqual(['token_birch_tree', 'token_birch_stump']);
+        expect(auditLifecycleBlocks(w)).toEqual([]);
     });
 });
 

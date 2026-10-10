@@ -11,6 +11,7 @@ import {
 } from '../../config/registries/chargeMomentRegistry.js';
 import * as BoardState from './BoardState.js';
 import * as Hand from './Hand.js';
+import * as Respawn from './Respawn.js';
 
 /**
  * The one place a Token's charge pool is read, moved, or spent. Three axes spend against that pool:
@@ -117,13 +118,18 @@ export function canFireStatement(instance, statement) {
 }
 
 /**
- * Remove a depleted Token from the board.
+ * Remove a depleted Token from the board, unless its type respawns: then it rests where it stands
+ * (`Respawn.js`).
  *
  * Token depletion is the only wear mechanic. The tile empties; the hero is not touched here, only
  * re-announced, and their flag chooses again on its next pass. Every event names the Token by
  * `instanceId` and, because it has just left the mat, by the point `x`, `y` it stood on.
  */
 export function destroyToken(instance, { heroId = null, exhaustedBy = heroId } = {}) {
+    // A Token type that respawns rests where it stands instead, in the player's hand too, and is
+    // never depleted.
+    if (Respawn.restInstead(instance, { heroId, exhaustedBy })) return;
+
     // In the player's hand it stays, empty, until it is put down, and goes from where it lands.
     // Skipped then if the drop took it off the mat (the bin) or something refilled it meanwhile.
     if (instance?.id != null && Hand.isInHand(instance.id)) {

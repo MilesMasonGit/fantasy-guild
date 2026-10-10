@@ -117,6 +117,21 @@ export const BOARD_EVENTS = {
      */
     TOKEN_DEPLETED: 'board:token_depleted',
 
+    /**
+     * A Token whose type respawns ran out of charges and stays, resting (`Respawn.js`), instead
+     * of leaving the board. Payload: `{ instanceId, typeId, mode, x, y, heroId, exhaustedBy }`,
+     * `mode` `'refill'` or `'regrow'`. ⚠️ Never with `TOKEN_DEPLETED`: a resting Token is not
+     * used up.
+     */
+    TOKEN_RESTING: 'board:token_resting',
+
+    /**
+     * A resting Token came back. Payload: `{ instanceId, typeId, mode, x, y }`. A refill names the
+     * same Token, full again; a regrow names the Token it became (`instanceId`, `typeId`) and adds
+     * `fromInstanceId`, `fromTypeId`, the one that rested.
+     */
+    TOKEN_RESPAWNED: 'board:token_respawned',
+
     /** A neighbourhood changed, so modifiers need recomputing. Payload: `{ points }` — the mat points the change touched. */
     ADJACENCY_DIRTY: 'board:adjacency_dirty',
 
@@ -297,5 +312,12 @@ export const ALERT = {
      * A spawner is waiting because the mat is at its Token cap (`MatCap`): spawned Tokens count
      * toward it. Same channel as `SPAWN_NEEDS_ITEM`.
      */
-    SPAWN_MAT_FULL: 'spawn_mat_full'
+    SPAWN_MAT_FULL: 'spawn_mat_full',
+    /**
+     * The Token ran out and is resting until it respawns (`Respawn.js`). `WorkCheck`'s first
+     * answer, so a flag skips it and its hero lets go, but ⚠️ never written as a Token's alert:
+     * resting is not a problem the player fixes, so it draws no badge and stays out of
+     * `WorkCheck.FIXABLE`.
+     */
+    RESTING: 'resting'
 };

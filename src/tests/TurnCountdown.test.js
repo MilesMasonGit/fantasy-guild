@@ -104,6 +104,15 @@ describe('countdown text (FB-14)', () => {
         cleanup();
         expect(mount(h(TimerBubble, { read: () => null, hovered: true })).container.querySelector('[data-ring]')).toBeNull();
     });
+
+    it('a resting Token shows its refill for the whole rest, unhovered, filling as it refills', () => {
+        const rest = (inMs) => () => ({ kind: 'respawn', mode: 'refill', inMs, totalMs: 30000, everyMs: 30000 });
+        const ring = mount(h(TimerBubble, { read: rest(24000), hovered: false })).container.querySelector('[data-ring="respawn"]');
+        expect(textOf(ring)).toBe('0:24');
+        expect(fractionOf(ring)).toBeCloseTo(0.2, 3);
+        // Non-breaking between the number and its unit, so the tip never splits them.
+        expect(ring.getAttribute('aria-label')).toBe('Resting. Refills in 24 s');
+    });
 });
 
 describe('on the mat (FB-14)', () => {

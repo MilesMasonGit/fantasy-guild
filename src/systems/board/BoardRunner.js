@@ -539,7 +539,8 @@ export function tick(delta) {
             const skipped = Flags.hasFixableSkip(instance)
                 ? WorkCheck.fixableReason(id, instance).reason
                 : null;
-            setAlert(instance,skipped);
+            // A Token that has since started resting keeps no badge: resting is not fixable.
+            setAlert(instance, WorkCheck.FIXABLE.has(skipped) ? skipped : null);
             continue;
         }
 
@@ -558,6 +559,12 @@ export function tick(delta) {
         // Token.
         const check = WorkCheck.fixableReason(id, instance);
         const io = check.io;
+
+        // Resting until it respawns: no cycle and no mark. Its hero lets go on the next flag pass.
+        if (check.reason === ALERT.RESTING) {
+            setAlert(instance, null);
+            continue;
+        }
 
         if (check.reason === ALERT.NO_RECIPE) {
             // Its selected recipe wants context that is not beside it (or the Token's pool is empty

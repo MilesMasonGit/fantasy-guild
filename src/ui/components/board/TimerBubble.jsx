@@ -4,11 +4,25 @@ import { Bubble } from './Bubble.jsx';
 import { turnCountdownText } from './centreAlert.js';
 import { TURN_COUNTDOWN_REFRESH_MS, turnFraction, timerVisible, bubbleSlot } from './ringRow.js';
 import { tokenName } from '../../../config/registries/tokenRegistry.js';
+import { formatDuration } from '../drawer/lifecycleLines.js';
 
 /** What the bubble draws from one read of the clock, or null. */
 function viewOf(roll) {
     const text = roll ? turnCountdownText(roll.inMs) : null;
     if (!text) return null;
+    // A resting Token's ring fills as it refills, and it shows for the whole rest, not only the
+    // last seconds: resting is the one thing to know about it.
+    if (roll.kind === 'respawn') {
+        return {
+            kind: 'respawn',
+            inMs: roll.inMs,
+            always: true,
+            text,
+            fraction: Number((1 - turnFraction(roll.inMs, roll.everyMs)).toFixed(3)),
+            // Non-breaking, so the tip never wraps between the number and its unit.
+            title: `Resting. Refills in ${formatDuration(roll.inMs).replace(/ /g, ' ')}`
+        };
+    }
     const chance = `${roll.chance}% chance`;
     let title;
     if (roll.kind === 'grow') title = `Grows into ${tokenName(roll.into) || 'something new'} in ${text}`;
@@ -27,13 +41,14 @@ const sameView = (a, b) => a === b || (!!a && !!b && a.text === b.text && a.frac
 
 /**
  * TimerBubble: the top-left bubble of a Token that changes on a clock: a Sapling counting down
- * to its growth, a Coast to its next turn roll (or its roll to turn back), `0:34`, emptying.
- * It shows while the Token is hovered and in the last few seconds of the countdown.
+ * to its growth, a Coast to its next turn roll (or its roll to turn back), `0:34`, emptying; a
+ * resting vein to its refill, filling. It shows while the Token is hovered and in the last few
+ * seconds of the countdown, and for the whole of a rest.
  * The clock runs on game time (the engine's `delta`), so the bubble polls it every {@link
  * TURN_COUNTDOWN_REFRESH_MS} rather than keeping its own. The poll lives here so only this
  * bubble re-renders on it, never the MatToken, and while the bubble is hidden it holds no state
- * at all (a hidden bubble does not redraw each second). `read()` returns `{ kind: 'grow' | 'turn',
- * inMs, everyMs, ... }` or null (then no bubble).
+ * at all (a hidden bubble does not redraw each second). `read()` returns `{ kind: 'grow' | 'turn'
+ * | 'respawn', inMs, everyMs, ... }` or null (then no bubble).
  */
 export const TimerBubble = ({ read, hovered = false, boxPx, small = false, dragProps = null }) => {
     const [view, setView] = useState(null);
@@ -45,7 +60,7 @@ export const TimerBubble = ({ read, hovered = false, boxPx, small = false, dragP
         if (!read) return undefined;
         const refresh = () => {
             const next = viewOf(read() ?? null);
-            const show = next && timerVisible(hoveredRef.current, next.inMs);
+            const show = next && (next.always || timerVisible(hoveredRef.current, next.inMs));
             setView(prev => {
                 const wanted = show ? next : null;
                 return sameView(prev, wanted) ? prev : wanted;

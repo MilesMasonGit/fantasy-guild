@@ -24,6 +24,8 @@ export const RING_COLOUR = Object.freeze({
     spawner: '#86efac',
     turn: '#7dd3fc',
     grow: '#bef264',
+    // A resting Token refilling: lavender, apart from the charges gold it refills.
+    respawn: '#c4b5fd',
     // A quest's progress, parchment: warmer and paler than the charges gold, so a done quest's
     // full ring is not read as charges.
     quest: '#e8c98a',

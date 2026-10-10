@@ -18,7 +18,7 @@ import {
     deriveTokenType, statementsOf, makeStatement, KEYWORD,
     migrateBearers, migratePromotionFields, migrateAppliesTargetsIn, migrateSkillIdsIn, migrateRecipePools,
     expandBearer, expandAll, effectRefsOf, provisionalName,
-    normaliseScale, FOUNDATION_KINDS, TURN_DEFAULTS,
+    normaliseScale, FOUNDATION_KINDS, TURN_DEFAULTS, RESPAWN_DEFAULTS,
 } from '../utils/constants';
 import { seedSimIntent } from './simIntentNormaliser';
 import { isMapItem, blankCartography } from '../../../src/systems/atlas/mapItems.js';
@@ -183,7 +183,7 @@ function renameInEffects(effects, oldId, newId, entityType) {
     return touched ? next : effects;
 }
 
-/** Repoint the Token ids inside one Token's lifecycle blocks: a spawner's `spawns[].typeId`, `grows.into` and `turns.into[].typeId`. Those field names are not shared with an item slot, so they are named explicitly rather than walked. */
+/** Repoint the Token ids inside one Token's lifecycle blocks: a spawner's `spawns[].typeId`, `grows.into`, `turns.into[].typeId` and a regrow's `respawn.into`. Those field names are not shared with an item slot, so they are named explicitly rather than walked. */
 function renameTokenInLifecycleBlocks(token, oldId, newId) {
     let touched = false;
     const next = { ...token };
@@ -204,6 +204,10 @@ function renameTokenInLifecycleBlocks(token, oldId, newId) {
     if (next.turns && typeof next.turns === 'object') {
         const into = remapWeighted(next.turns.into);
         if (into !== next.turns.into) next.turns = { ...next.turns, into };
+    }
+    if (next.respawn && next.respawn.into === oldId) {
+        next.respawn = { ...next.respawn, into: newId };
+        touched = true;
     }
 
     return touched ? next : token;
@@ -481,10 +485,10 @@ export function makeTokenOutputEntry(tokenId) {
     return { tokenId, chance: 100, minQty: 1, maxQty: 1 };
 }
 
-// Token Lifecycle blocks: `spawner`, `grows`, `turns`, `foundation`, `shop`, `trickle`. These factories only give the editor a starting value when an author ADDS a block.
+// Token Lifecycle blocks: `spawner`, `grows`, `turns`, `foundation`, `shop`, `trickle`, `respawn`. These factories only give the editor a starting value when an author ADDS a block.
 // ⚠️ Absent means absent: `makeToken` creates none of them and nothing on the load or sync path fills them in, so a Token without a block round-trips without one, byte for byte.
 
-export const TOKEN_LIFECYCLE_BLOCKS = Object.freeze(['spawner', 'grows', 'turns', 'foundation', 'shop', 'trickle']);
+export const TOKEN_LIFECYCLE_BLOCKS = Object.freeze(['spawner', 'grows', 'turns', 'foundation', 'shop', 'trickle', 'respawn']);
 
 export function makeWeightedTokenEntry(typeId = '') {
     return { typeId, weight: 1 };
@@ -511,6 +515,9 @@ export function makeLifecycleBlock(key) {
             return { price: [], section: 'general' };
         case 'trickle':
             return [];
+        case 'respawn':
+            // A refill on the game's default rest; a regrow is picked in the editor.
+            return { mode: RESPAWN_DEFAULTS.mode, afterMs: RESPAWN_DEFAULTS.afterMs };
         default:
             return undefined;
     }

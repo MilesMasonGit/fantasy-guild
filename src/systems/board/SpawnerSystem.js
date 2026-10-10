@@ -13,6 +13,7 @@ import * as EffectActions from './EffectActions.js';
 import { pickWeighted } from './weightedPick.js';
 import * as InputAllocator from './InputAllocator.js';
 import * as MatCap from './MatCap.js';
+import * as Respawn from './Respawn.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
@@ -89,7 +90,9 @@ let familyCacheRegVersion = -1;
 
 /**
  * A spawner type's family: every type in its `spawns` list plus everything they grow into,
- * following `grows.into` until it stops. An Oak Forest's is `{Oak Sapling, Oak Tree}`.
+ * following `grows.into` until it stops, and the Token a regrowing one becomes when it runs out
+ * (`respawn.into`), so a felled tree growing back still counts. An Oak Forest's is `{Oak Sapling,
+ * Oak Tree}`.
  *
  * @returns {string[]} in discovery order (the first spawned type first)
  */
@@ -105,16 +108,19 @@ export function familyOf(spawnerTypeId) {
     const block = spawnerBlock(getTokenType(spawnerTypeId));
     const family = [];
     if (block) {
+        // `seen` also stops a loop: a grows loop (A → B → A), which the audit forbids, and the
+        // regrow loop (Tree → Sapling → Tree), which is the point.
         const seen = new Set();
-        for (const entry of block.spawns) {
-            let typeId = entry?.typeId;
-            // `seen` also stops a grows loop (A → B → A), which the audit forbids.
-            while (typeId && getTokenType(typeId) && !seen.has(typeId)) {
-                seen.add(typeId);
-                family.push(typeId);
-                typeId = getTokenType(typeId)?.grows?.into;
-            }
-        }
+        const walk = (typeId) => {
+            const def = typeId ? getTokenType(typeId) : null;
+            if (!def || seen.has(typeId)) return;
+            seen.add(typeId);
+            family.push(typeId);
+            walk(def.grows?.into);
+            const respawn = Respawn.respawnOf(def);
+            if (respawn?.mode === 'regrow') walk(respawn.into);
+        };
+        for (const entry of block.spawns) walk(entry?.typeId);
     }
     familyCache.set(spawnerTypeId, family);
     return family;

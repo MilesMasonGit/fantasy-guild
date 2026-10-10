@@ -92,6 +92,7 @@ function everyBlock() {
             group: 'Fixture Group',
         },
         trickle: [{ itemId: i1, quantity: 1, everyMs: 300000 }],
+        respawn: { mode: 'refill', afterMs: 15000 },
     };
 }
 

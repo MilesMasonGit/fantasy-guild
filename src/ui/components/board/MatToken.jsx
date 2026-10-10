@@ -14,6 +14,7 @@ import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as Flags from '../../../systems/board/Flags.js';
 import * as TimedChanges from '../../../systems/board/TimedChanges.js';
+import * as Respawn from '../../../systems/board/Respawn.js';
 import * as Hand from '../../../systems/board/Hand.js';
 import { useTokenEvent } from './tokenEvents.js';
 import { useTokenDetail } from './useTokenDetail.js';
@@ -156,12 +157,15 @@ export const MatToken = React.memo(function MatToken({
     // (routed to this Token alone).
     const detail = useTokenDetail(id, def);
 
-    // The timer bubble polls this; stable per Token so its poll is not reset. A growing Token
-    // counts down its growth (`everyMs` is the whole growth time); a turning one to its next
+    // The timer bubble polls this; stable per Token so its poll is not reset. A resting Token
+    // counts down to its refill (a regrow has none: it becomes its Sapling at once); a growing
+    // one counts down its growth (`everyMs` is the whole growth time); a turning one to its next
     // roll, over the roll cycle (on a turned Token the ORIGINAL's, as the roll itself uses,
     // `turnTimingOf`).
     const readTimer = React.useCallback(() => {
         const instance = BoardState.getTokenById(id);
+        const rest = Respawn.nextRespawn(instance);
+        if (rest) return rest.mode === 'refill' ? { kind: 'respawn', ...rest, everyMs: rest.totalMs } : null;
         const grow = TimedChanges.nextGrowth(instance);
         if (grow) return { kind: 'grow', ...grow, everyMs: Number(getTokenType(instance.typeId)?.grows?.afterMs) || 0 };
         const roll = TimedChanges.nextTurnRoll(instance);
@@ -181,6 +185,7 @@ export const MatToken = React.memo(function MatToken({
     const questDone = !!quest?.done;
 
     const usesRemaining = detail?.usesRemaining ?? null;
+    const resting = !!detail?.resting;
     const alert = detail?.alert ?? null;
     const heroId = detail?.heroId ?? null;
     const staffed = hasHero || !!heroId;
@@ -216,12 +221,16 @@ export const MatToken = React.memo(function MatToken({
 
     const [landing, setLanding] = React.useState(false);
     const landingTimer = React.useRef(null);
-    useTokenEvent(BOARD_EVENTS.TILE_CHANGED, id, (p) => {
-        if (!p?.typeId) return;
+    const land = () => {
         setLanding(true);
         clearTimeout(landingTimer.current);
         landingTimer.current = setTimeout(() => setLanding(false), 400);
+    };
+    useTokenEvent(BOARD_EVENTS.TILE_CHANGED, id, (p) => {
+        if (p?.typeId) land();
     });
+    // A refilled Token hops as it comes back, as a Token does when it lands.
+    useTokenEvent(BOARD_EVENTS.TOKEN_RESPAWNED, id, land);
     React.useEffect(() => () => clearTimeout(landingTimer.current), []);
 
     /**
@@ -399,6 +408,7 @@ export const MatToken = React.memo(function MatToken({
                 data-outline={outline || undefined}
                 data-tile-has-token="true"
                 data-tile-finite-token={isFiniteToken ? 'true' : undefined}
+                data-token-resting={resting ? 'true' : undefined}
                 onContextMenu={handleContextMenu}
                 onClick={(e) => {
                     if (dragging) return;
@@ -462,7 +472,8 @@ export const MatToken = React.memo(function MatToken({
                     className={cn(
                         'w-full h-full flex items-center justify-center transition-[filter] duration-150',
                         isHovered && 'gi-token-hover-hop',
-                        received && 'brightness-125 saturate-125'
+                        received && 'brightness-125 saturate-125',
+                        resting && 'gi-token-resting'
                     )}
                 >
                     <TokenHitArt
@@ -533,7 +544,7 @@ export const MatToken = React.memo(function MatToken({
                     small={small}
                     spawner={spawnerBubble}
                     quest={questBubble}
-                    readTimer={detail?.turns || detail?.grows ? readTimer : null}
+                    readTimer={detail?.turns || detail?.grows || resting ? readTimer : null}
                     gear={gear}
                     disallowed={!!detail?.disallowed}
                     dragProps={dragProps}

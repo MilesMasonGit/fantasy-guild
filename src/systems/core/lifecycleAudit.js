@@ -1,13 +1,13 @@
 // Content audit for the Token Lifecycle blocks.
 
 import {
-    FOUNDATION_KINDS, TURN_DEFAULTS, foundationTierOf, foundationMinTierOf, foundationTierMeets
+    FOUNDATION_KINDS, TURN_DEFAULTS, RESPAWN_MODES, respawnOf, foundationTierOf, foundationMinTierOf, foundationTierMeets
 } from '../../config/registries/tokenConstants.js';
 import { stationSkillOf, getProvidedTagsWithTiers } from '../effects/statements.js';
 
 /**
- * The one checker for the six Token Lifecycle blocks (`spawner`, `grows`,
- * `turns`, `foundation`, `shop`, `trickle` (Passive Production)) and the recipe fields
+ * The one checker for the seven Token Lifecycle blocks (`spawner`, `grows`,
+ * `turns`, `foundation`, `shop`, `trickle` (Passive Production), `respawn`) and the recipe fields
  * `foundationKinds` and `foundationMinTier`, shared by the game's boot audit (`ContentAudit`) and the
  * CMS's Economy Audit (`connectivityAuditor`), so the two can never disagree.
  *
@@ -65,19 +65,34 @@ const show = (v) => (typeof v === 'string' ? v : JSON.stringify(v));
 
 /**
  * A spawner's family: every type in its `spawns` list plus everything they
- * grow into, following `grows.into` until it stops. Loop-guarded.
+ * grow into, following `grows.into` until it stops, and the Token a regrowing
+ * one becomes when it runs out (`respawn.into`), as `SpawnerSystem.familyOf`
+ * counts it. Loop-guarded.
  */
 export function spawnerFamily(spawner, tokens) {
     const family = new Set();
+    const walk = (id) => {
+        if (!hasValue(id) || family.has(id)) return;
+        family.add(id);
+        walk(tokens[id]?.grows?.into);
+        const respawn = respawnOf(tokens[id]);
+        if (respawn?.mode === 'regrow') walk(respawn.into);
+    };
     const spawns = Array.isArray(spawner?.spawns) ? spawner.spawns : [];
-    for (const entry of spawns) {
-        let id = entry?.typeId;
-        while (hasValue(id) && !family.has(id)) {
-            family.add(id);
-            id = tokens[id]?.grows?.into;
-        }
-    }
+    for (const entry of spawns) walk(entry?.typeId);
     return family;
+}
+
+/** Whether following `grows.into` from `fromId` reaches `toId`. Loop-guarded. */
+function growsBackInto(fromId, toId, tokens) {
+    const seen = new Set();
+    let id = tokens[fromId]?.grows?.into;
+    while (hasValue(id) && !seen.has(id)) {
+        if (id === toId) return true;
+        seen.add(id);
+        id = tokens[id]?.grows?.into;
+    }
+    return false;
 }
 
 /**
@@ -304,6 +319,34 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
             });
             if (lines.length > 0 && id !== GUILD_HALL_ID) {
                 warn('trickle', 'has Passive Production; only the Guild Hall is meant to have it for now (allowed).');
+            }
+        }
+
+        // ── respawn: what comes back after it runs out ──
+        if (def.respawn !== undefined && def.respawn !== null) {
+            const r = def.respawn;
+            // The engine ignores the block on these (`Respawn.respawnOf`), so it would do nothing.
+            if (def.enemy) {
+                err('respawn', 'is an enemy and respawns; an enemy never respawns (its spawner replaces it), so the block does nothing.');
+            } else if (def.spawner) {
+                err('respawn', 'is a spawner and respawns; a spawner never respawns, so the block does nothing.');
+            } else if (def.foundation) {
+                err('respawn', 'is a Foundation and respawns; a Foundation never respawns, so the block does nothing.');
+            } else if (!RESPAWN_MODES.includes(r?.mode)) {
+                err('respawn.mode', `respawn mode is ${show(r?.mode ?? 'blank')}; it must be one of ${RESPAWN_MODES.join(', ')}.`);
+            } else if (r.mode === 'refill') {
+                checkTime(err, 'respawn.afterMs', 'refill time', r.afterMs);
+            } else if (r.into === id) {
+                err('respawn.into', 'regrows from itself; it must regrow from another Token that grows back into it.');
+            } else {
+                checkTokenRef(err, 'respawn.into', 'regrows from', r.into);
+                if (hasValue(r.into) && tokens[r.into] && !growsBackInto(r.into, id, tokens)) {
+                    err('respawn.into',
+                        `regrows from ${tokenLabel(r.into)}, which never grows back into it; give that Token a Grows block that ends here.`);
+                }
+            }
+            if (def.uses === null || def.uses === undefined) {
+                warn('respawn', 'respawns but has unlimited charges, so it never runs out and never rests (allowed).');
             }
         }
     }

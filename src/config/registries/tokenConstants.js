@@ -163,6 +163,46 @@ export function foundationTierMeets(def, recipe) {
 export const TURN_DEFAULTS = Object.freeze({ everyMs: 60000, chance: 30 });
 
 /**
+ * ⭐ **A Token that comes back after it runs out.** `respawn: { mode, afterMs?, into? }` on the
+ * Token type:
+ *
+ * * `refill` — at 0 charges it stays where it stands, resting (nobody can work it), and after
+ *   `afterMs` refills to its starting charges all at once.
+ * * `regrow` — at 0 charges it becomes `into` (a felled Oak Tree becomes an Oak Sapling), and
+ *   `into`'s own `grows` block brings it back, so the regrow time is set on `into`.
+ *
+ * A Token type without the block leaves the mat at 0, as it always has. The engine reads the
+ * block only through {@link respawnOf}; the CMS's new-block factory and the content audit read
+ * these defaults (the CMS across the boundary, see the header note).
+ */
+export const RESPAWN_MODES = Object.freeze(['refill', 'regrow']);
+
+/** A refill's rest when the block names none, and what a new block in the CMS starts with. */
+export const RESPAWN_DEFAULTS = Object.freeze({ mode: 'refill', afterMs: 12000 });
+
+/** The shortest rest the engine honours. */
+export const RESPAWN_MIN_MS = 1000;
+
+/**
+ * A Token type's respawn as `{ mode, afterMs, into }`, or null when it has none: no block, a mode
+ * the game does not know, or a regrow that names nothing to regrow from. `afterMs` is a refill's
+ * rest (defaulted, floored at {@link RESPAWN_MIN_MS}) and null on a regrow; `into` is null on a
+ * refill.
+ */
+export function respawnOf(def) {
+    const block = def?.respawn;
+    if (!block || typeof block !== 'object') return null;
+    if (block.mode === 'regrow') {
+        const into = typeof block.into === 'string' ? block.into.trim() : '';
+        return into ? { mode: 'regrow', afterMs: null, into } : null;
+    }
+    if (block.mode !== 'refill') return null;
+    const ms = Number(block.afterMs);
+    const afterMs = Number.isFinite(ms) && ms > 0 ? Math.max(RESPAWN_MIN_MS, ms) : RESPAWN_DEFAULTS.afterMs;
+    return { mode: 'refill', afterMs, into: null };
+}
+
+/**
  * Passive Production's one timer: every line of a Token's `trickle` block (and the Wishing Well's
  * water on the Guild Hall) pays its quantity once per lap. A line's own `everyMs`, from before the
  * shared timer, is ignored.

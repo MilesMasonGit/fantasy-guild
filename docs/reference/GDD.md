@@ -103,7 +103,8 @@ Token.
   outputs (each output a chance and a quantity range). Example: Oak Tree,
   forestry 1, 3 s, 1–2 Oak Wood + 20 % Oak Seed, 5 charges.
 - **Charges** (`uses`): one is spent per cycle by default; at 0 the Token is
-  removed. `null` = unlimited (Workbench, Furnace, Cooking Pot).
+  removed, unless its type **respawns** (below). `null` = unlimited (Workbench,
+  Furnace, Cooking Pot).
 - **Origin**: *placed* (bought or built: fixed, refundable) or *spawned*
   (free, pushable, no refund). Both count toward the Token cap.
 - **Size**: 1 (art radius 64 u) or 2 (144 u); growing stages are half-size.
@@ -136,6 +137,15 @@ with no room costs nothing. *(`SpawnerSystem.js`)*
 - **Turns**: Coast ⇄ Shrimp Coast, 30 % chance every 60 s.
 - A transform keeps the Token's origin, starts fresh clocks and loses any cycle
   in progress. *(`TimedChanges.js`)*
+- **Respawn** (built; no shipped Token uses it yet): a Token type with a
+  Respawns block in the CMS comes back after it runs out. *Refill*: it stays
+  where it stands, **resting** (greyed, a countdown bubble), nobody can work it,
+  and after its time (12 s by default, at least 1 s) it refills to full at once.
+  *Regrow*: it becomes its `into` Token (Oak Tree → Oak Sapling), whose own
+  growth brings it back. Its hero moves on with no red alert; it is never
+  depleted (no On Depleted rules, not counted as used up); a regrowing tree
+  still counts toward its Forest's family cap. Never on enemies, spawners or
+  Foundations. *(`Respawn.js`)*
 
 ### Foundations — Built
 Buy a Foundation, pick a build recipe on it, and a hero builds it into a
@@ -579,7 +589,8 @@ realistic, ≈ 1.9 ms at 300 Tokens (code review round 3).
 | **Placed / spawned** | Bought or built by the player (fixed, refundable) vs made by the mat (free, pushable). |
 | **Cap** | The limit on Tokens on the mat, placed and spawned (128), counted in the active Region only. |
 | **Region** | One mat the guild has settled, kept in the Atlas; only the one the guild is in runs (§10). |
-| **Charges / uses** | A Token's wear; one per cycle; 0 removes it; `null` is unlimited. |
+| **Charges / uses** | A Token's wear; one per cycle; 0 removes it, unless it respawns; `null` is unlimited. |
+| **Resting / respawn** | A Token at 0 charges whose type respawns: unworkable until it refills, or becomes the Token it regrows from. |
 | **Cycle** | One unit of work on a Token (or one kill). |
 | **Near / reach** | 164 u centre to centre; how far a rule carries. |
 | **Spawner, family, allowance** | A Token that makes Tokens; the types it makes and what they grow into; how many it allows alive. |

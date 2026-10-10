@@ -10,6 +10,7 @@ import * as BoardState from './BoardState.js';
 import * as HeroMotion from './HeroMotion.js';
 import { centreOf, distanceSq } from './nearby.js';
 import * as WorkCheck from './WorkCheck.js';
+import * as Respawn from './Respawn.js';
 import { workConfigOf } from './StationRecipe.js';
 import * as BoardCombat from './BoardCombat.js';
 import * as BoardPromotion from './BoardPromotion.js';
@@ -42,15 +43,16 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
  * 6. a Promotion Token that would not train this hero: `same_job` or its gate reason, so a hero who
  * has just accepted goes back to work;
  * 7. the shared `WorkCheck` says it cannot run: skipped with that reason (level too low, missing
- * inputs, no recipe, charges);
+ * inputs, no recipe, charges, resting until it respawns);
  * 8. otherwise claimed.
  *
  * Nothing claimable: retry in a second of game time (or sooner, when the board changes: see dirty).
  *
  * Keeping a claim (phase 1) is sticky: a claim is kept while its Token is workable, wherever that
  * Token now is, so a moved Token carries its hero, even outside the radius. It is let go when the
- * Token stops being eligible, or the hero can no longer work it (skill, or its rule switched off),
- * or, for a fixable problem (inputs, charges, no recipe), only once another Token in range can run.
+ * Token stops being eligible (resting until it respawns included), or the hero can no longer work
+ * it (skill, or its rule switched off), or, for a fixable problem (inputs, charges, no recipe),
+ * only once another Token in range can run.
  *
  * Better work appears: a hero never leaves mid-cycle for a higher priority. When the hero's cycle
  * completes (a kill, for a fight), the next pass looks again, and they switch only to a strictly
@@ -538,7 +540,10 @@ function keepOrRelease(r, heroId, dirty) {
             (kind === 'hall')
             || (kind === 'promotion' && !promotionRefusal(heroId, instance))
             || (kind === 'enemy' && ruleAllows(heroId, FlagRules.FIGHT))
-            || (kind === 'work' && hasWorkSkill(def) && ruleAllows(heroId, workConfigOf(def).skill))
+            || (kind === 'work' && hasWorkSkill(def) && ruleAllows(heroId, workConfigOf(def).skill)
+                // A Token that ran out and rests until it respawns is let go at once, with no
+                // badge: the hero works the next thing, or a pinned hero waits by it.
+                && !Respawn.isResting(instance, def))
         );
 
         if (!eligible) {
@@ -1141,7 +1146,7 @@ export function teardown() {
 export function init() {
     teardown();
     const dirty = () => markDirty();
-    for (const event of [BOARD_EVENTS.TILE_CHANGED, BOARD_EVENTS.TOKEN_PLACED, ENGINE_EVENTS.INVENTORY_UPDATED]) {
+    for (const event of [BOARD_EVENTS.TILE_CHANGED, BOARD_EVENTS.TOKEN_PLACED, ENGINE_EVENTS.INVENTORY_UPDATED, BOARD_EVENTS.TOKEN_RESPAWNED]) {
         unsubscribers.push(EventBus.subscribe(event, dirty));
     }
     unsubscribers.push(EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, (payload = {}) => cycleCompleted(payload.heroId)));
