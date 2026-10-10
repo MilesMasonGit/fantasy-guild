@@ -259,16 +259,17 @@ const copy = (v) => JSON.parse(JSON.stringify(v));
 
 /**
  * Settle a Region: the layout the Cartography table previewed with this seed becomes a Region in
- * the Atlas, and the ingredients leave the stock. The guild stays where it is; travelling there is
- * the player's next step. Only this takes anything: a refusal takes nothing, and neither does
- * closing the table.
+ * the Atlas, and the ingredients are taken: a map item from the Bank, a dev recipe from its stock.
+ * The guild stays where it is; travelling there is the player's next step. Only this takes
+ * anything: a refusal takes nothing, and neither does closing the table.
  *
  * Refuses with no game, no ingredients, an ingredient the guild does not hold (two slots of one
  * map need two), or a layout in which some Token found no legal spot (the player rerolls). An
- * ingredient that is not a map recipe throws (`recipeOf`).
+ * ingredient that is neither a map item nor a map recipe throws (`recipeOf`).
  *
  * @param {object} options
- * @param {object[]} options.ingredients the slots' ingredients, in slot order
+ * @param {Array<string|object>} options.ingredients the slots' ingredients, in slot order: map item
+ *        ids (or items), or recipes
  * @param {number} [options.seed] the seed of the preview the player saw; else a fresh preview seed
  * @returns {{success: boolean, reason?: string, missing?: object[], unplaced?: object[],
  *          region?: object, preview?: object}} `preview` is the plan the Region was written from
@@ -302,7 +303,7 @@ export function settle({ ingredients = [], seed } = {}) {
 }
 
 // ---------------------------------------------------------------------------
-// Dev console: maps before maps are items
+// Dev console: placeholder map recipes, for a game with no authored maps
 // ---------------------------------------------------------------------------
 
 /** The dev recipes `names` pick out ('forest', 'overgrown', ...). */
@@ -315,7 +316,9 @@ function devRecipes(names) {
 }
 
 /**
- * Dev console: put `count` of each placeholder map in the stock (`Game.Atlas.devGrantMaps()`).
+ * Dev console: put `count` of each placeholder map in the dev stock (`Game.Atlas.devGrantMaps()`).
+ * Authored maps are items: grant them to the Bank (`Game.InventoryManager.addItem(id, n)`) and
+ * settle them by id (`Game.Atlas.settle({ ingredients: ['map_forest'], seed })`).
  *
  * @returns {string[]} what the stock now holds
  */

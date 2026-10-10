@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-139**
+**Next free number: T-142**
 
 ---
 
@@ -68,7 +68,7 @@ here.
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
-| T-137 | P2 | open | **Code-only animation batch** (owner picks 2026-10-09, `docs/active/research/animation_menu.md` "Owner picks"): effects 1, 2, 3, 4, 5, 6, 7, 10, 12, 13, 14 (every hit), 15, 17 now; 18 after the Atlas. Whole art pixels, stepped timing, no blur or fractional scaling; effect 1 also fixes T-135; effect 5 should make loot bursts cheaper (measure before/after). New hooks: `COMBAT_RESOLVED`, `HERO_LEVELED`; 7 needs the effect payload to name the source Token. Builder (engineer for 5). After brief 60; cost-log line per effect group; changes the look: owner eye-check. | research/animation_menu.md |
+| T-137 | P2 | open | **Code-only animation batch** (owner picks 2026-10-09, `docs/active/research/animation_menu.md` "Owner picks"): effects 1, 2, 3, 4, 5, 6, 7, 10, 12, 13, 14 (every hit), 15, 17 now; 18 after the Atlas. **Plus the tinted-copy effects** (afterimage trail, colour flash, echo ring, pixel dissolve, ground-staying shadow; same doc, "Tinted copies"): build one first both as generated pictures and as a live CSS mask tint, measure both in the cost log, then use the cheaper method. Whole art pixels, stepped timing, no blur or fractional scaling; effect 1 also fixes T-135; effect 5 should make loot bursts cheaper (measure before/after). New hooks: `COMBAT_RESOLVED`, `HERO_LEVELED`; 7 needs the effect payload to name the source Token. Builder (engineer for 5). After brief 60; cost-log line per effect group; changes the look: owner eye-check. | research/animation_menu.md |
 | T-138 | P3 | owner | **Sprite-strip player for owner-drawn effects**: play a horizontal strip once at a mat point on the strike frame / event (like `AnimatedHeroSprite.jsx:57-76`); a new `assets/fx/` folder added to the spriteFx generator's skip list (`spriteFx.js:77-80`). Waits for the owner's first effect art (owner_art_list.md). | research/animation_menu.md |
 | T-136 | P2 | open | **Pixel frames on every panel** (owner 2026-10-09, UI_STYLE "Pixel frames"): one shared frame class with `border-image` nine-slice, **studs** for big docked panels, **chamfer** for small floating ones, one colour, hard 2-art-pixel shadow; the two 7×7 pictures are the ones in `docs/active/research/pixel_borders_demo.html` (extract the data URIs to PNGs in `public/assets/ui/`; new files, not the owner's uncommitted art). Replace rounded corners, translucent hairlines and blurred shadows; unbox the rows UI_STYLE forbids (`TokenInspection.jsx:132,147,221`, `ShopDrawer.jsx:299`, `HeroSkillSheet.jsx:93`); tooltips first (`Bubble.jsx`, `TopBarTip.jsx`, `QuestTooltip.jsx`, `MatCapBadge.jsx` share classes), then sidebars, Token inspect, drawers, modals, toasts. Builder. Run when no crunch brief is editing those components; cost-log line (`bench:draw --compare`); changes the look: owner eye-check. | research/pixel_borders.md |
 | T-134 | P3 | open | The bubble menu's `ui_bar.png` (32×32) is stretched to the menu's width (`BubbleMenu.jsx:92-96`, `backgroundSize: '100% auto'`), about 2.5–4.7×, so its pixels come out uneven. Found by the pixel-borders research. Changes the look: eye-check. | research/pixel_borders.md |
@@ -98,11 +98,14 @@ here.
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
+| T-139 | P3 | open | `sprite-manifest.js` has ~61 entries pointing at files missing since before the 2026-10-09 art reorganisation (old `assets/sprites/implemented/...`, `pm_test_*`, `bg_table_*` and similar), and `AssetManager.js` still maps `pm_table_*` / `pm_board_*` ids to the gone `assets/playmat/tables` and `tiles` folders. Remove entries nothing in data/ or src uses (check with the AssetManager on-disk guard). Runner. | art/asset-reorg report |
 | T-045 | P3 | open | Dead combat, wound and loot code. | CR3-036 |
 | T-046 | P3 | open | A second hero-creation route. | CR3-037 |
 | T-047 | P3 | open | 8 retired `collection` fields in the save schema (keep `TOKEN_TYPES`). | CR3-038 |
 | T-048 | P3 | open | Small UI leftovers incl. the `ui:open_drawer` chain; events subscribed with no publisher. | CR3-043, 461 |
 | T-049 | P3 | open | Computed-and-never-read values; unused reset functions. | CR3-205 |
+| T-140 | P3 | open | **The Map check's dials and refusals are read by nothing** since Atlas A5 retired `mapPass.js`: in `cms/src/engine/sim/dials.js` `mapScrapRatio`, `mapProductiveReturn`, `rarityPremium`, `rarityWeights`/`RARITY_WEIGHTS`, `scrapRatioAt`, `productiveReturnAt`, `pinnedAt`; `dayInReach` in `xpPass.js` (and `hoursPerDay` if the Pace dials no longer need it); the seven `map-*` codes in `refusals.js`; their fields in the CMS Settings modal. Delete with their tests (`EconSimXP`'s `dayInReach` cases; `EconSimLevers`' Map-card test flips back to absent). Also `checkPass.js` skips unlimited Tokens because the Map check used to name them: nothing names them now. | Atlas A5 |
+| T-141 | P3 | blocked | **Content audit: a respawning node still sold at the Shop** (roadmap A5 lists it): warn when a Token with A2's Respawns block also has a `shop` block. Blocked on A2 merging (its block shape). One rule in `lifecycleAudit.js`, so the boot check and the CMS Economy Audit share it. | Atlas A5 |
 | T-050 | P3 | open | Stale comments in board-state files; `hitRadiusOf` doc claims whole-number centres. | CR3-154, FMR |
 | T-051 | P3 | open | Four copies of "is this the Guild Hall?"; a second `clampToMat`. | CR3-155 |
 | T-052 | P3 | open | Dead drag CSS; retired vocabulary in drag code. | CR3-406, 408 |
@@ -152,7 +155,6 @@ first, when content that uses it is authored.*
 | ID | Why parked | Summary | Origin |
 |---|---|---|---|
 | T-071 | Envelope | Canvas mat. Certification (2026-10-07): the realistic board passes, ~320 Tokens reaches 83 % of frames in budget. Unnecessary at realistic sizes; decide with the Performance Envelope whether boards that large must be smooth. | CR3-355 |
-| T-110 | Atlas | Map code is idle now that no Maps ship (`data/maps.json` is `{}`): `mapRegistry.js` (`listMaps` used only by tests), the Map checks in `ContentAudit.js`, Map loading in `DatabaseManager.js`, the `mapId` branch in `tokenTypeDerivation.js`, CMS `MapEditor`/`mapPass`. Delete or reuse when the Atlas lands; don't touch before. | T-109 |
 | T-072 | after the crunch | `@ts-check` trial on the contract layer. | CR3-560 |
 | T-073 | latent | Input-cost discount applied when paying, not when checking. | CR3-028 |
 | T-074 | latent | Item rules can be given moments that never fire. | CR3-202 |

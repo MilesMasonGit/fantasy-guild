@@ -17,7 +17,7 @@ import RecipeEditor from '../../cms/src/components/editors/RecipeEditor.jsx';
  */
 
 const DATA = path.resolve(__dirname, '../../data');
-const FILES = ['items.json', 'tokens.json', 'maps.json', 'tokenRecipes.json', 'effects.json'];
+const FILES = ['items.json', 'tokens.json', 'tokenRecipes.json', 'effects.json'];
 const read = (file) => JSON.parse(fs.readFileSync(path.join(DATA, file), 'utf8'));
 
 function loadShipped() {
@@ -27,7 +27,6 @@ function loadShipped() {
     useEntityStore.getState().hydrate({
         items: files['items.json'],
         tokens: files['tokens.json'],
-        maps: files['maps.json'],
         effects: files['effects.json'],
         recipePools,
     });
@@ -95,7 +94,7 @@ describe('A recipe that builds syncs intact', () => {
         const recipePools = {};
         for (const r of reread['tokenRecipes.json']) (recipePools[r.skill || 'general'] ||= []).push(r);
         useEntityStore.getState().hydrate({
-            items: reread['items.json'], tokens: reread['tokens.json'], maps: reread['maps.json'],
+            items: reread['items.json'], tokens: reread['tokens.json'],
             effects: reread['effects.json'], recipePools,
         });
         const second = syncPayload();

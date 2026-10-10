@@ -17,7 +17,7 @@ import { GuildUpgradeManager } from '../progression/GuildUpgradeManager.js';
 import { TUTORIAL_QUESTS, tutorialTemplate } from './tutorialQuests.js';
 // The bounty and reward helpers come from the leaf `questBounties.js`, not
 // QuestManager, so this module does not import QuestManager.
-import { createRandomQuest, questReward, copyReward } from './questBounties.js';
+import { createRandomQuest, questReward, copyReward, drawBountyMap } from './questBounties.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 export { QUEST_TOKEN_TYPE };
@@ -483,12 +483,12 @@ function removeQuestToken(instance) {
 /**
  * **Claim quest Token `instanceId`.** Only when done. A collection bounty hands
  * its items over from the Bank first. The reward drops as loot beside the
- * Token, then the Token vanishes. Claiming a tutorial step records it and
- * brings the next.
+ * Token, then the Token vanishes. A bounty may also pay a map, drawn here.
+ * Claiming a tutorial step records it and brings the next.
  *
  * @returns {{success: boolean, reason?: string, rewardItems?: object[]}}
  */
-export function claimQuest(instanceId) {
+export function claimQuest(instanceId, random = Math.random) {
     const instance = BoardState.getTokenById(instanceId);
     if (!isQuestToken(instance)) return refuse('No quest there');
     const quest = instance.quest;
@@ -507,6 +507,8 @@ export function claimQuest(instanceId) {
     // on hover, banked through InventoryManager. Dropped before the Token
     // leaves, since the drop is placed at its point.
     const rewardItems = questReward(quest);
+    const map = drawBountyMap(quest, random);
+    if (map) rewardItems.push(map);
     for (const r of rewardItems) SpriteLayer.addSprite('item', r.itemId, r.quantity, instance.id);
 
     removeQuestToken(instance);

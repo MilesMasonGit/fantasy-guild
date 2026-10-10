@@ -167,9 +167,9 @@ export default function ItemEditor() {
           </div>
         </div>
         <p className="text-[10px] text-gray-600 leading-relaxed">
-          Worked out from a Map's price, down through whatever produces this — so it
-          cannot be typed. An item nothing produces stays blank, and Recalculate raises
-          it as a Critical.
+          Worked out by the simulator from whatever produces this — so it cannot be
+          typed. An item nothing produces stays blank, and Recalculate raises it as a
+          Critical.
         </p>
 
         <div className="mt-4">

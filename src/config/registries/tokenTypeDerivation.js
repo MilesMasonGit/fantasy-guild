@@ -50,7 +50,7 @@ import { isEnemyDef } from './enemyProfile.js';
  * enemies ever grow rules of their own, converting this to a statement is the
  * move, and `enemyProfile.js` is the only other file that would change.
  *
- * It sits **first**, above Map. An enemy's drops live in `config.outputs`, so
+ * It sits **first**. An enemy's drops live in `config.outputs`, so
  * without this rung every enemy would file itself as a `resource`.
  */
 
@@ -66,7 +66,6 @@ export function deriveTokenType(def) {
     const hasCycle = !!config && (outputs.length > 0 || inputs.length > 0);
 
     if (isEnemyDef(def)) return { type: 'enemy', why: 'it is a creature a hero can fight' };
-    if (def.mapId) return { type: 'map', why: 'it bursts into a Map' };
 
     // ⚠️ Above the work-cycle rungs: a promotion Token HAS a cycle — the hero's
     // training — and would otherwise file itself as a station or a passive.

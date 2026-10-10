@@ -11,6 +11,7 @@ import SpriteAuditDashboard from './components/audit/SpriteAuditDashboard';
 import AuditPanel from './components/audit/AuditPanel';
 import ProgressionPanel from './components/progression/ProgressionPanel';
 import { useEntityStore } from './stores/useEntityStore';
+import { isMapItem } from '../../src/systems/atlas/mapItems.js';
 import { Package, Boxes, Map as MapIcon } from 'lucide-react';
 
 const EDITOR_MAP = {
@@ -43,6 +44,8 @@ function App() {
 function EditorRouter({ openGenerate }) {
   const activeType = useEntityStore((s) => s.activeEntityType);
   const activeId = useEntityStore((s) => s.activeEntityId);
+  // A map is an item, so it can be reached as one (a drop's item link, an audit row); it always opens in the Map editor.
+  const isMap = useEntityStore((s) => isMapItem(s.items[s.activeEntityId]));
 
   if (!activeType || !activeId) {
     return (
@@ -56,14 +59,14 @@ function EditorRouter({ openGenerate }) {
           <Hint icon={<MapIcon size={13} />} label="Maps" />
         </div>
         <p className="text-xs max-w-sm text-center mt-2 leading-relaxed">
-          Items first — they are the leaf nodes Tokens and Maps both reference,
-          so authoring one never stalls on an ingredient that does not exist yet.
+          Items first — they are the leaf nodes Tokens reference, so authoring one
+          never stalls on an ingredient that does not exist yet. A Map names Tokens.
         </p>
       </div>
     );
   }
 
-  const Editor = EDITOR_MAP[activeType];
+  const Editor = isMap ? MapEditor : EDITOR_MAP[activeType];
   if (!Editor) return <div style={{ color: 'var(--color-text-muted)' }}>Unknown entity type: {activeType}</div>;
   return <Editor openGenerate={openGenerate} />;
 }

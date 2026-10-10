@@ -45,14 +45,18 @@ export function authoredChance(output) {
     return Number.isFinite(output?.chance) ? output.chance : 100;
 }
 
-/** One normalised output entry. `chance` is a fraction; `chancePercent` is authored. */
-function adaptOutput(output) {
+/**
+ * One normalised output entry. `chance` is a fraction; `chancePercent` is authored.
+ * ⚠️ An output of an `exempt` item (a map) keeps its place but names no item, like a currency or Token output: every pass skips it, and the write-back's index join still lines up.
+ */
+function adaptOutput(output, exempt) {
     const { min, max } = quantityRange(output);
     const percent = authoredChance(output);
     const avgQty = expectedQuantity(output);
     const chance = percent / 100;
+    const itemId = output?.itemId ?? null;
     return Object.freeze({
-        itemId: output?.itemId ?? null,
+        itemId: itemId !== null && exempt.has(itemId) ? null : itemId,
         chancePercent: percent,
         chance,
         minQty: min,
@@ -65,16 +69,19 @@ function adaptOutput(output) {
     });
 }
 
-function adaptInput(input) {
+function adaptInput(input, exempt) {
+    const itemId = input?.itemId ?? null;
     return Object.freeze({
-        itemId: input?.itemId ?? null,
+        itemId: itemId !== null && exempt.has(itemId) ? null : itemId,
         quantity: Number.isFinite(input?.quantity) ? input.quantity : 1,
     });
 }
 
-function adaptCommon({ id, name, kind, skill, level, cycleTimeMs, inputs, outputs, sim, downcycle, rarity, tokenType, charges }) {
-    const adaptedOutputs = Object.freeze((outputs || []).map(adaptOutput));
-    const adaptedInputs = Object.freeze((inputs || []).map(adaptInput));
+const NO_EXEMPT = new Set();
+
+function adaptCommon({ id, name, kind, skill, level, cycleTimeMs, inputs, outputs, sim, downcycle, rarity, tokenType, charges }, exempt = NO_EXEMPT) {
+    const adaptedOutputs = Object.freeze((outputs || []).map((o) => adaptOutput(o, exempt)));
+    const adaptedInputs = Object.freeze((inputs || []).map((i) => adaptInput(i, exempt)));
     return Object.freeze({
         id,
         name: name ?? id,
@@ -95,7 +102,7 @@ function adaptCommon({ id, name, kind, skill, level, cycleTimeMs, inputs, output
     });
 }
 
-export function adaptToken(def, id = def?.id) {
+export function adaptToken(def, id = def?.id, exempt = NO_EXEMPT) {
     return adaptCommon({
         id,
         name: def?.name,
@@ -112,10 +119,10 @@ export function adaptToken(def, id = def?.id) {
         rarity: def?.rarity,
         tokenType: def?.tokenType,
         charges: liveCharges(def),
-    });
+    }, exempt);
 }
 
-export function adaptRecipe(def, id = def?.id) {
+export function adaptRecipe(def, id = def?.id, exempt = NO_EXEMPT) {
     return adaptCommon({
         id,
         name: def?.name,
@@ -132,7 +139,7 @@ export function adaptRecipe(def, id = def?.id) {
         rarity: null,
         tokenType: null,
         charges: null,
-    });
+    }, exempt);
 }
 
 /** Accept either a keyed object or an array of records, and yield `[id, def]`. */
@@ -142,11 +149,11 @@ function entries(collection) {
     return Object.entries(collection);
 }
 
-/** Adapt a whole corpus. Returns entities sorted by id: every later pass iterates this array, and a stable order is what makes two runs byte-identical. */
-export function adaptCorpus({ tokens, recipes } = {}) {
+/** Adapt a whole corpus. Returns entities sorted by id: every later pass iterates this array, and a stable order is what makes two runs byte-identical. `exempt` names the items no pass may see (the maps). */
+export function adaptCorpus({ tokens, recipes, exempt = NO_EXEMPT } = {}) {
     const adapted = [
-        ...entries(tokens).map(([id, def]) => adaptToken(def, def?.id ?? id)),
-        ...entries(recipes).map(([id, def]) => adaptRecipe(def, def?.id ?? id)),
+        ...entries(tokens).map(([id, def]) => adaptToken(def, def?.id ?? id, exempt)),
+        ...entries(recipes).map(([id, def]) => adaptRecipe(def, def?.id ?? id, exempt)),
     ];
     adapted.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
     return adapted;

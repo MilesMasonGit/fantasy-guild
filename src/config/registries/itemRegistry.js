@@ -14,6 +14,7 @@
  * - potion: Buff consumables
  * - currency: Special tracking items
  * - drop: Monster parts/loot
+ * - map: a Base Map, and modifier: a Map Modifier (their Cartography block: `systems/atlas/mapItems.js`)
  */
 
 import { DatabaseManager } from '../DatabaseManager.js';
@@ -32,7 +33,9 @@ export const ITEM_TYPES = {
     DRINK: 'drink',
     POTION: 'potion',
     CURRENCY: 'currency',
-    DROP: 'drop'
+    DROP: 'drop',
+    MAP: 'map',
+    MODIFIER: 'modifier'
 };
 
 // === Dynamic Item Loader ===

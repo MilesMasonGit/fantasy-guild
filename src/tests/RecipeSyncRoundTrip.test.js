@@ -98,7 +98,6 @@ describe('Recipe sync round trip', () => {
         const files = syncFiles({
             items: { a: 1 },
             tokens: { b: 2 },
-            maps: { c: 3 },
             recipePools: poolsFromFile(shipped),
         });
         expect(Object.keys(files)).toEqual([
@@ -106,7 +105,8 @@ describe('Recipe sync round trip', () => {
             // optional: `tokens.json` now holds references into it, so a sync
             // that wrote one without the other would leave every Token's rules
             // pointing at nothing.
-            'items.json', 'tokens.json', 'maps.json', 'tokenRecipes.json', 'effects.json',
+            // No maps.json: maps are items, written into items.json.
+            'items.json', 'tokens.json', 'tokenRecipes.json', 'effects.json',
         ]);
         expect(files['tokenRecipes.json'].map(r => r.id)).toEqual(shipped.map(r => r.id));
     });

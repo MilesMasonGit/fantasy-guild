@@ -20,7 +20,6 @@ export function syncFiles(balanced = {}) {
     return {
         'items.json': balanced.items,
         'tokens.json': balanced.tokens,
-        'maps.json': balanced.maps,
         'tokenRecipes.json': recipesToFile(balanced.recipePools),
         // The named effect library. A Token carries references into it, so it must be written by the same sync as `tokens.json` or the game loads Tokens whose rules resolve to nothing. ⚠️ The write is wholesale; nothing merges with what is already on disk.
         'effects.json': balanced.effects || {},

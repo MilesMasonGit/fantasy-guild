@@ -6,7 +6,6 @@ import { runSim } from '../../cms/src/engine/sim/simRunner.js';
 import tokenData from '../../data/tokens.json';
 import recipeData from '../../data/tokenRecipes.json';
 import itemData from '../../data/items.json';
-import mapData from '../../data/maps.json';
 
 /**
  * The CMS connectivity auditor's Token branch.
@@ -93,7 +92,6 @@ describe('CMS connectivity auditor — over the shipped corpus', () => {
                 items: itemData,
                 tokens: tokenData,
                 recipes: recipeData,
-                maps: mapData,
             }))
         );
 

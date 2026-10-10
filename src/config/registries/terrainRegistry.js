@@ -133,6 +133,10 @@ export function setArtSet(set) {
  *
  * ⚠️ These are **fills only**. There are no edge or corner pieces and no alpha
  * stencils, and there will not be: edges are computed.
+ *
+ * ⚠️ The per-variant files `substrateSprite` names no longer exist: the ground
+ * art is now one sheet per substrate (`ter_grass.png` and so on, in the same
+ * folder). Terrain is dormant, and its rewrite will read the sheets.
  */
 export const SUBSTRATES = Object.freeze({
     // ⚠️ No terrain has dirt as its *base* any more — it is only ever patched
@@ -169,7 +173,11 @@ export function substrateSprite(substrateId, variant = 0, set = activeArtSet) {
  * enough, but there is no art for them and half-authored scenery is worse than
  * none. Adding some is two fields here and no code.
  */
-/** The scenery that exists as art, in `public/assets/playmat/props/`. */
+/**
+ * The scenery the terrain scatters, in `public/assets/playmat/props/`.
+ * ⚠️ These tree props no longer exist as art: the props folder now holds 4×4
+ * sheets of 16px props, and no tree sheet yet. Dormant, like the ground.
+ */
 const BROADLEAF = Object.freeze(['prop_tree_oak', 'prop_tree_maple']);
 const CONIFER = Object.freeze(['prop_tree_fir']);
 
