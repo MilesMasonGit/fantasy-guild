@@ -193,7 +193,9 @@ function MiniMap({ camp, tokens }) {
   const hall = camp.hall || { x: w / 2, y: h / 2 };
   return (
     <svg viewBox={`0 0 ${w} ${h}`} className="w-full rounded-lg border border-white/10" style={{ background: '#14161f' }} role="img" aria-label="Starter Camp layout">
-      <rect x={hall.x - 144} y={hall.y - 144} width={288} height={288} rx={24} fill="#6366f1" opacity={0.6} />
+      <rect x={hall.x - 64} y={hall.y - 64} width={128} height={128} rx={16} fill="#6366f1" opacity={0.6}>
+        <title>{`Guild Hall (${hall.x}, ${hall.y})`}</title>
+      </rect>
       {camp.tokens.map((t, i) => (
         <circle key={i} cx={t.x} cy={t.y} r={56} fill={tokens[t.typeId]?.landmark === true ? '#fbbf24' : '#34d399'} opacity={0.75}>
           <title>{`${tokens[t.typeId]?.name || t.typeId} (${t.x}, ${t.y})`}</title>
