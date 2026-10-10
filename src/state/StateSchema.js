@@ -280,7 +280,8 @@ export const INITIAL_STATE = {
     //   tokens      { [id]: { id, typeId, x, y, placedAt, usesRemaining, cycleElapsedMs, selectedRecipeId? } }  (Free Playmat 1.6a)
     //               + origin 'placed'|'spawned' (absent reads as placed), clocks? { growMs, turnMs, turnWon?, ... },
     //                 turnedFrom? typeId  (Token Lifecycle 3.1 / 3.2, roadmap §3.1),
-    //                 fixture? true and biome? string on a node a map wrote (`BoardState.isFixture`)
+    //                 fixture? true and biome? string on a node a map wrote (`BoardState.isFixture`),
+    //                 demolish? true on a Token marked for demolition (`Demolition.js`; its progress is cycleElapsedMs)
     //   nextTokenOrder number               the next Token's placedAt
     //   flags       { [heroId]: { x, y, plantedAt, pinnedTo? } }  each hero's flag (Free Playmat 1.4b; no skill since 1.5b — the hero's rules live on the hero;
     //                 pinnedTo = the Token instance id it is pinned to, absent on an area flag and in older saves — B5, FB-45)

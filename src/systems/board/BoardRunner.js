@@ -24,6 +24,7 @@ import * as Hostiles from './Hostiles.js';
 import * as TimedChanges from './TimedChanges.js';
 import * as WorkCheck from './WorkCheck.js';
 import * as Foundations from './Foundations.js';
+import * as Demolition from './Demolition.js';
 import { workConfigOf } from './StationRecipe.js';
 import * as Restrictions from './Restrictions.js';
 import * as Placement from './Placement.js';
@@ -428,6 +429,39 @@ function completeCycle(instance, def, io, heroId, config = def.config) {
 }
 
 /**
+ * A Token marked for demolition, for one tick: its hero's Construction work, a fixed time with no
+ * recipe, inputs or charges, after which `Demolition.finish` takes it off the mat.
+ *
+ * ⚠️ No `CYCLE_START` or `CYCLE_COMPLETE`, no XP, no output: demolishing is not production, and a
+ * rule or quest counting cycles must not count it.
+ */
+function tickDemolition(instance, def, delta, heroId, publishProgress) {
+    if (!heroId) {
+        setAlert(instance, null);
+        return;
+    }
+    const config = workConfigOf(def, instance);
+    const skillAlert = WorkCheck.heroReason(heroId, config);
+    if (skillAlert) {
+        setAlert(instance, skillAlert);
+        return;
+    }
+    setAlert(instance, null);
+
+    instance.cycleElapsedMs = (instance.cycleElapsedMs > 0 ? instance.cycleElapsedMs : 0) + delta;
+    if (instance.cycleElapsedMs >= config.cycleTimeMs) {
+        Demolition.finish(instance, { heroId });
+    } else if (publishProgress) {
+        EventBus.publish(BOARD_EVENTS.PROGRESS, {
+            instanceId: instance.id,
+            percent: Math.min(100, (instance.cycleElapsedMs / config.cycleTimeMs) * 100),
+            elapsedMs: instance.cycleElapsedMs,
+            cycleTimeMs: config.cycleTimeMs
+        });
+    }
+}
+
+/**
  * Advance every Token on the board.
  *
  * @param {number} delta game milliseconds since the last tick
@@ -508,6 +542,14 @@ export function tick(delta) {
             // Guarding on `heroId` here would leave the old fight, and its damaged enemy, alive
             // forever, so a player could chip a boss down across free retreats.
             BoardCombat.tickToken(instance, delta, heroId);
+            continue;
+        }
+
+        // Marked for demolition: its own work (recipe, build, training, passive cycle) stops and the
+        // demolition runs in its place. After enemies, which can never be marked, and before the
+        // Promotion Tokens and Passive Generators, which can.
+        if (Demolition.isMarked(instance)) {
+            tickDemolition(instance, def, delta, heroId, publishProgress);
             continue;
         }
 

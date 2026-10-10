@@ -4,6 +4,7 @@ import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { recipesForToken } from '../../config/registries/recipePoolRegistry.js';
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
+import * as Demolition from './Demolition.js';
 
 /**
  * Which recipe a station is set to: the one place `selectedRecipeId` is read or written.
@@ -103,8 +104,13 @@ export function validateSelection(instance, def = null) {
  * what to build, not by a level.
  *
  * Returns null for a Token with neither, which is inert.
+ *
+ * A Token marked for demolition is demolition work whatever it is (`Demolition.DEMOLITION_CONFIG`).
+ * ⚠️ So every caller deciding who works a Token, or how, must pass the instance: the type alone
+ * cannot know the mark.
  */
 export function workConfigOf(def, instance = null) {
+    if (Demolition.isMarked(instance)) return Demolition.DEMOLITION_CONFIG;
     if (!def?.foundation) return def?.config || null;
     const recipe = instance ? selectedRecipe(instance, def) : null;
     return {

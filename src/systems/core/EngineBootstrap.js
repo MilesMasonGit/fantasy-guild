@@ -36,6 +36,8 @@ import * as BoardPromotion from '../board/BoardPromotion.js';
 import * as MatResize from '../board/MatResize.js';
 import * as Flags from '../board/Flags.js';
 import * as FlagRules from '../board/FlagRules.js';
+// Marking Tokens for demolition from the console (`Game.Demolition.mark(id)`).
+import * as Demolition from '../board/Demolition.js';
 import { QuestManager } from '../quests/QuestManager.js';
 // Quest Tokens on the mat, exposed for console probes (`Game.QuestTokens`).
 import * as QuestTokens from '../quests/QuestTokens.js';
@@ -90,6 +92,7 @@ export const EngineBootstrap = {
             BoardPromotion,
             Flags,
             FlagRules,
+            Demolition,
             QuestManager,
             QuestTokens,
             EnemyMotion,

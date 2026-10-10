@@ -132,6 +132,13 @@ export const BOARD_EVENTS = {
      */
     TOKEN_RESPAWNED: 'board:token_respawned',
 
+    /**
+     * A hero finished demolishing a marked Token and it left the board (`Demolition.js`). Payload:
+     * `{ instanceId, typeId, x, y, heroId }`. ⚠️ Never with `TOKEN_DEPLETED`: nothing ran out, and
+     * nothing is refunded or dropped.
+     */
+    TOKEN_DEMOLISHED: 'board:token_demolished',
+
     /** A neighbourhood changed, so modifiers need recomputing. Payload: `{ points }` — the mat points the change touched. */
     ADJACENCY_DIRTY: 'board:adjacency_dirty',
 

@@ -237,6 +237,12 @@ export const SKILL_COUNT = Object.keys(SKILLS).length;
  */
 export const RECRUIT_SKILL_SLOTS = STARTING_SKILL_IDS.length;
 
+/**
+ * The skill a hero demolishes a marked Token with (`board/Demolition.js`). ⚠️ It must stay a
+ * Starting skill: every hero holds it, so any hero can clear a Token away.
+ */
+export const DEMOLITION_SKILL_ID = SKILLS.construction.id;
+
 /** Whether `skillId` names a real skill. */
 export function isSkillId(skillId) {
     return Object.prototype.hasOwnProperty.call(SKILLS, skillId);

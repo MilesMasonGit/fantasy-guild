@@ -14,6 +14,7 @@ import { pickWeighted } from './weightedPick.js';
 import * as InputAllocator from './InputAllocator.js';
 import * as MatCap from './MatCap.js';
 import * as Respawn from './Respawn.js';
+import * as Demolition from './Demolition.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
@@ -377,6 +378,9 @@ const sameList = (a = [], b = []) => a.length === b.length && a.every((v, i) => 
 export function syncAlerts() {
     const live = new Set();
     for (const s of liveSpawners()) {
+        // A spawner marked for demolition never attempts (`TimedChanges` holds it), so nothing it
+        // waits for is a problem: its alert drops below like a departed spawner's.
+        if (Demolition.isMarked(s)) continue;
         live.add(s.id);
         const status = spawnerStatus(s.id);
         const alert = (status && ALERT_FOR_STATE[status.state]) || null;
