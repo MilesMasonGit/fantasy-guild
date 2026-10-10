@@ -15,6 +15,7 @@ import { centreOf, distanceSq } from './nearby.js';
 import { artRadiusOf, matW, matH } from '../../config/matGeometry.js';
 import * as MatPlacement from './MatPlacement.js';
 import * as TokenGlows from './TokenGlows.js';
+import * as FixedTokens from './FixedTokens.js';
 import { getTokenType, tokenStartingUses } from '../../config/registries/tokenRegistry.js';
 import { PLACEMENT, RANDOM_FREE_DARTS, placementOf } from '../../config/registries/placementRegistry.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
@@ -161,10 +162,10 @@ export function minCentreGap(typeA, typeB) {
  * Returns `{ x, y, pushed }`; `pushed` is for `BoardState.applyPushes`.
  */
 function spawnPoint(typeId, placement, from, random, bearerId) {
-    // A spawn pushes only other spawned Tokens. Everything the player placed holds its ground; a
-    // push that would need to move one fails, and `forceSpot` falls back to free space, or to null
-    // (the spawn waits).
-    const fixedIds = BoardState.placedTokenIds();
+    // A spawn pushes only spawned Tokens that are not planted. Everything the player placed, and
+    // every fixed Token, holds its ground; a push that would need to move one fails, and
+    // `forceSpot` falls back to free space, or to null (the spawn waits).
+    const fixedIds = FixedTokens.unpushableIds();
 
     if (placement === PLACEMENT.NEAREST_FREE) {
         const spot = MatPlacement.findSpot(typeId, from);
@@ -251,7 +252,8 @@ function openness(point, ignoreId = null) {
  * `Spawns`: put a Token on the mat.
  *
  * ⚠️ Never onto another Token. `here` replaces the bearer, which is what leaving a Stump behind
- * means and the only case where destroying something is the intent. Every other placement looks for
+ * means and the only case where destroying something is the intent; a fixed Token on that same
+ * point is never destroyed, so the spawn is skipped instead. Every other placement looks for
  * a free spot, pushes when there is none nearby, and does nothing when the mat is full: a full mat
  * is an ordinary state, and stacking a Token onto another would silently destroy whatever was
  * there.
@@ -280,10 +282,12 @@ export function spawn(statement, roles, random = Math.random) {
     if (!where) return null; // the mat is full, so the spawn is skipped
 
     if (replacesBearer) {
-        // The bearer (if it is still there) and anything else standing on the
-        // very point are replaced.
+        // The bearer (if it is still there) and anything else standing on the very point are
+        // replaced, unless one of those others is fixed: then nothing is, and the spawn is skipped.
+        const others = BoardState.tokensAtPoint(where.x, where.y).filter(t => t.id !== bearer?.id);
+        if (others.some(FixedTokens.isFixed)) return null;
         if (bearer) BoardState.removeToken(bearer.id);
-        for (const other of BoardState.tokensAtPoint(where.x, where.y)) BoardState.removeToken(other.id);
+        for (const other of others) BoardState.removeToken(other.id);
     }
 
     const touched = BoardState.applyPushes(where.pushed);
@@ -334,7 +338,8 @@ export function transform(statement, roles) {
  * @param {string} typeId what it becomes
  * @param {object} [options]
  * @param {boolean} [options.fixPlaced] placed Tokens may not be pushed out of the way. Default
- * false: a `Transforms` statement pushes as it always has.
+ * false: a `Transforms` statement pushes as it always has, except fixed Tokens
+ * (`FixedTokens.isFixed`), which nothing pushes.
  * @param {object} [options.extra] fields to set on the new instance (`turnedFrom`, `clocks`)
  * @returns {object|null} the new instance, or null when it did not happen
  */
@@ -345,8 +350,9 @@ export function transformInstance(old, typeId, options = {}) {
     const from = centreOf(old);
 
     // The new Token may be bigger, or carry a `Cannot` the old one did not: it pushes like any
-    // arrival, and a transform with nowhere legal to stand does not happen.
-    const fixedIds = options.fixPlaced ? BoardState.placedTokenIds().filter(id => id !== old.id) : [];
+    // arrival, and a transform with nowhere legal to stand does not happen. A fixed Token is
+    // never pushed either way.
+    const fixedIds = options.fixPlaced ? FixedTokens.unpushableIds(old.id) : FixedTokens.fixedTokenIds(old.id);
     const where = MatPlacement.forceSpot(typeId, from, { excludeId: old.id, fixedIds });
     if (!where) return null;
 

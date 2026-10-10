@@ -1,8 +1,8 @@
 // building in place on a Foundation
 
-import * as BoardState from './BoardState.js';
 import * as MatPlacement from './MatPlacement.js';
 import * as EffectActions from './EffectActions.js';
+import * as FixedTokens from './FixedTokens.js';
 import { centreOf } from './nearby.js';
 
 /**
@@ -28,11 +28,11 @@ export function buildTargetOf(io) {
 }
 
 /**
- * The placed Tokens a building must not push: placed Tokens are fixed, as in the timed changes;
- * only spawned ones make way.
+ * The Tokens a building must not push, the same set `transformInstance`'s `fixPlaced` names:
+ * placed and planted Tokens; only other spawned ones make way.
  */
 function fixedIdsFor(instance) {
-    return BoardState.placedTokenIds().filter(id => id !== instance.id);
+    return FixedTokens.unpushableIds(instance.id);
 }
 
 /**

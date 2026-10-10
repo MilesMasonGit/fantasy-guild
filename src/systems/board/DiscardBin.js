@@ -166,6 +166,7 @@ export function canBin(instanceId, options = {}) {
     const instance = BoardState.getTokenById(instanceId);
     if (!instance) return refuse('No Token there');
     if (Placement.isPermanentToken(instance.typeId, instance)) return refuse('The Guild Hall cannot be discarded.');
+    if (Placement.isFixed(instance)) return refuse(Placement.FIXED_IN_PLACE);
     // A tutorial quest Token stays until it is claimed; only bounties may be discarded (spawned, so
     // no refund).
     if (instance.quest?.tutorial) return refuse('Tutorial quests cannot be discarded.');
