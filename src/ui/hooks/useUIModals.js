@@ -65,6 +65,9 @@ const DRAWER_TARGETS = new Set(['bank']);
  */
 const SHOP_TARGET = 'shop';
 
+/** Nav targets that open as a full-screen view (`ui.fullscreen.view`). The Atlas is an overlay over the mat. */
+const FULLSCREEN_TARGETS = new Set(['guild', 'areas', 'atlas']);
+
 export const useUIModals = (engine) => {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isSlotSelectionOpen, setIsSlotSelectionOpen] = useState(true);
@@ -124,8 +127,9 @@ export const useUIModals = (engine) => {
     // neither close other views nor are closed by them.
     const isNavActive = useCallback((target) => {
         switch (target) {
-            case 'guild': return fullscreenView === 'guild';
-            case 'areas': return fullscreenView === 'areas';
+            case 'guild':
+            case 'areas':
+            case 'atlas': return fullscreenView === target;
             case 'bank': return drawerState.panes.includes('bank');
             case SHOP_TARGET: return isShopOpen;
             case 'settings': return isSettingsOpen;
@@ -135,7 +139,7 @@ export const useUIModals = (engine) => {
 
     const navToggle = useCallback((target) => {
         if (isNavActive(target)) {
-            if (target === 'guild' || target === 'areas') setFullscreenView(null);
+            if (FULLSCREEN_TARGETS.has(target)) setFullscreenView(null);
             else if (DRAWER_TARGETS.has(target)) setDrawerState({ panes: [], filters: {}, maximized: null });
             else if (target === SHOP_TARGET) setIsShopOpen(false);
             else if (target === 'settings') setIsSettingsOpen(false);
@@ -149,7 +153,7 @@ export const useUIModals = (engine) => {
         setIsSettingsOpen(false);
         setIsShopOpen(false);
         requestAnimationFrame(() => {
-            setFullscreenView(target === 'guild' ? 'guild' : target === 'areas' ? 'areas' : null);
+            setFullscreenView(FULLSCREEN_TARGETS.has(target) ? target : null);
             setDrawerState(
                 DRAWER_TARGETS.has(target)
                     ? { panes: [target], filters: {}, maximized: null }

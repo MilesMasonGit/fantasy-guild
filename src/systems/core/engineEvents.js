@@ -271,5 +271,4 @@ export const NO_LISTENER = Object.freeze({
     [ENGINE_EVENTS.STATUS_DOT_TICK]: 'status moment (Effects Grammar v2 will listen)',
     [ENGINE_EVENTS.STATUS_PURGED]: 'status moment (Effects Grammar v2 will listen)',
     [ENGINE_EVENTS.BGM_TRACK_CHANGED]: 'console affordance for the music system',
-    [ENGINE_EVENTS.ATLAS_CHANGED]: 'the Region list moment, for the Atlas screen',
 });

@@ -15,6 +15,7 @@ import { useInspectTokenHandlers } from './hooks/useInspectTokenHandlers.js';
 import Board from './components/board/Board.jsx';
 import BankDrawer from './components/drawer/BankDrawer.jsx';
 import ShopDrawer from './components/drawer/ShopDrawer.jsx';
+import AtlasScreen from './components/atlas/AtlasScreen.jsx';
 
 import BubbleMenu from './components/nav/BubbleMenu.jsx';
 import BottomHeroDock, { showsBottomHeroDock } from './components/dock/BottomHeroDock.jsx';
@@ -117,6 +118,7 @@ export const ReactRoot = ({ engine }) => {
     // The Hall's upgrade web selects by upgrade id; it has no tiles.
     const [selectedUpgradeId, setSelectedUpgradeId] = React.useState('roster_size');
     const isGuildView = ui.fullscreen.view === 'guild';
+    const isAtlasOpen = ui.fullscreen.view === 'atlas';
     const isBankOpen = ui.drawer.panes.includes('bank');
 
     // While the Bank is open the mat is not interactive at all. `useMatBankLock` is the one
@@ -338,6 +340,10 @@ export const ReactRoot = ({ engine }) => {
                                     />
                                 </ErrorBoundary>
                             )}
+                            {/* The Atlas covers the mat column only: the nav beside it stays reachable to close it. */}
+                            {isAtlasOpen && <ErrorBoundary label="AtlasScreen">
+                                <AtlasScreen onClose={ui.fullscreen.close} closePromotion={ui.dock.closePromotion} />
+                            </ErrorBoundary>}
                         </div>
                         {!menuRight && (
                             isGuildView ? (

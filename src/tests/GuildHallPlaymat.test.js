@@ -60,12 +60,13 @@ describe('Guild Hall upgrade web', () => {
         expect(keys.length).toBe(GUILD_UPGRADES.reduce((n, d) => n + d.links.length, 0));
     });
 
-    // Starting reachability is exactly what the 7x7 grid gave before B9: the
-    // four tiles beside the Hall open, Bank Tabs (beyond Bank Slots) and
+    // Starting reachability is what the 7x7 grid gave before B9, plus the
+    // Atlas's two tracks (Cartography Table, Token Cap), joined to the Hall:
+    // the tiles beside the Hall open, Bank Tabs (beyond Bank Slots) and
     // Scouting Flags (between Bunk Beds and Bank Slots) shut.
     it('matches the old grid: the same upgrades open and shut on a new game', () => {
         const open = GUILD_UPGRADES.filter(d => isUpgradeAccessible(d.id, {})).map(d => d.id).sort();
-        expect(open).toEqual(['bank_slots', 'notice_board', 'roster_size', 'wishing_well']);
+        expect(open).toEqual(['bank_slots', 'cartography_slots', 'notice_board', 'roster_size', 'token_cap', 'wishing_well']);
     });
 
     it('opens a node once ANY linked node has rank >= 1', () => {
