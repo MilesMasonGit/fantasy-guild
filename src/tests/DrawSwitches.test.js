@@ -98,6 +98,8 @@ describe('the registry', () => {
 describe('side UI', () => {
     it('notifications and bin draw by default and not when off', () => {
         const on = mount(h(NotificationSidebars));
+        // The toast list is drawn only while its panel is open.
+        fireEvent.mouseEnter(on.container.querySelector('[data-sidebar="notifications"]'));
         expect(on.container.querySelector('[data-toasts]')).not.toBeNull();
         expect(on.container.querySelector('[data-discard-bin]')).not.toBeNull();
         cleanup();
@@ -105,6 +107,7 @@ describe('side UI', () => {
         setDrawn('notifications', false);
         setDrawn('bin', false);
         const off = mount(h(NotificationSidebars));
+        fireEvent.mouseEnter(off.container.querySelector('[data-sidebar="notifications"]'));
         expect(off.container.querySelector('[data-toasts]')).toBeNull();
         expect(off.container.querySelector('[data-discard-bin]')).toBeNull();
     });

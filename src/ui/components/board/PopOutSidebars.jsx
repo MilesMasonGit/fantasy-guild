@@ -14,10 +14,14 @@ import { SIDE_COLUMN_PX, NOTIFICATION_COLUMN, NOTIFICATION_STRIP_PX, columnWidth
  * The Notifications and Bin sidebars. On the playmat each is a slim tab on the screen edge that
  * pops out over the mat while the pointer is on it, and closes when the pointer leaves; the mat
  * itself keeps the width the old column took.
- * ⚠️ Both panels stay mounted whether open or closed. Closing only fades them, because the
- * Toast list holds state and the bin's slots are drag sources that must not vanish under a drag
- * in progress. The bin's drop target is switched off while it is closed, since dnd-kit ignores
- * opacity and pointer-events and a hidden target would otherwise still catch drops.
+ * ⚠️ The bin's panel stays mounted whether open or closed: closing only fades it, because its
+ * slots are drag sources that must not vanish under a drag in progress. Its drop target is
+ * switched off while it is closed, since dnd-kit ignores opacity and pointer-events and a hidden
+ * target would otherwise still catch drops.
+ * The notifications' toast list is put away once its panel has faded out: each toast is a
+ * composited layer (its backdrop blur) and measures its layout whenever it redraws, which an
+ * invisible panel would pay for on every notification. The tab's count follows the queue on
+ * its own.
  */
 
 /** How far from a sidebar's tab, towards the mat, a carried Token must come to open the bin. */
@@ -108,7 +112,10 @@ const panelPlace = (towardMat) => ({
     width: columnWidthCss(NOTIFICATION_COLUMN)
 });
 
-const PANEL_CLS = 'absolute z-20 flex flex-col rounded-lg border border-gi-border/40 bg-gi-surface/95 shadow-[0_0_24px_rgba(0,0,0,0.6)] transition-opacity duration-150';
+/** How long a panel takes to fade in or out (⚠️ the `duration-150` in `PANEL_CLS`). */
+export const PANEL_FADE_MS = 150;
+
+const PANEL_CLS ='absolute z-20 flex flex-col rounded-lg border border-gi-border/40 bg-gi-surface/95 shadow-[0_0_24px_rgba(0,0,0,0.6)] transition-opacity duration-150';
 
 /** A tab: its label reads top to bottom, with an optional count above it. */
 const Tab = ({ label, count, stripRef, open, className, ...rest }) => (
@@ -150,11 +157,25 @@ function useToastCount() {
 // (it opens for some drags), and each toast re-measures its layout for its slide when it redraws.
 const ToastColumn = React.memo(ToastContainer);
 
+/** Whether the toast list is drawn: from the moment the panel opens until it has faded out. */
+function useListLive(open) {
+    const [live, setLive] = useState(open);
+    useEffect(() => {
+        if (open) { setLive(true); return undefined; }
+        const t = setTimeout(() => setLive(false), PANEL_FADE_MS);
+        return () => clearTimeout(t);
+    }, [open]);
+    return open || live;
+}
+
 export const NotificationsSidebar = ({ towardMat }) => {
     const [listHidden, setListHidden] = useState(false);
+    // Kept here, not in the list, because the list is put away while the panel is shut.
+    const [collapsed, setCollapsed] = useState(false);
     const toastsDrawn = useDrawn('notifications');
     const count = useToastCount();
     const pop = usePopOut({ towardMat });
+    const listLive = useListLive(pop.open);
     return (
         <div
             ref={pop.wrapRef}
@@ -177,9 +198,9 @@ export const NotificationsSidebar = ({ towardMat }) => {
                 >
                     {listHidden ? 'Show Notifications' : 'Notifications'}
                 </button>
-                {!listHidden && toastsDrawn && (
+                {!listHidden && toastsDrawn && listLive && (
                     <div className="min-h-0 overflow-y-auto gi-scrollbar">
-                        <ToastColumn />
+                        <ToastColumn collapsed={collapsed} onCollapsedChange={setCollapsed} />
                     </div>
                 )}
             </section>

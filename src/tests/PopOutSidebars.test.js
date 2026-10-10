@@ -89,10 +89,13 @@ describe('the strip', () => {
         expect(container.querySelector('aside').style.width).toBe(`${NOTIFICATION_STRIP_PX}px`);
     });
 
-    it('keeps both panels in the page while shut (the toast list holds state)', () => {
+    it('keeps the bin in the page while shut; the toast list only while open', () => {
         const { container } = mount();
         expect(noteSidebar(container).textContent).toContain('Notifications');
         expect(container.querySelector('[data-discard-bin]')).not.toBeNull();
+        expect(container.querySelector('[data-toasts]')).toBeNull();
+        fireEvent.mouseEnter(noteSidebar(container));
+        expect(container.querySelector('[data-toasts]')).not.toBeNull();
     });
 });
 

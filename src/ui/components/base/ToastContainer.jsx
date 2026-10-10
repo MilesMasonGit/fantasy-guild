@@ -18,9 +18,14 @@ import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
  * floating overlay. The setting is left in place because the Settings screen still offers it;
  * it needs either removing from Settings or repurposing.
  */
-const ToastContainer = ({ floating = false }) => {
-    const [toasts, setToasts] = useState([]);
-    const [collapsed, setCollapsed] = useState(false);
+const ToastContainer = ({ floating = false, collapsed: collapsedProp, onCollapsedChange }) => {
+    // Seeded from the queue so a list drawn when its panel opens has its toasts in its first
+    // render: AnimatePresence then shows them in place rather than sliding each one in.
+    const [toasts, setToasts] = useState(() => NotificationSystem.getQueue());
+    // The holder may keep the Collapse choice, so it outlives this list.
+    const [ownCollapsed, setOwnCollapsed] = useState(false);
+    const collapsed = collapsedProp ?? ownCollapsed;
+    const setCollapsed = onCollapsedChange ?? setOwnCollapsed;
     // Fallback mirrors SettingsManager's `notifications.position` default —
     // keep the two in step, or a missing setting lands somewhere the Settings
     // screen never claimed.
@@ -107,7 +112,7 @@ const ToastContainer = ({ floating = false }) => {
             {(toasts.length > 1 || collapsed) && (
                 <div className="flex justify-end gap-1 mb-0.5">
                     <button
-                        onClick={() => setCollapsed(c => !c)}
+                        onClick={() => setCollapsed(!collapsed)}
                         className={controlClass}
                         title={collapsed
                             ? 'Show every notification again'
@@ -126,7 +131,7 @@ const ToastContainer = ({ floating = false }) => {
              * Suspected framer-motion/React 19 AnimatePresence issue; see the ticket before
              * changing this.
              */}
-            <AnimatePresence>
+            <AnimatePresence initial={false}>
                 {visibleToasts.map(toast => (
                     <Toast
                         key={toast.id}
