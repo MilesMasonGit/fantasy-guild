@@ -57,15 +57,18 @@ changelog and `docs/archive/`).*
 5. **Brief 20 live-game check** once the Academies and master Tokens exist.
 6. **T-111**: engine bench timings are load-sensitive; trust the work check.
 
-**Status (2026-10-09, afternoon):** Atlas **A1** (Regions, travel, save
-schema 0.8.1, cap 128) and **A4's pure half** (budget, seeded layout, terrain
-map) are merged. Building in parallel worktrees: **A2** respawning fixtures
-(`crunch/atlas-a2`), **A4b** settle/reroll/Region rules (`crunch/atlas-a4b`),
-**A5** maps as items with the rewritten Map editor (`crunch/atlas-a5`), and
-brief **60 P1** measurement (`crunch/optimize`). Then A3a (demolition) on the
-A2 line, A6 (Cartography screens), A7 (Starter Camp), A10, A11. On `main` two test files depend on the owner's uncommitted
-art move under `public/assets` (TerrainRegistry, AssetManager's tool
-sprites) and three file-scan tests time out only under bench load.
+**Status (2026-10-09, evening):** merged today: Atlas **A1** (Regions,
+travel, schema 0.8.1, cap 128), **A4** (budget, seeded layout, terrain map,
+settle, reroll, Region rules), **A5** (maps and modifiers as items, the CMS
+Map editor rewritten, Regions settle from Bank-held maps, old Map code
+retired, T-110 closed), **A9** (ambush rules), **T-129**, brief **50**.
+Building: **A2** respawning fixtures, **A7** Starter Camp as content,
+**A11** no tier labels, brief **60 P1** measurement. Then A3a, A6, A8, A10.
+`data/maps.json` is read by nothing now: delete it in a data-only commit.
+**Owner CMS to-do from A5:** author the 3 Base Maps (Forest, Mountain,
+Coast) and 4 Modifiers (Overgrown, Fir Grove, Goblin Camp, Ruins) in the
+Maps tab; put maps on enemy Drops; delete the Volcanic Island Map Token;
+commit the two edited map pictures from `atlas-wip`.
 
 **Handoff (2026-10-09, director session hit its usage limit; superseded above):**
 - Merged to `main` today: brief 50 (drag), T-129 (carried Token pauses),
