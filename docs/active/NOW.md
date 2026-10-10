@@ -45,6 +45,15 @@ changelog and `docs/archive/`).*
    - **Brief 50 merged** (owner felt the drag 2026-10-09 and kept the flag
      cloth rule, T-130 closed). Still parked: **T-129** should a carried
      Token pause work and fights so it cannot vanish in your hand?
+   - **Atlas A11, no tier labels, on `crunch/atlas-a11` (eye-check, text).**
+     The recipe picker now says "Needs a Marble Foundation or better" and
+     "Beside a Mythril Pickaxe or better"; rules sentences name the tool
+     instead of "Tier 3". **Owner step:** the Token inspection's "Acts as a
+     Tier 2 pickaxe" is CMS-written text in `data/`; a patch for the CMS
+     composer is parked in the director's scratchpad; once applied on the
+     branch, you run Sync to Game **on that branch** so the round-trip tests
+     go green, then it merges. Parked wording choices are in the A11 report
+     (director has them).
    - Entries are added here as overnight phases land.
 3. **Overnight run (owner asleep, 2026-10-08):** the director continues the
    crunch order (50 drag → 60 optimization → 70 Atlas → 80 terrain → 90
