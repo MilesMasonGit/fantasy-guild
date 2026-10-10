@@ -12,6 +12,7 @@ function snapshot(state) {
     tokens: state.tokens,
     effects: state.effects,
     recipePools: state.recipePools,
+    starterCamp: state.starterCamp,
   };
 }
 
@@ -44,7 +45,7 @@ export async function importWorkspace(file) {
 }
 
 /**
- * One-way full-file sync to the project `data/` directory: runs the economy recalculation, then writes `data/items.json` (maps and modifiers included), `tokens.json`, `tokenRecipes.json` and `effects.json` from its output.
+ * One-way full-file sync to the project `data/` directory: runs the economy recalculation, then writes `data/items.json` (maps and modifiers included), `tokens.json`, `tokenRecipes.json` and `effects.json` from its output, and `starterCamp.json` when the workspace holds a Starter Camp.
  * ⚠️ Sync writes from the STORE, never from `data/`: a browser that has never loaded a workspace backup syncs whatever it holds, so it can overwrite `data/` with older content.
  * @returns {Promise<{ success: boolean, filesWritten: Array<string> }>}
  */

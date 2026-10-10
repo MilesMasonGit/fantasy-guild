@@ -10,6 +10,7 @@ lerna-debug.log*
 node_modules
 dist
 dist-perf
+dist-perf-prof
 dist-ssr
 *.local
 
@@ -36,6 +37,9 @@ cms/backups/*
 # loadable — but the tags are the only copy outside `data/`, and a fresh clone
 # with no workspace is how a Sync wipes content (R-18). Tracked deliberately.
 !cms/backups/cms-workspace-2026-08-28-p25-tagged.json
+# The Starter Camp the game's dev button saved, waiting for the CMS's Starter
+# Camp page (cms/vite-plugin-cms-api.js). Scratch: Sync writes data/.
+cms/inbox/
 
 # Game assets
 public/assets/archive/

@@ -10,6 +10,7 @@ import * as Charges from '../systems/board/Charges.js';
 import * as Demolition from '../systems/board/Demolition.js';
 import * as Flags from '../systems/board/Flags.js';
 import * as FlagRules from '../systems/board/FlagRules.js';
+import * as Landmarks from '../systems/board/Landmarks.js';
 import * as MatCap from '../systems/board/MatCap.js';
 import * as Respawn from '../systems/board/Respawn.js';
 import * as SpawnerSystem from '../systems/board/SpawnerSystem.js';
@@ -190,7 +191,7 @@ describe('what can be marked', () => {
         const spawned = place(11, 'demo_sapling');
         spawned.origin = BoardState.ORIGIN.SPAWNED;
         for (const t of [bought, spawned]) {
-            expect(Demolition.canDemolish(t.id)).toMatchObject({ success: true });
+            expect(Demolition.canMark(t.id)).toMatchObject({ success: true });
             expect(Demolition.mark(t.id)).toEqual({ success: true });
             expect(Demolition.isMarked(t)).toBe(true);
             expect(t.demolish).toBe(true);
@@ -221,12 +222,24 @@ describe('what can be marked', () => {
             const refused = Demolition.mark(t.id);
             expect(refused, code).toEqual({ success: false, code, reason: Demolition.REFUSAL_TEXT[code] });
             expect(refused.reason, code).toMatch(/\w/);
-            expect(Demolition.canDemolish(t), code).toMatchObject({ success: false, code });
+            expect(Demolition.canMark(t), code).toMatchObject({ success: false, code });
             expect(Demolition.isMarked(t), code).toBe(false);
             expect(t.demolish, code).toBeUndefined();
         }
         expect(changed).toEqual([]);
         expect(Demolition.mark('tok_nowhere')).toMatchObject({ success: false, code: Demolition.REFUSAL.NO_TOKEN });
+    });
+
+    it('the dev layout tool lets a landmark be taken off, never marked', () => {
+        const landmark = placeAt('demo_landmark', 400, 200);
+        Landmarks.setLayoutEditing(true);
+        try {
+            expect(Demolition.canDemolish(landmark)).toBe(true);
+            expect(Demolition.mark(landmark.id)).toMatchObject({ success: false, code: Demolition.REFUSAL.LANDMARK });
+        } finally {
+            Landmarks.setLayoutEditing(false);
+        }
+        expect(Demolition.canDemolish(landmark)).toBe(false);
     });
 });
 

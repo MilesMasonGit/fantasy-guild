@@ -45,15 +45,18 @@ const ASPECT = 0.64;
  *        next free cells — the board-reach aura goes here, so the prefill is not
  *        itself a few thousand whole-mat rebuilds (it would take seconds; that
  *        cost is what S3/S5 measure while ticking, not while building)
+ * @param {number}   [options.cap] the Token cap to play under (the Mat Tuner's
+ *        override); the spawners then fill the mat up to it and wait, as they do
+ *        for a player at the cap. Unset: lifted out of the way (2000).
  */
-export function buildBoard({ fixtures, setMatTuning }, { placed = REALISTIC_PLACED, extra = [], late = [], matSteps = 11 } = {}) {
+export function buildBoard({ fixtures, setMatTuning }, { placed = REALISTIC_PLACED, extra = [], late = [], matSteps = 11, cap = null } = {}) {
     const { placeAt, makeHeroes, plant, lattice } = fixtures;
 
     if (matSteps !== 11) setMatTuning('matSteps', matSteps);
     // ⚠️ These boards hold more than the game's Token cap (80, spawned Tokens included), so the
     // cap is lifted: with it, the spawners stall at 80 and every scenario measures a lighter
     // board than its baseline timings (S3 would lose a third of its Tokens).
-    setMatTuning('tokenCap', 2000);
+    setMatTuning('tokenCap', cap ?? 2000);
     const w = matSteps * STEP;
     const h = Math.round(w * ASPECT);
     const hall = { x: MARGIN + STEP * Math.floor((matSteps - 1) / 2), y: MARGIN + STEP * Math.floor((Math.floor((h - 2 * MARGIN) / STEP)) / 2) };

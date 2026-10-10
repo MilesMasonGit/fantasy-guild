@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { execFile } from 'child_process';
+import { normaliseStarterCamp } from '../src/config/starterCampShape.js';
 
 
 /**
@@ -69,13 +70,100 @@ function commitSync(projectRoot, counts) {
   })();
 }
 
-export default function cmsFileApi() {
+/** Whether a request comes from a page on this machine (the game's dev server, on any port). */
+const LOCAL_ORIGIN = /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/;
+
+/** Read a request's whole body as JSON. */
+function readJson(req, onBody, onError) {
+  let body = '';
+  req.on('data', (chunk) => (body += chunk));
+  req.on('end', () => {
+    let parsed;
+    try {
+      parsed = JSON.parse(body || 'null');
+    } catch (err) {
+      onError(err);
+      return;
+    }
+    onBody(parsed);
+  });
+}
+
+/**
+ * `/api/starter-camp`: the inbox between the game's dev button ("Save this mat as the Starter Camp")
+ * and the CMS's Starter Camp page. The game POSTs the live mat; the page GETs it and, once the owner
+ * takes it into the workspace or discards it, DELETEs it. It is written to `inboxDir`, never to
+ * `data/`: only Sync to Game writes `data/starterCamp.json`, from the workspace.
+ *
+ * The game runs on another port, so this one route answers cross-origin calls, from pages on this
+ * machine only.
+ */
+function starterCampRoute(req, res, inboxDir) {
+  const file = path.join(inboxDir, 'starter-camp.json');
+  const origin = req.headers?.origin;
+  if (origin && LOCAL_ORIGIN.test(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Vary', 'Origin');
+  }
+  const send = (status, body) => {
+    res.statusCode = status;
+    if (body === undefined) return res.end();
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify(body));
+  };
+
+  if (req.method === 'OPTIONS') return send(204);
+
+  if (req.method === 'GET') {
+    if (!fs.existsSync(file)) return send(200, { camp: null });
+    try {
+      return send(200, JSON.parse(fs.readFileSync(file, 'utf8')));
+    } catch (err) {
+      return send(500, { error: 'Failed to read the saved Starter Camp: ' + err.message });
+    }
+  }
+
+  if (req.method === 'DELETE') {
+    if (fs.existsSync(file)) fs.unlinkSync(file);
+    return send(200, { success: true });
+  }
+
+  if (req.method === 'POST') {
+    readJson(req, (payload) => {
+      const camp = normaliseStarterCamp(payload?.camp ?? payload);
+      if (!camp) return send(400, { error: 'That is not a Starter Camp' });
+      try {
+        fs.mkdirSync(inboxDir, { recursive: true });
+        fs.writeFileSync(file, JSON.stringify({ receivedAt: new Date().toISOString(), camp }, null, 2));
+      } catch (err) {
+        return send(500, { error: 'Failed to keep the Starter Camp: ' + err.message });
+      }
+      console.log(`[CMS] The game saved a Starter Camp: ${camp.tokens.length} Token(s), ${Object.keys(camp.bank).length} Bank item(s). Open the Starter Camp page to review it.`);
+      send(200, { success: true, tokens: camp.tokens.length, bank: Object.keys(camp.bank).length });
+    }, (err) => send(400, { error: 'Invalid JSON: ' + err.message }));
+    return;
+  }
+
+  send(405, { error: 'Method not allowed' });
+}
+
+/**
+ * @param {object} [options]
+ * @param {string} [options.inboxDir] where the game's saved Starter Camp waits for the page
+ *        (default `cms/inbox/`, git-ignored)
+ */
+export default function cmsFileApi({ inboxDir } = {}) {
   const projectRoot = process.cwd().endsWith('cms') ? path.resolve(process.cwd(), '..') : process.cwd();
+  const inbox = inboxDir || path.resolve(projectRoot, 'cms', 'inbox');
   return {
     name: 'cms-file-api',
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
         const url = req.url.split('?')[0];
+
+        if (url === '/api/starter-camp') return starterCampRoute(req, res, inbox);
 
         // Serve static assets from project root public/assets folder if requested in CMS
         if (url.startsWith('/assets/')) {
@@ -595,6 +683,9 @@ export default function cmsFileApi() {
             const tokenRecipes = fs.existsSync(path.join(dataDir, 'tokenRecipes.json'))
               ? JSON.parse(fs.readFileSync(path.join(dataDir, 'tokenRecipes.json'), 'utf8'))
               : [];
+            const starterCamp = fs.existsSync(path.join(dataDir, 'starterCamp.json'))
+              ? JSON.parse(fs.readFileSync(path.join(dataDir, 'starterCamp.json'), 'utf8'))
+              : null;
 
             const recipePools = {};
             for (const recipe of tokenRecipes) {
@@ -609,6 +700,7 @@ export default function cmsFileApi() {
               tokens,
               effects,
               recipePools,
+              starterCamp,
             }));
           } catch (err) {
             res.statusCode = 500;
@@ -661,7 +753,8 @@ export default function cmsFileApi() {
                 tokens: size(files['tokens.json']),
                 items: size(files['items.json']),
                 maps: Object.values(files['items.json'] || {}).filter(isMap).length,
-                recipes: size(files['tokenRecipes.json'])
+                recipes: size(files['tokenRecipes.json']),
+                'Starter Camp Tokens': size(files['starterCamp.json']?.tokens)
               };
 
               commitSync(projectRoot, counts).then((commit) => {

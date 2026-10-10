@@ -1,4 +1,4 @@
-// demolition: a marked Token is Construction work that removes it
+// Demolition: which Tokens may be taken off the mat for good, and the job that takes them
 
 import { EventBus } from '../core/EventBus.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
@@ -8,11 +8,20 @@ import { QUEST_TOKEN_TYPE } from '../../config/registries/engineTokens.js';
 import { isEnemyDef } from '../../config/registries/enemyProfile.js';
 import { DEMOLITION_SKILL_ID } from '../../config/registries/skillRegistry.js';
 import * as BoardState from './BoardState.js';
-import { isGuildHall, isLandmark } from './MatCap.js';
+import { isGuildHall } from './MatCap.js';
+import * as Landmarks from './Landmarks.js';
 
 /**
- * The player marks a Token for demolition (`instance.demolish: true`, saved) and a hero holding
- * Construction removes it: no refund, no loot, never a depletion.
+ * Two questions about removing a Token for good.
+ *
+ * {@link canDemolish}: may it be taken off at all? Never the Guild Hall (or a type that cannot
+ * leave the mat) and never a landmark, except while the dev layout tool is on
+ * (`Landmarks.setLayoutEditing`). The discard bin and `Placement.removePlacedToken` ask it.
+ *
+ * {@link canMark}: may the player mark it for demolition? Narrower: nor a map's nodes (the settled
+ * layout is permanent), quests or enemies, and never a landmark, dev tool or not. A marked Token
+ * (`instance.demolish: true`, saved) is taken away by a hero holding Construction: no refund, no
+ * loot, never a depletion.
  *
  * While marked the Token is that work and nothing else: `StationRecipe.workConfigOf(def,
  * instance)` answers {@link DEMOLITION_CONFIG}, so flags send Construction heroes to it whatever
@@ -67,6 +76,18 @@ export const REFUSAL_TEXT = Object.freeze({
 
 const refuse = (code) => ({ success: false, code, reason: REFUSAL_TEXT[code] });
 
+/** The Guild Hall, or a type that can never leave the mat. */
+function isPermanent(instance) {
+    return isGuildHall(instance) || !!getTokenType(instance.typeId)?.cannotLeaveBoard;
+}
+
+/** Whether `instance` may be removed for good (the bin, `Placement.removePlacedToken`). */
+export function canDemolish(instance) {
+    if (!instance?.typeId) return false;
+    if (isPermanent(instance)) return false;
+    return !Landmarks.isLandmark(instance) || Landmarks.isLayoutEditing();
+}
+
 /** Whether this Token is marked for demolition. */
 export function isMarked(instance) {
     return instance?.demolish === true;
@@ -79,17 +100,15 @@ function tokenOf(target) {
 
 /**
  * Why this Token may not be marked ({@link REFUSAL}), or null when it may. Everything bought,
- * built, spawned or planted may; the Guild Hall, landmarks, a map's nodes, quests and enemies may
- * not.
+ * built, spawned or planted may.
  */
 export function refusalOf(instance) {
     if (!instance?.typeId) return REFUSAL.NO_TOKEN;
-    const def = getTokenType(instance.typeId);
-    if (isGuildHall(instance) || def?.cannotLeaveBoard) return REFUSAL.GUILD_HALL;
-    if (isLandmark(instance)) return REFUSAL.LANDMARK;
+    if (isPermanent(instance)) return REFUSAL.GUILD_HALL;
+    if (Landmarks.isLandmark(instance)) return REFUSAL.LANDMARK;
     if (BoardState.isFixture(instance)) return REFUSAL.MAP_NODE;
     if (instance.typeId === QUEST_TOKEN_TYPE) return REFUSAL.QUEST;
-    if (isEnemyDef(def)) return REFUSAL.ENEMY;
+    if (isEnemyDef(getTokenType(instance.typeId))) return REFUSAL.ENEMY;
     return null;
 }
 
@@ -97,7 +116,7 @@ export function refusalOf(instance) {
  * Whether the Token named (instance id or instance, on the mat) may be marked: `{ success: true,
  * instance }`, or `{ success: false, code, reason }` with a sentence the UI can show.
  */
-export function canDemolish(target) {
+export function canMark(target) {
     const instance = tokenOf(target);
     const code = refusalOf(instance);
     return code ? refuse(code) : { success: true, instance };
@@ -131,7 +150,7 @@ function announce(instance) {
  * @returns {{ success: boolean, code?: string, reason?: string, unchanged?: boolean }}
  */
 export function mark(target) {
-    const check = canDemolish(target);
+    const check = canMark(target);
     if (!check.success) return check;
     const { instance } = check;
     if (isMarked(instance)) return { success: true, unchanged: true };

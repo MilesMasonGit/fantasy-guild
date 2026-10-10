@@ -1,6 +1,6 @@
 // where a Token may stand on the free playmat
 
-import { getTokenType, registryVersion } from '../../config/registries/tokenRegistry.js';
+import { getTokenType, registryVersion, isLandmarkType } from '../../config/registries/tokenRegistry.js';
 import { artRadiusOf, matW, matH, LARGEST_ART_RADIUS } from '../../config/matGeometry.js';
 import { matTuning, onMatTuningChanged } from '../../config/matTuning.js';
 import { KEYWORD, statementsWith } from '../effects/statements.js';
@@ -422,7 +422,8 @@ const PUSH_MARGIN = 0.5;
  *
  * @param {object} [options]
  * @param {string} [options.excludeId] a Token to ignore — the one being replaced
- * @param {string[]} [options.fixedIds] Tokens that must not be pushed
+ * @param {string[]} [options.fixedIds] Tokens that must not be pushed. Landmarks never are, named
+ * here or not.
  * @returns {{x: number, y: number, pushed: {id: string, x: number, y: number}[]}|null}
  */
 export function forceSpot(typeId, point, options = {}) {
@@ -457,7 +458,7 @@ function relax(typeId, at, excludeId, fixedIds) {
         .filter(t => t.id !== excludeId && Number.isFinite(t.x) && Number.isFinite(t.y))
         .map(t => ({
             id: t.id, typeId: t.typeId, x: t.x, y: t.y, x0: t.x, y0: t.y,
-            h: hitRadiusOf(t.typeId), fixed: fixedIds.has(t.id)
+            h: hitRadiusOf(t.typeId), fixed: fixedIds.has(t.id) || isLandmarkType(t.typeId)
         }));
     const newcomer = { id: null, typeId, x: at.x, y: at.y, h: hitRadiusOf(typeId), fixed: true };
     bodies.push(newcomer);

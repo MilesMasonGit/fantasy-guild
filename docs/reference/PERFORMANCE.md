@@ -28,7 +28,9 @@ Still to write (T-069): the mat-era guide to *keeping* it fast (draft in
 | `npm run bench -- --compare` | Engine ticks, no drawing; fails on slower (exit 1) or **different work** (exit 2) | ~2 min |
 | `npm run bench:draw -- --compare` | Drawing, perf build, 1× and 4×, all scenes | ~35 min |
 | `npm run bench:draw -- --quick` | One quick S2 check (not comparable with full runs) | ~1 min |
-| `npm run bench:draw -- --switches --cpu=4` | Cost of each system: S2 with one switch off at a time | ~13 min |
+| `npm run bench:draw -- --switches --cpu=4` | Cost of each system: S2 with one switch off at a time (`--only=cap128` for another board) | ~13 min |
+| `npm run bench:draw -- --only=cap128,camp128,cap256` | The realistic mix at the Token cap: 128, the Starter Camp at 128, 256 | ~6 min per condition |
+| `npm run bench:profile -- --scene=cap128 --cpu=4` | Where a frame's time goes: a trace, a CPU profile and the composited layers | ~2 min |
 | `npm run bench:drag` | Drag reliability, real mouse input, and frame stalls at pickup, carry and drop | ~19 min |
 | `npm run check:perf-build` | Proves the shipped build has no measuring code | ~1 min |
 
@@ -89,6 +91,10 @@ Turning one system's drawing off at a time. All on: 79.6 FPS, frame work
 **The rings are over half the drawing cost** of a realistic mat, then hero
 animation and the notification column. All three are in the owner's UI
 rework list — the rework should measure them before and after.
+
+⚠️ Since U1 (brief 10) the Token bubbles are the `bubbles` switch; `rings` now
+hides only the Near ring, drawn while hovering or dragging. Today's table, on the
+128 board: "Deep optimization (brief 60)", at the end.
 
 ## UI rework cost log
 
@@ -293,3 +299,276 @@ drop before D3, and after it a typical S2 pickup or drop has no frame over 12 ms
 drags per kind, back to back, 2026-10-09) the median drag's longest pickup frame
 went from 164–212 ms before D3 to 12–24 ms after, and the drop's from 55–127 ms
 to 18–36 ms.
+
+## Deep optimization (brief 60): ranking and plan, 2026-10-09
+
+Brief 60 P1: the post-rework game re-measured, the causes of drawing cost ranked,
+and the P2 plan. Branch `crunch/optimize`: measured at `b5c313a6` (brief 50 on top
+of the old `main`) in the morning and at `0a304871` (current `main` merged in:
+briefs 40 and 50, T-120, T-129, A9) in the afternoon. **The merge did not change
+what a frame costs**: an interleaved A/B at 1× on the 128 board (A,B,B,A twice)
+read 3.46 ms frame work p50 on both builds (156 / 151 fps). Planned for the
+owner's cap (Atlas roadmap D-9): **128 Tokens to start, +16 a rank, up to 256**.
+
+New tools for it (bench/README.md): the cap boards `cap128`, `camp128` and
+`cap256` (`?stress=` in game, `--only=` in `bench:draw`, `--board=` in
+`bench:drag`); `bench:draw` reports frames within 16.7 ms, frame work p95 and the
+1-in-1,000 frame interval, and runs `--switches` on any one board;
+`npm run bench:profile` (a trace, a CPU profile and the composited layers of one
+settled scene, mapped to `src/` lines); and the delivered-slowdown check below.
+
+### "Smooth", defined
+
+On the perf build at **4× CPU slowdown** (the crunch plan's slow laptop), 1600 ×
+1000, hands off, `bench:draw`'s 20 s settle and 20 s window, the median of three
+windows (or of an interleaved A,B,B,A pair), each window at a delivered slowdown
+within 25 % of 4× (see "Chrome's throttle", below):
+
+1. **≥ 95 % of frames' work within 16.7 ms** (the `≤16.7 %` column).
+2. **Frame interval p99.9 ≤ 33.4 ms**: at most one frame in a thousand misses two
+   or more refreshes of a 60 Hz screen (`interval p99.9`).
+3. **Picking up and dropping** (`bench:drag -- --cpu=4` on the same board, plain
+   pass): the median drag's longest frame ≤ 33.4 ms at pickup and at drop, for
+   every kind.
+
+The **must** is the realistic board at the base cap, **`cap128`** (130 on the mat
+with the Hall and a quest). The Starter Camp at that cap (`camp128`, 155 on the
+mat) and the top cap (`cap256`, 258) are measured against the same lines and
+reported, not gated (owner questions below).
+
+Why these lines:
+- **16.7 ms, not 6.06.** 4× stands in for a slow laptop, and a slow laptop has a
+  60 Hz screen. 6.06 ms is the owner's 165 Hz screen at full speed, where the
+  certification's bar (A4: ≥ 99 % in budget on S2) still holds: at 1× the 128
+  board does 99.5 % of frames within 6.06 ms.
+- **95 %** is the owner's own certification bar for a board under strain (A7).
+  A4's 99 % is the full-speed bar; at 4× Chrome's throttle multiplies any other
+  load on the PC, and identical windows here differed by up to 18 points.
+- **p99.9, not "no frame over 33 ms"**: the certification judged freezes by the
+  worst 1-in-1,000 frame (A4: 12.2 ms). One garbage collection in a 20 s window
+  would fail a "never" rule; a hitch that recurs fails this one.
+- **Drags** are what players feel most (T-033, certification B1/B2). The median
+  drag is the bench's robust figure; 33.4 ms is two missed 60 Hz frames.
+
+### Conditions, and Chrome's throttle
+
+The PC was shared all day: other agents' engine benches, test suites and dev
+servers in sibling worktrees, and the owner's art app open (about 23 % of the
+GPU). A load log (every 20 s) records which windows overlapped what; overlapped
+runs were stopped and re-run, or are marked below. Between about 23:05 and 23:20
+the shared `node_modules` was partly deleted and reinstalled (a cleanup mistake);
+runs in that window are marked suspect.
+
+⚠️ **Chrome's CPU throttle does not deliver what it is asked on this PC.** Asked
+for 4×, it delivered anywhere from 1.0× to 21.8× (timed with a fixed piece of
+JavaScript at 1× and at the throttle, before and after each window), sometimes
+changing inside one window. Such a window runs at 4–8 fps or at 120 fps for no
+reason in the game (the engine tick slows with it; MatBoard's renders stay
+normal). It explains the bimodal windows (Shop open 13.3 / 120.5 fps, hero sheet
+8.5 / 48.7 fps, an all-on window of the 4× cost table at 23.7 fps) and the
+wide noise of every 4× table this week. In the morning the 4× windows agreed
+within ~10 fps; in the afternoon most were 25 % or more off and were re-measured.
+`bench:draw` now checks every throttled window and measures it again when the
+slowdown is off; `bench:profile` and `bench:drag` print it. **At 1× the numbers
+are steady**, so P2 gates on an interleaved A/B at 1× first and confirms at 4×.
+
+### Fresh numbers
+
+**At 1×** (`0a304871`, three windows each, quiet apart from the art app):
+
+| Board | On the mat | fps | Frame work p50 / p95 / p99 | ≤ 6.06 ms | ≤ 16.7 ms | Interval p99.9 |
+|---|---|---|---|---|---|---|
+| S2 realistic | 102 | 161.6 | 2.91 / 6.41 / 10.10 ms (windows 2.1–4.5 p50) | 93.8 % | 99.9 % | 18.2 ms |
+| **cap128** | 130 | 164.9 | 2.31 / 4.70 / 5.70 ms | **99.5 %** | 100 % | 6.3 ms |
+| camp128 | 155 | 164.7 | 2.51 / 5.01 / 7.61 ms | 98.0 % | 100 % | 12.1 ms |
+| cap256 | 258 | 161.4 | 2.81 / 7.60 / 11.90 ms | 92.2 % | 99.6 % | 18.0 ms |
+| S3 torture | 310 | 155.0 | 3.60 / 10.20 / 15.71 ms | 78.9 % | 99.4 % | 24.3 ms |
+
+**At 4×, morning** (`b5c313a6`, three windows each, 10:20–10:40, the windows
+agreeing within 65–76 fps on the S2-sized boards; the slowdown check did not
+exist yet). The build does the same work per frame as the merged one (A/B
+above), so this is the best 4× picture of the current game:
+
+| Board | fps | Frame work p50 / p95 / p99 | ≤ 16.7 ms | Interval p99.9 | Long frames (n / worst) |
+|---|---|---|---|---|---|
+| S2 realistic | 73.5 | 15.71 / 33.81 / 47.70 ms | 54.5 % | 60.7 ms | 1 / 91 ms |
+| **cap128** | 71.6 | 16.10 / 33.41 / 43.40 ms | **52.2 %** | **42.5 ms** | 0 |
+| camp128 | 71.7 | 15.90 / 34.50 / 46.01 ms | 52.5 % | 54.6 ms | 0 |
+| cap256 | 45.3 | 25.31 / 51.01 / 62.91 ms | 24.7 % | 78.8 ms | 3 / 60 ms |
+| S3 torture | 24.0 | 49.81 / 89.21 / 144.10 ms | 3.6 % | 218.1 ms | 18 / 179 ms |
+
+**At 4×, afternoon** (`0a304871`, only windows at a delivered 3.1–4.9×, on a
+busier PC: the same boards read ~45 % more frame work at 1× then): S2 61.3 fps,
+44.3 % within 16.7 ms; cap128 46.5 fps, 23.2 %; camp128 50.2 fps, 30.6 %;
+cap256 27.6 fps, 4.0 %; S3 16.9 fps, 0.3 %.
+
+**Against "smooth"**: the 128 board at 4× has 23–52 % of frames within 16.7 ms
+(the line is 95 %) and a 1-in-1,000 frame of 42–67 ms (the line is 33.4 ms). Its
+p95 frame is ~33 ms: the typical bad frame must roughly halve. Frame cost barely
+grows from S2 (102) to the Starter Camp (155): **most of it does not scale with
+the number of Tokens** (below). 256 doubles it.
+
+**All scenes, morning** (`b5c313a6`, two windows each, `--compare` against the
+2026-10-07 baseline): 1× S1 0.65 ms p50, S2 2.11 ms (98.9 % within 6.06), S3
+3.55 ms (81.5 %), Bank 1.91, Shop 2.11, notifications 2.51, loot 3.55, hero sheet
+2.46 ms; nothing over 16.7 ms in more than 0.7 % of frames. 4× S2 71.1 fps (53 %
+within 16.7 ms), Bank 65.5 (48 %), notifications 48.7 (32 %), loot 28.9 (20 %),
+S3 18.1 (1.4 %); Shop and hero sheet bimodal (off-throttle windows). The compare
+flagged S3, Bank, Shop, notifications, loot and hero sheet at 4×: every 4×
+number this week reads below the 2026-10-07 baseline (84 fps on S2), and the
+throttle finding above is the likeliest reason; at 1× only S3's in-budget share
+(81.5 % against 87.4 %) and the p99 of loot and hero sheet were flagged.
+
+**The torture board (T-071)**: perf build at 1×, 78.9–81.5 % of frames within
+6.06 ms (the certification read 83 % in the dev build, 87 % in the perf build);
+at 4×, 0 % within 6.06 ms and 0.3–3.6 % within 16.7 ms.
+
+**Engine** (`npm run bench -- --compare`, `0a304871`): exit 0, the same work as
+the baseline in all ten scenarios (S8, S8L, S8F included); S2 tick 0.315 /
+0.611 ms p50 / p99 (baseline 0.297 / 0.593), S3 0.792 / 1.638 ms.
+
+**Drags on the 128 board** (`0a304871`, plain pass, 20 a kind, at 1×; run inside
+the `node_modules` repair window, so suspect): 100 % but flag → mat 19 / 20 (a
+hero over the flag, T-132); the median drag's longest frame 6–12 ms at pickup, 6
+ms carrying, 12–18 ms at drop; Bank equip drops up to 55 ms. **At 4× not
+measurable today**: per kind Chrome delivered 1.1× to 11.9×, with four other
+test suites running.
+
+### Where a hands-off frame goes (128 board, 4×, `bench:profile`)
+
+Traced at a delivered 4.2× (`0a304871`; tracing slows the page, so shares, not
+times): the main thread is busy the whole second. **Paint and compositing 39 %**
+(Layerize 18 %, Paint 11 %, PrePaint 6 %, Commit 3 %, layer updates 1 %),
+**script 22 %**, **style 18 %**, task overhead 13 %, layout 7 %. One style pass,
+one paint and one full layerize **every frame**: on a hands-off mat something
+changes every frame, and every change pays for the whole page's layers.
+
+- **What changes every frame** (invalidation trace): running animations restyle
+  ~540 elements a second (the worked Tokens' hit loops, ~280; the floor loot's
+  idle bob; the charge floaters); hero sprites write ~290 inline styles a second
+  (16 sprites: 8 on the mat, 8 in the hero bar, each on its own timer, 128 timer
+  callbacks a second); the cycle rings rewrite their arc ~235 times a second.
+- **Layers**: 73 composited layers; 30 exist only because they are drawn over
+  another composited layer ("Overlap": Token art boxes, heroes, flags, name
+  badges above the 7 worked Tokens' hit-loop animations), 5 are toasts with a
+  backdrop blur inside the closed notification column, 4 are bobbing loot.
+- **Script** (entry points, ms per second at 4×, traced): the tutorial beacon 38
+  (two animation-frame loops, each a whole-document `querySelector` every
+  frame), React's scheduler 37, the engine tick 35, hero sprite timers 22, the
+  cycle-ring sweep 18, framer-motion 10, the particle canvas 7, the Perf HUD
+  harness ~15 (in every run alike).
+- **At 256** the same causes, larger: Layerize 6.9 ms a frame (128: 4.3), React
+  54 ms/s (33), layout 98 ms/s (52).
+
+**What each system costs at 1×** (`--switches --only=cap128`, `4129b17b`, the
+merged game; noise 0.39 ms; all on 2.40 ms p50). Clean first half: **`bubbles`
+1.20 ms (half the frame)**, `itemFlight` 0.50, `heroAnim` 0.49 ms, above the
+noise; `speech` 0.39, `walkDraw` 0.39, `tooltips` 0.29, `alerts` 0.19,
+`enemyAnim` and `rings` nothing. The second half (`notifications`, `bin`, `dock`,
+`drawers`, `spriteFx`, `background`, `particles`, `spawnMotion`) ran over another
+agent's engine bench, a minute at 100 % CPU and the `node_modules` repair, and
+reads as negative savings: not usable; re-run it in P2-4's "before". The 4× table (`b5c313a6`) is unusable too: its
+three all-on windows read 23.7, 55.8 and 80.2 fps (an off-throttle window), and
+only `bubbles` stood clear (5.8 ms against 14.0–21.2 ms all on).
+
+### Causes, ranked
+
+Ranked by cost × how often a player meets it. Costs are on the 128 board;
+"measured" is a switch-off or trace figure, "reasoned" is not yet measured.
+
+| # | Cause | Cost now | Where | How often | Candidate fix | Look risk | Expected gain |
+|---|---|---|---|---|---|---|---|
+| 1 | **Token bubbles**, driven by the cycle ring's sweep: every worked Token rewrites its arc up to 400 times a cycle through the shared frame clock, so nearly every frame restyles, repaints and re-layerizes; the bubble rows add ~200 DOM nodes, the charge floaters' animations and half the layouts (14.3 → 6.7 a second with bubbles off, one traced pair) | 1.20 of 2.40 ms at 1× (measured); 4×: 5.8 ms against 14–21 ms all on (one window) | `TokenBubbles.jsx:26` (`RING_STEPS`), `:167-228` (the sweep), `RingBadge.jsx:54` (`paintRing`), `:124` (three blurred text shadows), `frameClock.js:31` | every frame while any hero works: all of play | stop the per-frame repaint: (a) a composited sweep (the arc turned by a transform animation, no main-thread paint); (b) all rings stepped together on one clock at whole-pixel steps | (a) none if pixel-identical (screenshot diff); (b) a slightly stepped sweep: owner | up to the switch's 1.2 ms at 1× (half the frame); at 4× the largest single gain |
+| 2 | **Compositing over 73 layers**: every frame's paint pays a full layerize; 30 layers exist only by overlap with the worked Tokens' infinite hit-loop animations; 5 toasts keep a backdrop blur inside the closed (invisible) notification column | ~39 % of the 4× main thread is paint and compositing (traced); the split by source is not measured | `TokenHitArt.jsx:52` (`iterations: Infinity`), `Toast.jsx:58` (`backdrop-blur-md`), `PopOutSidebars.jsx:17` (panels stay mounted while closed), `tailwind.css:309-326` (loot bob) | every frame | layer diet: the closed column draws no blur or animation while shut; then a spike on the hit loops (not composited, or contained so nothing above them becomes a layer) | closed column: none; hit loops: pixel check | reasoned: the part of Layerize (18 %) and Commit the extra layers cost; measure layers and Layerize ms per slice |
+| 3 | **Loot flights** (`itemFlight`): arcs and absorb slides on the mat, collection flights on a full-window canvas every 2.5 s (auto-collect), every floor sprite redrawn when any changes | 0.50 ms at 1× (measured); loot burst scene 28.9 fps at 4× | `SpriteLayerView.jsx:53` (`allSprites`), `:93` (`playLootArc`), `ParticleOverlay.jsx:86` (window-sized canvas), `:130` | every cycle drops loot; auto-collect every 2.5 s | memoise the floor sprites on their own data; a canvas only as big as the flights | none | ≤ 0.5 ms at 1×; most in loot bursts |
+| 4 | **Hero sprite steps**: 16 sprites, each on its own `setTimeout`, so most frames carry one sprite's style write | 0.49 ms at 1× (measured); 128 timer tasks a second | `AnimatedHeroSprite.jsx:51-72`, `DockHeroFigure.jsx:275` (the bar's figures use it) | always (8 on the mat, 8 in the bar) | one shared clock stepping every sprite in the frame its step falls due (same frames, same phases) | none | ≤ 0.5 ms at 1× |
+| 5 | **Tutorial beacon** (T-131): two animation-frame loops, each a whole-document `querySelector` every frame (the targets are missing on the bench boards), and a JS-driven `borderWidth` pulse when shown | ~4 % of the 4× main thread (38 ms/s, traced) | `TutorialAideOverlay.jsx:92-133`, `:103`, `:171` | every frame while the recruit-hero step is active: every new player, and every bench board | find the target on events, run the loop only while a target exists and moves | none | ~4 % at 4× (measured share) |
+| 6 | **Engine tick and the React work it sets off**: 10 ticks a second, each with its synchronous listeners and a React commit | tick 2.1–2.8 / 9.9–14 ms p50 / p99 at 4×; tick 35 and React 37 ms/s traced | `GameLoop.js:34`, listeners in `useGameState.js:98`, `tokenEvents.js` | 10 frames a second | profile the tick's listeners and commits; coalesce per-tick commits | none | reasoned: the p95–p99 frames |
+| 7 | **Dense stack order**: a spawn, a used-up tree, a hero starting work, the hover or a drop re-ranks every Token between; at the cap a spawner refills every freed place, so this churns | D3: 330–1,190 elements restyled per drop on S3 (measured); a ~90 ms task restyling ~350 elements at the same moment of two traced S2 + hero sheet windows (what restyled them is not identified yet; a re-rank is the likeliest) | `matLayers.js:39` (`TOKEN_SPAN`), `:73` (`matStackOrder`), `stackWriter.js`, `MatBoard.jsx:325-333` | spawns and depletions every few seconds at the cap; every drag | sparse ranks (moving one Token rewrites one) | none (same order) | drop and spawn spikes; also fixes a look fault at 256 (below) |
+| 8 | **Picking up and dropping** (T-033): dnd-kit's context changes reach every drag-hook holder; re-ranks (#7); the Bank measuring its targets | 1×: median longest frame 6–18 ms (fine); 4×: not measurable today | `DndKit.jsx:483-513`, `Bubble.jsx:11`, `SpriteLayerView.jsx:82`, `MatHero.jsx:120` | every drag | after #7: fewer context changes per drag, a provider that wraps less | none | reasoned |
+| 9 | **Notification column while shut**: each toast measures its layout (`layout="position"`) and glows by a JS box-shadow animation inside an invisible panel | notification burst scene 48.7 fps at 4× (S2 71) | `Toast.jsx:51`, `:111`, `ToastContainer.jsx` | every item notification (~1.3 a second with auto-collect) | no layout animation or glow while the panel is shut | none | reasoned; folds into #2's first slice |
+| 10 | **The minimised desktop app keeps drawing** (T-117) | battery and GPU, no frame time | Tauri window events | whenever minimised | pause drawing on minimise | none | not a frame cost |
+
+### P2: the slices, in order
+
+One cause per slice. Every slice: before and after **back to back** as an
+interleaved A/B (`bench:draw -- --ab=<the build before> --only=cap128,S2`) **at
+1× (the gate: steady)** and **at 4× (confirmation, delivered slowdown checked)**;
+`bench:profile -- --scene=cap128 --cpu=4` before and after for the mechanism
+(the events, restyles, layers or script entries the slice targets);
+`npm run bench -- --compare` exits 0 (same work); the full test suite; the smooth
+check on `cap128` at 4× (three windows) at the end; and a line in this file. Stop
+when the must is met, or when the next fix needs a design change (ask the owner,
+batched).
+
+| Slice | Cause | Files | Guard tests to write | Owner? |
+|---|---|---|---|---|
+| P2-1 | #1 cycle-ring sweep | `TokenBubbles.jsx`, `RingBadge.jsx`, `frameClock.js` | a running cycle writes nothing to the page per frame (or at most N steps a second, with every ring in the same frame); the ring shows the right fraction at a given time and restarts on `CYCLE_COMPLETE`; blocked rings freeze; `TokenBubbles`, `RingGlide` and `FrameClock` tests stay green | only for option (b) |
+| P2-2 | #5 tutorial beacon (T-131) | `TutorialAideOverlay.jsx` | extend `TutorialBeaconRect.test.js`: no document query and no box read per frame while the target is missing or still; it still follows a moving target | no |
+| P2-3 | #4 hero sprite clock | `AnimatedHeroSprite.jsx`, `AnimatedEnemySprite.jsx`, `frameClock.js` | `SpriteFrameSequence` and `SpriteFramesWithoutReact` stay green; 16 sprites make one scheduled callback per due frame, not 16 timers; the strike frame still meets the hit animation | no |
+| P2-4 | #2 and #9: the shut notification column | `Toast.jsx`, `ToastContainer.jsx`, `PopOutSidebars.jsx` | while shut: no backdrop filter, no layout measuring, no glow animation; opening shows the same toasts as before; layer count in `bench:profile` | no |
+| P2-5 | #2: hit-loop layers | `TokenHitArt.jsx` (a spike first, in its own worktree) | `HitAnimations` stays green; a pixel diff of a worked Token over its loop; the layer count drops | if pixels differ |
+| P2-6 | #3 loot | `SpriteLayerView.jsx`, `ParticleOverlay.jsx` | one sprite's change redraws one sprite; flights still land where the item went (`MatFrameDrops` stays green) | no |
+| P2-7 | #7 sparse stack order | `matLayers.js`, `stackWriter.js`, `MatBoard.jsx`, `FlagLayer.jsx` | for random boards of 10–300 Tokens and flags, the pairwise order equals today's rules; a moved Token rewrites only its own boxes; at 256 + 25 sites every Token keeps its own place (no clamp) | no |
+| P2-8 | #6 tick and React per tick | engine listeners, `useGameState.js` | per-tick commit count on S2 (dev build); the engine bench's same-work gate | no |
+| P2-9 | #8 drags | `DndKit.jsx` and its consumers | `DragRedraws*`, `DragCollisionReads`, `DragDropAftermath` stay green; context changes per pickup counted | no |
+| P2-10 | #10 T-117 | `src-tauri`, one window listener | the minimise event stops the frame loop; restore resumes it | no |
+
+**In parallel** (separate worktrees; files disjoint): P2-2, P2-4 and P2-10 can
+each run beside any other slice. P2-1 and P2-3 share `frameClock.js`: one after
+the other. P2-5 and P2-7 both touch the mat's stacking: one after the other.
+⚠️ **Measuring is never parallel**: one bench at a time on this PC (a second
+bench, a test suite or a build moves every number, and the 4× throttle with
+them), and every slice's A/B serves the build before it from its own worktree
+and port.
+
+### Owner questions
+
+1. **Which board must be smooth?**
+   - **A (recommended)**: the realistic board at the base cap (128). The Starter
+     Camp (155 on the mat with its 25 uncounted sites, Atlas D-1 B) and 256 are
+     measured after every slice and reported. Today the Starter Camp costs the
+     same as the 128 board.
+   - B: the Starter Camp at the base cap must pass too.
+   - C: every cap up to 256 must pass. At 4× the 256 board is at 25 % within
+     16.7 ms today; it likely needs the canvas mat (T-071), a design change.
+2. **The top cap, 256**: at 4× it doubles the 128 board's frame cost, and the
+   stack order runs out of ranks there (below).
+   - **A (recommended)**: keep 256; brief 90 (Envelope) states how it runs on a
+     slow laptop, with brief 60's numbers.
+   - B: lower the top cap to what passes once P2 is done.
+   - C: decide after P2.
+3. **The cycle ring**, only if P2-1's composited sweep does not come out
+   pixel-identical:
+   - **A (recommended)**: the composited sweep anyway (same look, smoother cost),
+     shown to you side by side first.
+   - B: rings that step a whole pixel at a time, every ring on one clock.
+   - C: leave the rings as they are.
+
+### Wrong against the code (found in P1)
+
+- "What each system costs" above (2026-10-07): `rings` was the bubbles then.
+  Since U1 the Token bubbles are the `bubbles` switch (`MatToken.jsx:121`,
+  `MatHero.jsx:168`); `rings` now hides only the Near ring (`MatBoard.jsx:428`),
+  which draws only while hovering or dragging, so it costs nothing hands off.
+- Brief 60 and NOW: "the torture board at 83 % of frames in budget" is the dev
+  build at 1× against 6.06 ms on the owner's screen, not a 4× figure (at 4×: 0 %
+  within 6.06 ms, 0.3–3.6 % within 16.7 ms).
+- Brief 60 and NOW: "the Token cap counts everything on the mat". It leaves out
+  the Hall and quest Tokens (`MatCap.js:29`) and counts the bin; with D-1 B the
+  Starter Camp's 25 sites do not count either, so that mat holds 153 Tokens plus
+  the Hall and quests at the base cap.
+- `matLayers.js:98`, "under the cap every rank is dense": true at 128, not at
+  256. The order has 226 ranks (`TOKEN_SPAN`, `:39`); 256 Tokens plus 8 flags
+  overflow it, the resting Tokens past rank 208 share one z, and page order
+  decides between them: flags (drawn after the Tokens) then cover every clamped
+  Token whatever their place on the mat. P2-7 fixes it.
+- T-131: on the bench boards the beacons' targets are missing, so the per-frame
+  cost is a whole-document `querySelector` per beacon, not a box read.
+- `tailwind.css` (the charge floater, the loot bob): "on the compositor" means no
+  JavaScript, but Chrome still restyles each running element every frame
+  (~540 animation restyles a second on the 128 board).
+- `bench/README.md`: S2 is "~108 Tokens"; the live drawing board holds 102 on the
+  mat once settled (trees used up and refilled).
+- The Perf HUD's "≤ 6.06" columns kept every 4× figure near 0 %; the 60 Hz line
+  (`≤16.7 %`) is now beside it.

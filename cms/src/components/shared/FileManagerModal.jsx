@@ -43,6 +43,7 @@ export default function FileManagerModal({ isOpen, onClose }) {
         tokens: state.tokens,
         effects: state.effects,
         recipePools: state.recipePools,
+        starterCamp: state.starterCamp,
       };
 
       const res = await fetch('/api/backups', {
