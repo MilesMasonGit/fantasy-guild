@@ -551,23 +551,51 @@ function auditMaps(out) {
 
 /**
  * The lists written by hand in the game's own code rather than authored in the
- * CMS. Three of them have named ids that do not exist at some point, and a
- * CMS-side check would have caught none of them — which is why the audit lives
- * on the game side.
+ * CMS. They have named ids that do not exist at some point, and a CMS-side
+ * check would have caught none of them — which is why the audit lives on the
+ * game side.
  */
-function auditHardcodedLists(out, openingTokens) {
-    // Passed in rather than imported: this list lives in `EngineBootstrap`,
-    // which calls the audit, and importing it back would make the two modules
-    // depend on each other in a circle.
-    const opening = openingTokens || [];
-    opening.forEach((typeId, i) => {
-        checkRef(out, 'The Tokens a new game starts with', 'Token', typeId,
-            `Opening Token ${i + 1} of ${opening.length}`);
-    });
-
+function auditHardcodedLists(out) {
     for (const hunt of RANDOM_HUNTS || []) {
         checkRef(out, 'The randomly-generated hunt bounties', 'enemy', hunt?.id,
             `The bounty "${hunt?.name || hunt?.id}"`);
+    }
+}
+
+/**
+ * The Starter Camp a new game opens on (`StarterCamp.starterCamp()`): every Token and Bank item it
+ * names exists, and every Token can stand where it says. Passed in rather than imported:
+ * `EngineBootstrap` reads the camp and calls the audit, and importing it back would make the two
+ * modules depend on each other in a circle.
+ */
+function auditStarterCamp(out, camp) {
+    if (!camp || typeof camp !== 'object') return;
+    const where = 'The Starter Camp';
+    const tokens = Array.isArray(camp.tokens) ? camp.tokens : [];
+    const mythics = new Set();
+    checkRef(out, where, 'Token', 'token_guild_hall', 'Its Guild Hall');
+    tokens.forEach((t, i) => {
+        const role = `Token ${i + 1} of ${tokens.length}, at (${t?.x}, ${t?.y}),`;
+        const def = getTokenType(t?.typeId);
+        if (!def) {
+            checkRef(out, where, 'Token', t?.typeId, role);
+            return;
+        }
+        const name = def.name || t.typeId;
+        if (def.rarity === 'mythic') {
+            if (mythics.has(t.typeId)) {
+                out.push(finding(where, `${role} is a second ${name}, but only one ${name} can be on the mat`));
+            }
+            mythics.add(t.typeId);
+        }
+        const w = camp.mat?.w;
+        const h = camp.mat?.h;
+        if (w && h && (t.x < 0 || t.y < 0 || t.x > w || t.y > h)) {
+            out.push(finding(where, `${role} the ${name}, stands off the mat it was saved on (${w} × ${h})`));
+        }
+    });
+    for (const itemId of Object.keys(camp.bank || {})) {
+        checkRef(out, where, 'item', itemId, 'Its Bank');
     }
 }
 
@@ -603,12 +631,15 @@ function auditUnknownRefs(out) {
  * Walk everything and return the findings.
  * Exported separately from the reporting so a test can assert on the list.
  */
-export function auditContent({ openingTokens = [] } = {}) {
+export function auditContent({ starterCamp = null } = {}) {
     const out = [];
-    const steps = [auditTokens, auditEffects, auditItems, auditItemEffects, auditLifecycle, auditUnknownRefs, auditMaps, auditHardcodedLists];
+    const steps = [
+        auditTokens, auditEffects, auditItems, auditItemEffects, auditLifecycle, auditUnknownRefs, auditMaps,
+        auditHardcodedLists, (o) => auditStarterCamp(o, starterCamp)
+    ];
     for (const step of steps) {
         try {
-            step(out, openingTokens);
+            step(out);
         } catch (error) {
             out.push(finding('The content check itself',
                 `could not finish one of its passes (${error?.message || error}) — the results below may be incomplete`));

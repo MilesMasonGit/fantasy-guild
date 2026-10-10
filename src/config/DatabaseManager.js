@@ -17,6 +17,10 @@ export const DatabaseManager = {
     // carrying `targetEntityTypes`) must never be restored here.
     effectFilesSingle: import.meta.glob('/data/effects.json', { eager: true }),
     effectFilesGlob: import.meta.glob('/data/effects/**/*.json', { eager: true }),
+
+    // The Starter Camp a new game opens on. Absent until the CMS first syncs one: the glob is then
+    // empty and the game opens on its built-in camp (`starterCampRegistry.js`).
+    starterCampFilesSingle: import.meta.glob('/data/starterCamp.json', { eager: true }),
 };
 
 export default DatabaseManager;
