@@ -7,7 +7,8 @@
 //   npm run bench:draw -- --only=S2,bank  some scenes
 //   npm run bench:draw -- --cpu=4         CPU slowdowns to run (default 1,4)
 //   npm run bench:draw -- --switches      the cost table: S2 all-on, then once per switch off
-//                                         (perf, 1× unless --cpu is given)
+//                                         (perf, 1× unless --cpu is given; --only=cap128 for
+//                                         another board)
 //   npm run bench:draw -- --repeats=3     runs per scene (the median is reported, with the spread)
 //   npm run bench:draw -- --compare       compare with bench/draw-baseline.json
 //   npm run bench:draw -- --save-baseline write this run as bench/draw-baseline.json
@@ -26,7 +27,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { launchChrome, sleep, runCleanups } from './browser/cdp.mjs';
 import { startDevServer, startPerfServer, buildPerf, perfBuildInfo } from './browser/servers.mjs';
-import { SCENES, sceneUrl, openBoard } from './browser/scenes.mjs';
+import { SCENES, sceneUrl, openBoard, deliveredSlowdown } from './browser/scenes.mjs';
 import {
     parseArgs, SCENE_IDS, DRAW_SWITCHES, metricsOf, rejectReason, aggregate, costTable, compareToBaseline,
     baselineEntry, abOrder, conditionKey, sceneTable, costTableText, table, EXIT, TOLERANCE, settingsMismatch
@@ -58,11 +59,15 @@ async function measure(chrome, baseUrl, scene, cpu, args, off = []) {
     try {
         const how = scene.ui ? await scene.ui(page) : null;
         await sleep(args.settleS * 1000);
+        const slowdownBefore = await deliveredSlowdown(page, cpu);
         await page.evaluate('window.__perf.reset(), true');
         await sleep(args.windowS * 1000);
         const report = await page.evaluate('window.__perf.report()');
+        const slowdownAfter = await deliveredSlowdown(page, cpu);
         const m = metricsOf(report);
-        m.reject = rejectReason(m);
+        m.slowdown = [slowdownBefore, slowdownAfter];
+        m.reject = rejectReason(m) || slowdownReject(m.slowdown, cpu);
+        m.slowdownOff = !rejectReason(m) && !!m.reject;
         if (page.navigations > 1) m.reject = `the page reloaded during the run (${page.navigations} loads)`;
         m.how = how;
         m.pageErrors = page.consoleErrors.slice(0, 5);
@@ -75,12 +80,37 @@ async function measure(chrome, baseUrl, scene, cpu, args, off = []) {
 }
 
 async function measureWithRetry(...a) {
+    let m;
     try {
-        return await measure(...a);
+        m = await measure(...a);
     } catch (err) {
         console.log(`    ⚠ ${err.message}; retrying once`);
         return measure(...a);
     }
+    // ⚠️ Chrome's CPU throttle does not always deliver what it is asked on this PC (3.4× to 12.8×
+    // seen when 4× was asked, sometimes changing inside one window), and a window at the wrong
+    // slowdown measures a different machine. Such a window is measured again, twice at most.
+    for (let retry = 1; retry <= SLOWDOWN_RETRIES && m.reject && m.slowdownOff; retry++) {
+        console.log(`    ⚠ ${m.reject}; measuring the window again (${retry}/${SLOWDOWN_RETRIES})`);
+        m = await measure(...a);
+    }
+    return m;
+}
+
+const SLOWDOWN_RETRIES = 2;
+
+/** Why a throttled window cannot be used: Chrome delivered more than 25 % off the slowdown asked. */
+function slowdownReject(slowdown, cpu) {
+    if (cpu === 1 || !slowdown) return null;
+    const off = slowdown.filter(s => Number.isFinite(s) && Math.abs(s - cpu) / cpu > 0.25);
+    return off.length ? `Chrome delivered a ${off[0]}× slowdown, not the ${cpu}× asked` : null;
+}
+
+/** The slowdown Chrome delivered before and after a throttled window, when it was not what was asked. */
+function slowdownNote(m, cpu) {
+    if (cpu === 1 || !m.slowdown) return '';
+    const off = m.slowdown.some(s => Number.isFinite(s) && Math.abs(s - cpu) / cpu > 0.25);
+    return `, slowdown ${m.slowdown.map(s => (Number.isFinite(s) ? `${s}×` : '?')).join(' → ')}${off ? ` ⚠ not the ${cpu}× asked` : ''}`;
 }
 
 function label(scene, m) {
@@ -102,7 +132,9 @@ async function main() {
         args
     };
 
-    const scenes = (args.switches ? ['S2'] : (args.only || SCENE_IDS)).map(id => SCENES[id]);
+    // The cost table runs on one board: S2, or the one `--only` names (a cap board, say).
+    const switchScene = SCENES[args.only?.[0] ?? 'S2'];
+    const scenes = (args.switches ? [switchScene.id] : (args.only || SCENE_IDS)).map(id => SCENES[id]);
     console.log(`Fantasy Guild drawing bench — ${meta.commit} on ${meta.branch}${meta.dirty && Object.values(meta.dirty).some(Boolean) ? ` (uncommitted: ${Object.entries(meta.dirty).filter(([, v]) => v).map(([k]) => k).join(', ')})` : ''} · ${meta.machine} · ${meta.cpu}`);
 
     const servers = {};
@@ -157,15 +189,15 @@ async function main() {
                     for (let r = 0; r < args.repeats; r++) {
                         for (const sw of plan) {
                             const lbl = sw ? `${sw} off` : 'all on';
-                            process.stdout.write(`  S2 ${lbl}…`);
-                            const m = await measureWithRetry(chrome, baseUrl, SCENES.S2, cpu, args, sw ? [sw] : []);
-                            console.log(` ${m.fps} fps, work p50 ${m.workP50} ms${m.reject ? ` ✗ ${m.reject}` : ''}`);
+                            process.stdout.write(`  ${switchScene.name} ${lbl}…`);
+                            const m = await measureWithRetry(chrome, baseUrl, switchScene, cpu, args, sw ? [sw] : []);
+                            console.log(` ${m.fps} fps, work p50 ${m.workP50} ms${slowdownNote(m, cpu)}${m.reject ? ` ✗ ${m.reject}` : ''}`);
                             if (m.reject) failed = true;
                             if (sw) (offRuns[sw] ||= []).push(m); else allOn.push(m);
                         }
                     }
                     cost = { cond, ...costTable(allOn, offRuns), raw: { allOn, offRuns } };
-                    all[cond].S2 = allOn;
+                    all[cond][switchScene.id] = allOn;
                     continue;
                 }
 
@@ -176,7 +208,7 @@ async function main() {
                             for (const side of abOrder(1)) {
                                 process.stdout.write(`  ${scene.name} ${side}…`);
                                 const m = await measureWithRetry(chrome, side === 'A' ? baseUrl : args.ab, scene, cpu, args);
-                                console.log(` ${m.fps} fps, work p50 ${m.workP50} ms${m.reject ? ` ✗ ${m.reject}` : ''}`);
+                                console.log(` ${m.fps} fps, work p50 ${m.workP50} ms${slowdownNote(m, cpu)}${m.reject ? ` ✗ ${m.reject}` : ''}`);
                                 if (m.reject) failed = true;
                                 pair[side].push(m);
                             }
@@ -188,7 +220,7 @@ async function main() {
                     for (let r = 0; r < args.repeats; r++) {
                         process.stdout.write(`  ${scene.name}${args.repeats > 1 ? ` ${r + 1}/${args.repeats}` : ''}…`);
                         const m = await measureWithRetry(chrome, baseUrl, scene, cpu, args);
-                        console.log(` ${m.fps} fps, work p50 ${m.workP50} ms${m.reject ? ` ✗ ${m.reject}` : ''}${m.how ? ` · ${m.how}` : ''}`);
+                        console.log(` ${m.fps} fps, work p50 ${m.workP50} ms${slowdownNote(m, cpu)}${m.reject ? ` ✗ ${m.reject}` : ''}${m.how ? ` · ${m.how}` : ''}`);
                         if (m.reject) failed = true;
                         runs.push(m);
                     }
@@ -223,7 +255,7 @@ async function main() {
     }
 
     if (cost) {
-        console.log(`\nCost table, ${cost.cond}: S2 with one system's drawing switched off. Positive saved = that system's cost.\n${costTableText(cost)}`);
+        console.log(`\nCost table, ${cost.cond}: ${switchScene.name} with one system's drawing switched off. Positive saved = that system's cost.\n${costTableText(cost)}`);
     }
 
     const abSummary = {};
