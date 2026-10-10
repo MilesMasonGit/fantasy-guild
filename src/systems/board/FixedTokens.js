@@ -4,6 +4,7 @@ import { getTokenType, getAllTokenTypes, registryVersion } from '../../config/re
 import { QUEST_TOKEN_TYPE } from '../../config/registries/engineTokens.js';
 import * as BoardState from './BoardState.js';
 import * as MatCap from './MatCap.js';
+import * as Landmarks from './Landmarks.js';
 
 /**
  * Fixed and movable Tokens on the post-Atlas mat.
@@ -54,7 +55,7 @@ export function isFixed(instance) {
     if (!instance) return false;
     return BoardState.isFixture(instance)
         || MatCap.isGuildHall(instance)
-        || MatCap.isLandmark(instance)
+        || (MatCap.isLandmark(instance) && !Landmarks.isLayoutEditing())
         || isPlanted(instance);
 }
 

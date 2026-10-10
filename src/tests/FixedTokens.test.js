@@ -5,7 +5,6 @@ import * as BoardState from '../systems/board/BoardState.js';
 import * as EffectActions from '../systems/board/EffectActions.js';
 import * as FixedTokens from '../systems/board/FixedTokens.js';
 import * as Placement from '../systems/board/Placement.js';
-import * as DiscardBin from '../systems/board/DiscardBin.js';
 import * as MatPlacement from '../systems/board/MatPlacement.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
@@ -132,8 +131,7 @@ describe('⭐ a fixed Token refuses a drag', () => {
 
     it('a map node cannot go in the bin', () => {
         const node = fixtureAt('fixture_producer', 400, 400);
-        expect(DiscardBin.canBin(node.id).success).toBe(false);
-        expect(DiscardBin.binToken(node.id, { fromHand: true }).success).toBe(false);
+        // The bin is gone (A3b); demolition refuses map nodes in Demolition.test.js.
         expect(BoardState.getTokenById(node.id)).toBeTruthy();
     });
 
