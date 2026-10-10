@@ -44,3 +44,9 @@ line each is enough.
   Forestry shows the Logging sprite.
 - The tutorial step still reads Log an Oak Tree (let your Hero log 3 times);
   the verb fits, but it could say fell.
+
+## Bubbles and framerate
+- After brief 60 swaps the cycle ring for its cheap version, plan and
+  experiment with different bubble styles for a polished look that keeps the
+  framerate stable (owner, 2026-10-09).
+

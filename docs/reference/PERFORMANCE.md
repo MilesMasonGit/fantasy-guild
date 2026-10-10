@@ -302,6 +302,14 @@ to 18–36 ms.
 
 ## Deep optimization (brief 60): ranking and plan, 2026-10-09
 
+**Owner rulings (2026-10-09):** the must board is the **128-Token board**
+(the Starter Camp and 256 are reported, not gated); the **top cap of 256 is
+decided after the P2 fixes**; the cycle ring uses the **cheap version now**,
+and bubble styles get a later design pass for a polished look at a stable
+framerate. The owner also expects terrain (brief 80) to be static, not
+animated, so it stays cheap, and hopes static Tokens can yield more gains.
+
+
 Brief 60 P1: the post-rework game re-measured, the causes of drawing cost ranked,
 and the P2 plan. Branch `crunch/optimize`: measured at `b5c313a6` (brief 50 on top
 of the old `main`) in the morning and at `0a304871` (current `main` merged in:
