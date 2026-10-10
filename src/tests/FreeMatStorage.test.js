@@ -13,6 +13,7 @@ import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
+import { setStarterCampForTests, resetStarterCampForTests } from '../config/registries/starterCampRegistry.js';
 import { placeAt } from './fixtures/mat.js';
 
 /**
@@ -92,6 +93,10 @@ describe('⭐ the save bump refuses old saves (FP-85)', () => {
 });
 
 describe('⭐ a new game opens with the Guild Hall on the mat (FP-44)', () => {
+    // The built-in camp, whatever Starter Camp the CMS has synced (that one is `NewGameOpening`'s).
+    beforeEach(() => setStarterCampForTests(null));
+    afterEach(() => resetStarterCampForTests());
+
     // ⚠️ Changed in Token Lifecycle 10.1: the Hall is joined by the starter
     // Oak Forest and Copper Mine, either side of it, all `placed`.
     it('holds the Hall in the middle of the mat, with the starter set beside it', () => {
