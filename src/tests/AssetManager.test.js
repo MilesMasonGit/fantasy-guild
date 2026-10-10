@@ -64,7 +64,7 @@ describe('AssetManager path resolution', () => {
     });
 
     it('should resolve token sprite paths correctly', () => {
-        expect(resolveSpritePath('t_pick_copper')).toBe('assets/items/tool/pick/t_pick_copper.png');
+        expect(resolveSpritePath('t_pick_copper')).toBe('assets/items/tool/pick/tool_pick_copper.png');
         // ⚠️ Was `assets/tokens/token_ore_copper.png`, which was a path with
         // no file behind it — the token art moved into subfolders and the
         // manifest was never repointed. The assertion was pinning the broken

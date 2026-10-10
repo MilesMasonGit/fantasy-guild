@@ -80,15 +80,13 @@ export const GuildHallBoard = ({
 
     return (
         <div className="w-full h-full min-w-0 min-h-0 flex items-center justify-center py-8 px-4 overflow-hidden select-none">
-            {/* The wooden frame (the Effects panel's), floored in the Hall's
-                own boards. */}
+            {/* The wooden frame (the Effects panel's), floored in a darkened
+                shade of its own wood. */}
             <div
                 className="w-full h-full min-w-0 min-h-0 relative rounded-2xl border-4 border-[#3a271d] overflow-hidden flex"
                 style={{
-                    backgroundImage: `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url('/assets/playmat/tiles/pm_board_guild_hall_1.png')`,
-                    backgroundRepeat: 'repeat',
-                    backgroundSize: 'auto, 128px',
-                    imageRendering: 'pixelated',
+                    backgroundColor: '#3a271d',
+                    backgroundImage: 'linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45))',
                     boxShadow: 'inset 0 0 28px rgba(0,0,0,0.9), 0 8px 24px rgba(0,0,0,0.6)'
                 }}
             >
