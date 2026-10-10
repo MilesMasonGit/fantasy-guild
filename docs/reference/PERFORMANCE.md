@@ -123,6 +123,7 @@ before and after, S2 at 4× (perf build). Measure, don't fix.
 | D2 Hit-testing (brief 50) | 2026-10-09 | 76.7 → 55.0 | 14.41 → 20.95 | No change. The after run read slower on every busy scene at 4× alike (S3, Bank, Shop, notify, loot too) on a busier machine (it took 40 min against 23); an interleaved A/B minutes later (`--ab`, A,B,B,A, at 4×) read D2 58.8 fps / 18.95 ms against the build before it 59.0 / 19.16 ms on S2 (S3 17.4 / 16.3 fps, Bank 64.5 / 63.1 fps). At 1× nothing moved (S2 work 2.00 → 2.01 ms). D2 changes the press path (once per press) and the mat cell's overflow (clip, not hidden); the last press fix (`2a60ee69`) is press-only and was not in the measured build. |
 | D3 Redraws (brief 50) | 2026-10-09 | 55.0 → 62.0 | 20.95 → 18.11 | No change. The compare run flagged S2, S3, Bank, Shop, loot and hero sheet at 4× against the 2026-10-07 baseline (84 fps on S2, which no run this week has read), and S3's in-budget share at 1× (79.3 %; D2's run read 80.9 %). Interleaved A/Bs straight after against the build before D3 (`e25a0b2d`; `--ab`, A,B,B,A, at 4×), D3 / before: S2 60.3 / 60.0 fps (work 19.05 / 19.01 ms), Shop open 57.0 / 60.8 fps and on a second A/B 57.3 / 57.2, loot 32.3 / 30.5, notifications 53.1 / 52.0. At 1× S2 work 2.06 ms, 99.6 % in budget. No draw scene drags. |
 | P2-1 Cycle ring (brief 60) | 2026-10-10 | 55.3 → 68.0 | 21.30 → 16.15 | cap128 at 4×, not S2: interleaved A/B against the build before (`86fbf8ad`), A,B,B,A twice, every window at a delivered 4.07–4.89×; within 16.7 ms 35.3 → 51.8 %. At 1× 2.65 → 2.35 ms, 98.7 % within 6.06 ms both. The rings step together ten times a second instead of each on its own frames; the `bubbles` switch still saves ~1 ms at 1× (see "P2-1 result"). |
+| P2-2 Tutorial beacon (brief 60) | 2026-10-10 | 77.9 → 82.7 | 14.01 → 12.35 | Interleaved A/B against the build before (`a0a3edf1`, served from its own folder), A,B,B,A, every 4× window at a delivered 4.07–4.86×. cap128 at 4× 69.5 → 75.9 fps, 16.66 → 14.25 ms, within 16.7 ms 49.9 → 56.7 %; the new `hall` scene (both beacons showing) 117.2 → 125.8 fps. At 1× S2 2.35 → 2.10 ms and cap128 3.11 → 2.41 ms (a second cap128 A/B: 2.25 → 2.06 ms). The two beacons no longer query the page every frame: 43.6 ms/s (4.4 % of the 4× main thread) became ~7 ms/s on the step clock (see "P2-2 result"). |
 
 ## Drag baseline (`npm run bench:drag`, perf build, S2, 50 drags per kind and pass)
 
@@ -574,6 +575,35 @@ dirty objects per layout and cut traced layout time by a third, but an A/B (A,B,
 twice, 1× and 4×) showed no change (1× 2.31 against 2.21 ms, 4× 15.2 against 15.7 ms),
 so it was dropped. Against "smooth" the 128 board at 4× is now at ~52 % of frames
 within 16.7 ms (the line is 95 %).
+
+### P2-2 result: the tutorial beacon (2026-10-10)
+
+**What changed**: a beacon looks its target up and reads its box once a step
+(`frameClock.onStep`, ten a second) and on a window resize or scroll, never every
+frame. When a step finds the target moved it follows it every frame until it has
+stood still for 10 frames, then drops back to steps; a target that goes takes the
+beacon with it at the next step, and one that comes back brings it back. A fresh
+resolver function each render no longer restarts the beacon. Guards:
+`TutorialBeaconRect.test.js` (each per-frame guard fails against the old loop and
+against a neutered step clock; following, settling and going were each neutered
+and caught).
+
+**Measured** (`bench:draw --ab --only=S2,cap128,hall`, the build before served by
+Vite preview from its own folder, A,B,B,A; before → after): see the cost-log line.
+**The mechanism** (`bench:profile --scene=cap128 --cpu=4`): the beacons' frame
+loop, 43.6 ms/s at 78.7 calls (4.4 % of a 993 ms/s main thread), is gone; the step
+clock's `runStep` went 7.1 → 14.5 ms/s, so the two beacons' lookups cost ~7 ms/s
+there (~0.35 ms a step at 4×: two whole-page attribute queries that find nothing).
+The after-trace shared the machine with another agent's engine bench for part of
+its window (delivered 4.07× → 4.59×); an earlier after-trace read the same
+`runStep` (14.5 ms/s) at a delivered 2.38×.
+
+**Not done by it**: on every board but the Guild Hall the standing beacons' targets
+are missing, so the remaining cost is those two queries ten times a second. Giving
+the roster node and the upgrade button an id (an O(1) lookup), or mounting the
+standing beacons only while the Guild Hall is open, would take it to nothing; both
+touch files outside this slice. The `borderWidth` pulse (`:171` in cause #5) is
+unchanged: it runs only while a beacon shows.
 
 ### Owner questions
 

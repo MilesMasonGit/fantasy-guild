@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import * as QuestTokens from '../../../systems/quests/QuestTokens.js';
 import { ENGINE_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
+import { onFrame, onStep } from '../board/frameClock.js';
 
 export const TUTORIAL_AIDE_EVENTS = {
     HOVER: UI_EVENTS.TUTORIAL_AIDE_HOVER,
@@ -88,61 +89,89 @@ export function resolveTutorialTargetElement(questId) {
     }
 }
 
-/** Individual pulsating golden beacon attached to a DOM element or query selector */
+/** Frames a moved target must stay still before the beacon stops reading it every frame. */
+const SETTLE_FRAMES = 10;
+
+const sameRect = (a, b) => a === b || (!!a && !!b && a.x === b.x && a.y === b.y && a.radius === b.radius);
+
+/**
+ * Individual pulsating golden beacon attached to a DOM element or query selector.
+ * ⚠️ It never looks every frame while its target is missing or still: it finds and measures the
+ * target once a step (`frameClock.onStep`, ten a second) and on resize or scroll, and follows it
+ * every frame only from the step that saw it move until it has stood still for
+ * {@link SETTLE_FRAMES} frames (a sliding drawer, a walking hero).
+ */
 export const TutorialBeacon = ({ target, keyId }) => {
     const [targetRect, setTargetRect] = useState(null);
-    const rafIdRef = useRef(null);
-
-    const updateRect = useCallback(() => {
-        if (!target || typeof document === 'undefined') {
-            setTargetRect(null);
-            return;
-        }
-
-        const el = typeof target === 'string'
-            ? document.querySelector(target)
-            : (typeof target === 'function' ? target() : target);
-
-        if (el) {
-            const r = el.getBoundingClientRect();
-            if (r.width > 0 && r.height > 0) {
-                const next = {
-                    x: r.left + r.width / 2,
-                    y: r.top + r.height / 2,
-                    radius: Math.max(40, Math.max(r.width, r.height) / 2 + 18)
-                };
-                // Keep the rect we have when the target has not moved, so a still beacon is
-                // not re-rendered every animation frame.
-                setTargetRect(prev => (prev && prev.x === next.x && prev.y === next.y && prev.radius === next.radius ? prev : next));
-                return;
-            }
-        }
-        setTargetRect(null);
-    }, [target]);
+    // The latest `target`, so a fresh resolver function each parent render does not restart the
+    // clocks; a different selector string does.
+    const targetRef = useRef(target);
+    targetRef.current = target;
+    const selector = typeof target === 'string' ? target : null;
 
     useEffect(() => {
-        updateRect();
+        if (typeof document === 'undefined') return undefined;
+        let el = null;
+        let rect = null;
+        let stopFrames = null;
+        let stillFrames = 0;
 
-        // High frequency RAF loop ensures beacon tracks sliding animations (hero dock tabs, inspection panel, playmat pan)
-        let running = true;
-        const tick = () => {
-            if (!running) return;
-            updateRect();
-            rafIdRef.current = requestAnimationFrame(tick);
+        const resolve = () => {
+            const t = targetRef.current;
+            if (!t) return null;
+            if (typeof t === 'string') return document.querySelector(t);
+            return typeof t === 'function' ? t() : t;
         };
-        rafIdRef.current = requestAnimationFrame(tick);
 
-        const handleResize = () => updateRect();
-        window.addEventListener('resize', handleResize);
-        window.addEventListener('scroll', handleResize);
+        // A step looks the target up again (a resolver's better choice may have appeared); a
+        // frame keeps the element it has while it is still on the page.
+        const measure = (fromFrame) => {
+            if (!fromFrame || !el || !el.isConnected) el = resolve();
+            if (!el) return null;
+            const r = el.getBoundingClientRect();
+            if (!(r.width > 0 && r.height > 0)) return null;
+            return {
+                x: r.left + r.width / 2,
+                y: r.top + r.height / 2,
+                radius: Math.max(40, Math.max(r.width, r.height) / 2 + 18)
+            };
+        };
+
+        const stopFollowing = () => {
+            stopFrames?.();
+            stopFrames = null;
+        };
+
+        const check = (fromFrame) => {
+            const next = measure(fromFrame);
+            const moved = !!(rect && next && !sameRect(rect, next));
+            if (!sameRect(rect, next)) {
+                rect = next;
+                setTargetRect(next);
+            }
+            if (!next) {
+                stopFollowing();
+            } else if (moved) {
+                stillFrames = 0;
+                if (!stopFrames) stopFrames = onFrame(() => check(true));
+            } else if (fromFrame && ++stillFrames >= SETTLE_FRAMES) {
+                stopFollowing();
+            }
+        };
+
+        check(false);
+        const stopSteps = onStep(() => check(false));
+        const onWindow = () => check(false);
+        window.addEventListener('resize', onWindow);
+        window.addEventListener('scroll', onWindow);
 
         return () => {
-            running = false;
-            if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
-            window.removeEventListener('resize', handleResize);
-            window.removeEventListener('scroll', handleResize);
+            stopSteps();
+            stopFollowing();
+            window.removeEventListener('resize', onWindow);
+            window.removeEventListener('scroll', onWindow);
         };
-    }, [updateRect]);
+    }, [selector]);
 
     if (!targetRect) return null;
 

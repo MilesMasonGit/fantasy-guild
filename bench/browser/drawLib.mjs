@@ -14,8 +14,11 @@ export const DRAW_SWITCHES = [
 /** Scene ids, in run order. The UI scenes are all on the S2 board. */
 export const SCENE_IDS = ['S1', 'S2', 'S3', 'bank', 'shop', 'notify', 'loot', 'inspect'];
 
-/** Scenes run only when `--only` names them: S2's mix filled to a Token cap (brief 60). */
-export const EXTRA_SCENE_IDS = ['cap128', 'camp128', 'cap256'];
+/**
+ * Scenes run only when `--only` names them: S2's mix filled to a Token cap (brief 60), and S2
+ * with the Guild Hall open, where the tutorial's beacons show.
+ */
+export const EXTRA_SCENE_IDS = ['cap128', 'camp128', 'cap256', 'hall'];
 
 export const DEFAULTS = {
     settleS: 20,

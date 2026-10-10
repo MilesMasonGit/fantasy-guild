@@ -64,6 +64,19 @@ async function openInspect(page) {
     return `clicked the first dock hero (real input${n > 1 ? `, ${n} clicks` : ''})`;
 }
 
+/**
+ * The Guild Hall in place of the mat, its roster upgrade picked: on a board still at the
+ * recruit-hero step the tutorial's two standing beacons are showing (on the roster node and on
+ * the inspection's upgrade button), so their cost is measured with a target, not only looking
+ * for one.
+ */
+async function openHall(page) {
+    const n = await clickUntil(page, '#guild-bubble-target', `!!document.querySelector('[data-guild-roster-upgrade="true"]')`, 'the Guild Hall');
+    await sleep(500);
+    const beacons = await page.evaluate(`document.querySelectorAll('.rounded-full.border-yellow-400').length`);
+    return `clicked the Guild Hall bubble (real input${n > 1 ? `, ${n} clicks` : ''}); ${beacons} tutorial beacon(s) showing`;
+}
+
 /** 20 notifications every 4 s (each lives 5 s, so the column stays full and keeps changing). */
 async function notifyBurst(page) {
     const n = await page.evaluate(`(() => {
@@ -131,7 +144,9 @@ export const SCENES = {
     // Not in the default run (`--only=cap128,camp128,cap256`): S2's mix filled to the Token cap.
     cap128: { id: 'cap128', name: 'S2 mix at cap 128', stress: 'cap128' },
     camp128: { id: 'camp128', name: 'Starter Camp at 128', stress: 'camp128' },
-    cap256: { id: 'cap256', name: 'S2 mix at cap 256', stress: 'cap256' }
+    cap256: { id: 'cap256', name: 'S2 mix at cap 256', stress: 'cap256' },
+    // Not in the default run either (`--only=hall`).
+    hall: { id: 'hall', name: 'S2 + Guild Hall (beacons)', stress: 'realistic', ui: openHall }
 };
 
 const STRESS_IDS = { quiet: 'S1', realistic: 'S2', torture: 'S3', cap128: 'C128', camp128: 'K128', cap256: 'C256' };

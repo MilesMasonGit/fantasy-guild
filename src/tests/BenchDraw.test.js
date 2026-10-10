@@ -66,9 +66,9 @@ describe('drawing bench options', () => {
         expect(() => parseArgs(['--save-baseline', '--switches'])).toThrow();
     });
 
-    it('the cap boards run only when --only names them', () => {
+    it('the cap boards and the Guild Hall run only when --only names them', () => {
         expect(SCENE_IDS).not.toContain('cap128');
-        expect(EXTRA_SCENE_IDS).toEqual(['cap128', 'camp128', 'cap256']);
+        expect(EXTRA_SCENE_IDS).toEqual(['cap128', 'camp128', 'cap256', 'hall']);
         expect(parseArgs(['--only=S2,CAP128,cap256']).only).toEqual(['S2', 'cap128', 'cap256']);
     });
 });
