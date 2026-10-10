@@ -247,7 +247,7 @@ describe('MatToken stays cheap (B6.2)', () => {
 });
 
 describe('the notification column (B6.2)', () => {
-    it('has Notifications and the bin, and no Quests section', () => {
+    it('has Notifications and no Quests section', () => {
         const { container } = mount(h(NotificationSidebars));
         expect(container.textContent).toContain('Notifications');
         expect(container.textContent).not.toMatch(/Quests/);

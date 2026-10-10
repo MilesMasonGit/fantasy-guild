@@ -5,7 +5,6 @@ import * as MatCap from '../systems/board/MatCap.js';
 import * as MatPlacement from '../systems/board/MatPlacement.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as EffectActions from '../systems/board/EffectActions.js';
-import * as DiscardBin from '../systems/board/DiscardBin.js';
 import * as Demolition from '../systems/board/Demolition.js';
 import * as Landmarks from '../systems/board/Landmarks.js';
 import { registerTokenTypes, isLandmarkType } from '../config/registries/tokenRegistry.js';
@@ -122,16 +121,6 @@ describe('a landmark cannot be demolished', () => {
         expect(Demolition.canDemolish(null)).toBe(false);
     });
 
-    it('the discard bin refuses it', () => {
-        const site = placeAt('fixture_lm_site', 300, 300);
-        const res = DiscardBin.binToken(site.id);
-        expect(res.success).toBe(false);
-        expect(res.reason).toMatch(/cannot be discarded/);
-        expect(BoardState.getTokenById(site.id)).toBeTruthy();
-        const plain = placeAt('fixture_lm_plain', 600, 300);
-        expect(DiscardBin.binToken(plain.id).success).toBe(true);
-    });
-
     it('removing it for good is refused', () => {
         const site = placeAt('fixture_lm_site', 300, 300);
         expect(Placement.removePlacedToken(site.id).success).toBe(false);
@@ -142,6 +131,7 @@ describe('a landmark cannot be demolished', () => {
         const site = placeAt('fixture_lm_site', 300, 300);
         Landmarks.setLayoutEditing(true);
         expect(Demolition.canDemolish(site)).toBe(true);
-        expect(DiscardBin.binToken(site.id).success).toBe(true);
+        expect(Placement.removePlacedToken(site.id).success).toBe(true);
+        expect(BoardState.getTokenById(site.id)).toBeNull();
     });
 });

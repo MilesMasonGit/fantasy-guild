@@ -6,9 +6,7 @@ import { matTuning } from '../../config/matTuning.js';
 import * as BoardState from './BoardState.js';
 
 /**
- * How many Tokens the mat may hold. Every Token counts, placed or spawned, on the mat or waiting in
- * the discard bin (a binned Token counts until it is discarded, so the bin cannot dodge the cap).
- * The Guild Hall and quest Tokens never count: the Hall is always there, and quests are bounded by
+ * How many Tokens the mat may hold. Every Token on the mat counts, placed or spawned. The Guild Hall and quest Tokens never count: the Hall is always there, and quests are bounded by
  * the quest cap. Landmarks (the endgame sites) count like any placed Token. The cap is the guild's,
  * but it counts only the Region the guild is in: the others are frozen in the Atlas, off the mat.
  *
@@ -39,23 +37,20 @@ export function countsTowardCap(instance) {
 }
 
 /**
- * The count, memoised on what can change it: mat membership, the bin (binning and discarding change
- * it without touching the mat) and the Token registry (`countsTowardCap` reads a type). Spawners
- * ask every tick, so this is one pass per change, not per question.
+ * The count, memoised on what can change it: mat membership and the Token registry
+ * (`countsTowardCap` reads a type). Spawners ask every tick, so this is one pass per change, not per
+ * question.
  */
-let memo = { tokens: null, version: -1, bin: null, binLength: -1, regVersion: -1, count: 0 };
+let memo = { tokens: null, version: -1, regVersion: -1, count: 0 };
 
-/** Tokens counting toward the cap: on the mat and in the discard bin. */
+/** Tokens on the mat counting toward the cap. */
 export function tokenCount() {
     const { tokens, version } = BoardState.membershipVersion();
-    const bin = BoardState.binTokens();
     const regVersion = registryVersion();
-    if (memo.tokens === tokens && memo.version === version && memo.bin === bin
-        && memo.binLength === bin.length && memo.regVersion === regVersion) return memo.count;
+    if (memo.tokens === tokens && memo.version === version && memo.regVersion === regVersion) return memo.count;
     let count = 0;
     for (const t of BoardState.tokens()) if (countsTowardCap(t)) count++;
-    for (const t of bin) if (countsTowardCap(t)) count++;
-    memo = { tokens, version, bin, binLength: bin.length, regVersion, count };
+    memo = { tokens, version, regVersion, count };
     return count;
 }
 

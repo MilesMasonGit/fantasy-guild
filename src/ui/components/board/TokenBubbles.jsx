@@ -17,7 +17,7 @@ import { TimerBubble } from './TimerBubble.jsx';
 import {
     BUBBLE_RECENT_MS, RING_D_U, bubbleSlot, chargesFraction, cycleSecondsText, ringCount
 } from './ringRow.js';
-import { TokenChargeDeltaFloater, StationGearBadge, DisallowBadge, StuckBadge } from './TokenBadges.jsx';
+import { TokenChargeDeltaFloater, StationGearBadge, DisallowBadge, StuckBadge, MarkedBadge } from './TokenBadges.jsx';
 import { onStep } from './frameClock.js';
 import { shareCycle } from './cycleShare.js';
 
@@ -38,6 +38,7 @@ export const BUBBLE_TIPS = Object.freeze({
     quest: (text) => `Quest progress: ${text}`,
     spawner: (text) => `Spawned: ${text}. It stops at the limit`,
     disallow: 'Heroes may not work this',
+    marked: 'Marked for demolition: a hero with Construction will take it away',
     /** A stuck spawner's warning: `{ alert, needs }` from `SpawnerSystem.spawnerAlertOf`. */
     stuck: (state) => {
         if (state?.alert === ALERT.SPAWN_MAT_FULL) return 'Token cap full';
@@ -82,8 +83,10 @@ export function useChangeFlash(value, ms = BUBBLE_RECENT_MS) {
  * glide when the number jumps.
  * - **Timer** (top-left, `TimerBubble`): a growing, turning or resting Token's countdown, hovered or in
  * its last seconds.
- * - **Gear** (middle row): always while a choice is needed (nothing chosen), otherwise hovered.
+ * - **Gear** (middle row): always while a choice is needed (nothing chosen), otherwise hovered;
+ * never while marked for demolition.
  * - **Disallow mark** (middle row): the whole time it is disallowed.
+ * - **Demolition mark** (middle row): the whole time it is marked for demolition.
  * - **Stuck warning** (middle row): the whole time a spawner waits on an item or on room
  * (`SPAWNER_ALERT_CHANGED`, read once on mount); yellow for an item, red for no room.
  * - **Enemy health bar** (above the Token's box, not a bubble): in a fight (`PROGRESS` with
@@ -108,6 +111,7 @@ export const TokenBubbles = ({
     readTimer = null,
     gear = null,
     disallowed = false,
+    marked = false,
     dragProps = null
 }) => {
     const typeId = token?.typeId ?? null;
@@ -314,9 +318,10 @@ export const TokenBubbles = ({
     // The bar's numbers: the fight's, else a full enemy (an enemy nobody fights is whole).
     const barHp = hp ?? (enemyHp ? { cur: enemyHp, max: enemyHp } : null);
     const showBar = (fight || (isHovered && !!enemyHp)) && !!barHp && barHp.max > 0;
-    const showGear = !!gear?.show && (gear.pulsing || isHovered);
+    // A marked Token runs no recipe, so there is nothing to choose.
+    const showGear = !!gear?.show && !marked && (gear.pulsing || isHovered);
     const showStuck = !!stuck?.alert;
-    const showMiddle = showGear || showSpawner || showStuck || disallowed;
+    const showMiddle = showGear || showSpawner || showStuck || disallowed || marked;
     const slot = (name) => bubbleSlot(name, { boxPx, small });
 
     const cycleTip = blocked ? BUBBLE_TIPS.cycleBlocked : BUBBLE_TIPS.cycle;
@@ -366,6 +371,11 @@ export const TokenBubbles = ({
                     {showStuck && (
                         <Bubble of={instanceId} kind="stuck" inline tip={BUBBLE_TIPS.stuck(stuck)} dragProps={dragProps}>
                             <StuckBadge noRoom={stuck.alert !== ALERT.SPAWN_NEEDS_ITEM} matFull={stuck.alert === ALERT.SPAWN_MAT_FULL} title={BUBBLE_TIPS.stuck(stuck)} />
+                        </Bubble>
+                    )}
+                    {marked && (
+                        <Bubble of={instanceId} kind="marked" inline tip={BUBBLE_TIPS.marked} dragProps={dragProps}>
+                            <MarkedBadge title={BUBBLE_TIPS.marked} />
                         </Bubble>
                     )}
                     {disallowed && (

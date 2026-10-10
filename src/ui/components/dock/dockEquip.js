@@ -2,8 +2,8 @@
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 
 /**
- * Equip through the engine and report a refusal the way the mat and the bin already do
- * (`dropOnMat.js`'s `announce`, `DiscardBinPanel.jsx`'s `dropIntoBin`): a short notification
+ * Equip through the engine and report a refusal the way the mat already does
+ * (`dropOnMat.js`'s `announce`): a short notification
  * with the engine's own reason, and `false` so the drag system counts the drop as a miss: the
  * ghost flies back to where it came from and the equip sound does not play (`DndKit.jsx`'s
  * `handleDragEnd`).

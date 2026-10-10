@@ -349,8 +349,8 @@ export function placeProduct(stationId, typeId) {
  * names an instance that no longer exists, so `Flags` releases it on its next assignment. Only
  * placed Tokens; the Guild Hall never leaves the mat.
  *
- * ⚠️ The game does not call this: the discard bin (`DiscardBin.binToken`) is the player's route.
- * Tests exercise it.
+ * ⚠️ The player's route is demolition (`Demolition.mark`, a hero's work). Only the dev layout
+ * tool's Remove button calls this (`TokenInspection`), so the owner can lift a misplaced landmark.
  *
  * @returns {{success: boolean, reason?: string, idledHeroId?: string|null}}
  */

@@ -97,11 +97,6 @@ describe('summariseMat (Token Summary)', () => {
         expect(s.pinned).toEqual([]);
         expect(s.sections[0].rows[0].blocked).toBe(1);
     });
-
-    it('counts the bin apart, without the Hall', () => {
-        const s = summariseMat([t('oak')], { ...withLayout, binned: [t('oak'), t('hall')] });
-        expect(s.binned.count).toBe(1);
-    });
 });
 
 // --- The bar and the badge ---------------------------------------------------
@@ -206,7 +201,7 @@ describe('⭐ Token Summary (MatCapBadge)', () => {
         expect(panel()).not.toBeNull();
     });
 
-    it('lists one row per type with status counts, missing items first, then sections, and the bin', () => {
+    it('lists one row per type with status counts, missing items first, then sections', () => {
         placeAt('fixture_mb_hall', 800, 500);
         placeAt('fixture_mb_oak', 160, 160);
         placeAt(BoardState.createTokenInstance('fixture_mb_tree', null, null, BoardState.ORIGIN.SPAWNED), 320, 160);
@@ -217,7 +212,6 @@ describe('⭐ Token Summary (MatCapBadge)', () => {
         off.disallowed = true;
         const gear = placeAt('fixture_mb_gear', 320, 480);
         gear.alert = ALERT.CHOOSE_RECIPE;
-        BoardState.binTokens().push(BoardState.createTokenInstance('fixture_mb_vein'));
 
         const { container } = render(React.createElement(MatCapBadge));
         fireEvent.click(badgeOf(container));
@@ -229,10 +223,8 @@ describe('⭐ Token Summary (MatCapBadge)', () => {
         expect(row('fixture_mb_vein').querySelector('[data-status-count="off"]').textContent).toBe('1 disallowed');
         expect(row('fixture_mb_gear').querySelector('[data-status-count="idle"]')).not.toBeNull();
         expect(panel().querySelector('[data-token-summary-pinned]').textContent).toContain('Bar Workbench');
-        expect(panel().querySelector('[data-token-summary-bin]').textContent).toBe('In the bin ×1');
-        expect(panel().textContent).toContain('Tokens 7/12');
+        expect(panel().textContent).toContain('Tokens 6/12');
         expect(row('fixture_mb_hall')).toBeNull();
-        BoardState.binTokens().length = 0;
     });
 
     it('a spawner waiting on a full mat reads as blocked, not pinned', () => {
@@ -287,6 +279,6 @@ describe('⭐ Token Summary (MatCapBadge)', () => {
         placeAt('fixture_mb_oak', 160, 160);
         placeAt(BoardState.createTokenInstance('fixture_mb_tree', null, null, BoardState.ORIGIN.SPAWNED), 320, 160);
         const s = liveMatSummary();
-        expect(s.total + s.binned.count).toBe(MatCap.tokenCount());
+        expect(s.total).toBe(MatCap.tokenCount());
     });
 });

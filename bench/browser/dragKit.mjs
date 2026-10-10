@@ -114,8 +114,6 @@ export function installDragKit() {
         if (d) return `dock hero ${d.getAttribute('data-dock-hero')}`;
         const r = document.querySelector('[data-shop-row].opacity-30');
         if (r) return `Shop row ${r.getAttribute('data-shop-row')}`;
-        const b = document.querySelector('[data-bin-slot].opacity-30');
-        if (b) return `bin ${b.getAttribute('data-bin-slot')}`;
         const i = document.querySelector('button.opacity-40[title*=" — drag to sort"]');
         if (i) return `Bank item ${i.getAttribute('title').split(' ×')[0]}`;
         return 'something unidentified';
@@ -123,7 +121,7 @@ export function installDragKit() {
 
     // ---- Naming what is under the pointer ----
     const IDENT = ['data-token-id', 'data-board-hero', 'data-flag', 'data-flag-gear', 'data-dock-hero', 'data-shop-row',
-        'data-bin-slot', 'data-discard-bin', 'data-ring-row', 'data-ring', 'data-callouts', 'data-callout', 'data-hero-bubbles',
+        'data-ring-row', 'data-ring', 'data-callouts', 'data-callout', 'data-hero-bubbles',
         'data-perf-hud', 'data-mat-top-bar', 'data-bottom-hero-dock', 'data-shop-drawer', 'data-board-origin', 'data-dnd-region'];
     function reactNames(el) {
         const key = el && Object.keys(el).find(k => k.startsWith('__reactFiber$'));
@@ -512,43 +510,6 @@ export function installDragKit() {
                 target: visibleCentre(dock),
                 expect: { kind: 'equip', heroId: p.heroId, itemId: p.itemId }
             };
-        },
-        tokenToBin() {
-            if (G.BoardState.binTokens().length >= G.DiscardBin.BIN_SIZE - 1) {
-                for (const b of [...G.BoardState.binTokens()]) G.DiscardBin.unbinToken(b.id, kit.freeSpot()?.mat || { x: 400, y: 400 });
-            }
-            const list = draggableTokens().filter(t => G.DiscardBin.canBin(t.id).success);
-            if (!list.length) return { skip: 'no Token the bin takes' };
-            const t = pickRandom(list);
-            const at = tokenPress(t.id);
-            const bin = visibleCentre(document.querySelector('[data-discard-bin]'));
-            if (!at || !bin) return { skip: 'Token or bin off screen' };
-            // The bin is a sidebar that opens as a carried Token nears its tab: go to the tab first.
-            const via = visibleCentre(document.querySelector('[data-sidebar="bin"] [data-sidebar-tab]'));
-            return { source: { ...at, what: `Token ${t.typeId} ${t.id}`, hand: `Token ${t.id}` }, target: bin, via, expect: { kind: 'binned', id: t.id } };
-        },
-        binToMat() {
-            if (!G.BoardState.binTokens().length) {
-                // The previous step emptied the bin: put one there (set-up, not a drag), and pick
-                // again once the bin panel has drawn its slot.
-                const t = draggableTokens().find(x => G.DiscardBin.canBin(x.id).success);
-                if (!t) return { skip: 'bin empty and nothing to put in it' };
-                G.DiscardBin.binToken(t.id);
-                return new Promise(resolve => setTimeout(() => resolve(kit.pick.binToMat()), 400));
-            }
-            const bin = G.BoardState.binTokens();
-            if (!bin.length) return { skip: 'bin empty' };
-            const inst = bin[bin.length - 1];
-            const at = visibleCentre(document.querySelector(`[data-bin-slot="${inst.id}"]`));
-            if (!at) return { skip: 'bin slot not drawn' };
-            const to = kit.freeSpot();
-            if (!to) return { skip: 'no free spot' };
-            // The bin is a sidebar that pops out on hover: the bench hovers its tab first, as a hand does.
-            return {
-                source: { ...at, what: `bin slot ${inst.typeId} ${inst.id}`, hand: `bin ${inst.id}` },
-                target: to.screen, hoverFirst: visibleCentre(document.querySelector('[data-sidebar="bin"] [data-sidebar-tab]')),
-                expect: { kind: 'unbinned', id: inst.id, mat: to.mat }
-            };
         }
     };
 
@@ -584,15 +545,6 @@ export function installDragKit() {
                 const hero = G.HeroManager.getHero(e.heroId);
                 const ok = (hero?.equipment || []).includes(e.itemId);
                 return { ok, detail: ok ? 'equipped' : 'not equipped' };
-            }
-            case 'binned': {
-                const ok = G.DiscardBin.isBinned(e.id);
-                return { ok, detail: ok ? 'in the bin' : G.BoardState.getTokenById(e.id) ? 'still on the mat' : 'gone' };
-            }
-            case 'unbinned': {
-                const t = G.BoardState.getTokenById(e.id);
-                const ok = !!t && !G.DiscardBin.isBinned(e.id);
-                return { ok, detail: ok ? `back on the mat ${Math.round(dist(t, e.mat))} u from the aim` : 'still in the bin' };
             }
             default: return { ok: false, detail: `unknown check ${e.kind}` };
         }

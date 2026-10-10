@@ -103,8 +103,7 @@ async function arrange(page, needs) {
 }
 
 async function attempt(page, kind) {
-    // The pointer rests on the empty top of the sidebar strip between drags: a drop on the bin leaves it on the open bin
-    // sidebar, which would cover Tokens at the screen edge while the next one is picked.
+    // The pointer rests on the empty top of the sidebar strip between drags, clear of the mat and of every pop-out.
     await page.mouse('mouseMoved', 1586, 12);
     await sleep(250);
     const pick = await page.evaluate(`window.__dragKit.pick.${kind.id}()`);

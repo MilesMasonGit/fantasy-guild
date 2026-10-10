@@ -3,6 +3,8 @@ import { cn } from '../../utils/cn.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { useTokenEvent } from './tokenEvents.js';
 import { inputSummary, outputSummary, contextSummary } from './StationRecipeModal.jsx';
+import { SkillIcon } from '../base/SkillIcon.jsx';
+import { getSkill, DEMOLITION_SKILL_ID } from '../../../config/registries/skillRegistry.js';
 
 /**
  * The small things drawn on a Token besides its ring bubbles: its name above the box, and the
@@ -191,6 +193,20 @@ export const DisallowBadge = ({ isDragging }) => {
         </div>
     );
 };
+
+/**
+ * MarkedBadge: the Construction icon in the middle row of a Token marked for demolition, the whole
+ * time it is marked: it is Construction work now, whatever it was.
+ */
+export const MarkedBadge = ({ title }) => (
+    <div
+        data-demolish-badge="true"
+        aria-label={title}
+        className="shrink-0 select-none w-7 h-7 flex items-center justify-center rounded-full bg-black/70 border border-gi-warning/80 filter drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)]"
+    >
+        <SkillIcon skill={getSkill(DEMOLITION_SKILL_ID)} skillId={DEMOLITION_SKILL_ID} size={16} />
+    </div>
+);
 
 /**
  * StuckBadge: the warning mark in the middle row of a spawner that cannot spawn: yellow while

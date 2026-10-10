@@ -10,7 +10,6 @@ import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as MatCap from '../systems/board/MatCap.js';
-import * as DiscardBin from '../systems/board/DiscardBin.js';
 import {
     getTokenType, getAllTokenTypes, listTokenTypeIds, tokenSpritePath, TOKENS
 } from '../config/registries/tokenRegistry.js';
@@ -28,7 +27,7 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
  * itself: bounties up to a cap (2, +1 per Notice Board rank, to 5) on a
  * 3-minute game-time clock; tutorial steps one at a time under a hidden cap of
  * their own. Claiming drops the reward as loot and removes the Token; bounties
- * may be binned, tutorial steps may not.
+ * may be dismissed, tutorial steps may not.
  */
 
 const HALL = { x: 880, y: 560 };
@@ -217,26 +216,29 @@ describe('the tutorial chain under its hidden cap (FB-42)', () => {
         expect(tutorials()).toHaveLength(1);   // no timer brings more steps
     });
 
-    it('a tutorial quest cannot be binned; a bounty can, with no refund, and frees its place', () => {
+    it('a tutorial quest cannot be dismissed; a bounty can, with no reward, and frees its place', () => {
         const [tut] = tutorials();
-        const refused = DiscardBin.canBin(tut.id);
+        const refused = QuestTokens.dismissBounty(tut.id);
         expect(refused.success).toBe(false);
-        expect(refused.reason).toBe('Tutorial quests cannot be discarded.');
-        expect(DiscardBin.binToken(tut.id).success).toBe(false);
+        expect(refused.reason).toBe('Tutorial quests cannot be dismissed.');
+        expect(BoardState.getTokenById(tut.id)).toBeTruthy();
+        expect(QuestTokens.canDismiss(tut)).toBe(false);
 
         QuestManager.tick(6 * MIN);
         expect(bounties()).toHaveLength(2);
         const [b] = bounties();
-        expect(DiscardBin.refundFor(b)).toEqual([]);
-        expect(DiscardBin.binToken(b.id).success).toBe(true);
+        expect(QuestTokens.canDismiss(b)).toBe(true);
+        const sprites = SpriteLayer.getSprites().length;
+        expect(QuestTokens.dismissBounty(b.id).success).toBe(true);
+        expect(BoardState.getTokenById(b.id)).toBeNull();
         expect(bounties()).toHaveLength(1);
+        expect(SpriteLayer.getSprites().length).toBe(sprites);
+        expect(QuestTokens.dismissBounty(b.id).success).toBe(false);
         // Freed: the timer brings another a full interval later.
         QuestManager.tick(3 * MIN - 1000);
         expect(bounties()).toHaveLength(1);
         QuestManager.tick(1000);
         expect(bounties()).toHaveLength(2);
-        const res = DiscardBin.discardAll();
-        expect(res.refunded).toEqual([]);
         expect(InventoryManager.getItemCount('item_oak_wood')).toBe(0);
     });
 });

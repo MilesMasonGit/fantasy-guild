@@ -131,7 +131,7 @@ export function destroyToken(instance, { heroId = null, exhaustedBy = heroId } =
     if (Respawn.restInstead(instance, { heroId, exhaustedBy })) return;
 
     // In the player's hand it stays, empty, until it is put down, and goes from where it lands.
-    // Skipped then if the drop took it off the mat (the bin) or something refilled it meanwhile.
+    // Skipped then if something took it off the mat or refilled it meanwhile.
     if (instance?.id != null && Hand.isInHand(instance.id)) {
         Hand.whenPutDown(instance.id, () => {
             const still = BoardState.getTokenById(instance.id);

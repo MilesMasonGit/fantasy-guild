@@ -86,7 +86,7 @@ Today the pull is skill levels, Guild Hall upgrades and promotions.
 - **Token cap: 128 Tokens** to start (owner, Atlas D-9: a Guild Hall upgrade
   will add 16 a rank, up to 256; not built yet). The cap is the guild's but
   counts only the Region the guild is in (§10): every Token there, placed or
-  spawned, including any in the discard bin, and the **landmarks** (Token
+  spawned, and the **landmarks** (Token
   types marked `landmark`: the endgame sites, Atlas D-1; none are authored
   yet); not quests or the Hall. A landmark is never pushed, cannot be moved by
   the player or demolished, and its inspection shows what its challenge needs
@@ -163,14 +163,7 @@ station in place (30 s, level 1). *(`Foundations.js`)*
 | Stone Foundation | 10 Stone + 5 Oak Wood | Furnace (5 Stone), Fighter's Academy (10 Stone + 10 Oak Wood) |
 | Farmland | 10 Oak Wood | Wheat Field (1 Wheat Seed), Apple Orchard (1 Apple Seed) |
 
-### Discard bin — Built
-Drag a Token onto the bin (9 places). Pull it back, or "Discard all" for a
-refund: built station = ½ Foundation + ½ build cost; bought unlimited = ½
-price; bought consumable = price × charges left ÷ (starting × 2); spawned =
-nothing. Rounded down per item. The Hall and tutorial quests can't be binned.
-*(`DiscardBin.js`)*
-
-### Demolition — Engine built (Atlas A3a); no button yet, the bin still there
+### Demolition — Built (Atlas A3a, A3b); replaced the discard bin
 Mark a Token for demolition and a hero holding Construction (level 1) removes
 it in 10 s of work: no refund, no loot, no XP, never a depletion. While marked
 it is only that job: its recipe, build, training, spawning, growth, refill and
@@ -178,8 +171,14 @@ Passive Production stop (what it gives its neighbours by standing there
 carries on until it is gone). Unmarking makes it itself again and loses the
 half-done demolition. Anything bought, built, spawned or planted can be marked,
 a resting Token included; the Guild Hall, landmarks, a map's nodes, quests and
-enemies can't. Marked from the console for now (`Game.Demolition.mark(id)`);
-the button and the bin's removal are A3b. *(`Demolition.js`)*
+enemies can't. **Demolish** on the Token's inspection marks it (where it
+can't be, the inspection says why), **Cancel demolition** takes the mark off.
+A marked Token wears the Construction badge, its inspection reads "Marked for
+demolition" with the time left once a hero is on it, and "Demolished …" pops
+up where it stood. A **bounty** quest has **Dismiss bounty** on its
+inspection instead: it leaves with no reward and frees its place; tutorial
+steps stay until claimed. The discard bin (and its refunds) is gone.
+*(`Demolition.js`, `QuestTokens.dismissBounty`, `TokenInspection.jsx`)*
 
 ### Maps — Items (Atlas A5); no map content yet
 A map is an item: a **Base Map** (type `map`) or a **Modifier** (type
@@ -430,7 +429,7 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
 
 ## 8. The Guild Hall and progression
 
-- The Hall stands in the middle of the mat, can't be moved off it or binned,
+- The Hall stands in the middle of the mat, can't be moved off it or demolished,
   and is excluded from the cap.
 - **Upgrade web** (separate full-screen view): nodes unlock when linked to the
   Hall or to a bought node. Price: rank *n* costs 10 × *n* Oak Wood
@@ -469,7 +468,7 @@ drawers**. The menu can be flipped to the right.
   is a leftover sci-fi theme ("SYSTEM BOOT").
 - **Bubble menu**: Guild Hall, Item Bank, Shop, Settings.
 - **Top bar**: Tokens / cap, upkeep per minute, disallow mode.
-- **Notification column**: toasts (collapse / clear all) and the discard bin.
+- **Notification column**: toasts (collapse / clear all).
 - **Hero dock** (bottom): heroes as standing figures with HP bars; drag onto
   the mat to deploy, drop a flag or hero on it to recall. Click → **hero
   sheet** (loadout grid, skills with XP rates, banked skills) → Edit (rename,
@@ -623,7 +622,6 @@ realistic, ≈ 1.9 ms at 300 Tokens (code review round 3).
 | **Rules (Token) / effect / statement** | A Token's behaviours, written as sentences in the CMS. |
 | **Bank** | The guild's item store; one slot per kind. |
 | **Loot** | Items lying on the mat, collected by hovering. |
-| **Bin** | The 9-place discard area. |
 | **Recruit / job / promotion** | Starting job; the job tree; changing job on a Promotes Token. |
 | **Banked skill** | A skill set aside by a job change, kept at its level. |
 | **Hostile / ambush** | An enemy that attacks heroes near its spawner. |
@@ -661,6 +659,6 @@ crunch plan):
 | Terrain | Returns for the Atlas after a major rework, later in the crunch once the Atlas works. |
 | Atlas timing | Moves into the crunch, after deep optimization. |
 | Drops over a drawer | A mat Token or flag dropped over the Shop drawer or the hero sheet lands on the mat underneath; intended (owner, certification 2026-10-07). |
-| Token cap | 128 to start, +16 per Guild Hall rank up to 256 (Atlas D-9); spawned Tokens and endgame sites count (D-1); binned Tokens count toward spawner caps (T-101, T-102). |
+| Token cap | 128 to start, +16 per Guild Hall rank up to 256 (Atlas D-9); spawned Tokens and endgame sites count (D-1); the discard bin is gone (Atlas A3b), so nothing off the mat counts. |
 | Trickle | Renamed **Passive Production**, one 5-minute timer; the Wishing Well joins it, about 10 Water per 5 min (T-099). |
 | Markets | **Cut for now**: items stay the only currency, no exchange rates; revisit if a real need appears (owner 2026-10-09, T-127). |

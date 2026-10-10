@@ -1,6 +1,6 @@
 /**
  * Callouts: the quick speech-bubble popups the mat says things in. One style for every kind
- * (a spawn, an effect firing, a refused drop), each appearing over the thing it is about and
+ * (a spawn, an effect firing, a refused drop, a demolition), each appearing over the thing it is about and
  * gone by itself. Pure, so the rules are tested without a screen.
  */
 
@@ -16,6 +16,7 @@ export const MAX_TOTAL = 24;
 /** The words for each kind. */
 export const calloutText = {
     spawned: (name) => `! Spawned ${name}`,
+    demolished: (name) => `Demolished ${name}`,
     effect: (title) => title
 };
 
