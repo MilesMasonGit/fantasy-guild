@@ -85,7 +85,9 @@ const shown = (el) => {
     return { row: root.getAttribute('data-hero-row'), frame: Number(root.getAttribute('data-hero-frame')) };
 };
 
-const IDS = ['hero_1', 'hero_2', 'hero_3', 'hero_4', 'hero_5', 'hero_6', 'hero_7', 'hero_8'];
+// Ids as the game makes them (`hero_` + nanoid): their phases spread over the loop. Sequential ids
+// (`hero_1` …) hash to phases a millisecond apart, every hero on one beat.
+const IDS = ['hero_V1StGXR8', 'hero_Uakgb_J5', 'hero_tz4a98xx', 'hero_7fYq2LmB', 'hero_kP0w9sNe', 'hero_Qx3_rT6d', 'hero_a8Hn-2Zc', 'hero_JmW5oLp1'];
 /** A working board: 8 heroes on the mat (working, walking, one limping, idle) and the same 8 in the bar. */
 const BOARD = [
     ...IDS.map((heroId, i) => ({
@@ -159,25 +161,40 @@ describe('⭐ the sprites share one clock', () => {
 
     it('⭐ a working board: every sprite shows its own clock’s frame in every frame; one callback a frame at most, none wasted', () => {
         const { container } = render(sprites(BOARD));
+        const els = BOARD.map(s => spriteEl(container, s.key));
         watch(container);
         framesAsked = 0;
         let stepFrames = 0;
         let spriteSteps = 0;
+        const offClock = [];
+        let overPending = 0;
+        let apart = 0;
         for (let i = 0; i < 500; i++) {          // 3 s
             const asked = framesAsked;
             const wrote = frame();
             if (wrote.size) {
                 stepFrames += 1;
                 spriteSteps += wrote.size;
+                // A hero's bar figure steps in the same frame as their (sound) mat figure.
+                for (const s of BOARD.slice(0, 8)) {
+                    if (!s.frameMs && wrote.has(s.key) !== wrote.has(`bar-${s.heroId}`)) apart += 1;
+                }
             }
-            for (const s of BOARD) expect(shown(spriteEl(container, s.key))).toEqual(want(s, clock));
-            expect(pending()).toBeLessThanOrEqual(1);
-            expect(framesAsked - asked).toBeLessThanOrEqual(1);
+            BOARD.forEach((s, k) => {
+                const got = shown(els[k]);
+                const w = want(s, clock);
+                if (got.row !== w.row || got.frame !== w.frame) offClock.push([clock, s.key, got, w]);
+            });
+            if (pending() > 1 || framesAsked - asked > 1) overPending += 1;
         }
-        // Every frame callback stepped something; the 16 sprites took ~370 steps in far fewer.
+        expect(offClock).toEqual([]);
+        expect(overPending).toBe(0);
+        expect(apart).toBe(0);
+        // Every frame callback stepped something; the 16 sprites' ~370 steps took far fewer.
         expect(framesAsked).toBe(stepFrames);
         expect(spriteSteps).toBeGreaterThan(350);
         expect(stepFrames).toBeLessThanOrEqual(8 * 25);    // at most one per hero's step
+        expect(stepFrames).toBeLessThan(spriteSteps / 2);
     });
 
     it('⭐ a hidden tab (no frames drawn) holds one callback, not a pile; back on screen one frame steps every sprite to its clock', () => {
@@ -343,7 +360,7 @@ describe('⭐ the hero bar: sprite frames redraw nothing around them', () => {
         const frames = new Set();
         for (let i = 0; i < 330; i++) {          // 2 s
             frame();
-            frames.add(container.querySelector('[data-dock-hero="hero_3"] [data-hero-row]').getAttribute('data-hero-frame'));
+            frames.add(container.querySelector(`[data-dock-hero="${IDS[2]}"] [data-hero-row]`).getAttribute('data-hero-frame'));
         }
         expect(frames.size).toBe(8);            // the bar's heroes did idle
         expect(commits).toBe(0);
