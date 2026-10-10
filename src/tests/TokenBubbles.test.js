@@ -25,6 +25,7 @@ import {
     GLIDING_RINGS
 } from '../ui/components/board/ringRow.js';
 import * as TimedChanges from '../systems/board/TimedChanges.js';
+import { STEP_MS } from '../ui/components/board/frameClock.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -66,6 +67,8 @@ const ring = (c, kind) => c.querySelector(`[data-ring="${kind}"]`);
 const bubble = (c, kind) => c.querySelector(`[data-bubble="${kind}"]`);
 const progress = (p) => act(() => { EventBus.publish(BOARD_EVENTS.PROGRESS, { instanceId: 'tok_r', ...p }); });
 const advance = (ms) => act(() => { vi.advanceTimersByTime(ms); });
+/** Past the next step of the shared step clock (its timer, then its frame). */
+const step = () => advance(STEP_MS + 20);
 
 afterEach(() => { cleanup(); vi.useRealTimers(); });
 
@@ -170,44 +173,49 @@ describe('which bubbles show', () => {
     });
 
     it('⭐ a worked Token shows the cycle bubble with seconds left, and resets on CYCLE_COMPLETE', () => {
+        vi.useFakeTimers();
         const { container } = mount(bub({ token: worked() }));
         const cycle = ring(container, 'cycle');
         expect(cycle).not.toBeNull();
         expect(bubble(container, 'cycle')).not.toBeNull();
         expect(cycle.getAttribute('data-ring-greyed')).toBeNull();
 
+        // The ring draws on the next step (`STEP_MS`), from where the engine said it was.
         progress({ percent: 20, elapsedMs: 600, cycleTimeMs: 3000 });
+        step();
         expect(cycle.getAttribute('data-ring-text')).toBe('3s');
         progress({ percent: 50, elapsedMs: 1500, cycleTimeMs: 3000 });
+        step();
         expect(cycle.getAttribute('data-ring-text')).toBe('2s');
-        expect(Number(cycle.getAttribute('data-ring-fraction'))).toBeCloseTo(0.5, 2);
+        expect(Math.abs(Number(cycle.getAttribute('data-ring-fraction')) - 0.5)).toBeLessThan(0.05);
         progress({ percent: 90, elapsedMs: 2700, cycleTimeMs: 3000 });
+        step();
         expect(cycle.getAttribute('data-ring-text')).toBe('1s');
         expect(cycle.querySelector('[data-ring-label]').textContent).toBe('1s');
 
         act(() => { EventBus.publish(BOARD_EVENTS.CYCLE_COMPLETE, { instanceId: 'tok_r' }); });
+        step();
         expect(Number(cycle.getAttribute('data-ring-fraction'))).toBeLessThan(0.05);
         expect(cycle.getAttribute('data-ring-text')).toBe('3s');
     });
 
-    it('the cycle bubble fills between ticks on animation frames, and runs none when idle', () => {
-        const raf = vi.spyOn(globalThis, 'requestAnimationFrame');
+    it('the cycle bubble steps between ticks on the shared step clock, and schedules nothing when idle', () => {
+        vi.useFakeTimers();
         const { container, rerender } = mount(bub({ token: worked({ heroId: null }) }));
-        expect(raf).not.toHaveBeenCalled();
+        expect(vi.getTimerCount()).toBe(0);
 
         rerender(tree(bub({ token: worked() })));
-        expect(raf).not.toHaveBeenCalled();           // nothing live until the engine says so
+        expect(vi.getTimerCount()).toBe(0);           // nothing live until the engine says so
         progress({ percent: 10, elapsedMs: 300, cycleTimeMs: 3000 });
-        expect(raf).toHaveBeenCalled();
-        expect(ring(container, 'cycle')).not.toBeNull();
+        expect(vi.getTimerCount()).toBe(1);           // the next step
+        step();
+        step();
+        expect(Number(ring(container, 'cycle').getAttribute('data-ring-fraction'))).toBeGreaterThan(0.1);
 
-        // The hero leaves: the loop stops.
-        const cancel = vi.spyOn(globalThis, 'cancelAnimationFrame');
+        // The hero leaves: the step stops.
         rerender(tree(bub({ token: worked({ heroId: null }) })));
-        expect(cancel).toHaveBeenCalled();
+        expect(vi.getTimerCount()).toBe(0);
         expect(container.querySelector('[data-bubble]')).toBeNull();
-        raf.mockRestore();
-        cancel.mockRestore();
     });
 
     it('greys, freezes and hides its number while blocked', () => {

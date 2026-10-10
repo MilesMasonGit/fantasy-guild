@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BOARD_EVENTS, ALERT } from '../../../systems/board/boardEvents.js';
 import * as SpawnerSystem from '../../../systems/board/SpawnerSystem.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
@@ -18,12 +18,10 @@ import {
     BUBBLE_RECENT_MS, RING_D_U, bubbleSlot, chargesFraction, cycleSecondsText, ringCount
 } from './ringRow.js';
 import { TokenChargeDeltaFloater, StationGearBadge, DisallowBadge, StuckBadge } from './TokenBadges.jsx';
-import { onFrame } from './frameClock.js';
+import { onStep } from './frameClock.js';
+import { shareCycle } from './cycleShare.js';
 
 const NO_MISSING = Object.freeze({ type: null, items: [] });
-
-/** How many visible steps the cycle ring sweeps in one cycle: 0.9° each. */
-const RING_STEPS = 400;
 
 /**
  * After a count changes, how long the bubble keeps showing the OLD number before it takes the
@@ -75,9 +73,10 @@ export function useChangeFlash(value, ms = BUBBLE_RECENT_MS) {
 /**
  * TokenBubbles: a Token's bubbles, drawn inside its box (`bubbleSlot` places each).
  * - **Cycle** (bottom-left): the whole time a hero works the Token and it is not a fight. Fills
- * as the cycle runs; the number is seconds left, rounded up. Smooth between engine ticks (rAF
- * interpolation) and back to empty on `CYCLE_COMPLETE`. Blocked (`workedAlertOf`, the same test
- * the centre mark uses): grey, frozen, no number.
+ * as the cycle runs; the number is seconds left, rounded up. Between engine ticks it moves on the
+ * shared step clock (`onStep`: ten steps a second, every ring in the same frame), and goes back
+ * to empty on `CYCLE_COMPLETE`. Blocked (`workedAlertOf`, the same test the centre mark uses):
+ * grey, frozen, no number. The inspection's rings read the same cycle (`shareCycle`).
  * - **Charges** (bottom-right), **quest progress** (bottom-centre), **spawner count** (middle
  * row): for {@link BUBBLE_RECENT_MS} after the number changes, and while hovered. Their rings
  * glide when the number jumps.
@@ -93,10 +92,9 @@ export function useChangeFlash(value, ms = BUBBLE_RECENT_MS) {
  * Every bubble has a tooltip, and pressing one grabs the Token (`dragProps`).
  * The subscriptions are keyed on the Token and nothing else. Hovering, the alert, the hero and
  * the fresh `token` object the mat builds on every state change must not tear down the
- * subscriptions or cancel the animation frame: everything the handlers read lives in
- * `liveRef`. They go through `tokenEvents.js`, so every Token shares one bus subscription per
- * event type. The frame loop runs only while a cycle is live, never for an idle, blocked or
- * fought Token.
+ * subscriptions or stop the step: everything the handlers read lives in `liveRef`. They go
+ * through `tokenEvents.js`, so every Token shares one bus subscription per event type. A ring
+ * steps only while its cycle is live, never for an idle, blocked or fought Token.
  */
 export const TokenBubbles = ({
     instanceId = null,
@@ -140,53 +138,69 @@ export const TokenBubbles = ({
 
     const cycleRef = useRef(null);
     const applyCurrentRef = useRef(null);
+    // Draws the cycle ring as it stands, at once: for a ring that (re)mounts mid-cycle, which
+    // would otherwise show empty until the next step.
+    const paintNowRef = useRef(null);
+    const setCycleRoot = useCallback((el) => {
+        cycleRef.current = el;
+        if (el) paintNowRef.current?.();
+    }, []);
 
     useEffect(() => {
         if (!instanceId) return undefined;
 
-        let active = false;
-        let lastElapsed = 0;
+        // The cycle as last told: `elapsed` at `stamp`. While `running` it moves on with the
+        // wall clock between engine ticks, up to `cycleTime`; stopped, it holds.
+        let running = false;
+        let elapsed = 0;
+        let stamp = 0;
         let cycleTime = null;
-        let lastTimestamp = performance.now();
-        // The shared frame clock's unsubscribe while the sweep runs.
-        let offClock = null;
+        // The shared step clock's unsubscribe while the ring runs.
+        let offStep = null;
 
-        const stop = () => {
-            active = false;
-            offClock?.();
-            offClock = null;
-        };
+        const elapsedAt = (now) => (running && cycleTime
+            ? Math.min(cycleTime, elapsed + Math.max(0, now - stamp))
+            : elapsed);
 
-        // Write the ring only when a pixel would move. The sweep is quantised to RING_STEPS a
-        // cycle (0.9°, well under a pixel at any mat size), so a long cycle writes far fewer
-        // times a second than once per display frame. The seconds and a remounted ring always
-        // write.
-        let lastStep = null;
-        let lastText = null;
+        // Write the ring only when what it draws changes (a ring held full or frozen writes
+        // nothing). A remounted ring always writes.
+        let lastKey = null;
         let lastRoot = null;
-        const paint = () => {
+        const paint = (now) => {
             const root = cycleRef.current;
-            const f = cycleTime ? lastElapsed / cycleTime : 0;
-            const text = cycleSecondsText(lastElapsed, cycleTime);
-            const step = Math.round(Math.max(0, Math.min(1, f)) * RING_STEPS);
-            if (root === lastRoot && step === lastStep && text === lastText) return;
+            const e = elapsedAt(now);
+            const f = cycleTime ? e / cycleTime : 0;
+            const text = liveRef.current.blocked ? '' : cycleSecondsText(e, cycleTime);
+            const key = `${Math.max(0, Math.min(1, f)).toFixed(3)}|${text}`;
+            if (root === lastRoot && key === lastKey) return;
             lastRoot = root;
-            lastStep = step;
-            lastText = text;
+            lastKey = key;
             paintRing(root, f, text);
         };
-        /** Any other write to the ring: the next sweep frame must write too. */
+        /** Any other write to the ring: the next step must write too. */
         const paintOnce = (f, text) => {
             lastRoot = null;
             paintRing(cycleRef.current, f, text);
         };
+        paintNowRef.current = () => {
+            lastRoot = null;
+            if (cycleTime && (running || liveRef.current.blocked)) paint(performance.now());
+        };
 
-        const updateFrame = () => {
-            if (!active) return;
-            const now = performance.now();
-            lastElapsed = Math.min(cycleTime, lastElapsed + (now - lastTimestamp));
-            lastTimestamp = now;
-            paint();
+        // ⚠️ While it runs, the ring is written on the shared step and nowhere else: an engine
+        // event only moves the model. So every ring on the mat changes in the same frame, ten
+        // times a second, and the frames between write nothing. Rings written on frames of
+        // their own would make nearly every frame of play restyle, repaint and re-layer the page.
+        const run = () => {
+            running = true;
+            if (!offStep) offStep = onStep(paint);
+        };
+        /** Hold the ring where the cycle stands now. */
+        const stop = () => {
+            elapsed = elapsedAt(performance.now());
+            running = false;
+            offStep?.();
+            offStep = null;
         };
 
         const setFight = (on) => {
@@ -212,28 +226,23 @@ export const TokenBubbles = ({
             if (p?.cycleTimeMs) setFight(false);
             if (liveRef.current.blocked) return;   // frozen while blocked
             if (p?.cycleTimeMs) cycleTime = p.cycleTimeMs;
-            lastElapsed = p?.elapsedMs != null
+            elapsed = p?.elapsedMs != null
                 ? p.elapsedMs
                 : cycleTime ? ((p?.percent || 0) / 100) * cycleTime : 0;
-            lastTimestamp = performance.now();
-            if (cycleTime) {
-                paint();
-            } else {
+            stamp = performance.now();
+            if (!cycleTime) {
                 paintOnce((p?.percent || 0) / 100, '');
+                return;
             }
-            if (!active && cycleTime && liveRef.current.hasHero) {
-                active = true;
-                lastTimestamp = performance.now();
-                offClock?.();
-                offClock = onFrame(updateFrame);
-            }
+            if (liveRef.current.hasHero) run();
         };
 
         const onCycleComplete = () => {
             if (liveRef.current.blocked || combatRef.current) return;
-            lastElapsed = 0;
-            lastTimestamp = performance.now();
-            paint();
+            elapsed = 0;
+            stamp = performance.now();
+            if (cycleTime && liveRef.current.hasHero) run();
+            else paintOnce(0, '');
         };
 
         const onTokenChanged = () => {
@@ -245,26 +254,32 @@ export const TokenBubbles = ({
             const { hasHero: heroNow, blocked: blockedNow } = liveRef.current;
             if (!heroNow) {
                 stop();
-                lastElapsed = 0;
+                elapsed = 0;
                 if (hpRef.current) { hpRef.current = null; setHp(null); }
                 return;
             }
             if (blockedNow) {
                 // Frozen where it was; the number goes.
                 stop();
-                paintOnce(cycleTime ? lastElapsed / cycleTime : 0, '');
+                paintOnce(cycleTime ? elapsed / cycleTime : 0, '');
             }
         };
 
         const unsubs = [
             subscribeToken(BOARD_EVENTS.PROGRESS, instanceId, apply),
             subscribeToken(BOARD_EVENTS.CYCLE_COMPLETE, instanceId, onCycleComplete),
-            subscribeToken(BOARD_EVENTS.TILE_CHANGED, instanceId, onTokenChanged)
+            subscribeToken(BOARD_EVENTS.TILE_CHANGED, instanceId, onTokenChanged),
+            shareCycle(instanceId, (now) => (
+                cycleTime && liveRef.current.hasHero && !combatRef.current
+                    ? { elapsedMs: elapsedAt(now), cycleMs: cycleTime }
+                    : null
+            ))
         ];
 
         return () => {
             stop();
             applyCurrentRef.current = null;
+            paintNowRef.current = null;
             unsubs.forEach(u => u());
         };
         // ⚠️ `instanceId` ONLY — everything else is read from refs.
@@ -363,7 +378,7 @@ export const TokenBubbles = ({
 
             {showCycle && (
                 <Bubble of={instanceId} kind="cycle" style={slot('cycle')} tip={cycleTip} dragProps={dragProps}>
-                    <RingBadge kind="cycle" rootRef={cycleRef} greyed={blocked} title={cycleTip} />
+                    <RingBadge kind="cycle" rootRef={setCycleRoot} greyed={blocked} title={cycleTip} />
                 </Bubble>
             )}
             {showQuest && (

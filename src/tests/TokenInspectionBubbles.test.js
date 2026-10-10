@@ -22,6 +22,7 @@ import { TokenInspection } from '../ui/components/drawer/TokenInspection.jsx';
 import { TokenInspectPopup } from '../ui/components/board/TokenInspectPopup.jsx';
 import { SkillIcon } from '../ui/components/base/SkillIcon.jsx';
 import { inspectBubbles } from '../ui/components/drawer/InspectBubbles.jsx';
+import { STEP_MS } from '../ui/components/board/frameClock.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -52,7 +53,7 @@ const fraction = (c, name) => Number(ring(c, name)?.getAttribute('data-ring-frac
 
 beforeAll(() => Flags.init());
 afterAll(() => Flags.teardown());
-afterEach(() => cleanup());
+afterEach(() => { cleanup(); vi.useRealTimers(); });
 beforeEach(() => {
     vi.clearAllMocks();
     GameState.initNew();
@@ -95,26 +96,35 @@ describe('inspection bubbles', () => {
     });
 
     it('time and XP fill with the work cycle while a hero works the Token', async () => {
+        vi.useFakeTimers();
         const forest = put(TOKEN, 'fixture_producer');
         Flags.plant('h1', TOKEN);
         expect(BoardState.workerOf(forest.id)).toBe('h1');
         const { container } = mount(h(TokenInspection, { typeId: 'fixture_producer', instanceId: forest.id }));
         expect(fraction(container, 'time')).toBe(0);
+        expect(text(container, 'time')).toBe('12s');
 
+        // Live rings draw on the shared step (`STEP_MS`), like the mat's cycle ring. With no mat
+        // ring to read here, from the engine's last progress.
+        const step = () => act(async () => { vi.advanceTimersByTime(STEP_MS + 20); });
         const tick = (elapsedMs) => act(async () => {
             EventBus.publish(BOARD_EVENTS.PROGRESS, {
                 instanceId: forest.id, percent: (elapsedMs / 12000) * 100, elapsedMs, cycleTimeMs: 12000
             });
         });
         await tick(3000);
+        await step();
         expect(text(container, 'time')).toBe('9s');
         expect(fraction(container, 'time')).toBeCloseTo(0.25, 2);
         expect(fraction(container, 'xp')).toBeCloseTo(0.25, 2);
+        expect(text(container, 'xp')).toBe('+4');
         await tick(9000);
+        await step();
         expect(text(container, 'time')).toBe('3s');
         expect(fraction(container, 'time')).toBeCloseTo(0.75, 2);
 
         await act(async () => { EventBus.publish(BOARD_EVENTS.CYCLE_COMPLETE, { instanceId: forest.id }); });
+        await step();
         expect(fraction(container, 'time')).toBe(0);
         expect(text(container, 'time')).toBe('12s');
     });
