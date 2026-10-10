@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-144**
+**Next free number: T-145**
 
 ---
 
@@ -146,6 +146,7 @@ here.
 | T-124 | P2 | open | Speech bubbles from different sources (a hero's bubble and the Token's bubble while the hero works it) can cover each other; they should stack smoothly like the bubbles of one source. Owner 2026-10-09. | eye-check B |
 | T-142 | P3 | open | The recipe picker's rows are `truncate`, so a recipe's requirement line ("Needs 10× Stone · Needs a Marble Foundation or better") is cut off with "…" at the modal's width and the player can't read it (`StationRecipeModal.jsx`; seen in brief 70 A11). | brief 70 A11 |
 | T-143 | P3 | open | `bench/browser/dragKit.mjs` picks drag targets skipping only the Hall and permanent types; on a board with planted Saplings (fixed since Atlas A10) it would count their refused drags as failures. Teach the picker `FixedTokens.isFixed`. | brief 70 A10 |
+| T-144 | P2 | open | The tutorial's "Plant a Flag" step (`tut_flag`) has no beacon target: its selectors (`[data-hero-dock-tab]`, `#rightmost-hero-dock`, `#hero-dock`) match nothing since brief 30's hero bar (`[data-dock-hero]`); `TutorialAide.test.js` passes only because its fixture supplies the old attribute. Found by brief 60 P2-2. A8 rewrites the tutorial; fix there or before. | brief 60 P2-2 |
 | T-114 | P3 | open | Remove `migrateSkillIds` (the `logging` → `forestry` content migration in the game loaders and the CMS store) once the owner has synced `data/` with `forestry`. | brief 20 R0 |
 
 ## 3. Parked — don't work on these without a reason
