@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-140**
+**Next free number: T-142**
 
 ---
 
@@ -104,6 +104,8 @@ here.
 | T-047 | P3 | open | 8 retired `collection` fields in the save schema (keep `TOKEN_TYPES`). | CR3-038 |
 | T-048 | P3 | open | Small UI leftovers incl. the `ui:open_drawer` chain; events subscribed with no publisher. | CR3-043, 461 |
 | T-049 | P3 | open | Computed-and-never-read values; unused reset functions. | CR3-205 |
+| T-140 | P3 | open | **The Map check's dials and refusals are read by nothing** since Atlas A5 retired `mapPass.js`: in `cms/src/engine/sim/dials.js` `mapScrapRatio`, `mapProductiveReturn`, `rarityPremium`, `rarityWeights`/`RARITY_WEIGHTS`, `scrapRatioAt`, `productiveReturnAt`, `pinnedAt`; `dayInReach` in `xpPass.js` (and `hoursPerDay` if the Pace dials no longer need it); the seven `map-*` codes in `refusals.js`; their fields in the CMS Settings modal. Delete with their tests (`EconSimXP`'s `dayInReach` cases; `EconSimLevers`' Map-card test flips back to absent). Also `checkPass.js` skips unlimited Tokens because the Map check used to name them: nothing names them now. | Atlas A5 |
+| T-141 | P3 | blocked | **Content audit: a respawning node still sold at the Shop** (roadmap A5 lists it): warn when a Token with A2's Respawns block also has a `shop` block. Blocked on A2 merging (its block shape). One rule in `lifecycleAudit.js`, so the boot check and the CMS Economy Audit share it. | Atlas A5 |
 | T-050 | P3 | open | Stale comments in board-state files; `hitRadiusOf` doc claims whole-number centres. | CR3-154, FMR |
 | T-051 | P3 | open | Four copies of "is this the Guild Hall?"; a second `clampToMat`. | CR3-155 |
 | T-052 | P3 | open | Dead drag CSS; retired vocabulary in drag code. | CR3-406, 408 |
@@ -153,7 +155,6 @@ first, when content that uses it is authored.*
 | ID | Why parked | Summary | Origin |
 |---|---|---|---|
 | T-071 | Envelope | Canvas mat. Certification (2026-10-07): the realistic board passes, ~320 Tokens reaches 83 % of frames in budget. Unnecessary at realistic sizes; decide with the Performance Envelope whether boards that large must be smooth. | CR3-355 |
-| T-110 | Atlas | Map code is idle now that no Maps ship (`data/maps.json` is `{}`): `mapRegistry.js` (`listMaps` used only by tests), the Map checks in `ContentAudit.js`, Map loading in `DatabaseManager.js`, the `mapId` branch in `tokenTypeDerivation.js`, CMS `MapEditor`/`mapPass`. Delete or reuse when the Atlas lands; don't touch before. | T-109 |
 | T-072 | after the crunch | `@ts-check` trial on the contract layer. | CR3-560 |
 | T-073 | latent | Input-cost discount applied when paying, not when checking. | CR3-028 |
 | T-074 | latent | Item rules can be given moments that never fire. | CR3-202 |

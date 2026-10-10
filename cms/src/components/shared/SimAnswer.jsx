@@ -182,18 +182,10 @@ function LifetimeLine({ lifetime }) {
       <span style={{ color: 'var(--color-text-primary)' }}>
         lives ~{formatHours(lifetime.hours)}
       </span>
-      {lifetime.returnFactor != null && (
-        <span style={{ color: 'var(--color-text-primary)' }}>
-          {' '}· returns ~{lifetime.returnFactor < 10
-            ? lifetime.returnFactor.toFixed(1)
-            : Math.round(lifetime.returnFactor)}× its find cost
-        </span>
-      )}
       <span style={{ color: 'var(--color-text-muted)' }}>
         {lifetime.unlimited
           ? ' · never runs out, so this is the assumed-lifetime dial, not a measurement'
           : ` · ${lifetime.charges} charges at the cycle above`}
-        {lifetime.findCost != null && ` · found for ${lifetime.findCost}g of a burst`}
       </span>
       {(long || short) && (
         <span className="block text-[10px]" style={{ color: 'var(--color-warning, #f59e0b)' }}>

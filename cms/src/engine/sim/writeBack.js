@@ -3,6 +3,7 @@
 import { quantityRange } from './fieldAdapter.js';
 import { deriveTokenType } from '../../utils/constants';
 import { slugify } from '../../utils/idGenerator';
+import { isMapItem } from '../../../../src/systems/atlas/mapItems.js';
 
 /** Item fields the retired balance engine wrote. Deleted on every run. */
 export const RETIRED_ITEM_FIELDS = Object.freeze(['trueCost', 'sellPrice']);
@@ -24,9 +25,10 @@ export const RETIRED_OUTPUT_FIELDS = Object.freeze(['isPrimarySource']);
  * * `xp`: a Token's top-level xp. Dead at runtime (the engine awards `io.xp ?? config.xp`), so it is a second, disagreeing number.
  * * `charges`: retired in favour of `uses`; `liveCharges` reads `uses` and nothing reads `charges`.
  * * `recipePool`: retired in favour of the skill named in the Token's `station` statement (`recipePoolRegistry`).
+ * * `scrapValue`: what a Map burst charged for a Token; the Map check that derived it is retired.
  * ⚠️ `config.xp` is NOT here and must never be: that one is derived and live.
  */
-export const RETIRED_TOKEN_FIELDS = Object.freeze(['xp', 'charges', 'recipePool']);
+export const RETIRED_TOKEN_FIELDS = Object.freeze(['xp', 'charges', 'recipePool', 'scrapValue']);
 
 /** A copy of `record` without `fields`; the original when it had none of them. */
 function without(record, fields) {
@@ -232,10 +234,12 @@ function deriveOutputs(outputs, downcycleEntry, tuning) {
 /**
  * Items: derived `value` and `valueSource`, retired fields gone.
  * ⚠️ An item the passes could not price keeps `value: null` and gains `valueSource: null` rather than being skipped: null means not yet computed, which is what an unreachable item is and what the audit raises as Critical.
+ * ⚠️ A map item is the exception: nothing prices a map, so it is written back exactly as authored.
  */
 export function applyItemResults(items = {}, sim) {
     const next = {};
     for (const [id, item] of Object.entries(items)) {
+        if (isMapItem(item)) { next[id] = item; continue; }
         const itemId = item?.id ?? id;
         const stripped = without(item, RETIRED_ITEM_FIELDS);
         const priced = sim.values.has(itemId);
@@ -265,52 +269,7 @@ export function applyTokenResults(tokens = {}, sim) {
         const xp = sim.xp?.get(tokenId);
         if (Number.isFinite(xp)) config.xp = xp;
 
-        next[id] = withScrapValue({ ...token, config }, sim, tokenId);
-    }
-    return next;
-}
-
-/**
- * A Token's derived scrap value: what one full copy sells for, allocated out of the scrap budget of the richest Map that hands it over.
- * ⚠️ A Token no Map's pool contains gets no `scrapValue` at all, rather than a zero: a written zero would read as the sim saying the Token is worth nothing, instead of the sim not having said.
- */
-function withScrapValue(token, sim, tokenId) {
-    const value = sim?.scrapValues?.get(tokenId);
-    if (!Number.isFinite(value)) {
-        if (!('scrapValue' in token)) return token;
-        const stripped = { ...token };
-        delete stripped.scrapValue;
-        return stripped;
-    }
-    return { ...token, scrapValue: value };
-}
-
-/** Tokens whose config is null still take a scrap value: `applyTokenResults` returns a config-less Token untouched, but a Map Token, a pickaxe or a buff is the kind of thing a player sells. This runs over its result so the two concerns stay separable. */
-export function applyScrapValues(tokens = {}, sim) {
-    if (!sim?.scrapValues) return tokens;
-    const next = {};
-    for (const [id, token] of Object.entries(tokens)) {
-        next[id] = token ? withScrapValue(token, sim, token?.id ?? id) : token;
-    }
-    return next;
-}
-
-/** Maps: derived pool weights. A pool entry's draw weight comes from the referenced Token's rarity through one global table, so it is sim-written and the Map editor's weight column is read-only-derived. Everything else about a Map is authored and untouched. A Map the pass skipped keeps its authored weights exactly as typed. */
-export function applyMapResults(maps = {}, sim) {
-    const weights = sim?.mapWeights;
-    if (!weights) return maps;
-    const next = {};
-    for (const [key, map] of Object.entries(maps)) {
-        const derived = weights.get(map?.id ?? key);
-        if (!derived || !Array.isArray(map?.pool)) { next[key] = map; continue; }
-        let changed = false;
-        const pool = map.pool.map((entry, i) => {
-            const weight = derived[i];
-            if (!Number.isFinite(weight) || entry?.weight === weight) return entry;
-            changed = true;
-            return { ...entry, weight };
-        });
-        next[key] = changed ? { ...map, pool } : map;
+        next[id] = { ...token, config };
     }
     return next;
 }

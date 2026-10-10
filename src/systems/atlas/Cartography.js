@@ -2,9 +2,12 @@
 
 import { GameState } from '../../state/GameState.js';
 import { tokenStartingUses } from '../../config/registries/tokenRegistry.js';
+import { getItem } from '../../config/registries/itemRegistry.js';
+import { InventoryManager } from '../inventory/InventoryManager.js';
 import * as BoardState from '../board/BoardState.js';
 import { matCap } from '../board/MatCap.js';
 import { budget } from './Budget.js';
+import { isMapItem, recipeOf as mapItemRecipe } from './mapItems.js';
 import { layout } from './Layout.js';
 import { layoutOptions } from './layoutInputs.js';
 import { nextSeed, seedFromText } from './seededRandom.js';
@@ -12,7 +15,8 @@ import { nextSeed, seedFromText } from './seededRandom.js';
 /**
  * Writing a Region from maps, up to the moment `Atlas.settle` makes it real:
  * - {@link recipeOf}: what a slotted ingredient writes, in `Budget.js`'s recipe shape;
- * - the stock ({@link held}, {@link heldCount}, {@link shortfall}, {@link take}): what the table may
+ * - what the guild holds ({@link held}, {@link heldCount}, {@link shortfall}, {@link take}): map
+ *   items in the Bank, and the dev console's recipes in a stock of their own; what the table may
  *   slot, and what Settle takes;
  * - {@link preview} and {@link reroll}: the Node Summary and the layout the table shows;
  * - {@link regionBoard} and {@link rulesOf}: what a settled Region is made of.
@@ -37,48 +41,70 @@ function described(item) {
 }
 
 /**
- * The recipe a slotted ingredient writes. ⚠️ The adapter seam: today an ingredient is already a
- * recipe (the dev console's or a test's) and comes back as it is. Once maps are items authored in
- * the Map editor (brief 70 A5), a map item becomes its recipe here and nowhere else, so the stock,
- * the preview and Settle all take items unchanged.
+ * The recipe a slotted ingredient writes. A map item, given as its id or as the item, becomes the
+ * recipe its Cartography block describes (`mapItems.recipeOf`); a recipe (the dev console's or a
+ * test's) comes back as it is. ⚠️ The one place an ingredient becomes a recipe, so the stock, the
+ * preview and Settle all take map items unchanged.
  *
- * @throws {TypeError} for anything that is not a recipe
+ * @throws {TypeError} for anything that is neither
  */
 export function recipeOf(item) {
     if (isRecipe(item)) return item;
-    throw new TypeError(`Atlas.recipeOf: ${described(item)} is not a map recipe `
-        + '({ id, kind: \'base\' | \'modifier\', ... }, see Budget.js). Map items need the Map editor\'s adapter (brief 70 A5).');
+    const def = typeof item === 'string' ? getItem(item) : item;
+    if (isMapItem(def)) return mapItemRecipe(def);
+    throw new TypeError(`Atlas.recipeOf: ${described(item)} is not a map recipe or a map item `
+        + '(a recipe is { id, kind: \'base\' | \'modifier\', ... }, see Budget.js; a map item is an item of type map or modifier)');
 }
 
 // ---------------------------------------------------------------------------
-// The stock
+// What the guild holds
 // ---------------------------------------------------------------------------
 
+/** Whether a recipe id is a map item, so that it is held in the Bank. */
+const inBank = (id) => isMapItem(getItem(id));
+
 /**
- * What the guild holds to slot, by recipe id: `{ recipe, count }`. ⚠️ A stand-in until maps are
- * items (A5): recipes the dev console grants (`Atlas.devGrantMaps`), in memory only, so a reload
- * empties it. A5 points {@link heldCount} and {@link take} at the Bank, where map items live.
+ * Recipes the dev console grants (`Atlas.devGrantMaps`) that are not items, by id:
+ * `{ recipe, count }`, in memory only, so a reload empties it. Map items are held in the Bank.
  */
 const stock = new Map();
 
-/** Add `count` of each recipe to the stock. */
+/** Add `count` of each recipe to the dev stock. A map item goes to the Bank instead, like any item. */
 export function grant(recipes, count = 1) {
     const n = Math.max(0, Math.floor(Number(count) || 0));
     for (const item of Array.isArray(recipes) ? recipes : [recipes]) {
         const recipe = recipeOf(item);
+        if (inBank(recipe.id)) {
+            if (n > 0) InventoryManager.addItem(recipe.id, n);
+            continue;
+        }
         const had = stock.get(recipe.id)?.count || 0;
         stock.set(recipe.id, { recipe, count: had + n });
     }
 }
 
-/** What the stock holds, oldest grant first: what the table's inventory lists. */
+/** How many of a recipe id the guild holds: a map item in the Bank, else in the dev stock. */
+function countOf(id) {
+    return inBank(id) ? InventoryManager.getItemCount(id) : (stock.get(id)?.count || 0);
+}
+
+/**
+ * What the table's inventory lists: the Bank's map items in Bank order, then the dev stock, oldest
+ * grant first. `{ recipe, count }`.
+ */
 export function held() {
-    return [...stock.values()].filter(e => e.count > 0).map(({ recipe, count }) => ({ recipe, count }));
+    const out = [];
+    for (const [id, entry] of Object.entries(InventoryManager.getAllItems() || {})) {
+        const def = getItem(id);
+        if ((entry?.quantity || 0) > 0 && isMapItem(def)) out.push({ recipe: mapItemRecipe(def), count: entry.quantity });
+    }
+    for (const { recipe, count } of stock.values()) if (count > 0) out.push({ recipe, count });
+    return out;
 }
 
 /** How many of this ingredient the guild holds. */
 export function heldCount(ingredient) {
-    return stock.get(recipeOf(ingredient).id)?.count || 0;
+    return countOf(recipeOf(ingredient).id);
 }
 
 /**
@@ -93,21 +119,29 @@ export function shortfall(ingredients) {
     }
     const short = [];
     for (const [id, needed] of wanted) {
-        const have = stock.get(id)?.count || 0;
+        const have = countOf(id);
         if (have < needed) short.push({ id, needed, held: have });
     }
     return short;
 }
 
-/** Take `ingredients` from the stock. ⚠️ Ask {@link shortfall} first: this takes what is there. */
+/**
+ * Take `ingredients`: one map item each from the Bank, or one recipe from the dev stock. ⚠️ Ask
+ * {@link shortfall} first: this takes what is there.
+ */
 export function take(ingredients) {
     for (const item of ingredients || []) {
-        const entry = stock.get(recipeOf(item).id);
+        const { id } = recipeOf(item);
+        if (inBank(id)) {
+            InventoryManager.removeItem(id, 1);
+            continue;
+        }
+        const entry = stock.get(id);
         if (entry && entry.count > 0) entry.count--;
     }
 }
 
-/** Empty the stock (tests, and a new game's dev console). */
+/** Empty the dev stock (tests, and a new game's dev console). The Bank is not touched. */
 export function clearStock() {
     stock.clear();
 }

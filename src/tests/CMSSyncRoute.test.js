@@ -6,7 +6,6 @@ describe('CMS Phase 10 Sync & Cutover (CMS-53, CMS-83)', () => {
     const state = useEntityStore.getState();
     expect(state.items).toBeDefined();
     expect(state.tokens).toBeDefined();
-    expect(state.maps).toBeDefined();
   });
 
   it('2. confirms hardcoded STATIC_ITEMS is eliminated in itemRegistry (CMS-83)', async () => {
@@ -20,11 +19,5 @@ describe('CMS Phase 10 Sync & Cutover (CMS-53, CMS-83)', () => {
     const tokenRegistry = await import('../../src/config/registries/tokenRegistry.js');
     expect(tokenRegistry.TOKENS).toBeDefined();
     expect(Object.keys(tokenRegistry.TOKENS).length).toBeGreaterThan(0);
-  });
-
-  it('4. confirms maps load dynamically from JSON (CMS-82)', async () => {
-    const mapRegistry = await import('../../src/config/registries/mapRegistry.js');
-    expect(Array.isArray(mapRegistry.listMaps())).toBe(true);
-    expect(typeof mapRegistry.allMaps()).toBe('object');
   });
 });

@@ -6,7 +6,6 @@ import path from 'node:path';
 import { resolveSpritePath } from '../utils/AssetManager.js';
 import tokenData from '../../data/tokens.json';
 import itemData from '../../data/items.json';
-import mapData from '../../data/maps.json';
 
 describe('AssetManager path resolution', () => {
     it('should successfully resolve flattened item paths from legacy manifest paths', () => {
@@ -93,7 +92,7 @@ describe('AssetManager path resolution', () => {
  */
 describe('Every sprite the content asks for exists on disk', () => {
     const used = new Set();
-    for (const collection of [tokenData, itemData, mapData]) {
+    for (const collection of [tokenData, itemData]) {
         for (const record of Object.values(collection)) {
             if (record?.sprite) used.add(record.sprite);
         }

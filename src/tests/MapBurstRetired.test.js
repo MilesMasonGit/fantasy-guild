@@ -1,28 +1,15 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { readFileSync, statSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { GameState } from '../state/GameState.js';
-import { EngineBootstrap } from '../systems/core/EngineBootstrap.js';
 import * as BoardState from '../systems/board/BoardState.js';
-import * as Placement from '../systems/board/Placement.js';
-import * as Shop from '../systems/board/Shop.js';
-import * as SpriteLayer from '../systems/board/SpriteLayer.js';
-import * as TileModifiers from '../systems/board/TileModifiers.js';
-import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { getAllTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
+import { DatabaseManager } from '../config/DatabaseManager.js';
+import { deriveTokenType } from '../config/registries/tokenTypeDerivation.js';
 
 /**
- * Token Lifecycle slice 9.1 — **the Map bursts are retired**.
+ * The Map bursts are retired, and so is the Map catalogue behind them: maps are items now
+ * (`systems/atlas/mapItems.js`).
  */
-
-vi.mock('../systems/core/NotificationSystem.js', () => ({
-    notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
-    getQueue: vi.fn(() => [])
-}));
-vi.mock('../systems/progression/RegistryManager.js', () => ({
-    RegistryManager: { recordItemGain: vi.fn() }
-}));
 
 const src = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -49,36 +36,14 @@ describe('The burst code is deleted (9.1)', () => {
     });
 });
 
-describe('A Map Token is an ordinary Token now (9.1)', () => {
-    beforeEach(() => {
-        GameState.initNew();
-        InventoryManager.init();
-        SpriteLayer.init();
-        TileModifiers.clearAll();
-        TileModifiers.init();
-        EngineBootstrap.createDefaultGameData();
+describe('The Map catalogue is gone: maps are items', () => {
+    it('no registry, no loader, no CMS pass reads data/maps.json', () => {
+        expect(() => statSync(join(src, 'config/registries/mapRegistry.js'))).toThrow();
+        expect(() => statSync(join(src, '../cms/src/engine/sim/mapPass.js'))).toThrow();
+        expect(DatabaseManager.mapFilesSingle).toBeUndefined();
     });
 
-    it('a new game has no Map box storage', () => {
-        expect(GameState.state.board.maps).toBeUndefined();
-    });
-
-    it('an unreworked Map Token placed on the mat stands there like any Token, and bursts nothing', () => {
-        const types = getAllTokenTypes();
-        const typeId = Object.keys(types).find((id) => types[id].mapId);
-        expect(typeId, 'an unreworked Map Token is still in the data (DP-9)').toBeTruthy();
-
-        const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
-        const hall = Placement.centreOfBoard();
-        const result = Placement.placeTokenAt(instance, { x: hall.x + 300, y: hall.y });
-        expect(result.success).toBe(true);
-        expect(BoardState.getTokenById(instance.id)).toBeTruthy();
-        expect(SpriteLayer.getSprites()).toEqual([]);
-    });
-
-    it('no Map Token is sold (DP-9)', () => {
-        const sold = Shop.catalogue().flatMap((g) => g.items.map((i) => i.typeId));
-        const types = getAllTokenTypes();
-        for (const id of sold) expect(types[id].mapId, id).toBeUndefined();
+    it('a leftover mapId makes nothing a Map Token', () => {
+        expect(deriveTokenType({ mapId: 'map_anything' }).type).not.toBe('map');
     });
 });

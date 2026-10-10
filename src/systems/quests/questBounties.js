@@ -7,7 +7,8 @@
 
 import { TUTORIAL_REWARD_ITEMS } from './tutorialQuests.js';
 import { InventoryStore } from '../inventory/InventoryStore.js';
-import { getItem } from '../../config/registries/itemRegistry.js';
+import { getItem, getAllItems } from '../../config/registries/itemRegistry.js';
+import { isMapItem, bountyWeightOf } from '../atlas/mapItems.js';
 
 /**
  * What a random bounty pays: a placeholder amount, in a live `item_*` id.
@@ -34,6 +35,39 @@ export function questReward(quest) {
     return list
         .filter(r => r?.itemId && r.quantity > 0)
         .map(r => ({ itemId: r.itemId, quantity: r.quantity, name: getItem(r.itemId)?.name || r.itemId }));
+}
+
+/**
+ * What a claimed bounty may pay besides its items: one map, `chance` of the time. Placeholders.
+ *
+ * ⚠️ Drawn when the bounty is claimed ({@link drawBountyMap}), never when it appears: a bounty's
+ * roll draws the same random numbers whether or not maps exist, so the bench (where bounties
+ * appear and are never claimed) does the same work.
+ */
+export const BOUNTY_MAP_REWARD = Object.freeze({ chance: 0.25, quantity: 1 });
+
+/** Every map a bounty may pay, `[{ itemId, weight }]` in id order: each map's own bounty weight. */
+export function bountyMapPool(items = getAllItems()) {
+    return Object.entries(items || {})
+        .filter(([, def]) => isMapItem(def))
+        .map(([id, def]) => ({ itemId: def.id || id, weight: bountyWeightOf(def) }))
+        .filter(entry => entry.weight > 0)
+        .sort((a, b) => (a.itemId < b.itemId ? -1 : a.itemId > b.itemId ? 1 : 0));
+}
+
+/**
+ * The map a claimed bounty pays, or null: none for a tutorial step, none when no map can be paid
+ * (and then nothing is drawn), else one draw for the chance and one to pick by weight.
+ *
+ * @returns {{itemId: string, quantity: number, name: string}|null}
+ */
+export function drawBountyMap(quest, random = Math.random, pool = bountyMapPool()) {
+    if (!quest || quest.tutorial || quest.isTutorial || pool.length === 0) return null;
+    if (!(random() < BOUNTY_MAP_REWARD.chance)) return null;
+    const total = pool.reduce((n, entry) => n + entry.weight, 0);
+    let roll = random() * total;
+    const pick = pool.find(entry => (roll -= entry.weight) < 0) || pool[pool.length - 1];
+    return { itemId: pick.itemId, quantity: BOUNTY_MAP_REWARD.quantity, name: getItem(pick.itemId)?.name || pick.itemId };
 }
 
 /**

@@ -13,6 +13,8 @@ const TYPE_LABEL = {
     [ITEM_TYPES.POTION]: 'Potion',
     [ITEM_TYPES.CURRENCY]: 'Currency',
     [ITEM_TYPES.DROP]: 'Drop',
+    [ITEM_TYPES.MAP]: 'Base Map',
+    [ITEM_TYPES.MODIFIER]: 'Map Modifier',
 };
 
 /**

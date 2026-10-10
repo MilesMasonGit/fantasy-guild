@@ -135,12 +135,11 @@ export function dayInReach(cost, projection, dials = DEFAULT_DIALS) {
 
 /**
  * Derive XP per cycle for every entity with a solved cycle, and the pacing
- * ladder for every Map.
+ * projection.
  *
  * @param {Array}  entities  adapted entities, as `fieldAdapter` returns them
- * @param {object} ctx  `{ cycleTimes, skipped, mapReports, dials }`
- * @returns {{ xp: Map, mapDays: Map, projection: object, masteryHours: number,
- *             rows: Array }}
+ * @param {object} ctx  `{ cycleTimes, skipped, dials }`
+ * @returns {{ xp: Map, projection: object, masteryHours: number, rows: Array }}
  *
  * An entity the TIME pass skipped — inert, or untagged — gets **no entry**, and
  * the write-back therefore leaves its authored `xp` exactly as typed. That is
@@ -150,7 +149,6 @@ export function dayInReach(cost, projection, dials = DEFAULT_DIALS) {
 export function runXpPass(entities = [], {
     cycleTimes = new Map(),
     skipped = new Map(),
-    mapReports = new Map(),
     dials = DEFAULT_DIALS,
 } = {}) {
     const xp = new Map();
@@ -188,11 +186,5 @@ export function runXpPass(entities = [], {
     }
 
     const projection = buildProjection(dials);
-    const mapDays = new Map();
-    for (const [id, report] of mapReports) {
-        if (!report || report.skipped) continue;
-        mapDays.set(id, dayInReach(report.cost, projection, dials));
-    }
-
-    return { xp, mapDays, projection, masteryHours: projection.masteryHours, rows };
+    return { xp, projection, masteryHours: projection.masteryHours, rows };
 }

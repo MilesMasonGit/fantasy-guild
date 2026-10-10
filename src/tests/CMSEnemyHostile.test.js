@@ -19,7 +19,7 @@ import { COMBAT_SKILL_IDS } from '../config/registries/skillRegistry.js';
  */
 
 const DATA = path.resolve(__dirname, '../../data');
-const FILES = ['items.json', 'tokens.json', 'maps.json', 'tokenRecipes.json', 'effects.json'];
+const FILES = ['items.json', 'tokens.json', 'tokenRecipes.json', 'effects.json'];
 // git may check these out with CRLF; JSON.stringify always emits LF.
 const read = (file) => fs.readFileSync(path.join(DATA, file), 'utf8').replace(/\r\n/g, '\n');
 // ⚠️ As the CMS holds the files once loaded: it renames retired skill ids, so until the
@@ -35,7 +35,6 @@ function workspaceFromFiles(files) {
     return {
         items: files['items.json'],
         tokens: files['tokens.json'],
-        maps: files['maps.json'],
         effects: files['effects.json'],
         recipePools,
     };
@@ -74,7 +73,7 @@ describe('a control sync of today’s data changes nothing', () => {
         for (const id of hostile) expect(isHostileEnemy(shippedTokens[id])).toBe(true);
     });
 
-    it('load → Recalculate → Sync writes all five files byte-identical', () => {
+    it('load → Recalculate → Sync writes all four files byte-identical', () => {
         const files = syncPayload();
         for (const f of FILES) expect(JSON.stringify(files[f], null, 2)).toBe(raw[f].trimEnd());
     });
