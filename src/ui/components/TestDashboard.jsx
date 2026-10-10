@@ -13,6 +13,7 @@ import {
 } from '../../systems/core/DevTools.js';
 import { BOARD_EVENTS } from '../../systems/board/boardEvents.js';
 import { PerfDevSection } from '../dev/perf/PerfDevSection.jsx';
+import { StarterCampDevSection } from '../dev/StarterCampDevSection.jsx';
 import { ENGINE_EVENTS, ORPHAN_EVENTS } from '../../systems/core/engineEvents.js';
 import { UI_LISTENER } from '../../systems/core/EventBus.js';
 
@@ -318,6 +319,7 @@ export const TestDashboard = React.memo(() => {
                          * normal production build with Debug Mode on still has no harness.
                          */}
                         {(import.meta.env.DEV || import.meta.env.MODE === 'perf') && <PerfDevSection />}
+                        {import.meta.env.DEV && <StarterCampDevSection />}
                         <div className="mb-3 pb-3 border-b border-gi-border space-y-2">
                             <div>
                                 <div className={devLabelClass}>Give item</div>

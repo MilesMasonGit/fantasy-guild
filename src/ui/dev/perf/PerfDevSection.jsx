@@ -14,7 +14,10 @@ const SCENARIOS = [
     ['realistic', 'S2 Realistic'],
     ['torture', 'S3 Torture'],
     ['push', 'S4 Push'],
-    ['rebuild', 'S5 Rebuild']
+    ['rebuild', 'S5 Rebuild'],
+    ['cap128', 'S2 at cap 128'],
+    ['camp128', 'Starter Camp 128'],
+    ['cap256', 'S2 at cap 256']
 ];
 
 const labelClass = 'text-[11px] font-bold uppercase tracking-wider text-gi-muted mb-1';

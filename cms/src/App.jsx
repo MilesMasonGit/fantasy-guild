@@ -10,6 +10,7 @@ import EffectEditor from './components/editors/EffectEditor';
 import SpriteAuditDashboard from './components/audit/SpriteAuditDashboard';
 import AuditPanel from './components/audit/AuditPanel';
 import ProgressionPanel from './components/progression/ProgressionPanel';
+import StarterCampPage from './components/starterCamp/StarterCampPage';
 import { useEntityStore } from './stores/useEntityStore';
 import { isMapItem } from '../../src/systems/atlas/mapItems.js';
 import { Package, Boxes, Map as MapIcon } from 'lucide-react';
@@ -27,6 +28,7 @@ function App() {
       {({ currentView, openGenerate }) => {
         if (currentView === 'recipes') return <RecipeEditor />;
         if (currentView === 'progression') return <ProgressionPanel />;
+        if (currentView === 'starterCamp') return <div className="h-full overflow-y-auto"><StarterCampPage /></div>;
         if (currentView === 'recolor') return <RecolorEditor />;
         if (currentView === 'animation') return <AnimationEditor />;
         if (currentView === 'sprites') return <SpriteAuditDashboard />;

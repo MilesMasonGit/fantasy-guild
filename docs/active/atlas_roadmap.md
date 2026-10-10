@@ -428,7 +428,7 @@ Only questions whose answer changes code. Recommendation first in each.
 
 | Q | Answer |
 |---|---|
-| D-1 | **B**: the 25 sites **don't count toward the cap and stand full size** (not half size, not a ring by rule). Where they stand is the owner's layout (D-2). Expect a crowded Starter Camp; the owner chose readability. |
+| D-1 | **B, amended 2026-10-09 (brief 60 interview)**: the 25 sites **count toward the cap** after all (the owner: "I want the starter camp's tokens to count towards the limit"), and stand full size (not half size, not a ring by rule). Where they stand is the owner's layout (D-2). Expect a crowded Starter Camp; the owner chose readability. |
 | D-2 | **A**: a Starter Camp page in the CMS, filled by a dev button ("Save this mat as the Starter Camp"), then Sync. The opening becomes content (settles T-014 for the opening). |
 | D-3 | **A**: 3 Base Maps (Forest, Mountain, Coast) and 4 modifier kinds (more of a node, a better node instead, an enemy camp, a treasure); base-building modifiers in a later slice. |
 | D-4 | **B**: maps and modifiers are authored in a **rewritten Map editor**, and each appears as an item in the Bank automatically. |

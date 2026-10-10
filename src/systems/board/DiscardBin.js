@@ -3,10 +3,11 @@
 import { EventBus } from '../core/EventBus.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { BOARD_EVENTS } from './boardEvents.js';
-import { getAllTokenTypes, tokenStartingUses } from '../../config/registries/tokenRegistry.js';
+import { getAllTokenTypes, tokenStartingUses, tokenName } from '../../config/registries/tokenRegistry.js';
 import { recipesForFoundation } from '../../config/registries/recipePoolRegistry.js';
 import * as BoardState from './BoardState.js';
 import * as Placement from './Placement.js';
+import * as Demolition from './Demolition.js';
 import * as Shop from './Shop.js';
 import * as Foundations from './Foundations.js';
 import * as Hand from './Hand.js';
@@ -166,6 +167,7 @@ export function canBin(instanceId, options = {}) {
     const instance = BoardState.getTokenById(instanceId);
     if (!instance) return refuse('No Token there');
     if (Placement.isPermanentToken(instance.typeId, instance)) return refuse('The Guild Hall cannot be discarded.');
+    if (!Demolition.canDemolish(instance)) return refuse(`${tokenName(instance.typeId)} cannot be discarded.`);
     // A tutorial quest Token stays until it is claimed; only bounties may be discarded (spawned, so
     // no refund).
     if (instance.quest?.tutorial) return refuse('Tutorial quests cannot be discarded.');

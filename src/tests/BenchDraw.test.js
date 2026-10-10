@@ -7,14 +7,16 @@ import path from 'node:path';
 import { describe, it, expect } from 'vitest';
 import {
     parseArgs, metricsOf, rejectReason, aggregate, costTable, judge, compareToBaseline, settingsMismatch,
-    toleranceFor, abOrder, DRAW_SWITCHES, TOLERANCE, baselineEntry
+    toleranceFor, abOrder, DRAW_SWITCHES, TOLERANCE, baselineEntry, SCENE_IDS, EXTRA_SCENE_IDS
 } from '../../bench/browser/drawLib.mjs';
+import { capPlaced, spawnRoom, SHIPPED_MAT_CELLS } from '../../bench/scenarios/cap.mjs';
+import { REALISTIC_PLACED } from '../../bench/scenarios/realistic.mjs';
 
 const report = (over = {}) => ({
     window: { seconds: 20, hiddenSeconds: 0, representative: true },
     env: { build: 'vite-dev (React development build)' },
-    frames: { count: 3200, p50: 6.1, p95: 6.2, p99: 12.1 },
-    frameWork: { p50: 2.1, p99: 8.3, pctAtOrUnder: { '6.06ms': 97.7 } },
+    frames: { count: 3200, p50: 6.1, p95: 6.2, p99: 12.1, p999: 30.4, max: 41.2 },
+    frameWork: { p50: 2.1, p95: 5.2, p99: 8.3, max: 22.5, pctAtOrUnder: { '6.06ms': 97.7, '16.7ms': 99.6 } },
     longAnimationFrames: { count: 1, maxMs: 60 },
     tick: { p50: 0.3, p99: 1.9, perSecond: 10 },
     react: { armed: true, ownRenders: { MatBoard: { perSecond: 0.5 } }, surfaces: { MatBoard: { perSecond: 8.4 }, HeroDock: { perSecond: 0.6 } } },
@@ -43,9 +45,11 @@ describe('drawing bench options', () => {
         expect(q.windowS).toBeLessThan(20);
     });
 
-    it('--switches runs at CPU 1x unless --cpu says otherwise', () => {
+    it('--switches runs at CPU 1x unless --cpu says otherwise, on S2 or the one board --only names', () => {
         expect(parseArgs(['--switches']).cpus).toEqual([1]);
         expect(parseArgs(['--switches', '--cpu=4']).cpus).toEqual([4]);
+        expect(parseArgs(['--switches', '--only=cap128']).only).toEqual(['cap128']);
+        expect(() => parseArgs(['--switches', '--only=S2,cap128'])).toThrow(/one board/);
     });
 
     it('a baseline takes three windows per scene and a compare two, unless --repeats is given', () => {
@@ -61,6 +65,30 @@ describe('drawing bench options', () => {
         expect(() => parseArgs(['--ab=localhost:5391'])).toThrow(/URL/);
         expect(() => parseArgs(['--save-baseline', '--switches'])).toThrow();
     });
+
+    it('the cap boards run only when --only names them', () => {
+        expect(SCENE_IDS).not.toContain('cap128');
+        expect(EXTRA_SCENE_IDS).toEqual(['cap128', 'camp128', 'cap256']);
+        expect(parseArgs(['--only=S2,CAP128,cap256']).only).toEqual(['S2', 'cap128', 'cap256']);
+    });
+});
+
+describe('the cap boards', () => {
+    it('keep S2\'s share of placed Tokens (39 of the 105 that count) and its order', () => {
+        expect(capPlaced(105)).toEqual(REALISTIC_PLACED);
+        const base = capPlaced(128);
+        expect(base).toHaveLength(48);
+        expect(base.slice(0, 39)).toEqual(REALISTIC_PLACED);
+        expect(base.slice(39)).toEqual(REALISTIC_PLACED.slice(0, 9));
+        // 256 wants 95 placed; the shipped mat has 72 free cells, and spawners make up the rest.
+        expect(capPlaced(256)).toHaveLength(SHIPPED_MAT_CELLS);
+    });
+
+    it('have the spawners to fill the rest of the mat up to the cap', () => {
+        for (const cap of [128, 153, 256]) expect(capPlaced(cap).length + spawnRoom(capPlaced(cap))).toBeGreaterThanOrEqual(cap);
+        // S2's own mix is kept where it suffices.
+        expect(capPlaced(128).filter(t => t === 'bench_forest')).toHaveLength(4);
+    });
 });
 
 describe('what is kept from a report', () => {
@@ -69,6 +97,11 @@ describe('what is kept from a report', () => {
         expect(m.fps).toBe(160);
         expect(m.workP50).toBe(2.1);
         expect(m.inBudgetPct).toBe(97.7);
+        expect(m.in16Pct).toBe(99.6);
+        expect(m.workP95).toBe(5.2);
+        expect(m.workMax).toBe(22.5);
+        expect(m.intervalP999).toBe(30.4);
+        expect(m.intervalMax).toBe(41.2);
         expect(m.matSubtreePerS).toBe(8.4);
         expect(m.dockPerS).toBe(0.6);
         expect(rejectReason(m)).toBeNull();

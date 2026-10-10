@@ -20,6 +20,7 @@ import {
     recipeOf, preview, grant, held, shortfall, take, regionBoard, rulesOf
 } from './Cartography.js';
 import { DEV_MAPS, asciiLayout } from './devMaps.js';
+import { layOnLiveBoard } from './StarterCamp.js';
 
 export { recipeOf, preview, reroll, held, heldCount } from './Cartography.js';
 
@@ -182,8 +183,12 @@ export function list({ archived = false } = {}) {
 // Making Regions
 // ---------------------------------------------------------------------------
 
-/** The Region a new game opens in: the live board. Idempotent. */
-export function createStarterRegion() {
+/**
+ * The Region a new game opens in: the live board, the Starter Camp. Given a camp
+ * (`StarterCamp.starterCamp()`) and an empty mat, its Tokens are stood on the mat first. Idempotent.
+ */
+export function createStarterRegion(camp = null) {
+    if (camp && GameState.state?.board && BoardState.tokens().length === 0) layOnLiveBoard(camp);
     ensureState();
     return activeRegion();
 }

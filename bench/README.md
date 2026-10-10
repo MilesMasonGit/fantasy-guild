@@ -320,13 +320,24 @@ For each scene: a fresh tab at **1600 × 1000, DPR 1**, the CPU slowdown set
 | `inspect` | S2 with the hero inspection sheet open (a real click on a dock hero) |
 | `notify` | S2 with 20 notifications every 4 s (`NotificationSystem.info`, from a page timer) |
 | `loot` | S2 with 30 loot sprites every 3 s (`SpriteLayer.addSprite`, as the QA panel's Scatter Loot does) |
+| `cap128` | S2's mix filled to the base Token cap, 128 (Atlas D-9), on the shipped mat: 130 on the mat with the Hall and a quest. Only with `--only` |
+| `camp128` | The Starter Camp at the base cap: 128 plus its 25 uncounted endgame sites (Atlas D-1 B), drawn as S2's mix at 153. Only with `--only` |
+| `cap256` | S2's mix at the top cap, 256, on the shipped mat: every free cell built, and more Forests and Quarries so the spawners can fill the rest. Only with `--only` |
 
-Columns: **fps** (frames ÷ window), **frame interval** p50/p95/p99, **frame
-work** p50/p99 (rAF start to the first task after the frame: the main thread's
-cost of a frame), **≤6.06 %** (frames whose work fits a 165 Hz frame), **LoAF**
+The cap boards (`bench/scenarios/cap.mjs`) keep S2's share of placed Tokens (39 of the 105
+that count) and its order, set the Token cap to the number, and let the spawners fill the mat
+until the cap stops them; a used-up tree or a killed goblin frees a place and a spawner takes it,
+as for a player at the cap (every spawner then shows its "Token cap full" mark). In game:
+`?stress=cap128` (also `camp128`, `cap256`).
+
+Columns: **fps** (frames ÷ window), **frame interval** p50/p95/p99 and
+**p99.9/max** (the 1-in-1,000 frame and the worst), **frame work** p50/p95/p99
+(rAF start to the first task after the frame: the main thread's cost of a frame),
+**≤6.06 %** (frames whose work fits a 165 Hz frame), **≤16.7 %** (frames whose
+work fits a 60 Hz frame: the line brief 60's "smooth" uses at 4×), **LoAF**
 (long animation frames: count / worst ms), **engine tick** p50/p99, **Mat own/s**
 (MatBoard's own renders), **mat sub/s** and **dock/s** (React commits in the mat
-and dock subtrees), **DOM** nodes and JS **heap**.
+and dock subtrees), **Tokens** on the mat, **DOM** nodes and JS **heap**.
 
 | Command | What it does | Time |
 |---|---|---|
@@ -336,6 +347,8 @@ and dock subtrees), **DOM** nodes and JS **heap**.
 | `npm run bench:draw -- --only=S2,bank` | some scenes | |
 | `npm run bench:draw -- --cpu=1` | CPU slowdowns to run (default `1,4`) | |
 | `npm run bench:draw -- --switches` | the **cost table** (below); perf, 1× unless `--cpu` is given | ~12 min |
+| `npm run bench:draw -- --switches --cpu=4 --only=cap128` | the cost table on another board | ~15 min |
+| `npm run bench:draw -- --only=S2,cap128,camp128,cap256` | the cap boards beside S2 | |
 | `npm run bench:draw -- --repeats=3` | windows per scene; the median is reported with its min–max spread | |
 | `npm run bench:draw -- --compare` | compare with `bench/draw-baseline.json` (2 windows per scene unless `--repeats`) | about twice the default |
 | `npm run bench:draw -- --save-baseline` | write the medians as `bench/draw-baseline.json` (3 windows per scene unless `--repeats`) | about three times the default |
@@ -353,11 +366,20 @@ machine, CPU, Chrome version and the GPU / ANGLE backend Chrome reports.
 | 1 | **REGRESSED**: a number is worse than the baseline beyond the tolerance |
 | 3 | the bench failed: a scene drew nothing or was hidden, a page reloaded mid-run, a click opened nothing, there is no baseline, or the baseline used another settle or window |
 
-**The cost table** (`--switches`): S2 with everything drawn, then once with each
+**The cost table** (`--switches`): S2 (or the one board `--only` names) with everything drawn, then once with each
 of the 17 drawing switches off (`?off=<name>`, `src/ui/dev/perf/drawSwitches.js`).
 All-on is measured at the start, the middle and the end; its spread is the
 **noise**, and a system's cost is all-on minus switch-off. A cost inside the
 noise is printed but marked "above noise: no".
+
+⚠️ **Chrome's CPU throttle does not always deliver what it is asked.** On the owner's PC, asked
+for 4×, it delivered anywhere from 3.4× to 12.8× (2026-10-09), sometimes changing inside one
+window: such a window runs three to eight times slower (or faster) than its twins, the engine tick
+too (4–5 ticks a second instead of 10), while MatBoard's own renders stay normal. So each throttled
+window times a fixed piece of JavaScript at 1× and at the throttle, before and after the window,
+and prints the slowdown Chrome delivered (`slowdown 4.24× → 4.61×`); a window more than 25 % off
+the slowdown asked is rejected and measured again, twice at most (then it counts as failed, exit
+3). The delivered slowdowns are kept in the results JSON (`slowdown`) for every window.
 
 **A/B** (`--ab=<url>`): for comparing two branches. The director starts the
 second branch's server (its own worktree, port and Vite `cacheDir`); this
@@ -415,6 +437,38 @@ a compare fails, run it again before believing it.
   "real frame numbers without the owner", step 8); this bench does not trace.
 - The Perf HUD is on screen during every run (it is the harness), the same in
   every run.
+
+### `npm run bench:profile`: where a frame's time goes
+
+`bench:draw` says how much a frame costs; this says what in it. One scene, settled as
+`bench:draw` settles it (same Chrome, window, throttle and scenes), then two windows one after
+the other, so neither tool's overhead lands in the other's numbers:
+
+1. a **Chrome trace** (the Performance panel's categories, no JavaScript sampler): main-thread
+   time by kind (script, style, layout, paint, GC, other); style passes per second and the
+   elements each touched; the busiest threads (the GPU process included); the script entry points
+   (timers, animation frames, events, React's scheduler) with their total time, mapped to
+   `src/` file and line; style and layout forced inside script, by who forced them; and the
+   **longest main-thread tasks**, each broken down the same way (spikes, not the average, decide
+   the 1-in-1,000 frame);
+2. a **V8 CPU profile**: JavaScript self time by function and by file.
+
+Then the page's **composited layers**, with the reason each exists (`Overlap` means it is only a
+layer because it is drawn over another one) and the element that owns it. The page is the perf
+build **unminified with source maps**, in its own `dist-perf-prof/` (git-ignored), so names and
+lines are the game's own; `bench:draw`'s `dist-perf/` is never replaced. Tracing slows the page
+(the 128 board read 45 fps traced against 72 untraced): read shares and counts from it, frame
+times from `bench:draw`.
+
+| Command | What it does | Time |
+|---|---|---|
+| `npm run bench:profile -- --scene=cap128 --cpu=4` | build, settle 20 s, trace 6 s, CPU profile 8 s, layers | ~2 min |
+| `npm run bench:profile -- --scene=S2 --off=bubbles` | with a drawing switch off | |
+| `npm run bench:profile -- --scene=cap128 --invalidations` | also which elements each style pass touched, and why (heavy) | |
+| `--trace=15 --sample=10 --top=40 --settle=20 --no-build` | seconds, rows, reuse `dist-perf-prof/` | |
+
+Raw files for DevTools (`.trace.json`, `.cpuprofile`) and a `.summary.json` go to
+`bench/results/profile/`.
 
 ### `npm run bench:drag`: does dragging always work?
 
@@ -511,6 +565,7 @@ p50/p95, **frame stalls** per drag phase and the grouped **failure causes**:
 | `npm run bench:drag -- --no-overlays` | the plain pass only | |
 | `npm run bench:drag -- --dev` | the dev build: React component names for the blockers | |
 | `npm run bench:drag -- --board=S3` | the torture board (~320 Tokens) instead of S2: carry stalls on a crowded mat | |
+| `npm run bench:drag -- --board=cap128` | a cap board (`cap128`, `camp128`, `cap256`); the Shop kind is refused there (the cap is full) | |
 | `npm run bench:drag -- --cpu=4` | CPU slowdown | |
 | `npm run bench:drag -- --no-build` | reuse `dist-perf/` | |
 

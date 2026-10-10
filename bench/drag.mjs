@@ -23,7 +23,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { launchChrome, sleep, runCleanups } from './browser/cdp.mjs';
 import { startDevServer, startPerfServer, buildPerf, perfBuildInfo } from './browser/servers.mjs';
-import { SCENES, sceneUrl, openBoard, clickUntil, BANK_OPEN, SHOP_OPEN } from './browser/scenes.mjs';
+import { SCENES, sceneUrl, openBoard, clickUntil, BANK_OPEN, SHOP_OPEN, deliveredSlowdown } from './browser/scenes.mjs';
 import { installDragKit } from './browser/dragKit.mjs';
 import { parseArgs, KINDS, summarise, exitCode, dragPath, EXIT, PHASES, STALL_MS, stallCells } from './browser/dragLib.mjs';
 import { table } from './browser/drawLib.mjs';
@@ -188,7 +188,10 @@ async function main() {
                         process.stdout.write(a.skipped ? 's' : a.error ? 'E' : a.ok ? '.' : 'x');
                     }
                     const s = summarise(list);
-                    console.log(` ${s.successes}/${s.attempts}${s.skipped ? ` (${s.skipped} skipped)` : ''}`);
+                    // ⚠️ A throttled run: the slowdown Chrome delivered may not be the one asked (bench/README.md).
+                    const slowdown = args.cpu === 1 ? null : await deliveredSlowdown(page, args.cpu);
+                    if (slowdown) ((meta.slowdown ||= {})[pass] ||= {})[kind.id] = slowdown;
+                    console.log(` ${s.successes}/${s.attempts}${s.skipped ? ` (${s.skipped} skipped)` : ''}${slowdown ? ` · slowdown ${slowdown}×` : ''}`);
                     results[pass][kind.id] = list;
                 }
                 if (pass === 'overlays') await page.evaluate('window.__dragKit.stopOverlays()');

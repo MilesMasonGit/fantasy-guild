@@ -8,6 +8,7 @@ const VIEWS = [
   { key: 'editor', label: 'Editor' },
   { key: 'recipes', label: 'Recipes' },
   { key: 'progression', label: 'Progression' },
+  { key: 'starterCamp', label: 'Starter Camp' },
   { key: 'audit', label: 'Economy Audit' },
   { key: 'sprites', label: 'Sprite Audit' },
   { key: 'recolor', label: 'Recolor' },
@@ -27,7 +28,7 @@ export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOp
   };
 
   const handleSync = async () => {
-    if (!window.confirm('Sync workspace to game data files? This will overwrite data/items.json (maps included), data/tokens.json, data/tokenRecipes.json, and data/effects.json with the CMS dataset.')) {
+    if (!window.confirm('Sync workspace to game data files? This will overwrite data/items.json (maps included), data/tokens.json, data/tokenRecipes.json and data/effects.json, and data/starterCamp.json when the Starter Camp page holds one, with the CMS dataset.')) {
       return;
     }
     setSyncStatus('syncing');

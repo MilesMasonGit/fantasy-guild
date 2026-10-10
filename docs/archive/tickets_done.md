@@ -38,3 +38,4 @@ T-106 — Flags that grabbed a Token or would not grab: the bench measured Token
 T-130 — A flag lying wholly over a Token is grabbed by its cloth; the owner felt the drag and kept the rule (2026-10-09) — crunch/drag — 2026-10-09
 T-129 — A Token in your hand is paused (owner 2026-10-09): no work, fight or charge removal until it is dropped, then it resumes where it stopped — crunch/t129 — 2026-10-09
 T-110 — The old Map code is retired: the Map catalogue (`mapRegistry.js`, `data/maps.json` loading), its audit and `mapId` type rung, the CMS Map editor's burst pools and the simulator's Map check; maps are items now (Atlas A5) — crunch/atlas-a5 — 2026-10-09
+T-014 (the opening half) — A new game's Tokens and Bank are content: the Starter Camp, laid out in the game, saved from the QA panel and synced from the CMS's Starter Camp page into data/starterCamp.json; the quest half stays open — crunch/atlas-a7 — 2026-10-09

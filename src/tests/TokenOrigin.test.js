@@ -16,6 +16,7 @@ import { PLACEMENT } from '../config/registries/placementRegistry.js';
 import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 import { QUEST_TOKEN_TYPE } from '../config/registries/engineTokens.js';
+import { setStarterCampForTests, resetStarterCampForTests } from '../config/registries/starterCampRegistry.js';
 
 /**
  * Token Lifecycle slice 3.1 — **origin, the mat cap and fixed pushes**
@@ -129,6 +130,10 @@ describe('⭐ every Token instance records its origin (DP-3)', () => {
 });
 
 describe('⭐ the mat cap counts every Token, placed or spawned (T-102)', () => {
+    // The built-in camp, whatever Starter Camp the CMS has synced: the counts below are its.
+    beforeEach(() => setStarterCampForTests(null));
+    afterEach(() => resetStarterCampForTests());
+
     it('is a game value, 128; the Mat Tuner only overrides it on this device', () => {
         expect(MatCap.BASE_TOKEN_CAP).toBe(128);
         expect(MatCap.matCap()).toBe(128);

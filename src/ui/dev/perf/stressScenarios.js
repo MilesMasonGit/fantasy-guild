@@ -42,14 +42,18 @@ const PROTECTED_KEYS = ['fantasy_guild_mat_tuning', 'fantasy_guild_settings'];
 
 /**
  * Scenario name → the bench module that builds it. The names are what
- * `?stress=` takes; the ids (S1…S5) and the bench's file names work too.
+ * `?stress=` takes; the ids (S1…S5, C128, K128, C256) work too. The cap boards are the drawing bench's
+ * only (`bench/scenarios/cap.mjs`); the engine bench does not run them.
  */
 export const STRESS_SCENARIOS = [
     { name: 'quiet', id: 'S1', label: 'S1 Quiet Hall', load: () => import('../../../../bench/scenarios/s1-quiet-hall.mjs') },
     { name: 'realistic', id: 'S2', label: 'S2 Realistic late game', load: () => import('../../../../bench/scenarios/s2-realistic.mjs') },
     { name: 'torture', id: 'S3', label: 'S3 Torture', load: () => import('../../../../bench/scenarios/s3-torture.mjs') },
     { name: 'push', id: 'S4', label: 'S4 Push storm', load: () => import('../../../../bench/scenarios/s4-push-storm.mjs') },
-    { name: 'rebuild', id: 'S5', label: 'S5 Rebuild storm', load: () => import('../../../../bench/scenarios/s5-rebuild-storm.mjs') }
+    { name: 'rebuild', id: 'S5', label: 'S5 Rebuild storm', load: () => import('../../../../bench/scenarios/s5-rebuild-storm.mjs') },
+    { name: 'cap128', id: 'C128', label: 'S2 mix at cap 128', load: () => import('../../../../bench/scenarios/cap.mjs').then(m => ({ default: m.cap128 })) },
+    { name: 'camp128', id: 'K128', label: 'Starter Camp at cap 128', load: () => import('../../../../bench/scenarios/cap.mjs').then(m => ({ default: m.camp128 })) },
+    { name: 'cap256', id: 'C256', label: 'S2 mix at cap 256', load: () => import('../../../../bench/scenarios/cap.mjs').then(m => ({ default: m.cap256 })) }
 ];
 
 const ALIASES = {

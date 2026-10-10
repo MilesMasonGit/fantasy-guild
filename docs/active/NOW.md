@@ -71,8 +71,24 @@ travel, schema 0.8.1, cap 128), **A4** (budget, seeded layout, terrain map,
 settle, reroll, Region rules), **A5** (maps and modifiers as items, the CMS
 Map editor rewritten, Regions settle from Bank-held maps, old Map code
 retired, T-110 closed), **A9** (ambush rules), **T-129**, brief **50**.
-Building: **A2** respawning fixtures, **A7** Starter Camp as content,
-**A11** no tier labels, brief **60 P1** measurement. Then A3a, A6, A8, A10.
+**A2** respawning fixtures (refill and regrow) is merged too; its resting
+look joins the eye-check once a shipped vein carries a respawn block.
+Building: **A3a** demolition as a job, **A6** the Atlas and Cartography
+screens (eye-check M1), **A10** fixed vs movable Tokens (eye-check M2), **A7**
+Starter Camp as content (eye-check M3), brief **60 P1** measurement. **A11**
+waits on its branch for the eye-check. Then A3b (the bin goes), A8 (the
+cartographer's tutorial), A12 (upcycling).
+**A7** (Starter Camp as content, landmarks) is merged; its look joins eye-check
+M3 once the sites exist. **Owner to-do from A7:** author the 25 endgame-site
+Tokens (name, ruin art, Work Cycle with the skill at 99 and the items it
+needs; tick "Landmark (endgame site)" in the Token editor's Lifecycle
+section) and Sync; then in a dev game use the QA panel's Starter Camp tools
+(Place Token, "Move and remove landmarks", Give item) to lay out the camp,
+press "Save this mat as the Starter Camp", open the CMS Starter Camp tab,
+"Use this layout", review, Sync.
+**Owner CMS to-do from A2:** Respawns refill (10–15 s) on Copper Ore Vein,
+Coal Vein, Stone Outcrop, Clay Deposit, Quartz Deposit; Oak Tree regrows
+from Oak Sapling; the Shrimp Coast gets a block too.
 `data/maps.json` is read by nothing now: delete it in a data-only commit.
 **Owner CMS to-do from A5:** author the 3 Base Maps (Forest, Mountain,
 Coast) and 4 Modifiers (Overgrown, Fir Grove, Goblin Camp, Ruins) in the

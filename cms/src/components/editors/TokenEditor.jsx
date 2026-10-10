@@ -278,6 +278,24 @@ export default function TokenEditor() {
               />
               <span className="text-xs text-gray-300">Requires a hero</span>
             </label>
+            <label
+              className="flex items-center gap-2 cursor-pointer select-none"
+              title="An endgame site: it stands outside the Token cap, and the player cannot move or demolish it"
+            >
+              <input
+                type="checkbox"
+                checked={token.landmark === true}
+                onChange={(e) => update('landmark', e.target.checked ? true : undefined)}
+                className="rounded border-white/10 text-emerald-500 cursor-pointer"
+              />
+              <span className="text-xs text-gray-300">Landmark (endgame site)</span>
+            </label>
+            {token.landmark === true && (
+              <p className="text-[10px] leading-relaxed text-gray-500">
+                Outside the Token cap; never moved, pushed or demolished. Its inspection shows the
+                skill, level and items from the Work Cycle.
+              </p>
+            )}
           </div>
         </div>
         {token.requiresHero === false && (

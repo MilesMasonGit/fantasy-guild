@@ -48,10 +48,14 @@ Today the pull is skill levels, Guild Hall upgrades and promotions.
 
 ## 2. The core loop as built
 
-1. **A new game** has the Guild Hall in the middle of the mat, an Oak Forest
-   and a Copper Mine either side (320 u away), and 3 Oak Seed, 10 Oak Wood and
+1. **A new game** opens in the **Starter Camp** (Atlas A7): the Tokens, their
+   points and the opening Bank the owner laid out in a dev game, saved with the
+   QA panel's Save this mat as the Starter Camp, reviewed on the CMS's Starter
+   Camp page and synced into `data/starterCamp.json`. Until one is synced it is
+   the built-in camp: the Guild Hall in the middle of the mat, an Oak Forest and
+   a Copper Mine either side (320 u away), and 3 Oak Seed, 10 Oak Wood and
    2 Wheat Seed in the Bank. There are **no heroes** (`ROSTER_BASE = 0`).
-   *(`EngineBootstrap.js:80-110`)*
+   *(`StarterCamp.js`, `EngineBootstrap.createDefaultGameData`)*
 2. **Recruit** in the Guild Hall: the first Bunk Beds rank is free and
    generates a Recruit immediately. The tutorial's first quest asks for this.
 3. **Plant a flag**: drag a hero from the dock onto the mat. The hero walks out
@@ -84,7 +88,9 @@ Today the pull is skill levels, Guild Hall upgrades and promotions.
   counts only the Region the guild is in (§10): every Token there, placed or
   spawned, including any in the discard bin; not quests, the Hall, or
   **landmarks** (Token types marked `landmark`: the endgame sites, Atlas D-1;
-  none are authored yet). Enforced by the Shop and by recipes that make Tokens;
+  none are authored yet; a landmark is also never pushed, cannot be moved by
+  the player or demolished, and its inspection shows what its challenge needs,
+  `Landmarks.js`). Enforced by the Shop and by recipes that make Tokens;
   a spawner waits while the mat is at the cap (as well as at its family cap).
   A save already over the cap keeps everything; adding waits until it is
   under. *(`MatCap.js`)*
@@ -518,7 +524,9 @@ drawers**. The menu can be flipped to the right.
 - **Dev tools** (dev build, or Debug Mode on in a built game): QA panel (give
   items, advance time, hire heroes, …), **Mat Tuner** (mat size, Token cap,
   quest cap, radii, speeds — stored per device, not in the save), FPS counter.
-  Dev build only: the **Perf HUD** and stress boards (`?stress=realistic`).
+  Dev build only: the **Perf HUD** and stress boards (`?stress=realistic`), and
+  the **Starter Camp** tools (place any Token, move and remove landmarks, save
+  the mat to the CMS).
 - **Bench** (`npm run bench`): 7 headless scenarios; `--compare` fails if the
   game got slower or **behaves differently**. See
   [TESTING](TESTING.md).
@@ -552,7 +560,7 @@ Content is half-authored on purpose; an unfinished Token is not a bug.
   Construction job with no refund, everything counts toward the cap, and a
   hand-made Starter Camp opens the game. Roadmap and owner answers:
   [`atlas_roadmap.md`](../active/atlas_roadmap.md). Built so far: Regions and
-  travel (§10), from the dev console.
+  travel (§10), from the dev console; the Starter Camp and landmarks (A7).
 - **Skill and class rework v2 — Engine built (brief 20, 2026-10-08)**:
   [`docs/active/concept_skill_and_class_rework_v2.md`](../active/concept_skill_and_class_rework_v2.md)
   and its [roadmap](../active/class_rework_v2_roadmap.md). The 4 Academies and

@@ -101,6 +101,24 @@ async function lootBurst(page) {
     return `SpriteLayer.addSprite × 30 every 3 s from a page timer (${n} sprites after the first)`;
 }
 
+// A fixed piece of JavaScript, timed in the page: the same work at 1× and at the throttle says what
+// slowdown Chrome actually delivered. The best of three, so a task that slipped in between does
+// not count.
+const FIXED_WORK = `(() => { let best = Infinity, x = 0; for (let r = 0; r < 3; r++) { const t0 = performance.now(); for (let i = 0; i < 2e6; i++) x += Math.sqrt(i); best = Math.min(best, performance.now() - t0); } return [best, x]; })()`;
+
+/**
+ * The slowdown Chrome is delivering right now: the fixed work at `cpu` over the same at 1×.
+ * ⚠️ Not always what was asked (bench/README.md, "Chrome's CPU throttle").
+ */
+export async function deliveredSlowdown(page, cpu) {
+    if (cpu === 1) return 1;
+    await page.setCpuThrottling(1);
+    const [full] = await page.evaluate(FIXED_WORK);
+    await page.setCpuThrottling(cpu);
+    const [slowed] = await page.evaluate(FIXED_WORK);
+    return full > 0 ? Math.round((slowed / full) * 100) / 100 : null;
+}
+
 export const SCENES = {
     S1: { id: 'S1', name: 'S1 quiet', stress: 'quiet' },
     S2: { id: 'S2', name: 'S2 realistic', stress: 'realistic' },
@@ -109,10 +127,14 @@ export const SCENES = {
     shop: { id: 'shop', name: 'S2 + Shop open', stress: 'realistic', ui: openShop },
     notify: { id: 'notify', name: 'S2 + notification burst', stress: 'realistic', ui: notifyBurst },
     loot: { id: 'loot', name: 'S2 + loot burst', stress: 'realistic', ui: lootBurst },
-    inspect: { id: 'inspect', name: 'S2 + hero sheet open', stress: 'realistic', ui: openInspect }
+    inspect: { id: 'inspect', name: 'S2 + hero sheet open', stress: 'realistic', ui: openInspect },
+    // Not in the default run (`--only=cap128,camp128,cap256`): S2's mix filled to the Token cap.
+    cap128: { id: 'cap128', name: 'S2 mix at cap 128', stress: 'cap128' },
+    camp128: { id: 'camp128', name: 'Starter Camp at 128', stress: 'camp128' },
+    cap256: { id: 'cap256', name: 'S2 mix at cap 256', stress: 'cap256' }
 };
 
-const STRESS_IDS = { quiet: 'S1', realistic: 'S2', torture: 'S3' };
+const STRESS_IDS = { quiet: 'S1', realistic: 'S2', torture: 'S3', cap128: 'C128', camp128: 'K128', cap256: 'C256' };
 
 export function sceneUrl(base, scene, offSwitches = []) {
     const q = new URLSearchParams({ stress: scene.stress });

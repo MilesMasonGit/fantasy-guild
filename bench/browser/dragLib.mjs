@@ -45,7 +45,7 @@ export function parseArgs(argv) {
                 break;
             }
             case 'board': {
-                if (value !== 'S2' && value !== 'S3') throw new Error('--board is S2 (realistic, the default) or S3 (torture)');
+                if (!['S2', 'S3', 'cap128', 'camp128', 'cap256'].includes(value)) throw new Error('--board is S2 (realistic, the default), S3 (torture), cap128, camp128 or cap256 (S2 mix at a Token cap)');
                 args.board = value;
                 break;
             }
