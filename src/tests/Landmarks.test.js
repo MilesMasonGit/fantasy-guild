@@ -17,8 +17,8 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 }));
 
 /**
- * ⭐ A landmark (an endgame site, `landmark: true` on its type) stands outside the Token cap, is
- * never pushed, cannot be moved by the player and cannot be demolished.
+ * ⭐ A landmark (an endgame site, `landmark: true` on its type) counts toward the Token cap like any
+ * placed Token, is never pushed, cannot be moved by the player and cannot be demolished.
  */
 
 registerTokenTypes({
@@ -54,10 +54,11 @@ describe('a landmark is a Token type flag', () => {
         expect(Landmarks.isLandmark(placeAt('fixture_lm_site', 300, 300))).toBe(true);
     });
 
-    it('stands outside the Token cap', () => {
-        placeAt('fixture_lm_site', 300, 300);
+    it('counts toward the Token cap like any placed Token', () => {
+        const site = placeAt('fixture_lm_site', 300, 300);
         placeAt('fixture_lm_plain', 600, 300);
-        expect(MatCap.tokenCount()).toBe(1);
+        expect(MatCap.countsTowardCap(site)).toBe(true);
+        expect(MatCap.tokenCount()).toBe(2);
     });
 });
 

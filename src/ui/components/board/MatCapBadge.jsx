@@ -257,7 +257,7 @@ export const MatCapBadge = ({ readSummary = liveMatSummary }) => {
                 <TopBarTip
                     anchor={ref.current}
                     title="Token cap"
-                    lines={['Placed, spawned and binned Tokens all count.', 'The Guild Hall, quests and endgame sites do not.', 'Click for the list.']}
+                    lines={['Placed, spawned and binned Tokens all count.', 'The Guild Hall and quests do not.', 'Click for the list.']}
                 />
             )}
             {open && <TokenSummaryPanel anchor={ref.current} summary={readSummary()} cap={cap} panelRef={panelRef} />}
