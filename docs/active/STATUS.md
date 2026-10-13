@@ -14,13 +14,13 @@ October 2026.*
 | P2-3 sprite clock | engineer (left by cut-off) | `crunch/p2-3` (`p2-3`) | bench-queued | Tue | |
 | P2-6 loot redraws and flight canvas | engineer (left by cut-off) | `crunch/p2-6` (`p2-6`) | bench-queued | Tue | |
 | P2-5 hit-loop layers (spike) | engineer | `crunch/p2-5` (`p2-5`) | bench-queued (layer count and pixel diff still to measure) | Tue–Wed | |
-| Atlas batch M1+M2: A6, A10, A3b, A11 | owner | `crunch/preview` (owner's folder) | eye-check ([file](eyecheck/2026-10-13_atlas-m1-m2.md)) | Tue–Wed | |
-| A11 CMS description patch and Sync | owner | `crunch/atlas-a11` (`atlas-a11`) | waiting on the owner | Tue–Wed | |
+| Atlas batch M1+M2: A6, A10, A3b, A11 | owner | `crunch/preview` → `main` | merged (owner verdict: fine for a first implementation; [archived file](../archive/eyecheck/2026-10-13_atlas-m1-m2.md)) | Tue–Wed | Tue |
+| A11 CMS composer patch | owner | `fix/a11-cms-composer` | waiting: the owner switches to it, Syncs to Game, then it merges | Tue–Wed | |
 | P2-7 sparse stack order | engineer | `crunch/p2-7` | queued (after P2-5 merges: both touch stacking) | Wed–Thu | |
-| P2-8 tick and React per tick | engineer | `crunch/p2-8` | queued | Wed–Thu | |
+| P2-8 tick and React per tick | engineer | `crunch/p2-8` (`p2-8`) | building (started Tue 10:00) | Tue–Wed | |
 | P2-9 drags | engineer | `crunch/p2-9` | queued | Thu–Fri | |
-| Atlas A8 cartographer's tutorial | builder | `crunch/atlas-a8` | queued (after A6 merges; T-144 beacon) | Fri | |
-| Atlas A12 map upcycling | builder-lite | `crunch/atlas-a12` | queued (after A6 merges) | Fri | |
+| Atlas A8 cartographer's tutorial | builder | `crunch/atlas-a8` | queued (T-144 beacon) | Thu–Fri | |
+| Atlas A12 map upcycling | builder-lite | `crunch/atlas-a12` | queued | Thu–Fri | |
 | Regroup: planning docs, wave 2 plan | owner + planning | `planning` (`pp`) | queued | Sat–Mon | |
 
 ## Bench queue (one at a time, weekdays 13:00–17:00 and 01:00–07:00)
@@ -28,7 +28,7 @@ October 2026.*
 1. `crunch/p2-3` engine bench `--compare` (expect same work).
 2. `crunch/p2-6` engine bench `--compare`; `bench:draw --compare` for the cost log.
 3. `crunch/p2-5` `bench:profile` layer count and a pixel diff of a worked Token.
-4. `crunch/atlas-a3b` drag bench baseline (`npm run bench:drag`, 5 kinds) for PERFORMANCE.md.
+4. `main` after the Atlas batch: engine bench `--compare` (expect same work) and the drag bench baseline (`npm run bench:drag`, 5 kinds, A3b) for PERFORMANCE.md.
 
 ## Summaries
 
@@ -40,3 +40,9 @@ eye-check file is ready for the owner's notes. Owner: look at the Atlas batch
 and give the preview notes; apply the A11 patch and Sync on its branch; CMS
 to-dos in NOW.md. Budget: one review agent and one director session so far
 today, well under the day's share. Blockers: none.
+
+**Tue 2026-10-13, midday.** The owner eye-checked the Atlas batch (fine for a
+first implementation) and it merged; the A11 CMS composer patch waits on
+`fix/a11-cms-composer` for your Sync (the round-trip tests are red until
+the Sync writes the new wording). Your folder is on `main`. P2-8 is building. Benches from 13:00. Next:
+merge P2-3 and P2-6 after their benches, then P2-7 and P2-9, A8 and A12.
