@@ -1,18 +1,18 @@
 # Refinement Pass — To-Do List
 
 > **Mode:** Non-coding review and refinement intake.  
-> **Status:** Saved intake ready for planning & director passes.
+> **Status:** Being triaged by the planning session (2026-10-13). Items marked [x] have moved on to the ticket shown in [TICKETS](../reference/TICKETS.md); the rest wait for their design interview, starting with the UI style guide (§5). Already decided elsewhere: the Starter Camp can't be abandoned (atlas A7) and map-written nodes can't be demolished (atlas D-6).
 
 ---
 
 ## 1. Potential Bugs & Rendering Issues
 
-- [ ] **Token Map Twitch / Flicker & Sharpness Loss**
+- [x] **Token Map Twitch / Flicker & Sharpness Loss** → **T-145**
   - **Symptom:** Every ~20–30 seconds, tokens on the mat twitch/flicker and momentarily (or intermittently) lose their pixel sharpness.
   - **Likely Area:** Sub-pixel positioning, nearest-neighbor canvas/CSS rendering, periodic re-render/interval cycle, or camera/viewport transform rounding.
   - **Goal:** Identify trigger (timer/gc/state cycle), preserve pixel-crisp nearest-neighbor rendering, eliminate periodic twitching.
 
-- [ ] **Animated Sprite Outline Clipping / Edge Cropping**
+- [x] **Animated Sprite Outline Clipping / Edge Cropping** → **T-146**
   - **Symptom:** When outlines are displayed on animated sprites, the outline gets cut off/clipped at the frame edges (e.g., top edge of a hero's bow, bottom edge of hero's feet).
   - **Cause:** Sprite pixels extend to the exact boundary of the animation frame/container, leaving no margin for the outline stroke.
   - **Proposed Fix / Direction:** Investigate expanding the frame padding slightly (e.g., 1px margin around animated frames) so outline shaders/strokes render cleanly without truncation.
@@ -112,7 +112,7 @@
   - **Search & Filter:**
     - Add a fast search input allowing players to filter recipes by input ingredients or output products.
 
-- [ ] **Settings Menu: "Quick Settings" Landing Surface**
+- [x] **Settings Menu: "Quick Settings" Landing Surface** → **T-157**
   - **Need:** Players opening settings usually want immediate access to common toggles without drilling through multiple sub-menus.
   - **Quick Settings View:** Add a prominent "Quick Settings" panel/landing tab bundling the most common adjustments:
     - Master Volume slider
@@ -125,29 +125,29 @@
 
 ## 3. Simple Tweaks & Interaction Polish
 
-- [ ] **Token Hover State: Replace Bob with Sharp Outline**
+- [x] **Token Hover State: Replace Bob with Sharp Outline** → **T-147**
   - **Need:** The floating/bob animation on hover feels visually noisy and loose when sweeping the cursor across the mat.
   - **Goal:** Replace the bob animation with a clean, sharp pixel outline on hovered tokens to keep the map grounded and legible.
 
-- [ ] **Horizontal Hero Bar: Mouse Wheel Scroll & Smooth Transitions for Level-Up Alerts**
+- [x] **Horizontal Hero Bar: Mouse Wheel Scroll & Smooth Transitions for Level-Up Alerts** → **T-149**
   - **Need:** Enable native mouse-wheel scrolling across queued level-up notifications.
   - **Goal:** 
     - Support smooth slide/transition animation between notifications.
     - Keep existing clickable chevron/arrow buttons intact alongside wheel support.
 
-- [ ] **Hero Flag Sprite: 32px Sizing Experiment**
+- [x] **Hero Flag Sprite: 32px Sizing Experiment** → **T-150**
   - **Need:** Current flags are too large and occupy excessive playmat screen space.
   - **Goal:** Experiment with the new 32px flag sprite for heroes. Since players will primarily click and drag on the hero directly to position the flag, the flag itself can be significantly smaller and less intrusive.
 
-- [ ] **Drawer Coordination: Mutual Exclusivity (Item Bank, Shop, Work Rules)**
+- [x] **Drawer Coordination: Mutual Exclusivity (Item Bank, Shop, Work Rules)** → **T-152**
   - **Need:** Drawers currently fight for screen real estate and state when opened concurrently.
   - **Goal:** Enforce mutual exclusivity—opening any drawer (Item Bank, Shop, Work Rules) automatically closes other open drawers; closing the active drawer cleanly returns directly to the normal playmat view.
 
-- [ ] **Hero Level-Up Speech Bubble: Compact Copy Format**
+- [x] **Hero Level-Up Speech Bubble: Compact Copy Format** → **T-149 (hero bar alert)**
   - **Need:** Current text is verbose and cluttered (e.g., `"Level up, 50 Stealth + 49"`).
   - **Goal:** Simplify to just `[Level] [Skill]!` (e.g., `"50 Stealth!"`). Punchy and instantly readable.
 
-- [ ] **Station & Foundation Gear Alerts: Remove Resize/Pulsing Glow**
+- [x] **Station & Foundation Gear Alerts: Remove Resize/Pulsing Glow** → **T-153**
   - **Art Direction Violation:** The gear alert icon on stations/foundations currently pulses, scales/resizes, and glows, distorting pixel art.
   - **Rule:** Sprites must maintain strict 1:1 pixel sizing without scaling, stretching, or fuzzy CSS glows.
   - **Goal:**
@@ -155,11 +155,11 @@
     - If attention pulsing is needed, experiment strictly with outline color shifting/pulsing (geometry remains static).
     - Plan and add test coverage before implementation.
 
-- [ ] **Tooltip Behavior: Cursor-Tracking (Follow Mouse)**
+- [x] **Tooltip Behavior: Cursor-Tracking (Follow Mouse)** → **T-030**
   - **Need:** Tooltips currently anchor statically or sprout out of the underlying UI element being inspected, which can feel rigid or disconnected.
   - **Goal:** Make tooltips dynamically follow / attach to the cursor as the mouse moves across elements for a smoother, more responsive feel.
 
-- [ ] **Token Drag Initiation: Smooth Pickup Transition (No Instant Teleport)**
+- [x] **Token Drag Initiation: Smooth Pickup Transition (No Instant Teleport)** → **T-154**
   - **Need:** Currently, clicking to drag a token causes it to instantly jump/teleport to center directly under the cursor.
   - **Goal:** Keep the centering behavior, but animate it as a very fast, smooth pickup transition (e.g. rapid lift-off/fly into cursor center over ~50–100ms) so tokens never visibly pop/teleport into the cursor.
 
@@ -169,15 +169,15 @@
   - **Hunt / Enemy Quests:** Display enemy/monster sprites on the billboard face (currently shows nothing for hunt quests).
   - **Tutorial / Itemless Quests:** Display an alert badge (yellow alert icon during progress, turning green once requirements are met/ready to turn in).
 
-- [ ] **Token Mobility: Restore Guild Hall Movability & Add Movable Feedback**
+- [x] **Token Mobility: Restore Guild Hall Movability & Add Movable Feedback** → **T-148 (feedback: atlas A10 marker)**
   - **Guild Hall Movability:** Re-enable dragging/moving the Guild Hall. The recent static-token changeover accidentally locked it in place; moving key guild structures is core fun and player agency.
   - **Mobility Feedback:** Provide clear visual feedback/cues distinguishing which tokens are player-movable versus static/immobile.
 
-- [ ] **Token Spawning: Universal Origin Pop-Out Animation (Match Guild Hall)**
+- [x] **Token Spawning: Universal Origin Pop-Out Animation (Match Guild Hall)** → **T-155**
   - **Issue:** Tokens popping out of the Guild Hall play a smooth emergence animation, but world spawners (e.g., a Forest spawning a new Tree) pop in abruptly without an origin animation.
   - **Goal:** Standardize generator spawns so new tokens smoothly pop out from their parent/origin token before landing on the mat.
 
-- [ ] **Hero Inspect Panel: Locked Skill Tooltips, Button Cleanup & "X" Scale**
+- [x] **Hero Inspect Panel: Locked Skill Tooltips, Button Cleanup & "X" Scale** → **T-156**
   - **Locked Skill Tooltips:** Tooltips on locked skills must explicitly indicate the required Class needed to unlock them (e.g. `"Requires [Class Name]"`).
   - **Remove Redundant Work Rules Button:** Drop the Work Rules button from the individual hero inspect panel (it is now centralized with its own labeled slot on the bottom hero bar).
   - **"X" (Close) Button Sizing & Pixel Integrity:** Fix the "X" button currently rendering too small and distorted. Enforce the canonical sprite dimensions so pixels remain crisp and undistorted.
