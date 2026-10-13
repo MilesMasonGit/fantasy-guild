@@ -25,3 +25,17 @@
 - **Credits**: every asset credited (T-124), with an in-game Credits screen
   before release.
 - **Sound**: added after the crunch, before release (D1).
+
+## The title screen's live diorama (parked)
+
+*Owner interview, 2026-10-13 (refinement pass §6); parked until the title,
+new-game and load menus are built.*
+
+- **Behind the title menu, a live mat the player can't touch.**
+- **Randomly generated each launch** from random maps by the Atlas generator,
+  with **a few heroes working** it on autopilot in the real engine.
+- **An endgame vignette**: heroes fighting a fierce dragon, which **plays out
+  and resets** after a pause, as a tease of what's ahead.
+- It must stay cheap: a small mat, a capped speed, paused when the window is
+  hidden (T-117).
+

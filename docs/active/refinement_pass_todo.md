@@ -1,7 +1,7 @@
 # Refinement Pass — To-Do List
 
 > **Mode:** Non-coding review and refinement intake.  
-> **Status:** Being triaged by the planning session (2026-10-13). Items marked [x] have moved on to the ticket shown in [TICKETS](../reference/TICKETS.md); the rest wait for their design interview, starting with the UI style guide (§5). Already decided elsewhere: the Starter Camp can't be abandoned (atlas A7) and map-written nodes can't be demolished (atlas D-6).
+> **Status:** Fully triaged by the planning session on 2026-10-13: every item has moved on (see the arrows). Items marked [x] have moved on to the ticket shown in [TICKETS](../reference/TICKETS.md); the rest wait for their design interview, starting with the UI style guide (§5). Already decided elsewhere: the Starter Camp can't be abandoned (atlas A7) and map-written nodes can't be demolished (atlas D-6).
 
 ---
 
@@ -226,7 +226,7 @@
 
 ## 6. Future Systems & Opening Experience
 
-- [ ] **Title Screen: Live Autonomous Background Diorama ("Mini-Game" Simulation)**
+- [x] **Title Screen: Live Autonomous Background Diorama ("Mini-Game" Simulation)** → parked in **[concept_release.md](concept_release.md)** (interview 2026-10-13)
   - **Horizon:** Longer-term milestone (when proper splash, new game, and load game menus are built).
   - **Concept:** Behind the title menu options, render a live, autonomous mini-mat simulation.
   - **Behavior:**

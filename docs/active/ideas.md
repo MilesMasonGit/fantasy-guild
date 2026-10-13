@@ -223,7 +223,7 @@ mods via the CMS after release.
 ## Moved on
 
 - **Owner refinement pass** ([refinement_pass_todo.md](refinement_pass_todo.md),
-  2026-10-10) is being worked through by the planning session from
+  2026-10-10) was fully worked through by the planning session on
   2026-10-13: bugs and tweaks → T-145 to T-157; the UI style guide →
   [UI_STYLE.md](../reference/UI_STYLE.md) and T-159 to T-162; information
   layers → [concept_info_layers.md](concept_info_layers.md); Work
@@ -231,8 +231,7 @@ mods via the CMS after release.
   T-164; map tool modes → [concept_map_tools.md](concept_map_tools.md),
   T-165, T-166; notifications →
   [concept_notifications.md](concept_notifications.md), T-168; the recipe
-  list → [concept_recipe_list.md](concept_recipe_list.md), T-169; the top bar → concept_map_tools.md, T-170; the Hall sky's look → concept_guild_hall.md, T-171; the Atlas tome and area banners → concept_atlas_tome.md, T-172 to T-174; collectors → concept_collectors.md, T-175; quest boards → concept_quests_tutorial.md, T-176; level-up and shine → concept_level_up.md, T-177, T-178; the Studio → T-179; the vibrancy pass → T-180. **Fresh saves** (owner): these builds need no old-save conversions. The rest wait
-  for their interviews, tracked in that file.
+  list → [concept_recipe_list.md](concept_recipe_list.md), T-169; the top bar → concept_map_tools.md, T-170; the Hall sky's look → concept_guild_hall.md, T-171; the Atlas tome and area banners → concept_atlas_tome.md, T-172 to T-174; collectors → concept_collectors.md, T-175; quest boards → concept_quests_tutorial.md, T-176; level-up and shine → concept_level_up.md, T-177, T-178; the Studio → T-179; the vibrancy pass → T-180; the title diorama → parked in concept_release.md. **Fresh saves** (owner): these builds need no old-save conversions. Every item has moved on; that file shows where each went.
 - **D9 Release package** → [concept_release.md](concept_release.md), done
   2026-10-09. **All nine design interviews are done.**
 - **D8 Quests and the tutorial** → [concept_quests_tutorial.md](concept_quests_tutorial.md),
