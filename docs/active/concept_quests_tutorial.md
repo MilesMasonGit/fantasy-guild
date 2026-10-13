@@ -26,3 +26,31 @@ the Starter Camp is in [concept_progression.md](concept_progression.md).*
   things from the guild's current chains, not always basics).
 - **Rewards**: **maps and modifiers** (a reliable map source, as the Atlas
   plans) and **materials**.
+
+## Quest boards (interim, until NPCs)
+
+*Owner interview, 2026-10-13 (refinement pass §3, "Quest Billboard Token");
+**done** for now. Build ticket **T-176**. The owner may later have NPCs bring
+boards; this is the design until then.*
+
+- **Three quest boards stand on the mat**, laid out **near the Hall** in a new
+  game (and in the Starter Camp layout). They are **movable**, **can't be
+  demolished**, and **count toward the Token cap**.
+- **A board persists**: claiming a quest pays out (the reward drops as loot
+  beside the board, as today), and the **board stays**. It **stands blank
+  until the next posting**; hovering it says when ("New notice in 2:10"). The
+  next quest is pinned onto that same board with a small pop.
+- **Posters**:
+  - an item quest shows the item, as today;
+  - **a hunt quest shows the target enemy**: the first frame of its idle
+    animation, **at exactly half size** so it matches the items (an exception
+    UI_STYLE allows for posters only);
+  - the **count** sits in the same place for both.
+- **A badge on every board's corner**: **yellow "!"** while in progress,
+  **green check** when ready to claim, on item, hunt and itemless (tutorial)
+  quests alike.
+- **Dragging a board keeps its poster on it** (today the item disappears while
+  carried).
+- **Fresh saves**: no conversion of old saves' loose quest Tokens (owner).
+- **Dismiss** stays as it is until the quest rework.
+

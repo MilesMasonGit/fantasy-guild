@@ -163,7 +163,7 @@
   - **Need:** Currently, clicking to drag a token causes it to instantly jump/teleport to center directly under the cursor.
   - **Goal:** Keep the centering behavior, but animate it as a very fast, smooth pickup transition (e.g. rapid lift-off/fly into cursor center over ~50–100ms) so tokens never visibly pop/teleport into the cursor.
 
-- [ ] **Quest Billboard Token: Sprite Layering, Signboard Persistence & Status Icons**
+- [x] **Quest Billboard Token: Sprite Layering, Signboard Persistence & Status Icons** → **[concept_quests_tutorial.md](concept_quests_tutorial.md)** ("Quest boards"), T-176 (interview 2026-10-13)
   - **Persistent Signboard Lifecycle:** On quest completion, do not despawn/destroy the signboard and spawn a replacement token. Keep the existing physical sign on the playmat, pay out rewards, and deliver the subsequent quest poster onto that same board.
   - **Layered Drag Sprite:** When dragging a questboard token displaying an item poster on its front, maintain the composite/layered sprite during the drag so the item does not disappear while carried.
   - **Hunt / Enemy Quests:** Display enemy/monster sprites on the billboard face (currently shows nothing for hunt quests).

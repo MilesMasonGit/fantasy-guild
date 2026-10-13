@@ -90,6 +90,8 @@ normal text colour; a new meaning needs the owner's OK.
 - **Every sprite draws at a whole multiple of its art size** (1×, 2×, 3×),
   never in between, never stretched. The box is sized to the sprite, never the
   sprite to the box.
+  **One exception**: an enemy sprite on a quest poster draws at exactly half
+  size, to match the items there (owner, 2026-10-13).
 - **Pixel sprites only.** No vector icon sets. Where no sprite exists yet, use
   a placeholder sprite and add the icon to
   [`owner_art_list.md`](../active/owner_art_list.md). Vector icons go as each
