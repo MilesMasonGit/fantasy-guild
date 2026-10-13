@@ -30,12 +30,7 @@ import { isDrawn } from '../../dev/perf/drawSwitches.js';
 export const SpriteLayerView = () => {
     const mat = useMatSize();
     const sprites = useGameState(
-        state => (state.board?.sprites || []).filter(s => s.kind !== 'token').map(s => ({
-            id: s.id, kind: s.kind, refId: s.refId,
-            quantity: s.quantity, x: s.x, y: s.y,
-            fromX: s.fromX, fromY: s.fromY, bornAt: s.bornAt,
-            targetStackId: s.targetStackId, absorbAt: s.absorbAt
-        })),
+        selectFloorLoot,
         [BOARD_EVENTS.SPRITES_CHANGED, ENGINE_EVENTS.STATE_CHANGED],
         null
     );
@@ -50,11 +45,32 @@ export const SpriteLayerView = () => {
             style={{ width: mat.w, height: mat.h, zIndex: MAT_Z.LOOT }}
         >
             {sprites.map(sprite => (
-                <LootSprite key={sprite.id} sprite={sprite} allSprites={sprites} onCollect={collect} />
+                <LootSprite key={sprite.id} {...sprite} onCollect={collect} />
             ))}
         </div>
     );
 };
+
+/**
+ * The floor's loot as flat records of primitives, handed to each sprite as its own props.
+ * ⚠️ Every field a sprite reads must be a primitive here, the stack it is sliding into
+ * included (`parentX`/`parentY`): an object or the list itself would be new on every change
+ * and redraw every sprite on the floor for one sprite's drop, pickup or count.
+ */
+function selectFloorLoot(state) {
+    const list = (state.board?.sprites || []).filter(s => s.kind !== 'token');
+    const byId = list.some(s => s.targetStackId) ? new Map(list.map(s => [s.id, s])) : null;
+    return list.map(s => {
+        const parent = s.targetStackId ? byId.get(s.targetStackId) : null;
+        return {
+            id: s.id, refId: s.refId, quantity: s.quantity,
+            x: s.x, y: s.y, fromX: s.fromX, fromY: s.fromY, bornAt: s.bornAt,
+            targetStackId: s.targetStackId ?? null,
+            parentX: parent ? parent.x : null,
+            parentY: parent ? parent.y : null
+        };
+    });
+}
 
 /**
  * Whether a drag is in flight anywhere. `DndKit` stamps `gi-dnd-active` on `<body>` for the
@@ -75,10 +91,15 @@ const isDragActive = () =>
  * The same reasoning as the tile landing, which keys off the placement event.
  */
 const THROW_WINDOW_MS = 1000;
-const justThrown = (sprite) => Date.now() - (sprite.bornAt ?? 0) < THROW_WINDOW_MS;
+const justThrown = (bornAt) => Date.now() - (bornAt ?? 0) < THROW_WINDOW_MS;
 
-/** One piece of item loot on the floor. */
-const LootSprite = React.memo(function LootSprite({ sprite, allSprites = [], onCollect }) {
+/**
+ * One piece of item loot on the floor. Its props are its own record's primitives
+ * (`selectFloorLoot`), so a change elsewhere on the floor leaves it alone.
+ */
+const LootSprite = React.memo(function LootSprite({
+    id, refId, quantity, x, y, fromX, fromY, bornAt, targetStackId, parentX, parentY, onCollect
+}) {
     const { isDragging: isAnyDragging } = useActiveDrag();
     const [isHovered, setIsHovered] = React.useState(false);
     const [isAbsorbingPulse, setIsAbsorbingPulse] = React.useState(false);
@@ -86,45 +107,43 @@ const LootSprite = React.memo(function LootSprite({ sprite, allSprites = [], onC
     const fit = useMatFit();
 
     React.useEffect(() => {
-        if (!justThrown(sprite) || !isDrawn('itemFlight')) return;
-        const fx = Math.round((sprite.fromX ?? sprite.x) - sprite.x);
-        const fy = Math.round((sprite.fromY ?? sprite.y) - sprite.y);
+        if (!justThrown(bornAt) || !isDrawn('itemFlight')) return;
+        const fx = Math.round((fromX ?? x) - x);
+        const fy = Math.round((fromY ?? y) - y);
         if (elementRef.current && (fx !== 0 || fy !== 0)) {
             playLootArc(elementRef.current, fx, fy, { centered: true });
         }
-    }, [sprite.fromX, sprite.fromY, sprite.x, sprite.y]);
+    }, [fromX, fromY, x, y]);
 
     React.useEffect(() => {
-        if (!sprite.targetStackId) return;
-        const parent = allSprites.find(s => s.id === sprite.targetStackId);
-        if (!parent) return;
+        if (!targetStackId || parentX == null || parentY == null) return;
 
-        const elapsed = Date.now() - (sprite.bornAt ?? 0);
+        const elapsed = Date.now() - (bornAt ?? 0);
         const delay = Math.max(0, 800 - elapsed);
 
         const timer = setTimeout(() => {
             if (elementRef.current && isDrawn('itemFlight')) {
-                const dx = Math.round(parent.x - sprite.x);
-                const dy = Math.round(parent.y - sprite.y);
+                const dx = Math.round(parentX - x);
+                const dy = Math.round(parentY - y);
                 playAbsorptionSlide(elementRef.current, dx, dy, 300);
             }
         }, delay);
 
         return () => clearTimeout(timer);
-    }, [sprite.targetStackId, sprite.bornAt, sprite.x, sprite.y, allSprites]);
+    }, [targetStackId, bornAt, x, y, parentX, parentY]);
 
     React.useEffect(() => {
         const unsub = EventBus.subscribe(BOARD_EVENTS.SPRITE_ABSORBED, (payload) => {
-            if (payload?.parentId === sprite.id) {
+            if (payload?.parentId === id) {
                 setIsAbsorbingPulse(true);
                 setTimeout(() => setIsAbsorbingPulse(false), 400);
             }
         }, UI_LISTENER);
         return unsub;
-    }, [sprite.id]);
+    }, [id]);
 
-    const art = resolveSpritePath(getItem(sprite.refId) || sprite.refId);
-    const label = getItem(sprite.refId)?.name || sprite.refId;
+    const art = resolveSpritePath(getItem(refId) || refId);
+    const label = getItem(refId)?.name || refId;
     // Items come from 32px art and render at half a Token's board scale; the flight to the
     // Hall draws at this same on-screen size.
     const spriteSize = lootSpriteMatPx(fit);
@@ -133,13 +152,13 @@ const LootSprite = React.memo(function LootSprite({ sprite, allSprites = [], onC
         if (!elementRef.current) return;
         if (!isHovered) {
             setIsHovered(true);
-            if (!isAnyDragging) onCollect(sprite.id);
+            if (!isAnyDragging) onCollect(id);
         }
     };
 
     const handleClick = (e) => {
         e.stopPropagation();
-        onCollect(sprite.id);
+        onCollect(id);
     };
 
     return (
@@ -150,7 +169,7 @@ const LootSprite = React.memo(function LootSprite({ sprite, allSprites = [], onC
             onClick={handleClick}
             onMouseEnter={() => {
                 setIsHovered(true);
-                if (!isAnyDragging) onCollect(sprite.id);
+                if (!isAnyDragging) onCollect(id);
             }}
             onMouseMove={handlePointerMove}
             onMouseLeave={() => setIsHovered(false)}
@@ -160,8 +179,8 @@ const LootSprite = React.memo(function LootSprite({ sprite, allSprites = [], onC
                 'cursor-pointer pointer-events-auto'
             )}
             style={{
-                left: sprite.x,
-                top: sprite.y,
+                left: x,
+                top: y,
                 width: spriteSize,
                 height: spriteSize,
                 borderRadius: '50%',
@@ -176,9 +195,9 @@ const LootSprite = React.memo(function LootSprite({ sprite, allSprites = [], onC
             >
                 <PixelArt src={art} alt={label} size={spriteSize} hovering />
             </div>
-            {sprite.quantity > 1 && (
+            {quantity > 1 && (
                 <span className="absolute -bottom-1 -right-1 px-1 rounded-full bg-black/85 text-[9px] font-bold text-white tabular-nums">
-                    {sprite.quantity}
+                    {quantity}
                 </span>
             )}
         </button>
