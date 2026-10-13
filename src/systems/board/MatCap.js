@@ -3,12 +3,12 @@
 import { getTokenType, registryVersion, isLandmarkType } from '../../config/registries/tokenRegistry.js';
 import { QUEST_TOKEN_TYPE } from '../../config/registries/engineTokens.js';
 import { matTuning } from '../../config/matTuning.js';
+import { TOKEN_CAP_BASE, tokenCapForRank } from '../../config/guildUpgrades.js';
+import { GameState } from '../../state/GameState.js';
 import * as BoardState from './BoardState.js';
 
 /**
- * How many Tokens the mat may hold. Every Token counts, placed or spawned, on the mat or waiting in
- * the discard bin (a binned Token counts until it is discarded, so the bin cannot dodge the cap).
- * The Guild Hall and quest Tokens never count: the Hall is always there, and quests are bounded by
+ * How many Tokens the mat may hold. Every Token on the mat counts, placed or spawned. The Guild Hall and quest Tokens never count: the Hall is always there, and quests are bounded by
  * the quest cap. Landmarks (the endgame sites) count like any placed Token. The cap is the guild's,
  * but it counts only the Region the guild is in: the others are frozen in the Atlas, off the mat.
  *
@@ -18,8 +18,8 @@ import * as BoardState from './BoardState.js';
  * until the count drops below.
  */
 
-/** The cap every guild starts with. Guild Hall upgrades raise it. */
-export const BASE_TOKEN_CAP = 128;
+/** The cap every guild starts with. The Guild Hall's Token Cap upgrade raises it. */
+export const BASE_TOKEN_CAP = TOKEN_CAP_BASE;
 
 /** Whether an instance is the Guild Hall — the same test `Cartographer` uses. */
 export function isGuildHall(instance) {
@@ -39,33 +39,31 @@ export function countsTowardCap(instance) {
 }
 
 /**
- * The count, memoised on what can change it: mat membership, the bin (binning and discarding change
- * it without touching the mat) and the Token registry (`countsTowardCap` reads a type). Spawners
- * ask every tick, so this is one pass per change, not per question.
+ * The count, memoised on what can change it: mat membership and the Token registry
+ * (`countsTowardCap` reads a type). Spawners ask every tick, so this is one pass per change, not per
+ * question.
  */
-let memo = { tokens: null, version: -1, bin: null, binLength: -1, regVersion: -1, count: 0 };
+let memo = { tokens: null, version: -1, regVersion: -1, count: 0 };
 
-/** Tokens counting toward the cap: on the mat and in the discard bin. */
+/** Tokens on the mat counting toward the cap. */
 export function tokenCount() {
     const { tokens, version } = BoardState.membershipVersion();
-    const bin = BoardState.binTokens();
     const regVersion = registryVersion();
-    if (memo.tokens === tokens && memo.version === version && memo.bin === bin
-        && memo.binLength === bin.length && memo.regVersion === regVersion) return memo.count;
+    if (memo.tokens === tokens && memo.version === version && memo.regVersion === regVersion) return memo.count;
     let count = 0;
     for (const t of BoardState.tokens()) if (countsTowardCap(t)) count++;
-    for (const t of bin) if (countsTowardCap(t)) count++;
-    memo = { tokens, version, bin, binLength: bin.length, regVersion, count };
+    memo = { tokens, version, regVersion, count };
     return count;
 }
 
 /**
- * The cap: {@link BASE_TOKEN_CAP}, unless the Mat Tuner's dev override (`tokenCap`, 0 = off) is
- * set on this device.
+ * The cap: {@link BASE_TOKEN_CAP} raised by the Token Cap upgrade's rank, unless the Mat Tuner's
+ * dev override (`tokenCap`, 0 = off) is set on this device.
  */
 export function matCap() {
     const override = Math.round(matTuning('tokenCap'));
-    return override > 0 ? override : BASE_TOKEN_CAP;
+    if (override > 0) return override;
+    return tokenCapForRank(GameState.state?.progress?.guildUpgrades?.token_cap);
 }
 
 /** Whether `count` more Tokens would still fit under the cap. */

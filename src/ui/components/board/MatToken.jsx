@@ -16,6 +16,7 @@ import * as Flags from '../../../systems/board/Flags.js';
 import * as TimedChanges from '../../../systems/board/TimedChanges.js';
 import * as Respawn from '../../../systems/board/Respawn.js';
 import * as Hand from '../../../systems/board/Hand.js';
+import * as FixedTokens from '../../../systems/board/FixedTokens.js';
 import { useTokenEvent } from './tokenEvents.js';
 import { useTokenDetail } from './useTokenDetail.js';
 import { TokenBubbles } from './TokenBubbles.jsx';
@@ -148,6 +149,13 @@ export const MatToken = React.memo(function MatToken({
     const label = tokenName(typeId);
     const isGuildHallToken = typeId === 'token_guild_hall';
     const isPermanent = !!(def?.cannotLeaveBoard || def?.isGuildHall || isGuildHallToken);
+    // Read once per instance: nothing that decides it (the fixture mark, origin, type) changes
+    // while the instance lives. A fixed Token never lifts and is never picked up; a movable one
+    // bought or built carries the faint marker at rest (`FixedTokens.showsMoveMarker`).
+    const { fixed, marked } = React.useMemo(() => {
+        const instance = BoardState.getTokenById(id);
+        return { fixed: FixedTokens.isFixed(instance), marked: FixedTokens.showsMoveMarker(instance) };
+    }, [id]);
 
     // A Token with a registered sheet animates on the board only; everything else, and every
     // other surface, keeps the plain static sprite.
@@ -312,10 +320,11 @@ export const MatToken = React.memo(function MatToken({
         artRef.current = el;
         stack?.attach(id, 'art', el);
     }, [stack, id]);
-    // A press anywhere this Token takes one (its circle, a bubble) picks it up.
+    // A press anywhere this Token takes one (its circle, a bubble) picks it up, unless it is
+    // fixed: then the press is only the start of a click, which still inspects it.
     const dragProps = React.useMemo(
-        () => ({ onPointerDown: (e) => onPress?.(e, { id, typeId, permanent: isPermanent }, artRef.current) }),
-        [onPress, id, typeId, isPermanent]
+        () => (fixed ? {} : { onPointerDown: (e) => onPress?.(e, { id, typeId, permanent: isPermanent }, artRef.current) }),
+        [fixed, onPress, id, typeId, isPermanent]
     );
     const setOverlayRef = React.useCallback((el) => {
         overlayRef.current = el;
@@ -409,6 +418,7 @@ export const MatToken = React.memo(function MatToken({
                 data-tile-has-token="true"
                 data-tile-finite-token={isFiniteToken ? 'true' : undefined}
                 data-token-resting={resting ? 'true' : undefined}
+                data-token-fixed={fixed ? 'true' : undefined}
                 onContextMenu={handleContextMenu}
                 onClick={(e) => {
                     if (dragging) return;
@@ -441,11 +451,12 @@ export const MatToken = React.memo(function MatToken({
                 }}
                 className={cn(
                     'absolute select-none',
-                    disallowMode || questDone ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing'
+                    disallowMode || questDone || fixed ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing'
                 )}
             >
                 <div
                     data-token-hit={id}
+                    data-token-movable={marked ? 'true' : undefined}
                     className="absolute"
                     style={{
                         left: boxHalf - r,
@@ -471,7 +482,7 @@ export const MatToken = React.memo(function MatToken({
                 <div
                     className={cn(
                         'w-full h-full flex items-center justify-center transition-[filter] duration-150',
-                        isHovered && 'gi-token-hover-hop',
+                        isHovered && !fixed && 'gi-token-hover-hop',
                         received && 'brightness-125 saturate-125',
                         resting && 'gi-token-resting'
                     )}
@@ -547,6 +558,7 @@ export const MatToken = React.memo(function MatToken({
                     readTimer={detail?.turns || detail?.grows || resting ? readTimer : null}
                     gear={gear}
                     disallowed={!!detail?.disallowed}
+                    marked={!!detail?.marked}
                     dragProps={dragProps}
                 />}
 

@@ -246,6 +246,9 @@ describe('⭐ grows — a Sapling becomes a Tree after its time', () => {
 
 // --- moving a spawned Token (owner feedback) --------------------------
 
+// A planted Sapling (spawned, growing) is fixed since Atlas D-6 B and refuses to move; a spawned
+// Token outside a growth chain still moves (FB-12), and a hand-placed Sapling carries the
+// moving-while-growing checks below.
 describe('⭐ a spawned Token moves like any other, and keeps what makes it spawned (FB-12)', () => {
     const spawnedAt = (typeId, x, y) => {
         const inst = BoardState.createTokenInstance(typeId, null, null, BoardState.ORIGIN.SPAWNED);
@@ -253,20 +256,26 @@ describe('⭐ a spawned Token moves like any other, and keeps what makes it spaw
     };
 
     it('moves, stays spawned, and still does not count toward the mat cap (SP-67)', () => {
-        const sapling = spawnedAt('fixture_tl_sapling', 400, 400);
+        const vein = spawnedAt('fixture_producer', 400, 400);
         const before = MatCap.tokenCount();
-        const res = Placement.moveTokenTo(sapling.id, { x: 900, y: 700 });
+        const res = Placement.moveTokenTo(vein.id, { x: 900, y: 700 });
         expect(res.success).toBe(true);
-        expect(sapling.x).toBe(900);
-        expect(sapling.y).toBe(700);
-        expect(BoardState.originOf(sapling)).toBe(BoardState.ORIGIN.SPAWNED);
+        expect(vein.x).toBe(900);
+        expect(vein.y).toBe(700);
+        expect(BoardState.originOf(vein)).toBe(BoardState.ORIGIN.SPAWNED);
         expect(MatCap.tokenCount()).toBe(before);
-        // Still pushable by a spawn: only placed Tokens are held fixed.
-        expect(BoardState.placedTokenIds()).not.toContain(sapling.id);
+        // Still pushable by a spawn: only placed and planted Tokens are held fixed.
+        expect(BoardState.placedTokenIds()).not.toContain(vein.id);
+    });
+
+    it('a planted Sapling is fixed: it refuses to move (Atlas D-6 B)', () => {
+        const sapling = spawnedAt('fixture_tl_sapling', 400, 400);
+        expect(Placement.moveTokenTo(sapling.id, { x: 900, y: 700 }).success).toBe(false);
+        expect({ x: sapling.x, y: sapling.y }).toEqual({ x: 400, y: 400 });
     });
 
     it('a moved Sapling keeps its grow clock, and grows on schedule where it now stands', () => {
-        const sapling = spawnedAt('fixture_tl_sapling', 400, 400);
+        const sapling = placeAt('fixture_tl_sapling', 400, 400);
         run(20000);
         expect(sapling.clocks.growMs).toBe(20000);
 
@@ -278,11 +287,11 @@ describe('⭐ a spawned Token moves like any other, and keeps what makes it spaw
         run(200);
         const tree = at(900, 700);
         expect(tree?.typeId).toBe('fixture_tl_tree');
-        expect(BoardState.originOf(tree)).toBe(BoardState.ORIGIN.SPAWNED);
+        expect(BoardState.originOf(tree)).toBe(BoardState.ORIGIN.PLACED);
     });
 
     it('does not grow while while carried: the change waits, then happens where it was put down', () => {
-        const sapling = spawnedAt('fixture_tl_sapling', 400, 400);
+        const sapling = placeAt('fixture_tl_sapling', 400, 400);
         run(29000);
 
         // Picked up with a second to go, carried for five.

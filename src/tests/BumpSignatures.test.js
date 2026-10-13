@@ -14,7 +14,6 @@ import { resetMatTuning } from '../config/matTuning.js';
 import { EngineContext } from '../ui/context/EngineContext';
 import { MatCapBadge } from '../ui/components/board/MatCapBadge.jsx';
 import { AllowAllButton } from '../ui/components/board/MatDisallowControls.jsx';
-import { DiscardBinPanel } from '../ui/components/board/DiscardBinPanel.jsx';
 import { placeAt, clearMat } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -24,9 +23,8 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 
 /**
  * the "bump" subscribers re-render only when what they draw has changed. R5
- * measured `MatCapBadge`, `AllowAllButton` and `DiscardBinPanel` (with its
- * nine empty slots) re-rendering on all 10 of 10 bare `state_changed`
- * publishes, with nothing changed.
+ * measured `MatCapBadge` and `AllowAllButton` re-rendering on all 10 of 10
+ * bare `state_changed` publishes, with nothing changed.
  */
 
 const h = React.createElement;
@@ -47,7 +45,7 @@ beforeEach(() => {
 afterEach(() => cleanup());
 
 describe('bump subscribers bail out when nothing they draw changed (CR3-309)', () => {
-    for (const [name, Comp] of [['MatCapBadge', MatCapBadge], ['AllowAllButton', AllowAllButton], ['DiscardBinPanel', DiscardBinPanel]]) {
+    for (const [name, Comp] of [['MatCapBadge', MatCapBadge], ['AllowAllButton', AllowAllButton]]) {
         it(`${name}: ten bare state_changed, no re-render`, () => {
             const { counts } = mountCounting(h(Comp));
             const before = counts.n;

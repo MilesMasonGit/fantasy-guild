@@ -16,7 +16,7 @@ import * as Landmarks from './Landmarks.js';
  *
  * {@link canDemolish}: may it be taken off at all? Never the Guild Hall (or a type that cannot
  * leave the mat) and never a landmark, except while the dev layout tool is on
- * (`Landmarks.setLayoutEditing`). The discard bin and `Placement.removePlacedToken` ask it.
+ * (`Landmarks.setLayoutEditing`). `Placement.removePlacedToken` asks it.
  *
  * {@link canMark}: may the player mark it for demolition? Narrower: nor a map's nodes (the settled
  * layout is permanent), quests or enemies, and never a landmark, dev tool or not. A marked Token
@@ -81,7 +81,7 @@ function isPermanent(instance) {
     return isGuildHall(instance) || !!getTokenType(instance.typeId)?.cannotLeaveBoard;
 }
 
-/** Whether `instance` may be removed for good (the bin, `Placement.removePlacedToken`). */
+/** Whether `instance` may be removed for good (`Placement.removePlacedToken`). */
 export function canDemolish(instance) {
     if (!instance?.typeId) return false;
     if (isPermanent(instance)) return false;

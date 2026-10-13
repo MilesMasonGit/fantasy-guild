@@ -49,7 +49,6 @@ function board() {
     if (!state.board.flags || typeof state.board.flags !== 'object') state.board.flags = {};
     if (typeof state.board.nextFlagOrder !== 'number') state.board.nextFlagOrder = 0;
     if (!state.board.workClaims || typeof state.board.workClaims !== 'object') state.board.workClaims = {};
-    if (!Array.isArray(state.board.bin)) state.board.bin = [];
     if ('vacancies' in state.board) delete state.board.vacancies;
     return state.board;
 }
@@ -72,7 +71,7 @@ function newTokenId() {
  * - `spawned`: the engine made it (`EffectActions.spawn`): a sapling from a Forest, a goblin from a
  * camp.
  *
- * A spawn may push only `spawned` Tokens; the Token cap (`MatCap.js`) counts both. A `grows` or `turns` change (a transform) keeps it.
+ * A spawn may push only `spawned` Tokens, and not a planted one (`FixedTokens.isPlanted`); the Token cap (`MatCap.js`) counts both. A `grows` or `turns` change (a transform) keeps it.
  *
  * Saved with the instance. ⚠️ An instance without it reads as `placed` ({@link originOf}), so a
  * save from before the field existed loses nothing.
@@ -378,17 +377,6 @@ export function tokens() {
 export function tokensAtPoint(x, y) {
     if (!Number.isFinite(x) || !Number.isFinite(y)) return [];
     return tokens().filter(t => t.x === x && t.y === y);
-}
-
-/**
- * The discard bin, the saved half: `board.bin` is an array of whole Token instances lifted off the
- * mat, in the order they went in. They are not in `board.tokens`, so nothing that walks the mat
- * (work, adjacency, spawner families, drawing) sees them. The rules (what may go in, refunds,
- * discarding) live in `DiscardBin.js`; this is the storage only. The live array is returned, so
- * callers must not hold it across a load.
- */
-export function binTokens() {
-    return board()?.bin || [];
 }
 
 /**

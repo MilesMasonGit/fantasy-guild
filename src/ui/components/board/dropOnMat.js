@@ -1,7 +1,6 @@
 
 import * as Placement from '../../../systems/board/Placement.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
-import * as DiscardBin from '../../../systems/board/DiscardBin.js';
 import * as Shop from '../../../systems/board/Shop.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import { DRAG_KIND } from '../../dnd/dragConstants.js';
@@ -15,10 +14,9 @@ import { DRAG_KIND } from '../../dnd/dragConstants.js';
  * (`Placement.plantFlagAt`), or, let go on a Token its hero can work, is pinned to that Token.
  * * **Any Token** stands exactly where it was let go, or at the nearest legal point when that
  * spot is crowded or would break a `Cannot` rule. Nothing snaps.
- * A Token can come from four places, told apart by its payload's `from`: `instanceId` (a Token
- * on the mat), `binnedId` (a Token dragged back out of the discard bin: the same instance
- * returns, `DiscardBin.unbinToken`), `shop` (a Shop row: bought at the drop point,
- * `Shop.buyAt`), or none (a bare `typeId`: make one).
+ * A Token can come from three places, told apart by its payload's `from`: `instanceId` (a Token
+ * on the mat), `shop` (a Shop row: bought at the drop point, `Shop.buyAt`), or none (a bare
+ * `typeId`: make one).
  * ⚠️ Nothing here decides whether a Token may land. Every rule lives in `MatPlacement.js` and
  * `Placement.js`. This function works out what the player meant, and a refused move leaves the
  * Token on the spot it was moved off.
@@ -65,11 +63,6 @@ export function dropOnMat(payload, point) {
     if (from.instanceId != null) {
         if (!BoardState.getTokenById(from.instanceId)) return announce(refuse('No Token there'));
         return announce(flownBack(Placement.moveTokenTo(from.instanceId, point)));
-    }
-
-    // Back out of the bin, unchanged, at the drop point.
-    if (from.binnedId != null) {
-        return announce(flownBack(DiscardBin.unbinToken(from.binnedId, point)));
     }
 
     // A Shop row dragged onto the mat, paid on drop and placed at the drop point. A point off

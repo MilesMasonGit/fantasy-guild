@@ -19,8 +19,8 @@ function storedCmsUrl() {
 
 /**
  * Lay out the Starter Camp on the mat, then save it to the CMS: Place Token brings any Token
- * (endgame sites included) beside the Hall; "Move and remove landmarks" lets them be dragged and
- * binned while it is ticked; "Save this mat as the Starter Camp" sends the mat and the Bank to the
+ * (endgame sites included) beside the Hall; "Move and remove landmarks" lets them be dragged, and
+ * removed from their inspection, while it is ticked; "Save this mat as the Starter Camp" sends the mat and the Bank to the
  * CMS's Starter Camp page, to review and Sync.
  */
 export function StarterCampDevSection() {

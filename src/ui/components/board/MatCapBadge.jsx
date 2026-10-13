@@ -22,14 +22,12 @@ import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
  * (`Charges`), an enemy killed (`BoardCombat`), a lift back to the Bank (`Placement`). The
  * rest are belt and braces: `TOKEN_PLACED` and `TOKEN_DEPLETED` for the player's own actions,
  * `state_changed` and `game_loaded` for a load or a new game. The cap itself is a Mat Tuner
- * number, heard through `onMatTuningChanged`. `BIN_CHANGED`: *Discard all* is what finally
- * drops binned Tokens from the count.
+ * number, heard through `onMatTuningChanged`.
  */
 export const CAP_EVENTS = Object.freeze([
     BOARD_EVENTS.TILE_CHANGED,
     BOARD_EVENTS.TOKEN_PLACED,
     BOARD_EVENTS.TOKEN_DEPLETED,
-    BOARD_EVENTS.BIN_CHANGED,
     ENGINE_EVENTS.STATE_CHANGED,
     ENGINE_EVENTS.GAME_LOADED
 ]);
@@ -128,9 +126,7 @@ export function liveMatSummary() {
         isExcluded: (t) => !MatCap.countsTowardCap(t),
         statusOf: liveStatusOf,
         layoutOf: liveLayouts(tokens),
-        sectionName: Shop.sectionName,
-        // Binned Tokens still count until discarded.
-        binned: BoardState.binTokens()
+        sectionName: Shop.sectionName
     });
 }
 
@@ -170,7 +166,6 @@ const SummaryHeading = ({ children }) => (
 export const TokenSummaryPanel = ({ anchor, summary, cap, panelRef }) => {
     useEffect(() => () => highlightType(null), []);
     if (typeof document === 'undefined') return null;
-    const binned = summary.binned?.count || 0;
     const empty = !summary.pinned.length && !summary.sections.length;
     return createPortal(
         <div
@@ -181,7 +176,7 @@ export const TokenSummaryPanel = ({ anchor, summary, cap, panelRef }) => {
             className="fixed z-[90] flex flex-col overflow-y-auto custom-scrollbar p-2 rounded-lg bg-black/90 border border-gi-gold/40 shadow-[0_10px_30px_rgba(0,0,0,0.8)] text-[11px] leading-snug text-white"
             style={{ width: PANEL_WIDTH, maxHeight: 'min(480px, 70vh)', ...placeUnder(anchor, PANEL_WIDTH, 360) }}
         >
-            <div className="font-bold text-gi-gold">Tokens {summary.total + binned}/{cap}</div>
+            <div className="font-bold text-gi-gold">Tokens {summary.total}/{cap}</div>
             {empty && <div className="mt-1 text-white/60">Nothing placed yet.</div>}
             {summary.pinned.length > 0 && (
                 <div data-token-summary-pinned>
@@ -195,7 +190,6 @@ export const TokenSummaryPanel = ({ anchor, summary, cap, panelRef }) => {
                     <ul className="flex flex-col">{s.rows.map(r => <SummaryRow key={r.typeId} row={r} />)}</ul>
                 </div>
             ))}
-            {binned > 0 && <div data-token-summary-bin className="mt-2 pt-1.5 border-t border-white/10 text-white/70">In the bin ×{binned}</div>}
         </div>,
         document.body
     );
@@ -257,7 +251,7 @@ export const MatCapBadge = ({ readSummary = liveMatSummary }) => {
                 <TopBarTip
                     anchor={ref.current}
                     title="Token cap"
-                    lines={['Placed, spawned and binned Tokens all count.', 'The Guild Hall and quests do not.', 'Click for the list.']}
+                    lines={['Placed and spawned Tokens all count.', 'The Guild Hall and quests do not.', 'Click for the list.']}
                 />
             )}
             {open && <TokenSummaryPanel anchor={ref.current} summary={readSummary()} cap={cap} panelRef={panelRef} />}

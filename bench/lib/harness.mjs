@@ -239,7 +239,6 @@ function structureSizes() {
         listeners,
         eventNames: EventBus.subscribers.size,
         notifications: NotificationSystem.getQueue?.().length ?? null,
-        bin: (s.board?.bin || []).length,
         stateJsonKb: Math.round(JSON.stringify(s).length / 1024)
     };
 }

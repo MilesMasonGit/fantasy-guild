@@ -8,6 +8,7 @@ import * as StationRecipe from '../../../systems/board/StationRecipe.js';
 import * as SpawnerSystem from '../../../systems/board/SpawnerSystem.js';
 import * as TimedChanges from '../../../systems/board/TimedChanges.js';
 import * as Respawn from '../../../systems/board/Respawn.js';
+import * as Demolition from '../../../systems/board/Demolition.js';
 import * as QuestTokens from '../../../systems/quests/QuestTokens.js';
 import { stationSkillOf } from '../../../systems/effects/statements.js';
 
@@ -52,6 +53,8 @@ export function tokenDetailOf(id, def) {
     // A Foundation picks its recipe like a station.
     const stationSkill = def ? (def.foundation?.skill || stationSkillOf(def)) : null;
     const isSpawner = !instance.turnedFrom && SpawnerSystem.isSpawner(def);
+    // Marked for demolition: its own clocks stand still (`TimedChanges` skips it), so no countdown.
+    const marked = Demolition.isMarked(instance);
     return {
         usesRemaining: instance.usesRemaining ?? null,
         alert: instance.alert || null,
@@ -70,11 +73,13 @@ export function tokenDetailOf(id, def) {
         // The family's live count against its cap, `{ count, cap }`: the spawner ring.
         spawnerCounts: isSpawner ? SpawnerSystem.spawnerCounts(id) : null,
         // A Token that turns (or has turned) counts down to its next roll.
-        turns: !!TimedChanges.nextTurnRoll(instance),
+        turns: !marked && !!TimedChanges.nextTurnRoll(instance),
         // A Token that grows (a Sapling) counts down to the change.
-        grows: !!TimedChanges.nextGrowth(instance),
+        grows: !marked && !!TimedChanges.nextGrowth(instance),
         // Out of charges and waiting to respawn: drawn resting, a refill counting down.
-        resting: Respawn.isResting(instance, def),
+        resting: !marked && Respawn.isResting(instance, def),
+        // Marked for demolition: the marked badge.
+        marked,
         // A quest Token's quest: ring, glow, tooltip, click to claim.
         quest: questProjection(instance)
     };
@@ -82,7 +87,7 @@ export function tokenDetailOf(id, def) {
 
 /** Events that name this Token by `instanceId` and can change its details. */
 const BY_ID = Object.freeze([
-    BOARD_EVENTS.TILE_CHANGED,              // disallowed, a recipe picked, moved, transformed
+    BOARD_EVENTS.TILE_CHANGED,              // disallowed, marked, a recipe picked, moved, transformed
     BOARD_EVENTS.ALERT_CHANGED,             // alert
     BOARD_EVENTS.HERO_MOVED,                // a hero arrived here: heroId, heroSide
     BOARD_EVENTS.TOKEN_CHARGES_CHANGED,     // usesRemaining, and with it resting

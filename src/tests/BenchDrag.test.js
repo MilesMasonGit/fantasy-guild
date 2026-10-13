@@ -26,8 +26,8 @@ describe('drag bench options', () => {
         expect(() => parseArgs(['--board=S9'])).toThrow(/--board/);
     });
 
-    it('covers the six drags the plan names (the bin round trip as two)', () => {
-        expect(KINDS.map(k => k.id)).toEqual(['dockHero', 'flag', 'token', 'tokenToBin', 'binToMat', 'shop', 'equip']);
+    it('covers the five drags left once the bin went (Atlas A3b)', () => {
+        expect(KINDS.map(k => k.id)).toEqual(['dockHero', 'flag', 'token', 'shop', 'equip']);
     });
 });
 

@@ -64,8 +64,8 @@ afterEach(() => {
 });
 
 describe('the registry', () => {
-    it('lists the seventeen switches, all on by default', () => {
-        expect(DRAW_SWITCHES).toHaveLength(17);
+    it('lists the sixteen switches, all on by default', () => {
+        expect(DRAW_SWITCHES).toHaveLength(16);
         expect(Object.values(drawnSwitches()).every(Boolean)).toBe(true);
         expect(DRAW_SWITCHES.every(isDrawn)).toBe(true);
     });
@@ -96,20 +96,17 @@ describe('the registry', () => {
 });
 
 describe('side UI', () => {
-    it('notifications and bin draw by default and not when off', () => {
+    it('notifications draw by default and not when off', () => {
         const on = mount(h(NotificationSidebars));
         // The toast list is drawn only while its panel is open.
         fireEvent.mouseEnter(on.container.querySelector('[data-sidebar="notifications"]'));
         expect(on.container.querySelector('[data-toasts]')).not.toBeNull();
-        expect(on.container.querySelector('[data-discard-bin]')).not.toBeNull();
         cleanup();
 
         setDrawn('notifications', false);
-        setDrawn('bin', false);
         const off = mount(h(NotificationSidebars));
         fireEvent.mouseEnter(off.container.querySelector('[data-sidebar="notifications"]'));
         expect(off.container.querySelector('[data-toasts]')).toBeNull();
-        expect(off.container.querySelector('[data-discard-bin]')).toBeNull();
     });
 });
 

@@ -152,7 +152,7 @@ describe('removePlacedToken (slice 5.2)', () => {
 });
 
 describe('the Token panel offers no Remove (B3.2, TL-13)', () => {
-    it('has no inline Remove: a Token leaves the mat through the discard bin', () => {
+    it('has no inline Remove: a Token leaves the mat through demolition', () => {
         const { hall, forest, east } = forestScene();
         for (const [typeId, instanceId] of [['fixture_producer', forest.id], ['fixture_producer', east.id], ['token_guild_hall', hall.id]]) {
             const { container } = mount(h(TokenInspection, { typeId, instanceId }));

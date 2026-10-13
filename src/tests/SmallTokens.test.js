@@ -192,7 +192,7 @@ describe('drawing: half-size art, whole pixel steps', () => {
         expect(tokenSizeFor(TOKEN_SURFACE.BOARD, 'b8_standard')).toBe(128);
         expect(tokenSizeFor(TOKEN_SURFACE.CARRY, 'b8_small')).toBe(64);
         expect(tokenSizeFor(TOKEN_SURFACE.FLOOR, 'b8_small')).toBe(64);
-        expect(tokenSizeFor(TOKEN_SURFACE.BIN, 'b8_small')).toBe(64);
+        expect(tokenSizeFor(TOKEN_SURFACE.BANK, 'b8_small')).toBe(64);
         expect(tokenSizeFor(TOKEN_SURFACE.INSPECT, 'b8_small')).toBe(64);
         expect(tokenSizeFor(TOKEN_SURFACE.CATALOGUE, 'b8_small')).toBe(32);
         // A bare number is a footprint and means what it always did.

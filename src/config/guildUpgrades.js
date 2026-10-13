@@ -34,7 +34,9 @@ export const UPGRADE_SPRITES = {
     guild_hall: '/assets/tokens/token_guildhall.png',
     wishing_well: '/assets/tokens/upgrade/token_well_wishing.png',
     flag_radius: '/assets/ui/flag/hero_flag_base.png',
-    notice_board: '/assets/ui/quest_board.png'
+    notice_board: '/assets/ui/quest_board.png',
+    cartography_slots: '/assets/tokens/map/map_base.png',
+    token_cap: '/assets/tokens/map/map_guild.png'
 };
 
 /**
@@ -97,6 +99,30 @@ export function wishingWellRank(ranks) {
  * Notice Board ranks: +1 quest per rank from the base of 2 to 5, so three ranks.
  */
 export const NOTICE_BOARD_MAX_RANK = 3;
+
+/** Cartography table slots: 4 to start, one more per rank, up to 8. */
+export const CARTOGRAPHY_SLOTS_BASE = 4;
+export const CARTOGRAPHY_SLOTS_MAX = 8;
+
+/** How many slots the Cartography table has at a `cartography_slots` rank. */
+export function cartographySlotsForRank(rank) {
+    const r = Math.max(0, Math.floor(Number(rank) || 0));
+    return Math.min(CARTOGRAPHY_SLOTS_MAX, CARTOGRAPHY_SLOTS_BASE + r);
+}
+
+/**
+ * The Token cap: 128 to start, +16 per rank over 8 ranks, up to 256. Here rather than in `MatCap`
+ * so the upgrade's labels and the cap read one definition.
+ */
+export const TOKEN_CAP_BASE = 128;
+export const TOKEN_CAP_PER_RANK = 16;
+export const TOKEN_CAP_MAX_RANK = 8;
+
+/** The Token cap at a `token_cap` rank. A save with ranks above the top caps at the top. */
+export function tokenCapForRank(rank) {
+    const r = Math.min(TOKEN_CAP_MAX_RANK, Math.max(0, Math.floor(Number(rank) || 0)));
+    return TOKEN_CAP_BASE + r * TOKEN_CAP_PER_RANK;
+}
 
 export const GUILD_UPGRADES = [
     {
@@ -174,6 +200,30 @@ export const GUILD_UPGRADES = [
         statLabel: rank => `+${rank} quest${rank === 1 ? '' : 's'}`,
         nextStatLabel: rank => `+${rank + 1} quests`,
         sprite: UPGRADE_SPRITES.notice_board
+    },
+    {
+        id: 'cartography_slots',
+        name: 'Cartography Table',
+        description: 'One more slot on the Cartography table, to write a Region from more maps.',
+        node: { x: 0.55, y: 0.55 },
+        links: [HALL_NODE],
+        maxRank: CARTOGRAPHY_SLOTS_MAX - CARTOGRAPHY_SLOTS_BASE,
+        prices: placeholderPrices(CARTOGRAPHY_SLOTS_MAX - CARTOGRAPHY_SLOTS_BASE),
+        statLabel: rank => `${cartographySlotsForRank(rank)} slots`,
+        nextStatLabel: rank => `${cartographySlotsForRank(rank + 1)} slots`,
+        sprite: UPGRADE_SPRITES.cartography_slots
+    },
+    {
+        id: 'token_cap',
+        name: 'Token Cap',
+        description: `Room for ${TOKEN_CAP_PER_RANK} more Tokens on the mat.`,
+        node: { x: 0.55, y: -0.55 },
+        links: [HALL_NODE],
+        maxRank: TOKEN_CAP_MAX_RANK,
+        prices: placeholderPrices(TOKEN_CAP_MAX_RANK),
+        statLabel: rank => `${tokenCapForRank(rank)} Tokens`,
+        nextStatLabel: rank => `${tokenCapForRank(rank + 1)} Tokens`,
+        sprite: UPGRADE_SPRITES.token_cap
     }
 ];
 

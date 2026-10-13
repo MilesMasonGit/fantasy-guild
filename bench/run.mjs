@@ -223,7 +223,7 @@ function printTable(rows) {
         if (r.checkpoints) {
             console.log(`\n${r.id} ${r.name} checkpoints (heap after forced GC):`);
             for (const c of r.checkpoints) {
-                console.log(`  ${String(c.gameMinutes).padStart(4)} min  heap ${f(c.heapMb, 2)} MB  tokens ${c.tokens}  sprites ${c.sprites}  listeners ${c.listeners}  notifications ${c.notifications}  bin ${c.bin}  state ${c.stateJsonKb} KB`);
+                console.log(`  ${String(c.gameMinutes).padStart(4)} min  heap ${f(c.heapMb, 2)} MB  tokens ${c.tokens}  sprites ${c.sprites}  listeners ${c.listeners}  notifications ${c.notifications}  state ${c.stateJsonKb} KB`);
             }
         }
         if (r.profile && !r.custom) {
