@@ -254,7 +254,7 @@ export function whatItWrites(def, { cap, nameOf = tokenName } = {}) {
     return { headline, lines, text: [headline, ...lines.map(l => l.text)].join('\n') };
 }
 
-/** The upcycle trade a map offers (the Cartography screen trades in a later slice): `{ itemId, ratio }`, or null. */
+/** The upcycle trade a map offers (`Upcycle.js` makes it): `{ itemId, ratio }`, or null. */
 export function upcycleOf(def) {
     if (!isMapItem(def)) return null;
     const upcycle = cartographyOf(def).upcycle;

@@ -57,10 +57,8 @@ const buttonCls = 'px-3 py-1 rounded border border-gi-gold/40 text-amber-100 hov
  * @param {object} props
  * @param {number} props.version  moves on whenever the holdings or the cap may have changed
  * @param {(regionId: string) => void} props.onTravel  the Travel prompt after a Settle
- * @param {(entry: {recipe: object, count: number}) => React.ReactNode} [props.renderItemExtra]
- *        more controls on an inventory row (map upcycling's place)
  */
-export const CartographyTable = ({ version, onTravel, renderItemExtra = null }) => {
+export const CartographyTable = ({ version, onTravel }) => {
     const held = useMemo(() => Atlas.held(), [version]); // eslint-disable-line react-hooks/exhaustive-deps
     const heldById = useMemo(() => new Map(held.map(h => [h.recipe.id, h])), [held]);
     const count = useMemo(() => slotCount(), [version]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -127,6 +125,11 @@ export const CartographyTable = ({ version, onTravel, renderItemExtra = null }) 
         setSettled({ id: result.region.id, flavour: result.region.flavourName, practical: result.region.practicalName });
     };
 
+    const trade = (id) => {
+        const result = Atlas.upcycle(id);
+        setMessage(result.success ? null : result.reason);
+    };
+
     const noRoom = plan && !plan.fits;
 
     return (
@@ -139,8 +142,9 @@ export const CartographyTable = ({ version, onTravel, renderItemExtra = null }) 
                         const { recipe } = entry;
                         const left = entry.count - slottedCount(recipe.id);
                         const out = left <= 0;
+                        const offer = Atlas.upcycleOffer(recipe.id);
                         return (
-                            <li key={recipe.id} className="flex items-center gap-1">
+                            <li key={recipe.id} className="flex flex-col">
                                 <button
                                     type="button"
                                     data-map-item={recipe.id}
@@ -156,7 +160,18 @@ export const CartographyTable = ({ version, onTravel, renderItemExtra = null }) 
                                     <span className="flex-1 min-w-0 truncate">{nameOf(recipe)}</span>
                                     <span className="tabular-nums text-white/70">×{Math.max(0, left)}</span>
                                 </button>
-                                {renderItemExtra?.(entry)}
+                                {offer && (
+                                    <button
+                                        type="button"
+                                        data-map-upcycle={recipe.id}
+                                        disabled={!!offer.reason}
+                                        title={offer.reason || undefined}
+                                        onClick={() => trade(recipe.id)}
+                                        className="self-start ml-2 mb-1 text-left text-[11px] text-gi-gold/80 hover:text-white disabled:text-white/40 disabled:cursor-not-allowed"
+                                    >
+                                        {SCREEN_TEXT.upcycle(offer.ratio, offer.toName)}
+                                    </button>
+                                )}
                             </li>
                         );
                     })}
