@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-165**
+**Next free number: T-167**
 
 ---
 
@@ -67,6 +67,8 @@ here.
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
+| T-165 | P2 | open | **Starter Camp Tokens become fixtures** ([concept_map_tools.md](../active/concept_map_tools.md)): every Token the camp layout places is marked `fixture` when the camp is laid down, so it can't be demolished, dragged or pushed (player-built and bought Tokens there stay movable). Existing saves need a load-time step marking the camp's Tokens (match the layout). Tests for a new game and an old save. Engineer. Eye-check. | concept_map_tools.md |
+| T-166 | P2 | open | **Demolish mode beside Disallow mode** on the top bar ([concept_map_tools.md](../active/concept_map_tools.md)): one mode at a time; a plain banner per mode (Demolish in red, warns once on entering); mode-coloured hover outline and cursor; protected Tokens dim in Demolish mode and a click shows the reason; batch controls (Allow All, shift-click a type to disallow or allow all of it, Cancel all marks). Then the Token card drops its Disallow switch and Demolish buttons. After T-147 and T-165. Builder. Eye-check. | concept_map_tools.md |
 | T-164 | P2 | open | **Work Permissions drawer and launcher** ([concept_work_permissions.md](../active/concept_work_permissions.md)): rename Work Rules to Work Permissions on screen; a labelled launcher in its own slot at the hero bar's left end; the drawer slides up full mat width above the hero bar, hero names left and columns spread evenly, every skill column always shown; one Combat column (tick/off, priority-mode capable: check the engine first) replaces the combat tint columns and Fight; header tooltips show a new `purpose` line from `skillRegistry.js` (drafts in the concept doc). With T-152 and T-156. Builder. Eye-check. | concept_work_permissions.md |
 | T-159 | P2 | open | **The style sheet page**: a Dev Tools screen showing every standard UI piece live (UI_STYLE "The style sheet page": the three text sizes and display size, the five colours as shared CSS variables, hover and alert outlines, ribbon, pill, header with close X, both button kinds, tabs, arrow bars, pixel frames, bars, the tooltip), with a section for *new, unapproved* pieces. Built from the existing shared pieces where they exist; first of the UI style work, since later briefs copy from it. Builder. Eye-check: the owner reviews the whole kit there. | UI_STYLE.md (2026-10-13) |
 | T-160 | P2 | open | **One shared arrow-bar scroll list** (UI_STYLE "Lists and scrolling") replacing the four hand copies in `ShopDrawer.jsx`, `InspectionPanel.jsx`, `TokenInspectPopup.jsx`, `GuildUpgradeInspection.jsx`: pixel triangle drawn in code, dims at the ends but keeps its space, a click scrolls ~two rows smoothly, holding repeats, the wheel works. Builder. Eye-check. | UI_STYLE.md (2026-10-13) |

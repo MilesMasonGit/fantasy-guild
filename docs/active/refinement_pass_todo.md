@@ -73,7 +73,7 @@
     - **Live Event Popouts:** As events happen, individual notifications pop out, hang briefly (for a second or two), and slide cleanly back away.
     - Hovering an individual notification provides expanded information.
 
-- [ ] **Map Controls Overhaul: Disallow Mode & Demolition Mode**
+- [x] **Map Controls Overhaul: Disallow Mode & Demolition Mode** → **[concept_map_tools.md](concept_map_tools.md)**, T-165, T-166 (interview 2026-10-13)
   - **Need:** Current flow requires inspecting an individual token to mark it for demolition or disallow, which is clunky and slow.
   - **Direct Tool Modes:**
     - Dedicated interactive map modes for **Disallow** and **Demolition** to click directly on tokens across the mat.
