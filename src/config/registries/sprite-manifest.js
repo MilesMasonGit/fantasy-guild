@@ -1,4 +1,6 @@
 export const SPRITE_MANIFEST = {
+    'seedling_oak': 'assets/items/wood/seedling_oak.png',
+    'item_seedling_base': 'assets/maybe/item_seedling_base.png',
     'token_sap_birch': 'assets/tokens/nature/tree/token_sap_birch.png',
     'token_sap_cedar': 'assets/tokens/nature/tree/token_sap_cedar.png',
     'token_sap_ebony': 'assets/tokens/nature/tree/token_sap_ebony.png',
@@ -77,8 +79,8 @@ export const SPRITE_MANIFEST = {
     'item_stone_granite': 'assets/items/construction/item_stone_granite.png',
     'item_stone_marble': 'assets/items/construction/item_stone_marble.png',
     'item_stone_sand': 'assets/items/construction/item_stone_sand.png',
-    'e_goblin_chief': 'assets/enemies/skeleton/enemy_skeleton_melee.png',
-    'e_goblin': 'assets/enemies/skeleton/e_skeleton_range.png',
+    'e_goblin_chief': 'assets/enemies/goblin/e_goblin_chief.png',
+    'e_goblin': 'assets/enemies/goblin/e_goblin.png',
     'f_honey': 'assets/items/food/f_honey.png',
     't_chisel_copper': 'assets/items/tool/chisel/tool_chisel_copper.png',
     'token_anvil_copper': 'assets/tokens/smith/token_anvil_copper.png',
