@@ -3,6 +3,7 @@ import { useEngine } from './useEngine';
 import isEqual from 'fast-deep-equal/es6';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 import { UI_LISTENER } from '../../systems/core/EventBus.js';
+import { shareEqual } from './structuralShare.js';
 
 /**
  * Subscribe to GameState via the EventBus.
@@ -35,6 +36,9 @@ import { UI_LISTENER } from '../../systems/core/EventBus.js';
  * * Several events in one task run the selector once (a microtask), and the result is compared
  * with the last value BEFORE React is asked to render, so an event that changed nothing costs
  * one selector call and no render.
+ * * **What changed is new; what did not keeps its identity** (`shareEqual`). When one element of
+ * a selected list changes, every other element is the very object handed out last time, so a
+ * memoised child given an unchanged element does not draw again.
  * * A slice for ONE mat Token belongs in `useTokenState` (`tokenEvents.js`), which wakes only
  * that Token.
  * @param {Function} selector - Extracts a slice of state, per the contract above
@@ -80,6 +84,19 @@ export const useGameState = (selector = (state) => state, events = [ENGINE_EVENT
         return Array.isArray(val) ? [...val] : Object.assign(Object.create(Object.getPrototypeOf(val)), val);
     };
 
+    // The value to hand React for a fresh read: `prev` itself when nothing changed, else the
+    // new slice with its unchanged parts taken from `prev`. Never the selector's own top-level
+    // object: that may be the store's.
+    const settle = (prev, slice) => {
+        if (prev === slice) return prev;
+        if (slice === null || typeof slice !== 'object') return slice;
+        if (options.bypassClone) return isEqual(prev, slice) ? prev : slice;
+        const shared = shareEqual(prev, slice);
+        if (shared === prev) return prev;
+        if (options.deepClone) return shareEqual(prev, safeClone(slice));
+        return shared === slice ? safeClone(slice) : shared;
+    };
+
     const [state, setState] = useState(() => {
         const initialSlice = selector(GameState);
         return initialSlice !== undefined ? safeClone(initialSlice) : undefined;
@@ -98,10 +115,8 @@ export const useGameState = (selector = (state) => state, events = [ENGINE_EVENT
             queueMicrotask(() => {
                 updateQueued = false;
                 const prevState = lastRef.current;
-                const newStateSlice = selectorRef.current(GameState);
-                if (prevState === newStateSlice) return;
-                if (newStateSlice !== null && typeof newStateSlice === 'object' && isEqual(prevState, newStateSlice)) return;
-                const next = (newStateSlice !== null && typeof newStateSlice === 'object') ? safeClone(newStateSlice) : newStateSlice;
+                const next = settle(prevState, selectorRef.current(GameState));
+                if (next === prevState) return;
                 lastRef.current = next;
                 setState(next);
             });
@@ -113,10 +128,9 @@ export const useGameState = (selector = (state) => state, events = [ENGINE_EVENT
     // Prop-driven sync: runs when props like 'heroId' change, so we don't wait for a game
     // event.
     useEffect(() => {
-        const currentSlice = selectorRef.current(GameState);
         const prev = lastRef.current;
-        if (prev !== currentSlice && !isEqual(prev, currentSlice)) {
-            const next = safeClone(currentSlice);
+        const next = settle(prev, selectorRef.current(GameState));
+        if (next !== prev) {
             lastRef.current = next;
             setState(next);
         }

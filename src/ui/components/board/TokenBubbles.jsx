@@ -53,22 +53,25 @@ export const BUBBLE_TIPS = Object.freeze({
  * {@link BUBBLE_RECENT_MS} after the value changes (never on the first render), and `shown`,
  * the value to DRAW, which trails a change by {@link GLIDE_START_MS} so a ring that appears
  * with the change still glides to it.
+ * `recent` turns on in the very render that sees the change (React draws the component again
+ * at once, before committing), so the bubble comes up in the same commit as the change that
+ * raised it. Turned on from an effect, it cost a commit of its own on every count change.
  */
 export function useChangeFlash(value, ms = BUBBLE_RECENT_MS) {
     const key = value == null ? '' : JSON.stringify(value);
-    const [recent, setRecent] = useState(false);
-    const [shown, setShown] = useState(value);
-    const last = useRef(key);
+    // `next` is the value the glide moves `shown` to.
+    const [flash, setFlash] = useState(() => ({ key, recent: false, shown: value, next: value }));
+    if (flash.key !== key) {
+        setFlash({ key, recent: true, shown: flash.shown, next: value });
+    }
     useEffect(() => {
-        if (last.current === key) return undefined;
-        last.current = key;
-        setRecent(true);
-        const glide = setTimeout(() => setShown(value), GLIDE_START_MS);
-        const done = setTimeout(() => setRecent(false), ms);
+        if (!flash.recent) return undefined;
+        const at = flash.key;
+        const glide = setTimeout(() => setFlash(f => (f.key === at ? { ...f, shown: f.next } : f)), GLIDE_START_MS);
+        const done = setTimeout(() => setFlash(f => (f.key === at ? { ...f, recent: false } : f)), ms);
         return () => { clearTimeout(glide); clearTimeout(done); };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [key, ms]);
-    return { recent, shown: shown ?? value };
+    }, [flash.key, flash.recent, ms]);
+    return { recent: flash.recent, shown: flash.shown ?? value };
 }
 
 /**
@@ -308,6 +311,16 @@ export const TokenBubbles = ({
     }, [instanceId]);
     const spawnerFlash = useChangeFlash(spawner ? { text: spawner.text, fraction: spawner.fraction } : null);
 
+    // The cycle bubble, kept as the same element while nothing it draws from changes: the ring
+    // inside is written on the step clock, never by a render, and the Token redraws far more
+    // often than its tip, place or grey change.
+    const cycleTip = blocked ? BUBBLE_TIPS.cycleBlocked : BUBBLE_TIPS.cycle;
+    const cycleBubble = useMemo(() => (
+        <Bubble of={instanceId} kind="cycle" style={bubbleSlot('cycle', { boxPx, small })} tip={cycleTip} dragProps={dragProps}>
+            <RingBadge kind="cycle" rootRef={setCycleRoot} greyed={blocked} title={cycleTip} />
+        </Bubble>
+    ), [instanceId, boxPx, small, cycleTip, dragProps, setCycleRoot, blocked]);
+
     if (isDragging) return null;
 
     const fight = hasHero && combat;
@@ -323,8 +336,6 @@ export const TokenBubbles = ({
     const showStuck = !!stuck?.alert;
     const showMiddle = showGear || showSpawner || showStuck || disallowed || marked;
     const slot = (name) => bubbleSlot(name, { boxPx, small });
-
-    const cycleTip = blocked ? BUBBLE_TIPS.cycleBlocked : BUBBLE_TIPS.cycle;
 
     return (
         <>
@@ -386,11 +397,7 @@ export const TokenBubbles = ({
                 </div>
             )}
 
-            {showCycle && (
-                <Bubble of={instanceId} kind="cycle" style={slot('cycle')} tip={cycleTip} dragProps={dragProps}>
-                    <RingBadge kind="cycle" rootRef={setCycleRoot} greyed={blocked} title={cycleTip} />
-                </Bubble>
-            )}
+            {showCycle && cycleBubble}
             {showQuest && (
                 <Bubble of={instanceId} kind="quest" style={slot('quest')} tip={BUBBLE_TIPS.quest(quest.text)} dragProps={dragProps}>
                     <RingBadge
