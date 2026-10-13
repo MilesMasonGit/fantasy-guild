@@ -75,3 +75,5 @@ player for these is T-138 (built when the first strips exist).
 - **Small UI icons** for the card's lines and the mat (NEW; placeholders until
   drawn): clock (cycle time), charges, regrow, spawn, grow, the problem mark
   ("!", recoloured yellow and red in code).
+- **Log button icon** (NEW, [concept_notifications.md](concept_notifications.md)):
+  a notepad or scroll, top right of the screen; placeholder until drawn.

@@ -63,7 +63,7 @@
   - **Inspection / Hover:**
     - The actual upgrade sprite/icon, detailed descriptions, prerequisites, and resource costs are displayed cleanly in the inspection panel upon hover/select.
 
-- [ ] **Notification System Overhaul (Sidebar $\rightarrow$ Top-Right Log & Popout Toasts)**
+- [x] **Notification System Overhaul (Sidebar $\rightarrow$ Top-Right Log & Popout Toasts)** → **[concept_notifications.md](concept_notifications.md)**, T-167 (interview 2026-10-13)
   - **Need:** Replace the current long, permanent sidebar along the screen edge with a clean, unobtrusive system.
   - **Form Factor & Placement:**
     - Place a top-right notepad/log icon button.

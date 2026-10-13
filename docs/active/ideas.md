@@ -231,7 +231,8 @@ mods via the CMS after release.
   layers → [concept_info_layers.md](concept_info_layers.md); Work
   Permissions → [concept_work_permissions.md](concept_work_permissions.md),
   T-164; map tool modes → [concept_map_tools.md](concept_map_tools.md),
-  T-165, T-166. The rest wait
+  T-165, T-166; notifications →
+  [concept_notifications.md](concept_notifications.md), T-167. The rest wait
   for their interviews, tracked in that file.
 - **D9 Release package** → [concept_release.md](concept_release.md), done
   2026-10-09. **All nine design interviews are done.**

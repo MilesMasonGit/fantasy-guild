@@ -6,12 +6,8 @@ notes first so the work doesn't fight them. Add bullets as they come up; one
 line each is enough.
 
 ## Notifications sidebar
-- Each notification should pop out on its own while it is active, not only
-  when the sidebar is hovered (owner, 2026-10-08).
-- They need a collapsed view: the total item count change and a very small
-  sprite (owner, 2026-10-08).
-- Notifications still auto-dismiss after ~5 s, so with the sidebar shut one can
-  be missed (director, brief 10 U4).
+- **Decided 2026-10-13** in [concept_notifications.md](concept_notifications.md)
+  (the 10-08 notes are covered there).
 
 ## Highlights and tutorial
 - Replace the glow and the tutorial assist rings with something in the game's
