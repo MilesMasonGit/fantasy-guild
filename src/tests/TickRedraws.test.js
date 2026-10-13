@@ -23,6 +23,10 @@ import { setLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
 import { DndContext } from '@dnd-kit/core';
 import * as Charges from '../systems/board/Charges.js';
 import { TokenBubbles } from '../ui/components/board/TokenBubbles.jsx';
+import { HeroBubbleLayer } from '../ui/components/board/HeroBubbleLayer.jsx';
+import { ALERT } from '../systems/board/boardEvents.js';
+import { MOMENT_TTL_MS } from '../ui/components/board/heroSpeech.js';
+import { INPUTS_DELAY_MS } from '../ui/components/board/heroBubbles.js';
 import { useGameState } from '../ui/hooks/useGameState.js';
 import { useTokenState } from '../ui/components/board/tokenEvents.js';
 import { shareEqual } from '../ui/hooks/structuralShare.js';
@@ -305,5 +309,63 @@ describe('⭐ a charge spent: the Token redraws, its art does not, and its bubbl
         expect(renders.of('RingBadge'), all).toBe(1);
         // The ring shows the old count first, so it has something to glide from.
         expect(view.container.querySelector('[data-bubble="charges"] [data-ring="charges"]').getAttribute('data-ring-text')).toBe('10');
+    });
+});
+
+describe('⭐ speech bubbles: the twice-a-second look draws only when what is said changes', () => {
+    // A stuck hero is "busy" for as long as they stay stuck, and the layer used to draw itself
+    // twice a second for all that time, saying the same thing.
+    let token;
+    beforeEach(() => {
+        resetMatTuning();
+        GameState.initNew();
+        clearMat();
+        token = placeAt('fixture_producer', 600, 400);
+        vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'] });
+    });
+    afterEach(() => {
+        renders.stop();
+        vi.useRealTimers();
+        cleanup();
+    });
+    const stuck = (alert) => [{ heroId: 'hs', state: 'working', x: 500, y: 400, moving: false, tokenId: token.id, alert }];
+    const said = (c) => [...c.querySelectorAll('[data-hero-bubble]')].map(el => el.textContent);
+    const wait = (ms) => act(() => { vi.advanceTimersByTime(ms); });
+
+    it('a hero stuck on the same thing: no redraw however long it lasts', () => {
+        const { container } = render(h(HeroBubbleLayer, { heroes: stuck(ALERT.CHARGES) }));
+        expect(said(container)).toEqual(['Fixture Producer has too few charges left.']);
+        renders.start();
+        for (let i = 0; i < 10; i++) wait(500);
+        renders.stop();
+        expect(renders.of('HeroBubbleLayer'), JSON.stringify(renders.all())).toBe(0);
+        expect(said(container)).toEqual(['Fixture Producer has too few charges left.']);
+    });
+
+    it('a moment that lapses is taken down, at the next look', () => {
+        const { container } = render(h(HeroBubbleLayer, { heroes: stuck(ALERT.CHARGES) }));
+        wait(10);
+        act(() => { EventBus.publish(ENGINE_EVENTS.HERO_LEVELED, { heroId: 'hs', skillName: 'Forestry', newLevel: 5, oldLevel: 4 }); });
+        expect(said(container)).toHaveLength(2);
+        renders.start();
+        wait(MOMENT_TTL_MS + 500);
+        renders.stop();
+        expect(said(container)).toEqual(['Fixture Producer has too few charges left.']);
+        // The look that found it lapsed, and the layout pass after measuring the shorter stack.
+        expect(renders.of('HeroBubbleLayer')).toBeGreaterThan(0);
+        expect(renders.of('HeroBubbleLayer')).toBeLessThanOrEqual(2);
+    });
+
+    it('a shortage that has waited its delay is spoken, at the next look', () => {
+        const { container } = render(h(HeroBubbleLayer, { heroes: stuck(ALERT.INPUTS) }));
+        expect(said(container)).toEqual([]);
+        renders.start();
+        wait(INPUTS_DELAY_MS + 500);
+        renders.stop();
+        expect(said(container)).toHaveLength(1);
+        expect(said(container)[0]).toMatch(/^I need /);
+        // The look that found it ready, and the layout pass after measuring the new line.
+        expect(renders.of('HeroBubbleLayer')).toBeGreaterThan(0);
+        expect(renders.of('HeroBubbleLayer')).toBeLessThanOrEqual(2);
     });
 });
