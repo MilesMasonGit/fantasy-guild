@@ -86,7 +86,7 @@
   - **Batch Controls:**
     - Include bulk actions like **"Allow All"** directly inside the Disallow mode menu to quickly reset permissions.
 
-- [ ] **Item Collection Automation: Warehouses & Guild Hall Collector**
+- [x] **Item Collection Automation: Warehouses & Guild Hall Collector** → **[concept_collectors.md](concept_collectors.md)**, T-175 (interview 2026-10-13)
   - **Concept:** Automated logistics buildings with an operational radius that sweep and collect dropped items directly into the player's bank.
   - **Specialized Warehouses:** Category/type-specific collection buildings (e.g., *Fish Warehouse* collects all fish dropped within its radius).
   - **Guild Hall Universal Collector:** The Guild Hall itself functions as a universal collector, automatically gathering all item types dropped within its area.

@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-175**
+**Next free number: T-176**
 
 ---
 
@@ -47,6 +47,7 @@ here.
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
+| T-175 | P2 | open | **Collectors: the Guild Hall and warehouses** ([concept_collectors.md](../active/concept_collectors.md)): the Hall collects all loot in a small radius from the start, widened by a ranked Hall star; warehouses built on Foundations collect items with one tag (CMS Collects block: tag, radius, interval ~60 s), bigger radius on higher tiers, no upkeep; shared sweep clock, nearest collector wins, items fly in; Bank-full leaves loot and shows the yellow mark; reach ring on hover, drag, placing. Remove the auto-collect setting. Engineer. WORK CHANGED expected. Cost-log line. Eye-check. | concept_collectors.md |
 | T-015 | P2 | open | Retire `state_changed`, stages 2–3 (stage 1 = `GAME_RESET`, merged). | CR3-305 |
 | T-125 | P2 | open | **Remove the +0.5 % work speed per skill level** (owner 2026-10-09, D2: invisible, one more number to balance). `SKILL_SPEED_FACTOR` in `src/config/FormulaRegistry.js`; check the CMS simulator's tempo maths (GDD §11: slower by `1 + (level−1)/70`) and the GDD's Skills section. Changes play: eye-check; the bench will show WORK CHANGED, accept under this ticket. | concept_progression.md |
 | T-126 | P2 | open | **Gathering tools become hero gear and last forever** (owner 2026-10-09, D2 + D4): pickaxes, woodaxes, fishing rods, sickles are carried in a hero's hands alongside weapons (hands: 2) and set what they can gather; tool Tokens on the mat go away; stations (anvils, furnaces) stay Tokens. Nothing wears out. Today tools are context Tokens and some recipes spend their charges (`Charges.js`, `requiresContext`); GDD says "Tools are not hero equipment". A design-to-code job for the post-crunch build, with the CMS content to match. Changes play: eye-check. | concept_skill_loops.md |
