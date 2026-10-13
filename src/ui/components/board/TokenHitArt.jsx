@@ -79,6 +79,7 @@ export function TokenHitArt({ instanceId, skill, heroId = null, active = false, 
             data-token-hit={anim?.name || undefined}
             data-token-hit-live={anim && !onAttack && heroId && active ? 'true' : undefined}
             className={cn('absolute inset-0 pointer-events-none', className)}
+            style={anim && !onAttack && heroId && active ? { willChange: 'contents' } : undefined}
         >
             {children}
         </div>
