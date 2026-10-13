@@ -892,7 +892,6 @@
   "shipped:effect:effect_work_time_bonus:0": "Makes nearby Coast Tokens work 5% faster.",
   "shipped:effect:effect_work_time_bonus:0:bare-names": "Makes nearby Coast Tokens work 5% faster.",
   "shipped:effect:effect_work_time_bonus:0:upkeep": "",
-  "shipped:item:item:rules": "[]",
   "shipped:item:item_adamantine_ingot:rules": "[]",
   "shipped:item:item_adamantine_ore:rules": "[]",
   "shipped:item:item_apple:rules": "[]",
