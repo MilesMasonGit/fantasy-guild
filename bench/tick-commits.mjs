@@ -50,11 +50,16 @@ function parseArgs(argv) {
 
 async function startDev(root) {
     const { createServer } = await import('vite');
+    const tailwind = (await import('@tailwindcss/postcss')).default;
+    const autoprefixer = (await import('autoprefixer')).default;
     const port = await freePort();
     const key = createHash('sha1').update(root.toLowerCase()).digest('hex').slice(0, 8);
     const server = await createServer({
         root,
         configFile: path.join(root, 'vite.config.js'),
+        // ⚠️ Tailwind finds the classes in use from the working directory unless told: told this
+        // checkout, or a server for another checkout draws without half its styles.
+        css: { postcss: { plugins: [tailwind({ base: root }), autoprefixer()] } },
         cacheDir: path.join(root, 'node_modules', `.vite-commits-${path.basename(root)}-${key}`),
         server: { port, strictPort: true, host: 'localhost', open: false },
         logLevel: 'warn',
@@ -337,6 +342,8 @@ function perTick(m) {
     const t = driven.times, ti = idle.times;
     const uiByEvent = Object.fromEntries(Object.entries(t.uiByEvent).map(([k, v]) => [k, v / n]));
     const times = {
+        drivenSchedMsPerTick: t.schedMs / n,
+        idleSchedMsPerSecond: ti.schedMs / idle.seconds,
         tickMs: driven.tickMsTotal / n,
         engineListenerMs: t.engineListenerMs / n,
         uiListenerMs: t.uiListenerMs / n,
@@ -373,7 +380,8 @@ const f2 = (x) => (x == null ? '–' : (Math.round(x * 100) / 100).toFixed(2));
 function printOne(label, p, top) {
     console.log(`\n${label}`);
     console.log(`  ${p.ticks} ticks in ${f2(p.seconds)} s · tick p50 ${f2(p.tickP50)} ms · engine events ${p.events} · fingerprint ${p.fingerprint}`);
-    console.log(`  commits: driven ${p.drivenCommits} · idle ${p.idleCommits} → **${f2(p.commitsPerTick)} commits per tick**`);
+    console.log(`  while playing, everything that committed ÷ ticks: ${f2(p.drivenCommits / p.ticks)} commits, ${f2(p.drivenRenders / p.ticks)} renders, React scheduler ${f2(p.times.drivenSchedMsPerTick)} ms (dev) per tick · with no ticks: ${f2(p.idleCommits / p.seconds)} commits/s, React ${f2(p.times.idleSchedMsPerSecond)} ms/s`);
+    console.log(`  commits: driven ${p.drivenCommits} · idle ${p.idleCommits} → **${f2(p.commitsPerTick)} commits per tick** (net of the no-tick background)`);
     console.log(`  component renders: driven ${p.drivenRenders} · idle ${p.idleRenders} → ${f2(p.rendersPerTick)} renders per tick, ${f2(p.mountsPerTick)} mounts per tick`);
     console.log(`  React render time (dev build, Profiler actualDuration) ${f2(p.reactMsPerTick)} ms per tick`);
     const T = p.times;
@@ -425,6 +433,10 @@ async function main() {
     for (let i = 0; i < roots.length; i++) {
         for (const [k, p] of results[i].entries()) printOne(`${i === 0 ? 'A' : 'B'} run ${k + 1}: ${roots[i]} (${args.scene}, seed ${args.seed})`, p, args.top);
     }
+    if (process.env.TICK_COMMITS_JSON) {
+        const fs = await import('node:fs');
+        fs.writeFileSync(process.env.TICK_COMMITS_JSON, JSON.stringify({ args, roots, results: results.map(rs => rs.map(({ sample, ...rest }) => rest)) }, null, 1));
+    }
     const all = results.flat();
     const fps = new Set(all.map(p => `${p.events}/${p.fingerprint}`));
     if (fps.size > 1) console.log(`\n⚠️ WORK DIFFERS between runs (engine events / fingerprint): ${[...fps].join(', ')}`);
@@ -433,6 +445,8 @@ async function main() {
         const mean = (xs) => xs.reduce((s, x) => s + x, 0) / xs.length;
         const [A, B] = results;
         const tm = (side, k) => f2(mean(side.map(p => p.times[k])));
+        const all2 = (side, f) => f2(mean(side.map(f)));
+        console.log(`A/B (means of A,B,B,A), while playing per tick: commits ${all2(A, p => p.drivenCommits / p.ticks)} → ${all2(B, p => p.drivenCommits / p.ticks)} · renders ${all2(A, p => p.drivenRenders / p.ticks)} → ${all2(B, p => p.drivenRenders / p.ticks)} · React scheduler (dev) ${tm(A, 'drivenSchedMsPerTick')} → ${tm(B, 'drivenSchedMsPerTick')} ms; with no ticks: React ${tm(A, 'idleSchedMsPerSecond')} → ${tm(B, 'idleSchedMsPerSecond')} ms/s`);
         console.log(`A/B (means of A,B,B,A), main thread ms per tick (dev): tick ${tm(A, 'tickMs')} → ${tm(B, 'tickMs')} · UI listeners ${tm(A, 'uiListenerMs')} → ${tm(B, 'uiListenerMs')} · tick microtasks ${tm(A, 'afterTickMs')} → ${tm(B, 'afterTickMs')} · React scheduler ${tm(A, 'schedMs')} → ${tm(B, 'schedMs')}`);
         console.log(`A/B (means of A,B,B,A): commits per tick ${f2(mean(A.map(p => p.commitsPerTick)))} → ${f2(mean(B.map(p => p.commitsPerTick)))} · renders per tick ${f2(mean(A.map(p => p.rendersPerTick)))} → ${f2(mean(B.map(p => p.rendersPerTick)))} · React ms per tick (dev) ${f2(mean(A.map(p => p.reactMsPerTick)))} → ${f2(mean(B.map(p => p.reactMsPerTick)))}`);
     }
