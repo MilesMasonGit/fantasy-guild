@@ -20,7 +20,7 @@ October 2026.*
 | P2-7 sparse stack order | engineer | `crunch/p2-7` | queued (after P2-5 merges: both touch stacking) | Wed–Thu | |
 | P2-8 tick and React per tick | engineer | `crunch/p2-8` (`p2-8`) | building (started Tue 10:00) | Tue–Wed | |
 | P2-9 drags | engineer | `crunch/p2-9` | queued | Thu–Fri | |
-| Atlas A8 cartographer's tutorial | builder | `crunch/atlas-a8` | queued (T-144 beacon) | Thu–Fri | |
+| Atlas A8 cartographer's tutorial | builder | `crunch/atlas-a8` (`atlas-a8`) | eye-check ([file](eyecheck/2026-10-13_atlas-a8.md)); director gate green; bench queued | Tue | |
 | Atlas A12 map upcycling | builder | `crunch/atlas-a12` → `main` | merged (owner deferred the look, trusted on the gate; [archived file](../archive/eyecheck/2026-10-13_atlas-a12.md)) | Tue | Tue |
 | Regroup: planning docs, wave 2 plan | owner + planning | `planning` (`pp`) | queued | Sat–Mon | |
 
@@ -29,7 +29,8 @@ October 2026.*
 1. `crunch/p2-3` engine bench `--compare` (expect same work).
 2. `crunch/p2-6` engine bench `--compare`; `bench:draw --compare` for the cost log.
 3. `crunch/p2-5` `bench:profile` layer count and a pixel diff of a worked Token.
-4. `main` after the Atlas batch: engine bench `--compare` (expect same work) and the drag bench baseline (`npm run bench:drag`, 5 kinds, A3b) for PERFORMANCE.md.
+4. `crunch/atlas-a8` engine bench `--compare` (expect same work).
+5. `main` after the Atlas batch: engine bench `--compare` (expect same work) and the drag bench baseline (`npm run bench:drag`, 5 kinds, A3b) for PERFORMANCE.md.
 
 ## Summaries
 

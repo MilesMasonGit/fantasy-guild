@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-167**
+**Next free number: T-168**
 
 ---
 
@@ -197,3 +197,4 @@ first, when content that uses it is authored.*
 | T-091 | Stage 3 | Tokens teleport; mat size is dev tuning. | CR3-565 |
 | T-092 | design | The free-playmat plan's "Map stays unopened" overflow rule (FP-46) is unbuilt; overflow drops as loot. | FMR |
 | T-100 | before release | Master volume defaults to 0 so the owner can work in silence; set an audible default before shipping. | GDD §16.10 |
+| T-167 | P2 | open | **Recruits get a weak basic attack** ("everyone fights", `concept_combat.md`): a hero with no combat skill is refused by `BoardCombat.canFight`, so the cartographer's tutorial step 8 "Win a Fight" cannot be completed in a real new game. Engine change; expect the bench's work check to change. The owner authors a weak, safe enemy in the Starter Camp to go with it. Owner ruling 2026-10-13: keep the step, build this. | Atlas A8 |
