@@ -41,3 +41,6 @@ T-110 — The old Map code is retired: the Map catalogue (`mapRegistry.js`, `dat
 T-014 (the opening half) — A new game's Tokens and Bank are content: the Starter Camp, laid out in the game, saved from the QA panel and synced from the CMS's Starter Camp page into data/starterCamp.json; the quest half stays open — crunch/atlas-a7 — 2026-10-09
 T-131 — The tutorial beacon no longer looks for or measures its target every frame: it looks ten times a second on the shared step clock and follows a moving target every frame only until it stands still (brief 60 P2-2) — crunch/p2-2 — 2026-10-10
 T-009 — Shop price format ruled: ribbon rows where items are listed with room (the Shop), pills inside buttons such as the Hall's Upgrade, costs read have/need with the count red when short (UI_STYLE "Item references") — planning — 2026-10-13
+T-095 — The Plant a Flag beacon's dead selectors replaced: it points at the hero bar (data-dock-hero), checked against today's page — crunch/atlas-a8 — 2026-10-13
+T-144 — Every tutorial beacon re-pointed at today's page attributes; TutorialAide.test.js's fixture mirrors the live page and is checked against the components — crunch/atlas-a8 — 2026-10-13
+T-115 — Log an Oak Tree left with the old tutorial chain; the promotion line names its gate skills (Requires Mining and Fishing at level N) — crunch/atlas-a8 — 2026-10-13
