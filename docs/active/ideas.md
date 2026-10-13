@@ -207,9 +207,7 @@ mods via the CMS after release.
 - **Full CMS review** once the new loops and the Atlas are in, including **the
   simulator's model**: it prices in an abstract "gold per hour", built before
   items-only currency, Hearts and the Atlas. Review, then tickets.
-- **Top bar visuals**: the bar with Token upkeep and the disallow controls;
-  (the hero control button became brief 30's Work Rules button). Brief 10 just
-  reworked the bar, so after the crunch.
+- **Top bar visuals** → designed 2026-10-13, T-170.
 - **Faster drawing for static Tokens**: if a Token can't move, it may be drawn
   more cheaply. Fits brief 90 (the Performance Envelope) or a follow-up; brief
   60 runs before the Atlas, so it can't use this.
@@ -233,7 +231,7 @@ mods via the CMS after release.
   T-164; map tool modes → [concept_map_tools.md](concept_map_tools.md),
   T-165, T-166; notifications →
   [concept_notifications.md](concept_notifications.md), T-168; the recipe
-  list → [concept_recipe_list.md](concept_recipe_list.md), T-169. The rest wait
+  list → [concept_recipe_list.md](concept_recipe_list.md), T-169; the top bar → concept_map_tools.md, T-170. The rest wait
   for their interviews, tracked in that file.
 - **D9 Release package** → [concept_release.md](concept_release.md), done
   2026-10-09. **All nine design interviews are done.**

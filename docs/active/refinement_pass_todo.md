@@ -21,7 +21,7 @@
 
 ## 2. Section Overhauls
 
-- [ ] **Top Bar: Token & Upkeep Summaries**
+- [x] **Top Bar: Token & Upkeep Summaries** → **[concept_map_tools.md](concept_map_tools.md)** ("The top bar around the modes"), T-170 (interview 2026-10-13)
   - **Need:** Full visual overhaul to match the latest aesthetic style.
   - **Goal:** Bring into alignment with current UI styles and strip down to clear, essential key information only (avoid visual clutter).
 

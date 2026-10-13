@@ -54,6 +54,29 @@ Starter Camp also can't be abandoned (already true, Atlas A7).
 
 The Guild Hall stays protected from demolition but is movable (T-148).
 
+## The top bar around the modes
+
+*Owner interview, 2026-10-13 (refinement pass §2, "Top Bar"); build ticket
+**T-170**.* The bar keeps its place and slim height; everything else is
+redone to the style guide.
+
+- **Look**: the slim strip drawn with UI_STYLE's **studded pixel frame** and
+  hard shadow (the wood texture goes).
+- **Left, information**, each in the **item bar style** (UI_STYLE "Item
+  references"):
+  - **Region name** first; **clicking it opens the Atlas** (a second way in
+    besides the bubble).
+  - **Tokens 45/128** with the Token icon; the count turns **red at the cap**,
+    and nothing else happens (spawners at the cap already show the red problem
+    mark).
+  - **Upkeep 2/min** with an upkeep icon, the **summed rate** in place of a
+    quantity; **hovering lists one item bar per item with its rate** (today's
+    Upkeep Summary, restyled).
+- **Centre**: empty, except the **mode banner** while a mode is on.
+- **Right**: the **Disallow** and **Demolish** toggles.
+- The notification **log button** sits at the screen's top right, beside the
+  bar ([concept_notifications.md](concept_notifications.md)).
+
 ## Notes for the director
 
 - **T-165 first** (engine): the Starter Camp's placed Tokens get the fixture
