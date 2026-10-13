@@ -593,7 +593,8 @@ is a seeded stream and `Date.now` moves 100 ms a tick (hero and enemy pottering 
 it; a loot sprite's wall-clock absorption timer, which races the tick due at the same moment, is
 dropped so absorption happens on the tick's own game-clock path). The engine events of the
 measured ticks are counted and fingerprinted, and runs that did not do the same work say
-**WORK DIFFERS**. Commit and render counts are then exact, run to run; the milliseconds are the
+**WORK DIFFERS** and name the events that differ. Notification events are left out: toasts are
+dismissed on wall-clock timers, so how many a tick trims depends on when those fired. Commit and render counts are then exact, run to run; the milliseconds are the
 dev build's and move with the machine's load.
 
 Two windows: **driven** (the ticks) and **idle** (as long, no ticks: what commits on its own,

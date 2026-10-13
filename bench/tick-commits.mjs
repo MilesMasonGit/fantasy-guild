@@ -190,7 +190,9 @@ const BUILD = (scene, seed) => `(async () => {
     const pub = EB.publish;
     EB.publish = function (name, payload) {
         const S = window.__tc;
-        if (S.on && window.__det.inEngine) {
+        // ⚠️ Notifications are left out of the work: their toasts are dismissed on wall-clock
+        // timers, so how many a tick trims or groups depends on when those timers fired.
+        if (S.on && window.__det.inEngine && !String(name).startsWith('notification_')) {
             S.events[name] = (S.events[name] || 0) + 1;
             // Ids carry the clock and a random tail: fingerprint them by first appearance.
             const id = payload && (payload.instanceId || payload.heroId || payload.typeId || payload.itemId);
@@ -439,8 +441,14 @@ async function main() {
     }
     const all = results.flat();
     const fps = new Set(all.map(p => `${p.events}/${p.fingerprint}`));
-    if (fps.size > 1) console.log(`\n⚠️ WORK DIFFERS between runs (engine events / fingerprint): ${[...fps].join(', ')}`);
-    else console.log(`\nSame work in every run: ${all[0].events} engine events, fingerprint ${all[0].fingerprint}`);
+    if (fps.size > 1) {
+        console.log(`\n⚠️ WORK DIFFERS between runs (engine events / fingerprint): ${all.map(p => `${p.events}/${p.fingerprint}`).join(', ')} (A runs first)`);
+        const names = new Set(all.flatMap(p => Object.keys(p.eventsByName || {})));
+        for (const n of [...names].sort()) {
+            const counts = all.map(p => p.eventsByName[n] || 0);
+            if (new Set(counts).size > 1) console.log(`    ${n}: ${counts.join(' / ')}`);
+        }
+    } else console.log(`\nSame work in every run: ${all[0].events} engine events, fingerprint ${all[0].fingerprint}`);
     if (args.b) {
         const mean = (xs) => xs.reduce((s, x) => s + x, 0) / xs.length;
         const [A, B] = results;

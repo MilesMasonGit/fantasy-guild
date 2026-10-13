@@ -33,6 +33,7 @@ Still to write (T-069): the mat-era guide to *keeping* it fast (draft in
 | `npm run bench:profile -- --scene=cap128 --cpu=4` | Where a frame's time goes: a trace, a CPU profile and the composited layers | ~2 min |
 | `npm run bench:drag` | Drag reliability, real mouse input, and frame stalls at pickup, carry and drop | ~19 min |
 | `npm run check:perf-build` | Proves the shipped build has no measuring code | ~1 min |
+| `node bench/tick-commits.mjs` | React commits and renders each engine tick sets off (S2, dev build), the same engine work every run; `--a=<before> --b=<after>` for an A/B | ~4 min (A/B ~13 min) |
 
 Details, options and exit codes: [`bench/README.md`](../../bench/README.md).
 In the game (dev or perf build): `?stress=realistic` + the Perf HUD, and
@@ -647,6 +648,72 @@ work) gone from the script entries; 109 fewer DOM nodes; the main thread's cost 
 too wide to read the small rows): `bubbles` 0.80 ms (above noise), `notifications`
 −0.01 ms: the shut column now costs nothing measurable. The second half of the 2026-10-09
 table (`notifications` … `spawnMotion`) all read within the noise here too.
+
+### P2-8 result: the engine tick and the React work it sets off (2026-10-13)
+
+**Measured first** (new tool, `node bench/tick-commits.mjs`: S2 in the dev build, 600 ticks the
+tool drives itself with a seeded `Math.random` and a 100 ms-a-tick clock inside each tick, so
+every run does the same engine work, fingerprinted; a window as long with no ticks for what
+commits on its own). Cause #6 guessed "each tick, a React commit". In fact a tick reaches React
+as **one commit at most**: every store read (`useGameState`, `useTokenState`) runs in a
+microtask and React renders them together. 48 % of ticks commit nothing. The tick's own listeners
+are cheap (UI listeners 0.07 ms, the stores' selectors 0.06 ms a tick, dev build); the cost is
+what React draws and the commits UI timers add after a change. Before, ranked by renders a tick:
+a Token's art, sprite and name redrawing with its bubbles on every charge (5 of the 8 renders of
+a Token's redraw); every flag redrawing when one hero's status changes (`projectFlags` rebuilds
+all eight objects); a count bubble's flash turned on from an effect (a commit of its own on every
+charge, quest or spawner change); the cycle bubble redrawing with its Token; and, with no tick at
+all, the speech layer's 500 ms look at a stuck hero (2 commits a second, unchanged text).
+
+**What changed** (no engine file):
+1. **The stores share what did not change** (`src/ui/hooks/structuralShare.js`, used by
+   `useGameState` and `useTokenState`): a fresh read is handed to React with every part equal to
+   the last value's taken from the last value, records paired by `id` / `heroId` /
+   `instanceId` when a list shifts. One changed flag is one new object; the other seven flags'
+   memoised components skip.
+2. **A Token's art, name and cycle bubble keep their element** (`MatToken.jsx`,
+   `TokenBadges.jsx`, `TokenBubbles.jsx`): a charge, alert or hero change redraws the Token and its
+   bubbles, not its hit loop, sprite and layers; the -1 floater and the name are memoised.
+3. **A count bubble's flash comes up in the render that sees the change** (`useChangeFlash`):
+   one commit instead of two. In the page the bubble appears a frame earlier (median 4 ms after
+   the tick against 10 ms) and still glides 50 ms after it appears (53 against 51 ms median).
+4. **The speech layer's look draws only when what is said changes** (`HeroBubbleLayer.jsx`): a
+   lapsed moment, a wait run out or a changed block still redraws at the next look.
+
+**Measured** (`tick-commits --a=<before> --b=<after>`, A,B,B,A, the same engine work in every run;
+dev build, so the milliseconds are the development build's and indicative only):
+
+| Per tick, while playing | S2 before → after | cap128 before → after |
+|---|---|---|
+| Commits (all commits ÷ ticks) | 0.79 → 0.57 | 0.74 → 0.49 |
+| Component renders | 6.35 → 3.89 | 4.51 → 2.49 |
+| React scheduler (render, commit, effects; dev) | 1.38 → 1.12 ms | 0.98 → 0.70 ms |
+| Ticks followed by 2 or more commits | 16 % → 13 % | 15 % → 11 % |
+| With no tick at all: commits a second | 2.0 → 0 | 2.0 → 0 |
+
+On cap128 the work check first flagged one run of the BEFORE side alone: a toast trimmed inside a
+tick (`notification_dismissed`, 6 against 5), which depends on when wall-clock dismiss timers
+fired; the tool now leaves notifications out of the work, and a second cap128 A/B (300 ticks)
+read the same work in every run, with 7.18 → 4.34 renders and 0.82 → 0.60 commits a tick.
+Net of the no-tick background, commits a tick went 0.59 → 0.57 (S2): the tick itself already
+committed once; what went is the extra commits around it and the redrawing inside each. The tick's
+own time did not move (0.57 → 0.54 ms, dev). **In the game** (a scratch check, deterministic S2 on
+both builds, the mat's DOM read 40, 160 and 450 ms after every 10th tick: Tokens with their place,
+stack order, outline, alert, bubbles and ring numbers, heroes, flags, speech, floaters): 117–118 of
+119 and 44 of 44 snapshots identical; the rest were a bubble's flash or glide caught at its edge,
+which two runs of the same build also differ by. Screenshots of the two builds match but for the
+heroes' animation frames. Guards: `src/tests/TickRedraws.test.js` (each part neutered and caught);
+`DragRedraws.test.js` now counts a Token's redraw by its bubbles, since its art no longer redraws
+with it.
+
+**Not done by it** (files outside this slice): the mat's own re-render (`MatBoard`, ~4 ms of
+render in the dev build each time, 0.05 a tick: P2-7's stack order work); flags whose stack rank
+changes (P2-7); the floor loot's redraws (`SpriteLayerView`, P2-6); the eight hero-bar figures
+redrawing their sprites on every HP change (`DockHeroFigure.jsx`, which P2-3 changes). The flash's
+glide (50 ms) and hide (2 s) and the floater's removal (3 s) still commit on their own: moving them
+onto the tick would shift when a bubble hides by up to 100 ms, a look change, so not taken.
+**Not measured yet**: the perf-build frame cost (`bench:draw --ab`, `bench:profile` for React's
+scheduler ms a second, 37 at 4× in P1) waits for a bench window.
 
 ### Owner questions
 
