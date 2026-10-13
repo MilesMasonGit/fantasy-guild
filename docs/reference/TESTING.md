@@ -9,9 +9,15 @@ Nothing merges to `main` until all of these hold:
    so anything red is new. It runs in a worktree too, once
    `node_modules` **and** `cms/node_modules` are linked (Worktrees, below). The suite takes ~2–3 minutes; read its result with
    `npx vitest run --reporter=dot 2>&1 | tail -30` rather than the full output.
-2. **Bench**: `npm run bench -- --compare` exits **0**.
+2. **Bench**: `npm run bench -- --compare` exits **0**. **The director runs
+   it, never a subagent, and only in the owner's downtime**: weekdays
+   13:00–17:00 and 01:00–07:00 Vancouver time, one bench at a time (a second
+   bench, a test suite or a build moves every number). Subagents stop at
+   items 1, 3 and 4 and report "ready for bench"; the branch waits in the
+   bench queue in `docs/active/STATUS.md` until a window.
    - Exit 1 = `REGRESSED` (slower). Timing is noisy under machine load; re-run
-     before believing it.
+     before believing it. The work check and an interleaved A/B at 1× are
+     what count (T-111).
    - Exit 2 = `WORK CHANGED`: the change altered what the game does. Stop and
      find out why, unless the ticket says a gameplay change is expected.
    - See [`bench/README.md`](../../bench/README.md).
@@ -21,7 +27,13 @@ Nothing merges to `main` until all of these hold:
    game (below). If something truly can't be automated, hand the owner an
    explicit manual check; never quietly skip it or claim it passed.
 6. **Look**: anything that changes how the game looks or plays waits for the
-   owner's eye-check before merging.
+   owner's eye-check before merging. The director writes one checklist file
+   per batch in `docs/active/eyecheck/` (`YYYY-MM-DD_<batch>.md`: the exact
+   branch-switch command, the save slot, numbered checks saying where to
+   click and what you should see, a `Verdict: ok / change: ___` line under
+   each, the owner's CMS steps at the end). Fixes from the look go on the
+   branch before it merges; the file then moves to `docs/archive/eyecheck/`
+   with the verdicts kept.
 
 Also: never weaken or delete a test to make something pass. Rewriting a test
 for a deliberate design change is fine; say which and why. Delete tests only

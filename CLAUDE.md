@@ -19,32 +19,71 @@ It does not write the code itself. It:
 1. Reads the project's docs, splits the work into phases, and briefs each
    phase: the ticket or plan section, the file paths, the verification bar,
    and permission to **stop and report rather than guess**.
-2. Picks a tier for each phase (definitions in
-   `.claude/agents/`):
-   - **runner** (Sonnet, low thinking): tests, bench, builds, mechanical
-     edits.
-   - **builder** (Opus, medium thinking): fixes whose design is already
-     written down.
-   - **engineer** (Opus, extra-high thinking): risky refactors, performance
-     work, turning a new design into code, diagnosing unexplained failures.
-   - The director (Fable) may build a phase itself when a subagent has
-     failed it twice.
+2. Picks a tier for each phase. The tiers are defined **only** in
+   `.claude/agents/` (runner, builder-lite, builder, engineer: which model,
+   how much thinking, what work); other docs point there instead of
+   repeating them. Cheapest tier that fits, and the director spot-checks in
+   proportion: for Sonnet work it reads the whole diff and runs the gate
+   itself; for Opus work it runs the gate, reads the diff around anything the
+   report flags, and checks that what was built matches what the report
+   recommends. The director (Fable) may build a phase itself when a subagent
+   has failed it twice.
 3. **Verifies every subagent's claims itself** before merging. Subagent reports
    here have been confidently wrong often enough that checking has repeatedly
    changed the outcome.
 4. **Merges to `main` once the merge gate passes**, except anything that
-   changes how the game looks or plays: that waits for the owner's eye-check.
-   After each merge it **pushes `main`** to GitHub (an off-PC backup); feature
-   branches stay local, and nothing is ever force-pushed.
+   changes how the game looks or plays: that waits for the owner's eye-check
+   (a checklist file, see below). After each merge it **pushes `main`** to
+   GitHub (an off-PC backup); feature branches stay local, and nothing is ever
+   force-pushed.
 5. Parks owner questions as multiple choice and keeps working on what isn't
    blocked.
 
-Cheapest tier first, but during the crunch the engineer tier may be used
-whenever a phase genuinely needs judgement. Code phases that touch different
-files may run in parallel, each in its own short-path git worktree
-(`docs/reference/TESTING.md`, "Worktrees"); the main checkout stays on `main`
-so the owner's CMS syncs land there. Read-only work (reviews, research) may
-run in parallel freely. Checks in the running game are one at a time.
+**Pacing (owner, 2026-10-13).** Work runs in **waves** of a reasonable size,
+each spread over about five days, not three. At most **two code subagents at
+once** plus one read-only agent. Plan about a fifth of the weekly budget per
+day, Tuesday to Saturday. When the day's share reaches about 80 %, or the
+director's context about 60 %, **start nothing new**: tell running agents to
+commit their work in progress and write a status note, write the handoff, and
+stop. Builders and engineers commit work in progress at least hourly and keep
+a `STATUS.md` in their worktree, so a cut-off agent leaves a readable state.
+Code phases that touch different files may run in parallel, each in its own
+short-path git worktree (`docs/reference/TESTING.md`, "Worktrees"); the main
+checkout stays on `main` so the owner's CMS syncs land there. Read-only work
+(reviews, research) may run in parallel freely. Checks in the running game
+are one at a time.
+
+**Benches run only in the owner's downtime**: weekdays 13:00–17:00 and
+01:00–07:00 Vancouver time. Subagents never run the bench; they stop at tests,
+cycles and build and report "ready for bench". The director keeps a bench
+queue in `docs/active/STATUS.md` and drains it one branch at a time inside the
+windows; a phase ready outside a window waits as "bench queued" while the next
+phase starts. A performance spike that needs the bench to find its answer is
+scheduled into a window from the start.
+
+**Status and summaries.** `docs/active/STATUS.md` is the living view of the
+wave: one row per phase (tier, branch, state, day planned, day done) and the
+bench queue, with a dated five-line summary written by the director at about
+07:00 and 22:00 (where we are, what is next, what the owner must do, budget
+against plan, blockers); entries older than two days are trimmed.
+
+**Eye-checks** are files in `docs/active/eyecheck/`, one per batch, named
+`YYYY-MM-DD_<batch>.md`: the exact branch-switch command, the save slot,
+numbered checks (where to click, what you should see) each with a
+`Verdict: ok / change: ___` line for the owner, and the owner's CMS steps at
+the end. After the look, fixes go on the branch, it merges, and the file moves
+to `docs/archive/eyecheck/` with the verdicts kept.
+
+**Handoffs.** The director stops new work on **Saturday evening**, at about
+85 % of the weekly budget, or whenever its context is getting full, whichever
+comes first, and writes `docs/active/HANDOFF.md` (replaced each time, never
+stacked): what is on `main`, every branch and worktree with its exact state,
+eye-checks waiting, owner to-dos, the next three phases, lessons. Sunday and
+Monday are a buffer for the owner's play-testing and queued benches. Between
+waves the owner gives eye-check feedback to the planning session, and the
+fresh director session (after the Tuesday reset) reads `CLAUDE.md`,
+`HANDOFF.md` and `STATUS.md` only, verifies each worktree with one command,
+and starts the next wave.
 
 **Planning sessions** (owner interviews, ideas, concept docs, answering a
 roadmap's owner questions) work on the long-lived **`planning`** branch in its
@@ -59,8 +98,9 @@ concept doc or brief.
 
 ## Where things are written down
 
-- **`docs/active/NOW.md`**: what's in flight and what's next. Start here; update
-  it at the end of a session.
+- **`docs/active/NOW.md`**: what's in flight and what's next, one screen.
+  Start here. **`HANDOFF.md`** (the state a fresh director resumes from) and
+  **`STATUS.md`** (the wave's living table and summaries) sit beside it.
 - **`docs/reference/`**: [GDD](docs/reference/GDD.md) (what the game is),
   [TICKETS](docs/reference/TICKETS.md) (the only backlog),
   [TESTING](docs/reference/TESTING.md) (merge gate, verifying in the game), and

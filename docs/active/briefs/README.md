@@ -54,8 +54,10 @@ a brief's read-only research may overlap another's build.
 - **Content is the owner's**: anything in `data/` is authored in the CMS by
   the owner. Briefs that need content end with a short "owner CMS to-do"
   list; never hand-edit `data/`.
-- **Tiers**: as `CLAUDE.md` says (2026-10-08: runner Sonnet, builder Opus,
-  engineer Opus extra-high). The director verifies every claim before merging.
+- **Tiers**: defined only in `.claude/agents/` (runner, builder-lite, builder,
+  engineer); `CLAUDE.md` says how the director picks one and spot-checks. The
+  director verifies every claim before merging. Benches run only in the
+  owner's downtime, by the director (TESTING.md, gate item 2).
 - **Bookkeeping**: close tickets into `docs/archive/tickets_done.md`, log
   changes in `CHANGELOG.md`, update `docs/active/NOW.md` at the end of a
   session.
