@@ -22,7 +22,10 @@ export const TEXT = Object.freeze({
     REFUSE_EMPTY_NAME: 'A Region needs a name',
     REFUSE_NO_MAPS: 'Slot a map first',
     REFUSE_NOT_HELD: 'The guild does not hold those maps',
-    REFUSE_NO_ROOM: 'Not everything fits on this layout: reroll'
+    REFUSE_NO_ROOM: 'Not everything fits on this layout: reroll',
+    REFUSE_NO_UPCYCLE: 'That map trades into nothing',
+    refuseUpcycleShort: (needed, held) => `Needs ${needed} to trade; the guild holds ${held}`,
+    refuseUpcycleNoRoom: (name) => `The Bank has no room for ${name}`
 });
 
 /** The longest flavour name, generated or typed. */

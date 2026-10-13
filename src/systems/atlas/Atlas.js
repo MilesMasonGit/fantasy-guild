@@ -23,6 +23,7 @@ import { DEV_MAPS, asciiLayout } from './devMaps.js';
 import { layOnLiveBoard } from './StarterCamp.js';
 
 export { recipeOf, preview, reroll, held, heldCount } from './Cartography.js';
+export { upcycleOffer, upcycle } from './Upcycle.js';
 
 /**
  * The Atlas: every Region the guild has settled, and moving the guild between them.

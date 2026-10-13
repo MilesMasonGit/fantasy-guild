@@ -28,6 +28,7 @@ export const SCREEN_TEXT = Object.freeze({
     REROLL: 'Reroll',
     CANCEL: 'Cancel',
     SETTLE: 'Settle',
+    upcycle: (ratio, name) => `Trade ${ratio.toLocaleString('en-US')} for 1 ${name}`,
     settled: (flavour, practical) => `${flavour} (${practical}) is settled.`,
     TRAVEL_THERE: 'Travel there',
     STAY: 'Stay here'
