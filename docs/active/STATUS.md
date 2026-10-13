@@ -11,8 +11,8 @@ October 2026.*
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
 | Process review and docs | director | `chore/process-review` | merged | Tue | Tue |
-| P2-3 sprite clock | engineer (left by cut-off) | `crunch/p2-3` (`p2-3`) | bench-queued | Tue | |
-| P2-6 loot redraws and flight canvas | engineer (left by cut-off) | `crunch/p2-6` (`p2-6`) | bench-queued | Tue | |
+| P2-3 sprite clock | engineer (left by cut-off) | `crunch/p2-3` → `main` | merged (bench: same work; timing 1.3–1.5× the Oct-7 baseline, identical to `main`'s own control run under today's load) | Tue | Tue |
+| P2-6 loot redraws and flight canvas | engineer (left by cut-off) | `crunch/p2-6` → `main` | merged (bench: same work; timing as `main`'s control) | Tue | Tue |
 | P2-5 hit-loop layers (spike) | engineer | `crunch/p2-5` (`p2-5`) | bench-queued (layer count and pixel diff still to measure) | Tue–Wed | |
 | Atlas batch M1+M2: A6, A10, A3b, A11 | owner | `crunch/preview` → `main` | merged (owner verdict: fine for a first implementation; [archived file](../archive/eyecheck/2026-10-13_atlas-m1-m2.md)) | Tue–Wed | Tue |
 | A11 CMS composer patch | owner | `main` | done: the owner's Sync of 10:00 wrote the tool wording; round-trip tests green | Tue | Tue |
@@ -26,9 +26,8 @@ October 2026.*
 
 ## Bench queue (one at a time, weekdays 13:00–17:00 and 01:00–07:00)
 
-1. `crunch/p2-3` engine bench `--compare` (expect same work).
-2. `crunch/p2-6` engine bench `--compare`; `bench:draw --compare` for the cost log.
-3. `crunch/p2-5` `bench:profile` layer count and a pixel diff of a worked Token.
+1. ~~P2-3, P2-6~~ done 13:00–13:05; `main` control run 13:05 shows the same 1.3–1.5× timing against the Oct-7 baseline (machine load: 13 Chrome, 15 Node processes). **Retake `bench/baseline.json` on a quiet machine** (T-111) before timing verdicts mean anything.
+2. `crunch/p2-5` `bench:profile` layer count and a pixel diff of a worked Token.
 4. `crunch/p2-8`: engine bench `--compare`; `bench:draw --ab` cap128 and S2 at 1× and 4×; `bench:profile --scene=cap128 --cpu=4`; cost-log line.
 5. `crunch/atlas-a8` engine bench `--compare` (expect same work).
 6. `main` after the Atlas batch: engine bench `--compare` (expect same work) and the drag bench baseline (`npm run bench:drag`, 5 kinds, A3b) for PERFORMANCE.md.
