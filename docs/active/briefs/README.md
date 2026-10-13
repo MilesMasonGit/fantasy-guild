@@ -8,6 +8,11 @@ done, and which tier should build it.
 
 ## Order
 
+**This table is the director's queue** (owner ruling 2026-10-13). A brief gets a
+row when its concept doc is `Status: approved` and the planning agent has
+written the brief; the director proposes each wave's order from it as
+multiple choice at wave start.
+
 | # | Brief | Needs | Eye-check |
 |---|---|---|---|
 | 1 | [00 Quick fixes](00_quick_fixes.md): T-104 drag, T-101 bin cap | — | no |

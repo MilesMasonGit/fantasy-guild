@@ -14,7 +14,10 @@ Directors don't act on this page.
    - small fix or tweak → a ticket in [TICKETS](../reference/TICKETS.md)
    - look or feel note → [design_pass_notes.md](design_pass_notes.md)
    - real feature → a `concept_<name>.md` with the owner's decisions, then a
-     numbered brief in [briefs/](briefs/README.md)
+     numbered brief in [briefs/](briefs/README.md). A concept doc's first
+     line is `Status: draft | approved <date> | briefed | built`; only an
+     approved doc gets a brief, and only briefs in the README's order table
+     reach the director (owner, 2026-10-13).
 4. The idea's line leaves this page and points to where it went.
 
 Tags: **⚠️ overlaps** = touches an area a crunch brief is rebuilding ·

@@ -14,6 +14,33 @@
   [`docs/reference/TICKETS.md`](docs/reference/TICKETS.md), not part of the
   current change.
 
+## The loop (owner, 2026-10-13)
+
+Two long-lived agents and the owner, in a cycle that is continuous but
+batches into **waves**, with a soft rhythm of weekday building and weekend
+planning (the owner's design ideas mostly follow what just got built):
+
+- **Planning agent** (branch `planning`, worktree `.claude/worktrees/pp`,
+  docs only): the owner shares broad ideas; the agent interviews them as
+  multiple choice, writes the concept docs and tickets, and triages the
+  owner's play-testing notes from `docs/active/owner_feedback.md` into
+  tickets, concept docs or `design_pass_notes.md`. Every concept doc starts
+  with one line, `Status: draft | approved <date> | briefed | built`. When
+  the owner approves a doc the agent writes its brief and adds a row to the
+  order table in `docs/active/briefs/README.md`: **that table is the
+  director's queue**, and the only staging there is.
+- **Director** (this session, Fable): at wave start it reads `CLAUDE.md`,
+  `HANDOFF.md`, `STATUS.md` and the briefs table, **proposes the wave's order
+  as multiple choice** (what fits the week's budget, dependencies first),
+  then dispatches and verifies subagents, keeps `STATUS.md` and the eye-check
+  files, parks design questions it cannot answer under **"Questions for the
+  owner"** in `STATUS.md` as multiple choice, and closes the wave with the
+  handoff: the break point where the owner, the planning agent and the next
+  director look at priorities and progress again.
+- **Owner**: shares ideas and answers interviews with the planning agent,
+  makes art, plays the game and the eye-checks, writes what they notice into
+  `owner_feedback.md`, and answers the director's parked questions.
+
 ## How work runs: director mode
 
 For any project bigger than a quick fix, the main session is the **director**.

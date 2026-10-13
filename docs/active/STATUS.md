@@ -24,6 +24,12 @@ October 2026.*
 | Atlas A12 map upcycling | builder | `crunch/atlas-a12` → `main` | merged (owner deferred the look, trusted on the gate; [archived file](../archive/eyecheck/2026-10-13_atlas-a12.md)) | Tue | Tue |
 | Regroup: planning docs, wave 2 plan | owner + planning | `planning` (`pp`) | queued (after P2-7, P2-9 and A8 merge) | Thu–Sat | |
 
+## Questions for the owner
+
+*Design questions the director cannot answer, as multiple choice, recommendation
+first; the owner answers in the director chat and the answer is recorded where
+it belongs. None open.*
+
 ## Bench queue (one at a time, weekdays 13:00–17:00 and 01:00–07:00)
 
 1. ~~P2-3, P2-6~~ done 13:00–13:05; `main` control run 13:05 shows the same 1.3–1.5× timing against the Oct-7 baseline (machine load: 13 Chrome, 15 Node processes). **Retake `bench/baseline.json` on a quiet machine** (T-111) before timing verdicts mean anything.
