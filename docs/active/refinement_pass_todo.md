@@ -43,7 +43,7 @@
   - **Gameplay Rule / Invariant:**
     - **Starting Camp cannot be abandoned:** Disallow abandoning the Starter Camp region. It houses endgame content and must remain a permanent fallback/rebuilding safety net for the player if they screw up other regions.
 
-- [ ] **Work Rules Menu & Hero Bar Integration Overhaul**
+- [x] **Work Rules Menu & Hero Bar Integration Overhaul** → **[concept_work_permissions.md](concept_work_permissions.md)**, T-164 (interview 2026-10-13)
   - **Drawer Presentation:**
     - Transform into a sliding drawer from the bottom.
     - Sized to match the full width of the playmat.
