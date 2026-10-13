@@ -238,7 +238,7 @@
 
 ## 7. Workflow & Agent Collaboration Protocols
 
-- [ ] **Dual-Agent Workflow Integration (Planning vs Director)**
+- [ ] **Dual-Agent Workflow Integration (Planning vs Director)** → the roles are in CLAUDE.md; the "new art is routine" line is proposed for CLAUDE.md and waits on the owner (agents can't edit it)
   - **Planning Agent Role:** Conducts interviews with the owner, author/updates concept documentation (`docs/active/concept_*.md`), refines design requirements, and prepares structured briefs for upcoming passes.
   - **Director Agent Role:** Focuses purely on execution and implementation, coordinating subagents (runners, builders, engineers) to ship verified code against locked briefs.
   - **Owner's Active Surfaces:** The owner frequently and independently updates two specific areas:
@@ -250,7 +250,7 @@
 
 ## 8. CMS & Internal Tooling Architecture (Studio Splitting)
 
-- [ ] **Decouple Recolor Studio into a Dedicated Standalone Tool / Surface**
+- [x] **Decouple Recolor Studio into a Dedicated Standalone Tool / Surface** → **T-179** (interview 2026-10-13)
   - **Need / Context:** Recolor is heavily and constantly used by the owner for asset creation, material variations, and palette swaps. Housing it inside the unified CMS causes friction, sluggishness, and mutual interference with heavy CMS processes (entity store cache mutations, background recalculations, or data syncing).
   - **Goal:** Extract the Recolor Editor (`cms/src/components/editors/RecolorEditor.jsx`) into an independent, lightweight standalone tool or dedicated workspace surface.
   - **Requirements & Scope:**
@@ -258,21 +258,21 @@
     - Retain full pixel processing capabilities: color picking/sampling, tolerance sliders, target material swaps, palette snapping, and direct asset saving (`/api/save-recolored-asset`).
     - Provide a fast-launching, non-blocking UI with zero risk of accidental game JSON overrides during sprite recoloring runs.
 
-- [ ] **Decouple Animation Studio into Standalone Motion & Sprite Viewer**
+- [x] **Decouple Animation Studio into Standalone Motion & Sprite Viewer** → **T-179** (interview 2026-10-13)
   - **Need / Context:** The Animation Editor (`cms/src/components/editors/AnimationEditor.jsx`) serves a purely visual review and motion testing purpose for hero and enemy sprite sheets (frame grids, playback speeds, outline clipping checks). It serves a distinct purpose from game balance and database editing.
   - **Goal:** Separate the Animation Studio from the CMS into an independent viewer utility.
   - **Requirements & Scope:**
     - Dedicated studio layout for animators and artists to quickly load, slice, and preview animation sheets (e.g., 8x3 hero cycles, 4x4 enemy sheets).
     - Maintain sprite inspection controls (FPS slider, frame-stepping, scale toggle, checkerboard backdrop) without loading CMS database stores or entity datasets.
 
-- [ ] **Streamline Core CMS Navigation & Workflow Isolation**
+- [x] **Streamline Core CMS Navigation & Workflow Isolation** → **T-179** (interview 2026-10-13)
   - **Need:** The CMS top bar currently bundles disparate domains (game data, economic balance, sprite editing, motion review).
   - **Goal:** Clean up `cms/src/components/layout/TopBar.jsx` and `cms/src/App.jsx` to focus the CMS purely on data authoring and validation:
     - Items, Tokens, Recipes, Maps, Effects, Progression, Starter Camp, and Economy/Sprite Audits.
     - Remove the `recolor` and `animation` views/tabs from the primary CMS once standalone alternatives are in place.
     - Prevent asset-heavy processing from interfering with core database sync (`syncToGame`) and backport operations.
 
-- [ ] **Tooling Architecture & Launch Configuration (Dev Scripts & API Endpoints)**
+- [x] **Tooling Architecture & Launch Configuration (Dev Scripts & API Endpoints)** → **T-179** (interview 2026-10-13)
   - **Architecture Plan:** Determine the hosting/execution model for decoupled studios (e.g., separate Vite sub-apps, dedicated multi-page routes, or dedicated npm scripts like `npm run studio:recolor` / `npm run studio:animation`).
   - **Asset API Endpoints:** Ensure asset I/O endpoints (like `/api/save-recolored-asset` and asset directory serving) are clean, robust, and cleanly routed without CMS state entanglements.
 
