@@ -650,6 +650,20 @@ too wide to read the small rows): `bubbles` 0.80 ms (above noise), `notification
 −0.01 ms: the shut column now costs nothing measurable. The second half of the 2026-10-09
 table (`notifications` … `spawnMotion`) all read within the noise here too.
 
+### P2-5 result: hit-loop layers (2026-10-13)
+
+**What changed** (`04cf1307`): `will-change: contents` on the element that carries a live hit
+loop, so Chrome runs the loop's transform animation on the main thread instead of promoting it
+(and everything drawn over it) to a composited layer. One line; a jsdom guard
+(`HitLoopLayers.test.js`) keeps the property where the loop is live and nowhere else.
+
+**Measured** (`bench:profile --scene=cap128 --cpu=4`, 2026-10-13, the machine under the day's
+load): composited layers **56 → 45** (49 → 39 drawing content) on `main` before and after the
+merge, like for like; the branch alone, on the older `main` it was cut from, showed 34. Paint
+`Layerize` and `UpdateLayer` time moved with the count. The pixel diff over a worked Token's loop
+was not taken: the loop's keyframes are untouched and the change is in which thread animates
+them, so the next eye-check batch includes a glance at a worked Token.
+
 ### P2-8 result: the engine tick and the React work it sets off (2026-10-13)
 
 **Measured first** (new tool, `node bench/tick-commits.mjs`: S2 in the dev build, 600 ticks the

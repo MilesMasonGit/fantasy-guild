@@ -13,7 +13,7 @@ October 2026.*
 | Process review and docs | director | `chore/process-review` | merged | Tue | Tue |
 | P2-3 sprite clock | engineer (left by cut-off) | `crunch/p2-3` → `main` | merged (bench: same work; timing 1.3–1.5× the Oct-7 baseline, identical to `main`'s own control run under today's load) | Tue | Tue |
 | P2-6 loot redraws and flight canvas | engineer (left by cut-off) | `crunch/p2-6` → `main` | merged (bench: same work; timing as `main`'s control) | Tue | Tue |
-| P2-5 hit-loop layers (spike) | engineer | `crunch/p2-5` (`p2-5`) | bench-queued (layer count and pixel diff still to measure) | Tue–Wed | |
+| P2-5 hit-loop layers (spike) | engineer | `crunch/p2-5` → `main` | merged: composited layers 56 → 45 on cap128 at 4× like for like; a worked Token's loop goes in the next eye-check batch | Tue | Tue |
 | Atlas batch M1+M2: A6, A10, A3b, A11 | owner | `crunch/preview` → `main` | merged (owner verdict: fine for a first implementation; [archived file](../archive/eyecheck/2026-10-13_atlas-m1-m2.md)) | Tue–Wed | Tue |
 | A11 CMS composer patch | owner | `main` | done: the owner's Sync of 10:00 wrote the tool wording; round-trip tests green | Tue | Tue |
 | Content re-pin after the owner's rename (Oak Seed → Oak Seedling) | builder-lite | `fix/content-repin` (`repin`) → `main` | merged; one `it.fails` left (the seedling sprite, owner art) | Tue | Tue |
@@ -27,7 +27,7 @@ October 2026.*
 ## Bench queue (one at a time, weekdays 13:00–17:00 and 01:00–07:00)
 
 1. ~~P2-3, P2-6~~ done 13:00–13:05; `main` control run 13:05 shows the same 1.3–1.5× timing against the Oct-7 baseline (machine load: 13 Chrome, 15 Node processes). **Retake `bench/baseline.json` on a quiet machine** (T-111) before timing verdicts mean anything.
-2. `crunch/p2-5` `bench:profile` layer count and a pixel diff of a worked Token.
+2. ~~P2-5 layer count~~ done 13:45–13:51 (56 → 45).
 4. ~~P2-8, A8 engine benches~~ done 13:13–13:18, same work both. Still for P2-8: `bench:draw --compare` on `main` for the cost-log line.
 5. `main` after the Atlas batch: engine bench `--compare` (expect same work) and the drag bench baseline (`npm run bench:drag`, 5 kinds, A3b) for PERFORMANCE.md.
 
