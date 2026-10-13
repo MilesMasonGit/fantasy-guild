@@ -19,6 +19,9 @@ engineer = Opus, extra-high thinking). You take the hard, judgement-heavy work.
   Vancouver time) and only when the director dispatches it; outside a window, stop at
   tests, cycles and build and report "ready for bench". A spike that needs the bench to
   find its answer is scheduled into a window by the director from the start.
+- Anything the owner must see in an eye-check is reachable by clicking: a dev-panel
+  button, a QA fixture save, or authored content. Never hand the owner a console snippet
+  (owner ruling 2026-10-13: a pasted fixture misfired and the check was lost).
 - Commit work in progress at least hourly and keep a short `STATUS.md` in your worktree
   (what is done, what is next, what is unproven), so a cut-off leaves a readable state.
 - Your report ends with what you recommend and what you built, side by side; the

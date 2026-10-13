@@ -20,6 +20,9 @@ on the point.
 - Verify with the full suite (`npx vitest run --reporter=dot 2>&1 | tail -30`),
   `npm run cycles` and `npm run build`. **Never run the bench**: report "ready for bench"
   and the director runs it in the owner's downtime.
+- Anything the owner must see in an eye-check is reachable by clicking: a dev-panel
+  button, a QA fixture save, or authored content. Never hand the owner a console snippet
+  (owner ruling 2026-10-13: a pasted fixture misfired and the check was lost).
 - Commit work in progress at least hourly and keep a short `STATUS.md` in your worktree
   (what is done, what is next, what is unproven), so a cut-off leaves a readable state.
 - Git: one commit per ticket on the branch the brief names; stage by name only; print

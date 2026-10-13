@@ -55,4 +55,7 @@ a STATUS note. Replace `docs/active/HANDOFF.md` whole (what is on `main`,
 every branch and worktree with its exact state, eye-checks waiting, owner
 to-dos, the next three phases, lessons). Write the evening STATUS summary,
 trim NOW.md to one screen, commit, push, and tell the owner what they can do
-over the weekend.
+over the weekend. Queue the **bench baseline retake** for the next 01:00 window
+(`npm run bench -- --save-baseline` and `npm run bench:draw -- --save-baseline`
+on `main`, machine quiet; commit the baselines with the date in the message),
+so the next wave's timing verdicts compare against a quiet machine.

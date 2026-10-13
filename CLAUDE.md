@@ -75,9 +75,10 @@ It does not write the code itself. It:
 
 **Pacing (owner, 2026-10-13).** Work runs in **waves** of a reasonable size,
 each spread over about five days, not three. At most **two code subagents at
-once** plus one read-only agent. Plan about a fifth of the weekly budget per
-day, Tuesday to Saturday. When the day's share reaches about 80 %, or the
-director's context about 60 %, **start nothing new**: tell running agents to
+once** plus one read-only agent. A director day is **at most three build
+phases and one review** (the director cannot see token usage, so it counts
+phases). When the day's count is reached, or the director's context is about
+60 % full, **start nothing new**: tell running agents to
 commit their work in progress and write a status note, write the handoff, and
 stop. Builders and engineers commit work in progress at least hourly and keep
 a `STATUS.md` in their worktree, so a cut-off agent leaves a readable state.
@@ -165,8 +166,12 @@ concept doc or brief.
   - A **pre-commit hook** refuses a commit that mixes `data/` with code; that
     is deliberate (`scripts/check-content-code-split.mjs`). Commit them apart.
   - The CMS's **Sync to Game commits `data/` onto whatever branch is checked
-    out.** Before merging a branch, check `git log main..<branch>` for
-    `CMS sync:` commits and mention them.
+    out, with whatever CMS code is checked out.** The owner Syncs only on
+    `main` (ruling 2026-10-13). Before merging a branch, check
+    `git log main..<branch>` for `CMS sync:` commits and mention them.
+  - **Renaming or deleting an id in the CMS can break code** (a quest reward,
+    the built-in camp bank). The owner says so after such a Sync; the director
+    greps `src/` and `cms/src/` for the old id before anything else.
   - `public/assets/**` is in **Git LFS**; the LFS hooks need `git-lfs`
     installed.
   - Several sessions may share this checkout: run `git branch --show-current`

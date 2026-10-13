@@ -18,6 +18,9 @@ prove them.
   bench**: report "ready for bench" and the director runs it in the owner's downtime.
   If the director's bench says WORK CHANGED, stop and find out why unless the brief
   names an accepted ticket.
+- Anything the owner must see in an eye-check is reachable by clicking: a dev-panel
+  button, a QA fixture save, or authored content. Never hand the owner a console snippet
+  (owner ruling 2026-10-13: a pasted fixture misfired and the check was lost).
 - Commit work in progress at least hourly and keep a short `STATUS.md` in your worktree
   (what is done, what is next, what is unproven), so a cut-off leaves a readable state.
 - Your report ends with what you recommend and what you built, side by side; the
