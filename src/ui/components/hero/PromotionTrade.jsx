@@ -15,6 +15,12 @@ import { cn } from '../../utils/cn.js';
  * the one property that makes promotion safe to engage with. A skill arriving *back* from the
  * bank says so, because 'Cooking 30' appearing from nowhere otherwise reads as a bug.
  */
+/** 'Mining', 'Mining and Fishing', 'Mining, Fishing and Cooking'. */
+export function listNames(names) {
+    if (names.length <= 1) return names.join('');
+    return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+}
+
 export const PromotionTrade = ({ preview, size = 'sm' }) => {
     if (!preview) return null;
 
@@ -40,7 +46,9 @@ export const PromotionTrade = ({ preview, size = 'sm' }) => {
             />
             {preview.cost?.skillLevel != null && (
                 <span className={cn('text-gi-muted/70', big ? 'text-[11px]' : 'text-[9px]')}>
-                    Requires the skills it carries forward at level {preview.cost.skillLevel}.
+                    {preview.gate?.length
+                        ? `Requires ${listNames(preview.gate)} at level ${preview.cost.skillLevel}.`
+                        : `Requires level ${preview.cost.skillLevel}.`}
                 </span>
             )}
             {!preview.ok && preview.detail && (

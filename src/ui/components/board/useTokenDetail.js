@@ -24,6 +24,8 @@ function questProjection(instance) {
         id: q.id,
         title: q.title,
         instruction: q.instruction || null,
+        says: q.says || null,
+        firstMaps: !!q.firstMaps,
         type: q.type || null,
         itemId: q.itemId || null,
         enemyId: q.enemyId || null,

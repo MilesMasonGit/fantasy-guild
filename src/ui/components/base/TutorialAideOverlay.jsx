@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import * as QuestTokens from '../../../systems/quests/QuestTokens.js';
+import { getTokenType } from '../../../config/registries/tokenRegistry.js';
 import { ENGINE_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import { onFrame, onStep } from '../board/frameClock.js';
 
@@ -31,58 +32,79 @@ export function activeTutorialQuest() {
     return token ? token.quest : null;
 }
 
+/** Whether a page element is on show: not inside a hidden tab or a `hidden` element. */
+function shown(el) {
+    return !!el && !el.closest('.hidden, [hidden]');
+}
+
+/** The first element matching `selector` that is on show, or null. */
+function firstShown(selector) {
+    for (const el of document.querySelectorAll(selector)) if (shown(el)) return el;
+    return null;
+}
+
+/** The first Token on the mat whose type passes `test`, by its art. */
+function tokenWhere(test) {
+    for (const el of document.querySelectorAll('[data-token-art="true"][data-token-type]')) {
+        const def = getTokenType(el.getAttribute('data-token-type'));
+        if (def && test(def)) return el;
+    }
+    return null;
+}
+
+/** Something a hero can gather: a resource with work in it that is not an endgame site. */
+const gatherable = (def) => def.tokenType === 'resource' && !def.landmark && !!def.config?.skill;
+/** A station that crafts: not a Foundation. */
+const craftStation = (def) => def.tokenType === 'station' && !def.foundation;
+const enemy = (def) => def.tokenType === 'enemy';
+const landmark = (def) => def.landmark === true;
+
 /**
- * Resolves the target DOM element for a given tutorial quest (the chain in
- * `tutorialQuests.js`). Each case falls back to the orb that opens the right screen.
+ * Resolves the target DOM element for a given tutorial quest (the chain in `tutorialQuests.js`).
+ * Each step prefers the thing itself and falls back to the orb that opens the right screen. The
+ * selectors are the live page's (`TutorialAide.test.js` checks them against the components).
  */
 export function resolveTutorialTargetElement(questId) {
     if (typeof document === 'undefined' || !questId) return null;
 
-    const q = (selector) => document.querySelector(selector);
+    const q = (selector) => firstShown(selector);
     const token = (typeId) => q(`[data-token-art="true"][data-token-type="${typeId}"]`);
     const shopItem = (typeId) => q(`[data-shop-item="${typeId}"]`) || q('#shop-bubble-target');
+    const atlasTab = (tab) => q(`[data-atlas-tab="${tab}"]`) || q('#atlas-bubble-target');
 
     switch (questId) {
-        case 'tut_recruit': // Recruit a Hero from the Guild Hall board
-            return (
-                q('[data-guild-roster-upgrade="true"]') ||
-                q('#guild-bubble-target') ||
-                q('button[title*="Guild"]')
-            );
+        case 'cart_recruit':
+            return q('[data-guild-roster-upgrade="true"]') || q('#guild-bubble-target');
 
-        case 'tut_flag': // Drag a Hero from the Hero Dock onto the mat
-            return (
-                q('[data-hero-dock-tab]') ||
-                q('#rightmost-hero-dock') ||
-                q('#hero-dock')
-            );
+        case 'cart_flag': // Drag a hero from the hero bar onto the mat
+            return q('[data-dock-hero][data-dock-deployed="false"]') || q('[data-dock-hero]') || q('#guild-bubble-target');
 
-        case 'tut_log': // Log an Oak Tree
-            return token('token_oak_tree') || token('token_oak_forest');
+        case 'cart_gather':
+            return tokenWhere(gatherable);
 
-        case 'tut_collect': // Collect loot by hovering
-            return q('[data-item-sprite="true"]') || q('#sprite-layer');
+        case 'cart_loot': // Loot on the floor, else where it will fall
+            return q('[data-item-sprite="true"]') || tokenWhere(gatherable);
 
-        case 'tut_bank': // Item Bank
-            return q('#bank-bubble-target');
-
-        case 'tut_shop': // Buy anything at the Shop
-            return q('[data-shop-item]') || q('#shop-bubble-target');
-
-        case 'tut_foundation': // Buy a Wood Foundation
+        case 'cart_foundation':
             return shopItem('token_wood_foundation');
 
-        case 'tut_workbench': // Build a Workbench on the Wood Foundation
+        case 'cart_station': // Build on the Wood Foundation
             return token('token_wood_foundation') || shopItem('token_wood_foundation');
 
-        case 'tut_charcoal': // Craft Charcoal at the Workbench
-            return token('token_workbench') || token('token_wood_foundation') || shopItem('token_wood_foundation');
+        case 'cart_craft': // Craft at the new station
+            return tokenWhere(craftStation) || token('token_wood_foundation') || shopItem('token_wood_foundation');
 
-        case 'tut_farmland': // Plant Farmland
-            return token('token_farmland') || shopItem('token_farmland');
+        case 'cart_fight':
+            return tokenWhere(enemy);
 
-        case 'tut_wheat': // Harvest Ripe Wheat
-            return token('token_ripe_wheat') || token('token_wheat_field') || token('token_farmland') || shopItem('token_farmland');
+        case 'cart_inspect': // An endgame site
+            return tokenWhere(landmark);
+
+        case 'cart_settle': // Slot a map and Settle, on the Atlas's Cartography table
+            return q('[data-cartography-settle]') || atlasTab('cartography');
+
+        case 'cart_travel': // Travel, from the settled message or the Region list
+            return q('[data-settled-travel]') || q('[data-region-travel]') || atlasTab('regions');
 
         default:
             return null;

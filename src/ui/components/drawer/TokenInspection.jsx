@@ -27,7 +27,8 @@ import { lifecycleLines } from './lifecycleLines.js';
 import { LandmarkBlock } from './LandmarkBlock.jsx';
 import { InspectBubbles } from './InspectBubbles.jsx';
 import { useTokenDetail } from '../board/useTokenDetail.js';
-import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
+import { ENGINE_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
+import { EventBus } from '../../../systems/core/EventBus.js';
 
 /**
  * TokenInspection: a Token's full detail, styled consistently with ItemInspection.
@@ -47,6 +48,14 @@ export const TokenInspection = ({
 }) => {
     const def = getTokenType(typeId);
     const marked = !!useTokenDetail(instanceId, def)?.marked;
+
+    // ⚠️ The engine cannot see a sheet open: this tells it, once per Token shown, and the
+    // tutorial's "inspect an endgame site" step counts it (`QuestManager`). Only a Token on the
+    // mat; a Shop row's sheet has no instance.
+    useEffect(() => {
+        if (instanceId == null || !typeId) return;
+        EventBus.publish(UI_EVENTS.TOKEN_INSPECTED, { instanceId, typeId });
+    }, [instanceId, typeId]);
 
     if (!def) return null;
 

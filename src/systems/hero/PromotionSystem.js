@@ -214,5 +214,8 @@ export function previewPromotion(heroId, jobId) {
         };
     });
 
-    return { jobId, losing, keeping, arriving, cost: getPromotionCost(jobId), ...canPromote(heroId, jobId) };
+    // The skills the gate asks for, by name, so the UI can say which.
+    const gate = getPromotionGateSkills(jobId).map(id => getSkill(id)?.name || id);
+
+    return { jobId, losing, keeping, arriving, gate, cost: getPromotionCost(jobId), ...canPromote(heroId, jobId) };
 }

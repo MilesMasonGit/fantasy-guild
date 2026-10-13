@@ -11,6 +11,7 @@ import {
 import { STARTING_SKILL_IDS } from '../config/registries/skillRegistry.js';
 import { restoreBankedStarting } from '../systems/hero/logic/HeroRehydration.js';
 import { canHeroFight } from '../utils/CombatFormulas.js';
+import { listNames } from '../ui/components/hero/PromotionTrade.jsx';
 
 /**
  * Promotion, re-training and banking.
@@ -512,6 +513,16 @@ describe('Preview shows the trade before the player commits', () => {
         expect(preview.arriving.length).toBe(2);
         expect(preview.keeping.length).toBe(STARTING_SKILL_IDS.length);
         expect(preview.ok).toBe(true);
+    });
+
+    it('names the gate skills, so the ceremony can say which (a basic class gates on two Starting skills)', () => {
+        const hero = makeQualified('fighter');
+        const preview = PromotionSystem.previewPromotion(hero.id, 'fighter');
+        expect(preview.gate.length).toBeGreaterThan(0);
+        expect(preview.gate.every(name => typeof name === 'string' && name.length > 0)).toBe(true);
+        expect(listNames(['Mining'])).toBe('Mining');
+        expect(listNames(['Mining', 'Fishing'])).toBe('Mining and Fishing');
+        expect(listNames(['Mining', 'Fishing', 'Cooking'])).toBe('Mining, Fishing and Cooking');
     });
 
     it('names a re-training swap: the old branch skills are lost (banked)', () => {

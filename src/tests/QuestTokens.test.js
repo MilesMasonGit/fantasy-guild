@@ -307,12 +307,12 @@ describe('saves (B6.1)', () => {
             if (state.board.tokens[id].typeId === QUEST_TOKEN_TYPE) delete state.board.tokens[id];
         }
         state.quests = {
-            completedTutorials: ['tut_recruit', 'tutorial_3'],
+            completedTutorials: ['cart_recruit', 'tutorial_3'],
             tutorialStep: 1,
             nextQuestAt: Date.now() + 1000,
             active: [
-                { id: 'tut_flag', isTutorial: true, step: 1, title: 'old', targetType: 'hero_deployed', requiredCount: 1, currentCount: 0, status: 'active' },
-                { id: 'tut_log', isTutorial: true, step: 2, title: 'old', targetType: 'cycle_completed', requiredCount: 3, currentCount: 2, status: 'active' },
+                { id: 'cart_flag', isTutorial: true, step: 1, title: 'old', targetType: 'hero_deployed', requiredCount: 1, currentCount: 0, status: 'active' },
+                { id: 'cart_gather', isTutorial: true, step: 2, title: 'old', targetType: 'cycle_completed', requiredCount: 3, currentCount: 2, status: 'active' },
                 { id: 'tutorial_12', isTutorial: true, title: 'Token Vault', targetType: 'open_vault', requiredCount: 1, currentCount: 0, status: 'active' },
                 { id: 'quest_old_1', isTutorial: false, type: 'hunt', title: 'Defeat 3 Goblins', targetType: 'enemy_hunted', enemyId: 'token_goblin', requiredCount: 3, currentCount: 1, rewardMapId: 'map_x', status: 'active' },
                 { id: 'quest_old_2', status: 'abandoned', originalId: 'x', readyAt: Date.now() + 60_000 }
@@ -325,10 +325,10 @@ describe('saves (B6.1)', () => {
         EventBus.publish('game_loaded', { slot: 0 });
 
         expect(GameState.state.quests.active).toEqual([]);
-        expect(tutorials().map(t => t.quest.id)).toEqual(['tut_flag', 'tut_log']);
-        const log = tutorials().find(t => t.quest.id === 'tut_log').quest;
+        expect(tutorials().map(t => t.quest.id)).toEqual(['cart_flag', 'cart_gather']);
+        const log = tutorials().find(t => t.quest.id === 'cart_gather').quest;
         expect(log.currentCount).toBe(2);
-        expect(log.title).toBe('Log an Oak Tree');   // re-read from its template
+        expect(log.title).toBe('Gather');   // re-read from its template
         const [hunt] = bounties();
         expect(hunt.quest).toMatchObject({ id: 'quest_old_1', tutorial: false, type: 'hunt', enemyId: 'token_goblin', currentCount: 1, done: false });
         expect(hunt.quest.rewardItems).toEqual([{ itemId: 'item_oak_wood', quantity: 10 }]);
@@ -336,15 +336,15 @@ describe('saves (B6.1)', () => {
         expect(GameState.state.quests.tutorialStep).toBe(1);
 
         // The chain settles back to one at a time: no new step until the last is claimed.
-        const flag = tutorials().find(t => t.quest.id === 'tut_flag');
+        const flag = tutorials().find(t => t.quest.id === 'cart_flag');
         flag.quest.currentCount = 1;
         flag.quest.done = true;
         expect(QuestTokens.claimQuest(flag.id).success).toBe(true);
-        expect(tutorials().map(t => t.quest.id)).toEqual(['tut_log']);
+        expect(tutorials().map(t => t.quest.id)).toEqual(['cart_gather']);
         const logToken = tutorials()[0];
         logToken.quest.currentCount = 3;
         logToken.quest.done = true;
         expect(QuestTokens.claimQuest(logToken.id).success).toBe(true);
-        expect(tutorials().map(t => t.quest.id)).toEqual(['tut_collect']);
+        expect(tutorials().map(t => t.quest.id)).toEqual(['cart_loot']);
     });
 });

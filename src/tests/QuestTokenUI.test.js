@@ -16,7 +16,9 @@ import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { EngineContext } from '../ui/context/EngineContext';
 import { MatToken } from '../ui/components/board/MatToken.jsx';
 import { questRing, RING_COLOUR } from '../ui/components/board/ringRow.js';
-import { questNeedLine } from '../ui/components/board/QuestTooltip.jsx';
+import { questNeedLine, questRewardsShown } from '../ui/components/board/QuestTooltip.jsx';
+import { TUTORIAL_TEXT } from '../systems/quests/tutorialText.js';
+import { registerItems, getAllItems } from '../config/registries/itemRegistry.js';
 import {
     activeTutorialQuest, TUTORIAL_AIDE_EVENTS
 } from '../ui/components/base/TutorialAideOverlay.jsx';
@@ -185,6 +187,29 @@ describe('hover to read (B6.2)', () => {
         expect(tip.querySelector('[data-quest-tutorial]').textContent).toBe('Tutorial');
         expect(tip.querySelector('[data-quest-instruction]').textContent).toBe(tut.quest.instruction);
         expect(tip.querySelector('[data-quest-need]').textContent).toBe('0/1');
+        // The cartographer speaks the step, with his name after the line.
+        const says = tip.querySelector('[data-quest-says]').textContent;
+        expect(says).toContain(tut.quest.says);
+        expect(says).toContain(TUTORIAL_TEXT.speaker);
+    });
+
+    it('a bounty has no cartographer\'s line', () => {
+        const q = spawn(hunt());
+        mount(tokenEl(q, { isHovered: true }));
+        expect(tooltip().querySelector('[data-quest-says]')).toBeNull();
+    });
+
+    it('the first-maps step shows the maps the registry holds now, and only its items with none', () => {
+        const step = { tutorial: true, firstMaps: true, rewardItems: [{ itemId: 'item_oak_wood', quantity: 10 }] };
+        const none = questRewardsShown(step);
+        expect(none).toEqual([{ itemId: 'item_oak_wood', quantity: 10 }]);
+        registerItems({ map_ui_test: { id: 'map_ui_test', name: 'Test Map', type: 'map', cartography: { biome: 'forest', points: 4, nodes: [] } } });
+        try {
+            expect(questRewardsShown(step).map(r => r.itemId)).toEqual(['item_oak_wood', 'map_ui_test']);
+            expect(questRewardsShown({ ...step, tutorial: false }).map(r => r.itemId)).toEqual(['item_oak_wood']);
+        } finally {
+            delete getAllItems().map_ui_test;
+        }
     });
 
     it('no tooltip unless hovered', () => {
