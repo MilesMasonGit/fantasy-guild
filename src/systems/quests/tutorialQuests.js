@@ -46,7 +46,7 @@ export const TUTORIAL_QUESTS = [
         targetType: 'cycle_completed',
         match: { typeId: 'token_oak_tree' },
         requiredCount: 3,
-        rewardItems: reward('item_oak_seed', 2)
+        rewardItems: reward('item_oak_seedling', 2)
     },
     {
         id: 'tut_collect',

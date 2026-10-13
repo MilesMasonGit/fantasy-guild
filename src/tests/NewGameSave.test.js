@@ -44,7 +44,7 @@ describe('a new game is saved complete straight away (CR3-100)', () => {
         const stored = JSON.parse(localStorage.getItem(SaveManager.getSlotKey(0)));
         const tokens = Object.values(stored.state.board.tokens || {}).map(t => t.typeId);
         expect(tokens).toContain('token_guild_hall');
-        expect(stored.state.inventory.items.item_oak_seed).toBeTruthy();
+        expect(stored.state.inventory.items.item_oak_seedling).toBeTruthy();
 
         // And it is the same starter set the live game holds.
         expect(tokens.sort()).toEqual(Object.values(GameState.state.board.tokens).map(t => t.typeId).sort());
