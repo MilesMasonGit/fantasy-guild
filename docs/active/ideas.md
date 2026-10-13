@@ -224,6 +224,12 @@ mods via the CMS after release.
 
 ## Moved on
 
+- **Owner refinement pass** ([refinement_pass_todo.md](refinement_pass_todo.md),
+  2026-10-10) is being worked through by the planning session from
+  2026-10-13: bugs and tweaks → T-145 to T-157; the UI style guide →
+  [UI_STYLE.md](../reference/UI_STYLE.md) and T-159 to T-162; information
+  layers → [concept_info_layers.md](concept_info_layers.md). The rest wait
+  for their interviews, tracked in that file.
 - **D9 Release package** → [concept_release.md](concept_release.md), done
   2026-10-09. **All nine design interviews are done.**
 - **D8 Quests and the tutorial** → [concept_quests_tutorial.md](concept_quests_tutorial.md),

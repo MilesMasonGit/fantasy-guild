@@ -25,7 +25,7 @@
   - **Need:** Full visual overhaul to match the latest aesthetic style.
   - **Goal:** Bring into alignment with current UI styles and strip down to clear, essential key information only (avoid visual clutter).
 
-- [ ] **Information Architecture: Bubbles vs. Hover vs. Inspection**
+- [x] **Information Architecture: Bubbles vs. Hover vs. Inspection** → **[concept_info_layers.md](concept_info_layers.md)** (interview 2026-10-13)
   - **Need:** Comprehensive experimentation and cleanup on world/work bubbles and data distribution:
     - **Optimization & Efficiency:** Ensure rendering/tick performance is lightweight.
     - **World Mat / Bubbles:** Radically declutter default view.

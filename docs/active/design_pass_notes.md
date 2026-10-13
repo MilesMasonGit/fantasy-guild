@@ -46,6 +46,7 @@ line each is enough.
   the verb fits, but it could say fell.
 
 ## Bubbles and framerate
+- **Decided 2026-10-13** in [concept_info_layers.md](concept_info_layers.md).
 - After brief 60 swaps the cycle ring for its cheap version, plan and
   experiment with different bubble styles for a polished look that keeps the
   framerate stable (owner, 2026-10-09).

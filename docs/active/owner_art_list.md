@@ -66,3 +66,12 @@ player for these is T-138 (built when the first strips exist).
 - A **quill icon** for the hero panel's Edit button (brief 30 eye-check).
 - Hero **recolour presets** need the hero sprites split into recolourable
   parts (clothing, skin): D7, design detail to come.
+- **Token card art, 256×256, one scene per activity** (NEW,
+  [concept_info_layers.md](concept_info_layers.md)): the full-art backdrop
+  behind a Token's card. One per Starting skill and trade (mining, forestry,
+  farming, cooking, smithing and the rest); a Token can also name its own
+  picture in the CMS. Exists today: one fishing scene and four stations in
+  `public/assets/backgrounds/`.
+- **Small UI icons** for the card's lines and the mat (NEW; placeholders until
+  drawn): clock (cycle time), charges, regrow, spawn, grow, the problem mark
+  ("!", recoloured yellow and red in code).
