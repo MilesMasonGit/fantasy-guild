@@ -57,7 +57,6 @@ player for these is T-138 (built when the first strips exist).
 | Hit spark | A landed combat hit | 3 | 16 × 16 |
 | Knockout poof | An enemy beaten | 5 | 32 × 32 |
 | Grain puff | Farming | 4 | 16 × 16 |
-| Level-up sparkle | A hero levels | 4 | 16 × 16 |
 | Rare shine | A rare item on the floor | 4 | 16 × 16 |
 | *Later*: loot glint, used-up crumble | — | 3 / 4 | 8 × 8 / 64 × 64 |
 

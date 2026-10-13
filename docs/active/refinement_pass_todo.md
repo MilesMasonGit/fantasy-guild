@@ -186,13 +186,13 @@
 
 ## 4. Animation, VFX & Art Asset Experiments
 
-- [ ] **Token & UI "Shine Sweep" Effect**
+- [x] **Token & UI "Shine Sweep" Effect** → **[concept_level_up.md](concept_level_up.md)** (interview 2026-10-13)
   - **Concept:** A subtle diagonal/linear shine sweep across the face of a token or UI button.
   - **Use Case:** Trigger when something special occurs on a token (e.g., milestone, rare trigger, upgrade) or on interactive UI buttons.
   - **Visual Rule:** Must not blot out or mask the underlying pixel artwork—just a fast, crisp sweep of light/sheen across the surface.
   - **Status:** Queued for future animation prototyping and sandbox testing.
 
-- [ ] **Hero Playmat Level-Up: Celebratory Animation & Splashy Speech Bubble**
+- [x] **Hero Playmat Level-Up: Celebratory Animation & Splashy Speech Bubble** → **[concept_level_up.md](concept_level_up.md)** (interview 2026-10-13)
   - **Context:** The horizontal hero bar notification remains subtle and persistent, but the on-mat hero moment needs high excitement and celebratory juice.
   - **Hero Sprite Animation:** Flashy celebratory FX on the hero token itself (e.g. sparkle, radiant burst, or level-up aura).
   - **Splashy World Speech Bubble:**

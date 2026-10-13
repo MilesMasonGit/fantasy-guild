@@ -80,10 +80,8 @@ redone to the style guide.
 ## Notes for the director
 
 - **T-165 first** (engine): the Starter Camp's placed Tokens get the fixture
-  mark when the camp is laid down. ⚠️ Existing saves already hold the camp's
-  Tokens without the mark: a load-time step must mark them (match against the
-  camp layout in `data/starterCamp.json`). Engineer; tests for a new game and
-  an old save.
+  mark when the camp is laid down. No old-save conversion: the owner plays
+  fresh saves (2026-10-13). Engineer; tests for a new game.
 - **T-166** (builder): the Demolish toggle, the banners, mode outlines and
   cursor, dimming, the batch controls. Then the Token card drops its Disallow
   switch and Demolish buttons (with the info-layers card work, or as a small
