@@ -7,7 +7,7 @@
  * { version: 1, savedAt: '2026-10-09T14:02:00.000Z', mat: { w: 1760, h: 1126 },
  *   hall: { x: 880, y: 563 },
  *   tokens: [{ typeId: 'token_oak_forest', x: 560, y: 563 }, ...],
- *   bank: { item_oak_seed: 3, item_oak_wood: 10 } }
+ *   bank: { item_oak_seedling: 3, item_oak_wood: 10 } }
  * ```
  *
  * Points are mat units on the mat it was saved from (`mat`); the game moves the whole layout so its

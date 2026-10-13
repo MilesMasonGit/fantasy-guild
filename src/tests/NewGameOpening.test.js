@@ -100,12 +100,12 @@ describe('with no Starter Camp file, a new game opens on the built-in camp', () 
         expect(onMat.find(t => t.typeId === 'token_oak_forest').usesRemaining ?? null).toBeNull();
     });
 
-    it('the Bank holds 3 Oak Seed, 10 Oak Wood and 2 Wheat Seed, and nothing else', () => {
-        expect(InventoryManager.getItemCount('item_oak_seed')).toBe(3);
+    it('the Bank holds 3 Oak Seedling, 10 Oak Wood and 2 Wheat Seed, and nothing else', () => {
+        expect(InventoryManager.getItemCount('item_oak_seedling')).toBe(3);
         expect(InventoryManager.getItemCount('item_oak_wood')).toBe(10);
         expect(InventoryManager.getItemCount('item_wheat_seed')).toBe(2);
         expect(Object.keys(GameState.state.inventory.items).sort())
-            .toEqual(['item_oak_seed', 'item_oak_wood', 'item_wheat_seed']);
+            .toEqual(['item_oak_seedling', 'item_oak_wood', 'item_wheat_seed']);
     });
 
     it('every built-in Token and item exists', () => {
@@ -270,7 +270,7 @@ describe('the §6 circularity check: every chain is reachable from the Starter C
 
     it('every chain item is reachable', () => {
         for (const id of [
-            'item_oak_wood', 'item_oak_seed', 'item_copper_ore', 'item_coal', 'item_stone',
+            'item_oak_wood', 'item_oak_seedling', 'item_copper_ore', 'item_coal', 'item_stone',
             'item_raw_shrimp', 'item_wheat', 'item_wheat_seed', 'item_apple', 'item_apple_seed',
             'item_charcoal', 'item_torch', 'item_copper_ingot', 'item_shrimp'
         ]) {

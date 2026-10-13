@@ -17,7 +17,7 @@ const items = read('items.json');
 const recipes = read('tokenRecipes.json');
 
 const CHAIN = [
-    { mine: 'token_copper_mine', name: 'Copper Mine', worked: 'token_copper_ore_vein', item: 'item_copper_ore' },
+    { mine: 'token_copper_mine', name: 'Copper Mine', worked: 'token_copper_ore_vein', item: 'item_copper_ore', pickaxe: true },
     { mine: 'token_coal_mine', name: 'Coal Mine', worked: 'token_coal_vein', item: 'item_coal' },
     { mine: 'token_quarry', name: 'Quarry', worked: 'token_stone_outcrop', item: 'item_stone' },
 ];
@@ -31,7 +31,7 @@ describe('The Mining chain in shipped data (7.2)', () => {
         expect(tokens.token_stone_outcrop).toMatchObject({ id: 'token_stone_outcrop', name: 'Stone Outcrop' });
     });
 
-    for (const { mine, name, worked, item } of CHAIN) {
+    for (const { mine, name, worked, item, pickaxe } of CHAIN) {
         describe(name, () => {
             const def = tokens[mine];
             const vein = tokens[worked];
@@ -60,12 +60,12 @@ describe('The Mining chain in shipped data (7.2)', () => {
                 expect(familyOf(mine)).toEqual([worked]);
             });
 
-            it(`what it spawns is mined for ${item}, needs no pickaxe, and runs out`, () => {
+            it(`what it spawns is mined for ${item}, ${pickaxe ? 'needs a Tier 1 pickaxe' : 'needs no pickaxe'}, and runs out`, () => {
                 expect(vein.config.skill).toBe('mining');
                 expect(vein.config.skillRequired).toBe(1);
                 expect(vein.config.outputs.map((o) => o.itemId)).toEqual([item]);
                 expect(vein.config.outputs[0].chance).toBe(100);
-                expect(vein.acceptedTokens || []).toEqual([]);
+                expect(vein.acceptedTokens || []).toEqual(pickaxe ? [{ tag: 'pickaxe', minTier: 1 }] : []);
                 expect(vein.uses).toBe(5);   // Q9 pacing: was 10
             });
 

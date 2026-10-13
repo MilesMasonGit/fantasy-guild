@@ -32,7 +32,7 @@ export const BUILT_IN_OFFSET = 320;
  * spawn), a little Oak Wood towards the first Shop purchase, and two Wheat Seeds for the first
  * Farmland.
  */
-export const BUILT_IN_BANK = Object.freeze({ item_oak_seed: 3, item_oak_wood: 10, item_wheat_seed: 2 });
+export const BUILT_IN_BANK = Object.freeze({ item_oak_seedling: 3, item_oak_wood: 10, item_wheat_seed: 2 });
 
 const centreOf = (w, h) => ({ x: Math.round(w / 2), y: Math.round(h / 2) });
 
