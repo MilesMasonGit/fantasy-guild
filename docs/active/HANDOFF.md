@@ -10,18 +10,14 @@ then verifies each worktree with `git -C .claude/worktrees/<name> status
 ## On `main` (pushed)
 
 Briefs 20, 30, 40, 50; brief 60 P1 (plan) and P2-1, P2-2, P2-4 (cap128 at 4×:
-35 % → ~68 % of frames in budget); Atlas A1, A2, A3a, A4, A5, A7, A9; T-129;
-the process-review docs of 2026-10-13. The `planning` branch is fully merged.
+35 % → ~68 % of frames in budget); Atlas A1, A2, A3a, A3b, A4, A5, A6, A7,
+A9, A10, A11; T-129; the process-review docs of 2026-10-13. The `planning` branch is fully merged.
 
 ## Branches and worktrees, verified 2026-10-13
 
 | Branch | Worktree | State |
 |---|---|---|
-| `crunch/preview` | none (was the owner's folder) | `main` as of 2026-10-10 + A6 + A10 + A3b + A11 + two seam fixes (`03812184`: fixed Tokens respect the dev layout tool for landmarks; the fixed-Token tests no longer import the removed bin). Gate green there (4651 tests, build). **Carry `03812184` over when A10 and A3b merge** (`git cherry-pick 03812184` onto `main` after them, or merge the preview branch itself). |
-| `crunch/atlas-a6` | none | A6 Atlas and Cartography screens, Token Cap and Cartography Table upgrades. Eye-check. |
-| `crunch/atlas-a10` | `atlas-a10` | A10 fixed vs movable Tokens, faint marker. Eye-check. |
-| `crunch/atlas-a3b` | `atlas-a3b` | A3b bin gone, Demolish / Cancel / Dismiss bounty on the inspection. Eye-check; drag-bench baseline not retaken (bench queue). |
-| `crunch/atlas-a11` | `atlas-a11` | A11 no tier labels; the CMS description patch is parked on the branch. **Owner** applies it and Syncs on this branch, then it merges. |
+| `crunch/preview`, `crunch/atlas-a6`, `-a10`, `-a3b`, `-a11` | `atlas-a10`, `atlas-a3b`, `atlas-a11` | All merged to `main` 2026-10-13 after the owner's eye-check (the preview branch carried the two seam fixes). The A11 CMS composer patch is committed on `fix/a11-cms-composer` (`0d99bc9e`, worktree `p23b`); the seven round-trip tests are red there until the owner Syncs to Game with it checked out, then it merges. The A3b drag-bench baseline is still in the bench queue. Worktrees disposable. |
 | `crunch/p2-3` | `p2-3` | Complete: 2 commits, clean tree, full suite green (335 files). The enemy float-boundary fix is in `57e55545`. Merge conflicts only in CHANGELOG (keep both). Bench queued. |
 | `crunch/p2-6` | `p2-6` | Complete and committed today (`2dee55f2`), full suite green (337 files). Bench queued. |
 | `crunch/p2-5` | `p2-5` | Spike committed today (`04cf1307`): `will-change: contents` on a live hit loop plus a jsdom guard. The layer count and the pixel diff were never measured: bench queue. If the layer count does not drop, the spike is a no. |
@@ -33,14 +29,13 @@ the process-review docs of 2026-10-13. The `planning` branch is fully merged.
 
 ## Eye-checks waiting
 
-- [eyecheck/2026-10-13_atlas-m1-m2.md](eyecheck/2026-10-13_atlas-m1-m2.md):
-  A6, A10, A3b, A11 on `crunch/preview`. The owner's play-testing notes from
-  the preview branch fold into it when given.
+- None. The Atlas batch's file is archived with the verdict in
+  `docs/archive/eyecheck/`. The owner's wider Atlas notes go to the planning
+  session for the next wave.
 
 ## Owner to-dos
 
-See NOW.md "Owner CMS to-do" and the A11 patch step. Don't Sync to Game while
-on `crunch/preview`.
+See NOW.md "Owner CMS to-do": Sync on `main` for the content, and one Sync on `fix/a11-cms-composer` for A11's wording.
 
 ## Next three phases
 
@@ -48,7 +43,7 @@ on `crunch/preview`.
    on CHANGELOG), push; P2-5's layer count after them.
 2. P2-7 sparse stack order (engineer; after P2-5 is decided, both touch the
    mat's stacking) and P2-8 tick/React per tick (engineer), in parallel.
-3. P2-9 drags; then A8 and A12 once the Atlas batch merges.
+3. P2-9 drags; A8 and A12 (the Atlas batch is merged).
 
 ## Lessons carried forward
 

@@ -8,12 +8,12 @@ wave's living table and the morning/evening summaries are
 
 ## Next
 
-1. **Wave 1, finishing (director, from 2026-10-13):** verify and merge the
-   brief 60 leftovers (P2-3, P2-5, P2-6), the Atlas eye-check batch
-   ([eyecheck/2026-10-13_atlas-m1-m2.md](eyecheck/2026-10-13_atlas-m1-m2.md):
-   A6, A10, A3b, A11, with the owner's preview-branch notes folded in), then
-   P2-7, P2-8, P2-9 two at a time, then Atlas A8 and A12. Order ruled by the
-   owner 2026-10-13.
+1. **Wave 1, finishing (director, from 2026-10-13):** the Atlas batch (A6,
+   A10, A3b, A11) is merged after the owner's eye-check; verify and merge the
+   brief 60 leftovers (P2-3, P2-5, P2-6), then P2-7, P2-8, P2-9 two at a
+   time, then Atlas A8 and A12. Order ruled by the owner 2026-10-13. A
+   planning agent works with the owner on the concept docs for the next
+   wave meanwhile.
 2. **Regroup** after wave 1 and before brief 80: read the planning docs
    (already on `main`), apply the lessons in HANDOFF.md, plan wave 2 (brief
    80 terrain with the owner's new spritesheets and the terrain-grid ruling
@@ -31,9 +31,11 @@ wave's living table and the morning/evening summaries are
      Tree regrows from Oak Sapling, the Shrimp Coast too; from A7 the 25
      endgame-site Tokens (Landmark checkbox), lay out the camp with the QA
      panel's Starter Camp tools, accept it on the CMS Starter Camp tab.
-   - A11: apply the CMS description-composer patch
-     (`a11_cms_description_composer.patch`) and Sync **on `crunch/atlas-a11`**
-     so the round-trip tests go green; then it merges.
+   - A11: the CMS composer patch is on branch `fix/a11-cms-composer`
+     (it names the tool instead of a tier number). Switch to it
+     (`git switch fix/a11-cms-composer`), open the CMS, Sync to Game, tell the
+     director; the Sync writes the wording into `data/` and the round-trip
+     tests go green, then it merges and you switch back to `main`.
 4. **Brief 20 live-game check** once the Academies and master Tokens exist.
 5. Parked: **T-111** engine bench timings are load-sensitive; trust the work
    check. `data/maps.json` is read by nothing: delete it in a data-only commit.
@@ -44,7 +46,7 @@ wave's living table and the morning/evening summaries are
 - **Crunch order:** UI rework ✓ → class rework v2 ✓ (engine) → hero bar and
   panel ✓ → offline progress ✓ → drag ✓ → deep optimization (P2-1, 2, 4 merged:
   cap128 at 4× from 35 % to ~68 % of frames in budget) → Atlas (A1, A2, A3a,
-  A4, A5, A7, A9 merged; A6, A10, A3b, A11 at eye-check) → terrain →
+  A3b, A4, A5, A6, A7, A9, A10, A11 merged; A8, A12 next) → terrain →
   Performance Envelope ([briefs](briefs/README.md)).
 - **Tests:** all green (4651 at `crunch/preview`; two file-scan tests time out
   only under bench load). Anything red is new.
