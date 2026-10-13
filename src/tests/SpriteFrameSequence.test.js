@@ -5,6 +5,7 @@ import { render, act, cleanup } from '@testing-library/react';
 import { AnimatedEnemySprite } from '../ui/components/board/AnimatedEnemySprite.jsx';
 import { AnimatedHeroSprite } from '../ui/components/board/AnimatedHeroSprite.jsx';
 import { heroSpriteFrame, HERO_FRAME_MS } from '../ui/components/board/hitAnimations.js';
+import { framesAtOnce } from './fixtures/framesAtOnce.js';
 
 vi.mock('../systems/board/BoardState.js', () => ({
     heroBodyOf: vi.fn(() => null)
@@ -13,18 +14,22 @@ vi.mock('../systems/board/BoardState.js', () => ({
 import * as BoardState from '../systems/board/BoardState.js';
 
 /**
- * ⭐ **Which frame a sprite sheet shows, over time** (R10 §2).
+ * ⭐ **Which frame a sprite sheet shows, over time** (R10 §2). A step is drawn in the animation
+ * frame after it falls due (`frameClock.js` `onDue`); here that frame follows at once, so the
+ * times below are the clock's own. Which screen frame a step lands in is `SpriteClock.test.js`.
  */
 
 const h = React.createElement;
 
 beforeEach(() => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'performance', 'Date'] });
+    framesAtOnce();
     BoardState.heroBodyOf.mockReturnValue(null);
 });
 
 afterEach(() => {
     cleanup();
+    vi.unstubAllGlobals();
     vi.useRealTimers();
     vi.clearAllMocks();
 });

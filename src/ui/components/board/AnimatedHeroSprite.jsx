@@ -4,6 +4,7 @@ import { heroSpriteFrame } from './hitAnimations.js';
 import { HERO_SHEET_GRID } from '../../../config/spriteFx.js';
 import { useSpriteFxVersion, sheetOutlineLayer } from '../../utils/spriteFx.js';
 import { isDrawn } from '../../dev/perf/drawSwitches.js';
+import { onDue } from './frameClock.js';
 
 /** The sheet's row for each state the clock can ask for. */
 const ROW_INDEX = { attack: 0, walk: 1, idle: 2 };
@@ -20,8 +21,8 @@ const ROW_INDEX = { attack: 0, walk: 1, idle: 2 };
  * already moved on. Which frame shows is pinned in `SpriteFrameSequence.test.js`.
  * **Outline** (`outline`: `'work'` | `'hover'` | `'alert'`): a generated outline sheet the
  * same size and grid as the art, under it, moved by the same frame step, so it follows every
- * frame with no filter. It is always in the tree (an empty layer when off) so the step can
- * write to it.
+ * frame with no filter. It is always in the tree (an empty layer when off); the step moves it
+ * only while it is on, and it takes the frame showing the moment it comes on.
  */
 export const AnimatedHeroSprite = ({
     src,
@@ -44,38 +45,39 @@ export const AnimatedHeroSprite = ({
     // 8 FPS by default (125 ms a frame); a limping hero plays slower.
     // The frame is read from the clock, not counted: the Token this hero works plays its hit
     // on the strike frame, from the same clock and the hero's own phase (`hitAnimations.js`),
-    // so the two never drift apart. Each step waits for the next frame boundary. In a fight
-    // (`combat`) the hero idles and plays the attack row once from `attackAt`, each real
+    // so the two never drift apart. Each step is due at the next frame boundary, on the shared
+    // sprite clock (`onDue`), which steps every sprite due by a frame in that one frame. In a
+    // fight (`combat`) the hero idles and plays the attack row once from `attackAt`, each real
     // attack restarting it. A layout effect, so the first frame is on the element before it
     // paints.
     useLayoutEffect(() => {
-        const clock = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
-        let timer = null;
         let shownRow = null;
         let shownFrame = null;
-        const step = () => {
-            const next = heroSpriteFrame(animationState, clock(), { heroId, frameMs, attackAt });
+        const step = (now) => {
+            const next = heroSpriteFrame(animationState, now, { heroId, frameMs, attackAt });
             if (next.row !== shownRow || next.frame !== shownFrame) {
                 shownRow = next.row;
                 shownFrame = next.frame;
                 const img = imgRef.current;
+                const ringEl = ringRef.current;
                 const root = rootRef.current;
                 const at = `translate(-${next.frame * size}px, -${(ROW_INDEX[next.row] ?? 2) * size}px)`;
                 if (img) img.style.transform = at;
-                if (ringRef.current) ringRef.current.style.transform = at;
+                // An outline that is off draws nothing; it takes the frame when it comes on (below).
+                if (ringEl?.hasAttribute('data-sprite-ring')) ringEl.style.transform = at;
                 if (root) {
                     root.setAttribute('data-hero-row', next.row);
                     root.setAttribute('data-hero-frame', String(next.frame));
                 }
             }
-            // heroAnim off: the one frame the state asks for, then no more steps.
-            if (isDrawn('heroAnim')) timer = setTimeout(step, next.nextInMs + 1);
+            return now + next.nextInMs;
         };
-        step();
-        return () => clearTimeout(timer);
+        const due = step(performance.now());
+        // heroAnim off: the one frame the state asks for, then no more steps.
+        return isDrawn('heroAnim') ? onDue(step, due) : undefined;
     }, [frameMs, heroId, animationState, attackAt, size]);
 
-    // An outline turned on mid-frame takes the frame already showing.
+    // An outline turned on takes the frame already showing.
     useLayoutEffect(() => {
         if (ringRef.current && imgRef.current) ringRef.current.style.transform = imgRef.current.style.transform;
     }, [ring?.url]);

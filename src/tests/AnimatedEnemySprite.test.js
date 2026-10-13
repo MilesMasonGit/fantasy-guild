@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, act } from '@testing-library/react';
 import { AnimatedEnemySprite } from '../ui/components/board/AnimatedEnemySprite.jsx';
+import { framesAtOnce } from './fixtures/framesAtOnce.js';
 
 vi.mock('../systems/board/BoardState.js', () => ({
     heroBodyOf: vi.fn(() => null)
@@ -31,10 +32,14 @@ const colOf = (el) => {
 
 beforeEach(() => {
     vi.useFakeTimers();
+    // A sprite's step is drawn in the animation frame after it falls due; here that frame
+    // follows at once.
+    framesAtOnce();
     BoardState.heroBodyOf.mockReturnValue(null);
 });
 
 afterEach(() => {
+    vi.unstubAllGlobals();
     vi.useRealTimers();
     vi.clearAllMocks();
 });

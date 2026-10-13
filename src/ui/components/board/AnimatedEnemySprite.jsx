@@ -4,6 +4,7 @@ import * as BoardState from '../../../systems/board/BoardState.js';
 import { ENEMY_SHEET_GRID } from '../../../config/spriteFx.js';
 import { useSpriteFxVersion, sheetOutlineLayer } from '../../utils/spriteFx.js';
 import { isDrawn } from '../../dev/perf/drawSwitches.js';
+import { onDue } from './frameClock.js';
 
 /**
  * Renders a 64px enemy sprite sheet, 4 columns × 4 rows: rows 0–1 are the **idle** cycle (8
@@ -14,8 +15,8 @@ import { isDrawn } from '../../dev/perf/drawSwitches.js';
  * (`0..7`) always picks the right column and row-within-cycle.
  * No engine coupling: which cycle plays and which way the enemy faces are pure presentation.
  * Nothing here writes to `BoardState`, subscribes to the board's event bus, or runs on the
- * engine tick; an enemy that isn't rendered costs nothing, and one that is costs one local
- * `setInterval`, like a hero's.
+ * engine tick; an enemy that isn't rendered costs nothing, and one that is steps on the shared
+ * sprite clock (`frameClock.js` `onDue`), like a hero's.
  * Which cycle plays: `heroId` is the Token's current worker, already tracked reactively by
  * `MatToken` (`BoardState.workerOf`). An enemy Token's only worker is a hero mid-fight, so
  * `heroId` truthy already means 'this fight is live', with no separate subscription and no
@@ -50,7 +51,6 @@ export const AnimatedEnemySprite = ({
     className
 }) => {
     const [facing, setFacing] = useState(FACING.LEFT);
-    const turnTimer = useRef(null);
 
     // The frame is written to the element, not kept in React state: `background-position` is
     // set directly on each step, so an animating enemy costs no React commits. `frameRef`
@@ -68,46 +68,48 @@ export const AnimatedEnemySprite = ({
         const col = frame % COLS;
         const pos = `-${col * size}px -${row * size}px`;
         if (artRef.current) artRef.current.style.backgroundPosition = pos;
-        if (ringRef.current) ringRef.current.style.backgroundPosition = pos;
+        // An outline that is off draws nothing; it takes the cell when it comes on (below).
+        if (ringRef.current?.hasAttribute('data-sprite-ring')) ringRef.current.style.backgroundPosition = pos;
     };
     useSpriteFxVersion();
     const ring = outline ? sheetOutlineLayer(src, outline) : null;
 
-    // The cycle (fought or not) and the cell size show at once.
+    // The cycle (fought or not), the cell size and an outline coming on show at once.
     useLayoutEffect(() => { paintRef.current(); }, [heroId, size, ring?.url]);
 
-    // Frame advance: a local clock, unrelated to the game's own tick, exactly like
-    // AnimatedHeroSprite's. 8 frames either cycle.
+    // Frame advance: a clock of its own, unrelated to the game's tick: one frame every
+    // `frameMs` from when it started, stepped on the shared sprite clock (`onDue`) like a
+    // hero's. 8 frames either cycle; a change of cycle keeps counting.
     useEffect(() => {
         if (!isDrawn('enemyAnim')) return undefined;
-        const id = setInterval(() => {
-            frameRef.current = (frameRef.current + 1) % 8;
+        const start = performance.now();
+        const first = frameRef.current;
+        let n = 0;
+        return onDue((now) => {
+            // Called only once its step is due, so at least one more; the division alone can
+            // land a hair short of a boundary it is exactly on.
+            n = Math.max(n + 1, Math.floor((now - start) / frameMs));
+            frameRef.current = (first + n) % 8;
             paintRef.current();
-        }, frameMs);
-        return () => clearInterval(id);
+            return start + (n + 1) * frameMs;
+        }, start + frameMs);
     }, [frameMs]);
 
     // Facing: forced to the working hero's side while fought; an idle enemy's own occasional
-    // turn otherwise. Switching between the two always cancels whatever timer the other one
-    // was running.
+    // turn otherwise, due on the same clock. Switching between the two always cancels whatever
+    // the other one was waiting for.
     useEffect(() => {
-        clearTimeout(turnTimer.current);
-
         if (heroId) {
             const side = BoardState.heroBodyOf(heroId)?.side;
             if (side === FACING.LEFT || side === FACING.RIGHT) setFacing(side);
             return undefined;
         }
 
-        const scheduleTurn = () => {
-            const delay = TURN_PAUSE_MS.min + Math.random() * (TURN_PAUSE_MS.max - TURN_PAUSE_MS.min);
-            turnTimer.current = setTimeout(() => {
-                setFacing(f => -f);
-                scheduleTurn();
-            }, delay);
-        };
-        scheduleTurn();
-        return () => clearTimeout(turnTimer.current);
+        const pause = () => TURN_PAUSE_MS.min + Math.random() * (TURN_PAUSE_MS.max - TURN_PAUSE_MS.min);
+        return onDue((now) => {
+            setFacing(f => -f);
+            return now + pause();
+        }, performance.now() + pause());
     }, [heroId]);
 
     // Walking by its spawner, it faces the way it walks, and keeps that facing when it stops.

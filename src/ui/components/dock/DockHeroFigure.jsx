@@ -40,8 +40,9 @@ export function dockHeroDragPayload(heroId, hero) {
  * waist by the strip's bottom edge. The name and HP bar sit above the head at the same height
  * for every hero; only the ART sinks and darkens when the hero is out on the mat, and lifts on
  * hover.
- * The sprite runs its own frame clock, so an idle frame re-renders the sprite alone, never
- * this figure or the dock around it.
+ * The sprite writes its frames straight to the element (the shared sprite clock), so an idle
+ * frame re-renders nothing: not this figure, and not the slot, whose reorder animation would
+ * measure its layout again.
  * Click, double-click, drag onto the mat, drop an item to equip, drop a flag to recall and
  * drop another dock hero to reorder all behave as the old tab did.
  * ⚠️ Two components on purpose. dnd-kit re-renders every component holding a drag hook at each
