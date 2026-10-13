@@ -7,6 +7,9 @@
 - **Ask, don't assume, as multiple choice.** When a design decision isn't
   already recorded, give labelled options with trade-offs and your
   recommendation first. Make routine calls yourself. Batch questions.
+- **New art is routine.** I draw and drop new or revised sprites into
+  `public/assets/` all the time and may ask for a quick swap of old art for
+  new. Expect it; don't treat new files as surprises or defects.
 - **Stay in scope.** Something unrelated worth fixing becomes a ticket in
   [`docs/reference/TICKETS.md`](docs/reference/TICKETS.md), not part of the
   current change.
