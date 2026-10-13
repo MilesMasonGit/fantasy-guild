@@ -238,7 +238,7 @@
 
 ## 7. Workflow & Agent Collaboration Protocols
 
-- [ ] **Dual-Agent Workflow Integration (Planning vs Director)** → the roles are in CLAUDE.md; the "new art is routine" line is proposed for CLAUDE.md and waits on the owner (agents can't edit it)
+- [x] **Dual-Agent Workflow Integration (Planning vs Director)** → the roles are in CLAUDE.md; "new art is routine" added to CLAUDE.md 2026-10-13
   - **Planning Agent Role:** Conducts interviews with the owner, author/updates concept documentation (`docs/active/concept_*.md`), refines design requirements, and prepares structured briefs for upcoming passes.
   - **Director Agent Role:** Focuses purely on execution and implementation, coordinating subagents (runners, builders, engineers) to ship verified code against locked briefs.
   - **Owner's Active Surfaces:** The owner frequently and independently updates two specific areas:
