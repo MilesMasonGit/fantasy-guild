@@ -1,4 +1,4 @@
-import { statementsOf, stationSkillOf, renderStatement, derivedTokenType } from '../utils/constants';
+import { statementsOf, stationSkillOf, renderStatement, derivedTokenType, toolNamer } from '../utils/constants';
 
 /** Description Dictionary Engine: composes mechanical descriptions for Tokens from their production, recipes, effects, triggers and lifecycle. */
 
@@ -79,29 +79,31 @@ export function getProductionClause(token, items = {}, recipePools = {}) {
 }
 
 /** A Token's rules, as sentences. ⚠️ There is exactly one renderer, in the game's `statementText.js`, shared by the editor row, the rules panel here and the in-game tooltip, so a description cannot disagree with an effect. */
-export function getEffectBlockClauses(token, items = {}) {
+export function getEffectBlockClauses(token, items = {}, tool = toolNamer()) {
   if (!token) return [];
   return statementsOf(token).map((statement) =>
     renderStatement(statement, {
       item: (id) => getItemName(id, items),
       token: (id) => id,
+      tool,
     })
   );
 }
 
 /**
- * Generates accepted tokens / tool requirements clause (e.g. "Requires a nearby Pickaxe (Tier 1+).").
+ * Generates accepted tokens / tool requirements clause (e.g. "Requires a nearby Iron Pickaxe or better.").
+ * ⚠️ This is player text, so it names the tool rather than its tier; the CMS's own editor keeps the number.
  * @param {object} token
+ * @param {(tag: string, minTier: number) => string} tool  from `toolNamer` over every Token
  * @returns {string|null}
  */
-export function getAcceptedTokensClause(token) {
+export function getAcceptedTokensClause(token, tool = toolNamer()) {
   if (!token || !token.acceptedTokens || token.acceptedTokens.length === 0) return null;
   const parts = token.acceptedTokens.map((req) => {
     const tagName = (req.tag || 'tool').replace(/_/g, ' ');
     const capitalTag = tagName.charAt(0).toUpperCase() + tagName.slice(1);
     const minTier = req.minTier || 1;
-    const tierStr = minTier > 1 ? ` (Tier ${minTier}+)` : '';
-    return `${capitalTag}${tierStr}`;
+    return minTier > 1 ? tool(req.tag || 'tool', minTier) : capitalTag;
   });
   if (parts.length === 1) {
     return `Requires a nearby ${parts[0]}.`;
@@ -148,16 +150,18 @@ export function getTraitClauses(token) {
  * @param {object} token - Token entity
  * @param {Record<string, object>} items - Items catalog
  * @param {Record<string, Array>} recipePools - Recipe pools catalog
+ * @param {Record<string, object>} tokens - every Token, expanded, so a tool requirement can name the tool
  * @returns {string} Composed description
  */
-export function composeTokenDescription(token, items = {}, recipePools = {}) {
+export function composeTokenDescription(token, items = {}, recipePools = {}, tokens = {}) {
   if (!token) return '';
 
   // ⚠️ There is no manual override: an override is how a description drifts from the effect it describes.
 
   const clauses = [];
 
-  const acceptedClause = getAcceptedTokensClause(token);
+  const tool = toolNamer(tokens);
+  const acceptedClause = getAcceptedTokensClause(token, tool);
   if (acceptedClause) clauses.push(acceptedClause);
 
   const prodClause = getProductionClause(token, items, recipePools);
@@ -166,7 +170,7 @@ export function composeTokenDescription(token, items = {}, recipePools = {}) {
   const lootClause = getCombatLootClause(token, items);
   if (lootClause) clauses.push(lootClause);
 
-  const effectClauses = getEffectBlockClauses(token, items);
+  const effectClauses = getEffectBlockClauses(token, items, tool);
   clauses.push(...effectClauses);
 
   const traitClauses = getTraitClauses(token);

@@ -1017,10 +1017,14 @@ export const useEntityStore = create(
                 // ⚠️ The description says nothing about Tempo or Purpose: those are authoring tags, not something a player is told.
                 // ⚠️ Each is expanded against the library on the way through and the expansion is deliberately NOT kept: writing resolved statements into `data/tokens.json` would put a second copy of every rule beside the library. The file keeps the references.
                 const finalTokens = {};
+                // Every Token expanded, so a description can name the tool a requirement asks for.
+                const expandedTokens = Object.fromEntries(
+                    Object.entries(tokens).map(([tokenId, token]) => [tokenId, expandBearer(token, library)])
+                );
                 for (const [tokenId, token] of Object.entries(tokens)) {
-                    const expanded = expandBearer(token, library);
+                    const expanded = expandedTokens[tokenId];
                     const next = { ...token, tokenType: deriveTokenType(expanded).type };
-                    next.description = composeTokenDescription(expanded, items, recipePools);
+                    next.description = composeTokenDescription(expanded, items, recipePools, expandedTokens);
                     delete next.descriptionOverride;
                     delete next.statements;
                     finalTokens[tokenId] = next;

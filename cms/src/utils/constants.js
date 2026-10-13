@@ -50,6 +50,9 @@ export {
   rulesTextOf,
 } from '../../../src/systems/effects/statementText.js';
 
+// The player's words for a tool requirement ("an Iron Pickaxe or better"), for the descriptions Sync to Game writes.
+export { toolNamer } from '../../../src/systems/effects/toolNames.js';
+
 // A statement as the ordered slots an author fills in: the model behind the sentence editor. It reads the same declarations the game reads, so a new keyword, moment, reach or role reaches the editor with no editor change.
 export {
   SLOT_KIND,

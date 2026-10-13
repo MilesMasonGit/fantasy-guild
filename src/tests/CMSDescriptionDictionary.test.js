@@ -17,8 +17,12 @@ describe('CMS Phase 9 Description Dictionary (CMS-66, CMS-67, CMS-81, CMS-87)', 
     // "an adjacent" here silently undoes the wording in data/tokens.json.
     expect(getAcceptedTokensClause({ acceptedTokens: [{ tag: 'pickaxe', minTier: 1 }] }))
       .toBe('Requires a nearby Pickaxe.');
+    // Above the bottom rung the player is told the tool, never a tier number (Atlas A11):
+    // the first Token that meets it when the Token dictionary is known, "stronger" otherwise.
     expect(getAcceptedTokensClause({ acceptedTokens: [{ tag: 'pickaxe', minTier: 3 }, { tag: 'fishing_net' }] }))
-      .toBe('Requires a nearby Pickaxe (Tier 3+) and Fishing net.');
+      .toBe('Requires a nearby stronger pickaxe and Fishing net.');
+    expect(getAcceptedTokensClause({ acceptedTokens: [{ tag: 'pickaxe', minTier: 3 }] }, () => 'Iron Pickaxe or better'))
+      .toBe('Requires a nearby Iron Pickaxe or better.');
   });
 
   it('1. composes description for gathering resource token', () => {
