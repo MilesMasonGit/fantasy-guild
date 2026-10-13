@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-172**
+**Next free number: T-175**
 
 ---
 
@@ -67,6 +67,9 @@ here.
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
+| T-172 | P2 | open | **The Atlas as a tome** ([concept_atlas_tome.md](../active/concept_atlas_tome.md)): the open tome on the map table as a backdrop for the standard UI, ~90 % of the window; bookmark tabs with a stepped page-turn between Cartography and Regions; Cartography over both pages with a big layout preview; drag maps into, between and out of slots, click still slots. Keep A6's behaviour, change only the presentation. Placeholders until the owner's tome art. Builder. Eye-check. | concept_atlas_tome.md |
+| T-173 | P2 | open | **Region rows and area banners** ([concept_atlas_tome.md](../active/concept_atlas_tome.md)): Regions as one row each with its area banner as a full-art backdrop (names, node pills, day, Tokens, heroes; Travel main, Rename/Archive/Abandon in a menu); a CMS banner field on Base Map items and the Starter Camp page (the owner sets pictures and Syncs); the banner behind the top bar's Region name, an arrival card on travel, behind the Cartography preview. After T-172. Builder. Eye-check. | concept_atlas_tome.md |
+| T-174 | P2 | open | **Camera moves**: tilt up from the mat into the Hall's sky and down onto the Atlas's map table ([concept_guild_hall.md](../active/concept_guild_hall.md) "Transitions", [concept_atlas_tome.md](../active/concept_atlas_tome.md)): under a second, skippable, with a reduce-motion setting. Engineer. Cost-log line. Eye-check. | concept_guild_hall.md |
 | T-171 | P3 | open | **The Hall sky's look** ([concept_guild_hall.md](../active/concept_guild_hall.md), "The look of the sky"): upgrade nodes become pixel stars by state (faint dot, twinkling, bright, gold), every star tagged `name rank/max`, faint-then-bright lines, faint constellation names, the Hall as a pole star, a night-sky backdrop (placeholder until the owner's art), Effects docked left and a hover-filled, click-pinned details panel right holding the icon and the Upgrade button. Check T-128 while there. Builder. Eye-check. | concept_guild_hall.md |
 | T-170 | P2 | open | **Top bar restyle** ([concept_map_tools.md](../active/concept_map_tools.md), "The top bar around the modes"): studded pixel frame; left: Region name (click opens the Atlas), Tokens 45/128 (red at the cap) and Upkeep summed per minute (hover lists one item bar per item with its rate), all in the item bar style; centre: the mode banner; right: Disallow and Demolish. With or after T-166. Builder. Eye-check. | concept_map_tools.md |
 | T-169 | P2 | open | **The recipe list** ([concept_recipe_list.md](../active/concept_recipe_list.md)): opens inside the Token card from Change recipe (Foundations too); one row per recipe sorted by level (level, inputs with have/need, hollow bars for tools and Foundation tiers, main output then muted byproducts with chance, XP and time); hero-face dividers at each hero's level replace the bands, markers and yellow banner; the next two locked recipes as ??? silhouettes; a search box over inputs and outputs; one click chooses. Absorbs T-142. Builder. Eye-check. | concept_recipe_list.md |

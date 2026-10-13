@@ -82,3 +82,10 @@ player for these is T-138 (built when the first strips exist).
   blue with scattered tiny stars, sized to the Hall screen; a plain night
   colour stands in until then. Optional: redraw the four placeholder star
   sprites (faint, twinkling, bright, gold).
+- **The Atlas tome** (NEW, [concept_atlas_tome.md](concept_atlas_tome.md)): a giant open book seen from above,
+  filling ~90 % of the screen, as the backdrop the Atlas UI sits on; the map
+  table's edge with a candle and a compass around it; ribbon bookmarks for
+  the two sections. Placeholders until drawn.
+- **Area banners**: the 19 in `backgrounds/area/` are in use (Region rows,
+  the top bar, travel, the Cartography preview); each Base Map names one in
+  the CMS, so a new Base Map may want a new banner.

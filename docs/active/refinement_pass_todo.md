@@ -33,7 +33,7 @@
     - **Inspect Panel (Click):** Move deep information here (e.g., exact timers, detailed stats).
   - **Inspect Panel Content:** Needs dedicated copy/layout polish so information presented is tight, punchy, and concise.
 
-- [ ] **Cartography Atlas & Regions Viewport Overhaul**
+- [x] **Cartography Atlas & Regions Viewport Overhaul** → **[concept_atlas_tome.md](concept_atlas_tome.md)**, T-172 to T-174 (interview 2026-10-13)
   - **Need:** Move away from the current modal / "popup window" look toward an immersive world view integrated with vertical camera transitions (pan up to Guild Hall constellation, pan down to Atlas).
   - **Theming & Frame:** Themed art framing (e.g., stylized as one giant tome / open book).
   - **Layout & Structure:**
@@ -91,7 +91,7 @@
   - **Specialized Warehouses:** Category/type-specific collection buildings (e.g., *Fish Warehouse* collects all fish dropped within its radius).
   - **Guild Hall Universal Collector:** The Guild Hall itself functions as a universal collector, automatically gathering all item types dropped within its area.
 
-- [ ] **256px Background & Card Art Integration: Area Banners & Inspect Backdrops**
+- [x] **256px Background & Card Art Integration: Area Banners & Inspect Backdrops** → area banners: **[concept_atlas_tome.md](concept_atlas_tome.md)**; inspect backdrops: **[concept_info_layers.md](concept_info_layers.md)**
   - **Assets:** Rich, detailed 256px illustration pieces previously used as card art.
   - **Area / Region Banners:** Use environmental pieces as thematic background banners for areas/regions (dynamically mapped based on the active map configuration) to add world flavor and immersion.
   - **Inspect Panel Backdrops:** Use skill- and trade-oriented pieces as environmental backdrop art in the inspection panels, grounding each token in its specific activity/setting.
