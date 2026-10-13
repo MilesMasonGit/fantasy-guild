@@ -753,7 +753,7 @@
     "name": "Oak Seedling",
     "description": "",
     "type": "material",
-    "sprite": "item_seedling_base",
+    "sprite": "seedling_oak",
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
@@ -917,19 +917,6 @@
     "valueSource": null,
     "autoSyncId": true,
     "id": "item_mahogany_seedling"
-  },
-  "item": {
-    "name": "",
-    "description": "",
-    "type": "material",
-    "sprite": "",
-    "stackable": true,
-    "restoreAmount": 0,
-    "equipSlot": "",
-    "value": null,
-    "valueSource": null,
-    "autoSyncId": true,
-    "id": "item"
   },
   "item_copper_pickaxe": {
     "name": "Copper Pickaxe",
