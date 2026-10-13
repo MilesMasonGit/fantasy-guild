@@ -31,11 +31,10 @@ wave's living table and the morning/evening summaries are
      Tree regrows from Oak Sapling, the Shrimp Coast too; from A7 the 25
      endgame-site Tokens (Landmark checkbox), lay out the camp with the QA
      panel's Starter Camp tools, accept it on the CMS Starter Camp tab.
-   - A11: the CMS composer patch is on branch `fix/a11-cms-composer`
-     (it names the tool instead of a tier number). Switch to it
-     (`git switch fix/a11-cms-composer`), open the CMS, Sync to Game, tell the
-     director; the Sync writes the wording into `data/` and the round-trip
-     tests go green, then it merges and you switch back to `main`.
+   - A11: the CMS composer on `main` now names the tool instead of a tier
+     number. **Restart the CMS dev server, then Sync to Game on `main`**: the
+     Sync writes the wording into `data/` and the seven round-trip tests go
+     green (red until then).
 4. **Brief 20 live-game check** once the Academies and master Tokens exist.
 5. Parked: **T-111** engine bench timings are load-sensitive; trust the work
    check. `data/maps.json` is read by nothing: delete it in a data-only commit.

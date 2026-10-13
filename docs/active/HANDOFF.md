@@ -17,7 +17,7 @@ A9, A10, A11; T-129; the process-review docs of 2026-10-13. The `planning` branc
 
 | Branch | Worktree | State |
 |---|---|---|
-| `crunch/preview`, `crunch/atlas-a6`, `-a10`, `-a3b`, `-a11` | `atlas-a10`, `atlas-a3b`, `atlas-a11` | All merged to `main` 2026-10-13 after the owner's eye-check (the preview branch carried the two seam fixes). The A11 CMS composer patch is committed on `fix/a11-cms-composer` (`0d99bc9e`, worktree `p23b`); the seven round-trip tests are red there until the owner Syncs to Game with it checked out, then it merges. The A3b drag-bench baseline is still in the bench queue. Worktrees disposable. |
+| `crunch/preview`, `crunch/atlas-a6`, `-a10`, `-a3b`, `-a11` | `atlas-a10`, `atlas-a3b`, `atlas-a11` | All merged to `main` 2026-10-13 after the owner's eye-check (the preview branch carried the two seam fixes). The A11 CMS composer patch is on `main` (`0d99bc9e`); the seven round-trip tests are red on `main` until the owner restarts the CMS and Syncs to Game there. The A3b drag-bench baseline is still in the bench queue. Worktrees disposable. |
 | `crunch/p2-3` | `p2-3` | Complete: 2 commits, clean tree, full suite green (335 files). The enemy float-boundary fix is in `57e55545`. Merge conflicts only in CHANGELOG (keep both). Bench queued. |
 | `crunch/p2-6` | `p2-6` | Complete and committed today (`2dee55f2`), full suite green (337 files). Bench queued. |
 | `crunch/p2-5` | `p2-5` | Spike committed today (`04cf1307`): `will-change: contents` on a live hit loop plus a jsdom guard. The layer count and the pixel diff were never measured: bench queue. If the layer count does not drop, the spike is a no. |
@@ -35,7 +35,7 @@ A9, A10, A11; T-129; the process-review docs of 2026-10-13. The `planning` branc
 
 ## Owner to-dos
 
-See NOW.md "Owner CMS to-do": Sync on `main` for the content, and one Sync on `fix/a11-cms-composer` for A11's wording.
+See NOW.md "Owner CMS to-do": one Sync on `main` (CMS restarted) writes A11's wording and the content.
 
 ## Next three phases
 
