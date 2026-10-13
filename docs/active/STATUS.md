@@ -17,12 +17,12 @@ October 2026.*
 | Atlas batch M1+M2: A6, A10, A3b, A11 | owner | `crunch/preview` → `main` | merged (owner verdict: fine for a first implementation; [archived file](../archive/eyecheck/2026-10-13_atlas-m1-m2.md)) | Tue–Wed | Tue |
 | A11 CMS composer patch | owner | `main` | done: the owner's Sync of 10:00 wrote the tool wording; round-trip tests green | Tue | Tue |
 | Content re-pin after the owner's rename (Oak Seed → Oak Seedling) | builder-lite | `fix/content-repin` (`repin`) → `main` | merged; one `it.fails` left (the seedling sprite, owner art) | Tue | Tue |
-| P2-7 sparse stack order | engineer | `crunch/p2-7` | queued (after P2-5 merges: both touch stacking) | Wed–Thu | |
+| P2-7 sparse stack order | engineer | `crunch/p2-7` | queued (P2-5 is merged) | Wed | |
 | P2-8 tick and React per tick | engineer | `crunch/p2-8` → `main` | merged (bench: same work, timing as `main`'s control; commits per tick 0.79 → 0.57 on S2, renders 6.35 → 3.89; no eye-check) | Tue | Tue |
-| P2-9 drags | engineer | `crunch/p2-9` | queued | Thu–Fri | |
+| P2-9 drags | engineer | `crunch/p2-9` | queued (from a `main` that holds P2-8) | Wed–Thu | |
 | Atlas A8 cartographer's tutorial | builder | `crunch/atlas-a8` (`atlas-a8`) | eye-check ([file](eyecheck/2026-10-13_atlas-a8.md)); gate and bench green (same work); merges after the owner's read | Tue | |
 | Atlas A12 map upcycling | builder | `crunch/atlas-a12` → `main` | merged (owner deferred the look, trusted on the gate; [archived file](../archive/eyecheck/2026-10-13_atlas-a12.md)) | Tue | Tue |
-| Regroup: planning docs, wave 2 plan | owner + planning | `planning` (`pp`) | queued | Sat–Mon | |
+| Regroup: planning docs, wave 2 plan | owner + planning | `planning` (`pp`) | queued (after P2-7, P2-9 and A8 merge) | Thu–Sat | |
 
 ## Bench queue (one at a time, weekdays 13:00–17:00 and 01:00–07:00)
 
@@ -47,3 +47,15 @@ first implementation) and it merged; the A11 CMS composer patch waits on
 `fix/a11-cms-composer` for your Sync (the round-trip tests are red until
 the Sync writes the new wording). Your folder is on `main`. P2-8 is building. Benches from 13:00. Next:
 merge P2-3 and P2-6 after their benches, then P2-7 and P2-9, A8 and A12.
+
+**Tue 2026-10-13, evening.** Where we are: on `main` today the Atlas batch (A6,
+A10, A3b, A11), A12, P2-3, P2-5, P2-6, P2-8, the content re-pin after the Oak
+Seedling rename, A11's wording in `data/`, and the process docs; suite 4716
+green. Next: Wed morning start P2-7 and P2-9 (two engineers); A8 merges when
+the owner has read its lines. Owner: read
+[eyecheck/2026-10-13_atlas-a8.md](eyecheck/2026-10-13_atlas-a8.md); the CMS
+to-dos in NOW.md are not urgent. Budget: a heavy day (five phases, one review
+and ~12 gate runs); Wednesday runs lighter with two engineers and no review.
+Blockers: the bench baseline (Oct 7) no longer matches the machine's load, so
+timing verdicts are noise until it is retaken on a quiet evening (T-111); the
+work check and like-for-like controls carry the gate meanwhile.
