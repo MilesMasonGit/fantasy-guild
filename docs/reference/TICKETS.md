@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-169**
+**Next free number: T-170**
 
 ---
 
@@ -67,6 +67,7 @@ here.
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
+| T-169 | P2 | open | **The recipe list** ([concept_recipe_list.md](../active/concept_recipe_list.md)): opens inside the Token card from Change recipe (Foundations too); one row per recipe sorted by level (level, inputs with have/need, hollow bars for tools and Foundation tiers, main output then muted byproducts with chance, XP and time); hero-face dividers at each hero's level replace the bands, markers and yellow banner; the next two locked recipes as ??? silhouettes; a search box over inputs and outputs; one click chooses. Absorbs T-142. Builder. Eye-check. | concept_recipe_list.md |
 | T-168 | P2 | open | **Notifications: log button, pop-out toasts, pins** ([concept_notifications.md](../active/concept_notifications.md)): replaces the edge sidebar; top-right button with unread badge; one-line sprite toasts slide out of it and back (max 3, loot merged per item); the log (tabs, per-minute loot rows, Clear log); pins that stay on screen and top the log, loot pins as resettable trackers; All / Pinned only / Hidden modes; mute a kind from a toast; Settings per-kind toggles, the position setting removed; hover highlights the hero or Token. Pins and mode saved. With T-028, T-037. Builder. Cost-log line. Eye-check. | concept_notifications.md |
 | T-165 | P2 | open | **Starter Camp Tokens become fixtures** ([concept_map_tools.md](../active/concept_map_tools.md)): every Token the camp layout places is marked `fixture` when the camp is laid down, so it can't be demolished, dragged or pushed (player-built and bought Tokens there stay movable). Existing saves need a load-time step marking the camp's Tokens (match the layout). Tests for a new game and an old save. Engineer. Eye-check. | concept_map_tools.md |
 | T-166 | P2 | open | **Demolish mode beside Disallow mode** on the top bar ([concept_map_tools.md](../active/concept_map_tools.md)): one mode at a time; a plain banner per mode (Demolish in red, warns once on entering); mode-coloured hover outline and cursor; protected Tokens dim in Demolish mode and a click shows the reason; batch controls (Allow All, shift-click a type to disallow or allow all of it, Cancel all marks). Then the Token card drops its Disallow switch and Demolish buttons. After T-147 and T-165. Builder. Eye-check. | concept_map_tools.md |
@@ -164,7 +165,7 @@ here.
 | T-121 | P3 | open | Slot card playtime reads hours for seconds: `formatPlaytime(seconds)` in `SlotSelectionModal.jsx` is handed milliseconds (76 s shows as 21h 6m). | brief 40 O4 |
 | T-122 | P3 | open | `HeroEditModal` still embeds `HeroSkillSheet` with its own skill list, duplicating the H2 hero panel; `VitalBar.jsx` may have no consumers left. | brief 30 H2 |
 | T-158 | P2 | open | Speech bubbles from different sources (a hero's bubble and the Token's bubble while the hero works it) can cover each other; they should stack smoothly like the bubbles of one source. Owner 2026-10-09. | eye-check B |
-| T-142 | P3 | open | The recipe picker's rows are `truncate`, so a recipe's requirement line ("Needs 10× Stone · Needs a Marble Foundation or better") is cut off with "…" at the modal's width and the player can't read it (`StationRecipeModal.jsx`; seen in brief 70 A11). | brief 70 A11 |
+| T-142 | P3 | open | The recipe picker's rows are `truncate`, so a recipe's requirement line ("Needs 10× Stone · Needs a Marble Foundation or better") is cut off with "…" at the modal's width and the player can't read it (`StationRecipeModal.jsx`; seen in brief 70 A11). Absorbed by T-169 (do it there). | brief 70 A11 |
 | T-143 | P3 | open | `bench/browser/dragKit.mjs` picks drag targets skipping only the Hall and permanent types; on a board with planted Saplings (fixed since Atlas A10) it would count their refused drags as failures. Teach the picker `FixedTokens.isFixed`. | brief 70 A10 |
 | T-144 | P2 | open | The tutorial's "Plant a Flag" step (`tut_flag`) has no beacon target: its selectors (`[data-hero-dock-tab]`, `#rightmost-hero-dock`, `#hero-dock`) match nothing since brief 30's hero bar (`[data-dock-hero]`); `TutorialAide.test.js` passes only because its fixture supplies the old attribute. Found by brief 60 P2-2. A8 rewrites the tutorial; fix there or before. | brief 60 P2-2 |
 | T-163 | P3 | open | `DndKit.jsx`'s `useLiveDropTarget` (and the comment about a pop-out bin above it) has no caller since the discard bin went (Atlas A3b): delete it. Left in place because A10 also edits `DndKit.jsx`; do it after A10 merges. | brief 70 A3b |

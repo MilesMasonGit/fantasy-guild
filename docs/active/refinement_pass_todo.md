@@ -96,7 +96,7 @@
   - **Area / Region Banners:** Use environmental pieces as thematic background banners for areas/regions (dynamically mapped based on the active map configuration) to add world flavor and immersion.
   - **Inspect Panel Backdrops:** Use skill- and trade-oriented pieces as environmental backdrop art in the inspection panels, grounding each token in its specific activity/setting.
 
-- [ ] **Recipe Presentation & Inspection Overhaul**
+- [x] **Recipe Presentation & Inspection Overhaul** → **[concept_recipe_list.md](concept_recipe_list.md)**, T-169 (interview 2026-10-13)
   - **Need:** Current recipe list presentation needs a ground-up rework for clarity, density, and usability.
   - **Structure & Ordering:**
     - Sort recipes strictly by required skill level.
