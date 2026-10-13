@@ -5,7 +5,7 @@
 **done** (owner closed it). Replaces the edge sidebar (`PopOutSidebars.jsx`,
 `ToastContainer.jsx`) and the 2026-10-08 sidebar notes in
 [design_pass_notes.md](design_pass_notes.md). The look follows
-[UI_STYLE.md](../reference/UI_STYLE.md). Build ticket: **T-167**.*
+[UI_STYLE.md](../reference/UI_STYLE.md). Build ticket: **T-168**.*
 
 ## The pieces
 
@@ -82,7 +82,7 @@ A small three-way control beside the button (or in the log's header):
 
 ## Notes for the director
 
-- One build (T-167), builder tier: the button, toasts, log, pins, modes,
+- One build (T-168), builder tier: the button, toasts, log, pins, modes,
   settings. Save fields for pins and mode need a schema entry and a load test.
 - Loot merging must stay cheap on a busy mat: merge in the store, not per
   render. The sidebar's comment already warns that each toast is a composited

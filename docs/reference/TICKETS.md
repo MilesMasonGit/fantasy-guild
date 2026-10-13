@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-168**
+**Next free number: T-169**
 
 ---
 
@@ -67,7 +67,7 @@ here.
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
-| T-167 | P2 | open | **Notifications: log button, pop-out toasts, pins** ([concept_notifications.md](../active/concept_notifications.md)): replaces the edge sidebar; top-right button with unread badge; one-line sprite toasts slide out of it and back (max 3, loot merged per item); the log (tabs, per-minute loot rows, Clear log); pins that stay on screen and top the log, loot pins as resettable trackers; All / Pinned only / Hidden modes; mute a kind from a toast; Settings per-kind toggles, the position setting removed; hover highlights the hero or Token. Pins and mode saved. With T-028, T-037. Builder. Cost-log line. Eye-check. | concept_notifications.md |
+| T-168 | P2 | open | **Notifications: log button, pop-out toasts, pins** ([concept_notifications.md](../active/concept_notifications.md)): replaces the edge sidebar; top-right button with unread badge; one-line sprite toasts slide out of it and back (max 3, loot merged per item); the log (tabs, per-minute loot rows, Clear log); pins that stay on screen and top the log, loot pins as resettable trackers; All / Pinned only / Hidden modes; mute a kind from a toast; Settings per-kind toggles, the position setting removed; hover highlights the hero or Token. Pins and mode saved. With T-028, T-037. Builder. Cost-log line. Eye-check. | concept_notifications.md |
 | T-165 | P2 | open | **Starter Camp Tokens become fixtures** ([concept_map_tools.md](../active/concept_map_tools.md)): every Token the camp layout places is marked `fixture` when the camp is laid down, so it can't be demolished, dragged or pushed (player-built and bought Tokens there stay movable). Existing saves need a load-time step marking the camp's Tokens (match the layout). Tests for a new game and an old save. Engineer. Eye-check. | concept_map_tools.md |
 | T-166 | P2 | open | **Demolish mode beside Disallow mode** on the top bar ([concept_map_tools.md](../active/concept_map_tools.md)): one mode at a time; a plain banner per mode (Demolish in red, warns once on entering); mode-coloured hover outline and cursor; protected Tokens dim in Demolish mode and a click shows the reason; batch controls (Allow All, shift-click a type to disallow or allow all of it, Cancel all marks). Then the Token card drops its Disallow switch and Demolish buttons. After T-147 and T-165. Builder. Eye-check. | concept_map_tools.md |
 | T-164 | P2 | open | **Work Permissions drawer and launcher** ([concept_work_permissions.md](../active/concept_work_permissions.md)): rename Work Rules to Work Permissions on screen; a labelled launcher in its own slot at the hero bar's left end; the drawer slides up full mat width above the hero bar, hero names left and columns spread evenly, every skill column always shown; one Combat column (tick/off, priority-mode capable: check the engine first) replaces the combat tint columns and Fight; header tooltips show a new `purpose` line from `skillRegistry.js` (drafts in the concept doc). With T-152 and T-156. Builder. Eye-check. | concept_work_permissions.md |
