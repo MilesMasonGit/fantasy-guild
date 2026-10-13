@@ -31,10 +31,11 @@ wave's living table and the morning/evening summaries are
      Tree regrows from Oak Sapling, the Shrimp Coast too; from A7 the 25
      endgame-site Tokens (Landmark checkbox), lay out the camp with the QA
      panel's Starter Camp tools, accept it on the CMS Starter Camp tab.
-   - A11: the CMS composer on `main` now names the tool instead of a tier
-     number. **Restart the CMS dev server, then Sync to Game on `main`**: the
-     Sync writes the wording into `data/` and the seven round-trip tests go
-     green (red until then).
+   - After the Oak Seedling rename: register the `item_seedling_base`
+     sprite when the art is in (one `it.fails` in AssetManager flips back),
+     re-accept the Starter Camp so its Bank names Oak Seedling, and delete
+     the stray blank item whose id is just `item`.
+   - A12: on each map, which map it trades up into and at what ratio.
 4. **Brief 20 live-game check** once the Academies and master Tokens exist.
 5. Parked: **T-111** engine bench timings are load-sensitive; trust the work
    check. `data/maps.json` is read by nothing: delete it in a data-only commit.
@@ -45,7 +46,7 @@ wave's living table and the morning/evening summaries are
 - **Crunch order:** UI rework ✓ → class rework v2 ✓ (engine) → hero bar and
   panel ✓ → offline progress ✓ → drag ✓ → deep optimization (P2-1, 2, 4 merged:
   cap128 at 4× from 35 % to ~68 % of frames in budget) → Atlas (A1, A2, A3a,
-  A3b, A4, A5, A6, A7, A9, A10, A11 merged; A8, A12 next) → terrain →
+  A3b, A4, A5, A6, A7, A9, A10, A11, A12 merged; A8 next) → terrain →
   Performance Envelope ([briefs](briefs/README.md)).
 - **Tests:** all green (4651 at `crunch/preview`; two file-scan tests time out
   only under bench load). Anything red is new.
