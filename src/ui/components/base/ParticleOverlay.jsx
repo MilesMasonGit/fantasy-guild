@@ -34,6 +34,23 @@ export function flightDurationMs(distPx) {
     return Math.round(Math.min(FLIGHT_MAX_MS, Math.max(FLIGHT_MIN_MS, ms)));
 }
 
+/** The radius of the glow drawn around a flying item. */
+const GLOW_R = 25;
+
+/**
+ * How far past its path a flight can draw, in px, not counting the item itself (half its size,
+ * added per flight): the glow, the trail, and the sparkles' drift. A trail sparkle starts up to
+ * 5 px off the path and drifts at most 1 px a frame sideways and 2 down for 49 frames; a
+ * landing sparkle at most 2 px a frame for 19 frames; each is a 2 px square.
+ * ⚠️ Follows the sparkle numbers in `update()`. Change those and this with them:
+ * `ParticleCanvasBounds.test.js` fails when something is drawn outside the canvas.
+ */
+const FLIGHT_REACH = { side: 56, up: 38, down: 105 };
+/** Antialiasing past a shape's edge. */
+const EDGE_PX = 2;
+
+const CANVAS_STYLE = { imageRendering: 'pixelated', display: 'none' };
+
 /**
  * Where a board point (natural board pixels / mat units) is on screen.
  * ⚠️ The board is drawn at its natural size and then CSS-scaled to fit (`useBoardScale`), so
@@ -52,6 +69,9 @@ export function boardPointToScreen(boardEl, x, y) {
 /**
  * ParticleOverlay: a Canvas layer for UI-space effects. Visualizes collected loot flying to
  * where it went, with sparkles.
+ * The canvas is only as big as the flights in the air (`ParticleSystem._fit`) and is hidden
+ * while nothing flies: a window-sized one was cleared and redrawn whole on every frame of every
+ * flight, and stayed a full-window layer in between.
  */
 export const ParticleOverlay = ({ disabled }) => {
     const canvasRef = useRef(null);
@@ -63,14 +83,11 @@ export const ParticleOverlay = ({ disabled }) => {
 
     useEffect(() => {
         disabledRef.current = disabled;
-        
+
         if (disabled && systemRef.current) {
             systemRef.current.particles = [];
             systemRef.current.sparkles = [];
-            if (canvasRef.current) {
-                const ctx = canvasRef.current.getContext('2d');
-                ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-            }
+            systemRef.current.sleep();
         }
     }, [disabled]);
 
@@ -82,10 +99,7 @@ export const ParticleOverlay = ({ disabled }) => {
         const system = new ParticleSystem(canvas, ctx);
         systemRef.current = system;
 
-        const handleResize = () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        };
+        const handleResize = () => system.setViewport(window.innerWidth, window.innerHeight);
 
         window.addEventListener('resize', handleResize);
         handleResize();
@@ -113,9 +127,8 @@ export const ParticleOverlay = ({ disabled }) => {
     /**
      * The frame loop.
      * ⚠️ It sleeps when there is nothing to draw: once the last particle has landed and the
-     * last sparkle faded, the loop stops asking for frames, and a new collection wakes it. The
-     * final frame before sleeping has just run `draw()`, which clears the canvas first, so
-     * nothing is left on screen.
+     * last sparkle faded, the loop stops asking for frames and hides the canvas, and a new
+     * collection wakes it.
      */
     useEffect(() => {
         if (disabled) {
@@ -132,9 +145,11 @@ export const ParticleOverlay = ({ disabled }) => {
             const system = systemRef.current;
             if (!system) return;
             system.update(time);
-            system.draw();
             if (system.particles.length || system.sparkles.length) {
+                system.draw();
                 frameIdRef.current = requestAnimationFrame(loop);
+            } else {
+                system.sleep();
             }
         };
         const wake = () => {
@@ -158,8 +173,8 @@ export const ParticleOverlay = ({ disabled }) => {
     return (
         <canvas
             ref={canvasRef}
-            className="fixed inset-0 z-[10000] pointer-events-none"
-            style={{ imageRendering: 'pixelated' }}
+            className="fixed left-0 top-0 z-[10000] pointer-events-none"
+            style={CANVAS_STYLE}
         />
     );
 };
@@ -174,6 +189,73 @@ class ParticleSystem {
         // The burst queue (`_nextSlot`): a place for the next particle, and when one was last asked for.
         this._slot = 0;
         this._lastSpawnAt = -Infinity;
+        // Screen px: every flight's reach since the loop last slept (`_include`), the window,
+        // and the canvas's rect as last set (`_fit`).
+        this._bounds = null;
+        this._view = { w: 0, h: 0 };
+        this._rect = null;
+    }
+
+    setViewport(w, h) {
+        this._view = { w, h };
+    }
+
+    /** Nothing in the air: forget the flights' reach and hide the canvas. */
+    sleep() {
+        this._bounds = null;
+        this._rect = null;
+        this.canvas.style.display = 'none';
+    }
+
+    /** Widen the canvas's reach over a flight's whole path. */
+    _include(path, size) {
+        const half = size / 2;
+        const side = Math.max(GLOW_R, half, FLIGHT_REACH.side) + EDGE_PX;
+        const up = Math.max(GLOW_R, half, FLIGHT_REACH.up) + EDGE_PX;
+        const down = Math.max(GLOW_R, half, FLIGHT_REACH.down) + EDGE_PX;
+        // A quadratic curve stays inside the box of its three points.
+        const box = {
+            l: Math.min(path.startX, path.cpX, path.endX) - side,
+            t: Math.min(path.startY, path.cpY, path.endY) - up,
+            r: Math.max(path.startX, path.cpX, path.endX) + side,
+            b: Math.max(path.startY, path.cpY, path.endY) + down
+        };
+        const a = this._bounds;
+        this._bounds = a
+            ? { l: Math.min(a.l, box.l), t: Math.min(a.t, box.t), r: Math.max(a.r, box.r), b: Math.max(a.b, box.b) }
+            : box;
+    }
+
+    /**
+     * Place and size the canvas over the flights' reach, cut to the window, in whole pixels so
+     * everything draws on the same pixels a window-sized canvas would. The bitmap is only
+     * re-made when the size changes.
+     * @returns {boolean} whether any of it is on screen
+     */
+    _fit() {
+        const b = this._bounds;
+        const left = b ? Math.max(0, Math.floor(b.l)) : 0;
+        const top = b ? Math.max(0, Math.floor(b.t)) : 0;
+        const w = b ? Math.min(this._view.w, Math.ceil(b.r)) - left : 0;
+        const h = b ? Math.min(this._view.h, Math.ceil(b.b)) - top : 0;
+        const canvas = this.canvas;
+        if (w <= 0 || h <= 0) {
+            if (this._rect) {
+                this._rect = null;
+                canvas.style.display = 'none';
+            }
+            return false;
+        }
+        const r = this._rect;
+        if (r && r.left === left && r.top === top && r.w === w && r.h === h) return true;
+        const s = canvas.style;
+        if (!r || r.left !== left) s.left = `${left}px`;
+        if (!r || r.top !== top) s.top = `${top}px`;
+        if (!r || r.w !== w) { canvas.width = w; s.width = `${w}px`; }
+        if (!r || r.h !== h) { canvas.height = h; s.height = `${h}px`; }
+        if (!r) s.display = 'block';
+        this._rect = { left, top, w, h };
+        return true;
     }
 
     /**
@@ -271,7 +353,7 @@ class ParticleSystem {
         const slot = this._nextSlot();
         if (slot == null) return;
 
-        this.particles.push({
+        const particle = {
             itemId: template.id,
             icon: template.icon,
             spriteKey: template.id,
@@ -289,7 +371,9 @@ class ParticleSystem {
             trail: [],
             maxTrail: 15,
             color: template.color || '#4ade80'
-        });
+        };
+        this.particles.push(particle);
+        this._include(particle.path, particle.size);
     }
 
     /**
@@ -442,8 +526,13 @@ class ParticleSystem {
     }
 
     draw() {
+        if (!this._fit()) return;
         const ctx = this.ctx;
-        ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        const { left, top, w, h } = this._rect;
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, w, h);
+        // Everything below is in screen pixels; the canvas stands at (left, top).
+        ctx.setTransform(1, 0, 0, 1, -left, -top);
 
         // Use Additive Blending for that "Glow" look
         ctx.globalCompositeOperation = 'lighter';
@@ -480,13 +569,13 @@ class ParticleSystem {
                 }
             }
 
-            const grad = ctx.createRadialGradient(p.x, p.y, 2, p.x, p.y, 25);
+            const grad = ctx.createRadialGradient(p.x, p.y, 2, p.x, p.y, GLOW_R);
             grad.addColorStop(0, p.color);
             grad.addColorStop(1, 'transparent');
             ctx.fillStyle = grad;
             ctx.globalAlpha = 0.4;
             ctx.beginPath();
-            ctx.arc(p.x, p.y, 25, 0, Math.PI * 2);
+            ctx.arc(p.x, p.y, GLOW_R, 0, Math.PI * 2);
             ctx.fill();
 
             // 2.3 Draw Sprite (Normal blending for the sprite itself)
