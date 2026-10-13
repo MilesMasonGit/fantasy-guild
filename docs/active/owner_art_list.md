@@ -77,3 +77,8 @@ player for these is T-138 (built when the first strips exist).
   ("!", recoloured yellow and red in code).
 - **Log button icon** (NEW, [concept_notifications.md](concept_notifications.md)):
   a notepad or scroll, top right of the screen; placeholder until drawn.
+- **Night-sky backdrop for the Hall screen** (NEW,
+  [concept_guild_hall.md](concept_guild_hall.md) "The look of the sky"): deep
+  blue with scattered tiny stars, sized to the Hall screen; a plain night
+  colour stands in until then. Optional: redraw the four placeholder star
+  sprites (faint, twinkling, bright, gold).

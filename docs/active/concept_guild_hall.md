@@ -37,3 +37,32 @@ couple of weeks).*
 - **A camera move**: the view tilts up from the mat into the night sky for the
   Hall, and down onto the cartographer's map table for the Atlas. Quick (under
   a second), skippable, with a reduce-motion setting.
+
+## The look of the sky
+
+*Owner interview, 2026-10-13 (refinement pass §2, "Guild Hall Upgrades
+Constellation View"); **done**. Build ticket **T-171**. Replaces drawing each
+upgrade's sprite on its node (`GuildHallBoard.jsx`): the icons cluttered the
+sky.*
+
+- **Stars, not icons.** Every upgrade is a pixel star. Its state shows by
+  **brightness and size steps**: **locked** a faint 1-pixel dot; **buyable** a
+  small star that twinkles (two stepped frames, no blur); **bought** a bigger,
+  brighter star; **maxed** a full gold star. Whole-pixel scales only.
+- **Every star carries a tag** beside it: `Bank Slots 3/10` (name and rank),
+  locked ones included.
+- **Lines**: 1 art pixel; **faint between unlit stars, bright white-gold once
+  both ends are lit**. A finished constellation's picture glows briefly and
+  stays bright.
+- **Constellation names** (Hearth, Vault, Compass, Well): a faint label near
+  each group that **brightens when the constellation is finished**.
+- **The centre is the Hall as a bright pole star**, labelled Guild Hall, that
+  every constellation starts from. No Hall sprite in the sky.
+- **The sky**: a **pixel night-sky backdrop the owner paints**; until then a
+  plain night colour with a few code-drawn 1-pixel stars.
+- **Panels**: the **Effects list stays docked on the left** (what the
+  upgrades give now); a **details panel docked on the right** shows the
+  hovered star (the upgrade's sprite icon, description, prerequisites, price
+  as pills with have/need, the Upgrade button) and **a click pins it** so the
+  button can be reached. The sprite icon appears only there.
+

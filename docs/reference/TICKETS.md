@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-171**
+**Next free number: T-172**
 
 ---
 
@@ -67,6 +67,7 @@ here.
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
+| T-171 | P3 | open | **The Hall sky's look** ([concept_guild_hall.md](../active/concept_guild_hall.md), "The look of the sky"): upgrade nodes become pixel stars by state (faint dot, twinkling, bright, gold), every star tagged `name rank/max`, faint-then-bright lines, faint constellation names, the Hall as a pole star, a night-sky backdrop (placeholder until the owner's art), Effects docked left and a hover-filled, click-pinned details panel right holding the icon and the Upgrade button. Check T-128 while there. Builder. Eye-check. | concept_guild_hall.md |
 | T-170 | P2 | open | **Top bar restyle** ([concept_map_tools.md](../active/concept_map_tools.md), "The top bar around the modes"): studded pixel frame; left: Region name (click opens the Atlas), Tokens 45/128 (red at the cap) and Upkeep summed per minute (hover lists one item bar per item with its rate), all in the item bar style; centre: the mode banner; right: Disallow and Demolish. With or after T-166. Builder. Eye-check. | concept_map_tools.md |
 | T-169 | P2 | open | **The recipe list** ([concept_recipe_list.md](../active/concept_recipe_list.md)): opens inside the Token card from Change recipe (Foundations too); one row per recipe sorted by level (level, inputs with have/need, hollow bars for tools and Foundation tiers, main output then muted byproducts with chance, XP and time); hero-face dividers at each hero's level replace the bands, markers and yellow banner; the next two locked recipes as ??? silhouettes; a search box over inputs and outputs; one click chooses. Absorbs T-142. Builder. Eye-check. | concept_recipe_list.md |
 | T-168 | P2 | open | **Notifications: log button, pop-out toasts, pins** ([concept_notifications.md](../active/concept_notifications.md)): replaces the edge sidebar; top-right button with unread badge; one-line sprite toasts slide out of it and back (max 3, loot merged per item); the log (tabs, per-minute loot rows, Clear log); pins that stay on screen and top the log, loot pins as resettable trackers; All / Pinned only / Hidden modes; mute a kind from a toast; Settings per-kind toggles, the position setting removed; hover highlights the hero or Token. Pins and mode saved. With T-028, T-037. Builder. Cost-log line. Eye-check. | concept_notifications.md |

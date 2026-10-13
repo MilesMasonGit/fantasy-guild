@@ -55,7 +55,7 @@
     - **Single Combat Column:** Consolidate combat permissions into one unified "Combat" column per hero (since each hero has one combat skill) to toggle combat on/off.
     - **Skill Header Tooltips:** Update tooltips to explain what the skill is actually used for in gameplay (primary purpose), rather than repetitive generic "click to allow/disallow" instructions.
 
-- [ ] **Guild Hall Upgrades Constellation View Overhaul**
+- [x] **Guild Hall Upgrades Constellation View Overhaul** → **[concept_guild_hall.md](concept_guild_hall.md)** ("The look of the sky"), T-171 (interview 2026-10-13)
   - **Need:** Showing upgrade sprite icons directly on the constellation nodes causes heavy visual clutter.
   - **Constellation Aesthetic:**
     - Keep nodes styled purely as luminous stars connected in constellations (preserving the celestial aesthetic).
