@@ -200,7 +200,7 @@
     - Copy & Layout: Celebratory line (e.g. `"I leveled up Fishing!"` or similar callout).
     - Features large skill icon and the new level number in a prominent, large font size so progression feels impactful and immediately clear.
 
-- [ ] **Token Sprite Vibrancy & Contrast Lift Exploration (Asset Pass)**
+- [x] **Token Sprite Vibrancy & Contrast Lift Exploration (Asset Pass)** → **T-180** (interview 2026-10-13)
   - **Observation:** During drag states, tokens receive a temporary brightness/contrast boost that looks rich, vibrant, and "gamey", making default mat tokens look somewhat washed out by comparison.
   - **Exploration Goal:** Investigate permanently boosting brightness/contrast across the token sprite library to make world visuals pop.
   - **Source Art Rule (No Engine Filters):** Update the source pixel sprites directly rather than applying runtime CSS/canvas filters in engine code.

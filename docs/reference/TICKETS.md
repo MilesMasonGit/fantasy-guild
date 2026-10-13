@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-180**
+**Next free number: T-181**
 
 ---
 
@@ -160,6 +160,7 @@ here.
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
+| T-180 | P3 | owner | **Vibrancy pass on the sprites** (owner 2026-10-13, refinement pass §4): bake the drag look (brightness 1.15, saturation 1.25, `DndKit.jsx`) into the source art of Tokens, items, heroes and enemies (not UI icons), by a script the owner reviews. Steps: (1) the owner commits their finished art (uncommitted files are skipped); (2) git tag `art-before-vibrancy` and a dated zip of `public/assets/` outside the project; (3) a script (an npm command, kept for new art) writes a before/after sheet for the test batch (the Oak, Copper and Fishing families, items beside their Tokens) and the owner checks it in the running game; (4) on approval, the full run, owner review, commit. Then the drag filter goes (lift and shadow stay), and the Recolor material palettes get the same transform through a Studio action the owner runs (T-179; `data/palettes/` is CMS-owned, never hand-edited). Builder. Eye-check. | refinement_pass_todo.md §4 |
 | T-179 | P2 | owner | **The Studio: Recolor and Animation outside the CMS** (owner 2026-10-13, refinement pass §8): one small app launched by `npm run studio` on its own port, Recolor and Animation as two tabs, sharing the CMS server's file endpoints (palettes, `/api/save-recolored-asset`, asset serving) but loading no game data, so it opens fast and can't write game JSON; runs alongside the CMS. Then the recolor and animation tabs leave the CMS top bar (`TopBar.jsx`, `App.jsx`). The editors already read no CMS stores, so this is mostly packaging. **Waiting on the owner** to commit their own edits to `AnimationEditor.jsx` and `vite-plugin-cms-api.js` first. Builder; CMS only. | refinement_pass_todo.md §8 |
 | T-133 | P2 | open | **CMS change packs for agent-authored content** (owner 2026-10-09): autosave the workspace to disk every few minutes (the server's last-5 rotation exists, nothing calls it); an inbox (`cms/incoming/`) of change packs reviewed per entry with before/after, edit-before-accept, conflict flags, per-pack undo, notes, placeholder-art flags. Design: `docs/active/concept_cms_agent_authoring.md`. Builder; CMS only, no game code. | concept_cms_agent_authoring.md |
 | T-065 | P2 | open | 3 of 7 test fixtures still borrow real `item_` ids — their rename changes the bench fingerprint, so land it as its own accepted commit. | CR3-551 |
