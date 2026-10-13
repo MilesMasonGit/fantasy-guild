@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { memo, useState, useEffect } from 'react';
 import { cn } from '../../utils/cn.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { useTokenEvent } from './tokenEvents.js';
@@ -19,9 +19,10 @@ import { getSkill, DEMOLITION_SKILL_ID } from '../../../config/registries/skillR
 /**
  * TokenChargeDeltaFloater: floating numbers (-1, +50) when this Token's charges change.
  * `anchor="ring"`: just above the charges ring it is drawn inside; `"corner"`: the Token's
- * bottom-right, when no charges ring shows.
+ * bottom-right, when no charges ring shows. Memoised: it draws from its own state, not from
+ * its Token's redraws.
  */
-export const TokenChargeDeltaFloater = ({ instanceId, anchor = 'corner' }) => {
+export const TokenChargeDeltaFloater = memo(function TokenChargeDeltaFloater({ instanceId, anchor = 'corner' }) {
     const [deltas, setDeltas] = useState([]);
     const timers = React.useRef(new Set());
 
@@ -77,14 +78,14 @@ export const TokenChargeDeltaFloater = ({ instanceId, anchor = 'corner' }) => {
             ))}
         </div>
     );
-};
+});
 
 /**
  * TokenNameBadge: the Token's name on hover, centred just above the Token's box so it never
  * covers a bubble. `lift` raises it further (mat units) when bubbles hang off the box's top
- * (a small Token's timer).
+ * (a small Token's timer). Memoised: its Token redraws far more often than any of these change.
  */
-export const TokenNameBadge = ({ name, isDragging, isHovered, lift = 0 }) => {
+export const TokenNameBadge = memo(function TokenNameBadge({ name, isDragging, isHovered, lift = 0 }) {
     if (!name || isDragging) return null;
 
     // A full-width flex row centres the label without a `transform`: a transform on every
@@ -110,7 +111,7 @@ export const TokenNameBadge = ({ name, isDragging, isHovered, lift = 0 }) => {
             </span>
         </div>
     );
-};
+});
 
 /**
  * StationGearBadge: the recipe picker's handle, in the middle row of a Token that has something

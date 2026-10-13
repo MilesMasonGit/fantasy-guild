@@ -1,7 +1,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import isEqual from 'fast-deep-equal/es6';
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
+import { shareEqual } from '../../hooks/structuralShare.js';
 
 /**
  * One EventBus subscription per event type, however many Tokens are drawn.
@@ -121,8 +121,9 @@ export function useTokenState(id, selector, routesOf) {
         queued.current = true;
         queueMicrotask(() => {
             queued.current = false;
-            const next = live.current();
-            if (isEqual(lastRef.current, next)) return;
+            // Unchanged parts keep their identity (`shareEqual`), as `useGameState`'s do.
+            const next = shareEqual(lastRef.current, live.current());
+            if (next === lastRef.current) return;
             lastRef.current = next;
             setState(next);
         });

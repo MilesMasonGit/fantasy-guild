@@ -578,3 +578,34 @@ p50/p95, **frame stalls** per drag phase and the grouped **failure causes**:
 JSON with every attempt (source, target, what was under the pointer, what was in
 the hand, the drop sound, the game's notifications) goes to `bench/results/drag/`.
 ⚠️ The bench reports drag bugs; it does not fix them.
+
+### `node bench/tick-commits.mjs`: the React work an engine tick sets off
+
+How many React commits and component renders each engine tick sets off, on a stress board in
+the **dev build** (React's development build names every component). A stand-in for the React
+DevTools hook, installed before the page's first script, hears every commit; each commit's
+components are walked as the DevTools walk them, and a component that rendered while its parent
+did not is that commit's **origin** (its own state, a context or a store woke it).
+
+**The same work every run.** The tool stops the game loop and drives the ticks itself, 100 ms
+of game time each, paced on the wall clock as the loop paces them. Inside a tick `Math.random`
+is a seeded stream and `Date.now` moves 100 ms a tick (hero and enemy pottering are pointed at
+it; a loot sprite's wall-clock absorption timer, which races the tick due at the same moment, is
+dropped so absorption happens on the tick's own game-clock path). The engine events of the
+measured ticks are counted and fingerprinted, and runs that did not do the same work say
+**WORK DIFFERS** and name the events that differ. Notification events are left out: toasts are
+dismissed on wall-clock timers, so how many a tick trims depends on when those fired. Commit and render counts are then exact, run to run; the milliseconds are the
+dev build's and move with the machine's load.
+
+Two windows: **driven** (the ticks) and **idle** (as long, no ticks: what commits on its own,
+from timers and animations). Per tick = (driven − idle) ÷ ticks. It prints, per tick: commits,
+component renders and mounts; the main thread split into the tick itself (engine and UI
+listeners, exclusive), microtasks (the stores' selectors) and React's scheduler (render, commit
+and effects); how many commits fell between one tick and the next; renders by component; and
+commits by what woke them.
+
+| Command | What it does | Time |
+|---|---|---|
+| `node bench/tick-commits.mjs` | this checkout, S2, 150 ticks to settle, 600 measured | ~4 min |
+| `node bench/tick-commits.mjs --a=<before> --b=<after>` | two checkouts, A,B,B,A, each on its own dev server and Vite cache | ~13 min |
+| `--scene=cap128 --ticks=300 --settle=100 --seed=2 --top=40 --dump=60` | any `?stress=` board; ticks; rows; the first commits of each window, one by one | |

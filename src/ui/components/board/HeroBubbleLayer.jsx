@@ -139,27 +139,49 @@ export const HeroBubbleLayer = ({ heroes }) => {
     }
     for (const key of [...since.keys()]) if (!liveKeys.has(key)) since.delete(key);
 
+    // What each hero says at time `t`, and where its stack hangs. Reads, never writes: the
+    // poll below asks it too.
+    const speechAt = (list, t) => {
+        const out = [];
+        for (const h of list) {
+            const blocked = (h.alert && h.tokenId && readyToSpeak(h.alert, sinceRef.current.get(keyOf(h)) ?? t, t))
+                ? blockedLineFor(h.tokenId, h.alert)
+                : null;
+            const stack = stackOf(momentsRef.current.get(h.heroId) || [], blocked, t);
+            if (!stack.length) continue;
+            // The tail sits just above the head, read from the art's real size at this mat scale
+            // (`bubbleAnchorY`). A moving hero comes with no point: read it live.
+            const at = h.x == null ? HeroMotion.bodyView(h.heroId) : h;
+            if (!at) continue;
+            out.push({ h, stack, x: at.x, y: bubbleAnchorY(at.y, artPx), live: h.x == null });
+        }
+        return out;
+    };
+    const speechKeyOf = (list) => list
+        .map(({ h, stack }) => `${h.heroId}:${stack.map(b => `${b.id}=${b.text}`).join('|')}`)
+        .join('||');
+    const speechAtRef = useRef(speechAt);
+    speechAtRef.current = speechAt;
+    const heroesRef = useRef(heroes);
+    heroesRef.current = heroes;
+    /** What the layer last drew, as `speechKeyOf` writes it. */
+    const drawnKeyRef = useRef(null);
+
+    // Twice a second, while anyone is blocked or has a moment up: a line may have lapsed, a wait
+    // run out, or a block now name something else. Drawn only when what is said has changed; a
+    // stuck hero's unchanged line drew the layer twice a second for nothing.
     const busy = heroes.some(h => h.alert && h.tokenId) || momentsRef.current.size > 0;
     useEffect(() => {
         if (!busy) return undefined;
-        const timer = setInterval(() => setNow(Date.now()), REFRESH_MS);
+        const timer = setInterval(() => {
+            const at = Date.now();
+            if (speechKeyOf(speechAtRef.current(heroesRef.current, at)) !== drawnKeyRef.current) setNow(at);
+        }, REFRESH_MS);
         return () => clearInterval(timer);
     }, [busy]);
 
     // What each hero says now, then where every stack goes so none crowd.
-    const anchored = [];
-    for (const h of heroes) {
-        const blocked = (h.alert && h.tokenId && readyToSpeak(h.alert, since.get(keyOf(h)) ?? t, t))
-            ? blockedLineFor(h.tokenId, h.alert)
-            : null;
-        const stack = stackOf(momentsRef.current.get(h.heroId) || [], blocked, t);
-        if (!stack.length) continue;
-        // The tail sits just above the head, read from the art's real size at this mat scale
-        // (`bubbleAnchorY`). A moving hero comes with no point: read it live.
-        const at = h.x == null ? HeroMotion.bodyView(h.heroId) : h;
-        if (!at) continue;
-        anchored.push({ h, stack, x: at.x, y: bubbleAnchorY(at.y, artPx), live: h.x == null });
-    }
+    const anchored = speechAt(heroes, t);
 
     // While a moving hero is speaking, follow their steps here: the one place that still
     // redraws per step, and only while a bubble is up.
@@ -176,10 +198,9 @@ export const HeroBubbleLayer = ({ heroes }) => {
     // Measure what was drawn, so the next pass spaces real sizes, not guesses. Only when what
     // the stacks SAY changes: a stack's size is its lines, and this layer re-renders on every
     // walking step, where measuring forced a layout inside each commit.
-    const measureKey = anchored
-        .map(({ h, stack }) => `${h.heroId}:${stack.map(b => `${b.id}=${b.text}`).join('|')}`)
-        .join('||');
+    const measureKey = speechKeyOf(anchored);
     useLayoutEffect(() => {
+        drawnKeyRef.current = measureKey;
         const root = layerRef.current;
         if (!root) return;
         let changed = false;

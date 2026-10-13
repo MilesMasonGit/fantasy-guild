@@ -34,13 +34,15 @@ vi.mock('../ui/components/drawer/HeroInspectionSheet.jsx', () => ({
 }));
 
 // Render counters: each wraps a part drawn once per render of the thing it belongs to. A Token's
-// art, a flag's mark and a hero's figure are not redrawn unless their owner rendered.
+// bubbles, a flag's mark and a hero's figure are not redrawn unless their owner rendered. (A
+// Token's art is no counter: it is kept as the same element while what it draws is unchanged,
+// so a Token can redraw without its art.)
 const drawn = { token: new Map(), flag: new Map(), matHero: new Map(), dockHero: new Map(), mat: new Map(), slot: new Map() };
 const bump = (map, key) => map.set(key, (map.get(key) || 0) + 1);
-vi.mock('../ui/components/board/TokenHitArt.jsx', async (orig) => {
+vi.mock('../ui/components/board/TokenBubbles.jsx', async (orig) => {
     const real = await orig();
-    const TokenHitArt = (props) => { bump(drawn.token, props.instanceId); return real.TokenHitArt(props); };
-    return { ...real, TokenHitArt };
+    const TokenBubbles = (props) => { bump(drawn.token, props.instanceId); return real.TokenBubbles(props); };
+    return { ...real, TokenBubbles, default: TokenBubbles };
 });
 vi.mock('../ui/components/board/FlagMark.jsx', async (orig) => {
     const real = await orig();

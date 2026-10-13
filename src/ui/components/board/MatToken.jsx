@@ -399,6 +399,46 @@ export const MatToken = React.memo(function MatToken({
         [gearState.show, gearState.pulsing, detail?.recipe, detail?.isFoundation, disallowMode, onFlipDisallow, onOpenRecipes, id]
     );
 
+    // The art, kept as the same element while nothing it draws from changes: a Token redraws
+    // on every change to its charges, alert or hero, and its art (hit loop, sprite, its layers)
+    // drew again each time for nothing.
+    const strikes = strikesLive(heroId, alert);
+    const flashing = !!transformGlow;
+    const art = React.useMemo(() => {
+        const spriteClass = cn('absolute inset-0 m-auto', landing && 'gi-token-land');
+        return (
+            <TokenHitArt
+                instanceId={id}
+                skill={hitSkill}
+                heroId={heroId}
+                active={strikes}
+                tokenX={x}
+                className={flashing ? 'gi-transform-flash' : null}
+            >
+                {enemyAnimSrc ? (
+                    <AnimatedEnemySprite
+                        src={enemyAnimSrc}
+                        heroId={heroId}
+                        walkFacing={walkFacing}
+                        alt={label}
+                        size={artPx}
+                        outline={outline}
+                        className={spriteClass}
+                    />
+                ) : (
+                    <TokenSprite
+                        typeId={typeId}
+                        surface={TOKEN_SURFACE.BOARD}
+                        scale={artScale}
+                        alt={label}
+                        outline={outline}
+                        className={spriteClass}
+                    />
+                )}
+            </TokenHitArt>
+        );
+    }, [id, hitSkill, heroId, strikes, x, flashing, enemyAnimSrc, walkFacing, label, artPx, outline, landing, typeId, artScale]);
+
     return (
         <>
             <div
@@ -487,35 +527,7 @@ export const MatToken = React.memo(function MatToken({
                         resting && 'gi-token-resting'
                     )}
                 >
-                    <TokenHitArt
-                        instanceId={id}
-                        skill={hitSkill}
-                        heroId={heroId}
-                        active={strikesLive(heroId, alert)}
-                        tokenX={x}
-                        className={transformGlow ? 'gi-transform-flash' : null}
-                    >
-                        {enemyAnimSrc ? (
-                            <AnimatedEnemySprite
-                                src={enemyAnimSrc}
-                                heroId={heroId}
-                                walkFacing={walkFacing}
-                                alt={label}
-                                size={artPx}
-                                outline={outline}
-                                className={cn('absolute inset-0 m-auto', landing && 'gi-token-land')}
-                            />
-                        ) : (
-                            <TokenSprite
-                                typeId={typeId}
-                                surface={TOKEN_SURFACE.BOARD}
-                                scale={artScale}
-                                alt={label}
-                                outline={outline}
-                                className={cn('absolute inset-0 m-auto', landing && 'gi-token-land')}
-                            />
-                        )}
-                    </TokenHitArt>
+                    {art}
                     {quest?.itemId && (
                         <QuestPosterItem itemId={quest.itemId} boxPx={boxPx} artPx={artPx} fit={fit} />
                     )}
