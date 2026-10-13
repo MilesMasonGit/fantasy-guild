@@ -37,6 +37,10 @@ planning (the owner's design ideas mostly follow what just got built):
   owner"** in `STATUS.md` as multiple choice, and closes the wave with the
   handoff: the break point where the owner, the planning agent and the next
   director look at priorities and progress again.
+- **Starting either agent**: type `/director` or `/planning` in a fresh
+  session (project skills in `.claude/skills/`); each reads its own
+  checklist and begins. Pick the model in the app first (Fable for the
+  director).
 - **Owner**: shares ideas and answers interviews with the planning agent,
   makes art, plays the game and the eye-checks, writes what they notice into
   `owner_feedback.md`, and answers the director's parked questions.
