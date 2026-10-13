@@ -13,6 +13,8 @@ dist-perf
 dist-perf-prof
 dist-ssr
 *.local
+.env
+.env.*
 
 # Editor directories and files
 .vscode/*

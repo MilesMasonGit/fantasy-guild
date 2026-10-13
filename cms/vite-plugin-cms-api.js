@@ -184,6 +184,92 @@ export default function cmsFileApi({ inboxDir } = {}) {
           }
         }
 
+        // Serve raw_assets from project root raw_assets folder if requested in CMS
+        if (url.startsWith('/raw_assets/')) {
+          const filePath = path.join(projectRoot, url);
+          if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+            const ext = path.extname(filePath).toLowerCase();
+            let contentType = 'application/octet-stream';
+            if (ext === '.png') contentType = 'image/png';
+            else if (ext === '.jpg' || ext === '.jpeg') contentType = 'image/jpeg';
+            else if (ext === '.gif') contentType = 'image/gif';
+            else if (ext === '.svg') contentType = 'image/svg+xml';
+            else if (ext === '.webp') contentType = 'image/webp';
+            
+            res.setHeader('Content-Type', contentType);
+            res.setHeader('Cache-Control', 'no-cache');
+            fs.createReadStream(filePath).pipe(res);
+            return;
+          }
+        }
+
+        // GET /api/animation-runs (List all candidate and staging animation runs)
+        if (req.method === 'GET' && url === '/api/animation-runs') {
+          try {
+            const runs = [];
+            const animDir = path.join(projectRoot, 'raw_assets', 'animations', 'enemies');
+            if (fs.existsSync(animDir)) {
+              const categories = fs.readdirSync(animDir);
+              for (const cat of categories) {
+                const catPath = path.join(animDir, cat);
+                if (!fs.statSync(catPath).isDirectory()) continue;
+                const enemies = fs.readdirSync(catPath);
+                for (const enemy of enemies) {
+                  const enemyPath = path.join(catPath, enemy);
+                  if (!fs.statSync(enemyPath).isDirectory()) continue;
+
+                  // Check for raw 4x4 sheet if assembled
+                  const rawSheet = path.join(enemyPath, `ani_${enemy}_raw.png`);
+                  if (fs.existsSync(rawSheet)) {
+                    runs.push({
+                      id: `${enemy}_raw`,
+                      label: `${enemy} (Assembled 4×4 Raw)`,
+                      path: `/raw_assets/animations/enemies/${cat}/${enemy}/ani_${enemy}_raw.png`,
+                      type: 'enemy',
+                      category: cat,
+                      enemy
+                    });
+                  }
+
+                  // Check runs/
+                  const runsFolder = path.join(enemyPath, 'runs');
+                  if (fs.existsSync(runsFolder)) {
+                    const runList = fs.readdirSync(runsFolder);
+                    for (const run of runList) {
+                      const runFolder = path.join(runsFolder, run);
+                      const strip = path.join(runFolder, 'strip_8f.png');
+                      if (fs.existsSync(strip)) {
+                        let meta = {};
+                        const metaPath = path.join(runFolder, 'meta.json');
+                        if (fs.existsSync(metaPath)) {
+                          try { meta = JSON.parse(fs.readFileSync(metaPath, 'utf8')); } catch (_) {}
+                        }
+                        runs.push({
+                          id: run,
+                          label: `${enemy} [${meta.cycle || 'strip'}] (${run.replace('run_', '')})`,
+                          path: `/raw_assets/animations/enemies/${cat}/${enemy}/runs/${run}/strip_8f.png`,
+                          type: 'strip',
+                          category: cat,
+                          enemy,
+                          cycle: meta.cycle || 'strip',
+                          cost: meta.cost,
+                          seed: meta.seed
+                        });
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify(runs));
+          } catch (err) {
+            res.statusCode = 500;
+            res.end(JSON.stringify({ error: err.message }));
+          }
+          return;
+        }
+
         if (!url.startsWith('/api/backups') && 
             !url.startsWith('/api/save-recolored-asset') && 
             !url.startsWith('/api/custom-palettes') &&

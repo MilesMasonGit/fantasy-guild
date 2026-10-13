@@ -14,13 +14,14 @@ const ENEMY_PRESETS = [
 ];
 
 const FPS_PRESETS = [4, 6, 8, 10, 12, 16];
-const ZOOM_PRESETS = [1, 2, 3, 4, 6, 8];
+const ZOOM_PRESETS = [1, 2, 3, 4, 6, 8, 10, 12, 16];
 
 export default function AnimationEditor() {
   const [imageSrc, setImageSrc] = useState('/assets/heroes/animations/ani_recruit_0.png');
   const [imageName, setImageName] = useState('ani_recruit_0');
   const [sheetDims, setSheetDims] = useState({ width: 512, height: 192 });
   const [archetype, setArchetype] = useState('hero');
+  const [aiRuns, setAiRuns] = useState([]);
 
   const [action, setAction] = useState('active');
   const [frame, setFrame] = useState(0);
@@ -44,8 +45,17 @@ export default function AnimationEditor() {
   const dragCounter = useRef(0);
   const fileInputRef = useRef(null);
 
+  useEffect(() => {
+    fetch('/api/animation-runs')
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data)) setAiRuns(data);
+      })
+      .catch(() => {});
+  }, []);
+
   const cols = archetype === 'enemy' ? 4 : 8;
-  const rows = archetype === 'enemy' ? 4 : 3;
+  const rows = archetype === 'enemy' ? 4 : (archetype === 'strip' ? 1 : 3);
   const cellW = sheetDims.width ? Math.round(sheetDims.width / cols) : 64;
   const cellH = sheetDims.height ? Math.round(sheetDims.height / rows) : 64;
 
@@ -60,17 +70,23 @@ export default function AnimationEditor() {
 
       let detected = forcedType;
       if (!detected) {
-        if (w === 256 || h >= 256 || name.toLowerCase().includes('enemy') || name.toLowerCase().includes('cow')) {
+        if (w === h * 8 || name.toLowerCase().includes('strip')) {
+          detected = 'strip';
+        } else if ((w === 256 && h === 256) || (w === 128 && h === 128) || name.toLowerCase().includes('enemy') || name.toLowerCase().includes('cow') || name.toLowerCase().includes('slime')) {
           detected = 'enemy';
         } else {
           detected = 'hero';
         }
       }
       setArchetype(detected);
-      setRunwayDir(detected === 'enemy' ? 'left' : 'right');
+      setRunwayDir(detected === 'enemy' || detected === 'strip' ? 'left' : 'right');
       setAction('active');
       setFrame(0);
-      setFloorY(detected === 'enemy' ? Math.round((h / 4) * 0.9) : 58);
+      const computedCellH = detected === 'strip' ? h : Math.round(h / (detected === 'enemy' ? 4 : 3));
+      setFloorY(Math.round(computedCellH * 0.9));
+      if (computedCellH <= 32) {
+        setZoom(8);
+      }
     };
     img.src = url;
   };
@@ -205,9 +221,11 @@ export default function AnimationEditor() {
   const currentFrame = frame % 8;
   const prevFrame = (currentFrame - 1 + 8) % 8;
 
-  // Hero sheet: 8 cols x 3 rows (Active, Walk, Idle). Enemy sheet: 4 cols x 4 rows, two rows per animation.
+  // Hero sheet: 8 cols x 3 rows (Active, Walk, Idle). Enemy sheet: 4 cols x 4 rows. Strip: 8 cols x 1 row.
   const getFrameCoords = (actKey, fIdx) => {
-    if (archetype === 'enemy') {
+    if (archetype === 'strip') {
+      return { col: fIdx % 8, row: 0 };
+    } else if (archetype === 'enemy') {
       const baseRow = actKey === 'active' ? 0 : 2;
       const subRow = Math.floor(fIdx / 4);
       const row = baseRow + subRow;
@@ -392,36 +410,74 @@ export default function AnimationEditor() {
               >
                 Enemy (4×4)
               </button>
+              <button
+                onClick={() => {
+                  setArchetype('strip');
+                  setAction('active');
+                }}
+                className={`px-2.5 py-1 rounded text-xs font-semibold transition-all ${archetype === 'strip' ? 'bg-emerald-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}
+              >
+                Strip (8×1)
+              </button>
             </div>
 
             <div className="flex items-center p-0.5 rounded-lg border gap-1" style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border-subtle)' }}>
-              <button
-                onClick={() => setAction('active')}
-                className={`px-3 py-1 rounded text-xs font-bold uppercase transition-all ${action === 'active' ? 'bg-amber-500 text-black shadow' : 'text-gray-400 hover:text-white'}`}
-              >
-                Active
-              </button>
-              {archetype === 'hero' && (
+              {archetype === 'strip' ? (
                 <button
-                  onClick={() => setAction('walk')}
-                  className={`px-3 py-1 rounded text-xs font-bold uppercase transition-all ${action === 'walk' ? 'bg-blue-500 text-white shadow' : 'text-gray-400 hover:text-white'}`}
+                  onClick={() => setAction('active')}
+                  className="px-3 py-1 rounded text-xs font-bold uppercase transition-all bg-emerald-500 text-black shadow"
                 >
-                  Walk
+                  Loop (8 Frames)
                 </button>
+              ) : (
+                <>
+                  <button
+                    onClick={() => setAction('active')}
+                    className={`px-3 py-1 rounded text-xs font-bold uppercase transition-all ${action === 'active' ? 'bg-amber-500 text-black shadow' : 'text-gray-400 hover:text-white'}`}
+                  >
+                    Active
+                  </button>
+                  {archetype === 'hero' && (
+                    <button
+                      onClick={() => setAction('walk')}
+                      className={`px-3 py-1 rounded text-xs font-bold uppercase transition-all ${action === 'walk' ? 'bg-blue-500 text-white shadow' : 'text-gray-400 hover:text-white'}`}
+                    >
+                      Walk
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setAction('idle')}
+                    className={`px-3 py-1 rounded text-xs font-bold uppercase transition-all ${action === 'idle' ? 'bg-emerald-500 text-black shadow' : 'text-gray-400 hover:text-white'}`}
+                  >
+                    Idle
+                  </button>
+                  <button
+                    onClick={() => setAction('all')}
+                    className={`px-3 py-1 rounded text-xs font-bold uppercase transition-all ${action === 'all' ? 'bg-purple-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}
+                  >
+                    {archetype === 'hero' ? 'Trio View' : 'Duo View'}
+                  </button>
+                </>
               )}
-              <button
-                onClick={() => setAction('idle')}
-                className={`px-3 py-1 rounded text-xs font-bold uppercase transition-all ${action === 'idle' ? 'bg-emerald-500 text-black shadow' : 'text-gray-400 hover:text-white'}`}
-              >
-                Idle
-              </button>
-              <button
-                onClick={() => setAction('all')}
-                className={`px-3 py-1 rounded text-xs font-bold uppercase transition-all ${action === 'all' ? 'bg-purple-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}
-              >
-                {archetype === 'hero' ? 'Trio View' : 'Duo View'}
-              </button>
             </div>
+
+            {aiRuns.length > 0 && (
+              <select
+                onChange={(e) => {
+                  const run = aiRuns.find((r) => r.id === e.target.value);
+                  if (run) handleLoadImageFromUrl(run.path, run.label, run.type);
+                }}
+                defaultValue=""
+                className="px-2.5 py-1.5 rounded-lg text-xs font-bold border border-emerald-500/40 text-emerald-300 bg-emerald-950/40 hover:bg-emerald-900/40 transition-all cursor-pointer"
+              >
+                <option value="" disabled>Load AI Run ({aiRuns.length}) ▾</option>
+                {aiRuns.map((run) => (
+                  <option key={run.id} value={run.id} className="bg-neutral-900 text-white">
+                    {run.label}
+                  </option>
+                ))}
+              </select>
+            )}
 
             <button
               onClick={() => fileInputRef.current?.click()}
@@ -476,6 +532,45 @@ export default function AnimationEditor() {
             </span>
 
             <div className="space-y-4">
+              {aiRuns.length > 0 && (
+                <div>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-400 flex items-center justify-between mb-2">
+                    <span>AI Animation Runs ({aiRuns.length})</span>
+                    <span className="text-[9px] bg-emerald-950/60 text-emerald-300 border border-emerald-500/30 px-1 rounded">Retro Diffusion</span>
+                  </span>
+                  <div className="grid grid-cols-1 gap-1.5">
+                    {aiRuns.map((run) => (
+                      <button
+                        key={run.id}
+                        onClick={() => handleLoadImageFromUrl(run.path, run.label, run.type)}
+                        className="flex items-center justify-between p-2.5 rounded-lg border border-emerald-500/20 bg-emerald-950/20 hover:border-emerald-500/50 hover:bg-emerald-950/40 transition-all text-left group"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded bg-black/60 border border-emerald-500/30 overflow-hidden flex items-center justify-center">
+                            <img
+                              src={run.path}
+                              alt=""
+                              className="w-8 h-8 object-cover object-left-top"
+                              style={{ imageRendering: 'pixelated' }}
+                            />
+                          </div>
+                          <div>
+                            <span className="text-xs font-bold text-white group-hover:text-emerald-300 block">
+                              {run.label}
+                            </span>
+                            <span className="text-[10px] font-mono text-gray-500">
+                              {run.type === 'strip' ? '8-Frame Strip' : '4×4 Sheet'} {run.cost ? `• $${run.cost}` : ''}
+                            </span>
+                          </div>
+                        </div>
+                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/5 text-emerald-400 border border-emerald-500/30">
+                          {run.type === 'strip' ? '8×1' : '4×4'}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div>
                 <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400 block mb-2">
                   Heroes (8-Frame • 3 Rows)
@@ -1006,7 +1101,9 @@ export default function AnimationEditor() {
                   const isCurrent = currentCoords.row === rIdx && currentCoords.col === cIdx;
                   
                   let cellLabel = '';
-                  if (archetype === 'enemy') {
+                  if (archetype === 'strip') {
+                    cellLabel = `Frame ${cIdx}`;
+                  } else if (archetype === 'enemy') {
                     if (rIdx <= 1) cellLabel = `Active ${rIdx * 4 + cIdx}`;
                     else cellLabel = `Idle ${(rIdx - 2) * 4 + cIdx}`;
                   } else {
@@ -1020,7 +1117,10 @@ export default function AnimationEditor() {
                       key={`${rIdx}-${cIdx}`}
                       onClick={() => {
                         setIsPlaying(false);
-                        if (archetype === 'enemy') {
+                        if (archetype === 'strip') {
+                          setAction('active');
+                          setFrame(cIdx);
+                        } else if (archetype === 'enemy') {
                           if (rIdx <= 1) {
                             setAction('active');
                             setFrame(rIdx * 4 + cIdx);
@@ -1043,7 +1143,7 @@ export default function AnimationEditor() {
                       <span className={`text-[8px] font-mono leading-none font-bold px-1 py-0.5 rounded bg-black/60 ${
                         isCurrent ? 'text-amber-300 bg-black/90' : 'text-white/40 group-hover:text-white'
                       }`}>
-                        {archetype === 'enemy' ? (rIdx % 2) * 4 + cIdx : cIdx}
+                        {archetype === 'strip' ? cIdx : archetype === 'enemy' ? (rIdx % 2) * 4 + cIdx : cIdx}
                       </span>
                       {isCurrent && (
                         <span className="absolute bottom-1 right-1 w-2 h-2 rounded-full bg-amber-400 animate-ping" />
