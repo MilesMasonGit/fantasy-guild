@@ -445,5 +445,26 @@
     ],
     "autoSyncId": true,
     "id": "effect_anvil"
+  },
+  "effect_capability": {
+    "name": "Capability",
+    "statements": [
+      {
+        "id": "stm_n9o3dqasq",
+        "keyword": "acts_as",
+        "payload": {
+          "tag": "pickaxe",
+          "tier": 1
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": null,
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_capability"
   }
 }

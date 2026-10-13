@@ -749,18 +749,18 @@
     "autoSyncId": true,
     "id": "item_bones"
   },
-  "item_oak_seed": {
-    "name": "Oak Seed",
+  "item_oak_seedling": {
+    "name": "Oak Seedling",
     "description": "",
     "type": "material",
-    "sprite": "i_seed_pit",
+    "sprite": "item_seedling_base",
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
     "value": 2,
     "valueSource": "token_oak_tree",
     "autoSyncId": true,
-    "id": "item_oak_seed"
+    "id": "item_oak_seedling"
   },
   "item_stone": {
     "name": "Stone",
@@ -839,5 +839,115 @@
     "valueSource": null,
     "autoSyncId": true,
     "id": "item_beeswax_comb"
+  },
+  "item_birch_seedling": {
+    "name": "Birch Seedling",
+    "description": "",
+    "type": "material",
+    "sprite": "seedling_birch",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_birch_seedling"
+  },
+  "item_fir_seedling": {
+    "name": "Fir Seedling",
+    "description": "",
+    "type": "material",
+    "sprite": "seedling_fir",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_fir_seedling"
+  },
+  "item_maple_seedling": {
+    "name": "Maple Seedling",
+    "description": "",
+    "type": "material",
+    "sprite": "seedling_maple",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_maple_seedling"
+  },
+  "item_ebony_seedling": {
+    "name": "Ebony Seedling",
+    "description": "",
+    "type": "material",
+    "sprite": "seedling_ebony",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_ebony_seedling"
+  },
+  "item_cedar_seedling": {
+    "name": "Cedar Seedling",
+    "description": "",
+    "type": "material",
+    "sprite": "seedling_cedar",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_cedar_seedling"
+  },
+  "item_mahogany_seedling": {
+    "name": "Mahogany Seedling",
+    "description": "",
+    "type": "material",
+    "sprite": "seedling_mahogany",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_mahogany_seedling"
+  },
+  "item": {
+    "name": "",
+    "description": "",
+    "type": "material",
+    "sprite": "",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item"
+  },
+  "item_copper_pickaxe": {
+    "name": "Copper Pickaxe",
+    "description": "",
+    "type": "tool",
+    "sprite": "tool_pick_copper",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_copper_pickaxe",
+    "effects": [
+      {
+        "effectId": "effect_capability",
+        "scale": 1
+      }
+    ]
   }
 }
