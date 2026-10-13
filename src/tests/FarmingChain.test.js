@@ -152,9 +152,9 @@ describe('The Farming chain in shipped data (7.4)', () => {
         }
     });
 
-    it('the Guild Hall trickles Oak, Wheat and Apple Seeds (SP-66 placeholder)', () => {
+    it('the Guild Hall trickles Oak Seedling, Wheat and Apple Seeds (SP-66 placeholder)', () => {
         expect(hall.trickle).toEqual([
-            { itemId: 'item_oak_seed', quantity: 1, everyMs: 300000 },
+            { itemId: 'item_oak_seedling', quantity: 1, everyMs: 300000 },
             { itemId: 'item_wheat_seed', quantity: 1, everyMs: 300000 },
             { itemId: 'item_apple_seed', quantity: 1, everyMs: 600000 },
         ]);

@@ -27,16 +27,16 @@ const tree = tokens.token_oak_tree;
 const hall = tokens.token_guild_hall;
 
 describe('The Forestry chain in shipped data (7.0, 7.1)', () => {
-    it('Oak Seed is a live item', () => {
-        expect(items.item_oak_seed).toMatchObject({ id: 'item_oak_seed', name: 'Oak Seed' });
+    it('Oak Seedling is a live item', () => {
+        expect(items.item_oak_seedling).toMatchObject({ id: 'item_oak_seedling', name: 'Oak Seedling' });
     });
 
-    it('the Oak Forest is a spawner of saplings that pays one Oak Seed per spawn', () => {
+    it('the Oak Forest is a spawner of saplings that pays one Oak Seedling per spawn', () => {
         expect(forest.spawner).toEqual({
             spawns: [{ typeId: 'token_oak_sapling', weight: 1 }],
             allowance: 5,
             intervalMs: 20000,
-            upkeep: [{ itemId: 'item_oak_seed', quantity: 1 }],
+            upkeep: [{ itemId: 'item_oak_seedling', quantity: 1 }],
         });
         expect(forest.tokenType).toBe('spawner');
     });
@@ -59,11 +59,11 @@ describe('The Forestry chain in shipped data (7.0, 7.1)', () => {
         expect(familyOf('token_oak_forest')).toEqual(['token_oak_sapling', 'token_oak_tree']);
     });
 
-    it('an Oak Tree is felled with Forestry for Oak Wood and a 20% Oak Seed, and runs out', () => {
+    it('an Oak Tree is felled with Forestry for Oak Wood and a 20% Oak Seedling, and runs out', () => {
         expect(tree.config.skill).toBe('forestry');
         const byItem = Object.fromEntries(tree.config.outputs.map((o) => [o.itemId, o]));
         expect(byItem.item_oak_wood.chance).toBe(100);
-        expect(byItem.item_oak_seed.chance).toBe(20);
+        expect(byItem.item_oak_seedling.chance).toBe(20);
         expect(tree.uses).toBe(5);   // Q9 pacing: was 10
     });
 
@@ -71,10 +71,10 @@ describe('The Forestry chain in shipped data (7.0, 7.1)', () => {
         for (const def of [forest, sapling, tree]) expect(def.acceptedTokens || []).toEqual([]);
     });
 
-    it('the Guild Hall trickles an Oak Seed every 5 minutes (SP-66)', () => {
+    it('the Guild Hall trickles an Oak Seedling every 5 minutes (SP-66)', () => {
         // Other chains add their own seed lines (7.4: Wheat and Apple Seed).
-        expect(hall.trickle).toContainEqual({ itemId: 'item_oak_seed', quantity: 1, everyMs: 300000 });
-        expect(hall.trickle.filter((t) => t.itemId === 'item_oak_seed')).toHaveLength(1);
+        expect(hall.trickle).toContainEqual({ itemId: 'item_oak_seedling', quantity: 1, everyMs: 300000 });
+        expect(hall.trickle.filter((t) => t.itemId === 'item_oak_seedling')).toHaveLength(1);
     });
 
     it('the lifecycle audit has nothing to say about the chain', () => {
