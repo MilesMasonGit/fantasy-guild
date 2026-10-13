@@ -213,7 +213,7 @@
 
 ## 5. Systemic Guidelines & Design Standards (For Planning Agent)
 
-- [ ] **Establish Comprehensive UI Style Guideline & Component Pattern Reference**
+- [x] **Establish Comprehensive UI Style Guideline & Component Pattern Reference** → **[UI_STYLE.md](../reference/UI_STYLE.md)** (interview 2026-10-13), T-159 to T-162, T-036
   - **Problem:** When building new UI features, builders often invent ad-hoc styles or mix inconsistent UI patterns instead of adhering to the design system.
   - **Goal:** Work with the planning agent to document and codify clear, canonical reference patterns that all feature implementations must follow.
   - **Key Examples to Standardize First:**

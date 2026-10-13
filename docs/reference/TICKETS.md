@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-160**
+**Next free number: T-164**
 
 ---
 
@@ -34,7 +34,6 @@ here.
 |---|---|---|
 | T-007 | **Coal Vein at 4 s**: accept, re-tag its purpose from gold to items (~3 s), or leave for the simulator rework? | FB §5.1 |
 | T-008 | **Flag Radius upgrade art**: keep borrowing the plain hero flag, or use the red banner art? | FB §5.2 |
-| T-009 | **Shop price format**: full item row (icon, name, have/need) or the compact icon-and-number pills of the Hall's Upgrade button? | FB §5.3 |
 | T-010 | **Speech bubble audit**: add/remove list for `docs/reference/speech_bubble_lines.md`. | FB §5.5 |
 | T-011 | **Watch by eye** (no agent has seen these on screen): Token hit animations + transform glow, loot flight to the Hall, Shop drawer, countdown badge. | FB §5.6 |
 | T-012 | **Transforms now push neighbouring Tokens** (the playmat plan said only bursts and spawns push). Keep or change? | FMR |
@@ -68,6 +67,10 @@ here.
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
+| T-159 | P2 | open | **The style sheet page**: a Dev Tools screen showing every standard UI piece live (UI_STYLE "The style sheet page": the three text sizes and display size, the five colours as shared CSS variables, hover and alert outlines, ribbon, pill, header with close X, both button kinds, tabs, arrow bars, pixel frames, bars, the tooltip), with a section for *new, unapproved* pieces. Built from the existing shared pieces where they exist; first of the UI style work, since later briefs copy from it. Builder. Eye-check: the owner reviews the whole kit there. | UI_STYLE.md (2026-10-13) |
+| T-160 | P2 | open | **One shared arrow-bar scroll list** (UI_STYLE "Lists and scrolling") replacing the four hand copies in `ShopDrawer.jsx`, `InspectionPanel.jsx`, `TokenInspectPopup.jsx`, `GuildUpgradeInspection.jsx`: pixel triangle drawn in code, dims at the ends but keeps its space, a click scrolls ~two rows smoothly, holding repeats, the wheel works. Builder. Eye-check. | UI_STYLE.md (2026-10-13) |
+| T-161 | P3 | open | **Three text sizes** (title, body, small) plus a display size for mat celebrations, as shared classes the Text size setting scales; move panels onto them as each is touched. With T-038. | UI_STYLE.md (2026-10-13) |
+| T-162 | P3 | ride-along | **Pixel sprites replace vector icons** (lucide: chevrons, X, zap, sparkles, help circle and others) as each screen is touched; missing sprites get a placeholder and a line in `owner_art_list.md`. | UI_STYLE.md (2026-10-13) |
 | T-145 | P1 | open | **Tokens on the mat twitch and lose pixel sharpness every ~20–30 s** (owner 2026-10-10). Find the trigger (a timer, GC, a periodic state cycle, a sub-pixel camera or transform rounding) and keep nearest-neighbour crispness. Check first whether brief 60's sprite clock (P2-3, `crunch/p2-3`) or loot-canvas work (P2-6) changes it. Engineer; measure, then fix. | refinement_pass_todo.md §1 |
 | T-146 | P2 | open | **Outlines on animated sprites are clipped at the frame edge** (a hero's bow top, feet bottom): art reaches the cell border, so a 1-art-pixel outline has no room. Fix where it costs least: pad cells by 1 art pixel in the sprite pipeline (`scripts/process_art.cjs`, spriteFx) or let the renderer draw the outline outside the cell. Owner art must not need redrawing. Changes the look: eye-check. | refinement_pass_todo.md §1 |
 | T-147 | P2 | open | **Hover = a 1-art-pixel white outline**, replacing the hover bob and A10's hover lift (owner 2026-10-13). Movable vs fixed stays told apart by A10's resting marker and the grab cursor. A follow-up to A10 (merged 2026-10-13). Needs T-146 for animated Tokens. Cost-log line. Eye-check. | refinement_pass_todo.md §3 |
@@ -93,7 +96,7 @@ here.
 | T-032 | P2 | open | Typography window is boxed inside Settings; Escape leaves its preview applied. *Suspected.* | CR3-453 |
 | T-033 | P1 | open | **Picking up and dropping still hitch now and then; on a very full mat, at most drops.** Owner 2026-10-07 (dev build, S2): ~90 ms pause at every pickup, ~60 ms at every drop. The drag deep-dive's D3 (2026-10-09) stopped a drag redrawing every draggable: `bench:drag` (perf build, S2, plain pass) now finds a frame over 16.7 ms in 0–9 of 50 pickups (was 47–50) and 0–11 of 50 drops (was 44–50), the median drag's longest frame 6–12 ms (was 18–30); with bubbles showing, pickups 0–10, drops 5–13. Left: Bank pickups (9–10 of 50) and drops, Shop drops (11–13 of 50), and S3 (~320 Tokens), where 41–49 of 50 drops and 11–50 of 50 pickups still have one, typically 18–24 ms, and carrying 6–20 of 50 drags (0.3–0.8 % of frames; the board alone 0.29 %). Causes and numbers: `docs/reference/PERFORMANCE.md`, D3 findings. | CR3-400 |
 | T-035 | P2 | open | A push shoves overlapping Tokens anywhere on the mat. Ruling: move only what the newcomer crowds (and what that pushes into). ⚠ The bench will report WORK CHANGED for S4 — expected, accept it here. | CR3-151 |
-| T-036 | P3 | open | One close-button look: the red pixel-art cancel icon everywhere. | R8-Q3 |
+| T-036 | P3 | open | One panel header everywhere (UI_STYLE "Panel headers", owner 2026-10-13): title left, the red pixel close X (`ui_cancel_red.png`, 16 px, at 2×) top right; ~12 files still use a vector X. | R8-Q3 |
 | T-037 | P3 | open | Two ways to hide notifications; keep only "Collapse". | R8-Q8 |
 | T-038 | P3 | open | Text sizes / fonts written in code aren't what renders; rewrite them to match (no visible change). | CR3-460 |
 | T-039 | P3 | open | Sci-fi words on screen ("Protocol Settings", "SYSTEM BOOT", "neural sync") and other retired vocabulary → plain words. | CR3-464 |
@@ -160,7 +163,7 @@ here.
 | T-142 | P3 | open | The recipe picker's rows are `truncate`, so a recipe's requirement line ("Needs 10× Stone · Needs a Marble Foundation or better") is cut off with "…" at the modal's width and the player can't read it (`StationRecipeModal.jsx`; seen in brief 70 A11). | brief 70 A11 |
 | T-143 | P3 | open | `bench/browser/dragKit.mjs` picks drag targets skipping only the Hall and permanent types; on a board with planted Saplings (fixed since Atlas A10) it would count their refused drags as failures. Teach the picker `FixedTokens.isFixed`. | brief 70 A10 |
 | T-144 | P2 | open | The tutorial's "Plant a Flag" step (`tut_flag`) has no beacon target: its selectors (`[data-hero-dock-tab]`, `#rightmost-hero-dock`, `#hero-dock`) match nothing since brief 30's hero bar (`[data-dock-hero]`); `TutorialAide.test.js` passes only because its fixture supplies the old attribute. Found by brief 60 P2-2. A8 rewrites the tutorial; fix there or before. | brief 60 P2-2 |
-| T-159 | P3 | open | `DndKit.jsx`'s `useLiveDropTarget` (and the comment about a pop-out bin above it) has no caller since the discard bin went (Atlas A3b): delete it. Left in place because A10 also edits `DndKit.jsx`; do it after A10 merges. | brief 70 A3b |
+| T-163 | P3 | open | `DndKit.jsx`'s `useLiveDropTarget` (and the comment about a pop-out bin above it) has no caller since the discard bin went (Atlas A3b): delete it. Left in place because A10 also edits `DndKit.jsx`; do it after A10 merges. | brief 70 A3b |
 | T-114 | P3 | open | Remove `migrateSkillIds` (the `logging` → `forestry` content migration in the game loaders and the CMS store) once the owner has synced `data/` with `forestry`. | brief 20 R0 |
 
 ## 3. Parked — don't work on these without a reason
