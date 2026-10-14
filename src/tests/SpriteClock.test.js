@@ -253,10 +253,13 @@ describe('⭐ the sprites share one clock', () => {
         expect(ringWrites.takeRecords()).toHaveLength(0);
         rerender(h(AnimatedHeroSprite, { ...props, outline: 'work' }));
         expect(ring.getAttribute('data-sprite-ring')).toBe('work');
-        expect(ring.style.transform).toBe(img.style.transform);
+        // The outline sheet picks its cell by position (its cells are padded, `spriteFx`); with
+        // this manifest's unpadded cells it lands where the art's frame does.
+        const xy = (v) => (String(v).match(/-?[\d.]+/g) || []).map(n => Math.abs(Number(n)) === 0 ? 0 : Number(n));
+        expect(xy(ring.style.backgroundPosition)).toEqual(xy(img.style.transform));
         for (let i = 0; i < 100; i++) {
             frame();
-            expect(ring.style.transform).toBe(img.style.transform);
+            expect(xy(ring.style.backgroundPosition)).toEqual(xy(img.style.transform));
         }
         ringWrites.disconnect();
     });

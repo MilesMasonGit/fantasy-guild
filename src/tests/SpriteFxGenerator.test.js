@@ -49,6 +49,27 @@ function bruteRing(mask, w, h, grid) {
 const setOf = (mask) => new Set([...mask.keys()].filter(i => mask[i]));
 
 /**
+ * Brute force for a sheet: each frame cell is padded by one pixel on every side (cell + 2), and
+ * a ring pixel is a clear pixel of the padded cell with art of THAT cell edge to edge.
+ */
+function bruteSheetRing(mask, w, h, grid) {
+    const cellW = w / grid.cols, cellH = h / grid.rows;
+    const PW = cellW + 2, PH = cellH + 2;
+    const W = grid.cols * PW, H = grid.rows * PH;
+    const out = new Set();
+    for (let cy = 0; cy < grid.rows; cy++) for (let cx = 0; cx < grid.cols; cx++) {
+        const inCell = (lx, ly) => lx >= 0 && ly >= 0 && lx < cellW && ly < cellH
+            && mask[(cy * cellH + ly) * w + cx * cellW + lx] === 1;
+        for (let Y = 0; Y < PH; Y++) for (let X = 0; X < PW; X++) {
+            const lx = X - 1, ly = Y - 1;
+            if (inCell(lx, ly)) continue;
+            if (CARDINAL.some(([dx, dy]) => inCell(lx + dx, ly + dy))) out.add((cy * PH + Y) * W + cx * PW + X);
+        }
+    }
+    return { set: out, W, H };
+}
+
+/**
  * The owner's rule, checked pixel by pixel: every ring pixel touches the art
  * edge to edge, no ring pixel touches it ONLY corner to corner, and no clear
  * pixel that touches the art edge to edge was left out.
@@ -139,20 +160,24 @@ describe('an outline is one art pixel, edge to edge only (4-connected)', () => {
         for (let y = 1; y <= 3; y++) for (let x = 1; x <= 3; x++) expect(ring.mask[y * 5 + x]).toBe(0);
     });
 
-    it('a sprite sheet grows inside each frame cell, cardinal only, and is not padded', () => {
-        // Two 4-px cells side by side; art on both sides of the shared edge.
+    it('a sprite sheet pads every frame cell by one pixel, so art at a frame edge keeps its outline', () => {
+        // Two 4-px cells side by side; art on both sides of the shared edge, and in a corner.
         const pixels = [[3, 1], [4, 3], [0, 0]];
         const mask = alphaMask(art(8, 4, pixels), 8, 4);
         const grid = { cols: 2, rows: 1 };
         const ring = outlineMask(mask, 8, 4, { grid });
-        expect([ring.width, ring.height]).toEqual([8, 4]);
-        expect(setOf(ring.mask)).toEqual(bruteRing(mask, 8, 4, grid).set);
-        expectCardinalOnly(mask, 8, 4, ring, grid);
-        // (3, 1) — the left cell's last column — rings (2, 1) in its own cell,
-        // never (4, 1) across the frame edge, and never its diagonal (2, 0).
-        expect(ring.mask[1 * 8 + 2]).toBe(1);
-        expect(ring.mask[1 * 8 + 4]).toBe(0);
-        expect(ring.mask[0 * 8 + 2]).toBe(0);
+        // Each 4×4 cell becomes 6×6.
+        expect([ring.width, ring.height]).toEqual([12, 6]);
+        expect(setOf(ring.mask)).toEqual(bruteSheetRing(mask, 8, 4, grid).set);
+        const at = (cell, lx, ly) => ring.mask[(ly + 1) * 12 + cell * 6 + lx + 1];
+        // (3, 1), the left cell's last column, is ringed on all four sides: (4, 1) lies in the
+        // left cell's own padding, never in the next frame, and its diagonal (2, 0) is not.
+        expect([at(0, 2, 1), at(0, 4, 1), at(0, 3, 0), at(0, 3, 2)]).toEqual([1, 1, 1, 1]);
+        expect(at(0, 2, 0)).toBe(0);
+        // (0, 0) in the corner gets its top and left pixels in the padding.
+        expect([at(0, -1, 0), at(0, 0, -1)]).toEqual([1, 1]);
+        // (4, 3) is the right cell's (0, 3): ringed on its left and bottom, in its own padding.
+        expect([at(1, -1, 3), at(1, 0, 4)]).toEqual([1, 1]);
     });
 
     it('is filled with one solid colour per state', () => {
@@ -228,7 +253,8 @@ describe('generateSpriteFx — files on disk, kept current', () => {
         const manifest = JSON.parse(fs.readFileSync(path.join(out(), 'manifest.json'), 'utf8'));
         expect(manifest.sprites['assets/tokens/token_test.png']).toMatchObject({ w: 4, h: 4, outlined: true });
         expect(manifest.sprites['assets/ui/ui_test.png']).toMatchObject({ w: 2, h: 2, outlined: false });
-        expect(manifest.sprites['assets/heroes/animations/ani_test_0.png']).toMatchObject({ w: 16, h: 6, cols: 8, rows: 3, outlined: true });
+        expect(manifest.sprites['assets/heroes/animations/ani_test_0.png']).toMatchObject({ w: 16, h: 6, cols: 8, rows: 3, outlined: true, ringPad: 1 });
+        expect(manifest.sprites['assets/tokens/token_test.png'].ringPad).toBeUndefined();
         expect(fs.existsSync(path.join(out(), 'ol-work', 'assets/ui/ui_test.png'))).toBe(false);
         expect(fs.existsSync(path.join(out(), 'sil', 'assets/audio/not_a_sprite.png'))).toBe(false);
         // Nothing was written beside the owner's art.
@@ -268,15 +294,16 @@ describe('generateSpriteFx — files on disk, kept current', () => {
         expect(fs.readdirSync(out()).filter(d => /-u\d+r\d+$/.test(d))).toEqual([]);
     });
 
-    it('a sheet’s outline keeps the sheet’s size and grid, cardinal only per frame', async () => {
+    it('a sheet’s outline keeps the sheet’s grid, each cell padded by one pixel, cardinal only per frame', async () => {
         const src = await read(path.join(root, 'public', 'assets/heroes/animations/ani_test_0.png'));
         const img = await read(path.join(out(), 'ol-hover', 'assets/heroes/animations/ani_test_0.png'));
-        expect([img.w, img.h]).toEqual([16, 6]);
+        // 8 × 3 cells of 2 × 2 become cells of 4 × 4.
+        expect([img.w, img.h]).toEqual([32, 12]);
         const mask = alphaMask(src.data, 16, 6);
         const grid = { cols: 8, rows: 3 };
         const got = new Set();
-        for (let i = 0; i < 96; i++) if (img.data[i * 4 + 3]) got.add(i);
-        expect(got).toEqual(bruteRing(mask, 16, 6, grid).set);
+        for (let i = 0; i < img.w * img.h; i++) if (img.data[i * 4 + 3]) got.add(i);
+        expect(got).toEqual(bruteSheetRing(mask, 16, 6, grid).set);
     });
 
     it('a second run redraws nothing; a changed sprite is redrawn; a deleted one is cleaned up', async () => {

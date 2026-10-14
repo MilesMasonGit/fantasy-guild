@@ -22,7 +22,7 @@
 export const SPRITE_FX_DIR = '_gen/sprite-fx';
 
 /** Bump to make every machine regenerate everything on its next start. */
-export const SPRITE_FX_VERSION = 2;
+export const SPRITE_FX_VERSION = 3;
 
 /**
  * The outline colours, as RGB. `work` is `--color-gi-success` (#09b554);
@@ -49,7 +49,8 @@ export const OUTLINE_COLOURS = Object.freeze({
  */
 /**
  * Animated sprite sheets: their frame grid, so an outline is grown **inside
- * each frame's cell** and never bleeds into the next frame. The same numbers
+ * each frame's cell, padded by one pixel a side** and never bleeds into the
+ * next frame. The same numbers
  * `AnimatedHeroSprite` (8 × 3) and `AnimatedEnemySprite` (4 × 4) draw with —
  * they import them from here.
  */

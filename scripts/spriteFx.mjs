@@ -13,10 +13,9 @@
 //   ol-<colour>/<path>               the 1-art-pixel ring a plus-shaped
 //                                    (4-connected) dilation adds around the
 //                                    art, in that colour (padded by 1 on
-//                                    every side — except a sprite sheet,
-//                                    grown inside each frame cell and not
-//                                    padded, so it is drawn with the sheet's
-//                                    own frame maths)
+//                                    every side; a sprite sheet pads every
+//                                    frame cell by 1, so art touching a
+//                                    frame's edge keeps its ring)
 //   manifest.json                    what exists, and each source's hash
 import fs from 'fs';
 import path from 'path';
@@ -63,27 +62,27 @@ const CARDINAL = [[0, -1], [-1, 0], [1, 0], [0, 1]];
  * alpha mask, so it sits outside that border.
  *
  * A single sprite is padded by one pixel on every side so the ring has room
- * (`(w + 2) × (h + 2)`). A sheet (`grid` given) is not padded and grows only
- * inside each frame cell, so one frame's ring never reaches the next.
+ * (`(w + 2) × (h + 2)`). A sheet (`grid` given) pads every frame cell the same
+ * way, each cell becoming `(cellW + 2) × (cellH + 2)` in the same grid: art
+ * at a frame's edge (a bow's tip, a foot) keeps its ring, and one frame's
+ * ring never reaches the next.
  */
 export function outlineMask(mask, w, h, { grid = null } = {}) {
-    const pad = grid ? 0 : 1;
-    const W = w + 2 * pad, H = h + 2 * pad;
-    const cellW = grid ? w / grid.cols : 0;
-    const cellH = grid ? h / grid.rows : 0;
+    const cols = grid ? grid.cols : 1, rows = grid ? grid.rows : 1;
+    const cellW = w / cols, cellH = h / rows;
+    const PW = cellW + 2, PH = cellH + 2;
+    const W = cols * PW, H = rows * PH;
     const out = new Uint8Array(W * H);
     for (let y = 0; y < h; y++) {
         for (let x = 0; x < w; x++) {
             if (!mask[y * w + x]) continue;
+            const cx = Math.floor(x / cellW), cy = Math.floor(y / cellH);
+            const lx = x - cx * cellW, ly = y - cy * cellH;
             for (const [dx, dy] of CARDINAL) {
-                const nx = x + dx, ny = y + dy;
-                if (grid) {
-                    if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
-                    if (Math.floor(nx / cellW) !== Math.floor(x / cellW) || Math.floor(ny / cellH) !== Math.floor(y / cellH)) continue;
-                }
-                const inside = nx >= 0 && ny >= 0 && nx < w && ny < h;
-                if (inside && mask[ny * w + nx]) continue;   // art, not ring
-                out[(ny + pad) * W + (nx + pad)] = 1;
+                const nx = lx + dx, ny = ly + dy;
+                const inCell = nx >= 0 && ny >= 0 && nx < cellW && ny < cellH;
+                if (inCell && mask[(cy * cellH + ny) * w + cx * cellW + nx]) continue;   // art, not ring
+                out[(cy * PH + ny + 1) * W + cx * PW + nx + 1] = 1;
             }
         }
     }
@@ -164,7 +163,8 @@ async function generateOne(root, outDir, rel, hash) {
         }
     }
     await Promise.all(jobs);
-    return { w, h, ...(grid ? { cols: grid.cols, rows: grid.rows } : {}), outlined, hash };
+    // `ringPad`: a sheet's outline cells are padded by this many pixels a side (`outlineMask`).
+    return { w, h, ...(grid ? { cols: grid.cols, rows: grid.rows, ...(outlined ? { ringPad: 1 } : {}) } : {}), outlined, hash };
 }
 
 const hashOf = (file) => crypto.createHash('sha1').update(fs.readFileSync(file)).digest('hex').slice(0, 16);

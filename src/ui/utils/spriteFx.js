@@ -127,15 +127,32 @@ export function outlineLayer(src, size, colour) {
 }
 
 /**
- * The outline sheet for an animated sprite sheet. It has the sheet's own size
- * and grid (each frame's ring grown inside its cell), so it is drawn exactly
- * like the sheet, with the same frame offset. Null if none.
+ * The outline sheet for an animated sprite sheet whose frames draw `size` CSS
+ * px across. It has the sheet's grid, each frame's ring grown inside its cell,
+ * and each cell padded by `ringPad` art pixels a side so art at a frame's edge
+ * keeps its ring. So one cell of it is drawn `cell` px across, `pad` up-left of
+ * the frame (one art pixel at this size), and frame (col, row) is the
+ * background position `-(col·cell) -(row·cell)`: scaled exactly like the art.
+ * A manifest from before the padding has no `ringPad`: `pad` 0, `cell` = size.
+ * Null if none.
  */
-export function sheetOutlineLayer(src, colour) {
+export function sheetOutlineLayer(src, colour, size) {
     if (!isDrawn('spriteFx')) return null;
     const entry = spriteFxEntry(src);
-    if (!entry || !entry.outlined || !entry.cols || !colour) return null;
-    return { url: url(outlineFolder(colour), entry.key) };
+    if (!entry || !entry.outlined || !entry.cols || !colour || !(size > 0)) return null;
+    const pad = (size * (entry.ringPad || 0)) / (entry.w / entry.cols);
+    return {
+        url: url(outlineFolder(colour), entry.key),
+        pad,
+        cell: size + 2 * pad,
+        cols: entry.cols,
+        rows: entry.rows
+    };
+}
+
+/** The background position of frame (`col`, `row`) in an outline sheet of `cell`-px cells. */
+export function sheetCellPosition(col, row, cell) {
+    return `-${col * cell}px -${row * cell}px`;
 }
 
 /**

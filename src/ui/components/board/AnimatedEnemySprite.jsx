@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { cn } from '../../utils/cn.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import { ENEMY_SHEET_GRID } from '../../../config/spriteFx.js';
-import { useSpriteFxVersion, sheetOutlineLayer } from '../../utils/spriteFx.js';
+import { useSpriteFxVersion, sheetOutlineLayer, sheetCellPosition } from '../../utils/spriteFx.js';
 import { isDrawn } from '../../dev/perf/drawSwitches.js';
 import { onDue } from './frameClock.js';
 
@@ -33,6 +33,7 @@ import { onDue } from './frameClock.js';
  */
 
 const COLS = ENEMY_SHEET_GRID.cols;
+const ROWS = ENEMY_SHEET_GRID.rows;
 const IDLE_ROW = 0;
 const ATTACK_ROW = 2;
 const FACING = { LEFT: -1, RIGHT: 1 };
@@ -55,27 +56,29 @@ export const AnimatedEnemySprite = ({
     // The frame is written to the element, not kept in React state: `background-position` is
     // set directly on each step, so an animating enemy costs no React commits. `frameRef`
     // keeps counting across a change of cycle.
-    // The coloured outline (`outline`) is a second sheet the same size and grid as the art,
-    // drawn from the generated images under it, so the same frame step moves both and nothing
-    // is ever filtered.
+    // The coloured outline (`outline`) is a second sheet in the same grid as the art, its cells
+    // padded one art pixel a side (`sheetOutlineLayer`), drawn from the generated images under
+    // it, so the same frame step moves both and nothing is ever filtered.
     const artRef = useRef(null);
     const ringRef = useRef(null);
     const frameRef = useRef(0);
     const paintRef = useRef(null);
+    useSpriteFxVersion();
+    const ring = outline ? sheetOutlineLayer(src, outline, size) : null;
+    const ringCell = ring ? ring.cell : size;
     paintRef.current = () => {
         const frame = frameRef.current;
         const row = (heroId ? ATTACK_ROW : IDLE_ROW) + Math.floor(frame / COLS);
         const col = frame % COLS;
-        const pos = `-${col * size}px -${row * size}px`;
-        if (artRef.current) artRef.current.style.backgroundPosition = pos;
+        if (artRef.current) artRef.current.style.backgroundPosition = sheetCellPosition(col, row, size);
         // An outline that is off draws nothing; it takes the cell when it comes on (below).
-        if (ringRef.current?.hasAttribute('data-sprite-ring')) ringRef.current.style.backgroundPosition = pos;
+        if (ringRef.current?.hasAttribute('data-sprite-ring')) {
+            ringRef.current.style.backgroundPosition = sheetCellPosition(col, row, ringCell);
+        }
     };
-    useSpriteFxVersion();
-    const ring = outline ? sheetOutlineLayer(src, outline) : null;
 
     // The cycle (fought or not), the cell size and an outline coming on show at once.
-    useLayoutEffect(() => { paintRef.current(); }, [heroId, size, ring?.url]);
+    useLayoutEffect(() => { paintRef.current(); }, [heroId, size, ring?.url, ringCell]);
 
     // Frame advance: a clock of its own, unrelated to the game's tick: one frame every
     // `frameMs` from when it started, stepped on the shared sprite clock (`onDue`) like a
@@ -128,16 +131,22 @@ export const AnimatedEnemySprite = ({
             data-sprite-outline={outline || undefined}
         >
             {/* The outline sheet: always in the tree (an empty box when off),
-                so the frame step has it to write to the moment it is wanted. */}
+                so the frame step has it to write to the moment it is wanted.
+                It reaches one art pixel past the frame on every side, centred on
+                it, so the flip mirrors it about the same middle as the art. */}
             <div
                 ref={ringRef}
                 aria-hidden="true"
                 data-sprite-ring={ring ? outline : undefined}
-                className="absolute inset-0"
+                className="absolute"
                 style={{
+                    left: -(ring?.pad || 0),
+                    top: -(ring?.pad || 0),
+                    width: ringCell,
+                    height: ringCell,
                     backgroundImage: ring ? `url("${ring.url}")` : 'none',
                     backgroundRepeat: 'no-repeat',
-                    backgroundSize: `${size * COLS}px ${size * COLS}px`,
+                    backgroundSize: `${ringCell * COLS}px ${ringCell * ROWS}px`,
                     imageRendering: 'pixelated',
                     transform: flip
                 }}
@@ -154,7 +163,7 @@ export const AnimatedEnemySprite = ({
                 style={{
                     backgroundImage: `url(${src})`,
                     backgroundRepeat: 'no-repeat',
-                    backgroundSize: `${size * COLS}px ${size * COLS}px`,
+                    backgroundSize: `${size * COLS}px ${size * ROWS}px`,
                     imageRendering: 'pixelated',
                     transform: flip
                 }}
