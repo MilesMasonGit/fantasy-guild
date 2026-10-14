@@ -6,6 +6,10 @@ import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
 import { landmarkLines, LANDMARK_TEXT } from '../ui/components/drawer/landmarkLines.js';
 import { TokenInspection } from '../ui/components/drawer/TokenInspection.jsx';
+import { EventBus } from '../systems/core/EventBus.js';
+import { UI_EVENTS } from '../systems/core/engineEvents.js';
+import { GameState } from '../state/GameState.js';
+import { EngineContext } from '../ui/context/EngineContext';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -72,5 +76,25 @@ describe('what a landmark\'s inspection says', () => {
         cleanup();
         const bare = render(React.createElement(TokenInspection, { typeId: BARE.id }));
         expect(bare.container.querySelector('[data-landmark]').textContent).toContain(LANDMARK_TEXT.NO_ITEMS);
+    });
+});
+
+describe('opening a Token sheet tells the engine (the tutorial counts it)', () => {
+    it('once per Token on the mat, with its type; never for a sheet with no instance (the Shop)', () => {
+        registerTokenTypes({ [SITE.id]: SITE });
+        const seen = [];
+        const off = EventBus.subscribe(UI_EVENTS.TOKEN_INSPECTED, (p) => seen.push(p));
+        try {
+            render(React.createElement(TokenInspection, { typeId: SITE.id }));
+            expect(seen).toEqual([]);
+            cleanup();
+            const onMat = () => React.createElement(EngineContext.Provider, { value: { GameState, EventBus } },
+                React.createElement(TokenInspection, { typeId: SITE.id, instanceId: 'tok_li_1' }));
+            const sheet = render(onMat());
+            sheet.rerender(onMat());
+            expect(seen).toEqual([{ instanceId: 'tok_li_1', typeId: SITE.id }]);
+        } finally {
+            off();
+        }
     });
 });

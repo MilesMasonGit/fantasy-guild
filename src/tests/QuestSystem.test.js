@@ -93,8 +93,8 @@ describe('Quest System (quest Tokens since B6.1)', () => {
 
     it('claiming a done tutorial quest drops its reward as loot and brings the next step', () => {
         EventBus.publish('hero_recruited', { heroId: 'hero_1' });
-        expect(find('tut_recruit').done).toBe(true);
-        const res = QuestManager.claimQuest('tut_recruit');
+        expect(find('cart_recruit').done).toBe(true);
+        const res = QuestManager.claimQuest('cart_recruit');
         expect(res.success).toBe(true);
         expect(res.rewardItems.map(r => [r.itemId, r.quantity])).toEqual([['item_oak_wood', 10]]);
         // B6 rewards: on the floor, not in the Bank, until collected.
@@ -130,12 +130,12 @@ describe('Quest System (quest Tokens since B6.1)', () => {
     });
 
     it('a tutorial quest Token’s saved copy is re-read from its template on load', () => {
-        const recruit = find('tut_recruit');
+        const recruit = find('cart_recruit');
         recruit.targetType = 'token_exhausted';
         recruit.title = 'stale';
         recruit.requiredCount = 99;
         EventBus.publish('game_loaded', { slot: 0 });
-        const fresh = find('tut_recruit');
+        const fresh = find('cart_recruit');
         expect(fresh.targetType).toBe('hero_recruited');
         expect(fresh.title).toBe('Recruit a Hero');
         expect(fresh.requiredCount).toBe(1);
@@ -175,7 +175,7 @@ describe('Quest System (quest Tokens since B6.1)', () => {
     });
 
     it('abandoning is retired: tutorials refuse as before, bounties point at Dismiss', () => {
-        const tutorialRes = QuestManager.abandonQuest('tut_recruit');
+        const tutorialRes = QuestManager.abandonQuest('cart_recruit');
         expect(tutorialRes.success).toBe(false);
         expect(tutorialRes.reason).toBe('Tutorial quests cannot be abandoned');
 

@@ -6,7 +6,7 @@ import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from '../board/boardEvents.js';
 import { tutorialTemplate } from './tutorialQuests.js';
-import { getTokenType } from '../../config/registries/tokenRegistry.js';
+import { getTokenType, isLandmarkType } from '../../config/registries/tokenRegistry.js';
 import * as RecipeResolver from '../board/RecipeResolver.js';
 // One way only: QuestTokens does not import this module, so the bounty and
 // reward helpers live in the leaf `questBounties.js` and are re-exported below.
@@ -148,12 +148,20 @@ export const QuestManager = {
             }),
             EventBus.subscribe(ENGINE_EVENTS.HERO_DEPLOYED, () => this.reportProgress('hero_deployed')),
             // A finished cycle: gathering, crafting, exploring, a kill. A failed
-            // cycle counts for nothing. The Token's type and skill, and each item it
-            // made, let a step ask for one kind of work.
+            // cycle counts for nothing. The Token's type and skill, whether it was
+            // gathering (a resource that is not an endgame site) or crafting (a station
+            // that is not a Foundation), and each item it made, let a step ask for one
+            // kind of work.
             EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, (data) => {
                 if (data?.failed) return;
-                const skill = getTokenType(data?.typeId)?.config?.skill || null;
-                this.reportProgress('cycle_completed', 1, { typeId: data?.typeId, skill });
+                const def = getTokenType(data?.typeId);
+                const skill = def?.config?.skill || null;
+                this.reportProgress('cycle_completed', 1, {
+                    typeId: data?.typeId,
+                    skill,
+                    gathered: def?.tokenType === 'resource' && !def.landmark,
+                    crafted: def?.tokenType === 'station' && !def.foundation
+                });
                 for (const itemId of new Set(data?.produced || [])) {
                     this.reportProgress('item_produced', 1, { itemId });
                 }
@@ -183,6 +191,18 @@ export const QuestManager = {
             EventBus.subscribe(UI_EVENTS.UI_MODAL_OPENED, (data) => {
                 if (data?.modalId === 'bank') this.reportProgress('open_bank');
                 else if (data?.modalId === 'shop') this.reportProgress('open_shop');
+            }),
+            // ⚠️ Also from the React layer: `TokenInspection` publishes it when its sheet opens on a
+            // Token on the mat. A new route that shows a board Token's sheet must publish it too, or
+            // the tutorial's "inspect an endgame site" step stalls.
+            EventBus.subscribe(UI_EVENTS.TOKEN_INSPECTED, (data) => {
+                const typeId = data?.typeId ?? null;
+                this.reportProgress('token_inspected', 1, { typeId, landmark: isLandmarkType(typeId) });
+            }),
+            // The Atlas: a Region written (settled) and the guild moving into another one.
+            EventBus.subscribe(ENGINE_EVENTS.ATLAS_CHANGED, (data) => {
+                if (data?.reason === 'created') this.reportProgress('region_settled');
+                else if (data?.reason === 'travelled') this.reportProgress('region_travelled');
             }),
             // ⚠️ Retired events that must not come back (`QuestTutorialChain.test.js`
             // fails if one does): `map_burst` / `map_opened` / `map_purchased`,

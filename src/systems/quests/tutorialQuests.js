@@ -1,19 +1,27 @@
-// Fantasy Guild - Tutorial Quests Specification
+// Fantasy Guild - the cartographer's tutorial chain
 //
-// The tutorial walks the Token Lifecycle loop: recruit a hero, plant their flag,
-// gather, collect the loot, buy at the Shop, build on a Foundation, craft and farm. Every step is completable in a new game with no dev
-// tools, and every `targetType` is reported by `QuestManager` from an event the engine (or,
-// for `open_bank`, the React layer) really publishes.
+// One step at a time, in the Starter Camp: heroes, flags and gathering; building and crafting; a
+// first fight; then the Atlas (an endgame site, the first maps, writing the first world and moving
+// the guild into it). Every step is completable in a new game with no dev tools once the owner's
+// Starter Camp and maps exist, and every `targetType` is reported by `QuestManager` from an event
+// the engine (or, for `token_inspected`, the React layer) really publishes.
 // `QuestTutorialChain.test.js` drives each step through the real systems.
 //
-// Step ids are not reused from an older chain: an old save's
-// `completedTutorials` must not tick off a new step that merely shares a number
-// with an old one. Old ids a save still carries are ignored.
+// Every word a step shows lives in `tutorialText.js`.
 //
-// `match` narrows a target to one Token type, item or skill: a quest with a
-// `match` only counts a report whose metadata carries every listed value.
+// Step ids are not reused from an older chain: an old save's `completedTutorials` must not tick
+// off a new step that merely shares a name with an old one. Old ids a save still carries are
+// ignored, and an old step's Token is taken off the mat.
 //
-// Rewards are small placeholder items, live `item_*` ids only.
+// `match` narrows a target: a quest with a `match` only counts a report whose metadata carries
+// every listed value.
+//
+// Rewards are small placeholder items, live `item_*` ids only. `firstMaps` adds the first maps,
+// read from the item registry when the step is claimed ({@link firstMapsReward}).
+
+import { getAllItems } from '../../config/registries/itemRegistry.js';
+import { isBaseMap, upcycleOf } from '../atlas/mapItems.js';
+import { TUTORIAL_TEXT } from './tutorialText.js';
 
 /** The default tutorial reward, and what a step with no rewards of its own pays. */
 export const TUTORIAL_REWARD_ITEMS = Object.freeze([
@@ -22,102 +30,102 @@ export const TUTORIAL_REWARD_ITEMS = Object.freeze([
 
 const reward = (itemId, quantity) => Object.freeze([Object.freeze({ itemId, quantity })]);
 
-export const TUTORIAL_QUESTS = [
+/** How many of each first map the tutorial pays. */
+export const FIRST_MAPS_QUANTITY = 1;
+
+/**
+ * The first maps, as `[{ itemId, quantity }]` in id order: one of each Base Map that no map trades
+ * up into (the lowest tier). Empty while no map is authored, so the step then pays only its items.
+ */
+export function firstMapsReward(items = getAllItems()) {
+    const defs = Object.entries(items || {}).map(([id, def]) => ({ id: def?.id || id, def }));
+    const tradedUpInto = new Set(defs.map(({ def }) => upcycleOf(def)?.itemId).filter(Boolean));
+    return defs
+        .filter(({ id, def }) => isBaseMap(def) && !tradedUpInto.has(id))
+        .map(({ id }) => id)
+        .sort()
+        .map(itemId => ({ itemId, quantity: FIRST_MAPS_QUANTITY }));
+}
+
+const STEPS = [
     {
-        id: 'tut_recruit',
-        title: 'Recruit a Hero',
-        instruction: 'Open the Guild Hall (purple orb, top left) and buy Bunk Beds to recruit your first Hero. The first one is free.',
+        id: 'cart_recruit',
         targetType: 'hero_recruited',
         requiredCount: 1,
         rewardItems: TUTORIAL_REWARD_ITEMS
     },
     {
-        id: 'tut_flag',
-        title: 'Plant a Flag',
-        instruction: 'Drag your Hero from the Hero Dock onto the mat beside the Oak Forest. Their flag marks where they work.',
+        id: 'cart_flag',
         targetType: 'hero_deployed',
         requiredCount: 1,
         rewardItems: TUTORIAL_REWARD_ITEMS
     },
     {
-        id: 'tut_log',
-        title: 'Log an Oak Tree',
-        instruction: 'The Oak Forest grows Oak Trees from Oak Seeds. Let your Hero log 3 times.',
+        id: 'cart_gather',
         targetType: 'cycle_completed',
-        match: { typeId: 'token_oak_tree' },
+        match: { gathered: true },
         requiredCount: 3,
         rewardItems: reward('item_oak_seedling', 2)
     },
     {
-        id: 'tut_collect',
-        title: 'Collect Loot',
-        instruction: 'Hover over the items your Hero drops on the mat to collect 10 of them.',
+        id: 'cart_loot',
         targetType: 'loot_collected',
         requiredCount: 10,
         rewardItems: TUTORIAL_REWARD_ITEMS
     },
     {
-        id: 'tut_bank',
-        title: 'Item Bank',
-        instruction: 'Open your Item Bank (yellow orb on the left). Its Upkeep button shows what your Tokens use up.',
-        targetType: 'open_bank',
-        requiredCount: 1,
-        rewardItems: TUTORIAL_REWARD_ITEMS
-    },
-    {
-        id: 'tut_shop',
-        title: 'Visit the Shop',
-        instruction: 'Open the Shop (green orb on the left) and buy something. A Quarry gives Stone.',
-        targetType: 'token_purchased',
-        requiredCount: 1,
-        rewardItems: TUTORIAL_REWARD_ITEMS
-    },
-    {
-        id: 'tut_foundation',
-        title: 'Buy a Foundation',
-        instruction: 'Buy a Wood Foundation at the Shop. Buildings are built on Foundations.',
+        id: 'cart_foundation',
         targetType: 'token_purchased',
         match: { typeId: 'token_wood_foundation' },
         requiredCount: 1,
         rewardItems: reward('item_oak_wood', 5)
     },
     {
-        id: 'tut_workbench',
-        title: 'Build a Workbench',
-        instruction: 'Click the Wood Foundation, choose Workbench, and let a Hero build it with Construction.',
+        id: 'cart_station',
         targetType: 'token_built',
-        match: { typeId: 'token_workbench' },
+        match: { fromTypeId: 'token_wood_foundation' },
         requiredCount: 1,
         rewardItems: TUTORIAL_REWARD_ITEMS
     },
     {
-        id: 'tut_charcoal',
-        title: 'Craft Charcoal',
-        instruction: 'Set the Workbench to Charcoal and let a Hero craft one. Charcoal is fuel for cooking.',
-        targetType: 'item_produced',
-        match: { itemId: 'item_charcoal' },
-        requiredCount: 1,
-        rewardItems: reward('item_wheat_seed', 2)
-    },
-    {
-        id: 'tut_farmland',
-        title: 'Plant Farmland',
-        instruction: 'Buy Farmland at the Shop, choose Wheat Field or Apple Orchard, and let a Hero plant it with Farming.',
-        targetType: 'token_built',
-        match: { fromTypeId: 'token_farmland' },
-        requiredCount: 1,
-        rewardItems: reward('item_wheat_seed', 2)
-    },
-    {
-        id: 'tut_wheat',
-        title: 'Harvest Wheat',
-        instruction: 'A Wheat Field grows Wheat Sprouts that ripen. Harvest Ripe Wheat once.',
+        id: 'cart_craft',
         targetType: 'cycle_completed',
-        match: { typeId: 'token_ripe_wheat' },
+        match: { crafted: true },
+        requiredCount: 1,
+        rewardItems: TUTORIAL_REWARD_ITEMS
+    },
+    {
+        id: 'cart_fight',
+        targetType: 'combat_victory',
+        requiredCount: 1,
+        rewardItems: TUTORIAL_REWARD_ITEMS
+    },
+    {
+        id: 'cart_inspect',
+        targetType: 'token_inspected',
+        match: { landmark: true },
+        requiredCount: 1,
+        rewardItems: TUTORIAL_REWARD_ITEMS,
+        firstMaps: true
+    },
+    {
+        id: 'cart_settle',
+        targetType: 'region_settled',
+        requiredCount: 1,
+        rewardItems: TUTORIAL_REWARD_ITEMS
+    },
+    {
+        id: 'cart_travel',
+        targetType: 'region_travelled',
         requiredCount: 1,
         rewardItems: TUTORIAL_REWARD_ITEMS
     }
-].map((quest, step) => ({ ...quest, step }));
+];
+
+export const TUTORIAL_QUESTS = STEPS.map((quest, step) => {
+    const text = TUTORIAL_TEXT.steps[quest.id];
+    return { ...quest, title: text.title, says: text.says, instruction: text.instruction, step };
+});
 
 /** The template for a tutorial id, or undefined for an id the chain no longer has. */
 export function tutorialTemplate(id) {

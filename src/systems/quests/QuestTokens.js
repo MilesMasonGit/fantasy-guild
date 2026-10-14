@@ -14,7 +14,7 @@ import { InventoryManager } from '../inventory/InventoryManager.js';
 import { InventoryStore } from '../inventory/InventoryStore.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { GuildUpgradeManager } from '../progression/GuildUpgradeManager.js';
-import { TUTORIAL_QUESTS, tutorialTemplate } from './tutorialQuests.js';
+import { TUTORIAL_QUESTS, tutorialTemplate, firstMapsReward } from './tutorialQuests.js';
 // The bounty and reward helpers come from the leaf `questBounties.js`, not
 // QuestManager, so this module does not import QuestManager.
 import { createRandomQuest, questReward, copyReward, drawBountyMap } from './questBounties.js';
@@ -33,6 +33,8 @@ export { QUEST_TOKEN_TYPE };
  * ```js
  * instance.quest = {
  *   id, title, instruction?,          // what it says
+ *   says?,                            // a tutorial step: the cartographer's line
+ *   firstMaps?,                       // a tutorial step that also pays the first maps
  *   type?: 'hunt' | 'collection',     // bounties only
  *   targetType, match?, enemyId?, itemId?,   // what it counts (QuestManager's matching)
  *   requiredCount, currentCount,
@@ -174,6 +176,7 @@ function tutorialQuest(template, from = null) {
         tutorial: true,
         step: template.step,
         title: template.title,
+        says: template.says,
         instruction: template.instruction,
         targetType: template.targetType,
         requiredCount: template.requiredCount,
@@ -182,6 +185,7 @@ function tutorialQuest(template, from = null) {
         done: false
     };
     if (template.match) quest.match = { ...template.match };
+    if (template.firstMaps) quest.firstMaps = true;
     quest.done = quest.currentCount >= quest.requiredCount;
     return quest;
 }
@@ -509,6 +513,10 @@ export function claimQuest(instanceId, random = Math.random) {
     const rewardItems = questReward(quest);
     const map = drawBountyMap(quest, random);
     if (map) rewardItems.push(map);
+    // The first maps are read now, not when the step appeared: maps authored since still pay.
+    if (quest.tutorial && quest.firstMaps) {
+        for (const r of firstMapsReward()) rewardItems.push({ ...r, name: getItem(r.itemId)?.name || r.itemId });
+    }
     for (const r of rewardItems) SpriteLayer.addSprite('item', r.itemId, r.quantity, instance.id);
 
     removeQuestToken(instance);

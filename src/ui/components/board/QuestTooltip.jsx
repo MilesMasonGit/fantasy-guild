@@ -5,6 +5,8 @@ import { tokenName } from '../../../config/registries/tokenRegistry.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { ItemIcon } from '../base/ItemIcon.jsx';
 import { placeUnder } from './tooltipPlacement.js';
+import { TUTORIAL_TEXT } from '../../../systems/quests/tutorialText.js';
+import { firstMapsReward } from '../../../systems/quests/tutorialQuests.js';
 
 /** The width it is placed with before it has been measured. */
 const START_WIDTH = 240;
@@ -31,9 +33,20 @@ export function questNeedLine(quest) {
 }
 
 /**
+ * What a quest pays, as shown: its items, and for the tutorial step that pays them the first maps
+ * as they stand in the registry now (the claim reads them again).
+ */
+export function questRewardsShown(quest) {
+    const rewards = Array.isArray(quest?.rewardItems) ? [...quest.rewardItems] : [];
+    if (quest?.tutorial && quest.firstMaps) rewards.push(...firstMapsReward());
+    return rewards;
+}
+
+/**
  * A quest Token's hover tooltip: the title (with a *Tutorial* tag on a tutorial step), the
- * instruction, what is still needed, the reward as item icons with counts, and 'Click to
- * claim' once done.
+ * cartographer's line on a tutorial step, the instruction, what is still needed, the reward as
+ * item icons with counts, and 'Click to claim' once done. Every tutorial word is in
+ * `tutorialText.js`.
  * Styled and placed like the Guild Hall's `PassiveProductionTooltip`: a portal to `document.body`, fixed
  * under the Token's art, `pointer-events: none` (so clicking and dragging the Token work
  * through it), hidden while anything is dragged. The quest comes in as a prop (`MatToken`'s
@@ -51,7 +64,7 @@ export const QuestTooltip = ({ instanceId, quest, anchorOf = artOf }) => {
     });
     if (anyDrag || !quest || typeof document === 'undefined') return null;
 
-    const rewards = Array.isArray(quest.rewardItems) ? quest.rewardItems : [];
+    const rewards = questRewardsShown(quest);
 
     return createPortal(
         <div
@@ -65,10 +78,16 @@ export const QuestTooltip = ({ instanceId, quest, anchorOf = artOf }) => {
                 <span data-quest-title className="font-bold text-gi-gold">{quest.title}</span>
                 {quest.tutorial && (
                     <span data-quest-tutorial className="px-1 rounded bg-sky-900/70 border border-sky-400/40 text-[9px] font-bold uppercase text-sky-200">
-                        Tutorial
+                        {TUTORIAL_TEXT.tag}
                     </span>
                 )}
             </div>
+            {quest.tutorial && quest.says && (
+                <p data-quest-says className="mt-1 italic text-amber-100/90 whitespace-normal">
+                    &ldquo;{quest.says}&rdquo;
+                    <span className="not-italic text-white/50"> &mdash; {TUTORIAL_TEXT.speaker}</span>
+                </p>
+            )}
             {quest.instruction && (
                 <p data-quest-instruction className="mt-0.5 text-white/80 whitespace-normal">{quest.instruction}</p>
             )}
