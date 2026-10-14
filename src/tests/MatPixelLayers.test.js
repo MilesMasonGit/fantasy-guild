@@ -70,6 +70,21 @@ describe('⭐ no animation on the mat is composited on its own layer', () => {
         expect(getComputedStyle(scaledBoardOf(container)).willChange).toBe('contents');
     });
 
+    it('a Token\'s name label is not drawn at all while it is not showing', () => {
+        // Its drop shadow is a filter Chrome draws on a layer of its own, transparent or not;
+        // every Token drawn after a hidden label then had to be a layer too.
+        placeAt('fixture_producer', 400, 400);
+        placeAt('fixture_producer_alt', 520, 640);
+        const { container } = render(engine(h(Board)));
+        const labels = [...scaledBoardOf(container).querySelectorAll('[data-token-name]')];
+        expect(labels.length).toBe(2);
+        for (const label of labels) {
+            expect(label.className.split(/\s+/)).toContain('invisible');
+            // and it still fades: visibility rides the opacity transition
+            expect(label.className).toMatch(/transition-\[opacity,visibility\]/);
+        }
+    });
+
     it('nothing on the mat asks for a layer of its own', () => {
         placeAt('fixture_producer', 400, 400);
         placeAt('fixture_producer_alt', 520, 640);

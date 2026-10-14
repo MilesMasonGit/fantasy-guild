@@ -90,14 +90,18 @@ export const TokenNameBadge = memo(function TokenNameBadge({ name, isDragging, i
 
     // A full-width flex row centres the label without a `transform`: a transform on every
     // Token of a busy mat costs more in compositing than it saves.
+    // ⚠️ Hidden means `invisible`, not only transparent. The label's drop shadow is a filter
+    // Chrome must draw on a layer of its own, and every Token drawn after an unseen, transparent
+    // label then needed a layer too, drawn soft and a pixel off (T-145). Visibility rides the
+    // opacity transition, so the fade in and out look as before.
     return (
         <div
             data-token-name="true"
             className={cn(
                 "absolute left-0 right-0 z-30 pointer-events-none",
                 "flex items-end justify-center text-center select-none",
-                "transition-opacity ease-out",
-                isHovered ? "opacity-100 duration-500 delay-[1200ms]" : "opacity-0 duration-150 delay-0"
+                "transition-[opacity,visibility] ease-out",
+                isHovered ? "opacity-100 duration-500 delay-[1200ms]" : "opacity-0 invisible duration-150 delay-0"
             )}
             style={{ bottom: `calc(100% + ${4 + lift}px)` }}
         >
