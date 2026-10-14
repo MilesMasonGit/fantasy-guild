@@ -216,6 +216,32 @@ describe('a drag through the shared source behaves as before', () => {
         act(() => { fireEvent.keyDown(document, { key: 'Escape', code: 'Escape' }); });
     });
 
+    it('a press on another source while one is in the hand changes nothing about the drag', () => {
+        let live = null;
+        function Spy() {
+            const { active } = useDndContext();
+            live = active ? active.data.current.itemId : null;
+            return null;
+        }
+        const out = {};
+        const view = render(h(DeckDndProvider, null, h(Item, { id: 'one', itemId: 'one' }), h(Item, { id: 'two', itemId: 'two' }), h(InHand, { out }), h(Spy)));
+        act(() => {
+            fireEvent.pointerDown(view.getByTestId('one'), ptr(10, 10));
+            fireEvent.pointerMove(document, ptr(40, 10));
+        });
+        expect(live).toBe('one');
+        // A second finger, then the same pointer again: dnd-kit refuses both, and so does the shared source.
+        act(() => { fireEvent.pointerDown(view.getByTestId('two'), ptr(10, 10, { pointerId: 2, isPrimary: false })); });
+        act(() => { fireEvent.pointerMove(document, ptr(50, 10)); });
+        expect(live).toBe('one');
+        act(() => { fireEvent.pointerDown(view.getByTestId('two'), ptr(10, 10)); });
+        act(() => { fireEvent.pointerMove(document, ptr(60, 10)); });
+        expect(live).toBe('one');
+        expect(out.payload).toMatchObject({ itemId: 'one' });
+        expect(view.getByTestId('one').getAttribute('aria-pressed')).toBe('true');
+        act(() => { fireEvent.keyDown(document, { key: 'Escape', code: 'Escape' }); });
+    });
+
     it('carries the payload the source was last drawn with, and dnd-kit measures the source\'s own element', () => {
         let measured = null;
         function Spy() {

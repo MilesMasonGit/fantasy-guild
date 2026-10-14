@@ -371,8 +371,12 @@ function SharedEntityDrag({ drags }) {
 }
 
 function pressEntity(drags, source, e) {
+    const native = e?.nativeEvent;
     // A source inside this one took the press (dnd-kit marks the event a drag is starting from).
-    if (e?.nativeEvent?.dndKit) return;
+    if (native?.dndKit) return;
+    // Presses dnd-kit refuses must not repoint the drag in the hand: a second pointer, another
+    // button, any press while a drag is live.
+    if (drags.held || native?.isPrimary === false || (native?.button ?? 0) !== 0) return;
     const grab = drags.grab;
     const press = grab?.listeners?.onPointerDown;
     if (!press) return;
