@@ -123,7 +123,6 @@ export const MatHero = memo(function MatHero(props) {
         <MatHeroBody
             {...props}
             heroCarried={heroCarried}
-            flagHeld={drag.isDragging}
             dragRef={drag.setNodeRef}
             dragProps={drag.handleProps}
         />
@@ -138,7 +137,6 @@ const MatHeroBody = memo(function MatHeroBody({
     top,
     z,
     outline = null,
-    hovered = false,
     onHover,
     onRecall,
     animationState = 'idle',
@@ -147,7 +145,6 @@ const MatHeroBody = memo(function MatHeroBody({
     limp = false,
     fighting = false,
     heroCarried = false,
-    flagHeld = false,
     dragRef,
     dragProps
 }) {
@@ -238,10 +235,7 @@ const MatHeroBody = memo(function MatHeroBody({
         >
             {(animArt || staticArt) && (
                 <div
-                    className={cn(
-                        'w-full h-full flex items-center justify-center transition-[filter] duration-150',
-                        hovered && !flagHeld && 'gi-token-hover-hop'
-                    )}
+                    className="w-full h-full flex items-center justify-center transition-[filter] duration-150"
                     // The art is wider than the hero's box and takes no pointer: a press beside
                     // the figure reaches the flag or Token behind it.
                     style={limp ? { filter: LIMP_FILTER, pointerEvents: 'none' } : NO_POINTER}

@@ -31,6 +31,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 /**
  * ⭐ **A fixed Token answers a click but not a drag** (Atlas D-6 B), and only movable Tokens carry
  * the faint marker at rest and show the grab cursor. The Guild Hall is movable (T-148).
+ * Hovering any Token shows the white outline and moves nothing (T-147).
  */
 
 registerTokenTypes({
@@ -159,19 +160,26 @@ describe('⭐ only movable Tokens carry the marker and show the grab cursor', ()
         for (const t of [node, sapling, enemy, quest]) expect(hitOf(container, t.id)).toBeTruthy();
     });
 
-    it('hovered, a bought Token lifts; a map node does not', () => {
+    it('hovered, any Token shows the white outline and nothing moves; at rest it has none', () => {
         const bought = placeAt('fixture_producer', 300, 300);
         const node = fixtureAt(900, 300);
         const { container } = mount();
-        const lifts = (id) => !!artOf(container, id).querySelector('.gi-token-hover-hop');
+        const moved = (id) => [artOf(container, id), ...artOf(container, id).querySelectorAll('*')]
+            .filter(el => /hop|bob|lift/.test(el.getAttribute('class') || '')
+                || (el.style.transform && el.style.transform !== 'none')
+                || el.style.translate || el.style.animation);
+
+        expect(artOf(container, bought.id).getAttribute('data-outline')).toBeNull();
+        const resting = moved(bought.id);
 
         fireEvent.pointerMove(hitOf(container, bought.id), { clientX: 300, clientY: 300 });
         expect(artOf(container, bought.id).getAttribute('data-outline')).toBe('hover');
-        expect(lifts(bought.id)).toBe(true);
+        expect(moved(bought.id)).toEqual(resting);
 
         fireEvent.pointerMove(hitOf(container, node.id), { clientX: 900, clientY: 300 });
         expect(artOf(container, node.id).getAttribute('data-outline')).toBe('hover');
-        expect(lifts(node.id)).toBe(false);
+        expect(artOf(container, bought.id).getAttribute('data-outline')).toBeNull();
+        expect(moved(node.id)).toEqual([]);
     });
 
     it('the grab cursor is on movable Tokens, a goblin included; a fixed Token shows the click cursor', () => {

@@ -511,13 +511,6 @@
   animation: gi-hover-bob 380ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* The same hop for a Token or hero on the mat, WITHOUT the brightening: there
-   the white outline says "hovered" (Wave 5, owner rulings Z §11), and a
-   filter on a sprite is what Wave 5 removed. */
-.gi-token-hover-hop {
-  animation: gi-hover-bob 380ms cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
 /* A movable Token's faint marker at rest: a flat ring at the foot of its circle,
    the game piece's base, drawn under the art (the art paints after the hit
    circle). Hard-edged, no shadow or blur: one pseudo-element per movable Token,
@@ -621,7 +614,6 @@
 @media (prefers-reduced-motion: reduce) {
   .gi-hover-pulse:hover,
   .gi-token-hover-pulse,
-  .gi-token-hover-hop,
   .gi-item-equipped-bob {
     animation: none;
   }

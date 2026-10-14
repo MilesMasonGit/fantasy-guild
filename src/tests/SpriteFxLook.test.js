@@ -353,12 +353,14 @@ describe('no live filters left for shadows or the glow', () => {
         expect(land).not.toContain('filter');
     });
 
-    it('the breathing green glow is gone; the hover hop on the mat has no brightening filter', () => {
+    it('the breathing green glow is gone, and nothing on the mat hops on hover: the outline alone says it', () => {
         expect(css).not.toMatch(/@keyframes gi-glow-active/);
         expect(css).not.toMatch(/\.gi-glow-active\s*\{/);
-        const hop = css.slice(css.indexOf('.gi-token-hover-hop {'), css.indexOf('}', css.indexOf('.gi-token-hover-hop {')));
-        expect(hop).toContain('animation');
-        expect(hop).not.toContain('filter');
+        expect(css).not.toMatch(/gi-token-hover-hop/);
+        for (const file of ['MatToken.jsx', 'MatHero.jsx']) {
+            const src = fs.readFileSync(path.resolve(__dirname, '../ui/components/board', file), 'utf8');
+            expect(src, file).not.toMatch(/hover-hop|hover-pulse|gi-hover-bob/);
+        }
     });
 
     it('nothing on a sprite asks for will-change (R6: 3× slower)', () => {
