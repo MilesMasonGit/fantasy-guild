@@ -215,14 +215,13 @@ describe('Moving a Token', () => {
         expect(Placement.moveTokenTo('tok_nobody', A).success).toBe(false);
     });
 
-    it('cannot move the Guild Hall token: it is fixed (Atlas D-6 B)', () => {
+    it('moves the Guild Hall token like a bought one (T-148)', () => {
         const hall = place('token_guild_hall', A);
-        const at = { x: hall.x, y: hall.y };
 
-        expect(Placement.moveTokenTo(hall.id, B).success).toBe(false);
+        expect(Placement.moveTokenTo(hall.id, B).success).toBe(true);
 
-        const stayed = BoardState.getTokenById(hall.id);
-        expect({ x: stayed.x, y: stayed.y }).toEqual(at);
+        const moved = BoardState.getTokenById(hall.id);
+        expect({ x: moved.x, y: moved.y }).toEqual({ x: B.x, y: B.y });
     });
 });
 

@@ -521,8 +521,8 @@
 /* A movable Token's faint marker at rest: a flat ring at the foot of its circle,
    the game piece's base, drawn under the art (the art paints after the hit
    circle). Hard-edged, no shadow or blur: one pseudo-element per movable Token,
-   nothing animated. Fixed Tokens (map nodes, planted trees, sites, the Hall)
-   carry none. */
+   nothing animated. Fixed Tokens (map nodes, planted trees, sites) carry none;
+   the Hall, movable, carries it. */
 [data-token-movable]::after {
   content: '';
   position: absolute;

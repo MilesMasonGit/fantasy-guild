@@ -408,13 +408,19 @@ describe('flags and the Guild Hall', () => {
         expect(BoardState.flagOf('h2')).toMatchObject(point);
     });
 
-    it('the Guild Hall is fixed: it does not move, on the mat or off it (Atlas D-6 B)', () => {
+    it('the Guild Hall moves on the mat, but never off it (T-148)', () => {
         const hall = placeAt('token_guild_hall', 900, 700);
 
-        expect(Placement.moveTokenTo(hall.id, { x: 300, y: 950 }).success).toBe(false);
-        expect(Placement.moveTokenTo(hall.id, { x: -500, y: -500 }).success).toBe(false);
+        // Aimed off the mat, it lands at the nearest spot on it, as any Token does.
+        Placement.moveTokenTo(hall.id, { x: -500, y: -500 });
+        const kept = BoardState.getTokenById(hall.id);
+        expect(kept.x).toBeGreaterThan(0);
+        expect(kept.y).toBeGreaterThan(0);
+        expect(kept.x).toBeLessThan(matW());
+        expect(kept.y).toBeLessThan(matH());
+        expect(Placement.moveTokenTo(hall.id, { x: 300, y: 950 }).success).toBe(true);
         expect({ x: BoardState.getTokenById(hall.id).x, y: BoardState.getTokenById(hall.id).y })
-            .toEqual({ x: 900, y: 700 });
+            .toEqual({ x: 300, y: 950 });
     });
 
     it('and still refuses to be removed (the Vault it also refused went in 9.3)', () => {
