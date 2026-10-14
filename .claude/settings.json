@@ -83,6 +83,8 @@
       "Bash(curl -s *)",
       "Bash(ps*)",
       "Bash(tasklist*)",
+      "Bash(git worktree *)",
+      "Bash(cmd //c rmdir *)",
       "PowerShell(git status*)",
       "PowerShell(git diff*)",
       "PowerShell(git log*)",
