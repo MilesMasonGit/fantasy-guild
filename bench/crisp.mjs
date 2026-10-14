@@ -1,5 +1,5 @@
 // Fantasy Guild sprite crispness check (`npm run bench:crisp`): does anything animating on the
-// mat change how the Tokens that stand still are drawn? (T-145: Tokens twitched and went soft.)
+// mat change how the Tokens that stand still are drawn? (Tokens twitched and went soft.)
 //
 //   npm run bench:crisp                  perf build, S2, every case
 //   npm run bench:crisp -- --dev         the dev build (no build step)
@@ -7,20 +7,23 @@
 //                                        `will-change: contents`, hidden name labels not painted):
 //                                        shows the fault (exits 1); `--neuter=mat` or `=labels` one
 //   npm run bench:crisp -- --scene=cap128 --no-build --keep=<dir>   another board; keep the shots
+//   --verbose                            each judged Token's share of exact pixels at rest
 //
 // How: the board is built, settled and FROZEN (the game loop stopped, the running animations
-// left to finish), so nothing moves on its own. Two screenshots at rest pick the still Tokens: those
-// drawn identically in both. Then each case starts ONE of the game's own animations behind the
-// Tokens (on the back-most Token, where every Token drawn after it is in front), screenshots, and
-// stops it. A case passes when no still Token away from it changes a pixel. Chrome's composited
-// layers are counted beside it (the mechanism: an animation on the compositor splits every sprite
-// drawn after it onto "overlap" layers, which Chrome draws resampled at fractional offsets).
-// Sharp is checked against the art itself, on the still Tokens nothing else is drawn over (no other
-// Token's art, hero or flag reaches into the middle of theirs): one is "exact" when at least 98 % of
-// the opaque pixels in the middle of its art are on screen exactly where nearest-neighbour sampling
-// of its picture puts them. It fails when fewer are exact during a case than at rest, or when the
-// rest itself leaves more than 5 % of them soft.
-// Exit codes: 0 every case kept the Tokens as they were · 1 a case changed them · 3 the check failed.
+// left to finish), so nothing moves on its own. Screenshots for 2 s pick the still Tokens: those
+// whose art is drawn the same in every one. Then each case starts ONE of the game's own animations
+// behind the Tokens (on the back-most Token, so every other Token is drawn after it), screenshots,
+// and stops it. Two checks:
+// * changed: a still Token away from the case whose art (its opaque texels; the faint ring at its
+//   foot and the mat show through the rest) changed a pixel. A case may change 5 % of them (a hero's
+//   frame, the case's own movement), no more.
+// * exact: of the still Tokens nothing else is drawn over (no other Token's art, hero or flag reaches
+//   into the middle of theirs), those with at least 98 % of the opaque pixels in the middle of the
+//   art on screen exactly where nearest-neighbour sampling of the picture puts them. Every one must
+//   be exact at rest and in every case.
+// Chrome's composited layers are counted beside it: an animation on the compositor splits every
+// sprite drawn after it onto "overlap" layers, and Chrome draws the board's sprites resampled.
+// Exit codes: 0 every still Token exact and unchanged · 1 a case changed them or one is soft · 3 the check failed.
 // ⚠️ Pixels compare only within one run (one machine, one Chrome); nothing is kept between runs.
 
 import fs from 'node:fs';
@@ -36,7 +39,7 @@ const root = path.resolve(here, '..');
 const require = createRequire(path.join(root, 'package.json'));
 
 function parseArgs(argv) {
-    const a = { dev: false, build: true, neuter: [], scene: 'S2', settleS: 10, keep: null, width: 1600, height: 1000 };
+    const a = { dev: false, build: true, neuter: [], scene: 'S2', settleS: 10, keep: null, verbose: false, width: 1600, height: 1000 };
     for (const arg of argv) {
         const [k, ...rest] = arg.replace(/^--/, '').split('=');
         const v = rest.join('=');
@@ -57,6 +60,7 @@ function parseArgs(argv) {
             }
             case 'settle': a.settleS = Number(v); break;
             case 'keep': a.keep = path.resolve(v); break;
+            case 'verbose': a.verbose = true; break;
             default: throw new Error(`unknown option --${k}`);
         }
     }
@@ -108,6 +112,18 @@ const CASES = [
         stop: `(document.getElementById('crisp-case')?.remove(), true)`
     },
     {
+        id: 'turn',
+        what: 'turning into another Token (gi-transform-glow over it, gi-transform-flash on its art)',
+        start: `(() => { const { art } = ${BACK}; const g = document.createElement('div'); g.id = 'crisp-case'; g.className = 'gi-transform-glow absolute inset-0 pointer-events-none'; g.style.animationDuration = '${LONG}ms'; art.appendChild(g); const hit = art.querySelector('[data-token-hit]:not([data-token-hit^="tok"])') || art.querySelector(':scope > div.flex > div'); hit.dataset.crispCase = 'true'; hit.classList.add('gi-transform-flash'); hit.style.animationDuration = '${LONG}ms'; return true; })()`,
+        stop: `(() => { document.getElementById('crisp-case')?.remove(); const el = document.querySelector('[data-crisp-case]'); el.classList.remove('gi-transform-flash'); el.style.animationDuration = ''; delete el.dataset.crispCase; return true; })()`
+    },
+    {
+        id: 'quest',
+        what: 'a done quest breathing (gi-quest-ready) behind its art',
+        start: `(() => { const { art } = ${BACK}; const g = document.createElement('div'); g.id = 'crisp-case'; g.className = 'gi-quest-ready absolute pointer-events-none'; g.style.inset = '-22%'; art.insertBefore(g, art.firstChild); return true; })()`,
+        stop: `(document.getElementById('crisp-case')?.remove(), true)`
+    },
+    {
         id: 'loot',
         what: 'floor loot bobbing (gi-sprite-hover) in its badges',
         start: `(() => { const { badges } = ${BACK}; const d = document.createElement('span'); d.id = 'crisp-case'; d.className = 'gi-sprite-hover absolute left-0 top-0'; d.style.cssText = 'width:8px;height:8px'; badges.appendChild(d); return true; })()`,
@@ -128,17 +144,31 @@ async function screenshot(page, keepAs) {
     return { raw, width: info.width };
 }
 
-/** The centre of a Token's art (its inner 60 %), as one number per pixel. */
-function artPixels(shot, t) {
-    const x0 = t.x + Math.round(t.w * 0.2), y0 = t.y + Math.round(t.h * 0.2);
-    const w = Math.round(t.w * 0.6), h = Math.round(t.h * 0.6);
-    const out = new Uint32Array(w * h);
-    for (let j = 0; j < h; j++) {
-        for (let i = 0; i < w; i++) {
-            const p = ((y0 + j) * shot.width + x0 + i) * 4;
-            out[j * w + i] = (shot.raw[p] << 16) | (shot.raw[p + 1] << 8) | shot.raw[p + 2];
+/**
+ * The screen pixels a Token's art paints whatever its drawing phase: those whose texel, and the
+ * texels a pixel either side would show, are all opaque in its picture. The faint ring at a
+ * Token's foot and the mat's surface show only through transparent texels, so they are left out.
+ */
+function artInterior(t, pic, width) {
+    const { left, top, width: w, height: h } = t.r;
+    const sx = pic.w / w, sy = pic.h / h;
+    const opaque = (px, py) => {
+        const tx = Math.floor((px + 0.5 - left) * sx), ty = Math.floor((py + 0.5 - top) * sy);
+        return tx >= 0 && ty >= 0 && tx < pic.w && ty < pic.h && pic.data[(ty * pic.w + tx) * 4 + 3] === 255;
+    };
+    const out = [];
+    for (let py = Math.ceil(top) + 1; py < Math.floor(top + h) - 1; py++) {
+        for (let px = Math.ceil(left) + 1; px < Math.floor(left + w) - 1; px++) {
+            if (opaque(px, py) && opaque(px - 1, py) && opaque(px + 1, py) && opaque(px, py - 1) && opaque(px, py + 1)) out.push((py * width + px) * 4);
         }
     }
+    return out;
+}
+
+/** What a Token's art shows on screen, one number per pixel of its interior. */
+function artPixels(shot, t) {
+    const out = new Uint32Array(t.interior.length);
+    t.interior.forEach((p, i) => { out[i] = (shot.raw[p] << 16) | (shot.raw[p + 1] << 8) | shot.raw[p + 2]; });
     return out;
 }
 
@@ -258,6 +288,8 @@ async function main() {
         const rest1 = await screenshot(page, args.keep && path.join(args.keep, 'rest-1.png'));
         const restLayers = layers;
         let candidates = tokens.filter(t => t.id !== backBox.id && !overlaps(t, backBox));
+        for (const t of candidates) t.interior = artInterior(t, await picture(t.src), rest1.width);
+        candidates = candidates.filter(t => t.interior.length >= 100);
         const restUntil = Date.now() + 2000;
         let restShots = 1;
         while (Date.now() < restUntil) {
@@ -272,7 +304,7 @@ async function main() {
         for (const t of still.filter(t => !t.tinted && !t.covered)) judged.push({ t, pic: await picture(t.src) });
         const exactIn = (shot) => judged.filter(({ t, pic }) => (exactShare(shot, t, pic) ?? 0) >= EXACT).length;
         const restExact = exactIn(rest1);
-        if (process.env.CRISP_DEBUG) {
+        if (args.verbose) {
             const shares = judged.map(({ t, pic }) => ({ id: t.id, x: Math.round(t.r.left), y: Math.round(t.r.top), share: exactShare(rest1, t, pic) }));
             console.log(JSON.stringify(shares.sort((a, b) => a.share - b.share).map(s => `${s.share.toFixed(2)}@${s.x},${s.y}`)));
         }
@@ -301,10 +333,11 @@ async function main() {
         // A Token or two may be brushed by a case's own movement or a hero's frame; the fault moves
         // most of them.
         const allowed = Math.max(2, Math.round(still.length * 0.05));
-        const failed = rows.filter(r => r.changed > allowed || r.exact < restExact - allowed);
+        // Exactness is not noisy: with the guards on every uncovered still Token is exact.
+        const failed = rows.filter(r => r.changed > allowed || r.exact < restExact);
         if (drift > allowed) throw new Error(`the board was not still (${drift} Tokens changed at rest)`);
         const soft = judged.length - restExact;
-        const softAtRest = soft > Math.max(2, Math.round(judged.length * 0.05));
+        const softAtRest = soft > 0;
         if (failed.length) console.log(`\nCHANGED: ${failed.map(r => r.id).join(', ')} changed how still Tokens are drawn`);
         if (softAtRest) console.log(`\nSOFT: at rest ${soft} still Tokens are not drawn exactly to their art`);
         if (!failed.length && !softAtRest) console.log('\nok: still Tokens are drawn exactly to their art, and no animation changes that');

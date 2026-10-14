@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-183**
+**Next free number: T-184**
 
 ---
 
@@ -85,7 +85,7 @@ here.
 | T-160 | P2 | open | **One shared arrow-bar scroll list** (UI_STYLE "Lists and scrolling") replacing the four hand copies in `ShopDrawer.jsx`, `InspectionPanel.jsx`, `TokenInspectPopup.jsx`, `GuildUpgradeInspection.jsx`: pixel triangle drawn in code, dims at the ends but keeps its space, a click scrolls ~two rows smoothly, holding repeats, the wheel works. Builder. Eye-check. | UI_STYLE.md (2026-10-13) |
 | T-161 | P3 | open | **Three text sizes** (title, body, small) plus a display size for mat celebrations, as shared classes the Text size setting scales; move panels onto them as each is touched. With T-038. | UI_STYLE.md (2026-10-13) |
 | T-162 | P3 | ride-along | **Pixel sprites replace vector icons** (lucide: chevrons, X, zap, sparkles, help circle and others) as each screen is touched; missing sprites get a placeholder and a line in `owner_art_list.md`. | UI_STYLE.md (2026-10-13) |
-| T-145 | P1 | open | **Tokens on the mat twitch and lose pixel sharpness every ~20–30 s** (owner 2026-10-10). Find the trigger (a timer, GC, a periodic state cycle, a sub-pixel camera or transform rounding) and keep nearest-neighbour crispness. Check first whether brief 60's sprite clock (P2-3, `crunch/p2-3`) or loot-canvas work (P2-6) changes it. Engineer; measure, then fix. | refinement_pass_todo.md §1 |
+| T-183 | P2 | open | **Floor loot that arrived with its arc sits half a sprite up-left of its point and is drawn soft** (found in T-145): `playLootArc` (`src/ui/utils/lootArc.js`) ends on `transform: translate3d(-50%, -50%, 0)` and holds it (`fill: both`), on top of the button's own Tailwind `-translate-x-1/2 -translate-y-1/2` (the `translate` property), so the loot is offset twice (measured: centre 40 mat units up-left of its point on S2); the held 3D transform also keeps every such sprite on a composited layer of its own (`Trivial3DTransform`), drawn resampled. Fix the double offset and end on a 2D transform (or none), then check `npm run bench:crisp` and that loot still lands where it went (`MatFrameDrops`). | T-145 |
 | T-146 | P2 | open | **Outlines on animated sprites are clipped at the frame edge** (a hero's bow top, feet bottom): art reaches the cell border, so a 1-art-pixel outline has no room. Fix where it costs least: pad cells by 1 art pixel in the sprite pipeline (`scripts/process_art.cjs`, spriteFx) or let the renderer draw the outline outside the cell. Owner art must not need redrawing. Changes the look: eye-check. | refinement_pass_todo.md §1 |
 | T-147 | P2 | open | **Hover = a 1-art-pixel white outline**, replacing the hover bob and A10's hover lift (owner 2026-10-13). Movable vs fixed stays told apart by A10's resting marker and the grab cursor. A follow-up to A10 (merged 2026-10-13). Needs T-146 for animated Tokens. Cost-log line. Eye-check. | refinement_pass_todo.md §3 |
 | T-148 | P2 | open | **The Guild Hall is movable again** (owner 2026-10-13, overrides atlas D-6 for the Hall only): it drags like bought and built Tokens and carries the movable marker; it still can't leave the mat or be demolished. A follow-up to A10 (merged 2026-10-13). Eye-check. | refinement_pass_todo.md §3 |

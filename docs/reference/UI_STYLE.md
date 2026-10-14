@@ -92,6 +92,12 @@ normal text colour; a new meaning needs the owner's OK.
   sprite to the box.
   **One exception**: an enemy sprite on a quest poster draws at exactly half
   size, to match the items there (owner, 2026-10-13).
+- **Sprites on a scaled board stay sharp while things move.** The mat and the
+  Guild Hall web keep every animation on them out of the browser's separate
+  drawing layers (`will-change: contents` on the board), and anything hidden on
+  them is `invisible`, not just transparent, when it carries a soft shadow or
+  blur: a sprite drawn on such a layer goes soft and jumps a pixel (T-145;
+  `npm run bench:crisp` checks it).
 - **Pixel sprites only.** No vector icon sets. Where no sprite exists yet, use
   a placeholder sprite and add the icon to
   [`owner_art_list.md`](../active/owner_art_list.md). Vector icons go as each

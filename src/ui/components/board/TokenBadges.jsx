@@ -92,7 +92,7 @@ export const TokenNameBadge = memo(function TokenNameBadge({ name, isDragging, i
     // Token of a busy mat costs more in compositing than it saves.
     // ⚠️ Hidden means `invisible`, not only transparent. The label's drop shadow is a filter
     // Chrome must draw on a layer of its own, and every Token drawn after an unseen, transparent
-    // label then needed a layer too, drawn soft and a pixel off (T-145). Visibility rides the
+    // label then needed a layer too, drawn soft and a pixel off. Visibility rides the
     // opacity transition, so the fade in and out look as before.
     return (
         <div

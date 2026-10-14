@@ -25,12 +25,12 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 /**
  * ⭐ **A sprite on the mat is always drawn the one crisp way.** The mat is scaled to fit the
  * window, so a Token stands at a fractional screen position. Painted into the mat's own layer it
- * lands crisp. But Chrome puts every compositor-run animation on a layer of its own, and then
- * every Token drawn after it must be a layer too ("overlap"); Chrome draws those layers at their
- * fractional offset by resampling, so the Tokens go soft and shift a pixel, and snap back when
- * the animation ends. Any -1 floater, landing hop, Hall flash, spawn or walking enemy behind
- * them did it. `will-change: contents` on the scaled board keeps every animation inside it on
- * the main thread, so no layer ever splits the mat's sprites off.
+ * lands crisp. But Chrome puts every compositor-run animation on a layer of its own, then every
+ * Token drawn after it must be a layer too ("overlap"), and while it runs Chrome draws the Tokens
+ * resampled: they go soft and shift a pixel, and snap back when the animation ends. Any -1
+ * floater, landing hop, Hall flash, spawn or walking enemy behind them did it.
+ * `will-change: contents` on the scaled board keeps every animation inside it on the main thread,
+ * and a hidden name label is not painted (its drop shadow is a filter that needs a layer too).
  * Chrome's layers cannot be seen from jsdom (`npm run bench:crisp` checks them in Chrome): these
  * guard the property that keeps them away.
  */
