@@ -32,6 +32,7 @@ Still to write (T-069): the mat-era guide to *keeping* it fast (draft in
 | `npm run bench:draw -- --only=cap128,camp128,cap256` | The realistic mix at the Token cap: 128, the Starter Camp at 128, 256 | ~6 min per condition |
 | `npm run bench:profile -- --scene=cap128 --cpu=4` | Where a frame's time goes: a trace, a CPU profile and the composited layers | ~2 min |
 | `npm run bench:drag` | Drag reliability, real mouse input, and frame stalls at pickup, carry and drop | ~19 min |
+| `npm run bench:crisp` | Not timing: whether anything animating on the mat changes how still Tokens are drawn (T-145); `--neuter` shows the fault | ~1 min |
 | `npm run check:perf-build` | Proves the shipped build has no measuring code | ~1 min |
 | `node bench/tick-commits.mjs` | React commits and renders each engine tick sets off (S2, dev build), the same engine work every run; `--a=<before> --b=<after>` for an A/B | ~4 min (A/B ~13 min) |
 | `node bench/drag-commits.mjs` | React commits, renders and context changes per pickup, carry move and drop (cap128, dev build), the same drags every run; `--a=<before> --b=<after>` for an A/B | ~4 min (A/B ~15 min) |

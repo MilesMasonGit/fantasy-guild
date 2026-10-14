@@ -551,6 +551,22 @@
   .gi-gear-pulse { animation: none; }
 }
 
+/* ⚠️ These animations play among the resting Tokens, so they run on the main
+   thread. The mat is scaled to fit, so a Token stands at a fractional screen
+   position; an animation Chrome runs on the compositor gets a layer of its own,
+   every Token drawn after it then needs one too, and those are drawn resampled:
+   soft and a pixel off until the animation ends. Per element, never the whole
+   mat: the whole mat on the main thread cost a third more frame work.
+   (MatToken does the same for an enemy's boxes and a resting Token's art,
+   spawnMotion for the spawn pop, TokenBadges for a -1 on a resting Token.) */
+.gi-token-land,
+.gi-transform-flash,
+.gi-transform-glow,
+.gi-quest-ready,
+.gi-gear-pulse {
+  will-change: contents;
+}
+
 /* A count ring gliding to its new value (owner, 2026-10-01): a Token's charges
    and a spawner's count. Only the ring whose value changed animates; at rest
    nothing runs. `RingBadge` explains why this is CSS, not the frame clock. */

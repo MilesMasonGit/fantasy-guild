@@ -46,15 +46,26 @@ export function resetSpawnMotion() {
  * The pop-out on one element: from the spawner's point (`dx`, `dy` mat units away) and half size
  * to its own spot. Transform only, added on top of whatever transform the box already has
  * (an enemy's box is placed by one), so no layout moves.
+ * ⚠️ On the main thread (`will-change: contents` while it plays): a new Token pops out among the
+ * resting ones, and on the compositor every Token in front of it was redrawn soft (tailwind.css,
+ * at `.gi-token-land`).
  * @returns {Animation|null} null where the browser cannot animate
  */
 export function playSpawn(el, dx, dy) {
     if (!el || typeof el.animate !== 'function') return null;
-    return el.animate(
+    const before = el.style.willChange;
+    el.style.willChange = 'contents';
+    const anim = el.animate(
         [
             { transform: `translate(${dx}px, ${dy}px) scale(${SPAWN_FROM_SCALE})` },
             { transform: 'translate(0px, 0px) scale(1)' }
         ],
         { duration: SPAWN_MS, easing: SPAWN_EASE, composite: 'add' }
     );
+    if (anim) {
+        const restore = () => { el.style.willChange = before; };
+        anim.onfinish = restore;
+        anim.oncancel = restore;
+    }
+    return anim;
 }

@@ -75,6 +75,7 @@ export function tokenBoxPx(typeId, artPx) {
 }
 
 const RECEIVED_MS = 350;
+const AT_REST_STYLE = Object.freeze({ willChange: 'contents' });
 
 
 const SLIDE_MS = 220;
@@ -288,12 +289,15 @@ export const MatToken = React.memo(function MatToken({
     // stays on left/top, because a transform on every Token of a busy mat cost more in
     // compositing than it saved. Decided once, at mount, by kind: a box switching styles
     // mid-life would slide in from the mat's corner.
-    // ⚠️ Never add `will-change` to these boxes (3x slower).
+    // ⚠️ Never add `will-change: transform` to these boxes (3x slower). A walker's boxes carry
+    // `will-change: contents`, so its glide and its knockback run on the main thread: on the
+    // compositor either redrew every Token in front of it soft (tailwind.css, at `.gi-token-land`).
     const [walker] = React.useState(() => !!def?.enemy);
     const boxStyle = walker ? {
         left: 0,
         top: 0,
         transform: `translate(${left}px, ${top}px)`,
+        willChange: 'contents',
         width: boxPx,
         height: boxPx,
         transition: skipSlide || (walking && !walkDrawn)
@@ -519,6 +523,9 @@ export const MatToken = React.memo(function MatToken({
                         style={{ inset: '-22%' }}
                     />
                 )}
+                {/* At rest its flash (the Hall taking in loot, resting on and off) and hop play
+                    among the resting Tokens: on the main thread, as tailwind.css explains at
+                    `.gi-token-land`. A worked Token is drawn in front of them all. */}
                 <div
                     className={cn(
                         'w-full h-full flex items-center justify-center transition-[filter] duration-150',
@@ -526,6 +533,7 @@ export const MatToken = React.memo(function MatToken({
                         received && 'brightness-125 saturate-125',
                         resting && 'gi-token-resting'
                     )}
+                    style={staffed ? undefined : AT_REST_STYLE}
                 >
                     {art}
                     {quest?.itemId && (

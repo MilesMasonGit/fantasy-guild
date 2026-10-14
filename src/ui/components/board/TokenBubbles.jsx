@@ -435,10 +435,10 @@ export const TokenBubbles = ({
                             />
                         </Bubble>
                     )}
-                    <TokenChargeDeltaFloater instanceId={instanceId} anchor="ring" />
+                    <TokenChargeDeltaFloater instanceId={instanceId} anchor="ring" atRest={!hasHero} />
                 </div>
             ) : (
-                <TokenChargeDeltaFloater instanceId={instanceId} anchor="corner" />
+                <TokenChargeDeltaFloater instanceId={instanceId} anchor="corner" atRest={!hasHero} />
             )}
         </>
     );

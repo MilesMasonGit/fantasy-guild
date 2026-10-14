@@ -92,6 +92,13 @@ normal text colour; a new meaning needs the owner's OK.
   sprite to the box.
   **One exception**: an enemy sprite on a quest poster draws at exactly half
   size, to match the items there (owner, 2026-10-13).
+- **Sprites on the mat stay sharp while things move.** An animation that plays
+  among the resting Tokens carries `will-change: contents` (the browser then
+  draws it itself rather than on a separate layer), and anything hidden on the
+  mat is `invisible`, not just transparent, when it carries a soft shadow or
+  blur: otherwise the Tokens in front go soft and jump a pixel (T-145;
+  `npm run bench:crisp` checks it). Not on the whole mat: that cost a third
+  more frame work.
 - **Pixel sprites only.** No vector icon sets. Where no sprite exists yet, use
   a placeholder sprite and add the icon to
   [`owner_art_list.md`](../active/owner_art_list.md). Vector icons go as each
