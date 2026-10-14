@@ -33,9 +33,9 @@ October 2026.*
 | T-145 Tokens twitch every 20–30 s (P1) | engineer | `fix/t145-twitch` → `main` | merged: the guard per animation plus hidden name labels; Tokens pixel-identical while every animation plays; frame work level with `main` at 1× and 4× cap128, 4× in-budget share 66 → 76 %; cost 1× fps 164 → 150 on a 165 Hz screen (director's call, not visible). Possible later spike: heroes and rings off the shared repaint to win those frames back | Wed | Wed |
 | Drawing pauses while the app is minimised (P2-10, T-117) | builder | `crunch/p2-10` → `main` | merged (work check same; brief 60's P2 slices are all done). Owner check: minimise the real desktop app once and see the frame counter stop (the Rust side compiles but has not run there) | Wed | Wed |
 | Drawers close each other (T-152) | builder-lite | `fix/t152-drawers` → `main` | merged (one hook, one new test; ruled in words, no eye-check) | Wed | Wed |
-| Hover outline + Guild Hall movable again (T-147, T-148, with the outline-clipping fix T-146) | builder | `fix/hover-and-hall` (`hover`) | building (started Wed 17:00); one eye-check | Wed–Thu | |
-| Overlapping speech bubbles (T-158) | builder | `fix/t158-bubbles` (`t158`) | building (started Wed 17:40) | Wed–Thu | |
-| Gear alert stops pulsing (T-153) | builder-lite | `fix/t153-gear-alert` | queued (follows the pixel-shadow ruling T-013) | Thu–Fri | |
+| Hover outline + Guild Hall movable again (T-147, T-148, with the outline-clipping fix T-146) | builder | `fix/hover-and-hall` (`hover`) | ready; director gate next; eye-check ([file](eyecheck/2026-10-15_hover-hall-gear.md)); work check in the 01:00 window | Wed–Thu | |
+| Overlapping speech bubbles (T-158) | builder | `fix/t158-bubbles` (`t158`) | ready; director gate running; the callout now sits above the working hero's speech in one column; work check in the 01:00 window | Wed–Thu | |
+| Gear alert stops pulsing (T-153) | builder-lite | `fix/t153-gear-alert` (`t153`) | building (started Wed 17:00); joins the hover eye-check | Wed–Thu | |
 | Safety net for CMS renames (T-182) | builder-lite | `fix/t182-id-guard` → `main` | merged (250 ids checked; T-184 filed for three dead ids on a dev-panel button) | Wed | Wed |
 | Brief 80 T0 terrain plan (read-only; owner's spritesheets are ready) | engineer | `crunch/terrain` | queued | Fri | |
 | Handoff; T-181 baseline retake queued for Sat 01:00 | director / runner | `main` | queued | Sat | |
