@@ -1,3 +1,5 @@
+Status: built for the tutorial (Atlas A8); Quest boards briefed 2026-10-14 (brief 170)
+
 # Quests and the tutorial
 
 *D8 of the post-crunch plan ([ideas.md](ideas.md)). Owner interview,

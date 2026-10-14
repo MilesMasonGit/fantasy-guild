@@ -1,3 +1,5 @@
+Status: draft (interview done 2026-10-13; owner holds approval, 2026-10-14)
+
 # Collectors: the Guild Hall and warehouses
 
 *From the owner's refinement pass ([refinement_pass_todo.md](refinement_pass_todo.md)

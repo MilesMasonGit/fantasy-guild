@@ -1,3 +1,5 @@
+Status: built (brief 20, engine; content in the CMS)
+
 # Concept: Skill & Class Rework v2 (4-Combat / 4-Basic System)
 
 > **Document Type:** Canonical Game Design Specification  

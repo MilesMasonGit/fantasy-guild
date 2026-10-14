@@ -1,3 +1,5 @@
+Status: approved 2026-10-09 (brief after the crunch)
+
 # Knowledge: dependency map, encyclopedia, collection log
 
 *D5 of the post-crunch plan ([ideas.md](ideas.md)). Owner interview, started

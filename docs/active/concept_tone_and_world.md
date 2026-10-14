@@ -1,3 +1,5 @@
+Status: approved 2026-10-09 (a standing writing guide; no brief)
+
 # Tone and world
 
 *D1 of the post-crunch plan ([ideas.md](ideas.md)). Owner interview,

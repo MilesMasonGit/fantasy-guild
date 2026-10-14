@@ -1,3 +1,5 @@
+Status: briefed 2026-10-14 for Transitions and The look of the sky (brief 160); the rest approved 2026-10-09, brief after the crunch
+
 # The Guild Hall: constellation screen, upgrades, transitions
 
 *D6 of the post-crunch plan ([ideas.md](ideas.md)). Owner interview,

@@ -1,3 +1,5 @@
+Status: approved 2026-10-09 (direction only; brief after the crunch)
+
 # Combat and gear
 
 *D3 of the post-crunch plan ([ideas.md](ideas.md)). Owner interview,

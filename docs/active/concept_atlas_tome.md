@@ -1,3 +1,5 @@
+Status: briefed 2026-10-14 (approved 2026-10-14; brief 160)
+
 # The Atlas as a tome, and area banners
 
 *From the owner's refinement pass ([refinement_pass_todo.md](refinement_pass_todo.md)

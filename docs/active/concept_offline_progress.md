@@ -1,3 +1,5 @@
+Status: built (brief 40)
+
 # Concept — real offline progress
 
 **Status:** decisions locked by the owner, 2026-10-07; built in brief 40

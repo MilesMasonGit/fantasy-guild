@@ -1,3 +1,5 @@
+Status: briefed (brief 70)
+
 # Progression, pacing and the Atlas loop
 
 *D2 of the post-crunch plan ([ideas.md](ideas.md)). Owner interview, started

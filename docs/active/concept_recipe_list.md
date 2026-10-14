@@ -1,3 +1,5 @@
+Status: briefed 2026-10-14 (approved 2026-10-14; brief 130)
+
 # The recipe list
 
 *From the owner's refinement pass ([refinement_pass_todo.md](refinement_pass_todo.md)

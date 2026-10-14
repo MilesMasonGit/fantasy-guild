@@ -1,3 +1,5 @@
+Status: briefed (brief 70); A1 to A12 built
+
 # Atlas System Specification
 
 This document expands on the **Map System & Region Generation Concept** to provide a concrete, actionable blueprint for implementing the Atlas System. It is designed to fully equip the agent responsible for planning and executing this feature.

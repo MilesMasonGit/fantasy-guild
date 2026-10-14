@@ -1,3 +1,5 @@
+Status: briefed (brief 70)
+
 # Skill loops and the board as a puzzle
 
 *D4 of the post-crunch plan ([ideas.md](ideas.md)). Owner interview, started

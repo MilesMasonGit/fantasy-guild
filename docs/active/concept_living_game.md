@@ -1,3 +1,5 @@
+Status: approved 2026-10-09 (brief after the crunch)
+
 # A living game: events, the return, hero identity
 
 *D7 of the post-crunch plan ([ideas.md](ideas.md)). Owner interview, started

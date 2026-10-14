@@ -1,3 +1,5 @@
+Status: briefed 2026-10-14 (approved 2026-10-14; brief 140)
+
 # Work Permissions: the drawer and its place on the hero bar
 
 *From the owner's refinement pass ([refinement_pass_todo.md](refinement_pass_todo.md)

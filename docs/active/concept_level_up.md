@@ -1,3 +1,5 @@
+Status: briefed 2026-10-14 (approved 2026-10-14; brief 140)
+
 # The level-up moment and the button shine
 
 *From the owner's refinement pass ([refinement_pass_todo.md](refinement_pass_todo.md)

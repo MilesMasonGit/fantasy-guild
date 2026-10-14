@@ -1,3 +1,5 @@
+Status: approved 2026-10-09 (ticket T-133; not briefed)
+
 # Agents author content through the CMS
 
 *Stage A tool from [ideas.md](ideas.md). Owner interview, 2026-10-09. **Done.**
