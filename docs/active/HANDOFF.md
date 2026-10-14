@@ -13,19 +13,17 @@ now 31 % of frames in budget against the Oct-7 draw baseline's 6 %); Atlas A1
 to A7, A9 to A12; T-129; the process-review docs of 2026-10-13; the content
 re-pin after the owner's Oak Seedling rename. The `planning` branch is fully merged.
 
-## Branches and worktrees, verified 2026-10-13
+## Branches and worktrees, cleaned 2026-10-13 evening
 
 | Branch | Worktree | State |
 |---|---|---|
-| `crunch/preview`, `crunch/atlas-a6`, `-a10`, `-a3b`, `-a11` | `atlas-a10`, `atlas-a3b`, `atlas-a11` | All merged to `main` 2026-10-13 after the owner's eye-check (the preview branch carried the two seam fixes). A11's CMS wording is synced into `data/` (`78ede7f8`). A12 merged the same day, eye-check deferred by the owner. The A3b drag-bench baseline is still in the bench queue. Worktrees disposable. |
-| `crunch/p2-3`, `crunch/p2-5`, `crunch/p2-6`, `crunch/p2-8` | `p2-3`, `p2-5`, `p2-6`, `p2-8`, `p28a` | All merged 2026-10-13 afternoon on the work check (timing against the Oct-7 baseline is 1.3–1.5× slower for `main` itself under the day's load: retake the baseline on a quiet evening, T-111). Worktrees disposable (junctions first). |
 | `crunch/atlas-a8` | `atlas-a8` | A8 the cartographer's tutorial: gate and bench green, waits on the owner's read of [eyecheck/2026-10-13_atlas-a8.md](eyecheck/2026-10-13_atlas-a8.md). Owner ruling on the fight step: keep it, T-167 filed. |
-| `crunch/atlas-a12`, `fix/content-repin`, `fix/a11-cms-composer`, `chore/*` | `atlas-a12`, `repin` | Merged. Disposable. |
-| `crunch/optimize` | `o6` | P1 plan, merged. Disposable. |
-| `crunch/atlas-a7` | `atlas-a7` | Merged. Disposable. |
-| `art/asset-reorg` | `ar` | The owner's art session; leave it. |
-| (detached) | `p23b`, `m` | Director scratch worktrees; `m` is detached now so the owner's folder could take `main`. Disposable. |
-| folders only | `d`, `t129`, `atlas-a9`, `atlas-a4b`, `atlas-a6` | Pruned from git, folders busy on disk. Remove junctions first (`cmd //c rmdir` with the full path), confirm `ls <wt>/node_modules` fails, then delete; **never `rm -rf` through a junction**. The auto-mode classifier refuses worktree removals: the owner deletes these by hand or allows the command. |
+| `planning` | `pp` | The planning agent's worktree. Leave it. |
+| `art/asset-reorg` | `ar` | The owner's art session. Leave it. |
+| (detached) | `p23b` | The director's scratch worktree for merges and gate runs (one untracked placeholder test, harmless). |
+| folder only | `d` | Empty, pruned from git, locked by some process; delete after a restart. |
+
+Every other worktree (the Atlas slices, brief 60 P2-3/5/6/8, the content re-pin, `m`, `o6`, `p28a`) was merged and removed; their branches stay local. Removal recipe that worked: `cmd //c rmdir` both junctions with the full path, confirm the real `node_modules` is intact, then `git worktree remove` (`--force` only for an untracked STATUS note). The allow rules for `git worktree` and `cmd //c rmdir` are in `.claude/settings.json` now.
 
 ## Eye-checks waiting
 
