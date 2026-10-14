@@ -437,17 +437,6 @@ table {
    UNIVERSAL ART FOUNDATION
    ============================================ */
 
-/* ⚠️ The scaled boards (the mat, the Guild Hall web) keep every animation inside them on the main
-   thread. The board is scaled to fit, so its sprites stand at fractional screen positions; painted
-   into the board's own layer they land crisp. A compositor-run animation (a -1 floater, a landing
-   hop, a flash, a spawn, a walking enemy) gets a layer of its own, every sprite drawn after it then
-   needs one too, and Chrome draws the board's sprites resampled while it runs: they go soft and
-   jump a pixel until the animation ends. Guarded by MatPixelLayers.test.js and
-   `npm run bench:crisp`. */
-[data-board-origin] {
-    will-change: contents;
-}
-
 /* Base Pixel Art styling */
 .pixel-art {
     image-rendering: -moz-crisp-edges;

@@ -16,13 +16,20 @@ import { getSkill, DEMOLITION_SKILL_ID } from '../../../config/registries/skillR
  * moment rather than a state.
  */
 
+const FLOATER_STYLE = Object.freeze({ textShadow: '0 1px 2px #000, 0 0 3px #000, 0 0 1px #000' });
+const FLOATER_AT_REST_STYLE = Object.freeze({ ...FLOATER_STYLE, willChange: 'contents' });
+
 /**
  * TokenChargeDeltaFloater: floating numbers (-1, +50) when this Token's charges change.
  * `anchor="ring"`: just above the charges ring it is drawn inside; `"corner"`: the Token's
  * bottom-right, when no charges ring shows. Memoised: it draws from its own state, not from
  * its Token's redraws.
+ * ⚠️ `atRest` (no hero works the Token): the rise runs on the main thread, since among the resting
+ * Tokens a compositor animation redrew every Token in front of it soft (tailwind.css, at
+ * `.gi-token-land`). A worked Token is drawn in front of every resting one, so its -1, the usual
+ * one, stays on the compositor: on the main thread the -1s alone cost a third more frame work.
  */
-export const TokenChargeDeltaFloater = memo(function TokenChargeDeltaFloater({ instanceId, anchor = 'corner' }) {
+export const TokenChargeDeltaFloater = memo(function TokenChargeDeltaFloater({ instanceId, anchor = 'corner', atRest = false }) {
     const [deltas, setDeltas] = useState([]);
     const timers = React.useRef(new Set());
 
@@ -69,9 +76,7 @@ export const TokenChargeDeltaFloater = memo(function TokenChargeDeltaFloater({ i
                         "font-mono font-bold text-[12px] tabular-nums leading-none tracking-tight pointer-events-none select-none drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.95)] whitespace-nowrap",
                         d.delta > 0 ? "text-emerald-300" : "text-amber-200"
                     )}
-                    style={{
-                        textShadow: '0 1px 2px #000, 0 0 3px #000, 0 0 1px #000'
-                    }}
+                    style={atRest ? FLOATER_AT_REST_STYLE : FLOATER_STYLE}
                 >
                     {d.delta > 0 ? `+${d.delta.toLocaleString()}` : (d.delta < 0 ? `-${Math.abs(d.delta).toLocaleString()}` : `${d.delta}`)}
                 </div>

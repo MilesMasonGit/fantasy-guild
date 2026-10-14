@@ -3,16 +3,18 @@
 //
 //   npm run bench:crisp                  perf build, S2, every case
 //   npm run bench:crisp -- --dev         the dev build (no build step)
-//   npm run bench:crisp -- --neuter      both guards switched off in the page (the mat's
-//                                        `will-change: contents`, hidden name labels not painted):
-//                                        shows the fault (exits 1); `--neuter=mat` or `=labels` one
+//   npm run bench:crisp -- --neuter      both guards switched off in the page (`will-change:
+//                                        contents` on the animations among the resting Tokens,
+//                                        hidden name labels not painted): shows the fault (exits
+//                                        1); `--neuter=anims` or `--neuter=labels` for one
 //   npm run bench:crisp -- --scene=cap128 --no-build --keep=<dir>   another board; keep the shots
 //   --verbose                            each judged Token's share of exact pixels at rest
 //
 // How: the board is built, settled and FROZEN (the game loop stopped, the running animations
 // left to finish), so nothing moves on its own. Screenshots for 2 s pick the still Tokens: those
 // whose art is drawn the same in every one. Then each case starts ONE of the game's own animations
-// behind the Tokens (on the back-most Token, so every other Token is drawn after it), screenshots,
+// where the game plays it (most on the back-most Token, so every other Token is drawn after it;
+// a worked Token's -1, a walking hero and floor loot where they are drawn, in front), screenshots,
 // and stops it. Two checks:
 // * changed: a still Token away from the case whose art (its opaque texels; the faint ring at its
 //   foot and the mat show through the rest) changed a pixel. A case may change 5 % of them (a hero's
@@ -47,8 +49,8 @@ function parseArgs(argv) {
             case 'dev': a.dev = true; break;
             case 'no-build': a.build = false; break;
             case 'neuter': {
-                const parts = v ? v.split(',') : ['mat', 'labels'];
-                for (const n of parts) if (!['mat', 'labels'].includes(n)) throw new Error(`--neuter: mat, labels or both, not ${n}`);
+                const parts = v ? v.split(',') : ['anims', 'labels'];
+                for (const n of parts) if (!['anims', 'labels'].includes(n)) throw new Error(`--neuter: anims, labels or both, not ${n}`);
                 a.neuter = parts;
                 break;
             }
@@ -68,48 +70,59 @@ function parseArgs(argv) {
 }
 
 // ---------------------------------------------------------------------------
-// The cases: the game's own animations, each started on the back-most Token
+// The cases: the game's own animations, where the game plays them
 // ---------------------------------------------------------------------------
 
-// The back-most Token's two boxes (art and badges): every other Token is drawn after them.
+// The back-most Token's two boxes (art and badges): every other Token is drawn after them. It is
+// at rest (a worked Token is drawn in front of every resting one).
 const BACK = `(() => {
     const art = [...document.querySelectorAll('[data-token-art="true"]')]
         .sort((a, b) => (Number(getComputedStyle(a).zIndex) || 0) - (Number(getComputedStyle(b).zIndex) || 0))[0];
     const id = art.dataset.tokenId;
-    return { art, badges: document.querySelector('[data-token-overlay="' + id + '"]'), sprite: art.querySelector('[data-sprite-outline]') || art.querySelector('img') };
+    return { id, type: art.dataset.tokenType, art, inner: art.querySelector(':scope > .w-full.h-full'),
+        badges: document.querySelector('[data-token-overlay="' + id + '"]'), sprite: art.querySelector('[data-sprite-outline]') || art.querySelector('img') };
 })()`;
 const LONG = 4000;   // every case lasts longer than its screenshot is taken
+const CHARGES = (who) => `(() => { const t = ${who}; if (!t) return false; window.__perf.game.EventBus.publish('board:token_charges_changed', { instanceId: t.id, delta: -1, remaining: 1, typeId: t.type }); return true; })()`;
 
+/**
+ * Each case: `start` (in the page; false skips the case on this board; a box {x, y, w, h} leaves
+ * the still Tokens under the thing it moves out of the count), `stop`, and `settleMs`
+ * after the stop. Where the game has a path the page can reach, the case takes it (a real
+ * charges event draws the real -1 with the real props); otherwise it puts the game's own classes
+ * where the game puts them, or (the spawn pop) does exactly what `spawnMotion.playSpawn` does.
+ */
 const CASES = [
     {
         id: 'floater',
-        what: 'a -1 charge floater (gi-charge-float) in its badges',
-        start: `(() => { const { badges } = ${BACK}; const d = document.createElement('div'); d.id = 'crisp-case'; d.className = 'gi-charge-float absolute left-0 bottom-0'; d.style.animationDuration = '${LONG}ms'; d.textContent = '-1'; badges.appendChild(d); return true; })()`,
-        stop: `(document.getElementById('crisp-case')?.remove(), true)`
+        what: 'a -1 on the back-most Token (at rest): the real charges event',
+        start: CHARGES(`(${BACK})`),
+        stop: 'true',
+        settleMs: 3000
     },
     {
         id: 'land',
         what: 'the landing hop (gi-token-land) on its sprite',
-        start: `(() => { const { sprite } = ${BACK}; sprite.dataset.crispCase = 'true'; sprite.style.animation = 'gi-token-land ${LONG}ms steps(1, end) both'; return true; })()`,
-        stop: `(() => { const el = document.querySelector('[data-crisp-case]'); el.style.animation = ''; delete el.dataset.crispCase; return true; })()`
+        start: `(() => { const { sprite } = ${BACK}; sprite.dataset.crispCase = 'true'; sprite.classList.add('gi-token-land'); sprite.style.animationDuration = '${LONG}ms'; return true; })()`,
+        stop: `(() => { const el = document.querySelector('[data-crisp-case]'); el.classList.remove('gi-token-land'); el.style.animationDuration = ''; delete el.dataset.crispCase; return true; })()`
     },
     {
         id: 'flash',
-        what: 'a filter flash (the Guild Hall taking in loot) on its art',
-        start: `(() => { const { art } = ${BACK}; const el = art.querySelector(':scope > div.flex'); el.dataset.crispCase = 'true'; el.style.transition = 'filter ${LONG}ms linear'; el.style.filter = 'brightness(1.25) saturate(1.25)'; return true; })()`,
-        stop: `(() => { const el = document.querySelector('[data-crisp-case]'); el.style.filter = ''; el.style.transition = ''; delete el.dataset.crispCase; return true; })()`
+        what: 'the art\'s filter flash (the Guild Hall taking in loot): its own classes',
+        start: `(() => { const { inner } = ${BACK}; inner.dataset.crispCase = 'true'; inner.style.transitionDuration = '${LONG}ms'; inner.classList.add('brightness-125', 'saturate-125'); return true; })()`,
+        stop: `(() => { const el = document.querySelector('[data-crisp-case]'); el.classList.remove('brightness-125', 'saturate-125'); el.style.transitionDuration = ''; delete el.dataset.crispCase; return true; })()`
     },
     {
         id: 'spawn',
-        what: 'the spawn pop (Web Animations transform) on both its boxes',
-        start: `(() => { const { art, badges } = ${BACK}; const kf = [{ transform: 'translate(-40px, -40px) scale(0.5)' }, { transform: 'translate(0px, 0px) scale(1)' }]; window.__crispCase = [art, badges].map(el => el.animate(kf, { duration: ${LONG}, composite: 'add' })); return true; })()`,
+        what: 'the spawn pop on both its boxes, as spawnMotion.playSpawn plays it',
+        start: `(() => { const { art, badges } = ${BACK}; const kf = [{ transform: 'translate(-40px, -40px) scale(0.5)' }, { transform: 'translate(0px, 0px) scale(1)' }]; window.__crispCase = [art, badges].map(el => { const before = el.style.willChange; el.style.willChange = 'contents'; const a = el.animate(kf, { duration: ${LONG}, composite: 'add' }); a.oncancel = () => { el.style.willChange = before; }; return a; }); return true; })()`,
         stop: `(window.__crispCase?.forEach(a => a.cancel()), window.__crispCase = null, true)`
     },
     {
         id: 'walk',
-        what: 'a walking step (a transform transition, as an enemy walks) on its badges',
-        start: `(() => { const { badges } = ${BACK}; const d = document.createElement('div'); d.id = 'crisp-case'; d.style.cssText = 'position:absolute;left:0;top:0;width:8px;height:8px;transition:transform ${LONG}ms linear'; badges.appendChild(d); d.getBoundingClientRect(); d.style.transform = 'translate(24px, 0px)'; return true; })()`,
-        stop: `(document.getElementById('crisp-case')?.remove(), true)`
+        what: 'an enemy walking (its box\'s transform transition)',
+        start: `(() => { const box = [...document.querySelectorAll('[data-token-art="true"]')].find(el => /translate\\(/.test(el.style.transform || '')); if (!box) return false; box.dataset.crispCase = 'true'; box.dataset.crispWas = box.style.transform; box.style.transition = 'transform ${LONG}ms linear'; const r = box.getBoundingClientRect(); box.style.transform = box.style.transform + ' translate(24px, 0px)'; return { x: r.left - 48, y: r.top - 48, w: r.width + 96, h: r.height + 96 }; })()`,
+        stop: `(() => { const el = document.querySelector('[data-crisp-case]'); el.style.transition = 'none'; el.style.transform = el.dataset.crispWas; delete el.dataset.crispCase; delete el.dataset.crispWas; return true; })()`
     },
     {
         id: 'turn',
@@ -124,12 +137,33 @@ const CASES = [
         stop: `(document.getElementById('crisp-case')?.remove(), true)`
     },
     {
-        id: 'loot',
-        what: 'floor loot bobbing (gi-sprite-hover) in its badges',
-        start: `(() => { const { badges } = ${BACK}; const d = document.createElement('span'); d.id = 'crisp-case'; d.className = 'gi-sprite-hover absolute left-0 top-0'; d.style.cssText = 'width:8px;height:8px'; badges.appendChild(d); return true; })()`,
+        id: 'gear',
+        what: 'a recipe gear pulsing (gi-gear-pulse) in its badges',
+        start: `(() => { const { badges } = ${BACK}; const g = document.createElement('div'); g.id = 'crisp-case'; g.className = 'gi-gear-pulse absolute left-0 top-0'; g.style.cssText += 'width:28px;height:28px;background:#888'; badges.appendChild(g); return true; })()`,
         stop: `(document.getElementById('crisp-case')?.remove(), true)`
+    },
+    {
+        id: 'worked',
+        what: 'a -1 on a worked Token (left on the compositor: drawn in front of every resting Token)',
+        start: CHARGES(`(() => { const el = [...document.querySelectorAll('[data-token-art][data-tile-staffed]')].pop(); return el && { id: el.dataset.tokenId, type: el.dataset.tokenType }; })()`),
+        stop: 'true',
+        settleMs: 3000
+    },
+    {
+        id: 'hero',
+        what: 'a hero walking (a transform transition on a hero, drawn above every Token)',
+        start: `(() => { const h = [...document.querySelectorAll('[data-board-hero]')].pop(); if (!h) return false; h.dataset.crispCase = 'true'; h.dataset.crispWas = h.style.transform || ''; h.style.transition = 'transform ${LONG}ms linear'; const r = h.getBoundingClientRect(); h.style.transform = (h.style.transform || '') + ' translate(24px, 0px)'; return { x: r.left - 48, y: r.top - 48, w: r.width + 96, h: r.height + 96 }; })()`,
+        stop: `(() => { const h = document.querySelector('[data-crisp-case]'); h.style.transition = 'none'; h.style.transform = h.dataset.crispWas; delete h.dataset.crispCase; delete h.dataset.crispWas; return true; })()`
     }
 ];
+
+// Last, after the rest is checked again: real loot thrown on the floor (it stays there).
+const LOOT_CASE = {
+    id: 'loot',
+    what: 'loot thrown on the floor and bobbing (drawn above every Token): SpriteLayer.addSprite',
+    start: `(() => { const G = window.__perf.game; const item = Object.values(G.getAllItems()).find(i => i && i.id && !i.equipSlot); const { art } = ${BACK}; const mat = document.querySelector('[data-board-origin]'); const s = Number(mat.dataset.boardScale); const r = art.getBoundingClientRect(), m = mat.getBoundingClientRect(); G.SpriteLayer.addSprite('item', item.id, 2, { centre: { x: (r.left + r.width / 2 - m.left) / s, y: (r.bottom - m.top) / s + 60 } }); return true; })()`,
+    stop: 'true'
+};
 
 // ---------------------------------------------------------------------------
 // Pixels
@@ -257,7 +291,8 @@ async function main() {
         let layers = 0;
         page.on('LayerTree.layerTreeDidChange', (p) => { layers = (p.layers || []).filter(l => l.drawsContent).length; });
 
-        if (args.neuter.includes('mat')) await page.evaluate(`(document.querySelector('[data-board-origin]').style.willChange = 'auto', true)`);
+        // Every will-change on the mat back to auto (the per-animation guard, and P2-5's on the hit loops).
+        if (args.neuter.includes('anims')) await page.evaluate(`(() => { const s = document.createElement('style'); s.textContent = '[data-board-origin], [data-board-origin] * { will-change: auto !important; }'; document.head.appendChild(s); return true; })()`);
         await sleep(args.settleS * 1000);
         // Labels made later (a spawn) keep their own visibility; the board is frozen below.
         if (args.neuter.includes('labels')) await page.evaluate(`(document.querySelectorAll('[data-token-name]').forEach(el => { el.style.visibility = 'visible'; }), true)`);
@@ -311,18 +346,22 @@ async function main() {
         console.log(`at rest ${restExact} of the ${judged.length} uncovered still Tokens are drawn exactly to their art`);
 
         const rows = [];
-        for (const c of CASES) {
-            await page.evaluate(c.start);
+        const runCase = async (c) => {
+            const started = await page.evaluate(c.start);
+            if (!started) { console.log(`(${c.id}: nothing to animate on this board, skipped)`); return; }
+            const moved = typeof started === 'object' ? started : null;
             await sleep(700);
             const shot = await screenshot(page, args.keep && path.join(args.keep, `${c.id}.png`));
             const caseLayers = layers;
             await page.evaluate(c.stop);
-            const changed = still.filter(t => !samePixels(artPixels(rest1, t), artPixels(shot, t)));
+            const changed = still.filter(t => !(moved && overlaps(t, moved)) && !samePixels(artPixels(rest1, t), artPixels(shot, t)));
             rows.push({ id: c.id, what: c.what, changed: changed.length, exact: exactIn(shot), layers: caseLayers });
-            await sleep(700);
-        }
+            await sleep(700 + (c.settleMs || 0));
+        };
+        for (const c of CASES) await runCase(c);
         const restAgain = await screenshot(page, args.keep && path.join(args.keep, 'rest-end.png'));
         const drift = still.filter(t => !samePixels(artPixels(rest1, t), artPixels(restAgain, t))).length;
+        await runCase(LOOT_CASE);
 
         console.log('');
         console.log('case      still Tokens changed   drawn exactly   composited layers   what');
