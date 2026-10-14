@@ -159,6 +159,9 @@ describe('⭐ a Token that moves changes its own z only', () => {
         // And when b moves past a again, b moves.
         const back = stack.order({ tokens: [{ id: 'a', y: 250 }, { id: 'b', y: 260 }, tokens[2]] });
         expect(changedKeys(after, back)).toEqual(['t:b']);
+        // Moving up the mat past one neighbour, too: c goes behind b.
+        const up = stack.order({ tokens: [{ id: 'a', y: 250 }, { id: 'b', y: 260 }, { id: 'c', y: 255 }] });
+        expect(changedKeys(back, up)).toEqual(['t:c']);
     });
 
     it('a long session on the cap-256 board: a z change or less per change, no spreading', () => {
@@ -182,7 +185,8 @@ describe('⭐ a Token that moves changes its own z only', () => {
 describe('⭐ no clamp: 256 Tokens, 25 Starter Camp sites, the Hall, quests and 8 flags', () => {
     const rnd = mulberry32(5);
     const tokens = Array.from({ length: 256 + 25 + 1 + 3 }, (_, i) => ({ id: `t${i}`, y: Math.floor(rnd() * 1400), placedAt: i }));
-    const flags = Array.from({ length: 8 }, (_, i) => ({ heroId: `h${i}`, y: Math.floor(rnd() * 1400) }));
+    // Flags spread down the mat, the last near the bottom, among the Tokens a clamp would tie.
+    const flags = Array.from({ length: 8 }, (_, i) => ({ heroId: `h${i}`, y: 100 + i * 185 }));
     const workedIds = ['t3', 't40', 't77', 't120', 't199', 't250', 't270', 't283'];
     const input = { tokens, flags, workedIds, hoveredId: 't100' };
     const order = createMatStack().order(input);

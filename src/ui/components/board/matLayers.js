@@ -1,4 +1,3 @@
-
 import { createStackPlaces } from './stackPlaces.js';
 
 /**
@@ -22,8 +21,10 @@ const TOKEN_TOP = 10 + STACK_PLACES * 3;
  * the mat sits above the whole range.
  * Every z below `WAITING_HERO` is set on an element that is a direct stacking sibling of the
  * others (no wrapper with its own z-index), which is what lets a flag slot in between two
- * Tokens. The board's scaled box is the stacking context, so none of these numbers reach
- * anything outside the mat.
+ * Tokens.
+ * ⚠️ The numbers run to about fifty million. They stay inside the mat only because the board's
+ * scaled box (`Board.jsx`, `data-board-origin`, its `transform`) is a stacking context; without
+ * one, every Token would draw over the rest of the game's screens.
  */
 export const MAT_Z = Object.freeze({
     /** The playmat surface itself. */
