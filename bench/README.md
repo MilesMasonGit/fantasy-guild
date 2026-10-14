@@ -479,18 +479,25 @@ T-145: Tokens on the mat twitched and went soft for a moment, again and again. T
 to fit the window, so its sprites stand at fractional screen positions. Painted into the mat's own
 layer they land crisp; but an animation Chrome runs on the compositor gets a layer of its own,
 every sprite drawn after it must then be a layer too (`Overlap`), and Chrome draws them resampled:
-soft, and a pixel off, until the animation ends. Two guards keep the mat in one piece:
-- the mat (`[data-board-origin]`) carries `will-change: contents` (`src/styles/main.css`), so its
-  animations run on the main thread;
+soft, and a pixel off, until the animation ends. Two guards keep the resting Tokens in one piece:
+- every animation that plays among the resting Tokens carries `will-change: contents`, so it runs
+  on the main thread: the landing hop, the transform glow and flash, the quest halo and the gear
+  pulse (one rule in `src/tailwind.css`), a resting Token's art (its filter flash and hop) and an
+  enemy's boxes (`MatToken.jsx`), the spawn pop while it plays (`spawnMotion.js`), and a -1 on a
+  Token no hero works (`TokenBadges.jsx`). What is drawn in front of every resting Token stays on
+  the compositor: a worked Token's -1 and hit loop, a walking hero, floor loot. ⚠️ Not the whole
+  mat: that repainted it on every frame of every animation and cost a third more frame work at 1×;
 - a Token's name label is `invisible` while it is not showing (`TokenBadges.jsx`), so its drop
   shadow (a filter Chrome draws on a layer of its own) is not painted on every Token at rest.
 
 This checks it in Chrome. A stress board is built, settled and **frozen** (the game loop stopped,
 running animations left to finish). Screenshots for 2 s pick the **still** Tokens (drawn the same
-in every one). Then each case starts one of the game's own animations behind them, on the
-back-most Token (a -1 floater, the landing hop, the Hall's filter flash, the spawn pop, a walking
-step, a Token turning into another, a done quest's halo, floor loot bobbing), screenshots, and
-stops it. Two checks: how many still Tokens **changed** a pixel of their art (where their picture
+in every one). Then each case starts one of the game's own animations where the game plays it,
+by the game's own event or classes where it can: on the back-most Token, which every other Token is
+drawn after (a -1 from a real charges event, the landing hop, the art's filter flash, the spawn pop,
+a Token turning into another, a done quest's halo, a pulsing gear), an enemy walking, and in front
+of the resting Tokens (a -1 on a worked Token, a walking hero, real loot thrown on the floor);
+screenshots, and stops it. Two checks: how many still Tokens **changed** a pixel of their art (where their picture
 is opaque: the faint ring at a Token's foot and the mat show through the rest), and how many of the still Tokens
 nothing else covers are **drawn exactly** to their art (98 % of the opaque pixels in the middle of
 the art where nearest-neighbour sampling of the picture puts them). A case fails when it changes
@@ -500,8 +507,8 @@ exact. Not a timing tool: one run is ~1 min and compares pixels only within itse
 | Command | What it does | Exit |
 |---|---|---|
 | `npm run bench:crisp` | perf build, S2, every case | 0 all crisp, 1 a case changed them or the rest is soft, 3 failed |
-| `npm run bench:crisp -- --neuter` | both guards switched off in the page, as `main` was before T-145: shows the fault (2026-10-14, perf build, S2: every case changed 58 of 67 still Tokens and left 0 of 15 exact, layers 29 → 47–49; with the guards on 0–2 of 67 and 14 of 14) | 1 |
-| `--neuter=mat`, `--neuter=labels` | one guard off (mat: every case changes still Tokens, e.g. the floater 14 of 65; labels: 2 of 14 soft at rest, 27 layers at rest against 9) | 1 |
+| `npm run bench:crisp -- --neuter` | both guards switched off in the page (every `will-change` on the mat back to auto, labels painted): shows the fault (2026-10-14, perf build, S2: the cases among the resting Tokens changed 62 of 69 still Tokens, 0 of 15 exact even at rest; with the guards on 0–2 of 67 and 14 of 14) | 1 |
+| `--neuter=anims`, `--neuter=labels` | one guard off (anims: the cases among the resting Tokens change 13 of 68; labels: 2 of 14 soft at rest, 26 layers at rest against 9) | 1 |
 | `--dev --no-build --scene=cap128 --keep=<dir> --settle=10 --verbose` | the dev build; reuse `dist-perf/`; another board; keep the screenshots; each Token's exact share | |
 
 ### `npm run bench:drag`: does dragging always work?
