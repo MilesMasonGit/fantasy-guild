@@ -30,7 +30,7 @@ October 2026.*
 |---|---|---|---|---|---|
 | P2-7 sparse stack order (also the z clamp at 256) | engineer | `crunch/p2-7` → `main` | merged (engine bench same work; boxes rewritten per move 122 → 2 on cap128; on a 256 board every Token keeps its own z, so flags no longer cover lower Tokens: a look fix you will notice, no eye-check) | Wed | Wed |
 | P2-9 drags | engineer | `crunch/p2-9` → `main` | merged (engine bench same work; drag bench level with `main` at 1× and 4× once run order was swapped; pickup renders −20 to −38 %; drags feel the same by design) | Wed | Wed |
-| T-145 Tokens twitch every 20–30 s (P1) | engineer | `fix/t145-twitch` (`t145`) | ready; director gate running; bench-queued (cause: compositor-run mat animations resample the scaled sprites; composited layers on cap128 46 → 14) | Wed | |
+| T-145 Tokens twitch every 20–30 s (P1) | engineer | `fix/t145-twitch` (`t145`) | back to the engineer: gate green and cause proven (compositor-run mat animations resample the scaled sprites), but the whole-board fix costs frame work (+50 % p50 at 1×, +17 % at 4× cap128 in a served A/B against `main`); a narrower per-animation version is being built and measured | Wed–Thu | |
 | P2-10 minimise stops the frame loop (T-117) | builder | `crunch/p2-10` | queued | Thu | |
 | Ruled tweaks: T-147 hover outline, T-148 Hall movable, T-153 gear alert, T-152 drawers, T-158 bubbles | builder-lite, two at a time | `fix/t1xx` each | queued (eye-check: T-147 and T-148 together, one file) | Thu–Fri | |
 | T-182 guard test for ids code depends on | builder-lite | `fix/t182-id-guard` | queued | Thu | |
@@ -61,7 +61,7 @@ it belongs.*
 1. ~~P2-3, P2-6~~ done 13:00–13:05; `main` control run 13:05 shows the same 1.3–1.5× timing against the Oct-7 baseline (machine load: 13 Chrome, 15 Node processes). **Retake `bench/baseline.json` on a quiet machine** (T-111) before timing verdicts mean anything.
 2. ~~P2-5 layer count~~ done 13:45–13:51 (56 → 45).
 3. Wed 13:00: `crunch/p2-7` engine bench `--compare`; `crunch/p2-9` engine bench `--compare`; `bench:drag --board=cap128` on `main` then on `crunch/p2-9` (plain and `--cpu=4`); `bench:draw --ab=.claude/worktrees/p27a --only=cap128,cap256` for P2-7.
-4. ~~P2-7, P2-9 engine and drag benches~~ done 13:00–14:14. Running: `fix/t145-twitch` engine bench and draw A/B against `main`. Still owed to the cost log: P2-7's draw A/B against its snapshot `p27a` (needs the snapshot's perf build served on a port; `--ab` takes a URL).
+4. ~~P2-7, P2-9 engine and drag benches~~ done 13:00–14:14. ~~T-145 engine bench and draw A/B~~ done 14:17–14:35 (engine same work; draw A/B: too costly, sent back). The engineer benches alone until it reports. Still owed to the cost log: P2-7's draw A/B against its snapshot `p27a` (needs the snapshot's perf build served on a port; `--ab` takes a URL).
 4. ~~P2-8, A8 engine benches~~ done 13:13–13:18, same work both. Still for P2-8: `bench:draw --compare` on `main` for the cost-log line.
 5. `main` after the Atlas batch: engine bench `--compare` (expect same work) and the drag bench baseline (`npm run bench:drag`, 5 kinds, A3b) for PERFORMANCE.md.
 
