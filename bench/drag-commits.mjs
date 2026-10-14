@@ -433,8 +433,10 @@ async function main() {
     for (let i = 0; i < roots.length; i++) {
         for (const [k, s] of results[i].entries()) printOne(`${i === 0 ? 'A' : 'B'} run ${k + 1}: ${roots[i]} (${args.scene}, seed ${args.seed})`, s, args.top);
     }
-    // The same drags on every run: the picks' names, in order.
-    const fps = results.flat().map(s => createHash('sha1').update(JSON.stringify(Object.entries(s.kinds).map(([k, v]) => [k, v.whats]))).digest('hex').slice(0, 10));
+    // The same drags on every run: the picks' names, in order. A Token's id carries the clock the
+    // run's seeded engine started from; only its random part names the Token.
+    const named = (what) => what.replace(/tok_\d+_/g, 'tok_');
+    const fps = results.flat().map(s => createHash('sha1').update(JSON.stringify(Object.entries(s.kinds).map(([k, v]) => [k, v.whats.map(named)]))).digest('hex').slice(0, 10));
     console.log(new Set(fps).size > 1 ? `\n⚠️ THE DRAGS DIFFER between runs (picks fingerprint ${fps.join(', ')}, A runs first)` : `\nThe same drags in every run (picks fingerprint ${fps[0]})`);
     if (args.b) {
         const [A, B] = results;

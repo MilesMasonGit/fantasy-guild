@@ -7,6 +7,7 @@ import { render, cleanup, fireEvent, act } from '@testing-library/react';
 import { useDndContext } from '@dnd-kit/core';
 import { DeckDndProvider, DropTarget, useEntityDrag, useActiveDrag } from '../ui/dnd/DndKit.jsx';
 import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
+import { DragGhost } from '../ui/dnd/DragGhost.jsx';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as Flags from '../systems/board/Flags.js';
@@ -168,6 +169,18 @@ describe('⭐ one shared drag source', () => {
 });
 
 describe('⭐ the ghost', () => {
+    it('a Guild Hall in the hand is dimmed with a refusal mark while it is not over the mat; any other Token is drawn plain', () => {
+        const ghost = (typeId) => render(h(DeckDndProvider, null,
+            h(DragGhost, { payload: { kind: DRAG_KIND.TOKEN, typeId }, bold: true }))).container.querySelector('.relative.transition-opacity');
+        const hall = ghost('token_guild_hall');
+        expect(hall.style.opacity).toBe('0.5');
+        expect(hall.querySelector('img[alt="Disallow"]')).not.toBeNull();
+        cleanup();
+        const plain = ghost('fixture_producer');
+        expect(plain.style.opacity).toBe('');
+        expect(plain.querySelector('img[alt="Disallow"]')).toBeNull();
+    });
+
     it('is not redrawn by the pointer moving', () => {
         const { a, container } = scene();
         renders.start();
