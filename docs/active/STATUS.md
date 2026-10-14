@@ -31,7 +31,7 @@ October 2026.*
 | P2-7 sparse stack order (also the z clamp at 256) | engineer | `crunch/p2-7` → `main` | merged (engine bench same work; boxes rewritten per move 122 → 2 on cap128; on a 256 board every Token keeps its own z, so flags no longer cover lower Tokens: a look fix you will notice, no eye-check) | Wed | Wed |
 | P2-9 drags | engineer | `crunch/p2-9` → `main` | merged (engine bench same work; drag bench level with `main` at 1× and 4× once run order was swapped; pickup renders −20 to −38 %; drags feel the same by design) | Wed | Wed |
 | T-145 Tokens twitch every 20–30 s (P1) | engineer | `fix/t145-twitch` → `main` | merged: the guard per animation plus hidden name labels; Tokens pixel-identical while every animation plays; frame work level with `main` at 1× and 4× cap128, 4× in-budget share 66 → 76 %; cost 1× fps 164 → 150 on a 165 Hz screen (director's call, not visible). Possible later spike: heroes and rings off the shared repaint to win those frames back | Wed | Wed |
-| Drawing pauses while the app is minimised (P2-10, T-117) | builder | `crunch/p2-10` (`p2-10`) | ready; director gate green (4772); engine work check queued for the 01:00 window, merges Thu morning. Owner check: minimise the real desktop app once and see the frame counter stop (the Rust side compiles but has not run there) | Wed–Thu | |
+| Drawing pauses while the app is minimised (P2-10, T-117) | builder | `crunch/p2-10` → `main` | merged (work check same; brief 60's P2 slices are all done). Owner check: minimise the real desktop app once and see the frame counter stop (the Rust side compiles but has not run there) | Wed | Wed |
 | Drawers close each other (T-152) | builder-lite | `fix/t152-drawers` → `main` | merged (one hook, one new test; ruled in words, no eye-check) | Wed | Wed |
 | Hover outline + Guild Hall movable again (T-147, T-148, with the outline-clipping fix T-146) | builder | `fix/hover-and-hall` (`hover`) | building (started Wed 17:00); one eye-check | Wed–Thu | |
 | Overlapping speech bubbles (T-158) | builder | `fix/t158-bubbles` (`t158`) | building (started Wed 17:40) | Wed–Thu | |
@@ -109,7 +109,7 @@ Blockers: none.
 **Wed 2026-10-14, evening.** Where we are: merged today the stack order fix,
 the drag redraw savings, the twitch fix (Tokens stay crisp), the cartographer's
 tutorial, the CMS-rename safety net and drawers that close each other; suite
-4772 green. Drawing-pause is built and waits only on the 01:00 work check.
+4772 green. Drawing-pause merged at 16:30, which closes brief 60's P2 slices.
 Building overnight: the hover outline with the Guild Hall movable again (one
 eye-check), and overlapping speech bubbles. Next: the gear alert stops
 pulsing, then Friday's terrain plan. Owner: nothing needed tonight; when you
