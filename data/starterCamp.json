@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "savedAt": "2026-10-14T03:54:26.986Z",
+  "mat": {
+    "w": 1760,
+    "h": 1126
+  },
+  "hall": {
+    "x": 880,
+    "y": 563
+  },
+  "tokens": [
+    {
+      "typeId": "token_oak_forest",
+      "x": 379,
+      "y": 253
+    },
+    {
+      "typeId": "token_copper_mine",
+      "x": 1364,
+      "y": 740
+    }
+  ],
+  "bank": {
+    "item_oak_wood": 20,
+    "item_wheat_seed": 132,
+    "item_apple_seed": 130,
+    "item_oak_seedling": 125
+  }
+}
