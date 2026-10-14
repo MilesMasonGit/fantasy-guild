@@ -35,8 +35,8 @@ the Starter Camp is in [concept_progression.md](concept_progression.md).*
 **done** for now. Build ticket **T-176**. The owner may later have NPCs bring
 boards; this is the design until then.*
 
-- **Three quest boards stand on the mat**, laid out **near the Hall** in a new
-  game (and in the Starter Camp layout). They are **movable**, **can't be
+- **Three quest boards stand on the mat**, **placed by code on free cells near the
+  Hall** in a new game, not in the CMS Starter Camp layout (owner, 2026-10-14). They are **movable**, **can't be
   demolished**, and **count toward the Token cap**.
 - **A board persists**: claiming a quest pays out (the reward drops as loot
   beside the board, as today), and the **board stays**. It **stands blank

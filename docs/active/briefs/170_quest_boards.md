@@ -12,8 +12,8 @@ to engineer if the read-through shows the quest lifecycle refactor is large.
 
 ## Q1 — Boards in the engine
 
-- **Change:** three boards near the Hall in a new game and in the Starter Camp
-  layout: movable, undemolishable, counted toward the cap; claiming pays out
+- **Change:** three boards placed by code on free cells near the Hall in a
+  new game (not in the CMS camp layout, owner 2026-10-14): movable, undemolishable, counted toward the cap; claiming pays out
   beside the board and leaves it blank until the next posting; the bounty cap
   becomes the board count. Replaces the spawn-and-remove quest Tokens
   (`QuestTokens.js`). Fresh saves, no conversion.
@@ -31,5 +31,4 @@ to engineer if the read-through shows the quest lifecycle refactor is large.
 
 ## Owner to-do
 
-- After Q1: place the three boards in the Starter Camp layout in the CMS and
-  re-accept the camp, then Sync on `main`.
+- Eye-check. No CMS work: the game places the boards itself.

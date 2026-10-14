@@ -1,4 +1,4 @@
-Status: draft (interview done 2026-10-13; owner holds approval, 2026-10-14)
+Status: draft (interview done 2026-10-13; owner holds approval until they have played the refinement-pass UI, 2026-10-14)
 
 # Collectors: the Guild Hall and warehouses
 

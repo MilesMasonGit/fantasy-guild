@@ -19,7 +19,7 @@ highlight uses T-153's gold alert outline (wave 2).
 
 - **Change:** the log button with its badge at the top right; toasts slide out
   and back (max 3, mute from a toast); the drop-down log with tabs and Clear
-  log; the three display modes; the Settings Notifications tab (per-kind
+  log; the three display modes (switch in the log's header); the Settings Notifications tab (per-kind
   toggles, the position setting removed); hovering a row outlines its hero or
   Token. The edge sidebar goes.
 - **Measure:** `bench:draw --compare` on a loot-heavy save; cost-log line. No

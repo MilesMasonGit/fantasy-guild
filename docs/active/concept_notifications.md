@@ -67,7 +67,7 @@ The log records everything. Toasts pop out for four kinds:
 
 ## Display modes
 
-A small three-way control beside the button (or in the log's header):
+A small three-way control **in the log's header** (owner, 2026-10-14):
 
 - **All**: pinned items stay out, new toasts pop out.
 - **Pinned only**: pinned items stay out, no new pop-outs; the log still
