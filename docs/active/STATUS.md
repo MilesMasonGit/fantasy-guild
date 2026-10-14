@@ -30,10 +30,10 @@ October 2026.*
 |---|---|---|---|---|---|
 | P2-7 sparse stack order (also the z clamp at 256) | engineer | `crunch/p2-7` → `main` | merged (engine bench same work; boxes rewritten per move 122 → 2 on cap128; on a 256 board every Token keeps its own z, so flags no longer cover lower Tokens: a look fix you will notice, no eye-check) | Wed | Wed |
 | P2-9 drags | engineer | `crunch/p2-9` → `main` | merged (engine bench same work; drag bench level with `main` at 1× and 4× once run order was swapped; pickup renders −20 to −38 %; drags feel the same by design) | Wed | Wed |
-| T-145 Tokens twitch every 20–30 s (P1) | engineer | `fix/t145-twitch` (`t145`) | back to the engineer: gate green and cause proven (compositor-run mat animations resample the scaled sprites), but the whole-board fix costs frame work (+50 % p50 at 1×, +17 % at 4× cap128 in a served A/B against `main`); a narrower per-animation version is being built and measured | Wed–Thu | |
-| P2-10 minimise stops the frame loop (T-117) | builder | `crunch/p2-10` | queued | Thu | |
+| T-145 Tokens twitch every 20–30 s (P1) | engineer | `fix/t145-twitch` → `main` | merged: the guard per animation plus hidden name labels; Tokens pixel-identical while every animation plays; frame work level with `main` at 1× and 4× cap128, 4× in-budget share 66 → 76 %; cost 1× fps 164 → 150 on a 165 Hz screen (director's call, not visible). Possible later spike: heroes and rings off the shared repaint to win those frames back | Wed | Wed |
+| P2-10 minimise stops the frame loop (T-117) | builder | `crunch/p2-10` (`p2-10`) | building (started Wed 16:00) | Wed–Thu | |
 | Ruled tweaks: T-147 hover outline, T-148 Hall movable, T-153 gear alert, T-152 drawers, T-158 bubbles | builder-lite, two at a time | `fix/t1xx` each | queued (eye-check: T-147 and T-148 together, one file) | Thu–Fri | |
-| T-182 guard test for ids code depends on | builder-lite | `fix/t182-id-guard` | queued | Thu | |
+| T-182 guard test for ids code depends on | builder-lite | `fix/t182-id-guard` (`t182`) | building (started Wed 16:00) | Wed–Thu | |
 | Brief 80 T0 terrain plan (read-only; owner's spritesheets are ready) | engineer | `crunch/terrain` | queued | Fri | |
 | Handoff; T-181 baseline retake queued for Sat 01:00 | director / runner | `main` | queued | Sat | |
 | Planning agent briefs this week's concept docs into the queue table | owner + planning | `planning` (`pp`) | in progress alongside (owner's choice) | Wed–Sat | |
