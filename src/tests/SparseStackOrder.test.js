@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { MAT_Z, STACK_PLACES, createMatStack } from '../ui/components/board/matLayers.js';
-import { createStackPlaces } from '../ui/components/board/stackPlaces.js';
 import { createStackWriter } from '../ui/components/board/stackWriter.js';
 
 /**
@@ -222,28 +221,45 @@ describe('⭐ no clamp: 256 Tokens, 25 Starter Camp sites, the Hall, quests and 
 
 describe('when there is no free place left', () => {
     it('a small range still keeps the order, and spreads only a window around the spot', () => {
-        // 64 places for 20 entries: the same spot runs out of room within a few arrivals.
-        const places = createStackPlaces(64);
-        const keys = Array.from({ length: 20 }, (_, i) => ({ key: `k${i}`, sign: '' }));
-        let last = places.place(keys);
-        let list = keys;
+        // 1,024 places for 20 to 30 Tokens: one spot runs out of room within a few arrivals.
+        const stack = createMatStack(1024);
+        let tokens = Array.from({ length: 20 }, (_, i) => ({ id: `k${i}`, y: i * 10 }));
+        let last = stack.order({ tokens });
         let mostMoved = 0;
         for (let i = 0; i < 40; i++) {
-            // A new entry right after the fifth, every time.
-            list = [...list.slice(0, 5), { key: `n${i}`, sign: '' }, ...list.slice(5)];
-            if (list.length > 30) list = list.filter((e, j) => j !== list.length - 1);
-            const next = places.place(list);
-            const seq = list.map(e => next.get(e.key));
-            for (let j = 1; j < seq.length; j++) expect(seq[j]).toBeGreaterThan(seq[j - 1]);
-            expect(Math.min(...seq)).toBeGreaterThanOrEqual(0);
-            expect(Math.max(...seq)).toBeLessThan(64);
-            let moved = 0;
-            for (const e of list) if (last.has(e.key) && last.get(e.key) !== next.get(e.key)) moved++;
-            mostMoved = Math.max(mostMoved, moved);
+            // A new Token just in front of the fifth, behind every earlier arrival; the oldest
+            // of ten arrivals leaves.
+            tokens = [...tokens.filter(t => t.id !== `n${i - 10}`), { id: `n${i}`, y: 49 - i * 0.1 }];
+            const next = stack.order({ tokens });
+            expectRuleOrder(next, { tokens, flags: [], workedIds: [], hoveredId: null });
+            const zs = [...next.tokenZ.values()];
+            expect(Math.min(...zs)).toBeGreaterThanOrEqual(MAT_Z.TOKEN_BASE);
+            expect(Math.max(...zs)).toBeLessThanOrEqual(MAT_Z.TOKEN_BASE + 1023 * 3);
+            mostMoved = Math.max(mostMoved, changedKeys(last, next).length);
             last = next;
         }
-        expect(places.spreads).toBeGreaterThan(0);
-        expect(mostMoved).toBeLessThan(30);
+        expect(stack.spreads).toBeGreaterThan(3);
+        expect(mostMoved).toBeLessThan(15);
+    });
+
+    it('when two Tokens that tie swap in the list, the order still holds and the Token that moved still moves', () => {
+        // a and b stand on one line, placed at once: the input order decides, and it flips here,
+        // so the unchanged Tokens are out of order and the full search runs.
+        const stack = createMatStack();
+        const a = { id: 'a', y: 100, placedAt: 1 };
+        const b = { id: 'b', y: 100, placedAt: 1 };
+        const c = { id: 'c', y: 300 };
+        const d = { id: 'd', y: 400 };
+        const e = { id: 'e', y: 500 };
+        const first = stack.order({ tokens: [a, b, c, d, e] });
+        // c moves just past d (one neighbour), while a and b swap in the list.
+        const tokens = [b, a, { id: 'c', y: 450 }, d, e];
+        const next = stack.order({ tokens });
+        expectRuleOrder(next, { tokens, flags: [], workedIds: [], hoveredId: null });
+        const moved = changedKeys(first, next);
+        expect(moved).toContain('t:c');
+        expect(moved).not.toContain('t:d');
+        expect(moved.length).toBe(2);
     });
 
     it('the mat has room for every Token it could ever hold', () => {

@@ -1,4 +1,4 @@
-import { createStackPlaces } from './stackPlaces.js';
+import { keepPlaces } from './stackPlaces.js';
 
 /**
  * How many places the mat's stack holds: far more than a mat ever has Tokens and flags, so a
@@ -70,8 +70,6 @@ function backToFront(a, b) {
  * rises together; when the work ends the Token drops back into band 1.
  * 3. **The hovered Token**, frontmost, so its own drag, click and right-click listeners are
  * the ones under the pointer.
- * Each entry's `sign` is what put it where it is, so the stack can tell a Token that moved from
- * one that was passed.
  */
 function stackSequence({ tokens = [], flags = [], workedIds = [], hoveredId = null }) {
     const worked = workedIds instanceof Set ? workedIds : new Set(workedIds);
@@ -80,41 +78,46 @@ function stackSequence({ tokens = [], flags = [], workedIds = [], hoveredId = nu
     let hovered = null;
 
     for (const t of tokens) {
-        const entry = { kind: 'token', id: t.id, y: t.y ?? 0, kindRank: 0, tie: t.placedAt ?? 0 };
-        if (hoveredId != null && t.id === hoveredId) hovered = entry;
-        else if (worked.has(t.id)) busy.push(entry);
+        const entry = { flag: false, id: t.id, y: t.y ?? 0, kindRank: 0, tie: t.placedAt ?? 0, band: 0 };
+        if (hoveredId != null && t.id === hoveredId) { entry.band = 2; hovered = entry; }
+        else if (worked.has(t.id)) { entry.band = 1; busy.push(entry); }
         else resting.push(entry);
     }
     flags.forEach((f, i) => {
-        resting.push({ kind: 'flag', id: f.heroId, y: f.y ?? 0, kindRank: 1, tie: i });
+        resting.push({ flag: true, id: f.heroId, y: f.y ?? 0, kindRank: 1, tie: i, band: 0 });
     });
 
     resting.sort(backToFront);
     busy.sort(backToFront);
+    for (const e of busy) resting.push(e);
+    if (hovered) resting.push(hovered);
+    return resting;
+}
 
-    const out = [];
-    const add = (e, band) => {
-        e.key = (e.kind === 'flag' ? 'f:' : 't:') + e.id;
-        e.sign = `${band}|${e.y}|${e.kindRank}|${e.tie}`;
-        out.push(e);
-    };
-    for (const e of resting) add(e, 0);
-    for (const e of busy) add(e, 1);
-    if (hovered) add(hovered, 2);
-    return out;
+/** Whether an entry stands where it stood when its place was last given. */
+const stoodStill = (r, e) => r.band === e.band && r.y === e.y && r.tie === e.tie;
+
+/** Remembers what an entry was sorted by. */
+function note(r, e) {
+    r.band = e.band;
+    r.y = e.y;
+    r.tie = e.tie;
 }
 
 /**
  * The mat's stack, kept from one render to the next. Each Token and flag keeps its place while
  * nothing passes it, so a Token that arrives, leaves, moves, is hovered or starts work changes
- * its own z and no one else's. The answer is the same object while no z changes, and each of
- * its maps is kept while none of its own z change, so memoised layers are not redrawn for a
- * new map with the same contents.
+ * its own z and no one else's (`stackPlaces.js`). The answer is the same object while no z
+ * changes, and each of its maps is kept while none of its own z change, so memoised layers are
+ * not redrawn for a new map with the same contents.
  */
 export function createMatStack(size = STACK_PLACES) {
-    const places = createStackPlaces(size);
-    let lastPlaces = null;
+    /** Token id → its place and what it was sorted by; flags the same, by hero id. */
+    let tokenAt = new Map();
+    let flagAt = new Map();
     let last = null;
+    let spreads = 0;
+
     return {
         /**
          * @param {{tokens?: {id: string, y: number, placedAt?: number}[], flags?: {heroId: string,
@@ -124,20 +127,66 @@ export function createMatStack(size = STACK_PLACES) {
          */
         order(input = {}) {
             const seq = stackSequence(input);
-            const placeOf = places.place(seq);
-            if (last && placeOf === lastPlaces) return last;
-            const tokenZ = new Map();
-            const flagZ = new Map();
-            for (const e of seq) (e.kind === 'flag' ? flagZ : tokenZ).set(e.id, placeZ(placeOf.get(e.key)));
-            last = {
-                tokenZ: last && sameMap(last.tokenZ, tokenZ) ? last.tokenZ : tokenZ,
-                flagZ: last && sameMap(last.flagZ, flagZ) ? last.flagZ : flagZ
-            };
-            lastPlaces = placeOf;
+            const n = seq.length;
+            const recs = new Array(n);
+            let found = 0;
+            let inOrder = true;
+            let prev = -1;
+            for (let i = 0; i < n; i++) {
+                const e = seq[i];
+                const r = (e.flag ? flagAt : tokenAt).get(e.id);
+                recs[i] = r;
+                if (r === undefined) { inOrder = false; continue; }
+                found++;
+                if (r.place <= prev) inOrder = false;
+                prev = r.place;
+            }
+            const sameMembers = found === n && tokenAt.size + flagAt.size === n;
+            if (last && sameMembers && inOrder) {
+                // Nobody passed anybody: the same answer.
+                for (let i = 0; i < n; i++) note(recs[i], seq[i]);
+                return last;
+            }
+
+            const old = new Array(n);
+            const same = new Uint8Array(n);
+            for (let i = 0; i < n; i++) {
+                if (recs[i] === undefined) continue;
+                old[i] = recs[i].place;
+                same[i] = stoodStill(recs[i], seq[i]) ? 1 : 0;
+            }
+            const { places, spread } = keepPlaces(old, same, size);
+            if (spread) spreads++;
+
+            // Same members: only the entries that moved change, in copies of the last maps.
+            const copy = last && sameMembers;
+            const nextTokens = copy ? tokenAt : new Map();
+            const nextFlags = copy ? flagAt : new Map();
+            let tokenZ = copy ? null : new Map();
+            let flagZ = copy ? null : new Map();
+            for (let i = 0; i < n; i++) {
+                const e = seq[i];
+                let r = recs[i];
+                if (r === undefined) r = recs[i] = { flag: e.flag, id: e.id, place: -1 };
+                note(r, e);
+                const moved = r.place !== places[i];
+                r.place = places[i];
+                if (copy) {
+                    if (!moved) continue;
+                    if (e.flag) (flagZ ??= new Map(last.flagZ)).set(e.id, placeZ(r.place));
+                    else (tokenZ ??= new Map(last.tokenZ)).set(e.id, placeZ(r.place));
+                } else {
+                    (e.flag ? nextFlags : nextTokens).set(e.id, r);
+                    (e.flag ? flagZ : tokenZ).set(e.id, placeZ(r.place));
+                }
+            }
+            tokenAt = nextTokens;
+            flagAt = nextFlags;
+            last = { tokenZ: tokenZ ?? last.tokenZ, flagZ: flagZ ?? last.flagZ };
             return last;
         },
         /** How many times part of the stack had to be spread out to make room (rare). */
-        get spreads() { return places.spreads; }
+        get spreads() { return spreads; }
     };
 }
 
@@ -148,13 +197,6 @@ export function createMatStack(size = STACK_PLACES) {
  */
 export function matStackOrder(input = {}, stack = createMatStack()) {
     return stack.order(input);
-}
-
-function sameMap(a, b) {
-    if (a === b) return true;
-    if (a.size !== b.size) return false;
-    for (const [k, v] of a) if (b.get(k) !== v) return false;
-    return true;
 }
 
 /**
