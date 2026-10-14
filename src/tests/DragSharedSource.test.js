@@ -20,6 +20,7 @@ import { resetMatTuning } from '../config/matTuning.js';
 import { matW, matH } from '../config/matGeometry.js';
 import { Board } from '../ui/components/board/Board.jsx';
 import { BottomHeroDock } from '../ui/components/dock/BottomHeroDock.jsx';
+import { BankHeroPanel } from '../ui/components/dock/BankHeroPanel.jsx';
 import { setLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
 import { placeAt, clearMat } from './fixtures/mat.js';
 
@@ -331,6 +332,29 @@ describe('⭐ the hero bar after a drop', () => {
         expect(fig('h2').getAttribute('data-dock-hover')).toBe('false');
         await wait(300);
         expect(fig('h2').getAttribute('data-dock-hover')).toBe('true');
+    });
+
+    it('the hero column beside the Bank: a drag ending redraws no tab but in the drag\'s own commits, and a tab hovered in the 320 ms shows its tip only after them', async () => {
+        GameState.state.heroes = ['h1', 'h2', 'h3'].map(hero);
+        const view = render(
+            h(EngineContext.Provider, { value: engine },
+                h(DeckDndProvider, null, h(Item), h(BankHeroPanel, { selectedHeroId: 'h1', showTabs: true, menuRight: false })))
+        );
+        view.getByTestId('item-src').getBoundingClientRect = () => box(0, 0, 50, 50);
+        const tabs = view.container.querySelectorAll('[data-hero-tab-face]');
+        expect(tabs.length).toBe(3);
+        renders.start();
+        await dragAway(view.getByTestId);
+        await wait(400);
+        renders.stop();
+        const own = (c) => c.has('DeckDndProvider') || c.has('DndContext');
+        expect(renders.commits().filter(c => c.has('HeroDockTab') && !own(c))).toHaveLength(0);
+        await dragAway(view.getByTestId);
+        await wait(100);
+        fireEvent.mouseEnter(tabs[1]);
+        expect(document.querySelector('[data-top-bar-tip]')).toBeNull();
+        await wait(350);
+        expect(document.querySelector('[data-top-bar-tip]')).not.toBeNull();
     });
 
     it('a figure first hovered just after a drop lifts only when the 320 ms are up', async () => {
