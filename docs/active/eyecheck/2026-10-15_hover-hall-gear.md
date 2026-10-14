@@ -4,7 +4,7 @@
 answer in chat). Fixes go on the branch, it merges, and this file moves to
 `docs/archive/eyecheck/` with your verdicts. Every check is by clicking.*
 
-**Branch:** `fix/hover-and-hall` (= `main` + the three hover/Hall tickets).
+**Branch:** `fix/hover-and-hall` (= `main` + the three hover/Hall tickets + the gear alert).
 Switch with:
 
 ```bash
@@ -45,9 +45,16 @@ outline sheets (a few seconds).
 6. **Click the Hall.** Its card says it cannot be demolished and has no
    Demolish button.
    Verdict: ok / change: ___
-7. **The gear alert** (filled in when its branch is ready): a station waiting
-   for a recipe shows a one-pixel gold outline that steps between two golds;
-   nothing pulses, scales or glows.
+7. **The gear alert.** QA panel, Clear the board, type `token_wood_foundation`
+   in the Place box, Place. The gear on the Foundation holds still, with a
+   thin gold edge whose colour steps between yellow-gold and pale gold about
+   every 0.8 s; no swell, no glow. Hover it: it does not grow. Known
+   limitation: the gear is drawn at three-quarters of its art size, so the
+   edge is thinner than one screen pixel; if it reads too thin, say so and the
+   gear gets drawn at full size on a later pass.
+   Verdict: ok / change: ___
+8. **Choose a recipe** on that Foundation. The gold edge goes, and the gear
+   grows slightly on hover again as before.
    Verdict: ok / change: ___
 
 ## Not changed, your call later
