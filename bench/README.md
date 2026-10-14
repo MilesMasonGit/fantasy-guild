@@ -473,6 +473,30 @@ times from `bench:draw`.
 Raw files for DevTools (`.trace.json`, `.cpuprofile`) and a `.summary.json` go to
 `bench/results/profile/`.
 
+### `npm run bench:crisp`: do still Tokens stay crisp while something animates?
+
+T-145: Tokens on the mat twitched and went soft for a moment, again and again. The mat is scaled
+to fit the window, so its sprites stand at fractional screen positions. Painted into the mat's own
+layer they land crisp; but an animation Chrome runs on the compositor gets a layer of its own,
+every sprite drawn after it must then be a layer too (`Overlap`), and Chrome draws those layers
+resampled at their fractional offsets: soft, and a pixel off, until the animation ends. The mat
+(`[data-board-origin]`) carries `will-change: contents` (`src/styles/main.css`) so its animations
+run on the main thread and never split it into layers.
+
+This checks it in Chrome. A stress board is built, settled and **frozen** (the game loop stopped,
+running animations left to finish). Screenshots for 2 s pick the **still** Tokens (drawn the same
+in every one). Then each case starts one of the game's own animations behind them, on the
+back-most Token (a -1 floater, the landing hop, the Hall's filter flash, the spawn pop, a walking
+step, floor loot bobbing), screenshots, and stops it. A case fails when it changes more than 5 %
+of the still Tokens; the composited layer count is printed beside it. Not a timing tool: one run is
+~1 min and compares pixels only within itself.
+
+| Command | What it does | Exit |
+|---|---|---|
+| `npm run bench:crisp` | perf build, S2, every case | 0 all crisp, 1 a case changed them, 3 failed |
+| `npm run bench:crisp -- --neuter` | the mat's `will-change: contents` switched off in the page: shows the fault (every case moved ~64 of ~67 still Tokens, layers 29 → 50 on 2026-10-14) | 1 |
+| `--dev --no-build --scene=cap128 --keep=<dir> --settle=10` | the dev build; reuse `dist-perf/`; another board; keep the screenshots | |
+
 ### `npm run bench:drag`: does dragging always work?
 
 On a busy S2 mat, N **real drags** of each kind, sent as browser input
