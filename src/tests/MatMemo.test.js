@@ -19,7 +19,7 @@ import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { MatHero } from '../ui/components/board/MatHero.jsx';
 import { MatRings } from '../ui/components/board/MatRings.jsx';
 import { CalloutLayer } from '../ui/components/board/CalloutLayer.jsx';
-import { matStackOrder, sameStackOrder } from '../ui/components/board/matLayers.js';
+import { createMatStack } from '../ui/components/board/matLayers.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -67,13 +67,22 @@ describe('⭐ the mat components are memoised', () => {
 });
 
 describe('⭐ stable stacking maps', () => {
-    it('the same ranks give the same answer; a changed rank does not', () => {
-        const a = matStackOrder({ tokens: [{ id: 't1', y: 1 }, { id: 't2', y: 2 }], flags: [{ heroId: 'h', y: 0 }] });
-        const b = matStackOrder({ tokens: [{ id: 't1', y: 1 }, { id: 't2', y: 2 }], flags: [{ heroId: 'h', y: 0 }] });
-        expect(sameStackOrder(a, b)).toBe(true);
-        const c = matStackOrder({ tokens: [{ id: 't1', y: 3 }, { id: 't2', y: 2 }], flags: [{ heroId: 'h', y: 0 }] });
-        expect(sameStackOrder(a, c)).toBe(false);
-        expect(sameStackOrder(null, a)).toBe(false);
+    it('the same order gives the same answer; a changed place gives a new map of that kind only', () => {
+        const stack = createMatStack();
+        const flags = [{ heroId: 'h', y: 0 }];
+        const a = stack.order({ tokens: [{ id: 't1', y: 1 }, { id: 't2', y: 2 }], flags });
+        // A fresh input with the same order, and a Token that moved without passing anyone.
+        expect(stack.order({ tokens: [{ id: 't1', y: 1 }, { id: 't2', y: 2 }], flags: [{ heroId: 'h', y: 0 }] })).toBe(a);
+        expect(stack.order({ tokens: [{ id: 't1', y: 1.5 }, { id: 't2', y: 2 }], flags })).toBe(a);
+        // t1 passes t2: the Tokens' map is new, the flags' map is kept.
+        const c = stack.order({ tokens: [{ id: 't1', y: 3 }, { id: 't2', y: 2 }], flags });
+        expect(c).not.toBe(a);
+        expect(c.tokenZ).not.toBe(a.tokenZ);
+        expect(c.flagZ).toBe(a.flagZ);
+        // The flag passes both: the Tokens' map is kept.
+        const d = stack.order({ tokens: [{ id: 't1', y: 3 }, { id: 't2', y: 2 }], flags: [{ heroId: 'h', y: 9 }] });
+        expect(d.tokenZ).toBe(c.tokenZ);
+        expect(d.flagZ).not.toBe(c.flagZ);
     });
 });
 

@@ -273,9 +273,9 @@ describe('⭐ a Token drag on a full mat redraws the Token in the hand and nothi
     });
 });
 
-describe('⭐ re-ranking the stack redraws no Token: their z is written, not rendered', () => {
-    // Back to front: the flag, A, B, D, C. Hovering A lifts it to the front, which moves every
-    // Token after it down a rank; dropping A lower on the mat moves B and D down a rank.
+describe('⭐ re-stacking redraws no Token: their z is written, not rendered, and only the moved one changes', () => {
+    // Back to front: the flag, A, B, D, C. Hovering A lifts it to the front and dropping A lower
+    // on the mat puts it between D and C; B, D and C keep their own z throughout.
     function scene() {
         // A hero who cannot work these Tokens, so none rises into the worked band.
         GameState.state.heroes = [{
@@ -303,17 +303,19 @@ describe('⭐ re-ranking the stack redraws no Token: their z is written, not ren
 
     it('hovering a Token lifts it to the front and redraws only it', () => {
         const { a, b, c, d, container } = scene();
+        const zBefore = [b, c, d].map(t => zOf(container, t.id));
         const before = snap();
         act(() => { fireEvent.pointerMove(container.querySelector('[data-mat-board]'), { clientX: 600, clientY: 400 }); });
         expect(container.querySelector(`[data-token-art][data-token-id="${a.id}"]`).getAttribute('data-outline')).toBe('hover');
         for (const t of [b, c, d]) expect(zOf(container, a.id)).toBeGreaterThan(zOf(container, t.id));
+        expect([b, c, d].map(t => zOf(container, t.id))).toEqual(zBefore);
         const dd = delta(drawn.token, before.token);
         expect(dd[b.id]).toBe(0);
         expect(dd[c.id]).toBe(0);
         expect(dd[d.id]).toBe(0);
     });
 
-    it('picking up the hovered Token redraws only it, though every Token after it changes rank', () => {
+    it('picking up the hovered Token redraws only it, and every other Token keeps its z', () => {
         const { a, b, c, d, container } = scene();
         act(() => { fireEvent.pointerMove(container.querySelector('[data-mat-board]'), { clientX: 600, clientY: 400 }); });
         const zBefore = [b, d, c].map(t => zOf(container, t.id));
@@ -323,9 +325,9 @@ describe('⭐ re-ranking the stack redraws no Token: their z is written, not ren
             fireEvent.pointerMove(document, ptr(630, 400));
         });
         expect(document.body.classList.contains('gi-dnd-active')).toBe(true);
-        // The hover is gone, so A is back in its place and B, D and C each moved up a rank.
+        // The hover is gone, so A is back in its place, behind B; B, D and C did not move.
         expect(zOf(container, a.id)).toBeLessThan(zOf(container, b.id));
-        expect([b, d, c].map(t => zOf(container, t.id))).not.toEqual(zBefore);
+        expect([b, d, c].map(t => zOf(container, t.id))).toEqual(zBefore);
         const dd = delta(drawn.token, before.token);
         expect(dd[b.id]).toBe(0);
         expect(dd[c.id]).toBe(0);
@@ -340,6 +342,7 @@ describe('⭐ re-ranking the stack redraws no Token: their z is written, not ren
             fireEvent.pointerMove(document, ptr(630, 400));
         });
         act(() => { fireEvent.pointerMove(document, ptr(700, 800)); });
+        const zBefore = [b, c, d].map(t => zOf(container, t.id));
         const before = snap();
         // Async: the mat hears of the move through the engine's events, a microtask later.
         await act(async () => { fireEvent.pointerUp(document, ptr(700, 800)); });
@@ -349,6 +352,7 @@ describe('⭐ re-ranking the stack redraws no Token: their z is written, not ren
         expect(zOf(container, d.id)).toBeLessThan(zOf(container, a.id));
         expect(zOf(container, a.id)).toBeLessThan(zOf(container, c.id));
         for (const t of [a, b, c, d]) expect(zOfBadges(container, t.id)).toBe(zOf(container, t.id) + 2);
+        expect([b, c, d].map(t => zOf(container, t.id))).toEqual(zBefore);
         const dd = delta(drawn.token, before.token);
         expect(dd[a.id]).toBeGreaterThan(0);
         expect(dd[b.id]).toBe(0);

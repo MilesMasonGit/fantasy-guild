@@ -730,6 +730,98 @@ onto the tick would shift when a bubble hides by up to 100 ms, a look change, so
 **Not measured yet**: the perf-build frame cost (`bench:draw --ab`, `bench:profile` for React's
 scheduler ms a second, 37 at 4× in P1) waits for a bench window.
 
+### P2-7 result: sparse stack order (2026-10-14)
+
+**Measured first** (new tool, `node bench/stack-writes.mjs`, bench/README.md: cap128 and cap256 in
+the dev build; 300 ticks driven with the same deterministic engine as `tick-commits.mjs`, then 60
+hovers by real mouse moves onto Tokens spread over the mat, then 30 Tokens moved through
+`Placement.moveTokenTo` to the point mirrored top to bottom; a MutationObserver counts every
+Token, badge, flag and hero box whose z-index changes). On `main` (`3919da18`), cap128 (130 Tokens
+and 8 flags): a hover rewrote 31 boxes on average and up to 276 (every Token in front of the
+hovered one moved down a rank, and back up when the hover left); a move rewrote 122 on average
+and up to 252 and redrew 3 flags; a tick at the cap rewrote nothing most of the time, but up to
+274 boxes when a spawn or a used-up Token near the back re-ranked everything in front of it. cap256
+(258 and 8): the clamp, 266 boxes on 217 z values with 50 sharing one; a move rewrote 235 boxes on
+average and up to 412.
+
+**What changed**: each Token and flag holds a place in a range of 2^24 (`stackPlaces.js`), which
+the mat keeps from one render to the next (`createMatStack` in `matLayers.js`, held by
+`MatBoard`). The order is the same rule as before, three bands back to front; only the numbers are
+new. On a change every place whose order still holds is kept (the most that can be, and among
+equals the entries that did not themselves move, so the Token that moved takes the new place, not
+the neighbour it passed), and the moved, new or hovered one takes a free place between its new
+neighbours. Places start spread evenly; when two neighbours have no free place between them, a
+window around the spot is spread out again, just wide enough to leave room (never in measured play:
+0 in 100,000 random changes on 280 Tokens). There is no clamp. The mat's other layers (waiting and
+walking heroes, rings, loot, callouts, speech bubbles, the disallow edge) moved above the range, in
+the same order; the board's scaled box keeps all of it inside the mat. The stack writer remembers
+what it wrote. `sameStackOrder` is gone: the stack hands back the same answer while nothing moved,
+and keeps the Tokens' or the flags' map while none of its own z changed.
+
+**Measured** (`stack-writes --a=<main> --b=<branch> --trace`, A,B,B,A for each board, run twice, the
+second time on the committed code; every count was the same in all runs of a side, and every run
+did the same work: the ticks' 1,395 / 1,933 engine events with the same fingerprint, every moved
+Token landing in the same place):
+
+| | cap128 before → after | cap256 before → after |
+|---|---|---|
+| Boxes rewritten per hover (mean / most) | 31.3 / 276 → 4.0 / 5 | 19.2 / 412 → 3.9 / 5 |
+| per move | 122.4 / 252 → 2.0 / 3 | 235.3 / 412 → 2.0 / 2 |
+| per tick | 3.22 / 274 → 0.03 / 3 | 3.90 / 359 → 0.39 / 3 |
+| Flags redrawn per move | 3.03 → 0 | 2.75 → 0 |
+| Flags / heroes redrawn per hover | 0.97 / 0.95 → 0.17 / 0.20 | 0.37 / 0.18 → 0.43 / 0.08 |
+| Component renders per move | 33.0 → 17.0 | 30.3 → 16.4 |
+| Component renders per tick | 3.38 → 2.70 | 6.15 → 5.74 |
+| Tokens and flags on distinct z | 138 of 138 → 138 of 138 | 266 on 217 (50 tied) → 266 of 266 |
+
+Four boxes per hover are the Token the hover left going back (its art and badges) and the new one
+rising (its two); five when a worked Token's hero rises with it. Two per move are the moved Token's
+boxes (three with its hero). The flags redrawn per hover on cap256 rise a little (0.37 → 0.43): likely
+because a flag's cloth in the bottom rows now takes the pointer where it is drawn in front of a
+Token, as it does everywhere else, which flips the flags' pointer setting (reasoned, not traced).
+**Elements Chrome restyled** (`--trace`, net of a quiet window as long; noisy): cap128 per hover
+90 → 64, per move 646 → 575; most of what is left is the hovered Token's hop and the moved Token's
+220 ms slide (a drop has no slide), which this slice does not touch. On cap256 the difference was
+inside the noise (per hover 97–122 before, 128–133 after; per move 758–863 → 720–730). **The order's
+own cost** (node, 2,000 calls each, a few runs, before → after): nothing moved 26–34 → 20–33 µs
+(130 Tokens), 54–60 → 43–50 µs (258); a hover 26–34 → 33–36 µs, 54–60 → 69–88 µs. A hover now costs
+the order up to ~30 µs more at 1× on the 256 board, against the 15–27 box rewrites and their flag
+and hero redraws it saves.
+
+**In the game** (dev build, `?stress=cap256`): 257 Tokens and 8 flags on 265 distinct z values; a hover
+on a Token in the bottom rows rewrote that Token's two boxes only. Screenshots of the same
+deterministic cap256 board on both builds, cropped where a flag in the bottom rows overlaps a rock
+standing lower on the mat: before, the flag and the rock shared z 634 and the flag, later in the page,
+was drawn over the rock; after, the rock is in front. On the 128 board nothing on screen changes (no
+ties there before). Reasoned: in the formerly tied rows the badges and bubbles of a Token further back
+no longer draw over the art of a Token in front.
+
+**Guards**: `SparseStackOrder.test.js`: the order is the rule, every pair, on 60 random boards of 10
+to 300 Tokens and up to 8 flags through 40 changes each (ties on purpose); a moved, hovered, worked,
+spawned Token or a moved flag changes only its own z (30 boards × 60 changes, no spreading); passing
+one neighbour either way moves the Token that moved; 5,000 changes on a 290-Token board, under one z
+change each; 256 Tokens + 25 sites + the Hall + 3 quests + 8 flags all on their own z, worked above
+everything at rest, hovered on top, a flag never over a Token lower on the mat; a range of 1,024
+places with arrivals at one spot keeps the order and spreads 6–14 of 30; two tied Tokens swapping in
+the list (the full search) still move only the Token that moved; the writer writes two boxes for one
+moved Token and nothing for an unchanged order. Neutered and caught: places given afresh on every
+change (11 tests fail, the `DragRedraws` hover, pickup and drop among them), a clamp (11), no notion of
+which entry moved (2), no widening (1), a writer that always writes (1). **Rewritten for the design
+change**: in `MatLayering.test.js` the dense-rank tests (first z exactly 10, flags exactly 3 above,
+`tokenZ(1e6)`, "under the cap every z is exactly what it was") and the clamp test (now "a hero
+starting work moves only the Token it works"); in `MatMemo.test.js` `sameStackOrder` (now the kept
+stack's identity); in `DragRedraws.test.js` "every Token after it changes rank" (now "keeps its z").
+
+**Worst case**, simulated: a conveyor (every new Token lower on the mat than all others while the
+oldest leaves) runs out of room at the front about every 24 arrivals; on 280 Tokens it rewrites 13
+boxes per change on average (dense ranks: about 280). Nothing in the game moves like that.
+
+**Not done by it**: the mat's own re-render count (`MatBoard`, which P2-8 listed under P2-7) is
+unchanged: MatBoard renders when the mat's Tokens, heroes or flags change, and the stack order is a
+few tens of microseconds of that render. **Not measured yet**: the perf-build frame cost
+(`bench:draw --ab=<main> --only=cap128,cap256` and `bench:drag --board=cap128`) waits for a bench
+window.
+
 ### Owner questions
 
 1. **Which board must be smooth?**
@@ -770,7 +862,7 @@ scheduler ms a second, 37 at 4× in P1) waits for a bench window.
   256. The order has 226 ranks (`TOKEN_SPAN`, `:39`); 256 Tokens plus 8 flags
   overflow it, the resting Tokens past rank 208 share one z, and page order
   decides between them: flags (drawn after the Tokens) then cover every clamped
-  Token whatever their place on the mat. P2-7 fixes it.
+  Token whatever their place on the mat. Fixed by P2-7: every Token and flag has its own place.
 - T-131: on the bench boards the beacons' targets are missing, so the per-frame
   cost is a whole-document `querySelector` per beacon, not a box read.
 - `tailwind.css` (the charge floater, the loot bob): "on the compositor" means no

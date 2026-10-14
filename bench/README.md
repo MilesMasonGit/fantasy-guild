@@ -609,3 +609,28 @@ commits by what woke them.
 | `node bench/tick-commits.mjs` | this checkout, S2, 150 ticks to settle, 600 measured | ~4 min |
 | `node bench/tick-commits.mjs --a=<before> --b=<after>` | two checkouts, A,B,B,A, each on its own dev server and Vite cache | ~13 min |
 | `--scene=cap128 --ticks=300 --settle=100 --seed=2 --top=40 --dump=60` | any `?stress=` board; ticks; rows; the first commits of each window, one by one | |
+
+### `node bench/stack-writes.mjs`: how much of the mat's stack a tick, a hover or a move rewrites
+
+How many Token, badge, flag and hero boxes change their z-index, on a stress board in the **dev
+build**: per engine tick, per hover (the pointer moved from one Token onto another) and per Token
+moved (through `Placement.moveTokenTo`, as a drop moves it). A MutationObserver on the mat sees
+every style write; a box whose z-index after a batch of writes differs from before is one change,
+and a box's first z (a Token or hero arriving) is not one. React renders by component are counted
+as `tick-commits.mjs` counts them, and `--trace` adds the elements Chrome restyled while hovering
+and while moving, net of a window as long with nothing done.
+
+Three phases on one board, the loop stopped throughout: **ticks** (driven by the tool, the same
+deterministic engine as `tick-commits.mjs`, events fingerprinted); **hovers** (real mouse moves
+from the browser onto the centres of Tokens spread over the mat, back to front); **moves** (Tokens
+spread over the mat, each to the point mirrored top to bottom; refused moves are not counted).
+It also prints the **census**: how many Tokens and flags the mat holds and on how many distinct z
+values (any that share a z are tied, and page order decides between them). Counts are exact run
+to run (the work check compares the ticks' fingerprint and where every moved Token landed); no
+milliseconds are taken.
+
+| Command | What it does | Time |
+|---|---|---|
+| `node bench/stack-writes.mjs` | this checkout, cap128, 100 ticks to settle, 300 measured, 60 hovers, 30 moves | ~3 min |
+| `node bench/stack-writes.mjs --a=<before> --b=<after>` | two checkouts, A,B,B,A, each on its own dev server and Vite cache | ~12 min |
+| `--scene=cap256 --trace --gap=120 --runs=2` | any `?stress=` board; restyled elements; ms after each hover or move; runs | |
