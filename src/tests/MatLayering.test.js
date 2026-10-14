@@ -15,7 +15,7 @@ import { EngineContext } from '../ui/context/EngineContext';
 import { resetMatTuning } from '../config/matTuning.js';
 import { matW, matH } from '../config/matGeometry.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
-import { MAT_Z, TOKEN_SPAN, tokenZ, matStackOrder, heroZ } from '../ui/components/board/matLayers.js';
+import { MAT_Z, STACK_PLACES, placeZ, matStackOrder, createMatStack, heroZ } from '../ui/components/board/matLayers.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -63,8 +63,9 @@ describe('matStackOrder — the rule', () => {
         const { tokenZ: tz, flagZ: fz } = matStackOrder({
             tokens: [{ id: 'a', y: 100 }], flags: [{ heroId: 'h1', y: 200 }]
         });
-        expect(fz.get('h1') - tz.get('a')).toBe(3);
-        expect(tz.get('a')).toBe(MAT_Z.TOKEN_BASE);
+        expect(fz.get('h1') - tz.get('a')).toBeGreaterThanOrEqual(3);
+        expect((fz.get('h1') - tz.get('a')) % 3).toBe(0);
+        expect(tz.get('a')).toBeGreaterThanOrEqual(MAT_Z.TOKEN_BASE);
     });
 
     it('ties: a flag in front of a Token on the same line; earlier placed or planted behind', () => {
@@ -99,11 +100,12 @@ describe('matStackOrder — the rule', () => {
     });
 
     it('stays below the heroes-on-the-move band, however many things are on the mat', () => {
-        const tokens = Array.from({ length: TOKEN_SPAN + 20 }, (_, i) => ({ id: `t${i}`, y: i }));
+        const tokens = Array.from({ length: 400 }, (_, i) => ({ id: `t${i}`, y: i }));
         const { tokenZ: tz } = matStackOrder({ tokens, workedIds: ['t0'], hoveredId: 't1' });
         const top = Math.max(...tz.values());
         expect(top + 2).toBeLessThan(MAT_Z.WAITING_HERO);
-        expect(tokenZ(1e6)).toBe(top);
+        // The last place there is, and its badges, still sit below.
+        expect(placeZ(STACK_PLACES - 1) + 2).toBeLessThan(MAT_Z.WAITING_HERO);
     });
 });
 
@@ -130,23 +132,18 @@ describe('⭐ CR3-354: a busy mat (S3 size) keeps worked and hovered Tokens in f
         expect(top + 2).toBeLessThan(MAT_Z.WAITING_HERO);
     });
 
-    it('a hero starting work does not re-rank the Tokens tied at the clamp (no mass redraw)', () => {
-        const more = matStackOrder({ tokens, flags, workedIds: [...workedIds, 't10'], hoveredId: 't300' });
-        const clamped = tokens.filter(t => tz.get(t.id) === Math.max(...restingZ) && t.id !== 't10');
-        expect(clamped.length).toBeGreaterThan(50);
-        // Only the one at the clamp's edge steps down into the rank t10 left.
-        const moved = clamped.filter(t => more.tokenZ.get(t.id) !== tz.get(t.id));
-        expect(moved.length).toBeLessThanOrEqual(1);
+    it('no Token or flag shares a z: nothing is clamped, so page order never decides', () => {
+        expect(new Set([...tz.values(), ...fz.values()]).size).toBe(tokens.length + flags.length);
     });
 
-    it('under the cap, every z is exactly what it was (dense ranks)', () => {
-        const small = Array.from({ length: 50 }, (_, i) => ({ id: `s${i}`, y: i }));
-        const { tokenZ: sz } = matStackOrder({ tokens: small, workedIds: ['s3'], hoveredId: 's7' });
-        const ranksOf = (id) => (sz.get(id) - MAT_Z.TOKEN_BASE) / 3;
-        expect(ranksOf('s0')).toBe(0);
-        expect(ranksOf('s49')).toBe(47);   // 48 resting: 0…47
-        expect(ranksOf('s3')).toBe(48);    // then the worked one
-        expect(ranksOf('s7')).toBe(49);    // then the hovered one
+    it('a hero starting work moves only the Token it works (no mass redraw)', () => {
+        const stack = createMatStack();
+        const before = stack.order({ tokens, flags, workedIds, hoveredId: 't300' });
+        const after = stack.order({ tokens, flags, workedIds: [...workedIds, 't10'], hoveredId: 't300' });
+        const moved = tokens.filter(t => after.tokenZ.get(t.id) !== before.tokenZ.get(t.id)).map(t => t.id);
+        expect(moved).toEqual(['t10']);
+        expect(after.flagZ).toBe(before.flagZ);
+        expect(after.tokenZ.get('t10')).toBeGreaterThan(Math.max(...restingZ) + 2);
     });
 });
 

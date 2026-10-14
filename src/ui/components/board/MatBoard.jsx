@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useMatSize } from '../../hooks/useMatSize.js';
-import { MAT_Z, matStackOrder, sameStackOrder, heroZ, walkerSortY } from './matLayers.js';
+import { MAT_Z, createMatStack, heroZ, walkerSortY } from './matLayers.js';
 import { createStackWriter } from './stackWriter.js';
 import { pointerToMat } from './matPoint.js';
 import { installPressRouting } from './pressRouting.js';
@@ -315,20 +315,19 @@ export const MatBoard = React.memo(function MatBoard({
 
     /**
      * Who is in front of whom: Tokens and flags sorted together; a worked Token, with its
-     * hero, in front of every Token and flag at rest; the hovered Token frontmost. See
-     * `matLayers.js`.
+     * hero, in front of every Token and flag at rest; the hovered Token frontmost. The stack
+     * keeps each one's place between renders, so a Token that moves changes its own z only
+     * (`matLayers.js`), and the answer is the same object while no z changes.
      */
     // Keyed by the worked ids, not the heroes: heroes redraw every walking step.
     const workedKey = [...workedBy.keys()].sort().join('|');
-    // The same object when no z changed, so `flagZ` is a stable prop.
-    const lastOrderRef = useRef(null);
-    const order = useMemo(() => {
-        const next = matStackOrder({ tokens, flags: flagPoints, workedIds: workedKey ? workedKey.split('|') : [], hoveredId });
-        return sameStackOrder(lastOrderRef.current, next) ? lastOrderRef.current : next;
-    }, [tokens, flagPoints, workedKey, hoveredId]);
-    lastOrderRef.current = order;
-    // Each Token's z goes straight onto its boxes, so a re-rank redraws no Token. A layout
-    // effect: written in the same commit, before anything is painted.
+    const [matStack] = useState(createMatStack);
+    const order = useMemo(
+        () => matStack.order({ tokens, flags: flagPoints, workedIds: workedKey ? workedKey.split('|') : [], hoveredId }),
+        [matStack, tokens, flagPoints, workedKey, hoveredId]
+    );
+    // Each Token's z goes straight onto its boxes, so a change of place redraws no Token. A
+    // layout effect: written in the same commit, before anything is painted.
     const stack = useMemo(() => createStackWriter(), []);
     useLayoutEffect(() => { stack.apply(order.tokenZ); }, [stack, order]);
 
@@ -363,8 +362,8 @@ export const MatBoard = React.memo(function MatBoard({
             {TERRAIN_ENABLED && <TerrainCanvas terrain={terrain} seed={0} />}
 
             {/**
-             * 10+: Tokens, the heroes on them, and what is written on them; flags and idle
-             * heroes sort in among them (FlagLayer, below).
+             * The stack (`MAT_Z.TOKEN_BASE` up): Tokens, the heroes on them, and what is written
+             * on them; flags and idle heroes sort in among them (FlagLayer, below).
              */}
             {ordered.map(t => (
                 <MatToken
@@ -424,13 +423,13 @@ export const MatBoard = React.memo(function MatBoard({
                 );
             })}
 
-            {/* 760: the Near ring. Flag radius rings are FlagLayer's. */}
+            {/* `MAT_Z.RINGS`: the Near ring. Flag radius rings are FlagLayer's. */}
             {ringsDrawn && <MatRings hoveredCentre={hoveredCentre} matRef={rootRef} />}
 
-            {/* 800: loot on the floor. */}
+            {/* `MAT_Z.LOOT`: loot on the floor. */}
             <SpriteLayerView />
 
-            {/* Flags, sorted in among the Tokens, and their rings (760). */}
+            {/* Flags, sorted in among the Tokens, and their rings (`MAT_Z.RINGS`). */}
             <FlagLayer
                 flagZ={order.flagZ}
                 inspectedHeroId={inspectedHeroId}
@@ -440,10 +439,10 @@ export const MatBoard = React.memo(function MatBoard({
                 yieldToTokens={flagsYield}
             />
 
-            {/* 855 — callouts: quick popups over a Token or a refused drop's spot. */}
+            {/* `MAT_Z.CALLOUT`: quick popups over a Token or a refused drop's spot. */}
             {alertsDrawn && <CalloutLayer />}
 
-            {/* 860 — hero speech bubbles, above every hero. */}
+            {/* `MAT_Z.HERO_BUBBLE`: hero speech bubbles, above every hero. */}
             {speechDrawn && <HeroBubbleLayer heroes={heroes} />}
 
             {/**
@@ -476,10 +475,8 @@ export const MatBoard = React.memo(function MatBoard({
     );
 });
 
-/**
- * Disallow mode's edge and hint: above the speech bubbles (`MAT_Z.HERO_BUBBLE`, 860).
- */
-const DISALLOW_EDGE_Z = 900;
+/** Disallow mode's edge and hint: above the speech bubbles. */
+const DISALLOW_EDGE_Z = MAT_Z.HERO_BUBBLE + 40;
 
 /** Shared empty terrain, so a dormant board's selector returns a stable value. */
 const NO_TERRAIN = Object.freeze({});
