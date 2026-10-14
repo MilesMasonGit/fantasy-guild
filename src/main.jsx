@@ -9,6 +9,7 @@ import './styles/components.css';
 import { createRoot } from 'react-dom/client';
 import ReactRoot from './ui/ReactRoot.jsx';
 import { ErrorBoundary } from './ui/components/base/ErrorBoundary.jsx';
+import { installDrawingPause } from './ui/drawingPause.js';
 
 // === System Orchestration ===
 import { EngineBootstrap } from './systems/core/EngineBootstrap.js';
@@ -85,6 +86,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 6. Initialize Interaction & Registry Overlays
     EngineBootstrap.init();
+
+    // A hidden or minimised window stops drawing the mat; the game keeps ticking.
+    installDrawingPause();
 
     // 7. Mount the React UI Engine (gated on critical art being warm)
     await Promise.all([artReady, fxReady]);
