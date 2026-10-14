@@ -609,3 +609,33 @@ commits by what woke them.
 | `node bench/tick-commits.mjs` | this checkout, S2, 150 ticks to settle, 600 measured | ~4 min |
 | `node bench/tick-commits.mjs --a=<before> --b=<after>` | two checkouts, A,B,B,A, each on its own dev server and Vite cache | ~13 min |
 | `--scene=cap128 --ticks=300 --settle=100 --seed=2 --top=40 --dump=60` | any `?stress=` board; ticks; rows; the first commits of each window, one by one | |
+
+### `node bench/drag-commits.mjs`: the React work a drag sets off
+
+How many React commits, component renders and context changes each phase of a drag sets off,
+on a stress board in the **dev build**, with the same stand-in for the React DevTools hook as
+`tick-commits.mjs`. Per commit it also counts the **fibers touched** (every fiber React began
+work on, rendered or not: the size of the walk a commit costs) and, for each context provider,
+whether its value changed (a **context change**: every reader of that context is redrawn). The
+drag system's own contexts are named (`useActiveDrag`, `useDragSurface`, `useDragPointer`);
+dnd-kit's three are named by what reads them (its internal one: every holder of a drag or drop
+hook; its public one: `useDndContext`; its transform: the source in the hand).
+
+**The same drags every run.** The board is built and settled with the seeded engine of
+`tick-commits.mjs`, then the game loop is stopped, so nothing but the drags commits (a 3 s quiet
+window before them says how much does anyway). The drags are the drag bench's own kinds,
+picked by its kit (`dragKit.mjs`) with `Math.random` a seeded stream while it picks, and driven
+with real input (`Input.dispatchMouseEvent`). Each drag is split into **pickup** (the press and
+the two moves that cross the 8 px threshold, then 250 ms still), **carry** (12 moves ~16 ms
+apart; reported per move) and **drop** (the release, then 500 ms still). The pickup's stillness
+keeps its commits apart from the carry's. For the Shop drags the Token cap is lifted (the Mat
+Tuner's dev override), since a board at its cap refuses every purchase. The picks are
+fingerprinted, and runs that did not make the same drags say **THE DRAGS DIFFER**; each drag
+is checked as the drag bench checks it (`as intended`). Counts are exact run to run; the
+milliseconds are the development build's.
+
+| Command | What it does | Time |
+|---|---|---|
+| `node bench/drag-commits.mjs` | this checkout, cap128, 12 drags of each kind | ~4 min |
+| `node bench/drag-commits.mjs --a=<before> --b=<after>` | two checkouts, A,B,B,A, each on its own dev server and Vite cache | ~15 min |
+| `--scene=S2 --n=4 --kinds=token,flag --dump=1 --full --top=40` | any `?stress=` board; drags per kind; which kinds; every commit of the first N drags of each kind, with every component that rendered | |

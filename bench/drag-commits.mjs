@@ -285,7 +285,7 @@ async function oneDrag(page, kind, drag) {
     await sleep(500);
     await page.evaluate(PHASE(null, null, 0));
     const check = await page.evaluate(`window.__dragKit.check(${JSON.stringify(pick.expect)})`);
-    return { what: pick.source.what, ok: !!check.ok && inHand === pick.source.hand, detail: check.detail };
+    return { what: pick.source.what, ok: !!check.ok && inHand === pick.source.hand, detail: check.detail, inHand };
 }
 
 async function measure(chrome, url, args) {
@@ -353,6 +353,7 @@ function summarise({ commits, drags, treeSize }) {
         k.ok = done.filter(d => d.ok).length;
         k.skipped = list.filter(d => d.skipped).length;
         k.errors = list.filter(d => d.error).map(d => d.error);
+        k.misses = done.filter(d => !d.ok).map(d => `${d.what}: ${d.detail ?? 'not as intended'}${d.inHand !== undefined ? ` (in hand: ${d.inHand})` : ''}`);
         k.whats = done.map(d => d.what);
     }
     return out;
@@ -373,6 +374,7 @@ function printOne(label, s, top) {
     console.log(`  ${s.treeSize} fibers in the tree · quiet (3 s, no drag): ${s.quiet.commits} commits, ${s.quiet.renders} renders`);
     for (const [kind, k] of Object.entries(s.kinds)) {
         console.log(`  ${kind}: ${k.drags} drags (${k.ok} as intended${k.skipped ? `, ${k.skipped} skipped` : ''}${k.errors?.length ? `, errors: ${k.errors.join(' | ')}` : ''})`);
+        for (const m of k.misses || []) console.log(`    not as intended: ${m}`);
         for (const ph of PHASES) {
             const p = k[ph];
             if (!p) { console.log(`    ${ph.padEnd(6)} no commits`); continue; }
