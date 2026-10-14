@@ -125,7 +125,7 @@ describe('⭐ one shared drag source', () => {
         expect([...dragHooks.keys()].sort()).toEqual(['entity-drag', 'mat-token']);
     });
 
-    it('a change of target mid-drag redraws no hero and no flag on the mat', () => {
+    it('a change of target mid-drag redraws nothing inside the mat: no hero, no flag, not the boxes around the mat\'s drawing', () => {
         const { a, container } = scene();
         act(() => {
             fireEvent.pointerDown(hitOf(container, a.id), ptr(600, 400));
@@ -141,6 +141,10 @@ describe('⭐ one shared drag source', () => {
         expect(renders.of('MatBoard')).toBe(0);
         expect(renders.of('MatHero')).toBe(0);
         expect(renders.of('Flag')).toBe(0);
+        // The mat's drop target (`Board`) is redrawn by dnd-kit; what it holds is not.
+        expect(renders.of('Board')).toBeGreaterThan(0);
+        expect(renders.of('ErrorBoundary')).toBe(0);
+        expect(renders.of('DevPerfProfiler')).toBe(0);
         act(() => { fireEvent.pointerUp(document, ptr(700, 420)); });
     });
 
