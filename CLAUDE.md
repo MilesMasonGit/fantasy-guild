@@ -75,10 +75,9 @@ It does not write the code itself. It:
 
 **Pacing (owner, 2026-10-13).** Work runs in **waves** of a reasonable size,
 each spread over about five days, not three. At most **two code subagents at
-once** plus one read-only agent. A director day is **at most three build
-phases and one review** (the director cannot see token usage, so it counts
-phases). When the day's count is reached, or the director's context is about
-60 % full, **start nothing new**: tell running agents to
+once** plus one read-only agent. There is **no daily count of phases** (owner,
+2026-10-14): the limit is parallelism, not volume. When the director's context
+is about 60 % full, or the weekly reset is near, **start nothing new**: tell running agents to
 commit their work in progress and write a status note, write the handoff, and
 stop. Builders and engineers commit work in progress at least hourly and keep
 a `STATUS.md` in their worktree, so a cut-off agent leaves a readable state.
@@ -93,8 +92,14 @@ are one at a time.
 cycles and build and report "ready for bench". The director keeps a bench
 queue in `docs/active/STATUS.md` and drains it one branch at a time inside the
 windows; a phase ready outside a window waits as "bench queued" while the next
-phase starts. A performance spike that needs the bench to find its answer is
-scheduled into a window from the start.
+phase starts. **What runs, and how often** (owner, 2026-10-14): the engine
+bench's work check on every merge (cheap, the real guard); the timing benches
+(draw, drag, A/B) per slice only during optimisation briefs (60, 90), because
+only a per-slice A/B says which slice helped or hurt; for feature briefs, one
+`bench:draw --compare` per eye-check batch for the cost log, and the drag
+bench only when drag code changes. One window a day (13:00) is the norm; the
+01:00 window is for baselines and long batches; two a day only while an
+optimisation brief is live.
 
 **Status and summaries.** `docs/active/STATUS.md` is the living view of the
 wave: one row per phase (tier, branch, state, day planned, day done) and the
