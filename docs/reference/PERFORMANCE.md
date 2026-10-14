@@ -34,6 +34,7 @@ Still to write (T-069): the mat-era guide to *keeping* it fast (draft in
 | `npm run bench:drag` | Drag reliability, real mouse input, and frame stalls at pickup, carry and drop | ~19 min |
 | `npm run check:perf-build` | Proves the shipped build has no measuring code | ~1 min |
 | `node bench/tick-commits.mjs` | React commits and renders each engine tick sets off (S2, dev build), the same engine work every run; `--a=<before> --b=<after>` for an A/B | ~4 min (A/B ~13 min) |
+| `node bench/drag-commits.mjs` | React commits, renders and context changes per pickup, carry move and drop (cap128, dev build), the same drags every run; `--a=<before> --b=<after>` for an A/B | ~4 min (A/B ~15 min) |
 
 Details, options and exit codes: [`bench/README.md`](../../bench/README.md).
 In the game (dev or perf build): `?stress=realistic` + the Perf HUD, and
@@ -729,6 +730,112 @@ glide (50 ms) and hide (2 s) and the floater's removal (3 s) still commit on the
 onto the tick would shift when a bubble hides by up to 100 ms, a look change, so not taken.
 **Not measured yet**: the perf-build frame cost (`bench:draw --ab`, `bench:profile` for React's
 scheduler ms a second, 37 at 4× in P1) waits for a bench window.
+
+### P2-9 result: drags (2026-10-14)
+
+**Measured first** (new tool, `node bench/drag-commits.mjs`: cap128 in the dev build, the board
+built and settled with `tick-commits`' seeded engine and the game loop then stopped, so only
+the drags commit; the drag bench's own kinds and pickers, seeded, driven with real input; each
+drag split into pickup, carry and drop, every commit's renders, fibers touched and context
+changes counted; bench/README.md). What a drag costs React, ranked:
+1. **dnd-kit's own state.** A pickup is 5–8 commits (the drag starts; the carried node and its
+   container are measured; the overlay and the drop targets are measured; the first target is
+   found; the measuring settles), a drop 2 plus what the drop changes, and every pointer move one.
+   Each commit hands out a new public context and a new transform, and three of a pickup's (two
+   of a drop's, and each change of target) a new internal one, which every holder of a dnd-kit
+   drag or drop hook reads. On the plain mat that was 29 holders a change: 8 heroes, 8 flags and 8
+   hero-bar figures, the mat, the three recall targets (the bar, the hero panel, the work rules)
+   and the Tokens' shared source; with the Shop open its rows too, with the Bank open its tiles,
+   tabs and slots (about 70).
+2. **The ghost** read dnd-kit's public context for one Guild Hall check, so it and its art redrew
+   in every one of those commits: 5 of the ~19 renders of every pointer move.
+3. **The mat's second render at a Token pickup.** `MatBoard` clears the hover in an effect after
+   the drag starts, so the pickup's second commit redraws the mat again and re-ranks it: every
+   flag and hero redraws for its new z. The largest single commit of a Token pickup (89 renders,
+   ~400 fibers, ~17 ms in the dev build, ~60 % of the pickup's React time). In `MatBoard.jsx`,
+   which P2-7 holds: not touched (below).
+4. **The source in the hand** redrew on every pointer move (it reads dnd-kit's transform).
+5. **After a drop**, every hero in the bar (and every tab beside the Bank) set state twice to
+   wait out the reorder animation: two commits, 8 renders each, after every drop of any kind.
+6. **The mat's drop target** (`Board`) redrew the error boundary and profiler around the mat at
+   each internal change (the mat itself is memoised and was not redrawn).
+
+**What changed**:
+1. **One shared drag source** (`DndKit.jsx`): `useEntityDrag` holds no dnd-kit hook. Every source
+   presses one draggable the provider holds (`ENTITY_DRAG_ID`), as the mat's Tokens press
+   `MatTokenGrab`'s: a press names the source and points the draggable at the source's own
+   element; dnd-kit's drag data is the pressed source's payload as last drawn; the source hears
+   only whether it is itself in the hand, in the same commits as before. Its attributes are
+   dnd-kit's (role, Tab stop, the hidden instructions, `aria-pressed` while held), a press inside
+   another source still picks up the inner one, a press dnd-kit refuses (a second finger,
+   another button, a press mid-drag) leaves the drag alone, and a missed drop springs back to the
+   source as before. Same API: no drag source's code changed for it. Heroes, flags and Shop rows
+   stop being dnd-kit readers; hero-bar figures, Bank tiles, tabs and slots still read it
+   through their drop hooks.
+2. **The ghost** reads dnd-kit's `over` only for a Guild Hall (`DragGhost.jsx`).
+3. **The hero bar and the hero column** (`useDragSettleHover.js`): only a hovered figure waits
+   after a drop; one hovered later in the window waits for what is left of it.
+4. **The mat's drop target** keeps the mat's drawing as one element (`Board.jsx`).
+
+Guards: `src/tests/DragSharedSource.test.js` (each guard failed on the old code; each parity test
+caught its part neutered: the nested press, a refused press, the held flag, the payload as last
+drawn, both settle cases; the Guild Hall ghost keeps its dimming). `MatPressTarget` names a started drag by its source (`dragSourceId`), and
+`MatTokenNotTabStop` mounts its source inside the drag provider. `DragRedraws*`,
+`DragCollisionReads`, `DragDropAftermath` unchanged and green.
+
+**Measured** (`drag-commits --a=<main 3919da18> --b=<this branch>`, A,B,B,A, 12 drags of each
+kind a run, the same drags in every run; per drag, carry per move; "woken" counts components
+redrawn while their parent was not, so by a context or their own state; dev build, so the
+milliseconds are the development build's and indicative only):
+
+| Drag | Phase | Commits | Component renders | Fibers touched | Woken (a context or own state) | React ms (dev) |
+|---|---|---|---|---|---|---|
+| Token → mat | pickup | 7.2 → 7.3 | 250 → 200 (−20 %) | 1,242 → 1,155 | 61 → 42 | 22.5 → 20.6 |
+| | a carry move | 1.0 → 1.0 | 18.5 → 13.5 (−27 %) | 99 → 88 | 4.0 → 3.0 | 1.1 → 1.0 |
+| | drop | 10.0 → 7.7 | 156 → 120 (−23 %) | 1,429 → 1,230 | 51 → 34 | 15.1 → 14.4 |
+| flag → mat | pickup | 8.4 → 8.3 | 220 → 163 (−26 %) | 1,288 → 990 | 61 → 38 | 24.5 → 20.6 |
+| | a carry move | 1.0 → 1.0 | 18.2 → 13.2 (−27 %) | 102 → 91 | 3.0 → 2.0 | 1.3 → 1.1 |
+| | drop | 8.7 → 6.4 | 153 → 117 (−24 %) | 1,206 → 1,012 | 50 → 33 | 17.3 → 16.2 |
+| hero bar → mat | pickup | 4.4 → 4.3 | 143 → 104 (−27 %) | 717 → 582 | 57 → 34 | 15.9 → 13.0 |
+| | a carry move | 1.2 → 1.2 | 22.9 → 17.8 (−22 %) | 155 → 121 | 5.8 → 2.8 | 2.1 → 1.8 |
+| | drop | 7.2 → 5.5 | 132 → 104 (−21 %) | 1,056 → 903 | 42 → 28 | 17.0 → 15.9 |
+| Shop row → mat | pickup | 7.3 → 7.3 | 236 → 147 (−38 %) | 1,187 → 794 | 102 → 41 | 20.1 → 14.5 |
+| | a carry move | 1.0 → 1.0 | 18.6 → 14.1 (−24 %) | 122 → 91 | 4.0 → 2.1 | 1.4 → 1.1 |
+| | drop | 9.2 → 7.0 | 249 → 194 (−22 %) | 1,516 → 1,244 | 71 → 35 | 24.4 → 22.8 |
+| Bank item → hero | pickup | 5.4 → 5.2 | 284 → 226 (−20 %) | 1,270 → 1,030 | 101 → 70 | 24.6 → 22.7 |
+| | a carry move | 1.7 → 1.7 | 42.9 → 31.5 (−27 %) | 255 → 164 | 14.4 → 7.3 | 2.7 → 2.1 |
+| | drop | 9.7 → 5.5 | 437 → 392 (−10 %) | 1,923 → 1,588 | 53 → 25 | 32.4 → 31.3 |
+
+Every run made the same 60 drags (the picks fingerprinted alike) and the same ones landed as
+intended: all of each kind but two hero-bar drags, the same two on both builds (a press on one
+hero's figure never started a drag on the stopped board; the drag bench's window run will say
+whether it does in play). The two runs of each build agree to the drag. Read with: the drop's
+two to four fewer commits are the hero bar's (and column's) settle; a Token pickup keeps its
+React time mostly in `MatBoard`'s second render (cause 3). The tree holds ~3,180 fibers. A
+check in the running game (this branch's dev build, cap128, synthetic pointer drags of a Token,
+a hero from the bar and that hero's flag): in the hand only the carried source looked held and
+was `aria-pressed`, the ghost was drawn, every drop landed where it was let go, no console
+error.
+
+**Context changes**: the providers' own changes per pickup did not go down and cannot here: they
+are dnd-kit's (internal 3, public and transform 5–8, one per dnd-kit commit) and ours (the active
+drag, its surface and the pointer, one each, all needed). What went down is how many components
+each change reaches (above). Cutting dnd-kit's own commits means forking its `DndContext`.
+
+**Not done by it**:
+- **`MatBoard`'s hover clear** (cause 3), the biggest remaining pickup cost. Clearing the hover in
+  the render that sees the drag start, not in an effect after it, would fold the second mat render
+  into the first. `MatBoard.jsx` is P2-7's; for it or right after it.
+- **The equip drop opens the hero sheet inside the drop's commit** (Bank open: the whole screen
+  redraws and the sheet mounts, ~240 renders and 50 mounts, ~38 ms in the dev build, the
+  heaviest drop of any kind). Opening it in a transition, after the drop's frame, as D3 did for
+  the Shop list and the toasts, would move that out of the drop; it opens a frame later. Not taken:
+  an owner or director call.
+- Flags still redraw their shell at a drag's start and end (`FlagLayer.jsx` reads the active drag
+  per flag; P2-7's file).
+
+**Not measured yet**: frame times. `npm run bench:drag -- --board=cap128` (plain and `--cpu=4`)
+before and after waits for a bench window.
 
 ### Owner questions
 
