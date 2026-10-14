@@ -77,6 +77,9 @@ say so and stop).
 - **Owner questions** you cannot answer go under "Questions for the owner"
   in STATUS as multiple choice; keep working on what is not blocked.
 - **STATUS** at about 07:00 and 22:00 and whenever a phase changes state.
+- **Report in plain words.** Name every feature by what it does for the
+  player, never by its code alone; every report ends with what is being built
+  now and what comes next, so the owner can say continue or stop for the day.
 
 ## End of the wave (Saturday evening, ~85 % of the weekly budget, or a full
 context, whichever is first)

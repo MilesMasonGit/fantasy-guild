@@ -72,6 +72,11 @@ It does not write the code itself. It:
    force-pushed.
 5. Parks owner questions as multiple choice and keeps working on what isn't
    blocked.
+6. **Reports in plain words** (owner, 2026-10-14): every report to the owner
+   names the feature by what it does for the player, never by a code alone
+   ("drawing pauses while the app is minimised", not "P2-10"), and ends
+   with **what is being built now and what comes next**, so the owner can say
+   continue or stop for the day. Codes may follow the words in brackets.
 
 **Pacing (owner, 2026-10-13).** Work runs in **waves** of a reasonable size,
 each spread over about five days, not three. At most **two code subagents at
