@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo, useState, useRef, useEffect } from 'react';
+import { memo, useCallback, useMemo, useRef } from 'react';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { useEngine } from '../../hooks/useEngine.js';
@@ -10,6 +10,7 @@ import { EventBus } from '../../../systems/core/EventBus.js';
 import * as Flags from '../../../systems/board/Flags.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { isRecallDrop, recallFromDrop } from './dockRecall.js';
+import { useDragSettleHover } from './useDragSettleHover.js';
 import { equipOrAnnounce } from './dockEquip.js';
 import { dockStatusLine } from '../board/flagText.js';
 import { TopBarTip } from '../board/TopBarTip.jsx';
@@ -33,22 +34,9 @@ export const HeroDockTab = ({
     onReorder,
     isDockLeft = false
 }) => {
-    const [isHovered, setIsHovered] = useState(false);
-    const [isDragSettling, setIsDragSettling] = useState(false);
     const engine = useEngine();
     const { isDragging: globalDragging } = useActiveDrag();
-    const prevDraggingRef = useRef(globalDragging);
-
-    useEffect(() => {
-        if (prevDraggingRef.current && !globalDragging) {
-            setIsDragSettling(true);
-            const timer = setTimeout(() => {
-                setIsDragSettling(false);
-            }, 320);
-            return () => clearTimeout(timer);
-        }
-        prevDraggingRef.current = globalDragging;
-    }, [globalDragging]);
+    const { isHovered, settling: isDragSettling, onHoverChange } = useDragSettleHover(globalDragging);
 
     const hero = useTabHero(heroId);
     const justDroppedRef = useRef(false);
@@ -114,7 +102,7 @@ export const HeroDockTab = ({
             onDoubleClick={onDoubleClick}
             isDockLeft={isDockLeft}
             isHovered={isHovered}
-            onHoverChange={setIsHovered}
+            onHoverChange={onHoverChange}
             hovering={hovering}
             itemCue={drop.valid && isDraggingItem}
             heroCue={isHeroDropValid}

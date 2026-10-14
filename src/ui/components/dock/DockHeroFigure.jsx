@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useMemo, useRef, useState } from 'react';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { useEngine } from '../../hooks/useEngine.js';
@@ -10,6 +10,7 @@ import * as Flags from '../../../systems/board/Flags.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { AnimatedHeroSprite } from '../board/AnimatedHeroSprite.jsx';
 import { isRecallDrop, recallFromDrop } from './dockRecall.js';
+import { useDragSettleHover } from './useDragSettleHover.js';
 import { equipOrAnnounce } from './dockEquip.js';
 import { useHeroBarBubbles, clearHeroBubbles, clearHeroBubble, BAR_BUBBLES_SHOWN, BAR_BUBBLE_FADE_MS } from './heroBarBubbles.js';
 import { BubbleText } from '../board/BubbleText.jsx';
@@ -52,23 +53,10 @@ export function dockHeroDragPayload(heroId, hero) {
  */
 export const DockHeroFigure = memo(function DockHeroFigure(props) {
     const { heroId, index = null, heroIds = [], onReorder } = props;
-    const [isHovered, setIsHovered] = useState(false);
-    const [isDragSettling, setIsDragSettling] = useState(false);
     const engine = useEngine();
     const { isDragging: globalDragging } = useActiveDrag();
-    const prevDraggingRef = useRef(globalDragging);
-
     // No hover lift while a drop is settling (the reorder animation).
-    useEffect(() => {
-        if (prevDraggingRef.current && !globalDragging) {
-            setIsDragSettling(true);
-            const timer = setTimeout(() => setIsDragSettling(false), 320);
-            prevDraggingRef.current = globalDragging;
-            return () => clearTimeout(timer);
-        }
-        prevDraggingRef.current = globalDragging;
-        return undefined;
-    }, [globalDragging]);
+    const { isHovered, settling: isDragSettling, onHoverChange } = useDragSettleHover(globalDragging);
 
     const hero = useDockHero(heroId);
     const justDroppedRef = useRef(false);
@@ -127,7 +115,7 @@ export const DockHeroFigure = memo(function DockHeroFigure(props) {
             nodeRef={nodeRef}
             handleProps={drag.handleProps}
             droppableProps={drop.droppableProps}
-            onHoverChange={setIsHovered}
+            onHoverChange={onHoverChange}
             justDroppedRef={justDroppedRef}
         />
     );

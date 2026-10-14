@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useBoardScale } from '../../hooks/useBoardScale.js';
 import { useMatSize } from '../../hooks/useMatSize.js';
 import { dropOnMat } from './dropOnMat.js';
@@ -88,6 +88,37 @@ export const Board = ({ onInspectToken, onClearInspect, inspectedHeroId = null, 
         ? bandStationRecipes(recipeDef, BoardState.workerOf(recipeId), GameState.state?.heroes || [])
         : null;
 
+    /**
+     * What the mat draws, as one element kept while its inputs hold.
+     * ⚠️ This component holds the mat's drop hook, which dnd-kit re-renders at every drag start,
+     * end and change of target; a kept element is not redrawn with it.
+     */
+    const matContents = useMemo(() => (
+        <MatFitProvider value={fit.scale}>
+            {/**
+             * A render error on the mat goes to a 'Something went wrong here'
+             * panel in this box only, rather than unmounting the whole app while
+             * the engine keeps ticking and saving underneath it.
+             */}
+            <ErrorBoundary label="MatBoard">
+                {/**
+                 * Counts every React commit in the mat SUBTREE for the Perf HUD (a
+                 * hero's frame step counts too; MatBoard's own renders are counted
+                 * inside it): dev builds only, and only when armed.
+                 */}
+                <PerfProfiler id="MatBoard">
+                    <MatBoard
+                        inspectedHeroId={inspectedHeroId}
+                        inspectedTokenId={inspectedTokenId}
+                        onInspectToken={onInspectToken}
+                        onClearInspect={onClearInspect}
+                        onOpenRecipes={handleOpenRecipes}
+                    />
+                </PerfProfiler>
+            </ErrorBoundary>
+        </MatFitProvider>
+    ), [fit.scale, inspectedHeroId, inspectedTokenId, onInspectToken, onClearInspect, handleOpenRecipes]);
+
     const handleSelectRecipe = useCallback((selectedRecipeId) => {
         if (!recipeId) return;
         const instance = BoardState.getTokenById(recipeId);
@@ -128,32 +159,11 @@ export const Board = ({ onInspectToken, onClearInspect, inspectedHeroId = null, 
                 >
                     {/**
                      * The sprites on the mat need to know what this transform is about to do
-                     * to them, so they can step to a whole multiple of ART_PX through it.
-                     * Nothing else on the mat cares: the transform handles the rest.
+                     * to them (`MatFitProvider`), so they can step to a whole multiple of
+                     * ART_PX through it. Nothing else on the mat cares: the transform handles
+                     * the rest.
                      */}
-                    <MatFitProvider value={fit.scale}>
-                        {/**
-                         * A render error on the mat goes to a 'Something went wrong here'
-                         * panel in this box only, rather than unmounting the whole app while
-                         * the engine keeps ticking and saving underneath it.
-                         */}
-                        <ErrorBoundary label="MatBoard">
-                            {/**
-                             * Counts every React commit in the mat SUBTREE for the Perf HUD (a
-                             * hero's frame step counts too; MatBoard's own renders are counted
-                             * inside it): dev builds only, and only when armed.
-                             */}
-                            <PerfProfiler id="MatBoard">
-                                <MatBoard
-                                    inspectedHeroId={inspectedHeroId}
-                                    inspectedTokenId={inspectedTokenId}
-                                    onInspectToken={onInspectToken}
-                                    onClearInspect={onClearInspect}
-                                    onOpenRecipes={handleOpenRecipes}
-                                />
-                            </PerfProfiler>
-                        </ErrorBoundary>
-                    </MatFitProvider>
+                    {matContents}
                 </div>
             </div>
 

@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach, beforeAll, afterAll, afterEach, vi } 
 import React from 'react';
 import { render, cleanup, fireEvent, act } from '@testing-library/react';
 import { DndContext, useDndMonitor } from '@dnd-kit/core';
-import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
+import { DeckDndProvider, dragSourceId } from '../ui/dnd/DndKit.jsx';
 import { MatHero } from '../ui/components/board/MatHero.jsx';
 import { setAlphaMaskForTests, updateAlphaPointerEvents } from '../ui/utils/alphaHitTest.js';
 import './fixtures/testTokens.js';
@@ -66,8 +66,8 @@ function mountAt(fit, props = {}) {
 }
 
 const artOf = (container, id) => container.querySelector(`[data-token-art][data-token-id="${id}"]`);
-/** What a drag picked up: a flag or hero by its drag id, a mat Token (one shared source) by its own id. */
-const startedName = (active) => (active.id === MAT_TOKEN_DRAG_ID ? `token-${active.data.current.from.instanceId}` : active.id);
+/** What a drag picked up: a flag or hero by its source's id, a mat Token (one shared source) by its own id. */
+const startedName = (active) => (active.id === MAT_TOKEN_DRAG_ID ? `token-${active.data.current.from.instanceId}` : dragSourceId(active));
 const hitOf = (container, id) => container.querySelector(`[data-token-hit="${id}"]`);
 
 beforeAll(() => Flags.init());
