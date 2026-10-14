@@ -26,50 +26,62 @@ function liveBoardFit() {
     return el ? parseFloat(el.getAttribute('data-board-scale')) || 1 : 1;
 }
 
+const isGuildHallPayload = (payload) => payload?.kind === DRAG_KIND.TOKEN && !!(
+    payload.typeId === 'token_guild_hall' ||
+    payload.cannotLeaveBoard ||
+    payload.isGuildHall ||
+    getTokenType(payload.typeId)?.cannotLeaveBoard ||
+    getTokenType(payload.typeId)?.isGuildHall
+);
+
+const NOT_DIMMED = {};
+const DIMMED = { opacity: 0.5 };
+
 export const DragGhost = ({ payload, bold }) => {
-    const { over } = useDndContext();
-    const isOverPlaymat = bold && over && over.data?.current?.surface === 'board';
-
-    const isGuildHall = payload?.kind === DRAG_KIND.TOKEN && (
-        payload.typeId === 'token_guild_hall' ||
-        payload.cannotLeaveBoard ||
-        payload.isGuildHall ||
-        getTokenType(payload.typeId)?.cannotLeaveBoard ||
-        getTokenType(payload.typeId)?.isGuildHall
-    );
-
-    const isGuildHallOffBoard = isGuildHall && !isOverPlaymat;
-    const opacityStyle = isGuildHallOffBoard ? { opacity: 0.5 } : {};
-
     if (!payload) return null;
     switch (payload.kind) {
         case DRAG_KIND.TOKEN:
-            return (
-                <div style={opacityStyle} className="relative transition-opacity duration-150">
-                    <TokenGhost payload={payload} bold={bold} />
-                    {isGuildHallOffBoard && (
-                        <div className="absolute top-1.5 left-[2px] z-50 pointer-events-none w-8 h-8 flex items-center justify-center">
-                            <img
-                                src="/assets/ui/ui_disallow_red.png"
-                                alt="Disallow"
-                                className="w-8 h-8 object-contain select-none animate-bounce drop-shadow-[0_0_8px_rgba(239,68,68,0.9)]"
-                                style={{
-                                    width: '32px',
-                                    height: '32px',
-                                    imageRendering: 'pixelated',
-                                    animationDuration: '2s'
-                                }}
-                            />
-                        </div>
-                    )}
-                </div>
-            );
-        case DRAG_KIND.HERO: return <div style={opacityStyle} className="transition-opacity duration-150"><HeroGhost payload={payload} bold={bold} /></div>;
-        case DRAG_KIND.ITEM: return <div style={opacityStyle} className="transition-opacity duration-150"><ItemGhost payload={payload} bold={bold} /></div>;
+            return isGuildHallPayload(payload)
+                ? <GuildHallGhost payload={payload} bold={bold} />
+                : <CarriedToken payload={payload} bold={bold} offBoard={false} />;
+        case DRAG_KIND.HERO: return <div style={NOT_DIMMED} className="transition-opacity duration-150"><HeroGhost payload={payload} bold={bold} /></div>;
+        case DRAG_KIND.ITEM: return <div style={NOT_DIMMED} className="transition-opacity duration-150"><ItemGhost payload={payload} bold={bold} /></div>;
         case DRAG_KIND.FLAG: return <FlagGhost payload={payload} bold={bold} />;
         default: return null;
     }
 };
+
+/**
+ * A Guild Hall in the hand dims, with a refusal mark, while it is not over the mat.
+ * ⚠️ The only ghost that reads dnd-kit's `over`: dnd-kit hands out a fresh context on every one
+ * of its renders, every pointer move included, and each reader is redrawn with it.
+ */
+const GuildHallGhost = ({ payload, bold }) => {
+    const { over } = useDndContext();
+    const isOverPlaymat = bold && over && over.data?.current?.surface === 'board';
+    return <CarriedToken payload={payload} bold={bold} offBoard={!isOverPlaymat} />;
+};
+
+const CarriedToken = ({ payload, bold, offBoard }) => (
+    <div style={offBoard ? DIMMED : NOT_DIMMED} className="relative transition-opacity duration-150">
+        <TokenGhost payload={payload} bold={bold} />
+        {offBoard && (
+            <div className="absolute top-1.5 left-[2px] z-50 pointer-events-none w-8 h-8 flex items-center justify-center">
+                <img
+                    src="/assets/ui/ui_disallow_red.png"
+                    alt="Disallow"
+                    className="w-8 h-8 object-contain select-none animate-bounce drop-shadow-[0_0_8px_rgba(239,68,68,0.9)]"
+                    style={{
+                        width: '32px',
+                        height: '32px',
+                        imageRendering: 'pixelated',
+                        animationDuration: '2s'
+                    }}
+                />
+            </div>
+        )}
+    </div>
+);
 
 /**
  * A flag in flight: the hero's own flag sprite at 128 px, lifted, with no hero drawn. A flag

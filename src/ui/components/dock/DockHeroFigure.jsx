@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { useEngine } from '../../hooks/useEngine.js';
@@ -34,6 +34,9 @@ export function dockHeroDragPayload(heroId, hero) {
     };
 }
 
+/** How long after a drag ends a hovered hero in the bar stays down (the reorder animation). */
+const DRAG_SETTLE_MS = 320;
+
 /**
  * One hero standing in the horizontal dock.
  * The idle sprite the mat uses (`AnimatedHeroSprite`), at the mat's art size, cut off at the
@@ -57,18 +60,32 @@ export const DockHeroFigure = memo(function DockHeroFigure(props) {
     const engine = useEngine();
     const { isDragging: globalDragging } = useActiveDrag();
     const prevDraggingRef = useRef(globalDragging);
+    const hoveredRef = useRef(false);
+    const endedAtRef = useRef(-Infinity);
+    const settleTimerRef = useRef(null);
 
-    // No hover lift while a drop is settling (the reorder animation).
+    // No hover lift while a drop is settling (the reorder animation): DRAG_SETTLE_MS from the
+    // end of a drag. Only a hovered figure is held down, so a drag's end sets no state on the
+    // rest of the bar; a figure hovered later in the window is held down for what is left of it.
+    const settleFor = useCallback((ms) => {
+        setIsDragSettling(true);
+        clearTimeout(settleTimerRef.current);
+        settleTimerRef.current = setTimeout(() => setIsDragSettling(false), ms);
+    }, []);
     useEffect(() => {
-        if (prevDraggingRef.current && !globalDragging) {
-            setIsDragSettling(true);
-            const timer = setTimeout(() => setIsDragSettling(false), 320);
-            prevDraggingRef.current = globalDragging;
-            return () => clearTimeout(timer);
-        }
+        const ended = prevDraggingRef.current && !globalDragging;
         prevDraggingRef.current = globalDragging;
-        return undefined;
-    }, [globalDragging]);
+        if (!ended) return;
+        endedAtRef.current = performance.now();
+        if (hoveredRef.current) settleFor(DRAG_SETTLE_MS);
+    }, [globalDragging, settleFor]);
+    useEffect(() => () => clearTimeout(settleTimerRef.current), []);
+    const onHoverChange = useCallback((on) => {
+        hoveredRef.current = on;
+        setIsHovered(on);
+        const left = endedAtRef.current + DRAG_SETTLE_MS - performance.now();
+        if (on && left > 0) settleFor(left);
+    }, [settleFor]);
 
     const hero = useDockHero(heroId);
     const justDroppedRef = useRef(false);
@@ -127,7 +144,7 @@ export const DockHeroFigure = memo(function DockHeroFigure(props) {
             nodeRef={nodeRef}
             handleProps={drag.handleProps}
             droppableProps={drop.droppableProps}
-            onHoverChange={setIsHovered}
+            onHoverChange={onHoverChange}
             justDroppedRef={justDroppedRef}
         />
     );

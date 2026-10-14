@@ -15,7 +15,7 @@ import { EngineContext } from '../ui/context/EngineContext';
 import { resetMatTuning } from '../config/matTuning.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { placeAt, clearMat } from './fixtures/mat.js';
-import { useEntityDrag } from '../ui/dnd/DndKit.jsx';
+import { useEntityDrag, DeckDndProvider } from '../ui/dnd/DndKit.jsx';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -43,10 +43,12 @@ describe('useEntityDrag keyboardAccessible option (CR3-411)', () => {
         out.handleProps = drag.handleProps;
         return null;
     }
+    // A drag source presses the drag provider's shared draggable, so it is drawn inside one.
+    const mountSource = (el) => render(h(DeckDndProvider, null, el));
 
     it('defaults to including dnd-kits tabIndex/role/aria attributes', () => {
         const out = {};
-        mount(h(Probe, { out, keyboardAccessible: undefined }));
+        mountSource(h(Probe, { out, keyboardAccessible: undefined }));
         expect(out.handleProps.tabIndex).toBe(0);
         expect(out.handleProps.role).toBeDefined();
         expect(out.handleProps['aria-roledescription']).toBe('draggable');
@@ -55,7 +57,7 @@ describe('useEntityDrag keyboardAccessible option (CR3-411)', () => {
 
     it('keyboardAccessible: false drops all of them, keeping only the pointer listeners', () => {
         const out = {};
-        mount(h(Probe, { out, keyboardAccessible: false }));
+        mountSource(h(Probe, { out, keyboardAccessible: false }));
         expect(out.handleProps.tabIndex).toBeUndefined();
         expect(out.handleProps.role).toBeUndefined();
         expect(out.handleProps['aria-roledescription']).toBeUndefined();

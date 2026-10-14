@@ -325,6 +325,62 @@ export class AlphaPointerSensor extends PointerSensor {
     ];
 }
 
+/**
+ * The one dnd-kit draggable every drag source (`useEntityDrag`) presses, as every mat Token
+ * presses `MatTokenGrab`'s.
+ * ⚠️ One for all on purpose: dnd-kit re-renders every holder of one of its drag hooks each time
+ * its own state changes (three times at a pickup, twice at a drop, at every change of target)
+ * and the holder of the one in the hand at every pointer move. A source holds no dnd-kit hook: a
+ * press says which source it is and points this draggable at the source's own element, and the
+ * source redraws only when it is itself picked up or put down. What a drag carries, which
+ * element dnd-kit measures and where a missed drop springs back to are the source's, as before.
+ */
+export const ENTITY_DRAG_ID = 'entity-drag';
+const SOURCE_ID = Symbol('drag source id');
+
+/** One provider's shared source: its dnd-kit handles, the source pressed last and the one in the hand. */
+function createEntityDrags() {
+    const drags = { grab: null, pressed: null, held: null, data: null };
+    const read = () => drags.pressed?.payload;
+    // What dnd-kit hands out as the drag's data (`active.data.current`): the pressed source's
+    // payload as it was last drawn, read when asked, as dnd-kit's own hook keeps it.
+    drags.data = new Proxy({}, {
+        get: (_, key) => (key === SOURCE_ID ? drags.pressed?.id : read()?.[key]),
+        has: (_, key) => { const p = read(); return !!p && key in p; },
+        ownKeys: () => { const p = read(); return p ? Reflect.ownKeys(p) : []; },
+        getOwnPropertyDescriptor: (_, key) => {
+            const p = read();
+            if (!p || !Object.prototype.hasOwnProperty.call(p, key)) return undefined;
+            return { value: p[key], writable: true, enumerable: true, configurable: true };
+        }
+    });
+    return drags;
+}
+
+const EntityDragContext = React.createContext(null);
+
+/** The drag source's own id (`useEntityDrag`'s `id`) for a drag dnd-kit reports: tests name what started by it. */
+export function dragSourceId(active) {
+    return active?.id === ENTITY_DRAG_ID ? active.data?.current?.[SOURCE_ID] ?? null : active?.id ?? null;
+}
+
+function SharedEntityDrag({ drags }) {
+    const { setNodeRef, listeners, attributes } = useDraggable({ id: ENTITY_DRAG_ID, data: drags.data });
+    drags.grab = { setNodeRef, listeners, describedBy: attributes['aria-describedby'] };
+    return null;
+}
+
+function pressEntity(drags, source, e) {
+    // A source inside this one took the press (dnd-kit marks the event a drag is starting from).
+    if (e?.nativeEvent?.dndKit) return;
+    const grab = drags.grab;
+    const press = grab?.listeners?.onPointerDown;
+    if (!press) return;
+    drags.pressed = source;
+    grab.setNodeRef(source.node ?? e?.currentTarget ?? null);
+    press(e);
+}
+
 export const DeckDndProvider = ({ children }) => {
     const [activePayload, setActivePayload] = useState(null);
     const [surface, setSurface] = useState(DND_SURFACE.BOARD);
@@ -332,6 +388,7 @@ export const DeckDndProvider = ({ children }) => {
     const glideTargetRef = useRef(null);
     const regionsRef = useRef([]);
     const startPayloadRef = useRef(null);
+    const [drags] = useState(createEntityDrags);
 
     const sensors = useSensors(useSensor(AlphaPointerSensor, SENSOR_OPTIONS));
 
@@ -357,6 +414,10 @@ export const DeckDndProvider = ({ children }) => {
         if (a && 'clientX' in a) pointerRef.current = { x: a.clientX, y: a.clientY };
         setSurface(payload?.sourceSurface || DND_SURFACE.BOARD);
         setActivePayload(payload);
+        if (event.active?.id === ENTITY_DRAG_ID && drags.pressed) {
+            drags.held = drags.pressed;
+            drags.held.setDragging(true);
+        }
         glideTargetRef.current = null;
         if (typeof document !== 'undefined') document.body.classList.add('gi-dnd-active');
         followDropTargetScroll(true);
@@ -385,16 +446,20 @@ export const DeckDndProvider = ({ children }) => {
                 });
             }
         }
-    }, []);
+    }, [drags]);
 
     const finishDrag = useCallback(() => {
         startPayloadRef.current = null;
         setActivePayload(null);
+        if (drags.held) {
+            drags.held.setDragging(false);
+            drags.held = null;
+        }
         // dragPointer itself is cleared by DragPointerProvider's own effect, which re-runs the
         // moment activePayload goes null.
         if (typeof document !== 'undefined') document.body.classList.remove('gi-dnd-active');
         followDropTargetScroll(false);
-    }, []);
+    }, [drags]);
 
     const handleDragEnd = useCallback((event) => {
         const { active, over } = event;
@@ -480,6 +545,7 @@ export const DeckDndProvider = ({ children }) => {
     );
 
     return (
+        <EntityDragContext.Provider value={drags}>
         <DeckDndContext.Provider value={activeValue}>
             <DragSurfaceContext.Provider value={activePayload ? surface : null}>
             <DragPointerProvider activePayload={activePayload} pointerRef={pointerRef}>
@@ -492,6 +558,8 @@ export const DeckDndProvider = ({ children }) => {
                 onDragCancel={handleDragCancel}
                 autoScroll={AUTO_SCROLL}
             >
+                {/* Before `children`, so its handles are ready when they first draw. */}
+                <SharedEntityDrag drags={drags} />
                 {children}
 
                 <DragOverlay dropAnimation={dropAnimation} modifiers={[snapCenterToCursor]} zIndex={2000} className="pointer-events-none">
@@ -511,34 +579,65 @@ export const DeckDndProvider = ({ children }) => {
             </DragPointerProvider>
             </DragSurfaceContext.Provider>
         </DeckDndContext.Provider>
+        </EntityDragContext.Provider>
     );
 };
 
 
 /**
- * Make a node a drag source. `payload` is merged into the drag data under the given `kind`;
- * `sourceSurface` seeds the ghost's compact/bold state at pickup.
- * `keyboardAccessible` (default true): whether dnd-kit's own `attributes` (`role="button"`,
+ * Make a node a drag source, pressed through the provider's shared draggable
+ * (`ENTITY_DRAG_ID`). `payload` is merged into the drag data under the given `kind`;
+ * `sourceSurface` seeds the ghost's compact/bold state at pickup. `id` names the source
+ * (`dragSourceId`).
+ * `keyboardAccessible` (default true): whether dnd-kit's own attributes (`role="button"`,
  * `tabIndex={0}`, aria text about pressing space bar) are spread onto the node. ⚠️ There is no
  * keyboard sensor registered (`DeckDndProvider` wires only `AlphaPointerSensor`), so that text
  * describes a drag that cannot happen. `MatToken` passes `false`, which drops the false
  * instructions and the Tab stop.
+ * Outside a `DeckDndProvider` a source draws but cannot be picked up.
  */
 export function useEntityDrag({
     id, kind, payload, sourceSurface = DND_SURFACE.DRAWER, disabled = false, keyboardAccessible = true
 }) {
     const rid = useId();
-    const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-        id: id || `${kind}-${rid}`,
-        disabled,
-        data: { kind, sourceSurface, ...payload }
-    });
-    // The same object until the listeners themselves change, so a memoised drag source is not
-    // redrawn for a fresh copy of the same handlers.
-    const handleProps = React.useMemo(
-        () => (keyboardAccessible ? { ...listeners, ...attributes } : { ...listeners }),
-        [listeners, attributes, keyboardAccessible]
-    );
+    const drags = React.useContext(EntityDragContext);
+    const [isDragging, setDragging] = useState(false);
+    const self = useRef(null);
+    if (!self.current) self.current = { id: null, node: null, payload: null, setDragging };
+    self.current.id = id || `${kind}-${rid}`;
+    // As dnd-kit's own hook keeps it: a pickup carries what the source was last drawn with.
+    self.current.payload = { kind, sourceSurface, ...payload };
+
+    // The source's element; dnd-kit's while this source is the one pressed.
+    const setNodeRef = useCallback((el) => {
+        const me = self.current;
+        me.node = el;
+        if (drags && drags.pressed === me) drags.grab?.setNodeRef(el);
+    }, [drags]);
+
+    useEffect(() => () => {
+        const me = self.current;
+        if (!drags) return;
+        if (drags.pressed === me) drags.pressed = null;
+        if (drags.held === me) drags.held = null;
+    }, [drags]);
+
+    const describedBy = drags?.grab?.describedBy;
+    // The same object while nothing it holds changes, so a memoised drag source is not redrawn
+    // for a fresh copy of the same handlers.
+    const handleProps = React.useMemo(() => {
+        const listeners = disabled || !drags ? null : { onPointerDown: (e) => pressEntity(drags, self.current, e) };
+        if (!keyboardAccessible) return { ...listeners };
+        return {
+            ...listeners,
+            role: 'button',
+            tabIndex: 0,
+            'aria-disabled': disabled,
+            'aria-pressed': isDragging ? true : undefined,
+            'aria-roledescription': 'draggable',
+            'aria-describedby': describedBy
+        };
+    }, [drags, disabled, keyboardAccessible, isDragging, describedBy]);
     return { setNodeRef, isDragging, handleProps };
 }
 
