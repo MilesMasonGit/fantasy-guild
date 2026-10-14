@@ -32,8 +32,8 @@ October 2026.*
 | P2-9 drags | engineer | `crunch/p2-9` → `main` | merged (engine bench same work; drag bench level with `main` at 1× and 4× once run order was swapped; pickup renders −20 to −38 %; drags feel the same by design) | Wed | Wed |
 | T-145 Tokens twitch every 20–30 s (P1) | engineer | `fix/t145-twitch` → `main` | merged: the guard per animation plus hidden name labels; Tokens pixel-identical while every animation plays; frame work level with `main` at 1× and 4× cap128, 4× in-budget share 66 → 76 %; cost 1× fps 164 → 150 on a 165 Hz screen (director's call, not visible). Possible later spike: heroes and rings off the shared repaint to win those frames back | Wed | Wed |
 | P2-10 minimise stops the frame loop (T-117) | builder | `crunch/p2-10` (`p2-10`) | building (started Wed 16:00) | Wed–Thu | |
-| Drawers close each other (T-152) | builder-lite | `fix/t152-drawers` (`t152`) | building (started Wed 16:30) | Wed–Thu | |
-| Hover outline + Guild Hall movable again (T-147, T-148) | builder | `fix/hover-and-hall` | queued, one eye-check | Thu | |
+| Drawers close each other (T-152) | builder-lite | `fix/t152-drawers` → `main` | merged (one hook, one new test; ruled in words, no eye-check) | Wed | Wed |
+| Hover outline + Guild Hall movable again (T-147, T-148, with the outline-clipping fix T-146) | builder | `fix/hover-and-hall` (`hover`) | building (started Wed 17:00); one eye-check | Wed–Thu | |
 | Overlapping speech bubbles (T-158) | builder | `fix/t158-bubbles` | queued | Thu | |
 | Gear alert stops pulsing (T-153) | builder-lite | `fix/t153-gear-alert` | queued (follows the pixel-shadow ruling T-013) | Thu–Fri | |
 | Safety net for CMS renames (T-182) | builder-lite | `fix/t182-id-guard` → `main` | merged (250 ids checked; T-184 filed for three dead ids on a dev-panel button) | Wed | Wed |
