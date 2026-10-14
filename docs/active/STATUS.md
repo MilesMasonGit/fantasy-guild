@@ -28,9 +28,9 @@ October 2026.*
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| P2-7 sparse stack order (also the z clamp at 256) | engineer | `crunch/p2-7` (`p2-7`) | building | Wed | |
-| P2-9 drags | engineer | `crunch/p2-9` (`p2-9`) | building | Wed | |
-| T-145 Tokens twitch every 20–30 s (P1) | engineer | `fix/t145-twitch` | queued (third phase of Wed, when a slot frees) | Wed–Thu | |
+| P2-7 sparse stack order (also the z clamp at 256) | engineer | `crunch/p2-7` (`p2-7`) | ready; director gate pending; bench-queued (boxes rewritten per move 122 → 2 on cap128; 256 board: every Token on its own z, flags no longer cover lower Tokens) | Wed | |
+| P2-9 drags | engineer | `crunch/p2-9` (`p2-9`) | ready; director gate running; bench-queued (`bench:drag` before/after; pickup renders −20 to −38 %) | Wed | |
+| T-145 Tokens twitch every 20–30 s (P1) | engineer | `fix/t145-twitch` (`t145`) | building (started Wed late morning) | Wed–Thu | |
 | P2-10 minimise stops the frame loop (T-117) | builder | `crunch/p2-10` | queued | Thu | |
 | Ruled tweaks: T-147 hover outline, T-148 Hall movable, T-153 gear alert, T-152 drawers, T-158 bubbles | builder-lite, two at a time | `fix/t1xx` each | queued (eye-check: T-147 and T-148 together, one file) | Thu–Fri | |
 | T-182 guard test for ids code depends on | builder-lite | `fix/t182-id-guard` | queued | Thu | |
@@ -43,12 +43,19 @@ October 2026.*
 
 *Design questions the director cannot answer, as multiple choice, recommendation
 first; the owner answers in the director chat and the answer is recorded where
-it belongs. None open.*
+it belongs.*
+
+1. **Equipping by drop opens the hero sheet inside the drop's own frame** (P2-9
+   found it is the heaviest drop: ~240 renders). **A (recommended):** open the
+   sheet in a transition one frame after the drop, as brief 60 D3 did for the
+   Shop list and the toasts; you would not see the difference. **B:** leave it.
+   Not built either way; a builder-lite job once ruled.
 
 ## Bench queue (one at a time, weekdays 13:00–17:00 and 01:00–07:00)
 
 1. ~~P2-3, P2-6~~ done 13:00–13:05; `main` control run 13:05 shows the same 1.3–1.5× timing against the Oct-7 baseline (machine load: 13 Chrome, 15 Node processes). **Retake `bench/baseline.json` on a quiet machine** (T-111) before timing verdicts mean anything.
 2. ~~P2-5 layer count~~ done 13:45–13:51 (56 → 45).
+3. Wed 13:00: `crunch/p2-7` engine bench `--compare`; `crunch/p2-9` engine bench `--compare`; `bench:drag --board=cap128` on `main` then on `crunch/p2-9` (plain and `--cpu=4`); `bench:draw --ab=.claude/worktrees/p27a --only=cap128,cap256` for P2-7.
 4. ~~P2-8, A8 engine benches~~ done 13:13–13:18, same work both. Still for P2-8: `bench:draw --compare` on `main` for the cost-log line.
 5. `main` after the Atlas batch: engine bench `--compare` (expect same work) and the drag bench baseline (`npm run bench:drag`, 5 kinds, A3b) for PERFORMANCE.md.
 
