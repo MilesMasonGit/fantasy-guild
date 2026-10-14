@@ -60,6 +60,8 @@
      status is a different vocabulary and must not drift with them. */
   --color-gi-gold: #fbbf24;
   /* Warm fantasy gold/amber for Gold, Currency, Valuables & Purchases */
+  --color-gi-gold-pale: #fde68a;
+  /* The second gold of the gear alert's two-step outline */
 
   /* Colors - Intent Palette (Muted) */
   --color-gi-intent-combat: #8b3535;
@@ -536,19 +538,22 @@
   pointer-events: none;
 }
 
-/* The recipe gear on a station or Foundation with nothing chosen (FB-7):
-   a gentle breathe, not an alarm. */
-@keyframes gi-gear-pulse {
-  0%, 100% { transform: scale(1); filter: brightness(1); }
-  50% { transform: scale(1.14); filter: brightness(1.35) drop-shadow(0 0 4px rgba(251, 191, 36, 0.8)); }
+/* The recipe gear on a station or Foundation with nothing chosen: a one-art-pixel gold outline
+   whose colour steps between two golds. Four copies of the gear's shape, each one art pixel off
+   in a direction, sit behind the art; only their colour changes, so nothing moves or resizes. */
+@keyframes gi-gear-alert {
+  0%   { background-color: var(--color-gi-gold); }
+  50%  { background-color: var(--color-gi-gold-pale); }
+  100% { background-color: var(--color-gi-gold); }
 }
 
-.gi-gear-pulse {
-  animation: gi-gear-pulse 1.6s ease-in-out infinite;
+.gi-gear-alert {
+  background-color: var(--color-gi-gold);
+  animation: gi-gear-alert 1.6s steps(1, end) infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .gi-gear-pulse { animation: none; }
+  .gi-gear-alert { animation: none; }
 }
 
 /* ⚠️ These animations play among the resting Tokens, so they run on the main
@@ -563,7 +568,7 @@
 .gi-transform-flash,
 .gi-transform-glow,
 .gi-quest-ready,
-.gi-gear-pulse {
+.gi-gear-alert {
   will-change: contents;
 }
 
