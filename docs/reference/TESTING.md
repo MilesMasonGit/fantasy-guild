@@ -26,8 +26,10 @@ Nothing merges to `main` until all of these hold:
 5. **In the game**: anything a player could see is exercised in the running
    game (below). If something truly can't be automated, hand the owner an
    explicit manual check; never quietly skip it or claim it passed.
-6. **Look**: anything that changes how the game looks or plays waits for the
-   owner's eye-check before merging. The director writes one checklist file
+6. **Look**: a significant change to how the game looks or plays (a new
+   screen or panel, a changed interaction, a look rule) waits for the owner's
+   eye-check before merging; wording, placeholder text and look-preserving
+   work merge on the gate with a line in STATUS. The director writes one checklist file
    per batch in `docs/active/eyecheck/` (`YYYY-MM-DD_<batch>.md`: the exact
    branch-switch command, the save slot, numbered checks saying where to
    click and what you should see (every check is reachable by clicking: a

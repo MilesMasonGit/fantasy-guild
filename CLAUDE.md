@@ -102,7 +102,12 @@ bench queue, with a dated five-line summary written by the director at about
 07:00 and 22:00 (where we are, what is next, what the owner must do, budget
 against plan, blockers); entries older than two days are trimmed.
 
-**Eye-checks** are files in `docs/active/eyecheck/`, one per batch, named
+**Eye-checks** are for a **significant change in how the game looks or
+plays** (owner, 2026-10-14): a new screen or panel, a changed interaction, a
+look rule. Wording and placeholder text, a one-frame timing change, a
+look-preserving optimisation: no eye-check; those merge on the gate and get
+one line in STATUS so the owner knows they landed. Eye-check files live in
+`docs/active/eyecheck/`, one per batch, named
 `YYYY-MM-DD_<batch>.md`: the exact branch-switch command, the save slot,
 numbered checks (where to click, what you should see) each with a
 `Verdict: ok / change: ___` line for the owner, and the owner's CMS steps at

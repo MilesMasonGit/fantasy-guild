@@ -20,9 +20,24 @@ October 2026.*
 | P2-7 sparse stack order | engineer | `crunch/p2-7` | queued (P2-5 is merged) | Wed | |
 | P2-8 tick and React per tick | engineer | `crunch/p2-8` → `main` | merged (bench: same work, timing as `main`'s control; commits per tick 0.79 → 0.57 on S2, renders 6.35 → 3.89; no eye-check) | Tue | Tue |
 | P2-9 drags | engineer | `crunch/p2-9` | queued (from a `main` that holds P2-8) | Wed–Thu | |
-| Atlas A8 cartographer's tutorial | builder | `crunch/atlas-a8` (`atlas-a8`) | eye-check ([file](eyecheck/2026-10-13_atlas-a8.md)); gate and bench green (same work); merges after the owner's read | Tue | |
+| Atlas A8 cartographer's tutorial | builder | `crunch/atlas-a8` → `main` | merged Wed morning (owner: lines are placeholders, fine; [archived file](../archive/eyecheck/2026-10-13_atlas-a8.md)) | Tue | Wed |
 | Atlas A12 map upcycling | builder | `crunch/atlas-a12` → `main` | merged (owner deferred the look, trusted on the gate; [archived file](../archive/eyecheck/2026-10-13_atlas-a12.md)) | Tue | Tue |
-| Regroup: planning docs, wave 2 plan | owner + planning | `planning` (`pp`) | queued (after P2-7, P2-9 and A8 merge) | Thu–Sat | |
+| Regroup: wave 2 order | owner + director | chat | done Wed morning (owner chose: finish brief 60, the P1 bug and ruled tweaks, terrain plan) | Wed | Wed |
+
+## Wave 2 (Wed 14 – Sat 17 October), order ruled by the owner 2026-10-14
+
+| Phase | Tier | Branch (worktree) | State | Planned | Done |
+|---|---|---|---|---|---|
+| P2-7 sparse stack order (also the z clamp at 256) | engineer | `crunch/p2-7` (`p2-7`) | building | Wed | |
+| P2-9 drags | engineer | `crunch/p2-9` (`p2-9`) | building | Wed | |
+| T-145 Tokens twitch every 20–30 s (P1) | engineer | `fix/t145-twitch` | queued (third phase of Wed, when a slot frees) | Wed–Thu | |
+| P2-10 minimise stops the frame loop (T-117) | builder | `crunch/p2-10` | queued | Thu | |
+| Ruled tweaks: T-147 hover outline, T-148 Hall movable, T-153 gear alert, T-152 drawers, T-158 bubbles | builder-lite, two at a time | `fix/t1xx` each | queued (eye-check: T-147 and T-148 together, one file) | Thu–Fri | |
+| T-182 guard test for ids code depends on | builder-lite | `fix/t182-id-guard` | queued | Thu | |
+| Brief 80 T0 terrain plan (read-only; owner's spritesheets are ready) | engineer | `crunch/terrain` | queued | Fri | |
+| Handoff; T-181 baseline retake queued for Sat 01:00 | director / runner | `main` | queued | Sat | |
+| Planning agent briefs this week's concept docs into the queue table | owner + planning | `planning` (`pp`) | in progress alongside (owner's choice) | Wed–Sat | |
+
 
 ## Questions for the owner
 
@@ -65,3 +80,11 @@ and ~12 gate runs); Wednesday runs lighter with two engineers and no review.
 Blockers: the bench baseline (Oct 7) no longer matches the machine's load, so
 timing verdicts are noise until it is retaken on a quiet evening (T-111); the
 work check and like-for-like controls carry the gate meanwhile.
+
+**Wed 2026-10-14, morning.** Where we are: A8 merged (owner read the lines;
+eye-checks are now only for significant look or play changes). Wave 2 ruled:
+finish brief 60, the P1 twitch bug and the ruled tweaks, then the terrain plan
+Friday. Next: P2-7 and P2-9 started on two engineers; T-145 when a slot frees;
+benches at 13:00. Owner: run /planning to brief this week's concept docs into
+the queue table; nothing else needed. Budget: three phases planned for today.
+Blockers: none.
