@@ -43,7 +43,11 @@ October 2026.*
 | Terrain T2: the ground drawn on the mat | engineer | `crunch/terrain-t2` (`t2`) | ready; director gate green (4838); combined eye-check branch `fix/terrain-tm1` (T2 + T3) being gated; eye-check file drafted ([file](eyecheck/2026-10-15_terrain-ground.md)); after the 13:00 window: merge T1 and T3, bring `main` into T2, layer count and draw bench on/off, then the handover | Thu | |
 | Terrain T4: the CMS "Stands on" field and the grid while placing | builder | `crunch/terrain-t4` (`t4`) | ready; director gate green (4908); on the eye-check branch `fix/terrain-tm1` with the ground | Thu | |
 | The dev server must survive a full sprite redraw (T-185) | engineer | `fix/t185-spritefx-server` (`t185`) | ready; director gate green (4810). Cause: the main folder's dev server watched every agent worktree (211k handles, 2 GB) and ran the redraw in its own process; now the worktrees are ignored (6k handles, 165 MB) and the redraw runs in a child process (5 s). Work check at 13:00, then merge | Thu | |
-| Handoff; T-181 baseline retake queued for Sat 01:00 | director / runner | `main` | queued | Sat | |
+| Art bench page (brief 85 A1: presets side by side on a sample scene, ground, scatter, tint) | builder | `crunch/art-a1` (`a1`) | building (started Thu 11:30; owner ruling via the planning agent: the three art tools ready by Friday) | Thu–Fri | |
+| Brightness script with presets and outline protection (brief 85 A2) | builder | `crunch/art-a2` (`a2`) | building (started Thu 11:30) | Thu–Fri | |
+| Studio split and palette import (brief 85 A3, T-179) | builder | `crunch/art-a3` | queued (when a slot frees) | Thu–Fri | |
+| The owner's art weekend (brief 85): tools first, then support | director + one agent | `main` | Fri–Sun; overrides the Saturday stop this weekend only | Fri–Sun | |
+| Handoff; T-181 baseline retake queued for Sat 01:00 | director / runner | `main` | queued; moves to Sunday night if the art weekend runs | Sat–Sun | |
 | Planning agent briefs this week's concept docs into the queue table | owner + planning | `planning` (`pp`) | in progress alongside (owner's choice) | Wed–Sat | |
 
 
@@ -132,3 +136,12 @@ CMS "Stands on" field and the placing grid (an eye-check). Owner: say go on
 the terrain slices; minimise the desktop app once to check the frame counter
 stops. Budget: two slots free. Blockers: none. Saturday: handoff and the
 quiet-machine baseline retake.
+
+**Thu 2026-10-15, midday.** Where we are: all four terrain slices are built and
+gated (the planning agent's brief 85 assumes terrain moved to the next wave; it
+did not: the ground plan, placement, the drawn ground and the CMS field are
+ready and wait on the 13:00 work checks, the ground's benches and the owner's
+look). The dev-server fix is ready. Brief 85's A1 and A2 started at the
+owner's ruling relayed by the planning agent; A3 follows. Next: 13:00
+merges, the terrain handover, then the art tools by Friday. Owner: nothing
+until the terrain handover. Blockers: none.
