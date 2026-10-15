@@ -1,145 +1,161 @@
-import { describe, it, expect } from 'vitest';
-import { buildSurface } from '../systems/board/TerrainSurface.js';
-import { resolveArtPixels, LATTICE_SIZE, subtileArtPx } from '../systems/board/TerrainLattice.js';
-import { getTerrain, patchOf, bandOf, toneOf } from '../config/registries/terrainRegistry.js';
+import { describe, it, expect, afterEach } from 'vitest';
+import { buildGroundPlan, sheetFor, muteTexels } from '../systems/board/TerrainSurface.js';
+import { LOOKS, SHEETS } from '../config/registries/terrainRegistry.js';
+import { setTuning, resetTuning } from '../config/playmatTuning.js';
+import { groundWith, flat } from './fixtures/ground.js';
 
 /**
- * The one answer per art pixel that replaced five rendering passes.
+ * The composed plan: one answer per pixel (which sheet, which tint), the layering rule that used
+ * to be draw order, and the mute the screen pass bakes into each sheet.
  */
 
-const flat = (terrainId) => new Array(LATTICE_SIZE * LATTICE_SIZE).fill(terrainId);
+afterEach(() => resetTuning());
 
-/** Sea on the left, forest on the right. Beaches appear between them. */
-function coast() {
-    const grid = new Array(LATTICE_SIZE * LATTICE_SIZE);
-    for (let sy = 0; sy < LATTICE_SIZE; sy++) {
-        for (let sx = 0; sx < LATTICE_SIZE; sx++) {
-            grid[sy * LATTICE_SIZE + sx] = sx < LATTICE_SIZE / 2 ? 'ocean' : 'forest';
-        }
+/** Sea, a beach, forest grass and mountain rock side by side. */
+const hybrid = (seed = 5) => groundWith(32, 16, (c) => (c < 6 ? 'water' : c < 12 ? 'sand' : c < 22 ? 'grass' : 'rock'), { seed });
+const meadow = (seed = 5) => groundWith(20, 12, flat('grass'), { seed, biomes: null });
+
+/** How many pixels draw each sheet. */
+function sheetCounts(plan) {
+    const out = {};
+    for (let i = 0; i < plan.sheetAt.length; i++) {
+        const id = plan.sheets[plan.sheetAt[i]];
+        out[id] = (out[id] || 0) + 1;
     }
-    return grid;
+    return out;
 }
 
-const surfaceOf = (grid, seed = 5) => {
-    const pixels = resolveArtPixels(grid, seed);
-    return { pixels, surface: buildSurface(pixels, seed) };
-};
-
-describe('Every painted pixel gets ground to draw', () => {
-    it('gives each terrain pixel its terrain’s substrate', () => {
-        const { pixels, surface } = surfaceOf(flat('forest'));
-        const grassIndex = surface.substrates.indexOf(getTerrain('forest').substrate);
-        expect(grassIndex).toBeGreaterThanOrEqual(0);
-        for (let i = 0; i < surface.substrateAt.length; i++) {
-            expect(surface.substrateAt[i]).toBeGreaterThanOrEqual(0);
+describe('Every pixel gets a sheet', () => {
+    it('covers the whole mat: no pixel without ground', () => {
+        const plan = buildGroundPlan(hybrid());
+        expect(plan.sheetAt.length).toBe(plan.width * plan.height);
+        for (let i = 0; i < plan.sheetAt.length; i++) {
+            expect(SHEETS).toContain(plan.sheets[plan.sheetAt[i]]);
         }
-        expect(pixels.size).toBe(LATTICE_SIZE * subtileArtPx());
     });
 
-    it('⭐ leaves bare table with nothing to draw', () => {
-        // -1 means transparent. If this ever became a real substrate the wooden
-        // table would disappear under a board-sized rectangle of ground.
-        const { surface } = surfaceOf(new Array(LATTICE_SIZE * LATTICE_SIZE).fill(null));
-        expect(Array.from(surface.substrateAt).every(v => v === -1)).toBe(true);
-    });
-
-    it('picks the variant per subtile, not per pixel', () => {
-        // A variant chosen per pixel would shred the texture into noise. Every
-        // pixel of one subtile must sample the same sprite.
-        const { surface } = surfaceOf(flat('meadow'));
-        const artPx = subtileArtPx();
-        const size = surface.size;
-        for (let sy = 0; sy < 4; sy++) {
-            for (let sx = 0; sx < 4; sx++) {
-                const seen = new Set();
-                for (let y = 0; y < artPx; y++) {
-                    for (let x = 0; x < artPx; x++) {
-                        const i = (sy * artPx + y) * size + sx * artPx + x;
-                        // Patches swap the substrate, so only compare pixels
-                        // that are still drawing the terrain's own ground.
-                        if (surface.substrateAt[i] === surface.substrateAt[sy * artPx * size + sx * artPx]) {
-                            seen.add(surface.variantAt[i]);
-                        }
-                    }
-                }
-                expect(seen.size).toBeLessThanOrEqual(1 + 1);
+    it('⭐ draws each look with its own sheet (TD-2 A)', () => {
+        // Meadow grass is `ter_grass`, forest ground `ter_grassb`, rock `ter_stone`, the beach
+        // `ter_sand`, the sea `ter_water`.
+        const byTerrain = (plan) => {
+            const out = {};
+            for (let i = 0; i < plan.sheetAt.length; i++) {
+                if (plan.wearAt?.[i]) continue;
+                const t = plan.palette[plan.terrainAt[i]];
+                (out[t] ||= new Set()).add(plan.sheets[plan.sheetAt[i]]);
             }
+            return Object.fromEntries(Object.entries(out).map(([t, s]) => [t, [...s]]));
+        };
+        expect(byTerrain(buildGroundPlan(hybrid()))).toEqual({
+            water: ['water'], sand: ['sand'], grass: ['grassb'], rock: ['stone']
+        });
+        expect(byTerrain(buildGroundPlan(meadow()))).toEqual({ grass: ['grass'] });
+    });
+
+    it('lists the look of every terrain it drew', () => {
+        const plan = buildGroundPlan(hybrid());
+        const looks = Object.fromEntries(plan.palette.map((t, i) => [t, plan.looks[i]]));
+        expect(looks).toMatchObject({ grass: 'forest', rock: 'mountain', sand: 'coast', water: 'sea' });
+    });
+});
+
+describe('⭐ Layering: tint under band under wear', () => {
+    it('wears earth through grass and gravel through rock, as wear and not a second ground', () => {
+        const counts = sheetCounts(buildGroundPlan(hybrid()));
+        expect(counts.dirt).toBeGreaterThan(0);
+        expect(counts.gravel).toBeGreaterThan(0);
+        expect(counts.grassb).toBeGreaterThan(counts.dirt);
+        expect(counts.stone).toBeGreaterThan(counts.gravel);
+    });
+
+    it('tints the shallows and the wet sand, and nothing else', () => {
+        const plan = buildGroundPlan(hybrid());
+        const tinted = new Set();
+        for (let i = 0; i < plan.tintAt.length; i++) {
+            if (plan.tintAt[i] < 0) continue;
+            tinted.add(plan.palette[plan.terrainAt[i]]);
+        }
+        expect([...tinted].sort()).toEqual(['sand', 'water']);
+        expect(plan.tints.map(t => t.tint).sort()).toEqual([LOOKS.coast.band.tint, LOOKS.sea.band.tint].sort());
+    });
+
+    it('⭐ never tints worn ground: bare earth is not shallow water', () => {
+        const plan = buildGroundPlan(hybrid());
+        for (let i = 0; i < plan.tintAt.length; i++) {
+            if (plan.wearAt?.[i]) expect(plan.tintAt[i], `worn pixel ${i}`).toBe(-1);
+        }
+    });
+
+    it('keeps which band each pixel is in, apart from the drawing answer', () => {
+        const plan = buildGroundPlan(hybrid());
+        expect(plan.bands.map(b => b.look).sort()).toEqual(['coast', 'sea']);
+        for (const band of plan.bands) {
+            expect(band.mask.length).toBe(plan.width * plan.height);
         }
     });
 });
 
-describe('⭐ Layering — the rules that used to be draw order', () => {
-    it('replaces the ground where a patch wears through', () => {
-        const { surface } = surfaceOf(flat('meadow'));
-        const grass = getTerrain('meadow').substrate;
-        const dirt = patchOf('meadow').substrate;
-        const names = surface.substrates;
-
-        let asGrass = 0;
-        let asDirt = 0;
-        for (let i = 0; i < surface.substrateAt.length; i++) {
-            const id = names[surface.substrateAt[i]];
-            if (id === grass) asGrass++;
-            if (id === dirt) asDirt++;
-        }
-        expect(asDirt).toBeGreaterThan(0);
-        expect(asGrass).toBeGreaterThan(asDirt);   // wear, not a second terrain
+describe('Alternate sheets swap per Region, never per cell', () => {
+    it('uses the one sheet a look has', () => {
+        expect(sheetFor(LOOKS.meadow, 1)).toBe('grass');
+        expect(sheetFor(LOOKS.meadow, 99)).toBe('grass');
     });
 
-    it('tints the ground where a band lies over it', () => {
-        const { surface } = surfaceOf(coast());
-        expect(surface.tints.length).toBeGreaterThan(0);
-        const tinted = Array.from(surface.tintAt).filter(v => v >= 0).length;
-        expect(tinted).toBeGreaterThan(0);
+    it('picks one alternate per seed, and every alternate comes up', () => {
+        const look = { sheets: ['a', 'b'] };
+        const seen = new Set();
+        for (let seed = 0; seed < 40; seed++) {
+            expect(sheetFor(look, seed)).toBe(sheetFor(look, seed));
+            seen.add(sheetFor(look, seed));
+        }
+        expect([...seen].sort()).toEqual(['a', 'b']);
     });
 
-    it('⭐ never leaves a patch tinted — bare earth is not shallow water', () => {
-        // Patches and bands do not currently overlap on any authored terrain,
-        // but the rule has to be decided rather than left to whichever pass ran
-        // last. A patch replaces the ground, so it drops the tint with it.
-        const { surface } = surfaceOf(coast());
-        const patchSubstrates = new Set(
-            ['meadow', 'forest', 'farmland', 'hamlet', 'diggings']
-                .map(id => patchOf(id)?.substrate).filter(Boolean)
-        );
-        for (let i = 0; i < surface.substrateAt.length; i++) {
-            const id = surface.substrates[surface.substrateAt[i]];
-            if (patchSubstrates.has(id) && surface.tintAt[i] >= 0) {
-                // Only a failure if this pixel's terrain is one that patches.
-                expect.fail(`patched pixel ${i} carried a band tint`);
-            }
-        }
+    it('draws one sheet for a look across the whole Region', () => {
+        const counts = sheetCounts(buildGroundPlan(meadow(12)));
+        expect(Object.keys(counts).sort()).toEqual(['dirt', 'grass']);
+    });
+});
+
+describe('The mute, baked into a sheet\'s pixels once', () => {
+    const rgba = () => Uint8ClampedArray.from([200, 100, 50, 255, 100, 100, 100, 128]);
+
+    it('changes nothing at full brightness and saturation', () => {
+        setTuning('muteBrightness', 1);
+        setTuning('muteSaturation', 1);
+        expect(Array.from(muteTexels(rgba()))).toEqual(Array.from(rgba()));
     });
 
-    it('tints only terrain that asked to be coloured', () => {
-        // ⚠️ Used to say "declared a band". Tones colour a terrain too, and
-        // arrived later — so a pixel may be tinted because of its band, its
-        // tone, or a blend of its tone with a neighbour's.
-        const { pixels, surface } = surfaceOf(coast());
-        for (let i = 0; i < surface.tintAt.length; i++) {
-            if (surface.tintAt[i] < 0) continue;
-            const terrainId = pixels.palette[pixels.at[i]];
-            const coloured = bandOf(terrainId) || toneOf(terrainId)
-                // A plain terrain can still be tinted, but only where a toned
-                // neighbour is fading across into it.
-                || surface.tints[surface.tintAt[i]].amount < 0.2;
-            expect(coloured, `${terrainId} was tinted for no reason`).toBeTruthy();
-        }
+    it('darkens and greys a colour by the tuned amounts, and leaves alpha alone', () => {
+        const out = muteTexels(rgba());
+        // brightness(0.85) saturate(0.7): darker, and the channels closer together.
+        expect(out[0]).toBeLessThan(200);
+        expect(out[0] - out[2]).toBeLessThan(150 * 0.85);
+        expect(out[3]).toBe(255);
+        expect(out[7]).toBe(128);
+        // A grey stays grey: saturation has nothing to take from it.
+        expect(out[4]).toBe(out[5]);
+        expect(out[5]).toBe(out[6]);
+        expect(out[4]).toBe(85);
+    });
+
+    it('works on a copy, so the decoded sheet is never altered', () => {
+        const src = rgba();
+        muteTexels(src);
+        expect(Array.from(src)).toEqual(Array.from(rgba()));
     });
 });
 
 describe('Stability', () => {
     it('is identical every time', () => {
-        const a = surfaceOf(coast(), 31).surface;
-        const b = surfaceOf(coast(), 31).surface;
-        expect(Array.from(a.substrateAt)).toEqual(Array.from(b.substrateAt));
+        const a = buildGroundPlan(hybrid(31));
+        const b = buildGroundPlan(hybrid(31));
+        expect(Array.from(a.sheetAt)).toEqual(Array.from(b.sheetAt));
         expect(Array.from(a.tintAt)).toEqual(Array.from(b.tintAt));
-        expect(Array.from(a.variantAt)).toEqual(Array.from(b.variantAt));
+        expect(a.props).toEqual(b.props);
     });
 
     it('differs between seeds', () => {
-        const a = surfaceOf(coast(), 1).surface;
-        const b = surfaceOf(coast(), 2).surface;
-        expect(Array.from(a.substrateAt)).not.toEqual(Array.from(b.substrateAt));
+        expect(Array.from(buildGroundPlan(hybrid(1)).sheetAt)).not.toEqual(Array.from(buildGroundPlan(hybrid(2)).sheetAt));
     });
 });

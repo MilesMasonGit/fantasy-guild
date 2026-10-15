@@ -1,257 +1,92 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import {
-    LATTICE_SIZE, SUBTILE_PX, SUBTILES_PER_TILE, SUBTILES_PER_GAP,
-    subtileArtPx, edgeAmplitude,
-    ownerOf, variantAt, resolveLattice, edgeProfile, edgeStrips,
-    LEGACY_BOARD_SIZE as BOARD_SIZE, LEGACY_BOARD_PX as BOARD_PX,
-    LEGACY_TILE_PX as TILE_PX, LEGACY_TILE_GAP_PX as TILE_GAP_PX
+    PLAN_PIXEL_U, CELL_PX, planSize, hash01, edgeAmplitude, edgeProfile, edgeStrips,
+    resolveArtPixels, distanceFromSeeds
 } from '../systems/board/TerrainLattice.js';
+import { TERRAIN_CELL, terrainGrid } from '../systems/atlas/TerrainMap.js';
+import { resetTuning } from '../config/playmatTuning.js';
+import { regionGround } from '../systems/atlas/regionGround.js';
+import { groundWith, regionWith, flat } from './fixtures/ground.js';
 
 /**
- * Terrain P2 — the subtile lattice.
+ * The ground's pixel map over a Region's terrain cells: one pixel per 2 mat units, the cell
+ * boundaries wiggled, the beach cut where water meets land (the beach itself is pinned in
+ * `TerrainBands.test.js`).
  */
 
-/** A board where every tile carries the same terrain, painted in index order. */
-const uniform = (terrainId) => {
-    const terrain = {};
-    for (let i = 0; i < BOARD_SIZE * BOARD_SIZE; i++) {
-        terrain[i] = { terrainId, paintedAt: i };
-    }
-    return terrain;
-};
+afterEach(() => resetTuning());
 
-const tileOf = (index) => ({
-    col: index % BOARD_SIZE,
-    row: Math.floor(index / BOARD_SIZE)
-});
+const SHIPPED = Object.freeze({ w: 1760, h: 1126 });
+const { cols: COLS, rows: ROWS } = terrainGrid(SHIPPED);
 
-/** The subtile coordinates of a tile's untouchable middle. */
-const coreOf = (index) => {
-    const { col, row } = tileOf(index);
-    const stride = SUBTILES_PER_TILE + SUBTILES_PER_GAP;
-    return { sx: col * stride + 1, sy: row * stride + 1 };
-};
+/** Blocks of grass, rock, sand and water, a few cells each, so boundaries of every pair exist. */
+const patchwork = (seed) => (c, r) =>
+    ['grass', 'rock', 'sand', 'water'][Math.floor(hash01(Math.floor(c / 3), Math.floor(r / 2), seed) * 4)];
 
-describe('The lattice lines up with the board exactly (D-T1)', () => {
-    it('is 29 subtiles across — six tiles and five gaps', () => {
-        expect(SUBTILES_PER_TILE).toBe(4);
-        expect(SUBTILES_PER_GAP).toBe(1);
-        expect(LATTICE_SIZE).toBe(29);
+describe('The plan is laid over the cell map', () => {
+    it('is one pixel per 2 mat units, 16 pixels to a terrain cell', () => {
+        expect(PLAN_PIXEL_U).toBe(2);
+        expect(CELL_PX).toBe(16);
+        expect(CELL_PX * PLAN_PIXEL_U).toBe(TERRAIN_CELL);
     });
 
-    it('⭐ covers the board edge to edge with nothing left over', () => {
-        // The whole reason the playmat moved to a 32px gap. If this fails the
-        // terrain no longer aligns with the tiles and every boundary is wrong.
-        expect(SUBTILE_PX).toBe(32);
-        expect(LATTICE_SIZE * SUBTILE_PX).toBe(BOARD_PX);
-    });
-
-    it('a gap is exactly one subtile, and a tile exactly four', () => {
-        expect(SUBTILES_PER_GAP * SUBTILE_PX).toBe(TILE_GAP_PX);
-        expect(SUBTILES_PER_TILE * SUBTILE_PX).toBe(TILE_PX);
+    it('covers the shipped mat in 880 × 563 pixels, under its 55 × 36 cells', () => {
+        expect(planSize(SHIPPED)).toEqual({ width: 880, height: 563 });
+        expect([COLS, ROWS]).toEqual([55, 36]);
+        // The last row of cells runs past the mat's edge; the plan stops at the edge.
+        expect(COLS * CELL_PX).toBeGreaterThanOrEqual(880);
+        expect(ROWS * CELL_PX).toBeGreaterThanOrEqual(563);
     });
 });
 
-describe('Ownership', () => {
-    it('gives an unpainted board no terrain at all', () => {
-        const grid = resolveLattice({}, 1);
-        expect(grid).toHaveLength(LATTICE_SIZE * LATTICE_SIZE);
-        expect(grid.every(cell => cell === null)).toBe(true);
-    });
-
-    it('⭐ never lets a tile keep terrain in its own core', () => {
-        // The core is what makes a tile readable as that tile. If a neighbour
-        // could take it, terrain would speckle into the middle of tiles and
-        // read as noise rather than as bleed.
-        const terrain = uniform('forest');
-        terrain[14] = { terrainId: 'shore', paintedAt: 999 };  // newest, most aggressive
-        for (let i = 0; i < BOARD_SIZE * BOARD_SIZE; i++) {
-            const { sx, sy } = coreOf(i);
-            expect(ownerOf(sx, sy, terrain, 7), `core of tile ${i}`).toBe(i);
-        }
-    });
-
-    it('paints the gaps, so the board reads as one surface', () => {
-        const terrain = uniform('forest');
-        const grid = resolveLattice(terrain, 7);
-        // Column 4 is the gap between tile columns 0 and 1. On a fully painted
-        // board it must be terrain, not bare table.
-        for (let sy = 0; sy < LATTICE_SIZE; sy++) {
-            expect(grid[sy * LATTICE_SIZE + 4], `gap at row ${sy}`).toBe('forest');
-        }
-    });
-
-    it('never reaches further than a nearby tile', () => {
-        // One painted tile in the middle of an empty board. Its terrain may
-        // spill into the gap and a little way into its neighbours, but it must
-        // not appear on the far side of them.
-        const terrain = { 14: { terrainId: 'shore', paintedAt: 0 } };
-        const grid = resolveLattice(terrain, 3);
-        const stride = SUBTILES_PER_TILE + SUBTILES_PER_GAP;
-        const { col, row } = tileOf(14);
-
-        for (let sy = 0; sy < LATTICE_SIZE; sy++) {
-            for (let sx = 0; sx < LATTICE_SIZE; sx++) {
-                if (grid[sy * LATTICE_SIZE + sx] == null) continue;
-                expect(Math.abs(Math.floor(sx / stride) - col)).toBeLessThanOrEqual(1);
-                expect(Math.abs(Math.floor(sy / stride) - row)).toBeLessThanOrEqual(1);
-            }
-        }
-    });
-
-    it('leaves a lone tile’s own sixteen subtiles entirely to it', () => {
-        const terrain = { 14: { terrainId: 'shore', paintedAt: 0 } };
-        const stride = SUBTILES_PER_TILE + SUBTILES_PER_GAP;
-        const { col, row } = tileOf(14);
-        for (let dy = 0; dy < SUBTILES_PER_TILE; dy++) {
-            for (let dx = 0; dx < SUBTILES_PER_TILE; dx++) {
-                const sx = col * stride + dx;
-                const sy = row * stride + dy;
-                expect(ownerOf(sx, sy, terrain, 3)).toBe(14);
-            }
+describe('Stable noise', () => {
+    it('is in [0, 1) and the same every time', () => {
+        for (let i = 0; i < 300; i++) {
+            const v = hash01(i, i * 7, 99);
+            expect(v).toBeGreaterThanOrEqual(0);
+            expect(v).toBeLessThan(1);
+            expect(hash01(i, i * 7, 99)).toBe(v);
         }
     });
 });
 
-describe('⚠️ The same board always resolves the same way (D-T11)', () => {
-    it('is identical when resolved twice', () => {
-        // This is the property that makes storing two numbers per tile enough
-        // instead of the whole 841-cell grid. If it ever fails, the save model
-        // is wrong, not just the picture.
-        const terrain = uniform('forest');
-        terrain[8] = { terrainId: 'shore', paintedAt: 100 };
-        expect(resolveLattice(terrain, 4242)).toEqual(resolveLattice(terrain, 4242));
-    });
-
-    it('differs between seeds, so two players get different coastlines', () => {
-        const terrain = uniform('forest');
-        terrain[8] = { terrainId: 'shore', paintedAt: 100 };
-        expect(resolveLattice(terrain, 1)).not.toEqual(resolveLattice(terrain, 2));
-    });
-
-    it('picks substrate variants stably, and always in range', () => {
-        for (let sy = 0; sy < LATTICE_SIZE; sy++) {
-            for (let sx = 0; sx < LATTICE_SIZE; sx++) {
-                const v = variantAt(sx, sy, 6, 99);
-                expect(v).toBeGreaterThanOrEqual(0);
-                expect(v).toBeLessThan(6);
-                expect(variantAt(sx, sy, 6, 99)).toBe(v);
-            }
-        }
-    });
-
-    it('uses more than one variant, rather than picking the same one forever', () => {
-        const seen = new Set();
-        for (let sy = 0; sy < LATTICE_SIZE; sy++) {
-            for (let sx = 0; sx < LATTICE_SIZE; sx++) seen.add(variantAt(sx, sy, 6, 99));
-        }
-        expect(seen.size).toBe(6);
-    });
-
-    it('handles a substrate with a single variant without dividing by it', () => {
-        expect(variantAt(3, 4, 1, 5)).toBe(0);
-        expect(variantAt(3, 4, 0, 5)).toBe(0);
-    });
-});
-
-describe('Recency decides a contested subtile (D-T3)', () => {
-    it('⭐ gives the newer terrain most of the gap between two tiles', () => {
-        // Not all of it — the jitter is what stops the boundary being a
-        // straight line — but it must clearly win, or "most recently painted
-        // wins" is not what the board shows.
-        const terrain = {};
-        for (let row = 0; row < BOARD_SIZE; row++) {
-            terrain[row * BOARD_SIZE + 2] = { terrainId: 'forest', paintedAt: 1 };
-            terrain[row * BOARD_SIZE + 3] = { terrainId: 'shore', paintedAt: 2 };
-        }
-        const grid = resolveLattice(terrain, 555);
-
-        // Subtile column 14 is the gap between tile columns 2 and 3.
-        let newer = 0;
-        for (let sy = 0; sy < LATTICE_SIZE; sy++) {
-            if (grid[sy * LATTICE_SIZE + 14] === 'shore') newer++;
-        }
-        expect(newer).toBeGreaterThan(LATTICE_SIZE / 2);
-    });
-
-    it('is not a straight line — the boundary moves along its length', () => {
-        const terrain = {};
-        for (let row = 0; row < BOARD_SIZE; row++) {
-            terrain[row * BOARD_SIZE + 2] = { terrainId: 'forest', paintedAt: 1 };
-            terrain[row * BOARD_SIZE + 3] = { terrainId: 'shore', paintedAt: 2 };
-        }
-        const grid = resolveLattice(terrain, 555);
-
-        // Only tile columns 2 and 3 are painted, so the board outside them is
-        // null. Count the forest in the painted band rather than scanning from
-        // the board edge, which would stop on the first unpainted column.
-        const widths = new Set();
-        for (let sy = 0; sy < LATTICE_SIZE; sy++) {
-            let forest = 0;
-            for (let sx = 10; sx <= 19; sx++) {
-                if (grid[sy * LATTICE_SIZE + sx] === 'forest') forest++;
-            }
-            widths.add(forest);
-        }
-        expect(widths.size).toBeGreaterThan(1);
-    });
-});
-
-describe('Edge frontiers (roadmap P3 — D-T13)', () => {
-    it('gives one displacement per art pixel, all within the amplitude', () => {
+describe('Edge frontiers', () => {
+    it('gives one displacement per pixel along a cell side, all within the amplitude', () => {
         for (const axis of ['v', 'h']) {
             const profile = edgeProfile(3, 4, axis, 99);
-            expect(profile).toHaveLength(subtileArtPx());
-            for (const value of profile) {
-                expect(Math.abs(value)).toBeLessThanOrEqual(edgeAmplitude());
-            }
+            expect(profile).toHaveLength(CELL_PX);
+            for (const value of profile) expect(Math.abs(value)).toBeLessThanOrEqual(edgeAmplitude());
         }
     });
 
-    it('⭐ has no step at a junction — the seam problem, closed', () => {
-        // Concept §6's sawtooth. Two boundary segments meeting at a junction
-        // must agree on the depth there, or the coastline visibly jumps. They
-        // agree because the depth is a property of the *junction*: both read
-        // the same hash of its coordinates rather than wandering off alone.
-        //
-        // This asserts exact equality rather than a tolerance, because that is
-        // what the design claims. Verified across 94,080 junctions and 60 seeds
-        // before being written down. A failure here means the frontier is no
-        // longer continuous, not that a constant needs nudging.
-        for (const seed of [0, 1, 7, 12345, 99999]) {
-            for (let sy = 0; sy < LATTICE_SIZE - 1; sy++) {
-                for (let sx = 0; sx < LATTICE_SIZE - 1; sx++) {
-                    const down = edgeProfile(sx, sy, 'v', seed);
-                    const nextDown = edgeProfile(sx, sy + 1, 'v', seed);
-                    expect(down[subtileArtPx() - 1], `v junction ${sx},${sy}`)
-                        .toBe(nextDown[0]);
+    it('keeps the swing under half a cell, so two boundaries of one cell never cross', () => {
+        expect(edgeAmplitude()).toBeLessThan(CELL_PX / 2);
+    });
 
-                    const across = edgeProfile(sx, sy, 'h', seed);
-                    const nextAcross = edgeProfile(sx + 1, sy, 'h', seed);
-                    expect(across[subtileArtPx() - 1], `h junction ${sx},${sy}`)
-                        .toBe(nextAcross[0]);
+    it('⭐ has no step at a junction: two neighbouring boundaries meet at one depth', () => {
+        // The junction contract, re-based from the 29 × 29 lattice onto the Region's 55 × 36 cells.
+        // Both segments meeting at a junction read the same hash of it, so they agree exactly; a
+        // tolerance here would hide a visible 1-pixel step in the coastline.
+        for (const seed of [0, 1, 7, 12345, 99999]) {
+            for (let cy = 0; cy < ROWS - 1; cy++) {
+                for (let cx = 0; cx < COLS - 1; cx++) {
+                    const down = edgeProfile(cx, cy, 'v', seed);
+                    const nextDown = edgeProfile(cx, cy + 1, 'v', seed);
+                    expect(down[CELL_PX - 1], `v junction ${cx},${cy}`).toBe(nextDown[0]);
+                    const across = edgeProfile(cx, cy, 'h', seed);
+                    const nextAcross = edgeProfile(cx + 1, cy, 'h', seed);
+                    expect(across[CELL_PX - 1], `h junction ${cx},${cy}`).toBe(nextAcross[0]);
                 }
             }
         }
     });
 
     it('⭐ uses the whole amplitude, so the coast really wanders', () => {
-        // What "ragged" has to mean, stated in a way that survives the art set
-        // being switched.
-        //
-        // ⚠️ This used to assert that each segment deviates from a straight
-        // ramp between its endpoints. That holds at 16 art pixels and quietly
-        // stops holding at 8, where the wobble is proportionally smaller and
-        // rounds away — so the test failed the moment the art set changed, even
-        // though the rendered coastline was fine. At the coarser resolution the
-        // shape comes from the junction depths varying, not from within-segment
-        // wander, and that is correct rather than a regression.
         const seen = new Set();
-        for (let sy = 0; sy < LATTICE_SIZE - 1; sy++) {
-            for (const v of edgeProfile(5, sy, 'v', 4242)) seen.add(v);
-            for (const v of edgeProfile(sy, 5, 'h', 4242)) seen.add(v);
+        for (let cy = 0; cy < ROWS - 1; cy++) {
+            for (const v of edgeProfile(5, cy, 'v', 4242)) seen.add(v);
+            for (const v of edgeProfile(cy, 5, 'h', 4242)) seen.add(v);
         }
-        // Both extremes reached, and most of the range in between.
         expect(Math.min(...seen)).toBe(-edgeAmplitude());
         expect(Math.max(...seen)).toBe(edgeAmplitude());
         expect(seen.size).toBeGreaterThanOrEqual(edgeAmplitude() + 2);
@@ -259,89 +94,185 @@ describe('Edge frontiers (roadmap P3 — D-T13)', () => {
 
     it('does not give every boundary the same frontier', () => {
         const shapes = new Set();
-        for (let sy = 0; sy < LATTICE_SIZE - 1; sy++) {
-            shapes.add(edgeProfile(5, sy, 'v', 4242).join(','));
-        }
-        expect(shapes.size).toBeGreaterThan(LATTICE_SIZE / 2);
+        for (let cy = 0; cy < ROWS - 1; cy++) shapes.add(edgeProfile(5, cy, 'v', 4242).join(','));
+        expect(shapes.size).toBeGreaterThan(ROWS / 2);
     });
 
-    it('is stable, and differs between seeds', () => {
+    it('is stable, differs between seeds, and keeps the two axes independent', () => {
         expect(edgeProfile(3, 4, 'v', 77)).toEqual(edgeProfile(3, 4, 'v', 77));
         expect(edgeProfile(3, 4, 'v', 77)).not.toEqual(edgeProfile(3, 4, 'v', 78));
-    });
-
-    it('keeps the two axes independent', () => {
-        // A vertical and a horizontal boundary anchored at the same subtile are
-        // different edges and must not mirror each other.
         expect(edgeProfile(3, 4, 'v', 77)).not.toEqual(edgeProfile(3, 4, 'h', 77));
     });
 });
 
-describe('⚠️ Edge strips — the geometry the renderer draws', () => {
-    /**
-     * These exist because of a bug that no other test could see.
-     */
-    const strips = (axis) => edgeStrips(3, 4, axis, 'forest', 'shore', 4242);
+describe('⚠️ Edge strips', () => {
+    const strips = (axis) => edgeStrips(3, 4, axis, 'grass', 'sand', 4242);
 
-    it('produces strips where two terrains meet, and none where they do not', () => {
+    it('come only where two terrains meet', () => {
         expect(strips('v').length).toBeGreaterThan(0);
-        expect(edgeStrips(3, 4, 'v', 'forest', 'forest', 4242)).toEqual([]);
-        expect(edgeStrips(3, 4, 'v', null, 'shore', 4242)).toEqual([]);
-        expect(edgeStrips(3, 4, 'v', 'forest', null, 4242)).toEqual([]);
+        expect(edgeStrips(3, 4, 'v', 'grass', 'grass', 4242)).toEqual([]);
     });
 
-    it('⭐ every strip lies inside the subtile it is painted into', () => {
-        // THE regression test. A strip outside its target subtile is a strip
-        // the renderer cannot cover with a one-subtile texture, so it draws
-        // nothing — invisibly, with no error anywhere.
-        const artPx = subtileArtPx();
+    it('⭐ every strip lies inside the cell it is painted into', () => {
         for (const axis of ['v', 'h']) {
-            for (let sy = 0; sy < LATTICE_SIZE - 1; sy++) {
-                for (let sx = 0; sx < LATTICE_SIZE - 1; sx++) {
-                    for (const s of edgeStrips(sx, sy, axis, 'forest', 'shore', 7)) {
-                        const left = s.intoSx * artPx;
-                        const top = s.intoSy * artPx;
-                        expect(s.x, `strip x @${sx},${sy}${axis}`).toBeGreaterThanOrEqual(left);
-                        expect(s.y, `strip y @${sx},${sy}${axis}`).toBeGreaterThanOrEqual(top);
-                        expect(s.x + s.w, `strip right @${sx},${sy}${axis}`)
-                            .toBeLessThanOrEqual(left + artPx);
-                        expect(s.y + s.h, `strip bottom @${sx},${sy}${axis}`)
-                            .toBeLessThanOrEqual(top + artPx);
+            for (let cy = 0; cy < ROWS - 1; cy++) {
+                for (let cx = 0; cx < COLS - 1; cx++) {
+                    for (const s of edgeStrips(cx, cy, axis, 'grass', 'sand', 7)) {
+                        const left = s.intoCx * CELL_PX;
+                        const top = s.intoCy * CELL_PX;
+                        expect(s.x, `strip x @${cx},${cy}${axis}`).toBeGreaterThanOrEqual(left);
+                        expect(s.y, `strip y @${cx},${cy}${axis}`).toBeGreaterThanOrEqual(top);
+                        expect(s.x + s.w, `strip right @${cx},${cy}${axis}`).toBeLessThanOrEqual(left + CELL_PX);
+                        expect(s.y + s.h, `strip bottom @${cx},${cy}${axis}`).toBeLessThanOrEqual(top + CELL_PX);
                     }
                 }
             }
         }
     });
 
-    it('paints into the neighbour it is taking ground from, never into itself', () => {
-        // The terrain doing the spilling and the subtile being spilled into
-        // must be on opposite sides of the boundary, or the strip is redrawing
-        // ground that already looks like that — invisible for a second reason.
+    it('paints into the neighbour it takes ground from, never into its own cell', () => {
         for (const axis of ['v', 'h']) {
             for (const s of strips(axis)) {
-                const sameSubtile = s.intoSx === s.variantSx && s.intoSy === s.variantSy;
-                expect(sameSubtile, 'strip painted into its own source').toBe(false);
+                const ownCell = s.terrainId === 'grass' ? [3, 4] : (axis === 'v' ? [4, 4] : [3, 5]);
+                expect([s.intoCx, s.intoCy]).not.toEqual(ownCell);
             }
         }
     });
 
-    it('never strays more than one subtile from the boundary', () => {
-        const artPx = subtileArtPx();
-        for (const s of strips('v')) {
-            expect(Math.abs(s.intoSx - 3)).toBeLessThanOrEqual(1);
-            expect(s.w).toBeLessThanOrEqual(artPx);
-        }
-    });
-
-    it('covers both directions — each terrain takes ground from the other', () => {
-        // A frontier that only ever pushed one way would be a fringe on one
-        // side rather than an interlocking boundary.
+    it('lets each terrain take ground from the other along one boundary', () => {
         const seen = new Set();
-        for (let sy = 0; sy < LATTICE_SIZE - 1; sy++) {
-            for (const s of edgeStrips(3, sy, 'v', 'forest', 'shore', 99)) {
-                seen.add(s.terrainId);
+        for (let cy = 0; cy < ROWS - 1; cy++) {
+            for (const s of edgeStrips(3, cy, 'v', 'grass', 'sand', 99)) seen.add(s.terrainId);
+        }
+        expect([...seen].sort()).toEqual(['grass', 'sand']);
+    });
+});
+
+describe('⭐ The pixel map', () => {
+    it('covers the plan, with the stored map\'s legend as its palette', () => {
+        const ground = groundWith(20, 12, patchwork(3));
+        const pixels = resolveArtPixels(ground, false);
+        expect([pixels.width, pixels.height]).toEqual([20 * CELL_PX, 12 * CELL_PX]);
+        expect(pixels.at.length).toBe(pixels.width * pixels.height);
+        expect(pixels.palette.slice(0, 4)).toEqual(['grass', 'rock', 'sand', 'water']);
+    });
+
+    it('stops at the mat\'s edge where the last row of cells runs past it', () => {
+        const ground = regionGround(regionWith(COLS, ROWS, patchwork(4)), SHIPPED);
+        const pixels = resolveArtPixels(ground);
+        expect([pixels.width, pixels.height]).toEqual([880, 563]);
+    });
+
+    it('⭐ every cell\'s pixels are its terrain except within the edge swing of a boundary', () => {
+        // Without the beach, the only thing that moves ground across a cell line is the wiggled
+        // edge: a pixel that is not its cell's terrain is within the swing of a side whose
+        // neighbour has that terrain.
+        const swing = edgeAmplitude();
+        for (const seed of [1, 2, 3]) {
+            const cols = 20;
+            const rows = 12;
+            const fill = patchwork(seed);
+            const ground = groundWith(cols, rows, fill, { seed });
+            const { width, palette, at } = resolveArtPixels(ground, false);
+            const cellAt = (c, r) => (c < 0 || r < 0 || c >= cols || r >= rows ? null : fill(c, r));
+            let moved = 0;
+            for (let i = 0; i < at.length; i++) {
+                const x = i % width;
+                const y = (i - x) / width;
+                const cx = Math.floor(x / CELL_PX);
+                const cy = Math.floor(y / CELL_PX);
+                const got = palette[at[i]];
+                if (got === fill(cx, cy)) continue;
+                moved++;
+                const lx = x - cx * CELL_PX;
+                const ly = y - cy * CELL_PX;
+                const fromSide = (lx < swing && cellAt(cx - 1, cy) === got)
+                    || (CELL_PX - 1 - lx < swing && cellAt(cx + 1, cy) === got)
+                    || (ly < swing && cellAt(cx, cy - 1) === got)
+                    || (CELL_PX - 1 - ly < swing && cellAt(cx, cy + 1) === got);
+                expect(fromSide, `pixel ${x},${y} is ${got} in a ${fill(cx, cy)} cell`).toBe(true);
+            }
+            expect(moved, 'the edges never wiggled').toBeGreaterThan(100);
+        }
+    });
+
+    it('agrees with the strips, which are the edge geometry', () => {
+        const fill = patchwork(9);
+        const ground = groundWith(20, 12, fill, { seed: 9 });
+        const { width, height, palette, at } = resolveArtPixels(ground, false);
+        let checked = 0;
+        for (let cy = 0; cy < 12; cy++) {
+            for (let cx = 0; cx < 20; cx++) {
+                for (const axis of ['v', 'h']) {
+                    const nx = axis === 'v' ? cx + 1 : cx;
+                    const ny = axis === 'v' ? cy : cy + 1;
+                    if (nx >= 20 || ny >= 12) continue;
+                    for (const s of edgeStrips(cx, cy, axis, fill(cx, cy), fill(nx, ny), 9)) {
+                        for (let y = s.y; y < s.y + s.h; y++) {
+                            for (let x = s.x; x < s.x + s.w; x++) {
+                                if (x >= width || y >= height) continue;
+                                // A later strip at a corner may paint over an earlier one; the
+                                // pixel is then one of the two terrains meeting there.
+                                expect([fill(cx, cy), fill(nx, ny), ...cornerTerrains(fill, cx, cy, 20, 12)])
+                                    .toContain(palette[at[y * width + x]]);
+                                checked++;
+                            }
+                        }
+                    }
+                }
             }
         }
-        expect([...seen].sort()).toEqual(['forest', 'shore']);
+        expect(checked).toBeGreaterThan(100);
+    });
+
+    it('is one terrain everywhere on a ground of one terrain', () => {
+        const { palette, at } = resolveArtPixels(groundWith(10, 6, flat('rock')));
+        expect(new Set(Array.from(at, i => palette[i]))).toEqual(new Set(['rock']));
+    });
+});
+
+/** The terrains of the cells round a corner a strip may share with another boundary's strip. */
+function cornerTerrains(fill, cx, cy, cols, rows) {
+    const out = [];
+    for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+            const c = cx + dx;
+            const r = cy + dy;
+            if (c >= 0 && r >= 0 && c < cols && r < rows) out.push(fill(c, r));
+        }
+    }
+    return out;
+}
+
+describe('Distances', () => {
+    /** The full two-pass transform, as a reference for the bounded walk. */
+    const full = (seeds, w, h) => distanceFromSeeds(seeds, w, h);
+
+    it('⭐ the bounded walk agrees with the full transform inside its bound', () => {
+        // The walk starts only from seeds on the edge of their region (an interior seed is never
+        // the last seed on a shortest path), which is what keeps it cheap on a mostly-land map.
+        // Checked with few seeds and with mostly seeds, the two ways it finds the edge.
+        const w = 37;
+        const h = 23;
+        for (const share of [0.08, 0.5, 0.92]) {
+            const seeds = new Uint8Array(w * h);
+            for (let i = 0; i < seeds.length; i++) {
+                seeds[i] = hash01(Math.floor((i % w) / 4), Math.floor(i / w / 3), 31) < share ? 1 : 0;
+            }
+            const limit = 18;
+            const bounded = distanceFromSeeds(seeds, w, h, limit);
+            const reference = full(seeds, w, h);
+            for (let i = 0; i < seeds.length; i++) {
+                if (reference[i] < limit) expect(bounded[i], `pixel ${i} at share ${share}`).toBe(reference[i]);
+                else expect(bounded[i]).toBeGreaterThanOrEqual(limit);
+            }
+        }
+    });
+
+    it('measures 3 a side step and 4 a diagonal one', () => {
+        const seeds = new Uint8Array(5 * 5);
+        seeds[12] = 1;
+        const d = distanceFromSeeds(seeds, 5, 5, 30);
+        expect([d[12], d[13], d[18], d[14], d[24]]).toEqual([0, 3, 4, 6, 8]);
     });
 });

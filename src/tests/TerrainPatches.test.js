@@ -1,32 +1,25 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { patchNoise, buildPatchMasks } from '../systems/board/TerrainPatches.js';
-import {
-    LATTICE_SIZE, subtileArtPx, resolveArtPixels
-} from '../systems/board/TerrainLattice.js';
-import { patchOf, TERRAIN_TYPES } from '../config/registries/terrainRegistry.js';
+import { patchNoise, buildWearMask } from '../systems/board/TerrainPatches.js';
+import { resolveArtPixels, CELL_PX } from '../systems/board/TerrainLattice.js';
+import { LOOKS, wearOf } from '../config/registries/terrainRegistry.js';
 import { setTuning, resetTuning } from '../config/playmatTuning.js';
+import { groundWith, flat } from './fixtures/ground.js';
 
 /**
- * Patches — a second substrate worn through a first.
+ * Wear: a second sheet showing through a look in clumps (earth through grass, gravel through
+ * rock), placed by smooth noise and calibrated so a coverage means that share of the ground.
  */
 
 afterEach(() => resetTuning());
 
-const artPx = () => subtileArtPx();
-const size = () => LATTICE_SIZE * artPx();
-const flat = (terrainId) => new Array(LATTICE_SIZE * LATTICE_SIZE).fill(terrainId);
+/** The ground of one look everywhere: meadow needs no biome to own the grass. */
+const lookGround = (lookId, seed = 5) => {
+    const terrain = LOOKS[lookId].terrain;
+    const biomes = lookId === 'meadow' ? null : { main: lookId, terrains: { [lookId]: terrain } };
+    return groundWith(40, 24, flat(terrain), { seed, biomes });
+};
 
-/** What fraction of the eligible ground a mask actually covers. */
-function coveredFraction(terrainId, seed = 5) {
-    const grid = flat(terrainId);
-    const { masks } = buildPatchMasks(resolveArtPixels(grid, seed), seed);
-    const substrate = patchOf(terrainId)?.substrate;
-    const mask = masks[substrate];
-    if (!mask) return 0;
-    let on = 0;
-    for (let i = 0; i < mask.length; i++) if (mask[i]) on++;
-    return on / mask.length;
-}
+const share = (mask) => mask.reduce((n, v) => n + (v ? 1 : 0), 0) / mask.length;
 
 describe('The noise makes clumps, not speckle', () => {
     it('stays in range and is the same every time', () => {
@@ -39,26 +32,20 @@ describe('The noise makes clumps, not speckle', () => {
     });
 
     it('⭐ changes gently between neighbouring pixels', () => {
-        // This is what separates a clump from dithering. Independent per-pixel
-        // noise would average about a third of the range between neighbours;
-        // interpolated noise moves a small fraction of it.
         let total = 0;
         let n = 0;
         for (let y = 0; y < 60; y++) {
             for (let x = 0; x < 60; x++) {
-                total += Math.abs(patchNoise(x, y, 9) - patchNoise(x + 1, y, 9));
+                total += Math.abs(patchNoise(x, y, 9, 10) - patchNoise(x + 1, y, 9, 10));
                 n++;
             }
         }
         expect(total / n).toBeLessThan(0.12);
     });
 
-    it('does not notice subtile or tile boundaries', () => {
-        // Sampled from absolute coordinates, so there is nothing to line up.
-        // A clump runs across a boundary without knowing it is there.
-        const edge = artPx() * 4;   // a subtile boundary
-        expect(Math.abs(patchNoise(edge - 1, 20, 3) - patchNoise(edge, 20, 3)))
-            .toBeLessThan(0.2);
+    it('does not notice the cell lines', () => {
+        const edge = CELL_PX * 4;
+        expect(Math.abs(patchNoise(edge - 1, 20, 3, 10) - patchNoise(edge, 20, 3, 10))).toBeLessThan(0.2);
     });
 
     it('differs between seeds', () => {
@@ -66,109 +53,111 @@ describe('The noise makes clumps, not speckle', () => {
     });
 });
 
-describe('⚠️ Coverage means what it says', () => {
-    it('⭐ wears through roughly the fraction the terrain asked for', () => {
-        // THE regression test. Not an exact match — the noise is continuous and
-        // the sample is finite — but it must be the right order of magnitude,
-        // which the first version was not.
-        for (const [id, terrain] of Object.entries(TERRAIN_TYPES)) {
-            if (!terrain.patch) continue;
-            const asked = terrain.patch.coverage;
-            const got = coveredFraction(id);
-            expect(got, `${id} asked ${asked}, got ${got.toFixed(3)}`)
-                .toBeGreaterThan(asked * 0.6);
-            expect(got, `${id} asked ${asked}, got ${got.toFixed(3)}`)
-                .toBeLessThan(asked * 1.4);
-        }
-    });
-
-    it('scales with the tuning slider, and zero means none', () => {
-        const base = coveredFraction('meadow');
-        setTuning('patchCoverage', 0);
-        expect(coveredFraction('meadow')).toBe(0);
-        setTuning('patchCoverage', 2);
-        expect(coveredFraction('meadow')).toBeGreaterThan(base);
-    });
-});
-
-describe('Patches stay where they belong', () => {
-    it('puts nothing on terrain that declares none', () => {
-        for (const id of Object.keys(TERRAIN_TYPES)) {
-            if (patchOf(id)) continue;
-            expect(buildPatchMasks(resolveArtPixels(flat(id), 5), 5).masks, id).toEqual({});
-        }
-    });
-
-    it('puts nothing on unpainted ground', () => {
-        const empty = new Array(LATTICE_SIZE * LATTICE_SIZE).fill(null);
-        expect(buildPatchMasks(resolveArtPixels(empty, 5), 5).masks).toEqual({});
-    });
-
-    it('⭐ stops at the edge of the terrain that grew it', () => {
-        // Half the board grass, half sand. Dirt worn into the grass must not
-        // continue into the sand — the noise itself has no idea a boundary is
-        // there, so this is the mask being gated by terrain, not by the noise.
-        //
-        // ⚠️ Asserted against the terrain map rather than against a straight
-        // line at the nominal boundary. The boundary is ragged, so grass really
-        // does extend past where the subtile grid says it stops, and dirt in
-        // that overhang is correct. An earlier version of this test measured
-        // against an x coordinate and started failing the moment patches became
-        // accurate enough to follow the drawn edge.
-        const grid = flat('shore');
-        for (let sy = 0; sy < LATTICE_SIZE; sy++) {
-            for (let sx = 0; sx < Math.floor(LATTICE_SIZE / 2); sx++) {
-                grid[sy * LATTICE_SIZE + sx] = 'meadow';
+describe('⭐ The wear noise is read from cached corners', () => {
+    it('gives exactly the reference noise\'s answer at every pixel', () => {
+        // The fast path hashes each noise corner once instead of four times a pixel; it must not
+        // change a single pixel of the wear.
+        for (const lookId of ['meadow', 'mountain']) {
+            const ground = groundWith(20, 12, flat(LOOKS[lookId].terrain), {
+                seed: 77, biomes: lookId === 'meadow' ? null : { main: lookId, terrains: { [lookId]: LOOKS[lookId].terrain } }
+            });
+            const pixels = resolveArtPixels(ground);
+            const { mask, thresholds, cell } = buildWearMask(pixels, ground);
+            let on = 0;
+            for (let i = 0; i < mask.length; i++) {
+                const x = i % pixels.width;
+                const y = (i - x) / pixels.width;
+                const want = patchNoise(x, y, 77, cell) < thresholds[pixels.at[i]] ? 1 : 0;
+                expect(mask[i], `${lookId} pixel ${x},${y}`).toBe(want);
+                on += want;
             }
+            expect(on).toBeGreaterThan(0);
         }
-        const pixels = resolveArtPixels(grid, 5);
-        const mask = buildPatchMasks(pixels, 5).masks.dirt;
-        const meadow = pixels.palette.indexOf('meadow');
-
-        let onMeadow = 0;
-        let elsewhere = 0;
-        for (let i = 0; i < mask.length; i++) {
-            if (!mask[i]) continue;
-            if (pixels.at[i] === meadow) onMeadow++; else elsewhere++;
-        }
-        expect(onMeadow).toBeGreaterThan(0);
-        expect(elsewhere, 'dirt worn through ground that never asked for it').toBe(0);
-    });
-
-    it('reports a mask the size of the board in art pixels', () => {
-        const built = buildPatchMasks(resolveArtPixels(flat('meadow'), 5), 5);
-        expect(built.width).toBe(size());
-        expect(built.height).toBe(size());
-        expect(built.masks.dirt.length).toBe(size() * size());
-    });
-
-    it('is identical every time', () => {
-        const a = buildPatchMasks(resolveArtPixels(flat('meadow'), 77), 77).masks.dirt;
-        const b = buildPatchMasks(resolveArtPixels(flat('meadow'), 77), 77).masks.dirt;
-        expect(Array.from(a)).toEqual(Array.from(b));
     });
 });
 
-describe('⭐ Patches respect the ground the renderer actually drew', () => {
-    it('does not speckle dirt across a beach', () => {
-        // ⚠️ The regression. Patches used to be gated by the SUBTILE lattice,
-        // so a forest subtile whose outer pixels had been fringed into beach
-        // still wore dirt through them — the patch had no idea the ground under
-        // it had become sand. Reported from the running game, not caught here,
-        // because nothing was asking the same question the renderer answers.
-        const grid = new Array(LATTICE_SIZE * LATTICE_SIZE).fill('forest');
-        for (let sy = 0; sy < LATTICE_SIZE; sy++) {
-            for (let sx = 0; sx < 5; sx++) grid[sy * LATTICE_SIZE + sx] = 'ocean';
+describe('⚠️ Coverage means what it says', () => {
+    it('⭐ each look wears through about the share it asks (calibrated)', () => {
+        const wearing = Object.keys(LOOKS).filter(id => wearOf(id));
+        expect(wearing.sort()).toEqual(['forest', 'meadow', 'mountain']);
+        for (const id of wearing) {
+            const ground = lookGround(id);
+            const { mask } = buildWearMask(resolveArtPixels(ground), ground);
+            const asked = wearOf(id).coverage;
+            const got = share(mask);
+            expect(got, `${id} asked ${asked}, got ${got.toFixed(3)}`).toBeGreaterThan(asked * 0.6);
+            expect(got, `${id} asked ${asked}, got ${got.toFixed(3)}`).toBeLessThan(asked * 1.4);
         }
-        const pixels = resolveArtPixels(grid, 5);
-        const mask = buildPatchMasks(pixels, 5).masks.dirt;
-        const shore = pixels.palette.indexOf('shore');
-        expect(shore).toBeGreaterThanOrEqual(0);   // a beach really was made
+    });
 
-        let onSand = 0;
-        for (let i = 0; i < mask.length; i++) {
-            if (mask[i] && pixels.at[i] === shore) onSand++;
+    it('scales with the coverage slider, and zero means none', () => {
+        const at = () => {
+            const ground = lookGround('meadow');
+            const { mask } = buildWearMask(resolveArtPixels(ground), ground);
+            return mask ? share(mask) : 0;
+        };
+        const base = at();
+        setTuning('patchCoverage', 0);
+        expect(at()).toBe(0);
+        setTuning('patchCoverage', 2);
+        expect(at()).toBeGreaterThan(base);
+    });
+
+    it('grows its clumps with the clump size (mat units)', () => {
+        // Bigger clumps at the same coverage leave fewer edges between worn and unworn ground.
+        const edges = () => {
+            const ground = lookGround('forest');
+            const pixels = resolveArtPixels(ground);
+            const { mask } = buildWearMask(pixels, ground);
+            let n = 0;
+            for (let i = 1; i < mask.length; i++) if (i % pixels.width && mask[i] !== mask[i - 1]) n++;
+            return n;
+        };
+        setTuning('wearClump', 8);
+        const small = edges();
+        setTuning('wearClump', 60);
+        expect(edges()).toBeLessThan(small / 2);
+    });
+});
+
+describe('Wear stays on the ground that wears', () => {
+    it('wears nothing on the coast or the sea', () => {
+        for (const id of ['coast', 'sea']) {
+            expect(wearOf(id), id).toBeNull();
+            const ground = lookGround(id);
+            expect(buildWearMask(resolveArtPixels(ground), ground).mask, id).toBeNull();
         }
-        expect(onSand, 'dirt worn through the beach').toBe(0);
+    });
+
+    it('⭐ never crosses onto the sand: not the beach rim, not a coast\'s own sand', () => {
+        // Gated per pixel on the drawn ground, after the beach is cut: the September regression
+        // was dirt speckled across a beach because the gate was the cell, still forest.
+        for (const fill of [
+            (c) => (c < 6 ? 'water' : 'grass'),
+            (c) => (c < 6 ? 'water' : (c < 12 ? 'sand' : 'grass')),
+            (c, r) => (c < 6 ? 'water' : (c + r < 20 ? 'sand' : 'rock'))
+        ]) {
+            const ground = groundWith(24, 14, fill);
+            const pixels = resolveArtPixels(ground);
+            const { mask } = buildWearMask(pixels, ground);
+            const sand = pixels.palette.indexOf('sand');
+            let onSand = 0;
+            let worn = 0;
+            for (let i = 0; i < mask.length; i++) {
+                if (!mask[i]) continue;
+                worn++;
+                if (pixels.at[i] === sand) onSand++;
+            }
+            expect(worn).toBeGreaterThan(0);
+            expect(onSand, 'wear on the sand').toBe(0);
+        }
+    });
+
+    it('is a mask the size of the plan, and the same every time', () => {
+        const ground = lookGround('meadow', 31);
+        const pixels = resolveArtPixels(ground);
+        const a = buildWearMask(pixels, ground).mask;
+        expect(a.length).toBe(pixels.width * pixels.height);
+        expect(Array.from(buildWearMask(pixels, ground).mask)).toEqual(Array.from(a));
     });
 });
