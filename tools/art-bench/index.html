@@ -1,0 +1,680 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Art Bench</title>
+<!--
+  Dev-only page (npm run art:bench). Served by scripts/artBench.mjs; never in the game build.
+  Loads the real art from /assets/ and the brightness script's previews from /_gen/art-bench/.
+-->
+<style>
+:root {
+  --bg: #26262a; --panel: #303036; --ink: #e8e6e1; --dim: #a9a6a0; --rule: #4a4a52; --accent: #e2c27a;
+  --warn: #e39a6a; --ok: #8fcf8f;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink);
+  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { padding: 16px 16px 48px; max-width: 2000px; margin: 0 auto; }
+h1 { font-size: 20px; margin: 0 0 4px; }
+.dim { color: var(--dim); }
+code { background: #1b1b1e; padding: 1px 4px; border-radius: 3px; font-size: 12px; }
+button, select, input { font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--rule);
+  border-radius: 5px; }
+button { padding: 3px 10px; cursor: pointer; }
+button:hover { border-color: var(--accent); }
+button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+input[type="number"] { width: 64px; padding: 2px 4px; }
+input[type="color"] { width: 44px; height: 26px; padding: 0 2px; }
+
+.controls { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  gap: 10px; margin: 12px 0 16px; }
+fieldset { border: 1px solid var(--rule); border-radius: 8px; margin: 0; padding: 8px 10px 10px; min-width: 0; }
+legend { color: var(--accent); font-weight: 600; padding: 0 4px; }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin: 4px 0; }
+.preset-row { display: grid; grid-template-columns: auto 1fr auto auto; gap: 6px; align-items: center; margin: 3px 0; }
+.preset-row label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; max-height: 130px; overflow-y: auto; }
+.chip { display: inline-flex; align-items: center; gap: 4px; padding: 1px 6px; border: 1px solid var(--rule);
+  border-radius: 12px; font-size: 12px; }
+.chip img { width: 16px; height: 16px; image-rendering: pixelated; }
+#pickerList { width: 100%; height: 150px; font-size: 12px; }
+#pickerPreview { width: 64px; height: 64px; image-rendering: pixelated; object-fit: contain;
+  background: #1b1b1e; border: 1px solid var(--rule); }
+.sprite-list { max-height: 150px; overflow-y: auto; font-size: 12px; margin-top: 6px; }
+.sprite-list div { display: flex; justify-content: space-between; gap: 6px; padding: 1px 0;
+  border-bottom: 1px solid #38383e; }
+.sprite-list span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sprite-list button { padding: 0 6px; font-size: 12px; }
+
+.panels { display: flex; flex-wrap: wrap; gap: 14px; }
+.panel { max-width: 100%; }
+.panel h2 { font-size: 15px; margin: 0 0 2px; }
+.panel .src { font-size: 12px; margin: 0 0 6px; }
+.src.live { color: var(--warn); }
+.src.files { color: var(--ok); }
+.scroll { max-width: 100%; overflow-x: auto; }
+.scene { position: relative; overflow: hidden; outline: 1px solid var(--rule); user-select: none; touch-action: none; }
+.scene > div { position: absolute; }
+.layer { inset: 0; pointer-events: none; }
+.px { image-rendering: pixelated; image-rendering: crisp-edges; background-repeat: no-repeat; }
+.ground { background-repeat: repeat; }
+.sprite { cursor: grab; }
+.sprite.dragging { cursor: grabbing; outline: 1px dashed var(--accent); }
+.note { margin-top: 24px; max-width: 95ch; }
+.note li { margin: 3px 0; }
+.err { color: var(--warn); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Art bench</h1>
+  <p class="dim">The same scene under each brightness preset, side by side. Presets change the Tokens, items, heroes
+    and enemies only; the ground, scatter and tint are the same in every picture. Drag any sprite to move it (it moves in
+    every picture). Your scene is remembered in this browser.</p>
+  <p id="status" class="dim">Loading the art list…</p>
+
+  <div class="controls">
+    <fieldset>
+      <legend>Presets</legend>
+      <div id="presetRows"></div>
+      <div class="row">
+        <button type="button" id="reloadPreviews">Reload previews</button>
+        <button type="button" id="resetPresets">Starting presets</button>
+      </div>
+      <p class="dim" style="margin:4px 0 0;font-size:12px">Tick the ones to show (3 or 4 fit side by side). Values are
+        brightness / saturation. Green = the brightness script's preview files; orange = a live CSS filter
+        (an approximation: no outline protection).</p>
+    </fieldset>
+
+    <fieldset>
+      <legend>Ground and scatter</legend>
+      <div class="row"><label for="groundSel">Ground</label> <select id="groundSel"></select></div>
+      <div class="row"><span>Scatter</span>
+        <button type="button" id="scatterAll">All</button><button type="button" id="scatterNone">None</button>
+        <label>Amount <input type="number" id="scatterCount" min="0" max="200" step="1"></label>
+        <button type="button" id="scatterShuffle">Shuffle</button></div>
+      <div class="chips" id="scatterChips"></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Tint</legend>
+      <div class="row"><label>Colour <input type="color" id="tintColor"></label>
+        <label>Strength <input type="range" id="tintAmount" min="0" max="0.6" step="0.01"></label>
+        <span id="tintAmountOut" class="dim"></span></div>
+      <div class="row" role="group" aria-label="Tint reach"><span>Reach</span>
+        <button type="button" data-reach="ground">Ground and scatter only</button>
+        <button type="button" data-reach="scene">Faint grade over the whole scene</button></div>
+      <div class="row"><span class="dim">Swatches</span> <span id="tintSwatches" class="row" style="margin:0"></span></div>
+      <div class="row"><span>Zoom</span>
+        <button type="button" data-zoom="1">1× game size</button><button type="button" data-zoom="2">2×</button>
+        <button type="button" data-zoom="3">3×</button></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Add sprites</legend>
+      <div class="row"><input type="search" id="pickerFilter" placeholder="Filter, e.g. oak, items/fish, enemies"
+        style="flex:1;min-width:0;padding:2px 6px"></div>
+      <div class="row" style="align-items:flex-start;flex-wrap:nowrap">
+        <select id="pickerList" size="8"></select>
+        <img id="pickerPreview" alt="">
+      </div>
+      <div class="row"><button type="button" id="pickerAdd">Add to scene</button>
+        <button type="button" id="resetScene">Starting scene</button>
+        <span id="pickerCount" class="dim"></span></div>
+      <div class="sprite-list" id="spriteList"></div>
+    </fieldset>
+  </div>
+
+  <div class="panels" id="panels"></div>
+
+  <div class="note dim">
+    <b>Notes</b>
+    <ul>
+      <li>Everything is drawn at whole-number scales with hard pixels. 1× is game size on a usual screen: one art pixel
+        is one screen pixel, a Token is 64 px.</li>
+      <li>Preview files are read from <code>public/_gen/art-bench/&lt;preset id&gt;/&lt;path under public/assets&gt;</code>;
+        the preset ids are <code>unchanged</code>, <code>gentle</code>, <code>drag</code>, <code>bold</code> unless
+        the script writes <code>presets.json</code> there. Run the brightness script, then press Reload previews.</li>
+      <li>The tint is a plain colour laid over at the chosen strength, the way the game tints ground.</li>
+    </ul>
+  </div>
+</main>
+
+<script>
+(function () {
+  'use strict';
+  var W = 448, H = 288;               // scene, in art pixels
+  var STORE = 'art-bench-v1';
+  var A = '/assets/';
+  var P = '/_gen/art-bench/';
+
+  var STARTING_PRESETS = [
+    { id: 'unchanged', label: 'Unchanged', b: 1, s: 1, on: true },
+    { id: 'gentle', label: 'Gentle', b: 1.08, s: 1.12, on: true },
+    { id: 'drag', label: 'Drag look', b: 1.15, s: 1.25, on: true },
+    { id: 'bold', label: 'Bold', b: 1.22, s: 1.4, on: true }
+  ];
+
+  var HERO_IDLE = { x: 0, y: 128, w: 64, h: 64 };  // hero sheets: 8 frames x 3 rows, idle is the third row
+  var STARTING_SPRITES = [
+    // Oak family, items beside their Tokens
+    { rel: 'tokens/nature/tree/token_tree_oak.png', x: 12, y: 12 },
+    { rel: 'tokens/nature/tree/token_sap_oak.png', x: 80, y: 44 },
+    { rel: 'tokens/nature/tree/token_stump_oak.png', x: 80, y: 8 },
+    { rel: 'items/wood/wood_oak.png', x: 116, y: 12 },
+    { rel: 'items/wood/seedling_oak.png', x: 116, y: 44 },
+    // Copper family
+    { rel: 'tokens/ore/token_ore_vein_copper.png', x: 164, y: 12 },
+    { rel: 'items/ore/ore_copper.png', x: 232, y: 12 },
+    { rel: 'items/ingot/ingot_copper.png', x: 232, y: 44 },
+    // Fishing family
+    { rel: 'tokens/fish/token_coast.png', x: 300, y: 12 },
+    { rel: 'items/fish/fish_trout_raw.png', x: 368, y: 12 },
+    { rel: 'items/fish/fish_shrimp_raw.png', x: 368, y: 44 },
+    { rel: 'tokens/fish/token_lake_small.png', x: 300, y: 84 },
+    // Heroes and enemies
+    { rel: 'heroes/animations/ani_fighter_0.png', x: 40, y: 112, frame: HERO_IDLE },
+    { rel: 'heroes/animations/ani_ranger_0.png', x: 112, y: 120, frame: HERO_IDLE },
+    { rel: 'enemies/goblin/e_goblin.png', x: 196, y: 116 },
+    { rel: 'enemies/animal/e_wolf.png', x: 380, y: 140 },
+    // Loot on the ground
+    { rel: 'items/wood/wood_oak.png', x: 52, y: 214 },
+    { rel: 'items/ore/ore_copper.png', x: 150, y: 232 },
+    { rel: 'items/fish/fish_trout_raw.png', x: 250, y: 212 },
+    { rel: 'items/wood/seedling_oak.png', x: 330, y: 236 },
+    { rel: 'items/ingot/ingot_copper.png', x: 96, y: 246 }
+  ];
+
+  var SWATCHES = [
+    { name: 'Forest', color: '#b9d46a', amount: 0.16 },
+    { name: 'Fir Grove', color: '#1d3a2a', amount: 0.34 },
+    { name: 'Wet sand', color: '#6b4a25', amount: 0.30 },
+    { name: 'Shallows', color: '#a8e8ff', amount: 0.45 },
+    { name: 'Warm grade', color: '#ffcf8a', amount: 0.08, reach: 'scene' },
+    { name: 'Cool grade', color: '#8ab4ff', amount: 0.08, reach: 'scene' }
+  ];
+
+  function defaults() {
+    return {
+      zoom: 1,
+      presets: STARTING_PRESETS.map(function (p) { return Object.assign({}, p); }),
+      ground: 'playmat/terrain/ter_grass.png',
+      scatter: null,          // null = all prop_ files
+      scatterCount: 24,
+      seed: 7,
+      // Each reach keeps its own strength: the whole-scene grade starts fainter.
+      tint: { color: '#b9d46a', reach: 'ground', amount: { ground: 0.16, scene: 0.08 } },
+      sprites: STARTING_SPRITES.map(function (s) { return Object.assign({}, s); })
+    };
+  }
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(STORE);
+      if (raw) {
+        var st = Object.assign(defaults(), JSON.parse(raw));
+        if (!st.tint || typeof st.tint.amount !== 'object') st.tint = defaults().tint;
+        return st;
+      }
+    } catch (e) { /* storage blocked: start fresh */ }
+    return defaults();
+  }
+  function save() {
+    try { localStorage.setItem(STORE, JSON.stringify(state)); } catch (e) { /* not kept */ }
+  }
+
+  var state = load();
+  var list = { assets: [], previews: [], presets: null };
+  var previewSet = new Set();
+  var dims = {};                 // rel -> {w, h}
+  var $ = function (id) { return document.getElementById(id); };
+
+  // ---- data ---------------------------------------------------------------
+
+  function fetchList() {
+    return fetch('/__art-bench/list', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
+      list = j;
+      previewSet = new Set(j.previews);
+      if (Array.isArray(j.presets) && j.presets.length) {
+        // The script's own presets replace the starting ones, keeping which are ticked.
+        var was = {};
+        state.presets.forEach(function (p) { was[p.id] = p; });
+        state.presets = j.presets.map(function (q) {
+          var old = was[q.id];
+          var b = Number(q.brightness != null ? q.brightness : 1), s = Number(q.saturation != null ? q.saturation : 1);
+          var keepEdit = old && old.edited;
+          return { id: q.id, label: q.label || q.id, b: keepEdit ? old.b : b, s: keepEdit ? old.s : s,
+                   scriptB: b, scriptS: s, threshold: q.threshold, on: old ? old.on : true, edited: !!keepEdit };
+        });
+      }
+      return j;
+    });
+  }
+
+  function measure(rel) {
+    if (dims[rel]) return Promise.resolve(dims[rel]);
+    return new Promise(function (res) {
+      var img = new Image();
+      img.onload = function () { dims[rel] = { w: img.naturalWidth, h: img.naturalHeight }; res(dims[rel]); };
+      img.onerror = function () { dims[rel] = { w: 32, h: 32, missing: true }; res(dims[rel]); };
+      img.src = A + rel;
+    });
+  }
+
+  // Scatter files are small sheets of pieces (16 x 16 cells, or wider rows such as the waves). Cut each sheet on
+  // the smallest grid no drawn pixel crosses, and keep the cells that have something in them.
+  var pieces = {};               // rel -> [{x, y, w, h}]
+  var GRIDS = [[16, 16], [32, 16], [16, 32], [32, 32], [64, 16], [16, 64], [64, 32], [32, 64]];
+  function cutPieces(rel) {
+    if (pieces[rel]) return Promise.resolve(pieces[rel]);
+    return new Promise(function (res) {
+      var img = new Image();
+      img.onload = function () {
+        var w = img.naturalWidth, h = img.naturalHeight;
+        var c = document.createElement('canvas'); c.width = w; c.height = h;
+        var g = c.getContext('2d'); g.drawImage(img, 0, 0);
+        var a; try { a = g.getImageData(0, 0, w, h).data; } catch (e) { a = null; }
+        var on = function (x, y) { return a[(y * w + x) * 4 + 3] > 0; };
+        var whole = [{ x: 0, y: 0, w: w, h: h }];
+        if (!a) { pieces[rel] = whole; return res(whole); }
+        for (var k = 0; k < GRIDS.length; k++) {
+          var cw = GRIDS[k][0], ch = GRIDS[k][1];
+          if (cw > w || ch > h || w % cw || h % ch) continue;
+          var crosses = false, x, y;
+          for (x = cw; x < w && !crosses; x += cw) for (y = 0; y < h; y++) if (on(x - 1, y) && on(x, y)) { crosses = true; break; }
+          for (y = ch; y < h && !crosses; y += ch) for (x = 0; x < w; x++) if (on(x, y - 1) && on(x, y)) { crosses = true; break; }
+          if (crosses) continue;
+          var cells = [];
+          for (var cy = 0; cy < h; cy += ch) for (var cx = 0; cx < w; cx += cw) {
+            var any = false;
+            for (y = cy; y < cy + ch && !any; y++) for (x = cx; x < cx + cw; x++) if (on(x, y)) { any = true; break; }
+            if (any) cells.push({ x: cx, y: cy, w: cw, h: ch });
+          }
+          pieces[rel] = cells.length ? cells : whole;
+          return res(pieces[rel]);
+        }
+        pieces[rel] = whole; res(whole);
+      };
+      img.onerror = function () { pieces[rel] = []; res([]); };
+      img.src = A + rel;
+    });
+  }
+
+  // Animation sheets show one frame: hero sheets their idle frame, anything else named ani_ its top-left square.
+  function frameFor(rel, d) {
+    if (/^heroes\/animations\/ani_/.test(rel) && d.w === 512 && d.h === 192) return HERO_IDLE;
+    var name = rel.split('/').pop();
+    if (/^ani_/.test(name) && d.w > 64 && d.h >= 64) {
+      var side = d.h <= 64 ? d.h : 64;
+      return { x: 0, y: 0, w: side, h: side };
+    }
+    return null;
+  }
+
+  function propFiles() {
+    return list.assets.filter(function (a) { return /^playmat\/props\/prop_[^/]*\.png$/i.test(a); });
+  }
+  function groundFiles() {
+    return list.assets.filter(function (a) { return /^playmat\/terrain\/(.*\/)?ter_[^/]*\.png$/i.test(a); });
+  }
+  function activeScatter() {
+    var all = propFiles();
+    if (!state.scatter) return all;
+    return all.filter(function (f) { return state.scatter.indexOf(f) >= 0; });
+  }
+
+  // ---- presets ------------------------------------------------------------
+
+  function previewCount(p) {
+    var n = 0;
+    state.sprites.forEach(function (s) { if (previewSet.has(p.id + '/' + s.rel)) n++; });
+    return n;
+  }
+  function useFiles(p) { return !p.edited && previewCount(p) > 0; }
+  function liveFilter(p) {
+    if (p.b === 1 && p.s === 1) return '';
+    return 'brightness(' + p.b + ') saturate(' + p.s + ')';
+  }
+
+  function renderPresetRows() {
+    var box = $('presetRows');
+    box.innerHTML = '';
+    state.presets.forEach(function (p, i) {
+      var row = document.createElement('div');
+      row.className = 'preset-row';
+      var lab = document.createElement('label');
+      var cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = !!p.on;
+      cb.addEventListener('change', function () { p.on = cb.checked; changed(); });
+      lab.appendChild(cb); lab.appendChild(document.createTextNode(' ' + p.label));
+      var spacer = document.createElement('span');
+      var nb = numInput(p.b, function (v) { p.b = v; p.edited = true; changed(true); });
+      var ns = numInput(p.s, function (v) { p.s = v; p.edited = true; changed(true); });
+      nb.title = 'Brightness'; ns.title = 'Saturation';
+      row.appendChild(lab); row.appendChild(spacer); row.appendChild(nb); row.appendChild(ns);
+      box.appendChild(row);
+    });
+  }
+  function numInput(v, on) {
+    var n = document.createElement('input');
+    n.type = 'number'; n.step = '0.01'; n.min = '0'; n.max = '3'; n.value = String(v);
+    n.addEventListener('input', function () { var x = parseFloat(n.value); if (isFinite(x) && x >= 0) on(x); });
+    return n;
+  }
+
+  // ---- scene --------------------------------------------------------------
+
+  function rng(seed) {
+    return function () { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+  }
+
+  function scatterPlan() {
+    var files = activeScatter();
+    var out = [];
+    if (!files.length) return out;
+    var r = rng(state.seed);
+    for (var i = 0; i < state.scatterCount; i++) {
+      var f = files[Math.floor(r() * files.length)];
+      var d = dims[f] || { w: 64, h: 64 };
+      var cut = pieces[f] && pieces[f].length ? pieces[f] : [{ x: 0, y: 0, w: d.w, h: d.h }];
+      var pc = cut[Math.floor(r() * cut.length)];
+      out.push({ rel: f, d: d, frame: pc, x: Math.floor(r() * (W - pc.w / 2)) - Math.floor(pc.w / 4),
+                 y: Math.floor(r() * (H - pc.h / 2)) - Math.floor(pc.h / 4) });
+    }
+    return out;
+  }
+
+  function placeArt(el, url, d, frame, x, y, z) {
+    var f = frame || { x: 0, y: 0, w: d.w, h: d.h };
+    el.style.left = (x * z) + 'px'; el.style.top = (y * z) + 'px';
+    el.style.width = (f.w * z) + 'px'; el.style.height = (f.h * z) + 'px';
+    el.style.backgroundImage = 'url("' + url + '")';
+    el.style.backgroundSize = (d.w * z) + 'px ' + (d.h * z) + 'px';
+    el.style.backgroundPosition = (-f.x * z) + 'px ' + (-f.y * z) + 'px';
+  }
+
+  function buildScene(p) {
+    var z = state.zoom;
+    var scene = document.createElement('div');
+    scene.className = 'scene';
+    scene.style.width = (W * z) + 'px'; scene.style.height = (H * z) + 'px';
+
+    var gd = dims[state.ground] || { w: 64, h: 64 };
+    var ground = document.createElement('div');
+    ground.className = 'layer px ground';
+    ground.style.backgroundImage = 'url("' + A + state.ground + '")';
+    ground.style.backgroundSize = (gd.w * z) + 'px ' + (gd.h * z) + 'px';
+    scene.appendChild(ground);
+
+    scatterPlan().forEach(function (s) {
+      var el = document.createElement('div');
+      el.className = 'px';
+      el.style.pointerEvents = 'none';
+      placeArt(el, A + s.rel, s.d, s.frame, s.x, s.y, z);
+      scene.appendChild(el);
+    });
+
+    var t = state.tint;
+    if (t.reach === 'ground') scene.appendChild(tintLayer(t));
+
+    // A sprite with a preview file shows it; any other falls back to the live filter, so one panel never mixes
+    // brightened and untouched art.
+    var files = useFiles(p);
+    state.sprites.forEach(function (s, i) {
+      var d = dims[s.rel] || { w: 32, h: 32 };
+      var hasFile = files && previewSet.has(p.id + '/' + s.rel);
+      var url = hasFile ? P + p.id + '/' + s.rel : A + s.rel;
+      var filter = hasFile ? '' : liveFilter(p);
+      var el = document.createElement('div');
+      el.className = 'px sprite';
+      el.dataset.i = String(i);
+      placeArt(el, url, d, s.frame, s.x, s.y, z);
+      if (filter) el.style.filter = filter;
+      el.title = s.rel;
+      scene.appendChild(el);
+    });
+
+    if (t.reach === 'scene') scene.appendChild(tintLayer(t));
+    return scene;
+  }
+
+  function tintLayer(t) {
+    var el = document.createElement('div');
+    el.className = 'layer';
+    el.style.background = t.color;
+    el.style.opacity = String(t.amount[t.reach]);
+    return el;
+  }
+
+  function renderPanels() {
+    var box = $('panels');
+    box.innerHTML = '';
+    state.presets.forEach(function (p) {
+      if (!p.on) return;
+      var panel = document.createElement('section');
+      panel.className = 'panel';
+      var h = document.createElement('h2');
+      h.textContent = p.label + '  ' + p.b + ' / ' + p.s;
+      var src = document.createElement('p');
+      var n = previewCount(p);
+      if (p.b === 1 && p.s === 1 && !n) {
+        src.className = 'src dim'; src.textContent = 'The art as drawn';
+      } else if (useFiles(p)) {
+        src.className = 'src files';
+        src.textContent = 'Preview files: ' + n + ' of ' + state.sprites.length + ' sprites' +
+          (p.threshold != null ? ', outline threshold ' + p.threshold : '') +
+          (n < state.sprites.length ? '; the rest live CSS filter' : '');
+      } else {
+        src.className = 'src live';
+        src.textContent = p.edited && n ? 'Live CSS filter (edited; preview files ignored)' :
+          'Live CSS filter (no preview files yet; no outline protection)';
+      }
+      var scroll = document.createElement('div'); scroll.className = 'scroll';
+      scroll.appendChild(buildScene(p));
+      panel.appendChild(h); panel.appendChild(src); panel.appendChild(scroll);
+      box.appendChild(panel);
+    });
+    if (!box.children.length) box.innerHTML = '<p class="dim">Tick a preset to show it.</p>';
+  }
+
+  function renderSpriteList() {
+    var box = $('spriteList');
+    box.innerHTML = '';
+    state.sprites.forEach(function (s, i) {
+      var row = document.createElement('div');
+      var name = document.createElement('span'); name.textContent = s.rel; name.title = s.rel;
+      var rm = document.createElement('button'); rm.type = 'button'; rm.textContent = 'Remove';
+      rm.addEventListener('click', function () { state.sprites.splice(i, 1); changed(); });
+      row.appendChild(name); row.appendChild(rm);
+      box.appendChild(row);
+    });
+  }
+
+  function renderGround() {
+    var sel = $('groundSel');
+    var files = groundFiles();
+    if (files.indexOf(state.ground) < 0 && files.length) state.ground = files[0];
+    sel.innerHTML = '';
+    files.forEach(function (f) {
+      var o = document.createElement('option'); o.value = f; o.textContent = f.replace('playmat/terrain/', '');
+      sel.appendChild(o);
+    });
+    sel.value = state.ground;
+
+    var chips = $('scatterChips');
+    chips.innerHTML = '';
+    var active = activeScatter();
+    propFiles().forEach(function (f) {
+      var lab = document.createElement('label'); lab.className = 'chip';
+      var cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = active.indexOf(f) >= 0;
+      cb.addEventListener('change', function () {
+        var cur = activeScatter();
+        state.scatter = cb.checked ? cur.concat([f]) : cur.filter(function (x) { return x !== f; });
+        changed();
+      });
+      var img = document.createElement('img'); img.src = A + f; img.alt = '';
+      lab.appendChild(cb); lab.appendChild(img); lab.appendChild(document.createTextNode(f.split('/').pop().replace(/\.png$/, '')));
+      chips.appendChild(lab);
+    });
+    $('scatterCount').value = String(state.scatterCount);
+  }
+
+  function renderTint() {
+    $('tintColor').value = state.tint.color;
+    var amt = state.tint.amount[state.tint.reach];
+    $('tintAmount').value = String(amt);
+    $('tintAmountOut').textContent = Math.round(amt * 100) + ' %';
+    document.querySelectorAll('[data-reach]').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(b.getAttribute('data-reach') === state.tint.reach));
+    });
+    document.querySelectorAll('[data-zoom]').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(Number(b.getAttribute('data-zoom')) === state.zoom));
+    });
+  }
+
+  function renderPicker() {
+    var q = $('pickerFilter').value.trim().toLowerCase();
+    var words = q ? q.split(/\s+/) : [];
+    var hits = list.assets.filter(function (a) {
+      var l = a.toLowerCase();
+      return words.every(function (w) { return l.indexOf(w) >= 0; });
+    });
+    var sel = $('pickerList');
+    var keep = sel.value;
+    sel.innerHTML = '';
+    hits.slice(0, 500).forEach(function (a) {
+      var o = document.createElement('option'); o.value = a; o.textContent = a; sel.appendChild(o);
+    });
+    if (keep && hits.indexOf(keep) >= 0) sel.value = keep;
+    $('pickerCount').textContent = hits.length > 500 ? 'first 500 of ' + hits.length : hits.length + ' files';
+    showPickerPreview();
+  }
+  function showPickerPreview() {
+    var v = $('pickerList').value;
+    var img = $('pickerPreview');
+    if (v) img.src = A + v; else img.removeAttribute('src');
+  }
+
+  function addSprite(rel) {
+    if (!rel) return;
+    measure(rel).then(function (d) {
+      var f = frameFor(rel, d);
+      var w = f ? f.w : d.w, h = f ? f.h : d.h;
+      var k = state.sprites.length;
+      var x = Math.max(0, Math.min(W - w, 180 + (k % 5) * 12));
+      var y = Math.max(0, Math.min(H - h, 150 + (k % 5) * 8));
+      var s = { rel: rel, x: x, y: y };
+      if (f) s.frame = f;
+      state.sprites.push(s);
+      changed();
+    });
+  }
+
+  // ---- render and wiring --------------------------------------------------
+
+  var saveTimer = null;
+  function changed(keepRows) {
+    if (!keepRows) renderPresetRows();
+    renderGround(); renderTint(); renderSpriteList(); renderPanels();
+    clearTimeout(saveTimer); saveTimer = setTimeout(save, 200);
+  }
+
+  function measureAll() {
+    var rels = state.sprites.map(function (s) { return s.rel; }).concat(propFiles(), groundFiles());
+    return Promise.all(rels.map(measure).concat(propFiles().map(cutPieces)));
+  }
+
+  // Drag a sprite in any picture; it moves in all of them.
+  var drag = null;
+  $('panels').addEventListener('pointerdown', function (e) {
+    var el = e.target.closest && e.target.closest('.sprite');
+    if (!el) return;
+    e.preventDefault();
+    var i = Number(el.dataset.i);
+    drag = { i: i, sx: e.clientX, sy: e.clientY, ox: state.sprites[i].x, oy: state.sprites[i].y };
+    el.classList.add('dragging');
+    el.setPointerCapture(e.pointerId);
+  });
+  $('panels').addEventListener('pointermove', function (e) {
+    if (!drag) return;
+    var z = state.zoom;
+    var s = state.sprites[drag.i];
+    s.x = Math.round(drag.ox + (e.clientX - drag.sx) / z);
+    s.y = Math.round(drag.oy + (e.clientY - drag.sy) / z);
+    document.querySelectorAll('.sprite[data-i="' + drag.i + '"]').forEach(function (el) {
+      el.style.left = (s.x * z) + 'px'; el.style.top = (s.y * z) + 'px';
+    });
+  });
+  function endDrag() {
+    if (!drag) return;
+    drag = null;
+    document.querySelectorAll('.sprite.dragging').forEach(function (el) { el.classList.remove('dragging'); });
+    save();
+  }
+  $('panels').addEventListener('pointerup', endDrag);
+  $('panels').addEventListener('pointercancel', endDrag);
+
+  $('groundSel').addEventListener('change', function (e) {
+    state.ground = e.target.value; measure(state.ground).then(function () { changed(); });
+  });
+  $('scatterAll').addEventListener('click', function () { state.scatter = null; changed(); });
+  $('scatterNone').addEventListener('click', function () { state.scatter = []; changed(); });
+  $('scatterShuffle').addEventListener('click', function () { state.seed = (state.seed * 31 + 17) % 100000; changed(); });
+  $('scatterCount').addEventListener('input', function (e) {
+    var n = parseInt(e.target.value, 10);
+    if (isFinite(n) && n >= 0 && n <= 200) { state.scatterCount = n; changed(); }
+  });
+  $('tintColor').addEventListener('input', function (e) { state.tint.color = e.target.value; changed(); });
+  $('tintAmount').addEventListener('input', function (e) { state.tint.amount[state.tint.reach] = parseFloat(e.target.value); changed(); });
+  document.querySelectorAll('[data-reach]').forEach(function (b) {
+    b.addEventListener('click', function () { state.tint.reach = b.getAttribute('data-reach'); changed(); });
+  });
+  document.querySelectorAll('[data-zoom]').forEach(function (b) {
+    b.addEventListener('click', function () { state.zoom = Number(b.getAttribute('data-zoom')); changed(); });
+  });
+  SWATCHES.forEach(function (sw) {
+    var b = document.createElement('button'); b.type = 'button';
+    b.innerHTML = '<span style="display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;background:' +
+      sw.color + '"></span>' + sw.name;
+    b.addEventListener('click', function () { state.tint.color = sw.color; state.tint.reach = sw.reach || 'ground';
+      state.tint.amount[state.tint.reach] = sw.amount; changed(); });
+    $('tintSwatches').appendChild(b);
+  });
+  $('pickerFilter').addEventListener('input', renderPicker);
+  $('pickerList').addEventListener('change', showPickerPreview);
+  $('pickerList').addEventListener('dblclick', function () { addSprite($('pickerList').value); });
+  $('pickerAdd').addEventListener('click', function () { addSprite($('pickerList').value); });
+  $('resetScene').addEventListener('click', function () {
+    var d = defaults();
+    state.sprites = d.sprites; state.ground = d.ground; state.scatter = d.scatter;
+    state.scatterCount = d.scatterCount; state.seed = d.seed; state.tint = d.tint;
+    measureAll().then(function () { changed(); });
+  });
+  $('resetPresets').addEventListener('click', function () {
+    state.presets = defaults().presets;
+    fetchList().then(function () { changed(); });
+  });
+  $('reloadPreviews').addEventListener('click', function () {
+    state.presets.forEach(function (p) {
+      if (p.edited && p.scriptB != null) { p.b = p.scriptB; p.s = p.scriptS; }
+      p.edited = false;
+    });
+    fetchList().then(measureAll).then(function () { renderPicker(); changed(); status(); });
+  });
+
+  function status() {
+    $('status').textContent = list.assets.length + ' PNGs under public/assets, ' + list.previews.length +
+      ' preview files' + (list.presets ? ' and the script\'s presets.json' : '') + '.';
+  }
+
+  fetchList().then(measureAll).then(function () {
+    status(); renderPicker(); changed();
+  }).catch(function (e) {
+    $('status').className = 'err';
+    $('status').textContent = 'Could not load the art list (' + e.message + '). Start the page with npm run art:bench.';
+  });
+})();
+</script>
+</body>
+</html>
