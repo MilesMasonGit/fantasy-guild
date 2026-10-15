@@ -6,7 +6,7 @@ import { EventBus, UI_LISTENER } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 import * as Atlas from '../../systems/atlas/Atlas.js';
 import { lastGroundBuilds, onGroundBuilt } from '../components/board/groundBuilds.js';
-import { TERRAIN_DEV_REGIONS, goToDevRegion, rerollDevRegion, backToStarterCamp, viewOf } from './terrainDev.js';
+import { TERRAIN_DEV_REGIONS, goToDevRegion, rerollDevRegion, backToStarterCamp, viewOf, placeGroundTestTokens } from './terrainDev.js';
 
 const labelClass = 'text-[11px] font-bold uppercase tracking-wider text-gi-muted mb-1';
 const buttonClass = 'px-2 py-1 rounded bg-gi-primary/10 hover:bg-gi-primary/20 border border-gi-primary/40 text-xs font-bold transition-colors';
@@ -25,8 +25,9 @@ const ms = (n) => (n == null ? '–' : `${n.toFixed(1)} ms`);
 /**
  * Six buttons, one per view of the ground (each biome, each pair): each settles a dev Region for
  * free and takes the guild there. Reroll it gives the one the guild is in a new seed; Back to the
- * Starter Camp goes home. The dev Region left behind is removed. Under them, how long the ground's
- * last build took.
+ * Starter Camp goes home. The dev Region left behind is removed. Place the ground test Tokens puts a
+ * Token that needs water, one that needs the shore and one that needs rock near the Hall, for the
+ * grid while placing. Under them, how long the ground's last build took.
  */
 export function TerrainDevSection() {
     const [status, setStatus] = useState('');
@@ -75,6 +76,14 @@ export function TerrainDevSection() {
                     Back to the Starter Camp
                 </button>
             </div>
+            <button
+                data-terrain-test-tokens
+                onClick={() => run(placeGroundTestTokens, 'Test Tokens')}
+                className={`${buttonClass} w-full`}
+                title="A Test Boat (needs water), a Test Dock (needs the shore) and a Test Mineshaft (needs rock), placed near the Hall. Pick one up to see the grid."
+            >
+                Place the ground test Tokens
+            </button>
             <div className="text-[10px] text-gi-text" data-terrain-where>{where}</div>
             <div className="text-[10px] text-gi-muted tabular-nums" data-terrain-builds>
                 Last ground build: plan {ms(builds.plan)}, picture {ms(builds.screen)}

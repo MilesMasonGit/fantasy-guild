@@ -2,6 +2,9 @@
 // ⚠️ DEV BUILDS ONLY: TestDashboard renders the section behind `import.meta.env.DEV`.
 
 import * as Atlas from '../../systems/atlas/Atlas.js';
+import * as BoardState from '../../systems/board/BoardState.js';
+import * as Placement from '../../systems/board/Placement.js';
+import { getTokenType, registerTokenTypes } from '../../config/registries/tokenRegistry.js';
 import { grant } from '../../systems/atlas/Cartography.js';
 import { DEV_MAPS } from '../../systems/atlas/devMaps.js';
 import { nextSeed, seedFromText } from '../../systems/atlas/seededRandom.js';
@@ -114,4 +117,58 @@ export function backToStarterCamp() {
     const trip = Atlas.travel(starter.id);
     if (trip.success) removeIfDev(here);
     return trip;
+}
+
+/**
+ * Three dev-only test Tokens for the grid while placing: one needs water, one the shore, one rock.
+ * Nothing authored has a "Stands on" yet, so the eye-check gets its own.
+ *
+ * ⚠️ Registered in memory (`registerTokenTypes`) for this page only, the same seam the stress
+ * boards use; `data/` is never read or written for them. A save that holds them and is loaded after
+ * a reload shows them as unknown Tokens until the button is pressed again.
+ */
+export const DEV_GROUND_TOKENS = Object.freeze([
+    { id: 'dev_ground_boat', name: 'Test Boat (needs water)', looksLike: 'token_fishing_net', standsOn: ['water'] },
+    { id: 'dev_ground_dock', name: 'Test Dock (needs the shore)', looksLike: 'token_coast', standsOn: ['shore'] },
+    { id: 'dev_ground_mineshaft', name: 'Test Mineshaft (needs rock)', looksLike: 'token_copper_mine', standsOn: ['rock'] }
+].map(Object.freeze));
+
+function registerDevGroundTokens() {
+    if (DEV_GROUND_TOKENS.every(t => getTokenType(t.id))) return;
+    registerTokenTypes(Object.fromEntries(DEV_GROUND_TOKENS.map(t => [t.id, {
+        id: t.id,
+        name: t.name,
+        description: `Dev only: ${t.name}.`,
+        // Borrowed art: a shipped Token's picture.
+        sprite: getTokenType(t.looksLike)?.sprite ?? null,
+        tokenType: 'resource',
+        tags: [],
+        size: 1,
+        uses: null,
+        requiresHero: false,
+        config: null,
+        standsOn: [...t.standsOn]
+    }])));
+}
+
+/**
+ * Put one of each dev test Token on the mat, each on ground it may stand on near the Guild Hall
+ * (`Placement.placeArrivalNear`, which honours the ground). One that has no such ground here (the
+ * Boat in a Region with no water) is refused with its reason.
+ *
+ * @returns {{success: boolean, reason?: string, placed: string[]}}
+ */
+export function placeGroundTestTokens() {
+    registerDevGroundTokens();
+    const placed = [];
+    const refused = [];
+    for (const t of DEV_GROUND_TOKENS) {
+        const instance = BoardState.createTokenInstance(t.id, null);
+        const res = Placement.placeArrivalNear(instance, Placement.centreOfBoard());
+        if (res?.success) placed.push(t.name);
+        else refused.push(`${t.name}: ${res?.reason || 'refused'}`);
+    }
+    return refused.length
+        ? { success: false, reason: refused.join(' '), placed }
+        : { success: true, placed };
 }

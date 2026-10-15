@@ -15,6 +15,7 @@ import { FlagLayer } from './FlagLayer.jsx';
 import { heroOutline } from './spriteOutline.js';
 import { SpriteLayerView } from './SpriteLayerView.jsx';
 import { TerrainCanvas } from './TerrainCanvas.jsx';
+import { TerrainGridOverlay } from './TerrainGridOverlay.jsx';
 import { MAT_EDGE, MAT_EDGE_CSS } from './groundScreen.js';
 import { announce } from './dropOnMat.js';
 import { useGameState } from '../../hooks/useGameState.js';
@@ -443,6 +444,9 @@ export const MatBoard = React.memo(function MatBoard({
 
             {/* `MAT_Z.RINGS`: the Near ring. Flag radius rings are FlagLayer's. */}
             {ringsDrawn && <MatRings hoveredCentre={hoveredCentre} matRef={rootRef} />}
+
+            {/* `MAT_Z.GROUND_GRID`: with a Token in the hand, the cells it may stand on, under every Token. */}
+            <TerrainGridOverlay mat={mat} />
 
             {/* `MAT_Z.LOOT`: loot on the floor. */}
             <SpriteLayerView />

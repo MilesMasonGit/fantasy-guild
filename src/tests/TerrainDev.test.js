@@ -12,9 +12,12 @@ import { resetMatTuning } from '../config/matTuning.js';
 import * as Atlas from '../systems/atlas/Atlas.js';
 import * as Cartography from '../systems/atlas/Cartography.js';
 import { decodeTerrain } from '../systems/atlas/TerrainMap.js';
+import * as GroundRules from '../systems/board/GroundRules.js';
+import { standsOnOf } from '../config/registries/tokenRegistry.js';
 import { nextSeed } from '../systems/atlas/seededRandom.js';
 import {
-    TERRAIN_DEV_REGIONS, goToDevRegion, rerollDevRegion, backToStarterCamp, isDevRegion, devMapsOf, viewOf, firstSeedOf
+    TERRAIN_DEV_REGIONS, goToDevRegion, rerollDevRegion, backToStarterCamp, isDevRegion, devMapsOf, viewOf, firstSeedOf,
+    DEV_GROUND_TOKENS, placeGroundTestTokens
 } from '../ui/dev/terrainDev.js';
 import { placeAt } from './fixtures/mat.js';
 import './fixtures/testTokens.js';
@@ -127,5 +130,30 @@ describe('⭐ each view is one click', () => {
         expect(Atlas.getRegion(players.id)).not.toBeNull();
         expect(backToStarterCamp().success).toBe(true);
         expect(regionIds()).toEqual([home, players.id].sort());
+    });
+});
+
+describe('⭐ the ground test Tokens are one click', () => {
+    const onMat = (id) => BoardState.tokens().filter(t => t.typeId === id);
+
+    it('on a Coast hybrid: a Boat on water, a Dock on the shore, a Mineshaft on rock, each where placement allows', () => {
+        expect(goToDevRegion(['mountain', 'coast']).success).toBe(true);
+        const res = placeGroundTestTokens();
+        expect(res).toMatchObject({ success: true });
+        expect(DEV_GROUND_TOKENS.map(t => t.standsOn[0])).toEqual(['water', 'shore', 'rock']);
+        for (const t of DEV_GROUND_TOKENS) {
+            expect(standsOnOf(t.id)).toEqual(t.standsOn);
+            const [token] = onMat(t.id);
+            expect(token, t.id).toBeTruthy();
+            expect(GroundRules.mayStandAt(t.id, token)).toBe(true);
+        }
+    });
+
+    it('on the meadow (no water, no rock) each is refused with its reason, and nothing is placed', () => {
+        const res = placeGroundTestTokens();
+        expect(res.success).toBe(false);
+        for (const reason of ['Needs water.', 'Needs the shore.', 'Needs rock.']) expect(res.reason).toContain(reason);
+        expect(res.placed).toEqual([]);
+        for (const t of DEV_GROUND_TOKENS) expect(onMat(t.id)).toHaveLength(0);
     });
 });
