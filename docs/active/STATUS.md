@@ -35,7 +35,7 @@ October 2026.*
 | Drawers close each other (T-152) | builder-lite | `fix/t152-drawers` → `main` | merged (one hook, one new test; ruled in words, no eye-check) | Wed | Wed |
 | Hover outline + Guild Hall movable again (T-147, T-148, with the outline-clipping fix T-146) | builder | `fix/hover-and-hall` (`hover`) | ready; director gate next; eye-check ([file](eyecheck/2026-10-15_hover-hall-gear.md)); work check in the 01:00 window | Wed–Thu | |
 | Overlapping speech bubbles (T-158) | builder | `fix/t158-bubbles` (`t158`) | ready; director gate running; the callout now sits above the working hero's speech in one column; work check in the 01:00 window | Wed–Thu | |
-| Gear alert stops pulsing (T-153) | builder-lite | `fix/t153-gear-alert` (`t153`) | building (started Wed 17:00); joins the hover eye-check | Wed–Thu | |
+| Gear alert stops pulsing (T-153) | builder-lite | `fix/t153-gear-alert` → folded onto `fix/hover-and-hall` | ready; combined branch gate green (4791); in the hover eye-check file (checks 7–8); work check in the 01:00 window | Wed–Thu | |
 | Safety net for CMS renames (T-182) | builder-lite | `fix/t182-id-guard` → `main` | merged (250 ids checked; T-184 filed for three dead ids on a dev-panel button) | Wed | Wed |
 | Brief 80 T0 terrain plan (read-only; owner's spritesheets are ready) | engineer | `crunch/terrain` | queued | Fri | |
 | Handoff; T-181 baseline retake queued for Sat 01:00 | director / runner | `main` | queued | Sat | |
