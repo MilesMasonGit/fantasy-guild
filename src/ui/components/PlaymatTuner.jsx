@@ -4,7 +4,6 @@ import { useEngine } from '../hooks/useEngine.js';
 import {
     TUNABLES, tuning, setTuning, resetTuning, isTuned, tuningDefault
 } from '../../config/playmatTuning.js';
-import { artSet, setArtSet } from '../../config/registries/terrainRegistry.js';
 import { UI_EVENTS } from '../../systems/core/engineEvents.js';
 
 /**
@@ -22,7 +21,6 @@ export const PlaymatTuner = React.memo(() => {
     const [isOpen, setIsOpen] = useState(false);
     // Mirrors the module-level store so the sliders re-render as they move.
     const [, bump] = useState(0);
-    const [ground, setGround] = useState(artSet());
 
     const repaint = useCallback(() => {
         bump(n => n + 1);
@@ -70,23 +68,6 @@ export const PlaymatTuner = React.memo(() => {
             </div>
 
             <div className="overflow-y-auto max-h-[60vh] custom-scrollbar pr-1 space-y-4">
-                <div>
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-gi-muted mb-2">
-                        Ground art
-                    </div>
-                    <button
-                        onClick={() => {
-                            const next = ground === 'b' ? 'a' : 'b';
-                            setArtSet(next);
-                            setGround(next);
-                            repaint();
-                        }}
-                        className="w-full text-left px-3 py-2 rounded bg-gi-base hover:bg-gi-primary/20 border border-gi-border hover:border-gi-primary/50 text-sm font-bold transition-colors"
-                    >
-                        {ground === 'b' ? '8px chunky' : '16px fine'}
-                    </button>
-                </div>
-
                 {groups.map(group => (
                     <div key={group}>
                         <div className="text-[10px] font-bold uppercase tracking-wider text-gi-muted mb-2">

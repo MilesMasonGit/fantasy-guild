@@ -15,6 +15,13 @@ afterEach(() => resetTuning());
 const hybrid = (seed = 5) => groundWith(32, 16, (c) => (c < 6 ? 'water' : c < 12 ? 'sand' : c < 22 ? 'grass' : 'rock'), { seed });
 const meadow = (seed = 5) => groundWith(20, 12, flat('grass'), { seed, biomes: null });
 
+/** Whether two typed arrays hold the same values: one loop, not one assertion per pixel. */
+function same(a, b) {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+    return true;
+}
+
 /** How many pixels draw each sheet. */
 function sheetCounts(plan) {
     const out = {};
@@ -29,9 +36,8 @@ describe('Every pixel gets a sheet', () => {
     it('covers the whole mat: no pixel without ground', () => {
         const plan = buildGroundPlan(hybrid());
         expect(plan.sheetAt.length).toBe(plan.width * plan.height);
-        for (let i = 0; i < plan.sheetAt.length; i++) {
-            expect(SHEETS).toContain(plan.sheets[plan.sheetAt[i]]);
-        }
+        for (const id of plan.sheets) expect(SHEETS).toContain(id);
+        expect(Math.max(...new Set(plan.sheetAt))).toBeLessThan(plan.sheets.length);
     });
 
     it('⭐ draws each look with its own sheet (TD-2 A)', () => {
@@ -81,9 +87,15 @@ describe('⭐ Layering: tint under band under wear', () => {
 
     it('⭐ never tints worn ground: bare earth is not shallow water', () => {
         const plan = buildGroundPlan(hybrid());
+        let worn = 0;
+        let wornTinted = 0;
         for (let i = 0; i < plan.tintAt.length; i++) {
-            if (plan.wearAt?.[i]) expect(plan.tintAt[i], `worn pixel ${i}`).toBe(-1);
+            if (!plan.wearAt?.[i]) continue;
+            worn++;
+            if (plan.tintAt[i] !== -1) wornTinted++;
         }
+        expect(worn).toBeGreaterThan(0);
+        expect(wornTinted).toBe(0);
     });
 
     it('keeps which band each pixel is in, apart from the drawing answer', () => {
@@ -150,12 +162,12 @@ describe('Stability', () => {
     it('is identical every time', () => {
         const a = buildGroundPlan(hybrid(31));
         const b = buildGroundPlan(hybrid(31));
-        expect(Array.from(a.sheetAt)).toEqual(Array.from(b.sheetAt));
-        expect(Array.from(a.tintAt)).toEqual(Array.from(b.tintAt));
+        expect(same(a.sheetAt, b.sheetAt)).toBe(true);
+        expect(same(a.tintAt, b.tintAt)).toBe(true);
         expect(a.props).toEqual(b.props);
     });
 
     it('differs between seeds', () => {
-        expect(Array.from(buildGroundPlan(hybrid(1)).sheetAt)).not.toEqual(Array.from(buildGroundPlan(hybrid(2)).sheetAt));
+        expect(same(buildGroundPlan(hybrid(1)).sheetAt, buildGroundPlan(hybrid(2)).sheetAt)).toBe(false);
     });
 });

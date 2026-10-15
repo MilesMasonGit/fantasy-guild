@@ -30,21 +30,28 @@ function settled(names, seed) {
 
 const planOf = (region) => buildGroundPlan(regionGround(region, MAT));
 
+/** Whether two typed arrays hold the same values: one loop, not one assertion per pixel. */
+function same(a, b) {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+    return true;
+}
+
 describe('⭐ The plan of a stored map', () => {
     it('⭐ is the same on every build, and changes with the seed', () => {
         const a = planOf(settled(['forest', 'coast'], 101));
         const b = planOf(settled(['forest', 'coast'], 101));
         expect([a.width, a.height]).toEqual([880, 563]);
-        expect(Array.from(b.terrainAt)).toEqual(Array.from(a.terrainAt));
-        expect(Array.from(b.sheetAt)).toEqual(Array.from(a.sheetAt));
-        expect(Array.from(b.tintAt)).toEqual(Array.from(a.tintAt));
+        expect(same(b.terrainAt, a.terrainAt)).toBe(true);
+        expect(same(b.sheetAt, a.sheetAt)).toBe(true);
+        expect(same(b.tintAt, a.tintAt)).toBe(true);
         expect(b.props).toEqual(a.props);
 
         // The same stored map under another seed: the same cells, other edges, wear and scatter.
         const region = settled(['forest', 'coast'], 101);
         const reseeded = planOf({ ...region, seed: 102 });
-        expect(Array.from(reseeded.terrainAt)).not.toEqual(Array.from(a.terrainAt));
-        expect(Array.from(reseeded.sheetAt)).not.toEqual(Array.from(a.sheetAt));
+        expect(same(reseeded.terrainAt, a.terrainAt)).toBe(false);
+        expect(same(reseeded.sheetAt, a.sheetAt)).toBe(false);
         expect(reseeded.props).not.toEqual(a.props);
     });
 
@@ -130,6 +137,7 @@ describe('⭐ The ground round the Hall is plain ground: no clearing (decision 4
         const cy = hall.y / PLAN_PIXEL_U;
         let checked = 0;
         let worn = 0;
+        const wrong = [];
         for (let y = Math.floor(cy - ring); y <= Math.ceil(cy + ring); y++) {
             for (let x = Math.floor(cx - ring); x <= Math.ceil(cx + ring); x++) {
                 if ((x - cx) * (x - cx) + (y - cy) * (y - cy) > ring * ring) continue;
@@ -137,12 +145,13 @@ describe('⭐ The ground round the Hall is plain ground: no clearing (decision 4
                 const t = plan.terrainAt[i];
                 const look = LOOKS[plan.looks[t]];
                 const wears = patchNoise(x, y, ground.seed, plan.wear.cell) < plan.wear.thresholds[t];
-                expect(Boolean(plan.wearAt[i]), `wear at ${x},${y}`).toBe(wears);
-                expect(plan.sheets[plan.sheetAt[i]]).toBe(wears ? look.wear.sheet : look.sheets[0]);
+                if (Boolean(plan.wearAt[i]) !== wears) wrong.push(`wear at ${x},${y}`);
+                if (plan.sheets[plan.sheetAt[i]] !== (wears ? look.wear.sheet : look.sheets[0])) wrong.push(`sheet at ${x},${y}`);
                 checked++;
                 if (wears) worn++;
             }
         }
+        expect(wrong.slice(0, 5), `${wrong.length} wrong`).toEqual([]);
         expect(checked).toBeGreaterThan(30000);
         // Wear at its ordinary share, not a worn patch (the tile era's hamlet wore 45 %).
         expect(worn / checked).toBeLessThan(0.3);
@@ -153,7 +162,7 @@ describe('⭐ The ground round the Hall is plain ground: no clearing (decision 4
         const hallAt = (x, y) => ({ ...region, board: { tokens: { hall: { typeId: 'token_guild_hall', x, y } } } });
         const a = planOf(hallAt(880, 563));
         const b = planOf(hallAt(300, 300));
-        expect(Array.from(b.sheetAt)).toEqual(Array.from(a.sheetAt));
+        expect(same(b.sheetAt, a.sheetAt)).toBe(true);
         expect(b.props).toEqual(a.props);
     });
 });

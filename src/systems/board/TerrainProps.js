@@ -1,127 +1,95 @@
-// scenery scattered over the terrain
+// scatter: small flat bits on the ground, cut from the prop sheets
 
-import { LATTICE_SIZE, SUBTILE_PX, hash01, subtileArtPx } from './TerrainLattice.js';
-
-/** Board pixels per art pixel — how the anchor maps onto the terrain map. */
-const artPx = () => SUBTILE_PX / subtileArtPx();
-import { propsOf } from '../../config/registries/terrainRegistry.js';
+import { hash01 } from './TerrainLattice.js';
+import { PROP_PX, PROP_SHEET_CELLS, propsOf } from '../../config/registries/terrainRegistry.js';
 import { tuning } from '../../config/playmatTuning.js';
 
 /**
- * Where every tree stands, worked out from the painted board. Pure data, not drawing, so it can be
- * asserted on: the renderer only paints the list in the order given.
+ * Where every prop stands, worked out from the Region's ground. Pure data, not drawing, so it can
+ * be asserted on: the screen pass paints the list in the order given.
  *
- * Props are 16px art drawn at the ground's own zoom, so a prop never has finer pixels than the
- * ground it stands on (it would read as pasted on). They change size when the art set is switched.
- *
- * A prop stands on a point, not a cell: anchored at a scattered point inside a subtile, never its
- * centre (which would line trees up on a lattice), with its base at that point.
- *
- * The list is sorted by the anchor's y, so painting in order puts nearer trees over farther ones.
+ * A prop is one cell of a 4 × 4 prop sheet, drawn one prop pixel per ground pixel, so it never
+ * has finer pixels than the ground it stands on. It stands on a point, not a cell: its foot is a
+ * scattered pixel inside the cell that grew it, never the cell's centre (which would line props
+ * up on a lattice), and the prop is dropped when its foot or the ends of its base are not on that
+ * cell's own ground (a beach cut into a forest's edge leaves the cell forest but those pixels
+ * sand).
  */
 
 /**
- * How much of a subtile a prop's anchor may roam over, as a fraction, centred.
- *
- * Never the full subtile: an anchor hard against an edge puts half the tree in
- * the next subtile along, which reads as a tree growing out of whatever terrain
- * is over there. The remaining margin keeps every trunk on the ground that grew
- * it while still scattering them well off centre.
- */
-const anchorSpan = () => tuning('propScatter');
-
-/**
- * Separate hash channels, so the four questions asked of each subtile are
- * independent. Sharing one would tie them together — turning the density up
- * would also move every surviving tree and change which species it was, which
- * makes tuning the look impossible.
+ * Separate hash channels, so the questions asked of each cell are independent: turning the
+ * density up must not also move every surviving prop and change which one it is.
  */
 const CHANNEL_PRESENCE = 0x9101;
-const CHANNEL_WHICH = 0x9102;
+const CHANNEL_SHEET = 0x9102;
 const CHANNEL_X = 0x9103;
 const CHANNEL_Y = 0x9104;
+const CHANNEL_CELL = 0x9105;
 
-/** Props are 16px whatever the ground art set is. */
-export const PROP_ART_PX = 16;
+/** How far either side of the foot the base is checked, in pixels: the props' art spans about 12. */
+const BASE_HALF = 5;
 
-/** How big a prop draws, in board pixels — the ground's zoom applied to 16px. */
-export function propSizePx() {
-    return PROP_ART_PX * (SUBTILE_PX / subtileArtPx());
+/** A weighted pick from a look's prop sheets. */
+function pickSheet(props, roll) {
+    const total = props.reduce((n, p) => n + p.weight, 0);
+    let left = roll * total;
+    for (const p of props) {
+        left -= p.weight;
+        if (left < 0) return p.sheet;
+    }
+    return props[props.length - 1].sheet;
 }
 
 /**
- * Every prop on the board, in the order it should be painted.
- * @param {Array<string|null>} grid A resolved lattice from `resolveLattice`.
- * @param {number} seed The save's terrain seed.
- * @param {object} [artPixels] A resolved art-pixel map. When given, a prop whose trunk does not
- * stand on the terrain that grew it is dropped: a beach fringed onto a forest's edge leaves the
- * subtile forest but those pixels sand.
- * @returns {Array<{propId, x, y, anchorX, anchorY, sx, sy, size}>} `x`/`y` are the sprite's
- * top-left in board pixels, offset so its base sits on its anchor; `anchorX`/`anchorY` are that
- * base; `sx`/`sy` the subtile it grew in. Sorted back-to-front.
+ * Every prop on the ground, in the order it should be painted.
+ *
+ * @param {object} ground The Region's ground (`regionGround`).
+ * @param {object} pixels Its resolved map (`resolveArtPixels`): a prop's foot is checked on it.
+ * @returns {Array<{sheet: string, index: number, look: string, x: number, y: number,
+ *   footX: number, footY: number, cx: number, cy: number}>} `index` is the prop's cell in its
+ *   sheet (row by row, 0–15); `x`, `y` the prop's top-left and `footX`, `footY` its foot, in plan
+ *   pixels; `cx`, `cy` the cell that grew it. Back to front.
  */
-export function propsForBoard(grid, seed = 0, artPixels = null) {
-    const size = propSizePx();
-    // One art pixel of a prop, in board pixels. Anchors snap to this so a
-    // sprite lands on the pixel grid rather than half a pixel off it.
-    const worldPixel = size / PROP_ART_PX;
-    const snap = (v) => Math.round(v / worldPixel) * worldPixel;
+export function propsForGround(ground, pixels) {
+    const { cols, rows, cells, terrains, seed, looks } = ground;
+    const { width, height, cellPx, at } = pixels;
+    const span = tuning('propScatter');
+    const margin = (1 - span) / 2;
+    const densityScale = tuning('propDensity');
+    const perSheet = PROP_SHEET_CELLS * PROP_SHEET_CELLS;
     const out = [];
 
-    for (let sy = 0; sy < LATTICE_SIZE; sy++) {
-        for (let sx = 0; sx < LATTICE_SIZE; sx++) {
-            const terrainId = grid[sy * LATTICE_SIZE + sx];
-            if (!terrainId) continue;
-
-            const scatter = propsOf(terrainId);
+    for (let cy = 0; cy < rows; cy++) {
+        for (let cx = 0; cx < cols; cx++) {
+            const terrainIndex = cells[cy * cols + cx];
+            const look = looks[terrains[terrainIndex]];
+            const scatter = propsOf(look);
             if (!scatter) continue;
+            if (hash01(cx, cy, CHANNEL_PRESENCE, seed) >= scatter.density * densityScale) continue;
 
-            // Whether this subtile carries anything at all. Its own draw is
-            // kept on a separate hash channel from the position and the choice
-            // of tree, so changing the density does not also reshuffle where
-            // the survivors stand.
-            const density = scatter.density * tuning('propDensity');
-            if (hash01(sx, sy, CHANNEL_PRESENCE, seed) >= density) continue;
+            const footX = cx * cellPx + Math.floor((margin + hash01(cx, cy, CHANNEL_X, seed) * span) * cellPx);
+            const footY = cy * cellPx + Math.floor((margin + hash01(cx, cy, CHANNEL_Y, seed) * span) * cellPx);
+            const x = footX - PROP_PX / 2;
+            const y = footY - (PROP_PX - 1);
+            if (x < 0 || y < 0 || x + PROP_PX > width || footY >= height) continue;
 
-            const pick = Math.floor(
-                hash01(sx, sy, CHANNEL_WHICH, seed) * scatter.props.length
-            );
-            const propId = scatter.props[Math.min(pick, scatter.props.length - 1)];
-
-            // The scatter is centred, so turning it to zero plants every prop
-            // dead centre rather than pushing them all into one corner.
-            const span = anchorSpan();
-            const margin = (1 - span) / 2;
-            const anchorX =
-                (sx + margin + hash01(sx, sy, CHANNEL_X, seed) * span) * SUBTILE_PX;
-            const anchorY =
-                (sy + margin + hash01(sx, sy, CHANNEL_Y, seed) * span) * SUBTILE_PX;
-
-            // ⚠️ Does the trunk actually stand on the ground that grew it?
-            // The subtile says forest; a beach fringed across its edge says
-            // sand. Checked at the anchor, which is the one pixel that decides
-            // what a tree is rooted in.
-            if (artPixels) {
-                const ax = Math.min(artPixels.size - 1, Math.floor(anchorX / (SUBTILE_PX / artPx())));
-                const ay = Math.min(artPixels.size - 1, Math.floor(anchorY / (SUBTILE_PX / artPx())));
-                if (artPixels.palette[artPixels.at[ay * artPixels.size + ax]] !== terrainId) continue;
-            }
+            // ⚠️ Its own ground under the foot and both ends of the base, read on the drawn
+            // pixels: the cell says forest, the beach rim may say sand.
+            const row = footY * width;
+            if (at[row + footX] !== terrainIndex
+                || at[row + Math.max(0, footX - BASE_HALF)] !== terrainIndex
+                || at[row + Math.min(width - 1, footX + BASE_HALF)] !== terrainIndex) continue;
 
             out.push({
-                propId,
-                x: snap(anchorX - size / 2),
-                y: snap(anchorY - size),
-                anchorX, anchorY,
-                // The subtile that grew it, kept so callers can check the trunk
-                // never wandered onto ground that did not ask for it.
-                sx, sy,
-                size
+                sheet: pickSheet(scatter.props, hash01(cx, cy, CHANNEL_SHEET, seed)),
+                index: Math.floor(hash01(cx, cy, CHANNEL_CELL, seed) * perSheet) % perSheet,
+                look, x, y, footX, footY, cx, cy
             });
         }
     }
 
-    // Painter's order: whatever stands lower on the board is nearer the viewer
-    // and goes on top. Ties broken by x so the order is total and stable.
-    out.sort((a, b) => (a.anchorY - b.anchorY) || (a.x - b.x));
+    // Painter's order: whatever stands lower is nearer the viewer and goes on top; ties by x so
+    // the order is total and stable.
+    out.sort((a, b) => (a.footY - b.footY) || (a.footX - b.footX));
     return out;
 }

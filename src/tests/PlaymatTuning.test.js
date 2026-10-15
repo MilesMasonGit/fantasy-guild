@@ -84,8 +84,11 @@ describe('⭐ No dead sliders', () => {
      * wiring it up cannot pass quietly.
      */
     const seed = 4242;
-    /** Sea, a beach, forest and mountain: every look's wear, band, beach and scatter is on it. */
-    const ground = () => groundWith(24, 12, (c) => (c < 5 ? 'water' : c < 9 ? 'sand' : c < 17 ? 'grass' : 'rock'), { seed });
+    /**
+     * Sea, a beach along half of it, forest and mountain: every look's wear, band and scatter is
+     * on it, and the sea meets the forest where the beach stops, so the beach rim has work to do.
+     */
+    const ground = () => groundWith(24, 12, (c, r) => (c < 5 ? 'water' : c < 9 && r < 6 ? 'sand' : c < 17 ? 'grass' : 'rock'), { seed });
 
     /** A mask summarised as a count plus a checksum: any two masks that differ at all differ here. */
     const summary = (mask) => {

@@ -1,94 +1,43 @@
-// patches of one substrate showing through another
+// wear: a second sheet showing through a look in clumps
 
-import { hash01 } from './TerrainLattice.js';
-import { patchOf } from '../../config/registries/terrainRegistry.js';
+import { hash01, PLAN_PIXEL_U } from './TerrainLattice.js';
+import { wearOf } from '../../config/registries/terrainRegistry.js';
 import { tuning } from '../../config/playmatTuning.js';
 
 /**
- * Clumps of bare earth worn through the grass: a second substrate showing through a first inside
- * one terrain, with no edge involved.
+ * Clumps of earth worn through grass, gravel through rock: a second sheet inside one look, with
+ * no edge involved.
  *
  * Clumps, not speckle: the shape comes from smooth value noise on a coarse grid, interpolated,
- * because independent per-pixel noise gives dithering.
+ * because independent per-pixel noise gives dithering. The noise is sampled from absolute pixel
+ * coordinates, so a clump runs across cell lines without lining anything up; what stops it is the
+ * ground under it changing to a look that does not wear.
  *
- * The noise is sampled from absolute art-pixel coordinates, so a clump runs across subtile and tile
- * boundaries without lining anything up. What stops a patch is the terrain underneath changing to
- * one with no patches declared.
- *
- * ⚠️ Reads the art-pixel map, not the subtile lattice: gated per subtile, dirt speckled across the
- * beaches fringed onto a forest's edge, because the subtile was still forest. Per pixel it stops
- * where the sand starts.
+ * ⚠️ Gated per pixel on the drawn ground (`resolveArtPixels`), after the beach is cut: gated per
+ * cell, earth speckled across the beach the sea had cut into a forest's edge.
  */
 
-/**
- * How many art pixels across one cell of the noise grid.
- *
- * This is the size of a clump. Small values approach per-pixel noise and look
- * like dithering; large ones give a few enormous continents of dirt and read as
- * a second terrain rather than as wear.
- */
-const NOISE_CELL = 5;
-
-/** Hash channel, kept clear of the ones the lattice and the props use. */
+/** Hash channel, kept clear of the ones the edges and the scatter use. */
 const CHANNEL_PATCH = 0x7a1c;
 
-/** Smoothstep, so cells blend into each other instead of meeting in creases. */
-const smooth = (t) => t * t * (3 - 2 * t);
-
-/** How many samples to estimate the noise distribution from. */
+/** How many samples the noise's distribution is estimated from. */
 const CALIBRATION_SAMPLES = 4096;
 
-/**
- * The noise field, kept between repaints.
- *
- * ⚠️ It depends on the seed and the clump size only, not on the terrain, so recomputing it whenever
- * a Token moves is wasted work. Held for the whole board rather than only the patched parts: which
- * parts are patched changes with the terrain, and a cache that had to be invalidated whenever the
- * board changed would not be a cache.
- */
-let noiseCache = { key: null, field: null, quantiles: null };
+/** The R2 sequence's steps (the plastic number's inverse powers): evenly spread 2D samples. */
+const R2_X = 0.7548776662466927;
+const R2_Y = 0.5698402909980532;
 
-function noiseField(size, seed, cell) {
-    const key = `${size}|${seed}|${cell}`;
-    if (noiseCache.key === key) return noiseCache;
+/** Smoothstep, so noise cells blend into each other instead of meeting in creases. */
+const smooth = (t) => t * t * (3 - 2 * t);
 
-    const field = new Float32Array(size * size);
-    for (let py = 0; py < size; py++) {
-        for (let px = 0; px < size; px++) {
-            field[py * size + px] = patchNoise(px, py, seed, cell);
-        }
-    }
-
-    const step = Math.max(1, Math.floor(field.length / CALIBRATION_SAMPLES));
-    const sample = [];
-    for (let i = 0; i < field.length; i += step) sample.push(field[i]);
-    sample.sort((a, b) => a - b);
-
-    noiseCache = { key, field, quantiles: sample };
-    return noiseCache;
-}
+/** The clump size in plan pixels, from the slider's mat units. */
+const clumpPx = () => Math.max(2, Math.round(tuning('wearClump') / PLAN_PIXEL_U));
 
 /**
- * ⚠️ Coverage has to be calibrated, not used as a threshold directly.
- *
- * Interpolating between uniform random corners does not give a uniform result: it piles up around
- * the middle, so `noise < 0.18` is nowhere near 18% of pixels. Instead coverage picks a quantile of
- * the sorted noise, so 0.18 means 18% of the ground for every terrain.
+ * Smooth noise in [0, 1) at a pixel: the corners of the coarse cell it falls in, hashed and
+ * interpolated. The reference the fast path in {@link buildWearMask} must match exactly.
  */
-function thresholdFrom(quantiles, coverage) {
-    if (coverage <= 0) return -Infinity;
-    if (coverage >= 1) return Infinity;
-    return quantiles[Math.floor(coverage * (quantiles.length - 1))];
-}
-
-/**
- * Smooth noise in [0, 1) at an absolute art-pixel position.
- *
- * Value noise: hash the corners of the coarse cell this pixel falls in, then
- * interpolate. Cheap, stable, and continuous across every boundary the board
- * has, because it never asks which subtile it is in.
- */
-export function patchNoise(px, py, seed, cell = NOISE_CELL) {
+export function patchNoise(px, py, seed, cell = 10) {
     const gx = Math.floor(px / cell);
     const gy = Math.floor(py / cell);
     const fx = smooth((px - gx * cell) / cell);
@@ -105,57 +54,102 @@ export function patchNoise(px, py, seed, cell = NOISE_CELL) {
 }
 
 /**
- * The alpha masks that say where each patch substrate shows through.
- *
- * One mask per distinct patch substrate, at art-pixel resolution. The renderer scales it up with
- * smoothing off, which keeps the patch edges on the pixel grid and is faster than drawing many
- * small rectangles.
- *
- * @param {object} artPixels A resolved art-pixel map from `resolveArtPixels`.
- * @param {number} seed The save's terrain seed.
- * @returns {{width: number, height: number, masks: Record<string, Uint8ClampedArray>}}
- *   Each mask is one byte per art pixel: 255 where that substrate shows, 0
- *   where it does not. Empty `masks` when no terrain on the board has patches.
+ * The same noise over a whole plan, with every corner hashed once rather than four times a pixel
+ * and the smoothstep weights worked out once per column and per row. Same arithmetic in the same
+ * order as {@link patchNoise}, so the same numbers.
  */
-export function buildPatchMasks(artPixels, seed = 0) {
-    const { size, palette, at } = artPixels;
-    const coverageScale = tuning('patchCoverage');
-    const cell = Math.max(2, Math.round(NOISE_CELL * tuning('patchScale')));
-
-    // Which terrains want patches at all, resolved once per palette entry rather than once per
-    // pixel: the per-pixel noise is the expensive part.
-    const wants = palette.map(id => {
-        const patch = patchOf(id);
-        return patch && patch.coverage > 0 ? patch : null;
-    });
-    const substrates = new Set(wants.filter(Boolean).map(p => p.substrate));
-    if (substrates.size === 0) return { width: size, height: size, masks: {} };
-
-    const masks = {};
-    for (const substrate of substrates) {
-        masks[substrate] = new Uint8ClampedArray(size * size);
+function noiseTables(width, height, seed, cell) {
+    const gw = Math.floor((width - 1) / cell) + 2;
+    const gh = Math.floor((height - 1) / cell) + 2;
+    const corners = new Float64Array(gw * gh);
+    for (let gy = 0; gy < gh; gy++) {
+        for (let gx = 0; gx < gw; gx++) corners[gy * gw + gx] = hash01(gx, gy, CHANNEL_PATCH, seed);
     }
+    const gxOf = new Int32Array(width);
+    const fxOf = new Float64Array(width);
+    for (let px = 0; px < width; px++) {
+        const gx = Math.floor(px / cell);
+        gxOf[px] = gx;
+        fxOf[px] = smooth((px - gx * cell) / cell);
+    }
+    const gyOf = new Int32Array(height);
+    const fyOf = new Float64Array(height);
+    for (let py = 0; py < height; py++) {
+        const gy = Math.floor(py / cell);
+        gyOf[py] = gy;
+        fyOf[py] = smooth((py - gy * cell) / cell);
+    }
+    const at = (px, py) => {
+        const row = gyOf[py] * gw + gxOf[px];
+        const fx = fxOf[px];
+        const c00 = corners[row];
+        const c10 = corners[row + 1];
+        const c01 = corners[row + gw];
+        const c11 = corners[row + gw + 1];
+        const top = c00 + (c10 - c00) * fx;
+        const bottom = c01 + (c11 - c01) * fx;
+        return top + (bottom - top) * fyOf[py];
+    };
+    return { gw, corners, gxOf, fxOf, gyOf, fyOf, at };
+}
 
-    const { field, quantiles } = noiseField(size, seed, cell);
-    const thresholds = new Map();
+/**
+ * ⚠️ Coverage has to be calibrated, not used as a threshold directly: interpolating uniform random
+ * corners piles values up round the middle, so `noise < 0.18` is nowhere near 18 % of pixels.
+ * Coverage picks a quantile of the sampled noise instead.
+ */
+function thresholdFrom(quantiles, coverage) {
+    if (!(coverage > 0)) return -Infinity;
+    if (coverage >= 1) return Infinity;
+    return quantiles[Math.floor(coverage * (quantiles.length - 1))];
+}
 
-    for (let py = 0; py < size; py++) {
-        for (let px = 0; px < size; px++) {
-            const terrain = at[py * size + px];
-            const patch = terrain >= 0 ? wants[terrain] : null;
-            if (!patch) continue;
+/**
+ * Where each look's wear shows through.
+ *
+ * @param {object} pixels A resolved map from `resolveArtPixels`.
+ * @param {object} ground The Region's ground, for its seed and the look of each terrain.
+ * @returns {{mask: Uint8Array|null, thresholds: number[], cell: number}} `mask` is 1 where the
+ *   pixel's look wears through (null when no look here wears); `thresholds` the noise level below
+ *   which each palette entry wears; `cell` the noise cell in pixels.
+ */
+export function buildWearMask(pixels, ground) {
+    const { width, height, palette, at, present } = pixels;
+    const cell = clumpPx();
+    const scale = tuning('patchCoverage');
+    const n = width * height;
+    const wants = palette.map((t, p) => (present[p] && wearOf(ground.looks[t])?.coverage * scale) || 0);
+    if (!wants.some(c => c > 0)) return { mask: null, thresholds: wants.map(() => -Infinity), cell };
 
-            // The threshold is the calibrated quantile (see `calibrate`), cached per coverage
-            // value.
-            const wanted = patch.coverage * coverageScale;
-            if (!thresholds.has(wanted)) {
-                thresholds.set(wanted, thresholdFrom(quantiles, wanted));
-            }
-            if (field[py * size + px] < thresholds.get(wanted)) {
-                masks[patch.substrate][py * size + px] = 255;
-            }
+    // ⚠️ Sampled at scattered points (an R2 low-discrepancy sequence), never on a stride: a stride
+    // that shares a factor with the width lands every sample on the same columns of the noise
+    // grid, where the noise is distributed differently, and the calibration comes out wrong.
+    const noise = noiseTables(width, height, ground.seed, cell);
+    const sample = new Float64Array(CALIBRATION_SAMPLES);
+    for (let k = 0; k < CALIBRATION_SAMPLES; k++) {
+        const u = (0.5 + R2_X * k) % 1;
+        const v = (0.5 + R2_Y * k) % 1;
+        sample[k] = noise.at(Math.floor(u * width), Math.floor(v * height));
+    }
+    sample.sort();
+    const thresholds = wants.map(c => thresholdFrom(sample, c));
+
+    const mask = new Uint8Array(n);
+    const { gw, corners, gxOf, fxOf, gyOf, fyOf } = noise;
+    for (let py = 0, i = 0; py < height; py++) {
+        const rowBase = gyOf[py] * gw;
+        const fy = fyOf[py];
+        for (let px = 0; px < width; px++, i++) {
+            const threshold = thresholds[at[i]];
+            if (threshold === -Infinity) continue;
+            const k = rowBase + gxOf[px];
+            const fx = fxOf[px];
+            const c00 = corners[k];
+            const c01 = corners[k + gw];
+            const top = c00 + (corners[k + 1] - c00) * fx;
+            const bottom = c01 + (corners[k + gw + 1] - c01) * fx;
+            if (top + (bottom - top) * fy < threshold) mask[i] = 1;
         }
     }
-
-    return { width: size, height: size, masks };
+    return { mask, thresholds, cell };
 }

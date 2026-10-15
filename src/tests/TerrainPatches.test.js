@@ -64,13 +64,15 @@ describe('⭐ The wear noise is read from cached corners', () => {
             const pixels = resolveArtPixels(ground);
             const { mask, thresholds, cell } = buildWearMask(pixels, ground);
             let on = 0;
+            const wrong = [];
             for (let i = 0; i < mask.length; i++) {
                 const x = i % pixels.width;
                 const y = (i - x) / pixels.width;
                 const want = patchNoise(x, y, 77, cell) < thresholds[pixels.at[i]] ? 1 : 0;
-                expect(mask[i], `${lookId} pixel ${x},${y}`).toBe(want);
+                if (mask[i] !== want) wrong.push(`${x},${y}`);
                 on += want;
             }
+            expect(wrong.slice(0, 5), `${lookId}: ${wrong.length} pixels differ`).toEqual([]);
             expect(on).toBeGreaterThan(0);
         }
     });

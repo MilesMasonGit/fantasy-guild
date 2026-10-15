@@ -1,145 +1,130 @@
-// what every art pixel of the ground should look like
+// the ground plan: what every plan pixel of a Region's ground should look like
 
-import { LATTICE_SIZE, subtileArtPx, variantAt } from './TerrainLattice.js';
+import { resolveArtPixels, hash01, PLAN_PIXEL_U } from './TerrainLattice.js';
 import { buildBandMasks } from './TerrainBands.js';
-import { buildPatchMasks } from './TerrainPatches.js';
-import { buildToneMap } from './TerrainTones.js';
-import { getTerrain, substrateVariants } from '../../config/registries/terrainRegistry.js';
+import { buildWearMask } from './TerrainPatches.js';
+import { propsForGround } from './TerrainProps.js';
+import { getLook, LOOKS } from '../../config/registries/terrainRegistry.js';
+import { tuning } from '../../config/playmatTuning.js';
 
 /**
- * One answer per art pixel: which substrate, which variant of it, and whether it is tinted.
+ * Built in two stages, never per frame: this plan (which ground, wear, band and scatter at every
+ * 2-unit pixel, independent of the window) when the Region changes or a tuning slider moves; then
+ * a screen pass that resamples it onto the screen's ground pixels and samples the sheets.
  *
- * ⚠️ A single buffer rather than one canvas pass per feature: the features all answer the same
- * question (what is at this pixel), and a pass each, with a clip() call per boundary pixel, cost
- * far too much per repaint. A wandering coastline is just a different value in the buffer.
- *
- * Kept as data, not drawing, so it can be tested.
- *
- * `resolveArtPixels` has already done the ragged boundaries and the beaches, so the terrain index
- * here is what the player ends up seeing.
+ * ⚠️ One answer per pixel rather than one drawing pass per feature: the features all answer the
+ * same question (what is at this pixel), and a pass each cost far too much per build. Kept as
+ * data so it can be tested.
  */
 
+/** Hash channel for the per-Region choice of alternate sheet. */
+const CHANNEL_SHEET = 0x5eed;
+
 /**
- * @param {object} artPixels A resolved map from `resolveArtPixels`.
- * @param {number} seed The save's terrain seed.
+ * The sheet a look draws throughout one Region: one of its alternates, picked by the Region's
+ * seed. ⚠️ Never per cell: two seamless sheets side by side show a square seam.
+ */
+export function sheetFor(look, seed) {
+    const sheets = look.sheets;
+    if (sheets.length <= 1) return sheets[0];
+    return sheets[Math.floor(hash01(CHANNEL_SHEET, seed) * sheets.length) % sheets.length];
+}
+
+/**
+ * A Region's ground plan.
+ *
+ * @param {object} ground The Region's ground, from `regionGround`.
  * @returns {{
- *   size: number, substrates: string[],
- *   substrateAt: Int16Array, variantAt: Int16Array, tintAt: Int16Array,
- *   tints: Array<{tint: string, amount: number}>
- * }} Per art pixel: which substrate to sample (-1 for bare table), which
- *   variant of it, and which tint to apply (-1 for none).
+ *   width: number, height: number, unit: number, seed: number,
+ *   palette: string[], looks: string[], terrainAt: Uint8Array,
+ *   wearAt: Uint8Array|null, wear: {mask: Uint8Array|null, thresholds: number[], cell: number},
+ *   bands: Array<{terrainId: string, look: string, mask: Uint8Array, appearance: object|null}>,
+ *   sheets: string[], sheetAt: Uint8Array, tints: Array<{tint: string, amount: number}>, tintAt: Int8Array,
+ *   props: object[]
+ * }}
+ *   Per pixel, row by row: `terrainAt` indexes `palette` (and `looks`, the look of each);
+ *   `wearAt` 1 where the look's wear shows; each band's `mask` 1 inside it. The drawing answer:
+ *   `sheetAt` indexes `sheets`, `tintAt` indexes `tints` (-1 for none). `props` back to front
+ *   (`TerrainProps`). Pixels are `unit` mat units.
  */
-export function buildSurface(artPixels, seed = 0) {
-    const { size, palette, at } = artPixels;
-    const artPx = subtileArtPx();
+export function buildGroundPlan(ground) {
+    const pixels = resolveArtPixels(ground);
+    const { width, height, palette, at } = pixels;
+    const { bands } = buildBandMasks(pixels, ground);
+    const wear = buildWearMask(pixels, ground);
+    const looks = palette.map(t => (getLook(ground.looks[t]) ? ground.looks[t] : LOOKS.meadow.id));
 
-    const bands = buildBandMasks(artPixels, seed);
-    const patches = buildPatchMasks(artPixels, seed);
-    const toneMap = buildToneMap(artPixels);
-
-    // Tables resolved to integers once: the inner loop runs once per art pixel, so a registry
-    // lookup or string compare in it is expensive.
-
-    const substrates = [];
-    const substrateIndex = new Map();
-    const substrateIdFor = (id) => {
-        if (!id) return -1;
-        let i = substrateIndex.get(id);
-        if (i === undefined) {
-            i = substrates.length;
-            substrates.push(id);
-            substrateIndex.set(id, i);
-        }
+    const sheets = [];
+    const sheetIndex = (id) => {
+        let i = sheets.indexOf(id);
+        if (i < 0) { i = sheets.length; sheets.push(id); }
         return i;
     };
-
-    /** The substrate each terrain's plain ground uses. */
-    const baseSubstrate = palette.map(id => substrateIdFor(getTerrain(id)?.substrate));
+    const baseSheet = looks.map(id => sheetIndex(sheetFor(getLook(id), ground.seed)));
+    const wearSheet = looks.map(id => (getLook(id).wear ? sheetIndex(getLook(id).wear.sheet) : -1));
 
     const tints = [];
-    const tintFor = new Map();
-    const tintIdFor = (appearance) => {
-        if (!appearance) return -1;
-        const key = `${appearance.tint}|${appearance.amount}`;
-        let i = tintFor.get(key);
-        if (i === undefined) {
-            i = tints.length;
-            tints.push(appearance);
-            tintFor.set(key, i);
+    const tinted = [];
+    for (const band of bands) {
+        if (!band.appearance) continue;
+        tinted.push({ mask: band.mask, tint: tints.length });
+        tints.push(band.appearance);
+    }
+
+    // ⚠️ The order is the layering rule: a band tints its look's own edge; wear replaces the
+    // ground, so it drops the tint with it (bare earth is not shallow water).
+    const n = width * height;
+    const sheetAt = new Uint8Array(n);
+    const tintAt = new Int8Array(n);
+    const worn = wear.mask;
+    for (let i = 0; i < n; i++) {
+        const t = at[i];
+        if (worn && worn[i]) {
+            sheetAt[i] = wearSheet[t];
+            tintAt[i] = -1;
+            continue;
         }
-        return i;
+        sheetAt[i] = baseSheet[t];
+        let tint = -1;
+        for (let k = 0; k < tinted.length; k++) if (tinted[k].mask[i]) tint = tinted[k].tint;
+        tintAt[i] = tint;
+    }
+
+    return {
+        width, height, unit: PLAN_PIXEL_U, seed: ground.seed,
+        palette, looks, terrainAt: at,
+        wearAt: wear.mask, wear, bands,
+        sheets, sheetAt, tints, tintAt,
+        props: propsForGround(ground, pixels)
     };
+}
 
-    const substrateAt = new Int16Array(size * size).fill(-1);
-    const variants = new Int16Array(size * size);
-    const tintAt = new Int16Array(size * size).fill(-1);
-
-    const patchMasks = Object.entries(patches.masks)
-        .map(([id, mask]) => ({ substrate: substrateIdFor(id), mask }));
-
-    const bandMasks = bands.bands.map(({ terrainId, mask, appearance }) => ({
-        terrain: palette.indexOf(terrainId),
-        tint: tintIdFor(appearance),
-        mask
-    })).filter(b => b.terrain >= 0 && b.tint >= 0);
-
-    // The variant is a property of the subtile, not of the pixel, so it is chosen once per subtile.
-    const variantTables = substrates.map(id => {
-        const count = substrateVariants(id);
-        const table = new Int16Array(LATTICE_SIZE * LATTICE_SIZE);
-        for (let sy = 0; sy < LATTICE_SIZE; sy++) {
-            for (let sx = 0; sx < LATTICE_SIZE; sx++) {
-                table[sy * LATTICE_SIZE + sx] = variantAt(sx, sy, count, seed);
-            }
-        }
-        return table;
-    });
-
-    for (let i = 0; i < at.length; i++) {
-        const terrain = at[i];
-        if (terrain < 0) continue;
-        substrateAt[i] = baseSubstrate[terrain];
+/**
+ * A sheet's RGBA pixels with the mute baked in, about `brightness(0.85) saturate(0.7)`: done once
+ * per sheet when it is decoded, never as a CSS filter (a filter would make the ground its own
+ * composited layer). The CSS filter formulas, so a value means what it would in a stylesheet.
+ *
+ * @param {Uint8ClampedArray} rgba
+ * @returns {Uint8ClampedArray} a new array; the source is left as decoded
+ */
+export function muteTexels(rgba) {
+    const b = tuning('muteBrightness');
+    const s = tuning('muteSaturation');
+    const out = new Uint8ClampedArray(rgba.length);
+    const rr = 0.213 + 0.787 * s;
+    const rg = 0.715 - 0.715 * s;
+    const rb = 0.072 - 0.072 * s;
+    const gr = 0.213 - 0.213 * s;
+    const gg = 0.715 + 0.285 * s;
+    const bb = 0.072 + 0.928 * s;
+    for (let i = 0; i < rgba.length; i += 4) {
+        const r = rgba[i] * b;
+        const g = rgba[i + 1] * b;
+        const bl = rgba[i + 2] * b;
+        out[i] = Math.round(rr * r + rg * g + rb * bl);
+        out[i + 1] = Math.round(gr * r + gg * g + rb * bl);
+        out[i + 2] = Math.round(gr * r + rg * g + bb * bl);
+        out[i + 3] = rgba[i + 3];
     }
-
-    // ⚠️ Three things want to colour a pixel, and the order they are applied in is the precedence
-    // rule: tone (the terrain's overall wash, the weakest claim), band (a local edge effect), patch
-    // (different ground entirely, so it drops the colouring with it).
-    if (toneMap.tones.length) {
-        const offset = tints.length;
-        for (const tone of toneMap.tones) tints.push(tone);
-        for (let i = 0; i < at.length; i++) {
-            const t = toneMap.toneAt[i];
-            if (t >= 0) tintAt[i] = offset + t;
-        }
-    }
-
-    for (const { terrain, tint, mask } of bandMasks) {
-        for (let i = 0; i < mask.length; i++) {
-            if (mask[i] && at[i] === terrain) tintAt[i] = tint;
-        }
-    }
-    for (const { substrate, mask } of patchMasks) {
-        for (let i = 0; i < mask.length; i++) {
-            if (!mask[i]) continue;
-            substrateAt[i] = substrate;
-            tintAt[i] = -1;          // bare earth is not shallow water
-        }
-    }
-
-    // Subtile by subtile, so the variant is looked up once per subtile and the pixel index is a
-    // counter rather than two divisions per pixel.
-    for (let sy = 0; sy < LATTICE_SIZE; sy++) {
-        for (let sx = 0; sx < LATTICE_SIZE; sx++) {
-            const subtile = sy * LATTICE_SIZE + sx;
-            for (let ty = 0; ty < artPx; ty++) {
-                let i = (sy * artPx + ty) * size + sx * artPx;
-                for (let tx = 0; tx < artPx; tx++, i++) {
-                    const substrate = substrateAt[i];
-                    if (substrate >= 0) variants[i] = variantTables[substrate][subtile];
-                }
-            }
-        }
-    }
-
-    return { size, substrates, substrateAt, variantAt: variants, tintAt, tints };
+    return out;
 }

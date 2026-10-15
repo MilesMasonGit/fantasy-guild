@@ -67,18 +67,23 @@ describe('Edge frontiers', () => {
         // The junction contract, re-based from the 29 × 29 lattice onto the Region's 55 × 36 cells.
         // Both segments meeting at a junction read the same hash of it, so they agree exactly; a
         // tolerance here would hide a visible 1-pixel step in the coastline.
+        const steps = [];
+        let junctions = 0;
         for (const seed of [0, 1, 7, 12345, 99999]) {
             for (let cy = 0; cy < ROWS - 1; cy++) {
                 for (let cx = 0; cx < COLS - 1; cx++) {
                     const down = edgeProfile(cx, cy, 'v', seed);
                     const nextDown = edgeProfile(cx, cy + 1, 'v', seed);
-                    expect(down[CELL_PX - 1], `v junction ${cx},${cy}`).toBe(nextDown[0]);
+                    if (down[CELL_PX - 1] !== nextDown[0]) steps.push(`v ${cx},${cy} seed ${seed}`);
                     const across = edgeProfile(cx, cy, 'h', seed);
                     const nextAcross = edgeProfile(cx + 1, cy, 'h', seed);
-                    expect(across[CELL_PX - 1], `h junction ${cx},${cy}`).toBe(nextAcross[0]);
+                    if (across[CELL_PX - 1] !== nextAcross[0]) steps.push(`h ${cx},${cy} seed ${seed}`);
+                    junctions += 2;
                 }
             }
         }
+        expect(junctions).toBe(5 * 2 * (COLS - 1) * (ROWS - 1));
+        expect(steps.slice(0, 5), `${steps.length} junctions step`).toEqual([]);
     });
 
     it('⭐ uses the whole amplitude, so the coast really wanders', () => {
@@ -114,20 +119,24 @@ describe('⚠️ Edge strips', () => {
     });
 
     it('⭐ every strip lies inside the cell it is painted into', () => {
+        const outside = [];
+        let strips = 0;
         for (const axis of ['v', 'h']) {
             for (let cy = 0; cy < ROWS - 1; cy++) {
                 for (let cx = 0; cx < COLS - 1; cx++) {
                     for (const s of edgeStrips(cx, cy, axis, 'grass', 'sand', 7)) {
+                        strips++;
                         const left = s.intoCx * CELL_PX;
                         const top = s.intoCy * CELL_PX;
-                        expect(s.x, `strip x @${cx},${cy}${axis}`).toBeGreaterThanOrEqual(left);
-                        expect(s.y, `strip y @${cx},${cy}${axis}`).toBeGreaterThanOrEqual(top);
-                        expect(s.x + s.w, `strip right @${cx},${cy}${axis}`).toBeLessThanOrEqual(left + CELL_PX);
-                        expect(s.y + s.h, `strip bottom @${cx},${cy}${axis}`).toBeLessThanOrEqual(top + CELL_PX);
+                        if (s.x < left || s.y < top || s.x + s.w > left + CELL_PX || s.y + s.h > top + CELL_PX) {
+                            outside.push(`${cx},${cy}${axis}`);
+                        }
                     }
                 }
             }
         }
+        expect(strips).toBeGreaterThan(10000);
+        expect(outside.slice(0, 5), `${outside.length} strips outside their cell`).toEqual([]);
     });
 
     it('paints into the neighbour it takes ground from, never into its own cell', () => {

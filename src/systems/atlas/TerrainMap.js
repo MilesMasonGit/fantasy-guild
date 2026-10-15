@@ -162,3 +162,25 @@ export function terrainAt(map, x, y) {
     const i = cellIndex({ cols: map.cols, rows: map.rows }, x, y, map.cell);
     return map.legend[parseInt(map.cells[i], 36)];
 }
+
+/**
+ * A stored map read back into numbers: each cell's index into `legend`, row by row (the inverse
+ * of {@link encodeTerrain}). Null for anything that is not a whole stored map, so a reader falls
+ * back to the default ground rather than drawing garbage.
+ *
+ * @returns {{cell: number, cols: number, rows: number, legend: string[], cells: Uint8Array}|null}
+ */
+export function decodeTerrain(map) {
+    if (!map || typeof map.cells !== 'string' || !Array.isArray(map.legend)) return null;
+    const { cols, rows, legend } = map;
+    if (!Number.isInteger(cols) || !Number.isInteger(rows) || cols < 1 || rows < 1) return null;
+    if (map.cells.length !== cols * rows) return null;
+    const cells = new Uint8Array(cols * rows);
+    for (let i = 0; i < cells.length; i++) {
+        const k = parseInt(map.cells[i], 36);
+        if (!(k >= 0 && k < legend.length)) return null;
+        cells[i] = k;
+    }
+    const cell = Number.isFinite(map.cell) && map.cell > 0 ? map.cell : TERRAIN_CELL;
+    return { cell, cols, rows, legend: [...legend], cells };
+}

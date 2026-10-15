@@ -39,12 +39,14 @@ describe('⭐ Shallows and wet sand sit where their cause is', () => {
             const limit = (tuning('shallowsWidth') / PLAN_PIXEL_U) * 3;
             const toLand = distanceTo(pixels, t => t !== 'water');
             let n = 0;
+            const wrong = [];
             for (let i = 0; i < pixels.at.length; i++) {
                 const isWater = pixels.palette[pixels.at[i]] === 'water';
                 const want = isWater && toLand[i] < limit;
-                expect(Boolean(shallows.mask[i]), `pixel ${i}`).toBe(want);
+                if (Boolean(shallows.mask[i]) !== want) wrong.push(i);
                 if (want) n++;
             }
+            expect(wrong.slice(0, 5), `${wrong.length} pixels wrong`).toEqual([]);
             expect(n).toBeGreaterThan(0);
         }
     });
@@ -57,12 +59,14 @@ describe('⭐ Shallows and wet sand sit where their cause is', () => {
             const limit = (tuning('wetSandWidth') / PLAN_PIXEL_U) * 3;
             const toWater = distanceTo(pixels, t => t === 'water');
             let n = 0;
+            const wrong = [];
             for (let i = 0; i < pixels.at.length; i++) {
                 const isSand = pixels.palette[pixels.at[i]] === 'sand';
                 const want = isSand && toWater[i] < limit;
-                expect(Boolean(wet.mask[i]), `pixel ${i}`).toBe(want);
+                if (Boolean(wet.mask[i]) !== want) wrong.push(i);
                 if (want) n++;
             }
+            expect(wrong.slice(0, 5), `${wrong.length} pixels wrong`).toEqual([]);
             expect(n).toBeGreaterThan(0);
         }
     });

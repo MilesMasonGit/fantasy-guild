@@ -7,17 +7,16 @@
  * ## ⚠️ Why this is in `config/` and not `ui/dev/`
  *
  * `src/systems/` is React-agnostic and must not import out of the UI tree,
- * and `TerrainLattice` and `TerrainProps` are both systems. Config is
- * the one place both they and the panel can reach. It follows the precedent set
- * by the art-set switch in `terrainRegistry`.
+ * and the ground plan's modules are systems. Config is the one place both
+ * they and the panel can reach.
  *
  * ## This is a developer tool, not a player setting
  *
- * Values live in `localStorage`, per device, exactly like the art set. They are
+ * Values live in `localStorage`, per device. They are
  * **not** in the save: two players' boards should not differ because one of them
  * moved a slider, and a value here changing must never change what a save means.
  * Everything tunable here is appearance only — nothing reads these to decide
- * what a Token does or what a tile holds.
+ * what a Token does or where it may stand.
  *
  * ## Adding one
  *
@@ -37,92 +36,85 @@ export const TUNABLES = Object.freeze([
         key: 'edgeSwing',
         group: 'Terrain boundaries',
         label: 'Coast swing',
-        hint: 'How far a boundary wanders from the grid. ⚠️ Becomes a whole number of art pixels, so it moves in jumps.',
+        hint: 'How far a boundary wanders from the cell line, as a share of a cell. ⚠️ Becomes a whole number of ground pixels, so it moves in jumps.',
         min: 0.1, max: 0.45, step: 0.0125, def: 0.3125
     },
     {
         key: 'edgeRoughness',
         group: 'Terrain boundaries',
         label: 'Coast roughness',
-        hint: 'How spiky the boundary is. This is the one that reads as jagged.',
+        hint: 'How spiky the boundary is, as a share of a cell. This is the one that reads as jagged.',
         min: 0, max: 0.16, step: 0.005, def: 0.070
     },
     {
-        key: 'ownerJitter',
-        group: 'Terrain boundaries',
-        label: 'Tile bleed',
-        hint: 'How far one tile’s terrain reaches into its neighbours. Above ~3 the board turns to soup.',
-        min: 0, max: 4, step: 0.1, def: 3.0
-    },
-    {
-        key: 'ownerCoarseShare',
-        group: 'Terrain boundaries',
-        label: 'Bleed smoothness',
-        hint: 'High values make boundaries meander in runs; low values make them fizz like dithering.',
-        min: 0, max: 1, step: 0.05, def: 0.65
-    },
-    {
-        key: 'toneBlend',
-        group: 'Biome colouring',
-        label: 'Blend distance',
-        hint: 'How far two biomes fade into each other, in art pixels. 0 makes the join a hard line.',
-        min: 0, max: 16, step: 1, def: 7
-    },
-    {
-        key: 'toneStrength',
-        group: 'Biome colouring',
-        label: 'Tone strength',
-        hint: 'How strongly a biome is washed with its own colour. Too high flattens the texture underneath.',
-        min: 0, max: 2, step: 0.05, def: 1
-    },
-    {
-        key: 'fringeWidth',
+        key: 'beachWidth',
         group: 'Shorelines',
-        label: 'Beach width',
-        hint: 'How far the sand reaches inland wherever water meets something else. 0 removes the beach.',
-        min: 0, max: 4, step: 0.25, def: 1
+        label: 'Beach width (u)',
+        hint: 'How far the sand reaches inland wherever water meets land, in mat units. 0 removes the beach.',
+        min: 0, max: 32, step: 2, def: 12
     },
     {
-        key: 'bandWidth',
+        key: 'shallowsWidth',
         group: 'Shorelines',
-        label: 'Band width',
-        hint: 'How far shallows and wet sand reach in from an edge. 0 turns the banding off.',
-        min: 0, max: 3, step: 0.1, def: 1
+        label: 'Shallows width (u)',
+        hint: 'How far the pale shallows reach out from the shore, in mat units. 0 turns them off.',
+        min: 0, max: 40, step: 2, def: 16
+    },
+    {
+        key: 'wetSandWidth',
+        group: 'Shorelines',
+        label: 'Wet sand width (u)',
+        hint: 'How far the dark wet sand reaches up the beach from the water, in mat units. 0 turns it off.',
+        min: 0, max: 24, step: 2, def: 8
     },
     {
         key: 'bandStrength',
         group: 'Shorelines',
         label: 'Band strength',
-        hint: 'How strongly the band is recoloured against its own terrain. 0 makes it invisible.',
+        hint: 'How strongly the shallows and the wet sand are recoloured. 0 makes them invisible.',
         min: 0, max: 2, step: 0.05, def: 1
     },
     {
         key: 'patchCoverage',
-        group: 'Ground patches',
+        group: 'Ground wear',
         label: 'Coverage',
-        hint: 'Multiplies how much bare earth wears through. 1 is as authored, 0 hides it entirely.',
+        hint: 'Multiplies how much earth (or gravel) wears through. 1 is as authored, 0 hides it entirely.',
         min: 0, max: 3, step: 0.05, def: 1
     },
     {
-        key: 'patchScale',
-        group: 'Ground patches',
-        label: 'Clump size',
-        hint: 'How big each patch is. Low values approach per-pixel dithering; high ones read as a second terrain.',
-        min: 0.4, max: 3, step: 0.1, def: 1
+        key: 'wearClump',
+        group: 'Ground wear',
+        label: 'Clump size (u)',
+        hint: 'How big each worn patch is, in mat units. Small values approach dithering; large ones read as a second ground.',
+        min: 8, max: 60, step: 2, def: 20
     },
     {
         key: 'propDensity',
         group: 'Scenery',
         label: 'Density',
-        hint: 'Multiplies every terrain’s own prop density. 1 is as authored.',
+        hint: 'Multiplies every look’s own scatter density. 1 is as authored.',
         min: 0, max: 3, step: 0.05, def: 1
     },
     {
         key: 'propScatter',
         group: 'Scenery',
         label: 'Scatter',
-        hint: 'How far props stray from the middle of their subtile. 0 plants them all dead centre.',
+        hint: 'How far props stray from the middle of their cell. 0 plants them all dead centre.',
         min: 0, max: 1, step: 0.05, def: 0.64
+    },
+    {
+        key: 'muteBrightness',
+        group: 'Colour',
+        label: 'Brightness',
+        hint: 'How bright the ground art is drawn: 1 is the art as drawn. Baked into the sheets once, never a filter.',
+        min: 0.5, max: 1.2, step: 0.01, def: 0.85
+    },
+    {
+        key: 'muteSaturation',
+        group: 'Colour',
+        label: 'Saturation',
+        hint: 'How colourful the ground art is drawn: 1 is the art as drawn, 0 grey.',
+        min: 0, max: 1.2, step: 0.01, def: 0.7
     }
 ]);
 
@@ -166,8 +158,7 @@ function persist() {
  * The live value of one tunable.
  *
  * ⚠️ Call this at the point of use, every time. Capturing it into a module
- * constant would freeze it at import and the sliders would appear to do nothing
- * — the same trap the art set fell into.
+ * constant would freeze it at import and the sliders would appear to do nothing.
  */
 export function tuning(key) {
     return values[key] ?? DEFAULTS[key];
