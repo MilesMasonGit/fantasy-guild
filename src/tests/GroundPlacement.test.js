@@ -498,6 +498,14 @@ describe('⚠️ the cost of the ground', () => {
         expect(GroundRules.rulesFor('gp_water')).not.toBeNull();
     });
 
+    it('a Token with no cell at all to stand on here gives up without searching the mat', () => {
+        // A station whose recipe makes a boat, in a Region with no water, asks every tick.
+        standOn(null);
+        expect(MatPlacement.findSpotAnywhere('gp_water', { x: 880, y: 563 })).toBeNull();
+        expect(MatPlacement.findSpot('gp_water', { x: 700, y: 400 })).toBeNull();
+        expect(GroundRules.allowsAt).not.toHaveBeenCalled();
+    });
+
     it('the ground is decoded once per map, not once per search', () => {
         const first = GroundRules.groundHere();
         for (let i = 0; i < 5; i++) MatPlacement.findSpot('gp_water', SAND_PT);

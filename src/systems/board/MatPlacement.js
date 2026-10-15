@@ -324,6 +324,12 @@ export function findSpot(typeId, point, options = {}) {
 
     const ctx = contextFor(typeId, point, options);
 
+    // No cell here this Token may stand on (a boat in a Region with no water): no candidate can pass.
+    if (ctx.ground && ctx.ground.allowed === 0) {
+        if (memo && !ctx.cannotMatters) memo.add(key);
+        return null;
+    }
+
     // `candidatesAround`'s walk, inlined: the same candidates in the same order, each put through
     // the same four tests `legalIn` makes (mat edge, crowding, the ground, then `Cannot`), but on
     // bare coordinates, so a search that fails allocates nothing per candidate. A point object is
@@ -370,6 +376,10 @@ export function findSpotAnywhere(typeId, point, options = {}) {
 
     const near = findSpot(typeId, point, options);
     if (near) return near;
+
+    // ⚠️ A station whose recipe makes a boat in a Region with no water asks this every tick: with no
+    // cell at all to stand on, the whole-mat scan below (some 30,000 candidates) cannot succeed.
+    if (GroundRules.rulesFor(typeId)?.allowed === 0) return null;
 
     const r = artRadiusOf(typeId);
     const w = matW();
