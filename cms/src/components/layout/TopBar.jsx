@@ -11,8 +11,6 @@ const VIEWS = [
   { key: 'starterCamp', label: 'Starter Camp' },
   { key: 'audit', label: 'Economy Audit' },
   { key: 'sprites', label: 'Sprite Audit' },
-  { key: 'recolor', label: 'Recolor' },
-  { key: 'animation', label: 'Animation' },
 ];
 
 export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOpenSettings, onOpenFileManager }) {

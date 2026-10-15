@@ -123,7 +123,8 @@ Rules of thumb for every piece:
 
 - Ground sheets are **seamless**: four copies in a 2 × 2 square show no seam.
   The pipeline's downscale can break the wrap, so check after processing.
-- Keep each ground to **6–10 colours**, like today's pieces (measured 4–16).
+- Keep each ground to **3–5 colours** (owner, 2026-10-15; today's pieces
+  measure 4–16, so most need trimming). See "Terrain art guide" below.
 - Ground stays **quieter than Tokens** (lower contrast, no dark outlines), so
   Tokens, heroes and loot read on top (L-7).
 - Scatter must **not look workable**: no tree, ore or rock that a player would
@@ -237,6 +238,59 @@ as below):**
   terrain cell map that the nodes and the ground agree on (L-4), and placement
   must check it. The dormant code's cell lattice (`TerrainLattice.js`) may be
   the starting point.
+
+## Terrain art guide (owner, 2026-10-15)
+
+From outside feedback on background pixel art, checked against this game and
+ruled by the owner. Guidelines per ground, not laws: a ground may earn an
+exception when it looks wrong without one.
+
+**Ruled:**
+- **Muting stays the code filter for now** (L-1's `brightness(0.85)
+  saturate(0.7)`). ⚠️ The feedback warns that a blanket desaturation turns
+  colours chalky; if the eye-check shows that, hand-tuned palettes (a shared
+  warm or cool tint per biome, shadows shifting cooler, highlights warmer)
+  come next.
+- **3–5 colours per ground sheet**: base, soft shadow, soft highlight, one or
+  two between.
+- **Sheets stay nearly plain; every detail is scatter.** Pebbles, tufts,
+  cracks and flowers are separate scatter pieces placed by the code, never
+  drawn into a sheet: a sheet repeats about once per Token width, so any
+  distinct mark in it shows as a pattern.
+- **No shadow under Tokens yet**: turn the terrain on first and look. If
+  Tokens float, a hard-edged pixel shadow (never a blur: UI_STYLE, T-145) is
+  the next step.
+
+**Drawing rules:**
+- **Low contrast inside a ground**: its darkest and lightest pixels only 2–3
+  steps apart, and the whole ground in the middle of the brightness range, so
+  Tokens' dark outlines and bright highlights stay above it.
+- **Clusters, not speckle**: shapes of 2×2 or 3×2 pixels and short strokes; no
+  single-pixel noise, no checkerboard dithering. Most of a sheet (70–80 %) is
+  calm body.
+- **One light direction**, the same side as the Tokens' shading.
+- **Keep the interface's signal colours out of the ground** (UI_STYLE
+  "Colours": red, green, gold, white, muted grey): no bright yellow sand or
+  red ground near the yellow and red problem marks, gold alert outlines or the
+  placement highlights.
+- **Tokens don't change by biome**, so any tint stays subtle: the same Token
+  should sit well on every ground.
+- **Water** may stand a little apart (nothing can be placed on it), but its
+  white wave dashes are speckle: soften them into clusters.
+
+**Edges are code** (L-3 A): the "darker edge in the ground's own shade" advice
+becomes a tuned darker band along computed edges, not drawn art.
+
+**How to check a ground** (owner and brief 80's eye-check):
+1. A screenshot with Tokens **and loot** on it, turned grey: the ground is one
+   calm middle band; Tokens and loot stand clearly on top. Loot is half a
+   Token's size and every colour, so it is lost first.
+2. Squint or zoom out: no specks or tile repeats jump out.
+3. The placement grid's lit and dimmed cells read on every ground.
+4. Judge against the Tokens **after** the vibrancy pass (T-180), which
+   brightens them.
+5. Uneven ground pixels (shimmer) are a snapping problem (section 7, item 3),
+   not an art problem.
 
 ## 5. Look questions for the owner
 
@@ -413,7 +467,8 @@ Not decided here because each needs `bench:draw` or the Perf HUD:
   value. 1126 u is not a whole number of ground pixels (281.5 chunky), so the
   last row needs rounding.
 - **The Starter Camp's ground** (L-10 C) needs a field on the CMS page from D-2.
-- **The unopened raw sources**: whether any of the ~650 "Generated Image"
-  files in `raw_assets/dataset/` are ground sources.
+- ~~The unopened raw sources~~: **none of the "Generated Image" files are
+  ground sources** (owner, 2026-10-15): they are kept only for re-processing a
+  sprite. Agents can ignore them.
 - **Unused tile-era art** (`pm_board_*` except `guild_hall_1`, the two
   `tables/` soils): not drawn anywhere. Owner art; left alone.

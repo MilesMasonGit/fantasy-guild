@@ -76,11 +76,12 @@ player for these is T-138 (built when the first strips exist).
   ("!", recoloured yellow and red in code).
 - **Log button icon** (NEW, [concept_notifications.md](concept_notifications.md)):
   a notepad or scroll, top right of the screen; placeholder until drawn.
-- **Night-sky backdrop for the Hall screen** (NEW,
-  [concept_guild_hall.md](concept_guild_hall.md) "The look of the sky"): deep
-  blue with scattered tiny stars, sized to the Hall screen; a plain night
-  colour stands in until then. Optional: redraw the four placeholder star
-  sprites (faint, twinkling, bright, gold).
+- **Night-sky backdrop for the Hall screen** (**HAVE**, 2026-10-15:
+  `playmat/screens/bg_nightsky_1.png` and `bg_nightsky_cloud_layer.png`;
+  [concept_guild_hall.md](concept_guild_hall.md) "The look of the sky").
+- **Upgrade star sprites** (NEW): one per state (locked, buyable with two
+  twinkle frames, bought, maxed gold), drawn to read apart from the
+  backdrop's stars; code-drawn stars stand in until then.
 - **The Atlas tome** (NEW, [concept_atlas_tome.md](concept_atlas_tome.md)): a giant open book seen from above,
   filling ~90 % of the screen, as the backdrop the Atlas UI sits on; the map
   table's edge with a candle and a compass around it; ribbon bookmarks for

@@ -6,6 +6,11 @@ shipped with the game.
 
 - **Run it**: `npm --prefix cms run dev` (port 5174), or `preview_start` with
   name `cms` (see `docs/reference/TESTING.md`).
+- **The Studio** (Recolor and Animation): `npm run studio` from the repo root
+  (port 5175), beside the CMS. It loads no game data, and its server refuses the
+  game-data routes. Palette files dropped in `palettes-inbox/` (by agents, never
+  into `data/palettes/`) show under the Recolor tab's **Import** button; see
+  `palettes-inbox/README.md`.
 - **Sync to Game** overwrites `data/items.json`, `tokens.json`, `maps.json`,
   `tokenRecipes.json` and `effects.json` from the CMS's own store (browser
   localStorage), then commits `data/` onto whatever branch is checked out.

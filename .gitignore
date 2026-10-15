@@ -42,6 +42,11 @@ cms/backups/*
 # The Starter Camp the game's dev button saved, waiting for the CMS's Starter
 # Camp page (cms/vite-plugin-cms-api.js). Scratch: Sync writes data/.
 cms/inbox/
+# The palette drop folder: agents write palette files here, and the Studio's
+# Import adds one to data/palettes/. Scratch, except its README.
+cms/palettes-inbox/*
+!cms/palettes-inbox/README.md
+cms/dist-studio/
 
 # Game assets
 public/assets/archive/
@@ -56,3 +61,6 @@ bench/results/
 # Generated sprite shadows and outlines (scripts/spriteFx.mjs, Wave 5).
 # Rebuilt from public/assets by npm run dev / npm run build; never edit.
 public/_gen/
+
+# an agent's worktree status note, never committed
+/STATUS.md
