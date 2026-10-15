@@ -467,7 +467,8 @@ Not decided here because each needs `bench:draw` or the Perf HUD:
   value. 1126 u is not a whole number of ground pixels (281.5 chunky), so the
   last row needs rounding.
 - **The Starter Camp's ground** (L-10 C) needs a field on the CMS page from D-2.
-- **The unopened raw sources**: whether any of the ~650 "Generated Image"
-  files in `raw_assets/dataset/` are ground sources.
+- ~~The unopened raw sources~~: **none of the "Generated Image" files are
+  ground sources** (owner, 2026-10-15): they are kept only for re-processing a
+  sprite. Agents can ignore them.
 - **Unused tile-era art** (`pm_board_*` except `guild_hall_1`, the two
   `tables/` soils): not drawn anywhere. Owner art; left alone.

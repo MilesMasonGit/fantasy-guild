@@ -1,4 +1,4 @@
-Status: draft
+Status: briefed 2026-10-15 (approved 2026-10-15; brief 85)
 
 # Art direction: brightness, palettes and the terrain's look
 
@@ -49,6 +49,16 @@ every look; agents build the tools and prepare palettes.*
   `docs/reference/ART_STYLE.md` beside UI_STYLE.md: Token and ground
   brightness ranges, colour counts, light direction, tint rules, the check
   steps from the terrain art guide. Every future sprite follows it.
+- **Outline protection** (owner, 2026-10-15): the bake leaves the darkest
+  colours (outlines, near-black) exactly as drawn; a threshold setting says
+  how dark counts.
+- **Starting presets**: unchanged, gentle 1.08 / 1.12, the drag look
+  1.15 / 1.25, bold 1.22 / 1.4. Later passes narrow in.
+- **Timing** (owner, 2026-10-15): tools Friday 16 October; every art phase
+  over the weekend of 17–18 October; the terrain in the game with brief 80,
+  next wave.
+- **Scatter files use the `prop_` prefix** in `public/assets/playmat/props/`
+  (the owner's naming); `props/sheets/` holds their source sheets.
 - **No art check script**: the owner's eye and the bench are enough.
 - **All three biomes at once** for the final art (Forest, Mountain, Coast),
   so the grounds are consistent with each other from the start.

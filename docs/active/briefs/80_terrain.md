@@ -23,6 +23,8 @@ colours, plain sheets with all detail as scatter, the code filter kept for
 now, no Token shadows until the terrain has been seen. The art itself is
 planned in [`concept_art_direction.md`](../concept_art_direction.md) (draft):
 build the engine on placeholder art; the final art arrives in its phase 10.
+**T0 moves to the wave after 2026-10-17** (owner, 2026-10-15) to make room
+for brief 85's tools.
 
 ## T0 — Plan (engineer, read-only first)
 

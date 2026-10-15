@@ -23,7 +23,8 @@ multiple choice at wave start.
 | 6 | [50 Drag deep-dive](50_drag_deep_dive.md) | 2, 4 | yes |
 | 7 | [60 Deep optimization](60_deep_optimization.md) | 2–6 | look-preserving |
 | 8 | [70 Atlas](70_atlas.md) | 7 | yes |
-| 9 | [80 Terrain rework](80_terrain.md) | 8 | yes |
+| 9 | [85 Art direction](85_art_direction.md): bench page, brightness script, Studio palette import; the owner's art weekend | — | owner judges on the bench |
+| 10 | [80 Terrain rework](80_terrain.md) | 8 | yes |
 | 11 | [100 Style kit](100_style_kit.md): style sheet page, arrow-bar list, text sizes, tooltip | — | yes, once |
 | 12 | [110 Map tools and top bar](110_map_tools.md): camp fixtures, Demolish mode, top bar | 11, T-147 | yes |
 | 13 | [120 Mat, hover and Token card](120_mat_and_card.md) | 11, 12, T-146, T-147 | yes, two batches |
@@ -32,12 +33,14 @@ multiple choice at wave start.
 | 16 | [150 Notifications](150_notifications.md) | 11, 15 | yes |
 | 17 | [160 Atlas tome and Hall sky](160_atlas_tome.md): tome, banners, sky, camera moves | 11, 12 | yes, two batches |
 | 18 | [170 Quest boards](170_quest_boards.md) | 13 | yes |
-| 19 | [90 Performance Envelope](90_performance_envelope.md) | 9–18 | — |
+| 19 | [90 Performance Envelope](90_performance_envelope.md) | 10–18 | — |
 
 Order ruled by the owner 2026-10-07: UI phases that don't touch skills first,
 then class rework v2, then the hero bar/panel on the new skill list, then
 offline progress. Deep optimization → Atlas → terrain → Envelope (2026-10-06).
-The refinement-pass briefs (100–170) run after terrain and before the
+**Brief 85 runs now** (owner, 2026-10-15): its three tools on Friday 16 October
+so the owner can work the art over the weekend; brief 80's T0 and Friday's
+remaining tweaks move to the next wave. The refinement-pass briefs (100–170) run after terrain and before the
 Envelope, foundations first (owner, 2026-10-14); the Envelope measures the
 finished game. `T-` entries under Needs are wave 2 tickets that must be
 merged first. Collectors (`concept_collectors.md`) stays a draft for now.
