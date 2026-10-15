@@ -48,6 +48,7 @@ T-145 — Tokens twitched and went soft: any compositor-run animation on the mat
 T-117 — The desktop app kept drawing while minimised (WebView2 is never told): the Tauri side forwards minimise and restore to the page, which with a hidden page's visibilitychange pauses the mat's frame clocks; the game's tick keeps running; guarded by DrawingPause.test.js — crunch/p2-10 — 2026-10-14
 T-152 — Drawers close each other: the Bank, Shop and Work Rules drawers are one at a time (panels and modals unchanged) — fix/t152-drawers — 2026-10-14
 T-182 — Guard test for content ids named in src/ (ContentIdsInCode.test.js): every item_/token_/map_ literal must exist in data/ or sit on a short reasoned allow-list — fix/t182-id-guard — 2026-10-14
+T-158 — A Token's callouts stack on top of its working hero's speech bubbles in one column instead of covering them — fix/t158-bubbles — 2026-10-14
 T-153 — The gear alert no longer pulses, scales or glows: a one-art-pixel gold outline (four masked copies of the gear, one art pixel off) whose colour steps between two golds; guarded by GearAlertOutline.test.js — fix/t153-gear-alert — 2026-10-14
 T-146 — Animated sprite outlines get one art pixel of room past each frame (padded outline cells, outline drawn outside the frame crop) — a5ba92c4 — 2026-10-14
 T-148 — The Guild Hall is movable again (drags, carries the marker; never pushed, never off the mat, never demolished) — dcefcf89 — 2026-10-14

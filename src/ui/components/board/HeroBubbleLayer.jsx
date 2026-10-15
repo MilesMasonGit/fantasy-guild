@@ -14,6 +14,7 @@ import { layoutStacks, bubbleAnchorY } from './bubbleLayout.js';
 import { useMatSize } from '../../hooks/useMatSize.js';
 import { TICK_INTERVAL_MS } from '../../../config/loopConstants.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
+import { publishHeroColumns } from './speechColumns.js';
 
 /** How often lines are re-read and expired ones cleared. */
 const REFRESH_MS = 500;
@@ -194,6 +195,19 @@ export const HeroBubbleLayer = ({ heroes }) => {
         anchored.map(a => ({ id: a.h.heroId, x: a.x, y: a.y, ...(sizesRef.current.get(a.h.heroId) || guessSize(a.stack)) })),
         mat
     );
+
+    // Where each stack standing at a Token is, so that Token's callouts go on top of it
+    // (`speechColumns.js`). A walker's stack is not one: it moves on without this layer.
+    useLayoutEffect(() => {
+        publishHeroColumns(anchored
+            .filter(a => a.h.tokenId && !a.live && !a.h.moving)
+            .map(a => {
+                const { dx, dy } = offsets.get(a.h.heroId);
+                const { h: stackH } = sizesRef.current.get(a.h.heroId) || guessSize(a.stack);
+                return { tokenId: a.h.tokenId, x: a.x + dx, top: a.y + dy - stackH };
+            }));
+    });
+    useLayoutEffect(() => () => publishHeroColumns([]), []);
 
     // Measure what was drawn, so the next pass spaces real sizes, not guesses. Only when what
     // the stacks SAY changes: a stack's size is its lines, and this layer re-renders on every

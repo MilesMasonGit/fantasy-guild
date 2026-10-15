@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
@@ -7,11 +7,14 @@ import { artRadiusOf } from '../../../config/matGeometry.js';
 import { tokenName } from '../../../config/registries/tokenRegistry.js';
 import { MAT_Z } from './matLayers.js';
 import { CALLOUT_MS, addCallout, anchorKeyOf, calloutText } from './callouts.js';
+import { columnPlace, heroColumnAt, heroColumnsVersion, subscribeHeroColumns } from './speechColumns.js';
 
 /** Clear air between the top of a Token's art and the bottom of its callout's tail, in mat units. */
 const GAP_PX = 6;
 
 let nextId = 1;
+
+const NO_SUBSCRIPTION = () => () => {};
 
 /**
  * Quick popups over the mat, one style: "! Spawned Oak Tree" over the spawner, an effect's name
@@ -21,6 +24,8 @@ let nextId = 1;
  * and the pointer passes straight through. One layer and one subscription per event for the
  * whole mat, however many Tokens are drawn.
  * Depletion and level-ups are not here: a hero says those (`HeroBubbleLayer`).
+ * Over a Token whose hero is speaking, the callouts go on top of the hero's stack, one column
+ * (`speechColumns.js`). Only while a callout is up does a change to that stack redraw this.
  */
 export const CalloutLayer = memo(function CalloutLayer() {
     const [callouts, setCallouts] = useState([]);
@@ -68,6 +73,8 @@ export const CalloutLayer = memo(function CalloutLayer() {
         };
     }, []);
 
+    useSyncExternalStore(callouts.length ? subscribeHeroColumns : NO_SUBSCRIPTION, heroColumnsVersion);
+
     if (!callouts.length) return null;
 
     const groups = new Map();
@@ -83,8 +90,11 @@ export const CalloutLayer = memo(function CalloutLayer() {
             style={{ zIndex: MAT_Z.CALLOUT }}
         >
             {[...groups.entries()].map(([key, list]) => {
-                const { x, y, typeId } = list[0];
-                const top = y - (typeId ? artRadiusOf(typeId) : 0) - GAP_PX;
+                const { x: ownX, y, typeId, anchorId } = list[0];
+                const { x, top } = columnPlace(
+                    { x: ownX, top: y - (typeId ? artRadiusOf(typeId) : 0) - GAP_PX },
+                    anchorId ? heroColumnAt(anchorId) : null
+                );
                 return (
                     <div
                         key={key}
