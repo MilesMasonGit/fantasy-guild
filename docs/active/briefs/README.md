@@ -39,8 +39,8 @@ Order ruled by the owner 2026-10-07: UI phases that don't touch skills first,
 then class rework v2, then the hero bar/panel on the new skill list, then
 offline progress. Deep optimization → Atlas → terrain → Envelope (2026-10-06).
 **Brief 85 runs now** (owner, 2026-10-15): its three tools on Friday 16 October
-so the owner can work the art over the weekend; brief 80's T0 and Friday's
-remaining tweaks move to the next wave. The refinement-pass briefs (100–170) run after terrain and before the
+so the owner can work the art over the weekend; Friday's remaining tweaks
+move to the next wave. Brief 80 (T0 to T4) was built alongside, 2026-10-15. The refinement-pass briefs (100–170) run after terrain and before the
 Envelope, foundations first (owner, 2026-10-14); the Envelope measures the
 finished game. `T-` entries under Needs are wave 2 tickets that must be
 merged first. Collectors (`concept_collectors.md`) stays a draft for now.

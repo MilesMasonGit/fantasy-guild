@@ -16,9 +16,9 @@ every look; agents build the tools and prepare palettes.*
 - **Look passes are working sessions** between the owner and one agent. What
   the owner decides is recorded here (or in ART_STYLE.md once it exists), not
   left in chat.
-- **Brief 80's terrain code runs in parallel on placeholder art**: T0 plans as
-  scheduled; the grid, biome painting and scatter placement are built on
-  today's ground. The art phases swap the real art in. Nothing waits.
+- **Brief 80's terrain code runs in parallel on placeholder art**: T0 to T4
+  were built 2026-10-15 (the grid, biome painting, scatter placement, the
+  "Stands on" field) on today's ground. The art phases swap the real art in. Nothing waits.
 
 ## Decided
 
@@ -55,8 +55,8 @@ every look; agents build the tools and prepare palettes.*
 - **Starting presets**: unchanged, gentle 1.08 / 1.12, the drag look
   1.15 / 1.25, bold 1.22 / 1.4. Later passes narrow in.
 - **Timing** (owner, 2026-10-15): tools Friday 16 October; every art phase
-  over the weekend of 17–18 October; the terrain in the game with brief 80,
-  next wave.
+  over the weekend of 17–18 October; brief 80's ground is built and shows the
+  art in the game once it merges.
 - **Scatter files use the `prop_` prefix** in `public/assets/playmat/props/`
   (the owner's naming); `props/sheets/` holds their source sheets.
 - **No art check script**: the owner's eye and the bench are enough.

@@ -6,10 +6,13 @@
 
 **Timing (owner, 2026-10-15):** the three tools are built **Friday 16
 October**, so the owner can run every art phase over the weekend of 17–18
-October on the bench. To make room, **brief 80's T0 and Friday's remaining
-ruled tweaks move to the next wave**; P2-7, P2-9, T-145 and P2-10 are
-unaffected. The terrain shows in the running game when brief 80 lands, next
-wave.
+October on the bench. Friday's remaining ruled tweaks move to the next wave;
+P2-7, P2-9, T-145 and P2-10 are unaffected. **Brief 80 is already built**
+(T0 to T4 on the director's branches, 2026-10-15) and waits on its checks and
+the owner's eye-check; whether it merges this week or parks for the art
+weekend is the owner's call with the director. Its scatter already reads the
+owner's `playmat/props/`, so the weekend's art can be seen on the real ground
+once it merges.
 
 **Focus (owner, 2026-10-15): Friday to Sunday is for this art pass.**
 Before Friday, the director may run work that supports it (A1–A3 can start
@@ -95,7 +98,7 @@ recorded in the concept doc as it's made.
   Changes the look slightly: one line in STATUS.
 - **T-180's material palettes**: the Studio action that gives the Recolor
   material palettes the same transform, run by the owner.
-- **Brief 80** takes the final art and tints (the concept's phase 10).
+- **Brief 80's ground** takes the final art and tints (the concept's phase 10).
 
 ## Owner to-do
 
