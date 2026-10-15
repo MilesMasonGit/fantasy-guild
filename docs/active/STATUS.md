@@ -116,3 +116,14 @@ pulsing, then Friday's terrain plan. Owner: nothing needed tonight; when you
 next run the desktop app, minimise it once and see the frame counter stop.
 Blockers: none. Process: no daily phase count (parallelism is the limit),
 benches by purpose, the director reports in plain words.
+
+**Thu 2026-10-15, morning.** Where we are: everything from the wave 2 table is
+merged (brief 60's P2 slices complete; the twitch, tutorial, safety net,
+drawers, hover outline, movable Hall, gear alert and speech-bubble fixes), and
+the terrain plan is on `main` with the owner's five answers. Next: on the
+owner's word, the first two terrain slices in parallel (the ground plan, pure
+code; terrain-aware placement), then the drawn ground (an eye-check), then the
+CMS "Stands on" field and the placing grid (an eye-check). Owner: say go on
+the terrain slices; minimise the desktop app once to check the frame counter
+stops. Budget: two slots free. Blockers: none. Saturday: handoff and the
+quiet-machine baseline retake.
