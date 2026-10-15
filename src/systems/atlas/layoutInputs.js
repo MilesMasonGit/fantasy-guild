@@ -2,11 +2,12 @@
 
 import { MAT_STEP_U, MAT_ASPECT, artRadiusOf } from '../../config/matGeometry.js';
 import { matTuningDefault } from '../../config/matTuning.js';
-import { getTokenType } from '../../config/registries/tokenRegistry.js';
+import { getTokenType, standsOnOf } from '../../config/registries/tokenRegistry.js';
 import { KEYWORD, statementsWith } from '../effects/statements.js';
 import { isWithin, nearRadius } from '../board/nearby.js';
 import * as Restrictions from '../board/Restrictions.js';
 import { HALL_TYPE_ID } from './Layout.js';
+import { allowsTerrain } from './TerrainMap.js';
 
 /**
  * `Layout.js` is pure and takes its geometry as numbers; this is where the game supplies them, so
@@ -62,10 +63,24 @@ export function cannotCheck(typeIds) {
 }
 
 /**
- * Everything `Layout.layout` needs besides the budget, as the game supplies it. No `terrainAllows`
- * yet, so every Token may stand anywhere dry; per-Token terrain needs (a Dock on the coast), set in
- * the CMS, plug in here when they exist.
+ * A layout `terrainAllows` seam that asks each Token's "Stands on" (`standsOnOf`), the rule
+ * placement asks on the mat (`GroundRules`), so a generated Token stands only where the player
+ * could have put it: a Sailboat on the water, a Dock on the shore, anything with no list anywhere
+ * dry. Each type's list is read once per layout.
  */
+export function terrainRule() {
+    const lists = new Map();
+    return (typeId, terrain, shore) => {
+        let standsOn = lists.get(typeId);
+        if (!standsOn) {
+            standsOn = standsOnOf(typeId);
+            lists.set(typeId, standsOn);
+        }
+        return allowsTerrain(standsOn, terrain, shore);
+    };
+}
+
+/** Everything `Layout.layout` needs besides the budget, as the game supplies it. */
 export function layoutOptions(summary, seed) {
     const entries = Array.isArray(summary) ? summary : (summary?.entries || []);
     return {
@@ -73,6 +88,7 @@ export function layoutOptions(summary, seed) {
         mat: shippedMat(),
         crowding: shippedCrowding(),
         artRadius: artRadiusOf,
+        terrainAllows: terrainRule(),
         allows: cannotCheck(entries.map(e => e.typeId))
     };
 }

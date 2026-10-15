@@ -23,14 +23,16 @@ import {
  * **The ground follows the nodes**: a node's own cell takes its biome's terrain, any other dry
  * cell the terrain of the nearest node in reach, else the Region's main biome's. Camps and
  * treasures take the ground where they land. Every placed Token records its biome, so the cell
- * under its centre always has that biome's terrain.
+ * under its centre always has that biome's terrain, except a node that stands in the water (a
+ * boat): its cell stays water, while the dry cells round it follow it like any node's.
  *
  * A spot is legal by `MatPlacement`'s rules restated on explicit numbers: the art circle inside the
  * mat, centres at least the hitbox gap apart, plus clear of the Hall's ring, on a terrain the
- * `terrainAllows` seam accepts (by default anywhere dry; per-Token terrain needs come later), and
- * not refused by the optional `allows` hook (`layoutInputs.cannotCheck` asks the game's `Cannot`
- * rules). Nodes are spaced more loosely than that when the budget leaves room ({@link
- * COMFORT_GAP}), packing tighter as density modifiers add more.
+ * `terrainAllows` seam accepts (by default anywhere dry; `layoutInputs` supplies each Token's
+ * "Stands on"), and not refused by the optional `allows` hook (`layoutInputs.cannotCheck` asks the
+ * game's `Cannot` rules). A grove, camp or treasure also starts on ground its Token may stand on.
+ * Nodes are spaced more loosely than that when the budget leaves room ({@link COMFORT_GAP}),
+ * packing tighter as density modifiers add more.
  *
  * ⚠️ Determinism: every number comes from the seeded generator, whole-unit coordinates, and
  * arithmetic IEEE fixes exactly (+ − × ÷ sqrt). No trigonometry, no `Math.hypot`, no `**`: their
@@ -114,7 +116,7 @@ export function campBand(point, art, mat) {
     return Math.max(ex, ey);
 }
 
-/** The default terrain rule until Tokens carry their own: anything may stand anywhere dry. */
+/** The default terrain rule: anything may stand anywhere dry. */
 export function anywhereDry(typeId, terrain) {
     return terrain !== TERRAIN.WATER;
 }
@@ -130,8 +132,9 @@ export function anywhereDry(typeId, terrain) {
  *   layout means the same on every machine (the live mat size is a per-device dev setting)
  * @param {{hitboxPct: number, overlapPct: number}} options.crowding  the hitbox and overlap rules
  * @param {(typeId: string) => number} options.artRadius  a Token type's art radius
- * @param {(typeId: string, terrain: string) => boolean} [options.terrainAllows]  whether a Token
- *   may stand on a terrain; {@link anywhereDry} by default. The seam per-Token terrain needs plug into.
+ * @param {(typeId: string, terrain: string, shore: boolean) => boolean} [options.terrainAllows]
+ *   whether a Token may stand on a cell of a terrain, `shore` saying whether that cell is dry land
+ *   touching water; {@link anywhereDry} by default. `layoutInputs` plugs each Token's "Stands on" in.
  * @param {(typeId: string, point: {x: number, y: number}, placed: {typeId: string, x: number, y: number}[]) => boolean} [options.allows]
  *   a last say on a spot that passes every other rule; `placed` includes the Hall
  * @param {string} [options.hallTypeId]
@@ -185,6 +188,8 @@ export function layout(summary, {
     const shoreBiomes = new Set(ground.shore);
     const cellAt = (x, y) => cellIndex(cells, x, y);
     const isWater = (x, y) => water[cellAt(x, y)] === 1;
+    // Dry land touching water, a diagonal counting: the "shore" a Token's "Stands on" may name.
+    const isShore = (i) => shore !== null && shore[i] === 1;
     // The cell each node stands in, with its ground; and the nodes in placement order, which the
     // rest of the ground follows.
     const owned = new Map();
@@ -262,18 +267,32 @@ export function layout(summary, {
         if (x < body.art || y < body.art || x > w - body.art || y > h - body.art) return false;
         if (!outsideRing(x, y, body.art)) return false;
         if (item.role === ROLE_CAMP && campBand({ x, y }, body.art, mat) < CAMP_BAND) return false;
+        const i = cellAt(x, y);
+        const coast = isShore(i);
         let here = null;
-        if (isWater(x, y)) {
+        if (water[i] === 1) {
             here = TERRAIN.WATER;
         } else if (item.role === ROLE_NODE) {
             here = terrainOf(item.biome);
-            const holder = owned.get(cellAt(x, y));
+            const holder = owned.get(i);
             if (holder && holder.terrain !== here) return false;
         }
-        if (here !== null && !terrainAllows(item.typeId, here)) return false;
+        if (here !== null && !terrainAllows(item.typeId, here, coast)) return false;
         if (!clearAt(x, y, body, item.role, loose)) return false;
-        if (here === null && !terrainAllows(item.typeId, groundAt(x, y).terrain)) return false;
+        if (here === null && !terrainAllows(item.typeId, groundAt(x, y).terrain, coast)) return false;
         return !allows || allows(item.typeId, { x, y }, placed) === true;
+    };
+
+    /**
+     * Whether a Token could stand on the ground under `p`, by its terrain alone: where a grove, a
+     * camp or a treasure starts. A node brings its biome's terrain to a dry cell; anything else is
+     * judged on the ground already there.
+     */
+    const groundFits = (item, p) => {
+        const i = cellAt(p.x, p.y);
+        if (water[i] === 1) return terrainAllows(item.typeId, TERRAIN.WATER, false);
+        const terrain = item.role === ROLE_NODE ? terrainOf(item.biome) : groundAt(p.x, p.y).terrain;
+        return terrainAllows(item.typeId, terrain, isShore(i));
     };
 
     const between = (lo, hi) => lo + Math.floor(random() * (hi - lo + 1));
@@ -391,6 +410,8 @@ export function layout(summary, {
         }
         let under;
         if (item.role === ROLE_NODE) {
+            // A node in the water (a boat) keeps this too: its own cell stays water (every reader
+            // asks `water` first), and the dry cells round it follow it like any node's.
             under = { terrain: terrainOf(item.biome), biome: item.biome };
             owned.set(cellAt(spot.x, spot.y), under);
             marks.push({ x: spot.x, y: spot.y, ...under });
@@ -405,8 +426,6 @@ export function layout(summary, {
 
     put({ typeId: hallTypeId, role: 'hall', x: hall.x, y: hall.y, body: hallBody });
 
-    const dry = (p) => !isWater(p.x, p.y);
-
     // Biggest bodies first, as in any packing: a 2×2 placed last finds only the gaps small Tokens
     // left, which on a dense mat are too small for it. Then shore species, before a forest takes
     // the beach.
@@ -418,7 +437,7 @@ export function layout(summary, {
     for (const species of bySize) {
         const { art } = bodyOf(species.typeId);
         const onShore = shore && shoreBiomes.has(species.biome);
-        const accept = (p) => outsideRing(p.x, p.y, art) && dry(p)
+        const accept = (p) => outsideRing(p.x, p.y, art) && groundFits(species.items[0], p)
             && (!onShore || shore[cellAt(p.x, p.y)] <= SHORE_CELLS);
         const count = species.items.length;
         const k = Math.ceil(count / GROVE_SIZE);
@@ -441,13 +460,13 @@ export function layout(summary, {
 
     for (const item of items.filter(it => it.role === ROLE_CAMP)) {
         const { art } = bodyOf(item.typeId);
-        const anchor = roomiest(art, CAMP_DRAWS, p => campBand(p, art, mat) >= CAMP_BAND && dry(p), placed);
+        const anchor = roomiest(art, CAMP_DRAWS, p => campBand(p, art, mat) >= CAMP_BAND && groundFits(item, p), placed);
         place(item, spotNear(item, anchor, []));
     }
 
     for (const item of items.filter(it => it.role === ROLE_TREASURE)) {
         const { art } = bodyOf(item.typeId);
-        const anchor = roomiest(art, TREASURE_DRAWS, p => outsideRing(p.x, p.y, art) && dry(p), placed);
+        const anchor = roomiest(art, TREASURE_DRAWS, p => outsideRing(p.x, p.y, art) && groundFits(item, p), placed);
         place(item, spotNear(item, anchor, []));
     }
 

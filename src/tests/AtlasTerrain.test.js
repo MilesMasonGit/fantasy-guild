@@ -265,8 +265,8 @@ describe('the terrain map', () => {
                             expect(n.biome).toBe('coast');
                         }
                     }
-                    // The sea is the coastline the seed carved, whoever stands in it: a boat brings no
-                    // ground of its own to the cells round it.
+                    // The sea is the coastline the seed carved, whoever stands in it: a boat's cell
+                    // stays water, and no dry cell becomes water round it.
                     expect(waterCells(result.terrain)).toEqual(waterCells(layout(summary, options(seed)).terrain));
                 }
                 expect(boats).toBeGreaterThan(SEEDS.length);
