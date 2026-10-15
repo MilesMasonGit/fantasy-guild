@@ -20,7 +20,9 @@ terrain types; some Tokens require a terrain; grid visible only while
 placing). L-1 (pixel size) is decided from a mockup. Its **"Terrain art
 guide"** (owner, 2026-10-15) sets how the ground is drawn and checked: 3–5
 colours, plain sheets with all detail as scatter, the code filter kept for
-now, no Token shadows until the terrain has been seen.
+now, no Token shadows until the terrain has been seen. The art itself is
+planned in [`concept_art_direction.md`](../concept_art_direction.md) (draft):
+build the engine on placeholder art; the final art arrives in its phase 10.
 
 ## T0 — Plan (engineer, read-only first)
 
