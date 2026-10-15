@@ -187,7 +187,6 @@ export function layout(summary, {
     const shore = waterCells > 0 ? shoreDistance(cells, water) : null;
     const shoreBiomes = new Set(ground.shore);
     const cellAt = (x, y) => cellIndex(cells, x, y);
-    const isWater = (x, y) => water[cellAt(x, y)] === 1;
     // Dry land touching water, a diagonal counting: the "shore" a Token's "Stands on" may name.
     const isShore = (i) => shore !== null && shore[i] === 1;
     // The cell each node stands in, with its ground; and the nodes in placement order, which the

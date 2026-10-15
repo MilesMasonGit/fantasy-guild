@@ -105,7 +105,6 @@ const ROCK_PT = { x: 1500, y: 563 };
 const POND_PT = { x: 1040, y: 336 };
 
 const underfoot = (p) => terrainAt(MAP, p.x, p.y);
-const cellOf = (p) => ({ col: Math.floor(p.x / TERRAIN_CELL), row: Math.floor(p.y / TERRAIN_CELL) });
 const fresh = (typeId) => BoardState.createTokenInstance(typeId, 100);
 
 /** Make `map` the ground of the Region the guild is in (null: the meadow). */
