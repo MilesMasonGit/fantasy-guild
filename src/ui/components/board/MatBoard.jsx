@@ -15,7 +15,7 @@ import { FlagLayer } from './FlagLayer.jsx';
 import { heroOutline } from './spriteOutline.js';
 import { SpriteLayerView } from './SpriteLayerView.jsx';
 import { TerrainCanvas } from './TerrainCanvas.jsx';
-import { TERRAIN_ENABLED } from '../../../config/registries/terrainRegistry.js';
+import { MAT_EDGE, MAT_EDGE_CSS } from './groundScreen.js';
 import { announce } from './dropOnMat.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { useActiveDrag } from '../../dnd/DndKit.jsx';
@@ -29,6 +29,8 @@ import * as HeroMotion from '../../../systems/board/HeroMotion.js';
 import * as EnemyMotion from '../../../systems/board/EnemyMotion.js';
 import * as Placement from '../../../systems/board/Placement.js';
 import { showsNearRing } from '../../../systems/board/reachDisplay.js';
+import { activeRegion } from '../../../systems/atlas/Atlas.js';
+import { regionGround } from '../../../systems/atlas/regionGround.js';
 import { getTokenType } from '../../../config/registries/tokenRegistry.js';
 import { usePerfRenderCount } from '../../dev/perf/PerfProfiler.jsx';
 import { useDrawn } from '../../dev/perf/drawSwitches.js';
@@ -64,6 +66,7 @@ export const MatBoard = React.memo(function MatBoard({
     const ringsDrawn = useDrawn('rings');
     const alertsDrawn = useDrawn('alerts');
     const speechDrawn = useDrawn('speech');
+    const terrainDrawn = useDrawn('terrain');
     const rootRef = useRef(null);
 
     // Read through the hook so the whole board redraws when the Mat Tuner resizes it.
@@ -236,10 +239,19 @@ export const MatBoard = React.memo(function MatBoard({
     );
     const flagPoints = useMemo(() => flagsRaw || [], [flagsRaw]);
 
-    // The painted ground. Dormant while terrain is off.
-    const terrain = useGameState(
-        state => (TERRAIN_ENABLED ? state.board?.terrain || NO_TERRAIN : NO_TERRAIN),
-        [ENGINE_EVENTS.STATE_CHANGED, BOARD_EVENTS.TILE_CHANGED]
+    /**
+     * The ground: the active Region's (`regionGround`), meadow where it stored no map. The same
+     * object until the Region's ground or the mat's size changes, so a tick, a drag or a Token
+     * changing redraws none of it; a travel or a load to another ground rebuilds it once.
+     */
+    const groundSource = useGameState(
+        activeGroundSource,
+        [ENGINE_EVENTS.ATLAS_CHANGED, ENGINE_EVENTS.GAME_RESET, ENGINE_EVENTS.STATE_CHANGED],
+        null
+    );
+    const ground = useMemo(
+        () => (terrainDrawn ? regionGround(groundSource, mat) : null),
+        [terrainDrawn, groundSource, mat]
     );
 
 
@@ -344,6 +356,10 @@ export const MatBoard = React.memo(function MatBoard({
             {/**
              * 0: the mat itself, a plain darker surface with a soft rounded border. With free
              * placement it is the only edge there is, since a Token may stand anywhere on it.
+             * ⚠️ While the ground is drawn it covers the surface, so its light edge and inset
+             * shadow are drawn in the ground's picture instead (`groundScreen.js`, `MAT_EDGE`): a
+             * blurred shadow under an opaque picture would cost a blur on every repaint and show
+             * nothing.
              */}
             <div
                 data-mat-surface
@@ -352,14 +368,17 @@ export const MatBoard = React.memo(function MatBoard({
                     width: mat.w,
                     height: mat.h,
                     zIndex: MAT_Z.SURFACE,
-                    borderRadius: 28,
+                    borderRadius: MAT_EDGE.radius,
                     backgroundColor: 'rgba(0, 0, 0, 0.22)',
-                    border: '2px solid rgba(255, 255, 255, 0.08)',
-                    boxShadow: 'inset 0 0 90px rgba(0, 0, 0, 0.40), 0 0 0 1px rgba(0, 0, 0, 0.35)'
+                    border: ground ? `${MAT_EDGE.border}px solid transparent` : MAT_EDGE_CSS.border,
+                    boxShadow: ground
+                        ? '0 0 0 1px rgba(0, 0, 0, 0.35)'
+                        : `${MAT_EDGE_CSS.insetShadow}, 0 0 0 1px rgba(0, 0, 0, 0.35)`
                 }}
             />
 
-            {TERRAIN_ENABLED && <TerrainCanvas terrain={terrain} seed={0} />}
+            {/* `MAT_Z.GROUND`: the ground, under every Token. */}
+            {ground && <TerrainCanvas ground={ground} />}
 
             {/**
              * The stack (`MAT_Z.TOKEN_BASE` up): Tokens, the heroes on them, and what is written
@@ -457,7 +476,7 @@ export const MatBoard = React.memo(function MatBoard({
                         width: mat.w,
                         height: mat.h,
                         zIndex: DISALLOW_EDGE_Z,
-                        borderRadius: 28,
+                        borderRadius: MAT_EDGE.radius,
                         border: `${3 / fit}px dashed #E24B4A`
                     }}
                 >
@@ -477,8 +496,15 @@ export const MatBoard = React.memo(function MatBoard({
 /** Disallow mode's edge and hint: above the speech bubbles. */
 const DISALLOW_EDGE_Z = MAT_Z.HERO_BUBBLE + 40;
 
-/** Shared empty terrain, so a dormant board's selector returns a stable value. */
-const NO_TERRAIN = Object.freeze({});
+/**
+ * What the drawing needs of the active Region (`regionGround`): its seed, its stored cell map and
+ * its maps' ground. A flat projection, so a load that brings the same Region back compares equal
+ * and draws nothing again.
+ */
+function activeGroundSource() {
+    const region = activeRegion();
+    return { seed: region?.seed ?? 0, terrain: region?.terrain ?? null, ground: region?.ground ?? null };
+}
 
 /**
  * Where a hero's 64 × 128 box goes, in mat units: centred on the hero's own point. A working

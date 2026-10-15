@@ -9,8 +9,11 @@ import { GameLoop } from '../systems/core/GameLoop.js';
 import { SaveManager } from '../systems/core/SaveManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { GameState } from '../state/GameState.js';
+import { createEmptyBoard } from '../state/StateSchema.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
+import * as BoardState from '../systems/board/BoardState.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
+import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import * as Atlas from '../systems/atlas/Atlas.js';
 import { budget } from '../systems/atlas/Budget.js';
 import { layout } from '../systems/atlas/Layout.js';
@@ -79,9 +82,14 @@ const lastPicture = (canvas) => contexts.get(canvas)?.puts.at(-1) || null;
 let plans;
 let screens;
 
+/** Commits of the mat's subtree, so a test can show the mat really redrew. */
+let matCommits = 0;
+const countCommit = () => { matCommits++; };
+
 function mountMat(fit = 1) {
     const tree = (f) => h(EngineContext.Provider, { value: { GameState, EventBus } },
-        h(DndContext, null, h(MatFitProvider, { value: f }, h(MatBoard))));
+        h(DndContext, null, h(MatFitProvider, { value: f },
+            h(React.Profiler, { id: 'mat', onRender: countCommit }, h(MatBoard)))));
     const out = render(tree(fit));
     return { ...out, setFit: (f) => out.rerender(tree(f)) };
 }
@@ -159,14 +167,15 @@ describe('⭐ the ground is the active Region\'s', () => {
         expect(lastPicture(groundCanvas(container))).not.toBeNull();
     });
 
-    it('⭐ a travel rebuilds once, from the new Region\'s ground; travelling back once more', () => {
+    it('⭐ a travel rebuilds once, from the new Region\'s ground; travelling back once more', async () => {
         const forestCoast = settledRegion(['forest', 'coast'], 101);
         const home = Atlas.activeRegionId();
         const { container } = mountMat();
         plans.mockClear();
         screens.mockClear();
 
-        act(() => { expect(Atlas.travel(forestCoast.id).success).toBe(true); });
+        // The mat hears the travel's events once their task is done (`useGameState`).
+        await act(async () => { expect(Atlas.travel(forestCoast.id).success).toBe(true); });
         expect(plans).toHaveBeenCalledTimes(1);
         expect(screens).toHaveBeenCalledTimes(1);
         const ground = plans.mock.calls[0][0];
@@ -175,24 +184,39 @@ describe('⭐ the ground is the active Region\'s', () => {
         expect(ground.looks).toMatchObject({ grass: 'forest', sand: 'coast', water: 'sea' });
         expect(groundCanvas(container)).not.toBeNull();
 
-        act(() => { expect(Atlas.travel(home).success).toBe(true); });
+        await act(async () => { expect(Atlas.travel(home).success).toBe(true); });
         expect(plans).toHaveBeenCalledTimes(2);
         expect(screens).toHaveBeenCalledTimes(2);
         expect(plans.mock.calls[1][0].meadow).toBe(true);
     });
 
-    it('a load of the same Region rebuilds nothing; a load of another rebuilds once', () => {
+    it('lives on the Region: placing Tokens stores nothing about the ground on the board', () => {
+        // Moved from the retired `TerrainOff.test.js`: since Free Playmat 1.6a the board has no
+        // terrain storage or paint hook, and the ground is the Region's stored cell map.
+        const at = { x: Math.round(matW() / 2) - 300, y: Math.round(matH() / 2) - 200 };
+        const placed = fixtures.placeAt('fixture_producer_alt', at.x, at.y);
+        expect(placed.typeId).toBe('fixture_producer_alt');
+        for (const field of ['terrain', 'nextPaintOrder', 'terrainSeed']) {
+            expect(field in GameState.state.board).toBe(false);
+            expect(field in createEmptyBoard()).toBe(false);
+        }
+        for (const fn of ['getTileTerrain', 'terrainMap', 'terrainSeed', 'paintTile']) {
+            expect(BoardState[fn]).toBeUndefined();
+        }
+    });
+
+    it('a load of the same Region rebuilds nothing; a load of another rebuilds once', async () => {
         const forest = settledRegion(['forest'], 7);
         const { container } = mountMat();
         plans.mockClear();
         screens.mockClear();
         // A load hands the game fresh objects with the same contents.
-        act(() => {
+        await act(async () => {
             GameState.state.atlas = JSON.parse(JSON.stringify(GameState.state.atlas));
             EventBus.publish('game_reset', { reason: 'load' });
         });
         expect(plans).not.toHaveBeenCalled();
-        act(() => {
+        await act(async () => {
             GameState.state.atlas.activeRegionId = forest.id;
             EventBus.publish('game_reset', { reason: 'load' });
         });
@@ -203,7 +227,7 @@ describe('⭐ the ground is the active Region\'s', () => {
 });
 
 describe('⭐ never per frame', () => {
-    it('⭐ 100 engine ticks rebuild nothing', () => {
+    it('⭐ 100 engine ticks rebuild nothing', async () => {
         const centre = { x: Math.round(matW() / 2), y: Math.round(matH() / 2) };
         const producer = fixtures.placeAt('fixture_producer_alt', centre.x + 320, centre.y);
         fixtures.placeAt('bench_forest', centre.x - 480, centre.y);
@@ -214,9 +238,22 @@ describe('⭐ never per frame', () => {
         mountMat();
         plans.mockClear();
         screens.mockClear();
+        matCommits = 0;
 
-        for (let i = 0; i < 100; i++) act(() => { GameLoop.runHandlers(100); });
+        // Each tick's events reach the mat after the tick's task (`useGameState`), so each is
+        // awaited: a rebuild they caused would be counted. Every tenth tick a Token arrives, as
+        // spawns do at the cap, so the mat itself redraws while the ground must not.
+        for (let i = 0; i < 100; i++) {
+            await act(async () => {
+                GameLoop.runHandlers(100);
+                if (i % 10 === 9) {
+                    const t = fixtures.placeAt('fixture_producer', 200 + i * 12, 200);
+                    EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: t.id, typeId: t.typeId });
+                }
+            });
+        }
         expect(GameState.state.time.gameTimeMs).toBeGreaterThan(0);
+        expect(matCommits).toBeGreaterThanOrEqual(10);
         expect(plans).not.toHaveBeenCalled();
         expect(screens).not.toHaveBeenCalled();
     });
@@ -269,7 +306,7 @@ describe('⭐ never per frame', () => {
         expect(screens).toHaveBeenCalledTimes(1);
     });
 
-    it('mutes each sheet once: not again for a travel or a fit change, again when a Colour slider moves', () => {
+    it('mutes each sheet once: not again for a travel or a fit change, again when a Colour slider moves', async () => {
         vi.useFakeTimers();
         const mutes = vi.spyOn(TerrainSurface, 'muteTexels');
         try {
@@ -278,7 +315,7 @@ describe('⭐ never per frame', () => {
             const first = mutes.mock.calls.length;
             expect(first).toBeGreaterThan(0);
             expect(first).toBeLessThanOrEqual(groundSheetPaths().length);
-            act(() => { Atlas.travel(forest.id); });
+            await act(async () => { Atlas.travel(forest.id); });
             setFit(0.74);
             settle(300);
             const afterTravel = mutes.mock.calls.length;

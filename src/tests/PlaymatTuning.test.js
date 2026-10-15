@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import {
-    TUNABLES, tuning, setTuning, resetTuning, isTuned, tuningDefault
+    TUNABLES, tuning, setTuning, resetTuning, isTuned, tuningDefault, tuningReport
 } from '../config/playmatTuning.js';
 import { edgeProfile, resolveArtPixels } from '../systems/board/TerrainLattice.js';
 import { propsForGround } from '../systems/board/TerrainProps.js';
@@ -72,6 +72,28 @@ describe('Setting values', () => {
         resetTuning();
         for (const t of TUNABLES) expect(tuning(t.key), t.key).toBe(t.def);
         expect(isTuned()).toBe(false);
+    });
+});
+
+describe('Copy values: the tuned look as text to paste into chat', () => {
+    it('lists every slider by its label and key, marking those moved from how they ship', () => {
+        setTuning('beachWidth', 20);
+        setTuning('muteSaturation', 0.55);
+        const text = tuningReport();
+        const lines = text.split('\n');
+        expect(lines[0]).toMatch(/^Playmat Tuner/);
+        for (const t of TUNABLES) {
+            expect(lines.some(l => l.includes(`${t.label} [${t.key}]`)), t.key).toBe(true);
+        }
+        expect(text).toContain('Beach width (u) [beachWidth]: 20 (ships 12) *');
+        expect(text).toContain('Saturation [muteSaturation]: 0.55 (ships 0.7) *');
+        expect(text).toContain('Coast swing [edgeSwing]: 0.3125\n');
+        // And the same values as one line a builder can paste into code.
+        expect(JSON.parse(lines.at(-1))).toMatchObject({ beachWidth: 20, muteSaturation: 0.55, edgeSwing: 0.3125 });
+    });
+
+    it('says when nothing has moved', () => {
+        expect(tuningReport().split('\n')[0]).toMatch(/as it ships/);
     });
 });
 

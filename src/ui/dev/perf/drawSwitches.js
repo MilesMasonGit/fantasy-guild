@@ -6,12 +6,13 @@
 
 import { useSyncExternalStore } from 'react';
 
-// `alerts` is the callout layer (spawn, effect and refused-drop popups); `speech` is the hero bubbles.
+// `alerts` is the callout layer (spawn, effect and refused-drop popups); `speech` is the hero bubbles;
+// `terrain` is the ground under the Tokens (off, it is not mounted and the surface draws its own edge).
 export const DRAW_SWITCHES = [
     'rings', 'bubbles', 'alerts', 'speech', 'tooltips',
     'heroAnim', 'enemyAnim', 'walkDraw', 'itemFlight',
     'notifications', 'dock', 'drawers',
-    'spriteFx', 'background', 'particles', 'spawnMotion'
+    'spriteFx', 'background', 'terrain', 'particles', 'spawnMotion'
 ];
 
 const off = new Set();

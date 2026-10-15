@@ -1,0 +1,131 @@
+import { describe, it, expect, beforeAll, beforeEach, afterEach, afterAll, vi } from 'vitest';
+import { SettingsManager } from '../systems/core/SettingsManager.js';
+import { EngineBootstrap } from '../systems/core/EngineBootstrap.js';
+import { GameLoop } from '../systems/core/GameLoop.js';
+import { SaveManager } from '../systems/core/SaveManager.js';
+import { GameState } from '../state/GameState.js';
+import { InventoryManager } from '../systems/inventory/InventoryManager.js';
+import * as BoardState from '../systems/board/BoardState.js';
+import * as MatCap from '../systems/board/MatCap.js';
+import { matW, matH } from '../config/matGeometry.js';
+import { resetMatTuning } from '../config/matTuning.js';
+import * as Atlas from '../systems/atlas/Atlas.js';
+import * as Cartography from '../systems/atlas/Cartography.js';
+import { decodeTerrain } from '../systems/atlas/TerrainMap.js';
+import { nextSeed } from '../systems/atlas/seededRandom.js';
+import {
+    TERRAIN_DEV_REGIONS, goToDevRegion, rerollDevRegion, backToStarterCamp, isDevRegion, devMapsOf, viewOf, firstSeedOf
+} from '../ui/dev/terrainDev.js';
+import { placeAt } from './fixtures/mat.js';
+import './fixtures/testTokens.js';
+
+vi.mock('../systems/core/NotificationSystem.js', () => ({
+    notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
+    getQueue: vi.fn(() => []), dismissAll: vi.fn(), setQuiet: vi.fn()
+}));
+
+/**
+ * The Terrain dev section's buttons (dev builds only): every view of the ground the eye-check
+ * needs is one click, never a console line. Each settles a dev Region for free and travels there;
+ * the dev Region left behind is removed.
+ */
+
+const regionIds = () => Object.keys(GameState.state.atlas.regions).sort();
+
+beforeAll(() => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    SettingsManager.init();
+    EngineBootstrap.init();
+    GameLoop.stop();
+});
+
+beforeEach(() => {
+    resetMatTuning();
+    GameState.initNew();
+    InventoryManager.init();
+    placeAt('token_guild_hall', Math.round(matW() / 2), Math.round(matH() / 2));
+    Atlas.createStarterRegion();
+    Cartography.clearStock();
+});
+
+afterEach(() => {
+    SaveManager.currentSlot = null;
+    GameLoop.stop();
+    Cartography.clearStock();
+});
+
+afterAll(() => {
+    vi.restoreAllMocks();
+    resetMatTuning();
+});
+
+describe('⭐ each view is one click', () => {
+    it('⭐ every button settles its Region for free and takes the guild there, with its ground stored', () => {
+        const home = Atlas.activeRegionId();
+        const guildSeed = GameState.state.atlas.seed;
+        for (const view of TERRAIN_DEV_REGIONS) {
+            const result = goToDevRegion(view.maps);
+            expect(result.success, view.label).toBe(true);
+            const here = Atlas.activeRegion();
+            expect(here.id).toBe(result.region.id);
+            expect(viewOf(here)).toBe(view);
+            expect(devMapsOf(here)).toEqual(view.maps);
+            const map = decodeTerrain(here.terrain);
+            expect(map, view.label).not.toBeNull();
+            const terrains = new Set([...map.cells].map(i => map.legend[i]));
+            if (view.maps.includes('coast')) expect(terrains.has('water'), view.label).toBe(true);
+            if (view.maps.includes('mountain')) expect(terrains.has('rock'), view.label).toBe(true);
+            if (view.maps.includes('forest')) expect(terrains.has('grass'), view.label).toBe(true);
+            // Free: nothing is left in the dev stock, and the Hall came along.
+            expect(Cartography.held(), view.label).toEqual([]);
+            expect(BoardState.tokens().some(t => MatCap.isGuildHall(t)), view.label).toBe(true);
+        }
+        // Only the last one is left beside the Starter Camp; the guild seed never moved.
+        expect(regionIds()).toEqual([home, Atlas.activeRegionId()].sort());
+        expect(GameState.state.atlas.seed).toBe(guildSeed);
+    });
+
+    it('the same button gives the same Region every time', () => {
+        const first = goToDevRegion(['forest', 'coast']).region;
+        backToStarterCamp();
+        const again = goToDevRegion(['forest', 'coast']).region;
+        expect(again.seed).toBe(first.seed);
+        expect(again.terrain).toEqual(first.terrain);
+        expect(first.seed === firstSeedOf(['forest', 'coast']) || first.seed === nextSeed(firstSeedOf(['forest', 'coast']))).toBe(true);
+    });
+
+    it('Reroll it: the same maps on the next seed, the old one removed; refused away from a dev Region', () => {
+        expect(rerollDevRegion()).toMatchObject({ success: false });
+        const first = goToDevRegion(['mountain', 'coast']).region;
+        const result = rerollDevRegion();
+        expect(result.success).toBe(true);
+        const here = Atlas.activeRegion();
+        expect(here.id).not.toBe(first.id);
+        expect(devMapsOf(here)).toEqual(['mountain', 'coast']);
+        expect(here.seed).not.toBe(first.seed);
+        expect(here.terrain).not.toEqual(first.terrain);
+        expect(Atlas.getRegion(first.id)).toBeNull();
+    });
+
+    it('Back to the Starter Camp: home, the dev Region removed; refused when already home', () => {
+        const home = Atlas.activeRegionId();
+        expect(backToStarterCamp()).toMatchObject({ success: false });
+        const dev = goToDevRegion(['forest']).region;
+        expect(backToStarterCamp().success).toBe(true);
+        expect(Atlas.activeRegionId()).toBe(home);
+        expect(Atlas.getRegion(dev.id)).toBeNull();
+        expect(regionIds()).toEqual([home]);
+    });
+
+    it('never removes a Region the player settled, or the Starter Camp', () => {
+        const home = Atlas.activeRegionId();
+        const players = Atlas.createRegion({ ingredients: ['map_forest'], seed: 9 }).region;
+        expect(isDevRegion(players)).toBe(false);
+        expect(isDevRegion(Atlas.getRegion(home))).toBe(false);
+        expect(Atlas.travel(players.id).success).toBe(true);
+        expect(goToDevRegion(['coast']).success).toBe(true);
+        expect(Atlas.getRegion(players.id)).not.toBeNull();
+        expect(backToStarterCamp().success).toBe(true);
+        expect(regionIds()).toEqual([home, players.id].sort());
+    });
+});
