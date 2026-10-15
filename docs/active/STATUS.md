@@ -31,10 +31,10 @@ October 2026.*
 | P2-7 sparse stack order (also the z clamp at 256) | engineer | `crunch/p2-7` → `main` | merged (engine bench same work; boxes rewritten per move 122 → 2 on cap128; on a 256 board every Token keeps its own z, so flags no longer cover lower Tokens: a look fix you will notice, no eye-check) | Wed | Wed |
 | P2-9 drags | engineer | `crunch/p2-9` → `main` | merged (engine bench same work; drag bench level with `main` at 1× and 4× once run order was swapped; pickup renders −20 to −38 %; drags feel the same by design) | Wed | Wed |
 | T-145 Tokens twitch every 20–30 s (P1) | engineer | `fix/t145-twitch` → `main` | merged: the guard per animation plus hidden name labels; Tokens pixel-identical while every animation plays; frame work level with `main` at 1× and 4× cap128, 4× in-budget share 66 → 76 %; cost 1× fps 164 → 150 on a 165 Hz screen (director's call, not visible). Possible later spike: heroes and rings off the shared repaint to win those frames back | Wed | Wed |
-| P2-10 minimise stops the frame loop (T-117) | builder | `crunch/p2-10` (`p2-10`) | building (started Wed 16:00) | Wed–Thu | |
-| Drawers close each other (T-152) | builder-lite | `fix/t152-drawers` (`t152`) | building (started Wed 16:30) | Wed–Thu | |
-| Hover outline + Guild Hall movable again (T-147, T-148) | builder | `fix/hover-and-hall` | queued, one eye-check | Thu | |
-| Overlapping speech bubbles (T-158) | builder | `fix/t158-bubbles` | queued | Thu | |
+| Drawing pauses while the app is minimised (P2-10, T-117) | builder | `crunch/p2-10` → `main` | merged (work check same; brief 60's P2 slices are all done). Owner check: minimise the real desktop app once and see the frame counter stop (the Rust side compiles but has not run there) | Wed | Wed |
+| Drawers close each other (T-152) | builder-lite | `fix/t152-drawers` → `main` | merged (one hook, one new test; ruled in words, no eye-check) | Wed | Wed |
+| Hover outline + Guild Hall movable again (T-147, T-148, with the outline-clipping fix T-146) | builder | `fix/hover-and-hall` (`hover`) | building (started Wed 17:00); one eye-check | Wed–Thu | |
+| Overlapping speech bubbles (T-158) | builder | `fix/t158-bubbles` (`t158`) | building (started Wed 17:40) | Wed–Thu | |
 | Gear alert stops pulsing (T-153) | builder-lite | `fix/t153-gear-alert` | queued (follows the pixel-shadow ruling T-013) | Thu–Fri | |
 | Safety net for CMS renames (T-182) | builder-lite | `fix/t182-id-guard` → `main` | merged (250 ids checked; T-184 filed for three dead ids on a dev-panel button) | Wed | Wed |
 | Brief 80 T0 terrain plan (read-only; owner's spritesheets are ready) | engineer | `crunch/terrain` | queued | Fri | |
@@ -64,6 +64,7 @@ it belongs.*
 1. ~~P2-3, P2-6~~ done 13:00–13:05; `main` control run 13:05 shows the same 1.3–1.5× timing against the Oct-7 baseline (machine load: 13 Chrome, 15 Node processes). **Retake `bench/baseline.json` on a quiet machine** (T-111) before timing verdicts mean anything.
 2. ~~P2-5 layer count~~ done 13:45–13:51 (56 → 45).
 3. Wed 13:00: `crunch/p2-7` engine bench `--compare`; `crunch/p2-9` engine bench `--compare`; `bench:drag --board=cap128` on `main` then on `crunch/p2-9` (plain and `--cpu=4`); `bench:draw --ab=.claude/worktrees/p27a --only=cap128,cap256` for P2-7.
+5. Thu 01:00 (timer armed): engine work checks for drawing-pause, the hover job and the bubbles job, whichever is committed by then.
 4. ~~P2-7, P2-9 engine and drag benches~~ done 13:00–14:14. ~~T-145 engine bench and draw A/B~~ done 14:17–14:35 (engine same work; draw A/B: too costly, sent back). The engineer benches alone until it reports. Still owed to the cost log: P2-7's draw A/B against its snapshot `p27a` (needs the snapshot's perf build served on a port; `--ab` takes a URL).
 4. ~~P2-8, A8 engine benches~~ done 13:13–13:18, same work both. Still for P2-8: `bench:draw --compare` on `main` for the cost-log line.
 5. `main` after the Atlas batch: engine bench `--compare` (expect same work) and the drag bench baseline (`npm run bench:drag`, 5 kinds, A3b) for PERFORMANCE.md.
@@ -104,3 +105,14 @@ Friday. Next: P2-7 and P2-9 started on two engineers; T-145 when a slot frees;
 benches at 13:00. Owner: run /planning to brief this week's concept docs into
 the queue table; nothing else needed. Budget: three phases planned for today.
 Blockers: none.
+
+**Wed 2026-10-14, evening.** Where we are: merged today the stack order fix,
+the drag redraw savings, the twitch fix (Tokens stay crisp), the cartographer's
+tutorial, the CMS-rename safety net and drawers that close each other; suite
+4772 green. Drawing-pause merged at 16:30, which closes brief 60's P2 slices.
+Building overnight: the hover outline with the Guild Hall movable again (one
+eye-check), and overlapping speech bubbles. Next: the gear alert stops
+pulsing, then Friday's terrain plan. Owner: nothing needed tonight; when you
+next run the desktop app, minimise it once and see the frame counter stop.
+Blockers: none. Process: no daily phase count (parallelism is the limit),
+benches by purpose, the director reports in plain words.

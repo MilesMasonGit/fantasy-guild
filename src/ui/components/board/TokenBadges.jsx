@@ -126,11 +126,30 @@ export const TokenNameBadge = memo(function TokenNameBadge({ name, isDragging, i
  * StationGearBadge: the recipe picker's handle, in the middle row of a Token that has something
  * to choose: a Foundation, or a station whose pool is not empty (`centreAlert.gearStateOf`
  * decides; `TokenBubbles` decides when it shows).
- * While nothing is chosen it **pulses gently** and that is all, with no red alert: the Token is
+ * While nothing is chosen it wears a gold one-art-pixel outline stepping between two golds, and that is all, with no red alert: the Token is
  * waiting, not broken, and heroes pass it over until the player picks. Once a recipe is chosen
  * it is still, so the player can change it.
  * Hovering previews the selected recipe: outputs first, then what it consumes.
  */
+// One art pixel of the 32px gear sprite, drawn at 24px in its 28px button (2px inset).
+const GEAR_INSET = 2;
+const GEAR_ART_PX = 24 / 32;
+const GEAR_OUTLINE_OFFSETS = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+const GEAR_SRC = '/assets/ui/ui_gear.png';
+
+/** The gear's shape filled with the alert colour, one art pixel off in one direction. */
+const gearOutlineStyle = (dx, dy) => ({
+    left: `${GEAR_INSET + dx * GEAR_ART_PX}px`,
+    top: `${GEAR_INSET + dy * GEAR_ART_PX}px`,
+    maskImage: `url("${GEAR_SRC}")`,
+    WebkitMaskImage: `url("${GEAR_SRC}")`,
+    maskSize: '100% 100%',
+    WebkitMaskSize: '100% 100%',
+    maskRepeat: 'no-repeat',
+    WebkitMaskRepeat: 'no-repeat',
+    imageRendering: 'pixelated'
+});
+
 export const StationGearBadge = ({ isDragging, recipe, pulsing = false, isFoundation = false, onClick }) => {
     if (isDragging) return null;
 
@@ -151,14 +170,23 @@ export const StationGearBadge = ({ isDragging, recipe, pulsing = false, isFounda
                 className={cn(
                     'w-7 h-7 flex items-center justify-center p-0 cursor-pointer select-none',
                     'filter drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)]',
-                    'hover:scale-110 active:scale-95 transition-transform duration-150',
-                    pulsing && 'gi-gear-pulse'
+                    !pulsing && 'hover:scale-110 active:scale-95 transition-transform duration-150',
+                    pulsing && 'relative'
                 )}
             >
+                {pulsing && GEAR_OUTLINE_OFFSETS.map(([dx, dy]) => (
+                    <span
+                        key={`${dx}${dy}`}
+                        data-gear-outline=""
+                        aria-hidden="true"
+                        className="gi-gear-alert absolute w-6 h-6 pointer-events-none"
+                        style={gearOutlineStyle(dx, dy)}
+                    />
+                ))}
                 <img
-                    src="/assets/ui/ui_gear.png"
+                    src={GEAR_SRC}
                     alt={label}
-                    className="w-6 h-6 object-contain pointer-events-none"
+                    className="relative w-6 h-6 object-contain pointer-events-none"
                     style={{ imageRendering: 'pixelated' }}
                 />
             </button>

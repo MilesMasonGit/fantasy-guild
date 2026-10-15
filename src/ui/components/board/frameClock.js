@@ -7,8 +7,11 @@
  * - {@link onDue}: each subscriber at times of its own, every one due by a frame called in that
  * frame. The hero and enemy sprites step here.
  * Each runs only while something is subscribed: the last unsubscribe cancels what is pending,
- * and the next subscribe starts it again.
+ * and the next subscribe starts it again. While drawing is paused ({@link setDrawingPaused}: a
+ * hidden or minimised window) none of them asks for a frame.
  */
+
+let paused = false;
 
 const subs = new Set();
 let raf = null;
@@ -19,7 +22,7 @@ function run(now) {
     for (const fn of [...subs]) {
         if (subs.has(fn)) fn(now);
     }
-    if (subs.size && raf === null) raf = requestAnimationFrame(run);
+    if (subs.size && raf === null && !paused) raf = requestAnimationFrame(run);
 }
 
 /**
@@ -31,7 +34,7 @@ function run(now) {
  */
 export function onFrame(fn) {
     subs.add(fn);
-    if (raf === null) raf = requestAnimationFrame(run);
+    if (raf === null && !paused) raf = requestAnimationFrame(run);
     return () => {
         subs.delete(fn);
         if (!subs.size && raf !== null) {
@@ -55,7 +58,7 @@ let stepRaf = null;
  * still draws no frame for the rings.
  */
 function scheduleStep() {
-    if (stepTimer !== null || stepRaf !== null || !stepSubs.size) return;
+    if (paused || stepTimer !== null || stepRaf !== null || !stepSubs.size) return;
     const wait = STEP_MS - (performance.now() % STEP_MS);
     stepTimer = setTimeout(() => {
         stepTimer = null;
@@ -110,7 +113,7 @@ let dueRaf = null;
  * frames, holds one callback, not a queue of them.
  */
 function scheduleDue() {
-    if (dueRaf !== null) return;
+    if (paused || dueRaf !== null) return;
     let at = Infinity;
     for (const t of dueSubs.values()) if (t < at) at = t;
     if (dueTimer !== null) {
@@ -172,4 +175,38 @@ export function onDue(fn, dueAt) {
         dueTimerAt = Infinity;
         dueRaf = null;
     };
+}
+
+
+/**
+ * Stop every clock asking for frames (`true`), or start them again (`false`). Paused, whatever
+ * is pending is cancelled and nothing is scheduled; subscribing and unsubscribing still work.
+ * Resumed, each clock asks for one frame: {@link onFrame}'s subscribers run in it, a step falls
+ * on the next {@link STEP_MS} as usual, and every {@link onDue} subscriber due by then is called
+ * once in it, so the window coming back draws one frame, not the ones it missed.
+ * ⚠️ Only drawing: the game's tick (`GameLoop`) is a timer of its own and keeps running.
+ * @param {boolean} on
+ */
+export function setDrawingPaused(on) {
+    on = !!on;
+    if (on === paused) return;
+    paused = on;
+    if (paused) {
+        if (raf !== null) cancelAnimationFrame(raf);
+        if (stepTimer !== null) clearTimeout(stepTimer);
+        if (stepRaf !== null) cancelAnimationFrame(stepRaf);
+        if (dueTimer !== null) clearTimeout(dueTimer);
+        if (dueRaf !== null) cancelAnimationFrame(dueRaf);
+        raf = stepTimer = stepRaf = dueTimer = dueRaf = null;
+        dueTimerAt = Infinity;
+        return;
+    }
+    if (subs.size && raf === null) raf = requestAnimationFrame(run);
+    scheduleStep();
+    scheduleDue();
+}
+
+/** Whether drawing is paused ({@link setDrawingPaused}). */
+export function isDrawingPaused() {
+    return paused;
 }

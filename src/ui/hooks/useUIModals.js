@@ -88,9 +88,6 @@ export const useUIModals = (engine) => {
     // (`standingPromotionOffer`) rather than lost with the tab.
     const [promotionOffer, setPromotionOffer] = useState(null);
 
-    // The work rules drawer, and the hero whose row it opened lit (the hero panel's link).
-    const [flagRules, setFlagRules] = useState({ isOpen: false, heroId: null });
-
     const [inspectByPane, setInspectByPane] = useState({
         bank: null,
         shop: null,
@@ -100,6 +97,23 @@ export const useUIModals = (engine) => {
 
     const [fullscreenView, setFullscreenView] = useState(null);
 
+    // The work rules drawer, and the hero whose row it opened lit (the hero panel's link).
+    const [flagRules, setFlagRules] = useState({ isOpen: false, heroId: null });
+
+    // The Bank, Shop and Work Rules drawers are one at a time: opening one closes the others.
+    const closeBankPane = useCallback(() => setDrawerState({ panes: [], filters: {}, maximized: null }), []);
+    const closeRules = useCallback(() => setFlagRules({ isOpen: false, heroId: null }), []);
+    const openRules = useCallback((heroId) => {
+        closeBankPane();
+        setIsShopOpen(false);
+        setFlagRules({ isOpen: true, heroId: heroId || null });
+    }, [closeBankPane]);
+    const openShop = useCallback(() => {
+        closeBankPane();
+        closeRules();
+        setIsShopOpen(true);
+    }, [closeBankPane, closeRules]);
+
     // Contextual auto-open (e.g. a banner's open-the-drawer prompt). Independent of the nav
     // bar's exclusivity rule: it only adds a pane, never closes anything else.
     // ⚠️ One pane at a time: the drawer has a fixed width, and splitting it leaves each pane
@@ -107,10 +121,12 @@ export const useUIModals = (engine) => {
     // than one.
     const openDrawerTab = useCallback((tab, filter = null) => {
         if (tab === SHOP_TARGET) {
-            setIsShopOpen(true);
+            openShop();
             EventBus.publish(UI_EVENTS.UI_MODAL_OPENED, { modalId: tab });
             return;
         }
+        closeRules();
+        setIsShopOpen(false);
         setDrawerState(s => ({
             ...s,
             panes: [tab],
@@ -120,7 +136,7 @@ export const useUIModals = (engine) => {
             maximized: null
         }));
         EventBus.publish(UI_EVENTS.UI_MODAL_OPENED, { modalId: tab });
-    }, []);
+    }, [openShop, closeRules]);
 
     // The nav bubbles share an only-one-open rule: clicking a bubble closes whatever any other
     // has open, and clicking the active one closes it. Contextual auto-opens (`openDrawerTab`)
@@ -152,6 +168,7 @@ export const useUIModals = (engine) => {
         setDrawerState({ panes: [], filters: {}, maximized: null });
         setIsSettingsOpen(false);
         setIsShopOpen(false);
+        if (DRAWER_TARGETS.has(target) || target === SHOP_TARGET) closeRules();
         requestAnimationFrame(() => {
             setFullscreenView(FULLSCREEN_TARGETS.has(target) ? target : null);
             setDrawerState(
@@ -163,7 +180,7 @@ export const useUIModals = (engine) => {
             setIsShopOpen(target === SHOP_TARGET);
             EventBus.publish(UI_EVENTS.UI_MODAL_OPENED, { modalId: target });
         });
-    }, [isNavActive]);
+    }, [isNavActive, closeRules]);
 
     const fullscreenOpen = useCallback((view) => setFullscreenView(view), []);
     const fullscreenToggle = useCallback((view) => setFullscreenView(v => (v === view ? null : view)), []);
@@ -244,7 +261,7 @@ export const useUIModals = (engine) => {
         },
         shop: {
             isOpen: isShopOpen,
-            open: useCallback(() => setIsShopOpen(true), []),
+            open: openShop,
             close: useCallback(() => setIsShopOpen(false), [])
         },
         dock: {
@@ -262,9 +279,12 @@ export const useUIModals = (engine) => {
         flagRules: {
             isOpen: flagRules.isOpen,
             heroId: flagRules.heroId,
-            open: useCallback((heroId) => setFlagRules({ isOpen: true, heroId: heroId || null }), []),
-            toggle: useCallback(() => setFlagRules(s => ({ isOpen: !s.isOpen, heroId: null })), []),
-            close: useCallback(() => setFlagRules({ isOpen: false, heroId: null }), [])
+            open: openRules,
+            toggle: useCallback(() => {
+                if (flagRules.isOpen) closeRules();
+                else openRules(null);
+            }, [flagRules.isOpen, closeRules, openRules]),
+            close: closeRules
         },
         inspect,
         nav: {
@@ -284,7 +304,7 @@ export const useUIModals = (engine) => {
                 openDrawerTab(tab, data?.filter);
             }, UI_LISTENER),
             engine.EventBus.subscribe(UI_EVENTS.UI_OPEN_FLAG_RULES, (data) => {
-                setFlagRules({ isOpen: true, heroId: data?.heroId || null });
+                openRules(data?.heroId);
             }, UI_LISTENER),
             // Nothing has happened to the hero yet: the tile holds the offer open and this
             // only decides to draw it.
@@ -314,7 +334,7 @@ export const useUIModals = (engine) => {
             clearTimeout(initial);
             subs.forEach(unsub => unsub());
         };
-    }, [engine]);
+    }, [engine, openDrawerTab, openRules]);
 
     const isAnyModalOpen = isSettingsOpen ||
                            fullscreenView !== null;

@@ -207,12 +207,12 @@ describe('the badges on their own', () => {
         expect(gear.getAttribute('data-station-gear')).toBe('unset');
         expect(gear.querySelector('img').getAttribute('src')).toBe('/assets/ui/ui_gear.png');
         expect(gear.querySelector('img').style.imageRendering).toBe('pixelated');
-        expect(gear.querySelector('button').className).toContain('gi-gear-pulse');
+        expect(gear.querySelectorAll('.gi-gear-alert').length).toBe(4);
         cleanup();
 
         const set = mount(h(StationGearBadge, { isDragging: false, recipe: { id: 'r', name: 'R' }, pulsing: false, onClick: () => {} })).container;
         expect(set.querySelector('[data-station-gear]').getAttribute('data-station-gear')).toBe('set');
-        expect(set.querySelector('button').className).not.toContain('gi-gear-pulse');
+        expect(set.querySelectorAll('.gi-gear-alert').length).toBe(0);
     });
 
     it('disallow badge renders, and hides while dragging; the corner count badges are gone (B1.3)', () => {
