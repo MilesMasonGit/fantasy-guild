@@ -30,8 +30,9 @@ The per-frame cost below is reasoned, and T2 measures it.
 ## Locked decisions
 
 Settled by the owner's answers plus the evidence in A and B; slices build on
-these without asking again. Where an owner question (§D) could change one, it
-says so.
+these without asking again. **The owner answered §D on 2026-10-14: TD-1, TD-2,
+TD-3 and TD-5 are settled as A, so T1 and T3 build on them; TD-4 was struck
+(there is no clearing, decision 4).**
 
 1. **The ground is the Atlas's cell map.** One terrain per 32-unit cell
    (`TERRAIN_CELL`, `TerrainMap.js:19`), 55 × 36 cells on the shipped mat,
@@ -55,11 +56,10 @@ says so.
    **no save change and no migration**. Every Region settled since A4 already
    carries its map (A4 wrote the grid the day settle landed, `aabf2927`), and
    older saves are refused anyway (Atlas D-5 A).
-4. **The clearing round the Hall is a look, not a terrain** (L-9 A): heavy
-   wear (earth through grass, gravel through rock) fading out over the Hall's
-   clearing radius (224 units, `Layout.js:47`) at the mat's centre, where every
-   Region's Hall is generated. Cells keep their terrain, so placement is not
-   affected. Whether it follows a Hall the player moves is TD-4.
+4. **No clearing: the ground is static and the Hall leaves no mark** (owner,
+   2026-10-14, striking the research doc's L-9 answer). The ground round the
+   Hall is whatever its cells are, with the same wear as anywhere else. A Hall
+   the player moves changes nothing in the ground.
 5. **One look per terrain per Region**, from the biome that owns that terrain
    (`region.ground.terrains`, `Budget.js:179-186`): forest grass, mountain
    rock, coast sand, the sea; grass with no owning biome is meadow. Five
@@ -157,12 +157,12 @@ props 0.2 ms.
 | Wiggly edges (`edgeProfile`, `edgeStrips`) | `TerrainLattice.js:337-428` | Yes: works on any grid of ground ids; the owner's September tuning | part of the 4.8 ms | **Keep**, over `cols × rows` cells of 16 pixels |
 | Pixel map, distances, beach rim (`resolveArtPixels`, `distanceFromSeeds`, `applyFringes`) | `TerrainLattice.js:447-650` | Yes; square `size` everywhere becomes width × height | 4.8 ms (+ the rim inside bands' 13.9) | **Keep**, generalised |
 | Shallows and wet sand | `TerrainBands.js` (19 tests with the beach) | Yes: the Coast's waterline | 13.9 ms on a full-width shore | **Keep** |
-| Wear patches | `TerrainPatches.js` (12 tests) | Yes: earth through grass, gravel through rock; the clearing is a stronger wear near the Hall | 26.2 ms first build per seed | **Keep**, with the noise taken from cached corner values (four hashes a pixel today) |
-| Tones (fades between two looks on one ground) | `TerrainTones.js` (11 tests) | Not needed in v1: one look per terrain per Region (decision 5), so two looks on one ground never meet; the forest's colour is its own sheet | 14.6 ms | **Goes** with its tests, unless TD-3 is B (git keeps it) |
+| Wear patches | `TerrainPatches.js` (12 tests) | Yes: earth through grass, as the dormant design had it (meadow 18 %, forest 12 %, `terrainRegistry.js:262-280`); gravel through rock is new, from the research art list (the owner drew `ter_gravel` for it), not from the dormant code | 26.2 ms first build per seed | **Keep**, with the noise taken from cached corner values (four hashes a pixel today). None of this wear existed for the clearing; only the tile-era `hamlet` (grass with 45 % earth, `:306-309`), which the research doc proposed as the clearing, was, and it goes with the other tile-era terrains |
+| Tones (fades between two looks on one ground) | `TerrainTones.js` (11 tests) | Not needed in v1: one look per terrain per Region (decision 5), so two looks on one ground never meet; the forest's colour is its own sheet | 14.6 ms | **Goes** with its tests (TD-3 A; git keeps it) |
 | One-buffer compose, layering rule (tone < band < wear) | `TerrainSurface.js` (9 tests) | Yes | small | **Keep**, minus tones and per-cell variants |
-| Scatter placement | `TerrainProps.js` (17 tests) | Yes: seeded, scattered, back to front, foot-on-its-ground check | 0.2 ms | **Keep**; props become cells of the 4 × 4 sheets, density per look, fewer in the clearing |
+| Scatter placement | `TerrainProps.js` (17 tests) | Yes: seeded, scattered, back to front, foot-on-its-ground check | 0.2 ms | **Keep**; props become cells of the 4 × 4 sheets, density per look |
 | Vocabulary (`SUBSTRATES`, `TERRAIN_TYPES`, art-set switch, variant counts, tile-era terrains `hills`, `farmland`, `hamlet`, `diggings`, `desert`) | `terrainRegistry.js` (11 tests) | Partly | — | **Rewritten** as the five looks over the eight sheets; art-set switch, variants and tile-era terrains go |
-| Live tuning | `playmatTuning.js`, `PlaymatTuner.jsx` (9 tests) | Yes: the eye-check's tool | — | **Keep**: drop "Tile bleed", "Bleed smoothness" (tile claims) and the two tone sliders; add mute brightness and saturation, clearing size and wear; a "Copy values" button so the owner can paste a tuned look into chat |
+| Live tuning | `playmatTuning.js`, `PlaymatTuner.jsx` (9 tests) | Yes: the eye-check's tool | — | **Keep**: drop "Tile bleed", "Bleed smoothness" (tile claims) and the two tone sliders; add mute brightness and saturation; a "Copy values" button so the owner can paste a tuned look into chat |
 | Canvas renderer | `TerrainCanvas.jsx` | Its idea (one buffer, one blit, sheets decoded once) yes; its geometry no | — | **Rewritten** (decisions 6–8): screen-pixel grid, CPU canvas, props in the same buffer, no accelerated context, no centred legacy blit |
 | Master switch and guards | `terrainRegistry.js:49`, `TerrainOff.test.js`, `MatBoard.jsx:240-243`, `:362`, `ReactRoot.jsx:434-435` | — | — | **Go** in T2 (decision 17) |
 | The board's terrain selector | `MatBoard.jsx:240-243` (`state.board.terrain`) | No: terrain lives on the Region | — | **Goes**; the mat reads the active Region's ground |
@@ -181,14 +181,13 @@ props 0.2 ms.
   rock, 259 sand, 308 water (16 %). Layouts take 2–8 ms.
 - **The reader** (T1): `regionGround(region, mat)` decodes the stored map once
   (cached on the map object, so a load or a travel gets a fresh one) and
-  returns its cells, the look of each terrain (decision 5) and the clearing's
-  centre; `terrain: null` gives the meadow (decision 3). A device whose Mat
+  returns its cells and the look of each terrain (decision 5); `terrain: null`
+  gives the meadow (decision 3). A device whose Mat
   Tuner made the mat bigger or smaller than the shipped one reads clamped cells
   (`cellIndex` already clamps, `TerrainMap.js:37-41`) until T-097 fixes the size.
 - **The ground plan** (T1): from the cells and the Region's seed, one value per
   2-unit pixel: the ground (after the wiggly edges and the beach rim), its band
-  (shallows, wet sand), its wear (patches, plus the clearing), and the scatter
-  list. Pure; tests pin it.
+  (shallows, wet sand), its wear (patches), and the scatter list. Pure; tests pin it.
 
 ### B3. Drawing, and what it costs
 
@@ -236,7 +235,7 @@ decoded once (128 KB).
 
 - **The field**: `standsOn`, a list on the Token type, authored in the CMS's
   Token editor as **"Stands on"** (chips; none ticked = anywhere dry). Values
-  per TD-1 (recommended: `water`, `shore`, `grass`, `rock`, `sand`). A Token
+  per TD-1 A: `water`, `shore`, `grass`, `rock`, `sand`. A Token
   passes if the cell under its centre is any one it lists; `shore` is a dry
   cell touching water (8 neighbours), worked out once per Region.
 - **The rule** (T3): `MatPlacement`'s fourth test, after the mat edge and
@@ -252,7 +251,8 @@ decoded once (128 KB).
   stays water.
 - **Shown while placing** (T4): with a Token in the hand, the cells it may stand
   on light up and the others dim, drawn once at pickup under the Tokens, beside
-  the landing ring; when it shows is TD-5.
+  the landing ring; only when the Token in the hand cannot stand everywhere
+  here (TD-5 A).
 
 ---
 
@@ -266,9 +266,9 @@ subagents stop at tests, cycles and build.
 - **Files**: `src/systems/board/TerrainLattice.js` (keep `hash01`, the edges, the
   pixel map, distances and the beach rim over `cols × rows` cells of 16
   pixels; delete the tile claims and `LEGACY_*`), `TerrainBands.js`,
-  `TerrainPatches.js` (noise from cached corners; the clearing's wear),
+  `TerrainPatches.js` (noise from cached corners),
   `TerrainSurface.js` (no tones, no variants), `TerrainProps.js` (sheet cells,
-  density per look, thinner in the clearing); delete `TerrainTones.js` (TD-3 A);
+  density per look); delete `TerrainTones.js` (TD-3 A);
   `src/config/registries/terrainRegistry.js` rewritten as the looks and the
   eight sheets (keep `TERRAIN_ENABLED` until T2); `src/config/playmatTuning.js`
   (sliders per B; widths in mat units); new `src/systems/atlas/regionGround.js`
@@ -279,8 +279,8 @@ subagents stop at tests, cycles and build.
   (the junction contract, re-based); water never meets grass or rock without
   the beach rim; shallows only on water beside land, wet sand only on sand
   beside water; wear covers what its coverage says (calibrated) and never
-  crosses onto the sand; the clearing is worn at the centre and plain past its
-  radius; no prop stands with its foot off its own ground or on water; the
+  crosses onto the sand; the ground round the Hall is plain ground (no
+  clearing); no prop stands with its foot off its own ground or on water; the
   meadow default for `terrain: null`; a hybrid's grass takes the forest look
   and its rock the mountain look; a 55 × 36 map decodes back to what
   `encodeTerrain` wrote. The existing suites are rewritten for the new shapes
@@ -289,8 +289,8 @@ subagents stop at tests, cycles and build.
 - **Done when**: tests green; the plan of the Forest + Coast dev Region builds
   in ≤ 60 ms in Node (a printed figure in the report).
 - **Bench**: none (nothing at runtime calls it yet). **Eye-check**: no.
-- **Parallel**: with T3 (no shared file). **Waits for**: nothing. TD-2 changes
-  only table values; TD-3 B would keep `TerrainTones.js` instead of deleting it.
+- **Parallel**: with T3 (no shared file). **Waits for**: nothing (TD-2 and
+  TD-3 answered A).
 
 ### T2 — The ground on the mat (engineer)
 
@@ -316,8 +316,8 @@ subagents stop at tests, cycles and build.
   a travel rebuilds once; a fit change runs one screen pass and no plan
   rebuild; the switch off mounts nothing; pixels outside the mat's rounded
   corners are clear.
-- **Done when** (dev build, in the game): the Starter Camp shows meadow with
-  its clearing; each dev Region shows its biome's ground, the hybrids blend;
+- **Done when** (dev build, in the game): the Starter Camp shows meadow; each
+  dev Region shows its biome's ground, the hybrids blend;
   at two window sizes a zoomed screenshot shows ground pixels the size of
   Token pixels; no console error.
 - **Bench** (director, a window): `bench:crisp` passes; `bench:profile
@@ -350,7 +350,7 @@ subagents stop at tests, cycles and build.
 - **Bench**: `npm run bench -- --compare` exit 0, same work (decision 15); S7
   (the waiting room, placement-heavy) timing within noise.
 - **Eye-check**: no (nothing shows until T4). **Parallel**: with T1 and T2.
-  **Waits for**: TD-1 (built with A).
+  **Waits for**: nothing (TD-1 answered A).
 
 ### T4 — "Stands on" in the CMS, and the grid while placing (builder)
 
@@ -370,14 +370,13 @@ subagents stop at tests, cycles and build.
   an ordinary Token on the meadow shows what TD-5 says.
 - **Bench**: `bench:drag --board=cap128` (plain, and `--cpu=4`): pickup's longest
   frame within noise of `main`. **Eye-check**: **yes, TM2**, with the owner's
-  first "Stands on" in the CMS. **Waits for**: T2, T3, TD-1, TD-5. An engineer
+  first "Stands on" in the CMS. **Waits for**: T2, T3 (TD-1 and TD-5 answered A). An engineer
   takes it instead if the pickup misses.
 
 ### T5 — The look's fix round (builder)
 
 The owner's TM1 and TM2 verdicts: tuned numbers (pasted from the Tuner's Copy
-values) into the look table, TD-2, TD-3 and TD-4 if answered other than
-recommended, scatter density, beach and band widths. On the T2/T4 branch before
+values) into the look table, scatter density, beach and band widths. On the T2/T4 branch before
 it merges (TESTING item 6). **Eye-check**: yes, a short re-look.
 
 ### T6 — The plan in a worker (engineer; only if T2 misses its build bars)
@@ -397,6 +396,18 @@ the stale comments in A-10, tickets for A-11 and the Token terrain stamp (B).
 ## D. Owner questions (one batch)
 
 Only what the plan cannot settle. Recommendation first.
+
+### Owner answers (chat, 2026-10-14)
+
+| Q | Answer | Date |
+|---|---|---|
+| TD-1 | **A**: Water, Shore, Grass, Rock, Sand; nothing ticked means anywhere dry. | 2026-10-14 |
+| TD-2 | **A**: `ter_grass` is meadow, `ter_grassb` forest ground, `ter_water` the sea; `ter_waterb` waits. | 2026-10-14 |
+| TD-3 | **A**: one forest look per Region, whatever trees grow on it. | 2026-10-14 |
+| TD-4 | **Struck, neither option**: "No worn clearing. I've never suggested there was. The terrain is static." There is no clearing at all; the research doc's L-9 answer was recorded wrongly (amended there). | 2026-10-14 |
+| TD-5 | **A**: the grid shows only when the Token in the hand cannot stand everywhere here. | 2026-10-14 |
+
+The questions as asked, kept for the record:
 
 **TD-1. Which grounds can a Token ask for in "Stands on"?**
 - **A (recommended)**: **Water, Shore, Grass, Rock, Sand.** Shore means dry
@@ -455,7 +466,7 @@ darker green; `ter_waterb` is your water in a bright blue.)
    (forest grass, mountain rock, coast sand with 30 % water).
 
 **Art** (none blocks the build):
-1. Answer TD-2.
+1. ~~Answer TD-2.~~ Answered A, 2026-10-14.
 2. Optional: an alternate sheet per ground (used one per Region), only if the
    repeat shows at the eye-check.
 3. Optional scatter still missing from the research list: rock cracks,
@@ -476,16 +487,15 @@ darker green; `ter_waterb` is your water in a bright blue.)
 - **Then T2** on `crunch/terrain` after T1; it is the first slice with a look,
   so it waits for TM1 before merging. T1 can merge on the gate on its own
   (nothing calls it) or ride with T2.
-- **Then T4** after T2 and T3 and the answers to TD-1 and TD-5; TM2.
+- **Then T4** after T2 and T3 (TD-1 and TD-5 are answered); TM2.
 - **T5** inside the TM1/TM2 fix rounds; **T6** only on a missed bar.
 
 ### Eye-check milestones
 
-- **TM1** (T2): the Starter Camp's meadow and clearing (the owner's slot), then
+- **TM1** (T2): the Starter Camp's meadow (the owner's slot), then
   the six dev Regions from the Terrain dev section, the Tuner open beside them;
   checks: the mute, ground pixel size against the Tokens, edges, the beach,
-  shallows and wet sand, wear, scatter, the corners, the repeat; TD-2 to TD-4
-  if still open.
+  shallows and wet sand, wear, scatter, the corners, the repeat.
 - **TM2** (T4): the three dev test Tokens dragged over a Coast hybrid; the grid;
   a refused drop's words; the owner ticks a first "Stands on" and Syncs.
 
@@ -494,7 +504,7 @@ darker green; `ter_waterb` is your water in a bright blue.)
 1. **Compositing.** An accelerated canvas becomes a layer and drags every Token
    above it onto layers (the T-145 fault, more Layerize). Guard: the CPU
    context, the `MatPixelLayers` tests, `bench:profile`'s layer count, `bench:crisp`.
-2. **The one-off build** at 4× (travel, resize, a Hall move under TD-4 B).
+2. **The one-off build** at 4× (travel, resize).
    Bars in B3; T6 if missed.
 3. **Uneven edge steps**: the plan is at 2 units a pixel and resampled to the
    screen grid, so where a screen ground pixel is smaller than 2 units (fits
