@@ -34,7 +34,7 @@ October 2026.*
 | Drawing pauses while the app is minimised (P2-10, T-117) | builder | `crunch/p2-10` → `main` | merged (work check same; brief 60's P2 slices are all done). Owner check: minimise the real desktop app once and see the frame counter stop (the Rust side compiles but has not run there) | Wed | Wed |
 | Drawers close each other (T-152) | builder-lite | `fix/t152-drawers` → `main` | merged (one hook, one new test; ruled in words, no eye-check) | Wed | Wed |
 | Hover outline + Guild Hall movable again (T-147, T-148, with the outline-clipping fix T-146) | builder | `fix/hover-and-hall` → `main` | merged (owner eye-check all fine; [archived file](../archive/eyecheck/2026-10-14_hover-hall-gear.md)) | Wed | Wed |
-| Overlapping speech bubbles (T-158) | builder | `fix/t158-bubbles` (`t158`) | ready; director gate running; the callout now sits above the working hero's speech in one column; work check in the 01:00 window | Wed–Thu | |
+| Overlapping speech bubbles (T-158) | builder | `fix/t158-bubbles` → `main` | merged Thu 01:10 (night work check same work): a Token's pop-up callout now sits directly above its working hero's speech in one column instead of covering it | Wed | Thu |
 | Gear alert stops pulsing (T-153) | builder-lite | `fix/t153-gear-alert` → `main` (via the hover branch) | merged (owner eye-check all fine) | Wed | Wed |
 | Safety net for CMS renames (T-182) | builder-lite | `fix/t182-id-guard` → `main` | merged (250 ids checked; T-184 filed for three dead ids on a dev-panel button) | Wed | Wed |
 | Terrain plan (brief 80 T0) | engineer | `crunch/terrain` → `main` | done: [terrain_roadmap.md](terrain_roadmap.md), the owner answered all five questions the same evening (no clearing, the ground is static); slices T1 ground plan and T3 placement can start in parallel, T2 the drawn ground after T1, T4 the CMS field and grid after T2 and T3 | Wed | Wed |
@@ -64,7 +64,7 @@ it belongs.*
 1. ~~P2-3, P2-6~~ done 13:00–13:05; `main` control run 13:05 shows the same 1.3–1.5× timing against the Oct-7 baseline (machine load: 13 Chrome, 15 Node processes). **Retake `bench/baseline.json` on a quiet machine** (T-111) before timing verdicts mean anything.
 2. ~~P2-5 layer count~~ done 13:45–13:51 (56 → 45).
 3. Wed 13:00: `crunch/p2-7` engine bench `--compare`; `crunch/p2-9` engine bench `--compare`; `bench:drag --board=cap128` on `main` then on `crunch/p2-9` (plain and `--cpu=4`); `bench:draw --ab=.claude/worktrees/p27a --only=cap128,cap256` for P2-7.
-5. Thu 01:00 (timer armed): engine work checks for drawing-pause, the hover job and the bubbles job, whichever is committed by then.
+5. ~~Thu 01:00 work checks~~ done: drawing-pause, hover, bubbles all same work; on the quiet machine the engine run reads 1.06× the Oct-7 baseline (yesterday's 1.3× was load).
 4. ~~P2-7, P2-9 engine and drag benches~~ done 13:00–14:14. ~~T-145 engine bench and draw A/B~~ done 14:17–14:35 (engine same work; draw A/B: too costly, sent back). The engineer benches alone until it reports. Still owed to the cost log: P2-7's draw A/B against its snapshot `p27a` (needs the snapshot's perf build served on a port; `--ab` takes a URL).
 4. ~~P2-8, A8 engine benches~~ done 13:13–13:18, same work both. Still for P2-8: `bench:draw --compare` on `main` for the cost-log line.
 5. `main` after the Atlas batch: engine bench `--compare` (expect same work) and the drag bench baseline (`npm run bench:drag`, 5 kinds, A3b) for PERFORMANCE.md.
