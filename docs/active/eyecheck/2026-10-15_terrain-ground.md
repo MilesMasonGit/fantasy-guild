@@ -1,4 +1,4 @@
-# Eye-check: the ground on the mat (terrain TM1)
+# Eye-check: the ground on the mat, and placing by terrain (terrain TM1 + TM2)
 
 *Owner: play on the branch, fill in each Verdict line, hand the file back or
 answer in chat. This is the first look at the terrain; the slider values you
@@ -7,7 +7,8 @@ Fixes go on the branch, it merges, and this file moves to
 `docs/archive/eyecheck/` with your verdicts. Every check is a click.*
 
 **Branch:** `fix/terrain-tm1` (= `main` + the ground plan, placement by
-terrain, and the drawn ground). The director switches your folder to it and
+terrain, the drawn ground, the CMS "Stands on" field and the grid while
+placing). The director switches your folder to it and
 starts the server before telling you; the address is filled in then:
 
 **Address:** http://localhost:____ (filled in at handover)
@@ -51,6 +52,42 @@ after each click if it covers the mat. The look sliders are under the
    Verdict: ok / change: ___
 10. **Copy values**, paste into chat. Then **Back to the Starter Camp**.
     Values: ___
+
+## Placing by terrain (TM2)
+
+11. **Starter Camp:** QA → Terrain → **Place the ground test Tokens**. A red
+    note lists Test Boat, Test Dock and Test Mineshaft, each with its
+    "Needs …" reason, and nothing is placed.
+    Verdict: ok / change: ___
+12. **Pick up any ordinary Token** (or the Hall) on the Starter Camp. No grid.
+    Verdict: ok / change: ___
+13. **Mountain + Coast**, then **Place the ground test Tokens**. The three
+    appear near the Hall.
+    Verdict: ok / change: ___
+14. **Pick up the Test Boat.** The sea is lit, the land dark. Drop it far
+    inland on a dark cell: it flies back saying "Needs water."
+    Verdict: ok / change: ___
+15. **Pick up the Test Dock.** Only the strip of dry land touching the water
+    is lit. Drop it on a dark cell far from the water: it flies back saying
+    "Needs the shore."
+    Verdict: ok / change: ___
+16. **Pick up the Test Mineshaft.** The rock is lit; water and sand dark.
+    Drop it in the sea: it is nudged onto the nearest rock, or flies back if
+    none is within reach.
+    Verdict: ok / change: ___
+17. **Pick up an ordinary Token here.** Every dry cell lit, the sea dark
+    (this Region has water, so the grid shows).
+    Verdict: ok / change: ___
+18. **Look and feel:** are the lit and dark cells readable, strong enough,
+    not too strong? Your words feed the fix round.
+    Verdict: ok / change: ___
+
+## Your CMS step, later
+
+In the Token editor's Lifecycle section, "Stands on" chips sit under
+Landmark (Water, Shore, Grass, Rock, Sand). Once a Dock or Sailboat exists,
+tick Shore or Water on it and Sync to Game. Candidates today: Coast and Shrimp
+Coast (Shore?), Copper and Coal Mine (Rock?).
 
 ## Known and not for this look
 
