@@ -191,8 +191,10 @@ describe('MatBoard mounts the grid beside the rings', () => {
         const { container } = render(engine(held('tg_water'), h(MatBoard)));
         const canvas = container.querySelector('[data-mat-board] canvas[data-terrain-grid]');
         expect(canvas).not.toBeNull();
-        expect(Number(canvas.style.zIndex)).toBeGreaterThan(MAT_Z.GROUND);
-        expect(Number(canvas.style.zIndex)).toBeLessThan(MAT_Z.TOKEN_BASE);
+        const layer = canvas.closest('[data-terrain-grid-clip]');
+        expect(layer.parentElement.matches('[data-mat-board]')).toBe(true);
+        expect(Number(layer.style.zIndex)).toBeGreaterThan(MAT_Z.GROUND);
+        expect(Number(layer.style.zIndex)).toBeLessThan(MAT_Z.TOKEN_BASE);
     });
 
     it('nothing in the hand: no grid on the mat', () => {
