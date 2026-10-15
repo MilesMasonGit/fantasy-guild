@@ -54,40 +54,32 @@ export function buildGroundPlan(ground) {
     const wear = buildWearMask(pixels, ground);
     const looks = palette.map(t => (getLook(ground.looks[t]) ? ground.looks[t] : LOOKS.meadow.id));
 
-    const sheets = [];
-    const sheetIndex = (id) => {
-        let i = sheets.indexOf(id);
-        if (i < 0) { i = sheets.length; sheets.push(id); }
-        return i;
-    };
-    const baseSheet = looks.map(id => sheetIndex(sheetFor(getLook(id), ground.seed)));
-    const wearSheet = looks.map(id => (getLook(id).wear ? sheetIndex(getLook(id).wear.sheet) : -1));
+    // Sheet `p` is palette entry `p`'s ground, so the drawing answer starts as a copy of the
+    // terrain map; the wear sheets follow. (A sheet may be listed twice.)
+    const sheets = looks.map(id => sheetFor(getLook(id), ground.seed));
+    const wearSheet = looks.map(id => {
+        const wear = getLook(id).wear;
+        if (!wear) return -1;
+        if (!sheets.includes(wear.sheet)) sheets.push(wear.sheet);
+        return sheets.indexOf(wear.sheet);
+    });
 
-    const tints = [];
-    const tinted = [];
-    for (const band of bands) {
-        if (!band.appearance) continue;
-        tinted.push({ mask: band.mask, tint: tints.length });
-        tints.push(band.appearance);
-    }
+    const n = width * height;
+    const sheetAt = at.slice();
 
     // ⚠️ The order is the layering rule: a band tints its look's own edge; wear replaces the
     // ground, so it drops the tint with it (bare earth is not shallow water).
-    const n = width * height;
-    const sheetAt = new Uint8Array(n);
-    const tintAt = new Int8Array(n);
-    const worn = wear.mask;
-    for (let i = 0; i < n; i++) {
-        const t = at[i];
-        if (worn && worn[i]) {
-            sheetAt[i] = wearSheet[t];
-            tintAt[i] = -1;
-            continue;
-        }
-        sheetAt[i] = baseSheet[t];
-        let tint = -1;
-        for (let k = 0; k < tinted.length; k++) if (tinted[k].mask[i]) tint = tinted[k].tint;
-        tintAt[i] = tint;
+    const tints = [];
+    const tintAt = new Int8Array(n).fill(-1);
+    for (const band of bands) {
+        if (!band.appearance) continue;
+        const tint = tints.length;
+        tints.push(band.appearance);
+        for (const i of band.pixels) tintAt[i] = tint;
+    }
+    for (const i of wear.worn) {
+        sheetAt[i] = wearSheet[at[i]];
+        tintAt[i] = -1;
     }
 
     return {

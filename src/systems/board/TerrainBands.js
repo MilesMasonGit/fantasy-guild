@@ -23,9 +23,9 @@ import { tuning } from '../../config/playmatTuning.js';
  *
  * @param {object} pixels A resolved map from `resolveArtPixels`.
  * @param {object} ground The Region's ground, for the look of each terrain.
- * @returns {{bands: Array<{terrainId: string, look: string, mask: Uint8Array,
- *   appearance: {tint: string, amount: number}|null}>}} One mask per banded terrain that has any
- *   band, 1 inside it.
+ * @returns {{bands: Array<{terrainId: string, look: string, mask: Uint8Array, pixels: number[],
+ *   appearance: {tint: string, amount: number}|null}>}} One per banded terrain that has any band:
+ *   `mask` 1 inside it, `pixels` the same pixels as a list.
  */
 export function buildBandMasks(pixels, ground) {
     const { width, height, palette, at, present } = pixels;
@@ -47,13 +47,13 @@ export function buildBandMasks(pixels, ground) {
         const cause = triggers ? triggers.length > 0 : present.some((on, i) => on && i !== p);
         if (!cause) continue;
 
-        const dist = triggers ? fields.from(triggers, false, limit) : fields.from([p], true, limit);
+        const { pixels: near } = triggers ? fields.from(triggers, false, limit) : fields.from([p], true, limit);
+        const inside = [];
+        for (const i of near) if (at[i] === p) inside.push(i);
+        if (!inside.length) continue;
         const mask = new Uint8Array(at.length);
-        let any = false;
-        for (let i = 0; i < mask.length; i++) {
-            if (at[i] === p && dist[i] < limit) { mask[i] = 1; any = true; }
-        }
-        if (any) bands.push({ terrainId: palette[p], look, mask, appearance: bandAppearance(look) });
+        for (const i of inside) mask[i] = 1;
+        bands.push({ terrainId: palette[p], look, mask, pixels: inside, appearance: bandAppearance(look) });
     }
 
     return { bands };

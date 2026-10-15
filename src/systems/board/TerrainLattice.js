@@ -163,8 +163,8 @@ export function cellPxOf(ground) {
  * @returns {{width: number, height: number, cellPx: number, palette: string[], at: Uint8Array,
  *   present: Uint8Array, fields: object, fringes: Array<{terrainId: string, mask: Uint8Array}>}}
  *   `at` holds an index into `palette` per pixel, row by row; the palette starts as the ground's
- *   own terrains, in order. `present` is 1 per palette entry some pixel shows; `fields` the
- *   distance fields measured so far ({@link distanceFields}), for the bands to reuse.
+ *   own terrains, in order. `present[p]` is 1 when palette entry `p` is on the ground; `fields`
+ *   the distance fields measured so far ({@link distanceFields}), for the bands to reuse.
  */
 export function resolveArtPixels(ground, withFringes = true) {
     const cellPx = cellPxOf(ground);
@@ -185,31 +185,46 @@ export function resolveArtPixels(ground, withFringes = true) {
 
     const at = new Uint8Array(width * height);
 
-    // Every cell its own terrain first.
+    // Every cell its own terrain: the first pixel row of each row of cells, copied down it.
     for (let cy = 0; cy < rows; cy++) {
         const y0 = cy * cellPx;
         if (y0 >= height) break;
         const y1 = Math.min(height, y0 + cellPx);
+        const first = y0 * width;
         for (let cx = 0; cx < cols; cx++) {
             const x0 = cx * cellPx;
             if (x0 >= width) break;
-            const x1 = Math.min(width, x0 + cellPx);
-            const id = cells[cy * cols + cx];
-            for (let y = y0; y < y1; y++) at.fill(id, y * width + x0, y * width + x1);
+            at.fill(cells[cy * cols + cx], first + x0, first + Math.min(width, x0 + cellPx));
+        }
+        for (let y = y0 + 1; y < y1; y++) at.copyWithin(y * width, first, first + width);
+    }
+
+    // The cells beside a different one, eight ways: the only cells two pixels can differ in,
+    // since a strip reaches under half a cell.
+    const border = new Uint8Array(cols * rows);
+    for (let cy = 0; cy < rows; cy++) {
+        for (let cx = 0; cx < cols; cx++) {
+            const here = cells[cy * cols + cx];
+            for (let r = Math.max(0, cy - 1); r <= Math.min(rows - 1, cy + 1) && !border[cy * cols + cx]; r++) {
+                for (let c = Math.max(0, cx - 1); c <= Math.min(cols - 1, cx + 1); c++) {
+                    if (cells[r * cols + c] !== here) { border[cy * cols + cx] = 1; break; }
+                }
+            }
         }
     }
 
     // Then the strips where two terrains meet.
     for (let cy = 0; cy < rows; cy++) {
         for (let cx = 0; cx < cols; cx++) {
-            const here = terrains[cells[cy * cols + cx]];
+            if (!border[cy * cols + cx]) continue;
+            const here = cells[cy * cols + cx];
             for (const axis of ['v', 'h']) {
                 const nx = axis === 'v' ? cx + 1 : cx;
                 const ny = axis === 'v' ? cy : cy + 1;
                 if (nx >= cols || ny >= rows) continue;
-                const there = terrains[cells[ny * cols + nx]];
+                const there = cells[ny * cols + nx];
                 if (there === here) continue;
-                for (const strip of edgeStrips(cx, cy, axis, here, there, seed, cellPx)) {
+                for (const strip of edgeStrips(cx, cy, axis, terrains[here], terrains[there], seed, cellPx)) {
                     const id = idFor(strip.terrainId);
                     const yEnd = Math.min(height, strip.y + strip.h);
                     const xEnd = Math.min(width, strip.x + strip.w);
@@ -219,73 +234,42 @@ export function resolveArtPixels(ground, withFringes = true) {
         }
     }
 
-    const fields = distanceFields(at, width, height);
-    const fringes = withFringes ? applyFringes(at, palette, indexOf, idFor, ground.looks, fields) : [];
-    const present = new Uint8Array(palette.length);
-    for (let i = 0; i < at.length; i++) present[at[i]] = 1;
+    const fields = distanceFields(at, width, height, { cols, rows, cellPx, border });
+    // Which palette entries some pixel shows: the cells' terrains (a strip only carries a
+    // neighbouring cell's), and whatever a fringe writes.
+    const present = new Uint8Array(256);
+    for (let i = 0; i < cells.length; i++) present[cells[i]] = 1;
+    const fringes = withFringes ? applyFringes(at, palette, indexOf, idFor, ground.looks, fields, present) : [];
     return { width, height, cellPx, palette, at, present, fields, fringes };
 }
 
 const INF = 0x3fff;
 
 /**
- * How far each pixel is from the nearest seed, ×3: the chamfer weights are 3 sideways and 4
- * diagonally, the standard cheap approximation to Euclidean distance.
+ * The bounded walk every distance here comes from: outward from `start` (seeds on the edge of
+ * their region) in order of distance, stopping at `limit`, never stepping onto a seed
+ * (`members[at[i]] === want`). `dist` holds each reached pixel's distance plus one (0 is not
+ * reached, so a fresh zeroed array needs no fill). Returns the reached pixels that are not
+ * seeds, each once.
  *
- * ⚠️ Pass `maxDist` whenever you have one. Bounded, it walks outward from the seeds and stops,
- * touching only the band asked about; and it starts only from seeds with a non-seed neighbour,
- * since the last seed on any shortest path is one of those. The shallows' seeds are all the land,
- * almost every pixel, and walking from each of them was most of a coast's build.
- *
- * @param {Uint8Array} seeds 1 per seed pixel, row by row.
- * @param {number} [maxDist] In the same ×3 units. Pixels beyond it come back as at least that.
- * @returns {Int16Array}
+ * ⚠️ Starting from edge seeds only is exact: the last seed on any shortest path has a non-seed
+ * side neighbour, or a side neighbour that is itself a seed one step nearer (a diagonal step
+ * costs more than a side one). Walking from every seed was most of a coast's build: the
+ * shallows' seeds are all the land.
  */
-export function distanceFromSeeds(seeds, width, height, maxDist = Infinity) {
-    const n = width * height;
-    const dist = new Int16Array(n);
-    let seedCount = 0;
-    for (let i = 0; i < n; i++) {
-        if (seeds[i]) seedCount++;
-        else dist[i] = INF;
-    }
-    if (!Number.isFinite(maxDist)) return fullTransform(dist, width, height);
-
-    const limit = Math.min(INF - 1, Math.ceil(maxDist));
+function walk(at, members, want, dist, start, width, height, limit) {
     const buckets = Array.from({ length: limit + 1 }, () => []);
-    const start = buckets[0];
-    // The seeds on the edge of their region, found from whichever side is smaller: each seed
-    // with a non-seed neighbour, or each seed beside a non-seed (queued once).
-    const fromSeeds = seedCount * 2 <= n;
-    const queued = fromSeeds ? null : new Uint8Array(n);
-    for (let y = 0; y < height; y++) {
-        const y0 = y > 0 ? -1 : 0;
-        const y1 = y < height - 1 ? 1 : 0;
-        for (let x = 0, i = y * width; x < width; x++, i++) {
-            if (fromSeeds !== Boolean(seeds[i])) continue;
-            const x0 = x > 0 ? -1 : 0;
-            const x1 = x < width - 1 ? 1 : 0;
-            let found = false;
-            for (let dy = y0; dy <= y1 && !found; dy++) {
-                const row = i + dy * width;
-                for (let dx = x0; dx <= x1; dx++) {
-                    const j = row + dx;
-                    if (fromSeeds) {
-                        if (!seeds[j]) { found = true; break; }
-                    } else if (seeds[j] && !queued[j]) {
-                        queued[j] = 1;
-                        start.push(j);
-                    }
-                }
-            }
-            if (found) start.push(i);
-        }
+    const reached = [];
+    for (const s of start) {
+        if (dist[s] === 1) continue;
+        dist[s] = 1;
+        buckets[0].push(s);
     }
     for (let d = 0; d <= limit; d++) {
         const bucket = buckets[d];
         for (let b = 0; b < bucket.length; b++) {
             const i = bucket[b];
-            if (dist[i] !== d) continue;          // superseded since queued
+            if (dist[i] !== d + 1) continue;      // superseded since queued
             const x = i % width;
             const y = (i - x) / width;
             for (let dy = -1; dy <= 1; dy++) {
@@ -298,11 +282,46 @@ export function distanceFromSeeds(seeds, width, height, maxDist = Infinity) {
                     const nd = d + (dx && dy ? 4 : 3);
                     if (nd > limit) continue;
                     const j = ny * width + nx;
-                    if (nd < dist[j]) { dist[j] = nd; buckets[nd].push(j); }
+                    const was = dist[j];
+                    if ((was !== 0 && nd + 1 >= was) || members[at[j]] === want) continue;
+                    if (was === 0) reached.push(j);
+                    dist[j] = nd + 1;
+                    buckets[nd].push(j);
                 }
             }
         }
     }
+    return reached;
+}
+
+/**
+ * How far each pixel is from the nearest seed, ×3: the chamfer weights are 3 sideways and 4
+ * diagonally, the standard cheap approximation to Euclidean distance. Seeds are 0.
+ *
+ * @param {Uint8Array} seeds 1 per seed pixel, row by row.
+ * @param {number} [maxDist] In the same ×3 units: bounded, it walks outward from the seeds and
+ *   stops. Pixels beyond it come back as at least that. Unbounded, two full sweeps.
+ * @returns {Int16Array}
+ */
+export function distanceFromSeeds(seeds, width, height, maxDist = Infinity) {
+    const n = width * height;
+    if (!Number.isFinite(maxDist)) {
+        const dist = new Int16Array(n).fill(INF);
+        for (let i = 0; i < n; i++) if (seeds[i]) dist[i] = 0;
+        return fullTransform(dist, width, height);
+    }
+    const flags = new Uint8Array(n);
+    for (let i = 0; i < n; i++) flags[i] = seeds[i] ? 1 : 0;
+    const start = [];
+    for (let y = 0, i = 0; y < height; y++) {
+        for (let x = 0; x < width; x++, i++) {
+            if (x < width - 1 && flags[i] !== flags[i + 1]) start.push(flags[i] ? i : i + 1);
+            if (y < height - 1 && flags[i] !== flags[i + width]) start.push(flags[i] ? i : i + width);
+        }
+    }
+    const dist = new Int16Array(n);
+    walk(flags, Uint8Array.of(0, 1), 1, dist, start, width, height, Math.min(INF - 1, Math.ceil(maxDist)));
+    for (let i = 0; i < n; i++) dist[i] = flags[i] ? 0 : (dist[i] === 0 ? INF : dist[i] - 1);
     return dist;
 }
 
@@ -334,36 +353,112 @@ function fullTransform(dist, width, height) {
 }
 
 /**
- * Distance fields over one pixel map, shared by the beach and the bands of one build: the beach
- * and the wet sand both measure from the water, and the second measurement is the first again.
+ * Distance fields over one pixel map, shared by the beach and the bands of one build.
  *
- * `from(set, outside, limit)` is the distance (×3, bounded) from every pixel whose palette index
- * is in `set` (or, with `outside`, is not). `rewrote(fromFlags, to)` says pixels of the flagged
- * palette entries became `to`, and drops every field whose seeds that changed.
+ * `from(set, outside, limit)` measures from every pixel whose palette index is in `set` (or,
+ * with `outside`, is not) and returns `{pixels}`: the pixels outside the set nearer than `limit`
+ * (chamfer ×3 units), so a caller visits those rather than the whole plan.
+ *
+ * Every edge between two terrains is found once, as the pairs of side neighbours that differ,
+ * looking only in the cells `cellScan.border` marks (all of them without it); a field starts
+ * from the pairs its set splits. The beach and the wet sand both measure from the water, so the
+ * second request is the first one again.
+ *
+ * `rewrote(fromFlags, to, changed)` says the `changed` pixels, of the flagged palette entries,
+ * became `to`: fields whose seeds that altered are dropped, and the new edges noted.
  */
-export function distanceFields(at, width, height) {
+export function distanceFields(at, width, height, cellScan = null) {
+    const n = width * height;
     const entries = [];
+    let edgeA = null;
+    let edgeB = null;
+    let edges = 0;
+
+    const addEdge = (a, b) => {
+        if (edges === edgeA.length) {
+            const grownA = new Int32Array(edgeA.length * 2);
+            const grownB = new Int32Array(edgeB.length * 2);
+            grownA.set(edgeA);
+            grownB.set(edgeB);
+            edgeA = grownA;
+            edgeB = grownB;
+        }
+        edgeA[edges] = a;
+        edgeB[edges] = b;
+        edges++;
+    };
+    const scan = (y, x0, x1) => {
+        const last = y === height - 1;
+        for (let x = x0, i = y * width + x0; x < x1; x++, i++) {
+            const t = at[i];
+            if (x < width - 1 && t !== at[i + 1]) addEdge(i, i + 1);
+            if (!last && t !== at[i + width]) addEdge(i, i + width);
+        }
+    };
+    const findEdges = () => {
+        edgeA = new Int32Array(4096);
+        edgeB = new Int32Array(4096);
+        if (!cellScan) {
+            for (let y = 0; y < height; y++) scan(y, 0, width);
+            return;
+        }
+        const { cols, rows, cellPx, border } = cellScan;
+        for (let cy = 0; cy < rows; cy++) {
+            const y0 = cy * cellPx;
+            const y1 = Math.min(height, y0 + cellPx);
+            for (let cx = 0; cx < cols; cx++) {
+                if (!border[cy * cols + cx]) continue;
+                const x0 = cx * cellPx;
+                const x1 = Math.min(width, x0 + cellPx);
+                for (let y = y0; y < y1; y++) scan(y, x0, x1);
+            }
+        }
+    };
     const isSeed = (e, t) => e.outside !== e.set.has(t);
+    const within = (e, limit) => {
+        const out = [];
+        for (const i of e.reached) if (e.dist[i] - 1 < limit) out.push(i);
+        return { pixels: out };
+    };
+
     return {
         from(set, outside, limit) {
             const key = `${outside ? '!' : ''}${[...set].sort((a, b) => a - b).join(',')}`;
             const hit = entries.find(e => e.key === key && e.limit >= limit);
-            if (hit) return hit.dist;
+            if (hit) return within(hit, limit);
+            if (!edgeA) findEdges();
             const members = new Uint8Array(256);
             for (const t of set) members[t] = 1;
             const want = outside ? 0 : 1;
-            const seeds = new Uint8Array(at.length);
-            for (let i = 0; i < at.length; i++) if (members[at[i]] === want) seeds[i] = 1;
-            const dist = distanceFromSeeds(seeds, width, height, limit);
-            entries.push({ key, set: new Set(set), outside, limit, dist });
-            return dist;
+            const start = [];
+            for (let k = 0; k < edges; k++) {
+                const a = edgeA[k];
+                const b = edgeB[k];
+                const seedA = members[at[a]] === want;
+                if (seedA !== (members[at[b]] === want)) start.push(seedA ? a : b);
+            }
+            const dist = new Int16Array(n);
+            const reached = walk(at, members, want, dist, start, width, height, Math.min(INF - 1, Math.ceil(limit)));
+            const entry = { key, set: new Set(set), outside, limit, dist, reached };
+            entries.push(entry);
+            return within(entry, limit);
         },
-        rewrote(fromFlags, to) {
+        rewrote(fromFlags, to, changed) {
             for (let k = entries.length - 1; k >= 0; k--) {
                 const e = entries[k];
                 for (let t = 0; t < fromFlags.length; t++) {
                     if (fromFlags[t] && isSeed(e, t) !== isSeed(e, to)) { entries.splice(k, 1); break; }
                 }
+            }
+            if (!edgeA) return;
+            // Edges that stopped being edges are skipped when a field reads them; new ones can
+            // only lie beside a changed pixel.
+            for (const i of changed) {
+                const x = i % width;
+                if (x > 0 && at[i - 1] !== at[i]) addEdge(i - 1, i);
+                if (x < width - 1 && at[i + 1] !== at[i]) addEdge(i, i + 1);
+                if (i >= width && at[i - width] !== at[i]) addEdge(i - width, i);
+                if (i + width < n && at[i + width] !== at[i]) addEdge(i, i + width);
             }
         }
     };
@@ -377,40 +472,41 @@ export function distanceFields(at, width, height) {
  * over the top is what makes everything downstream behave: the wet sand sees real shore, the
  * forest's earth stops at it, and nothing of the forest's scatter stands on it.
  *
- * Mutates `at` and returns what each fringe changed.
+ * Mutates `at` (and `present`) and returns what each fringe changed.
  */
-function applyFringes(at, palette, indexOf, idFor, looks, fields) {
+function applyFringes(at, palette, indexOf, idFor, looks, fields, present) {
     const changed = [];
     const sources = palette.length;
     for (let source = 0; source < sources; source++) {
+        if (!present[source]) continue;
         const fringe = fringeOf(looks[palette[source]]);
         if (!fringe) continue;
         const pixels = tuning(fringe.widthTuning) / PLAN_PIXEL_U;
         if (!(pixels > 0)) continue;
 
-        const limit = pixels * 3;
-        const dist = fields.from([source], false, limit);
+        const { pixels: near } = fields.from([source], false, pixels * 3);
         const spared = new Uint8Array(256);
         for (const id of fringe.except || []) if (indexOf.has(id)) spared[indexOf.get(id)] = 1;
         const existing = indexOf.get(fringe.terrain);
-        const mask = new Uint8Array(at.length);
         const fromFlags = new Uint8Array(256);
+        const written = [];
         // ⚠️ The target is claimed on the first write, so a fringe that writes nothing adds no
         // terrain to the palette.
         let target = -1;
-        for (let i = 0; i < at.length; i++) {
-            if (dist[i] >= limit) continue;
+        for (const i of near) {
             const here = at[i];
-            if (here === source || here === existing || spared[here]) continue;
+            if (here === existing || spared[here]) continue;
             if (target < 0) target = idFor(fringe.terrain);
             fromFlags[here] = 1;
             at[i] = target;
-            mask[i] = 1;
+            written.push(i);
         }
-        if (target >= 0) {
-            fields.rewrote(fromFlags, target);
-            changed.push({ terrainId: fringe.terrain, mask });
-        }
+        if (target < 0) continue;
+        present[target] = 1;
+        fields.rewrote(fromFlags, target, written);
+        const mask = new Uint8Array(at.length);
+        for (const i of written) mask[i] = 1;
+        changed.push({ terrainId: fringe.terrain, mask });
     }
     return changed;
 }

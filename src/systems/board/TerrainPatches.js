@@ -109,9 +109,10 @@ function thresholdFrom(quantiles, coverage) {
  *
  * @param {object} pixels A resolved map from `resolveArtPixels`.
  * @param {object} ground The Region's ground, for its seed and the look of each terrain.
- * @returns {{mask: Uint8Array|null, thresholds: number[], cell: number}} `mask` is 1 where the
- *   pixel's look wears through (null when no look here wears); `thresholds` the noise level below
- *   which each palette entry wears; `cell` the noise cell in pixels.
+ * @returns {{mask: Uint8Array|null, worn: number[], thresholds: number[], cell: number}} `mask`
+ *   is 1 where the pixel's look wears through (null when no look here wears), `worn` the same
+ *   pixels as a list; `thresholds` the noise level below which each palette entry wears; `cell`
+ *   the noise cell in pixels.
  */
 export function buildWearMask(pixels, ground) {
     const { width, height, palette, at, present } = pixels;
@@ -119,7 +120,7 @@ export function buildWearMask(pixels, ground) {
     const scale = tuning('patchCoverage');
     const n = width * height;
     const wants = palette.map((t, p) => (present[p] && wearOf(ground.looks[t])?.coverage * scale) || 0);
-    if (!wants.some(c => c > 0)) return { mask: null, thresholds: wants.map(() => -Infinity), cell };
+    if (!wants.some(c => c > 0)) return { mask: null, worn: [], thresholds: wants.map(() => -Infinity), cell };
 
     // ⚠️ Sampled at scattered points (an R2 low-discrepancy sequence), never on a stride: a stride
     // that shares a factor with the width lands every sample on the same columns of the noise
@@ -134,22 +135,61 @@ export function buildWearMask(pixels, ground) {
     sample.sort();
     const thresholds = wants.map(c => thresholdFrom(sample, c));
 
-    const mask = new Uint8Array(n);
+    // The noise along a corner row, once per row of noise cells rather than once per pixel row:
+    // `top` and `bottom` are exactly patchNoise's two horizontal blends.
     const { gw, corners, gxOf, fxOf, gyOf, fyOf } = noise;
-    for (let py = 0, i = 0; py < height; py++) {
-        const rowBase = gyOf[py] * gw;
+    const blendRow = (gy, out) => {
+        const base = gy * gw;
+        for (let px = 0; px < width; px++) {
+            const k = base + gxOf[px];
+            const c0 = corners[k];
+            out[px] = c0 + (corners[k + 1] - c0) * fxOf[px];
+        }
+    };
+    let top = new Float64Array(width);
+    let bottom = new Float64Array(width);
+    let rowsOf = -1;
+
+    // A noise value is a blend of its cell's four corners, never below the least of them, so a
+    // noise cell whose corners all sit above every threshold wears nowhere and is skipped whole:
+    // most of the ground, at the coverages the looks ask for. The margin keeps rounding out of it.
+    const highest = Math.max(...thresholds);
+    const blocks = gw - 1;
+    const clear = new Uint8Array(blocks);
+
+    const mask = new Uint8Array(n);
+    const worn = [];
+    for (let py = 0, row = 0; py < height; py++, row += width) {
+        const gy = gyOf[py];
+        if (gy !== rowsOf) {
+            if (rowsOf >= 0 && gy === rowsOf + 1) {
+                [top, bottom] = [bottom, top];
+                blendRow(gy + 1, bottom);
+            } else {
+                blendRow(gy, top);
+                blendRow(gy + 1, bottom);
+            }
+            rowsOf = gy;
+            for (let gx = 0; gx < blocks; gx++) {
+                const k = gy * gw + gx;
+                const least = Math.min(corners[k], corners[k + 1], corners[k + gw], corners[k + gw + 1]);
+                clear[gx] = least > highest + 1e-9 ? 1 : 0;
+            }
+        }
         const fy = fyOf[py];
-        for (let px = 0; px < width; px++, i++) {
-            const threshold = thresholds[at[i]];
-            if (threshold === -Infinity) continue;
-            const k = rowBase + gxOf[px];
-            const fx = fxOf[px];
-            const c00 = corners[k];
-            const c01 = corners[k + gw];
-            const top = c00 + (corners[k + 1] - c00) * fx;
-            const bottom = c01 + (corners[k + gw + 1] - c01) * fx;
-            if (top + (bottom - top) * fy < threshold) mask[i] = 1;
+        for (let gx = 0; gx < blocks; gx++) {
+            if (clear[gx]) continue;
+            const x1 = Math.min(width, (gx + 1) * cell);
+            for (let px = gx * cell, i = row + px; px < x1; px++, i++) {
+                const threshold = thresholds[at[i]];
+                if (threshold === -Infinity) continue;
+                const t = top[px];
+                if (t + (bottom[px] - t) * fy < threshold) {
+                    mask[i] = 1;
+                    worn.push(i);
+                }
+            }
         }
     }
-    return { mask, thresholds, cell };
+    return { mask, worn, thresholds, cell };
 }
