@@ -11,7 +11,7 @@ terrain, the drawn ground, the CMS "Stands on" field and the grid while
 placing). The director switches your folder to it and
 starts the server before telling you; the address is filled in then:
 
-**Address:** http://localhost:____ (filled in at handover)
+**Address:** http://localhost:5173 (the director started it from your folder on 2026-10-15 at the handover and saw the slot screen load; if it is ever down, `npm run dev` in your terminal brings it back on this branch)
 
 **Save slot:** your own slot is fine; the dev buttons settle and travel
 inside your real save and clean up after themselves (Region numbers move on).
