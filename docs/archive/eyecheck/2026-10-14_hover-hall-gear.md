@@ -1,5 +1,10 @@
 # Eye-check: hover outline, the Guild Hall movable again, the gear alert
 
+**Owner verdict (2026-10-14, in chat):** all fine. Merged the same evening.
+The handover went badly (branch still checked out in a worktree, the dev
+server crashed after the outline redraw and sat dead on 5173): the director's
+handover checklist and T-185 came out of it.
+
 *Owner: play on the branch, fill in each Verdict line, hand the file back (or
 answer in chat). Fixes go on the branch, it merges, and this file moves to
 `docs/archive/eyecheck/` with your verdicts. Every check is by clicking.*
