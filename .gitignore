@@ -61,3 +61,6 @@ bench/results/
 # Generated sprite shadows and outlines (scripts/spriteFx.mjs, Wave 5).
 # Rebuilt from public/assets by npm run dev / npm run build; never edit.
 public/_gen/
+
+# an agent's worktree status note, never committed
+/STATUS.md
