@@ -1,289 +1,201 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { buildBandMasks } from '../systems/board/TerrainBands.js';
-import {
-    resolveArtPixels, resolveLattice, edgeStrips, LATTICE_SIZE, subtileArtPx
-} from '../systems/board/TerrainLattice.js';
-import { TERRAIN_TYPES, bandOf } from '../config/registries/terrainRegistry.js';
-import { setTuning, resetTuning } from '../config/playmatTuning.js';
+import { buildBandMasks, bandAppearance } from '../systems/board/TerrainBands.js';
+import { resolveArtPixels, distanceFromSeeds, PLAN_PIXEL_U } from '../systems/board/TerrainLattice.js';
+import { LOOKS, bandOf } from '../config/registries/terrainRegistry.js';
+import { tuning, setTuning, resetTuning } from '../config/playmatTuning.js';
+import { groundWith, flat } from './fixtures/ground.js';
 
 /**
- * Shore bands, and the per-art-pixel terrain map they are measured on.
- *
- * The map has to agree with what the renderer actually paints, and the band has
- * to be caused by the right neighbour. Both were got wrong first time — the
- * second one visibly, with wet sand appearing where the beach met the forest.
+ * The waterline: the beach rim written onto the land beside the sea, the shallows on the sea's
+ * edge, the wet sand on the beach's. Widths are in mat units (the tuning sliders), measured on
+ * the drawn coastline.
  */
 
 afterEach(() => resetTuning());
 
-const flat = (terrainId) => new Array(LATTICE_SIZE * LATTICE_SIZE).fill(terrainId);
+/** Sea on the left, a beach, then forest grass. */
+const coast = () => groundWith(24, 14, (c) => (c < 8 ? 'water' : (c < 16 ? 'sand' : 'grass')));
+/** Sea laid straight against forest, no sand authored. */
+const seaAndWood = () => groundWith(24, 14, (c) => (c < 12 ? 'water' : 'grass'));
+/** Sea laid straight against mountain rock. */
+const seaAndRock = () => groundWith(24, 14, (c, r) => (c + (r >> 2) < 12 ? 'water' : 'rock'));
 
-/** Sea on the left, beach in the middle, forest on the right. */
-function coastGrid() {
-    const grid = new Array(LATTICE_SIZE * LATTICE_SIZE);
-    const third = Math.floor(LATTICE_SIZE / 3);
-    for (let sy = 0; sy < LATTICE_SIZE; sy++) {
-        for (let sx = 0; sx < LATTICE_SIZE; sx++) {
-            grid[sy * LATTICE_SIZE + sx] =
-                sx < third ? 'ocean' : (sx < third * 2 ? 'shore' : 'forest');
-        }
-    }
-    return grid;
+/** Chamfer distance (×3) from every pixel to the nearest pixel `isSeed` picks out. */
+function distanceTo(pixels, isSeed) {
+    const seeds = new Uint8Array(pixels.at.length);
+    for (let i = 0; i < seeds.length; i++) seeds[i] = isSeed(pixels.palette[pixels.at[i]]) ? 1 : 0;
+    return distanceFromSeeds(seeds, pixels.width, pixels.height);
 }
 
-describe('The per-art-pixel terrain map', () => {
-    it('covers the board at art resolution, with a palette of what is on it', () => {
-        const { size, palette, at } = resolveArtPixels(coastGrid(), 5);
-        expect(size).toBe(LATTICE_SIZE * subtileArtPx());
-        expect(at.length).toBe(size * size);
-        expect([...palette].sort()).toEqual(['forest', 'ocean', 'shore']);
-    });
+const bandFor = (bands, terrainId) => bands.find(b => b.terrainId === terrainId);
+const countOf = (mask) => mask.reduce((n, v) => n + (v ? 1 : 0), 0);
 
-    it('leaves unpainted ground unpainted', () => {
-        const { at } = resolveArtPixels(new Array(LATTICE_SIZE * LATTICE_SIZE).fill(null), 5);
-        expect(at.every(v => v === -1)).toBe(true);
-    });
-
-    it('⭐ agrees with the strips the renderer paints from', () => {
-        // The map and the canvas both apply `edgeStrips`. If they ever drift,
-        // bands would sit beside the coastline instead of on it — and that is
-        // precisely the class of bug P3 shipped, where the data was right and
-        // the drawing was not.
-        const grid = coastGrid();
-        const seed = 9;
-        const { size, palette, at } = resolveArtPixels(grid, seed);
-
-        let checked = 0;
-        for (let sy = 0; sy < LATTICE_SIZE - 1; sy++) {
-            for (let sx = 0; sx < LATTICE_SIZE - 1; sx++) {
-                const here = grid[sy * LATTICE_SIZE + sx];
-                for (const axis of ['v', 'h']) {
-                    const there = axis === 'v'
-                        ? grid[sy * LATTICE_SIZE + sx + 1]
-                        : grid[(sy + 1) * LATTICE_SIZE + sx];
-                    for (const s of edgeStrips(sx, sy, axis, here, there, seed)) {
-                        for (let y = s.y; y < s.y + s.h; y++) {
-                            for (let x = s.x; x < s.x + s.w; x++) {
-                                if (x < 0 || y < 0 || x >= size || y >= size) continue;
-                                expect(palette[at[y * size + x]]).toBe(s.terrainId);
-                                checked++;
-                            }
-                        }
-                    }
-                }
+describe('⭐ Shallows and wet sand sit where their cause is', () => {
+    it('⭐ shallows only on water beside land, and on all of it', () => {
+        for (const make of [coast, seaAndWood, seaAndRock]) {
+            const ground = make();
+            const pixels = resolveArtPixels(ground);
+            const shallows = bandFor(buildBandMasks(pixels, ground).bands, 'water');
+            const limit = (tuning('shallowsWidth') / PLAN_PIXEL_U) * 3;
+            const toLand = distanceTo(pixels, t => t !== 'water');
+            let n = 0;
+            const wrong = [];
+            for (let i = 0; i < pixels.at.length; i++) {
+                const isWater = pixels.palette[pixels.at[i]] === 'water';
+                const want = isWater && toLand[i] < limit;
+                if (Boolean(shallows.mask[i]) !== want) wrong.push(i);
+                if (want) n++;
             }
+            expect(wrong.slice(0, 5), `${wrong.length} pixels wrong`).toEqual([]);
+            expect(n).toBeGreaterThan(0);
         }
-        expect(checked).toBeGreaterThan(100);
+    });
+
+    it('⭐ wet sand only on sand beside water, and on all of it', () => {
+        for (const make of [coast, seaAndWood, seaAndRock]) {
+            const ground = make();
+            const pixels = resolveArtPixels(ground);
+            const wet = bandFor(buildBandMasks(pixels, ground).bands, 'sand');
+            const limit = (tuning('wetSandWidth') / PLAN_PIXEL_U) * 3;
+            const toWater = distanceTo(pixels, t => t === 'water');
+            let n = 0;
+            const wrong = [];
+            for (let i = 0; i < pixels.at.length; i++) {
+                const isSand = pixels.palette[pixels.at[i]] === 'sand';
+                const want = isSand && toWater[i] < limit;
+                if (Boolean(wet.mask[i]) !== want) wrong.push(i);
+                if (want) n++;
+            }
+            expect(wrong.slice(0, 5), `${wrong.length} pixels wrong`).toEqual([]);
+            expect(n).toBeGreaterThan(0);
+        }
+    });
+
+    it('⭐ leaves the beach dry where it meets the grass', () => {
+        // The September regression: a band caused by having an edge, rather than by what is on the
+        // other side of it, wetted the beach where it met the forest.
+        const ground = coast();
+        const pixels = resolveArtPixels(ground);
+        const wet = bandFor(buildBandMasks(pixels, ground).bands, 'sand');
+        const { width, palette, at } = pixels;
+        for (let i = 0; i < at.length; i++) {
+            if (!wet.mask[i]) continue;
+            const x = i % width;
+            // Grass starts at cell 16; the sea ends at cell 8. Wet sand stays near the sea.
+            expect(x, `wet sand at ${x}`).toBeLessThan(10 * 16);
+            expect(palette[at[i]]).toBe('sand');
+        }
+    });
+
+    it('bands nothing on a ground of one terrain: the mat\'s edge is not a shore', () => {
+        for (const t of ['water', 'sand', 'grass', 'rock']) {
+            const ground = groundWith(10, 6, flat(t));
+            expect(buildBandMasks(resolveArtPixels(ground), ground).bands, t).toEqual([]);
+        }
+    });
+
+    it('gives a band only to the looks that declare one: the sea and the coast', () => {
+        const declared = Object.keys(LOOKS).filter(id => bandOf(id)).sort();
+        expect(declared).toEqual(['coast', 'sea']);
+        const ground = coast();
+        const named = buildBandMasks(resolveArtPixels(ground), ground).bands.map(b => b.look).sort();
+        expect(named).toEqual(['coast', 'sea']);
+    });
+
+    it('is identical every time', () => {
+        const masks = () => {
+            const ground = coast();
+            return buildBandMasks(resolveArtPixels(ground), ground).bands.map(b => Array.from(b.mask).join(''));
+        };
+        expect(masks()).toEqual(masks());
     });
 });
 
-describe('Bands appear only where a terrain asks for one', () => {
-    it('gives nothing to terrain with no band declared', () => {
-        for (const id of Object.keys(TERRAIN_TYPES)) {
-            if (bandOf(id)) continue;
-            expect(buildBandMasks(resolveArtPixels(flat(id), 5), 5).bands, id).toEqual([]);
-        }
+describe('Band widths and strength (tuning, in mat units)', () => {
+    const area = (terrainId) => {
+        const ground = coast();
+        const band = bandFor(buildBandMasks(resolveArtPixels(ground), ground).bands, terrainId);
+        return band ? countOf(band.mask) : 0;
+    };
+
+    it('widens the shallows with their slider, and zero turns them off', () => {
+        const normal = area('water');
+        setTuning('shallowsWidth', 0);
+        expect(area('water')).toBe(0);
+        setTuning('shallowsWidth', 32);
+        expect(area('water')).toBeGreaterThan(normal);
     });
 
-    it('gives nothing on a board of one terrain — there is no edge to band', () => {
-        expect(buildBandMasks(resolveArtPixels(flat('ocean'), 5), 5).bands).toEqual([]);
+    it('widens the wet sand with its slider, and zero turns it off', () => {
+        const normal = area('sand');
+        setTuning('wetSandWidth', 0);
+        expect(area('sand')).toBe(0);
+        setTuning('wetSandWidth', 20);
+        expect(area('sand')).toBeGreaterThan(normal);
     });
 
-    it('bands the ocean and the shore on a coast', () => {
-        const named = buildBandMasks(resolveArtPixels(coastGrid(), 5), 5).bands.map(b => b.terrainId).sort();
-        expect(named).toEqual(['ocean', 'shore']);
-    });
-
-    it('paints a band only onto its own terrain', () => {
-        const grid = coastGrid();
-        const { size, palette, at } = resolveArtPixels(grid, 5);
-        for (const { terrainId, mask } of buildBandMasks(resolveArtPixels(grid, 5), 5).bands) {
-            for (let i = 0; i < mask.length; i++) {
-                if (mask[i]) expect(palette[at[i]]).toBe(terrainId);
-            }
-        }
-        expect(size).toBeGreaterThan(0);
+    it('strength changes the tint, not the band', () => {
+        const before = bandAppearance('sea');
+        setTuning('bandStrength', 2);
+        expect(bandAppearance('sea').amount).toBeGreaterThan(before.amount);
+        setTuning('bandStrength', 0);
+        expect(bandAppearance('sea')).toBeNull();
+        expect(bandAppearance('meadow')).toBeNull();
     });
 });
 
-describe('⚠️ A band is caused by a neighbour, not by having an edge', () => {
-    /** What each band's pixels actually sit next to, across the boundary. */
-    function touches(grid, seed, terrainId) {
-        const { size, palette, at } = resolveArtPixels(grid, seed);
-        const band = buildBandMasks(resolveArtPixels(grid, seed), seed).bands.find(b => b.terrainId === terrainId);
+describe('⭐ The beach rim', () => {
+    /** Every terrain a water pixel touches, eight ways. */
+    function waterTouches(pixels) {
+        const { width, height, palette, at } = pixels;
         const found = new Set();
-        if (!band) return found;
-        for (let y = 1; y < size - 1; y++) {
-            for (let x = 1; x < size - 1; x++) {
-                const i = y * size + x;
-                if (!band.mask[i]) continue;
-                for (const j of [i - 1, i + 1, i - size, i + size]) {
-                    if (at[j] !== at[i]) found.add(palette[at[j]] ?? 'unpainted');
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                if (palette[at[y * width + x]] !== 'water') continue;
+                for (let dy = -1; dy <= 1; dy++) {
+                    for (let dx = -1; dx <= 1; dx++) {
+                        const nx = x + dx;
+                        const ny = y + dy;
+                        if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
+                        const t = palette[at[ny * width + nx]];
+                        if (t !== 'water') found.add(t);
+                    }
                 }
             }
         }
         return found;
     }
 
-    it('⭐ wet sand appears against water and nothing else', () => {
-        // THE regression test. `shore` bands against `ocean` only. Without
-        // `against`, this came out touching forest across 486 pixels — a wet
-        // beach where it met the woods, because a band was a property of having
-        // an edge rather than of what was on the other side of it.
-        expect([...touches(coastGrid(), 5, 'shore')]).toEqual(['ocean']);
-    });
-
-    it('⭐ water never meets anything but sand, because of the beach', () => {
-        // The fringe's whole purpose. Ocean declares no `against`, so it bands
-        // against whatever is there — and after fringing, what is there is
-        // always shore, because a beach is written onto every neighbour first.
-        //
-        // ⚠️ This test used to expect ocean beside forest and had to be
-        // rewritten when the beach landed. That is the right way round: the
-        // guarantee got stronger, so the assertion did.
-        expect([...touches(coastGrid(), 5, 'ocean')]).toEqual(['shore']);
-
-        const seaMeetsWood = new Array(LATTICE_SIZE * LATTICE_SIZE);
-        for (let sy = 0; sy < LATTICE_SIZE; sy++) {
-            for (let sx = 0; sx < LATTICE_SIZE; sx++) {
-                seaMeetsWood[sy * LATTICE_SIZE + sx] =
-                    sx < LATTICE_SIZE / 2 ? 'ocean' : 'forest';
-            }
+    it('⭐ water never meets grass or rock without the beach rim', () => {
+        for (const make of [seaAndWood, seaAndRock, coast]) {
+            expect([...waterTouches(resolveArtPixels(make()))]).toEqual(['sand']);
         }
-        // Sea laid directly against forest, with no sand authored anywhere.
-        expect([...touches(seaMeetsWood, 5, 'ocean')]).toEqual(['shore']);
     });
 
-    it('does not band against bare table — a map running out is not a shore', () => {
-        // Ocean in one corner, nothing around it.
-        const grid = new Array(LATTICE_SIZE * LATTICE_SIZE).fill(null);
-        for (let sy = 0; sy < 8; sy++) {
-            for (let sx = 0; sx < 8; sx++) grid[sy * LATTICE_SIZE + sx] = 'ocean';
-        }
-        expect(buildBandMasks(resolveArtPixels(grid, 5), 5).bands).toEqual([]);
-    });
-});
-
-describe('Width and stability', () => {
-    it('widens with the tuning slider, and zero turns it off', () => {
-        const count = (mult) => {
-            setTuning('bandWidth', mult);
-            const band = buildBandMasks(resolveArtPixels(coastGrid(), 5), 5).bands.find(b => b.terrainId === 'ocean');
-            if (!band) return 0;
-            let n = 0;
-            for (let i = 0; i < band.mask.length; i++) if (band.mask[i]) n++;
-            return n;
-        };
-        const normal = count(1);
-        expect(count(0)).toBe(0);
-        expect(count(2)).toBeGreaterThan(normal);
-    });
-
-    it('stays within a reasonable distance of the water', () => {
-        // A band that grew without limit would flood the terrain rather than
-        // edge it. Ocean is four pixels wide by default.
-        const grid = coastGrid();
-        const band = buildBandMasks(resolveArtPixels(grid, 5), 5).bands.find(b => b.terrainId === 'ocean');
-        const { size, palette, at } = resolveArtPixels(grid, 5);
-        let total = 0;
-        let banded = 0;
-        for (let i = 0; i < band.mask.length; i++) {
-            if (palette[at[i]] === 'ocean') total++;
-            if (band.mask[i]) banded++;
-        }
-        expect(banded / total).toBeLessThan(0.6);
-        expect(size).toBeGreaterThan(0);
-    });
-
-    it('is identical every time', () => {
-        const a = buildBandMasks(resolveArtPixels(coastGrid(), 31), 31).bands.map(b => Array.from(b.mask).join(''));
-        const b = buildBandMasks(resolveArtPixels(coastGrid(), 31), 31).bands.map(b2 => Array.from(b2.mask).join(''));
-        expect(a).toEqual(b);
-    });
-});
-
-describe('⭐ Beaches — a fringe written onto the neighbour', () => {
-    /** Sea on the left, forest on the right, and no sand authored anywhere. */
-    function seaAndWood() {
-        const grid = new Array(LATTICE_SIZE * LATTICE_SIZE);
-        for (let sy = 0; sy < LATTICE_SIZE; sy++) {
-            for (let sx = 0; sx < LATTICE_SIZE; sx++) {
-                grid[sy * LATTICE_SIZE + sx] =
-                    sx < LATTICE_SIZE / 2 ? 'ocean' : 'forest';
-            }
-        }
-        return grid;
-    }
-
-    it('puts sand between water and land that was never authored', () => {
-        const { palette, fringes } = resolveArtPixels(seaAndWood(), 5);
-        expect(palette).toContain('shore');
-        expect(fringes.map(f => f.terrainId)).toEqual(['shore']);
-    });
-
-    it('⭐ leaves water touching nothing but sand', () => {
-        // The guarantee the owner asked for: water never meets grass directly.
-        const { size, palette, at } = resolveArtPixels(seaAndWood(), 5);
-        const ocean = palette.indexOf('ocean');
-        const shore = palette.indexOf('shore');
-        for (let y = 1; y < size - 1; y++) {
-            for (let x = 1; x < size - 1; x++) {
-                const i = y * size + x;
-                if (at[i] !== ocean) continue;
-                for (const j of [i - 1, i + 1, i - size, i + size]) {
-                    if (at[j] === ocean || at[j] < 0) continue;
-                    expect(palette[at[j]], `water touching ${palette[at[j]]}`).toBe(palette[shore]);
-                }
-            }
-        }
-        expect(shore).toBeGreaterThanOrEqual(0);
+    it('is cut where none was authored, and only by a ground with a fringe (the sea)', () => {
+        const plain = resolveArtPixels(seaAndWood(), false);
+        const cut = resolveArtPixels(seaAndWood());
+        expect(plain.fringes).toEqual([]);
+        expect(cut.fringes.map(f => f.terrainId)).toEqual(['sand']);
+        expect([...waterTouches(plain)].sort()).toEqual(['grass']);
     });
 
     it('never eats into the water itself', () => {
-        const plain = resolveArtPixels(seaAndWood(), 5, false);
-        const fringed = resolveArtPixels(seaAndWood(), 5);
-        const oceanBefore = plain.palette.indexOf('ocean');
-        const oceanAfter = fringed.palette.indexOf('ocean');
-        let before = 0;
-        let after = 0;
-        for (let i = 0; i < plain.at.length; i++) {
-            if (plain.at[i] === oceanBefore) before++;
-            if (fringed.at[i] === oceanAfter) after++;
-        }
-        expect(after).toBe(before);
+        const plain = resolveArtPixels(seaAndWood(), false);
+        const cut = resolveArtPixels(seaAndWood());
+        const water = (p) => Array.from(p.at).filter(i => p.palette[i] === 'water').length;
+        expect(water(cut)).toBe(water(plain));
     });
 
-    it('does not fringe onto bare table', () => {
-        const grid = new Array(LATTICE_SIZE * LATTICE_SIZE).fill(null);
-        for (let sy = 0; sy < 6; sy++) {
-            for (let sx = 0; sx < 6; sx++) grid[sy * LATTICE_SIZE + sx] = 'ocean';
-        }
-        const { at, palette, fringes } = resolveArtPixels(grid, 5);
-        expect(fringes).toEqual([]);
-        expect(palette).not.toContain('shore');
-        expect(at.some(v => v >= 0)).toBe(true);
-    });
-
-    it('widens with the tuning slider, and zero removes the beach', () => {
-        const sand = (mult) => {
-            setTuning('fringeWidth', mult);
-            const { at, palette } = resolveArtPixels(seaAndWood(), 5);
-            const shore = palette.indexOf('shore');
-            if (shore < 0) return 0;
-            let n = 0;
-            for (let i = 0; i < at.length; i++) if (at[i] === shore) n++;
-            return n;
+    it('widens with its slider (mat units), and zero removes it', () => {
+        const sand = () => {
+            const p = resolveArtPixels(seaAndWood());
+            return Array.from(p.at).filter(i => p.palette[i] === 'sand').length;
         };
-        const normal = sand(1);
-        expect(sand(0)).toBe(0);
-        expect(sand(3)).toBeGreaterThan(normal);
-    });
-
-    it('can be turned off entirely, leaving the map as the strips drew it', () => {
-        const withFringe = resolveArtPixels(seaAndWood(), 5);
-        const without = resolveArtPixels(seaAndWood(), 5, false);
-        expect(without.fringes).toEqual([]);
-        expect(without.palette).not.toContain('shore');
-        expect(withFringe.palette).toContain('shore');
+        const normal = sand();
+        setTuning('beachWidth', 0);
+        expect(sand()).toBe(0);
+        setTuning('beachWidth', 24);
+        expect(sand()).toBeGreaterThan(normal);
     });
 });

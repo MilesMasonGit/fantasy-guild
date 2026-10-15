@@ -2,13 +2,12 @@ import { describe, it, expect, afterEach } from 'vitest';
 import {
     TUNABLES, tuning, setTuning, resetTuning, isTuned, tuningDefault
 } from '../config/playmatTuning.js';
-import {
-    resolveLattice, edgeProfile, resolveArtPixels, LATTICE_SIZE
-} from '../systems/board/TerrainLattice.js';
-import { propsForBoard } from '../systems/board/TerrainProps.js';
-import { buildPatchMasks } from '../systems/board/TerrainPatches.js';
+import { edgeProfile, resolveArtPixels } from '../systems/board/TerrainLattice.js';
+import { propsForGround } from '../systems/board/TerrainProps.js';
+import { buildWearMask } from '../systems/board/TerrainPatches.js';
 import { buildBandMasks, bandAppearance } from '../systems/board/TerrainBands.js';
-import { buildToneMap } from '../systems/board/TerrainTones.js';
+import { muteTexels } from '../systems/board/TerrainSurface.js';
+import { groundWith } from './fixtures/ground.js';
 
 /**
  * The playmat tuning store — the developer panel's sliders.
@@ -81,113 +80,94 @@ describe('⭐ No dead sliders', () => {
      * What each tunable is supposed to change, as something comparable.
      *
      * A knob missing from this table is a knob nobody has claimed an effect
-     * for, and the test below fails on that too — so adding a slider without
+     * for, and the test below fails on that too, so adding a slider without
      * wiring it up cannot pass quietly.
      */
     const seed = 4242;
-    const board = {};
-    for (let i = 0; i < 36; i++) {
-        board[i] = { terrainId: i % 6 < 3 ? 'forest' : 'shore', paintedAt: i };
-    }
-    const lattice = () => JSON.stringify(resolveLattice(board, seed));
-    const edges = () => JSON.stringify(
-        Array.from({ length: LATTICE_SIZE - 1 }, (_, i) => edgeProfile(4, i, 'v', seed))
-    );
-    const props = () => JSON.stringify(
-        propsForBoard(resolveLattice(board, seed), seed)
-    );
-    const patches = () => {
-        const mask = buildPatchMasks(resolveArtPixels(resolveLattice(board, seed), seed), seed).masks.dirt;
-        // Summarised rather than compared byte for byte: 53,824 bytes through
-        // JSON.stringify per tunable per bound is slow enough to notice, and a
-        // count plus a checksum separates any two masks that differ at all.
+    /**
+     * Sea, a beach along half of it, forest and mountain: every look's wear, band and scatter is
+     * on it, and the sea meets the forest where the beach stops, so the beach rim has work to do.
+     */
+    const ground = () => groundWith(24, 12, (c, r) => (c < 5 ? 'water' : c < 9 && r < 6 ? 'sand' : c < 17 ? 'grass' : 'rock'), { seed });
+
+    /** A mask summarised as a count plus a checksum: any two masks that differ at all differ here. */
+    const summary = (mask) => {
+        if (!mask) return 'none';
         let on = 0;
         let sum = 0;
         for (let i = 0; i < mask.length; i++) if (mask[i]) { on++; sum += i; }
         return `${on}:${sum}`;
     };
 
-    const bandBoard = {};
-    for (let i = 0; i < 36; i++) {
-        bandBoard[i] = { terrainId: i % 6 < 3 ? 'ocean' : 'shore', paintedAt: i };
-    }
-    const bands = () => buildBandMasks(resolveArtPixels(resolveLattice(bandBoard, seed), seed), seed)
-        .bands.map(b => {
-            let on = 0;
-            let sum = 0;
-            for (let i = 0; i < b.mask.length; i++) if (b.mask[i]) { on++; sum += i; }
-            return `${b.terrainId}:${on}:${sum}`;
-        }).join('|');
-
-    // ⚠️ Water beside FOREST, not beside shore. On the band fixture the sea's
-    // neighbour is already sand, so there is nothing for a beach to be written
-    // onto and the slider would look dead when it is not.
-    const fringeBoard = {};
-    for (let i = 0; i < 36; i++) {
-        fringeBoard[i] = { terrainId: i % 6 < 3 ? 'ocean' : 'forest', paintedAt: i };
-    }
-    const fringe = () => {
-        const { at, palette } = resolveArtPixels(resolveLattice(fringeBoard, seed), seed);
-        const shore = palette.indexOf('shore');
-        let n = 0;
-        for (let i = 0; i < at.length; i++) if (at[i] === shore) n++;
-        return String(n);
+    const edges = () => JSON.stringify(Array.from({ length: 11 }, (_, i) => edgeProfile(4, i, 'v', seed)));
+    const props = () => {
+        const g = ground();
+        return JSON.stringify(propsForGround(g, resolveArtPixels(g)));
     };
-
-    // Two toned biomes on the same substrate, which is the only situation a
-    // tone is visible in at all.
-    const toneBoard = {};
-    for (let i = 0; i < 36; i++) {
-        toneBoard[i] = { terrainId: i % 6 < 3 ? 'forest' : 'fir_forest', paintedAt: i };
-    }
-    const tones = () => {
-        const map = buildToneMap(resolveArtPixels(resolveLattice(toneBoard, seed), seed));
-        let sum = 0;
-        for (let i = 0; i < map.toneAt.length; i++) sum += map.toneAt[i];
-        return `${map.tones.length}:${sum}`;
+    const wear = () => {
+        const g = ground();
+        return summary(buildWearMask(resolveArtPixels(g), g).mask);
     };
+    const band = (terrainId) => () => {
+        const g = ground();
+        const found = buildBandMasks(resolveArtPixels(g), g).bands.find(b => b.terrainId === terrainId);
+        return summary(found?.mask);
+    };
+    const beach = () => {
+        const { at, palette } = resolveArtPixels(ground());
+        const sand = palette.indexOf('sand');
+        return String(at.reduce((n, v) => n + (v === sand ? 1 : 0), 0));
+    };
+    const mute = () => Array.from(muteTexels(Uint8ClampedArray.from([200, 120, 60, 255]))).join(',');
 
     const OBSERVES = {
         edgeSwing: edges,
         edgeRoughness: edges,
-        ownerJitter: lattice,
-        ownerCoarseShare: lattice,
+        beachWidth: beach,
+        shallowsWidth: band('water'),
+        wetSandWidth: band('sand'),
+        // ⚠️ Strength changes the tint, not the mask, so it is observed through the appearance.
+        bandStrength: () => JSON.stringify(['sea', 'coast'].map(id => bandAppearance(id))),
+        patchCoverage: wear,
+        wearClump: wear,
         propDensity: props,
         propScatter: props,
-        patchCoverage: patches,
-        patchScale: patches,
-        bandWidth: bands,
-        fringeWidth: fringe,
-        toneBlend: tones,
-        toneStrength: tones,
-        // ⚠️ Strength changes the tint, not the mask, so it has to be observed
-        // through the appearance rather than through the geometry.
-        bandStrength: () => JSON.stringify(
-            ['ocean', 'shore'].map(id => bandAppearance(id))
-        )
+        muteBrightness: mute,
+        muteSaturation: mute
     };
 
     it('every tunable in the table is claimed to change something', () => {
         for (const t of TUNABLES) {
             expect(OBSERVES[t.key], `${t.key} has no declared effect`).toBeDefined();
         }
+        expect(Object.keys(OBSERVES).sort()).toEqual(TUNABLES.map(t => t.key).sort());
     });
 
     it('⚠️ every tunable actually changes what it claims to', () => {
-        // The whole point. A slider that saves and repaints but alters nothing
-        // is indistinguishable from a working one until you have wasted an
-        // afternoon on it.
+        // A slider that saves and repaints but alters nothing is indistinguishable from a working
+        // one until an afternoon has gone on it.
         for (const t of TUNABLES) {
             const observe = OBSERVES[t.key];
             resetTuning();
-
             setTuning(t.key, t.min);
             const atMin = observe();
             setTuning(t.key, t.max);
             const atMax = observe();
+            expect(atMin, `${t.key} does nothing between ${t.min} and ${t.max}`).not.toBe(atMax);
+        }
+    });
+});
 
-            expect(atMin, `${t.key} does nothing between ${t.min} and ${t.max}`)
-                .not.toBe(atMax);
+describe('The sliders the tile era needed are gone', () => {
+    it('has no tile bleed, bleed smoothness or tone slider, and its widths are in mat units', () => {
+        const keys = TUNABLES.map(t => t.key);
+        for (const gone of ['ownerJitter', 'ownerCoarseShare', 'toneBlend', 'toneStrength', 'fringeWidth', 'bandWidth', 'patchScale']) {
+            expect(keys).not.toContain(gone);
+        }
+        for (const key of ['beachWidth', 'shallowsWidth', 'wetSandWidth', 'wearClump']) {
+            const t = TUNABLES.find(x => x.key === key);
+            expect(t.label, key).toMatch(/\(u\)$/);
+            expect(t.step % 2, key).toBe(0);
         }
     });
 });

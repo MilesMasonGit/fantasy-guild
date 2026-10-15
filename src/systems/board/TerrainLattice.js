@@ -1,109 +1,34 @@
-// the terrain subtile lattice
+// the ground's pixel map: which terrain at every plan pixel, cell edges wiggled, beaches cut
 
-import { substrateArtPx, fringeOf } from '../../config/registries/terrainRegistry.js';
+import { TERRAIN_CELL } from '../atlas/TerrainMap.js';
+import { fringeOf } from '../../config/registries/terrainRegistry.js';
 import { tuning } from '../../config/playmatTuning.js';
 
 /**
- * ⚠️ Dormant terrain: the last of the old 6×6 grid.
+ * The ground plan is built at one pixel per 2 mat units, whatever the window: a ground pixel is
+ * then a Token pixel at the shipped scale (a 64-pixel Token is 128 units). A 32-unit terrain cell
+ * is 16 plan pixels, one 16-pixel ground art piece.
  *
- * Terrain is switched off (`TERRAIN_ENABLED = false`) and its lattice is still laid out on the grid
- * the playmat used to be: six 128px tiles with 32px gaps, 928px across. These numbers exist only to
- * keep the dormant terrain stack compiling and drawing as before, and live here, in the stack that
- * is the sole remaining user of them.
- *
- * ⚠️ These are not playmat geometry and nothing outside the terrain files may import them. The mat
- * is a free surface (`matGeometry.js`) with no size in tiles. When terrain is revived it is
- * re-latticed over the mat itself and this block goes with the grid it describes.
- */
-export const LEGACY_BOARD_SIZE = 6;
-export const LEGACY_TILE_PX = 128;
-export const LEGACY_TILE_GAP_PX = 32;
-export const LEGACY_BOARD_PX =
-    LEGACY_TILE_PX * LEGACY_BOARD_SIZE + LEGACY_TILE_GAP_PX * (LEGACY_BOARD_SIZE - 1);
-
-/** Where the dormant lattice is blitted onto the mat: the old 928px area, centred. */
-export const LEGACY_AREA_ORIGIN = Object.freeze({ x: 416, y: 99 });
-
-const BOARD_SIZE = LEGACY_BOARD_SIZE;
-const TILE_PX = LEGACY_TILE_PX;
-const TILE_GAP_PX = LEGACY_TILE_GAP_PX;
-
-/**
- * Which terrain each of the board's 841 subtiles shows.
- *
- * Pure arithmetic, no React, no game state beyond what is passed in, so the renderer can ask for a
- * whole board and get the same answer every time.
- *
- * The lattice: a terrain sprite is 16px drawn at 32px, and a tile is 128px, so four subtiles fit
- * across a tile. The gap between tiles is 32px, exactly one more subtile, so the board is one
- * continuous grid rather than 36 separate ones. Six tiles of four plus five gaps of one is 29
- * across, and 29 × 32px = 928px, the board's exact width.
- *
- * Who owns a subtile: each tile keeps a solid 2×2 core that nothing can take from it (the middle
- * four of its sixteen subtiles). Everything else is contestable: a tile's outer ring, and the gap
- * subtiles between tiles, can go to any tile within reach, which is what makes a boundary ragged
- * and lets one tile's terrain spill across the gap. A contest is settled by score, highest wins:
- * - Distance: how far the subtile sits from the tile claiming it, in subtiles. Its own tile is 0
- * away, a tile across the gap is 2, so bleeding into a neighbour is rarer than winning a gap.
- * - Recency: later-painted tiles score higher. Ranked among the candidates rather than used as a
- * raw number, so the arithmetic stays bounded however long a game runs.
- * - Jitter: a fixed pseudo-random value per subtile-and-claimant, derived from coordinates and the
- * save's seed so it is identical on every redraw. This is the whole source of the ragged edge.
- *
- * Two scales of raggedness: ownership above is the coarse one (which of 841 subtiles belongs to
- * whom); `edgeProfile` below is the fine one (where exactly, within a boundary between two
- * subtiles, one terrain stops and the other starts).
+ * Pure arithmetic over a Region's ground (`regionGround`), no game state, no React: the same
+ * ground and seed give the same pixels on every build.
  */
 
-/** Subtiles across one tile. 128px tile ÷ 32px subtile. */
-export const SUBTILES_PER_TILE = 4;
+/** Mat units in one plan pixel. */
+export const PLAN_PIXEL_U = 2;
 
-/** Subtiles in the gap between two tiles. 32px gap ÷ 32px subtile. */
-export const SUBTILES_PER_GAP = TILE_GAP_PX / (TILE_PX / SUBTILES_PER_TILE);
+/** Plan pixels across one terrain cell. */
+export const CELL_PX = TERRAIN_CELL / PLAN_PIXEL_U;
 
-/** One tile plus the gap that follows it. */
-const STRIDE = SUBTILES_PER_TILE + SUBTILES_PER_GAP;
-
-/** The lattice is this many subtiles on a side. Six tiles and five gaps: 29. */
-export const LATTICE_SIZE = BOARD_SIZE * SUBTILES_PER_TILE + (BOARD_SIZE - 1) * SUBTILES_PER_GAP;
-
-/** How big one subtile draws, in board pixels. */
-export const SUBTILE_PX = TILE_PX / SUBTILES_PER_TILE;
-
-/**
- * How much each term is worth when tiles compete for a subtile. Tuned by eye: below about 1.5 of
- * jitter the gaps resolve into straight lines (a regular sawtooth, worse than none), and much above
- * 2.5 a tile starts winning subtiles it is nowhere near.
- */
-const DISTANCE_WEIGHT = 0.75;
-const RECENCY_STEP = 0.7;
-
-/**
- * ⚠️ Read through `tuning()` at the point of use, never captured into a const.
- * Capturing would freeze the value at import and the tuning panel's sliders
- * would appear to do nothing — which is exactly how the art set went wrong.
- */
-const jitter = () => tuning('ownerJitter');
-const coarseShare = () => tuning('ownerCoarseShare');
-
-/**
- * How much of the jitter comes from a *coarse* sample rather than a per-subtile
- * one — the difference between an edge that meanders and an edge that fizzes.
- *
- * Independent noise per subtile gives every subtile its own coin flip, so a
- * boundary comes out as salt-and-pepper: statistically ragged, but reading as
- * dithering rather than as a coastline. Mixing in a value sampled from a
- * coarser grid makes neighbouring subtiles lean the same way, so the boundary
- * wanders in runs and looks like a shape somebody drew.
- */
-const COARSE_CELLS = 3;
+/** The plan's size for a mat: whole pixels, the last row and column covering the mat's edge. */
+export function planSize(mat) {
+    return { width: Math.ceil(mat.w / PLAN_PIXEL_U), height: Math.ceil(mat.h / PLAN_PIXEL_U) };
+}
 
 /**
  * A stable pseudo-random number in [0, 1) from a handful of integers.
  *
- * Deliberately not `Math.random`: the same subtile must resolve the same way on every redraw and
- * every reload, or the board would shimmer as you played and come back different after a save.
- * Exported so `TerrainProps` scatters trees from the same source of noise.
+ * Deliberately not `Math.random`: the same pixel must come out the same on every build and every
+ * load, or the ground would shimmer as you played and come back different after a save.
  */
 export function hash01(...values) {
     let h = 0x811c9dc5;
@@ -116,342 +41,141 @@ export function hash01(...values) {
 }
 
 /**
- * The random term in a contest: mostly a coarse sample so edges meander, with
- * enough per-subtile noise mixed in to keep them from looking like steps.
+ * The two dials that decide how a coastline reads, both as a share of a cell, so the shape stays
+ * the same whatever the pixel size and only how finely it is cut changes.
+ *
+ * `edgeSwing` is how far the frontier travels from the cell line, the scale of the bays and
+ * headlands. `edgeRoughness` is how spiky it is between its pinned ends.
+ *
+ * ⚠️ The shipped values (0.3125 / 0.070) are the owner's middle ground between too jagged
+ * (0.3125 / 0.1125) and too calm (0.25 / 0.055); not a simple average.
  */
-function jitterAt(sx, sy, tile, seed) {
-    const coarse = hash01(
-        Math.floor(sx / COARSE_CELLS), Math.floor(sy / COARSE_CELLS), tile, seed
-    );
-    const fine = hash01(sx, sy, tile, seed);
-    const share = coarseShare();
-    return share * coarse + (1 - share) * fine;
+const edgeSwing = () => tuning('edgeSwing');
+const edgeRoughness = () => tuning('edgeRoughness');
+
+/**
+ * How far, in pixels, a terrain may push across a cell boundary.
+ *
+ * ⚠️ Held under half a cell whatever the slider says: a frontier is drawn relative to one
+ * boundary and knows nothing about the cell's opposite side, so two boundaries each displaced by
+ * more than half could cross; and `resolveArtPixels` looks for edges only in the cells beside a
+ * different cell, which is exact only while a strip stops short of a cell's middle.
+ */
+export function edgeAmplitude(cellPx = CELL_PX) {
+    return Math.max(1, Math.min(Math.ceil(cellPx / 2) - 1, Math.round(cellPx * edgeSwing())));
 }
 
 /**
- * The tile column a subtile column belongs to, and how far into it.
+ * Where two neighbouring cells actually divide, rather than where the grid says they do.
  *
- * `offset` of 0–3 is inside that tile; 4 means the gap after it, which belongs
- * to no tile until someone claims it.
- */
-function split(subtileIndex) {
-    const tile = Math.floor(subtileIndex / STRIDE);
-    return { tile, offset: subtileIndex - tile * STRIDE };
-}
-
-/** Whether an offset within a tile is one of its untouchable middle subtiles. */
-const isCore = (offset) => offset === 1 || offset === 2;
-
-/**
- * Distance in subtiles from a subtile to the nearest edge of a tile's body.
- * Zero when the subtile is inside that tile.
- */
-function distanceToTile(subtileIndex, tileIndex) {
-    const start = tileIndex * STRIDE;
-    const end = start + SUBTILES_PER_TILE - 1;
-    if (subtileIndex < start) return start - subtileIndex;
-    if (subtileIndex > end) return subtileIndex - end;
-    return 0;
-}
-
-/** The tile columns (or rows) that may claim a subtile column (or row). */
-function claimants(subtileIndex) {
-    const { tile, offset } = split(subtileIndex);
-    const out = [];
-    if (offset < SUBTILES_PER_TILE) out.push(tile);
-    if (offset >= SUBTILES_PER_TILE) {
-        out.push(tile);
-        if (tile + 1 < BOARD_SIZE) out.push(tile + 1);
-    } else {
-        // An outer subtile of a tile can also be taken by the tile across the gap; the core two are
-        // never offered.
-        if (offset === 0 && tile - 1 >= 0) out.push(tile - 1);
-        if (offset === SUBTILES_PER_TILE - 1 && tile + 1 < BOARD_SIZE) out.push(tile + 1);
-    }
-    return out;
-}
-
-/**
- * Which tile owns the subtile at `(sx, sy)`, or null if no candidate is painted.
- *
- * @param {number} sx Subtile column, 0 … LATTICE_SIZE-1.
- * @param {number} sy Subtile row.
- * @param {object} terrain The board's terrain map, `tileIndex -> {terrainId, paintedAt}`.
- * @param {number} seed The save's terrain seed.
- * @returns {number|null} A tile index.
- */
-export function ownerOf(sx, sy, terrain, seed = 0) {
-    const x = split(sx);
-    const y = split(sy);
-
-    // The untouchable core: both axes inside a tile and away from its edges.
-    // Resolving these without a contest is not only faster, it is what stops a
-    // tile's middle flickering between neighbours as the board fills up.
-    if (isCore(x.offset) && isCore(y.offset)) {
-        const own = y.tile * BOARD_SIZE + x.tile;
-        return terrain[own] ? own : null;
-    }
-
-    const cols = claimants(sx);
-    const rows = claimants(sy);
-
-    const candidates = [];
-    for (const row of rows) {
-        for (const col of cols) {
-            const tile = row * BOARD_SIZE + col;
-            if (terrain[tile]) candidates.push(tile);
-        }
-    }
-    if (candidates.length === 0) return null;
-    if (candidates.length === 1) return candidates[0];
-
-    // Rank by paint order so recency is a bounded bonus rather than a raw
-    // counter that grows without limit over a long game.
-    const byAge = [...candidates].sort(
-        (a, b) => (terrain[a].paintedAt || 0) - (terrain[b].paintedAt || 0)
-    );
-    const rank = new Map(byAge.map((tile, index) => [tile, index]));
-
-    let best = null;
-    let bestScore = -Infinity;
-    for (const tile of candidates) {
-        const col = tile % BOARD_SIZE;
-        const row = Math.floor(tile / BOARD_SIZE);
-        const distance = Math.max(distanceToTile(sx, col), distanceToTile(sy, row));
-        const score =
-            -DISTANCE_WEIGHT * distance
-            + RECENCY_STEP * rank.get(tile)
-            + jitter() * jitterAt(sx, sy, tile, seed);
-        if (score > bestScore) {
-            bestScore = score;
-            best = tile;
-        }
-    }
-    return best;
-}
-
-/**
- * Which of a substrate's interchangeable variants a subtile draws.
- *
- * Derived from the subtile's own position rather than from its tile, so the
- * noise carries across a tile boundary instead of restarting at it — two
- * nearby grass tiles read as one field, not as two squares of grass.
- */
-export function variantAt(sx, sy, variants, seed = 0) {
-    if (!variants || variants <= 1) return 0;
-    return Math.floor(hash01(sx, sy, 0x5eed, seed) * variants) % variants;
-}
-
-/**
- * The whole board resolved, as a flat array of `LATTICE_SIZE * LATTICE_SIZE`
- * terrain ids (or null where nothing has been painted within reach).
- *
- * Row-major, so index `sy * LATTICE_SIZE + sx`.
- */
-export function resolveLattice(terrain = {}, seed = 0) {
-    const out = new Array(LATTICE_SIZE * LATTICE_SIZE);
-    for (let sy = 0; sy < LATTICE_SIZE; sy++) {
-        for (let sx = 0; sx < LATTICE_SIZE; sx++) {
-            const owner = ownerOf(sx, sy, terrain, seed);
-            out[sy * LATTICE_SIZE + sx] = owner == null ? null : terrain[owner].terrainId;
-        }
-    }
-    return out;
-}
-
-/**
- * How many art pixels a subtile is across — the resolution a coastline is cut at.
- *
- * ⚠️ **Follows the selected art set, and must.** A 32px subtile is 16 art pixels
- * of the `a` set or 8 of the `b` set, and the frontier steps in art pixels. Pin
- * this to a number and a coastline cut at 16 steps through ground drawn at 8
- * reads as a mistake rather than as a style — the edge would be finer than
- * anything around it.
- *
- * ⚠️ A **function**, not a constant. The QA panel switches art sets at runtime;
- * a constant would be captured at import and keep the old resolution forever,
- * which is subtle to spot because the ground changes and the coastline does not.
- */
-export function subtileArtPx() {
-    return substrateArtPx();
-}
-
-/**
- * How far, in art pixels, a terrain may push across a subtile boundary. Expressed as a fraction of
- * the subtile rather than a fixed number, so that switching art sets keeps the coastline the same
- * shape and only changes how coarsely it is cut.
- *
- * Kept well under half a subtile: the frontier is drawn relative to one boundary and knows nothing
- * about the next one along, so two neighbouring boundaries each displaced by more than half could
- * overlap and produce terrain on the far side of a subtile that does not own it.
- */
-export function edgeAmplitude() {
-    return Math.max(1, Math.round(subtileArtPx() * EDGE_SWING()));
-}
-
-/**
- * The two dials that decide how a coastline reads. They do different jobs and are worth turning
- * separately.
- *
- * `EDGE_SWING` is how far the frontier travels from the grid line, the scale of the bays and
- * headlands. Past about a third it starts letting terrain reach ground it has no business on.
- *
- * `EDGE_ROUGHNESS` is how spiky the frontier is between its pinned ends: at high values the
- * boundary grows single-pixel teeth that look like noise. It is a fraction of the subtile, so it
- * shrinks with the art set.
- *
- * ⚠️ The shipped values (0.3125 / 0.070) are the owner's middle ground between too jagged (0.3125 /
- * 0.1125) and too calm (0.25 / 0.055); not a simple average.
- *
- * ⚠️ Swing is quantised: it becomes a whole number of art pixels, so at 8px art it is 2 or 3 and
- * nothing between. The middle ground has to be found in the roughness.
- */
-const EDGE_SWING = () => tuning('edgeSwing');
-const EDGE_ROUGHNESS = () => tuning('edgeRoughness');
-
-/** How far the frontier wanders between its two pinned ends, in art pixels. */
-const wobble = () => subtileArtPx() * EDGE_ROUGHNESS();
-
-/**
- * Where two neighbouring subtiles actually divide, rather than where the grid says they do.
- *
- * Returns one signed displacement per art pixel along the boundary. Positive pushes the first
- * subtile's terrain into the second; negative pulls the second into the first. Straight zeros would
- * give a hard edge.
+ * Returns one signed displacement per pixel along the boundary. Positive pushes the first cell's
+ * terrain into the second; negative pulls the second into the first.
  *
  * ⚠️ Why the ends are pinned, and to what: a coastline crossing from one boundary segment into the
  * next steps if each segment wandered off on its own. So a segment's endpoints are properties of
  * the junction, not of the segment: both boundaries meeting at a junction read the same hash of
- * that junction's coordinates, so they agree without needing to know about each other. Pinning
- * every junction to the same depth would also be continuous but reads as a decorative scalloped
- * fringe rather than a coast, so the depth varies per junction, which is why this is computed
- * rather than drawn.
+ * that junction's coordinates and agree without knowing about each other. The depth varies per
+ * junction, or the coast reads as a scalloped fringe.
  *
- * @param {number} sx Column of the first subtile.
- * @param {number} sy Row of the first subtile.
- * @param {'v'|'h'} axis 'v' for the boundary with the subtile to the right,
- *   'h' for the boundary with the subtile below.
- * @param {number} seed The save's terrain seed.
- * @returns {number[]} One signed displacement per art pixel, in art pixels.
+ * @param {number} cx Column of the first cell.
+ * @param {number} cy Row of the first cell.
+ * @param {'v'|'h'} axis 'v' for the boundary with the cell to the right, 'h' with the cell below.
+ * @param {number} seed The Region's seed.
+ * @returns {number[]} One signed displacement per pixel, in pixels.
  */
-export function edgeProfile(sx, sy, axis, seed) {
-    // The two junctions this segment runs between. A vertical boundary runs
-    // downward, so its junctions are above and below; a horizontal one runs
-    // rightward. Naming them by absolute position is what makes neighbouring
-    // segments agree.
-    const startJunction = axis === 'v' ? [sx, sy] : [sx, sy];
-    const endJunction = axis === 'v' ? [sx, sy + 1] : [sx + 1, sy];
-
-    const artPx = subtileArtPx();
-    const amplitude = edgeAmplitude();
+export function edgeProfile(cx, cy, axis, seed, cellPx = CELL_PX) {
+    const endJunction = axis === 'v' ? [cx, cy + 1] : [cx + 1, cy];
+    const amplitude = edgeAmplitude(cellPx);
+    const wobble = cellPx * edgeRoughness();
 
     const depthAt = ([jx, jy]) =>
         Math.round((hash01(jx, jy, axis === 'v' ? 0x11 : 0x22, seed) * 2 - 1) * amplitude);
 
-    const from = depthAt(startJunction);
+    const from = depthAt([cx, cy]);
     const to = depthAt(endJunction);
 
-    const out = new Array(artPx);
-    for (let i = 0; i < artPx; i++) {
-        // ⚠️ `i / (N - 1)`, not `(i + 0.5) / N`: this lands the first and last samples exactly on
-        // the two junction depths rather than merely near them, which makes the seam guarantee
-        // structural. With the half-pixel version a value midway between two integers could round
-        // one way in one segment and the other way in its neighbour: a 1px step.
-        const t = i / (artPx - 1);
+    const out = new Array(cellPx);
+    for (let i = 0; i < cellPx; i++) {
+        // ⚠️ `i / (N - 1)`, not `(i + 0.5) / N`: the first and last samples land exactly on the two
+        // junction depths, which makes the seam guarantee structural rather than a rounding hope.
+        const t = i / (cellPx - 1);
         const base = from + (to - from) * t;
-
-        // A little wander on top of the interpolation, or the run between two junctions is a
-        // straight ramp and the coast comes out faceted.
-        // ⚠️ Tapered to nothing at both ends: otherwise the last sample of one segment and the
-        // first of the next each get their own wobble and can differ by several pixels, a visible
-        // step, which is what the junction contract exists to prevent.
+        // A little wander so the run between two junctions is not a straight ramp, tapered to
+        // nothing at both ends so neighbouring segments still meet exactly.
         const taper = Math.sin(Math.PI * t);
-        const wander = (hash01(sx, sy, i, seed) * 2 - 1) * wobble() * taper;
-
-        const value = Math.round(base + wander);
-        const clamped = Math.max(-amplitude, Math.min(amplitude, value));
-        // `Math.round(-0.4)` is `-0`, which is numerically zero but not the same
-        // value as `0`. Normalising keeps "no displacement" a single thing, so
-        // callers comparing two junctions' depths for equality can just compare.
-        out[i] = clamped === 0 ? 0 : clamped;
+        const wander = (hash01(cx, cy, i, seed) * 2 - 1) * wobble * taper;
+        const value = Math.max(-amplitude, Math.min(amplitude, Math.round(base + wander)));
+        // `Math.round(-0.4)` is `-0`; normalised so "no displacement" is one value.
+        out[i] = value === 0 ? 0 : value;
     }
     return out;
 }
 
 /**
- * The strips of one terrain that spill across a boundary into its neighbour.
+ * The strips of one terrain that spill across a boundary into its neighbour: the edge geometry,
+ * as data so it can be tested. Each strip says where it is (`x`, `y`, `w`, `h`, in plan pixels),
+ * which terrain it carries and which cell it is painted into (`intoCx`, `intoCy`).
  *
- * Returned as data rather than drawn, so the geometry can be tested without a canvas. Each strip
- * says where it is (`x`, `y`, `w`, `h`, in art pixels), which terrain's art to use, which subtile
- * picks the variant of that art, and which subtile it is being painted into (`intoSx`, `intoSy`),
- * since that is where a 32px texture has to be positioned to cover it.
- *
- * @returns {Array<{x:number,y:number,w:number,h:number,terrainId:string,
- *                  variantSx:number,variantSy:number,
- *                  intoSx:number,intoSy:number}>}
+ * @returns {Array<{x:number,y:number,w:number,h:number,terrainId:string,intoCx:number,intoCy:number}>}
  */
-export function edgeStrips(sx, sy, axis, here, there, seed = 0) {
+export function edgeStrips(cx, cy, axis, here, there, seed = 0, cellPx = CELL_PX) {
     if (!here || !there || here === there) return [];
 
-    const artPx = subtileArtPx();
-    const profile = edgeProfile(sx, sy, axis, seed);
+    const profile = edgeProfile(cx, cy, axis, seed, cellPx);
     const vertical = axis === 'v';
-    const nextSx = vertical ? sx + 1 : sx;
-    const nextSy = vertical ? sy : sy + 1;
-    const boundary = (vertical ? sx + 1 : sy + 1) * artPx;
+    const nextCx = vertical ? cx + 1 : cx;
+    const nextCy = vertical ? cy : cy + 1;
+    const boundary = (vertical ? cx + 1 : cy + 1) * cellPx;
 
     const out = [];
-    for (let i = 0; i < artPx; i++) {
+    for (let i = 0; i < cellPx; i++) {
         const push = profile[i];
         if (push === 0) continue;
-
-        // Positive: `here` spills forward into `there`, so the strip lies in
-        // `there`'s subtile. Negative: `there` reaches back, and the strip lies
-        // in `here`'s. Either way the strip is painted INTO the loser.
+        // Positive: `here` spills forward into `there`'s cell. Negative: `there` reaches back
+        // into `here`'s. Either way the strip is painted into the loser.
         const forward = push > 0;
-        const terrainId = forward ? here : there;
-        const [variantSx, variantSy] = forward ? [sx, sy] : [nextSx, nextSy];
-        const [intoSx, intoSy] = forward ? [nextSx, nextSy] : [sx, sy];
-
         const depth = Math.abs(push);
         const from = forward ? boundary : boundary - depth;
-
         out.push({
-            x: vertical ? from : sx * artPx + i,
-            y: vertical ? sy * artPx + i : from,
+            x: vertical ? from : cx * cellPx + i,
+            y: vertical ? cy * cellPx + i : from,
             w: vertical ? depth : 1,
             h: vertical ? 1 : depth,
-            terrainId, variantSx, variantSy, intoSx, intoSy
+            terrainId: forward ? here : there,
+            intoCx: forward ? nextCx : cx,
+            intoCy: forward ? nextCy : cy
         });
     }
     return out;
 }
 
-/**
- * Which terrain is at every art pixel, after the boundaries have been ragged.
- *
- * The subtile lattice says what a 32px cell holds; this says what each world pixel holds, which is
- * a different question once edges wander across cell lines. Anything that has to follow the drawn
- * coastline rather than the grid needs this: the shore bands and the patches.
- *
- * ⚠️ Built from `edgeStrips`, the same function the renderer paints from, so the two cannot
- * disagree about where a boundary ended up.
- *
- * @param {boolean} [withFringes] Whether to push fringes onto neighbours — the
- *   beach around the sea. Off only for the test that checks this map against the
- *   strips the renderer paints, which knows nothing about fringes.
- * @returns {{size, palette, at, fringes}} `at` holds an index into `palette` per
- *   art pixel, or -1 for unpainted ground. `fringes` lists what the fringing
- *   changed, so the renderer knows which pixels it owes a new coat.
- */
-export function resolveArtPixels(grid, seed = 0, withFringes = true) {
-    const artPx = subtileArtPx();
-    const size = LATTICE_SIZE * artPx;
+/** Plan pixels in one of the ground's cells. */
+export function cellPxOf(ground) {
+    const px = ground.cell / PLAN_PIXEL_U;
+    if (!Number.isInteger(px) || px < 2) throw new RangeError(`a ${ground.cell}-unit cell is not a whole number of plan pixels`);
+    return px;
+}
 
-    const palette = [];
-    const indexOf = new Map();
+/**
+ * Which terrain is at every plan pixel, after the cell boundaries have been wiggled and the beach
+ * cut: what the shore bands, the wear and the scatter all measure against.
+ *
+ * @param {object} ground A Region's ground, from `regionGround`.
+ * @param {boolean} [withFringes] Whether to cut the beach (a fringe pushed onto the neighbours).
+ * @returns {{width: number, height: number, cellPx: number, palette: string[], at: Uint8Array,
+ *   present: Uint8Array, fields: object, fringes: Array<{terrainId: string, mask: Uint8Array}>}}
+ *   `at` holds an index into `palette` per pixel, row by row; the palette starts as the ground's
+ *   own terrains, in order. `present[p]` is 1 when palette entry `p` is on the ground; `fields`
+ *   the distance fields measured so far ({@link distanceFields}), for the bands to reuse.
+ */
+export function resolveArtPixels(ground, withFringes = true) {
+    const cellPx = cellPxOf(ground);
+    const { width, height } = planSize(ground.mat);
+    const { cols, rows, cells, terrains, seed } = ground;
+
+    const palette = [...terrains];
+    const indexOf = new Map(palette.map((t, i) => [t, i]));
     const idFor = (terrainId) => {
-        if (terrainId == null) return -1;
         let i = indexOf.get(terrainId);
         if (i === undefined) {
             i = palette.length;
@@ -461,190 +185,330 @@ export function resolveArtPixels(grid, seed = 0, withFringes = true) {
         return i;
     };
 
-    const at = new Int16Array(size * size).fill(-1);
+    const at = new Uint8Array(width * height);
 
-    // Flat fill first, matching the renderer's first pass.
-    for (let sy = 0; sy < LATTICE_SIZE; sy++) {
-        for (let sx = 0; sx < LATTICE_SIZE; sx++) {
-            const id = idFor(grid[sy * LATTICE_SIZE + sx]);
-            if (id < 0) continue;
-            for (let y = 0; y < artPx; y++) {
-                const row = (sy * artPx + y) * size + sx * artPx;
-                at.fill(id, row, row + artPx);
-            }
+    // Every cell its own terrain: the first pixel row of each row of cells, copied down it.
+    for (let cy = 0; cy < rows; cy++) {
+        const y0 = cy * cellPx;
+        if (y0 >= height) break;
+        const y1 = Math.min(height, y0 + cellPx);
+        const first = y0 * width;
+        for (let cx = 0; cx < cols; cx++) {
+            const x0 = cx * cellPx;
+            if (x0 >= width) break;
+            at.fill(cells[cy * cols + cx], first + x0, first + Math.min(width, x0 + cellPx));
         }
+        for (let y = y0 + 1; y < y1; y++) at.copyWithin(y * width, first, first + width);
     }
 
-    // Then the strips, matching the renderer's second.
-    for (let sy = 0; sy < LATTICE_SIZE; sy++) {
-        for (let sx = 0; sx < LATTICE_SIZE; sx++) {
-            const here = grid[sy * LATTICE_SIZE + sx];
-            for (const axis of ['v', 'h']) {
-                const nx = axis === 'v' ? sx + 1 : sx;
-                const ny = axis === 'v' ? sy : sy + 1;
-                if (nx >= LATTICE_SIZE || ny >= LATTICE_SIZE) continue;
-                const there = grid[ny * LATTICE_SIZE + nx];
-
-                for (const strip of edgeStrips(sx, sy, axis, here, there, seed)) {
-                    const id = idFor(strip.terrainId);
-                    for (let y = strip.y; y < strip.y + strip.h; y++) {
-                        if (y < 0 || y >= size) continue;
-                        for (let x = strip.x; x < strip.x + strip.w; x++) {
-                            if (x < 0 || x >= size) continue;
-                            at[y * size + x] = id;
-                        }
-                    }
+    // The cells beside a different one, eight ways: the only cells two pixels can differ in,
+    // since a strip reaches under half a cell.
+    const border = new Uint8Array(cols * rows);
+    for (let cy = 0; cy < rows; cy++) {
+        for (let cx = 0; cx < cols; cx++) {
+            const here = cells[cy * cols + cx];
+            for (let r = Math.max(0, cy - 1); r <= Math.min(rows - 1, cy + 1) && !border[cy * cols + cx]; r++) {
+                for (let c = Math.max(0, cx - 1); c <= Math.min(cols - 1, cx + 1); c++) {
+                    if (cells[r * cols + c] !== here) { border[cy * cols + cx] = 1; break; }
                 }
             }
         }
     }
 
-    const fringes = withFringes
-        ? applyFringes(at, size, palette, indexOf, idFor)
-        : [];
+    // Then the strips where two terrains meet.
+    for (let cy = 0; cy < rows; cy++) {
+        for (let cx = 0; cx < cols; cx++) {
+            if (!border[cy * cols + cx]) continue;
+            const here = cells[cy * cols + cx];
+            for (const axis of ['v', 'h']) {
+                const nx = axis === 'v' ? cx + 1 : cx;
+                const ny = axis === 'v' ? cy : cy + 1;
+                if (nx >= cols || ny >= rows) continue;
+                const there = cells[ny * cols + nx];
+                if (there === here) continue;
+                for (const strip of edgeStrips(cx, cy, axis, terrains[here], terrains[there], seed, cellPx)) {
+                    const id = idFor(strip.terrainId);
+                    const yEnd = Math.min(height, strip.y + strip.h);
+                    const xEnd = Math.min(width, strip.x + strip.w);
+                    for (let y = strip.y; y < yEnd; y++) at.fill(id, y * width + strip.x, y * width + Math.max(strip.x, xEnd));
+                }
+            }
+        }
+    }
 
-    return { size, palette, at, fringes };
+    const fields = distanceFields(at, width, height, { cols, rows, cellPx, border });
+    // Which palette entries some pixel shows: the cells' terrains (a strip only carries a
+    // neighbouring cell's), and whatever a fringe writes.
+    const present = new Uint8Array(256);
+    for (let i = 0; i < cells.length; i++) present[cells[i]] = 1;
+    const fringes = withFringes ? applyFringes(at, palette, indexOf, idFor, ground.looks, fields, present) : [];
+    return { width, height, cellPx, palette, at, present, fields, fringes };
+}
+
+const INF = 0x3fff;
+
+/**
+ * The bounded walk every distance here comes from: outward from `start` (seeds on the edge of
+ * their region) in order of distance, stopping at `limit`, never stepping onto a seed
+ * (`members[at[i]] === want`). `dist` holds each reached pixel's distance plus one (0 is not
+ * reached, so a fresh zeroed array needs no fill). Returns the reached pixels that are not
+ * seeds, each once.
+ *
+ * ⚠️ Starting from edge seeds only is exact: the last seed on any shortest path has a non-seed
+ * side neighbour, or a side neighbour that is itself a seed one step nearer (a diagonal step
+ * costs more than a side one). Walking from every seed was most of a coast's build: the
+ * shallows' seeds are all the land.
+ */
+function walk(at, members, want, dist, start, width, height, limit) {
+    const buckets = Array.from({ length: limit + 1 }, () => []);
+    const reached = [];
+    for (const s of start) {
+        if (dist[s] === 1) continue;
+        dist[s] = 1;
+        buckets[0].push(s);
+    }
+    for (let d = 0; d <= limit; d++) {
+        const bucket = buckets[d];
+        for (let b = 0; b < bucket.length; b++) {
+            const i = bucket[b];
+            if (dist[i] !== d + 1) continue;      // superseded since queued
+            const x = i % width;
+            const y = (i - x) / width;
+            for (let dy = -1; dy <= 1; dy++) {
+                const ny = y + dy;
+                if (ny < 0 || ny >= height) continue;
+                for (let dx = -1; dx <= 1; dx++) {
+                    if (!dx && !dy) continue;
+                    const nx = x + dx;
+                    if (nx < 0 || nx >= width) continue;
+                    const nd = d + (dx && dy ? 4 : 3);
+                    if (nd > limit) continue;
+                    const j = ny * width + nx;
+                    const was = dist[j];
+                    if ((was !== 0 && nd + 1 >= was) || members[at[j]] === want) continue;
+                    if (was === 0) reached.push(j);
+                    dist[j] = nd + 1;
+                    buckets[nd].push(j);
+                }
+            }
+        }
+    }
+    return reached;
 }
 
 /**
- * How far each pixel is from the nearest seed.
+ * How far each pixel is from the nearest seed, ×3: the chamfer weights are 3 sideways and 4
+ * diagonally, the standard cheap approximation to Euclidean distance. Seeds are 0.
  *
- * Distances come back multiplied by 3: the weights are 3 sideways and 4 diagonally, the standard
- * cheap approximation to Euclidean distance, and dividing through would only lose precision. Shared
- * rather than duplicated: the shore bands and the beach fringe both measure distance from the
- * coast, and two implementations would be two chances to disagree about where it is.
- *
- * ⚠️ Pass `maxDist` if you have one: without a bound this sweeps the whole board twice to compute a
- * distance for every pixel, and callers discard everything past a few pixels. Bounded, it walks
- * outward from the seeds and stops, touching only the band it was asked about.
- *
- * @param {number} [maxDist] In the same ×3 units. Pixels beyond it come back as
- *   a large number rather than a true distance, which is all either caller
- *   needs to reject them.
+ * @param {Uint8Array} seeds 1 per seed pixel, row by row.
+ * @param {number} [maxDist] In the same ×3 units: bounded, it walks outward from the seeds and
+ *   stops. Pixels beyond it come back as at least that. Unbounded, two full sweeps.
+ * @returns {Int16Array}
  */
-export function distanceFromSeeds(seeds, size, maxDist = Infinity) {
-    const INF = 0x3fff;
-    const dist = new Int16Array(size * size).fill(INF);
-
-    if (Number.isFinite(maxDist)) {
-        const limit = Math.min(INF - 1, Math.ceil(maxDist));
-        // A bucket per distance: costs are only ever 3 or 4, so the frontier
-        // can be walked in order without a real priority queue.
-        const buckets = Array.from({ length: limit + 1 }, () => []);
-        for (let i = 0; i < seeds.length; i++) {
-            if (seeds[i]) { dist[i] = 0; buckets[0].push(i); }
-        }
-        for (let d = 0; d <= limit; d++) {
-            const bucket = buckets[d];
-            for (let b = 0; b < bucket.length; b++) {
-                const i = bucket[b];
-                if (dist[i] !== d) continue;          // superseded since queued
-                const x = i % size;
-                const y = (i - x) / size;
-                for (let dy = -1; dy <= 1; dy++) {
-                    const ny = y + dy;
-                    if (ny < 0 || ny >= size) continue;
-                    for (let dx = -1; dx <= 1; dx++) {
-                        if (!dx && !dy) continue;
-                        const nx = x + dx;
-                        if (nx < 0 || nx >= size) continue;
-                        const nd = d + (dx && dy ? 4 : 3);
-                        if (nd > limit) continue;
-                        const j = ny * size + nx;
-                        if (nd < dist[j]) { dist[j] = nd; buckets[nd].push(j); }
-                    }
-                }
-            }
-        }
-        return dist;
+export function distanceFromSeeds(seeds, width, height, maxDist = Infinity) {
+    const n = width * height;
+    if (!Number.isFinite(maxDist)) {
+        const dist = new Int16Array(n).fill(INF);
+        for (let i = 0; i < n; i++) if (seeds[i]) dist[i] = 0;
+        return fullTransform(dist, width, height);
     }
+    const flags = new Uint8Array(n);
+    for (let i = 0; i < n; i++) flags[i] = seeds[i] ? 1 : 0;
+    const start = [];
+    for (let y = 0, i = 0; y < height; y++) {
+        for (let x = 0; x < width; x++, i++) {
+            if (x < width - 1 && flags[i] !== flags[i + 1]) start.push(flags[i] ? i : i + 1);
+            if (y < height - 1 && flags[i] !== flags[i + width]) start.push(flags[i] ? i : i + width);
+        }
+    }
+    const dist = new Int16Array(n);
+    walk(flags, Uint8Array.of(0, 1), 1, dist, start, width, height, Math.min(INF - 1, Math.ceil(maxDist)));
+    for (let i = 0; i < n; i++) dist[i] = flags[i] ? 0 : (dist[i] === 0 ? INF : dist[i] - 1);
+    return dist;
+}
 
-    for (let i = 0; i < seeds.length; i++) if (seeds[i]) dist[i] = 0;
-
+/** The unbounded two-pass chamfer transform, from `dist` already 0 on the seeds and INF elsewhere. */
+function fullTransform(dist, width, height) {
     const relax = (i, j, cost) => {
         const d = dist[j] + cost;
         if (d < dist[i]) dist[i] = d;
     };
-
-    for (let y = 0; y < size; y++) {
-        for (let x = 0; x < size; x++) {
-            const i = y * size + x;
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            const i = y * width + x;
             if (x > 0) relax(i, i - 1, 3);
-            if (y > 0) relax(i, i - size, 3);
-            if (x > 0 && y > 0) relax(i, i - size - 1, 4);
-            if (x < size - 1 && y > 0) relax(i, i - size + 1, 4);
+            if (y > 0) relax(i, i - width, 3);
+            if (x > 0 && y > 0) relax(i, i - width - 1, 4);
+            if (x < width - 1 && y > 0) relax(i, i - width + 1, 4);
         }
     }
-    for (let y = size - 1; y >= 0; y--) {
-        for (let x = size - 1; x >= 0; x--) {
-            const i = y * size + x;
-            if (x < size - 1) relax(i, i + 1, 3);
-            if (y < size - 1) relax(i, i + size, 3);
-            if (x < size - 1 && y < size - 1) relax(i, i + size + 1, 4);
-            if (x > 0 && y < size - 1) relax(i, i + size - 1, 4);
+    for (let y = height - 1; y >= 0; y--) {
+        for (let x = width - 1; x >= 0; x--) {
+            const i = y * width + x;
+            if (x < width - 1) relax(i, i + 1, 3);
+            if (y < height - 1) relax(i, i + width, 3);
+            if (x < width - 1 && y < height - 1) relax(i, i + width + 1, 4);
+            if (x > 0 && y < height - 1) relax(i, i + width - 1, 4);
         }
     }
     return dist;
 }
 
 /**
- * Push a terrain's *fringe* out onto its neighbours — the beach around the sea.
+ * Distance fields over one pixel map, shared by the beach and the bands of one build.
  *
- * ⚠️ The opposite direction to a shore band. A band shades a terrain's own edge;
- * a fringe writes a **different terrain** onto the ground next to it. Sand
- * cannot be a band on the water, because the sand is not in the water — it is on
- * the land side of the line.
+ * `from(set, outside, limit)` measures from every pixel whose palette index is in `set` (or,
+ * with `outside`, is not) and returns `{pixels}`: the pixels outside the set nearer than `limit`
+ * (chamfer ×3 units), so a caller visits those rather than the whole plan.
  *
- * Done by rewriting the terrain map rather than by drawing sand over the top,
- * which is what makes everything downstream behave: the wet-sand band sees real
- * shore and darkens it, the forest's dirt patches stop at it instead of
- * speckling the beach, and a tree will not grow on it. Painting it as an
- * overlay would have looked identical and been wrong in all three ways.
+ * Every edge between two terrains is found once, as the pairs of side neighbours that differ,
+ * looking only in the cells `cellScan.border` marks (all of them without it); a field starts
+ * from the pairs its set splits. The beach and the wet sand both measure from the water, so the
+ * second request is the first one again.
  *
- * Mutates `at` in place and returns the masks of what changed, so the renderer
- * knows which pixels it owes a coat of sand.
+ * `rewrote(fromFlags, to, changed)` says the `changed` pixels, of the flagged palette entries,
+ * became `to`: fields whose seeds that altered are dropped, and the new edges noted.
  */
-function applyFringes(at, size, palette, indexOf, idFor) {
+export function distanceFields(at, width, height, cellScan = null) {
+    const n = width * height;
+    const entries = [];
+    let edgeA = null;
+    let edgeB = null;
+    let edges = 0;
+
+    const addEdge = (a, b) => {
+        if (edges === edgeA.length) {
+            const grownA = new Int32Array(edgeA.length * 2);
+            const grownB = new Int32Array(edgeB.length * 2);
+            grownA.set(edgeA);
+            grownB.set(edgeB);
+            edgeA = grownA;
+            edgeB = grownB;
+        }
+        edgeA[edges] = a;
+        edgeB[edges] = b;
+        edges++;
+    };
+    const scan = (y, x0, x1) => {
+        const last = y === height - 1;
+        for (let x = x0, i = y * width + x0; x < x1; x++, i++) {
+            const t = at[i];
+            if (x < width - 1 && t !== at[i + 1]) addEdge(i, i + 1);
+            if (!last && t !== at[i + width]) addEdge(i, i + width);
+        }
+    };
+    const findEdges = () => {
+        edgeA = new Int32Array(4096);
+        edgeB = new Int32Array(4096);
+        if (!cellScan) {
+            for (let y = 0; y < height; y++) scan(y, 0, width);
+            return;
+        }
+        const { cols, rows, cellPx, border } = cellScan;
+        for (let cy = 0; cy < rows; cy++) {
+            const y0 = cy * cellPx;
+            const y1 = Math.min(height, y0 + cellPx);
+            for (let cx = 0; cx < cols; cx++) {
+                if (!border[cy * cols + cx]) continue;
+                const x0 = cx * cellPx;
+                const x1 = Math.min(width, x0 + cellPx);
+                for (let y = y0; y < y1; y++) scan(y, x0, x1);
+            }
+        }
+    };
+    const isSeed = (e, t) => e.outside !== e.set.has(t);
+    const within = (e, limit) => {
+        const out = [];
+        for (const i of e.reached) if (e.dist[i] - 1 < limit) out.push(i);
+        return { pixels: out };
+    };
+
+    return {
+        from(set, outside, limit) {
+            const key = `${outside ? '!' : ''}${[...set].sort((a, b) => a - b).join(',')}`;
+            const hit = entries.find(e => e.key === key && e.limit >= limit);
+            if (hit) return within(hit, limit);
+            if (!edgeA) findEdges();
+            const members = new Uint8Array(256);
+            for (const t of set) members[t] = 1;
+            const want = outside ? 0 : 1;
+            const start = [];
+            for (let k = 0; k < edges; k++) {
+                const a = edgeA[k];
+                const b = edgeB[k];
+                const seedA = members[at[a]] === want;
+                if (seedA !== (members[at[b]] === want)) start.push(seedA ? a : b);
+            }
+            const dist = new Int16Array(n);
+            const reached = walk(at, members, want, dist, start, width, height, Math.min(INF - 1, Math.ceil(limit)));
+            const entry = { key, set: new Set(set), outside, limit, dist, reached };
+            entries.push(entry);
+            return within(entry, limit);
+        },
+        rewrote(fromFlags, to, changed) {
+            for (let k = entries.length - 1; k >= 0; k--) {
+                const e = entries[k];
+                for (let t = 0; t < fromFlags.length; t++) {
+                    if (fromFlags[t] && isSeed(e, t) !== isSeed(e, to)) { entries.splice(k, 1); break; }
+                }
+            }
+            if (!edgeA) return;
+            // Edges that stopped being edges are skipped when a field reads them; new ones can
+            // only lie beside a changed pixel.
+            for (const i of changed) {
+                const x = i % width;
+                if (x > 0 && at[i - 1] !== at[i]) addEdge(i - 1, i);
+                if (x < width - 1 && at[i + 1] !== at[i]) addEdge(i, i + 1);
+                if (i >= width && at[i - width] !== at[i]) addEdge(i - width, i);
+                if (i + width < n && at[i + width] !== at[i]) addEdge(i, i + width);
+            }
+        }
+    };
+}
+
+/**
+ * Push a terrain's fringe out onto its neighbours: the beach the sea cuts into the land.
+ *
+ * ⚠️ The opposite direction to a band. A band shades a terrain's own edge; a fringe writes a
+ * **different terrain** onto the ground beside it. Rewriting the map rather than drawing sand
+ * over the top is what makes everything downstream behave: the wet sand sees real shore, the
+ * forest's earth stops at it, and nothing of the forest's scatter stands on it.
+ *
+ * Mutates `at` (and `present`) and returns what each fringe changed.
+ */
+function applyFringes(at, palette, indexOf, idFor, looks, fields, present) {
     const changed = [];
-
-    for (let source = 0; source < palette.length; source++) {
-        const fringe = fringeOf(palette[source]);
+    const sources = palette.length;
+    for (let source = 0; source < sources; source++) {
+        if (!present[source]) continue;
+        const fringe = fringeOf(looks[palette[source]]);
         if (!fringe) continue;
+        const pixels = tuning(fringe.widthTuning) / PLAN_PIXEL_U;
+        if (!(pixels > 0)) continue;
 
-        const width = Math.max(0, fringe.width * tuning('fringeWidth'));
-        if (width <= 0) continue;
-
-        const seeds = new Uint8ClampedArray(size * size);
-        let anySeed = false;
-        for (let i = 0; i < at.length; i++) {
-            if (at[i] === source) { seeds[i] = 1; anySeed = true; }
-        }
-        if (!anySeed) continue;
-
-        const limit = width * 3;
-        const dist = distanceFromSeeds(seeds, size, limit);
-        const spared = new Set((fringe.except || []).map(id => indexOf.get(id)).filter(i => i != null));
+        const { pixels: near } = fields.from([source], false, pixels * 3);
+        const spared = new Uint8Array(256);
+        for (const id of fringe.except || []) if (indexOf.has(id)) spared[indexOf.get(id)] = 1;
         const existing = indexOf.get(fringe.terrain);
-
-        const mask = new Uint8ClampedArray(size * size);
-        // ⚠️ The target index is claimed on the first actual write, not up
-        // front. Registering it eagerly put the fringe terrain into the palette
-        // of boards that had none of it — an island alone on the table listed
-        // `shore` among its terrains and nothing had drawn any.
+        const fromFlags = new Uint8Array(256);
+        const written = [];
+        // ⚠️ The target is claimed on the first write, so a fringe that writes nothing adds no
+        // terrain to the palette.
         let target = -1;
-        for (let i = 0; i < at.length; i++) {
+        for (const i of near) {
             const here = at[i];
-            // Never onto itself, onto what it is already becoming, onto bare
-            // table, or onto anything that has asked to be left alone — a cliff
-            // dropping into the sea should not sprout a beach.
-            if (here === source || here === existing || here < 0 || spared.has(here)) continue;
-            if (dist[i] >= limit) continue;
+            if (here === existing || spared[here]) continue;
             if (target < 0) target = idFor(fringe.terrain);
+            fromFlags[here] = 1;
             at[i] = target;
-            mask[i] = 255;
+            written.push(i);
         }
-        if (target >= 0) changed.push({ terrainId: fringe.terrain, mask });
+        if (target < 0) continue;
+        present[target] = 1;
+        fields.rewrote(fromFlags, target, written);
+        const mask = new Uint8Array(at.length);
+        for (const i of written) mask[i] = 1;
+        changed.push({ terrainId: fringe.terrain, mask });
     }
-
     return changed;
 }

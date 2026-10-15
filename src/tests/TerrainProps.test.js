@@ -1,181 +1,144 @@
-import { describe, it, expect } from 'vitest';
-import { existsSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { propsForBoard, propSizePx, PROP_ART_PX } from '../systems/board/TerrainProps.js';
-import {
-    LATTICE_SIZE, SUBTILE_PX, subtileArtPx, resolveArtPixels
-} from '../systems/board/TerrainLattice.js';
-import { TERRAIN_TYPES, propSprite, propsOf } from '../config/registries/terrainRegistry.js';
+import { describe, it, expect, afterEach } from 'vitest';
+import { propsForGround } from '../systems/board/TerrainProps.js';
+import { resolveArtPixels, CELL_PX } from '../systems/board/TerrainLattice.js';
+import { LOOKS, PROP_PX, PROP_SHEETS, PROP_SHEET_CELLS, propsOf } from '../config/registries/terrainRegistry.js';
+import { setTuning, resetTuning } from '../config/playmatTuning.js';
+import { groundWith, flat } from './fixtures/ground.js';
 
 /**
- * Terrain P4 — scenery.
- *
- * The placement is data, so it can be asserted on. That is the direct lesson of
- * P3, where the geometry lived inside the renderer, was wrong, and no test could
- * see it. Nothing here draws anything.
+ * Scatter: small flat bits (L-6 A) cut from the owner's 4 × 4 prop sheets, one prop pixel to a
+ * ground pixel, seeded and scattered, never on a lattice, never standing off its own ground.
+ * Data, not drawing, so it can be asserted on.
  */
 
-const projectRoot = resolve(__dirname, '../..');
+afterEach(() => resetTuning());
 
-/** A lattice with one terrain everywhere. */
-const flat = (terrainId) => new Array(LATTICE_SIZE * LATTICE_SIZE).fill(terrainId);
+const lookGround = (lookId, seed = 5, cols = 40, rows = 24) => {
+    const terrain = LOOKS[lookId].terrain;
+    const biomes = lookId === 'meadow' ? null : { main: lookId, terrains: { [lookId]: terrain } };
+    return groundWith(cols, rows, flat(terrain), { seed, biomes });
+};
+const propsOn = (ground) => propsForGround(ground, resolveArtPixels(ground));
 
-describe('Scenery only grows where it was authored', () => {
-    it('scatters trees on the grass terrains', () => {
-        expect(propsForBoard(flat('forest'), 5).length).toBeGreaterThan(0);
-        expect(propsForBoard(flat('meadow'), 5).length).toBeGreaterThan(0);
+/** Forest down to a strip of sea on the left: the beach is cut into the forest's cells. */
+const woodBySea = (seed = 11) => groundWith(30, 16, (c) => (c < 4 ? 'water' : 'grass'), { seed });
+
+describe('Scatter grows only where a look asks for it', () => {
+    it('scatters on the meadow, the forest, the mountain and the coast; never on the sea', () => {
+        for (const id of ['meadow', 'forest', 'mountain', 'coast']) {
+            expect(propsOn(lookGround(id)).length, id).toBeGreaterThan(0);
+        }
+        expect(propsOf('sea')).toBeNull();
+        expect(propsOn(lookGround('sea'))).toEqual([]);
     });
 
-    it('leaves every other terrain bare', () => {
-        // Not an oversight — there is no rock or reed art, and half-authored
-        // scenery looks worse than none.
-        for (const id of Object.keys(TERRAIN_TYPES)) {
-            if (propsOf(id)) continue;
-            expect(propsForBoard(flat(id), 5), id).toEqual([]);
+    it('cuts every prop from a real sheet: a cell of its 4 × 4 grid', () => {
+        for (const id of ['meadow', 'forest', 'mountain', 'coast']) {
+            const allowed = propsOf(id).props.map(p => p.sheet);
+            for (const p of propsOn(lookGround(id))) {
+                expect(PROP_SHEETS).toContain(p.sheet);
+                expect(allowed).toContain(p.sheet);
+                expect(p.index).toBeGreaterThanOrEqual(0);
+                expect(p.index).toBeLessThan(PROP_SHEET_CELLS * PROP_SHEET_CELLS);
+                expect(Number.isInteger(p.index)).toBe(true);
+            }
         }
     });
 
-    it('puts nothing on unpainted ground', () => {
-        expect(propsForBoard(new Array(LATTICE_SIZE * LATTICE_SIZE).fill(null), 5)).toEqual([]);
+    it('uses every sheet a look names, and many cells of them', () => {
+        const props = propsOn(lookGround('forest'));
+        expect(new Set(props.map(p => p.sheet)).size).toBe(propsOf('forest').props.length);
+        expect(new Set(props.map(p => `${p.sheet}:${p.index}`)).size).toBeGreaterThan(16);
     });
 
-    it('is denser on forest than on open meadow', () => {
-        expect(propsForBoard(flat('forest'), 5).length)
-            .toBeGreaterThan(propsForBoard(flat('meadow'), 5).length * 2);
-    });
-
-    // ⚠️ Skipped: the tree props were retired from the art, and the props
-    // folder has no tree sheet yet. Revive it when terrain is rewritten.
-    it.skip('names only props that exist as art', () => {
-        for (const prop of propsForBoard(flat('forest'), 5)) {
-            const rel = propSprite(prop.propId);
-            const abs = resolve(projectRoot, 'public', rel.replace(/^\//, ''));
-            expect(existsSync(abs), `missing ${rel}`).toBe(true);
-        }
-    });
-
-    it('uses every species it was given, not just the first', () => {
-        const seen = new Set(propsForBoard(flat('forest'), 5).map(p => p.propId));
-        expect(seen.size).toBe(propsOf('forest').props.length);
+    it('is thicker in the forest than on the meadow, and follows the density slider', () => {
+        const meadow = propsOn(lookGround('meadow')).length;
+        expect(propsOn(lookGround('forest')).length).toBeGreaterThan(meadow * 1.3);
+        setTuning('propDensity', 0);
+        expect(propsOn(lookGround('meadow'))).toEqual([]);
+        setTuning('propDensity', 3);
+        expect(propsOn(lookGround('meadow')).length).toBeGreaterThan(meadow * 2);
     });
 });
 
-describe('⭐ Trees are scattered, not planted on a grid', () => {
-    it('does not put every prop at the same place in its subtile', () => {
-        // The whole point of the scatter. If the offsets collapse to one value
-        // every tree lines up on the lattice and the board looks tiled.
-        const offsets = new Set(
-            propsForBoard(flat('forest'), 5).map(p => `${p.x % SUBTILE_PX},${p.y % SUBTILE_PX}`)
-        );
-        expect(offsets.size).toBeGreaterThan(20);
+describe('⭐ Scattered, not planted on a lattice', () => {
+    it('puts props at many places within their cells', () => {
+        const spots = new Set(propsOn(lookGround('forest')).map(p => `${p.footX % CELL_PX},${p.footY % CELL_PX}`));
+        expect(spots.size).toBeGreaterThan(20);
     });
 
-    it('does not plant them all at the subtile centre', () => {
-        // Dead centre is what it would do with the jitter dropped. Asserted
-        // across the whole board rather than per prop: one tree CAN land on the
-        // centre by chance, and a test that forbade that would fail at random.
-        const props = propsForBoard(flat('forest'), 5);
-        const centred = props.filter(p =>
-            p.anchorX % SUBTILE_PX === SUBTILE_PX / 2 &&
-            p.anchorY % SUBTILE_PX === SUBTILE_PX / 2
-        );
-        expect(centred.length).toBeLessThan(props.length * 0.05);
+    it('⭐ keeps every foot on the cell that grew it', () => {
+        for (const p of propsOn(lookGround('forest'))) {
+            expect(p.footX).toBeGreaterThanOrEqual(p.cx * CELL_PX);
+            expect(p.footX).toBeLessThan((p.cx + 1) * CELL_PX);
+            expect(p.footY).toBeGreaterThanOrEqual(p.cy * CELL_PX);
+            expect(p.footY).toBeLessThan((p.cy + 1) * CELL_PX);
+        }
     });
 
-    it('⭐ keeps every trunk on the subtile that grew it', () => {
-        // The anchor is the base of the trunk, and it is what decides which
-        // terrain the tree belongs to. If it drifted outside its own subtile a
-        // fir could end up standing in the sea — and because the canopy is
-        // taller than a subtile anyway, nothing about the picture would look
-        // obviously wrong.
-        //
-        // Compared against the subtile the prop was actually generated from,
-        // not one recomputed from the anchor, which would make this vacuous.
-        for (const p of propsForBoard(flat('forest'), 5)) {
-            expect(p.anchorX, `prop at ${p.sx},${p.sy}`)
-                .toBeGreaterThanOrEqual(p.sx * SUBTILE_PX);
-            expect(p.anchorX).toBeLessThan((p.sx + 1) * SUBTILE_PX);
-            expect(p.anchorY).toBeGreaterThanOrEqual(p.sy * SUBTILE_PX);
-            expect(p.anchorY).toBeLessThan((p.sy + 1) * SUBTILE_PX);
+    it('draws one prop pixel per ground pixel, its foot at the bottom middle, inside the mat', () => {
+        const ground = lookGround('forest');
+        const { width, height } = resolveArtPixels(ground);
+        expect(PROP_PX).toBe(16);
+        for (const p of propsOn(ground)) {
+            expect(p.x).toBe(p.footX - PROP_PX / 2);
+            expect(p.y).toBe(p.footY - (PROP_PX - 1));
+            expect(p.x).toBeGreaterThanOrEqual(0);
+            expect(p.y).toBeGreaterThanOrEqual(0);
+            expect(p.x + PROP_PX).toBeLessThanOrEqual(width);
+            expect(p.footY).toBeLessThan(height);
+        }
+    });
+
+    it('follows the scatter slider: zero plants every prop at its cell\'s middle', () => {
+        setTuning('propScatter', 0);
+        for (const p of propsOn(lookGround('forest'))) {
+            expect(p.footX % CELL_PX).toBe(CELL_PX / 2);
+            expect(p.footY % CELL_PX).toBe(CELL_PX / 2);
         }
     });
 });
 
-describe('⭐ Depth — what stands lower is drawn on top', () => {
-    it('returns the list already in back-to-front order', () => {
-        // The renderer does nothing but paint this in order, so the sort IS the
-        // depth rule. If it stops holding, trees behind will cover trees in
-        // front and there is nothing downstream to catch it.
-        const props = propsForBoard(flat('forest'), 5);
+describe('⭐ Depth: what stands lower is drawn on top', () => {
+    it('comes back to front, in a total order', () => {
+        const props = propsOn(lookGround('forest'));
         for (let i = 1; i < props.length; i++) {
-            expect(props[i - 1].anchorY).toBeLessThanOrEqual(props[i].anchorY);
+            const a = props[i - 1];
+            const b = props[i];
+            expect(a.footY < b.footY || (a.footY === b.footY && a.footX < b.footX)).toBe(true);
         }
-    });
-
-    // ⚠️ Not tested: that it sorts by the tree's BASE rather than by the top of
-    // its sprite. Every prop is currently the same size, so the two orders are
-    // identical and no assertion can tell them apart. The distinction starts to
-    // matter the moment props of different heights exist — a tall tree standing
-    // in front of a short one must still be drawn in front — so it is written
-    // down here rather than silently relied upon.
-
-    it('is a total order — no two props tie', () => {
-        const props = propsForBoard(flat('forest'), 5);
-        const keys = props.map(p => `${p.anchorY}:${p.x}`);
-        expect(new Set(keys).size).toBe(keys.length);
     });
 });
 
-describe('Stability and scale', () => {
-    it('is identical every time, so the wood does not move as you play', () => {
-        expect(propsForBoard(flat('forest'), 4242)).toEqual(propsForBoard(flat('forest'), 4242));
+describe('⭐ No prop stands with its foot off its own ground or on water', () => {
+    it('drops the props the beach rim took the ground from', () => {
+        const ground = woodBySea();
+        const pixels = resolveArtPixels(ground);
+        const kept = propsForGround(ground, pixels);
+        setTuning('beachWidth', 0);
+        const noBeach = propsForGround(ground, resolveArtPixels(ground));
+        expect(kept.length).toBeGreaterThan(0);
+        expect(kept.length).toBeLessThan(noBeach.length);
     });
 
-    it('differs between seeds', () => {
-        expect(propsForBoard(flat('forest'), 1)).not.toEqual(propsForBoard(flat('forest'), 2));
-    });
-
-    it('draws props at the same pixel zoom as the ground', () => {
-        // A prop at a different zoom has finer pixels than the ground it stands
-        // on and reads as pasted on — the same error as cutting a coastline
-        // finer than the ground it runs through.
-        expect(propSizePx()).toBe(PROP_ART_PX * (SUBTILE_PX / subtileArtPx()));
+    it('⭐ leaves every foot, and both ends of its base, on its own look', () => {
+        for (const seed of [11, 12, 13]) {
+            const ground = woodBySea(seed);
+            const pixels = resolveArtPixels(ground);
+            for (const p of propsForGround(ground, pixels)) {
+                for (const x of [p.footX - 5, p.footX, p.footX + 5]) {
+                    const t = pixels.palette[pixels.at[p.footY * pixels.width + x]];
+                    expect(t, `prop ${p.sheet} at ${p.footX},${p.footY}`).toBe('grass');
+                    expect(ground.looks[t]).toBe(p.look);
+                }
+            }
+        }
     });
 });
 
-describe('⭐ A tree will not grow on a beach (concept §8A)', () => {
-    /** Forest everywhere, with a strip of sea down one side. */
-    function woodByTheSea() {
-        const grid = new Array(LATTICE_SIZE * LATTICE_SIZE).fill('forest');
-        for (let sy = 0; sy < LATTICE_SIZE; sy++) {
-            for (let sx = 0; sx < 4; sx++) grid[sy * LATTICE_SIZE + sx] = 'ocean';
-        }
-        return grid;
-    }
-
-    it('drops props whose trunk stands on fringed ground', () => {
-        // The beach is written onto the forest's outer pixels, so a subtile can
-        // still be forest while the ground a tree would stand in is sand. The
-        // subtile grid cannot see that; the art-pixel map can.
-        const grid = woodByTheSea();
-        const unchecked = propsForBoard(grid, 11);
-        const checked = propsForBoard(grid, 11, resolveArtPixels(grid, 11));
-        expect(checked.length).toBeLessThan(unchecked.length);
-    });
-
-    it('⭐ leaves every surviving trunk standing on its own terrain', () => {
-        const grid = woodByTheSea();
-        const pixels = resolveArtPixels(grid, 11);
-        const scale = SUBTILE_PX / subtileArtPx();
-        for (const p of propsForBoard(grid, 11, pixels)) {
-            const ax = Math.min(pixels.size - 1, Math.floor(p.anchorX / scale));
-            const ay = Math.min(pixels.size - 1, Math.floor(p.anchorY / scale));
-            expect(pixels.palette[pixels.at[ay * pixels.size + ax]]).toBe('forest');
-        }
-    });
-
-    it('changes nothing when no map is supplied', () => {
-        const grid = woodByTheSea();
-        expect(propsForBoard(grid, 11)).toEqual(propsForBoard(grid, 11, null));
+describe('Stability', () => {
+    it('is identical every time, and differs between seeds', () => {
+        expect(propsOn(lookGround('forest', 4242))).toEqual(propsOn(lookGround('forest', 4242)));
+        expect(propsOn(lookGround('forest', 1))).not.toEqual(propsOn(lookGround('forest', 2)));
     });
 });

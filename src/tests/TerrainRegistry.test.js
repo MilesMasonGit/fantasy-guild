@@ -2,135 +2,131 @@ import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
-    SUBSTRATES, TERRAIN_TYPES, substrateSprite, getTerrain, isTerrainId, substrateOf,
-    DEFAULT_ART_SET, ART_PX_FOR_SET, artSet, setArtSet, substrateArtPx, substrateVariants
+    LOOKS, DEFAULT_LOOK, SHEETS, SHEET_PX, PROP_SHEETS, PROP_PX, PROP_SHEET_CELLS,
+    sheetPath, propSheetPath, getLook, bandOf, fringeOf, wearOf, propsOf
 } from '../config/registries/terrainRegistry.js';
-import { subtileArtPx } from '../systems/board/TerrainLattice.js';
+import { TERRAIN } from '../systems/atlas/TerrainMap.js';
+import { TUNABLES } from '../config/playmatTuning.js';
 
 /**
- * Terrain vocabulary: every terrain type names real art.
- *
- * Terrain is switched off (`TERRAIN_ENABLED = false`) since the free playmat.
+ * The ground's vocabulary: five looks over the owner's eight ground sheets and seven prop sheets.
+ * Every look names art that exists, at the size the drawing assumes.
  */
 
 const projectRoot = resolve(__dirname, '../..');
+const onDisk = (rel) => resolve(projectRoot, 'public', rel.replace(/^\//, ''));
 
-describe('Terrain types name real art', () => {
-    it('every terrain sits on a substrate that exists', () => {
-        for (const [id, terrain] of Object.entries(TERRAIN_TYPES)) {
-            expect(terrain.id, `${id} must carry its own id`).toBe(id);
-            expect(SUBSTRATES[terrain.substrate], `${id} substrate`).toBeDefined();
+/** A PNG's width and height, from its IHDR chunk: cheaper than decoding. */
+function pngSize(abs) {
+    const bytes = readFileSync(abs);
+    return [bytes.readUInt32BE(16), bytes.readUInt32BE(20)];
+}
+
+describe('The art the looks draw with', () => {
+    it('has the eight ground sheets on disk, each a 64 × 64 fill', () => {
+        expect(SHEETS).toHaveLength(8);
+        expect(SHEET_PX).toBe(64);
+        for (const id of SHEETS) {
+            const abs = onDisk(sheetPath(id));
+            expect(existsSync(abs), `missing ${sheetPath(id)}`).toBe(true);
+            expect(pngSize(abs), id).toEqual([SHEET_PX, SHEET_PX]);
         }
     });
 
-    it('every substrate has its ground sheet on disk', () => {
-        // ⚠️ The ground art is one sheet per substrate now, not one file per
-        // variant, so `substrateSprite`'s per-variant paths have no file behind
-        // them while terrain is dormant. This checks the art that does exist.
-        for (const substrate of Object.values(SUBSTRATES)) {
-            const abs = resolve(projectRoot, 'public/assets/playmat/terrain', `ter_${substrate.id}.png`);
-            expect(existsSync(abs), `missing ter_${substrate.id}.png`).toBe(true);
+    it('has the seven prop sheets on disk, each 4 × 4 props of 16 pixels', () => {
+        expect(PROP_SHEETS).toHaveLength(7);
+        expect(PROP_PX * PROP_SHEET_CELLS).toBe(64);
+        for (const id of PROP_SHEETS) {
+            const abs = onDisk(propSheetPath(id));
+            expect(existsSync(abs), `missing ${propSheetPath(id)}`).toBe(true);
+            expect(pngSize(abs), id).toEqual([PROP_PX * PROP_SHEET_CELLS, PROP_PX * PROP_SHEET_CELLS]);
         }
     });
 
-    it('does not claim a variant that was never drawn', () => {
-        // The counts are hand-written, so the cheap mistake is claiming one
-        // variant too many and rendering a broken image on some subtiles.
-        for (const substrate of Object.values(SUBSTRATES)) {
-            for (const set of Object.keys(ART_PX_FOR_SET)) {
-                const rel = substrateSprite(substrate.id, substrate.variants[set], set);
-                const abs = resolve(projectRoot, 'public', rel.replace(/^\//, ''));
-                expect(existsSync(abs), `${substrate.id}/${set} claims too few`).toBe(false);
+    it('has no edge or corner art: edges are computed (L-3 A)', () => {
+        expect(existsSync(resolve(projectRoot, 'public/assets/playmat/terrain/masks'))).toBe(false);
+    });
+});
+
+describe('The five looks', () => {
+    it('are the meadow, the forest, the mountain, the coast and the sea', () => {
+        expect(Object.keys(LOOKS).sort()).toEqual(['coast', 'forest', 'meadow', 'mountain', 'sea']);
+        for (const [id, look] of Object.entries(LOOKS)) {
+            expect(look.id, id).toBe(id);
+            expect(Object.values(TERRAIN), id).toContain(look.terrain);
+        }
+    });
+
+    it('⭐ draw the sheets the owner chose (TD-2 A)', () => {
+        expect(LOOKS.meadow.sheets).toEqual(['grass']);
+        expect(LOOKS.forest.sheets).toEqual(['grassb']);
+        expect(LOOKS.mountain.sheets).toEqual(['stone']);
+        expect(LOOKS.coast.sheets).toEqual(['sand']);
+        expect(LOOKS.sea.sheets).toEqual(['water']);
+        // `ter_waterb` waits (a lake, later): drawn, used by no look.
+        const used = Object.values(LOOKS).flatMap(l => [...l.sheets, l.wear?.sheet].filter(Boolean));
+        expect(used).not.toContain('waterb');
+    });
+
+    it('name only sheets that exist, for their ground and their wear', () => {
+        for (const look of Object.values(LOOKS)) {
+            for (const sheet of look.sheets) expect(SHEETS, look.id).toContain(sheet);
+            if (look.wear) expect(SHEETS, look.id).toContain(look.wear.sheet);
+        }
+        expect(wearOf('meadow').sheet).toBe('dirt');
+        expect(wearOf('forest').sheet).toBe('dirt');
+        expect(wearOf('mountain').sheet).toBe('gravel');
+    });
+
+    it('scatter only from the prop sheets, with a positive weight each', () => {
+        for (const id of Object.keys(LOOKS)) {
+            const scatter = propsOf(id);
+            if (!scatter) continue;
+            expect(scatter.density, id).toBeGreaterThan(0);
+            for (const p of scatter.props) {
+                expect(PROP_SHEETS, id).toContain(p.sheet);
+                expect(p.weight, id).toBeGreaterThan(0);
             }
         }
     });
 
-    it('⚠️ cuts coastlines at the same resolution the ground is drawn at', () => {
-        // The one way to switch art sets and get something that looks broken
-        // rather than different: an edge stepped at 16 through ground drawn at
-        // 8 is finer than anything around it, and reads as a rendering fault.
-        // Checked in BOTH sets, because the QA toggle can leave either live.
-        const original = artSet();
-        try {
-            for (const set of Object.keys(ART_PX_FOR_SET)) {
-                setArtSet(set);
-                expect(subtileArtPx(), set).toBe(substrateArtPx());
-                expect(substrateArtPx(), set).toBe(ART_PX_FOR_SET[set]);
+    it('take their band and beach widths from a tuning slider, and name real terrains', () => {
+        const keys = TUNABLES.map(t => t.key);
+        for (const id of Object.keys(LOOKS)) {
+            const band = bandOf(id);
+            if (band) {
+                expect(keys, id).toContain(band.widthTuning);
+                for (const t of band.against || []) expect(Object.values(TERRAIN)).toContain(t);
             }
-        } finally {
-            setArtSet(original);
-        }
-    });
-
-    it('⭐ actually changes what is drawn when the set is switched', () => {
-        // The bug this guards is silent: if anything captures the art set at
-        // import time — a constant, a cache key — the toggle appears to work
-        // and the board keeps drawing the old sprites.
-        const original = artSet();
-        try {
-            setArtSet('a');
-            const fine = substrateSprite('grass', 0);
-            const fineSize = substrateArtPx();
-            setArtSet('b');
-            expect(substrateSprite('grass', 0)).not.toBe(fine);
-            expect(substrateArtPx()).not.toBe(fineSize);
-            expect(subtileArtPx()).toBe(substrateArtPx());
-        } finally {
-            setArtSet(original);
-        }
-    });
-
-    it('refuses a set that does not exist, and leaves the live one alone', () => {
-        const original = artSet();
-        expect(setArtSet('nonsense')).toBe(false);
-        expect(artSet()).toBe(original);
-        expect(setArtSet(original)).toBe(false);   // already live, nothing to do
-    });
-
-    it('ships a default that names a real set', () => {
-        expect(ART_PX_FOR_SET[DEFAULT_ART_SET]).toBeDefined();
-    });
-
-    // ⚠️ Skipped: it reads the per-variant files, which the art no longer has
-    // (see above). Revive it against the sheets when terrain is rewritten.
-    it.skip('every sprite in the selected set really is the size that set claims', () => {
-        // A PNG's width lives at byte 16 of the IHDR chunk. Cheaper than
-        // decoding, and this only has to catch a sprite drawn at the wrong size.
-        for (const substrate of Object.values(SUBSTRATES)) {
-            for (let v = 0; v < substrateVariants(substrate.id); v++) {
-                const rel = substrateSprite(substrate.id, v);
-                const abs = resolve(projectRoot, 'public', rel.replace(/^\//, ''));
-                const width = readFileSync(abs).readUInt32BE(16);
-                expect(width, `${rel} is ${width}px`).toBe(substrateArtPx());
+            const fringe = fringeOf(id);
+            if (fringe) {
+                expect(keys, id).toContain(fringe.widthTuning);
+                expect(Object.values(TERRAIN)).toContain(fringe.terrain);
             }
         }
+        expect(fringeOf('sea').terrain).toBe(TERRAIN.SAND);
+        expect(bandOf('coast').against).toEqual([TERRAIN.WATER]);
     });
 
-    it('⚠️ has no edge or corner art, which is why slice one cannot blend', () => {
-        // If this ever fails, someone has drawn the stencil library and the
-        // blending work in roadmap P3 is unblocked. Delete this test then.
-        const masks = resolve(projectRoot, 'public/assets/playmat/terrain/masks');
-        expect(existsSync(masks)).toBe(false);
-    });
-
-    it('resolves terrain and substrate lookups, and refuses unknown ids', () => {
-        expect(getTerrain('forest').substrate).toBe('grass');
-        expect(substrateOf('shore').id).toBe('sand');
-        expect(isTerrainId('forest')).toBe(true);
-        expect(isTerrainId('swamp')).toBe(false);
-        expect(getTerrain('swamp')).toBeNull();
-        expect(substrateOf('swamp')).toBeNull();
-    });
-
-    it('two terrain types may share one substrate (D-T8)', () => {
-        // The whole point of the flattened model: "desert" and "desert village"
-        // are different terrains on the same sand. If this stops being true the
-        // registry has drifted back towards the concept doc's overlay split.
-        const bySubstrate = {};
-        for (const t of Object.values(TERRAIN_TYPES)) {
-            (bySubstrate[t.substrate] ||= []).push(t.id);
+    it('give every terrain a default look, grass with no owning biome being meadow', () => {
+        for (const t of Object.values(TERRAIN)) {
+            expect(LOOKS[DEFAULT_LOOK[t]], t).toBeDefined();
+            expect(LOOKS[DEFAULT_LOOK[t]].terrain, t).toBe(t);
         }
-        const shared = Object.values(bySubstrate).filter(ids => ids.length > 1);
-        expect(shared.length).toBeGreaterThan(0);
+        expect(DEFAULT_LOOK.grass).toBe('meadow');
+    });
+
+    it('refuse an unknown look rather than throw', () => {
+        expect(getLook('swamp')).toBeNull();
+        expect(bandOf('swamp')).toBeNull();
+        expect(wearOf('swamp')).toBeNull();
+        expect(propsOf('swamp')).toBeNull();
+        expect(fringeOf('swamp')).toBeNull();
+    });
+
+    it('cannot be changed at runtime', () => {
+        expect(Object.isFrozen(LOOKS.forest)).toBe(true);
+        expect(Object.isFrozen(LOOKS.forest.sheets)).toBe(true);
+        expect(Object.isFrozen(LOOKS.forest.props[0])).toBe(true);
     });
 });

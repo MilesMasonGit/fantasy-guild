@@ -211,7 +211,9 @@ scenarios). Only S8 carries a timing.
 - `micro/` — `npm run bench:micro`: `BoardState.tokens()`, `nearby.tokensWithin`,
   the push solver via `MatPlacement.forceSpot`, Flags choosing (a re-plant, which
   releases and chooses) and `TileModifiers.rebuildAll` with and without a
-  board-reach aura, each at 40, 150 and 300 Tokens.
+  board-reach aura, each at 40, 150 and 300 Tokens; and the terrain's ground plan
+  for the three dev hybrids on the shipped mat (`groundPlan.bench.js`, which also
+  prints the first build of a cold module).
 
 ### How fixtures are registered
 

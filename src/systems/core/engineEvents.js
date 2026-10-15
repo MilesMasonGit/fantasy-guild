@@ -218,8 +218,6 @@ export const UI_EVENTS = Object.freeze({
     TUTORIAL_AIDE_HOVER: 'tutorial_aide:hover',
     /** Payload: none. */
     TUTORIAL_AIDE_UNHOVER: 'tutorial_aide:unhover',
-    /** The playmat tuner swapped the terrain art. Payload: none. */
-    TERRAIN_ART_SET_CHANGED: 'terrain_art_set_changed',
 
     /** Dev stress harness. Payload: `{ name, id }`. */
     DEV_STRESS_STARTED: 'dev:stress_started',
