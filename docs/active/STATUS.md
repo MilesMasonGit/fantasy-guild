@@ -37,7 +37,7 @@ October 2026.*
 | Overlapping speech bubbles (T-158) | builder | `fix/t158-bubbles` (`t158`) | ready; director gate running; the callout now sits above the working hero's speech in one column; work check in the 01:00 window | Wed–Thu | |
 | Gear alert stops pulsing (T-153) | builder-lite | `fix/t153-gear-alert` → `main` (via the hover branch) | merged (owner eye-check all fine) | Wed | Wed |
 | Safety net for CMS renames (T-182) | builder-lite | `fix/t182-id-guard` → `main` | merged (250 ids checked; T-184 filed for three dead ids on a dev-panel button) | Wed | Wed |
-| Brief 80 T0 terrain plan (read-only; owner's spritesheets are ready) | engineer | `crunch/terrain` | queued | Fri | |
+| Terrain plan (brief 80 T0: what survives of the dormant system, biome → cell map → ground, placement by terrain, slices and owner questions) | engineer | `crunch/terrain` (`terrain`) | building (started Wed evening at the owner's word); ends in a question batch for the owner | Wed–Thu | |
 | Handoff; T-181 baseline retake queued for Sat 01:00 | director / runner | `main` | queued | Sat | |
 | Planning agent briefs this week's concept docs into the queue table | owner + planning | `planning` (`pp`) | in progress alongside (owner's choice) | Wed–Sat | |
 
