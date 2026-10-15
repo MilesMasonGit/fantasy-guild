@@ -71,6 +71,27 @@ check.
   and enemies, not UI icons or the 256 px card and banner art.
 - **Done when:** previews for the four presets exist for the sample families;
   the bake refuses without its backups (a test); report "ready for the owner".
+- **Built** (`scripts/artBrighten.mjs`, tests in `src/tests/ArtBrighten.test.js`):
+  - `npm run art:brighten` writes all four presets (same as `--all-presets`);
+    `-- --preset drag` one of them; `-- --brightness 1.15 --saturation 1.25
+    --outline 40` a custom setting, into `custom_b1.15_s1.25_o40`;
+    `--outline N` also changes the presets' threshold (default 40);
+    `--only tokens/nature/tree,items/ore` limits a run to some folders.
+  - Previews go to `public/_gen/art-bench/<preset>/<path under public/assets>`
+    (git-ignored), with `public/_gen/art-bench/presets.json` (`[{ id, label,
+    brightness, saturation, threshold }]`, the shape A1's bench reads) listing the presets'
+    settings. The full set (about 675 files × 4 presets) takes
+    about 30 s.
+  - The transform is the browser's own `brightness() saturate()` filter (the
+    drag look's maths) per pixel; clear pixels and pixels whose brightest
+    channel is at or below the threshold stay exactly as drawn; no resizing.
+  - Covers `tokens/`, `items/`, `heroes/`, `enemies/` and the loose PNGs at
+    the top of `public/assets/` (gear); skips `waste/` folders, `ui/`,
+    `icon/`, `skills/`, `backgrounds/`, `playmat/` and `audio/`.
+  - Bake: `npm run art:brighten -- --preset <winner> --bake --backup
+    <path outside the project>/assets_YYYY-MM-DD.zip` (today's date in the
+    name). Refused, writing nothing, unless every covered file is committed,
+    the tag `art-before-vibrancy` exists and the zip is there.
 
 ### A3 — The Studio split and palette import (T-179 plus import, builder)
 

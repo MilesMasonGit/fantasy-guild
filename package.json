@@ -29,6 +29,7 @@
     "cms:restore": "node scripts/backport-game-to-cms.mjs",
     "fx": "node scripts/generate-fx.mjs",
     "animate": "node scripts/animate-enemy.mjs",
+    "art:brighten": "node scripts/artBrighten.mjs"
     "art:bench": "node scripts/artBench.mjs"
   },
   "devDependencies": {
