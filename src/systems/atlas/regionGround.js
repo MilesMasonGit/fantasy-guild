@@ -40,7 +40,8 @@ export function looksForGround(ground, terrains) {
     const out = {};
     for (const terrain of terrains) {
         const owner = owned.find(([biome, t]) => t === terrain && getLook(biome)?.terrain === terrain);
-        out[terrain] = owner ? owner[0] : (DEFAULT_LOOK[terrain] || DEFAULT_LOOK[DEFAULT_TERRAIN]);
+        const fallback = Object.prototype.hasOwnProperty.call(DEFAULT_LOOK, terrain) ? DEFAULT_LOOK[terrain] : DEFAULT_LOOK[DEFAULT_TERRAIN];
+        out[terrain] = owner ? owner[0] : fallback;
     }
     return out;
 }

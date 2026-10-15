@@ -37,8 +37,8 @@ export function sheetFor(look, seed) {
  * @returns {{
  *   width: number, height: number, unit: number, seed: number,
  *   palette: string[], looks: string[], terrainAt: Uint8Array,
- *   wearAt: Uint8Array|null, wear: {mask: Uint8Array|null, thresholds: number[], cell: number},
- *   bands: Array<{terrainId: string, look: string, mask: Uint8Array, appearance: object|null}>,
+ *   wearAt: Uint8Array|null, wear: {mask: Uint8Array|null, worn: number[], thresholds: number[], cell: number},
+ *   bands: Array<{terrainId: string, look: string, mask: Uint8Array, pixels: number[], appearance: object|null}>,
  *   sheets: string[], sheetAt: Uint8Array, tints: Array<{tint: string, amount: number}>, tintAt: Int8Array,
  *   props: object[]
  * }}
@@ -55,13 +55,14 @@ export function buildGroundPlan(ground) {
     const looks = palette.map(t => (getLook(ground.looks[t]) ? ground.looks[t] : LOOKS.meadow.id));
 
     // Sheet `p` is palette entry `p`'s ground, so the drawing answer starts as a copy of the
-    // terrain map; the wear sheets follow. (A sheet may be listed twice.)
+    // terrain map; the wear sheets follow. A sheet may be listed twice, and a terrain of the
+    // stored legend that no cell uses still lists its sheet.
     const sheets = looks.map(id => sheetFor(getLook(id), ground.seed));
     const wearSheet = looks.map(id => {
-        const wear = getLook(id).wear;
-        if (!wear) return -1;
-        if (!sheets.includes(wear.sheet)) sheets.push(wear.sheet);
-        return sheets.indexOf(wear.sheet);
+        const worn = getLook(id).wear?.sheet;
+        if (!worn) return -1;
+        if (!sheets.includes(worn)) sheets.push(worn);
+        return sheets.indexOf(worn);
     });
 
     const n = width * height;

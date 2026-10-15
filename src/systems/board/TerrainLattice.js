@@ -56,11 +56,13 @@ const edgeRoughness = () => tuning('edgeRoughness');
 /**
  * How far, in pixels, a terrain may push across a cell boundary.
  *
- * ⚠️ Kept under half a cell: a frontier is drawn relative to one boundary and knows nothing about
- * the cell's opposite side, so two boundaries each displaced by more than half could cross.
+ * ⚠️ Held under half a cell whatever the slider says: a frontier is drawn relative to one
+ * boundary and knows nothing about the cell's opposite side, so two boundaries each displaced by
+ * more than half could cross; and `resolveArtPixels` looks for edges only in the cells beside a
+ * different cell, which is exact only while a strip stops short of a cell's middle.
  */
 export function edgeAmplitude(cellPx = CELL_PX) {
-    return Math.max(1, Math.round(cellPx * edgeSwing()));
+    return Math.max(1, Math.min(Math.ceil(cellPx / 2) - 1, Math.round(cellPx * edgeSwing())));
 }
 
 /**

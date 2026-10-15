@@ -4,7 +4,6 @@ import { useEngine } from '../hooks/useEngine.js';
 import {
     TUNABLES, tuning, setTuning, resetTuning, isTuned, tuningDefault
 } from '../../config/playmatTuning.js';
-import { UI_EVENTS } from '../../systems/core/engineEvents.js';
 
 /**
  * PlaymatTuner: a developer panel for finding the playmat's look. Sits beside the QA tester
@@ -12,9 +11,8 @@ import { UI_EVENTS } from '../../systems/core/engineEvents.js';
  * this adjusts *appearance* with nothing in the game changing underneath.
  * It builds itself: every control comes from `TUNABLES` in `config/playmatTuning.js`. Adding a
  * knob is a row in that table and nothing here.
- * Redrawing: a tuning change alters no game state, so nothing would repaint on its own. The
- * panel publishes `terrain_art_set_changed`, the event the canvas already listens to for a
- * 'your sprites mean something different now' repaint.
+ * Redrawing: a tuning change alters no game state, so nothing would repaint on its own; whatever
+ * draws the ground subscribes with `onTuningChanged` (`config/playmatTuning.js`).
  */
 export const PlaymatTuner = React.memo(() => {
     const engine = useEngine();
@@ -22,10 +20,7 @@ export const PlaymatTuner = React.memo(() => {
     // Mirrors the module-level store so the sliders re-render as they move.
     const [, bump] = useState(0);
 
-    const repaint = useCallback(() => {
-        bump(n => n + 1);
-        engine?.EventBus.publish(UI_EVENTS.TERRAIN_ART_SET_CHANGED);
-    }, [engine]);
+    const repaint = useCallback(() => bump(n => n + 1), []);
 
     if (!engine) return null;
 
