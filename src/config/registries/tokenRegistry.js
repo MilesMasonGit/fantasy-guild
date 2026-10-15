@@ -28,6 +28,7 @@ import { expandBearer } from '../../systems/effects/effectLibrary.js';
 import { migrateAppliesTargets } from '../../systems/effects/effectMigration.js';
 import { migrateSkillIds } from '../../systems/effects/skillIdMigration.js';
 import { engineTokenType } from './engineTokens.js';
+import { STANDS_ON_CHOICES } from '../../systems/atlas/TerrainMap.js';
 
 /**
  * Merge every Token JSON source into one keyed object.
@@ -145,6 +146,21 @@ export function listTokenTypeIds() {
  */
 export function isLandmarkType(typeId) {
     return getTokenType(typeId)?.landmark === true;
+}
+
+const ANYWHERE_DRY = Object.freeze([]);
+
+/**
+ * The grounds a Token type may stand on, its "Stands on" (`standsOn`): the words the game knows
+ * (`TerrainMap.STANDS_ON`), each once, in the CMS's order. An empty list means anywhere dry.
+ *
+ * ⚠️ An unknown word is dropped rather than read as a ground nothing gives: a typo or a renamed
+ * word must not leave a Token with nowhere to stand. The boot audit names it.
+ */
+export function standsOnOf(typeId) {
+    const list = getTokenType(typeId)?.standsOn;
+    if (!Array.isArray(list) || list.length === 0) return ANYWHERE_DRY;
+    return STANDS_ON_CHOICES.filter(choice => list.includes(choice.id)).map(choice => choice.id);
 }
 
 /** A Token's display name, falling back to its id so the UI never renders blank. */

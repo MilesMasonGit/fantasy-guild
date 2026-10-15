@@ -7,19 +7,25 @@ import { KEYWORD, statementsWith } from '../effects/statements.js';
 import { distanceSq, nearRadius } from './nearby.js';
 import * as BoardState from './BoardState.js';
 import * as Restrictions from './Restrictions.js';
+import * as GroundRules from './GroundRules.js';
 
 /**
  * A Token lands exactly where the player lets go: there are no tiles and nothing snaps. This file
  * is the whole answer to may a Token of this type stand at this point, and if not, where is the
  * nearest place it may?
  *
- * The three rules a spot has to pass:
+ * The four rules a spot has to pass, in the order they are asked:
  * 1. It fits on the mat: the art circle, not the hitbox, stays fully inside. A Token half off the
  * edge would be half unclickable, and the art is what the player sees.
  * 2. It is not crowding anything: centre to centre, against the invisible hitbox. See {@link
  * minGap}.
- * 3. It breaks no `Cannot` rule: a spot that would is simply not a spot, so the search carries on
- * past it rather than refusing the drop.
+ * 3. The ground under its centre is one its "Stands on" allows; with no list, anywhere dry
+ * (`GroundRules`). Tokens already standing where a later rule forbids are left there; the rule
+ * applies from their next move.
+ * 4. It breaks no `Cannot` rule.
+ *
+ * A spot that breaks rule 3 or 4 is simply not a spot, so the search carries on past it rather
+ * than refusing the drop.
  *
  * ⚠️ This file decides, it does not act. Nothing here moves a Token, publishes an event or
  * transfers a charge. {@link dropAt} returns what should happen; `Placement.js` makes it happen and
@@ -152,7 +158,8 @@ function bucketNeighbours(neighbours, cell) {
  * to those close enough to block any candidate (`reach` + the largest gap this type can have), with
  * their gap pre-squared, and `Cannot` is gated once: if neither the Token being placed nor anything
  * within reach of the drop carries a `Cannot`, no candidate can break one, and the projected view
- * is never built at all.
+ * is never built at all. The ground is read once too: `ground` is null when the Token may stand on
+ * every cell here, so a meadow asks nothing per candidate.
  */
 function contextFor(typeId, point, { excludeId = null, plan = null, reach = nudgeReach() } = {}) {
     const hit = hitRadiusOf(typeId);
@@ -187,7 +194,8 @@ function contextFor(typeId, point, { excludeId = null, plan = null, reach = nudg
     }
 
     const buckets = bucketNeighbours(neighbours, largestGap);
-    return { typeId, neighbours, buckets, cell: largestGap, cannotMatters, plan, excludeId, reach, bounds };
+    const ground = GroundRules.rulesFor(typeId);
+    return { typeId, neighbours, buckets, cell: largestGap, cannotMatters, ground, plan, excludeId, reach, bounds };
 }
 
 /** {@link insideMat}, against bounds already read once for this search. */
@@ -231,8 +239,8 @@ function clearAt(x, y, ctx) {
 }
 
 /**
- * Whether a Token of `typeId` may stand at `point`: on the mat, clear of its neighbours, and
- * breaking no `Cannot` rule.
+ * Whether a Token of `typeId` may stand at `point`: on the mat, clear of its neighbours, on ground
+ * it may stand on, and breaking no `Cannot` rule.
  *
  * @param {object} [options]
  * @param {string} [options.excludeId] a Token to ignore — itself, when moving
@@ -245,6 +253,7 @@ export function isLegal(typeId, point, options = {}) {
 function legalIn(typeId, point, ctx) {
     if (!insideBounds(point, ctx.bounds)) return false;
     if (!clearOf(point, ctx)) return false;
+    if (ctx.ground && !GroundRules.allowsAt(ctx.ground, point.x, point.y)) return false;
     if (!ctx.cannotMatters) return true;
 
     // ⚠️ Only reached when something in range actually carries a `Cannot`.
@@ -261,9 +270,9 @@ function legalIn(typeId, point, ctx) {
  * A spawner with nowhere to land, a Foundation with no room to build and a recipe whose Token has
  * nowhere to go all ask the same failing question every tick until room appears. A search reads
  * only the board (which Tokens, where: `BoardState`'s membership counter and move journal), the Mat
- * Tuner (any change bumps `tuningGeneration`) and the Token registry (`registryVersion`). While all
- * three are exactly as they were, the same question has the same answer, so a remembered failure is
- * returned without searching again.
+ * Tuner (any change bumps `tuningGeneration`), the Token registry (`registryVersion`) and the
+ * ground (`GroundRules.groundVersion`). While all four are exactly as they were, the same question
+ * has the same answer, so a remembered failure is returned without searching again.
  *
  * Only failures are remembered (a success is acted on at once and changes the board), and never for
  * a search that consulted a `Cannot` rule or was given a `plan` (a projected board): those read
@@ -282,7 +291,7 @@ function failureMemo() {
         onMatTuningChanged(() => { tuningGeneration++; });
     }
     const { tokens, version } = BoardState.membershipVersion();
-    const stamp = `${version}|${BoardState.moveCount()}|${tuningGeneration}|${registryVersion()}`;
+    const stamp = `${version}|${BoardState.moveCount()}|${tuningGeneration}|${registryVersion()}|${GroundRules.groundVersion()}`;
     if (failedSearches.tokens !== tokens || failedSearches.stamp !== stamp) {
         failedSearches = { tokens, stamp, keys: new Set() };
     }
@@ -316,12 +325,14 @@ export function findSpot(typeId, point, options = {}) {
     const ctx = contextFor(typeId, point, options);
 
     // `candidatesAround`'s walk, inlined: the same candidates in the same order, each put through
-    // the same three tests `legalIn` makes (mat edge, crowding, then `Cannot`), but on bare
-    // coordinates, so a search that fails allocates nothing per candidate. A point object is made
-    // only for a candidate that gets as far as `Cannot`. `whyRefused` still walks the generator.
+    // the same four tests `legalIn` makes (mat edge, crowding, the ground, then `Cannot`), but on
+    // bare coordinates, so a search that fails allocates nothing per candidate. A point object is
+    // made only for a candidate that gets as far as `Cannot`. `whyRefused` still walks the generator.
     const { r, w, h } = ctx.bounds;
+    const ground = ctx.ground;
     const at = (x, y) => x >= r && y >= r && x <= w - r && y <= h - r
         && clearAt(x, y, ctx)
+        && (ground === null || GroundRules.allowsAt(ground, x, y))
         && (!ctx.cannotMatters || legalIn(typeId, { x, y }, ctx));
 
     if (at(point.x, point.y)) return { x: point.x, y: point.y, nudge: 0 };
@@ -349,8 +360,8 @@ const ANYWHERE_STEP = 8;
  *
  * The scan is a coarse grid sorted nearest first, rather than {@link candidatesAround} out to the
  * mat's diagonal, which would be far more candidates; each is checked by the same {@link legalIn}
- * (mat edge, crowding, `Cannot`), so a spot it returns is exactly as legal as a nudge. Nothing is
- * pushed.
+ * (mat edge, crowding, the ground, `Cannot`), so a spot it returns is exactly as legal as a nudge.
+ * Nothing is pushed.
  * @param {object} [options] as {@link findSpot} (`excludeId`, `plan`)
  * @returns {{x: number, y: number, nudge: number}|null}
  */
@@ -411,7 +422,8 @@ const PUSH_MARGIN = 0.5;
  *
  * Guard rails:
  * - a pushed Token stays on the mat (clamped to the edge);
- * - nothing is pushed into a spot that breaks a `Cannot` rule;
+ * - nothing is pushed into a spot that breaks a `Cannot` rule, or onto ground it may not stand on;
+ * - an arrival aimed at ground it may not stand on does not push at all;
  * - when the push cannot be solved, the arrival lands in the nearest free space instead, and
  * nothing is pushed.
  *
@@ -450,6 +462,10 @@ export function forceSpot(typeId, point, options = {}) {
  * clamped back onto the mat. Positions are not rounded (see the loop).
  */
 function relax(typeId, at, excludeId, fixedIds) {
+    // The newcomer stands exactly where it aims, so no push can help one aimed at ground it may not
+    // stand on.
+    if (!GroundRules.mayStandAt(typeId, at)) return null;
+
     // Hit radius per body, once, and the overlap factor read once for this push (`minGap`'s own
     // expression, hoisted; still read live, so a Mat Tuner change takes effect on the very next
     // push).
@@ -524,9 +540,15 @@ function relax(typeId, at, excludeId, fixedIds) {
         }
     }
 
-    const moved = bodies
-        .filter(t => t.id != null && t.pushed && (t.x !== t.x0 || t.y !== t.y0))
-        .map(t => ({ id: t.id, x: t.x, y: t.y }));
+    const shoved = bodies.filter(t => t.id != null && t.pushed && (t.x !== t.x0 || t.y !== t.y0));
+
+    // ⚠️ A push is a pushed Token's next move, so the ground has its say: a push that would carry
+    // one onto a cell it may not stand on (a hut into the sea, a boat up the beach) is not a push.
+    for (const t of shoved) {
+        if (!GroundRules.mayStandAt(t.typeId, t)) return null;
+    }
+
+    const moved = shoved.map(t => ({ id: t.id, x: t.x, y: t.y }));
 
     // One check on the board as it would be — the newcomer down and every
     // pushed Token at its new point — so a push that carries a Token next to
@@ -646,14 +668,15 @@ export const NO_ROOM = 'No room there.';
  * returning null. They are not the same thing to a player: one is shuffle something along, the
  * other is that rule will never let this sit here. If the drop point itself was physically clear
  * and only the rule refused it, the rule's own sentence is the honest answer, and it is the message
- * `TILE_EVENT_ALERT`'s refused-drop mark was built to carry.
+ * `TILE_EVENT_ALERT`'s refused-drop mark was built to carry. The ground is such a rule: a boat
+ * dropped on dry land comes back saying "Needs water.", not that there was no room.
  */
 function whyRefused(typeId, point, options = {}) {
     const ctx = contextFor(typeId, point, options);
 
-    // No restriction anywhere in range, so crowding is the only thing it can
+    // No ground rule and no restriction anywhere in range, so crowding is the only thing it can
     // have been — and this never costs an ordinary drop anything.
-    if (!ctx.cannotMatters) return { reason: NO_ROOM };
+    if (!ctx.cannotMatters && !ctx.ground) return { reason: NO_ROOM };
 
     const plan = { ...(options.plan || {}) };
     if (options.excludeId && plan.id == null) plan.id = options.excludeId;
@@ -661,9 +684,11 @@ function whyRefused(typeId, point, options = {}) {
     // ⚠️ The first spot that was physically fine and refused only by a rule is the honest answer,
     // not merely the drop point. A player aiming at a Token they are not allowed to sit beside hits
     // a spot that is both occupied AND against the rule; reporting on that one point alone would
-    // say No room there and hide the rule.
+    // say No room there and hide the rule. The ground is asked before `Cannot`, as the search asks.
     for (const candidate of candidatesAround(point, ctx.reach)) {
         if (!insideBounds(candidate, ctx.bounds) || !clearOf(candidate, ctx)) continue;
+        if (ctx.ground && !GroundRules.allowsAt(ctx.ground, candidate.x, candidate.y)) return { reason: ctx.ground.reason };
+        if (!ctx.cannotMatters) continue;
         const verdict = Restrictions.checkPlacement(candidate, typeId, plan);
         if (!verdict.ok) {
             return {
@@ -674,6 +699,15 @@ function whyRefused(typeId, point, options = {}) {
         }
     }
     return { reason: NO_ROOM };
+}
+
+/**
+ * What a Token of `typeId` needs, when the ground here has no cell at all it may stand on (a boat
+ * in a Region with no water), else null: the honest refusal for an arrival with nowhere to go.
+ */
+export function groundRefusal(typeId) {
+    const rules = GroundRules.rulesFor(typeId);
+    return rules && rules.allowed === 0 ? rules.reason : null;
 }
 
 /**
