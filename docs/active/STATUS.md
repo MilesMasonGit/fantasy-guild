@@ -41,7 +41,8 @@ October 2026.*
 | Terrain T1: the ground plan, pure code (what each Region's cells become as pixels; no look yet) | engineer | `crunch/terrain-t1` (`t1`) | ready; director gate green (4802); Forest + Coast plans in ~10 ms warm against a 60 ms bar; work check at 13:00, then merge | Thu | |
 | Terrain T3: terrain in placement (Tokens that need water or shore land only there; everything else anywhere dry; meadow Regions unchanged) | engineer | `crunch/terrain-t3` (`t3`) | ready; director gate green (4847); work check at 13:00, then merge | Thu | |
 | Terrain T2: the ground drawn on the mat | engineer | `crunch/terrain-t2` (`t2`) | ready; director gate green (4838); combined eye-check branch `fix/terrain-tm1` (T2 + T3) being gated; eye-check file drafted ([file](eyecheck/2026-10-15_terrain-ground.md)); after the 13:00 window: merge T1 and T3, bring `main` into T2, layer count and draw bench on/off, then the handover | Thu | |
-| Terrain T4: the CMS "Stands on" field and the grid while placing | builder | `crunch/terrain-t4` | queued after T2 and T3; eye-check | Fri–Sat | |
+| Terrain T4: the CMS "Stands on" field and the grid while placing | builder | `crunch/terrain-t4` (`t4`) | ready; director gate green (4908); on the eye-check branch `fix/terrain-tm1` with the ground | Thu | |
+| The dev server must survive a full sprite redraw (T-185) | engineer | `fix/t185-spritefx-server` (`t185`) | building (started Thu 10:00 at the owner's word; the idle slots) | Thu | |
 | Handoff; T-181 baseline retake queued for Sat 01:00 | director / runner | `main` | queued | Sat | |
 | Planning agent briefs this week's concept docs into the queue table | owner + planning | `planning` (`pp`) | in progress alongside (owner's choice) | Wed–Sat | |
 
