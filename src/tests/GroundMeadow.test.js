@@ -17,6 +17,9 @@ import { KEYWORD } from '../systems/effects/statements.js';
 import { mulberry32, seedFromText } from '../systems/atlas/seededRandom.js';
 import { TERRAIN, terrainGrid, encodeTerrain } from '../systems/atlas/TerrainMap.js';
 import { createRegionRecord } from '../state/StateSchema.js';
+import { budget } from '../systems/atlas/Budget.js';
+import { layout } from '../systems/atlas/Layout.js';
+import { layoutOptions } from '../systems/atlas/layoutInputs.js';
 import { clearMat } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -218,4 +221,46 @@ describe('⭐ a meadow Region places exactly as before (decision 15)', () => {
             expect(print).toBe(MEADOW_FINGERPRINT);
         });
     }
+});
+
+/**
+ * ⭐ **A layout of Tokens with no "Stands on" is exactly as before** (roadmap risk 4: stored maps
+ * are permanent, and a Region generated tomorrow from today's maps must come out as it would have
+ * yesterday). Fixture Tokens, the game's own layout inputs, water and no water, every role.
+ * Recorded on `main` at fe151c8e, before the layout read "Stands on".
+ */
+const LAYOUT_FINGERPRINT = 'e89c01e9';
+
+registerTokenTypes({
+    gm_oak: { id: 'gm_oak', name: 'GM Oak', tokenType: 'resource', size: 1, uses: 5, requiresHero: true, config: { skill: 'logging', skillRequired: 1, cycleTimeMs: 3000, inputs: [], outputs: [] } },
+    gm_bush: { id: 'gm_bush', name: 'GM Bush', tokenType: 'resource', artSize: 'small', uses: 5, requiresHero: true, config: { skill: 'logging', skillRequired: 1, cycleTimeMs: 3000, inputs: [], outputs: [] } },
+    gm_ore: { id: 'gm_ore', name: 'GM Ore', tokenType: 'resource', size: 2, uses: 5, requiresHero: true, config: { skill: 'mining', skillRequired: 1, cycleTimeMs: 3000, inputs: [], outputs: [] } },
+    gm_fish: { id: 'gm_fish', name: 'GM Fish', tokenType: 'resource', size: 1, uses: 5, requiresHero: true, config: { skill: 'fishing', skillRequired: 1, cycleTimeMs: 3000, inputs: [], outputs: [] } },
+    gm_camp: { id: 'gm_camp', name: 'GM Camp', tokenType: 'spawner', size: 1, uses: null, requiresHero: false, config: null },
+    gm_ruins: { id: 'gm_ruins', name: 'GM Ruins', tokenType: 'resource', size: 1, uses: 1, requiresHero: true, config: { skill: 'logging', skillRequired: 1, cycleTimeMs: 3000, inputs: [], outputs: [] } }
+});
+
+const FOREST_MAP = { id: 'gm_forest', kind: 'base', biome: 'forest', points: 40, nodes: [{ typeId: 'gm_oak', weight: 5 }, { typeId: 'gm_bush', weight: 2 }] };
+const MOUNTAIN_MAP = { id: 'gm_mountain', kind: 'base', biome: 'mountain', points: 36, nodes: [{ typeId: 'gm_ore', weight: 2 }, { typeId: 'gm_bush', weight: 1 }] };
+const COAST_MAP = { id: 'gm_coast', kind: 'base', biome: 'coast', points: 24, nodes: [{ typeId: 'gm_fish', weight: 3 }, { typeId: 'gm_oak', weight: 1 }] };
+const CAMPS = { id: 'gm_camps', kind: 'modifier', effects: [{ kind: 'threat', typeId: 'gm_camp', count: 2 }, { kind: 'treasure', typeId: 'gm_ruins', count: 2 }] };
+
+describe('⭐ a layout of Tokens with no "Stands on" is exactly as before', () => {
+    beforeEach(freshGame);
+
+    it('same nodes, same ground, for the same maps and seeds, water or none', () => {
+        const recipes = [[FOREST_MAP], [FOREST_MAP, MOUNTAIN_MAP, CAMPS], [COAST_MAP, CAMPS], [COAST_MAP, FOREST_MAP, MOUNTAIN_MAP, CAMPS]];
+        const out = [];
+        for (const slots of recipes) {
+            const summary = budget(slots, { cap: 128 });
+            for (let k = 0; k < 4; k++) {
+                const result = layout(summary, layoutOptions(summary, seedFromText(`layout ${k}`)));
+                out.push([result.nodes.map(m => [m.typeId, m.role, m.biome, m.x, m.y]), result.unplaced, result.terrain.cells]);
+            }
+        }
+        expect(out.some(([, , cells]) => cells.includes('3'))).toBe(true);
+        const print = fnv(JSON.stringify(out));
+        if (LAYOUT_FINGERPRINT === 'RECORD_ME') console.log(`LAYOUT_FINGERPRINT: ${print}`);
+        expect(print).toBe(LAYOUT_FINGERPRINT);
+    });
 });
