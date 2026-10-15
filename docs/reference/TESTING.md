@@ -37,7 +37,10 @@ Nothing merges to `main` until all of these hold:
    snippet), a `Verdict: ok / change: ___` line under
    each, the owner's CMS steps at the end). Fixes from the look go on the
    branch before it merges; the file then moves to `docs/archive/eyecheck/`
-   with the verdicts kept.
+   with the verdicts kept. Before the owner is told, the director detaches
+   the agent's worktree, switches the owner's folder to the branch, starts
+   the dev server from it and sees the slot screen load (a branch can trigger
+   a one-time redraw or rebuild on first start).
 
 Also: never weaken or delete a test to make something pass. Rewriting a test
 for a deliberate design change is fine; say which and why. Delete tests only

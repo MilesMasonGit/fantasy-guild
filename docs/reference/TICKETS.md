@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-185**
+**Next free number: T-186**
 
 ---
 
@@ -208,3 +208,4 @@ first, when content that uses it is authored.*
 | T-167 | P2 | open | **Recruits get a weak basic attack** ("everyone fights", `concept_combat.md`): a hero with no combat skill is refused by `BoardCombat.canFight`, so the cartographer's tutorial step 8 "Win a Fight" cannot be completed in a real new game. Engine change; expect the bench's work check to change. The owner authors a weak, safe enemy in the Starter Camp to go with it. Owner ruling 2026-10-13: keep the step, build this. | Atlas A8 |
 | T-181 | P2 | open | **Bench baseline retaken each wave, on a quiet machine.** The Oct-7 `bench/baseline.json` reads 1.3–1.5× slow for `main` itself under daytime load, so every timing verdict is noise (T-111). A runner retakes the engine and draw baselines in the 01:00 window at the end of each wave (`--save-baseline`), commits them with the date, and the director's end-of-wave checklist queues it. Nice to have: a scheduled task. | Process review 2026-10-13 |
 | T-184 | P3 | open | The dev panel's Scatter Loot button (`TestDashboard.jsx`, ~line 226) names three items that no longer exist (`item_yew_log`, `item_glowcap`, `item_spider_silk`); point it at real items and drop the three from `ContentIdsInCode.test.js`'s allow-list. builder-lite. | T-182 |
+| T-185 | P2 | open | **The dev server died after a full sprite-fx redraw** (2026-10-14, first start on the padded-outline branch: `drawing shadows and outlines for 738 sprite(s)`, then exit 0xC0000409 about a minute later, the orphaned Vite process holding port 5173 at 2 GB). The standalone `node scripts/spriteFx.mjs` finishes in 3.4 s and a second server start was fine. Find why the in-server run crashes (memory from the 8-wide pool over 738 sheets? the native image module?) and make the plugin's redraw safe: a smaller pool, a child process, or drawing before Vite serves. engineer. | eye-check 2026-10-14 |

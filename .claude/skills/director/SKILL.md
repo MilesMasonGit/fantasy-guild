@@ -60,9 +60,19 @@ say so and stop).
   scratchpad) and the A side run with `--ab=http://localhost:NNNN`. A drag
   bench difference that only shows at 1× is checked by re-running the pair in
   the other order before it counts.
-- **Before handing the owner an eye-check branch, detach the agent's worktree**
-  (`git -C .claude/worktrees/<name> switch --detach`): a branch checked out in a
-  worktree cannot be switched to in the owner's folder.
+- **Handing over an eye-check branch, in this order, before telling the owner:**
+  1. detach the agent's worktree (`git -C .claude/worktrees/<name> switch
+     --detach`): a branch checked out in a worktree cannot be switched to in
+     the owner's folder;
+  2. switch the owner's folder to the branch yourself (`git switch <branch>`,
+     their uncommitted files come along);
+  3. start the dev server from that folder (`preview_start` name `dev`) and
+     wait until the slot screen is on the page (`window.Game` present), so any
+     one-time work the branch triggers (a sprite redraw, a cache rebuild)
+     happens on your watch, not theirs;
+  4. only then tell the owner the branch and the address, and put both in
+     the eye-check file. After the look, switch the folder back to `main`
+     and check `git branch --show-current` before your next commit.
 - **Eye-checks** only for a significant change in how the game looks or
   plays (a new screen or panel, a changed interaction, a look rule): a dated
   file in `docs/active/eyecheck/` whose every check is reachable by clicking,
