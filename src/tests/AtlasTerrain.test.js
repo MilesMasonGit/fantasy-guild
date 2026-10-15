@@ -3,7 +3,7 @@ import { budget, ROLE } from '../systems/atlas/Budget.js';
 import { layout, HALL_CLEARING, SHORE_CELLS } from '../systems/atlas/Layout.js';
 import {
     TERRAIN, DEFAULT_TERRAIN, TERRAIN_CELL, MAX_WATER_SHARE, FOLLOW_REACH,
-    terrainAt, terrainGrid, carveWater, shoreDistance, encodeTerrain
+    terrainAt, terrainGrid, carveWater, shoreDistance, encodeTerrain, allowsTerrain
 } from '../systems/atlas/TerrainMap.js';
 import { mulberry32, seedFromText, nextSeed } from '../systems/atlas/seededRandom.js';
 
@@ -193,7 +193,7 @@ describe('the terrain map', () => {
         }
     });
 
-    describe('the terrain seam (per-Token terrain needs come later)', () => {
+    describe('the terrain seam (a Token\'s "Stands on")', () => {
         it('by default lets a Token stand anywhere dry', () => {
             const seen = new Set();
             const terrainAllows = (typeId, terrain) => { seen.add(terrain); return terrain !== TERRAIN.WATER; };
@@ -229,6 +229,74 @@ describe('the terrain map', () => {
             const result = layout(budget([forest], { cap: 128 }), options(SEEDS[4], { terrainAllows }));
             expect(result.unplaced.filter(u => u.typeId === 'oak')).toHaveLength(30);
             expect(result.nodes.some(n => n.typeId === 'oak')).toBe(false);
+        });
+
+        it('is told whether a dry cell is the shore, and water never is', () => {
+            const calls = [];
+            const terrainAllows = (typeId, terrain, shore) => { calls.push([terrain, shore]); return terrain !== TERRAIN.WATER; };
+            const summary = budget([coast, forest, camp], { cap: 128 });
+            const withSeam = layout(summary, options(SEEDS[5], { terrainAllows }));
+            expect(withSeam).toEqual(layout(summary, options(SEEDS[5])));
+            expect(calls.some(([t, s]) => t !== TERRAIN.WATER && s === true)).toBe(true);
+            expect(calls.some(([t, s]) => t !== TERRAIN.WATER && s === false)).toBe(true);
+            expect(calls.some(([t, s]) => t === TERRAIN.WATER && s)).toBe(false);
+        });
+
+        describe('⭐ Tokens that need water or the shore', () => {
+            const harbour = base('coast', 24, [
+                { typeId: 'fishing_spot', weight: 2 }, { typeId: 'boat', weight: 1 }, { typeId: 'dock', weight: 1 }
+            ]);
+            const needs = { boat: ['water'], dock: ['shore'] };
+            const terrainAllows = (typeId, terrain, shore) => allowsTerrain(needs[typeId] || [], terrain, shore);
+            const waterCells = (map) => [...map.cells].flatMap((ch, i) => (map.legend[parseInt(ch, 36)] === TERRAIN.WATER ? [i] : []));
+            const cellOf = (map, n) => Math.floor(n.y / map.cell) * map.cols + Math.floor(n.x / map.cell);
+
+            it('a node that needs water stands on water, its cell stays water, and no dry node does', () => {
+                const summary = budget([harbour, forest, camp], { cap: 128 });
+                let boats = 0;
+                for (const seed of SEEDS) {
+                    const result = layout(summary, options(seed, { terrainAllows }));
+                    expect(result.unplaced).toEqual([]);
+                    for (const n of result.nodes) {
+                        const wet = terrainAt(result.terrain, n.x, n.y) === TERRAIN.WATER;
+                        expect(wet, `${n.typeId} at ${n.x},${n.y}`).toBe(n.typeId === 'boat');
+                        if (n.typeId === 'boat') {
+                            boats++;
+                            expect(n.biome).toBe('coast');
+                        }
+                    }
+                    // The sea is the coastline the seed carved, whoever stands in it: a boat's cell
+                    // stays water, and no dry cell becomes water round it.
+                    expect(waterCells(result.terrain)).toEqual(waterCells(layout(summary, options(seed)).terrain));
+                }
+                expect(boats).toBeGreaterThan(SEEDS.length);
+            });
+
+            it('a node that needs the shore stands on dry land touching water', () => {
+                const summary = budget([harbour, forest], { cap: 128 });
+                let docks = 0;
+                for (const seed of SEEDS) {
+                    const result = layout(summary, options(seed, { terrainAllows }));
+                    expect(result.unplaced).toEqual([]);
+                    const { cols, rows } = result.terrain;
+                    const water = new Uint8Array(cols * rows);
+                    for (const i of waterCells(result.terrain)) water[i] = 1;
+                    const dist = shoreDistance({ cols, rows }, water);
+                    for (const n of result.nodes.filter(m => m.typeId === 'dock')) {
+                        docks++;
+                        expect(dist[cellOf(result.terrain, n)], `dock at ${n.x},${n.y}`).toBe(1);
+                    }
+                }
+                expect(docks).toBeGreaterThan(SEEDS.length);
+            });
+
+            it('a water node on a map with no water is reported, not forced onto land', () => {
+                const pond = base('forest', 40, [{ typeId: 'oak', weight: 3 }, { typeId: 'boat', weight: 1 }]);
+                const result = layout(budget([pond], { cap: 128 }), options(SEEDS[6], { terrainAllows }));
+                expect(result.unplaced.length).toBeGreaterThan(0);
+                expect(result.unplaced.every(u => u.typeId === 'boat')).toBe(true);
+                expect(result.nodes.some(n => n.typeId === 'boat')).toBe(false);
+            });
         });
     });
 });

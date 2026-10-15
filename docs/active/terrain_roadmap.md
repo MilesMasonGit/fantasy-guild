@@ -391,6 +391,21 @@ GDD (Terrain from Dormant to Built, §13; placement's fourth rule in §3),
 CHANGELOG, the research doc to `docs/archive/` after TM2 (its §2 is stale, A-1),
 the stale comments in A-10, tickets for A-11 and the Token terrain stamp (B).
 
+**T3 result (2026-10-15, `crunch/terrain-t3`).** Built as B4 says. The words,
+`allowsTerrain` and the refusal sentence (`needsText`) are in `TerrainMap.js`
+(the CMS's chips: `STANDS_ON_CHOICES`); `standsOnOf` drops a word the game
+does not know. `GroundRules.js` decodes the active Region's map once per map
+object (so travel and a load read afresh, even mid-travel) and returns null for
+a Token with no list on a Region with no water, the fast path every meadow and
+bench board takes. `MatPlacement` asks it in `legalIn`, `findSpot`, `relax`
+(the newcomer's own spot, and every shoved Token), `whyRefused` (before
+`Cannot`) and the failure memo's stamp; an arrival with no cell at all here
+says what it needs. The layout seam is told which dry cells are shore, groves,
+camps and treasures start on ground their Token may stand on, and a node in the
+water keeps its cell water. Two fingerprints recorded before the rule existed
+pin a meadow's placements and a list-free layout to the bit. Not covered: a
+`here` spawn replaces its bearer on the very spot and skips every placement
+rule, as it always has.
 **T1 result** (2026-10-15, `crunch/terrain-t1`; nothing calls it yet, so no
 CHANGELOG line).
 - **Built**: `regionGround(region, mat)` (B2's reader; decodes once per stored

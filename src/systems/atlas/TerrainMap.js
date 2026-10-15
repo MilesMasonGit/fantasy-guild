@@ -15,6 +15,54 @@ export const TERRAIN = Object.freeze({ GRASS: 'grass', ROCK: 'rock', SAND: 'sand
 /** The ground where nothing says otherwise. */
 export const DEFAULT_TERRAIN = TERRAIN.GRASS;
 
+/**
+ * The grounds a Token type's "Stands on" (`standsOn`) may name. A Token passes if the cell under
+ * its centre is any one its list names; `shore` is a dry cell touching water, a diagonal counting,
+ * so a Dock stands at the water's edge. A Token whose list names nothing may stand anywhere dry.
+ */
+export const STANDS_ON = Object.freeze({ WATER: 'water', SHORE: 'shore', GRASS: 'grass', ROCK: 'rock', SAND: 'sand' });
+
+/** The words as the CMS's "Stands on" chips show them, in their order. */
+export const STANDS_ON_CHOICES = Object.freeze([
+    Object.freeze({ id: STANDS_ON.WATER, label: 'Water' }),
+    Object.freeze({ id: STANDS_ON.SHORE, label: 'Shore' }),
+    Object.freeze({ id: STANDS_ON.GRASS, label: 'Grass' }),
+    Object.freeze({ id: STANDS_ON.ROCK, label: 'Rock' }),
+    Object.freeze({ id: STANDS_ON.SAND, label: 'Sand' })
+]);
+
+const STANDS_ON_ORDER = STANDS_ON_CHOICES.map(choice => choice.id);
+
+/** How each word reads in a refusal: "Needs the shore." */
+const NEEDS_WORD = Object.freeze({ water: 'water', shore: 'the shore', grass: 'grass', rock: 'rock', sand: 'sand' });
+
+/** Whether `word` is one of the {@link STANDS_ON} words. */
+export function isStandsOnWord(word) {
+    return STANDS_ON_ORDER.includes(word);
+}
+
+/**
+ * Whether a Token whose "Stands on" is `standsOn` may stand on a cell of `terrain`, `shore` saying
+ * whether that cell is dry land touching water. An empty list: anywhere dry.
+ */
+export function allowsTerrain(standsOn, terrain, shore = false) {
+    const wet = terrain === TERRAIN.WATER;
+    if (!standsOn || standsOn.length === 0) return !wet;
+    for (let i = 0; i < standsOn.length; i++) {
+        const word = standsOn[i];
+        if (word === terrain || (word === STANDS_ON.SHORE && shore && !wet)) return true;
+    }
+    return false;
+}
+
+/** What a Token the ground refused needs, in one sentence: "Needs water.", "Needs grass, rock or sand." */
+export function needsText(standsOn) {
+    const words = STANDS_ON_ORDER.filter(word => standsOn?.includes(word)).map(word => NEEDS_WORD[word]);
+    if (!words.length) return 'Needs dry land.';
+    const list = words.length === 1 ? words[0] : `${words.slice(0, -1).join(', ')} or ${words[words.length - 1]}`;
+    return `Needs ${list}.`;
+}
+
 /** A cell's side in mat units: one ground art piece (8 chunky or 16 fine pixels). */
 export const TERRAIN_CELL = 32;
 

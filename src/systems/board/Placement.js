@@ -199,8 +199,9 @@ export const MAT_FULL = 'The mat is full';
  * A player's drop that finds no room within nudge reach flies back to their hand. These have no
  * hand to fly back to, so instead of refusing they land on the nearest legal free spot anywhere on
  * the mat (`MatPlacement.findSpotAnywhere`): the nudge-reach search first, then the whole mat.
- * Nothing is pushed, and no spot breaking a `Cannot` rule is ever chosen. Refused only when the
- * whole mat has no legal spot ({@link MAT_FULL}). It never restocks a copy.
+ * Nothing is pushed, and no spot breaking a `Cannot` rule or on ground it may not stand on is ever
+ * chosen. Refused only when the whole mat has no legal spot ({@link MAT_FULL}, or what it needs
+ * when the ground here offers it no cell at all). It never restocks a copy.
  *
  * @returns {{success: boolean, reason?: string, x?: number, y?: number, nudged?: boolean, full?: boolean}}
  */
@@ -215,7 +216,7 @@ export function placeArrivalNear(instance, aim) {
         excludeId: instance.id,
         plan: { id: instance.id }
     });
-    if (!spot) return refuse(MAT_FULL, { full: true });
+    if (!spot) return refuse(MatPlacement.groundRefusal(instance.typeId) || MAT_FULL, { full: true });
     const res = placeTokenAt(instance, { x: spot.x, y: spot.y }, { noRestock: true });
     return res?.success ? { ...res, nudged: spot.nudge > 0 } : res;
 }

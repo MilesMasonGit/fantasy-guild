@@ -66,7 +66,8 @@ export const BIOME_GROUND = Object.freeze({
     coast: Object.freeze({ terrain: TERRAIN.SAND, water: 0.3 })
 });
 
-function groundOf(map) {
+/** A Base Map recipe's ground, `{ terrain, water }`: its own where it names them, else its biome's. */
+export function groundOf(map) {
     const known = BIOME_GROUND[map.biome] || {};
     const water = Number.isFinite(map.water) ? map.water : (known.water || 0);
     return { terrain: map.terrain || known.terrain || DEFAULT_TERRAIN, water: Math.min(1, Math.max(0, water)) };

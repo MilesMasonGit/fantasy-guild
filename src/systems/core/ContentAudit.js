@@ -1,6 +1,6 @@
 // Boot-time content-integrity audit: warns about content references that do not resolve.
 
-import { TOKENS, getTokenType, getProvidedTagsWithTiers } from '../../config/registries/tokenRegistry.js';
+import { TOKENS, getTokenType, getProvidedTagsWithTiers, standsOnOf, tokenName } from '../../config/registries/tokenRegistry.js';
 import { statementsOf, hasRetiredEffectData, stationSkillOf, KEYWORD, getKeyword, keywordAllowsRole } from '../effects/statements.js';
 import { getTriggerEvent, momentSupplies } from '../../config/registries/triggerRegistry.js';
 import { getRole } from '../../config/registries/roleRegistry.js';
@@ -14,7 +14,9 @@ import { isEnemyDef } from '../../config/registries/enemyProfile.js';
 import { EFFECTS, getEffect } from '../../config/registries/effectRegistry.js';
 import { effectRefsOf, duplicateRefsOf, hasWorkingStatements, usedBy } from '../effects/effectLibrary.js';
 import { ITEMS, getItem } from '../../config/registries/itemRegistry.js';
-import { isMapItem, mapItemFindings } from '../atlas/mapItems.js';
+import { isMapItem, isBaseMap, mapItemFindings, recipeOf } from '../atlas/mapItems.js';
+import { groundOf } from '../atlas/Budget.js';
+import { STANDS_ON, STANDS_ON_CHOICES, isStandsOnWord, allowsTerrain } from '../atlas/TerrainMap.js';
 import { listPooledSkillIds } from '../../config/registries/recipePoolRegistry.js';
 import { SPRITE_MANIFEST } from '../../config/registries/sprite-manifest.js';
 import { RANDOM_HUNTS } from '../quests/QuestManager.js';
@@ -148,9 +150,70 @@ function auditTokens(out) {
         auditCombatAxes(out, where, def);
         auditStatements(out, where, def);
         auditDerivedType(out, where, def);
+        auditStandsOn(out, where, def);
     }
 
     auditCapabilityTags(out);
+}
+
+/** A "Stands on" word as the CMS's chip shows it, or a terrain the chips do not name as it is. */
+function groundLabel(word) {
+    return STANDS_ON_CHOICES.find(choice => choice.id === word)?.label || word;
+}
+
+/** "Water", "Shore or Sand", "Grass, Rock or Sand". */
+function groundLabels(words) {
+    const labels = words.map(groundLabel);
+    return labels.length <= 1 ? (labels[0] || '') : `${labels.slice(0, -1).join(', ')} or ${labels[labels.length - 1]}`;
+}
+
+/**
+ * A "Stands on" word the game does not know. Placement drops it (`standsOnOf`), so a renamed or
+ * hand-typed word never strands a Token, but the Token then stands somewhere its author did not
+ * mean.
+ */
+function auditStandsOn(out, where, def) {
+    const list = def.standsOn;
+    if (list === undefined || list === null) return;
+    if (!Array.isArray(list)) {
+        out.push(finding(where,
+            `has a "Stands on" that is not a list of grounds (${JSON.stringify(list)}), so it is ignored ` +
+            `and the Token may stand anywhere dry. Tick its grounds again in the CMS.`));
+        return;
+    }
+    const anyKnown = list.some(isStandsOnWord);
+    for (const word of list) {
+        if (isStandsOnWord(word)) continue;
+        out.push(finding(where,
+            `its "Stands on" names "${word}", which is not a ground the game knows ` +
+            `(${groundLabels(STANDS_ON_CHOICES.map(choice => choice.id))}), so that word is ignored` +
+            `${anyKnown ? '' : ' and the Token may stand anywhere dry'}. Tick its grounds again in the CMS.`));
+    }
+}
+
+/**
+ * A Base Map node whose "Stands on" its map's ground can never give. A node brings its map's
+ * terrain to its own cell (`Layout.js`), so on dry land it stands on that terrain and nothing else;
+ * the shore and the water exist only where some map brings water. The layout leaves such a node
+ * unplaced, and Settle refuses every layout of a Region with it ("Not everything fits").
+ */
+function auditMapNodeGround(out, itemId, def) {
+    if (!isBaseMap(def)) return;
+    const recipe = recipeOf(def);
+    const ground = groundOf(recipe);
+    for (const { typeId } of recipe.nodes) {
+        const standsOn = standsOnOf(typeId);
+        if (!standsOn.length || allowsTerrain(standsOn, ground.terrain, false)) continue;
+        const byWater = standsOn.includes(STANDS_ON.WATER) || standsOn.includes(STANDS_ON.SHORE);
+        if (byWater && ground.water > 0) continue;
+        const node = `One of its nodes, ${tokenName(typeId)}, has "Stands on" ${groundLabels(standsOn)}`;
+        out.push(finding(`Item "${itemId}"`, byWater
+            ? `${node} and this map brings no water, so a Region written from this map alone has ` +
+              `nowhere for it and Settle refuses it. It fits only beside a map that brings water.`
+            : `${node} and this map's ground is ${groundLabel(ground.terrain)}, so it can never be ` +
+              `placed, and Settle refuses every Region with this map in it. Tick ` +
+              `${groundLabel(ground.terrain)} in its "Stands on", or put it on a map whose ground it stands on.`));
+    }
 }
 
 /**
@@ -530,7 +593,8 @@ function auditItems(out) {
 
 /**
  * Map and Modifier items: the Tokens their Cartography block names, and a map that writes nothing.
- * The rule lives in `mapItems.js`, shared with the CMS Economy Audit.
+ * The rule lives in `mapItems.js`, shared with the CMS Economy Audit. Then a node whose "Stands
+ * on" its map's ground can never give (game side only).
  */
 function auditMapItems(out) {
     const tokenExists = id => !!getTokenType(id);
@@ -539,6 +603,7 @@ function auditMapItems(out) {
         for (const what of mapItemFindings(def, { tokenExists, itemOf: getItem })) {
             out.push(finding(`Item "${itemId}"`, what));
         }
+        auditMapNodeGround(out, itemId, def);
     }
 }
 
