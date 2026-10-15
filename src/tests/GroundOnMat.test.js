@@ -29,6 +29,7 @@ import { boardScaleAt } from '../ui/components/base/TokenSprite.jsx';
 import * as GroundScreen from '../ui/components/board/groundScreen.js';
 import { primeGroundSheets, resetGroundSheets, groundSheetPaths } from '../ui/components/board/groundSheets.js';
 import { setDrawn, resetDrawSwitches } from '../ui/dev/perf/drawSwitches.js';
+import { TerrainDevSection } from '../ui/dev/TerrainDevSection.jsx';
 import * as fixtures from '../../bench/fixtures.mjs';
 import './fixtures/testTokens.js';
 
@@ -398,5 +399,24 @@ describe('⭐ the terrain draw switch', () => {
         expect(Number(canvas.style.zIndex)).toBeLessThan(tokenZ);
         expect(canvas.className).toMatch(/pointer-events-none/);
         expect(canvas.getAttribute('aria-hidden')).toBe('true');
+    });
+});
+
+describe('the Terrain dev section beside the mat', () => {
+    it('a button travels, the ground rebuilds once, and the section shows the build without React complaining', async () => {
+        const errors = vi.spyOn(console, 'error');
+        const { container } = render(h(EngineContext.Provider, { value: { GameState, EventBus } },
+            h(DndContext, null, h(MatFitProvider, { value: 1 }, h(TerrainDevSection), h(MatBoard)))));
+        plans.mockClear();
+        await act(async () => {
+            container.querySelector('[data-terrain-view="forest_coast"]').click();
+        });
+        expect(plans).toHaveBeenCalledTimes(1);
+        expect(plans.mock.calls[0][0].looks.grass).toBe('forest');
+        expect(container.querySelector('[data-terrain-where]').textContent).toMatch(/Forest \+ Coast/);
+        expect(container.querySelector('[data-terrain-builds]').textContent).toMatch(/plan \d+\.\d ms, picture \d+\.\d ms/);
+        const complaints = errors.mock.calls.filter(args => /Cannot update a component/.test(String(args[0])));
+        expect(complaints).toEqual([]);
+        errors.mockRestore();
     });
 });

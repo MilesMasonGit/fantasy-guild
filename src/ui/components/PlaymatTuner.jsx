@@ -32,6 +32,13 @@ export const PlaymatTuner = React.memo(() => {
             setManual(null);
             setCopied('Copied: paste it into chat');
         } catch {
+            // The older way, still inside the click: an unfocused or embedded page may refuse the
+            // clipboard API and allow this.
+            if (copyBySelection(text)) {
+                setManual(null);
+                setCopied('Copied: paste it into chat');
+                return;
+            }
             setManual(text);
             setCopied('Select the text below and copy it');
         }
@@ -142,5 +149,20 @@ export const PlaymatTuner = React.memo(() => {
         </div>
     );
 });
+
+/** Copy `text` through a selected, off-screen text box. Whether the browser says it copied. */
+function copyBySelection(text) {
+    const box = document.createElement('textarea');
+    box.value = text;
+    box.setAttribute('readonly', '');
+    box.style.position = 'fixed';
+    box.style.left = '-9999px';
+    document.body.appendChild(box);
+    box.select();
+    let ok;
+    try { ok = document.execCommand('copy'); } catch { ok = false; }
+    box.remove();
+    return ok === true;
+}
 
 export default PlaymatTuner;
