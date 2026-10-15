@@ -391,6 +391,35 @@ GDD (Terrain from Dormant to Built, §13; placement's fourth rule in §3),
 CHANGELOG, the research doc to `docs/archive/` after TM2 (its §2 is stale, A-1),
 the stale comments in A-10, tickets for A-11 and the Token terrain stamp (B).
 
+**T1 result** (2026-10-15, `crunch/terrain-t1`; nothing calls it yet, so no
+CHANGELOG line).
+- **Built**: `regionGround(region, mat)` (B2's reader; decodes once per stored
+  map object, meadow for `terrain: null`), `TerrainMap.decodeTerrain`, and
+  `TerrainSurface.buildGroundPlan(ground)`: per 2-unit pixel, row by row, the
+  terrain (`terrainAt`), wear (`wearAt`), bands (`bands[].mask`) and the
+  drawing answer the screen pass samples (`sheetAt` into `sheets`, `tintAt`
+  into `tints`), plus the props (`{sheet, index, x, y}` in plan pixels, `index`
+  the cell of the 4 × 4 sheet, back to front). `muteTexels` bakes the mute into
+  a decoded sheet. The registry is the five looks over the eight sheets and
+  seven prop sheets. `TerrainTones` and the tile claims are gone.
+- **Tuning**: the beach, shallows and wet-sand widths and the wear clump size
+  are sliders in mat units (three widths, not one multiplier: the shallows and
+  the wet sand differ); mute brightness and saturation added; the tile and
+  tone sliders gone. The ground's drawing subscribes with `onTuningChanged`;
+  the art-set event is retired (nothing listened once the canvas stopped).
+- **Measured** (Node 24 on this PC at 1×, other sessions loading it ~30 %):
+  the Forest + Coast dev Region's plan, 880 × 563, **7–10 ms warm, 30–33 ms the
+  first build in a fresh process** (`npx vitest bench --config
+  bench/micro/vitest.config.mjs --run bench/micro/groundPlan.bench.js` prints
+  both). The first straight port of the dormant pipeline (`03013203`) measured
+  24–29 ms warm and 68–78 ms cold, interleaved with the final code; the
+  difference is mostly distances that walk out from the edges between
+  terrains instead of from every pixel. Not measured: the browser.
+- **For T2**: `TerrainCanvas.jsx` is a stub that draws nothing and the Tuner
+  lost its art-set toggle (both needed for the build once the art-set switch
+  went). `sheets[p]` is palette entry `p`'s sheet, so a sheet can be listed
+  twice and an unused legend terrain's sheet is listed too.
+
 ---
 
 ## D. Owner questions (one batch)
