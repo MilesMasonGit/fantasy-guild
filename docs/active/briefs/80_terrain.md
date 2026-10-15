@@ -17,7 +17,10 @@ mostly art and look.
 art inventory, what of the dormant code survives, and the owner's answers to
 the look questions L-1 to L-10, including the **terrain grid** (cells with
 terrain types; some Tokens require a terrain; grid visible only while
-placing). L-1 (pixel size) is decided from a mockup.
+placing). L-1 (pixel size) is decided from a mockup. Its **"Terrain art
+guide"** (owner, 2026-10-15) sets how the ground is drawn and checked: 3–5
+colours, plain sheets with all detail as scatter, the code filter kept for
+now, no Token shadows until the terrain has been seen.
 
 ## T0 — Plan (engineer, read-only first)
 
