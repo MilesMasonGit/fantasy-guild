@@ -73,6 +73,10 @@ check.
   owner then saves as usual). Agents write only the drop folder.
 - **Done when:** a sample palette file appears in the Studio and imports with
   one click; the CMS no longer shows the Recolor and Animation tabs.
+- **Built** (2026-10-15, `crunch/art-a3`): `npm run studio` opens the Studio on
+  port 5175; the drop folder is `cms/palettes-inbox/` (its README has the file
+  formats and a sample); Import adds a file to the Material Library through the
+  library's own files, asking before replacing a palette of the same name.
 
 ## The weekend: working sessions (owner + one agent)
 

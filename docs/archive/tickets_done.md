@@ -53,3 +53,4 @@ T-153 — The gear alert no longer pulses, scales or glows: a one-art-pixel gold
 T-146 — Animated sprite outlines get one art pixel of room past each frame (padded outline cells, outline drawn outside the frame crop) — a5ba92c4 — 2026-10-14
 T-148 — The Guild Hall is movable again (drags, carries the marker; never pushed, never off the mat, never demolished) — dcefcf89 — 2026-10-14
 T-147 — Hover is the 1-art-pixel white outline alone; the hover hop and A10's lift are gone — 095420e0 — 2026-10-14
+T-179 — The Studio: `npm run studio` (port 5175) runs Recolor and Animation as two tabs on a server that refuses the game-data routes; the tabs left the CMS top bar; palette drop folder `cms/palettes-inbox/` with an Import button in the Recolor tab (brief 85 A3) — crunch/art-a3 — 2026-10-15

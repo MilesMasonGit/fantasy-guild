@@ -4,8 +4,6 @@ import ItemEditor from './components/editors/ItemEditor';
 import TokenEditor from './components/editors/TokenEditor';
 import RecipeEditor from './components/editors/RecipeEditor';
 import MapEditor from './components/editors/MapEditor';
-import RecolorEditor from './components/editors/RecolorEditor';
-import AnimationEditor from './components/editors/AnimationEditor';
 import EffectEditor from './components/editors/EffectEditor';
 import SpriteAuditDashboard from './components/audit/SpriteAuditDashboard';
 import AuditPanel from './components/audit/AuditPanel';
@@ -29,8 +27,6 @@ function App() {
         if (currentView === 'recipes') return <RecipeEditor />;
         if (currentView === 'progression') return <ProgressionPanel />;
         if (currentView === 'starterCamp') return <div className="h-full overflow-y-auto"><StarterCampPage /></div>;
-        if (currentView === 'recolor') return <RecolorEditor />;
-        if (currentView === 'animation') return <AnimationEditor />;
         if (currentView === 'sprites') return <SpriteAuditDashboard />;
         if (currentView === 'audit') return <div className="p-4 h-full"><AuditPanel openGenerate={openGenerate} /></div>;
         return (

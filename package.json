@@ -26,6 +26,7 @@
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
     "hooks:install": "node scripts/install-hooks.mjs",
+    "studio": "npm --prefix cms run studio",
     "cms:restore": "node scripts/backport-game-to-cms.mjs",
     "fx": "node scripts/generate-fx.mjs",
     "animate": "node scripts/animate-enemy.mjs"

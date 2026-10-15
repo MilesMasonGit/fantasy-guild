@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Download, Upload, SwatchBook, RefreshCw, Layers, FolderDown } from 'lucide-react';
+import PaletteImport from './PaletteImport';
 
 function rgbToOklab(r, g, b) {
   const toLinear = (c) => c > 0.04045 ? Math.pow((c + 0.055) / 1.055, 2.4) : c / 12.92;
@@ -217,6 +218,13 @@ export default function RecolorEditor() {
     } catch (err) {
       console.error("Failed to save palette groups to server:", err);
     }
+  };
+
+  /** Re-read the Material Library from the server, after an import from the drop folder. */
+  const reloadLibrary = async () => {
+    const [palettesRes, groupsRes] = await Promise.all([fetch('/api/custom-palettes'), fetch('/api/palette-groups')]);
+    if (palettesRes.ok) setCustomPalettes((await palettesRes.json()) || {});
+    if (groupsRes.ok) setPaletteGroups((await groupsRes.json()) || {});
   };
 
   const handleDragOver = (e) => {
@@ -1389,6 +1397,7 @@ export default function RecolorEditor() {
               style={{ borderColor: 'var(--color-border-subtle)' }}
             />
           </div>
+          <PaletteImport library={customPalettes} onImported={reloadLibrary} />
           {Object.keys(customPalettes).length === 0 ? (
             <p className="text-xs italic text-center py-4" style={{ color: 'var(--color-text-muted)' }}>No saved materials. Save active parts to add them here.</p>
           ) : (
