@@ -15,6 +15,7 @@ import { Board } from '../ui/components/board/Board.jsx';
 import { TokenChargeDeltaFloater } from '../ui/components/board/TokenBadges.jsx';
 import { playSpawn } from '../ui/components/board/spawnMotion.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
+import { primeGroundSheets, resetGroundSheets } from '../ui/components/board/groundSheets.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -139,5 +140,48 @@ describe('⭐ nothing at rest on the mat splits it into layers', () => {
             const wc = el.style.willChange;
             if (wc) expect(wc, el.outerHTML.slice(0, 120)).toBe('contents');
         }
+    });
+});
+
+describe('⭐ the ground stays in the mat\'s own layer', () => {
+    /**
+     * An accelerated canvas is a composited layer, and every Token drawn after it would be pushed
+     * onto a layer by overlap: the T-145 softness, and more Layerize every frame. A canvas whose
+     * context is asked for with `willReadFrequently: true` is CPU-backed, which Chrome paints into
+     * its parent's layer; `will-change` or a filter on it would ask for a layer again.
+     * `npm run bench:profile` counts the layers in Chrome.
+     */
+    let calls;
+    beforeEach(() => {
+        calls = [];
+        vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(function getContext(type, attrs) {
+            calls.push({ canvas: this, type, attrs });
+            return {
+                createImageData: (w, hgt) => ({ width: w, height: hgt, data: new Uint8ClampedArray(w * hgt * 4) }),
+                putImageData: () => {},
+                clearRect: () => {}
+            };
+        });
+        resetGroundSheets();
+        primeGroundSheets(() => new Uint8ClampedArray(64 * 64 * 4).fill(200));
+    });
+    afterEach(() => resetGroundSheets());
+
+    it('⭐ asks for its 2D context with willReadFrequently: true, and carries no will-change or filter', () => {
+        placeAt('fixture_producer', 400, 400);
+        const { container } = render(engine(h(Board)));
+        const ground = container.querySelector('[data-board-origin] canvas[data-terrain-ground]');
+        expect(ground).not.toBeNull();
+        const own = calls.filter(c => c.canvas === ground);
+        expect(own.length).toBeGreaterThan(0);
+        for (const c of own) {
+            expect(c.type).toBe('2d');
+            expect(c.attrs).toEqual({ willReadFrequently: true });
+        }
+        expect(ground.style.willChange).toBe('');
+        expect(ground.style.filter).toBe('');
+        expect(ground.style.transform).toBe('');
+        expect(ground.style.opacity).toBe('');
+        expect(ground.className).not.toMatch(/will-change|filter|blur|drop-shadow|brightness|saturate|transform|opacity/);
     });
 });
