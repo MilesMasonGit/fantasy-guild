@@ -39,7 +39,7 @@ October 2026.*
 | Safety net for CMS renames (T-182) | builder-lite | `fix/t182-id-guard` → `main` | merged (250 ids checked; T-184 filed for three dead ids on a dev-panel button) | Wed | Wed |
 | Terrain plan (brief 80 T0) | engineer | `crunch/terrain` → `main` | done: [terrain_roadmap.md](terrain_roadmap.md), the owner answered all five questions the same evening (no clearing, the ground is static); slices T1 ground plan and T3 placement can start in parallel, T2 the drawn ground after T1, T4 the CMS field and grid after T2 and T3 | Wed | Wed |
 | Terrain T1: the ground plan, pure code (what each Region's cells become as pixels; no look yet) | engineer | `crunch/terrain-t1` (`t1`) | building (started Thu morning) | Thu | |
-| Terrain T3: terrain in placement (Tokens that need water or shore land only there; everything else anywhere dry; meadow Regions unchanged) | engineer | `crunch/terrain-t3` (`t3`) | building (started Thu morning); merges on the gate | Thu | |
+| Terrain T3: terrain in placement (Tokens that need water or shore land only there; everything else anywhere dry; meadow Regions unchanged) | engineer | `crunch/terrain-t3` (`t3`) | ready; director gate green (4847); work check at 13:00, then merge | Thu | |
 | Terrain T2: the ground drawn on the mat | engineer | `crunch/terrain-t2` | queued after T1; eye-check | Fri | |
 | Terrain T4: the CMS "Stands on" field and the grid while placing | builder | `crunch/terrain-t4` | queued after T2 and T3; eye-check | Fri–Sat | |
 | Handoff; T-181 baseline retake queued for Sat 01:00 | director / runner | `main` | queued | Sat | |
