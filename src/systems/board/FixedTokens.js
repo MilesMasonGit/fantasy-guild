@@ -9,12 +9,16 @@ import * as Landmarks from './Landmarks.js';
 /**
  * Fixed and movable Tokens on the post-Atlas mat.
  *
- * Fixed: a map's node (`BoardState.isFixture`), a landmark (`MatCap.isLandmark`), the Guild Hall,
- * and a planted Token ({@link isPlanted}). A fixed Token is never dragged, binned or pushed; it
- * still answers a click. Everything else is movable.
+ * Fixed: a map's node (`BoardState.isFixture`), a landmark (`MatCap.isLandmark`) and a planted
+ * Token ({@link isPlanted}). A fixed Token is never dragged, binned or pushed; it still answers a
+ * click. Everything else is movable.
  *
- * A movable Token bought or built carries the faint marker at rest ({@link showsMoveMarker});
- * enemies and quests move as they always have, without it.
+ * ⚠️ The Guild Hall is movable but never pushed ({@link holdsItsGround}): the player drags it,
+ * nothing else moves it, and it never leaves the mat (`Placement.isPermanentToken`,
+ * `Demolition.canDemolish`).
+ *
+ * A movable Token bought or built, and the Hall, carry the faint marker at rest
+ * ({@link showsMoveMarker}); enemies and quests move as they always have, without it.
  *
  * ⚠️ Kept a leaf (the registries, `BoardState` and `MatCap` only) so the pushers (`EffectActions`,
  * `Foundations`) can ask it without importing `Placement` and everything above it.
@@ -50,18 +54,22 @@ export function isPlanted(instance) {
     return !!def.grows || grownIntoIds().has(instance.typeId);
 }
 
-/** Whether a Token stays where it is: a map's node, a landmark, the Guild Hall or planted. */
+/** Whether a Token stays where it is, refusing a drag: a map's node, a landmark or planted. */
 export function isFixed(instance) {
     if (!instance) return false;
     return BoardState.isFixture(instance)
-        || MatCap.isGuildHall(instance)
         || (MatCap.isLandmark(instance) && !Landmarks.isLayoutEditing())
         || isPlanted(instance);
 }
 
+/** Whether nothing but the player may move a Token: a fixed one, and the Guild Hall. */
+export function holdsItsGround(instance) {
+    return isFixed(instance) || MatCap.isGuildHall(instance);
+}
+
 /**
- * Whether a Token shows the faint "you can move me" marker at rest, and lifts with the grab cursor
- * on hover: a movable Token that is neither an enemy nor a quest.
+ * Whether a Token shows the faint "you can move me" marker at rest (the grab cursor goes with
+ * it): a movable Token that is neither an enemy nor a quest.
  */
 export function showsMoveMarker(instance) {
     if (!instance || isFixed(instance)) return false;
@@ -70,26 +78,26 @@ export function showsMoveMarker(instance) {
 }
 
 /**
- * The ids of every fixed Token on the mat, except `exceptId`: what no push may move.
+ * The ids of every Token on the mat no push may move ({@link holdsItsGround}), except `exceptId`.
  * A Token that is about to be replaced (a transform's old self) is named in `exceptId`.
  */
 export function fixedTokenIds(exceptId = null) {
     const ids = [];
     for (const t of BoardState.tokens()) {
-        if (t.id !== exceptId && isFixed(t)) ids.push(t.id);
+        if (t.id !== exceptId && holdsItsGround(t)) ids.push(t.id);
     }
     return ids;
 }
 
 /**
  * The ids of every Token a spawn, a growth or a build may not push, except `exceptId`: every
- * `placed` Token, and every fixed one (a planted Token is `spawned` but fixed).
+ * `placed` Token, every planted one (`spawned` but fixed), and the Guild Hall.
  */
 export function unpushableIds(exceptId = null) {
     const ids = [];
     for (const t of BoardState.tokens()) {
         if (t.id === exceptId) continue;
-        if (BoardState.originOf(t) === BoardState.ORIGIN.PLACED || isPlanted(t)) ids.push(t.id);
+        if (BoardState.originOf(t) === BoardState.ORIGIN.PLACED || isPlanted(t) || MatCap.isGuildHall(t)) ids.push(t.id);
     }
     return ids;
 }

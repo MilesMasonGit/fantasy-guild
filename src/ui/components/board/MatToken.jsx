@@ -151,8 +151,9 @@ export const MatToken = React.memo(function MatToken({
     const isGuildHallToken = typeId === 'token_guild_hall';
     const isPermanent = !!(def?.cannotLeaveBoard || def?.isGuildHall || isGuildHallToken);
     // Read once per instance: nothing that decides it (the fixture mark, origin, type) changes
-    // while the instance lives. A fixed Token never lifts and is never picked up; a movable one
-    // bought or built carries the faint marker at rest (`FixedTokens.showsMoveMarker`).
+    // while the instance lives. A fixed Token is never picked up; a movable one bought or built
+    // carries the faint marker at rest (`FixedTokens.showsMoveMarker`).
+    // ⚠️ Hovered, a Token only shows its white outline (`tokenOutline`): nothing on it moves.
     const { fixed, marked } = React.useMemo(() => {
         const instance = BoardState.getTokenById(id);
         return { fixed: FixedTokens.isFixed(instance), marked: FixedTokens.showsMoveMarker(instance) };
@@ -523,13 +524,12 @@ export const MatToken = React.memo(function MatToken({
                         style={{ inset: '-22%' }}
                     />
                 )}
-                {/* At rest its flash (the Hall taking in loot, resting on and off) and hop play
+                {/* At rest its flash (the Hall taking in loot, resting on and off) and landing hop play
                     among the resting Tokens: on the main thread, as tailwind.css explains at
                     `.gi-token-land`. A worked Token is drawn in front of them all. */}
                 <div
                     className={cn(
                         'w-full h-full flex items-center justify-center transition-[filter] duration-150',
-                        isHovered && !fixed && 'gi-token-hover-hop',
                         received && 'brightness-125 saturate-125',
                         resting && 'gi-token-resting'
                     )}

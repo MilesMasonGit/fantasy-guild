@@ -241,11 +241,11 @@ describe('mat art', () => {
         } });
         expect(shadowLayer('/assets/a.png', 64)).not.toBeNull();
         expect(outlineLayer('/assets/a.png', 64, 'hover')).not.toBeNull();
-        expect(sheetOutlineLayer('/assets/s.png', 'hover')).not.toBeNull();
+        expect(sheetOutlineLayer('/assets/s.png', 'hover', 64)).not.toBeNull();
         setDrawn('spriteFx', false);
         expect(shadowLayer('/assets/a.png', 64)).toBeNull();
         expect(outlineLayer('/assets/a.png', 64, 'hover')).toBeNull();
-        expect(sheetOutlineLayer('/assets/s.png', 'hover')).toBeNull();
+        expect(sheetOutlineLayer('/assets/s.png', 'hover', 64)).toBeNull();
         setSpriteFxManifest(null);
     });
 });

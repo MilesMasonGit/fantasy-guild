@@ -30,7 +30,8 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 
 /**
  * ⭐ **A fixed Token answers a click but not a drag** (Atlas D-6 B), and only movable Tokens carry
- * the faint marker at rest, lift on hover and show the grab cursor.
+ * the faint marker at rest and show the grab cursor. The Guild Hall is movable (T-148).
+ * Hovering any Token shows the white outline and moves nothing (T-147).
  */
 
 registerTokenTypes({
@@ -57,8 +58,14 @@ const spawnedAt = (typeId, x, y) =>
 
 function mount(props = {}) {
     const started = [];
+    const flyBack = [];
     const Spy = () => {
-        useDndMonitor({ onDragStart: (e) => started.push(e.active.id === MAT_TOKEN_DRAG_ID ? e.active.data.current.from.instanceId : e.active.id) });
+        useDndMonitor({
+            onDragStart: (e) => {
+                started.push(e.active.id === MAT_TOKEN_DRAG_ID ? e.active.data.current.from.instanceId : e.active.id);
+                flyBack.push(typeof e.active.data.current?.onMiss === 'function');
+            }
+        });
         return null;
     };
     const view = render(
@@ -68,7 +75,7 @@ function mount(props = {}) {
     );
     const mat = view.container.querySelector('[data-mat-board]');
     mat.getBoundingClientRect = () => ({ left: 0, top: 0, x: 0, y: 0, width: matW(), height: matH(), right: matW(), bottom: matH() });
-    return { ...view, started };
+    return { ...view, started, flyBack };
 }
 
 const hitOf = (container, id) => container.querySelector(`[data-token-hit="${id}"]`);
@@ -106,13 +113,21 @@ describe('⭐ a fixed Token refuses a drag; the press still inspects', () => {
         expect(started).toEqual([]);
     });
 
-    it('a planted Sapling and the Guild Hall are not picked up either', () => {
+    it('a planted Sapling is not picked up either', () => {
         const sapling = spawnedAt('fxp_sapling', 400, 400);
-        const hall = placeAt('token_guild_hall', 900, 600);
         const { container, started } = mount();
         pressAndPull(hitOf(container, sapling.id), 400, 400);
-        pressAndPull(hitOf(container, hall.id), 900, 600);
         expect(started).toEqual([]);
+    });
+
+    it('the Guild Hall is picked up like a bought Token, and flies back if let go off the mat', () => {
+        const hall = placeAt('token_guild_hall', 900, 600);
+        const { container, started, flyBack } = mount();
+        pressAndPull(hitOf(container, hall.id), 900, 600);
+        expect(started).toEqual([hall.id]);
+        expect(flyBack).toEqual([true]);
+        expect(artOf(container, hall.id).className).toContain('cursor-grab');
+        expect(artOf(container, hall.id).getAttribute('data-token-fixed')).toBeNull();
     });
 
     it('a click on a map node still inspects it', () => {
@@ -131,8 +146,8 @@ describe('⭐ a fixed Token refuses a drag; the press still inspects', () => {
     });
 });
 
-describe('⭐ only movable Tokens carry the marker, lift on hover and show the grab cursor', () => {
-    it('the marker is on a bought Token alone, never a fixed one, an enemy or a quest', () => {
+describe('⭐ only movable Tokens carry the marker and show the grab cursor', () => {
+    it('the marker is on a bought Token and the Hall, never a fixed one, an enemy or a quest', () => {
         const bought = placeAt('fixture_producer', 300, 300);
         const node = fixtureAt(600, 300);
         const hall = placeAt('token_guild_hall', 900, 600);
@@ -141,23 +156,30 @@ describe('⭐ only movable Tokens carry the marker, lift on hover and show the g
         const quest = spawnedAt(QUEST_TOKEN_TYPE, 600, 800);
         const { container } = mount();
         const marked = [...container.querySelectorAll('[data-token-movable]')].map(el => el.getAttribute('data-token-hit'));
-        expect(marked).toEqual([bought.id]);
-        for (const t of [node, hall, sapling, enemy, quest]) expect(hitOf(container, t.id)).toBeTruthy();
+        expect(marked.sort()).toEqual([bought.id, hall.id].sort());
+        for (const t of [node, sapling, enemy, quest]) expect(hitOf(container, t.id)).toBeTruthy();
     });
 
-    it('hovered, a bought Token lifts; a map node does not', () => {
+    it('hovered, any Token shows the white outline and nothing moves; at rest it has none', () => {
         const bought = placeAt('fixture_producer', 300, 300);
         const node = fixtureAt(900, 300);
         const { container } = mount();
-        const lifts = (id) => !!artOf(container, id).querySelector('.gi-token-hover-hop');
+        const moved = (id) => [artOf(container, id), ...artOf(container, id).querySelectorAll('*')]
+            .filter(el => /hop|bob|lift/.test(el.getAttribute('class') || '')
+                || (el.style.transform && el.style.transform !== 'none')
+                || el.style.translate || el.style.animation);
+
+        expect(artOf(container, bought.id).getAttribute('data-outline')).toBeNull();
+        const resting = moved(bought.id);
 
         fireEvent.pointerMove(hitOf(container, bought.id), { clientX: 300, clientY: 300 });
         expect(artOf(container, bought.id).getAttribute('data-outline')).toBe('hover');
-        expect(lifts(bought.id)).toBe(true);
+        expect(moved(bought.id)).toEqual(resting);
 
         fireEvent.pointerMove(hitOf(container, node.id), { clientX: 900, clientY: 300 });
         expect(artOf(container, node.id).getAttribute('data-outline')).toBe('hover');
-        expect(lifts(node.id)).toBe(false);
+        expect(artOf(container, bought.id).getAttribute('data-outline')).toBeNull();
+        expect(moved(node.id)).toEqual([]);
     });
 
     it('the grab cursor is on movable Tokens, a goblin included; a fixed Token shows the click cursor', () => {

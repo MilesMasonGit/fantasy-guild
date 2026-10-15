@@ -5,6 +5,7 @@ import * as BoardState from '../systems/board/BoardState.js';
 import * as EffectActions from '../systems/board/EffectActions.js';
 import * as FixedTokens from '../systems/board/FixedTokens.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Demolition from '../systems/board/Demolition.js';
 import * as MatPlacement from '../systems/board/MatPlacement.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
@@ -28,9 +29,11 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * ⭐ **Fixed and movable Tokens** (Atlas D-6 B): map nodes, planted trees, the endgame sites and
- * the Guild Hall stay where they are. Nothing drags, bins or pushes them. Everything bought or
- * built moves and carries the faint marker; enemies and quests move as they always have.
+ * ⭐ **Fixed and movable Tokens** (Atlas D-6 B): map nodes, planted trees and the endgame sites
+ * stay where they are. Nothing drags, bins or pushes them. Everything bought or built moves and
+ * carries the faint marker; enemies and quests move as they always have.
+ * The Guild Hall is the exception to D-6 (T-148): the player drags it like a bought Token, with
+ * the marker, but nothing else ever pushes it, and it never leaves the mat or is demolished.
  */
 
 const base = { tokenType: 'resource', rarity: 'common', theme: 'fixture', sprite: 'skill_nature', uses: null };
@@ -75,10 +78,10 @@ afterEach(() => {
 });
 
 describe('⭐ what is fixed (D-6 B)', () => {
-    it('a map node, the Guild Hall and a landmark are fixed', () => {
+    it('a map node and a landmark are fixed; the Guild Hall is not', () => {
         expect(FixedTokens.isFixed(fixtureAt('fixture_producer', 300, 300))).toBe(true);
-        expect(FixedTokens.isFixed(placeAt('token_guild_hall', 800, 600))).toBe(true);
         expect(FixedTokens.isFixed(placeAt('fx_landmark', 1200, 300))).toBe(true);
+        expect(FixedTokens.isFixed(placeAt('token_guild_hall', 800, 600))).toBe(false);
     });
 
     it('a planted Token is fixed: spawned, and growing or grown', () => {
@@ -101,11 +104,11 @@ describe('⭐ what is fixed (D-6 B)', () => {
 });
 
 describe('⭐ only movable Tokens carry the marker', () => {
-    it('a bought Token does; a fixed one, an enemy and a quest do not', () => {
+    it('a bought Token and the Guild Hall do; a fixed one, an enemy and a quest do not', () => {
         expect(FixedTokens.showsMoveMarker(placeAt('fixture_producer', 300, 300))).toBe(true);
         expect(FixedTokens.showsMoveMarker(spawnedAt('fixture_producer', 500, 300))).toBe(true);
         expect(FixedTokens.showsMoveMarker(fixtureAt('fixture_producer', 700, 300))).toBe(false);
-        expect(FixedTokens.showsMoveMarker(placeAt('token_guild_hall', 900, 600))).toBe(false);
+        expect(FixedTokens.showsMoveMarker(placeAt('token_guild_hall', 900, 600))).toBe(true);
         expect(FixedTokens.showsMoveMarker(spawnedAt('fx_sapling', 1100, 300))).toBe(false);
         expect(FixedTokens.showsMoveMarker(spawnedAt('fx_enemy', 1300, 300))).toBe(false);
         expect(FixedTokens.showsMoveMarker(spawnedAt(QUEST_TOKEN_TYPE, 300, 700))).toBe(false);
@@ -115,7 +118,6 @@ describe('⭐ only movable Tokens carry the marker', () => {
 describe('⭐ a fixed Token refuses a drag', () => {
     it.each([
         ['a map node', () => fixtureAt('fixture_producer', 400, 400)],
-        ['the Guild Hall', () => placeAt('token_guild_hall', 400, 400)],
         ['a landmark', () => placeAt('fx_landmark', 400, 400)],
         ['a planted Sapling', () => spawnedAt('fx_sapling', 400, 400)]
     ])('%s does not move, by the engine or by a drop on the mat', (_, make) => {
@@ -139,6 +141,43 @@ describe('⭐ a fixed Token refuses a drag', () => {
         const t = placeAt('fixture_producer', 400, 400);
         expect(Placement.moveTokenTo(t.id, { x: 900, y: 700 }).success).toBe(true);
         expect(pointOf(t)).toEqual({ x: 900, y: 700 });
+    });
+});
+
+describe('⭐ the Guild Hall moves, but only by the player (T-148)', () => {
+    it('it moves, by the engine and by a drop on the mat', () => {
+        const hall = placeAt('token_guild_hall', 400, 400);
+        expect(Placement.moveTokenTo(hall.id, { x: 900, y: 700 }).success).toBe(true);
+        expect(pointOf(hall)).toEqual({ x: 900, y: 700 });
+        const dropped = dropOnMat({ kind: DRAG_KIND.TOKEN, typeId: hall.typeId, from: { instanceId: hall.id } }, { x: 1200, y: 500 });
+        expect(dropped.success).toBe(true);
+        expect(pointOf(hall)).toEqual({ x: 1200, y: 500 });
+    });
+
+    it('it still refuses demolition and removal', () => {
+        const hall = placeAt('token_guild_hall', 400, 400);
+        expect(Demolition.canDemolish(hall)).toBe(false);
+        expect(Placement.removePlacedToken(hall.id).success).toBe(false);
+        expect(BoardState.getTokenById(hall.id)).toBeTruthy();
+    });
+
+    it('no push moves it: it is among the ids nothing may push', () => {
+        const hall = placeAt('token_guild_hall', 400, 400);
+        expect(FixedTokens.fixedTokenIds()).toContain(hall.id);
+        expect(FixedTokens.unpushableIds()).toContain(hall.id);
+    });
+
+    it('a spawn that replaces its bearer never removes the Hall standing on the same point', () => {
+        const bearer = spawnedAt('fixture_passive', 600, 600);
+        const hall = placeAt('token_guild_hall', 600, 600);
+        expect(EffectActions.spawn(spawnStatement('fixture_passive', PLACEMENT.HERE), { self: bearer.id })).toBeNull();
+        expect(BoardState.getTokenById(hall.id)).toBeTruthy();
+    });
+
+    it('landmarks, map nodes and planted Tokens stay fixed', () => {
+        expect(FixedTokens.isFixed(placeAt('fx_landmark', 300, 300))).toBe(true);
+        expect(FixedTokens.isFixed(fixtureAt('fixture_producer', 600, 300))).toBe(true);
+        expect(FixedTokens.isFixed(spawnedAt('fx_tree', 900, 300))).toBe(true);
     });
 });
 

@@ -181,7 +181,7 @@ describe('⭐ a Token drag on a full mat redraws the Token in the hand and nothi
         act(() => { fireEvent.pointerUp(document, ptr(700, 380)); });
     });
 
-    it('through the shared source, a fixed Token is never picked up: the Guild Hall stays and nothing flies (Atlas D-6 B)', () => {
+    it('through the shared source, the Guild Hall let go off the mat flies back and says why (T-148)', () => {
         let hall;
         const { container } = scene(() => { hall = placeAt('token_guild_hall', 900, 800); });
         const alerts = [];
@@ -196,7 +196,7 @@ describe('⭐ a Token drag on a full mat redraws the Token in the hand and nothi
         } finally {
             off();
         }
-        expect(alerts).toHaveLength(0);
+        expect(alerts.map(a => a.type)).toEqual(['drop_rejected']);
         expect(document.body.classList.contains('gi-dnd-active')).toBe(false);
         expect(BoardState.getTokenById(hall.id)).toMatchObject({ x: 900, y: 800 });
     });

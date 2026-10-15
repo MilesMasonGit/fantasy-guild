@@ -286,7 +286,7 @@ function restock(instance, decision) {
 /**
  * Move the Token with id `id` to a mat point.
  *
- * A fixed Token (a map's node, a landmark, the Hall, a planted tree) refuses.
+ * A fixed Token (a map's node, a landmark, a planted tree) refuses.
  *
  * A moved Token keeps its progress and carries its hero. The hero's claim is keyed by the Token
  * instance, so it follows on its own, even outside their flag's radius; this only has to stop the

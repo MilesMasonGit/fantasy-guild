@@ -283,9 +283,9 @@ export function spawn(statement, roles, random = Math.random) {
 
     if (replacesBearer) {
         // The bearer (if it is still there) and anything else standing on the very point are
-        // replaced, unless one of those others is fixed: then nothing is, and the spawn is skipped.
+        // replaced, unless one of those others holds its ground: then nothing is, and the spawn is skipped.
         const others = BoardState.tokensAtPoint(where.x, where.y).filter(t => t.id !== bearer?.id);
-        if (others.some(FixedTokens.isFixed)) return null;
+        if (others.some(FixedTokens.holdsItsGround)) return null;
         if (bearer) BoardState.removeToken(bearer.id);
         for (const other of others) BoardState.removeToken(other.id);
     }
@@ -339,7 +339,7 @@ export function transform(statement, roles) {
  * @param {object} [options]
  * @param {boolean} [options.fixPlaced] placed Tokens may not be pushed out of the way. Default
  * false: a `Transforms` statement pushes as it always has, except fixed Tokens
- * (`FixedTokens.isFixed`), which nothing pushes.
+ * (`FixedTokens.holdsItsGround`), which nothing pushes.
  * @param {object} [options.extra] fields to set on the new instance (`turnedFrom`, `clocks`)
  * @returns {object|null} the new instance, or null when it did not happen
  */

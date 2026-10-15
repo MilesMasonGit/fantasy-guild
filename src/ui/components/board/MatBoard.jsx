@@ -411,7 +411,6 @@ export const MatBoard = React.memo(function MatBoard({
                             working: h.state === 'working',
                             stuck: h.stuck
                         })}
-                        hovered={hoverHeroId === h.heroId || (h.tokenId != null && hoveredId === h.tokenId)}
                         onHover={handleHoverHero}
                         onRecall={handleRecallHero}
                         animationState={animState}

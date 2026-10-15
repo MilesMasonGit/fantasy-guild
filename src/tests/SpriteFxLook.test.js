@@ -54,8 +54,8 @@ function manifestWith(extra = {}) {
         sprites: {
             'assets/tokens/test/token_look.png': { w: 64, h: 64, outlined: true },
             'assets/items/item_look.png': { w: 32, h: 32, outlined: false },
-            'assets/heroes/animations/ani_look_0.png': { w: 512, h: 192, cols: 8, rows: 3, outlined: true },
-            'assets/enemies/animal/anim/ani_look.png': { w: 256, h: 256, cols: 4, rows: 4, outlined: true },
+            'assets/heroes/animations/ani_look_0.png': { w: 512, h: 192, cols: 8, rows: 3, outlined: true, ringPad: 1 },
+            'assets/enemies/animal/anim/ani_look.png': { w: 256, h: 256, cols: 4, rows: 4, outlined: true, ringPad: 1 },
             'assets/ui/flag/hero_flag_base.png': { w: 64, h: 64, outlined: true },
             ...extra
         }
@@ -211,8 +211,19 @@ describe('the outline is one art pixel, scaled with the sprite like the art', ()
     });
 });
 
+/** `translate(-Xpx, -Ypx)` or `-Xpx -Ypx` as two numbers, -0 read as 0. */
+const xy = (v) => (String(v).match(/-?[\d.]+/g) || []).map(n => Math.abs(Number(n)) === 0 ? 0 : Number(n));
+/** Whether an element between `el` and `root` (inclusive) clips what spills out of it. */
+const clippedWithin = (el, root) => {
+    for (let e = el.parentElement; e; e = e.parentElement) {
+        if (/\boverflow-hidden\b/.test(e.className || '') || e.style?.overflow === 'hidden') return true;
+        if (e === root) break;
+    }
+    return false;
+};
+
 describe('animated sheets carry an outline sheet that follows every frame', () => {
-    it('a hero: the outline sheet is the sheet’s size and moves with the same frame step', () => {
+    it('a hero: each frame’s outline has a free art pixel on every side, and moves with the same frame step', () => {
         vi.useFakeTimers();
         try {
             const { container, rerender } = render(h(AnimatedHeroSprite, { src: SHEET_SRC, size: 128, animationState: 'walk', outline: null }));
@@ -221,33 +232,50 @@ describe('animated sheets carry an outline sheet that follows every frame', () =
             rerender(h(AnimatedHeroSprite, { src: SHEET_SRC, size: 128, animationState: 'walk', outline: 'work' }));
             expect(ringEl.getAttribute('data-sprite-ring')).toBe('work');
             expect(ringEl.style.backgroundImage).toContain('ol-work/assets/heroes/animations/ani_look_0.png');
-            expect([ringEl.style.width, ringEl.style.height]).toEqual(['1024px', '384px']);
+            // 64-px cells at 128 px: one art pixel is 2 px. Each padded cell (66) draws 132 px,
+            // starting one art pixel up-left of the frame, so nothing at the frame's edge is cut.
+            expect([ringEl.style.left, ringEl.style.top, ringEl.style.width, ringEl.style.height]).toEqual(['-2px', '-2px', '132px', '132px']);
+            expect(ringEl.style.backgroundSize).toBe('1056px 396px');
+            expect(clippedWithin(ringEl, container)).toBe(false);
             const img = container.querySelector('img');
-            expect(ringEl.style.transform).toBe(img.style.transform);
+            const same = () => expect(xy(ringEl.style.backgroundPosition)).toEqual(xy(img.style.transform).map(n => n * 132 / 128));
+            same();
             act(() => { vi.advanceTimersByTime(400); });
             expect(img.style.transform).not.toBe('');
-            expect(ringEl.style.transform).toBe(img.style.transform);
+            expect(xy(img.style.transform)[0]).not.toBe(0);
+            same();
             expect(filtersIn(container)).toEqual([]);
         } finally {
             vi.useRealTimers();
         }
     });
 
-    it('an enemy: no resting shadow filter; the outline sheet shares the frame position', () => {
+    it('an enemy: no resting shadow filter; the outline sheet is padded and shares the frame', () => {
         vi.useFakeTimers();
         try {
             const { container } = render(h(AnimatedEnemySprite, { src: ENEMY_SRC, size: 128, outline: 'alert' }));
             expect(filtersIn(container)).toEqual([]);
             const ringEl = container.querySelector('[data-sprite-ring]');
             expect(ringEl.style.backgroundImage).toContain('ol-alert/');
+            expect([ringEl.style.left, ringEl.style.top, ringEl.style.width, ringEl.style.height]).toEqual(['-2px', '-2px', '132px', '132px']);
+            expect(ringEl.style.backgroundSize).toBe('528px 528px');
+            expect(clippedWithin(ringEl, container)).toBe(false);
             const art = container.querySelector('[role="img"]');
             act(() => { vi.advanceTimersByTime(300); });
             expect(art.style.backgroundPosition).not.toBe('');
-            expect(ringEl.style.backgroundPosition).toBe(art.style.backgroundPosition);
-            expect(ringEl.style.backgroundSize).toBe(art.style.backgroundSize);
+            expect(xy(art.style.backgroundPosition)[0]).not.toBe(0);
+            expect(xy(ringEl.style.backgroundPosition)).toEqual(xy(art.style.backgroundPosition).map(n => n * 132 / 128));
         } finally {
             vi.useRealTimers();
         }
+    });
+
+    it('a manifest from before the padding draws the outline sheet over the frame, as it did', () => {
+        setSpriteFxManifest(manifestWith({ [ENEMY_SRC]: { w: 256, h: 256, cols: 4, rows: 4, outlined: true } }));
+        const { container } = render(h(AnimatedEnemySprite, { src: ENEMY_SRC, size: 128, outline: 'alert' }));
+        const ringEl = container.querySelector('[data-sprite-ring]');
+        expect([ringEl.style.left, ringEl.style.width]).toEqual(['0px', '128px']);
+        expect(ringEl.style.backgroundSize).toBe('512px 512px');
     });
 });
 
@@ -325,12 +353,14 @@ describe('no live filters left for shadows or the glow', () => {
         expect(land).not.toContain('filter');
     });
 
-    it('the breathing green glow is gone; the hover hop on the mat has no brightening filter', () => {
+    it('the breathing green glow is gone, and nothing on the mat hops on hover: the outline alone says it', () => {
         expect(css).not.toMatch(/@keyframes gi-glow-active/);
         expect(css).not.toMatch(/\.gi-glow-active\s*\{/);
-        const hop = css.slice(css.indexOf('.gi-token-hover-hop {'), css.indexOf('}', css.indexOf('.gi-token-hover-hop {')));
-        expect(hop).toContain('animation');
-        expect(hop).not.toContain('filter');
+        expect(css).not.toMatch(/gi-token-hover-hop/);
+        for (const file of ['MatToken.jsx', 'MatHero.jsx']) {
+            const src = fs.readFileSync(path.resolve(__dirname, '../ui/components/board', file), 'utf8');
+            expect(src, file).not.toMatch(/hover-hop|hover-pulse|gi-hover-bob/);
+        }
     });
 
     it('nothing on a sprite asks for will-change (R6: 3× slower)', () => {
