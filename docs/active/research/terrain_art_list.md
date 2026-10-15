@@ -219,7 +219,7 @@ goes.
 | L-6 | **A**: small flat bits only (flowers, pebbles, shells, tufts). |
 | L-7 | **A**: muted and a little dark. |
 | L-8 | **A**: still at first; a little water shimmer later if the cost log allows. |
-| L-9 | **A**: a worn-earth clearing round the Hall. |
+| L-9 | ~~**A**: a worn-earth clearing round the Hall.~~ **Struck by the owner 2026-10-14: no clearing, the terrain is static.** |
 | L-10 | **A**: the Starter Camp is meadow (grass with worn earth). |
 
 **The terrain grid (owner idea, 2026-10-09, "thinking out loud" but answered
