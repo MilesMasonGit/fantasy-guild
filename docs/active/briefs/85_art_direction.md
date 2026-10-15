@@ -11,6 +11,14 @@ ruled tweaks move to the next wave**; P2-7, P2-9, T-145 and P2-10 are
 unaffected. The terrain shows in the running game when brief 80 lands, next
 wave.
 
+**Focus (owner, 2026-10-15): Friday to Sunday is for this art pass.**
+Before Friday, the director may run work that supports it (A1–A3 can start
+early). From Friday through Sunday the work centres on brief 85: the tools
+first, then supporting the owner's working sessions (fixing a tool that breaks,
+small changes the passes ask for). Other phases that are already running
+finish and park; nothing new starts that doesn't serve the art pass. This
+overrides "stop Saturday evening" and the Sunday buffer for this weekend only.
+
 **Eye-check:** the tools themselves don't change the game. The owner judges
 the bake on the bench and in the game during the weekend; that is the look's
 check.
