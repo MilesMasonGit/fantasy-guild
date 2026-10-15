@@ -1,10 +1,10 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import {
     PLAN_PIXEL_U, CELL_PX, planSize, hash01, edgeAmplitude, edgeProfile, edgeStrips,
-    resolveArtPixels, distanceFromSeeds
+    resolveArtPixels, distanceFromSeeds, distanceFields
 } from '../systems/board/TerrainLattice.js';
 import { TERRAIN_CELL, terrainGrid } from '../systems/atlas/TerrainMap.js';
-import { resetTuning } from '../config/playmatTuning.js';
+import { resetTuning, setTuning } from '../config/playmatTuning.js';
 import { regionGround } from '../systems/atlas/regionGround.js';
 import { groundWith, regionWith, flat } from './fixtures/ground.js';
 
@@ -278,10 +278,51 @@ describe('Distances', () => {
         }
     });
 
+    it('drops a measured field when a rewrite changes its seeds', () => {
+        // Two columns of terrain 0 beside two of terrain 1; then one pixel of 0 becomes 1.
+        const at = Uint8Array.from([0, 0, 1, 1, 0, 0, 1, 1]);
+        const fields = distanceFields(at, 4, 2);
+        expect([...fields.from([1], false, 30).pixels].sort()).toEqual([0, 1, 4, 5]);
+        const fromZero = fields.from([0], false, 30).pixels;
+        at[1] = 1;
+        const flags = new Uint8Array(256);
+        flags[0] = 1;
+        fields.rewrote(flags, 1, [1]);
+        expect([...fields.from([1], false, 30).pixels].sort()).toEqual([0, 4, 5]);
+        expect([...fields.from([0], false, 30).pixels].sort()).not.toEqual([...fromZero].sort());
+    });
+
     it('measures 3 a side step and 4 a diagonal one', () => {
         const seeds = new Uint8Array(5 * 5);
         seeds[12] = 1;
         const d = distanceFromSeeds(seeds, 5, 5, 30);
         expect([d[12], d[13], d[18], d[14], d[24]]).toEqual([0, 3, 4, 6, 8]);
+    });
+
+    it('⭐ measures exactly, finding edges only in the cells beside a different cell', () => {
+        // The plan's fields look for edges between terrains only in border cells (a strip stops
+        // short of a cell's middle) and walk out from them. Checked against the full two-pass
+        // transform, for every terrain and its complement, at the widest swing the slider allows.
+        // The last two grounds have their beach cut, which rewrites the map under the fields.
+        setTuning('edgeSwing', 0.45);
+        const limit = 30;
+        const grounds = [1, 2, 3].map(seed => resolveArtPixels(groundWith(20, 12, patchwork(seed), { seed }), false));
+        for (const seed of [4, 5]) {
+            grounds.push(resolveArtPixels(groundWith(20, 12, (c, r) => (c + (r >> 1) < 9 ? 'water' : c < 14 ? 'grass' : 'rock'), { seed })));
+        }
+        for (const [k, pixels] of grounds.entries()) {
+            const seed = k + 1;
+            const { width, height, at, palette } = pixels;
+            for (let t = 0; t < palette.length; t++) {
+                for (const outside of [false, true]) {
+                    const seeds = Uint8Array.from(at, v => ((v === t) !== outside ? 1 : 0));
+                    const full = distanceFromSeeds(seeds, width, height);
+                    const want = [];
+                    for (let i = 0; i < at.length; i++) if (!seeds[i] && full[i] < limit) want.push(i);
+                    const got = [...pixels.fields.from([t], outside, limit).pixels].sort((a, b) => a - b);
+                    expect(got, `seed ${seed}, ${outside ? 'not ' : ''}${palette[t]}`).toEqual(want);
+                }
+            }
+        }
     });
 });
