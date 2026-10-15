@@ -97,7 +97,9 @@ Today the pull is skill levels, Guild Hall upgrades and promotions.
 - One Mythic of a type may be placed at a time (the only gameplay use of
   rarity). *(`Placement.js:84-93`)*
 - **Disallow mode** (top bar): click Tokens to forbid hero work on them.
-- **Terrain** (painted ground) is **Dormant**: `TERRAIN_ENABLED = false`.
+- **Terrain** (the ground under the Tokens) is **Built** (brief 80): each Region's stored cell map
+  drawn as pixel ground, one look per terrain per Region, meadow where a Region stores none (the
+  Starter Camp). Static: nothing on the mat changes it. *(`TerrainCanvas.jsx`)*
 
 ### What a Token is — Built
 Everything on the mat is a Token: resource nodes, tools, stations, spawners,
@@ -576,8 +578,8 @@ Content is half-authored on purpose; an unfinished Token is not a bug.
   and its [roadmap](../active/class_rework_v2_roadmap.md). The 4 Academies and
   8 master-class Tokens are owner content still to author.
 - **Real offline progress — Built (brief 40)**; see section 10.
-- **Terrain — Dormant, returns in the crunch** after the Atlas works, as a
-  major rework (owner 2026-10-06).
+- **Terrain — Built** (brief 80): the ground is drawn (T2); "Stands on" placement
+  and its grid while placing follow (T3, T4).
 - **Dormant**: energy and drinking, Villager heroes,
   Map bursts and most Map Tokens, `data/stations.json` (nothing loads it).
 - **Latent** (code ready, no content): gear, statuses, ranged/magic enemies,

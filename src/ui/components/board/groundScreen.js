@@ -113,6 +113,60 @@ function rgbOf(hex) {
 }
 
 const PROP_SHEET_PX = PROP_PX * PROP_SHEET_CELLS;
+const SHEET_WORDS = SHEET_PX * SHEET_PX;
+
+/**
+ * Which drawn look each plan pixel takes: its sheet, or that sheet with its band's colour mixed in.
+ * Look `v` is block `v` of the screen pass's table (`looksOf`). Depends on the plan alone, so it is
+ * kept with the plan: a fit change reuses it.
+ */
+const looksByPlan = new WeakMap();
+function lookAtOf(plan) {
+    let lookAt = looksByPlan.get(plan);
+    if (lookAt) return lookAt;
+    const n = plan.sheets.length;
+    const { sheetAt, tintAt } = plan;
+    lookAt = new Uint16Array(sheetAt.length);
+    for (let i = 0; i < lookAt.length; i++) {
+        const t = tintAt[i];
+        lookAt[i] = t < 0 ? sheetAt[i] : (t + 1) * n + sheetAt[i];
+    }
+    looksByPlan.set(plan, lookAt);
+    return lookAt;
+}
+
+/**
+ * Every look the plan can draw, as one table of opaque pixels, `SHEET_PX` square each: the sheets,
+ * then each band's colour over every sheet. A sheet that is missing is a block of clear pixels. A
+ * look's pixel is then one read, banded or not.
+ */
+function looksOf(texels, tints) {
+    const n = texels.length;
+    const bytes = new Uint8ClampedArray(n * (tints.length + 1) * SHEET_WORDS * 4);
+    for (let band = -1; band < tints.length; band++) {
+        const tint = band < 0 ? null : tints[band];
+        for (let s = 0; s < n; s++) {
+            const src = texels[s];
+            if (!src) continue;
+            const base = ((band + 1) * n + s) * SHEET_WORDS * 4;
+            for (let i = 0; i < SHEET_WORDS * 4; i += 4) {
+                let red = src[i];
+                let green = src[i + 1];
+                let blue = src[i + 2];
+                if (tint) {
+                    red = red * tint.keep + tint.r;
+                    green = green * tint.keep + tint.g;
+                    blue = blue * tint.keep + tint.b;
+                }
+                bytes[base + i] = red;
+                bytes[base + i + 1] = green;
+                bytes[base + i + 2] = blue;
+                bytes[base + i + 3] = 255;
+            }
+        }
+    }
+    return bytes;
+}
 
 /**
  * The screen pass.
@@ -138,29 +192,29 @@ export function buildScreenPass(plan, { mat, unit, sheet, prop = () => null, out
     const planU = plan.unit;
 
     // Where each ground pixel's centre falls on the plan, and on a sheet, per column and per row:
-    // the loop below then does no division.
+    // the loops below then do no division.
     const planCol = new Int32Array(cols);
     const texCol = new Int32Array(cols);
     for (let c = 0; c < cols; c++) {
         planCol[c] = Math.min(planW - 1, Math.floor(((c + 0.5) * unit) / planU));
-        texCol[c] = (c % SHEET_PX) * 4;
+        texCol[c] = c % SHEET_PX;
     }
     const planRow = new Int32Array(rows);
-    const texRow = new Int32Array(rows);
-    for (let r = 0; r < rows; r++) {
-        planRow[r] = Math.min(planH - 1, Math.floor(((r + 0.5) * unit) / planU)) * planW;
-        texRow[r] = (r % SHEET_PX) * SHEET_PX * 4;
-    }
+    for (let r = 0; r < rows; r++) planRow[r] = Math.min(planH - 1, Math.floor(((r + 0.5) * unit) / planU)) * planW;
 
     const texels = plan.sheets.map(id => {
         const t = sheet(id);
-        return t && t.length === SHEET_PX * SHEET_PX * 4 ? t : null;
+        return t && t.length === SHEET_WORDS * 4 ? t : null;
     });
     const tints = plan.tints.map(({ tint, amount }) => {
         const a = Math.min(1, Math.max(0, amount));
         const [r, g, b] = rgbOf(tint);
         return { keep: 1 - a, r: r * a, g: g * a, b: b * a };
     });
+    const lookAt = lookAtOf(plan);
+    const lookBytes = looksOf(texels, tints);
+    const lookWords = new Uint32Array(lookBytes.buffer);
+    const out32 = new Uint32Array(data.buffer, data.byteOffset, cols * rows);
 
     const alongX = insideAlong(cols, unit, mat.w);
     const alongY = insideAlong(rows, unit, mat.h);
@@ -170,18 +224,22 @@ export function buildScreenPass(plan, { mat, unit, sheet, prop = () => null, out
     const lightAdd = 255 * light;
     const { from, to } = spans(grid, mat);
 
-    /** Whether a drawn pixel is on the picture's outer ring (a neighbour across an edge is not drawn). */
-    const onRim = (c, r) => c === from[r] || c === to[r] - 1
-        || r === 0 || c < from[r - 1] || c >= to[r - 1]
-        || r === rows - 1 || c < from[r + 1] || c >= to[r + 1];
+    /** The outer ring's columns of row `r` lie before `[lo, hi)`: a neighbour across an edge is not drawn. */
+    const rimSpan = (r) => {
+        if (r === 0 || r === rows - 1) return [0, 0];
+        return [
+            Math.max(from[r] + 1, from[r - 1], from[r + 1]),
+            Math.min(to[r] - 1, to[r - 1], to[r + 1])
+        ];
+    };
 
     /** Shade one written pixel as the surface's edge did: the inset shadow, then the light edge. */
-    const shade = (d, c, r) => {
+    const shade = (d, c, r, rim) => {
         const m = 1 - shadow * (1 - alongX[c] * alongY[r]);
         let red = data[d] * m;
         let green = data[d + 1] * m;
         let blue = data[d + 2] * m;
-        if (onRim(c, r)) {
+        if (rim) {
             red = red * keepLight + lightAdd;
             green = green * keepLight + lightAdd;
             blue = blue * keepLight + lightAdd;
@@ -191,45 +249,35 @@ export function buildScreenPass(plan, { mat, unit, sheet, prop = () => null, out
         data[d + 2] = blue;
     };
 
-    const sheetAt = plan.sheetAt;
-    const tintAt = plan.tintAt;
+    // ⚠️ Most of the picture lies where the inset shadow has faded below half a byte: there a pixel
+    // is one 32-bit copy from the table of looks, the same bytes shading would leave. Only a band
+    // round the edge, about 120 units deep, is shaded byte by byte.
+    const deep = 1 - 0.49 / (255 * shadow);
     for (let r = 0; r < rows; r++) {
         const a = from[r];
         const b = to[r];
         if (a === b) continue;
         const pr = planRow[r];
-        const tr = texRow[r];
-        const rowInside = alongY[r];
-        const rimRow = r === 0 || r === rows - 1;
+        const texRow = (r % SHEET_PX) * SHEET_PX;
+        const rowBase = r * cols;
         for (let c = a; c < b; c++) {
-            const i = pr + planCol[c];
-            const src = texels[sheetAt[i]];
-            if (!src) continue;
-            const s = tr + texCol[c];
-            let red = src[s];
-            let green = src[s + 1];
-            let blue = src[s + 2];
-            const t = tintAt[i];
-            if (t >= 0) {
-                const tint = tints[t];
-                red = red * tint.keep + tint.r;
-                green = green * tint.keep + tint.g;
-                blue = blue * tint.keep + tint.b;
-            }
-            const m = 1 - shadow * (1 - alongX[c] * rowInside);
-            red *= m;
-            green *= m;
-            blue *= m;
-            if (rimRow || c === a || c === b - 1 || c < from[r - 1] || c >= to[r - 1] || c < from[r + 1] || c >= to[r + 1]) {
-                red = red * keepLight + lightAdd;
-                green = green * keepLight + lightAdd;
-                blue = blue * keepLight + lightAdd;
-            }
-            const d = (r * cols + c) * 4;
-            data[d] = red;
-            data[d + 1] = green;
-            data[d + 2] = blue;
-            data[d + 3] = 255;
+            out32[rowBase + c] = lookWords[lookAt[pr + planCol[c]] * SHEET_WORDS + texRow + texCol[c]];
+        }
+        // The run of this row deep enough to need no shading (`alongX` rises, then falls).
+        const rowInside = alongY[r];
+        let f0 = b;
+        let f1 = b;
+        if (rowInside >= deep) {
+            f0 = a;
+            while (f0 < b && alongX[f0] * rowInside < deep) f0++;
+            f1 = b;
+            while (f1 > f0 && alongX[f1 - 1] * rowInside < deep) f1--;
+        }
+        const [lo, hi] = rimSpan(r);
+        for (let c = a; c < b; c++) {
+            if (c === f0 && f1 > f0) { c = f1 - 1; continue; }
+            const d = (rowBase + c) * 4;
+            if (data[d + 3] !== 0) shade(d, c, r, c < lo || c >= hi);
         }
     }
 
@@ -254,6 +302,7 @@ export function buildScreenPass(plan, { mat, unit, sheet, prop = () => null, out
         for (let y = 0; y < PROP_PX; y++) {
             const r = top + y;
             if (r < 0 || r >= rows) continue;
+            const [lo, hi] = rimSpan(r);
             const rowStart = ((oy + y) * PROP_SHEET_PX + ox) * 4;
             for (let x = 0; x < PROP_PX; x++) {
                 const c = left + x;
@@ -265,7 +314,7 @@ export function buildScreenPass(plan, { mat, unit, sheet, prop = () => null, out
                 data[d + 1] = src[s + 1];
                 data[d + 2] = src[s + 2];
                 data[d + 3] = 255;
-                shade(d, c, r);
+                shade(d, c, r, c < lo || c >= hi);
             }
         }
     }
