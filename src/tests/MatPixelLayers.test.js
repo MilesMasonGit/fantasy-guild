@@ -16,6 +16,10 @@ import { TokenChargeDeltaFloater } from '../ui/components/board/TokenBadges.jsx'
 import { playSpawn } from '../ui/components/board/spawnMotion.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 import { primeGroundSheets, resetGroundSheets } from '../ui/components/board/groundSheets.js';
+import { TerrainGridOverlay } from '../ui/components/board/TerrainGridOverlay.jsx';
+import { DeckDndContext } from '../ui/dnd/DndKit.jsx';
+import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
+import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -183,5 +187,26 @@ describe('⭐ the ground stays in the mat\'s own layer', () => {
         expect(ground.style.transform).toBe('');
         expect(ground.style.opacity).toBe('');
         expect(ground.className).not.toMatch(/will-change|filter|blur|drop-shadow|brightness|saturate|transform|opacity/);
+    });
+
+    it('⭐ the grid while placing (`TerrainGridOverlay`) asks for the same CPU context, and carries no will-change or filter', () => {
+        // A Token that needs rock shows the grid even on the meadow (TD-5 A).
+        registerTokenTypes({ mpl_needs_rock: { id: 'mpl_needs_rock', name: 'Needs Rock', tokenType: 'resource', size: 1, uses: null, requiresHero: false, config: null, standsOn: ['rock'] } });
+        const payload = { kind: DRAG_KIND.TOKEN, typeId: 'mpl_needs_rock', from: { instanceId: 'tok_held' } };
+        const { container } = render(h(DeckDndContext.Provider, { value: { isDragging: true, activePayload: payload } },
+            h(TerrainGridOverlay, { mat: { w: 1760, h: 1126 } })));
+        const grid = container.querySelector('canvas[data-terrain-grid]');
+        expect(grid).not.toBeNull();
+        const own = calls.filter(c => c.canvas === grid);
+        expect(own.length).toBeGreaterThan(0);
+        for (const c of own) {
+            expect(c.type).toBe('2d');
+            expect(c.attrs).toEqual({ willReadFrequently: true });
+        }
+        expect(grid.style.willChange).toBe('');
+        expect(grid.style.filter).toBe('');
+        expect(grid.style.transform).toBe('');
+        expect(grid.style.opacity).toBe('');
+        expect(grid.className).not.toMatch(/will-change|filter|blur|drop-shadow|brightness|saturate|transform|opacity/);
     });
 });
