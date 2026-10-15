@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { execFile } from 'child_process';
 import { normaliseStarterCamp } from '../src/config/starterCampShape.js';
+import { listDropFolder, importDropFile, libraryFiles } from './paletteInbox.js';
 
 
 /**
@@ -149,21 +150,66 @@ function starterCampRoute(req, res, inboxDir) {
   send(405, { error: 'Method not allowed' });
 }
 
+/** The only API routes the Studio's server answers: palettes, sprites and animation runs, never game data. */
+const STUDIO_ROUTES = ['/api/custom-palettes', '/api/palette-groups', '/api/palette-inbox', '/api/save-recolored-asset', '/api/animation-runs'];
+
 /**
  * @param {object} [options]
  * @param {string} [options.inboxDir] where the game's saved Starter Camp waits for the page
  *        (default `cms/inbox/`, git-ignored)
+ * @param {string} [options.paletteInboxDir] the palette drop folder (default `cms/palettes-inbox/`)
+ * @param {string} [options.palettesDir] the Material Library's files (default `data/palettes/`)
+ * @param {boolean} [options.studio] the Studio's server: refuses every API route outside `STUDIO_ROUTES`
  */
-export default function cmsFileApi({ inboxDir } = {}) {
+export default function cmsFileApi({ inboxDir, paletteInboxDir, palettesDir, studio = false } = {}) {
   const projectRoot = process.cwd().endsWith('cms') ? path.resolve(process.cwd(), '..') : process.cwd();
   const inbox = inboxDir || path.resolve(projectRoot, 'cms', 'inbox');
+  const paletteInbox = paletteInboxDir || path.resolve(projectRoot, 'cms', 'palettes-inbox');
+  const palettesRoot = palettesDir || path.resolve(projectRoot, 'data', 'palettes');
+  const library = libraryFiles(palettesRoot);
   return {
     name: 'cms-file-api',
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
         const url = req.url.split('?')[0];
 
+        if (studio && url.startsWith('/api/') && !STUDIO_ROUTES.some((r) => url === r || url.startsWith(r + '/'))) {
+          res.statusCode = 403;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: 'The Studio does not read or write game data; use the CMS' }));
+          return;
+        }
+
         if (url === '/api/starter-camp') return starterCampRoute(req, res, inbox);
+
+        // --- The palette drop folder: list it, and import one file into the Material Library ---
+        if (req.method === 'GET' && url === '/api/palette-inbox') {
+          res.setHeader('Content-Type', 'application/json');
+          try {
+            res.end(JSON.stringify(listDropFolder(paletteInbox)));
+          } catch (err) {
+            res.statusCode = 500;
+            res.end(JSON.stringify({ error: 'Failed to read the palette drop folder: ' + err.message }));
+          }
+          return;
+        }
+        if (req.method === 'POST' && url === '/api/palette-inbox/import') {
+          readJson(req, (payload) => {
+            let out;
+            try {
+              out = importDropFile(paletteInbox, palettesRoot, payload?.file, { overwrite: payload?.overwrite === true });
+            } catch (err) {
+              out = { status: 500, body: { error: 'Failed to import the palette: ' + err.message } };
+            }
+            res.statusCode = out.status;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify(out.body));
+          }, (err) => {
+            res.statusCode = 400;
+            res.end(JSON.stringify({ error: 'Invalid JSON: ' + err.message }));
+          });
+          return;
+        }
 
         // Serve static assets from project root public/assets folder if requested in CMS
         if (url.startsWith('/assets/')) {
@@ -445,7 +491,7 @@ export default function cmsFileApi({ inboxDir } = {}) {
 
         // --- GET /api/custom-palettes (Load custom palettes) ---
         if (req.method === 'GET' && req.url === '/api/custom-palettes') {
-          const palettesPath = path.resolve(projectRoot, 'data', 'palettes', 'custom_palettes.json');
+          const palettesPath = library.palettes;
           if (fs.existsSync(palettesPath)) {
             const data = fs.readFileSync(palettesPath, 'utf-8');
             res.setHeader('Content-Type', 'application/json');
@@ -464,7 +510,7 @@ export default function cmsFileApi({ inboxDir } = {}) {
           req.on('end', () => {
             try {
               const palettes = JSON.parse(body);
-              const palettesPath = path.resolve(projectRoot, 'data', 'palettes', 'custom_palettes.json');
+              const palettesPath = library.palettes;
               const dir = path.dirname(palettesPath);
               if (!fs.existsSync(dir)) {
                 fs.mkdirSync(dir, { recursive: true });
@@ -482,7 +528,7 @@ export default function cmsFileApi({ inboxDir } = {}) {
 
         // --- GET /api/palette-groups (Load palette groups) ---
         if (req.method === 'GET' && req.url === '/api/palette-groups') {
-          const groupsPath = path.resolve(projectRoot, 'data', 'palettes', 'palette_groups.json');
+          const groupsPath = library.groups;
           if (fs.existsSync(groupsPath)) {
             const data = fs.readFileSync(groupsPath, 'utf-8');
             res.setHeader('Content-Type', 'application/json');
@@ -501,7 +547,7 @@ export default function cmsFileApi({ inboxDir } = {}) {
           req.on('end', () => {
             try {
               const groups = JSON.parse(body);
-              const groupsPath = path.resolve(projectRoot, 'data', 'palettes', 'palette_groups.json');
+              const groupsPath = library.groups;
               const dir = path.dirname(groupsPath);
               if (!fs.existsSync(dir)) {
                 fs.mkdirSync(dir, { recursive: true });
@@ -520,7 +566,7 @@ export default function cmsFileApi({ inboxDir } = {}) {
         // --- GET /data/palettes/:filename (Serve palette files) ---
         if (req.method === 'GET' && url.startsWith('/data/palettes/')) {
           const filename = url.split('/').pop();
-          const filePath = path.resolve(projectRoot, 'data', 'palettes', filename);
+          const filePath = path.resolve(palettesRoot, filename);
           if (fs.existsSync(filePath)) {
             const data = fs.readFileSync(filePath, 'utf-8');
             res.setHeader('Content-Type', 'application/json');

@@ -53,4 +53,5 @@ T-153 — The gear alert no longer pulses, scales or glows: a one-art-pixel gold
 T-146 — Animated sprite outlines get one art pixel of room past each frame (padded outline cells, outline drawn outside the frame crop) — a5ba92c4 — 2026-10-14
 T-148 — The Guild Hall is movable again (drags, carries the marker; never pushed, never off the mat, never demolished) — dcefcf89 — 2026-10-14
 T-147 — Hover is the 1-art-pixel white outline alone; the hover hop and A10's lift are gone — 095420e0 — 2026-10-14
+T-179 — The Studio: `npm run studio` (port 5175) runs Recolor and Animation as two tabs on a server that refuses the game-data routes; the tabs left the CMS top bar; palette drop folder `cms/palettes-inbox/` with an Import button in the Recolor tab (brief 85 A3) — crunch/art-a3 — 2026-10-15
 T-185 — The dev server redraws sprite shadows and outlines in a child process (killed on close or restart) and no longer watches the other sessions' worktrees under .claude/worktrees (main checkout: 211,296 → 6,276 watch handles, 2.0-2.4 GB → under 0.7 GB, full redraw 31.6 s → 5.7 s); the 0xC0000409 itself was not reproduced — 0cfcdf1e — 2026-10-15
