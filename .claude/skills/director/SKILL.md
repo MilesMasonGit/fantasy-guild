@@ -60,6 +60,9 @@ say so and stop).
   scratchpad) and the A side run with `--ab=http://localhost:NNNN`. A drag
   bench difference that only shows at 1× is checked by re-running the pair in
   the other order before it counts.
+- **Before handing the owner an eye-check branch, detach the agent's worktree**
+  (`git -C .claude/worktrees/<name> switch --detach`): a branch checked out in a
+  worktree cannot be switched to in the owner's folder.
 - **Eye-checks** only for a significant change in how the game looks or
   plays (a new screen or panel, a changed interaction, a look rule): a dated
   file in `docs/active/eyecheck/` whose every check is reachable by clicking,
