@@ -47,6 +47,14 @@ check.
 - Previews come from A2's output folder; until A2 lands, the page may apply
   the presets live as CSS filters.
 - **Done when:** the page runs from one npm command; screenshot in the report.
+- **Built:** `npm run art:bench` opens the bench at `http://localhost:5190/art-bench/`
+  (its own small server beside `npm run dev`, which also serves `/art-bench/`).
+  Page: `tools/art-bench/index.html`; server and build guard: `scripts/artBench.mjs`.
+  It reads A2's previews from `public/_gen/art-bench/<preset id>/<path under
+  public/assets>` (ids `unchanged`, `gentle`, `drag`, `bold`, or whatever an
+  optional `public/_gen/art-bench/presets.json` lists:
+  `[{ id, label, brightness, saturation, threshold }]`) and falls back to a live
+  CSS filter per sprite. The build deletes `dist/_gen/art-bench/`.
 
 ### A2 — The brightness script with presets (builder)
 

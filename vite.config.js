@@ -8,6 +8,8 @@ import { fileURLToPath } from 'url';
 // pictures generated from the art, into the git-ignored public/_gen/sprite-fx/
 // — before a build, and when the dev server starts or a sprite changes.
 import { spriteFxPlugin } from './scripts/spriteFx.mjs';
+// The art bench (`/art-bench/`, dev server only; never in the build).
+import { artBenchPlugin } from './scripts/artBench.mjs';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // The app version, taken from package.json at build time and injected as
@@ -94,7 +96,7 @@ export default defineConfig(({ mode }) => ({
     define: {
         __APP_VERSION__: JSON.stringify(packageVersion)
     },
-    plugins: [react(), assetManifestPlugin(), spriteFxPlugin({ root: __dirname })],
+    plugins: [react(), assetManifestPlugin(), spriteFxPlugin({ root: __dirname }), artBenchPlugin({ root: __dirname })],
     resolve: {
         alias: {
             '@': path.resolve(__dirname, './src')
