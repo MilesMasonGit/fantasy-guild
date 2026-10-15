@@ -42,7 +42,7 @@ October 2026.*
 | Terrain T3: terrain in placement (Tokens that need water or shore land only there; everything else anywhere dry; meadow Regions unchanged) | engineer | `crunch/terrain-t3` (`t3`) | ready; director gate green (4847); work check at 13:00, then merge | Thu | |
 | Terrain T2: the ground drawn on the mat | engineer | `crunch/terrain-t2` (`t2`) | ready; director gate green (4838); combined eye-check branch `fix/terrain-tm1` (T2 + T3) being gated; eye-check file drafted ([file](eyecheck/2026-10-15_terrain-ground.md)); after the 13:00 window: merge T1 and T3, bring `main` into T2, layer count and draw bench on/off, then the handover | Thu | |
 | Terrain T4: the CMS "Stands on" field and the grid while placing | builder | `crunch/terrain-t4` (`t4`) | ready; director gate green (4908); on the eye-check branch `fix/terrain-tm1` with the ground | Thu | |
-| The dev server must survive a full sprite redraw (T-185) | engineer | `fix/t185-spritefx-server` (`t185`) | building (started Thu 10:00 at the owner's word; the idle slots) | Thu | |
+| The dev server must survive a full sprite redraw (T-185) | engineer | `fix/t185-spritefx-server` (`t185`) | ready; director gate green (4810). Cause: the main folder's dev server watched every agent worktree (211k handles, 2 GB) and ran the redraw in its own process; now the worktrees are ignored (6k handles, 165 MB) and the redraw runs in a child process (5 s). Work check at 13:00, then merge | Thu | |
 | Handoff; T-181 baseline retake queued for Sat 01:00 | director / runner | `main` | queued | Sat | |
 | Planning agent briefs this week's concept docs into the queue table | owner + planning | `planning` (`pp`) | in progress alongside (owner's choice) | Wed–Sat | |
 
