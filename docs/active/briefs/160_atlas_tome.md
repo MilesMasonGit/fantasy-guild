@@ -28,7 +28,11 @@ Region name).
 
 ## T3 — The Hall's sky (T-171, builder)
 
-- **Change:** as "The look of the sky" says. Check T-128 while there.
+- **Change:** as "The look of the sky" says, including the two drifting
+  backdrop layers (owner's art is in `playmat/screens/`) and the owner's star
+  sprites when drawn. Check T-128 while there.
+- **Measure:** the drift on the Hall screen with the Perf HUD; it must not
+  run while the screen is closed.
 
 ## T4 — Camera moves (T-174, engineer)
 

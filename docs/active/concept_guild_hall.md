@@ -51,6 +51,9 @@ sky.*
   **brightness and size steps**: **locked** a faint 1-pixel dot; **buyable** a
   small star that twinkles (two stepped frames, no blur); **bought** a bigger,
   brighter star; **maxed** a full gold star. Whole-pixel scales only.
+  **The owner draws the star sprites** for each state so they read apart
+  from the backdrop's painted stars (owner, 2026-10-15); the steps above are
+  the brief for that art, and code-drawn stars stand in until it exists.
 - **Every star carries a tag** beside it: `Bank Slots 3/10` (name and rank),
   locked ones included.
 - **Lines**: 1 art pixel; **faint between unlit stars, bright white-gold once
@@ -60,8 +63,18 @@ sky.*
   each group that **brightens when the constellation is finished**.
 - **The centre is the Hall as a bright pole star**, labelled Guild Hall, that
   every constellation starts from. No Hall sprite in the sky.
-- **The sky**: a **pixel night-sky backdrop the owner paints**; until then a
-  plain night colour with a few code-drawn 1-pixel stars.
+- **The sky** (owner, 2026-10-15): two layers of the owner's art in
+  `public/assets/playmat/screens/`, both 512 × 512 and seamless:
+  - **`bg_nightsky_1.png`**, the star field, **tiled at 2×** over the whole
+    screen;
+  - **`bg_nightsky_cloud_layer.png`** (see-through), **tiled at 2× on top at
+    about 25 % opacity**.
+  - **Both drift**, in **whole art pixels with stepped timing** (one art pixel
+    about every half-second, never a smooth glide), **very slowly** and in
+    **different directions**: the stars cross one tile in about 10 minutes,
+    the clouds in about 5, so the clouds feel nearer.
+  - The drift stops under the **reduce-motion setting**. Drift only while the
+    Hall screen is open; nothing runs on the mat.
 - **Panels**: the **Effects list stays docked on the left** (what the
   upgrades give now); a **details panel docked on the right** shows the
   hovered star (the upgrade's sprite icon, description, prerequisites, price
