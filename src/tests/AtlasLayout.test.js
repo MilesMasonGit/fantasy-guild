@@ -17,6 +17,7 @@ import { placeAt, clearMat } from './fixtures/mat.js';
 import { SRC, codeOf } from './fixtures/sourceScan.js';
 import { FOREST, MOUNTAIN, COAST, OVERGROWN, GOBLIN_CAMP } from './fixtures/atlasMaps.js';
 import { terrainAt } from '../systems/atlas/TerrainMap.js';
+import { createRegionRecord } from '../state/StateSchema.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -320,7 +321,9 @@ describe('the game\'s side of the layout (layoutInputs)', () => {
             atlas_t_sapling: resource('atlas_t_sapling', { artSize: 'small' }),
             atlas_t_coast: resource('atlas_t_coast', { tags: ['Coast'], statements: [NO_THIRD_COAST] }),
             atlas_t_camp: { id: 'atlas_t_camp', name: 'Camp', tokenType: 'spawner', size: 1, uses: null, requiresHero: false, config: null },
-            atlas_t_ruins: resource('atlas_t_ruins')
+            atlas_t_ruins: resource('atlas_t_ruins'),
+            atlas_t_boat: resource('atlas_t_boat', { standsOn: ['water'] }),
+            atlas_t_dock: resource('atlas_t_dock', { standsOn: ['shore'] })
         });
     });
     afterEach(() => { clearMat(); resetMatTuning(); });
@@ -365,6 +368,38 @@ describe('the game\'s side of the layout (layoutInputs)', () => {
             }
         });
     }
+
+    it('⭐ the layout honours "Stands on", and the game agrees with every spot it chose', () => {
+        const summary = budget([
+            { id: 'coast', kind: 'base', biome: 'coast', points: 40, nodes: [
+                { typeId: 'atlas_t_oak', weight: 4 }, { typeId: 'atlas_t_boat', weight: 1 }, { typeId: 'atlas_t_dock', weight: 1 }
+            ] },
+            mod('camp', { kind: 'threat', typeId: 'atlas_t_camp', count: 2 })
+        ], { cap: 128 });
+        for (const seed of SEEDS.slice(0, 4)) {
+            clearMat();
+            const result = layout(summary, layoutOptions(summary, seed));
+            expect(result.unplaced).toEqual([]);
+
+            // The guild is in the Region this layout wrote.
+            const region = createRegionRecord('region_9');
+            region.terrain = result.terrain;
+            GameState.state.atlas = { activeRegionId: region.id, nextRegionNumber: 10, regions: { [region.id]: region }, seed: null };
+
+            placeAt(result.hall.typeId, result.hall.x, result.hall.y);
+            const placed = result.nodes.map(n => ({ node: n, instance: placeAt(n.typeId, n.x, n.y) }));
+            for (const { node, instance } of placed) {
+                expect(MatPlacement.isLegal(node.typeId, node, { excludeId: instance.id }), `${node.typeId} at ${node.x},${node.y}`).toBe(true);
+                const wet = terrainAt(result.terrain, node.x, node.y) === 'water';
+                expect(wet, node.typeId).toBe(node.typeId === 'atlas_t_boat');
+            }
+            expect(result.nodes.filter(n => n.typeId === 'atlas_t_boat').length).toBeGreaterThan(0);
+            expect(result.nodes.filter(n => n.typeId === 'atlas_t_dock').length).toBeGreaterThan(0);
+            // A boat moved a little stays on the water; a plain node may not follow it there.
+            const boat = placed.find(p => p.node.typeId === 'atlas_t_boat');
+            expect(MatPlacement.isLegal('atlas_t_oak', boat.node, { excludeId: boat.instance.id })).toBe(false);
+        }
+    });
 });
 
 describe('purity guards', () => {
