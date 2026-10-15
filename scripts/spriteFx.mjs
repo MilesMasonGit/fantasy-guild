@@ -1,12 +1,14 @@
 // Fantasy Guild — generates the sprites' hard shadows and coloured outlines
 // (Wave 5, CR3-350). See `src/config/spriteFx.js` for what and why.
 //
-//   node scripts/spriteFx.mjs          generate (only what changed)
-//   node scripts/spriteFx.mjs --force  regenerate everything
+//   node scripts/spriteFx.mjs                 generate (only what changed)
+//   node scripts/spriteFx.mjs --force         regenerate everything
+//   node scripts/spriteFx.mjs --root <dir>    for another checkout
 //
 // Normally you never run it by hand: `spriteFxPlugin()` (in vite.config.js)
-// runs it when `npm run dev` starts, before `npm run build`, and again for any
-// sprite added or changed while the dev server is up.
+// runs it when `npm run dev` starts (as a child process), before
+// `npm run build`, and again for any sprite added or changed while the dev
+// server is up.
 //
 // Output, all under the git-ignored `public/_gen/sprite-fx/`:
 //   sil/<assets path>                black where the art is, clear elsewhere
@@ -20,6 +22,7 @@
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
+import { fork } from 'child_process';
 import { fileURLToPath, pathToFileURL } from 'url';
 import sharp from 'sharp';
 import {
@@ -28,8 +31,8 @@ import {
     silhouetteFolder, outlineFolder
 } from '../src/config/spriteFx.js';
 
-const HERE = path.dirname(fileURLToPath(import.meta.url));
-const DEFAULT_ROOT = path.resolve(HERE, '..');
+const SCRIPT_FILE = fileURLToPath(import.meta.url);
+const DEFAULT_ROOT = path.resolve(path.dirname(SCRIPT_FILE), '..');
 
 // ---------------------------------------------------------------------------
 // The pixel maths (pure — `SpriteFxGenerator.test.js` pins it)
@@ -260,8 +263,52 @@ export async function generateSpriteFx({ root = DEFAULT_ROOT, force = false, log
 }
 
 // ---------------------------------------------------------------------------
+// The dev server's redraw, in its own process
+// ---------------------------------------------------------------------------
+
+/**
+ * Run the generator as a child Node process. `done` resolves with its result
+ * (plus the child's `pid`), or rejects if it crashed, failed or was killed;
+ * `kill()` stops it.
+ *
+ * ⚠️ The dev server never draws in its own process. There, sharp's work
+ * queues behind the file watcher's on Node's four shared worker threads (a
+ * full redraw crawled for minutes on the main checkout), and a native fault
+ * in the image library would end the whole server. In a child, the worst
+ * case is one lost redraw.
+ *
+ * @returns {{ done: Promise<object>, kill: () => void }}
+ */
+export function runSpriteFxInChild({ root = DEFAULT_ROOT, force = false, script = SCRIPT_FILE } = {}) {
+    const args = ['--root', root, ...(force ? ['--force'] : [])];
+    const child = fork(script, args, { stdio: ['ignore', 'inherit', 'inherit', 'ipc'] });
+    let reply = null;
+    child.on('message', (m) => { if (m?.type === 'sprite-fx:result') reply = m; });
+    // `close` comes after both the exit and the message channel's end, so the reply is in by then.
+    const done = new Promise((resolve, reject) => {
+        child.once('error', reject);
+        child.once('close', (code, signal) => {
+            if (code === 0 && reply) resolve({ ...reply.result, pid: reply.pid });
+            else reject(new Error(signal ? `generator stopped (${signal})` : `generator exited with code ${code}`));
+        });
+    });
+    const kill = () => { if (child.exitCode === null && child.signalCode === null) child.kill(); };
+    return { done, kill };
+}
+
+// ---------------------------------------------------------------------------
 // The Vite plugin
 // ---------------------------------------------------------------------------
+
+/** `file` is `dir` or inside it (both absolute). Windows paths compare without case. */
+function isUnder(file, dir) {
+    const norm = (p) => {
+        const s = toPosix(path.resolve(p));
+        return process.platform === 'win32' ? s.toLowerCase() : s;
+    };
+    const f = norm(file), d = norm(dir).replace(/\/$/, '');
+    return f === d || f.startsWith(d + '/');
+}
 
 /**
  * Keeps the generated images current, so new art gets its shadow and outlines
@@ -269,14 +316,20 @@ export async function generateSpriteFx({ root = DEFAULT_ROOT, force = false, log
  *
  * - **`npm run build`** — generated before the bundle (`buildStart`), so Vite
  *   copies them from `public/` into `dist/` with everything else.
- * - **`npm run dev`** — generated in the background as the server starts (the
- *   game draws without them for those few seconds, never broken), then a file
- *   watcher on `public/assets` redraws any sprite added or changed and tells
- *   the page to re-read the manifest (`sprite-fx:update`).
+ * - **`npm run dev`** — generated in a child process as the server starts
+ *   (the game draws without them for those few seconds, never broken), then a
+ *   file watcher on `public/assets` redraws any sprite added or changed and
+ *   tells the page to re-read the manifest (`sprite-fx:update`). The
+ *   generator's own files are outside `public/assets`, so they never start
+ *   another redraw. Closing or restarting the server stops a redraw in flight.
+ *
+ * `runGenerator` is how the dev server runs it (`runSpriteFxInChild`); tests
+ * pass a stand-in.
  */
-export function spriteFxPlugin({ root = DEFAULT_ROOT } = {}) {
+export function spriteFxPlugin({ root = DEFAULT_ROOT, runGenerator = runSpriteFxInChild } = {}) {
     let command = 'serve';
     const log = (m) => console.log(m);
+    let stop = () => {};
     return {
         name: 'sprite-fx',
         configResolved(config) { command = config.command; },
@@ -285,39 +338,58 @@ export function spriteFxPlugin({ root = DEFAULT_ROOT } = {}) {
             await generateSpriteFx({ root, log });
         },
         configureServer(server) {
-            const assetsDir = toPosix(path.join(root, 'public', 'assets'));
-            let running = null;
+            const assetsDir = path.join(root, 'public', 'assets');
+            let job = null;
             let again = false;
+            let closed = false;
             const run = () => {
-                if (running) { again = true; return running; }
-                running = generateSpriteFx({ root, log })
+                if (closed) return;
+                if (job) { again = true; return; }
+                job = runGenerator({ root });
+                job.done
                     .then((r) => {
-                        if (r.generated || r.removed) server.ws.send({ type: 'custom', event: 'sprite-fx:update' });
+                        if (!closed && (r.generated || r.removed)) server.ws.send({ type: 'custom', event: 'sprite-fx:update' });
                     })
-                    .catch(e => log(`sprite-fx: failed (${e.message}) — sprites draw without shadows or outlines`))
+                    .catch((e) => {
+                        if (!closed) log(`sprite-fx: failed (${e.message}) — sprites draw without shadows or outlines`);
+                    })
                     .finally(() => {
-                        running = null;
-                        if (again) { again = false; run(); }
+                        job = null;
+                        if (again && !closed) { again = false; run(); }
                     });
-                return running;
             };
             let timer = null;
             const onFile = (file) => {
-                const f = toPosix(file);
-                if (!f.startsWith(assetsDir) || !/\.png$/i.test(f)) return;
+                if (!/\.png$/i.test(file) || !isUnder(file, assetsDir)) return;
                 clearTimeout(timer);
                 timer = setTimeout(run, 250);
             };
             server.watcher.on('add', onFile);
             server.watcher.on('change', onFile);
             server.watcher.on('unlink', onFile);
+            stop = () => {
+                closed = true;
+                clearTimeout(timer);
+                job?.kill();
+            };
             run();
-        }
+        },
+        // Vite calls this as the dev server closes, including the close before a restart.
+        closeBundle() { stop(); }
     };
 }
 
-// Run directly: `node scripts/spriteFx.mjs [--force]`.
+// Run directly: `node scripts/spriteFx.mjs [--force] [--root <dir>]`. As the
+// dev server's child, it hands the result back over the message channel.
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
-    const r = await generateSpriteFx({ force: process.argv.includes('--force'), log: (m) => console.log(m) });
-    console.log(JSON.stringify(r));
+    const at = process.argv.indexOf('--root');
+    const root = at > 0 && process.argv[at + 1] ? path.resolve(process.argv[at + 1]) : DEFAULT_ROOT;
+    const r = await generateSpriteFx({ root, force: process.argv.includes('--force'), log: (m) => console.log(m) });
+    if (process.send) {
+        process.send({ type: 'sprite-fx:result', result: r, pid: process.pid }, () => {
+            if (process.connected) process.disconnect();
+        });
+    } else {
+        console.log(JSON.stringify(r));
+    }
 }

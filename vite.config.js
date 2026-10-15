@@ -69,11 +69,24 @@ function assetManifestPlugin() {
     };
 }
 
+// ⚠️ The main checkout holds every other session's git worktree under
+// `.claude/worktrees/`. Watching them cost its dev server ~210,000 file
+// handles, 2 GB of memory and minutes of scanning at every start, starving
+// everything else the server does. A worktree's own server has none inside it.
+const NESTED_WORKTREES = path.resolve(__dirname, '.claude', 'worktrees');
+const sameCase = (p) => (process.platform === 'win32' ? p.toLowerCase() : p);
+const NESTED_WORKTREES_KEY = sameCase(NESTED_WORKTREES.split(path.sep).join('/'));
+function inNestedWorktree(file) {
+    const f = sameCase(path.resolve(file).split(path.sep).join('/'));
+    return f === NESTED_WORKTREES_KEY || f.startsWith(NESTED_WORKTREES_KEY + '/');
+}
+
 export default defineConfig(({ mode }) => ({
     // Honor an externally assigned port (e.g. tooling that sets PORT) so two
     // dev servers can run side-by-side; falls back to Vite's default 5173.
     server: {
-        port: Number(process.env.PORT) || 5173
+        port: Number(process.env.PORT) || 5173,
+        watch: { ignored: [inNestedWorktree] }
     },
     // Perf mode (`npm run build:perf`) is the production build plus the measuring harness; its own
     // folder means it never overwrites the shipped `dist/`.
