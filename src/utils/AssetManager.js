@@ -1,9 +1,13 @@
 import { SPRITE_MANIFEST } from '../config/registries/sprite-manifest.js';
+import { LEGACY_SPRITE_NAMES } from '../config/registries/legacySpriteNames.js';
 
 /**
  * Fantasy Guild - Asset Manager
  * Universal utility for resolving visual assets (Sprites vs Emojis)
  * with consistent scaling and framing.
+ *
+ * A sprite name is its file's name (`docs/reference/ASSET_NAMING.md`). Names from before the art
+ * was renamed still resolve through `LEGACY_SPRITE_NAMES`, because content and saves may hold them.
  */
 
 // ⚠️ ART ALIASES, not live concepts. `AREA_ART_MAP` keys are area ids and
@@ -13,255 +17,130 @@ import { SPRITE_MANIFEST } from '../config/registries/sprite-manifest.js';
 // Module scope on purpose: `resolveSpritePath` runs once per visible sprite per
 // render, so declaring them inside would allocate two objects per icon.
 
-/** CMS area-background id → art file stem. */
+/** CMS area-background id → art name. */
 const AREA_ART_MAP = {
-    bg_area_guild_hall: 'bg_guild_hall',
-    bg_area_whispering_woods: 'bg_lush_forest',
-    bg_area_misty_mountains: 'bg_mountains_snowy',
-    bg_area_sunken_bog: 'bg_swamp'
+    bg_area_guild_hall: 'b_guild_hall',
+    bg_area_whispering_woods: 'b_lush_forest',
+    bg_area_misty_mountains: 'b_mountains_snowy',
+    bg_area_sunken_bog: 'b_swamp'
 };
 
-/** Retired class name / custom selector → hero art file stem. */
+/** Retired class name → hero portrait name. */
 const HERO_MAP = {
-    // Classes
-    fighter: 'hm_fighter',
-    ranger: 'hn_range',
-    wizard: 'hm_wizard',
-    rogue: 'hn_sneak',
-    paladin: 'hm_cleric',
-    cleric: 'hm_cleric',
-    bard: 'hm_bard',
-    alchemist: 'hf_alchemist',
-    engineer: 'hm_blacksmith',
-    adventure: 'hn_adventure1',
+    fighter: 'hm_fighter_por',
+    ranger: 'hn_range_por',
+    wizard: 'hm_wizard_por',
+    rogue: 'hn_sneak_por',
+    paladin: 'hm_cleric_por',
+    cleric: 'hm_cleric_por',
+    bard: 'hm_bard_por',
+    alchemist: 'hf_alchemist_por',
+    engineer: 'hm_blacksmith_por',
+    adventure: 'hn_adventure_por'
+};
 
-    // Custom Selectors
-    hero_recruit_0: 'hero_recruit_0',
-    icon_recruit_0: 'icon_recruit_0',
-    hero_adventure: 'hn_adventure1',
-    hero_knight: 'hm_fighter',
-    hero_rogue: 'hn_sneak',
-    hero_warlock: 'hm_wizard',
-    hero_wizard: 'hm_wizard',
-    hero_wizard_arcane: 'hm_wizard',
+/** Skill id → skill icon name, for a skill asked for by its id. */
+const SKILL_MAP = {
+    mining: 's_mining',
+    forestry: 's_logging',
+    fishing: 's_fishing',
+    smithing: 's_smithing',
+    crafting: 's_crafting',
+    cooking: 's_cooking',
+    melee: 's_melee',
+    ranged: 's_ranged',
+    magic: 's_magic',
+    crime: 's_crime'
 };
 
 /**
- * Enemy Token sprite id → animation sheet path. Only a Token whose sprite id is
- * listed animates; every other enemy keeps its static art. Full paths are
- * stored because enemy art is split across category folders.
+ * A hero's portrait or class name → its animation sheet. Only these heroes animate; any other
+ * draws its still portrait.
+ */
+const ANIMATION_MAP = {
+    hn_recruit_por: 'hn_recruit_sheet',
+    hn_recruit_icon_por: 'hn_recruit_sheet',
+    recruit: 'hn_recruit_sheet',
+    hm_fighter_por: 'hn_fighter_sheet',
+    fighter: 'hn_fighter_sheet',
+    hn_sneak_por: 'hn_rogue_sheet',
+    rogue: 'hn_rogue_sheet',
+    hm_wizard_por: 'hn_wizard_sheet',
+    wizard: 'hn_wizard_sheet',
+    hn_range_por: 'hn_ranger_sheet',
+    ranger: 'hn_ranger_sheet'
+};
+
+/**
+ * Enemy Token sprite name → animation sheet path. Only a Token whose sprite is
+ * listed animates; every other enemy keeps its static art.
  *
  * ⚠️ A different grid from a hero's sheet: 4 columns × 4 rows of 64px frames,
  * not 8×3. See `AnimatedEnemySprite.jsx`.
  */
 const ENEMY_ANIMATION_MAP = {
-    e_cow: 'assets/enemies/animal/anim/ani_cow.png'
+    e_cow: 'assets/enemies/animal/e_cow_sheet.png'
 };
 
+/** The current name for a sprite name, which may be one from before the art was renamed. */
+export function currentSpriteName(name) {
+    if (typeof name !== 'string') return name;
+    return Object.prototype.hasOwnProperty.call(LEGACY_SPRITE_NAMES, name) ? LEGACY_SPRITE_NAMES[name] : name;
+}
+
 /**
- * The animation sheet for an enemy Token's sprite id, or null if it has
+ * The animation sheet for an enemy Token's sprite, or null if it has
  * none yet. `spriteId` is the Token def's own `sprite` field.
  */
 export function resolveEnemyAnimationPath(spriteId) {
-    return ENEMY_ANIMATION_MAP[spriteId] || null;
+    return ENEMY_ANIMATION_MAP[currentSpriteName(spriteId)] || null;
 }
 
-
 /**
- * Resolve a sprite path for a given ID using Manifest Lookups.
- * Priority: 
- * 1. Explicit .sprite property on entity
- * 2. Static Manifest (SPRITE_MANIFEST)
- * 3. Smart Path Guessing (Fallbacks)
+ * Resolve a sprite path for a given ID.
+ * Priority:
+ * 1. A path (`assets/...`) is returned as it is
+ * 2. An area id or a retired class name, through its own table
+ * 3. The current name for an old one
+ * 4. A hero portrait or skill icon by its prefix, a skill by its id
+ * 5. The manifest
+ * 6. An entity's own `sprite` or `background` path
  */
 export function resolveSpritePath(entity) {
     if (!entity) return null;
 
-    // 1. If it's already a full path, return it (safety check, translating playmat legacy paths)
-    if (typeof entity === 'string' && entity.startsWith('assets/')) {
-        let path = entity;
-        if (path.startsWith('assets/backgrounds/playmat/')) {
-            const fileName = path.substring(path.lastIndexOf('/') + 1);
-            if (fileName.startsWith('pm_table_')) {
-                path = `assets/playmat/tables/${fileName}`;
-            } else if (fileName.startsWith('pm_board_')) {
-                path = `assets/playmat/tiles/${fileName}`;
-            }
-        }
-        return path;
-    }
+    if (typeof entity === 'string' && entity.startsWith('assets/')) return entity;
 
-    // 2. Resolve ID for Manifest Lookup
     let id = null;
     if (typeof entity === 'object') {
         id = entity.spriteId || entity.sprite || entity.background || entity.classId || entity.templateId || entity.id || entity.itemId;
     } else {
         id = entity;
     }
+    if (!id || typeof id !== 'string') return null;
 
-    if (id && AREA_ART_MAP[id]) {
-        id = AREA_ART_MAP[id];
+    if (AREA_ART_MAP[id]) id = AREA_ART_MAP[id];
+    if (HERO_MAP[id]) return `assets/heroes/${HERO_MAP[id]}.png`;
+    id = currentSpriteName(id);
+
+    if (/^h[fmn]_/.test(id)) return `assets/heroes/${id}.png`;
+    if (id.startsWith('s_')) return `assets/skills/${id}.png`;
+    if (SKILL_MAP[id]) return `assets/skills/${SKILL_MAP[id]}.png`;
+
+    if (SPRITE_MANIFEST[id]) return SPRITE_MANIFEST[id];
+
+    if (typeof entity === 'object') {
+        if (typeof entity.sprite === 'string' && entity.sprite.startsWith('assets/')) return entity.sprite;
+        if (typeof entity.background === 'string' && entity.background.startsWith('assets/')) return entity.background;
     }
-
-    let spritePath = null;
-
-    // Direct hero sprite and class id mapping
-    if (id && typeof id === 'string') {
-        if (HERO_MAP[id]) {
-            spritePath = `assets/heroes/${HERO_MAP[id]}.png`;
-        } else if (id.startsWith('hf_') || id.startsWith('hm_') || id.startsWith('hn_') || id.startsWith('hero_') || id.startsWith('icon_')) {
-            spritePath = `assets/heroes/${id}.png`;
-        }
-    }
-
-    // Direct Playmat ID mapping
-    if (!spritePath && id && typeof id === 'string') {
-        if (id.startsWith('pm_table_')) {
-            spritePath = `assets/playmat/tables/${id}.png`;
-        } else if (id.startsWith('pm_board_')) {
-            spritePath = `assets/playmat/tiles/${id}.png`;
-        } else if (id.startsWith('skill_')) {
-            spritePath = `assets/skills/${id}.png`;
-        } else {
-            const SKILL_MAP = {
-                mining: 'skill_mining',
-                forestry: 'skill_logging',
-                fishing: 'skill_fishing',
-                smithing: 'skill_smithing',
-                crafting: 'skill_crafting',
-                cooking: 'skill_cooking',
-                melee: 'skill_melee',
-                ranged: 'skill_ranged',
-                magic: 'skill_magic',
-                crime: 'skill_crime'
-            };
-            if (SKILL_MAP[id]) {
-                spritePath = `assets/skills/${SKILL_MAP[id]}.png`;
-            }
-        }
-    }
-
-    // 3. Static Manifest (O1 Lookup)
-    if (!spritePath && id && SPRITE_MANIFEST[id]) {
-        spritePath = SPRITE_MANIFEST[id];
-    }
-
-    // 4. Explicit Path check (Fallback if not in manifest)
-    if (!spritePath && typeof entity === 'object') {
-        if (entity.sprite && typeof entity.sprite === 'string' && entity.sprite.startsWith('assets/')) spritePath = entity.sprite;
-        else if (entity.background && typeof entity.background === 'string' && entity.background.startsWith('assets/')) spritePath = entity.background;
-    }
-
-    // 5. Smart Item Guessing (Restricted to non-hero items)
-    if (!spritePath && id && typeof id === 'string' && !id.startsWith('hero_')) {
-        let folder = '';
-        if (id.startsWith('ore_')) folder = 'mining/ore/';
-        else if (id.startsWith('ingot_')) folder = 'mining/ingot/';
-        else if (id.startsWith('battleaxe_')) folder = 'equipment/battleaxe/';
-        else if (id.startsWith('longsword_')) folder = 'equipment/longsword/';
-        else if (id.startsWith('staff_')) folder = 'equipment/staff/';
-        else if (id.startsWith('key_')) folder = 'crime/key/';
-        else if (id.startsWith('drink_')) folder = 'drink/';
-        else if (id.startsWith('wood_')) folder = 'wood/';
-
-        if (folder) {
-            spritePath = `assets/sprites/implemented/items/${folder}${id}.png`;
-        } else if (id.startsWith('bg_') || id.startsWith('scene_')) {
-            if (id.includes('.')) {
-                const baseId = id.split('.')[0];
-                if (SPRITE_MANIFEST[baseId]) {
-                    spritePath = SPRITE_MANIFEST[baseId];
-                } else {
-                    spritePath = `assets/sprites/implemented/biomes/${id}`;
-                }
-            } else {
-                spritePath = `assets/sprites/implemented/biomes/${id}.png`;
-            }
-        }
-    }
-
-    // Runtime path translation for reorganized assets
-    if (spritePath && typeof spritePath === 'string') {
-        if (spritePath.startsWith('assets/sprites/implemented/biomes/')) {
-            const fileName = spritePath.substring('assets/sprites/implemented/biomes/'.length);
-            spritePath = `assets/backgrounds/area/${fileName}`;
-        } else if (spritePath.startsWith('assets/sprites/implemented/tasks/')) {
-            const fileName = spritePath.substring('assets/sprites/implemented/tasks/'.length);
-            if (fileName === 'bg_wishing_well.png') {
-                spritePath = `assets/backgrounds/cards/guild_hall/${fileName}`;
-            } else {
-                spritePath = `assets/backgrounds/area/${fileName}`;
-            }
-        } else if (spritePath.startsWith('assets/sprites/implemented/items/')) {
-            let rest = spritePath.substring('assets/sprites/implemented/items/'.length);
-            // Translate intermediate legacy path segments to match reorganized disk locations
-            if (rest.startsWith('mining/ore/')) {
-                rest = rest.substring('mining/'.length);
-            } else if (rest.startsWith('mining/ingot/')) {
-                rest = rest.substring('mining/'.length);
-            } else if (rest.startsWith('crime/key/')) {
-                rest = rest.substring('crime/'.length);
-            } else if (rest.startsWith('equipment/battleaxe/')) {
-                rest = rest.replace('equipment/battleaxe/battleaxe_', 'weapon/axe/w_axe_');
-            } else if (rest.startsWith('equipment/longsword/')) {
-                rest = rest.replace('equipment/longsword/longsword_', 'weapon/sword/w_sword_');
-            } else if (rest.startsWith('equipment/staff/')) {
-                rest = rest.replace('equipment/staff/staff_', 'weapon/staff/w_staff_');
-            } else if (rest.startsWith('drink/drink_')) {
-                rest = rest.replace('drink/drink_', 'drink/d_');
-            }
-            spritePath = `assets/items/${rest}`;
-        } else if (spritePath.startsWith('assets/sprites/implemented/enemies/')) {
-            const rest = spritePath.substring('assets/sprites/implemented/enemies/'.length);
-            spritePath = `assets/enemies/${rest}`;
-        } else if (spritePath.startsWith('assets/sprites/implemented/heroes/')) {
-            const rest = spritePath.substring('assets/sprites/implemented/heroes/'.length);
-            spritePath = `assets/heroes/${rest}`;
-        } else if (spritePath.startsWith('assets/sprites/implemented/skills/')) {
-            const rest = spritePath.substring('assets/sprites/implemented/skills/'.length);
-            spritePath = `assets/skills/${rest}`;
-        } else if (spritePath.startsWith('assets/sprites/playmat/')) {
-            const rest = spritePath.substring('assets/sprites/playmat/'.length);
-            spritePath = `assets/playmat/${rest}`;
-        } else if (spritePath.startsWith('assets/backgrounds/playmat/')) {
-            const fileName = spritePath.substring(spritePath.lastIndexOf('/') + 1);
-            if (fileName.startsWith('pm_table_')) {
-                spritePath = `assets/playmat/tables/${fileName}`;
-            } else if (fileName.startsWith('pm_board_')) {
-                spritePath = `assets/playmat/tiles/${fileName}`;
-            }
-        }
-    }
-
-    return spritePath;
+    return null;
 }
 
 export function resolveAnimationPath(entity) {
     const id = typeof entity === 'object' && entity !== null
         ? (entity.spriteId || entity.sprite || entity.classId || entity.templateId || entity.id)
         : entity;
-
-    const ANIMATION_MAP = {
-        'hero_recruit_0': 'ani_recruit_0', 'hero_adventure': 'ani_adventure1', 'hn_adventure1': 'ani_adventure1', 'adventure': 'ani_adventure1',
-        'icon_recruit_0': 'ani_recruit_0',
-        'recruit': 'ani_recruit_0',
-        'hm_fighter': 'ani_fighter_0',
-        'hero_knight': 'ani_fighter_0',
-        'fighter': 'ani_fighter_0',
-        'hn_sneak': 'ani_rogue_0',
-        'hero_rogue': 'ani_rogue_0',
-        'rogue': 'ani_rogue_0',
-        'hm_wizard': 'ani_wizard_0',
-        'hero_wizard': 'ani_wizard_0',
-        'wizard': 'ani_wizard_0',
-        'hero_wizard_arcane': 'ani_wizard_0',
-        'hn_range': 'ani_ranger_0',
-        'ranger': 'ani_ranger_0'
-    };
-
-    if (id && ANIMATION_MAP[id]) {
-        return `assets/heroes/animations/${ANIMATION_MAP[id]}.png`;
-    }
-    
-    return null;
+    if (!id || typeof id !== 'string') return null;
+    const sheet = ANIMATION_MAP[id] || ANIMATION_MAP[currentSpriteName(id)];
+    return sheet ? `assets/heroes/${sheet}.png` : null;
 }
