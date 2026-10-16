@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { Download, Upload, SwatchBook, RefreshCw, Layers, FolderDown } from 'lucide-react';
 import PaletteImport from './PaletteImport';
+import PaletteBrighten from './PaletteBrighten';
+import { splitLibrary } from '../../../paletteBrighten.js';
 import { ITEM_GROUPS, studioAssetPath } from '../../../assetNaming.js';
 
 function rgbToOklab(r, g, b) {
@@ -174,7 +176,7 @@ export default function RecolorEditor() {
         const res = await fetch('/api/custom-palettes');
         if (res.ok) {
           const data = await res.json();
-          setCustomPalettes(data || {});
+          setCustomPalettes(splitLibrary(data).palettes);
         }
       } catch (err) {
         console.warn("Failed to load custom palettes.", err);
@@ -225,7 +227,7 @@ export default function RecolorEditor() {
   /** Re-read the Material Library from the server, after an import from the drop folder. */
   const reloadLibrary = async () => {
     const [palettesRes, groupsRes] = await Promise.all([fetch('/api/custom-palettes'), fetch('/api/palette-groups')]);
-    if (palettesRes.ok) setCustomPalettes((await palettesRes.json()) || {});
+    if (palettesRes.ok) setCustomPalettes(splitLibrary(await palettesRes.json()).palettes);
     if (groupsRes.ok) setPaletteGroups((await groupsRes.json()) || {});
   };
 
@@ -1425,6 +1427,7 @@ export default function RecolorEditor() {
             />
           </div>
           <PaletteImport library={customPalettes} onImported={reloadLibrary} />
+          <PaletteBrighten library={customPalettes} onApplied={reloadLibrary} />
           {Object.keys(customPalettes).length === 0 ? (
             <p className="text-xs italic text-center py-4" style={{ color: 'var(--color-text-muted)' }}>No saved materials. Save active parts to add them here.</p>
           ) : (

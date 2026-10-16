@@ -3,6 +3,7 @@ import path from 'path';
 import { execFile } from 'child_process';
 import { normaliseStarterCamp } from '../src/config/starterCampShape.js';
 import { listDropFolder, importDropFile, libraryFiles } from './paletteInbox.js';
+import { BAKE_KEY, splitLibrary } from './paletteBrighten.js';
 import { resolveSpritePath, currentSpriteName } from '../src/utils/AssetManager.js';
 import { studioAssetPath } from './assetNaming.js';
 
@@ -499,6 +500,12 @@ export default function cmsFileApi({ inboxDir, paletteInboxDir, palettesDir, stu
             try {
               const palettes = JSON.parse(body);
               const palettesPath = library.palettes;
+              // A save from a page that does not know about the bake marker must not drop it,
+              // or the palettes could be brightened a second time.
+              if (palettes && typeof palettes === 'object' && !(BAKE_KEY in palettes) && fs.existsSync(palettesPath)) {
+                const marker = splitLibrary(JSON.parse(fs.readFileSync(palettesPath, 'utf-8'))).marker;
+                if (marker) palettes[BAKE_KEY] = marker;
+              }
               const dir = path.dirname(palettesPath);
               if (!fs.existsSync(dir)) {
                 fs.mkdirSync(dir, { recursive: true });
