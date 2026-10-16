@@ -1,4 +1,4 @@
-Status: draft 2026-10-16 (owner interview with the director; approve or change)
+Status: approved 2026-10-16 (owner interview with the director)
 
 # Asset names and folders
 
@@ -27,7 +27,7 @@ numbers, no `final`, `new`, `v2` or dates.
 |---|---|---|---|
 | `t_` | Token | `tokens/` | `tokens/forest/t_forest_tree_oak.png` |
 | `i_` | item: materials, tools, gear, food, drink, potions | `items/` | `items/tool/i_tool_pick_copper.png` |
-| `h_` | hero | `heroes/` | open: what today's `hf_`, `hm_`, `hn_` mean decides the group and variant words |
+| `h_` | hero portrait: class, then `f`, `m` or `n` (female, male, neutral) last | `heroes/` | `heroes/h_bard_f.png`, `heroes/h_bard_m.png` |
 | `e_` | enemy | `enemies/` | `enemies/goblin/e_goblin_archer.png` |
 | `p_` | prop: scatter on the ground | `playmat/props/` | `playmat/props/p_flower_red.png` |
 | `g_` | ground sheet | `playmat/terrain/` | `playmat/terrain/g_grass.png` |
@@ -44,7 +44,7 @@ only Tokens use `t_`.
 `items/potion/`, `enemies/goblin/`). The groups follow the game's own
 categories; the exact list is drafted with the rename list and approved by
 the owner. Today's deeper folders (the 20 potion folders) flatten into their
-group. Where a kind has few files (skills, UI) there is no group level.
+group. Where a kind has few files (heroes, skills, UI) there is no group level, and its names have no category word either.
 
 ## Spritesheets
 
