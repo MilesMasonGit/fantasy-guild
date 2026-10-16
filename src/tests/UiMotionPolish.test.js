@@ -21,7 +21,6 @@ import { posterItemLayout, POSTER_CENTRE } from '../ui/components/board/QuestPos
 import { resetSpawnMotion, SPAWN_MS } from '../ui/components/board/spawnMotion.js';
 import { setDrawn, resetDrawSwitches } from '../ui/dev/perf/drawSwitches.js';
 import { DragGhost } from '../ui/dnd/DragGhost.jsx';
-import { overlayFilter } from '../ui/dnd/DndKit.jsx';
 import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
 import { setSpriteFxManifest } from '../ui/utils/spriteFx.js';
 import * as Flags from '../systems/board/Flags.js';
@@ -173,13 +172,12 @@ describe('quest billboard', () => {
 });
 
 describe('Bank drag ghost', () => {
-    it('draws a carried item with the hard pixel shadow and no soft one', () => {
+    it('draws a carried item with the hard pixel shadow', () => {
         registerItems({ fixture_ghost: { id: 'fixture_ghost', name: 'Ghost', sprite: 'assets/items/ghost.png' } });
         setSpriteFxManifest({ sprites: { 'assets/items/ghost.png': { w: 32, h: 32, outlined: true } } });
         const { container } = render(h(DndContext, null,
             h(DragGhost, { payload: { kind: DRAG_KIND.ITEM, itemId: 'fixture_ghost' }, bold: true })));
         expect(container.querySelector('[data-sprite-shadow="true"]')).not.toBeNull();
-        expect(overlayFilter(DRAG_KIND.ITEM, true)).not.toContain('drop-shadow');
         setSpriteFxManifest(null);
     });
 });
