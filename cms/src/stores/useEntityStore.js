@@ -23,6 +23,7 @@ import {
 import { seedSimIntent } from './simIntentNormaliser';
 import { isMapItem, blankCartography } from '../../../src/systems/atlas/mapItems.js';
 import { normaliseStarterCamp, emptyStarterCamp, withBankCount, withoutToken } from '../engine/starterCamp';
+import { pendingSpriteRenames, applySpriteRenamesTo } from '../engine/spriteRenames';
 
 /** The CMS's authored content, in one store: the keyed collections `items` and `tokens`, the named effect library, and the per-skill recipe pools. Enemy is a filtered view of the Token list, and a Map or Modifier is an item (type `map` / `modifier`) that only the Map editor edits: one record, so nothing keeps two copies in step. */
 
@@ -792,6 +793,16 @@ export const useEntityStore = create(
                     activeEntityId: get().activeEntityId === oldId ? newId : get().activeEntityId,
                 });
                 return true;
+            },
+
+            /**
+             * Rewrite every sprite name from before the art was renamed to its new name (`engine/spriteRenames.js`), in this workspace; Sync to Game then writes it to `data/`. Returns how many fields changed: 0 on a second run.
+             */
+            applySpriteRenames: () => {
+                const state = get();
+                const count = pendingSpriteRenames(state).length;
+                if (count > 0) set(applySpriteRenamesTo(state));
+                return count;
             },
 
             addRecipe: (skillId, data = {}) => {

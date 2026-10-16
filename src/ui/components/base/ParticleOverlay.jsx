@@ -438,7 +438,7 @@ class ParticleSystem {
 
     /**
      * Takes the full item template, not just its id: `resolveSpritePath` needs the object's
-     * own `sprite`/`spriteId` field (e.g. item id `oak_wood` has `sprite: "wood_oak"`), the
+     * own `sprite`/`spriteId` field (e.g. item id `oak_wood` has `sprite: "i_wood_oak"`), the
      * same way `ItemIcon.jsx` resolves it. A bare id used the wrong manifest key and every
      * particle silently fell back to the emoji icon.
      */

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useEntityStore } from '../../stores/useEntityStore';
 import { AlertCircle, HelpCircle, Image, RefreshCw, Layers, Copy, Check } from 'lucide-react';
+import SpriteRenamesCard from './SpriteRenamesCard';
 
 export default function SpriteAuditDashboard() {
   const items = useEntityStore((s) => s.items);
@@ -85,6 +86,8 @@ MANDATORY: Distinct dark charcoal colored border outline around the asset silhou
 
   return (
     <div className="flex-1 flex flex-col gap-6 min-h-0 overflow-y-auto pr-1">
+      <SpriteRenamesCard />
+
       <div className="grid grid-cols-3 gap-4">
         <div className="p-4 rounded-xl border flex flex-col gap-1" style={{ background: 'var(--color-bg-surface)', borderColor: 'var(--color-border-subtle)' }}>
           <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Unassigned Sprites</span>

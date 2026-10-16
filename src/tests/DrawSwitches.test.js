@@ -192,7 +192,7 @@ describe('motion', () => {
     it('enemyAnim off: the enemy sheet never advances', () => {
         vi.useFakeTimers();
         const run = () => {
-            const { container } = render(h(AnimatedEnemySprite, { src: 'ani_cow.png', size: 64 }));
+            const { container } = render(h(AnimatedEnemySprite, { src: 'e_cow_sheet.png', size: 64 }));
             const first = frameOf(container);
             act(() => { vi.advanceTimersByTime(500); });
             return [first, frameOf(container)];
