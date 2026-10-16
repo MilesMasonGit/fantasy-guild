@@ -57,6 +57,13 @@ every look; agents build the tools and prepare palettes.*
 - **The winning preset** (owner, 2026-10-16, first pass on the bench): **Drag,
   brightness 1.15 / saturation 1.25, outline threshold 40**. Not baked yet: the
   owner first wants the asset names and folders reorganised (below).
+- **Baked** (owner approved in the game, 2026-10-16): 623 sprites; rollback tag
+  `art-before-vibrancy`. The drag brightening is gone (A4); hover brightening is
+  gentler, 1.06 / 1.08 (owner, 2026-10-16).
+- **Palettes after the bake** (owner, 2026-10-16): the Studio's button brightens
+  all 101 Material Library palettes once; palettes added later are picked against
+  the baked art, not brightened. The older `materials_library.json` is left and
+  ticketed for retirement (T-189).
 - **Timing** (owner, 2026-10-15): tools Friday 16 October; every art phase
   over the weekend of 17–18 October; brief 80's ground is built and shows the
   art in the game once it merges.

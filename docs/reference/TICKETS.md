@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-189**
+**Next free number: T-190**
 
 ---
 
@@ -202,3 +202,4 @@ first, when content that uses it is authored.*
 | T-186 | P3 | open | **Equipping by drop opens the hero sheet one frame after the drop** (owner 2026-10-15): today the sheet opens inside the drop's own frame, the heaviest drop in the game (~240 renders, found in P2-9). Open it in a transition one frame later, as brief 60 D3 did for the Shop list and the toasts; no visible difference. builder-lite. | P2-9 |
 | T-187 | P3 | open | **Flag drags on a full board sometimes pick up a neighbouring hero's flag or a Token** (drag bench, cap128 at 4×, 2026-10-15 night: 1–2 in 100 drags, the same before and after the placing grid, so not caused by it). Find out whether it is overlapping flags under the pointer (expected; then teach the bench to pick a clear flag) or a hit-test bug in the game. Engineer, read-only first. | Drag pair for terrain T4 |
 | T-188 | P2 | open | **Sync to Game warns before it removes content** (2026-10-16: a stale CMS workspace in the browser synced over `data/` and dropped 16 Tokens, 14 items, 9 recipes and 2 effects; caught by the director, reverted). Before writing, Sync compares the workspace with `data/` and, when it would delete entities or bring back retired ones, lists them and asks for a confirm, offering Restore from Game. builder. | Asset rename |
+| T-189 | P3 | open | **Retire `data/palettes/materials_library.json`** (found 2026-10-16): 12 lower-case ramps the Studio only reads (a GET in `RecolorEditor.jsx`), looked up only when a swap target matches a lower-case key exactly, which the dropdown never offers. Confirm nothing needs it, then remove the read and have the owner delete the file through the Studio/CMS. builder-lite. | T-180 palette bake |
