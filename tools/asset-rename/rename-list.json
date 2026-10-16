@@ -34,10 +34,10 @@
   },
   {
     "from": "backgrounds/area/bg_beach.png",
-    "to": "backgrounds/area/b_area_beach.png",
+    "to": "backgrounds/area/b_beach.png",
     "action": "move",
     "keyFrom": "bg_beach",
-    "keyTo": "b_area_beach",
+    "keyTo": "b_beach",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -47,10 +47,10 @@
   },
   {
     "from": "backgrounds/area/bg_desert.png",
-    "to": "backgrounds/area/b_area_desert.png",
+    "to": "backgrounds/area/b_desert.png",
     "action": "move",
     "keyFrom": "bg_desert",
-    "keyTo": "b_area_desert",
+    "keyTo": "b_desert",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -58,10 +58,10 @@
   },
   {
     "from": "backgrounds/area/bg_desert_monolith.png",
-    "to": "backgrounds/area/b_area_desert_monolith.png",
+    "to": "backgrounds/area/b_desert_monolith.png",
     "action": "move",
     "keyFrom": "bg_desert_monolith",
-    "keyTo": "b_area_desert_monolith",
+    "keyTo": "b_desert_monolith",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -69,10 +69,10 @@
   },
   {
     "from": "backgrounds/area/bg_desert_oasis.png",
-    "to": "backgrounds/area/b_area_desert_oasis.png",
+    "to": "backgrounds/area/b_desert_oasis.png",
     "action": "move",
     "keyFrom": "bg_desert_oasis",
-    "keyTo": "b_area_desert_oasis",
+    "keyTo": "b_desert_oasis",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -80,10 +80,10 @@
   },
   {
     "from": "backgrounds/area/bg_fishing_village.png",
-    "to": "backgrounds/area/b_area_fishing_village.png",
+    "to": "backgrounds/area/b_fishing_village.png",
     "action": "move",
     "keyFrom": "bg_fishing_village",
-    "keyTo": "b_area_fishing_village",
+    "keyTo": "b_fishing_village",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -91,10 +91,10 @@
   },
   {
     "from": "backgrounds/area/bg_forest_ruins.png",
-    "to": "backgrounds/area/b_area_forest_ruins.png",
+    "to": "backgrounds/area/b_forest_ruins.png",
     "action": "move",
     "keyFrom": "bg_forest_ruins",
-    "keyTo": "b_area_forest_ruins",
+    "keyTo": "b_forest_ruins",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -102,10 +102,10 @@
   },
   {
     "from": "backgrounds/area/bg_golden_plains.png",
-    "to": "backgrounds/area/b_area_golden_plains.png",
+    "to": "backgrounds/area/b_golden_plains.png",
     "action": "move",
     "keyFrom": "bg_golden_plains",
-    "keyTo": "b_area_golden_plains",
+    "keyTo": "b_golden_plains",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -115,10 +115,10 @@
   },
   {
     "from": "backgrounds/area/bg_guild_hall.png",
-    "to": "backgrounds/area/b_area_guild_hall.png",
+    "to": "backgrounds/area/b_guild_hall.png",
     "action": "move",
     "keyFrom": "bg_guild_hall",
-    "keyTo": "b_area_guild_hall",
+    "keyTo": "b_guild_hall",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js",
@@ -130,10 +130,10 @@
   },
   {
     "from": "backgrounds/area/bg_guild_hall_castle.png",
-    "to": "backgrounds/area/b_area_guild_hall_castle.png",
+    "to": "backgrounds/area/b_guild_hall_castle.png",
     "action": "move",
     "keyFrom": "bg_guild_hall_castle",
-    "keyTo": "b_area_guild_hall_castle",
+    "keyTo": "b_guild_hall_castle",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -143,10 +143,10 @@
   },
   {
     "from": "backgrounds/area/bg_hidden_valley.png",
-    "to": "backgrounds/area/b_area_hidden_valley.png",
+    "to": "backgrounds/area/b_hidden_valley.png",
     "action": "move",
     "keyFrom": "bg_hidden_valley",
-    "keyTo": "b_area_hidden_valley",
+    "keyTo": "b_hidden_valley",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -156,10 +156,10 @@
   },
   {
     "from": "backgrounds/area/bg_jungle_temple.png",
-    "to": "backgrounds/area/b_area_jungle_temple.png",
+    "to": "backgrounds/area/b_jungle_temple.png",
     "action": "move",
     "keyFrom": "bg_jungle_temple",
-    "keyTo": "b_area_jungle_temple",
+    "keyTo": "b_jungle_temple",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -167,10 +167,10 @@
   },
   {
     "from": "backgrounds/area/bg_lush_forest.png",
-    "to": "backgrounds/area/b_area_lush_forest.png",
+    "to": "backgrounds/area/b_lush_forest.png",
     "action": "move",
     "keyFrom": "bg_lush_forest",
-    "keyTo": "b_area_lush_forest",
+    "keyTo": "b_lush_forest",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js",
@@ -182,10 +182,10 @@
   },
   {
     "from": "backgrounds/area/bg_mountains_snowy.png",
-    "to": "backgrounds/area/b_area_mountains_snowy.png",
+    "to": "backgrounds/area/b_mountains_snowy.png",
     "action": "move",
     "keyFrom": "bg_mountains_snowy",
-    "keyTo": "b_area_mountains_snowy",
+    "keyTo": "b_mountains_snowy",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js",
@@ -197,10 +197,10 @@
   },
   {
     "from": "backgrounds/area/bg_swamp.png",
-    "to": "backgrounds/area/b_area_swamp.png",
+    "to": "backgrounds/area/b_swamp.png",
     "action": "move",
     "keyFrom": "bg_swamp",
-    "keyTo": "b_area_swamp",
+    "keyTo": "b_swamp",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js",
@@ -212,10 +212,10 @@
   },
   {
     "from": "backgrounds/area/bg_village.png",
-    "to": "backgrounds/area/b_area_village.png",
+    "to": "backgrounds/area/b_village.png",
     "action": "move",
     "keyFrom": "bg_village",
-    "keyTo": "b_area_village",
+    "keyTo": "b_village",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -223,10 +223,10 @@
   },
   {
     "from": "backgrounds/area/bg_village_occult.png",
-    "to": "backgrounds/area/b_area_village_occult.png",
+    "to": "backgrounds/area/b_village_occult.png",
     "action": "move",
     "keyFrom": "bg_village_occult",
-    "keyTo": "b_area_village_occult",
+    "keyTo": "b_village_occult",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -267,10 +267,10 @@
   },
   {
     "from": "backgrounds/bg_farmland.png",
-    "to": "backgrounds/area/b_area_farmland.png",
+    "to": "backgrounds/area/b_farmland.png",
     "action": "move",
     "keyFrom": "bg_farmland",
-    "keyTo": "b_area_farmland",
+    "keyTo": "b_farmland",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -280,10 +280,10 @@
   },
   {
     "from": "backgrounds/bg_library.png",
-    "to": "backgrounds/area/b_area_library.png",
+    "to": "backgrounds/area/b_library.png",
     "action": "move",
     "keyFrom": "bg_library",
-    "keyTo": "b_area_library",
+    "keyTo": "b_library",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -291,10 +291,10 @@
   },
   {
     "from": "backgrounds/cards/bg_cellar.png",
-    "to": "backgrounds/cards/b_cards_cellar.png",
+    "to": "backgrounds/cards/b_cellar.png",
     "action": "move",
     "keyFrom": "bg_cellar",
-    "keyTo": "b_cards_cellar",
+    "keyTo": "b_cellar",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -302,10 +302,10 @@
   },
   {
     "from": "backgrounds/cards/bg_mine.png",
-    "to": "backgrounds/cards/b_cards_mine.png",
+    "to": "backgrounds/cards/b_mine.png",
     "action": "move",
     "keyFrom": "bg_mine",
-    "keyTo": "b_cards_mine",
+    "keyTo": "b_mine",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js",
@@ -316,10 +316,10 @@
   },
   {
     "from": "backgrounds/cards/bg_tavern.png",
-    "to": "backgrounds/cards/b_cards_tavern.png",
+    "to": "backgrounds/cards/b_tavern.png",
     "action": "move",
     "keyFrom": "bg_tavern",
-    "keyTo": "b_cards_tavern",
+    "keyTo": "b_tavern",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -329,10 +329,10 @@
   },
   {
     "from": "backgrounds/cards/guild_hall/bg_wishing_well.png",
-    "to": "backgrounds/cards/b_cards_wishing_well.png",
+    "to": "backgrounds/cards/b_wishing_well.png",
     "action": "move",
     "keyFrom": "bg_wishing_well",
-    "keyTo": "b_cards_wishing_well",
+    "keyTo": "b_wishing_well",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js",
@@ -351,8 +351,8 @@
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
     ],
-    "confidence": "sure",
-    "note": ""
+    "confidence": "check",
+    "note": "group word kept in the name: invasion, quest and area backgrounds share place names (farmland, forest, mountain, village)"
   },
   {
     "from": "backgrounds/invasion/bg_i_farmland.png",
@@ -364,8 +364,8 @@
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
     ],
-    "confidence": "sure",
-    "note": ""
+    "confidence": "check",
+    "note": "group word kept in the name: invasion, quest and area backgrounds share place names (farmland, forest, mountain, village)"
   },
   {
     "from": "backgrounds/invasion/bg_i_forest.png",
@@ -377,8 +377,8 @@
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
     ],
-    "confidence": "sure",
-    "note": ""
+    "confidence": "check",
+    "note": "group word kept in the name: invasion, quest and area backgrounds share place names (farmland, forest, mountain, village)"
   },
   {
     "from": "backgrounds/invasion/bg_i_mountain.png",
@@ -388,8 +388,8 @@
     "keyTo": "b_invasion_mountain",
     "inUse": false,
     "usedBy": [],
-    "confidence": "sure",
-    "note": ""
+    "confidence": "check",
+    "note": "group word kept in the name: invasion, quest and area backgrounds share place names (farmland, forest, mountain, village)"
   },
   {
     "from": "backgrounds/invasion/bg_i_village.png",
@@ -401,72 +401,72 @@
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
     ],
-    "confidence": "sure",
-    "note": ""
+    "confidence": "check",
+    "note": "group word kept in the name: invasion, quest and area backgrounds share place names (farmland, forest, mountain, village)"
   },
   {
     "from": "backgrounds/quests/bg_q_farmland.png",
-    "to": "backgrounds/quests/b_quests_farmland.png",
+    "to": "backgrounds/quests/b_quest_farmland.png",
     "action": "move",
     "keyFrom": "bg_q_farmland",
-    "keyTo": "b_quests_farmland",
+    "keyTo": "b_quest_farmland",
     "inUse": false,
     "usedBy": [],
-    "confidence": "sure",
-    "note": ""
+    "confidence": "check",
+    "note": "group word kept in the name: invasion, quest and area backgrounds share place names (farmland, forest, mountain, village)"
   },
   {
     "from": "backgrounds/quests/bg_q_forest.png",
-    "to": "backgrounds/quests/b_quests_forest.png",
+    "to": "backgrounds/quests/b_quest_forest.png",
     "action": "move",
     "keyFrom": "bg_q_forest",
-    "keyTo": "b_quests_forest",
+    "keyTo": "b_quest_forest",
     "inUse": false,
     "usedBy": [],
-    "confidence": "sure",
-    "note": ""
+    "confidence": "check",
+    "note": "group word kept in the name: invasion, quest and area backgrounds share place names (farmland, forest, mountain, village)"
   },
   {
     "from": "backgrounds/quests/bg_q_generic.png",
-    "to": "backgrounds/quests/b_quests_generic.png",
+    "to": "backgrounds/quests/b_quest_generic.png",
     "action": "move",
     "keyFrom": "bg_q_generic",
-    "keyTo": "b_quests_generic",
+    "keyTo": "b_quest_generic",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
     ],
-    "confidence": "sure",
-    "note": ""
+    "confidence": "check",
+    "note": "group word kept in the name: invasion, quest and area backgrounds share place names (farmland, forest, mountain, village)"
   },
   {
     "from": "backgrounds/quests/bg_q_mountain.png",
-    "to": "backgrounds/quests/b_quests_mountain.png",
+    "to": "backgrounds/quests/b_quest_mountain.png",
     "action": "move",
     "keyFrom": "bg_q_mountain",
-    "keyTo": "b_quests_mountain",
+    "keyTo": "b_quest_mountain",
     "inUse": false,
     "usedBy": [],
-    "confidence": "sure",
-    "note": ""
+    "confidence": "check",
+    "note": "group word kept in the name: invasion, quest and area backgrounds share place names (farmland, forest, mountain, village)"
   },
   {
     "from": "backgrounds/quests/bg_q_village.png",
-    "to": "backgrounds/quests/b_quests_village.png",
+    "to": "backgrounds/quests/b_quest_village.png",
     "action": "move",
     "keyFrom": "bg_q_village",
-    "keyTo": "b_quests_village",
+    "keyTo": "b_quest_village",
     "inUse": false,
     "usedBy": [],
-    "confidence": "sure",
-    "note": ""
+    "confidence": "check",
+    "note": "group word kept in the name: invasion, quest and area backgrounds share place names (farmland, forest, mountain, village)"
   },
   {
     "from": "backgrounds/skills/fishing/bg_fishing_1.png",
-    "to": "backgrounds/skills/b_skills_fishing.png",
+    "to": "backgrounds/skills/b_fishing.png",
     "action": "move",
     "keyFrom": "bg_fishing_1",
-    "keyTo": "b_skills_fishing",
+    "keyTo": "b_fishing",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -476,10 +476,10 @@
   },
   {
     "from": "backgrounds/station/bg_clay_kiln.png",
-    "to": "backgrounds/station/b_station_clay_kiln.png",
+    "to": "backgrounds/station/b_clay_kiln.png",
     "action": "move",
     "keyFrom": "bg_clay_kiln",
-    "keyTo": "b_station_clay_kiln",
+    "keyTo": "b_clay_kiln",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -489,10 +489,10 @@
   },
   {
     "from": "backgrounds/station/bg_forge.png",
-    "to": "backgrounds/station/b_station_forge.png",
+    "to": "backgrounds/station/b_forge.png",
     "action": "move",
     "keyFrom": "bg_forge",
-    "keyTo": "b_station_forge",
+    "keyTo": "b_forge",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -502,10 +502,10 @@
   },
   {
     "from": "backgrounds/station/bg_kitchen.png",
-    "to": "backgrounds/station/b_station_kitchen.png",
+    "to": "backgrounds/station/b_kitchen.png",
     "action": "move",
     "keyFrom": "bg_kitchen",
-    "keyTo": "b_station_kitchen",
+    "keyTo": "b_kitchen",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -515,10 +515,10 @@
   },
   {
     "from": "backgrounds/station/bg_smithy.png",
-    "to": "backgrounds/station/b_station_smithy.png",
+    "to": "backgrounds/station/b_smithy.png",
     "action": "move",
     "keyFrom": "bg_smithy",
-    "keyTo": "b_station_smithy",
+    "keyTo": "b_smithy",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -528,68 +528,68 @@
   },
   {
     "from": "enemies/animal/ani_chicken_raw.png",
-    "to": null,
-    "action": "delete",
-    "keyFrom": null,
-    "keyTo": null,
+    "to": "enemies/animal/e_chicken_sheet_raw.png",
+    "action": "move",
+    "keyFrom": "ani_chicken_raw",
+    "keyTo": "e_chicken_sheet_raw",
     "inUse": false,
     "usedBy": [
       "src/config/spriteFx.js"
     ],
-    "confidence": "sure",
-    "note": "_raw processing copy"
+    "confidence": "check",
+    "note": "kept for the owner to check later"
   },
   {
     "from": "enemies/animal/ani_cow_raw.png",
-    "to": null,
-    "action": "delete",
-    "keyFrom": null,
-    "keyTo": null,
+    "to": "enemies/animal/e_cow_sheet_raw.png",
+    "action": "move",
+    "keyFrom": "ani_cow_raw",
+    "keyTo": "e_cow_sheet_raw",
     "inUse": false,
     "usedBy": [
       "src/config/spriteFx.js"
     ],
-    "confidence": "sure",
-    "note": "_raw processing copy"
+    "confidence": "check",
+    "note": "kept for the owner to check later"
   },
   {
     "from": "enemies/animal/ani_wolf.png",
-    "to": null,
-    "action": "delete",
-    "keyFrom": null,
-    "keyTo": null,
+    "to": "enemies/animal/e_wolf_sheet_raw_1.png",
+    "action": "move",
+    "keyFrom": "ani_wolf",
+    "keyTo": "e_wolf_sheet_raw_1",
     "inUse": false,
     "usedBy": [
       "src/config/spriteFx.js"
     ],
     "confidence": "check",
-    "note": "same frames as anim/ani_wolf.png, a processing copy"
+    "note": "same frames as anim/ani_wolf.png, a processing copy; kept for the owner to check later"
   },
   {
     "from": "enemies/animal/ani_wolf_2.png",
-    "to": null,
-    "action": "delete",
-    "keyFrom": null,
-    "keyTo": null,
+    "to": "enemies/animal/e_wolf_sheet_raw_2.png",
+    "action": "move",
+    "keyFrom": "ani_wolf_2",
+    "keyTo": "e_wolf_sheet_raw_2",
     "inUse": false,
     "usedBy": [
       "src/config/spriteFx.js"
     ],
     "confidence": "check",
-    "note": "same frames as anim/ani_wolf.png, a numbered processing copy"
+    "note": "same frames as anim/ani_wolf.png, a numbered processing copy; kept for the owner to check later"
   },
   {
     "from": "enemies/animal/ani_wolf_raw.png",
-    "to": null,
-    "action": "delete",
-    "keyFrom": null,
-    "keyTo": null,
+    "to": "enemies/animal/e_wolf_sheet_raw.png",
+    "action": "move",
+    "keyFrom": "ani_wolf_raw",
+    "keyTo": "e_wolf_sheet_raw",
     "inUse": false,
     "usedBy": [
       "src/config/spriteFx.js"
     ],
-    "confidence": "sure",
-    "note": "_raw processing copy"
+    "confidence": "check",
+    "note": "kept for the owner to check later"
   },
   {
     "from": "enemies/animal/anim/affectionate_headbut...-672813648-1.png",
@@ -604,10 +604,10 @@
   },
   {
     "from": "enemies/animal/anim/ani_chicken.png",
-    "to": "enemies/animal/e_animal_chicken_sheet.png",
+    "to": "enemies/animal/e_chicken_sheet.png",
     "action": "move",
     "keyFrom": "ani_chicken",
-    "keyTo": "e_animal_chicken_sheet",
+    "keyTo": "e_chicken_sheet",
     "inUse": false,
     "usedBy": [
       "src/config/spriteFx.js"
@@ -825,10 +825,10 @@
   },
   {
     "from": "enemies/animal/anim/ani_cow.png",
-    "to": "enemies/animal/e_animal_cow_sheet.png",
+    "to": "enemies/animal/e_cow_sheet.png",
     "action": "move",
     "keyFrom": "ani_cow",
-    "keyTo": "e_animal_cow_sheet",
+    "keyTo": "e_cow_sheet",
     "inUse": true,
     "usedBy": [
       "cms/src/components/editors/AnimationEditor.jsx",
@@ -841,21 +841,21 @@
   },
   {
     "from": "enemies/animal/anim/ani_enemy.pxo",
-    "to": null,
-    "action": "delete",
+    "to": "enemies/animal/anim/ani_enemy.pxo",
+    "action": "keep",
     "keyFrom": null,
     "keyTo": null,
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "Pixelorama work file, not art the game loads"
+    "confidence": "sure",
+    "note": "Pixelorama work file, kept where it is (owner 2026-10-16)"
   },
   {
     "from": "enemies/animal/anim/ani_wolf.png",
-    "to": "enemies/animal/e_animal_wolf_sheet.png",
+    "to": "enemies/animal/e_wolf_sheet.png",
     "action": "move",
     "keyFrom": "ani_wolf",
-    "keyTo": "e_animal_wolf_sheet",
+    "keyTo": "e_wolf_sheet",
     "inUse": false,
     "usedBy": [
       "src/config/spriteFx.js"
@@ -865,23 +865,23 @@
   },
   {
     "from": "enemies/animal/anim/ani_wolf_base.png",
-    "to": null,
-    "action": "delete",
-    "keyFrom": null,
-    "keyTo": null,
+    "to": "enemies/animal/e_wolf_sheet_raw_base.png",
+    "action": "move",
+    "keyFrom": "ani_wolf_base",
+    "keyTo": "e_wolf_sheet_raw_base",
     "inUse": false,
     "usedBy": [
       "src/config/spriteFx.js"
     ],
     "confidence": "check",
-    "note": "the wolf frames in a scrambled order, a processing copy"
+    "note": "the wolf frames in a scrambled order, a processing copy; kept for the owner to check later"
   },
   {
     "from": "enemies/animal/e_bee.png",
-    "to": "enemies/animal/e_animal_bee.png",
-    "action": "move",
+    "to": "enemies/animal/e_bee.png",
+    "action": "keep",
     "keyFrom": "e_bee",
-    "keyTo": "e_animal_bee",
+    "keyTo": "e_bee",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -889,10 +889,10 @@
   },
   {
     "from": "enemies/animal/e_chicken.png",
-    "to": "enemies/animal/e_animal_chicken.png",
-    "action": "move",
+    "to": "enemies/animal/e_chicken.png",
+    "action": "keep",
     "keyFrom": "e_chicken",
-    "keyTo": "e_animal_chicken",
+    "keyTo": "e_chicken",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -900,10 +900,10 @@
   },
   {
     "from": "enemies/animal/e_cow.png",
-    "to": "enemies/animal/e_animal_cow.png",
-    "action": "move",
+    "to": "enemies/animal/e_cow.png",
+    "action": "keep",
     "keyFrom": "e_cow",
-    "keyTo": "e_animal_cow",
+    "keyTo": "e_cow",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -915,10 +915,10 @@
   },
   {
     "from": "enemies/animal/e_crab.png",
-    "to": "enemies/animal/e_animal_crab.png",
-    "action": "move",
+    "to": "enemies/animal/e_crab.png",
+    "action": "keep",
     "keyFrom": "e_crab",
-    "keyTo": "e_animal_crab",
+    "keyTo": "e_crab",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -926,10 +926,10 @@
   },
   {
     "from": "enemies/animal/e_frog.png",
-    "to": "enemies/animal/e_animal_frog.png",
-    "action": "move",
+    "to": "enemies/animal/e_frog.png",
+    "action": "keep",
     "keyFrom": "e_frog",
-    "keyTo": "e_animal_frog",
+    "keyTo": "e_frog",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -937,10 +937,10 @@
   },
   {
     "from": "enemies/animal/e_frog_toxic.png",
-    "to": "enemies/animal/e_animal_frog_toxic.png",
-    "action": "move",
+    "to": "enemies/animal/e_frog_toxic.png",
+    "action": "keep",
     "keyFrom": "e_frog_toxic",
-    "keyTo": "e_animal_frog_toxic",
+    "keyTo": "e_frog_toxic",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -948,10 +948,10 @@
   },
   {
     "from": "enemies/animal/e_rat.png",
-    "to": "enemies/animal/e_animal_rat.png",
-    "action": "move",
+    "to": "enemies/animal/e_rat.png",
+    "action": "keep",
     "keyFrom": "e_rat",
-    "keyTo": "e_animal_rat",
+    "keyTo": "e_rat",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -959,10 +959,10 @@
   },
   {
     "from": "enemies/animal/e_rat_big.png",
-    "to": "enemies/animal/e_animal_rat_big.png",
-    "action": "move",
+    "to": "enemies/animal/e_rat_big.png",
+    "action": "keep",
     "keyFrom": "e_rat_big",
-    "keyTo": "e_animal_rat_big",
+    "keyTo": "e_rat_big",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -970,10 +970,10 @@
   },
   {
     "from": "enemies/animal/e_rat_smol.png",
-    "to": "enemies/animal/e_animal_rat_smol.png",
-    "action": "move",
+    "to": "enemies/animal/e_rat_smol.png",
+    "action": "keep",
     "keyFrom": "e_rat_smol",
-    "keyTo": "e_animal_rat_smol",
+    "keyTo": "e_rat_smol",
     "inUse": false,
     "usedBy": [],
     "confidence": "check",
@@ -981,10 +981,10 @@
   },
   {
     "from": "enemies/animal/e_wolf.png",
-    "to": "enemies/animal/e_animal_wolf.png",
-    "action": "move",
+    "to": "enemies/animal/e_wolf.png",
+    "action": "keep",
     "keyFrom": "e_wolf",
-    "keyTo": "e_animal_wolf",
+    "keyTo": "e_wolf",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -992,10 +992,10 @@
   },
   {
     "from": "enemies/demon/Generated Image October 10, 2026 - 10_18PM.png",
-    "to": "enemies/demon/e_demon_imp.png",
+    "to": "enemies/demon/e_imp.png",
     "action": "move",
     "keyFrom": "Generated Image October 10, 2026 - 10_18PM",
-    "keyTo": "e_demon_imp",
+    "keyTo": "e_imp",
     "inUse": false,
     "usedBy": [],
     "confidence": "check",
@@ -1003,16 +1003,16 @@
   },
   {
     "from": "enemies/dragon/ani_dragon_y_blu_raw.png",
-    "to": null,
-    "action": "delete",
-    "keyFrom": null,
-    "keyTo": null,
+    "to": "enemies/dragon/e_dragon_y_blue_sheet_raw.png",
+    "action": "move",
+    "keyFrom": "ani_dragon_y_blu_raw",
+    "keyTo": "e_dragon_y_blue_sheet_raw",
     "inUse": false,
     "usedBy": [
       "src/config/spriteFx.js"
     ],
-    "confidence": "sure",
-    "note": "_raw processing copy"
+    "confidence": "check",
+    "note": "colour spelled out: blu=blue; kept for the owner to check later"
   },
   {
     "from": "enemies/dragon/anim/ani_dragon_y_blu.png",
@@ -1186,29 +1186,29 @@
   },
   {
     "from": "enemies/goblin/ani_goblin_chief_raw.png",
-    "to": null,
-    "action": "delete",
-    "keyFrom": null,
-    "keyTo": null,
+    "to": "enemies/goblin/e_goblin_chief_sheet_raw.png",
+    "action": "move",
+    "keyFrom": "ani_goblin_chief_raw",
+    "keyTo": "e_goblin_chief_sheet_raw",
     "inUse": false,
     "usedBy": [
       "src/config/spriteFx.js"
     ],
-    "confidence": "sure",
-    "note": "_raw processing copy"
+    "confidence": "check",
+    "note": "kept for the owner to check later"
   },
   {
     "from": "enemies/goblin/ani_goblin_raw.png",
-    "to": null,
-    "action": "delete",
-    "keyFrom": null,
-    "keyTo": null,
+    "to": "enemies/goblin/e_goblin_sheet_raw.png",
+    "action": "move",
+    "keyFrom": "ani_goblin_raw",
+    "keyTo": "e_goblin_sheet_raw",
     "inUse": false,
     "usedBy": [
       "src/config/spriteFx.js"
     ],
-    "confidence": "sure",
-    "note": "_raw processing copy"
+    "confidence": "check",
+    "note": "kept for the owner to check later"
   },
   {
     "from": "enemies/goblin/anim/ani_goblin.png",
@@ -1254,10 +1254,10 @@
   },
   {
     "from": "enemies/human/e_knight_dark.png",
-    "to": "enemies/human/e_human_knight_dark.png",
-    "action": "move",
+    "to": "enemies/human/e_knight_dark.png",
+    "action": "keep",
     "keyFrom": "e_knight_dark",
-    "keyTo": "e_human_knight_dark",
+    "keyTo": "e_knight_dark",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -1265,10 +1265,10 @@
   },
   {
     "from": "enemies/human/e_lizard.png",
-    "to": "enemies/human/e_human_lizard.png",
-    "action": "move",
+    "to": "enemies/human/e_lizard.png",
+    "action": "keep",
     "keyFrom": "e_lizard",
-    "keyTo": "e_human_lizard",
+    "keyTo": "e_lizard",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -1276,10 +1276,10 @@
   },
   {
     "from": "enemies/human/e_wizard.png",
-    "to": "enemies/human/e_human_wizard.png",
-    "action": "move",
+    "to": "enemies/human/e_wizard.png",
+    "action": "keep",
     "keyFrom": "e_wizard",
-    "keyTo": "e_human_wizard",
+    "keyTo": "e_wizard",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -1287,29 +1287,29 @@
   },
   {
     "from": "enemies/slime/ani_slime_green_big_raw.png",
-    "to": null,
-    "action": "delete",
-    "keyFrom": null,
-    "keyTo": null,
+    "to": "enemies/slime/e_slime_green_big_sheet_raw.png",
+    "action": "move",
+    "keyFrom": "ani_slime_green_big_raw",
+    "keyTo": "e_slime_green_big_sheet_raw",
     "inUse": false,
     "usedBy": [
       "src/config/spriteFx.js"
     ],
-    "confidence": "sure",
-    "note": "_raw processing copy"
+    "confidence": "check",
+    "note": "kept for the owner to check later"
   },
   {
     "from": "enemies/slime/ani_slime_green_smol_raw.png",
-    "to": null,
-    "action": "delete",
-    "keyFrom": null,
-    "keyTo": null,
+    "to": "enemies/slime/e_slime_green_smol_sheet_raw.png",
+    "action": "move",
+    "keyFrom": "ani_slime_green_smol_raw",
+    "keyTo": "e_slime_green_smol_sheet_raw",
     "inUse": false,
     "usedBy": [
       "src/config/spriteFx.js"
     ],
-    "confidence": "sure",
-    "note": "_raw processing copy"
+    "confidence": "check",
+    "note": "abbreviation kept: smol; kept for the owner to check later"
   },
   {
     "from": "enemies/slime/anim/ani_slime_green_big.png",
@@ -1374,10 +1374,10 @@
   },
   {
     "from": "enemies/slime/e_slurm.png",
-    "to": "enemies/slime/e_slime_slurm.png",
-    "action": "move",
+    "to": "enemies/slime/e_slurm.png",
+    "action": "keep",
     "keyFrom": "e_slurm",
-    "keyTo": "e_slime_slurm",
+    "keyTo": "e_slurm",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -1385,10 +1385,10 @@
   },
   {
     "from": "enemies/undead/e_ghost.png",
-    "to": "enemies/undead/e_undead_ghost.png",
-    "action": "move",
+    "to": "enemies/undead/e_ghost.png",
+    "action": "keep",
     "keyFrom": "e_ghost",
-    "keyTo": "e_undead_ghost",
+    "keyTo": "e_ghost",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -1396,10 +1396,10 @@
   },
   {
     "from": "enemies/undead/e_ghost_phantom.png",
-    "to": "enemies/undead/e_undead_ghost_phantom.png",
-    "action": "move",
+    "to": "enemies/undead/e_ghost_phantom.png",
+    "action": "keep",
     "keyFrom": "e_ghost_phantom",
-    "keyTo": "e_undead_ghost_phantom",
+    "keyTo": "e_ghost_phantom",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -1407,10 +1407,10 @@
   },
   {
     "from": "enemies/undead/e_ghost_smol.png",
-    "to": "enemies/undead/e_undead_ghost_smol.png",
-    "action": "move",
+    "to": "enemies/undead/e_ghost_smol.png",
+    "action": "keep",
     "keyFrom": "e_ghost_smol",
-    "keyTo": "e_undead_ghost_smol",
+    "keyTo": "e_ghost_smol",
     "inUse": false,
     "usedBy": [],
     "confidence": "check",
@@ -1418,10 +1418,10 @@
   },
   {
     "from": "enemies/undead/e_skeleton_magic.png",
-    "to": "enemies/undead/e_undead_skeleton_magic.png",
-    "action": "move",
+    "to": "enemies/undead/e_skeleton_magic.png",
+    "action": "keep",
     "keyFrom": "e_skeleton_magic",
-    "keyTo": "e_undead_skeleton_magic",
+    "keyTo": "e_skeleton_magic",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -1429,10 +1429,10 @@
   },
   {
     "from": "enemies/undead/e_skeleton_range.png",
-    "to": "enemies/undead/e_undead_skeleton_range.png",
-    "action": "move",
+    "to": "enemies/undead/e_skeleton_range.png",
+    "action": "keep",
     "keyFrom": "e_skeleton_range",
-    "keyTo": "e_undead_skeleton_range",
+    "keyTo": "e_skeleton_range",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -1440,10 +1440,10 @@
   },
   {
     "from": "enemies/undead/e_zombie.png",
-    "to": "enemies/undead/e_undead_zombie.png",
-    "action": "move",
+    "to": "enemies/undead/e_zombie.png",
+    "action": "keep",
     "keyFrom": "e_zombie",
-    "keyTo": "e_undead_zombie",
+    "keyTo": "e_zombie",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -1451,10 +1451,10 @@
   },
   {
     "from": "enemies/undead/enemy_skeleton_melee.png",
-    "to": "enemies/undead/e_undead_skeleton_melee.png",
+    "to": "enemies/undead/e_skeleton_melee.png",
     "action": "move",
     "keyFrom": "enemy_skeleton_melee",
-    "keyTo": "e_undead_skeleton_melee",
+    "keyTo": "e_skeleton_melee",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -1462,10 +1462,10 @@
   },
   {
     "from": "g_body_mage.png",
-    "to": "items/gear/i_gear_body_mage.png",
+    "to": "items/gear/i_body_mage.png",
     "action": "move",
     "keyFrom": "g_body_mage",
-    "keyTo": "i_gear_body_mage",
+    "keyTo": "i_body_mage",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -1473,10 +1473,10 @@
   },
   {
     "from": "g_body_mage_plus.png",
-    "to": "items/gear/i_gear_body_mage_plus.png",
+    "to": "items/gear/i_body_mage_plus.png",
     "action": "move",
     "keyFrom": "g_body_mage_plus",
-    "keyTo": "i_gear_body_mage_plus",
+    "keyTo": "i_body_mage_plus",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -1484,10 +1484,10 @@
   },
   {
     "from": "g_body_royal.png",
-    "to": "items/gear/i_gear_body_royal.png",
+    "to": "items/gear/i_body_royal.png",
     "action": "move",
     "keyFrom": "g_body_royal",
-    "keyTo": "i_gear_body_royal",
+    "keyTo": "i_body_royal",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -1495,10 +1495,10 @@
   },
   {
     "from": "g_body_sneak.png",
-    "to": "items/gear/i_gear_body_sneak.png",
+    "to": "items/gear/i_body_sneak.png",
     "action": "move",
     "keyFrom": "g_body_sneak",
-    "keyTo": "i_gear_body_sneak",
+    "keyTo": "i_body_sneak",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -1506,10 +1506,10 @@
   },
   {
     "from": "g_body_tunic.png",
-    "to": "items/gear/i_gear_body_tunic.png",
+    "to": "items/gear/i_body_tunic.png",
     "action": "move",
     "keyFrom": "g_body_tunic",
-    "keyTo": "i_gear_body_tunic",
+    "keyTo": "i_body_tunic",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -1517,10 +1517,10 @@
   },
   {
     "from": "g_boot_leather.png",
-    "to": "items/gear/i_gear_boot_leather.png",
+    "to": "items/gear/i_boot_leather.png",
     "action": "move",
     "keyFrom": "g_boot_leather",
-    "keyTo": "i_gear_boot_leather",
+    "keyTo": "i_boot_leather",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -1528,10 +1528,10 @@
   },
   {
     "from": "g_boot_slipper.png",
-    "to": "items/gear/i_gear_boot_slipper.png",
+    "to": "items/gear/i_boot_slipper.png",
     "action": "move",
     "keyFrom": "g_boot_slipper",
-    "keyTo": "i_gear_boot_slipper",
+    "keyTo": "i_boot_slipper",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -1539,10 +1539,10 @@
   },
   {
     "from": "g_boot_steel.png",
-    "to": "items/gear/i_gear_boot_steel.png",
+    "to": "items/gear/i_boot_steel.png",
     "action": "move",
     "keyFrom": "g_boot_steel",
-    "keyTo": "i_gear_boot_steel",
+    "keyTo": "i_boot_steel",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -1550,10 +1550,10 @@
   },
   {
     "from": "g_cape.png",
-    "to": "items/gear/i_gear_cape.png",
+    "to": "items/gear/i_cape.png",
     "action": "move",
     "keyFrom": "g_cape",
-    "keyTo": "i_gear_cape",
+    "keyTo": "i_cape",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -1561,10 +1561,10 @@
   },
   {
     "from": "g_glove_hard.png",
-    "to": "items/gear/i_gear_glove_hard.png",
+    "to": "items/gear/i_glove_hard.png",
     "action": "move",
     "keyFrom": "g_glove_hard",
-    "keyTo": "i_gear_glove_hard",
+    "keyTo": "i_glove_hard",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -1572,10 +1572,10 @@
   },
   {
     "from": "g_glove_leather.png",
-    "to": "items/gear/i_gear_glove_leather.png",
+    "to": "items/gear/i_glove_leather.png",
     "action": "move",
     "keyFrom": "g_glove_leather",
-    "keyTo": "i_gear_glove_leather",
+    "keyTo": "i_glove_leather",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -1583,10 +1583,10 @@
   },
   {
     "from": "g_glove_steel.png",
-    "to": "items/gear/i_gear_glove_steel.png",
+    "to": "items/gear/i_glove_steel.png",
     "action": "move",
     "keyFrom": "g_glove_steel",
-    "keyTo": "i_gear_glove_steel",
+    "keyTo": "i_glove_steel",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -1594,10 +1594,10 @@
   },
   {
     "from": "g_hat_mage.png",
-    "to": "items/gear/i_gear_hat_mage.png",
+    "to": "items/gear/i_hat_mage.png",
     "action": "move",
     "keyFrom": "g_hat_mage",
-    "keyTo": "i_gear_hat_mage",
+    "keyTo": "i_hat_mage",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -1605,10 +1605,10 @@
   },
   {
     "from": "g_hat_mage_plus.png",
-    "to": "items/gear/i_gear_hat_mage_plus.png",
+    "to": "items/gear/i_hat_mage_plus.png",
     "action": "move",
     "keyFrom": "g_hat_mage_plus",
-    "keyTo": "i_gear_hat_mage_plus",
+    "keyTo": "i_hat_mage_plus",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -1616,10 +1616,10 @@
   },
   {
     "from": "g_head_crusade.png",
-    "to": "items/gear/i_gear_head_crusade.png",
+    "to": "items/gear/i_head_crusade.png",
     "action": "move",
     "keyFrom": "g_head_crusade",
-    "keyTo": "i_gear_head_crusade",
+    "keyTo": "i_head_crusade",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -1627,10 +1627,10 @@
   },
   {
     "from": "g_head_steel.png",
-    "to": "items/gear/i_gear_head_steel.png",
+    "to": "items/gear/i_head_steel.png",
     "action": "move",
     "keyFrom": "g_head_steel",
-    "keyTo": "i_gear_head_steel",
+    "keyTo": "i_head_steel",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -1653,14 +1653,14 @@
   },
   {
     "from": "heroes/animations/ani_hero.pxo",
-    "to": null,
-    "action": "delete",
+    "to": "heroes/animations/ani_hero.pxo",
+    "action": "keep",
     "keyFrom": null,
     "keyTo": null,
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "Pixelorama work file, not art the game loads"
+    "confidence": "sure",
+    "note": "Pixelorama work file, kept where it is (owner 2026-10-16)"
   },
   {
     "from": "heroes/animations/ani_ranger_0.png",
@@ -2326,14 +2326,14 @@
   },
   {
     "from": "i_nest_bird.png",
-    "to": "items/drop/i_drop_nest_bird.png",
+    "to": "items/material/i_nest_bird.png",
     "action": "move",
     "keyFrom": "i_nest_bird",
-    "keyTo": "i_drop_nest_bird",
+    "keyTo": "i_nest_bird",
     "inUse": false,
     "usedBy": [],
     "confidence": "check",
-    "note": "loose drop; replaces the near-identical items/wood/bird_nest.png; group drop is new"
+    "note": "loose drop; replaces the near-identical items/wood/bird_nest.png"
   },
   {
     "from": "icon/icon_tree.png",
@@ -2348,10 +2348,10 @@
   },
   {
     "from": "icon/p_bunkbed.png",
-    "to": "tokens/upgrade/t_upgrade_bunk_bed_blue.png",
+    "to": "tokens/upgrade/t_bunk_bed_blue.png",
     "action": "move",
     "keyFrom": "p_bunkbed",
-    "keyTo": "t_upgrade_bunk_bed_blue",
+    "keyTo": "t_bunk_bed_blue",
     "inUse": false,
     "usedBy": [],
     "confidence": "check",
@@ -2359,10 +2359,10 @@
   },
   {
     "from": "items/ammy/chain/j_chain_gold.png",
-    "to": "items/jewelry/i_jewelry_chain_gold.png",
+    "to": "items/jewelry/i_chain_gold.png",
     "action": "move",
     "keyFrom": "j_chain_gold",
-    "keyTo": "i_jewelry_chain_gold",
+    "keyTo": "i_chain_gold",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -2370,10 +2370,10 @@
   },
   {
     "from": "items/ammy/chain/j_chain_iron.png",
-    "to": "items/jewelry/i_jewelry_chain_iron.png",
+    "to": "items/jewelry/i_chain_iron.png",
     "action": "move",
     "keyFrom": "j_chain_iron",
-    "keyTo": "i_jewelry_chain_iron",
+    "keyTo": "i_chain_iron",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -2381,10 +2381,10 @@
   },
   {
     "from": "items/ammy/chain/j_chain_silver.png",
-    "to": "items/jewelry/i_jewelry_chain_silver.png",
+    "to": "items/jewelry/i_chain_silver.png",
     "action": "move",
     "keyFrom": "j_chain_silver",
-    "keyTo": "i_jewelry_chain_silver",
+    "keyTo": "i_chain_silver",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -2392,10 +2392,10 @@
   },
   {
     "from": "items/ammy/gold/ammy_gold_amethyst.png",
-    "to": "items/jewelry/i_jewelry_ammy_gold_amethyst.png",
+    "to": "items/jewelry/i_ammy_gold_amethyst.png",
     "action": "move",
     "keyFrom": "ammy_gold_amethyst",
-    "keyTo": "i_jewelry_ammy_gold_amethyst",
+    "keyTo": "i_ammy_gold_amethyst",
     "inUse": false,
     "usedBy": [],
     "confidence": "check",
@@ -2403,10 +2403,10 @@
   },
   {
     "from": "items/ammy/gold/ammy_gold_diamond.png",
-    "to": "items/jewelry/i_jewelry_ammy_gold_diamond.png",
+    "to": "items/jewelry/i_ammy_gold_diamond.png",
     "action": "move",
     "keyFrom": "ammy_gold_diamond",
-    "keyTo": "i_jewelry_ammy_gold_diamond",
+    "keyTo": "i_ammy_gold_diamond",
     "inUse": false,
     "usedBy": [],
     "confidence": "check",
@@ -2414,10 +2414,10 @@
   },
   {
     "from": "items/ammy/gold/ammy_gold_emerald.png",
-    "to": "items/jewelry/i_jewelry_ammy_gold_emerald.png",
+    "to": "items/jewelry/i_ammy_gold_emerald.png",
     "action": "move",
     "keyFrom": "ammy_gold_emerald",
-    "keyTo": "i_jewelry_ammy_gold_emerald",
+    "keyTo": "i_ammy_gold_emerald",
     "inUse": false,
     "usedBy": [],
     "confidence": "check",
@@ -2425,10 +2425,10 @@
   },
   {
     "from": "items/ammy/gold/ammy_gold_ruby.png",
-    "to": "items/jewelry/i_jewelry_ammy_gold_ruby.png",
+    "to": "items/jewelry/i_ammy_gold_ruby.png",
     "action": "move",
     "keyFrom": "ammy_gold_ruby",
-    "keyTo": "i_jewelry_ammy_gold_ruby",
+    "keyTo": "i_ammy_gold_ruby",
     "inUse": false,
     "usedBy": [],
     "confidence": "check",
@@ -2436,10 +2436,10 @@
   },
   {
     "from": "items/ammy/gold/ammy_gold_sapphire.png",
-    "to": "items/jewelry/i_jewelry_ammy_gold_sapphire.png",
+    "to": "items/jewelry/i_ammy_gold_sapphire.png",
     "action": "move",
     "keyFrom": "ammy_gold_sapphire",
-    "keyTo": "i_jewelry_ammy_gold_sapphire",
+    "keyTo": "i_ammy_gold_sapphire",
     "inUse": false,
     "usedBy": [],
     "confidence": "check",
@@ -2447,10 +2447,10 @@
   },
   {
     "from": "items/ammy/gold/ammy_gold_topaz.png",
-    "to": "items/jewelry/i_jewelry_ammy_gold_topaz.png",
+    "to": "items/jewelry/i_ammy_gold_topaz.png",
     "action": "move",
     "keyFrom": "ammy_gold_topaz",
-    "keyTo": "i_jewelry_ammy_gold_topaz",
+    "keyTo": "i_ammy_gold_topaz",
     "inUse": false,
     "usedBy": [],
     "confidence": "check",
@@ -2458,10 +2458,10 @@
   },
   {
     "from": "items/ammy/silver/ammy_silver_amethyst.png",
-    "to": "items/jewelry/i_jewelry_ammy_silver_amethyst.png",
+    "to": "items/jewelry/i_ammy_silver_amethyst.png",
     "action": "move",
     "keyFrom": "ammy_silver_amethyst",
-    "keyTo": "i_jewelry_ammy_silver_amethyst",
+    "keyTo": "i_ammy_silver_amethyst",
     "inUse": false,
     "usedBy": [],
     "confidence": "check",
@@ -2469,10 +2469,10 @@
   },
   {
     "from": "items/ammy/silver/ammy_silver_diamond.png",
-    "to": "items/jewelry/i_jewelry_ammy_silver_diamond.png",
+    "to": "items/jewelry/i_ammy_silver_diamond.png",
     "action": "move",
     "keyFrom": "ammy_silver_diamond",
-    "keyTo": "i_jewelry_ammy_silver_diamond",
+    "keyTo": "i_ammy_silver_diamond",
     "inUse": false,
     "usedBy": [],
     "confidence": "check",
@@ -2480,10 +2480,10 @@
   },
   {
     "from": "items/ammy/silver/ammy_silver_emerald.png",
-    "to": "items/jewelry/i_jewelry_ammy_silver_emerald.png",
+    "to": "items/jewelry/i_ammy_silver_emerald.png",
     "action": "move",
     "keyFrom": "ammy_silver_emerald",
-    "keyTo": "i_jewelry_ammy_silver_emerald",
+    "keyTo": "i_ammy_silver_emerald",
     "inUse": false,
     "usedBy": [],
     "confidence": "check",
@@ -2491,10 +2491,10 @@
   },
   {
     "from": "items/ammy/silver/ammy_silver_ruby.png",
-    "to": "items/jewelry/i_jewelry_ammy_silver_ruby.png",
+    "to": "items/jewelry/i_ammy_silver_ruby.png",
     "action": "move",
     "keyFrom": "ammy_silver_ruby",
-    "keyTo": "i_jewelry_ammy_silver_ruby",
+    "keyTo": "i_ammy_silver_ruby",
     "inUse": false,
     "usedBy": [],
     "confidence": "check",
@@ -2502,10 +2502,10 @@
   },
   {
     "from": "items/ammy/silver/ammy_silver_sapphire.png",
-    "to": "items/jewelry/i_jewelry_ammy_silver_sapphire.png",
+    "to": "items/jewelry/i_ammy_silver_sapphire.png",
     "action": "move",
     "keyFrom": "ammy_silver_sapphire",
-    "keyTo": "i_jewelry_ammy_silver_sapphire",
+    "keyTo": "i_ammy_silver_sapphire",
     "inUse": false,
     "usedBy": [],
     "confidence": "check",
@@ -2513,10 +2513,10 @@
   },
   {
     "from": "items/ammy/silver/ammy_silver_topaz.png",
-    "to": "items/jewelry/i_jewelry_ammy_silver_topaz.png",
+    "to": "items/jewelry/i_ammy_silver_topaz.png",
     "action": "move",
     "keyFrom": "ammy_silver_topaz",
-    "keyTo": "i_jewelry_ammy_silver_topaz",
+    "keyTo": "i_ammy_silver_topaz",
     "inUse": false,
     "usedBy": [],
     "confidence": "check",
@@ -2524,10 +2524,10 @@
   },
   {
     "from": "items/armor/cloak/armor_cloak_blue.png",
-    "to": "items/gear/i_gear_armor_cloak_blue.png",
+    "to": "items/gear/i_cloak_blue.png",
     "action": "move",
     "keyFrom": "armor_cloak_blue",
-    "keyTo": "i_gear_armor_cloak_blue",
+    "keyTo": "i_cloak_blue",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -2535,10 +2535,10 @@
   },
   {
     "from": "items/armor/plate/armor_plate_adamantium.png",
-    "to": "items/gear/i_gear_armor_plate_adamantium.png",
+    "to": "items/gear/i_armor_plate_adamantium.png",
     "action": "move",
     "keyFrom": "armor_plate_adamantium",
-    "keyTo": "i_gear_armor_plate_adamantium",
+    "keyTo": "i_armor_plate_adamantium",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -2546,10 +2546,10 @@
   },
   {
     "from": "items/armor/plate/armor_plate_copper.png",
-    "to": "items/gear/i_gear_armor_plate_copper.png",
+    "to": "items/gear/i_armor_plate_copper.png",
     "action": "move",
     "keyFrom": "armor_plate_copper",
-    "keyTo": "i_gear_armor_plate_copper",
+    "keyTo": "i_armor_plate_copper",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -2557,10 +2557,10 @@
   },
   {
     "from": "items/armor/plate/armor_plate_darkmetal.png",
-    "to": "items/gear/i_gear_armor_plate_darkmetal.png",
+    "to": "items/gear/i_armor_plate_darkmetal.png",
     "action": "move",
     "keyFrom": "armor_plate_darkmetal",
-    "keyTo": "i_gear_armor_plate_darkmetal",
+    "keyTo": "i_armor_plate_darkmetal",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -2568,10 +2568,10 @@
   },
   {
     "from": "items/armor/plate/armor_plate_iron.png",
-    "to": "items/gear/i_gear_armor_plate_iron.png",
+    "to": "items/gear/i_armor_plate_iron.png",
     "action": "move",
     "keyFrom": "armor_plate_iron",
-    "keyTo": "i_gear_armor_plate_iron",
+    "keyTo": "i_armor_plate_iron",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -2579,10 +2579,10 @@
   },
   {
     "from": "items/armor/plate/armor_plate_mythril.png",
-    "to": "items/gear/i_gear_armor_plate_mythril.png",
+    "to": "items/gear/i_armor_plate_mythril.png",
     "action": "move",
     "keyFrom": "armor_plate_mythril",
-    "keyTo": "i_gear_armor_plate_mythril",
+    "keyTo": "i_armor_plate_mythril",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -2590,10 +2590,10 @@
   },
   {
     "from": "items/baking/f_bread.png",
-    "to": "items/baking/i_baking_bread.png",
+    "to": "items/food/i_bread.png",
     "action": "move",
     "keyFrom": "f_bread",
-    "keyTo": "i_baking_bread",
+    "keyTo": "i_bread",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -2601,52 +2601,52 @@
   },
   {
     "from": "items/baking/i_dough.png",
-    "to": "items/baking/i_baking_dough.png",
+    "to": "items/material/i_dough.png",
     "action": "move",
     "keyFrom": "i_dough",
-    "keyTo": "i_baking_dough",
+    "keyTo": "i_dough",
     "inUse": true,
     "usedBy": [
       "data/items.json",
       "src/config/registries/sprite-manifest.js"
     ],
-    "confidence": "sure",
-    "note": ""
+    "confidence": "check",
+    "note": "data type is material (Dough), so material rather than food"
   },
   {
     "from": "items/baking/i_flour.png",
-    "to": "items/baking/i_baking_flour.png",
+    "to": "items/material/i_flour.png",
     "action": "move",
     "keyFrom": "i_flour",
-    "keyTo": "i_baking_flour",
+    "keyTo": "i_flour",
     "inUse": true,
     "usedBy": [
       "data/items.json",
       "src/config/registries/sprite-manifest.js"
     ],
-    "confidence": "sure",
-    "note": ""
+    "confidence": "check",
+    "note": "data type is material (Flour), so material rather than food"
   },
   {
     "from": "items/baking/i_wheat.png",
-    "to": "items/baking/i_baking_wheat.png",
+    "to": "items/material/i_wheat.png",
     "action": "move",
     "keyFrom": "i_wheat",
-    "keyTo": "i_baking_wheat",
+    "keyTo": "i_wheat",
     "inUse": true,
     "usedBy": [
       "data/items.json",
       "src/config/registries/sprite-manifest.js"
     ],
-    "confidence": "sure",
-    "note": ""
+    "confidence": "check",
+    "note": "data type is material (Wheat), so material rather than food"
   },
   {
     "from": "items/bones/item_bones.png",
-    "to": "items/drop/i_drop_bones.png",
+    "to": "items/material/i_bones.png",
     "action": "move",
     "keyFrom": "item_bones",
-    "keyTo": "i_drop_bones",
+    "keyTo": "i_bones",
     "inUse": true,
     "usedBy": [
       "bench/fixtures.mjs",
@@ -2664,37 +2664,37 @@
       "src/tests/fixtures/testTokens.js",
       "src/ui/components/TestDashboard.jsx"
     ],
-    "confidence": "check",
-    "note": "group drop is new"
+    "confidence": "sure",
+    "note": "Bones (data type material)"
   },
   {
     "from": "items/bones/item_bones_burnt.png",
-    "to": "items/drop/i_drop_bones_burnt.png",
+    "to": "items/material/i_bones_burnt.png",
     "action": "move",
     "keyFrom": "item_bones_burnt",
-    "keyTo": "i_drop_bones_burnt",
+    "keyTo": "i_bones_burnt",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "group drop is new"
+    "confidence": "sure",
+    "note": ""
   },
   {
     "from": "items/candle/item_candle_white.png",
-    "to": "items/craft/i_craft_candle_white.png",
+    "to": "items/material/i_candle_white.png",
     "action": "move",
     "keyFrom": "item_candle_white",
-    "keyTo": "i_craft_candle_white",
+    "keyTo": "i_candle_white",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "group craft (today holds clay)"
+    "confidence": "sure",
+    "note": ""
   },
   {
     "from": "items/cash/cash_purse.png",
-    "to": "items/coin/i_coin_purse.png",
+    "to": "items/coin/i_cash_purse.png",
     "action": "move",
     "keyFrom": "cash_purse",
-    "keyTo": "i_coin_purse",
+    "keyTo": "i_cash_purse",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -2713,10 +2713,10 @@
   },
   {
     "from": "items/construction/item_plank_base.png",
-    "to": "items/construction/i_construction_plank_base.png",
+    "to": "items/material/i_plank_base.png",
     "action": "move",
     "keyFrom": "item_plank_base",
-    "keyTo": "i_construction_plank_base",
+    "keyTo": "i_plank_base",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -2726,10 +2726,10 @@
   },
   {
     "from": "items/construction/item_plank_birch.png",
-    "to": "items/construction/i_construction_plank_birch.png",
+    "to": "items/material/i_plank_birch.png",
     "action": "move",
     "keyFrom": "item_plank_birch",
-    "keyTo": "i_construction_plank_birch",
+    "keyTo": "i_plank_birch",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -2739,10 +2739,10 @@
   },
   {
     "from": "items/construction/item_plank_cedar.png",
-    "to": "items/construction/i_construction_plank_cedar.png",
+    "to": "items/material/i_plank_cedar.png",
     "action": "move",
     "keyFrom": "item_plank_cedar",
-    "keyTo": "i_construction_plank_cedar",
+    "keyTo": "i_plank_cedar",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -2752,10 +2752,10 @@
   },
   {
     "from": "items/construction/item_plank_ebony.png",
-    "to": "items/construction/i_construction_plank_ebony.png",
+    "to": "items/material/i_plank_ebony.png",
     "action": "move",
     "keyFrom": "item_plank_ebony",
-    "keyTo": "i_construction_plank_ebony",
+    "keyTo": "i_plank_ebony",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -2765,10 +2765,10 @@
   },
   {
     "from": "items/construction/item_plank_mahogany.png",
-    "to": "items/construction/i_construction_plank_mahogany.png",
+    "to": "items/material/i_plank_mahogany.png",
     "action": "move",
     "keyFrom": "item_plank_mahogany",
-    "keyTo": "i_construction_plank_mahogany",
+    "keyTo": "i_plank_mahogany",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -2778,10 +2778,10 @@
   },
   {
     "from": "items/construction/item_plank_maple.png",
-    "to": "items/construction/i_construction_plank_maple.png",
+    "to": "items/material/i_plank_maple.png",
     "action": "move",
     "keyFrom": "item_plank_maple",
-    "keyTo": "i_construction_plank_maple",
+    "keyTo": "i_plank_maple",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -2791,10 +2791,10 @@
   },
   {
     "from": "items/construction/item_plank_oak.png",
-    "to": "items/construction/i_construction_plank_oak.png",
+    "to": "items/material/i_plank_oak.png",
     "action": "move",
     "keyFrom": "item_plank_oak",
-    "keyTo": "i_construction_plank_oak",
+    "keyTo": "i_plank_oak",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -2804,10 +2804,10 @@
   },
   {
     "from": "items/construction/item_stone.png",
-    "to": "items/construction/i_construction_stone.png",
+    "to": "items/material/i_stone.png",
     "action": "move",
     "keyFrom": "item_stone",
-    "keyTo": "i_construction_stone",
+    "keyTo": "i_stone",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js",
@@ -2826,10 +2826,10 @@
   },
   {
     "from": "items/construction/item_stone_basalt.png",
-    "to": "items/construction/i_construction_stone_basalt.png",
+    "to": "items/material/i_stone_basalt.png",
     "action": "move",
     "keyFrom": "item_stone_basalt",
-    "keyTo": "i_construction_stone_basalt",
+    "keyTo": "i_stone_basalt",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -2839,10 +2839,10 @@
   },
   {
     "from": "items/construction/item_stone_base.png",
-    "to": "items/construction/i_construction_stone_base.png",
+    "to": "items/material/i_stone_base.png",
     "action": "move",
     "keyFrom": "item_stone_base",
-    "keyTo": "i_construction_stone_base",
+    "keyTo": "i_stone_base",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -2852,10 +2852,10 @@
   },
   {
     "from": "items/construction/item_stone_brick.png",
-    "to": "items/construction/i_construction_stone_brick.png",
+    "to": "items/material/i_stone_brick.png",
     "action": "move",
     "keyFrom": "item_stone_brick",
-    "keyTo": "i_construction_stone_brick",
+    "keyTo": "i_stone_brick",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -2865,10 +2865,10 @@
   },
   {
     "from": "items/construction/item_stone_brick_basalt.png",
-    "to": "items/construction/i_construction_stone_brick_basalt.png",
+    "to": "items/material/i_stone_brick_basalt.png",
     "action": "move",
     "keyFrom": "item_stone_brick_basalt",
-    "keyTo": "i_construction_stone_brick_basalt",
+    "keyTo": "i_stone_brick_basalt",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -2878,10 +2878,10 @@
   },
   {
     "from": "items/construction/item_stone_brick_base.png",
-    "to": "items/construction/i_construction_stone_brick_base.png",
+    "to": "items/material/i_stone_brick_base.png",
     "action": "move",
     "keyFrom": "item_stone_brick_base",
-    "keyTo": "i_construction_stone_brick_base",
+    "keyTo": "i_stone_brick_base",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -2891,10 +2891,10 @@
   },
   {
     "from": "items/construction/item_stone_brick_granite.png",
-    "to": "items/construction/i_construction_stone_brick_granite.png",
+    "to": "items/material/i_stone_brick_granite.png",
     "action": "move",
     "keyFrom": "item_stone_brick_granite",
-    "keyTo": "i_construction_stone_brick_granite",
+    "keyTo": "i_stone_brick_granite",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -2904,10 +2904,10 @@
   },
   {
     "from": "items/construction/item_stone_brick_marble.png",
-    "to": "items/construction/i_construction_stone_brick_marble.png",
+    "to": "items/material/i_stone_brick_marble.png",
     "action": "move",
     "keyFrom": "item_stone_brick_marble",
-    "keyTo": "i_construction_stone_brick_marble",
+    "keyTo": "i_stone_brick_marble",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -2917,10 +2917,10 @@
   },
   {
     "from": "items/construction/item_stone_brick_sand.png",
-    "to": "items/construction/i_construction_stone_brick_sand.png",
+    "to": "items/material/i_stone_brick_sand.png",
     "action": "move",
     "keyFrom": "item_stone_brick_sand",
-    "keyTo": "i_construction_stone_brick_sand",
+    "keyTo": "i_stone_brick_sand",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -2930,10 +2930,10 @@
   },
   {
     "from": "items/construction/item_stone_granite.png",
-    "to": "items/construction/i_construction_stone_granite.png",
+    "to": "items/material/i_stone_granite.png",
     "action": "move",
     "keyFrom": "item_stone_granite",
-    "keyTo": "i_construction_stone_granite",
+    "keyTo": "i_stone_granite",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -2943,10 +2943,10 @@
   },
   {
     "from": "items/construction/item_stone_marble.png",
-    "to": "items/construction/i_construction_stone_marble.png",
+    "to": "items/material/i_stone_marble.png",
     "action": "move",
     "keyFrom": "item_stone_marble",
-    "keyTo": "i_construction_stone_marble",
+    "keyTo": "i_stone_marble",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -2956,10 +2956,10 @@
   },
   {
     "from": "items/construction/item_stone_sand.png",
-    "to": "items/construction/i_construction_stone_sand.png",
+    "to": "items/material/i_stone_sand.png",
     "action": "move",
     "keyFrom": "item_stone_sand",
-    "keyTo": "i_construction_stone_sand",
+    "keyTo": "i_stone_sand",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -2969,38 +2969,38 @@
   },
   {
     "from": "items/craft/i_clay.png",
-    "to": "items/craft/i_craft_clay.png",
+    "to": "items/material/i_clay.png",
     "action": "move",
     "keyFrom": "i_clay",
-    "keyTo": "i_craft_clay",
+    "keyTo": "i_clay",
     "inUse": true,
     "usedBy": [
       "data/items.json",
       "src/config/registries/sprite-manifest.js"
     ],
     "confidence": "sure",
-    "note": ""
+    "note": "Clay (data type material)"
   },
   {
     "from": "items/drink/d_applejuice.png",
-    "to": "items/drink/i_drink_applejuice.png",
+    "to": "items/drink/i_apple_juice.png",
     "action": "move",
     "keyFrom": "d_applejuice",
-    "keyTo": "i_drink_applejuice",
+    "keyTo": "i_apple_juice",
     "inUse": true,
     "usedBy": [
       "data/items.json",
       "src/config/registries/sprite-manifest.js"
     ],
     "confidence": "sure",
-    "note": ""
+    "note": "Apple Juice in the data"
   },
   {
     "from": "items/drink/d_beer.png",
-    "to": "items/drink/i_drink_beer.png",
+    "to": "items/drink/i_beer.png",
     "action": "move",
     "keyFrom": "d_beer",
-    "keyTo": "i_drink_beer",
+    "keyTo": "i_beer",
     "inUse": true,
     "usedBy": [
       "data/items.json",
@@ -3011,10 +3011,10 @@
   },
   {
     "from": "items/drink/d_lemonade.png",
-    "to": "items/drink/i_drink_lemonade.png",
+    "to": "items/drink/i_lemonade.png",
     "action": "move",
     "keyFrom": "d_lemonade",
-    "keyTo": "i_drink_lemonade",
+    "keyTo": "i_lemonade",
     "inUse": true,
     "usedBy": [
       "data/items.json",
@@ -3025,10 +3025,10 @@
   },
   {
     "from": "items/drink/d_limeade.png",
-    "to": "items/drink/i_drink_limeade.png",
+    "to": "items/drink/i_limeade.png",
     "action": "move",
     "keyFrom": "d_limeade",
-    "keyTo": "i_drink_limeade",
+    "keyTo": "i_limeade",
     "inUse": true,
     "usedBy": [
       "data/items.json",
@@ -3039,21 +3039,21 @@
   },
   {
     "from": "items/drink/d_orangejuice.png",
-    "to": "items/drink/i_drink_orangejuice.png",
+    "to": "items/drink/i_orange_juice.png",
     "action": "move",
     "keyFrom": "d_orangejuice",
-    "keyTo": "i_drink_orangejuice",
+    "keyTo": "i_orange_juice",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
-    "note": ""
+    "note": "like Apple Juice"
   },
   {
     "from": "items/drink/d_water.png",
-    "to": "items/drink/i_drink_water.png",
+    "to": "items/drink/i_water.png",
     "action": "move",
     "keyFrom": "d_water",
-    "keyTo": "i_drink_water",
+    "keyTo": "i_water",
     "inUse": true,
     "usedBy": [
       "data/items.json",
@@ -3080,10 +3080,10 @@
   },
   {
     "from": "items/fish/fish_lobster.png",
-    "to": "items/fish/i_fish_lobster.png",
+    "to": "items/fish/i_lobster.png",
     "action": "move",
     "keyFrom": "fish_lobster",
-    "keyTo": "i_fish_lobster",
+    "keyTo": "i_lobster",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -3091,10 +3091,10 @@
   },
   {
     "from": "items/fish/fish_lobster_raw.png",
-    "to": "items/fish/i_fish_lobster_raw.png",
+    "to": "items/fish/i_lobster_raw.png",
     "action": "move",
     "keyFrom": "fish_lobster_raw",
-    "keyTo": "i_fish_lobster_raw",
+    "keyTo": "i_lobster_raw",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -3102,10 +3102,10 @@
   },
   {
     "from": "items/fish/fish_salmon_raw.png",
-    "to": "items/fish/i_fish_salmon_raw.png",
+    "to": "items/fish/i_salmon_raw.png",
     "action": "move",
     "keyFrom": "fish_salmon_raw",
-    "keyTo": "i_fish_salmon_raw",
+    "keyTo": "i_salmon_raw",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -3113,10 +3113,10 @@
   },
   {
     "from": "items/fish/fish_shark.png",
-    "to": "items/fish/i_fish_shark.png",
+    "to": "items/fish/i_shark.png",
     "action": "move",
     "keyFrom": "fish_shark",
-    "keyTo": "i_fish_shark",
+    "keyTo": "i_shark",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -3124,10 +3124,10 @@
   },
   {
     "from": "items/fish/fish_shark_raw.png",
-    "to": "items/fish/i_fish_shark_raw.png",
+    "to": "items/fish/i_shark_raw.png",
     "action": "move",
     "keyFrom": "fish_shark_raw",
-    "keyTo": "i_fish_shark_raw",
+    "keyTo": "i_shark_raw",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -3135,10 +3135,10 @@
   },
   {
     "from": "items/fish/fish_shrimp.png",
-    "to": "items/fish/i_fish_shrimp.png",
+    "to": "items/fish/i_shrimp.png",
     "action": "move",
     "keyFrom": "fish_shrimp",
-    "keyTo": "i_fish_shrimp",
+    "keyTo": "i_shrimp",
     "inUse": true,
     "usedBy": [
       "data/items.json",
@@ -3149,10 +3149,10 @@
   },
   {
     "from": "items/fish/fish_shrimp_raw.png",
-    "to": "items/fish/i_fish_shrimp_raw.png",
+    "to": "items/fish/i_shrimp_raw.png",
     "action": "move",
     "keyFrom": "fish_shrimp_raw",
-    "keyTo": "i_fish_shrimp_raw",
+    "keyTo": "i_shrimp_raw",
     "inUse": true,
     "usedBy": [
       "data/items.json",
@@ -3175,21 +3175,21 @@
   },
   {
     "from": "items/fish/fish_tropical_raw.png",
-    "to": "items/fish/i_fish_tropical_raw.png",
+    "to": "items/fish/i_tropical_fish_raw.png",
     "action": "move",
     "keyFrom": "fish_tropical_raw",
-    "keyTo": "i_fish_tropical_raw",
+    "keyTo": "i_tropical_fish_raw",
     "inUse": false,
     "usedBy": [],
-    "confidence": "sure",
-    "note": ""
+    "confidence": "check",
+    "note": "fish kept: tropical alone does not say what it is"
   },
   {
     "from": "items/fish/fish_trout_raw.png",
-    "to": "items/fish/i_fish_trout_raw.png",
+    "to": "items/fish/i_trout_raw.png",
     "action": "move",
     "keyFrom": "fish_trout_raw",
-    "keyTo": "i_fish_trout_raw",
+    "keyTo": "i_trout_raw",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -3197,10 +3197,10 @@
   },
   {
     "from": "items/flower/flower_rose.png",
-    "to": "items/flower/i_flower_rose.png",
+    "to": "items/flower/i_rose.png",
     "action": "move",
     "keyFrom": "flower_rose",
-    "keyTo": "i_flower_rose",
+    "keyTo": "i_rose",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -3208,10 +3208,10 @@
   },
   {
     "from": "items/food/f_egg.png",
-    "to": "items/food/i_food_egg.png",
+    "to": "items/food/i_egg.png",
     "action": "move",
     "keyFrom": "f_egg",
-    "keyTo": "i_food_egg",
+    "keyTo": "i_egg",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -3219,24 +3219,24 @@
   },
   {
     "from": "items/food/f_honey.png",
-    "to": "items/food/i_food_honey.png",
+    "to": "items/food/i_honey.png",
     "action": "move",
     "keyFrom": "f_honey",
-    "keyTo": "i_food_honey",
+    "keyTo": "i_honey",
     "inUse": true,
     "usedBy": [
       "data/items.json",
       "src/config/registries/sprite-manifest.js"
     ],
-    "confidence": "sure",
-    "note": ""
+    "confidence": "check",
+    "note": "the item using it is Beeswax Comb (data type material); kept honey and food"
   },
   {
     "from": "items/food/f_potato_baked.png",
-    "to": "items/food/i_food_potato_baked.png",
+    "to": "items/food/i_potato_baked.png",
     "action": "move",
     "keyFrom": "f_potato_baked",
-    "keyTo": "i_food_potato_baked",
+    "keyTo": "i_potato_baked",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -3244,10 +3244,10 @@
   },
   {
     "from": "items/food/fruit/f_apple.png",
-    "to": "items/food/i_food_fruit_apple.png",
+    "to": "items/food/i_apple.png",
     "action": "move",
     "keyFrom": "f_apple",
-    "keyTo": "i_food_fruit_apple",
+    "keyTo": "i_apple",
     "inUse": true,
     "usedBy": [
       "data/items.json",
@@ -3258,10 +3258,10 @@
   },
   {
     "from": "items/food/fruit/f_banana.png",
-    "to": "items/food/i_food_fruit_banana.png",
+    "to": "items/food/i_banana.png",
     "action": "move",
     "keyFrom": "f_banana",
-    "keyTo": "i_food_fruit_banana",
+    "keyTo": "i_banana",
     "inUse": true,
     "usedBy": [
       "data/items.json",
@@ -3272,10 +3272,10 @@
   },
   {
     "from": "items/food/fruit/f_blackberry.png",
-    "to": "items/food/i_food_fruit_blackberry.png",
+    "to": "items/food/i_blackberry.png",
     "action": "move",
     "keyFrom": "f_blackberry",
-    "keyTo": "i_food_fruit_blackberry",
+    "keyTo": "i_blackberry",
     "inUse": true,
     "usedBy": [
       "data/items.json",
@@ -3286,10 +3286,10 @@
   },
   {
     "from": "items/food/fruit/f_blueberry.png",
-    "to": "items/food/i_food_fruit_blueberry.png",
+    "to": "items/food/i_blueberry.png",
     "action": "move",
     "keyFrom": "f_blueberry",
-    "keyTo": "i_food_fruit_blueberry",
+    "keyTo": "i_blueberry",
     "inUse": true,
     "usedBy": [
       "data/items.json",
@@ -3300,10 +3300,10 @@
   },
   {
     "from": "items/food/fruit/f_cherry.png",
-    "to": "items/food/i_food_fruit_cherry.png",
+    "to": "items/food/i_cherry.png",
     "action": "move",
     "keyFrom": "f_cherry",
-    "keyTo": "i_food_fruit_cherry",
+    "keyTo": "i_cherry",
     "inUse": true,
     "usedBy": [
       "data/items.json",
@@ -3314,10 +3314,10 @@
   },
   {
     "from": "items/food/fruit/f_coconut.png",
-    "to": "items/food/i_food_fruit_coconut.png",
+    "to": "items/food/i_coconut.png",
     "action": "move",
     "keyFrom": "f_coconut",
-    "keyTo": "i_food_fruit_coconut",
+    "keyTo": "i_coconut",
     "inUse": true,
     "usedBy": [
       "data/items.json",
@@ -3328,10 +3328,10 @@
   },
   {
     "from": "items/food/fruit/f_grapes.png",
-    "to": "items/food/i_food_fruit_grapes.png",
+    "to": "items/food/i_grapes.png",
     "action": "move",
     "keyFrom": "f_grapes",
-    "keyTo": "i_food_fruit_grapes",
+    "keyTo": "i_grapes",
     "inUse": true,
     "usedBy": [
       "data/items.json",
@@ -3342,10 +3342,10 @@
   },
   {
     "from": "items/food/fruit/f_lemon.png",
-    "to": "items/food/i_food_fruit_lemon.png",
+    "to": "items/food/i_lemon.png",
     "action": "move",
     "keyFrom": "f_lemon",
-    "keyTo": "i_food_fruit_lemon",
+    "keyTo": "i_lemon",
     "inUse": true,
     "usedBy": [
       "data/items.json",
@@ -3356,10 +3356,10 @@
   },
   {
     "from": "items/food/fruit/f_lime.png",
-    "to": "items/food/i_food_fruit_lime.png",
+    "to": "items/food/i_lime.png",
     "action": "move",
     "keyFrom": "f_lime",
-    "keyTo": "i_food_fruit_lime",
+    "keyTo": "i_lime",
     "inUse": true,
     "usedBy": [
       "data/items.json",
@@ -3370,24 +3370,24 @@
   },
   {
     "from": "items/food/fruit/f_melon.png",
-    "to": "items/food/i_food_fruit_melon.png",
+    "to": "items/food/i_watermelon.png",
     "action": "move",
     "keyFrom": "f_melon",
-    "keyTo": "i_food_fruit_melon",
+    "keyTo": "i_watermelon",
     "inUse": true,
     "usedBy": [
       "data/items.json",
       "src/config/registries/sprite-manifest.js"
     ],
     "confidence": "sure",
-    "note": ""
+    "note": "Watermelon in the data"
   },
   {
     "from": "items/food/fruit/f_orange.png",
-    "to": "items/food/i_food_fruit_orange.png",
+    "to": "items/food/i_orange.png",
     "action": "move",
     "keyFrom": "f_orange",
-    "keyTo": "i_food_fruit_orange",
+    "keyTo": "i_orange",
     "inUse": true,
     "usedBy": [
       "data/items.json",
@@ -3398,10 +3398,10 @@
   },
   {
     "from": "items/food/fruit/f_peach.png",
-    "to": "items/food/i_food_fruit_peach.png",
+    "to": "items/food/i_peach.png",
     "action": "move",
     "keyFrom": "f_peach",
-    "keyTo": "i_food_fruit_peach",
+    "keyTo": "i_peach",
     "inUse": true,
     "usedBy": [
       "data/items.json",
@@ -3412,10 +3412,10 @@
   },
   {
     "from": "items/food/fruit/f_pineapple.png",
-    "to": "items/food/i_food_fruit_pineapple.png",
+    "to": "items/food/i_pineapple.png",
     "action": "move",
     "keyFrom": "f_pineapple",
-    "keyTo": "i_food_fruit_pineapple",
+    "keyTo": "i_pineapple",
     "inUse": true,
     "usedBy": [
       "data/items.json",
@@ -3426,10 +3426,10 @@
   },
   {
     "from": "items/food/fruit/f_raspberry.png",
-    "to": "items/food/i_food_fruit_raspberry.png",
+    "to": "items/food/i_raspberry.png",
     "action": "move",
     "keyFrom": "f_raspberry",
-    "keyTo": "i_food_fruit_raspberry",
+    "keyTo": "i_raspberry",
     "inUse": true,
     "usedBy": [
       "data/items.json",
@@ -3440,10 +3440,10 @@
   },
   {
     "from": "items/food/fruit/f_redberry.png",
-    "to": "items/food/i_food_fruit_redberry.png",
+    "to": "items/food/i_redberry.png",
     "action": "move",
     "keyFrom": "f_redberry",
-    "keyTo": "i_food_fruit_redberry",
+    "keyTo": "i_redberry",
     "inUse": true,
     "usedBy": [
       "data/items.json",
@@ -3460,10 +3460,10 @@
   },
   {
     "from": "items/food/fruit/f_strawberry.png",
-    "to": "items/food/i_food_fruit_strawberry.png",
+    "to": "items/food/i_strawberry.png",
     "action": "move",
     "keyFrom": "f_strawberry",
-    "keyTo": "i_food_fruit_strawberry",
+    "keyTo": "i_strawberry",
     "inUse": true,
     "usedBy": [
       "data/items.json",
@@ -3474,10 +3474,10 @@
   },
   {
     "from": "items/food/pie/f_pie_blackberry.png",
-    "to": "items/food/i_food_pie_blackberry.png",
+    "to": "items/food/i_pie_blackberry.png",
     "action": "move",
     "keyFrom": "f_pie_blackberry",
-    "keyTo": "i_food_pie_blackberry",
+    "keyTo": "i_pie_blackberry",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -3487,10 +3487,10 @@
   },
   {
     "from": "items/food/pie/f_pie_blueberry.png",
-    "to": "items/food/i_food_pie_blueberry.png",
+    "to": "items/food/i_pie_blueberry.png",
     "action": "move",
     "keyFrom": "f_pie_blueberry",
-    "keyTo": "i_food_pie_blueberry",
+    "keyTo": "i_pie_blueberry",
     "inUse": true,
     "usedBy": [
       "data/items.json",
@@ -3501,10 +3501,10 @@
   },
   {
     "from": "items/food/pie/f_pie_cherry.png",
-    "to": "items/food/i_food_pie_cherry.png",
+    "to": "items/food/i_pie_cherry.png",
     "action": "move",
     "keyFrom": "f_pie_cherry",
-    "keyTo": "i_food_pie_cherry",
+    "keyTo": "i_pie_cherry",
     "inUse": true,
     "usedBy": [
       "scripts/generate-icons.mjs",
@@ -3515,10 +3515,10 @@
   },
   {
     "from": "items/food/stew/f_mirepoix.png",
-    "to": "items/food/i_food_stew_mirepoix.png",
+    "to": "items/food/i_mirepoix.png",
     "action": "move",
     "keyFrom": "f_mirepoix",
-    "keyTo": "i_food_stew_mirepoix",
+    "keyTo": "i_mirepoix",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -3528,10 +3528,10 @@
   },
   {
     "from": "items/food/stew/f_sofrito.png",
-    "to": "items/food/i_food_stew_sofrito.png",
+    "to": "items/food/i_sofrito.png",
     "action": "move",
     "keyFrom": "f_sofrito",
-    "keyTo": "i_food_stew_sofrito",
+    "keyTo": "i_sofrito",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -3552,10 +3552,10 @@
   },
   {
     "from": "items/food/stew/f_stew_bc_1.png",
-    "to": "items/food/i_food_stew_bc_1.png",
+    "to": "items/food/i_stew_bc_1.png",
     "action": "move",
     "keyFrom": "f_stew_bc_1",
-    "keyTo": "i_food_stew_bc_1",
+    "keyTo": "i_stew_bc_1",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -3565,10 +3565,10 @@
   },
   {
     "from": "items/food/stew/f_stew_bc_2.png",
-    "to": "items/food/i_food_stew_bc_2.png",
+    "to": "items/food/i_stew_bc_2.png",
     "action": "move",
     "keyFrom": "f_stew_bc_2",
-    "keyTo": "i_food_stew_bc_2",
+    "keyTo": "i_stew_bc_2",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -3578,10 +3578,10 @@
   },
   {
     "from": "items/food/stew/f_stew_bc_3.png",
-    "to": "items/food/i_food_stew_bc_3.png",
+    "to": "items/food/i_stew_bc_3.png",
     "action": "move",
     "keyFrom": "f_stew_bc_3",
-    "keyTo": "i_food_stew_bc_3",
+    "keyTo": "i_stew_bc_3",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -3591,10 +3591,10 @@
   },
   {
     "from": "items/food/stew/f_stew_copper.png",
-    "to": "items/food/i_food_stew_copper.png",
+    "to": "items/food/i_stew_copper.png",
     "action": "move",
     "keyFrom": "f_stew_copper",
-    "keyTo": "i_food_stew_copper",
+    "keyTo": "i_stew_copper",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -3602,10 +3602,10 @@
   },
   {
     "from": "items/food/stew/f_stew_gold.png",
-    "to": "items/food/i_food_stew_gold.png",
+    "to": "items/food/i_stew_gold.png",
     "action": "move",
     "keyFrom": "f_stew_gold",
-    "keyTo": "i_food_stew_gold",
+    "keyTo": "i_stew_gold",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -3613,10 +3613,10 @@
   },
   {
     "from": "items/food/stew/f_stew_iron.png",
-    "to": "items/food/i_food_stew_iron.png",
+    "to": "items/food/i_stew_iron.png",
     "action": "move",
     "keyFrom": "f_stew_iron",
-    "keyTo": "i_food_stew_iron",
+    "keyTo": "i_stew_iron",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -3624,10 +3624,10 @@
   },
   {
     "from": "items/food/stew/f_stew_pl_1.png",
-    "to": "items/food/i_food_stew_pl_1.png",
+    "to": "items/food/i_stew_pl_1.png",
     "action": "move",
     "keyFrom": "f_stew_pl_1",
-    "keyTo": "i_food_stew_pl_1",
+    "keyTo": "i_stew_pl_1",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -3637,10 +3637,10 @@
   },
   {
     "from": "items/food/stew/f_stew_pl_2.png",
-    "to": "items/food/i_food_stew_pl_2.png",
+    "to": "items/food/i_stew_pl_2.png",
     "action": "move",
     "keyFrom": "f_stew_pl_2",
-    "keyTo": "i_food_stew_pl_2",
+    "keyTo": "i_stew_pl_2",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -3650,10 +3650,10 @@
   },
   {
     "from": "items/food/stew/f_stew_pl_3.png",
-    "to": "items/food/i_food_stew_pl_3.png",
+    "to": "items/food/i_stew_pl_3.png",
     "action": "move",
     "keyFrom": "f_stew_pl_3",
-    "keyTo": "i_food_stew_pl_3",
+    "keyTo": "i_stew_pl_3",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -3663,10 +3663,10 @@
   },
   {
     "from": "items/food/veg/f_cabbage.png",
-    "to": "items/food/i_food_veg_cabbage.png",
+    "to": "items/food/i_cabbage.png",
     "action": "move",
     "keyFrom": "f_cabbage",
-    "keyTo": "i_food_veg_cabbage",
+    "keyTo": "i_cabbage",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -3674,10 +3674,10 @@
   },
   {
     "from": "items/food/veg/f_carrot.png",
-    "to": "items/food/i_food_veg_carrot.png",
+    "to": "items/food/i_carrot.png",
     "action": "move",
     "keyFrom": "f_carrot",
-    "keyTo": "i_food_veg_carrot",
+    "keyTo": "i_carrot",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -3687,10 +3687,10 @@
   },
   {
     "from": "items/food/veg/f_celery.png",
-    "to": "items/food/i_food_veg_celery.png",
+    "to": "items/food/i_celery.png",
     "action": "move",
     "keyFrom": "f_celery",
-    "keyTo": "i_food_veg_celery",
+    "keyTo": "i_celery",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -3700,10 +3700,10 @@
   },
   {
     "from": "items/food/veg/f_corn.png",
-    "to": "items/food/i_food_veg_corn.png",
+    "to": "items/food/i_corn.png",
     "action": "move",
     "keyFrom": "f_corn",
-    "keyTo": "i_food_veg_corn",
+    "keyTo": "i_corn",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -3711,10 +3711,10 @@
   },
   {
     "from": "items/food/veg/f_garlic.png",
-    "to": "items/food/i_food_veg_garlic.png",
+    "to": "items/food/i_garlic.png",
     "action": "move",
     "keyFrom": "f_garlic",
-    "keyTo": "i_food_veg_garlic",
+    "keyTo": "i_garlic",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -3724,10 +3724,10 @@
   },
   {
     "from": "items/food/veg/f_leek.png",
-    "to": "items/food/i_food_veg_leek.png",
+    "to": "items/food/i_leek.png",
     "action": "move",
     "keyFrom": "f_leek",
-    "keyTo": "i_food_veg_leek",
+    "keyTo": "i_leek",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -3737,10 +3737,10 @@
   },
   {
     "from": "items/food/veg/f_onion.png",
-    "to": "items/food/i_food_veg_onion.png",
+    "to": "items/food/i_onion.png",
     "action": "move",
     "keyFrom": "f_onion",
-    "keyTo": "i_food_veg_onion",
+    "keyTo": "i_onion",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -3750,10 +3750,10 @@
   },
   {
     "from": "items/food/veg/f_potato.png",
-    "to": "items/food/i_food_veg_potato.png",
+    "to": "items/food/i_potato.png",
     "action": "move",
     "keyFrom": "f_potato",
-    "keyTo": "i_food_veg_potato",
+    "keyTo": "i_potato",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -3763,10 +3763,10 @@
   },
   {
     "from": "items/food/veg/f_tomato.png",
-    "to": "items/food/i_food_veg_tomato.png",
+    "to": "items/food/i_tomato.png",
     "action": "move",
     "keyFrom": "f_tomato",
-    "keyTo": "i_food_veg_tomato",
+    "keyTo": "i_tomato",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -3774,10 +3774,10 @@
   },
   {
     "from": "items/food/veg/f_turnip.png",
-    "to": "items/food/i_food_veg_turnip.png",
+    "to": "items/food/i_turnip.png",
     "action": "move",
     "keyFrom": "f_turnip",
-    "keyTo": "i_food_veg_turnip",
+    "keyTo": "i_turnip",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -3785,10 +3785,10 @@
   },
   {
     "from": "items/gem/gem_amethyst.png",
-    "to": "items/gem/i_gem_amethyst.png",
+    "to": "items/gem/i_amethyst.png",
     "action": "move",
     "keyFrom": "gem_amethyst",
-    "keyTo": "i_gem_amethyst",
+    "keyTo": "i_amethyst",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -3798,10 +3798,10 @@
   },
   {
     "from": "items/gem/gem_diamond.png",
-    "to": "items/gem/i_gem_diamond.png",
+    "to": "items/gem/i_diamond.png",
     "action": "move",
     "keyFrom": "gem_diamond",
-    "keyTo": "i_gem_diamond",
+    "keyTo": "i_diamond",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -3811,10 +3811,10 @@
   },
   {
     "from": "items/gem/gem_emerald.png",
-    "to": "items/gem/i_gem_emerald.png",
+    "to": "items/gem/i_emerald.png",
     "action": "move",
     "keyFrom": "gem_emerald",
-    "keyTo": "i_gem_emerald",
+    "keyTo": "i_emerald",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -3824,10 +3824,10 @@
   },
   {
     "from": "items/gem/gem_quartz.png",
-    "to": "items/gem/i_gem_quartz.png",
+    "to": "items/gem/i_quartz.png",
     "action": "move",
     "keyFrom": "gem_quartz",
-    "keyTo": "i_gem_quartz",
+    "keyTo": "i_quartz",
     "inUse": true,
     "usedBy": [
       "data/items.json",
@@ -3838,10 +3838,10 @@
   },
   {
     "from": "items/gem/gem_ruby.png",
-    "to": "items/gem/i_gem_ruby.png",
+    "to": "items/gem/i_ruby.png",
     "action": "move",
     "keyFrom": "gem_ruby",
-    "keyTo": "i_gem_ruby",
+    "keyTo": "i_ruby",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -3851,10 +3851,10 @@
   },
   {
     "from": "items/gem/gem_sapphire.png",
-    "to": "items/gem/i_gem_sapphire.png",
+    "to": "items/gem/i_sapphire.png",
     "action": "move",
     "keyFrom": "gem_sapphire",
-    "keyTo": "i_gem_sapphire",
+    "keyTo": "i_sapphire",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -3864,10 +3864,10 @@
   },
   {
     "from": "items/gem/gem_topaz.png",
-    "to": "items/gem/i_gem_topaz.png",
+    "to": "items/gem/i_topaz.png",
     "action": "move",
     "keyFrom": "gem_topaz",
-    "keyTo": "i_gem_topaz",
+    "keyTo": "i_topaz",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -3877,10 +3877,10 @@
   },
   {
     "from": "items/gem/uncut/gem_uncut_amethyst.png",
-    "to": "items/gem/i_gem_uncut_amethyst.png",
+    "to": "items/gem/i_amethyst_uncut.png",
     "action": "move",
     "keyFrom": "gem_uncut_amethyst",
-    "keyTo": "i_gem_uncut_amethyst",
+    "keyTo": "i_amethyst_uncut",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -3890,10 +3890,10 @@
   },
   {
     "from": "items/gem/uncut/gem_uncut_diamond.png",
-    "to": "items/gem/i_gem_uncut_diamond.png",
+    "to": "items/gem/i_diamond_uncut.png",
     "action": "move",
     "keyFrom": "gem_uncut_diamond",
-    "keyTo": "i_gem_uncut_diamond",
+    "keyTo": "i_diamond_uncut",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -3903,10 +3903,10 @@
   },
   {
     "from": "items/gem/uncut/gem_uncut_emerald.png",
-    "to": "items/gem/i_gem_uncut_emerald.png",
+    "to": "items/gem/i_emerald_uncut.png",
     "action": "move",
     "keyFrom": "gem_uncut_emerald",
-    "keyTo": "i_gem_uncut_emerald",
+    "keyTo": "i_emerald_uncut",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -3916,10 +3916,10 @@
   },
   {
     "from": "items/gem/uncut/gem_uncut_ruby.png",
-    "to": "items/gem/i_gem_uncut_ruby.png",
+    "to": "items/gem/i_ruby_uncut.png",
     "action": "move",
     "keyFrom": "gem_uncut_ruby",
-    "keyTo": "i_gem_uncut_ruby",
+    "keyTo": "i_ruby_uncut",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -3929,10 +3929,10 @@
   },
   {
     "from": "items/gem/uncut/gem_uncut_sapphire.png",
-    "to": "items/gem/i_gem_uncut_sapphire.png",
+    "to": "items/gem/i_sapphire_uncut.png",
     "action": "move",
     "keyFrom": "gem_uncut_sapphire",
-    "keyTo": "i_gem_uncut_sapphire",
+    "keyTo": "i_sapphire_uncut",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -3942,10 +3942,10 @@
   },
   {
     "from": "items/gem/uncut/gem_uncut_topaz.png",
-    "to": "items/gem/i_gem_uncut_topaz.png",
+    "to": "items/gem/i_topaz_uncut.png",
     "action": "move",
     "keyFrom": "gem_uncut_topaz",
-    "keyTo": "i_gem_uncut_topaz",
+    "keyTo": "i_topaz_uncut",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -3955,21 +3955,21 @@
   },
   {
     "from": "items/goblet_silver.png",
-    "to": "items/jewelry/i_jewelry_goblet_silver.png",
+    "to": "items/material/i_goblet_silver.png",
     "action": "move",
     "keyFrom": "goblet_silver",
-    "keyTo": "i_jewelry_goblet_silver",
+    "keyTo": "i_goblet_silver",
     "inUse": false,
     "usedBy": [],
     "confidence": "check",
-    "note": "a goblet among the valuables; no better group"
+    "note": "a goblet; material is the closest group"
   },
   {
     "from": "items/herb/i_lavender.png",
-    "to": "items/herb/i_herb_lavender.png",
-    "action": "move",
+    "to": "items/herb/i_lavender.png",
+    "action": "keep",
     "keyFrom": "i_lavender",
-    "keyTo": "i_herb_lavender",
+    "keyTo": "i_lavender",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -3977,10 +3977,10 @@
   },
   {
     "from": "items/i_tongs.png",
-    "to": "items/tool/i_tool_tongs.png",
+    "to": "items/tool/i_tongs.png",
     "action": "move",
     "keyFrom": "i_tongs",
-    "keyTo": "i_tool_tongs",
+    "keyTo": "i_tongs",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -3988,10 +3988,10 @@
   },
   {
     "from": "items/ingot/color_addy.png",
-    "to": "items/ingot/i_ingot_color_addy.png",
+    "to": "items/material/i_color_addy.png",
     "action": "move",
     "keyFrom": "color_addy",
-    "keyTo": "i_ingot_color_addy",
+    "keyTo": "i_color_addy",
     "inUse": false,
     "usedBy": [],
     "confidence": "check",
@@ -3999,10 +3999,10 @@
   },
   {
     "from": "items/ingot/color_darkmetal.png",
-    "to": "items/ingot/i_ingot_color_darkmetal.png",
+    "to": "items/material/i_color_darkmetal.png",
     "action": "move",
     "keyFrom": "color_darkmetal",
-    "keyTo": "i_ingot_color_darkmetal",
+    "keyTo": "i_color_darkmetal",
     "inUse": false,
     "usedBy": [],
     "confidence": "check",
@@ -4010,10 +4010,10 @@
   },
   {
     "from": "items/ingot/color_mythril.png",
-    "to": "items/ingot/i_ingot_color_mythril.png",
+    "to": "items/material/i_color_mythril.png",
     "action": "move",
     "keyFrom": "color_mythril",
-    "keyTo": "i_ingot_color_mythril",
+    "keyTo": "i_color_mythril",
     "inUse": false,
     "usedBy": [],
     "confidence": "check",
@@ -4154,32 +4154,32 @@
   },
   {
     "from": "items/item_ash.png",
-    "to": "items/drop/i_drop_ash.png",
+    "to": "items/material/i_ash.png",
     "action": "move",
     "keyFrom": "item_ash",
-    "keyTo": "i_drop_ash",
+    "keyTo": "i_ash",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "group drop is new"
+    "confidence": "sure",
+    "note": ""
   },
   {
     "from": "items/item_feather.png",
-    "to": "items/drop/i_drop_feather.png",
+    "to": "items/material/i_feather.png",
     "action": "move",
     "keyFrom": "item_feather",
-    "keyTo": "i_drop_feather",
+    "keyTo": "i_feather",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "group drop is new"
+    "confidence": "sure",
+    "note": ""
   },
   {
     "from": "items/item_torch.png",
-    "to": "items/craft/i_craft_torch.png",
+    "to": "items/material/i_torch.png",
     "action": "move",
     "keyFrom": "item_torch",
-    "keyTo": "i_craft_torch",
+    "keyTo": "i_torch",
     "inUse": true,
     "usedBy": [
       "data/items.json",
@@ -4189,7 +4189,7 @@
       "Item_torch"
     ],
     "confidence": "check",
-    "note": "group craft (today holds clay); manifest alias Item_torch points here: keep the key, point at the new path (or retire once the data uses the new name); manifest key Item_torch writes the path as assets/items/Item_torch.png (case differs from the file)"
+    "note": "Torch (data type material); manifest alias Item_torch points here: keep the key, point at the new path (or retire once the data uses the new name); manifest key Item_torch writes the path as assets/items/Item_torch.png (case differs from the file)"
   },
   {
     "from": "items/key/item_key.png",
@@ -4231,10 +4231,10 @@
   },
   {
     "from": "items/meat/meat_beef_raw.png",
-    "to": "items/meat/i_meat_beef_raw.png",
+    "to": "items/meat/i_beef_raw.png",
     "action": "move",
     "keyFrom": "meat_beef_raw",
-    "keyTo": "i_meat_beef_raw",
+    "keyTo": "i_beef_raw",
     "inUse": true,
     "usedBy": [
       "data/items.json",
@@ -4245,10 +4245,10 @@
   },
   {
     "from": "items/meat/meat_chicken.png",
-    "to": "items/meat/i_meat_chicken.png",
+    "to": "items/meat/i_chicken.png",
     "action": "move",
     "keyFrom": "meat_chicken",
-    "keyTo": "i_meat_chicken",
+    "keyTo": "i_chicken",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -4256,10 +4256,10 @@
   },
   {
     "from": "items/meat/meat_chicken_honey.png",
-    "to": "items/meat/i_meat_chicken_honey.png",
+    "to": "items/meat/i_chicken_honey.png",
     "action": "move",
     "keyFrom": "meat_chicken_honey",
-    "keyTo": "i_meat_chicken_honey",
+    "keyTo": "i_chicken_honey",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -4267,10 +4267,10 @@
   },
   {
     "from": "items/meat/meat_chicken_raw.png",
-    "to": "items/meat/i_meat_chicken_raw.png",
+    "to": "items/meat/i_chicken_raw.png",
     "action": "move",
     "keyFrom": "meat_chicken_raw",
-    "keyTo": "i_meat_chicken_raw",
+    "keyTo": "i_chicken_raw",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -4286,15 +4286,15 @@
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
     ],
-    "confidence": "sure",
-    "note": ""
+    "confidence": "check",
+    "note": "game meat: meat kept, game alone is unclear"
   },
   {
     "from": "items/meat/meat_steak.png",
-    "to": "items/meat/i_meat_steak.png",
+    "to": "items/meat/i_steak.png",
     "action": "move",
     "keyFrom": "meat_steak",
-    "keyTo": "i_meat_steak",
+    "keyTo": "i_steak",
     "inUse": true,
     "usedBy": [
       "data/items.json",
@@ -4319,17 +4319,17 @@
   },
   {
     "from": "items/ore/ore_coal.png",
-    "to": "items/ore/i_ore_coal.png",
+    "to": "items/ore/i_coal.png",
     "action": "move",
     "keyFrom": "ore_coal",
-    "keyTo": "i_ore_coal",
+    "keyTo": "i_coal",
     "inUse": true,
     "usedBy": [
       "data/items.json",
       "src/config/registries/sprite-manifest.js"
     ],
     "confidence": "sure",
-    "note": ""
+    "note": "Coal in the data"
   },
   {
     "from": "items/ore/ore_copper.png",
@@ -5472,10 +5472,10 @@
   },
   {
     "from": "items/ring/gold/ring_gold_amethyst.png",
-    "to": "items/jewelry/i_jewelry_ring_gold_amethyst.png",
+    "to": "items/jewelry/i_ring_gold_amethyst.png",
     "action": "move",
     "keyFrom": "ring_gold_amethyst",
-    "keyTo": "i_jewelry_ring_gold_amethyst",
+    "keyTo": "i_ring_gold_amethyst",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -5483,10 +5483,10 @@
   },
   {
     "from": "items/ring/gold/ring_gold_diamond.png",
-    "to": "items/jewelry/i_jewelry_ring_gold_diamond.png",
+    "to": "items/jewelry/i_ring_gold_diamond.png",
     "action": "move",
     "keyFrom": "ring_gold_diamond",
-    "keyTo": "i_jewelry_ring_gold_diamond",
+    "keyTo": "i_ring_gold_diamond",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -5494,10 +5494,10 @@
   },
   {
     "from": "items/ring/gold/ring_gold_emerald.png",
-    "to": "items/jewelry/i_jewelry_ring_gold_emerald.png",
+    "to": "items/jewelry/i_ring_gold_emerald.png",
     "action": "move",
     "keyFrom": "ring_gold_emerald",
-    "keyTo": "i_jewelry_ring_gold_emerald",
+    "keyTo": "i_ring_gold_emerald",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -5505,10 +5505,10 @@
   },
   {
     "from": "items/ring/gold/ring_gold_ruby.png",
-    "to": "items/jewelry/i_jewelry_ring_gold_ruby.png",
+    "to": "items/jewelry/i_ring_gold_ruby.png",
     "action": "move",
     "keyFrom": "ring_gold_ruby",
-    "keyTo": "i_jewelry_ring_gold_ruby",
+    "keyTo": "i_ring_gold_ruby",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -5516,10 +5516,10 @@
   },
   {
     "from": "items/ring/gold/ring_gold_sapphire.png",
-    "to": "items/jewelry/i_jewelry_ring_gold_sapphire.png",
+    "to": "items/jewelry/i_ring_gold_sapphire.png",
     "action": "move",
     "keyFrom": "ring_gold_sapphire",
-    "keyTo": "i_jewelry_ring_gold_sapphire",
+    "keyTo": "i_ring_gold_sapphire",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -5527,10 +5527,10 @@
   },
   {
     "from": "items/ring/gold/ring_gold_topaz.png",
-    "to": "items/jewelry/i_jewelry_ring_gold_topaz.png",
+    "to": "items/jewelry/i_ring_gold_topaz.png",
     "action": "move",
     "keyFrom": "ring_gold_topaz",
-    "keyTo": "i_jewelry_ring_gold_topaz",
+    "keyTo": "i_ring_gold_topaz",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -5538,10 +5538,10 @@
   },
   {
     "from": "items/ring/ring_meat.png",
-    "to": "items/jewelry/i_jewelry_ring_meat.png",
+    "to": "items/jewelry/i_ring_meat.png",
     "action": "move",
     "keyFrom": "ring_meat",
-    "keyTo": "i_jewelry_ring_meat",
+    "keyTo": "i_ring_meat",
     "inUse": false,
     "usedBy": [],
     "confidence": "check",
@@ -5549,10 +5549,10 @@
   },
   {
     "from": "items/ring/silver/ring_silver_amethyst.png",
-    "to": "items/jewelry/i_jewelry_ring_silver_amethyst.png",
+    "to": "items/jewelry/i_ring_silver_amethyst.png",
     "action": "move",
     "keyFrom": "ring_silver_amethyst",
-    "keyTo": "i_jewelry_ring_silver_amethyst",
+    "keyTo": "i_ring_silver_amethyst",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -5560,10 +5560,10 @@
   },
   {
     "from": "items/ring/silver/ring_silver_diamond.png",
-    "to": "items/jewelry/i_jewelry_ring_silver_diamond.png",
+    "to": "items/jewelry/i_ring_silver_diamond.png",
     "action": "move",
     "keyFrom": "ring_silver_diamond",
-    "keyTo": "i_jewelry_ring_silver_diamond",
+    "keyTo": "i_ring_silver_diamond",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -5571,10 +5571,10 @@
   },
   {
     "from": "items/ring/silver/ring_silver_emerald.png",
-    "to": "items/jewelry/i_jewelry_ring_silver_emerald.png",
+    "to": "items/jewelry/i_ring_silver_emerald.png",
     "action": "move",
     "keyFrom": "ring_silver_emerald",
-    "keyTo": "i_jewelry_ring_silver_emerald",
+    "keyTo": "i_ring_silver_emerald",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -5582,10 +5582,10 @@
   },
   {
     "from": "items/ring/silver/ring_silver_ruby.png",
-    "to": "items/jewelry/i_jewelry_ring_silver_ruby.png",
+    "to": "items/jewelry/i_ring_silver_ruby.png",
     "action": "move",
     "keyFrom": "ring_silver_ruby",
-    "keyTo": "i_jewelry_ring_silver_ruby",
+    "keyTo": "i_ring_silver_ruby",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -5593,10 +5593,10 @@
   },
   {
     "from": "items/ring/silver/ring_silver_sapphire.png",
-    "to": "items/jewelry/i_jewelry_ring_silver_sapphire.png",
+    "to": "items/jewelry/i_ring_silver_sapphire.png",
     "action": "move",
     "keyFrom": "ring_silver_sapphire",
-    "keyTo": "i_jewelry_ring_silver_sapphire",
+    "keyTo": "i_ring_silver_sapphire",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -5604,10 +5604,10 @@
   },
   {
     "from": "items/ring/silver/ring_silver_topaz.png",
-    "to": "items/jewelry/i_jewelry_ring_silver_topaz.png",
+    "to": "items/jewelry/i_ring_silver_topaz.png",
     "action": "move",
     "keyFrom": "ring_silver_topaz",
-    "keyTo": "i_jewelry_ring_silver_topaz",
+    "keyTo": "i_ring_silver_topaz",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -5615,36 +5615,36 @@
   },
   {
     "from": "items/scale/item_scale_blue.png",
-    "to": "items/drop/i_drop_scale_blue.png",
+    "to": "items/material/i_scale_blue.png",
     "action": "move",
     "keyFrom": "item_scale_blue",
-    "keyTo": "i_drop_scale_blue",
+    "keyTo": "i_scale_blue",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "group drop is new"
+    "confidence": "sure",
+    "note": ""
   },
   {
     "from": "items/scale/item_scale_grn.png",
-    "to": "items/drop/i_drop_scale_green.png",
+    "to": "items/material/i_scale_green.png",
     "action": "move",
     "keyFrom": "item_scale_grn",
-    "keyTo": "i_drop_scale_green",
+    "keyTo": "i_scale_green",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "group drop is new; colour spelled out: grn=green"
+    "confidence": "sure",
+    "note": "colour spelled out: grn=green; colour spelled out: grn=green"
   },
   {
     "from": "items/scale/item_scale_red.png",
-    "to": "items/drop/i_drop_scale_red.png",
+    "to": "items/material/i_scale_red.png",
     "action": "move",
     "keyFrom": "item_scale_red",
-    "keyTo": "i_drop_scale_red",
+    "keyTo": "i_scale_red",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "group drop is new"
+    "confidence": "sure",
+    "note": ""
   },
   {
     "from": "items/seeds/i_seed4.png",
@@ -5692,8 +5692,8 @@
       "data/items.json",
       "src/config/registries/sprite-manifest.js"
     ],
-    "confidence": "check",
-    "note": "wheat taken from the item that uses it (item_wheat_seed)"
+    "confidence": "sure",
+    "note": "Wheat Seed in the data"
   },
   {
     "from": "items/seeds/i_seeds_apple.png",
@@ -5843,10 +5843,10 @@
   },
   {
     "from": "items/seeds/i_shoot_pineapple.png",
-    "to": "items/seed/i_seed_shoot_pineapple.png",
+    "to": "items/seed/i_shoot_pineapple.png",
     "action": "move",
     "keyFrom": "i_shoot_pineapple",
-    "keyTo": "i_seed_shoot_pineapple",
+    "keyTo": "i_shoot_pineapple",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -5854,10 +5854,10 @@
   },
   {
     "from": "items/tool/chisel/t_chisel.png",
-    "to": "items/tool/i_tool_chisel.png",
+    "to": "items/tool/i_chisel.png",
     "action": "move",
     "keyFrom": "t_chisel",
-    "keyTo": "i_tool_chisel",
+    "keyTo": "i_chisel",
     "inUse": false,
     "usedBy": [],
     "confidence": "check",
@@ -5865,10 +5865,10 @@
   },
   {
     "from": "items/tool/chisel/tool_chisel_addy.png",
-    "to": "items/tool/i_tool_chisel_addy.png",
+    "to": "items/tool/i_chisel_addy.png",
     "action": "move",
     "keyFrom": "tool_chisel_addy",
-    "keyTo": "i_tool_chisel_addy",
+    "keyTo": "i_chisel_addy",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -5878,10 +5878,10 @@
   },
   {
     "from": "items/tool/chisel/tool_chisel_copper.png",
-    "to": "items/tool/i_tool_chisel_copper.png",
+    "to": "items/tool/i_chisel_copper.png",
     "action": "move",
     "keyFrom": "tool_chisel_copper",
-    "keyTo": "i_tool_chisel_copper",
+    "keyTo": "i_chisel_copper",
     "inUse": true,
     "usedBy": [
       "data/items.json",
@@ -5895,10 +5895,10 @@
   },
   {
     "from": "items/tool/chisel/tool_chisel_dark.png",
-    "to": "items/tool/i_tool_chisel_dark.png",
+    "to": "items/tool/i_chisel_dark.png",
     "action": "move",
     "keyFrom": "tool_chisel_dark",
-    "keyTo": "i_tool_chisel_dark",
+    "keyTo": "i_chisel_dark",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -5908,10 +5908,10 @@
   },
   {
     "from": "items/tool/chisel/tool_chisel_iron.png",
-    "to": "items/tool/i_tool_chisel_iron.png",
+    "to": "items/tool/i_chisel_iron.png",
     "action": "move",
     "keyFrom": "tool_chisel_iron",
-    "keyTo": "i_tool_chisel_iron",
+    "keyTo": "i_chisel_iron",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -5921,10 +5921,10 @@
   },
   {
     "from": "items/tool/chisel/tool_chisel_myth.png",
-    "to": "items/tool/i_tool_chisel_myth.png",
+    "to": "items/tool/i_chisel_myth.png",
     "action": "move",
     "keyFrom": "tool_chisel_myth",
-    "keyTo": "i_tool_chisel_myth",
+    "keyTo": "i_chisel_myth",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -5934,10 +5934,10 @@
   },
   {
     "from": "items/tool/pick/tool_pick_addy.png",
-    "to": "items/tool/i_tool_pick_addy.png",
+    "to": "items/tool/i_pick_addy.png",
     "action": "move",
     "keyFrom": "tool_pick_addy",
-    "keyTo": "i_tool_pick_addy",
+    "keyTo": "i_pick_addy",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -5951,10 +5951,10 @@
   },
   {
     "from": "items/tool/pick/tool_pick_copper.png",
-    "to": "items/tool/i_tool_pick_copper.png",
+    "to": "items/tool/i_pick_copper.png",
     "action": "move",
     "keyFrom": "tool_pick_copper",
-    "keyTo": "i_tool_pick_copper",
+    "keyTo": "i_pick_copper",
     "inUse": true,
     "usedBy": [
       "data/items.json",
@@ -5972,10 +5972,10 @@
   },
   {
     "from": "items/tool/pick/tool_pick_dark.png",
-    "to": "items/tool/i_tool_pick_dark.png",
+    "to": "items/tool/i_pick_dark.png",
     "action": "move",
     "keyFrom": "tool_pick_dark",
-    "keyTo": "i_tool_pick_dark",
+    "keyTo": "i_pick_dark",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -5989,10 +5989,10 @@
   },
   {
     "from": "items/tool/pick/tool_pick_iron.png",
-    "to": "items/tool/i_tool_pick_iron.png",
+    "to": "items/tool/i_pick_iron.png",
     "action": "move",
     "keyFrom": "tool_pick_iron",
-    "keyTo": "i_tool_pick_iron",
+    "keyTo": "i_pick_iron",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -6006,10 +6006,10 @@
   },
   {
     "from": "items/tool/pick/tool_pick_myth.png",
-    "to": "items/tool/i_tool_pick_myth.png",
+    "to": "items/tool/i_pick_myth.png",
     "action": "move",
     "keyFrom": "tool_pick_myth",
-    "keyTo": "i_tool_pick_myth",
+    "keyTo": "i_pick_myth",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -6023,10 +6023,10 @@
   },
   {
     "from": "items/tool/rod/tool_rod_wood.png",
-    "to": "items/tool/i_tool_rod_wood.png",
+    "to": "items/tool/i_rod_wood.png",
     "action": "move",
     "keyFrom": "tool_rod_wood",
-    "keyTo": "i_tool_rod_wood",
+    "keyTo": "i_rod_wood",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -6053,10 +6053,10 @@
   },
   {
     "from": "items/tool/woodaxe/tool_woodaxe_addy.png",
-    "to": "items/tool/i_tool_woodaxe_addy.png",
+    "to": "items/tool/i_woodaxe_addy.png",
     "action": "move",
     "keyFrom": "tool_woodaxe_addy",
-    "keyTo": "i_tool_woodaxe_addy",
+    "keyTo": "i_woodaxe_addy",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -6066,10 +6066,10 @@
   },
   {
     "from": "items/tool/woodaxe/tool_woodaxe_copper.png",
-    "to": "items/tool/i_tool_woodaxe_copper.png",
+    "to": "items/tool/i_woodaxe_copper.png",
     "action": "move",
     "keyFrom": "tool_woodaxe_copper",
-    "keyTo": "i_tool_woodaxe_copper",
+    "keyTo": "i_woodaxe_copper",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -6084,10 +6084,10 @@
   },
   {
     "from": "items/tool/woodaxe/tool_woodaxe_dark.png",
-    "to": "items/tool/i_tool_woodaxe_dark.png",
+    "to": "items/tool/i_woodaxe_dark.png",
     "action": "move",
     "keyFrom": "tool_woodaxe_dark",
-    "keyTo": "i_tool_woodaxe_dark",
+    "keyTo": "i_woodaxe_dark",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -6097,10 +6097,10 @@
   },
   {
     "from": "items/tool/woodaxe/tool_woodaxe_iron.png",
-    "to": "items/tool/i_tool_woodaxe_iron.png",
+    "to": "items/tool/i_woodaxe_iron.png",
     "action": "move",
     "keyFrom": "tool_woodaxe_iron",
-    "keyTo": "i_tool_woodaxe_iron",
+    "keyTo": "i_woodaxe_iron",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -6110,10 +6110,10 @@
   },
   {
     "from": "items/tool/woodaxe/tool_woodaxe_myth.png",
-    "to": "items/tool/i_tool_woodaxe_myth.png",
+    "to": "items/tool/i_woodaxe_myth.png",
     "action": "move",
     "keyFrom": "tool_woodaxe_myth",
-    "keyTo": "i_tool_woodaxe_myth",
+    "keyTo": "i_woodaxe_myth",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -6123,10 +6123,10 @@
   },
   {
     "from": "items/weapon/axe/w_axe_copper.png",
-    "to": "items/weapon/i_weapon_axe_copper.png",
+    "to": "items/weapon/i_battleaxe_copper.png",
     "action": "move",
     "keyFrom": "w_axe_copper",
-    "keyTo": "i_weapon_axe_copper",
+    "keyTo": "i_battleaxe_copper",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js",
@@ -6136,14 +6136,14 @@
       "battleaxe_copper"
     ],
     "confidence": "check",
-    "note": "manifest alias battleaxe_copper points here: keep the key, point at the new path (or retire once the data uses the new name); key routing: battleaxe_copper reaches this file through AssetManager (HERO_MAP, a prefix rule or legacy path rewriting), not through its manifest path assets/sprites/implemented/items/equipment/battleaxe/battleaxe_copper.png"
+    "note": "battleaxe from the id the game uses (battleaxe_copper); axe alone would sit beside woodaxe; manifest alias battleaxe_copper points here: keep the key, point at the new path (or retire once the data uses the new name); key routing: battleaxe_copper reaches this file through AssetManager (HERO_MAP, a prefix rule or legacy path rewriting), not through its manifest path assets/sprites/implemented/items/equipment/battleaxe/battleaxe_copper.png"
   },
   {
     "from": "items/weapon/axe/w_axe_iron.png",
-    "to": "items/weapon/i_weapon_axe_iron.png",
+    "to": "items/weapon/i_battleaxe_iron.png",
     "action": "move",
     "keyFrom": "w_axe_iron",
-    "keyTo": "i_weapon_axe_iron",
+    "keyTo": "i_battleaxe_iron",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -6152,14 +6152,14 @@
       "battleaxe_iron"
     ],
     "confidence": "check",
-    "note": "manifest alias battleaxe_iron points here: keep the key, point at the new path (or retire once the data uses the new name); key routing: battleaxe_iron reaches this file through AssetManager (HERO_MAP, a prefix rule or legacy path rewriting), not through its manifest path assets/sprites/implemented/items/equipment/battleaxe/battleaxe_iron.png"
+    "note": "battleaxe from the id the game uses (battleaxe_iron); manifest alias battleaxe_iron points here: keep the key, point at the new path (or retire once the data uses the new name); key routing: battleaxe_iron reaches this file through AssetManager (HERO_MAP, a prefix rule or legacy path rewriting), not through its manifest path assets/sprites/implemented/items/equipment/battleaxe/battleaxe_iron.png"
   },
   {
     "from": "items/weapon/sword/w_sword_copper.png",
-    "to": "items/weapon/i_weapon_sword_copper.png",
+    "to": "items/weapon/i_longsword_copper.png",
     "action": "move",
     "keyFrom": "w_sword_copper",
-    "keyTo": "i_weapon_sword_copper",
+    "keyTo": "i_longsword_copper",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js",
@@ -6169,14 +6169,14 @@
       "longsword_copper"
     ],
     "confidence": "check",
-    "note": "manifest alias longsword_copper points here: keep the key, point at the new path (or retire once the data uses the new name); key routing: longsword_copper reaches this file through AssetManager (HERO_MAP, a prefix rule or legacy path rewriting), not through its manifest path assets/sprites/implemented/items/equipment/longsword/longsword_copper.png"
+    "note": "longsword from the id the game uses (longsword_copper); manifest alias longsword_copper points here: keep the key, point at the new path (or retire once the data uses the new name); key routing: longsword_copper reaches this file through AssetManager (HERO_MAP, a prefix rule or legacy path rewriting), not through its manifest path assets/sprites/implemented/items/equipment/longsword/longsword_copper.png"
   },
   {
     "from": "items/weapon/sword/w_sword_iron.png",
-    "to": "items/weapon/i_weapon_sword_iron.png",
+    "to": "items/weapon/i_longsword_iron.png",
     "action": "move",
     "keyFrom": "w_sword_iron",
-    "keyTo": "i_weapon_sword_iron",
+    "keyTo": "i_longsword_iron",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -6185,7 +6185,7 @@
       "longsword_iron"
     ],
     "confidence": "check",
-    "note": "manifest alias longsword_iron points here: keep the key, point at the new path (or retire once the data uses the new name); key routing: longsword_iron reaches this file through AssetManager (HERO_MAP, a prefix rule or legacy path rewriting), not through its manifest path assets/sprites/implemented/items/equipment/longsword/longsword_iron.png"
+    "note": "longsword from the id the game uses (longsword_iron); manifest alias longsword_iron points here: keep the key, point at the new path (or retire once the data uses the new name); key routing: longsword_iron reaches this file through AssetManager (HERO_MAP, a prefix rule or legacy path rewriting), not through its manifest path assets/sprites/implemented/items/equipment/longsword/longsword_iron.png"
   },
   {
     "from": "items/wood/bird_nest.png",
@@ -6200,10 +6200,10 @@
   },
   {
     "from": "items/wood/seedling_birch.png",
-    "to": "items/wood/i_wood_seedling_birch.png",
+    "to": "items/seed/i_seedling_birch.png",
     "action": "move",
     "keyFrom": "seedling_birch",
-    "keyTo": "i_wood_seedling_birch",
+    "keyTo": "i_seedling_birch",
     "inUse": true,
     "usedBy": [
       "data/items.json",
@@ -6214,10 +6214,10 @@
   },
   {
     "from": "items/wood/seedling_cedar.png",
-    "to": "items/wood/i_wood_seedling_cedar.png",
+    "to": "items/seed/i_seedling_cedar.png",
     "action": "move",
     "keyFrom": "seedling_cedar",
-    "keyTo": "i_wood_seedling_cedar",
+    "keyTo": "i_seedling_cedar",
     "inUse": true,
     "usedBy": [
       "data/items.json",
@@ -6228,10 +6228,10 @@
   },
   {
     "from": "items/wood/seedling_dark.png",
-    "to": "items/wood/i_wood_seedling_dark.png",
+    "to": "items/seed/i_seedling_dark.png",
     "action": "move",
     "keyFrom": "seedling_dark",
-    "keyTo": "i_wood_seedling_dark",
+    "keyTo": "i_seedling_dark",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -6241,10 +6241,10 @@
   },
   {
     "from": "items/wood/seedling_ebony.png",
-    "to": "items/wood/i_wood_seedling_ebony.png",
+    "to": "items/seed/i_seedling_ebony.png",
     "action": "move",
     "keyFrom": "seedling_ebony",
-    "keyTo": "i_wood_seedling_ebony",
+    "keyTo": "i_seedling_ebony",
     "inUse": true,
     "usedBy": [
       "data/items.json",
@@ -6255,10 +6255,10 @@
   },
   {
     "from": "items/wood/seedling_fir.png",
-    "to": "items/wood/i_wood_seedling_fir.png",
+    "to": "items/seed/i_seedling_fir.png",
     "action": "move",
     "keyFrom": "seedling_fir",
-    "keyTo": "i_wood_seedling_fir",
+    "keyTo": "i_seedling_fir",
     "inUse": true,
     "usedBy": [
       "data/items.json",
@@ -6269,10 +6269,10 @@
   },
   {
     "from": "items/wood/seedling_mahogany.png",
-    "to": "items/wood/i_wood_seedling_mahogany.png",
+    "to": "items/seed/i_seedling_mahogany.png",
     "action": "move",
     "keyFrom": "seedling_mahogany",
-    "keyTo": "i_wood_seedling_mahogany",
+    "keyTo": "i_seedling_mahogany",
     "inUse": true,
     "usedBy": [
       "data/items.json",
@@ -6283,10 +6283,10 @@
   },
   {
     "from": "items/wood/seedling_maple.png",
-    "to": "items/wood/i_wood_seedling_maple.png",
+    "to": "items/seed/i_seedling_maple.png",
     "action": "move",
     "keyFrom": "seedling_maple",
-    "keyTo": "i_wood_seedling_maple",
+    "keyTo": "i_seedling_maple",
     "inUse": true,
     "usedBy": [
       "data/items.json",
@@ -6297,10 +6297,10 @@
   },
   {
     "from": "items/wood/seedling_oak.png",
-    "to": "items/wood/i_wood_seedling_oak.png",
+    "to": "items/seed/i_seedling_oak.png",
     "action": "move",
     "keyFrom": "seedling_oak",
-    "keyTo": "i_wood_seedling_oak",
+    "keyTo": "i_seedling_oak",
     "inUse": true,
     "usedBy": [
       "data/items.json",
@@ -6340,10 +6340,10 @@
   },
   {
     "from": "items/wood/wood_charcoal.png",
-    "to": "items/wood/i_wood_charcoal.png",
+    "to": "items/wood/i_charcoal.png",
     "action": "move",
     "keyFrom": "wood_charcoal",
-    "keyTo": "i_wood_charcoal",
+    "keyTo": "i_charcoal",
     "inUse": true,
     "usedBy": [
       "data/items.json",
@@ -6351,7 +6351,7 @@
       "src/tests/fixtures/fixtureItems.js"
     ],
     "confidence": "sure",
-    "note": ""
+    "note": "Charcoal in the data"
   },
   {
     "from": "items/wood/wood_drift.png",
@@ -6450,14 +6450,14 @@
   },
   {
     "from": "playmat/props/prop_base.pxo",
-    "to": null,
-    "action": "delete",
+    "to": "playmat/props/prop_base.pxo",
+    "action": "keep",
     "keyFrom": null,
     "keyTo": null,
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "Pixelorama work file, not art the game loads"
+    "confidence": "sure",
+    "note": "Pixelorama work file, kept where it is (owner 2026-10-16)"
   },
   {
     "from": "playmat/props/prop_bush.png",
@@ -7151,10 +7151,10 @@
   },
   {
     "from": "swordfish.png",
-    "to": "items/fish/i_fish_swordfish.png",
+    "to": "items/fish/i_swordfish.png",
     "action": "move",
     "keyFrom": "swordfish",
-    "keyTo": "i_fish_swordfish",
+    "keyTo": "i_swordfish",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -7162,10 +7162,10 @@
   },
   {
     "from": "tokens/alchemy/token_alembic_small.png",
-    "to": "tokens/alchemy/t_alchemy_alembic_small.png",
+    "to": "tokens/alchemy/t_alembic_small.png",
     "action": "move",
     "keyFrom": "token_alembic_small",
-    "keyTo": "t_alchemy_alembic_small",
+    "keyTo": "t_alembic_small",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -7243,10 +7243,10 @@
   },
   {
     "from": "tokens/cook/token_campfire.png",
-    "to": "tokens/cook/t_cook_campfire.png",
+    "to": "tokens/cook/t_campfire.png",
     "action": "move",
     "keyFrom": "token_campfire",
-    "keyTo": "t_cook_campfire",
+    "keyTo": "t_campfire",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -7260,10 +7260,10 @@
   },
   {
     "from": "tokens/cook/token_cooking_pot.png",
-    "to": "tokens/cook/t_cook_cooking_pot.png",
+    "to": "tokens/cook/t_cooking_pot.png",
     "action": "move",
     "keyFrom": "token_cooking_pot",
-    "keyTo": "t_cook_cooking_pot",
+    "keyTo": "t_cooking_pot",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -7277,10 +7277,10 @@
   },
   {
     "from": "tokens/cook/token_kitchen_cozy.png",
-    "to": "tokens/cook/t_cook_kitchen_cozy.png",
+    "to": "tokens/cook/t_kitchen_cozy.png",
     "action": "move",
     "keyFrom": "token_kitchen_cozy",
-    "keyTo": "t_cook_kitchen_cozy",
+    "keyTo": "t_kitchen_cozy",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -7291,10 +7291,10 @@
   },
   {
     "from": "tokens/cook/token_windmill.png",
-    "to": "tokens/cook/t_cook_windmill.png",
+    "to": "tokens/cook/t_windmill.png",
     "action": "move",
     "keyFrom": "token_windmill",
-    "keyTo": "t_cook_windmill",
+    "keyTo": "t_windmill",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -7307,24 +7307,24 @@
   },
   {
     "from": "tokens/craft/token_crafting_kiln.png",
-    "to": "tokens/craft/t_craft_crafting_kiln.png",
+    "to": "tokens/craft/t_kiln.png",
     "action": "move",
     "keyFrom": "token_crafting_kiln",
-    "keyTo": "t_craft_crafting_kiln",
+    "keyTo": "t_kiln",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
       "src/config/registries/sprite-manifest.js"
     ],
-    "confidence": "sure",
-    "note": ""
+    "confidence": "check",
+    "note": "crafting is a skill word; data name Ceramics Kiln"
   },
   {
     "from": "tokens/craft/token_deposit_clay.png",
-    "to": "tokens/craft/t_craft_deposit_clay.png",
+    "to": "tokens/craft/t_deposit_clay.png",
     "action": "move",
     "keyFrom": "token_deposit_clay",
-    "keyTo": "t_craft_deposit_clay",
+    "keyTo": "t_deposit_clay",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -7335,10 +7335,10 @@
   },
   {
     "from": "tokens/craft/token_sawmill.png",
-    "to": "tokens/craft/t_craft_sawmill.png",
+    "to": "tokens/craft/t_sawmill.png",
     "action": "move",
     "keyFrom": "token_sawmill",
-    "keyTo": "t_craft_sawmill",
+    "keyTo": "t_sawmill",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -7346,10 +7346,10 @@
   },
   {
     "from": "tokens/craft/token_shears.png",
-    "to": "tokens/craft/t_craft_shears.png",
+    "to": "tokens/craft/t_shears.png",
     "action": "move",
     "keyFrom": "token_shears",
-    "keyTo": "t_craft_shears",
+    "keyTo": "t_shears",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -7357,10 +7357,10 @@
   },
   {
     "from": "tokens/craft/token_workbench.png",
-    "to": "tokens/craft/t_craft_workbench.png",
+    "to": "tokens/craft/t_workbench.png",
     "action": "move",
     "keyFrom": "token_workbench",
-    "keyTo": "t_craft_workbench",
+    "keyTo": "t_workbench",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -7376,10 +7376,10 @@
   },
   {
     "from": "tokens/crime/Token_crowbar.png",
-    "to": "tokens/crime/t_crime_crowbar.png",
+    "to": "tokens/crime/t_crowbar.png",
     "action": "move",
     "keyFrom": "Token_crowbar",
-    "keyTo": "t_crime_crowbar",
+    "keyTo": "t_crowbar",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -7398,10 +7398,10 @@
   },
   {
     "from": "tokens/crime/token_crowbar_addy.png",
-    "to": "tokens/crime/t_crime_crowbar_addy.png",
+    "to": "tokens/crime/t_crowbar_addy.png",
     "action": "move",
     "keyFrom": "token_crowbar_addy",
-    "keyTo": "t_crime_crowbar_addy",
+    "keyTo": "t_crowbar_addy",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -7409,10 +7409,10 @@
   },
   {
     "from": "tokens/crime/token_crowbar_copper.png",
-    "to": "tokens/crime/t_crime_crowbar_copper.png",
+    "to": "tokens/crime/t_crowbar_copper.png",
     "action": "move",
     "keyFrom": "token_crowbar_copper",
-    "keyTo": "t_crime_crowbar_copper",
+    "keyTo": "t_crowbar_copper",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -7420,10 +7420,10 @@
   },
   {
     "from": "tokens/crime/token_crowbar_dark.png",
-    "to": "tokens/crime/t_crime_crowbar_dark.png",
+    "to": "tokens/crime/t_crowbar_dark.png",
     "action": "move",
     "keyFrom": "token_crowbar_dark",
-    "keyTo": "t_crime_crowbar_dark",
+    "keyTo": "t_crowbar_dark",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -7431,10 +7431,10 @@
   },
   {
     "from": "tokens/crime/token_crowbar_iron.png",
-    "to": "tokens/crime/t_crime_crowbar_iron.png",
+    "to": "tokens/crime/t_crowbar_iron.png",
     "action": "move",
     "keyFrom": "token_crowbar_iron",
-    "keyTo": "t_crime_crowbar_iron",
+    "keyTo": "t_crowbar_iron",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -7442,10 +7442,10 @@
   },
   {
     "from": "tokens/crime/token_crowbar_myth.png",
-    "to": "tokens/crime/t_crime_crowbar_myth.png",
+    "to": "tokens/crime/t_crowbar_myth.png",
     "action": "move",
     "keyFrom": "token_crowbar_myth",
-    "keyTo": "t_crime_crowbar_myth",
+    "keyTo": "t_crowbar_myth",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -7453,10 +7453,10 @@
   },
   {
     "from": "tokens/crime/token_lockpick.png",
-    "to": "tokens/crime/t_crime_lockpick.png",
+    "to": "tokens/crime/t_lockpick.png",
     "action": "move",
     "keyFrom": "token_lockpick",
-    "keyTo": "t_crime_lockpick",
+    "keyTo": "t_lockpick",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -7464,10 +7464,10 @@
   },
   {
     "from": "tokens/crime/token_lockpick_addy.png",
-    "to": "tokens/crime/t_crime_lockpick_addy.png",
+    "to": "tokens/crime/t_lockpick_addy.png",
     "action": "move",
     "keyFrom": "token_lockpick_addy",
-    "keyTo": "t_crime_lockpick_addy",
+    "keyTo": "t_lockpick_addy",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -7475,10 +7475,10 @@
   },
   {
     "from": "tokens/crime/token_lockpick_copper.png",
-    "to": "tokens/crime/t_crime_lockpick_copper.png",
+    "to": "tokens/crime/t_lockpick_copper.png",
     "action": "move",
     "keyFrom": "token_lockpick_copper",
-    "keyTo": "t_crime_lockpick_copper",
+    "keyTo": "t_lockpick_copper",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -7486,10 +7486,10 @@
   },
   {
     "from": "tokens/crime/token_lockpick_dark.png",
-    "to": "tokens/crime/t_crime_lockpick_dark.png",
+    "to": "tokens/crime/t_lockpick_dark.png",
     "action": "move",
     "keyFrom": "token_lockpick_dark",
-    "keyTo": "t_crime_lockpick_dark",
+    "keyTo": "t_lockpick_dark",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -7497,10 +7497,10 @@
   },
   {
     "from": "tokens/crime/token_lockpick_iron.png",
-    "to": "tokens/crime/t_crime_lockpick_iron.png",
+    "to": "tokens/crime/t_lockpick_iron.png",
     "action": "move",
     "keyFrom": "token_lockpick_iron",
-    "keyTo": "t_crime_lockpick_iron",
+    "keyTo": "t_lockpick_iron",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -7508,10 +7508,10 @@
   },
   {
     "from": "tokens/crime/token_lockpick_myth.png",
-    "to": "tokens/crime/t_crime_lockpick_myth.png",
+    "to": "tokens/crime/t_lockpick_myth.png",
     "action": "move",
     "keyFrom": "token_lockpick_myth",
-    "keyTo": "t_crime_lockpick_myth",
+    "keyTo": "t_lockpick_myth",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -7526,14 +7526,14 @@
     "inUse": false,
     "usedBy": [],
     "confidence": "check",
-    "note": "no type word; the only enchant Token"
+    "note": "no thing word; the only enchant Token"
   },
   {
     "from": "tokens/fish/token_coast.png",
-    "to": "tokens/fish/t_fish_coast.png",
+    "to": "tokens/fish/t_coast.png",
     "action": "move",
     "keyFrom": "token_coast",
-    "keyTo": "t_fish_coast",
+    "keyTo": "t_coast",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -7555,10 +7555,10 @@
   },
   {
     "from": "tokens/fish/token_coast_shrimp.png",
-    "to": "tokens/fish/t_fish_coast_shrimp.png",
+    "to": "tokens/fish/t_coast_shrimp.png",
     "action": "move",
     "keyFrom": "token_coast_shrimp",
-    "keyTo": "t_fish_coast_shrimp",
+    "keyTo": "t_coast_shrimp",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -7569,10 +7569,10 @@
   },
   {
     "from": "tokens/fish/token_lake_large.png",
-    "to": "tokens/fish/t_fish_lake_large.png",
+    "to": "tokens/fish/t_lake_large.png",
     "action": "move",
     "keyFrom": "token_lake_large",
-    "keyTo": "t_fish_lake_large",
+    "keyTo": "t_lake_large",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -7580,10 +7580,10 @@
   },
   {
     "from": "tokens/fish/token_lake_mountain.png",
-    "to": "tokens/fish/t_fish_lake_mountain.png",
+    "to": "tokens/fish/t_lake_mountain.png",
     "action": "move",
     "keyFrom": "token_lake_mountain",
-    "keyTo": "t_fish_lake_mountain",
+    "keyTo": "t_lake_mountain",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -7591,10 +7591,10 @@
   },
   {
     "from": "tokens/fish/token_lake_small.png",
-    "to": "tokens/fish/t_fish_lake_small.png",
+    "to": "tokens/fish/t_lake_small.png",
     "action": "move",
     "keyFrom": "token_lake_small",
-    "keyTo": "t_fish_lake_small",
+    "keyTo": "t_lake_small",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -7602,10 +7602,10 @@
   },
   {
     "from": "tokens/fish/token_puddle.png",
-    "to": "tokens/fish/t_fish_puddle.png",
+    "to": "tokens/fish/t_puddle.png",
     "action": "move",
     "keyFrom": "token_puddle",
-    "keyTo": "t_fish_puddle",
+    "keyTo": "t_puddle",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -7620,7 +7620,7 @@
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
-    "note": ""
+    "note": "fishing spot: fish is part of the name"
   },
   {
     "from": "tokens/foundation/token_foundation_basalt.png",
@@ -7691,10 +7691,10 @@
   },
   {
     "from": "tokens/leader/token_banner_red.png",
-    "to": "tokens/leader/t_leader_banner_red.png",
+    "to": "tokens/leader/t_banner_red.png",
     "action": "move",
     "keyFrom": "token_banner_red",
-    "keyTo": "t_leader_banner_red",
+    "keyTo": "t_banner_red",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -7984,10 +7984,10 @@
   },
   {
     "from": "tokens/market/token_lemonade_stand.png",
-    "to": "tokens/market/t_market_lemonade_stand.png",
+    "to": "tokens/market/t_lemonade_stand.png",
     "action": "move",
     "keyFrom": "token_lemonade_stand",
-    "keyTo": "t_market_lemonade_stand",
+    "keyTo": "t_lemonade_stand",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -8185,10 +8185,10 @@
   },
   {
     "from": "tokens/mine/token_minecart_addy.png",
-    "to": "tokens/mine/t_mine_minecart_addy.png",
+    "to": "tokens/mine/t_minecart_addy.png",
     "action": "move",
     "keyFrom": "token_minecart_addy",
-    "keyTo": "t_mine_minecart_addy",
+    "keyTo": "t_minecart_addy",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -8196,10 +8196,10 @@
   },
   {
     "from": "tokens/mine/token_minecart_base.png",
-    "to": "tokens/mine/t_mine_minecart_base.png",
+    "to": "tokens/mine/t_minecart_base.png",
     "action": "move",
     "keyFrom": "token_minecart_base",
-    "keyTo": "t_mine_minecart_base",
+    "keyTo": "t_minecart_base",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -8210,10 +8210,10 @@
   },
   {
     "from": "tokens/mine/token_minecart_coal.png",
-    "to": "tokens/mine/t_mine_minecart_coal.png",
+    "to": "tokens/mine/t_minecart_coal.png",
     "action": "move",
     "keyFrom": "token_minecart_coal",
-    "keyTo": "t_mine_minecart_coal",
+    "keyTo": "t_minecart_coal",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -8224,10 +8224,10 @@
   },
   {
     "from": "tokens/mine/token_minecart_copper.png",
-    "to": "tokens/mine/t_mine_minecart_copper.png",
+    "to": "tokens/mine/t_minecart_copper.png",
     "action": "move",
     "keyFrom": "token_minecart_copper",
-    "keyTo": "t_mine_minecart_copper",
+    "keyTo": "t_minecart_copper",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -8238,10 +8238,10 @@
   },
   {
     "from": "tokens/mine/token_minecart_dark.png",
-    "to": "tokens/mine/t_mine_minecart_dark.png",
+    "to": "tokens/mine/t_minecart_dark.png",
     "action": "move",
     "keyFrom": "token_minecart_dark",
-    "keyTo": "t_mine_minecart_dark",
+    "keyTo": "t_minecart_dark",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -8249,10 +8249,10 @@
   },
   {
     "from": "tokens/mine/token_minecart_gold.png",
-    "to": "tokens/mine/t_mine_minecart_gold.png",
+    "to": "tokens/mine/t_minecart_gold.png",
     "action": "move",
     "keyFrom": "token_minecart_gold",
-    "keyTo": "t_mine_minecart_gold",
+    "keyTo": "t_minecart_gold",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -8260,10 +8260,10 @@
   },
   {
     "from": "tokens/mine/token_minecart_iron.png",
-    "to": "tokens/mine/t_mine_minecart_iron.png",
+    "to": "tokens/mine/t_minecart_iron.png",
     "action": "move",
     "keyFrom": "token_minecart_iron",
-    "keyTo": "t_mine_minecart_iron",
+    "keyTo": "t_minecart_iron",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -8271,10 +8271,10 @@
   },
   {
     "from": "tokens/mine/token_minecart_myth.png",
-    "to": "tokens/mine/t_mine_minecart_myth.png",
+    "to": "tokens/mine/t_minecart_myth.png",
     "action": "move",
     "keyFrom": "token_minecart_myth",
-    "keyTo": "t_mine_minecart_myth",
+    "keyTo": "t_minecart_myth",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -8282,10 +8282,10 @@
   },
   {
     "from": "tokens/mine/token_minecart_silver.png",
-    "to": "tokens/mine/t_mine_minecart_silver.png",
+    "to": "tokens/mine/t_minecart_silver.png",
     "action": "move",
     "keyFrom": "token_minecart_silver",
-    "keyTo": "t_mine_minecart_silver",
+    "keyTo": "t_minecart_silver",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -8293,10 +8293,10 @@
   },
   {
     "from": "tokens/mine/token_mineshaft_addy.png",
-    "to": "tokens/mine/t_mine_mineshaft_addy.png",
+    "to": "tokens/mine/t_mineshaft_addy.png",
     "action": "move",
     "keyFrom": "token_mineshaft_addy",
-    "keyTo": "t_mine_mineshaft_addy",
+    "keyTo": "t_mineshaft_addy",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -8304,10 +8304,10 @@
   },
   {
     "from": "tokens/mine/token_mineshaft_copper.png",
-    "to": "tokens/mine/t_mine_mineshaft_copper.png",
+    "to": "tokens/mine/t_mineshaft_copper.png",
     "action": "move",
     "keyFrom": "token_mineshaft_copper",
-    "keyTo": "t_mine_mineshaft_copper",
+    "keyTo": "t_mineshaft_copper",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -8318,10 +8318,10 @@
   },
   {
     "from": "tokens/mine/token_mineshaft_dark.png",
-    "to": "tokens/mine/t_mine_mineshaft_dark.png",
+    "to": "tokens/mine/t_mineshaft_dark.png",
     "action": "move",
     "keyFrom": "token_mineshaft_dark",
-    "keyTo": "t_mine_mineshaft_dark",
+    "keyTo": "t_mineshaft_dark",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -8329,10 +8329,10 @@
   },
   {
     "from": "tokens/mine/token_mineshaft_gold.png",
-    "to": "tokens/mine/t_mine_mineshaft_gold.png",
+    "to": "tokens/mine/t_mineshaft_gold.png",
     "action": "move",
     "keyFrom": "token_mineshaft_gold",
-    "keyTo": "t_mine_mineshaft_gold",
+    "keyTo": "t_mineshaft_gold",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -8340,10 +8340,10 @@
   },
   {
     "from": "tokens/mine/token_mineshaft_iron.png",
-    "to": "tokens/mine/t_mine_mineshaft_iron.png",
+    "to": "tokens/mine/t_mineshaft_iron.png",
     "action": "move",
     "keyFrom": "token_mineshaft_iron",
-    "keyTo": "t_mine_mineshaft_iron",
+    "keyTo": "t_mineshaft_iron",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -8351,10 +8351,10 @@
   },
   {
     "from": "tokens/mine/token_mineshaft_myth.png",
-    "to": "tokens/mine/t_mine_mineshaft_myth.png",
+    "to": "tokens/mine/t_mineshaft_myth.png",
     "action": "move",
     "keyFrom": "token_mineshaft_myth",
-    "keyTo": "t_mine_mineshaft_myth",
+    "keyTo": "t_mineshaft_myth",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -8362,10 +8362,10 @@
   },
   {
     "from": "tokens/mine/token_mineshaft_silver.png",
-    "to": "tokens/mine/t_mine_mineshaft_silver.png",
+    "to": "tokens/mine/t_mineshaft_silver.png",
     "action": "move",
     "keyFrom": "token_mineshaft_silver",
-    "keyTo": "t_mine_mineshaft_silver",
+    "keyTo": "t_mineshaft_silver",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -8460,7 +8460,7 @@
       "src/config/registries/sprite-manifest.js"
     ],
     "confidence": "check",
-    "note": "r and w kept: meaning unclear"
+    "note": "r and w kept: meaning unclear (data: Pickaxe Mould)"
   },
   {
     "from": "tokens/mould/token_mouldw_woodaxe.png",
@@ -8475,24 +8475,24 @@
   },
   {
     "from": "tokens/nature/Token_grapes.png",
-    "to": "tokens/farm/t_farm_grapes.png",
+    "to": "tokens/farm/t_grapevine.png",
     "action": "move",
     "keyFrom": "Token_grapes",
-    "keyTo": "t_farm_grapes",
+    "keyTo": "t_grapevine",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
       "src/config/registries/sprite-manifest.js"
     ],
     "confidence": "sure",
-    "note": ""
+    "note": "Grapevine in the data"
   },
   {
     "from": "tokens/nature/bush_blackberry.png",
-    "to": "tokens/farm/t_farm_bush_blackberry.png",
+    "to": "tokens/farm/t_bush_blackberry.png",
     "action": "move",
     "keyFrom": "bush_blackberry",
-    "keyTo": "t_farm_bush_blackberry",
+    "keyTo": "t_bush_blackberry",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -8503,10 +8503,10 @@
   },
   {
     "from": "tokens/nature/bush_raspberry.png",
-    "to": "tokens/farm/t_farm_bush_raspberry.png",
+    "to": "tokens/farm/t_bush_raspberry.png",
     "action": "move",
     "keyFrom": "bush_raspberry",
-    "keyTo": "t_farm_bush_raspberry",
+    "keyTo": "t_bush_raspberry",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -8517,10 +8517,10 @@
   },
   {
     "from": "tokens/nature/token_bush_blue.png",
-    "to": "tokens/farm/t_farm_bush_blue.png",
+    "to": "tokens/farm/t_bush_blue.png",
     "action": "move",
     "keyFrom": "token_bush_blue",
-    "keyTo": "t_farm_bush_blue",
+    "keyTo": "t_bush_blue",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -8531,10 +8531,10 @@
   },
   {
     "from": "tokens/nature/token_bush_pineapple.png",
-    "to": "tokens/farm/t_farm_bush_pineapple.png",
+    "to": "tokens/farm/t_bush_pineapple.png",
     "action": "move",
     "keyFrom": "token_bush_pineapple",
-    "keyTo": "t_farm_bush_pineapple",
+    "keyTo": "t_bush_pineapple",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -8545,10 +8545,10 @@
   },
   {
     "from": "tokens/nature/token_bush_redberry.png",
-    "to": "tokens/farm/t_farm_bush_redberry.png",
+    "to": "tokens/farm/t_bush_redberry.png",
     "action": "move",
     "keyFrom": "token_bush_redberry",
-    "keyTo": "t_farm_bush_redberry",
+    "keyTo": "t_bush_redberry",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -8559,10 +8559,10 @@
   },
   {
     "from": "tokens/nature/token_bush_strawberry.png",
-    "to": "tokens/farm/t_farm_bush_strawberry.png",
+    "to": "tokens/farm/t_bush_strawberry.png",
     "action": "move",
     "keyFrom": "token_bush_strawberry",
-    "keyTo": "t_farm_bush_strawberry",
+    "keyTo": "t_bush_strawberry",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -8573,10 +8573,10 @@
   },
   {
     "from": "tokens/nature/token_farmland.png",
-    "to": "tokens/farm/t_farm_farmland.png",
+    "to": "tokens/farm/t_farmland.png",
     "action": "move",
     "keyFrom": "token_farmland",
-    "keyTo": "t_farm_farmland",
+    "keyTo": "t_farmland",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -8590,10 +8590,10 @@
   },
   {
     "from": "tokens/nature/token_field_lavender.png",
-    "to": "tokens/farm/t_farm_field_lavender.png",
+    "to": "tokens/farm/t_field_lavender.png",
     "action": "move",
     "keyFrom": "token_field_lavender",
-    "keyTo": "t_farm_field_lavender",
+    "keyTo": "t_field_lavender",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -8601,10 +8601,10 @@
   },
   {
     "from": "tokens/nature/token_field_wheat.png",
-    "to": "tokens/farm/t_farm_field_wheat.png",
+    "to": "tokens/farm/t_field_wheat.png",
     "action": "move",
     "keyFrom": "token_field_wheat",
-    "keyTo": "t_farm_field_wheat",
+    "keyTo": "t_field_wheat",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -8615,10 +8615,10 @@
   },
   {
     "from": "tokens/nature/token_garden.png",
-    "to": "tokens/farm/t_farm_garden.png",
+    "to": "tokens/farm/t_garden.png",
     "action": "move",
     "keyFrom": "token_garden",
-    "keyTo": "t_farm_garden",
+    "keyTo": "t_garden",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -8640,10 +8640,10 @@
   },
   {
     "from": "tokens/nature/token_lumberpile.png",
-    "to": "tokens/forest/t_forest_lumberpile.png",
+    "to": "tokens/forest/t_lumberpile.png",
     "action": "move",
     "keyFrom": "token_lumberpile",
-    "keyTo": "t_forest_lumberpile",
+    "keyTo": "t_lumberpile",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -8653,10 +8653,10 @@
   },
   {
     "from": "tokens/nature/token_meadow.png",
-    "to": "tokens/farm/t_farm_meadow.png",
+    "to": "tokens/farm/t_meadow.png",
     "action": "move",
     "keyFrom": "token_meadow",
-    "keyTo": "t_farm_meadow",
+    "keyTo": "t_meadow",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -8664,10 +8664,10 @@
   },
   {
     "from": "tokens/nature/token_orchard_red.png",
-    "to": "tokens/farm/t_farm_orchard_red.png",
+    "to": "tokens/farm/t_orchard_red.png",
     "action": "move",
     "keyFrom": "token_orchard_red",
-    "keyTo": "t_farm_orchard_red",
+    "keyTo": "t_orchard_red",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -8678,10 +8678,10 @@
   },
   {
     "from": "tokens/nature/token_orchard_tree_apple.png",
-    "to": "tokens/farm/t_farm_orchard_tree_apple.png",
+    "to": "tokens/farm/t_tree_apple.png",
     "action": "move",
     "keyFrom": "token_orchard_tree_apple",
-    "keyTo": "t_farm_orchard_tree_apple",
+    "keyTo": "t_tree_apple",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -8692,10 +8692,10 @@
   },
   {
     "from": "tokens/nature/token_orchard_tree_cherry.png",
-    "to": "tokens/farm/t_farm_orchard_tree_cherry.png",
+    "to": "tokens/farm/t_tree_cherry.png",
     "action": "move",
     "keyFrom": "token_orchard_tree_cherry",
-    "keyTo": "t_farm_orchard_tree_cherry",
+    "keyTo": "t_tree_cherry",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -8706,10 +8706,10 @@
   },
   {
     "from": "tokens/nature/token_orchard_tree_lemon.png",
-    "to": "tokens/farm/t_farm_orchard_tree_lemon.png",
+    "to": "tokens/farm/t_tree_lemon.png",
     "action": "move",
     "keyFrom": "token_orchard_tree_lemon",
-    "keyTo": "t_farm_orchard_tree_lemon",
+    "keyTo": "t_tree_lemon",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -8720,10 +8720,10 @@
   },
   {
     "from": "tokens/nature/token_orchard_tree_lime.png",
-    "to": "tokens/farm/t_farm_orchard_tree_lime.png",
+    "to": "tokens/farm/t_tree_lime.png",
     "action": "move",
     "keyFrom": "token_orchard_tree_lime",
-    "keyTo": "t_farm_orchard_tree_lime",
+    "keyTo": "t_tree_lime",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -8734,10 +8734,10 @@
   },
   {
     "from": "tokens/nature/token_orchard_tree_orange.png",
-    "to": "tokens/farm/t_farm_orchard_tree_orange.png",
+    "to": "tokens/farm/t_tree_orange.png",
     "action": "move",
     "keyFrom": "token_orchard_tree_orange",
-    "keyTo": "t_farm_orchard_tree_orange",
+    "keyTo": "t_tree_orange",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -8748,10 +8748,10 @@
   },
   {
     "from": "tokens/nature/token_orchard_tree_peach.png",
-    "to": "tokens/farm/t_farm_orchard_tree_peach.png",
+    "to": "tokens/farm/t_tree_peach.png",
     "action": "move",
     "keyFrom": "token_orchard_tree_peach",
-    "keyTo": "t_farm_orchard_tree_peach",
+    "keyTo": "t_tree_peach",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -8762,10 +8762,10 @@
   },
   {
     "from": "tokens/nature/token_patch_watermelon.png",
-    "to": "tokens/farm/t_farm_patch_watermelon.png",
+    "to": "tokens/farm/t_patch_watermelon.png",
     "action": "move",
     "keyFrom": "token_patch_watermelon",
-    "keyTo": "t_farm_patch_watermelon",
+    "keyTo": "t_patch_watermelon",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -8776,10 +8776,10 @@
   },
   {
     "from": "tokens/nature/token_shrine_forest_b.png",
-    "to": "tokens/forest/t_forest_shrine.png",
+    "to": "tokens/forest/t_shrine_forest.png",
     "action": "move",
     "keyFrom": "token_shrine_forest_b",
-    "keyTo": "t_forest_shrine",
+    "keyTo": "t_shrine_forest",
     "inUse": false,
     "usedBy": [],
     "confidence": "check",
@@ -8787,10 +8787,10 @@
   },
   {
     "from": "tokens/nature/token_tree_banana.png",
-    "to": "tokens/farm/t_farm_tree_banana.png",
+    "to": "tokens/farm/t_tree_banana.png",
     "action": "move",
     "keyFrom": "token_tree_banana",
-    "keyTo": "t_farm_tree_banana",
+    "keyTo": "t_tree_banana",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -8801,10 +8801,10 @@
   },
   {
     "from": "tokens/nature/token_tree_coconut.png",
-    "to": "tokens/farm/t_farm_tree_coconut.png",
+    "to": "tokens/farm/t_tree_coconut.png",
     "action": "move",
     "keyFrom": "token_tree_coconut",
-    "keyTo": "t_farm_tree_coconut",
+    "keyTo": "t_tree_coconut",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -8908,75 +8908,75 @@
   },
   {
     "from": "tokens/nature/tree/token_sap_birch.png",
-    "to": "tokens/forest/t_forest_sap_birch.png",
+    "to": "tokens/forest/t_sapling_birch.png",
     "action": "move",
     "keyFrom": "token_sap_birch",
-    "keyTo": "t_forest_sap_birch",
+    "keyTo": "t_sapling_birch",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
     ],
-    "confidence": "check",
-    "note": "abbreviation kept: sap"
+    "confidence": "sure",
+    "note": "sap = sapling (data: Oak Sapling)"
   },
   {
     "from": "tokens/nature/tree/token_sap_cedar.png",
-    "to": "tokens/forest/t_forest_sap_cedar.png",
+    "to": "tokens/forest/t_sapling_cedar.png",
     "action": "move",
     "keyFrom": "token_sap_cedar",
-    "keyTo": "t_forest_sap_cedar",
+    "keyTo": "t_sapling_cedar",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
     ],
-    "confidence": "check",
-    "note": "abbreviation kept: sap"
+    "confidence": "sure",
+    "note": "sap = sapling (data: Oak Sapling)"
   },
   {
     "from": "tokens/nature/tree/token_sap_ebony.png",
-    "to": "tokens/forest/t_forest_sap_ebony.png",
+    "to": "tokens/forest/t_sapling_ebony.png",
     "action": "move",
     "keyFrom": "token_sap_ebony",
-    "keyTo": "t_forest_sap_ebony",
+    "keyTo": "t_sapling_ebony",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
     ],
-    "confidence": "check",
-    "note": "abbreviation kept: sap"
+    "confidence": "sure",
+    "note": "sap = sapling (data: Oak Sapling)"
   },
   {
     "from": "tokens/nature/tree/token_sap_fir.png",
-    "to": "tokens/forest/t_forest_sap_fir.png",
+    "to": "tokens/forest/t_sapling_fir.png",
     "action": "move",
     "keyFrom": "token_sap_fir",
-    "keyTo": "t_forest_sap_fir",
+    "keyTo": "t_sapling_fir",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
     ],
-    "confidence": "check",
-    "note": "abbreviation kept: sap"
+    "confidence": "sure",
+    "note": "sap = sapling (data: Oak Sapling)"
   },
   {
     "from": "tokens/nature/tree/token_sap_mahogany.png",
-    "to": "tokens/forest/t_forest_sap_mahogany.png",
+    "to": "tokens/forest/t_sapling_mahogany.png",
     "action": "move",
     "keyFrom": "token_sap_mahogany",
-    "keyTo": "t_forest_sap_mahogany",
+    "keyTo": "t_sapling_mahogany",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
     ],
-    "confidence": "check",
-    "note": "abbreviation kept: sap"
+    "confidence": "sure",
+    "note": "sap = sapling (data: Oak Sapling)"
   },
   {
     "from": "tokens/nature/tree/token_sap_maple.png",
-    "to": "tokens/forest/t_forest_sap_maple.png",
+    "to": "tokens/forest/t_sapling_maple.png",
     "action": "move",
     "keyFrom": "token_sap_maple",
-    "keyTo": "t_forest_sap_maple",
+    "keyTo": "t_sapling_maple",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -8986,14 +8986,14 @@
       "prop_tree_maple"
     ],
     "confidence": "check",
-    "note": "abbreviation kept: sap; manifest alias prop_tree_maple points here: keep the key, point at the new path (or retire once the data uses the new name)"
+    "note": "manifest alias prop_tree_maple points here: keep the key, point at the new path (or retire once the data uses the new name); sap = sapling (data: Oak Sapling)"
   },
   {
     "from": "tokens/nature/tree/token_sap_oak.png",
-    "to": "tokens/forest/t_forest_sap_oak.png",
+    "to": "tokens/forest/t_sapling_oak.png",
     "action": "move",
     "keyFrom": "token_sap_oak",
-    "keyTo": "t_forest_sap_oak",
+    "keyTo": "t_sapling_oak",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -9006,14 +9006,14 @@
       "prop_tree_oak"
     ],
     "confidence": "check",
-    "note": "abbreviation kept: sap; manifest alias prop_tree_oak points here: keep the key, point at the new path (or retire once the data uses the new name)"
+    "note": "manifest alias prop_tree_oak points here: keep the key, point at the new path (or retire once the data uses the new name); sap = sapling (data: Oak Sapling)"
   },
   {
     "from": "tokens/nature/tree/token_stump_birch.png",
-    "to": "tokens/forest/t_forest_stump_birch.png",
+    "to": "tokens/forest/t_stump_birch.png",
     "action": "move",
     "keyFrom": "token_stump_birch",
-    "keyTo": "t_forest_stump_birch",
+    "keyTo": "t_stump_birch",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -9023,10 +9023,10 @@
   },
   {
     "from": "tokens/nature/tree/token_stump_cedar.png",
-    "to": "tokens/forest/t_forest_stump_cedar.png",
+    "to": "tokens/forest/t_stump_cedar.png",
     "action": "move",
     "keyFrom": "token_stump_cedar",
-    "keyTo": "t_forest_stump_cedar",
+    "keyTo": "t_stump_cedar",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -9036,10 +9036,10 @@
   },
   {
     "from": "tokens/nature/tree/token_stump_ebony.png",
-    "to": "tokens/forest/t_forest_stump_ebony.png",
+    "to": "tokens/forest/t_stump_ebony.png",
     "action": "move",
     "keyFrom": "token_stump_ebony",
-    "keyTo": "t_forest_stump_ebony",
+    "keyTo": "t_stump_ebony",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -9049,10 +9049,10 @@
   },
   {
     "from": "tokens/nature/tree/token_stump_fir.png",
-    "to": "tokens/forest/t_forest_stump_fir.png",
+    "to": "tokens/forest/t_stump_fir.png",
     "action": "move",
     "keyFrom": "token_stump_fir",
-    "keyTo": "t_forest_stump_fir",
+    "keyTo": "t_stump_fir",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -9062,10 +9062,10 @@
   },
   {
     "from": "tokens/nature/tree/token_stump_mahogany.png",
-    "to": "tokens/forest/t_forest_stump_mahogany.png",
+    "to": "tokens/forest/t_stump_mahogany.png",
     "action": "move",
     "keyFrom": "token_stump_mahogany",
-    "keyTo": "t_forest_stump_mahogany",
+    "keyTo": "t_stump_mahogany",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -9075,10 +9075,10 @@
   },
   {
     "from": "tokens/nature/tree/token_stump_maple.png",
-    "to": "tokens/forest/t_forest_stump_maple.png",
+    "to": "tokens/forest/t_stump_maple.png",
     "action": "move",
     "keyFrom": "token_stump_maple",
-    "keyTo": "t_forest_stump_maple",
+    "keyTo": "t_stump_maple",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -9088,10 +9088,10 @@
   },
   {
     "from": "tokens/nature/tree/token_stump_oak.png",
-    "to": "tokens/forest/t_forest_stump_oak.png",
+    "to": "tokens/forest/t_stump_oak.png",
     "action": "move",
     "keyFrom": "token_stump_oak",
-    "keyTo": "t_forest_stump_oak",
+    "keyTo": "t_stump_oak",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js",
@@ -9102,10 +9102,10 @@
   },
   {
     "from": "tokens/nature/tree/token_tree_birch.png",
-    "to": "tokens/forest/t_forest_tree_birch.png",
+    "to": "tokens/forest/t_tree_birch.png",
     "action": "move",
     "keyFrom": "token_tree_birch",
-    "keyTo": "t_forest_tree_birch",
+    "keyTo": "t_tree_birch",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -9116,10 +9116,10 @@
   },
   {
     "from": "tokens/nature/tree/token_tree_cedar.png",
-    "to": "tokens/forest/t_forest_tree_cedar.png",
+    "to": "tokens/forest/t_tree_cedar.png",
     "action": "move",
     "keyFrom": "token_tree_cedar",
-    "keyTo": "t_forest_tree_cedar",
+    "keyTo": "t_tree_cedar",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -9130,10 +9130,10 @@
   },
   {
     "from": "tokens/nature/tree/token_tree_ebony.png",
-    "to": "tokens/forest/t_forest_tree_ebony.png",
+    "to": "tokens/forest/t_tree_ebony.png",
     "action": "move",
     "keyFrom": "token_tree_ebony",
-    "keyTo": "t_forest_tree_ebony",
+    "keyTo": "t_tree_ebony",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -9144,10 +9144,10 @@
   },
   {
     "from": "tokens/nature/tree/token_tree_fir.png",
-    "to": "tokens/forest/t_forest_tree_fir.png",
+    "to": "tokens/forest/t_tree_fir.png",
     "action": "move",
     "keyFrom": "token_tree_fir",
-    "keyTo": "t_forest_tree_fir",
+    "keyTo": "t_tree_fir",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -9158,10 +9158,10 @@
   },
   {
     "from": "tokens/nature/tree/token_tree_mahogany.png",
-    "to": "tokens/forest/t_forest_tree_mahogany.png",
+    "to": "tokens/forest/t_tree_mahogany.png",
     "action": "move",
     "keyFrom": "token_tree_mahogany",
-    "keyTo": "t_forest_tree_mahogany",
+    "keyTo": "t_tree_mahogany",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -9172,10 +9172,10 @@
   },
   {
     "from": "tokens/nature/tree/token_tree_maple.png",
-    "to": "tokens/forest/t_forest_tree_maple.png",
+    "to": "tokens/forest/t_tree_maple.png",
     "action": "move",
     "keyFrom": "token_tree_maple",
-    "keyTo": "t_forest_tree_maple",
+    "keyTo": "t_tree_maple",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -9186,10 +9186,10 @@
   },
   {
     "from": "tokens/nature/tree/token_tree_oak.png",
-    "to": "tokens/forest/t_forest_tree_oak.png",
+    "to": "tokens/forest/t_tree_oak.png",
     "action": "move",
     "keyFrom": "token_tree_oak",
-    "keyTo": "t_forest_tree_oak",
+    "keyTo": "t_tree_oak",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -9225,10 +9225,10 @@
   },
   {
     "from": "tokens/nature/unused/token_oak_fallen.png",
-    "to": "tokens/forest/t_forest_oak_fallen.png",
+    "to": "tokens/forest/t_oak_fallen.png",
     "action": "move",
     "keyFrom": "token_oak_fallen",
-    "keyTo": "t_forest_oak_fallen",
+    "keyTo": "t_oak_fallen",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -9293,10 +9293,10 @@
   },
   {
     "from": "tokens/ore/token_deposit_quartz.png",
-    "to": "tokens/ore/t_ore_deposit_quartz.png",
+    "to": "tokens/ore/t_deposit_quartz.png",
     "action": "move",
     "keyFrom": "token_deposit_quartz",
-    "keyTo": "t_ore_deposit_quartz",
+    "keyTo": "t_deposit_quartz",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -9456,10 +9456,10 @@
   },
   {
     "from": "tokens/ore/token_vein_basalt.png",
-    "to": "tokens/ore/t_ore_vein_basalt.png",
+    "to": "tokens/ore/t_vein_basalt.png",
     "action": "move",
     "keyFrom": "token_vein_basalt",
-    "keyTo": "t_ore_vein_basalt",
+    "keyTo": "t_vein_basalt",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -9469,10 +9469,10 @@
   },
   {
     "from": "tokens/ore/token_vein_granite.png",
-    "to": "tokens/ore/t_ore_vein_granite.png",
+    "to": "tokens/ore/t_vein_granite.png",
     "action": "move",
     "keyFrom": "token_vein_granite",
-    "keyTo": "t_ore_vein_granite",
+    "keyTo": "t_vein_granite",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -9482,10 +9482,10 @@
   },
   {
     "from": "tokens/ore/token_vein_marble.png",
-    "to": "tokens/ore/t_ore_vein_marble.png",
+    "to": "tokens/ore/t_vein_marble.png",
     "action": "move",
     "keyFrom": "token_vein_marble",
-    "keyTo": "t_ore_vein_marble",
+    "keyTo": "t_vein_marble",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -9495,10 +9495,10 @@
   },
   {
     "from": "tokens/ore/token_vein_sandstone.png",
-    "to": "tokens/ore/t_ore_vein_sandstone.png",
+    "to": "tokens/ore/t_vein_sandstone.png",
     "action": "move",
     "keyFrom": "token_vein_sandstone",
-    "keyTo": "t_ore_vein_sandstone",
+    "keyTo": "t_vein_sandstone",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -9508,10 +9508,10 @@
   },
   {
     "from": "tokens/ore/token_vein_stone.png",
-    "to": "tokens/ore/t_ore_vein_stone.png",
+    "to": "tokens/ore/t_vein_stone.png",
     "action": "move",
     "keyFrom": "token_vein_stone",
-    "keyTo": "t_ore_vein_stone",
+    "keyTo": "t_vein_stone",
     "inUse": true,
     "usedBy": [
       "data/items.json",
@@ -9526,10 +9526,10 @@
   },
   {
     "from": "tokens/promote/token_school_alchemist.png",
-    "to": "tokens/promote/t_promote_school_alchemist.png",
+    "to": "tokens/promote/t_school_alchemist.png",
     "action": "move",
     "keyFrom": "token_school_alchemist",
-    "keyTo": "t_promote_school_alchemist",
+    "keyTo": "t_school_alchemist",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -9537,10 +9537,10 @@
   },
   {
     "from": "tokens/promote/token_school_cleric.png",
-    "to": "tokens/promote/t_promote_school_cleric.png",
+    "to": "tokens/promote/t_school_cleric.png",
     "action": "move",
     "keyFrom": "token_school_cleric",
-    "keyTo": "t_promote_school_cleric",
+    "keyTo": "t_school_cleric",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -9548,10 +9548,10 @@
   },
   {
     "from": "tokens/promote/token_school_fighter.png",
-    "to": "tokens/promote/t_promote_school_fighter.png",
+    "to": "tokens/promote/t_school_fighter.png",
     "action": "move",
     "keyFrom": "token_school_fighter",
-    "keyTo": "t_promote_school_fighter",
+    "keyTo": "t_school_fighter",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -9562,10 +9562,10 @@
   },
   {
     "from": "tokens/promote/token_school_ranger.png",
-    "to": "tokens/promote/t_promote_school_ranger.png",
+    "to": "tokens/promote/t_school_ranger.png",
     "action": "move",
     "keyFrom": "token_school_ranger",
-    "keyTo": "t_promote_school_ranger",
+    "keyTo": "t_school_ranger",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -9573,10 +9573,10 @@
   },
   {
     "from": "tokens/promote/token_school_rogue.png",
-    "to": "tokens/promote/t_promote_school_rogue.png",
+    "to": "tokens/promote/t_school_rogue.png",
     "action": "move",
     "keyFrom": "token_school_rogue",
-    "keyTo": "t_promote_school_rogue",
+    "keyTo": "t_school_rogue",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -9584,10 +9584,10 @@
   },
   {
     "from": "tokens/promote/token_school_wizard.png",
-    "to": "tokens/promote/t_promote_school_wizard.png",
+    "to": "tokens/promote/t_school_wizard.png",
     "action": "move",
     "keyFrom": "token_school_wizard",
-    "keyTo": "t_promote_school_wizard",
+    "keyTo": "t_school_wizard",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -9598,10 +9598,10 @@
   },
   {
     "from": "tokens/smith/token_anvil.png",
-    "to": "tokens/smith/t_smith_anvil.png",
+    "to": "tokens/smith/t_anvil.png",
     "action": "move",
     "keyFrom": "token_anvil",
-    "keyTo": "t_smith_anvil",
+    "keyTo": "t_anvil",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -9609,10 +9609,10 @@
   },
   {
     "from": "tokens/smith/token_anvil_addy.png",
-    "to": "tokens/smith/t_smith_anvil_addy.png",
+    "to": "tokens/smith/t_anvil_addy.png",
     "action": "move",
     "keyFrom": "token_anvil_addy",
-    "keyTo": "t_smith_anvil_addy",
+    "keyTo": "t_anvil_addy",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -9620,10 +9620,10 @@
   },
   {
     "from": "tokens/smith/token_anvil_copper.png",
-    "to": "tokens/smith/t_smith_anvil_copper.png",
+    "to": "tokens/smith/t_anvil_copper.png",
     "action": "move",
     "keyFrom": "token_anvil_copper",
-    "keyTo": "t_smith_anvil_copper",
+    "keyTo": "t_anvil_copper",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -9634,10 +9634,10 @@
   },
   {
     "from": "tokens/smith/token_anvil_dark.png",
-    "to": "tokens/smith/t_smith_anvil_dark.png",
+    "to": "tokens/smith/t_anvil_dark.png",
     "action": "move",
     "keyFrom": "token_anvil_dark",
-    "keyTo": "t_smith_anvil_dark",
+    "keyTo": "t_anvil_dark",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -9645,10 +9645,10 @@
   },
   {
     "from": "tokens/smith/token_anvil_iron.png",
-    "to": "tokens/smith/t_smith_anvil_iron.png",
+    "to": "tokens/smith/t_anvil_iron.png",
     "action": "move",
     "keyFrom": "token_anvil_iron",
-    "keyTo": "t_smith_anvil_iron",
+    "keyTo": "t_anvil_iron",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -9656,10 +9656,10 @@
   },
   {
     "from": "tokens/smith/token_anvil_mythril.png",
-    "to": "tokens/smith/t_smith_anvil_mythril.png",
+    "to": "tokens/smith/t_anvil_mythril.png",
     "action": "move",
     "keyFrom": "token_anvil_mythril",
-    "keyTo": "t_smith_anvil_mythril",
+    "keyTo": "t_anvil_mythril",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -9667,10 +9667,10 @@
   },
   {
     "from": "tokens/smith/token_forge.png",
-    "to": "tokens/smith/t_smith_forge.png",
+    "to": "tokens/smith/t_forge.png",
     "action": "move",
     "keyFrom": "token_forge",
-    "keyTo": "t_smith_forge",
+    "keyTo": "t_forge",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -9684,10 +9684,10 @@
   },
   {
     "from": "tokens/smith/token_forge_major.png",
-    "to": "tokens/smith/t_smith_forge_major.png",
+    "to": "tokens/smith/t_forge_major.png",
     "action": "move",
     "keyFrom": "token_forge_major",
-    "keyTo": "t_smith_forge_major",
+    "keyTo": "t_forge_major",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
@@ -9697,10 +9697,10 @@
   },
   {
     "from": "tokens/smith/token_shrine_forge_major.png",
-    "to": "tokens/smith/t_smith_shrine_forge_major.png",
+    "to": "tokens/smith/t_shrine_forge_major.png",
     "action": "move",
     "keyFrom": "token_shrine_forge_major",
-    "keyTo": "t_smith_shrine_forge_major",
+    "keyTo": "t_shrine_forge_major",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -9711,10 +9711,10 @@
   },
   {
     "from": "tokens/smith/token_smelter.png",
-    "to": "tokens/smith/t_smith_smelter.png",
+    "to": "tokens/smith/t_smelter.png",
     "action": "move",
     "keyFrom": "token_smelter",
-    "keyTo": "t_smith_smelter",
+    "keyTo": "t_smelter",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -9743,14 +9743,14 @@
     "inUse": false,
     "usedBy": [],
     "confidence": "check",
-    "note": "goblin camp Token; group camp is new"
+    "note": "goblin camp Token; group camp is new; camp is part of the name"
   },
   {
     "from": "tokens/token_coin_pile.png",
-    "to": "tokens/crime/t_crime_coin_pile.png",
+    "to": "tokens/crime/t_coin_pile.png",
     "action": "move",
     "keyFrom": "token_coin_pile",
-    "keyTo": "t_crime_coin_pile",
+    "keyTo": "t_coin_pile",
     "inUse": false,
     "usedBy": [],
     "confidence": "check",
@@ -9758,10 +9758,10 @@
   },
   {
     "from": "tokens/token_greenhouse.png",
-    "to": "tokens/farm/t_farm_greenhouse.png",
+    "to": "tokens/farm/t_greenhouse.png",
     "action": "move",
     "keyFrom": "token_greenhouse",
-    "keyTo": "t_farm_greenhouse",
+    "keyTo": "t_greenhouse",
     "inUse": false,
     "usedBy": [],
     "confidence": "check",
@@ -9769,10 +9769,10 @@
   },
   {
     "from": "tokens/token_guildhall.png",
-    "to": "tokens/upgrade/t_upgrade_guildhall.png",
+    "to": "tokens/upgrade/t_guildhall.png",
     "action": "move",
     "keyFrom": "token_guildhall",
-    "keyTo": "t_upgrade_guildhall",
+    "keyTo": "t_guildhall",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -9781,14 +9781,14 @@
       "src/ui/components/board/GuildHallBoard.jsx"
     ],
     "confidence": "sure",
-    "note": "the guild_hall upgrade art"
+    "note": "the guild_hall upgrade art (Guild Hall)"
   },
   {
     "from": "tokens/token_pasture_cow.png",
-    "to": "tokens/farm/t_farm_pasture_cow.png",
+    "to": "tokens/farm/t_pasture_cow.png",
     "action": "move",
     "keyFrom": "token_pasture_cow",
-    "keyTo": "t_farm_pasture_cow",
+    "keyTo": "t_pasture_cow",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",
@@ -9796,10 +9796,10 @@
   },
   {
     "from": "tokens/token_quarry_2.png",
-    "to": "tokens/ore/t_ore_quarry.png",
+    "to": "tokens/ore/t_quarry.png",
     "action": "move",
     "keyFrom": "token_quarry_2",
-    "keyTo": "t_ore_quarry",
+    "keyTo": "t_quarry",
     "inUse": false,
     "usedBy": [
       "src/tests/SpriteFxGenerator.test.js"
@@ -9809,10 +9809,10 @@
   },
   {
     "from": "tokens/upgrade/token_bunk_bed.png",
-    "to": "tokens/upgrade/t_upgrade_bunk_bed.png",
+    "to": "tokens/upgrade/t_bunk_bed.png",
     "action": "move",
     "keyFrom": "token_bunk_bed",
-    "keyTo": "t_upgrade_bunk_bed",
+    "keyTo": "t_bunk_bed",
     "inUse": true,
     "usedBy": [
       "src/config/guildUpgrades.js",
@@ -9823,10 +9823,10 @@
   },
   {
     "from": "tokens/upgrade/token_well_wishing.png",
-    "to": "tokens/upgrade/t_upgrade_well_wishing.png",
+    "to": "tokens/upgrade/t_well_wishing.png",
     "action": "move",
     "keyFrom": "token_well_wishing",
-    "keyTo": "t_upgrade_well_wishing",
+    "keyTo": "t_well_wishing",
     "inUse": true,
     "usedBy": [
       "data/tokens.json",
@@ -10399,10 +10399,10 @@
   },
   {
     "from": "w_arrow.png",
-    "to": "items/weapon/i_weapon_arrow.png",
+    "to": "items/weapon/i_arrow.png",
     "action": "move",
     "keyFrom": "w_arrow",
-    "keyTo": "i_weapon_arrow",
+    "keyTo": "i_arrow",
     "inUse": false,
     "usedBy": [],
     "confidence": "sure",

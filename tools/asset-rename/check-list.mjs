@@ -16,8 +16,16 @@ const KINDS = [
     ['tokens', 't'], ['items', 'i'], ['heroes', 'h[fmn]'], ['enemies', 'e'],
     ['ui', 'u'], ['backgrounds', 'b'], ['skills', 's'],
 ];
-// Kinds whose files sit in a group folder, and whose names repeat that group.
+// Kinds whose files sit in a group folder. The group word stays out of the name.
 const GROUPED = new Set(['tokens', 'items', 'enemies', 'backgrounds']);
+// Item groups say what an item is, never a skill or a source.
+const ITEM_GROUPS = new Set(['ore', 'ingot', 'wood', 'gem', 'food', 'drink', 'potion', 'tool', 'gear', 'jewelry', 'seed', 'coin',
+    'fish', 'meat', 'flower', 'herb', 'key', 'weapon', 'material']);
+const ITEM_BANNED_WORDS = new Set(['drop', 'construction', 'craft', 'crafting', 'baking']);
+// Where the group word is part of what the thing is called (Copper Ore, Oak Wood, Fish Trap, Map, Chest).
+const GROUP_WORD_IS_NAME = new Set(['items/ore', 'items/ingot', 'items/wood', 'items/potion', 'items/seed', 'items/key', 'items/coin',
+    'items/fish', 'tokens/chest', 'tokens/map', 'tokens/mould', 'tokens/foundation', 'tokens/camp', 'tokens/fish', 'tokens/market',
+    'tokens/forest', 'tokens/ore', 'enemies/dragon', 'enemies/elemental', 'enemies/goblin', 'enemies/slime', 'backgrounds/invasion']);
 const NAME = /^[a-z0-9]+(_[a-z0-9]+)*$/;
 const HERO = /^h[fmn]_[a-z]+(_[a-z]+)*_(por|sheet)(_\d+)?$/;
 
@@ -62,7 +70,15 @@ for (const r of rows) {
     if (r.action === 'move' && r.to === r.from) fail(`${where}: move to the same path`);
     if (typeof r.to !== 'string') { fail(`${where}: no target`); continue; }
 
+    // Pixelorama work files the owner keeps: not sprites, so no name rules and no sprite name.
+    if (r.to.endsWith('.pxo')) {
+        if (r.action !== 'keep') fail(`${where}: a .pxo work file is kept where it is, not moved`);
+        if (r.keyTo !== null) fail(`${where}: a .pxo work file has no sprite name`);
+        continue;
+    }
+
     const ext = path.extname(r.to);
+    if (ext !== '.png') fail(`${where}: only .png sprites are kept (${r.to})`);
     const stem = path.basename(r.to, ext);
     const dir = path.dirname(r.to);
     if (ext !== ext.toLowerCase()) fail(`${where}: extension not lower case (${r.to})`);
@@ -78,7 +94,19 @@ for (const r of rows) {
     if (under.length > 1) fail(`${where}: more than one folder under ${kindDir}/ (${r.to})`);
     if (GROUPED.has(kindDir)) {
         if (under.length !== 1) fail(`${where}: ${kindDir} files sit in a group folder (${r.to})`);
-        else if (stem !== `${prefix}_${under[0]}` && !stem.startsWith(`${prefix}_${under[0]}_`)) fail(`${where}: ${stem} should repeat its group ${under[0]}`);
+        else {
+            const group = under[0];
+            const second = stem.split('_')[1];
+            if (second === group && !GROUP_WORD_IS_NAME.has(`${kindDir}/${group}`)) {
+                if (r.confidence === 'check') warnings.push(`${stem}: repeats its group word ${group} (row flagged check)`);
+                else fail(`${where}: ${stem} repeats its folder's group word ${group}`);
+            }
+            if (kindDir === 'items' && !ITEM_GROUPS.has(group)) fail(`${where}: item group ${group} is not one of the approved groups`);
+        }
+        if (kindDir === 'items') {
+            const banned = stem.split('_').filter(w => ITEM_BANNED_WORDS.has(w));
+            if (banned.length) fail(`${where}: skill or source word in an item name: ${banned.join(', ')} (${stem})`);
+        }
     } else if (under.length && !(kindDir === 'playmat/props' && under[0] === 'sheets')) {
         fail(`${where}: ${kindDir} has no group level (${r.to})`);
     }
@@ -89,7 +117,7 @@ for (const r of rows) {
     if (/\d/.test(stem) && !/^[a-z_]*[a-z](_\d+)?$/.test(stem)) fail(`${where}: a number may only be the last _N word (${stem})`);
     if (/\d/.test(stem)) warnings.push(`${stem}: numbered`);
     if (/_sheet(_|$)/.test(stem)) {
-        const still = path.join(dir, stem.replace(/_sheet(_[a-z]+)?$/, kindDir === 'heroes' ? '_por' : '') + ext).split(path.sep).join('/');
+        const still = path.join(dir, stem.replace(/_sheet(_[a-z0-9_]+)?$/, kindDir === 'heroes' ? '_por' : '') + ext).split(path.sep).join('/');
         if (!rows.some(o => o.to === still)) warnings.push(`${stem}: no still sprite ${still} beside it`);
     }
 
