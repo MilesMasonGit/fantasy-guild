@@ -111,7 +111,7 @@ export function resolveSpritePath(entity) {
 
     if (typeof entity === 'string' && entity.startsWith('assets/')) return entity;
 
-    let id = null;
+    let id;
     if (typeof entity === 'object') {
         id = entity.spriteId || entity.sprite || entity.background || entity.classId || entity.templateId || entity.id || entity.itemId;
     } else {
