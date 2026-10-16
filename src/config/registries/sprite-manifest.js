@@ -748,6 +748,18 @@ export const SPRITE_MANIFEST = {
     'token_woodaxe_copper': 'assets/items/tool/i_woodaxe_copper.png',
     'token_woodaxe_rust': 'assets/items/tool/i_woodaxe_copper.png',
 
+    // Retired class names: the resolver answers these from its class table before this file; listed
+    // with the portrait that table draws.
+    'alchemist': 'assets/heroes/hf_alchemist_por.png',
+    'bard': 'assets/heroes/hm_bard_por.png',
+    'cleric': 'assets/heroes/hm_cleric_por.png',
+    'engineer': 'assets/heroes/hm_blacksmith_por.png',
+    'fighter': 'assets/heroes/hm_fighter_por.png',
+    'paladin': 'assets/heroes/hm_cleric_por.png',
+    'ranger': 'assets/heroes/hn_range_por.png',
+    'rogue': 'assets/heroes/hn_sneak_por.png',
+    'wizard': 'assets/heroes/hm_wizard_por.png',
+
     // ⚠️ No file behind these paths (art that was never drawn or was removed).
     'item_seedling_base': 'assets/maybe/item_seedling_base.png',
     'token_oak': 'assets/items/wood/token_oak.png',

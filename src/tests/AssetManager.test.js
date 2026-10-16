@@ -130,6 +130,14 @@ describe('the manifest and the old-name table', () => {
         expect(missing).toEqual([]);
     });
 
+    it('every entry with a file is the picture the resolver draws for that name', () => {
+        const differs = Object.entries(SPRITE_MANIFEST)
+            .filter(([, p]) => onDisk(p))
+            .filter(([k, p]) => resolveSpritePath(k) !== p)
+            .map(([k, p]) => `${k}: manifest ${p}, drawn ${resolveSpritePath(k)}`);
+        expect(differs).toEqual([]);
+    });
+
     it('every old name resolves to a picture on disk', () => {
         const missing = Object.keys(LEGACY_SPRITE_NAMES)
             .filter(old => !/_sheet(_|$)/.test(LEGACY_SPRITE_NAMES[old]) && !/^p_/.test(LEGACY_SPRITE_NAMES[old]) && !/^g_/.test(LEGACY_SPRITE_NAMES[old]))
