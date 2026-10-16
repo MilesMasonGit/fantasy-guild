@@ -8,17 +8,22 @@ the owner, 2026-10-16.
 
 ## The name
 
-`<prefix>_<category>_<type>_<variant>.png`, lower case, words joined by `_`,
-general to specific:
+`<prefix>_<name>_<variant>.png`, lower case, words joined by `_`:
 
 - **prefix**: one letter for the top-level kind (below). It names the kind
   only: a pick is a tool, a tool is an item, so a pick is `i_`.
-- **category**: the group, the same word as the sprite's folder. It repeats
-  the folder on purpose, so a name read on its own (in the CMS list) still
-  says what it is.
-- **type**: what the thing is, then its state or shape if it has one.
+- **name**: what the thing is called in the game, general to specific
+  (`pick`, `fish_trap`, `tree`, `ore`, `potion_round`). A word like `ore`,
+  `ingot` or `potion` is there only because it is part of what the thing is.
 - **variant** last: material, colour, or another distinguishing word. Recolours
-  of one drawing therefore sit side by side (`…_pick_copper`, `…_pick_iron`).
+  of one drawing therefore sit side by side (`i_pick_copper`, `i_pick_iron`).
+
+**No group, skill or source words in a name** (owner, 2026-10-16): an item can
+come from many places and serve many skills, so words like `drop`,
+`construction`, `craft` or `baking` never go in a name, and the folder's group
+word is not repeated (`items/tool/i_pick_copper.png`,
+`tokens/smith/t_anvil.png`). Within a kind every name is unique across its
+groups, because the name is also the sprite name the game data uses.
 
 **Material shorthands stay** (owner, 2026-10-16): metal items are many, so `addy` (adamantium), `myth` (mythril) and the other established short material words are kept as they are.
 
@@ -29,14 +34,14 @@ numbers, no `final`, `new`, `v2` or dates.
 
 | Prefix | Kind | Top folder | Example |
 |---|---|---|---|
-| `t_` | Token | `tokens/` | `tokens/forest/t_forest_tree_oak.png` |
-| `i_` | item: materials, tools, gear, food, drink, potions | `items/` | `items/tool/i_tool_pick_copper.png` |
+| `t_` | Token | `tokens/` | `tokens/forest/t_tree_oak.png` |
+| `i_` | item: materials, tools, gear, food, drink, potions | `items/` | `items/tool/i_pick_copper.png` |
 | `hf_` `hm_` `hn_` | hero: `h` plus `f`, `m` or `n` (female, male, neutral), then the class, then what the sprite is (`por` portrait, `sheet` animation) | `heroes/` | `heroes/hf_bard_por.png`, `heroes/hm_fighter_sheet.png` |
 | `e_` | enemy | `enemies/` | `enemies/goblin/e_goblin_archer.png` |
 | `p_` | prop: scatter on the ground | `playmat/props/` | `playmat/props/p_flower_red.png` |
 | `g_` | ground sheet | `playmat/terrain/` | `playmat/terrain/g_grass.png` |
 | `u_` | UI and icons | `ui/` | `ui/u_star_gold.png` |
-| `b_` | background, card and banner art | `backgrounds/` | `backgrounds/cards/b_cards_guild_hall.png` |
+| `b_` | background, card and banner art | `backgrounds/` | `backgrounds/cards/b_guild_hall.png` |
 | `s_` | skill icon | `skills/` | `skills/s_cooking.png` |
 
 Nine kinds, no prefix reused (the hero's three share the `h`). Tools, gear, food and potions are items (`i_`);
@@ -45,25 +50,29 @@ only Tokens use `t_`.
 ## Folders
 
 **Kind, then one group, two levels at most** (`tokens/forest/`,
-`items/potion/`, `enemies/goblin/`). The groups follow the game's own
-categories; the exact list is drafted with the rename list and approved by
-the owner. Today's deeper folders (the 20 potion folders) flatten into their
-group. Where a kind has few files (heroes, skills, UI) there is no group level, and its names have no category word either.
+`items/potion/`, `enemies/goblin/`). Item groups say what an item is (ore,
+ingot, wood, gem, food, drink, potion, tool, gear, jewelry, seed, coin, and
+`material` for the rest), never a skill or a source. Token groups may follow
+the skill a Token belongs to, since the group word stays out of the name. Today's deeper folders (the 20 potion folders) flatten into their
+group. Where a kind has few files (heroes, skills, UI) there is no group level.
 
 ## Spritesheets
 
 An animation is one spritesheet, never loose frames. The sheet takes the
 still sprite's name plus `_sheet` and sits in the same folder:
-`enemies/animal/e_animal_cow.png` and `enemies/animal/e_animal_cow_sheet.png`.
+`enemies/animal/e_cow.png` and `enemies/animal/e_cow_sheet.png`.
 A sprite with several animations names each: `…_sheet_walk`, `…_sheet_attack`.
 Source sheets that are cut into separate sprites (the props) live in a
 `sheets/` folder beside them.
 
 ## What leaves the project
 
-The `waste`, `maybe`, `unused` and `archive` folders, loose animation frames
-(`_0001` files from processing sheets) and `_raw` processing copies are
-deleted. Git history and the owner's desktop backup keep them. Anything the
+The `waste`, `maybe`, `unused` and `archive` folders and loose animation
+frames (`_0001` files from processing sheets) are deleted. Kept for now
+(owner, 2026-10-16): the enemy processing sheets (`ani_*_raw` and the wolf
+copies), named `<enemy>_sheet_raw` beside the real sheet until the owner
+confirms they can go; and the Pixelorama work files `prop_base.pxo`,
+`ani_hero.pxo`, `ani_enemy.pxo`. Git history and the owner's desktop backup keep them. Anything the
 game still uses is moved into the right folder first (2026-10-16: 14 sprites
 in `unused` and `maybe`, among them the class portraits).
 
