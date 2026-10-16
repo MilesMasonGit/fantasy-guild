@@ -78,8 +78,8 @@ export function createEmptyBoard() {
         // Lifecycle 9.3): Tokens live on the mat. `migrateState` drops them
         // from an older save.
 
-        // Terrain's `terrain`, `nextPaintOrder` and `terrainSeed` left the board
-        // in slice 1.6a: they were keyed by tile, and terrain is dormant (FP-10).
+        // No ground on the board: a Region's ground is its stored cell map
+        // (`region.terrain`), drawn by `TerrainCanvas`.
     };
 }
 

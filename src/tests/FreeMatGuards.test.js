@@ -177,20 +177,10 @@ function codeOf(text) {
 }
 
 /**
- * The Guild Hall upgrade board was allow-list 1 here: a separate 7×7 diagram
- * with its own geometry module (`upgradeBoardGeometry.js`). B9 turned it into a
- * web of freely placed nodes and deleted that module, so it no longer needs
- * excusing and is scanned like everything else.
- *
- * ⚠️ **The allow-list — dormant terrain.** `TERRAIN_ENABLED` is false and this
- * stack draws nothing. It is wholly lattice-shaped and is **re-latticed or
- * deleted when terrain is revived**; slice 1.6d-3 owns it. Not re-latticed here.
+ * Nothing is excused. The Guild Hall upgrade board was once (a 7×7 diagram with its own geometry
+ * module, until B9 made it a web of freely placed nodes), and so was the dormant terrain, until
+ * the ground was rebuilt over the Atlas cell map (terrain roadmap T1 and T2).
  */
-const DORMANT_TERRAIN_FILES = [
-    'systems/board/TerrainLattice.js',
-    'systems/board/TerrainProps.js',
-    'ui/components/board/TerrainCanvas.jsx'
-];
 
 /**
  * ⚠️ **Kept on purpose — names that say "tile" but are not geometry.** Each is
@@ -245,13 +235,10 @@ const GRID_GEOMETRY = {
     'Placement.moveFlag': /\bmoveFlag\s*\(/
 };
 
-const GEOMETRY_EXEMPT = new Set(DORMANT_TERRAIN_FILES);
-
-/** Every `path: name` hit in `files`, ignoring the allow-listed files. */
+/** Every `path: name` hit in `files`. */
 function gridGeometryHits(files) {
     const out = [];
     for (const f of files) {
-        if (GEOMETRY_EXEMPT.has(f.path)) continue;
         const code = codeOf(f.text);
         for (const [name, re] of Object.entries(GRID_GEOMETRY)) {
             if (re.test(code)) out.push(`${f.path}: ${name}`);
@@ -261,14 +248,14 @@ function gridGeometryHits(files) {
 }
 
 describe('⭐ THE GRID IS DELETED (slice 1.6d-2)', () => {
-    it('no grid geometry survives anywhere in src, outside tests and the allow-list', () => {
+    it('no grid geometry survives anywhere in src, outside tests', () => {
         expect(FILES.length).toBeGreaterThan(100);
         expect(gridGeometryHits(FILES)).toEqual([]);
     });
 
-    it('the allow-listed files are real files, so the list is not a dead letter', () => {
-        for (const path of DORMANT_TERRAIN_FILES) {
-            expect(FILES.some(f => f.path === path), `${path} is allow-listed but missing`).toBe(true);
+    it('scans the drawing of the ground like everything else', () => {
+        for (const path of ['systems/board/TerrainLattice.js', 'systems/board/TerrainProps.js', 'ui/components/board/TerrainCanvas.jsx']) {
+            expect(FILES.some(f => f.path === path), `${path} is not scanned`).toBe(true);
         }
     });
 

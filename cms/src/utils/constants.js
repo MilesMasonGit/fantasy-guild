@@ -178,6 +178,9 @@ export {
   placementOf,
 } from '../../../src/config/registries/placementRegistry.js';
 
+// The grounds a Token may stand on ("Stands on"): the game's own words, so the CMS can never offer one placement does not know.
+export { STANDS_ON_CHOICES } from '../../../src/systems/atlas/TerrainMap.js';
+
 // What a `Cannot` may forbid. One row today, shaped like the modifier palette so a second restriction is a row in the game, not a rewrite of the editor.
 export {
   RESTRICTION_KINDS,

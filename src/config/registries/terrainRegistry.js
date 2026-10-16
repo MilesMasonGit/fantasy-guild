@@ -18,13 +18,6 @@ import { TERRAIN } from '../../systems/atlas/TerrainMap.js';
  * art is not CMS content.
  */
 
-/**
- * ⭐ **The terrain master switch.** While false the ground is not drawn (`MatBoard.jsx`) and the
- * Playmat Tuner is hidden (`ReactRoot.jsx`). Read at the point of use, never copied.
- * `TerrainOff.test.js` fails if a guard goes.
- */
-export const TERRAIN_ENABLED = false;
-
 /** A ground sheet's side in pixels: each is one seamless fill. */
 export const SHEET_PX = 64;
 

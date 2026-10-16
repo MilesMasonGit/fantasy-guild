@@ -29,6 +29,10 @@ const TOKEN_TOP = 10 + STACK_PLACES * 3;
 export const MAT_Z = Object.freeze({
     /** The playmat surface itself. */
     SURFACE: 0,
+    /** The ground's picture (`TerrainCanvas`): over the surface, under every Token. */
+    GROUND: 1,
+    /** The grid while placing (`TerrainGridOverlay`): over the ground, under every Token. */
+    GROUND_GRID: 2,
     /** Tokens, flags, their heroes and badges: `TOKEN_BASE + place * 3`. */
     TOKEN_BASE: 10,
     /** Heroes with no Token to stand on and no flag to stand beside. */

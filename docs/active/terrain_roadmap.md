@@ -435,6 +435,48 @@ CHANGELOG line).
   went). `sheets[p]` is palette entry `p`'s sheet, so a sheet can be listed
   twice and an unused legend terrain's sheet is listed too.
 
+**T2 result** (2026-10-15, `crunch/terrain-t2`, cut from T1; waits for TM1).
+- **Built**: `TerrainCanvas.jsx` draws the active Region's ground (`regionGround`, meadow where
+  none is stored) on one CPU canvas (`willReadFrequently: true`, no `will-change`, filter,
+  transform or opacity) at `MAT_Z.GROUND`, over the surface and under every Token. The plan is
+  built when the Region's ground changes (a travel, a load of another Region), a tuning slider
+  moves (bursts gathered over 50 ms) or the sheets first arrive; the screen pass
+  (`groundScreen.js`, pure) when the plan changes or 250 ms after the fit stops moving, on ground
+  pixels of `boardScaleAt(fit)` mat units. The sheets are decoded and muted once
+  (`groundSheets.js`; the 15 sheets load together). The mat's rounded corners, its 2-unit light
+  edge and its inset shadow are drawn in the picture (`MAT_EDGE`; the inset shadow as the CSS
+  Gaussian of half the blur); the surface drops them while the ground is drawn. Outside a band
+  about 120 units deep, where the shadow rounds away, a pixel is one 32-bit copy from a table of
+  every sheet and banded sheet. `MatBoard` reads the Region on `ATLAS_CHANGED`, `GAME_RESET` and
+  `STATE_CHANGED` as a flat projection (seed, map, maps' ground), so a load of the same Region
+  draws nothing again. A `terrain` draw switch (off: not mounted, the surface keeps its own
+  edge); `TERRAIN_ENABLED` and `TerrainOff.test.js` gone (its board-storage guard moved to
+  `GroundOnMat.test.js`); `FreeMatGuards` has no allow-list. The Playmat Tuner shows in dev
+  builds (its button reads GROUND), follows `onTuningChanged`, and has Copy values
+  (`tuningReport`). The QA panel's Terrain section settles a dev Region for free and travels
+  there (six views, Reroll it, Back to the Starter Camp; the dev Region left is removed; each
+  view's seed follows from its name) and shows the last build's times.
+- **Measured, Node 24 at 1×** (`bench/micro/groundScreen.bench.js`, Forest + Coast, other
+  sessions loading the PC): screen pass 9.3 ms at fit 0.74 (1303 × 834, the most pixels),
+  4.1 ms at 0.8 (704 × 451, the bench's 1600 × 1000 window), 5.3 ms at 1 (880 × 563); a cold
+  module's first pass 27–35 ms. The straight per-byte pass measured first was 20.4 / 6.8 / 9.9.
+- **Measured, dev build in the browser** (performance marks `fg-perf:ground-plan` and
+  `-screen`; unminified, the desktop pane hidden, other sessions loading): travel by travel at
+  fit 0.8, plan 6–9 ms and picture 6–10 ms warm in the pane; 7–30 ms and 8–29 ms in headless
+  Chrome. The first builds after a page load are the slowest: plan 22–69 ms, picture 34–47 ms
+  (cold code). ⚠️ The mat is mounted behind the slot screen, so a page load builds a meadow
+  plan before any game is loaded, and loading a game builds again.
+- **Measured, screenshots** (headless Chrome, dev build, full-resolution PNGs with everything
+  but the ground hidden): every colour change in the ground lies on the ground-pixel grid and
+  every run is a whole number of steps: 2 px at 1600 × 1000 (fit 0.8), 3 px at 2560 × 1600
+  (fit 1.33), 1 px at 1000 × 650 (fit 0.46); Token art boxes are 64 × the same step.
+  `bench:crisp` (perf build, S2): exit 0, 8 composited layers at rest, every case 0 of 65 still
+  Tokens changed and 14 of 14 exact.
+- **For the director, in a window**: `bench:profile --scene=cap128 --cpu=4` with and without
+  `?off=terrain` (layer count equal); `bench:draw` on `cap128` at 1× and 4×, ground on against
+  off; the build marks in the perf build against B3's bars; the cost-log line. No engine file
+  changed (the engine bench's work is unchanged by construction).
+
 ---
 
 ## D. Owner questions (one batch)

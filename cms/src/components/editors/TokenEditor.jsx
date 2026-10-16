@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Settings2, Tag as TagIcon, Timer, HelpCircle, Swords, Lock, BookOpen, Sparkles, X, Plus, Gauge } from 'lucide-react';
 import { useEntityStore, makeTokenConfig } from '../../stores/useEntityStore';
 import { useSimulationStore } from '../../stores/useSimulationStore';
-import { TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, stationSkillOf, ENEMY_STYLES, enemyCombatBudget, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY } from '../../utils/constants';
+import { TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, stationSkillOf, ENEMY_STYLES, enemyCombatBudget, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, STANDS_ON_CHOICES } from '../../utils/constants';
 import { Header, Section, Field, Empty } from '../shared/EditorLayout';
 import SimIntentControls from '../shared/SimIntentControls';
 import SimAnswer from '../shared/SimAnswer';
@@ -25,6 +25,13 @@ export default function TokenEditor() {
   const [tagDraft, setTagDraft] = useState('');
 
   const update = (key, value) => updateToken(activeId, { [key]: value });
+  // Kept in the game's order; none ticked drops the key, which means anywhere dry.
+  const toggleStandsOn = (word) => {
+    const current = token.standsOn || [];
+    const next = current.includes(word) ? current.filter((w) => w !== word) : [...current, word];
+    const ordered = STANDS_ON_CHOICES.map((c) => c.id).filter((id) => next.includes(id));
+    update('standsOn', ordered.length ? ordered : undefined);
+  };
   const updateConfig = (patch) =>
     updateToken(activeId, { config: { ...(token.config || makeTokenConfig()), ...patch } });
   // Merged rather than replaced so the per-output intent in the IO list and the Tempo/Purpose here cannot clobber one another.
@@ -296,6 +303,31 @@ export default function TokenEditor() {
                 the skill, level and items from the Work Cycle.
               </p>
             )}
+            <div data-field="stands-on" title="The ground the cell under the Token's centre must be. Shore is dry land touching water. None ticked: anywhere dry.">
+              <span className="text-xs text-gray-300">Stands on</span>
+              <div className="flex flex-wrap gap-1 mt-1">
+                {STANDS_ON_CHOICES.map((choice) => {
+                  const on = (token.standsOn || []).includes(choice.id);
+                  return (
+                    <button
+                      key={choice.id}
+                      type="button"
+                      data-stands-on={choice.id}
+                      aria-pressed={on}
+                      onClick={() => toggleStandsOn(choice.id)}
+                      className={`px-2 py-0.5 rounded-md text-[11px] border transition-colors ${on
+                        ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-200'
+                        : 'bg-white/5 border-white/10 text-gray-400 hover:text-gray-200'}`}
+                    >
+                      {choice.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-[10px] leading-relaxed text-gray-500 mt-1">
+                {(token.standsOn || []).length ? 'Only on the ticked ground. Shore is dry land touching water.' : 'None ticked: anywhere dry.'}
+              </p>
+            </div>
           </div>
         </div>
         {token.requiresHero === false && (

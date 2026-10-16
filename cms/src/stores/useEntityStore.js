@@ -1027,6 +1027,8 @@ export const useEntityStore = create(
                     next.description = composeTokenDescription(expanded, items, recipePools, expandedTokens);
                     delete next.descriptionOverride;
                     delete next.statements;
+                    // An empty "Stands on" means anywhere dry, which is what no list says too.
+                    if (Array.isArray(next.standsOn) && next.standsOn.length === 0) delete next.standsOn;
                     finalTokens[tokenId] = next;
                 }
 

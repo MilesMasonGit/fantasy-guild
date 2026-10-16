@@ -213,7 +213,8 @@ scenarios). Only S8 carries a timing.
   releases and chooses) and `TileModifiers.rebuildAll` with and without a
   board-reach aura, each at 40, 150 and 300 Tokens; and the terrain's ground plan
   for the three dev hybrids on the shipped mat (`groundPlan.bench.js`, which also
-  prints the first build of a cold module).
+  prints the first build of a cold module), and its screen pass at fits 0.74, 0.8
+  and 1 (`groundScreen.bench.js`).
 
 ### How fixtures are registered
 

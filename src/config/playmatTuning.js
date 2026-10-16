@@ -193,6 +193,27 @@ export function tuningDefault(key) {
     return DEFAULTS[key];
 }
 
+/** A value as the panel shows it: no trailing zeros. */
+function shown(value) {
+    return String(Number(value.toFixed(4)));
+}
+
+/**
+ * Every value as text, for the panel's Copy values: one line per slider (its label, its key, its
+ * value, and what it ships at with a `*` when it differs), then the values as one JSON line. The
+ * owner pastes it into chat after the eye-check; the look's fix round puts the numbers in code.
+ */
+export function tuningReport() {
+    const moved = TUNABLES.filter(t => values[t.key] !== t.def);
+    const lines = [moved.length ? `Playmat Tuner: ${moved.length} moved (*)` : 'Playmat Tuner: as it ships'];
+    for (const t of TUNABLES) {
+        const v = tuning(t.key);
+        lines.push(v === t.def ? `${t.label} [${t.key}]: ${shown(v)}` : `${t.label} [${t.key}]: ${shown(v)} (ships ${shown(t.def)}) *`);
+    }
+    lines.push(JSON.stringify(Object.fromEntries(TUNABLES.map(t => [t.key, tuning(t.key)]))));
+    return lines.join('\n');
+}
+
 /** Called whenever any value changes. Returns an unsubscribe. */
 export function onTuningChanged(fn) {
     listeners.add(fn);
