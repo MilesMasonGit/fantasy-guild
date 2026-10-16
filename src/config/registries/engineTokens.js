@@ -38,7 +38,7 @@ export const ENGINE_TOKEN_TYPES = Object.freeze({
         description: 'A notice from the Guild Hall. Do what it asks, then click it to claim the reward.',
         // A full path: `resolveSpritePath` returns an `assets/…` path as is,
         // so no manifest entry is needed.
-        sprite: 'assets/ui/quest_board.png',
+        sprite: 'assets/ui/u_quest_board.png',
         tokenType: 'quest',
         rarity: 'common',
         tier: 1,

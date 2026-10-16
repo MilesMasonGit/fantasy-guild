@@ -47,7 +47,7 @@ export const GuildHallEffectsPanel = () => {
                 <div
                     className="w-full h-full relative rounded-2xl border-4 border-[#3a271d] shadow-2xl overflow-hidden flex flex-col bg-[#14100c]"
                     style={{
-                        backgroundImage: `linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.35)), url('/assets/ui/pm_table_mountain.png')`,
+                        backgroundImage: `linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.35)), url('/assets/ui/u_table_mountain.png')`,
                         backgroundRepeat: 'repeat',
                         backgroundSize: 'auto, 128px',
                         imageRendering: 'pixelated',

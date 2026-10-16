@@ -122,7 +122,7 @@ describe('the idle mark (FP-29)', () => {
         const flag = container.querySelector('[data-flag="h1"]');
         expect(flag.getAttribute('data-flag-state')).toBe('idle');
         expect(flag.getAttribute('data-flag-colour')).not.toBe('base');
-        expect(flag.querySelector('img').getAttribute('src')).toContain(`hero_flag_${flag.getAttribute('data-flag-colour')}.png`);
+        expect(flag.querySelector('img').getAttribute('src')).toContain(`u_flag_${flag.getAttribute('data-flag-colour')}.png`);
         expect(flag.querySelector('[data-flag-idle-chip]')).toBeNull();
 
         // ⭐ The hero is drawn by MatBoard, like every hero in every state
@@ -336,7 +336,7 @@ describe('the Disallow switch (FP-35, FPP-8)', () => {
 
         const { container } = mount(h(MatBoard));
         const mark = container.querySelector('[data-tile-disallowed]');
-        expect(mark.querySelector('img').getAttribute('src')).toBe('/assets/ui/ui_disallow_red.png');
+        expect(mark.querySelector('img').getAttribute('src')).toBe('/assets/ui/u_disallow_red.png');
         expect(mark.closest('[data-bubble-row="middle"]')).not.toBeNull();
         expect(mark.closest('[data-bubble="disallow"]')).not.toBeNull();
         expect(mark.textContent).not.toContain('⊘');

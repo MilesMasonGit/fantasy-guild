@@ -35,17 +35,17 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
  */
 
 registerItems({
-    fixture_ngo_wood: { id: 'fixture_ngo_wood', name: 'Fixture Camp Wood', type: 'material', sprite: 'wood_oak', stackable: true },
-    fixture_ngo_ore: { id: 'fixture_ngo_ore', name: 'Fixture Camp Ore', type: 'material', sprite: 'ore_copper', stackable: true }
+    fixture_ngo_wood: { id: 'fixture_ngo_wood', name: 'Fixture Camp Wood', type: 'material', sprite: 'i_wood_oak', stackable: true },
+    fixture_ngo_ore: { id: 'fixture_ngo_ore', name: 'Fixture Camp Ore', type: 'material', sprite: 'i_ore_copper', stackable: true }
 });
 registerTokenTypes({
     fixture_ngo_producer: {
         id: 'fixture_ngo_producer', name: 'Fixture Camp Producer', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: 50, size: 1, sprite: 'skill_nature'
+        rarity: 'common', theme: 'fixture', uses: 50, size: 1, sprite: 's_nature'
     },
     fixture_ngo_site: {
         id: 'fixture_ngo_site', name: 'Fixture Endgame Site', tokenType: 'resource', landmark: true,
-        rarity: 'common', theme: 'fixture', uses: null, size: 1, sprite: 'skill_nature',
+        rarity: 'common', theme: 'fixture', uses: null, size: 1, sprite: 's_nature',
         config: { skill: 'forestry', skillRequired: 99, cycleTimeMs: 60000, xp: 0, inputs: [], outputs: [] }
     }
 });

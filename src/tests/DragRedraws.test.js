@@ -363,7 +363,7 @@ describe('⭐ re-stacking redraws no Token: their z is written, not rendered, an
 
 describe('⭐ the hero bar: a drag redraws only the heroes it is about', () => {
     const engine = { GameState, EventBus, BoardPlacement: { recallHeroById: vi.fn() }, EquipmentManager: { equipItem: vi.fn() } };
-    const hero = (id) => ({ id, name: id, spriteId: 'hero_recruit_0', hp: { current: 100, max: 100 }, status: 'idle', equipment: {} });
+    const hero = (id) => ({ id, name: id, spriteId: 'hn_recruit_por', hp: { current: 100, max: 100 }, status: 'idle', equipment: {} });
 
     function Item() {
         const d = useEntityDrag({ id: 'item-src', kind: DRAG_KIND.ITEM, payload: { itemId: 'item_coal' } });

@@ -43,16 +43,16 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 registerTokenTypes({
     fixture_b13_sapling: {
         id: 'fixture_b13_sapling', name: 'Fixture B1.3 Sapling', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature'
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature'
     },
     fixture_b13_forest: {
         id: 'fixture_b13_forest', name: 'Fixture B1.3 Forest', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature', requiresHero: false,
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature', requiresHero: false,
         spawner: { spawns: [{ typeId: 'fixture_b13_sapling', weight: 1 }], allowance: 5, intervalMs: 1000 }
     },
     fixture_bub_grower: {
         id: 'fixture_bub_grower', name: 'Fixture Grower', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature',
         grows: { into: 'fixture_b13_sapling', afterMs: 60000 }
     }
 });
@@ -370,7 +370,7 @@ describe('stuck spawner warning', () => {
     it('mat full (T-102): a red bubble that says the Token cap is full', () => {
         const { container } = mount(bub({ token: worked({ heroId: null }) }));
         say(ALERT.SPAWN_MAT_FULL);
-        expect(stuckEl(container).querySelector('[data-stuck-badge="mat_full"] img').getAttribute('src')).toContain('ui_alert_red');
+        expect(stuckEl(container).querySelector('[data-stuck-badge="mat_full"] img').getAttribute('src')).toContain('u_alert_red');
         expect(tipOf(container)).toBe('Token cap full');
     });
 

@@ -43,7 +43,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 registerTokenTypes({
     mat_large: {
         id: 'mat_large', name: 'Mat Large', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: 100, sprite: 'skill_nature',
+        rarity: 'common', theme: 'fixture', uses: 100, sprite: 's_nature',
         size: 2, requiresHero: false
     }
 });

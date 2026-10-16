@@ -49,22 +49,22 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 registerTokenTypes({
     fixture_q4_sapling: {
         id: 'fixture_q4_sapling', name: 'Fixture Q4 Sapling', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature',
         grows: { into: 'fixture_q4_tree', afterMs: 1000 }
     },
     fixture_q4_tree: {
         id: 'fixture_q4_tree', name: 'Fixture Q4 Tree', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: 10, sprite: 'skill_nature',
+        rarity: 'common', theme: 'fixture', uses: 10, sprite: 's_nature',
         config: { skill: 'forestry', skillRequired: 1, cycleTimeMs: 12000, xp: 1, inputs: [], outputs: [] }
     },
     fixture_q4_coast: {
         id: 'fixture_q4_coast', name: 'Fixture Q4 Coast', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nautical',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nautical',
         turns: { into: [{ typeId: 'fixture_q4_shrimp', weight: 1 }], everyMs: 1000, chance: 100 }
     },
     fixture_q4_shrimp: {
         id: 'fixture_q4_shrimp', name: 'Fixture Q4 Shrimp Coast', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nautical',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nautical',
         config: { skill: 'fishing', skillRequired: 1, cycleTimeMs: 12000, xp: 1, inputs: [], outputs: [] }
     },
     fixture_q4_foundation: {
@@ -80,7 +80,7 @@ registerTokenTypes({
     },
     fixture_q4_goblin: {
         id: 'fixture_q4_goblin', name: 'Fixture Q4 Goblin', tokenType: 'enemy',
-        rarity: 'common', theme: 'fixture', uses: 3, sprite: 'skill_nature',
+        rarity: 'common', theme: 'fixture', uses: 3, sprite: 's_nature',
         enemy: { level: 1, style: 'melee' }
     }
 });

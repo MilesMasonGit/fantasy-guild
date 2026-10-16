@@ -35,12 +35,12 @@ registerTokenTypes({
     /** A Foundation (Token Lifecycle 6.1) that builds the 2×2 station below. */
     bench_foundation: {
         id: 'bench_foundation', name: 'Bench Foundation', rarity: 'common', theme: 'fixture', uses: 1,
-        sprite: 'skill_industry', foundation: { kind: 'bench_stone', skill: 'construction' }
+        sprite: 's_industry', foundation: { kind: 'bench_stone', skill: 'construction' }
     },
     /** What it builds: a 2×2 station — too big for any gap on this mat. */
     bench_big_station: {
         id: 'bench_big_station', name: 'Bench Big Station', tokenType: 'station', rarity: 'common',
-        theme: 'fixture', uses: 100, size: 2, sprite: 'skill_industry',
+        theme: 'fixture', uses: 100, size: 2, sprite: 's_industry',
         config: { skill: 'smithing', skillRequired: 1, cycleTimeMs: 16000, xp: 1 },
         statements: [{ id: 'stm_bench_big_station', keyword: KEYWORD.STATION, payload: { skill: 'smithing' } }]
     }

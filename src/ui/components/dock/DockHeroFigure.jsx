@@ -187,7 +187,7 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
 
     const sprite = hero.spriteId || hero.classId || null;
     const animArt = sprite ? resolveAnimationPath(sprite) : null;
-    const staticArt = animArt ? null : resolveSpritePath(sprite || hero.icon || 'hero_recruit_0');
+    const staticArt = animArt ? null : resolveSpritePath(sprite || hero.icon || 'hn_recruit_por');
 
     // The sprite frame's top edge sits half the art above the strip's bottom; the labels sit
     // just above that, whatever the art is doing.

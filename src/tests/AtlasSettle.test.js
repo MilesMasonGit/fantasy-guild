@@ -48,12 +48,12 @@ const COLOSSUS = 'fixture_atlas_colossus';
 registerTokenTypes({
     [BERRY]: {
         id: BERRY, name: 'Atlas Berry', tokenType: 'resource', rarity: 'common', theme: 'fixture',
-        uses: 25, sprite: 'skill_nature', config: null
+        uses: 25, sprite: 's_nature', config: null
     },
     // A 2×2: at the 256 cap a map of nothing else overfills the mat, so a layout leaves some unplaced.
     [COLOSSUS]: {
         id: COLOSSUS, name: 'Atlas Colossus', tokenType: 'resource', rarity: 'common', theme: 'fixture',
-        size: 2, uses: null, sprite: 'skill_nature', config: null
+        size: 2, uses: null, sprite: 's_nature', config: null
     }
 });
 

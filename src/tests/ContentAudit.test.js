@@ -30,13 +30,13 @@ describe('The content-integrity audit', () => {
         registerItems({
             // A blank name is the tell, and it reads as a real item everywhere
             // it is referenced.
-            fixture_audit_nameless: { id: 'fixture_audit_nameless', name: '', sprite: 'ore_copper' },
-            fixture_audit_ok: { id: 'fixture_audit_ok', name: 'Audit Fixture', sprite: 'ore_copper' }
+            fixture_audit_nameless: { id: 'fixture_audit_nameless', name: '', sprite: 'i_ore_copper' },
+            fixture_audit_ok: { id: 'fixture_audit_ok', name: 'Audit Fixture', sprite: 'i_ore_copper' }
         });
         registerTokenTypes({
             fixture_audit_blank_output: {
                 id: 'fixture_audit_blank_output', name: 'Audit Blank Output',
-                tokenType: 'resource', sprite: 'ore_copper',
+                tokenType: 'resource', sprite: 'i_ore_copper',
                 config: {
                     skill: 'mining', skillRequired: 1, cycleTimeMs: 1000, xp: 0,
                     inputs: [], outputs: [{ chance: 100, minQty: 1, maxQty: 1 }]
@@ -44,7 +44,7 @@ describe('The content-integrity audit', () => {
             },
             fixture_audit_bad_currency: {
                 id: 'fixture_audit_bad_currency', name: 'Audit Bad Currency',
-                tokenType: 'market', sprite: 'ore_copper',
+                tokenType: 'market', sprite: 'i_ore_copper',
                 config: {
                     skill: 'commerce', skillRequired: 1, cycleTimeMs: 1000, xp: 0,
                     inputs: [], outputs: [{ currency: 'doubloons', quantity: 5 }]

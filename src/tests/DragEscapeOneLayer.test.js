@@ -34,7 +34,7 @@ import { DisallowModeToggle } from '../ui/components/board/MatDisallowControls.j
 const h = React.createElement;
 
 const hero = (id, name) => (
-    { id, name, spriteId: 'hero_recruit_0', hp: { current: 100, max: 100 }, status: 'idle', equipment: {} }
+    { id, name, spriteId: 'hn_recruit_por', hp: { current: 100, max: 100 }, status: 'idle', equipment: {} }
 );
 
 const engine = {

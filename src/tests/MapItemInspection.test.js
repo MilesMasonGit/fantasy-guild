@@ -20,7 +20,7 @@ registerTokenTypes({
 const entry = (template, count = 2) => ({ id: template.id, count, template });
 
 const FOREST = {
-    id: 'fixture_inspect_map', name: 'Inspect Forest', type: 'map', sprite: 'map_forest', stackable: true,
+    id: 'fixture_inspect_map', name: 'Inspect Forest', type: 'map', sprite: 't_map_forest', stackable: true,
     cartography: {
         biome: 'forest', points: 12,
         nodes: [{ typeId: 'fixture_inspect_tree', weight: 3 }, { typeId: 'fixture_inspect_bush', weight: 1 }],
@@ -28,7 +28,7 @@ const FOREST = {
     }
 };
 const OVERGROWN = {
-    id: 'fixture_inspect_mod', name: 'Inspect Overgrown', type: 'modifier', sprite: 'map_flowers', stackable: true,
+    id: 'fixture_inspect_mod', name: 'Inspect Overgrown', type: 'modifier', sprite: 't_map_flowers', stackable: true,
     cartography: { effects: [{ kind: 'density', typeId: 'fixture_inspect_tree', points: 16 }] }
 };
 

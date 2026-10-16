@@ -59,7 +59,7 @@ function filteredBuff(id, filters) {
     registerTokenTypes({
         [id]: {
             id, name: id, tokenType: 'buff', rarity: 'rare', theme: 'fixture',
-            uses: null, sprite: 'skill_industry',
+            uses: null, sprite: 's_industry',
             statements: [{
                 id: `stm_${id}`, keyword: 'provides',
                 to: { mode: 'all', value: '', filters },

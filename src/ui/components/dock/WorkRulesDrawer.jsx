@@ -24,7 +24,7 @@ const DRAWER_CLOSE_MS = 250;
 const ROW_PX = 26;
 const COL_PX = 24;
 const HEADER_PX = 136;
-const GEAR_SRC = '/assets/ui/ui_gear.png';
+const GEAR_SRC = '/assets/ui/u_gear.png';
 
 /**
  * The hero bar's Work Rules button (the Stations' orange gear) at the bar's left end: the only
@@ -240,7 +240,7 @@ const RulesGrid = ({ litHeroId }) => {
             >
                 {heroes.map(hero => {
                     const lit = hero.id === litHeroId;
-                    const portrait = resolveSpritePath(hero.spriteId || 'hero_recruit_0');
+                    const portrait = resolveSpritePath(hero.spriteId || 'hn_recruit_por');
                     return (
                         <div
                             key={hero.id}

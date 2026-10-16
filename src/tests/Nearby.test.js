@@ -60,7 +60,7 @@ const BUFF = 'fixture_buff_yield';     // +5% YIELD, default (nearby) reach
 registerTokenTypes({
     [LARGE_BUFF]: {
         id: LARGE_BUFF, name: LARGE_BUFF, tokenType: 'buff', rarity: 'common', theme: 'fixture',
-        uses: null, sprite: 'skill_nature', size: 2, requiresHero: false, config: null,
+        uses: null, sprite: 's_nature', size: 2, requiresHero: false, config: null,
         statements: [{
             id: `stm_${LARGE_BUFF}`, keyword: 'provides',
             to: { mode: 'all', value: '' },

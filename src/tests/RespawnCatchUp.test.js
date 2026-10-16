@@ -41,12 +41,12 @@ const mining = {
 registerTokenTypes({
     catchup_respawn_vein: {
         id: 'catchup_respawn_vein', name: 'Catch-up Respawn Vein', tokenType: 'resource', rarity: 'common',
-        theme: 'fixture', uses: 3, sprite: 'skill_industry', config: mining,
+        theme: 'fixture', uses: 3, sprite: 's_industry', config: mining,
         respawn: { mode: 'refill', afterMs: 12000 }
     },
     catchup_plain_vein: {
         id: 'catchup_plain_vein', name: 'Catch-up Plain Vein', tokenType: 'resource', rarity: 'common',
-        theme: 'fixture', uses: 3, sprite: 'skill_industry', config: mining
+        theme: 'fixture', uses: 3, sprite: 's_industry', config: mining
     }
 });
 

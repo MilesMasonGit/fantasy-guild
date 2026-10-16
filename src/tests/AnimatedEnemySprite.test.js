@@ -47,7 +47,7 @@ afterEach(() => {
 describe('⭐ which cycle plays (EAP-2)', () => {
     it('plays the idle cycle (rows 0-1) with no worker', () => {
         const { container } = render(
-            React.createElement(AnimatedEnemySprite, { src: 'ani_cow.png', heroId: null, size: 64 })
+            React.createElement(AnimatedEnemySprite, { src: 'e_cow_sheet.png', heroId: null, size: 64 })
         );
         expect(rowOf(sprite(container))).toBeLessThan(2);
     });
@@ -55,7 +55,7 @@ describe('⭐ which cycle plays (EAP-2)', () => {
     it('plays the attack cycle (rows 2-3) while a hero works it', () => {
         BoardState.heroBodyOf.mockReturnValue({ side: -1 });
         const { container } = render(
-            React.createElement(AnimatedEnemySprite, { src: 'ani_cow.png', heroId: 'h1', size: 64 })
+            React.createElement(AnimatedEnemySprite, { src: 'e_cow_sheet.png', heroId: 'h1', size: 64 })
         );
         expect(rowOf(sprite(container))).toBeGreaterThanOrEqual(2);
     });
@@ -63,11 +63,11 @@ describe('⭐ which cycle plays (EAP-2)', () => {
     it('drops back to idle the instant the worker is gone — no fight-ended event needed', () => {
         BoardState.heroBodyOf.mockReturnValue({ side: -1 });
         const { container, rerender } = render(
-            React.createElement(AnimatedEnemySprite, { src: 'ani_cow.png', heroId: 'h1', size: 64 })
+            React.createElement(AnimatedEnemySprite, { src: 'e_cow_sheet.png', heroId: 'h1', size: 64 })
         );
         expect(rowOf(sprite(container))).toBeGreaterThanOrEqual(2);
 
-        rerender(React.createElement(AnimatedEnemySprite, { src: 'ani_cow.png', heroId: null, size: 64 }));
+        rerender(React.createElement(AnimatedEnemySprite, { src: 'e_cow_sheet.png', heroId: null, size: 64 }));
         expect(rowOf(sprite(container))).toBeLessThan(2);
     });
 });
@@ -78,7 +78,7 @@ describe('⭐ which cycle plays (EAP-2)', () => {
 describe('⭐ frame advance', () => {
     it('shows a different cell for each of the 8 frames of the active cycle', () => {
         const { container } = render(
-            React.createElement(AnimatedEnemySprite, { src: 'ani_cow.png', size: 64, frameMs: 100 })
+            React.createElement(AnimatedEnemySprite, { src: 'e_cow_sheet.png', size: 64, frameMs: 100 })
         );
         const seen = new Set();
         for (let i = 0; i < 8; i++) {
@@ -92,7 +92,7 @@ describe('⭐ frame advance', () => {
 describe('⭐ facing (EA-2, EA-3, EA-4)', () => {
     it('starts facing left, the sheet\'s native pose — no flip', () => {
         const { container } = render(
-            React.createElement(AnimatedEnemySprite, { src: 'ani_cow.png', size: 64 })
+            React.createElement(AnimatedEnemySprite, { src: 'e_cow_sheet.png', size: 64 })
         );
         expect(container.querySelector('[style*="scaleX"]')).toBeNull();
     });
@@ -100,7 +100,7 @@ describe('⭐ facing (EA-2, EA-3, EA-4)', () => {
     it('turns to face a hero working it from the right (flipped)', () => {
         BoardState.heroBodyOf.mockReturnValue({ side: 1 });
         const { container } = render(
-            React.createElement(AnimatedEnemySprite, { src: 'ani_cow.png', heroId: 'h1', size: 64 })
+            React.createElement(AnimatedEnemySprite, { src: 'e_cow_sheet.png', heroId: 'h1', size: 64 })
         );
         const flipped = container.querySelector('[style*="scaleX(-1)"]');
         expect(flipped).not.toBeNull();
@@ -109,14 +109,14 @@ describe('⭐ facing (EA-2, EA-3, EA-4)', () => {
     it('stays facing left for a hero working it from the left (no flip)', () => {
         BoardState.heroBodyOf.mockReturnValue({ side: -1 });
         const { container } = render(
-            React.createElement(AnimatedEnemySprite, { src: 'ani_cow.png', heroId: 'h1', size: 64 })
+            React.createElement(AnimatedEnemySprite, { src: 'e_cow_sheet.png', heroId: 'h1', size: 64 })
         );
         expect(container.querySelector('[style*="scaleX(-1)"]')).toBeNull();
     });
 
     it('turns on its own while idle, somewhere in the 12-24s window (EA-4)', () => {
         const { container } = render(
-            React.createElement(AnimatedEnemySprite, { src: 'ani_cow.png', heroId: null, size: 64 })
+            React.createElement(AnimatedEnemySprite, { src: 'e_cow_sheet.png', heroId: null, size: 64 })
         );
         expect(container.querySelector('[style*="scaleX(-1)"]')).toBeNull();
 
@@ -130,7 +130,7 @@ describe('⭐ facing (EA-2, EA-3, EA-4)', () => {
     it('never turns on its own while a hero is fighting it', () => {
         BoardState.heroBodyOf.mockReturnValue({ side: -1 });
         const { container } = render(
-            React.createElement(AnimatedEnemySprite, { src: 'ani_cow.png', heroId: 'h1', size: 64 })
+            React.createElement(AnimatedEnemySprite, { src: 'e_cow_sheet.png', heroId: 'h1', size: 64 })
         );
         act(() => { vi.advanceTimersByTime(30000); });
         expect(container.querySelector('[style*="scaleX(-1)"]')).toBeNull();

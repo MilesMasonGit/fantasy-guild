@@ -59,14 +59,14 @@ registerTokenTypes({
     /** Sits beside Coasts and feeds whoever is working them. */
     fixture_cook_fire: {
         id: 'fixture_cook_fire', name: 'Fixture Cook Fire', tokenType: 'buff',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_flask',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_flask',
         requiresHero: false,
         statements: [AMBIENT]
     },
     /** The same rule, but on a trigger rather than ambient. */
     fixture_cook_bell: {
         id: 'fixture_cook_bell', name: 'Fixture Cook Bell', tokenType: 'buff',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_flask',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_flask',
         requiresHero: false,
         statements: [{
             id: 'stm_bell',
@@ -80,7 +80,7 @@ registerTokenTypes({
     /** A workable Coast, the thing the filters name. */
     fixture_shrimp_bed: {
         id: 'fixture_shrimp_bed', name: 'Fixture Shrimp Bed', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: 500, sprite: 'skill_nature',
+        rarity: 'common', theme: 'fixture', uses: 500, sprite: 's_nature',
         tags: ['Coast'],
         config: {
             skill: 'fishing', skillRequired: 1, cycleTimeMs: 12000, xp: 2,
@@ -90,7 +90,7 @@ registerTokenTypes({
     /** Untagged, so the filter must not reach it. */
     fixture_dry_bed: {
         id: 'fixture_dry_bed', name: 'Fixture Dry Bed', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: 500, sprite: 'skill_nature',
+        rarity: 'common', theme: 'fixture', uses: 500, sprite: 's_nature',
         config: {
             skill: 'fishing', skillRequired: 1, cycleTimeMs: 12000, xp: 2,
             inputs: [], outputs: [{ itemId: 'fixture_fish', quantity: 1, chance: 100 }]

@@ -49,7 +49,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 registerTokenTypes({
     fixture_wnr_camp: {
         id: 'fixture_wnr_camp', name: 'Fixture WNR Camp', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature',
         spawner: { spawns: [{ typeId: 'fixture_enemy', weight: 1 }], allowance: 4, intervalMs: 99999999, upkeep: [] }
     }
 });

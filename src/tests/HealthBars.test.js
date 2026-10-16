@@ -31,7 +31,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 registerTokenTypes({
     fixture_hb_bear: {
         id: 'fixture_hb_bear', name: 'Fixture Bear', tokenType: 'enemy',
-        rarity: 'common', uses: 20, sprite: 'skill_occult',
+        rarity: 'common', uses: 20, sprite: 's_occult',
         enemy: { level: 2, style: 'melee' },
         config: { skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0 }
     }

@@ -44,23 +44,23 @@ const CFG = { cycleTimeMs: 5000, inputs: [], outputs: [] };
 
 registerTokenTypes({
     b8_standard: {
-        id: 'b8_standard', name: 'B8 Standard', tokenType: 'resource', sprite: 'skill_nature',
+        id: 'b8_standard', name: 'B8 Standard', tokenType: 'resource', sprite: 's_nature',
         size: 1, uses: 100, requiresHero: false, config: CFG
     },
     b8_small: {
-        id: 'b8_small', name: 'B8 Small', tokenType: 'resource', sprite: 'skill_nature',
+        id: 'b8_small', name: 'B8 Small', tokenType: 'resource', sprite: 's_nature',
         size: 1, artSize: 'small', uses: 100, requiresHero: false, config: CFG
     },
     b8_small_explicit_standard: {
         id: 'b8_small_explicit_standard', name: 'B8 Explicit Standard', tokenType: 'resource',
-        sprite: 'skill_nature', size: 1, artSize: 'standard', uses: 100, requiresHero: false, config: CFG
+        sprite: 's_nature', size: 1, artSize: 'standard', uses: 100, requiresHero: false, config: CFG
     },
     b8_large_small: {
-        id: 'b8_large_small', name: 'B8 Large Marked Small', tokenType: 'resource', sprite: 'skill_nature',
+        id: 'b8_large_small', name: 'B8 Large Marked Small', tokenType: 'resource', sprite: 's_nature',
         size: 2, artSize: 'small', uses: 100, requiresHero: false, config: CFG
     },
     b8_small_spawner: {
-        id: 'b8_small_spawner', name: 'B8 Small Spawner', tokenType: 'resource', sprite: 'skill_nature',
+        id: 'b8_small_spawner', name: 'B8 Small Spawner', tokenType: 'resource', sprite: 's_nature',
         size: 1, artSize: 'small', uses: null, requiresHero: false,
         spawner: { spawns: [{ typeId: 'b8_standard', weight: 1 }], allowance: 5, intervalMs: 1000 }
     }

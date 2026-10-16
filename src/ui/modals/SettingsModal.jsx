@@ -178,10 +178,10 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                                 value={getVal('ui.backgroundTile')} 
                                 onChange={(v) => handleSettingChange('ui.backgroundTile', v)} 
                                 options={[
-                                    { value: 'pm_table_wood_spruce', label: 'Spruce Planks (Default)' },
-                                    { value: 'pm_table_wood_planks_oak', label: 'Oak Planks' },
-                                    { value: 'pm_table_mountain', label: 'Mountain' },
-                                    { value: 'pm_table_forest', label: 'Forest' }
+                                    { value: 'u_table_wood_spruce', label: 'Spruce Planks (Default)' },
+                                    { value: 'u_table_wood_planks_oak', label: 'Oak Planks' },
+                                    { value: 'u_table_mountain', label: 'Mountain' },
+                                    { value: 'u_table_forest', label: 'Forest' }
                                 ]} 
                             />
 

@@ -32,7 +32,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 registerTokenTypes({
     fixture_wfr_forest: {
         id: 'fixture_wfr_forest', name: 'Fixture WFR Forest', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature',
         spawner: { spawns: [{ typeId: 'fixture_passive', weight: 1 }], allowance: 3, intervalMs: 5000, upkeep: [] }
     }
 });

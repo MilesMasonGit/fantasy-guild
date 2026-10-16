@@ -146,7 +146,8 @@ legend { color: var(--accent); font-weight: 600; padding: 0 4px; }
 (function () {
   'use strict';
   var W = 448, H = 288;               // scene, in art pixels
-  var STORE = 'art-bench-v1';
+  // v2: the art was renamed (docs/reference/ASSET_NAMING.md); a v1 layout names files that no longer exist.
+  var STORE = 'art-bench-v2';
   var A = '/assets/';
   var P = '/_gen/art-bench/';
 
@@ -160,31 +161,31 @@ legend { color: var(--accent); font-weight: 600; padding: 0 4px; }
   var HERO_IDLE = { x: 0, y: 128, w: 64, h: 64 };  // hero sheets: 8 frames x 3 rows, idle is the third row
   var STARTING_SPRITES = [
     // Oak family, items beside their Tokens
-    { rel: 'tokens/nature/tree/token_tree_oak.png', x: 12, y: 12 },
-    { rel: 'tokens/nature/tree/token_sap_oak.png', x: 80, y: 44 },
-    { rel: 'tokens/nature/tree/token_stump_oak.png', x: 80, y: 8 },
-    { rel: 'items/wood/wood_oak.png', x: 116, y: 12 },
-    { rel: 'items/wood/seedling_oak.png', x: 116, y: 44 },
+    { rel: 'tokens/forest/t_tree_oak.png', x: 12, y: 12 },
+    { rel: 'tokens/forest/t_sapling_oak.png', x: 80, y: 44 },
+    { rel: 'tokens/forest/t_stump_oak.png', x: 80, y: 8 },
+    { rel: 'items/wood/i_wood_oak.png', x: 116, y: 12 },
+    { rel: 'items/seed/i_seedling_oak.png', x: 116, y: 44 },
     // Copper family
-    { rel: 'tokens/ore/token_ore_vein_copper.png', x: 164, y: 12 },
-    { rel: 'items/ore/ore_copper.png', x: 232, y: 12 },
-    { rel: 'items/ingot/ingot_copper.png', x: 232, y: 44 },
+    { rel: 'tokens/ore/t_ore_vein_copper.png', x: 164, y: 12 },
+    { rel: 'items/ore/i_ore_copper.png', x: 232, y: 12 },
+    { rel: 'items/ingot/i_ingot_copper.png', x: 232, y: 44 },
     // Fishing family
-    { rel: 'tokens/fish/token_coast.png', x: 300, y: 12 },
-    { rel: 'items/fish/fish_trout_raw.png', x: 368, y: 12 },
-    { rel: 'items/fish/fish_shrimp_raw.png', x: 368, y: 44 },
-    { rel: 'tokens/fish/token_lake_small.png', x: 300, y: 84 },
+    { rel: 'tokens/fish/t_coast.png', x: 300, y: 12 },
+    { rel: 'items/fish/i_trout_raw.png', x: 368, y: 12 },
+    { rel: 'items/fish/i_shrimp_raw.png', x: 368, y: 44 },
+    { rel: 'tokens/fish/t_lake_small.png', x: 300, y: 84 },
     // Heroes and enemies
-    { rel: 'heroes/animations/ani_fighter_0.png', x: 40, y: 112, frame: HERO_IDLE },
-    { rel: 'heroes/animations/ani_ranger_0.png', x: 112, y: 120, frame: HERO_IDLE },
+    { rel: 'heroes/hn_fighter_sheet.png', x: 40, y: 112, frame: HERO_IDLE },
+    { rel: 'heroes/hn_ranger_sheet.png', x: 112, y: 120, frame: HERO_IDLE },
     { rel: 'enemies/goblin/e_goblin.png', x: 196, y: 116 },
     { rel: 'enemies/animal/e_wolf.png', x: 380, y: 140 },
     // Loot on the ground
-    { rel: 'items/wood/wood_oak.png', x: 52, y: 214 },
-    { rel: 'items/ore/ore_copper.png', x: 150, y: 232 },
-    { rel: 'items/fish/fish_trout_raw.png', x: 250, y: 212 },
-    { rel: 'items/wood/seedling_oak.png', x: 330, y: 236 },
-    { rel: 'items/ingot/ingot_copper.png', x: 96, y: 246 }
+    { rel: 'items/wood/i_wood_oak.png', x: 52, y: 214 },
+    { rel: 'items/ore/i_ore_copper.png', x: 150, y: 232 },
+    { rel: 'items/fish/i_trout_raw.png', x: 250, y: 212 },
+    { rel: 'items/seed/i_seedling_oak.png', x: 330, y: 236 },
+    { rel: 'items/ingot/i_ingot_copper.png', x: 96, y: 246 }
   ];
 
   var SWATCHES = [
@@ -200,8 +201,8 @@ legend { color: var(--accent); font-weight: 600; padding: 0 4px; }
     return {
       zoom: 1,
       presets: STARTING_PRESETS.map(function (p) { return Object.assign({}, p); }),
-      ground: 'playmat/terrain/ter_grass.png',
-      scatter: null,          // null = all prop_ files
+      ground: 'playmat/terrain/g_grass.png',
+      scatter: null,          // null = every prop sheet
       scatterCount: 24,
       seed: 7,
       // Each reach keeps its own strength: the whole-scene grade starts fainter.
@@ -302,11 +303,11 @@ legend { color: var(--accent); font-weight: 600; padding: 0 4px; }
     });
   }
 
-  // Animation sheets show one frame: hero sheets their idle frame, anything else named ani_ its top-left square.
+  // Animation sheets show one frame: hero sheets their idle frame, any other _sheet its top-left square.
   function frameFor(rel, d) {
-    if (/^heroes\/animations\/ani_/.test(rel) && d.w === 512 && d.h === 192) return HERO_IDLE;
+    if (/^heroes\/[^/]+_sheet\.png$/.test(rel) && d.w === 512 && d.h === 192) return HERO_IDLE;
     var name = rel.split('/').pop();
-    if (/^ani_/.test(name) && d.w > 64 && d.h >= 64) {
+    if (/_sheet(_[^/]*)?\.png$/.test(name) && d.w > 64 && d.h >= 64) {
       var side = d.h <= 64 ? d.h : 64;
       return { x: 0, y: 0, w: side, h: side };
     }
@@ -314,10 +315,10 @@ legend { color: var(--accent); font-weight: 600; padding: 0 4px; }
   }
 
   function propFiles() {
-    return list.assets.filter(function (a) { return /^playmat\/props\/prop_[^/]*\.png$/i.test(a); });
+    return list.assets.filter(function (a) { return /^playmat\/props\/p_[^/]*\.png$/i.test(a); });
   }
   function groundFiles() {
-    return list.assets.filter(function (a) { return /^playmat\/terrain\/(.*\/)?ter_[^/]*\.png$/i.test(a); });
+    return list.assets.filter(function (a) { return /^playmat\/terrain\/(.*\/)?g_[^/]*\.png$/i.test(a); });
   }
   function activeScatter() {
     var all = propFiles();

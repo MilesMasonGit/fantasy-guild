@@ -25,7 +25,7 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 registerTokenTypes({
     fx_bare_station: {
         id: 'fx_bare_station', name: 'Bare Context Station', tokenType: 'station',
-        rarity: 'common', theme: 'fixture', uses: 900, sprite: 'skill_flask',
+        rarity: 'common', theme: 'fixture', uses: 900, sprite: 's_flask',
         config: { skill: 'fx_bare_ctx', skillRequired: 1, cycleTimeMs: 16000, xp: 3 },
         statements: [{ id: 'stm_fx_bare_station', keyword: KEYWORD.STATION, payload: { skill: 'fx_bare_ctx' } }]
     }

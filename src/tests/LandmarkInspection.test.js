@@ -25,10 +25,10 @@ const names = { skillName: (id) => ({ forestry: 'Forestry' }[id] || id), itemNam
 
 const SITE = {
     id: 'fixture_li_site', name: 'Stump of the World Tree', landmark: true, tokenType: 'resource',
-    rarity: 'mythic', uses: null, size: 1, sprite: 'skill_nature',
+    rarity: 'mythic', uses: null, size: 1, sprite: 's_nature',
     config: { skill: 'forestry', skillRequired: 99, cycleTimeMs: 600000, xp: 0, inputs: [{ itemId: 'item_seed', quantity: 100 }], outputs: [] }
 };
-const BARE = { id: 'fixture_li_bare', name: 'Unwritten Site', landmark: true, tokenType: 'resource', uses: null, size: 1, sprite: 'skill_nature' };
+const BARE = { id: 'fixture_li_bare', name: 'Unwritten Site', landmark: true, tokenType: 'resource', uses: null, size: 1, sprite: 's_nature' };
 
 afterEach(() => cleanup());
 
@@ -62,7 +62,7 @@ describe('what a landmark\'s inspection says', () => {
     });
 
     it('the inspection panel shows it', () => {
-        registerItems({ item_li_seed: { id: 'item_li_seed', name: 'World Seed', type: 'material', sprite: 'wood_oak' } });
+        registerItems({ item_li_seed: { id: 'item_li_seed', name: 'World Seed', type: 'material', sprite: 'i_wood_oak' } });
         registerTokenTypes({
             [SITE.id]: { ...SITE, config: { ...SITE.config, inputs: [{ itemId: 'item_li_seed', quantity: 100 }] } },
             [BARE.id]: BARE

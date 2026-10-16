@@ -36,12 +36,12 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 registerTokenTypes({
     fixture_em_camp: {
         id: 'fixture_em_camp', name: 'Fixture Em Camp', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature',
         spawner: { spawns: [{ typeId: 'fixture_enemy', weight: 1 }], allowance: 4, intervalMs: 1000, upkeep: [] }
     },
     fixture_em_forest: {
         id: 'fixture_em_forest', name: 'Fixture Em Forest', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature',
         spawner: { spawns: [{ typeId: 'fixture_producer', weight: 1 }], allowance: 4, intervalMs: 1000, upkeep: [] }
     }
 });

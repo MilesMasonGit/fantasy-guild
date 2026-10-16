@@ -60,14 +60,14 @@ registerTokenTypes({
     /** The fixture tool, two spots square. */
     fixture_large_tool: {
         id: 'fixture_large_tool', name: 'Fixture Large Tool', tokenType: 'context',
-        rarity: 'common', theme: 'fixture', uses: 80, sprite: 'skill_industry', size: 2,
+        rarity: 'common', theme: 'fixture', uses: 80, sprite: 's_industry', size: 2,
         isTool: true, requiresHero: false,
         provides: [{ tag: 'ctx_fixture_tool', minTier: 1, chargeCost: 0 }]
     },
     /** The tool-gated resource, two spots square. */
     fixture_large_gated: {
         id: 'fixture_large_gated', name: 'Fixture Large Gated', tokenType: 'resource',
-        rarity: 'uncommon', theme: 'fixture', uses: 2600, sprite: 'skill_nature', size: 2,
+        rarity: 'uncommon', theme: 'fixture', uses: 2600, sprite: 's_nature', size: 2,
         config: { skill: 'forestry', skillRequired: 1, cycleTimeMs: 18000, xp: 12 },
         statements: [
             { id: 'stm_fixture_large_gated', keyword: KEYWORD.STATION, payload: { skill: 'fixture_gated_skill' } }
@@ -75,7 +75,7 @@ registerTokenTypes({
     },
     fixture_large_producer: {
         id: 'fixture_large_producer', name: 'Fixture Large Producer', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: 5000, sprite: 'skill_nature', size: 2,
+        rarity: 'common', theme: 'fixture', uses: 5000, sprite: 's_nature', size: 2,
         config: {
             skill: 'forestry', skillRequired: 1, cycleTimeMs: 12000, xp: 4,
             inputs: [], outputs: [{ itemId: 'fixture_oak_wood', quantity: 2, chance: 100 }]
@@ -84,7 +84,7 @@ registerTokenTypes({
     /** `fixture_trigger_any`, two spots square. */
     fixture_large_trigger_any: {
         id: 'fixture_large_trigger_any', name: 'Fixture Large Trigger Any', tokenType: 'buff',
-        rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_industry', size: 2,
+        rarity: 'rare', theme: 'fixture', uses: null, sprite: 's_industry', size: 2,
         requiresHero: false,
         statements: [{
             id: 'stm_large_trigger_any', keyword: 'grants',
@@ -95,13 +95,13 @@ registerTokenTypes({
     /** A plain Coast two spots square — counted, carries no rule. */
     fixture_large_coast: {
         id: 'fixture_large_coast', name: 'Fixture Large Coast', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: 500, sprite: 'skill_nature', size: 2,
+        rarity: 'common', theme: 'fixture', uses: 500, sprite: 's_nature', size: 2,
         requiresHero: false, tags: ['Coast']
     },
     /** A +5% YIELD buff that reaches the whole board. */
     fixture_board_buff: {
         id: 'fixture_board_buff', name: 'Fixture Board Buff', tokenType: 'buff',
-        rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_occult',
+        rarity: 'rare', theme: 'fixture', uses: null, sprite: 's_occult',
         statements: [{
             id: 'stm_board_buff', keyword: 'provides', reach: 'board', to: { mode: 'all' },
             payload: { type: EFFECT_TYPES.YIELD, bucket: 'percentage', value: 0.05 }
@@ -471,7 +471,7 @@ describe('Placement publishes one dirty event per change, covering the Near radi
         registerTokenTypes({
             fixture_large_yield: {
                 id: 'fixture_large_yield', name: 'Fixture Large Yield', tokenType: 'buff',
-                rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature', size: 2,
+                rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature', size: 2,
                 requiresHero: false,
                 statements: [{
                     id: 'stm_large_yield', keyword: 'provides', to: { mode: 'all' },

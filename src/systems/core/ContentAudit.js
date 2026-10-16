@@ -19,6 +19,7 @@ import { groundOf } from '../atlas/Budget.js';
 import { STANDS_ON, STANDS_ON_CHOICES, isStandsOnWord, allowsTerrain } from '../atlas/TerrainMap.js';
 import { listPooledSkillIds } from '../../config/registries/recipePoolRegistry.js';
 import { SPRITE_MANIFEST } from '../../config/registries/sprite-manifest.js';
+import { currentSpriteName } from '../../utils/AssetManager.js';
 import { RANDOM_HUNTS } from '../quests/QuestManager.js';
 import { warnMissingContent } from '../../utils/missingContent.js';
 import { isWorkedWithoutSkill, WORK_SKILL_WHY } from './workSkillRule.js';
@@ -48,7 +49,7 @@ const RESOLVERS = {
     item: id => !!getItem(id),
     // `enemy` resolves through the Token registry: an enemy IS a Token, so its id is a Token id.
     enemy: id => !!getTokenType(id),
-    sprite: id => !!SPRITE_MANIFEST[id],
+    sprite: id => !!SPRITE_MANIFEST[currentSpriteName(id)],
     status: id => !!getStatusEffect(id),
     'recipe pool': id => listPooledSkillIds().includes(id)
 };

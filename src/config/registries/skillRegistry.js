@@ -47,38 +47,38 @@ export const SKILLS = {
         id: 'mining', name: 'Mining', layer: SKILL_LAYERS.STARTING,
         description: 'Extracting ore, stone and gems from veins and quarries.',
         icon: '⛏️',
-        sprite: 'assets/skills/skill_mining.png'
+        sprite: 'assets/skills/s_mining.png'
     },
     forestry: {
         id: 'forestry', name: 'Forestry', layer: SKILL_LAYERS.STARTING,
         description: 'Felling trees for timber, sap and bark.',
         icon: '🪓',
         // ⚠️ The art kept its Logging file name when the skill was renamed.
-        sprite: 'assets/skills/skill_logging.png'
+        sprite: 'assets/skills/s_logging.png'
     },
     fishing: {
         id: 'fishing', name: 'Fishing', layer: SKILL_LAYERS.STARTING,
         description: 'Working ponds, rivers and deep water for fish and salvage.',
         icon: '🎣',
-        sprite: 'assets/skills/skill_fishing.png'
+        sprite: 'assets/skills/s_fishing.png'
     },
     smithing: {
         id: 'smithing', name: 'Smithing', layer: SKILL_LAYERS.STARTING,
         description: 'Smelting ore into bars, and forging tools and weapons.',
         icon: '🔨',
-        sprite: 'assets/skills/skill_smithing.png'
+        sprite: 'assets/skills/s_smithing.png'
     },
     crafting: {
         id: 'crafting', name: 'Crafting', layer: SKILL_LAYERS.STARTING,
         description: 'Assembling wood, leather and fibre into gear and containers.',
         icon: '🪡',
-        sprite: 'assets/skills/skill_crafting.png'
+        sprite: 'assets/skills/s_crafting.png'
     },
     cooking: {
         id: 'cooking', name: 'Cooking', layer: SKILL_LAYERS.STARTING,
         description: 'Preparing meals and curative broths that keep heroes working.',
         icon: '🍳',
-        sprite: 'assets/skills/skill_cooking.png'
+        sprite: 'assets/skills/s_cooking.png'
     },
     farming: {
         id: 'farming', name: 'Farming', layer: SKILL_LAYERS.STARTING,
@@ -103,19 +103,19 @@ export const SKILLS = {
         id: 'melee', name: 'Melee', layer: SKILL_LAYERS.COMBAT,
         description: 'Frontline fighting with blades, axes and hammers.',
         icon: '⚔️',
-        sprite: 'assets/skills/skill_melee.png'
+        sprite: 'assets/skills/s_melee.png'
     },
     ranged: {
         id: 'ranged', name: 'Ranged', layer: SKILL_LAYERS.COMBAT,
         description: 'Fighting at distance with bows, crossbows and thrown weapons.',
         icon: '🏹',
-        sprite: 'assets/skills/skill_ranged.png'
+        sprite: 'assets/skills/s_ranged.png'
     },
     magic: {
         id: 'magic', name: 'Magic', layer: SKILL_LAYERS.COMBAT,
         description: 'Elemental spellcraft with staves, wands and tomes.',
         icon: '✨',
-        sprite: 'assets/skills/skill_magic.png'
+        sprite: 'assets/skills/s_magic.png'
     },
     stealth: {
         id: 'stealth', name: 'Stealth', layer: SKILL_LAYERS.COMBAT,
@@ -143,7 +143,7 @@ export const SKILLS = {
         id: 'crime', name: 'Crime', layer: SKILL_LAYERS.ADVANCED,
         description: 'Locks, contraband and the things other people would rather keep.',
         icon: '🗝️',
-        sprite: 'assets/skills/skill_crime.png'
+        sprite: 'assets/skills/s_crime.png'
     },
 
     // === Master (8) — exclusive to one master class each ==================

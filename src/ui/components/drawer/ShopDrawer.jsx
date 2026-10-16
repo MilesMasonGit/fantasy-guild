@@ -168,7 +168,7 @@ const ShopContents = memo(function ShopContents({ isOpen, onClose }) {
                         className="p-0.5 rounded cursor-pointer flex items-center justify-center gi-hover-pulse"
                     >
                         <img
-                            src="/assets/ui/ui_cancel_red.png"
+                            src="/assets/ui/u_cancel_red.png"
                             alt="Close"
                             className="w-8 h-8 object-contain select-none pointer-events-none"
                             style={{ width: '32px', height: '32px', imageRendering: 'pixelated' }}

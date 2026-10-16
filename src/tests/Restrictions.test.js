@@ -34,7 +34,7 @@ const LIMIT_STATEMENT = {
 registerTokenTypes({
     fixture_coast: {
         id: 'fixture_coast', name: 'Fixture Coast', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: 500, sprite: 'skill_nature',
+        rarity: 'common', theme: 'fixture', uses: 500, sprite: 's_nature',
         tags: ['Coast'],
         statements: [LIMIT_STATEMENT],
         config: {
@@ -45,7 +45,7 @@ registerTokenTypes({
     /** Carries the tag but no rule — the thing being counted, not the counter. */
     fixture_plain_coast: {
         id: 'fixture_plain_coast', name: 'Fixture Plain Coast', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: 500, sprite: 'skill_nature',
+        rarity: 'common', theme: 'fixture', uses: 500, sprite: 's_nature',
         tags: ['Coast'],
         config: {
             skill: 'fishing', skillRequired: 1, cycleTimeMs: 12000, xp: 2,
@@ -55,7 +55,7 @@ registerTokenTypes({
     /** A 2×2, to exercise the cascade path. */
     fixture_big_slab: {
         id: 'fixture_big_slab', name: 'Fixture Big Slab', tokenType: 'buff',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_industry',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_industry',
         size: 2, requiresHero: false
     }
 });
@@ -167,7 +167,7 @@ describe('A `Cannot` refuses the placement, and says why', () => {
         registerTokenTypes({
             fixture_future_rule: {
                 id: 'fixture_future_rule', name: 'Fixture Future Rule', tokenType: 'buff',
-                rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_industry',
+                rarity: 'common', theme: 'fixture', uses: null, sprite: 's_industry',
                 statements: [{
                     id: 'stm_future', keyword: KEYWORD.CANNOT,
                     payload: { kind: 'be_in_the_outer_ring' },

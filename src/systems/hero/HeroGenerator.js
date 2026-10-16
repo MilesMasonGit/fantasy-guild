@@ -29,11 +29,10 @@ export const HERO_ICONS = [
 ];
 
 export const HERO_SPRITES = [
-    'hero_adventure',
-    'hero_knight',
-    'hero_rogue',
-    'hero_warlock',
-    'hero_wizard'
+    'hn_adventure_por',
+    'hm_fighter_por',
+    'hn_sneak_por',
+    'hm_wizard_por'
 ];
 
 /**
@@ -56,8 +55,8 @@ export function generateHero(options = {}) {
         };
     }
 
-    const icon = options.icon || 'icon_recruit_0';
-    const spriteId = options.spriteId || 'hero_recruit_0';
+    const icon = options.icon || 'hn_recruit_icon_por';
+    const spriteId = options.spriteId || 'hn_recruit_por';
 
     // Max HP derives from the combat skill, floored at level 1 for a Recruit.
     const maxHp = heroMaxHpFromSkills(skills);

@@ -150,7 +150,7 @@ describe('⭐ the drawers', () => {
     });
 
     it('the hero column and the hero sheet: a drag elsewhere redraws no tab and not the sheet', () => {
-        GameState.state.heroes = ['h1', 'h2', 'h3'].map(id => ({ id, name: id, spriteId: 'hero_recruit_0', hp: { current: 100, max: 100 }, status: 'idle', equipment: {}, skills: {} }));
+        GameState.state.heroes = ['h1', 'h2', 'h3'].map(id => ({ id, name: id, spriteId: 'hn_recruit_por', hp: { current: 100, max: 100 }, status: 'idle', equipment: {}, skills: {} }));
         const view = render(
             h(EngineContext.Provider, { value: engine },
                 h(DeckDndProvider, null, h(Item), h(BankHeroPanel, { selectedHeroId: 'h1', showTabs: true, menuRight: false })))

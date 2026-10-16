@@ -35,7 +35,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 const item = (id, name) => ({
-    id, name, type: 'material', sprite: 'wood_oak', description: '', tags: [],
+    id, name, type: 'material', sprite: 'i_wood_oak', description: '', tags: [],
     stackable: true, restoreAmount: 0, restoreType: '', regen: 0, equipSlot: '', value: 1
 });
 registerItems({
@@ -46,7 +46,7 @@ const SEED = 'fixture_ub_seed';
 const ORE = 'fixture_ub_ore';
 
 const tokenDef = (id, name, extra = {}) => ({
-    id, name, tokenType: 'resource', rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature', ...extra
+    id, name, tokenType: 'resource', rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature', ...extra
 });
 registerTokenTypes({
     fixture_ub_sapling: tokenDef('fixture_ub_sapling', 'Fixture Ub Sapling'),

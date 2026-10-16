@@ -50,13 +50,13 @@ const logging = {
 registerTokenTypes({
     respawn_vein: {
         id: 'respawn_vein', name: 'Respawn Vein', tokenType: 'resource', rarity: 'common',
-        theme: 'fixture', uses: 3, sprite: 'skill_industry', config: mining,
+        theme: 'fixture', uses: 3, sprite: 's_industry', config: mining,
         respawn: { mode: 'refill', afterMs: 12000 }
     },
     /** Needs an item the Bank never has, so a flag skips it for a fixable reason. */
     respawn_kiln: {
         id: 'respawn_kiln', name: 'Respawn Kiln', tokenType: 'resource', rarity: 'common',
-        theme: 'fixture', uses: 3, sprite: 'skill_industry',
+        theme: 'fixture', uses: 3, sprite: 's_industry',
         config: { ...mining, inputs: [{ itemId: 'fixture_oak_wood', quantity: 1 }] },
         respawn: { mode: 'refill', afterMs: 12000 }
     },
@@ -69,38 +69,38 @@ registerTokenTypes({
     /** The same vein with no block: the guard. */
     plain_vein: {
         id: 'plain_vein', name: 'Plain Vein', tokenType: 'resource', rarity: 'common',
-        theme: 'fixture', uses: 3, sprite: 'skill_industry', config: mining
+        theme: 'fixture', uses: 3, sprite: 's_industry', config: mining
     },
     respawn_tree: {
         id: 'respawn_tree', name: 'Respawn Tree', tokenType: 'resource', rarity: 'common',
-        theme: 'fixture', uses: 2, sprite: 'skill_nature', config: logging,
+        theme: 'fixture', uses: 2, sprite: 's_nature', config: logging,
         respawn: { mode: 'regrow', into: 'respawn_sapling' }
     },
     respawn_sapling: {
         id: 'respawn_sapling', name: 'Respawn Sapling', tokenType: 'resource', rarity: 'common',
-        theme: 'fixture', uses: null, sprite: 'skill_nature',
+        theme: 'fixture', uses: null, sprite: 's_nature',
         grows: { into: 'respawn_tree', afterMs: 30000 }
     },
     /** Spawns Saplings: its family is {Sapling, Tree} through `grows` alone. */
     respawn_forest: {
         id: 'respawn_forest', name: 'Respawn Forest', tokenType: 'spawner', rarity: 'common',
-        theme: 'fixture', uses: null, sprite: 'skill_nature',
+        theme: 'fixture', uses: null, sprite: 's_nature',
         spawner: { spawns: [{ typeId: 'respawn_sapling', weight: 1 }], allowance: 1, intervalMs: 5000, upkeep: [] }
     },
     /** Spawns grown trees that regrow from a stump: only `respawn.into` puts the stump in the family. */
     stump_tree: {
         id: 'stump_tree', name: 'Stump Tree', tokenType: 'resource', rarity: 'common',
-        theme: 'fixture', uses: 2, sprite: 'skill_nature', config: logging,
+        theme: 'fixture', uses: 2, sprite: 's_nature', config: logging,
         respawn: { mode: 'regrow', into: 'stump' }
     },
     stump: {
         id: 'stump', name: 'Stump', tokenType: 'resource', rarity: 'common',
-        theme: 'fixture', uses: null, sprite: 'skill_nature',
+        theme: 'fixture', uses: null, sprite: 's_nature',
         grows: { into: 'stump_tree', afterMs: 20000 }
     },
     stump_forest: {
         id: 'stump_forest', name: 'Stump Forest', tokenType: 'spawner', rarity: 'common',
-        theme: 'fixture', uses: null, sprite: 'skill_nature',
+        theme: 'fixture', uses: null, sprite: 's_nature',
         spawner: { spawns: [{ typeId: 'stump_tree', weight: 1 }], allowance: 1, intervalMs: 5000, upkeep: [] }
     },
     /** A one-charge yield buff that rests and refills: worn by a neighbour's cycle or a kill. */

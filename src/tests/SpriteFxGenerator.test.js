@@ -203,20 +203,20 @@ describe('an outline is one art pixel, edge to edge only (4-connected)', () => {
 
 describe('what gets outlines, and the sheet grids the game draws with', () => {
     it('anything a Token can wear is outlined; the UI’s own icons get a silhouette only; flags are outlined', () => {
-        expect(isOutlined('assets/tokens/nature/token_tree_oak.png')).toBe(true);
-        expect(isOutlined('assets/heroes/animations/ani_fighter_0.png')).toBe(true);
-        expect(isOutlined('assets/enemies/animal/anim/ani_cow.png')).toBe(true);
-        expect(isOutlined('assets/ui/flag/hero_flag_base.png')).toBe(true);
-        expect(isOutlined('assets/playmat/props/prop_tree_oak.png')).toBe(true);
-        expect(isOutlined('assets/items/ore/item_copper_ore.png')).toBe(true);
-        expect(isOutlined('assets/skills/skill_mining.png')).toBe(true);
-        expect(isOutlined('assets/ui/ui_alert_red.png')).toBe(false);
+        expect(isOutlined('assets/tokens/forest/t_tree_oak.png')).toBe(true);
+        expect(isOutlined('assets/heroes/hn_fighter_sheet.png')).toBe(true);
+        expect(isOutlined('assets/enemies/animal/e_cow_sheet.png')).toBe(true);
+        expect(isOutlined('assets/ui/u_flag_base.png')).toBe(true);
+        expect(isOutlined('assets/playmat/props/p_tree_oak.png')).toBe(true);
+        expect(isOutlined('assets/items/ore/i_ore_copper.png')).toBe(true);
+        expect(isOutlined('assets/skills/s_mining.png')).toBe(true);
+        expect(isOutlined('assets/ui/u_alert_red.png')).toBe(false);
     });
 
     it('hero sheets are 8 × 3 and enemy sheets 4 × 4, matching the animation code', () => {
-        expect(sheetGridOf('assets/heroes/animations/ani_fighter_0.png')).toEqual(HERO_SHEET_GRID);
-        expect(sheetGridOf('assets/enemies/animal/anim/ani_cow.png')).toEqual(ENEMY_SHEET_GRID);
-        expect(sheetGridOf('assets/tokens/token_quarry_2.png')).toBeNull();
+        expect(sheetGridOf('assets/heroes/hn_fighter_sheet.png')).toEqual(HERO_SHEET_GRID);
+        expect(sheetGridOf('assets/enemies/animal/e_cow_sheet.png')).toEqual(ENEMY_SHEET_GRID);
+        expect(sheetGridOf('assets/tokens/ore/t_quarry.png')).toBeNull();
         expect(HERO_SHEET_GRID).toEqual({ cols: 8, rows: 3 });
         expect(ENEMY_SHEET_GRID).toEqual({ cols: 4, rows: 4 });
     });
@@ -237,9 +237,9 @@ describe('generateSpriteFx — files on disk, kept current', () => {
 
     beforeAll(async () => {
         root = fs.mkdtempSync(path.join(os.tmpdir(), 'sprite-fx-'));
-        await writeArt('assets/tokens/token_test.png', 4, 4, [[1, 1], [2, 1], [1, 2]]);
-        await writeArt('assets/ui/ui_test.png', 2, 2, [[0, 0]]);
-        await writeArt('assets/heroes/animations/ani_test_0.png', 16, 6, [[1, 1], [9, 4]]);
+        await writeArt('assets/tokens/test/t_test.png', 4, 4, [[1, 1], [2, 1], [1, 2]]);
+        await writeArt('assets/ui/u_test.png', 2, 2, [[0, 0]]);
+        await writeArt('assets/heroes/hn_test_sheet.png', 16, 6, [[1, 1], [9, 4]]);
         await writeArt('assets/audio/not_a_sprite.png', 2, 2, [[0, 0]]);
     });
     afterAll(() => { try { fs.rmSync(root, { recursive: true, force: true }); } catch { /* temp */ } });
@@ -248,22 +248,22 @@ describe('generateSpriteFx — files on disk, kept current', () => {
         const r = await generateSpriteFx({ root });
         expect(r.generated).toBe(3);
         expect(listSprites(root)).toEqual([
-            'assets/heroes/animations/ani_test_0.png', 'assets/tokens/token_test.png', 'assets/ui/ui_test.png'
+            'assets/heroes/hn_test_sheet.png', 'assets/tokens/test/t_test.png', 'assets/ui/u_test.png'
         ]);
         const manifest = JSON.parse(fs.readFileSync(path.join(out(), 'manifest.json'), 'utf8'));
-        expect(manifest.sprites['assets/tokens/token_test.png']).toMatchObject({ w: 4, h: 4, outlined: true });
-        expect(manifest.sprites['assets/ui/ui_test.png']).toMatchObject({ w: 2, h: 2, outlined: false });
-        expect(manifest.sprites['assets/heroes/animations/ani_test_0.png']).toMatchObject({ w: 16, h: 6, cols: 8, rows: 3, outlined: true, ringPad: 1 });
-        expect(manifest.sprites['assets/tokens/token_test.png'].ringPad).toBeUndefined();
-        expect(fs.existsSync(path.join(out(), 'ol-work', 'assets/ui/ui_test.png'))).toBe(false);
+        expect(manifest.sprites['assets/tokens/test/t_test.png']).toMatchObject({ w: 4, h: 4, outlined: true });
+        expect(manifest.sprites['assets/ui/u_test.png']).toMatchObject({ w: 2, h: 2, outlined: false });
+        expect(manifest.sprites['assets/heroes/hn_test_sheet.png']).toMatchObject({ w: 16, h: 6, cols: 8, rows: 3, outlined: true, ringPad: 1 });
+        expect(manifest.sprites['assets/tokens/test/t_test.png'].ringPad).toBeUndefined();
+        expect(fs.existsSync(path.join(out(), 'ol-work', 'assets/ui/u_test.png'))).toBe(false);
         expect(fs.existsSync(path.join(out(), 'sil', 'assets/audio/not_a_sprite.png'))).toBe(false);
         // Nothing was written beside the owner's art.
-        expect(fs.readdirSync(path.join(root, 'public', 'assets', 'tokens'))).toEqual(['token_test.png']);
+        expect(fs.readdirSync(path.join(root, 'public', 'assets', 'tokens', 'test'))).toEqual(['t_test.png']);
     });
 
     it('the silhouette PNG decodes to the art’s mask in black', async () => {
-        const src = await read(path.join(root, 'public', 'assets/tokens/token_test.png'));
-        const sil = await read(path.join(out(), 'sil', 'assets/tokens/token_test.png'));
+        const src = await read(path.join(root, 'public', 'assets/tokens/test/t_test.png'));
+        const sil = await read(path.join(out(), 'sil', 'assets/tokens/test/t_test.png'));
         expect([sil.w, sil.h]).toEqual([4, 4]);
         const mask = alphaMask(src.data, 4, 4);
         for (let i = 0; i < 16; i++) {
@@ -275,11 +275,11 @@ describe('generateSpriteFx — files on disk, kept current', () => {
     });
 
     it('each outline PNG decodes to the cardinal ring, at the art’s own pixel size plus 1, in its colour', async () => {
-        const src = await read(path.join(root, 'public', 'assets/tokens/token_test.png'));
+        const src = await read(path.join(root, 'public', 'assets/tokens/test/t_test.png'));
         const mask = alphaMask(src.data, 4, 4);
         const want = bruteRing(mask, 4, 4, null);
         for (const [colour, rgb] of Object.entries(OUTLINE_COLOURS)) {
-            const img = await read(path.join(out(), `ol-${colour}`, 'assets/tokens/token_test.png'));
+            const img = await read(path.join(out(), `ol-${colour}`, 'assets/tokens/test/t_test.png'));
             // One image pixel per art pixel: whole art pixels once scaled with the sprite.
             expect([img.w, img.h]).toEqual([6, 6]);
             const got = new Set();
@@ -295,8 +295,8 @@ describe('generateSpriteFx — files on disk, kept current', () => {
     });
 
     it('a sheet’s outline keeps the sheet’s grid, each cell padded by one pixel, cardinal only per frame', async () => {
-        const src = await read(path.join(root, 'public', 'assets/heroes/animations/ani_test_0.png'));
-        const img = await read(path.join(out(), 'ol-hover', 'assets/heroes/animations/ani_test_0.png'));
+        const src = await read(path.join(root, 'public', 'assets/heroes/hn_test_sheet.png'));
+        const img = await read(path.join(out(), 'ol-hover', 'assets/heroes/hn_test_sheet.png'));
         // 8 × 3 cells of 2 × 2 become cells of 4 × 4.
         expect([img.w, img.h]).toEqual([32, 12]);
         const mask = alphaMask(src.data, 16, 6);
@@ -308,16 +308,16 @@ describe('generateSpriteFx — files on disk, kept current', () => {
 
     it('a second run redraws nothing; a changed sprite is redrawn; a deleted one is cleaned up', async () => {
         expect((await generateSpriteFx({ root })).generated).toBe(0);
-        await writeArt('assets/tokens/token_test.png', 4, 4, [[0, 0]]);
+        await writeArt('assets/tokens/test/t_test.png', 4, 4, [[0, 0]]);
         expect((await generateSpriteFx({ root })).generated).toBe(1);
-        const sil = await read(path.join(out(), 'sil', 'assets/tokens/token_test.png'));
+        const sil = await read(path.join(out(), 'sil', 'assets/tokens/test/t_test.png'));
         expect(sil.data[3]).toBe(255);
         expect(sil.data[(1 * 4 + 1) * 4 + 3]).toBe(0);
-        fs.rmSync(path.join(root, 'public', 'assets/ui/ui_test.png'));
+        fs.rmSync(path.join(root, 'public', 'assets/ui/u_test.png'));
         const r = await generateSpriteFx({ root });
         expect(r.removed).toBe(1);
-        expect(fs.existsSync(path.join(out(), 'sil', 'assets/ui/ui_test.png'))).toBe(false);
+        expect(fs.existsSync(path.join(out(), 'sil', 'assets/ui/u_test.png'))).toBe(false);
         const manifest = JSON.parse(fs.readFileSync(path.join(out(), 'manifest.json'), 'utf8'));
-        expect(manifest.sprites['assets/ui/ui_test.png']).toBeUndefined();
+        expect(manifest.sprites['assets/ui/u_test.png']).toBeUndefined();
     });
 });

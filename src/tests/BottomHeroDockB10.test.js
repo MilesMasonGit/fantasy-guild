@@ -30,7 +30,7 @@ import { drawnPoint } from './fixtures/drawnPoint.js';
 const h = React.createElement;
 
 const hero = (id, name, hp = 100, extra = {}) => ({
-    id, name, spriteId: 'hero_recruit_0', hp: { current: hp, max: 100 }, status: 'idle', equipment: {}, ...extra
+    id, name, spriteId: 'hn_recruit_por', hp: { current: hp, max: 100 }, status: 'idle', equipment: {}, ...extra
 });
 
 const engine = {

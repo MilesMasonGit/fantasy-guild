@@ -40,7 +40,7 @@ registerTokenTypes({
     /** The station under test: one skill, one pool, nothing else going on. */
     fixture_drop_bench: {
         id: 'fixture_drop_bench', name: 'Fixture Drop Bench', tokenType: 'station',
-        rarity: 'common', theme: 'fixture', uses: 900, sprite: 'skill_flask',
+        rarity: 'common', theme: 'fixture', uses: 900, sprite: 's_flask',
         requiresHero: false,
         config: { skill: 'fixture_drop_skill', skillRequired: 1, cycleTimeMs: 10000, xp: 0 },
         statements: [{
@@ -52,19 +52,19 @@ registerTokenTypes({
     /** A limited Token to be crafted — 12 charges when fresh. */
     fixture_dropped_tool: {
         id: 'fixture_dropped_tool', name: 'Fixture Dropped Tool', tokenType: 'support',
-        rarity: 'common', theme: 'fixture', uses: 12, sprite: 'skill_mining',
+        rarity: 'common', theme: 'fixture', uses: 12, sprite: 's_mining',
         requiresHero: false
     },
     /** Filler for crowding the station (Token Lifecycle 5.3). */
     fixture_drop_crowd: {
         id: 'fixture_drop_crowd', name: 'Fixture Crowd', tokenType: 'support',
-        rarity: 'common', theme: 'fixture', uses: 1, sprite: 'skill_mining',
+        rarity: 'common', theme: 'fixture', uses: 1, sprite: 's_mining',
         requiresHero: false
     },
     /** An unlimited Token to be crafted — `uses: null`. */
     fixture_dropped_eternal: {
         id: 'fixture_dropped_eternal', name: 'Fixture Dropped Eternal', tokenType: 'support',
-        rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_mining',
+        rarity: 'rare', theme: 'fixture', uses: null, sprite: 's_mining',
         requiresHero: false
     }
 });

@@ -152,7 +152,7 @@ export const GuildUpgradeInspection = ({ upgradeDef, onClose }) => {
                     {!accessible && (
                         <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                             <img
-                                src="/assets/ui/ui_lock.png"
+                                src="/assets/ui/u_lock.png"
                                 alt="Locked"
                                 className="w-16 h-16 object-contain drop-shadow-lg"
                                 style={{ imageRendering: 'pixelated' }}
@@ -183,7 +183,7 @@ export const GuildUpgradeInspection = ({ upgradeDef, onClose }) => {
                     ) : !accessible ? (
                         <div className="w-full py-2.5 rounded-lg bg-red-950/20 border border-red-500/30 text-xs font-bold text-red-300 flex items-center justify-center gap-2">
                             <img
-                                src="/assets/ui/ui_lock.png"
+                                src="/assets/ui/u_lock.png"
                                 alt="Locked"
                                 className="w-4 h-4 object-contain"
                                 style={{ imageRendering: 'pixelated' }}

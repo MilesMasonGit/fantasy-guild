@@ -60,7 +60,7 @@ registerTokenTypes({
     /** Watches for Coal specifically, not for "a neighbour finished". */
     fixture_coal_watcher: {
         id: 'fixture_coal_watcher', name: 'Fixture Coal Watcher', tokenType: 'buff',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_industry',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_industry',
         requiresHero: false,
         statements: [grantOf('item_bones', {
             event: 'ITEM_PRODUCED', scope: TRIGGER_SCOPES.NEARBY,
@@ -71,7 +71,7 @@ registerTokenTypes({
     /** The same rule with no item named — must fire on nothing. */
     fixture_blank_watcher: {
         id: 'fixture_blank_watcher', name: 'Fixture Blank Watcher', tokenType: 'buff',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_industry',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_industry',
         requiresHero: false,
         statements: [grantOf('item_bones', {
             event: 'ITEM_PRODUCED', scope: TRIGGER_SCOPES.NEARBY, cooldownMs: 0
@@ -81,7 +81,7 @@ registerTokenTypes({
     /** Produces Oak Wood, and reacts to its OWN completion. */
     fixture_self_reactor: {
         id: 'fixture_self_reactor', name: 'Fixture Self Reactor', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature',
         config: {
             skill: 'forestry', skillRequired: 1, cycleTimeMs: 12000, xp: 1,
             inputs: [], outputs: [{ itemId: 'fixture_oak_wood', quantity: 1, chance: 100 }]
@@ -100,7 +100,7 @@ registerTokenTypes({
      */
     fixture_ouroboros: {
         id: 'fixture_ouroboros', name: 'Fixture Ouroboros', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature',
         config: {
             skill: 'forestry', skillRequired: 1, cycleTimeMs: 12000, xp: 1,
             inputs: [], outputs: [{ itemId: 'fixture_oak_wood', quantity: 1, chance: 100 }]
@@ -113,7 +113,7 @@ registerTokenTypes({
     /** A plain producer of Coal, to be watched. */
     fixture_coal_seam: {
         id: 'fixture_coal_seam', name: 'Fixture Coal Seam', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_industry',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_industry',
         config: {
             skill: 'mining', skillRequired: 1, cycleTimeMs: 12000, xp: 1,
             inputs: [], outputs: [{ itemId: 'item_coal', quantity: 1, chance: 100 }]
@@ -123,7 +123,7 @@ registerTokenTypes({
     /** Produces something else entirely. */
     fixture_wood_lot: {
         id: 'fixture_wood_lot', name: 'Fixture Wood Lot', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature',
         config: {
             skill: 'forestry', skillRequired: 1, cycleTimeMs: 12000, xp: 1,
             inputs: [], outputs: [{ itemId: 'fixture_oak_wood', quantity: 1, chance: 100 }]
@@ -204,7 +204,7 @@ describe('A neighbour produces a specific item', () => {
         registerTokenTypes({
             fixture_picky_watcher: {
                 id: 'fixture_picky_watcher', name: 'Fixture Picky Watcher', tokenType: 'buff',
-                rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_industry',
+                rarity: 'common', theme: 'fixture', uses: null, sprite: 's_industry',
                 requiresHero: false,
                 statements: [grantOf('item_bones', {
                     event: 'ITEM_PRODUCED', scope: TRIGGER_SCOPES.NEARBY,
@@ -286,7 +286,7 @@ describe('⚠️ The loop guard', () => {
         registerTokenTypes({
             fixture_domino: {
                 id: 'fixture_domino', name: 'Fixture Domino', tokenType: 'buff',
-                rarity: 'common', theme: 'fixture', uses: 1, sprite: 'skill_industry',
+                rarity: 'common', theme: 'fixture', uses: 1, sprite: 's_industry',
                 requiresHero: false,
                 statements: [grantOf('item_bones', {
                     event: 'TOKEN_DEPLETED', scope: TRIGGER_SCOPES.NEARBY, cooldownMs: 0

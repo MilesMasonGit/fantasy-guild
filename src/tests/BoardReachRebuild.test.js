@@ -43,7 +43,7 @@ const buff = (id, value, extra = {}, payloadType = EFFECT_TYPES.YIELD) => ({
 });
 const type = (id, statements, extra = {}) => ({
     id, name: id, tokenType: 'buff', rarity: 'common', theme: 'fixture',
-    uses: null, sprite: 'skill_occult', statements, ...extra
+    uses: null, sprite: 's_occult', statements, ...extra
 });
 
 registerTokenTypes({

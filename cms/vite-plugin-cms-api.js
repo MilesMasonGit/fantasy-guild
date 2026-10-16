@@ -3,6 +3,8 @@ import path from 'path';
 import { execFile } from 'child_process';
 import { normaliseStarterCamp } from '../src/config/starterCampShape.js';
 import { listDropFolder, importDropFile, libraryFiles } from './paletteInbox.js';
+import { resolveSpritePath, currentSpriteName } from '../src/utils/AssetManager.js';
+import { studioAssetPath } from './assetNaming.js';
 
 
 /**
@@ -437,36 +439,22 @@ export default function cmsFileApi({ inboxDir, paletteInboxDir, palettesDir, stu
           req.on('data', chunk => body += chunk);
           req.on('end', () => {
             try {
-              const { filename, category, base64Image } = JSON.parse(body);
+              const { filename, category, group, base64Image } = JSON.parse(body);
               if (!filename || !category || !base64Image) {
                 res.statusCode = 400;
                 res.end(JSON.stringify({ error: 'Missing filename, category, or base64Image' }));
                 return;
               }
 
-              const cleanFilename = filename.replace(/[^a-z0-9_-]/gi, '_');
-              
-              let baseDir;
-              if (category === 'items') {
-                baseDir = path.resolve(projectRoot, 'public', 'assets', 'items');
-              } else if (category === 'enemy') {
-                baseDir = path.resolve(projectRoot, 'public', 'assets', 'enemies');
-              } else {
-                baseDir = path.resolve(projectRoot, 'public', 'assets', 'dataset', category);
+              // Named and filed by docs/reference/ASSET_NAMING.md: <kind>/<group>/<prefix>_<name>.png.
+              const target = studioAssetPath({ name: filename, category, group });
+              if (target.error) {
+                res.statusCode = 400;
+                res.end(JSON.stringify({ error: target.error }));
+                return;
               }
-
-              const parts = cleanFilename.split('_');
-              let targetDir = baseDir;
-              if (parts.length > 1) {
-                const subpath = parts.slice(0, -1).join('/');
-                targetDir = path.join(baseDir, subpath);
-              }
-
-              if (!fs.existsSync(targetDir)) {
-                fs.mkdirSync(targetDir, { recursive: true });
-              }
-
-              const filePath = path.join(targetDir, `${cleanFilename}.png`);
+              const filePath = path.resolve(projectRoot, 'public', 'assets', ...target.rel.split('/'));
+              fs.mkdirSync(path.dirname(filePath), { recursive: true });
 
               // Remove base64 prefix
               const matches = base64Image.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
@@ -480,7 +468,7 @@ export default function cmsFileApi({ inboxDir, paletteInboxDir, palettesDir, stu
               fs.writeFileSync(filePath, imageBuffer);
 
               res.setHeader('Content-Type', 'application/json');
-              res.end(JSON.stringify({ success: true, path: filePath }));
+              res.end(JSON.stringify({ success: true, path: filePath, rel: target.rel }));
             } catch (err) {
               res.statusCode = 500;
               res.end(JSON.stringify({ error: 'Failed to save asset: ' + err.message }));
@@ -639,38 +627,11 @@ export default function cmsFileApi({ inboxDir, paletteInboxDir, palettesDir, stu
                   ref = entity.spriteId || entity.sprite || entity.background;
                 }
 
-                if (!ref) return null;
-                if (typeof ref === 'string' && ref.startsWith('assets/')) {
-                  return ref;
-                }
-                if (spriteManifest[ref]) {
-                  return spriteManifest[ref];
-                }
-                // Check prefix fallbacks matching AssetManager.js
-                if (typeof ref === 'string') {
-                  let folder = '';
-                  if (ref.startsWith('ore_')) folder = 'mining/ore/';
-                  else if (ref.startsWith('ingot_')) folder = 'mining/ingot/';
-                  else if (ref.startsWith('battleaxe_')) folder = 'equipment/battleaxe/';
-                  else if (ref.startsWith('longsword_')) folder = 'equipment/longsword/';
-                  else if (ref.startsWith('staff_')) folder = 'equipment/staff/';
-                  else if (ref.startsWith('key_')) folder = 'crime/key/';
-                  else if (ref.startsWith('drink_')) folder = 'drink/';
-                  else if (ref.startsWith('wood_')) folder = 'wood/';
-                  if (folder) {
-                    return `assets/sprites/implemented/items/${folder}${ref}.png`;
-                  }
-
-                  if (ref.startsWith('bg_') || ref.startsWith('scene_')) {
-                    if (ref.includes('.')) {
-                      const baseId = ref.split('.')[0];
-                      if (spriteManifest[baseId]) return spriteManifest[baseId];
-                      return `assets/sprites/implemented/biomes/${ref}`;
-                    }
-                    return `assets/sprites/implemented/biomes/${ref}.png`;
-                  }
-                }
-                return null;
+                if (!ref || typeof ref !== 'string') return null;
+                if (ref.startsWith('assets/')) return ref;
+                // The manifest as it is on disk now (a sprite registered since this server started),
+                // then the game's own rules (old names, hero portraits, skill icons).
+                return spriteManifest[currentSpriteName(ref)] || spriteManifest[ref] || resolveSpritePath(ref);
               }
 
               // 4. Map active assignments

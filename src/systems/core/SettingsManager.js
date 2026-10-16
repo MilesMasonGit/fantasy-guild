@@ -3,6 +3,7 @@
 import { EventBus } from './EventBus.js';
 import { logger } from '../../utils/Logger.js';
 import { ENGINE_EVENTS } from './engineEvents.js';
+import { currentSpriteName } from '../../utils/AssetManager.js';
 
 const SETTINGS_STORAGE_KEY = 'fantasy_guild_settings';
 
@@ -50,7 +51,7 @@ const defaultSettings = {
         itemParticles: true,
         instantPackReveal: false,
         allCaps: true,
-        backgroundTile: 'pm_table_wood_spruce',
+        backgroundTile: 'u_table_wood_spruce',
         bubbleMenuRight: false
     },
     audio: {
@@ -122,6 +123,10 @@ class SettingsManagerClass {
 
                 // Deep merge to ensure new default settings are added to existing saves
                 this.settings = this._deepMerge(this.settings, parsed);
+
+                // The table background is a sprite name; settings saved before the art was
+                // renamed hold the old one.
+                if (this.settings.ui) this.settings.ui.backgroundTile = currentSpriteName(this.settings.ui.backgroundTile);
                 logger.debug('SettingsManager', 'Settings loaded from storage');
             }
         } catch (e) {

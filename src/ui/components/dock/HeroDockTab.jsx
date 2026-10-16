@@ -191,7 +191,7 @@ const HeroDockTabBody = memo(function HeroDockTabBody({
     const isWounded = hero.status === 'wounded';
     const job = hero.jobId ? getJob(hero.jobId) : null;
     const jobTitle = job ? job.name : (hero.className || 'Recruit');
-    const headshotPath = resolveSpritePath(hero.icon || 'icon_recruit_0') || resolveSpritePath(hero.spriteId || 'hero_recruit_0');
+    const headshotPath = resolveSpritePath(hero.icon || 'hn_recruit_icon_por') || resolveSpritePath(hero.spriteId || 'hn_recruit_por');
     const hp = Math.max(0, Math.round(hero.hp?.current ?? 0));
     const hpMax = Math.max(1, hero.hp?.max ?? 100);
     const pct = hpPercent(hero.hp);

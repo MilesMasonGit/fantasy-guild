@@ -9,7 +9,7 @@ import { describe, it, expect, vi } from 'vitest';
 const FILE = vi.hoisted(() => ({
     item_oak_wood: { name: 'Oak Wood', type: 'material', sprite: 'd_oak_wood', stackable: true, value: 1 },
     map_forest: {
-        name: 'Forest Map', description: '', type: 'map', tags: [], sprite: 'map_forest', stackable: true,
+        name: 'Forest Map', description: '', type: 'map', tags: [], sprite: 't_map_forest', stackable: true,
         autoSyncId: true, id: 'map_forest',
         cartography: {
             biome: 'forest', points: 40,
@@ -19,7 +19,7 @@ const FILE = vi.hoisted(() => ({
         }
     },
     mod_overgrown: {
-        name: 'Overgrown', type: 'modifier', sprite: 'map_flowers', stackable: true, id: 'mod_overgrown',
+        name: 'Overgrown', type: 'modifier', sprite: 't_map_flowers', stackable: true, id: 'mod_overgrown',
         cartography: { effects: [{ kind: 'density', typeId: 'token_oak_tree', points: 16 }] }
     }
 }));

@@ -135,7 +135,7 @@ async function assembleSheet(stagingDir, category, cleanName, cellW, cellH) {
   // Save directly to public/assets/enemies/<category>/ folder for convenient cleanup & game referencing
   const assetsEnemyDir = path.resolve('public', 'assets', 'enemies', category);
   if (fs.existsSync(assetsEnemyDir)) {
-    const assetsSheetPath = path.join(assetsEnemyDir, `ani_${cleanName}_raw.png`);
+    const assetsSheetPath = path.join(assetsEnemyDir, `e_${cleanName}_sheet_raw.png`);
     fs.writeFileSync(assetsSheetPath, finalSheetBuf);
     console.log(`[Assemble] Saved raw sheet in assets folder: ${assetsSheetPath}`);
   }

@@ -27,7 +27,7 @@ import { BankHeroPanel } from '../ui/components/dock/BankHeroPanel.jsx';
 const h = React.createElement;
 
 const hero = (id, name, hp = 100) => (
-    { id, name, spriteId: 'hero_recruit_0', hp: { current: hp, max: 100 }, status: 'idle', equipment: {} }
+    { id, name, spriteId: 'hn_recruit_por', hp: { current: hp, max: 100 }, status: 'idle', equipment: {} }
 );
 
 const engine = {

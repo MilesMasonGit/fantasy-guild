@@ -36,7 +36,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
  * the marker, but nothing else ever pushes it, and it never leaves the mat or is demolished.
  */
 
-const base = { tokenType: 'resource', rarity: 'common', theme: 'fixture', sprite: 'skill_nature', uses: null };
+const base = { tokenType: 'resource', rarity: 'common', theme: 'fixture', sprite: 's_nature', uses: null };
 registerTokenTypes({
     fx_sapling: { ...base, id: 'fx_sapling', name: 'Fx Sapling', grows: { into: 'fx_tree', afterMs: 30000 } },
     fx_tree: { ...base, id: 'fx_tree', name: 'Fx Tree', uses: 5 },

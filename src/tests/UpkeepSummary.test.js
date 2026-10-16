@@ -29,7 +29,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 const item = (id, name) => ({
-    id, name, type: 'material', sprite: 'wood_oak', description: '', tags: [],
+    id, name, type: 'material', sprite: 'i_wood_oak', description: '', tags: [],
     stackable: true, restoreAmount: 0, restoreType: '', regen: 0, equipSlot: '', value: 1
 });
 registerItems({
@@ -42,12 +42,12 @@ const INCENSE = 'fixture_us_incense';
 registerTokenTypes({
     fixture_us_sapling: {
         id: 'fixture_us_sapling', name: 'Fixture Us Sapling', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature'
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature'
     },
     /** 5 Saplings, one attempt every 20 s, a seed each = 3 seeds a minute while spawning. */
     fixture_us_forest: {
         id: 'fixture_us_forest', name: 'Fixture Us Forest', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature',
         spawner: {
             spawns: [{ typeId: 'fixture_us_sapling', weight: 1 }],
             allowance: 5, intervalMs: 20000,
@@ -57,7 +57,7 @@ registerTokenTypes({
     /** A Shrine burning 2 incense every 30 s = 4 a minute. */
     fixture_us_shrine: {
         id: 'fixture_us_shrine', name: 'Fixture Us Shrine', tokenType: 'buff',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature',
         statements: [{
             id: 'stm_us_aura', keyword: KEYWORD.PROVIDES, to: { mode: 'all' },
             payload: { type: EFFECT_TYPES.YIELD, bucket: 'percentage', value: 0.1 },
@@ -67,7 +67,7 @@ registerTokenTypes({
     /** A Hall stand-in: 10 seeds per 5-minute Passive Production lap = 2 a minute. */
     fixture_us_hall: {
         id: 'fixture_us_hall', name: 'Fixture Us Hall', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature',
         trickle: [{ itemId: SEED, quantity: 10 }]
     }
 });

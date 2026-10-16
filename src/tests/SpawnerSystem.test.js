@@ -38,7 +38,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 // --- Fixtures (test instruments, not content) -------------------------------
 
 const item = (id, name) => ({
-    id, name, type: 'material', sprite: 'wood_oak', description: '', tags: [],
+    id, name, type: 'material', sprite: 'i_wood_oak', description: '', tags: [],
     stackable: true, restoreAmount: 0, restoreType: '', regen: 0, equipSlot: '', value: 1
 });
 registerItems({
@@ -52,12 +52,12 @@ const TWINE = 'fixture_sp_twine';
 registerTokenTypes({
     fixture_sp_sapling: {
         id: 'fixture_sp_sapling', name: 'Fixture Sp Sapling', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature',
         grows: { into: 'fixture_sp_tree', afterMs: 30000 }
     },
     fixture_sp_tree: {
         id: 'fixture_sp_tree', name: 'Fixture Sp Tree', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: 3, sprite: 'skill_nature',
+        rarity: 'common', theme: 'fixture', uses: 3, sprite: 's_nature',
         config: {
             skill: 'forestry', skillRequired: 1, cycleTimeMs: 12000, xp: 1,
             inputs: [], outputs: [{ itemId: 'fixture_oak_wood', quantity: 1, chance: 100 }]
@@ -66,7 +66,7 @@ registerTokenTypes({
     /** The Forest: 5 of the Sapling → Tree family, one attempt every 20 s, a seed each. */
     fixture_sp_forest: {
         id: 'fixture_sp_forest', name: 'Fixture Sp Forest', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature',
         spawner: {
             spawns: [{ typeId: 'fixture_sp_sapling', weight: 1 }],
             allowance: 5, intervalMs: 20000,
@@ -76,13 +76,13 @@ registerTokenTypes({
     /** Spawns Trees directly (same family) — for "families share a cap". */
     fixture_sp_grove: {
         id: 'fixture_sp_grove', name: 'Fixture Sp Grove', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature',
         spawner: { spawns: [{ typeId: 'fixture_sp_tree', weight: 1 }], allowance: 2, intervalMs: 10000, upkeep: [] }
     },
     /** Two items per spawn — for all-or-nothing upkeep. */
     fixture_sp_orchard: {
         id: 'fixture_sp_orchard', name: 'Fixture Sp Orchard', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature',
         spawner: {
             spawns: [{ typeId: 'fixture_sp_sapling', weight: 1 }], allowance: 3, intervalMs: 5000,
             upkeep: [{ itemId: SEED, quantity: 1 }, { itemId: TWINE, quantity: 2 }]
@@ -91,7 +91,7 @@ registerTokenTypes({
     /** A free spawner of a plain small Token. */
     fixture_sp_camp: {
         id: 'fixture_sp_camp', name: 'Fixture Sp Camp', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature',
         spawner: { spawns: [{ typeId: 'fixture_passive', weight: 1 }], allowance: 4, intervalMs: 5000, upkeep: [] }
     }
 });
@@ -272,7 +272,7 @@ describe('⭐ the family census is exact within one tick (CR3-047)', () => {
         registerTokenTypes({
             fixture_sp_shifting: {
                 id: 'fixture_sp_shifting', name: 'Fixture Sp Shifting', tokenType: 'resource',
-                rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature',
+                rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature',
                 spawner: { spawns: [{ typeId: 'fixture_sp_sapling', weight: 1 }], allowance: 2, intervalMs: 5000, upkeep: [] }
             }
         });
@@ -281,7 +281,7 @@ describe('⭐ the family census is exact within one tick (CR3-047)', () => {
         registerTokenTypes({
             fixture_sp_shifting: {
                 id: 'fixture_sp_shifting', name: 'Fixture Sp Shifting', tokenType: 'resource',
-                rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature',
+                rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature',
                 spawner: { spawns: [{ typeId: 'fixture_passive', weight: 1 }], allowance: 2, intervalMs: 5000, upkeep: [] }
             }
         });

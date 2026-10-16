@@ -66,7 +66,7 @@ function selfBuffingProducer(id, reach) {
     registerTokenTypes({
         [id]: {
             id, name: id, tokenType: 'resource', rarity: 'common', theme: 'fixture',
-            uses: null, sprite: 'skill_nature',
+            uses: null, sprite: 's_nature',
             config: {
                 skill: 'forestry', skillRequired: 1, cycleTimeMs: 12000, xp: 1,
                 inputs: [], outputs: [{ itemId: 'fixture_oak_wood', quantity: 2, chance: 100 }]
@@ -137,7 +137,7 @@ describe('⚠️ nothing authored before P2 moved (ER-5)', () => {
         registerTokenTypes({
             fixture_legacy_shape_buff: {
                 id: 'fixture_legacy_shape_buff', name: 'Legacy Shape Buff', tokenType: 'buff',
-                rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_occult',
+                rarity: 'common', theme: 'fixture', uses: null, sprite: 's_occult',
                 statements: [{
                     id: 'stm_legacy_shape', keyword: 'provides',
                     to: { mode: 'all', value: '' },
@@ -213,7 +213,7 @@ describe('board reach carries across the whole playmat', () => {
         registerTokenTypes({
             fixture_board_tagged: {
                 id: 'fixture_board_tagged', name: 'Board Tagged', tokenType: 'buff',
-                rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_industry',
+                rarity: 'rare', theme: 'fixture', uses: null, sprite: 's_industry',
                 statements: [{
                     id: 'stm_board_tagged', keyword: 'provides', reach: REACH.BOARD,
                     to: { mode: 'tag', value: 'seafood' },
@@ -236,7 +236,7 @@ describe('a firing rule reaches as far as it says (the outbound side)', () => {
         registerTokenTypes({
             fixture_self_grant: {
                 id: 'fixture_self_grant', name: 'Self Grant', tokenType: 'buff',
-                rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_industry',
+                rarity: 'rare', theme: 'fixture', uses: null, sprite: 's_industry',
                 statements: [{
                     id: 'stm_self_grant', keyword: 'grants', reach: REACH.SELF,
                     to: { mode: 'all', value: '' },

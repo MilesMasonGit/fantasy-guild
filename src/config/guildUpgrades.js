@@ -28,15 +28,15 @@ export function rosterLimitForRank(rank) {
  * `flag_radius` has no art of its own: it borrows the plain hero flag the mat draws.
  */
 export const UPGRADE_SPRITES = {
-    roster_size: '/assets/tokens/upgrade/token_bunk_bed.png',
-    bank_slots: '/assets/tokens/chest/token_chest_iron.png',
-    bank_tabs: '/assets/tokens/chest/token_chest_addy.png',
-    guild_hall: '/assets/tokens/token_guildhall.png',
-    wishing_well: '/assets/tokens/upgrade/token_well_wishing.png',
-    flag_radius: '/assets/ui/flag/hero_flag_base.png',
-    notice_board: '/assets/ui/quest_board.png',
-    cartography_slots: '/assets/tokens/map/map_base.png',
-    token_cap: '/assets/tokens/map/map_guild.png'
+    roster_size: '/assets/tokens/upgrade/t_bunk_bed.png',
+    bank_slots: '/assets/tokens/chest/t_chest_iron.png',
+    bank_tabs: '/assets/tokens/chest/t_chest_addy.png',
+    guild_hall: '/assets/tokens/upgrade/t_guildhall.png',
+    wishing_well: '/assets/tokens/upgrade/t_well_wishing.png',
+    flag_radius: '/assets/ui/u_flag_base.png',
+    notice_board: '/assets/ui/u_quest_board.png',
+    cartography_slots: '/assets/tokens/map/t_map_base.png',
+    token_cap: '/assets/tokens/map/t_map_guild.png'
 };
 
 /**

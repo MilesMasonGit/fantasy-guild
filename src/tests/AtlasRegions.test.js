@@ -32,7 +32,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 registerTokenTypes({
     fixture_atlas_site: {
         id: 'fixture_atlas_site', name: 'Fixture Site', tokenType: 'resource', landmark: true,
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature'
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature'
     }
 });
 

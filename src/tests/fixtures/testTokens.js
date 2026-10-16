@@ -18,7 +18,7 @@ import { KEYWORD } from '../../systems/effects/statements.js';
 export const FIXTURE_TOKENS = {
     fixture_producer: {
         id: 'fixture_producer', name: 'Fixture Producer', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: 5000, sprite: 'skill_nature',
+        rarity: 'common', theme: 'fixture', uses: 5000, sprite: 's_nature',
         config: {
             skill: 'forestry', skillRequired: 1, cycleTimeMs: 12000, xp: 4,
             inputs: [],
@@ -34,7 +34,7 @@ export const FIXTURE_TOKENS = {
      */
     fixture_range_producer: {
         id: 'fixture_range_producer', name: 'Fixture Range Producer', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: 5000, sprite: 'skill_nature',
+        rarity: 'common', theme: 'fixture', uses: 5000, sprite: 's_nature',
         config: {
             skill: 'forestry', skillRequired: 1, cycleTimeMs: 12000, xp: 4,
             inputs: [],
@@ -45,7 +45,7 @@ export const FIXTURE_TOKENS = {
     /** A second producer of a DIFFERENT item, for per-item shortfall tests. */
     fixture_producer_alt: {
         id: 'fixture_producer_alt', name: 'Fixture Alt Producer', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: 4000, sprite: 'skill_industry',
+        rarity: 'common', theme: 'fixture', uses: 4000, sprite: 's_industry',
         config: {
             skill: 'mining', skillRequired: 1, cycleTimeMs: 15000, xp: 5,
             inputs: [],
@@ -56,7 +56,7 @@ export const FIXTURE_TOKENS = {
     /** Shallow consumer: needs 2. Pairs with the deep one for risk 13. */
     fixture_consumer: {
         id: 'fixture_consumer', name: 'Fixture Consumer', tokenType: 'station',
-        rarity: 'uncommon', theme: 'fixture', uses: 600, sprite: 'skill_flask',
+        rarity: 'uncommon', theme: 'fixture', uses: 600, sprite: 's_flask',
         config: {
             skill: 'alchemy', skillRequired: 1, cycleTimeMs: 18000, xp: 8,
             inputs: [{ itemId: 'fixture_oak_wood', quantity: 2 }],
@@ -74,7 +74,7 @@ export const FIXTURE_TOKENS = {
      */
     fixture_deep_consumer: {
         id: 'fixture_deep_consumer', name: 'Fixture Deep Consumer', tokenType: 'station',
-        rarity: 'rare', theme: 'fixture', uses: 400, sprite: 'skill_culinary',
+        rarity: 'rare', theme: 'fixture', uses: 400, sprite: 's_culinary',
         config: {
             skill: 'smithing', skillRequired: 1, cycleTimeMs: 18000, xp: 20,
             inputs: [{ itemId: 'fixture_oak_wood', quantity: 5 }],
@@ -85,7 +85,7 @@ export const FIXTURE_TOKENS = {
     /** Skill-gated, for Access. Requires 25; nothing else does. */
     fixture_gated: {
         id: 'fixture_gated', name: 'Fixture Gated', tokenType: 'resource',
-        rarity: 'rare', theme: 'fixture', uses: 2000, sprite: 'skill_crime',
+        rarity: 'rare', theme: 'fixture', uses: 2000, sprite: 's_crime',
         config: {
             skill: 'mining', skillRequired: 25, cycleTimeMs: 20000, xp: 30,
             inputs: [],
@@ -103,7 +103,7 @@ export const FIXTURE_TOKENS = {
      */
     fixture_ungated: {
         id: 'fixture_ungated', name: 'Fixture Ungated', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: 2000, sprite: 'skill_industry',
+        rarity: 'common', theme: 'fixture', uses: 2000, sprite: 's_industry',
         config: {
             skill: 'crafting', skillRequired: 0, cycleTimeMs: 10000, xp: 3,
             inputs: [],
@@ -114,7 +114,7 @@ export const FIXTURE_TOKENS = {
     /** Passive Generator: no hero, and deliberately far worse than the producer. */
     fixture_passive: {
         id: 'fixture_passive', name: 'Fixture Passive', tokenType: 'passive',
-        rarity: 'uncommon', theme: 'fixture', uses: 900, sprite: 'skill_social',
+        rarity: 'uncommon', theme: 'fixture', uses: 900, sprite: 's_social',
         requiresHero: false,
         config: {
             skill: 'forestry', skillRequired: 0, cycleTimeMs: 30000, xp: 0,
@@ -134,7 +134,7 @@ export const FIXTURE_TOKENS = {
      */
     fixture_station: {
         id: 'fixture_station', name: 'Fixture Station', tokenType: 'station',
-        rarity: 'uncommon', theme: 'fixture', uses: 700, sprite: 'skill_industry',
+        rarity: 'uncommon', theme: 'fixture', uses: 700, sprite: 's_industry',
         config: { skill: 'smithing', skillRequired: 1, cycleTimeMs: 16000, xp: 10 },
         statements: [
             { id: 'stm_fixture_station', keyword: KEYWORD.STATION, payload: { skill: 'fixture_station_skill' } }
@@ -148,7 +148,7 @@ export const FIXTURE_TOKENS = {
 
     fixture_kitchen: {
         id: 'fixture_kitchen', name: 'Fixture Kitchen', tokenType: 'station',
-        rarity: 'common', theme: 'fixture', uses: 900, sprite: 'skill_flask',
+        rarity: 'common', theme: 'fixture', uses: 900, sprite: 's_flask',
         config: { skill: 'cooking', skillRequired: 1, cycleTimeMs: 16000, xp: 3 },
         statements: [
             { id: 'stm_fixture_kitchen', keyword: KEYWORD.STATION, payload: { skill: 'cooking' } }
@@ -156,7 +156,7 @@ export const FIXTURE_TOKENS = {
     },
     fixture_camp_stove: {
         id: 'fixture_camp_stove', name: 'Fixture Camp Stove', tokenType: 'station',
-        rarity: 'common', theme: 'fixture', uses: 500, sprite: 'skill_flask',
+        rarity: 'common', theme: 'fixture', uses: 500, sprite: 's_flask',
         config: { skill: 'cooking', skillRequired: 1, cycleTimeMs: 16000, xp: 3 },
         statements: [
             { id: 'stm_fixture_camp_stove', keyword: KEYWORD.STATION, payload: { skill: 'cooking' } }
@@ -166,23 +166,23 @@ export const FIXTURE_TOKENS = {
     /** The Kitchen mechanic's two axes: a Tool and a Cookbook. */
     fixture_pie_tin: {
         id: 'fixture_pie_tin', name: 'Fixture Pie Tin', tokenType: 'context',
-        rarity: 'common', theme: 'fixture', uses: 60, sprite: 'skill_flask',
+        rarity: 'common', theme: 'fixture', uses: 60, sprite: 's_flask',
         provides: [{ tag: 'ctx_pie_tin', minTier: 1, chargeCost: 0 }]
     },
     fixture_cookbook: {
         id: 'fixture_cookbook', name: 'Fixture Cookbook', tokenType: 'context',
-        rarity: 'common', theme: 'fixture', uses: 60, sprite: 'skill_flask',
+        rarity: 'common', theme: 'fixture', uses: 60, sprite: 's_flask',
         provides: [{ tag: 'ctx_berry_cookbook', minTier: 1, chargeCost: 0 }]
     },
 
     fixture_context_a: {
         id: 'fixture_context_a', name: 'Fixture Context A', tokenType: 'context',
-        rarity: 'common', theme: 'fixture', uses: 40, sprite: 'skill_crime',
+        rarity: 'common', theme: 'fixture', uses: 40, sprite: 's_crime',
         provides: [{ tag: 'ctx_fixture_a', minTier: 1, chargeCost: 0 }]
     },
     fixture_context_b: {
         id: 'fixture_context_b', name: 'Fixture Context B', tokenType: 'context',
-        rarity: 'common', theme: 'fixture', uses: 40, sprite: 'skill_flask',
+        rarity: 'common', theme: 'fixture', uses: 40, sprite: 's_flask',
         provides: [{ tag: 'ctx_fixture_b', minTier: 1, chargeCost: 0 }]
     },
 
@@ -193,7 +193,7 @@ export const FIXTURE_TOKENS = {
 
     fixture_charge_station: {
         id: 'fixture_charge_station', name: 'Fixture Charge Station', tokenType: 'station',
-        rarity: 'common', theme: 'fixture', uses: 10, sprite: 'skill_industry',
+        rarity: 'common', theme: 'fixture', uses: 10, sprite: 's_industry',
         config: { skill: 'smithing', skillRequired: 1, cycleTimeMs: 10000, xp: 1 },
         statements: [
             { id: 'stm_fixture_charge_station', keyword: KEYWORD.STATION, payload: { skill: 'smithing' } }
@@ -201,21 +201,21 @@ export const FIXTURE_TOKENS = {
     },
     fixture_charged_context: {
         id: 'fixture_charged_context', name: 'Fixture Charged Context', tokenType: 'context',
-        rarity: 'common', theme: 'fixture', uses: 6, sprite: 'skill_industry',
+        rarity: 'common', theme: 'fixture', uses: 6, sprite: 's_industry',
         provides: [{ tag: 'ctx_fixture_charged', minTier: 1 }]
     },
     /** The same tag, forever. Charges deltas do not touch it at all. */
     fixture_charged_context_unlimited: {
         id: 'fixture_charged_context_unlimited', name: 'Fixture Endless Context',
         tokenType: 'context', rarity: 'mythic', theme: 'fixture', uses: null,
-        sprite: 'skill_industry',
+        sprite: 's_industry',
         provides: [{ tag: 'ctx_fixture_charged', minTier: 1 }]
     },
 
     /** Three statements, three charge deltas — the "planeswalker model" (§3.2). */
     fixture_trigger_free: {
         id: 'fixture_trigger_free', name: 'Fixture Free Trigger', tokenType: 'buff',
-        rarity: 'rare', theme: 'fixture', uses: 3, sprite: 'skill_occult',
+        rarity: 'rare', theme: 'fixture', uses: 3, sprite: 's_occult',
         statements: [{
             id: 'stm_free', keyword: 'grants', chargeDelta: 0,
             when: { event: 'CYCLE_COMPLETE', scope: 'nearby', cooldownMs: 0 },
@@ -224,7 +224,7 @@ export const FIXTURE_TOKENS = {
     },
     fixture_trigger_costly: {
         id: 'fixture_trigger_costly', name: 'Fixture Costly Trigger', tokenType: 'buff',
-        rarity: 'rare', theme: 'fixture', uses: 3, sprite: 'skill_occult',
+        rarity: 'rare', theme: 'fixture', uses: 3, sprite: 's_occult',
         statements: [{
             id: 'stm_costly', keyword: 'grants', chargeDelta: -2,
             when: { event: 'CYCLE_COMPLETE', scope: 'nearby', cooldownMs: 0 },
@@ -233,7 +233,7 @@ export const FIXTURE_TOKENS = {
     },
     fixture_trigger_restoring: {
         id: 'fixture_trigger_restoring', name: 'Fixture Restoring Trigger', tokenType: 'buff',
-        rarity: 'rare', theme: 'fixture', uses: 4, sprite: 'skill_occult',
+        rarity: 'rare', theme: 'fixture', uses: 4, sprite: 's_occult',
         statements: [{
             id: 'stm_restoring', keyword: 'grants', chargeDelta: 2,
             when: { event: 'CYCLE_COMPLETE', scope: 'nearby', cooldownMs: 0 },
@@ -243,7 +243,7 @@ export const FIXTURE_TOKENS = {
     /** A `+charges` effect on an unlimited Token is a no-op. */
     fixture_trigger_unlimited: {
         id: 'fixture_trigger_unlimited', name: 'Fixture Endless Trigger', tokenType: 'buff',
-        rarity: 'mythic', theme: 'fixture', uses: null, sprite: 'skill_occult',
+        rarity: 'mythic', theme: 'fixture', uses: null, sprite: 's_occult',
         statements: [{
             id: 'stm_endless', keyword: 'grants', chargeDelta: -2,
             when: { event: 'CYCLE_COMPLETE', scope: 'nearby', cooldownMs: 0 },
@@ -254,14 +254,14 @@ export const FIXTURE_TOKENS = {
     /** A TOOL context: gates whether, not what. */
     fixture_tool: {
         id: 'fixture_tool', name: 'Fixture Tool', tokenType: 'context',
-        rarity: 'common', theme: 'fixture', uses: 80, sprite: 'skill_industry',
+        rarity: 'common', theme: 'fixture', uses: 80, sprite: 's_industry',
         isTool: true,
         provides: [{ tag: 'ctx_fixture_tool', minTier: 1, chargeCost: 0 }]
     },
     /** A resource that does nothing without the tool beside it. */
     fixture_tool_gated: {
         id: 'fixture_tool_gated', name: 'Fixture Tool-Gated', tokenType: 'resource',
-        rarity: 'uncommon', theme: 'fixture', uses: 2600, sprite: 'skill_nature',
+        rarity: 'uncommon', theme: 'fixture', uses: 2600, sprite: 's_nature',
         config: { skill: 'forestry', skillRequired: 1, cycleTimeMs: 18000, xp: 12 },
         statements: [
             { id: 'stm_fixture_gated', keyword: KEYWORD.STATION, payload: { skill: 'fixture_gated_skill' } }
@@ -272,7 +272,7 @@ export const FIXTURE_TOKENS = {
     //     +10% must resolve to ×1.15 in ONE bucket, never ×1.05 × ×1.10.
     fixture_buff_yield: {
         id: 'fixture_buff_yield', name: 'Fixture Yield Buff', tokenType: 'buff',
-        rarity: 'common', theme: 'fixture', uses: 800, sprite: 'skill_occult',
+        rarity: 'common', theme: 'fixture', uses: 800, sprite: 's_occult',
         statements: [
             { id: 'stm_buff_yield', keyword: 'provides', to: { mode: 'all' },
               payload: { type: 'YIELD', bucket: 'percentage', value: 0.05 } }
@@ -280,7 +280,7 @@ export const FIXTURE_TOKENS = {
     },
     fixture_buff_speed: {
         id: 'fixture_buff_speed', name: 'Fixture Speed Buff', tokenType: 'buff',
-        rarity: 'common', theme: 'fixture', uses: 60, sprite: 'skill_industry',
+        rarity: 'common', theme: 'fixture', uses: 60, sprite: 's_industry',
         statements: [
             { id: 'stm_buff_speed', keyword: 'provides', to: { mode: 'all' },
               payload: { type: 'WORK_TIME', bucket: 'percentage', value: -0.10 } }
@@ -289,7 +289,7 @@ export const FIXTURE_TOKENS = {
     /** Unlimited use, and duplicates deliberately do not stack. */
     fixture_buff_unique: {
         id: 'fixture_buff_unique', name: 'Fixture Unique Buff', tokenType: 'buff',
-        rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_social',
+        rarity: 'rare', theme: 'fixture', uses: null, sprite: 's_social',
         noStackDuplicates: true,
         statements: [
             { id: 'stm_buff_unique', keyword: 'provides', to: { mode: 'all' },
@@ -304,7 +304,7 @@ export const FIXTURE_TOKENS = {
     /** "Double all nearby seafood" — targets by TAG. */
     fixture_buff_tag: {
         id: 'fixture_buff_tag', name: 'Fixture Tag Buff', tokenType: 'buff',
-        rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_nautical',
+        rarity: 'rare', theme: 'fixture', uses: null, sprite: 's_nautical',
         statements: [
             { id: 'stm_buff_tag', keyword: 'provides', to: { mode: 'tag', value: 'seafood' },
               payload: { type: 'YIELD', bucket: 'percentage', value: 1.0 } }
@@ -313,7 +313,7 @@ export const FIXTURE_TOKENS = {
     /** "Boost specifically the range producer" — targets by exact ID. */
     fixture_buff_id: {
         id: 'fixture_buff_id', name: 'Fixture Id Buff', tokenType: 'buff',
-        rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_nautical',
+        rarity: 'rare', theme: 'fixture', uses: null, sprite: 's_nautical',
         statements: [
             { id: 'stm_buff_id', keyword: 'provides', to: { mode: 'id', value: 'fixture_producer' },
               payload: { type: 'YIELD', bucket: 'percentage', value: 1.0 } }
@@ -328,7 +328,7 @@ export const FIXTURE_TOKENS = {
      */
     fixture_buff_type: {
         id: 'fixture_buff_type', name: 'Fixture Type Buff', tokenType: 'buff',
-        rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_nautical',
+        rarity: 'rare', theme: 'fixture', uses: null, sprite: 's_nautical',
         statements: [
             { id: 'stm_buff_type', keyword: 'provides', to: { mode: 'tokenType', value: 'station' },
               payload: { type: 'YIELD', bucket: 'percentage', value: 1.0 } }
@@ -337,7 +337,7 @@ export const FIXTURE_TOKENS = {
     /** ⚠️ A typo'd mode must make the buff inert, never universal. */
     fixture_buff_bad_target: {
         id: 'fixture_buff_bad_target', name: 'Fixture Bad Target', tokenType: 'buff',
-        rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_nautical',
+        rarity: 'rare', theme: 'fixture', uses: null, sprite: 's_nautical',
         statements: [
             { id: 'stm_buff_bad', keyword: 'provides', to: { mode: 'taggg', value: 'seafood' },
               payload: { type: 'YIELD', bucket: 'percentage', value: 1.0 } }
@@ -346,7 +346,7 @@ export const FIXTURE_TOKENS = {
     /** A producer carrying a Token TAG, for tag-mode targeting. */
     fixture_seafood_producer: {
         id: 'fixture_seafood_producer', name: 'Fixture Seafood', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: 3000, sprite: 'skill_nautical',
+        rarity: 'common', theme: 'fixture', uses: 3000, sprite: 's_nautical',
         tags: ['seafood'],
         config: {
             skill: 'fishing', skillRequired: 1, cycleTimeMs: 12000, xp: 4,
@@ -359,7 +359,7 @@ export const FIXTURE_TOKENS = {
     //     deterministic and the test asserts behaviour, not luck.
     fixture_buff_xp: {
         id: 'fixture_buff_xp', name: 'Fixture XP Buff', tokenType: 'buff',
-        rarity: 'uncommon', theme: 'fixture', uses: null, sprite: 'skill_occult',
+        rarity: 'uncommon', theme: 'fixture', uses: null, sprite: 's_occult',
         statements: [
             { id: 'stm_buff_xp', keyword: 'provides', to: { mode: 'all' },
               payload: { type: 'XP_BONUS', bucket: 'percentage', value: 1.0 } }
@@ -367,7 +367,7 @@ export const FIXTURE_TOKENS = {
     },
     fixture_buff_always_fails: {
         id: 'fixture_buff_always_fails', name: 'Fixture Always Fails', tokenType: 'buff',
-        rarity: 'uncommon', theme: 'fixture', uses: null, sprite: 'skill_crime',
+        rarity: 'uncommon', theme: 'fixture', uses: null, sprite: 's_crime',
         statements: [
             { id: 'stm_buff_fails', keyword: 'provides', to: { mode: 'all' },
               payload: { type: 'FAIL_CHANCE', bucket: 'flat', value: 100 } }
@@ -375,7 +375,7 @@ export const FIXTURE_TOKENS = {
     },
     fixture_buff_always_doubles: {
         id: 'fixture_buff_always_doubles', name: 'Fixture Always Doubles', tokenType: 'buff',
-        rarity: 'uncommon', theme: 'fixture', uses: null, sprite: 'skill_social',
+        rarity: 'uncommon', theme: 'fixture', uses: null, sprite: 's_social',
         statements: [
             { id: 'stm_always_doubles', keyword: 'provides', to: { mode: 'all' },
               payload: { type: 'LOOT_MULT', bucket: 'flat', value: 100 } }
@@ -387,7 +387,7 @@ export const FIXTURE_TOKENS = {
     /** TWO statements on one Token, aimed at different targets. */
     fixture_two_blocks: {
         id: 'fixture_two_blocks', name: 'Fixture Two Blocks', tokenType: 'buff',
-        rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_occult',
+        rarity: 'rare', theme: 'fixture', uses: null, sprite: 's_occult',
         statements: [
             { id: 'stm_two_a', keyword: 'provides', to: { mode: 'tag', value: 'seafood' },
               payload: { type: 'YIELD', bucket: 'percentage', value: 1.0 } },
@@ -399,7 +399,7 @@ export const FIXTURE_TOKENS = {
     /** A statement with upkeep on its own clock: 1 Coal every 5s. */
     fixture_upkeep_aura: {
         id: 'fixture_upkeep_aura', name: 'Fixture Upkeep Aura', tokenType: 'buff',
-        rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_flask',
+        rarity: 'rare', theme: 'fixture', uses: null, sprite: 's_flask',
         statements: [
             {
                 id: 'stm_upkeep_aura', keyword: 'provides', to: { mode: 'all' },
@@ -412,7 +412,7 @@ export const FIXTURE_TOKENS = {
     /** Grants an item the neighbour does not make itself. */
     fixture_bonus_drop: {
         id: 'fixture_bonus_drop', name: 'Fixture Bonus Drop', tokenType: 'buff',
-        rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_industry',
+        rarity: 'rare', theme: 'fixture', uses: null, sprite: 's_industry',
         statements: [
             { id: 'stm_bonus_drop', keyword: 'grants', to: { mode: 'all' },
               payload: { type: 'BONUS_DROP', itemId: 'fixture_charcoal', chance: 100, quantity: 1 } }
@@ -429,7 +429,7 @@ export const FIXTURE_TOKENS = {
      */
     fixture_wheelbarrow: {
         id: 'fixture_wheelbarrow', name: 'Fixture Wheelbarrow', tokenType: 'buff',
-        rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_industry',
+        rarity: 'rare', theme: 'fixture', uses: null, sprite: 's_industry',
         statements: [{
             id: 'stm_wheelbarrow', keyword: 'grants',
             when: {
@@ -445,7 +445,7 @@ export const FIXTURE_TOKENS = {
     /** Same, but reacting to ANY neighbour rather than a named one. */
     fixture_trigger_any: {
         id: 'fixture_trigger_any', name: 'Fixture Trigger Any', tokenType: 'buff',
-        rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_industry',
+        rarity: 'rare', theme: 'fixture', uses: null, sprite: 's_industry',
         statements: [{
             id: 'stm_trigger_any', keyword: 'grants',
             when: { event: 'CYCLE_COMPLETE', scope: 'nearby', cooldownMs: 0 },
@@ -456,7 +456,7 @@ export const FIXTURE_TOKENS = {
     /** Reacts to a neighbour running out of charges. */
     fixture_trigger_depleted: {
         id: 'fixture_trigger_depleted', name: 'Fixture Depletion Watcher', tokenType: 'buff',
-        rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_occult',
+        rarity: 'rare', theme: 'fixture', uses: null, sprite: 's_occult',
         statements: [{
             id: 'stm_depleted', keyword: 'grants',
             when: { event: 'TOKEN_DEPLETED', scope: 'nearby', cooldownMs: 0 },
@@ -470,7 +470,7 @@ export const FIXTURE_TOKENS = {
      */
     fixture_sigil: {
         id: 'fixture_sigil', name: 'Fixture Sigil', tokenType: 'buff',
-        rarity: 'mythic', theme: 'fixture', uses: null, sprite: 'skill_occult',
+        rarity: 'mythic', theme: 'fixture', uses: null, sprite: 's_occult',
         statements: [{
             id: 'stm_sigil', keyword: 'converts',
             when: {
@@ -489,7 +489,7 @@ export const FIXTURE_TOKENS = {
     /** A triggered Token with finite charges,'s wear rule. */
     fixture_trigger_wearing: {
         id: 'fixture_trigger_wearing', name: 'Fixture Wearing Trigger', tokenType: 'buff',
-        rarity: 'rare', theme: 'fixture', uses: 3, sprite: 'skill_industry',
+        rarity: 'rare', theme: 'fixture', uses: 3, sprite: 's_industry',
         statements: [{
             id: 'stm_wearing', keyword: 'grants',
             when: { event: 'CYCLE_COMPLETE', scope: 'nearby', cooldownMs: 0 },
@@ -508,7 +508,7 @@ export const FIXTURE_TOKENS = {
      */
     fixture_buff_hero: {
         id: 'fixture_buff_hero', name: 'Fixture Hero Buff', tokenType: 'buff',
-        rarity: 'uncommon', theme: 'fixture', uses: null, sprite: 'skill_culinary',
+        rarity: 'uncommon', theme: 'fixture', uses: null, sprite: 's_culinary',
         buff: {
             target: 'hero',
             modifiers: [{ type: 'HP_REGEN', bucket: 'flat', value: 1 }]
@@ -518,14 +518,14 @@ export const FIXTURE_TOKENS = {
     /** Manager over the fixture producer, — the legacy `manages` field. */
     fixture_manager: {
         id: 'fixture_manager', name: 'Fixture Manager', tokenType: 'manager',
-        rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_social',
+        rarity: 'rare', theme: 'fixture', uses: null, sprite: 's_social',
         manages: ['fixture_producer']
     },
 
     /** The same Manager, authored as a **Restocks** statement (owner Q6). */
     fixture_restocker: {
         id: 'fixture_restocker', name: 'Fixture Restocker', tokenType: 'manager',
-        rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_social',
+        rarity: 'rare', theme: 'fixture', uses: null, sprite: 's_social',
         statements: [
             { id: 'stm_restock', keyword: 'restocks', payload: { tokenIds: ['fixture_producer'] } }
         ]
@@ -533,7 +533,7 @@ export const FIXTURE_TOKENS = {
     /** A manager for the enemy fixture, proving one economic model. */
     fixture_enemy_manager: {
         id: 'fixture_enemy_manager', name: 'Fixture Enemy Manager', tokenType: 'manager',
-        rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_crime',
+        rarity: 'rare', theme: 'fixture', uses: null, sprite: 's_crime',
         manages: ['fixture_enemy']
     },
 
@@ -549,7 +549,7 @@ export const FIXTURE_TOKENS = {
      */
     fixture_enemy: {
         id: 'fixture_enemy', name: 'Fixture Enemy', tokenType: 'enemy',
-        rarity: 'common', theme: 'fixture', uses: 20, sprite: 'skill_occult',
+        rarity: 'common', theme: 'fixture', uses: 20, sprite: 's_occult',
         enemy: { level: 2, style: 'melee' },
         config: {
             skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0,
@@ -593,7 +593,7 @@ export const FIXTURE_TOKENS = {
     /** Mythic,'s one-placed rule. */
     fixture_mythic: {
         id: 'fixture_mythic', name: 'Fixture Mythic', tokenType: 'resource',
-        rarity: 'mythic', theme: 'fixture', uses: 8000, sprite: 'skill_occult',
+        rarity: 'mythic', theme: 'fixture', uses: 8000, sprite: 's_occult',
         config: {
             skill: 'forestry', skillRequired: 1, cycleTimeMs: 10000, xp: 25,
             inputs: [],
@@ -611,7 +611,7 @@ export const FIXTURE_TOKENS = {
      */
     fixture_market: {
         id: 'fixture_market', name: 'Fixture Market', tokenType: 'market',
-        rarity: 'uncommon', theme: 'fixture', uses: null, sprite: 'skill_social',
+        rarity: 'uncommon', theme: 'fixture', uses: null, sprite: 's_social',
         config: {
             skill: 'commerce', skillRequired: 1, cycleTimeMs: 15000, xp: 6,
             inputs: [{ itemId: 'fixture_market_goods', quantity: 10 }],
@@ -622,17 +622,17 @@ export const FIXTURE_TOKENS = {
     // --- Accepted Tokens & Tool Tier Fixtures ---
     fixture_pickaxe_t1: {
         id: 'fixture_pickaxe_t1', name: 'Fixture Copper Pickaxe', tokenType: 'support',
-        rarity: 'common', tier: 1, uses: 10, provides: ['pickaxe'], sprite: 'skill_mining',
+        rarity: 'common', tier: 1, uses: 10, provides: ['pickaxe'], sprite: 's_mining',
         isTool: true, requiresHero: false
     },
     fixture_pickaxe_t2: {
         id: 'fixture_pickaxe_t2', name: 'Fixture Iron Pickaxe', tokenType: 'support',
-        rarity: 'common', tier: 2, uses: 10, provides: ['pickaxe'], sprite: 'skill_mining',
+        rarity: 'common', tier: 2, uses: 10, provides: ['pickaxe'], sprite: 's_mining',
         isTool: true, requiresHero: false
     },
     fixture_copper_vein: {
         id: 'fixture_copper_vein', name: 'Fixture Copper Vein', tokenType: 'resource',
-        rarity: 'common', uses: 100, sprite: 'skill_mining',
+        rarity: 'common', uses: 100, sprite: 's_mining',
         acceptedTokens: [{ tag: 'pickaxe', minTier: 1 }],
         config: {
             skill: 'mining', skillRequired: 1, cycleTimeMs: 10000, xp: 5,
@@ -642,7 +642,7 @@ export const FIXTURE_TOKENS = {
     },
     fixture_iron_vein: {
         id: 'fixture_iron_vein', name: 'Fixture Iron Vein', tokenType: 'resource',
-        rarity: 'common', uses: 100, sprite: 'skill_mining',
+        rarity: 'common', uses: 100, sprite: 's_mining',
         acceptedTokens: [{ tag: 'pickaxe', minTier: 2 }],
         config: {
             skill: 'mining', skillRequired: 1, cycleTimeMs: 10000, xp: 10,
@@ -652,7 +652,7 @@ export const FIXTURE_TOKENS = {
     },
     fixture_coast: {
         id: 'fixture_coast', name: 'Fixture Coast', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: 500, sprite: 'skill_nature',
+        rarity: 'common', theme: 'fixture', uses: 500, sprite: 's_nature',
         tags: ['Coast'],
         statements: [
             {
@@ -671,7 +671,7 @@ export const FIXTURE_TOKENS = {
     },
     fixture_plain_coast: {
         id: 'fixture_plain_coast', name: 'Fixture Plain Coast', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: 500, sprite: 'skill_nature',
+        rarity: 'common', theme: 'fixture', uses: 500, sprite: 's_nature',
         tags: ['Coast'],
         config: {
             skill: 'fishing', skillRequired: 1, cycleTimeMs: 12000, xp: 2,

@@ -31,7 +31,7 @@ const lvl = (level, extra = 0) => ({ level, xp: xpForLevel(level) + extra });
 const startingSkills = (level = 5) => Object.fromEntries(STARTING.map(id => [id, lvl(level)]));
 
 const recruit = (id, name) => ({
-    id, name, spriteId: 'hero_recruit_0', hp: { current: 80, max: 100 }, status: 'idle', equipment: {},
+    id, name, spriteId: 'hn_recruit_por', hp: { current: 80, max: 100 }, status: 'idle', equipment: {},
     skills: startingSkills()
 });
 
@@ -342,7 +342,7 @@ describe('H2: the panel header', () => {
         const onCloseHero = vi.fn();
         const r = render(panel({ selectedHeroId: 'h1', showTabs: false, onCloseHero }));
         const close = r.container.querySelector('[data-hero-panel-close]');
-        expect(close.querySelector('img').getAttribute('src')).toBe('/assets/ui/ui_cancel_red.png');
+        expect(close.querySelector('img').getAttribute('src')).toBe('/assets/ui/u_cancel_red.png');
         fireEvent.click(close);
         expect(onCloseHero).toHaveBeenCalledTimes(1);
     });
