@@ -223,14 +223,6 @@ const MEASURING = { droppable: { measure: measureDropTarget } };
  */
 const SENSOR_OPTIONS = { activationConstraint: { distance: 8 } };
 
-/**
- * Whatever is carried casts the hard pixel shadow `PixelArt` draws for `lifted`; a soft
- * drop-shadow on top would be a second, blurred shadow, so the overlay only brightens.
- */
-export function overlayFilter() {
-    return 'brightness(1.15) saturate(1.25)';
-}
-
 export const DeckDndContext = React.createContext({ activePayload: null, isDragging: false });
 export const useActiveDrag = () => React.useContext(DeckDndContext);
 
@@ -573,7 +565,6 @@ export const DeckDndProvider = ({ children }) => {
                             animate={{ opacity: 1 }}
                             transition={{ duration: 0.15, ease: 'easeOut' }}
                             className="w-full h-full flex items-center justify-center origin-center will-change-transform"
-                            style={{ filter: overlayFilter() }}
                         >
                             <DragGhost payload={activePayload} bold={bold} />
                         </motion.div>
