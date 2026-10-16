@@ -47,10 +47,10 @@ export const DEFAULT_OUTLINE = 40;
 
 export const BACKUP_TAG = 'art-before-vibrancy';
 
-// Tokens, items, heroes and enemies. The loose PNGs at the top of
-// public/assets are gear and items. Not ui/, icon/, skills/ (UI icons),
-// backgrounds/ (the 256 px card and banner art), playmat/ (the ground has its
-// own pass) or audio/.
+// Tokens, items (the gear is items/gear/), heroes and enemies, and any loose PNG
+// dropped at the top of public/assets before it is filed. Not ui/, skills/ (UI
+// icons), backgrounds/ (the 256 px card and banner art), playmat/ (the ground
+// has its own pass) or audio/.
 const COVERED_FOLDERS = new Set(['tokens', 'items', 'heroes', 'enemies']);
 
 /** Is this PNG (path relative to public/assets, either slash) part of the pass? */

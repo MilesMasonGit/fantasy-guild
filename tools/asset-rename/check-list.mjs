@@ -5,6 +5,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { ITEM_GROUPS as APPROVED_ITEM_GROUPS } from '../../cms/assetNaming.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../..');
@@ -19,9 +20,7 @@ const KINDS = [
 ];
 // Kinds whose files sit in a group folder. The group word stays out of the name.
 const GROUPED = new Set(['tokens', 'items', 'enemies', 'backgrounds']);
-// Item groups say what an item is, never a skill or a source.
-const ITEM_GROUPS = new Set(['ore', 'ingot', 'wood', 'gem', 'food', 'drink', 'potion', 'tool', 'gear', 'jewelry', 'seed', 'coin',
-    'fish', 'meat', 'flower', 'herb', 'key', 'weapon', 'mat']);
+const ITEM_GROUPS = new Set(APPROVED_ITEM_GROUPS);
 const ITEM_BANNED_WORDS = new Set(['drop', 'construction', 'craft', 'crafting', 'baking']);
 // Where the group word is part of what the thing is called (Copper Ore, Oak Wood, Fish Trap, Map, Chest).
 const GROUP_WORD_IS_NAME = new Set(['items/ore', 'items/ingot', 'items/wood', 'items/potion', 'items/seed', 'items/key', 'items/coin',

@@ -65,13 +65,13 @@ describe('brightenRgba: the per-pixel transform', () => {
 });
 
 describe('what the script covers', () => {
-    it('Tokens, items, heroes, enemies and the loose gear at the top; not UI, icons, skills, backgrounds, the mat or waste', () => {
-        for (const rel of ['tokens/nature/tree/token_sap_oak.png', 'items/ore/ore_copper.png', 'heroes/hm_cook.png',
-            'heroes/animations/ani_fighter_0.png', 'enemies/slime/anim/ani_slime_green_big.png', 'g_body_mage.png']) {
+    it('Tokens, items (the gear too), heroes, enemies and a loose drop at the top; not UI, icons, skills, backgrounds, the mat or waste', () => {
+        for (const rel of ['tokens/forest/t_sapling_oak.png', 'items/ore/i_ore_copper.png', 'items/gear/i_body_mage.png',
+            'heroes/hm_cook_por.png', 'heroes/hn_fighter_sheet.png', 'enemies/slime/e_slime_green_big_sheet.png', 'i_new_drop.png']) {
             expect(isCovered(rel)).toBe(true);
         }
-        for (const rel of ['ui/ui_add_green.png', 'icon/icon.png', 'skills/skill_crime.png', 'backgrounds/cards/bg_mine.png',
-            'playmat/props/prop_rock.png', 'enemies/slime/waste/x.png', 'maybe/item.png', 'archive/ore.png',
+        for (const rel of ['ui/u_add_green.png', 'icon/icon.png', 'skills/s_crime.png', 'backgrounds/cards/b_mine.png',
+            'playmat/props/p_rock.png', 'enemies/slime/waste/x.png', 'maybe/item.png', 'archive/ore.png',
             'audio/sfx/x.png', 'tokens/readme.txt']) {
             expect(isCovered(rel)).toBe(false);
         }

@@ -18,7 +18,7 @@ import pngToIco from 'png-to-ico';
 import fs from 'fs/promises';
 import path from 'path';
 
-const SOURCE = process.argv[2] || 'public/assets/items/food/pie/f_pie_cherry.png';
+const SOURCE = process.argv[2] || 'public/assets/items/food/i_pie_cherry.png';
 const ICON_DIR = 'src-tauri/icons';
 
 // Only the entries listed under `bundle.icon` in tauri.conf.json ship in the

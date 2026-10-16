@@ -2,23 +2,23 @@ import { useState, useEffect, useRef } from 'react';
 import { Play, Pause, ChevronLeft, ChevronRight, Upload, Trash2, Grid, Move, Sparkles, RotateCcw, Check } from 'lucide-react';
 
 const HERO_PRESETS = [
-  { name: 'ani_recruit_0', path: '/assets/heroes/animations/ani_recruit_0.png', label: 'Recruit', type: 'hero' },
-  { name: 'ani_fighter_0', path: '/assets/heroes/animations/ani_fighter_0.png', label: 'Fighter', type: 'hero' },
-  { name: 'ani_ranger_0', path: '/assets/heroes/animations/ani_ranger_0.png', label: 'Ranger', type: 'hero' },
-  { name: 'ani_rogue_0', path: '/assets/heroes/animations/ani_rogue_0.png', label: 'Rogue', type: 'hero' },
-  { name: 'ani_wizard_0', path: '/assets/heroes/animations/ani_wizard_0.png', label: 'Wizard', type: 'hero' }
+  { name: 'hn_recruit_sheet', path: '/assets/heroes/hn_recruit_sheet.png', label: 'Recruit', type: 'hero' },
+  { name: 'hn_fighter_sheet', path: '/assets/heroes/hn_fighter_sheet.png', label: 'Fighter', type: 'hero' },
+  { name: 'hn_ranger_sheet', path: '/assets/heroes/hn_ranger_sheet.png', label: 'Ranger', type: 'hero' },
+  { name: 'hn_rogue_sheet', path: '/assets/heroes/hn_rogue_sheet.png', label: 'Rogue', type: 'hero' },
+  { name: 'hn_wizard_sheet', path: '/assets/heroes/hn_wizard_sheet.png', label: 'Wizard', type: 'hero' }
 ];
 
 const ENEMY_PRESETS = [
-  { name: 'ani_cow', path: '/assets/enemies/animal/anim/ani_cow.png', label: 'Cow (Enemy)', type: 'enemy' }
+  { name: 'e_cow_sheet', path: '/assets/enemies/animal/e_cow_sheet.png', label: 'Cow (Enemy)', type: 'enemy' }
 ];
 
 const FPS_PRESETS = [4, 6, 8, 10, 12, 16];
 const ZOOM_PRESETS = [1, 2, 3, 4, 6, 8, 10, 12, 16];
 
 export default function AnimationEditor() {
-  const [imageSrc, setImageSrc] = useState('/assets/heroes/animations/ani_recruit_0.png');
-  const [imageName, setImageName] = useState('ani_recruit_0');
+  const [imageSrc, setImageSrc] = useState('/assets/heroes/hn_recruit_sheet.png');
+  const [imageName, setImageName] = useState('hn_recruit_sheet');
   const [sheetDims, setSheetDims] = useState({ width: 512, height: 192 });
   const [archetype, setArchetype] = useState('hero');
   const [aiRuns, setAiRuns] = useState([]);

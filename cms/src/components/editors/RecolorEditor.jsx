@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Download, Upload, SwatchBook, RefreshCw, Layers, FolderDown } from 'lucide-react';
 import PaletteImport from './PaletteImport';
+import { ITEM_GROUPS, studioAssetPath } from '../../../assetNaming.js';
 
 function rgbToOklab(r, g, b) {
   const toLinear = (c) => c > 0.04045 ? Math.pow((c + 0.055) / 1.055, 2.4) : c / 12.92;
@@ -54,6 +55,7 @@ export default function RecolorEditor() {
   const [imageSrc, setImageSrc] = useState(null);
   const [imageName, setImageName] = useState('recolored_item');
   const [category, setCategory] = useState('items');
+  const [group, setGroup] = useState('');
   const [tolerance, setTolerance] = useState(10);
 
   const [originalPixels, setOriginalPixels] = useState(null);
@@ -757,16 +759,14 @@ export default function RecolorEditor() {
         body: JSON.stringify({
           filename: imageName,
           category,
+          group,
           base64Image
         })
       });
 
       const data = await res.json();
       if (res.ok) {
-        const subpath = category === 'items' ? 'items/' : (category === 'enemy' ? 'enemies/' : `dataset/${category}/`);
-        const parts = imageName.split('_');
-        const folder = parts.length > 1 ? parts.slice(0, -1).join('/') + '/' : '';
-        alert(`Successfully saved to: public/assets/${subpath}${folder}${imageName}.png`);
+        alert(`Successfully saved to: public/assets/${data.rel}`);
       } else {
         alert(`Error saving asset: ${data.error}`);
       }
@@ -1029,6 +1029,33 @@ export default function RecolorEditor() {
                       <option key={opt.value} value={opt.value} className="bg-neutral-900">{opt.label}</option>
                     ))}
                   </select>
+                  {category === 'items' ? (
+                    <select
+                      value={group}
+                      onChange={(e) => setGroup(e.target.value)}
+                      title="The item group: the folder the picture goes in"
+                      className="px-3 py-1.5 rounded-lg border text-xs bg-black/20 focus:border-indigo-500 outline-none"
+                      style={{ borderColor: 'var(--color-border-subtle)' }}
+                    >
+                      <option value="" className="bg-neutral-900">Group…</option>
+                      {ITEM_GROUPS.map(g => (
+                        <option key={g} value={g} className="bg-neutral-900">{g}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      value={group}
+                      onChange={(e) => setGroup(e.target.value)}
+                      placeholder={category === 'enemy' ? 'Group (e.g. goblin)' : 'Group (e.g. area)'}
+                      title="The group: the folder the picture goes in"
+                      className="w-32 px-3 py-1.5 rounded-lg border text-xs outline-none bg-black/20 focus:border-indigo-500 transition-all"
+                      style={{ borderColor: 'var(--color-border-subtle)' }}
+                    />
+                  )}
+                  <span className="text-[10px] font-mono" style={{ color: 'var(--color-text-muted)' }}>
+                    {(() => { const t = studioAssetPath({ name: imageName, category, group }); return t.error || `→ ${t.rel}`; })()}
+                  </span>
                 </div>
 
                 <div className="flex gap-2">
