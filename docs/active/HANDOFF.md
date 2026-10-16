@@ -27,7 +27,7 @@ worktrees; sprite redraws run in a child process). Suite ~4960 green.
 | `pp` (`planning`) | The planning agent's. Leave it. |
 | `ar` (`art/asset-reorg`) | The owner's art session. Leave it. |
 | `p23b` (detached) | The director's scratch worktree for merges and gates; keep or remove. |
-| `d` | Empty folder locked by a process; delete after a restart. |
+| `a1`, `d` | Empty folders locked by some process; delete after a restart. |
 | everything else | Merged and removed (junctions first, then `git worktree remove`). |
 
 The merged feature branches stay local as history. A stray `STATUS.md` at the

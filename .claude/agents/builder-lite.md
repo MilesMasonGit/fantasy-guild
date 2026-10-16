@@ -23,6 +23,9 @@ on the point.
 - Anything the owner must see in an eye-check is reachable by clicking: a dev-panel
   button, a QA fixture save, or authored content. Never hand the owner a console snippet
   (owner ruling 2026-10-13: a pasted fixture misfired and the check was lost).
+- Before you report, stop every server and browser you started (`tasklist` for your
+  own node and chrome processes, `taskkill //PID`), and say so: a server left running
+  locks the worktree folder and holds a port (seven were found running on 2026-10-15).
 - Commit work in progress at least hourly and keep a short `STATUS.md` in your worktree
   (what is done, what is next, what is unproven), so a cut-off leaves a readable state.
 - Git: one commit per ticket on the branch the brief names; stage by name only; print

@@ -109,4 +109,9 @@ on `main`, machine quiet; commit the baselines with the date), so the next
 wave's timing verdicts compare against a quiet machine. Clean dead worktrees:
 `cmd //c rmdir` both junctions with the full path, confirm the real
 `node_modules` is intact, then `git worktree remove`; never `rm -rf` through a
-junction.
+junction. First kill the agents' leftover servers (`wmic process where
+"name='node.exe'" get ProcessId,CommandLine | grep worktrees`, then
+`taskkill //PID`), or the folders stay locked; a folder git no longer lists
+goes with PowerShell `Remove-Item -LiteralPath … -Recurse -Force` once a
+reparse-point scan of it is empty. In bash, write a Windows path as
+`…\worktrees\${w}`: `\$w` in double quotes is a literal.

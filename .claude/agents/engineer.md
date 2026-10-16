@@ -22,6 +22,9 @@ engineer = Opus, extra-high thinking). You take the hard, judgement-heavy work.
 - Anything the owner must see in an eye-check is reachable by clicking: a dev-panel
   button, a QA fixture save, or authored content. Never hand the owner a console snippet
   (owner ruling 2026-10-13: a pasted fixture misfired and the check was lost).
+- Before you report, stop every server and browser you started (`tasklist` for your
+  own node and chrome processes, `taskkill //PID`), and say so: a server left running
+  locks the worktree folder and holds a port (seven were found running on 2026-10-15).
 - Commit work in progress at least hourly and keep a short `STATUS.md` in your worktree
   (what is done, what is next, what is unproven), so a cut-off leaves a readable state.
 - Your report ends with what you recommend and what you built, side by side; the
