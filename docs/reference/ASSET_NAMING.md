@@ -20,6 +20,10 @@ general to specific:
 - **variant** last: material, colour, or another distinguishing word. Recolours
   of one drawing therefore sit side by side (`…_pick_copper`, `…_pick_iron`).
 
+**Material shorthands stay** (owner, 2026-10-16): metal items are many, so `addy` (adamantium), `myth` (mythril) and the other established short material words are kept as they are.
+
+**Recolours of one drawing** that exist as separate files (today the mage portraits) take a number last: `hf_mage_por_1`, `hf_mage_por_2`. A later recolour system will let the player recolour base hero sprites, so these numbered files are temporary.
+
 No pixel sizes in names (every sprite is drawn at its game size), no frame
 numbers, no `final`, `new`, `v2` or dates.
 
@@ -27,7 +31,7 @@ numbers, no `final`, `new`, `v2` or dates.
 |---|---|---|---|
 | `t_` | Token | `tokens/` | `tokens/forest/t_forest_tree_oak.png` |
 | `i_` | item: materials, tools, gear, food, drink, potions | `items/` | `items/tool/i_tool_pick_copper.png` |
-| `h_` | hero portrait: class, then `f`, `m` or `n` (female, male, neutral) last | `heroes/` | `heroes/h_bard_f.png`, `heroes/h_bard_m.png` |
+| `hf_` `hm_` `hn_` | hero: `h` plus `f`, `m` or `n` (female, male, neutral), then the class, then what the sprite is (`por` portrait, `sheet` animation) | `heroes/` | `heroes/hf_bard_por.png`, `heroes/hm_fighter_sheet.png` |
 | `e_` | enemy | `enemies/` | `enemies/goblin/e_goblin_archer.png` |
 | `p_` | prop: scatter on the ground | `playmat/props/` | `playmat/props/p_flower_red.png` |
 | `g_` | ground sheet | `playmat/terrain/` | `playmat/terrain/g_grass.png` |
@@ -35,7 +39,7 @@ numbers, no `final`, `new`, `v2` or dates.
 | `b_` | background, card and banner art | `backgrounds/` | `backgrounds/cards/b_cards_guild_hall.png` |
 | `s_` | skill icon | `skills/` | `skills/s_cooking.png` |
 
-Nine letters, none reused. Tools, gear, food and potions are items (`i_`);
+Nine kinds, no prefix reused (the hero's three share the `h`). Tools, gear, food and potions are items (`i_`);
 only Tokens use `t_`.
 
 ## Folders
