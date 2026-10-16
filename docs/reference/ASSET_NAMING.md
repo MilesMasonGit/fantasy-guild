@@ -25,6 +25,10 @@ word is not repeated (`items/tool/i_pick_copper.png`,
 `tokens/smith/t_anvil.png`). Within a kind every name is unique across its
 groups, because the name is also the sprite name the game data uses.
 
+**Colour codes stay** (owner, 2026-10-16): short codes such as `lr`, `rlc`,
+`bc`, `pl` tell apart the many colour variants of potions and stews; they are
+kept as they are.
+
 **Material shorthands stay** (owner, 2026-10-16): metal items are many, so `addy` (adamantium), `myth` (mythril) and the other established short material words are kept as they are.
 
 **Recolours of one drawing** that exist as separate files (today the mage portraits) take a number last: `hf_mage_por_1`, `hf_mage_por_2`. A later recolour system will let the player recolour base hero sprites, so these numbered files are temporary.
@@ -52,7 +56,7 @@ only Tokens use `t_`.
 **Kind, then one group, two levels at most** (`tokens/forest/`,
 `items/potion/`, `enemies/goblin/`). Item groups say what an item is (ore,
 ingot, wood, gem, food, drink, potion, tool, gear, jewelry, seed, coin, and
-`material` for the rest), never a skill or a source. Token groups may follow
+`mat` for general materials such as wheat, flour, dough, planks, bones), never a skill or a source. Token groups may follow
 the skill a Token belongs to, since the group word stays out of the name. Today's deeper folders (the 20 potion folders) flatten into their
 group. Where a kind has few files (heroes, skills, UI) there is no group level.
 
