@@ -424,5 +424,47 @@
       }
     ],
     "autoSyncId": true
+  },
+  "effect_anvil": {
+    "name": "Anvil",
+    "statements": [
+      {
+        "id": "stm_wr8rixjat",
+        "keyword": "acts_as",
+        "payload": {
+          "tag": "anvil",
+          "tier": 1
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": null,
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_anvil"
+  },
+  "effect_capability": {
+    "name": "Capability",
+    "statements": [
+      {
+        "id": "stm_n9o3dqasq",
+        "keyword": "acts_as",
+        "payload": {
+          "tag": "pickaxe",
+          "tier": 1
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": null,
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_capability"
   }
 }
