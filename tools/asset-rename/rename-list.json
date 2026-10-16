@@ -1638,10 +1638,10 @@
   },
   {
     "from": "heroes/animations/ani_fighter_0.png",
-    "to": "heroes/h_fighter_sheet.png",
+    "to": "heroes/hn_fighter_sheet.png",
     "action": "move",
     "keyFrom": "ani_fighter_0",
-    "keyTo": "h_fighter_sheet",
+    "keyTo": "hn_fighter_sheet",
     "inUse": true,
     "usedBy": [
       "cms/src/components/editors/AnimationEditor.jsx",
@@ -1649,7 +1649,7 @@
       "src/tests/SpriteFxGenerator.test.js"
     ],
     "confidence": "check",
-    "note": "the ruleset names a sheet after its still sprite; a hero sheet has no still of its own, so it is named by class with no f/m/n"
+    "note": "no gender in the name today, so hn_; ANIMATION_MAP in AssetManager.js pairs it with a portrait whose letter may be the better choice"
   },
   {
     "from": "heroes/animations/ani_hero.pxo",
@@ -1664,24 +1664,24 @@
   },
   {
     "from": "heroes/animations/ani_ranger_0.png",
-    "to": "heroes/h_ranger_sheet.png",
+    "to": "heroes/hn_ranger_sheet.png",
     "action": "move",
     "keyFrom": "ani_ranger_0",
-    "keyTo": "h_ranger_sheet",
+    "keyTo": "hn_ranger_sheet",
     "inUse": true,
     "usedBy": [
       "cms/src/components/editors/AnimationEditor.jsx",
       "src/config/spriteFx.js"
     ],
     "confidence": "check",
-    "note": "the ruleset names a sheet after its still sprite; a hero sheet has no still of its own, so it is named by class with no f/m/n"
+    "note": "no gender in the name today, so hn_; ANIMATION_MAP in AssetManager.js pairs it with a portrait whose letter may be the better choice"
   },
   {
     "from": "heroes/animations/ani_recruit_0.png",
-    "to": "heroes/h_recruit_sheet.png",
+    "to": "heroes/hn_recruit_sheet.png",
     "action": "move",
     "keyFrom": "ani_recruit_0",
-    "keyTo": "h_recruit_sheet",
+    "keyTo": "hn_recruit_sheet",
     "inUse": true,
     "usedBy": [
       "cms/src/components/editors/AnimationEditor.jsx",
@@ -1689,42 +1689,42 @@
       "src/ui/components/dev/AnimationStudioModal.jsx"
     ],
     "confidence": "check",
-    "note": "the ruleset names a sheet after its still sprite; a hero sheet has no still of its own, so it is named by class with no f/m/n"
+    "note": "no gender in the name today, so hn_; ANIMATION_MAP in AssetManager.js pairs it with a portrait whose letter may be the better choice"
   },
   {
     "from": "heroes/animations/ani_rogue_0.png",
-    "to": "heroes/h_rogue_sheet.png",
+    "to": "heroes/hn_rogue_sheet.png",
     "action": "move",
     "keyFrom": "ani_rogue_0",
-    "keyTo": "h_rogue_sheet",
+    "keyTo": "hn_rogue_sheet",
     "inUse": true,
     "usedBy": [
       "cms/src/components/editors/AnimationEditor.jsx",
       "src/config/spriteFx.js"
     ],
     "confidence": "check",
-    "note": "the ruleset names a sheet after its still sprite; a hero sheet has no still of its own, so it is named by class with no f/m/n"
+    "note": "no gender in the name today, so hn_; ANIMATION_MAP in AssetManager.js pairs it with a portrait whose letter may be the better choice"
   },
   {
     "from": "heroes/animations/ani_wizard_0.png",
-    "to": "heroes/h_wizard_sheet.png",
+    "to": "heroes/hn_wizard_sheet.png",
     "action": "move",
     "keyFrom": "ani_wizard_0",
-    "keyTo": "h_wizard_sheet",
+    "keyTo": "hn_wizard_sheet",
     "inUse": true,
     "usedBy": [
       "cms/src/components/editors/AnimationEditor.jsx",
       "src/config/spriteFx.js"
     ],
     "confidence": "check",
-    "note": "the ruleset names a sheet after its still sprite; a hero sheet has no still of its own, so it is named by class with no f/m/n"
+    "note": "no gender in the name today, so hn_; ANIMATION_MAP in AssetManager.js pairs it with a portrait whose letter may be the better choice"
   },
   {
     "from": "heroes/hero_recruit_0.png",
-    "to": "heroes/h_recruit_n.png",
+    "to": "heroes/hn_recruit_por.png",
     "action": "move",
     "keyFrom": "hero_recruit_0",
-    "keyTo": "h_recruit_n",
+    "keyTo": "hn_recruit_por",
     "inUse": true,
     "usedBy": [
       "src/systems/hero/HeroGenerator.js",
@@ -1752,10 +1752,10 @@
   },
   {
     "from": "heroes/hf_alchemist.png",
-    "to": "heroes/h_alchemist_f.png",
+    "to": "heroes/hf_alchemist_por.png",
     "action": "move",
     "keyFrom": "hf_alchemist",
-    "keyTo": "h_alchemist_f",
+    "keyTo": "hf_alchemist_por",
     "inUse": true,
     "usedBy": [
       "src/config/registries/heroPortraits.js",
@@ -1771,10 +1771,10 @@
   },
   {
     "from": "heroes/hf_art.png",
-    "to": "heroes/h_art_f.png",
+    "to": "heroes/hf_art_por.png",
     "action": "move",
     "keyFrom": "hf_art",
-    "keyTo": "h_art_f",
+    "keyTo": "hf_art_por",
     "inUse": true,
     "usedBy": [
       "src/config/registries/heroPortraits.js",
@@ -1785,10 +1785,10 @@
   },
   {
     "from": "heroes/hf_bard.png",
-    "to": "heroes/h_bard_f.png",
+    "to": "heroes/hf_bard_por.png",
     "action": "move",
     "keyFrom": "hf_bard",
-    "keyTo": "h_bard_f",
+    "keyTo": "hf_bard_por",
     "inUse": true,
     "usedBy": [
       "src/config/registries/heroPortraits.js",
@@ -1799,10 +1799,10 @@
   },
   {
     "from": "heroes/hf_cook.png",
-    "to": "heroes/h_cook_f.png",
+    "to": "heroes/hf_cook_por.png",
     "action": "move",
     "keyFrom": "hf_cook",
-    "keyTo": "h_cook_f",
+    "keyTo": "hf_cook_por",
     "inUse": true,
     "usedBy": [
       "src/config/registries/heroPortraits.js",
@@ -1813,10 +1813,10 @@
   },
   {
     "from": "heroes/hf_druid.png",
-    "to": "heroes/h_druid_f.png",
+    "to": "heroes/hf_druid_por.png",
     "action": "move",
     "keyFrom": "hf_druid",
-    "keyTo": "h_druid_f",
+    "keyTo": "hf_druid_por",
     "inUse": true,
     "usedBy": [
       "src/config/registries/heroPortraits.js",
@@ -1827,10 +1827,10 @@
   },
   {
     "from": "heroes/hf_jester.png",
-    "to": "heroes/h_jester_f.png",
+    "to": "heroes/hf_jester_por.png",
     "action": "move",
     "keyFrom": "hf_jester",
-    "keyTo": "h_jester_f",
+    "keyTo": "hf_jester_por",
     "inUse": true,
     "usedBy": [
       "src/config/registries/heroPortraits.js",
@@ -1841,66 +1841,66 @@
   },
   {
     "from": "heroes/hf_mage1.png",
-    "to": "heroes/h_mage_blue_f.png",
+    "to": "heroes/hf_mage_por_1.png",
     "action": "move",
     "keyFrom": "hf_mage1",
-    "keyTo": "h_mage_blue_f",
-    "inUse": true,
-    "usedBy": [
-      "src/config/registries/heroPortraits.js",
-      "src/utils/AssetManager.js"
-    ],
-    "confidence": "check",
-    "note": "number replaced by the robe colour; saved heroes store this id (hero.spriteId); old saves need a mapping"
-  },
-  {
-    "from": "heroes/hf_mage2.png",
-    "to": "heroes/h_mage_red_f.png",
-    "action": "move",
-    "keyFrom": "hf_mage2",
-    "keyTo": "h_mage_red_f",
-    "inUse": true,
-    "usedBy": [
-      "src/config/registries/heroPortraits.js",
-      "src/utils/AssetManager.js"
-    ],
-    "confidence": "check",
-    "note": "number replaced by the robe colour; saved heroes store this id (hero.spriteId); old saves need a mapping"
-  },
-  {
-    "from": "heroes/hf_sail.png",
-    "to": "heroes/h_sail_f.png",
-    "action": "move",
-    "keyFrom": "hf_sail",
-    "keyTo": "h_sail_f",
+    "keyTo": "hf_mage_por_1",
     "inUse": true,
     "usedBy": [
       "src/config/registries/heroPortraits.js",
       "src/utils/AssetManager.js"
     ],
     "confidence": "sure",
-    "note": "saved heroes store this id (hero.spriteId); old saves need a mapping"
+    "note": "numbered recolour (blue robe); saved heroes store this id (hero.spriteId); old saves need a mapping"
   },
   {
-    "from": "heroes/hf_sail1.png",
-    "to": "heroes/h_sail_pirate_f.png",
+    "from": "heroes/hf_mage2.png",
+    "to": "heroes/hf_mage_por_2.png",
     "action": "move",
-    "keyFrom": "hf_sail1",
-    "keyTo": "h_sail_pirate_f",
+    "keyFrom": "hf_mage2",
+    "keyTo": "hf_mage_por_2",
+    "inUse": true,
+    "usedBy": [
+      "src/config/registries/heroPortraits.js",
+      "src/utils/AssetManager.js"
+    ],
+    "confidence": "sure",
+    "note": "numbered recolour (red robe); saved heroes store this id (hero.spriteId); old saves need a mapping"
+  },
+  {
+    "from": "heroes/hf_sail.png",
+    "to": "heroes/hf_sail_por.png",
+    "action": "move",
+    "keyFrom": "hf_sail",
+    "keyTo": "hf_sail_por",
     "inUse": true,
     "usedBy": [
       "src/config/registries/heroPortraits.js",
       "src/utils/AssetManager.js"
     ],
     "confidence": "check",
-    "note": "number replaced: the one with the tricorn hat and rapier; saved heroes store this id (hero.spriteId); old saves need a mapping"
+    "note": "hf_sail and hf_sail1 are two different drawings (pose, hat, weapon), not recolours, so no number; saved heroes store this id (hero.spriteId); old saves need a mapping"
+  },
+  {
+    "from": "heroes/hf_sail1.png",
+    "to": "heroes/hf_sail_pirate_por.png",
+    "action": "move",
+    "keyFrom": "hf_sail1",
+    "keyTo": "hf_sail_pirate_por",
+    "inUse": true,
+    "usedBy": [
+      "src/config/registries/heroPortraits.js",
+      "src/utils/AssetManager.js"
+    ],
+    "confidence": "check",
+    "note": "a different drawing from hf_sail, not a recolour: tricorn hat and rapier, so a word instead of a number; saved heroes store this id (hero.spriteId); old saves need a mapping"
   },
   {
     "from": "heroes/hf_social.png",
-    "to": "heroes/h_social_f.png",
+    "to": "heroes/hf_social_por.png",
     "action": "move",
     "keyFrom": "hf_social",
-    "keyTo": "h_social_f",
+    "keyTo": "hf_social_por",
     "inUse": true,
     "usedBy": [
       "src/config/registries/heroPortraits.js",
@@ -1911,10 +1911,10 @@
   },
   {
     "from": "heroes/hf_warrior.png",
-    "to": "heroes/h_warrior_f.png",
+    "to": "heroes/hf_warrior_por.png",
     "action": "move",
     "keyFrom": "hf_warrior",
-    "keyTo": "h_warrior_f",
+    "keyTo": "hf_warrior_por",
     "inUse": true,
     "usedBy": [
       "src/config/registries/heroPortraits.js",
@@ -1925,10 +1925,10 @@
   },
   {
     "from": "heroes/hm_alchemy.png",
-    "to": "heroes/h_alchemy_m.png",
+    "to": "heroes/hm_alchemy_por.png",
     "action": "move",
     "keyFrom": "hm_alchemy",
-    "keyTo": "h_alchemy_m",
+    "keyTo": "hm_alchemy_por",
     "inUse": true,
     "usedBy": [
       "src/config/registries/heroPortraits.js",
@@ -1939,10 +1939,10 @@
   },
   {
     "from": "heroes/hm_bard.png",
-    "to": "heroes/h_bard_m.png",
+    "to": "heroes/hm_bard_por.png",
     "action": "move",
     "keyFrom": "hm_bard",
-    "keyTo": "h_bard_m",
+    "keyTo": "hm_bard_por",
     "inUse": true,
     "usedBy": [
       "src/config/registries/heroPortraits.js",
@@ -1957,10 +1957,10 @@
   },
   {
     "from": "heroes/hm_blacksmith.png",
-    "to": "heroes/h_blacksmith_m.png",
+    "to": "heroes/hm_blacksmith_por.png",
     "action": "move",
     "keyFrom": "hm_blacksmith",
-    "keyTo": "h_blacksmith_m",
+    "keyTo": "hm_blacksmith_por",
     "inUse": true,
     "usedBy": [
       "src/config/registries/heroPortraits.js",
@@ -1975,10 +1975,10 @@
   },
   {
     "from": "heroes/hm_cleric.png",
-    "to": "heroes/h_cleric_m.png",
+    "to": "heroes/hm_cleric_por.png",
     "action": "move",
     "keyFrom": "hm_cleric",
-    "keyTo": "h_cleric_m",
+    "keyTo": "hm_cleric_por",
     "inUse": true,
     "usedBy": [
       "src/config/registries/heroPortraits.js",
@@ -1994,10 +1994,10 @@
   },
   {
     "from": "heroes/hm_cook.png",
-    "to": "heroes/h_cook_m.png",
+    "to": "heroes/hm_cook_por.png",
     "action": "move",
     "keyFrom": "hm_cook",
-    "keyTo": "h_cook_m",
+    "keyTo": "hm_cook_por",
     "inUse": true,
     "usedBy": [
       "src/config/registries/heroPortraits.js",
@@ -2009,10 +2009,10 @@
   },
   {
     "from": "heroes/hm_crime.png",
-    "to": "heroes/h_crime_m.png",
+    "to": "heroes/hm_crime_por.png",
     "action": "move",
     "keyFrom": "hm_crime",
-    "keyTo": "h_crime_m",
+    "keyTo": "hm_crime_por",
     "inUse": true,
     "usedBy": [
       "src/config/registries/heroPortraits.js",
@@ -2023,10 +2023,10 @@
   },
   {
     "from": "heroes/hm_druid.png",
-    "to": "heroes/h_druid_m.png",
+    "to": "heroes/hm_druid_por.png",
     "action": "move",
     "keyFrom": "hm_druid",
-    "keyTo": "h_druid_m",
+    "keyTo": "hm_druid_por",
     "inUse": true,
     "usedBy": [
       "src/config/registries/heroPortraits.js",
@@ -2037,10 +2037,10 @@
   },
   {
     "from": "heroes/hm_fighter.png",
-    "to": "heroes/h_fighter_m.png",
+    "to": "heroes/hm_fighter_por.png",
     "action": "move",
     "keyFrom": "hm_fighter",
-    "keyTo": "h_fighter_m",
+    "keyTo": "hm_fighter_por",
     "inUse": true,
     "usedBy": [
       "src/config/registries/heroPortraits.js",
@@ -2058,10 +2058,10 @@
   },
   {
     "from": "heroes/hm_sail.png",
-    "to": "heroes/h_sail_m.png",
+    "to": "heroes/hm_sail_por.png",
     "action": "move",
     "keyFrom": "hm_sail",
-    "keyTo": "h_sail_m",
+    "keyTo": "hm_sail_por",
     "inUse": true,
     "usedBy": [
       "src/config/registries/heroPortraits.js",
@@ -2072,10 +2072,10 @@
   },
   {
     "from": "heroes/hm_wizard.png",
-    "to": "heroes/h_wizard_m.png",
+    "to": "heroes/hm_wizard_por.png",
     "action": "move",
     "keyFrom": "hm_wizard",
-    "keyTo": "h_wizard_m",
+    "keyTo": "hm_wizard_por",
     "inUse": true,
     "usedBy": [
       "src/config/registries/heroPortraits.js",
@@ -2094,10 +2094,10 @@
   },
   {
     "from": "heroes/hn_adventure1.png",
-    "to": "heroes/h_adventure_n.png",
+    "to": "heroes/hn_adventure_por.png",
     "action": "move",
     "keyFrom": "hn_adventure1",
-    "keyTo": "h_adventure_n",
+    "keyTo": "hn_adventure_por",
     "inUse": true,
     "usedBy": [
       "src/config/registries/heroPortraits.js",
@@ -2112,10 +2112,10 @@
   },
   {
     "from": "heroes/hn_bard.png",
-    "to": "heroes/h_bard_n.png",
+    "to": "heroes/hn_bard_por.png",
     "action": "move",
     "keyFrom": "hn_bard",
-    "keyTo": "h_bard_n",
+    "keyTo": "hn_bard_por",
     "inUse": true,
     "usedBy": [
       "src/config/registries/heroPortraits.js",
@@ -2126,10 +2126,10 @@
   },
   {
     "from": "heroes/hn_cook.png",
-    "to": "heroes/h_cook_n.png",
+    "to": "heroes/hn_cook_por.png",
     "action": "move",
     "keyFrom": "hn_cook",
-    "keyTo": "h_cook_n",
+    "keyTo": "hn_cook_por",
     "inUse": true,
     "usedBy": [
       "src/config/registries/heroPortraits.js",
@@ -2140,10 +2140,10 @@
   },
   {
     "from": "heroes/hn_crime.png",
-    "to": "heroes/h_crime_n.png",
+    "to": "heroes/hn_crime_por.png",
     "action": "move",
     "keyFrom": "hn_crime",
-    "keyTo": "h_crime_n",
+    "keyTo": "hn_crime_por",
     "inUse": true,
     "usedBy": [
       "src/config/registries/heroPortraits.js",
@@ -2154,10 +2154,10 @@
   },
   {
     "from": "heroes/hn_range.png",
-    "to": "heroes/h_range_n.png",
+    "to": "heroes/hn_range_por.png",
     "action": "move",
     "keyFrom": "hn_range",
-    "keyTo": "h_range_n",
+    "keyTo": "hn_range_por",
     "inUse": true,
     "usedBy": [
       "src/config/registries/heroPortraits.js",
@@ -2173,10 +2173,10 @@
   },
   {
     "from": "heroes/hn_sneak.png",
-    "to": "heroes/h_sneak_n.png",
+    "to": "heroes/hn_sneak_por.png",
     "action": "move",
     "keyFrom": "hn_sneak",
-    "keyTo": "h_sneak_n",
+    "keyTo": "hn_sneak_por",
     "inUse": true,
     "usedBy": [
       "src/config/registries/heroPortraits.js",
@@ -2193,10 +2193,10 @@
   },
   {
     "from": "heroes/icon_recruit_0.png",
-    "to": "heroes/h_recruit_icon_n.png",
+    "to": "heroes/hn_recruit_icon_por.png",
     "action": "move",
     "keyFrom": "icon_recruit_0",
-    "keyTo": "h_recruit_icon_n",
+    "keyTo": "hn_recruit_icon_por",
     "inUse": true,
     "usedBy": [
       "src/systems/hero/HeroGenerator.js",
@@ -2205,7 +2205,7 @@
       "src/utils/AssetManager.js"
     ],
     "confidence": "check",
-    "note": "16px headshot; saved heroes store icon_recruit_0 as icon"
+    "note": "16px headshot: the rule has no word for an icon, so icon sits in the class slot; saved heroes store icon_recruit_0 as icon"
   },
   {
     "from": "heroes/unused/hero_druid.png",
@@ -2231,10 +2231,10 @@
   },
   {
     "from": "heroes/unused/hero_knight.png",
-    "to": "heroes/h_knight_n.png",
+    "to": "heroes/hn_knight_por.png",
     "action": "move",
     "keyFrom": "hero_knight",
-    "keyTo": "h_knight_n",
+    "keyTo": "hn_knight_por",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js",
@@ -2263,10 +2263,10 @@
   },
   {
     "from": "heroes/unused/hero_rogue.png",
-    "to": "heroes/h_rogue_n.png",
+    "to": "heroes/hn_rogue_por.png",
     "action": "move",
     "keyFrom": "hero_rogue",
-    "keyTo": "h_rogue_n",
+    "keyTo": "hn_rogue_por",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js",
@@ -2295,10 +2295,10 @@
   },
   {
     "from": "heroes/unused/hero_wizard_arcane.png",
-    "to": "heroes/h_wizard_arcane_n.png",
+    "to": "heroes/hn_wizard_arcane_por.png",
     "action": "move",
     "keyFrom": "hero_wizard_arcane",
-    "keyTo": "h_wizard_arcane_n",
+    "keyTo": "hn_wizard_arcane_por",
     "inUse": true,
     "usedBy": [
       "src/config/registries/sprite-manifest.js",
@@ -3995,7 +3995,7 @@
     "inUse": false,
     "usedBy": [],
     "confidence": "check",
-    "note": "a material colour swatch, not an ingot drawing; abbreviation kept: addy"
+    "note": "a material colour swatch, not an ingot drawing"
   },
   {
     "from": "items/ingot/color_darkmetal.png",
@@ -4314,8 +4314,8 @@
       "data/items.json",
       "src/config/registries/sprite-manifest.js"
     ],
-    "confidence": "check",
-    "note": "abbreviation kept: addy"
+    "confidence": "sure",
+    "note": ""
   },
   {
     "from": "items/ore/ore_coal.png",
@@ -4430,8 +4430,8 @@
     "keyTo": "i_potion_chicken_dia",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "abbreviation kept: dia"
+    "confidence": "sure",
+    "note": ""
   },
   {
     "from": "items/potion/chicken/p_chicken_red.png",
@@ -4540,8 +4540,8 @@
     "keyTo": "i_potion_dragon_dia",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "abbreviation kept: dia"
+    "confidence": "sure",
+    "note": ""
   },
   {
     "from": "items/potion/dragon/p_dragon_gold.png",
@@ -4584,8 +4584,8 @@
     "keyTo": "i_potion_gem_ame",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "abbreviation kept: ame"
+    "confidence": "sure",
+    "note": ""
   },
   {
     "from": "items/potion/gem/p_gem_dia.png",
@@ -4595,8 +4595,8 @@
     "keyTo": "i_potion_gem_dia",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "abbreviation kept: dia"
+    "confidence": "sure",
+    "note": ""
   },
   {
     "from": "items/potion/gem/p_gem_emr.png",
@@ -4606,8 +4606,8 @@
     "keyTo": "i_potion_gem_emr",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "abbreviation kept: emr"
+    "confidence": "sure",
+    "note": ""
   },
   {
     "from": "items/potion/gem/p_gem_gold.png",
@@ -4639,8 +4639,8 @@
     "keyTo": "i_potion_gem_saph",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "abbreviation kept: saph"
+    "confidence": "sure",
+    "note": ""
   },
   {
     "from": "items/potion/gem/p_gem_silver.png",
@@ -4848,8 +4848,8 @@
     "keyTo": "i_potion_myst_dia",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "abbreviation kept: dia"
+    "confidence": "sure",
+    "note": ""
   },
   {
     "from": "items/potion/myst/p_myst_dred.png",
@@ -4881,8 +4881,8 @@
     "keyTo": "i_potion_myst_myth",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "abbreviation kept: myth"
+    "confidence": "sure",
+    "note": ""
   },
   {
     "from": "items/potion/myst/p_myst_purp.png",
@@ -5090,8 +5090,8 @@
     "keyTo": "i_potion_shrimp_dia",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "abbreviation kept: dia"
+    "confidence": "sure",
+    "note": ""
   },
   {
     "from": "items/potion/shrimp/p_shrimp_pink.png",
@@ -5258,8 +5258,8 @@
     "keyTo": "i_potion_swirl_dia_red",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "abbreviation kept: dia"
+    "confidence": "sure",
+    "note": ""
   },
   {
     "from": "items/potion/tear/p_tear_cyan.png",
@@ -5412,8 +5412,8 @@
     "keyTo": "i_potion_wine_dia",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "abbreviation kept: dia"
+    "confidence": "sure",
+    "note": ""
   },
   {
     "from": "items/potion/wine/p_wine_grape.png",
@@ -5873,8 +5873,8 @@
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
     ],
-    "confidence": "check",
-    "note": "abbreviation kept: addy"
+    "confidence": "sure",
+    "note": ""
   },
   {
     "from": "items/tool/chisel/tool_chisel_copper.png",
@@ -5929,8 +5929,8 @@
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
     ],
-    "confidence": "check",
-    "note": "abbreviation kept: myth"
+    "confidence": "sure",
+    "note": ""
   },
   {
     "from": "items/tool/pick/tool_pick_addy.png",
@@ -5947,7 +5947,7 @@
       "Token_pickaxe_addy"
     ],
     "confidence": "check",
-    "note": "abbreviation kept: addy; manifest alias Token_pickaxe_addy points here: keep the key, point at the new path (or retire once the data uses the new name)"
+    "note": "manifest alias Token_pickaxe_addy points here: keep the key, point at the new path (or retire once the data uses the new name)"
   },
   {
     "from": "items/tool/pick/tool_pick_copper.png",
@@ -6019,7 +6019,7 @@
       "Token_pickaxe_myth"
     ],
     "confidence": "check",
-    "note": "abbreviation kept: myth; manifest alias Token_pickaxe_myth points here: keep the key, point at the new path (or retire once the data uses the new name)"
+    "note": "manifest alias Token_pickaxe_myth points here: keep the key, point at the new path (or retire once the data uses the new name)"
   },
   {
     "from": "items/tool/rod/tool_rod_wood.png",
@@ -6061,8 +6061,8 @@
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
     ],
-    "confidence": "check",
-    "note": "abbreviation kept: addy"
+    "confidence": "sure",
+    "note": ""
   },
   {
     "from": "items/tool/woodaxe/tool_woodaxe_copper.png",
@@ -6118,8 +6118,8 @@
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
     ],
-    "confidence": "check",
-    "note": "abbreviation kept: myth"
+    "confidence": "sure",
+    "note": ""
   },
   {
     "from": "items/weapon/axe/w_axe_copper.png",
@@ -7181,8 +7181,8 @@
     "usedBy": [
       "src/config/guildUpgrades.js"
     ],
-    "confidence": "check",
-    "note": "abbreviation kept: addy"
+    "confidence": "sure",
+    "note": ""
   },
   {
     "from": "tokens/chest/token_chest_copper.png",
@@ -7238,8 +7238,8 @@
     "keyTo": "t_chest_myth",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "abbreviation kept: myth"
+    "confidence": "sure",
+    "note": ""
   },
   {
     "from": "tokens/cook/token_campfire.png",
@@ -7404,8 +7404,8 @@
     "keyTo": "t_crime_crowbar_addy",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "abbreviation kept: addy"
+    "confidence": "sure",
+    "note": ""
   },
   {
     "from": "tokens/crime/token_crowbar_copper.png",
@@ -7448,8 +7448,8 @@
     "keyTo": "t_crime_crowbar_myth",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "abbreviation kept: myth"
+    "confidence": "sure",
+    "note": ""
   },
   {
     "from": "tokens/crime/token_lockpick.png",
@@ -7470,8 +7470,8 @@
     "keyTo": "t_crime_lockpick_addy",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "abbreviation kept: addy"
+    "confidence": "sure",
+    "note": ""
   },
   {
     "from": "tokens/crime/token_lockpick_copper.png",
@@ -7514,8 +7514,8 @@
     "keyTo": "t_crime_lockpick_myth",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "abbreviation kept: myth"
+    "confidence": "sure",
+    "note": ""
   },
   {
     "from": "tokens/enchant/token_enchant.png",
@@ -8191,8 +8191,8 @@
     "keyTo": "t_mine_minecart_addy",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "abbreviation kept: addy"
+    "confidence": "sure",
+    "note": ""
   },
   {
     "from": "tokens/mine/token_minecart_base.png",
@@ -8277,8 +8277,8 @@
     "keyTo": "t_mine_minecart_myth",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "abbreviation kept: myth"
+    "confidence": "sure",
+    "note": ""
   },
   {
     "from": "tokens/mine/token_minecart_silver.png",
@@ -8299,8 +8299,8 @@
     "keyTo": "t_mine_mineshaft_addy",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "abbreviation kept: addy"
+    "confidence": "sure",
+    "note": ""
   },
   {
     "from": "tokens/mine/token_mineshaft_copper.png",
@@ -8357,8 +8357,8 @@
     "keyTo": "t_mine_mineshaft_myth",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "abbreviation kept: myth"
+    "confidence": "sure",
+    "note": ""
   },
   {
     "from": "tokens/mine/token_mineshaft_silver.png",
@@ -9320,7 +9320,7 @@
       "token_ore_addy"
     ],
     "confidence": "check",
-    "note": "abbreviation kept: addy; manifest alias token_ore_addy points here: keep the key, point at the new path (or retire once the data uses the new name)"
+    "note": "manifest alias token_ore_addy points here: keep the key, point at the new path (or retire once the data uses the new name)"
   },
   {
     "from": "tokens/ore/token_ore_vein_coal.png",
@@ -9615,8 +9615,8 @@
     "keyTo": "t_smith_anvil_addy",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "abbreviation kept: addy"
+    "confidence": "sure",
+    "note": ""
   },
   {
     "from": "tokens/smith/token_anvil_copper.png",

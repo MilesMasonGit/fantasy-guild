@@ -13,12 +13,13 @@ const rows = JSON.parse(fs.readFileSync(path.join(HERE, 'rename-list.json'), 'ut
 // Kind folder -> prefix. Longest folder first, so playmat/props wins over a shorter match.
 const KINDS = [
     ['playmat/terrain', 'g'], ['playmat/props', 'p'],
-    ['tokens', 't'], ['items', 'i'], ['heroes', 'h'], ['enemies', 'e'],
+    ['tokens', 't'], ['items', 'i'], ['heroes', 'h[fmn]'], ['enemies', 'e'],
     ['ui', 'u'], ['backgrounds', 'b'], ['skills', 's'],
 ];
 // Kinds whose files sit in a group folder, and whose names repeat that group.
 const GROUPED = new Set(['tokens', 'items', 'enemies', 'backgrounds']);
 const NAME = /^[a-z0-9]+(_[a-z0-9]+)*$/;
+const HERO = /^h[fmn]_[a-z]+(_[a-z]+)*_(por|sheet)(_\d+)?$/;
 
 const errors = [];
 const warnings = [];
@@ -72,7 +73,7 @@ for (const r of rows) {
     const kind = KINDS.find(([k]) => dir === k || dir.startsWith(k + '/'));
     if (!kind) { fail(`${where}: ${r.to} is not under a kind folder`); continue; }
     const [kindDir, prefix] = kind;
-    if (!stem.startsWith(prefix + '_')) fail(`${where}: ${stem} should start with ${prefix}_ (kind ${kindDir})`);
+    if (!new RegExp(`^${prefix}_`).test(stem)) fail(`${where}: ${stem} should start with ${prefix}_ (kind ${kindDir})`);
     const under = dir === kindDir ? [] : dir.slice(kindDir.length + 1).split('/');
     if (under.length > 1) fail(`${where}: more than one folder under ${kindDir}/ (${r.to})`);
     if (GROUPED.has(kindDir)) {
@@ -81,12 +82,14 @@ for (const r of rows) {
     } else if (under.length && !(kindDir === 'playmat/props' && under[0] === 'sheets')) {
         fail(`${where}: ${kindDir} has no group level (${r.to})`);
     }
-    if (kindDir === 'heroes' && !/_(f|m|n)$/.test(stem) && !/_sheet$/.test(stem)) fail(`${where}: hero portrait should end in _f, _m or _n (${stem})`);
+    if (kindDir === 'heroes' && !HERO.test(stem)) fail(`${where}: hero name should be hf_, hm_ or hn_, the class, then por or sheet, with an optional _N (${stem})`);
 
     if (/(^|_)(final|new|v\d+|\d+px|\d+x\d+)(_|$)/.test(stem)) fail(`${where}: forbidden word in ${stem}`);
-    if (/\d/.test(stem)) warnings.push(`${stem}: has a digit`);
+    // A number is allowed only as the last word, for numbered recolours of one drawing.
+    if (/\d/.test(stem) && !/^[a-z_]*[a-z](_\d+)?$/.test(stem)) fail(`${where}: a number may only be the last _N word (${stem})`);
+    if (/\d/.test(stem)) warnings.push(`${stem}: numbered`);
     if (/_sheet(_|$)/.test(stem)) {
-        const still = path.join(dir, stem.replace(/_sheet(_[a-z]+)?$/, '') + ext).split(path.sep).join('/');
+        const still = path.join(dir, stem.replace(/_sheet(_[a-z]+)?$/, kindDir === 'heroes' ? '_por' : '') + ext).split(path.sep).join('/');
         if (!rows.some(o => o.to === still)) warnings.push(`${stem}: no still sprite ${still} beside it`);
     }
 
