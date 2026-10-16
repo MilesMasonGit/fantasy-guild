@@ -51,7 +51,7 @@ registerTokenTypes({
     },
     [SAPLING]: {
         id: SAPLING, name: 'Atlas Sapling', tokenType: 'resource', rarity: 'common', theme: 'fixture',
-        uses: null, sprite: 'skill_nature', grows: { into: 'fixture_producer', afterMs: 10 * MIN }
+        uses: null, sprite: 's_nature', grows: { into: 'fixture_producer', afterMs: 10 * MIN }
     }
 });
 

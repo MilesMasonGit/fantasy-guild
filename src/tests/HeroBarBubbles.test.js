@@ -29,7 +29,7 @@ import { setLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
  */
 
 const h = React.createElement;
-const hero = (id, name) => ({ id, name, spriteId: 'hero_recruit_0', hp: { current: 100, max: 100 }, status: 'idle', equipment: {} });
+const hero = (id, name) => ({ id, name, spriteId: 'hn_recruit_por', hp: { current: 100, max: 100 }, status: 'idle', equipment: {} });
 const engine = { GameState, EventBus, BoardPlacement: { recallHeroById: vi.fn() }, EquipmentManager: { equipItem: vi.fn() } };
 
 function mount(props = {}) {

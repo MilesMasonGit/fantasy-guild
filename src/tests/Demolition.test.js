@@ -54,37 +54,37 @@ const logging = {
 registerTokenTypes({
     demo_landmark: {
         id: 'demo_landmark', name: 'Demo Landmark', tokenType: 'resource', rarity: 'common',
-        theme: 'fixture', uses: null, sprite: 'skill_nature', landmark: true, config: logging
+        theme: 'fixture', uses: null, sprite: 's_nature', landmark: true, config: logging
     },
     demo_tree: {
         id: 'demo_tree', name: 'Demo Tree', tokenType: 'resource', rarity: 'common',
-        theme: 'fixture', uses: 3, sprite: 'skill_nature', config: logging
+        theme: 'fixture', uses: 3, sprite: 's_nature', config: logging
     },
     demo_sapling: {
         id: 'demo_sapling', name: 'Demo Sapling', tokenType: 'resource', rarity: 'common',
-        theme: 'fixture', uses: null, sprite: 'skill_nature',
+        theme: 'fixture', uses: null, sprite: 's_nature',
         grows: { into: 'demo_tree', afterMs: 20000 }
     },
     demo_forest: {
         id: 'demo_forest', name: 'Demo Forest', tokenType: 'spawner', rarity: 'common',
-        theme: 'fixture', uses: null, sprite: 'skill_nature',
+        theme: 'fixture', uses: null, sprite: 's_nature',
         spawner: { spawns: [{ typeId: 'demo_sapling', weight: 1 }], allowance: 3, intervalMs: 5000, upkeep: [] }
     },
     /** Its upkeep is an item the Bank never holds, so it waits with an alert up. */
     demo_hungry_forest: {
         id: 'demo_hungry_forest', name: 'Demo Hungry Forest', tokenType: 'spawner', rarity: 'common',
-        theme: 'fixture', uses: null, sprite: 'skill_nature',
+        theme: 'fixture', uses: null, sprite: 's_nature',
         spawner: { spawns: [{ typeId: 'demo_sapling', weight: 1 }], allowance: 3, intervalMs: 5000, upkeep: [{ itemId: 'fixture_carrot', quantity: 1 }] }
     },
     demo_vein: {
         id: 'demo_vein', name: 'Demo Vein', tokenType: 'resource', rarity: 'common',
-        theme: 'fixture', uses: 3, sprite: 'skill_industry',
+        theme: 'fixture', uses: 3, sprite: 's_industry',
         config: { ...logging, skill: 'mining' },
         respawn: { mode: 'refill', afterMs: 12000 }
     },
     demo_foundation: {
         id: 'demo_foundation', name: 'Demo Foundation', tokenType: 'structure', rarity: 'common',
-        theme: 'fixture', uses: null, sprite: 'skill_industry',
+        theme: 'fixture', uses: null, sprite: 's_industry',
         foundation: { kind: 'demo', skill: 'construction' }
     }
 });

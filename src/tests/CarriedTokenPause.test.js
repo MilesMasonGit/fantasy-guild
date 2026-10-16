@@ -35,7 +35,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 registerTokenTypes({
     carried_last_charge: {
         id: 'carried_last_charge', name: 'Carried Last Charge', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: 1, sprite: 'skill_industry',
+        rarity: 'common', theme: 'fixture', uses: 1, sprite: 's_industry',
         requiresHero: false,
         config: { skill: 'forestry', skillRequired: 0, cycleTimeMs: 2000, xp: 0, inputs: [], outputs: [] }
     }

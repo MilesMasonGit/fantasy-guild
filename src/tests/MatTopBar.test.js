@@ -32,7 +32,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 const tokenDef = (id, name, extra = {}) => ({
-    id, name, tokenType: 'resource', rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature', ...extra
+    id, name, tokenType: 'resource', rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature', ...extra
 });
 registerTokenTypes({
     fixture_mb_oak: tokenDef('fixture_mb_oak', 'Bar Oak Forest'),

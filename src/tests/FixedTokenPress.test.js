@@ -37,11 +37,11 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 registerTokenTypes({
     fxp_sapling: {
         id: 'fxp_sapling', name: 'Fxp Sapling', tokenType: 'resource', rarity: 'common',
-        theme: 'fixture', sprite: 'skill_nature', uses: null, grows: { into: 'fixture_producer', afterMs: 30000 }
+        theme: 'fixture', sprite: 's_nature', uses: null, grows: { into: 'fixture_producer', afterMs: 30000 }
     },
     fxp_enemy: {
         id: 'fxp_enemy', name: 'Fxp Goblin', tokenType: 'enemy', rarity: 'common', theme: 'fixture',
-        sprite: 'skill_nature', uses: 1, enemy: { level: 1, style: 'melee' }
+        sprite: 's_nature', uses: 1, enemy: { level: 1, style: 'melee' }
     }
 });
 

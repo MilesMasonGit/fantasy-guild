@@ -40,13 +40,13 @@ export const BENCH_TOKENS = {
     bench_hall: {
         id: 'bench_hall', name: 'Bench Hall', tokenType: 'guild_hall', isGuildHall: true,
         rarity: 'common', theme: 'fixture', uses: null, size: 2, requiresHero: false,
-        sprite: 'skill_social'
+        sprite: 's_social'
     },
 
     /** A spawned forestry Token that runs out — 40 cycles — so its spawner refills it. */
     bench_tree: {
         id: 'bench_tree', name: 'Bench Tree', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: 40, sprite: 'skill_nature',
+        rarity: 'common', theme: 'fixture', uses: 40, sprite: 's_nature',
         config: {
             skill: 'forestry', skillRequired: 1, cycleTimeMs: 8000, xp: 3,
             inputs: [],
@@ -56,7 +56,7 @@ export const BENCH_TOKENS = {
     /** The mining twin of `bench_tree`. */
     bench_rock: {
         id: 'bench_rock', name: 'Bench Rock', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: 40, sprite: 'skill_industry',
+        rarity: 'common', theme: 'fixture', uses: 40, sprite: 's_industry',
         config: {
             skill: 'mining', skillRequired: 1, cycleTimeMs: 10000, xp: 3,
             inputs: [],
@@ -67,31 +67,31 @@ export const BENCH_TOKENS = {
     /** Spawners (Token Lifecycle 3.3): a family cap of `allowance` each. */
     bench_forest: {
         id: 'bench_forest', name: 'Bench Forest', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature',
         spawner: { spawns: [{ typeId: 'bench_tree', weight: 1 }], allowance: 10, intervalMs: 5000, upkeep: [] }
     },
     bench_quarry: {
         id: 'bench_quarry', name: 'Bench Quarry', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_industry',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_industry',
         spawner: { spawns: [{ typeId: 'bench_rock', weight: 1 }], allowance: 10, intervalMs: 5000, upkeep: [] }
     },
     bench_camp: {
         id: 'bench_camp', name: 'Bench Camp', tokenType: 'spawner',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_crime',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_crime',
         spawner: { spawns: [{ typeId: 'bench_goblin', weight: 1 }], allowance: 3, intervalMs: 30000, upkeep: [] }
     },
 
     /** A bigger camp for S3: five goblins. */
     bench_warcamp: {
         id: 'bench_warcamp', name: 'Bench War Camp', tokenType: 'spawner',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_crime',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_crime',
         spawner: { spawns: [{ typeId: 'bench_goblin', weight: 1 }], allowance: 5, intervalMs: 30000, upkeep: [] }
     },
 
     /** A hostile level-1 melee enemy with one charge: a kill clears it and its camp respawns it. */
     bench_goblin: {
         id: 'bench_goblin', name: 'Bench Goblin', tokenType: 'enemy',
-        rarity: 'common', theme: 'fixture', uses: 1, sprite: 'skill_crime', requiresHero: true,
+        rarity: 'common', theme: 'fixture', uses: 1, sprite: 's_crime', requiresHero: true,
         enemy: { level: 1, style: 'melee', budgetScale: 0.3, hostile: true },
         config: {
             skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0,
@@ -103,7 +103,7 @@ export const BENCH_TOKENS = {
     /** A station fed by the producers: 2 wood → 1 glowcap. Starves when wood runs short. */
     bench_mill: {
         id: 'bench_mill', name: 'Bench Mill', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: 5000, sprite: 'skill_flask',
+        rarity: 'common', theme: 'fixture', uses: 5000, sprite: 's_flask',
         config: {
             skill: 'alchemy', skillRequired: 1, cycleTimeMs: 15000, xp: 6,
             inputs: [{ itemId: 'fixture_oak_wood', quantity: 2 }],
@@ -117,7 +117,7 @@ export const BENCH_TOKENS = {
      */
     bench_smelter: {
         id: 'bench_smelter', name: 'Bench Smelter', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: 5000, sprite: 'skill_industry',
+        rarity: 'common', theme: 'fixture', uses: 5000, sprite: 's_industry',
         config: {
             skill: 'smithing', skillRequired: 1, cycleTimeMs: 12000, xp: 6,
             inputs: [{ itemId: 'item_coal', quantity: 2 }],
@@ -128,7 +128,7 @@ export const BENCH_TOKENS = {
     /** One rule with BOARD reach: +5 % yield to every Token on the mat (CR3-004). */
     bench_board_aura: {
         id: 'bench_board_aura', name: 'Bench Board Aura', tokenType: 'buff',
-        rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_occult',
+        rarity: 'rare', theme: 'fixture', uses: null, sprite: 's_occult',
         statements: [
             { id: 'stm_bench_board_aura', keyword: 'provides', reach: 'board', to: { mode: 'all' },
               payload: { type: 'YIELD', bucket: 'percentage', value: 0.05 } }

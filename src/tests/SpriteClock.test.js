@@ -345,7 +345,7 @@ describe('⭐ the strike frame meets the hit', () => {
 });
 
 describe('⭐ the hero bar: sprite frames redraw nothing around them', () => {
-    const hero = (id, name) => ({ id, name, spriteId: 'hero_recruit_0', hp: { current: 100, max: 100 }, status: 'idle', equipment: {} });
+    const hero = (id, name) => ({ id, name, spriteId: 'hn_recruit_por', hp: { current: 100, max: 100 }, status: 'idle', equipment: {} });
     const engine = { GameState, EventBus, BoardPlacement: { recallHeroById: vi.fn() }, EquipmentManager: { equipItem: vi.fn() } };
 
     it('⭐ 8 bar heroes idling: no React commit, and the slots’ layout animation never measures', async () => {

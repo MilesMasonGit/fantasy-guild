@@ -39,20 +39,20 @@ const DAY = 24 * 60 * 60 * 1000;
 registerTokenTypes({
     fixture_hostile_camp: {
         id: 'fixture_hostile_camp', name: 'Fixture Hostile Camp', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature',
         spawner: { spawns: [{ typeId: 'fixture_goblin', weight: 1 }], allowance: 4, intervalMs: DAY, upkeep: [] }
     },
     /** Hostile, one kill and gone — the Goblin's shape. */
     fixture_goblin: {
         id: 'fixture_goblin', name: 'Fixture Goblin', tokenType: 'enemy',
-        rarity: 'common', theme: 'fixture', uses: 1, sprite: 'skill_occult',
+        rarity: 'common', theme: 'fixture', uses: 1, sprite: 's_occult',
         enemy: { level: 1, style: 'melee', budgetScale: 0.3, hostile: true },
         config: { skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0, inputs: [], outputs: [] }
     },
     /** The same creature, peaceful (no `hostile`). */
     fixture_peaceful: {
         id: 'fixture_peaceful', name: 'Fixture Peaceful', tokenType: 'enemy',
-        rarity: 'common', theme: 'fixture', uses: 1, sprite: 'skill_occult',
+        rarity: 'common', theme: 'fixture', uses: 1, sprite: 's_occult',
         enemy: { level: 1, style: 'melee', budgetScale: 0.3 },
         config: { skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0, inputs: [], outputs: [] }
     }

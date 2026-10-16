@@ -33,7 +33,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 const LAP = PASSIVE_PRODUCTION_MS;
 
 const item = (id, name) => ({
-    id, name, type: 'material', sprite: 'wood_oak', description: '', tags: [],
+    id, name, type: 'material', sprite: 'i_wood_oak', description: '', tags: [],
     stackable: true, restoreAmount: 0, restoreType: '', regen: 0, equipSlot: '', value: 1
 });
 registerItems({
@@ -49,7 +49,7 @@ registerTokenTypes({
      */
     fixture_pp_hall: {
         id: 'fixture_pp_hall', name: 'Fixture Passive Hall', tokenType: 'resource', isGuildHall: true,
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature',
         trickle: [
             { itemId: 'fixture_pp_seed', quantity: 1, everyMs: 300000 },
             { itemId: 'fixture_pp_wood', quantity: 2, everyMs: 90000 },
@@ -59,18 +59,18 @@ registerTokenTypes({
     /** A Hall with no lines of its own: only the Wishing Well can make it pay. */
     fixture_pp_bare_hall: {
         id: 'fixture_pp_bare_hall', name: 'Fixture Bare Hall', tokenType: 'resource', isGuildHall: true,
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature'
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature'
     },
     /** Not a Hall, with a line: pays it, never the Wishing Well's Water. */
     fixture_pp_shrine: {
         id: 'fixture_pp_shrine', name: 'Fixture Shrine', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature',
         trickle: [{ itemId: 'fixture_pp_wood', quantity: 1 }]
     },
     /** Lines the engine must skip rather than choke on. */
     fixture_pp_broken: {
         id: 'fixture_pp_broken', name: 'Fixture Broken Passive', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature',
         trickle: [
             { itemId: 'fixture_pp_seed', quantity: 0 },
             { quantity: 1 },

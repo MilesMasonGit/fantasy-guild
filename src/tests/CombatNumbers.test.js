@@ -194,7 +194,7 @@ describe('⭐ an enemy lends its own numbers to the hero fighting it', () => {
         registerTokenTypes({
             fixture_corrosive_enemy: {
                 id: 'fixture_corrosive_enemy', name: 'Corrosive Enemy', tokenType: 'enemy',
-                rarity: 'common', uses: 20, sprite: 'skill_occult',
+                rarity: 'common', uses: 20, sprite: 's_occult',
                 enemy: { level: 2, style: 'melee' },
                 effects: [{ effectId: 'fixture_effect_corrosive', scale: 1 }],
                 config: {
@@ -276,7 +276,7 @@ describe('the audit names a combat rule that reaches nobody', () => {
         registerTokenTypes({
             fixture_confused_forge: {
                 id: 'fixture_confused_forge', name: 'Confused Forge', tokenType: 'station',
-                rarity: 'common', uses: 100, sprite: 'skill_occult',
+                rarity: 'common', uses: 100, sprite: 's_occult',
                 effects: [{ effectId: 'fixture_effect_plating' }],
                 config: { skill: 'smithing', skillRequired: 1, cycleTimeMs: 5000, xp: 0, inputs: [], outputs: [] },
             },

@@ -33,7 +33,7 @@ const WORKED_BUFF = 'fixture_cr250_worked_buff';
 registerTokenTypes({
     [WORKED_BUFF]: {
         id: WORKED_BUFF, name: 'CR3-250 Worked Buff', tokenType: 'buff', rarity: 'common', theme: 'fixture',
-        uses: null, sprite: 'skill_occult',
+        uses: null, sprite: 's_occult',
         statements: [{
             id: 'stm_cr250_worked_buff', keyword: 'provides',
             to: { mode: 'all', filters: [{ kind: 'worked' }] },

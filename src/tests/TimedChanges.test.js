@@ -45,12 +45,12 @@ const fishing = (cycleTimeMs) => ({
 registerTokenTypes({
     fixture_tl_sapling: {
         id: 'fixture_tl_sapling', name: 'Fixture Sapling', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature',
         grows: { into: 'fixture_tl_tree', afterMs: 30000 }
     },
     fixture_tl_tree: {
         id: 'fixture_tl_tree', name: 'Fixture Tree', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: 50, sprite: 'skill_nature',
+        rarity: 'common', theme: 'fixture', uses: 50, sprite: 's_nature',
         config: {
             skill: 'forestry', skillRequired: 1, cycleTimeMs: 12000, xp: 1,
             inputs: [], outputs: [{ itemId: 'fixture_oak_wood', quantity: 1, chance: 100 }]
@@ -59,12 +59,12 @@ registerTokenTypes({
     /** Grows into something twice its size — for "nowhere to stand". */
     fixture_tl_big_sapling: {
         id: 'fixture_tl_big_sapling', name: 'Fixture Big Sapling', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature',
         grows: { into: 'fixture_tl_big_tree', afterMs: 10000 }
     },
     fixture_tl_big_tree: {
         id: 'fixture_tl_big_tree', name: 'Fixture Big Tree', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: 50, sprite: 'skill_nature', size: 2
+        rarity: 'common', theme: 'fixture', uses: 50, sprite: 's_nature', size: 2
     },
     /**
      * The plain Coast: nothing to fish (the concept leaves that open). A 100%
@@ -73,7 +73,7 @@ registerTokenTypes({
      */
     fixture_tl_coast: {
         id: 'fixture_tl_coast', name: 'Fixture Coast', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nautical',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nautical',
         turns: {
             into: [{ typeId: 'fixture_tl_shrimp_coast', weight: 1 }, { typeId: 'fixture_tl_crab_coast', weight: 3 }],
             everyMs: 120000,
@@ -82,36 +82,36 @@ registerTokenTypes({
     },
     fixture_tl_shrimp_coast: {
         id: 'fixture_tl_shrimp_coast', name: 'Fixture Shrimp Coast', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nautical',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nautical',
         config: fishing(45000)
     },
     fixture_tl_crab_coast: {
         id: 'fixture_tl_crab_coast', name: 'Fixture Crab Coast', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nautical',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nautical',
         config: fishing(45000)
     },
     /** A second Coast on its own timings, turning into one thing only. */
     fixture_tl_cove: {
         id: 'fixture_tl_cove', name: 'Fixture Cove', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nautical',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nautical',
         turns: { into: [{ typeId: 'fixture_tl_shrimp_coast', weight: 1 }], everyMs: 50000, chance: 100 }
     },
     /** shape: a 30% chance every minute, both ways. */
     fixture_tl_lagoon: {
         id: 'fixture_tl_lagoon', name: 'Fixture Lagoon', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nautical',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nautical',
         turns: { into: [{ typeId: 'fixture_tl_shrimp_coast', weight: 1 }], everyMs: 60000, chance: 30 }
     },
     /** A turns block with neither cycle nor chance: the defaults (1 min, 30%). */
     fixture_tl_bay: {
         id: 'fixture_tl_bay', name: 'Fixture Bay', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nautical',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nautical',
         turns: { into: [{ typeId: 'fixture_tl_shrimp_coast', weight: 1 }] }
     },
     /** Turns into something twice its size — for a won roll with nowhere to stand. */
     fixture_tl_big_shore: {
         id: 'fixture_tl_big_shore', name: 'Fixture Big Shore', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nautical',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nautical',
         turns: { into: [{ typeId: 'fixture_tl_big_tree', weight: 1 }], everyMs: 10000, chance: 50 }
     }
 });

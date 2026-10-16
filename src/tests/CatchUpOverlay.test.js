@@ -26,7 +26,7 @@ const MIN = 60 * 1000;
 const HOUR = 60 * MIN;
 
 const item = (id, name) => ({
-    id, name, type: 'material', sprite: 'wood_oak', description: '', tags: [],
+    id, name, type: 'material', sprite: 'i_wood_oak', description: '', tags: [],
     stackable: true, restoreAmount: 0, restoreType: '', regen: 0, equipSlot: '', value: 1
 });
 registerItems({
@@ -36,7 +36,7 @@ registerItems({
     fixture_cu_pelt: item('fixture_cu_pelt', 'Fixture Pelt')
 });
 const token = (id, name) => ({
-    id, name, tokenType: 'resource', rarity: 'common', theme: 'fixture', uses: 5, sprite: 'skill_nature'
+    id, name, tokenType: 'resource', rarity: 'common', theme: 'fixture', uses: 5, sprite: 's_nature'
 });
 registerTokenTypes({
     fixture_cu_rock: token('fixture_cu_rock', 'Fixture Rock'),

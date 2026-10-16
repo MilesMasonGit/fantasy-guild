@@ -32,14 +32,14 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 
 registerItems({
     fixture_tt_seed: {
-        id: 'fixture_tt_seed', name: 'Tooltip Seed', type: 'material', sprite: 'wood_oak', description: '',
+        id: 'fixture_tt_seed', name: 'Tooltip Seed', type: 'material', sprite: 'i_wood_oak', description: '',
         tags: [], stackable: true, restoreAmount: 0, restoreType: '', regen: 0, equipSlot: '', value: 1
     }
 });
 registerTokenTypes({
     fixture_tt_hall: {
         id: 'fixture_tt_hall', name: 'Tooltip Hall', tokenType: 'resource', rarity: 'common',
-        theme: 'fixture', uses: null, sprite: 'skill_nature',
+        theme: 'fixture', uses: null, sprite: 's_nature',
         isGuildHall: true,
         trickle: [{ itemId: 'fixture_tt_seed', quantity: 1, everyMs: 300000 }]
     }

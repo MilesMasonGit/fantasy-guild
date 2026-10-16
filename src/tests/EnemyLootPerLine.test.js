@@ -32,7 +32,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 registerTokenTypes({
     fixture_enemy_two_lines: {
         id: 'fixture_enemy_two_lines', name: 'Two-Line Enemy', tokenType: 'enemy',
-        rarity: 'common', theme: 'fixture', uses: 20, sprite: 'skill_occult',
+        rarity: 'common', theme: 'fixture', uses: 20, sprite: 's_occult',
         enemy: { level: 2, style: 'melee' },
         config: {
             skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0,

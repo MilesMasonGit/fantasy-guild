@@ -31,7 +31,7 @@ registerTokenTypes({
         tokenType: 'station',
         rarity: 'common',
         uses: 10,
-        sprite: 'skill_mining',
+        sprite: 's_mining',
         requiresHero: false,
         statements: [
             {

@@ -19,7 +19,7 @@ import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 registerTokenTypes({
     fixture_axe_tree: {
         id: 'fixture_axe_tree', name: 'Fixture Axe Tree', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: 25, sprite: 'token_tree_oak',
+        rarity: 'common', theme: 'fixture', uses: 25, sprite: 't_tree_oak',
         acceptedTokens: [{ tag: 'axe', minTier: 1 }],
         config: {
             skill: 'forestry', skillRequired: 1, cycleTimeMs: 16000, xp: 2, inputs: [],

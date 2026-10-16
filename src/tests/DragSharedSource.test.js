@@ -83,7 +83,7 @@ afterEach(async () => {
 
 const engine = { GameState, EventBus, BoardPlacement: { recallHeroById: vi.fn() }, EquipmentManager: { equipItem: vi.fn() } };
 const hero = (id) => ({
-    id, name: id, spriteId: 'hero_recruit_0', status: 'idle', level: 50, equipment: {},
+    id, name: id, spriteId: 'hn_recruit_por', status: 'idle', level: 50, equipment: {},
     skills: { forestry: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 }
 });
 

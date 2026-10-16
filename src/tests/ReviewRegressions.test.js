@@ -78,7 +78,7 @@ function ruleProducer(id, keyword, payload, extra = {}, uses = null) {
     registerTokenTypes({
         [id]: {
             id, name: id, tokenType: 'resource', rarity: 'common', theme: 'fixture',
-            uses, sprite: 'skill_nature',
+            uses, sprite: 's_nature',
             config: {
                 skill: 'forestry', skillRequired: 1, cycleTimeMs: 12000, xp: 1,
                 inputs: [], outputs: [{ itemId: 'fixture_oak_wood', quantity: 1, chance: 100 }]
@@ -170,7 +170,7 @@ describe('⭐ a Token-borne Applies reaches somebody', () => {
         registerTokenTypes({
             fixture_cursed_ground: {
                 id: 'fixture_cursed_ground', name: 'Cursed Ground', tokenType: 'buff',
-                rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_occult',
+                rarity: 'rare', theme: 'fixture', uses: null, sprite: 's_occult',
                 statements: [{
                     ...makeStatement(KEYWORD.APPLIES), id: 'stm_curse_ground',
                     when: null,
@@ -191,7 +191,7 @@ describe('⭐ a Token-borne Applies reaches somebody', () => {
         registerTokenTypes({
             fixture_curse_trap: {
                 id: 'fixture_curse_trap', name: 'Curse Trap', tokenType: 'buff',
-                rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_occult',
+                rarity: 'rare', theme: 'fixture', uses: null, sprite: 's_occult',
                 statements: [{
                     ...makeStatement(KEYWORD.APPLIES), id: 'stm_curse_trap',
                     when: { event: 'CYCLE_COMPLETE', scope: 'nearby', cooldownMs: 0 },
@@ -262,7 +262,7 @@ describe('⭐ a hero leaving switches a state filter back off', () => {
         registerTokenTypes({
             fixture_worked_buff: {
                 id: 'fixture_worked_buff', name: 'Worked Buff', tokenType: 'buff',
-                rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_industry',
+                rarity: 'rare', theme: 'fixture', uses: null, sprite: 's_industry',
                 statements: [{
                     id: 'stm_worked_buff', keyword: 'provides',
                     to: { mode: 'all', value: '', filters: [{ kind: 'worked' }] },
@@ -294,7 +294,7 @@ describe('⭐ a distant duplicate cannot suppress a nearby one', () => {
         registerTokenTypes({
             fixture_unique_buff: {
                 id: 'fixture_unique_buff', name: 'Unique Buff', tokenType: 'buff',
-                rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_industry',
+                rarity: 'rare', theme: 'fixture', uses: null, sprite: 's_industry',
                 noStackDuplicates: true,
                 statements: [{
                     id: 'stm_unique_buff', keyword: 'provides',
@@ -334,7 +334,7 @@ describe('⭐ chaining fires immediately, as the editor promises', () => {
         registerTokenTypes({
             fixture_burst_trap: {
                 id: 'fixture_burst_trap', name: 'Burst Trap', tokenType: 'buff',
-                rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_occult',
+                rarity: 'rare', theme: 'fixture', uses: null, sprite: 's_occult',
                 statements: [{
                     ...makeStatement(KEYWORD.APPLIES), id: 'stm_burst_trap',
                     when: null,
@@ -367,7 +367,7 @@ describe('⭐ the audit names a rule that can never fire where it sits', () => {
         registerTokenTypes({
             fixture_confused_ticker: {
                 id: 'fixture_confused_ticker', name: 'Confused Ticker', tokenType: 'buff',
-                rarity: 'common', uses: 10, sprite: 'skill_occult',
+                rarity: 'common', uses: 10, sprite: 's_occult',
                 effects: [{ effectId: 'fixture_tick_on_token' }]
             }
         });

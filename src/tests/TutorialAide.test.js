@@ -23,7 +23,7 @@ const SITE = 'fixture_aide_site';
 registerTokenTypes({
     [SITE]: {
         id: SITE, name: 'Old Site', landmark: true, tokenType: 'resource', rarity: 'common',
-        theme: 'fixture', uses: null, size: 1, sprite: 'skill_nature',
+        theme: 'fixture', uses: null, size: 1, sprite: 's_nature',
         config: { skill: 'forestry', skillRequired: 99, cycleTimeMs: 600000, xp: 0, inputs: [], outputs: [] }
     }
 });

@@ -40,12 +40,12 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 registerTokenTypes({
     fixture_q8_coast: {
         id: 'fixture_q8_coast', name: 'Fixture Q8 Coast', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nautical',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nautical',
         turns: { into: [{ typeId: 'fixture_q8_shrimp', weight: 1 }], everyMs: 60000, chance: 100 }
     },
     fixture_q8_shrimp: {
         id: 'fixture_q8_shrimp', name: 'Fixture Q8 Shrimp Coast', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nautical'
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nautical'
     }
 });
 

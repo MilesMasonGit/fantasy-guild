@@ -27,7 +27,7 @@ const CYCLE_TIMES = [1000, 1234, 1500, 2500, 8000];
 function stationType(cycleTimeMs, inputs = []) {
     return {
         id: `carry_station_${cycleTimeMs}_${inputs.length}`, name: `Carry ${cycleTimeMs}`, tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_industry',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_industry',
         requiresHero: false,
         config: { skill: 'forestry', skillRequired: 0, cycleTimeMs, xp: 0, inputs, outputs: [] }
     };

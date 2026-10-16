@@ -71,7 +71,7 @@ function load() {
 /** Author a Forest Base Map and an Overgrown modifier through the store, as the editor does. */
 function authorForestAndOvergrown() {
     const store = useEntityStore.getState();
-    const forestId = store.addMap('map', { name: 'Forest Map', sprite: 'map_forest' });
+    const forestId = store.addMap('map', { name: 'Forest Map', sprite: 't_map_forest' });
     store.updateItem(forestId, {
         cartography: {
             biome: 'forest', points: 40,
@@ -80,7 +80,7 @@ function authorForestAndOvergrown() {
             bountyWeight: 2
         }
     });
-    const overgrownId = useEntityStore.getState().addMap('modifier', { name: 'Overgrown', sprite: 'map_flowers' });
+    const overgrownId = useEntityStore.getState().addMap('modifier', { name: 'Overgrown', sprite: 't_map_flowers' });
     useEntityStore.getState().updateItem(overgrownId, {
         cartography: { effects: [{ kind: 'density', typeId: 'token_fixture_tree', points: 16 }] }
     });

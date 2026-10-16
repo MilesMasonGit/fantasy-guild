@@ -31,7 +31,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 registerTokenTypes({
     fixture_sc_site: {
         id: 'fixture_sc_site', name: 'Fixture Camp Site', tokenType: 'resource', landmark: true,
-        rarity: 'common', theme: 'fixture', uses: null, size: 1, sprite: 'skill_nature'
+        rarity: 'common', theme: 'fixture', uses: null, size: 1, sprite: 's_nature'
     }
 });
 

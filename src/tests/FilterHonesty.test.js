@@ -86,7 +86,7 @@ function grantTokenAimedAt(id, to) {
     registerTokenTypes({
         [id]: {
             id, name: id, tokenType: 'buff', rarity: 'rare', theme: 'fixture',
-            uses: null, sprite: 'skill_industry',
+            uses: null, sprite: 's_industry',
             statements: [{
                 id: `stm_${id}`, keyword: 'grants', to,
                 when: { event: 'CYCLE_COMPLETE', scope: 'nearby', cooldownMs: 0 },
@@ -102,7 +102,7 @@ function sigilAimedAt(id, to) {
     registerTokenTypes({
         [id]: {
             id, name: id, tokenType: 'buff', rarity: 'mythic', theme: 'fixture',
-            uses: null, sprite: 'skill_occult',
+            uses: null, sprite: 's_occult',
             statements: [{
                 id: `stm_${id}`, keyword: 'converts', to,
                 when: {
@@ -180,7 +180,7 @@ describe('a triggered Grants reaches the neighbour its filter names', () => {
             fixture_grant_wearing_unmatched: {
                 id: 'fixture_grant_wearing_unmatched', name: 'Wearing Unmatched',
                 tokenType: 'buff', rarity: 'rare', theme: 'fixture',
-                uses: 3, sprite: 'skill_industry',
+                uses: 3, sprite: 's_industry',
                 statements: [{
                     id: 'stm_wearing_unmatched', keyword: 'grants',
                     to: { mode: 'id', value: 'fixture_gated' },

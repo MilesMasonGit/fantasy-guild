@@ -222,7 +222,7 @@ describe('3. one fight per hero', () => {
         registerTokenTypes({
             fixture_enemy_v10a_debuffer: {
                 id: 'fixture_enemy_v10a_debuffer', name: 'Debuffer', tokenType: 'enemy',
-                rarity: 'common', theme: 'fixture', uses: 20, sprite: 'skill_occult',
+                rarity: 'common', theme: 'fixture', uses: 20, sprite: 's_occult',
                 enemy: { level: 2, style: 'melee' },
                 statements: [{
                     ...makeStatement(KEYWORD.PROVIDES), id: 'stm_v10a_lend',
@@ -396,7 +396,7 @@ describe('8. G-41: on a monster’s own rule, the enemy is the monster', () => {
         registerTokenTypes({
             fixture_enemy_v10a_selfharm: {
                 id: 'fixture_enemy_v10a_selfharm', name: 'Self Thorn', tokenType: 'enemy',
-                rarity: 'common', theme: 'fixture', uses: 20, sprite: 'skill_occult',
+                rarity: 'common', theme: 'fixture', uses: 20, sprite: 's_occult',
                 enemy: { level: 2, style: 'melee' },
                 statements: [dealsToEnemy(6, { id: 'stm_v10a_selfharm', when: { event: 'SELF_COMBAT_ENGAGED', scope: 'self' }, chargeDelta: 0 })],
                 config: { skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0, inputs: [], outputs: [] }

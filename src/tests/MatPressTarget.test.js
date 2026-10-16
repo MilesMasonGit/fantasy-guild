@@ -44,7 +44,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 registerTokenTypes({
     press_large: {
         id: 'press_large', name: 'Press Large', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: 100, sprite: 'skill_nature',
+        rarity: 'common', theme: 'fixture', uses: 100, sprite: 's_nature',
         size: 2, requiresHero: false
     }
 });
@@ -215,7 +215,7 @@ describe('⭐ a press through a hero\'s see-through pixel reaches what is beneat
 
     function heroAt(id, flagPoint) {
         GameState.state.heroes = [...(GameState.state.heroes || []), {
-            id, name: id, spriteId: 'hero_knight', status: 'idle', level: 50,
+            id, name: id, spriteId: 'hm_fighter_por', status: 'idle', level: 50,
             skills: { forestry: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 }
         }];
         Flags.plant(id, flagPoint);
@@ -313,7 +313,7 @@ describe('⭐ a press through a hero\'s see-through pixel reaches what is beneat
         const draw = (facing) => render(
             h(DndContext, null,
                 h(MatFitProvider, { value: OWNER_FIT },
-                    h(MatHero, { heroId: 'h1', name: 'h1', sprite: 'hero_knight', left: 0, top: 0, facing })))
+                    h(MatHero, { heroId: 'h1', name: 'h1', sprite: 'hm_fighter_por', left: 0, top: 0, facing })))
         ).container.querySelector('[data-board-hero="h1"]');
         expect(draw(1).hasAttribute('data-alpha-flip')).toBe(false);
         cleanup();
@@ -340,7 +340,7 @@ describe('⭐ a flag\'s cloth drawn in front of a Token takes the pointer there'
     function scene(flagPoint) {
         const tok = placeAt('fixture_producer', 600, 600);
         // A hero who cannot work it, so the Token stays at rest (a worked Token is drawn in front of every flag).
-        GameState.state.heroes = [{ id: 'h1', name: 'h1', spriteId: 'hero_knight', status: 'idle', level: 50, skills: { mining: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 } }];
+        GameState.state.heroes = [{ id: 'h1', name: 'h1', spriteId: 'hm_fighter_por', status: 'idle', level: 50, skills: { mining: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 } }];
         Flags.plant('h1', flagPoint);
         return tok;
     }
@@ -460,7 +460,7 @@ describe('⭐ a flag\'s cloth drawn in front of a Token takes the pointer there'
 
 describe('⭐ a hero\'s art takes no pointer outside the hero\'s box', () => {
     it('the figure draws wider than its 64 × 128 box, and only the box catches presses', () => {
-        GameState.state.heroes = [{ id: 'h1', name: 'h1', spriteId: 'hero_knight', status: 'idle', level: 50, skills: { forestry: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 } }];
+        GameState.state.heroes = [{ id: 'h1', name: 'h1', spriteId: 'hm_fighter_por', status: 'idle', level: 50, skills: { forestry: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 } }];
         Flags.plant('h1', { x: 500, y: 900 });
         const { container } = mountAt(OWNER_FIT);
         const hero = container.querySelector('[data-board-hero="h1"]');

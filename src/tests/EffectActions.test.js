@@ -70,7 +70,7 @@ function actingProducer(id, keyword, payload, target = ROLE.ACTOR) {
     registerTokenTypes({
         [id]: {
             id, name: id, tokenType: 'resource', rarity: 'common', theme: 'fixture',
-            uses: 50, sprite: 'skill_nature',
+            uses: 50, sprite: 's_nature',
             config: {
                 skill: 'forestry', skillRequired: 1, cycleTimeMs: 12000, xp: 1,
                 inputs: [], outputs: [{ itemId: 'fixture_oak_wood', quantity: 1, chance: 100 }]

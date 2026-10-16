@@ -39,7 +39,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 registerTokenTypes({
     dm_scenery: {
         id: 'dm_scenery', name: 'DM Scenery', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: 100, sprite: 'skill_nature', requiresHero: false
+        rarity: 'common', theme: 'fixture', uses: 100, sprite: 's_nature', requiresHero: false
     }
 });
 

@@ -48,18 +48,18 @@ registerTokenTypes({
     /** Hostile, one kill and gone: the Goblin's shape. */
     fixture_ambusher: {
         id: 'fixture_ambusher', name: 'Fixture Ambusher', tokenType: 'enemy',
-        rarity: 'common', theme: 'fixture', uses: 1, sprite: 'skill_occult',
+        rarity: 'common', theme: 'fixture', uses: 1, sprite: 's_occult',
         enemy: { level: 1, style: 'melee', budgetScale: 0.3, hostile: true },
         config: { skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0, inputs: [], outputs: [] }
     },
     /** Not an enemy: something to count. */
     fixture_pebble: {
         id: 'fixture_pebble', name: 'Fixture Pebble', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature'
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature'
     },
     fixture_ambush_camp: {
         id: 'fixture_ambush_camp', name: 'Fixture Ambush Camp', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature',
         spawner: { spawns: [{ typeId: 'fixture_ambusher', weight: 1 }], allowance: 4, intervalMs: 24 * 3600 * 1000, upkeep: [] }
     }
 });
@@ -85,7 +85,7 @@ function ambushNode(payload, { cooldownMs = 0, uses = 50, chargeDelta } = {}) {
     registerTokenTypes({
         [typeId]: {
             id: typeId, name: 'Fixture Ambush Node', tokenType: 'resource', rarity: 'common',
-            theme: 'fixture', uses, sprite: 'skill_nature',
+            theme: 'fixture', uses, sprite: 's_nature',
             config: {
                 skill: 'forestry', skillRequired: 1, cycleTimeMs: 1000, xp: 1,
                 inputs: [], outputs: [{ itemId: 'fixture_oak_wood', quantity: 1, chance: 100 }]

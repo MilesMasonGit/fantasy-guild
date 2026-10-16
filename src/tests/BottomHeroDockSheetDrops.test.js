@@ -35,7 +35,7 @@ beforeEach(() => {
     vi.useFakeTimers();
     GameState.initNew();
     GameState.state.heroes = [{
-        id: 'h1', name: 'Aldric', spriteId: 'hero_recruit_0',
+        id: 'h1', name: 'Aldric', spriteId: 'hn_recruit_por',
         hp: { current: 100, max: 100 }, status: 'idle', equipment: {}
     }];
     setLiveMatFit(1);

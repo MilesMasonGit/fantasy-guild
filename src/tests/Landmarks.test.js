@@ -23,16 +23,16 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 registerTokenTypes({
     fixture_lm_site: {
         id: 'fixture_lm_site', name: 'Fixture Site', tokenType: 'resource', landmark: true,
-        rarity: 'common', theme: 'fixture', uses: null, size: 1, sprite: 'skill_nature',
+        rarity: 'common', theme: 'fixture', uses: null, size: 1, sprite: 's_nature',
         config: { skill: 'forestry', skillRequired: 99, cycleTimeMs: 60000, xp: 0, inputs: [], outputs: [] }
     },
     fixture_lm_plain: {
         id: 'fixture_lm_plain', name: 'Fixture Plain', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, size: 1, sprite: 'skill_nature'
+        rarity: 'common', theme: 'fixture', uses: null, size: 1, sprite: 's_nature'
     },
     fixture_lm_big: {
         id: 'fixture_lm_big', name: 'Fixture Big', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, size: 2, sprite: 'skill_nature'
+        rarity: 'common', theme: 'fixture', uses: null, size: 2, sprite: 's_nature'
     }
 });
 

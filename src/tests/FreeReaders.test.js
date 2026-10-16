@@ -37,7 +37,7 @@ const BOARD_BUFF = 'fixture_free_board_buff';
 registerTokenTypes({
     [LARGE_BUFF]: {
         id: LARGE_BUFF, name: 'Free Large Buff', tokenType: 'buff', rarity: 'common', theme: 'fixture',
-        uses: null, sprite: 'skill_nature', size: 2, requiresHero: false,
+        uses: null, sprite: 's_nature', size: 2, requiresHero: false,
         statements: [{
             id: 'stm_free_large_buff', keyword: 'provides', to: { mode: 'all' },
             payload: { type: EFFECT_TYPES.YIELD, bucket: 'percentage', value: 0.05 }
@@ -45,7 +45,7 @@ registerTokenTypes({
     },
     [BOARD_BUFF]: {
         id: BOARD_BUFF, name: 'Free Board Buff', tokenType: 'buff', rarity: 'rare', theme: 'fixture',
-        uses: null, sprite: 'skill_occult',
+        uses: null, sprite: 's_occult',
         statements: [{
             id: 'stm_free_board_buff', keyword: 'provides', reach: 'board', to: { mode: 'all' },
             payload: { type: EFFECT_TYPES.YIELD, bucket: 'percentage', value: 0.05 }
@@ -467,7 +467,7 @@ registerTokenTypes({
     /** A board-reach +5% yield aura that costs one oak wood a second. */
     [UPKEEP_AURA]: {
         id: UPKEEP_AURA, name: 'Free Upkeep Aura', tokenType: 'buff', rarity: 'rare', theme: 'fixture',
-        uses: null, sprite: 'skill_occult',
+        uses: null, sprite: 's_occult',
         statements: [{
             id: 'stm_free_upkeep_aura', keyword: 'provides', reach: 'board', to: { mode: 'all' },
             payload: { type: EFFECT_TYPES.YIELD, bucket: 'percentage', value: 0.05 },
@@ -477,7 +477,7 @@ registerTokenTypes({
     /** Its only rule fires on a moment (`when`), so it is never an ambient source. */
     [WHEN_ONLY]: {
         id: WHEN_ONLY, name: 'Free When Only', tokenType: 'buff', rarity: 'common', theme: 'fixture',
-        uses: null, sprite: 'skill_nature',
+        uses: null, sprite: 's_nature',
         statements: [{
             id: 'stm_free_when_only', keyword: 'provides', to: { mode: 'all' },
             when: { event: 'CYCLE_COMPLETE', scope: 'nearby', cooldownMs: 0 },
@@ -520,7 +520,7 @@ describe('⭐ what counts as an ambient source (CR3-004, test first)', () => {
         registerTokenTypes({
             [LATE]: {
                 id: LATE, name: 'Free Late Source', tokenType: 'buff', rarity: 'common', theme: 'fixture',
-                uses: null, sprite: 'skill_nature', statements: []
+                uses: null, sprite: 's_nature', statements: []
             }
         });
         const producer = at('fixture_producer', P(1, 0));
@@ -532,7 +532,7 @@ describe('⭐ what counts as an ambient source (CR3-004, test first)', () => {
         registerTokenTypes({
             [LATE]: {
                 id: LATE, name: 'Free Late Source', tokenType: 'buff', rarity: 'common', theme: 'fixture',
-                uses: null, sprite: 'skill_nature',
+                uses: null, sprite: 's_nature',
                 statements: [{
                     id: 'stm_free_late_source', keyword: 'provides', to: { mode: 'all' },
                     payload: { type: EFFECT_TYPES.YIELD, bucket: 'percentage', value: 0.05 }
