@@ -13,7 +13,7 @@ every look; agents build the tools and prepare palettes.*
 
 - **Tools go through the director** as normal phases (merge gate, tiers):
   the bench page, the brightness script, the Studio's palette import.
-- **Look passes are working sessions** between the owner and one agent. What
+- **Look passes are working sessions** in the director's session (owner, 2026-10-15: here with the director, at the owner's own pace, no dates); the director runs the tools or sends one agent. What
   the owner decides is recorded here (or in ART_STYLE.md once it exists), not
   left in chat.
 - **Brief 80's terrain code runs in parallel on placeholder art**: T0 to T4

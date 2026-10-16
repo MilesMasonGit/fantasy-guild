@@ -109,7 +109,7 @@ check.
 
 ## The weekend: working sessions (owner + one agent)
 
-The owner opens a fresh session for these (the agent runs the tools, writes
+(Owner, 2026-10-15: these run in the director's session, at the owner's own pace, no dates; the weekend timing above no longer applies.) The owner opens a fresh session for these (the agent runs the tools, writes
 palette files and records decisions; it doesn't build code). Each decision is
 recorded in the concept doc as it's made.
 
