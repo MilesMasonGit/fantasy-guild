@@ -71,8 +71,9 @@ It does not write the code itself. It:
    (a checklist file, see below). After each merge it **pushes `main`** to
    GitHub (an off-PC backup); feature branches stay local, and nothing is ever
    force-pushed.
-5. Parks owner questions as multiple choice and keeps working on what isn't
-   blocked.
+5. Asks the owner **once per batch**: every open question joins the batch's
+   proposal as multiple choice (owner, 2026-10-15); mid-batch questions are
+   parked in STATUS and keep working on what isn't blocked.
 6. **Reports in plain words** (owner, 2026-10-14): every report to the owner
    names the feature by what it does for the player, never by a code alone
    ("drawing pauses while the app is minimised", not "P2-10"), and ends
@@ -110,9 +111,10 @@ optimisation brief is live.
 
 **Status and summaries.** `docs/active/STATUS.md` is the living view of the
 wave: one row per phase (tier, branch, state, day planned, day done) and the
-bench queue, with a dated five-line summary written by the director at about
-07:00 and 22:00 (where we are, what is next, what the owner must do, budget
-against plan, blockers); entries older than two days are trimmed.
+bench queue, with a dated five-line summary written by the director **at each batch's
+edges**: when the batch is proposed and when it has been looked at (where we
+are, what is next, what the owner must do, blockers); older summaries are
+trimmed. No fixed clock times (owner, 2026-10-15).
 
 **Eye-checks** are for a **significant change in how the game looks or
 plays** (owner, 2026-10-14): a new screen or panel, a changed interaction, a

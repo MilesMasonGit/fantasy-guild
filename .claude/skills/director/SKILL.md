@@ -22,9 +22,11 @@ say so and stop).
    once on `main`. Check `docs/active/owner_feedback.md` and STATUS's
    "Questions for the owner".
 3. Propose **the next batch as one multiple-choice question** (two to four
-   phases the owner can look at together, dependencies first, what waits, any
-   open questions, recommendation first). Build nothing before the owner
-   answers. Days of the week do not matter: batches do.
+   phases the owner can look at together, dependencies first, what waits, and
+   every open question folded in, recommendation first). Build nothing before
+   the owner answers. Days of the week do not matter: batches do. The first
+   quiet night of a session, queue the bench baseline retake (T-181) if the
+   baselines are older than the last big merge.
 4. Write the batch's STATUS rows (phase, tier, branch, state) and a summary.
 
 ## During a batch
@@ -89,9 +91,12 @@ say so and stop).
   every commit: the owner's folder changes branch between turns. The owner
   Syncs the CMS only on `main`, and says so after an id rename; grep `src/`
   for the old id then.
-- **Owner questions** you cannot answer go under "Questions for the owner"
-  in STATUS as multiple choice; keep working on what is not blocked.
-- **STATUS** at about 07:00 and 22:00 and whenever a phase changes state.
+- **Owner questions**: one question per batch. Fold every open question into
+  the batch's proposal as multiple choice; a question that comes up mid-batch
+  is parked under "Questions for the owner" in STATUS and asked with the next
+  proposal. Keep working on what is not blocked.
+- **STATUS** summaries at a batch's edges (proposed, looked at) and the rows
+  whenever a phase changes state; no fixed clock times.
 - **Report in plain words.** Name every feature by what it does for the
   player, never by its code alone; every report ends with what is being built
   now and what comes next, so the owner can say continue or stop for the day.

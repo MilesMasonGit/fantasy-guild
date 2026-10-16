@@ -46,14 +46,22 @@ None. Archived with verdicts in `docs/archive/eyecheck/`.
   "Stands on" on real Tokens once a Dock or Sailboat exists, Base Maps.
 - The art weekend itself (brief 85's working sessions).
 
+## Kickoff prompt for the next director (paste after `/director`)
+
+> Run the art pass (brief 85) with me. First batch: on the first quiet night,
+> retake the bench baselines (T-181); support my art sessions on the bench and
+> the brightness script; keep the small tickets in HANDOFF.md as filler.
+> Propose the batch and its questions in one go, then wait for my go.
+
 ## Next batches (proposed; the director puts them to the owner)
 
 1. **The art pass (brief 85):** the owner works the bench and the brightness
    script with one agent; the director supports (a tool that breaks, small
    changes the passes ask for). After the bake: A4 (drop the drag filter's
    brightness and saturation in `DndKit.jsx`), T-180's material palettes.
-2. **Small tickets while the owner is on art:** T-181 (retake the bench
-   baselines on a quiet night: `--save-baseline` for engine and draw), T-184
+2. **Small tickets while the owner is on art:** T-181 first (retake the bench
+   baselines on the first quiet night: `--save-baseline` for engine and draw;
+   every timing verdict this week was noise against the Oct-7 baseline), T-184
    (dev-panel dead items), T-183 (floor loot offset twice), T-167 (Recruits
    get a weak basic attack; an engine change, expect the work check to
    change), a 4× drag-bench pair for the placing grid (owed), the 1× fps
