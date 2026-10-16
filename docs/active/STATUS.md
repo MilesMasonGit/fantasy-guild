@@ -9,11 +9,11 @@ build green) · bench-queued · eye-check · merged.*
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| Bench baselines retaken on a quiet machine (T-181), engine and draw | director (timer) | `main` | bench-queued: runs when the owner says they are off the PC for the night (owner 2026-10-15), inside 01:00–07:00 or 13:00–17:00 | Fri 01:00 | |
-| The owed 4× drag pair for the placing grid: before (`1f8239b3`) and after (`main`), cap128 | director (timer) | `p23b` then `main` | bench-queued, same timer, after the baselines | Fri 01:00 | |
-| The owner's art sessions on the bench and the brightness script; the bake when a preset wins (tag `art-before-vibrancy`, dated zip, art-only commit on `main`) | owner + director on call | `main` | waiting on the owner | Fri– | |
-| Dev panel's Scatter Loot button names real items (T-184) | builder-lite | `fix/t184-dev-items` (`t184`) | bench-queued (director's gate green: 4960 tests, cycles, build; work check in tonight's window, then merge) | Thu | |
-| Floor loot lands on its spot and draws crisp (T-183) | builder | `fix/t183-loot-offset` (`t183`) | bench-queued (director's gate green: 4964 tests with 4 new, cycles, build; in the game the landed loot measured 40 mat units up-left before, 0 after, nothing held on it; the stack slide fixed alongside so piles don't jump; a small look fix, no eye-check) | Thu | |
+| Bench baselines retaken on a quiet machine (T-181), engine and draw | director | `main` | engine: done Thu 22:11 (owner asleep, PC quiet), committed. Draw: refused twice (Chrome ran one 4× scene at ~5×, the bench's own guard); one more try at 01:00, else it waits for the next quiet night | Thu night | |
+| The owed 4× drag pair for the placing grid: before (`1f8239b3`) and after (`main`), cap128 | director | `p23b` then `main` | done: Token drags level (median pickup 67/67 ms, carry 36/36, drop 73/73 plain); the grid costs nothing measurable. Both runs had 1–2 flag drags grab a neighbour's flag on the full board, before and after alike (T-187) | Thu night | Thu |
+| The owner's art sessions on the bench and the brightness script, here with the director at the owner's pace (owner 2026-10-15); the bake when a preset wins (tag `art-before-vibrancy`, dated zip, art-only commit on `main`) | owner + director | `main` | ready: previews for the four presets written (675 sprites each), the bench running at http://localhost:5190/art-bench/ | owner's pace | |
+| Dev panel's Scatter Loot button names real items (T-184) | builder-lite | `fix/t184-dev-items` → `main` | merged Thu night (gate on the merged result: 4964 tests, cycles, build, work check same) | Thu | Thu |
+| Floor loot lands on its spot and draws crisp (T-183) | builder | `fix/t183-loot-offset` → `main` | merged Thu night (same gate; in the game the landed loot measured 40 mat units up-left before, 0 after; the stack slide fixed alongside so piles don't jump; a small look fix, no eye-check) | Thu | Thu |
 | After the bake: drop the drag filter's brightness and saturation (A4), T-180's material palettes | builder-lite / owner | — | waits for the bake | | |
 | Later: Recruits get a weak basic attack (T-167); equip-by-drop opens the sheet a frame later (T-186, ruled 2026-10-15) | — | — | next batches | | |
 
@@ -52,10 +52,9 @@ first; asked with the next batch proposal and recorded where they belong.*
 None open. (Ruled 2026-10-15: equip-by-drop opens the sheet a frame later,
 T-186; the badges' soft shadows are settled inside T-013.)
 
-## Bench queue (one at a time, weekdays 13:00–17:00 and 01:00–07:00)
+## Bench queue (one at a time, weekdays 13:00–17:00 and 01:00–07:00, or when the owner says the PC is quiet)
 
-1. When the owner says they are off the PC (no timer): `npm run bench -- --save-baseline`, `npm run bench:draw -- --save-baseline` on `main`; then `bench:drag --board=cap128 --cpu=4` on `1f8239b3` (in `p23b`) and on `main`. The director commits the baselines with the date and logs the drag pair.
-2. Merge work checks for T-184 and T-183 (`npm run bench -- --compare`, against the new baseline).
+1. Fri 01:00: `npm run bench:draw -- --save-baseline` on `main`, one more try (queued on a timer).
 
 ## Summaries
 
@@ -69,3 +68,5 @@ owed drag pair tonight at 01:00 on a timer; the owner's art sessions with the
 director on call; two small fillers building (dev-panel items, floor loot
 offset). Owner: leave the PC on and quiet tonight; work the art bench when you
 like. Blockers: none.
+
+**Fri 2026-10-16, night.** Where we are: the floor-loot fix and the dev panel's real items are on `main` (gate on the merged result green, same work); the engine baseline is fresh; the placing grid's drag pair shows no cost. The draw baseline was refused twice by the bench's own guard (Chrome's 4× setting ran at ~5× on one scene); one more try at 01:00. Next: the owner's first brightness pass on the bench, which is ready. Owner: open the bench and pick or adjust a preset. Blockers: none.
