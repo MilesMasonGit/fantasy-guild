@@ -111,7 +111,7 @@ const LootSprite = React.memo(function LootSprite({
         const fx = Math.round((fromX ?? x) - x);
         const fy = Math.round((fromY ?? y) - y);
         if (elementRef.current && (fx !== 0 || fy !== 0)) {
-            playLootArc(elementRef.current, fx, fy, { centered: true });
+            playLootArc(elementRef.current, fx, fy);
         }
     }, [fromX, fromY, x, y]);
 
