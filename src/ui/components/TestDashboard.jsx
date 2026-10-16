@@ -224,7 +224,7 @@ export const TestDashboard = React.memo(() => {
             label: "✨ Scatter Loot (burst)",
             onClick: () => {
                 // 3-6 item stacks scattered from random points. Items only.
-                const items = ['item_yew_log', 'item_glowcap', 'item_spider_silk'];
+                const items = ['item_oak_wood', 'item_blueberry', 'item_bones'];
                 const count = 3 + Math.floor(Math.random() * 4);
                 for (let i = 0; i < count; i++) {
                     // A random point on the mat, as a fraction of it, so the scatter follows

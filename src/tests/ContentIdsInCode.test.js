@@ -32,10 +32,7 @@ const NOT_CONTENT_IDS = {
     token_cap: 'Guild Hall upgrade track id, not a Token definition',
     token_bank_slots: 'retired Guild Hall upgrade ids (SaveMigration drops them from old saves)',
     token_bank_tabs: 'retired Guild Hall upgrade ids (SaveMigration drops them from old saves)',
-    item_coin: 'SpriteLayer legacy alias next to item_coins, kept as a harmless match',
-    item_yew_log: 'TestDashboard Scatter Loot button: stale, no such item (follow up)',
-    item_glowcap: 'TestDashboard Scatter Loot button: stale, no such item (follow up)',
-    item_spider_silk: 'TestDashboard Scatter Loot button: stale, no such item (follow up)'
+    item_coin: 'SpriteLayer legacy alias next to item_coins, kept as a harmless match'
 };
 
 const SRC = path.resolve(__dirname, '..');
