@@ -1,4 +1,5 @@
-// Checks rename-list.json against docs/reference/ASSET_NAMING.md and the files under public/assets.
+// Checks rename-list.json against docs/reference/ASSET_NAMING.md and the files under public/assets,
+// before the moves (every row's `from` on disk) or after them (every kept or moved row's `to`).
 // Usage: node tools/asset-rename/check-list.mjs   (exit code 1 when anything fails)
 
 import fs from 'fs';
@@ -20,7 +21,7 @@ const KINDS = [
 const GROUPED = new Set(['tokens', 'items', 'enemies', 'backgrounds']);
 // Item groups say what an item is, never a skill or a source.
 const ITEM_GROUPS = new Set(['ore', 'ingot', 'wood', 'gem', 'food', 'drink', 'potion', 'tool', 'gear', 'jewelry', 'seed', 'coin',
-    'fish', 'meat', 'flower', 'herb', 'key', 'weapon', 'material']);
+    'fish', 'meat', 'flower', 'herb', 'key', 'weapon', 'mat']);
 const ITEM_BANNED_WORDS = new Set(['drop', 'construction', 'craft', 'crafting', 'baking']);
 // Where the group word is part of what the thing is called (Copper Ore, Oak Wood, Fish Trap, Map, Chest).
 const GROUP_WORD_IS_NAME = new Set(['items/ore', 'items/ingot', 'items/wood', 'items/potion', 'items/seed', 'items/key', 'items/coin',
@@ -49,9 +50,23 @@ for (const r of rows) {
     byFrom.set(r.from, r);
     if (r.from.startsWith('audio/')) fail(`audio file listed: ${r.from}`);
 }
-for (const f of onDisk) if (!byFrom.has(f)) fail(`no row for ${f}`);
+// A move onto another row's starting place would make "applied" ambiguous and the git mv order matter.
+for (const r of rows) if (r.action === 'move' && byFrom.has(r.to)) fail(`${r.from}: moves onto another row's file ${r.to}`);
+
 const diskSet = new Set(onDisk);
-for (const r of rows) if (!diskSet.has(r.from)) fail(`row for a file that is not on disk: ${r.from}`);
+const applied = rows.filter(r => r.action !== 'keep' && !diskSet.has(r.from));
+const pending = rows.filter(r => r.action !== 'keep' && diskSet.has(r.from));
+if (applied.length && pending.length) {
+    fail(`half applied: ${applied.length} rows moved or deleted, ${pending.length} not (first not: ${pending[0].from})`);
+}
+const state = applied.length && !pending.length ? 'applied' : 'not applied';
+const expected = new Map();
+for (const r of rows) {
+    const at = state === 'applied' ? (r.action === 'delete' ? null : r.to) : r.from;
+    if (at) expected.set(at, r);
+}
+for (const f of onDisk) if (!expected.has(f)) fail(`no row for ${f}`);
+for (const f of expected.keys()) if (!diskSet.has(f)) fail(`row for a file that is not on disk: ${f}`);
 
 const toSeen = new Map();
 const keySeen = new Map();
@@ -128,7 +143,7 @@ for (const r of rows) {
 }
 
 const count = (field) => rows.reduce((m, r) => ((m[r[field]] = (m[r[field]] || 0) + 1), m), {});
-console.log(`rows: ${rows.length}, files on disk (no audio): ${onDisk.length}`);
+console.log(`rows: ${rows.length}, files on disk (no audio): ${onDisk.length}, moves: ${state}`);
 console.log('by action:', count('action'));
 console.log('by confidence:', count('confidence'));
 console.log('in use:', rows.filter(r => r.inUse).length, '| in use and moving:', rows.filter(r => r.inUse && r.action === 'move').length);

@@ -2326,7 +2326,7 @@
   },
   {
     "from": "i_nest_bird.png",
-    "to": "items/material/i_nest_bird.png",
+    "to": "items/mat/i_nest_bird.png",
     "action": "move",
     "keyFrom": "i_nest_bird",
     "keyTo": "i_nest_bird",
@@ -2601,7 +2601,7 @@
   },
   {
     "from": "items/baking/i_dough.png",
-    "to": "items/material/i_dough.png",
+    "to": "items/mat/i_dough.png",
     "action": "move",
     "keyFrom": "i_dough",
     "keyTo": "i_dough",
@@ -2615,7 +2615,7 @@
   },
   {
     "from": "items/baking/i_flour.png",
-    "to": "items/material/i_flour.png",
+    "to": "items/mat/i_flour.png",
     "action": "move",
     "keyFrom": "i_flour",
     "keyTo": "i_flour",
@@ -2629,7 +2629,7 @@
   },
   {
     "from": "items/baking/i_wheat.png",
-    "to": "items/material/i_wheat.png",
+    "to": "items/mat/i_wheat.png",
     "action": "move",
     "keyFrom": "i_wheat",
     "keyTo": "i_wheat",
@@ -2643,7 +2643,7 @@
   },
   {
     "from": "items/bones/item_bones.png",
-    "to": "items/material/i_bones.png",
+    "to": "items/mat/i_bones.png",
     "action": "move",
     "keyFrom": "item_bones",
     "keyTo": "i_bones",
@@ -2669,7 +2669,7 @@
   },
   {
     "from": "items/bones/item_bones_burnt.png",
-    "to": "items/material/i_bones_burnt.png",
+    "to": "items/mat/i_bones_burnt.png",
     "action": "move",
     "keyFrom": "item_bones_burnt",
     "keyTo": "i_bones_burnt",
@@ -2680,7 +2680,7 @@
   },
   {
     "from": "items/candle/item_candle_white.png",
-    "to": "items/material/i_candle_white.png",
+    "to": "items/mat/i_candle_white.png",
     "action": "move",
     "keyFrom": "item_candle_white",
     "keyTo": "i_candle_white",
@@ -2713,7 +2713,7 @@
   },
   {
     "from": "items/construction/item_plank_base.png",
-    "to": "items/material/i_plank_base.png",
+    "to": "items/mat/i_plank_base.png",
     "action": "move",
     "keyFrom": "item_plank_base",
     "keyTo": "i_plank_base",
@@ -2726,7 +2726,7 @@
   },
   {
     "from": "items/construction/item_plank_birch.png",
-    "to": "items/material/i_plank_birch.png",
+    "to": "items/mat/i_plank_birch.png",
     "action": "move",
     "keyFrom": "item_plank_birch",
     "keyTo": "i_plank_birch",
@@ -2739,7 +2739,7 @@
   },
   {
     "from": "items/construction/item_plank_cedar.png",
-    "to": "items/material/i_plank_cedar.png",
+    "to": "items/mat/i_plank_cedar.png",
     "action": "move",
     "keyFrom": "item_plank_cedar",
     "keyTo": "i_plank_cedar",
@@ -2752,7 +2752,7 @@
   },
   {
     "from": "items/construction/item_plank_ebony.png",
-    "to": "items/material/i_plank_ebony.png",
+    "to": "items/mat/i_plank_ebony.png",
     "action": "move",
     "keyFrom": "item_plank_ebony",
     "keyTo": "i_plank_ebony",
@@ -2765,7 +2765,7 @@
   },
   {
     "from": "items/construction/item_plank_mahogany.png",
-    "to": "items/material/i_plank_mahogany.png",
+    "to": "items/mat/i_plank_mahogany.png",
     "action": "move",
     "keyFrom": "item_plank_mahogany",
     "keyTo": "i_plank_mahogany",
@@ -2778,7 +2778,7 @@
   },
   {
     "from": "items/construction/item_plank_maple.png",
-    "to": "items/material/i_plank_maple.png",
+    "to": "items/mat/i_plank_maple.png",
     "action": "move",
     "keyFrom": "item_plank_maple",
     "keyTo": "i_plank_maple",
@@ -2791,7 +2791,7 @@
   },
   {
     "from": "items/construction/item_plank_oak.png",
-    "to": "items/material/i_plank_oak.png",
+    "to": "items/mat/i_plank_oak.png",
     "action": "move",
     "keyFrom": "item_plank_oak",
     "keyTo": "i_plank_oak",
@@ -2804,7 +2804,7 @@
   },
   {
     "from": "items/construction/item_stone.png",
-    "to": "items/material/i_stone.png",
+    "to": "items/mat/i_stone.png",
     "action": "move",
     "keyFrom": "item_stone",
     "keyTo": "i_stone",
@@ -2826,7 +2826,7 @@
   },
   {
     "from": "items/construction/item_stone_basalt.png",
-    "to": "items/material/i_stone_basalt.png",
+    "to": "items/mat/i_stone_basalt.png",
     "action": "move",
     "keyFrom": "item_stone_basalt",
     "keyTo": "i_stone_basalt",
@@ -2839,7 +2839,7 @@
   },
   {
     "from": "items/construction/item_stone_base.png",
-    "to": "items/material/i_stone_base.png",
+    "to": "items/mat/i_stone_base.png",
     "action": "move",
     "keyFrom": "item_stone_base",
     "keyTo": "i_stone_base",
@@ -2852,7 +2852,7 @@
   },
   {
     "from": "items/construction/item_stone_brick.png",
-    "to": "items/material/i_stone_brick.png",
+    "to": "items/mat/i_stone_brick.png",
     "action": "move",
     "keyFrom": "item_stone_brick",
     "keyTo": "i_stone_brick",
@@ -2865,7 +2865,7 @@
   },
   {
     "from": "items/construction/item_stone_brick_basalt.png",
-    "to": "items/material/i_stone_brick_basalt.png",
+    "to": "items/mat/i_stone_brick_basalt.png",
     "action": "move",
     "keyFrom": "item_stone_brick_basalt",
     "keyTo": "i_stone_brick_basalt",
@@ -2878,7 +2878,7 @@
   },
   {
     "from": "items/construction/item_stone_brick_base.png",
-    "to": "items/material/i_stone_brick_base.png",
+    "to": "items/mat/i_stone_brick_base.png",
     "action": "move",
     "keyFrom": "item_stone_brick_base",
     "keyTo": "i_stone_brick_base",
@@ -2891,7 +2891,7 @@
   },
   {
     "from": "items/construction/item_stone_brick_granite.png",
-    "to": "items/material/i_stone_brick_granite.png",
+    "to": "items/mat/i_stone_brick_granite.png",
     "action": "move",
     "keyFrom": "item_stone_brick_granite",
     "keyTo": "i_stone_brick_granite",
@@ -2904,7 +2904,7 @@
   },
   {
     "from": "items/construction/item_stone_brick_marble.png",
-    "to": "items/material/i_stone_brick_marble.png",
+    "to": "items/mat/i_stone_brick_marble.png",
     "action": "move",
     "keyFrom": "item_stone_brick_marble",
     "keyTo": "i_stone_brick_marble",
@@ -2917,7 +2917,7 @@
   },
   {
     "from": "items/construction/item_stone_brick_sand.png",
-    "to": "items/material/i_stone_brick_sand.png",
+    "to": "items/mat/i_stone_brick_sand.png",
     "action": "move",
     "keyFrom": "item_stone_brick_sand",
     "keyTo": "i_stone_brick_sand",
@@ -2930,7 +2930,7 @@
   },
   {
     "from": "items/construction/item_stone_granite.png",
-    "to": "items/material/i_stone_granite.png",
+    "to": "items/mat/i_stone_granite.png",
     "action": "move",
     "keyFrom": "item_stone_granite",
     "keyTo": "i_stone_granite",
@@ -2943,7 +2943,7 @@
   },
   {
     "from": "items/construction/item_stone_marble.png",
-    "to": "items/material/i_stone_marble.png",
+    "to": "items/mat/i_stone_marble.png",
     "action": "move",
     "keyFrom": "item_stone_marble",
     "keyTo": "i_stone_marble",
@@ -2956,7 +2956,7 @@
   },
   {
     "from": "items/construction/item_stone_sand.png",
-    "to": "items/material/i_stone_sand.png",
+    "to": "items/mat/i_stone_sand.png",
     "action": "move",
     "keyFrom": "item_stone_sand",
     "keyTo": "i_stone_sand",
@@ -2969,7 +2969,7 @@
   },
   {
     "from": "items/craft/i_clay.png",
-    "to": "items/material/i_clay.png",
+    "to": "items/mat/i_clay.png",
     "action": "move",
     "keyFrom": "i_clay",
     "keyTo": "i_clay",
@@ -3560,8 +3560,8 @@
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
     ],
-    "confidence": "check",
-    "note": "abbreviation kept: bc"
+    "confidence": "sure",
+    "note": "colour code kept: bc (owner)"
   },
   {
     "from": "items/food/stew/f_stew_bc_2.png",
@@ -3573,8 +3573,8 @@
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
     ],
-    "confidence": "check",
-    "note": "abbreviation kept: bc"
+    "confidence": "sure",
+    "note": "colour code kept: bc (owner)"
   },
   {
     "from": "items/food/stew/f_stew_bc_3.png",
@@ -3586,8 +3586,8 @@
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
     ],
-    "confidence": "check",
-    "note": "abbreviation kept: bc"
+    "confidence": "sure",
+    "note": "colour code kept: bc (owner)"
   },
   {
     "from": "items/food/stew/f_stew_copper.png",
@@ -3632,8 +3632,8 @@
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
     ],
-    "confidence": "check",
-    "note": "abbreviation kept: pl"
+    "confidence": "sure",
+    "note": "colour code kept: pl (owner)"
   },
   {
     "from": "items/food/stew/f_stew_pl_2.png",
@@ -3645,8 +3645,8 @@
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
     ],
-    "confidence": "check",
-    "note": "abbreviation kept: pl"
+    "confidence": "sure",
+    "note": "colour code kept: pl (owner)"
   },
   {
     "from": "items/food/stew/f_stew_pl_3.png",
@@ -3658,8 +3658,8 @@
     "usedBy": [
       "src/config/registries/sprite-manifest.js"
     ],
-    "confidence": "check",
-    "note": "abbreviation kept: pl"
+    "confidence": "sure",
+    "note": "colour code kept: pl (owner)"
   },
   {
     "from": "items/food/veg/f_cabbage.png",
@@ -3955,7 +3955,7 @@
   },
   {
     "from": "items/goblet_silver.png",
-    "to": "items/material/i_goblet_silver.png",
+    "to": "items/mat/i_goblet_silver.png",
     "action": "move",
     "keyFrom": "goblet_silver",
     "keyTo": "i_goblet_silver",
@@ -3988,7 +3988,7 @@
   },
   {
     "from": "items/ingot/color_addy.png",
-    "to": "items/material/i_color_addy.png",
+    "to": "items/mat/i_color_addy.png",
     "action": "move",
     "keyFrom": "color_addy",
     "keyTo": "i_color_addy",
@@ -3999,7 +3999,7 @@
   },
   {
     "from": "items/ingot/color_darkmetal.png",
-    "to": "items/material/i_color_darkmetal.png",
+    "to": "items/mat/i_color_darkmetal.png",
     "action": "move",
     "keyFrom": "color_darkmetal",
     "keyTo": "i_color_darkmetal",
@@ -4010,7 +4010,7 @@
   },
   {
     "from": "items/ingot/color_mythril.png",
-    "to": "items/material/i_color_mythril.png",
+    "to": "items/mat/i_color_mythril.png",
     "action": "move",
     "keyFrom": "color_mythril",
     "keyTo": "i_color_mythril",
@@ -4154,7 +4154,7 @@
   },
   {
     "from": "items/item_ash.png",
-    "to": "items/material/i_ash.png",
+    "to": "items/mat/i_ash.png",
     "action": "move",
     "keyFrom": "item_ash",
     "keyTo": "i_ash",
@@ -4165,7 +4165,7 @@
   },
   {
     "from": "items/item_feather.png",
-    "to": "items/material/i_feather.png",
+    "to": "items/mat/i_feather.png",
     "action": "move",
     "keyFrom": "item_feather",
     "keyTo": "i_feather",
@@ -4176,7 +4176,7 @@
   },
   {
     "from": "items/item_torch.png",
-    "to": "items/material/i_torch.png",
+    "to": "items/mat/i_torch.png",
     "action": "move",
     "keyFrom": "item_torch",
     "keyTo": "i_torch",
@@ -4452,8 +4452,8 @@
     "keyTo": "i_potion_cyl_pink",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "abbreviation kept: cyl"
+    "confidence": "sure",
+    "note": "colour code kept: cyl (owner)"
   },
   {
     "from": "items/potion/cyl/p_cyl_red.png",
@@ -4463,8 +4463,8 @@
     "keyTo": "i_potion_cyl_red",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "abbreviation kept: cyl"
+    "confidence": "sure",
+    "note": "colour code kept: cyl (owner)"
   },
   {
     "from": "items/potion/donut/p_donut_grn.png",
@@ -4716,8 +4716,8 @@
     "keyTo": "i_potion_loct_cyan",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "abbreviation kept: loct"
+    "confidence": "sure",
+    "note": "colour code kept: loct (owner)"
   },
   {
     "from": "items/potion/loct/p_loct_org.png",
@@ -4727,8 +4727,8 @@
     "keyTo": "i_potion_loct_orange",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "abbreviation kept: loct; colour spelled out: org=orange"
+    "confidence": "sure",
+    "note": "colour code kept: loct (owner); colour spelled out: org=orange"
   },
   {
     "from": "items/potion/loct/p_loct_purp.png",
@@ -4738,8 +4738,8 @@
     "keyTo": "i_potion_loct_purple",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "abbreviation kept: loct; colour spelled out: purp=purple"
+    "confidence": "sure",
+    "note": "colour code kept: loct (owner); colour spelled out: purp=purple"
   },
   {
     "from": "items/potion/loct/p_loct_red.png",
@@ -4749,8 +4749,8 @@
     "keyTo": "i_potion_loct_red",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "abbreviation kept: loct"
+    "confidence": "sure",
+    "note": "colour code kept: loct (owner)"
   },
   {
     "from": "items/potion/loct/p_loct_ylw.png",
@@ -4760,8 +4760,8 @@
     "keyTo": "i_potion_loct_yellow",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "abbreviation kept: loct; colour spelled out: ylw=yellow"
+    "confidence": "sure",
+    "note": "colour code kept: loct (owner); colour spelled out: ylw=yellow"
   },
   {
     "from": "items/potion/loct/p_oct_org2.png",
@@ -4782,8 +4782,8 @@
     "keyTo": "i_potion_lr_black",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "abbreviation kept: lr; colour spelled out: blk=black"
+    "confidence": "sure",
+    "note": "colour code kept: lr (owner); colour spelled out: blk=black"
   },
   {
     "from": "items/potion/lr/p_lr_cyan.png",
@@ -4793,8 +4793,8 @@
     "keyTo": "i_potion_lr_cyan",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "abbreviation kept: lr"
+    "confidence": "sure",
+    "note": "colour code kept: lr (owner)"
   },
   {
     "from": "items/potion/lr/p_lr_grey.png",
@@ -4804,8 +4804,8 @@
     "keyTo": "i_potion_lr_grey",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "abbreviation kept: lr"
+    "confidence": "sure",
+    "note": "colour code kept: lr (owner)"
   },
   {
     "from": "items/potion/lr/p_lr_rainbow.png",
@@ -4815,8 +4815,8 @@
     "keyTo": "i_potion_lr_rainbow",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "abbreviation kept: lr"
+    "confidence": "sure",
+    "note": "colour code kept: lr (owner)"
   },
   {
     "from": "items/potion/moon/p_moon_blk.png",
@@ -4859,8 +4859,8 @@
     "keyTo": "i_potion_myst_dred",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "abbreviation kept: dred"
+    "confidence": "sure",
+    "note": "colour code kept: dred (owner)"
   },
   {
     "from": "items/potion/myst/p_myst_gold.png",
@@ -5013,8 +5013,8 @@
     "keyTo": "i_potion_rlc_cyan",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "abbreviation kept: rlc"
+    "confidence": "sure",
+    "note": "colour code kept: rlc (owner)"
   },
   {
     "from": "items/potion/round/p_rlc_org.png",
@@ -5024,8 +5024,8 @@
     "keyTo": "i_potion_rlc_orange",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "abbreviation kept: rlc; colour spelled out: org=orange"
+    "confidence": "sure",
+    "note": "colour code kept: rlc (owner); colour spelled out: org=orange"
   },
   {
     "from": "items/potion/round/p_rlc_pink.png",
@@ -5035,8 +5035,8 @@
     "keyTo": "i_potion_rlc_pink",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "abbreviation kept: rlc"
+    "confidence": "sure",
+    "note": "colour code kept: rlc (owner)"
   },
   {
     "from": "items/potion/round/p_rlc_purp.png",
@@ -5046,8 +5046,8 @@
     "keyTo": "i_potion_rlc_purple",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "abbreviation kept: rlc; colour spelled out: purp=purple"
+    "confidence": "sure",
+    "note": "colour code kept: rlc (owner); colour spelled out: purp=purple"
   },
   {
     "from": "items/potion/round/p_rlc_red.png",
@@ -5057,8 +5057,8 @@
     "keyTo": "i_potion_rlc_red",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "abbreviation kept: rlc"
+    "confidence": "sure",
+    "note": "colour code kept: rlc (owner)"
   },
   {
     "from": "items/potion/round/p_rlc_ylw.png",
@@ -5068,8 +5068,8 @@
     "keyTo": "i_potion_rlc_yellow",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "abbreviation kept: rlc; colour spelled out: ylw=yellow"
+    "confidence": "sure",
+    "note": "colour code kept: rlc (owner); colour spelled out: ylw=yellow"
   },
   {
     "from": "items/potion/round/p_round_red.png",
@@ -5401,8 +5401,8 @@
     "keyTo": "i_potion_wine_blueb",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "abbreviation kept: blueb"
+    "confidence": "sure",
+    "note": "colour code kept: blueb (owner)"
   },
   {
     "from": "items/potion/wine/p_wine_dia.png",
@@ -5456,8 +5456,8 @@
     "keyTo": "i_potion_wine_rb",
     "inUse": false,
     "usedBy": [],
-    "confidence": "check",
-    "note": "abbreviation kept: rb"
+    "confidence": "sure",
+    "note": "colour code kept: rb (owner)"
   },
   {
     "from": "items/potion/wine/p_wine_ylw.png",
@@ -5615,7 +5615,7 @@
   },
   {
     "from": "items/scale/item_scale_blue.png",
-    "to": "items/material/i_scale_blue.png",
+    "to": "items/mat/i_scale_blue.png",
     "action": "move",
     "keyFrom": "item_scale_blue",
     "keyTo": "i_scale_blue",
@@ -5626,7 +5626,7 @@
   },
   {
     "from": "items/scale/item_scale_grn.png",
-    "to": "items/material/i_scale_green.png",
+    "to": "items/mat/i_scale_green.png",
     "action": "move",
     "keyFrom": "item_scale_grn",
     "keyTo": "i_scale_green",
@@ -5637,7 +5637,7 @@
   },
   {
     "from": "items/scale/item_scale_red.png",
-    "to": "items/material/i_scale_red.png",
+    "to": "items/mat/i_scale_red.png",
     "action": "move",
     "keyFrom": "item_scale_red",
     "keyTo": "i_scale_red",
