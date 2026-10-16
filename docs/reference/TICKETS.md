@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-186**
+**Next free number: T-187**
 
 ---
 
@@ -37,7 +37,7 @@ here.
 | T-010 | **Speech bubble audit**: add/remove list for `docs/reference/speech_bubble_lines.md`. | FB §5.5 |
 | T-011 | **Watch by eye** (no agent has seen these on screen): Token hit animations + transform glow, loot flight to the Hall, Shop drawer, countdown badge. | FB §5.6 |
 | T-012 | **Transforms now push neighbouring Tokens** (the playmat plan said only bursts and spawns push). Keep or change? | FMR |
-| T-013 | **The last ~65 alert-icon glows and ~105 label text-shadows**: switch them to the hard-pixel style too? | CR3 summary |
+| T-013 | **The last ~65 alert-icon glows and ~105 label text-shadows**: switch them to the hard-pixel style too? Also covers the soft drop shadows on the state badges (recipe gear, warnings, the −1 number), which each take a drawing layer while shown (owner 2026-10-15: settle them in this ruling). | CR3 summary; T-145 |
 | T-014 | **Quest content is written in engine code** (the tutorial chain, `tutorialQuests.js`), not the CMS. Move it to content? (Design call, never asked; Atlas A8 rewrites the chain.) The opening half is closed: the Starter Camp is content (Atlas A7). | CR3-515 |
 | T-127 | **Markets are cut for now** (owner 2026-10-09, D2): the Shrimp Market Token runs but pays nothing. Retire or repurpose it in the CMS (it turns up from Shrimp Coast content). The GDD §16 question is closed. | concept_progression.md |
 
@@ -202,3 +202,4 @@ first, when content that uses it is authored.*
 | T-167 | P2 | open | **Recruits get a weak basic attack** ("everyone fights", `concept_combat.md`): a hero with no combat skill is refused by `BoardCombat.canFight`, so the cartographer's tutorial step 8 "Win a Fight" cannot be completed in a real new game. Engine change; expect the bench's work check to change. The owner authors a weak, safe enemy in the Starter Camp to go with it. Owner ruling 2026-10-13: keep the step, build this. | Atlas A8 |
 | T-181 | P2 | open | **Bench baseline retaken each wave, on a quiet machine.** The Oct-7 `bench/baseline.json` reads 1.3–1.5× slow for `main` itself under daytime load, so every timing verdict is noise (T-111). A runner retakes the engine and draw baselines in the 01:00 window at the end of each wave (`--save-baseline`), commits them with the date, and the director's end-of-wave checklist queues it. Nice to have: a scheduled task. | Process review 2026-10-13 |
 | T-184 | P3 | open | The dev panel's Scatter Loot button (`TestDashboard.jsx`, ~line 226) names three items that no longer exist (`item_yew_log`, `item_glowcap`, `item_spider_silk`); point it at real items and drop the three from `ContentIdsInCode.test.js`'s allow-list. builder-lite. | T-182 |
+| T-186 | P3 | open | **Equipping by drop opens the hero sheet one frame after the drop** (owner 2026-10-15): today the sheet opens inside the drop's own frame, the heaviest drop in the game (~240 renders, found in P2-9). Open it in a transition one frame later, as brief 60 D3 did for the Shop list and the toasts; no visible difference. builder-lite. | P2-9 |

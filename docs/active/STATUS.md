@@ -1,28 +1,21 @@
-# STATUS — wave 1, finishing
+# STATUS — the art pass (brief 85), batch 1
 
 *The director keeps this file; nobody else edits it. One row per phase; a
-five-line summary at about 07:00 and 22:00 Vancouver time; anything older
+five-line summary at each batch's edges (proposed, looked at); anything older
 than two days is trimmed. States: queued · building · ready (tests, cycles,
-build green) · bench-queued · eye-check · merged. Days are Tue 13 to Sat 17
-October 2026.*
+build green) · bench-queued · eye-check · merged.*
 
-## Phases
+## Art pass, batch 1 (proposed and ruled 2026-10-15 evening)
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| Process review and docs | director | `chore/process-review` | merged | Tue | Tue |
-| P2-3 sprite clock | engineer (left by cut-off) | `crunch/p2-3` → `main` | merged (bench: same work; timing 1.3–1.5× the Oct-7 baseline, identical to `main`'s own control run under today's load) | Tue | Tue |
-| P2-6 loot redraws and flight canvas | engineer (left by cut-off) | `crunch/p2-6` → `main` | merged (bench: same work; timing as `main`'s control) | Tue | Tue |
-| P2-5 hit-loop layers (spike) | engineer | `crunch/p2-5` → `main` | merged: composited layers 56 → 45 on cap128 at 4× like for like; a worked Token's loop goes in the next eye-check batch | Tue | Tue |
-| Atlas batch M1+M2: A6, A10, A3b, A11 | owner | `crunch/preview` → `main` | merged (owner verdict: fine for a first implementation; [archived file](../archive/eyecheck/2026-10-13_atlas-m1-m2.md)) | Tue–Wed | Tue |
-| A11 CMS composer patch | owner | `main` | done: the owner's Sync of 10:00 wrote the tool wording; round-trip tests green | Tue | Tue |
-| Content re-pin after the owner's rename (Oak Seed → Oak Seedling) | builder-lite | `fix/content-repin` (`repin`) → `main` | merged; one `it.fails` left (the seedling sprite, owner art) | Tue | Tue |
-| P2-7 sparse stack order | engineer | `crunch/p2-7` | queued (P2-5 is merged) | Wed | |
-| P2-8 tick and React per tick | engineer | `crunch/p2-8` → `main` | merged (bench: same work, timing as `main`'s control; commits per tick 0.79 → 0.57 on S2, renders 6.35 → 3.89; no eye-check) | Tue | Tue |
-| P2-9 drags | engineer | `crunch/p2-9` | queued (from a `main` that holds P2-8) | Wed–Thu | |
-| Atlas A8 cartographer's tutorial | builder | `crunch/atlas-a8` → `main` | merged Wed morning (owner: lines are placeholders, fine; [archived file](../archive/eyecheck/2026-10-13_atlas-a8.md)) | Tue | Wed |
-| Atlas A12 map upcycling | builder | `crunch/atlas-a12` → `main` | merged (owner deferred the look, trusted on the gate; [archived file](../archive/eyecheck/2026-10-13_atlas-a12.md)) | Tue | Tue |
-| Regroup: wave 2 order | owner + director | chat | done Wed morning (owner chose: finish brief 60, the P1 bug and ruled tweaks, terrain plan) | Wed | Wed |
+| Bench baselines retaken on a quiet machine (T-181), engine and draw | director (timer) | `main` | bench-queued: a timer runs them at 01:00 Fri 16th; the owner leaves the PC on and quiet | Fri 01:00 | |
+| The owed 4× drag pair for the placing grid: before (`1f8239b3`) and after (`main`), cap128 | director (timer) | `p23b` then `main` | bench-queued, same timer, after the baselines | Fri 01:00 | |
+| The owner's art sessions on the bench and the brightness script; the bake when a preset wins (tag `art-before-vibrancy`, dated zip, art-only commit on `main`) | owner + director on call | `main` | waiting on the owner | Fri– | |
+| Dev panel's Scatter Loot button names real items (T-184) | builder-lite | `fix/t184-dev-items` (`t184`) | building | Thu | |
+| Floor loot lands on its spot and draws crisp (T-183) | builder | `fix/t183-loot-offset` (`t183`) | building; a small look fix, a line here instead of an eye-check | Thu | |
+| After the bake: drop the drag filter's brightness and saturation (A4), T-180's material palettes | builder-lite / owner | — | waits for the bake | | |
+| Later: Recruits get a weak basic attack (T-167); equip-by-drop opens the sheet a frame later (T-186, ruled 2026-10-15) | — | — | next batches | | |
 
 ## Wave 2 (Wed 14 – Sat 17 October), order ruled by the owner 2026-10-14
 
@@ -54,102 +47,25 @@ October 2026.*
 ## Questions for the owner
 
 *Design questions the director cannot answer, as multiple choice, recommendation
-first; the owner answers in the director chat and the answer is recorded where
-it belongs.*
+first; asked with the next batch proposal and recorded where they belong.*
 
-1. **Equipping by drop opens the hero sheet inside the drop's own frame** (P2-9
-   found it is the heaviest drop: ~240 renders). **A (recommended):** open the
-   sheet in a transition one frame after the drop, as brief 60 D3 did for the
-   Shop list and the toasts; you would not see the difference. **B:** leave it.
-   Not built either way; a builder-lite job once ruled.
-2. **Soft drop shadows on the state badges** (recipe gear, warnings, the −1
-   number) each take a drawing layer while shown (T-145 found it; no Token
-   goes soft from them). **A (recommended):** settle it inside T-013's
-   pixel-shadow ruling. **B:** keep them. **C:** swap now for a near-identical
-   hard shadow.
+None open. (Ruled 2026-10-15: equip-by-drop opens the sheet a frame later,
+T-186; the badges' soft shadows are settled inside T-013.)
 
 ## Bench queue (one at a time, weekdays 13:00–17:00 and 01:00–07:00)
 
-1. ~~P2-3, P2-6~~ done 13:00–13:05; `main` control run 13:05 shows the same 1.3–1.5× timing against the Oct-7 baseline (machine load: 13 Chrome, 15 Node processes). **Retake `bench/baseline.json` on a quiet machine** (T-111) before timing verdicts mean anything.
-2. ~~P2-5 layer count~~ done 13:45–13:51 (56 → 45).
-3. Wed 13:00: `crunch/p2-7` engine bench `--compare`; `crunch/p2-9` engine bench `--compare`; `bench:drag --board=cap128` on `main` then on `crunch/p2-9` (plain and `--cpu=4`); `bench:draw --ab=.claude/worktrees/p27a --only=cap128,cap256` for P2-7.
-5. ~~Thu 01:00 work checks~~ done: drawing-pause, hover, bubbles all same work; on the quiet machine the engine run reads 1.06× the Oct-7 baseline (yesterday's 1.3× was load).
-4. ~~P2-7, P2-9 engine and drag benches~~ done 13:00–14:14. ~~T-145 engine bench and draw A/B~~ done 14:17–14:35 (engine same work; draw A/B: too costly, sent back). The engineer benches alone until it reports. Still owed to the cost log: P2-7's draw A/B against its snapshot `p27a` (needs the snapshot's perf build served on a port; `--ab` takes a URL).
-4. ~~P2-8, A8 engine benches~~ done 13:13–13:18, same work both. Still for P2-8: `bench:draw --compare` on `main` for the cost-log line.
-5. `main` after the Atlas batch: engine bench `--compare` (expect same work) and the drag bench baseline (`npm run bench:drag`, 5 kinds, A3b) for PERFORMANCE.md.
+1. Fri 01:00 (timer): `npm run bench -- --save-baseline`, `npm run bench:draw -- --save-baseline` on `main`; then `bench:drag --board=cap128 --cpu=4` on `1f8239b3` (in `p23b`) and on `main`. The director commits the baselines with the date and logs the drag pair.
+2. Merge work checks for T-184 and T-183 (`npm run bench -- --compare`, against the new baseline).
 
 ## Summaries
 
-**Tue 2026-10-13, morning.** Where we are: process decisions recorded in
-CLAUDE.md, TESTING.md and the tier files; the owner's folder is back on
-`main`; P2-3, P2-6 and P2-5 verified green on tests and committed on their
-branches. Next: benches from 13:00, then merge P2-3 and P2-6; the Atlas
-eye-check file is ready for the owner's notes. Owner: look at the Atlas batch
-and give the preview notes; apply the A11 patch and Sync on its branch; CMS
-to-dos in NOW.md. Budget: one review agent and one director session so far
-today, well under the day's share. Blockers: none.
+**Thu 2026-10-15, closing (wave 2 director).** The whole of wave 2 and the
+terrain (brief 80 T0–T4) are on `main`, the owner's eye-checks all fine; the
+three art tools for brief 85 are on `main` for the owner's art pass.
 
-**Tue 2026-10-13, midday.** The owner eye-checked the Atlas batch (fine for a
-first implementation) and it merged; the A11 CMS composer patch waits on
-`fix/a11-cms-composer` for your Sync (the round-trip tests are red until
-the Sync writes the new wording). Your folder is on `main`. P2-8 is building. Benches from 13:00. Next:
-merge P2-3 and P2-6 after their benches, then P2-7 and P2-9, A8 and A12.
-
-**Tue 2026-10-13, evening.** Where we are: on `main` today the Atlas batch (A6,
-A10, A3b, A11), A12, P2-3, P2-5, P2-6, P2-8, the content re-pin after the Oak
-Seedling rename, A11's wording in `data/`, and the process docs; suite 4716
-green. Next: Wed morning start P2-7 and P2-9 (two engineers); A8 merges when
-the owner has read its lines. Owner: read
-[eyecheck/2026-10-13_atlas-a8.md](eyecheck/2026-10-13_atlas-a8.md); the CMS
-to-dos in NOW.md are not urgent. Budget: a heavy day (five phases, one review
-and ~12 gate runs); Wednesday runs lighter with two engineers and no review.
-Blockers: the bench baseline (Oct 7) no longer matches the machine's load, so
-timing verdicts are noise until it is retaken on a quiet evening (T-111); the
-work check and like-for-like controls carry the gate meanwhile.
-
-**Wed 2026-10-14, morning.** Where we are: A8 merged (owner read the lines;
-eye-checks are now only for significant look or play changes). Wave 2 ruled:
-finish brief 60, the P1 twitch bug and the ruled tweaks, then the terrain plan
-Friday. Next: P2-7 and P2-9 started on two engineers; T-145 when a slot frees;
-benches at 13:00. Owner: run /planning to brief this week's concept docs into
-the queue table; nothing else needed. Budget: three phases planned for today.
-Blockers: none.
-
-**Wed 2026-10-14, evening.** Where we are: merged today the stack order fix,
-the drag redraw savings, the twitch fix (Tokens stay crisp), the cartographer's
-tutorial, the CMS-rename safety net and drawers that close each other; suite
-4772 green. Drawing-pause merged at 16:30, which closes brief 60's P2 slices.
-Building overnight: the hover outline with the Guild Hall movable again (one
-eye-check), and overlapping speech bubbles. Next: the gear alert stops
-pulsing, then Friday's terrain plan. Owner: nothing needed tonight; when you
-next run the desktop app, minimise it once and see the frame counter stop.
-Blockers: none. Process: no daily phase count (parallelism is the limit),
-benches by purpose, the director reports in plain words.
-
-**Thu 2026-10-15, morning.** Where we are: everything from the wave 2 table is
-merged (brief 60's P2 slices complete; the twitch, tutorial, safety net,
-drawers, hover outline, movable Hall, gear alert and speech-bubble fixes), and
-the terrain plan is on `main` with the owner's five answers. Next: on the
-owner's word, the first two terrain slices in parallel (the ground plan, pure
-code; terrain-aware placement), then the drawn ground (an eye-check), then the
-CMS "Stands on" field and the placing grid (an eye-check). Owner: say go on
-the terrain slices; minimise the desktop app once to check the frame counter
-stops. Budget: two slots free. Blockers: none. Saturday: handoff and the
-quiet-machine baseline retake.
-
-**Thu 2026-10-15, midday.** Where we are: all four terrain slices are built and
-gated (the planning agent's brief 85 assumes terrain moved to the next wave; it
-did not: the ground plan, placement, the drawn ground and the CMS field are
-ready and wait on the 13:00 work checks, the ground's benches and the owner's
-look). The dev-server fix is ready. Brief 85's A1 and A2 started at the
-owner's ruling relayed by the planning agent; A3 follows. Next: 13:00
-merges, the terrain handover, then the art tools by Friday. Owner: nothing
-until the terrain handover. Blockers: none.
-
-**Thu 2026-10-15, closing (this director's last summary).** Where we are: the
-whole of wave 2 and the terrain (brief 80 T0–T4) are on `main`, the owner's
-eye-checks all fine; the three art tools for brief 85 are on `main` for the
-owner's art pass. Next: a fresh director session for the art pass; the next
-batches are in HANDOFF.md. Owner: start the fresh director with /director;
-run `npm run art:bench` when you want to look at the art. Blockers: none.
-Process: batches not weekdays (recorded).
+**Thu 2026-10-15, evening: art pass batch 1 proposed and ruled.** Where we
+are: `main` green (4960 tests), worktrees clean. The batch: baselines and the
+owed drag pair tonight at 01:00 on a timer; the owner's art sessions with the
+director on call; two small fillers building (dev-panel items, floor loot
+offset). Owner: leave the PC on and quiet tonight; work the art bench when you
+like. Blockers: none.
