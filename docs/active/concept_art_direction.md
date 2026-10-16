@@ -54,6 +54,9 @@ every look; agents build the tools and prepare palettes.*
   how dark counts.
 - **Starting presets**: unchanged, gentle 1.08 / 1.12, the drag look
   1.15 / 1.25, bold 1.22 / 1.4. Later passes narrow in.
+- **The winning preset** (owner, 2026-10-16, first pass on the bench): **Drag,
+  brightness 1.15 / saturation 1.25, outline threshold 40**. Not baked yet: the
+  owner first wants the asset names and folders reorganised (below).
 - **Timing** (owner, 2026-10-15): tools Friday 16 October; every art phase
   over the weekend of 17–18 October; brief 80's ground is built and shows the
   art in the game once it merges.
