@@ -231,7 +231,7 @@ describe('FP-77 / FP-82 — flag sprites and lasting colours', () => {
         const { container } = mount(h(FlagLayer));
         const flag = container.querySelector('[data-flag="h1"]');
         const img = flag.querySelector('img');
-        expect(img.getAttribute('src')).toBe(`/assets/ui/flag/hero_flag_${colour}.png`);
+        expect(img.getAttribute('src')).toBe(`/assets/ui/u_flag_${colour}.png`);
         expect(img.style.width).toBe('128px');
         expect(img.style.height).toBe('128px');
         expect(img.style.imageRendering).toBe('pixelated');
@@ -240,14 +240,14 @@ describe('FP-77 / FP-82 — flag sprites and lasting colours', () => {
 
     it('a hero with no colour draws the base flag', () => {
         const { container } = mount(h(FlagGhost, { payload: { heroId: 'h2' } }));
-        expect(container.querySelector('img').getAttribute('src')).toBe('/assets/ui/flag/hero_flag_base.png');
+        expect(container.querySelector('img').getAttribute('src')).toBe('/assets/ui/u_flag_base.png');
     });
 
     it('the drag ghost is the hero’s flag sprite at 128 px', () => {
         Flags.plant('h1', C(20));
         const { container } = mount(h(FlagGhost, { payload: { heroId: 'h1' } }));
         const img = container.querySelector('img');
-        expect(img.getAttribute('src')).toBe(`/assets/ui/flag/hero_flag_${flagColourOf('h1')}.png`);
+        expect(img.getAttribute('src')).toBe(`/assets/ui/u_flag_${flagColourOf('h1')}.png`);
         expect(img.style.width).toBe('128px');
     });
 
@@ -298,7 +298,7 @@ describe('FP-77 / FP-82 — flag sprites and lasting colours', () => {
 
         const swatches = document.querySelectorAll('[data-flag-swatch]');
         expect([...swatches].map(s => s.getAttribute('data-flag-swatch'))).toEqual([...FLAG_COLOURS]);
-        expect(swatches[0].querySelector('img').getAttribute('src')).toBe(`/assets/ui/flag/hero_flag_${FLAG_COLOURS[0]}.png`);
+        expect(swatches[0].querySelector('img').getAttribute('src')).toBe(`/assets/ui/u_flag_${FLAG_COLOURS[0]}.png`);
 
         await act(async () => { fireEvent.click(document.querySelector('[data-flag-swatch="purplite"]')); });
         const save = [...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'Save');
@@ -359,7 +359,7 @@ describe('the flag answers clicks on its round area (owner, 2026-09-21)', () => 
         expect(flag.getAttribute('data-alpha-test')).toBeNull();
         expect(flag.style.borderRadius).toBe('50%');
         expect(flag.style.width).toBe('128px');
-        expect(flag.querySelector('img').getAttribute('src')).toContain('/assets/ui/flag/hero_flag_');
+        expect(flag.querySelector('img').getAttribute('src')).toContain('/assets/ui/u_flag_');
     });
 
     it('a click on the flag is kept, never passed to what is underneath', () => {

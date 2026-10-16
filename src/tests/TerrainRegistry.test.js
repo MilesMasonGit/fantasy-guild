@@ -59,13 +59,13 @@ describe('The five looks', () => {
 
     it('⭐ draw the sheets the owner chose (TD-2 A)', () => {
         expect(LOOKS.meadow.sheets).toEqual(['grass']);
-        expect(LOOKS.forest.sheets).toEqual(['grassb']);
+        expect(LOOKS.forest.sheets).toEqual(['grass_dark']);
         expect(LOOKS.mountain.sheets).toEqual(['stone']);
         expect(LOOKS.coast.sheets).toEqual(['sand']);
         expect(LOOKS.sea.sheets).toEqual(['water']);
-        // `ter_waterb` waits (a lake, later): drawn, used by no look.
+        // `g_water_bright` waits (a lake, later): drawn, used by no look.
         const used = Object.values(LOOKS).flatMap(l => [...l.sheets, l.wear?.sheet].filter(Boolean));
-        expect(used).not.toContain('waterb');
+        expect(used).not.toContain('water_bright');
     });
 
     it('name only sheets that exist, for their ground and their wear', () => {

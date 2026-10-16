@@ -156,7 +156,7 @@ export const GuildHallBoard = ({
                                 }}
                             >
                                 <img
-                                    src="/assets/tokens/token_guildhall.png"
+                                    src="/assets/tokens/upgrade/t_guildhall.png"
                                     alt="Guild Hall"
                                     className={cn('w-32 h-32 object-contain drop-shadow-md transition-[filter] duration-150', hovered === HALL_NODE && 'gi-token-hover-pulse')}
                                     style={{ imageRendering: 'pixelated' }}
@@ -219,7 +219,7 @@ export const GuildHallBoard = ({
                                             />
                                             {state === 'locked' && (
                                                 <img
-                                                    src="/assets/ui/ui_lock.png"
+                                                    src="/assets/ui/u_lock.png"
                                                     alt="Locked"
                                                     className="absolute w-12 h-12 object-contain opacity-80 drop-shadow-md pointer-events-none"
                                                     style={{ imageRendering: 'pixelated' }}
@@ -229,7 +229,7 @@ export const GuildHallBoard = ({
                                             {canAfford && (
                                                 <div data-upgrade-available="true" className="absolute -top-3 -left-3 z-10 pointer-events-none">
                                                     <img
-                                                        src="/assets/ui/ui_upgrade.png"
+                                                        src="/assets/ui/u_upgrade.png"
                                                         alt="Upgrade Available"
                                                         className="select-none animate-bounce drop-shadow-[0_0_8px_rgba(234,179,8,0.9)]"
                                                         style={{ width: 32, height: 32, imageRendering: 'pixelated', animationDuration: '2s' }}

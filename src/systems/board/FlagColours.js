@@ -24,7 +24,7 @@ export const FLAG_COLOURS = Object.freeze([
 /** The plain flag, drawn for a hero with no (valid) colour. */
 export const FLAG_BASE = 'base';
 
-const FLAG_DIR = '/assets/ui/flag';
+const FLAG_DIR = '/assets/ui';
 
 /** Whether a value is one of the eight flag colours. */
 export function isFlagColour(value) {
@@ -33,7 +33,7 @@ export function isFlagColour(value) {
 
 /** The sprite path for a colour; the base flag for anything else. */
 export function flagSpritePath(colour) {
-    return `${FLAG_DIR}/hero_flag_${isFlagColour(colour) ? colour : FLAG_BASE}.png`;
+    return `${FLAG_DIR}/u_flag_${isFlagColour(colour) ? colour : FLAG_BASE}.png`;
 }
 
 function heroRecord(heroId) {

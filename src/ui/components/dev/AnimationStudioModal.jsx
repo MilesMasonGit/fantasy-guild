@@ -17,7 +17,7 @@ const ZOOM_PRESETS = [1, 2, 3, 4, 6, 8];
  * skinning, and interactive full-sheet frame mapping.
  */
 export const AnimationStudioModal = ({ isOpen, onClose }) => {
-    const [sheetPath, setSheetPath] = useState('/assets/heroes/animations/ani_recruit_0.png');
+    const [sheetPath, setSheetPath] = useState('/assets/heroes/hn_recruit_sheet.png');
     const [action, setAction] = useState('idle'); // 'idle' | 'walk' | 'active' | 'all'
     const [frame, setFrame] = useState(0);
     const [isPlaying, setIsPlaying] = useState(true);
@@ -588,14 +588,14 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
                                 value={sheetPath}
                                 onChange={e => setSheetPath(e.target.value)}
                                 className="w-full bg-gi-surface border border-gi-border rounded px-2.5 py-1.5 text-xs font-mono text-gi-text focus:border-gi-primary outline-none"
-                                placeholder="/assets/heroes/animations/ani_recruit_0.png"
+                                placeholder="/assets/heroes/hn_recruit_sheet.png"
                             />
                             <div className="flex gap-1 mt-1">
                                 <button
-                                    onClick={() => setSheetPath('/assets/heroes/animations/ani_recruit_0.png')}
+                                    onClick={() => setSheetPath('/assets/heroes/hn_recruit_sheet.png')}
                                     className="text-[10px] px-2 py-0.5 rounded bg-gi-surface hover:bg-gi-primary/20 text-gi-primary border border-gi-border"
                                 >
-                                    Default: ani_recruit_0
+                                    Default: hn_recruit_sheet
                                 </button>
                             </div>
                         </div>

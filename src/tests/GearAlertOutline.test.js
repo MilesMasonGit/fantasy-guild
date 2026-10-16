@@ -75,7 +75,7 @@ describe('T-153: the gear alert is a stepped gold outline, never a movement', ()
         for (const l of layers) {
             expect(l.className).toContain('gi-gear-alert');
             expect(l.style.imageRendering).toBe('pixelated');
-            expect(l.style.maskImage || l.style.webkitMaskImage).toContain('/assets/ui/ui_gear.png');
+            expect(l.style.maskImage || l.style.webkitMaskImage).toContain('/assets/ui/u_gear.png');
         }
     });
 

@@ -95,7 +95,7 @@ export const HeroInspectionSheet = memo(function HeroInspectionSheet({ heroId, o
                         className="p-0.5 rounded flex items-center justify-center cursor-pointer gi-hover-pulse"
                     >
                         <img
-                            src="/assets/ui/ui_cancel_red.png"
+                            src="/assets/ui/u_cancel_red.png"
                             alt="Close"
                             draggable={false}
                             className="select-none pointer-events-none"
@@ -197,7 +197,7 @@ const HeroFigure = ({ hero, heroId, size }) => {
     });
     const sprite = hero.spriteId || hero.classId || null;
     const animArt = sprite ? resolveAnimationPath(sprite) : null;
-    const staticArt = animArt ? null : resolveSpritePath(sprite || hero.icon || 'hero_recruit_0');
+    const staticArt = animArt ? null : resolveSpritePath(sprite || hero.icon || 'hn_recruit_por');
     // The flag's pole stands just behind the hero's shoulder, its cloth flying out to the right.
     const flagLeft = Math.round(size * 0.3);
     return (

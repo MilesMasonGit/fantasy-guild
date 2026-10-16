@@ -135,7 +135,7 @@ export const TokenNameBadge = memo(function TokenNameBadge({ name, isDragging, i
 const GEAR_INSET = 2;
 const GEAR_ART_PX = 24 / 32;
 const GEAR_OUTLINE_OFFSETS = [[-1, 0], [1, 0], [0, -1], [0, 1]];
-const GEAR_SRC = '/assets/ui/ui_gear.png';
+const GEAR_SRC = '/assets/ui/u_gear.png';
 
 /** The gear's shape filled with the alert colour, one art pixel off in one direction. */
 const gearOutlineStyle = (dx, dy) => ({
@@ -223,7 +223,7 @@ export const DisallowBadge = ({ isDragging }) => {
             className="shrink-0 select-none w-7 h-7 flex items-center justify-center filter drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)]"
         >
             <img
-                src="/assets/ui/ui_disallow_red.png"
+                src="/assets/ui/u_disallow_red.png"
                 alt="Heroes may not work this"
                 className="w-6 h-6 object-contain"
                 style={{ imageRendering: 'pixelated' }}
@@ -258,7 +258,7 @@ export const StuckBadge = ({ noRoom = false, matFull = false, title }) => (
         className="shrink-0 select-none w-7 h-7 flex items-center justify-center filter drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)]"
     >
         <img
-            src={noRoom ? '/assets/ui/ui_alert_red.png' : '/assets/ui/ui_alert_yellow.png'}
+            src={noRoom ? '/assets/ui/u_alert_red.png' : '/assets/ui/u_alert_yellow.png'}
             alt={title}
             className="w-6 h-6 object-contain"
             style={{ imageRendering: 'pixelated' }}

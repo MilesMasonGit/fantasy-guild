@@ -41,8 +41,8 @@ describe('Every pixel gets a sheet', () => {
     });
 
     it('⭐ draws each look with its own sheet (TD-2 A)', () => {
-        // Meadow grass is `ter_grass`, forest ground `ter_grassb`, rock `ter_stone`, the beach
-        // `ter_sand`, the sea `ter_water`.
+        // Meadow grass is `g_grass`, forest ground `g_grass_dark`, rock `g_stone`, the beach
+        // `g_sand`, the sea `g_water`.
         const byTerrain = (plan) => {
             const out = {};
             for (let i = 0; i < plan.sheetAt.length; i++) {
@@ -53,7 +53,7 @@ describe('Every pixel gets a sheet', () => {
             return Object.fromEntries(Object.entries(out).map(([t, s]) => [t, [...s]]));
         };
         expect(byTerrain(buildGroundPlan(hybrid()))).toEqual({
-            water: ['water'], sand: ['sand'], grass: ['grassb'], rock: ['stone']
+            water: ['water'], sand: ['sand'], grass: ['grass_dark'], rock: ['stone']
         });
         expect(byTerrain(buildGroundPlan(meadow()))).toEqual({ grass: ['grass'] });
     });
@@ -70,7 +70,7 @@ describe('⭐ Layering: tint under band under wear', () => {
         const counts = sheetCounts(buildGroundPlan(hybrid()));
         expect(counts.dirt).toBeGreaterThan(0);
         expect(counts.gravel).toBeGreaterThan(0);
-        expect(counts.grassb).toBeGreaterThan(counts.dirt);
+        expect(counts.grass_dark).toBeGreaterThan(counts.dirt);
         expect(counts.stone).toBeGreaterThan(counts.gravel);
     });
 

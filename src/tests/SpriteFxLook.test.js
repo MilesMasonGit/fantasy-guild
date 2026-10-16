@@ -46,7 +46,7 @@ const TOKEN_SRC = '/assets/tokens/test/token_look.png';
 const ITEM_SRC = '/assets/items/item_look.png';
 const SHEET_SRC = 'assets/heroes/animations/ani_look_0.png';
 const ENEMY_SRC = 'assets/enemies/animal/anim/ani_look.png';
-const FLAG_SRC = '/assets/ui/flag/hero_flag_base.png';
+const FLAG_SRC = '/assets/ui/u_flag_base.png';
 
 /** A manifest as the generator writes it, for the sprites these tests draw. */
 function manifestWith(extra = {}) {
@@ -56,7 +56,7 @@ function manifestWith(extra = {}) {
             'assets/items/item_look.png': { w: 32, h: 32, outlined: false },
             'assets/heroes/animations/ani_look_0.png': { w: 512, h: 192, cols: 8, rows: 3, outlined: true, ringPad: 1 },
             'assets/enemies/animal/anim/ani_look.png': { w: 256, h: 256, cols: 4, rows: 4, outlined: true, ringPad: 1 },
-            'assets/ui/flag/hero_flag_base.png': { w: 64, h: 64, outlined: true },
+            'assets/ui/u_flag_base.png': { w: 64, h: 64, outlined: true },
             ...extra
         }
     };

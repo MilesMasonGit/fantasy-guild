@@ -94,13 +94,13 @@ export const ReactRoot = ({ engine }) => {
     const [debugMode, setDebugMode] = React.useState(() => SettingsManager.get('debugMode') ?? false);
     // Bubble menu side: left by default, right via the Settings toggle.
     const [menuRight, setMenuRight] = React.useState(() => SettingsManager.get('ui.bubbleMenuRight') ?? false);
-    const [backgroundTile, setBackgroundTile] = React.useState(() => SettingsManager.get('ui.backgroundTile') ?? 'pm_table_wood_spruce');
+    const [backgroundTile, setBackgroundTile] = React.useState(() => SettingsManager.get('ui.backgroundTile') ?? 'u_table_wood_spruce');
 
     React.useEffect(() => {
         const unsubscribe = EventBus.subscribe(ENGINE_EVENTS.SETTINGS_UPDATED, (s) => {
             setDebugMode(s.debugMode ?? false);
             setMenuRight(s.ui?.bubbleMenuRight ?? false);
-            setBackgroundTile(s.ui?.backgroundTile ?? 'pm_table_wood_spruce');
+            setBackgroundTile(s.ui?.backgroundTile ?? 'u_table_wood_spruce');
         }, UI_LISTENER);
         return () => unsubscribe();
     }, []);

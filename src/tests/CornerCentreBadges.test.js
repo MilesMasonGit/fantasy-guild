@@ -46,7 +46,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 
 registerItems({
     fixture_q2_seed: {
-        id: 'fixture_q2_seed', name: 'Fixture Q2 Seed', type: 'material', sprite: 'wood_oak',
+        id: 'fixture_q2_seed', name: 'Fixture Q2 Seed', type: 'material', sprite: 'i_wood_oak',
         description: '', tags: [], stackable: true, restoreAmount: 0, restoreType: '', regen: 0, equipSlot: '', value: 1
     }
 });
@@ -71,11 +71,11 @@ registerTokenTypes({
     },
     fixture_q2_sapling: {
         id: 'fixture_q2_sapling', name: 'Fixture Q2 Sapling', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature'
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature'
     },
     fixture_q2_forest: {
         id: 'fixture_q2_forest', name: 'Fixture Q2 Forest', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature', requiresHero: false,
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature', requiresHero: false,
         spawner: {
             spawns: [{ typeId: 'fixture_q2_sapling', weight: 1 }],
             allowance: 5, intervalMs: 1000,
@@ -205,7 +205,7 @@ describe('the badges on their own', () => {
         const unset = mount(h(StationGearBadge, { isDragging: false, recipe: null, pulsing: true, onClick: () => {} })).container;
         const gear = unset.querySelector('[data-station-gear]');
         expect(gear.getAttribute('data-station-gear')).toBe('unset');
-        expect(gear.querySelector('img').getAttribute('src')).toBe('/assets/ui/ui_gear.png');
+        expect(gear.querySelector('img').getAttribute('src')).toBe('/assets/ui/u_gear.png');
         expect(gear.querySelector('img').style.imageRendering).toBe('pixelated');
         expect(gear.querySelectorAll('.gi-gear-alert').length).toBe(4);
         cleanup();
@@ -216,7 +216,7 @@ describe('the badges on their own', () => {
     });
 
     it('disallow badge renders, and hides while dragging; the corner count badges are gone (B1.3)', () => {
-        expect(mount(h(DisallowBadge, { isDragging: false })).container.querySelector('img').getAttribute('src')).toBe('/assets/ui/ui_disallow_red.png');
+        expect(mount(h(DisallowBadge, { isDragging: false })).container.querySelector('img').getAttribute('src')).toBe('/assets/ui/u_disallow_red.png');
         cleanup();
         expect(mount(h(DisallowBadge, { isDragging: true })).container.querySelector('[data-tile-disallowed]')).toBeNull();
         expect(TokenBadges.SpawnerCountBadge).toBeUndefined();
@@ -238,7 +238,7 @@ describe('on the mat', () => {
         put('fixture_q2_bench', FAR);
         const { container } = mount(h(MatBoard));
         expect(container.querySelector('[aria-label="Assign Hero"]')).toBeNull();
-        expect(container.querySelector('img[src*="ui_add_"]')).toBeNull();
+        expect(container.querySelector('img[src*="u_add_"]')).toBeNull();
     });
 
     it('FB-7: an unset station shows a pulsing gear and no alert, button or red bar; the gear opens the picker', () => {
@@ -306,6 +306,6 @@ describe('on the mat', () => {
         expect(container.querySelector('[data-spawner-alert], [data-worked-alert], [data-alert-kind], [data-token-notice]')).toBeNull();
         const o = container.querySelector(`[data-token-overlay="${forest.id}"]`);
         expect(o.querySelector('[data-bubble-row="middle"] [data-bubble="stuck"] [data-stuck-badge="needs_item"]')).not.toBeNull();
-        expect(container.querySelectorAll('img[src*="ui_alert"]').length).toBe(1);
+        expect(container.querySelectorAll('img[src*="u_alert"]').length).toBe(1);
     });
 });

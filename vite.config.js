@@ -29,7 +29,7 @@ const packageVersion = JSON.parse(
 
 const IMAGE_RE = /\.(png|webp|jpe?g|gif|svg)$/i;
 
-// Walk public/assets and list every image as a web path ("assets/heroes/hm_fighter.png").
+// Walk public/assets and list every image as a web path ("assets/heroes/hm_fighter_por.png").
 // The AssetPreloader fetches this list at boot to warm the browser cache before first render.
 function scanAssetImages() {
     const publicRoot = path.resolve(__dirname, 'public');

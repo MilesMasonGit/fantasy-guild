@@ -64,7 +64,7 @@ describe('The 25 skills in four layers', () => {
     it('forestry keeps the Logging sprite', () => {
         expect(getSkill('forestry')).toMatchObject({
             id: 'forestry', name: 'Forestry', layer: SKILL_LAYERS.STARTING,
-            sprite: 'assets/skills/skill_logging.png'
+            sprite: 'assets/skills/s_logging.png'
         });
     });
 

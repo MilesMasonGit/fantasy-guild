@@ -68,7 +68,7 @@ const CarriedToken = ({ payload, bold, offBoard }) => (
         {offBoard && (
             <div className="absolute top-1.5 left-[2px] z-50 pointer-events-none w-8 h-8 flex items-center justify-center">
                 <img
-                    src="/assets/ui/ui_disallow_red.png"
+                    src="/assets/ui/u_disallow_red.png"
                     alt="Disallow"
                     className="w-8 h-8 object-contain select-none animate-bounce drop-shadow-[0_0_8px_rgba(239,68,68,0.9)]"
                     style={{

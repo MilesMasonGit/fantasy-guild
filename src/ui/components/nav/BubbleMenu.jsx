@@ -52,7 +52,7 @@ const Bubble = React.forwardRef(({ icon: Icon, label, color, onClick, active = f
                     disabled && 'opacity-40 cursor-not-allowed'
                 )}
                 style={{
-                    backgroundImage: `url('/assets/ui/ui_orb_${color === 'blue' ? 'lblu' : color}.png')`,
+                    backgroundImage: `url('/assets/ui/u_orb_${color === 'blue' ? 'lblu' : color}.png')`,
                     imageRendering: 'pixelated'
                 }}
             >
@@ -89,7 +89,7 @@ export const BubbleMenu = ({ ui, side = 'left' }) => {
                 aboveOwnModal ? 'z-[310]' : 'z-[110]'
             )}
             style={{
-                backgroundImage: `url('/assets/ui/ui_bar.png')`,
+                backgroundImage: `url('/assets/ui/u_bar.png')`,
                 backgroundRepeat: 'repeat-y',
                 backgroundPosition: side === 'left' ? 'left top' : 'right top',
                 backgroundSize: '100% auto',

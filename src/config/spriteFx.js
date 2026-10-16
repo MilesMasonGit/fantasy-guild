@@ -57,9 +57,10 @@ export const OUTLINE_COLOURS = Object.freeze({
 export const HERO_SHEET_GRID = Object.freeze({ cols: 8, rows: 3 });
 export const ENEMY_SHEET_GRID = Object.freeze({ cols: 4, rows: 4 });
 
+/** A sheet is its still sprite's name plus `_sheet` (and a word after it: `_sheet_walk`, `_sheet_raw`). */
 export const SHEET_GRIDS = Object.freeze([
-    { test: /^assets\/heroes\/animations\/ani_[^/]+\.png$/i, ...HERO_SHEET_GRID },
-    { test: /^assets\/enemies\/.+\/ani_[^/]+\.png$/i, ...ENEMY_SHEET_GRID }
+    { test: /^assets\/heroes\/[^/]+_sheet(_[^/]*)?\.png$/i, ...HERO_SHEET_GRID },
+    { test: /^assets\/enemies\/.+_sheet(_[^/]*)?\.png$/i, ...ENEMY_SHEET_GRID }
 ]);
 
 /** The sheet grid for an asset path (`assets/...`), or null for a single sprite. */
@@ -76,7 +77,7 @@ export function sheetGridOf(rel) {
  * the one UI sprite on the mat.
  */
 export function isOutlined(rel) {
-    if (/^assets\/ui\/flag\//i.test(rel)) return true;
+    if (/^assets\/ui\/u_flag_/i.test(rel)) return true;
     return !/^assets\/ui\//i.test(rel);
 }
 

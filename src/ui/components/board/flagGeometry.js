@@ -3,7 +3,7 @@
  * Every number about **where a flag sprite sits** on the mat, in one place.
  * A flag stands exactly where it was let go: its pole base is the flag's own mat point.
  * Flags may overlap freely and never push, nudge or hide each other.
- * The flag art is 64×64 and drawn at 2×. Measured from `hero_flag_*.png`: the pole leaves the
+ * The flag art is 64×64 and drawn at 2×. Measured from `u_flag_*.png`: the pole leaves the
  * grass tuft at about (20, 58) in the art, the cloth spans x 12–62, y 11–36, and the pole's
  * top is at (10, 1).
  */

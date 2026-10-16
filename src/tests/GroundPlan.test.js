@@ -187,8 +187,8 @@ describe('⭐ Looks', () => {
             const key = `${plan.palette[plan.terrainAt[i]]}>${plan.sheets[plan.sheetAt[i]]}`;
             counts[key] = (counts[key] || 0) + 1;
         }
-        expect(Object.keys(counts).sort()).toEqual(['grass>grassb', 'rock>stone']);
-        expect(counts['grass>grassb']).toBeGreaterThan(10000);
+        expect(Object.keys(counts).sort()).toEqual(['grass>grass_dark', 'rock>stone']);
+        expect(counts['grass>grass_dark']).toBeGreaterThan(10000);
         expect(counts['rock>stone']).toBeGreaterThan(10000);
     });
 });

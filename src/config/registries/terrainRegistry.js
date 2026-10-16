@@ -22,15 +22,15 @@ import { TERRAIN } from '../../systems/atlas/TerrainMap.js';
 export const SHEET_PX = 64;
 
 /**
- * The ground sheets in `public/assets/playmat/terrain/` (`ter_<id>.png`), one per ground. The two
- * "b" sheets are recolours: `grassb` is the forest's darker ground; `waterb`, a much brighter sea,
+ * The ground sheets in `public/assets/playmat/terrain/` (`g_<id>.png`), one per ground. Two are
+ * recolours: `grass_dark` is the forest's darker ground; `water_bright`, a much brighter sea,
  * waits for a lake (it is drawn, and no look uses it yet).
  */
-export const SHEETS = Object.freeze(['grass', 'grassb', 'dirt', 'gravel', 'sand', 'stone', 'water', 'waterb']);
+export const SHEETS = Object.freeze(['grass', 'grass_dark', 'dirt', 'gravel', 'sand', 'stone', 'water', 'water_bright']);
 
 /** Where a ground sheet lives. */
 export function sheetPath(sheetId) {
-    return `/assets/playmat/terrain/ter_${sheetId}.png`;
+    return `/assets/playmat/terrain/g_${sheetId}.png`;
 }
 
 /** A prop's side in pixels: one prop pixel is one ground pixel, the same size as a Token's. */
@@ -45,7 +45,7 @@ export const PROP_SHEET_CELLS = 4;
  * not read.
  */
 export const PROP_SHEETS = Object.freeze([
-    'prop_bush', 'prop_bush_dark', 'prop_coast', 'prop_flowers', 'prop_mushroom', 'prop_rock', 'prop_rock_sand'
+    'p_bush', 'p_bush_dark', 'p_coast', 'p_flowers', 'p_mushroom', 'p_rock', 'p_rock_sand'
 ]);
 
 /** Where a prop sheet lives. */
@@ -83,22 +83,22 @@ export const LOOKS = deepFreeze({
     meadow: {
         id: 'meadow', name: 'Meadow', terrain: TERRAIN.GRASS, sheets: ['grass'],
         wear: { sheet: 'dirt', coverage: 0.18 },
-        props: [{ sheet: 'prop_flowers', weight: 2 }, { sheet: 'prop_bush', weight: 1 }],
+        props: [{ sheet: 'p_flowers', weight: 2 }, { sheet: 'p_bush', weight: 1 }],
         propDensity: 0.06
     },
     forest: {
-        id: 'forest', name: 'Forest', terrain: TERRAIN.GRASS, sheets: ['grassb'],
+        id: 'forest', name: 'Forest', terrain: TERRAIN.GRASS, sheets: ['grass_dark'],
         // Less than the meadow: leaf litter and shade, not footfall.
         wear: { sheet: 'dirt', coverage: 0.12 },
         props: [
-            { sheet: 'prop_bush_dark', weight: 2 }, { sheet: 'prop_mushroom', weight: 1 }, { sheet: 'prop_flowers', weight: 1 }
+            { sheet: 'p_bush_dark', weight: 2 }, { sheet: 'p_mushroom', weight: 1 }, { sheet: 'p_flowers', weight: 1 }
         ],
         propDensity: 0.1
     },
     mountain: {
         id: 'mountain', name: 'Mountain', terrain: TERRAIN.ROCK, sheets: ['stone'],
         wear: { sheet: 'gravel', coverage: 0.15 },
-        props: [{ sheet: 'prop_rock', weight: 1 }],
+        props: [{ sheet: 'p_rock', weight: 1 }],
         propDensity: 0.05
     },
     coast: {
@@ -106,7 +106,7 @@ export const LOOKS = deepFreeze({
         // Wet sand where the water reaches: caused by the water, not by having an edge, or the
         // beach comes out wet where it meets the grass.
         band: { widthTuning: 'wetSandWidth', tint: '#6b4a25', amount: 0.3, against: [TERRAIN.WATER] },
-        props: [{ sheet: 'prop_coast', weight: 2 }, { sheet: 'prop_rock_sand', weight: 1 }],
+        props: [{ sheet: 'p_coast', weight: 2 }, { sheet: 'p_rock_sand', weight: 1 }],
         propDensity: 0.05
     },
     sea: {

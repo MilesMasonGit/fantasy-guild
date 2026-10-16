@@ -33,7 +33,7 @@ const h = React.createElement;
 
 const skills = (levels) => Object.fromEntries(Object.entries(levels).map(([id, level]) => [id, { level, xp: 0 }]));
 const hero = (id, name, levels, extra = {}) => ({
-    id, name, spriteId: 'hero_recruit_0', hp: { current: 100, max: 100 }, status: 'idle', equipment: {},
+    id, name, spriteId: 'hn_recruit_por', hp: { current: 100, max: 100 }, status: 'idle', equipment: {},
     skills: skills(levels), flagRules: {}, ...extra
 });
 
@@ -102,7 +102,7 @@ describe('H3 v2: the Work Rules button', () => {
         const view = render(h(Host));
         const btn = button(view);
         expect(btn.closest('[data-bottom-hero-dock]')).not.toBeNull();
-        expect(btn.querySelector('img').getAttribute('src')).toBe('/assets/ui/ui_gear.png');
+        expect(btn.querySelector('img').getAttribute('src')).toBe('/assets/ui/u_gear.png');
         expect(drawer(view)).toBeNull();
 
         click(btn);

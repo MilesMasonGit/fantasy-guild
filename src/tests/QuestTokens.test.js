@@ -69,7 +69,7 @@ describe('the quest Token type is engine-owned (B6.1)', () => {
         expect(def.name).toBe('Quest');
         expect(def.config).toBeNull();
         expect(def.requiresHero).toBe(false);
-        expect(tokenSpritePath(QUEST_TOKEN_TYPE)).toBe('/assets/ui/quest_board.png');
+        expect(tokenSpritePath(QUEST_TOKEN_TYPE)).toBe('/assets/ui/u_quest_board.png');
     });
 
     it('stays out of the authored content set the audits and the Shop walk', () => {
