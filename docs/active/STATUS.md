@@ -12,8 +12,8 @@ build green) · bench-queued · eye-check · merged.*
 | Bench baselines retaken on a quiet machine (T-181), engine and draw | director (timer) | `main` | bench-queued: a timer runs them at 01:00 Fri 16th; the owner leaves the PC on and quiet | Fri 01:00 | |
 | The owed 4× drag pair for the placing grid: before (`1f8239b3`) and after (`main`), cap128 | director (timer) | `p23b` then `main` | bench-queued, same timer, after the baselines | Fri 01:00 | |
 | The owner's art sessions on the bench and the brightness script; the bake when a preset wins (tag `art-before-vibrancy`, dated zip, art-only commit on `main`) | owner + director on call | `main` | waiting on the owner | Fri– | |
-| Dev panel's Scatter Loot button names real items (T-184) | builder-lite | `fix/t184-dev-items` (`t184`) | building | Thu | |
-| Floor loot lands on its spot and draws crisp (T-183) | builder | `fix/t183-loot-offset` (`t183`) | building; a small look fix, a line here instead of an eye-check | Thu | |
+| Dev panel's Scatter Loot button names real items (T-184) | builder-lite | `fix/t184-dev-items` (`t184`) | bench-queued (director's gate green: 4960 tests, cycles, build; work check in tonight's window, then merge) | Thu | |
+| Floor loot lands on its spot and draws crisp (T-183) | builder | `fix/t183-loot-offset` (`t183`) | bench-queued (director's gate green: 4964 tests with 4 new, cycles, build; in the game the landed loot measured 40 mat units up-left before, 0 after, nothing held on it; the stack slide fixed alongside so piles don't jump; a small look fix, no eye-check) | Thu | |
 | After the bake: drop the drag filter's brightness and saturation (A4), T-180's material palettes | builder-lite / owner | — | waits for the bake | | |
 | Later: Recruits get a weak basic attack (T-167); equip-by-drop opens the sheet a frame later (T-186, ruled 2026-10-15) | — | — | next batches | | |
 
