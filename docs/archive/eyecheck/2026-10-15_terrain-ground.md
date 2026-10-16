@@ -1,5 +1,8 @@
 # Eye-check: the ground on the mat, and placing by terrain (terrain TM1 + TM2)
 
+**Owner verdict (2026-10-15, in chat):** all fine. Merged the same afternoon;
+no fix round. The look's tuning (slider defaults) is open for a later pass.
+
 *Owner: play on the branch, fill in each Verdict line, hand the file back or
 answer in chat. This is the first look at the terrain; the slider values you
 like become the shipped defaults, so paste "Copy values" output into chat.

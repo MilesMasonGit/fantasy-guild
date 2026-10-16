@@ -16,9 +16,10 @@
 
 ## The loop (owner, 2026-10-13)
 
-Two long-lived agents and the owner, in a cycle that is continuous but
-batches into **waves**, with a soft rhythm of weekday building and weekend
-planning (the owner's design ideas mostly follow what just got built):
+Two long-lived agents and the owner, in a continuous cycle that moves in
+**small batches**, whatever the day of the week (owner, 2026-10-15: no
+schedule by weekday; the owner's design ideas mostly follow what just got
+built, so batches stay small and the owner looks often):
 
 - **Planning agent** (branch `planning`, worktree `.claude/worktrees/pp`,
   docs only): the owner shares broad ideas; the agent interviews them as
@@ -78,11 +79,12 @@ It does not write the code itself. It:
    with **what is being built now and what comes next**, so the owner can say
    continue or stop for the day. Codes may follow the words in brackets.
 
-**Pacing (owner, 2026-10-13).** Work runs in **waves** of a reasonable size,
-each spread over about five days, not three. At most **two code subagents at
-once** plus one read-only agent. There is **no daily count of phases** (owner,
-2026-10-14): the limit is parallelism, not volume. When the director's context
-is about 60 % full, or the weekly reset is near, **start nothing new**: tell running agents to
+**Pacing (owner, 2026-10-13, amended 2026-10-15).** Work moves in **small
+batches**: a batch is two to four phases the owner can look at together, and
+the next batch starts when the owner says continue. Days of the week do not
+matter. At most **two code subagents at once** plus one read-only agent.
+There is **no daily count of phases**: the limit is parallelism, not volume.
+When the director's context is about 60 % full, **start nothing new**: tell running agents to
 commit their work in progress and write a status note, write the handoff, and
 stop. Builders and engineers commit work in progress at least hourly and keep
 a `STATUS.md` in their worktree, so a cut-off agent leaves a readable state.
@@ -124,16 +126,15 @@ numbered checks (where to click, what you should see) each with a
 the end. After the look, fixes go on the branch, it merges, and the file moves
 to `docs/archive/eyecheck/` with the verdicts kept.
 
-**Handoffs.** The director stops new work on **Saturday evening**, at about
-85 % of the weekly budget, or whenever its context is getting full, whichever
-comes first, and writes `docs/active/HANDOFF.md` (replaced each time, never
+**Handoffs.** A director session ends when the owner says so, when its
+context is getting full, or when its usage limit nears, whichever comes
+first. It then writes `docs/active/HANDOFF.md` (replaced each time, never
 stacked): what is on `main`, every branch and worktree with its exact state,
-eye-checks waiting, owner to-dos, the next three phases, lessons. Sunday and
-Monday are a buffer for the owner's play-testing and queued benches. Between
-waves the owner gives eye-check feedback to the planning session, and the
-fresh director session (after the Tuesday reset) reads `CLAUDE.md`,
-`HANDOFF.md` and `STATUS.md` only, verifies each worktree with one command,
-and starts the next wave.
+eye-checks waiting, owner to-dos, the next batches, lessons. The owner gives
+eye-check feedback to the planning session between batches when they want
+to, and the fresh director session reads `CLAUDE.md`, `HANDOFF.md` and
+`STATUS.md` only, verifies each worktree with one command, and proposes the
+next batch.
 
 **Planning sessions** (owner interviews, ideas, concept docs, answering a
 roadmap's owner questions) work on the long-lived **`planning`** branch in its

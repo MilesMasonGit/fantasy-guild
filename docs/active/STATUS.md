@@ -40,8 +40,8 @@ October 2026.*
 | Terrain plan (brief 80 T0) | engineer | `crunch/terrain` → `main` | done: [terrain_roadmap.md](terrain_roadmap.md), the owner answered all five questions the same evening (no clearing, the ground is static); slices T1 ground plan and T3 placement can start in parallel, T2 the drawn ground after T1, T4 the CMS field and grid after T2 and T3 | Wed | Wed |
 | Terrain T1: the ground plan, pure code | engineer | `crunch/terrain-t1` → `main` | merged (work check same; Forest + Coast plans in ~10 ms) | Thu | Thu |
 | Terrain T3: terrain in placement (Tokens that need water or shore land only there; everything else anywhere dry; meadow Regions unchanged) | engineer | `crunch/terrain-t3` → `main` | merged (work check same) | Thu | Thu |
-| Terrain T2: the ground drawn on the mat | engineer | `fix/terrain-tm1` (= T2 + T4 on today's `main`) | eye-check ([file](eyecheck/2026-10-15_terrain-ground.md)); benches: layers 26 with and without the ground, draw cost 0.00 ms saved with it off (below noise), crisp green; handed over Thu 13:45 | Thu | |
-| Terrain T4: the CMS "Stands on" field and the grid while placing | builder | `fix/terrain-tm1` | eye-check with the ground (checks 11–18); drag bench at 1× within the spread of `main`'s two runs; a 4× pair still owed in a later window | Thu | |
+| Terrain T2: the ground drawn on the mat | engineer | `fix/terrain-tm1` → `main` | merged (owner eye-check all fine; benches: layers 26 with and without the ground, draw cost 0.00 ms saved with it off, crisp green; [archived file](../archive/eyecheck/2026-10-15_terrain-ground.md)) | Thu | Thu |
+| Terrain T4: the CMS "Stands on" field and the grid while placing | builder | `fix/terrain-tm1` → `main` | merged (owner eye-check all fine; a 4× drag pair still owed) | Thu | Thu |
 | The dev server must survive a full sprite redraw (T-185) | engineer | `fix/t185-spritefx-server` → `main` | merged. Cause: the main folder's dev server watched every agent worktree (211k handles, 2 GB) and ran the redraw in its own process; now the worktrees are ignored (6k handles, 165 MB) and the redraw runs in a child process (5 s) | Thu | Thu |
 | Art bench page (brief 85 A1) | builder | `crunch/art-a1` → `main` | merged: `npm run art:bench` | Thu | Thu |
 | Brightness script with presets and outline protection (brief 85 A2) | builder | `crunch/art-a2` → `main` | merged: `npm run art:brighten` (previews only; the bake refuses without the tag, a dated zip outside the project and a clean assets tree) | Thu | Thu |
@@ -145,3 +145,11 @@ look). The dev-server fix is ready. Brief 85's A1 and A2 started at the
 owner's ruling relayed by the planning agent; A3 follows. Next: 13:00
 merges, the terrain handover, then the art tools by Friday. Owner: nothing
 until the terrain handover. Blockers: none.
+
+**Thu 2026-10-15, closing (this director's last summary).** Where we are: the
+whole of wave 2 and the terrain (brief 80 T0–T4) are on `main`, the owner's
+eye-checks all fine; the three art tools for brief 85 are on `main` for the
+owner's art pass. Next: a fresh director session for the art pass; the next
+batches are in HANDOFF.md. Owner: start the fresh director with /director;
+run `npm run art:bench` when you want to look at the art. Blockers: none.
+Process: batches not weekdays (recorded).

@@ -1,6 +1,6 @@
 # NOW — start here
 
-*Updated 2026-10-13. One screen: what is next and where the project stands.
+*Updated 2026-10-15. One screen: what is next and where the project stands.
 The state a fresh director resumes from is [HANDOFF.md](HANDOFF.md); the
 wave's living table and the morning/evening summaries are
 [STATUS.md](STATUS.md); finished work lives in git, the changelog and
@@ -8,48 +8,32 @@ wave's living table and the morning/evening summaries are
 
 ## Next
 
-1. **Wave 1, finishing (director, from 2026-10-13):** the Atlas batch (A6,
-   A10, A3b, A11) is merged after the owner's eye-check; verify and merge the
-   brief 60 leftovers (P2-3, P2-5, P2-6), then P2-7, P2-8, P2-9 two at a
-   time, then Atlas A8 and A12. Order ruled by the owner 2026-10-13. A
-   planning agent works with the owner on the concept docs for the next
-   wave meanwhile.
-2. **Regroup** after wave 1 and before brief 80: read the planning docs
-   (already on `main`), apply the lessons in HANDOFF.md, plan wave 2 (brief
-   80 terrain with the owner's new spritesheets and the terrain-grid ruling
-   f39323f8, then brief 90 Envelope), start a fresh director.
-3. **Owner CMS to-do** (the engine waits on this content; do it with `main`
-   checked out, then Sync to Game):
-   - Brief 20: check the trees read **Forestry** and Sync (then T-114 removes
-     the Logging→Forestry bridge); the Wizard Academy recipe, the Ranger and
-     Rogue Academy Tokens, the eight master-class Tokens; brief 10's
-     Foundation Tier, Shop group labels, minimum Foundation tier on recipes,
-     higher anvils' "Acts as".
-   - Atlas: from A5 the 3 Base Maps and 4 Modifiers, maps on enemy Drops,
-     delete the Volcanic Island Map Token, commit the two edited map pictures
-     from `atlas-wip`; from A2 Respawns (10–15 s) on veins and outcrops, Oak
-     Tree regrows from Oak Sapling, the Shrimp Coast too; from A7 the 25
-     endgame-site Tokens (Landmark checkbox), lay out the camp with the QA
-     panel's Starter Camp tools, accept it on the CMS Starter Camp tab.
-   - After the Oak Seedling rename: register the `item_seedling_base`
-     sprite when the art is in (one `it.fails` in AssetManager flips back),
-     re-accept the Starter Camp so its Bank names Oak Seedling, and delete
-     the stray blank item whose id is just `item`.
-   - A12: on each map, which map it trades up into and at what ratio.
-4. **Brief 20 live-game check** once the Academies and master Tokens exist.
-5. Parked: **T-111** engine bench timings are load-sensitive; trust the work
-   check. `data/maps.json` is read by nothing: delete it in a data-only commit.
+1. **The art pass (brief 85)** with a fresh director: the owner works the
+   bench (`npm run art:bench`) and the brightness script
+   (`npm run art:brighten`) with one agent; the director supports. After the
+   bake: A4 (the drag filter loses its brightness and saturation) and T-180's
+   material palettes. [HANDOFF.md](HANDOFF.md) lists the batches after that:
+   small tickets (T-181 baselines, T-184, T-183, T-167) and wave 3 from the
+   briefs queue (100 style kit → 170 quest boards → 90 Envelope).
+2. **Owner CMS to-do** (none urgent; `main` checked out, then Sync): the
+   seedling sprite registration, re-accept the Starter Camp (Oak Seedling),
+   map trade ratios, "Stands on" on real Tokens once a Dock or Sailboat
+   exists, Base Maps, the brief 20 and brief 10 content. Minimise the desktop
+   app once to see the frame counter stop.
+3. Parked: **T-111** bench timings are load-sensitive (T-181 retakes the
+   baselines). `data/maps.json` is read by nothing: delete it in a data-only
+   commit.
 
 ## Where the project is
 
 - **Version** 0.8.x on `main`.
 - **Crunch order:** UI rework ✓ → class rework v2 ✓ (engine) → hero bar and
-  panel ✓ → offline progress ✓ → drag ✓ → deep optimization (P2-1, 2, 4 merged:
-  cap128 at 4× from 35 % to ~68 % of frames in budget) → Atlas (A1, A2, A3a,
-  A3b, A4, A5, A6, A7, A9, A10, A11, A12 merged; A8 next) → terrain →
+  panel ✓ → offline progress ✓ → drag ✓ → deep optimization ✓ (cap128 at 4×
+  from 35 % to ~76 % of frames in budget) → Atlas ✓ → terrain ✓ (T0–T4; the
+  look's tuning later) → art pass (brief 85) → wave 3 (briefs 100–170) →
   Performance Envelope ([briefs](briefs/README.md)).
-- **Tests:** all green (4651 at `crunch/preview`; two file-scan tests time out
-  only under bench load). Anything red is new.
+- **Tests:** all green (~4960; the file-scan tests time out only under load
+  and pass alone). Anything red is new.
 - **Process (owner, 2026-10-13):** four tiers in `.claude/agents/`, two code
   agents at once, benches only in the owner's downtime, STATUS.md and
   HANDOFF.md, eye-check files; the rules are in `CLAUDE.md`.

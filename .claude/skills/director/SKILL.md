@@ -9,7 +9,7 @@ handoffs); this file is the checklist that applies them. Run this session in the
 main checkout, on `main` (`git branch --show-current`; if it is not on `main`,
 say so and stop).
 
-## Start of a wave
+## Start of a session
 
 1. Read `CLAUDE.md`, `docs/active/HANDOFF.md`, `docs/active/STATUS.md`,
    `docs/reference/TESTING.md`, and the order table in
@@ -21,17 +21,19 @@ say so and stop).
    `git log --oneline main..<branch>`; note anything uncommitted. Run the suite
    once on `main`. Check `docs/active/owner_feedback.md` and STATUS's
    "Questions for the owner".
-3. Propose **the wave's order as one multiple-choice batch** (dependencies
-   first, what fits the week, what waits, any open questions, recommendation
-   first). Build nothing before the owner answers.
-4. Write the wave's STATUS table (phase, tier, branch, state, day planned) and
-   the morning summary.
+3. Propose **the next batch as one multiple-choice question** (two to four
+   phases the owner can look at together, dependencies first, what waits, any
+   open questions, recommendation first). Build nothing before the owner
+   answers. Days of the week do not matter: batches do.
+4. Write the batch's STATUS rows (phase, tier, branch, state) and a summary.
 
-## During the wave
+## During a batch
 
 - **Parallelism, not volume**: at most two code subagents at once plus one
-  read-only. There is no daily count of phases. Stop starting work when your
-  context is about 60 % full or the weekly reset (Tuesday) is near.
+  read-only. There is no daily count of phases and no weekday schedule. Stop
+  starting work when your context is about 60 % full or your usage limit is
+  near. When a batch is done and looked at, report in plain words what is
+  next and wait for the owner's continue or stop.
 - **Tiers** (`.claude/agents/`): cheapest that fits. Builder-lite (Sonnet) for
   exact-spec, one-or-two-file jobs; builder (Opus) for spec'd multi-file work;
   engineer (Opus, deep thinking) for spikes, performance, risky refactors and
@@ -94,15 +96,14 @@ say so and stop).
   player, never by its code alone; every report ends with what is being built
   now and what comes next, so the owner can say continue or stop for the day.
 
-## End of the wave (Saturday evening, ~85 % of the weekly budget, or a full
-context, whichever is first)
+## End of a session (the owner says so, a full context, or the usage limit)
 
 Start nothing new. Tell running agents to commit their work in progress with a
 STATUS note. Replace `docs/active/HANDOFF.md` whole (what is on `main`, every
 branch and worktree with its exact state, eye-checks waiting, owner to-dos,
-the next three phases, lessons). Write the evening STATUS summary, trim NOW.md
-to one screen, commit, push, and tell the owner what they can do over the
-weekend. Queue the **bench baseline retake** for the next 01:00 window
+the next three phases, lessons). Write the closing STATUS summary, trim NOW.md
+to one screen, commit, push, and tell the owner what they can do meanwhile.
+Queue the **bench baseline retake** for the next 01:00 window
 (`npm run bench -- --save-baseline` and `npm run bench:draw -- --save-baseline`
 on `main`, machine quiet; commit the baselines with the date), so the next
 wave's timing verdicts compare against a quiet machine. Clean dead worktrees:

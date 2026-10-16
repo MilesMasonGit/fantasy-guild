@@ -1,62 +1,82 @@
 # HANDOFF — what a fresh director resumes from
 
-*Replaced whole each time the director stops (Saturday evening, ~85 % of the
-weekly budget, or a full context), never stacked. Updated 2026-10-13 14:00
-Vancouver at the end of day 1 of wave 1's finish. A fresh session reads `CLAUDE.md`, this file and `STATUS.md` only,
-then verifies each worktree with `git -C .claude/worktrees/<name> status
---short` and `git log --oneline main..<branch>` before trusting it.*
+*Replaced whole each time a director session ends, never stacked. Written
+2026-10-15 afternoon by the director closing wave 2; the next director runs
+the **art pass (brief 85)** with the owner, then wave 3 from the briefs queue.
+Read `CLAUDE.md`, this file and `STATUS.md`, then verify each worktree with
+`git -C .claude/worktrees/<name> status --short` and
+`git log --oneline main..<branch>` before trusting anything here.*
 
 ## On `main` (pushed)
 
-Briefs 20, 30, 40, 50; brief 60 P1 (plan) and P2-1 to P2-6 and P2-8 (S2 at 4×
-now 31 % of frames in budget against the Oct-7 draw baseline's 6 %); Atlas A1
-to A7, A9 to A12; T-129; the process-review docs of 2026-10-13; the content
-re-pin after the owner's Oak Seedling rename. The `planning` branch is fully merged.
+Everything from waves 1 and 2: briefs 20, 30, 40, 50, 60 (every P2 slice),
+70 (Atlas A1–A12), 80 (terrain T0–T4: the ground plan, placement by terrain,
+the drawn ground, the CMS "Stands on" field and the placing grid; the owner's
+eye-check 2026-10-15 was all fine, no fix round needed), the three art tools
+of brief 85 (`npm run art:bench`, `npm run art:brighten`, `npm run studio`),
+the twitch fix, the cartographer's tutorial, the CMS-rename safety net,
+drawers that close each other, the hover outline, the movable Guild Hall, the
+still gear alert, stacked speech bubbles, drawing paused while minimised, and
+the dev-server fix (the main folder's Vite no longer watches the agent
+worktrees; sprite redraws run in a child process). Suite ~4960 green.
 
-## Branches and worktrees, cleaned 2026-10-13 evening
+## Branches and worktrees
 
-| Branch | Worktree | State |
-|---|---|---|
-| `crunch/atlas-a8` | `atlas-a8` | A8 the cartographer's tutorial: gate and bench green, waits on the owner's read of [eyecheck/2026-10-13_atlas-a8.md](eyecheck/2026-10-13_atlas-a8.md). Owner ruling on the fight step: keep it, T-167 filed. |
-| `planning` | `pp` | The planning agent's worktree. Leave it. |
-| `art/asset-reorg` | `ar` | The owner's art session. Leave it. |
-| (detached) | `p23b` | The director's scratch worktree for merges and gate runs (one untracked placeholder test, harmless). |
-| folder only | `d` | Empty, pruned from git, locked by some process; delete after a restart. |
+| Worktree | State |
+|---|---|
+| `pp` (`planning`) | The planning agent's. Leave it. |
+| `ar` (`art/asset-reorg`) | The owner's art session. Leave it. |
+| `p23b` (detached) | The director's scratch worktree for merges and gates; keep or remove. |
+| `d` | Empty folder locked by a process; delete after a restart. |
+| everything else | Merged and removed (junctions first, then `git worktree remove`). |
 
-Every other worktree (the Atlas slices, brief 60 P2-3/5/6/8, the content re-pin, `m`, `o6`, `p28a`) was merged and removed; their branches stay local. Removal recipe that worked: `cmd //c rmdir` both junctions with the full path, confirm the real `node_modules` is intact, then `git worktree remove` (`--force` only for an untracked STATUS note). The allow rules for `git worktree` and `cmd //c rmdir` are in `.claude/settings.json` now.
+The merged feature branches stay local as history. A stray `STATUS.md` at the
+repo root is an agent's note, git-ignored now; delete it if it bothers you.
 
 ## Eye-checks waiting
 
-- [eyecheck/2026-10-13_atlas-a8.md](eyecheck/2026-10-13_atlas-a8.md): the
-  eleven cartographer lines and three in-game checks. The Atlas batch and A12
-  files are archived with their verdicts.
+None. Archived with verdicts in `docs/archive/eyecheck/`.
 
-## Owner to-dos
+## Owner to-dos (none urgent)
 
-See NOW.md "Owner CMS to-do": one Sync on `main` (CMS restarted) writes A11's wording and the content.
+- Minimise the desktop app once to see the frame counter stop (the Rust side
+  of drawing-pause compiles but has not run in the real app).
+- CMS: the seedling sprite registration (one `it.fails` in AssetManager),
+  re-accept the Starter Camp so its Bank names Oak Seedling, map trade ratios,
+  "Stands on" on real Tokens once a Dock or Sailboat exists, Base Maps.
+- The art weekend itself (brief 85's working sessions).
 
-## Next three phases
+## Next batches (proposed; the director puts them to the owner)
 
-1. P2-7 sparse stack order (engineer) and P2-9 drags (engineer), in parallel
-   from `main`, Wednesday morning; benches in the 13:00 window.
-2. A8 merges on the owner's read (fixes from the read first).
-3. Regroup on the planning docs and plan wave 2 (brief 80 terrain, brief 90).
+1. **The art pass (brief 85):** the owner works the bench and the brightness
+   script with one agent; the director supports (a tool that breaks, small
+   changes the passes ask for). After the bake: A4 (drop the drag filter's
+   brightness and saturation in `DndKit.jsx`), T-180's material palettes.
+2. **Small tickets while the owner is on art:** T-181 (retake the bench
+   baselines on a quiet night: `--save-baseline` for engine and draw), T-184
+   (dev-panel dead items), T-183 (floor loot offset twice), T-167 (Recruits
+   get a weak basic attack; an engine change, expect the work check to
+   change), a 4× drag-bench pair for the placing grid (owed), the 1× fps
+   spike from T-145's result if the owner ever cares.
+3. **Wave 3 from the queue table** (`docs/active/briefs/README.md`): 100
+   style kit, 110 map tools and top bar, 120 mat and Token card, 130 recipe
+   list, 140 hero bar, 150 notifications, 160 Atlas tome and sky, 170 quest
+   boards; brief 90 Envelope last.
 
-## Lessons carried forward
+## Lessons from this session
 
-- Usage limits kill subagents without a report: WIP commits hourly and a
-  `STATUS.md` in the worktree are now in every tier file.
-- Subagent benches run in parallel invalidated each other's numbers; now only
-  the director benches, in the owner's downtime, one at a time.
-- NOW.md grew three stacked handoffs; it is one screen again, with this file
-  and STATUS.md beside it.
-- `git merge-tree --write-tree` is not in this machine's git (2.37); dry-run
-  merges with `git merge --no-commit --no-ff` in a scratch worktree, then
-  `--abort`.
-- Never pipe a git command whose failure matters (`git merge --ff-only … |
-  tail -1 && …` continues on failure: the pipe's status is `tail`'s). Run it
-  bare, then read the result. Check `git branch --show-current` before every
-  commit: the owner's folder changes branch between turns.
-- Content tests pin `data/` ids; an owner rename in the CMS turns them red
-  and can leave code paying a dead item (the first tutorial quest did). Grep
-  code for the old id after any rename sync.
+- Batches, not weekdays: the owner wants small batches with a look between
+  them, whatever the day (recorded in CLAUDE.md and the director skill).
+- Hand over an eye-check branch only after detaching the agent's worktree,
+  switching the owner's folder, starting the server and seeing the slot
+  screen (two failures on 2026-10-14 taught this; it is in the skill).
+- Never pipe a git command whose failure matters; `git branch --show-current`
+  before every commit (the owner switches branches between turns).
+- The engine bench's timing against the Oct-7 baseline is noise under load;
+  a control run of `main` is the tie-breaker and the work check decides.
+  Retake the baselines (T-181).
+- Keep-both on `package.json` can drop a comma; validate JSON after.
+- An agent's worktree `STATUS.md` must stay untracked; it is ignored now.
+- Subagent reports held up every time this session when checked against the
+  code; the one thing that went wrong was scope assumed from stale docs (brief
+  85 thought the terrain was next wave). Verify the state, not the docs.
