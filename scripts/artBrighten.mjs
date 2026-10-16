@@ -28,6 +28,7 @@ import path from 'path';
 import { execFileSync } from 'child_process';
 import { fileURLToPath, pathToFileURL } from 'url';
 import sharp from 'sharp';
+import { DEFAULT_OUTLINE, makeColorBrightener } from '../cms/artBrightenColor.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_ROOT = path.resolve(HERE, '..');
@@ -43,7 +44,7 @@ export const PRESETS = {
 };
 
 /** A pixel whose brightest channel is at or below this (0–255) stays exactly as drawn. */
-export const DEFAULT_OUTLINE = 40;
+export { DEFAULT_OUTLINE };
 
 export const BACKUP_TAG = 'art-before-vibrancy';
 
@@ -85,29 +86,21 @@ export function listCovered(root = DEFAULT_ROOT) {
 // The pixel maths (pure)
 // ---------------------------------------------------------------------------
 
-const clamp255 = (v) => (v < 0 ? 0 : v > 255 ? 255 : v);
-
 /**
  * The transformed copy of an RGBA buffer. Clear pixels (alpha 0) and pixels
- * whose brightest channel is at or below `outline` are copied unchanged.
+ * whose brightest channel is at or below `outline` are copied unchanged. The
+ * colour maths is `makeColorBrightener`, shared with the Studio's palettes.
  */
 export function brightenRgba(rgba, { brightness = 1, saturation = 1, outline = DEFAULT_OUTLINE } = {}) {
     const out = Buffer.from(rgba);
-    if (brightness === 1 && saturation === 1) return out;
-    const s = saturation;
-    const m = [
-        0.213 + 0.787 * s, 0.715 - 0.715 * s, 0.072 - 0.072 * s,
-        0.213 - 0.213 * s, 0.715 + 0.285 * s, 0.072 - 0.072 * s,
-        0.213 - 0.213 * s, 0.715 - 0.715 * s, 0.072 + 0.928 * s
-    ];
+    const f = makeColorBrightener({ brightness, saturation, outline });
+    if (!f) return out;
     for (let i = 0; i < out.length; i += 4) {
         if (out[i + 3] === 0) continue;
-        const r0 = out[i], g0 = out[i + 1], b0 = out[i + 2];
-        if (Math.max(r0, g0, b0) <= outline) continue;
-        const r = clamp255(r0 * brightness), g = clamp255(g0 * brightness), b = clamp255(b0 * brightness);
-        out[i] = Math.round(clamp255(m[0] * r + m[1] * g + m[2] * b));
-        out[i + 1] = Math.round(clamp255(m[3] * r + m[4] * g + m[5] * b));
-        out[i + 2] = Math.round(clamp255(m[6] * r + m[7] * g + m[8] * b));
+        const [r, g, b] = f(out[i], out[i + 1], out[i + 2]);
+        out[i] = r;
+        out[i + 1] = g;
+        out[i + 2] = b;
     }
     return out;
 }

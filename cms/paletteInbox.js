@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { BAKE_KEY } from './paletteBrighten.js';
 
 /**
  * The palette drop folder (`cms/palettes-inbox/`): agents write palette files here, never into
@@ -95,6 +96,7 @@ export function importDropFile(dropDir, palettesDir, file, { overwrite = false }
   if (!fs.existsSync(full)) return { status: 404, body: { error: 'No such file in the palette drop folder' } };
   const parsed = parseDropFile(file, fs.readFileSync(full, 'utf8'));
   if (parsed.error) return { status: 400, body: { error: parsed.error } };
+  if (parsed.name === BAKE_KEY) return { status: 400, body: { error: `"${BAKE_KEY}" is reserved; rename the palette` } };
 
   const files = libraryFiles(palettesDir);
   const palettes = readJsonFile(files.palettes);
