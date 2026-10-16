@@ -41,8 +41,8 @@ export function rehydrateHero(hero) {
 
     hero.className = hero.isVillager ? 'Villager' : 'Adventurer';
     hero.traitName = '';
-    if (!hero.spriteId) hero.spriteId = 'hero_recruit_0';
-    if (!hero.icon) hero.icon = 'icon_recruit_0';
+    if (!hero.spriteId) hero.spriteId = 'hn_recruit_por';
+    if (!hero.icon) hero.icon = 'hn_recruit_icon_por';
 
     // Older saves may hold Starting skills in the bank; put them back on the
     // sheet. Runs before the derived stats.

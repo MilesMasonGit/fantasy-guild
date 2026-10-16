@@ -1,5 +1,6 @@
 import { INITIAL_STATE, GAME_VERSION } from '../../state/StateSchema.js';
 import { logger } from '../../utils/Logger.js';
+import { currentSpriteName } from '../../utils/AssetManager.js';
 
 /**
  * Thrown when a save was created under an incompatible schema version. Reworks
@@ -97,7 +98,24 @@ export function migrateState(state, savedVersion) {
         migrated.progress = { ...migrated.progress, guildUpgrades: kept };
     }
 
+    // Renamed art: a hero's portrait (`spriteId`) and dock icon (`icon`) are sprite names, and an
+    // older save holds the names from before the rename.
+    if (Array.isArray(migrated.heroes) && migrated.heroes.some(hasOldSpriteName)) {
+        migrated.heroes = migrated.heroes.map(h => {
+            if (!hasOldSpriteName(h)) return h;
+            const renamed = { ...h };
+            if (typeof h.spriteId === 'string') renamed.spriteId = currentSpriteName(h.spriteId);
+            if (typeof h.icon === 'string') renamed.icon = currentSpriteName(h.icon);
+            return renamed;
+        });
+    }
+
     return migrated;
+}
+
+/** A hero whose portrait or icon is a sprite name from before the art was renamed. */
+function hasOldSpriteName(hero) {
+    return isPlainObject(hero) && (currentSpriteName(hero.spriteId) !== hero.spriteId || currentSpriteName(hero.icon) !== hero.icon);
 }
 
 /** Board fields of the Token Vault and the Tray. */
