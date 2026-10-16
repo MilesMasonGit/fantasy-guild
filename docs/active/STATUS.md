@@ -9,7 +9,7 @@ build green) · bench-queued · eye-check · merged.*
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| Bench baselines retaken on a quiet machine (T-181), engine and draw | director (timer) | `main` | bench-queued: a timer runs them at 01:00 Fri 16th; the owner leaves the PC on and quiet | Fri 01:00 | |
+| Bench baselines retaken on a quiet machine (T-181), engine and draw | director (timer) | `main` | bench-queued: runs when the owner says they are off the PC for the night (owner 2026-10-15), inside 01:00–07:00 or 13:00–17:00 | Fri 01:00 | |
 | The owed 4× drag pair for the placing grid: before (`1f8239b3`) and after (`main`), cap128 | director (timer) | `p23b` then `main` | bench-queued, same timer, after the baselines | Fri 01:00 | |
 | The owner's art sessions on the bench and the brightness script; the bake when a preset wins (tag `art-before-vibrancy`, dated zip, art-only commit on `main`) | owner + director on call | `main` | waiting on the owner | Fri– | |
 | Dev panel's Scatter Loot button names real items (T-184) | builder-lite | `fix/t184-dev-items` (`t184`) | bench-queued (director's gate green: 4960 tests, cycles, build; work check in tonight's window, then merge) | Thu | |
@@ -54,7 +54,7 @@ T-186; the badges' soft shadows are settled inside T-013.)
 
 ## Bench queue (one at a time, weekdays 13:00–17:00 and 01:00–07:00)
 
-1. Fri 01:00 (timer): `npm run bench -- --save-baseline`, `npm run bench:draw -- --save-baseline` on `main`; then `bench:drag --board=cap128 --cpu=4` on `1f8239b3` (in `p23b`) and on `main`. The director commits the baselines with the date and logs the drag pair.
+1. When the owner says they are off the PC (no timer): `npm run bench -- --save-baseline`, `npm run bench:draw -- --save-baseline` on `main`; then `bench:drag --board=cap128 --cpu=4` on `1f8239b3` (in `p23b`) and on `main`. The director commits the baselines with the date and logs the drag pair.
 2. Merge work checks for T-184 and T-183 (`npm run bench -- --compare`, against the new baseline).
 
 ## Summaries
