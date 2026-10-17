@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Settings, DatabaseBackup, Download, Sparkles, Calculator, Check, UploadCloud, AlertCircle } from 'lucide-react';
-import { exportWorkspace, syncToGame } from '../../engine/fileUtils';
+import { exportWorkspace, syncToGame, sendSync, restoreFromGame } from '../../engine/fileUtils';
+import SyncGuardPanel from '../shared/SyncGuardPanel';
 import { useEntityStore } from '../../stores/useEntityStore';
 import { useGlobalStore } from '../../stores/useGlobalStore';
 
@@ -16,6 +17,8 @@ const VIEWS = [
 export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOpenSettings, onOpenFileManager }) {
   const [recalcDone, setRecalcDone] = useState(false);
   const [syncStatus, setSyncStatus] = useState('idle');
+  const [guard, setGuard] = useState(null);
+  const [guardBusy, setGuardBusy] = useState(false);
   const recalculateEconomy = useEntityStore((s) => s.recalculateEconomy);
   const globals = useGlobalStore();
 
@@ -31,14 +34,60 @@ export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOp
     }
     setSyncStatus('syncing');
     try {
-      await syncToGame();
-      setSyncStatus('synced');
-      setTimeout(() => setSyncStatus('idle'), 3000);
+      const result = await syncToGame();
+      if (result?.needsConfirm) {
+        setGuard(result);
+        return;
+      }
+      showSynced();
     } catch (err) {
-      console.error('Sync failed:', err);
-      setSyncStatus('error');
-      setTimeout(() => setSyncStatus('idle'), 4000);
+      showSyncError(err);
     }
+  };
+
+  const showSynced = () => {
+    setSyncStatus('synced');
+    setTimeout(() => setSyncStatus('idle'), 3000);
+  };
+
+  const showSyncError = (err) => {
+    console.error('Sync failed:', err);
+    setSyncStatus('error');
+    setTimeout(() => setSyncStatus('idle'), 4000);
+  };
+
+  const closeGuard = () => {
+    setGuard(null);
+    setGuardBusy(false);
+  };
+
+  const handleSyncAnyway = async () => {
+    setGuardBusy(true);
+    try {
+      await sendSync(guard.files, { confirmRemovals: true });
+      closeGuard();
+      showSynced();
+    } catch (err) {
+      closeGuard();
+      showSyncError(err);
+    }
+  };
+
+  const handleRestoreInstead = async () => {
+    setGuardBusy(true);
+    try {
+      await restoreFromGame();
+      closeGuard();
+      setSyncStatus('idle');
+    } catch (err) {
+      closeGuard();
+      showSyncError(err);
+    }
+  };
+
+  const handleCancelGuard = () => {
+    closeGuard();
+    setSyncStatus('idle');
   };
 
   return (
@@ -159,6 +208,16 @@ export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOp
           <Settings size={14} />
         </button>
       </div>
+
+      {guard && (
+        <SyncGuardPanel
+          diff={guard.diff}
+          busy={guardBusy}
+          onRestore={handleRestoreInstead}
+          onSyncAnyway={handleSyncAnyway}
+          onCancel={handleCancelGuard}
+        />
+      )}
     </header>
   );
 }

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { DatabaseBackup, Upload, Trash2, X, Plus, Clock, FileJson, DownloadCloud } from 'lucide-react';
 import { useEntityStore } from '../../stores/useEntityStore';
+import { restoreFromGame } from '../../engine/fileUtils';
 
 export default function FileManagerModal({ isOpen, onClose }) {
   const [backups, setBackups] = useState([]);
@@ -89,10 +90,7 @@ export default function FileManagerModal({ isOpen, onClose }) {
         useEntityStore.getState().hydrate(json);
         onClose();
       } else if (type === 'restoreFromGame') {
-        const res = await fetch('/api/load-game-data');
-        if (!res.ok) throw new Error('Failed to load game data');
-        const json = await res.json();
-        useEntityStore.getState().hydrate(json);
+        await restoreFromGame();
         onClose();
       } else if (type === 'delete') {
         const res = await fetch(`/api/backups/${data}`, { method: 'DELETE' });
