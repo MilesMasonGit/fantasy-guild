@@ -153,9 +153,9 @@ describe('the dev server’s redraw (spriteFxPlugin)', () => {
 /**
  * ⭐ A redraw writes its pictures while the dev server is already running. Vite serves a file
  * under `public/` only if it was there when the server started or its file watcher reported it
- * since, and a watcher still making its first scan reports nothing it finds: the outlines drawn
- * as a server started were answered with the game's own page, and no outline drew. The test
- * takes the watcher away, so "never reported" is certain rather than a race.
+ * since, and a watcher still making its first scan reports nothing it finds, so through Vite alone
+ * the outlines drawn as a server starts are answered with the game's own page. The test takes the
+ * watcher away, so "never reported" is certain rather than a race.
  */
 describe('the dev server serves what a redraw wrote after it started', () => {
     let root, server, http, base;

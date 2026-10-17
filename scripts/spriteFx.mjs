@@ -319,8 +319,8 @@ const SERVED_TYPES = Object.freeze({ '.png': 'image/png', '.json': 'application/
  * ⚠️ Vite serves a file under `public/` only if it was there when the server
  * started or its file watcher has reported it since, and a watcher still
  * making its first scan reports nothing it finds. A redraw writes as the
- * server starts, so those pictures were answered with the game's own page:
- * every outline and shadow drawn then was missing until the next restart.
+ * server starts, so through Vite alone those pictures are answered with the
+ * game's own page, and no outline or shadow draws until a restart.
  */
 export function serveSpriteFx(outDir) {
     const prefix = `/${SPRITE_FX_DIR}/`;
