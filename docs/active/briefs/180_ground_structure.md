@@ -112,7 +112,7 @@ code dimming retire for generated looks. Same done-bar as G3 (side-by-side with
 each round's final image, build time, tests, work check, draw compare,
 eye-check).
 
-## Next design topic: world generation (owner, 2026-10-17; rounds started: W1 water layouts in a meadow Region, waiting for the owner)
+## Next design topic: world generation (owner, 2026-10-17; rounds: W1 verdict B, a lake with a stream to the edge; W2 blending styles for Forest + Mountain, waiting for the owner)
 
 After G4: how biomes blend and possible Region layouts, as design rounds with
 the owner. **Most biomes should have at least a bit of water** (ponds, lakes)
