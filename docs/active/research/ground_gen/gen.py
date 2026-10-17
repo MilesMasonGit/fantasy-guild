@@ -308,3 +308,31 @@ def pools(W, H, land, p):
             for thr, col in rings:
                 if best < thr: px[x, y] = tuple(col) + (255,); break
     return out
+
+def water_field(land, field, p):
+    """Water wherever field(x, y) > 0 (field grows into the water, about 1 unit per pixel / scale);
+    bands by depth: wet bank, foam, shallows, water, deep; small waves as strokes, bigger in deep water."""
+    W, H = land.size; rnd = random.Random(p.get('seed', 7)); n2 = vnoise(9, rnd)
+    sea = ramp(*p['sea'], hue_shift=0.02, step=0.06); bank = ramp(*p['bank'], hue_shift=0.02, step=0.06)
+    out = land.copy(); px = out.load(); F = [[field(x, y) for x in range(W)] for y in range(H)]
+    FOAM = lighten(sea[4], 1.30)
+    for y in range(H):
+        for x in range(W):
+            f = F[y][x]
+            if f < -2.5: continue
+            if f < 0: px[x, y] = bank[1] if f < -1 else bank[0]
+            elif f < 1.2: px[x, y] = FOAM if n2(x * 3, y * 3) > 0.35 else lighten(sea[4], 1.1)
+            elif f < 5: px[x, y] = sea[3] if n2(x, y) > 0.6 else sea[2]
+            elif f < p.get('deep', 14): px[x, y] = sea[1]
+            else: px[x, y] = sea[0]
+    occ = set()
+    for _ in range(int(W * H * p.get('waves', 0.004))):
+        x, y = rnd.randrange(W - 10), rnd.randrange(1, H - 2)
+        f = F[y][x]
+        if f < 5: continue
+        L = 2 if f < 9 else rnd.choice((3, 4, 5)) if f < 18 else rnd.choice((5, 6, 7, 8))
+        if any((xx, yy) in occ for yy in range(y - 3, y + 4) for xx in range(x - 3, x + L + 3)): continue
+        for i in range(L):
+            if F[y][x + i] > 4: px[x + i, y] = sea[3] if f < p.get('deep', 14) else sea[2]; occ.add((x + i, y))
+            if i and F[y + 1][x + i] > 4: px[x + i, y + 1] = sea[0]
+    return out
