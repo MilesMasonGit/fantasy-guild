@@ -98,7 +98,8 @@ const FLOWERS = { blades: 0.06, cluster: 4, heights: [1, 2], tips: 0.25, shadow:
  * without one), and the `patch`es its strokes gather in. An `overlay` lays one kind over the zones
  * where its own noise is above `cut`, its blades reaching over the top edge and a shadow under the
  * bottom; `pools` are the sulphur lakes, `perFrame` of them in the prototype's 320 × 200 pixels;
- * `shore` the wet sand and waterline drawn where the look meets water.
+ * `shore` the wet sand (up to `wet` pixels from the water) and the dithered waterline (up to
+ * `line`) drawn where the look meets water, in the prototype's pixels.
  *
  * A generated water look (`water`): the sea by distance from the shore, in the prototype's pixels
  * (its shore fractions × 320): foam, shallows, deeper water, and waves as strokes growing longer
