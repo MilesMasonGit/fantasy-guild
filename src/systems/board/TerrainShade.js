@@ -1,7 +1,7 @@
 // shade: the ground lighter and darker in large areas, and the lip round a worn patch
 
 import { PLAN_PIXEL_U } from './TerrainLattice.js';
-import { noiseTables, valueNoise, spreadSamples, CALIBRATION_SAMPLES } from './TerrainPatches.js';
+import { layeredNoise, layeredTables, spreadSamples, CALIBRATION_SAMPLES, FINE } from './TerrainPatches.js';
 import { wearOf } from '../../config/registries/terrainRegistry.js';
 import { tuning } from '../../config/playmatTuning.js';
 
@@ -11,51 +11,27 @@ import { tuning } from '../../config/playmatTuning.js';
  * its earth and a lighter fringe on the grass round it.
  *
  * ⚠️ Stepped, never a gradient: a pixel is in one of three shades, and the shades meet in hard
- * edges, as a pixel artist would draw them. The pattern's shape comes from smooth value noise (two
- * octaves, so the areas are not square blobs on the noise grid), cut at two calibrated levels.
+ * edges, as a pixel artist would draw them. The pattern's shape comes from layered value noise
+ * (`TerrainPatches.layeredNoise`, so the areas are not round blobs on the noise grid), cut at two
+ * calibrated levels.
  *
  * The answer is per plan pixel, a brightness factor the screen pass bakes into a shaded copy of each
  * sheet, so drawing a shaded pixel costs the same single copy as drawing a plain one.
  */
 
-/** Hash channels for the pattern's two octaves, kept clear of the wear's and the scatter's. */
+/** Hash channels for the pattern's two layers, kept clear of the wear's and the scatter's. */
 const CHANNEL_SHADE = 0x5ad1;
 const CHANNEL_SHADE_FINE = 0x5ad2;
-
-/** The fine octave's weight against the coarse one. */
-const FINE = 0.5;
 
 /** The share of the ground drawn darker, and the share drawn lighter; the rest is as drawn. */
 export const PATTERN_SHARES = Object.freeze({ dark: 0.3, light: 0.3 });
 
 /** The pattern's noise cell in plan pixels, from the slider's mat units. */
 const patternCell = () => Math.max(4, Math.round(tuning('patternScale') / PLAN_PIXEL_U));
-const fineCellOf = (cell) => Math.max(2, Math.round(cell / 2));
 
 /** The pattern's noise at a pixel: the reference the fast path in {@link buildShadePattern} must match. */
 export function shadeNoise(px, py, seed, cell) {
-    return valueNoise(px, py, seed, cell, CHANNEL_SHADE) + FINE * valueNoise(px, py, seed, fineCellOf(cell), CHANNEL_SHADE_FINE);
-}
-
-/** One octave walked row by row: the two corner rows a pixel row blends between. */
-function rowWalker(tables, width) {
-    let top = new Float64Array(width);
-    let bottom = new Float64Array(width);
-    let rowsOf = -1;
-    return (py) => {
-        const gy = tables.gyOf[py];
-        if (gy !== rowsOf) {
-            if (rowsOf >= 0 && gy === rowsOf + 1) {
-                [top, bottom] = [bottom, top];
-                tables.blendRow(gy + 1, bottom);
-            } else {
-                tables.blendRow(gy, top);
-                tables.blendRow(gy + 1, bottom);
-            }
-            rowsOf = gy;
-        }
-        return { top, bottom, fy: tables.fyOf[py] };
-    };
+    return layeredNoise(px, py, seed, cell, CHANNEL_SHADE, CHANNEL_SHADE_FINE);
 }
 
 /**
@@ -69,23 +45,19 @@ export function buildShadePattern(width, height, seed) {
     const cell = patternCell();
     if (!(tuning('patternOn') > 0) || !(tuning('patternStrength') > 0)) return { levelAt: null, cell, thresholds: null };
 
-    const coarse = noiseTables(width, height, seed, cell, CHANNEL_SHADE);
-    const fine = noiseTables(width, height, seed, fineCellOf(cell), CHANNEL_SHADE_FINE);
+    const noise = layeredTables(width, height, seed, cell, CHANNEL_SHADE, CHANNEL_SHADE_FINE);
     // ⚠️ Calibrated like the wear: blended noise piles up round the middle, so the cut levels are
     // quantiles of the sampled noise, not fixed numbers.
-    const sample = spreadSamples(width, height, CALIBRATION_SAMPLES, (x, y) => coarse.at(x, y) + FINE * fine.at(x, y));
+    const sample = spreadSamples(width, height, CALIBRATION_SAMPLES, noise.at);
     const last = sample.length - 1;
     const low = sample[Math.floor(PATTERN_SHARES.dark * last)];
     const high = sample[Math.floor((1 - PATTERN_SHARES.light) * last)];
 
     const levelAt = new Int8Array(width * height);
-    const coarseRow = rowWalker(coarse, width);
-    const fineRow = rowWalker(fine, width);
     for (let py = 0, row = 0; py < height; py++, row += width) {
-        const c = coarseRow(py);
-        const f = fineRow(py);
-        const ct = c.top, cb = c.bottom, cfy = c.fy;
-        const ft = f.top, fb = f.bottom, ffy = f.fy;
+        const { coarse, fine } = noise.row(py);
+        const ct = coarse.top, cb = coarse.bottom, cfy = coarse.fy;
+        const ft = fine.top, fb = fine.bottom, ffy = fine.fy;
         for (let px = 0; px < width; px++) {
             const a = ct[px];
             const b = ft[px];
@@ -136,17 +108,27 @@ export function buildWearEdges(pixels, wear, ground) {
     const mark = new Uint8Array(n);
     let rimRing = [];
     let fringeRing = [];
+    // The first ring walks every worn pixel, so its side steps are written out rather than
+    // passed to `sides` as a callback.
+    const near = new Int32Array(4);
     for (const i of wear.worn) {
         if (!lipped[at[i]]) continue;
+        const x = i % width;
+        let count = 0;
+        if (x > 0) near[count++] = i - 1;
+        if (x < width - 1) near[count++] = i + 1;
+        if (i >= width) near[count++] = i - width;
+        if (i + width < n) near[count++] = i + width;
         let open = false;
-        sides(i, width, n, (j) => {
-            if (mask[j]) return;
+        for (let k = 0; k < count; k++) {
+            const j = near[k];
+            if (mask[j]) continue;
             open = true;
             if (lipped[at[j]] && !mark[j]) {
                 mark[j] = 2;
                 fringeRing.push(j);
             }
-        });
+        }
         if (open) {
             mark[i] = 1;
             rimRing.push(i);

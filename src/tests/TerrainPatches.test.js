@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { patchNoise, buildWearMask } from '../systems/board/TerrainPatches.js';
+import { patchNoise, buildWearMask, FINE, minClumpPx } from '../systems/board/TerrainPatches.js';
 import { resolveArtPixels, CELL_PX } from '../systems/board/TerrainLattice.js';
 import { LOOKS, wearOf } from '../config/registries/terrainRegistry.js';
 import { setTuning, resetTuning } from '../config/playmatTuning.js';
@@ -23,12 +23,38 @@ const share = (mask) => mask.reduce((n, v) => n + (v ? 1 : 0), 0) / mask.length;
 
 describe('The noise makes clumps, not speckle', () => {
     it('stays in range and is the same every time', () => {
+        // Two layers since the clumps were moved off the noise grid: the coarse one in [0, 1) and
+        // the finer at half weight, so [0, 1.5).
         for (let i = 0; i < 200; i++) {
             const v = patchNoise(i * 3, i * 7, 42);
             expect(v).toBeGreaterThanOrEqual(0);
-            expect(v).toBeLessThan(1);
+            expect(v).toBeLessThan(1 + FINE);
             expect(patchNoise(i * 3, i * 7, 42)).toBe(v);
         }
+    });
+
+    it('⭐ keeps the clumps off the noise grid: they do not sit in rows at its corners', () => {
+        // One layer alone wears through only round its lowest grid corners, so at a low coverage
+        // the clumps' centres all fall on the corners. Measured as the share of worn pixels within
+        // a sixth of a cell of a grid corner, against what an even spread would give.
+        const ground = lookGround('meadow', 51);
+        const pixels = resolveArtPixels(ground);
+        const { mask, cell } = buildWearMask(pixels, ground);
+        const near = Math.max(1, Math.round(cell / 6));
+        let worn = 0;
+        let atCorners = 0;
+        for (let i = 0; i < mask.length; i++) {
+            if (!mask[i]) continue;
+            worn++;
+            const x = i % pixels.width;
+            const y = (i - x) / pixels.width;
+            const dx = Math.min(x % cell, cell - (x % cell));
+            const dy = Math.min(y % cell, cell - (y % cell));
+            if (dx <= near && dy <= near) atCorners++;
+        }
+        const even = ((2 * near + 1) / cell) ** 2;
+        expect(worn).toBeGreaterThan(0);
+        expect(atCorners / worn).toBeLessThan(even * 1.8);
     });
 
     it('⭐ changes gently between neighbouring pixels', () => {
@@ -53,27 +79,84 @@ describe('The noise makes clumps, not speckle', () => {
     });
 });
 
+/**
+ * The wear worked out the slow way: the reference noise under the threshold at every pixel, then
+ * every side-connected clump smaller than minClumpPx(cell) cleared.
+ */
+function referenceWear(pixels, seed, thresholds, cell) {
+    const { width, height, at } = pixels;
+    const raw = new Uint8Array(width * height);
+    for (let i = 0; i < raw.length; i++) {
+        const x = i % width;
+        const y = (i - x) / width;
+        raw[i] = patchNoise(x, y, seed, cell) < thresholds[at[i]] ? 1 : 0;
+    }
+    const out = raw.slice();
+    const seen = new Uint8Array(raw.length);
+    let specks = 0;
+    for (let s = 0; s < raw.length; s++) {
+        if (!raw[s] || seen[s]) continue;
+        const clump = [s];
+        seen[s] = 1;
+        for (let k = 0; k < clump.length; k++) {
+            const i = clump[k];
+            const x = i % width;
+            for (const j of [x > 0 ? i - 1 : -1, x < width - 1 ? i + 1 : -1, i - width, i + width]) {
+                if (j < 0 || j >= raw.length || !raw[j] || seen[j]) continue;
+                seen[j] = 1;
+                clump.push(j);
+            }
+        }
+        if (clump.length < minClumpPx(cell)) {
+            specks++;
+            for (const i of clump) out[i] = 0;
+        }
+    }
+    return { mask: out, specks };
+}
+
 describe('⭐ The wear noise is read from cached corners', () => {
-    it('gives exactly the reference noise\'s answer at every pixel', () => {
+    it('gives exactly the reference noise\'s answer at every pixel, specks cleared', () => {
         // The fast path hashes each noise corner once instead of four times a pixel; it must not
         // change a single pixel of the wear.
+        let specks = 0;
         for (const lookId of ['meadow', 'mountain']) {
             const ground = groundWith(20, 12, flat(LOOKS[lookId].terrain), {
                 seed: 77, biomes: lookId === 'meadow' ? null : { main: lookId, terrains: { [lookId]: LOOKS[lookId].terrain } }
             });
             const pixels = resolveArtPixels(ground);
-            const { mask, thresholds, cell } = buildWearMask(pixels, ground);
-            let on = 0;
+            const { mask, worn, thresholds, cell } = buildWearMask(pixels, ground);
+            const want = referenceWear(pixels, 77, thresholds, cell);
+            specks += want.specks;
             const wrong = [];
-            for (let i = 0; i < mask.length; i++) {
-                const x = i % pixels.width;
-                const y = (i - x) / pixels.width;
-                const want = patchNoise(x, y, 77, cell) < thresholds[pixels.at[i]] ? 1 : 0;
-                if (mask[i] !== want) wrong.push(`${x},${y}`);
-                on += want;
-            }
+            for (let i = 0; i < mask.length; i++) if (mask[i] !== want.mask[i]) wrong.push(i);
             expect(wrong.slice(0, 5), `${lookId}: ${wrong.length} pixels differ`).toEqual([]);
-            expect(on).toBeGreaterThan(0);
+            expect(worn.length).toBe(want.mask.reduce((n, v) => n + v, 0));
+            expect(worn.length).toBeGreaterThan(0);
+        }
+        expect(specks, 'the noise left some specks to clear').toBeGreaterThan(0);
+    });
+
+    it('⭐ leaves no clump of earth smaller than the least a clump may be', () => {
+        const ground = lookGround('meadow', 61);
+        const pixels = resolveArtPixels(ground);
+        const { mask, cell } = buildWearMask(pixels, ground);
+        // Every worn pixel's clump is at least minClumpPx(cell): flood from each.
+        const seen = new Uint8Array(mask.length);
+        for (let s = 0; s < mask.length; s++) {
+            if (!mask[s] || seen[s]) continue;
+            const clump = [s];
+            seen[s] = 1;
+            for (let k = 0; k < clump.length; k++) {
+                const i = clump[k];
+                const x = i % pixels.width;
+                for (const j of [x > 0 ? i - 1 : -1, x < pixels.width - 1 ? i + 1 : -1, i - pixels.width, i + pixels.width]) {
+                    if (j < 0 || j >= mask.length || !mask[j] || seen[j]) continue;
+                    seen[j] = 1;
+                    clump.push(j);
+                }
+            }
+            expect(clump.length).toBeGreaterThanOrEqual(minClumpPx(cell));
         }
     });
 });

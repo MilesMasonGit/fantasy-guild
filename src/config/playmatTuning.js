@@ -108,8 +108,8 @@ export const TUNABLES = Object.freeze([
         key: 'wearClump',
         group: 'Ground wear',
         label: 'Clump size (u)',
-        hint: 'How big each worn patch is, in mat units. Small values approach dithering; large ones read as a second ground.',
-        min: 8, max: 60, step: 2, def: 40
+        hint: 'How big each worn patch is, in mat units: at the same coverage, bigger patches are fewer, with more open grass between. Small values approach dithering.',
+        min: 8, max: 120, step: 2, def: 60
     },
     {
         key: 'wearEdgeWidth',
@@ -158,7 +158,7 @@ export const TUNABLES = Object.freeze([
         group: 'Scenery',
         label: 'Group spread (u)',
         hint: 'How far apart the props of one group stand, in mat units.',
-        min: 4, max: 32, step: 2, def: 12
+        min: 4, max: 32, step: 2, def: 16
     },
     {
         key: 'propScatter',
