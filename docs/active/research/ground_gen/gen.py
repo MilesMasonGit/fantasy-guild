@@ -241,3 +241,40 @@ def coast(W, H, land, p):
                 if wav(x * 0.4, y * 2.2) > p.get('dash', 0.74): c = sea[2]       # soft horizontal wave clusters
                 px[x, y] = c
     return out
+
+def coast2(W, H, land, p):
+    """Calm water with depth steps; waves drawn as strokes (lit crest over a darker trough) in
+    patches, like grass; a stronger broken foam line; wet sand."""
+    rnd = random.Random(p.get('seed', 5)); n = vnoise(p.get('shore_scale', 50), rnd); n2 = vnoise(12, rnd)
+    sea = ramp(*p['sea'], hue_shift=0.02, step=0.06); sand = ramp(*p['sand'], hue_shift=0.02, step=0.06)
+    out = land.copy(); px = out.load(); F = [[0.0] * W for _ in range(H)]
+    patch = vnoise(p.get('wave_patch_scale', 30), rnd)
+    foam_w = p.get('foam', 0.016)
+    FOAM = lighten(sea[4], p.get('foam_light', 1.35)); FOAM2 = lighten(sea[4], 1.12)
+    for y in range(H):
+        for x in range(W):
+            f = x / W + (n(x, y) - 0.5) * p.get('shore_amp', 0.35) + (n2(x, y) - 0.5) * 0.04 - p.get('shore', 0.62)
+            F[y][x] = f
+            if f < -0.035: continue
+            if f < -0.010: px[x, y] = sand[1]
+            elif f < 0.0: px[x, y] = sand[0] if (x + 2 * y) % 4 else sand[1]
+            elif f < foam_w: px[x, y] = FOAM if (n2(x * 3, y * 3) > 0.35 or f < foam_w * 0.5) else FOAM2
+            elif f < p.get('shallow', 0.06): px[x, y] = sea[3] if n2(x, y) > 0.6 else sea[2]
+            elif f < p.get('deep', 0.22): px[x, y] = sea[1]
+            else: px[x, y] = sea[0]
+    # foam flecks just off the line
+    for _ in range(int(W * H * p.get('flecks', 0.004))):
+        x, y = rnd.randrange(W - 2), rnd.randrange(H)
+        if foam_w < F[y][x] < foam_w * 3: px[x, y] = FOAM2
+    # wave strokes: horizontal crest of 2-5 px in a light tone, trough one row below shifted right
+    for _ in range(int(W * H * p.get('waves', 0.02))):
+        x, y = rnd.randrange(W - 6), rnd.randrange(1, H - 1)
+        f = F[y][x]
+        if f < p.get('shallow', 0.06) or patch(x, y) < p.get('wave_mask', 0.45): continue
+        L = rnd.choice(p.get('wave_len', (2, 3, 3, 4, 5)))
+        crest = sea[3] if f < p.get('deep', 0.22) else sea[2]
+        trough = sea[0] if f < p.get('deep', 0.22) else lighten(sea[0], 0.85)
+        for i in range(L):
+            if F[y][x + i] > p.get('shallow', 0.06): px[x + i, y] = crest
+            if i >= 1 and F[y + 1][x + i] > p.get('shallow', 0.06): px[x + i, y + 1] = trough
+    return out
