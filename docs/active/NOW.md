@@ -1,6 +1,6 @@
 # NOW — start here
 
-*Updated 2026-10-15. One screen: what is next and where the project stands.
+*Updated 2026-10-17. One screen: what is next and where the project stands.
 The state a fresh director resumes from is [HANDOFF.md](HANDOFF.md); the
 wave's living table and the morning/evening summaries are
 [STATUS.md](STATUS.md); finished work lives in git, the changelog and
@@ -8,31 +8,27 @@ wave's living table and the morning/evening summaries are
 
 ## Next
 
-1. **The art pass (brief 85)** with a fresh director: the owner works the
-   bench (`npm run art:bench`) and the brightness script
-   (`npm run art:brighten`) with one agent; the director supports. After the
-   bake: A4 (the drag filter loses its brightness and saturation) and T-180's
-   material palettes. [HANDOFF.md](HANDOFF.md) lists the batches after that:
-   small tickets (T-181 baselines, T-184, T-183, T-167) and wave 3 from the
-   briefs queue (100 style kit → 170 quest boards → 90 Envelope).
+1. **The art pass continues** ([HANDOFF.md](HANDOFF.md)): the owner's look at
+   the ground structure (brief 180 G1, on `crunch/ground-g1`), then the Studio
+   palette button and a Sync on `main`, then G2 (the owner's edge pieces).
+   Terrain advice: https://claude.ai/artifact/PLTLkP5bqjLqtTc8YYJSpg
 2. **Owner CMS to-do** (none urgent; `main` checked out, then Sync): the
    seedling sprite registration, re-accept the Starter Camp (Oak Seedling),
    map trade ratios, "Stands on" on real Tokens once a Dock or Sailboat
-   exists, Base Maps, the brief 20 and brief 10 content. Minimise the desktop
-   app once to see the frame counter stop.
-3. Parked: **T-111** bench timings are load-sensitive (T-181 retakes the
-   baselines). `data/maps.json` is read by nothing: delete it in a data-only
-   commit.
+   exists, Base Maps. Minimise the desktop app once to see the frame counter
+   stop.
+3. Filler tickets T-167, T-186, T-187, T-189; then wave 3 from the briefs
+   queue (100 style kit → 170 quest boards → 180 ground → 90 Envelope).
 
 ## Where the project is
 
 - **Version** 0.8.x on `main`.
 - **Crunch order:** UI rework ✓ → class rework v2 ✓ (engine) → hero bar and
   panel ✓ → offline progress ✓ → drag ✓ → deep optimization ✓ (cap128 at 4×
-  from 35 % to ~76 % of frames in budget) → Atlas ✓ → terrain ✓ (T0–T4; the
-  look's tuning later) → art pass (brief 85) → wave 3 (briefs 100–170) →
+  from 35 % to ~76 % of frames in budget) → Atlas ✓ → terrain ✓ (T0–T4) → art pass (brief 85: names ✓, Gentle bake ✓, ground
+  structure in progress) → wave 3 (briefs 100–170) →
   Performance Envelope ([briefs](briefs/README.md)).
-- **Tests:** all green (~4960; the file-scan tests time out only under load
+- **Tests:** all green (~5010 on `main`; the file-scan tests time out only under load
   and pass alone). Anything red is new.
 - **Process (owner, 2026-10-13):** four tiers in `.claude/agents/`, two code
   agents at once, benches only in the owner's downtime, STATUS.md and

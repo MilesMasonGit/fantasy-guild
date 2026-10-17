@@ -1,90 +1,115 @@
 # HANDOFF — what a fresh director resumes from
 
 *Replaced whole each time a director session ends, never stacked. Written
-2026-10-15 afternoon by the director closing wave 2; the next director runs
-the **art pass (brief 85)** with the owner, then wave 3 from the briefs queue.
-Read `CLAUDE.md`, this file and `STATUS.md`, then verify each worktree with
+2026-10-17 01:45 by the art-pass director (session of 15–17 October). Read
+`CLAUDE.md`, this file and `STATUS.md`, then verify each worktree with
 `git -C .claude/worktrees/<name> status --short` and
 `git log --oneline main..<branch>` before trusting anything here.*
 
-## On `main` (pushed)
+## On `main` (pushed, 22679a3e plus this handoff)
 
-Everything from waves 1 and 2: briefs 20, 30, 40, 50, 60 (every P2 slice),
-70 (Atlas A1–A12), 80 (terrain T0–T4: the ground plan, placement by terrain,
-the drawn ground, the CMS "Stands on" field and the placing grid; the owner's
-eye-check 2026-10-15 was all fine, no fix round needed), the three art tools
-of brief 85 (`npm run art:bench`, `npm run art:brighten`, `npm run studio`),
-the twitch fix, the cartographer's tutorial, the CMS-rename safety net,
-drawers that close each other, the hover outline, the movable Guild Hall, the
-still gear alert, stacked speech bubbles, drawing paused while minimised, and
-the dev-server fix (the main folder's Vite no longer watches the agent
-worktrees; sprite redraws run in a child process). Suite ~4960 green.
+- **Bench baselines** retaken on a quiet machine 2026-10-15/16 (engine and
+  draw, both committed).
+- **Floor loot** lands on its spot and draws crisp (T-183); the dev panel's
+  Scatter Loot names real items (T-184).
+- **Every picture renamed and filed** under
+  [`ASSET_NAMING.md`](../reference/ASSET_NAMING.md) (prefix t/i/hf-hm-hn/e/p/g/u/b/s,
+  the thing's real name, material last, no group words). The owner applied
+  the renames in the CMS and Synced; old names still resolve for old saves
+  (`legacySpriteNames.js`; what can go is in the rename merge's notes).
+  162 local, git-ignored leftovers went to `_art_leftovers/` in the owner's
+  folder for the owner to drag out.
+- **The art carries the Gentle brightness** (1.08 / 1.12, outlines at or below
+  40 kept), baked from the original after a first Drag bake (1.15 / 1.25)
+  proved too bright. Rollback tag `art-before-vibrancy` (pushed) and the
+  owner's Desktop zip. [`ART_STYLE.md`](../reference/ART_STYLE.md) approved.
+- Dragging adds no brightening (A4); hover brightening is gentle (1.06 / 1.08).
+- **Studio button** brightens the Material Library once with the art's
+  setting (now Gentle). The palettes are currently their **original** colours
+  (the 1.15 brightening was reverted): the owner still has to press it.
+- **CMS Sync warns before it removes content** (T-188): a stale browser
+  workspace once wiped 16 Tokens; caught and reverted.
+- **Hover/work/alert outlines and carried shadows** show again: the dev server
+  was answering freshly redrawn outline pictures with the game page; it now
+  reads the generated folder from disk (dev only; builds were never affected).
+- Brief 180 written and queued (ground structure).
 
 ## Branches and worktrees
 
-| Worktree | State |
+| Where | State |
 |---|---|
-| `pp` (`planning`) | The planning agent's. Leave it. |
-| `ar` (`art/asset-reorg`) | The owner's art session. Leave it. |
-| `p23b` (detached) | The director's scratch worktree for merges and gates; keep or remove. |
-| `a1`, `d` | Empty folders locked by some process; delete after a restart. |
-| everything else | Merged and removed (junctions first, then `git worktree remove`). |
-
-The merged feature branches stay local as history. A stray `STATUS.md` at the
-repo root is an agent's note, git-ignored now; delete it if it bothers you.
+| Owner's folder | **on `crunch/ground-g1`** for the eye-check; switch back to `main` after the look (`git switch main`) |
+| `g1` (detached at 483fae3c) | brief 180 G1's worktree; the branch is `crunch/ground-g1` (+ the eye-check file commit 4fd7c8cc). Gate green (5035 tests, cycles, build); engine work check same; draw compare no regression (S2 4× 107 → 100 fps, work p50 10.7 → 11.8 ms, within tolerance). Merge after the owner's verdicts |
+| `p23b` (detached) | director's scratch; also holds `public/_gen/art-bench` previews of the original art at four levels (git-ignored) |
+| `pp` (`planning`), `ar` (`art/asset-reorg`) | not this director's; leave them |
+| everything else | merged and removed |
 
 ## Eye-checks waiting
 
-None. Archived with verdicts in `docs/archive/eyecheck/`.
+- [`eyecheck/2026-10-17_ground-structure.md`](eyecheck/2026-10-17_ground-structure.md)
+  (on the branch only): the tint pattern, organic earth with fringe, grouped
+  props, new Ground tuner sliders; two small questions at the end.
 
-## Owner to-dos (none urgent)
+## Owner to-dos
 
-- Minimise the desktop app once to see the frame counter stop (the Rust side
-  of drawing-pause compiles but has not run in the real app).
-- CMS: the seedling sprite registration (one `it.fails` in AssetManager),
-  re-accept the Starter Camp so its Bank names Oak Seedling, map trade ratios,
-  "Stands on" on real Tokens once a Dock or Sailboat exists, Base Maps.
-- The art weekend itself (brief 85's working sessions).
+1. Look at the ground (file above), give verdicts and slider values.
+2. Then on `main`: start the Studio (`npm run studio`, restart if open) →
+   Recolor tab → Material Library panel → "Brighten material palettes (art
+   bake: 1.08 / 1.12)" → "Yes" → check "Already applied" → CMS **Sync to Game**
+   on `main`. The director checks the Sync touched only
+   `data/palettes/custom_palettes.json` (and that content counts stay 86
+   Tokens, 71 items, 25 recipes) before pushing.
+3. Drag `_art_leftovers/` out of the project folder (the sandbox won't let
+   agents write outside it).
+4. Terrain art from the notes page (below): earth sheet lifted to just under
+   the grass; grass at about 100–120 brightness, vibrant, 4–5 colours; then
+   the edge pieces (G2).
 
-## Kickoff prompt for the next director (paste after `/director`)
+## Next phases
 
-> Run the art pass (brief 85) with me. First batch: on the first quiet night,
-> retake the bench baselines (T-181); support my art sessions on the bench and
-> the brightness script; keep the small tickets in HANDOFF.md as filler.
-> Propose the batch and its questions in one go, then wait for my go.
+1. **Merge G1** after the look (apply the owner's slider values as defaults
+   first if any; a builder-lite job).
+2. **Brief 180 G2:** the code lays the owner's hand-drawn edge pieces along
+   ground boundaries; makes the 64 × 64 template sheet (`p_edge_<a>_<b>.png`,
+   4 × 4 of 16 px) and placeholder pieces. Then the owner draws
+   `p_edge_grass_dirt.png`.
+3. **When the owner's new ground sheets land:** remove the code dimming of the
+   ground (`brightness 0.85, saturate 0.7`), look again.
+4. Filler tickets: T-167 (Recruits' weak attack, needs an owner enemy), T-186
+   (equip-by-drop a frame later), T-187 (flag drags grab a neighbour on a full
+   board), T-189 (retire `materials_library.json`). Then wave 3 from the queue.
 
-## Next batches (proposed; the director puts them to the owner)
+## The terrain advice (the owner's goal for the art pass)
 
-1. **The art pass (brief 85):** the owner works the bench and the brightness
-   script with one agent; the director supports (a tool that breaks, small
-   changes the passes ask for). After the bake: A4 (drop the drag filter's
-   brightness and saturation in `DndKit.jsx`), T-180's material palettes.
-2. **Small tickets while the owner is on art:** T-181 first (retake the bench
-   baselines on the first quiet night: `--save-baseline` for engine and draw;
-   every timing verdict this week was noise against the Oct-7 baseline), T-184
-   (dev-panel dead items), T-183 (floor loot offset twice), T-167 (Recruits
-   get a weak basic attack; an engine change, expect the work check to
-   change), a 4× drag-bench pair for the placing grid (owed), the 1× fps
-   spike from T-145's result if the owner ever cares.
-3. **Wave 3 from the queue table** (`docs/active/briefs/README.md`): 100
-   style kit, 110 map tools and top bar, 120 mat and Token card, 130 recipe
-   list, 140 hero bar, 150 notifications, 160 Atlas tome and sky, 170 quest
-   boards; brief 90 Envelope last.
+The owner wants design advice to make the ground and props look as good as
+possible, target Sea of Stars; the owner draws. Notes with measurements and
+mock-ups: https://claude.ai/artifact/PLTLkP5bqjLqtTc8YYJSpg (sections 1–9).
+Settled so far: ground in its own brightness band (~100–120) above the Tokens'
+bodies; earth lifted; speckle and drawn cracks out; props quieter than Tokens
+(no black outlines, nothing ore- or gem-like); vibrant colour, leaning
+yellow-green to keep green Tokens and the green signal colours distinct;
+structure at three sizes (brief 180). Full transition tiles were declined as
+too much work; edge pieces on code shapes instead. The mock scripts are in this
+session's scratchpad only; regenerate from the notes if needed.
 
 ## Lessons from this session
 
-- Batches, not weekdays: the owner wants small batches with a look between
-  them, whatever the day (recorded in CLAUDE.md and the director skill).
-- Hand over an eye-check branch only after detaching the agent's worktree,
-  switching the owner's folder, starting the server and seeing the slot
-  screen (two failures on 2026-10-14 taught this; it is in the skill).
-- Never pipe a git command whose failure matters; `git branch --show-current`
-  before every commit (the owner switches branches between turns).
-- The engine bench's timing against the Oct-7 baseline is noise under load;
-  a control run of `main` is the tie-breaker and the work check decides.
-  Retake the baselines (T-181).
-- Keep-both on `package.json` can drop a comma; validate JSON after.
-- An agent's worktree `STATUS.md` must stay untracked; it is ignored now.
-- Subagent reports held up every time this session when checked against the
-  code; the one thing that went wrong was scope assumed from stale docs (brief
-  85 thought the terrain was next wave). Verify the state, not the docs.
+- **Check every CMS Sync's counts before pushing.** A stale browser workspace
+  synced old content over new; `git show --stat` and a per-file id diff caught
+  it. T-188 now guards it, but keep checking.
+- **The sandbox blocks writes outside the project**: a move "out" landed loose
+  at the project root. Ask the owner to move things out of the project.
+- **Moves through Windows can fail on folders a server watches**; copy, verify
+  the count, then delete the originals.
+- **Generated pictures written while Vite starts aren't served** (fixed for
+  sprite-fx); `performance.getEntriesByType('resource')` caps at 250 entries,
+  so use the network list to check a picture loads.
+- **Show art choices on the bench before baking**: the owner judged the first
+  bake too bright only in play. The bench with columns from the original art
+  made the second choice quick and exact (the bake matched it pixel for pixel).
+- **The owner directs the art**: don't interview for art rules; record what's
+  settled and give measured, illustrated advice when asked.
+- `git fetch . <sha>:main` fails for a bare SHA; to move `main` while the
+  owner's folder is on another branch use `git update-ref refs/heads/main NEW
+  OLD` after `git merge-base --is-ancestor OLD NEW`.
+- A shell `&` job does not survive the tool call; use `run_in_background`.
