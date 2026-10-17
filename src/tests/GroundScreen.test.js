@@ -134,6 +134,33 @@ describe('⭐ one ground pixel is one Token pixel on screen', () => {
         const pass = buildScreenPass(plan, { mat: MAT, unit: 2, sheet: fromTable({ flat: solid(0, 100, 200) }) });
         expect(px(pass, 440, 280)).toEqual([64, 75, 150, 255]);
     });
+
+    it('⭐ draws a shaded pixel as its sheet times its shade, banded or not, in hard steps', () => {
+        const plan = planOf({ tints: [{ tint: '#ff0000', amount: 0.25 }] });
+        plan.shades = [1, 0.9, 1.1];
+        plan.shadeAt = new Uint8Array(plan.width * plan.height);
+        // Columns from 440 lighter, rows from 300 darker and banded.
+        for (let y = 0; y < plan.height; y++) plan.shadeAt.fill(2, y * plan.width + 440, (y + 1) * plan.width);
+        for (let y = 300; y < plan.height; y++) {
+            plan.shadeAt.fill(1, y * plan.width, (y + 1) * plan.width);
+            plan.tintAt.fill(0, y * plan.width, (y + 1) * plan.width);
+        }
+        const pass = buildScreenPass(plan, { mat: MAT, unit: 2, sheet: fromTable({ flat: solid(0, 100, 200) }) });
+        expect(px(pass, 400, 250)).toEqual([0, 100, 200, 255]);
+        expect(px(pass, 439, 250)).toEqual([0, 100, 200, 255]);
+        expect(px(pass, 440, 250)).toEqual([0, 110, 220, 255]);
+        expect(px(pass, 400, 300)).toEqual([Math.round(63.75 * 0.9), Math.round(75 * 0.9), Math.round(150 * 0.9), 255]);
+    });
+
+    it('lights a prop as the ground under its foot', () => {
+        const prop = { sheet: 'p', index: 0, footX: 450, footY: 300, shade: 0.5 };
+        const sheet = new Uint8ClampedArray(PROP_PX * PROP_SHEET_CELLS * PROP_PX * PROP_SHEET_CELLS * 4);
+        sheet.set([200, 100, 50, 255], ((15 * PROP_PX * PROP_SHEET_CELLS) + 8) * 4);
+        const pass = buildScreenPass(planOf({ props: [prop] }), {
+            mat: MAT, unit: 2, sheet: fromTable({ flat: solid(9, 9, 9) }), prop: fromTable({ p: sheet })
+        });
+        expect(px(pass, 450, 300)).toEqual([100, 50, 25, 255]);
+    });
 });
 
 describe('⭐ the mat\'s edge is in the picture', () => {

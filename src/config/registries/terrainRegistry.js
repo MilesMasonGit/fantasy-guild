@@ -67,29 +67,30 @@ function deepFreeze(value) {
  *   by its seed (`TerrainSurface.sheetFor`). Never one per cell: two seamless sheets side by side
  *   show a square seam.
  * - `wear`: a second sheet showing through in clumps, `coverage` the share of the ground it takes
- *   (calibrated, `TerrainPatches`).
+ *   (calibrated, `TerrainPatches`); with `rim`, each clump gets a darker rim and the ground round
+ *   it a lighter fringe (`TerrainShade`), so it reads as worn into the ground.
  * - `band`: how the look shades its own edge where `against` (any other ground when absent)
  *   touches it: a `tint` mixed in by `amount`, as wide as the `widthTuning` slider (mat units).
  * - `fringe`: a different terrain written onto the neighbours, `widthTuning` wide: the beach the
  *   sea cuts into whatever land it meets, except the terrains in `except`.
- * - `props`: the prop sheets it scatters from, by weight; `propDensity` the share of its cells
- *   that carry one.
+ * - `props`: the prop sheets it scatters from, by weight; `propDensity` how many props it carries,
+ *   as a share of its cells (they stand in groups, `TerrainProps`).
  *
  * ⚠️ First values, retuned at the eye-check with the Playmat Tuner. The shoreline widths (the
- * tuning sliders) and the wear shares carry over from the 8-pixel ground set, where an art pixel
- * was 4 units; the gravel share and the scatter are guesses.
+ * tuning sliders) carry over from the 8-pixel ground set, where an art pixel was 4 units; the
+ * gravel share and the scatter are guesses.
  */
 export const LOOKS = deepFreeze({
     meadow: {
         id: 'meadow', name: 'Meadow', terrain: TERRAIN.GRASS, sheets: ['grass'],
-        wear: { sheet: 'dirt', coverage: 0.18 },
+        wear: { sheet: 'dirt', coverage: 0.10, rim: true },
         props: [{ sheet: 'p_flowers', weight: 2 }, { sheet: 'p_bush', weight: 1 }],
         propDensity: 0.06
     },
     forest: {
         id: 'forest', name: 'Forest', terrain: TERRAIN.GRASS, sheets: ['grass_dark'],
         // Less than the meadow: leaf litter and shade, not footfall.
-        wear: { sheet: 'dirt', coverage: 0.12 },
+        wear: { sheet: 'dirt', coverage: 0.08, rim: true },
         props: [
             { sheet: 'p_bush_dark', weight: 2 }, { sheet: 'p_mushroom', weight: 1 }, { sheet: 'p_flowers', weight: 1 }
         ],

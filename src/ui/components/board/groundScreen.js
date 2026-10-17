@@ -116,53 +116,67 @@ const PROP_SHEET_PX = PROP_PX * PROP_SHEET_CELLS;
 const SHEET_WORDS = SHEET_PX * SHEET_PX;
 
 /**
- * Which drawn look each plan pixel takes: its sheet, or that sheet with its band's colour mixed in.
- * Look `v` is block `v` of the screen pass's table (`looksOf`). Depends on the plan alone, so it is
- * kept with the plan: a fit change reuses it.
+ * Which drawn look each plan pixel takes: its sheet, with its band's colour mixed in and its shade
+ * applied. Only the combinations the plan uses become looks: look `v` is `combos[v]`
+ * (`[shade, tint, sheet]`, tint -1 for none) and block `v` of the screen pass's table (`looksOf`).
+ * Depends on the plan alone, so it is kept with the plan: a fit change reuses it.
  */
 const looksByPlan = new WeakMap();
 function lookAtOf(plan) {
-    let lookAt = looksByPlan.get(plan);
-    if (lookAt) return lookAt;
+    let found = looksByPlan.get(plan);
+    if (found) return found;
     const n = plan.sheets.length;
+    const bands = plan.tints.length + 1;
     const { sheetAt, tintAt } = plan;
-    lookAt = new Uint16Array(sheetAt.length);
+    const shadeAt = plan.shadeAt || null;
+    const shadeCount = plan.shades?.length || 1;
+    const ids = new Int32Array(shadeCount * bands * n).fill(-1);
+    const combos = [];
+    const lookAt = new Uint16Array(sheetAt.length);
     for (let i = 0; i < lookAt.length; i++) {
+        const s = shadeAt ? shadeAt[i] : 0;
         const t = tintAt[i];
-        lookAt[i] = t < 0 ? sheetAt[i] : (t + 1) * n + sheetAt[i];
+        const key = (s * bands + t + 1) * n + sheetAt[i];
+        let id = ids[key];
+        if (id < 0) {
+            id = combos.length;
+            ids[key] = id;
+            combos.push([s, t, sheetAt[i]]);
+        }
+        lookAt[i] = id;
     }
-    looksByPlan.set(plan, lookAt);
-    return lookAt;
+    found = { lookAt, combos };
+    looksByPlan.set(plan, found);
+    return found;
 }
 
 /**
- * Every look the plan can draw, as one table of opaque pixels, `SHEET_PX` square each: the sheets,
- * then each band's colour over every sheet. A sheet that is missing is a block of clear pixels. A
- * look's pixel is then one read, banded or not.
+ * Every look the plan draws, as one table of opaque pixels, `SHEET_PX` square each: a sheet, its
+ * band's colour mixed in, then its shade. A sheet that is missing is a block of clear pixels. A
+ * look's pixel is then one read, banded, shaded or not.
  */
-function looksOf(texels, tints) {
-    const n = texels.length;
-    const bytes = new Uint8ClampedArray(n * (tints.length + 1) * SHEET_WORDS * 4);
-    for (let band = -1; band < tints.length; band++) {
+function looksOf(texels, tints, shades, combos) {
+    const bytes = new Uint8ClampedArray(combos.length * SHEET_WORDS * 4);
+    for (let v = 0; v < combos.length; v++) {
+        const [shade, band, sheet] = combos[v];
+        const src = texels[sheet];
+        if (!src) continue;
         const tint = band < 0 ? null : tints[band];
-        for (let s = 0; s < n; s++) {
-            const src = texels[s];
-            if (!src) continue;
-            const base = ((band + 1) * n + s) * SHEET_WORDS * 4;
-            for (let i = 0; i < SHEET_WORDS * 4; i += 4) {
-                let red = src[i];
-                let green = src[i + 1];
-                let blue = src[i + 2];
-                if (tint) {
-                    red = red * tint.keep + tint.r;
-                    green = green * tint.keep + tint.g;
-                    blue = blue * tint.keep + tint.b;
-                }
-                bytes[base + i] = red;
-                bytes[base + i + 1] = green;
-                bytes[base + i + 2] = blue;
-                bytes[base + i + 3] = 255;
+        const f = shades[shade] ?? 1;
+        const base = v * SHEET_WORDS * 4;
+        for (let i = 0; i < SHEET_WORDS * 4; i += 4) {
+            let red = src[i];
+            let green = src[i + 1];
+            let blue = src[i + 2];
+            if (tint) {
+                red = red * tint.keep + tint.r;
+                green = green * tint.keep + tint.g;
+                blue = blue * tint.keep + tint.b;
             }
+            bytes[base + i] = red * f;
+            bytes[base + i + 1] = green * f;
+            bytes[base + i + 2] = blue * f;
+            bytes[base + i + 3] = 255;
         }
     }
     return bytes;
@@ -211,8 +225,8 @@ export function buildScreenPass(plan, { mat, unit, sheet, prop = () => null, out
         const [r, g, b] = rgbOf(tint);
         return { keep: 1 - a, r: r * a, g: g * a, b: b * a };
     });
-    const lookAt = lookAtOf(plan);
-    const lookBytes = looksOf(texels, tints);
+    const { lookAt, combos } = lookAtOf(plan);
+    const lookBytes = looksOf(texels, tints, plan.shades || [1], combos);
     const lookWords = new Uint32Array(lookBytes.buffer);
     const out32 = new Uint32Array(data.buffer, data.byteOffset, cols * rows);
 
@@ -282,7 +296,8 @@ export function buildScreenPass(plan, { mat, unit, sheet, prop = () => null, out
     }
 
     // Props, back to front: one prop pixel per ground pixel, the foot on the ground pixel under the
-    // plan's foot, opaque pixels only, never outside the drawn ground.
+    // plan's foot, opaque pixels only, never outside the drawn ground, in the light of the ground
+    // under the foot (`shade`).
     const half = PROP_PX / 2;
     const perRow = PROP_SHEET_CELLS;
     const propTexels = new Map();
@@ -299,6 +314,7 @@ export function buildScreenPass(plan, { mat, unit, sheet, prop = () => null, out
         const top = footR - (PROP_PX - 1);
         const ox = (p.index % perRow) * PROP_PX;
         const oy = Math.floor(p.index / perRow) * PROP_PX;
+        const f = p.shade ?? 1;
         for (let y = 0; y < PROP_PX; y++) {
             const r = top + y;
             if (r < 0 || r >= rows) continue;
@@ -310,9 +326,9 @@ export function buildScreenPass(plan, { mat, unit, sheet, prop = () => null, out
                 const s = rowStart + x * 4;
                 if (src[s + 3] === 0) continue;
                 const d = (r * cols + c) * 4;
-                data[d] = src[s];
-                data[d + 1] = src[s + 1];
-                data[d + 2] = src[s + 2];
+                data[d] = src[s] * f;
+                data[d + 1] = src[s + 1] * f;
+                data[d + 2] = src[s + 2] * f;
                 data[d + 3] = 255;
                 shade(d, c, r, c < lo || c >= hi);
             }

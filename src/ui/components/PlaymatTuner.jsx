@@ -115,6 +115,27 @@ export const PlaymatTuner = React.memo(() => {
                             {TUNABLES.filter(t => t.group === group).map(t => {
                                 const value = tuning(t.key);
                                 const changed = value !== tuningDefault(t.key);
+                                if (t.toggle) {
+                                    return (
+                                        <div key={t.key}>
+                                            <label className="flex items-center justify-between text-[11px] mb-0.5 cursor-pointer">
+                                                <span className={changed ? 'text-gi-primary font-bold' : 'text-gi-muted'}>
+                                                    {t.label}
+                                                </span>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={value >= 1}
+                                                    aria-label={t.label}
+                                                    onChange={(e) => setTuning(t.key, e.target.checked ? t.max : t.min)}
+                                                    className="accent-gi-primary cursor-pointer"
+                                                />
+                                            </label>
+                                            <div className="text-[9px] leading-tight text-gi-muted/80 mt-0.5">
+                                                {t.hint}
+                                            </div>
+                                        </div>
+                                    );
+                                }
                                 return (
                                     <div key={t.key}>
                                         <div className="flex items-baseline justify-between text-[11px] mb-0.5">

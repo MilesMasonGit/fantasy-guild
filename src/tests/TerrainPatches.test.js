@@ -105,6 +105,51 @@ describe('⚠️ Coverage means what it says', () => {
         expect(at()).toBeGreaterThan(base);
     });
 
+    it('⭐ wears about a tenth of a meadow, and a little less of a forest', () => {
+        const got = (id) => {
+            const ground = lookGround(id);
+            return share(buildWearMask(resolveArtPixels(ground), ground).mask);
+        };
+        expect(wearOf('meadow').coverage).toBe(0.1);
+        expect(got('meadow')).toBeGreaterThan(0.07);
+        expect(got('meadow')).toBeLessThan(0.13);
+        expect(wearOf('forest').coverage).toBeLessThan(wearOf('meadow').coverage);
+    });
+
+    it('⭐ with "Wear in the middle" up, wears more in the middle and less at the edges, about as much in all', () => {
+        const parts = () => {
+            let middle = 0;
+            let middleN = 0;
+            let edge = 0;
+            let edgeN = 0;
+            let total = 0;
+            let n = 0;
+            for (const seed of [41, 42, 43, 44]) {
+                const ground = groundWith(60, 36, flat('grass'), { seed, biomes: null });
+                const pixels = resolveArtPixels(ground);
+                const { mask } = buildWearMask(pixels, ground);
+                for (let i = 0; i < mask.length; i++) {
+                    const x = i % pixels.width;
+                    const y = (i - x) / pixels.width;
+                    const dx = Math.abs(x / pixels.width - 0.5);
+                    const dy = Math.abs(y / pixels.height - 0.5);
+                    if (dx < 0.2 && dy < 0.2) { middle += mask[i]; middleN++; }
+                    if (dx > 0.4 || dy > 0.4) { edge += mask[i]; edgeN++; }
+                    total += mask[i];
+                    n++;
+                }
+            }
+            return { middle: middle / middleN, edge: edge / edgeN, all: total / n };
+        };
+        const even = parts();
+        setTuning('wearMiddle', 0.8);
+        const leaning = parts();
+        expect(leaning.middle).toBeGreaterThan(even.middle * 1.3);
+        expect(leaning.edge).toBeLessThan(even.edge * 0.7);
+        expect(leaning.all).toBeGreaterThan(even.all * 0.7);
+        expect(leaning.all).toBeLessThan(even.all * 1.3);
+    });
+
     it('grows its clumps with the clump size (mat units)', () => {
         // Bigger clumps at the same coverage leave fewer edges between worn and unworn ground.
         const edges = () => {
