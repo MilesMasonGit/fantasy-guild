@@ -272,9 +272,17 @@ def coast2(W, H, land, p):
         f = F[y][x]
         if f < p.get('shallow', 0.06) or patch(x, y) < p.get('wave_mask', 0.45): continue
         L = rnd.choice(p.get('wave_len', (2, 3, 3, 4, 5)))
+        if p.get('wave_grad'):
+            for thr, lens in p['wave_grad']:
+                if f >= thr: L = rnd.choice(lens)
+        thick = p.get('far_thick') and f >= p['far_thick']
         crest = sea[3] if f < p.get('deep', 0.22) else sea[2]
         trough = sea[0] if f < p.get('deep', 0.22) else lighten(sea[0], 0.85)
+        if x + L + 2 >= W or y + 2 >= H: continue
         for i in range(L):
             if F[y][x + i] > p.get('shallow', 0.06): px[x + i, y] = crest
             if i >= 1 and F[y + 1][x + i] > p.get('shallow', 0.06): px[x + i, y + 1] = trough
+        if thick:   # far out: a second, shorter crest row above, offset, so big swells read as rolling
+            for i in range(1, L - 1):
+                if y - 1 >= 0 and F[y - 1][x + i + 1] > p.get('shallow', 0.06): px[x + i + 1, y - 1] = crest
     return out
