@@ -75,6 +75,11 @@ function deepFreeze(value) {
  *   sea cuts into whatever land it meets, except the terrains in `except`.
  * - `props`: the prop sheets it scatters from, by weight; `propDensity` how many props it carries,
  *   as a share of its cells (they stand in groups, `TerrainProps`).
+ * - `generated`: the look is drawn by rules instead of its sheet and wear (`TerrainGrass`), in
+ *   these colours: each a hue-shifted 5-colour ramp `[hue, lightness, saturation]` (`grass` the
+ *   body and the lawn's strokes, `tall` and `dry` those kinds' strokes, `earth` the bare ground);
+ *   `earth` share is how much of it wears bare before the grass reaches back in (about 58 % of
+ *   that stays bare). The sheet and wear stay for when the "Generated grass" switch is off.
  *
  * ⚠️ First values, retuned at the eye-check with the Playmat Tuner. The shoreline widths (the
  * tuning sliders) carry over from the 8-pixel ground set, where an art pixel was 4 units; the
@@ -84,6 +89,11 @@ export const LOOKS = deepFreeze({
     meadow: {
         id: 'meadow', name: 'Meadow', terrain: TERRAIN.GRASS, sheets: ['grass'],
         wear: { sheet: 'dirt', coverage: 0.10, rim: true },
+        // The owner's settled prototype: `docs/active/research/ground_gen/final_spec.json`.
+        generated: {
+            grass: [0.26, 0.44, 0.60], tall: [0.30, 0.36, 0.58], dry: [0.16, 0.50, 0.62],
+            earth: [0.06, 0.38, 0.32], earthShare: 0.18
+        },
         props: [{ sheet: 'p_flowers', weight: 2 }, { sheet: 'p_bush', weight: 1 }],
         propDensity: 0.06
     },
@@ -91,6 +101,12 @@ export const LOOKS = deepFreeze({
         id: 'forest', name: 'Forest', terrain: TERRAIN.GRASS, sheets: ['grass_dark'],
         // Less than the meadow: leaf litter and shade, not footfall.
         wear: { sheet: 'dirt', coverage: 0.08, rim: true },
+        // ⚠️ A first guess, not yet seen by the owner: the meadow's ramps moved as `grass_dark`
+        // sits from `grass` (bluer, darker), with a darker earth and less of it.
+        generated: {
+            grass: [0.30, 0.37, 0.55], tall: [0.34, 0.30, 0.55], dry: [0.20, 0.44, 0.52],
+            earth: [0.07, 0.32, 0.30], earthShare: 0.145
+        },
         props: [
             { sheet: 'p_bush_dark', weight: 2 }, { sheet: 'p_mushroom', weight: 1 }, { sheet: 'p_flowers', weight: 1 }
         ],
@@ -146,6 +162,11 @@ export function fringeOf(lookId) {
 /** The sheet worn through a look, and how much of it shows, or null. */
 export function wearOf(lookId) {
     return getLook(lookId)?.wear || null;
+}
+
+/** The colours a look's generated ground is drawn in, or null for a look drawn from its sheet. */
+export function generatedOf(lookId) {
+    return getLook(lookId)?.generated || null;
 }
 
 /** The props a look scatters and how thickly, or null. */

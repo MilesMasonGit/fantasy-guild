@@ -140,6 +140,91 @@ export const TUNABLES = Object.freeze([
         min: 0, max: 1, step: 0.05, def: 0
     },
     {
+        key: 'grassOn',
+        group: 'Generated grass',
+        label: 'Generated grass',
+        hint: 'The meadow and the forest drawn by rules: clumps, mounds, blades, three kinds of grass, earth the grass reaches into. Off draws their old sheets.',
+        toggle: true,
+        min: 0, max: 1, step: 1, def: 1
+    },
+    {
+        key: 'grassStrokes',
+        group: 'Generated grass',
+        label: 'Stroke density',
+        hint: 'Multiplies how many blade strokes every kind of grass carries. 1 is the prototype; 0 leaves only the clumps and mounds.',
+        min: 0, max: 3, step: 0.05, def: 1
+    },
+    {
+        key: 'grassPatch',
+        group: 'Generated grass',
+        label: 'Texture patches',
+        hint: 'How much of the grass lies outside the patches where the strokes gather: 0 spreads them evenly; higher leaves calmer grass between fewer patches.',
+        min: 0, max: 1, step: 0.05, def: 0.55
+    },
+    {
+        key: 'grassPatchFloor',
+        group: 'Generated grass',
+        label: 'Strokes between patches',
+        hint: 'The share of strokes kept outside the patches: 1 keeps them all (no patches), 0 leaves bare grass between.',
+        min: 0, max: 1, step: 0.05, def: 0.6
+    },
+    {
+        key: 'grassZoneScale',
+        group: 'Generated grass',
+        label: 'Zone scale (u)',
+        hint: 'How big the zones of tall, lawn and dry grass are, in mat units: a Token is 128.',
+        min: 40, max: 320, step: 10, def: 110
+    },
+    {
+        key: 'grassTall',
+        group: 'Generated grass',
+        label: 'Tall grass',
+        hint: 'The share of the grass that is tall grass (long dark strokes).',
+        min: 0, max: 0.6, step: 0.01, def: 0.23
+    },
+    {
+        key: 'grassDry',
+        group: 'Generated grass',
+        label: 'Dry grass',
+        hint: 'The share of the grass that is dry grass (short yellow strokes, flower-like tips).',
+        min: 0, max: 0.6, step: 0.01, def: 0.27
+    },
+    {
+        key: 'grassEarth',
+        group: 'Generated grass',
+        label: 'Earth amount',
+        hint: 'Multiplies how much bare earth each look has. 1 is the prototype: about a tenth of the meadow bare once the grass has reached back in.',
+        min: 0, max: 3, step: 0.05, def: 1
+    },
+    {
+        key: 'grassEncroach',
+        group: 'Generated grass',
+        label: 'Grass into earth',
+        hint: 'How far grass fingers and islands reach into the earth from its edge. 0 gives earth with clean, round edges.',
+        min: 0, max: 1, step: 0.05, def: 0.85
+    },
+    {
+        key: 'grassBodySoft',
+        group: 'Generated grass',
+        label: 'Clump softness',
+        hint: 'How close the darker clumps are to the lighter ones (the rounds’ body_soft): 0 is full contrast, 1 one flat tone.',
+        min: 0, max: 1, step: 0.05, def: 0.55
+    },
+    {
+        key: 'grassClump',
+        group: 'Generated grass',
+        label: 'Clump size (u)',
+        hint: 'How big the light and dark clumps of the grass are, in mat units.',
+        min: 8, max: 96, step: 2, def: 32
+    },
+    {
+        key: 'grassMounds',
+        group: 'Generated grass',
+        label: 'Mound strength',
+        hint: 'How often a mound shows its lit top and its shadowed bottom edge. 1 is the prototype; 0 removes the mounds.',
+        min: 0, max: 2, step: 0.05, def: 1
+    },
+    {
         key: 'propDensity',
         group: 'Scenery',
         label: 'Density',

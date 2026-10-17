@@ -1,6 +1,7 @@
 // the ground's screen pass: the ground plan resampled onto the screen's ground pixels
 
-import { SHEET_PX, PROP_PX, PROP_SHEET_CELLS } from '../../../config/registries/terrainRegistry.js';
+import { SHEET_PX, PROP_PX, PROP_SHEET_CELLS, generatedOf } from '../../../config/registries/terrainRegistry.js';
+import { drawGrass, grassColours, COLOUR } from '../../../systems/board/TerrainGrass.js';
 
 /**
  * The second of the ground's two stages (the first is `TerrainSurface.buildGroundPlan`, 2 mat units
@@ -182,6 +183,70 @@ function looksOf(texels, tints, shades, combos) {
     return bytes;
 }
 
+/** Buffers the generated ground's details reuse from one screen pass to the next. */
+const grassScratch = {};
+
+/**
+ * The looks drawn by rules (`TerrainGrass`): their details decided per ground pixel, and a table of
+ * their colours with each of the plan's shades applied. ⚠️ Not muted: the ramps are the final colours.
+ *
+ * @returns {{colour: Uint8Array, kinds: Uint8Array, words: Uint32Array, shadeCount: number}|null}
+ */
+function grassOf(plan, grid, planCol, planRow) {
+    if (!plan.grass) return null;
+    const { colour, kinds } = drawGrass(plan.grass, plan.seed, grid.cols, grid.rows, planCol, planRow, grassScratch);
+    const shades = plan.shades || [1];
+    const S = shades.length;
+    const NC = COLOUR.COUNT;
+    const tables = plan.grass.looks.map(id => grassColours(generatedOf(id)));
+    const bytes = new Uint8ClampedArray(tables.length * S * NC * 4);
+    tables.forEach((table, slot) => {
+        for (let s = 0; s < S; s++) {
+            const f = shades[s];
+            for (let k = 0; k < NC; k++) {
+                const o = ((slot * S + s) * NC + k) * 4;
+                const [red, green, blue] = table[k];
+                bytes[o] = red * f;
+                bytes[o + 1] = green * f;
+                bytes[o + 2] = blue * f;
+                bytes[o + 3] = 255;
+            }
+        }
+    });
+    return { colour, kinds, words: new Uint32Array(bytes.buffer), shadeCount: S };
+}
+
+/**
+ * Row `r`'s pixels inside the mat: a generated look's colour where there is one, else its sheet's
+ * texel. ⚠️ A function per row: as a loop nested in the pass, V8 compiled the pixel loop on its own
+ * and threw it away at the end of every row.
+ */
+function fillRow(ctx, r) {
+    const { out32, cols, from, to, planRow, planCol, lookAt, lookWords, texCol, grass, shadeAt } = ctx;
+    const a = from[r];
+    const b = to[r];
+    if (a === b) return;
+    const pr = planRow[r];
+    const texRow = (r % SHEET_PX) * SHEET_PX;
+    const rowBase = r * cols;
+    if (!grass) {
+        for (let c = a; c < b; c++) {
+            out32[rowBase + c] = lookWords[lookAt[pr + planCol[c]] * SHEET_WORDS + texRow + texCol[c]];
+        }
+        return;
+    }
+    const { colour, kinds, words, shadeCount } = grass;
+    const NC = COLOUR.COUNT;
+    for (let c = a; c < b; c++) {
+        const i = rowBase + c;
+        const k = colour[i];
+        const p = pr + planCol[c];
+        out32[i] = k === 255
+            ? lookWords[lookAt[p] * SHEET_WORDS + texRow + texCol[c]]
+            : words[((kinds[i] >> 2) * shadeCount + (shadeAt ? shadeAt[p] : 0)) * NC + k];
+    }
+}
+
 /**
  * The screen pass.
  *
@@ -263,6 +328,12 @@ export function buildScreenPass(plan, { mat, unit, sheet, prop = () => null, out
         data[d + 2] = blue;
     };
 
+    const fill = {
+        out32, cols, from, to, planRow, planCol, lookAt, lookWords, texCol,
+        grass: grassOf(plan, grid, planCol, planRow), shadeAt: plan.shadeAt || null
+    };
+    for (let r = 0; r < rows; r++) fillRow(fill, r);
+
     // ⚠️ Most of the picture lies where the inset shadow has faded below half a byte: there a pixel
     // is one 32-bit copy from the table of looks, the same bytes shading would leave. Only a band
     // round the edge, about 120 units deep, is shaded byte by byte.
@@ -271,12 +342,6 @@ export function buildScreenPass(plan, { mat, unit, sheet, prop = () => null, out
         const a = from[r];
         const b = to[r];
         if (a === b) continue;
-        const pr = planRow[r];
-        const texRow = (r % SHEET_PX) * SHEET_PX;
-        const rowBase = r * cols;
-        for (let c = a; c < b; c++) {
-            out32[rowBase + c] = lookWords[lookAt[pr + planCol[c]] * SHEET_WORDS + texRow + texCol[c]];
-        }
         // The run of this row deep enough to need no shading (`alongX` rises, then falls).
         const rowInside = alongY[r];
         let f0 = b;
@@ -288,6 +353,7 @@ export function buildScreenPass(plan, { mat, unit, sheet, prop = () => null, out
             while (f1 > f0 && alongX[f1 - 1] * rowInside < deep) f1--;
         }
         const [lo, hi] = rimSpan(r);
+        const rowBase = r * cols;
         for (let c = a; c < b; c++) {
             if (c === f0 && f1 > f0) { c = f1 - 1; continue; }
             const d = (rowBase + c) * 4;

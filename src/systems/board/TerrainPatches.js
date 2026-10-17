@@ -223,17 +223,19 @@ function thresholdFrom(quantiles, coverage) {
  *
  * @param {object} pixels A resolved map from `resolveArtPixels`.
  * @param {object} ground The Region's ground, for its seed and the look of each terrain.
+ * @param {Uint8Array} [skip] 1 per palette entry whose wear is not a sheet: generated ground
+ *   draws its own earth.
  * @returns {{mask: Uint8Array|null, worn: number[], thresholds: number[], cell: number}} `mask`
  *   is 1 where the pixel's look wears through (null when no look here wears), `worn` the same
  *   pixels as a list; `thresholds` the noise level below which each palette entry wears (before
  *   the "Wear in the middle" slider moves it per pixel); `cell` the coarse noise cell in pixels.
  */
-export function buildWearMask(pixels, ground) {
+export function buildWearMask(pixels, ground, skip = null) {
     const { width, height, palette, at, present } = pixels;
     const cell = clumpPx();
     const scale = tuning('patchCoverage');
     const n = width * height;
-    const wants = palette.map((t, p) => (present[p] && wearOf(ground.looks[t])?.coverage * scale) || 0);
+    const wants = palette.map((t, p) => (present[p] && !skip?.[p] && wearOf(ground.looks[t])?.coverage * scale) || 0);
     if (!wants.some(c => c > 0)) return { mask: null, worn: [], thresholds: wants.map(() => -Infinity), cell };
 
     const noise = layeredTables(width, height, ground.seed, cell, CHANNEL_PATCH, CHANNEL_PATCH_FINE);

@@ -5,6 +5,7 @@ import { buildBandMasks } from './TerrainBands.js';
 import { buildWearMask } from './TerrainPatches.js';
 import { propsForGround } from './TerrainProps.js';
 import { buildShadePattern, buildWearEdges, composeShades } from './TerrainShade.js';
+import { buildGrassPlan } from './TerrainGrass.js';
 import { getLook, LOOKS } from '../../config/registries/terrainRegistry.js';
 import { tuning } from '../../config/playmatTuning.js';
 
@@ -42,21 +43,24 @@ export function sheetFor(look, seed) {
  *   bands: Array<{terrainId: string, look: string, mask: Uint8Array, pixels: number[], appearance: object|null}>,
  *   sheets: string[], sheetAt: Uint8Array, tints: Array<{tint: string, amount: number}>, tintAt: Int8Array,
  *   shades: number[], shadeAt: Uint8Array, pattern: object, edges: {rim: number[], fringe: number[]},
- *   props: object[]
+ *   props: object[], grass: object|null
  * }}
  *   Per pixel, row by row: `terrainAt` indexes `palette` (and `looks`, the look of each);
  *   `wearAt` 1 where the look's wear shows; each band's `mask` 1 inside it. The drawing answer:
  *   `sheetAt` indexes `sheets`, `tintAt` indexes `tints` (-1 for none), `shadeAt` indexes
  *   `shades` (brightness factors, 0 being 1: as drawn). `pattern` and `edges` are the shade's
  *   parts (`TerrainShade`). `props` back to front (`TerrainProps`), each with the `shade` of the
- *   pattern under its foot. Pixels are `unit` mat units.
+ *   pattern under its foot. `grass` the shapes of the looks drawn by rules (`TerrainGrass`), null
+ *   when none is: their sheet stays in `sheetAt` beneath, without wear. Pixels are `unit` mat units.
  */
 export function buildGroundPlan(ground) {
     const pixels = resolveArtPixels(ground);
     const { width, height, palette, at } = pixels;
     const { bands } = buildBandMasks(pixels, ground);
-    const wear = buildWearMask(pixels, ground);
     const looks = palette.map(t => (getLook(ground.looks[t]) ? ground.looks[t] : LOOKS.meadow.id));
+    const grass = buildGrassPlan(pixels, ground.seed, looks);
+    const generated = grass ? Uint8Array.from(grass.slotOf.slice(0, palette.length), s => (s >= 0 ? 1 : 0)) : null;
+    const wear = buildWearMask(pixels, ground, generated);
 
     // Sheet `p` is palette entry `p`'s ground, so the drawing answer starts as a copy of the
     // terrain map; the wear sheets follow. A sheet may be listed twice, and a terrain of the
@@ -99,7 +103,7 @@ export function buildGroundPlan(ground) {
         wearAt: wear.mask, wear, bands,
         sheets, sheetAt, tints, tintAt,
         shades, shadeAt, pattern, edges,
-        props
+        props, grass
     };
 }
 
