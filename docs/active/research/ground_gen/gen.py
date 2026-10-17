@@ -33,7 +33,14 @@ def ground(W, H, p):
     clump = vnoise(p['clump'], rnd); fine = vnoise(max(2, p['clump'] // 2), rnd)
     tint = vnoise(p['tint_scale'], rnd); wear = vnoise(p['earth_scale'], rnd); wear2 = vnoise(max(4, p['earth_scale'] // 4), rnd)
     lo, hi = p.get('body', (1, 2))
-    earth = [[(wear(x, y) * 0.8 + wear2(x, y) * 0.2) > p['earth_thr'] for x in range(W)] for y in range(H)]
+    enc = vnoise(p.get('encroach_scale', 7), rnd)
+    def is_earth(x, y):
+        w = wear(x, y) * 0.8 + wear2(x, y) * 0.2
+        if w <= p['earth_thr']: return False
+        # near the edge (w just above the threshold) grass fingers win more often
+        depth = (w - p['earth_thr']) / max(1e-6, 1 - p['earth_thr'])
+        return enc(x, y) > p.get('encroach', 0.0) * (1 - min(1, depth * 3))
+    earth = [[is_earth(x, y) for x in range(W)] for y in range(H)]
     tf = p.get('tint', 0.07)
     for y in range(H):
         for x in range(W):
@@ -46,6 +53,18 @@ def ground(W, H, p):
             if t > 0.62: c = lighten(c, 1 + tf)
             elif t < 0.38: c = lighten(c, 1 - tf)
             px[x, y] = c
+    if p.get('mounds'):
+        mnd = vnoise(p['mounds'], rnd); fine2 = vnoise(max(2, p['mounds'] // 3), rnd)
+        up = lambda x, y: (mnd(x, y) * 0.75 + fine2(x, y) * 0.25) > 0.52
+        M = [[up(x, y) for x in range(W)] for y in range(H)]
+        for y in range(1, H - 1):
+            for x in range(1, W - 1):
+                if earth[y][x]: continue
+                if M[y][x] and not M[y + 1][x]:               # bottom edge of a mound: shadow
+                    px[x, y + 1] = lighten(gp[1], 1 - tf) if tint(x, y) < 0.38 else gp[1]
+                    if x + 1 < W and not M[y + 1][x + 1] and rnd.random() < 0.5: px[x + 1, y + 1] = gp[1]
+                elif M[y][x] and not M[y - 1][x] and rnd.random() < p.get('mound_light', 0.6):  # top edge: light
+                    px[x, y] = gp[3]
     def shade_at(x, y, col):
         t = tint(x, y)
         return lighten(col, 1 + tf) if t > 0.62 else lighten(col, 1 - tf) if t < 0.38 else col
@@ -71,6 +90,14 @@ def ground(W, H, p):
             px[x, y] = ep[3]
             if rnd.random() < 0.5 and earth[y][x + 1]: px[x + 1, y] = ep[3]
             px[x + 1, y + 1] = ep[0]
+    for _ in range(int(W * H * p.get('earth_tufts', 0.0))):
+        x, y = rnd.randrange(1, W - 2), rnd.randrange(2, H - 2)
+        if not earth[y][x]: continue
+        for k in range(rnd.randrange(2, 4)):
+            xx = x + k - 1
+            if 0 <= xx < W and earth[y][xx]:
+                px[xx, y] = gp[2]; px[xx, y - 1] = gp[3] if rnd.random() < 0.6 else gp[2]
+                if earth[y + 1][xx]: px[xx, y + 1] = ep[0]
     # earth edges: dark rim under grass, tufts hanging over the top edge, ragged sides
     for y in range(1, H - 2):
         for x in range(1, W - 1):
