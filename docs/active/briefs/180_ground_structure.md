@@ -60,7 +60,7 @@ unless the owner revives it.
 
 **Design rounds (owner's verdicts):** round 1 (2026-10-17): B's tufts on C's calm body. Round 2: C (tall and dry zones, ragged borders); grass should reach into the earth; more shading; colours to explore. Round 3: palette B; push the grass further into the earth; work on the dirt. Round 4: grass deep into the earth, sunken earth edges, three dirt styles (lumpy, packed path, dark soil). Round 4 verdict: A clods with B lighter middle, less earth. Round 5 verdict: B amount, but the mat is too busy overall. Round 6: three calmer versions. Verdict: B (lawn plus soft tall), lighter tall grass in smaller zones, maybe texture in patches with less calm between. Round 7 verdict: B pattern good; zone colour changes look strange; bring dry grass back. Round 8 verdict: C (more dry grass, flower-like is good), but the darker ground textures were lost. Final prototype (round 9): everything together, darker texture back; rules in `docs/active/research/ground_gen/final_spec.json` and `final.py`.
 
-**Biome rounds:** Forest F1 (2026-10-17): verdict B (forest floor) with browner leaves and C fern tufts. F2 verdict: C (leaves in bigger drifts), settled as `forest_spec.json`. Mountain M1 verdict: A (cool grey rock) with greyer clumped pebbles and C alpine grass in longer thinner stretches. M2 verdict: B (wider), broken into seams. M3 verdict: C (seams on calmer rock), settled (`mountain_spec.json`). Coast C1 verdict: A with C dune grass and a stronger foam line; waves should be drawn like grass. C2 verdict: A, smaller waves near shore and bigger far out. C3 verdict: the stronger waves, but too many and too close. C4: fewer, spaced; waiting for the owner.
+**Biome rounds:** Forest F1 (2026-10-17): verdict B (forest floor) with browner leaves and C fern tufts. F2 verdict: C (leaves in bigger drifts), settled as `forest_spec.json`. Mountain M1 verdict: A (cool grey rock) with greyer clumped pebbles and C alpine grass in longer thinner stretches. M2 verdict: B (wider), broken into seams. M3 verdict: C (seams on calmer rock), settled (`mountain_spec.json`). Coast C1 verdict: A with C dune grass and a stronger foam line; waves should be drawn like grass. C2 verdict: A, smaller waves near shore and bigger far out. C3 verdict: the stronger waves, but too many and too close. C4 verdict: C (fewest, widest spacing, swells), settled (`coast_spec.json`). **All three biomes and the meadow have settled rules.**
 
 ## G3 — Generated ground in the game (engineer)
 
@@ -93,6 +93,22 @@ Done when: the Starter Camp and a Forest show the generated ground; side-by-side
 screenshots against `final.png`; tests for the pure parts (determinism, earth
 mask with encroachment, zone mixing, ramp); engine work check same; a
 `bench:draw --compare` for the cost log; eye-check.
+
+## G4 — The biomes in the game (engineer, after G3)
+
+Extend G3's generated ground to the Forest, Mountain and Coast looks with the
+settled rule sets in `docs/active/research/ground_gen/`: `forest_spec.json`
+(fern, lawn and litter kinds, dappled shade, darker earth),
+`mountain_spec.json` with `mountain3.py` (cool grey rock with fewer cracks,
+clumped grey scree, alpine grass in broken seams via stretched zone bands,
+gravel instead of earth), `coast_spec.json` with `coast4.py` (sand with dune
+grass, ripples and shells; calm sea with depth steps; near-white broken foam
+and flecks; waves as strokes growing with distance from the shore, spaced,
+with swells far out), plus the generator's `banded` and `coast2`. Hybrid
+Regions blend at the existing computed edges. The sand and sea sheets and the
+code dimming retire for generated looks. Same done-bar as G3 (side-by-side with
+each round's final image, build time, tests, work check, draw compare,
+eye-check).
 
 ## G2 — Edge pieces (superseded 2026-10-17; kept for reference)
 
