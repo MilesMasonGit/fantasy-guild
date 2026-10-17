@@ -204,3 +204,17 @@ def board_imgs(imgs, out, labels, W=320, H=200, s=2):
         d.text((x + 4, 5), labels[i], fill=(255, 255, 255))
         P.paste(A.convert('RGB'), (x, top)); P.paste(G(A), (x, top + H * s + pad))
     P.save(os.path.join(S, out))
+
+def banded(W, H, layers_kinds, cuts, zone_scale=60, stretch=(1.0, 1.0), seed=11, ragged=0.35):
+    """Zones by thresholds on a stretched noise: kind i where cuts[i-1] <= v < cuts[i]. A narrow
+    band between two cuts gives long thin stretches when the noise is stretched along one axis."""
+    rnd = random.Random(seed); z = vnoise(zone_scale, rnd); j = vnoise(6, rnd)
+    layers = [ground(W, H, k) for k in layers_kinds]; lps = [l.load() for l in layers]
+    out = layers[0].copy(); op = out.load()
+    for y in range(H):
+        for x in range(W):
+            v = z(x / stretch[0], y / stretch[1]) + (j(x, y) - 0.5) * ragged * 0.25
+            idx = 0
+            while idx < len(cuts) and v >= cuts[idx]: idx += 1
+            op[x, y] = lps[idx][x, y]
+    return out
