@@ -39,7 +39,7 @@ def ground(W, H, p):
         if w <= p['earth_thr']: return False
         # near the edge (w just above the threshold) grass fingers win more often
         depth = (w - p['earth_thr']) / max(1e-6, 1 - p['earth_thr'])
-        return enc(x, y) > p.get('encroach', 0.0) * (1 - min(1, depth * 3))
+        return enc(x, y) > p.get('encroach', 0.0) * (1 - min(1, depth * p.get('encroach_depth', 3)))
     earth = [[is_earth(x, y) for x in range(W)] for y in range(H)]
     tf = p.get('tint', 0.07)
     for y in range(H):
@@ -68,6 +68,37 @@ def ground(W, H, p):
     def shade_at(x, y, col):
         t = tint(x, y)
         return lighten(col, 1 + tf) if t > 0.62 else lighten(col, 1 - tf) if t < 0.38 else col
+    style = p.get('dirt_style')
+    if style:
+        dn = vnoise(5, rnd); streak = vnoise(3, rnd)
+        for y in range(1, H - 1):
+            for x in range(1, W - 1):
+                if not earth[y][x]: continue
+                if style == 'clods' and dn(x, y) > 0.6:
+                    px[x, y] = ep[3] if (earth[y + 1][x] and dn(x, y + 1) <= 0.68) is False else ep[3]
+                    if earth[y + 1][x] and dn(x, y + 1) <= 0.6: px[x, y + 1] = ep[0]
+                elif style == 'path':
+                    # packed, lighter middle, faint streaks along the path
+                    w = wear(x, y) * 0.8 + wear2(x, y) * 0.2
+                    deep = (w - p['earth_thr']) / max(1e-6, 1 - p['earth_thr'])
+                    if deep > 0.35: px[x, y] = ep[3] if streak(x * 0.3, y * 3) > 0.62 else ep[2]
+                elif style == 'soil':
+                    if dn(x, y) > 0.64: px[x, y] = ep[0]
+                    elif dn(x, y) < 0.28: px[x, y] = ep[3]
+        if style == 'soil':
+            for _ in range(int(W * H * 0.004)):   # twigs and roots: short dark diagonal strokes
+                x, y = rnd.randrange(2, W - 4), rnd.randrange(2, H - 4)
+                if earth[y][x]:
+                    for k in range(rnd.randrange(2, 4)):
+                        if earth[y + k // 2][x + k]: px[x + k, y + k // 2] = ep[0]
+    if p.get('sunken'):
+        for y in range(2, H - 2):
+            for x in range(2, W - 2):
+                if not earth[y][x]: continue
+                if not earth[y - 1][x] or not earth[y - 2][x] or not earth[y][x - 1]:   # top/left inside: shade cast by grass
+                    px[x, y] = ep[0]
+                elif not earth[y + 1][x] or not earth[y][x + 1]:                        # bottom/right inside: lit lip
+                    px[x, y] = ep[4]
     # blades: clusters of strokes, light from top-left, shadow pixel under-right
     n = int(W * H * p['blades'])
     for _ in range(n):
@@ -93,10 +124,11 @@ def ground(W, H, p):
     for _ in range(int(W * H * p.get('earth_tufts', 0.0))):
         x, y = rnd.randrange(1, W - 2), rnd.randrange(2, H - 2)
         if not earth[y][x]: continue
-        for k in range(rnd.randrange(2, 4)):
-            xx = x + k - 1
+        for k in range(rnd.randrange(2, p.get('earth_tuft_max', 4))):
+            xx = x + k - 1; hgt = rnd.choice((1, 2, 2, 3))
             if 0 <= xx < W and earth[y][xx]:
-                px[xx, y] = gp[2]; px[xx, y - 1] = gp[3] if rnd.random() < 0.6 else gp[2]
+                for i in range(hgt):
+                    if y - i >= 0: px[xx, y - i] = gp[3] if (i == hgt - 1 and rnd.random() < 0.6) else gp[2]
                 if earth[y + 1][xx]: px[xx, y + 1] = ep[0]
     # earth edges: dark rim under grass, tufts hanging over the top edge, ragged sides
     for y in range(1, H - 2):
