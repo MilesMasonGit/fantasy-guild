@@ -22,6 +22,8 @@ every look; agents build the tools and prepare palettes.*
 
 ## Decided
 
+- **Ground structure** (owner, 2026-10-16, after the notes): target feel Sea of Stars; edges stay computed (L-3 A) but the code lays the owner's hand-drawn edge pieces along them, plus a tint pattern, organic earth with a rim and grouped props. Full transition tiles were weighed and declined as too labour-intensive. Brief 180.
+
 - **The owner's goal for the terrain pass** (owner, 2026-10-16): the director gives design advice to make the ground and props look as good as possible; the owner draws. First notes, measured on the art after the bake: https://claude.ai/artifact/PLTLkP5bqjLqtTc8YYJSpg (ground in its own brightness band about 100–120 above the Tokens' bodies; worn earth lifted and reduced; speckle and drawn cracks out; props quieter than Tokens, no black outlines, nothing ore- or gem-like; drop the code dimming once the sheets land).
 
 - **Brightness comes first**, before any ground art work.

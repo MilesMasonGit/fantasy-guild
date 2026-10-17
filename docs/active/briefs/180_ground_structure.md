@@ -1,0 +1,71 @@
+# Brief 180 — Ground structure: tint pattern, organic earth, grouped props, edge pieces
+
+**Source:** the owner's terrain goal (2026-10-16): the director advises, the owner
+draws. Notes with mock-ups: https://claude.ai/artifact/PLTLkP5bqjLqtTc8YYJSpg
+(sections 1–9). Target feel: Sea of Stars (owner). Also read the "Terrain art
+guide" in [`../research/terrain_art_list.md`](../research/terrain_art_list.md),
+[`ART_STYLE.md`](../../reference/ART_STYLE.md) and
+[`ASSET_NAMING.md`](../../reference/ASSET_NAMING.md).
+
+**Ruled (owner, 2026-10-16):** edges stay computed by code (L-3 A stands), but
+the code lays **hand-drawn edge pieces** along them: grass tufts over earth,
+pebbles in seams, wet sand at the waterline. Not full transition tiles (too
+labour-intensive). The owner thinks the ground "lacks structure"; the cure is
+structure at three sizes: a large tint pattern, medium shapes and groups, small
+detail in the sheets (the owner's drawing).
+
+**Why it looks plain today (measured):** one 64 px sheet repeated like carpet;
+props sprinkled evenly one per cell; earth patches nearly black (sheet mean
+brightness 30) and hard-edged; every ground in the same brightness band as the
+Tokens' bodies.
+
+## G1 — Structure in code (engineer; eye-check)
+
+Code under `src/systems/board/Terrain*.js`, `src/config/registries/terrainRegistry.js`,
+`src/ui/components/board/TerrainCanvas.jsx`, tuning sliders in the dev panel's
+Ground tuner (`playmatTuning`). The plan is built once per Region and on resize,
+never per frame: keep it that way (measure the build time before and after).
+
+1. **Tint pattern:** per look, two or three shades of its sheet (one lighter,
+   one darker, a few percent each way) in large soft areas several Tokens wide,
+   from smooth value noise on a coarse grid, stepped (hard edges between
+   shades, pixel-art style, no gradients). Sliders: scale, strength, on/off.
+2. **Organic earth with a rim:** worn patches keep their noise shape but get a
+   darker rim on the earth side and a lighter fringe on the grass side, each
+   one ground pixel or two wide; coverage slider defaults lower (about 10 % of
+   a grass Region). Optional, behind a slider: wear more near Tokens and less
+   toward the mat's edges ("feet go here").
+3. **Grouped props:** scatter in small groups (3–6 of one kind around a point)
+   with open grass between, instead of one per cell; density and group size on
+   sliders. Props keep every existing rule (own ground, never on beaches cut in,
+   never workable-looking).
+4. **No change** to the sheets' art or the code dimming in this phase (the
+   dimming goes when the owner's new sheets land).
+
+Done when: Starter Camp, a Forest and a Coast Region show all three; tests for
+the pure parts (shade map, rim, grouping); the engine work check unchanged; the
+ground build time reported before and after; screenshots in colour and grey.
+
+## G2 — Edge pieces (engineer or builder; after G1)
+
+The code lays the owner's edge pieces along every boundary between two grounds
+and along worn-patch edges: pieces sit across the boundary line, spaced with
+some randomness, never on top of each other, never under a Token's foot. A pair
+with no drawn pieces falls back to G1's rim alone.
+
+**Art format (for the owner):** one sheet per pair, 64 × 64, a 4 × 4 grid of
+16 px pieces like the prop sheets, named `p_edge_<ground>_<ground>.png` in
+`playmat/props/` (e.g. `p_edge_grass_dirt.png`): rows 1–2 overhang tufts or
+stones drawn sitting on a horizontal boundary through the cell's middle, row 3
+corner clumps, row 4 small seam bits. G2 first makes a template sheet with the
+boundary line and the light direction marked, and placeholder pieces cut from
+the existing tufts so the placement can be seen before the art exists.
+
+Start with grass↔earth; then grass↔sand and sand↔water (the wet line).
+
+## Owner to-do
+
+- Draw `p_edge_grass_dirt.png` on the template (after G2 makes it).
+- The sheet redraws from the notes page when convenient: earth lifted to just
+  under the grass, grass at the new brightness (about 100–120) and vibrant,
+  4–5 colours, strokes leaning with the light, 2–3 variants.

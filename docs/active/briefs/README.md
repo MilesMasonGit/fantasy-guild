@@ -33,7 +33,8 @@ multiple choice at wave start.
 | 16 | [150 Notifications](150_notifications.md) | 11, 15 | yes |
 | 17 | [160 Atlas tome and Hall sky](160_atlas_tome.md): tome, banners, sky, camera moves | 11, 12 | yes, two batches |
 | 18 | [170 Quest boards](170_quest_boards.md) | 13 | yes |
-| 19 | [90 Performance Envelope](90_performance_envelope.md) | 10–18 | — |
+| 19 | [180 Ground structure](180_ground_structure.md): tint pattern, organic earth, grouped props, the owner's edge pieces | 10 | yes |
+| 20 | [90 Performance Envelope](90_performance_envelope.md) | 10–19 | — |
 
 Order ruled by the owner 2026-10-07: UI phases that don't touch skills first,
 then class rework v2, then the hero bar/panel on the new skill list, then
