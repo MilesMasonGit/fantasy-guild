@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 import cmsFileApi from './vite-plugin-cms-api.js'
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), cmsFileApi()],
+  plugins: [react(), tailwindcss(), cmsFileApi({ dataDir: process.env.CMS_DATA_DIR })],
   server: {
     port: Number(process.env.PORT) || 5174,
   },

@@ -6,6 +6,7 @@ import { listDropFolder, importDropFile, libraryFiles } from './paletteInbox.js'
 import { BAKE_KEY, splitLibrary } from './paletteBrighten.js';
 import { resolveSpritePath, currentSpriteName } from '../src/utils/AssetManager.js';
 import { studioAssetPath } from './assetNaming.js';
+import { compareSync } from './src/engine/syncGuard.js';
 
 
 /**
@@ -162,13 +163,16 @@ const STUDIO_ROUTES = ['/api/custom-palettes', '/api/palette-groups', '/api/pale
  *        (default `cms/inbox/`, git-ignored)
  * @param {string} [options.paletteInboxDir] the palette drop folder (default `cms/palettes-inbox/`)
  * @param {string} [options.palettesDir] the Material Library's files (default `data/palettes/`)
+ * @param {string} [options.dataDir] the game's content files read by Restore from Game and written by Sync
+ *        (default `data/`). ⚠️ When set, Sync does not commit: the commit stages the project's `data/`, not this folder.
  * @param {boolean} [options.studio] the Studio's server: refuses every API route outside `STUDIO_ROUTES`
  */
-export default function cmsFileApi({ inboxDir, paletteInboxDir, palettesDir, studio = false } = {}) {
+export default function cmsFileApi({ inboxDir, paletteInboxDir, palettesDir, dataDir, studio = false } = {}) {
   const projectRoot = process.cwd().endsWith('cms') ? path.resolve(process.cwd(), '..') : process.cwd();
   const inbox = inboxDir || path.resolve(projectRoot, 'cms', 'inbox');
   const paletteInbox = paletteInboxDir || path.resolve(projectRoot, 'cms', 'palettes-inbox');
   const palettesRoot = palettesDir || path.resolve(projectRoot, 'data', 'palettes');
+  const dataRoot = dataDir || path.resolve(projectRoot, 'data');
   const library = libraryFiles(palettesRoot);
   return {
     name: 'cms-file-api',
@@ -774,7 +778,7 @@ export default function cmsFileApi({ inboxDir, paletteInboxDir, palettesDir, stu
         // --- GET /api/load-game-data (Reconstruct workspace from data/) ---
         if (req.method === 'GET' && req.url === '/api/load-game-data') {
           try {
-            const dataDir = path.resolve(projectRoot, 'data');
+            const dataDir = dataRoot;
             const items = JSON.parse(fs.readFileSync(path.join(dataDir, 'items.json'), 'utf8'));
             const tokens = JSON.parse(fs.readFileSync(path.join(dataDir, 'tokens.json'), 'utf8'));
             const effects = fs.existsSync(path.join(dataDir, 'effects.json'))
@@ -815,11 +819,31 @@ export default function cmsFileApi({ inboxDir, paletteInboxDir, palettesDir, stu
           req.on('data', (chunk) => (body += chunk));
           req.on('end', () => {
             try {
-              const { files } = JSON.parse(body);
+              const { files, confirmRemovals } = JSON.parse(body);
               if (!files || typeof files !== 'object') {
                 res.statusCode = 400;
                 res.end(JSON.stringify({ error: 'Missing or invalid files payload' }));
                 return;
+              }
+
+              // A stale browser workspace once synced over newer content and silently dropped it, so a Sync that would
+              // remove anything the game has writes nothing until the author confirms.
+              if (confirmRemovals !== true) {
+                const current = {};
+                for (const name of Object.keys(files)) {
+                  try {
+                    current[name] = JSON.parse(fs.readFileSync(path.join(dataRoot, name), 'utf8'));
+                  } catch {
+                    current[name] = null;
+                  }
+                }
+                const diff = compareSync(current, files);
+                if (diff.hasRemovals) {
+                  res.statusCode = 409;
+                  res.setHeader('Content-Type', 'application/json');
+                  res.end(JSON.stringify({ error: 'This Sync would remove content the game has', needsConfirm: true, diff }));
+                  return;
+                }
               }
 
               const filesWritten = [];
@@ -831,7 +855,7 @@ export default function cmsFileApi({ inboxDir, paletteInboxDir, palettesDir, stu
                   return;
                 }
 
-                const absolutePath = path.resolve(projectRoot, 'data', relPath);
+                const absolutePath = path.resolve(dataRoot, relPath);
                 const dir = path.dirname(absolutePath);
                 if (!fs.existsSync(dir)) {
                   fs.mkdirSync(dir, { recursive: true });
@@ -857,7 +881,10 @@ export default function cmsFileApi({ inboxDir, paletteInboxDir, palettesDir, stu
                 'Starter Camp Tokens': size(files['starterCamp.json']?.tokens)
               };
 
-              commitSync(projectRoot, counts).then((commit) => {
+              const committing = dataDir
+                ? Promise.resolve({ committed: false, reason: 'data folder overridden' })
+                : commitSync(projectRoot, counts);
+              committing.then((commit) => {
                 if (commit.committed) {
                   console.log(`[CMS Sync] Committed as ${commit.sha}`);
                 } else {
