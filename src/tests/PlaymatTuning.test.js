@@ -177,7 +177,7 @@ describe('⭐ No dead sliders', () => {
     const grassColour = () => JSON.stringify(grassColours(generatedOf('forest')));
     /** Yellowstone's sulphur lakes in the plan. */
     const lakes = () => {
-        const g = groundWith(24, 12, flat('grass'), { seed, biomes: { main: 'yellowstone', terrains: { yellowstone: 'grass' } } });
+        const g = groundWith(55, 36, flat('grass'), { seed, biomes: { main: 'yellowstone', terrains: { yellowstone: 'grass' } } });
         return summary(buildGroundPlan(g).grass.ring);
     };
 
