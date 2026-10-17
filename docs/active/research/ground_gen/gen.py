@@ -266,6 +266,7 @@ def coast2(W, H, land, p):
     for _ in range(int(W * H * p.get('flecks', 0.004))):
         x, y = rnd.randrange(W - 2), rnd.randrange(H)
         if foam_w < F[y][x] < foam_w * 3: px[x, y] = FOAM2
+    occ = [[False] * W for _ in range(H)]
     # wave strokes: horizontal crest of 2-5 px in a light tone, trough one row below shifted right
     for _ in range(int(W * H * p.get('waves', 0.02))):
         x, y = rnd.randrange(W - 6), rnd.randrange(1, H - 1)
@@ -279,6 +280,10 @@ def coast2(W, H, land, p):
         crest = sea[3] if f < p.get('deep', 0.22) else sea[2]
         trough = sea[0] if f < p.get('deep', 0.22) else lighten(sea[0], 0.85)
         if x + L + 2 >= W or y + 2 >= H: continue
+        g = p.get('wave_gap', 0)
+        if g:
+            if any(occ[yy][xx] for yy in range(max(0, y - g), min(H, y + g + 2)) for xx in range(max(0, x - g), min(W, x + L + g))): continue
+            for xx in range(x, min(W, x + L)): occ[y][xx] = True
         for i in range(L):
             if F[y][x + i] > p.get('shallow', 0.06): px[x + i, y] = crest
             if i >= 1 and F[y + 1][x + i] > p.get('shallow', 0.06): px[x + i, y + 1] = trough
