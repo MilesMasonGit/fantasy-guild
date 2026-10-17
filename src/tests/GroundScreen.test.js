@@ -1,7 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { screenGrid, buildScreenPass, MAT_EDGE } from '../ui/components/board/groundScreen.js';
 import { boardScaleAt, boardArtSteps } from '../ui/components/base/TokenSprite.jsx';
-import { SHEET_PX, PROP_PX, PROP_SHEET_CELLS } from '../config/registries/terrainRegistry.js';
+import { SHEET_PX, PROP_PX, PROP_SHEET_CELLS, generatedOf } from '../config/registries/terrainRegistry.js';
+import { buildGroundPlan } from '../systems/board/TerrainSurface.js';
+import { drawGrass, grassColours } from '../systems/board/TerrainGrass.js';
+import { regionGround } from '../systems/atlas/regionGround.js';
 
 /**
  * The screen pass (terrain roadmap decisions 6 and 8): the ground plan, 2 mat units a pixel,
@@ -294,5 +297,32 @@ describe('the pass leaves what it cannot draw clear', () => {
         const out = new Uint8ClampedArray(grid.cols * grid.rows * 4);
         const pass = buildScreenPass(planOf(), { mat: MAT, unit, sheet: fromTable({ flat: solid(9, 9, 9) }), out });
         expect(pass.data).toBe(out);
+    });
+});
+
+describe('⭐ generated looks', () => {
+    it('⭐ draws a generated look in its own colours, unmuted, in the light of the shade pattern', () => {
+        const plan = buildGroundPlan(regionGround({ seed: 77 }, MAT));
+        const table = grassColours(generatedOf('meadow'));
+        for (const fit of [0.74, 1]) {
+            const unit = boardScaleAt(fit);
+            // The sheet beneath is a flat colour no ramp has: it must show nowhere.
+            const pass = buildScreenPass(plan, { mat: MAT, unit, sheet: fromTable({ grass: solid(1, 2, 3) }) });
+            const grid = screenGrid(MAT, unit);
+            const planCol = Int32Array.from({ length: grid.cols }, (_, c) => Math.min(plan.width - 1, Math.floor(((c + 0.5) * unit) / PLAN_U)));
+            const planRow = Int32Array.from({ length: grid.rows }, (_, r) => Math.min(plan.height - 1, Math.floor(((r + 0.5) * unit) / PLAN_U)) * plan.width);
+            const { colour } = drawGrass(plan.grass, plan.seed, grid.cols, grid.rows, planCol, planRow);
+            const shades = new Set();
+            for (let gy = 150; gy < 250; gy++) {
+                for (let gx = 250; gx < 400; gx++) {
+                    const f = plan.shades[plan.shadeAt[planRow[gy] + planCol[gx]]];
+                    shades.add(f);
+                    const want = [...Uint8ClampedArray.from(table[colour[gy * grid.cols + gx]].map(v => v * f)), 255];
+                    const got = px(pass, gx, gy);
+                    if (got.join() !== want.join()) throw new Error(`fit ${fit} at ${gx},${gy}: ${got} not ${want}`);
+                }
+            }
+            expect(shades.size, `fit ${fit}`).toBeGreaterThan(1);
+        }
     });
 });

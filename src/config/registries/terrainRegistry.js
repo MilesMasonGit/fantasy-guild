@@ -75,6 +75,16 @@ function deepFreeze(value) {
  *   sea cuts into whatever land it meets, except the terrains in `except`.
  * - `props`: the prop sheets it scatters from, by weight; `propDensity` how many props it carries,
  *   as a share of its cells (they stand in groups, `TerrainProps`).
+ * - `generated`: the look is drawn by rules instead of its sheet and wear (`TerrainGrass`), from
+ *   one of the owner's settled rule sets (`docs/active/research/ground_gen/`). Colours are
+ *   hue-shifted 5-colour ramps `[hue, lightness, saturation]`: `grass` the body, `earth` the bare
+ *   ground. `earthShare` is how much wears bare before the grass reaches back in (about 58 % of it
+ *   stays bare); `zoneCell` the zones' noise cell in Token pixels. `kinds` are its three kinds of
+ *   grass in the order they lie along the zone noise, each with its strokes: how many centres
+ *   (`blades`, a chance per pixel) of `cluster` strokes, their `heights`, the chance of a lit
+ *   `tips` and of a `shadow` pixel, the `mounds` noise cell, and the stroke colour, step `tone` of
+ *   its own `strokes` ramp, or of the grass ramp without one (the middle kind's always is). The
+ *   sheet and wear stay for when the "Generated grass" switch is off.
  *
  * ⚠️ First values, retuned at the eye-check with the Playmat Tuner. The shoreline widths (the
  * tuning sliders) carry over from the 8-pixel ground set, where an art pixel was 4 units; the
@@ -84,6 +94,15 @@ export const LOOKS = deepFreeze({
     meadow: {
         id: 'meadow', name: 'Meadow', terrain: TERRAIN.GRASS, sheets: ['grass'],
         wear: { sheet: 'dirt', coverage: 0.10, rim: true },
+        // `final_spec.json`: tall, lawn and dry grass.
+        generated: {
+            grass: [0.26, 0.44, 0.60], earth: [0.06, 0.38, 0.32], earthShare: 0.175, zoneCell: 55,
+            kinds: [
+                { id: 'tall', blades: 0.036, cluster: 5, heights: [3, 3, 4], tips: 0.15, shadow: 0.55, mounds: 12, strokes: [0.30, 0.36, 0.58], tone: 2 },
+                { id: 'lawn', blades: 0.02975, cluster: 4, heights: [2, 2, 3], tips: 0.15, shadow: 0.5, mounds: 16, strokes: null, tone: 3 },
+                { id: 'dry', blades: 0.054, cluster: 3, heights: [1, 2, 2], tips: 0.2, shadow: 0.5, mounds: 18, strokes: [0.16, 0.50, 0.62], tone: 2 }
+            ]
+        },
         props: [{ sheet: 'p_flowers', weight: 2 }, { sheet: 'p_bush', weight: 1 }],
         propDensity: 0.06
     },
@@ -91,6 +110,16 @@ export const LOOKS = deepFreeze({
         id: 'forest', name: 'Forest', terrain: TERRAIN.GRASS, sheets: ['grass_dark'],
         // Less than the meadow: leaf litter and shade, not footfall.
         wear: { sheet: 'dirt', coverage: 0.08, rim: true },
+        // `forest_spec.json`: ferns, lawn and leaf litter. ⚠️ Its stronger dappled shade (twice the
+        // meadow's tint) is not carried: every look takes the one shade pattern.
+        generated: {
+            grass: [0.31, 0.36, 0.50], earth: [0.05, 0.30, 0.28], earthShare: 0.205, zoneCell: 75,
+            kinds: [
+                { id: 'fern', blades: 0.03, cluster: 6, heights: [3, 4, 4], tips: 0.15, shadow: 0.55, mounds: 12, strokes: [0.36, 0.30, 0.55], tone: 2 },
+                { id: 'lawn', blades: 0.02, cluster: 4, heights: [2, 2, 3], tips: 0.15, shadow: 0.5, mounds: 16, strokes: null, tone: 3 },
+                { id: 'litter', blades: 0.08, cluster: 3, heights: [1, 1, 2], tips: 0.15, shadow: 0.5, mounds: 18, strokes: [0.085, 0.38, 0.45], tone: 2 }
+            ]
+        },
         props: [
             { sheet: 'p_bush_dark', weight: 2 }, { sheet: 'p_mushroom', weight: 1 }, { sheet: 'p_flowers', weight: 1 }
         ],
@@ -146,6 +175,11 @@ export function fringeOf(lookId) {
 /** The sheet worn through a look, and how much of it shows, or null. */
 export function wearOf(lookId) {
     return getLook(lookId)?.wear || null;
+}
+
+/** The colours a look's generated ground is drawn in, or null for a look drawn from its sheet. */
+export function generatedOf(lookId) {
+    return getLook(lookId)?.generated || null;
 }
 
 /** The props a look scatters and how thickly, or null. */

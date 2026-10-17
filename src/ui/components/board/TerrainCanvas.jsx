@@ -3,7 +3,7 @@ import { useMatFit } from './MatFitContext.jsx';
 import { boardScaleAt } from '../base/TokenSprite.jsx';
 import { MAT_Z } from './matLayers.js';
 import { buildScreenPass, screenGrid } from './groundScreen.js';
-import { groundSheetsReady, loadGroundSheets, onGroundSheetsReady, mutedSheet } from './groundSheets.js';
+import { groundSheetsReady, loadGroundSheets, onGroundSheetsReady, mutedSheet, drawnSheet } from './groundSheets.js';
 import { timedBuild } from './groundBuilds.js';
 import { buildGroundPlan } from '../../../systems/board/TerrainSurface.js';
 import { sheetPath, propSheetPath } from '../../../config/registries/terrainRegistry.js';
@@ -87,7 +87,7 @@ function useSettledFit(fit, waitForIt) {
 }
 
 const groundSheet = (id) => mutedSheet(sheetPath(id));
-const propSheet = (id) => mutedSheet(propSheetPath(id));
+const propSheet = (id, asDrawn) => (asDrawn ? drawnSheet(propSheetPath(id)) : mutedSheet(propSheetPath(id)));
 
 /**
  * @param {{ground: object}} props  the active Region's ground (`regionGround`), the same object

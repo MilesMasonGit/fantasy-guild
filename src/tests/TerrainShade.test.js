@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, beforeEach } from 'vitest';
 import { buildShadePattern, shadeNoise, buildWearEdges, PATTERN_SHARES } from '../systems/board/TerrainShade.js';
 import { buildWearMask } from '../systems/board/TerrainPatches.js';
 import { buildGroundPlan } from '../systems/board/TerrainSurface.js';
@@ -138,6 +138,9 @@ describe('⭐ The plan carries the shade as a factor per pixel', () => {
 });
 
 describe('⭐ A worn patch has a darker rim, and a lighter fringe round it', () => {
+    // The lip of a sheet look's wear: generated grass draws its own earth edge (`TerrainGrass`).
+    beforeEach(() => setTuning('grassOn', 0));
+
     /** Every pixel within `steps` side steps of `i` (a diamond). */
     const within = (i, steps, width, n, fn) => {
         const x = i % width;
