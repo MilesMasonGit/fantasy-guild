@@ -88,14 +88,14 @@ export const TUNABLES = Object.freeze([
         group: 'Ground pattern',
         label: 'Pattern scale (u)',
         hint: 'How big the lighter and darker areas are, in mat units: a Token is 128.',
-        min: 128, max: 768, step: 16, def: 320
+        min: 128, max: 768, step: 16, def: 384
     },
     {
         key: 'patternStrength',
         group: 'Ground pattern',
         label: 'Pattern strength',
-        hint: 'How much lighter and darker those areas are than the sheet as drawn: 0.06 is 6 % each way. 0 turns them off.',
-        min: 0, max: 0.2, step: 0.01, def: 0.06
+        hint: 'How much lighter and darker those areas are than the sheet as drawn: 0.08 is 8 % each way. 0 turns them off.',
+        min: 0, max: 0.2, step: 0.01, def: 0.08
     },
     {
         key: 'patchCoverage',
@@ -109,7 +109,7 @@ export const TUNABLES = Object.freeze([
         group: 'Ground wear',
         label: 'Clump size (u)',
         hint: 'How big each worn patch is, in mat units. Small values approach dithering; large ones read as a second ground.',
-        min: 8, max: 60, step: 2, def: 20
+        min: 8, max: 60, step: 2, def: 40
     },
     {
         key: 'wearEdgeWidth',
