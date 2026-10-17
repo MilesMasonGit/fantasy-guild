@@ -687,6 +687,12 @@ describe('⭐ Yellowstone\'s sulphur lakes', () => {
         expect(buildGroundPlan(lakeGround()).grass.ring).toBeNull();
     });
 
+    it('keep the scatter out of the lakes', () => {
+        const plan = buildGroundPlan(lakeGround(74));
+        expect(plan.props.length).toBeGreaterThan(0);
+        for (const p of plan.props) expect(plan.grass.ring[p.footY * plan.width + p.footX], `${p.sheet} at ${p.footX},${p.footY}`).toBe(0);
+    });
+
     it('draw their rings over the ground in the screen\'s details', () => {
         const plan = buildGroundPlan(lakeGround(73));
         const d = detailsOf(plan);

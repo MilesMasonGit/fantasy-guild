@@ -588,10 +588,13 @@ function shapeRow(ctx, look, py) {
     const sliders = rules.zones.sliders;
     const tall = look.levels.tall;
     const dry = look.levels.dry;
-    const cuts = look.levels.cuts;
-    const order = rules.zones.order;
+    const { cuts, order } = look;
+    const nCuts = cuts.length;
     const gap = rules.zones.gap;
-    const gapN = look.gapN;
+    const gapBand = gap ? gap.band : -1;
+    const gapCut = gap ? gap.cut : 0;
+    const gapTo = gap ? gap.to : 0;
+    const gT = gap ? look.gapN.top : null, gB = gap ? look.gapN.bottom : null, gY = gap ? look.gapN.fy : 0;
     const ov = rules.overlay;
     const [oN, oF, oJ] = look.overlayN || [];
     let any = false;
@@ -649,14 +652,22 @@ function shapeRow(ctx, look, py) {
                 kind = v < tall ? 0 : v > dry ? 2 : 1;
             }
         } else {
-            let band = bandOf(cuts, z - halfJag);
-            if (band !== bandOf(cuts, z + halfJag)) {
+            // `bandOf` written out: a call per pixel here was a tenth of the plan.
+            const low = z - halfJag;
+            const high = z + halfJag;
+            let band = 0;
+            while (band < nCuts && low >= cuts[band]) band++;
+            let top = band;
+            while (top < nCuts && high >= cuts[top]) top++;
+            if (top !== band) {
                 const y = jT[px];
-                band = bandOf(cuts, z + ((y + (jB[px] - y) * jY) - 0.5) * jag);
+                const v = z + ((y + (jB[px] - y) * jY) - 0.5) * jag;
+                band = 0;
+                while (band < nCuts && v >= cuts[band]) band++;
             }
-            if (gap && band === gap.band) {
-                x = gapN.top[px];
-                if (x + (gapN.bottom[px] - x) * gapN.fy < gap.cut) band = gap.to;
+            if (band === gapBand) {
+                x = gT[px];
+                if (x + (gB[px] - x) * gY < gapCut) band = gapTo;
             }
             kind = order[band];
         }
@@ -932,6 +943,9 @@ export function buildGrassPlan(pixels, seed, looks) {
         const ov = r.overlay;
         const look = {
             slot, rules: r, cells, zoneN,
+            // Typed copies, so every look's zones read alike (a frozen array is read another way).
+            cuts: Float64Array.from(r.zones.cuts || []),
+            order: Int8Array.from(r.zones.order),
             levels: calibrate(width, height, shared, zoneN, r, r.earthShare * tuning('grassEarth')),
             encroach: r.encroach + offset('grassEncroach'),
             gapN: r.zones.gap ? walker(r.zones.gap.cell, CH.GAP) : null,
@@ -962,8 +976,8 @@ export function buildGrassPlan(pixels, seed, looks) {
         const fields = pixels.fields || distanceFields(at, width, height);
         const wet = [];
         palette.forEach((t, p) => { if (slotOf[p] >= 0 && rules[slotOf[p]].water) wet.push(p); });
-        ctx.waterDist = fields.from(wet, true, 3 * Math.max(...water.map(w => waterReach(w.rules.water)))).dist;
-        if (shoreLooks.length) ctx.shoreDist = fields.from(wet, false, 3 * Math.max(...shoreLooks.map(l => shoreReach(l.rules.shore)))).dist;
+        ctx.waterDist = fields.distances(wet, true, 3 * Math.max(...water.map(w => waterReach(w.rules.water))));
+        if (shoreLooks.length) ctx.shoreDist = fields.distances(wet, false, 3 * Math.max(...shoreLooks.map(l => shoreReach(l.rules.shore))));
         ctx.shore = new Uint8Array(n);
         ctx.shoreN = walker(R.shoreCell, CH.SHORE);
         ctx.foamN = walker(R.foamCell, CH.FOAM);

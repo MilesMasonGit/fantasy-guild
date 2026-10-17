@@ -96,7 +96,8 @@ export function buildGroundPlan(ground) {
     const pattern = buildShadePattern(width, height, ground.seed);
     const edges = buildWearEdges(pixels, wear, ground);
     const { shades, shadeAt, levels, parts, step, lips } = composeShades(n, pattern, edges);
-    const props = propsForGround(ground, pixels);
+    // No bush stands in a sulphur lake.
+    const props = propsForGround(ground, pixels).filter(p => !grass?.ring?.[p.footY * width + p.footX]);
     for (const p of props) {
         if (!pattern.levelAt) p.shade = 1;
         else if (drawsGenerated(p.look)) p.shade = 1 + pattern.levelAt[p.footY * width + p.footX] * step * shadeRatio(p.look);
