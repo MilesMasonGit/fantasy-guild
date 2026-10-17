@@ -108,8 +108,10 @@ def ground(W, H, p):
                     px[x, y] = ep[4]
     # blades: clusters of strokes, light from top-left, shadow pixel under-right
     n = int(W * H * p['blades'])
+    bmask = vnoise(p.get('blade_mask_scale', 48), rnd) if p.get('blade_mask') else None
     for _ in range(n):
         cx, cy = rnd.randrange(W), rnd.randrange(H)
+        if bmask and bmask(cx, cy) < p['blade_mask']: continue
         for _ in range(p.get('cluster', 1)):
             x = cx + rnd.randrange(-1, 2) * (p.get('cluster', 1) > 1); y = cy + rnd.randrange(-1, 2) * (p.get('cluster', 1) > 1)
             if not (0 <= x < W and 0 <= y < H) or earth[y][x]: continue
@@ -117,7 +119,7 @@ def ground(W, H, p):
             for i in range(hgt):
                 xx = x + (1 if lean and i == 0 else 0); yy = y - i
                 if 0 <= xx < W and 0 <= yy < H and not earth[yy][xx]:
-                    col = gp[4] if (i == hgt - 1 and rnd.random() < p.get('tips', 0.15)) else gp[3]
+                    col = gp[4] if (i == hgt - 1 and rnd.random() < p.get('tips', 0.15)) else gp[p.get('stroke_tone', 3)]
                     px[xx, yy] = shade_at(xx, yy, col)
             if x + 1 < W and y + 1 < H and not earth[y + 1][x + 1] and rnd.random() < p.get('blade_shadow', 0.5):
                 px[x + 1, y + 1] = shade_at(x + 1, y + 1, gp[0])
