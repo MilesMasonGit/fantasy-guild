@@ -1,0 +1,109 @@
+"""Ground generator, design loop. Renders whole scenes with no repeating sheet (as the in-game route would)."""
+from PIL import Image, ImageOps, ImageDraw
+import random, colorsys, os, glob, sys, json
+S = os.path.dirname(os.path.abspath(__file__))
+os.chdir(r"C:\Users\16048\Projects\fantasy_guild_v2")
+
+def ramp(h, l_mid, s, n=5, hue_shift=0.035, step=0.075):
+    out = []
+    for i in range(n):
+        k = i - (n - 1) / 2
+        r, g, b = colorsys.hls_to_rgb((h - k * hue_shift) % 1, l_mid + k * step, min(1, s * (1 - abs(k) * 0.08)))
+        out.append((int(r * 255), int(g * 255), int(b * 255), 255))
+    return out
+
+def vnoise(cell, rnd, gw=64, gh=64):
+    g = [[rnd.random() for _ in range(gw)] for _ in range(gh)]
+    def at(x, y):
+        fx, fy = x / cell, y / cell; x0, y0 = int(fx), int(fy); tx, ty = fx - x0, fy - y0
+        tx = tx * tx * (3 - 2 * tx); ty = ty * ty * (3 - 2 * ty)
+        a = g[y0 % gh][x0 % gw]; b = g[y0 % gh][(x0 + 1) % gw]; c = g[(y0 + 1) % gh][x0 % gw]; d = g[(y0 + 1) % gh][(x0 + 1) % gw]
+        return (a * (1 - tx) + b * tx) * (1 - ty) + (c * (1 - tx) + d * tx) * ty
+    return at
+
+def lighten(c, f):
+    h, l, s = colorsys.rgb_to_hls(c[0] / 255, c[1] / 255, c[2] / 255)
+    r, g, b = colorsys.hls_to_rgb(h, min(1, l * f), s); return (int(r * 255), int(g * 255), int(b * 255), 255)
+
+def ground(W, H, p):
+    """p: dict of rules. Returns an RGBA image W x H."""
+    rnd = random.Random(p.get('seed', 3))
+    gp = ramp(*p['grass']); ep = ramp(*p['earth'], hue_shift=0.02, step=0.06)
+    img = Image.new('RGBA', (W, H)); px = img.load()
+    clump = vnoise(p['clump'], rnd); fine = vnoise(max(2, p['clump'] // 2), rnd)
+    tint = vnoise(p['tint_scale'], rnd); wear = vnoise(p['earth_scale'], rnd); wear2 = vnoise(max(4, p['earth_scale'] // 4), rnd)
+    lo, hi = p.get('body', (1, 2))
+    earth = [[(wear(x, y) * 0.8 + wear2(x, y) * 0.2) > p['earth_thr'] for x in range(W)] for y in range(H)]
+    tf = p.get('tint', 0.07)
+    for y in range(H):
+        for x in range(W):
+            if earth[y][x]:
+                c = ep[2] if clump(x, y) > 0.5 else ep[1]
+            else:
+                v = clump(x, y) * 0.7 + fine(x, y) * 0.3
+                c = gp[hi] if v > 0.5 else gp[lo]
+            t = tint(x, y)
+            if t > 0.62: c = lighten(c, 1 + tf)
+            elif t < 0.38: c = lighten(c, 1 - tf)
+            px[x, y] = c
+    def shade_at(x, y, col):
+        t = tint(x, y)
+        return lighten(col, 1 + tf) if t > 0.62 else lighten(col, 1 - tf) if t < 0.38 else col
+    # blades: clusters of strokes, light from top-left, shadow pixel under-right
+    n = int(W * H * p['blades'])
+    for _ in range(n):
+        cx, cy = rnd.randrange(W), rnd.randrange(H)
+        for _ in range(p.get('cluster', 1)):
+            x = cx + rnd.randrange(-1, 2) * (p.get('cluster', 1) > 1); y = cy + rnd.randrange(-1, 2) * (p.get('cluster', 1) > 1)
+            if not (0 <= x < W and 0 <= y < H) or earth[y][x]: continue
+            hgt = rnd.choice(p.get('heights', (2, 2, 3))); lean = rnd.random() < 0.4
+            for i in range(hgt):
+                xx = x + (1 if lean and i == 0 else 0); yy = y - i
+                if 0 <= xx < W and 0 <= yy < H and not earth[yy][xx]:
+                    col = gp[4] if (i == hgt - 1 and rnd.random() < p.get('tips', 0.15)) else gp[3]
+                    px[xx, yy] = shade_at(xx, yy, col)
+            if x + 1 < W and y + 1 < H and not earth[y + 1][x + 1] and rnd.random() < p.get('blade_shadow', 0.5):
+                px[x + 1, y + 1] = shade_at(x + 1, y + 1, gp[0])
+    # pebbles on earth
+    for _ in range(int(W * H * p.get('pebbles', 0.01))):
+        x, y = rnd.randrange(W - 2), rnd.randrange(H - 2)
+        if earth[y][x] and earth[y + 1][x + 1]:
+            px[x, y] = ep[3]
+            if rnd.random() < 0.5 and earth[y][x + 1]: px[x + 1, y] = ep[3]
+            px[x + 1, y + 1] = ep[0]
+    # earth edges: dark rim under grass, tufts hanging over the top edge, ragged sides
+    for y in range(1, H - 2):
+        for x in range(1, W - 1):
+            if not earth[y][x]: continue
+            if not earth[y - 1][x]:
+                px[x, y] = ep[0]
+                if rnd.random() < p.get('tufts', 0.5):
+                    for i in range(rnd.choice((1, 2))):
+                        px[x, y + i] = shade_at(x, y + i, gp[3] if i == 0 else gp[2])
+            elif (not earth[y][x - 1] or not earth[y][x + 1]) and rnd.random() < p.get('ragged', 0.25):
+                px[x, y] = shade_at(x, y, gp[2])
+    return img
+
+def put_tokens(base):
+    tk = sorted(f for f in glob.glob('public/assets/tokens/**/*.png', recursive=True) if any(k in f for k in ('t_tree_oak.png', 't_sawmill', 't_campfire')))
+    it = sorted(f for f in glob.glob('public/assets/items/**/*.png', recursive=True) if any(k in f for k in ('i_wood_oak.png', 'i_ore_copper.png', 'i_apple.png')))
+    for n, f in enumerate(tk): base.alpha_composite(Image.open(f).convert('RGBA'), (40 + n * 100, 50 + (n % 2) * 60))
+    for n, f in enumerate(it): base.alpha_composite(Image.open(f).convert('RGBA'), (90 + n * 90, 150))
+    return base
+
+def board(variants, out, W=320, H=200, s=2, labels=None):
+    G = lambda im: ImageOps.grayscale(im.convert('RGB')).convert('RGB')
+    n = len(variants); pad = 12; top = 22
+    P = Image.new('RGB', (W * s * n + pad * (n - 1), H * s * 2 + pad + top), (40, 40, 40)); d = ImageDraw.Draw(P)
+    for i, p in enumerate(variants):
+        A = put_tokens(ground(W, H, p)).resize((W * s, H * s), Image.NEAREST)
+        x = i * (W * s + pad)
+        d.text((x + 4, 5), (labels or 'ABCDEFG')[i] if not labels else labels[i], fill=(255, 255, 255))
+        P.paste(A.convert('RGB'), (x, top)); P.paste(G(A), (x, top + H * s + pad))
+    P.save(os.path.join(S, out))
+
+if __name__ == '__main__':
+    rounds = json.load(open(os.path.join(S, 'rounds.json')))
+    r = rounds[sys.argv[1]]
+    board(r['variants'], f"round_{sys.argv[1]}.png", labels=r.get('labels'))
+    print('ok')

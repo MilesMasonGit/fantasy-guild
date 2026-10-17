@@ -1,0 +1,6 @@
+{"1": {"labels": ["A  your favourite, no repeat", "B  strokes in little tufts", "C  calm body, strokes only"],
+ "variants": [
+  {"seed": 3, "grass": [0.24, 0.47, 0.55], "earth": [0.08, 0.40, 0.30], "clump": 16, "tint_scale": 96, "tint": 0.07, "earth_scale": 40, "earth_thr": 0.75, "blades": 0.11, "cluster": 1, "tufts": 0.5},
+  {"seed": 3, "grass": [0.24, 0.47, 0.55], "earth": [0.08, 0.40, 0.30], "clump": 16, "tint_scale": 96, "tint": 0.07, "earth_scale": 40, "earth_thr": 0.75, "blades": 0.035, "cluster": 4, "tufts": 0.6},
+  {"seed": 3, "grass": [0.24, 0.47, 0.55], "earth": [0.08, 0.40, 0.30], "clump": 16, "tint_scale": 96, "tint": 0.09, "earth_scale": 40, "earth_thr": 0.75, "blades": 0.11, "cluster": 1, "tufts": 0.5, "body": [2, 2]}
+ ]}}
