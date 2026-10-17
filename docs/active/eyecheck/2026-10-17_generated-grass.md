@@ -17,23 +17,23 @@ new grass for now.
    zones, texture in patches, softened clumps, earth with clods, a lighter
    middle, a sunken edge and grass reaching in. Compare with the prototype
    (https://claude.ai/artifact/LefBh8qULf3JCdqUBb9jFY, round 9).
-   Verdict: ok / change: ___
+   Verdict: ok (owner, 2026-10-17: looks good)
 2. Resize the window a little: the ground keeps its shapes; strokes stay one
    Token pixel wide.
-   Verdict: ok / change: ___
+   Verdict: ok (owner, 2026-10-17: looks good)
 3. QA (bottom right) → Terrain → **Forest**: ferns, moss and leaf litter in
    drifts, darker earth.
-   Verdict: ok / change: ___
+   Verdict: ok (owner, 2026-10-17: looks good)
 4. Terrain → **Forest + Coast**: the new grass meeting the old beach.
-   Verdict: ok / change: ___
+   Verdict: ok (owner, 2026-10-17: looks good)
 5. The **Ground** button (bottom right) → section "Generated grass": a switch
    (off shows the old sheets, for comparison) and sliders for stroke density,
    patches, zones, earth, clump softness and size, mounds, tall and dry
    amounts. Any value you prefer becomes the default.
-   Verdict: ok / change: ___
+   Verdict: ok (owner, 2026-10-17: looks good)
 6. Travel between Regions a few times: building the ground takes a moment on
    arrival (about a tenth of a second at most). Say if you notice a hitch.
-   Verdict: ok / change: ___
+   Verdict: ok (owner, 2026-10-17: looks good)
 7. Terrain → **Back to the Starter Camp** when done.
 
 **Four questions** (recommendation first):
@@ -52,3 +52,10 @@ new grass for now.
 4. **Build time per travel** (45–110 ms): **A: accept it; a background-thread
    version only if you feel a hitch (recommended).** B: do that before
    merging. C: another speed pass first.
+
+**Owner's verdict (2026-10-17):** looks good; merge. Notes: the props may need
+recolouring (a little out of place, not too bad); the ground overall looks a
+little strong, which may settle once there are many Tokens on the mat. The four
+questions took the recommendations (A each): props full colour with `p_bush`
+recoloured by the owner; per-look dapple strength in G4; shapes fixed to the
+mat; build time accepted, a Worker only if a hitch is felt.
