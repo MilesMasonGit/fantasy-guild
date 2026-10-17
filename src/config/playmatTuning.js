@@ -270,14 +270,14 @@ export const TUNABLES = Object.freeze([
         key: 'muteBrightness',
         group: 'Colour',
         label: 'Brightness',
-        hint: 'How bright the ground sheets and their scatter are drawn: 1 is the art as drawn. Baked into the sheets once, never a filter. The generated grass and its scatter are drawn as they are.',
+        hint: 'How bright the ground sheets and their scatter are drawn: 1 is the art as drawn. Baked into the sheets once, never a filter. The generated ground and its scatter are drawn as they are (see Ground strength).',
         min: 0.5, max: 1.2, step: 0.01, def: 0.85
     },
     {
         key: 'muteSaturation',
         group: 'Colour',
         label: 'Saturation',
-        hint: 'How colourful the ground sheets and their scatter are drawn: 1 is the art as drawn, 0 grey. The generated grass and its scatter are drawn as they are.',
+        hint: 'How colourful the ground sheets and their scatter are drawn: 1 is the art as drawn, 0 grey. The generated ground and its scatter are drawn as they are (see Ground strength).',
         min: 0, max: 1.2, step: 0.01, def: 0.7
     }
 ]);

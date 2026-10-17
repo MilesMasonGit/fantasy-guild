@@ -5,6 +5,8 @@ import { SHEET_PX, PROP_PX, PROP_SHEET_CELLS, generatedOf } from '../config/regi
 import { buildGroundPlan } from '../systems/board/TerrainSurface.js';
 import { drawGrass, grassColours } from '../systems/board/TerrainGrass.js';
 import { regionGround } from '../systems/atlas/regionGround.js';
+import { regionWith, flat } from './fixtures/ground.js';
+import { tuning } from '../config/playmatTuning.js';
 
 /**
  * The screen pass (terrain roadmap decisions 6 and 8): the ground plan, 2 mat units a pixel,
@@ -324,5 +326,32 @@ describe('⭐ generated looks', () => {
             }
             expect(shades.size, `fit ${fit}`).toBeGreaterThan(1);
         }
+    });
+});
+
+describe('⭐ each generated look in its own share of the shade pattern', () => {
+    it('⭐ steps the forest twice as far as the meadow, as its rules say', () => {
+        const plan = buildGroundPlan(regionGround(regionWith(55, 36, flat('grass'), { seed: 78 }), MAT));
+        expect(plan.grass.looks).toEqual(['forest']);
+        const table = grassColours(generatedOf('forest'));
+        const s = tuning('patternStrength');
+        const unit = boardScaleAt(1);
+        const pass = buildScreenPass(plan, { mat: MAT, unit, sheet: () => null });
+        const grid = screenGrid(MAT, unit);
+        const planCol = Int32Array.from({ length: grid.cols }, (_, c) => Math.min(plan.width - 1, Math.floor(((c + 0.5) * unit) / PLAN_U)));
+        const planRow = Int32Array.from({ length: grid.rows }, (_, r) => Math.min(plan.height - 1, Math.floor(((r + 0.5) * unit) / PLAN_U)) * plan.width);
+        const { colour } = drawGrass(plan.grass, plan.seed, grid.cols, grid.rows, planCol, planRow);
+        const levels = new Set();
+        for (let gy = 150; gy < 350; gy++) {
+            for (let gx = 250; gx < 600; gx++) {
+                const level = plan.pattern.levelAt[planRow[gy] + planCol[gx]];
+                levels.add(level);
+                const f = 1 + level * s * 2;
+                const want = [...Uint8ClampedArray.from(table[colour[gy * grid.cols + gx]].map(v => v * f)), 255];
+                const got = px(pass, gx, gy);
+                if (got.join() !== want.join()) throw new Error(`at ${gx},${gy}: ${got} not ${want}`);
+            }
+        }
+        expect(levels.size).toBe(3);
     });
 });

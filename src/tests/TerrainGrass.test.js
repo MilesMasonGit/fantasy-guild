@@ -9,6 +9,7 @@ import { resolveArtPixels } from '../systems/board/TerrainLattice.js';
 import { LOOKS, generatedOf } from '../config/registries/terrainRegistry.js';
 import { setTuning, resetTuning } from '../config/playmatTuning.js';
 import { groundWith, flat } from './fixtures/ground.js';
+import { hallSpot, HALL_CLEARING } from '../systems/atlas/Layout.js';
 
 /**
  * Generated ground: the owner's settled ground prototype (`docs/active/research/ground_gen`) as the
@@ -638,12 +639,17 @@ describe('⭐ The sea and the shore', () => {
 
 describe('⭐ Yellowstone\'s sulphur lakes', () => {
     const lakeGround = (seed = 71) => lookGround('yellowstone', seed, 40, 24);
+    /** The Hall's ring on the plan, which the plan keeps its lakes out of. */
+    const clearOf = (ground) => {
+        const hall = hallSpot(ground.mat);
+        return { x: hall.x / 2, y: hall.y / 2, r: HALL_CLEARING / 2 };
+    };
 
     it('⭐ match the slow reference at every pixel', () => {
         const ground = lakeGround();
         const plan = buildGroundPlan(ground);
         const pools = lookRules('yellowstone').pools;
-        const centres = poolCentres(plan.width, plan.height, ground.seed, pools);
+        const centres = poolCentres(plan.width, plan.height, ground.seed, pools, clearOf(ground));
         expect(centres.length).toBeGreaterThan(0);
         let wrong = 0;
         let lake = 0;
@@ -665,7 +671,7 @@ describe('⭐ Yellowstone\'s sulphur lakes', () => {
         const steps = [0, 0.3, 0.55, 0.7, 0.8];
         const sums = steps.map(() => 0);
         const counts = steps.map(() => 0);
-        for (const { x, y, r } of poolCentres(plan.width, plan.height, ground.seed, pools)) {
+        for (const { x, y, r } of poolCentres(plan.width, plan.height, ground.seed, pools, clearOf(ground))) {
             expect(plan.grass.ring[Math.round(y) * plan.width + Math.round(x)]).toBe(1);
             steps.forEach((t, k) => {
                 for (const [dx, dy] of [[1, 0], [-1, 0], [0, 0.75], [0, -0.75]]) {
@@ -685,6 +691,21 @@ describe('⭐ Yellowstone\'s sulphur lakes', () => {
         setTuning('groundLakes', 0);
         expect(poolCentres(880, 563, 1, pools).length).toBe(0);
         expect(buildGroundPlan(lakeGround()).grass.ring).toBeNull();
+    });
+
+    it('⭐ keep out of the Guild Hall\'s ring', () => {
+        const pools = lookRules('yellowstone').pools;
+        const clear = { x: 440, y: 281, r: 112 };
+        for (let seed = 1; seed <= 20; seed++) {
+            const centres = poolCentres(880, 563, seed, pools, clear);
+            expect(centres.length).toBeGreaterThan(10);
+            for (let y = 169; y <= 393; y += 4) {
+                for (let x = 328; x <= 552; x += 4) {
+                    if (Math.hypot(x - clear.x, y - clear.y) > clear.r) continue;
+                    expect(poolRingAt(x, y, seed, pools, centres), `seed ${seed} at ${x},${y}`).toBe(0);
+                }
+            }
+        }
     });
 
     it('keep the scatter out of the lakes', () => {

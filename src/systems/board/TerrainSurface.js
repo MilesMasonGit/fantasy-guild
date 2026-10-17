@@ -7,6 +7,7 @@ import { propsForGround } from './TerrainProps.js';
 import { buildShadePattern, buildWearEdges, composeShades } from './TerrainShade.js';
 import { buildGrassPlan, drawsGenerated, shadeRatio } from './TerrainGrass.js';
 import { getLook, LOOKS } from '../../config/registries/terrainRegistry.js';
+import { hallSpot, HALL_CLEARING } from '../atlas/Layout.js';
 import { tuning } from '../../config/playmatTuning.js';
 
 /**
@@ -59,7 +60,10 @@ export function buildGroundPlan(ground) {
     const { width, height, palette, at } = pixels;
     const looks = palette.map(t => (getLook(ground.looks[t]) ? ground.looks[t] : LOOKS.meadow.id));
     // The generated sea measures furthest from the shore: first, so the bands reuse its walk.
-    const grass = buildGrassPlan(pixels, ground.seed, looks);
+    const hall = hallSpot(ground.mat);
+    const grass = buildGrassPlan(pixels, ground.seed, looks, {
+        clear: { x: hall.x / PLAN_PIXEL_U, y: hall.y / PLAN_PIXEL_U, r: HALL_CLEARING / PLAN_PIXEL_U }
+    });
     const { bands } = buildBandMasks(pixels, ground);
     const generated = grass ? Uint8Array.from(grass.slotOf.slice(0, palette.length), s => (s >= 0 ? 1 : 0)) : null;
     const wear = buildWearMask(pixels, ground, generated);

@@ -786,24 +786,40 @@ function shoreRow(ctx, look, py) {
     }
 }
 
+/** How many places a lake tries before it is left out for want of room. */
+const POOL_TRIES = 4;
+
 /**
  * A look's lakes: `perFrame` of them in every prototype-sized piece of the plan (times the Sulphur
- * lakes slider), each somewhere on the mat away from its edge, a radius between the two given.
+ * lakes slider), each somewhere on the mat away from its edge, a radius between the two given,
+ * and none reaching into the `clear` circle (the Guild Hall's ring): a lake that finds no place
+ * clear of it in a few tries is left out.
  *
+ * @param {{x: number, y: number, r: number}|null} [clear]  in plan pixels
  * @returns {Array<{x: number, y: number, r: number}>} in plan pixels
  */
-export function poolCentres(width, height, seed, pools) {
+export function poolCentres(width, height, seed, pools, clear = null) {
     const R = GRASS_RULES;
     const count = Math.round(pools.perFrame * (width * height) / (R.frame.w * R.frame.h) * Math.max(0, tuning('groundLakes')));
     const salt = saltOf(seed, SALT.POOL_PLACE);
     const u = (k, axis) => hash(k, axis, salt) / 4294967296;
     const span = 1 - 2 * R.poolMargin;
     const [r0, r1] = pools.radius;
-    return Array.from({ length: count }, (_, k) => ({
-        x: (R.poolMargin + span * u(k, 0)) * width,
-        y: (R.poolMargin + span * u(k, 1)) * height,
-        r: r0 + (r1 - r0) * u(k, 2)
-    }));
+    const reach = pools.rings[pools.rings.length - 1][0] + 0.5 * R.poolNoise + 0.5 * R.poolFineNoise;
+    const out = [];
+    for (let k = 0; k < count; k++) {
+        for (let t = 0; t < POOL_TRIES; t++) {
+            const at = {
+                x: (R.poolMargin + span * u(k, 3 * t)) * width,
+                y: (R.poolMargin + span * u(k, 3 * t + 1)) * height,
+                r: r0 + (r1 - r0) * u(k, 3 * t + 2)
+            };
+            if (clear && Math.hypot(at.x - clear.x, at.y - clear.y) < clear.r + reach * at.r) continue;
+            out.push(at);
+            break;
+        }
+    }
+    return out;
 }
 
 /**
@@ -878,6 +894,8 @@ function poolRow(ctx, look, py) {
  * @param {object} pixels A resolved map from `resolveArtPixels`.
  * @param {number} seed The Region's seed.
  * @param {string[]} looks The look of each palette entry.
+ * @param {{clear?: {x: number, y: number, r: number}|null}} [options]  a circle no lake reaches
+ *   into (the Guild Hall's ring), in plan pixels
  * @returns {null|{looks: string[], slotOf: Int8Array, bits: Uint8Array, kinds: Uint8Array,
  *   thresholds: Array<object|null>, shore: Uint8Array|null, ring: Uint8Array|null,
  *   bands: Array<number[]|null>}} Null when no look here is generated. Per plan pixel, row by row:
@@ -888,7 +906,7 @@ function poolRow(ctx, look, py) {
  *   land pixel's {@link SHORE} byte; `ring` a lake's ring, 1 the middle. `slotOf[p]` is palette
  *   entry `p`'s slot, -1 for none.
  */
-export function buildGrassPlan(pixels, seed, looks) {
+export function buildGrassPlan(pixels, seed, looks, { clear = null } = {}) {
     const { width, height, palette, at, present } = pixels;
     const slotOf = new Int8Array(256).fill(-1);
     const slots = [];
@@ -956,7 +974,7 @@ export function buildGrassPlan(pixels, seed, looks) {
                 moundN: kind.mounds > 0 ? walker(cells.mounds[k], CH.MOUND + k) : null,
                 moundFineN: kind.mounds > 0 ? walker(cells.moundFine[k], CH.MOUND_FINE + k) : null
             })),
-            centres: r.pools ? poolCentres(width, height, seed, r.pools) : null,
+            centres: r.pools ? poolCentres(width, height, seed, r.pools, clear) : null,
             rings: r.pools ? r.pools.rings : null
         };
         if (look.centres?.length) pooled = true;
