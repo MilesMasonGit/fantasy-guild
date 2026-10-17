@@ -171,29 +171,29 @@ export const TUNABLES = Object.freeze([
     {
         key: 'grassZoneScale',
         group: 'Generated grass',
-        label: 'Zone scale (u)',
-        hint: 'How big the zones of tall, lawn and dry grass are, in mat units: a Token is 128.',
-        min: 40, max: 320, step: 10, def: 110
+        label: 'Zone scale',
+        hint: 'Multiplies how big the zones of each kind of grass are. 1 is the settled rules: in the meadow about a Token across, a little more in the forest.',
+        min: 0.4, max: 3, step: 0.05, def: 1
     },
     {
         key: 'grassTall',
         group: 'Generated grass',
-        label: 'Tall grass',
-        hint: 'The share of the grass that is tall grass (long dark strokes).',
+        label: 'Tall grass / ferns',
+        hint: 'The share of the grass that is the meadow’s tall grass (long dark strokes), or the forest’s ferns.',
         min: 0, max: 0.6, step: 0.01, def: 0.23
     },
     {
         key: 'grassDry',
         group: 'Generated grass',
-        label: 'Dry grass',
-        hint: 'The share of the grass that is dry grass (short yellow strokes, flower-like tips).',
+        label: 'Dry grass / leaf litter',
+        hint: 'The share of the grass that is the meadow’s dry grass (short yellow strokes, flower-like tips), or the forest’s leaf litter.',
         min: 0, max: 0.6, step: 0.01, def: 0.27
     },
     {
         key: 'grassEarth',
         group: 'Generated grass',
         label: 'Earth amount',
-        hint: 'Multiplies how much bare earth each look has. 1 is the prototype: about a tenth of the meadow bare once the grass has reached back in.',
+        hint: 'Multiplies how much bare earth each look has. 1 is the settled rules: about a tenth of the meadow bare once the grass has reached back in, a little more of the forest.',
         min: 0, max: 3, step: 0.05, def: 1
     },
     {

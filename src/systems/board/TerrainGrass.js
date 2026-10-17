@@ -6,11 +6,13 @@ import { generatedOf } from '../../config/registries/terrainRegistry.js';
 import { tuning } from '../../config/playmatTuning.js';
 
 /**
- * The owner's settled ground prototype (`docs/active/research/ground_gen/gen.py`, `ground` and
- * `mixed`, with `final_spec.json`) as the game draws it: hue-shifted 5-colour ramps; a body of two
+ * The owner's settled ground rules (`docs/active/research/ground_gen/gen.py`, `ground` and
+ * `mixed`, with each look's spec: `final_spec.json` the meadow, `forest_spec.json` the forest) as
+ * the game draws them, each look's numbers in its `generated` entry (`terrainRegistry`): hue-shifted 5-colour ramps; a body of two
  * soft tones in clumps; mounds with a lit top and a shadowed bottom edge; blade strokes and tufts
  * lit from the top-left, each with a shadow pixel; strokes gathered in patches; three kinds of
- * grass (tall, lawn, dry) in ragged zones that share one body and differ by their strokes; earth
+ * grass (the meadow's tall, lawn and dry; the forest's ferns, lawn and leaf litter) in ragged zones
+ * that share one body and differ by their strokes; earth
  * with clods, a lighter middle and a sunken edge, which the grass reaches into in fingers and
  * tufts.
  *
@@ -32,14 +34,7 @@ import { tuning } from '../../config/playmatTuning.js';
  * each pass took a half to twice as long again.
  */
 
-/** The three kinds of grass in the order they lie along the zone noise: tall low, dry high. */
-export const GRASS_KINDS = Object.freeze([
-    Object.freeze({ id: 'tall', blades: 0.036, cluster: 5, heights: Object.freeze([3, 3, 4]), shadow: 0.55, tips: 0.15, mounds: 12 }),
-    Object.freeze({ id: 'lawn', blades: 0.02975, cluster: 4, heights: Object.freeze([2, 2, 3]), shadow: 0.5, tips: 0.15, mounds: 16 }),
-    Object.freeze({ id: 'dry', blades: 0.054, cluster: 3, heights: Object.freeze([1, 2, 2]), shadow: 0.5, tips: 0.2, mounds: 18 })
-]);
-
-/** The prototype's rules that have no slider, in its pixels. */
+/** The rules every look shares and no slider moves, in the prototype's pixels. */
 export const GRASS_RULES = Object.freeze({
     earthCell: 40, earthFineCell: 10, earthFine: 0.2,
     encroachCell: 9, encroachDepth: 2.2,
@@ -56,9 +51,10 @@ export const GRASS_RULES = Object.freeze({
 
 /**
  * Where each colour sits in a look's table: the grass ramp (`GRASS + 0` darkest to `+ 4`), the soft
- * body tone, the tall and dry strokes' ramps, the earth ramp and the earth's lighter middle.
+ * body tone, the strokes' ramps of the kinds at the low and the high end of the zones (the meadow's
+ * tall and dry grass, the forest's ferns and litter), the earth ramp and the earth's lighter middle.
  */
-export const COLOUR = Object.freeze({ GRASS: 0, SOFT: 5, TALL: 6, DRY: 11, EARTH: 16, MIDDLE: 21, COUNT: 22, NONE: 255 });
+export const COLOUR = Object.freeze({ GRASS: 0, SOFT: 5, LOW: 6, HIGH: 11, EARTH: 16, MIDDLE: 21, COUNT: 22, NONE: 255 });
 
 /** What a plan pixel's shape byte holds; `MOUND` is a mound of the pixel's own kind of grass. */
 export const BIT = Object.freeze({ EARTH: 1, HIGH: 2, MIDDLE: 4, CLOD: 8, PATCH: 16, MOUND: 32 });
@@ -237,7 +233,7 @@ export function lighten([r, g, b], f) {
 /**
  * A look's colour table, indexed by {@link COLOUR}: `[r, g, b]` bytes.
  *
- * @param {{grass: number[], tall: number[], dry: number[], earth: number[]}} spec  `generatedOf(look)`
+ * @param {object} spec  `generatedOf(look)`
  * @param {number} soft  how far the body's darker tone moves toward its lighter one
  */
 export function grassColours(spec, soft = tuning('grassBodySoft')) {
@@ -245,12 +241,12 @@ export function grassColours(spec, soft = tuning('grassBodySoft')) {
     const earth = ramp(...spec.earth, 5, 0.02, 0.06);
     const [a, b] = [grass[1], grass[2]];
     const softTone = [0, 1, 2].map(i => Math.floor(a[i] * (1 - soft) + b[i] * soft));
-    return [...grass, softTone, ...ramp(...spec.tall), ...ramp(...spec.dry), ...earth, lighten(earth[2], 1.08)];
+    const strokes = (kind) => (kind.strokes ? ramp(...kind.strokes) : grass);
+    return [...grass, softTone, ...strokes(spec.kinds[0]), ...strokes(spec.kinds[2]), ...earth, lighten(earth[2], 1.08)];
 }
 
-/** The colour index of each kind's strokes and of their lit tips. */
-const STROKE_TONE = Object.freeze([COLOUR.TALL + 2, COLOUR.GRASS + 3, COLOUR.DRY + 2]);
-const STROKE_TIP = Object.freeze([COLOUR.TALL + 4, COLOUR.GRASS + 4, COLOUR.DRY + 4]);
+/** Where a kind's strokes take their colour from: its own ramp, or the grass ramp (the middle kind always). */
+const strokeBase = (kind, k) => (k !== 1 && kind.strokes ? (k === 0 ? COLOUR.LOW : COLOUR.HIGH) : COLOUR.GRASS);
 
 // ---------------------------------------------------------------------------------------------
 // Shapes, per plan pixel
@@ -260,15 +256,19 @@ export function drawsGenerated(lookId) {
     return tuning('grassOn') > 0 && Boolean(generatedOf(lookId));
 }
 
-/** The noise cells in plan pixels, from the sliders' mat units and the prototype's fixed ones. */
-export function grassCells() {
+/**
+ * A look's noise cells in plan pixels (the prototype's pixels): the clumps from their slider's mat
+ * units, the zones from the look's own cell times their slider, the mounds per kind.
+ */
+export function grassCells(lookId) {
+    const spec = generatedOf(lookId);
     const clump = Math.max(2, Math.round(tuning('grassClump') / PLAN_PIXEL_U));
     return {
         clump,
         fine: Math.max(2, Math.floor(clump / 2)),
-        zone: Math.max(4, Math.round(tuning('grassZoneScale') / PLAN_PIXEL_U)),
-        mounds: GRASS_KINDS.map(k => k.mounds),
-        moundFine: GRASS_KINDS.map(k => Math.max(2, Math.floor(k.mounds / 3)))
+        zone: Math.max(4, Math.round(spec.zoneCell * tuning('grassZoneScale'))),
+        mounds: spec.kinds.map(k => k.mounds),
+        moundFine: spec.kinds.map(k => Math.max(2, Math.floor(k.mounds / 3)))
     };
 }
 
@@ -286,13 +286,16 @@ export function earthNoise(px, py, seed) {
  * The reference for one pixel of {@link buildGrassPlan}, worked out the slow way from
  * {@link grassNoise}; the fast path must match it exactly.
  *
- * @param {number} earthAt  The look's earth level (`thresholds.earth[slot]` of the plan).
- * @param {{tall: number, dry: number}} thresholds  The plan's zone levels.
- * @returns {{bits: number, kind: number}} the {@link BIT} flags and the kind (0 tall, 1 lawn, 2 dry)
+ * @param {string} lookId  The pixel's look.
+ * @param {{earth: number, tall: number, dry: number}} levels  The look's levels in the plan
+ *   (`thresholds[slot]`): where the earth starts, and where the zones change.
+ * @returns {{bits: number, kind: number}} the {@link BIT} flags and the kind (0 the low end of the
+ *   zones, 1 the middle, 2 the high end)
  */
-export function grassShapeAt(px, py, seed, earthAt, thresholds) {
+export function grassShapeAt(px, py, seed, lookId, levels) {
     const R = GRASS_RULES;
-    const cells = grassCells();
+    const cells = grassCells(lookId);
+    const earthAt = levels.earth;
     const n = (cell, ch) => grassNoise(px, py, seed, cell, ch);
     const encroach = tuning('grassEncroach');
     let bits = 0;
@@ -312,7 +315,7 @@ export function grassShapeAt(px, py, seed, earthAt, thresholds) {
     if (!earth && clump * (1 - R.bodyFine) + n(cells.fine, CH.FINE) * R.bodyFine > R.body) bits |= BIT.HIGH;
     if (n(R.patchCell, CH.PATCH) >= tuning('grassPatch')) bits |= BIT.PATCH;
     const zone = n(cells.zone, CH.ZONE) + (n(R.zoneJagCell, CH.JAG) - 0.5) * JAG;
-    const kind = zone < thresholds.tall ? 0 : zone > thresholds.dry ? 2 : 1;
+    const kind = zone < levels.tall ? 0 : zone > levels.dry ? 2 : 1;
     const mound = (1 - R.moundFine) * n(cells.mounds[kind], CH.MOUND + kind) + R.moundFine * n(cells.moundFine[kind], CH.MOUND_FINE + kind);
     if (mound > R.mound) bits |= BIT.MOUND;
     return { bits, kind };
@@ -323,17 +326,21 @@ export function grassShapeAt(px, py, seed, earthAt, thresholds) {
  * share means that share of the ground (blended noise piles up round the middle, so a fixed level
  * would not).
  */
-function calibrate(width, height, layers, earthShares) {
+function calibrate(width, height, shared, zoneN, earthShare) {
     const R = GRASS_RULES;
-    const { wearN, wearFineN, zoneN, jagN } = layers;
-    const wear = spreadSamples(width, height, CALIBRATION_SAMPLES, (x, y) => (1 - R.earthFine) * wearN.at(x, y) + R.earthFine * wearFineN.at(x, y));
-    const zone = spreadSamples(width, height, CALIBRATION_SAMPLES, (x, y) => zoneN.at(x, y) + (jagN.at(x, y) - 0.5) * JAG);
+    const { wearN, wearFineN, jagN } = shared;
     const last = CALIBRATION_SAMPLES - 1;
     const quantile = (sample, q) => sample[Math.min(last, Math.max(0, Math.floor(q * last)))];
     const tall = Math.max(0, tuning('grassTall'));
     const dry = Math.max(0, tuning('grassDry'));
+    let earth = Infinity;
+    if (earthShare > 0) {
+        const wear = spreadSamples(width, height, CALIBRATION_SAMPLES, (x, y) => (1 - R.earthFine) * wearN.at(x, y) + R.earthFine * wearFineN.at(x, y));
+        earth = quantile(wear, 1 - Math.min(0.95, earthShare));
+    }
+    const zone = spreadSamples(width, height, CALIBRATION_SAMPLES, (x, y) => zoneN.at(x, y) + (jagN.at(x, y) - 0.5) * JAG);
     return {
-        earth: earthShares.map(s => (s > 0 ? quantile(wear, 1 - Math.min(0.95, s)) : Infinity)),
+        earth,
         tall: tall > 0 ? quantile(zone, tall) : -Infinity,
         dry: dry > 0 ? quantile(zone, 1 - dry) : Infinity
     };
@@ -347,8 +354,10 @@ function calibrate(width, height, layers, earthShares) {
  * whose coarse part already decides it, or a zone far from a border, skips it): exact, as
  * rounding never turns a smaller addend into a larger sum.
  */
-function shapeRow(ctx, py) {
-    const { width, at, slotOf, earthAt, bits, kinds, tall, dry, patchCut, encroach } = ctx;
+function shapeRow(ctx, look, py) {
+    const { width, at, slotOf, bits, kinds, patchCut, encroach } = ctx;
+    const { slot, zoneN, moundN, moundFineN } = look;
+    const { earth: earthAt, tall, dry } = look.levels;
     const R = GRASS_RULES;
     const wearKeep = 1 - R.earthFine;
     const earthFine = R.earthFine;
@@ -363,7 +372,7 @@ function shapeRow(ctx, py) {
     const encroachDepth = R.encroachDepth;
     const jag = JAG;
     const halfJag = 0.5 * JAG;
-    const { clumpN, fineN, wearN, wearFineN, encN, zoneN, jagN, patchN, clodN, moundN, moundFineN } = ctx;
+    const { clumpN, fineN, wearN, wearFineN, encN, jagN, patchN, clodN } = ctx;
     const cT = clumpN.top, cB = clumpN.bottom, cY = clumpN.fy;
     const fT = fineN.top, fB = fineN.bottom, fY = fineN.fy;
     const wT = wearN.top, wB = wearN.bottom, wY = wearN.fy;
@@ -380,14 +389,13 @@ function shapeRow(ctx, py) {
     const gT = moundN[2].top, gB = moundN[2].bottom, gY = moundN[2].fy;
     const GT = moundFineN[2].top, GB = moundFineN[2].bottom, GY = moundFineN[2].fy;
     for (let px = 0, i = py * width; px < width; px++, i++) {
-        const slot = slotOf[at[i]];
-        if (slot < 0) continue;
+        if (slotOf[at[i]] !== slot) continue;
         let b = 0;
         let x = cT[px];
         const clump = x + (cB[px] - x) * cY;
 
         // Earth: the fine layer only where the coarse one leaves it a chance.
-        const t = earthAt[slot];
+        const t = earthAt;
         x = wT[px];
         const coarse = wearKeep * (x + (wB[px] - x) * wY);
         let earth = false;
@@ -473,10 +481,11 @@ function shapeRow(ctx, py) {
  * @param {number} seed The Region's seed.
  * @param {string[]} looks The look of each palette entry.
  * @returns {null|{looks: string[], slotOf: Int8Array, bits: Uint8Array, kinds: Uint8Array,
- *   thresholds: {earth: number[], tall: number, dry: number}, cells: object}} Null when no look
- *   here is generated. Per plan pixel, row by row: `kinds` 0 where the ground is not generated,
- *   else `(slot << 2) | (kind + 1)`, `slot` indexing `looks`, `kind` {@link GRASS_KINDS};
- *   `bits` the {@link BIT} flags. `slotOf[p]` is palette entry `p`'s slot, -1 for none.
+ *   thresholds: Array<{earth: number, tall: number, dry: number}>}} Null when no look here is
+ *   generated. Per plan pixel, row by row: `kinds` 0 where the ground is not generated, else
+ *   `(slot << 2) | (kind + 1)`, `slot` indexing `looks` (and `thresholds`, each look's levels),
+ *   `kind` its `kinds` in the registry; `bits` the {@link BIT} flags. `slotOf[p]` is palette
+ *   entry `p`'s slot, -1 for none.
  */
 export function buildGrassPlan(pixels, seed, looks) {
     const { width, height, palette, at, present } = pixels;
@@ -500,41 +509,49 @@ export function buildGrassPlan(pixels, seed, looks) {
     }
 
     const R = GRASS_RULES;
-    const cells = grassCells();
     const walker = (cell, ch) => noiseWalker(width, height, seed, cell, ch);
-    const layers = {
-        clumpN: walker(cells.clump, CH.CLUMP),
-        fineN: walker(cells.fine, CH.FINE),
+    const clump = grassCells(slots[0]);
+    const shared = {
+        clumpN: walker(clump.clump, CH.CLUMP),
+        fineN: walker(clump.fine, CH.FINE),
         wearN: walker(R.earthCell, CH.EARTH),
         wearFineN: walker(R.earthFineCell, CH.EARTH_FINE),
         encN: walker(R.encroachCell, CH.ENCROACH),
-        zoneN: walker(cells.zone, CH.ZONE),
         jagN: walker(R.zoneJagCell, CH.JAG),
         patchN: walker(R.patchCell, CH.PATCH),
-        clodN: walker(R.clodCell, CH.CLOD),
-        moundN: cells.mounds.map((cell, k) => walker(cell, CH.MOUND + k)),
-        moundFineN: cells.moundFine.map((cell, k) => walker(cell, CH.MOUND_FINE + k))
+        clodN: walker(R.clodCell, CH.CLOD)
     };
-    const all = [
-        layers.clumpN, layers.fineN, layers.wearN, layers.wearFineN, layers.encN, layers.zoneN,
-        layers.jagN, layers.patchN, layers.clodN, ...layers.moundN, ...layers.moundFineN
-    ];
-    const earthShares = slots.map(id => (generatedOf(id).earthShare || 0) * tuning('grassEarth'));
-    const thresholds = calibrate(width, height, layers, earthShares);
+    // Each look its own zones (its cell and levels) and its kinds' mounds.
+    const looksHere = slots.map((id, slot) => {
+        const cells = grassCells(id);
+        const zoneN = walker(cells.zone, CH.ZONE);
+        const levels = calibrate(width, height, shared, zoneN, (generatedOf(id).earthShare || 0) * tuning('grassEarth'));
+        return {
+            slot, cells, zoneN, levels,
+            moundN: cells.mounds.map((cell, k) => walker(cell, CH.MOUND + k)),
+            moundFineN: cells.moundFine.map((cell, k) => walker(cell, CH.MOUND_FINE + k))
+        };
+    });
+    const sharedWalkers = Object.values(shared);
 
     const ctx = {
-        ...layers,
-        width, at, slotOf, earthAt: Float64Array.from(thresholds.earth),
+        ...shared,
+        width, at, slotOf,
         bits: new Uint8Array(n), kinds: new Uint8Array(n),
-        tall: thresholds.tall, dry: thresholds.dry,
         patchCut: tuning('grassPatch'), encroach: tuning('grassEncroach')
     };
     for (let py = 0; py < height; py++) {
         if (!rowHas[py]) continue;
-        for (const w of all) w.walk(py);
-        shapeRow(ctx, py);
+        for (const w of sharedWalkers) w.walk(py);
+        for (const look of looksHere) {
+            look.zoneN.walk(py);
+            for (const w of look.moundN) w.walk(py);
+            for (const w of look.moundFineN) w.walk(py);
+            shapeRow(ctx, look, py);
+        }
     }
-    return { looks: slots, slotOf, bits: ctx.bits, kinds: ctx.kinds, thresholds, cells };
+    const thresholds = looksHere.map(l => l.levels);
+    return { looks: slots, slotOf, bits: ctx.bits, kinds: ctx.kinds, thresholds };
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -647,7 +664,7 @@ function bodyRow(ctx, r) {
  * rather than a hash per pixel), and each is kept at its own kind's share of that chance.
  */
 function strokesRow(ctx, r) {
-    const { shape, kinds, colour, cols, rows, keepCut, floorCut, sCentre, sPatch, sGap, gapLog, leanCut, strokeSalts, moreSalts } = ctx;
+    const { shape, kinds, colour, cols, rows, strokeKinds, floorCut, sCentre, sPatch, sGap, gapLog, leanCut, strokeSalts, moreSalts } = ctx;
     const PATCH = BIT.PATCH;
     let c = -1;
     for (;;) {
@@ -657,14 +674,10 @@ function strokesRow(ctx, r) {
         const i = r * cols + c;
         const k = kinds[i];
         if (!k) continue;
-        const kind = (k & 3) - 1;
-        if (hash(c, r, sCentre) >= keepCut[kind]) continue;
+        const spec = strokeKinds[(k >> 2) * 3 + (k & 3) - 1];
+        if (hash(c, r, sCentre) >= spec.keepCut) continue;
         if (!(shape[i] & PATCH) && hash(c, r, sPatch) >= floorCut) continue;
-        const spec = GRASS_KINDS[kind];
-        const tipCut = Math.round(spec.tips * 65536);
-        const shadowAt = Math.round(spec.shadow * 65536);
-        const tone = STROKE_TONE[kind];
-        const tip = STROKE_TIP[kind];
+        const { tipCut, shadowAt, tone, tip } = spec;
         const spread = spec.cluster > 1;
         for (let s = 0; s < spec.cluster; s++) {
             const h = hash(c, r, strokeSalts[s]);
@@ -806,13 +819,23 @@ export function drawGrass(grass, seed, cols, rows, planCol, planRow, scratch = n
     ctx.sDiagonal = saltOf(seed, SALT.DIAGONAL);
     for (let r = 0; r < rows; r++) bodyRow(ctx, r);
 
+    // Every look's kinds, slot by slot: the centres come at the busiest kind's chance.
     const density = Math.max(0, tuning('grassStrokes'));
-    const chances = GRASS_KINDS.map(kind => Math.min(1, kind.blades * density));
-    const busiest = Math.max(...chances);
+    const kindsBySlot = grass.looks.flatMap(id => generatedOf(id).kinds);
+    const chances = kindsBySlot.map(kind => Math.min(1, kind.blades * density));
+    const busiest = Math.max(0, ...chances);
     if (busiest > 0) {
-        const mostStrokes = Math.max(...GRASS_KINDS.map(kind => kind.cluster));
+        const mostStrokes = Math.max(...kindsBySlot.map(kind => kind.cluster));
+        ctx.strokeKinds = kindsBySlot.map((kind, j) => {
+            const base = strokeBase(kind, j % 3);
+            return {
+                keepCut: cut32(chances[j] / busiest),
+                cluster: kind.cluster, heights: kind.heights,
+                tipCut: Math.round(kind.tips * 65536), shadowAt: Math.round(kind.shadow * 65536),
+                tone: base + kind.tone, tip: base + 4
+            };
+        });
         ctx.gapLog = busiest >= 1 ? 0 : Math.log(1 - busiest);
-        ctx.keepCut = chances.map(p => cut32(p / busiest));
         ctx.floorCut = cut32(tuning('grassPatchFloor'));
         ctx.sCentre = saltOf(seed, SALT.CENTRE);
         ctx.sPatch = saltOf(seed, SALT.PATCH);

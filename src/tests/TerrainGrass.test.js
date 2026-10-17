@@ -17,6 +17,7 @@ import { groundWith, flat } from './fixtures/ground.js';
 afterEach(() => resetTuning());
 
 const meadow = (seed = 5, cols = 30, rows = 18) => groundWith(cols, rows, flat('grass'), { seed, biomes: null });
+const forest = (seed = 5, cols = 30, rows = 18) => groundWith(cols, rows, flat('grass'), { seed });
 /** Sea, a beach and forest grass side by side. */
 const shore = (seed = 7) => groundWith(30, 16, (c) => (c < 6 ? 'water' : c < 10 ? 'sand' : 'grass'), { seed });
 
@@ -78,27 +79,29 @@ describe('⭐ Colours: the prototype\'s hue-shifted ramps', () => {
 
 describe('⭐ Shapes in the plan', () => {
     it('⭐ matches the slow reference at every pixel, with the shipped sliders and moved ones', () => {
-        const check = () => {
+        const check = (look) => {
             const ground = meadow(11, 16, 10);
             const pixels = resolveArtPixels(ground);
-            const grass = buildGrassPlan(pixels, ground.seed, pixels.palette.map(() => 'meadow'));
+            const grass = buildGrassPlan(pixels, ground.seed, pixels.palette.map(() => look));
             let wrong = 0;
             for (let y = 0, i = 0; y < pixels.height; y++) {
                 for (let x = 0; x < pixels.width; x++, i++) {
-                    const ref = grassShapeAt(x, y, ground.seed, grass.thresholds.earth[0], grass.thresholds);
+                    const ref = grassShapeAt(x, y, ground.seed, look, grass.thresholds[0]);
                     if (ref.bits !== grass.bits[i] || ref.kind + 1 !== (grass.kinds[i] & 3)) wrong++;
                 }
             }
             return wrong;
         };
-        expect(check()).toBe(0);
+        expect(check('meadow')).toBe(0);
+        expect(check('forest')).toBe(0);
         setTuning('grassClump', 20);
-        setTuning('grassZoneScale', 60);
+        setTuning('grassZoneScale', 0.6);
         setTuning('grassTall', 0.4);
         setTuning('grassEncroach', 0.5);
         setTuning('grassPatch', 0.3);
         setTuning('grassEarth', 2);
-        expect(check()).toBe(0);
+        expect(check('meadow')).toBe(0);
+        expect(check('forest')).toBe(0);
     });
 
     it('⭐ is the same for the same Region every time, and another for another seed', () => {
@@ -138,7 +141,7 @@ describe('⭐ The earth, and the grass reaching into it', () => {
     /** Each plan pixel's earth noise and depth below the earth's edge, beside its shape. */
     function earthOf(ground) {
         const plan = buildGroundPlan(ground);
-        const t = plan.grass.thresholds.earth[0];
+        const t = plan.grass.thresholds[0].earth;
         const out = [];
         for (let y = 0, i = 0; y < plan.height; y++) {
             for (let x = 0; x < plan.width; x++, i++) {
@@ -191,8 +194,14 @@ describe('⭐ The earth, and the grass reaching into it', () => {
         expect(count()).toBe(0);
     });
 
-    it('gives the forest less earth than the meadow', () => {
-        expect(LOOKS.forest.generated.earthShare).toBeLessThan(LOOKS.meadow.generated.earthShare);
+    it('wears each look\'s own share: the forest a little more than the meadow, as its rules say', () => {
+        setTuning('grassEncroach', 0);
+        for (const [ground, look] of [[meadow(24, 40, 24), 'meadow'], [forest(24, 40, 24), 'forest']]) {
+            const { bits } = buildGroundPlan(ground).grass;
+            const share = bits.reduce((n, b) => n + (b & BIT.EARTH), 0) / bits.length;
+            expect(share, look).toBeCloseTo(LOOKS[look].generated.earthShare, 2);
+        }
+        expect(LOOKS.forest.generated.earthShare).toBeGreaterThan(LOOKS.meadow.generated.earthShare);
     });
 });
 
@@ -234,15 +243,15 @@ describe('⭐ Kinds of grass in ragged zones', () => {
             for (let i = 1; i < kinds.length; i++) if (i % plan.width && kinds[i] !== kinds[i - 1]) n++;
             return n;
         };
-        setTuning('grassZoneScale', 60);
+        setTuning('grassZoneScale', 0.6);
         const small = borders();
-        setTuning('grassZoneScale', 240);
+        setTuning('grassZoneScale', 2.4);
         expect(borders()).toBeLessThan(small * 0.6);
     });
 });
 
 describe('⭐ Details per ground pixel', () => {
-    const STROKES = (k) => (k >= COLOUR.TALL && k < COLOUR.EARTH) || k === COLOUR.GRASS + 4;
+    const STROKES = (k) => (k >= COLOUR.LOW && k < COLOUR.EARTH) || k === COLOUR.GRASS + 4;
 
     it('⭐ is the same for the same Region and window, and another for another seed', () => {
         const a = detailsOf(buildGroundPlan(meadow(41)));
@@ -274,8 +283,8 @@ describe('⭐ Details per ground pixel', () => {
         for (let i = 0; i < d.colour.length; i++) {
             const k = d.colour[i];
             const kind = (d.kinds[i] & 3) - 1;
-            if (k >= COLOUR.TALL && k < COLOUR.DRY) { tall++; expect(kind).toBe(0); }
-            if (k >= COLOUR.DRY && k < COLOUR.EARTH) { dry++; expect(kind).toBe(2); }
+            if (k >= COLOUR.LOW && k < COLOUR.HIGH) { tall++; expect(kind).toBe(0); }
+            if (k >= COLOUR.HIGH && k < COLOUR.EARTH) { dry++; expect(kind).toBe(2); }
         }
         expect(tall).toBeGreaterThan(500);
         expect(dry).toBeGreaterThan(500);
@@ -354,8 +363,28 @@ describe('⭐ Details per ground pixel', () => {
         expect(same(second.colour, fresh)).toBe(true);
     });
 
+    it('⭐ draws the forest\'s own kinds: ferns at the low end, leaf litter thick at the high end', () => {
+        const table = grassColours(generatedOf('forest'));
+        expect(table[COLOUR.LOW + 2]).toEqual(ramp(0.36, 0.30, 0.55)[2]);
+        expect(table[COLOUR.HIGH + 2]).toEqual(ramp(0.085, 0.38, 0.45)[2]);
+        // Litter is laid at 0.08 a pixel, the meadow's dry grass at 0.054: thicker on its kind.
+        const highShare = (ground) => {
+            const d = detailsOf(buildGroundPlan(ground));
+            let high = 0;
+            let strokes = 0;
+            for (let i = 0; i < d.colour.length; i++) {
+                if ((d.kinds[i] & 3) !== 3 || (d.shape[i] & BIT.EARTH)) continue;
+                high++;
+                if (d.colour[i] >= COLOUR.HIGH && d.colour[i] < COLOUR.EARTH) strokes++;
+            }
+            return strokes / high;
+        };
+        expect(highShare(forest(51, 40, 24))).toBeGreaterThan(highShare(meadow(51, 40, 24)) * 1.15);
+    });
+
     it('reads the clump size in mat units: 32 is the prototype\'s 16 pixels', () => {
-        expect(grassCells().clump).toBe(16);
-        expect(grassCells().zone).toBe(55);
+        expect(grassCells('meadow').clump).toBe(16);
+        expect(grassCells('meadow').zone).toBe(55);
+        expect(grassCells('forest').zone).toBe(75);
     });
 });

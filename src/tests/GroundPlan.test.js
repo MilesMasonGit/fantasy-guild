@@ -149,7 +149,7 @@ describe('⭐ The ground round the Hall is plain ground: no clearing (decision 4
                 const slot = plan.grass?.slotOf[t] ?? -1;
                 if (slot >= 0) {
                     // Generated grass: its shapes by the same rule as anywhere, and no sheet wear.
-                    const ref = grassShapeAt(x, y, ground.seed, plan.grass.thresholds.earth[slot], plan.grass.thresholds);
+                    const ref = grassShapeAt(x, y, ground.seed, plan.looks[t], plan.grass.thresholds[slot]);
                     if (ref.bits !== plan.grass.bits[i] || ref.kind + 1 !== (plan.grass.kinds[i] & 3)) wrong.push(`grass at ${x},${y}`);
                     if (plan.wearAt?.[i]) wrong.push(`sheet wear on grass at ${x},${y}`);
                     checked++;
