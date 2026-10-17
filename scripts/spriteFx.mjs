@@ -310,6 +310,43 @@ function isUnder(file, dir) {
     return f === d || f.startsWith(d + '/');
 }
 
+const SERVED_TYPES = Object.freeze({ '.png': 'image/png', '.json': 'application/json' });
+
+/**
+ * The dev server's route to the generated folder, read from disk at every
+ * request.
+ *
+ * ⚠️ Vite serves a file under `public/` only if it was there when the server
+ * started or its file watcher has reported it since, and a watcher still
+ * making its first scan reports nothing it finds. A redraw writes as the
+ * server starts, so those pictures were answered with the game's own page:
+ * every outline and shadow drawn then was missing until the next restart.
+ */
+export function serveSpriteFx(outDir) {
+    const prefix = `/${SPRITE_FX_DIR}/`;
+    return function spriteFxFiles(req, res, next) {
+        const pathname = (req.url || '').split(/[?#]/)[0];
+        if (!pathname.startsWith(prefix) || (req.method !== 'GET' && req.method !== 'HEAD')) return next();
+        const notFound = () => { res.statusCode = 404; res.end(); };
+        let file;
+        try { file = path.resolve(outDir, decodeURIComponent(pathname.slice(prefix.length))); } catch { return notFound(); }
+        const type = SERVED_TYPES[path.extname(file).toLowerCase()];
+        if (!type || !isUnder(file, outDir)) return notFound();
+        fs.stat(file, (err, st) => {
+            if (err || !st.isFile()) return notFound();
+            // The same address gets new pixels when its sprite is redrawn.
+            const etag = `W/"${st.size}-${Math.floor(st.mtimeMs)}"`;
+            res.setHeader('Cache-Control', 'no-cache');
+            res.setHeader('ETag', etag);
+            if (req.headers['if-none-match'] === etag) { res.statusCode = 304; res.end(); return; }
+            res.setHeader('Content-Type', type);
+            res.setHeader('Content-Length', st.size);
+            if (req.method === 'HEAD') { res.end(); return; }
+            fs.createReadStream(file).on('error', () => res.destroy()).pipe(res);
+        });
+    };
+}
+
 /**
  * Keeps the generated images current, so new art gets its shadow and outlines
  * with no step to remember:
@@ -322,6 +359,8 @@ function isUnder(file, dir) {
  *   tells the page to re-read the manifest (`sprite-fx:update`). The
  *   generator's own files are outside `public/assets`, so they never start
  *   another redraw. Closing or restarting the server stops a redraw in flight.
+ *   The server reads the generated folder through `serveSpriteFx`, not
+ *   through Vite's `public/` serving.
  *
  * `runGenerator` is how the dev server runs it (`runSpriteFxInChild`); tests
  * pass a stand-in.
@@ -338,6 +377,7 @@ export function spriteFxPlugin({ root = DEFAULT_ROOT, runGenerator = runSpriteFx
             await generateSpriteFx({ root, log });
         },
         configureServer(server) {
+            server.middlewares.use(serveSpriteFx(path.join(root, 'public', SPRITE_FX_DIR)));
             const assetsDir = path.join(root, 'public', 'assets');
             let job = null;
             let again = false;

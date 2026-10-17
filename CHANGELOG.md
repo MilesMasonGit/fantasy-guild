@@ -5,6 +5,7 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **The white hover outline, the green and red outlines and the carried shadow show again in the dev game.** Pictures drawn while the dev server was starting (after today's art rename, almost all of them) were answered with the game page instead of the image; the dev server now reads them straight from disk.
 - **A carried Token or item is no longer brightened.** The drag filter (brightness 1.15, saturation 1.25) is gone because the art now carries that look; the lift and the pixel shadow are unchanged.
 - **The Studio can brighten the Material Library to match the baked art.** The Recolor tab has a Brighten material palettes button that gives every palette the same brightness 1.15 and saturation 1.25 the sprites were baked with (colours at or below 40 kept), shows how many colours would change, asks once, and records the bake in the library so it can never run twice. The art script and the Studio share one colour function.
 - **Hovering a Token brightens it less.** The art now carries its extra brightness and colour in the pictures themselves, so the hover lift is a smaller step (a touch brighter, a touch more colour) instead of stacking on top.
