@@ -94,42 +94,42 @@ export const TUNABLES = Object.freeze([
         key: 'patternStrength',
         group: 'Ground pattern',
         label: 'Pattern strength',
-        hint: 'How much lighter and darker those areas are than the sheet as drawn: 0.08 is 8 % each way. 0 turns them off.',
+        hint: 'How much lighter and darker those areas are than the sheet as drawn: 0.08 is 8 % each way. 0 turns them off. Each generated look takes its own share of it, as its rules say: the meadow all of it, the forest twice, the sand a little less, the sea none.',
         min: 0, max: 0.2, step: 0.01, def: 0.08
     },
     {
         key: 'patchCoverage',
         group: 'Ground wear',
         label: 'Coverage',
-        hint: 'Multiplies how much gravel wears through rock, and earth through grass while Generated grass is off (the generated grass has its own Earth amount). 1 is as authored, 0 hides it entirely.',
+        hint: 'Multiplies how much gravel wears through rock, and earth through grass while Generated ground is off (the generated ground has its own Earth amount). 1 is as authored, 0 hides it entirely.',
         min: 0, max: 3, step: 0.05, def: 1
     },
     {
         key: 'wearClump',
         group: 'Ground wear',
         label: 'Clump size (u)',
-        hint: 'How big each worn patch of gravel (and of earth, while Generated grass is off) is, in mat units: at the same coverage, bigger patches are fewer. Small values approach dithering.',
+        hint: 'How big each worn patch of gravel (and of earth, while Generated ground is off) is, in mat units: at the same coverage, bigger patches are fewer. Small values approach dithering.',
         min: 8, max: 120, step: 2, def: 60
     },
     {
         key: 'wearEdgeWidth',
         group: 'Ground wear',
         label: 'Edge width (u)',
-        hint: 'Sheets only (Generated grass off): how wide the darker rim inside a worn patch and the lighter fringe round it are, in mat units; 2 is one ground pixel at full size. 0 turns both off.',
+        hint: 'Sheets only (Generated ground off): how wide the darker rim inside a worn patch and the lighter fringe round it are, in mat units; 2 is one ground pixel at full size. 0 turns both off.',
         min: 0, max: 8, step: 2, def: 2
     },
     {
         key: 'wearRim',
         group: 'Ground wear',
         label: 'Rim darkness',
-        hint: 'Sheets only (Generated grass off): how much darker the earth is along the edge of a worn patch. 0 turns the rim off.',
+        hint: 'Sheets only (Generated ground off): how much darker the earth is along the edge of a worn patch. 0 turns the rim off.',
         min: 0, max: 0.6, step: 0.02, def: 0.3
     },
     {
         key: 'wearFringe',
         group: 'Ground wear',
         label: 'Fringe lightness',
-        hint: 'Sheets only (Generated grass off): how much lighter the grass is round a worn patch. 0 turns the fringe off.',
+        hint: 'Sheets only (Generated ground off): how much lighter the grass is round a worn patch. 0 turns the fringe off.',
         min: 0, max: 0.4, step: 0.02, def: 0.12
     },
     {
@@ -141,88 +141,102 @@ export const TUNABLES = Object.freeze([
     },
     {
         key: 'grassOn',
-        group: 'Generated grass',
-        label: 'Generated grass',
-        hint: 'The meadow and the forest drawn by rules: clumps, mounds, blades, three kinds of grass, earth the grass reaches into. Off draws their old sheets.',
+        group: 'Generated ground',
+        label: 'Generated ground',
+        hint: 'Every ground drawn by rules: clumps, mounds, blades, kinds of ground in zones, earth the grass reaches into, the sea with its foam and waves. Off draws the old sheets.',
         toggle: true,
         min: 0, max: 1, step: 1, def: 1
     },
     {
         key: 'grassStrokes',
-        group: 'Generated grass',
+        group: 'Generated ground',
         label: 'Stroke density',
-        hint: 'Multiplies how many blade strokes every kind of grass carries. 1 is the prototype; 0 leaves only the clumps and mounds.',
+        hint: 'Multiplies how many blade strokes every kind of ground carries (grass, flowers, cracks, ripples). 1 is the prototype; 0 leaves only the clumps and mounds.',
         min: 0, max: 3, step: 0.05, def: 1
     },
     {
         key: 'grassPatch',
-        group: 'Generated grass',
+        group: 'Generated ground',
         label: 'Texture patches',
-        hint: 'How much of the grass lies outside the patches where the strokes gather: 0 spreads them evenly; higher leaves calmer grass between fewer patches.',
+        hint: 'How much of the ground lies outside the patches where the strokes gather: 0 spreads them evenly; higher leaves calmer ground between fewer patches. Moves every kind’s own patches by as much.',
         min: 0, max: 1, step: 0.05, def: 0.55
     },
     {
         key: 'grassPatchFloor',
-        group: 'Generated grass',
+        group: 'Generated ground',
         label: 'Strokes between patches',
-        hint: 'The share of strokes kept outside the patches: 1 keeps them all (no patches), 0 leaves bare grass between.',
+        hint: 'The share of strokes kept outside the patches: 1 keeps them all (no patches), 0 leaves bare ground between. Moves every kind’s own share by as much.',
         min: 0, max: 1, step: 0.05, def: 0.6
     },
     {
         key: 'grassZoneScale',
-        group: 'Generated grass',
+        group: 'Generated ground',
         label: 'Zone scale',
         hint: 'Multiplies how big the zones of each kind of grass are. 1 is the settled rules: in the meadow about a Token across, a little more in the forest.',
         min: 0.4, max: 3, step: 0.05, def: 1
     },
     {
         key: 'grassTall',
-        group: 'Generated grass',
+        group: 'Generated ground',
         label: 'Tall grass / ferns',
-        hint: 'The share of the grass that is the meadow’s tall grass (long dark strokes), or the forest’s ferns.',
+        hint: 'The share of the grass that is the meadow’s tall grass (long dark strokes), or the forest’s ferns. The meadow and the forest only: the other looks lay their kinds where their rules say.',
         min: 0, max: 0.6, step: 0.01, def: 0.23
     },
     {
         key: 'grassDry',
-        group: 'Generated grass',
+        group: 'Generated ground',
         label: 'Dry grass / leaf litter',
-        hint: 'The share of the grass that is the meadow’s dry grass (short yellow strokes, flower-like tips), or the forest’s leaf litter.',
+        hint: 'The share of the grass that is the meadow’s dry grass (short yellow strokes, flower-like tips), or the forest’s leaf litter. The meadow and the forest only.',
         min: 0, max: 0.6, step: 0.01, def: 0.27
     },
     {
         key: 'grassEarth',
-        group: 'Generated grass',
+        group: 'Generated ground',
         label: 'Earth amount',
         hint: 'Multiplies how much bare earth each look has. 1 is the settled rules: about a tenth of the meadow bare once the grass has reached back in, a little more of the forest.',
         min: 0, max: 3, step: 0.05, def: 1
     },
     {
         key: 'grassEncroach',
-        group: 'Generated grass',
+        group: 'Generated ground',
         label: 'Grass into earth',
-        hint: 'How far grass fingers and islands reach into the earth from its edge. 0 gives earth with clean, round edges.',
+        hint: 'How far grass fingers and islands reach into the earth from its edge. 0 gives earth with clean, round edges. Moves every look’s own amount by as much (the mountain reaches in less).',
         min: 0, max: 1, step: 0.05, def: 0.85
     },
     {
         key: 'grassBodySoft',
-        group: 'Generated grass',
+        group: 'Generated ground',
         label: 'Clump softness',
-        hint: 'How close the darker clumps are to the lighter ones (the rounds’ body_soft): 0 is full contrast, 1 one flat tone.',
+        hint: 'How close the darker clumps are to the lighter ones (the rounds’ body_soft): 0 is full contrast, 1 one flat tone. Moves every look’s own softness by as much (the sand is softer).',
         min: 0, max: 1, step: 0.05, def: 0.55
     },
     {
         key: 'grassClump',
-        group: 'Generated grass',
+        group: 'Generated ground',
         label: 'Grass clump size (u)',
         hint: 'How big the light and dark clumps of the grass are, in mat units: 32 is the prototype’s 16 Token pixels.',
         min: 8, max: 96, step: 2, def: 32
     },
     {
         key: 'grassMounds',
-        group: 'Generated grass',
+        group: 'Generated ground',
         label: 'Mound strength',
         hint: 'How often a mound shows its lit top and its shadowed bottom edge. 1 is the prototype; 0 removes the mounds.',
         min: 0, max: 2, step: 0.05, def: 1
+    },
+    {
+        key: 'groundLakes',
+        group: 'Generated ground',
+        label: 'Sulphur lakes',
+        hint: 'Multiplies how many sulphur lakes Yellowstone has: 1 is the prototype’s two in every piece of the mat its size (about fifteen on a full mat). 0 removes them.',
+        min: 0, max: 2, step: 0.05, def: 1
+    },
+    {
+        key: 'groundStrength',
+        group: 'Generated ground',
+        label: 'Ground strength',
+        hint: 'Pulls every generated look’s colours toward its middle tone: less saturated and less contrast at once. 1 is as the rules draw them; 0.85 a little softer.',
+        min: 0.5, max: 1.2, step: 0.01, def: 1
     },
     {
         key: 'propDensity',

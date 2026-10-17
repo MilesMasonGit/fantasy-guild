@@ -123,17 +123,21 @@ describe('⭐ The plan carries the shade as a factor per pixel', () => {
         expect(plan.props.every(p => p.shade === 1)).toBe(true);
     });
 
-    it('⭐ puts every prop in the light of the ground under its foot', () => {
-        const plan = buildGroundPlan(lookGround('forest'));
+    it('⭐ puts every prop in the light of the ground under its foot, in its look\'s share of the pattern', () => {
         const s = tuning('patternStrength');
-        expect(plan.props.length).toBeGreaterThan(0);
-        const seen = new Set();
-        for (const p of plan.props) {
-            const level = plan.pattern.levelAt[p.footY * plan.width + p.footX];
-            expect(p.shade).toBe([1 - s, 1, 1 + s][level + 1]);
-            seen.add(p.shade);
+        // The forest's generated ground takes twice the pattern; its sheet the slider's own.
+        for (const [step, generated] of [[2 * s, 1], [s, 0]]) {
+            setTuning('grassOn', generated);
+            const plan = buildGroundPlan(lookGround('forest'));
+            expect(plan.props.length).toBeGreaterThan(0);
+            const seen = new Set();
+            for (const p of plan.props) {
+                const level = plan.pattern.levelAt[p.footY * plan.width + p.footX];
+                expect(p.shade).toBeCloseTo([1 - step, 1, 1 + step][level + 1], 12);
+                seen.add(p.shade);
+            }
+            expect(seen.size).toBeGreaterThan(1);
         }
-        expect(seen.size).toBeGreaterThan(1);
     });
 });
 

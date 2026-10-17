@@ -1,7 +1,7 @@
 // the ground's screen pass: the ground plan resampled onto the screen's ground pixels
 
-import { SHEET_PX, PROP_PX, PROP_SHEET_CELLS, generatedOf } from '../../../config/registries/terrainRegistry.js';
-import { drawGrass, grassColours, COLOUR } from '../../../systems/board/TerrainGrass.js';
+import { SHEET_PX, PROP_PX, PROP_SHEET_CELLS } from '../../../config/registries/terrainRegistry.js';
+import { drawGrass, grassTable, shadeRatio, COLOUR, SLOT_SHIFT } from '../../../systems/board/TerrainGrass.js';
 
 /**
  * The second of the ground's two stages (the first is `TerrainSurface.buildGroundPlan`, 2 mat units
@@ -187,25 +187,39 @@ function looksOf(texels, tints, shades, combos) {
 const grassScratch = {};
 
 /**
+ * The brightness factor of shade `s` for a look that takes `ratio` of the shade pattern: the
+ * plan's own factor with the pattern's step scaled (the forest's twice the meadow's, the sea's
+ * none); the lip round worn sheets as it is.
+ */
+function shadeFor(plan, s, ratio) {
+    const part = plan.shadeParts?.[s];
+    if (!part) return plan.shades?.[s] ?? 1;
+    const [level, lip] = part;
+    return (1 + (level - 1) * plan.patternStep * ratio) * plan.lips[lip];
+}
+
+/**
  * The looks drawn by rules (`TerrainGrass`): their details decided per ground pixel, and a table of
- * their colours with each of the plan's shades applied. ⚠️ Not muted: the ramps are the final colours.
+ * their colours with each of the plan's shades applied, in each look's own share of the pattern.
+ * ⚠️ Not muted: the ramps are the final colours.
  *
  * @returns {{colour: Uint8Array, kinds: Uint8Array, words: Uint32Array, shadeCount: number}|null}
  */
 function grassOf(plan, grid, planCol, planRow) {
     if (!plan.grass) return null;
     const { colour, kinds } = drawGrass(plan.grass, plan.seed, grid.cols, grid.rows, planCol, planRow, grassScratch);
-    const shades = plan.shades || [1];
-    const S = shades.length;
+    const S = (plan.shades || [1]).length;
     const NC = COLOUR.COUNT;
-    const tables = plan.grass.looks.map(id => grassColours(generatedOf(id)));
+    const tables = plan.grass.looks.map(id => grassTable(id));
     const bytes = new Uint8ClampedArray(tables.length * S * NC * 4);
-    tables.forEach((table, slot) => {
+    tables.forEach(({ colours, unshaded }, slot) => {
+        const ratio = shadeRatio(plan.grass.looks[slot]);
         for (let s = 0; s < S; s++) {
-            const f = shades[s];
+            const shaded = shadeFor(plan, s, ratio);
             for (let k = 0; k < NC; k++) {
                 const o = ((slot * S + s) * NC + k) * 4;
-                const [red, green, blue] = table[k];
+                const f = unshaded[k] ? 1 : shaded;
+                const [red, green, blue] = colours[k];
                 bytes[o] = red * f;
                 bytes[o + 1] = green * f;
                 bytes[o + 2] = blue * f;
@@ -243,7 +257,7 @@ function fillRow(ctx, r) {
         const p = pr + planCol[c];
         out32[i] = k === 255
             ? lookWords[lookAt[p] * SHEET_WORDS + texRow + texCol[c]]
-            : words[((kinds[i] >> 2) * shadeCount + (shadeAt ? shadeAt[p] : 0)) * NC + k];
+            : words[((kinds[i] >> SLOT_SHIFT) * shadeCount + (shadeAt ? shadeAt[p] : 0)) * NC + k];
     }
 }
 

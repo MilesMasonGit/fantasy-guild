@@ -1,4 +1,4 @@
-// Fantasy Guild — how the ground looks: the five looks and the sheets they draw with.
+// Fantasy Guild — how the ground looks: the looks, their rules and the sheets they draw with.
 
 import { TERRAIN } from '../../systems/atlas/TerrainMap.js';
 
@@ -61,8 +61,11 @@ function deepFreeze(value) {
     return value;
 }
 
+/** A flower meadow's drifts: the meadow's dry grass with flowers for strokes, in their own patches. */
+const FLOWERS = { blades: 0.06, cluster: 4, heights: [1, 2], tips: 0.25, shadow: 0.5, mounds: 18, tone: 2, patch: { cell: 26, cut: 0.5, floor: 0.15 } };
+
 /**
- * The five looks. Each draws one terrain:
+ * The looks. Each draws one terrain:
  * - `sheets`: the ground sheet, or its alternates; a Region draws one of them throughout, picked
  *   by its seed (`TerrainSurface.sheetFor`). Never one per cell: two seamless sheets side by side
  *   show a square seam.
@@ -76,15 +79,30 @@ function deepFreeze(value) {
  * - `props`: the prop sheets it scatters from, by weight; `propDensity` how many props it carries,
  *   as a share of its cells (they stand in groups, `TerrainProps`).
  * - `generated`: the look is drawn by rules instead of its sheet and wear (`TerrainGrass`), from
- *   one of the owner's settled rule sets (`docs/active/research/ground_gen/`). Colours are
- *   hue-shifted 5-colour ramps `[hue, lightness, saturation]`: `grass` the body, `earth` the bare
- *   ground. `earthShare` is how much wears bare before the grass reaches back in (about 58 % of it
- *   stays bare); `zoneCell` the zones' noise cell in Token pixels. `kinds` are its three kinds of
- *   grass in the order they lie along the zone noise, each with its strokes: how many centres
- *   (`blades`, a chance per pixel) of `cluster` strokes, their `heights`, the chance of a lit
- *   `tips` and of a `shadow` pixel, the `mounds` noise cell, and the stroke colour, step `tone` of
- *   its own `strokes` ramp, or of the grass ramp without one (the middle kind's always is). The
- *   sheet and wear stay for when the "Generated grass" switch is off.
+ *   one of the owner's settled rule sets (`docs/active/research/ground_gen/`, named beside each).
+ *   The sheet, wear and band stay for when the "Generated ground" switch is off.
+ *
+ * A generated land look: colours are hue-shifted 5-colour ramps `[hue, lightness, saturation]`,
+ * `grass` the body (each kind may have its own), `earth` the bare ground (null for none).
+ * `earthShare` is how much wears bare before the grass reaches back in (about 58 % of it stays
+ * bare at the meadow's `encroach`); `soft` how close the body's darker clumps come to its lighter
+ * ones; `tint` the prototype's shade-pattern strength (the meadow's 0.06 is the slider's own).
+ * `zones` lay its `kinds` along a noise of `cell` Token pixels, `stretch`ed along x and y: with
+ * `sliders` the Tall and Dry sliders share three kinds out; else band `b` of the noise, cut at the
+ * raw `cuts` (evenly, one band per `order` entry, when absent), is kind `order[b]`, and a `gap`
+ * hands band `band` to kind `to` where a second noise of `cell` is under `cut` (a seam broken into
+ * pieces). Each kind: how many stroke centres (`blades`, a chance per pixel) of `cluster` strokes,
+ * their `heights`, the chance of a lit `tips` and of a `shadow` pixel, the `mounds` noise cell (0
+ * none) and how often a mound shows its lit top (`moundLight`), the body's two tones (`body`, steps
+ * of its ramp), the stroke colour (step `tone` of its own `strokes` ramp, or of its body ramp
+ * without one), and the `patch`es its strokes gather in. An `overlay` lays one kind over the zones
+ * where its own noise is above `cut`, its blades reaching over the top edge and a shadow under the
+ * bottom; `pools` are the sulphur lakes, `perFrame` of them in the prototype's 320 × 200 pixels;
+ * `shore` the wet sand and waterline drawn where the look meets water.
+ *
+ * A generated water look (`water`): the sea by distance from the shore, in the prototype's pixels
+ * (its shore fractions × 320): foam, shallows, deeper water, and waves as strokes growing longer
+ * with distance (`waveLengths`, from each distance on), `waveGap` pixels apart.
  *
  * ⚠️ First values, retuned at the eye-check with the Playmat Tuner. The shoreline widths (the
  * tuning sliders) carry over from the 8-pixel ground set, where an art pixel was 4 units; the
@@ -96,7 +114,8 @@ export const LOOKS = deepFreeze({
         wear: { sheet: 'dirt', coverage: 0.10, rim: true },
         // `final_spec.json`: tall, lawn and dry grass.
         generated: {
-            grass: [0.26, 0.44, 0.60], earth: [0.06, 0.38, 0.32], earthShare: 0.175, zoneCell: 55,
+            grass: [0.26, 0.44, 0.60], earth: [0.06, 0.38, 0.32], earthShare: 0.175, tint: 0.06,
+            zones: { cell: 55, sliders: true },
             kinds: [
                 { id: 'tall', blades: 0.036, cluster: 5, heights: [3, 3, 4], tips: 0.15, shadow: 0.55, mounds: 12, strokes: [0.30, 0.36, 0.58], tone: 2 },
                 { id: 'lawn', blades: 0.02975, cluster: 4, heights: [2, 2, 3], tips: 0.15, shadow: 0.5, mounds: 16, strokes: null, tone: 3 },
@@ -110,10 +129,10 @@ export const LOOKS = deepFreeze({
         id: 'forest', name: 'Forest', terrain: TERRAIN.GRASS, sheets: ['grass_dark'],
         // Less than the meadow: leaf litter and shade, not footfall.
         wear: { sheet: 'dirt', coverage: 0.08, rim: true },
-        // `forest_spec.json`: ferns, lawn and leaf litter. ⚠️ Its stronger dappled shade (twice the
-        // meadow's tint) is not carried: every look takes the one shade pattern.
+        // `forest_spec.json`: ferns, lawn and leaf litter, twice the meadow's dappled shade.
         generated: {
-            grass: [0.31, 0.36, 0.50], earth: [0.05, 0.30, 0.28], earthShare: 0.205, zoneCell: 75,
+            grass: [0.31, 0.36, 0.50], earth: [0.05, 0.30, 0.28], earthShare: 0.205, tint: 0.12,
+            zones: { cell: 75, sliders: true },
             kinds: [
                 { id: 'fern', blades: 0.03, cluster: 6, heights: [3, 4, 4], tips: 0.15, shadow: 0.55, mounds: 12, strokes: [0.36, 0.30, 0.55], tone: 2 },
                 { id: 'lawn', blades: 0.02, cluster: 4, heights: [2, 2, 3], tips: 0.15, shadow: 0.5, mounds: 16, strokes: null, tone: 3 },
@@ -128,6 +147,17 @@ export const LOOKS = deepFreeze({
     mountain: {
         id: 'mountain', name: 'Mountain', terrain: TERRAIN.ROCK, sheets: ['stone'],
         wear: { sheet: 'gravel', coverage: 0.15 },
+        // `mountain_spec.json`, `mountain3.py` C: calm grey rock, alpine grass in broken seams
+        // along stretched bands, clumped scree, gravel for earth.
+        generated: {
+            grass: [0.60, 0.46, 0.10], earth: [0.60, 0.52, 0.06], earthShare: 0.148, encroach: 0.6, tint: 0.07,
+            zones: { cell: 60, stretch: [3, 1], cuts: [0.45, 0.55, 0.70], order: [0, 1, 0, 2], gap: { band: 1, cell: 9, cut: 0.45, to: 0 } },
+            kinds: [
+                { id: 'rock', blades: 0.012, cluster: 2, heights: [1, 2], tips: 0, shadow: 0, mounds: 12, moundLight: 0.7, strokes: [0.60, 0.36, 0.14], tone: 1 },
+                { id: 'alpine', grass: [0.27, 0.42, 0.50], blades: 0.05, cluster: 4, heights: [2, 3, 3], tips: 0.15, shadow: 0.55, mounds: 12, strokes: [0.27, 0.36, 0.55], tone: 2 },
+                { id: 'scree', blades: 0.05, cluster: 7, heights: [1], tips: 0, shadow: 0.8, mounds: 18, strokes: [0.60, 0.50, 0.06], tone: 3, patch: { cell: 14, cut: 0.55, floor: 0.05 } }
+            ]
+        },
         props: [{ sheet: 'p_rock', weight: 1 }],
         propDensity: 0.05
     },
@@ -136,6 +166,18 @@ export const LOOKS = deepFreeze({
         // Wet sand where the water reaches: caused by the water, not by having an edge, or the
         // beach comes out wet where it meets the grass.
         band: { widthTuning: 'wetSandWidth', tint: '#6b4a25', amount: 0.3, against: [TERRAIN.WATER] },
+        // `coast_spec.json`, `coast4.py` C: golden sand with dune grass, ripples and shells, wet
+        // sand and a waterline at the water.
+        generated: {
+            grass: [0.11, 0.58, 0.42], earth: null, earthShare: 0, soft: 0.7, tint: 0.05,
+            zones: { cell: 60 },
+            kinds: [
+                { id: 'dune', blades: 0.05, cluster: 5, heights: [2, 3, 3], tips: 0.15, shadow: 0.55, mounds: 20, moundLight: 0.4, strokes: [0.22, 0.42, 0.45], tone: 2 },
+                { id: 'ripples', blades: 0.03, cluster: 3, heights: [1], tips: 0, shadow: 0, mounds: 20, moundLight: 0.4, strokes: [0.11, 0.50, 0.42], tone: 1 },
+                { id: 'shells', blades: 0.04, cluster: 2, heights: [1], tips: 0, shadow: 0.6, mounds: 20, moundLight: 0.4, strokes: [0.05, 0.62, 0.35], tone: 3, patch: { cell: 20, cut: 0.6, floor: 0 } }
+            ],
+            shore: { sand: [0.11, 0.58, 0.42], wet: 11.2, line: 3.2 }
+        },
         props: [{ sheet: 'p_coast', weight: 2 }, { sheet: 'p_rock_sand', weight: 1 }],
         propDensity: 0.05
     },
@@ -145,7 +187,90 @@ export const LOOKS = deepFreeze({
         band: { widthTuning: 'shallowsWidth', tint: '#a8e8ff', amount: 0.45 },
         // A beach wherever it comes ashore, so water never meets grass or rock directly. Written
         // onto the land as real sand, so it takes the wet-sand band, no wear and no forest scatter.
-        fringe: { terrain: TERRAIN.SAND, widthTuning: 'beachWidth', except: [] }
+        fringe: { terrain: TERRAIN.SAND, widthTuning: 'beachWidth', except: [] },
+        // `coast_spec.json`, `coast4.py` C with `gen.coast2`: calm water in depth steps, a broken
+        // foam line with flecks, the fewest and widest-spaced waves, rolling swells far out.
+        generated: {
+            water: {
+                sea: [0.47, 0.46, 0.55], foam: 5.12, foamLight: 1.35, foam2Light: 1.12, shallow: 19.2, deep: 70.4,
+                flecks: 0.004, waves: 0.007, waveMask: 0.4, wavePatchCell: 30, waveGap: 5, farThick: 76.8,
+                waveLengths: [[19.2, [1, 1, 2]], [38.4, [2, 3]], [64, [4, 5, 6, 7]], [89.6, [6, 7, 8, 9]]]
+            }
+        }
+    },
+    flower_meadow: {
+        id: 'flower_meadow', name: 'Flower meadow', terrain: TERRAIN.GRASS, sheets: ['grass'],
+        wear: { sheet: 'dirt', coverage: 0.10, rim: true },
+        // `flower_volcano_spec.json`, `refine_fv.py` FB: a bright lawn, drifts of pink, purple
+        // and white flowers between calm lawn.
+        generated: {
+            grass: [0.25, 0.47, 0.62], earth: [0.06, 0.38, 0.32], earthShare: 0.175, tint: 0.06,
+            zones: { cell: 55, order: [0, 1, 2, 1, 3, 1] },
+            kinds: [
+                { id: 'pink', ...FLOWERS, strokes: [0.92, 0.66, 0.55] },
+                { id: 'lawn', blades: 0.02975, cluster: 4, heights: [2, 2, 3], tips: 0.15, shadow: 0.5, mounds: 16, strokes: null, tone: 3 },
+                { id: 'purple', ...FLOWERS, strokes: [0.78, 0.62, 0.5] },
+                { id: 'white', ...FLOWERS, strokes: [0.12, 0.85, 0.15] }
+            ]
+        },
+        props: [{ sheet: 'p_flowers', weight: 3 }, { sheet: 'p_bush', weight: 1 }],
+        propDensity: 0.06
+    },
+    cherry_grove: {
+        id: 'cherry_grove', name: 'Cherry grove', terrain: TERRAIN.GRASS, sheets: ['grass'],
+        // `cherry_spec.json`, `cherry4.py`: pink-lavender moss with magenta and white petals, no
+        // earth, patches of green grass whose blades reach over their top edge.
+        generated: {
+            grass: [0.88, 0.62, 0.38], earth: null, earthShare: 0, tint: 0.06,
+            zones: { cell: 55 },
+            kinds: [
+                { id: 'magenta', blades: 0.06, cluster: 3, heights: [1, 1, 2], tips: 0.35, shadow: 0.5, mounds: 18, strokes: [0.92, 0.55, 0.75], tone: 2 },
+                { id: 'moss', blades: 0.03, cluster: 4, heights: [2, 2, 3], tips: 0.15, shadow: 0.5, mounds: 16, strokes: [0.86, 0.70, 0.35], tone: 3 },
+                { id: 'white', blades: 0.05, cluster: 3, heights: [1, 1, 2], tips: 0.35, shadow: 0.5, mounds: 18, strokes: [0.0, 0.92, 0.20], tone: 2 },
+                { id: 'green', grass: [0.30, 0.45, 0.55], blades: 0.045, cluster: 4, heights: [2, 2, 3], tips: 0.15, shadow: 0.5, mounds: 16, strokes: null, tone: 3 }
+            ],
+            overlay: { kind: 3, cell: 40, fineCell: 10, fine: 0.2, jagCell: 4, jag: 0.06, cut: 0.64, blades: 0.55, heights: [1, 2, 2, 3], shadow: 0.7, dim: 0.88 }
+        },
+        props: [{ sheet: 'p_flowers', weight: 1 }],
+        propDensity: 0.04
+    },
+    yellowstone: {
+        id: 'yellowstone', name: 'Yellowstone', terrain: TERRAIN.GRASS, sheets: ['grass_dark'],
+        wear: { sheet: 'dirt', coverage: 0.08, rim: true },
+        // `yellowstone_spec.json`, `biomes_new2.py` YB: a dark forest floor of ferns, moss and
+        // needles, with big milky blue sulphur lakes ringed pale yellow (drawn as ground).
+        generated: {
+            grass: [0.40, 0.28, 0.40], earth: [0.06, 0.26, 0.25], earthShare: 0.122, tint: 0.10,
+            zones: { cell: 60 },
+            kinds: [
+                { id: 'fern', blades: 0.03, cluster: 6, heights: [3, 4, 4], tips: 0.15, shadow: 0.55, mounds: 12, strokes: [0.44, 0.22, 0.50], tone: 2 },
+                { id: 'moss', blades: 0.015, cluster: 4, heights: [2, 2, 3], tips: 0.15, shadow: 0.5, mounds: 16, strokes: null, tone: 3 },
+                { id: 'needles', blades: 0.07, cluster: 3, heights: [1, 2], tips: 0.1, shadow: 0.5, mounds: 18, strokes: [0.07, 0.26, 0.35], tone: 2 }
+            ],
+            pools: {
+                perFrame: 2, radius: [40, 60],
+                rings: [[0.42, [150, 214, 228]], [0.62, [122, 196, 214]], [0.74, [176, 222, 226]], [0.82, [226, 214, 120]], [0.88, [200, 186, 96]]]
+            }
+        },
+        props: [{ sheet: 'p_bush_dark', weight: 2 }, { sheet: 'p_mushroom', weight: 1 }],
+        propDensity: 0.08
+    },
+    volcano: {
+        id: 'volcano', name: 'Volcano', terrain: TERRAIN.ROCK, sheets: ['stone'],
+        // `flower_volcano_spec.json`, `refine_fv.py` VA: dark warm basalt, ash, a yellow-orange
+        // lava glow in broken seams along stretched bands, few cracks. ⚠️ Below the brightness band
+        // the rest of the ground keeps to, on purpose; the lava stays clear of the alert red.
+        generated: {
+            grass: [0.04, 0.24, 0.10], earth: null, earthShare: 0, tint: 0.06,
+            zones: { cell: 50, stretch: [2.2, 1], cuts: [0.475, 0.525, 0.68], order: [0, 1, 0, 2], gap: { band: 1, cell: 7, cut: 0.45, to: 0 } },
+            kinds: [
+                { id: 'basalt', blades: 0.012, cluster: 2, heights: [1, 2], tips: 0, shadow: 0, mounds: 12, moundLight: 0.7, strokes: [0.04, 0.14, 0.10], tone: 1 },
+                { id: 'lava', grass: [0.09, 0.50, 0.95], body: [2, 3], blades: 0.08, cluster: 2, heights: [1, 2], tips: 0, shadow: 0, mounds: 0, strokes: [0.13, 0.62, 1.0], tone: 3 },
+                { id: 'ash', grass: [0.06, 0.38, 0.05], blades: 0.03, cluster: 4, heights: [1], tips: 0, shadow: 0, mounds: 12, moundLight: 0.7, strokes: [0.06, 0.48, 0.05], tone: 3 }
+            ]
+        },
+        props: [{ sheet: 'p_rock', weight: 1 }],
+        propDensity: 0.04
     }
 });
 

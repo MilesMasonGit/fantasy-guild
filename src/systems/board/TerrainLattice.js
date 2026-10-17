@@ -358,8 +358,10 @@ function fullTransform(dist, width, height) {
  * Distance fields over one pixel map, shared by the beach and the bands of one build.
  *
  * `from(set, outside, limit)` measures from every pixel whose palette index is in `set` (or,
- * with `outside`, is not) and returns `{pixels}`: the pixels outside the set nearer than `limit`
- * (chamfer ×3 units), so a caller visits those rather than the whole plan.
+ * with `outside`, is not) and returns `{pixels, dist}`: the pixels outside the set nearer than
+ * `limit` (chamfer ×3 units), so a caller visits those rather than the whole plan, and the field
+ * itself, each reached pixel's distance plus one (0 where the walk never reached; it may run past
+ * `limit` when an earlier, longer walk is reused, and it is shared, so read it, never write it).
  *
  * Every edge between two terrains is found once, as the pairs of side neighbours that differ,
  * looking only in the cells `cellScan.border` marks (all of them without it); a field starts
@@ -420,7 +422,7 @@ export function distanceFields(at, width, height, cellScan = null) {
     const within = (e, limit) => {
         const out = [];
         for (const i of e.reached) if (e.dist[i] - 1 < limit) out.push(i);
-        return { pixels: out };
+        return { pixels: out, dist: e.dist };
     };
 
     return {
