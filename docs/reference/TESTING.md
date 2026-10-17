@@ -138,6 +138,8 @@ Phases that touch the same files stay sequential.
 - Read the worktree's copy of a file before editing it (Edit refuses a file
   you haven't read at that path).
 
+- `performance.getEntriesByType('resource')` holds 250 entries and the dev server fills it at boot; to check whether a picture loads, use the browser tools' network list or fetch the URL.
+
 ## Shell and tools on this machine (Windows)
 
 Facts past sessions had to re-learn:

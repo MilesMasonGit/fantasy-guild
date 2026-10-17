@@ -20,8 +20,11 @@ build green) · bench-queued · eye-check · merged.*
 | T-180: a Studio button brightens the material palettes the same way, pressed by the owner | builder | `art/palette-brighten` → `main` | merged Fri 13:10 (same gate). Owner pressed it and Synced: 1868 of 1961 colours in 100 of 101 palettes, marker written, content counts unchanged | Fri | Fri |
 | Hover brightening gentler, 1.06 / 1.08 (owner ruling) | builder-lite | `fix/hover-gentler` → `main` | merged Fri 13:10 (same gate) | Fri | Fri |
 | ART_STYLE.md: a short record of what is settled (owner 2026-10-16: the owner directs the art; no style interview) | director | `main` | draft, for the owner's approval | Fri | |
-| The CMS warns before a Sync removes content (T-188) | builder | `fix/t188-sync-guard` (`sg`) | building | Fri | |
-| The white hover outline on Tokens is gone (owner report; reproduced: no outline picture is requested) | engineer | `fix/hover-outline` (`ho`) | building: find the commit that broke it, fix, test | Fri | |
+| The CMS warns before a Sync removes content (T-188) | builder | `fix/t188-sync-guard` (`sg`) | bench-queued: gate green with the two below (5026 tests, cycles, build); work check at 01:00 Sat on a timer, then merge | Fri | |
+| The white hover outline on Tokens is gone (owner report; reproduced: no outline picture is requested) | engineer | `fix/hover-outline` (`ho`) | bench-queued with T-188. Cause: the dev server answered freshly redrawn outline pictures with the game page (Vite serves `public/` files only after its watcher reports them; the rename made it redraw nearly all at start). Fix: the dev server reads the generated folder from disk. Game code was fine; production builds were never affected | Fri | |
+| Re-bake at Gentle 1.08 / 1.12 (owner found Drag too bright in play) | director | `main` | merged Fri 22:45: back to the original from the tag, then baked at Gentle; all 623 match the bench column the owner picked | Fri | Fri |
+| Palettes back to original, button at Gentle | builder-lite | `fix/palette-gentle` (`pb`) | bench-queued with T-188; then the owner presses the button and Syncs | Fri | |
+| Terrain design advice (owner's goal for the terrain pass) | director | [notes page](https://claude.ai/artifact/PLTLkP5bqjLqtTc8YYJSpg) | sections 1–9; waiting for the owner's references and screenshot before proposing the code side (tint pattern, organic earth, clustered scatter) | Fri | |
 | Later: Recruits get a weak basic attack (T-167); equip-by-drop opens the sheet a frame later (T-186, ruled 2026-10-15) | — | — | next batches | | |
 
 ## Wave 2 (Wed 14 – Sat 17 October), order ruled by the owner 2026-10-14
