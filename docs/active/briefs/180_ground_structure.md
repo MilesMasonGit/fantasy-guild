@@ -58,7 +58,39 @@ owner's few motifs stamped by rules later. Options weighed:
 https://claude.ai/artifact/VHkHDrAMkKQYwbZwmSu3YS. G2 below is superseded
 unless the owner revives it.
 
-**Design rounds (owner's verdicts):** round 1 (2026-10-17): B's tufts on C's calm body. Round 2: C (tall and dry zones, ragged borders); grass should reach into the earth; more shading; colours to explore. Round 3: palette B; push the grass further into the earth; work on the dirt. Round 4: grass deep into the earth, sunken earth edges, three dirt styles (lumpy, packed path, dark soil). Round 4 verdict: A clods with B lighter middle, less earth. Round 5 verdict: B amount, but the mat is too busy overall. Round 6: three calmer versions. Verdict: B (lawn plus soft tall), lighter tall grass in smaller zones, maybe texture in patches with less calm between. Round 7 verdict: B pattern good; zone colour changes look strange; bring dry grass back. Round 8: one base colour, kinds by strokes, dry grass back, waiting for the owner.
+**Design rounds (owner's verdicts):** round 1 (2026-10-17): B's tufts on C's calm body. Round 2: C (tall and dry zones, ragged borders); grass should reach into the earth; more shading; colours to explore. Round 3: palette B; push the grass further into the earth; work on the dirt. Round 4: grass deep into the earth, sunken earth edges, three dirt styles (lumpy, packed path, dark soil). Round 4 verdict: A clods with B lighter middle, less earth. Round 5 verdict: B amount, but the mat is too busy overall. Round 6: three calmer versions. Verdict: B (lawn plus soft tall), lighter tall grass in smaller zones, maybe texture in patches with less calm between. Round 7 verdict: B pattern good; zone colour changes look strange; bring dry grass back. Round 8 verdict: C (more dry grass, flower-like is good), but the darker ground textures were lost. Final prototype (round 9): everything together, darker texture back; rules in `docs/active/research/ground_gen/final_spec.json` and `final.py`.
+
+## G3 — Generated ground in the game (engineer)
+
+Move the settled rules of the final prototype into the game's ground plan, so
+the grass and earth of meadow and forest looks are **generated per pixel**
+instead of sampled from a repeating sheet. Spec: the generator
+(`docs/active/research/ground_gen/gen.py`, functions `ground` and `mixed`)
+and the parameter set `final_spec.json` (lawn, tall, dry kinds; zone scale and
+raggedness). The prototype's Python is the reference for the look; the game's
+version must match it by eye on the same parameters, not pixel for pixel.
+
+- Generated, not sampled: body tones, clumps, mounds with lit and shadowed
+  edges, blade strokes and tufts (lit from the top-left, shadow pixel), texture
+  in patches, kinds of grass in ragged zones sharing one base colour, earth
+  with clods, a lighter middle, a sunken edge, grass fingers and tufts into it.
+  Palettes as hue-shifted 5-colour ramps per look.
+- Keeps G1's tint pattern (one strength), grouped props, every placement rule,
+  and determinism per Region seed. The plan stays built once per Region and on
+  resize, never per frame; report the build time (budget: well under 100 ms
+  per Region on this machine; say if it isn't).
+- Sliders in the Ground tuner for the parameters the owner tuned in the rounds
+  (stroke density, patch mask, zone scale, earth amount, clump contrast and
+  size, mound strength, tall/dry amounts), defaults from `final_spec.json`.
+- Other looks (sand, sea, rock, gravel) keep their sheets for now; biome
+  variants are the next design rounds, using the same machinery.
+- The code dimming of the ground is switched off for the generated looks (the
+  palettes are the final colours).
+
+Done when: the Starter Camp and a Forest show the generated ground; side-by-side
+screenshots against `final.png`; tests for the pure parts (determinism, earth
+mask with encroachment, zone mixing, ramp); engine work check same; a
+`bench:draw --compare` for the cost log; eye-check.
 
 ## G2 — Edge pieces (superseded 2026-10-17; kept for reference)
 
