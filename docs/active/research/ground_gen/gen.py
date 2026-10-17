@@ -1,6 +1,6 @@
 """Ground generator, design loop. Renders whole scenes with no repeating sheet (as the in-game route would)."""
 from PIL import Image, ImageOps, ImageDraw
-import random, colorsys, os, glob, sys, json
+import random, colorsys, os, glob, sys, json, math
 S = os.path.dirname(os.path.abspath(__file__))
 os.chdir(r"C:\Users\16048\Projects\fantasy_guild_v2")
 
@@ -290,4 +290,21 @@ def coast2(W, H, land, p):
         if thick:   # far out: a second, shorter crest row above, offset, so big swells read as rolling
             for i in range(1, L - 1):
                 if y - 1 >= 0 and F[y - 1][x + i + 1] > p.get('shallow', 0.06): px[x + i + 1, y - 1] = crest
+    return out
+
+def pools(W, H, land, p):
+    """Hot springs: pools with concentric rings (deep centre to bacterial-mat edge), noisy edges,
+    a thin crust rim, and runoff streaks."""
+    rnd = random.Random(p.get('seed', 9)); n = vnoise(14, rnd); n2 = vnoise(5, rnd)
+    out = land.copy(); px = out.load()
+    centres = [(rnd.uniform(0.15, 0.85) * W, rnd.uniform(0.2, 0.8) * H, rnd.uniform(*p.get('radius', (22, 40)))) for _ in range(p.get('count', 3))]
+    rings = p['rings']   # list of (threshold, rgb) from centre outward, threshold in units of radius
+    for y in range(H):
+        for x in range(W):
+            best = 9
+            for cx, cy, r in centres:
+                d = math.hypot((x - cx) / r, (y - cy) / (r * 0.75)) + (n(x, y) - 0.5) * 0.35 + (n2(x, y) - 0.5) * 0.08
+                best = min(best, d)
+            for thr, col in rings:
+                if best < thr: px[x, y] = tuple(col) + (255,); break
     return out
