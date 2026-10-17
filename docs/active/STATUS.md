@@ -24,7 +24,8 @@ build green) · bench-queued · eye-check · merged.*
 | The white hover outline on Tokens is gone (owner report; reproduced: no outline picture is requested) | engineer | `fix/hover-outline` (`ho`) | bench-queued with T-188. Cause: the dev server answered freshly redrawn outline pictures with the game page (Vite serves `public/` files only after its watcher reports them; the rename made it redraw nearly all at start). Fix: the dev server reads the generated folder from disk. Game code was fine; production builds were never affected | Fri | |
 | Re-bake at Gentle 1.08 / 1.12 (owner found Drag too bright in play) | director | `main` | merged Fri 22:45: back to the original from the tag, then baked at Gentle; all 623 match the bench column the owner picked | Fri | Fri |
 | Palettes back to original, button at Gentle | builder-lite | `fix/palette-gentle` (`pb`) | bench-queued with T-188; then the owner presses the button and Syncs | Fri | |
-| Terrain design advice (owner's goal for the terrain pass) | director | [notes page](https://claude.ai/artifact/PLTLkP5bqjLqtTc8YYJSpg) | sections 1–9; waiting for the owner's references and screenshot before proposing the code side (tint pattern, organic earth, clustered scatter) | Fri | |
+| Terrain design advice (owner's goal for the terrain pass) | director | [notes page](https://claude.ai/artifact/PLTLkP5bqjLqtTc8YYJSpg) | sections 1–9; owner ruled the path 2026-10-16: computed edges plus the owner's hand-drawn edge pieces, Sea of Stars as the target (brief 180) | Fri | |
+| Brief 180 G1: ground structure in code (tint pattern, organic earth with rim and fringe, grouped props) | engineer | `crunch/ground-g1` (`g1`) | building; told to stay quiet 00:55–01:20 for the bench | Fri | |
 | Later: Recruits get a weak basic attack (T-167); equip-by-drop opens the sheet a frame later (T-186, ruled 2026-10-15) | — | — | next batches | | |
 
 ## Wave 2 (Wed 14 – Sat 17 October), order ruled by the owner 2026-10-14
