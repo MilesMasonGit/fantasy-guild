@@ -349,7 +349,9 @@ describe('⭐ one ground pixel is one Token pixel', () => {
             expect(canvas.style.imageRendering).toBe('pixelated');
         }
         expect(plans).toHaveBeenCalledTimes(1);
-    });
+    // 111 screen passes, each drawing the generated grass's details: about 3 s alone, more beside
+    // the rest of the suite.
+    }, 20000);
 
     it('⭐ pixels outside the mat\'s rounded corners are clear in the picture put on the canvas', () => {
         vi.useFakeTimers();
