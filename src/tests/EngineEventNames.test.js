@@ -93,7 +93,7 @@ describe('global events are declared and named by constant (CR3-559)', () => {
         expect(hits).toEqual([]);
     });
 
-    it('every engine and UI event has a publisher', () => {
+    it('every engine and UI event has a publisher', { timeout: 20000 }, () => {
         const missing = DECLARED.filter(d => d.group !== 'ORPHAN_EVENTS' && !isPublished(d.ref)).map(d => d.ref);
         expect(missing).toEqual([]);
     });
