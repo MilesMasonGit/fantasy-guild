@@ -1,0 +1,8 @@
+{
+ "flower_meadow": {
+  "note": "Settled on N5 B: bright lawn (grass [0.25,0.47,0.62]) with flower drifts (pink 0.92, purple 0.78, white 0.12/l0.85/s0.15) alternating with calm lawn zones, zone scale 55. See refine_fv.py FB."
+ },
+ "volcano": {
+  "note": "Settled on N5 A: dark warm basalt [0.04,0.24,0.10], ash zones [0.06,0.38,0.05], yellower lava glow (body [0.09,0.50,0.95], strokes [0.13,0.62,1.0]) in broken seams (banded, stretch 2.2, gap thr 0.45), fewer cracks (0.012). Caution recorded: dark ground is below the brightness band; lava kept yellow-orange away from the alert red. See refine_fv.py VA."
+ }
+}

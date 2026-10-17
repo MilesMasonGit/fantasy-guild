@@ -1,0 +1,62 @@
+{
+ "note": "Yellowstone settled on N2 B: dark forest floor (fern, moss, needles; grass [0.40,0.28,0.40], earth [0.06,0.26,0.25]) with 2 big milky light-blue sulphur lakes (radius 40-60) ringed pale sulphur yellow. See biomes_new2.py YB and gen.pools.",
+ "forest_grass": [
+  0.4,
+  0.28,
+  0.4
+ ],
+ "earth": [
+  0.06,
+  0.26,
+  0.25
+ ],
+ "pools": {
+  "count": 2,
+  "radius": [
+   40,
+   60
+  ]
+ },
+ "rings": [
+  [
+   0.42,
+   [
+    150,
+    214,
+    228
+   ]
+  ],
+  [
+   0.62,
+   [
+    122,
+    196,
+    214
+   ]
+  ],
+  [
+   0.74,
+   [
+    176,
+    222,
+    226
+   ]
+  ],
+  [
+   0.82,
+   [
+    226,
+    214,
+    120
+   ]
+  ],
+  [
+   0.88,
+   [
+    200,
+    186,
+    96
+   ]
+  ]
+ ]
+}

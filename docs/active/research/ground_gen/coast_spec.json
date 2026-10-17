@@ -1,0 +1,58 @@
+{
+ "note": "Coast settled on C4 C: golden sand with dune grass, ripples and shell clusters; turquoise sea, calm with depth steps; near-white broken foam line with flecks; waves as strokes growing with distance, fewest and widest spacing, rolling swells far out. See coast4.py (variant C) and gen.coast2.",
+ "sand": [
+  0.11,
+  0.58,
+  0.42
+ ],
+ "sea": [
+  0.47,
+  0.46,
+  0.55
+ ],
+ "waves": {
+  "waves": 0.007,
+  "wave_mask": 0.4,
+  "wave_grad": [
+   [
+    0.06,
+    [
+     1,
+     1,
+     2
+    ]
+   ],
+   [
+    0.12,
+    [
+     2,
+     3
+    ]
+   ],
+   [
+    0.2,
+    [
+     4,
+     5,
+     6,
+     7
+    ]
+   ],
+   [
+    0.28,
+    [
+     6,
+     7,
+     8,
+     9
+    ]
+   ]
+  ],
+  "wave_gap": 5,
+  "far_thick": 0.24
+ },
+ "foam": 0.016,
+ "foam_light": 1.35,
+ "shallow": 0.06,
+ "deep": 0.22
+}

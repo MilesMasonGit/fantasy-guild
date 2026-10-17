@@ -1,0 +1,15 @@
+{
+ "note": "Mountain settled on M3 C: cool grey rock with fewer cracks (rock blades 0.012), greyer clumped scree, alpine grass seams; see mountain3.py make(0.10,(3,1),(1,9,0.45,0),calm=True)",
+ "band": 0.1,
+ "stretch": [
+  3,
+  1
+ ],
+ "gap": [
+  1,
+  9,
+  0.45,
+  0
+ ],
+ "calm": true
+}

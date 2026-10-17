@@ -1,6 +1,6 @@
 """Ground generator, design loop. Renders whole scenes with no repeating sheet (as the in-game route would)."""
 from PIL import Image, ImageOps, ImageDraw
-import random, colorsys, os, glob, sys, json
+import random, colorsys, os, glob, sys, json, math
 S = os.path.dirname(os.path.abspath(__file__))
 os.chdir(r"C:\Users\16048\Projects\fantasy_guild_v2")
 
@@ -204,3 +204,107 @@ def board_imgs(imgs, out, labels, W=320, H=200, s=2):
         d.text((x + 4, 5), labels[i], fill=(255, 255, 255))
         P.paste(A.convert('RGB'), (x, top)); P.paste(G(A), (x, top + H * s + pad))
     P.save(os.path.join(S, out))
+
+def banded(W, H, layers_kinds, cuts, zone_scale=60, stretch=(1.0, 1.0), seed=11, ragged=0.35, gap=None):
+    """Zones by thresholds on a stretched noise: kind i where cuts[i-1] <= v < cuts[i]. A narrow
+    band between two cuts gives long thin stretches when the noise is stretched along one axis."""
+    rnd = random.Random(seed); z = vnoise(zone_scale, rnd); j = vnoise(6, rnd)
+    layers = [ground(W, H, k) for k in layers_kinds]; lps = [l.load() for l in layers]
+    gn = vnoise(gap[1], rnd) if gap else None
+    out = layers[0].copy(); op = out.load()
+    for y in range(H):
+        for x in range(W):
+            v = z(x / stretch[0], y / stretch[1]) + (j(x, y) - 0.5) * ragged * 0.25
+            idx = 0
+            while idx < len(cuts) and v >= cuts[idx]: idx += 1
+            if gap and idx == gap[0] and gn(x, y) < gap[2]: idx = gap[3]
+            op[x, y] = lps[idx][x, y]
+    return out
+
+def coast(W, H, land, p):
+    """Land image plus a sea on one side: the shore follows a noisy line; bands of wet sand,
+    shallows and a foam line by distance from it; water with soft clustered wave dashes."""
+    rnd = random.Random(p.get('seed', 5)); n = vnoise(p.get('shore_scale', 50), rnd); n2 = vnoise(12, rnd)
+    sea = ramp(*p['sea'], hue_shift=0.02, step=0.06); sand = ramp(*p['sand'], hue_shift=0.02, step=0.06)
+    out = land.copy(); px = out.load()
+    wav = vnoise(p.get('wave_scale', 10), rnd); wsh = vnoise(40, rnd)
+    for y in range(H):
+        for x in range(W):
+            f = x / W + (n(x, y) - 0.5) * p.get('shore_amp', 0.35) + (n2(x, y) - 0.5) * 0.04 - p.get('shore', 0.62)
+            if f < -0.035: continue
+            if f < -0.012: px[x, y] = sand[1]                                      # wet sand
+            elif f < 0.0: px[x, y] = sand[0] if (x + y) % 3 else sand[1]           # waterline
+            elif f < p.get('foam', 0.008): px[x, y] = sea[4] if n2(x * 2, y * 2) > 0.45 else sea[3]   # foam
+            elif f < p.get('shallow', 0.05): px[x, y] = sea[3] if wsh(x, y) > 0.55 else sea[2]       # shallows
+            else:
+                c = sea[1] if wsh(x, y) > 0.5 else sea[0]
+                if wav(x * 0.4, y * 2.2) > p.get('dash', 0.74): c = sea[2]       # soft horizontal wave clusters
+                px[x, y] = c
+    return out
+
+def coast2(W, H, land, p):
+    """Calm water with depth steps; waves drawn as strokes (lit crest over a darker trough) in
+    patches, like grass; a stronger broken foam line; wet sand."""
+    rnd = random.Random(p.get('seed', 5)); n = vnoise(p.get('shore_scale', 50), rnd); n2 = vnoise(12, rnd)
+    sea = ramp(*p['sea'], hue_shift=0.02, step=0.06); sand = ramp(*p['sand'], hue_shift=0.02, step=0.06)
+    out = land.copy(); px = out.load(); F = [[0.0] * W for _ in range(H)]
+    patch = vnoise(p.get('wave_patch_scale', 30), rnd)
+    foam_w = p.get('foam', 0.016)
+    FOAM = lighten(sea[4], p.get('foam_light', 1.35)); FOAM2 = lighten(sea[4], 1.12)
+    for y in range(H):
+        for x in range(W):
+            f = x / W + (n(x, y) - 0.5) * p.get('shore_amp', 0.35) + (n2(x, y) - 0.5) * 0.04 - p.get('shore', 0.62)
+            F[y][x] = f
+            if f < -0.035: continue
+            if f < -0.010: px[x, y] = sand[1]
+            elif f < 0.0: px[x, y] = sand[0] if (x + 2 * y) % 4 else sand[1]
+            elif f < foam_w: px[x, y] = FOAM if (n2(x * 3, y * 3) > 0.35 or f < foam_w * 0.5) else FOAM2
+            elif f < p.get('shallow', 0.06): px[x, y] = sea[3] if n2(x, y) > 0.6 else sea[2]
+            elif f < p.get('deep', 0.22): px[x, y] = sea[1]
+            else: px[x, y] = sea[0]
+    # foam flecks just off the line
+    for _ in range(int(W * H * p.get('flecks', 0.004))):
+        x, y = rnd.randrange(W - 2), rnd.randrange(H)
+        if foam_w < F[y][x] < foam_w * 3: px[x, y] = FOAM2
+    occ = [[False] * W for _ in range(H)]
+    # wave strokes: horizontal crest of 2-5 px in a light tone, trough one row below shifted right
+    for _ in range(int(W * H * p.get('waves', 0.02))):
+        x, y = rnd.randrange(W - 6), rnd.randrange(1, H - 1)
+        f = F[y][x]
+        if f < p.get('shallow', 0.06) or patch(x, y) < p.get('wave_mask', 0.45): continue
+        L = rnd.choice(p.get('wave_len', (2, 3, 3, 4, 5)))
+        if p.get('wave_grad'):
+            for thr, lens in p['wave_grad']:
+                if f >= thr: L = rnd.choice(lens)
+        thick = p.get('far_thick') and f >= p['far_thick']
+        crest = sea[3] if f < p.get('deep', 0.22) else sea[2]
+        trough = sea[0] if f < p.get('deep', 0.22) else lighten(sea[0], 0.85)
+        if x + L + 2 >= W or y + 2 >= H: continue
+        g = p.get('wave_gap', 0)
+        if g:
+            if any(occ[yy][xx] for yy in range(max(0, y - g), min(H, y + g + 2)) for xx in range(max(0, x - g), min(W, x + L + g))): continue
+            for xx in range(x, min(W, x + L)): occ[y][xx] = True
+        for i in range(L):
+            if F[y][x + i] > p.get('shallow', 0.06): px[x + i, y] = crest
+            if i >= 1 and F[y + 1][x + i] > p.get('shallow', 0.06): px[x + i, y + 1] = trough
+        if thick:   # far out: a second, shorter crest row above, offset, so big swells read as rolling
+            for i in range(1, L - 1):
+                if y - 1 >= 0 and F[y - 1][x + i + 1] > p.get('shallow', 0.06): px[x + i + 1, y - 1] = crest
+    return out
+
+def pools(W, H, land, p):
+    """Hot springs: pools with concentric rings (deep centre to bacterial-mat edge), noisy edges,
+    a thin crust rim, and runoff streaks."""
+    rnd = random.Random(p.get('seed', 9)); n = vnoise(14, rnd); n2 = vnoise(5, rnd)
+    out = land.copy(); px = out.load()
+    centres = [(rnd.uniform(0.15, 0.85) * W, rnd.uniform(0.2, 0.8) * H, rnd.uniform(*p.get('radius', (22, 40)))) for _ in range(p.get('count', 3))]
+    rings = p['rings']   # list of (threshold, rgb) from centre outward, threshold in units of radius
+    for y in range(H):
+        for x in range(W):
+            best = 9
+            for cx, cy, r in centres:
+                d = math.hypot((x - cx) / r, (y - cy) / (r * 0.75)) + (n(x, y) - 0.5) * 0.35 + (n2(x, y) - 0.5) * 0.08
+                best = min(best, d)
+            for thr, col in rings:
+                if best < thr: px[x, y] = tuple(col) + (255,); break
+    return out
