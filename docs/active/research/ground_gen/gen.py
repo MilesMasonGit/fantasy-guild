@@ -107,3 +107,27 @@ if __name__ == '__main__':
     r = rounds[sys.argv[1]]
     board(r['variants'], f"round_{sys.argv[1]}.png", labels=r.get('labels'))
     print('ok')
+
+def mixed(W, H, kinds, zone_scale=70, seed=11, ragged=0.35):
+    """Several grass kinds in zones: each kind is a full ground() with the same earth and tint
+    (same seed), composited by a large noise map cut into bands; zone borders get a ragged edge."""
+    rnd = random.Random(seed); z = vnoise(zone_scale, rnd); j = vnoise(6, rnd)
+    layers = [ground(W, H, k) for k in kinds]
+    out = layers[0].copy(); op = out.load(); lps = [l.load() for l in layers]
+    n = len(kinds)
+    for y in range(H):
+        for x in range(W):
+            v = z(x, y) + (j(x, y) - 0.5) * ragged * 0.25
+            idx = min(n - 1, max(0, int(v * n * 1.0)))
+            op[x, y] = lps[idx][x, y]
+    return out
+
+def board_imgs(imgs, out, labels, W=320, H=200, s=2):
+    G = lambda im: ImageOps.grayscale(im.convert('RGB')).convert('RGB')
+    n = len(imgs); pad = 12; top = 22
+    P = Image.new('RGB', (W * s * n + pad * (n - 1), H * s * 2 + pad + top), (40, 40, 40)); d = ImageDraw.Draw(P)
+    for i, im in enumerate(imgs):
+        A = put_tokens(im).resize((W * s, H * s), Image.NEAREST); x = i * (W * s + pad)
+        d.text((x + 4, 5), labels[i], fill=(255, 255, 255))
+        P.paste(A.convert('RGB'), (x, top)); P.paste(G(A), (x, top + H * s + pad))
+    P.save(os.path.join(S, out))

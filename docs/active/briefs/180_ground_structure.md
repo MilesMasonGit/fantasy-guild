@@ -58,6 +58,8 @@ owner's few motifs stamped by rules later. Options weighed:
 https://claude.ai/artifact/VHkHDrAMkKQYwbZwmSu3YS. G2 below is superseded
 unless the owner revives it.
 
+**Design rounds (owner's verdicts):** round 1 (2026-10-17): B's tufts on C's calm body. Round 2: kinds of grass in zones (short lawn, tall, dry), waiting for the owner.
+
 ## G2 — Edge pieces (superseded 2026-10-17; kept for reference)
 
 The code lays the owner's edge pieces along every boundary between two grounds
