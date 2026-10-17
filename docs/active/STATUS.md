@@ -27,7 +27,9 @@ build green) · bench-queued · eye-check · merged.*
 | Terrain design advice (owner's goal for the terrain pass) | director | [notes page](https://claude.ai/artifact/PLTLkP5bqjLqtTc8YYJSpg) | sections 1–9; owner ruled the path 2026-10-16: computed edges plus the owner's hand-drawn edge pieces, Sea of Stars as the target (brief 180) | Fri | |
 | Brief 180 G1: ground structure in code (tint pattern, organic earth with rim and fringe, grouped props) | engineer | `crunch/ground-g1` → `main` | merged Sat (owner: a clear improvement, more to do; gate on the merged result 5053 tests, build) | Fri | Sat |
 | Ground design rounds 1–9 with the owner (generated ground; [rounds page](https://claude.ai/artifact/LefBh8qULf3JCdqUBb9jFY)) | director | `docs/active/research/ground_gen/` | done: final prototype approved with softer camouflage; spec `final_spec.json` | Sat | Sat |
-| Brief 180 G3: generated ground in the game (meadow and forest) | engineer | `crunch/ground-g3` (`g3`) | building | Sat | |
+| Brief 180 G3: generated ground in the game (meadow and forest) | engineer | `crunch/ground-g3` (owner's folder) | owner eye-check: looks good, merge; gate green (5079 tests, cycles, build); work check and draw compare at 13:00, then merge | Sat | |
+| Brief 180 G4: Mountain, Coast, per-look dapple, ground strength slider, and four new biomes (flower meadow, cherry grove, Yellowstone, volcano) | engineer | `crunch/ground-g4` (`g4`, from G3) | building | Sat | |
+| Next: world generation design rounds (biome blending, layouts, ponds and lakes in most biomes) | director + owner | — | after G4 | | |
 | Later: Recruits get a weak basic attack (T-167); equip-by-drop opens the sheet a frame later (T-186, ruled 2026-10-15) | — | — | next batches | | |
 
 ## Wave 2 (Wed 14 – Sat 17 October), order ruled by the owner 2026-10-14
