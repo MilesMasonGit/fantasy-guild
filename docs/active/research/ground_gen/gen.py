@@ -82,6 +82,13 @@ def ground(W, H, p):
                     w = wear(x, y) * 0.8 + wear2(x, y) * 0.2
                     deep = (w - p['earth_thr']) / max(1e-6, 1 - p['earth_thr'])
                     if deep > 0.35: px[x, y] = ep[3] if streak(x * 0.3, y * 3) > 0.62 else ep[2]
+                elif style == 'clods_middle':
+                    w = wear(x, y) * 0.8 + wear2(x, y) * 0.2
+                    deep = (w - p['earth_thr']) / max(1e-6, 1 - p['earth_thr'])
+                    if deep > p.get('middle', 0.3): px[x, y] = lighten(ep[2], 1.08)
+                    if dn(x, y) > 0.6:
+                        px[x, y] = ep[3]
+                        if earth[y + 1][x] and dn(x, y + 1) <= 0.6: px[x, y + 1] = ep[0]
                 elif style == 'soil':
                     if dn(x, y) > 0.64: px[x, y] = ep[0]
                     elif dn(x, y) < 0.28: px[x, y] = ep[3]
