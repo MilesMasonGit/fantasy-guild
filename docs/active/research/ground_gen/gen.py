@@ -111,7 +111,7 @@ def ground(W, H, p):
     bmask = vnoise(p.get('blade_mask_scale', 48), rnd) if p.get('blade_mask') else None
     for _ in range(n):
         cx, cy = rnd.randrange(W), rnd.randrange(H)
-        if bmask and bmask(cx, cy) < p['blade_mask']: continue
+        if bmask and bmask(cx, cy) < p['blade_mask'] and rnd.random() > p.get('blade_mask_floor', 0.0): continue
         for _ in range(p.get('cluster', 1)):
             x = cx + rnd.randrange(-1, 2) * (p.get('cluster', 1) > 1); y = cy + rnd.randrange(-1, 2) * (p.get('cluster', 1) > 1)
             if not (0 <= x < W and 0 <= y < H) or earth[y][x]: continue
