@@ -1,4 +1,4 @@
-Status: draft 2026-10-16 (a record of what the owner settled; the owner directs the art and approves this page)
+Status: approved 2026-10-16 (a record of what the owner settled; the owner directs the art)
 
 # Art style
 
