@@ -24,8 +24,15 @@ const hex = (rgb) => '#' + rgb.map((c) => c.toString(16).padStart(2, '0')).join(
 
 describe('the shared colour function', () => {
     it('is the setting baked into the art', () => {
-        expect({ brightness: ART_BAKE.brightness, saturation: ART_BAKE.saturation }).toEqual(PRESETS.drag);
+        expect({ brightness: ART_BAKE.brightness, saturation: ART_BAKE.saturation }).toEqual(PRESETS.gentle);
         expect(ART_BAKE.threshold).toBe(DEFAULT_OUTLINE);
+    });
+
+    it('matches the art script gentle preset and its outline threshold, so the two cannot drift', () => {
+        expect(ART_BAKE.brightness).toBe(PRESETS.gentle.brightness);
+        expect(ART_BAKE.saturation).toBe(PRESETS.gentle.saturation);
+        expect(PRESETS.gentle).toEqual({ brightness: 1.08, saturation: 1.12 });
+        expect(DEFAULT_OUTLINE).toBe(40);
     });
 
     it('gives exactly the script’s per-pixel result on sample colours, every preset', () => {
@@ -80,7 +87,7 @@ describe('planning the bake on a library', () => {
     });
 
     it('records the marker in the library it saves', () => {
-        expect(planBrighten(fixture()).next[BAKE_KEY]).toEqual({ brightness: 1.15, saturation: 1.25, threshold: 40 });
+        expect(planBrighten(fixture()).next[BAKE_KEY]).toEqual({ brightness: 1.08, saturation: 1.12, threshold: 40 });
     });
 
     it('never brightens twice', () => {
@@ -181,7 +188,7 @@ describe('the Recolor tab’s brighten button', () => {
         const view = render(React.createElement(PaletteBrighten, { library: {}, onApplied }));
         await act(async () => {});
         expect(view.getByText(`Would change ${plan.changedColors} of 11 colours in 2 of 3 palettes. Once only; undo with git.`)).toBeTruthy();
-        fireEvent.click(view.getByRole('button', { name: /Brighten material palettes \(art bake: 1\.15 \/ 1\.25\)/ }));
+        fireEvent.click(view.getByRole('button', { name: /Brighten material palettes \(art bake: 1\.08 \/ 1\.12\)/ }));
         expect(posts).toHaveLength(0);
         await act(async () => { fireEvent.click(view.getByRole('button', { name: `Yes, brighten ${plan.changedColors} colours` })); });
         expect(posts).toEqual([plan.next]);
@@ -194,7 +201,7 @@ describe('the Recolor tab’s brighten button', () => {
         const posts = server(planBrighten(fixture()).next);
         const view = render(React.createElement(PaletteBrighten, { library: {} }));
         await act(async () => {});
-        expect(view.getByText('Already applied (brightness 1.15, saturation 1.25, outlines at or below 40 kept).')).toBeTruthy();
+        expect(view.getByText('Already applied (brightness 1.08, saturation 1.12, outlines at or below 40 kept).')).toBeTruthy();
         expect(view.getByRole('button', { name: /Brighten material palettes/ }).disabled).toBe(true);
         expect(posts).toHaveLength(0);
     });

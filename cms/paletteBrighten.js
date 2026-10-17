@@ -14,7 +14,7 @@ import { brightenHex, DEFAULT_OUTLINE } from './artBrightenColor.js';
 export const BAKE_KEY = '_brightened';
 
 /** The setting baked into the sprite art (the script's `drag` preset, outline 40). */
-export const ART_BAKE = Object.freeze({ brightness: 1.15, saturation: 1.25, threshold: DEFAULT_OUTLINE });
+export const ART_BAKE = Object.freeze({ brightness: 1.08, saturation: 1.12, threshold: DEFAULT_OUTLINE });
 
 /** `{ palettes, marker }`: the library's palettes without the bake marker, and the marker (or null). */
 export function splitLibrary(library) {
