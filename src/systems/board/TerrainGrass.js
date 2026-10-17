@@ -275,6 +275,13 @@ export function grassCells() {
 /** The zone noise's jagged edge, as a weight on the jag layer. */
 const JAG = GRASS_RULES.zoneRagged * 0.25;
 
+/** The earth's noise at a pixel, the slow way: earth wears where it is above the look's level. */
+export function earthNoise(px, py, seed) {
+    const R = GRASS_RULES;
+    return (1 - R.earthFine) * grassNoise(px, py, seed, R.earthCell, CH.EARTH)
+        + R.earthFine * grassNoise(px, py, seed, R.earthFineCell, CH.EARTH_FINE);
+}
+
 /**
  * The reference for one pixel of {@link buildGrassPlan}, worked out the slow way from
  * {@link grassNoise}; the fast path must match it exactly.
@@ -291,7 +298,7 @@ export function grassShapeAt(px, py, seed, earthAt, thresholds) {
     let bits = 0;
     let earth = false;
     const clump = n(cells.clump, CH.CLUMP);
-    const wear = (1 - R.earthFine) * n(R.earthCell, CH.EARTH) + R.earthFine * n(R.earthFineCell, CH.EARTH_FINE);
+    const wear = earthNoise(px, py, seed);
     if (wear > earthAt) {
         const depth = (wear - earthAt) / (1 - earthAt);
         if (n(R.encroachCell, CH.ENCROACH) > encroach * (1 - Math.min(1, depth * R.encroachDepth))) {

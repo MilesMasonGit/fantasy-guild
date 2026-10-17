@@ -7,6 +7,8 @@ import { propsForGround } from '../systems/board/TerrainProps.js';
 import { buildWearMask } from '../systems/board/TerrainPatches.js';
 import { buildBandMasks, bandAppearance } from '../systems/board/TerrainBands.js';
 import { muteTexels, buildGroundPlan } from '../systems/board/TerrainSurface.js';
+import { drawGrass, grassColours } from '../systems/board/TerrainGrass.js';
+import { generatedOf } from '../config/registries/terrainRegistry.js';
 import { groundWith } from './fixtures/ground.js';
 
 /**
@@ -149,6 +151,31 @@ describe('⭐ No dead sliders', () => {
         return `${sum}|${plan.shades.join(',')}`;
     };
 
+    /** The sheet looks' lip only shows with the generated grass off: the forest draws its own. */
+    const sheetShade = () => {
+        setTuning('grassOn', 0);
+        return shade();
+    };
+    /** Any array summarised by its values and where they are. */
+    const weighted = (arr) => {
+        let sum = 0;
+        for (let i = 0; i < arr.length; i++) sum += arr[i] * ((i % 9973) + 1);
+        return String(sum);
+    };
+    /** The generated grass's shapes in the plan. */
+    const grassShape = () => {
+        const { grass } = buildGroundPlan(ground());
+        return grass ? `${weighted(grass.bits)}|${weighted(grass.kinds)}` : 'none';
+    };
+    /** The generated grass's details on a ground grid the size of the plan. */
+    const grassDetail = () => {
+        const plan = buildGroundPlan(ground());
+        const planCol = Int32Array.from({ length: plan.width }, (_, c) => c);
+        const planRow = Int32Array.from({ length: plan.height }, (_, r) => r * plan.width);
+        return weighted(drawGrass(plan.grass, plan.seed, plan.width, plan.height, planCol, planRow).colour);
+    };
+    const grassColour = () => JSON.stringify(grassColours(generatedOf('forest')));
+
     const OBSERVES = {
         edgeSwing: edges,
         edgeRoughness: edges,
@@ -162,10 +189,22 @@ describe('⭐ No dead sliders', () => {
         patternStrength: shade,
         patchCoverage: wear,
         wearClump: wear,
-        wearEdgeWidth: shade,
-        wearRim: shade,
-        wearFringe: shade,
+        wearEdgeWidth: sheetShade,
+        wearRim: sheetShade,
+        wearFringe: sheetShade,
         wearMiddle: wear,
+        grassOn: grassShape,
+        grassStrokes: grassDetail,
+        grassPatch: grassShape,
+        grassPatchFloor: grassDetail,
+        grassZoneScale: grassShape,
+        grassTall: grassShape,
+        grassDry: grassShape,
+        grassEarth: grassShape,
+        grassEncroach: grassShape,
+        grassBodySoft: grassColour,
+        grassClump: grassShape,
+        grassMounds: grassDetail,
         propDensity: props,
         propGroupSize: props,
         propGroupSpread: props,

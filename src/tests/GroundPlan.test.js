@@ -5,9 +5,10 @@ import { DEV_MAPS } from '../systems/atlas/devMaps.js';
 import { regionGround } from '../systems/atlas/regionGround.js';
 import { buildGroundPlan } from '../systems/board/TerrainSurface.js';
 import { patchNoise } from '../systems/board/TerrainPatches.js';
+import { grassShapeAt } from '../systems/board/TerrainGrass.js';
 import { PLAN_PIXEL_U, CELL_PX, edgeAmplitude } from '../systems/board/TerrainLattice.js';
 import { LOOKS } from '../config/registries/terrainRegistry.js';
-import { tuning, resetTuning } from '../config/playmatTuning.js';
+import { tuning, setTuning, resetTuning } from '../config/playmatTuning.js';
 import { createRegionRecord } from '../state/StateSchema.js';
 
 /**
@@ -145,6 +146,15 @@ describe('⭐ The ground round the Hall is plain ground: no clearing (decision 4
                 const i = y * plan.width + x;
                 const t = plan.terrainAt[i];
                 const look = LOOKS[plan.looks[t]];
+                const slot = plan.grass?.slotOf[t] ?? -1;
+                if (slot >= 0) {
+                    // Generated grass: its shapes by the same rule as anywhere, and no sheet wear.
+                    const ref = grassShapeAt(x, y, ground.seed, plan.grass.thresholds.earth[slot], plan.grass.thresholds);
+                    if (ref.bits !== plan.grass.bits[i] || ref.kind + 1 !== (plan.grass.kinds[i] & 3)) wrong.push(`grass at ${x},${y}`);
+                    if (plan.wearAt?.[i]) wrong.push(`sheet wear on grass at ${x},${y}`);
+                    checked++;
+                    continue;
+                }
                 const noiseWears = patchNoise(x, y, ground.seed, plan.wear.cell) < plan.wear.thresholds[t];
                 const wears = Boolean(plan.wearAt[i]);
                 // Worn only where the noise says; the noise's specks too small to be a clump are
@@ -179,7 +189,14 @@ describe('⭐ Looks', () => {
         const plan = planOf(record);
         expect([plan.width, plan.height]).toEqual([880, 563]);
         expect(plan.looks).toEqual(['meadow']);
-        expect(new Set(plan.sheets.filter((s, i) => plan.sheetAt.includes(i)))).toEqual(new Set(['grass', 'dirt']));
+        // Generated everywhere, its sheet beneath; with the switch off, its sheet and worn earth.
+        expect(plan.grass.looks).toEqual(['meadow']);
+        expect(plan.grass.kinds.every(k => k > 0)).toBe(true);
+        expect(new Set(plan.sheets.filter((s, i) => plan.sheetAt.includes(i)))).toEqual(new Set(['grass']));
+        setTuning('grassOn', 0);
+        const sheets = planOf(record);
+        expect(sheets.grass).toBeNull();
+        expect(new Set(sheets.sheets.filter((s, i) => sheets.sheetAt.includes(i)))).toEqual(new Set(['grass', 'dirt']));
         expect(plan.bands).toEqual([]);
         expect(plan.props.length).toBeGreaterThan(0);
         expect(new Set(plan.props.map(p => p.look))).toEqual(new Set(['meadow']));

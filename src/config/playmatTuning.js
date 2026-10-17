@@ -101,35 +101,35 @@ export const TUNABLES = Object.freeze([
         key: 'patchCoverage',
         group: 'Ground wear',
         label: 'Coverage',
-        hint: 'Multiplies how much earth (or gravel) wears through. 1 is as authored (a tenth of a meadow), 0 hides it entirely.',
+        hint: 'Multiplies how much gravel wears through rock, and earth through grass while Generated grass is off (the generated grass has its own Earth amount). 1 is as authored, 0 hides it entirely.',
         min: 0, max: 3, step: 0.05, def: 1
     },
     {
         key: 'wearClump',
         group: 'Ground wear',
         label: 'Clump size (u)',
-        hint: 'How big each worn patch is, in mat units: at the same coverage, bigger patches are fewer, with more open grass between. Small values approach dithering.',
+        hint: 'How big each worn patch of gravel (and of earth, while Generated grass is off) is, in mat units: at the same coverage, bigger patches are fewer. Small values approach dithering.',
         min: 8, max: 120, step: 2, def: 60
     },
     {
         key: 'wearEdgeWidth',
         group: 'Ground wear',
         label: 'Edge width (u)',
-        hint: 'How wide the darker rim inside a worn patch and the lighter fringe round it are, in mat units: 2 is one ground pixel at full size. 0 turns both off.',
+        hint: 'Sheets only (Generated grass off): how wide the darker rim inside a worn patch and the lighter fringe round it are, in mat units; 2 is one ground pixel at full size. 0 turns both off.',
         min: 0, max: 8, step: 2, def: 2
     },
     {
         key: 'wearRim',
         group: 'Ground wear',
         label: 'Rim darkness',
-        hint: 'How much darker the earth is along the edge of a worn patch. 0 turns the rim off.',
+        hint: 'Sheets only (Generated grass off): how much darker the earth is along the edge of a worn patch. 0 turns the rim off.',
         min: 0, max: 0.6, step: 0.02, def: 0.3
     },
     {
         key: 'wearFringe',
         group: 'Ground wear',
         label: 'Fringe lightness',
-        hint: 'How much lighter the grass is round a worn patch. 0 turns the fringe off.',
+        hint: 'Sheets only (Generated grass off): how much lighter the grass is round a worn patch. 0 turns the fringe off.',
         min: 0, max: 0.4, step: 0.02, def: 0.12
     },
     {
@@ -213,8 +213,8 @@ export const TUNABLES = Object.freeze([
     {
         key: 'grassClump',
         group: 'Generated grass',
-        label: 'Clump size (u)',
-        hint: 'How big the light and dark clumps of the grass are, in mat units.',
+        label: 'Grass clump size (u)',
+        hint: 'How big the light and dark clumps of the grass are, in mat units: 32 is the prototype’s 16 Token pixels.',
         min: 8, max: 96, step: 2, def: 32
     },
     {
@@ -256,14 +256,14 @@ export const TUNABLES = Object.freeze([
         key: 'muteBrightness',
         group: 'Colour',
         label: 'Brightness',
-        hint: 'How bright the ground art is drawn: 1 is the art as drawn. Baked into the sheets once, never a filter.',
+        hint: 'How bright the ground sheets and their scatter are drawn: 1 is the art as drawn. Baked into the sheets once, never a filter. The generated grass and its scatter are drawn as they are.',
         min: 0.5, max: 1.2, step: 0.01, def: 0.85
     },
     {
         key: 'muteSaturation',
         group: 'Colour',
         label: 'Saturation',
-        hint: 'How colourful the ground art is drawn: 1 is the art as drawn, 0 grey.',
+        hint: 'How colourful the ground sheets and their scatter are drawn: 1 is the art as drawn, 0 grey. The generated grass and its scatter are drawn as they are.',
         min: 0, max: 1.2, step: 0.01, def: 0.7
     }
 ]);

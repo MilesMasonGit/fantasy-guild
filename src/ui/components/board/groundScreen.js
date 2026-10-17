@@ -256,7 +256,8 @@ function fillRow(ctx, r) {
  * @param {number} options.unit  mat units per ground pixel (`boardScaleAt(fit)`)
  * @param {(id: string) => Uint8ClampedArray|null} options.sheet  a ground sheet's muted RGBA,
  *   `SHEET_PX` square; null leaves its pixels clear
- * @param {(id: string) => Uint8ClampedArray|null} [options.prop]  a prop sheet's muted RGBA
+ * @param {(id: string, asDrawn: boolean) => Uint8ClampedArray|null} [options.prop]  a prop sheet's
+ *   RGBA: muted, or as drawn for a prop standing on a generated look
  * @param {Uint8ClampedArray} [options.out]  where to write (`cols × rows × 4` bytes); else a new one
  * @returns {{cols: number, rows: number, unit: number, data: Uint8ClampedArray}}
  */
@@ -366,13 +367,18 @@ export function buildScreenPass(plan, { mat, unit, sheet, prop = () => null, out
     // under the foot (`shade`).
     const half = PROP_PX / 2;
     const perRow = PROP_SHEET_CELLS;
+    // ⚠️ A prop on a generated look is drawn as drawn, like the ground under it: muted, the
+    // scatter read grey against the ramps.
+    const generated = new Set(plan.grass?.looks || []);
     const propTexels = new Map();
     for (const p of plan.props || []) {
-        if (!propTexels.has(p.sheet)) {
-            const t = prop(p.sheet);
-            propTexels.set(p.sheet, t && t.length === PROP_SHEET_PX * PROP_SHEET_PX * 4 ? t : null);
+        const asDrawn = generated.has(p.look);
+        const key = `${p.sheet}|${asDrawn}`;
+        if (!propTexels.has(key)) {
+            const t = prop(p.sheet, asDrawn);
+            propTexels.set(key, t && t.length === PROP_SHEET_PX * PROP_SHEET_PX * 4 ? t : null);
         }
-        const src = propTexels.get(p.sheet);
+        const src = propTexels.get(key);
         if (!src) continue;
         const footC = Math.floor(((p.footX + 0.5) * planU) / unit);
         const footR = Math.floor(((p.footY + 0.5) * planU) / unit);

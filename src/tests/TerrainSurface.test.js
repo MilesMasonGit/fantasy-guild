@@ -67,6 +67,8 @@ describe('Every pixel gets a sheet', () => {
 
 describe('⭐ Layering: tint under band under wear', () => {
     it('wears earth through grass and gravel through rock, as wear and not a second ground', () => {
+        // The sheet looks' wear: generated grass draws its own earth (`TerrainGrass`).
+        setTuning('grassOn', 0);
         const counts = sheetCounts(buildGroundPlan(hybrid()));
         expect(counts.dirt).toBeGreaterThan(0);
         expect(counts.gravel).toBeGreaterThan(0);
@@ -124,6 +126,9 @@ describe('Alternate sheets swap per Region, never per cell', () => {
     });
 
     it('draws one sheet for a look across the whole Region', () => {
+        // Under generated grass the meadow keeps its sheet beneath and wears no sheet earth.
+        expect(Object.keys(sheetCounts(buildGroundPlan(meadow(12))))).toEqual(['grass']);
+        setTuning('grassOn', 0);
         const counts = sheetCounts(buildGroundPlan(meadow(12)));
         expect(Object.keys(counts).sort()).toEqual(['dirt', 'grass']);
     });

@@ -109,6 +109,16 @@ export function mutedSheet(path) {
 }
 
 /**
+ * A sheet's RGBA bytes as drawn, with no mute: what a generated look's scatter is drawn from. Null
+ * while it is not decoded, or if it would not load.
+ *
+ * @param {string} path  `sheetPath(id)` or `propSheetPath(id)`
+ */
+export function drawnSheet(path) {
+    return decoded.get(path) || null;
+}
+
+/**
  * **Test seam.** Every sheet decoded at once from `texelsOf(path)` (RGBA bytes, or null), as if it
  * had loaded; jsdom loads no images.
  */
