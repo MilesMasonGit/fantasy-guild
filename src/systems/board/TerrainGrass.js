@@ -562,7 +562,7 @@ function calibrate(width, height, shared, zoneN, rules, earthShare) {
  * rounding never turns a smaller addend into a larger sum.
  */
 function shapeRow(ctx, look, py) {
-    const { width, at, slotOf, bits, kinds, rowKind } = ctx;
+    const { width, at, slotOf, bits, rowKind } = ctx;
     const { slot, zoneN, encroach, rules } = look;
     const { earth: earthAt } = look.levels;
     const R = GRASS_RULES;
@@ -1343,17 +1343,18 @@ function drawWater(ctx, grass, seed) {
         return classesBySlot[kinds[i] >> SLOT_SHIFT][planShore[planRow[r] + planCol[i - r * cols]]];
     };
     const sFleck = saltOf(seed, SALT.FLECK);
+    const fleckCuts = specBySlot.map(w => (w ? cut32(w.flecks) : 0));
     for (let e = 0; e < wet; e++) {
         const i = water[e];
         const r = (i / cols) | 0;
         const c = i - r * cols;
         const p = planRow[r] + planCol[c];
-        const w = specBySlot[kinds[i] >> SLOT_SHIFT];
-        const cls = classesBySlot[kinds[i] >> SLOT_SHIFT][planShore[p]];
+        const slot = kinds[i] >> SLOT_SHIFT;
+        const cls = classesBySlot[slot][planShore[p]];
         let col = cls.colour;
         if (cls.mix === 1) col = planBits[p] & WATER_BIT.FOAM_LIGHT ? COLOUR.FOAM : COLOUR.FOAM2;
         else if (cls.mix === 2) col = planBits[p] & WATER_BIT.SHALLOW_LIGHT ? COLOUR.SEA + 3 : COLOUR.SEA + 2;
-        if (cls.fleck && hash(c, r, sFleck) < cut32(w.flecks)) col = COLOUR.FOAM2;
+        if (cls.fleck && hash(c, r, sFleck) < fleckCuts[slot]) col = COLOUR.FOAM2;
         colour[i] = col;
     }
 
@@ -1376,7 +1377,7 @@ function drawWater(ctx, grass, seed) {
             if (!isWater[k]) continue;
             const w = specBySlot[k >> SLOT_SHIFT];
             const h = hash(c, r, sWave);
-            if (h >= cut32(w.waves / busiest) && busiest !== w.waves) continue;
+            if (w.waves < busiest && h >= cut32(w.waves / busiest)) continue;
             const cls = classAt(i);
             if (!cls.waves || !(planBits[planRow[r] + planCol[c]] & WATER_BIT.WAVES)) continue;
             const L = cls.lengths[(h >>> 8) % cls.lengths.length];
