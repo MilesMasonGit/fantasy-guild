@@ -244,9 +244,6 @@ export function buildWearMask(pixels, ground) {
 
     const mask = new Uint8Array(n);
     const worn = [];
-    // ⚠️ A local copy: an exported module binding read in this loop cost more than the noise
-    // itself (measured: 5.5 ms against 2.4 for the whole wear).
-    const fineWeight = FINE;
     for (let py = 0, row = 0; py < height; py++, row += width) {
         const { coarse, fine } = noise.row(py);
         const ct = coarse.top, cb = coarse.bottom, cfy = coarse.fy;
@@ -262,7 +259,7 @@ export function buildWearMask(pixels, ground) {
             }
             const a = ct[px];
             const b = ft[px];
-            if ((a + (cb[px] - a) * cfy) + fineWeight * (b + (fb[px] - b) * ffy) < threshold) {
+            if ((a + (cb[px] - a) * cfy) + FINE * (b + (fb[px] - b) * ffy) < threshold) {
                 mask[i] = 1;
                 worn.push(i);
             }
@@ -285,28 +282,27 @@ export const minClumpPx = (cell) => Math.max(4, Math.round((cell * cell) / 16));
  */
 function dropSpecks(mask, worn, width, least) {
     const n = mask.length;
-    // 2 marks a pixel already gathered into a clump.
-    const stack = new Int32Array(worn.length);
-    const clump = [];
+    // Every clump is gathered breadth first into `order`, one after another, so a clump is the
+    // run `order[from, end)`. 2 marks a pixel already gathered.
+    const order = new Int32Array(worn.length);
+    let end = 0;
     let dropped = 0;
     for (const start of worn) {
         if (mask[start] !== 1) continue;
-        clump.length = 0;
-        let top = 0;
-        stack[top++] = start;
+        const from = end;
+        order[end++] = start;
         mask[start] = 2;
-        while (top > 0) {
-            const i = stack[--top];
-            clump.push(i);
+        for (let k = from; k < end; k++) {
+            const i = order[k];
             const x = i % width;
-            if (x > 0 && mask[i - 1] === 1) { mask[i - 1] = 2; stack[top++] = i - 1; }
-            if (x < width - 1 && mask[i + 1] === 1) { mask[i + 1] = 2; stack[top++] = i + 1; }
-            if (i >= width && mask[i - width] === 1) { mask[i - width] = 2; stack[top++] = i - width; }
-            if (i + width < n && mask[i + width] === 1) { mask[i + width] = 2; stack[top++] = i + width; }
+            if (x > 0 && mask[i - 1] === 1) { mask[i - 1] = 2; order[end++] = i - 1; }
+            if (x < width - 1 && mask[i + 1] === 1) { mask[i + 1] = 2; order[end++] = i + 1; }
+            if (i >= width && mask[i - width] === 1) { mask[i - width] = 2; order[end++] = i - width; }
+            if (i + width < n && mask[i + width] === 1) { mask[i + width] = 2; order[end++] = i + width; }
         }
-        if (clump.length < least) {
-            for (const i of clump) mask[i] = 0;
-            dropped += clump.length;
+        if (end - from < least) {
+            for (let k = from; k < end; k++) mask[order[k]] = 0;
+            dropped += end - from;
         }
     }
     const kept = dropped ? [] : worn;
