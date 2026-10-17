@@ -54,6 +54,8 @@ export function buildShadePattern(width, height, seed) {
     const high = sample[Math.floor((1 - PATTERN_SHARES.light) * last)];
 
     const levelAt = new Int8Array(width * height);
+    // ⚠️ A local copy: the imported binding read in this loop made the pattern four times slower.
+    const fineWeight = FINE;
     for (let py = 0, row = 0; py < height; py++, row += width) {
         const { coarse, fine } = noise.row(py);
         const ct = coarse.top, cb = coarse.bottom, cfy = coarse.fy;
@@ -61,7 +63,7 @@ export function buildShadePattern(width, height, seed) {
         for (let px = 0; px < width; px++) {
             const a = ct[px];
             const b = ft[px];
-            const v = (a + (cb[px] - a) * cfy) + FINE * (b + (fb[px] - b) * ffy);
+            const v = (a + (cb[px] - a) * cfy) + fineWeight * (b + (fb[px] - b) * ffy);
             levelAt[row + px] = v < low ? -1 : v > high ? 1 : 0;
         }
     }
