@@ -220,3 +220,24 @@ def banded(W, H, layers_kinds, cuts, zone_scale=60, stretch=(1.0, 1.0), seed=11,
             if gap and idx == gap[0] and gn(x, y) < gap[2]: idx = gap[3]
             op[x, y] = lps[idx][x, y]
     return out
+
+def coast(W, H, land, p):
+    """Land image plus a sea on one side: the shore follows a noisy line; bands of wet sand,
+    shallows and a foam line by distance from it; water with soft clustered wave dashes."""
+    rnd = random.Random(p.get('seed', 5)); n = vnoise(p.get('shore_scale', 50), rnd); n2 = vnoise(12, rnd)
+    sea = ramp(*p['sea'], hue_shift=0.02, step=0.06); sand = ramp(*p['sand'], hue_shift=0.02, step=0.06)
+    out = land.copy(); px = out.load()
+    wav = vnoise(p.get('wave_scale', 10), rnd); wsh = vnoise(40, rnd)
+    for y in range(H):
+        for x in range(W):
+            f = x / W + (n(x, y) - 0.5) * p.get('shore_amp', 0.35) + (n2(x, y) - 0.5) * 0.04 - p.get('shore', 0.62)
+            if f < -0.035: continue
+            if f < -0.012: px[x, y] = sand[1]                                      # wet sand
+            elif f < 0.0: px[x, y] = sand[0] if (x + y) % 3 else sand[1]           # waterline
+            elif f < p.get('foam', 0.008): px[x, y] = sea[4] if n2(x * 2, y * 2) > 0.45 else sea[3]   # foam
+            elif f < p.get('shallow', 0.05): px[x, y] = sea[3] if wsh(x, y) > 0.55 else sea[2]       # shallows
+            else:
+                c = sea[1] if wsh(x, y) > 0.5 else sea[0]
+                if wav(x * 0.4, y * 2.2) > p.get('dash', 0.74): c = sea[2]       # soft horizontal wave clusters
+                px[x, y] = c
+    return out
