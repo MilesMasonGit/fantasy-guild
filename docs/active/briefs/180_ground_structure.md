@@ -119,7 +119,7 @@ the owner. **Most biomes should have at least a bit of water** (ponds, lakes)
 so a player can place a Token that needs water. Open points to bring: how
 water comes into a Region (per biome rules, per map, or both), blend styles at
 biome borders, layout shapes, and whether Yellowstone's sulphur lakes count as
-water ground.
+water ground. **Also:** the game's coastline follows the ground's 32-unit cells, so in the generated Coast the shore steps like a staircase where the prototype's was smooth (seen in G4's side-by-sides); a smoother shore belongs here. Yellowstone's sulphur lakes are drawn but not yet water ground (Tokens can stand on them).
 
 ## G2 — Edge pieces (superseded 2026-10-17; kept for reference)
 
