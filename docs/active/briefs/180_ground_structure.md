@@ -112,7 +112,7 @@ code dimming retire for generated looks. Same done-bar as G3 (side-by-side with
 each round's final image, build time, tests, work check, draw compare,
 eye-check).
 
-## Next design topic: world generation (owner, 2026-10-17; rounds: W1 verdict B, a lake with a stream to the edge; W2 verdict: mixed band and islands preferred, wants more styles; W3 verdict: fingers, transition ground and river border liked, a variety of blend types picked at random or by biome pair; W4 gradients (clumped fade, colour steps, both), waiting for the owner; page https://claude.ai/artifact/XFe5Kj6P1RC9KiMREUTTmc)
+## Next design topic: world generation (owner, 2026-10-17; rounds: W1 verdict B, a lake with a stream to the edge; W2 verdict: mixed band and islands preferred, wants more styles; W3 verdict: fingers, transition ground and river border liked, a variety of blend types picked at random or by biome pair; W4 verdict: C joins the variety; beaches wherever land meets the sea (blending settled). W5 layouts (side by side, core and rim, patchwork) with water, waiting for the owner; page https://claude.ai/artifact/XFe5Kj6P1RC9KiMREUTTmc)
 
 After G4: how biomes blend and possible Region layouts, as design rounds with
 the owner. **Most biomes should have at least a bit of water** (ponds, lakes)
