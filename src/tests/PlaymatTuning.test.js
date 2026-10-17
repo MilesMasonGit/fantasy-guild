@@ -6,7 +6,7 @@ import { edgeProfile, resolveArtPixels } from '../systems/board/TerrainLattice.j
 import { propsForGround } from '../systems/board/TerrainProps.js';
 import { buildWearMask } from '../systems/board/TerrainPatches.js';
 import { buildBandMasks, bandAppearance } from '../systems/board/TerrainBands.js';
-import { muteTexels } from '../systems/board/TerrainSurface.js';
+import { muteTexels, buildGroundPlan } from '../systems/board/TerrainSurface.js';
 import { groundWith } from './fixtures/ground.js';
 
 /**
@@ -141,6 +141,13 @@ describe('⭐ No dead sliders', () => {
         return String(at.reduce((n, v) => n + (v === sand ? 1 : 0), 0));
     };
     const mute = () => Array.from(muteTexels(Uint8ClampedArray.from([200, 120, 60, 255]))).join(',');
+    /** The plan's shade answer: which factor each pixel takes, and the factors. */
+    const shade = () => {
+        const plan = buildGroundPlan(ground());
+        let sum = 0;
+        for (let i = 0; i < plan.shadeAt.length; i++) sum += plan.shadeAt[i] * ((i % 9973) + 1);
+        return `${sum}|${plan.shades.join(',')}`;
+    };
 
     const OBSERVES = {
         edgeSwing: edges,
@@ -150,9 +157,18 @@ describe('⭐ No dead sliders', () => {
         wetSandWidth: band('sand'),
         // ⚠️ Strength changes the tint, not the mask, so it is observed through the appearance.
         bandStrength: () => JSON.stringify(['sea', 'coast'].map(id => bandAppearance(id))),
+        patternOn: shade,
+        patternScale: shade,
+        patternStrength: shade,
         patchCoverage: wear,
         wearClump: wear,
+        wearEdgeWidth: shade,
+        wearRim: shade,
+        wearFringe: shade,
+        wearMiddle: wear,
         propDensity: props,
+        propGroupSize: props,
+        propGroupSpread: props,
         propScatter: props,
         muteBrightness: mute,
         muteSaturation: mute

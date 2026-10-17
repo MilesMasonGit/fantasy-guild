@@ -13,15 +13,27 @@ import { tuning } from '../../config/playmatTuning.js';
  * coordinates, so a clump runs across cell lines without lining anything up; what stops it is the
  * ground under it changing to a look that does not wear.
  *
+ * ⚠️ Two layers of noise, a coarse one and a finer one at half its weight. One layer alone wears
+ * through only round its lowest grid corners, so at a low coverage the clumps sit on the noise
+ * grid in rows, as dots and crosses; the finer layer moves them off it and gives them ragged,
+ * organic outlines.
+ *
  * ⚠️ Gated per pixel on the drawn ground (`resolveArtPixels`), after the beach is cut: gated per
  * cell, earth speckled across the beach the sea had cut into a forest's edge.
  */
 
-/** Hash channel, kept clear of the ones the edges and the scatter use. */
+/** Hash channels for the wear's two layers, kept clear of the ones the edges and the scatter use. */
 const CHANNEL_PATCH = 0x7a1c;
+const CHANNEL_PATCH_FINE = 0x7a1d;
 
-/** How many samples the noise's distribution is estimated from. */
-const CALIBRATION_SAMPLES = 4096;
+/** The finer layer's weight against the coarse one, in every layered noise here. */
+export const FINE = 0.5;
+
+/** The finer layer's cell for a coarse cell: half as big. */
+export const fineCellOf = (cell) => Math.max(2, Math.round(cell / 2));
+
+/** How many samples a noise's distribution is estimated from. */
+export const CALIBRATION_SAMPLES = 4096;
 
 /** The R2 sequence's steps (the plastic number's inverse powers): evenly spread 2D samples. */
 const R2_X = 0.7548776662466927;
@@ -34,19 +46,19 @@ const smooth = (t) => t * t * (3 - 2 * t);
 const clumpPx = () => Math.max(2, Math.round(tuning('wearClump') / PLAN_PIXEL_U));
 
 /**
- * Smooth noise in [0, 1) at a pixel: the corners of the coarse cell it falls in, hashed and
- * interpolated. The reference the fast path in {@link buildWearMask} must match exactly.
+ * Smooth value noise in [0, 1) at a pixel: the corners of the coarse cell it falls in, hashed on
+ * `channel` and interpolated.
  */
-export function patchNoise(px, py, seed, cell = 10) {
+export function valueNoise(px, py, seed, cell, channel) {
     const gx = Math.floor(px / cell);
     const gy = Math.floor(py / cell);
     const fx = smooth((px - gx * cell) / cell);
     const fy = smooth((py - gy * cell) / cell);
 
-    const c00 = hash01(gx, gy, CHANNEL_PATCH, seed);
-    const c10 = hash01(gx + 1, gy, CHANNEL_PATCH, seed);
-    const c01 = hash01(gx, gy + 1, CHANNEL_PATCH, seed);
-    const c11 = hash01(gx + 1, gy + 1, CHANNEL_PATCH, seed);
+    const c00 = hash01(gx, gy, channel, seed);
+    const c10 = hash01(gx + 1, gy, channel, seed);
+    const c01 = hash01(gx, gy + 1, channel, seed);
+    const c11 = hash01(gx + 1, gy + 1, channel, seed);
 
     const top = c00 + (c10 - c00) * fx;
     const bottom = c01 + (c11 - c01) * fx;
@@ -54,16 +66,31 @@ export function patchNoise(px, py, seed, cell = 10) {
 }
 
 /**
- * The same noise over a whole plan, with every corner hashed once rather than four times a pixel
- * and the smoothstep weights worked out once per column and per row. Same arithmetic in the same
- * order as {@link patchNoise}, so the same numbers.
+ * Two layers of {@link valueNoise}, in [0, 1.5): a coarse one on `cell` and a finer one at half
+ * the cell and {@link FINE} its weight. The reference every fast path over {@link layeredTables}
+ * must match exactly.
  */
-function noiseTables(width, height, seed, cell) {
+export function layeredNoise(px, py, seed, cell, channel, fineChannel) {
+    return valueNoise(px, py, seed, cell, channel) + FINE * valueNoise(px, py, seed, fineCellOf(cell), fineChannel);
+}
+
+/** The wear's noise at a pixel: the reference the fast path in {@link buildWearMask} must match. */
+export function patchNoise(px, py, seed, cell = 10) {
+    return layeredNoise(px, py, seed, cell, CHANNEL_PATCH, CHANNEL_PATCH_FINE);
+}
+
+/**
+ * {@link valueNoise} over a whole plan, with every corner hashed once rather than four times a
+ * pixel and the smoothstep weights worked out once per column and per row. Same arithmetic in the
+ * same order, so the same numbers. `blendRow(gy, out)` writes the noise along corner row `gy`
+ * (the top of every pixel row in noise row `gy`) for a caller that walks the plan row by row.
+ */
+export function noiseTables(width, height, seed, cell, channel) {
     const gw = Math.floor((width - 1) / cell) + 2;
     const gh = Math.floor((height - 1) / cell) + 2;
     const corners = new Float64Array(gw * gh);
     for (let gy = 0; gy < gh; gy++) {
-        for (let gx = 0; gx < gw; gx++) corners[gy * gw + gx] = hash01(gx, gy, CHANNEL_PATCH, seed);
+        for (let gx = 0; gx < gw; gx++) corners[gy * gw + gx] = hash01(gx, gy, channel, seed);
     }
     const gxOf = new Int32Array(width);
     const fxOf = new Float64Array(width);
@@ -90,7 +117,94 @@ function noiseTables(width, height, seed, cell) {
         const bottom = c01 + (c11 - c01) * fx;
         return top + (bottom - top) * fyOf[py];
     };
-    return { gw, corners, gxOf, fxOf, gyOf, fyOf, at };
+    const blendRow = (gy, out) => {
+        const base = gy * gw;
+        for (let px = 0; px < width; px++) {
+            const k = base + gxOf[px];
+            const c0 = corners[k];
+            out[px] = c0 + (corners[k + 1] - c0) * fxOf[px];
+        }
+    };
+    return { gw, corners, gxOf, fxOf, gyOf, fyOf, at, blendRow };
+}
+
+/** One layer walked row by row: the two corner rows a pixel row blends between, and its weight. */
+function rowWalker(tables, width) {
+    const out = { top: new Float64Array(width), bottom: new Float64Array(width), fy: 0 };
+    let rowsOf = -1;
+    return (py) => {
+        const gy = tables.gyOf[py];
+        if (gy !== rowsOf) {
+            if (rowsOf >= 0 && gy === rowsOf + 1) {
+                [out.top, out.bottom] = [out.bottom, out.top];
+                tables.blendRow(gy + 1, out.bottom);
+            } else {
+                tables.blendRow(gy, out.top);
+                tables.blendRow(gy + 1, out.bottom);
+            }
+            rowsOf = gy;
+        }
+        out.fy = tables.fyOf[py];
+        return out;
+    };
+}
+
+/**
+ * {@link layeredNoise} over a whole plan: `at(x, y)` anywhere, and `row(py)` for a caller walking
+ * the plan top to bottom, which returns each layer's two corner rows and weight (`coarse`, `fine`:
+ * `{top, bottom, fy}`), so a pixel costs two blends. The noise at a pixel `px` of that row is
+ * `(t + (b - t) * fy)` of the coarse layer plus {@link FINE} times the same of the fine one, in
+ * that order.
+ */
+export function layeredTables(width, height, seed, cell, channel, fineChannel) {
+    const coarse = noiseTables(width, height, seed, cell, channel);
+    const fine = noiseTables(width, height, seed, fineCellOf(cell), fineChannel);
+    const coarseRow = rowWalker(coarse, width);
+    const fineRow = rowWalker(fine, width);
+    return {
+        at: (px, py) => coarse.at(px, py) + FINE * fine.at(px, py),
+        row: (py) => ({ coarse: coarseRow(py), fine: fineRow(py) })
+    };
+}
+
+/**
+ * `count` points spread evenly over a `width × height` plan (the R2 low-discrepancy sequence),
+ * each passed to `fn(x, y)`; the answers come back sorted, as quantiles. ⚠️ Never a stride: a
+ * stride that shares a factor with the width lands every sample on the same columns of a noise
+ * grid, where the noise is distributed differently, and a calibration comes out wrong.
+ */
+export function spreadSamples(width, height, count, fn) {
+    const out = new Float64Array(count);
+    for (let k = 0; k < count; k++) {
+        const u = (0.5 + R2_X * k) % 1;
+        const v = (0.5 + R2_Y * k) % 1;
+        out[k] = fn(Math.floor(u * width), Math.floor(v * height));
+    }
+    out.sort();
+    return out;
+}
+
+/**
+ * How much more (or less) a pixel wears than the average, from the "Wear in the middle" slider:
+ * 1 everywhere at 0; at 1, twice the average in the middle of the mat, none in its corners. Its
+ * mean over the plan stays about 1, so a coverage still means that share of the ground.
+ * `along[x]` and `down[y]` add up to the pixel's squared distance from the middle, as a share.
+ */
+function middleWeights(width, height) {
+    const s = tuning('wearMiddle');
+    if (!(s > 0)) return null;
+    const along = new Float64Array(width);
+    const down = new Float64Array(height);
+    for (let x = 0; x < width; x++) {
+        const d = (x + 0.5 - width / 2) / (width / 2);
+        along[x] = (d * d) / 2;
+    }
+    for (let y = 0; y < height; y++) {
+        const d = (y + 0.5 - height / 2) / (height / 2);
+        down[y] = (d * d) / 2;
+    }
+    // The squared distance averages a third over a rectangle, so `1 + 3s(1/3 - r²)` averages 1.
+    return { s, along, down };
 }
 
 /**
@@ -111,8 +225,8 @@ function thresholdFrom(quantiles, coverage) {
  * @param {object} ground The Region's ground, for its seed and the look of each terrain.
  * @returns {{mask: Uint8Array|null, worn: number[], thresholds: number[], cell: number}} `mask`
  *   is 1 where the pixel's look wears through (null when no look here wears), `worn` the same
- *   pixels as a list; `thresholds` the noise level below which each palette entry wears; `cell`
- *   the noise cell in pixels.
+ *   pixels as a list; `thresholds` the noise level below which each palette entry wears (before
+ *   the "Wear in the middle" slider moves it per pixel); `cell` the coarse noise cell in pixels.
  */
 export function buildWearMask(pixels, ground) {
     const { width, height, palette, at, present } = pixels;
@@ -122,74 +236,81 @@ export function buildWearMask(pixels, ground) {
     const wants = palette.map((t, p) => (present[p] && wearOf(ground.looks[t])?.coverage * scale) || 0);
     if (!wants.some(c => c > 0)) return { mask: null, worn: [], thresholds: wants.map(() => -Infinity), cell };
 
-    // ⚠️ Sampled at scattered points (an R2 low-discrepancy sequence), never on a stride: a stride
-    // that shares a factor with the width lands every sample on the same columns of the noise
-    // grid, where the noise is distributed differently, and the calibration comes out wrong.
-    const noise = noiseTables(width, height, ground.seed, cell);
-    const sample = new Float64Array(CALIBRATION_SAMPLES);
-    for (let k = 0; k < CALIBRATION_SAMPLES; k++) {
-        const u = (0.5 + R2_X * k) % 1;
-        const v = (0.5 + R2_Y * k) % 1;
-        sample[k] = noise.at(Math.floor(u * width), Math.floor(v * height));
-    }
-    sample.sort();
+    const noise = layeredTables(width, height, ground.seed, cell, CHANNEL_PATCH, CHANNEL_PATCH_FINE);
+    const sample = spreadSamples(width, height, CALIBRATION_SAMPLES, noise.at);
     const thresholds = wants.map(c => thresholdFrom(sample, c));
-
-    // The noise along a corner row, once per row of noise cells rather than once per pixel row:
-    // `top` and `bottom` are exactly patchNoise's two horizontal blends.
-    const { gw, corners, gxOf, fxOf, gyOf, fyOf } = noise;
-    const blendRow = (gy, out) => {
-        const base = gy * gw;
-        for (let px = 0; px < width; px++) {
-            const k = base + gxOf[px];
-            const c0 = corners[k];
-            out[px] = c0 + (corners[k + 1] - c0) * fxOf[px];
-        }
-    };
-    let top = new Float64Array(width);
-    let bottom = new Float64Array(width);
-    let rowsOf = -1;
-
-    // A noise value is a blend of its cell's four corners, never below the least of them, so a
-    // noise cell whose corners all sit above every threshold wears nowhere and is skipped whole:
-    // most of the ground, at the coverages the looks ask for. The margin keeps rounding out of it.
-    const highest = Math.max(...thresholds);
-    const blocks = gw - 1;
-    const clear = new Uint8Array(blocks);
+    const middle = middleWeights(width, height);
+    const last = sample.length - 1;
 
     const mask = new Uint8Array(n);
     const worn = [];
     for (let py = 0, row = 0; py < height; py++, row += width) {
-        const gy = gyOf[py];
-        if (gy !== rowsOf) {
-            if (rowsOf >= 0 && gy === rowsOf + 1) {
-                [top, bottom] = [bottom, top];
-                blendRow(gy + 1, bottom);
-            } else {
-                blendRow(gy, top);
-                blendRow(gy + 1, bottom);
+        const { coarse, fine } = noise.row(py);
+        const ct = coarse.top, cb = coarse.bottom, cfy = coarse.fy;
+        const ft = fine.top, fb = fine.bottom, ffy = fine.fy;
+        const rowWeight = middle ? 1 + middle.s - 3 * middle.s * middle.down[py] : 1;
+        for (let px = 0, i = row; px < width; px++, i++) {
+            let threshold = thresholds[at[i]];
+            if (threshold === -Infinity) continue;
+            if (middle) {
+                const want = wants[at[i]] * (rowWeight - 3 * middle.s * middle.along[px]);
+                if (!(want > 0)) continue;
+                threshold = want >= 1 ? Infinity : sample[Math.floor(want * last)];
             }
-            rowsOf = gy;
-            for (let gx = 0; gx < blocks; gx++) {
-                const k = gy * gw + gx;
-                const least = Math.min(corners[k], corners[k + 1], corners[k + gw], corners[k + gw + 1]);
-                clear[gx] = least > highest + 1e-9 ? 1 : 0;
-            }
-        }
-        const fy = fyOf[py];
-        for (let gx = 0; gx < blocks; gx++) {
-            if (clear[gx]) continue;
-            const x1 = Math.min(width, (gx + 1) * cell);
-            for (let px = gx * cell, i = row + px; px < x1; px++, i++) {
-                const threshold = thresholds[at[i]];
-                if (threshold === -Infinity) continue;
-                const t = top[px];
-                if (t + (bottom[px] - t) * fy < threshold) {
-                    mask[i] = 1;
-                    worn.push(i);
-                }
+            const a = ct[px];
+            const b = ft[px];
+            if ((a + (cb[px] - a) * cfy) + FINE * (b + (fb[px] - b) * ffy) < threshold) {
+                mask[i] = 1;
+                worn.push(i);
             }
         }
     }
-    return { mask, worn, thresholds, cell };
+    return { mask, worn: dropSpecks(mask, worn, width, minClumpPx(cell)), thresholds, cell };
+}
+
+/**
+ * The fewest plan pixels a worn clump may have, for a noise cell of `cell` pixels: anything smaller
+ * than a square a quarter of the cell across reads as a speck of dirt beside the clumps the noise
+ * makes at that size.
+ */
+export const minClumpPx = (cell) => Math.max(4, Math.round((cell * cell) / 16));
+
+/**
+ * Clears every worn clump (side-connected) smaller than `least` pixels from `mask`, and
+ * returns the worn pixels left, in their order. The noise dips just below the threshold in a few
+ * places, and a pixel or two of earth with a lip round it is speckle, not wear.
+ */
+function dropSpecks(mask, worn, width, least) {
+    const n = mask.length;
+    // Every clump is gathered breadth first into `order`, one after another, so a clump is the
+    // run `order[from, end)`. 2 marks a pixel already gathered.
+    const order = new Int32Array(worn.length);
+    let end = 0;
+    let dropped = 0;
+    for (const start of worn) {
+        if (mask[start] !== 1) continue;
+        const from = end;
+        order[end++] = start;
+        mask[start] = 2;
+        for (let k = from; k < end; k++) {
+            const i = order[k];
+            const x = i % width;
+            if (x > 0 && mask[i - 1] === 1) { mask[i - 1] = 2; order[end++] = i - 1; }
+            if (x < width - 1 && mask[i + 1] === 1) { mask[i + 1] = 2; order[end++] = i + 1; }
+            if (i >= width && mask[i - width] === 1) { mask[i - width] = 2; order[end++] = i - width; }
+            if (i + width < n && mask[i + width] === 1) { mask[i + width] = 2; order[end++] = i + width; }
+        }
+        if (end - from < least) {
+            for (let k = from; k < end; k++) mask[order[k]] = 0;
+            dropped += end - from;
+        }
+    }
+    const kept = dropped ? [] : worn;
+    for (const i of worn) {
+        if (mask[i] === 2) {
+            mask[i] = 1;
+            if (dropped) kept.push(i);
+        }
+    }
+    return kept;
 }

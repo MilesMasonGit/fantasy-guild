@@ -21,7 +21,8 @@
  * ## Adding one
  *
  * Add a row to `TUNABLES` and read it with `tuning('yourKey')`. The panel builds
- * itself from this table, so there is no UI to write.
+ * itself from this table, so there is no UI to write. A row marked `toggle`
+ * (0 off, 1 on) shows as a checkbox rather than a slider.
  */
 
 /**
@@ -75,31 +76,95 @@ export const TUNABLES = Object.freeze([
         min: 0, max: 2, step: 0.05, def: 1
     },
     {
+        key: 'patternOn',
+        group: 'Ground pattern',
+        label: 'Shade pattern',
+        hint: 'Large areas of each ground drawn a little lighter or darker, several Tokens wide, with hard edges. Off draws every sheet as it is.',
+        toggle: true,
+        min: 0, max: 1, step: 1, def: 1
+    },
+    {
+        key: 'patternScale',
+        group: 'Ground pattern',
+        label: 'Pattern scale (u)',
+        hint: 'How big the lighter and darker areas are, in mat units: a Token is 128.',
+        min: 128, max: 768, step: 16, def: 384
+    },
+    {
+        key: 'patternStrength',
+        group: 'Ground pattern',
+        label: 'Pattern strength',
+        hint: 'How much lighter and darker those areas are than the sheet as drawn: 0.08 is 8 % each way. 0 turns them off.',
+        min: 0, max: 0.2, step: 0.01, def: 0.08
+    },
+    {
         key: 'patchCoverage',
         group: 'Ground wear',
         label: 'Coverage',
-        hint: 'Multiplies how much earth (or gravel) wears through. 1 is as authored, 0 hides it entirely.',
+        hint: 'Multiplies how much earth (or gravel) wears through. 1 is as authored (a tenth of a meadow), 0 hides it entirely.',
         min: 0, max: 3, step: 0.05, def: 1
     },
     {
         key: 'wearClump',
         group: 'Ground wear',
         label: 'Clump size (u)',
-        hint: 'How big each worn patch is, in mat units. Small values approach dithering; large ones read as a second ground.',
-        min: 8, max: 60, step: 2, def: 20
+        hint: 'How big each worn patch is, in mat units: at the same coverage, bigger patches are fewer, with more open grass between. Small values approach dithering.',
+        min: 8, max: 120, step: 2, def: 60
+    },
+    {
+        key: 'wearEdgeWidth',
+        group: 'Ground wear',
+        label: 'Edge width (u)',
+        hint: 'How wide the darker rim inside a worn patch and the lighter fringe round it are, in mat units: 2 is one ground pixel at full size. 0 turns both off.',
+        min: 0, max: 8, step: 2, def: 2
+    },
+    {
+        key: 'wearRim',
+        group: 'Ground wear',
+        label: 'Rim darkness',
+        hint: 'How much darker the earth is along the edge of a worn patch. 0 turns the rim off.',
+        min: 0, max: 0.6, step: 0.02, def: 0.3
+    },
+    {
+        key: 'wearFringe',
+        group: 'Ground wear',
+        label: 'Fringe lightness',
+        hint: 'How much lighter the grass is round a worn patch. 0 turns the fringe off.',
+        min: 0, max: 0.4, step: 0.02, def: 0.12
+    },
+    {
+        key: 'wearMiddle',
+        group: 'Ground wear',
+        label: 'Wear in the middle',
+        hint: 'More wear toward the middle of the mat, where the Hall and the Tokens gather, and less toward its edges; the total stays the same. 0 spreads it evenly.',
+        min: 0, max: 1, step: 0.05, def: 0
     },
     {
         key: 'propDensity',
         group: 'Scenery',
         label: 'Density',
-        hint: 'Multiplies every look’s own scatter density. 1 is as authored.',
+        hint: 'Multiplies every look’s own scatter density: how many props there are. 1 is as authored.',
         min: 0, max: 3, step: 0.05, def: 1
+    },
+    {
+        key: 'propGroupSize',
+        group: 'Scenery',
+        label: 'Group size',
+        hint: 'The most props in one group, all of one kind; a group has between half that and that many. 1 scatters them singly.',
+        min: 1, max: 8, step: 1, def: 6
+    },
+    {
+        key: 'propGroupSpread',
+        group: 'Scenery',
+        label: 'Group spread (u)',
+        hint: 'How far apart the props of one group stand, in mat units.',
+        min: 4, max: 32, step: 2, def: 16
     },
     {
         key: 'propScatter',
         group: 'Scenery',
         label: 'Scatter',
-        hint: 'How far props stray from the middle of their cell. 0 plants them all dead centre.',
+        hint: 'How far a group strays from the middle of its patch of ground (a Token square). 0 plants every group dead centre.',
         min: 0, max: 1, step: 0.05, def: 0.64
     },
     {

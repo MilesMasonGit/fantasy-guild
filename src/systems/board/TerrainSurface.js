@@ -4,6 +4,7 @@ import { resolveArtPixels, hash01, PLAN_PIXEL_U } from './TerrainLattice.js';
 import { buildBandMasks } from './TerrainBands.js';
 import { buildWearMask } from './TerrainPatches.js';
 import { propsForGround } from './TerrainProps.js';
+import { buildShadePattern, buildWearEdges, composeShades } from './TerrainShade.js';
 import { getLook, LOOKS } from '../../config/registries/terrainRegistry.js';
 import { tuning } from '../../config/playmatTuning.js';
 
@@ -40,12 +41,15 @@ export function sheetFor(look, seed) {
  *   wearAt: Uint8Array|null, wear: {mask: Uint8Array|null, worn: number[], thresholds: number[], cell: number},
  *   bands: Array<{terrainId: string, look: string, mask: Uint8Array, pixels: number[], appearance: object|null}>,
  *   sheets: string[], sheetAt: Uint8Array, tints: Array<{tint: string, amount: number}>, tintAt: Int8Array,
+ *   shades: number[], shadeAt: Uint8Array, pattern: object, edges: {rim: number[], fringe: number[]},
  *   props: object[]
  * }}
  *   Per pixel, row by row: `terrainAt` indexes `palette` (and `looks`, the look of each);
  *   `wearAt` 1 where the look's wear shows; each band's `mask` 1 inside it. The drawing answer:
- *   `sheetAt` indexes `sheets`, `tintAt` indexes `tints` (-1 for none). `props` back to front
- *   (`TerrainProps`). Pixels are `unit` mat units.
+ *   `sheetAt` indexes `sheets`, `tintAt` indexes `tints` (-1 for none), `shadeAt` indexes
+ *   `shades` (brightness factors, 0 being 1: as drawn). `pattern` and `edges` are the shade's
+ *   parts (`TerrainShade`). `props` back to front (`TerrainProps`), each with the `shade` of the
+ *   pattern under its foot. Pixels are `unit` mat units.
  */
 export function buildGroundPlan(ground) {
     const pixels = resolveArtPixels(ground);
@@ -83,12 +87,19 @@ export function buildGroundPlan(ground) {
         tintAt[i] = -1;
     }
 
+    const pattern = buildShadePattern(width, height, ground.seed);
+    const edges = buildWearEdges(pixels, wear, ground);
+    const { shades, shadeAt, levels } = composeShades(n, pattern, edges);
+    const props = propsForGround(ground, pixels);
+    for (const p of props) p.shade = pattern.levelAt ? levels[pattern.levelAt[p.footY * width + p.footX] + 1] : 1;
+
     return {
         width, height, unit: PLAN_PIXEL_U, seed: ground.seed,
         palette, looks, terrainAt: at,
         wearAt: wear.mask, wear, bands,
         sheets, sheetAt, tints, tintAt,
-        props: propsForGround(ground, pixels)
+        shades, shadeAt, pattern, edges,
+        props
     };
 }
 

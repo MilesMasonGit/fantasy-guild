@@ -137,6 +137,7 @@ describe('⭐ The ground round the Hall is plain ground: no clearing (decision 4
         const cy = hall.y / PLAN_PIXEL_U;
         let checked = 0;
         let worn = 0;
+        let specks = 0;
         const wrong = [];
         for (let y = Math.floor(cy - ring); y <= Math.ceil(cy + ring); y++) {
             for (let x = Math.floor(cx - ring); x <= Math.ceil(cx + ring); x++) {
@@ -144,14 +145,19 @@ describe('⭐ The ground round the Hall is plain ground: no clearing (decision 4
                 const i = y * plan.width + x;
                 const t = plan.terrainAt[i];
                 const look = LOOKS[plan.looks[t]];
-                const wears = patchNoise(x, y, ground.seed, plan.wear.cell) < plan.wear.thresholds[t];
-                if (Boolean(plan.wearAt[i]) !== wears) wrong.push(`wear at ${x},${y}`);
+                const noiseWears = patchNoise(x, y, ground.seed, plan.wear.cell) < plan.wear.thresholds[t];
+                const wears = Boolean(plan.wearAt[i]);
+                // Worn only where the noise says; the noise's specks too small to be a clump are
+                // cleared everywhere alike (`TerrainPatches.minClumpPx`).
+                if (wears && !noiseWears) wrong.push(`wear at ${x},${y}`);
+                if (noiseWears && !wears) specks++;
                 if (plan.sheets[plan.sheetAt[i]] !== (wears ? look.wear.sheet : look.sheets[0])) wrong.push(`sheet at ${x},${y}`);
                 checked++;
                 if (wears) worn++;
             }
         }
         expect(wrong.slice(0, 5), `${wrong.length} wrong`).toEqual([]);
+        expect(specks).toBeLessThan(checked * 0.01);
         expect(checked).toBeGreaterThan(30000);
         // Wear at its ordinary share, not a worn patch (the tile era's hamlet wore 45 %).
         expect(worn / checked).toBeLessThan(0.3);
