@@ -359,7 +359,10 @@ function fullTransform(dist, width, height) {
  *
  * `from(set, outside, limit)` measures from every pixel whose palette index is in `set` (or,
  * with `outside`, is not) and returns `{pixels}`: the pixels outside the set nearer than `limit`
- * (chamfer ×3 units), so a caller visits those rather than the whole plan.
+ * (chamfer ×3 units), so a caller visits those rather than the whole plan. `distances` with the
+ * same arguments returns the field itself, each reached pixel's distance plus one (0 where the walk
+ * never reached; it may run past `limit` when an earlier, longer walk is reused, and it is shared,
+ * so read it, never write it).
  *
  * Every edge between two terrains is found once, as the pairs of side neighbours that differ,
  * looking only in the cells `cellScan.border` marks (all of them without it); a field starts
@@ -423,27 +426,35 @@ export function distanceFields(at, width, height, cellScan = null) {
         return { pixels: out };
     };
 
+    const entryFor = (set, outside, limit) => {
+        const key = `${outside ? '!' : ''}${[...set].sort((a, b) => a - b).join(',')}`;
+        const hit = entries.find(e => e.key === key && e.limit >= limit);
+        if (hit) return hit;
+        if (!edgeA) findEdges();
+        const members = new Uint8Array(256);
+        for (const t of set) members[t] = 1;
+        const want = outside ? 0 : 1;
+        const start = [];
+        for (let k = 0; k < edges; k++) {
+            const a = edgeA[k];
+            const b = edgeB[k];
+            const seedA = members[at[a]] === want;
+            if (seedA !== (members[at[b]] === want)) start.push(seedA ? a : b);
+        }
+        const dist = new Int16Array(n);
+        const reached = walk(at, members, want, dist, start, width, height, Math.min(INF - 1, Math.ceil(limit)));
+        const entry = { key, set: new Set(set), outside, limit, dist, reached };
+        entries.push(entry);
+        return entry;
+    };
+
     return {
         from(set, outside, limit) {
-            const key = `${outside ? '!' : ''}${[...set].sort((a, b) => a - b).join(',')}`;
-            const hit = entries.find(e => e.key === key && e.limit >= limit);
-            if (hit) return within(hit, limit);
-            if (!edgeA) findEdges();
-            const members = new Uint8Array(256);
-            for (const t of set) members[t] = 1;
-            const want = outside ? 0 : 1;
-            const start = [];
-            for (let k = 0; k < edges; k++) {
-                const a = edgeA[k];
-                const b = edgeB[k];
-                const seedA = members[at[a]] === want;
-                if (seedA !== (members[at[b]] === want)) start.push(seedA ? a : b);
-            }
-            const dist = new Int16Array(n);
-            const reached = walk(at, members, want, dist, start, width, height, Math.min(INF - 1, Math.ceil(limit)));
-            const entry = { key, set: new Set(set), outside, limit, dist, reached };
-            entries.push(entry);
-            return within(entry, limit);
+            return within(entryFor(set, outside, limit), limit);
+        },
+        /** {@link from}'s field alone, for a caller that reads it by pixel rather than visiting a list. */
+        distances(set, outside, limit) {
+            return entryFor(set, outside, limit).dist;
         },
         rewrote(fromFlags, to, changed) {
             for (let k = entries.length - 1; k >= 0; k--) {

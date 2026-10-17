@@ -165,9 +165,14 @@ export function buildWearEdges(pixels, wear, ground) {
  * @param {number} n Pixels in the plan.
  * @param {{levelAt: Int8Array|null}} pattern From {@link buildShadePattern}.
  * @param {{rim: number[], fringe: number[]}} edges From {@link buildWearEdges}.
- * @returns {{shades: number[], shadeAt: Uint8Array, levels: number[]}} `shadeAt` indexes `shades`,
- *   whose first entry is 1 (as drawn); `levels` the pattern's factor for darker, as drawn and
- *   lighter, for whatever stands on the ground (the scatter) to take the same light.
+ * @returns {{shades: number[], shadeAt: Uint8Array, levels: number[], parts: number[][], step: number,
+ *   lips: number[]}} `shadeAt` indexes `shades`, whose first entry is 1 (as drawn); `levels` the
+ *   pattern's factor for darker, as drawn and lighter, for whatever stands on the ground (the
+ *   scatter) to take the same light. `parts[s]` is shade `s` as `[level, lip]` (0 darker, 1 as
+ *   drawn, 2 lighter; 0 no lip, 1 rim, 2 fringe), `step` the pattern's step and `lips` the lip's
+ *   factors, for a look that takes its own share of the pattern (`TerrainGrass.shadeRatio`).
+ *   ⚠️ Two parts with one factor share an index and keep the first's parts: only a lipped shade
+ *   can meet a plain one so, and no lip lies on a generated look.
  */
 export function composeShades(n, pattern, edges) {
     const strength = tuning('patternStrength');
@@ -176,6 +181,7 @@ export function composeShades(n, pattern, edges) {
 
     // Only the factors some pixel takes are listed: each is a shaded copy of a sheet to make.
     const shades = [1];
+    const parts = [[1, 0]];
     const indexOf = new Map([[1, 0]]);
     const table = new Int16Array(9).fill(-1);
     const shadeFor = (l, e) => {
@@ -185,6 +191,7 @@ export function composeShades(n, pattern, edges) {
             if (!indexOf.has(f)) {
                 indexOf.set(f, shades.length);
                 shades.push(f);
+                parts.push([l, e]);
             }
             table[k] = indexOf.get(f);
         }
@@ -200,5 +207,5 @@ export function composeShades(n, pattern, edges) {
     const level = (i) => (levelAt ? levelAt[i] + 1 : 1);
     for (const i of edges.rim) shadeAt[i] = shadeFor(level(i), 1);
     for (const i of edges.fringe) shadeAt[i] = shadeFor(level(i), 2);
-    return { shades, shadeAt, levels };
+    return { shades, shadeAt, levels, parts, step: pattern.levelAt ? strength : 0, lips: lip };
 }

@@ -12,6 +12,8 @@ import { resetMatTuning } from '../config/matTuning.js';
 import * as Atlas from '../systems/atlas/Atlas.js';
 import * as Cartography from '../systems/atlas/Cartography.js';
 import { decodeTerrain } from '../systems/atlas/TerrainMap.js';
+import { looksForGround } from '../systems/atlas/regionGround.js';
+import { BIOME_GROUND } from '../systems/atlas/Budget.js';
 import * as GroundRules from '../systems/board/GroundRules.js';
 import { standsOnOf } from '../config/registries/tokenRegistry.js';
 import { nextSeed } from '../systems/atlas/seededRandom.js';
@@ -79,6 +81,13 @@ describe('⭐ each view is one click', () => {
             if (view.maps.includes('coast')) expect(terrains.has('water'), view.label).toBe(true);
             if (view.maps.includes('mountain')) expect(terrains.has('rock'), view.label).toBe(true);
             if (view.maps.includes('forest')) expect(terrains.has('grass'), view.label).toBe(true);
+            // A newer biome's ground takes its own look.
+            for (const biome of ['flower_meadow', 'cherry_grove', 'yellowstone', 'volcano']) {
+                if (!view.maps.includes(biome)) continue;
+                const terrain = BIOME_GROUND[biome].terrain;
+                expect(terrains.has(terrain), view.label).toBe(true);
+                expect(looksForGround(here.ground, [terrain])[terrain], view.label).toBe(biome);
+            }
             // Free: nothing is left in the dev stock, and the Hall came along.
             expect(Cartography.held(), view.label).toEqual([]);
             expect(BoardState.tokens().some(t => MatCap.isGuildHall(t)), view.label).toBe(true);

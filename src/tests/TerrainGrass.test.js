@@ -1,25 +1,38 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import {
-    ramp, lighten, grassColours, grassNoise, earthNoise, grassShapeAt, buildGrassPlan, drawGrass, drawsGenerated,
-    grassCells, GRASS_RULES, COLOUR, BIT
+    ramp, lighten, toward, grassColours, grassTable, grassNoise, earthNoise, grassShapeAt, buildGrassPlan, drawGrass,
+    drawsGenerated, grassCells, lookRules, shadeRatio, waterBands, poolCentres, poolRingAt,
+    GRASS_RULES, COLOUR, BIT, SHORE, KIND_MASK, SLOT_SHIFT, KIND_LIMIT, kindColour
 } from '../systems/board/TerrainGrass.js';
 import { buildGroundPlan } from '../systems/board/TerrainSurface.js';
 import { resolveArtPixels } from '../systems/board/TerrainLattice.js';
 import { LOOKS, generatedOf } from '../config/registries/terrainRegistry.js';
 import { setTuning, resetTuning } from '../config/playmatTuning.js';
 import { groundWith, flat } from './fixtures/ground.js';
+import { hallSpot, HALL_CLEARING } from '../systems/atlas/Layout.js';
 
 /**
- * Generated grass: the owner's settled ground prototype (`docs/active/research/ground_gen`) as the
- * game draws it. Shapes per plan pixel, from smooth noise; details per ground pixel of the screen.
+ * Generated ground: the owner's settled ground prototype (`docs/active/research/ground_gen`) as the
+ * game draws it. Shapes per plan pixel, from smooth noise and the shore's distance; details per
+ * ground pixel of the screen.
  */
 
 afterEach(() => resetTuning());
 
 const meadow = (seed = 5, cols = 30, rows = 18) => groundWith(cols, rows, flat('grass'), { seed, biomes: null });
 const forest = (seed = 5, cols = 30, rows = 18) => groundWith(cols, rows, flat('grass'), { seed });
+/** A Region all of one look's ground. */
+const lookGround = (id, seed = 5, cols = 30, rows = 18) => {
+    const terrain = LOOKS[id].terrain;
+    const biomes = id === 'meadow' ? null : { main: id, terrains: { [id]: terrain } };
+    return groundWith(cols, rows, flat(terrain), { seed, biomes });
+};
 /** Sea, a beach and forest grass side by side. */
 const shore = (seed = 7) => groundWith(30, 16, (c) => (c < 6 ? 'water' : c < 10 ? 'sand' : 'grass'), { seed });
+/** A wide sea, then a beach and forest: room for every distance the sea draws. */
+const bay = (seed = 7) => groundWith(40, 20, (c) => (c < 24 ? 'water' : c < 28 ? 'sand' : 'grass'), { seed });
+
+const LAND_LOOKS = Object.keys(LOOKS).filter(id => !lookRules(id).water);
 
 /** The ground grid at `unit` mat units a pixel, as the screen pass lays it over the plan. */
 function gridOf(plan, unit) {
@@ -32,16 +45,26 @@ function gridOf(plan, unit) {
     return { cols, rows, planCol, planRow };
 }
 
-/** The details at `unit`, with each ground pixel's plan shape beside them. */
+/** The details at `unit`, with each ground pixel's plan shape and plan index beside them. */
 function detailsOf(plan, unit = 2) {
     const g = gridOf(plan, unit);
-    const { colour, kinds } = drawGrass(plan.grass, plan.seed, g.cols, g.rows, g.planCol, g.planRow);
+    const { colour, kinds, waves } = drawGrass(plan.grass, plan.seed, g.cols, g.rows, g.planCol, g.planRow);
     const shape = new Uint8Array(g.cols * g.rows);
-    for (let r = 0, i = 0; r < g.rows; r++) for (let c = 0; c < g.cols; c++, i++) shape[i] = plan.grass.bits[g.planRow[r] + g.planCol[c]];
-    return { ...g, colour, kinds, shape };
+    const planAt = new Int32Array(g.cols * g.rows);
+    for (let r = 0, i = 0; r < g.rows; r++) {
+        for (let c = 0; c < g.cols; c++, i++) {
+            planAt[i] = g.planRow[r] + g.planCol[c];
+            shape[i] = plan.grass.bits[planAt[i]];
+        }
+    }
+    return { ...g, colour, kinds, waves, shape, planAt };
 }
 
 const same = (a, b) => a.length === b.length && a.every((v, i) => v === b[i]);
+const kindOf = (byte) => (byte & KIND_MASK) - 1;
+/** Whether a colour is one of kind `k`'s strokes (its own ramp; a kind without one strokes its body). */
+const strokeOf = (colour, k) => colour >= kindColour(k, COLOUR.STROKES) && colour < kindColour(k + 1, COLOUR.GRASS);
+const anyStroke = (colour) => colour < COLOUR.DIM && colour >= COLOUR.KIND && (colour - COLOUR.KIND) % COLOUR.STRIDE >= COLOUR.STROKES;
 
 describe('⭐ Colours: the prototype\'s hue-shifted ramps', () => {
     it('makes the meadow\'s ramps byte for byte as the prototype does', () => {
@@ -60,25 +83,93 @@ describe('⭐ Colours: the prototype\'s hue-shifted ramps', () => {
         expect(mid[1] / mid[0]).toBeGreaterThan(light[1] / light[0]);
     });
 
-    it('lays out a look\'s table as COLOUR says, the body\'s soft tone between its two greens', () => {
-        const table = grassColours(generatedOf('meadow'), 0.55);
-        expect(table.length).toBe(COLOUR.COUNT);
-        expect(table[COLOUR.SOFT]).toEqual([86, 163, 42]);
-        expect(table[COLOUR.MIDDLE]).toEqual([137, 95, 70]);
-        expect(grassColours(generatedOf('meadow'), 0)[COLOUR.SOFT]).toEqual(table[COLOUR.GRASS + 1]);
-        expect(grassColours(generatedOf('meadow'), 1)[COLOUR.SOFT]).toEqual(table[COLOUR.GRASS + 2]);
+    it('clamps a ramp that runs past white, as the prototype\'s picture did', () => {
+        // The cherry grove's white petals: lightness 0.92, its lighter steps past 1.
+        for (const c of ramp(0.0, 0.92, 0.20)) for (const v of c) expect(v).toBeLessThanOrEqual(255);
+        expect(ramp(0.0, 0.92, 0.20)[4]).toEqual([255, 255, 255]);
     });
 
-    it('gives the meadow and the forest their own ramps, and no other look any', () => {
-        expect(generatedOf('meadow')).toBeTruthy();
-        expect(generatedOf('forest')).toBeTruthy();
-        for (const id of ['mountain', 'coast', 'sea']) expect(generatedOf(id), id).toBeNull();
-        expect(grassColours(generatedOf('forest'))).not.toEqual(grassColours(generatedOf('meadow')));
+    it('lays out a look\'s table as COLOUR says, each kind\'s soft tone between its body\'s two tones', () => {
+        const table = grassColours(generatedOf('meadow'), { soft: 0.55 });
+        expect(table.length).toBe(COLOUR.KIND + 3 * COLOUR.STRIDE);
+        expect(table[kindColour(0, COLOUR.SOFT)]).toEqual([86, 163, 42]);
+        expect(table[COLOUR.MIDDLE]).toEqual([137, 95, 70]);
+        const flat0 = grassColours(generatedOf('meadow'), { soft: 0 });
+        const flat1 = grassColours(generatedOf('meadow'), { soft: 1 });
+        expect(flat0[kindColour(0, COLOUR.SOFT)]).toEqual(table[kindColour(0, COLOUR.GRASS + 1)]);
+        expect(flat1[kindColour(0, COLOUR.SOFT)]).toEqual(table[kindColour(0, COLOUR.GRASS + 2)]);
+        // Lava's body is its ramp's two lighter tones.
+        const volcano = grassColours(generatedOf('volcano'), { soft: 1 });
+        expect(volcano[kindColour(1, COLOUR.SOFT)]).toEqual(volcano[kindColour(1, COLOUR.GRASS + 3)]);
+    });
+
+    it('gives every look its own rules and colours, and the sea a water table', () => {
+        for (const id of Object.keys(LOOKS)) expect(generatedOf(id), id).toBeTruthy();
+        expect(lookRules('sea').water).toBeTruthy();
+        const tables = Object.keys(LOOKS).map(id => JSON.stringify(grassColours(generatedOf(id))));
+        expect(new Set(tables).size).toBe(tables.length);
+        for (const id of LAND_LOOKS) {
+            expect(lookRules(id).kinds.length, id).toBeLessThanOrEqual(KIND_LIMIT);
+            expect(grassColours(generatedOf(id)).length, id).toBeLessThanOrEqual(COLOUR.DIM);
+        }
+    });
+
+    it('gives each kind its own body where its rules do: the mountain\'s alpine grass is green on grey rock', () => {
+        const t = grassColours(generatedOf('mountain'));
+        const [rock, alpine] = [t[kindColour(0, 2)], t[kindColour(1, 2)]];
+        expect(alpine[1] - alpine[0]).toBeGreaterThan(40);
+        expect(Math.max(...rock) - Math.min(...rock)).toBeLessThan(25);
+    });
+});
+
+describe('⭐ Ground strength: every colour toward the look\'s middle tone', () => {
+    const chroma = (c) => Math.max(...c) - Math.min(...c);
+    const luma = (c) => 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2];
+
+    it('⭐ leaves every look as it is at 1', () => {
+        for (const id of Object.keys(LOOKS)) {
+            expect(grassColours(generatedOf(id), { strength: 1 }), id).toEqual(grassColours(generatedOf(id)));
+        }
+    });
+
+    it('⭐ scales saturation and contrast by the strength, about the middle tone\'s grey', () => {
+        const mid = ramp(0.26, 0.44, 0.60)[2];
+        const m = luma(mid);
+        const full = grassColours(generatedOf('meadow'), { strength: 1 });
+        const soft = grassColours(generatedOf('meadow'), { strength: 0.85 });
+        full.forEach((c, i) => {
+            expect(chroma(soft[i])).toBeCloseTo(0.85 * chroma(c), -0.5);
+            expect(luma(soft[i]) - m).toBeCloseTo(0.85 * (luma(c) - m), -0.5);
+        });
+        expect(toward([200, 100, 50], mid, 0).every(v => Math.abs(v - Math.round(m)) <= 1)).toBe(true);
+    });
+
+    it('follows its slider', () => {
+        const before = grassColours(generatedOf('forest'));
+        setTuning('groundStrength', 0.85);
+        expect(grassColours(generatedOf('forest'))).not.toEqual(before);
+    });
+});
+
+describe('⭐ Each look its own share of the shade pattern', () => {
+    it('⭐ gives the forest twice the meadow\'s, as the prototype\'s 0.12 against 0.06, and the sea none', () => {
+        expect(shadeRatio('meadow')).toBe(1);
+        expect(shadeRatio('forest')).toBe(2);
+        expect(shadeRatio('sea')).toBe(0);
+        expect(shadeRatio('yellowstone')).toBeCloseTo(0.10 / 0.06, 9);
+        expect(shadeRatio('coast')).toBeCloseTo(0.05 / 0.06, 9);
+    });
+
+    it('keeps the lakes, the wet sand and the waterline out of the pattern, as the prototype drew them flat', () => {
+        const { unshaded } = grassTable('yellowstone');
+        for (let k = 0; k < 5; k++) expect(unshaded[COLOUR.RING + k]).toBe(1);
+        expect(unshaded[COLOUR.WET]).toBe(1);
+        expect(unshaded[kindColour(0, COLOUR.GRASS + 2)]).toBe(0);
     });
 });
 
 describe('⭐ Shapes in the plan', () => {
-    it('⭐ matches the slow reference at every pixel, with the shipped sliders and moved ones', () => {
+    it('⭐ matches the slow reference at every pixel for every land look, with the shipped sliders and moved ones', () => {
         const check = (look) => {
             const ground = meadow(11, 16, 10);
             const pixels = resolveArtPixels(ground);
@@ -87,21 +178,19 @@ describe('⭐ Shapes in the plan', () => {
             for (let y = 0, i = 0; y < pixels.height; y++) {
                 for (let x = 0; x < pixels.width; x++, i++) {
                     const ref = grassShapeAt(x, y, ground.seed, look, grass.thresholds[0]);
-                    if (ref.bits !== grass.bits[i] || ref.kind + 1 !== (grass.kinds[i] & 3)) wrong++;
+                    if (ref.bits !== grass.bits[i] || ref.kind + 1 !== (grass.kinds[i] & KIND_MASK)) wrong++;
                 }
             }
             return wrong;
         };
-        expect(check('meadow')).toBe(0);
-        expect(check('forest')).toBe(0);
+        for (const id of LAND_LOOKS) expect(check(id), id).toBe(0);
         setTuning('grassClump', 20);
         setTuning('grassZoneScale', 0.6);
         setTuning('grassTall', 0.4);
         setTuning('grassEncroach', 0.5);
         setTuning('grassPatch', 0.3);
         setTuning('grassEarth', 2);
-        expect(check('meadow')).toBe(0);
-        expect(check('forest')).toBe(0);
+        for (const id of LAND_LOOKS) expect(check(id), id).toBe(0);
     });
 
     it('⭐ is the same for the same Region every time, and another for another seed', () => {
@@ -123,14 +212,11 @@ describe('⭐ Shapes in the plan', () => {
         expect(jump).toBeLessThan(0.15);
     });
 
-    it('draws nothing for a look that is not generated, and nothing at all with the switch off', () => {
+    it('draws every ground of a shore, and nothing at all with the switch off', () => {
         const ground = shore();
         const plan = buildGroundPlan(ground);
-        const generated = plan.palette.map((t, p) => plan.grass.slotOf[p] >= 0);
-        expect(plan.palette.filter((t, p) => generated[p])).toEqual(['grass']);
-        for (let i = 0; i < plan.terrainAt.length; i++) {
-            if (Boolean(plan.grass.kinds[i]) !== generated[plan.terrainAt[i]]) throw new Error(`kind at ${i}`);
-        }
+        expect(plan.palette.filter((t, p) => plan.grass.slotOf[p] >= 0).sort()).toEqual(['grass', 'sand', 'water']);
+        expect(plan.grass.kinds.every(k => k > 0)).toBe(true);
         setTuning('grassOn', 0);
         expect(drawsGenerated('forest')).toBe(false);
         expect(buildGroundPlan(ground).grass).toBeNull();
@@ -194,21 +280,21 @@ describe('⭐ The earth, and the grass reaching into it', () => {
         expect(count()).toBe(0);
     });
 
-    it('wears each look\'s own share: the forest a little more than the meadow, as its rules say', () => {
+    it('wears each look\'s own share: the forest a little more than the meadow, the mountain\'s gravel less, the sand none', () => {
         setTuning('grassEncroach', 0);
-        for (const [ground, look] of [[meadow(24, 40, 24), 'meadow'], [forest(24, 40, 24), 'forest']]) {
-            const { bits } = buildGroundPlan(ground).grass;
+        for (const id of ['meadow', 'forest', 'mountain', 'yellowstone', 'coast', 'volcano', 'cherry_grove']) {
+            const { bits } = buildGroundPlan(lookGround(id, 24, 40, 24)).grass;
             const share = bits.reduce((n, b) => n + (b & BIT.EARTH), 0) / bits.length;
-            expect(share, look).toBeCloseTo(LOOKS[look].generated.earthShare, 2);
+            expect(share, id).toBeCloseTo(LOOKS[id].generated.earthShare, 2);
         }
         expect(LOOKS.forest.generated.earthShare).toBeGreaterThan(LOOKS.meadow.generated.earthShare);
     });
 });
 
-describe('⭐ Kinds of grass in ragged zones', () => {
+describe('⭐ Kinds of ground in ragged zones', () => {
     const kindsOf = (ground) => {
         const plan = buildGroundPlan(ground);
-        return { plan, kinds: Array.from(plan.grass.kinds, k => (k & 3) - 1) };
+        return { plan, kinds: Array.from(plan.grass.kinds, kindOf) };
     };
 
     it('⭐ shares the grass between tall, lawn and dry as the sliders say', () => {
@@ -248,11 +334,46 @@ describe('⭐ Kinds of grass in ragged zones', () => {
         setTuning('grassZoneScale', 2.4);
         expect(borders()).toBeLessThan(small * 0.6);
     });
+
+    it('⭐ lays the flower meadow\'s drifts between calm lawn, every kind in its band of the noise', () => {
+        const { kinds } = kindsOf(lookGround('flower_meadow', 35, 55, 35));
+        const share = (k) => kinds.filter(v => v === k).length / kinds.length;
+        // Six bands: pink, lawn, purple, lawn, white, lawn: the lawn three of them, in the middle.
+        expect(share(1)).toBeGreaterThan(0.4);
+        for (const k of [0, 2, 3]) expect(share(k), `kind ${k}`).toBeGreaterThan(0.02);
+    });
+
+    it('⭐ draws the mountain\'s alpine grass in long thin seams, stretched along x and broken by the gap', () => {
+        const { plan, kinds } = kindsOf(lookGround('mountain', 36, 55, 35));
+        const w = plan.width;
+        const h = plan.height;
+        const alpine = kinds.filter(k => k === 1).length / kinds.length;
+        expect(alpine).toBeGreaterThan(0.01);
+        expect(alpine).toBeLessThan(0.12);
+        // The bands lie along x: the scree's edge is crossed far more often going down than across.
+        let acrossX = 0;
+        let acrossY = 0;
+        for (let i = 0; i < kinds.length - w; i++) {
+            if (i % w < w - 1 && (kinds[i] === 2) !== (kinds[i + 1] === 2)) acrossX++;
+            if ((kinds[i] === 2) !== (kinds[i + w] === 2)) acrossY++;
+        }
+        expect(acrossY).toBeGreaterThan(acrossX * 1.2);
+        void h;
+        // Its band is cut into pieces by the gap, and stretched three times along x.
+        expect(lookRules('mountain').zones.gap.band).toBe(1);
+        const cells = grassCells('mountain');
+        expect(cells.zoneX).toBe(3 * cells.zoneY);
+    });
+
+    it('⭐ lays the cherry grove\'s green patches over its zones where their own noise rises', () => {
+        const { kinds } = kindsOf(lookGround('cherry_grove', 37, 55, 35));
+        const green = kinds.filter(k => k === 3).length / kinds.length;
+        expect(green).toBeGreaterThan(0.03);
+        expect(green).toBeLessThan(0.35);
+    });
 });
 
 describe('⭐ Details per ground pixel', () => {
-    const STROKES = (k) => (k >= COLOUR.LOW && k < COLOUR.EARTH) || k === COLOUR.GRASS + 4;
-
     it('⭐ is the same for the same Region and window, and another for another seed', () => {
         const a = detailsOf(buildGroundPlan(meadow(41)));
         const b = detailsOf(buildGroundPlan(meadow(41)));
@@ -269,25 +390,31 @@ describe('⭐ Details per ground pixel', () => {
                 if (!(d.shape[i] & BIT.EARTH)) continue;
                 earth++;
                 const k = d.colour[i];
-                const ok = (k >= COLOUR.EARTH && k <= COLOUR.MIDDLE) || k === COLOUR.GRASS + 2 || k === COLOUR.GRASS + 3;
+                const kind = kindOf(d.kinds[i]);
+                const ok = (k >= COLOUR.EARTH && k <= COLOUR.MIDDLE) || k === kindColour(kind, 2) || k === kindColour(kind, 3);
                 if (!ok) throw new Error(`colour ${k} on earth at ${i}, unit ${unit}`);
             }
             expect(earth).toBeGreaterThan(1000);
         }
     });
 
-    it('⭐ keeps each kind\'s strokes on its own kind of grass', () => {
-        const d = detailsOf(buildGroundPlan(meadow(44, 55, 35)));
-        let tall = 0;
-        let dry = 0;
-        for (let i = 0; i < d.colour.length; i++) {
-            const k = d.colour[i];
-            const kind = (d.kinds[i] & 3) - 1;
-            if (k >= COLOUR.LOW && k < COLOUR.HIGH) { tall++; expect(kind).toBe(0); }
-            if (k >= COLOUR.HIGH && k < COLOUR.EARTH) { dry++; expect(kind).toBe(2); }
+    it('⭐ keeps each kind\'s strokes on its own kind of ground', () => {
+        for (const id of ['meadow', 'mountain', 'flower_meadow', 'volcano']) {
+            const d = detailsOf(buildGroundPlan(lookGround(id, 44, 55, 35)));
+            const kinds = lookRules(id).kinds;
+            const counts = kinds.map(() => 0);
+            for (let i = 0; i < d.colour.length; i++) {
+                const k = d.colour[i];
+                const owner = kinds.findIndex((kind, j) => kind.strokes && strokeOf(k, j));
+                if (owner < 0) continue;
+                counts[owner]++;
+                // A stroke stands on its own kind; a kind's shadow and the earth's edge are not strokes.
+                if (kindOf(d.kinds[i]) !== owner) throw new Error(`${id}: kind ${owner}'s stroke on kind ${kindOf(d.kinds[i])} at ${i}`);
+            }
+            kinds.forEach((kind, j) => {
+                if (kind.strokes) expect(counts[j], `${id} ${kind.id}`).toBeGreaterThan(50);
+            });
         }
-        expect(tall).toBeGreaterThan(500);
-        expect(dry).toBeGreaterThan(500);
     });
 
     it('⭐ draws strokes a ground pixel wide at every fit: as many to a pixel, whatever its size', () => {
@@ -299,7 +426,8 @@ describe('⭐ Details per ground pixel', () => {
             for (let i = 0; i < d.colour.length; i++) {
                 if (d.colour[i] === COLOUR.NONE) continue;
                 grass++;
-                if (STROKES(d.colour[i]) || d.colour[i] === COLOUR.GRASS) strokes++;
+                const k = d.colour[i];
+                if (anyStroke(k) || k === kindColour(kindOf(d.kinds[i]), COLOUR.GRASS)) strokes++;
             }
             return strokes / grass;
         };
@@ -311,7 +439,7 @@ describe('⭐ Details per ground pixel', () => {
     });
 
     it('follows the stroke density and the patches', () => {
-        const strokes = () => detailsOf(buildGroundPlan(meadow(46))).colour.filter(STROKES).length;
+        const strokes = () => detailsOf(buildGroundPlan(meadow(46))).colour.filter(anyStroke).length;
         const shipped = strokes();
         expect(shipped).toBeGreaterThan(0);
         setTuning('grassStrokes', 2);
@@ -326,34 +454,29 @@ describe('⭐ Details per ground pixel', () => {
     });
 
     it('⭐ shades a mound under its own kind only, so no edge follows a zone or a beach', () => {
-        const d = detailsOf(buildGroundPlan(shore(47)));
-        const MOUND = BIT.MOUND;
-        let shadows = 0;
-        for (let i = 0; i < d.colour.length; i++) {
-            if (d.colour[i] !== COLOUR.GRASS + 1) continue;
-            shadows++;
+        const shadowsOf = (plan) => {
+            const d = detailsOf(plan);
+            const land = (i) => d.kinds[i] && !lookRules(plan.grass.looks[d.kinds[i] >> SLOT_SHIFT]).water;
+            const out = [];
+            for (let i = 0; i < d.colour.length; i++) {
+                if (!land(i) || (d.shape[i] & BIT.EARTH)) continue;
+                if (d.colour[i] === kindColour(kindOf(d.kinds[i]), COLOUR.GRASS + 1)) out.push(i);
+            }
+            return { d, out };
+        };
+        const { d, out } = shadowsOf(buildGroundPlan(shore(47)));
+        for (const i of out) {
             // Its mound: straight above or above to the left, of the same kind.
-            const above = [i - d.cols, i - d.cols - 1].filter(j => d.kinds[j] === d.kinds[i] && (d.shape[j] & MOUND));
+            const above = [i - d.cols, i - d.cols - 1].filter(j => d.kinds[j] === d.kinds[i] && (d.shape[j] & BIT.MOUND));
             expect(above.length, `shadow at ${i}`).toBeGreaterThan(0);
         }
-        expect(shadows).toBeGreaterThan(200);
+        expect(out.length).toBeGreaterThan(200);
         setTuning('grassMounds', 0);
-        expect(detailsOf(buildGroundPlan(shore(47))).colour.includes(COLOUR.GRASS + 1)).toBe(false);
-    });
-
-    it('⭐ leaves the beach and the sea to their sheets: nothing drawn off the generated ground', () => {
-        const d = detailsOf(buildGroundPlan(shore(48)));
-        let off = 0;
-        for (let i = 0; i < d.colour.length; i++) {
-            if (d.kinds[i]) continue;
-            off++;
-            expect(d.colour[i]).toBe(COLOUR.NONE);
-        }
-        expect(off).toBeGreaterThan(1000);
+        expect(shadowsOf(buildGroundPlan(shore(47))).out.length).toBe(0);
     });
 
     it('reuses the buffers it is handed, and draws the same into them', () => {
-        const plan = buildGroundPlan(meadow(49));
+        const plan = buildGroundPlan(shore(49));
         const g = gridOf(plan, 2);
         const fresh = drawGrass(plan.grass, plan.seed, g.cols, g.rows, g.planCol, g.planRow).colour.slice();
         const scratch = {};
@@ -365,17 +488,17 @@ describe('⭐ Details per ground pixel', () => {
 
     it('⭐ draws the forest\'s own kinds: ferns at the low end, leaf litter thick at the high end', () => {
         const table = grassColours(generatedOf('forest'));
-        expect(table[COLOUR.LOW + 2]).toEqual(ramp(0.36, 0.30, 0.55)[2]);
-        expect(table[COLOUR.HIGH + 2]).toEqual(ramp(0.085, 0.38, 0.45)[2]);
+        expect(table[kindColour(0, COLOUR.STROKES + 2)]).toEqual(ramp(0.36, 0.30, 0.55)[2]);
+        expect(table[kindColour(2, COLOUR.STROKES + 2)]).toEqual(ramp(0.085, 0.38, 0.45)[2]);
         // Litter is laid at 0.08 a pixel, the meadow's dry grass at 0.054: thicker on its kind.
         const highShare = (ground) => {
             const d = detailsOf(buildGroundPlan(ground));
             let high = 0;
             let strokes = 0;
             for (let i = 0; i < d.colour.length; i++) {
-                if ((d.kinds[i] & 3) !== 3 || (d.shape[i] & BIT.EARTH)) continue;
+                if (kindOf(d.kinds[i]) !== 2 || (d.shape[i] & BIT.EARTH)) continue;
                 high++;
-                if (d.colour[i] >= COLOUR.HIGH && d.colour[i] < COLOUR.EARTH) strokes++;
+                if (strokeOf(d.colour[i], 2)) strokes++;
             }
             return strokes / high;
         };
@@ -386,5 +509,221 @@ describe('⭐ Details per ground pixel', () => {
         expect(grassCells('meadow').clump).toBe(16);
         expect(grassCells('meadow').zone).toBe(55);
         expect(grassCells('forest').zone).toBe(75);
+        expect(grassCells('volcano').zoneX).toBe(110);
+    });
+
+    it('⭐ reaches the cherry grove\'s green blades over the patches\' top edge, and shades the moss under them', () => {
+        const plan = buildGroundPlan(lookGround('cherry_grove', 52, 55, 35));
+        const d = detailsOf(plan);
+        const green = (b) => kindOf(b) === 3;
+        let over = 0;
+        let dimmed = 0;
+        for (let i = d.cols; i < d.colour.length; i++) {
+            const k = d.colour[i];
+            if (!green(d.kinds[i]) && k >= kindColour(3, 0) && k < kindColour(3, COLOUR.SOFT)) over++;
+            if (k >= COLOUR.DIM) {
+                dimmed++;
+                expect(green(d.kinds[i - d.cols]), `shadow at ${i}`).toBe(true);
+            }
+        }
+        expect(over).toBeGreaterThan(100);
+        expect(dimmed).toBeGreaterThan(100);
+    });
+});
+
+describe('⭐ The sea and the shore', () => {
+    /** Each water ground pixel's distance class, and the class's lower distance. */
+    const seaOf = (seed) => {
+        const plan = buildGroundPlan(bay(seed));
+        const d = detailsOf(plan);
+        const slot = plan.grass.looks.indexOf('sea');
+        const bands = plan.grass.bands[slot];
+        const from = (cls) => (cls <= 1 ? 0 : bands[cls - 2]);
+        return { plan, d, slot, bands, from };
+    };
+    const water = LOOKS.sea.generated.water;
+
+    it('⭐ draws foam at the shore, then shallows, then deeper water, step by step out to sea', () => {
+        const { plan, d, slot, from } = seaOf(61);
+        let foam = 0;
+        let deep = 0;
+        for (let i = 0; i < d.colour.length; i++) {
+            if (d.kinds[i] >> SLOT_SHIFT !== slot || !(d.kinds[i] & KIND_MASK)) continue;
+            const f = from(plan.grass.shore[d.planAt[i]]);
+            const k = d.colour[i];
+            if (k === COLOUR.FOAM) { foam++; expect(f, `foam at ${i}`).toBeLessThan(water.foam); }
+            if (k === COLOUR.SEA && f < water.deep) {
+                // Sea[0] near the shore is only ever a wave's trough.
+                expect(f).toBeGreaterThanOrEqual(water.shallow);
+            }
+            if (k === COLOUR.SEA && f >= water.deep) deep++;
+        }
+        expect(foam).toBeGreaterThan(100);
+        expect(deep).toBeGreaterThan(1000);
+    });
+
+    it('⭐ keeps the drawn shore on the computed one: the shore class 1 lies against the land', () => {
+        const { plan } = seaOf(62);
+        const slot = plan.grass.looks.indexOf('sea');
+        const w = plan.width;
+        let touching = 0;
+        for (let i = 0; i < plan.grass.kinds.length; i++) {
+            if ((plan.grass.kinds[i] >> SLOT_SHIFT) !== slot || i % w === w - 1) continue;
+            const right = plan.grass.kinds[i + 1];
+            if (right && (right >> SLOT_SHIFT) !== slot) {
+                touching++;
+                expect(plan.grass.shore[i], `water at ${i} beside land`).toBeLessThanOrEqual(2);
+            }
+        }
+        expect(touching).toBeGreaterThan(50);
+    });
+
+    it('⭐ spaces the waves: none starts within the gap of another\'s crest', () => {
+        const { d } = seaOf(63);
+        const g = water.waveGap;
+        expect(d.waves.length).toBeGreaterThan(20);
+        for (let a = 0; a < d.waves.length; a++) {
+            for (let b = a + 1; b < d.waves.length; b++) {
+                const [p, q] = [d.waves[a], d.waves[b]];
+                if (Math.abs(p.y - q.y) > g) continue;
+                const apart = p.x + p.length - 1 < q.x - g || p.x > q.x + q.length + g - 1;
+                if (!apart) throw new Error(`waves at ${p.x},${p.y} and ${q.x},${q.y} too close`);
+            }
+        }
+    });
+
+    it('⭐ grows the waves with distance from the shore: short near, long far out, a second crest farthest', () => {
+        const { plan, d, from } = seaOf(64);
+        const near = [];
+        const far = [];
+        for (const wv of d.waves) {
+            const f = from(plan.grass.shore[d.planAt[wv.y * d.cols + wv.x]]);
+            expect(f).toBeGreaterThanOrEqual(water.shallow);
+            const lens = water.waveLengths.filter(([at]) => f >= at).pop()[1];
+            expect(lens, `length ${wv.length} at ${f}`).toContain(wv.length);
+            (f < water.waveLengths[1][0] ? near : f >= water.waveLengths[3][0] ? far : []).push(wv);
+            expect(wv.far).toBe(f >= water.farThick);
+        }
+        const mean = (xs) => xs.reduce((n, w) => n + w.length, 0) / xs.length;
+        expect(near.length).toBeGreaterThan(3);
+        expect(far.length).toBeGreaterThan(3);
+        expect(mean(far)).toBeGreaterThan(mean(near) * 3);
+    });
+
+    it('lists the sea\'s distances in order, every rule\'s step among them', () => {
+        const bands = waterBands(water);
+        expect([...bands].sort((a, b) => a - b)).toEqual(bands);
+        for (const at of [water.foam, water.shallow, water.deep, water.farThick, ...water.waveLengths.map(([x]) => x)]) expect(bands).toContain(at);
+    });
+
+    it('⭐ wets the sand by the water and dithers its waterline, and nowhere else', () => {
+        const plan = buildGroundPlan(bay(65));
+        const d = detailsOf(plan);
+        const sand = plan.grass.looks.indexOf('coast');
+        let wet = 0;
+        const sea = plan.grass.looks.indexOf('sea');
+        for (let i = 0; i < d.colour.length; i++) {
+            const k = d.colour[i];
+            if ((k !== COLOUR.WET && k !== COLOUR.LINE) || (d.kinds[i] >> SLOT_SHIFT) === sea) continue;
+            expect(d.kinds[i] >> SLOT_SHIFT, `wet at ${i}`).toBe(sand);
+            expect([SHORE.WET, SHORE.LINE]).toContain(plan.grass.shore[d.planAt[i]]);
+            wet++;
+        }
+        expect(wet).toBeGreaterThan(200);
+        // The beach's far side, by the forest, is dry.
+        for (let i = 0; i < plan.grass.shore.length; i++) {
+            if (plan.grass.shore[i] >= SHORE.LINE) expect(i % plan.width).toBeLessThan(28 * 16 - 4);
+        }
+    });
+});
+
+describe('⭐ Yellowstone\'s sulphur lakes', () => {
+    const lakeGround = (seed = 71) => lookGround('yellowstone', seed, 40, 24);
+    /** The Hall's ring on the plan, which the plan keeps its lakes out of. */
+    const clearOf = (ground) => {
+        const hall = hallSpot(ground.mat);
+        return { x: hall.x / 2, y: hall.y / 2, r: HALL_CLEARING / 2 };
+    };
+
+    it('⭐ match the slow reference at every pixel', () => {
+        const ground = lakeGround();
+        const plan = buildGroundPlan(ground);
+        const pools = lookRules('yellowstone').pools;
+        const centres = poolCentres(plan.width, plan.height, ground.seed, pools, clearOf(ground));
+        expect(centres.length).toBeGreaterThan(0);
+        let wrong = 0;
+        let lake = 0;
+        for (let y = 0, i = 0; y < plan.height; y++) {
+            for (let x = 0; x < plan.width; x++, i++) {
+                const ref = poolRingAt(x, y, ground.seed, pools, centres);
+                if (ref !== plan.grass.ring[i]) wrong++;
+                if (ref) lake++;
+            }
+        }
+        expect(wrong).toBe(0);
+        expect(lake).toBeGreaterThan(1000);
+    });
+
+    it('⭐ ring each lake from its milky middle out to the pale yellow crust', () => {
+        const ground = lakeGround(72);
+        const plan = buildGroundPlan(ground);
+        const pools = lookRules('yellowstone').pools;
+        const steps = [0, 0.3, 0.55, 0.7, 0.8];
+        const sums = steps.map(() => 0);
+        const counts = steps.map(() => 0);
+        for (const { x, y, r } of poolCentres(plan.width, plan.height, ground.seed, pools, clearOf(ground))) {
+            expect(plan.grass.ring[Math.round(y) * plan.width + Math.round(x)]).toBe(1);
+            steps.forEach((t, k) => {
+                for (const [dx, dy] of [[1, 0], [-1, 0], [0, 0.75], [0, -0.75]]) {
+                    const v = plan.grass.ring[Math.round(y + dy * t * r) * plan.width + Math.round(x + dx * t * r)];
+                    if (v) { sums[k] += v; counts[k]++; }
+                }
+            });
+        }
+        const means = sums.map((v, k) => v / counts[k]);
+        for (let k = 1; k < means.length; k++) expect(means[k], `at ${steps[k]} of the radius`).toBeGreaterThan(means[k - 1]);
+    });
+
+    it('come as often as the prototype\'s, per piece of the mat its size, and follow the slider', () => {
+        const pools = lookRules('yellowstone').pools;
+        expect(poolCentres(320, 200, 1, pools).length).toBe(2);
+        expect(poolCentres(880, 563, 1, pools).length).toBe(15);
+        setTuning('groundLakes', 0);
+        expect(poolCentres(880, 563, 1, pools).length).toBe(0);
+        expect(buildGroundPlan(lakeGround()).grass.ring).toBeNull();
+    });
+
+    it('⭐ keep out of the Guild Hall\'s ring', () => {
+        const pools = lookRules('yellowstone').pools;
+        const clear = { x: 440, y: 281, r: 112 };
+        for (let seed = 1; seed <= 20; seed++) {
+            const centres = poolCentres(880, 563, seed, pools, clear);
+            expect(centres.length).toBeGreaterThan(10);
+            for (let y = 169; y <= 393; y += 4) {
+                for (let x = 328; x <= 552; x += 4) {
+                    if (Math.hypot(x - clear.x, y - clear.y) > clear.r) continue;
+                    expect(poolRingAt(x, y, seed, pools, centres), `seed ${seed} at ${x},${y}`).toBe(0);
+                }
+            }
+        }
+    });
+
+    it('keep the scatter out of the lakes', () => {
+        const plan = buildGroundPlan(lakeGround(74));
+        expect(plan.props.length).toBeGreaterThan(0);
+        for (const p of plan.props) expect(plan.grass.ring[p.footY * plan.width + p.footX], `${p.sheet} at ${p.footX},${p.footY}`).toBe(0);
+    });
+
+    it('draw their rings over the ground in the screen\'s details', () => {
+        const plan = buildGroundPlan(lakeGround(73));
+        const d = detailsOf(plan);
+        let rings = 0;
+        for (let i = 0; i < d.colour.length; i++) {
+            const v = plan.grass.ring[d.planAt[i]];
+            if (!v) continue;
+            rings++;
+            expect(d.colour[i]).toBe(COLOUR.RING + v - 1);
+        }
+        expect(rings).toBeGreaterThan(1000);
     });
 });

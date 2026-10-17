@@ -18,14 +18,18 @@ import { nextSeed, seedFromText } from '../../systems/atlas/seededRandom.js';
  * up with them.
  */
 
-/** The six views: each biome alone, and each pair. */
+/** The views: each first biome alone and each pair of them, then each newer biome alone. */
 export const TERRAIN_DEV_REGIONS = Object.freeze([
     { id: 'forest', label: 'Forest', maps: ['forest'] },
     { id: 'mountain', label: 'Mountain', maps: ['mountain'] },
     { id: 'coast', label: 'Coast', maps: ['coast'] },
     { id: 'forest_mountain', label: 'Forest + Mountain', maps: ['forest', 'mountain'] },
     { id: 'forest_coast', label: 'Forest + Coast', maps: ['forest', 'coast'] },
-    { id: 'mountain_coast', label: 'Mountain + Coast', maps: ['mountain', 'coast'] }
+    { id: 'mountain_coast', label: 'Mountain + Coast', maps: ['mountain', 'coast'] },
+    { id: 'flower_meadow', label: 'Flower meadow', maps: ['flower_meadow'] },
+    { id: 'cherry_grove', label: 'Cherry grove', maps: ['cherry_grove'] },
+    { id: 'yellowstone', label: 'Yellowstone', maps: ['yellowstone'] },
+    { id: 'volcano', label: 'Volcano', maps: ['volcano'] }
 ].map(Object.freeze));
 
 /** How many seeds are tried for a layout in which every node fits. */
@@ -51,7 +55,7 @@ export function firstSeedOf(maps) {
     return seedFromText(`terrain-dev:${maps.join('+')}`);
 }
 
-/** Which of the six views a Region is, by its maps; null for any other. */
+/** Which of the views a Region is, by its maps; null for any other. */
 export function viewOf(region) {
     const maps = devMapsOf(region);
     if (!maps) return null;

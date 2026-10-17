@@ -38,6 +38,30 @@ export const DEV_MAPS = Object.freeze({
         id: 'dev_map_coast', name: 'Coast Map', kind: 'base', biome: 'coast', points: 12,
         nodes: [{ typeId: 'token_coast', weight: 1 }]
     }),
+    flower_meadow: Object.freeze({
+        id: 'dev_map_flower_meadow', name: 'Flower Meadow Map', kind: 'base', biome: 'flower_meadow', points: 16,
+        nodes: [
+            { typeId: 'token_strawberry_bush', weight: 2 },
+            { typeId: 'token_blueberry_bush', weight: 1 },
+            { typeId: 'token_apple_tree', weight: 1 }
+        ]
+    }),
+    cherry_grove: Object.freeze({
+        id: 'dev_map_cherry_grove', name: 'Cherry Grove Map', kind: 'base', biome: 'cherry_grove', points: 20,
+        nodes: [{ typeId: 'token_cherry_tree', weight: 4 }, { typeId: 'token_peach_tree', weight: 1 }]
+    }),
+    yellowstone: Object.freeze({
+        id: 'dev_map_yellowstone', name: 'Yellowstone Map', kind: 'base', biome: 'yellowstone', points: 24,
+        nodes: [{ typeId: 'token_fir_tree', weight: 4 }, { typeId: 'token_stone_outcrop', weight: 1 }]
+    }),
+    volcano: Object.freeze({
+        id: 'dev_map_volcano', name: 'Volcano Map', kind: 'base', biome: 'volcano', points: 20,
+        nodes: [
+            { typeId: 'token_coal_vein', weight: 2 },
+            { typeId: 'token_stone_outcrop', weight: 2 },
+            { typeId: 'token_iron_ore_vein', weight: 1 }
+        ]
+    }),
     overgrown: Object.freeze({
         id: 'dev_mod_overgrown', name: 'Overgrown', kind: 'modifier',
         effects: [{ kind: 'density', typeId: 'token_oak_tree', points: 16 }],

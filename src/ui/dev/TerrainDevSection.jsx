@@ -23,7 +23,7 @@ function whereNow() {
 const ms = (n) => (n == null ? '–' : `${n.toFixed(1)} ms`);
 
 /**
- * Six buttons, one per view of the ground (each biome, each pair): each settles a dev Region for
+ * A button per view of the ground (each biome, each pair of the first three): each settles a dev Region for
  * free and takes the guild there. Reroll it gives the one the guild is in a new seed; Back to the
  * Starter Camp goes home. The dev Region left behind is removed. Place the ground test Tokens puts a
  * Token that needs water, one that needs the shore and one that needs rock near the Hall, for the

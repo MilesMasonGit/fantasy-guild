@@ -5,7 +5,7 @@ import { DEV_MAPS } from '../systems/atlas/devMaps.js';
 import { regionGround } from '../systems/atlas/regionGround.js';
 import { buildGroundPlan } from '../systems/board/TerrainSurface.js';
 import { patchNoise } from '../systems/board/TerrainPatches.js';
-import { grassShapeAt } from '../systems/board/TerrainGrass.js';
+import { grassShapeAt, KIND_MASK } from '../systems/board/TerrainGrass.js';
 import { PLAN_PIXEL_U, CELL_PX, edgeAmplitude } from '../systems/board/TerrainLattice.js';
 import { LOOKS } from '../config/registries/terrainRegistry.js';
 import { tuning, setTuning, resetTuning } from '../config/playmatTuning.js';
@@ -150,7 +150,7 @@ describe('⭐ The ground round the Hall is plain ground: no clearing (decision 4
                 if (slot >= 0) {
                     // Generated grass: its shapes by the same rule as anywhere, and no sheet wear.
                     const ref = grassShapeAt(x, y, ground.seed, plan.looks[t], plan.grass.thresholds[slot]);
-                    if (ref.bits !== plan.grass.bits[i] || ref.kind + 1 !== (plan.grass.kinds[i] & 3)) wrong.push(`grass at ${x},${y}`);
+                    if (ref.bits !== plan.grass.bits[i] || ref.kind + 1 !== (plan.grass.kinds[i] & KIND_MASK)) wrong.push(`grass at ${x},${y}`);
                     if (plan.wearAt?.[i]) wrong.push(`sheet wear on grass at ${x},${y}`);
                     checked++;
                     continue;
@@ -203,6 +203,9 @@ describe('⭐ Looks', () => {
     });
 
     it('⭐ gives a hybrid\'s grass the forest look and its rock the mountain look', () => {
+        expect(planOf(settled(['forest', 'mountain'], 112)).grass.looks.sort()).toEqual(['forest', 'mountain']);
+        // With the generated ground off, their sheets.
+        setTuning('grassOn', 0);
         const plan = planOf(settled(['forest', 'mountain'], 112));
         const counts = {};
         for (let i = 0; i < plan.sheetAt.length; i++) {

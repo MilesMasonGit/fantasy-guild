@@ -63,7 +63,11 @@ import { TERRAIN, DEFAULT_TERRAIN } from './TerrainMap.js';
 export const BIOME_GROUND = Object.freeze({
     forest: Object.freeze({ terrain: TERRAIN.GRASS, water: 0 }),
     mountain: Object.freeze({ terrain: TERRAIN.ROCK, water: 0 }),
-    coast: Object.freeze({ terrain: TERRAIN.SAND, water: 0.3 })
+    coast: Object.freeze({ terrain: TERRAIN.SAND, water: 0.3 }),
+    flower_meadow: Object.freeze({ terrain: TERRAIN.GRASS, water: 0 }),
+    cherry_grove: Object.freeze({ terrain: TERRAIN.GRASS, water: 0 }),
+    yellowstone: Object.freeze({ terrain: TERRAIN.GRASS, water: 0 }),
+    volcano: Object.freeze({ terrain: TERRAIN.ROCK, water: 0 })
 });
 
 /** A Base Map recipe's ground, `{ terrain, water }`: its own where it names them, else its biome's. */

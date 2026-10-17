@@ -5,8 +5,9 @@ import { buildBandMasks } from './TerrainBands.js';
 import { buildWearMask } from './TerrainPatches.js';
 import { propsForGround } from './TerrainProps.js';
 import { buildShadePattern, buildWearEdges, composeShades } from './TerrainShade.js';
-import { buildGrassPlan } from './TerrainGrass.js';
+import { buildGrassPlan, drawsGenerated, shadeRatio } from './TerrainGrass.js';
 import { getLook, LOOKS } from '../../config/registries/terrainRegistry.js';
+import { hallSpot, HALL_CLEARING } from '../atlas/Layout.js';
 import { tuning } from '../../config/playmatTuning.js';
 
 /**
@@ -48,17 +49,22 @@ export function sheetFor(look, seed) {
  *   Per pixel, row by row: `terrainAt` indexes `palette` (and `looks`, the look of each);
  *   `wearAt` 1 where the look's wear shows; each band's `mask` 1 inside it. The drawing answer:
  *   `sheetAt` indexes `sheets`, `tintAt` indexes `tints` (-1 for none), `shadeAt` indexes
- *   `shades` (brightness factors, 0 being 1: as drawn). `pattern` and `edges` are the shade's
- *   parts (`TerrainShade`). `props` back to front (`TerrainProps`), each with the `shade` of the
+ *   `shades` (brightness factors, 0 being 1: as drawn); `shadeParts`, `patternStep` and `lips`
+ *   say what each is made of, for a generated look's own share of the pattern. `pattern` and
+ *   `edges` are the shade's parts (`TerrainShade`). `props` back to front (`TerrainProps`), each with the `shade` of the
  *   pattern under its foot. `grass` the shapes of the looks drawn by rules (`TerrainGrass`), null
  *   when none is: their sheet stays in `sheetAt` beneath, without wear. Pixels are `unit` mat units.
  */
 export function buildGroundPlan(ground) {
     const pixels = resolveArtPixels(ground);
     const { width, height, palette, at } = pixels;
-    const { bands } = buildBandMasks(pixels, ground);
     const looks = palette.map(t => (getLook(ground.looks[t]) ? ground.looks[t] : LOOKS.meadow.id));
-    const grass = buildGrassPlan(pixels, ground.seed, looks);
+    // The generated sea measures furthest from the shore: first, so the bands reuse its walk.
+    const hall = hallSpot(ground.mat);
+    const grass = buildGrassPlan(pixels, ground.seed, looks, {
+        clear: { x: hall.x / PLAN_PIXEL_U, y: hall.y / PLAN_PIXEL_U, r: HALL_CLEARING / PLAN_PIXEL_U }
+    });
+    const { bands } = buildBandMasks(pixels, ground);
     const generated = grass ? Uint8Array.from(grass.slotOf.slice(0, palette.length), s => (s >= 0 ? 1 : 0)) : null;
     const wear = buildWearMask(pixels, ground, generated);
 
@@ -93,16 +99,21 @@ export function buildGroundPlan(ground) {
 
     const pattern = buildShadePattern(width, height, ground.seed);
     const edges = buildWearEdges(pixels, wear, ground);
-    const { shades, shadeAt, levels } = composeShades(n, pattern, edges);
-    const props = propsForGround(ground, pixels);
-    for (const p of props) p.shade = pattern.levelAt ? levels[pattern.levelAt[p.footY * width + p.footX] + 1] : 1;
+    const { shades, shadeAt, levels, parts, step, lips } = composeShades(n, pattern, edges);
+    // No bush stands in a sulphur lake.
+    const props = propsForGround(ground, pixels).filter(p => !grass?.ring?.[p.footY * width + p.footX]);
+    for (const p of props) {
+        if (!pattern.levelAt) p.shade = 1;
+        else if (drawsGenerated(p.look)) p.shade = 1 + pattern.levelAt[p.footY * width + p.footX] * step * shadeRatio(p.look);
+        else p.shade = levels[pattern.levelAt[p.footY * width + p.footX] + 1];
+    }
 
     return {
         width, height, unit: PLAN_PIXEL_U, seed: ground.seed,
         palette, looks, terrainAt: at,
         wearAt: wear.mask, wear, bands,
         sheets, sheetAt, tints, tintAt,
-        shades, shadeAt, pattern, edges,
+        shades, shadeAt, shadeParts: parts, patternStep: step, lips, pattern, edges,
         props, grass
     };
 }

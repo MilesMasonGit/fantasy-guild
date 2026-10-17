@@ -9,7 +9,7 @@ import { buildBandMasks, bandAppearance } from '../systems/board/TerrainBands.js
 import { muteTexels, buildGroundPlan } from '../systems/board/TerrainSurface.js';
 import { drawGrass, grassColours } from '../systems/board/TerrainGrass.js';
 import { generatedOf } from '../config/registries/terrainRegistry.js';
-import { groundWith } from './fixtures/ground.js';
+import { groundWith, flat } from './fixtures/ground.js';
 
 /**
  * The playmat tuning store — the developer panel's sliders.
@@ -175,6 +175,11 @@ describe('⭐ No dead sliders', () => {
         return weighted(drawGrass(plan.grass, plan.seed, plan.width, plan.height, planCol, planRow).colour);
     };
     const grassColour = () => JSON.stringify(grassColours(generatedOf('forest')));
+    /** Yellowstone's sulphur lakes in the plan. */
+    const lakes = () => {
+        const g = groundWith(55, 36, flat('grass'), { seed, biomes: { main: 'yellowstone', terrains: { yellowstone: 'grass' } } });
+        return summary(buildGroundPlan(g).grass.ring);
+    };
 
     const OBSERVES = {
         edgeSwing: edges,
@@ -205,6 +210,8 @@ describe('⭐ No dead sliders', () => {
         grassBodySoft: grassColour,
         grassClump: grassShape,
         grassMounds: grassDetail,
+        groundLakes: lakes,
+        groundStrength: grassColour,
         propDensity: props,
         propGroupSize: props,
         propGroupSpread: props,

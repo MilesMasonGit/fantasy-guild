@@ -88,6 +88,8 @@ describe('⭐ Layering: tint under band under wear', () => {
     });
 
     it('⭐ never tints worn ground: bare earth is not shallow water', () => {
+        // Sheets wear only with the generated ground off.
+        setTuning('grassOn', 0);
         const plan = buildGroundPlan(hybrid());
         let worn = 0;
         let wornTinted = 0;
