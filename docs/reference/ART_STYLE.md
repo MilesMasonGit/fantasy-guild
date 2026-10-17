@@ -17,11 +17,12 @@ Ground and scatter: the "Terrain art guide" in
   around it (white on hover, green while worked, red on a problem) from
   generated copies, so the art's outline stays plain black.
 - **Light** comes from the top-left; the ground follows the Tokens.
-- **Brightness**: the art carries the Drag look, baked 2026-10-16 (brightness
-  1.15, saturation 1.25; colours whose brightest channel is at or below 40,
-  the outlines, kept as drawn). New sprites are recoloured by the owner to
+- **Brightness**: the art carries the Gentle look, baked 2026-10-16 (brightness
+  1.08, saturation 1.12; colours whose brightest channel is at or below 40,
+  the outlines, kept as drawn). A first bake at 1.15 / 1.25 was too bright
+  and was undone the same day. New sprites are recoloured by the owner to
   match, using the brightened Studio palettes. The game adds no brightening
-  of its own except a gentle hover step (1.06 / 1.08).
+  of its own except a gentle hover step (1.06 / 1.08); dragging adds none.
 - **Rollback**: the git tag `art-before-vibrancy` holds the art before the
   bake.
 
@@ -34,7 +35,7 @@ workable. Checked against the Tokens after the bake.
 
 ## Palettes
 
-The Studio's Material Library was brightened with the same maths as the art
-(2026-10-16, once; marker `_brightened` in the file). Palettes added later are
+The Studio's Material Library is brightened with the same maths and setting as
+the art, once (marker `_brightened` in the file). Palettes added later are
 picked against the baked art. Agents deliver palette files only to the drop
 folder `cms/palettes-inbox/`; the owner imports them.
