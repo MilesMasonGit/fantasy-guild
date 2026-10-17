@@ -49,7 +49,11 @@ def ground(W, H, p):
                 c = ep[2] if clump(x, y) > 0.5 else ep[1]
             else:
                 v = clump(x, y) * 0.7 + fine(x, y) * 0.3
-                c = gp[hi] if v > 0.5 else gp[lo]
+                if v > 0.5: c = gp[hi]
+                elif p.get('body_soft'):
+                    k = p['body_soft']; a, b = gp[lo], gp[hi]
+                    c = tuple(int(a[i] * (1 - k) + b[i] * k) for i in range(3)) + (255,)
+                else: c = gp[lo]
             t = tint(x, y)
             if t > 0.62: c = lighten(c, 1 + tf)
             elif t < 0.38: c = lighten(c, 1 - tf)

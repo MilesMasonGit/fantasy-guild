@@ -23,6 +23,7 @@
    1,
    2
   ],
+  "body_soft": 0.55,
   "encroach": 0.85,
   "encroach_scale": 9,
   "encroach_depth": 2.2,
@@ -61,6 +62,7 @@
    1,
    2
   ],
+  "body_soft": 0.55,
   "encroach": 0.85,
   "encroach_scale": 9,
   "encroach_depth": 2.2,
@@ -111,6 +113,7 @@
    1,
    2
   ],
+  "body_soft": 0.55,
   "encroach": 0.85,
   "encroach_scale": 9,
   "encroach_depth": 2.2,

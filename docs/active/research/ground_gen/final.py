@@ -4,7 +4,7 @@ from gen import *
 W, H = 320, 200
 LAWN = [0.26, 0.44, 0.60]
 base = {"seed": 3, "grass": LAWN, "earth": [0.06, 0.38, 0.32], "clump": 16, "tint_scale": 96, "tint": 0.06,
-        "earth_scale": 40, "earth_thr": 0.68, "blades": 0.035 * 0.85, "cluster": 4, "tufts": 0.8, "body": [1, 2],
+        "earth_scale": 40, "earth_thr": 0.68, "blades": 0.035 * 0.85, "cluster": 4, "tufts": 0.8, "body": [1, 2], "body_soft": 0.55,
         "encroach": 0.85, "encroach_scale": 9, "encroach_depth": 2.2, "earth_tufts": 0.012, "earth_tuft_max": 6,
         "mounds": 16, "mound_light": 0.5, "dirt_style": "clods_middle", "middle": 0.3, "sunken": True,
         "blade_mask": 0.55, "blade_mask_scale": 40, "blade_mask_floor": 0.6}
