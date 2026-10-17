@@ -60,6 +60,8 @@ unless the owner revives it.
 
 **Design rounds (owner's verdicts):** round 1 (2026-10-17): B's tufts on C's calm body. Round 2: C (tall and dry zones, ragged borders); grass should reach into the earth; more shading; colours to explore. Round 3: palette B; push the grass further into the earth; work on the dirt. Round 4: grass deep into the earth, sunken earth edges, three dirt styles (lumpy, packed path, dark soil). Round 4 verdict: A clods with B lighter middle, less earth. Round 5 verdict: B amount, but the mat is too busy overall. Round 6: three calmer versions. Verdict: B (lawn plus soft tall), lighter tall grass in smaller zones, maybe texture in patches with less calm between. Round 7 verdict: B pattern good; zone colour changes look strange; bring dry grass back. Round 8 verdict: C (more dry grass, flower-like is good), but the darker ground textures were lost. Final prototype (round 9): everything together, darker texture back; rules in `docs/active/research/ground_gen/final_spec.json` and `final.py`.
 
+**Biome rounds:** Forest F1 (2026-10-17): deep meadow, forest floor (leaf litter, dappled shade), mossy; waiting for the owner.
+
 ## G3 — Generated ground in the game (engineer)
 
 Move the settled rules of the final prototype into the game's ground plan, so
