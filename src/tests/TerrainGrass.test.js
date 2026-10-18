@@ -9,7 +9,11 @@ import { resolveArtPixels } from '../systems/board/TerrainLattice.js';
 import { LOOKS, generatedOf } from '../config/registries/terrainRegistry.js';
 import { setTuning, resetTuning } from '../config/playmatTuning.js';
 import { groundWith, flat } from './fixtures/ground.js';
-import { hallSpot, HALL_CLEARING } from '../systems/atlas/Layout.js';
+import { hallSpot, HALL_CLEARING, layout } from '../systems/atlas/Layout.js';
+import { budget } from '../systems/atlas/Budget.js';
+import { DEV_MAPS } from '../systems/atlas/devMaps.js';
+import { regionGround } from '../systems/atlas/regionGround.js';
+import { rasterise } from '../systems/atlas/WaterShapes.js';
 
 /**
  * Generated ground: the owner's settled ground prototype (`docs/active/research/ground_gen`) as the
@@ -725,5 +729,115 @@ describe('⭐ Yellowstone\'s sulphur lakes', () => {
             expect(d.colour[i]).toBe(COLOUR.RING + v - 1);
         }
         expect(rings).toBeGreaterThan(1000);
+    });
+});
+
+describe('⭐ Shaped water: lakes, rivers and sulphur springs by their own field', () => {
+    const MAT = { w: 1760, h: 1126 };
+    /** A dev Region of `map`, its plan, its water's field at each plan pixel and the details at `unit`. */
+    const shaped = (map, seed, unit = 2) => {
+        const summary = budget([DEV_MAPS[map]], { cap: 128 });
+        const result = layout(summary, { seed, mat: MAT, crowding: { hitboxPct: 80, overlapPct: 40 }, artRadius: () => 64 });
+        const ground = regionGround({ seed, ground: summary.ground, terrain: result.terrain }, MAT);
+        const plan = buildGroundPlan(ground);
+        const { f } = rasterise(ground.water, { x0: 1, y0: 1, step: 2, nx: plan.width, ny: plan.height });
+        return { ground, plan, f, d: detailsOf(plan, unit) };
+    };
+    const lake = LOOKS.lake.generated.water;
+    const bandAt = (bands, px) => {
+        let c = 0;
+        while (c < bands.length && px >= bands[c]) c++;
+        return 1 + c;
+    };
+
+    it('⭐ draws a lake by its depth: foam at the waterline, shallows, water, deep water, waves only out from the shallows', () => {
+        for (const [map, seed] of [['water_lake_river', 81], ['water_split', 82], ['water_braided', 83]]) {
+            const { plan, f, d } = shaped(map, seed);
+            const slot = plan.grass.looks.indexOf('lake');
+            expect(slot, map).toBeGreaterThanOrEqual(0);
+            const bands = plan.grass.bands[slot];
+            let foam = 0;
+            let deep = 0;
+            for (let i = 0; i < d.colour.length; i++) {
+                if ((d.kinds[i] >> SLOT_SHIFT) !== slot || !(d.kinds[i] & KIND_MASK)) continue;
+                const px = f[d.planAt[i]] / 2;
+                expect(plan.grass.shore[d.planAt[i]]).toBe(bandAt(bands, px));
+                const k = d.colour[i];
+                if (px < lake.foam) {
+                    expect([COLOUR.FOAM, COLOUR.FOAM2], `${map}: foam at ${px}`).toContain(k);
+                    foam++;
+                } else if (px < lake.shallow) {
+                    expect([COLOUR.SEA + 2, COLOUR.SEA + 3], `${map}: shallows at ${px}`).toContain(k);
+                } else if (px >= lake.deep) {
+                    // Deep water, or a wave over it (its crest lighter where it started nearer the shore).
+                    expect([COLOUR.SEA, COLOUR.SEA + 2, COLOUR.SEA + 3, COLOUR.TROUGH], `${map}: deep at ${px}`).toContain(k);
+                    if (k === COLOUR.SEA) deep++;
+                }
+            }
+            expect(foam, map).toBeGreaterThan(100);
+            if (map === 'water_lake_river') expect(deep).toBeGreaterThan(500);
+            for (const wv of d.waves) {
+                if ((d.kinds[wv.y * d.cols + wv.x] >> SLOT_SHIFT) !== slot) continue;
+                expect(f[d.planAt[wv.y * d.cols + wv.x]] / 2).toBeGreaterThanOrEqual(lake.shallow);
+            }
+        }
+    });
+
+    it('⭐ wets the land round a lake in a bank two and a half pixels wide, and nowhere else', () => {
+        const { plan, f, d } = shaped('water_lake_river', 84);
+        const water = plan.grass.looks.map(id => Boolean(lookRules(id).water));
+        let bank = 0;
+        const wrong = [];
+        for (let i = 0; i < d.colour.length; i++) {
+            const k = d.colour[i];
+            if (!d.kinds[i] || water[d.kinds[i] >> SLOT_SHIFT]) continue;
+            const out = -f[d.planAt[i]] / 2;
+            const want = out >= 0 && out <= 1 ? COLOUR.BANK : out > 1 && out <= 2.5 ? COLOUR.BANK + 1 : null;
+            if (want !== null) bank++;
+            if (want !== null ? k !== want : k >= COLOUR.BANK && k < COLOUR.BANK + 4) wrong.push(`${i}: ${k} at ${out} px`);
+        }
+        expect(wrong.slice(0, 5)).toEqual([]);
+        expect(bank).toBeGreaterThan(500);
+    });
+
+    it('⭐ rings a sulphur spring from its pale rim to its milky middle, crusts the land round it, and keeps it real water', () => {
+        const { plan, f, d, ground } = shaped('water_sulphur', 85);
+        expect(plan.grass.ring).toBeNull();
+        const slot = plan.grass.looks.indexOf('sulphur');
+        const spring = LOOKS.sulphur.generated.water;
+        const seen = new Set();
+        let crust = 0;
+        for (let i = 0; i < d.colour.length; i++) {
+            const px = f[d.planAt[i]] / 2;
+            if ((d.kinds[i] >> SLOT_SHIFT) === slot) {
+                const ring = px < spring.ringAt[0] ? 0 : px < spring.ringAt[1] ? 1 : 2;
+                expect(d.colour[i]).toBe(COLOUR.SEA + ring);
+                seen.add(ring);
+            } else if (d.kinds[i] && px <= 0 && -px <= 7) {
+                expect(d.colour[i]).toBe(-px <= 4 ? COLOUR.BANK + 2 : COLOUR.BANK + 3);
+                crust++;
+            }
+        }
+        expect([...seen].sort()).toEqual([0, 1, 2]);
+        expect(crust).toBeGreaterThan(500);
+        expect(d.waves.filter(wv => (d.kinds[wv.y * d.cols + wv.x] >> SLOT_SHIFT) === slot)).toEqual([]);
+        // Real water: the cells under the springs' middles are water.
+        const wet = [...ground.cells].filter(c => ground.terrains[c] === 'water').length;
+        expect(wet).toBeGreaterThan(100);
+    });
+
+    it('draws the same at every fit, a ground pixel wide: a coarser window reads the same classes', () => {
+        const a = shaped('water_lake_river', 86, 2);
+        const b = shaped('water_lake_river', 86, 3);
+        const slot = a.plan.grass.looks.indexOf('lake');
+        for (const { d, plan } of [a, b]) {
+            let n = 0;
+            for (let i = 0; i < d.colour.length; i++) {
+                if ((d.kinds[i] >> SLOT_SHIFT) !== slot) continue;
+                expect(plan.grass.shore[d.planAt[i]]).toBeGreaterThan(0);
+                n++;
+            }
+            expect(n).toBeGreaterThan(1000);
+        }
     });
 });

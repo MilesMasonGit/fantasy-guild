@@ -96,7 +96,9 @@ export const DEV_MAPS = Object.freeze({
     water_braided: withWater('mountain', WATER_KIND.BRAIDED),
     water_tarn: withWater('mountain', WATER_KIND.TARN),
     water_pond: withWater('forest', WATER_KIND.POND),
-    water_sulphur: withWater('yellowstone', WATER_KIND.SULPHUR)
+    water_sulphur: withWater('yellowstone', WATER_KIND.SULPHUR),
+    // The Coast's sea, as its own view.
+    water_sea: Object.freeze({ ...BASE_MAPS.coast, id: 'dev_map_water_sea' })
 });
 
 const GLYPHS = Object.freeze({

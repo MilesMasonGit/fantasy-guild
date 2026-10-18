@@ -44,7 +44,7 @@ export const TERRAIN_DEV_WATER = Object.freeze([
     { id: 'water_pond', label: 'Pond', maps: ['water_pond'] },
     { id: 'water_tarn', label: 'Tarn', maps: ['water_tarn'] },
     { id: 'water_sulphur', label: 'Sulphur springs', maps: ['water_sulphur'] },
-    { id: 'water_sea', label: 'Sea', maps: ['coast'] }
+    { id: 'water_sea', label: 'Sea', maps: ['water_sea'] }
 ].map(Object.freeze));
 
 /** How many seeds are tried for a layout in which every node fits. */

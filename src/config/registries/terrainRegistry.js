@@ -207,7 +207,6 @@ export const LOOKS = deepFreeze({
     },
     lake: {
         id: 'lake', name: 'Lake', terrain: TERRAIN.WATER, sheets: ['water_bright'],
-        band: { widthTuning: 'shallowsWidth', tint: '#a8e8ff', amount: 0.45 },
         // `gen.water_field` with `world6.py`'s colours: a wet bank on the land, a broken foam line,
         // shallows, water and deep water by the depth, waves longer the deeper.
         generated: {
@@ -221,7 +220,6 @@ export const LOOKS = deepFreeze({
     },
     sulphur: {
         id: 'sulphur', name: 'Sulphur spring', terrain: TERRAIN.WATER, sheets: ['water_bright'],
-        band: { widthTuning: 'shallowsWidth', tint: '#a8e8ff', amount: 0.3 },
         // Yellowstone's springs (`gen.pools`): pale cyan at the rim, blue, a milky middle, ringed on
         // the land by a pale yellow crust. The rings fall where the prototype's did on a spring of
         // 100 mat units: its 0.74 of the radius is the waterline, 0.62 and 0.42 the rings inside.

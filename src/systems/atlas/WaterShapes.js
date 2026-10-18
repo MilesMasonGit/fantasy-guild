@@ -47,7 +47,7 @@ export const WATER_KIND = Object.freeze({
 export const FAR = -1e6;
 
 /** How far past a shore, on the land, the field is worked out: the banks and the crust are drawn there. */
-const BANK_PAD = 16;
+export const BANK_PAD = 16;
 
 /** A lake's shore: warped twice (`big_lake`), its lobes squashed a little, holes for islands and bays. */
 const LAKE = Object.freeze({ warpCell: 140, warp: 140, noiseCell: 60, noise: 44, fineCell: 24, fine: 14, squash: 1.1, holeFine: 12 });
@@ -97,6 +97,8 @@ const layerSalt = (salt, channel) => hash(salt | 0, channel, 0x3c6ef372);
 /**
  * Smooth value noise in [0, 1) on square cells of `cell` units, its corners hashed. The corners
  * over `box` are worked out once; a point outside it hashes its own, to the same values.
+ * `layer.row(lattice, j, i0, i1, out)` writes the values of lattice row `j` from column `i0` to
+ * `i1` into `out`, each exactly as `layer(x, y)` gives it.
  */
 export function noiseLayer(salt, cell, box = null) {
     if (!box) return (x, y) => noiseAt(x, y, cell, salt);
@@ -106,7 +108,23 @@ export function noiseLayer(salt, cell, box = null) {
     const gh = Math.floor(box.y1 / cell) + 3 - gy0;
     const grid = new Float64Array(gw * gh);
     for (let j = 0; j < gh; j++) for (let i = 0; i < gw; i++) grid[j * gw + i] = corner(gx0 + i, gy0 + j, salt);
-    return (x, y) => {
+    // Each lattice column's noise cell and its eased share across it, worked out once a lattice.
+    const columns = new WeakMap();
+    const columnsOf = (lattice) => {
+        let c = columns.get(lattice);
+        if (!c) {
+            c = { g: new Int32Array(lattice.nx), f: new Float64Array(lattice.nx) };
+            for (let i = 0; i < lattice.nx; i++) {
+                const tx = (lattice.x0 + i * lattice.step) / cell;
+                const g = Math.floor(tx);
+                c.g[i] = g;
+                c.f[i] = smooth(tx - g);
+            }
+            columns.set(lattice, c);
+        }
+        return c;
+    };
+    const at = (x, y) => {
         const tx = x / cell;
         const ty = y / cell;
         const gx = Math.floor(tx);
@@ -123,6 +141,30 @@ export function noiseLayer(salt, cell, box = null) {
         const bottom = c01 + (grid[k + gw + 1] - c01) * fx;
         return top + (bottom - top) * fy;
     };
+    at.row = (lattice, jRow, i0, i1, out) => {
+        const { g, f } = columnsOf(lattice);
+        const y = lattice.y0 + jRow * lattice.step;
+        const ty = y / cell;
+        const gy = Math.floor(ty);
+        const fy = smooth(ty - gy);
+        const j = gy - gy0;
+        const inside = j >= 0 && j + 1 < gh;
+        for (let i = i0; i <= i1; i++) {
+            const ii = g[i] - gx0;
+            if (!inside || ii < 0 || ii + 1 >= gw) {
+                out[i] = noiseAt(lattice.x0 + i * lattice.step, y, cell, salt);
+                continue;
+            }
+            const fx = f[i];
+            const k = j * gw + ii;
+            const c00 = grid[k];
+            const c01 = grid[k + gw];
+            const top = c00 + (grid[k + 1] - c00) * fx;
+            const bottom = c01 + (grid[k + gw + 1] - c01) * fx;
+            out[i] = top + (bottom - top) * fy;
+        }
+    };
+    return at;
 }
 
 /** {@link noiseLayer}'s value at one point, every corner hashed: the reference. */
@@ -195,7 +237,19 @@ export function wiggle(points, amp, noise, row) {
     return smoothPath(kept, 3);
 }
 
-/** A point's distance to a segment, and how far along it the nearest point is (0 to 1). */
+/** A point's distance to a segment, squared. */
+function segmentDistance2(px, py, ax, ay, bx, by) {
+    const dx = bx - ax;
+    const dy = by - ay;
+    const L2 = dx * dx + dy * dy;
+    let t = L2 > 0 ? ((px - ax) * dx + (py - ay) * dy) / L2 : 0;
+    t = t < 0 ? 0 : t > 1 ? 1 : t;
+    const ex = px - (ax + dx * t);
+    const ey = py - (ay + dy * t);
+    return ex * ex + ey * ey;
+}
+
+/** A point's distance to a segment, and the nearest point on it. */
 function toSegment(px, py, ax, ay, bx, by) {
     const dx = bx - ax;
     const dy = by - ay;
@@ -259,10 +313,11 @@ function vertexAt(pts, share) {
 // The field
 
 /** Every layer a record's shapes read, over the box they are worked out in. */
-function layersOf(record, box) {
+function layersOf(record, box, nx) {
     const s = record.salt >>> 0;
     const at = (channel, cell) => noiseLayer(layerSalt(s, channel), cell, box);
     return {
+        rows: { wx: new Float64Array(nx), wy: new Float64Array(nx), nz: new Float64Array(nx), nf: new Float64Array(nx) },
         warpX: at(CH.WARP_X, LAKE.warpCell), warpY: at(CH.WARP_Y, LAKE.warpCell),
         lake: at(CH.LAKE, LAKE.noiseCell), lakeFine: at(CH.LAKE_FINE, LAKE.fineCell),
         width: at(CH.WIDTH, RIVER.widthCell), riverFine: at(CH.RIVER_FINE, RIVER.fineCell),
@@ -284,40 +339,66 @@ function span(lattice, x0, y0, x1, y1) {
 }
 
 function lakeInto(out, lattice, shape, L) {
-    const { lobes, holes } = shape;
+    // Flat copies: the pixel loop reads them many times over.
+    const lobes = Float64Array.from(shape.lobes.flat());
+    const holes = Float64Array.from(shape.holes.flat());
+    const nLobes = lobes.length;
+    const nHoles = holes.length;
     const pad = LAKE.warp / 2 + LAKE.noise / 2 + LAKE.fine / 2 + BANK_PAD;
     let x0 = Infinity;
     let y0 = Infinity;
     let x1 = -Infinity;
     let y1 = -Infinity;
-    for (const [x, y, r] of lobes) {
-        x0 = Math.min(x0, x - r);
-        y0 = Math.min(y0, y - r);
-        x1 = Math.max(x1, x + r);
-        y1 = Math.max(y1, y + r);
+    for (let k = 0; k < nLobes; k += 3) {
+        x0 = Math.min(x0, lobes[k] - lobes[k + 2]);
+        y0 = Math.min(y0, lobes[k + 1] - lobes[k + 2]);
+        x1 = Math.max(x1, lobes[k] + lobes[k + 2]);
+        y1 = Math.max(y1, lobes[k + 1] + lobes[k + 2]);
     }
     const { i0, i1, j0, j1 } = span(lattice, x0 - pad, y0 - pad, x1 + pad, y1 + pad);
     const { f, style } = out;
     const { step, nx } = lattice;
+    // The most the warp and the noise can raise a point's field: each row is worked out only
+    // across the lobes' reach with that added.
+    const warpReach = (LAKE.warp / 2) * Math.sqrt(1 + LAKE.squash * LAKE.squash);
+    const lift = warpReach + LAKE.noise / 2 + LAKE.fine / 2 + BANK_PAD;
+    const { wx, wy, nz, nf } = L.rows;
     for (let j = j0; j <= j1; j++) {
         const y = lattice.y0 + j * step;
-        for (let i = i0; i <= i1; i++) {
+        let lo = Infinity;
+        let hi = -Infinity;
+        for (let k = 0; k < nLobes; k += 3) {
+            const R = lobes[k + 2] + lift;
+            const dy = (y - lobes[k + 1]) * LAKE.squash;
+            if (dy * dy >= R * R) continue;
+            const half = Math.sqrt(R * R - dy * dy);
+            if (lobes[k] - half < lo) lo = lobes[k] - half;
+            if (lobes[k] + half > hi) hi = lobes[k] + half;
+        }
+        const a = Math.max(i0, Math.ceil((lo - lattice.x0) / step));
+        const b = Math.min(i1, Math.floor((hi - lattice.x0) / step));
+        if (a > b) continue;
+        L.warpX.row(lattice, j, a, b, wx);
+        L.warpY.row(lattice, j, a, b, wy);
+        L.lake.row(lattice, j, a, b, nz);
+        L.lakeFine.row(lattice, j, a, b, nf);
+        for (let i = a; i <= b; i++) {
             const x = lattice.x0 + i * step;
-            const u = x + (L.warpX(x, y) - 0.5) * LAKE.warp;
-            const v = y + (L.warpY(x, y) - 0.5) * LAKE.warp;
+            const u = x + (wx[i] - 0.5) * LAKE.warp;
+            const v = y + (wy[i] - 0.5) * LAKE.warp;
             let val = FAR;
-            for (let k = 0; k < lobes.length; k++) {
-                const [cx, cy, r] = lobes[k];
-                const dx = u - cx;
-                const dy = (v - cy) * LAKE.squash;
-                const g = r - Math.sqrt(dx * dx + dy * dy);
+            for (let k = 0; k < nLobes; k += 3) {
+                const dx = u - lobes[k];
+                const dy = (v - lobes[k + 1]) * LAKE.squash;
+                const g = lobes[k + 2] - Math.sqrt(dx * dx + dy * dy);
                 if (g > val) val = g;
             }
-            const fine = L.lakeFine(x, y);
-            val += (L.lake(x, y) - 0.5) * LAKE.noise + (fine - 0.5) * LAKE.fine;
-            for (let k = 0; k < holes.length; k++) {
-                const [cx, cy, r] = holes[k];
-                const g = dist(u, v, cx, cy) - r + (fine - 0.5) * LAKE.holeFine;
+            const fine = nf[i];
+            val += (nz[i] - 0.5) * LAKE.noise + (fine - 0.5) * LAKE.fine;
+            for (let k = 0; k < nHoles; k += 3) {
+                const dx = u - holes[k];
+                const dy = v - holes[k + 1];
+                const g = Math.sqrt(dx * dx + dy * dy) - holes[k + 2] + (fine - 0.5) * LAKE.holeFine;
                 if (g < val) val = g;
             }
             const p = j * nx + i;
@@ -333,7 +414,9 @@ function riverInto(out, lattice, shape, L, scratch) {
     const pts = shape.points;
     const [hw0, hw1] = shape.w;
     const reach = Math.max(hw0, hw1) + hw0 * RIVER.width / 2 + RIVER.fine / 2 + BANK_PAD;
+    const reach2 = reach * reach;
     const { step, nx } = lattice;
+    // Nearest squared distances, the root taken once a point: the same as the nearest distance.
     const { near, seen, touched } = scratch;
     const stamp = ++scratch.stamp;
     touched.length = 0;
@@ -345,8 +428,8 @@ function riverInto(out, lattice, shape, L, scratch) {
             const y = lattice.y0 + j * step;
             for (let i = i0; i <= i1; i++) {
                 const x = lattice.x0 + i * step;
-                const d = toSegment(x, y, ax, ay, bx, by).d;
-                if (d >= reach) continue;
+                const d = segmentDistance2(x, y, ax, ay, bx, by);
+                if (d >= reach2) continue;
                 const p = j * nx + i;
                 if (seen[p] !== stamp) {
                     seen[p] = stamp;
@@ -371,7 +454,7 @@ function riverInto(out, lattice, shape, L, scratch) {
         let t = ((x - xa) * cx + (y - ya) * cy) / L2;
         t = t < 0 ? 0 : t > 1 ? 1 : t;
         const hw = hw0 + (hw1 - hw0) * t + (L.width(x, y) - 0.5) * hw0 * RIVER.width;
-        const val = hw - near[p] + (L.riverFine(x, y) - 0.5) * RIVER.fine;
+        const val = hw - Math.sqrt(near[p]) + (L.riverFine(x, y) - 0.5) * RIVER.fine;
         if (val > f[p]) {
             f[p] = val;
             style[p] = STYLE.LAKE;
@@ -387,13 +470,16 @@ function poolInto(out, lattice, shape, L) {
     const { f, style } = out;
     const { step, nx } = lattice;
     const ry0 = r * POOL.squash;
+    const { nz, nf } = L.rows;
     for (let j = j0; j <= j1; j++) {
         const y = lattice.y0 + j * step;
         const dy = (y - cy) / ry0;
+        L.pool.row(lattice, j, i0, i1, nz);
+        L.poolFine.row(lattice, j, i0, i1, nf);
         for (let i = i0; i <= i1; i++) {
             const x = lattice.x0 + i * step;
             const dx = (x - cx) / r;
-            const d = Math.sqrt(dx * dx + dy * dy) + (L.pool(x, y) - 0.5) * POOL.noise + (L.poolFine(x, y) - 0.5) * POOL.fineNoise;
+            const d = Math.sqrt(dx * dx + dy * dy) + (nz[i] - 0.5) * POOL.noise + (nf[i] - 0.5) * POOL.fineNoise;
             const val = (POOL.waterline - d) * POOL.scale;
             const p = j * nx + i;
             if (val > f[p]) {
@@ -404,8 +490,7 @@ function poolInto(out, lattice, shape, L) {
     }
 }
 
-/** A point's distance along the sea's edge and in from it, for each side (0 top, 1 right, 2 bottom, 3 left). */
-const along = (side, x, y) => (side % 2 === 0 ? x : y);
+/** A point's distance in from the sea's edge, for each side (0 top, 1 right, 2 bottom, 3 left). */
 const across = (side, x, y, w, h) => (side === 0 ? y : side === 1 ? w - x : side === 2 ? h - y : x);
 
 /** The sea's depth at `a` along its edge: its knots, eased into each other. */
@@ -428,12 +513,22 @@ function seaInto(out, lattice, shape, L, mat) {
     const { i0, i1, j0, j1 } = span(lattice, ...box);
     const { f, style } = out;
     const { step, nx } = lattice;
+    const bend = SEA.noise / 2 + SEA.fine / 2;
+    // The depth along the edge, once per column (top and bottom) or per row (the sides).
+    const byColumn = side % 2 === 0;
+    const depths = new Float64Array(byColumn ? nx : lattice.ny);
+    for (let k = 0; k < depths.length; k++) depths[k] = seaDepth(shape, (byColumn ? lattice.x0 : lattice.y0) + k * step);
     for (let j = j0; j <= j1; j++) {
         const y = lattice.y0 + j * step;
         for (let i = i0; i <= i1; i++) {
             const x = lattice.x0 + i * step;
-            const val = seaDepth(shape, along(side, x, y)) - across(side, x, y, w, h)
-                + (L.sea(x, y) - 0.5) * SEA.noise + (L.seaFine(x, y) - 0.5) * SEA.fine;
+            const base = depths[byColumn ? i : j] - across(side, x, y, w, h);
+            if (base + bend <= -BANK_PAD) continue;
+            // ⚠️ Far out to sea the field is its least, not its value: only its sign and the
+            // shore's neighbourhood are ever read for the sea, which is drawn by its distance
+            // from the drawn shore.
+            const val = base - bend > BANK_PAD ? base - bend
+                : base + (L.sea(x, y) - 0.5) * SEA.noise + (L.seaFine(x, y) - 0.5) * SEA.fine;
             const p = j * nx + i;
             if (val > f[p]) {
                 f[p] = val;
@@ -443,23 +538,100 @@ function seaInto(out, lattice, shape, L, mat) {
     }
 }
 
-/** No water inside the Hall's clearing: the field held below the distance past its edge. */
+/**
+ * No water inside the Hall's clearing: the field held below the distance past its edge (bent
+ * outward a little), so a shape the clearing cuts gets a shore along it, deepening away from it.
+ */
 function clearInto(out, lattice, record, L) {
     const [hx, hy, R] = record.clear;
-    const reach = R + CLEAR.bend + BANK_PAD;
-    const { i0, i1, j0, j1 } = span(lattice, hx - reach, hy - reach, hx + reach, hy + reach);
     const { f } = out;
-    const { step, nx } = lattice;
-    for (let j = j0; j <= j1; j++) {
+    const { step, nx, ny } = lattice;
+    for (let j = 0; j < ny; j++) {
         const y = lattice.y0 + j * step;
-        for (let i = i0; i <= i1; i++) {
+        const dy = y - hy;
+        for (let i = 0, p = j * nx; i < nx; i++, p++) {
+            const v = f[p];
+            if (v <= -BANK_PAD) continue;
+            // Further than the clearing's edge, its bend and the field itself: never lower.
             const x = lattice.x0 + i * step;
-            const p = j * nx + i;
-            if (f[p] <= -BANK_PAD) continue;
-            const g = dist(x, y, hx, hy) - R - L.clear(x, y) * CLEAR.bend;
-            if (g < f[p]) f[p] = g;
+            const dx = x - hx;
+            const reach = R + CLEAR.bend + v;
+            if (dx * dx + dy * dy >= reach * reach) continue;
+            const g = Math.sqrt(dx * dx + dy * dy) - R - L.clear(x, y) * CLEAR.bend;
+            if (g < v) f[p] = g;
         }
     }
+}
+
+/**
+ * The field at one point the slow way, every noise corner hashed and every shape read whole: the
+ * reference {@link rasterise} must match exactly wherever the field is above `-BANK_PAD` (below
+ * it, a lattice may leave a far point at {@link FAR}).
+ *
+ * @returns {{f: number, style: number}}
+ */
+export function waterFieldAt(water, x, y) {
+    const s = water.salt >>> 0;
+    const n = (channel, cell) => noiseAt(x, y, cell, layerSalt(s, channel));
+    let f = FAR;
+    let style = STYLE.NONE;
+    const put = (v, st) => {
+        if (v > f) {
+            f = v;
+            style = st;
+        }
+    };
+    for (const shape of water.shapes) {
+        if (shape.k === SHAPE.LAKE) {
+            const u = x + (n(CH.WARP_X, LAKE.warpCell) - 0.5) * LAKE.warp;
+            const v = y + (n(CH.WARP_Y, LAKE.warpCell) - 0.5) * LAKE.warp;
+            let val = FAR;
+            for (const [cx, cy, r] of shape.lobes) {
+                const dx = u - cx;
+                const dy = (v - cy) * LAKE.squash;
+                val = Math.max(val, r - Math.sqrt(dx * dx + dy * dy));
+            }
+            const fine = n(CH.LAKE_FINE, LAKE.fineCell);
+            val += (n(CH.LAKE, LAKE.noiseCell) - 0.5) * LAKE.noise + (fine - 0.5) * LAKE.fine;
+            for (const [cx, cy, r] of shape.holes) {
+                const dx = u - cx;
+                const dy = v - cy;
+                val = Math.min(val, Math.sqrt(dx * dx + dy * dy) - r + (fine - 0.5) * LAKE.holeFine);
+            }
+            put(val, STYLE.LAKE);
+        } else if (shape.k === SHAPE.RIVER) {
+            const pts = shape.points;
+            let near = Infinity;
+            for (let k = 0; k + 1 < pts.length; k++) {
+                near = Math.min(near, segmentDistance2(x, y, pts[k][0], pts[k][1], pts[k + 1][0], pts[k + 1][1]));
+            }
+            const [hw0, hw1] = shape.w;
+            const [xa, ya] = pts[0];
+            const [xb, yb] = pts[pts.length - 1];
+            const cx = xb - xa;
+            const cy = yb - ya;
+            let t = ((x - xa) * cx + (y - ya) * cy) / (cx * cx + cy * cy || 1);
+            t = t < 0 ? 0 : t > 1 ? 1 : t;
+            const hw = hw0 + (hw1 - hw0) * t + (n(CH.WIDTH, RIVER.widthCell) - 0.5) * hw0 * RIVER.width;
+            put(hw - Math.sqrt(near) + (n(CH.RIVER_FINE, RIVER.fineCell) - 0.5) * RIVER.fine, STYLE.LAKE);
+        } else if (shape.k === SHAPE.POOL) {
+            const dx = (x - shape.x) / shape.r;
+            const dy = (y - shape.y) / (shape.r * POOL.squash);
+            const d = Math.sqrt(dx * dx + dy * dy) + (n(CH.POOL, POOL.cell) - 0.5) * POOL.noise + (n(CH.POOL_FINE, POOL.fineCell) - 0.5) * POOL.fineNoise;
+            put((POOL.waterline - d) * POOL.scale, STYLE.SULPHUR);
+        } else if (shape.k === SHAPE.SEA) {
+            const [w, h] = water.mat;
+            const base = seaDepth(shape, shape.side % 2 === 0 ? x : y) - across(shape.side, x, y, w, h);
+            const bend = SEA.noise / 2 + SEA.fine / 2;
+            put(base - bend > BANK_PAD ? base - bend
+                : base + (n(CH.SEA, SEA.cell) - 0.5) * SEA.noise + (n(CH.SEA_FINE, SEA.fineCell) - 0.5) * SEA.fine, STYLE.SEA);
+        }
+    }
+    if (f > -BANK_PAD) {
+        const [hx, hy, R] = water.clear;
+        f = Math.min(f, dist(x, y, hx, hy) - R - n(CH.CLEAR, CLEAR.cell) * CLEAR.bend);
+    }
+    return { f, style };
 }
 
 /**
@@ -509,7 +681,7 @@ export function rasterise(water, lattice) {
         x0: lattice.x0 - margin, y0: lattice.y0 - margin,
         x1: lattice.x0 + lattice.step * lattice.nx + margin, y1: lattice.y0 + lattice.step * lattice.ny + margin
     };
-    const L = layersOf(water, box);
+    const L = layersOf(water, box, lattice.nx);
     let scratch = null;
     for (const shape of water.shapes) {
         if (shape.k === SHAPE.LAKE) lakeInto(out, lattice, shape, L);
