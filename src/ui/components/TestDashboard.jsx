@@ -140,8 +140,8 @@ export const TestDashboard = React.memo(() => {
     };
 
     /**
-     * ⚠️ Dev scaffolding: grants a combat skill directly. A hero who holds no combat skill
-     * cannot fight, and the only other way to gain one is a promotion.
+     * ⚠️ Dev scaffolding: grants a combat skill directly; the only other way to gain one is a
+     * promotion.
      */
     const grantCombatSkill = (skillId) => {
         const heroes = engine.HeroManager.getAllHeroes().filter(h => !h.isVillager);

@@ -61,7 +61,7 @@ function heldSkills(heroId) {
     return hero?.skills && typeof hero.skills === 'object' ? hero.skills : {};
 }
 
-/** Whether the hero can fight at all: holds a combat skill. */
+/** Whether the hero can fight at all (everyone can; see `CombatFormulas.canHeroFight`). */
 export function canFight(heroId) {
     return CombatFormulas.canHeroFight(heroRecord(heroId));
 }

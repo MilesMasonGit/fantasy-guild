@@ -533,9 +533,8 @@ export function tick(delta) {
         // hostile enemy gets a hero onto it through `Hostiles` and `Flags.ambush`, not through this
         // function.
         if (BoardCombat.isEnemyToken(instance)) {
-            // A hero who holds no combat skill cannot fight. Under flags that hero never claims an
-            // enemy at all: the flag records `unskilled` against it, shown on hover only, so an
-            // enemy Token never carries a red mark.
+            // A hero who cannot fight never claims an enemy under flags: the flag records
+            // `unskilled` against it, shown on hover only, so an enemy Token never carries a red mark.
             setAlert(instance,null);
 
             // Called unconditionally: `tickToken` also owns ENDING a fight when the hero has gone.

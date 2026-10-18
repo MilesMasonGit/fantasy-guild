@@ -201,8 +201,7 @@ describe('⭐ the cartographer\'s chain, step by step, through the real systems'
         Flags.furl(heroId);
 
         // 8. Win a first fight, against a Cow (it never attacks first).
-        // ⚠️ Fixture: a Recruit holds no combat skill and cannot fight today ("everyone fights",
-        // concept_combat.md, is not built yet), and even with one a level-1 or level-10 hero is
+        // ⚠️ Fixture: a Recruit fights as a level 1 fighter, and a level-1 or level-10 hero is
         // often knocked out by a Cow before the first kill, so the hero is lent a combat skill at
         // level 40.
         GameState.heroes[0].skills[COMBAT_SKILL_IDS[0]] = { xp: 0, level: 40 };

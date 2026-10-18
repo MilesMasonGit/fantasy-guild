@@ -3,7 +3,7 @@ import {
     JOB_TIERS, STARTING_JOB_ID,
     getAllJobIds, getJob, getJobsByTier, getPromotionsFrom,
     getJobSkills, getJobSheet, getJobSkillsByLayer, getJobCombatSkill, getJobMasterSkill,
-    jobCanFight, grantsOf, removesOf, getPromotionGateSkills, getJobLineage,
+    jobHoldsCombatSkill, grantsOf, removesOf, getPromotionGateSkills, getJobLineage,
     getPromotionCost
 } from '../config/registries/jobRegistry.js';
 import * as JobRegistry from '../config/registries/jobRegistry.js';
@@ -12,7 +12,7 @@ import {
     STARTING_SKILL_IDS, COMBAT_SKILL_IDS, ADVANCED_SKILL_IDS, MASTER_SKILL_IDS
 } from '../config/registries/skillRegistry.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
-import { canHeroFight } from '../utils/CombatFormulas.js';
+import { canHeroFight, getHeroCombatSkillEntry } from '../utils/CombatFormulas.js';
 
 /**
  * The job tree's structural rules, asserted mechanically: the Recruit, four
@@ -77,10 +77,10 @@ describe('The tree is the Recruit, 4 basic and 8 master classes', () => {
 });
 
 describe('Each tier has the shape the design specifies', () => {
-    it('the Recruit is exactly the Starting layer, and cannot fight', () => {
+    it('the Recruit is exactly the Starting layer, with no combat skill', () => {
         expect(getJobSkills(STARTING_JOB_ID).sort()).toEqual([...STARTING_SKILL_IDS].sort());
         expect(getJobCombatSkill(STARTING_JOB_ID)).toBeNull();
-        expect(jobCanFight(STARTING_JOB_ID)).toBe(false);
+        expect(jobHoldsCombatSkill(STARTING_JOB_ID)).toBe(false);
     });
 
     it('each basic class lists its combat and advanced skill (Fighter melee + leadership, Ranger ranged + fletching, Wizard magic + enchanting, Rogue stealth + crime)', () => {
@@ -149,9 +149,9 @@ describe('Each tier has the shape the design specifies', () => {
         }
     });
 
-    it('every promoted job can fight; only the Recruit cannot', () => {
+    it('every promoted job grants a combat skill; only the Recruit holds none', () => {
         for (const jobId of [...BASIC, ...MASTER]) {
-            expect(jobCanFight(jobId), `${jobId} cannot fight`).toBe(true);
+            expect(jobHoldsCombatSkill(jobId), `${jobId} holds no combat skill`).toBe(true);
         }
     });
 });
@@ -266,10 +266,13 @@ describe('Hero generation reads the tree, rather than repeating it', () => {
         expect(Object.keys(hero.skills).length).toBeGreaterThanOrEqual(RECRUIT_SKILL_SLOTS);
     });
 
-    it('only a hero on a fighting job can fight', () => {
+    // Everyone fights: a hero on any job can fight, the Recruit as a level 1 fighter. What the
+    // job decides is whether the hero holds a combat skill, so whether their fights earn XP.
+    it('a hero on every job can fight; only a combat job holds a combat skill', () => {
         for (const jobId of getAllJobIds()) {
             const hero = generateHero({ jobId });
-            expect(canHeroFight(hero), `${jobId}`).toBe(jobCanFight(jobId));
+            expect(canHeroFight(hero), `${jobId}`).toBe(true);
+            expect(getHeroCombatSkillEntry(hero).id !== null, `${jobId}`).toBe(jobHoldsCombatSkill(jobId));
         }
     });
 });

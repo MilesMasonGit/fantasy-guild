@@ -59,10 +59,9 @@ const MONSTER = 16, BUSH = 15;
 /**
  * A hero who can actually fight.
  *
- * WARNING: `melee` must be PRESENT, not merely levelled. `canHeroFight` tests
- * possession of a combat skill and never its level, so a hero built without this
- * line stands on an enemy doing nothing, no fight is created, and every
- * assertion below passes for the wrong reason.
+ * WARNING: `melee` must be PRESENT, not merely levelled. A hero holding no combat
+ * skill fights as a level 1 fighter whatever their other skills' levels, so a hero
+ * built without this line fights far weaker than the suite assumes.
  */
 function fighter(id) {
     const hero = generateHero({ name: id });

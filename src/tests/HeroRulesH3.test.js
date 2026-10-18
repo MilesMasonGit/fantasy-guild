@@ -219,8 +219,8 @@ describe('H3 v2: the grid', () => {
         click(missing);
         rightClick(missing);
         expect(GameState.state.heroes.find(x => x.id === 'h2').flagRules).toEqual({});
-        // A hero who cannot fight has no Fight cell either.
-        expect(cell(view, 'h2', FlagRules.FIGHT).getAttribute('data-cell')).toBe('missing');
+        // Everyone fights: a hero with no combat skill still has a Fight rule.
+        expect(cell(view, 'h2', FlagRules.FIGHT).getAttribute('data-cell')).toBe('rule');
         expect(cell(view, 'h1', FlagRules.FIGHT).getAttribute('data-cell')).toBe('rule');
     });
 
