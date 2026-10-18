@@ -5,8 +5,8 @@ import {
     TERRAIN, TERRAIN_CELL, MAX_WATER_SHARE, terrainGrid, terrainAt, encodeTerrain, decodeTerrain
 } from '../systems/atlas/TerrainMap.js';
 import {
-    planWater, readWater, rasterise, sampleWater, fieldAt, waterFieldAt, noiseLayer, noiseAt, simplify,
-    WATER_KIND, WATER_VERSION, STYLE, SHAPE, SAMPLES, FAR, BANK_PAD
+    planWater, readWater, rasterise, sampleWater, fieldAt, waterFieldAt, noiseLayer, noiseAt, simplify, foldsBack,
+    WATER_KIND, WATER_VERSION, STYLE, SHAPE, SAMPLES, FAR, BANK_PAD, RIVER_CELL_SHARE
 } from '../systems/atlas/WaterShapes.js';
 import { mulberry32, seedFromText } from '../systems/atlas/seededRandom.js';
 import { regionGround } from '../systems/atlas/regionGround.js';
@@ -24,10 +24,13 @@ const CROWDING = Object.freeze({ hitboxPct: 80, overlapPct: 40 });
 const options = (seed) => ({ seed, mat: MAT, crowding: CROWDING, artRadius: () => 64 });
 const SEEDS = Array.from({ length: 8 }, (_, i) => seedFromText(`water-${i}`));
 
-/** A one-biome map, naming one variety of its water when `inland` is given. */
+/**
+ * A one-biome map, naming one variety of its water when `inland` is given. Its Tokens are its
+ * own, so beside another map its biome writes them and has ground of its own.
+ */
 const mapOf = (biome, inland = null, extra = {}) => ({
     id: `w_${biome}_${inland || 'own'}`, kind: 'base', biome, points: 30,
-    nodes: [{ typeId: 'oak', weight: 3 }, { typeId: 'berry', weight: 1 }],
+    nodes: [{ typeId: `${biome}_tree`, weight: 3 }, { typeId: `${biome}_bush`, weight: 1 }],
     ...(inland ? { inland } : {}), ...extra
 });
 const settle = (maps, seed) => layout(budget(maps, { cap: 128 }), options(seed));
@@ -169,19 +172,34 @@ describe('⭐ Shapes as fields', () => {
     it('keeps a stored river short: its path thinned to the points that shape it', () => {
         const zigzag = Array.from({ length: 200 }, (_, i) => [i, (i % 2) * 0.1]);
         expect(simplify(zigzag, 1)).toEqual([[0, 0], [199, 0.1]]);
-        for (const kind of [WATER_KIND.BRAIDED, WATER_KIND.SPLIT, WATER_KIND.LAKE_RIVER]) {
+        for (const kind of [WATER_KIND.MOUNTAIN_RIVER, WATER_KIND.SPLIT, WATER_KIND.LAKE_RIVER]) {
             expect(JSON.stringify(recordOf(kind)).length, kind).toBeLessThan(6000);
         }
     });
 });
 
 describe('⭐ Cells from shapes', () => {
-    it('⭐ makes a cell water when the water covers at least half its sample points, unless kept dry', () => {
+    it('⭐ makes a cell water when the water covers at least half its sample points, or a quarter where a river\'s middle runs, unless kept dry', () => {
         const grid = terrainGrid(MAT);
-        const water = readWater(recordOf(WATER_KIND.LAKE_RIVER, 3));
+        const water = readWater(recordOf(WATER_KIND.SPLIT, 3));
         const keepDry = (i) => i % 7 === 0;
         const { water: cells, sample } = sampleWater(water, grid, TERRAIN_CELL, keepDry);
+        // The cells the rivers' middle lines run through, walked a quarter of a cell at a time.
+        const middle = new Set();
+        for (const s of water.shapes.filter(sh => sh.k === SHAPE.RIVER)) {
+            for (let k = 0; k + 1 < s.points.length; k++) {
+                const [ax, ay] = s.points[k];
+                const [bx, by] = s.points[k + 1];
+                const steps = Math.max(1, Math.ceil(Math.sqrt((bx - ax) * (bx - ax) + (by - ay) * (by - ay)) / (TERRAIN_CELL / 4)));
+                for (let q = 0; q <= steps; q++) {
+                    const c = Math.floor((ax + (bx - ax) * q / steps) / TERRAIN_CELL);
+                    const r = Math.floor((ay + (by - ay) * q / steps) / TERRAIN_CELL);
+                    if (c >= 0 && r >= 0 && c < grid.cols && r < grid.rows) middle.add(r * grid.cols + c);
+                }
+            }
+        }
         let wetCells = 0;
+        let byMiddle = 0;
         for (let r = 0; r < grid.rows; r++) {
             for (let c = 0; c < grid.cols; c++) {
                 let wet = 0;
@@ -193,11 +211,15 @@ describe('⭐ Cells from shapes', () => {
                     }
                 }
                 const index = r * grid.cols + c;
-                expect(cells[index], `cell ${c},${r}`).toBe(wet >= 8 && !keepDry(index) ? 1 : 0);
+                const quarter = SAMPLES * SAMPLES * RIVER_CELL_SHARE;
+                const want = (wet >= 8 || (middle.has(index) && wet >= quarter)) && !keepDry(index);
+                expect(cells[index], `cell ${c},${r}`).toBe(want ? 1 : 0);
+                if (want && wet < 8) byMiddle++;
                 wetCells += cells[index];
             }
         }
         expect(wetCells).toBeGreaterThan(50);
+        expect(byMiddle).toBeGreaterThan(0);
         // Read between the samples: each sample itself, and in between on the line.
         const { x0, y0, step } = sample.lattice;
         expect(fieldAt(sample, x0 + 5 * step, y0 + 9 * step)).toBe(sample.f[9 * sample.lattice.nx + 5]);
@@ -270,16 +292,16 @@ describe('⭐ Water by biome', () => {
             expect(kindsOf('forest', seed)).toEqual(['lake2']);
             expect(kindsOf('cherry_grove', seed)).toEqual(['lake2']);
             const mountain = kindsOf('mountain', seed);
-            expect([['lake1'], [SHAPE.RIVER, SHAPE.RIVER, SHAPE.RIVER, SHAPE.RIVER]]).toContainEqual(mountain);
+            expect([['lake1'], [SHAPE.RIVER]]).toContainEqual(mountain);
             const springs = kindsOf('yellowstone', seed);
             expect(springs.length).toBeGreaterThan(8);
             expect(new Set(springs)).toEqual(new Set([SHAPE.POOL]));
             expect(kindsOf('volcano', seed)).toEqual([]);
             expect(kindsOf('coast', seed)).toEqual([SHAPE.SEA]);
         }
-        // A forest with a little mountain: the forest's pond, no tarn.
+        // A forest with a little mountain: the forest's pond (two lobes), then the mountain's tarn (one).
         const hybrid = settle([mapOf('forest'), { ...mapOf('mountain'), points: 10 }], SEEDS[0]).terrain.water;
-        expect(hybrid.shapes.map(s => s.k)).toEqual([SHAPE.LAKE]);
+        expect(hybrid.shapes.map(s => `${s.k}${s.lobes?.length ?? ''}`)).toEqual(['lake2', 'lake1']);
         // Every variety comes up in the meadow's draws, a lake with its river most.
         const seen = {};
         for (let s = 0; s < 60; s++) {
@@ -366,5 +388,158 @@ describe('the field reads FAR where nothing reaches', () => {
         expect(planWater({ sea: 0, kinds: [] }, mulberry32(1), MAT, CLEAR).record).toBeNull();
         expect(settle([mapOf('volcano')], SEEDS[0]).terrain.water).toBeUndefined();
         expect(STYLE.NONE).toBe(0);
+    });
+});
+
+describe('⭐ Rivers: wide, and bending gently', () => {
+    const RIVERS = [WATER_KIND.LAKE_RIVER, WATER_KIND.RIVER, WATER_KIND.SPLIT, WATER_KIND.SPRING, WATER_KIND.MOUNTAIN_RIVER];
+
+    it('⭐ never folds a river back on itself or kinks it, nor brings a lake\'s two rivers together outside it', () => {
+        let rivers = 0;
+        for (const kind of RIVERS) {
+            for (let seed = 1; seed <= 12; seed++) {
+                const water = readWater(recordOf(kind, seed));
+                const runs = water.shapes.filter(s => s.k === SHAPE.RIVER);
+                for (const s of runs) {
+                    rivers++;
+                    expect(foldsBack(s.points, 3 * 2 * Math.max(...s.w)), `${kind} ${seed}`).toBe(false);
+                }
+                if (kind === WATER_KIND.LAKE_RIVER && runs.length === 2) {
+                    const lake = water.shapes.find(s => s.k === SHAPE.LAKE);
+                    const inLake = (p) => waterFieldAt({ ...water, shapes: [lake] }, p[0], p[1]).f > -60;
+                    for (const p of runs[0].points) {
+                        if (inLake(p)) continue;
+                        for (const q of runs[1].points) {
+                            if (inLake(q)) continue;
+                            const d = Math.sqrt((p[0] - q[0]) ** 2 + (p[1] - q[1]) ** 2);
+                            expect(d, `${seed}: the lake's rivers meet outside it`).toBeGreaterThanOrEqual(3 * 2 * 24);
+                        }
+                    }
+                }
+            }
+        }
+        expect(rivers).toBeGreaterThan(70);
+        // A path that doubles back is caught, and so is a kink; a long gentle bend is not.
+        const hairpin = [[0, 0], [200, 0], [400, 0], [400, 60], [200, 60], [0, 60]];
+        expect(foldsBack(hairpin, 96)).toBe(true);
+        const kink = [[0, 0], [100, 0], [140, 0], [100, 10], [60, 20]];
+        expect(foldsBack(kink, 96)).toBe(true);
+        const arc = Array.from({ length: 40 }, (_, i) => [i * 40, 0.15 * (i * 40 - 800) * (i * 40 - 800) / 40]);
+        expect(foldsBack(arc, 96)).toBe(false);
+    });
+
+    it('⭐ makes every river at least a placing cell wide, the side channel exactly that', () => {
+        for (const kind of RIVERS) {
+            for (let seed = 1; seed <= 6; seed++) {
+                for (const s of readWater(recordOf(kind, seed)).shapes.filter(sh => sh.k === SHAPE.RIVER)) {
+                    expect(Math.min(...s.w) * 2, `${kind} ${seed}`).toBeGreaterThanOrEqual(TERRAIN_CELL);
+                }
+            }
+        }
+        const split = readWater(recordOf(WATER_KIND.SPLIT, 4)).shapes.filter(s => s.k === SHAPE.RIVER);
+        expect(split[0].w).toEqual([24, 33]);
+        expect(split[1].w).toEqual([TERRAIN_CELL / 2, TERRAIN_CELL / 2]);
+    });
+
+    it('⭐ leaves no dry cell on a river\'s middle line for a Token to stand in the river', () => {
+        let points = 0;
+        let dry = 0;
+        for (const kind of RIVERS) {
+            for (const seed of SEEDS.slice(0, 4)) {
+                const result = settle([mapOf('meadow', kind)], seed);
+                const water = readWater(result.terrain.water);
+                for (const s of water.shapes.filter(sh => sh.k === SHAPE.RIVER)) {
+                    for (let k = 0; k + 1 < s.points.length; k++) {
+                        const [ax, ay] = s.points[k];
+                        const [bx, by] = s.points[k + 1];
+                        for (let q = 0; q < 4; q++) {
+                            const x = ax + (bx - ax) * q / 4;
+                            const y = ay + (by - ay) * q / 4;
+                            if (x < 0 || y < 0 || x >= MAT.w || y >= MAT.h) continue;
+                            if ((x - result.hall.x) ** 2 + (y - result.hall.y) ** 2 < (CLEAR.r + 60) ** 2) continue;
+                            points++;
+                            if (terrainAt(result.terrain, x, y) !== TERRAIN.WATER) dry++;
+                        }
+                    }
+                }
+            }
+        }
+        expect(points).toBeGreaterThan(1000);
+        expect(dry / points).toBeLessThan(0.002);
+    });
+});
+
+describe('⭐ A minor biome\'s small water, once the Tokens stand', () => {
+    const forest = () => mapOf('forest');
+    const little = (biome) => ({ ...mapOf(biome), points: 14 });
+
+    it('⭐ moves nothing: the same Tokens where they stood, and the water a small one more', () => {
+        for (const seed of SEEDS.slice(0, 4)) {
+            const summary = budget([forest(), little('mountain')], { cap: 128 });
+            const withSmall = layout(summary, options(seed));
+            const without = layout({ ...summary, ground: { ...summary.ground, small: {} } }, options(seed));
+            expect(withSmall.nodes).toEqual(without.nodes);
+            expect(withSmall.unplaced).toEqual(without.unplaced);
+            const extra = withSmall.terrain.water.shapes.slice(without.terrain.water.shapes.length);
+            expect(withSmall.terrain.water.shapes.slice(0, without.terrain.water.shapes.length)).toEqual(without.terrain.water.shapes);
+            expect(extra.length).toBeLessThanOrEqual(1);
+        }
+    });
+
+    it('⭐ lies in a gap of its own biome\'s ground, off every Token and every other water', () => {
+        let placed = 0;
+        for (const [minor, kind, terrain] of [['mountain', SHAPE.LAKE, TERRAIN.ROCK], ['yellowstone', SHAPE.POOL, TERRAIN.GRASS], ['forest', SHAPE.LAKE, TERRAIN.GRASS]]) {
+            const main = minor === 'forest' ? mapOf('mountain') : forest();
+            for (const seed of SEEDS.slice(0, 5)) {
+                const result = settle([main, little(minor)], seed);
+                const water = readWater(result.terrain.water);
+                const mainShapes = settle([main], seed).terrain.water?.shapes.length ?? 0;
+                if (water.shapes.length <= 1) continue;
+                const small = water.shapes[water.shapes.length - 1];
+                expect(small.k, minor).toBe(kind);
+                placed++;
+                expect(mainShapes).toBeGreaterThanOrEqual(0);
+                const alone = { ...water, shapes: [small] };
+                const others = { ...water, shapes: water.shapes.slice(0, -1) };
+                const { water: own, sample } = sampleWater(alone, terrainGrid(MAT), TERRAIN_CELL);
+                const { water: theirs } = sampleWater(others, terrainGrid(MAT), TERRAIN_CELL);
+                const { cols, rows } = result.terrain;
+                for (let i = 0; i < own.length; i++) {
+                    if (!own[i]) continue;
+                    const c = i % cols;
+                    const r = (i - c) / cols;
+                    for (let dr = -1; dr <= 1; dr++) {
+                        for (let dc = -1; dc <= 1; dc++) {
+                            const j = (r + dr) * cols + c + dc;
+                            if (r + dr >= 0 && r + dr < rows && c + dc >= 0 && c + dc < cols) expect(theirs[j], `${minor} ${seed}: beside other water`).toBe(0);
+                        }
+                    }
+                }
+                // The minor biome's ground round it: every dry cell it draws on is that biome's terrain.
+                for (let r = 0; r < rows; r++) {
+                    for (let c = 0; c < cols; c++) {
+                        let drawn = false;
+                        for (let j = 0; j < SAMPLES && !drawn; j++) {
+                            for (let k = 0; k < SAMPLES; k++) if (sample.f[(r * SAMPLES + j) * sample.lattice.nx + c * SAMPLES + k] > 0) drawn = true;
+                        }
+                        if (!drawn) continue;
+                        const t = result.terrain.legend[parseInt(result.terrain.cells[r * cols + c], 36)];
+                        expect([TERRAIN.WATER, terrain], `${minor} ${seed} at ${c},${r}`).toContain(t);
+                    }
+                }
+                for (const n of [...result.nodes, result.hall]) expect(fieldAt(sample, n.x, n.y), `${minor} ${seed}`).toBeLessThanOrEqual(-DRY_GAP);
+            }
+        }
+        expect(placed).toBeGreaterThan(8);
+    });
+
+    it('brings none for a volcano or a Coast, and the main biome\'s none twice', () => {
+        for (const seed of SEEDS.slice(0, 3)) {
+            const volcano = settle([forest(), little('volcano')], seed).terrain.water;
+            expect(volcano.shapes.map(s => s.k)).toEqual([SHAPE.LAKE]);
+            const twoForests = settle([forest(), { ...forest(), id: 'w_forest_2' }], seed).terrain.water;
+            expect(twoForests.shapes).toHaveLength(1);
+        }
+        expect(budget([forest(), little('coast')], { cap: 128 }).ground.small).toEqual({});
     });
 });

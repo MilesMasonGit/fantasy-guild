@@ -101,7 +101,7 @@ describe('⭐ each view is one click', () => {
     it('⭐ every water button makes a Region with that water, stored as its shapes, and a reroll keeps the kind', () => {
         const want = {
             water_lake_river: [SHAPE.LAKE, SHAPE.RIVER], water_lake: [SHAPE.LAKE], water_river: [SHAPE.RIVER],
-            water_split: [SHAPE.RIVER], water_spring: [SHAPE.LAKE, SHAPE.RIVER], water_braided: [SHAPE.RIVER],
+            water_split: [SHAPE.RIVER], water_spring: [SHAPE.LAKE, SHAPE.RIVER], water_mountain_river: [SHAPE.RIVER],
             water_pond: [SHAPE.LAKE], water_tarn: [SHAPE.LAKE], water_sulphur: [SHAPE.POOL], water_sea: [SHAPE.SEA]
         };
         expect(TERRAIN_DEV_WATER.map(v => v.id).sort()).toEqual(Object.keys(want).sort());
@@ -123,7 +123,7 @@ describe('⭐ each view is one click', () => {
         const again = Atlas.activeRegion().terrain.water;
         expect(again).not.toEqual(first);
         expect(again.shapes.filter(s => s.k === SHAPE.RIVER).length).toBeGreaterThanOrEqual(2);
-        expect(again.shapes.some(s => s.w[0] === 8 && s.w[1] === 8)).toBe(true);
+        expect(again.shapes.some(s => s.w[0] === 16 && s.w[1] === 16)).toBe(true);
     });
 
     it('the same button gives the same Region every time', () => {

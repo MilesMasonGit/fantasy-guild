@@ -751,7 +751,7 @@ describe('⭐ Shaped water: lakes, rivers and sulphur springs by their own field
     };
 
     it('⭐ draws a lake by its depth: foam at the waterline, shallows, water, deep water, waves only out from the shallows', () => {
-        for (const [map, seed] of [['water_lake_river', 81], ['water_split', 82], ['water_braided', 83]]) {
+        for (const [map, seed] of [['water_lake_river', 81], ['water_split', 82], ['water_mountain_river', 83]]) {
             const { plan, f, d } = shaped(map, seed);
             const slot = plan.grass.looks.indexOf('lake');
             expect(slot, map).toBeGreaterThanOrEqual(0);
