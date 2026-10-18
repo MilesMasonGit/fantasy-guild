@@ -28,10 +28,10 @@ until the owner says otherwise in the refinement pass. Built on
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| Recruit's Goblin fight doesn't start in the owner's play (T-167 follow-up) | engineer | `fix/t167-recruit-attack` (`t167`) | diagnosing | Sat | |
+| Recruit's Goblin fight doesn't start in the owner's play (T-167 follow-up) | engineer | `fix/t167-recruit-attack` (`t167`) | diagnosed: no bug; the owner dropped near the Goblin and a hostile measured to the hero's idle spot (up-right of the flag), so a near drop fought on one side only (tests d6a50adc). Owner 2026-10-18 chose: hostiles measure from the flag, the same on every side. Building | Sat | |
 | Brief 110 M1: Starter Camp Tokens become fixtures (T-165); one call in `atlas/StarterCamp.js`, logic in board code (terrain director's folder) | engineer | `crunch/map-tools` (`mt`) | ready (8d9c7e25; two lines in `StarterCamp.js`, logic in `FixedTokens`/`BoardState`/`Demolition`/`Placement`; also fixed the dev layout tool, which never lifted Tokens already on the mat; director's gate: 5188 tests, cycles, build). Two small owner questions left at the recommendations (a camp Foundation built on keeps the mark; the refusal wording) | Sat | Sun |
-| Brief 110 M2: Demolish mode beside Disallow mode (T-166) | builder | `crunch/map-tools` (`mt`) | building | Sun | |
-| Brief 110 M3: top bar restyle (T-170) | builder | `crunch/map-tools` | queued, after M2 | | |
+| Brief 110 M2: Demolish mode beside Disallow mode (T-166) | builder | `crunch/map-tools` (`mt`) | ready (109f1709; director's gate: 5200 tests, cycles, build). Three look questions for the eye-check (Allow all only in the banner; the reason only on click; outline grey, edge colour) | Sun | Sun |
+| Brief 110 M3: top bar restyle (T-170) | builder | `crunch/map-tools` (`mt`) | building | Sun | |
 
 ## Features director, batch 2: the hero bar (owner 2026-10-17: proceed while the kit's eye-check waits a few hours)
 
