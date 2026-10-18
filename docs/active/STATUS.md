@@ -14,9 +14,9 @@ runs one, so the PC holds two.*
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
 | Brief 100 K1: the style sheet page, every standard UI piece live (T-159) | builder | `crunch/style-kit` (`k1`) | ready (ca5bf7ff; director's gate: 5106 tests, cycles, build; page seen in the builder's screenshots). Waits for the kit's one eye-check after K3 | Sat | |
-| Brief 100 K2: one shared arrow-bar scroll list (T-160) | builder | `crunch/style-kit` | queued, after K1 | | |
+| Brief 100 K2: one shared arrow-bar scroll list (T-160) | builder | `crunch/style-kit` (`k1`) | building | Sat | |
 | Brief 100 K3: three text sizes and the shared tooltip (T-161, T-038, T-030) | builder-lite | `crunch/style-kit` | queued, after K2 | | |
-| Recruits get a weak basic attack so the tutorial's fight can be won (T-167); owner authors a safe enemy in the Starter Camp afterwards | builder | `fix/t167-recruit-attack` | building (owner 2026-10-17: fights as a level 1 fighter, no combat XP until promotion) | Sat | |
+| Recruits get a weak basic attack so the tutorial's fight can be won (T-167); owner authors a safe enemy in the Starter Camp afterwards | builder | `fix/t167-recruit-attack` | ready (30c0923b; director's gate: 5107 tests, cycles, build). Bench-queued (work check; builder expects same: every bench hero holds melee). Eye-check with the kit (plays differently) | Sat | |
 
 ## Art pass, batch 1 (proposed and ruled 2026-10-15 evening)
 
@@ -82,12 +82,14 @@ first; asked with the next batch proposal and recorded where they belong.*
 
 - **Alert outline colour** (found by K1): UI_STYLE says alerts are a gold outline; the game draws Token alerts red (`outline="alert"`) and has for a while. Keep red for Tokens, switch to gold, or red for problems and gold for attention? Asked in the style kit's eye-check.
 
+- **Recruits and Fight by default** (found by T-167): Fight is on by default for everyone, so a Recruit's flag now goes after peaceful enemies in its reach (a Cow, which a level 1 fighter loses to) and hostiles attack Recruits. Keep Fight on for Recruits (everyone fights, the player turns it off), or default it off for Recruits until promotion (the player turns it on for the tutorial fight)? Asked with T-167's eye-check.
+
 Earlier: none open. (Ruled 2026-10-15: equip-by-drop opens the sheet a frame later,
 T-186; the badges' soft shadows are settled inside T-013.)
 
 ## Bench queue (one at a time, weekdays 13:00–17:00 and 01:00–07:00, or when the owner says the PC is quiet)
 
-Empty (the rename's work check ran at 11:35 with the owner's go).
+1. `fix/t167-recruit-attack` (30c0923b): engine work check (`npm run bench -- --compare`), features director.
 
 ## Summaries
 
