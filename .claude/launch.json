@@ -33,11 +33,11 @@
       "port": 5190
     },
     {
-      "name": "g5-water",
+      "name": "g7-placement",
       "runtimeExecutable": "npm",
       "runtimeArgs": [
         "--prefix",
-        ".claude/worktrees/wg",
+        ".claude/worktrees/pl",
         "run",
         "dev",
         "--",
@@ -52,7 +52,7 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": [
         "--prefix",
-        ".claude/worktrees/mt",
+        ".claude/worktrees/ec",
         "run",
         "dev",
         "--",
@@ -61,6 +61,21 @@
         "--strictPort"
       ],
       "port": 5198
+    },
+    {
+      "name": "g6-blends",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        ".claude/worktrees/bl",
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "5201",
+        "--strictPort"
+      ],
+      "port": 5201
     }
   ]
 }
