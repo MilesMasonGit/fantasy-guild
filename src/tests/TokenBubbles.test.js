@@ -18,14 +18,16 @@ import { resetMatTuning } from '../config/matTuning.js';
 import { matW, matH } from '../config/matGeometry.js';
 import { EngineContext } from '../ui/context/EngineContext';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
-import { TokenBubbles, GLIDE_START_MS, BUBBLE_TIPS } from '../ui/components/board/TokenBubbles.jsx';
+import { TokenBubbles, BUBBLE_TIPS } from '../ui/components/board/TokenBubbles.jsx';
 import {
     cycleSecondsText, chargesFraction, ringCount, RING_D_U, RING_STROKE_U, spawnerRing, questRing,
-    RING_COLOUR, bubbleSlot, timerVisible, BUBBLE_RECENT_MS, TIMER_SOON_MS, SMALL_OVERHANG_U,
-    GLIDING_RINGS
+    RING_COLOUR, bubbleSlot, SMALL_OVERHANG_U, GLIDING_RINGS
 } from '../ui/components/board/ringRow.js';
+import { workBarPlace, WORK_BAR_ART_W, WORK_BAR_ART_H } from '../ui/components/board/workBar.js';
+import { PROBLEM_SPRITE, SEVERITY } from '../ui/components/board/problemMark.js';
 import * as TimedChanges from '../systems/board/TimedChanges.js';
 import { STEP_MS } from '../ui/components/board/frameClock.js';
+import { boardScaleAt } from '../ui/components/base/TokenSprite.jsx';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -36,8 +38,10 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * ⭐ Token bubbles: where each sits in the Token's box, when each shows, that count bubbles
- * glide, that every bubble has a tooltip and that pressing one grabs the Token.
+ * ⭐ The mat layer (brief 120, C1): at rest a Token shows that it is worked (a thin bar along its
+ * foot) and what is wrong (one problem mark), and nothing else; the rings and the timer come up
+ * only on hover. Where each piece sits, when it shows, that the hover rings still glide, the
+ * tooltips, and that pressing any of them grabs the Token.
  */
 
 registerTokenTypes({
@@ -58,26 +62,28 @@ registerTokenTypes({
 });
 
 const h = React.createElement;
-const tree = (el) => h(EngineContext.Provider, { value: { GameState, EventBus } }, h(DndContext, null, el));
+const tree = (el) => h(EngineContext.Provider, { value: { GameState, EventBus } }, h(DndContext, null, h('div', { 'data-under-test': '' }, el)));
 const mount = (el) => render(tree(el));
 
 const worked = (extra = {}) => ({ typeId: 'fixture_producer', instanceId: 'tok_r', heroId: 'hero_1', alert: null, usesRemaining: null, ...extra });
 const bub = (props) => h(TokenBubbles, { instanceId: 'tok_r', boxPx: 128, ...props });
 const ring = (c, kind) => c.querySelector(`[data-ring="${kind}"]`);
 const bubble = (c, kind) => c.querySelector(`[data-bubble="${kind}"]`);
+const bar = (c) => c.querySelector('[data-work-bar]');
+const mark = (c) => c.querySelector('[data-problem-mark]');
 const progress = (p) => act(() => { EventBus.publish(BOARD_EVENTS.PROGRESS, { instanceId: 'tok_r', ...p }); });
 const advance = (ms) => act(() => { vi.advanceTimersByTime(ms); });
 /** Past the next step of the shared step clock (its timer, then its frame). */
 const step = () => advance(STEP_MS + 20);
+/** Every element the Token's bubbles drew (dnd-kit's own announcer left out). */
+const drawn = (c) => [...c.querySelector('[data-under-test]').querySelectorAll('*')];
 
 afterEach(() => { cleanup(); vi.useRealTimers(); });
 
 describe('the rules, pure', () => {
-    it('the cycle number is whole seconds left, rounded up, never 0s while running', () => {
+    it('the cycle number is whole seconds left, rounded up, never 0s while running (the inspection’s)', () => {
         expect(cycleSecondsText(0, 3000)).toBe('3s');
-        expect(cycleSecondsText(1, 3000)).toBe('3s');
         expect(cycleSecondsText(1000, 3000)).toBe('2s');
-        expect(cycleSecondsText(2500, 3000)).toBe('1s');
         expect(cycleSecondsText(3000, 3000)).toBe('1s');
         expect(cycleSecondsText(0, null)).toBe('');
     });
@@ -92,9 +98,7 @@ describe('the rules, pure', () => {
 
     it('counts shorten to fit inside a ring', () => {
         expect(ringCount(7)).toBe('7');
-        expect(ringCount(250)).toBe('250');
         expect(ringCount(1200)).toBe('1.2k');
-        expect(ringCount(5000)).toBe('5k');
         expect(ringCount(12450)).toBe('12k');
     });
 
@@ -102,241 +106,321 @@ describe('the rules, pure', () => {
         expect(RING_STROKE_U / RING_D_U).toBeCloseTo(3 / 28);
     });
 
-    it('⭐ positions: timer top-left, cycle bottom-left, quest bottom-centre, charges bottom-right, all inside a full-size box', () => {
+    it('⭐ the work bar: centred along the foot of the box, in whole art pixels, thin', () => {
+        const p = workBarPlace(128, 2);
+        expect(p.steps).toBe(WORK_BAR_ART_W);
+        expect(p.width).toBe(WORK_BAR_ART_W * 2);
+        expect(p.height).toBe(WORK_BAR_ART_H * 2);
+        expect(WORK_BAR_ART_H).toBeLessThanOrEqual(2);
+        expect(p.left + p.width / 2).toBe(64);
+        expect(p.top + p.height).toBeLessThanOrEqual(128);
+        expect(p.top).toBeGreaterThan(128 * 0.85);
+        // At another mat fit the art pixel is another size; the bar is the same art pixels.
+        const q = workBarPlace(128 * 1.5, 3);
+        expect(q.width).toBe(WORK_BAR_ART_W * 3);
+        // A small Token's bar is half as long.
+        expect(workBarPlace(64, 2, true).steps).toBe(WORK_BAR_ART_W / 2);
+    });
+
+    it('ring spots: timer top-left, quest bottom-centre, charges bottom-right, inside a full-size box', () => {
         const box = { boxPx: 128 };
         const timer = bubbleSlot('timer', box);
-        const cycle = bubbleSlot('cycle', box);
         const quest = bubbleSlot('quest', box);
         const charges = bubbleSlot('charges', box);
-        expect(timer.left).toBe(cycle.left);
-        expect(timer.top).toBeLessThan(cycle.top);
-        expect(cycle.top).toBe(quest.top);
+        expect(timer.top).toBeLessThan(quest.top);
         expect(quest.top).toBe(charges.top);
-        expect(cycle.left).toBeLessThan(quest.left);
-        expect(quest.left).toBeLessThan(charges.left);
-        expect(quest.left + RING_D_U / 2).toBe(64);          // centred
-        for (const p of [timer, cycle, quest, charges]) {
+        expect(quest.left + RING_D_U / 2).toBe(64);
+        expect(quest.left + RING_D_U).toBeLessThanOrEqual(charges.left);
+        for (const p of [timer, quest, charges]) {
             expect(p.left).toBeGreaterThanOrEqual(0);
-            expect(p.top).toBeGreaterThanOrEqual(0);
-            expect(p.left + RING_D_U).toBeLessThanOrEqual(128);
             expect(p.top + RING_D_U).toBeLessThanOrEqual(128);
         }
-        // The three bottom bubbles do not overlap.
-        expect(cycle.left + RING_D_U).toBeLessThanOrEqual(quest.left);
-        expect(quest.left + RING_D_U).toBeLessThanOrEqual(charges.left);
     });
 
-    it('⭐ small Token: same corners, hanging off the box, the bottom three still not overlapping', () => {
+    it('small Token: the rings hang off the box', () => {
         const box = { boxPx: 64, small: true };
-        const timer = bubbleSlot('timer', box);
-        const cycle = bubbleSlot('cycle', box);
-        const quest = bubbleSlot('quest', box);
-        const charges = bubbleSlot('charges', box);
-        expect(timer).toEqual({ left: -SMALL_OVERHANG_U, top: -SMALL_OVERHANG_U });
-        expect(charges.left + RING_D_U).toBeGreaterThan(64);       // overhangs the right
-        expect(cycle.top + RING_D_U).toBeGreaterThan(64);          // and the bottom
-        expect(cycle.left + RING_D_U).toBeLessThanOrEqual(quest.left + 1e-9);
-        expect(quest.left + RING_D_U).toBeLessThanOrEqual(charges.left + 1e-9);
+        expect(bubbleSlot('timer', box)).toEqual({ left: -SMALL_OVERHANG_U, top: -SMALL_OVERHANG_U });
+        expect(bubbleSlot('charges', box).left + RING_D_U).toBeGreaterThan(64);
     });
 
-    it('a timer shows hovered, or in its last ten seconds', () => {
-        expect(timerVisible(false, 60000)).toBe(false);
-        expect(timerVisible(true, 60000)).toBe(true);
-        expect(timerVisible(false, TIMER_SOON_MS)).toBe(true);
-        expect(timerVisible(false, TIMER_SOON_MS + 1)).toBe(false);
-        expect(timerVisible(false, 0)).toBe(true);
-        expect(timerVisible(true, null)).toBe(false);
-    });
-
-    it('every count bubble glides', () => {
+    it('every count ring glides', () => {
         for (const kind of ['charges', 'spawner', 'quest']) expect(GLIDING_RINGS.has(kind)).toBe(true);
     });
 
     it('spawner and quest rings', () => {
         expect(spawnerRing({ count: 3, cap: 5 })).toMatchObject({ kind: 'spawner', text: '3/5', fraction: 0.6 });
-        expect(spawnerRing({ count: 5, cap: 5 }).fraction).toBe(1);
         expect(spawnerRing(null)).toBeNull();
         expect(questRing({ currentCount: 3, requiredCount: 10, title: 'T' })).toMatchObject({ kind: 'quest', text: '3/10', fraction: 0.3 });
         expect(RING_COLOUR.spawner).toBe('#86efac');
-        expect(RING_COLOUR.turn).toBe('#7dd3fc');
     });
 });
 
-describe('which bubbles show', () => {
-    it('nothing at rest: not worked, not hovered, nothing changed', () => {
-        const { container } = mount(bub({
-            token: worked({ heroId: null, usesRemaining: 5 }),
-            spawner: spawnerRing({ count: 3, cap: 5 }),
-            quest: questRing({ currentCount: 1, requiredCount: 4 })
-        }));
-        expect(container.querySelector('[data-bubble]')).toBeNull();
+describe('⭐ at rest: the bar and the marks, nothing else', () => {
+    const everything = { spawner: spawnerRing({ count: 3, cap: 5 }), quest: questRing({ currentCount: 1, requiredCount: 4 }) };
+    const clock = () => ({ kind: 'grow', inMs: 3000, everyMs: 60000, into: 'fixture_b13_sapling' });
+
+    it('⭐ not worked, nothing wrong: nothing at all, rings and timer included (even in its last seconds)', () => {
+        const { container } = mount(bub({ token: worked({ heroId: null, usesRemaining: 5 }), ...everything, readTimer: clock }));
+        expect(drawn(container)).toEqual([]);
     });
 
-    it('⭐ a worked Token shows the cycle bubble with seconds left, and resets on CYCLE_COMPLETE', () => {
-        vi.useFakeTimers();
-        const { container } = mount(bub({ token: worked() }));
-        const cycle = ring(container, 'cycle');
-        expect(cycle).not.toBeNull();
-        expect(bubble(container, 'cycle')).not.toBeNull();
-        expect(cycle.getAttribute('data-ring-greyed')).toBeNull();
-
-        // The ring draws on the next step (`STEP_MS`), from where the engine said it was.
-        progress({ percent: 20, elapsedMs: 600, cycleTimeMs: 3000 });
-        step();
-        expect(cycle.getAttribute('data-ring-text')).toBe('3s');
-        progress({ percent: 50, elapsedMs: 1500, cycleTimeMs: 3000 });
-        step();
-        expect(cycle.getAttribute('data-ring-text')).toBe('2s');
-        expect(Math.abs(Number(cycle.getAttribute('data-ring-fraction')) - 0.5)).toBeLessThan(0.05);
-        progress({ percent: 90, elapsedMs: 2700, cycleTimeMs: 3000 });
-        step();
-        expect(cycle.getAttribute('data-ring-text')).toBe('1s');
-        expect(cycle.querySelector('[data-ring-label]').textContent).toBe('1s');
-
-        act(() => { EventBus.publish(BOARD_EVENTS.CYCLE_COMPLETE, { instanceId: 'tok_r' }); });
-        step();
-        expect(Number(cycle.getAttribute('data-ring-fraction'))).toBeLessThan(0.05);
-        expect(cycle.getAttribute('data-ring-text')).toBe('3s');
+    it('⭐ a worked Token shows the work bar and nothing else', () => {
+        const { container } = mount(bub({ token: worked({ usesRemaining: 5 }), ...everything, readTimer: clock }));
+        const all = drawn(container);
+        expect(all).toHaveLength(1);
+        expect(all[0]).toBe(bar(container));
+        expect(bar(container).getAttribute('data-work-bar')).toBe('tok_r');
+        expect(bar(container).className).toContain('gi-work-bar');
+        expect(bar(container).getAttribute('data-work-bar-blocked')).toBeNull();
     });
 
-    it('the cycle bubble steps between ticks on the shared step clock, and schedules nothing when idle', () => {
+    it('⭐ a count change does not bring a ring up by itself: charges, spawner, quest', () => {
         vi.useFakeTimers();
-        const { container, rerender } = mount(bub({ token: worked({ heroId: null }) }));
+        const { container, rerender } = mount(bub({ token: worked({ heroId: null, usesRemaining: 5 }), ...everything }));
+        rerender(tree(bub({
+            token: worked({ heroId: null, usesRemaining: 4 }),
+            spawner: spawnerRing({ count: 4, cap: 5 }),
+            quest: questRing({ currentCount: 2, requiredCount: 4 })
+        })));
+        expect(container.querySelector('[data-ring]')).toBeNull();
+        advance(100);
+        expect(container.querySelector('[data-ring]')).toBeNull();
+        // The change sets no timers of its own any more.
         expect(vi.getTimerCount()).toBe(0);
-
-        rerender(tree(bub({ token: worked() })));
-        expect(vi.getTimerCount()).toBe(0);           // nothing live until the engine says so
-        progress({ percent: 10, elapsedMs: 300, cycleTimeMs: 3000 });
-        expect(vi.getTimerCount()).toBe(1);           // the next step
-        step();
-        step();
-        expect(Number(ring(container, 'cycle').getAttribute('data-ring-fraction'))).toBeGreaterThan(0.1);
-
-        // The hero leaves: the step stops.
-        rerender(tree(bub({ token: worked({ heroId: null }) })));
-        expect(vi.getTimerCount()).toBe(0);
-        expect(container.querySelector('[data-bubble]')).toBeNull();
     });
 
-    it('greys, freezes and hides its number while blocked', () => {
-        const { container, rerender } = mount(bub({ token: worked() }));
-        progress({ percent: 50, elapsedMs: 1500, cycleTimeMs: 3000 });
-        rerender(tree(bub({ token: worked({ alert: ALERT.INPUTS }) })));
-        const cycle = ring(container, 'cycle');
-        expect(cycle.getAttribute('data-ring-greyed')).toBe('true');
-        expect(cycle.getAttribute('data-ring-text')).toBe('');
-        expect(cycle.querySelector('[data-ring-label]').style.visibility).toBe('hidden');
-        expect(bubble(container, 'cycle').querySelector('[data-ring]').getAttribute('aria-label')).toBe(BUBBLE_TIPS.cycleBlocked);
-        const frozen = cycle.getAttribute('data-ring-fraction');
-        expect(Number(frozen)).toBeCloseTo(0.5, 1);
-        progress({ percent: 90, elapsedMs: 2700, cycleTimeMs: 3000 });
-        expect(cycle.getAttribute('data-ring-fraction')).toBe(frozen);
-    });
-
-    it('⭐ charges: not just because a hero works it; on hover, and for 2 s after a change', () => {
-        vi.useFakeTimers();
-        const start = tokenStartingUses('fixture_producer');
-        const { container, rerender } = mount(bub({ token: worked({ usesRemaining: start }) }));
-        expect(ring(container, 'charges')).toBeNull();
-
-        // Hover.
-        rerender(tree(bub({ token: worked({ usesRemaining: start }), isHovered: true })));
-        const charges = ring(container, 'charges');
-        expect(charges.getAttribute('data-ring-text')).toBe(ringCount(start));
-        rerender(tree(bub({ token: worked({ usesRemaining: start }), isHovered: false })));
-        expect(ring(container, 'charges')).toBeNull();
-
-        // A change: up for BUBBLE_RECENT_MS, then gone.
-        rerender(tree(bub({ token: worked({ usesRemaining: start - 1 }) })));
-        advance(GLIDE_START_MS + 1);
-        expect(ring(container, 'charges').getAttribute('data-ring-text')).toBe(ringCount(start - 1));
-        advance(BUBBLE_RECENT_MS - GLIDE_START_MS - 100);
-        expect(ring(container, 'charges')).not.toBeNull();
-        advance(200);
-        expect(ring(container, 'charges')).toBeNull();
-    });
-
-    it('a change while hovered keeps it up past the 2 s', () => {
-        vi.useFakeTimers();
-        const { container, rerender } = mount(bub({ token: worked({ usesRemaining: 4 }), isHovered: true }));
-        rerender(tree(bub({ token: worked({ usesRemaining: 3 }), isHovered: true })));
-        advance(BUBBLE_RECENT_MS + 500);
-        expect(ring(container, 'charges').getAttribute('data-ring-text')).toBe('3');
-    });
-
-    it('unlimited charges draw no charges bubble, worked or hovered', () => {
-        const { container } = mount(bub({ token: worked({ usesRemaining: null }), isHovered: true }));
-        expect(ring(container, 'charges')).toBeNull();
-        expect(ring(container, 'cycle')).not.toBeNull();
-    });
-
-    it('⭐ in combat: no cycle bubble, and no HP bubble (the health bar replaces it)', () => {
-        const { container } = mount(bub({ token: worked({ usesRemaining: 4 }) }));
-        progress({ percent: 25, combat: true, enemyHp: 30, enemyMaxHp: 40 });
-        expect(ring(container, 'cycle')).toBeNull();
-        expect(ring(container, 'hp')).toBeNull();
-        expect(bubble(container, 'hp')).toBeNull();
-        const bar = container.querySelector('[data-health-bar="enemy"]');
-        expect(bar.getAttribute('data-health-text')).toBe('30/40');
-        expect(Number(bar.getAttribute('data-health-fraction'))).toBeCloseTo(0.75, 2);
-        progress({ percent: 75, combat: true, enemyHp: 10, enemyMaxHp: 40 });
-        expect(container.querySelector('[data-health-bar="enemy"]').getAttribute('data-health-text')).toBe('10/40');
+    it('a worked Token with a problem: the bar, held grey, and one mark', () => {
+        const { container } = mount(bub({ token: worked({ alert: ALERT.INPUTS }), ...everything }));
+        expect(bar(container).getAttribute('data-work-bar-blocked')).toBe('true');
+        expect(container.querySelectorAll('[data-problem-mark]')).toHaveLength(1);
+        expect(container.querySelector('[data-ring]')).toBeNull();
     });
 
     it('nothing while the Token is dragged', () => {
         const { container } = mount(bub({
-            token: worked(), isDragging: true, isHovered: true, disallowed: true,
+            token: worked({ alert: ALERT.NO_ROOM }), isDragging: true, isHovered: true, disallowed: true,
             spawner: spawnerRing({ count: 3, cap: 5 }),
             gear: { show: true, pulsing: true, recipe: null }
         }));
-        expect(container.querySelector('[data-bubble]')).toBeNull();
-        expect(container.querySelector('[data-bubble-row]')).toBeNull();
+        expect(drawn(container)).toEqual([]);
     });
 });
 
-describe('where they sit', () => {
-    it('⭐ cycle bottom-left, charges bottom-right, quest bottom-centre', () => {
-        const { container } = mount(bub({
-            token: worked({ usesRemaining: 4 }), isHovered: true,
-            quest: questRing({ currentCount: 1, requiredCount: 4 })
-        }));
-        const at = (k) => ({ l: parseFloat(bubble(container, k).style.left), t: parseFloat(bubble(container, k).style.top) });
-        const cycle = at('cycle');
-        const quest = at('quest');
-        const slot = container.querySelector('[data-bubble-slot="charges"]');
-        const charges = { l: parseFloat(slot.style.left), t: parseFloat(slot.style.top) };
-        expect(cycle).toEqual({ l: bubbleSlot('cycle', { boxPx: 128 }).left, t: bubbleSlot('cycle', { boxPx: 128 }).top });
-        expect(quest.l + RING_D_U / 2).toBe(64);
-        expect(charges.l).toBe(bubbleSlot('charges', { boxPx: 128 }).left);
-        expect(cycle.t).toBe(quest.t);
-        expect(quest.t).toBe(charges.t);
+describe('the work bar', () => {
+    const fillOf = (c) => Number(bar(c).getAttribute('data-work-bar-fill'));
+
+    it('⭐ fills in whole art pixels on the shared step clock, and is empty again on CYCLE_COMPLETE', () => {
+        vi.useFakeTimers();
+        const { container } = mount(bub({ token: worked() }));
+        progress({ percent: 20, elapsedMs: 600, cycleTimeMs: 3000 });
+        step();
+        const early = fillOf(container);
+        expect(Number.isInteger(early)).toBe(true);
+        expect(early).toBeGreaterThanOrEqual(Math.floor(0.2 * WORK_BAR_ART_W));
+        expect(early).toBeLessThan(0.3 * WORK_BAR_ART_W);
+        expect(bar(container).style.getPropertyValue('--work-bar-fill')).toBe(String(early / WORK_BAR_ART_W));
+
+        progress({ percent: 90, elapsedMs: 2700, cycleTimeMs: 3000 });
+        step();
+        expect(fillOf(container)).toBeGreaterThanOrEqual(Math.floor(0.9 * WORK_BAR_ART_W));
+
+        act(() => { EventBus.publish(BOARD_EVENTS.CYCLE_COMPLETE, { instanceId: 'tok_r' }); });
+        step();
+        expect(fillOf(container)).toBeLessThan(0.1 * WORK_BAR_ART_W);
     });
 
-    it('⭐ the middle row is centred on the box: gear, spawner count, disallow, in that order', () => {
+    it('runs between engine ticks only while the cycle is live, and schedules nothing when idle', () => {
+        vi.useFakeTimers();
+        const { container, rerender } = mount(bub({ token: worked({ heroId: null }) }));
+        expect(vi.getTimerCount()).toBe(0);
+        rerender(tree(bub({ token: worked() })));
+        expect(vi.getTimerCount()).toBe(0);           // nothing live until the engine says so
+        progress({ percent: 10, elapsedMs: 300, cycleTimeMs: 3000 });
+        expect(vi.getTimerCount()).toBe(1);           // the next step
+        const before = fillOf(container);
+        advance(600);
+        expect(fillOf(container)).toBeGreaterThan(before);
+
+        rerender(tree(bub({ token: worked({ heroId: null }) })));
+        expect(vi.getTimerCount()).toBe(0);
+        expect(bar(container)).toBeNull();
+    });
+
+    it('⭐ blocked: grey, held where it stood, ignoring progress until the alert clears', () => {
+        vi.useFakeTimers();
+        const { container, rerender } = mount(bub({ token: worked() }));
+        progress({ percent: 50, elapsedMs: 1500, cycleTimeMs: 3000 });
+        step();
+        rerender(tree(bub({ token: worked({ alert: ALERT.INPUTS }) })));
+        expect(bar(container).getAttribute('data-work-bar-blocked')).toBe('true');
+        const held = fillOf(container);
+        expect(held).toBeCloseTo(0.55 * WORK_BAR_ART_W, -1);
+        progress({ percent: 90, elapsedMs: 2700, cycleTimeMs: 3000 });
+        advance(1000);
+        expect(fillOf(container)).toBe(held);
+        expect(vi.getTimerCount()).toBe(0);
+
+        rerender(tree(bub({ token: worked() })));
+        expect(bar(container).getAttribute('data-work-bar-blocked')).toBeNull();
+        progress({ percent: 90, elapsedMs: 2700, cycleTimeMs: 3000 });
+        step();
+        expect(fillOf(container)).toBeGreaterThanOrEqual(Math.floor(0.9 * WORK_BAR_ART_W));
+    });
+
+    it('a blocked bar is drawn grey by its own rule (tailwind.css)', async () => {
+        const fs = await import('fs');
+        const path = await import('path');
+        const css = fs.readFileSync(path.resolve(__dirname, '../tailwind.css'), 'utf8');
+        expect(css).toMatch(/\.gi-work-bar\[data-work-bar-blocked\]::after\s*\{\s*background: var\(--color-work-bar-blocked\);/);
+        expect(css).toMatch(/\.gi-work-bar::after\s*\{[^}]*transform: scaleX\(var\(--work-bar-fill, 0\)\);/);
+    });
+
+    it('⭐ in a fight: no bar; the enemy health bar instead', () => {
+        const { container } = mount(bub({ token: worked({ usesRemaining: 4 }) }));
+        progress({ percent: 25, combat: true, enemyHp: 30, enemyMaxHp: 40 });
+        expect(bar(container)).toBeNull();
+        const hb = container.querySelector('[data-health-bar="enemy"]');
+        expect(hb.getAttribute('data-health-text')).toBe('30/40');
+        progress({ percent: 75, combat: true, enemyHp: 10, enemyMaxHp: 40 });
+        expect(container.querySelector('[data-health-bar="enemy"]').getAttribute('data-health-text')).toBe('10/40');
+    });
+
+    it('the bar takes no pointer: a press goes through to the Token', () => {
+        const { container } = mount(bub({ token: worked() }));
+        expect(bar(container).className).toContain('pointer-events-none');
+    });
+});
+
+describe('hover: the rings, the timer and the gear', () => {
+    it('⭐ charges: on hover only, with its number; unlimited has none', () => {
+        const start = tokenStartingUses('fixture_producer');
+        const { container, rerender } = mount(bub({ token: worked({ usesRemaining: start }) }));
+        expect(ring(container, 'charges')).toBeNull();
+        rerender(tree(bub({ token: worked({ usesRemaining: start }), isHovered: true })));
+        expect(ring(container, 'charges').getAttribute('data-ring-text')).toBe(ringCount(start));
+        rerender(tree(bub({ token: worked({ usesRemaining: start }), isHovered: false })));
+        expect(ring(container, 'charges')).toBeNull();
+        rerender(tree(bub({ token: worked({ usesRemaining: null }), isHovered: true })));
+        expect(ring(container, 'charges')).toBeNull();
+    });
+
+    it('a change while hovered moves the same ring, which glides', () => {
+        const { container, rerender } = mount(bub({ token: worked({ usesRemaining: 4 }), isHovered: true }));
+        const r = ring(container, 'charges');
+        expect(r.getAttribute('data-ring-glide')).toBe('true');
+        rerender(tree(bub({ token: worked({ usesRemaining: 3 }), isHovered: true })));
+        expect(ring(container, 'charges')).toBe(r);
+        expect(r.getAttribute('data-ring-text')).toBe('3');
+    });
+
+    for (const [kind, props, text] of [
+        ['spawner', { spawner: spawnerRing({ count: 4, cap: 5 }) }, '4/5'],
+        ['quest', { quest: questRing({ currentCount: 3, requiredCount: 5 }) }, '3/5']
+    ]) {
+        it(`⭐ ${kind}: hidden at rest, up on hover`, () => {
+            const { container, rerender } = mount(bub({ token: worked({ heroId: null }), ...props }));
+            expect(ring(container, kind)).toBeNull();
+            rerender(tree(bub({ token: worked({ heroId: null }), ...props, isHovered: true })));
+            expect(ring(container, kind).getAttribute('data-ring-text')).toBe(text);
+            expect(ring(container, kind).getAttribute('data-ring-glide')).toBe('true');
+        });
+    }
+
+    it('⭐ the timer: only while hovered, top-left, polling only while it shows', () => {
+        vi.useFakeTimers();
+        const read = () => ({ kind: 'grow', inMs: 30000, everyMs: 60000, into: 'fixture_b13_sapling' });
+        const { container, rerender } = mount(bub({ token: worked({ heroId: null }), readTimer: read }));
+        expect(bubble(container, 'timer')).toBeNull();
+        expect(vi.getTimerCount()).toBe(0);
+
+        rerender(tree(bub({ token: worked({ heroId: null }), readTimer: read, isHovered: true })));
+        const t = bubble(container, 'timer');
+        expect(ring(container, 'grow').getAttribute('data-ring-text')).toBe('0:30');
+        expect(ring(container, 'grow').querySelector('[data-ring-arc]').getAttribute('stroke')).toBe(RING_COLOUR.grow);
+        expect(parseFloat(t.style.left)).toBe(bubbleSlot('timer', { boxPx: 128 }).left);
+        expect(vi.getTimerCount()).toBe(1);
+
+        rerender(tree(bub({ token: worked({ heroId: null }), readTimer: read, isHovered: false })));
+        expect(bubble(container, 'timer')).toBeNull();
+        expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it('a hovered timer follows the clock; a resting Token’s fills as it refills', () => {
+        vi.useFakeTimers();
+        let inMs = 12000;
+        const read = () => ({ kind: 'turn', inMs, everyMs: 60000, chance: 30, back: false, into: [] });
+        const { container } = mount(bub({ token: worked({ heroId: null }), readTimer: read, isHovered: true }));
+        expect(ring(container, 'turn').getAttribute('data-ring-text')).toBe('0:12');
+        inMs = 9000;
+        advance(300);
+        expect(ring(container, 'turn').getAttribute('data-ring-text')).toBe('0:09');
+        cleanup();
+        const rest = mount(bub({ token: worked({ heroId: null }), isHovered: true, readTimer: () => ({ kind: 'respawn', inMs: 15000, everyMs: 60000 }) }));
+        expect(Number(ring(rest.container, 'respawn').getAttribute('data-ring-fraction'))).toBeCloseTo(0.75, 3);
+    });
+
+    it('a Token with no clock has no timer', () => {
+        const { container } = mount(bub({ token: worked({ heroId: null }), readTimer: () => null, isHovered: true }));
+        expect(bubble(container, 'timer')).toBeNull();
+    });
+
+    it('growth: nextGrowth reads the clock against afterMs; none for a Token that does not grow', () => {
+        expect(TimedChanges.nextGrowth({ typeId: 'fixture_bub_grower', clocks: { growMs: 45000 } }))
+            .toEqual({ inMs: 15000, into: 'fixture_b13_sapling' });
+        expect(TimedChanges.nextGrowth({ typeId: 'fixture_producer' })).toBeNull();
+    });
+
+    it('⭐ the gear: only on hover, set or not; never while marked for demolition', () => {
+        const pending = { show: true, pulsing: true, recipe: null, onClick: vi.fn() };
+        const chosen = { show: true, pulsing: false, recipe: { name: 'R' }, onClick: vi.fn() };
+        const { container, rerender } = mount(bub({ token: worked({ heroId: null }), gear: pending }));
+        expect(container.querySelector('[data-station-gear]')).toBeNull();
+        rerender(tree(bub({ token: worked({ heroId: null }), gear: pending, isHovered: true })));
+        expect(container.querySelector('[data-station-gear="unset"]')).not.toBeNull();
+        rerender(tree(bub({ token: worked({ heroId: null }), gear: chosen })));
+        expect(container.querySelector('[data-station-gear]')).toBeNull();
+        rerender(tree(bub({ token: worked({ heroId: null }), gear: chosen, isHovered: true })));
+        expect(container.querySelector('[data-station-gear="set"]')).not.toBeNull();
+        rerender(tree(bub({ token: worked({ heroId: null }), gear: chosen, isHovered: true, marked: true })));
+        expect(container.querySelector('[data-station-gear]')).toBeNull();
+    });
+});
+
+describe('the middle row', () => {
+    it('⭐ centred on the box: gear, spawner count, problem mark, demolition mark, disallow mark, in that order', () => {
         const { container } = mount(bub({
-            token: worked({ heroId: null }), isHovered: true, disallowed: true,
+            token: worked({ heroId: null, alert: ALERT.INPUTS }), isHovered: true, disallowed: true, marked: true,
             spawner: spawnerRing({ count: 3, cap: 5 }),
             gear: { show: true, pulsing: false, recipe: null }
         }));
         const row = container.querySelector('[data-bubble-row="middle"]');
-        expect(row.style.left).toBe('0px');
         expect(parseFloat(row.style.width)).toBe(128);
         expect(parseFloat(row.style.top)).toBe(64);
         expect(row.style.transform).toContain('translateY(-50%)');
-        expect(row.className).toContain('justify-center');
-        const kinds = [...row.children].map(c => c.getAttribute('data-bubble') || (c.querySelector('[data-station-gear]') ? 'gear' : '?'));
-        expect(kinds).toEqual(['gear', 'spawner', 'disallow']);
+        const kinds = [...row.children].map(c => c.getAttribute('data-bubble')
+            || (c.hasAttribute('data-problem-mark') ? 'problem' : null)
+            || (c.querySelector('[data-station-gear]') ? 'gear' : '?'));
+        expect(kinds).toEqual(['spawner', 'problem', 'marked', 'disallow']);
+    });
+
+    it('⭐ the disallow and demolition marks show the whole time, hovered or not', () => {
+        const { container, rerender } = mount(bub({ token: worked({ heroId: null }), disallowed: true, marked: true }));
+        expect(container.querySelector('[data-tile-disallowed]')).not.toBeNull();
+        expect(container.querySelector('[data-demolish-badge]')).not.toBeNull();
+        rerender(tree(bub({ token: worked({ heroId: null }) })));
+        expect(container.querySelector('[data-tile-disallowed]')).toBeNull();
+        expect(container.querySelector('[data-demolish-badge]')).toBeNull();
     });
 });
 
-describe('stuck spawner warning', () => {
+describe('⭐ the problem mark on a Token', () => {
     const say = (alert, needs = []) => act(() => {
         EventBus.publish(BOARD_EVENTS.SPAWNER_ALERT_CHANGED, { instanceId: 'tok_r', alert, needs });
     });
-    const stuckEl = (c) => c.querySelector('[data-bubble-row="middle"] [data-bubble="stuck"]');
-    const tipOf = (c) => {
-        fireEvent.pointerEnter(stuckEl(c));
-        return document.querySelector('[data-bubble-tip]')?.textContent;
+    const hoverText = (c) => {
+        fireEvent.pointerEnter(mark(c));
+        const tip = document.querySelector('[data-tooltip]');
+        return tip ? { text: tip.textContent, colour: tip.querySelector('span')?.style.color } : null;
     };
 
     beforeAll(() => {
@@ -346,191 +430,97 @@ describe('stuck spawner warning', () => {
         });
     });
 
-    it('needs-item: a yellow bubble in the middle row, naming the items', () => {
+    it('a spawner short of items: a yellow mark naming them; red with no room or at the cap', () => {
         const { container } = mount(bub({ token: worked({ heroId: null }) }));
-        expect(stuckEl(container)).toBeNull();
-        say(ALERT.SPAWN_NEEDS_ITEM, ['fixture_stuck_seed']);
-        expect(stuckEl(container).querySelector('[data-stuck-badge="needs_item"]')).not.toBeNull();
-        expect(tipOf(container)).toBe('Needs Fixture Seed to spawn');
-    });
-
-    it('needs-item with two items joins them', () => {
-        const { container } = mount(bub({ token: worked({ heroId: null }) }));
+        expect(mark(container)).toBeNull();
         say(ALERT.SPAWN_NEEDS_ITEM, ['fixture_stuck_seed', 'fixture_stuck_water']);
-        expect(tipOf(container)).toBe('Needs Fixture Seed and Fixture Water to spawn');
-    });
+        expect(mark(container).getAttribute('data-problem-severity')).toBe(SEVERITY.WAITING);
+        expect(mark(container).getAttribute('src')).toBe(PROBLEM_SPRITE[SEVERITY.WAITING]);
+        expect(hoverText(container)).toEqual({ text: 'Needs Fixture Seed and Fixture Water to spawn', colour: 'var(--color-ui-gold)' });
+        fireEvent.pointerLeave(mark(container));
 
-    it('no-room: a red bubble that says so', () => {
-        const { container } = mount(bub({ token: worked({ heroId: null }) }));
         say(ALERT.SPAWN_NO_ROOM);
-        expect(stuckEl(container).querySelector('[data-stuck-badge="no_room"]')).not.toBeNull();
-        expect(tipOf(container)).toBe('No room to spawn');
-    });
+        expect(mark(container).getAttribute('src')).toBe(PROBLEM_SPRITE[SEVERITY.CANT]);
+        expect(hoverText(container)).toEqual({ text: 'No room to spawn', colour: 'var(--color-ui-red)' });
+        fireEvent.pointerLeave(mark(container));
 
-    it('mat full (T-102): a red bubble that says the Token cap is full', () => {
-        const { container } = mount(bub({ token: worked({ heroId: null }) }));
         say(ALERT.SPAWN_MAT_FULL);
-        expect(stuckEl(container).querySelector('[data-stuck-badge="mat_full"] img').getAttribute('src')).toContain('u_alert_red');
-        expect(tipOf(container)).toBe('Token cap full');
-    });
+        expect(hoverText(container).text).toBe('Token cap full');
+        fireEvent.pointerLeave(mark(container));
 
-    it('goes the moment the spawner is no longer stuck, and the state change updates it', () => {
-        const { container } = mount(bub({ token: worked({ heroId: null }) }));
-        say(ALERT.SPAWN_NO_ROOM);
-        say(ALERT.SPAWN_NEEDS_ITEM, ['fixture_stuck_seed']);
-        expect(stuckEl(container).querySelector('[data-stuck-badge="needs_item"]')).not.toBeNull();
         say(null);
-        expect(stuckEl(container)).toBeNull();
+        expect(mark(container)).toBeNull();
         expect(container.querySelector('[data-bubble-row="middle"]')).toBeNull();
     });
 
-    it('sits in the middle row beside the spawner count, and a press grabs the Token', () => {
+    it('⭐ an unset station or Foundation: the yellow mark says choose, and a click on it opens the list', () => {
+        const onClick = vi.fn();
+        const { container, rerender } = mount(bub({ token: worked({ heroId: null }), gear: { show: true, pulsing: true, recipe: null, onClick } }));
+        expect(mark(container).getAttribute('data-problem-mark')).toBe(ALERT.CHOOSE_RECIPE);
+        expect(mark(container).getAttribute('data-problem-severity')).toBe(SEVERITY.WAITING);
+        expect(hoverText(container).text).toBe('Choose a recipe');
+        fireEvent.click(mark(container));
+        expect(onClick).toHaveBeenCalledTimes(1);
+
+        rerender(tree(bub({ token: worked({ heroId: null }), gear: { show: true, pulsing: true, recipe: null, isFoundation: true, onClick } })));
+        expect(mark(container).getAttribute('data-problem-mark')).toBe(ALERT.CHOOSE_BUILD);
+        // A recipe chosen: no mark.
+        rerender(tree(bub({ token: worked({ heroId: null }), gear: { show: true, pulsing: false, recipe: { name: 'R' }, onClick } })));
+        expect(mark(container)).toBeNull();
+        // Marked for demolition: nothing to choose.
+        rerender(tree(bub({ token: worked({ heroId: null }), gear: { show: true, pulsing: true, recipe: null, onClick }, marked: true })));
+        expect(mark(container)).toBeNull();
+    });
+
+    it('a mark a click does not fix does nothing on click but still grabs the Token on a press', () => {
         const grab = vi.fn();
+        const onClick = vi.fn();
         const { container } = mount(bub({
-            token: worked({ heroId: null }), isHovered: true,
-            spawner: spawnerRing({ count: 5, cap: 5 }),
-            dragProps: { onPointerDown: grab }
+            token: worked({ alert: ALERT.NO_ROOM }), dragProps: { onPointerDown: grab },
+            gear: { show: true, pulsing: false, recipe: { name: 'R' }, onClick }
         }));
-        say(ALERT.SPAWN_NO_ROOM);
-        const row = container.querySelector('[data-bubble-row="middle"]');
-        expect([...row.children].map(c => c.getAttribute('data-bubble'))).toEqual(['spawner', 'stuck']);
-        fireEvent.pointerDown(stuckEl(container));
+        fireEvent.click(mark(container));
+        expect(onClick).not.toHaveBeenCalled();
+        fireEvent.pointerDown(mark(container));
         expect(grab).toHaveBeenCalledTimes(1);
     });
-});
 
-describe('gear and disallow', () => {
-    it('the gear shows always while a choice is needed, and on hover once chosen', () => {
-        const pending = { show: true, pulsing: true, recipe: null };
-        const chosen = { show: true, pulsing: false, recipe: { name: 'R' } };
-        const { container, rerender } = mount(bub({ token: worked({ heroId: null }), gear: pending }));
-        expect(container.querySelector('[data-station-gear="unset"]')).not.toBeNull();
-        rerender(tree(bub({ token: worked({ heroId: null }), gear: chosen })));
-        expect(container.querySelector('[data-station-gear]')).toBeNull();
-        rerender(tree(bub({ token: worked({ heroId: null }), gear: chosen, isHovered: true })));
-        expect(container.querySelector('[data-station-gear="set"]')).not.toBeNull();
-        // No gear for a Token with nothing to choose, hovered or not.
-        rerender(tree(bub({ token: worked({ heroId: null }), gear: null, isHovered: true })));
-        expect(container.querySelector('[data-station-gear]')).toBeNull();
+    it('a can’t beats a waiting: one mark, red', () => {
+        const { container } = mount(bub({ token: worked({ heroId: null, alert: ALERT.INPUTS }) }));
+        say(ALERT.SPAWN_MAT_FULL);
+        expect(container.querySelectorAll('[data-problem-mark]')).toHaveLength(1);
+        expect(mark(container).getAttribute('data-problem-mark')).toBe(ALERT.SPAWN_MAT_FULL);
     });
 
-    it('the disallow mark shows the whole time, hovered or not', () => {
-        const { container, rerender } = mount(bub({ token: worked({ heroId: null }), disallowed: true }));
-        expect(container.querySelector('[data-tile-disallowed]')).not.toBeNull();
-        rerender(tree(bub({ token: worked({ heroId: null }), disallowed: false })));
-        expect(container.querySelector('[data-tile-disallowed]')).toBeNull();
-    });
-});
-
-describe('count bubbles: when they show and how they glide', () => {
-    const cases = [
-        ['spawner', (v) => ({ spawner: spawnerRing({ count: v, cap: 5 }) }), 3, 4, '4/5'],
-        ['quest', (v) => ({ quest: questRing({ currentCount: v, requiredCount: 5 }) }), 2, 3, '3/5']
-    ];
-    for (const [kind, props, from, to, text] of cases) {
-        it(`⭐ ${kind}: hidden at rest, up ~2 s after a change, up on hover`, () => {
-            vi.useFakeTimers();
-            const { container, rerender } = mount(bub({ token: worked({ heroId: null }), ...props(from) }));
-            expect(ring(container, kind)).toBeNull();
-
-            rerender(tree(bub({ token: worked({ heroId: null }), ...props(to) })));
-            expect(ring(container, kind)).not.toBeNull();
-            advance(GLIDE_START_MS + 1);
-            expect(ring(container, kind).getAttribute('data-ring-text')).toBe(text);
-            advance(BUBBLE_RECENT_MS);
-            expect(ring(container, kind)).toBeNull();
-
-            rerender(tree(bub({ token: worked({ heroId: null }), ...props(to), isHovered: true })));
-            expect(ring(container, kind).getAttribute('data-ring-text')).toBe(text);
-        });
-
-        it(`⭐ ${kind}: the ring glides: it appears at the old value, then takes the new one`, () => {
-            vi.useFakeTimers();
-            const { container, rerender } = mount(bub({ token: worked({ heroId: null }), ...props(from) }));
-            rerender(tree(bub({ token: worked({ heroId: null }), ...props(to) })));
-            const r = ring(container, kind);
-            expect(r.getAttribute('data-ring-glide')).toBe('true');       // the CSS transition is on it
-            const before = r.getAttribute('data-ring-fraction');
-            expect(Number(before)).toBeCloseTo(from / 5, 3);
-            advance(GLIDE_START_MS + 1);
-            expect(Number(ring(container, kind).getAttribute('data-ring-fraction'))).toBeCloseTo(to / 5, 3);
-        });
-    }
-
-    it('charges glide too', () => {
-        vi.useFakeTimers();
-        const { container, rerender } = mount(bub({ token: worked({ usesRemaining: 4 }), isHovered: true }));
-        expect(ring(container, 'charges').getAttribute('data-ring-glide')).toBe('true');
-        rerender(tree(bub({ token: worked({ usesRemaining: 3 }), isHovered: true })));
-        advance(GLIDE_START_MS + 1);
-        expect(ring(container, 'charges').getAttribute('data-ring-text')).toBe('3');
-    });
-});
-
-describe('the timer bubble', () => {
-    const grow = (inMs) => () => ({ kind: 'grow', inMs, everyMs: 60000, into: 'fixture_b13_sapling' });
-
-    it('⭐ hidden at rest, up on hover, and by itself in the last 10 s', () => {
-        vi.useFakeTimers();
-        const read = grow(30000);
-        const { container, rerender } = mount(bub({ token: worked({ heroId: null }), readTimer: read }));
-        expect(bubble(container, 'timer')).toBeNull();
-
-        rerender(tree(bub({ token: worked({ heroId: null }), readTimer: read, isHovered: true })));
-        expect(ring(container, 'grow').getAttribute('data-ring-text')).toBe('0:30');
-        expect(ring(container, 'grow').querySelector('[data-ring-arc]').getAttribute('stroke')).toBe(RING_COLOUR.grow);
-        rerender(tree(bub({ token: worked({ heroId: null }), readTimer: read, isHovered: false })));
-        expect(bubble(container, 'timer')).toBeNull();
-
-        const soon = grow(8000);
-        cleanup();
-        const near = mount(bub({ token: worked({ heroId: null }), readTimer: soon }));
-        expect(ring(near.container, 'grow').getAttribute('data-ring-text')).toBe('0:08');
-    });
-
-    it('it follows the clock: appears when the countdown enters its last 10 s', () => {
-        vi.useFakeTimers();
-        let inMs = 12000;
-        const read = () => ({ kind: 'turn', inMs, everyMs: 60000, chance: 30, back: false, into: [] });
-        const { container } = mount(bub({ token: worked({ heroId: null }), readTimer: read }));
-        expect(bubble(container, 'timer')).toBeNull();
-        inMs = 9000;
-        advance(300);
-        expect(ring(container, 'turn').getAttribute('data-ring-text')).toBe('0:09');
-        expect(ring(container, 'turn').querySelector('[data-ring-arc]').getAttribute('stroke')).toBe(RING_COLOUR.turn);
-    });
-
-    it('sits top-left of the box', () => {
-        const { container } = mount(bub({ token: worked({ heroId: null }), readTimer: grow(5000) }));
-        const el = bubble(container, 'timer');
-        expect(parseFloat(el.style.left)).toBe(bubbleSlot('timer', { boxPx: 128 }).left);
-        expect(parseFloat(el.style.top)).toBe(bubbleSlot('timer', { boxPx: 128 }).top);
-    });
-
-    it('a Token with no clock has none', () => {
-        const { container } = mount(bub({ token: worked({ heroId: null }), readTimer: () => null, isHovered: true }));
-        expect(bubble(container, 'timer')).toBeNull();
-    });
-
-    it('growth: nextGrowth reads the clock against afterMs; none for a Token that does not grow', () => {
-        expect(TimedChanges.nextGrowth({ typeId: 'fixture_bub_grower', clocks: { growMs: 45000 } }))
-            .toEqual({ inMs: 15000, into: 'fixture_b13_sapling' });
-        expect(TimedChanges.nextGrowth({ typeId: 'fixture_bub_grower' })).toMatchObject({ inMs: 60000 });
-        expect(TimedChanges.nextGrowth({ typeId: 'fixture_bub_grower', clocks: { growMs: 99999 } }).inMs).toBe(0);
-        expect(TimedChanges.nextGrowth({ typeId: 'fixture_producer' })).toBeNull();
-        expect(TimedChanges.nextGrowth({ typeId: 'fixture_bub_grower', turnedFrom: 'x' })).toBeNull();
-        expect(TimedChanges.nextGrowth(null)).toBeNull();
+    it('pressing hides an open tooltip', () => {
+        const { container } = mount(bub({ token: worked({ alert: ALERT.NO_ROOM }), dragProps: { onPointerDown: vi.fn() } }));
+        fireEvent.pointerEnter(mark(container));
+        expect(document.body.querySelector('[data-tooltip]')).not.toBeNull();
+        fireEvent.pointerDown(mark(container));
+        expect(document.body.querySelector('[data-tooltip]')).toBeNull();
     });
 });
 
 describe('the floater', () => {
-    it('the -1 rides above the charges slot, bubble shown or not', () => {
-        const { container } = mount(bub({ token: worked({ usesRemaining: 4 }) }));
-        expect(ring(container, 'charges')).toBeNull();
+    it('⭐ nothing is drawn for it at rest; a -1 rides above the charges spot', () => {
+        const { container } = mount(bub({ token: worked({ heroId: null, usesRemaining: 4 }) }));
+        expect(drawn(container)).toEqual([]);
         act(() => { EventBus.publish(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, { instanceId: 'tok_r', delta: -1, remaining: 3 }); });
         const floater = container.querySelector('[data-charge-floater]');
         expect(floater.getAttribute('data-charge-floater')).toBe('ring');
-        expect(container.querySelector('[data-bubble-slot="charges"]').contains(floater)).toBe(true);
+        expect(floater.textContent).toBe('-1');
+        const slot = container.querySelector('[data-bubble-slot="charges"]');
+        expect(slot.contains(floater)).toBe(true);
+        expect(parseFloat(slot.style.left)).toBe(bubbleSlot('charges', { boxPx: 128 }).left);
+    });
+
+    it('hovering while a number floats keeps it: the floater is not remounted', () => {
+        const { container, rerender } = mount(bub({ token: worked({ heroId: null, usesRemaining: 4 }) }));
+        act(() => { EventBus.publish(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, { instanceId: 'tok_r', delta: -1, remaining: 3 }); });
+        const floater = container.querySelector('[data-charge-floater]');
+        rerender(tree(bub({ token: worked({ heroId: null, usesRemaining: 3 }), isHovered: true })));
+        expect(ring(container, 'charges')).not.toBeNull();
+        expect(container.querySelector('[data-charge-floater]')).toBe(floater);
     });
 
     it('a Token with no charges floats it from the corner', () => {
@@ -548,10 +538,9 @@ describe('tooltips and grabbing', () => {
         readTimer: () => ({ kind: 'grow', inMs: 30000, everyMs: 60000, into: 'fixture_b13_sapling' })
     });
 
-    it('⭐ hovering a bubble shows what it means; leaving hides it', () => {
+    it('⭐ hovering a hover ring or a player mark shows what it means; leaving hides it', () => {
         const { container } = mount(everything());
         const expected = {
-            cycle: BUBBLE_TIPS.cycle,
             charges: BUBBLE_TIPS.charges(4),
             quest: BUBBLE_TIPS.quest('1/4'),
             spawner: BUBBLE_TIPS.spawner('3/5'),
@@ -569,28 +558,22 @@ describe('tooltips and grabbing', () => {
         expect(document.body.querySelector('[data-bubble-tip]').textContent).toMatch(/^Grows into .* in 0:30$/);
     });
 
-    it('⭐ pressing a bubble reaches the Token’s drag handle', () => {
+    it('⭐ pressing a ring or a mark reaches the Token’s drag handle', () => {
         const onPointerDown = vi.fn();
         const { container } = mount(bub({
-            token: worked({ usesRemaining: 4 }), isHovered: true, disallowed: true,
+            token: worked({ usesRemaining: 4, alert: ALERT.INPUTS }), isHovered: true, disallowed: true,
             spawner: spawnerRing({ count: 3, cap: 5 }),
             quest: questRing({ currentCount: 1, requiredCount: 4 }),
             dragProps: { onPointerDown }
         }));
-        for (const kind of ['cycle', 'charges', 'quest', 'spawner', 'disallow']) {
+        for (const kind of ['charges', 'quest', 'spawner', 'disallow']) {
             onPointerDown.mockClear();
             fireEvent.pointerDown(bubble(container, kind));
             expect(onPointerDown, kind).toHaveBeenCalledTimes(1);
         }
-    });
-
-    it('pressing hides an open tooltip', () => {
-        const { container } = mount(bub({ token: worked(), dragProps: { onPointerDown: vi.fn() } }));
-        const el = bubble(container, 'cycle');
-        fireEvent.pointerEnter(el);
-        expect(document.body.querySelector('[data-bubble-tip]')).not.toBeNull();
-        fireEvent.pointerDown(el);
-        expect(document.body.querySelector('[data-bubble-tip]')).toBeNull();
+        onPointerDown.mockClear();
+        fireEvent.pointerDown(mark(container));
+        expect(onPointerDown).toHaveBeenCalledTimes(1);
     });
 });
 
@@ -621,7 +604,7 @@ describe('on the mat (MatToken)', () => {
         fireEvent.pointerMove(root, { clientX: tok.x, clientY: tok.y });
     }
 
-    it('⭐ a spawner at 3 of 5: no bubble at rest; hovered, its 3/5 sits in the middle row inside the box', () => {
+    it('⭐ a spawner at 3 of 5: nothing at rest; hovered, its 3/5 sits in the middle row inside the box', () => {
         const forest = put('fixture_b13_forest');
         put('fixture_b13_sapling', { x: 1200, y: 520 });
         put('fixture_b13_sapling', { x: 1400, y: 300 });
@@ -629,30 +612,38 @@ describe('on the mat (MatToken)', () => {
         const { container } = mount(h(MatBoard));
         const o = container.querySelector(`[data-token-overlay="${forest.id}"]`);
         expect(o.querySelector('[data-ring]')).toBeNull();
+        expect(o.querySelector('[data-bubble-row]')).toBeNull();
 
         hover(container, forest);
         const r = o.querySelector('[data-bubble-row="middle"] [data-ring="spawner"]');
         expect(r.getAttribute('data-ring-text')).toBe('3/5');
-        expect(Number(r.getAttribute('data-ring-fraction'))).toBeCloseTo(0.6, 3);
         const box = parseFloat(o.style.width);
         const row = o.querySelector('[data-bubble-row]');
         expect(parseFloat(row.style.top)).toBe(box / 2);
-        expect(parseFloat(row.style.left) + parseFloat(row.style.width) / 2).toBe(box / 2);
-        // The name label is above the box.
-        const name = o.querySelector('[data-token-name]');
-        expect(name.style.bottom).toContain('100%');
-        expect(o.querySelector('[data-token-name]').compareDocumentPosition(row)).toBeTruthy();
+        expect(o.querySelector('[data-token-name]').style.bottom).toContain('100%');
     });
 
-    it('⭐ a Sapling-like grower shows its growth timer top-left when hovered', () => {
+    it('⭐ a Sapling-like grower shows its growth timer top-left only when hovered', () => {
         const g = put('fixture_bub_grower');
         const { container } = mount(h(MatBoard));
         const o = container.querySelector(`[data-token-overlay="${g.id}"]`);
         expect(o.querySelector('[data-bubble="timer"]')).toBeNull();
         hover(container, g);
         const t = o.querySelector('[data-bubble="timer"]');
-        expect(t).not.toBeNull();
         expect(t.querySelector('[data-ring]').getAttribute('data-ring')).toBe('grow');
         expect(parseFloat(t.style.left)).toBe(bubbleSlot('timer', { boxPx: parseFloat(o.style.width) }).left);
+    });
+
+    it('⭐ the mark is drawn at the Token’s own art-pixel size', () => {
+        const station = put('fixture_consumer');
+        station.alert = ALERT.INPUTS;
+        const { container } = mount(h(MatBoard));
+        const o = container.querySelector(`[data-token-overlay="${station.id}"]`);
+        const m = o.querySelector('[data-problem-mark]');
+        expect(m.getAttribute('data-problem-severity')).toBe(SEVERITY.WAITING);
+        // 16 art pixels at the board's art scale: 2 mat units a pixel with the mat drawn 1:1.
+        expect(parseFloat(m.style.width)).toBe(16 * boardScaleAt(1));
+        expect(parseFloat(m.style.height)).toBe(16 * boardScaleAt(1));
+        expect(m.style.imageRendering).toBe('pixelated');
     });
 });

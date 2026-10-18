@@ -86,16 +86,18 @@ describe('a marked Token reads as demolition work', () => {
 });
 
 describe('the marked badge', () => {
-    it('shows in the middle row, and the recipe gear does not while marked', () => {
+    it('shows in the middle row, and neither the recipe gear nor the "choose" mark does while marked', () => {
         const t = placeAt('fixture_producer', 400, 300);
-        const props = { instanceId: t.id, token: { typeId: t.typeId }, gear: { show: true, pulsing: true, recipe: null } };
+        const props = { instanceId: t.id, token: { typeId: t.typeId }, gear: { show: true, pulsing: true, recipe: null }, isHovered: true };
         const plain = mount(h(TokenBubbles, props));
         expect(plain.container.querySelector('[data-station-gear]')).not.toBeNull();
+        expect(plain.container.querySelector('[data-problem-mark]')).not.toBeNull();
         expect(plain.container.querySelector('[data-demolish-badge]')).toBeNull();
         cleanup();
         const marked = mount(h(TokenBubbles, { ...props, marked: true }));
         expect(marked.container.querySelector('[data-demolish-badge]')).not.toBeNull();
         expect(marked.container.querySelector('[data-station-gear]')).toBeNull();
+        expect(marked.container.querySelector('[data-problem-mark]')).toBeNull();
     });
 });
 

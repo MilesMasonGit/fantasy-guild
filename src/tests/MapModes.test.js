@@ -266,18 +266,18 @@ describe('⭐ Disallow mode on the mat', () => {
         expect([a, b, c].map(disallowed)).toEqual([true, true, true]);
     });
 
-    it('⭐ a click on a Token’s recipe gear is the Token’s click, shift included', () => {
+    it('⭐ a click on a Token’s "choose a recipe" mark is the Token’s click, shift included', () => {
         const a = placeAt(OTHER, 400, 200);
         const b = placeAt(OTHER, 560, 200);
         const onOpenRecipes = vi.fn();
         const { container } = mountMat({ onOpenRecipes });
-        const gear = (t) => container.querySelector(`[data-token-overlay="${t.id}"] [data-station-gear] button`);
-        expect(gear(a)).not.toBeNull();
+        const mark = (t) => container.querySelector(`[data-token-overlay="${t.id}"] [data-problem-mark]`);
+        expect(mark(a)).not.toBeNull();
         act(() => setMapMode(MAP_MODE.DISALLOW));
 
-        fireEvent.click(gear(a), { shiftKey: true });
+        fireEvent.click(mark(a), { shiftKey: true });
         expect([a, b].map(disallowed)).toEqual([true, true]);
-        fireEvent.click(gear(b));
+        fireEvent.click(mark(b));
         expect([a, b].map(disallowed)).toEqual([true, false]);
         expect(onOpenRecipes).not.toHaveBeenCalled();
     });

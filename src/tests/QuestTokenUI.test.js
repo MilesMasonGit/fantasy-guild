@@ -131,11 +131,13 @@ describe('a quest Token on the mat (B6.2)', () => {
         expect(o.querySelectorAll('[data-ring]').length).toBe(1);
     });
 
-    it('the ring follows progress (state_changed, no subscription of its own), shown 2 s on the change', async () => {
+    it('the ring follows progress (state_changed, no subscription of its own); it shows on hover, not by itself', async () => {
         const q = spawn(hunt());
-        const { container } = mount(tokenEl(q));
+        const { container, rerender } = mount(tokenEl(q));
         await act(async () => { QuestTokens.reportProgress('enemy_hunted', 1, { enemyId: 'token_goblin' }); });
         await act(async () => { await new Promise(r => setTimeout(r, 120)); });
+        expect(overlay(container, q).querySelector('[data-ring="quest"]')).toBeNull();
+        rerender(tree(tokenEl(q, { isHovered: true })));
         const ring = overlay(container, q).querySelector('[data-ring="quest"]');
         expect(ring.getAttribute('data-ring-text')).toBe('2/3');
     });

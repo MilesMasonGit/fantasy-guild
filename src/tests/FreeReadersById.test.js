@@ -31,6 +31,7 @@ import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import * as MatPlacement from '../systems/board/MatPlacement.js';
 import { TokenBubbles } from '../ui/components/board/TokenBubbles.jsx';
 import { STEP_MS } from '../ui/components/board/frameClock.js';
+import { WORK_BAR_ART_W } from '../ui/components/board/workBar.js';
 import { EngineContext } from '../ui/context/EngineContext';
 import { placeAt, clearMat } from './fixtures/mat.js';
 
@@ -348,7 +349,7 @@ describe('⭐ quest events carry instanceId, and still count', () => {
 });
 
 describe('⭐ the mat draws each Token by its instance id (slice 1.6c-2)', () => {
-    it('a cycle ring updates from its Token’s id, and ignores another Token’s (B1.2: was the bar)', () => {
+    it('a work bar updates from its Token’s id, and ignores another Token’s', () => {
         vi.useFakeTimers();
         try {
             clearMat();
@@ -358,17 +359,17 @@ describe('⭐ the mat draws each Token by its instance id (slice 1.6c-2)', () =>
                 EngineContext.Provider, { value: { EventBus } },
                 React.createElement(TokenBubbles, { instanceId: tok.id, token: { typeId: tok.typeId, heroId: 'hero_1', instanceId: tok.id } })
             ));
-            const ring = container.querySelector('[data-ring="cycle"]');
-            // The ring draws on the shared step clock's next step.
+            const bar = container.querySelector('[data-work-bar]');
+            // The bar draws on the shared step clock's next step, in art pixels.
             const step = () => act(() => { vi.advanceTimersByTime(STEP_MS + 20); });
 
             act(() => { EventBus.publish(BOARD_EVENTS.PROGRESS, { instanceId: other.id, percent: 80, elapsedMs: 8000, cycleTimeMs: 10000 }); });
             step();
-            expect(ring.getAttribute('data-ring-fraction')).toBe('0.000');
+            expect(bar.getAttribute('data-work-bar-fill')).toBe('0');
 
             act(() => { EventBus.publish(BOARD_EVENTS.PROGRESS, { instanceId: tok.id, percent: 50, elapsedMs: 5000, cycleTimeMs: 10000 }); });
             step();
-            expect(Number(ring.getAttribute('data-ring-fraction'))).toBeCloseTo(0.5, 1);
+            expect(Number(bar.getAttribute('data-work-bar-fill')) / WORK_BAR_ART_W).toBeCloseTo(0.5, 1);
         } finally {
             cleanup();
             vi.useRealTimers();

@@ -14,22 +14,23 @@ describe('A hero’s stack of speech bubbles', () => {
         expect(list.map(m => m.text)).toEqual(['Mining is now level 3.']);
     });
 
-    it('puts the blocked line nearest the head, after the moments', () => {
+    it('puts the newest moment nearest the head', () => {
         let list = addMoment([], { key: 'a', text: 'A' }, 0);
         list = addMoment(list, { key: 'b', text: 'B' }, 1);
-        expect(stackOf(list, 'Stuck.', 2).map(b => b.text)).toEqual(['A', 'B', 'Stuck.']);
+        expect(stackOf(list, 2).map(b => b.text)).toEqual(['A', 'B']);
     });
 
-    it('never shows more than three — the oldest moment gives way, the blocked line stays', () => {
+    it('never shows more than three: the oldest moment gives way', () => {
         let list = [];
         ['a', 'b', 'c', 'd'].forEach((k, i) => { list = addMoment(list, { key: k, text: k }, i); });
-        const stack = stackOf(list, 'Stuck.', 10);
+        const stack = stackOf(list, 10);
         expect(stack).toHaveLength(MAX_BUBBLES);
-        expect(stack.map(b => b.text)).toEqual(['c', 'd', 'Stuck.']);
+        expect(stack.map(b => b.text)).toEqual(['b', 'c', 'd']);
+        expect(stack.every(b => b.kind === 'moment')).toBe(true);
     });
 
     it('has no stack when there is nothing to say', () => {
-        expect(stackOf([], null, 0)).toEqual([]);
+        expect(stackOf([], 0)).toEqual([]);
     });
 
     it('words the moments plainly', () => {

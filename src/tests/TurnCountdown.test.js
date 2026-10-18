@@ -105,9 +105,9 @@ describe('countdown text (FB-14)', () => {
         expect(mount(h(TimerBubble, { read: () => null, hovered: true })).container.querySelector('[data-ring]')).toBeNull();
     });
 
-    it('a resting Token shows its refill for the whole rest, unhovered, filling as it refills', () => {
+    it('a resting Token’s ring (on hover) fills as it refills', () => {
         const rest = (inMs) => () => ({ kind: 'respawn', mode: 'refill', inMs, totalMs: 30000, everyMs: 30000 });
-        const ring = mount(h(TimerBubble, { read: rest(24000), hovered: false })).container.querySelector('[data-ring="respawn"]');
+        const ring = mount(h(TimerBubble, { read: rest(24000) })).container.querySelector('[data-ring="respawn"]');
         expect(textOf(ring)).toBe('0:24');
         expect(fractionOf(ring)).toBeCloseTo(0.2, 3);
         // Non-breaking between the number and its unit, so the tip never splits them.
@@ -155,7 +155,7 @@ describe('on the mat (FB-14)', () => {
         expect(ring.getAttribute('aria-label')).toContain('turn back');
     });
 
-    it('⭐ not hovered, the countdown comes up by itself in its last ten seconds', () => {
+    it('⭐ not hovered, the countdown never comes up by itself, not even in its last seconds (brief 120)', () => {
         vi.useFakeTimers();
         const coast = BoardState.createTokenInstance('fixture_q8_coast');
         Placement.placeTokenAt(coast, AT);
@@ -163,7 +163,7 @@ describe('on the mat (FB-14)', () => {
         act(() => { TimedChanges.tick(49000); vi.advanceTimersByTime(TURN_COUNTDOWN_REFRESH_MS); });
         expect(countdownOf(container, coast.id)).toBeNull();            // 11 s to go
         act(() => { TimedChanges.tick(2000); vi.advanceTimersByTime(TURN_COUNTDOWN_REFRESH_MS); });
-        expect(textOf(countdownOf(container, coast.id))).toBe('0:09');
+        expect(countdownOf(container, coast.id)).toBeNull();            // 9 s to go
     });
 
     it('a Token that does not turn has no countdown', () => {

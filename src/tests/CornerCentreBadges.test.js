@@ -136,7 +136,7 @@ beforeEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('gear alerts', () => {
-    it('nothing chosen is for the gear to say, not a problem', () => {
+    it('nothing chosen is a choice waiting, not a fault (the Token summary does not count it blocked)', () => {
         expect(isGearOnlyAlert(ALERT.CHOOSE_RECIPE)).toBe(true);
         expect(isGearOnlyAlert(ALERT.CHOOSE_BUILD)).toBe(true);
         for (const a of [ALERT.INPUTS, ALERT.NO_RECIPE, ALERT.CHARGES, ALERT.NO_ROOM, ALERT.ACCESS, ALERT.UNSKILLED]) {
@@ -241,28 +241,36 @@ describe('on the mat', () => {
         expect(container.querySelector('img[src*="u_add_"]')).toBeNull();
     });
 
-    it('FB-7: an unset station shows a pulsing gear and no alert, button or red bar; the gear opens the picker', () => {
+    it('an unset station shows the yellow "choose" mark at rest (brief 120, no longer the pulsing gear); the mark and the hovered gear open the picker', () => {
         const bench = put('fixture_q2_bench');
         const onOpenRecipes = vi.fn();
         const { container } = mount(h(MatBoard, { onOpenRecipes }));
         const o = overlay(container, bench.id);
 
-        expect(o.querySelector('[data-station-gear="unset"]')).not.toBeNull();
-        expect(o.querySelector('[data-choose-recipe]')).toBeNull();
+        expect(o.querySelector('[data-station-gear]')).toBeNull();
+        const mark = o.querySelector('[data-problem-mark]');
+        expect(mark.getAttribute('data-problem-mark')).toBe(ALERT.CHOOSE_RECIPE);
+        expect(mark.getAttribute('data-problem-severity')).toBe('waiting');
         expect(o.querySelector('[data-alert-kind]')).toBeNull();
-        expect(o.textContent).not.toContain('Choose a recipe');
+        // No words on the mat: only the (hidden) name label carries text.
+        expect(o.textContent).toBe(o.querySelector('[data-token-name]').textContent);
 
-        fireEvent.click(o.querySelector('[data-station-gear] button'));
+        fireEvent.click(mark);
         expect(onOpenRecipes).toHaveBeenCalledWith(bench.id);
+        hoverAt(container, bench);
+        fireEvent.click(o.querySelector('[data-station-gear="unset"] button'));
+        expect(onOpenRecipes).toHaveBeenCalledTimes(2);
     });
 
-    it('a blocked Token greys its cycle ring and draws no alert mark', () => {
+    it('a blocked Token holds its work bar grey and draws one red mark, no words', () => {
         const bench = put('fixture_q2_bench');
         const token = (alert) => ({ typeId: bench.typeId, instanceId: bench.id, heroId: 'h1', alert });
         const row = mount(h(TokenBubbles, { instanceId: bench.id, token: token(ALERT.NO_ROOM) })).container;
-        expect(row.textContent).not.toContain('No Room');
+        expect(row.textContent).not.toContain('No room');
         expect(row.querySelector('[data-alert-kind]')).toBeNull();
-        expect(row.querySelector('[data-ring="cycle"]').getAttribute('data-ring-greyed')).toBe('true');
+        expect(row.querySelector('[data-work-bar]').getAttribute('data-work-bar-blocked')).toBe('true');
+        expect(row.querySelectorAll('[data-problem-mark]')).toHaveLength(1);
+        expect(row.querySelector('[data-problem-mark]').getAttribute('data-problem-severity')).toBe('cant');
     });
 
     it('FB-7: a chosen recipe keeps the gear, still, shown on hover', () => {
@@ -274,13 +282,16 @@ describe('on the mat', () => {
         expect(overlay(container, bench.id).querySelector('[data-station-gear="set"]')).not.toBeNull();
     });
 
-    it('FB-7: a Foundation gets the gear; a station with an empty pool does not', () => {
+    it('FB-7: a Foundation gets the gear (on hover) and the "choose what to build" mark; a station with an empty pool gets neither', () => {
         const f = put('fixture_q2_foundation');
         const empty = put('fixture_q2_empty_station', FAR);
         const { container } = mount(h(MatBoard));
+        expect(overlay(container, f.id).querySelector('[data-problem-mark]').getAttribute('data-problem-mark')).toBe(ALERT.CHOOSE_BUILD);
+        hoverAt(container, f);
         expect(overlay(container, f.id).querySelector('[data-station-gear="unset"]')).not.toBeNull();
         expect(overlay(container, f.id).querySelector('[data-choose-build]')).toBeNull();
         expect(overlay(container, empty.id).querySelector('[data-station-gear]')).toBeNull();
+        expect(overlay(container, empty.id).querySelector('[data-problem-mark]')).toBeNull();
     });
 
     it('FB-5 / B1.3: a spawner shows its count against its cap as a ring in its row, not in a corner', () => {
@@ -297,7 +308,7 @@ describe('on the mat', () => {
         expect(o.querySelector('[data-spawner-count]')).toBeNull();
     });
 
-    it('a spawner that needs an item draws no centre alert mark, only the warning bubble in its middle row', () => {
+    it('a spawner that needs an item draws one yellow problem mark in its middle row, and nothing else', () => {
         vi.useFakeTimers();
         const forest = put('fixture_q2_forest');
         SpawnerSystem.syncAlerts();
@@ -305,7 +316,9 @@ describe('on the mat', () => {
         expect(SpawnerSystem.spawnerAlertOf(forest.id)?.alert).toBe(ALERT.SPAWN_NEEDS_ITEM);
         expect(container.querySelector('[data-spawner-alert], [data-worked-alert], [data-alert-kind], [data-token-notice]')).toBeNull();
         const o = container.querySelector(`[data-token-overlay="${forest.id}"]`);
-        expect(o.querySelector('[data-bubble-row="middle"] [data-bubble="stuck"] [data-stuck-badge="needs_item"]')).not.toBeNull();
+        const mark = o.querySelector('[data-bubble-row="middle"] [data-problem-mark]');
+        expect(mark.getAttribute('data-problem-mark')).toBe(ALERT.SPAWN_NEEDS_ITEM);
+        expect(mark.getAttribute('src')).toContain('u_alert_yellow');
         expect(container.querySelectorAll('img[src*="u_alert"]').length).toBe(1);
     });
 });
