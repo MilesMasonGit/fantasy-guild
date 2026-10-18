@@ -13,9 +13,9 @@ runs one, so the PC holds two.*
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| Brief 100 K1: the style sheet page, every standard UI piece live (T-159) | builder | `crunch/style-kit` (`k1`) | ready (ca5bf7ff; director's gate: 5106 tests, cycles, build; page seen in the builder's screenshots). Waits for the kit's one eye-check after K3 | Sat | |
-| Brief 100 K2: one shared arrow-bar scroll list (T-160) | builder | `crunch/style-kit` (`k1`) | ready (14474430; director's gate: 5113 tests, cycles, build). Arrows now dim instead of hiding on the inspect column, pop-up and rank list (UI_STYLE); four look questions for the eye-check | Sat | Sat |
-| Brief 100 K3: three text sizes and the shared tooltip (T-161, T-038, T-030) | builder (tooltip spans several files) | `crunch/style-kit` (`k1`) | building; the size mapping is proposed from measured sizes, unapproved until the eye-check | Sat | |
+| Brief 100 K1: the style sheet page, every standard UI piece live (T-159) | builder | `crunch/style-kit` (`k1`) | eye-check (ca5bf7ff; director's gate: 5106 tests, cycles, build) | Sat | |
+| Brief 100 K2: one shared arrow-bar scroll list (T-160) | builder | `crunch/style-kit` (`k1`) | eye-check (14474430; director's gate: 5113 tests, cycles, build). Arrows now dim instead of hiding on the inspect column, pop-up and rank list (UI_STYLE); four look questions for the eye-check | Sat | Sat |
+| Brief 100 K3: three text sizes and the shared tooltip (T-161, T-038, T-030) | builder (tooltip spans several files) | `crunch/style-kit` (`k1`) | eye-check (7060a37f; director's gate on the whole kit: 5126 tests, cycles, build). Sizes 18/16/14, display 32 proposed; tooltip on the Bank, Shop and hero panel | Sat | Sat |
 | Recruits get a weak basic attack so the tutorial's fight can be won (T-167); owner authors a safe enemy in the Starter Camp afterwards | builder | `fix/t167-recruit-attack` | ready (30c0923b; director's gate: 5107 tests, cycles, build). Bench-queued (work check; builder expects same: every bench hero holds melee). Eye-check with the kit (plays differently) | Sat | |
 
 ## Art pass, batch 1 (proposed and ruled 2026-10-15 evening)
@@ -92,6 +92,14 @@ T-186; the badges' soft shadows are settled inside T-013.)
 1. `fix/t167-recruit-attack` (30c0923b): engine work check (`npm run bench -- --compare`), features director.
 
 ## Summaries
+
+**Sat 2026-10-17, 19:20: features batch 1 at the eye-check.** Where we are:
+the style kit (page, shared arrow lists, text sizes, shared tooltip) and the
+Recruits' attack are built and gated; [eye-check file](eyecheck/2026-10-17_style-kit.md),
+served from the worktrees on 5196 and 5197 so the owner's folder stays on
+`main`. Next: the owner's verdicts and seven questions; then the work check
+(T-167) and a draw compare (kit) in a quiet window, merge. Owner: the
+eye-check. Blockers: none.
 
 **Sat 2026-10-17, evening: features batch 1 proposed and ruled.** Where we
 are: `main` clean; five finished tickets closed in the archive. The batch: the
