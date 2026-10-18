@@ -14,7 +14,6 @@ import { SKILL_LAYERS, getSkillIdsByLayer, SKILL_COUNT } from '../config/registr
 import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
 import { EngineContext } from '../ui/context/EngineContext';
 import { BottomHeroDock } from '../ui/components/dock/BottomHeroDock.jsx';
-import { BankHeroPanel } from '../ui/components/dock/BankHeroPanel.jsx';
 import { WorkRulesDrawer } from '../ui/components/dock/WorkRulesDrawer.jsx';
 import { MAX_ROWS, tintLightness, cycleRule } from '../ui/components/dock/workRules.js';
 import { setLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
@@ -25,8 +24,9 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 }));
 
 /**
- * H3 v2: the work rules grid, in a drawer behind the hero bar, opened by the bar's one Work
- * Rules button (and the hero panel's link).
+ * H3 v2: the Work Permissions grid, in a drawer behind the hero bar, opened by the bar's
+ * launcher. The launcher's slot, the Combat column and the header lines are in
+ * `WorkPermissions.test.js`.
  */
 
 const h = React.createElement;
@@ -192,22 +192,21 @@ describe('H3 v2: the grid', () => {
         expect(q(big, '[data-rules-body]').getAttribute('data-rows-shown')).toBe('8');
     });
 
-    it('columns: every skill, combat then Starting then specialist, then one Fight column, under group headers', () => {
+    it('columns: every work skill, Starting then specialist, then one Combat column, under group headers', () => {
         const view = openDrawer();
         const cols = qa(view, '[data-rules-col]').map(el => el.getAttribute('data-rules-col'));
         expect(cols).toEqual([
-            ...getSkillIdsByLayer(SKILL_LAYERS.COMBAT),
             ...getSkillIdsByLayer(SKILL_LAYERS.STARTING),
             ...getSkillIdsByLayer(SKILL_LAYERS.ADVANCED),
             ...getSkillIdsByLayer(SKILL_LAYERS.MASTER),
             FlagRules.FIGHT
         ]);
-        expect(cols.length).toBe(SKILL_COUNT + 1);
-        expect(qa(view, '[data-rules-group]').map(el => el.getAttribute('data-rules-group'))).toEqual(['combat', 'starting', 'specialist', 'fight']);
+        expect(cols.length).toBe(SKILL_COUNT - getSkillIdsByLayer(SKILL_LAYERS.COMBAT).length + 1);
+        expect(qa(view, '[data-rules-group]').map(el => el.getAttribute('data-rules-group'))).toEqual(['starting', 'specialist', 'combat']);
         expect(q(view, '[data-rules-group="specialist"]').textContent).toBe('Specialist');
         // A hairline opens each group after the first.
         const starts = qa(view, '[data-rules-col][data-group-start]').map(el => el.getAttribute('data-rules-col'));
-        expect(starts).toEqual([getSkillIdsByLayer(SKILL_LAYERS.STARTING)[0], getSkillIdsByLayer(SKILL_LAYERS.ADVANCED)[0], FlagRules.FIGHT]);
+        expect(starts).toEqual([getSkillIdsByLayer(SKILL_LAYERS.ADVANCED)[0], FlagRules.FIGHT]);
     });
 
     it('a skill the hero does not hold is a blank, dimmed cell that ignores clicks', () => {
@@ -219,18 +218,9 @@ describe('H3 v2: the grid', () => {
         click(missing);
         rightClick(missing);
         expect(GameState.state.heroes.find(x => x.id === 'h2').flagRules).toEqual({});
-        // Everyone fights: a hero with no combat skill still has a Fight rule.
+        // Everyone fights: a hero with no combat skill still has a Combat rule.
         expect(cell(view, 'h2', FlagRules.FIGHT).getAttribute('data-cell')).toBe('rule');
         expect(cell(view, 'h1', FlagRules.FIGHT).getAttribute('data-cell')).toBe('rule');
-    });
-
-    it('a combat skill’s column is a level tint only, not a rule', () => {
-        const view = openDrawer();
-        const melee = cell(view, 'h1', 'melee');
-        expect(melee.getAttribute('data-cell')).toBe('level');
-        expect(melee.textContent).toBe('');
-        click(melee);
-        expect(GameState.state.heroes.find(x => x.id === 'h1').flagRules).toEqual({});
     });
 
     it('each cell is tinted by the hero’s level, dark at 1 and bright at 99', () => {
@@ -246,13 +236,13 @@ describe('H3 v2: the grid', () => {
 
     it('hovering a cell shows the game’s tooltip with hero, skill and level', () => {
         const view = openDrawer();
-        fireEvent.mouseEnter(cell(view, 'h1', 'forestry'));
-        const tip = document.querySelector('[data-top-bar-tip]');
+        fireEvent.pointerEnter(cell(view, 'h1', 'forestry'));
+        const tip = document.querySelector('[data-tooltip]');
         expect(tip.textContent).toContain('Aldric');
         expect(tip.textContent).toContain('Forestry');
         expect(tip.textContent).toContain('30/99');
-        fireEvent.mouseLeave(cell(view, 'h1', 'forestry'));
-        expect(document.querySelector('[data-top-bar-tip]')).toBeNull();
+        fireEvent.pointerLeave(cell(view, 'h1', 'forestry'));
+        expect(document.querySelector('[data-tooltip]')).toBeNull();
     });
 
     it('hovering a row lights that hero (and their flag) on the mat', () => {
@@ -364,23 +354,11 @@ describe('H3 v2: bulk toggles', () => {
 
         click(header());
         for (const id of ['h1', 'h3', 'h4']) expect(FlagRules.ruleOf(id, 'mining')).toEqual({ allowed: true, priority: 1 });
-
-        // A combat skill's column has no rules to switch.
-        click(q(view, '[data-rules-col="melee"]'));
-        expect(GameState.state.heroes.find(x => x.id === 'h1').flagRules.melee).toBeUndefined();
     });
 });
 
-describe('H3 v2: the hero panel’s link', () => {
-    it('opens the drawer with that hero’s row lit', () => {
-        const opened = [];
-        const unsub = EventBus.subscribe(UI_EVENTS.UI_OPEN_FLAG_RULES, d => opened.push(d.heroId));
-        const panel = render(wrap(h(BankHeroPanel, { menuRight: false, showTabs: false, selectedHeroId: 'h3' })));
-        click(panel.container.querySelector('[data-hero-panel-rules]'));
-        unsub();
-        expect(opened).toEqual(['h3']);
-        cleanup();
-
+describe('H3 v2: opening on one hero', () => {
+    it('the open event opens the drawer with that hero’s row lit', () => {
         const view = render(h(Host));
         act(() => { EventBus.publish(UI_EVENTS.UI_OPEN_FLAG_RULES, { heroId: 'h3' }); });
         expect(drawer(view)).not.toBeNull();

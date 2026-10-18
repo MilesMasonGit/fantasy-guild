@@ -1,44 +1,49 @@
-import { SKILL_LAYERS, getSkillIdsByLayer, getSkill } from '../../../config/registries/skillRegistry.js';
+import { SKILL_LAYERS, getSkillIdsByLayer, getSkill, skillPurpose, COMBAT_PURPOSE } from '../../../config/registries/skillRegistry.js';
 import * as FlagRules from '../../../systems/board/FlagRules.js';
 import * as Flags from '../../../systems/board/Flags.js';
 import { getHeroCombatSkillEntry } from '../../../utils/CombatFormulas.js';
 import { HIGHLIGHT_ATTR } from '../board/tokenHighlight.js';
 
 /**
- * The work rules grid's model: plain functions over the hero records and `Flags.setRule`, so the
- * tests can pin them without rendering. Rows are heroes; columns are every skill, then Fight.
+ * The Work Permissions grid's model: plain functions over the hero records and `Flags.setRule`, so
+ * the tests can pin them without rendering. Rows are heroes; columns are every work skill, then
+ * one Combat column (the hero's fighting, whichever combat skill they hold).
  */
 
 /** The most hero rows the drawer shows before it scrolls. */
 export const MAX_ROWS = 8;
 
 /**
- * The column groups, left to right: combat, Starting, specialist (Advanced then Master), then the
- * one Fight column. A combat-skill column is a level tint only; the hero's fighting is the Fight
- * rule.
+ * The column groups, left to right: Starting, specialist (Advanced then Master), then the one
+ * Combat column. Every column is shown for every hero; a skill the hero lacks is a blank cell.
  */
 export function ruleGroups() {
     return [
-        { id: 'combat', name: 'Combat', columns: getSkillIdsByLayer(SKILL_LAYERS.COMBAT) },
         { id: 'starting', name: 'Starting', columns: getSkillIdsByLayer(SKILL_LAYERS.STARTING) },
         {
             id: 'specialist',
             name: 'Specialist',
             columns: [...getSkillIdsByLayer(SKILL_LAYERS.ADVANCED), ...getSkillIdsByLayer(SKILL_LAYERS.MASTER)]
         },
-        { id: 'fight', name: '', columns: [FlagRules.FIGHT] }
+        { id: 'combat', name: '', columns: [FlagRules.FIGHT] }
     ];
 }
 
-/** Whether a column carries a rule (a work skill or Fight), rather than a combat skill's level only. */
+/**
+ * Whether a column carries a rule. Every grid column does; a combat skill's id does not (combat
+ * is the one Combat rule), so `cellOf` stays safe if handed one.
+ */
 export const isRuleColumn = (columnId) => columnId === FlagRules.FIGHT || getSkill(columnId)?.layer !== SKILL_LAYERS.COMBAT;
 
 /** A column's name, for headers and tooltips. */
-export const columnName = (columnId) => (columnId === FlagRules.FIGHT ? 'Fight' : (getSkill(columnId)?.name || columnId));
+export const columnName = (columnId) => (columnId === FlagRules.FIGHT ? 'Combat' : (getSkill(columnId)?.name || columnId));
+
+/** A column header's tooltip line: what the skill does and what it feeds. */
+export const columnPurpose = (columnId) => (columnId === FlagRules.FIGHT ? COMBAT_PURPOSE : skillPurpose(columnId));
 
 /**
- * One cell: `held` (the hero holds the skill, or can fight for Fight), the level that tints it
- * (Fight: the hero's combat skill level), and for a rule column the rule itself.
+ * One cell: `held` (the hero holds the skill, or can fight for Combat), the level that tints it
+ * (Combat: the hero's combat skill level), and for a rule column the rule itself.
  * @returns {{ held: boolean, level: number|null, rule: boolean, allowed: boolean, priority: number }}
  */
 export function cellOf(heroId, columnId) {

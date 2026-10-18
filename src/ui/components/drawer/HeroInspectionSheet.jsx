@@ -9,7 +9,6 @@ import { SkillIcon } from '../base/SkillIcon.jsx';
 import { boardArtSteps } from '../base/TokenSprite.jsx';
 import { AnimatedHeroSprite } from '../board/AnimatedHeroSprite.jsx';
 import { FlagMark } from '../board/FlagMark.jsx';
-import { WorkRulesLink } from '../dock/WorkRulesDrawer.jsx';
 import { Tooltip } from '../base/Tooltip.jsx';
 import { useLiveMatFit } from '../board/MatFitContext.jsx';
 import { useEntityDrag } from '../../dnd/DndKit.jsx';
@@ -18,10 +17,13 @@ import { Feather, ChevronRight } from 'lucide-react';
 import { flagColourOf } from '../../../systems/board/FlagColours.js';
 import { XpRateTracker } from '../../../systems/hero/XpRateTracker.js';
 import {
-    heroSkillList, skillLevelText, skillXpView, skillDetail,
+    heroSkillList, skillLevelText, skillXpView, skillDetail, requiresText,
     useLockedListOpen, setLockedListOpen
 } from '../dock/heroPanelSkills.js';
 import { ENGINE_EVENTS, ORPHAN_EVENTS } from '../../../systems/core/engineEvents.js';
+
+/** The close X: its 16 px sprite at 2×, as every panel header draws it. */
+const CLOSE_PX = 32;
 
 /** Advanced and Master rows' own backgrounds. */
 const TIER_BG = {
@@ -99,7 +101,7 @@ export const HeroInspectionSheet = memo(function HeroInspectionSheet({ heroId, o
                             alt="Close"
                             draggable={false}
                             className="select-none pointer-events-none"
-                            style={{ width: 24, height: 24, imageRendering: 'pixelated' }}
+                            style={{ width: CLOSE_PX, height: CLOSE_PX, imageRendering: 'pixelated' }}
                         />
                     </button>
                 </div>
@@ -115,7 +117,6 @@ export const HeroInspectionSheet = memo(function HeroInspectionSheet({ heroId, o
                         <h3 className="min-w-0 text-sm font-bold text-white truncate">{hero.name}</h3>
                         <span data-hero-panel-job className="ml-auto shrink-0 text-xs text-gi-muted truncate">{jobTitle}</span>
                     </div>
-                    <WorkRulesLink heroId={heroId} />
                     <div className="flex items-center gap-2">
                         <div data-hero-panel-hp className="h-1.5 flex-1 bg-black/60 rounded-full overflow-hidden">
                             <div className={cn('h-full transition-all duration-300', hpTone)} style={{ width: `${hpPct}%` }} />
@@ -251,7 +252,7 @@ const SkillRow = ({ row, heroId, kind = 'held', expanded = false, onToggle }) =>
     const tipLines = kind === 'banked'
         ? [`Set aside at ${skillLevelText(row.level)}.`, 'A job that uses it again gets it back as it was.']
         : kind === 'locked'
-            ? ['Not on this hero’s job.']
+            ? [requiresText(row.id)]
             : [xp.title, ...(row.mastered ? ['Mastered: kept on every job.'] : [])];
     return (
         <Tooltip title={row.name} lines={tipLines}>

@@ -1,78 +1,76 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Check, Swords } from 'lucide-react';
 import { cn } from '../../utils/cn.js';
 import { useEngine } from '../../hooks/useEngine.js';
 import { useEntityDrop } from '../../dnd/DndKit.jsx';
 import { DND_SURFACE } from '../../dnd/dragConstants.js';
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
-import { ENGINE_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
+import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 import * as FlagRules from '../../../systems/board/FlagRules.js';
 import { GameState } from '../../../state/GameState.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { SkillIcon } from '../base/SkillIcon.jsx';
-import { TopBarTip } from '../board/TopBarTip.jsx';
+import { Tooltip } from '../base/Tooltip.jsx';
 import { isRecallDrop, recallFromDrop } from './dockRecall.js';
 import { skillLevelText } from './heroPanelSkills.js';
 import { DOCK_STRIP_PX } from './dockHeroView.js';
 import {
-    MAX_ROWS, ruleGroups, isRuleColumn, columnName, cellOf, clickCell, toggleRow, toggleColumn,
+    MAX_ROWS, ruleGroups, isRuleColumn, columnName, columnPurpose, cellOf, clickCell, toggleRow, toggleColumn,
     tintLightness, levelTint, highlightHero
 } from './workRules.js';
 
 /** The drawer's slide-down (`duration-200`), plus a little slack, before it unmounts. */
 const DRAWER_CLOSE_MS = 250;
-const ROW_PX = 26;
-const COL_PX = 24;
-const HEADER_PX = 136;
+const ROW_PX = 30;
+const HEADER_ROW_PX = 40;
+const NAME_PX = 150;
 const GEAR_SRC = '/assets/ui/u_gear.png';
+/** The gear sprite's own size: it draws at 1×. */
+const GEAR_PX = 32;
+
+/** The launcher's slot width at the hero bar's left end; the heroes start after it. */
+export const LAUNCHER_PX = 136;
+
+/** The name a player reads for the rules grid, everywhere. */
+export const WORK_PERMISSIONS = 'Work Permissions';
 
 /**
- * The hero bar's Work Rules button (the Stations' orange gear) at the bar's left end: the only
- * way to the rules grid. Toggles the drawer.
+ * The hero bar's Work Permissions launcher: its own framed slot at the bar's left end, the gear
+ * and the label, with a divider before the heroes. The only way to the grid. Toggles the drawer.
  */
-export const WorkRulesButton = ({ open = false, onToggle }) => {
-    const ref = useRef(null);
-    const [hovered, setHovered] = useState(false);
-    return (
-        <>
+export const WorkRulesButton = ({ open = false, onToggle }) => (
+    <div
+        data-work-rules-slot
+        className="absolute left-0 top-0 bottom-0 z-50 flex items-stretch p-1 border-r border-white/15"
+        style={{ width: LAUNCHER_PX }}
+    >
+        <Tooltip title={WORK_PERMISSIONS} lines={['Which skills each hero works, and in what order.']}>
             <button
-                ref={ref}
                 type="button"
                 data-work-rules-button
                 aria-pressed={open ? 'true' : 'false'}
-                aria-label="Work rules"
+                aria-label={WORK_PERMISSIONS}
                 // ⚠️ Stops the press reaching the bar's drop zone and any hero under it.
                 onPointerDown={e => e.stopPropagation()}
                 onClick={(e) => { e.stopPropagation(); onToggle?.(); }}
-                onMouseEnter={() => setHovered(true)}
-                onMouseLeave={() => setHovered(false)}
                 className={cn(
-                    'absolute left-2 top-1/2 -translate-y-1/2 z-50 w-10 h-10 flex items-center justify-center rounded-md cursor-pointer',
-                    'filter drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)] transition-transform duration-150 hover:scale-110 active:scale-95',
-                    open && 'bg-white/10'
+                    'flex-1 min-w-0 flex items-center gap-1.5 px-1.5 rounded-md border cursor-pointer transition-colors',
+                    open ? 'border-ui-gold/70 bg-white/10' : 'border-white/15 bg-black/30 hover:border-ui-white/60'
                 )}
             >
-                <img src={GEAR_SRC} alt="" draggable={false} className="w-7 h-7 pointer-events-none" style={{ imageRendering: 'pixelated' }} />
+                <img
+                    src={GEAR_SRC}
+                    alt=""
+                    draggable={false}
+                    className="shrink-0 pointer-events-none"
+                    style={{ width: GEAR_PX, height: GEAR_PX, imageRendering: 'pixelated' }}
+                />
+                <span className={cn('ui-text-small font-bold leading-tight text-left', open ? 'text-ui-gold' : 'text-white')}>
+                    Work<br />Permissions
+                </span>
             </button>
-            {hovered && <TopBarTip anchor={ref.current} title="Work rules" lines={['Which skills each hero works, and in what order.']} width={200} />}
-        </>
-    );
-};
-
-/** The hero panel's small "Work rules" link: opens the drawer with this hero's row lit. */
-export const WorkRulesLink = ({ heroId }) => (
-    <button
-        type="button"
-        data-hero-panel-rules
-        onClick={(e) => {
-            e.stopPropagation();
-            EventBus.publish(UI_EVENTS.UI_OPEN_FLAG_RULES, { heroId });
-        }}
-        className="self-start flex items-center gap-1 text-[10px] font-bold text-gi-muted hover:text-gi-gold transition-colors"
-    >
-        <img src={GEAR_SRC} alt="" draggable={false} className="w-3 h-3" style={{ imageRendering: 'pixelated' }} />
-        Work rules
-    </button>
+        </Tooltip>
+    </div>
 );
 
 /** Re-render on anything that changes a hero, a rule or a level. Only while the drawer is mounted. */
@@ -87,9 +85,10 @@ function useHeroesRefresh() {
 }
 
 /**
- * The work rules grid, in a drawer that rises from behind the hero bar: one row per hero, one
- * column per skill, then Fight. Open until the button or Escape closes it; the mat stays usable.
- * Rules go through `Flags.setRule`, so the engine sees nothing new.
+ * The Work Permissions grid, in a drawer that slides up from behind the hero bar, the full width
+ * of the mat: one row per hero, one column per work skill, then Combat. Open until the launcher or
+ * Escape closes it; the mat stays usable. Rules go through `Flags.setRule`, so the engine sees
+ * nothing new.
  */
 export const WorkRulesDrawer = ({ open = false, litHeroId = null, onClose }) => {
     const engine = useEngine();
@@ -139,7 +138,7 @@ export const WorkRulesDrawer = ({ open = false, litHeroId = null, onClose }) => 
             data-dnd-region={DND_SURFACE.DRAWER}
             onContextMenu={e => e.preventDefault()}
             style={{ bottom: DOCK_STRIP_PX }}
-            className="absolute left-2 z-[45] overflow-hidden pointer-events-auto select-none"
+            className="absolute left-0 right-0 z-[45] overflow-hidden pointer-events-auto select-none"
         >
             <div
                 className={cn(
@@ -157,7 +156,6 @@ export const WorkRulesDrawer = ({ open = false, litHeroId = null, onClose }) => 
 const RulesGrid = ({ litHeroId }) => {
     useHeroesRefresh();
     const [priorityMode, setPriorityMode] = useState(false);
-    const [tip, setTip] = useState(null);
     const [hoverRow, setHoverRow] = useState(null);
 
     useEffect(() => () => highlightHero(null), []);
@@ -167,30 +165,28 @@ const RulesGrid = ({ litHeroId }) => {
     const groups = ruleGroups();
     const columns = groups.flatMap(g => g.columns);
     const groupStarts = new Set(groups.slice(1).map(g => g.columns[0]));
-    const template = `${HEADER_PX}px repeat(${columns.length}, ${COL_PX}px)`;
+    // Hero names take a fixed width; the columns share the rest evenly, whatever their count.
+    const template = `${NAME_PX}px repeat(${columns.length}, minmax(0, 1fr))`;
     const shown = Math.min(heroes.length, MAX_ROWS);
-
-    const showTip = (el, title, lines) => setTip({ el, title, lines });
-    const hideTip = () => setTip(null);
     const hairline = (columnId) => (groupStarts.has(columnId) ? 'border-l border-white/15' : '');
 
     return (
         <div className="flex flex-col text-gi-text" data-rules-priority-mode={priorityMode ? 'true' : 'false'}>
-            <div className="flex items-center gap-3 px-2 pt-1.5 pb-1">
-                <span className="text-[11px] font-bold gi-caps tracking-wider text-gi-muted">Work rules</span>
+            <div className="flex items-center gap-4 px-2 pt-1.5 pb-1">
+                <span data-rules-title className="ui-text-title font-bold text-ui-gold">{WORK_PERMISSIONS}</span>
                 <button
                     type="button"
                     data-rules-mode
                     aria-pressed={priorityMode ? 'true' : 'false'}
                     onClick={() => setPriorityMode(m => !m)}
-                    className="flex items-center gap-1.5 text-[10px] font-bold gi-caps text-gi-muted hover:text-gi-text transition-colors cursor-pointer"
+                    className="flex items-center gap-1.5 ui-text-small font-bold text-ui-muted hover:text-ui-white transition-colors cursor-pointer"
                 >
                     <span className={cn('relative w-6 h-3 rounded-full transition-colors', priorityMode ? 'bg-gi-gold/80' : 'bg-white/15')}>
                         <span className={cn('absolute top-0.5 w-2 h-2 rounded-full bg-white transition-[left]', priorityMode ? 'left-3.5' : 'left-0.5')} />
                     </span>
                     Priorities
                 </button>
-                <span className="ml-auto text-[10px] text-gi-muted/80">Click: up · Right-click: down</span>
+                <span className="ml-auto ui-text-small text-ui-muted">Click: up · Right-click: down</span>
             </div>
 
             {/* Group headers, then one header per column. */}
@@ -201,35 +197,30 @@ const RulesGrid = ({ litHeroId }) => {
                         key={g.id}
                         data-rules-group={g.id}
                         style={{ gridColumn: `span ${g.columns.length}` }}
-                        className={cn('px-1 text-[9px] font-bold gi-caps tracking-wider text-gi-muted truncate', g.id !== groups[0].id && 'border-l border-white/15')}
+                        className={cn('px-1 ui-text-small font-bold text-ui-muted truncate', g.id !== groups[0].id && 'border-l border-white/15')}
                     >
                         {g.name}
                     </span>
                 ))}
             </div>
-            <div className="grid border-b border-white/10" style={{ gridTemplateColumns: template, height: ROW_PX }}>
+            <div className="grid border-b border-white/10" style={{ gridTemplateColumns: template, height: HEADER_ROW_PX }}>
                 <span />
-                {columns.map(columnId => {
-                    const rule = isRuleColumn(columnId);
-                    return (
+                {columns.map(columnId => (
+                    <Tooltip key={columnId} title={columnName(columnId)} lines={[columnPurpose(columnId)]}>
                         <button
-                            key={columnId}
                             type="button"
                             data-rules-col={columnId}
                             data-group-start={groupStarts.has(columnId) ? 'true' : undefined}
-                            onClick={() => { if (rule) toggleColumn(heroIds, columnId); }}
-                            onMouseEnter={e => showTip(e.currentTarget, columnName(columnId), [
-                                rule ? 'Click to allow or disallow for every hero.' : 'Level only. Fighting is the Fight column.'
-                            ])}
-                            onMouseLeave={hideTip}
-                            className={cn('flex items-center justify-center', rule ? 'cursor-pointer hover:bg-white/10' : 'cursor-default', hairline(columnId))}
+                            aria-label={columnName(columnId)}
+                            onClick={() => toggleColumn(heroIds, columnId)}
+                            className={cn('min-w-0 flex items-center justify-center cursor-pointer hover:bg-white/10', hairline(columnId))}
                         >
                             {columnId === FlagRules.FIGHT
-                                ? <Swords size={14} className="text-gi-gold" />
-                                : <SkillIcon skillId={columnId} size={16} />}
+                                ? <Swords size={24} className="text-ui-gold" />
+                                : <SkillIcon skillId={columnId} size={32} title={null} />}
                         </button>
-                    );
-                })}
+                    </Tooltip>
+                ))}
             </div>
 
             <div
@@ -251,25 +242,25 @@ const RulesGrid = ({ litHeroId }) => {
                             className={cn('grid', lit ? 'bg-gi-gold/15' : hoverRow === hero.id && 'bg-white/5')}
                             style={{ gridTemplateColumns: template, height: ROW_PX }}
                         >
-                            <button
-                                type="button"
-                                data-rules-row-header
-                                onClick={() => toggleRow(hero.id)}
-                                onMouseEnter={e => showTip(e.currentTarget, hero.name, ['Click to allow or disallow every skill.'])}
-                                onMouseLeave={hideTip}
-                                className="flex items-center gap-1.5 px-1.5 min-w-0 text-left cursor-pointer hover:bg-white/10"
-                            >
-                                {portrait && (
-                                    <img
-                                        src={portrait.startsWith('/') ? portrait : `/${portrait}`}
-                                        alt=""
-                                        draggable={false}
-                                        className="w-5 h-5 shrink-0 object-contain"
-                                        style={{ imageRendering: 'pixelated' }}
-                                    />
-                                )}
-                                <span className={cn('truncate text-[11px] font-bold', lit ? 'text-gi-gold' : 'text-white')}>{hero.name}</span>
-                            </button>
+                            <Tooltip title={hero.name} lines={['Click to allow or disallow every skill.']}>
+                                <button
+                                    type="button"
+                                    data-rules-row-header
+                                    onClick={() => toggleRow(hero.id)}
+                                    className="flex items-center gap-1.5 px-1.5 min-w-0 text-left cursor-pointer hover:bg-white/10"
+                                >
+                                    {portrait && (
+                                        <img
+                                            src={portrait.startsWith('/') ? portrait : `/${portrait}`}
+                                            alt=""
+                                            draggable={false}
+                                            className="w-6 h-6 shrink-0 object-contain"
+                                            style={{ imageRendering: 'pixelated' }}
+                                        />
+                                    )}
+                                    <span className={cn('truncate ui-text-body font-bold', lit ? 'text-ui-gold' : 'text-white')}>{hero.name}</span>
+                                </button>
+                            </Tooltip>
                             {columns.map(columnId => (
                                 <RuleCell
                                     key={columnId}
@@ -277,58 +268,48 @@ const RulesGrid = ({ litHeroId }) => {
                                     columnId={columnId}
                                     priorityMode={priorityMode}
                                     hairline={hairline(columnId)}
-                                    onTip={showTip}
-                                    onTipEnd={hideTip}
                                 />
                             ))}
                         </div>
                     );
                 })}
             </div>
-            {tip && <TopBarTip anchor={tip.el} title={tip.title} lines={tip.lines} width={180} />}
         </div>
     );
 };
 
-/** One hero's one skill: blank if not held, a tint if a combat skill, else a tick or a number. */
-const RuleCell = ({ hero, columnId, priorityMode, hairline, onTip, onTipEnd }) => {
+/** One hero's one column: blank if not held, else a level tint with a tick or a number. */
+const RuleCell = ({ hero, columnId, priorityMode, hairline }) => {
     const cell = cellOf(hero.id, columnId);
     const id = `${hero.id}:${columnId}`;
-    if (!cell.held) {
+    if (!cell.held || !cell.rule) {
         return <span data-rules-cell={id} data-cell="missing" aria-disabled="true" className={cn('m-px bg-black/40 opacity-50', hairline)} />;
     }
-    const tint = {
-        'data-cell-tint': tintLightness(cell.level),
-        style: { backgroundColor: levelTint(cell.level) },
-        onMouseEnter: e => onTip(e.currentTarget, hero.name, [`${columnName(columnId)} ${skillLevelText(cell.level)}`]),
-        onMouseLeave: onTipEnd
-    };
-    if (!cell.rule) {
-        return <span data-rules-cell={id} data-cell="level" {...tint} className={cn('m-px', hairline)} />;
-    }
     return (
-        <span
-            role="button"
-            data-rules-cell={id}
-            data-cell="rule"
-            data-cell-on={cell.allowed ? 'true' : 'false'}
-            data-cell-priority={cell.allowed ? cell.priority : undefined}
-            {...tint}
-            onClick={() => clickCell(hero.id, columnId, 'up', priorityMode)}
-            onContextMenu={(e) => {
-                e.preventDefault();
-                clickCell(hero.id, columnId, 'down', priorityMode);
-            }}
-            className={cn(
-                'm-px flex items-center justify-center cursor-pointer text-[11px] font-bold tabular-nums text-white hover:brightness-125',
-                hairline
-            )}
-            style={{ ...tint.style, textShadow: '0 1px 2px #000' }}
-        >
-            {cell.allowed && (priorityMode
-                ? cell.priority
-                : <Check data-cell-tick size={14} strokeWidth={3} />)}
-        </span>
+        <Tooltip title={hero.name} lines={[`${columnName(columnId)} ${skillLevelText(cell.level)}`]}>
+            <span
+                role="button"
+                data-rules-cell={id}
+                data-cell="rule"
+                data-cell-on={cell.allowed ? 'true' : 'false'}
+                data-cell-priority={cell.allowed ? cell.priority : undefined}
+                data-cell-tint={tintLightness(cell.level)}
+                onClick={() => clickCell(hero.id, columnId, 'up', priorityMode)}
+                onContextMenu={(e) => {
+                    e.preventDefault();
+                    clickCell(hero.id, columnId, 'down', priorityMode);
+                }}
+                className={cn(
+                    'm-px flex items-center justify-center cursor-pointer ui-text-body font-bold tabular-nums text-white hover:brightness-125',
+                    hairline
+                )}
+                style={{ backgroundColor: levelTint(cell.level), textShadow: '0 1px 2px #000' }}
+            >
+                {cell.allowed && (priorityMode
+                    ? cell.priority
+                    : <Check data-cell-tick size={16} strokeWidth={3} />)}
+            </span>
+        </Tooltip>
     );
 };
 

@@ -92,7 +92,7 @@ export const SKIP_HINT = {
     disallowed: 'heroes not allowed',
     claimed: 'being worked by {holder}',
     same_job: 'already holds this job',
-    rule_off: 'off in {hero}’s rules'
+    rule_off: 'off in {hero}’s Work Permissions'
 };
 
 /**

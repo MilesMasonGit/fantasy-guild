@@ -404,21 +404,22 @@ describe('the rules grid (FP-71, FP-79, FPP-17)', () => {
     const grid = () => mount(h(WorkRulesDrawer, { open: true, litHeroId: null, onClose: () => {} }));
     const cell = (container, heroId, ruleId) => container.querySelector(`[data-rules-cell="${heroId}:${ruleId}"]`);
 
-    it('a rule cell per held work skill, and a Fight rule for every hero, combat skill or not', () => {
+    it('a rule cell per held work skill, and a Combat rule for every hero, combat skill or not', () => {
         const { container } = grid();
         expect(cell(container, 'h1', 'forestry').getAttribute('data-cell')).toBe('rule');
         expect(cell(container, 'h1', 'mining').getAttribute('data-cell')).toBe('rule');
         expect(cell(container, 'h1', FlagRules.FIGHT).getAttribute('data-cell')).toBe('rule');
         expect(cell(container, 'fighter', FlagRules.FIGHT).getAttribute('data-cell')).toBe('rule');
-        expect(cell(container, 'fighter', 'melee').getAttribute('data-cell')).toBe('level');   // combat skills are one Fight rule
+        expect(cell(container, 'fighter', 'melee')).toBeNull();   // combat skills are the one Combat column
     });
 
     it('shows the level and the default rule: allowed, priority 3', () => {
         const { container } = grid();
         const forestry = () => cell(container, 'h1', 'forestry');
         expect(forestry().getAttribute('data-cell-on')).toBe('true');
-        fireEvent.mouseEnter(forestry());
-        expect(document.querySelector('[data-top-bar-tip]').textContent).toContain('50/99');
+        fireEvent.pointerEnter(forestry());
+        expect(document.querySelector('[data-tooltip]').textContent).toContain('50/99');
+        fireEvent.pointerLeave(forestry());
         fireEvent.click(container.querySelector('[data-rules-mode]'));
         expect(forestry().textContent).toBe('3');
     });
