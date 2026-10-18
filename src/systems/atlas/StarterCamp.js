@@ -1,6 +1,6 @@
 // The Starter Camp: the Region a new game opens in
 
-import { matW, matH } from '../../config/matGeometry.js';
+import { matW, matH, artRadiusOf } from '../../config/matGeometry.js';
 import { getTokenType, tokenStartingUses } from '../../config/registries/tokenRegistry.js';
 import { QUEST_TOKEN_TYPE } from '../../config/registries/engineTokens.js';
 import { authoredStarterCamp } from '../../config/registries/starterCampRegistry.js';
@@ -10,6 +10,10 @@ import * as MatPlacement from '../board/MatPlacement.js';
 import { isGuildHall } from '../board/MatCap.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { warnMissingContent } from '../../utils/missingContent.js';
+import { TERRAIN, DEFAULT_TERRAIN, TERRAIN_CELL, terrainGrid, cellCentre, cellIndex, encodeTerrain } from './TerrainMap.js';
+import { emptyWater, readWater, sampleWater, fieldAt, smallWater, SMALL_WATER } from './WaterShapes.js';
+import { HALL_CLEARING } from './Layout.js';
+import { mulberry32 } from './seededRandom.js';
 
 /**
  * The Starter Camp is content: the owner lays it out in the game, saves it with the QA panel's
@@ -82,6 +86,54 @@ export function placementsOf(camp = starterCamp()) {
         at(GUILD_HALL_TYPE, camp?.hall || saved),
         ...(camp?.tokens || []).map(t => at(t.typeId, t))
     ];
+}
+
+/**
+ * Where the Starter Camp's pond is tried, in order: a step out from the Hall's clearing in eight
+ * directions (left first), then further out.
+ */
+const POND_DIRECTIONS = Object.freeze([[-1, 0], [-0.7071, 0.7071], [0.7071, -0.7071], [1, 0], [0, -1], [0, 1], [-0.7071, -0.7071], [0.7071, 0.7071]]);
+const POND_REACH = Object.freeze([460, 540, 620]);
+
+/** How far the pond keeps inside the mat's edge, and off each Token's art, in mat units. */
+const POND_MARGIN = 140;
+const POND_CLEAR = 24;
+
+/**
+ * The Starter Camp's ground: meadow, and one small pond near the camp where nothing stands (the
+ * first spot of {@link POND_DIRECTIONS} where the pond keeps off the Hall's clearing, the mat's
+ * edge and every Token's art), stored like a settled Region's water so it is drawn and the Tokens
+ * keep off it. Null when no spot fits: the camp is then all meadow, as before.
+ *
+ * @param {{typeId: string, x: number, y: number}[]} standing  the camp's Tokens as they stand
+ * @param {{w: number, h: number}} mat
+ * @param {number} seed  the Region's seed, for the pond's shape
+ */
+export function starterCampTerrain(standing, mat, seed) {
+    const hall = standing.find(t => t.typeId === GUILD_HALL_TYPE) || centreOf(mat.w, mat.h);
+    const clear = { x: hall.x, y: hall.y, r: HALL_CLEARING + 2 * TERRAIN_CELL };
+    const random = mulberry32((Number(seed) || 0) ^ 0x504f4e44);
+    const record = emptyWater(random, mat, clear);
+    const grid = terrainGrid(mat);
+    const tokenCells = new Set(standing.map(t => cellIndex(grid, t.x, t.y)));
+    const keepDry = (i) => {
+        const c = cellCentre(grid, i);
+        return tokenCells.has(i) || (c.x - clear.x) * (c.x - clear.x) + (c.y - clear.y) * (c.y - clear.y) < clear.r * clear.r;
+    };
+    for (const reach of POND_REACH) {
+        for (const [dx, dy] of POND_DIRECTIONS) {
+            const x = Math.round(hall.x + dx * reach);
+            const y = Math.round(hall.y + dy * reach);
+            if (x < POND_MARGIN || y < POND_MARGIN || x > mat.w - POND_MARGIN || y > mat.h - POND_MARGIN) continue;
+            const shape = smallWater(SMALL_WATER.POND, x, y, random);
+            const water = { ...record, shapes: [shape] };
+            const { water: cells, sample } = sampleWater(readWater(water), grid, TERRAIN_CELL, keepDry);
+            if (!cells.some(Boolean)) continue;
+            if (!standing.every(t => fieldAt(sample, t.x, t.y) <= -(artRadiusOf(t.typeId) + POND_CLEAR))) continue;
+            return encodeTerrain(grid, Array.from(cells, v => (v ? TERRAIN.WATER : DEFAULT_TERRAIN)), water);
+        }
+    }
+    return null;
 }
 
 /** A camp's Bank as `[{ itemId, quantity }]`, in its order. */

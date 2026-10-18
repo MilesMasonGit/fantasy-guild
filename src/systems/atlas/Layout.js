@@ -5,7 +5,7 @@ import {
     TERRAIN, DEFAULT_TERRAIN, TERRAIN_CELL, MAX_WATER_SHARE, terrainGrid, cellIndex, cellCentre,
     shoreDistance, followNodes, encodeTerrain
 } from './TerrainMap.js';
-import { planWater, readWater, sampleWater, fieldAt, withoutInland } from './WaterShapes.js';
+import { planWater, readWater, sampleWater, fieldAt, withoutInland, smallWater, emptyWater } from './WaterShapes.js';
 
 /**
  * The layout half of generation: places every Token a budget (`Budget.js`) writes, on a mat of a
@@ -17,6 +17,9 @@ import { planWater, readWater, sampleWater, fieldAt, withoutInland } from './Wat
  *   get one along an edge, and the main biome its inland water (`summary.ground.inland`, one
  *   variety picked by the seed). A cell is water when the water covers half of it; the shapes are
  *   stored with the cells, so the drawing follows them.
+ * - **Small waters** last, once every Token stands: each other biome's (`summary.ground.small`)
+ *   in a gap of its own ground, clear of every Token and of the other water, or none where none
+ *   fits. Nothing placed moves for them.
  * - **Nodes** grow in groves: each species gets one grove per {@link GROVE_SIZE} nodes, grove
  *   centres spread over the mat, and each node takes the free spot nearest its grove's centre.
  *   Species with the biggest bodies go first; a species of a biome that brings water (a Coast)
@@ -88,6 +91,9 @@ const DRY_MARGIN = 2 * TERRAIN_CELL;
  * covers less than half of it, so a shore cell may still show some.
  */
 export const DRY_GAP = 8;
+
+/** Places a small water tries in its biome's ground before it is left out. */
+const SMALL_TRIES = 24;
 
 const STANDARD_ART = 64;
 const HEX = Math.sqrt(3) / 2;
@@ -202,7 +208,7 @@ export function layout(summary, {
         record = withoutInland(record);
         sampled = record ? sampleWater(readWater(record), cells, TERRAIN_CELL, keepDry) : null;
     }
-    const water = sampled ? sampled.water : new Uint8Array(cells.cols * cells.rows);
+    const water = sampled ? sampled.water.slice() : new Uint8Array(cells.cols * cells.rows);
     const drawnAt = sampled ? (x, y) => fieldAt(sampled.sample, x, y) : null;
     const waterCells = water.reduce((n, v) => n + v, 0);
     const shore = waterCells > 0 ? shoreDistance(cells, water) : null;
@@ -497,6 +503,38 @@ export function layout(summary, {
         place(item, spotNear(item, anchor, []));
     }
 
+    // The other biomes' small waters, into gaps of their own ground.
+    const smalls = Object.entries(ground.small);
+    if (smalls.length) {
+        const n = cells.cols * cells.rows;
+        const biomeAt = new Array(n);
+        for (let i = 0; i < n; i++) biomeAt[i] = water[i] ? null : (owned.get(i) || followNodes(cellCentre(cells, i), marks, mainGround)).biome;
+        const standing = [{ x: hall.x, y: hall.y }, ...placed];
+        const standingCells = new Set(standing.map(p => cellAt(p.x, p.y)));
+        for (const [biome, kind] of smalls) {
+            const own = [];
+            for (let i = 0; i < n; i++) if (biomeAt[i] === biome) own.push(i);
+            if (!own.length) continue;
+            if (!record) record = emptyWater(random, mat, { x: hall.x, y: hall.y, r: dryReach });
+            for (let t = 0; t < SMALL_TRIES; t++) {
+                const c = cellCentre(cells, own[Math.floor(random() * own.length)]);
+                const shape = smallWater(kind, c.x, c.y, random);
+                const alone = sampleWater(readWater({ ...record, shapes: [shape] }), cells, TERRAIN_CELL, keepDry);
+                if (!smallFits(alone, biome, biomeAt, water, standing, standingCells, cells)) continue;
+                const wet = water.reduce((m, v) => m + v, 0) + alone.water.reduce((m, v) => m + v, 0);
+                if (wet / n > MAX_WATER_SHARE) continue;
+                record.shapes.push(shape);
+                for (let i = 0; i < n; i++) {
+                    if (!alone.water[i]) continue;
+                    water[i] = 1;
+                    biomeAt[i] = null;
+                }
+                break;
+            }
+        }
+        if (!record.shapes.length) record = null;
+    }
+
     const terrains = new Array(cells.cols * cells.rows);
     for (let i = 0; i < terrains.length; i++) {
         terrains[i] = water[i] ? TERRAIN.WATER
@@ -513,6 +551,40 @@ export function layout(summary, {
     };
 }
 
+/**
+ * Whether a small water, sampled alone, fits where it lies: some cells of its own, every one of
+ * them and every point it draws on in its biome's dry ground and not beside other water, and every
+ * standing Token's centre off it by the dry gap.
+ */
+function smallFits(alone, biome, biomeAt, water, standing, standingCells, cells) {
+    const { cols, rows } = cells;
+    const { f, lattice } = alone.sample;
+    const per = lattice.nx / cols;
+    let any = false;
+    for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+            const i = r * cols + c;
+            let drawn = false;
+            for (let j = 0; j < per && !drawn; j++) {
+                const row = (r * per + j) * lattice.nx + c * per;
+                for (let k = 0; k < per; k++) if (f[row + k] > 0) { drawn = true; break; }
+            }
+            if (!drawn) continue;
+            if (biomeAt[i] !== biome || standingCells.has(i)) return false;
+            for (let dr = -1; dr <= 1; dr++) {
+                for (let dc = -1; dc <= 1; dc++) {
+                    const rr = r + dr;
+                    const cc = c + dc;
+                    if (rr >= 0 && cc >= 0 && rr < rows && cc < cols && water[rr * cols + cc]) return false;
+                }
+            }
+            if (alone.water[i]) any = true;
+        }
+    }
+    if (!any) return false;
+    return standing.every(p => fieldAt(alone.sample, p.x, p.y) <= -DRY_GAP);
+}
+
 /** The budget's ground, or none (no water, everything on the default ground) for bare entries. */
 function groundOf(summary) {
     const g = Array.isArray(summary) ? null : summary?.ground;
@@ -521,7 +593,8 @@ function groundOf(summary) {
         terrains: g?.terrains || {},
         water: Number(g?.water) || 0,
         shore: g?.shore || [],
-        inland: Array.isArray(g?.inland) ? g.inland : []
+        inland: Array.isArray(g?.inland) ? g.inland : [],
+        small: g?.small && typeof g.small === 'object' ? g.small : {}
     };
 }
 

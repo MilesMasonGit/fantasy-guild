@@ -2,7 +2,7 @@
 
 import { tokenName } from '../../config/registries/tokenRegistry.js';
 import { TERRAIN, DEFAULT_TERRAIN } from './TerrainMap.js';
-import { WATER_KIND } from './WaterShapes.js';
+import { WATER_KIND, SMALL_WATER } from './WaterShapes.js';
 
 /**
  * The node budget: what the Cartography table's Node Summary shows, and what a layout then places.
@@ -51,9 +51,9 @@ import { WATER_KIND } from './WaterShapes.js';
  * 7. **Biomes and ground.** Each node entry carries the biome that writes most of its points (a
  *    replaced node keeps its source's biome; a density node with no Base Map takes the main
  *    biome). The summary's `ground` says which terrain each biome's ground is, how much of the
- *    mat is sea (blended like points), which biomes bring the sea, and the inland water the main
- *    biome brings (`BIOME_WATER`, one variety picked by the layout's seed); `Layout.js` builds
- *    the terrain grid from it. Camps and treasures take the ground where they land.
+ *    mat is sea (blended like points), which biomes bring the sea, the inland water the main
+ *    biome brings (`BIOME_WATER`, one variety picked by the layout's seed) and the small water
+ *    each other biome brings (`BIOME_SMALL_WATER`); `Layout.js` builds the terrain grid from it. Camps and treasures take the ground where they land.
  *
  * An effect kind the engine does not know is skipped and listed in `ignored`, never guessed at.
  */
@@ -76,18 +76,32 @@ export const BIOME_GROUND = Object.freeze({
  * The inland water each biome brings, by the settled world rounds (`world5.py` to `world7.py` in
  * `docs/active/research/ground_gen/`), beside the sea `BIOME_GROUND` gives the Coast: the layout picks one variety by its seed, a variety listed twice coming twice
  * as often. The meadows a lake, a river, or a lake with its river; the forest and the cherry grove
- * a pond; the mountain a tarn or a braided river; Yellowstone its sulphur springs; the volcano and
- * the Coast none inland. A biome not listed brings none.
+ * a pond; the mountain a tarn or a river; Yellowstone its sulphur springs; the volcano and the
+ * Coast none inland. A biome not listed brings none.
  */
 export const BIOME_WATER = Object.freeze({
     meadow: Object.freeze([WATER_KIND.LAKE_RIVER, WATER_KIND.LAKE_RIVER, WATER_KIND.LAKE, WATER_KIND.RIVER, WATER_KIND.SPLIT, WATER_KIND.SPRING]),
     flower_meadow: Object.freeze([WATER_KIND.LAKE_RIVER, WATER_KIND.LAKE_RIVER, WATER_KIND.LAKE, WATER_KIND.RIVER, WATER_KIND.SPLIT, WATER_KIND.SPRING]),
     forest: Object.freeze([WATER_KIND.POND]),
     cherry_grove: Object.freeze([WATER_KIND.POND]),
-    mountain: Object.freeze([WATER_KIND.TARN, WATER_KIND.BRAIDED]),
+    mountain: Object.freeze([WATER_KIND.TARN, WATER_KIND.MOUNTAIN_RIVER]),
     yellowstone: Object.freeze([WATER_KIND.SULPHUR]),
     volcano: Object.freeze([]),
     coast: Object.freeze([])
+});
+
+/**
+ * The small water a biome brings when it is not the Region's main one, put in a gap of its own
+ * ground once the Tokens stand: a pond, a tarn, or one sulphur spring. A biome not listed (the
+ * volcano, the Coast, whose sea comes with its share) brings none.
+ */
+export const BIOME_SMALL_WATER = Object.freeze({
+    meadow: SMALL_WATER.POND,
+    flower_meadow: SMALL_WATER.POND,
+    forest: SMALL_WATER.POND,
+    cherry_grove: SMALL_WATER.POND,
+    mountain: SMALL_WATER.TARN,
+    yellowstone: SMALL_WATER.SPRING
 });
 
 /**
@@ -185,7 +199,7 @@ function canonical(ingredients) {
  *   total: number, wanted: number, limit: number, clamped: boolean,
  *   biomes: Record<string, number>,
  *   ground: {main: string|null, terrains: Record<string, string>, water: number, shore: string[],
- *     inland: string[]},
+ *     inland: string[], small: Record<string, string>},
  *   ingredients: string[], ignored: {ingredientId: string, kind: string}[]
  * }}
  */
@@ -322,10 +336,19 @@ export function budget(ingredients, { cap } = {}) {
         limit,
         clamped: total < wanted,
         biomes,
-        ground: { main: mainBiome, terrains, water, shore: [...shore].sort(byText), inland: [...(inlandOf[mainBiome] || [])] },
+        ground: { main: mainBiome, terrains, water, shore: [...shore].sort(byText), inland: [...(inlandOf[mainBiome] || [])], small: smallWaterOf(terrains, mainBiome) },
         ingredients: slots.map(i => i.id),
         ignored
     };
+}
+
+/** Each biome but the main one that brings a small water, and which, in biome order. */
+function smallWaterOf(terrains, main) {
+    const out = {};
+    for (const biome of Object.keys(terrains).sort(byText)) {
+        if (biome !== main && BIOME_SMALL_WATER[biome]) out[biome] = BIOME_SMALL_WATER[biome];
+    }
+    return out;
 }
 
 /** Player-facing words of the Node Summary, kept together for translation. */

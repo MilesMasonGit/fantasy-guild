@@ -6,8 +6,11 @@
  * save draws the same water. Each shape is a field over the mat, above 0 inside the water and
  * about the distance to its shore near it; the water is wherever the largest field is above 0.
  * The shapes are the owner's settled world rounds (`docs/active/research/ground_gen/`:
- * `world6.py`'s `big_lake`, `river` and `pond`, `world7.py`'s `wiggle`, uneven split and braid,
- * `gen.py`'s `pools` and `coast2`), a prototype pixel being two mat units.
+ * `world6.py`'s `big_lake`, `river` and `pond`, `world7.py`'s `wiggle` and uneven split, `gen.py`'s
+ * `pools` and `coast2`), a prototype pixel being two mat units.
+ *
+ * Minor biomes' small waters ({@link smallWater}) are made after the Tokens stand, into a gap of
+ * that biome's own ground, by the layout.
  *
  * The cells ({@link sampleWater}) and the drawing ({@link rasterise} over the plan's pixels) read
  * the same field: a cell is water when the water covers at least half of it (8 of its 16 sample
@@ -40,8 +43,14 @@ const STYLE_OF = Object.freeze({ lake: STYLE.LAKE, river: STYLE.LAKE, pool: STYL
 /** The water varieties a biome's rules may name (`Budget.BIOME_WATER`). */
 export const WATER_KIND = Object.freeze({
     LAKE: 'lake', LAKE_RIVER: 'lake_river', RIVER: 'river', SPLIT: 'split', SPRING: 'spring',
-    BRAIDED: 'braided', POND: 'pond', TARN: 'tarn', SULPHUR: 'sulphur'
+    MOUNTAIN_RIVER: 'mountain_river', POND: 'pond', TARN: 'tarn', SULPHUR: 'sulphur'
 });
+
+/**
+ * The small waters a minor biome's own ground may take once the Tokens stand (`Layout.js`): a
+ * pond, a tarn, or one sulphur spring.
+ */
+export const SMALL_WATER = Object.freeze({ POND: 'pond', TARN: 'tarn', SPRING: 'sulphur' });
 
 /** The field where no shape reaches: far below any shore, and finite so it interpolates. */
 export const FAR = -1e6;
@@ -68,8 +77,19 @@ const SEA = Object.freeze({ step: 192, wiggle: 0.35, cell: 100, noise: 60, fineC
 /** The Guild Hall's clearing: water never comes inside it, its edge bent outward a little. */
 const CLEAR = Object.freeze({ cell: 60, bend: 30 });
 
-/** `wiggle`: a noise along the path's length (`vnoise(16)` read at 0.32 and 0.9 of a pixel per pixel). */
-const WIGGLE = Object.freeze({ cell: 16, slow: 0.16, quick: 0.45, slowAmp: 5, quickAmp: 0.6 });
+/**
+ * `wiggle`: a noise along the path's length. The prototype read `vnoise(16)` at 0.32 and 0.9 of a
+ * pixel per pixel; the game reads it at about half that, the quick part at half the strength, so
+ * the bends are longer and softer: at the prototype's, rivers tangled.
+ */
+const WIGGLE = Object.freeze({ cell: 16, slow: 0.085, quick: 0.22, slowAmp: 5, quickAmp: 0.3 });
+
+/**
+ * A river never comes back within this many of its widths of itself, unless it has run at least
+ * twice that far along its own course in between it is only bending: a tighter fold is wiggled
+ * again more gently.
+ */
+const FOLD_WIDTHS = 3;
 
 /** Noise channels, each layer of a record its own. */
 const CH = Object.freeze({
@@ -307,6 +327,60 @@ function vertexAt(pts, share) {
         if (s >= want) return i;
     }
     return pts.length - 1;
+}
+
+/**
+ * Whether a path comes back within `gap` of itself: two of its points closer than that in a
+ * straight line, though more than twice `gap` apart along the path (a hairpin or a loop rather
+ * than a bend); or it turns more than a right angle within half of `gap` along it (a kink).
+ */
+export function foldsBack(pts, gap) {
+    const n = pts.length;
+    const along = new Float64Array(n);
+    for (let i = 1; i < n; i++) along[i] = along[i - 1] + dist(pts[i][0], pts[i][1], pts[i - 1][0], pts[i - 1][1]);
+    // Each point's heading, from its neighbours.
+    const hx = new Float64Array(n);
+    const hy = new Float64Array(n);
+    for (let i = 0; i < n; i++) {
+        const a = pts[Math.max(0, i - 1)];
+        const b = pts[Math.min(n - 1, i + 1)];
+        const L = dist(a[0], a[1], b[0], b[1]) || 1;
+        hx[i] = (b[0] - a[0]) / L;
+        hy[i] = (b[1] - a[1]) / L;
+    }
+    for (let i = 0, j = 0; i < n; i++) {
+        while (j < n - 1 && along[j] - along[i] < gap / 2) j++;
+        if (hx[i] * hx[j] + hy[i] * hy[j] < 0) return true;
+    }
+    const gap2 = gap * gap;
+    for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) {
+            if (along[j] - along[i] <= 2 * gap) continue;
+            const dx = pts[i][0] - pts[j][0];
+            const dy = pts[i][1] - pts[j][1];
+            if (dx * dx + dy * dy < gap2) return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * Whether a path comes within `gap` of another, anywhere but within `meet` of the points `meets`
+ * where the two are meant to meet (a lake both run into).
+ */
+function nearOther(pts, other, gap, meets = []) {
+    const gap2 = gap * gap;
+    const free = (p) => meets.every(([x, y, r]) => (p[0] - x) * (p[0] - x) + (p[1] - y) * (p[1] - y) >= r * r);
+    for (const p of pts) {
+        if (!free(p)) continue;
+        for (const q of other) {
+            if (!free(q)) continue;
+            const dx = p[0] - q[0];
+            const dy = p[1] - q[1];
+            if (dx * dx + dy * dy < gap2) return true;
+        }
+    }
+    return false;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -700,8 +774,39 @@ export function rasterise(water, lattice) {
 export const SAMPLES = 4;
 
 /**
+ * Of a cell a river's middle line runs through, the share of its sample points the water need
+ * cover for it to be water: a quarter, so a river a cell wide crossing the cells aslant leaves no
+ * dry cell in its middle for a Token to stand on.
+ */
+export const RIVER_CELL_SHARE = 0.25;
+
+/** The cells a stored river's middle line runs through, walked a quarter of a cell at a time. */
+function riverCells(water, grid, cell) {
+    const out = new Uint8Array(grid.cols * grid.rows);
+    const stride = cell / 4;
+    for (const shape of water?.shapes || []) {
+        if (shape.k !== SHAPE.RIVER) continue;
+        const pts = shape.points;
+        for (let k = 0; k + 1 < pts.length; k++) {
+            const [ax, ay] = pts[k];
+            const [bx, by] = pts[k + 1];
+            const steps = Math.max(1, Math.ceil(dist(ax, ay, bx, by) / stride));
+            for (let q = 0; q <= steps; q++) {
+                const x = ax + (bx - ax) * q / steps;
+                const y = ay + (by - ay) * q / steps;
+                const c = Math.floor(x / cell);
+                const r = Math.floor(y / cell);
+                if (c >= 0 && r >= 0 && c < grid.cols && r < grid.rows) out[r * grid.cols + c] = 1;
+            }
+        }
+    }
+    return out;
+}
+
+/**
  * The water's cells: the field sampled at 4 × 4 points in each cell, a cell water when at least
- * half of them are, unless `keepDry(index)` says to keep it dry. The samples stay, for
+ * half of them are, or a quarter where a river's middle line runs through it
+ * ({@link RIVER_CELL_SHARE}), unless `keepDry(index)` says to keep it dry. The samples stay, for
  * {@link fieldAt}.
  *
  * @returns {{water: Uint8Array, sea: Uint8Array, sample: {f: Float64Array, style: Uint8Array, lattice: object}}}
@@ -714,6 +819,8 @@ export function sampleWater(water, grid, cell, keepDry = () => false) {
     const cells = new Uint8Array(grid.cols * grid.rows);
     const sea = new Uint8Array(grid.cols * grid.rows);
     const half = (SAMPLES * SAMPLES) / 2;
+    const quarter = SAMPLES * SAMPLES * RIVER_CELL_SHARE;
+    const middles = riverCells(water, grid, cell);
     for (let r = 0; r < grid.rows; r++) {
         for (let c = 0; c < grid.cols; c++) {
             let wet = 0;
@@ -727,7 +834,7 @@ export function sampleWater(water, grid, cell, keepDry = () => false) {
                 }
             }
             const index = r * grid.cols + c;
-            if (wet >= half && !keepDry(index)) {
+            if ((wet >= half || (middles[index] && wet >= quarter)) && !keepDry(index)) {
                 cells[index] = 1;
                 if (salt * 2 > wet) sea[index] = 1;
             }
@@ -761,6 +868,12 @@ const OUT = 40;
 /** A lake's share of the mat, by the owner's rule (up to a fifth): drawn between these. */
 const LAKE_SHARE = Object.freeze([0.07, 0.17]);
 
+/**
+ * The narrowest a river runs, half its width in mat units: a placing cell wide, so the cells see
+ * it (the split's side channel, a delta's narrower mouth, a spring's first stretch).
+ */
+const CHANNEL_HW = 16;
+
 /** How far past the Hall's clearing a river's straight line should pass, so it needs no bend round it. */
 const CROSSING_CLEAR = 140;
 
@@ -783,13 +896,8 @@ export function planWater(rules, random, mat, clear, { kind: forced = null } = {
     const sea = Number(rules?.sea) || 0;
     const kinds = Array.isArray(rules?.kinds) ? rules.kinds.filter(k => Object.values(WATER_KIND).includes(k)) : [];
     if (!(sea > 0) && !kinds.length && !forced) return { record: null, kind: null };
-    const salt = Math.floor(random() * 4294967296) >>> 0;
-    const record = {
-        v: WATER_VERSION, salt,
-        mat: [mat.w, mat.h],
-        clear: [Math.round(clear.x), Math.round(clear.y), Math.round(clear.r)],
-        shapes: []
-    };
+    const record = emptyWater(random, mat, clear);
+    const { salt } = record;
     if (sea > 0) record.shapes.push(seaShape(random, mat, sea));
     const kind = forced || (kinds.length ? kinds[Math.floor(random() * kinds.length)] : null);
     if (kind) {
@@ -830,18 +938,9 @@ class Maker {
         return lo + (hi - lo) * this.random();
     }
 
-    /** A direction, without trigonometry: a point in the square kept if it lies in the ring. */
+    /** A direction, without trigonometry. */
     direction() {
-        for (let k = 0; k < 32; k++) {
-            const x = this.random() * 2 - 1;
-            const y = this.random() * 2 - 1;
-            const d = x * x + y * y;
-            if (d > 0.04 && d <= 1) {
-                const l = Math.sqrt(d);
-                return [x / l, y / l];
-            }
-        }
-        return [1, 0];
+        return directionOf(this.random);
     }
 
     /** How far a point is from the Hall. */
@@ -896,7 +995,11 @@ class Maker {
     route(points, margin) {
         const { x: hx, y: hy, r } = this.clear;
         const R = r + margin;
-        let pts = points;
+        // ⚠️ A corner inside the margin is pushed out first: every stretch to it would pass too
+        // near however many corners were added round it. The ends stay where they join.
+        const last = points.length - 1;
+        let pts = points.map((p, k) => (k === 0 || k === last ? p : this.repel([p], R * 1.05)[0]));
+        const outside = ([x, y]) => (x - hx) * (x - hx) + (y - hy) * (y - hy) >= R * R;
         for (let pass = 0; pass < 6; pass++) {
             const out = [pts[0]];
             let changed = false;
@@ -904,7 +1007,8 @@ class Maker {
                 const [ax, ay] = pts[k];
                 const [bx, by] = pts[k + 1];
                 const near = toSegment(hx, hy, ax, ay, bx, by);
-                if (near.d < R) {
+                // A stretch from an end inside the margin cannot be rounded; `repel` sees to it.
+                if (near.d < R && outside(pts[k]) && outside(pts[k + 1])) {
                     let nx = near.cx - hx;
                     let ny = near.cy - hy;
                     let l = Math.sqrt(nx * nx + ny * ny);
@@ -940,10 +1044,21 @@ class Maker {
      * A river's final path: `points` routed round the clearing, wiggled by `amp`, every point kept
      * `hw` and a margin clear of it.
      */
-    path(points, amp, hw) {
+    path(points, amp, hw, { avoid = null, meets = [] } = {}) {
+        const row = this.rows++;
         const margin = hw * 1.4 + 2 * amp + 24;
         const routed = this.route(points, margin);
-        return this.repel(wiggle(routed, amp, this.wig, this.rows++), this.clear.r + hw * 1.3 + 24);
+        const gap = FOLD_WIDTHS * 2 * hw;
+        // Gentler each time it folds back on itself (or crowds the river it must keep off), and
+        // at last only the routed line, which never does.
+        let a = amp;
+        let out = null;
+        for (let k = 0; k < 5; k++) {
+            out = this.repel(wiggle(routed, k === 4 ? 0 : a, this.wig, row), this.clear.r + hw * 1.3 + 24);
+            if (!foldsBack(out, gap) && !(avoid && nearOther(out, avoid, gap, meets))) break;
+            a *= 0.7;
+        }
+        return out;
     }
 
     river(points, hw0, hw1) {
@@ -1066,7 +1181,7 @@ class Maker {
             case WATER_KIND.RIVER: return this.riverAcross();
             case WATER_KIND.SPLIT: return this.splitRiver();
             case WATER_KIND.SPRING: return this.springRiver();
-            case WATER_KIND.BRAIDED: return this.braided();
+            case WATER_KIND.MOUNTAIN_RIVER: return this.riverAcross(false);
             case WATER_KIND.POND: return [this.small(this.between(66, 80), true)?.shape].filter(Boolean);
             case WATER_KIND.TARN: return [this.small(this.between(50, 64), false)?.shape].filter(Boolean);
             case WATER_KIND.SULPHUR: return this.sulphur();
@@ -1087,22 +1202,29 @@ class Maker {
         const exit = this.toEdge(lake.x, lake.y, 0.15, lake.r * 1.5 + 220);
         const toward = dist(lake.x, lake.y, exit[0], exit[1]) || 1;
         const start = [lake.x + (exit[0] - lake.x) / toward * lake.r * 0.5, lake.y + (exit[1] - lake.y) / toward * lake.r * 0.5];
-        out.push(this.river(this.path(this.through(start, exit, 3), 44, 18), 12, 18));
+        const outflow = this.path(this.through(start, exit, 3), 44, 27);
+        out.push(this.river(outflow, 18, 27));
         if (this.random() < 0.5) {
-            // And in from another side: the river runs into the lake and on out of it.
+            // And in from another side: the river runs into the lake and on out of it, the two
+            // meeting only in the lake.
             const side = (this.nearestSide(exit[0], exit[1]) + 1 + Math.floor(this.random() * 3)) % 4;
             const from = this.edgePoint(side, this.between(0.15, 0.85));
-            out.push(this.river(this.path(this.through(from, [lake.x, lake.y], 3), 40, 16), 12, 16));
+            const meets = [[lake.x, lake.y, lake.r * 1.3]];
+            const inflow = this.path(this.through(from, [lake.x, lake.y], 3), 40, 24, { avoid: outflow, meets });
+            if (!nearOther(inflow, outflow, FOLD_WIDTHS * 2 * 24, meets)) out.push(this.river(inflow, 18, 24));
         }
         return out;
     }
 
-    /** A river from one side of the mat to another, widening; now and then through a pool on the way. */
-    riverAcross() {
+    /**
+     * A river from one side of the mat to another, widening; now and then (not in the mountains)
+     * through a pool on the way.
+     */
+    riverAcross(pools = true) {
         const [a, b] = this.crossing();
-        const points = this.path(this.through(a, b, 4), this.between(36, 50), 26);
-        const out = [this.river(points, 16, 26)];
-        if (this.random() < 0.4) {
+        const points = this.path(this.through(a, b, 4), this.between(36, 50), 39);
+        const out = [this.river(points, 24, 39)];
+        if (pools && this.random() < 0.4) {
             const k = vertexAt(points, this.between(0.35, 0.65));
             const [x, y] = points[k];
             const r = this.between(90, 120);
@@ -1120,15 +1242,15 @@ class Maker {
      */
     splitRiver() {
         const [a, b] = this.crossing();
-        let main = this.path(this.through(a, b, 4), this.between(30, 40), 22);
+        let main = this.path(this.through(a, b, 4), this.between(30, 40), 33);
         const out = [];
         const s = this.between(0.18, 0.28);
         const iS = vertexAt(main, s);
-        const iJ = Math.max(iS + 4, vertexAt(main, s + this.between(0.22, 0.3)));
+        const iJ = Math.max(iS + 4, vertexAt(main, s + this.between(0.28, 0.36)));
         const S = main[iS];
         const J = main[Math.min(main.length - 1, iJ)];
         // The side channel follows the main arm a teardrop's width off, widest in its first half.
-        const swing = this.between(70, 110) * (this.random() < 0.5 ? -1 : 1);
+        const swing = this.between(110, 150) * (this.random() < 0.5 ? -1 : 1);
         const off = (share, wide) => {
             const k = Math.min(main.length - 2, iS + Math.round((iJ - iS) * share));
             const [x, y] = main[k];
@@ -1136,7 +1258,7 @@ class Maker {
             const L = dist(x, y, x2, y2) || 1;
             return [x - (y2 - y) / L * wide, y + (x2 - x) / L * wide];
         };
-        const channel = this.path([S, off(0.25, swing * 0.8), off(0.5, swing), off(0.78, swing * 0.6), J], 12, 8);
+        const channel = this.path([S, off(0.18, swing * 0.55), off(0.42, swing), off(0.7, swing * 0.75), off(0.9, swing * 0.3), J], 12, CHANNEL_HW);
         if (this.random() < 0.7) {
             // The delta: the main stops short of the edge and forks into two mouths.
             const F = vertexAt(main, this.between(0.84, 0.9));
@@ -1144,14 +1266,15 @@ class Maker {
             main = main.slice(0, F + 1);
             const sideOut = this.nearestSide(b[0], b[1]);
             const t = this.alongOf(sideOut, fork[0], fork[1]);
-            const spread = this.between(110, 150) / (sideOut % 2 === 0 ? this.mat.w : this.mat.h);
+            const spread = this.between(150, 200) / (sideOut % 2 === 0 ? this.mat.w : this.mat.h);
             const m1 = this.edgePoint(sideOut, Math.max(0.02, t - spread));
             const m2 = this.edgePoint(sideOut, Math.min(0.98, t + spread * 0.8));
             const wideFirst = this.random() < 0.5;
-            out.push(this.river(this.path([fork, m1], 16, 14), wideFirst ? 14 : 10, wideFirst ? 14 : 10));
-            out.push(this.river(this.path([fork, m2], 14, 14), wideFirst ? 10 : 14, wideFirst ? 10 : 14));
+            const [w1, w2] = wideFirst ? [21, CHANNEL_HW] : [CHANNEL_HW, 21];
+            out.push(this.river(this.path([fork, m1], 16, w1), w1, w1));
+            out.push(this.river(this.path([fork, m2], 14, w2), w2, w2));
         }
-        out.unshift(this.river(main, 16, 22), this.river(channel, 8, 8));
+        out.unshift(this.river(main, 24, 33), this.river(channel, CHANNEL_HW, CHANNEL_HW));
         return out;
     }
 
@@ -1160,31 +1283,7 @@ class Maker {
         const pool = this.small(40, false);
         if (!pool) return this.riverAcross();
         const exit = this.toEdge(pool.x, pool.y, 0.2, 500);
-        return [pool.shape, this.river(this.path(this.through([pool.x, pool.y], exit, 3), 32, 16), 8, 16)];
-    }
-
-    /** The braided river (`world7` B): channels weaving round gravel bars, one at each end. */
-    braided() {
-        const [a, b] = this.crossing();
-        const spine = this.route(this.through(a, b, 5), 90);
-        // Six control points along the spine, the middle two pulled apart per channel.
-        const base = [];
-        for (let k = 0; k <= 5; k++) base.push(pointAlong(spine, k / 5));
-        const out = [];
-        // Each channel pulled to its side of the spine, most in the middle: `world7` B's offsets,
-        // across the river's way rather than along x and y.
-        const pull = [0, 0.5, 1, 1, 0.5, 0];
-        const channels = [[-40, 14], [40, 12], [14, 10], [-18, 8]];
-        for (const [off, hw] of channels) {
-            const pts = base.map(([x, y], k) => {
-                const a = base[Math.max(0, k - 1)];
-                const b = base[Math.min(5, k + 1)];
-                const L = dist(a[0], a[1], b[0], b[1]) || 1;
-                return [x - (b[1] - a[1]) / L * off * pull[k], y + (b[0] - a[0]) / L * off * pull[k]];
-            });
-            out.push(this.river(this.path(pts, 28, hw), hw, hw));
-        }
-        return out;
+        return [pool.shape, this.river(this.path(this.through([pool.x, pool.y], exit, 3), 32, 24), CHANNEL_HW, 24)];
     }
 
     /** Yellowstone's sulphur springs: as many as the prototype's per piece of the mat its size. */
@@ -1206,19 +1305,41 @@ class Maker {
     }
 }
 
-/** The point `share` of the way along a path, by length. */
-function pointAlong(pts, share) {
-    const want = lengthOf(pts) * share;
-    let s = 0;
-    for (let i = 1; i < pts.length; i++) {
-        const l = dist(pts[i][0], pts[i][1], pts[i - 1][0], pts[i - 1][1]);
-        if (s + l >= want) {
-            const t = l > 0 ? (want - s) / l : 0;
-            return [pts[i - 1][0] + (pts[i][0] - pts[i - 1][0]) * t, pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * t];
+/** A direction from `random`, without trigonometry: a point in the square kept if it lies in the ring. */
+function directionOf(random) {
+    for (let k = 0; k < 32; k++) {
+        const x = random() * 2 - 1;
+        const y = random() * 2 - 1;
+        const d = x * x + y * y;
+        if (d > 0.04 && d <= 1) {
+            const l = Math.sqrt(d);
+            return [x / l, y / l];
         }
-        s += l;
     }
-    return pts[pts.length - 1];
+    return [1, 0];
+}
+
+/**
+ * A small water centred near a point, its size and lean from `random`: a pond (two lobes), a tarn
+ * (one) or one sulphur spring ({@link SMALL_WATER}).
+ */
+export function smallWater(kind, x, y, random) {
+    const between = (lo, hi) => lo + (hi - lo) * random();
+    if (kind === SMALL_WATER.SPRING) return { k: SHAPE.POOL, x: round(x), y: round(y), r: round(between(70, 100)) };
+    if (kind === SMALL_WATER.TARN) return { k: SHAPE.LAKE, lobes: [[round(x), round(y), round(between(50, 64))]], holes: [] };
+    const r = between(60, 74);
+    const [dx, dy] = directionOf(random);
+    return { k: SHAPE.LAKE, lobes: [[round(x), round(y), round(r)], [round(x + dx * r * 0.58), round(y + dy * r * 0.58), round(r * 0.6)]], holes: [] };
+}
+
+/** An empty record to add shapes to, its noise salted from `random`. */
+export function emptyWater(random, mat, clear) {
+    return {
+        v: WATER_VERSION, salt: Math.floor(random() * 4294967296) >>> 0,
+        mat: [mat.w, mat.h],
+        clear: [Math.round(clear.x), Math.round(clear.y), Math.round(clear.r)],
+        shapes: []
+    };
 }
 
 /** Which shapes of a record are the inland water (everything but the edge sea). */

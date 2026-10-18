@@ -40,7 +40,7 @@ export const TERRAIN_DEV_WATER = Object.freeze([
     { id: 'water_river', label: 'River across', maps: ['water_river'] },
     { id: 'water_split', label: 'Split river', maps: ['water_split'] },
     { id: 'water_spring', label: 'Spring river', maps: ['water_spring'] },
-    { id: 'water_braided', label: 'Braided river', maps: ['water_braided'] },
+    { id: 'water_mountain_river', label: 'Mountain river', maps: ['water_mountain_river'] },
     { id: 'water_pond', label: 'Pond', maps: ['water_pond'] },
     { id: 'water_tarn', label: 'Tarn', maps: ['water_tarn'] },
     { id: 'water_sulphur', label: 'Sulphur springs', maps: ['water_sulphur'] },

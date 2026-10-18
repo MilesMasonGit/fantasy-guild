@@ -93,7 +93,7 @@ export const DEV_MAPS = Object.freeze({
     water_river: withWater('meadow', WATER_KIND.RIVER),
     water_split: withWater('meadow', WATER_KIND.SPLIT),
     water_spring: withWater('meadow', WATER_KIND.SPRING),
-    water_braided: withWater('mountain', WATER_KIND.BRAIDED),
+    water_mountain_river: withWater('mountain', WATER_KIND.MOUNTAIN_RIVER),
     water_tarn: withWater('mountain', WATER_KIND.TARN),
     water_pond: withWater('forest', WATER_KIND.POND),
     water_sulphur: withWater('yellowstone', WATER_KIND.SULPHUR),
