@@ -91,6 +91,16 @@
   --color-gi-label-text: #ffffff;
   /* White text for matte labels */
 
+  /* The five colour meanings (UI_STYLE "Colours"), named by meaning so a panel says what it
+     means, not which shade. Red: short, can't, danger. Green: ready, enough. Gold: alert,
+     attention, upgrade, the selected tab. White: hover, selection. Muted: locked, unavailable.
+     ⚠️ A sixth meaning needs the owner's OK. */
+  --color-ui-red: var(--color-gi-danger);
+  --color-ui-green: var(--color-gi-success);
+  --color-ui-gold: var(--color-gi-gold);
+  --color-ui-white: #ffffff;
+  --color-ui-muted: var(--color-gi-muted);
+
   /* Legacy Colors (Mapped to new GI Typography truth) */
   --color-bg-primary: var(--color-gi-base);
   --color-bg-secondary: #141414;

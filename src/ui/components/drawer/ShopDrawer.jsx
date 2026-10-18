@@ -205,7 +205,7 @@ const arrowClass = 'shrink-0 h-7 flex items-center justify-center text-gi-muted 
  * The scrolling list: an arrow bar above and below instead of a scrollbar (the wheel still
  * scrolls). An arrow dims when that end is reached.
  */
-const ShopList = ({ children }) => {
+export const ShopList = ({ children }) => {
     const ref = useRef(null);
     const [ends, setEnds] = useState({ top: true, bottom: true });
     const measure = useCallback(() => {

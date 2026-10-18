@@ -15,6 +15,7 @@ import { BOARD_EVENTS } from '../../systems/board/boardEvents.js';
 import { PerfDevSection } from '../dev/perf/PerfDevSection.jsx';
 import { StarterCampDevSection } from '../dev/StarterCampDevSection.jsx';
 import { TerrainDevSection } from '../dev/TerrainDevSection.jsx';
+import { StyleSheetPage } from '../dev/StyleSheetPage.jsx';
 import { ENGINE_EVENTS, ORPHAN_EVENTS } from '../../systems/core/engineEvents.js';
 import { UI_LISTENER } from '../../systems/core/EventBus.js';
 
@@ -39,6 +40,7 @@ export const TestDashboard = React.memo(() => {
     const [showFontTest, setShowFontTest] = useState(false);
     const [showSpawnItem, setShowSpawnItem] = useState(false);
     const [showAnimationStudio, setShowAnimationStudio] = useState(false);
+    const [showStyleSheet, setShowStyleSheet] = useState(false);
     const [giveId, setGiveId] = useState('');
     const [giveAmount, setGiveAmount] = useState(1);
     const [advanceMinutes, setAdvanceMinutes] = useState(10);
@@ -182,6 +184,10 @@ export const TestDashboard = React.memo(() => {
             onClick: () => {
                 setShowFontTest(true);
             }
+        },
+        {
+            label: "🎨 Style Sheet",
+            onClick: () => setShowStyleSheet(true)
         },
         {
             label: "🧰 Spawn Items...",
@@ -408,6 +414,7 @@ export const TestDashboard = React.memo(() => {
             )}
 
             {showFontTest && <TypographyScaleModal isOpen={showFontTest} onClose={() => setShowFontTest(false)} />}
+            {showStyleSheet && <StyleSheetPage onClose={() => setShowStyleSheet(false)} />}
             {showSpawnItem && <DevSpawnItemModal engine={engine} onClose={() => setShowSpawnItem(false)} />}
             {showAnimationStudio && (
                 <AnimationStudioModal
