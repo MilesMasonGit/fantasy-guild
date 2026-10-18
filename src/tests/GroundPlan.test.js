@@ -58,6 +58,8 @@ describe('⭐ The plan of a stored map', () => {
     });
 
     it('keeps every cell\'s pixels its terrain except near a boundary: the edge swing, or the beach (a map saved without water shapes)', () => {
+        // The blends reach further, by their own rule (`TerrainBlend.test.js`).
+        setTuning('blendOn', 0);
         const stored = settled(['forest', 'coast'], 103);
         const { water: _shapes, ...cellsOnly } = stored.terrain;
         const region = { ...stored, terrain: cellsOnly };
