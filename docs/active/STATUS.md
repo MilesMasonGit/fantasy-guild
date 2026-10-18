@@ -31,7 +31,7 @@ until the owner says otherwise in the refinement pass. Built on
 | Recruit's Goblin fight doesn't start in the owner's play (T-167 follow-up) | engineer | `fix/t167-recruit-attack` (`t167`) | diagnosed: no bug; the owner dropped near the Goblin and a hostile measured to the hero's idle spot (up-right of the flag), so a near drop fought on one side only (tests d6a50adc). Owner 2026-10-18 chose: hostiles measure from the flag, the same on every side. Ready (fd3de552, `Hostiles.js` line 119; director's gate: 5120 tests + one flaky loot test, T-192, passes alone, cycles, build). Work check will change on S2, S3, S5, S6, S8 (goblin camps): accept under this ruling | Sat | Sun |
 | Brief 110 M1: Starter Camp Tokens become fixtures (T-165); one call in `atlas/StarterCamp.js`, logic in board code (terrain director's folder) | engineer | `crunch/map-tools` (`mt`) | ready (8d9c7e25; two lines in `StarterCamp.js`, logic in `FixedTokens`/`BoardState`/`Demolition`/`Placement`; also fixed the dev layout tool, which never lifted Tokens already on the mat; director's gate: 5188 tests, cycles, build). Two small owner questions left at the recommendations (a camp Foundation built on keeps the mark; the refusal wording) | Sat | Sun |
 | Brief 110 M2: Demolish mode beside Disallow mode (T-166) | builder | `crunch/map-tools` (`mt`) | ready (109f1709; director's gate: 5200 tests, cycles, build). Three look questions for the eye-check (Allow all only in the banner; the reason only on click; outline grey, edge colour) | Sun | Sun |
-| Brief 110 M3: top bar restyle (T-170) | builder | `crunch/map-tools` (`mt`) | building | Sun | |
+| Brief 110 M3: top bar restyle (T-170) | builder | `crunch/map-tools` (`mt`) | eye-check (52beccc3, then `crunch/hero-bar` merged in; director's gate on the result: 5224 tests, cycles, build; frame pictures in LFS). Served on 5198 from `mt` for the one combined eye-check | Sun | Sun |
 
 ## Features director, batch 2: the hero bar (owner 2026-10-17: proceed while the kit's eye-check waits a few hours)
 
@@ -121,6 +121,7 @@ T-186; the badges' soft shadows are settled inside T-013.)
 1. `fix/t167-recruit-attack` (6790962d): engine work check (`npm run bench -- --compare`), features director.
 2. `crunch/style-kit` (7060a37f): engine work check and one `bench:draw --compare` for the cost log, features director.
 3. `crunch/hero-bar` (after H3): engine work check and `bench:draw --compare` (the level-up floats), features director.
+4. `crunch/map-tools`: engine work check (expect WORK CHANGED on S2, S3, S5, S6, S8 from the hostile flag watch; accept under the T-167 ruling) and `bench:draw --compare` (the top bar frame, the mode outlines), features director. The four branches stack: kit → Recruits → hero bar → map tools; one run on `map-tools` plus a work check per merge.
 4. `crunch/ground-g5` merged result (`1f659d8d`, in `p23b`): engine work check and one `bench:draw --compare` for the cost log, terrain director. Note for the features director: `crunch/map-tools` also edits `src/systems/atlas/StarterCamp.js`, which G5 changes (the Starter Camp pond); expect a merge conflict there after G5 lands.
 
 ## Summaries

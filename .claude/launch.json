@@ -48,41 +48,11 @@
       "port": 5195
     },
     {
-      "name": "kit",
+      "name": "eyecheck",
       "runtimeExecutable": "npm",
       "runtimeArgs": [
         "--prefix",
-        ".claude/worktrees/k1",
-        "run",
-        "dev",
-        "--",
-        "--port",
-        "5196",
-        "--strictPort"
-      ],
-      "port": 5196
-    },
-    {
-      "name": "recruits",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": [
-        "--prefix",
-        ".claude/worktrees/t167",
-        "run",
-        "dev",
-        "--",
-        "--port",
-        "5197",
-        "--strictPort"
-      ],
-      "port": 5197
-    },
-    {
-      "name": "herobar",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": [
-        "--prefix",
-        ".claude/worktrees/hb",
+        ".claude/worktrees/mt",
         "run",
         "dev",
         "--",
