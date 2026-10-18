@@ -88,7 +88,7 @@ const ToastContainer = ({ floating = false, collapsed: collapsedProp, onCollapse
     const visibleToasts = collapsed ? toasts.filter(t => t.type === 'crisis') : toasts;
     const hiddenCount = toasts.length - visibleToasts.length;
 
-    const controlClass = "pointer-events-auto gi-text-outline uppercase text-[10px] font-bold text-gi-text/30 hover:text-white transition-all tracking-widest cursor-pointer px-3 py-0.5 bg-black/20 hover:bg-black/40 rounded-full border border-white/5 active:scale-95";
+    const controlClass = "pointer-events-auto gi-text-outline uppercase text-(length:--font-size-xs) font-bold text-gi-text/30 hover:text-white transition-all tracking-widest cursor-pointer px-3 py-0.5 bg-black/20 hover:bg-black/40 rounded-full border border-white/5 active:scale-95";
 
     const body = (
         <div

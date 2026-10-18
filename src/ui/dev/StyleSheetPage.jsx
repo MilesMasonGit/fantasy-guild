@@ -4,15 +4,15 @@
 // yet. Once a piece has one shared version, its entry points at that version and moves to the
 // shared group.
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { cn } from '../utils/cn.js';
 import { EntityRibbon } from '../components/base/EntityRibbon.jsx';
 import { ItemIcon } from '../components/base/ItemIcon.jsx';
 import { VitalBar } from '../components/base/VitalBar.jsx';
 import { TokenSprite, TOKEN_SURFACE } from '../components/base/TokenSprite.jsx';
 import { StationGearBadge } from '../components/board/TokenBadges.jsx';
-import { TopBarTip } from '../components/board/TopBarTip.jsx';
-import { BubbleTip } from '../components/board/Bubble.jsx';
+import { Tooltip } from '../components/base/Tooltip.jsx';
+import { TEXT_SIZES } from '../components/base/textSizes.js';
 import { ArrowScrollList } from '../components/base/ArrowScrollList.jsx';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
@@ -201,21 +201,50 @@ const KitXpBar = ({ cur, max }) => (
 // Demos that use the shared pieces.
 // ---------------------------------------------------------------------------------------------
 
-const HoverToShow = ({ label, render }) => {
+const TooltipDemo = () => (
+    <div className="flex flex-wrap gap-4">
+        <Tooltip title="Oak Wood" lines={['×1,154', 'Drag to sort, or onto a hero to equip']}>
+            <span data-kit-tooltip-target className="inline-block px-2 py-1 border border-dashed border-white/30 cursor-default">
+                Hover: title and lines
+            </span>
+        </Tooltip>
+        <Tooltip lines={['Item stacks in the bank / slot capacity']}>
+            <span className="inline-block px-2 py-1 border border-dashed border-white/30 cursor-default">Hover: one line</span>
+        </Tooltip>
+    </div>
+);
+
+/** One kit text size: a sample in its class, and the size it renders at right now. */
+const TextSizeRow = ({ size }) => {
     const ref = useRef(null);
-    const [open, setOpen] = useState(false);
+    const [px, setPx] = useState(null);
+    useLayoutEffect(() => {
+        if (ref.current) setPx(getComputedStyle(ref.current).fontSize);
+    }, []);
     return (
-        <span
-            ref={ref}
-            onPointerEnter={() => setOpen(true)}
-            onPointerLeave={() => setOpen(false)}
-            className="inline-block px-2 py-1 border border-dashed border-white/30 cursor-default"
-        >
-            {label}
-            {open && render(ref.current)}
-        </span>
+        <div data-kit-text-size={size.id} className="flex items-baseline gap-3">
+            <span ref={ref} className={size.className}>Mining 25/99</span>
+            <span className="ui-text-small text-gi-muted">
+                <b>{size.id}</b> <code>.{size.className}</code> reads <code>{size.cssVar}</code>: {px || '?'} now, {size.px} px by default. {size.use}.
+            </span>
+        </div>
     );
 };
+
+const TextSizesDemo = () => (
+    <div className="flex flex-col gap-1.5">
+        {TEXT_SIZES.map(size => <TextSizeRow key={size.id} size={size} />)}
+        <p className="ui-text-small text-gi-muted max-w-2xl">
+            Measured in the running game at the default Text size (computed sizes, not class names):
+            panel titles render at 18 px (Bank “Item Bank”, Shop “Shop”, the hero’s name, Shop row
+            names); rows and ribbons at 16 px (hero skill rows, Shop prices, Bank counts). Counts and
+            hints render at 16 px too, the same as rows, so small takes the setting’s next step down,
+            14 px. No panel text renders at a display size today; display takes the setting’s 32 px
+            step. Change Settings › Accessibility › Typography Scale and reopen this page: every row
+            follows its step.
+        </p>
+    </div>
+);
 
 const HoverOutlineDemo = () => {
     const [hover, setHover] = useState(false);
@@ -270,18 +299,10 @@ const ArrowBarDemo = () => (
     </div>
 );
 
-const TEXT_SCALE = [
-    ['text-xs', '--font-size-xs'],
-    ['text-sm', '--font-size-sm'],
-    ['text-base', '--font-size-base'],
-    ['text-lg', '--font-size-lg'],
-    ['text-xl', '--font-size-xl'],
-    ['text-2xl', '--font-size-2xl']
-];
-
 // ---------------------------------------------------------------------------------------------
-// The page's sections. `status` 'shared' renders a shared component; 'unapproved' a placeholder.
-// `slot` names the phase that replaces the entry with its shared version.
+// The page's sections. `status` 'shared' renders a shared component; 'unapproved' a placeholder
+// or a new piece waiting for the owner's OK. `slot` names the phase that replaces the entry with
+// its shared version.
 // ---------------------------------------------------------------------------------------------
 
 export const KIT_SECTIONS = [
@@ -333,29 +354,15 @@ export const KIT_SECTIONS = [
         )
     },
     {
-        id: 'tooltip', title: 'Tooltip', status: 'shared', source: 'TopBarTip, BubbleTip (two of several copies)', slot: 'K3',
-        rule: 'Small floating pop-ups have no header and no X. K3 brings one shared tooltip that follows the cursor.',
-        Demo: () => (
-            <div className="flex gap-4">
-                <HoverToShow label="Hover: TopBarTip" render={(a) => <TopBarTip anchor={a} title="Tokens" lines={['45 / 128 on this mat']} />} />
-                <HoverToShow label="Hover: BubbleTip" render={(a) => <BubbleTip anchor={a} text="Ready to collect" />} />
-            </div>
-        )
+        id: 'tooltip', title: 'Tooltip', status: 'shared', source: 'Tooltip (the Bank, the Shop, the hero panel)',
+        rule: 'One gold-edged tooltip that follows the cursor, offset so it never covers what is under it, flipping at the screen edges. No header and no X. Browser tips only on icon buttons.',
+        Demo: TooltipDemo
     },
     {
-        id: 'text-sizes', title: 'Text sizes', status: 'unapproved', slot: 'K3',
-        source: 'none yet: today’s size scale shown; K3 picks title, body, small and display',
-        rule: 'Three sizes in panels (title, body, small), plus one display size for mat celebrations.',
-        Demo: () => (
-            <div className="flex flex-col gap-1">
-                {TEXT_SCALE.map(([cls, cssVar]) => (
-                    <div key={cls} className="flex items-baseline gap-3">
-                        <span className={cls}>Mining 25/99</span>
-                        <code className="text-gi-muted" style={{ fontSize: 11 }}>{cls} ({cssVar})</code>
-                    </div>
-                ))}
-            </div>
-        )
+        id: 'text-sizes', title: 'Text sizes', status: 'unapproved',
+        source: 'ui-text-title, ui-text-body, ui-text-small, ui-text-display (src/tailwind.css); no panel uses them yet',
+        rule: 'Three sizes in panels (title, body, small), plus one display size for mat celebrations. The Text size setting scales all four.',
+        Demo: TextSizesDemo
     },
     {
         id: 'pill', title: 'Pill', status: 'unapproved', source: 'none yet',
@@ -435,7 +442,7 @@ export const KIT_SECTIONS = [
 ];
 
 const SectionCard = ({ section }) => {
-    const { id, title, status, source, rule, slot, Demo } = section;
+    const { id, title, source, rule, slot, Demo } = section;
     return (
         <section data-kit-section={id} className="flex flex-col gap-2 py-3 border-b border-white/10">
             <header className="flex items-baseline gap-3 flex-wrap">
@@ -466,9 +473,6 @@ export const StyleSheetPage = ({ onClose }) => {
             aria-label="Style sheet"
             className="fixed inset-0 z-[10000] bg-gi-base text-gi-text overflow-y-auto pointer-events-auto"
         >
-            {/* The shared tooltips portal to the page body at z 90; lift them over this page
-                only while it is open. */}
-            <style>{'[data-top-bar-tip],[data-bubble-tip]{z-index:10001 !important}'}</style>
             <div className="max-w-4xl mx-auto px-6 py-4">
                 <div className="sticky top-0 z-[60] bg-gi-base flex items-center gap-3 py-2 border-b border-white/10">
                     <h2 className="font-bold">Style sheet</h2>

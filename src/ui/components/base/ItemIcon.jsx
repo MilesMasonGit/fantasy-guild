@@ -13,8 +13,10 @@ import { getTokenType } from '../../../config/registries/tokenRegistry.js';
  * @param {number} props.size - Pixel size (default 32)
  * @param {boolean} props.isDiscovered - Whether the item is discovered (default true)
  * @param {string} props.className - Additional classes
+ * @param {string|null} [props.title] - Hover text, the item's name by default; `null` for none,
+ *   where a shared Tooltip around the icon says it instead.
  */
-export const ItemIcon = ({ item, size = 32, isDiscovered = true, className }) => {
+export const ItemIcon = ({ item, size = 32, isDiscovered = true, className, title }) => {
     const [hasError, setHasError] = useState(false);
 
     if (!isDiscovered) {
@@ -24,7 +26,7 @@ export const ItemIcon = ({ item, size = 32, isDiscovered = true, className }) =>
             <div
                 className={cn("flex items-center justify-center select-none grayscale opacity-60", sizeClass, className)}
                 style={{ fontSize: validSize * 0.6 }}
-                title="???"
+                title={title === null ? undefined : '???'}
             >
                 ❓
             </div>
@@ -68,7 +70,7 @@ export const ItemIcon = ({ item, size = 32, isDiscovered = true, className }) =>
         return (
             <div
                 className={cn("flex items-center justify-center select-none border border-white/5 rounded bg-black/20 text-gray-500", sizeClass, className)}
-                title={name}
+                title={title === null ? undefined : (title || name)}
             >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '50%', height: '50%', opacity: 0.4 }}>
                     <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
@@ -82,7 +84,7 @@ export const ItemIcon = ({ item, size = 32, isDiscovered = true, className }) =>
     return (
         <div
             className={cn("relative flex items-center justify-center overflow-hidden", sizeClass, className)}
-            title={name}
+            title={title === null ? undefined : (title || name)}
         >
             <img
                 src={spritePath}

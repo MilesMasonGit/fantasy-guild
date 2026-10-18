@@ -35,7 +35,7 @@ export const EntityRibbon = ({
     required,
     isDiscovered = true,
     // Optional hover text. Defaults to the entity's name; pass a sentence when
-    // the row needs explaining rather than naming.
+    // the row needs explaining rather than naming, or `null` for none.
     title,
     size = 'md',
     variant = 'default',
@@ -123,14 +123,14 @@ export const EntityRibbon = ({
             box: 'w-8 h-8',
             iconSize: 32,
             text: 'text-xs',
-            sub: 'text-[9px]',
+            sub: 'text-(length:--font-size-xs)',
             pad: 'p-1.5 gap-2.5'
         },
         md: {
             box: 'w-8 h-8',
             iconSize: 32,
             text: 'text-xs md:text-sm',
-            sub: 'text-[10px]',
+            sub: 'text-(length:--font-size-xs)',
             pad: 'p-2 gap-2.5'
         },
         lg: {
@@ -144,7 +144,7 @@ export const EntityRibbon = ({
         box: 'w-8 h-8',
         iconSize: 32,
         text: 'text-xs md:text-sm',
-        sub: 'text-[10px]',
+        sub: 'text-(length:--font-size-xs)',
         pad: 'p-2 gap-2.5'
     };
 
@@ -162,7 +162,7 @@ export const EntityRibbon = ({
                 isInteractive && 'cursor-pointer hover:bg-[#201b18] active:scale-[0.99]',
                 className
             )}
-            title={title || displayName}
+            title={title === null ? undefined : (title || displayName)}
         >
             {/**
              * Sprite Box: 32px base, smoothly scales to 64px (scale-[2]) overflowing the

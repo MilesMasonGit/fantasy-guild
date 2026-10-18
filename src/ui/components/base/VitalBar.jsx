@@ -10,14 +10,14 @@ import { cn } from '../../utils/cn.js';
  */
 export const VitalBar = ({ label, value, max, barClass }) => (
     <div className="flex items-center gap-1.5">
-        <span className="text-[9px] font-bold text-gi-muted w-5">{label}</span>
+        <span className="text-(length:--font-size-xs) font-bold text-gi-muted w-5">{label}</span>
         <div className="flex-1 h-1.5 bg-black/50 rounded-full overflow-hidden">
             <div
                 className={cn('h-full transition-all duration-300', barClass)}
                 style={{ width: `${Math.min(100, (value / Math.max(1, max)) * 100)}%` }}
             />
         </div>
-        <span className="text-[9px] text-gi-muted tabular-nums">{value}</span>
+        <span className="text-(length:--font-size-xs) text-gi-muted tabular-nums">{value}</span>
     </div>
 );
 

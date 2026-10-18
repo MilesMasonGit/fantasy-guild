@@ -86,7 +86,7 @@ const Toast = ({ id, message, type = 'info', count = 1, added = 0, removed = 0, 
             </div>
 
             {rate !== 0 && (
-                <span className="text-[10px] font-mono text-gray-400 select-none tabular-nums shrink-0">
+                <span className="text-(length:--font-size-xs) font-mono text-gray-400 select-none tabular-nums shrink-0">
                     ({Math.abs(rate) < 1000 ? Math.floor(rate) : formatCompact(rate, 1)}/hr)
                 </span>
             )}

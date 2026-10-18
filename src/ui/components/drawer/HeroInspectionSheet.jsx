@@ -1,4 +1,4 @@
-import { memo, useRef, useState } from 'react';
+import { memo, useState } from 'react';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { resolveSpritePath, resolveAnimationPath } from '../../../utils/AssetManager.js';
@@ -10,7 +10,7 @@ import { boardArtSteps } from '../base/TokenSprite.jsx';
 import { AnimatedHeroSprite } from '../board/AnimatedHeroSprite.jsx';
 import { FlagMark } from '../board/FlagMark.jsx';
 import { WorkRulesLink } from '../dock/WorkRulesDrawer.jsx';
-import { TopBarTip } from '../board/TopBarTip.jsx';
+import { Tooltip } from '../base/Tooltip.jsx';
 import { useLiveMatFit } from '../board/MatFitContext.jsx';
 import { useEntityDrag } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
@@ -120,7 +120,7 @@ export const HeroInspectionSheet = memo(function HeroInspectionSheet({ heroId, o
                         <div data-hero-panel-hp className="h-1.5 flex-1 bg-black/60 rounded-full overflow-hidden">
                             <div className={cn('h-full transition-all duration-300', hpTone)} style={{ width: `${hpPct}%` }} />
                         </div>
-                        <span data-hero-panel-hp-text className="shrink-0 text-[11px] tabular-nums text-white/80">
+                        <span data-hero-panel-hp-text className="shrink-0 text-(length:--font-size-sm) tabular-nums text-white/80">
                             {`${hero.hp.toLocaleString('en-US')} / ${hero.hpMax.toLocaleString('en-US')}`}
                         </span>
                     </div>
@@ -146,7 +146,7 @@ export const HeroInspectionSheet = memo(function HeroInspectionSheet({ heroId, o
 
                 {bankedRows.length > 0 && (
                     <div data-skill-group="banked" className="py-2 border-t border-white/5 flex flex-col gap-0.5">
-                        <span className="text-[11px] font-bold gi-caps tracking-wider text-gi-muted">Set aside</span>
+                        <span className="text-(length:--font-size-sm) font-bold gi-caps tracking-wider text-gi-muted">Set aside</span>
                         {bankedRows.map(r => <SkillRow key={r.id} row={r} heroId={heroId} kind="banked" />)}
                     </div>
                 )}
@@ -158,7 +158,7 @@ export const HeroInspectionSheet = memo(function HeroInspectionSheet({ heroId, o
                             data-locked-toggle
                             aria-expanded={lockedOpen}
                             onClick={() => setLockedListOpen(!lockedOpen)}
-                            className="w-full flex items-center gap-1 py-1 text-[11px] font-bold gi-caps tracking-wider text-gi-muted hover:text-gi-text transition-colors cursor-pointer"
+                            className="w-full flex items-center gap-1 py-1 text-(length:--font-size-sm) font-bold gi-caps tracking-wider text-gi-muted hover:text-gi-text transition-colors cursor-pointer"
                         >
                             <ChevronRight size={12} className={cn('transition-transform', lockedOpen && 'rotate-90')} />
                             <span>Locked</span>
@@ -246,8 +246,6 @@ const HeroFigure = ({ hero, heroId, size }) => {
  * it reached) or `locked` (never held).
  */
 const SkillRow = ({ row, heroId, kind = 'held', expanded = false, onToggle }) => {
-    const ref = useRef(null);
-    const [hovered, setHovered] = useState(false);
     const held = kind === 'held';
     const xp = skillXpView(row.xp);
     const tipLines = kind === 'banked'
@@ -256,16 +254,14 @@ const SkillRow = ({ row, heroId, kind = 'held', expanded = false, onToggle }) =>
             ? ['Not on this hero’s job.']
             : [xp.title, ...(row.mastered ? ['Mastered: kept on every job.'] : [])];
     return (
+        <Tooltip title={row.name} lines={tipLines}>
         <div
-            ref={ref}
             data-skill-row={row.id}
             data-skill-tier={held && row.tier ? row.tier : undefined}
             data-skill-banked={kind === 'banked' || undefined}
             data-skill-locked={kind === 'locked' || undefined}
             aria-expanded={held ? expanded : undefined}
             onClick={held ? onToggle : undefined}
-            onMouseEnter={() => setHovered(true)}
-            onMouseLeave={() => setHovered(false)}
             className={cn(
                 'flex flex-col gap-1 px-1 py-0.5 rounded-sm',
                 held && 'cursor-pointer hover:bg-white/5',
@@ -291,8 +287,8 @@ const SkillRow = ({ row, heroId, kind = 'held', expanded = false, onToggle }) =>
                 </div>
             </div>
             {held && expanded && <SkillDetail heroId={heroId} row={row} />}
-            {hovered && <TopBarTip anchor={ref.current} title={row.name} lines={tipLines} />}
         </div>
+        </Tooltip>
     );
 };
 
@@ -311,8 +307,8 @@ const SkillDetail = ({ heroId, row }) => {
             {lines.map(([label, value], i) => (
                 // The first line, this level's XP, is the longest: it takes the full width.
                 <div key={label} className={cn('min-w-0 flex flex-col', i === 0 && d.level && 'col-span-2')}>
-                    <dt className="truncate text-[9px] text-gi-muted">{label}</dt>
-                    <dd className="truncate text-[11px] tabular-nums text-white/90">{value}</dd>
+                    <dt className="truncate text-(length:--font-size-xs) text-gi-muted">{label}</dt>
+                    <dd className="truncate text-(length:--font-size-sm) tabular-nums text-white/90">{value}</dd>
                 </div>
             ))}
         </dl>

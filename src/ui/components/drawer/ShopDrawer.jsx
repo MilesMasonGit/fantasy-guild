@@ -5,6 +5,7 @@ import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { TokenSprite, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
 import { EntityRibbon } from '../base/EntityRibbon.jsx';
 import { ArrowScrollList } from '../base/ArrowScrollList.jsx';
+import { Tooltip } from '../base/Tooltip.jsx';
 import * as Shop from '../../../systems/board/Shop.js';
 import { onMatTuningChanged } from '../../../config/matTuning.js';
 import { useEntityDrag, useActiveDrag, useDragSurface } from '../../dnd/DndKit.jsx';
@@ -178,13 +179,13 @@ const ShopContents = memo(function ShopContents({ isOpen, onClose }) {
             </div>
 
             <ArrowScrollList step={SHOP_SCROLL_STEP_PX} className="flex-1 min-h-0 p-3 flex flex-col gap-3">
-                <p className="text-[11px] text-gi-muted">Drag a Token onto the mat to buy it.</p>
+                <p className="text-(length:--font-size-sm) text-gi-muted">Drag a Token onto the mat to buy it.</p>
                 {shop.length === 0 && (
                     <p className="text-xs text-gi-muted">Nothing is for sale yet.</p>
                 )}
                 {shop.map(group => (
                     <section key={group.section} data-shop-section={group.section} className="flex flex-col gap-1.5">
-                        <h3 className="text-[11px] font-bold gi-caps tracking-wider text-gi-muted">{group.name}</h3>
+                        <h3 className="text-(length:--font-size-sm) font-bold gi-caps tracking-wider text-gi-muted">{group.name}</h3>
                         {group.items.map(item => <ShopRow key={item.group ? `group:${item.group}` : item.typeId} item={item} />)}
                     </section>
                 ))}
@@ -237,6 +238,7 @@ const NO_HANDLE = Object.freeze({});
 const ShopRowBody = memo(function ShopRowBody({ item, chosen, ok, onPick, held, dragRef, dragProps }) {
     const options = item.options || null;
     return (
+        <Tooltip lines={[ok ? `Drag ${chosen.name} onto the mat to buy it` : chosen.affordability?.reason]}>
         <div
             ref={dragRef}
             {...dragProps}
@@ -244,7 +246,6 @@ const ShopRowBody = memo(function ShopRowBody({ item, chosen, ok, onPick, held, 
             data-shop-row={chosen.typeId}
             data-shop-group={item.group || undefined}
             data-shop-affordable={ok ? 'true' : 'false'}
-            title={ok ? `Drag ${chosen.name} onto the mat to buy it` : chosen.affordability?.reason}
             style={{ height: SHOP_ROW_PX }}
             className={cn(
                 'shrink-0 overflow-hidden rounded-lg border border-gi-border/50 bg-gi-base/50 p-2 flex items-stretch gap-2 select-none transition-opacity',
@@ -287,6 +288,7 @@ const ShopRowBody = memo(function ShopRowBody({ item, chosen, ok, onPick, held, 
                                 required={p.need}
                                 size="sm"
                                 variant="cost"
+                                title={null}
                             />
                         ))}
                     </div>
@@ -300,6 +302,7 @@ const ShopRowBody = memo(function ShopRowBody({ item, chosen, ok, onPick, held, 
                 <TokenSprite typeId={chosen.typeId} surface={TOKEN_SURFACE.CARRY} size={SHOP_ART_PX} alt={chosen.name} />
             </div>
         </div>
+        </Tooltip>
     );
 });
 

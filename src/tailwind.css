@@ -148,13 +148,8 @@
   --font-mono: "JetBrains Mono", monospace;
   --font-inter: "Inter", sans-serif;
 
-  /* Pixel-Crisp Font Sizes (Multiples of 8 / 4 for absolute sharpness) */
-  --font-size-xs: 12px;
-  --font-size-sm: 16px;
-  --font-size-base: 20px;
-  --font-size-lg: 24px;
-  --font-size-xl: 32px;
-  --font-size-2xl: 48px;
+  /* The --font-size-* steps live in main.css :root (14, 16, 18, 20, 24, 32, 48 px) and the Text
+     size setting overrides them on <html>; a copy here would lose to both. */
 
   /* Size-Based Text Outlines (User Specified) */
   --shadow-outline-1: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
@@ -185,8 +180,7 @@
 @layer base {
   body {
     @apply bg-gi-base text-gi-text font-base;
-    font-size: var(--font-size-sm);
-    /* Standard 16px */
+    /* No font-size here: main.css's unlayered body rule sets it (--font-size-base) and wins. */
     -webkit-font-smoothing: none;
     -moz-osx-font-smoothing: none;
     font-smooth: never;
@@ -784,6 +778,25 @@
 
 .text-\[32px\], .text-2xl {
   font-size: var(--font-size-2xl) !important;
+}
+
+/* The kit's text sizes (UI_STYLE "Text sizes"; textSizes.js lists them). Each reads one step of
+   the Text size setting. ⚠️ Font size only: the line height stays the element's own, so moving a
+   panel onto these changes nothing but the size. */
+.ui-text-title {
+  font-size: var(--font-size-sm) !important;
+}
+
+.ui-text-body {
+  font-size: var(--font-size-xs) !important;
+}
+
+.ui-text-small {
+  font-size: var(--font-size-xxs) !important;
+}
+
+.ui-text-display {
+  font-size: var(--font-size-xl) !important;
 }
 
 /* All Caps Toggle Rules */
