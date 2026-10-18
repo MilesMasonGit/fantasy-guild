@@ -73,7 +73,7 @@ describe('natural clumps: uneven groves, tight in the middle and looser at the r
 
     it('groves come in uneven sizes, small and large', () => {
         const sizes = results.flatMap(r => clusters(r.nodes, 1.3 * COMFORT_GAP).map(g => g.length)).filter(n => n > 1);
-        // Today's layout grew one grove per eight nodes, all alike in size.
+        // One grove per eight nodes, all alike in size, would have few small groves.
         expect(share(sizes, n => n <= 4)).toBeGreaterThan(0.25);
         expect(share(sizes, n => n >= 8)).toBeGreaterThan(0.1);
     });

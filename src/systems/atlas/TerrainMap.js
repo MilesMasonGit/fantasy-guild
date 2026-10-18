@@ -166,9 +166,10 @@ export function islandsOf(grid, water, home) {
 
 /**
  * The ground a cell gets from the nodes round it: the nearest node within {@link FOLLOW_REACH} of
- * the cell's centre gives its terrain (the earliest placed wins a tie), else `fallback`.
+ * the cell's centre gives its terrain (the first listed wins a tie), else `fallback`.
  *
- * @param {{x: number, y: number, terrain: string, biome: string|null}[]} nodes  in placement order
+ * @param {{x: number, y: number, terrain: string, biome: string|null}[]} nodes  in the layout's
+ *   order (`Layout.js` keeps them in budget order)
  * @returns {{terrain: string, biome: string|null}}
  */
 export function followNodes(centre, nodes, fallback) {
