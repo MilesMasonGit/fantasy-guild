@@ -5,6 +5,19 @@ five-line summary at each batch's edges (proposed, looked at); anything older
 than two days is trimmed. States: queued · building · ready (tests, cycles,
 build green) · bench-queued · eye-check · merged.*
 
+## Features director, batch 1: the style kit (ruled 2026-10-17)
+
+*The second director (owner, 2026-10-17) works the main queue; the terrain
+director keeps the rows below. One code agent at a time here while terrain
+runs one, so the PC holds two.*
+
+| Phase | Tier | Branch (worktree) | State | Planned | Done |
+|---|---|---|---|---|---|
+| Brief 100 K1: the style sheet page, every standard UI piece live (T-159) | builder | `crunch/style-kit` (`k1`) | building | Sat | |
+| Brief 100 K2: one shared arrow-bar scroll list (T-160) | builder | `crunch/style-kit` | queued, after K1 | | |
+| Brief 100 K3: three text sizes and the shared tooltip (T-161, T-038, T-030) | builder-lite | `crunch/style-kit` | queued, after K2 | | |
+| Recruits get a weak basic attack so the tutorial's fight can be won (T-167); owner authors a safe enemy in the Starter Camp afterwards | builder | `fix/t167-recruit-attack` | queued, after K1 (engine files, no overlap) | | |
+
 ## Art pass, batch 1 (proposed and ruled 2026-10-15 evening)
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
@@ -75,6 +88,13 @@ T-186; the badges' soft shadows are settled inside T-013.)
 Empty (the rename's work check ran at 11:35 with the owner's go).
 
 ## Summaries
+
+**Sat 2026-10-17, evening: features batch 1 proposed and ruled.** Where we
+are: `main` clean; five finished tickets closed in the archive. The batch: the
+style kit (brief 100: page, shared list, text sizes and tooltip; one eye-check
+at the end) and the Recruits' weak attack (T-167). Next: brief 140 (hero bar)
+or 110 (map tools) on the kit. Owner: after T-167 lands, author a weak, safe
+enemy in the Starter Camp. Blockers: none.
 
 **Thu 2026-10-15, closing (wave 2 director).** The whole of wave 2 and the
 terrain (brief 80 T0–T4) are on `main`, the owner's eye-checks all fine; the

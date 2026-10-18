@@ -55,3 +55,8 @@ T-148 — The Guild Hall is movable again (drags, carries the marker; never push
 T-147 — Hover is the 1-art-pixel white outline alone; the hover hop and A10's lift are gone — 095420e0 — 2026-10-14
 T-179 — The Studio: `npm run studio` (port 5175) runs Recolor and Animation as two tabs on a server that refuses the game-data routes; the tabs left the CMS top bar; palette drop folder `cms/palettes-inbox/` with an Import button in the Recolor tab (brief 85 A3) — crunch/art-a3 — 2026-10-15
 T-185 — The dev server redraws sprite shadows and outlines in a child process (killed on close or restart) and no longer watches the other sessions' worktrees under .claude/worktrees (main checkout: 211,296 → 6,276 watch handles, 2.0-2.4 GB → under 0.7 GB, full redraw 31.6 s → 5.7 s); the 0xC0000409 itself was not reproduced — 0cfcdf1e — 2026-10-15
+T-180 — Vibrancy pass: art baked at Gentle 1.08 / 1.12 by the brightness script (tag art-before-vibrancy); the Studio button brightens the material palettes the same way, once — dfb17ac2 — 2026-10-16
+T-183 — Floor loot lands on its spot and draws crisp; piles no longer jump into stacks — 6a961f28 — 2026-10-15
+T-184 — The dev panel's Scatter Loot button throws real items — bf57730c — 2026-10-15
+T-188 — Sync to Game lists the content it would remove or bring back and asks first, offering Restore from Game — 1873d62f — 2026-10-17
+T-190 — The event-publisher scan test gets a 20 s timeout (slow only under load) — 2a6ee4d9 — 2026-10-17
