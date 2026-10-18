@@ -262,7 +262,7 @@ const AlertOutlineDemo = () => (
 
 const ArrowBarDemo = () => (
     <div className="flex flex-col w-64 h-48 bg-gi-base/60">
-        <ArrowScrollList step={56} className="flex-1 min-h-0 p-2 flex flex-col gap-1">
+        <ArrowScrollList step={100} className="flex-1 min-h-0 p-2 flex flex-col gap-1">
             {Array.from({ length: 12 }, (_, i) => (
                 <EntityRibbon key={i} kind="item" id={SAMPLE_ITEMS[i % SAMPLE_ITEMS.length]} quantity={i + 1} size="sm" />
             ))}

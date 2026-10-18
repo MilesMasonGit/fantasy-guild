@@ -22,8 +22,8 @@ const priceText = (price) =>
         ? 'FREE'
         : price.map(p => `${p.quantity.toLocaleString()} ${itemName(p.itemId)}`).join(' + ');
 
-/** How far an arrow press scrolls the rank list: about two rank rows and their gaps. */
-const RANK_SCROLL_STEP_PX = 120;
+/** How far an arrow press scrolls the rank list: two rank rows (42 px at the default text size) and their gaps. */
+const RANK_SCROLL_STEP_PX = 96;
 
 /**
  * GuildUpgradeInspection: clean, focused upgrade inspection panel: a large central sprite, a
