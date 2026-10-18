@@ -129,7 +129,9 @@ rim, patchwork, which steer where each biome's groves go, since the ground
 follows the nodes); then what the owner noticed in play. Page:
 https://claude.ai/artifact/4BLxWmqzGpvF4gdin4tKdQ. Prototype `place1.py`, with
 today's layout from the game's own `Layout.js` via `place_today.mjs`. P1
-(today, natural clumps, mixed edges, drifts) waiting for the owner.
+verdict: **A, natural clumps** (one kind per grove). B's mixing is out because maps
+control which Tokens a player gets: early maps give many of the current tier's
+trees and one or two of the next tier's.
 
 ## G5 — Water in every Region (engineer; eye-check)
 
@@ -180,7 +182,13 @@ cells from shapes, rules per biome, determinism, the Hall clearing dry, the
 water cap); engine work check same; ground build time reported; a
 `bench:draw --compare` for the cost log; eye-check.
 
-## G6 — Blends and beaches at biome borders (after G5)
+**G5 eye-check (owner, 2026-10-17):** water ok; rivers a little tangled (gentler
+bends, never doubling back); braided river removed; rivers wider overall, the
+split's side channel at least a placing cell wide; minor biomes get a small
+water in their own ground after placing (option A); the Starter Camp gets a
+small pond; Token art over water fine. Being built on the same branch.
+
+## G6 — Blends and beaches at biome borders (after G5; owner 2026-10-17: build it, though today's blending is good enough for now)
 
 The variety of blend styles from rounds W2–W4 (mixed band, islands, fingers,
 transition ground, river border, gradient C), picked by seed or by biome pair,
