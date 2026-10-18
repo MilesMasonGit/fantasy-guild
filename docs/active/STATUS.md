@@ -16,7 +16,7 @@ runs one, so the PC holds two.*
 | Brief 100 K1: the style sheet page, every standard UI piece live (T-159) | builder | `crunch/style-kit` (`k1`) | eye-check (ca5bf7ff; director's gate: 5106 tests, cycles, build) | Sat | |
 | Brief 100 K2: one shared arrow-bar scroll list (T-160) | builder | `crunch/style-kit` (`k1`) | eye-check (14474430; director's gate: 5113 tests, cycles, build). Arrows now dim instead of hiding on the inspect column, pop-up and rank list (UI_STYLE); four look questions for the eye-check | Sat | Sat |
 | Brief 100 K3: three text sizes and the shared tooltip (T-161, T-038, T-030) | builder (tooltip spans several files) | `crunch/style-kit` (`k1`) | eye-check (7060a37f; director's gate on the whole kit: 5126 tests, cycles, build). Sizes 18/16/14, display 32 proposed; tooltip on the Bank, Shop and hero panel | Sat | Sat |
-| Recruits get a weak basic attack so the tutorial's fight can be won (T-167); owner authors a safe enemy in the Starter Camp afterwards | builder | `fix/t167-recruit-attack` | ready (30c0923b; director's gate: 5107 tests, cycles, build). Bench-queued (work check; builder expects same: every bench hero holds melee). Eye-check with the kit (plays differently) | Sat | |
+| Recruits get a weak basic attack so the tutorial's fight can be won (T-167); owner authors a safe enemy in the Starter Camp afterwards | builder | `fix/t167-recruit-attack` | eye-check (6790962d, with the QA Hire button making roster room; director's gate: 5109 tests, cycles, build; director saw a fresh Recruit beat a Goblin in ~10 s on 5197: Bones on the mat, skills unchanged, the hostile Goblin hit first). Bench-queued (work check; builder expects same) | Sat | |
 
 ## Art pass, batch 1 (proposed and ruled 2026-10-15 evening)
 
@@ -89,7 +89,8 @@ T-186; the badges' soft shadows are settled inside T-013.)
 
 ## Bench queue (one at a time, weekdays 13:00–17:00 and 01:00–07:00, or when the owner says the PC is quiet)
 
-1. `fix/t167-recruit-attack` (30c0923b): engine work check (`npm run bench -- --compare`), features director.
+1. `fix/t167-recruit-attack` (6790962d): engine work check (`npm run bench -- --compare`), features director.
+2. `crunch/style-kit` (7060a37f): engine work check and one `bench:draw --compare` for the cost log, features director.
 
 ## Summaries
 
