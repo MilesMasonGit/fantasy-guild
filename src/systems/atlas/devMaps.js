@@ -11,7 +11,8 @@ import { WATER_KIND } from './WaterShapes.js';
  *
  * The Overgrown here also carries a Region rule, +10 % Forestry yield, so a Region rule can be
  * seen applying and dropping as the guild travels. The `water_*` maps are a biome's map that names
- * one variety of its water (`inland`), for the dev panel's water views.
+ * one variety of its water (`inland`), for the dev panel's water views; the `place_*` maps and the
+ * Test Chest (a dev-only Token the dev panel registers) are for its placement views.
  */
 
 export const DEV_RULE_FORESTRY_YIELD = Object.freeze({
@@ -80,6 +81,33 @@ const BASE_MAPS = Object.freeze({
     goblinCamp: Object.freeze({
         id: 'dev_mod_goblin_camp', name: 'Goblin Camp', kind: 'modifier',
         effects: [{ kind: 'threat', typeId: 'token_goblin_camp', count: 1 }]
+    }),
+    // The placement views: the placement rounds' mix, a map's common trees and bushes with two
+    // of the next tier's tree, beside a little copper of a mountain.
+    place_meadow: Object.freeze({
+        id: 'dev_map_place_meadow', name: 'Meadow Map (placement)', kind: 'base', biome: 'meadow', points: 52,
+        nodes: [
+            { typeId: 'token_oak_tree', weight: 16 },
+            { typeId: 'token_redberry_bush', weight: 8 },
+            { typeId: 'token_maple_tree', weight: 2 }
+        ]
+    }),
+    place_copper: Object.freeze({
+        id: 'dev_map_place_copper', name: 'Copper Map (placement)', kind: 'base', biome: 'mountain', points: 10,
+        nodes: [{ typeId: 'token_copper_ore_vein', weight: 1 }]
+    }),
+    place_lake: Object.freeze({
+        id: 'dev_map_place_lake', name: 'Lake Meadow Map (placement)', kind: 'base', biome: 'meadow', points: 26,
+        inland: WATER_KIND.LAKE,
+        nodes: [
+            { typeId: 'token_oak_tree', weight: 16 },
+            { typeId: 'token_redberry_bush', weight: 8 },
+            { typeId: 'token_maple_tree', weight: 2 }
+        ]
+    }),
+    devChest: Object.freeze({
+        id: 'dev_mod_chest', name: 'Test Chest', kind: 'modifier',
+        effects: [{ kind: 'treasure', typeId: 'dev_treasure_chest', count: 1 }]
     })
 });
 

@@ -229,9 +229,11 @@ describe('⭐ a meadow Region places exactly as before (decision 15)', () => {
  * yesterday). Fixture Tokens, the game's own layout inputs, water and no water, every role.
  * Recorded on `main` at fe151c8e, before the layout read "Stands on"; recorded again when the water
  * became shapes and every biome brought its own (and again when the rivers calmed and the minor
- * biomes gained their small waters): new Regions get water, stored ones keep theirs.
+ * biomes gained their small waters): new Regions get water, stored ones keep theirs. Recorded
+ * again when the placement rounds grew natural groves, camps in a grove and treasures on islands:
+ * new Regions place that way, stored ones keep their layout.
  */
-const LAYOUT_FINGERPRINT = 'aa16d6e5';
+const LAYOUT_FINGERPRINT = '472c01cc';
 
 registerTokenTypes({
     gm_oak: { id: 'gm_oak', name: 'GM Oak', tokenType: 'resource', size: 1, uses: 5, requiresHero: true, config: { skill: 'logging', skillRequired: 1, cycleTimeMs: 3000, inputs: [], outputs: [] } },
