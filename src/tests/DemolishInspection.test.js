@@ -28,9 +28,9 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 }));
 
 /**
- * Demolition from the inspection: a Demolish button where the engine allows it, the reason where it
- * does not, Cancel demolition once marked, the countdown line, and a Dismiss for bounties (never for
- * tutorial steps).
+ * Demolition as the inspection and the mat show it: the countdown line, the marked badge, the
+ * callout, and a Dismiss for bounties (never for tutorial steps). Marking is Demolish mode's
+ * (`MapModes.test.js`); the inspection has no Demolish button.
  */
 
 const h = React.createElement;
@@ -46,55 +46,6 @@ afterEach(() => cleanup());
 beforeEach(() => {
     GameState.initNew();
     clearMat();
-});
-
-describe('the Demolish button', () => {
-    it('marks the Token, then Cancel demolition unmarks it', async () => {
-        const t = placeAt('fixture_producer', 400, 300);
-        const { container } = inspect(t);
-        const btn = control(container);
-        expect(btn.getAttribute('data-demolish')).toBe('mark');
-        expect(btn.textContent).toBe('Demolish');
-
-        await act(async () => { fireEvent.click(btn); });
-        expect(Demolition.isMarked(t)).toBe(true);
-        expect(control(container).getAttribute('data-demolish')).toBe('cancel');
-        expect(control(container).textContent).toBe('Cancel demolition');
-
-        await act(async () => { fireEvent.click(control(container)); });
-        expect(Demolition.isMarked(t)).toBe(false);
-        expect(control(container).getAttribute('data-demolish')).toBe('mark');
-    });
-
-    it('follows a mark made elsewhere (the console)', async () => {
-        const t = placeAt('fixture_producer', 400, 300);
-        const { container } = inspect(t);
-        await act(async () => { Demolition.mark(t.id); });
-        expect(control(container).getAttribute('data-demolish')).toBe('cancel');
-    });
-
-    it('shows the refusal for the Guild Hall, with no button', () => {
-        const hall = placeAt('token_guild_hall', 880, 560);
-        const { container } = inspect(hall);
-        const hint = control(container);
-        expect(hint.getAttribute('data-demolish')).toBe('refused');
-        expect(hint.tagName).not.toBe('BUTTON');
-        expect(hint.textContent).toBe(Demolition.REFUSAL_TEXT[Demolition.REFUSAL.GUILD_HALL]);
-        expect(container.querySelector('button[data-demolish]')).toBeNull();
-    });
-
-    it('shows the refusal for a map node', () => {
-        const node = placeAt('fixture_producer', 400, 300);
-        node.fixture = true;
-        const { container } = inspect(node);
-        expect(control(container).getAttribute('data-demolish')).toBe('refused');
-        expect(control(container).textContent).toBe(Demolition.REFUSAL_TEXT[Demolition.REFUSAL.MAP_NODE]);
-    });
-
-    it('a Shop inspection (no instance) offers nothing', () => {
-        const { container } = mount(h(TokenInspection, { typeId: 'fixture_producer' }));
-        expect(control(container)).toBeNull();
-    });
 });
 
 describe('a marked Token reads as demolition work', () => {

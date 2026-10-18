@@ -1,6 +1,6 @@
 /**
  * While the Bank is open, the playmat cannot be interacted with at all: the Bank covers it.
- * Mirrors `useDisallowMode.js`'s shape on purpose: a tiny external store so
+ * Mirrors `useMapMode.js`'s shape on purpose: a tiny external store so
  * `AlphaPointerSensor` (outside React, a plain class) can ask the same question the mat's own
  * drop target asks. `ReactRoot` is the only writer, kept in step with
  * `ui.drawer.panes.includes('bank')`.

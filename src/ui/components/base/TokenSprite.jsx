@@ -109,7 +109,7 @@ const ON_MAT_SURFACES = new Set([TOKEN_SURFACE.BOARD, TOKEN_SURFACE.CARRY, TOKEN
  * - **A sprite at rest has no shadow at all.**
  * - **A held Token (`lifted`) and floating loot (`hovering`) cast a hard shadow**: a solid
  * black silhouette of the art, 2 art pixels down and to the right, pixel-crisp.
- * - **`outline`** (`'work'` green, `'hover'` white, `'alert'` red) draws a sharp coloured
+ * - **`outline`** (`'work'` green, `'hover'` white, `'alert'` red; `'muted'` grey and `'danger'` red in the map modes) draws a sharp coloured
  * line, one art pixel thick and on the art's own grid, around the art's own black outline. Its
  * pixels touch the art edge to edge only (`src/config/spriteFx.js`).
  * Both are images made from the art by `scripts/spriteFx.mjs` and drawn as plain layers
@@ -145,7 +145,7 @@ const spriteImgStyle = (size, extra) => ({
  * comes and goes.
  * @param {boolean} lifted    held in the hand: hard shadow, art raised 4 px
  * @param {boolean} hovering  floating loot: hard shadow, art bobbing
- * @param {'work'|'hover'|'alert'|null} [outline]
+ * @param {'work'|'hover'|'alert'|'muted'|'danger'|null} [outline]
  */
 export const PixelArt = (props) => {
     if (!props.src) return null;
@@ -219,7 +219,7 @@ function LayeredPixelArt({ src, alt, size, lifted = false, hovering = false, out
  * pixel value.
  * @param {boolean} lifted    Held by the cursor: hard shadow, art offset up. The size does not
  * change.
- * @param {string}  outline   `'work'` | `'hover'` | `'alert'` | null: the coloured outline.
+ * @param {string}  outline   `'work'` | `'hover'` | `'alert'` | `'muted'` | `'danger'` | null: the coloured outline.
  * Mat callers always pass it; elsewhere leave it out.
  * @param {string}  alt       Overrides the registry name, for callers that already have a
  * label.

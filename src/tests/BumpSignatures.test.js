@@ -13,7 +13,7 @@ import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { EngineContext } from '../ui/context/EngineContext';
 import { MatCapBadge } from '../ui/components/board/MatCapBadge.jsx';
-import { AllowAllButton } from '../ui/components/board/MatDisallowControls.jsx';
+import { AllowAllButton } from '../ui/components/board/MatModeControls.jsx';
 import { placeAt, clearMat } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({

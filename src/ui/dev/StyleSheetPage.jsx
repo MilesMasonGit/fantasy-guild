@@ -15,6 +15,8 @@ import { Tooltip } from '../components/base/Tooltip.jsx';
 import { TEXT_SIZES } from '../components/base/textSizes.js';
 import { ArrowScrollList } from '../components/base/ArrowScrollList.jsx';
 import { LevelUpFloats } from '../components/board/LevelUpFloat.jsx';
+import { ModeBannerView } from '../components/board/MatModeControls.jsx';
+import { MAP_MODE } from '../hooks/useMapMode.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 
@@ -246,6 +248,30 @@ const TextSizesDemo = () => (
         </p>
     </div>
 );
+
+/** The map modes' hover outlines and their banners, as the top bar shows them. */
+const MapModesDemo = () => {
+    const known = !!getTokenType(SAMPLE_TOKEN);
+    return (
+        <div className="flex flex-col gap-3">
+            {known && (
+                <div className="flex items-end gap-6">
+                    {[['muted', 'Disallow'], ['danger', 'Demolish']].map(([outline, label]) => (
+                        <figure key={outline} className="flex flex-col items-center gap-1">
+                            <TokenSprite typeId={SAMPLE_TOKEN} surface={TOKEN_SURFACE.INSPECT} scale={2} outline={outline} />
+                            <figcaption className="text-xs text-gi-muted">{label}: outline=&quot;{outline}&quot;</figcaption>
+                        </figure>
+                    ))}
+                </div>
+            )}
+            {[MAP_MODE.DISALLOW, MAP_MODE.DEMOLISH].map(mode => (
+                <div key={mode} className="h-[30px] max-w-[760px] px-3 bg-[#3a271d] font-pixel text-amber-100">
+                    <ModeBannerView mode={mode} />
+                </div>
+            ))}
+        </div>
+    );
+};
 
 const HoverOutlineDemo = () => {
     const [hover, setHover] = useState(false);
@@ -487,6 +513,12 @@ export const KIT_SECTIONS = [
         id: 'xp-bar', title: 'XP bar', status: 'unapproved', source: 'none shared',
         rule: 'XP is a thin bar; the exact number shows on hover.',
         Demo: () => <KitXpBar cur={1154} max={1500} />
+    },
+    {
+        id: 'map-modes', title: 'Map mode outlines and banners', status: 'unapproved',
+        source: 'MatModeControls (the top bar), outline="muted" / "danger"',
+        rule: 'While a map mode is on, the hovered Token’s outline takes the mode’s colour: muted grey for Disallow, red for Demolish (muted grey on a Token the mode cannot act on). The bar’s centre says what a click does; Demolish’s in red.',
+        Demo: MapModesDemo
     }
 ];
 

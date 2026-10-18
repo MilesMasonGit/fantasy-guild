@@ -74,6 +74,10 @@ player for these is T-138 (built when the first strips exist).
 - **Small UI icons** for the card's lines and the mat (NEW; placeholders until
   drawn): clock (cycle time), charges, regrow, spawn, grow, the problem mark
   ("!", recoloured yellow and red in code).
+- **Map mode cursors** (NEW, [concept_map_tools.md](concept_map_tools.md)):
+  the cursor over a Token in Disallow mode (muted grey) and in Demolish mode
+  (red); about 11 × 11, drawn at 2×. Code-drawn placeholders (a crossed
+  circle, an X) stand in until then.
 - **Log button icon** (NEW, [concept_notifications.md](concept_notifications.md)):
   a notepad or scroll, top right of the screen; placeholder until drawn.
 - **Night-sky backdrop for the Hall screen** (**HAVE**, 2026-10-15:

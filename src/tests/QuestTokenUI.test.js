@@ -243,12 +243,12 @@ describe('click to claim (B6.2, FB-41)', () => {
         expect(onInspectToken).toHaveBeenCalledTimes(1);
     });
 
-    it('disallow mode never claims: the click only flips', () => {
+    it('a map mode never claims: the click only goes to the mode', () => {
         const q = spawn(hunt({ currentCount: 3 }));
-        const onFlipDisallow = vi.fn();
-        const { container } = mount(tokenEl(q, { disallowMode: true, onFlipDisallow }));
+        const onModeClick = vi.fn();
+        const { container } = mount(tokenEl(q, { mapMode: 'disallow', onModeClick }));
         act(() => { fireEvent.click(art(container, q)); });
-        expect(onFlipDisallow).toHaveBeenCalledWith(q.id);
+        expect(onModeClick).toHaveBeenCalledWith(q.id, false);
         expect(BoardState.getTokenById(q.id)).toBeTruthy();
     });
 });

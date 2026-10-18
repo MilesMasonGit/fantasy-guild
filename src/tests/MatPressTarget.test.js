@@ -18,7 +18,7 @@ import { EngineContext } from '../ui/context/EngineContext';
 import { matW, matH, artRadiusOf } from '../config/matGeometry.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { MAT_TOKEN_DRAG_ID } from '../ui/components/board/MatToken.jsx';
-import { setDisallowMode } from '../ui/hooks/useDisallowMode.js';
+import { setDisallowMode } from '../ui/hooks/useMapMode.js';
 import { MatFitProvider } from '../ui/components/board/MatFitContext.jsx';
 import { HERO_HIT_PX } from '../ui/components/board/boardConstants.js';
 import { FLAG_PX } from '../ui/components/board/flagGeometry.js';

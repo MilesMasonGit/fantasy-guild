@@ -28,8 +28,8 @@ import { EngineContext } from '../ui/context/EngineContext';
 import { BottomHeroDock } from '../ui/components/dock/BottomHeroDock.jsx';
 import { BankHeroPanel } from '../ui/components/dock/BankHeroPanel.jsx';
 import { setLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
-import { toggleDisallowMode, setDisallowMode } from '../ui/hooks/useDisallowMode.js';
-import { DisallowModeToggle } from '../ui/components/board/MatDisallowControls.jsx';
+import { toggleMapMode, setDisallowMode, MAP_MODE } from '../ui/hooks/useMapMode.js';
+import { MapModeToggles } from '../ui/components/board/MatModeControls.jsx';
 
 const h = React.createElement;
 
@@ -109,11 +109,11 @@ describe('Escape mid-drag does not also end disallow mode (CR3-409)', () => {
             h(EngineContext.Provider, { value: engine },
                 h(DeckDndProvider, null,
                     h(BottomHeroDock, { selectedHeroId: null }),
-                    h(DisallowModeToggle)))
+                    h(MapModeToggles)))
         );
 
-        act(() => toggleDisallowMode());
-        expect(container.querySelector('[data-disallow-toggle="on"]')).not.toBeNull();
+        act(() => toggleMapMode(MAP_MODE.DISALLOW));
+        expect(container.querySelector('[data-map-mode-toggle="disallow"][data-on="true"]')).not.toBeNull();
 
         act(() => startRealDrag(container));
         expect(document.body.classList.contains('gi-dnd-active')).toBe(true);
@@ -122,10 +122,10 @@ describe('Escape mid-drag does not also end disallow mode (CR3-409)', () => {
 
         expect(document.body.classList.contains('gi-dnd-active')).toBe(false);
         // Disallow mode is still on: the drag's Escape did not also turn it off.
-        expect(container.querySelector('[data-disallow-toggle="on"]')).not.toBeNull();
+        expect(container.querySelector('[data-map-mode-toggle="disallow"][data-on="true"]')).not.toBeNull();
 
         // A second Escape, with no drag live, does end it.
         act(() => fireEvent.keyDown(document, { key: 'Escape', code: 'Escape' }));
-        expect(container.querySelector('[data-disallow-toggle="off"]')).not.toBeNull();
+        expect(container.querySelector('[data-map-mode-toggle="disallow"][data-on="false"]')).not.toBeNull();
     });
 });

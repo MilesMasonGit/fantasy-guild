@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, beforeAll, afterAll, afterEach, vi } from 'vitest';
 import React from 'react';
-import { render, cleanup, fireEvent, act } from '@testing-library/react';
+import { render, cleanup, fireEvent } from '@testing-library/react';
 import { DndContext } from '@dnd-kit/core';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
@@ -19,7 +19,6 @@ import { resetMatTuning, setMatTuning } from '../config/matTuning.js';
 import { EngineContext } from '../ui/context/EngineContext';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { FlagLayer } from '../ui/components/board/FlagLayer.jsx';
-import { TokenInspection } from '../ui/components/drawer/TokenInspection.jsx';
 import { dockStatusLine, flagTooltip } from '../ui/components/board/flagText.js';
 import { drawnPoint } from './fixtures/drawnPoint.js';
 
@@ -33,7 +32,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 
 /**
  * ⭐ Free Playmat slice 1.5 — the flag UI as drawn: the idle mark, the reach
- * ring and the disallow toggle. The engine hooks are in `FlagUI.test.js`. The
+ * ring and the disallow mark. The engine hooks are in `FlagUI.test.js`. The
  * skill picker is gone since slice 1.5b: a flag has no skill.
  */
 
@@ -295,36 +294,7 @@ describe('the flag has no skill since slice 1.5b (FP-71)', () => {
     });
 });
 
-describe('the Disallow switch (FP-35, FPP-8)', () => {
-    const toggle = (container) => container.querySelector('[data-disallow-switch]');
-
-    it('switching on marks the Token disallowed and the hero working it leaves', async () => {
-        const forest = put(TOKEN,'fixture_producer');
-        Flags.plant('h1', TOKEN);
-        expect(BoardState.workTokenOf('h1')).toBe(forest.id);
-
-        const { container } = mount(h(TokenInspection, { typeId: 'fixture_producer', instanceId: forest.id }));
-        const box = toggle(container).querySelector('[role="switch"]');
-        expect(box.getAttribute('aria-checked')).toBe('false');
-
-        await act(async () => { fireEvent.click(box); });
-
-        expect(Flags.isDisallowed(forest)).toBe(true);
-        expect(BoardState.workTokenOf('h1')).toBeNull();
-        expect(toggle(container).getAttribute('data-disallow-switch')).toBe('on');
-    });
-
-    it('is offered only for a board Token a hero could work', () => {
-        const passive = put(TOKEN,'fixture_passive');
-        const enemy = put(SECOND,'fixture_enemy');
-        expect(toggle(mount(h(TokenInspection, { typeId: 'fixture_passive', instanceId: passive.id })).container)).toBeNull();
-        cleanup();
-        expect(toggle(mount(h(TokenInspection, { typeId: 'fixture_enemy', instanceId: enemy.id })).container)).toBeTruthy();
-        cleanup();
-        // Not opened from the board (the Vault, the Tray): no toggle.
-        expect(toggle(mount(h(TokenInspection, { typeId: 'fixture_enemy' })).container)).toBeNull();
-    });
-
+describe('the disallow mark on the mat (FP-35, FPP-8)', () => {
     it('a disallowed Token shows the red disallow sprite in its middle row on the mat (FB-33)', () => {
         const forest = put(TOKEN,'fixture_producer');
         Flags.setDisallowed(forest.id, true);

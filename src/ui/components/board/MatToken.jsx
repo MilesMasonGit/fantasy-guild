@@ -18,6 +18,7 @@ import * as Respawn from '../../../systems/board/Respawn.js';
 import * as Hand from '../../../systems/board/Hand.js';
 import * as FixedTokens from '../../../systems/board/FixedTokens.js';
 import * as Landmarks from '../../../systems/board/Landmarks.js';
+import { MAP_MODE, isProtectedFromDemolition } from '../../hooks/useMapMode.js';
 import { useTokenEvent } from './tokenEvents.js';
 import { useTokenDetail } from './useTokenDetail.js';
 import { TokenBubbles } from './TokenBubbles.jsx';
@@ -117,8 +118,8 @@ export const MatToken = React.memo(function MatToken({
     onClearInspect,
     onOpenRecipes,
     onRecallHero,
-    disallowMode = false,
-    onFlipDisallow,
+    mapMode = null,
+    onModeClick,
     dragging = false,
     onPress
 }) {
@@ -161,6 +162,11 @@ export const MatToken = React.memo(function MatToken({
         const instance = BoardState.getTokenById(id);
         return { fixed: FixedTokens.isFixed(instance), marked: FixedTokens.showsMoveMarker(instance) };
     }, [id, layoutEditing]);   // eslint-disable-line react-hooks/exhaustive-deps
+    // Demolish mode dims a Token the engine will not let go, read once per mode change.
+    const demolishProtected = React.useMemo(
+        () => mapMode === MAP_MODE.DEMOLISH && isProtectedFromDemolition(BoardState.getTokenById(id)),
+        [mapMode, id, typeId]   // eslint-disable-line react-hooks/exhaustive-deps
+    );
 
     // A Token with a registered sheet animates on the board only; everything else, and every
     // other surface, keeps the plain static sprite.
@@ -360,8 +366,8 @@ export const MatToken = React.memo(function MatToken({
     const handleContextMenu = (e) => {
         e.preventDefault();
         e.stopPropagation();
-        // In disallow mode a Token only flips; nothing is recalled.
-        if (disallowMode) return;
+        // In a map mode a click only acts on the Token; nothing is recalled.
+        if (mapMode) return;
         if (heroId) onRecallHero?.(heroId);
     };
 
@@ -394,7 +400,12 @@ export const MatToken = React.memo(function MatToken({
 
     // A sharp coloured outline: white hovered or selected, red in alert, green worked
     // (`spriteOutline.js`). It is a generated picture under the art, not a filter.
-    const outline = tokenOutline({ hovered: isHovered, selected, alert: !!alert, working: staffed });
+    // In a map mode the hovered Token takes the mode's colour, or muted grey where the mode cannot
+    // act on it.
+    const modeUnavailable = isHovered && mapMode
+        ? (mapMode === MAP_MODE.DEMOLISH ? demolishProtected : !Flags.isHeroWorkable(BoardState.getTokenById(id)))
+        : false;
+    const outline = tokenOutline({ hovered: isHovered, selected, alert: !!alert, working: staffed, mode: mapMode, unavailable: modeUnavailable });
     const gearState = gearStateOf(detail || {});
     const gear = React.useMemo(
         () => (gearState.show ? {
@@ -402,9 +413,10 @@ export const MatToken = React.memo(function MatToken({
             pulsing: gearState.pulsing,
             recipe: detail?.recipe,
             isFoundation: !!detail?.isFoundation,
-            onClick: () => (disallowMode ? onFlipDisallow?.(id) : onOpenRecipes?.(id))
+            // The gear covers the middle of the Token, so in a map mode it is the Token's click.
+            onClick: (e) => (mapMode ? onModeClick?.(id, !!e?.shiftKey) : onOpenRecipes?.(id))
         } : null),
-        [gearState.show, gearState.pulsing, detail?.recipe, detail?.isFoundation, disallowMode, onFlipDisallow, onOpenRecipes, id]
+        [gearState.show, gearState.pulsing, detail?.recipe, detail?.isFoundation, mapMode, onModeClick, onOpenRecipes, id]
     );
 
     // The art, kept as the same element while nothing it draws from changes: a Token redraws
@@ -467,12 +479,13 @@ export const MatToken = React.memo(function MatToken({
                 data-tile-finite-token={isFiniteToken ? 'true' : undefined}
                 data-token-resting={resting ? 'true' : undefined}
                 data-token-fixed={fixed ? 'true' : undefined}
+                data-token-protected={demolishProtected ? 'true' : undefined}
                 onContextMenu={handleContextMenu}
                 onClick={(e) => {
                     if (dragging) return;
-                    // In disallow mode a click flips the Token allowed/disallowed and does
+                    // In a map mode a click acts on the Token (shift: on its whole type) and does
                     // nothing else; it never claims a quest.
-                    if (disallowMode) { onFlipDisallow?.(id); return; }
+                    if (mapMode) { onModeClick?.(id, e.shiftKey); return; }
                     // Click a done quest to claim it. The engine drops the reward as loot and
                     // removes the Token. `skipSlide` is still on just after a drop, so the
                     // drop's own click never claims. A quest not yet done inspects.
@@ -487,7 +500,7 @@ export const MatToken = React.memo(function MatToken({
                     onInspectToken?.(typeId, e.currentTarget.getBoundingClientRect(), id);
                 }}
                 onDoubleClick={(e) => {
-                    if (disallowMode) return;
+                    if (mapMode) return;
                     onInspectToken?.(typeId, e.currentTarget.getBoundingClientRect(), id);
                 }}
                 style={{
@@ -499,7 +512,7 @@ export const MatToken = React.memo(function MatToken({
                 }}
                 className={cn(
                     'absolute select-none',
-                    disallowMode || questDone || fixed ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing'
+                    mapMode || questDone || fixed ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing'
                 )}
             >
                 <div
@@ -534,7 +547,8 @@ export const MatToken = React.memo(function MatToken({
                     className={cn(
                         'w-full h-full flex items-center justify-center transition-[filter] duration-150',
                         received && 'brightness-125 saturate-125',
-                        resting && 'gi-token-resting'
+                        resting && 'gi-token-resting',
+                        demolishProtected && 'gi-token-protected'
                     )}
                     style={staffed ? undefined : AT_REST_STYLE}
                 >
@@ -559,6 +573,9 @@ export const MatToken = React.memo(function MatToken({
                 data-token-overlay={id}
                 data-quest-token={quest ? id : undefined}
                 data-quest-done={quest ? String(questDone) : undefined}
+                // In a map mode a click on any bubble over the Token (the demolition mark, the
+                // disallow mark) is a click on the Token: the bubbles take the pointer for their tips.
+                onClick={mapMode ? (e) => { if (!dragging) onModeClick?.(id, e.shiftKey); } : undefined}
                 className="absolute pointer-events-none"
                 style={{ ...boxStyle, visibility: hidden ? 'hidden' : 'visible' }}
             >

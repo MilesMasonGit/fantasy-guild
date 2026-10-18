@@ -11,7 +11,6 @@ import { TokenSprite, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
 import { EntityRibbon } from '../base/EntityRibbon.jsx';
 import { SkillIcon } from '../base/SkillIcon.jsx';
 import * as BoardState from '../../../systems/board/BoardState.js';
-import * as Flags from '../../../systems/board/Flags.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as SpawnerSystem from '../../../systems/board/SpawnerSystem.js';
 import * as PassiveProduction from '../../../systems/board/PassiveProduction.js';
@@ -172,9 +171,8 @@ export const TokenInspection = ({
                     </div>
                 )}
 
-                {instanceId != null && <DisallowSwitch instanceId={instanceId} />}
                 {instanceId != null && <LifecycleLines instanceId={instanceId} />}
-                {instanceId != null && <DemolishControl instanceId={instanceId} />}
+                {instanceId != null && <LeaveMatControl instanceId={instanceId} />}
             </div>
 
 
@@ -215,78 +213,22 @@ export const TokenInspection = ({
     );
 };
 
-/**
- * The Disallow switch. Shown only for a board Token a hero could work: a work cycle that needs a
- * hero and names a skill, an enemy, a Promotion Token, or the Guild Hall (`Flags.isHeroWorkable`).
- * On means heroes may NOT work it, the same state the mat's disallow bubble shows: switching it
- * on lets go of any hero working it and every flag skips it from then on; the Token itself keeps
- * running its rules. A Token a Manager restocks arrives allowed.
- */
-const DisallowSwitch = ({ instanceId }) => {
-    const view = useGameState(
-        () => {
-            const instance = BoardState.getTokenById(instanceId);
-            if (!instance || !Flags.isHeroWorkable(instance)) return null;
-            return { id: instance.id, disallowed: Flags.isDisallowed(instance) };
-        },
-        [BOARD_EVENTS.TILE_CHANGED, ENGINE_EVENTS.STATE_CHANGED],
-        null,
-        { deps: [instanceId] }
-    );
-    if (!view) return null;
-
-    return (
-        <label
-            data-disallow-switch={view.disallowed ? 'on' : 'off'}
-            title="When on, heroes will not work this Token"
-            className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-[#181412] border border-white/10 hover:border-gi-gold/40 text-xs cursor-pointer transition-colors"
-        >
-            <span className="text-gi-muted">Disallow</span>
-            <button
-                type="button"
-                role="switch"
-                aria-checked={view.disallowed}
-                onClick={() => Flags.setDisallowed(view.id, !view.disallowed)}
-                className={cn(
-                    "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
-                    view.disallowed ? "bg-red-500" : "bg-black/80 border-white/20"
-                )}
-            >
-                <span
-                    aria-hidden="true"
-                    className={cn(
-                        "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
-                        view.disallowed ? "translate-x-4" : "translate-x-0 bg-white/70"
-                    )}
-                />
-            </button>
-        </label>
-    );
-};
-
 const ACTION_CLS = 'w-full px-3 py-2 rounded-lg border text-xs font-bold transition-colors cursor-pointer';
 
 /**
- * How a board Token leaves the mat for good. A bounty: Dismiss (no reward; a tutorial step never
- * leaves this way). Anything the engine lets the player mark (`Demolition.refusalOf` is null):
- * Demolish, then Cancel demolition while marked; a hero holding Construction does the work, with
- * no refund. Otherwise the engine's reason, as a plain line. While the dev layout tool is on, a
- * placed Token (a landmark included) can also be removed at once.
+ * How a board Token leaves the mat at once. A bounty: Dismiss (no reward; a tutorial step never
+ * leaves this way). While the dev layout tool is on, a placed Token (a landmark included) can be
+ * removed. Disallowing and demolishing are the top bar's map modes, not the card's.
  */
-const DemolishControl = ({ instanceId }) => {
+const LeaveMatControl = ({ instanceId }) => {
     const view = useGameState(
         () => {
             const instance = BoardState.getTokenById(instanceId);
             if (!instance) return null;
             if (QuestTokens.isQuestToken(instance)) return { id: instance.id, bounty: QuestTokens.canDismiss(instance) };
-            const refusal = Demolition.refusalOf(instance);
-            return {
-                id: instance.id,
-                marked: Demolition.isMarked(instance),
-                refusal: refusal ? Demolition.REFUSAL_TEXT[refusal] : null,
-                devRemove: Landmarks.isLayoutEditing() && Demolition.canDemolish(instance)
-                    && BoardState.originOf(instance) === BoardState.ORIGIN.PLACED
-            };
+            const devRemove = Landmarks.isLayoutEditing() && Demolition.canDemolish(instance)
+                && BoardState.originOf(instance) === BoardState.ORIGIN.PLACED;
+            return devRemove ? { id: instance.id, devRemove } : null;
         },
         [BOARD_EVENTS.TILE_CHANGED, ENGINE_EVENTS.STATE_CHANGED],
         null,
@@ -310,41 +252,14 @@ const DemolishControl = ({ instanceId }) => {
     }
 
     return (
-        <>
-            {view.refusal ? (
-                <p data-demolish="refused" className="px-1 text-[11px] text-gi-muted leading-snug">{view.refusal}</p>
-            ) : view.marked ? (
-                <button
-                    type="button"
-                    data-demolish="cancel"
-                    title="Keep this Token. Its demolition so far is lost."
-                    onClick={() => Demolition.unmark(view.id)}
-                    className={cn(ACTION_CLS, 'bg-[#181412] border-gi-warning/60 text-gi-warning hover:border-gi-warning')}
-                >
-                    Cancel demolition
-                </button>
-            ) : (
-                <button
-                    type="button"
-                    data-demolish="mark"
-                    title="A hero with Construction takes it away. Nothing is refunded."
-                    onClick={() => Demolition.mark(view.id)}
-                    className={cn(ACTION_CLS, 'bg-[#181412] border-white/10 text-gi-danger hover:border-gi-danger/60')}
-                >
-                    Demolish
-                </button>
-            )}
-            {view.devRemove && (
-                <button
-                    type="button"
-                    data-dev-remove={view.id}
-                    onClick={() => Placement.removePlacedToken(view.id)}
-                    className={cn(ACTION_CLS, 'bg-[#181412] border-sky-400/40 text-sky-200 hover:border-sky-300')}
-                >
-                    Remove now (layout tool)
-                </button>
-            )}
-        </>
+        <button
+            type="button"
+            data-dev-remove={view.id}
+            onClick={() => Placement.removePlacedToken(view.id)}
+            className={cn(ACTION_CLS, 'bg-[#181412] border-sky-400/40 text-sky-200 hover:border-sky-300')}
+        >
+            Remove now (layout tool)
+        </button>
     );
 };
 

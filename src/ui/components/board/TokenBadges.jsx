@@ -165,7 +165,7 @@ export const StationGearBadge = ({ isDragging, recipe, pulsing = false, isFounda
         >
             <button
                 type="button"
-                onClick={(e) => { e.stopPropagation(); onClick?.(); }}
+                onClick={(e) => { e.stopPropagation(); onClick?.(e); }}
                 aria-label={label}
                 className={cn(
                     'w-7 h-7 flex items-center justify-center p-0 cursor-pointer select-none',

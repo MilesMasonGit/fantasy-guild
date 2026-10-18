@@ -41,7 +41,7 @@ import CatchUpOverlay from './components/hud/CatchUpOverlay.jsx';
 import MatTopBar, { showsMatTopBar } from './components/board/MatTopBar.jsx';
 import MatCapBadge from './components/board/MatCapBadge.jsx';
 import MatUpkeepBadge from './components/board/MatUpkeepBadge.jsx';
-import MatDisallowControls from './components/board/MatDisallowControls.jsx';
+import { MapModeToggles, MapModeBanner } from './components/board/MatModeControls.jsx';
 import { PerfProfiler, usePerfHudShowing } from './dev/perf/PerfProfiler.jsx';
 import { useDrawn } from './dev/perf/drawSwitches.js';
 
@@ -284,7 +284,8 @@ export const ReactRoot = ({ engine }) => {
                                     <PerfProfiler id="TopBar">
                                         <MatTopBar
                                             left={<><MatCapBadge /><MatUpkeepBadge /></>}
-                                            right={<MatDisallowControls />}
+                                            middle={<MapModeBanner />}
+                                            right={<MapModeToggles />}
                                         />
                                     </PerfProfiler>
                                 )}

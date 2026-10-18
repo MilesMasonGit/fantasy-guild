@@ -410,6 +410,20 @@
   opacity: 0.85;
 }
 
+/* Demolish mode: a Token the engine will not let go is dimmed, so what can go reads at a glance. */
+.gi-token-protected {
+  filter: grayscale(0.6) brightness(0.45);
+}
+
+/* A map mode's cursor over a Token (`mapModeCursor.js`, handed down by the mat), and the
+   not-allowed cursor over one Demolish mode cannot mark. */
+[data-map-mode] [data-token-hit] {
+  cursor: var(--map-mode-cursor, pointer);
+}
+[data-map-mode] [data-token-protected] [data-token-hit] {
+  cursor: not-allowed;
+}
+
 /* A Token that has just become another one (feedback Q4, FB-11): a white-gold
  * flash of the art and a soft glow that swells out and fades, ~1 s
  * (`TokenGlows.GLOW_MS`). The glow is its own layer over the art box; the
