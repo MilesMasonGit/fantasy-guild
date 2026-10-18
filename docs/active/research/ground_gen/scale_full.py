@@ -25,7 +25,8 @@ HEROES = ['hn_fighter', 'hn_ranger', 'hn_rogue', 'hn_wizard', 'hn_recruit', 'hn_
 AREA_X, AREA_Y, AREA_W, AREA_H = 152, 30, 1740, 986
 
 
-def mock(k, dense=1.0, label=None):
+def scene(k, dense=1.0):
+    """The mat's ground (with its pond) and the sprites to draw on it, in art pixels."""
     W = int(min(AREA_W, AREA_H / 0.64) // k); H = int(W * 0.64)       # the mat in art pixels
     entries = [{'typeId': n, 'role': r, 'count': c if r != 'node' else round(c * dense), 'biome': 'meadow'} for n, r, c in BUDGET]
     out = json.loads(subprocess.run(['node', os.path.join(HERE, 'place_today.mjs'), json.dumps(entries), '11', str(W * 2)], capture_output=True, text=True).stdout)
@@ -69,9 +70,19 @@ def mock(k, dense=1.0, label=None):
         r = min(26, bd - 22); cx, cy = best; nz_ = vnoise(9, random.Random(3))
         img = water_field(img, lambda x, y: r - math.hypot(x - cx, (y - cy) * 1.2) + (nz_(x, y) - 0.5) * 8, {'sea': [0.50, 0.44, 0.52], 'bank': [0.08, 0.34, 0.30]})
     draw = [(token(n), x, y) for n, x, y in items] + sprites
-    for spr, x, y in sorted(draw, key=lambda t: t[2]):
+    return img, sorted(draw, key=lambda t: t[2]), W, H, len(nodes), len(items), len(sprites), out['unplaced']
+
+
+def sprites_on(img, draw):
+    img = img.copy()
+    for spr, x, y in draw:
         img.alpha_composite(spr, (int(x - spr.width / 2), int(y - spr.height + 24)))
-    mat = img.resize((W * k, H * k), Image.NEAREST)
+    return img
+
+
+def frame_screen(mat_img, k):
+    """The mat, scaled k times, on the game's screen: the wood table, the side bar with its orbs, the top bar."""
+    W, H = mat_img.size; mat = mat_img.resize((W * k, H * k), Image.NEAREST)
     # the screen: the wood table under a dark veil, the side bar with its orbs, the top bar
     screen = Image.new('RGBA', (1920, 1080))
     tile = load('public/assets/ui/u_table_wood_planks_oak.png').resize((256, 256), Image.NEAREST)
@@ -84,9 +95,14 @@ def mock(k, dense=1.0, label=None):
     screen.alpha_composite(Image.new('RGBA', (1920 - AREA_X, AREA_Y), (24, 20, 18, 235)), (AREA_X, 0))
     mx = AREA_X + (AREA_W - W * k) // 2; my = AREA_Y + (AREA_H - H * k) // 2
     screen.alpha_composite(mat, (mx, my))
-    count = len(items) + len(sprites)
-    screen.convert('RGB').save(os.path.join(HERE, f'scale_full_{label or str(k) + "x"}.png'))
-    print(k, 'x: mat', W * 2, 'x', H * 2, 'u;', len(nodes), 'nodes,', len(items) - len(nodes) - 1, 'buildings,', len(sprites), 'heroes and goblins; unplaced', out['unplaced'])
+    return screen.convert('RGB')
 
 
-mock(3); mock(3, 1.5, '3x_dense'); mock(2)
+def mock(k, dense=1.0, label=None):
+    ground, draw, W, H, nn, ni, ns, unplaced = scene(k, dense)
+    frame_screen(sprites_on(ground, draw), k).save(os.path.join(HERE, f'scale_full_{label or str(k) + "x"}.png'))
+    print(k, 'x: mat', W * 2, 'x', H * 2, 'u;', nn, 'nodes,', ni - nn - 1, 'buildings,', ns, 'heroes and goblins; unplaced', unplaced)
+
+
+if __name__ == '__main__':
+    mock(3); mock(3, 1.5, '3x_dense'); mock(2)

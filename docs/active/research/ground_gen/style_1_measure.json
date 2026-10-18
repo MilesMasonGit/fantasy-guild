@@ -1,0 +1,149 @@
+{
+ "A_today": {
+  "ground": {
+   "L_mean": 61.0,
+   "L_10": 45.3,
+   "L_90": 71.5,
+   "L_sd": 9.6,
+   "C_mean": 65.1,
+   "C_90": 76.6,
+   "green_share": 0.9
+  },
+  "tokens": {
+   "L_mean": 34.2,
+   "L_10": 0.0,
+   "L_90": 68.9,
+   "L_sd": 25.0,
+   "C_mean": 30.7,
+   "C_90": 78.0,
+   "green_share": 0.26
+  },
+  "token_minus_ground_L_median": -27.6
+ },
+ "B_quiet": {
+  "ground": {
+   "L_mean": 58.3,
+   "L_10": 47.7,
+   "L_90": 66.0,
+   "L_sd": 6.6,
+   "C_mean": 47.7,
+   "C_90": 54.7,
+   "green_share": 0.93
+  },
+  "tokens": {
+   "L_mean": 34.2,
+   "L_10": 0.0,
+   "L_90": 68.9,
+   "L_sd": 25.0,
+   "C_mean": 30.7,
+   "C_90": 78.0,
+   "green_share": 0.26
+  },
+  "token_minus_ground_L_median": -24.6
+ },
+ "C_darker": {
+  "ground": {
+   "L_mean": 48.2,
+   "L_10": 36.8,
+   "L_90": 55.3,
+   "L_sd": 6.9,
+   "C_mean": 42.1,
+   "C_90": 48.9,
+   "green_share": 0.9
+  },
+  "tokens": {
+   "L_mean": 34.2,
+   "L_10": 0.0,
+   "L_90": 68.9,
+   "L_sd": 25.0,
+   "C_mean": 30.7,
+   "C_90": 78.0,
+   "green_share": 0.26
+  },
+  "token_minus_ground_L_median": -14.2
+ },
+ "D_lighter": {
+  "ground": {
+   "L_mean": 63.2,
+   "L_10": 51.4,
+   "L_90": 71.4,
+   "L_sd": 7.4,
+   "C_mean": 41.2,
+   "C_90": 47.5,
+   "green_share": 0.92
+  },
+  "tokens": {
+   "L_mean": 34.2,
+   "L_10": 0.0,
+   "L_90": 68.9,
+   "L_sd": 25.0,
+   "C_mean": 30.7,
+   "C_90": 78.0,
+   "green_share": 0.26
+  },
+  "token_minus_ground_L_median": -30.0
+ },
+ "E_olive": {
+  "ground": {
+   "L_mean": 59.6,
+   "L_10": 43.3,
+   "L_90": 68.5,
+   "L_sd": 8.9,
+   "C_mean": 49.2,
+   "C_90": 57.3,
+   "green_share": 0.9
+  },
+  "tokens": {
+   "L_mean": 34.2,
+   "L_10": 0.0,
+   "L_90": 68.9,
+   "L_sd": 25.0,
+   "C_mean": 30.7,
+   "C_90": 78.0,
+   "green_share": 0.26
+  },
+  "token_minus_ground_L_median": -25.9
+ },
+ "F_shadows": {
+  "ground": {
+   "L_mean": 60.3,
+   "L_10": 44.2,
+   "L_90": 71.5,
+   "L_sd": 10.1,
+   "C_mean": 64.3,
+   "C_90": 76.6,
+   "green_share": 0.9
+  },
+  "tokens": {
+   "L_mean": 34.2,
+   "L_10": 0.0,
+   "L_90": 68.9,
+   "L_sd": 25.0,
+   "C_mean": 30.7,
+   "C_90": 78.0,
+   "green_share": 0.26
+  },
+  "token_minus_ground_L_median": -23.0
+ },
+ "G_quiet_shadows": {
+  "ground": {
+   "L_mean": 57.6,
+   "L_10": 46.0,
+   "L_90": 65.9,
+   "L_sd": 7.3,
+   "C_mean": 47.1,
+   "C_90": 54.3,
+   "green_share": 0.93
+  },
+  "tokens": {
+   "L_mean": 34.2,
+   "L_10": 0.0,
+   "L_90": 68.9,
+   "L_sd": 25.0,
+   "C_mean": 30.7,
+   "C_90": 78.0,
+   "green_share": 0.26
+  },
+  "token_minus_ground_L_median": -20.6
+ }
+}
