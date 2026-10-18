@@ -12,17 +12,23 @@ import * as HeroMotion from './HeroMotion.js';
 import * as Hand from './Hand.js';
 
 /**
- * An enemy authored `enemy.hostile: true` (see `isHostileEnemy`) attacks a hero who comes inside
- * the live flag radius (`Flags.flagRadius()`) around its spawner (`EnemyMotion.spawnerOf`), or around
- * the node it ambushed from; with neither it watches the radius around itself.
+ * An enemy authored `enemy.hostile: true` (see `isHostileEnemy`) attacks a hero whose flag stands
+ * inside the live flag radius (`Flags.flagRadius()`) around its spawner (`EnemyMotion.spawnerOf`), or
+ * around the node it ambushed from; with neither it watches the radius around itself.
+ *
+ * ⚠️ The watch measures the hero's FLAG (its foot), never where the hero stands. An idle hero stands
+ * up and to the right of their flag, so measuring the body made a flag dropped beside an enemy count
+ * on some sides and not others. It also means a hero merely walking past, or appearing at the Guild
+ * Hall on the way out, is not attacked, and a hero whose flag lands inside is attacked at once,
+ * wherever they are, and walks up.
  *
  * Attacking is `Flags.ambush`: the hero drops their work and claims the enemy, walks up, and
  * `BoardCombat.tickToken` begins the fight on arrival; they fight back whatever their rules say. A
  * peaceful enemy never comes through here: it fights only when a hero with Fight allowed seeks it.
  *
- * Who is attacked: for each hostile enemy in arrival order, the nearest hero whose body is inside
- * the radius (the earlier-planted flag on a tie). One fight per enemy and one enemy per hero, so
- * enemies never gang up.
+ * Who is attacked: for each hostile enemy in arrival order, of the heroes whose flag is inside the
+ * radius, the one standing nearest the enemy (the earlier-planted flag on a tie). One fight per
+ * enemy and one enemy per hero, so enemies never gang up.
  *
  * Not attacked: heroes with no flag, wounded heroes, heroes who cannot fight and heroes already
  * on an enemy. Recruits are attacked like anyone: everyone fights, as a level 1 fighter at least. An enemy does not
@@ -62,7 +68,10 @@ function onEnemy(heroId) {
     return !!claim && BoardCombat.isEnemyToken(BoardState.getTokenById(claim.instanceId));
 }
 
-/** Heroes a hostile enemy could attack this look, as `[{ heroId, x, y }]`, in planting order. */
+/**
+ * Heroes a hostile enemy could attack this look, in planting order: `[{ heroId, x, y, flagX, flagY }]`,
+ * where they stand and where their flag stands.
+ */
 function targets() {
     const flags = BoardState.getFlags();
     const order = Object.keys(flags).sort((a, b) => (flags[a].plantedAt ?? 0) - (flags[b].plantedAt ?? 0));
@@ -70,9 +79,10 @@ function targets() {
     for (const heroId of order) {
         if (HeroMotion.isReturning(heroId) || isWounded(heroId)) continue;
         if (!FlagRules.canFight(heroId) || onEnemy(heroId)) continue;
+        const flag = flags[heroId];
         const at = HeroMotion.heroPointOf(heroId) || BoardState.displayPointOf(heroId);
-        if (!at) continue;
-        out.push({ heroId, x: at.x, y: at.y });
+        if (!at || !Number.isFinite(flag?.x) || !Number.isFinite(flag?.y)) continue;
+        out.push({ heroId, x: at.x, y: at.y, flagX: flag.x, flagY: flag.y });
     }
     return out;
 }
@@ -86,8 +96,8 @@ function canAttack(enemy) {
 }
 
 /**
- * One look: every free hostile enemy attacks the nearest hero inside the flag
- * radius of its spawner.
+ * One look: every free hostile enemy attacks the nearest hero whose flag is
+ * inside the flag radius of its spawner.
  * @returns {Array<{ enemyId: string, heroId: string }>} the attacks started (tests, probes)
  */
 export function scan() {
@@ -106,7 +116,7 @@ export function scan() {
         let bestD = Infinity;
         for (let i = 0; i < heroes.length; i++) {
             const h = heroes[i];
-            if ((h.x - centre.x) ** 2 + (h.y - centre.y) ** 2 > r2) continue;
+            if ((h.flagX - centre.x) ** 2 + (h.flagY - centre.y) ** 2 > r2) continue;
             const d = (h.x - enemy.x) ** 2 + (h.y - enemy.y) ** 2;
             if (d < bestD) { best = i; bestD = d; }
         }

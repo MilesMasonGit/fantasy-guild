@@ -519,7 +519,7 @@ export default function TokenEditor() {
               </Field>
             </div>
 
-            {/* A hostile enemy attacks a hero who comes inside the flag radius around its spawner; a peaceful one fights only when attacked. Written ONLY when ticked; missing means peaceful, which is what the game reads. */}
+            {/* A hostile enemy attacks a hero whose flag stands inside the flag radius around its spawner (or itself); a peaceful one fights only when attacked. Written ONLY when ticked; missing means peaceful, which is what the game reads. */}
             <label className="flex items-center gap-2.5 cursor-pointer select-none mt-3">
               <input
                 type="checkbox"
@@ -534,7 +534,7 @@ export default function TokenEditor() {
               />
               <span className="text-[11px] text-gray-300">Hostile</span>
               <span className="text-[10px] text-gray-600">
-                attacks heroes who come near its spawner; otherwise it fights only when attacked
+                attacks heroes whose flag is planted near it (or its spawner); otherwise it fights only when attacked
               </span>
             </label>
 
