@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-191**
+**Next free number: T-192**
 
 ---
 
@@ -70,6 +70,7 @@ here.
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
 | T-177 | P2 | open | **The level-up moment** ([concept_level_up.md](../active/concept_level_up.md)): the levelled skill's icon (2×) and number float above the hero for ~30 s, the old number flashes a gold outline then rolls up to the new one; several sit side by side; after time away they roll from old to new. The on-mat LVL UP! speech line goes (the hero bar keeps its lasting alert, T-149). Hook `HERO_LEVELED`. Builder. Cost-log line. Eye-check. | concept_level_up.md |
+| T-191 | P3 | open | **The shine, more solid** (owner 2026-10-17, eye-check of brief 140 H3, a refinement for later): the glint should cover the whole button, art included, and read more solid than today's 40 % white band under the content (`.ui-shine` in `src/tailwind.css`). Builder-lite. Eye-check. | brief 140 H3 |
 | T-178 | P3 | open | **Shine on main-action buttons** ([concept_level_up.md](../active/concept_level_up.md)): one fast stepped diagonal glint when an Upgrade, Settle or Craft button is hovered; never covers the art. Add to the style sheet page (T-159). Builder-lite. Eye-check. | concept_level_up.md |
 | T-172 | P2 | open | **The Atlas as a tome** ([concept_atlas_tome.md](../active/concept_atlas_tome.md)): the open tome on the map table as a backdrop for the standard UI, ~90 % of the window; bookmark tabs with a stepped page-turn between Cartography and Regions; Cartography over both pages with a big layout preview; drag maps into, between and out of slots, click still slots. Keep A6's behaviour, change only the presentation. Placeholders until the owner's tome art. Builder. Eye-check. | concept_atlas_tome.md |
 | T-173 | P2 | open | **Region rows and area banners** ([concept_atlas_tome.md](../active/concept_atlas_tome.md)): Regions as one row each with its area banner as a full-art backdrop (names, node pills, day, Tokens, heroes; Travel main, Rename/Archive/Abandon in a menu); a CMS banner field on Base Map items and the Starter Camp page (the owner sets pictures and Syncs); the banner behind the top bar's Region name, an arrival card on travel, behind the Cartography preview. After T-172. Builder. Eye-check. | concept_atlas_tome.md |

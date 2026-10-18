@@ -18,6 +18,21 @@ runs one, so the PC holds two.*
 | Brief 100 K3: three text sizes and the shared tooltip (T-161, T-038, T-030) | builder (tooltip spans several files) | `crunch/style-kit` (`k1`) | eye-check (7060a37f; director's gate on the whole kit: 5126 tests, cycles, build). Sizes 18/16/14, display 32 proposed; tooltip on the Bank, Shop and hero panel | Sat | Sat |
 | Recruits get a weak basic attack so the tutorial's fight can be won (T-167); owner authors a safe enemy in the Starter Camp afterwards | builder | `fix/t167-recruit-attack` | eye-check (6790962d, with the QA Hire button making roster room; director's gate: 5109 tests, cycles, build; director saw a fresh Recruit beat a Goblin in ~10 s on 5197: Bones on the mat, skills unchanged, the hostile Goblin hit first). Bench-queued (work check; builder expects same) | Sat | |
 
+## Features director, batch 3: map tools (owner 2026-10-17: keep going with the larger implementations; fine refinements later)
+
+*Owner's look so far (2026-10-17, late): the style sheet looks good; the shine
+needs work (T-191, later); the Goblin fight doesn't start for the owner (being
+diagnosed). The eye-check's eight questions stand at the recommendations
+until the owner says otherwise in the refinement pass. Built on
+`crunch/hero-bar`; merges after it.*
+
+| Phase | Tier | Branch (worktree) | State | Planned | Done |
+|---|---|---|---|---|---|
+| Recruit's Goblin fight doesn't start in the owner's play (T-167 follow-up) | engineer | `fix/t167-recruit-attack` (`t167`) | diagnosing | Sat | |
+| Brief 110 M1: Starter Camp Tokens become fixtures (T-165); one call in `atlas/StarterCamp.js`, logic in board code (terrain director's folder) | engineer | `crunch/map-tools` (`mt`) | building | Sat | |
+| Brief 110 M2: Demolish mode beside Disallow mode (T-166) | builder | `crunch/map-tools` | queued, after M1 | | |
+| Brief 110 M3: top bar restyle (T-170) | builder | `crunch/map-tools` | queued, after M2 | | |
+
 ## Features director, batch 2: the hero bar (owner 2026-10-17: proceed while the kit's eye-check waits a few hours)
 
 *Built on `crunch/style-kit` plus `fix/t167-recruit-attack` (merged into the
