@@ -501,21 +501,11 @@ describe('⭐ A minor biome\'s small water, once the Tokens stand', () => {
                 expect(mainShapes).toBeGreaterThanOrEqual(0);
                 const alone = { ...water, shapes: [small] };
                 const others = { ...water, shapes: water.shapes.slice(0, -1) };
-                const { water: own, sample } = sampleWater(alone, terrainGrid(MAT), TERRAIN_CELL);
+                const { sample } = sampleWater(alone, terrainGrid(MAT), TERRAIN_CELL);
                 const { water: theirs } = sampleWater(others, terrainGrid(MAT), TERRAIN_CELL);
                 const { cols, rows } = result.terrain;
-                for (let i = 0; i < own.length; i++) {
-                    if (!own[i]) continue;
-                    const c = i % cols;
-                    const r = (i - c) / cols;
-                    for (let dr = -1; dr <= 1; dr++) {
-                        for (let dc = -1; dc <= 1; dc++) {
-                            const j = (r + dr) * cols + c + dc;
-                            if (r + dr >= 0 && r + dr < rows && c + dc >= 0 && c + dc < cols) expect(theirs[j], `${minor} ${seed}: beside other water`).toBe(0);
-                        }
-                    }
-                }
-                // The minor biome's ground round it: every dry cell it draws on is that biome's terrain.
+                // Every cell it draws on: the minor biome's ground (or its own water), two cells
+                // clear of any other water.
                 for (let r = 0; r < rows; r++) {
                     for (let c = 0; c < cols; c++) {
                         let drawn = false;
@@ -525,6 +515,12 @@ describe('⭐ A minor biome\'s small water, once the Tokens stand', () => {
                         if (!drawn) continue;
                         const t = result.terrain.legend[parseInt(result.terrain.cells[r * cols + c], 36)];
                         expect([TERRAIN.WATER, terrain], `${minor} ${seed} at ${c},${r}`).toContain(t);
+                        for (let dr = -2; dr <= 2; dr++) {
+                            for (let dc = -2; dc <= 2; dc++) {
+                                if (r + dr < 0 || r + dr >= rows || c + dc < 0 || c + dc >= cols) continue;
+                                expect(theirs[(r + dr) * cols + c + dc], `${minor} ${seed}: near other water`).toBe(0);
+                            }
+                        }
                     }
                 }
                 for (const n of [...result.nodes, result.hall]) expect(fieldAt(sample, n.x, n.y), `${minor} ${seed}`).toBeLessThanOrEqual(-DRY_GAP);

@@ -95,6 +95,12 @@ export const DRY_GAP = 8;
 /** Places a small water tries in its biome's ground before it is left out. */
 const SMALL_TRIES = 24;
 
+/** How far a small water's middle keeps in from the mat's edge, in mat units. */
+const SMALL_EDGE = 4 * TERRAIN_CELL;
+
+/** How many cells a small water's drawn edge keeps from any other water's cells. */
+const SMALL_APART = 2;
+
 const STANDARD_ART = 64;
 const HEX = Math.sqrt(3) / 2;
 const EPS = 1e-6;
@@ -518,6 +524,8 @@ export function layout(summary, {
             if (!record) record = emptyWater(random, mat, { x: hall.x, y: hall.y, r: dryReach });
             for (let t = 0; t < SMALL_TRIES; t++) {
                 const c = cellCentre(cells, own[Math.floor(random() * own.length)]);
+                // Its middle a few cells in from the mat's edge, so it is seen whole.
+                if (c.x < SMALL_EDGE || c.y < SMALL_EDGE || c.x > w - SMALL_EDGE || c.y > h - SMALL_EDGE) continue;
                 const shape = smallWater(kind, c.x, c.y, random);
                 const alone = sampleWater(readWater({ ...record, shapes: [shape] }), cells, TERRAIN_CELL, keepDry);
                 if (!smallFits(alone, biome, biomeAt, water, standing, standingCells, cells)) continue;
@@ -553,8 +561,8 @@ export function layout(summary, {
 
 /**
  * Whether a small water, sampled alone, fits where it lies: some cells of its own, every one of
- * them and every point it draws on in its biome's dry ground and not beside other water, and every
- * standing Token's centre off it by the dry gap.
+ * them and every point it draws on in its biome's dry ground and two cells clear of other water,
+ * and every standing Token's centre off it by the dry gap.
  */
 function smallFits(alone, biome, biomeAt, water, standing, standingCells, cells) {
     const { cols, rows } = cells;
@@ -571,8 +579,8 @@ function smallFits(alone, biome, biomeAt, water, standing, standingCells, cells)
             }
             if (!drawn) continue;
             if (biomeAt[i] !== biome || standingCells.has(i)) return false;
-            for (let dr = -1; dr <= 1; dr++) {
-                for (let dc = -1; dc <= 1; dc++) {
+            for (let dr = -SMALL_APART; dr <= SMALL_APART; dr++) {
+                for (let dc = -SMALL_APART; dc <= SMALL_APART; dc++) {
                     const rr = r + dr;
                     const cc = c + dc;
                     if (rr >= 0 && cc >= 0 && rr < rows && cc < cols && water[rr * cols + cc]) return false;

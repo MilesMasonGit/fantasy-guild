@@ -231,7 +231,7 @@ describe('⭐ a meadow Region places exactly as before (decision 15)', () => {
  * became shapes and every biome brought its own (and again when the rivers calmed and the minor
  * biomes gained their small waters): new Regions get water, stored ones keep theirs.
  */
-const LAYOUT_FINGERPRINT = '7461b10f';
+const LAYOUT_FINGERPRINT = 'aa16d6e5';
 
 registerTokenTypes({
     gm_oak: { id: 'gm_oak', name: 'GM Oak', tokenType: 'resource', size: 1, uses: 5, requiresHero: true, config: { skill: 'logging', skillRequired: 1, cycleTimeMs: 3000, inputs: [], outputs: [] } },
