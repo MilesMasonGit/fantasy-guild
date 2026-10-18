@@ -7,6 +7,7 @@ import { authoredStarterCamp } from '../../config/registries/starterCampRegistry
 import { normaliseStarterCamp } from '../../config/starterCampShape.js';
 import * as BoardState from '../board/BoardState.js';
 import * as MatPlacement from '../board/MatPlacement.js';
+import * as FixedTokens from '../board/FixedTokens.js';
 import { isGuildHall } from '../board/MatCap.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { warnMissingContent } from '../../utils/missingContent.js';
@@ -104,6 +105,7 @@ export function layOnLiveBoard(camp = starterCamp()) {
         }
         laid.push(BoardState.addToken(BoardState.createTokenInstance(typeId, tokenStartingUses(typeId)), x, y));
     }
+    FixedTokens.fixCampTokens(laid);
     return laid;
 }
 
