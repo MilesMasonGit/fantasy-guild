@@ -56,7 +56,7 @@ export function isEnemyDef(def) {
 
 /**
  * Whether an enemy Token type is **hostile**: it attacks
- * a hero who comes inside the flag radius around its spawner
+ * a hero whose flag stands inside the flag radius around its spawner (or itself)
  * (`board/Hostiles.js`). Authored in the CMS as `enemy.hostile`; only a literal
  * `true` counts, and a missing field is peaceful — such an enemy fights only
  * when a hero attacks it.
