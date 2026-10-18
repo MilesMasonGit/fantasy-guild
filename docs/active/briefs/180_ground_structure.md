@@ -121,6 +121,16 @@ water comes into a Region (per biome rules, per map, or both), blend styles at
 biome borders, layout shapes, and whether Yellowstone's sulphur lakes count as
 water ground. **Also:** the game's coastline follows the ground's 32-unit cells, so in the generated Coast the shore steps like a staircase where the prototype's was smooth (seen in G4's side-by-sides); a smoother shore belongs here. Yellowstone's sulphur lakes are drawn but not yet water ground (Tokens can stand on them).
 
+## Next design topic: Token placement (owner, 2026-10-17)
+
+Rounds in the owner's order: P1 how groves look; then how groves relate to the
+world (water, rock, camps, treasures); then the biome layouts (G7: core and
+rim, patchwork, which steer where each biome's groves go, since the ground
+follows the nodes); then what the owner noticed in play. Page:
+https://claude.ai/artifact/4BLxWmqzGpvF4gdin4tKdQ. Prototype `place1.py`, with
+today's layout from the game's own `Layout.js` via `place_today.mjs`. P1
+(today, natural clumps, mixed edges, drifts) waiting for the owner.
+
 ## G5 — Water in every Region (engineer; eye-check)
 
 The settled world rounds (page above, rounds W1 and W5–W7; prototypes `world6.py`,
