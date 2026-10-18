@@ -82,21 +82,30 @@ function budgetCounts(summary) {
     return Object.fromEntries(summary.entries.map(e => [`${e.role}|${e.typeId}`, e.count]));
 }
 
-/** Of all nodes, the share whose nearest node is of its own species. */
-function sameSpeciesNeighbourShare(result) {
+/**
+ * Of the nodes in a grove (another of their species within 1.6 comfortable gaps), the share whose
+ * nearest node is of their own species; and the share of nodes in a grove at all (the rest are the
+ * stragglers between groves).
+ */
+function groveShares(result) {
     const nodes = result.nodes.filter(n => n.role === ROLE.NODE);
+    let members = 0;
     let same = 0;
     for (const a of nodes) {
         let best = null;
         let bestD = Infinity;
+        let own = Infinity;
         for (const b of nodes) {
             if (a === b) continue;
             const d = (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
             if (d < bestD) { bestD = d; best = b; }
+            if (b.typeId === a.typeId) own = Math.min(own, d);
         }
+        if (own > (1.6 * COMFORT_GAP) ** 2) continue;
+        members++;
         if (best?.typeId === a.typeId) same++;
     }
-    return same / nodes.length;
+    return { same: same / members, members: members / nodes.length };
 }
 
 describe('the seeded random source', () => {
@@ -262,13 +271,16 @@ describe('the layout', () => {
     });
 
     describe('shape', () => {
-        it('same-species nodes stand together in groves', () => {
+        it('same-species nodes stand together in groves, a few alone between them', () => {
             const summary = fullBudget(128, ['oak', 'fir', 'copper', 'coal']);
             // Four equal species scattered at random would give about 1 in 4.
-            const shares = SEEDS.map(seed => sameSpeciesNeighbourShare(layout(summary, options(seed))));
-            const mean = shares.reduce((a, b) => a + b, 0) / shares.length;
-            expect(mean).toBeGreaterThan(0.75);
-            expect(Math.min(...shares)).toBeGreaterThan(0.6);
+            const shares = SEEDS.map(seed => groveShares(layout(summary, options(seed))));
+            const mean = (key) => shares.reduce((a, s) => a + s[key], 0) / shares.length;
+            expect(mean('same')).toBeGreaterThan(0.75);
+            expect(Math.min(...shares.map(s => s.same))).toBeGreaterThan(0.6);
+            // About one node in eight a straggler.
+            expect(mean('members')).toBeGreaterThan(0.75);
+            expect(mean('members')).toBeLessThan(0.97);
         });
 
         it('enemy camps stand away from the centre', () => {

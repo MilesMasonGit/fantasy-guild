@@ -11,7 +11,7 @@ import { matW, matH } from '../config/matGeometry.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import * as Atlas from '../systems/atlas/Atlas.js';
 import * as Cartography from '../systems/atlas/Cartography.js';
-import { decodeTerrain } from '../systems/atlas/TerrainMap.js';
+import { decodeTerrain, islandsOf, cellIndex } from '../systems/atlas/TerrainMap.js';
 import { looksForGround } from '../systems/atlas/regionGround.js';
 import { BIOME_GROUND } from '../systems/atlas/Budget.js';
 import * as GroundRules from '../systems/board/GroundRules.js';
@@ -19,7 +19,7 @@ import { standsOnOf } from '../config/registries/tokenRegistry.js';
 import { nextSeed } from '../systems/atlas/seededRandom.js';
 import {
     TERRAIN_DEV_REGIONS, TERRAIN_DEV_WATER, goToDevRegion, rerollDevRegion, backToStarterCamp, isDevRegion, devMapsOf, viewOf, firstSeedOf,
-    DEV_GROUND_TOKENS, placeGroundTestTokens
+    DEV_GROUND_TOKENS, placeGroundTestTokens, TERRAIN_DEV_PLACEMENT, DEV_CHEST, hasIsland
 } from '../ui/dev/terrainDev.js';
 import { SHAPE } from '../systems/atlas/WaterShapes.js';
 import { placeAt } from './fixtures/mat.js';
@@ -124,6 +124,27 @@ describe('⭐ each view is one click', () => {
         expect(again).not.toEqual(first);
         expect(again.shapes.filter(s => s.k === SHAPE.RIVER).length).toBeGreaterThanOrEqual(2);
         expect(again.shapes.some(s => s.w[0] === 16 && s.w[1] === 16)).toBe(true);
+    });
+
+    it('⭐ every placement button makes a Region with a camp and a Test Chest; the lake view\'s chest stands on its island', () => {
+        expect(TERRAIN_DEV_PLACEMENT.length).toBeGreaterThan(0);
+        for (const view of TERRAIN_DEV_PLACEMENT) {
+            const result = goToDevRegion(view.maps);
+            expect(result.success, view.label).toBe(true);
+            const here = Atlas.activeRegion();
+            expect(viewOf(here)).toBe(view);
+            const camp = BoardState.tokens().find(t => t.typeId === 'token_goblin_camp');
+            const chest = BoardState.tokens().find(t => t.typeId === DEV_CHEST.id);
+            expect(camp, view.label).toBeTruthy();
+            expect(chest, view.label).toBeTruthy();
+            if (view.wants !== 'island') continue;
+            const hall = { x: Math.round(matW() / 2), y: Math.round(matH() / 2) };
+            expect(hasIsland({ terrain: here.terrain, hall }), view.label).toBe(true);
+            const map = decodeTerrain(here.terrain);
+            const wet = map.legend.indexOf('water');
+            const isles = islandsOf(map, map.cells.map(k => (k === wet ? 1 : 0)), cellIndex(map, hall.x, hall.y, map.cell));
+            expect(isles.some(i => i.includes(cellIndex(map, chest.x, chest.y, map.cell))), view.label).toBe(true);
+        }
     });
 
     it('the same button gives the same Region every time', () => {
