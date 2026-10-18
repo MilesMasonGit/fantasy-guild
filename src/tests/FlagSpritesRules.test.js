@@ -375,13 +375,13 @@ describe('the flag answers clicks on its round area (owner, 2026-09-21)', () => 
 });
 
 describe('opening the rules drawer (FP-73)', () => {
-    it('a request opens the drawer with that hero lit, another swaps hero; the button toggles it', () => {
+    it('opening on a hero lights them, another swaps hero; the launcher toggles it', () => {
         const { result } = renderHook(() => useUIModals(engine));
         expect(result.current.flagRules.isOpen).toBe(false);
-        act(() => { EventBus.publish('ui:open_flag_rules', { heroId: 'h1' }); });
+        act(() => { result.current.flagRules.open('h1'); });
         expect(result.current.flagRules.isOpen).toBe(true);
         expect(result.current.flagRules.heroId).toBe('h1');
-        act(() => { EventBus.publish('ui:open_flag_rules', { heroId: 'fighter' }); });
+        act(() => { result.current.flagRules.open('fighter'); });
         expect(result.current.flagRules.heroId).toBe('fighter');
         act(() => { result.current.flagRules.close(); });
         expect(result.current.flagRules.isOpen).toBe(false);

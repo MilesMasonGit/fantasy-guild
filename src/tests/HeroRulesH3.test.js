@@ -7,7 +7,7 @@ import { render, cleanup, fireEvent, act } from '@testing-library/react';
 
 import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
-import { UI_EVENTS, ENGINE_EVENTS } from '../systems/core/engineEvents.js';
+import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import * as Flags from '../systems/board/Flags.js';
 import * as FlagRules from '../systems/board/FlagRules.js';
 import { SKILL_LAYERS, getSkillIdsByLayer, SKILL_COUNT } from '../config/registries/skillRegistry.js';
@@ -49,7 +49,6 @@ const wrap = (...children) => h(EngineContext.Provider, { value: engine }, h(Dec
 /** ReactRoot's wiring in small: the bar with its button, and the drawer. */
 const Host = () => {
     const [state, setState] = React.useState({ open: false, heroId: null });
-    React.useEffect(() => EventBus.subscribe(UI_EVENTS.UI_OPEN_FLAG_RULES, d => setState({ open: true, heroId: d?.heroId || null })), []);
     const toggle = React.useCallback(() => setState(s => ({ open: !s.open, heroId: null })), []);
     const close = React.useCallback(() => setState({ open: false, heroId: null }), []);
     return wrap(
@@ -358,9 +357,8 @@ describe('H3 v2: bulk toggles', () => {
 });
 
 describe('H3 v2: opening on one hero', () => {
-    it('the open event opens the drawer with that hero’s row lit', () => {
-        const view = render(h(Host));
-        act(() => { EventBus.publish(UI_EVENTS.UI_OPEN_FLAG_RULES, { heroId: 'h3' }); });
+    it('a lit hero’s row is marked', () => {
+        const view = openDrawer({ litHeroId: 'h3' });
         expect(drawer(view)).not.toBeNull();
         expect(q(view, '[data-rules-row="h3"]').getAttribute('data-rules-lit')).toBe('true');
         expect(q(view, '[data-rules-row="h1"]').getAttribute('data-rules-lit')).toBeNull();

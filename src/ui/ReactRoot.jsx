@@ -329,7 +329,7 @@ export const ReactRoot = ({ engine }) => {
                                     </PerfProfiler>
                                 </ErrorBoundary>
                             )}
-                            {/* The work rules grid rises from behind the bar, over the mat. */}
+                            {/* The Work Permissions grid rises from behind the bar, the mat's full width. */}
                             {dockDrawn && showsBottomHeroDock(ui.fullscreen.view) && (
                                 <ErrorBoundary label="WorkRulesDrawer">
                                     <WorkRulesDrawer

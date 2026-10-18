@@ -212,8 +212,6 @@ export const UI_EVENTS = Object.freeze({
     UI_TOKEN_ALERT: 'ui:token_alert',
     /** Payload: `{ tab }`. */
     UI_OPEN_DRAWER: 'ui:open_drawer',
-    /** Payload: `{ heroId }`. */
-    UI_OPEN_FLAG_RULES: 'ui:open_flag_rules',
     /** Payload: `{ questId }`. */
     TUTORIAL_AIDE_HOVER: 'tutorial_aide:hover',
     /** Payload: none. */
