@@ -1,6 +1,7 @@
 // the ground's pixel map: which terrain at every plan pixel, cell edges wiggled, beaches cut
 
-import { TERRAIN_CELL } from '../atlas/TerrainMap.js';
+import { TERRAIN, TERRAIN_CELL } from '../atlas/TerrainMap.js';
+import { rasterise, STYLE_TERRAIN } from '../atlas/WaterShapes.js';
 import { fringeOf } from '../../config/registries/terrainRegistry.js';
 import { tuning } from '../../config/playmatTuning.js';
 
@@ -157,21 +158,65 @@ export function cellPxOf(ground) {
 }
 
 /**
+ * Each water cell given the terrain of the nearest dry cell, a diagonal step counting as one (the
+ * first reached wins, in cell order): the land the water's shape leaves dry in a water cell.
+ */
+function dryFilled(cells, cols, rows, wet) {
+    const out = cells.slice();
+    if (wet < 0) return out;
+    const queue = [];
+    const done = new Uint8Array(cells.length);
+    for (let i = 0; i < cells.length; i++) {
+        if (cells[i] !== wet) {
+            done[i] = 1;
+            queue.push(i);
+        }
+    }
+    for (let head = 0; head < queue.length; head++) {
+        const i = queue[head];
+        const c = i % cols;
+        const r = (i - c) / cols;
+        for (let dr = -1; dr <= 1; dr++) {
+            for (let dc = -1; dc <= 1; dc++) {
+                const nc = c + dc;
+                const nr = r + dr;
+                if (nc < 0 || nr < 0 || nc >= cols || nr >= rows) continue;
+                const n = nr * cols + nc;
+                if (done[n]) continue;
+                done[n] = 1;
+                out[n] = out[i];
+                queue.push(n);
+            }
+        }
+    }
+    return out;
+}
+
+/**
  * Which terrain is at every plan pixel, after the cell boundaries have been wiggled and the beach
  * cut: what the shore bands, the wear and the scatter all measure against.
+ *
+ * A ground with water shapes (`ground.water`, `WaterShapes`) draws its water where they say,
+ * at every pixel rather than by the cells: its land first, each water cell taking the ground of
+ * the nearest dry one, then the water laid over it in each shape's style (`STYLE_TERRAIN`).
  *
  * @param {object} ground A Region's ground, from `regionGround`.
  * @param {boolean} [withFringes] Whether to cut the beach (a fringe pushed onto the neighbours).
  * @returns {{width: number, height: number, cellPx: number, palette: string[], at: Uint8Array,
- *   present: Uint8Array, fields: object, fringes: Array<{terrainId: string, mask: Uint8Array}>}}
+ *   present: Uint8Array, fields: object, fringes: Array<{terrainId: string, mask: Uint8Array}>,
+ *   water: {f: Float64Array, style: Uint8Array}|null}}
  *   `at` holds an index into `palette` per pixel, row by row; the palette starts as the ground's
  *   own terrains, in order. `present[p]` is 1 when palette entry `p` is on the ground; `fields`
- *   the distance fields measured so far ({@link distanceFields}), for the bands to reuse.
+ *   the distance fields measured so far ({@link distanceFields}), for the bands to reuse; `water`
+ *   the shapes' field at each pixel (mat units, above 0 in the water) and its style, null when
+ *   the ground has no shapes.
  */
 export function resolveArtPixels(ground, withFringes = true) {
     const cellPx = cellPxOf(ground);
     const { width, height } = planSize(ground.mat);
-    const { cols, rows, cells, terrains, seed } = ground;
+    const { cols, rows, terrains, seed } = ground;
+    const shapes = ground.water || null;
+    const cells = shapes ? dryFilled(ground.cells, cols, rows, terrains.indexOf(TERRAIN.WATER)) : ground.cells;
 
     const palette = [...terrains];
     const indexOf = new Map(palette.map((t, i) => [t, i]));
@@ -236,13 +281,29 @@ export function resolveArtPixels(ground, withFringes = true) {
         }
     }
 
-    const fields = distanceFields(at, width, height, { cols, rows, cellPx, border });
     // Which palette entries some pixel shows: the cells' terrains (a strip only carries a
-    // neighbouring cell's), and whatever a fringe writes.
+    // neighbouring cell's), the water's, and whatever a fringe writes.
     const present = new Uint8Array(256);
     for (let i = 0; i < cells.length; i++) present[cells[i]] = 1;
+    let water = null;
+    if (shapes) {
+        water = rasterise(shapes, { x0: PLAN_PIXEL_U / 2, y0: PLAN_PIXEL_U / 2, step: PLAN_PIXEL_U, nx: width, ny: height });
+        const ids = STYLE_TERRAIN.map(() => -1);
+        const { f, style } = water;
+        for (let i = 0; i < at.length; i++) {
+            if (!(f[i] > 0)) continue;
+            const s = style[i];
+            if (ids[s] < 0) {
+                ids[s] = idFor(STYLE_TERRAIN[s]);
+                present[ids[s]] = 1;
+            }
+            at[i] = ids[s];
+        }
+    }
+    // ⚠️ The shapes' shores lie anywhere, not only in the cells beside a different one.
+    const fields = distanceFields(at, width, height, shapes ? null : { cols, rows, cellPx, border });
     const fringes = withFringes ? applyFringes(at, palette, indexOf, idFor, ground.looks, fields, present) : [];
-    return { width, height, cellPx, palette, at, present, fields, fringes };
+    return { width, height, cellPx, palette, at, present, fields, fringes, water };
 }
 
 const INF = 0x3fff;

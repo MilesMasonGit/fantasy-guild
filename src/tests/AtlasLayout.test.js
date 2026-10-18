@@ -404,7 +404,7 @@ describe('the game\'s side of the layout (layoutInputs)', () => {
 
 describe('purity guards', () => {
     const FILES = [
-        'Budget.js', 'Layout.js', 'TerrainMap.js', 'seededRandom.js', 'layoutInputs.js',
+        'Budget.js', 'Layout.js', 'TerrainMap.js', 'WaterShapes.js', 'seededRandom.js', 'layoutInputs.js',
         'Cartography.js', 'Atlas.js', 'RegionRules.js', 'devMaps.js'
     ];
     const code = (file) => codeOf(fs.readFileSync(`${SRC}/systems/atlas/${file}`, 'utf8'));
@@ -414,17 +414,18 @@ describe('purity guards', () => {
     });
 
     it('Budget and Layout use no maths whose last bit may differ between browser engines', () => {
-        for (const file of ['Budget.js', 'Layout.js', 'TerrainMap.js', 'seededRandom.js']) {
+        for (const file of ['Budget.js', 'Layout.js', 'TerrainMap.js', 'WaterShapes.js', 'seededRandom.js']) {
             expect(code(file), file).not.toMatch(/\*\*|Math\s*\.\s*(hypot|pow|sin|cos|tan|atan2?|exp|log\w*|cbrt)\b/);
         }
     });
 
-    it('Budget, Layout and TerrainMap read no clock, no board and no Mat Tuner', () => {
+    it('Budget, Layout, TerrainMap and WaterShapes read no clock, no board and no Mat Tuner', () => {
         const imports = (file) => [...code(file).matchAll(/from\s*['"]([^'"]+)['"]/g)].map(m => m[1]);
-        expect(imports('Layout.js')).toEqual(['./seededRandom.js', './TerrainMap.js']);
-        expect(imports('Budget.js')).toEqual(['../../config/registries/tokenRegistry.js', './TerrainMap.js']);
-        expect(imports('TerrainMap.js')).toEqual([]);
-        for (const file of ['Budget.js', 'Layout.js', 'TerrainMap.js']) {
+        expect(imports('Layout.js')).toEqual(['./seededRandom.js', './TerrainMap.js', './WaterShapes.js']);
+        expect(imports('Budget.js')).toEqual(['../../config/registries/tokenRegistry.js', './TerrainMap.js', './WaterShapes.js']);
+        expect(imports('TerrainMap.js')).toEqual(['./WaterShapes.js']);
+        expect(imports('WaterShapes.js')).toEqual([]);
+        for (const file of ['Budget.js', 'Layout.js', 'TerrainMap.js', 'WaterShapes.js']) {
             expect(code(file), file).not.toMatch(/Date\s*\.\s*now|performance\s*\.\s*now|new Date/);
         }
     });

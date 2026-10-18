@@ -18,9 +18,10 @@ import * as GroundRules from '../systems/board/GroundRules.js';
 import { standsOnOf } from '../config/registries/tokenRegistry.js';
 import { nextSeed } from '../systems/atlas/seededRandom.js';
 import {
-    TERRAIN_DEV_REGIONS, goToDevRegion, rerollDevRegion, backToStarterCamp, isDevRegion, devMapsOf, viewOf, firstSeedOf,
+    TERRAIN_DEV_REGIONS, TERRAIN_DEV_WATER, goToDevRegion, rerollDevRegion, backToStarterCamp, isDevRegion, devMapsOf, viewOf, firstSeedOf,
     DEV_GROUND_TOKENS, placeGroundTestTokens
 } from '../ui/dev/terrainDev.js';
+import { SHAPE } from '../systems/atlas/WaterShapes.js';
 import { placeAt } from './fixtures/mat.js';
 import './fixtures/testTokens.js';
 
@@ -95,6 +96,34 @@ describe('⭐ each view is one click', () => {
         // Only the last one is left beside the Starter Camp; the guild seed never moved.
         expect(regionIds()).toEqual([home, Atlas.activeRegionId()].sort());
         expect(GameState.state.atlas.seed).toBe(guildSeed);
+    });
+
+    it('⭐ every water button makes a Region with that water, stored as its shapes, and a reroll keeps the kind', () => {
+        const want = {
+            water_lake_river: [SHAPE.LAKE, SHAPE.RIVER], water_lake: [SHAPE.LAKE], water_river: [SHAPE.RIVER],
+            water_split: [SHAPE.RIVER], water_spring: [SHAPE.LAKE, SHAPE.RIVER], water_mountain_river: [SHAPE.RIVER],
+            water_pond: [SHAPE.LAKE], water_tarn: [SHAPE.LAKE], water_sulphur: [SHAPE.POOL], water_sea: [SHAPE.SEA]
+        };
+        expect(TERRAIN_DEV_WATER.map(v => v.id).sort()).toEqual(Object.keys(want).sort());
+        for (const view of TERRAIN_DEV_WATER) {
+            const result = goToDevRegion(view.maps);
+            expect(result.success, view.label).toBe(true);
+            const here = Atlas.activeRegion();
+            expect(viewOf(here)).toBe(view);
+            const kinds = new Set(here.terrain.water.shapes.map(s => s.k));
+            for (const k of want[view.id]) expect(kinds.has(k), `${view.label}: ${k}`).toBe(true);
+            const map = decodeTerrain(here.terrain);
+            expect(map.water.shapes.length, view.label).toBeGreaterThan(0);
+            expect([...map.cells].some(i => map.legend[i] === 'water'), view.label).toBe(true);
+        }
+        // The split river's view rerolled is still a split river: a main arm, its side channel.
+        goToDevRegion(['water_split']);
+        const first = Atlas.activeRegion().terrain.water;
+        expect(rerollDevRegion().success).toBe(true);
+        const again = Atlas.activeRegion().terrain.water;
+        expect(again).not.toEqual(first);
+        expect(again.shapes.filter(s => s.k === SHAPE.RIVER).length).toBeGreaterThanOrEqual(2);
+        expect(again.shapes.some(s => s.w[0] === 16 && s.w[1] === 16)).toBe(true);
     });
 
     it('the same button gives the same Region every time', () => {

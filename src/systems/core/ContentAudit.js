@@ -195,7 +195,8 @@ function auditStandsOn(out, where, def) {
 /**
  * A Base Map node whose "Stands on" its map's ground can never give. A node brings its map's
  * terrain to its own cell (`Layout.js`), so on dry land it stands on that terrain and nothing else;
- * the shore and the water exist only where some map brings water. The layout leaves such a node
+ * the shore and the water exist only where some map brings water, a sea or its biome's own
+ * (`Budget.BIOME_WATER`: a forest's pond, a meadow's lake). The layout leaves such a node
  * unplaced, and Settle refuses every layout of a Region with it ("Not everything fits").
  */
 function auditMapNodeGround(out, itemId, def) {
@@ -206,7 +207,7 @@ function auditMapNodeGround(out, itemId, def) {
         const standsOn = standsOnOf(typeId);
         if (!standsOn.length || allowsTerrain(standsOn, ground.terrain, false)) continue;
         const byWater = standsOn.includes(STANDS_ON.WATER) || standsOn.includes(STANDS_ON.SHORE);
-        if (byWater && ground.water > 0) continue;
+        if (byWater && (ground.water > 0 || ground.inland.length > 0)) continue;
         const node = `One of its nodes, ${tokenName(typeId)}, has "Stands on" ${groundLabels(standsOn)}`;
         out.push(finding(`Item "${itemId}"`, byWater
             ? `${node} and this map brings no water, so a Region written from this map alone has ` +

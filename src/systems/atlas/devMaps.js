@@ -2,6 +2,7 @@
 
 import { HALL_CLEARING } from './Layout.js';
 import { terrainAt } from './TerrainMap.js';
+import { WATER_KIND } from './WaterShapes.js';
 
 /**
  * Map recipes for trying the Atlas from the dev console in a game with no authored map items:
@@ -9,7 +10,8 @@ import { terrainAt } from './TerrainMap.js';
  * today's Tokens; every number is a placeholder, not content.
  *
  * The Overgrown here also carries a Region rule, +10 % Forestry yield, so a Region rule can be
- * seen applying and dropping as the guild travels.
+ * seen applying and dropping as the guild travels. The `water_*` maps are a biome's map that names
+ * one variety of its water (`inland`), for the dev panel's water views.
  */
 
 export const DEV_RULE_FORESTRY_YIELD = Object.freeze({
@@ -17,7 +19,7 @@ export const DEV_RULE_FORESTRY_YIELD = Object.freeze({
     payload: Object.freeze({ type: 'YIELD', bucket: 'percentage', value: 0.1, category: 'forestry' })
 });
 
-export const DEV_MAPS = Object.freeze({
+const BASE_MAPS = Object.freeze({
     forest: Object.freeze({
         id: 'dev_map_forest', name: 'Forest Map', kind: 'base', biome: 'forest', points: 40,
         nodes: [
@@ -37,6 +39,10 @@ export const DEV_MAPS = Object.freeze({
     coast: Object.freeze({
         id: 'dev_map_coast', name: 'Coast Map', kind: 'base', biome: 'coast', points: 12,
         nodes: [{ typeId: 'token_coast', weight: 1 }]
+    }),
+    meadow: Object.freeze({
+        id: 'dev_map_meadow', name: 'Meadow Map', kind: 'base', biome: 'meadow', points: 20,
+        nodes: [{ typeId: 'token_apple_tree', weight: 2 }, { typeId: 'token_redberry_bush', weight: 1 }]
     }),
     flower_meadow: Object.freeze({
         id: 'dev_map_flower_meadow', name: 'Flower Meadow Map', kind: 'base', biome: 'flower_meadow', points: 16,
@@ -75,6 +81,24 @@ export const DEV_MAPS = Object.freeze({
         id: 'dev_mod_goblin_camp', name: 'Goblin Camp', kind: 'modifier',
         effects: [{ kind: 'threat', typeId: 'token_goblin_camp', count: 1 }]
     })
+});
+
+/** A biome's dev map naming one variety of water. */
+const withWater = (base, kind) => Object.freeze({ ...BASE_MAPS[base], id: `dev_map_water_${kind}`, inland: kind });
+
+export const DEV_MAPS = Object.freeze({
+    ...BASE_MAPS,
+    water_lake_river: withWater('meadow', WATER_KIND.LAKE_RIVER),
+    water_lake: withWater('meadow', WATER_KIND.LAKE),
+    water_river: withWater('meadow', WATER_KIND.RIVER),
+    water_split: withWater('meadow', WATER_KIND.SPLIT),
+    water_spring: withWater('meadow', WATER_KIND.SPRING),
+    water_mountain_river: withWater('mountain', WATER_KIND.MOUNTAIN_RIVER),
+    water_tarn: withWater('mountain', WATER_KIND.TARN),
+    water_pond: withWater('forest', WATER_KIND.POND),
+    water_sulphur: withWater('yellowstone', WATER_KIND.SULPHUR),
+    // The Coast's sea, as its own view.
+    water_sea: Object.freeze({ ...BASE_MAPS.coast, id: 'dev_map_water_sea' })
 });
 
 const GLYPHS = Object.freeze({

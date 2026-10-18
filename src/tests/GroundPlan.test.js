@@ -10,6 +10,7 @@ import { PLAN_PIXEL_U, CELL_PX, edgeAmplitude } from '../systems/board/TerrainLa
 import { LOOKS } from '../config/registries/terrainRegistry.js';
 import { tuning, setTuning, resetTuning } from '../config/playmatTuning.js';
 import { createRegionRecord } from '../state/StateSchema.js';
+import { rasterise } from '../systems/atlas/WaterShapes.js';
 
 /**
  * The ground plan of a settled Region (terrain roadmap decision 7a): what is on the ground at
@@ -56,9 +57,12 @@ describe('⭐ The plan of a stored map', () => {
         expect(reseeded.props).not.toEqual(a.props);
     });
 
-    it('keeps every cell\'s pixels its terrain except near a boundary: the edge swing, or the beach', () => {
-        const region = settled(['forest', 'coast'], 103);
+    it('keeps every cell\'s pixels its terrain except near a boundary: the edge swing, or the beach (a map saved without water shapes)', () => {
+        const stored = settled(['forest', 'coast'], 103);
+        const { water: _shapes, ...cellsOnly } = stored.terrain;
+        const region = { ...stored, terrain: cellsOnly };
         const ground = regionGround(region, MAT);
+        expect(ground.water).toBeNull();
         const plan = buildGroundPlan(ground);
         const reach = edgeAmplitude() + tuning('beachWidth') / PLAN_PIXEL_U;
         const cellTerrain = (c, r) => ground.terrains[ground.cells[r * ground.cols + c]];
@@ -88,7 +92,30 @@ describe('⭐ The plan of a stored map', () => {
         expect(moved).toBeGreaterThan(0);
     });
 
-    it('⭐ never lets water meet grass or rock without the beach rim', () => {
+    it('⭐ draws shaped water exactly where its shapes say, at every pixel, not by the cells', () => {
+        for (const [names, seed] of [[['forest', 'coast'], 103], [['water_split'], 113], [['water_sulphur'], 114]]) {
+            const ground = regionGround(settled(names, seed), MAT);
+            expect(ground.water, names.join('+')).not.toBeNull();
+            const plan = buildGroundPlan(ground);
+            const { f } = rasterise(ground.water, { x0: 1, y0: 1, step: 2, nx: plan.width, ny: plan.height });
+            let wet = 0;
+            let offCell = 0;
+            for (let i = 0; i < plan.terrainAt.length; i++) {
+                const drawnWet = plan.palette[plan.terrainAt[i]].startsWith('water');
+                if (drawnWet !== f[i] > 0) throw new Error(`${names.join('+')}: pixel ${i} drawn ${drawnWet ? 'wet' : 'dry'} at ${f[i]}`);
+                if (!drawnWet) continue;
+                wet++;
+                const x = i % plan.width;
+                const y = (i - x) / plan.width;
+                if (ground.terrains[ground.cells[Math.floor(y / CELL_PX) * ground.cols + Math.floor(x / CELL_PX)]] !== 'water') offCell++;
+            }
+            expect(wet, names.join('+')).toBeGreaterThan(1000);
+            // The shores cut through cells: some drawn water lies in dry cells, as the shape says.
+            expect(offCell, names.join('+')).toBeGreaterThan(0);
+        }
+    });
+
+    it('⭐ never lets the sea meet grass or rock without the beach rim', () => {
         for (const [names, seed] of [[['forest', 'coast'], 104], [['mountain', 'coast'], 105], [['coast'], 106]]) {
             const plan = planOf(settled(names, seed));
             const { width, height, palette, terrainAt } = plan;
@@ -103,7 +130,8 @@ describe('⭐ The plan of a stored map', () => {
                         const ny = y + dy;
                         if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
                         const t = palette[terrainAt[ny * width + nx]];
-                        if (t === 'water') continue;
+                        // Another water (a river reaching the sea) is no shore.
+                        if (t.startsWith('water')) continue;
                         shore++;
                         expect(t, `${names.join('+')}: water at ${x},${y} meets ${t}`).toBe('sand');
                     }
@@ -203,7 +231,8 @@ describe('⭐ Looks', () => {
     });
 
     it('⭐ gives a hybrid\'s grass the forest look and its rock the mountain look', () => {
-        expect(planOf(settled(['forest', 'mountain'], 112)).grass.looks.sort()).toEqual(['forest', 'mountain']);
+        // And the forest's pond the lake's.
+        expect(planOf(settled(['forest', 'mountain'], 112)).grass.looks.sort()).toEqual(['forest', 'lake', 'mountain']);
         // With the generated ground off, their sheets.
         setTuning('grassOn', 0);
         const plan = planOf(settled(['forest', 'mountain'], 112));
@@ -213,7 +242,7 @@ describe('⭐ Looks', () => {
             const key = `${plan.palette[plan.terrainAt[i]]}>${plan.sheets[plan.sheetAt[i]]}`;
             counts[key] = (counts[key] || 0) + 1;
         }
-        expect(Object.keys(counts).sort()).toEqual(['grass>grass_dark', 'rock>stone']);
+        expect(Object.keys(counts).sort()).toEqual(['grass>grass_dark', 'rock>stone', 'water:lake>water_bright']);
         expect(counts['grass>grass_dark']).toBeGreaterThan(10000);
         expect(counts['rock>stone']).toBeGreaterThan(10000);
     });

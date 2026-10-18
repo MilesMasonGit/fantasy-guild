@@ -20,7 +20,7 @@ import {
     recipeOf, preview, grant, held, shortfall, take, regionBoard, rulesOf
 } from './Cartography.js';
 import { DEV_MAPS, asciiLayout } from './devMaps.js';
-import { layOnLiveBoard } from './StarterCamp.js';
+import { layOnLiveBoard, starterCampTerrain } from './StarterCamp.js';
 
 export { recipeOf, preview, reroll, held, heldCount } from './Cartography.js';
 export { upcycleOffer, upcycle } from './Upcycle.js';
@@ -186,12 +186,20 @@ export function list({ archived = false } = {}) {
 
 /**
  * The Region a new game opens in: the live board, the Starter Camp. Given a camp
- * (`StarterCamp.starterCamp()`) and an empty mat, its Tokens are stood on the mat first. Idempotent.
+ * (`StarterCamp.starterCamp()`) and an empty mat, its Tokens are stood on the mat first, and the
+ * camp gets its pond (`StarterCamp.starterCampTerrain`). Idempotent. A Starter Camp made any other
+ * way (an older save, a board built without a camp) keeps no stored ground: all meadow.
  */
 export function createStarterRegion(camp = null) {
-    if (camp && GameState.state?.board && BoardState.tokens().length === 0) layOnLiveBoard(camp);
+    const laid = Boolean(camp && GameState.state?.board && BoardState.tokens().length === 0);
+    if (laid) layOnLiveBoard(camp);
     ensureState();
-    return activeRegion();
+    const region = activeRegion();
+    if (laid && region?.kind === REGION_KIND.STARTER && !region.terrain) {
+        const standing = BoardState.tokens().map(t => ({ typeId: t.typeId, x: t.x, y: t.y }));
+        region.terrain = starterCampTerrain(standing, { w: matW(), h: matH() }, region.seed);
+    }
+    return region;
 }
 
 /**

@@ -1,6 +1,7 @@
 // Fantasy Guild — how the ground looks: the looks, their rules and the sheets they draw with.
 
 import { TERRAIN } from '../../systems/atlas/TerrainMap.js';
+import { STYLE, STYLE_TERRAIN } from '../../systems/atlas/WaterShapes.js';
 
 /**
  * A Region's ground is its Atlas cell map (`TerrainMap.js`): one terrain per cell. This says what
@@ -23,8 +24,8 @@ export const SHEET_PX = 64;
 
 /**
  * The ground sheets in `public/assets/playmat/terrain/` (`g_<id>.png`), one per ground. Two are
- * recolours: `grass_dark` is the forest's darker ground; `water_bright`, a much brighter sea,
- * waits for a lake (it is drawn, and no look uses it yet).
+ * recolours: `grass_dark` is the forest's darker ground; `water_bright`, a much brighter sea, is
+ * the lakes' and the sulphur springs'.
  */
 export const SHEETS = Object.freeze(['grass', 'grass_dark', 'dirt', 'gravel', 'sand', 'stone', 'water', 'water_bright']);
 
@@ -103,7 +104,11 @@ const FLOWERS = { blades: 0.06, cluster: 4, heights: [1, 2], tips: 0.25, shadow:
  *
  * A generated water look (`water`): the sea by distance from the shore, in the prototype's pixels
  * (its shore fractions × 320): foam, shallows, deeper water, and waves as strokes growing longer
- * with distance (`waveLengths`, from each distance on), `waveGap` pixels apart.
+ * with distance (`waveLengths`, from each distance on), `waveGap` pixels apart. With `field`, the
+ * distance is the water's shape (`WaterShapes`) rather than measured on the drawn shore, as the
+ * prototype's `water_field` drew it, and the land round it takes a `bank` (`at`: up to how many
+ * pixels out from the waterline each step reaches, and its colour); a `rings` water is coloured
+ * by its depth alone, ring `k` from `ringAt[k - 1]` pixels in.
  *
  * ⚠️ First values, retuned at the eye-check with the Playmat Tuner. The shoreline widths (the
  * tuning sliders) carry over from the 8-pixel ground set, where an art pixel was 4 units; the
@@ -188,7 +193,8 @@ export const LOOKS = deepFreeze({
         band: { widthTuning: 'shallowsWidth', tint: '#a8e8ff', amount: 0.45 },
         // A beach wherever it comes ashore, so water never meets grass or rock directly. Written
         // onto the land as real sand, so it takes the wet-sand band, no wear and no forest scatter.
-        fringe: { terrain: TERRAIN.SAND, widthTuning: 'beachWidth', except: [] },
+        // Never onto a lake or a spring beside it.
+        fringe: { terrain: TERRAIN.SAND, widthTuning: 'beachWidth', except: [STYLE_TERRAIN[STYLE.LAKE], STYLE_TERRAIN[STYLE.SULPHUR]] },
         // `coast_spec.json`, `coast4.py` C with `gen.coast2`: calm water in depth steps, a broken
         // foam line with flecks, the fewest and widest-spaced waves, rolling swells far out.
         generated: {
@@ -196,6 +202,31 @@ export const LOOKS = deepFreeze({
                 sea: [0.47, 0.46, 0.55], foam: 5.12, foamLight: 1.35, foam2Light: 1.12, shallow: 19.2, deep: 70.4,
                 flecks: 0.004, waves: 0.007, waveMask: 0.4, wavePatchCell: 30, waveGap: 5, farThick: 76.8,
                 waveLengths: [[19.2, [1, 1, 2]], [38.4, [2, 3]], [64, [4, 5, 6, 7]], [89.6, [6, 7, 8, 9]]]
+            }
+        }
+    },
+    lake: {
+        id: 'lake', name: 'Lake', terrain: TERRAIN.WATER, sheets: ['water_bright'],
+        // `gen.water_field` with `world6.py`'s colours: a wet bank on the land, a broken foam line,
+        // shallows, water and deep water by the depth, waves longer the deeper.
+        generated: {
+            water: {
+                field: true, sea: [0.50, 0.44, 0.52], foam: 1.2, solidFoam: false, foamLight: 1.30, foam2Light: 1.1,
+                trough: 1, shallow: 5, deep: 14, flecks: 0, waves: 0.004, waveMask: 0, wavePatchCell: 30, waveGap: 3,
+                farThick: null, waveLengths: [[5, [2]], [9, [3, 4, 5]], [18, [5, 6, 7, 8]]],
+                bank: { ramp: [0.08, 0.34, 0.30], at: [[1, 0], [2.5, 1]] }
+            }
+        }
+    },
+    sulphur: {
+        id: 'sulphur', name: 'Sulphur spring', terrain: TERRAIN.WATER, sheets: ['water_bright'],
+        // Yellowstone's springs (`gen.pools`): pale cyan at the rim, blue, a milky middle, ringed on
+        // the land by a pale yellow crust. The rings fall where the prototype's did on a spring of
+        // 100 mat units: its 0.74 of the radius is the waterline, 0.62 and 0.42 the rings inside.
+        generated: {
+            water: {
+                field: true, rings: [[176, 222, 226], [122, 196, 214], [150, 214, 228]], ringAt: [6, 16],
+                bank: { colours: [[226, 214, 120], [200, 186, 96]], at: [[4, 0], [7, 1]] }
             }
         }
     },
@@ -280,7 +311,9 @@ export const DEFAULT_LOOK = Object.freeze({
     [TERRAIN.GRASS]: 'meadow',
     [TERRAIN.ROCK]: 'mountain',
     [TERRAIN.SAND]: 'coast',
-    [TERRAIN.WATER]: 'sea'
+    [TERRAIN.WATER]: 'sea',
+    [STYLE_TERRAIN[STYLE.LAKE]]: 'lake',
+    [STYLE_TERRAIN[STYLE.SULPHUR]]: 'sulphur'
 });
 
 /** A look by id, or null. */
