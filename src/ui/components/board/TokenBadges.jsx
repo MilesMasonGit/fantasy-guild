@@ -17,6 +17,7 @@ import { RING_D_U } from './ringRow.js';
  * moment rather than a state.
  */
 
+const NAME_STYLE = Object.freeze({ textShadow: '0 1px 2px #000, 0 0 3px #000, 0 0 1px #000' });
 const FLOATER_STYLE = Object.freeze({ textShadow: '0 1px 2px #000, 0 0 3px #000, 0 0 1px #000' });
 const FLOATER_AT_REST_STYLE = Object.freeze({ ...FLOATER_STYLE, willChange: 'contents' });
 
@@ -98,35 +99,31 @@ export const TokenChargeDeltaFloater = memo(function TokenChargeDeltaFloater({ i
 });
 
 /**
- * TokenNameBadge: the Token's name on hover, centred just above the Token's box so it never
- * covers a bubble. `lift` raises it further (mat units) when bubbles hang off the box's top
- * (a small Token's timer). Memoised: its Token redraws far more often than any of these change.
+ * TokenNameBadge: a Token's or hero's name once the pointer rests on it (`shown`), centred just
+ * above the box so it never covers a bubble. `lift` raises it further (mat units) when something
+ * hangs off the box's top (a small Token's timer, a health bar). Memoised: its Token redraws far
+ * more often than any of these change.
  */
-export const TokenNameBadge = memo(function TokenNameBadge({ name, isDragging, isHovered, lift = 0 }) {
-    if (!name || isDragging) return null;
+export const TokenNameBadge = memo(function TokenNameBadge({ name, isDragging, shown = false, lift = 0 }) {
+    // ⚠️ Not drawn at all until shown, never drawn hidden: the label's drop shadow is a filter
+    // Chrome draws on a layer of its own, and every Token drawn after a hidden label then needed
+    // a layer too, drawn soft and a pixel off.
+    if (!name || isDragging || !shown) return null;
 
     // A full-width flex row centres the label without a `transform`: a transform on every
     // Token of a busy mat costs more in compositing than it saves.
-    // ⚠️ Hidden means `invisible`, not only transparent. The label's drop shadow is a filter
-    // Chrome must draw on a layer of its own, and every Token drawn after an unseen, transparent
-    // label then needed a layer too, drawn soft and a pixel off. Visibility rides the
-    // opacity transition, so the fade in and out look as before.
     return (
         <div
             data-token-name="true"
             className={cn(
                 "absolute left-0 right-0 z-30 pointer-events-none",
-                "flex items-end justify-center text-center select-none",
-                "transition-[opacity,visibility] ease-out",
-                isHovered ? "opacity-100 duration-500 delay-[1200ms]" : "opacity-0 invisible duration-150 delay-0"
+                "flex items-end justify-center text-center select-none"
             )}
             style={{ bottom: `calc(100% + ${4 + lift}px)` }}
         >
             <span
-                className="w-max max-w-[240px] shrink-0 text-[10px] font-bold text-white leading-tight tracking-tight px-1 drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.95)]"
-                style={{
-                    textShadow: '0 1px 2px #000, 0 0 3px #000, 0 0 1px #000'
-                }}
+                className="ui-text-small w-max max-w-[240px] shrink-0 font-bold text-white leading-tight tracking-tight px-1 drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.95)]"
+                style={NAME_STYLE}
             >
                 {name}
             </span>

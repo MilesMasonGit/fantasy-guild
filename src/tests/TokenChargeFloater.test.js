@@ -60,32 +60,31 @@ describe('TokenChargeDeltaFloater', () => {
 });
 
 describe('TokenNameBadge', () => {
-    it('is hidden (opacity-0) when not hovered', () => {
+    it('is not drawn at all until shown', () => {
         const { container } = render(
-            React.createElement(TokenNameBadge, { name: 'Ancient Forge', isDragging: false, isHovered: false })
+            React.createElement(TokenNameBadge, { name: 'Ancient Forge', isDragging: false, shown: false })
         );
-        expect(container.firstChild.className).toContain('opacity-0');
-        expect(screen.getByText('Ancient Forge')).toBeDefined();
+        expect(container.firstChild).toBeNull();
     });
 
-    it('reveals with opacity-100 above the box when hovered', () => {
+    it('shown, it sits above the box in the kit small text', () => {
         const { container } = render(
-            React.createElement(TokenNameBadge, { name: 'Ancient Forge', isDragging: false, isHovered: true })
+            React.createElement(TokenNameBadge, { name: 'Ancient Forge', isDragging: false, shown: true })
         );
-        expect(container.firstChild.className).toContain('opacity-100');
+        expect(screen.getByText('Ancient Forge').className).toContain('ui-text-small');
         expect(container.firstChild.style.bottom).toBe('calc(100% + 4px)');
     });
 
     it('does not render while dragging', () => {
         const { container } = render(
-            React.createElement(TokenNameBadge, { name: 'Ancient Forge', isDragging: true, isHovered: true })
+            React.createElement(TokenNameBadge, { name: 'Ancient Forge', isDragging: true, shown: true })
         );
         expect(container.firstChild).toBeNull();
     });
 
     it('does not render if name is null/empty', () => {
         const { container } = render(
-            React.createElement(TokenNameBadge, { name: '', isDragging: false, isHovered: true })
+            React.createElement(TokenNameBadge, { name: '', isDragging: false, shown: true })
         );
         expect(container.firstChild).toBeNull();
     });

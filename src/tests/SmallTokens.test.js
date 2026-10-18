@@ -27,6 +27,7 @@ import { MatFitProvider } from '../ui/components/board/MatFitContext.jsx';
 import { RING_D_U } from '../ui/components/board/ringRow.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 import { drawnPoint } from './fixtures/drawnPoint.js';
+import { restHover } from './fixtures/hoverRest.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -222,7 +223,7 @@ describe('on the mat (MatBoard)', () => {
         SpriteLayer.init();
         GameState.state.heroes = [];
     });
-    afterEach(cleanup);
+    afterEach(() => { cleanup(); vi.useRealTimers(); });
 
     function put(typeId, point) {
         const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
@@ -248,6 +249,7 @@ describe('on the mat (MatBoard)', () => {
     });
 
     it('⭐ a small Token keeps full-size bubbles, hung off the corners of its small box', () => {
+        vi.useFakeTimers();
         const spawner = put('b8_small_spawner', { x: 600, y: 500 });
         put('b8_standard', { x: 1200, y: 500 });
         const { container } = mount(1);
@@ -259,6 +261,7 @@ describe('on the mat (MatBoard)', () => {
             left: 0, top: 0, width: matW(), height: matH(), right: matW(), bottom: matH(), x: 0, y: 0
         });
         fireEvent.pointerMove(root, { clientX: spawner.x, clientY: spawner.y });
+        restHover();
         const ring = o.querySelector('[data-bubble-row] [data-ring="spawner"]');
         expect(ring).not.toBeNull();
         expect(parseFloat(ring.style.width)).toBe(RING_D_U);

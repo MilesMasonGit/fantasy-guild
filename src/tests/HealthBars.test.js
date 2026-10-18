@@ -19,6 +19,7 @@ import * as Flags from '../systems/board/Flags.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { resetMatTuning } from '../config/matTuning.js';
+import { restHover } from './fixtures/hoverRest.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -153,16 +154,16 @@ describe('the hero bar', () => {
         expect(bar(container, 'hero').getAttribute('data-health-text')).toBe('80/100');
     });
 
-    it('⭐ shows while hurt, or hovered; not at full health with nothing going on', () => {
+    it('⭐ shows while hurt, or rested on; not at full health with nothing going on', () => {
         const { container, rerender } = mount(hero());
         expect(bar(container, 'hero')).toBeNull();
         rerender(tree(hero({ hurt: true })));
         expect(bar(container, 'hero').getAttribute('data-health-text')).toBe('80/100');
         rerender(tree(hero({ hurt: false })));
         expect(bar(container, 'hero')).toBeNull();
-        rerender(tree(hero({ hovered: true })));
+        rerender(tree(hero({ rested: true })));
         expect(bar(container, 'hero')).not.toBeNull();
-        rerender(tree(hero({ hovered: false })));
+        rerender(tree(hero({ rested: false })));
         expect(bar(container, 'hero')).toBeNull();
     });
 
@@ -234,9 +235,14 @@ describe('⭐ on the mat: the hero bar follows the hero’s health and the point
         });
         expect(bar(container, 'hero')).toBeNull();
 
-        fireEvent.mouseEnter(figure);
-        expect(bar(container, 'hero')).not.toBeNull();
-        fireEvent.mouseLeave(figure);
-        expect(bar(container, 'hero')).toBeNull();
+        vi.useFakeTimers();
+        try {
+            fireEvent.mouseEnter(figure);
+            expect(bar(container, 'hero')).toBeNull();
+            restHover();
+            expect(bar(container, 'hero')).not.toBeNull();
+            fireEvent.mouseLeave(figure);
+            expect(bar(container, 'hero')).toBeNull();
+        } finally { vi.useRealTimers(); }
     });
 });

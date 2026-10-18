@@ -112,6 +112,7 @@ export const MatToken = React.memo(function MatToken({
     walkFacing = null,
     stack = null,
     isHovered = false,
+    isRested = false,
     selected = false,
     hasHero = false,
     onInspectToken,
@@ -253,24 +254,26 @@ export const MatToken = React.memo(function MatToken({
     React.useEffect(() => () => clearTimeout(landingTimer.current), []);
 
     /**
-     * Hovering a Token also says which flags passed it over, and why. Skips change without an
-     * event (a flag re-checks every second), so they are read when the pointer arrives rather
+     * Resting on a Token also says which flags passed it over, and why. Skips change without an
+     * event (a flag re-checks every second), so they are read when the pointer rests rather
      * than kept in the projection.
      */
     const [skipLines, setSkipLines] = React.useState([]);
     React.useEffect(() => {
-        if (!isHovered) return;
-        setSkipLines(tokenSkipLines(id));
-    }, [isHovered, id]);
+        if (!isRested) return;
+        // The same lines keep the same array, so a rest with nothing skipped costs no second render.
+        const next = tokenSkipLines(id);
+        setSkipLines(prev => (prev.join('|') === next.join('|') ? prev : next));
+    }, [isRested, id]);
 
     // A Token with Passive Production (the Guild Hall) shows what it pays in a game-styled
-    // tooltip with a live next-in, not the native title. Read only while hovered.
-    const showPassive = isHovered && PassiveProduction.hasPassiveProduction(BoardState.getTokenById(id));
+    // tooltip with a live next-in, not the native title. Read only once the pointer rests.
+    const showPassive = isRested && PassiveProduction.hasPassiveProduction(BoardState.getTokenById(id));
 
-    // Hovering a quest Token reads it (`QuestTooltip`), and a tutorial step still to do lights
+    // Resting on a quest Token reads it (`QuestTooltip`), and a tutorial step still to do lights
     // its target (`TutorialAideOverlay`).
-    const showQuestTip = isHovered && !!quest;
-    const aideStep = isHovered && quest?.tutorial && !questDone ? quest.id : null;
+    const showQuestTip = isRested && !!quest;
+    const aideStep = isRested && quest?.tutorial && !questDone ? quest.id : null;
     React.useEffect(() => {
         if (!aideStep) return undefined;
         setTutorialAideTarget(aideStep);
@@ -279,7 +282,7 @@ export const MatToken = React.memo(function MatToken({
 
     const hoverTitle = [
         detail?.disallowed ? 'Heroes may not work this' : null,
-        ...(isHovered ? skipLines : [])
+        ...(isRested ? skipLines : [])
     ].filter(Boolean).join('\n') || undefined;
 
     // The Token stays exactly where it is: its hero walks up and stands beside it
@@ -579,17 +582,17 @@ export const MatToken = React.memo(function MatToken({
                 className="absolute pointer-events-none"
                 style={{ ...boxStyle, visibility: hidden ? 'hidden' : 'visible' }}
             >
-                <TokenNameBadge name={label} isDragging={hidden} isHovered={isHovered} lift={Math.max(small ? SMALL_OVERHANG_U : 0, def?.enemy ? HEALTH_BAR_LIFT_U : 0)} />
+                <TokenNameBadge name={label} isDragging={hidden} shown={isRested} lift={Math.max(small ? SMALL_OVERHANG_U : 0, def?.enemy ? HEALTH_BAR_LIFT_U : 0)} />
 
                 {/**
                  * The work bar, the problem mark, the player's marks and the -1 floater, and
-                 * while hovered the rings and the gear, each in its own spot inside the Token's
+                 * once the pointer rests on it the rings and the gear, each in its own spot inside the Token's
                  * box. A small Token keeps FULL-size rings and they hang off its box.
                  */}
                 {bubblesDrawn && <TokenBubbles
                     instanceId={id}
                     token={isGuildHallToken ? { ...token, usesRemaining: null } : token}
-                    isHovered={isHovered}
+                    isHovered={isRested}
                     isDragging={hidden}
                     boxPx={boxPx}
                     artPx={artPx}

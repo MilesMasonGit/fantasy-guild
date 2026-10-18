@@ -26,6 +26,7 @@ import * as HeroMotion from '../systems/board/HeroMotion.js';
 import { ALERT } from '../systems/board/boardEvents.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 import { drawnPoint } from './fixtures/drawnPoint.js';
+import { restHover } from './fixtures/hoverRest.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -72,7 +73,7 @@ function hero(id, skills) {
 
 beforeAll(() => Flags.init());
 afterAll(() => Flags.teardown());
-afterEach(() => cleanup());
+afterEach(() => { cleanup(); vi.useRealTimers(); });
 
 beforeEach(() => {
     vi.clearAllMocks();
@@ -338,7 +339,8 @@ describe('⭐ which Token the pointer is on (overlapping art)', () => {
         expect(zOf(container, a.id)).toBeGreaterThan(zOf(container, b.id));
     });
 
-    it('⭐ only a Token whose rules involve its neighbours shows a reach ring (owner, 2026-09-21)', () => {
+    it('⭐ only a Token whose rules involve its neighbours shows a reach ring (owner, 2026-09-21), once the pointer rests', () => {
+        vi.useFakeTimers();
         const plain = placeAt('fixture_producer', 500, 500);
         const tool = placeAt('fixture_tool', 900, 500);
         const { container } = mount(h(MatBoard));
@@ -346,9 +348,12 @@ describe('⭐ which Token the pointer is on (overlapping art)', () => {
         unscaled(root);
 
         fireEvent.pointerMove(root, { clientX: plain.x, clientY: plain.y });
+        restHover();
         expect(container.querySelector('[data-near-ring]')).toBeNull();
 
         fireEvent.pointerMove(root, { clientX: tool.x, clientY: tool.y });
+        expect(container.querySelector('[data-near-ring]')).toBeNull();
+        restHover();
         const ring = container.querySelector('[data-near-ring]');
         expect(ring).not.toBeNull();
         expect(Number(ring.getAttribute('cx'))).toBe(tool.x);

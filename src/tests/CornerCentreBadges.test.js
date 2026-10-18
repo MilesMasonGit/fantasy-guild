@@ -31,6 +31,7 @@ import {
     spawnerCountText, gearStateOf, isGearOnlyAlert
 } from '../ui/components/board/centreAlert.js';
 import { matW, matH } from '../config/matGeometry.js';
+import { restHover } from './fixtures/hoverRest.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -230,6 +231,7 @@ const hoverAt = (container, tok) => {
         left: 0, top: 0, width: matW(), height: matH(), right: matW(), bottom: matH(), x: 0, y: 0
     });
     fireEvent.pointerMove(root, { clientX: tok.x, clientY: tok.y });
+    restHover();
 };
 
 describe('on the mat', () => {
@@ -242,6 +244,7 @@ describe('on the mat', () => {
     });
 
     it('an unset station shows the yellow "choose" mark at rest (brief 120, no longer the pulsing gear); the mark and the hovered gear open the picker', () => {
+        vi.useFakeTimers();
         const bench = put('fixture_q2_bench');
         const onOpenRecipes = vi.fn();
         const { container } = mount(h(MatBoard, { onOpenRecipes }));
@@ -252,8 +255,9 @@ describe('on the mat', () => {
         expect(mark.getAttribute('data-problem-mark')).toBe(ALERT.CHOOSE_RECIPE);
         expect(mark.getAttribute('data-problem-severity')).toBe('waiting');
         expect(o.querySelector('[data-alert-kind]')).toBeNull();
-        // No words on the mat: only the (hidden) name label carries text.
-        expect(o.textContent).toBe(o.querySelector('[data-token-name]').textContent);
+        // No words on the mat, not even the name until the pointer rests on it.
+        expect(o.querySelector('[data-token-name]')).toBeNull();
+        expect(o.textContent).toBe('');
 
         fireEvent.click(mark);
         expect(onOpenRecipes).toHaveBeenCalledWith(bench.id);
@@ -274,6 +278,7 @@ describe('on the mat', () => {
     });
 
     it('FB-7: a chosen recipe keeps the gear, still, shown on hover', () => {
+        vi.useFakeTimers();
         const bench = put('fixture_q2_bench');
         StationRecipe.setSelectedRecipe(bench, 'fixture_q2_make');
         const { container } = mount(h(MatBoard));
@@ -283,6 +288,7 @@ describe('on the mat', () => {
     });
 
     it('FB-7: a Foundation gets the gear (on hover) and the "choose what to build" mark; a station with an empty pool gets neither', () => {
+        vi.useFakeTimers();
         const f = put('fixture_q2_foundation');
         const empty = put('fixture_q2_empty_station', FAR);
         const { container } = mount(h(MatBoard));
@@ -295,6 +301,7 @@ describe('on the mat', () => {
     });
 
     it('FB-5 / B1.3: a spawner shows its count against its cap as a ring in its row, not in a corner', () => {
+        vi.useFakeTimers();
         const forest = put('fixture_q2_forest');
         put('fixture_q2_sapling', FAR);
         put('fixture_q2_sapling', { x: 1400, y: 300 });

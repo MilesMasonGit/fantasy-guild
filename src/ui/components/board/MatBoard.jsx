@@ -5,6 +5,7 @@ import { createStackWriter } from './stackWriter.js';
 import { pointerToMat } from './matPoint.js';
 import { installPressRouting } from './pressRouting.js';
 import { flagClothOver } from './flagCloth.js';
+import { useHoverRest } from './hoverRest.js';
 import { MatToken, MatTokenGrab } from './MatToken.jsx';
 import { MatHero, heroBoxAt } from './MatHero.jsx';
 import { MatRings } from './MatRings.jsx';
@@ -79,6 +80,9 @@ export const MatBoard = React.memo(function MatBoard({
 
     const [hoveredId, setHoveredId] = useState(null);
     const [hoverHeroId, setHoverHeroId] = useState(null);
+    // The outline follows the hover at once; the name, the rings and the HP bar wait for the
+    // pointer to rest (`useHoverRest`), so a Token's own rest redraws that Token alone.
+    const rest = useHoverRest(hoveredId, hoverHeroId);
     /** The pointer is on a Token's art circle, so every flag lets it through. */
     const [flagsYield, setFlagsYield] = useState(false);
     const { isDragging, activePayload } = useActiveDrag();
@@ -339,12 +343,12 @@ export const MatBoard = React.memo(function MatBoard({
 
     // Only a Token that acts on or depends on its neighbours shows a ring (`showsNearRing`).
     const hoveredCentre = useMemo(() => {
-        const t = hoveredId ? tokens.find(k => k.id === hoveredId) : null;
+        const t = rest.tokenId ? tokens.find(k => k.id === rest.tokenId) : null;
         if (!t || !showsNearRing(t.typeId)) return null;
         // A walker's own point is not in `tokens`: read it live.
         const at = t.x == null ? BoardState.getTokenById(t.id) : t;
         return at ? { x: at.x, y: at.y } : null;
-    }, [hoveredId, tokens]);
+    }, [rest.tokenId, tokens]);
 
     const workedBy = useMemo(() => {
         const out = new Map();
@@ -421,6 +425,7 @@ export const MatBoard = React.memo(function MatBoard({
                     walkFacing={t.walkFacing}
                     stack={stack}
                     isHovered={hoveredId === t.id}
+                    isRested={rest.tokenId === t.id}
                     selected={inspectedTokenId != null && inspectedTokenId === t.id}
                     hasHero={workedBy.has(t.id)}
                     onInspectToken={onInspectToken}
@@ -465,7 +470,7 @@ export const MatBoard = React.memo(function MatBoard({
                         limp={h.limp}
                         fighting={h.combat}
                         hurt={h.hurt}
-                        hovered={hoverHeroId === h.heroId}
+                        rested={rest.heroId === h.heroId}
                     />
                 );
             })}

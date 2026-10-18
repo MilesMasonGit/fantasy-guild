@@ -122,7 +122,7 @@ describe('a quest Token on the mat (B6.2)', () => {
         expect(o.getAttribute('data-quest-done')).toBe('false');
         expect(o.querySelector('[data-ring="quest"]')).toBeNull();
 
-        rerender(h(EngineContext.Provider, { value: { GameState, EventBus } }, h(DndContext, null, tokenEl(q, { isHovered: true }))));
+        rerender(h(EngineContext.Provider, { value: { GameState, EventBus } }, h(DndContext, null, tokenEl(q, { isHovered: true, isRested: true }))));
         const ring = o.querySelector('[data-bubble="quest"] [data-ring="quest"]');
         expect(ring).not.toBeNull();
         expect(ring.getAttribute('data-ring-text')).toBe('1/3');
@@ -137,7 +137,7 @@ describe('a quest Token on the mat (B6.2)', () => {
         await act(async () => { QuestTokens.reportProgress('enemy_hunted', 1, { enemyId: 'token_goblin' }); });
         await act(async () => { await new Promise(r => setTimeout(r, 120)); });
         expect(overlay(container, q).querySelector('[data-ring="quest"]')).toBeNull();
-        rerender(tree(tokenEl(q, { isHovered: true })));
+        rerender(tree(tokenEl(q, { isHovered: true, isRested: true })));
         const ring = overlay(container, q).querySelector('[data-ring="quest"]');
         expect(ring.getAttribute('data-ring-text')).toBe('2/3');
     });
@@ -164,7 +164,7 @@ describe('a quest Token on the mat (B6.2)', () => {
 describe('hover to read (B6.2)', () => {
     it('a bounty: title, what is needed, the reward, no claim line until done', () => {
         const q = spawn(hunt());
-        mount(tokenEl(q, { isHovered: true }));
+        mount(tokenEl(q, { isHovered: true, isRested: true }));
         const tip = tooltip();
         expect(tip).not.toBeNull();
         expect(tip.getAttribute('data-quest-tooltip')).toBe(q.id);
@@ -177,14 +177,14 @@ describe('hover to read (B6.2)', () => {
 
     it('a done quest says "Click to claim"', () => {
         const q = spawn(hunt({ currentCount: 3 }));
-        mount(tokenEl(q, { isHovered: true }));
+        mount(tokenEl(q, { isHovered: true, isRested: true }));
         expect(tooltip().querySelector('[data-quest-claim]').textContent).toBe('Click to claim');
     });
 
     it('a tutorial step says "Tutorial" and shows its instruction', () => {
         const tut = QuestTokens.tutorialTokens()[0];
         expect(tut).toBeTruthy();
-        mount(tokenEl(tut, { isHovered: true }));
+        mount(tokenEl(tut, { isHovered: true, isRested: true }));
         const tip = tooltip();
         expect(tip.querySelector('[data-quest-tutorial]').textContent).toBe('Tutorial');
         expect(tip.querySelector('[data-quest-instruction]').textContent).toBe(tut.quest.instruction);
@@ -197,7 +197,7 @@ describe('hover to read (B6.2)', () => {
 
     it('a bounty has no cartographer\'s line', () => {
         const q = spawn(hunt());
-        mount(tokenEl(q, { isHovered: true }));
+        mount(tokenEl(q, { isHovered: true, isRested: true }));
         expect(tooltip().querySelector('[data-quest-says]')).toBeNull();
     });
 
@@ -298,8 +298,8 @@ describe('the tutorial aide reads quest Tokens (B6.2)', () => {
         const events = [];
         const a = EventBus.subscribe(TUTORIAL_AIDE_EVENTS.HOVER, (e) => events.push(['hover', e.questId]));
         const b = EventBus.subscribe(TUTORIAL_AIDE_EVENTS.UNHOVER, () => events.push(['unhover']));
-        const { rerender } = mount(tokenEl(tut, { isHovered: true }));
-        rerender(tree(tokenEl(tut, { isHovered: false })));
+        const { rerender } = mount(tokenEl(tut, { isHovered: true, isRested: true }));
+        rerender(tree(tokenEl(tut, { isHovered: false, isRested: false })));
         a(); b();
         expect(events).toEqual([['hover', tut.quest.id], ['unhover']]);
     });

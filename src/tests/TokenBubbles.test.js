@@ -28,6 +28,7 @@ import { PROBLEM_SPRITE, SEVERITY } from '../ui/components/board/problemMark.js'
 import * as TimedChanges from '../systems/board/TimedChanges.js';
 import { STEP_MS } from '../ui/components/board/frameClock.js';
 import { boardScaleAt } from '../ui/components/base/TokenSprite.jsx';
+import { restHover } from './fixtures/hoverRest.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -642,9 +643,11 @@ describe('on the mat (MatToken)', () => {
             left: 0, top: 0, width: matW(), height: matH(), right: matW(), bottom: matH(), x: 0, y: 0
         });
         fireEvent.pointerMove(root, { clientX: tok.x, clientY: tok.y });
+        restHover();
     }
 
     it('⭐ a spawner at 3 of 5: nothing at rest; hovered, its 3/5 sits at the centre of the box', () => {
+        vi.useFakeTimers();
         const forest = put('fixture_b13_forest');
         put('fixture_b13_sapling', { x: 1200, y: 520 });
         put('fixture_b13_sapling', { x: 1400, y: 300 });
@@ -664,6 +667,7 @@ describe('on the mat (MatToken)', () => {
     });
 
     it('⭐ a Sapling-like grower shows its growth timer top-left only when hovered', () => {
+        vi.useFakeTimers();
         const g = put('fixture_bub_grower');
         const { container } = mount(h(MatBoard));
         const o = container.querySelector(`[data-token-overlay="${g.id}"]`);

@@ -21,6 +21,7 @@ import { TURN_COUNTDOWN_REFRESH_MS, turnFraction } from '../ui/components/board/
 import { turnCountdownText } from '../ui/components/board/centreAlert.js';
 import { matW, matH } from '../config/matGeometry.js';
 import * as Flags from '../systems/board/Flags.js';
+import { restHover } from './fixtures/hoverRest.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -129,6 +130,8 @@ describe('on the mat (FB-14)', () => {
         // At rest, with a minute to go: no bubble. Hovered: a full sky ring.
         expect(countdownOf(container, coast.id)).toBeNull();
         act(hover);
+        expect(countdownOf(container, coast.id)).toBeNull();
+        restHover();
         expect(textOf(countdownOf(container, coast.id))).toBe('1:00');
         expect(fractionOf(countdownOf(container, coast.id))).toBe(1);
 

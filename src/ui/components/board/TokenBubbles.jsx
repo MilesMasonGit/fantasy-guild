@@ -46,6 +46,8 @@ const ROW_GAP_U = 4;
  * - **Enemy health bar** (above the box): in a fight, and while an enemy is hovered.
  * - **Hovered only**: the charges, quest and spawner rings, the timer ring (growing, turning,
  * resting) and the recipe gear; the gear and the spawner ring in a row of their own.
+ * `isHovered` is the mat's rest (`useHoverRest`), not the bare hover: the pointer has stayed on
+ * the Token for a moment, so a sweep across the mat mounts none of these.
  * - While the Token is dragged: nothing.
  * Pressing anything here that takes the pointer grabs the Token (`dragProps`).
  * The subscriptions are keyed on the Token and nothing else: hovering, the alert, the hero and

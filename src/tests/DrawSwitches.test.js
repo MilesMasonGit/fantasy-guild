@@ -27,6 +27,7 @@ import { AnimatedEnemySprite } from '../ui/components/board/AnimatedEnemySprite.
 import { AnimatedHeroSprite } from '../ui/components/board/AnimatedHeroSprite.jsx';
 import { NotificationSidebars } from '../ui/components/board/PopOutSidebars.jsx';
 import { shadowLayer, outlineLayer, sheetOutlineLayer, setSpriteFxManifest } from '../ui/utils/spriteFx.js';
+import { restHover } from './fixtures/hoverRest.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -125,7 +126,7 @@ describe('mat overlays', () => {
         BoardState.addToken(BoardState.createTokenInstance('token_guild_hall'), 880, 560);
         QuestManager.init();
         const q = QuestTokens.spawnQuest(hunt);
-        return h(MatToken, { id: q.id, typeId: q.typeId, x: q.x, y: q.y, size: 1, z: 10, isHovered: true });
+        return h(MatToken, { id: q.id, typeId: q.typeId, x: q.x, y: q.y, size: 1, z: 10, isHovered: true, isRested: true });
     }
 
     it('bubbles and tooltips', () => {
@@ -144,6 +145,7 @@ describe('mat overlays', () => {
     });
 
     it('rings: the hover reach ring on the mat draws, and not when off', () => {
+        vi.useFakeTimers();
         const hover = () => {
             GameState.initNew();
             InventoryManager.init();
@@ -155,6 +157,7 @@ describe('mat overlays', () => {
                 left: 0, top: 0, width: matW(), height: matH(), right: matW(), bottom: matH(), x: 0, y: 0
             });
             fireEvent.pointerMove(root, { clientX: tool.x, clientY: tool.y });
+            restHover();
             return container.querySelector('[data-near-ring]');
         };
         expect(hover()).not.toBeNull();
