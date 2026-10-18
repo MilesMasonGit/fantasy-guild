@@ -404,11 +404,11 @@ describe('the rules grid (FP-71, FP-79, FPP-17)', () => {
     const grid = () => mount(h(WorkRulesDrawer, { open: true, litHeroId: null, onClose: () => {} }));
     const cell = (container, heroId, ruleId) => container.querySelector(`[data-rules-cell="${heroId}:${ruleId}"]`);
 
-    it('a rule cell per held work skill, and a Fight rule only for a hero who can fight', () => {
+    it('a rule cell per held work skill, and a Fight rule for every hero, combat skill or not', () => {
         const { container } = grid();
         expect(cell(container, 'h1', 'forestry').getAttribute('data-cell')).toBe('rule');
         expect(cell(container, 'h1', 'mining').getAttribute('data-cell')).toBe('rule');
-        expect(cell(container, 'h1', FlagRules.FIGHT).getAttribute('data-cell')).toBe('missing');
+        expect(cell(container, 'h1', FlagRules.FIGHT).getAttribute('data-cell')).toBe('rule');
         expect(cell(container, 'fighter', FlagRules.FIGHT).getAttribute('data-cell')).toBe('rule');
         expect(cell(container, 'fighter', 'melee').getAttribute('data-cell')).toBe('level');   // combat skills are one Fight rule
     });

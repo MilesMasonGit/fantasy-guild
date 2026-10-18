@@ -24,8 +24,8 @@ import * as Hand from './Hand.js';
  * the radius (the earlier-planted flag on a tie). One fight per enemy and one enemy per hero, so
  * enemies never gang up.
  *
- * Not attacked: heroes with no flag, wounded heroes, heroes who cannot fight (a Recruit holds no
- * combat skill, so they would stand frozen) and heroes already on an enemy. An enemy does not
+ * Not attacked: heroes with no flag, wounded heroes, heroes who cannot fight and heroes already
+ * on an enemy. Recruits are attacked like anyone: everyone fights, as a level 1 fighter at least. An enemy does not
  * attack while a hero holds it, while it is in the player's hand, or while the player has marked it
  * as not for heroes to work: a forced fight there would be let go on the next pass.
  *

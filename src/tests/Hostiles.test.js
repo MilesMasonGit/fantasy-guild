@@ -74,7 +74,7 @@ function fighter(id) {
     return hero;
 }
 
-/** A Recruit who logs: no combat skill. */
+/** A Recruit who logs: no combat skill, so they fight as a level 1 fighter. */
 function recruit(id) {
     return { id, name: id, status: 'idle', level: 50, skills: { forestry: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 } };
 }
@@ -237,6 +237,18 @@ describe('⭐ a hostile enemy attacks a hero inside the flag radius of its spawn
     });
 });
 
+describe('everyone fights: a Recruit gatherer is attacked and defends themselves', () => {
+    it('a Recruit logging inside the radius is attacked and fights back', () => {
+        GameState.state.heroes = [recruit('r1')];
+        const { enemy } = campWith();
+        logging('r1', NEAR);
+        expect(Hostiles.scan()).toEqual([{ enemyId: enemy.id, heroId: 'r1' }]);
+        expect(Flags.ambusherOf('r1')).toBe(enemy.id);
+        BoardRunner.tick(1);
+        expect(BoardCombat.fightOfHero('r1')?.instanceId).toBe(enemy.id);
+    });
+});
+
 describe('with walking (no instant arrival)', () => {
     afterEach(() => BoardState.setInstantArrival(true));
 
@@ -288,17 +300,6 @@ describe('who is never attacked', () => {
         Flags.furl('h1');
         expect(Hostiles.scan()).toEqual([]);
         expect(BoardState.claimOfHero('h1')).toBeNull();
-    });
-
-    it('a hero who cannot fight (a Recruit would stand frozen: no fight can start)', () => {
-        GameState.state.heroes = [recruit('r1')];
-        campWith();
-        const near = placeAt('fixture_producer', NEAR.x, NEAR.y);
-        Flags.plant('r1', NEAR);
-        expect(BoardState.workTokenOf('r1')).toBe(near.id);
-        run(1000);
-        expect(Flags.ambusherOf('r1')).toBeNull();
-        expect(BoardState.workTokenOf('r1')).toBe(near.id);
     });
 
     it('a disallowed hostile enemy attacks nobody (FP-35)', () => {

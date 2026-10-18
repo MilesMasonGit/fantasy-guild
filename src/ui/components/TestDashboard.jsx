@@ -102,25 +102,32 @@ export const TestDashboard = React.memo(() => {
     };
 
     /**
+     * Raises the roster cap just enough for `count` more heroes. A dev convenience, not a
+     * purchase, so it writes the rank directly rather than paying items through
+     * `GuildUpgradeManager.purchase`.
+     */
+    const ensureRosterRoom = (count) => {
+        const ranks = engine.GuildUpgradeManager.getRanks();
+        const neededRank = engine.GameState.state.heroes.length + count;
+        if ((ranks.roster_size || 0) < neededRank) {
+            ranks.roster_size = neededRank;
+            engine.GuildUpgradeManager.recompute();
+        }
+    };
+
+    /**
      * "Spawn Party" — a Fighter, Wizard, Ranger and Rogue, each already at
      * level 50 in every skill their job holds. Unlike a Recruit (no combat
      * skill at all — see `grantCombatSkill` below), each of these jobs
      * already includes its own combat skill (melee, magic, ranged, ranged),
      * so no separate "grant combat" step is needed to make them fight.
      *
-     * Bumps the roster cap first if the incoming four would not fit — a dev
-     * convenience, not a purchase, so it writes the rank directly rather
-     * than paying items through `GuildUpgradeManager.purchase`.
+     * Bumps the roster cap first if the incoming four would not fit.
      */
     const spawnParty = () => {
         const jobIds = ['fighter', 'wizard', 'ranger', 'rogue'];
 
-        const ranks = engine.GuildUpgradeManager.getRanks();
-        const neededRank = engine.GameState.state.heroes.length + jobIds.length;
-        if ((ranks.roster_size || 0) < neededRank) {
-            ranks.roster_size = neededRank;
-            engine.GuildUpgradeManager.recompute();
-        }
+        ensureRosterRoom(jobIds.length);
 
         let added = 0;
         jobIds.forEach(jobId => {
@@ -142,8 +149,8 @@ export const TestDashboard = React.memo(() => {
     };
 
     /**
-     * ⚠️ Dev scaffolding: grants a combat skill directly. A hero who holds no combat skill
-     * cannot fight, and the only other way to gain one is a promotion.
+     * ⚠️ Dev scaffolding: grants a combat skill directly; the only other way to gain one is a
+     * promotion.
      */
     const grantCombatSkill = (skillId) => {
         const heroes = engine.HeroManager.getAllHeroes().filter(h => !h.isVillager);
@@ -198,6 +205,7 @@ export const TestDashboard = React.memo(() => {
         {
             label: "Hire Random Hero",
             onClick: () => {
+                ensureRosterRoom(1);
                 const hero = generateHero();
                 engine.HeroManager.addHero(hero);
             }

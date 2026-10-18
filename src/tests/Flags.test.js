@@ -10,6 +10,7 @@ import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as Charges from '../systems/board/Charges.js';
 import * as Flags from '../systems/board/Flags.js';
+import * as FlagRules from '../systems/board/FlagRules.js';
 import * as NotificationSystem from '../systems/core/NotificationSystem.js';
 import { migrateState } from '../systems/core/SaveMigration.js';
 import { EventBus } from '../systems/core/EventBus.js';
@@ -159,12 +160,14 @@ describe('skill (FP-47, FP-60, FP-71)', () => {
 });
 
 describe('what a flag never chooses by itself', () => {
-    it('passes over passive Tokens, enemies and Promotion Tokens in range', () => {
+    it('passes over passive Tokens, Promotion Tokens, and enemies while Fight is off', () => {
         put(15, 'fixture_passive');
         put(13, 'fixture_enemy');
         put(20, 'fixture_promotion');
         put(16, 'fixture_producer');
 
+        // Everyone fights, so with Fight on (the default) the enemy would be chosen.
+        Flags.setRule('h1', FlagRules.FIGHT, { allowed: false });
         plant('h1', 14);
 
         expect(workTileOf('h1')).toBe(16);
