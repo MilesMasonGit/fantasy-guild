@@ -134,9 +134,10 @@ control which Tokens a player gets: early maps give many of the current tier's
 trees and one or two of the next tier's. P2 verdict: all three (kinds where they
 belong: ore on rock, berries by water, trees on grass; the next tier further
 out; the camp tucked into a grove at the edge, the treasure hidden, on a lake's
-island when there is one; `place2.py`). P3 (layouts done by steering groves:
-core and rim, patchwork; each biome's water in its own ground; `place3.py`)
-waiting for the owner.
+island when there is one; `place2.py`). P3 verdict (owner, 2026-10-18): **today's** (groves go
+anywhere and each biome's ground follows them): the most variety and the most
+natural. The core-and-rim and patchwork layouts are dropped; G7 becomes the
+placement build below.
 
 ## G5 — Water in every Region (engineer; eye-check)
 
@@ -199,10 +200,31 @@ The variety of blend styles from rounds W2–W4 (mixed band, islands, fingers,
 transition ground, river border, gradient C), picked by seed or by biome pair,
 drawn where two biomes' ground meet; a beach wherever land meets the sea.
 
-## G7 — Layouts (after G6)
+## G7 — Placement (engineer; eye-check; after G5, beside or after G6)
 
-Core and rim, and patchwork (W5 B and C), picked per Region: steer where each
-biome's nodes are placed so its ground forms a core with a rim or a patchwork.
+The settled placement rounds (page above; prototypes `place1.py`, `place2.py`)
+in `src/systems/atlas/Layout.js`. Biome areas stay as today: the ground follows
+the groves (P3).
+
+1. **Natural clumps** (P1 A): groves of uneven sizes (about 3 to 12),
+   stretched in a seeded direction, tight in the middle and looser at the rim,
+   a few stragglers (about 1 in 8) on their own between groves. One kind per
+   grove.
+2. **Kinds where they belong** (P2 A): ore and stone on rock (or a rocky
+   biome's ground), berry bushes near water, trees on grass. A small table by
+   kind in code to start; say if a CMS field would be cleaner.
+3. **Rarer further out** (P2 B): a kind the budget gives only one or two of
+   (a map's next-tier tree) is placed towards the mat's edge, so it feels
+   found. Count-based, no new tier field.
+4. **Camps and treasures with a reason** (P2 C): the camp in the outer band,
+   tucked into a grove that wraps its inner side; the treasure on a lake's
+   island when there is one dry enough, else the most hidden spot far from the
+   Hall (screened by groves).
+
+All of today's rules hold (spacing, the Hall's clearing, "Stands on", the
+water, the camp band, the token cap, determinism). Done when: side-by-sides
+with `place_1_A.png` and `place_2_*.png`; tests for each rule; engine work
+check same; layout time reported; eye-check.
 
 ## G2 — Edge pieces (superseded 2026-10-17; kept for reference)
 
