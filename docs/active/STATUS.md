@@ -18,6 +18,18 @@ runs one, so the PC holds two.*
 | Brief 100 K3: three text sizes and the shared tooltip (T-161, T-038, T-030) | builder (tooltip spans several files) | `crunch/style-kit` (`k1`) | eye-check (7060a37f; director's gate on the whole kit: 5126 tests, cycles, build). Sizes 18/16/14, display 32 proposed; tooltip on the Bank, Shop and hero panel | Sat | Sat |
 | Recruits get a weak basic attack so the tutorial's fight can be won (T-167); owner authors a safe enemy in the Starter Camp afterwards | builder | `fix/t167-recruit-attack` | eye-check (6790962d, with the QA Hire button making roster room; director's gate: 5109 tests, cycles, build; director saw a fresh Recruit beat a Goblin in ~10 s on 5197: Bones on the mat, skills unchanged, the hostile Goblin hit first). Bench-queued (work check; builder expects same) | Sat | |
 
+## Features director, batch 4: the mat, hover and the Token card (owner 2026-10-18 chose brief 120 next)
+
+*Built on `crunch/map-tools`; merges after it. Two eye-checks: after C2 (mat
+and hover) and after C3 (card). C1 needs a `bench:draw --compare` before and
+after (director, quiet window); the engineer reports DOM counts meanwhile.*
+
+| Phase | Tier | Branch (worktree) | State | Planned | Done |
+|---|---|---|---|---|---|
+| Brief 120 C1: the mat layer (progress bar, one problem mark, rings off at rest, health bars when it matters, block speech retired) | engineer | `crunch/info-layers` (`il`) | building | Sun | |
+| Brief 120 C2: hover (outline at once, name and charges after ~150 ms, HP for heroes and enemies) | builder | `crunch/info-layers` | queued, after C1 | | |
+| Brief 120 C3: the Token card (full-art card, blocks, enemy card, CMS art override field) | builder | `crunch/info-layers` | queued, after C2 | | |
+
 ## Features director, batch 3: map tools (owner 2026-10-17: keep going with the larger implementations; fine refinements later)
 
 *Owner's look so far (2026-10-17, late): the style sheet looks good; the shine
