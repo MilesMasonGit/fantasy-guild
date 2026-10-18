@@ -275,12 +275,12 @@ describe('Shop layout (U5)', () => {
 
     it('has arrow buttons at the top and bottom, and no visible scrollbar', () => {
         const view = mountDrawer();
-        const up = view.container.querySelector('[data-shop-scroll="up"]');
-        const down = view.container.querySelector('[data-shop-scroll="down"]');
+        const up = view.container.querySelector('[data-scroll-arrow="up"]');
+        const down = view.container.querySelector('[data-scroll-arrow="down"]');
         expect(up).toBeTruthy();
         expect(down).toBeTruthy();
         expect(up.compareDocumentPosition(down) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-        const list = view.container.querySelector('[data-shop-list]');
+        const list = view.container.querySelector('[data-scroll-list]');
         expect(list.className).toContain('[scrollbar-width:none]');
         expect(list.className).not.toContain('gi-scrollbar');
         let scrolled = null;

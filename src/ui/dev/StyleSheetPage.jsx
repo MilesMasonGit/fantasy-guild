@@ -13,7 +13,7 @@ import { TokenSprite, TOKEN_SURFACE } from '../components/base/TokenSprite.jsx';
 import { StationGearBadge } from '../components/board/TokenBadges.jsx';
 import { TopBarTip } from '../components/board/TopBarTip.jsx';
 import { BubbleTip } from '../components/board/Bubble.jsx';
-import { ShopList } from '../components/drawer/ShopDrawer.jsx';
+import { ArrowScrollList } from '../components/base/ArrowScrollList.jsx';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 
@@ -262,11 +262,11 @@ const AlertOutlineDemo = () => (
 
 const ArrowBarDemo = () => (
     <div className="flex flex-col w-64 h-48 bg-gi-base/60">
-        <ShopList>
-            {Array.from({ length: 8 }, (_, i) => (
+        <ArrowScrollList step={56} className="flex-1 min-h-0 p-2 flex flex-col gap-1">
+            {Array.from({ length: 12 }, (_, i) => (
                 <EntityRibbon key={i} kind="item" id={SAMPLE_ITEMS[i % SAMPLE_ITEMS.length]} quantity={i + 1} size="sm" />
             ))}
-        </ShopList>
+        </ArrowScrollList>
     </div>
 );
 
@@ -409,9 +409,8 @@ export const KIT_SECTIONS = [
         Demo: KitTabs
     },
     {
-        id: 'arrow-bars', title: 'Arrow bars', status: 'unapproved', slot: 'K2',
-        source: 'the Shop’s copy (one of four); K2 replaces it with one shared list',
-        rule: 'No scrollbars: an arrow bar above and below that dims at the end but keeps its space.',
+        id: 'arrow-bars', title: 'Arrow bars', status: 'shared', source: 'ArrowScrollList',
+        rule: 'No scrollbars: an arrow bar above and below that dims at the end but keeps its space. A click scrolls about two rows, holding repeats, the wheel works.',
         Demo: ArrowBarDemo
     },
     {

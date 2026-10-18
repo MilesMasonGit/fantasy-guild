@@ -1,7 +1,7 @@
 import { useRef, useLayoutEffect, useState, useEffect, useCallback } from 'react';
 import { cn } from '../../utils/cn.js';
 import TokenInspection from '../drawer/TokenInspection.jsx';
-import { ChevronUp, ChevronDown } from 'lucide-react';
+import { ArrowScrollList } from '../base/ArrowScrollList.jsx';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { useTokenEvent } from './tokenEvents.js';
 
@@ -14,6 +14,9 @@ import { useTokenEvent } from './tokenEvents.js';
  * away, and once more after the CSS move has finished, because a Token slides to its new point
  * over 220ms and measuring mid-slide would anchor to where it was passing through.
  */
+
+/** How far an arrow press scrolls the sheet. */
+const POPUP_SCROLL_STEP_PX = 140;
 
 /** Long enough for `MatToken`'s left/top transition to have settled. */
 const MOVE_SETTLE_MS = 280;
@@ -28,19 +31,9 @@ const TAIL_CLASS = {
 
 export const TokenInspectPopup = ({ typeId, instanceId = null, anchorRect, onClose }) => {
     const popupRef = useRef(null);
-    const scrollRef = useRef(null);
     const [coords, setCoords] = useState({ top: 0, left: 0, dir: 'top', tailOffset: 0 });
     const [isVisible, setIsVisible] = useState(false);
-    const [canScrollUp, setCanScrollUp] = useState(false);
-    const [canScrollDown, setCanScrollDown] = useState(false);
     const [targetRect, setTargetRect] = useState(anchorRect || null);
-
-    const checkScroll = useCallback(() => {
-        const el = scrollRef.current;
-        if (!el) return;
-        setCanScrollUp(el.scrollTop > 6);
-        setCanScrollDown(el.scrollTop + el.clientHeight < el.scrollHeight - 6);
-    }, []);
 
     /** Where the Token is on screen right now, falling back to where it was. */
     const measure = useCallback(() => {
@@ -131,18 +124,6 @@ export const TokenInspectPopup = ({ typeId, instanceId = null, anchorRect, onClo
     }, [targetRect, typeId]);
 
     useEffect(() => {
-        checkScroll();
-        const el = scrollRef.current;
-        if (!el) return;
-        el.addEventListener('scroll', checkScroll, { passive: true });
-        window.addEventListener('resize', checkScroll);
-        return () => {
-            el.removeEventListener('scroll', checkScroll);
-            window.removeEventListener('resize', checkScroll);
-        };
-    }, [checkScroll, typeId]);
-
-    useEffect(() => {
         const handleGlobalClick = (e) => {
             if (popupRef.current && !popupRef.current.contains(e.target)) {
                 // Clicking another Token just moves the inspection to it.
@@ -159,14 +140,6 @@ export const TokenInspectPopup = ({ typeId, instanceId = null, anchorRect, onClo
             window.removeEventListener('click', handleGlobalClick);
         };
     }, [onClose]);
-
-    const scrollUp = () => {
-        scrollRef.current?.scrollBy({ top: -140, behavior: 'smooth' });
-    };
-
-    const scrollDown = () => {
-        scrollRef.current?.scrollBy({ top: 140, behavior: 'smooth' });
-    };
 
     const originClass = {
         top: 'origin-bottom',
@@ -190,32 +163,9 @@ export const TokenInspectPopup = ({ typeId, instanceId = null, anchorRect, onClo
             }}
         >
             <div className="w-full flex-1 flex flex-col overflow-hidden rounded-md">
-                {canScrollUp && (
-                    <button
-                        onClick={scrollUp}
-                        className="w-full py-1 bg-black/60 hover:bg-black/80 border-b border-white/10 hover:border-gi-gold/40 flex items-center justify-center text-gi-gold transition-colors shrink-0 shadow active:scale-[0.99] cursor-pointer"
-                        title="Scroll up"
-                    >
-                        <ChevronUp size={14} />
-                    </button>
-                )}
-
-                <div
-                    ref={scrollRef}
-                    className="max-h-[75vh] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                >
+                <ArrowScrollList step={POPUP_SCROLL_STEP_PX} compact className="max-h-[75vh]">
                     <TokenInspection typeId={typeId} instanceId={instanceId} hideSprite={true} showSell={false} />
-                </div>
-
-                {canScrollDown && (
-                    <button
-                        onClick={scrollDown}
-                        className="w-full py-1 bg-black/60 hover:bg-black/80 border-t border-white/10 hover:border-gi-gold/40 flex items-center justify-center text-gi-gold transition-colors shrink-0 shadow active:scale-[0.99] cursor-pointer"
-                        title="Scroll down"
-                    >
-                        <ChevronDown size={14} />
-                    </button>
-                )}
+                </ArrowScrollList>
             </div>
 
             {/* The tail is the speech bubbles' own: a small turned square on the edge facing

@@ -127,7 +127,7 @@ describe('⭐ the drawers', () => {
         expect(renders.of('ShopDrawer')).toBeGreaterThan(0);
         expect(renders.of('ShopContents')).toBe(0);
         expect(renders.of('ShopRowBody')).toBe(0);
-        expect(renders.of('ShopList')).toBe(0);
+        expect(renders.of('ArrowScrollList')).toBe(0);
         expect(renders.of('EntityRibbon')).toBe(0);
     });
 

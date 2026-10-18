@@ -1,10 +1,10 @@
-import { memo, startTransition, useEffect, useRef, useState, useCallback } from 'react';
-import { ChevronUp, ChevronDown } from 'lucide-react';
+import { memo, startTransition, useEffect, useState } from 'react';
 import { cn } from '../../utils/cn.js';
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { TokenSprite, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
 import { EntityRibbon } from '../base/EntityRibbon.jsx';
+import { ArrowScrollList } from '../base/ArrowScrollList.jsx';
 import * as Shop from '../../../systems/board/Shop.js';
 import { onMatTuningChanged } from '../../../config/matTuning.js';
 import { useEntityDrag, useActiveDrag, useDragSurface } from '../../dnd/DndKit.jsx';
@@ -177,7 +177,7 @@ const ShopContents = memo(function ShopContents({ isOpen, onClose }) {
                 </div>
             </div>
 
-            <ShopList>
+            <ArrowScrollList step={SHOP_SCROLL_STEP_PX} className="flex-1 min-h-0 p-3 flex flex-col gap-3">
                 <p className="text-[11px] text-gi-muted">Drag a Token onto the mat to buy it.</p>
                 {shop.length === 0 && (
                     <p className="text-xs text-gi-muted">Nothing is for sale yet.</p>
@@ -188,7 +188,7 @@ const ShopContents = memo(function ShopContents({ isOpen, onClose }) {
                         {group.items.map(item => <ShopRow key={item.group ? `group:${item.group}` : item.typeId} item={item} />)}
                     </section>
                 ))}
-            </ShopList>
+            </ArrowScrollList>
         </>
     );
 });
@@ -198,55 +198,6 @@ export const SHOP_ART_PX = 128;
 export const SHOP_ROW_PX = SHOP_ART_PX + 18;
 /** How far an arrow press scrolls the list: two rows and their gaps. */
 const SHOP_SCROLL_STEP_PX = (SHOP_ROW_PX + 6) * 2;
-
-const arrowClass = 'shrink-0 h-7 flex items-center justify-center text-gi-muted hover:text-gi-gold bg-gi-base/60 disabled:opacity-30 disabled:cursor-default cursor-pointer';
-
-/**
- * The scrolling list: an arrow bar above and below instead of a scrollbar (the wheel still
- * scrolls). An arrow dims when that end is reached.
- */
-export const ShopList = ({ children }) => {
-    const ref = useRef(null);
-    const [ends, setEnds] = useState({ top: true, bottom: true });
-    const measure = useCallback(() => {
-        const el = ref.current;
-        if (!el) return;
-        const top = el.scrollTop <= 0;
-        const bottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
-        setEnds(prev => (prev.top === top && prev.bottom === bottom ? prev : { top, bottom }));
-    }, []);
-    useEffect(() => {
-        window.addEventListener('resize', measure);
-        return () => window.removeEventListener('resize', measure);
-    }, [measure]);
-    // Content or drawer size may have changed since the last paint.
-    useEffect(measure);
-    const scrollBy = (dy) => ref.current?.scrollBy({ top: dy, behavior: 'smooth' });
-    return (
-        <>
-            <button
-                type="button" data-shop-scroll="up" title="Scroll up" aria-label="Scroll up"
-                disabled={ends.top} onClick={() => scrollBy(-SHOP_SCROLL_STEP_PX)} className={arrowClass}
-            >
-                <ChevronUp size={20} />
-            </button>
-            <div
-                ref={ref}
-                data-shop-list
-                onScroll={measure}
-                className="flex-1 min-h-0 overflow-y-auto p-3 flex flex-col gap-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-            >
-                {children}
-            </div>
-            <button
-                type="button" data-shop-scroll="down" title="Scroll down" aria-label="Scroll down"
-                disabled={ends.bottom} onClick={() => scrollBy(SHOP_SCROLL_STEP_PX)} className={arrowClass}
-            >
-                <ChevronDown size={20} />
-            </button>
-        </>
-    );
-};
 
 /**
  * One Token for sale, a fixed-height row: the name (a dropdown when the entry is a group), the
