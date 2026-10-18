@@ -128,6 +128,43 @@ export function shoreDistance(grid, water) {
 }
 
 /**
+ * The dry land the water surrounds: each group of dry cells (a diagonal joining them) that touches
+ * neither the grid's edge nor the cell `home` (the Hall's), its cells in index order.
+ *
+ * @returns {number[][]}
+ */
+export function islandsOf(grid, water, home) {
+    const { cols, rows } = grid;
+    const seen = new Uint8Array(cols * rows);
+    const out = [];
+    for (let start = 0; start < cols * rows; start++) {
+        if (water[start] || seen[start]) continue;
+        const group = [start];
+        seen[start] = 1;
+        let open = false;
+        for (let head = 0; head < group.length; head++) {
+            const i = group[head];
+            const c = i % cols;
+            const r = (i - c) / cols;
+            if (i === home || c === 0 || r === 0 || c === cols - 1 || r === rows - 1) open = true;
+            for (let dr = -1; dr <= 1; dr++) {
+                for (let dc = -1; dc <= 1; dc++) {
+                    const nc = c + dc;
+                    const nr = r + dr;
+                    if (nc < 0 || nr < 0 || nc >= cols || nr >= rows) continue;
+                    const n = nr * cols + nc;
+                    if (water[n] || seen[n]) continue;
+                    seen[n] = 1;
+                    group.push(n);
+                }
+            }
+        }
+        if (!open) out.push(group.sort((a, b) => a - b));
+    }
+    return out;
+}
+
+/**
  * The ground a cell gets from the nodes round it: the nearest node within {@link FOLLOW_REACH} of
  * the cell's centre gives its terrain (the earliest placed wins a tie), else `fallback`.
  *

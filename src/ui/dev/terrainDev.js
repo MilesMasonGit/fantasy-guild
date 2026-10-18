@@ -8,6 +8,7 @@ import { getTokenType, registerTokenTypes } from '../../config/registries/tokenR
 import { grant } from '../../systems/atlas/Cartography.js';
 import { DEV_MAPS } from '../../systems/atlas/devMaps.js';
 import { nextSeed, seedFromText } from '../../systems/atlas/seededRandom.js';
+import { TERRAIN, cellIndex, decodeTerrain, islandsOf } from '../../systems/atlas/TerrainMap.js';
 
 /**
  * Every view of the ground the eye-check needs is a click: each button settles a Region from the
@@ -47,8 +48,26 @@ export const TERRAIN_DEV_WATER = Object.freeze([
     { id: 'water_sea', label: 'Sea', maps: ['water_sea'] }
 ].map(Object.freeze));
 
+/**
+ * The placement views: an enemy camp and a Test Chest with the placement rounds' mix, so the camp's
+ * grove, the chest's hiding place and the next tier's trees at the edge are a click away. The
+ * lake view rolls on to a seed whose lake has an island.
+ */
+export const TERRAIN_DEV_PLACEMENT = Object.freeze([
+    { id: 'place_meadow', label: 'Meadow, copper, camp, chest', maps: ['place_meadow', 'place_copper', 'goblinCamp', 'devChest'] },
+    { id: 'place_lake', label: 'Lake island, camp, chest', maps: ['place_lake', 'goblinCamp', 'devChest'], wants: 'island' },
+    { id: 'place_forest', label: 'Forest, camp, chest', maps: ['forest', 'goblinCamp', 'devChest'] },
+    { id: 'place_mountain', label: 'Mountain, camp, chest', maps: ['mountain', 'goblinCamp', 'devChest'] }
+].map(Object.freeze));
+
 /** How many seeds are tried for a layout in which every node fits. */
 const MAX_TRIES = 12;
+
+/** How many seeds a view that wants an island tries. */
+const ISLAND_TRIES = 40;
+
+/** The fewest cells an island must have for the lake view. */
+const ISLAND_CELLS = 3;
 
 const nameById = new Map(Object.entries(DEV_MAPS).map(([name, recipe]) => [recipe.id, name]));
 
@@ -74,23 +93,40 @@ export function firstSeedOf(maps) {
 export function viewOf(region) {
     const maps = devMapsOf(region);
     if (!maps) return null;
-    const key = maps.join('+');
-    return [...TERRAIN_DEV_REGIONS, ...TERRAIN_DEV_WATER].find(v => v.maps.join('+') === key) || null;
+    return viewOfMaps(maps);
 }
 
-/** Settle `maps` for free with the first seed from `seed` whose layout fits every node. */
+function viewOfMaps(maps) {
+    const key = maps.join('+');
+    return [...TERRAIN_DEV_REGIONS, ...TERRAIN_DEV_WATER, ...TERRAIN_DEV_PLACEMENT].find(v => v.maps.join('+') === key) || null;
+}
+
+/** Whether a layout's ground has an island of at least {@link ISLAND_CELLS} cells. */
+export function hasIsland(result) {
+    const map = decodeTerrain(result?.terrain);
+    if (!map) return false;
+    const wet = map.legend.indexOf(TERRAIN.WATER);
+    const water = map.cells.map(k => (k === wet ? 1 : 0));
+    const home = cellIndex(map, result.hall.x, result.hall.y, map.cell);
+    return islandsOf(map, water, home).some(island => island.length >= ISLAND_CELLS);
+}
+
+/** Settle `maps` for free with the first seed from `seed` whose layout fits every node (and has what the view wants). */
 function settleFree(maps, seed) {
     const recipes = maps.map(name => DEV_MAPS[name]);
+    const wantsIsland = viewOfMaps(maps)?.wants === 'island';
+    const tries = wantsIsland ? ISLAND_TRIES : MAX_TRIES;
     let tried = seed >>> 0;
-    for (let i = 0; i < MAX_TRIES; i++) {
+    for (let i = 0; i < tries; i++) {
         // Asked with a seed, a preview changes nothing (not even the guild seed).
-        if (Atlas.preview(recipes, { seed: tried }).fits) {
+        const plan = Atlas.preview(recipes, { seed: tried });
+        if (plan.fits && (!wantsIsland || hasIsland(plan.layout))) {
             grant(recipes, 1);
             return Atlas.settle({ ingredients: recipes, seed: tried });
         }
         tried = nextSeed(tried);
     }
-    return { success: false, reason: `No layout of ${maps.join(' + ')} fitted in ${MAX_TRIES} seeds` };
+    return { success: false, reason: `No layout of ${maps.join(' + ')} fitted in ${tries} seeds` };
 }
 
 /** Leave `region` behind for good, if it is a dev Region (never the one the guild is in). */
@@ -106,6 +142,7 @@ function removeIfDev(region) {
  * @returns {{success: boolean, reason?: string, region?: object}}
  */
 export function goToDevRegion(maps, { seed } = {}) {
+    if (maps.includes('devChest')) registerDevTokens([DEV_CHEST]);
     const from = Atlas.activeRegion();
     const settled = settleFree(maps, Number.isFinite(seed) ? seed : firstSeedOf(maps));
     if (!settled.success) return settled;
@@ -152,14 +189,17 @@ export const DEV_GROUND_TOKENS = Object.freeze([
     { id: 'dev_ground_mineshaft', name: 'Test Mineshaft (needs rock)', looksLike: 'token_copper_mine', standsOn: ['rock'] }
 ].map(Object.freeze));
 
-function registerDevGroundTokens() {
-    if (DEV_GROUND_TOKENS.every(t => getTokenType(t.id))) return;
-    registerTokenTypes(Object.fromEntries(DEV_GROUND_TOKENS.map(t => [t.id, {
+/** The placement views' treasure: a dev-only Token in the chest art, registered like the ground test Tokens. */
+export const DEV_CHEST = Object.freeze({ id: 'dev_treasure_chest', name: 'Test Chest (treasure)', sprite: 't_chest_copper', standsOn: [] });
+
+function registerDevTokens(list) {
+    if (list.every(t => getTokenType(t.id))) return;
+    registerTokenTypes(Object.fromEntries(list.map(t => [t.id, {
         id: t.id,
         name: t.name,
         description: `Dev only: ${t.name}.`,
-        // Borrowed art: a shipped Token's picture.
-        sprite: getTokenType(t.looksLike)?.sprite ?? null,
+        // Borrowed art: a shipped Token's picture, or a sprite by name.
+        sprite: t.sprite ?? getTokenType(t.looksLike)?.sprite ?? null,
         tokenType: 'resource',
         tags: [],
         size: 1,
@@ -168,6 +208,10 @@ function registerDevGroundTokens() {
         config: null,
         standsOn: [...t.standsOn]
     }])));
+}
+
+function registerDevGroundTokens() {
+    registerDevTokens(DEV_GROUND_TOKENS);
 }
 
 /**
