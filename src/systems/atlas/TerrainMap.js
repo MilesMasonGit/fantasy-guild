@@ -1,5 +1,7 @@
 // the ground of a generated Region: a grid of terrain cells
 
+import { readWater } from './WaterShapes.js';
+
 /**
  * The ground is a grid of square cells, each one terrain; Tokens stand freely on top, and the cell
  * under a Token's centre is its terrain. Generation (`Layout.js`) makes the grid together with the
@@ -72,10 +74,6 @@ export const MAX_WATER_SHARE = 0.45;
 /** How far a node's ground reaches into cells around it, in mat units; beyond, the Region's main ground. */
 export const FOLLOW_REACH = 256;
 
-/** Coastline shape: a depth knot every few cells, each up to this share deeper or shallower. */
-const KNOT_CELLS = 6;
-const WIGGLE = 0.35;
-
 /** The grid over a mat: whole cells, the last row and column running past the edge. */
 export function terrainGrid(mat) {
     return { cols: Math.ceil(mat.w / TERRAIN_CELL), rows: Math.ceil(mat.h / TERRAIN_CELL) };
@@ -93,45 +91,6 @@ export function cellCentre(grid, index) {
     const c = index % grid.cols;
     const r = (index - c) / grid.cols;
     return { x: (c + 0.5) * TERRAIN_CELL, y: (r + 0.5) * TERRAIN_CELL };
-}
-
-const smooth = (f) => f * f * (3 - 2 * f);
-
-/**
- * Water along one edge of the mat, the edge picked by the seed: `share` of the cells, with a
- * coastline that wanders by smoothed seeded knots. A cell `keepDry(index)` says to keep is never
- * water (the Hall's clearing).
- *
- * @returns {Uint8Array} 1 for water, per cell, row by row
- */
-export function carveWater(grid, share, random, keepDry = () => false) {
-    const { cols, rows } = grid;
-    const water = new Uint8Array(cols * rows);
-    const s = Math.min(MAX_WATER_SHARE, Math.max(0, Number(share) || 0));
-    if (!(s > 0)) return water;
-
-    // 0 top, 1 right, 2 bottom, 3 left.
-    const side = Math.floor(random() * 4);
-    const along = side % 2 === 0 ? cols : rows;
-    const across = side % 2 === 0 ? rows : cols;
-    const mean = s * cols * rows / along;
-    const knots = Array.from({ length: Math.ceil(along / KNOT_CELLS) + 2 }, () => random() * 2 - 1);
-
-    for (let i = 0; i < along; i++) {
-        const t = i / KNOT_CELLS;
-        const j = Math.floor(t);
-        const f = smooth(t - j);
-        const wiggle = knots[j] * (1 - f) + knots[j + 1] * f;
-        const depth = Math.max(0, Math.min(across, Math.round(mean * (1 + WIGGLE * wiggle))));
-        for (let d = 0; d < depth; d++) {
-            let c;
-            let r;
-            if (side === 0) { c = i; r = d; } else if (side === 1) { c = cols - 1 - d; r = i; } else if (side === 2) { c = i; r = rows - 1 - d; } else { c = d; r = i; }
-            const index = r * cols + c;
-            if (!keepDry(index)) water[index] = 1;
-        }
-    }
-    return water;
 }
 
 /**
@@ -192,17 +151,21 @@ export function followNodes(centre, nodes, fallback) {
 
 /**
  * The stored form: one character per cell, row by row, each a base-36 index into `legend`. About
- * 2 KB for the shipped mat.
+ * 2 KB for the shipped mat; a Region with water adds its shapes (`WaterShapes.planWater`).
  *
  * @param {string[]} terrains  one terrain id per cell
- * @returns {{cell: number, cols: number, rows: number, legend: string[], cells: string}}
+ * @param {object|null} [water]  the water's stored shapes
+ * @returns {{cell: number, cols: number, rows: number, legend: string[], cells: string, water?: object}}
  */
-export function encodeTerrain(grid, terrains) {
+export function encodeTerrain(grid, terrains, water = null) {
     const known = Object.values(TERRAIN);
     const extra = [...new Set(terrains)].filter(t => !known.includes(t)).sort();
     const legend = [...known, ...extra];
     const index = new Map(legend.map((t, i) => [t, i.toString(36)]));
-    return { cell: TERRAIN_CELL, cols: grid.cols, rows: grid.rows, legend, cells: terrains.map(t => index.get(t)).join('') };
+    const map = { cell: TERRAIN_CELL, cols: grid.cols, rows: grid.rows, legend, cells: terrains.map(t => index.get(t)).join('') };
+    // The water's shapes (`WaterShapes`), so the drawing follows them rather than the cells.
+    if (water) map.water = water;
+    return map;
 }
 
 /** The terrain under a mat point on a stored terrain map. */
@@ -216,7 +179,9 @@ export function terrainAt(map, x, y) {
  * of {@link encodeTerrain}). Null for anything that is not a whole stored map, so a reader falls
  * back to the default ground rather than drawing garbage.
  *
- * @returns {{cell: number, cols: number, rows: number, legend: string[], cells: Uint8Array}|null}
+ * @returns {{cell: number, cols: number, rows: number, legend: string[], cells: Uint8Array,
+ *   water: object|null}|null} `water` the shapes read back (`WaterShapes.readWater`), null for a map
+ *   with none or of another version: its water is then drawn from its cells
  */
 export function decodeTerrain(map) {
     if (!map || typeof map.cells !== 'string' || !Array.isArray(map.legend)) return null;
@@ -230,5 +195,5 @@ export function decodeTerrain(map) {
         cells[i] = k;
     }
     const cell = Number.isFinite(map.cell) && map.cell > 0 ? map.cell : TERRAIN_CELL;
-    return { cell, cols, rows, legend: [...legend], cells };
+    return { cell, cols, rows, legend: [...legend], cells, water: readWater(map.water) };
 }

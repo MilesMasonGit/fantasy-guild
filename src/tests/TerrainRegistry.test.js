@@ -49,9 +49,9 @@ describe('The art the looks draw with', () => {
 });
 
 describe('The looks', () => {
-    it('are the meadow, the forest, the mountain, the coast and the sea, and the four newer biomes', () => {
+    it('are the meadow, the forest, the mountain, the coast and the sea, the four newer biomes, and the lakes and springs', () => {
         expect(Object.keys(LOOKS).sort()).toEqual([
-            'cherry_grove', 'coast', 'flower_meadow', 'forest', 'meadow', 'mountain', 'sea', 'volcano', 'yellowstone'
+            'cherry_grove', 'coast', 'flower_meadow', 'forest', 'lake', 'meadow', 'mountain', 'sea', 'sulphur', 'volcano', 'yellowstone'
         ]);
         for (const [id, look] of Object.entries(LOOKS)) {
             expect(look.id, id).toBe(id);
@@ -68,9 +68,9 @@ describe('The looks', () => {
         // The newer biomes borrow the nearest sheet for when the generated ground is off.
         expect(LOOKS.volcano.sheets).toEqual(['stone']);
         expect(LOOKS.yellowstone.sheets).toEqual(['grass_dark']);
-        // `g_water_bright` waits (a lake, later): drawn, used by no look.
-        const used = Object.values(LOOKS).flatMap(l => [...l.sheets, l.wear?.sheet].filter(Boolean));
-        expect(used).not.toContain('water_bright');
+        // `g_water_bright`, the brighter water, is the lakes' and the springs'.
+        expect(LOOKS.lake.sheets).toEqual(['water_bright']);
+        expect(LOOKS.sulphur.sheets).toEqual(['water_bright']);
     });
 
     it('name only sheets that exist, for their ground and their wear', () => {

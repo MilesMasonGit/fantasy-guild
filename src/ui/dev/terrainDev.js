@@ -20,6 +20,7 @@ import { nextSeed, seedFromText } from '../../systems/atlas/seededRandom.js';
 
 /** The views: each first biome alone and each pair of them, then each newer biome alone. */
 export const TERRAIN_DEV_REGIONS = Object.freeze([
+    { id: 'meadow', label: 'Meadow', maps: ['meadow'] },
     { id: 'forest', label: 'Forest', maps: ['forest'] },
     { id: 'mountain', label: 'Mountain', maps: ['mountain'] },
     { id: 'coast', label: 'Coast', maps: ['coast'] },
@@ -30,6 +31,20 @@ export const TERRAIN_DEV_REGIONS = Object.freeze([
     { id: 'cherry_grove', label: 'Cherry grove', maps: ['cherry_grove'] },
     { id: 'yellowstone', label: 'Yellowstone', maps: ['yellowstone'] },
     { id: 'volcano', label: 'Volcano', maps: ['volcano'] }
+].map(Object.freeze));
+
+/** The water views: a Region with each kind of water, its biome's own ground round it. */
+export const TERRAIN_DEV_WATER = Object.freeze([
+    { id: 'water_lake_river', label: 'Lake and river', maps: ['water_lake_river'] },
+    { id: 'water_lake', label: 'Lake', maps: ['water_lake'] },
+    { id: 'water_river', label: 'River across', maps: ['water_river'] },
+    { id: 'water_split', label: 'Split river', maps: ['water_split'] },
+    { id: 'water_spring', label: 'Spring river', maps: ['water_spring'] },
+    { id: 'water_braided', label: 'Braided river', maps: ['water_braided'] },
+    { id: 'water_pond', label: 'Pond', maps: ['water_pond'] },
+    { id: 'water_tarn', label: 'Tarn', maps: ['water_tarn'] },
+    { id: 'water_sulphur', label: 'Sulphur springs', maps: ['water_sulphur'] },
+    { id: 'water_sea', label: 'Sea', maps: ['coast'] }
 ].map(Object.freeze));
 
 /** How many seeds are tried for a layout in which every node fits. */
@@ -60,7 +75,7 @@ export function viewOf(region) {
     const maps = devMapsOf(region);
     if (!maps) return null;
     const key = maps.join('+');
-    return TERRAIN_DEV_REGIONS.find(v => v.maps.join('+') === key) || null;
+    return [...TERRAIN_DEV_REGIONS, ...TERRAIN_DEV_WATER].find(v => v.maps.join('+') === key) || null;
 }
 
 /** Settle `maps` for free with the first seed from `seed` whose layout fits every node. */

@@ -2,6 +2,7 @@
 
 import { tokenName } from '../../config/registries/tokenRegistry.js';
 import { TERRAIN, DEFAULT_TERRAIN } from './TerrainMap.js';
+import { WATER_KIND } from './WaterShapes.js';
 
 /**
  * The node budget: what the Cartography table's Node Summary shows, and what a layout then places.
@@ -50,8 +51,9 @@ import { TERRAIN, DEFAULT_TERRAIN } from './TerrainMap.js';
  * 7. **Biomes and ground.** Each node entry carries the biome that writes most of its points (a
  *    replaced node keeps its source's biome; a density node with no Base Map takes the main
  *    biome). The summary's `ground` says which terrain each biome's ground is, how much of the
- *    mat is water (blended like points) and which biomes bring the water; `Layout.js` builds the
- *    terrain grid from it. Camps and treasures take the ground where they land.
+ *    mat is sea (blended like points), which biomes bring the sea, and the inland water the main
+ *    biome brings (`BIOME_WATER`, one variety picked by the layout's seed); `Layout.js` builds
+ *    the terrain grid from it. Camps and treasures take the ground where they land.
  *
  * An effect kind the engine does not know is skipped and listed in `ignored`, never guessed at.
  */
@@ -70,11 +72,34 @@ export const BIOME_GROUND = Object.freeze({
     volcano: Object.freeze({ terrain: TERRAIN.ROCK, water: 0 })
 });
 
-/** A Base Map recipe's ground, `{ terrain, water }`: its own where it names them, else its biome's. */
+/**
+ * The inland water each biome brings, by the settled world rounds (`world5.py` to `world7.py` in
+ * `docs/active/research/ground_gen/`), beside the sea `BIOME_GROUND` gives the Coast: the layout picks one variety by its seed, a variety listed twice coming twice
+ * as often. The meadows a lake, a river, or a lake with its river; the forest and the cherry grove
+ * a pond; the mountain a tarn or a braided river; Yellowstone its sulphur springs; the volcano and
+ * the Coast none inland. A biome not listed brings none.
+ */
+export const BIOME_WATER = Object.freeze({
+    meadow: Object.freeze([WATER_KIND.LAKE_RIVER, WATER_KIND.LAKE_RIVER, WATER_KIND.LAKE, WATER_KIND.RIVER, WATER_KIND.SPLIT, WATER_KIND.SPRING]),
+    flower_meadow: Object.freeze([WATER_KIND.LAKE_RIVER, WATER_KIND.LAKE_RIVER, WATER_KIND.LAKE, WATER_KIND.RIVER, WATER_KIND.SPLIT, WATER_KIND.SPRING]),
+    forest: Object.freeze([WATER_KIND.POND]),
+    cherry_grove: Object.freeze([WATER_KIND.POND]),
+    mountain: Object.freeze([WATER_KIND.TARN, WATER_KIND.BRAIDED]),
+    yellowstone: Object.freeze([WATER_KIND.SULPHUR]),
+    volcano: Object.freeze([]),
+    coast: Object.freeze([])
+});
+
+/**
+ * A Base Map recipe's ground, `{ terrain, water, inland }`: its own where it names them, else its
+ * biome's. `inland` may name one variety (the dev panel's water views).
+ */
 export function groundOf(map) {
     const known = BIOME_GROUND[map.biome] || {};
     const water = Number.isFinite(map.water) ? map.water : (known.water || 0);
-    return { terrain: map.terrain || known.terrain || DEFAULT_TERRAIN, water: Math.min(1, Math.max(0, water)) };
+    const kinds = Object.values(WATER_KIND);
+    const inland = typeof map.inland === 'string' && kinds.includes(map.inland) ? [map.inland] : [...(BIOME_WATER[map.biome] || [])];
+    return { terrain: map.terrain || known.terrain || DEFAULT_TERRAIN, water: Math.min(1, Math.max(0, water)), inland };
 }
 
 /** What a budget entry is for: a node to work, an enemy camp, or a one-time treasure. */
@@ -159,7 +184,8 @@ function canonical(ingredients) {
  *   entries: {typeId: string, role: string, count: number, biome: string|null}[],
  *   total: number, wanted: number, limit: number, clamped: boolean,
  *   biomes: Record<string, number>,
- *   ground: {main: string|null, terrains: Record<string, string>, water: number, shore: string[]},
+ *   ground: {main: string|null, terrains: Record<string, string>, water: number, shore: string[],
+ *     inland: string[]},
  *   ingredients: string[], ignored: {ingredientId: string, kind: string}[]
  * }}
  */
@@ -183,12 +209,14 @@ export function budget(ingredients, { cap } = {}) {
     const biomes = {};
     const terrains = {};
     const shore = new Set();
+    const inlandOf = {};
     let water = 0;
 
     for (const map of bases) {
         if (map.biome) biomes[map.biome] = (biomes[map.biome] || 0) + 1;
         const ground = groundOf(map);
         if (map.biome && !(map.biome in terrains)) terrains[map.biome] = ground.terrain;
+        if (map.biome && !(map.biome in inlandOf)) inlandOf[map.biome] = ground.inland;
         if (map.biome && ground.water > 0) shore.add(map.biome);
         water += ground.water / bases.length;
         const share = positive(map.points, 0) / bases.length;
@@ -294,7 +322,7 @@ export function budget(ingredients, { cap } = {}) {
         limit,
         clamped: total < wanted,
         biomes,
-        ground: { main: mainBiome, terrains, water, shore: [...shore].sort(byText) },
+        ground: { main: mainBiome, terrains, water, shore: [...shore].sort(byText), inland: [...(inlandOf[mainBiome] || [])] },
         ingredients: slots.map(i => i.id),
         ignored
     };

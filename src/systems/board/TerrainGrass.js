@@ -2,7 +2,8 @@
 
 import { PLAN_PIXEL_U, distanceFields } from './TerrainLattice.js';
 import { spreadSamples, CALIBRATION_SAMPLES } from './TerrainPatches.js';
-import { generatedOf } from '../../config/registries/terrainRegistry.js';
+import { generatedOf, DEFAULT_LOOK } from '../../config/registries/terrainRegistry.js';
+import { STYLE, STYLE_TERRAIN } from '../atlas/WaterShapes.js';
 import { tuning, tuningDefault } from '../../config/playmatTuning.js';
 
 /**
@@ -15,7 +16,9 @@ import { tuning, tuningDefault } from '../../config/playmatTuning.js';
  * alpine grass and scree); earth with clods, a lighter middle and a sunken edge, which the grass
  * reaches into in fingers and tufts. Then what only some looks have: a kind laid over the zones in
  * patches (the cherry grove's green grass), sulphur lakes (Yellowstone), wet sand at the water, and
- * the sea itself: depth steps, a broken foam line and waves by distance from the shore.
+ * the water itself: the sea by distance from its drawn shore (depth steps, a broken foam line,
+ * waves); a lake, a river and a sulphur spring by their shape's own field (`WaterShapes`), as the
+ * prototype's `water_field` drew them, with a wet bank or a crust on the land round them.
  *
  * ⭐ Two stages, split by size:
  * - **Shapes** (earth, clumps, zones, mounds, patches, the shore's distance, the lakes) are smooth
@@ -62,13 +65,15 @@ export const GRASS_RULES = Object.freeze({
 
 /**
  * Where each colour sits in a look's table. A land look: its earth ramp (`EARTH + 0` darkest to
- * `+ 4`), the earth's lighter middle, the wet sand and the waterline, the lakes' five rings, then a
- * block of `STRIDE` per kind: its body ramp (`GRASS + 0..4`), the body's soft tone and its strokes'
- * ramp. A water look: the sea's ramp, the foam's two whites and the far trough. `DIM` added to an
- * index is the same colour in shadow (a patch's soft shadow). `COUNT` is the table's length.
+ * `+ 4`), the earth's lighter middle, the wet sand and the waterline, the lakes' five rings, the
+ * banks round shaped water (`BANK`: each water look's steps, {@link BANK_SLOTS}), then a block of
+ * `STRIDE` per kind: its body ramp (`GRASS + 0..4`), the body's soft tone and its strokes' ramp. A
+ * water look: the sea's ramp (a ringed water's rings), the foam's two whites and the far trough.
+ * `DIM` added to an index is the same colour in shadow (a patch's soft shadow). `COUNT` is the
+ * table's length.
  */
 export const COLOUR = Object.freeze({
-    EARTH: 0, MIDDLE: 5, WET: 6, LINE: 7, RING: 8, KIND: 13, STRIDE: 11,
+    EARTH: 0, MIDDLE: 5, WET: 6, LINE: 7, RING: 8, BANK: 13, KIND: 17, STRIDE: 11,
     GRASS: 0, SOFT: 5, STROKES: 6,
     SEA: 0, FOAM: 5, FOAM2: 6, TROUGH: 7,
     DIM: 128, COUNT: 256, NONE: 255
@@ -90,14 +95,27 @@ export const BIT = Object.freeze({ EARTH: 1, HIGH: 2, MIDDLE: 4, CLOD: 8, PATCH:
 /** A water pixel's shape byte: its foam and shallows are the lighter tone; waves may start there. */
 export const WATER_BIT = Object.freeze({ FOAM_LIGHT: 1, SHALLOW_LIGHT: 2, WAVES: 16 });
 
-/** A land pixel's shore byte, where a look with a `shore` meets water. */
-export const SHORE = Object.freeze({ LINE: 253, WET: 254 });
+/**
+ * A land pixel's shore byte: where a look with a `shore` meets the sea, its wet sand and waterline;
+ * by shaped water, `BANK + k` its bank's colour `BANK + k` (four of them).
+ */
+export const SHORE = Object.freeze({ BANK: 249, LINE: 253, WET: 254 });
+
+/** How many bank colours a land look's table holds. */
+const BANK_COUNT = 4;
+
+/**
+ * Where each shaped water look's bank colours start in a land look's table, after `COLOUR.BANK`:
+ * the lake's wet bank, then the sulphur springs' crust.
+ */
+export const BANK_SLOTS = Object.freeze({ lake: 0, sulphur: 2 });
 
 /** The share of the prototype's tint the shade pattern's slider stands for: the meadow's. */
 const SLIDER_TINT = 0.06;
 
 /** The colours that keep out of the shade pattern: drawn flat in the prototype. */
-const UNSHADED = Object.freeze([COLOUR.WET, COLOUR.LINE, COLOUR.RING, COLOUR.RING + 1, COLOUR.RING + 2, COLOUR.RING + 3, COLOUR.RING + 4]);
+const UNSHADED = Object.freeze([COLOUR.WET, COLOUR.LINE, COLOUR.RING, COLOUR.RING + 1, COLOUR.RING + 2, COLOUR.RING + 3, COLOUR.RING + 4,
+    COLOUR.BANK, COLOUR.BANK + 1, COLOUR.BANK + 2, COLOUR.BANK + 3]);
 
 /** Hash channels for the noise layers. */
 const CH = Object.freeze({
@@ -374,10 +392,15 @@ export function grassColours(spec, { soft, strength } = {}) {
     const k = strength ?? tuning('groundStrength');
     let table;
     let middle;
-    if (rules.water) {
+    if (rules.water?.rings) {
+        const rings = rules.water.rings.map(c => [...c]);
+        while (rings.length < 8) rings.push(rings[rings.length - 1]);
+        table = rings;
+        middle = rings[1];
+    } else if (rules.water) {
         const w = rules.water;
         const sea = ramp(...w.sea, 5, 0.02, 0.06);
-        table = [...sea, lighten(sea[4], w.foamLight), lighten(sea[4], w.foam2Light), lighten(sea[0], 0.85)];
+        table = [...sea, lighten(sea[4], w.foamLight), lighten(sea[4], w.foam2Light), lighten(sea[0], w.trough ?? 0.85)];
         middle = sea[2];
     } else {
         const s = soft ?? clamp01(rules.soft + offset('grassBodySoft'));
@@ -385,7 +408,7 @@ export function grassColours(spec, { soft, strength } = {}) {
         const sand = rules.shore ? ramp(...rules.shore.sand, 5, 0.02, 0.06) : earth;
         const rings = rules.pools ? rules.pools.rings.map(([, rgb]) => [...rgb]) : [];
         while (rings.length < 5) rings.push(earth[2]);
-        table = [...earth, lighten(earth[2], 1.08), sand[1], sand[0], ...rings];
+        table = [...earth, lighten(earth[2], 1.08), sand[1], sand[0], ...rings, ...bankColours()];
         for (const kind of rules.kinds) {
             const body = ramp(...kind.grass);
             const [a, b] = [body[kind.body[0]], body[kind.body[1]]];
@@ -395,6 +418,18 @@ export function grassColours(spec, { soft, strength } = {}) {
         middle = ramp(...rules.grass)[2];
     }
     return k === 1 ? table : table.map(c => toward(c, middle, k));
+}
+
+/** The banks' colours every land look's table holds, by {@link BANK_SLOTS}. */
+function bankColours() {
+    const out = new Array(BANK_COUNT).fill(null);
+    for (const [look, at] of Object.entries(BANK_SLOTS)) {
+        const bank = generatedOf(look)?.water?.bank;
+        if (!bank) continue;
+        const colours = bank.colours ? bank.colours.map(c => [...c]) : ramp(...bank.ramp, 5, 0.02, 0.06);
+        bank.at.forEach(([, k], step) => { out[at + step] = colours[k]; });
+    }
+    return out.map(c => c || [0, 0, 0]);
 }
 
 /**
@@ -720,8 +755,9 @@ function kindRow(ctx, look, k, py) {
 
 /** The sorted distances at which a water look's drawing changes: its classes lie between them. */
 export function waterBands(water) {
+    if (water.rings) return [...water.ringAt];
     const at = new Set([water.foam / 2, water.foam, 3 * water.foam, water.shallow, water.deep, water.farThick, ...water.waveLengths.map(([d]) => d)]);
-    return [...at].sort((a, b) => a - b);
+    return [...at].filter(Number.isFinite).sort((a, b) => a - b);
 }
 
 /**
@@ -766,6 +802,57 @@ function waterRow(ctx, look, py) {
         const e = (d - 1) / 3 - 0.5;
         const f = Math.max(0, e + (wobble - 0.5) * R.shoreWobble * Math.min(1, e / R.shoreTaper));
         shore[i] = 1 + bandOf(bands, f);
+    }
+}
+
+/**
+ * One plan row of a water look drawn by its shape (`field`): its texture bits as the sea's, its
+ * class by the shape's own field (the prototype's pixels in from the waterline).
+ */
+function fieldRow(ctx, look, py) {
+    const { width, at, slotOf, bits, kinds, shore, waterField } = ctx;
+    const { slot, bands, mask } = look;
+    const R = GRASS_RULES;
+    const { shoreN, foamN } = ctx;
+    const { patchN } = look;
+    const code = (slot << SLOT_SHIFT) | 1;
+    const sT = shoreN.top, sB = shoreN.bottom, sY = shoreN.fy;
+    const fT = foamN.top, fB = foamN.bottom, fY = foamN.fy;
+    const pT = patchN.top, pB = patchN.bottom, pY = patchN.fy;
+    const nb = bands.length;
+    for (let px = 0, i = py * width; px < width; px++, i++) {
+        if (slotOf[at[i]] !== slot) continue;
+        kinds[i] = code;
+        let x = sT[px];
+        let b = 0;
+        if (x + (sB[px] - x) * sY > R.shallowLight) b |= 2;
+        x = fT[px];
+        if (x + (fB[px] - x) * fY > R.foamLight) b |= 1;
+        x = pT[px];
+        if (x + (pB[px] - x) * pY >= mask) b |= 16;
+        bits[i] = b;
+        const f = waterField[i] / PLAN_PIXEL_U;
+        let c = 0;
+        while (c < nb && f >= bands[c]) c++;
+        shore[i] = 1 + c;
+    }
+}
+
+/**
+ * One plan row's banks: land of a generated look by shaped water, each pixel the step of its
+ * water's bank it lies in (the prototype's pixels out from the waterline).
+ */
+function bankRow(ctx, py) {
+    const { width, at, slotOf, isLand, shore, waterField, waterStyle, banks, bankReach } = ctx;
+    for (let px = 0, i = py * width; px < width; px++, i++) {
+        const f = waterField[i];
+        if (f > 0 || f <= -bankReach || !isLand[slotOf[at[i]] + 1]) continue;
+        const steps = banks[waterStyle[i]];
+        if (!steps) continue;
+        const out = -f / PLAN_PIXEL_U;
+        for (let k = 0; k < steps.length; k++) {
+            if (out <= steps[k][0]) { shore[i] = SHORE.BANK + steps[k][1]; break; }
+        }
     }
 }
 
@@ -898,13 +985,14 @@ function poolRow(ctx, look, py) {
  *   into (the Guild Hall's ring), in plan pixels
  * @returns {null|{looks: string[], slotOf: Int8Array, bits: Uint8Array, kinds: Uint8Array,
  *   thresholds: Array<object|null>, shore: Uint8Array|null, ring: Uint8Array|null,
- *   bands: Array<number[]|null>}} Null when no look here is generated. Per plan pixel, row by row:
- *   `kinds` 0 where the ground is not generated, else `(slot << SLOT_SHIFT) | (kind + 1)`, `slot`
- *   indexing `looks` (and `thresholds`, each land look's levels; `bands`, each water look's
- *   distances), `kind` its `kinds` in the registry (0 for water); `bits` the {@link BIT} flags of
- *   land and the {@link WATER_BIT} flags of water; `shore` a water pixel's class by distance and a
- *   land pixel's {@link SHORE} byte; `ring` a lake's ring, 1 the middle. `slotOf[p]` is palette
- *   entry `p`'s slot, -1 for none.
+ *   bands: Array<number[]|null>, banked: boolean}} Null when no look here is generated. Per plan
+ *   pixel, row by row: `kinds` 0 where the ground is not generated, else
+ *   `(slot << SLOT_SHIFT) | (kind + 1)`, `slot` indexing `looks` (and `thresholds`, each land
+ *   look's levels; `bands`, each water look's distances), `kind` its `kinds` in the registry (0 for
+ *   water); `bits` the {@link BIT} flags of land and the {@link WATER_BIT} flags of water; `shore` a
+ *   water pixel's class by distance and a land pixel's {@link SHORE} byte (`banked` when some are
+ *   banks); `ring` a drawn-only sulphur lake's ring, 1 the middle. `slotOf[p]` is palette entry
+ *   `p`'s slot, -1 for none.
  */
 export function buildGrassPlan(pixels, seed, looks, { clear = null } = {}) {
     const { width, height, palette, at, present } = pixels;
@@ -950,10 +1038,15 @@ export function buildGrassPlan(pixels, seed, looks, { clear = null } = {}) {
     const land = [];
     const water = [];
     let pooled = false;
+    // Shaped water replaces the drawn-only sulphur lakes: a save without shapes keeps them.
+    const shaped = Boolean(pixels.water);
     slots.forEach((id, slot) => {
         const r = rules[slot];
         if (r.water) {
-            water.push({ slot, rules: r, bands: waterBands(r.water), mask: r.water.waveMask, patchN: walker(r.water.wavePatchCell, CH.WAVE_PATCH) });
+            water.push({
+                slot, rules: r, field: Boolean(r.water.field), bands: waterBands(r.water), mask: r.water.waveMask ?? 0,
+                patchN: walker(r.water.wavePatchCell ?? GRASS_RULES.patchCell, CH.WAVE_PATCH)
+            });
             return;
         }
         const cells = grassCells(id);
@@ -974,7 +1067,7 @@ export function buildGrassPlan(pixels, seed, looks, { clear = null } = {}) {
                 moundN: kind.mounds > 0 ? walker(cells.mounds[k], CH.MOUND + k) : null,
                 moundFineN: kind.mounds > 0 ? walker(cells.moundFine[k], CH.MOUND_FINE + k) : null
             })),
-            centres: r.pools ? poolCentres(width, height, seed, r.pools, clear) : null,
+            centres: r.pools && !shaped ? poolCentres(width, height, seed, r.pools, clear) : null,
             rings: r.pools ? r.pools.rings : null
         };
         if (look.centres?.length) pooled = true;
@@ -985,20 +1078,48 @@ export function buildGrassPlan(pixels, seed, looks, { clear = null } = {}) {
         ...shared,
         width, at, slotOf,
         bits: new Uint8Array(n), kinds: new Uint8Array(n), rowKind: new Int8Array(width),
-        shore: null, ring: null, waterDist: null, shoreDist: null, shoreN: null, foamN: null
+        shore: null, ring: null, waterDist: null, shoreDist: null, shoreN: null, foamN: null,
+        waterField: pixels.water?.f || null, waterStyle: pixels.water?.style || null, banks: null, bankReach: 0, isLand: null
     };
 
-    // The shore: each side's distance from the water, measured on the drawn coastline.
+    // The shore: each side's distance from the water, measured on the drawn coastline. Shaped
+    // water reads its own field instead, and only the sea wets the sand.
     const shoreLooks = land.filter(l => l.rules.shore);
+    const measured = water.filter(w => !w.field);
     if (water.length) {
         const fields = pixels.fields || distanceFields(at, width, height);
         const wet = [];
-        palette.forEach((t, p) => { if (slotOf[p] >= 0 && rules[slotOf[p]].water) wet.push(p); });
-        ctx.waterDist = fields.distances(wet, true, 3 * Math.max(...water.map(w => waterReach(w.rules.water))));
-        if (shoreLooks.length) ctx.shoreDist = fields.distances(wet, false, 3 * Math.max(...shoreLooks.map(l => shoreReach(l.rules.shore))));
+        const sea = [];
+        palette.forEach((t, p) => {
+            if (slotOf[p] < 0 || !rules[slotOf[p]].water) return;
+            wet.push(p);
+            if (!rules[slotOf[p]].water.field) sea.push(p);
+        });
+        if (measured.length) ctx.waterDist = fields.distances(wet, true, 3 * Math.max(...measured.map(w => waterReach(w.rules.water))));
+        if (shoreLooks.length && sea.length) ctx.shoreDist = fields.distances(sea, false, 3 * Math.max(...shoreLooks.map(l => shoreReach(l.rules.shore))));
         ctx.shore = new Uint8Array(n);
         ctx.shoreN = walker(R.shoreCell, CH.SHORE);
         ctx.foamN = walker(R.foamCell, CH.FOAM);
+    }
+    // The banks round shaped water, on the generated land.
+    if (shaped && land.length) {
+        const banks = [];
+        let reach = 0;
+        for (const style of [STYLE.LAKE, STYLE.SULPHUR]) {
+            const p = palette.indexOf(STYLE_TERRAIN[style]);
+            const lookId = p >= 0 ? looks[p] : DEFAULT_LOOK[STYLE_TERRAIN[style]];
+            const bank = generatedOf(lookId)?.water?.bank;
+            if (!bank || !(lookId in BANK_SLOTS)) continue;
+            banks[style] = bank.at.map(([out], k) => [out, BANK_SLOTS[lookId] + k]);
+            reach = Math.max(reach, ...bank.at.map(([out]) => out));
+        }
+        if (banks.some(Boolean)) {
+            ctx.banks = banks;
+            ctx.bankReach = reach * PLAN_PIXEL_U;
+            ctx.isLand = new Uint8Array(slots.length + 1);
+            for (const l of land) ctx.isLand[l.slot + 1] = 1;
+            if (!ctx.shore) ctx.shore = new Uint8Array(n);
+        }
     }
     if (pooled) {
         ctx.ring = new Uint8Array(n);
@@ -1026,12 +1147,14 @@ export function buildGrassPlan(pixels, seed, looks, { clear = null } = {}) {
         }
         for (const look of water) {
             look.patchN.walk(py);
-            waterRow(ctx, look, py);
+            if (look.field) fieldRow(ctx, look, py);
+            else waterRow(ctx, look, py);
         }
+        if (ctx.banks) bankRow(ctx, py);
     }
     const thresholds = slots.map((id, slot) => land.find(l => l.slot === slot)?.levels || null);
     const bands = slots.map((id, slot) => water.find(w => w.slot === slot)?.bands || null);
-    return { looks: slots, slotOf, bits: ctx.bits, kinds: ctx.kinds, thresholds, shore: ctx.shore, ring: ctx.ring, bands };
+    return { looks: slots, slotOf, bits: ctx.bits, kinds: ctx.kinds, thresholds, shore: ctx.shore, ring: ctx.ring, bands, banked: Boolean(ctx.banks) };
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -1311,19 +1434,25 @@ function waterClasses(water, bands) {
     const out = [null];
     for (let c = 0; c <= bands.length; c++) {
         const f = c === 0 ? bands[0] / 2 : c === bands.length ? bands[c - 1] + 1 : (bands[c - 1] + bands[c]) / 2;
+        if (water.rings) {
+            // A ringed water: ring `c`, nothing else.
+            out.push({ mix: 0, colour: COLOUR.SEA + c, fleck: false, waves: false, lengths: null, crest: 0, trough: 0, thick: false });
+            continue;
+        }
         let lengths = null;
         for (const [from, lens] of water.waveLengths) if (f >= from) lengths = lens;
         const deep = f >= water.deep;
+        const solid = water.solidFoam === false ? 0 : water.foam / 2;
         out.push({
             // 0 a colour of its own; 1 the foam's two whites; 2 the shallows' two blues
-            mix: f < water.foam / 2 ? 0 : f < water.foam ? 1 : f < water.shallow ? 2 : 0,
+            mix: f < solid ? 0 : f < water.foam ? 1 : f < water.shallow ? 2 : 0,
             colour: f < water.foam ? COLOUR.FOAM : deep ? COLOUR.SEA : COLOUR.SEA + 1,
             fleck: f > water.foam && f < 3 * water.foam,
             waves: f > water.shallow && lengths !== null,
             lengths,
             crest: deep ? COLOUR.SEA + 2 : COLOUR.SEA + 3,
             trough: deep ? COLOUR.TROUGH : COLOUR.SEA,
-            thick: f >= water.farThick
+            thick: water.farThick !== null && f >= water.farThick
         });
     }
     return out;
@@ -1359,7 +1488,7 @@ function drawWater(ctx, grass, seed) {
     }
 
     const waves = [];
-    const busiest = Math.max(...specBySlot.map(w => (w ? w.waves : 0)));
+    const busiest = Math.max(...specBySlot.map(w => (w ? w.waves || 0 : 0)));
     if (!(busiest > 0)) return waves;
     occ.fill(0, 0, cols * rows);
     const gapLog = busiest >= 1 ? 0 : Math.log(1 - busiest);
@@ -1377,7 +1506,7 @@ function drawWater(ctx, grass, seed) {
             if (!isWater[k]) continue;
             const w = specBySlot[k >> SLOT_SHIFT];
             const h = hash(c, r, sWave);
-            if (w.waves < busiest && h >= cut32(w.waves / busiest)) continue;
+            if ((w.waves || 0) < busiest && h >= cut32((w.waves || 0) / busiest)) continue;
             const cls = classAt(i);
             if (!cls.waves || !(planBits[planRow[r] + planCol[c]] & WATER_BIT.WAVES)) continue;
             const L = cls.lengths[(h >>> 8) % cls.lengths.length];
@@ -1405,6 +1534,21 @@ function drawWater(ctx, grass, seed) {
         }
     }
     return waves;
+}
+
+/** The banks round shaped water over everything else on the land. */
+function drawBanks(ctx) {
+    const { shape, colour, cols, rows, planCol, planRow, planShore } = ctx;
+    const lo = SHORE.BANK;
+    const hi = SHORE.BANK + BANK_COUNT;
+    for (let r = 0; r < rows; r++) {
+        const pr = planRow[r];
+        for (let c = 0, i = r * cols; c < cols; c++, i++) {
+            if (!shape[i]) continue;
+            const v = planShore[pr + planCol[c]];
+            if (v >= lo && v < hi) colour[i] = COLOUR.BANK + v - lo;
+        }
+    }
 }
 
 /** The lakes' rings over everything else on their look's ground. */
@@ -1526,5 +1670,6 @@ export function drawGrass(grass, seed, cols, rows, planCol, planRow, scratch = n
     if (grass.shore && grass.looks.some(id => lookRules(id).shore)) drawShore(ctx);
     const waves = hasWater ? drawWater(ctx, grass, seed) : [];
     if (grass.ring) drawRings(ctx);
+    if (grass.banked) drawBanks(ctx);
     return { colour: buffers.colour, kinds: buffers.kinds, waves };
 }

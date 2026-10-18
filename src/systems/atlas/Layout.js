@@ -2,9 +2,10 @@
 
 import { mulberry32 } from './seededRandom.js';
 import {
-    TERRAIN, DEFAULT_TERRAIN, TERRAIN_CELL, terrainGrid, cellIndex, cellCentre, carveWater,
+    TERRAIN, DEFAULT_TERRAIN, TERRAIN_CELL, MAX_WATER_SHARE, terrainGrid, cellIndex, cellCentre,
     shoreDistance, followNodes, encodeTerrain
 } from './TerrainMap.js';
+import { planWater, readWater, sampleWater, fieldAt, withoutInland } from './WaterShapes.js';
 
 /**
  * The layout half of generation: places every Token a budget (`Budget.js`) writes, on a mat of a
@@ -12,7 +13,10 @@ import {
  * the Tokens stand on (`TerrainMap.js`). A pure function of the budget, the seed and the geometry
  * it is handed: a reroll is a new seed, and moves only coordinates and ground.
  *
- * - **Water** first: maps that bring it (`summary.ground.water`) get a coastline along one edge.
+ * - **Water** first, as shapes (`WaterShapes`): maps that bring a sea (`summary.ground.water`)
+ *   get one along an edge, and the main biome its inland water (`summary.ground.inland`, one
+ *   variety picked by the seed). A cell is water when the water covers half of it; the shapes are
+ *   stored with the cells, so the drawing follows them.
  * - **Nodes** grow in groves: each species gets one grove per {@link GROVE_SIZE} nodes, grove
  *   centres spread over the mat, and each node takes the free spot nearest its grove's centre.
  *   Species with the biggest bodies go first; a species of a biome that brings water (a Coast)
@@ -79,6 +83,12 @@ const CAMP_ROOM = 1.5;
 /** The Hall's clearing stays dry this far past the ring, so the quests and the first buildings have land. */
 const DRY_MARGIN = 2 * TERRAIN_CELL;
 
+/**
+ * How far a dry Token's centre keeps from the drawn water, in mat units: a cell is dry when water
+ * covers less than half of it, so a shore cell may still show some.
+ */
+export const DRY_GAP = 8;
+
 const STANDARD_ART = 64;
 const HEX = Math.sqrt(3) / 2;
 const EPS = 1e-6;
@@ -141,7 +151,7 @@ export function anywhereDry(typeId, terrain) {
  * @returns {{seed: number, mat: {w: number, h: number}, hall: {typeId: string, x: number, y: number},
  *   nodes: {typeId: string, role: string, biome: string|null, x: number, y: number}[],
  *   unplaced: {typeId: string, role: string}[],
- *   terrain: {cell: number, cols: number, rows: number, legend: string[], cells: string}}}
+ *   terrain: {cell: number, cols: number, rows: number, legend: string[], cells: string, water?: object}}}
  */
 export function layout(summary, {
     seed, mat, crowding, artRadius, terrainAllows = anywhereDry, allows = null, hallTypeId = HALL_TYPE_ID
@@ -177,14 +187,27 @@ export function layout(summary, {
     // The ground first: water is where nothing dry may stand.
     const cells = terrainGrid(mat);
     const dryReach = HALL_CLEARING + DRY_MARGIN;
-    const water = carveWater(cells, ground.water, random, (i) => {
+    const keepDry = (i) => {
         const c = cellCentre(cells, i);
         const dx = c.x - hall.x;
         const dy = c.y - hall.y;
         return dx * dx + dy * dy < dryReach * dryReach;
-    });
+    };
+    const sea = Math.min(MAX_WATER_SHARE, Math.max(0, ground.water));
+    let { record } = planWater({ sea, kinds: ground.inland }, random, mat, { x: hall.x, y: hall.y, r: dryReach });
+    let sampled = record ? sampleWater(readWater(record), cells, TERRAIN_CELL, keepDry) : null;
+    const share = (w) => w.reduce((n, v) => n + v, 0) / w.length;
+    // Over the most a mat may hold: the inland water goes, the sea stays.
+    if (sampled && share(sampled.water) > MAX_WATER_SHARE + 0.01) {
+        record = withoutInland(record);
+        sampled = record ? sampleWater(readWater(record), cells, TERRAIN_CELL, keepDry) : null;
+    }
+    const water = sampled ? sampled.water : new Uint8Array(cells.cols * cells.rows);
+    const drawnAt = sampled ? (x, y) => fieldAt(sampled.sample, x, y) : null;
     const waterCells = water.reduce((n, v) => n + v, 0);
     const shore = waterCells > 0 ? shoreDistance(cells, water) : null;
+    // The groves of a biome that brings the sea line the sea, not a pond.
+    const seaShore = sampled?.sea.some(Boolean) ? shoreDistance(cells, sampled.sea) : null;
     const shoreBiomes = new Set(ground.shore);
     const cellAt = (x, y) => cellIndex(cells, x, y);
     // Dry land touching water, a diagonal counting: the "shore" a Token's "Stands on" may name.
@@ -267,6 +290,11 @@ export function layout(summary, {
         if (!outsideRing(x, y, body.art)) return false;
         if (item.role === ROLE_CAMP && campBand({ x, y }, body.art, mat) < CAMP_BAND) return false;
         const i = cellAt(x, y);
+        // The drawn water as well as the cells: a boat on it, anything dry a little way off it.
+        if (drawnAt) {
+            const f = drawnAt(x, y);
+            if (water[i] === 1 ? f <= 0 : f > -DRY_GAP) return false;
+        }
         const coast = isShore(i);
         let here = null;
         if (water[i] === 1) {
@@ -387,7 +415,7 @@ export function layout(summary, {
                 if (!p || !legal(item, p.x, p.y)) continue;
                 const dx = p.x - anchor.x;
                 const dy = p.y - anchor.y;
-                const inland = onShore ? shore[cellAt(p.x, p.y)] * TERRAIN_CELL : 0;
+                const inland = onShore ? seaShore[cellAt(p.x, p.y)] * TERRAIN_CELL : 0;
                 // A little jitter, so a grove's edge is ragged rather than a perfect disc.
                 const score = (dx * dx + dy * dy + SHORE_PULL * inland * inland) * (0.8 + 0.4 * random());
                 if (score < bestScore) {
@@ -428,16 +456,16 @@ export function layout(summary, {
     // Biggest bodies first, as in any packing: a 2×2 placed last finds only the gaps small Tokens
     // left, which on a dense mat are too small for it. Then shore species, before a forest takes
     // the beach.
-    const shoreRank = (species) => (shore && shoreBiomes.has(species.biome) ? 0 : 1);
+    const shoreRank = (species) => (seaShore && shoreBiomes.has(species.biome) ? 0 : 1);
     const bySize = speciesOf(items).sort((a, b) => bodyOf(b.typeId).art - bodyOf(a.typeId).art
         || shoreRank(a) - shoreRank(b));
     const anchors = [{ x: hall.x, y: hall.y }];
     const groves = [];
     for (const species of bySize) {
         const { art } = bodyOf(species.typeId);
-        const onShore = shore && shoreBiomes.has(species.biome);
+        const onShore = seaShore && shoreBiomes.has(species.biome);
         const accept = (p) => outsideRing(p.x, p.y, art) && groundFits(species.items[0], p)
-            && (!onShore || shore[cellAt(p.x, p.y)] <= SHORE_CELLS);
+            && (!onShore || seaShore[cellAt(p.x, p.y)] <= SHORE_CELLS);
         const count = species.items.length;
         const k = Math.ceil(count / GROVE_SIZE);
         let next = 0;
@@ -481,7 +509,7 @@ export function layout(summary, {
         hall: { typeId: hallTypeId, x: hall.x, y: hall.y },
         nodes: nodes.map(({ typeId, role, biome, x, y }) => ({ typeId, role, biome, x, y })),
         unplaced,
-        terrain: encodeTerrain(cells, terrains)
+        terrain: encodeTerrain(cells, terrains, record)
     };
 }
 
@@ -492,7 +520,8 @@ function groundOf(summary) {
         main: g?.main ?? null,
         terrains: g?.terrains || {},
         water: Number(g?.water) || 0,
-        shore: g?.shore || []
+        shore: g?.shore || [],
+        inland: Array.isArray(g?.inland) ? g.inland : []
     };
 }
 

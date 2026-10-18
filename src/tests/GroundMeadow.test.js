@@ -227,9 +227,10 @@ describe('⭐ a meadow Region places exactly as before (decision 15)', () => {
  * ⭐ **A layout of Tokens with no "Stands on" is exactly as before** (roadmap risk 4: stored maps
  * are permanent, and a Region generated tomorrow from today's maps must come out as it would have
  * yesterday). Fixture Tokens, the game's own layout inputs, water and no water, every role.
- * Recorded on `main` at fe151c8e, before the layout read "Stands on".
+ * Recorded on `main` at fe151c8e, before the layout read "Stands on"; recorded again when the water
+ * became shapes and every biome brought its own: new Regions get water, stored ones keep theirs.
  */
-const LAYOUT_FINGERPRINT = 'e89c01e9';
+const LAYOUT_FINGERPRINT = 'b894c047';
 
 registerTokenTypes({
     gm_oak: { id: 'gm_oak', name: 'GM Oak', tokenType: 'resource', size: 1, uses: 5, requiresHero: true, config: { skill: 'logging', skillRequired: 1, cycleTimeMs: 3000, inputs: [], outputs: [] } },

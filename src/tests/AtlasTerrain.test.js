@@ -3,9 +3,9 @@ import { budget, ROLE } from '../systems/atlas/Budget.js';
 import { layout, HALL_CLEARING, SHORE_CELLS } from '../systems/atlas/Layout.js';
 import {
     TERRAIN, DEFAULT_TERRAIN, TERRAIN_CELL, MAX_WATER_SHARE, FOLLOW_REACH,
-    terrainAt, terrainGrid, carveWater, shoreDistance, encodeTerrain, allowsTerrain
+    terrainAt, terrainGrid, shoreDistance, encodeTerrain, allowsTerrain
 } from '../systems/atlas/TerrainMap.js';
-import { mulberry32, seedFromText, nextSeed } from '../systems/atlas/seededRandom.js';
+import { seedFromText, nextSeed } from '../systems/atlas/seededRandom.js';
 
 /**
  * The terrain grid a generated Region stands on (owner, 2026-10-09): one terrain per cell, the
@@ -22,6 +22,8 @@ const base = (id, points, nodes, extra = {}) => ({ id, kind: 'base', biome: id, 
 const mod = (id, ...effects) => ({ id, kind: 'modifier', effects });
 
 const forest = base('forest', 40, [{ typeId: 'oak', weight: 3 }, { typeId: 'berry', weight: 1 }]);
+/** A biome that brings no water of its own. */
+const plains = base('plains', 40, [{ typeId: 'oak', weight: 3 }, { typeId: 'berry', weight: 1 }]);
 const mountain = base('mountain', 36, [{ typeId: 'copper', weight: 1 }, { typeId: 'coal', weight: 1 }]);
 const coast = base('coast', 12, [{ typeId: 'fishing_spot', weight: 1 }]);
 const camp = mod('camp', { kind: 'threat', typeId: 'goblin_camp', count: 2 });
@@ -46,10 +48,12 @@ describe('the terrain map', () => {
             const b = layout(summary, options(SEEDS[0]));
             expect(b.terrain).toEqual(a.terrain);
             const rerolled = layout(summary, options(nextSeed(SEEDS[0]))).terrain.cells;
-            // One biome and no water is one ground, whatever the seed.
-            if (label === 'Forest') expect(rerolled).toBe(a.terrain.cells);
-            else expect(rerolled).not.toBe(a.terrain.cells);
+            // Every one of these brings water somewhere, so the seed moves it.
+            expect(rerolled).not.toBe(a.terrain.cells);
         }
+        // One biome and no water is one ground, whatever the seed.
+        const flat = budget([plains, camp], { cap: 128 });
+        expect(layout(flat, options(nextSeed(SEEDS[0]))).terrain.cells).toBe(layout(flat, options(SEEDS[0])).terrain.cells);
     });
 
     it('covers the mat in whole cells, one terrain each, stored compactly', () => {
@@ -131,18 +135,22 @@ describe('the terrain map', () => {
         }
     });
 
-    it('water comes only from maps that bring it, about as much as they bring', () => {
+    it('the sea comes only from maps that bring it, about as much as they bring; inland water is the main biome\'s', () => {
         const share = (slots) => {
             const summary = budget(slots, { cap: 128 });
             return SEEDS.map(seed => waterShare(layout(summary, options(seed)).terrain)).reduce((a, b) => a + b) / SEEDS.length;
         };
-        expect(share(RECIPES.Forest)).toBe(0);
-        expect(share(RECIPES['Forest + Mountain'])).toBe(0);
+        expect(share([plains, camp])).toBe(0);
+        // The forest's pond: a little water, never a sea.
+        const pond = share(RECIPES.Forest);
+        expect(pond).toBeGreaterThan(0);
+        expect(pond).toBeLessThan(0.03);
+        expect(share(RECIPES['Forest + Mountain'])).toBeLessThan(0.03);
         const coastAlone = share(RECIPES.Coast);
         expect(coastAlone).toBeGreaterThan(0.2);
         expect(coastAlone).toBeLessThan(0.36);
-        // A Coast blended with a Forest brings half the water.
-        const hybrid = share([coast, forest]);
+        // A Coast blended with a map of another biome brings half the sea.
+        const hybrid = share([coast, plains]);
         expect(hybrid).toBeGreaterThan(coastAlone * 0.35);
         expect(hybrid).toBeLessThan(coastAlone * 0.65);
     });
@@ -178,6 +186,8 @@ describe('the terrain map', () => {
                     if (ownCells.has(`${c},${r}`)) continue;
                     const x = (c + 0.5) * TERRAIN_CELL;
                     const y = (r + 0.5) * TERRAIN_CELL;
+                    // Water is water whoever is near: the forest's pond, the mountain's tarn.
+                    if (terrainAt(result.terrain, x, y) === TERRAIN.WATER) continue;
                     let best = null;
                     let bestD = FOLLOW_REACH * FOLLOW_REACH;
                     for (const n of nodes) {
@@ -291,7 +301,7 @@ describe('the terrain map', () => {
             });
 
             it('a water node on a map with no water is reported, not forced onto land', () => {
-                const pond = base('forest', 40, [{ typeId: 'oak', weight: 3 }, { typeId: 'boat', weight: 1 }]);
+                const pond = base('plains', 40, [{ typeId: 'oak', weight: 3 }, { typeId: 'boat', weight: 1 }]);
                 const result = layout(budget([pond], { cap: 128 }), options(SEEDS[6], { terrainAllows }));
                 expect(result.unplaced.length).toBeGreaterThan(0);
                 expect(result.unplaced.every(u => u.typeId === 'boat')).toBe(true);
@@ -302,17 +312,6 @@ describe('the terrain map', () => {
 });
 
 describe('TerrainMap pieces', () => {
-    it('carves water along one edge, about the share asked, sparing what must stay dry', () => {
-        const grid = { cols: 40, rows: 20 };
-        const water = carveWater(grid, 0.25, mulberry32(5));
-        const share = water.reduce((n, v) => n + v, 0) / water.length;
-        expect(share).toBeGreaterThan(0.15);
-        expect(share).toBeLessThan(0.35);
-        const kept = carveWater(grid, 0.25, mulberry32(5), (i) => i % 2 === 0);
-        expect(kept.every((v, i) => !(v && i % 2 === 0))).toBe(true);
-        expect(carveWater(grid, 0, mulberry32(5)).every(v => v === 0)).toBe(true);
-    });
-
     it('measures each cell\'s distance to the water in side steps', () => {
         const grid = { cols: 4, rows: 1 };
         expect([...shoreDistance(grid, Uint8Array.from([1, 0, 0, 0]))]).toEqual([0, 1, 2, 3]);
