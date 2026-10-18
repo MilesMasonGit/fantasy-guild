@@ -29,7 +29,7 @@ import { HealthBar } from './HealthBar.jsx';
 import { heroBarPlace } from './healthBar.js';
 
 /**
- * A fighting hero's health bar, just over their figure's head. Reads the hero's HP as a flat
+ * A hero's health bar, just over their figure's head. Reads the hero's HP as a flat
  * projection of primitives (the engine mutates `hp` in place), so it redraws only when the
  * number moves.
  */
@@ -144,6 +144,8 @@ const MatHeroBody = memo(function MatHeroBody({
     facing = 1,
     limp = false,
     fighting = false,
+    hurt = false,
+    hovered = false,
     heroCarried = false,
     dragRef,
     dragProps
@@ -163,7 +165,8 @@ const MatHeroBody = memo(function MatHeroBody({
     const isWalking = moving;
     const walkDrawn = useDrawn('walkDraw');
     const barsDrawn = useDrawn('bubbles');
-    const barShown = useBarLinger(fighting);
+    // Only when it says something: below full health, fighting (and a moment after), or hovered.
+    const barShown = useBarLinger(fighting) || hurt || hovered;
     const facingLeft = facing < 0;
 
     // A moving hero is handed no point (so their steps do not redraw the mat). Read it live,

@@ -118,6 +118,9 @@
   --color-hp: var(--color-gi-hp);
   --color-energy: #f6ad55;
   --color-xp: #9f7aea;
+  /* The work bar on a worked Token (the cycle ring's colours before it). */
+  --color-work-bar: #f4f1e8;
+  --color-work-bar-blocked: #8a8a8a;
 
   --color-task: #6090c0;
   --color-recipe: #50a060;
@@ -707,6 +710,26 @@
 .gi-quest-ready,
 .gi-gear-alert {
   will-change: contents;
+}
+
+/* The work bar along a worked Token's foot (`workBar.js`): a dark track, and its
+   fill as the track's own `::after`, scaled to `--work-bar-fill` (whole art pixels,
+   written on the shared step clock). Grey and still while the Token is blocked. */
+.gi-work-bar {
+  background: rgba(10, 8, 6, 0.72);
+}
+
+.gi-work-bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--color-work-bar);
+  transform-origin: left center;
+  transform: scaleX(var(--work-bar-fill, 0));
+}
+
+.gi-work-bar[data-work-bar-blocked]::after {
+  background: var(--color-work-bar-blocked);
 }
 
 /* A count ring gliding to its new value (owner, 2026-10-01): a Token's charges

@@ -5,11 +5,12 @@ import { useTokenEvent } from './tokenEvents.js';
 import { inputSummary, outputSummary, contextSummary } from './StationRecipeModal.jsx';
 import { SkillIcon } from '../base/SkillIcon.jsx';
 import { getSkill, DEMOLITION_SKILL_ID } from '../../../config/registries/skillRegistry.js';
+import { RING_D_U } from './ringRow.js';
 
 /**
- * The small things drawn on a Token besides its ring bubbles: its name above the box, and the
- * recipe gear and the disallow mark, which sit in the middle row of bubbles (`TokenBubbles`
- * places them).
+ * The small things drawn on a Token besides its ring bubbles: its name above the box, the -1
+ * floater, and the recipe gear, the disallow mark and the demolition mark, which sit in the
+ * middle row (`TokenBubbles` places them).
  * A Token is a circle at a point, so what these badges are about is its **instance id**, and
  * everything they need to draw arrives as a prop from `MatToken`, which already reads the
  * Token's details by id. Only the charge floater still listens for itself, because a `-1` is a
@@ -21,15 +22,16 @@ const FLOATER_AT_REST_STYLE = Object.freeze({ ...FLOATER_STYLE, willChange: 'con
 
 /**
  * TokenChargeDeltaFloater: floating numbers (-1, +50) when this Token's charges change.
- * `anchor="ring"`: just above the charges ring it is drawn inside; `"corner"`: the Token's
- * bottom-right, when no charges ring shows. Memoised: it draws from its own state, not from
- * its Token's redraws.
+ * `anchor="ring"`: just above the charges ring's spot, `slot` (`{left, top}` in the Token's box,
+ * the spot a ring `RING_D_U` across takes); `"corner"`: the Token's bottom-right, for a Token with
+ * no charges. Nothing at all is drawn while no number floats. Memoised: it draws from its own
+ * state, not from its Token's redraws.
  * ⚠️ `atRest` (no hero works the Token): the rise runs on the main thread, since among the resting
  * Tokens a compositor animation redrew every Token in front of it soft (tailwind.css, at
  * `.gi-token-land`). A worked Token is drawn in front of every resting one, so its -1, the usual
  * one, stays on the compositor: on the main thread the -1s alone cost a third more frame work.
  */
-export const TokenChargeDeltaFloater = memo(function TokenChargeDeltaFloater({ instanceId, anchor = 'corner', atRest = false }) {
+export const TokenChargeDeltaFloater = memo(function TokenChargeDeltaFloater({ instanceId, anchor = 'corner', atRest = false, slot = null }) {
     const [deltas, setDeltas] = useState([]);
     const timers = React.useRef(new Set());
 
@@ -54,7 +56,7 @@ export const TokenChargeDeltaFloater = memo(function TokenChargeDeltaFloater({ i
 
     if (!deltas.length) return null;
 
-    return (
+    const floats = (
         <div
             data-charge-floater={anchor}
             className={cn(
@@ -81,6 +83,16 @@ export const TokenChargeDeltaFloater = memo(function TokenChargeDeltaFloater({ i
                     {d.delta > 0 ? `+${d.delta.toLocaleString()}` : (d.delta < 0 ? `-${Math.abs(d.delta).toLocaleString()}` : `${d.delta}`)}
                 </div>
             ))}
+        </div>
+    );
+    if (!slot) return floats;
+    return (
+        <div
+            data-bubble-slot="charges"
+            className="absolute z-20 pointer-events-none"
+            style={{ left: slot.left, top: slot.top, width: RING_D_U, height: RING_D_U }}
+        >
+            {floats}
         </div>
     );
 });
@@ -243,25 +255,5 @@ export const MarkedBadge = ({ title }) => (
         className="shrink-0 select-none w-7 h-7 flex items-center justify-center rounded-full bg-black/70 border border-gi-warning/80 filter drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)]"
     >
         <SkillIcon skill={getSkill(DEMOLITION_SKILL_ID)} skillId={DEMOLITION_SKILL_ID} size={16} />
-    </div>
-);
-
-/**
- * StuckBadge: the warning mark in the middle row of a spawner that cannot spawn: yellow while
- * it waits on an item, red when there is no room or the mat's Token cap is full. `TokenBubbles`
- * shows it the whole time.
- */
-export const StuckBadge = ({ noRoom = false, matFull = false, title }) => (
-    <div
-        data-stuck-badge={matFull ? 'mat_full' : noRoom ? 'no_room' : 'needs_item'}
-        aria-label={title}
-        className="shrink-0 select-none w-7 h-7 flex items-center justify-center filter drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)]"
-    >
-        <img
-            src={noRoom ? '/assets/ui/u_alert_red.png' : '/assets/ui/u_alert_yellow.png'}
-            alt={title}
-            className="w-6 h-6 object-contain"
-            style={{ imageRendering: 'pixelated' }}
-        />
     </div>
 );

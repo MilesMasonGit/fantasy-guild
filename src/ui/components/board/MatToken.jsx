@@ -582,9 +582,9 @@ export const MatToken = React.memo(function MatToken({
                 <TokenNameBadge name={label} isDragging={hidden} isHovered={isHovered} lift={Math.max(small ? SMALL_OVERHANG_U : 0, def?.enemy ? HEALTH_BAR_LIFT_U : 0)} />
 
                 {/**
-                 * The bubbles, each in its own spot inside the Token's box: timer, gear, spawner
-                 * count, disallow mark, cycle, quest progress, charges. A small Token keeps
-                 * FULL-size bubbles and they hang off its box. They carry the -1 floater.
+                 * The work bar, the problem mark, the player's marks and the -1 floater, and
+                 * while hovered the rings and the gear, each in its own spot inside the Token's
+                 * box. A small Token keeps FULL-size rings and they hang off its box.
                  */}
                 {bubblesDrawn && <TokenBubbles
                     instanceId={id}
@@ -592,6 +592,7 @@ export const MatToken = React.memo(function MatToken({
                     isHovered={isHovered}
                     isDragging={hidden}
                     boxPx={boxPx}
+                    artUnit={artScale}
                     small={small}
                     spawner={spawnerBubble}
                     quest={questBubble}

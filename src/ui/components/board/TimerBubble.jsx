@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { RingBadge } from './RingBadge.jsx';
 import { Bubble } from './Bubble.jsx';
 import { turnCountdownText } from './centreAlert.js';
-import { TURN_COUNTDOWN_REFRESH_MS, turnFraction, timerVisible, bubbleSlot } from './ringRow.js';
+import { TURN_COUNTDOWN_REFRESH_MS, turnFraction, bubbleSlot } from './ringRow.js';
 import { tokenName } from '../../../config/registries/tokenRegistry.js';
 import { formatDuration } from '../drawer/lifecycleLines.js';
 
@@ -10,17 +10,14 @@ import { formatDuration } from '../drawer/lifecycleLines.js';
 function viewOf(roll) {
     const text = roll ? turnCountdownText(roll.inMs) : null;
     if (!text) return null;
-    // A resting Token's ring fills as it refills, and it shows for the whole rest, not only the
-    // last seconds: resting is the one thing to know about it.
+    // A resting Token's ring fills as it refills.
     if (roll.kind === 'respawn') {
         return {
             kind: 'respawn',
-            inMs: roll.inMs,
-            always: true,
             text,
             fraction: Number((1 - turnFraction(roll.inMs, roll.everyMs)).toFixed(3)),
             // Non-breaking, so the tip never wraps between the number and its unit.
-            title: `Resting. Refills in ${formatDuration(roll.inMs).replace(/ /g, ' ')}`
+            title: `Resting. Refills in ${formatDuration(roll.inMs).replace(/ /g, ' ')}`
         };
     }
     const chance = `${roll.chance}% chance`;
@@ -30,7 +27,6 @@ function viewOf(roll) {
     else title = `Next roll to turn into something else in ${text} (${chance})`;
     return {
         kind: roll.kind === 'grow' ? 'grow' : 'turn',
-        inMs: roll.inMs,
         text,
         fraction: Number(turnFraction(roll.inMs, roll.everyMs).toFixed(3)),
         title
@@ -40,40 +36,28 @@ function viewOf(roll) {
 const sameView = (a, b) => a === b || (!!a && !!b && a.text === b.text && a.fraction === b.fraction && a.title === b.title);
 
 /**
- * TimerBubble: the top-left bubble of a Token that changes on a clock: a Sapling counting down
- * to its growth, a Coast to its next turn roll (or its roll to turn back), `0:34`, emptying; a
- * resting vein to its refill, filling. It shows while the Token is hovered and in the last few
- * seconds of the countdown, and for the whole of a rest.
+ * TimerBubble: the top-left ring of a hovered Token that changes on a clock: a Sapling counting
+ * down to its growth, a Coast to its next turn roll (or its roll to turn back), `0:34`, emptying;
+ * a resting vein to its refill, filling. `TokenBubbles` mounts it only while the Token is
+ * hovered, so a Token at rest polls nothing.
  * The clock runs on game time (the engine's `delta`), so the bubble polls it every {@link
- * TURN_COUNTDOWN_REFRESH_MS} rather than keeping its own. The poll lives here so only this
- * bubble re-renders on it, never the MatToken, and while the bubble is hidden it holds no state
- * at all (a hidden bubble does not redraw each second). `read()` returns `{ kind: 'grow' | 'turn'
- * | 'respawn', inMs, everyMs, ... }` or null (then no bubble).
+ * TURN_COUNTDOWN_REFRESH_MS} rather than keeping its own; only this bubble re-renders on it.
+ * `read()` returns `{ kind: 'grow' | 'turn' | 'respawn', inMs, everyMs, ... }` or null (then
+ * no bubble).
  */
-export const TimerBubble = ({ read, hovered = false, boxPx, small = false, dragProps = null }) => {
-    const [view, setView] = useState(null);
-    const hoveredRef = useRef(hovered);
-    hoveredRef.current = hovered;
-    const refreshRef = useRef(null);
+export const TimerBubble = ({ read, boxPx, small = false, dragProps = null }) => {
+    const [view, setView] = useState(() => (read ? viewOf(read() ?? null) : null));
 
     useEffect(() => {
         if (!read) return undefined;
         const refresh = () => {
             const next = viewOf(read() ?? null);
-            const show = next && (next.always || timerVisible(hoveredRef.current, next.inMs));
-            setView(prev => {
-                const wanted = show ? next : null;
-                return sameView(prev, wanted) ? prev : wanted;
-            });
+            setView(prev => (sameView(prev, next) ? prev : next));
         };
-        refreshRef.current = refresh;
         refresh();
         const timer = setInterval(refresh, TURN_COUNTDOWN_REFRESH_MS);
-        return () => { clearInterval(timer); refreshRef.current = null; };
+        return () => clearInterval(timer);
     }, [read]);
-
-    // Hover shows it at once, not at the next poll.
-    useEffect(() => { refreshRef.current?.(); }, [hovered]);
 
     if (!view) return null;
     return (

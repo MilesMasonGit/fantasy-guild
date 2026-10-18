@@ -207,13 +207,13 @@ export const MatBoard = React.memo(function MatBoard({
                     name: hero?.name || 'Hero',
                     sprite: hero?.spriteId || hero?.classId || null,
                     // Not working productively: the Token it holds is stuck. Such a hero gets
-                    // no glow (the red badge says it alone) and stands idle instead of
-                    // swinging. The same test as the Token's own hit reaction (`strikesLive`).
+                    // no glow (the Token's problem mark says it alone) and stands idle instead
+                    // of swinging. The same test as the Token's own hit reaction (`strikesLive`).
                     stuck: !!worked && !strikesLive(heroId, worked.alert),
                     // Fighting: idle, one attack per real attack.
                     combat: !!worked && hitsOnAttack(hitSkillOf(getTokenType(worked.typeId))),
-                    // Which alert; the speech bubble says what is wrong.
-                    alert: worked?.alert || null
+                    // Below full health: the health bar shows.
+                    hurt: !!hero?.hp && hero.hp.current < hero.hp.max
                 });
             }
             return out;
@@ -464,6 +464,8 @@ export const MatBoard = React.memo(function MatBoard({
                         facing={h.facing}
                         limp={h.limp}
                         fighting={h.combat}
+                        hurt={h.hurt}
+                        hovered={hoverHeroId === h.heroId}
                     />
                 );
             })}

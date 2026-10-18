@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { MAT_Z } from './matLayers.js';
-import { blockedLineFor, readyToSpeak, pinRefusedLineFor } from './heroBubbles.js';
+import { pinRefusedLineFor } from './heroBubbles.js';
 import { addMoment, liveMoments, stackOf, momentText, speaksMoment, DEPLETED_TTL_MS } from './heroSpeech.js';
 import { floatsOf, anyFloats, subscribeFloats } from './levelUpFloats.js';
 import { LevelUpFloats } from './LevelUpFloat.jsx';
@@ -47,19 +47,15 @@ const guessSize = (stack, floats, unit) => {
  * A hero who has just levelled a skill has its icon and number floating at the top of their
  * stack (`levelUpFloats.js`, `LevelUpFloat.jsx`), drawn with the speech so it follows the hero
  * and is kept off the other stacks the same way.
- * Per hero: **blocked** (`hero.alert`, the alert on the Token they hold) says what is wrong
- * for as long as it is wrong, re-read twice a second so it names what is missing NOW; a
- * shortage of items waits first. **moments** (arriving at a job, going idle, a flag that could
- * not be pinned, a Token the hero used up) are timed, and gone by themselves (`heroSpeech.js`).
- * Only unusual events are spoken: routine lines are filtered out by `speaksMoment` /
- * `speaksBlock`, and every line with its status is listed in
- * `docs/reference/speech_bubble_lines.md`.
+ * Heroes speak only of **moments** (going idle, a flag that could not be pinned, a Token the hero
+ * used up), timed and gone by themselves (`heroSpeech.js`). A Token's problem is never spoken: its
+ * problem mark and the mark's hover say it. Routine moments are filtered out by `speaksMoment`,
+ * and every line with its status is listed in `docs/reference/speech_bubble_lines.md`.
  * Stacks are kept off each other and inside the mat (`bubbleLayout.js`); a nudged stack's
  * little tail still points at its hero.
  */
 export const HeroBubbleLayer = ({ heroes }) => {
     const [now, setNow] = useState(() => Date.now());
-    const sinceRef = useRef(new Map());     // blocked key → when first seen
     const momentsRef = useRef(new Map());   // heroId → moments, oldest first
     const layerRef = useRef(null);
     const sizesRef = useRef(new Map());     // heroId → measured {w, h} of its stack
@@ -140,27 +136,12 @@ export const HeroBubbleLayer = ({ heroes }) => {
         else if (live.length !== list.length) momentsRef.current.set(heroId, live);
     }
 
-    // When each block was first seen; a block that has cleared is forgotten so
-    // it waits its delay afresh if it returns.
-    const since = sinceRef.current;
-    const liveKeys = new Set();
-    const keyOf = (h) => `${h.heroId}:${h.tokenId}:${h.alert}`;
-    for (const h of heroes) {
-        if (!(h.alert && h.tokenId)) continue;
-        liveKeys.add(keyOf(h));
-        if (!since.has(keyOf(h))) since.set(keyOf(h), Date.now());
-    }
-    for (const key of [...since.keys()]) if (!liveKeys.has(key)) since.delete(key);
-
     // What each hero says at time `t`, and where its stack hangs. Reads, never writes: the
     // poll below asks it too.
     const speechAt = (list, t) => {
         const out = [];
         for (const h of list) {
-            const blocked = (h.alert && h.tokenId && readyToSpeak(h.alert, sinceRef.current.get(keyOf(h)) ?? t, t))
-                ? blockedLineFor(h.tokenId, h.alert)
-                : null;
-            const stack = stackOf(momentsRef.current.get(h.heroId) || [], blocked, t);
+            const stack = stackOf(momentsRef.current.get(h.heroId) || [], t);
             const floats = floatsOf(h.heroId, t);
             if (!stack.length && !floats.length) continue;
             // The tail sits just above the head, read from the art's real size at this mat scale
@@ -181,10 +162,9 @@ export const HeroBubbleLayer = ({ heroes }) => {
     /** What the layer last drew, as `speechKeyOf` writes it. */
     const drawnKeyRef = useRef(null);
 
-    // Twice a second, while anyone is blocked or has a moment up: a line may have lapsed, a wait
-    // run out, or a block now name something else. Drawn only when what is said has changed; a
-    // stuck hero's unchanged line drew the layer twice a second for nothing.
-    const busy = heroes.some(h => h.alert && h.tokenId) || momentsRef.current.size > 0 || anyFloats(t);
+    // Twice a second, while anyone has a moment or a float up: one may have lapsed. Drawn only
+    // when what is said has changed.
+    const busy = momentsRef.current.size > 0 || anyFloats(t);
     useEffect(() => {
         if (!busy) return undefined;
         const timer = setInterval(() => {
