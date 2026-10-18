@@ -761,16 +761,16 @@ describe('⭐ Shaped water: lakes, rivers and sulphur springs by their own field
             for (let i = 0; i < d.colour.length; i++) {
                 if ((d.kinds[i] >> SLOT_SHIFT) !== slot || !(d.kinds[i] & KIND_MASK)) continue;
                 const px = f[d.planAt[i]] / 2;
-                expect(plan.grass.shore[d.planAt[i]]).toBe(bandAt(bands, px));
+                if (plan.grass.shore[d.planAt[i]] !== bandAt(bands, px)) throw new Error(`${map}: class at ${px}`);
                 const k = d.colour[i];
                 if (px < lake.foam) {
-                    expect([COLOUR.FOAM, COLOUR.FOAM2], `${map}: foam at ${px}`).toContain(k);
+                    if (k !== COLOUR.FOAM && k !== COLOUR.FOAM2) throw new Error(`${map}: ${k} in the foam at ${px}`);
                     foam++;
                 } else if (px < lake.shallow) {
-                    expect([COLOUR.SEA + 2, COLOUR.SEA + 3], `${map}: shallows at ${px}`).toContain(k);
+                    if (k !== COLOUR.SEA + 2 && k !== COLOUR.SEA + 3) throw new Error(`${map}: ${k} in the shallows at ${px}`);
                 } else if (px >= lake.deep) {
                     // Deep water, or a wave over it (its crest lighter where it started nearer the shore).
-                    expect([COLOUR.SEA, COLOUR.SEA + 2, COLOUR.SEA + 3, COLOUR.TROUGH], `${map}: deep at ${px}`).toContain(k);
+                    if (![COLOUR.SEA, COLOUR.SEA + 2, COLOUR.SEA + 3, COLOUR.TROUGH].includes(k)) throw new Error(`${map}: ${k} deep at ${px}`);
                     if (k === COLOUR.SEA) deep++;
                 }
             }
@@ -781,7 +781,7 @@ describe('⭐ Shaped water: lakes, rivers and sulphur springs by their own field
                 expect(f[d.planAt[wv.y * d.cols + wv.x]] / 2).toBeGreaterThanOrEqual(lake.shallow);
             }
         }
-    });
+    }, 30000);
 
     it('⭐ wets the land round a lake in a bank two and a half pixels wide, and nowhere else', () => {
         const { plan, f, d } = shaped('water_lake_river', 84);

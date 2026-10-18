@@ -313,15 +313,21 @@ group('biomes and ground', () => {
 
     it('says each biome\'s ground, and how much water the maps bring, blended like points', () => {
         const { water, ...rest } = budget([forest, mountain, coast], { cap: CAP }).ground;
-        expect(rest).toEqual({ main: 'forest', terrains: { coast: 'sand', forest: 'grass', mountain: 'rock' }, shore: ['coast'] });
+        // The sea blends like points; the inland water is the main biome's (a forest's pond).
+        expect(rest).toEqual({ main: 'forest', terrains: { coast: 'sand', forest: 'grass', mountain: 'rock' }, shore: ['coast'], inland: ['pond'] });
         expect(water).toBeCloseTo(0.1, 12);
         expect(budget([coast], { cap: CAP }).ground.water).toBe(0.3);
-        expect(budget([forest], { cap: CAP }).ground).toEqual({ main: 'forest', terrains: { forest: 'grass' }, water: 0, shore: [] });
+        expect(budget([coast], { cap: CAP }).ground.inland).toEqual([]);
+        expect(budget([forest], { cap: CAP }).ground).toEqual({ main: 'forest', terrains: { forest: 'grass' }, water: 0, shore: [], inland: ['pond'] });
+        expect(budget([mountain], { cap: CAP }).ground.inland).toEqual(['tarn', 'braided']);
     });
 
     it('a Base Map may name its own ground and water', () => {
         const marsh = base('marsh', 20, [{ typeId: 'reed', weight: 1 }], { biome: 'marsh', terrain: 'mud', water: 0.2 });
-        expect(budget([marsh], { cap: CAP }).ground).toEqual({ main: 'marsh', terrains: { marsh: 'mud' }, water: 0.2, shore: ['marsh'] });
+        expect(budget([marsh], { cap: CAP }).ground).toEqual({ main: 'marsh', terrains: { marsh: 'mud' }, water: 0.2, shore: ['marsh'], inland: [] });
+        // And one variety of inland water, which a biome's own rules would pick among.
+        expect(budget([{ ...marsh, inland: 'lake' }], { cap: CAP }).ground.inland).toEqual(['lake']);
+        expect(budget([{ ...marsh, inland: 'whirlpool' }], { cap: CAP }).ground.inland).toEqual([]);
         // An unknown biome with no ground of its own is grass, and dry.
         expect(budget([base('plains', 10, [{ typeId: 'tuft', weight: 1 }])], { cap: CAP }).ground.terrains).toEqual({ plains: 'grass' });
     });

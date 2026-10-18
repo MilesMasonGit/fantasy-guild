@@ -14,7 +14,7 @@ import { buildGroundPlan } from '../systems/board/TerrainSurface.js';
 import { PLAN_PIXEL_U } from '../systems/board/TerrainLattice.js';
 
 /**
- * A Region's water as shapes (brief 180 G5, the owner's world rounds W5 to W7): lakes, ponds,
+ * A Region's water as shapes (the owner's settled world rounds): lakes, ponds,
  * tarns, rivers, sulphur springs and the edge sea, made with the layout, stored with the cells,
  * drawn where they lie rather than by the cells. Content-free: synthetic Tokens, the real rules.
  */

@@ -25,7 +25,8 @@ const map = (id, cartography) => ({ id, name: id, type: 'map', cartography: { po
 const nodes = (...typeIds) => typeIds.map(typeId => ({ typeId, weight: 1 }));
 
 registerItems({
-    fixture_ga_forest: map('fixture_ga_forest', { biome: 'forest', nodes: nodes('fixture_ga_plain', 'fixture_ga_mine', 'fixture_ga_boat', 'fixture_ga_hut') }),
+    fixture_ga_plains: map('fixture_ga_plains', { biome: 'plains', nodes: nodes('fixture_ga_plain', 'fixture_ga_mine', 'fixture_ga_boat', 'fixture_ga_hut') }),
+    fixture_ga_forest: map('fixture_ga_forest', { biome: 'forest', nodes: nodes('fixture_ga_plain', 'fixture_ga_boat', 'fixture_ga_dock') }),
     fixture_ga_coast: map('fixture_ga_coast', { biome: 'coast', nodes: nodes('fixture_ga_plain', 'fixture_ga_boat', 'fixture_ga_dock', 'fixture_ga_hut') }),
     fixture_ga_mountain: map('fixture_ga_mountain', { biome: 'mountain', nodes: nodes('fixture_ga_mine') }),
     fixture_ga_quarry: map('fixture_ga_quarry', { biome: 'quarry', terrain: 'rock', water: 0, nodes: nodes('fixture_ga_mine') }),
@@ -57,7 +58,7 @@ describe('the audit reads "Stands on"', () => {
     });
 
     it('names a map node its map\'s ground can never give', () => {
-        const said = standsOnLines('Item "fixture_ga_forest"');
+        const said = standsOnLines('Item "fixture_ga_plains"');
         expect(said).toHaveLength(2);
         // Rock on a forest's grass: never, beside any map.
         expect(said.find(s => /GA Mineshaft/.test(s))).toMatch(/never/);
@@ -68,6 +69,8 @@ describe('the audit reads "Stands on"', () => {
     it('says nothing when the map\'s own ground or water serves the node', () => {
         expect(standsOnLines('Item "fixture_ga_coast"')).toEqual([]);
         expect(standsOnLines('Item "fixture_ga_mountain"')).toEqual([]);
+        // A forest brings its own pond: a boat and a dock have water.
+        expect(standsOnLines('Item "fixture_ga_forest"')).toEqual([]);
         // A map that names its own terrain is read by it, not by its biome.
         expect(standsOnLines('Item "fixture_ga_quarry"')).toEqual([]);
     });

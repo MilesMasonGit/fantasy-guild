@@ -49,7 +49,7 @@ describe('the terrain map', () => {
             expect(b.terrain).toEqual(a.terrain);
             const rerolled = layout(summary, options(nextSeed(SEEDS[0]))).terrain.cells;
             // Every one of these brings water somewhere, so the seed moves it.
-            expect(rerolled).not.toBe(a.terrain.cells);
+            expect(rerolled, label).not.toBe(a.terrain.cells);
         }
         // One biome and no water is one ground, whatever the seed.
         const flat = budget([plains, camp], { cap: 128 });
