@@ -220,7 +220,7 @@ const ACTION_CLS = 'w-full px-3 py-2 rounded-lg border text-xs font-bold transit
  * leaves this way). While the dev layout tool is on, a placed Token (a landmark included) can be
  * removed. Disallowing and demolishing are the top bar's map modes, not the card's.
  */
-const LeaveMatControl = ({ instanceId }) => {
+export const LeaveMatControl = ({ instanceId }) => {
     const view = useGameState(
         () => {
             const instance = BoardState.getTokenById(instanceId);

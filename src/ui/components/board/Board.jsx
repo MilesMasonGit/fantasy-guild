@@ -17,6 +17,8 @@ import { bandStationRecipes } from '../../../systems/board/RecipeBands.js';
 import { StationRecipeModal } from './StationRecipeModal.jsx';
 import { isShopPayload, pointerOverShopDrawer } from '../drawer/ShopDrawer.jsx';
 import { isMatBankLocked } from '../../hooks/useMatBankLock.js';
+import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
+import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
  * The playmat: one drop surface, scaled to fit, with `MatBoard` drawing what is on it.
@@ -81,6 +83,10 @@ export const Board = ({ onInspectToken, onClearInspect, inspectedHeroId = null, 
     const [recipeId, setRecipeId] = useState(null);
     const handleOpenRecipes = useCallback((id) => setRecipeId(id), []);
     const closeRecipes = useCallback(() => setRecipeId(null), []);
+    // The Token card's Change recipe opens the same picker as the gear.
+    useEffect(() => EventBus.subscribe(UI_EVENTS.OPEN_STATION_RECIPES, (p) => {
+        if (p?.instanceId) setRecipeId(p.instanceId);
+    }, UI_LISTENER), []);
 
     const recipeInstance = recipeId ? BoardState.getTokenById(recipeId) : null;
     const recipeDef = recipeInstance ? getTokenType(recipeInstance.typeId) : null;

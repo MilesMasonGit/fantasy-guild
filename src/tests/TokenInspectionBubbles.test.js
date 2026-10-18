@@ -238,21 +238,3 @@ describe('the Origin line', () => {
         }
     });
 });
-
-describe('the popup shape', () => {
-    it('has the speech bubbles look: rounded, yellow-bordered, a turned-square tail', () => {
-        const forest = put(TOKEN, 'fixture_producer');
-        const rect = { top: 400, bottom: 480, left: 400, right: 480, width: 80, height: 80 };
-        const { container } = mount(h(TokenInspectPopup, {
-            typeId: 'fixture_producer', instanceId: forest.id, anchorRect: rect, onClose: () => {}
-        }));
-        const tail = container.querySelector('[data-inspect-tail]');
-        expect(tail).not.toBeNull();
-        expect(tail.className).toContain('rotate-45');
-        expect(tail.className).toContain('border-yellow-500/70');
-        const popup = tail.parentElement;
-        expect(popup.className).toContain('rounded-md');
-        expect(popup.className).toContain('border-yellow-500/70');
-        expect(popup.className).toContain('bg-yellow-950/95');
-    });
-});

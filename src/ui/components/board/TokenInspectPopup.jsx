@@ -1,12 +1,14 @@
 import { useRef, useLayoutEffect, useState, useEffect, useCallback } from 'react';
 import { cn } from '../../utils/cn.js';
-import TokenInspection from '../drawer/TokenInspection.jsx';
+import { TokenCard, CARD_ART_PX } from './TokenCard.jsx';
 import { ArrowScrollList } from '../base/ArrowScrollList.jsx';
+import { PixelFrame, FRAME_KIND, FRAME_BAND_PX } from '../base/PixelFrame.jsx';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { useTokenEvent } from './tokenEvents.js';
 
 /**
- * The Token sheet, floating beside the Token it is about.
+ * The Token card, floating beside the Token it is about. One at a time: clicking another Token
+ * moves it there, clicking bare mat or pressing Escape closes it.
  * It follows the Token, not a remembered rectangle. On the mat a Token moves: it is pushed by
  * a 2×2 cascade, or dragged somewhere else, and the popup has to come along or it ends up
  * pointing at bare mat. So the anchor is looked up live by **instance id**
@@ -21,17 +23,12 @@ const POPUP_SCROLL_STEP_PX = 140;
 /** Long enough for `MatToken`'s left/top transition to have settled. */
 const MOVE_SETTLE_MS = 280;
 
-/** Where the tail sits for each side the popup opens on, and which two edges carry its border. */
-const TAIL_CLASS = {
-    top: '-bottom-[6px] -translate-x-1/2 border-r border-b',
-    bottom: '-top-[6px] -translate-x-1/2 border-l border-t',
-    right: '-left-[6px] -translate-y-1/2 border-l border-b',
-    left: '-right-[6px] -translate-y-1/2 border-r border-t'
-};
+/** The card inside its chamfer frame. */
+const POPUP_W = CARD_ART_PX + 2 * FRAME_BAND_PX;
 
 export const TokenInspectPopup = ({ typeId, instanceId = null, anchorRect, onClose }) => {
     const popupRef = useRef(null);
-    const [coords, setCoords] = useState({ top: 0, left: 0, dir: 'top', tailOffset: 0 });
+    const [coords, setCoords] = useState({ top: 0, left: 0, dir: 'top' });
     const [isVisible, setIsVisible] = useState(false);
     const [targetRect, setTargetRect] = useState(anchorRect || null);
 
@@ -61,7 +58,7 @@ export const TokenInspectPopup = ({ typeId, instanceId = null, anchorRect, onClo
         if (!targetRect || !popupRef.current) return;
 
         const popupEl = popupRef.current;
-        const popupW = popupEl.offsetWidth || 288;
+        const popupW = popupEl.offsetWidth || POPUP_W;
         const popupH = popupEl.offsetHeight || 320;
 
         const viewportW = window.innerWidth;
@@ -91,7 +88,6 @@ export const TokenInspectPopup = ({ typeId, instanceId = null, anchorRect, onClo
 
         let top = 0;
         let left = 0;
-        let tailOffset = 0;
 
         const tokenCenterX = targetRect.left + targetRect.width / 2;
         const tokenCenterY = targetRect.top + targetRect.height / 2;
@@ -100,26 +96,22 @@ export const TokenInspectPopup = ({ typeId, instanceId = null, anchorRect, onClo
             top = Math.max(margin, targetRect.top - tailGap - popupH);
             const idealLeft = tokenCenterX - popupW / 2;
             left = Math.max(margin, Math.min(viewportW - margin - popupW, idealLeft));
-            tailOffset = Math.max(16, Math.min(popupW - 16, tokenCenterX - left));
         } else if (dir === 'bottom') {
             top = Math.min(viewportH - margin - popupH, targetRect.bottom + tailGap);
             const idealLeft = tokenCenterX - popupW / 2;
             left = Math.max(margin, Math.min(viewportW - margin - popupW, idealLeft));
-            tailOffset = Math.max(16, Math.min(popupW - 16, tokenCenterX - left));
         } else if (dir === 'right') {
             left = Math.min(viewportW - margin - popupW, targetRect.right + tailGap);
             const idealTop = tokenCenterY - popupH / 2;
             top = Math.max(margin, Math.min(viewportH - margin - popupH, idealTop));
-            tailOffset = Math.max(16, Math.min(popupH - 16, tokenCenterY - top));
         } else if (dir === 'left') {
             left = Math.max(margin, targetRect.left - tailGap - popupW);
             const idealTop = tokenCenterY - popupH / 2;
             top = Math.max(margin, Math.min(viewportH - margin - popupH, idealTop));
-            tailOffset = Math.max(16, Math.min(popupH - 16, tokenCenterY - top));
         }
 
         // Whole pixels: a fractional position blurs the pixel-art icons inside.
-        setCoords({ top: Math.round(top), left: Math.round(left), dir, tailOffset: Math.round(tailOffset) });
+        setCoords({ top: Math.round(top), left: Math.round(left), dir });
         requestAnimationFrame(() => setIsVisible(true));
     }, [targetRect, typeId]);
 
@@ -134,52 +126,35 @@ export const TokenInspectPopup = ({ typeId, instanceId = null, anchorRect, onClo
             }
         };
 
+        // One Escape, one layer: while a drag is live, Escape only cancels it.
+        const handleKey = (e) => {
+            if (e.key === 'Escape' && !document.body.classList.contains('gi-dnd-active')) onClose();
+        };
+
         const timer = setTimeout(() => window.addEventListener('click', handleGlobalClick), 50);
+        window.addEventListener('keydown', handleKey);
         return () => {
             clearTimeout(timer);
             window.removeEventListener('click', handleGlobalClick);
+            window.removeEventListener('keydown', handleKey);
         };
     }, [onClose]);
-
-    const originClass = {
-        top: 'origin-bottom',
-        bottom: 'origin-top',
-        right: 'origin-left',
-        left: 'origin-right'
-    }[coords.dir] || 'origin-bottom';
 
     return (
         <div
             ref={popupRef}
+            data-token-card-popup={coords.dir}
             className={cn(
-                "fixed z-[80] w-72 border border-yellow-500/70 bg-yellow-950/95 shadow-lg rounded-md flex flex-col",
-                "transition-all duration-200 ease-out",
-                originClass,
-                isVisible ? "opacity-100 scale-100" : "opacity-0 scale-75 pointer-events-none"
+                "fixed z-[80] transition-opacity duration-200 ease-out",
+                isVisible ? "opacity-100" : "opacity-0 pointer-events-none"
             )}
-            style={{
-                top: coords.top,
-                left: coords.left
-            }}
+            style={{ top: coords.top, left: coords.left, width: POPUP_W }}
         >
-            <div className="w-full flex-1 flex flex-col overflow-hidden rounded-md">
+            <PixelFrame kind={FRAME_KIND.CHAMFER}>
                 <ArrowScrollList step={POPUP_SCROLL_STEP_PX} compact className="max-h-[75vh]">
-                    <TokenInspection typeId={typeId} instanceId={instanceId} hideSprite={true} showSell={false} />
+                    <TokenCard typeId={typeId} instanceId={instanceId} onClose={onClose} />
                 </ArrowScrollList>
-            </div>
-
-            {/* The tail is the speech bubbles' own: a small turned square on the edge facing
-                the Token, its two outer edges carrying the border. */}
-            <div
-                data-inspect-tail={coords.dir}
-                className={cn(
-                    "absolute z-10 w-2.5 h-2.5 rotate-45 border-yellow-500/70 bg-yellow-950 pointer-events-none",
-                    TAIL_CLASS[coords.dir]
-                )}
-                style={coords.dir === 'top' || coords.dir === 'bottom'
-                    ? { left: coords.tailOffset }
-                    : { top: coords.tailOffset }}
-            />
+            </PixelFrame>
         </div>
     );
 };

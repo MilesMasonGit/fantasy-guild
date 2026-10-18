@@ -25,6 +25,8 @@ import { ProblemMark } from '../components/board/ProblemMark.jsx';
 import { SEVERITY } from '../components/board/problemMark.js';
 import { workBarPlace, filledSteps } from '../components/board/workBar.js';
 import { ALERT } from '../../systems/board/boardEvents.js';
+import { PixelGlyph, GLYPHS } from '../components/base/PixelGlyph.jsx';
+import { TokenCard } from '../components/board/TokenCard.jsx';
 
 /** One art pixel of the UI, in screen pixels: UI sprites draw at 2×. */
 const ART_PX = 2;
@@ -366,6 +368,29 @@ const WorkBarDemo = () => {
     );
 };
 
+/** The card's small icons, code-drawn placeholders at 2×. */
+const CardIconsDemo = () => (
+    <div className="flex items-end gap-4 text-gi-text">
+        {Object.keys(GLYPHS).map(name => (
+            <figure key={name} className="flex flex-col items-center gap-1">
+                <PixelGlyph name={name} />
+                <figcaption className="text-xs text-gi-muted">{name}</figcaption>
+            </figure>
+        ))}
+    </div>
+);
+
+/** Two Token cards from the Shop's view (no Token on the mat): one with its activity's art, one plain. */
+const TokenCardDemo = () => (
+    <div className="flex items-start gap-6 flex-wrap">
+        {['token_copper_ore_vein', 'token_oak_tree'].map(id => (
+            <PixelFrame key={id} style={{ width: 256 + 12 }}>
+                <TokenCard typeId={id} />
+            </PixelFrame>
+        ))}
+    </div>
+);
+
 const ArrowBarDemo = () => (
     <div className="flex flex-col w-64 h-48 bg-gi-base/60">
         <ArrowScrollList step={100} className="flex-1 min-h-0 p-2 flex flex-col gap-1">
@@ -539,6 +564,16 @@ export const KIT_SECTIONS = [
         id: 'work-bar', title: 'Work bar', status: 'unapproved', source: 'TokenBubbles + workBar.js (a worked Token’s foot)',
         rule: 'A thin bar, 2 art pixels tall and 40 long, along a worked Token’s foot, filling in whole art pixels each work cycle; no number. Held and grey while the Token is blocked.',
         Demo: WorkBarDemo
+    },
+    {
+        id: 'token-card', title: 'Token card', status: 'unapproved', source: 'TokenCard (the card a click on a Token opens)',
+        rule: 'The 256 px activity scene fills the card behind the information, at 1×; a Token with none gets a plain card. Each block sits in a see-through box: name and X; work; cycle; the current recipe (needs, tools as hollow bars, makes); lifecycle; drops. Every icon and number explains itself on hover.',
+        Demo: TokenCardDemo
+    },
+    {
+        id: 'card-icons', title: 'Card icons', status: 'unapproved', source: 'PixelGlyph (the Token card’s lines)',
+        rule: 'Placeholders drawn in code until the owner’s sprites: clock, charges, regrow, spawn, grow, turn. 8×8 at 2×, in the text colour.',
+        Demo: CardIconsDemo
     },
     {
         id: 'map-modes', title: 'Map mode outlines and banners', status: 'unapproved',
