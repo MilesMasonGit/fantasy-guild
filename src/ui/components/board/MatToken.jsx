@@ -17,6 +17,7 @@ import * as TimedChanges from '../../../systems/board/TimedChanges.js';
 import * as Respawn from '../../../systems/board/Respawn.js';
 import * as Hand from '../../../systems/board/Hand.js';
 import * as FixedTokens from '../../../systems/board/FixedTokens.js';
+import * as Landmarks from '../../../systems/board/Landmarks.js';
 import { useTokenEvent } from './tokenEvents.js';
 import { useTokenDetail } from './useTokenDetail.js';
 import { TokenBubbles } from './TokenBubbles.jsx';
@@ -151,13 +152,15 @@ export const MatToken = React.memo(function MatToken({
     const isGuildHallToken = typeId === 'token_guild_hall';
     const isPermanent = !!(def?.cannotLeaveBoard || def?.isGuildHall || isGuildHallToken);
     // Read once per instance: nothing that decides it (the fixture mark, origin, type) changes
-    // while the instance lives. A fixed Token is never picked up; a movable one bought or built
+    // while the instance lives, except the dev layout tool, which lifts landmarks and the camp's
+    // fixtures while it is on. A fixed Token is never picked up; a movable one bought or built
     // carries the faint marker at rest (`FixedTokens.showsMoveMarker`).
     // ⚠️ Hovered, a Token only shows its white outline (`tokenOutline`): nothing on it moves.
+    const layoutEditing = React.useSyncExternalStore(Landmarks.onLayoutEditingChange, Landmarks.isLayoutEditing);
     const { fixed, marked } = React.useMemo(() => {
         const instance = BoardState.getTokenById(id);
         return { fixed: FixedTokens.isFixed(instance), marked: FixedTokens.showsMoveMarker(instance) };
-    }, [id]);
+    }, [id, layoutEditing]);   // eslint-disable-line react-hooks/exhaustive-deps
 
     // A Token with a registered sheet animates on the board only; everything else, and every
     // other surface, keeps the plain static sprite.
