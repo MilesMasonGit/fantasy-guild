@@ -71,8 +71,9 @@ branch), so it uses the kit and everyone fights; it merges after both.*
 | Brief 180 G3: generated ground in the game (meadow and forest) | engineer | `crunch/ground-g3` → `main` | merged Sat 13:40 (owner: looks good; work check same; draw +0.05–0.1 ms at 1×, within noise) | Sat | Sat |
 | Brief 180 G4: Mountain, Coast, per-look dapple, ground strength slider, and four new biomes (flower meadow, cherry grove, Yellowstone, volcano) | engineer | `crunch/ground-g4` → `main` | merged Sat 13:50 (owner asked to merge; gate green but T-190's flaky timeout; work check same; draw level with main) | Sat | |
 | World generation design rounds W1–W7 with the owner ([world page](https://claude.ai/artifact/XFe5Kj6P1RC9KiMREUTTmc)) | director + owner | `docs/active/research/ground_gen/` | done Sat: water by biome, lakes up to a fifth, rivers (uneven split, braided), blend variety, beaches at the sea, layouts core-and-rim and patchwork; brief 180 G5–G7 | Sat | Sat |
-| Brief 180 G5: water in every Region (lakes, ponds, tarns, rivers, smooth shores, sulphur lakes as water) | engineer | `crunch/ground-g5` (`wg`) | fixes built and verified (5132 tests, cycles, build); re-check waiting (file items 10-12, port 5195). Was eye-check ([file](eyecheck/2026-10-17_g5-water.md); served from `wg` on port 5195, the owner folder stays on `main`). Director gate: 5122 tests, cycles, build. Bench queued: work check and one `bench:draw --compare` in the next window. Minor biomes water not built (question A in the file) | Sat | |
-| Brief 180 G6 blends and beaches, then G7 placement (natural clumps, kinds where they belong, rarer further out, camps and treasures with a reason; layouts dropped, owner P3) | engineer | — | after G5 | | |
+| Brief 180 G5: water in every Region (lakes, ponds, tarns, rivers, smooth shores, sulphur lakes as water, Starter Camp pond) | engineer | `crunch/ground-g5` (`wg`) | bench-queued: owner re-check all ok (Sun); merged result `1f659d8d` in `p23b` (clean; no code on main since, so the branch gate stands: 5132 tests, cycles, build). Waits for the work check in the 13:00 window, then merges | Sat | |
+| Brief 180 G7: placement (natural clumps, kinds where they belong, rarer further out, camps and treasures with a reason) | engineer | `crunch/ground-g7` (`pl`, from G5) | building | Sun | |
+| Brief 180 G6: blend styles at biome borders, beaches at the sea | engineer | — | queued (after G7, or beside it once a code agent slot frees) | | |
 | **Two directors (owner, 2026-10-17):** this session keeps the terrain and world generation; a second director takes other features. Terrain owns `src/systems/atlas/`, `src/systems/board/Terrain*.js`, `groundScreen.js`, `terrainRegistry.js`, `playmatTuning.js`, `src/ui/dev/terrainDev.js` and `docs/active/research/ground_gen/`. Shared on this PC: two code subagents at once in total, one heavy run (suite, build, bench) at a time, the owner's folder stays on `main` | — | — | standing | | |
 | Later: Recruits get a weak basic attack (T-167); equip-by-drop opens the sheet a frame later (T-186, ruled 2026-10-15) | — | — | next batches | | |
 
@@ -120,6 +121,7 @@ T-186; the badges' soft shadows are settled inside T-013.)
 1. `fix/t167-recruit-attack` (6790962d): engine work check (`npm run bench -- --compare`), features director.
 2. `crunch/style-kit` (7060a37f): engine work check and one `bench:draw --compare` for the cost log, features director.
 3. `crunch/hero-bar` (after H3): engine work check and `bench:draw --compare` (the level-up floats), features director.
+4. `crunch/ground-g5` merged result (`1f659d8d`, in `p23b`): engine work check and one `bench:draw --compare` for the cost log, terrain director. Note for the features director: `crunch/map-tools` also edits `src/systems/atlas/StarterCamp.js`, which G5 changes (the Starter Camp pond); expect a merge conflict there after G5 lands.
 
 ## Summaries
 
