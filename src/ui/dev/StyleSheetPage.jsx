@@ -21,6 +21,10 @@ import { MAT_TOP_BAR_PX } from '../components/board/MatTopBar.jsx';
 import { MAP_MODE } from '../hooks/useMapMode.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
+import { ProblemMark } from '../components/board/ProblemMark.jsx';
+import { SEVERITY } from '../components/board/problemMark.js';
+import { workBarPlace, filledSteps } from '../components/board/workBar.js';
+import { ALERT } from '../../systems/board/boardEvents.js';
 
 /** One art pixel of the UI, in screen pixels: UI sprites draw at 2×. */
 const ART_PX = 2;
@@ -318,6 +322,50 @@ const LevelUpFloatDemo = () => {
     );
 };
 
+/** The mat's problem mark, both colours, each with its hover; and the work bar, running and held. */
+const ProblemMarkDemo = () => (
+    <div className="flex items-center gap-6 px-4 py-3" style={{ background: '#4a6b34' }}>
+        {[
+            { problem: { kind: ALERT.INPUTS, severity: SEVERITY.WAITING }, tip: 'Needs Oak Wood', label: 'waiting' },
+            { problem: { kind: ALERT.NO_ROOM, severity: SEVERITY.CANT }, tip: 'No room for what it makes', label: 'can’t' }
+        ].map(m => (
+            <figure key={m.label} className="flex flex-col items-center gap-1">
+                <ProblemMark problem={m.problem} tip={m.tip} artUnit={ART_PX} />
+                <figcaption className="text-xs text-white/80">{m.label}: hover me</figcaption>
+            </figure>
+        ))}
+    </div>
+);
+
+/** A work bar filling over 3 s in whole art pixels, as on a worked Token, and one held grey. */
+const WorkBarDemo = () => {
+    const place = workBarPlace(128, ART_PX);
+    const [fill, setFill] = useState(0);
+    useEffect(() => {
+        const started = performance.now();
+        const timer = setInterval(() => {
+            setFill(filledSteps(((performance.now() - started) % 3000) / 3000, place.steps) / place.steps);
+        }, 100);
+        return () => clearInterval(timer);
+    }, [place.steps]);
+    const bar = (blocked, f) => (
+        <div className="relative" style={{ width: 128, height: 128, background: '#4a6b34' }}>
+            <div
+                data-work-bar-demo
+                data-work-bar-blocked={blocked ? 'true' : undefined}
+                className="gi-work-bar absolute"
+                style={{ left: place.left, top: place.top, width: place.width, height: place.height, '--work-bar-fill': f }}
+            />
+        </div>
+    );
+    return (
+        <div className="flex items-end gap-6">
+            <figure className="flex flex-col items-center gap-1">{bar(false, fill)}<figcaption className="text-xs text-gi-muted">worked</figcaption></figure>
+            <figure className="flex flex-col items-center gap-1">{bar(true, 0.45)}<figcaption className="text-xs text-gi-muted">blocked: held, grey</figcaption></figure>
+        </div>
+    );
+};
+
 const ArrowBarDemo = () => (
     <div className="flex flex-col w-64 h-48 bg-gi-base/60">
         <ArrowScrollList step={100} className="flex-1 min-h-0 p-2 flex flex-col gap-1">
@@ -481,6 +529,16 @@ export const KIT_SECTIONS = [
         id: 'xp-bar', title: 'XP bar', status: 'unapproved', source: 'none shared',
         rule: 'XP is a thin bar; the exact number shows on hover.',
         Demo: () => <KitXpBar cur={1154} max={1500} />
+    },
+    {
+        id: 'problem-mark', title: 'Problem mark', status: 'unapproved', source: 'ProblemMark (the mat, one per Token)',
+        rule: 'One mark per Token at its centre, yellow while it waits (items, a Token beside it, a choice), red when it can’t (no room, the cap, the hero’s skill). Drawn at the Token’s art-pixel size with a hard shadow. Its hover says exactly what, in the mark’s colour. Placeholder: the alert “!” sprites.',
+        Demo: ProblemMarkDemo
+    },
+    {
+        id: 'work-bar', title: 'Work bar', status: 'unapproved', source: 'TokenBubbles + workBar.js (a worked Token’s foot)',
+        rule: 'A thin bar, 2 art pixels tall and 40 long, along a worked Token’s foot, filling in whole art pixels each work cycle; no number. Held and grey while the Token is blocked.',
+        Demo: WorkBarDemo
     },
     {
         id: 'map-modes', title: 'Map mode outlines and banners', status: 'unapproved',

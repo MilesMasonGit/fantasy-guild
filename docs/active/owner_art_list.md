@@ -74,6 +74,10 @@ player for these is T-138 (built when the first strips exist).
 - **Small UI icons** for the card's lines and the mat (NEW; placeholders until
   drawn): clock (cycle time), charges, regrow, spawn, grow, the problem mark
   ("!", recoloured yellow and red in code).
+  - **The problem mark is on the mat now** (brief 120 C1), 16 × 16, drawn at
+    the Token's own pixel size at a Token's centre with a hard black shadow.
+    The placeholder is today's `ui/u_alert_yellow.png` and `ui/u_alert_red.png`;
+    a new single "!" replaces both.
 - **Map mode cursors** (NEW, [concept_map_tools.md](concept_map_tools.md)):
   the cursor over a Token in Disallow mode (muted grey) and in Demolish mode
   (red); about 11 × 11, drawn at 2×. Code-drawn placeholders (a crossed
