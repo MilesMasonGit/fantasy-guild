@@ -21,8 +21,10 @@ import {
 
 /** The drawer's slide-down (`duration-200`), plus a little slack, before it unmounts. */
 const DRAWER_CLOSE_MS = 250;
-const ROW_PX = 30;
-const HEADER_ROW_PX = 40;
+/** Every skill cell, header cells included, is this square; 32 px fits the skill icon. */
+export const CELL_PX = 32;
+const ROW_PX = CELL_PX;
+const HEADER_ROW_PX = CELL_PX;
 const NAME_PX = 150;
 const GEAR_SRC = '/assets/ui/u_gear.png';
 /** The gear sprite's own size: it draws at 1×. */
@@ -85,8 +87,8 @@ function useHeroesRefresh() {
 }
 
 /**
- * The Work Permissions grid, in a drawer that slides up from behind the hero bar, the full width
- * of the mat: one row per hero, one column per work skill, then Combat. Open until the launcher or
+ * The Work Permissions grid, in a drawer that slides up from behind the hero bar, as wide as its
+ * content and no wider than the mat: one row per hero, one column per work skill, then Combat. Open until the launcher or
  * Escape closes it; the mat stays usable. Rules go through `Flags.setRule`, so the engine sees
  * nothing new.
  */
@@ -138,7 +140,7 @@ export const WorkRulesDrawer = ({ open = false, litHeroId = null, onClose }) => 
             data-dnd-region={DND_SURFACE.DRAWER}
             onContextMenu={e => e.preventDefault()}
             style={{ bottom: DOCK_STRIP_PX }}
-            className="absolute left-0 right-0 z-[45] overflow-hidden pointer-events-auto select-none"
+            className="absolute left-0 w-max max-w-full z-[45] overflow-hidden pointer-events-auto select-none"
         >
             <div
                 className={cn(
@@ -165,8 +167,9 @@ const RulesGrid = ({ litHeroId }) => {
     const groups = ruleGroups();
     const columns = groups.flatMap(g => g.columns);
     const groupStarts = new Set(groups.slice(1).map(g => g.columns[0]));
-    // Hero names take a fixed width; the columns share the rest evenly, whatever their count.
-    const template = `${NAME_PX}px repeat(${columns.length}, minmax(0, 1fr))`;
+    // Hero names take a fixed width and every column is one square cell wide, so the drawer is
+    // only as wide as its content.
+    const template = `${NAME_PX}px repeat(${columns.length}, ${CELL_PX}px)`;
     const shown = Math.min(heroes.length, MAX_ROWS);
     const hairline = (columnId) => (groupStarts.has(columnId) ? 'border-l border-white/15' : '');
 

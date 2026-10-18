@@ -14,7 +14,7 @@ import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
 import { EngineContext } from '../ui/context/EngineContext';
 import { BottomHeroDock } from '../ui/components/dock/BottomHeroDock.jsx';
 import { BankHeroPanel } from '../ui/components/dock/BankHeroPanel.jsx';
-import { WorkRulesDrawer, LAUNCHER_PX } from '../ui/components/dock/WorkRulesDrawer.jsx';
+import { WorkRulesDrawer, LAUNCHER_PX, CELL_PX } from '../ui/components/dock/WorkRulesDrawer.jsx';
 import { requiresText } from '../ui/components/dock/heroPanelSkills.js';
 import { setLockedListOpen } from '../ui/components/dock/heroPanelSkills.js';
 import { setLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
@@ -26,7 +26,7 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 
 /**
  * Work Permissions: the launcher in its own slot on the hero bar (the only way in), the drawer
- * the full width of the mat with every skill column, one Combat column in place of the combat
+ * as wide as its square cells with every skill column, one Combat column in place of the combat
  * skills and Fight, and header tooltips that say what each skill is for.
  */
 
@@ -141,14 +141,22 @@ describe('the launcher', () => {
 });
 
 describe('the drawer', () => {
-    it('is titled Work Permissions and spans the mat, with the columns sharing the width evenly', () => {
+    it('is titled Work Permissions and is as wide as its content, with square fixed-size cells', () => {
         const view = openDrawer();
         expect(q(view, '[data-rules-title]').textContent).toBe('Work Permissions');
         expect(drawer(view).textContent).not.toMatch(/work rules/i);
         expect(drawer(view).className).toContain('left-0');
-        expect(drawer(view).className).toContain('right-0');
+        expect(drawer(view).className).toContain('w-max');
+        expect(drawer(view).className).toContain('max-w-full');
+        expect(drawer(view).className).not.toContain('right-0');
         const row = q(view, '[data-rules-row="h1"]');
-        expect(row.style.gridTemplateColumns).toContain('minmax(0, 1fr)');
+        const cols = view.container.querySelectorAll('[data-rules-col]').length;
+        expect(row.style.gridTemplateColumns).toBe(`150px repeat(${cols}, ${CELL_PX}px)`);
+        expect(row.style.gridTemplateColumns).not.toContain('fr');
+        expect(row.style.height).toBe(`${CELL_PX}px`);
+        const header = q(view, '[data-rules-col]').parentElement;
+        expect(header.style.gridTemplateColumns).toBe(row.style.gridTemplateColumns);
+        expect(header.style.height).toBe(`${CELL_PX}px`);
     });
 
     it('shows every skill column, Advanced and Master included, whatever the heroes hold', () => {
