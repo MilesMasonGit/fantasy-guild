@@ -126,9 +126,12 @@ export const TokenInspectPopup = ({ typeId, instanceId = null, anchorRect, onClo
             }
         };
 
-        // One Escape, one layer: while a drag is live, Escape only cancels it.
+        // One Escape, one layer: while a drag is live, Escape only cancels it, and while a window
+        // is open over the card (the recipe list its Change recipe opened), Escape closes that.
         const handleKey = (e) => {
-            if (e.key === 'Escape' && !document.body.classList.contains('gi-dnd-active')) onClose();
+            if (e.key !== 'Escape' || document.body.classList.contains('gi-dnd-active')) return;
+            if (document.querySelector('[role="dialog"]')) return;
+            onClose();
         };
 
         const timer = setTimeout(() => window.addEventListener('click', handleGlobalClick), 50);

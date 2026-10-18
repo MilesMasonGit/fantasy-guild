@@ -309,6 +309,14 @@ describe('one card at a time', () => {
         expect(onClose).not.toHaveBeenCalled();
         token.remove();
 
+        // A window open over the card (its recipe list) takes the Escape instead.
+        const dialog = document.createElement('div');
+        dialog.setAttribute('role', 'dialog');
+        document.body.appendChild(dialog);
+        fireEvent.keyDown(window, { key: 'Escape' });
+        expect(onClose).not.toHaveBeenCalled();
+        dialog.remove();
+
         fireEvent.keyDown(window, { key: 'Escape' });
         expect(onClose).toHaveBeenCalledTimes(1);
 
