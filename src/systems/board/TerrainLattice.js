@@ -200,18 +200,22 @@ function dryFilled(cells, cols, rows, wet) {
  * at every pixel rather than by the cells: its land first, each water cell taking the ground of
  * the nearest dry one, then the water laid over it in each shape's style (`STYLE_TERRAIN`).
  *
+ * A `blend` (`TerrainBlend.blendBorders`) rewrites the land where two looks meet, after the water
+ * and before the beach, so the beach and every distance measure the blended map.
+ *
  * @param {object} ground A Region's ground, from `regionGround`.
  * @param {boolean} [withFringes] Whether to cut the beach (a fringe pushed onto the neighbours).
+ * @param {Function|null} [blend] Rewrites the borders between looks, given the map so far.
  * @returns {{width: number, height: number, cellPx: number, palette: string[], at: Uint8Array,
  *   present: Uint8Array, fields: object, fringes: Array<{terrainId: string, mask: Uint8Array}>,
- *   water: {f: Float64Array, style: Uint8Array}|null}}
+ *   water: {f: Float64Array, style: Uint8Array}|null, blend: object|null}}
  *   `at` holds an index into `palette` per pixel, row by row; the palette starts as the ground's
  *   own terrains, in order. `present[p]` is 1 when palette entry `p` is on the ground; `fields`
  *   the distance fields measured so far ({@link distanceFields}), for the bands to reuse; `water`
  *   the shapes' field at each pixel (mat units, above 0 in the water) and its style, null when
- *   the ground has no shapes.
+ *   the ground has no shapes; `blend` what the blend returned.
  */
-export function resolveArtPixels(ground, withFringes = true) {
+export function resolveArtPixels(ground, withFringes = true, blend = null) {
     const cellPx = cellPxOf(ground);
     const { width, height } = planSize(ground.mat);
     const { cols, rows, terrains, seed } = ground;
@@ -300,10 +304,13 @@ export function resolveArtPixels(ground, withFringes = true) {
             at[i] = ids[s];
         }
     }
-    // ⚠️ The shapes' shores lie anywhere, not only in the cells beside a different one.
-    const fields = distanceFields(at, width, height, shapes ? null : { cols, rows, cellPx, border });
+    const blended = blend ? blend({ at, width, height, palette, present, idFor, looks: ground.looks, seed }) : null;
+    // ⚠️ The shapes' shores and a blend's pieces lie anywhere, not only in the cells beside a
+    // different one.
+    const anywhere = shapes || blended?.changed > 0;
+    const fields = distanceFields(at, width, height, anywhere ? null : { cols, rows, cellPx, border });
     const fringes = withFringes ? applyFringes(at, palette, indexOf, idFor, ground.looks, fields, present) : [];
-    return { width, height, cellPx, palette, at, present, fields, fringes, water };
+    return { width, height, cellPx, palette, at, present, fields, fringes, water, blend: blended };
 }
 
 const INF = 0x3fff;
