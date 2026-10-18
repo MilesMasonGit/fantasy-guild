@@ -643,6 +643,40 @@
   .gi-bar-slide-older, .gi-bar-slide-newer { animation: none; }
 }
 
+/* The shine on a main-action button: one hard-edged diagonal band steps across the button's face
+   once per hover. ⚠️ The band is a negative-z layer inside the button's own stacking context
+   (`isolation`), so it paints over the button's background but under its text and icons, and
+   `overflow: hidden` keeps it on the face. No blur, no scaling. */
+.ui-shine {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.ui-shine::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(110deg, transparent 0 40%, rgba(255, 255, 255, 0.4) 40% 60%, transparent 60% 100%);
+}
+
+@keyframes ui-shine-sweep {
+  from { opacity: 1; transform: translateX(-100%); }
+  to   { opacity: 1; transform: translateX(100%); }
+}
+
+.ui-shine:hover:not(:disabled)::before {
+  animation: ui-shine-sweep 280ms steps(7, end) 1 both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-shine:hover:not(:disabled)::before { animation: none; }
+}
+
 /* ⚠️ These animations play among the resting Tokens, so they run on the main
    thread. The mat is scaled to fit, so a Token stands at a fractional screen
    position; an animation Chrome runs on the compositor gets a layer of its own,

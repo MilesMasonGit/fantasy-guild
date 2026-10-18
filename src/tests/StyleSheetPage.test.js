@@ -21,7 +21,7 @@ function stubEngine() {
 /** Every piece UI_STYLE's "The style sheet page" names. */
 const UI_STYLE_PIECES = [
     'text-sizes', 'colours', 'hover-outline', 'alert-outline', 'ribbon', 'pill', 'header',
-    'main-button', 'icon-button', 'tabs', 'arrow-bars', 'frames', 'bars', 'tooltip'
+    'main-button', 'shine', 'icon-button', 'tabs', 'arrow-bars', 'frames', 'bars', 'tooltip'
 ];
 
 /**
@@ -78,5 +78,29 @@ describe('Style sheet page', () => {
         const view = openPage();
         const swatches = view.container.ownerDocument.querySelectorAll('[data-kit-colour]');
         expect(swatches.length).toBe(5);
+    });
+});
+
+describe('Main-action button shine', () => {
+    const read = (rel) => readFileSync(path.resolve(__dirname, '..', rel), 'utf8');
+
+    it('is on the Upgrade and Settle buttons and the style sheet demo', () => {
+        const upgrade = read('ui/components/drawer/GuildUpgradeInspection.jsx');
+        expect(upgrade).toMatch(/id="guild-upgrade-button"[\s\S]*?"ui-shine /);
+        const settle = read('ui/components/atlas/CartographyTable.jsx');
+        expect(settle).toMatch(/data-cartography-settle className=\{`\$\{buttonCls\} ui-shine`\}/);
+        expect(read('ui/dev/StyleSheetPage.jsx')).toMatch(/data-kit-main-button\s+className=\{cn\('ui-shine /);
+    });
+
+    it('is a stepped, once-only band under the content that stops for reduced motion', () => {
+        const css = read('tailwind.css');
+        expect(css).toMatch(/\.ui-shine::before\s*\{[^}]*z-index: -1/);
+        expect(css).toMatch(/animation: ui-shine-sweep 280ms steps\(7, end\) 1 both/);
+        expect(css).toMatch(/prefers-reduced-motion: reduce\)\s*\{\s*\.ui-shine:hover:not\(:disabled\)::before \{ animation: none; \}/);
+    });
+
+    it('is listed on the style sheet page as an unapproved piece', () => {
+        const shine = KIT_SECTIONS.find(s => s.id === 'shine');
+        expect(shine?.status).toBe('unapproved');
     });
 });

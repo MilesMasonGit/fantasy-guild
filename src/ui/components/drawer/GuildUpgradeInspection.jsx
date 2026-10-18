@@ -184,7 +184,7 @@ export const GuildUpgradeInspection = ({ upgradeDef, onClose }) => {
                                 textShadow: '0 1px 0 #000, 1px 0 0 #000, 0 -1px 0 #000, -1px 0 0 #000, 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 0 1px 2px rgba(0,0,0,0.9)'
                             } : undefined}
                             className={cn(
-                                "w-full py-2.5 px-4 rounded-lg font-bold transition-all shadow-lg flex items-center justify-between gap-2 cursor-pointer",
+                                "ui-shine w-full py-2.5 px-4 rounded-lg font-bold transition-all shadow-lg flex items-center justify-between gap-2 cursor-pointer",
                                 canAfford
                                     ? "bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-400 hover:via-yellow-400 hover:to-amber-500 text-white font-extrabold shadow-[0_0_18px_rgba(245,158,11,0.4)] active:scale-[0.98] border border-amber-300/40"
                                     : "bg-white/5 border border-white/10 text-stone-500 cursor-not-allowed opacity-60"

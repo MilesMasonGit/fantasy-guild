@@ -131,7 +131,7 @@ const KitMainButton = ({ label, cost = [], blockedReason = null }) => {
                     type="button"
                     disabled={blocked}
                     data-kit-main-button
-                    className={cn('flex items-center gap-3 px-2 py-0.5 font-bold', blocked ? 'cursor-not-allowed' : 'cursor-pointer')}
+                    className={cn('ui-shine flex items-center gap-3 px-2 py-0.5 font-bold', blocked ? 'cursor-not-allowed' : 'cursor-pointer')}
                     style={{ color: blocked ? ui('--color-ui-muted') : ui('--color-ui-gold') }}
                 >
                     {label}
@@ -431,6 +431,15 @@ export const KIT_SECTIONS = [
                     cost={[{ itemId: SAMPLE_ITEMS[0], have: 3, need: 10 }, { itemId: SAMPLE_ITEMS[1], have: 5, need: 5 }]}
                     blockedReason="Needs 7 more Oak Wood"
                 />
+            </div>
+        )
+    },
+    {
+        id: 'shine', title: 'Shine', status: 'unapproved', source: 'ui-shine (src/tailwind.css); Upgrade and Settle use it',
+        rule: 'Main-action buttons only: one fast, stepped diagonal glint across the button face when hovered, once per hover. It passes under the text and icons, never over the art. No glint with reduced motion.',
+        Demo: () => (
+            <div className="flex flex-wrap items-start gap-6">
+                <KitMainButton label="Hover me" cost={[{ itemId: SAMPLE_ITEMS[0], have: 10, need: 10 }]} />
             </div>
         )
     },
