@@ -39,6 +39,7 @@ import PlaymatTuner from './components/PlaymatTuner.jsx';
 import MatTuner from './components/MatTuner.jsx';
 import CatchUpOverlay from './components/hud/CatchUpOverlay.jsx';
 import MatTopBar, { showsMatTopBar } from './components/board/MatTopBar.jsx';
+import MatRegionName from './components/board/MatRegionName.jsx';
 import MatCapBadge from './components/board/MatCapBadge.jsx';
 import MatUpkeepBadge from './components/board/MatUpkeepBadge.jsx';
 import { MapModeToggles, MapModeBanner } from './components/board/MatModeControls.jsx';
@@ -133,6 +134,13 @@ export const ReactRoot = ({ engine }) => {
             ui.inspect.set('guild_upgrade', def.id, { upgradeDef: def }, 'guild');
         }
     }, [ui.fullscreen, ui.inspect]);
+
+    // The top bar's Region name opens the Atlas the way its bubble does; a click while it is
+    // already open leaves it open.
+    const { isActive: isNavActive, toggle: navToggle } = ui.nav;
+    const openAtlasFromBar = useCallback(() => {
+        if (!isNavActive('atlas')) navToggle('atlas');
+    }, [isNavActive, navToggle]);
 
     const handleCloseGuildHall = useCallback(() => {
         ui.fullscreen.close();
@@ -283,7 +291,7 @@ export const ReactRoot = ({ engine }) => {
                                 {showsMatTopBar(ui.fullscreen.view) && (
                                     <PerfProfiler id="TopBar">
                                         <MatTopBar
-                                            left={<><MatCapBadge /><MatUpkeepBadge /></>}
+                                            left={<><MatRegionName onOpenAtlas={openAtlasFromBar} /><MatCapBadge /><MatUpkeepBadge /></>}
                                             middle={<MapModeBanner />}
                                             right={<MapModeToggles />}
                                         />

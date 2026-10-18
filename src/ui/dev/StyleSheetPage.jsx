@@ -1,7 +1,7 @@
 // The style sheet page: every standard UI piece from UI_STYLE, live, for builders to copy from
 // and the owner to eye-check. Opened from the QA panel.
-// ⚠️ Pieces in the "new, unapproved" group are placeholders drawn here only: no screen uses them
-// yet. Once a piece has one shared version, its entry points at that version and moves to the
+// ⚠️ Pieces in the "new, unapproved" group wait for the owner's OK: placeholders drawn here only,
+// or new pieces only the screen their entry names uses so far. Once a piece has one shared version, its entry points at that version and moves to the
 // shared group.
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
@@ -12,10 +12,12 @@ import { VitalBar } from '../components/base/VitalBar.jsx';
 import { TokenSprite, TOKEN_SURFACE } from '../components/base/TokenSprite.jsx';
 import { StationGearBadge } from '../components/board/TokenBadges.jsx';
 import { Tooltip } from '../components/base/Tooltip.jsx';
+import { PixelFrame } from '../components/base/PixelFrame.jsx';
 import { TEXT_SIZES } from '../components/base/textSizes.js';
 import { ArrowScrollList } from '../components/base/ArrowScrollList.jsx';
 import { LevelUpFloats } from '../components/board/LevelUpFloat.jsx';
 import { ModeBannerView } from '../components/board/MatModeControls.jsx';
+import { MAT_TOP_BAR_PX } from '../components/board/MatTopBar.jsx';
 import { MAP_MODE } from '../hooks/useMapMode.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
@@ -41,40 +43,6 @@ const ui = (cssVar) => `var(${cssVar})`;
 // ---------------------------------------------------------------------------------------------
 // Placeholders for the pieces with no shared version yet.
 // ---------------------------------------------------------------------------------------------
-
-// The two 7×7 nine-slice pictures and their black shadow copies, from
-// docs/active/research/pixel_borders_demo.html (approach B, the shipping art).
-const FRAME_ART = {
-    chamfer: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAcAAAAHCAYAAADEUlfTAAAAJ0lEQVR4nGNggILpxWL/YZgBGYAEeLk44BiuAF0CRQH5knjtxOdaAJ98OWfLy6Z1AAAAAElFTkSuQmCC',
-    chamferShadow: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAcAAAAHCAYAAADEUlfTAAAAHklEQVR4nGNgQID/SBgF/MeCcUrAFZAviddOnK4FAGcpJNzTXOuEAAAAAElFTkSuQmCC',
-    studs: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAcAAAAHCAYAAADEUlfTAAAAL0lEQVR4nGOYXiz2HxdmABF/n3WBObxcHP+R+QwwVSAJGEbRiSyBrICwToJ2YsMA/ElgF+rVz5AAAAAASUVORK5CYII=',
-    studsShadow: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAcAAAAHCAYAAADEUlfTAAAAEUlEQVR4nGNgYGD4jwcPIUkAEsQw0PomzpoAAAAASUVORK5CYII='
-};
-
-const nineSlice = (src) => ({
-    borderStyle: 'solid',
-    borderWidth: 3 * ART_PX,
-    borderImage: `url(${src}) 3 fill / ${3 * ART_PX}px stretch`,
-    imageRendering: 'pixelated'
-});
-
-/** A pixel frame: the nine-slice picture with its hard shadow, 2 art pixels down-right. */
-export const KitFrame = ({ kind = 'chamfer', className, children, ...rest }) => (
-    <div className={cn('relative isolate', className)} data-kit-frame={kind} {...rest}>
-        <div
-            aria-hidden="true"
-            className="absolute -z-10 pointer-events-none"
-            style={{
-                inset: 0,
-                transform: `translate(${2 * ART_PX}px, ${2 * ART_PX}px)`,
-                ...nineSlice(FRAME_ART[`${kind}Shadow`])
-            }}
-        />
-        <div style={nineSlice(FRAME_ART[kind])} className="relative">
-            {children}
-        </div>
-    </div>
-);
 
 /** A hard one-art-pixel outline around a sprite's own shape, in a colour. No blur. */
 const spriteOutline = (colour) => [
@@ -128,7 +96,7 @@ const KitMainButton = ({ label, cost = [], blockedReason = null }) => {
     const blocked = !!blockedReason;
     return (
         <div className="inline-flex flex-col items-start gap-1">
-            <KitFrame kind="chamfer" className={cn(blocked && 'opacity-50 grayscale')}>
+            <PixelFrame kind="chamfer" className={cn('inline-block', blocked && 'opacity-50 grayscale')}>
                 <button
                     type="button"
                     disabled={blocked}
@@ -139,7 +107,7 @@ const KitMainButton = ({ label, cost = [], blockedReason = null }) => {
                     {label}
                     {cost.map(c => <KitPill key={c.itemId} {...c} />)}
                 </button>
-            </KitFrame>
+            </PixelFrame>
             {blocked && <span className="text-xs" style={{ color: ui('--color-ui-red') }}>{blockedReason}</span>}
         </div>
     );
@@ -265,9 +233,9 @@ const MapModesDemo = () => {
                 </div>
             )}
             {[MAP_MODE.DISALLOW, MAP_MODE.DEMOLISH].map(mode => (
-                <div key={mode} className="h-[30px] max-w-[760px] px-3 bg-[#3a271d] font-pixel text-amber-100">
+                <PixelFrame key={mode} kind="studs" style={{ height: MAT_TOP_BAR_PX }} frameClassName="px-2 font-pixel ui-text-body text-amber-100">
                     <ModeBannerView mode={mode} />
-                </div>
+                </PixelFrame>
             ))}
         </div>
     );
@@ -491,16 +459,16 @@ export const KIT_SECTIONS = [
         Demo: ArrowBarDemo
     },
     {
-        id: 'frames', title: 'Pixel frames', status: 'unapproved', source: 'none yet (the research demo’s art)',
+        id: 'frames', title: 'Pixel frames', status: 'unapproved', source: 'PixelFrame, ui-frame-studs / ui-frame-chamfer (src/tailwind.css); the mat’s top bar wears studs',
         rule: 'Nine-slice pictures: studs on big docked panels, chamfer on small floating ones; a hard shadow under every panel.',
         Demo: () => (
             <div className="flex flex-wrap gap-8 items-start">
-                <KitFrame kind="studs" className="w-56">
+                <PixelFrame kind="studs" className="w-56">
                     <div className="bg-gi-surface p-2 text-sm">Studs: Bank, Shop, hero panel</div>
-                </KitFrame>
-                <KitFrame kind="chamfer" className="w-48">
+                </PixelFrame>
+                <PixelFrame kind="chamfer" className="w-48">
                     <div className="p-2 text-xs">Chamfer: tooltips, pop-ups, toasts</div>
-                </KitFrame>
+                </PixelFrame>
             </div>
         )
     },
@@ -579,7 +547,7 @@ export const StyleSheetPage = ({ onClose }) => {
                     New, unapproved
                 </h2>
                 <p className="text-xs text-gi-muted">
-                    Placeholders for pieces UI_STYLE describes but no screen shares yet. Nothing in the game uses them.
+                    Pieces waiting for the owner’s OK: placeholders for what UI_STYLE describes, and new pieces only the screen their entry names uses so far.
                 </p>
                 {unapproved.map(s => <SectionCard key={s.id} section={s} />)}
             </div>

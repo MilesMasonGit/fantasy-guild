@@ -939,6 +939,23 @@
   font-size: var(--font-size-xl) !important;
 }
 
+/* The kit's pixel frames (UI_STYLE "Pixel frames"; PixelFrame.jsx wears them). A 7×7 nine-slice
+   picture at 2×: 3 art-pixel corners make a 6 px band, `fill` paints the panel colour from the
+   picture's centre. The shadow classes are the same shape in solid black, for a layer behind the
+   frame offset 2 art pixels down-right. */
+.ui-frame-studs, .ui-frame-chamfer, .ui-frame-shadow-studs, .ui-frame-shadow-chamfer {
+  border-style: solid;
+  border-width: 6px;
+  border-image-slice: 3 fill;
+  border-image-width: 6px;
+  border-image-repeat: stretch;
+  image-rendering: pixelated;
+}
+.ui-frame-studs { border-image-source: url('/assets/ui/u_frame_studs.png'); }
+.ui-frame-chamfer { border-image-source: url('/assets/ui/u_frame_chamfer.png'); }
+.ui-frame-shadow-studs { border-image-source: url('/assets/ui/u_frame_studs_shadow.png'); transform: translate(4px, 4px); }
+.ui-frame-shadow-chamfer { border-image-source: url('/assets/ui/u_frame_chamfer_shadow.png'); transform: translate(4px, 4px); }
+
 /* All Caps Toggle Rules */
 body[data-allcaps="true"] *:not(input):not(textarea):not(code) {
   text-transform: uppercase !important;

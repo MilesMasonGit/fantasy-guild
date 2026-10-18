@@ -78,6 +78,10 @@ player for these is T-138 (built when the first strips exist).
   the cursor over a Token in Disallow mode (muted grey) and in Demolish mode
   (red); about 11 × 11, drawn at 2×. Code-drawn placeholders (a crossed
   circle, an X) stand in until then.
+- **Top bar icons** (NEW, [concept_map_tools.md](concept_map_tools.md)): a
+  Token icon (Tokens 45/128) and an upkeep icon (Upkeep 2/min), and one for
+  the Region name if wanted; shown at 16 px in the bar's item bars.
+  Placeholders until drawn: the tree, coins and pennant from `public/assets/ui/`.
 - **Log button icon** (NEW, [concept_notifications.md](concept_notifications.md)):
   a notepad or scroll, top right of the screen; placeholder until drawn.
 - **Night-sky backdrop for the Hall screen** (**HAVE**, 2026-10-15:

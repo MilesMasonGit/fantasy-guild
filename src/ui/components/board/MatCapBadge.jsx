@@ -14,6 +14,8 @@ import { isGearOnlyAlert } from './centreAlert.js';
 import { placeUnder } from './tooltipPlacement.js';
 import { highlightType } from './tokenHighlight.js';
 import { TopBarTip } from './TopBarTip.jsx';
+import { EntityRibbon } from '../base/EntityRibbon.jsx';
+import { TOP_BAR_ICON, TopBarIcon } from './MatTopBar.jsx';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
@@ -196,8 +198,8 @@ export const TokenSummaryPanel = ({ anchor, summary, cap, panelRef }) => {
 };
 
 /**
- * The Token cap badge: `Tokens 62/80`, every Token counting toward the mat's cap (`MatCap`).
- * Click opens the Token Summary; Esc or a click anywhere else closes it. Hovering while it is
+ * The Token cap badge: `Tokens 62/80` in the item bar style, every Token counting toward the
+ * mat's cap (`MatCap`); the count turns red at the cap. Click opens the Token Summary; Esc or a click anywhere else closes it. Hovering while it is
  * shut gives a short tooltip. The number is read on the events in {@link CAP_EVENTS}, never per
  * frame; the summary is only worked out while it is open.
  * @param {{ readSummary?: () => object }} props  `readSummary` for tests
@@ -230,23 +232,31 @@ export const MatCapBadge = ({ readSummary = liveMatSummary }) => {
 
     const count = MatCap.tokenCount();
     const cap = MatCap.matCap();
+    // Red at the cap and nothing else: the spawners it stops already show their own red mark.
+    const atCap = count >= cap;
 
     return (
         <>
-            <button
-                type="button"
+            <EntityRibbon
                 ref={ref}
                 data-mat-cap-badge
+                data-at-cap={atCap ? 'true' : 'false'}
+                role="button"
+                tabIndex={0}
                 aria-expanded={open}
+                size="xs"
+                name="Tokens"
+                title={null}
+                icon={<TopBarIcon src={TOP_BAR_ICON.TOKENS} />}
+                countText={(
+                    <span data-mat-cap-count style={atCap ? { color: 'var(--color-ui-red)' } : undefined}>{count}/{cap}</span>
+                )}
                 onClick={() => { setHover(false); setOpen(o => !o); }}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setHover(false); setOpen(o => !o); } }}
                 onMouseEnter={() => setHover(true)}
                 onMouseLeave={() => setHover(false)}
-                className="flex items-center gap-1 px-2 py-0.5 rounded bg-black/30 border border-[#2a1d15] hover:border-gi-gold/60 cursor-pointer whitespace-nowrap"
-            >
-                <span data-mat-cap-text className="text-white tabular-nums">
-                    <span className="text-amber-200/80">Tokens</span>{' '}{count}/{cap}
-                </span>
-            </button>
+                className="whitespace-nowrap"
+            />
             {hover && !open && (
                 <TopBarTip
                     anchor={ref.current}

@@ -141,14 +141,15 @@ export const MapModeBanner = () => {
 /**
  * The banner for `mode`, drawn without reading the live mode (the style sheet page shows it too).
  * ⚠️ The words take a second line rather than being cut: Demolish's last sentence is the warning,
- * and at 1600 px the bar's centre is narrower than one line of it.
+ * and at 1600 px the bar's centre is narrower than one line of it at body size. Narrower still
+ * (1280 px), two lines cannot hold it and the rest is on hover.
  */
 export const ModeBannerView = ({ mode }) => (
     <div data-map-mode-banner={mode} className="flex items-center justify-center gap-2 min-w-0 h-full">
         <Tooltip title={MODE_BANNER_TEXT[mode]} maxWidth={360}>
             <span
                 data-map-mode-banner-text
-                className="ui-text-small min-w-0 leading-none line-clamp-2 text-center"
+                className="ui-text-body min-w-0 leading-4 line-clamp-2 text-center"
                 style={{ color: mode === MAP_MODE.DEMOLISH ? 'var(--color-ui-red)' : undefined }}
             >
                 {MODE_BANNER_TEXT[mode]}
