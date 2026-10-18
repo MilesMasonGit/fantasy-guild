@@ -223,7 +223,7 @@ const TextSizeRow = ({ size }) => {
     }, []);
     return (
         <div data-kit-text-size={size.id} className="flex items-baseline gap-3">
-            <span ref={ref} className={size.className}>Mining 25/99</span>
+            <span ref={ref} className={`${size.className} shrink-0 whitespace-nowrap`}>Mining 25/99</span>
             <span className="ui-text-small text-gi-muted">
                 <b>{size.id}</b> <code>.{size.className}</code> reads <code>{size.cssVar}</code>: {px || '?'} now, {size.px} px by default. {size.use}.
             </span>

@@ -41,7 +41,7 @@ const Toast = ({ id, message, type = 'info', count = 1, added = 0, removed = 0, 
             return <span key={i} className="text-yellow-400 font-bold">Level up!</span>;
         }
         if (/\d+ > \d+/.test(part)) {
-            return <span key={i} className="text-[var(--color-success)] font-mono font-bold">{part}</span>;
+            return <span key={i} className="text-[var(--color-success)] font-bold">{part}</span>;
         }
         return part;
     });
@@ -68,12 +68,12 @@ const Toast = ({ id, message, type = 'info', count = 1, added = 0, removed = 0, 
                 {aggregationKey && !isLevelUp && (
                     <div className="flex gap-x-1.5 shrink-0 select-none">
                         {added > 0 && (
-                            <span className="font-mono font-bold text-[var(--color-success)] tabular-nums transition-all duration-150">
+                            <span className="font-bold text-[var(--color-success)] tabular-nums transition-all duration-150">
                                 +{formatCompact(added)}
                             </span>
                         )}
                         {removed > 0 && (
-                            <span className="font-mono font-bold text-red-400 tabular-nums transition-all duration-150">
+                            <span className="font-bold text-red-400 tabular-nums transition-all duration-150">
                                 -{formatCompact(removed)}
                             </span>
                         )}
@@ -86,7 +86,7 @@ const Toast = ({ id, message, type = 'info', count = 1, added = 0, removed = 0, 
             </div>
 
             {rate !== 0 && (
-                <span className="text-(length:--font-size-xs) font-mono text-gray-400 select-none tabular-nums shrink-0">
+                <span className="text-(length:--font-size-xs) text-gray-400 select-none tabular-nums shrink-0">
                     ({Math.abs(rate) < 1000 ? Math.floor(rate) : formatCompact(rate, 1)}/hr)
                 </span>
             )}

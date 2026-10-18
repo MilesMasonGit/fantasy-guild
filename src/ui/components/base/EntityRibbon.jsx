@@ -213,7 +213,7 @@ export const EntityRibbon = ({
                 )}
             </div>
 
-            <div className="relative flex flex-col items-end justify-center shrink-0 tabular-nums font-mono min-w-[3.5rem]">
+            <div className="relative flex flex-col items-end justify-center shrink-0 tabular-nums min-w-[3.5rem]">
                 {hasAmount ? (
                     // Both counts share one grid cell, so the column is as wide as the longer one.
                     <div className="grid justify-items-end">
