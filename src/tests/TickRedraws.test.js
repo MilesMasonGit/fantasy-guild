@@ -24,8 +24,9 @@ import { DndContext } from '@dnd-kit/core';
 import * as Charges from '../systems/board/Charges.js';
 import { TokenBubbles } from '../ui/components/board/TokenBubbles.jsx';
 import { HeroBubbleLayer } from '../ui/components/board/HeroBubbleLayer.jsx';
-import { ALERT } from '../systems/board/boardEvents.js';
-import { MOMENT_TTL_MS } from '../ui/components/board/heroSpeech.js';
+import { ALERT, BOARD_EVENTS } from '../systems/board/boardEvents.js';
+import { DEPLETED_TTL_MS } from '../ui/components/board/heroSpeech.js';
+import { FLOAT_MS, clearAllFloats } from '../ui/components/board/levelUpFloats.js';
 import { INPUTS_DELAY_MS } from '../ui/components/board/heroBubbles.js';
 import { useGameState } from '../ui/hooks/useGameState.js';
 import { useTokenState } from '../ui/components/board/tokenEvents.js';
@@ -345,13 +346,32 @@ describe('⭐ speech bubbles: the twice-a-second look draws only when what is sa
     it('a moment that lapses is taken down, at the next look', () => {
         const { container } = render(h(HeroBubbleLayer, { heroes: stuck(ALERT.CHARGES) }));
         wait(10);
-        act(() => { EventBus.publish(ENGINE_EVENTS.HERO_LEVELED, { heroId: 'hs', skillName: 'Forestry', newLevel: 5, oldLevel: 4 }); });
+        act(() => { EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { instanceId: 'o', x: 1, y: 1, typeId: 'fixture_producer', exhaustedBy: 'hs' }); });
         expect(said(container)).toHaveLength(2);
         renders.start();
-        wait(MOMENT_TTL_MS + 500);
+        wait(DEPLETED_TTL_MS + 500);
         renders.stop();
         expect(said(container)).toEqual(['Fixture Producer has too few charges left.']);
         // The look that found it lapsed, and the layout pass after measuring the shorter stack.
+        expect(renders.of('HeroBubbleLayer')).toBeGreaterThan(0);
+        expect(renders.of('HeroBubbleLayer')).toBeLessThanOrEqual(2);
+    });
+
+    it('a level-up float that runs out is taken down, at the next look; it does not redraw while it plays', () => {
+        clearAllFloats();
+        const { container } = render(h(HeroBubbleLayer, { heroes: stuck(ALERT.CHARGES) }));
+        wait(10);
+        act(() => { EventBus.publish(ENGINE_EVENTS.HERO_LEVELED, { heroId: 'hs', skillId: 'logging', skillName: 'Forestry', newLevel: 5, oldLevel: 4 }); });
+        expect(container.querySelector('[data-level-float]')).not.toBeNull();
+        renders.start();
+        wait(FLOAT_MS - 1000);
+        renders.stop();
+        expect(renders.of('HeroBubbleLayer')).toBe(0);
+        renders.start();
+        wait(1500);
+        renders.stop();
+        expect(container.querySelector('[data-level-float]')).toBeNull();
+        expect(said(container)).toEqual(['Fixture Producer has too few charges left.']);
         expect(renders.of('HeroBubbleLayer')).toBeGreaterThan(0);
         expect(renders.of('HeroBubbleLayer')).toBeLessThanOrEqual(2);
     });

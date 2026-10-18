@@ -553,6 +553,96 @@
   .gi-gear-alert { animation: none; }
 }
 
+/* The level-up float over a hero (`LevelUpFloat.jsx`): the old level flashes a one-art-pixel gold
+   outline, rolls up to the new one in stepped jumps, and fades at the end of its time. `--lvl-u` is
+   one art pixel. ⚠️ The text shadows need `!important` and a class: the global retro outline below
+   sets every text shadow with `!important`, and an animated text shadow would lose to it, so the
+   flash shows and hides a gold copy instead. */
+.gi-lvl-window {
+  height: 1.4em;
+  line-height: 1.4em;
+}
+
+.gi-lvl-num {
+  height: 1.4em;
+  line-height: 1.4em;
+  padding: 0 calc(2 * var(--lvl-u, 2px));
+  text-shadow: var(--text-outline-dark), calc(2 * var(--lvl-u, 2px)) calc(2 * var(--lvl-u, 2px)) 0 #000 !important;
+}
+
+.gi-lvl-gold {
+  text-shadow:
+    calc(-1 * var(--lvl-u, 2px)) 0 0 var(--color-ui-gold),
+    var(--lvl-u, 2px) 0 0 var(--color-ui-gold),
+    0 calc(-1 * var(--lvl-u, 2px)) 0 var(--color-ui-gold),
+    0 var(--lvl-u, 2px) 0 var(--color-ui-gold),
+    calc(-1 * var(--lvl-u, 2px)) calc(-1 * var(--lvl-u, 2px)) 0 var(--color-ui-gold),
+    var(--lvl-u, 2px) calc(-1 * var(--lvl-u, 2px)) 0 var(--color-ui-gold),
+    calc(-1 * var(--lvl-u, 2px)) var(--lvl-u, 2px) 0 var(--color-ui-gold),
+    var(--lvl-u, 2px) var(--lvl-u, 2px) 0 var(--color-ui-gold),
+    calc(2 * var(--lvl-u, 2px)) calc(2 * var(--lvl-u, 2px)) 0 #000 !important;
+}
+
+@keyframes gi-lvl-flash {
+  0%     { visibility: visible; }
+  16.6%  { visibility: hidden; }
+  33.3%  { visibility: visible; }
+  50%    { visibility: hidden; }
+  66.6%  { visibility: visible; }
+  83.3%, 100% { visibility: hidden; }
+}
+
+.gi-lvl-flash {
+  animation-name: gi-lvl-flash;
+  animation-timing-function: steps(1, end);
+  animation-fill-mode: both;
+}
+
+@keyframes gi-lvl-roll {
+  from { transform: translateY(0); }
+  to   { transform: translateY(var(--lvl-roll-y)); }
+}
+
+.gi-lvl-roll {
+  animation-name: gi-lvl-roll;
+  animation-fill-mode: both;
+}
+
+@keyframes gi-lvl-fade {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+.gi-lvl-float {
+  animation-name: gi-lvl-fade;
+  animation-timing-function: steps(3, end);
+  animation-fill-mode: both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gi-lvl-flash { animation: none; visibility: hidden; }
+  .gi-lvl-roll { animation-duration: 1ms !important; animation-delay: 0ms !important; }
+}
+
+/* The hero bar's level-up alerts turning a page: the new page slides a few whole pixels in from
+   the side it came from (older from above, newer from below), in stepped jumps. */
+@keyframes gi-bar-slide-older {
+  from { transform: translateY(-6px); }
+  to   { transform: translateY(0); }
+}
+
+@keyframes gi-bar-slide-newer {
+  from { transform: translateY(6px); }
+  to   { transform: translateY(0); }
+}
+
+.gi-bar-slide-older { animation: gi-bar-slide-older 150ms steps(3, end) both; }
+.gi-bar-slide-newer { animation: gi-bar-slide-newer 150ms steps(3, end) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .gi-bar-slide-older, .gi-bar-slide-newer { animation: none; }
+}
+
 /* ⚠️ These animations play among the resting Tokens, so they run on the main
    thread. The mat is scaled to fit, so a Token stands at a fractional screen
    position; an animation Chrome runs on the compositor gets a layer of its own,
@@ -562,6 +652,8 @@
    (MatToken does the same for an enemy's boxes and a resting Token's art,
    spawnMotion for the spawn pop, TokenBadges for a -1 on a resting Token.) */
 .gi-token-land,
+.gi-lvl-float,
+.gi-lvl-roll,
 .gi-transform-flash,
 .gi-transform-glow,
 .gi-quest-ready,

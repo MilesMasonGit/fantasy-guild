@@ -14,6 +14,7 @@ import { StationGearBadge } from '../components/board/TokenBadges.jsx';
 import { Tooltip } from '../components/base/Tooltip.jsx';
 import { TEXT_SIZES } from '../components/base/textSizes.js';
 import { ArrowScrollList } from '../components/base/ArrowScrollList.jsx';
+import { LevelUpFloats } from '../components/board/LevelUpFloat.jsx';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 
@@ -289,6 +290,40 @@ const AlertOutlineDemo = () => (
     </div>
 );
 
+/** The mat's level-up float, two skills side by side over a patch of ground. */
+const LevelUpFloatPatch = () => {
+    const [floats] = useState(() => {
+        const at = Date.now();
+        return [
+            { key: 'mining', skillId: 'mining', skillName: 'Mining', from: 49, to: 50, at, held: false },
+            { key: 'logging', skillId: 'logging', skillName: 'Logging', from: 12, to: 15, at, held: false }
+        ];
+    });
+    return (
+        <div className="px-6 py-4" style={{ background: '#4a6b34' }}>
+            <LevelUpFloats floats={floats} unit={2} fit={1} />
+        </div>
+    );
+};
+
+/** Replay draws a fresh patch, so the flash and roll play again. */
+const LevelUpFloatDemo = () => {
+    const [round, setRound] = useState(0);
+    return (
+        <div className="flex items-center gap-6">
+            <LevelUpFloatPatch key={round} />
+            <button
+                type="button"
+                data-kit-replay
+                onClick={() => setRound(r => r + 1)}
+                className="px-2 py-1 text-xs font-bold border border-white/20 hover:border-white"
+            >
+                Replay
+            </button>
+        </div>
+    );
+};
+
 const ArrowBarDemo = () => (
     <div className="flex flex-col w-64 h-48 bg-gi-base/60">
         <ArrowScrollList step={100} className="flex-1 min-h-0 p-2 flex flex-col gap-1">
@@ -433,6 +468,11 @@ export const KIT_SECTIONS = [
                 </KitFrame>
             </div>
         )
+    },
+    {
+        id: 'level-up-float', title: 'Level-up float', status: 'unapproved', source: 'LevelUpFloat (over a hero on the mat)',
+        rule: 'The skill icon at 2× and the level in the display size, no frame, hard shadow. The old number flashes a 1-art-pixel gold outline, rolls up in stepped jumps to the new one, stays about 30 s, then fades in steps.',
+        Demo: LevelUpFloatDemo
     },
     {
         id: 'xp-bar', title: 'XP bar', status: 'unapproved', source: 'none shared',

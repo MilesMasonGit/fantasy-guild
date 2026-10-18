@@ -193,6 +193,8 @@ export const UI_EVENTS = Object.freeze({
 
     /** Payload: `{ heroId }`. */
     INSPECT_HERO: 'inspect_hero',
+    /** "While you were away" was closed: what it covered may now play on the mat. No payload. */
+    CATCH_UP_SUMMARY_CLOSED: 'ui:catch_up_summary_closed',
     /** A collect particle reached its Token. Payload: `{ instanceId, … }`. */
     PARTICLE_LANDED: 'particle_landed',
     /**

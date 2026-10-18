@@ -1,9 +1,10 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { MAT_Z } from './matLayers.js';
 import { blockedLineFor, readyToSpeak, pinRefusedLineFor } from './heroBubbles.js';
-import { addMoment, liveMoments, stackOf, momentText, speaksMoment, levelUpFrom, DEPLETED_TTL_MS } from './heroSpeech.js';
+import { addMoment, liveMoments, stackOf, momentText, speaksMoment, DEPLETED_TTL_MS } from './heroSpeech.js';
+import { floatsOf, anyFloats, subscribeFloats } from './levelUpFloats.js';
+import { LevelUpFloats } from './LevelUpFloat.jsx';
 import { useMatFit } from './MatFitContext.jsx';
-import { BubbleText } from './BubbleText.jsx';
 import { tokenSizeFor, TOKEN_SURFACE, boardScaleAt } from '../base/TokenSprite.jsx';
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
@@ -13,7 +14,6 @@ import { getTokenType, tokenName } from '../../../config/registries/tokenRegistr
 import { layoutStacks, bubbleAnchorY } from './bubbleLayout.js';
 import { useMatSize } from '../../hooks/useMatSize.js';
 import { TICK_INTERVAL_MS } from '../../../config/loopConstants.js';
-import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 import { publishHeroColumns } from './speechColumns.js';
 
 /** How often lines are re-read and expired ones cleared. */
@@ -24,10 +24,18 @@ const GUESS_CHAR_PX = 6.3;
 const GUESS_PAD_PX = 16;
 const GUESS_ROW_PX = 22;
 const ROW_GAP_PX = 4;
-const guessSize = (stack) => ({
-    w: Math.max(...stack.map(b => b.text.length)) * GUESS_CHAR_PX + GUESS_PAD_PX,
-    h: stack.length * GUESS_ROW_PX + (stack.length - 1) * ROW_GAP_PX
-});
+/** A level-up float: the icon (16 art pixels) beside a number of about four characters. */
+const GUESS_FLOAT_ART_PX = 40;
+const GUESS_FLOAT_ROW_ART_PX = 22;
+const guessSize = (stack, floats, unit) => {
+    const floatW = floats.length * GUESS_FLOAT_ART_PX * unit;
+    const textW = stack.length ? Math.max(...stack.map(b => b.text.length)) * GUESS_CHAR_PX + GUESS_PAD_PX : 0;
+    const rows = stack.length + (floats.length ? 1 : 0);
+    return {
+        w: Math.max(floatW, textW),
+        h: (floats.length ? GUESS_FLOAT_ROW_ART_PX * unit : 0) + stack.length * GUESS_ROW_PX + (rows - 1) * ROW_GAP_PX
+    };
+};
 
 /**
  * Speech bubbles, above every hero's head.
@@ -36,10 +44,13 @@ const guessSize = (stack) => ({
  * tick while the hero walks, so it stays over the head. Bubbles are not clickable: the pointer
  * passes straight through to whatever is beneath, so dragging a hero or their flag is never
  * blocked.
+ * A hero who has just levelled a skill has its icon and number floating at the top of their
+ * stack (`levelUpFloats.js`, `LevelUpFloat.jsx`), drawn with the speech so it follows the hero
+ * and is kept off the other stacks the same way.
  * Per hero: **blocked** (`hero.alert`, the alert on the Token they hold) says what is wrong
  * for as long as it is wrong, re-read twice a second so it names what is missing NOW; a
- * shortage of items waits first. **moments** (arriving at a job, going idle, a level-up, a
- * flag that could not be pinned, a Token the hero used up) are timed, and gone by themselves (`heroSpeech.js`).
+ * shortage of items waits first. **moments** (arriving at a job, going idle, a flag that could
+ * not be pinned, a Token the hero used up) are timed, and gone by themselves (`heroSpeech.js`).
  * Only unusual events are spoken: routine lines are filtered out by `speaksMoment` /
  * `speaksBlock`, and every line with its status is listed in
  * `docs/reference/speech_bubble_lines.md`.
@@ -55,7 +66,9 @@ export const HeroBubbleLayer = ({ heroes }) => {
     const [, setSizeTick] = useState(0);
     const mat = useMatSize();
     // The hero's art size in mat units, as `MatHero` draws it.
-    const artPx = tokenSizeFor(TOKEN_SURFACE.BOARD, 1, boardScaleAt(useMatFit()));
+    const fit = useMatFit();
+    const artUnit = boardScaleAt(fit);
+    const artPx = tokenSizeFor(TOKEN_SURFACE.BOARD, 1, artUnit);
     const wasIdleRef = useRef(null);        // heroId → was idle last render (null until the first look)
 
     // `kind` is the moment's entry in `MOMENT_SPOKEN`: routine ones stay
@@ -69,15 +82,14 @@ export const HeroBubbleLayer = ({ heroes }) => {
     const sayRef = useRef(say);
     sayRef.current = say;
 
-    // Level-ups and arrivals arrive as events.
+    // A level-up float added or let go (`levelUpFloats.js` hears the level-ups). A count, not
+    // the clock: several level-ups land in the same millisecond.
+    const [, setFloatTick] = useState(0);
+    useEffect(() => subscribeFloats(() => setFloatTick(n => n + 1)), []);
+
+    // Depletions, arrivals and refused pins arrive as events.
     useEffect(() => {
         const unsubs = [
-            EventBus.subscribe(ENGINE_EVENTS.HERO_LEVELED, ({ heroId, skillName, newLevel, oldLevel }) => {
-                if (!heroId || !skillName) return;
-                const key = `level:${skillName}`;
-                const from = levelUpFrom(momentsRef.current.get(heroId) || [], key, oldLevel ?? newLevel - 1, Date.now());
-                sayRef.current(heroId, 'levelUp', { key, from, text: momentText.levelUp(skillName, newLevel, newLevel - from) });
-            }, UI_LISTENER),
             // The hero whose work spent a Token's last charge says so.
             EventBus.subscribe(BOARD_EVENTS.TOKEN_DEPLETED, (p) => {
                 if (!p?.exhaustedBy || !p.typeId) return;
@@ -149,17 +161,18 @@ export const HeroBubbleLayer = ({ heroes }) => {
                 ? blockedLineFor(h.tokenId, h.alert)
                 : null;
             const stack = stackOf(momentsRef.current.get(h.heroId) || [], blocked, t);
-            if (!stack.length) continue;
+            const floats = floatsOf(h.heroId, t);
+            if (!stack.length && !floats.length) continue;
             // The tail sits just above the head, read from the art's real size at this mat scale
             // (`bubbleAnchorY`). A moving hero comes with no point: read it live.
             const at = h.x == null ? HeroMotion.bodyView(h.heroId) : h;
             if (!at) continue;
-            out.push({ h, stack, x: at.x, y: bubbleAnchorY(at.y, artPx), live: h.x == null });
+            out.push({ h, stack, floats, x: at.x, y: bubbleAnchorY(at.y, artPx), live: h.x == null });
         }
         return out;
     };
     const speechKeyOf = (list) => list
-        .map(({ h, stack }) => `${h.heroId}:${stack.map(b => `${b.id}=${b.text}`).join('|')}`)
+        .map(({ h, stack, floats }) => `${h.heroId}:${floats.map(f => `${f.key}=${f.from}>${f.to}`).join('|')}:${stack.map(b => `${b.id}=${b.text}`).join('|')}`)
         .join('||');
     const speechAtRef = useRef(speechAt);
     speechAtRef.current = speechAt;
@@ -171,7 +184,7 @@ export const HeroBubbleLayer = ({ heroes }) => {
     // Twice a second, while anyone is blocked or has a moment up: a line may have lapsed, a wait
     // run out, or a block now name something else. Drawn only when what is said has changed; a
     // stuck hero's unchanged line drew the layer twice a second for nothing.
-    const busy = heroes.some(h => h.alert && h.tokenId) || momentsRef.current.size > 0;
+    const busy = heroes.some(h => h.alert && h.tokenId) || momentsRef.current.size > 0 || anyFloats(t);
     useEffect(() => {
         if (!busy) return undefined;
         const timer = setInterval(() => {
@@ -192,7 +205,7 @@ export const HeroBubbleLayer = ({ heroes }) => {
         return EventBus.subscribe(BOARD_EVENTS.HEROES_WALKED, () => setNow(Date.now()), UI_LISTENER);
     }, [following]);
     const offsets = layoutStacks(
-        anchored.map(a => ({ id: a.h.heroId, x: a.x, y: a.y, ...(sizesRef.current.get(a.h.heroId) || guessSize(a.stack)) })),
+        anchored.map(a => ({ id: a.h.heroId, x: a.x, y: a.y, ...(sizesRef.current.get(a.h.heroId) || guessSize(a.stack, a.floats, artUnit)) })),
         mat
     );
 
@@ -203,7 +216,7 @@ export const HeroBubbleLayer = ({ heroes }) => {
             .filter(a => a.h.tokenId && !a.live && !a.h.moving)
             .map(a => {
                 const { dx, dy } = offsets.get(a.h.heroId);
-                const { h: stackH } = sizesRef.current.get(a.h.heroId) || guessSize(a.stack);
+                const { h: stackH } = sizesRef.current.get(a.h.heroId) || guessSize(a.stack, a.floats, artUnit);
                 return { tokenId: a.h.tokenId, x: a.x + dx, top: a.y + dy - stackH };
             }));
     });
@@ -240,7 +253,7 @@ export const HeroBubbleLayer = ({ heroes }) => {
             className="absolute left-0 top-0 w-0 h-0 pointer-events-none"
             style={{ zIndex: MAT_Z.HERO_BUBBLE }}
         >
-            {anchored.map(({ h, stack, x, y }) => {
+            {anchored.map(({ h, stack, floats, x, y }) => {
                 const { dx, dy } = offsets.get(h.heroId);
                 return (
                     <div
@@ -258,6 +271,7 @@ export const HeroBubbleLayer = ({ heroes }) => {
                                 : 'none'
                         }}
                     >
+                        {floats.length > 0 && <LevelUpFloats floats={floats} unit={artUnit} fit={fit} />}
                         {stack.map((b, i) => (
                             <div
                                 key={b.id}
@@ -265,7 +279,7 @@ export const HeroBubbleLayer = ({ heroes }) => {
                                 data-hero-bubble-kind={b.kind}
                                 className="relative whitespace-nowrap px-2 py-1 rounded-md border border-yellow-500/70 bg-yellow-950/95 text-yellow-100 text-[11px] font-bold shadow-lg"
                             >
-                                {b.id.startsWith('level:') ? <BubbleText text={b.text} /> : b.text}
+                                {b.text}
                                 {/* The tail is on the bubble nearest the head, and points at the
                                     hero even when the stack has been nudged aside. */}
                                 {i === stack.length - 1 && (

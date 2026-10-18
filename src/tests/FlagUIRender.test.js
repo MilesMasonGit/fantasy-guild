@@ -284,17 +284,12 @@ describe('green dots on the Tokens a dragged flag could work (eye-check A)', () 
 describe('the flag has no skill since slice 1.5b (FP-71)', () => {
     it('draws no skill disc, clicking it opens nothing, and its tooltip title is the hero name', () => {
         Flags.plant('h1', BARE);
-        const opened = [];
-        const unsub = EventBus.subscribe('ui:open_flag_rules', (p) => opened.push(p));
         const { container } = mount(h(FlagLayer));
         const flag = container.querySelector('[data-flag="h1"]');
         expect(flag.querySelector('[data-flag-skill]')).toBeNull();
 
         fireEvent.click(flag);
-        unsub();
         expect(document.querySelector('[role="menu"]')).toBeNull();
-        // The rules never open from the flag.
-        expect(opened).toEqual([]);
 
         expect(flagTooltip('h1').title).toBe('h1');
     });

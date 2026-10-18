@@ -18,7 +18,7 @@ import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
 import { EngineContext } from '../ui/context/EngineContext';
 import { BottomHeroDock } from '../ui/components/dock/BottomHeroDock.jsx';
 import { DOCK_SLOT_PX } from '../ui/components/dock/dockHeroView.js';
-import { addLevelUp, clearAllHeroBubbles, clearHeroBubble, BAR_BUBBLES_SHOWN, BAR_BUBBLE_FADE_MS } from '../ui/components/dock/heroBarBubbles.js';
+import { addLevelUp, barLevelUpText, clearAllHeroBubbles, clearHeroBubble, BAR_BUBBLES_SHOWN, BAR_BUBBLE_FADE_MS } from '../ui/components/dock/heroBarBubbles.js';
 import { MOMENT_TTL_MS } from '../ui/components/board/heroSpeech.js';
 import { setLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
 
@@ -56,14 +56,15 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.clearAllMocks(); });
 
 describe('level-up wording on the bar', () => {
-    it('is the mat bubble wording, (+n) only when two or more levels merged', () => {
+    it('reads [level] [skill]!, the level the skill reached, one alert per skill', () => {
         let list = addLevelUp([], { skillName: 'Mining', oldLevel: 24, newLevel: 25 });
-        expect(list.map(b => b.text)).toEqual(['LVL UP! 25 Mining!']);
+        expect(list.map(b => b.text)).toEqual(['25 Mining!']);
         list = addLevelUp(list, { skillName: 'Mining', oldLevel: 25, newLevel: 26 });
-        expect(list.map(b => b.text)).toEqual(['LVL UP! 26 Mining! (+2)']);
+        expect(list.map(b => b.text)).toEqual(['26 Mining!']);
+        expect(barLevelUpText('Stealth', 50)).toBe('50 Stealth!');
         list = addLevelUp(list, { skillName: 'Forestry', oldLevel: 3, newLevel: 4 });
         list = addLevelUp(list, { skillName: 'Mining', oldLevel: 26, newLevel: 29 });
-        expect(list.map(b => b.text)).toEqual(['LVL UP! 4 Forestry!', 'LVL UP! 29 Mining! (+5)']);
+        expect(list.map(b => b.text)).toEqual(['4 Forestry!', '29 Mining!']);
     });
 });
 
@@ -71,7 +72,7 @@ describe('the hero bar level-up bubbles', () => {
     it('appear over the hero who levelled, and only that hero', () => {
         const view = mount();
         level('h1', 'Mining', 24, 25);
-        expect(bubbles(view, 'h1')).toEqual(['LVL UP! 25 Mining!']);
+        expect(bubbles(view, 'h1')).toEqual(['25 Mining!']);
         expect(bubbles(view, 'h2')).toEqual([]);
     });
 
@@ -86,14 +87,14 @@ describe('the hero bar level-up bubbles', () => {
                 await Promise.resolve();
             });
         }
-        expect(bubbles(view, 'h1')).toEqual(['LVL UP! 25 Mining!']);
+        expect(bubbles(view, 'h1')).toEqual(['25 Mining!']);
     });
 
-    it('merge levels of one skill with the (+n) rule, one bubble per skill', () => {
+    it('merge levels of one skill into one alert with the newest level', () => {
         const view = mount();
         for (let l = 21; l <= 25; l++) level('h1', 'Mining', l - 1, l);
         level('h1', 'Forestry', 3, 4);
-        expect(bubbles(view, 'h1')).toEqual(['LVL UP! 25 Mining! (+5)', 'LVL UP! 4 Forestry!']);
+        expect(bubbles(view, 'h1')).toEqual(['25 Mining!', '4 Forestry!']);
     });
 
     it('clicking a bubble fades it out and clears that one bubble only, without opening the hero', () => {
@@ -105,11 +106,11 @@ describe('the hero bar level-up bubbles', () => {
         const mining = view.container.querySelector('[data-bar-bubbles="h1"] [data-bar-bubble="level:Mining"]');
         fireEvent.click(mining);
         // Still drawn while it fades, marked as fading.
-        expect(bubbles(view, 'h1')).toEqual(['LVL UP! 25 Mining!', 'LVL UP! 4 Forestry!']);
+        expect(bubbles(view, 'h1')).toEqual(['25 Mining!', '4 Forestry!']);
         expect(mining.getAttribute('data-bar-bubble-fading')).toBe('true');
         act(() => { vi.advanceTimersByTime(BAR_BUBBLE_FADE_MS + 10); });
-        expect(bubbles(view, 'h1')).toEqual(['LVL UP! 4 Forestry!']);
-        expect(bubbles(view, 'h2')).toEqual(['LVL UP! 10 Fishing!']);
+        expect(bubbles(view, 'h1')).toEqual(['4 Forestry!']);
+        expect(bubbles(view, 'h2')).toEqual(['10 Fishing!']);
         expect(onSelectHero).not.toHaveBeenCalled();
     });
 
@@ -118,7 +119,7 @@ describe('the hero bar level-up bubbles', () => {
         level('h1', 'Mining', 24, 25);
         level('h1', 'Forestry', 3, 4);
         act(() => clearHeroBubble('h1', 'level:Forestry'));
-        expect(bubbles(view, 'h1')).toEqual(['LVL UP! 25 Mining!']);
+        expect(bubbles(view, 'h1')).toEqual(['25 Mining!']);
         act(() => clearHeroBubble('h1', 'level:Mining'));
         expect(view.container.querySelector('[data-bar-bubbles="h1"]')).toBeNull();
     });
@@ -127,8 +128,8 @@ describe('the hero bar level-up bubbles', () => {
         const view = mount();
         for (let l = 2; l <= 50; l++) level('h1', 'Melee', l - 1, l);
         const b = view.container.querySelector('[data-bar-bubble="level:Melee"]');
-        expect(b.textContent).toBe('LVL UP! 50 Melee! (+49)');
-        expect([...b.querySelectorAll('[data-bubble-num]')].map(n => n.textContent)).toEqual(['50', '(+49)']);
+        expect(b.textContent).toBe('50 Melee!');
+        expect([...b.querySelectorAll('[data-bubble-num]')].map(n => n.textContent)).toEqual(['50']);
     });
 
     it('clicking the hero clears their bubbles and still selects them', () => {
@@ -139,7 +140,7 @@ describe('the hero bar level-up bubbles', () => {
         fireEvent.click(figure(view, 'h1'));
         expect(onSelectHero).toHaveBeenCalledWith('h1');
         expect(bubbles(view, 'h1')).toEqual([]);
-        expect(bubbles(view, 'h2')).toEqual(['LVL UP! 10 Fishing!']);
+        expect(bubbles(view, 'h2')).toEqual(['10 Fishing!']);
     });
 
     it('a cleared skill counts afresh from its next level-up', () => {
@@ -148,7 +149,7 @@ describe('the hero bar level-up bubbles', () => {
         level('h1', 'Mining', 25, 26);
         fireEvent.click(figure(view, 'h1'));
         level('h1', 'Mining', 26, 27);
-        expect(bubbles(view, 'h1')).toEqual(['LVL UP! 27 Mining!']);
+        expect(bubbles(view, 'h1')).toEqual(['27 Mining!']);
     });
 
     it(`shows the newest ${BAR_BUBBLES_SHOWN} and pages through the rest with arrows`, () => {
@@ -156,20 +157,20 @@ describe('the hero bar level-up bubbles', () => {
         ['Mining', 'Forestry', 'Fishing', 'Cooking', 'Smithing'].forEach((s, i) => level('h1', s, i, i + 1));
         const q = (sel) => view.container.querySelector(`[data-bar-bubbles="h1"] ${sel}`);
         expect(bubbles(view, 'h1')).toEqual([
-            'LVL UP! 3 Fishing!', 'LVL UP! 4 Cooking!', 'LVL UP! 5 Smithing!'
+            '3 Fishing!', '4 Cooking!', '5 Smithing!'
         ]);
         expect(view.container.querySelector('[data-bar-bubble-more]')).toBeNull();
         expect(q('[data-bar-bubble-page]').textContent).toBe('1/2');
         expect(q('[data-bar-bubble-newer]').disabled).toBe(true);
 
         fireEvent.click(q('[data-bar-bubble-older]'));
-        expect(bubbles(view, 'h1')).toEqual(['LVL UP! 1 Mining!', 'LVL UP! 2 Forestry!']);
+        expect(bubbles(view, 'h1')).toEqual(['1 Mining!', '2 Forestry!']);
         expect(q('[data-bar-bubble-page]').textContent).toBe('2/2');
         expect(q('[data-bar-bubble-older]').disabled).toBe(true);
 
         fireEvent.click(q('[data-bar-bubble-newer]'));
         expect(bubbles(view, 'h1')).toEqual([
-            'LVL UP! 3 Fishing!', 'LVL UP! 4 Cooking!', 'LVL UP! 5 Smithing!'
+            '3 Fishing!', '4 Cooking!', '5 Smithing!'
         ]);
     });
 
@@ -179,8 +180,52 @@ describe('the hero bar level-up bubbles', () => {
         ['Mining', 'Forestry', 'Fishing', 'Cooking'].forEach((s, i) => level('h1', s, i, i + 1));
         fireEvent.click(view.container.querySelector('[data-bar-bubbles="h1"] [data-bar-bubble-older]'));
         act(() => { vi.advanceTimersByTime(BAR_BUBBLE_FADE_MS * 4); });
-        expect(bubbles(view, 'h1')).toEqual(['LVL UP! 1 Mining!']);
+        expect(bubbles(view, 'h1')).toEqual(['1 Mining!']);
         expect(onSelectHero).not.toHaveBeenCalled();
+    });
+
+    it('the mouse wheel pages like the arrows, one page per flick, sliding in from its side', () => {
+        const view = mount();
+        ['Mining', 'Forestry', 'Fishing', 'Cooking', 'Smithing', 'Crafting', 'Logging'].forEach((s, i) => level('h1', s, i, i + 1));
+        const box = () => view.container.querySelector('[data-bar-bubbles="h1"]');
+        const page = () => box().querySelector('[data-bar-bubble-page]').textContent;
+        const slide = () => box().querySelector('[data-bar-bubble-slide]')?.getAttribute('data-bar-bubble-slide') ?? null;
+        expect(page()).toBe('1/3');
+        expect(slide()).toBeNull();
+
+        fireEvent.wheel(box(), { deltaY: -100 });
+        expect(page()).toBe('2/3');
+        expect(bubbles(view, 'h1')).toEqual(['2 Forestry!', '3 Fishing!', '4 Cooking!']);
+        expect(slide()).toBe('older');
+        // The rest of the same flick is not another page.
+        fireEvent.wheel(box(), { deltaY: -100 });
+        expect(page()).toBe('2/3');
+
+        act(() => { vi.advanceTimersByTime(300); });
+        fireEvent.wheel(box(), { deltaY: -100 });
+        expect(page()).toBe('3/3');
+        expect(bubbles(view, 'h1')).toEqual(['1 Mining!']);
+
+        act(() => { vi.advanceTimersByTime(300); });
+        fireEvent.wheel(box(), { deltaY: 100 });
+        expect(page()).toBe('2/3');
+        expect(slide()).toBe('newer');
+        expect(box().querySelector('[data-bar-bubble-slide]').className).toContain('gi-bar-slide-newer');
+
+        // Past the newest page the wheel does nothing.
+        act(() => { vi.advanceTimersByTime(300); });
+        fireEvent.wheel(box(), { deltaY: 100 });
+        act(() => { vi.advanceTimersByTime(300); });
+        fireEvent.wheel(box(), { deltaY: 100 });
+        expect(page()).toBe('1/3');
+    });
+
+    it('the arrows are pixel triangles drawn in code', () => {
+        const view = mount();
+        ['Mining', 'Forestry', 'Fishing', 'Cooking'].forEach((s, i) => level('h1', s, i, i + 1));
+        const box = view.container.querySelector('[data-bar-bubbles="h1"]');
+        expect(box.querySelector('[data-bar-bubble-older] [data-pixel-triangle="up"]')).not.toBeNull();
+        expect(box.querySelector('[data-bar-bubble-newer] [data-pixel-triangle="down"]')).not.toBeNull();
     });
 
     it('shows no arrows with three bubbles or fewer', () => {
@@ -193,7 +238,7 @@ describe('the hero bar level-up bubbles', () => {
         const view = mount();
         level('h1', 'Mining', 24, 25);
         act(() => { EventBus.publish(ENGINE_EVENTS.GAME_RESET, { reason: 'dev_time_skip' }); });
-        expect(bubbles(view, 'h1')).toEqual(['LVL UP! 25 Mining!']);
+        expect(bubbles(view, 'h1')).toEqual(['25 Mining!']);
         act(() => { EventBus.publish(ENGINE_EVENTS.GAME_RESET, { reason: 'load' }); });
         expect(bubbles(view, 'h1')).toEqual([]);
     });

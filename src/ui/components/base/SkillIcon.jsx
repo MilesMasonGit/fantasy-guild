@@ -3,6 +3,49 @@ import { getSkill } from '../../../config/registries/skillRegistry.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { cn } from '../../utils/cn.js';
 
+/** Skills that currently have pixel art sprite assets. */
+const KNOWN_SKILL_SPRITES = new Set([
+    'mining',
+    'logging',
+    'fishing',
+    'smithing',
+    'crafting',
+    'cooking',
+    'melee',
+    'ranged',
+    'magic',
+    'crime',
+    'nature',
+    'occult',
+    'culinary',
+    'farming',
+    'flask',
+    'industry',
+    'nautical',
+    'social'
+]);
+
+/**
+ * A skill's definition and sprite path (null when it has none), from its id or definition
+ * (`skillId` when `skill` is neither).
+ * @returns {{ def: Object|null, cleanId: string, spritePath: string|null }}
+ */
+export function skillArt(skill, skillId) {
+    const rawId = (typeof skill === 'string' ? skill : (skill?.id || skillId)) || '';
+    const normalizedId = String(rawId).toLowerCase().trim();
+    const cleanId = normalizedId.startsWith('skill_') ? normalizedId.substring('skill_'.length) : normalizedId;
+
+    const def = (typeof skill === 'object' && skill !== null)
+        ? skill
+        : (cleanId ? getSkill(cleanId) || getSkill(normalizedId) : null);
+
+    let spritePath = def?.sprite || (cleanId ? resolveSpritePath(def || cleanId || normalizedId) : null);
+    if (!spritePath && cleanId && KNOWN_SKILL_SPRITES.has(cleanId)) {
+        spritePath = `assets/skills/s_${cleanId}.png`;
+    }
+    return { def, cleanId, spritePath: spritePath || null };
+}
+
 /**
  * SkillIcon — Displays a pixel-art sprite (standard 32px) for skills with authored sprites,
  * falling back gracefully to the skill's emoji icon.
@@ -26,40 +69,7 @@ export const SkillIcon = ({
 }) => {
     const [hasError, setHasError] = useState(false);
 
-    const rawId = (typeof skill === 'string' ? skill : (skill?.id || skillId)) || '';
-    const normalizedId = String(rawId).toLowerCase().trim();
-    const cleanId = normalizedId.startsWith('skill_') ? normalizedId.substring('skill_'.length) : normalizedId;
-
-    const def = (typeof skill === 'object' && skill !== null)
-        ? skill
-        : (cleanId ? getSkill(cleanId) || getSkill(normalizedId) : null);
-
-    // List of skills that currently have pixel art sprite assets
-    const KNOWN_SKILL_SPRITES = new Set([
-        'mining',
-        'logging',
-        'fishing',
-        'smithing',
-        'crafting',
-        'cooking',
-        'melee',
-        'ranged',
-        'magic',
-        'crime',
-        'nature',
-        'occult',
-        'culinary',
-        'farming',
-        'flask',
-        'industry',
-        'nautical',
-        'social'
-    ]);
-
-    let spritePath = def?.sprite || (cleanId ? resolveSpritePath(def || cleanId || normalizedId) : null);
-    if (!spritePath && cleanId && KNOWN_SKILL_SPRITES.has(cleanId)) {
-        spritePath = `assets/skills/s_${cleanId}.png`;
-    }
+    const { def, cleanId, spritePath } = skillArt(skill, skillId);
 
     const hasSprite = !hasError && Boolean(spritePath);
     const name = def?.name || cleanId || 'Skill';
