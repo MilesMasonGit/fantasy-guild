@@ -489,7 +489,7 @@ export function tick(delta) {
     // already holds still for them.
     EnemyMotion.tick(delta);
 
-    // Hostile enemies attack heroes inside the flag radius of their spawner: after the enemies'
+    // Hostile enemies attack heroes whose flag is inside the radius of their spawner: after the enemies'
     // steps, and before any Token ticks, so an attacked hero standing beside the enemy fights this
     // same tick.
     Hostiles.tick(delta);

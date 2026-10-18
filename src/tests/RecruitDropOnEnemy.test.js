@@ -5,6 +5,7 @@ import * as BoardState from '../systems/board/BoardState.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as Flags from '../systems/board/Flags.js';
+import * as FlagRules from '../systems/board/FlagRules.js';
 import * as HeroMotion from '../systems/board/HeroMotion.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
@@ -129,39 +130,68 @@ describe('a Recruit dropped ON a Goblin fights it and wins', () => {
     });
 });
 
-describe('a Recruit dropped NEAR a Goblin, not on it: the rules as written', () => {
+describe('a Recruit dropped NEAR a hostile Goblin: it watches the flag, the same on every side', () => {
     /**
-     * An area flag works enemies whose centre is inside its reach (`Flags.flagRadius`). A hostile
-     * enemy attacks a hero whose BODY is inside the same radius around itself; an idle hero's body
-     * stands at `HeroMotion.IDLE_SPOT` from the flag (up and to the right).
+     * A hostile enemy attacks a hero whose FLAG stands inside the flag radius around it, wherever
+     * the hero's body is. The Recruit's Fight rule is off here, so only the Goblin's watch can
+     * start a fight (an attacked hero fights back whatever their rules say).
      */
-    function nearDrop(dx, dy) {
-        // Out on the mat first, far up and to the right, so the walk over never passes the Goblin.
+    const SIDES = { right: [1, 0], left: [-1, 0], above: [0, -1], below: [0, 1] };
+    const WHERE = { right: 'right of it', left: 'left of it', above: 'above it', below: 'below it' };
+
+    /** The Recruit out on the mat far up and to the right, then their flag moved beside the Goblin. */
+    function nearDrop(side, distance) {
+        Flags.setRule('r1', FlagRules.FIGHT, { allowed: false });
         expect(barDrop('r1', { x: 1500, y: 300 }).success).toBe(true);
         for (let i = 0; i < 50; i++) BoardRunner.tick(100);
         const goblin = placeAt('fixture_drop_goblin', GOBLIN.x, GOBLIN.y);
-        const at = { x: GOBLIN.x + dx, y: GOBLIN.y + dy };
-        const res = flagDrop('r1', at);
+        const [ux, uy] = SIDES[side];
+        const res = flagDrop('r1', { x: GOBLIN.x + ux * distance, y: GOBLIN.y + uy * distance });
         expect(res.success).toBe(true);
         expect(res.pinnedTo).toBeNull();
-        expect(Flags.flagReaches(BoardState.flagOf('r1'), GOBLIN)).toBe(false);
         return goblin;
     }
 
-    it('right of it, beyond the reach: the Recruit idles there and the Goblin never attacks', () => {
-        const goblin = nearDrop(200, 0);
-        const { fought, gone } = play('r1', goblin, 30000);
-        expect(fought).toBe(false);
-        expect(gone).toBe(false);
-        expect(Flags.statusOf('r1').state).toBe('idle');
+    for (const side of Object.keys(SIDES)) {
+        it(`${WHERE[side]}, the flag inside its watch: the Goblin attacks and the Recruit wins`, () => {
+            const goblin = nearDrop(side, 150);
+            const { fought, gone } = play('r1', goblin);
+            expect(fought).toBe(true);
+            expect(gone).toBe(true);
+        });
+
+        it(`${WHERE[side]}, the flag outside its watch: the Goblin leaves the Recruit alone`, () => {
+            const goblin = nearDrop(side, 200);
+            const { fought, gone } = play('r1', goblin, 30000);
+            expect(fought).toBe(false);
+            expect(gone).toBe(false);
+            expect(Flags.ambusherOf('r1')).toBeNull();
+            expect(Flags.statusOf('r1').state).toBe('idle');
+        });
+    }
+
+    it('attacked as soon as the flag lands inside its watch, while the Recruit is still far away', () => {
+        const goblin = nearDrop('left', 150);
+        BoardRunner.tick(300);
+        expect(Flags.ambusherOf('r1')).toBe(goblin.id);
         const body = HeroMotion.heroPointOf('r1');
         expect(Math.hypot(body.x - GOBLIN.x, body.y - GOBLIN.y)).toBeGreaterThan(Flags.flagRadius());
     });
 
-    it('below it, as far away: the idle Recruit stands inside its watch, so the Goblin attacks', () => {
-        const goblin = nearDrop(0, 180);
-        const { fought, gone } = play('r1', goblin);
-        expect(fought).toBe(true);
-        expect(gone).toBe(true);
+    it('walking past it to a flag far beyond: not attacked on the way', () => {
+        Flags.setRule('r1', FlagRules.FIGHT, { allowed: false });
+        expect(barDrop('r1', { x: 200, y: GOBLIN.y }).success).toBe(true);
+        for (let i = 0; i < 50; i++) BoardRunner.tick(100);
+        const goblin = placeAt('fixture_drop_goblin', GOBLIN.x, GOBLIN.y);
+        expect(flagDrop('r1', { x: 1600, y: GOBLIN.y }).success).toBe(true);
+        let closest = Infinity;
+        for (let t = 0; t < 20000; t += 100) {
+            BoardRunner.tick(100);
+            const body = HeroMotion.heroPointOf('r1');
+            closest = Math.min(closest, Math.hypot(body.x - GOBLIN.x, body.y - GOBLIN.y));
+            expect(Flags.ambusherOf('r1')).toBeNull();
+        }
+        expect(closest).toBeLessThan(Flags.flagRadius());
+        expect(BoardState.getTokenById(goblin.id)).not.toBeNull();
     });
 });
