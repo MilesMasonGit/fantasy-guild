@@ -19,7 +19,10 @@ import { TERRAIN, cellIndex, decodeTerrain, islandsOf } from '../../systems/atla
  * up with them.
  */
 
-/** The views: each first biome alone and each pair of them, then each newer biome alone. */
+/**
+ * The views: each first biome alone and each pair of them, three newer biomes beside another for
+ * the blends at their borders, then each newer biome alone.
+ */
 export const TERRAIN_DEV_REGIONS = Object.freeze([
     { id: 'meadow', label: 'Meadow', maps: ['meadow'] },
     { id: 'forest', label: 'Forest', maps: ['forest'] },
@@ -28,6 +31,9 @@ export const TERRAIN_DEV_REGIONS = Object.freeze([
     { id: 'forest_mountain', label: 'Forest + Mountain', maps: ['forest', 'mountain'] },
     { id: 'forest_coast', label: 'Forest + Coast', maps: ['forest', 'coast'] },
     { id: 'mountain_coast', label: 'Mountain + Coast', maps: ['mountain', 'coast'] },
+    { id: 'yellowstone_mountain', label: 'Yellowstone + Mountain', maps: ['yellowstone', 'mountain'] },
+    { id: 'cherry_mountain', label: 'Cherry grove + Mountain', maps: ['cherry_grove', 'mountain'] },
+    { id: 'volcano_forest', label: 'Volcano + Forest', maps: ['volcano', 'forest'] },
     { id: 'flower_meadow', label: 'Flower meadow', maps: ['flower_meadow'] },
     { id: 'cherry_grove', label: 'Cherry grove', maps: ['cherry_grove'] },
     { id: 'yellowstone', label: 'Yellowstone', maps: ['yellowstone'] },

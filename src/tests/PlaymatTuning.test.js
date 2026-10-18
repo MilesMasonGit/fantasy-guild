@@ -181,9 +181,18 @@ describe('⭐ No dead sliders', () => {
         return summary(buildGroundPlan(g).grass.ring);
     };
 
+    /** The blended borders: which ground every plan pixel shows, and each pair's style. */
+    const blend = () => {
+        const plan = buildGroundPlan(ground());
+        return `${weighted(plan.terrainAt)}|${JSON.stringify(plan.blendPairs)}`;
+    };
+
     const OBSERVES = {
         edgeSwing: edges,
         edgeRoughness: edges,
+        blendOn: blend,
+        blendWidth: blend,
+        blendStyle: blend,
         beachWidth: beach,
         shallowsWidth: band('water'),
         wetSandWidth: band('sand'),

@@ -2,7 +2,7 @@
 
 import { TERRAIN, DEFAULT_TERRAIN, TERRAIN_CELL, decodeTerrain } from './TerrainMap.js';
 import { STYLE_TERRAIN } from './WaterShapes.js';
-import { DEFAULT_LOOK, getLook } from '../../config/registries/terrainRegistry.js';
+import { DEFAULT_LOOK, LAWN_TERRAIN, getLook } from '../../config/registries/terrainRegistry.js';
 
 /**
  * The ground is the Atlas cell map a Region stored at settle (`region.terrain`): nothing else
@@ -59,7 +59,7 @@ export function looksForGround(ground, terrains) {
  *   terrains: string[], cells: Uint8Array, looks: Record<string, string>, meadow: boolean,
  *   water: object|null}}
  *   `cells[r * cols + c]` indexes `terrains`; `looks` covers every terrain the drawing can meet
- *   (the map's, the first ones a beach may write, and the water's own looks); `meadow` when no
+ *   (the map's, the first ones a beach may write, the water's own looks and a blend's lawn); `meadow` when no
  *   map was stored; `water` the water's shapes (`WaterShapes.readWater`), null when the map stored
  *   none: its water is then drawn from its cells
  */
@@ -76,7 +76,7 @@ export function regionGround(region, mat) {
         for (let c = 0; c < cols; c++) cells[r * cols + c] = source.cells[from + Math.min(c, source.cols - 1)];
     }
     const terrains = [...source.legend];
-    const named = [...new Set([...terrains, ...Object.values(TERRAIN), ...STYLE_TERRAIN.filter(Boolean)])];
+    const named = [...new Set([...terrains, ...Object.values(TERRAIN), ...STYLE_TERRAIN.filter(Boolean), LAWN_TERRAIN])];
     return {
         seed: Number.isFinite(region?.seed) ? region.seed : 0,
         mat: { w: mat.w, h: mat.h },
