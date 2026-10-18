@@ -18,6 +18,17 @@ runs one, so the PC holds two.*
 | Brief 100 K3: three text sizes and the shared tooltip (T-161, T-038, T-030) | builder (tooltip spans several files) | `crunch/style-kit` (`k1`) | eye-check (7060a37f; director's gate on the whole kit: 5126 tests, cycles, build). Sizes 18/16/14, display 32 proposed; tooltip on the Bank, Shop and hero panel | Sat | Sat |
 | Recruits get a weak basic attack so the tutorial's fight can be won (T-167); owner authors a safe enemy in the Starter Camp afterwards | builder | `fix/t167-recruit-attack` | eye-check (6790962d, with the QA Hire button making roster room; director's gate: 5109 tests, cycles, build; director saw a fresh Recruit beat a Goblin in ~10 s on 5197: Bones on the mat, skills unchanged, the hostile Goblin hit first). Bench-queued (work check; builder expects same) | Sat | |
 
+## Features director, batch 2: the hero bar (owner 2026-10-17: proceed while the kit's eye-check waits a few hours)
+
+*Built on `crunch/style-kit` plus `fix/t167-recruit-attack` (merged into the
+branch), so it uses the kit and everyone fights; it merges after both.*
+
+| Phase | Tier | Branch (worktree) | State | Planned | Done |
+|---|---|---|---|---|---|
+| Brief 140 H1: Work Permissions drawer and launcher, one Combat column, purpose tooltips (T-164, T-156) | builder | `crunch/hero-bar` (`hb`) | building (base suite 5132 passed) | Sat | |
+| Brief 140 H2: the level-up moment (T-177, T-149) | builder | `crunch/hero-bar` | queued, after H1 | | |
+| Brief 140 H3: the shine on main-action buttons (T-178) | builder-lite | `crunch/hero-bar` | queued, after H2 | | |
+
 ## Art pass, batch 1 (proposed and ruled 2026-10-15 evening)
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
