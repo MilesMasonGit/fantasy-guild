@@ -26,8 +26,8 @@ after (director, quiet window); the engineer reports DOM counts meanwhile.*
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| Brief 120 C1: the mat layer (progress bar, one problem mark, rings off at rest, health bars when it matters, block speech retired) | engineer | `crunch/info-layers` (`il`) | building | Sun | |
-| Brief 120 C2: hover (outline at once, name and charges after ~150 ms, HP for heroes and enemies) | builder | `crunch/info-layers` | queued, after C1 | | |
+| Brief 120 C1: the mat layer (progress bar, one problem mark, rings off at rest, health bars when it matters, block speech retired) | engineer | `crunch/info-layers` (`il`) | ready (6c7059d2; director's gate: 5245 tests, cycles, build). Elements per worked Token 10–14 → 3.4–4.9, mat total −8 %; bench:draw --compare and bench:crisp queued (watch: S2 heroes at 56/144 HP now show 8 health bars at rest). Five look questions for the C2 eye-check, at the recommendations meanwhile | Sun | Sun |
+| Brief 120 C2: hover (outline at once, name and charges after ~150 ms, HP for heroes and enemies) | builder | `crunch/info-layers` (`il`) | building | Sun | |
 | Brief 120 C3: the Token card (full-art card, blocks, enemy card, CMS art override field) | builder | `crunch/info-layers` | queued, after C2 | | |
 
 ## Features director, batch 3: map tools (owner 2026-10-17: keep going with the larger implementations; fine refinements later)
@@ -133,6 +133,7 @@ T-186; the badges' soft shadows are settled inside T-013.)
 1. `fix/t167-recruit-attack` (6790962d): engine work check (`npm run bench -- --compare`), features director.
 2. `crunch/style-kit` (7060a37f): engine work check and one `bench:draw --compare` for the cost log, features director.
 3. `crunch/hero-bar` (after H3): engine work check and `bench:draw --compare` (the level-up floats), features director.
+5. `crunch/info-layers` (C1): `bench:draw --compare` against `crunch/map-tools` (the mat must draw cheaper; if dearer, stop and report) and `bench:crisp`, features director.
 4. `crunch/map-tools`: engine work check (expect WORK CHANGED on S2, S3, S5, S6, S8 from the hostile flag watch; accept under the T-167 ruling) and `bench:draw --compare` (the top bar frame, the mode outlines), features director. The four branches stack: kit → Recruits → hero bar → map tools; one run on `map-tools` plus a work check per merge.
 4. `crunch/ground-g5` merged result (`1f659d8d`, in `p23b`): engine work check and one `bench:draw --compare` for the cost log, terrain director. Note for the features director: `crunch/map-tools` also edits `src/systems/atlas/StarterCamp.js`, which G5 changes (the Starter Camp pond); expect a merge conflict there after G5 lands.
 5. `crunch/ground-g7` (fd0bab2a, after G5 merges): engine work check, terrain director. Its micro benches (groundPlan, groundScreen) lay out different Regions, so their timings are not like-for-like.
