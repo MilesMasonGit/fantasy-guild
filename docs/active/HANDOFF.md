@@ -1,5 +1,7 @@
 # HANDOFF — what a fresh director resumes from
 
+> **Two directors (owner, 2026-10-17).** This file is the terrain director's. The features director (the main queue: briefs 100–170) resumes from [HANDOFF_features.md](HANDOFF_features.md).
+
 *Replaced whole each time a director session ends, never stacked. Written
 2026-10-17 01:45 by the art-pass director (session of 15–17 October). Read
 `CLAUDE.md`, this file and `STATUS.md`, then verify each worktree with

@@ -28,7 +28,7 @@ after (director, quiet window); the engineer reports DOM counts meanwhile.*
 |---|---|---|---|---|---|
 | Brief 120 C1: the mat layer (progress bar, one problem mark, rings off at rest, health bars when it matters, block speech retired) | engineer | `crunch/info-layers` (`il`) | ready (6c7059d2; director's gate: 5245 tests, cycles, build). Elements per worked Token 10–14 → 3.4–4.9, mat total −8 %; bench:draw --compare and bench:crisp queued (watch: S2 heroes at 56/144 HP now show 8 health bars at rest). Five look questions for the C2 eye-check, at the recommendations meanwhile | Sun | Sun |
 | Brief 120 C2: hover (outline at once, name and charges after ~150 ms, HP for heroes and enemies) | builder | `crunch/info-layers` (`il`) | eye-check (be0cf72e; one mat timer; director's gate: 5253 tests, cycles, build). The owner's preview on 5198 now serves a frozen copy (`ec`, detached at be0cf72e) so C3 can build in `il` | Sun | Sun |
-| Brief 120 C3: the Token card | builder | `crunch/info-layers` (`il`) | building | Sun | |
+| Brief 120 C3: the Token card | builder | `crunch/info-layers` (`il`) | eye-check (dd93f7a8; director's gate: 5272 tests, cycles, build; no `data/` or art touched). Preview `ec` moved to dd93f7a8 | Sun | Sun |
 
 ## Features director, batch 3: map tools (owner 2026-10-17: keep going with the larger implementations; fine refinements later)
 
@@ -141,6 +141,15 @@ T-186; the badges' soft shadows are settled inside T-013.)
 6. `crunch/ground-g6` (08bc7ee6, after G7): engine work check and one `bench:draw --compare` (the blend adds about 5–12 ms to a two-biome ground build), terrain director.
 
 ## Summaries
+
+**Sun 2026-10-18, afternoon: features director's closing summary.** Where we
+are: four batches built and gated, none merged, stacked kit → Recruits (with
+hostiles watching the flag) → hero bar → map tools → mat, hover and card;
+the owner's one eye-check (29 checks, 16 questions) on http://localhost:5198/
+from the frozen `ec`. Next: the bench queue in a quiet window (one run on the
+top branch plus a work check per merge; WORK CHANGED expected from the hostile
+rule), then merge in order. Owner: the eye-check when free; the CMS steps
+after the merge. Blockers: none. Handoff: [HANDOFF_features.md](HANDOFF_features.md).
 
 **Sat 2026-10-17, evening: batches 1 and 2 at one eye-check.** Where we
 are: the style kit, Recruits who fight and the hero bar (Work Permissions with
