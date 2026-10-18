@@ -76,6 +76,21 @@
         "--strictPort"
       ],
       "port": 5197
+    },
+    {
+      "name": "herobar",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        ".claude/worktrees/hb",
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "5198",
+        "--strictPort"
+      ],
+      "port": 5198
     }
   ]
 }

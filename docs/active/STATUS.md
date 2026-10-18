@@ -29,7 +29,7 @@ branch), so it uses the kit and everyone fights; it merges after both.*
 | Brief 140 H2: the level-up moment (T-177, T-149) | builder | `crunch/hero-bar` (`hb`) | ready (32a39376; director's gate: 5160 tests, cycles, build; floats seen in screenshots). Draw compare queued for the cost log | Sat | Sat |
 | Work Permissions cells square (owner 2026-10-17, from the screenshots: square cells so every skill fits even with the hero panel open; replaces the spread-evenly columns and settles the overlap) | builder-lite | `crunch/hero-bar` | ready (2053ca25; 32 px squares, drawer 856 px wide at 1600×900, Combat ends ~270 px clear of the open hero panel; director's gate: 5160 tests, cycles, build) | Sat | Sat |
 | Brief 140 H3: the shine on main-action buttons (T-178) | builder-lite | `crunch/hero-bar` (`hb`) | ready (8251a1a7; Upgrade and Settle; no Craft button exists yet; director's gate: 5163 tests, cycles, build) | Sat | Sat |
-| Work Permissions drawer centred (owner 2026-10-17: square cells look good; the drawer stays centred horizontally). Director's reading: centred on the visible mat, so with the hero panel open it centres in the space left of the panel and never sits under it | builder-lite | `crunch/hero-bar` | building | Sat | |
+| Work Permissions drawer centred (owner 2026-10-17: square cells look good; the drawer stays centred horizontally). Director's reading: centred on the visible mat, so with the hero panel open it centres in the space left of the panel and never sits under it | builder-lite | `crunch/hero-bar` | ready (04dba554; measured centred within 1 px at 1600×900 and 1280×800, panel open and closed; director's gate: 5165 tests, cycles, build) | Sat | Sat |
 
 ## Art pass, batch 1 (proposed and ruled 2026-10-15 evening)
 
@@ -107,6 +107,15 @@ T-186; the badges' soft shadows are settled inside T-013.)
 3. `crunch/hero-bar` (after H3): engine work check and `bench:draw --compare` (the level-up floats), features director.
 
 ## Summaries
+
+**Sat 2026-10-17, evening: batches 1 and 2 at one eye-check.** Where we
+are: the style kit, Recruits who fight and the hero bar (Work Permissions with
+square centred cells, the level-up moment, the shine) are built and gated;
+the hero bar branch holds all three, served on http://localhost:5198/ from
+`hb` ([eye-check file](eyecheck/2026-10-17_style-kit.md), 17 checks, 8
+questions). Next: the owner's look, fixes on the branches, the bench queue in
+a quiet window, then merge kit → Recruits → hero bar. Owner: the eye-check
+when free. Blockers: none.
 
 **Sat 2026-10-17, 19:20: features batch 1 at the eye-check.** Where we are:
 the style kit (page, shared arrow lists, text sizes, shared tooltip) and the
