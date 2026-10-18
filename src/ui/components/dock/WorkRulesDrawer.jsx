@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Check, Swords } from 'lucide-react';
 import { cn } from '../../utils/cn.js';
 import { useEngine } from '../../hooks/useEngine.js';
@@ -75,6 +75,18 @@ export const WorkRulesButton = ({ open = false, onToggle }) => (
     </div>
 );
 
+/**
+ * How far the hero panel intrudes into the mat column from each side, in px, so the drawer can
+ * centre on what is left visible. Zero for a missing panel or one that does not overlap.
+ */
+export function drawerInsets(columnRect, panelRect) {
+    const none = { left: 0, right: 0 };
+    if (!columnRect || !panelRect) return none;
+    const onRight = panelRect.left + panelRect.right > columnRect.left + columnRect.right;
+    if (onRight) return { left: 0, right: Math.max(0, Math.min(columnRect.right - panelRect.left, columnRect.right - columnRect.left)) };
+    return { left: Math.max(0, Math.min(panelRect.right - columnRect.left, columnRect.right - columnRect.left)), right: 0 };
+}
+
 /** Re-render on anything that changes a hero, a rule or a level. Only while the drawer is mounted. */
 function useHeroesRefresh() {
     const [, bump] = useState(0);
@@ -92,8 +104,10 @@ function useHeroesRefresh() {
  * Escape closes it; the mat stays usable. Rules go through `Flags.setRule`, so the engine sees
  * nothing new.
  */
-export const WorkRulesDrawer = ({ open = false, litHeroId = null, onClose }) => {
+export const WorkRulesDrawer = ({ open = false, heroPanelOpen = false, litHeroId = null, onClose }) => {
     const engine = useEngine();
+    const drawerRef = useRef(null);
+    const [insets, setInsets] = useState({ left: 0, right: 0 });
     const [mounted, setMounted] = useState(open);
     const [entered, setEntered] = useState(false);
 
@@ -130,17 +144,54 @@ export const WorkRulesDrawer = ({ open = false, litHeroId = null, onClose }) => 
         disabled: !mounted
     });
 
+    // Centred on the part of the mat column the hero panel leaves visible. ⚠️ The panel mounts a
+    // render after its id is set, so a missing panel is looked for again shortly.
+    useLayoutEffect(() => {
+        const column = drawerRef.current?.parentElement;
+        if (!mounted || !column) return undefined;
+        let timer = 0;
+        let tries = 0;
+        let observed = null;
+        const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => measure());
+        function measure() {
+            const panel = heroPanelOpen ? document.querySelector('[data-hero-panel]') : null;
+            if (heroPanelOpen && !panel && tries++ < 10) {
+                timer = setTimeout(measure, 30);
+                return;
+            }
+            if (panel && panel !== observed) {
+                observed = panel;
+                observer?.observe(panel);
+            }
+            const next = panel ? drawerInsets(column.getBoundingClientRect(), panel.getBoundingClientRect()) : { left: 0, right: 0 };
+            setInsets(prev => (prev.left === next.left && prev.right === next.right ? prev : next));
+        }
+        observer?.observe(column);
+        measure();
+        window.addEventListener('resize', measure);
+        return () => {
+            clearTimeout(timer);
+            window.removeEventListener('resize', measure);
+            observer?.disconnect();
+        };
+    }, [mounted, heroPanelOpen]);
+
     if (!mounted) return null;
 
     return (
         <div
-            ref={recall.setNodeRef}
+            ref={(node) => { drawerRef.current = node; recall.setNodeRef(node); }}
             {...recall.droppableProps}
             data-work-rules-drawer
             data-dnd-region={DND_SURFACE.DRAWER}
             onContextMenu={e => e.preventDefault()}
-            style={{ bottom: DOCK_STRIP_PX }}
-            className="absolute left-0 w-max max-w-full z-[45] overflow-hidden pointer-events-auto select-none"
+            style={{
+                bottom: DOCK_STRIP_PX,
+                left: insets.left,
+                right: insets.right,
+                maxWidth: `calc(100% - ${insets.left + insets.right}px)`
+            }}
+            className="absolute mx-auto w-max z-[45] overflow-hidden pointer-events-auto select-none"
         >
             <div
                 className={cn(

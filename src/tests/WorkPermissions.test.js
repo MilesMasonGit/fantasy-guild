@@ -14,7 +14,7 @@ import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
 import { EngineContext } from '../ui/context/EngineContext';
 import { BottomHeroDock } from '../ui/components/dock/BottomHeroDock.jsx';
 import { BankHeroPanel } from '../ui/components/dock/BankHeroPanel.jsx';
-import { WorkRulesDrawer, LAUNCHER_PX, CELL_PX } from '../ui/components/dock/WorkRulesDrawer.jsx';
+import { WorkRulesDrawer, LAUNCHER_PX, CELL_PX, drawerInsets } from '../ui/components/dock/WorkRulesDrawer.jsx';
 import { requiresText } from '../ui/components/dock/heroPanelSkills.js';
 import { setLockedListOpen } from '../ui/components/dock/heroPanelSkills.js';
 import { setLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
@@ -140,15 +140,51 @@ describe('the launcher', () => {
     });
 });
 
+describe('the drawer centring', () => {
+    const rect = (left, right) => ({ left, right });
+    it('measures how far the hero panel intrudes into the mat column from either side', () => {
+        expect(drawerInsets(rect(100, 900), null)).toEqual({ left: 0, right: 0 });
+        expect(drawerInsets(rect(100, 900), rect(580, 940))).toEqual({ left: 0, right: 320 });
+        expect(drawerInsets(rect(100, 900), rect(60, 420))).toEqual({ left: 320, right: 0 });
+        expect(drawerInsets(rect(100, 900), rect(920, 1280))).toEqual({ left: 0, right: 0 });
+    });
+
+    it('with the hero panel open the drawer is inset by the panel so it clears it', () => {
+        const panel = document.createElement('aside');
+        panel.setAttribute('data-hero-panel', 'true');
+        document.body.appendChild(panel);
+        const proto = Element.prototype.getBoundingClientRect;
+        Element.prototype.getBoundingClientRect = function () {
+            if (this === panel) return { left: 580, right: 940, top: 0, bottom: 800, width: 360, height: 800 };
+            return { left: 100, right: 900, top: 0, bottom: 800, width: 800, height: 800 };
+        };
+        try {
+            const view = render(wrap(h(WorkRulesDrawer, { open: true, heroPanelOpen: true, litHeroId: null, onClose: () => {} })));
+            expect(drawer(view).style.left).toBe('0px');
+            expect(drawer(view).style.right).toBe('320px');
+            expect(drawer(view).style.maxWidth).toBe('calc(100% - 320px)');
+            expect(drawer(view).className).toContain('mx-auto');
+            view.rerender(wrap(h(WorkRulesDrawer, { open: true, heroPanelOpen: false, litHeroId: null, onClose: () => {} })));
+            expect(drawer(view).style.right).toBe('0px');
+        } finally {
+            Element.prototype.getBoundingClientRect = proto;
+            panel.remove();
+        }
+    });
+});
+
 describe('the drawer', () => {
     it('is titled Work Permissions and is as wide as its content, with square fixed-size cells', () => {
         const view = openDrawer();
         expect(q(view, '[data-rules-title]').textContent).toBe('Work Permissions');
         expect(drawer(view).textContent).not.toMatch(/work rules/i);
-        expect(drawer(view).className).toContain('left-0');
         expect(drawer(view).className).toContain('w-max');
-        expect(drawer(view).className).toContain('max-w-full');
-        expect(drawer(view).className).not.toContain('right-0');
+        // Centred: margins auto between a zero left and right inset while the hero panel is closed.
+        expect(drawer(view).className).toContain('mx-auto');
+        expect(drawer(view).className).not.toContain('left-0');
+        expect(drawer(view).style.left).toBe('0px');
+        expect(drawer(view).style.right).toBe('0px');
+        expect(drawer(view).style.maxWidth).toBe('calc(100% - 0px)');
         const row = q(view, '[data-rules-row="h1"]');
         const cols = view.container.querySelectorAll('[data-rules-col]').length;
         expect(row.style.gridTemplateColumns).toBe(`150px repeat(${cols}, ${CELL_PX}px)`);

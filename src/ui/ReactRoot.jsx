@@ -334,6 +334,7 @@ export const ReactRoot = ({ engine }) => {
                                 <ErrorBoundary label="WorkRulesDrawer">
                                     <WorkRulesDrawer
                                         open={ui.flagRules.isOpen}
+                                        heroPanelOpen={Boolean(inspectHeroId)}
                                         litHeroId={ui.flagRules.heroId}
                                         onClose={ui.flagRules.close}
                                     />
