@@ -25,8 +25,8 @@ branch), so it uses the kit and everyone fights; it merges after both.*
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| Brief 140 H1: Work Permissions drawer and launcher, one Combat column, purpose tooltips (T-164, T-156) | builder | `crunch/hero-bar` (`hb`) | building (base suite 5132 passed) | Sat | |
-| Brief 140 H2: the level-up moment (T-177, T-149) | builder | `crunch/hero-bar` | queued, after H1 | | |
+| Brief 140 H1: Work Permissions drawer and launcher, one Combat column, purpose tooltips (T-164, T-156) | builder | `crunch/hero-bar` (`hb`) | ready (fe9d17c5; director's gate: 5150 tests, cycles, build; Fight priority proved by a test; drawer seen in screenshots). Eye-check with the bar | Sat | Sat |
+| Brief 140 H2: the level-up moment (T-177, T-149) | builder | `crunch/hero-bar` (`hb`) | building | Sat | |
 | Brief 140 H3: the shine on main-action buttons (T-178) | builder-lite | `crunch/hero-bar` | queued, after H2 | | |
 
 ## Art pass, batch 1 (proposed and ruled 2026-10-15 evening)
@@ -94,6 +94,8 @@ first; asked with the next batch proposal and recorded where they belong.*
 - **Alert outline colour** (found by K1): UI_STYLE says alerts are a gold outline; the game draws Token alerts red (`outline="alert"`) and has for a while. Keep red for Tokens, switch to gold, or red for problems and gold for attention? Asked in the style kit's eye-check.
 
 - **Recruits and Fight by default** (found by T-167): Fight is on by default for everyone, so a Recruit's flag now goes after peaceful enemies in its reach (a Cow, which a level 1 fighter loses to) and hostiles attack Recruits. Keep Fight on for Recruits (everyone fights, the player turns it off), or default it off for Recruits until promotion (the player turns it on for the tutorial fight)? Asked with T-167's eye-check.
+
+- **The hero panel covers the Work Permissions drawer's last columns** (found by H1: the drawer now spans the mat, the panel sits over its right end, Combat included). A: the drawer stops at the panel's edge while the panel is open, columns a little narrower (recommended). B: accept the overlap. C: opening one closes the other. Asked with the hero bar's eye-check.
 
 Earlier: none open. (Ruled 2026-10-15: equip-by-drop opens the sheet a frame later,
 T-186; the badges' soft shadows are settled inside T-013.)
