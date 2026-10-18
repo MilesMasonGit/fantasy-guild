@@ -13,10 +13,10 @@ runs one, so the PC holds two.*
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| Brief 100 K1: the style sheet page, every standard UI piece live (T-159) | builder | `crunch/style-kit` (`k1`) | building | Sat | |
+| Brief 100 K1: the style sheet page, every standard UI piece live (T-159) | builder | `crunch/style-kit` (`k1`) | ready (ca5bf7ff; director's gate: 5106 tests, cycles, build; page seen in the builder's screenshots). Waits for the kit's one eye-check after K3 | Sat | |
 | Brief 100 K2: one shared arrow-bar scroll list (T-160) | builder | `crunch/style-kit` | queued, after K1 | | |
 | Brief 100 K3: three text sizes and the shared tooltip (T-161, T-038, T-030) | builder-lite | `crunch/style-kit` | queued, after K2 | | |
-| Recruits get a weak basic attack so the tutorial's fight can be won (T-167); owner authors a safe enemy in the Starter Camp afterwards | builder | `fix/t167-recruit-attack` | queued, after K1 (engine files, no overlap) | | |
+| Recruits get a weak basic attack so the tutorial's fight can be won (T-167); owner authors a safe enemy in the Starter Camp afterwards | builder | `fix/t167-recruit-attack` | building (owner 2026-10-17: fights as a level 1 fighter, no combat XP until promotion) | Sat | |
 
 ## Art pass, batch 1 (proposed and ruled 2026-10-15 evening)
 
@@ -80,7 +80,9 @@ runs one, so the PC holds two.*
 *Design questions the director cannot answer, as multiple choice, recommendation
 first; asked with the next batch proposal and recorded where they belong.*
 
-None open. (Ruled 2026-10-15: equip-by-drop opens the sheet a frame later,
+- **Alert outline colour** (found by K1): UI_STYLE says alerts are a gold outline; the game draws Token alerts red (`outline="alert"`) and has for a while. Keep red for Tokens, switch to gold, or red for problems and gold for attention? Asked in the style kit's eye-check.
+
+Earlier: none open. (Ruled 2026-10-15: equip-by-drop opens the sheet a frame later,
 T-186; the badges' soft shadows are settled inside T-013.)
 
 ## Bench queue (one at a time, weekdays 13:00–17:00 and 01:00–07:00, or when the owner says the PC is quiet)
