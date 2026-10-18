@@ -26,8 +26,8 @@ branch), so it uses the kit and everyone fights; it merges after both.*
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
 | Brief 140 H1: Work Permissions drawer and launcher, one Combat column, purpose tooltips (T-164, T-156) | builder | `crunch/hero-bar` (`hb`) | ready (fe9d17c5; director's gate: 5150 tests, cycles, build; Fight priority proved by a test; drawer seen in screenshots). Eye-check with the bar | Sat | Sat |
-| Brief 140 H2: the level-up moment (T-177, T-149) | builder | `crunch/hero-bar` (`hb`) | building | Sat | |
-| Work Permissions cells square (owner 2026-10-17, from the screenshots: square cells so every skill fits even with the hero panel open; replaces the spread-evenly columns and settles the overlap) | builder-lite | `crunch/hero-bar` | queued, right after H2 (same worktree) | | |
+| Brief 140 H2: the level-up moment (T-177, T-149) | builder | `crunch/hero-bar` (`hb`) | ready (32a39376; director's gate: 5160 tests, cycles, build; floats seen in screenshots). Draw compare queued for the cost log | Sat | Sat |
+| Work Permissions cells square (owner 2026-10-17, from the screenshots: square cells so every skill fits even with the hero panel open; replaces the spread-evenly columns and settles the overlap) | builder-lite | `crunch/hero-bar` | building | Sat | |
 | Brief 140 H3: the shine on main-action buttons (T-178) | builder-lite | `crunch/hero-bar` | queued, after H2 | | |
 
 ## Art pass, batch 1 (proposed and ruled 2026-10-15 evening)
@@ -103,6 +103,7 @@ T-186; the badges' soft shadows are settled inside T-013.)
 
 1. `fix/t167-recruit-attack` (6790962d): engine work check (`npm run bench -- --compare`), features director.
 2. `crunch/style-kit` (7060a37f): engine work check and one `bench:draw --compare` for the cost log, features director.
+3. `crunch/hero-bar` (after H3): engine work check and `bench:draw --compare` (the level-up floats), features director.
 
 ## Summaries
 
