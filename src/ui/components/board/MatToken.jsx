@@ -592,6 +592,7 @@ export const MatToken = React.memo(function MatToken({
                     isHovered={isHovered}
                     isDragging={hidden}
                     boxPx={boxPx}
+                    artPx={artPx}
                     artUnit={artScale}
                     small={small}
                     spawner={spawnerBubble}

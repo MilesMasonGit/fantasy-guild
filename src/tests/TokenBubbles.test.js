@@ -122,6 +122,18 @@ describe('the rules, pure', () => {
         expect(workBarPlace(64, 2, true).steps).toBe(WORK_BAR_ART_W / 2);
     });
 
+    it('⭐ the bar sits at the foot of the ART, not the box, when the art is drawn smaller than its box', () => {
+        // The mat drawn at 0.7: art 64 px at 1.43 mat units a pixel (91.4 u) centred in a 128 u box.
+        const artUnit = 1 / 0.7;
+        const artPx = 64 * artUnit;
+        const p = workBarPlace(128, artUnit, false, artPx);
+        const artBottom = (128 + artPx) / 2;
+        expect(p.top + p.height).toBeLessThanOrEqual(artBottom);
+        expect(p.top + p.height).toBeGreaterThan(artBottom - 4 * artUnit);
+        // Art as big as the box: the box's foot.
+        expect(workBarPlace(128, 2, false, 128)).toEqual(workBarPlace(128, 2));
+    });
+
     it('ring spots: timer top-left, quest bottom-centre, charges bottom-right, inside a full-size box', () => {
         const box = { boxPx: 128 };
         const timer = bubbleSlot('timer', box);
@@ -387,7 +399,7 @@ describe('hover: the rings, the timer and the gear', () => {
 });
 
 describe('the middle row', () => {
-    it('⭐ centred on the box: gear, spawner count, problem mark, demolition mark, disallow mark, in that order', () => {
+    it('⭐ the marks sit centred on the box: problem mark, demolition mark, disallow mark, in that order', () => {
         const { container } = mount(bub({
             token: worked({ heroId: null, alert: ALERT.INPUTS }), isHovered: true, disallowed: true, marked: true,
             spawner: spawnerRing({ count: 3, cap: 5 }),
@@ -397,10 +409,38 @@ describe('the middle row', () => {
         expect(parseFloat(row.style.width)).toBe(128);
         expect(parseFloat(row.style.top)).toBe(64);
         expect(row.style.transform).toContain('translateY(-50%)');
-        const kinds = [...row.children].map(c => c.getAttribute('data-bubble')
-            || (c.hasAttribute('data-problem-mark') ? 'problem' : null)
-            || (c.querySelector('[data-station-gear]') ? 'gear' : '?'));
-        expect(kinds).toEqual(['spawner', 'problem', 'marked', 'disallow']);
+        const kinds = [...row.children].map(c => c.getAttribute('data-bubble') || (c.hasAttribute('data-problem-mark') ? 'problem' : '?'));
+        expect(kinds).toEqual(['problem', 'marked', 'disallow']);
+    });
+
+    it('⭐ hovering never moves a mark: the gear and the spawner ring come up in a row of their own, above the marks', () => {
+        const props = {
+            token: worked({ heroId: null }), gear: { show: true, pulsing: true, recipe: null, onClick: () => {} },
+            spawner: spawnerRing({ count: 3, cap: 5 })
+        };
+        const { container, rerender } = mount(bub(props));
+        const row = container.querySelector('[data-bubble-row="middle"]');
+        const markEl = mark(container);
+        const at = () => ({ row: row.getAttribute('style'), children: [...row.children] });
+        const before = at();
+        rerender(tree(bub({ ...props, isHovered: true })));
+        expect(container.querySelector('[data-bubble-row="middle"]')).toBe(row);
+        expect(mark(container)).toBe(markEl);
+        expect(at()).toEqual(before);
+        const hoverRow = container.querySelector('[data-bubble-row="hover"]');
+        expect([...hoverRow.children].map(c => c.getAttribute('data-bubble') || (c.querySelector('[data-station-gear]') ? 'gear' : '?')))
+            .toEqual(['gear', 'spawner']);
+        // Above the marks: its bottom edge clear of the mark's top (16 art pixels at 2 units, centred at 64).
+        expect(hoverRow.style.transform).toContain('translateY(-100%)');
+        expect(parseFloat(hoverRow.style.top)).toBeLessThanOrEqual(64 - 16);
+    });
+
+    it('with no marks, the hover row sits at the centre', () => {
+        const { container } = mount(bub({ token: worked({ heroId: null }), isHovered: true, spawner: spawnerRing({ count: 3, cap: 5 }) }));
+        const hoverRow = container.querySelector('[data-bubble-row="hover"]');
+        expect(parseFloat(hoverRow.style.top)).toBe(64);
+        expect(hoverRow.style.transform).toContain('translateY(-50%)');
+        expect(container.querySelector('[data-bubble-row="middle"]')).toBeNull();
     });
 
     it('⭐ the disallow and demolition marks show the whole time, hovered or not', () => {
@@ -604,7 +644,7 @@ describe('on the mat (MatToken)', () => {
         fireEvent.pointerMove(root, { clientX: tok.x, clientY: tok.y });
     }
 
-    it('⭐ a spawner at 3 of 5: nothing at rest; hovered, its 3/5 sits in the middle row inside the box', () => {
+    it('⭐ a spawner at 3 of 5: nothing at rest; hovered, its 3/5 sits at the centre of the box', () => {
         const forest = put('fixture_b13_forest');
         put('fixture_b13_sapling', { x: 1200, y: 520 });
         put('fixture_b13_sapling', { x: 1400, y: 300 });
@@ -615,7 +655,7 @@ describe('on the mat (MatToken)', () => {
         expect(o.querySelector('[data-bubble-row]')).toBeNull();
 
         hover(container, forest);
-        const r = o.querySelector('[data-bubble-row="middle"] [data-ring="spawner"]');
+        const r = o.querySelector('[data-bubble-row="hover"] [data-ring="spawner"]');
         expect(r.getAttribute('data-ring-text')).toBe('3/5');
         const box = parseFloat(o.style.width);
         const row = o.querySelector('[data-bubble-row]');

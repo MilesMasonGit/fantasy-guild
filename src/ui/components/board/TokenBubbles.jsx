@@ -12,7 +12,7 @@ import { TimerBubble } from './TimerBubble.jsx';
 import { bubbleSlot, chargesFraction, ringCount } from './ringRow.js';
 import { TokenChargeDeltaFloater, StationGearBadge, DisallowBadge, MarkedBadge } from './TokenBadges.jsx';
 import { ProblemMark } from './ProblemMark.jsx';
-import { problemOf, problemText } from './problemMark.js';
+import { problemOf, problemText, PROBLEM_MARK_ART_PX } from './problemMark.js';
 import { createWorkBar, workBarPlace } from './workBar.js';
 import { shareCycle } from './cycleShare.js';
 
@@ -27,21 +27,25 @@ export const BUBBLE_TIPS = Object.freeze({
 
 const CHOOSE_KINDS = new Set([ALERT.CHOOSE_RECIPE, ALERT.CHOOSE_BUILD]);
 
+/** The disallow and demolition badges' size (`w-7 h-7`), and the gap in a row, in mat units. */
+const BADGE_U = 28;
+const ROW_GAP_U = 4;
+
 /**
  * TokenBubbles: what is drawn on a Token's box besides its art. The mat shows that something is
  * happening and what is wrong, and no numbers (docs/active/concept_info_layers.md):
  * - **Work bar** (`workBar.js`), along the foot: the whole time a hero works the Token and it is
  * not a fight. Fills each cycle on the shared step clock; empty again on `CYCLE_COMPLETE`. Any
  * engine alert on the worked Token stops the cycle, so the bar holds there, grey.
- * - **Problem mark** (`ProblemMark`, middle row): one, yellow while it waits (items, a Token
+ * - **Problem mark** (`ProblemMark`, the middle row): one, yellow while it waits (items, a Token
  * beside it, charges, a choice) or red when it can't (no room, the cap, a hero who can't do the
  * work); its hover says exactly what (`problemMark.js`). From the engine's alert, a spawner's
  * stuck alert (`SPAWNER_ALERT_CHANGED`, read once on mount), or nothing chosen on a station.
- * - **Disallow and demolition marks** (middle row): the whole time they apply.
+ * - **Disallow and demolition marks** (the middle row): the whole time they apply.
  * - **The -1 / +50 floater**: whenever the charges change.
  * - **Enemy health bar** (above the box): in a fight, and while an enemy is hovered.
  * - **Hovered only**: the charges, quest and spawner rings, the timer ring (growing, turning,
- * resting) and the recipe gear.
+ * resting) and the recipe gear; the gear and the spawner ring in a row of their own.
  * - While the Token is dragged: nothing.
  * Pressing anything here that takes the pointer grabs the Token (`dragProps`).
  * The subscriptions are keyed on the Token and nothing else: hovering, the alert, the hero and
@@ -55,6 +59,7 @@ export const TokenBubbles = ({
     isHovered = false,
     isDragging = false,
     boxPx = 128,
+    artPx = boxPx,
     artUnit = 2,
     small = false,
     spawner = null,
@@ -84,7 +89,7 @@ export const TokenBubbles = ({
     liveRef.current = { hasHero, blocked };
 
     const [bar] = useState(() => createWorkBar());
-    const barPlace = useMemo(() => workBarPlace(boxPx, artUnit, small), [boxPx, artUnit, small]);
+    const barPlace = useMemo(() => workBarPlace(boxPx, artUnit, small, artPx), [boxPx, artUnit, small, artPx]);
     const setBarRoot = useCallback((el) => bar.attach(el, barPlace.steps), [bar, barPlace.steps]);
 
     useEffect(() => {
@@ -189,8 +194,16 @@ export const TokenBubbles = ({
     const barHp = hp ?? (enemyHp ? { cur: enemyHp, max: enemyHp } : null);
     const showHp = (fight || (isHovered && !!enemyHp)) && !!barHp && barHp.max > 0;
     const showGear = !!gear?.show && !marked && isHovered;
-    const showMiddle = showGear || showSpawner || !!problem || disallowed || marked;
+    const showRest = !!problem || disallowed || marked;
+    const showHoverRow = showGear || showSpawner;
     const startingUses = hasCharges && typeId ? tokenStartingUses(typeId) : null;
+    // ⚠️ The hover row never shares the marks' row: inserted beside them it would slide the mark
+    // out from under the pointer the moment the pointer reached it. With marks showing it sits
+    // just above them; alone, at the centre.
+    const restHalf = Math.max(PROBLEM_MARK_ART_PX * artUnit, BADGE_U) / 2;
+    const hoverRowStyle = showRest
+        ? { left: 0, width: boxPx, top: boxPx / 2 - restHalf - ROW_GAP_U, transform: 'translateY(-100%)', gap: ROW_GAP_U }
+        : { left: 0, width: boxPx, top: boxPx / 2, transform: 'translateY(-50%)', gap: ROW_GAP_U };
 
     return (
         <>
@@ -208,11 +221,11 @@ export const TokenBubbles = ({
                 />
             )}
 
-            {showMiddle && (
+            {showHoverRow && (
                 <div
-                    data-bubble-row="middle"
+                    data-bubble-row="hover"
                     className="absolute z-20 flex items-center justify-center pointer-events-none"
-                    style={{ left: 0, width: boxPx, top: boxPx / 2, transform: 'translateY(-50%)', gap: 4 }}
+                    style={hoverRowStyle}
                 >
                     {showGear && (
                         <div {...dragProps} className="relative shrink-0 pointer-events-auto">
@@ -229,6 +242,15 @@ export const TokenBubbles = ({
                             <RingBadge kind="spawner" fraction={spawner.fraction} text={spawner.text} title={BUBBLE_TIPS.spawner(spawner.text)} />
                         </Bubble>
                     )}
+                </div>
+            )}
+
+            {showRest && (
+                <div
+                    data-bubble-row="middle"
+                    className="absolute z-20 flex items-center justify-center pointer-events-none"
+                    style={{ left: 0, width: boxPx, top: boxPx / 2, transform: 'translateY(-50%)', gap: ROW_GAP_U }}
+                >
                     {problem && (
                         <ProblemMark problem={problem} tip={problemTip} artUnit={artUnit} dragProps={dragProps} onClick={problemClick} />
                     )}

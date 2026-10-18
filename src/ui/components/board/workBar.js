@@ -19,16 +19,20 @@ export const WORK_BAR_ART_LIFT = 2;
 
 /**
  * Where the bar sits in a Token's box, in mat units, and how many art pixels long it is
- * (`steps`). `artUnit` is one art pixel in mat units (`boardScaleAt(fit)`).
+ * (`steps`): centred, along the foot of the art. `artUnit` is one art pixel in mat units
+ * (`boardScaleAt(fit)`); `artPx` is how big the art is drawn, centred in the box (smaller than
+ * the box when the mat is drawn small, so the box's own bottom would leave the bar floating
+ * below the art).
  * @returns {{left: number, top: number, width: number, height: number, steps: number}}
  */
-export function workBarPlace(boxPx, artUnit, small = false) {
+export function workBarPlace(boxPx, artUnit, small = false, artPx = boxPx) {
     const steps = small ? WORK_BAR_ART_W / 2 : WORK_BAR_ART_W;
     const width = steps * artUnit;
     const height = WORK_BAR_ART_H * artUnit;
+    const foot = (boxPx + Math.min(artPx, boxPx)) / 2;
     return {
         left: (boxPx - width) / 2,
-        top: boxPx - height - WORK_BAR_ART_LIFT * artUnit,
+        top: foot - height - WORK_BAR_ART_LIFT * artUnit,
         width,
         height,
         steps
