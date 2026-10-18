@@ -131,7 +131,9 @@ https://claude.ai/artifact/4BLxWmqzGpvF4gdin4tKdQ. Prototype `place1.py`, with
 today's layout from the game's own `Layout.js` via `place_today.mjs`. P1
 verdict: **A, natural clumps** (one kind per grove). B's mixing is out because maps
 control which Tokens a player gets: early maps give many of the current tier's
-trees and one or two of the next tier's.
+trees and one or two of the next tier's. P2 (groves and the world: kinds where
+they belong, rarer further out, camps and treasures with a reason; `place2.py`)
+waiting for the owner.
 
 ## G5 — Water in every Region (engineer; eye-check)
 
