@@ -25,16 +25,16 @@ import * as Flags from '../systems/board/Flags.js';
 import { MatHero } from '../ui/components/board/MatHero.jsx';
 import { AnimatedEnemySprite } from '../ui/components/board/AnimatedEnemySprite.jsx';
 import { AnimatedHeroSprite } from '../ui/components/board/AnimatedHeroSprite.jsx';
-import { NotificationSidebars } from '../ui/components/board/PopOutSidebars.jsx';
+import { ItemStubColumn } from '../ui/components/notifications/ItemStubColumn.jsx';
+import { BannerStack } from '../ui/components/notifications/BannerStack.jsx';
+import * as ItemStubs from '../systems/notifications/itemStubs.js';
+import * as Banners from '../systems/notifications/banners.js';
 import { shadowLayer, outlineLayer, sheetOutlineLayer, setSpriteFxManifest } from '../ui/utils/spriteFx.js';
 import { restHover } from './fixtures/hoverRest.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
     getQueue: vi.fn(() => [])
-}));
-vi.mock('../ui/components/base/ToastContainer.jsx', () => ({
-    default: () => React.createElement('i', { 'data-toasts': true })
 }));
 vi.mock('../systems/progression/RegistryManager.js', () => ({
     RegistryManager: { recordItemGain: vi.fn() }
@@ -97,17 +97,23 @@ describe('the registry', () => {
 });
 
 describe('side UI', () => {
-    it('notifications draw by default and not when off', () => {
-        const on = mount(h(NotificationSidebars));
-        // The toast list is drawn only while its panel is open.
-        fireEvent.mouseEnter(on.container.querySelector('[data-sidebar="notifications"]'));
-        expect(on.container.querySelector('[data-toasts]')).not.toBeNull();
+    it('notifications (item stubs and banners) draw by default and not when off', () => {
+        ItemStubs.reset();
+        Banners.reset();
+        ItemStubs.recordFlow('item_oak_wood', { added: 2 });
+        ItemStubs.flush();
+        Banners.push({ kind: 'hero', parts: { heroes: ['Aela'] } });
+        const on = mount(h('div', null, h(ItemStubColumn), h(BannerStack)));
+        expect(on.container.querySelector('[data-item-stub]')).not.toBeNull();
+        expect(on.container.querySelector('[data-banner]')).not.toBeNull();
         cleanup();
 
         setDrawn('notifications', false);
-        const off = mount(h(NotificationSidebars));
-        fireEvent.mouseEnter(off.container.querySelector('[data-sidebar="notifications"]'));
-        expect(off.container.querySelector('[data-toasts]')).toBeNull();
+        const off = mount(h('div', null, h(ItemStubColumn), h(BannerStack)));
+        expect(off.container.querySelector('[data-item-stub]')).toBeNull();
+        expect(off.container.querySelector('[data-banner]')).toBeNull();
+        ItemStubs.reset();
+        Banners.reset();
     });
 });
 

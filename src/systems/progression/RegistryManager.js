@@ -3,7 +3,6 @@ import { EventBus } from '../core/EventBus.js';
 import { logger } from '../../utils/Logger.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
-import * as NotificationSystem from '../core/NotificationSystem.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
@@ -51,8 +50,6 @@ export const RegistryManager = {
             
             const template = getItem(itemId);
             const itemName = template?.name || itemId;
-            NotificationSystem.notify(`Unlock: ${itemName}`, 'info', { category: 'discovery' });
-
             EventBus.publish(ENGINE_EVENTS.ITEM_DISCOVERED, { itemId, itemName });
         }
         
@@ -100,8 +97,6 @@ export const RegistryManager = {
             // An enemy id IS a Token id, so the name comes from the Token registry.
             const template = getTokenType(enemyId);
             const enemyName = template?.name || enemyId;
-            NotificationSystem.notify(`Unlock: ${enemyName}`, 'info', { category: 'discovery' });
-
             EventBus.publish(ENGINE_EVENTS.ENEMY_DISCOVERED, { enemyId, enemyName });
         }
 

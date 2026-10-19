@@ -14,6 +14,7 @@ import {
 import { BOARD_EVENTS } from '../../systems/board/boardEvents.js';
 import { PerfDevSection } from '../dev/perf/PerfDevSection.jsx';
 import { StarterCampDevSection } from '../dev/StarterCampDevSection.jsx';
+import { NotificationsDevSection } from '../dev/NotificationsDevSection.jsx';
 import { TerrainDevSection } from '../dev/TerrainDevSection.jsx';
 import { StyleSheetPage } from '../dev/StyleSheetPage.jsx';
 import { ENGINE_EVENTS, ORPHAN_EVENTS } from '../../systems/core/engineEvents.js';
@@ -336,6 +337,7 @@ export const TestDashboard = React.memo(() => {
                         {(import.meta.env.DEV || import.meta.env.MODE === 'perf') && <PerfDevSection />}
                         {import.meta.env.DEV && <TerrainDevSection />}
                         {import.meta.env.DEV && <StarterCampDevSection />}
+                        {import.meta.env.DEV && <NotificationsDevSection />}
                         <div className="mb-3 pb-3 border-b border-gi-border space-y-2">
                             <div>
                                 <div className={devLabelClass}>Give item</div>

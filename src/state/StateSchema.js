@@ -266,7 +266,8 @@ export const INITIAL_STATE = {
 
     // === UI State (Transient Focus) ===
     ui: {
-        newDiscoveries: {}               // { [id]: true } - IDs with active "New!" badges
+        newDiscoveries: {},              // { [id]: true } - IDs with active "New!" badges
+        pinnedStubs: []                  // [{ itemId, added, removed }] - pinned item stubs, counting since pinned
     },
 
     // === The Board (the playmat) ===

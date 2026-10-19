@@ -2,7 +2,8 @@
 import * as Placement from '../../../systems/board/Placement.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as Shop from '../../../systems/board/Shop.js';
-import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
+import { EventBus } from '../../../systems/core/EventBus.js';
+import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import { DRAG_KIND } from '../../dnd/dragConstants.js';
 
 /**
@@ -23,10 +24,26 @@ import { DRAG_KIND } from '../../dnd/dragConstants.js';
  * @returns the placement result (`{ success, reason?, flyBack? }`) or null
  */
 
-/** Report a refusal rather than swallowing it — the player needs the reason. */
-export const announce = (result) => {
-    if (result && result.success === false && result.reason && result.reason !== 'Already there') {
-        NotificationSystem.warning(result.reason);
+/**
+ * Report a refusal rather than swallowing it: the player needs the reason. It is said as a callout
+ * on the mat over what was involved, never as a notification: over the Token (`at.instanceId`), or
+ * at the mat point it was aimed at (`at.x`, `at.y`). A refusal the mat has already said
+ * (`alerted`) is not said twice, and one with nowhere on the mat to say it is a plain cancel.
+ */
+export const announce = (result, at = null) => {
+    if (result && result.success === false && result.reason && result.reason !== 'Already there' && !result.alerted) {
+        const hasPoint = Number.isFinite(at?.x) && Number.isFinite(at?.y);
+        if (at?.instanceId || hasPoint) {
+            EventBus.publish(UI_EVENTS.UI_TOKEN_ALERT, {
+                instanceId: at.instanceId || null,
+                x: at.x,
+                y: at.y,
+                severity: 'disallow',
+                type: 'drop_rejected',
+                title: result.reason,
+                message: result.reason
+            });
+        }
     }
     return result;
 };
@@ -47,22 +64,23 @@ const flownBack = (result) => (result?.full ? { ...result, flyBack: true } : res
 
 export function dropOnMat(payload, point) {
     if (!payload) return null;
-    if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) return announce(refuse('Nowhere to drop that'));
+    if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) return refuse('Nowhere to drop that');
 
     if (isHeroDrop(payload)) {
         if (!payload.heroId) return null;
         if (payload.kind === DRAG_KIND.FLAG && !BoardState.flagOf(payload.heroId)) {
-            return announce(refuse('That hero has no flag planted'));
+            return announce(refuse('That hero has no flag planted'), point);
         }
         // A drop on a Token the hero can work pins the flag to it.
-        return announce(Placement.plantFlagAt(payload.heroId, point, { pin: true }));
+        return announce(Placement.plantFlagAt(payload.heroId, point, { pin: true }), point);
     }
 
     const from = payload.from || {};
 
     if (from.instanceId != null) {
-        if (!BoardState.getTokenById(from.instanceId)) return announce(refuse('No Token there'));
-        return announce(flownBack(Placement.moveTokenTo(from.instanceId, point)));
+        if (!BoardState.getTokenById(from.instanceId)) return announce(refuse('No Token there'), point);
+        // A refused move leaves the Token where it was: said over it.
+        return announce(flownBack(Placement.moveTokenTo(from.instanceId, point)), { instanceId: from.instanceId, ...point });
     }
 
     // A Shop row dragged onto the mat, paid on drop and placed at the drop point. A point off
@@ -72,12 +90,12 @@ export function dropOnMat(payload, point) {
     if (from.shop) {
         const res = Shop.buyAt(payload.typeId || from.shop, point);
         if (res?.offMat) return { ...res, flyBack: true };
-        return announce(res?.success ? res : { ...res, flyBack: true });
+        return announce(res?.success ? res : { ...res, flyBack: true }, point);
     }
 
     if (payload.typeId) {
         const instance = BoardState.createTokenInstance(payload.typeId, payload.usesRemaining);
-        return announce(flownBack(Placement.placeTokenAt(instance, point)));
+        return announce(flownBack(Placement.placeTokenAt(instance, point)), point);
     }
     return null;
 }

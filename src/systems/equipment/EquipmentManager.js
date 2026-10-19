@@ -3,7 +3,6 @@ import * as HeroManager from '../hero/HeroManager.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { logger } from '../../utils/Logger.js';
-import * as NotificationSystem from '../core/NotificationSystem.js';
 import {
     createEmptyEquipment, getGrid,
     findFreeSlot, slotsInCategory, getCategoryCap, isEquipCategory
@@ -49,10 +48,7 @@ export function equipItem(heroId, itemId, preferredSlot = null) {
     if (!InventoryManager.hasItem(itemId, 1)) return { success: false, error: 'Out of stock' };
     
     const { canEquip, reason } = EquipmentValidator.canHeroEquip(heroId, itemId);
-    if (!canEquip) {
-        NotificationSystem.error(`${hero.name} cannot equip ${template.name}: ${reason}`);
-        return { success: false, error: reason };
-    }
+    if (!canEquip) return { success: false, error: reason };
 
     // Food, drink and consumables share the grid with gear.
     const category = template.equipSlot;

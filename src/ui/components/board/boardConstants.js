@@ -22,9 +22,9 @@ export const SIDE_COLUMN_PX = 928;
  * viewport, and stopping at a floor set by what is actually inside it. The mat is their flex
  * sibling with `flex-1 min-w-0`, so without this it absorbed every pixel of a narrow window on
  * its own and fitted at a tiny scale.
- * - **Notifications**: `Toast` carries `min-w-[220px]`, and the column's `pl-8` gutter is
- * inside its border-box, so below ~252px the toasts overflow their own column. 256 leaves a
- * little air.
+ * - **The hero column** (`NOTIFICATION_COLUMN`, named for the notifications it once held): the
+ * hero panel and the Guild Hall's inspection take it while the Bank or the Hall is open; the
+ * playmat itself has no notification column. 256 keeps their contents from overflowing.
  * - **Effects panel** (`EFFECTS_COLUMN`): 244 keeps a comfortable margin around its contents.
  * - **The hero dock** is already only `w-20` (80px) and its inspection sheet is absolutely
  * positioned, so it is left alone.
@@ -36,12 +36,6 @@ export const SIDE_COLUMN_PX = 928;
  */
 export const NOTIFICATION_COLUMN = Object.freeze({ min: 256, vw: 20, max: 356 });
 
-/**
- * On the playmat the notification side reserves only this slim strip: the Notifications sidebar
- * pops out over the mat from it (`PopOutSidebars.jsx`) at `NOTIFICATION_COLUMN`'s
- * width. The Bank and the Guild Hall still take the full column.
- */
-export const NOTIFICATION_STRIP_PX = 28;
 export const EFFECTS_COLUMN = Object.freeze({ min: 244, vw: 19, max: 340 });
 
 /**

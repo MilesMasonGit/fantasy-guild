@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import GIModal from '../components/base/GIModal.jsx';
 import { SaveManager } from '../../systems/core/SaveManager.js';
+import { EventBus, UI_LISTENER } from '../../systems/core/EventBus.js';
+import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
+import * as NotificationSystem from '../../systems/core/NotificationSystem.js';
 import { formatTimeAgo } from '../../utils/Formatters.js';
 import { cn } from '../utils/cn.js';
 import { Play, Plus, Trash2, AlertTriangle } from 'lucide-react';
@@ -16,6 +19,20 @@ function formatPlaytime(seconds) {
     return `${mins}m`;
 }
 
+/** The newest plain message ("Slot 2 deleted", a save that could not be loaded), or null. */
+function useSlotMessage() {
+    const latest = () => NotificationSystem.getQueue().at(-1) || null;
+    const [message, setMessage] = useState(latest);
+    useEffect(() => {
+        const sync = () => setMessage(latest());
+        const offs = [ENGINE_EVENTS.NOTIFICATION_ADDED, ENGINE_EVENTS.NOTIFICATION_DISMISSED]
+            .map(e => EventBus.subscribe(e, sync, UI_LISTENER));
+        sync();
+        return () => offs.forEach(off => off());
+    }, []);
+    return message;
+}
+
 /**
  * SlotSelectionModal
  * The landing screen blocking game initialization until a save file is targeted.
@@ -23,6 +40,7 @@ function formatPlaytime(seconds) {
 export const SlotSelectionModal = ({ isOpen, onSelect }) => {
     const [slots, setSlots] = useState([]);
     const [deleteAttemptIndex, setDeleteAttemptIndex] = useState(null);
+    const message = useSlotMessage();
 
     // Refresh slots when opened or when a deletion happens
     const refreshSlots = () => {
@@ -160,6 +178,15 @@ export const SlotSelectionModal = ({ isOpen, onSelect }) => {
                 <div className="flex flex-col gap-3">
                     {[0, 1, 2].map(renderSlotCard)}
                 </div>
+                {/* The slot screen's messages: a plain line, red for a problem. */}
+                {message && (
+                    <p
+                        data-slot-message={message.type}
+                        className={cn('text-sm', message.type === 'error' || message.type === 'warning' ? 'text-red-400' : 'text-gray-300')}
+                    >
+                        {message.message}
+                    </p>
+                )}
             </div>
         </GIModal>
     );

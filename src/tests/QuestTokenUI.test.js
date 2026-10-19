@@ -22,15 +22,10 @@ import { registerItems, getAllItems } from '../config/registries/itemRegistry.js
 import {
     activeTutorialQuest, TUTORIAL_AIDE_EVENTS
 } from '../ui/components/base/TutorialAideOverlay.jsx';
-import { NotificationSidebars } from '../ui/components/board/PopOutSidebars.jsx';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
     getQueue: vi.fn(() => [])
-}));
-// `Toast.jsx` imports through the `@/` alias, which the test build lacks.
-vi.mock('../ui/components/base/ToastContainer.jsx', () => ({
-    default: () => null, ToastContainer: () => null
 }));
 vi.mock('../systems/progression/RegistryManager.js', () => ({
     RegistryManager: { recordItemGain: vi.fn() }
@@ -270,15 +265,6 @@ describe('MatToken stays cheap (B6.2)', () => {
         BoardState.addToken(plain, 300, 300);
         const q = spawn(hunt());
         expect(count(tokenEl(q))).toBe(count(tokenEl(plain)));
-    });
-});
-
-describe('the notification column (B6.2)', () => {
-    it('has Notifications and no Quests section', () => {
-        const { container } = mount(h(NotificationSidebars));
-        expect(container.textContent).toContain('Notifications');
-        expect(container.textContent).not.toMatch(/Quests/);
-        expect(container.querySelector('[data-quest-id]')).toBeNull();
     });
 });
 

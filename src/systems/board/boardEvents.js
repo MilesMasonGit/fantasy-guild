@@ -240,7 +240,7 @@ export const BOARD_EVENTS = {
     COMBAT_ENGAGED: 'board:combat_engaged',
 
     /**
-     * A hero was defeated: `{ heroId }`.
+     * A hero was defeated: `{ heroId, heroName, lost }` (`lost`: the names of the gear it cost).
      *
      * Published by `BoardCombat.resolveDefeat` instead of a direct call into `Flags`, which would
      * make a `BoardCombat ↔ Flags` import cycle. `Flags.init` subscribes and furls the hero's flag;

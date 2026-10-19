@@ -19,7 +19,8 @@ const NO_SUBSCRIPTION = () => () => {};
 /**
  * Quick popups over the mat, one style: "! Spawned Oak Tree" over the spawner, an effect's name
  * over the Token it fired on, "Demolished Oak Tree" where a demolished Token stood, and the reason
- * for a refused drop over the spot it was aimed at.
+ * for a refused action (a drop, a quest claim, a shrink that left a Token crowded) over the spot or
+ * Token involved. Refusals are never notifications.
  * They appear, hold for a moment and fade (`callout-pop` in `components.css`); nothing to click,
  * and the pointer passes straight through. One layer and one subscription per event for the
  * whole mat, however many Tokens are drawn.
@@ -57,13 +58,16 @@ export const CalloutLayer = memo(function CalloutLayer() {
             EventBus.subscribe(BOARD_EVENTS.TOKEN_DEMOLISHED, (p) => {
                 if (p?.typeId) say({ x: p.x, y: p.y, typeId: p.typeId, text: calloutText.demolished(tokenName(p.typeId)) });
             }, UI_LISTENER),
-            // A drop the mat refused names a point, not a Token: say why where it was aimed.
+            // A drop the mat refused names a point, not a Token: say why where it was aimed. A
+            // Token a shrunk mat left crowded says so over itself.
             EventBus.subscribe(BOARD_EVENTS.TILE_EVENT_ALERT, (p) => {
                 if (p?.type === 'drop_rejected') say({ x: p.x, y: p.y, text: p.rulesText || p.title || p.message });
+                else if (p?.type === 'resize_crowded' && p.instanceId) say({ anchorId: p.instanceId, text: p.title || p.message });
             }, UI_LISTENER),
-            // The screen's own refusal (the Guild Hall dragged off).
+            // The screen's own refusals (the Guild Hall dragged off, a drop or claim refused): over
+            // the Token involved, or at the mat point it names.
             EventBus.subscribe(UI_EVENTS.UI_TOKEN_ALERT, (p) => {
-                if (p?.instanceId) say({ anchorId: p.instanceId, text: p.title || p.message });
+                if (p) say({ anchorId: p.instanceId || null, x: p.x, y: p.y, text: p.title || p.message });
             }, UI_LISTENER)
         ];
         return () => {

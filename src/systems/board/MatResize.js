@@ -7,7 +7,6 @@ import { onMatTuningChanged } from '../../config/matTuning.js';
 import * as BoardState from './BoardState.js';
 import * as MatPlacement from './MatPlacement.js';
 import * as Flags from './Flags.js';
-import * as NotificationSystem from '../core/NotificationSystem.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
@@ -20,7 +19,7 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
  *
  * ⚠️ Nothing is ever lost: a Token that finds no clear spot within {@link PULL_REACH} stays at its
  * clamped point, overlapping a neighbour more than a drop would allow. It is never removed or
- * deposited elsewhere (a silent removal), and the player is told how many are crowded.
+ * deposited elsewhere (a silent removal), and each crowded Token says so over itself.
  *
  * Every changed point goes out in a single `ADJACENCY_DIRTY`, so the modifier caches are rebuilt
  * once per resize, not once per Token.
@@ -35,6 +34,9 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
  * legitimate nudge-reach setting.
  */
 export const PULL_REACH = 320;
+
+/** What a Token left overlapping a neighbour by a shrink says over itself. */
+export const CROWDED_TEXT = 'No clear room here';
 
 let unsubscribe = null;
 
@@ -63,6 +65,7 @@ export function teardown() {
  */
 export function fitToMat() {
     const dirty = [];
+    const crowdedIds = [];
     const summary = { tokensPulled: 0, flagsPulled: 0, crowded: 0 };
 
     // In arrival order, each Token moved before the next is considered, so the second Token pulled
@@ -81,7 +84,10 @@ export function fitToMat() {
         BoardState.setTokenPoint(token.id, to.x, to.y);
         dirty.push(from, to);
         summary.tokensPulled++;
-        if (!spot) summary.crowded++;
+        if (!spot) {
+            summary.crowded++;
+            crowdedIds.push(token.id);
+        }
     }
 
     for (const [heroId, flag] of Object.entries(BoardState.getFlags() || {})) {
@@ -101,10 +107,15 @@ export function fitToMat() {
     EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { points: dirty });
     EventBus.publish(ENGINE_EVENTS.STATE_CHANGED, {});
 
-    if (summary.crowded > 0) {
-        NotificationSystem.warning(
-            `${summary.crowded} Token${summary.crowded === 1 ? '' : 's'} had nowhere clear to go on the smaller mat — ${summary.crowded === 1 ? 'it is' : 'they are'} overlapping a neighbour`
-        );
+    // Each crowded Token says so over itself, a callout on the mat.
+    for (const instanceId of crowdedIds) {
+        EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
+            instanceId,
+            severity: 'disallow',
+            type: 'resize_crowded',
+            title: CROWDED_TEXT,
+            message: CROWDED_TEXT
+        });
     }
 
     return summary;

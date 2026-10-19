@@ -12,6 +12,8 @@ import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { placeAt } from './fixtures/mat.js';
 import * as NotificationSystem from '../systems/core/NotificationSystem.js';
+import { EventBus } from '../systems/core/EventBus.js';
+import { UI_EVENTS } from '../systems/core/engineEvents.js';
 import { dropOnMat } from '../ui/components/board/dropOnMat.js';
 import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
 
@@ -356,16 +358,25 @@ describe('the mat drop route for a Shop row (B4)', () => {
         expect({ x: forest.x, y: forest.y }).toEqual({ x: 500, y: 350 });
     });
 
-    it('a refusal is announced, flies back, and makes nothing', () => {
+    it('a refusal is said on the mat where it was dropped, flies back, and makes nothing', () => {
+        const said = [];
+        const off = EventBus.subscribe(UI_EVENTS.UI_TOKEN_ALERT, (p) => said.push(p));
         const res = dropOnMat(payload('fixture_shop_forest'), { x: 500, y: 350 });
+        off();
         expect(res).toMatchObject({ success: false, flyBack: true });
-        expect(NotificationSystem.warning).toHaveBeenCalledWith(expect.stringMatching(/Need/));
+        expect(said).toHaveLength(1);
+        expect(said[0]).toMatchObject({ x: 500, y: 350, title: expect.stringMatching(/Need/) });
+        expect(NotificationSystem.warning).not.toHaveBeenCalled();
         expect(onMat('fixture_shop_forest')).toHaveLength(0);
     });
 
     it('off the mat is a plain cancel: flown back, not announced', () => {
         InventoryManager.addItem(WOOD, 10);
+        const said = [];
+        const off = EventBus.subscribe(UI_EVENTS.UI_TOKEN_ALERT, (p) => said.push(p));
         const res = dropOnMat(payload('fixture_shop_forest'), { x: -200, y: 350 });
+        off();
+        expect(said).toEqual([]);
         expect(res).toMatchObject({ success: false, flyBack: true });
         expect(NotificationSystem.warning).not.toHaveBeenCalled();
         expect(InventoryManager.getItemCount(WOOD)).toBe(10);

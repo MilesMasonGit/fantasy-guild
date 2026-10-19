@@ -3,6 +3,7 @@ import { EventBus } from './EventBus.js';
 import { SettingsManager } from './SettingsManager.js';
 import { logger } from '../../utils/Logger.js';
 import * as NotificationSystem from './NotificationSystem.js';
+import * as Banners from '../notifications/banners.js';
 import { migrateState, IncompatibleSaveError } from './SaveMigration.js';
 import * as SlotHelper from './SaveSlotHelper.js';
 import { validateSaveData } from '../../state/StateSchema.js';
@@ -161,12 +162,17 @@ export const SaveManager = {
             const isQuota = err?.name === 'QuotaExceededError'
                 || err?.name === 'NS_ERROR_DOM_QUOTA_REACHED'
                 || /quota/i.test(err?.message || '');
-            NotificationSystem.notify(
-                isQuota
-                    ? 'Save failed — browser storage is full. Free space or export your save.'
-                    : 'Save Failed!',
-                'error'
-            );
+            // The game is running: a problem banner, which stays until clicked.
+            Banners.push({
+                kind: 'save',
+                groupKey: 'save_failed',
+                parts: {
+                    title: 'Save Failed!',
+                    message: isQuota
+                        ? 'Browser storage is full. Free space or export your save.'
+                        : 'The game could not be saved.'
+                }
+            });
             return false;
         }
     },
@@ -244,7 +250,11 @@ export const SaveManager = {
                     console.warn(`[SaveManager] Retrying slot ${slotIndex} from its backup`);
                     const recovered = await this.loadSlot(slotIndex, { fromBackup: true, catchUp });
                     if (recovered) {
-                        NotificationSystem.notify('Your latest save was damaged — restored the previous one.', 'warning');
+                        Banners.push({
+                            kind: 'save',
+                            groupKey: 'save_restored',
+                            parts: { title: 'Save Restored', message: 'Your latest save was damaged, so the one before it was loaded.' }
+                        });
                         return true;
                     }
                 }
@@ -318,7 +328,11 @@ export const SaveManager = {
             console.error('[SaveManager] Could not put the save from before the catch-up back:', err);
             this.resumeSaving();
             this.startAutoSave();
-            NotificationSystem.notify('Could not load the game as you left it.', 'error');
+            Banners.push({
+                kind: 'save',
+                groupKey: 'restore_failed',
+                parts: { title: 'Load Failed', message: 'Could not load the game as you left it.' }
+            });
             return false;
         }
         this.reloadPage();

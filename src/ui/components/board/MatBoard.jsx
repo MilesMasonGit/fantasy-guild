@@ -315,7 +315,9 @@ export const MatBoard = React.memo(function MatBoard({
     useEffect(() => watchSpawns(), []);
 
     const handleRecallHero = useCallback((heroId) => {
-        announce(Placement.recallHeroById(heroId));
+        // Said where the hero stood, should a recall ever be refused.
+        const at = BoardState.displayPointOf(heroId);
+        announce(Placement.recallHeroById(heroId), at);
     }, []);
 
     // A click on a Token in a map mode. Disallow: flip it, or with shift its whole type (a Token

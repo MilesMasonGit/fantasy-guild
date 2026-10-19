@@ -13,7 +13,10 @@ import { EngineContext } from '../ui/context/EngineContext';
 import { resetMatTuning } from '../config/matTuning.js';
 import { DeckDndProvider, useEntityDrag } from '../ui/dnd/DndKit.jsx';
 import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
-import { NotificationsSidebar } from '../ui/components/board/PopOutSidebars.jsx';
+import { ItemStubColumn } from '../ui/components/notifications/ItemStubColumn.jsx';
+import { BannerStack } from '../ui/components/notifications/BannerStack.jsx';
+import * as ItemStubs from '../systems/notifications/itemStubs.js';
+import * as Banners from '../systems/notifications/banners.js';
 import { ShopDrawer } from '../ui/components/drawer/ShopDrawer.jsx';
 import { BankTab } from '../ui/components/drawer/BankTab.jsx';
 import { BankHeroPanel } from '../ui/components/dock/BankHeroPanel.jsx';
@@ -21,10 +24,6 @@ import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { EngineBootstrap } from '../systems/core/EngineBootstrap.js';
 import { clearMat } from './fixtures/mat.js';
 
-// The real column's toasts load an alias the tests do not resolve; this stands in, by name.
-vi.mock('../ui/components/base/ToastContainer.jsx', () => ({
-    default: function ToastContainer() { return React.createElement('i', { 'data-toasts': true }); }
-}));
 // Called once each time a hero tab, or an equipment slot, draws itself: a count of their draws.
 const drawCalls = vi.hoisted(() => ({ tab: 0, slot: 0 }));
 vi.mock('../ui/components/board/flagText.js', async (orig) => {
@@ -84,20 +83,27 @@ function dragAbout(getByTestId) {
     expect(document.body.classList.contains('gi-dnd-active')).toBe(false);
 }
 
-describe('⭐ the sidebars', () => {
-    it('the notification column: a drag redraws no toast', () => {
+describe('⭐ the notifications over the mat', () => {
+    it('the item stubs and the banners: a drag redraws neither', () => {
+        ItemStubs.reset();
+        Banners.reset();
+        ItemStubs.recordFlow('item_oak_wood', { added: 3 });
+        ItemStubs.flush();
+        Banners.push({ kind: 'hero', parts: { heroes: ['Aela'] } });
         const view = render(
             h(EngineContext.Provider, { value: { GameState, EventBus } },
-                h(DeckDndProvider, null, h(Item), h(NotificationsSidebar, { towardMat: 'right' })))
+                h(DeckDndProvider, null, h(Item), h(ItemStubColumn), h(BannerStack)))
         );
         view.getByTestId('item').getBoundingClientRect = () => box(2000, 2000, 50, 50);
-        // Open, so the toast list is drawn (a shut panel draws none); the drag then closes it.
-        fireEvent.mouseEnter(view.container.querySelector('[data-sidebar="notifications"]'));
-        expect(view.container.querySelector('[data-toasts]')).not.toBeNull();
+        expect(view.container.querySelector('[data-item-stub]')).not.toBeNull();
+        expect(view.container.querySelector('[data-banner]')).not.toBeNull();
         renders.start();
         dragAbout(view.getByTestId);
-        expect(renders.of('NotificationsSidebar')).toBeGreaterThan(0);
-        expect(renders.of('ToastContainer')).toBe(0);
+        expect(renders.of('ItemStubColumn')).toBe(0);
+        expect(renders.of('Stub')).toBe(0);
+        expect(renders.of('BannerStack')).toBe(0);
+        ItemStubs.reset();
+        Banners.reset();
     });
 });
 

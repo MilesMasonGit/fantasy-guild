@@ -14,7 +14,7 @@ const ALLOWED = {
     'systems/core/TimeManager.js': [1, 'when the player paused'],
     'systems/core/EngineBootstrap.js': [1, 'the last tick\'s real time, written into the save'],
     'systems/core/EventBus.js': [1, 'the console event log'],
-    'systems/core/NotificationSystem.js': [3, 'toasts are on screen in real time'],
+    'systems/core/NotificationSystem.js': [1, 'slot-screen messages are on screen in real time'],
     'systems/board/BoardState.js': [1, 'Token ids'],
     'systems/board/SpriteLayer.js': [1, 'loot ids'],
     'systems/board/Placement.js': [1, 'a placed Token\'s birth stamp, read by nothing that decides anything'],
@@ -22,6 +22,7 @@ const ALLOWED = {
     'systems/board/TokenGlows.js': [1, 'glows are drawing, never saved'],
     'systems/effects/statements.js': [1, 'statement ids'],
     'systems/hero/HeroGenerator.js': [1, 'a hero\'s recruitment stamp'],
+    'systems/notifications/itemStubs.js': [2, 'item stubs fade on screen in real time'],
     'systems/quests/questBounties.js': [1, 'quest ids']
 };
 
