@@ -14,7 +14,7 @@ import { regionGround } from '../systems/atlas/regionGround.js';
 import { groundWith, flat } from './fixtures/ground.js';
 
 /**
- * Brief 190 P1, the ground's look: each generated look in its Clean colours (style2.py's table P),
+ * The ground's look: each generated look in its Clean colours (style2.py's table P),
  * the ground drawn at twice the Tokens' pixel with its details drawn for that size, its loud little
  * things quietened toward the ground round them, and a darker rim in two hard steps.
  */
