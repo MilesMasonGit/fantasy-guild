@@ -27,9 +27,10 @@ import { useGameState } from '../../hooks/useGameState.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 import { HealthBar } from './HealthBar.jsx';
 import { heroBarPlace } from './healthBar.js';
+import { TokenNameBadge } from './TokenBadges.jsx';
 
 /**
- * A fighting hero's health bar, just over their figure's head. Reads the hero's HP as a flat
+ * A hero's health bar, just over their figure's head. Reads the hero's HP as a flat
  * projection of primitives (the engine mutates `hp` in place), so it redraws only when the
  * number moves.
  */
@@ -144,6 +145,8 @@ const MatHeroBody = memo(function MatHeroBody({
     facing = 1,
     limp = false,
     fighting = false,
+    hurt = false,
+    rested = false,
     heroCarried = false,
     dragRef,
     dragProps
@@ -163,7 +166,9 @@ const MatHeroBody = memo(function MatHeroBody({
     const isWalking = moving;
     const walkDrawn = useDrawn('walkDraw');
     const barsDrawn = useDrawn('bubbles');
-    const barShown = useBarLinger(fighting);
+    // Only when it says something: below full health, fighting (and a moment after), or once the
+    // pointer rests on the hero (`useHoverRest`).
+    const barShown = useBarLinger(fighting) || hurt || rested;
     const facingLeft = facing < 0;
 
     // A moving hero is handed no point (so their steps do not redraw the mat). Read it live,
@@ -266,6 +271,8 @@ const MatHeroBody = memo(function MatHeroBody({
                 </div>
             )}
             {barShown && barsDrawn && <HeroHealthBar heroId={heroId} artPx={artPx} />}
+            {/* Over the bar's spot whether or not the bar is up, so the name never jumps. */}
+            <TokenNameBadge name={name} shown={rested && !heroCarried} lift={-heroBarPlace(artPx).top} />
         </button>
     );
 });

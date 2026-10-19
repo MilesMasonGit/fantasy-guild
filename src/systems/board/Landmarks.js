@@ -9,10 +9,12 @@ import { isLandmarkType, tokenName } from '../../config/registries/tokenRegistry
  * player (`Placement.moveTokenTo`) and cannot be demolished (`Demolition.canDemolish`).
  *
  * The one exception is the owner laying out the Starter Camp: the dev layout tool
- * ({@link setLayoutEditing}) lets landmarks be moved and taken off while it is on. Never saved.
+ * ({@link setLayoutEditing}) lets landmarks, and the Tokens the camp laid (`FixedTokens.isFixed`),
+ * be moved and taken off while it is on. Never saved.
  */
 
 let layoutEditing = false;
+const layoutListeners = new Set();
 
 /** Whether `instance` is a landmark. */
 export function isLandmark(instance) {
@@ -21,12 +23,24 @@ export function isLandmark(instance) {
 
 /** Dev only (the QA panel's Starter Camp tools): let the owner move and remove landmarks. */
 export function setLayoutEditing(on) {
-    layoutEditing = !!on;
+    const next = !!on;
+    if (next === layoutEditing) return;
+    layoutEditing = next;
+    for (const listener of layoutListeners) listener();
 }
 
 /** Whether the dev layout tool is on. */
 export function isLayoutEditing() {
     return layoutEditing;
+}
+
+/**
+ * Be told when the dev layout tool is switched on or off. Returns the unsubscribe. The mat's
+ * Tokens read whether they are fixed once (`MatToken`), so they need telling.
+ */
+export function onLayoutEditingChange(listener) {
+    layoutListeners.add(listener);
+    return () => layoutListeners.delete(listener);
 }
 
 /** Whether the player may pick `instance` up and put it somewhere else. */

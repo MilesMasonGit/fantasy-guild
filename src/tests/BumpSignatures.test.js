@@ -13,7 +13,8 @@ import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { EngineContext } from '../ui/context/EngineContext';
 import { MatCapBadge } from '../ui/components/board/MatCapBadge.jsx';
-import { AllowAllButton } from '../ui/components/board/MatDisallowControls.jsx';
+import { AllowAllButton } from '../ui/components/board/MatModeControls.jsx';
+import { MatRegionName } from '../ui/components/board/MatRegionName.jsx';
 import { placeAt, clearMat } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -45,7 +46,8 @@ beforeEach(() => {
 afterEach(() => cleanup());
 
 describe('bump subscribers bail out when nothing they draw changed (CR3-309)', () => {
-    for (const [name, Comp] of [['MatCapBadge', MatCapBadge], ['AllowAllButton', AllowAllButton]]) {
+    const NamedRegion = () => h(MatRegionName, { readName: () => ({ name: 'Elderfield', practical: 'Starter Camp' }) });
+    for (const [name, Comp] of [['MatCapBadge', MatCapBadge], ['AllowAllButton', AllowAllButton], ['MatRegionName', NamedRegion]]) {
         it(`${name}: ten bare state_changed, no re-render`, () => {
             const { counts } = mountCounting(h(Comp));
             const before = counts.n;
@@ -56,7 +58,7 @@ describe('bump subscribers bail out when nothing they draw changed (CR3-309)', (
 
     it('MatCapBadge still follows a Token placed', () => {
         const { container } = mountCounting(h(MatCapBadge));
-        const text = () => container.querySelector('[data-mat-cap-text]').textContent;
+        const text = () => container.querySelector('[data-mat-cap-count]').textContent;
         const before = text();
         act(() => { placeAt('fixture_producer', 600, 600); EventBus.publish(ENGINE_EVENTS.STATE_CHANGED); });
         expect(text()).not.toBe(before);

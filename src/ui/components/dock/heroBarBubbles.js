@@ -1,14 +1,11 @@
 import { useSyncExternalStore } from 'react';
-import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
-import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
-import { momentText } from '../board/heroSpeech.js';
+import { subscribeLevelUps } from '../board/levelUpFeed.js';
 
 /**
- * The hero bar's level-up bubbles. Unlike the mat's (`heroSpeech.js`, gone in a few seconds)
- * these stay until the player clears them, so after a long AFK session the bar shows every
- * level gained. One bubble per skill: a later level-up of the same skill rewrites it, counting
- * from the level the bubble started at, so the wording matches the mat's ("LVL UP! 25 Mining!
- * (+4)").
+ * The hero bar's level-up alerts. Unlike the number floating over the hero on the mat (gone in
+ * about 30 s) these stay until the player clears them, so after a long AFK session the bar shows
+ * every level gained. One alert per skill, worded with the level it reached ("50 Stealth!"): a
+ * later level-up of the same skill rewrites it.
  * UI memory only: never saved, emptied when a game is started or loaded (a page reload, as
  * "Load as I left it" does, starts it empty).
  */
@@ -19,18 +16,18 @@ export const BAR_BUBBLES_SHOWN = 3;
 /** How long a clicked bubble takes to fade before it is cleared. */
 export const BAR_BUBBLE_FADE_MS = 250;
 
+/** An alert's words: the level reached and the skill. */
+export const barLevelUpText = (skillName, level) => `${level} ${skillName}!`;
+
 /**
- * Add a level-up to one hero's list (oldest first). A skill already up keeps its starting
- * level and moves to the newest place.
+ * Add a level-up to one hero's list (oldest first). A skill already up moves to the newest
+ * place with its new level.
  *
  * @returns a new list; the input is untouched
  */
-export function addLevelUp(list, { skillName, oldLevel, newLevel }) {
+export function addLevelUp(list, { skillName, newLevel }) {
     const key = `level:${skillName}`;
-    const earlier = list.find(b => b.key === key);
-    const from = earlier ? earlier.from : (Number.isFinite(oldLevel) ? oldLevel : newLevel - 1);
-    const text = momentText.levelUp(skillName, newLevel, newLevel - from);
-    return [...list.filter(b => b.key !== key), { key, from, text }];
+    return [...list.filter(b => b.key !== key), { key, text: barLevelUpText(skillName, newLevel) }];
 }
 
 const NONE = Object.freeze([]);
@@ -84,39 +81,13 @@ export function useHeroBarBubbles(heroId) {
 
 function addLevelUps(rows) {
     byHero = new Map(byHero);
-    for (const { heroId, skillName, oldLevel, newLevel } of rows) {
-        byHero.set(heroId, addLevelUp(byHero.get(heroId) || NONE, { skillName, oldLevel, newLevel }));
+    for (const { heroId, skillName, newLevel } of rows) {
+        byHero.set(heroId, addLevelUp(byHero.get(heroId) || NONE, { skillName, newLevel }));
     }
     emit();
 }
 
-/**
- * A catch-up's level-ups (a silent one's too: a background tab plays its hours in them),
- * waiting for the `GAME_RESET` that follows it: a catch-up plays with the bus quiet, so they
- * never arrive as `HERO_LEVELED`. ⚠️ Added on that reset, not on
- * `CATCH_UP_FINISHED`: a load's catch-up finishes before the load's own reset, which would wipe
- * them. Taken once, so a later reset cannot add them again.
- */
-let pendingCatchUp = null;
+// A catch-up's level-ups too (a silent one's: a background tab plays its hours in them).
+const off = subscribeLevelUps({ onLevelUps: addLevelUps, onReset: clearAllHeroBubbles });
 
-const offs = [
-    EventBus.subscribe(ENGINE_EVENTS.HERO_LEVELED, ({ heroId, skillName, newLevel, oldLevel } = {}) => {
-        if (!heroId || !skillName || !Number.isFinite(newLevel)) return;
-        addLevelUps([{ heroId, skillName, oldLevel, newLevel }]);
-    }, UI_LISTENER),
-    EventBus.subscribe(ENGINE_EVENTS.CATCH_UP_FINISHED, ({ summary } = {}) => {
-        const rows = (summary?.levelUps || []).filter(r => r.heroId && r.skillName && Number.isFinite(r.to));
-        pendingCatchUp = rows.length ? rows : null;
-    }, UI_LISTENER),
-    // Another save's heroes. A dev time-skip or a sleeping PC's catch-up keeps them: the same game
-    // moved on, with bubbles the player may not have read yet.
-    EventBus.subscribe(ENGINE_EVENTS.GAME_RESET, ({ reason } = {}) => {
-        if (reason !== 'dev_time_skip' && reason !== 'catch_up') clearAllHeroBubbles();
-        if (!pendingCatchUp) return;
-        const rows = pendingCatchUp;
-        pendingCatchUp = null;
-        addLevelUps(rows.map(r => ({ heroId: r.heroId, skillName: r.skillName, oldLevel: r.from, newLevel: r.to })));
-    }, UI_LISTENER)
-];
-
-if (import.meta.hot) import.meta.hot.dispose(() => offs.forEach(off => off()));
+if (import.meta.hot) import.meta.hot.dispose(off);

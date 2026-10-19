@@ -7,6 +7,7 @@ import * as EquipmentManager from '../../../systems/equipment/EquipmentManager.j
 import { useEntityDrag, useEntityDrop, DropTarget, mergeRefs } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { ItemIcon } from '../base/ItemIcon.jsx';
+import { Tooltip } from '../base/Tooltip.jsx';
 import { formatCompact } from '../../../utils/Formatters.js';
 import { matCap } from '../../../systems/board/MatCap.js';
 import { isMapItem, whatItWrites, MAP_TEXT } from '../../../systems/atlas/mapItems.js';
@@ -195,11 +196,11 @@ export const BankTab = ({ filter, selectedItemId, onInspect, searchQuery = '' })
                     firstItemByTab={Object.fromEntries(bank.groupOrder.map(gid => [gid, tabItems[gid]?.[0]?.template || null]))}
                     onDropToTab={handleTabDrop}
                 />
+                <Tooltip lines={[selectMode ? 'Exit select mode' : 'Select multiple items to move']}>
                 <button
                     onClick={() => (selectMode ? exitSelectMode() : setSelectMode(true))}
-                    title={selectMode ? 'Exit select mode' : 'Select multiple items to move'}
                     className={cn(
-                        'flex items-center gap-1.5 px-2 py-1 rounded border text-[10px] font-bold uppercase tracking-wide transition-colors',
+                        'flex items-center gap-1.5 px-2 py-1 rounded border text-(length:--font-size-xs) font-bold uppercase tracking-wide transition-colors',
                         selectMode
                             ? 'border-gi-primary bg-gi-primary/15 text-gi-text'
                             : 'border-gi-border text-gi-muted hover:text-gi-text hover:border-gi-muted'
@@ -207,31 +208,34 @@ export const BankTab = ({ filter, selectedItemId, onInspect, searchQuery = '' })
                 >
                     <BoxSelect size={11} /> {selectMode ? 'Done' : 'Select'}
                 </button>
+                </Tooltip>
                 {/**
                  * No Sell button: nothing sells to the merchant. Select mode only moves
                  * stacks.
                  */}
                 {selectMode && (
-                    <span className="text-[10px] text-gi-muted tabular-nums">{selectedEntries.length} selected</span>
+                    <span className="text-(length:--font-size-xs) text-gi-muted tabular-nums">{selectedEntries.length} selected</span>
                 )}
                 {typeFilter && (
+                    <Tooltip lines={['Clear the slot filter']}>
                     <button
                         onClick={() => setTypeFilter(null)}
-                        title="Clear the slot filter"
-                        className="flex items-center gap-1 px-2 py-1 rounded border border-gi-gold/50 bg-gi-gold/10 text-[10px] font-bold uppercase text-gi-text"
+                        className="flex items-center gap-1 px-2 py-1 rounded border border-gi-gold/50 bg-gi-gold/10 text-(length:--font-size-xs) font-bold uppercase text-gi-text"
                     >
                         {typeFilter} <X size={10} />
                     </button>
+                    </Tooltip>
                 )}
+                <Tooltip lines={['Item stacks in the bank / slot capacity']}>
                 <span
-                    title="Item stacks in the bank / slot capacity"
                     className={cn(
-                        'text-[10px] font-bold px-1.5 py-0.5 rounded border tabular-nums ml-auto',
+                        'text-(length:--font-size-xs) font-bold px-1.5 py-0.5 rounded border tabular-nums ml-auto',
                         stocked.length >= bank.maxSlots ? 'text-gi-danger border-gi-danger/40 bg-gi-danger/10' : 'text-gi-muted border-gi-border'
                     )}
                 >
                     {stocked.length}/{bank.maxSlots}
                 </span>
+                </Tooltip>
             </div>
 
             {/**
@@ -250,10 +254,10 @@ export const BankTab = ({ filter, selectedItemId, onInspect, searchQuery = '' })
                 className="flex-1 overflow-y-auto custom-scrollbar p-3"
             >
                 {searching && (
-                    <div className="mb-2 text-[9px] text-gi-muted italic">Searching all tabs — sorting is paused.</div>
+                    <div className="mb-2 text-(length:--font-size-xs) text-gi-muted italic">Searching all tabs — sorting is paused.</div>
                 )}
                 {selectMode && (
-                    <div className="mb-2 text-[9px] text-gi-muted italic">
+                    <div className="mb-2 text-(length:--font-size-xs) text-gi-muted italic">
                         Click items to select them — drag any selected item onto a tab to move them all.
                     </div>
                 )}
@@ -280,7 +284,7 @@ export const BankTab = ({ filter, selectedItemId, onInspect, searchQuery = '' })
                             {stocked.length === 0 ? 'Bank empty' : 'No items here'}
                         </span>
                         {!searching && stocked.length > 0 && (
-                            <span className="text-[10px] normal-case">Drag items onto this tab to file them here.</span>
+                            <span className="text-(length:--font-size-xs) normal-case">Drag items onto this tab to file them here.</span>
                         )}
                     </div>
                 )}
@@ -331,14 +335,19 @@ const ItemTile = ({ entry, selected, onSelect, checked = false, selectMode = fal
 const ItemTileBody = memo(function ItemTileBody({ entry, selected, onSelect, checked, selectMode, cue, held, nodeRef, handleProps, droppableProps }) {
     const { template, count } = entry;
     return (
+        <Tooltip
+            title={template.name}
+            lines={[
+                `×${count.toLocaleString('en-US')}`,
+                selectMode ? `Click to ${checked ? 'deselect' : 'select'}` : 'Drag to sort, or onto a hero to equip'
+            ]}
+        >
         <button
             ref={nodeRef}
+            data-bank-item={template.id}
             onClick={onSelect}
             {...handleProps}
             {...droppableProps}
-            title={selectMode
-                ? `${template.name} ×${count} — click to ${checked ? 'deselect' : 'select'}`
-                : `${template.name} ×${count} — drag to sort, or onto a hero to equip`}
             className={cn(
                 'relative flex flex-col items-center justify-center p-3 rounded-lg border transition-all duration-200 cursor-grab active:cursor-grabbing text-center min-w-0 min-h-0 aspect-square',
                 selected && !selectMode ? 'border-gi-primary bg-gi-primary/10' : 'border-gi-border bg-gi-base/60 hover:border-gi-muted',
@@ -352,11 +361,12 @@ const ItemTileBody = memo(function ItemTileBody({ entry, selected, onSelect, che
                     <Check size={11} strokeWidth={3} />
                 </span>
             )}
-            <ItemIcon item={template} size={64} className="shrink-0" />
+            <ItemIcon item={template} size={64} className="shrink-0" title={null} />
             <span className="text-xs md:text-sm font-bold text-gi-text mt-1.5 tabular-nums">
                 {formatCompact(count, 1)}
             </span>
         </button>
+        </Tooltip>
     );
 });
 
@@ -381,13 +391,11 @@ const BankTabStrip = ({ tabs, activeId, onSelect, firstItemByTab, onDropToTab })
                 />
             ))}
             {Array.from({ length: Math.max(0, BANK_TAB_CAP - tabs.length) }, (_, i) => (
-                <div
-                    key={`locked-${i}`}
-                    title="Locked — unlock more tabs via Guild Hall upgrades"
-                    className="w-10 h-10 rounded border border-gi-border/30 bg-black/20 flex items-center justify-center text-gi-muted/30 shrink-0"
-                >
-                    <Lock size={12} />
-                </div>
+                <Tooltip key={`locked-${i}`} lines={['Locked — unlock more tabs via Guild Hall upgrades']}>
+                    <div className="w-10 h-10 rounded border border-gi-border/30 bg-black/20 flex items-center justify-center text-gi-muted/30 shrink-0">
+                        <Lock size={12} />
+                    </div>
+                </Tooltip>
             ))}
         </div>
     );
@@ -432,7 +440,7 @@ const BankTabButtonBody = memo(function BankTabButtonBody({ tab, index, first, a
         >
             {first
                 ? <ItemIcon item={first} size={32} className="pointer-events-none" />
-                : <span className="text-[10px] font-bold text-gi-muted">{index + 1}</span>}
+                : <span className="text-(length:--font-size-xs) font-bold text-gi-muted">{index + 1}</span>}
         </button>
     );
 });
@@ -463,7 +471,7 @@ export const ItemInspection = ({ entry, showSell = true, showViewInBank = false 
                         {template.tags.map(tag => (
                             <span 
                                 key={tag} 
-                                className="px-2 py-0.5 rounded border border-gi-border/50 text-[10px] font-medium text-gi-muted uppercase tracking-wider"
+                                className="px-2 py-0.5 rounded border border-gi-border/50 text-(length:--font-size-xs) font-medium text-gi-muted uppercase tracking-wider"
                             >
                                 {tag}
                             </span>
@@ -483,7 +491,7 @@ export const ItemInspection = ({ entry, showSell = true, showViewInBank = false 
             {writes && (
                 <div data-map-writes className="flex flex-col gap-2 pt-1 border-t border-gi-border/30">
                     <div className="flex items-baseline justify-between gap-2">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-gi-muted">{MAP_TEXT.whatItWrites}</span>
+                        <span className="text-(length:--font-size-xs) font-bold uppercase tracking-wider text-gi-muted">{MAP_TEXT.whatItWrites}</span>
                         <span className="text-xs font-bold text-gi-text text-right">{writes.headline}</span>
                     </div>
                     <ul className="flex flex-col gap-1">

@@ -1,22 +1,16 @@
 
 import { ALERT } from '../../../systems/board/boardEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
-import * as RecipeResolver from '../../../systems/board/RecipeResolver.js';
 import { workConfigOf } from '../../../systems/board/StationRecipe.js';
 import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
 import { getSkill } from '../../../config/registries/skillRegistry.js';
 
 /**
- * A hero's blocked line, in plain words. A block is a live fact rather than an event: the line
- * is worked out from the Token the hero holds NOW, so it names the thing that is missing this
- * moment and vanishes the moment the problem does.
+ * A hero's sentence for a Token they cannot work. Heroes no longer speak a Token's problems (its
+ * problem mark says them); what is left is the moment a flag dropped on a Token could not be
+ * pinned to it ({@link pinRefusedLineFor}). The other sentences stay in {@link blockedText} as
+ * the record of the retired lines (`docs/reference/speech_bubble_lines.md`).
  */
-
-/**
- * How long a hero waits, stuck for want of items, before saying so. Provisional: items often
- * arrive within a few seconds, and a bubble that flashes on and off is worse than none.
- */
-export const INPUTS_DELAY_MS = 3000;
 
 /** "A", "A and B", "A, B and C". */
 export function joinNames(names) {
@@ -61,40 +55,6 @@ export function blockedText(alert, { token, missing = null, skill = null }) {
 }
 
 /**
- * Blocks a hero does not speak about. A station or Foundation with nothing chosen is waiting,
- * not broken: it shows only its gear, with no alert, so its hero says nothing either. The
- * wording in `blockedText` stays, so a line can be reinstated by taking it out of this set.
- * Every line and its status: `docs/reference/speech_bubble_lines.md`.
- */
-export const SILENT_BLOCKS = new Set([ALERT.CHOOSE_RECIPE, ALERT.CHOOSE_BUILD]);
-
-/** Whether a hero speaks about this block at all. */
-export function speaksBlock(alert) {
-    return !!alert && !SILENT_BLOCKS.has(alert);
-}
-
-/**
- * The blocked line for a hero working `tokenId`, or null when they are not
- * blocked (or the block is one they keep quiet about, `speaksBlock`). `alert`
- * is the Token's own alert, already known to the caller.
- */
-export function blockedLineFor(tokenId, alert) {
-    if (!tokenId || !speaksBlock(alert)) return null;
-    const token = BoardState.getTokenById(tokenId);
-    if (!token) return null;
-    const def = getTokenType(token.typeId);
-    const missing = (alert === ALERT.INPUTS || alert === ALERT.NO_RECIPE)
-        ? RecipeResolver.getMissingRequirements(token.id, token)
-        : null;
-    const skillId = workConfigOf(def, token)?.skill;
-    return blockedText(alert, {
-        token: def?.name || tokenName(token.typeId) || token.typeId,
-        missing,
-        skill: skillId ? (getSkill(skillId)?.name || skillId) : undefined
-    });
-}
-
-/**
  * What a hero says when their flag, dropped on a Token, could not be pinned to it: the **same
  * sentence** they would say stuck on that Token for that reason (level too low, skill not
  * held; see `docs/reference/speech_bubble_lines.md`). Null for a reason with no wording (a
@@ -111,12 +71,4 @@ export function pinRefusedLineFor(tokenId, reason) {
         token: def?.name || tokenName(token.typeId) || token.typeId,
         skill: skillId ? (getSkill(skillId)?.name || skillId) : undefined
     });
-}
-
-/**
- * Whether a block has been showing long enough to speak. Only item shortages wait; every other
- * block speaks at once.
- */
-export function readyToSpeak(alert, sinceMs, nowMs) {
-    return alert !== ALERT.INPUTS || nowMs - sinceMs >= INPUTS_DELAY_MS;
 }

@@ -17,6 +17,8 @@ import * as TimedChanges from '../../../systems/board/TimedChanges.js';
 import * as Respawn from '../../../systems/board/Respawn.js';
 import * as Hand from '../../../systems/board/Hand.js';
 import * as FixedTokens from '../../../systems/board/FixedTokens.js';
+import * as Landmarks from '../../../systems/board/Landmarks.js';
+import { MAP_MODE, isProtectedFromDemolition } from '../../hooks/useMapMode.js';
 import { useTokenEvent } from './tokenEvents.js';
 import { useTokenDetail } from './useTokenDetail.js';
 import { TokenBubbles } from './TokenBubbles.jsx';
@@ -110,14 +112,15 @@ export const MatToken = React.memo(function MatToken({
     walkFacing = null,
     stack = null,
     isHovered = false,
+    isRested = false,
     selected = false,
     hasHero = false,
     onInspectToken,
     onClearInspect,
     onOpenRecipes,
     onRecallHero,
-    disallowMode = false,
-    onFlipDisallow,
+    mapMode = null,
+    onModeClick,
     dragging = false,
     onPress
 }) {
@@ -151,13 +154,20 @@ export const MatToken = React.memo(function MatToken({
     const isGuildHallToken = typeId === 'token_guild_hall';
     const isPermanent = !!(def?.cannotLeaveBoard || def?.isGuildHall || isGuildHallToken);
     // Read once per instance: nothing that decides it (the fixture mark, origin, type) changes
-    // while the instance lives. A fixed Token is never picked up; a movable one bought or built
+    // while the instance lives, except the dev layout tool, which lifts landmarks and the camp's
+    // fixtures while it is on. A fixed Token is never picked up; a movable one bought or built
     // carries the faint marker at rest (`FixedTokens.showsMoveMarker`).
     // ⚠️ Hovered, a Token only shows its white outline (`tokenOutline`): nothing on it moves.
+    const layoutEditing = React.useSyncExternalStore(Landmarks.onLayoutEditingChange, Landmarks.isLayoutEditing);
     const { fixed, marked } = React.useMemo(() => {
         const instance = BoardState.getTokenById(id);
         return { fixed: FixedTokens.isFixed(instance), marked: FixedTokens.showsMoveMarker(instance) };
-    }, [id]);
+    }, [id, layoutEditing]);   // eslint-disable-line react-hooks/exhaustive-deps
+    // Demolish mode dims a Token the engine will not let go, read once per mode change.
+    const demolishProtected = React.useMemo(
+        () => mapMode === MAP_MODE.DEMOLISH && isProtectedFromDemolition(BoardState.getTokenById(id)),
+        [mapMode, id, typeId]   // eslint-disable-line react-hooks/exhaustive-deps
+    );
 
     // A Token with a registered sheet animates on the board only; everything else, and every
     // other surface, keeps the plain static sprite.
@@ -244,24 +254,26 @@ export const MatToken = React.memo(function MatToken({
     React.useEffect(() => () => clearTimeout(landingTimer.current), []);
 
     /**
-     * Hovering a Token also says which flags passed it over, and why. Skips change without an
-     * event (a flag re-checks every second), so they are read when the pointer arrives rather
+     * Resting on a Token also says which flags passed it over, and why. Skips change without an
+     * event (a flag re-checks every second), so they are read when the pointer rests rather
      * than kept in the projection.
      */
     const [skipLines, setSkipLines] = React.useState([]);
     React.useEffect(() => {
-        if (!isHovered) return;
-        setSkipLines(tokenSkipLines(id));
-    }, [isHovered, id]);
+        if (!isRested) return;
+        // The same lines keep the same array, so a rest with nothing skipped costs no second render.
+        const next = tokenSkipLines(id);
+        setSkipLines(prev => (prev.join('|') === next.join('|') ? prev : next));
+    }, [isRested, id]);
 
     // A Token with Passive Production (the Guild Hall) shows what it pays in a game-styled
-    // tooltip with a live next-in, not the native title. Read only while hovered.
-    const showPassive = isHovered && PassiveProduction.hasPassiveProduction(BoardState.getTokenById(id));
+    // tooltip with a live next-in, not the native title. Read only once the pointer rests.
+    const showPassive = isRested && PassiveProduction.hasPassiveProduction(BoardState.getTokenById(id));
 
-    // Hovering a quest Token reads it (`QuestTooltip`), and a tutorial step still to do lights
+    // Resting on a quest Token reads it (`QuestTooltip`), and a tutorial step still to do lights
     // its target (`TutorialAideOverlay`).
-    const showQuestTip = isHovered && !!quest;
-    const aideStep = isHovered && quest?.tutorial && !questDone ? quest.id : null;
+    const showQuestTip = isRested && !!quest;
+    const aideStep = isRested && quest?.tutorial && !questDone ? quest.id : null;
     React.useEffect(() => {
         if (!aideStep) return undefined;
         setTutorialAideTarget(aideStep);
@@ -270,7 +282,7 @@ export const MatToken = React.memo(function MatToken({
 
     const hoverTitle = [
         detail?.disallowed ? 'Heroes may not work this' : null,
-        ...(isHovered ? skipLines : [])
+        ...(isRested ? skipLines : [])
     ].filter(Boolean).join('\n') || undefined;
 
     // The Token stays exactly where it is: its hero walks up and stands beside it
@@ -357,8 +369,8 @@ export const MatToken = React.memo(function MatToken({
     const handleContextMenu = (e) => {
         e.preventDefault();
         e.stopPropagation();
-        // In disallow mode a Token only flips; nothing is recalled.
-        if (disallowMode) return;
+        // In a map mode a click only acts on the Token; nothing is recalled.
+        if (mapMode) return;
         if (heroId) onRecallHero?.(heroId);
     };
 
@@ -391,7 +403,12 @@ export const MatToken = React.memo(function MatToken({
 
     // A sharp coloured outline: white hovered or selected, red in alert, green worked
     // (`spriteOutline.js`). It is a generated picture under the art, not a filter.
-    const outline = tokenOutline({ hovered: isHovered, selected, alert: !!alert, working: staffed });
+    // In a map mode the hovered Token takes the mode's colour, or muted grey where the mode cannot
+    // act on it.
+    const modeUnavailable = isHovered && mapMode
+        ? (mapMode === MAP_MODE.DEMOLISH ? demolishProtected : !Flags.isHeroWorkable(BoardState.getTokenById(id)))
+        : false;
+    const outline = tokenOutline({ hovered: isHovered, selected, alert: !!alert, working: staffed, mode: mapMode, unavailable: modeUnavailable });
     const gearState = gearStateOf(detail || {});
     const gear = React.useMemo(
         () => (gearState.show ? {
@@ -399,9 +416,10 @@ export const MatToken = React.memo(function MatToken({
             pulsing: gearState.pulsing,
             recipe: detail?.recipe,
             isFoundation: !!detail?.isFoundation,
-            onClick: () => (disallowMode ? onFlipDisallow?.(id) : onOpenRecipes?.(id))
+            // The gear covers the middle of the Token, so in a map mode it is the Token's click.
+            onClick: (e) => (mapMode ? onModeClick?.(id, !!e?.shiftKey) : onOpenRecipes?.(id))
         } : null),
-        [gearState.show, gearState.pulsing, detail?.recipe, detail?.isFoundation, disallowMode, onFlipDisallow, onOpenRecipes, id]
+        [gearState.show, gearState.pulsing, detail?.recipe, detail?.isFoundation, mapMode, onModeClick, onOpenRecipes, id]
     );
 
     // The art, kept as the same element while nothing it draws from changes: a Token redraws
@@ -464,12 +482,13 @@ export const MatToken = React.memo(function MatToken({
                 data-tile-finite-token={isFiniteToken ? 'true' : undefined}
                 data-token-resting={resting ? 'true' : undefined}
                 data-token-fixed={fixed ? 'true' : undefined}
+                data-token-protected={demolishProtected ? 'true' : undefined}
                 onContextMenu={handleContextMenu}
                 onClick={(e) => {
                     if (dragging) return;
-                    // In disallow mode a click flips the Token allowed/disallowed and does
+                    // In a map mode a click acts on the Token (shift: on its whole type) and does
                     // nothing else; it never claims a quest.
-                    if (disallowMode) { onFlipDisallow?.(id); return; }
+                    if (mapMode) { onModeClick?.(id, e.shiftKey); return; }
                     // Click a done quest to claim it. The engine drops the reward as loot and
                     // removes the Token. `skipSlide` is still on just after a drop, so the
                     // drop's own click never claims. A quest not yet done inspects.
@@ -484,7 +503,7 @@ export const MatToken = React.memo(function MatToken({
                     onInspectToken?.(typeId, e.currentTarget.getBoundingClientRect(), id);
                 }}
                 onDoubleClick={(e) => {
-                    if (disallowMode) return;
+                    if (mapMode) return;
                     onInspectToken?.(typeId, e.currentTarget.getBoundingClientRect(), id);
                 }}
                 style={{
@@ -496,7 +515,7 @@ export const MatToken = React.memo(function MatToken({
                 }}
                 className={cn(
                     'absolute select-none',
-                    disallowMode || questDone || fixed ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing'
+                    mapMode || questDone || fixed ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing'
                 )}
             >
                 <div
@@ -531,7 +550,8 @@ export const MatToken = React.memo(function MatToken({
                     className={cn(
                         'w-full h-full flex items-center justify-center transition-[filter] duration-150',
                         received && 'brightness-125 saturate-125',
-                        resting && 'gi-token-resting'
+                        resting && 'gi-token-resting',
+                        demolishProtected && 'gi-token-protected'
                     )}
                     style={staffed ? undefined : AT_REST_STYLE}
                 >
@@ -556,22 +576,27 @@ export const MatToken = React.memo(function MatToken({
                 data-token-overlay={id}
                 data-quest-token={quest ? id : undefined}
                 data-quest-done={quest ? String(questDone) : undefined}
+                // In a map mode a click on any bubble over the Token (the demolition mark, the
+                // disallow mark) is a click on the Token: the bubbles take the pointer for their tips.
+                onClick={mapMode ? (e) => { if (!dragging) onModeClick?.(id, e.shiftKey); } : undefined}
                 className="absolute pointer-events-none"
                 style={{ ...boxStyle, visibility: hidden ? 'hidden' : 'visible' }}
             >
-                <TokenNameBadge name={label} isDragging={hidden} isHovered={isHovered} lift={Math.max(small ? SMALL_OVERHANG_U : 0, def?.enemy ? HEALTH_BAR_LIFT_U : 0)} />
+                <TokenNameBadge name={label} isDragging={hidden} shown={isRested} lift={Math.max(small ? SMALL_OVERHANG_U : 0, def?.enemy ? HEALTH_BAR_LIFT_U : 0)} />
 
                 {/**
-                 * The bubbles, each in its own spot inside the Token's box: timer, gear, spawner
-                 * count, disallow mark, cycle, quest progress, charges. A small Token keeps
-                 * FULL-size bubbles and they hang off its box. They carry the -1 floater.
+                 * The work bar, the problem mark, the player's marks and the -1 floater, and
+                 * once the pointer rests on it the rings and the gear, each in its own spot inside the Token's
+                 * box. A small Token keeps FULL-size rings and they hang off its box.
                  */}
                 {bubblesDrawn && <TokenBubbles
                     instanceId={id}
                     token={isGuildHallToken ? { ...token, usesRemaining: null } : token}
-                    isHovered={isHovered}
+                    isHovered={isRested}
                     isDragging={hidden}
                     boxPx={boxPx}
+                    artPx={artPx}
+                    artUnit={artScale}
                     small={small}
                     spawner={spawnerBubble}
                     quest={questBubble}

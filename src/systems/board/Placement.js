@@ -86,6 +86,9 @@ export { isFixed };
 /** Why a fixed Token refuses to move (`FixedTokens.isFixed`). */
 export const FIXED_IN_PLACE = 'That stays where it is';
 
+/** Why a Token the Starter Camp laid refuses to move (`BoardState.isCampFixture`). */
+export const CAMP_FIXED_IN_PLACE = 'This came with the Starter Camp, so it stays where it is';
+
 /** Check if a token cannot be removed from the playmat once placed. */
 export function isPermanentToken(typeId, instance) {
     if (typeId === 'token_guild_hall' || instance?.typeId === 'token_guild_hall') return true;
@@ -287,7 +290,7 @@ function restock(instance, decision) {
 /**
  * Move the Token with id `id` to a mat point.
  *
- * A fixed Token (a map's node, a landmark, a planted tree) refuses.
+ * A fixed Token (a map's node, a Token the Starter Camp laid, a landmark, a planted tree) refuses.
  *
  * A moved Token keeps its progress and carries its hero. The hero's claim is keyed by the Token
  * instance, so it follows on its own, even outside their flag's radius; this only has to stop the
@@ -297,7 +300,7 @@ export function moveTokenTo(id, point) {
     const moving = BoardState.getTokenById(id);
     if (!moving) return refuse('No Token there');
     if (!Landmarks.canMove(moving)) return refuse(Landmarks.cannotMoveReason(moving));
-    if (isFixed(moving)) return refuse(FIXED_IN_PLACE);
+    if (isFixed(moving)) return refuse(BoardState.isCampFixture(moving) ? CAMP_FIXED_IN_PLACE : FIXED_IN_PLACE);
 
     const from = pointOf(moving);
     const heroId = BoardState.workerOf(id);

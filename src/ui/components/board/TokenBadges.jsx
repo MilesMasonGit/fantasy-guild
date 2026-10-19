@@ -5,31 +5,34 @@ import { useTokenEvent } from './tokenEvents.js';
 import { inputSummary, outputSummary, contextSummary } from './StationRecipeModal.jsx';
 import { SkillIcon } from '../base/SkillIcon.jsx';
 import { getSkill, DEMOLITION_SKILL_ID } from '../../../config/registries/skillRegistry.js';
+import { RING_D_U } from './ringRow.js';
 
 /**
- * The small things drawn on a Token besides its ring bubbles: its name above the box, and the
- * recipe gear and the disallow mark, which sit in the middle row of bubbles (`TokenBubbles`
- * places them).
+ * The small things drawn on a Token besides its ring bubbles: its name above the box, the -1
+ * floater, and the recipe gear, the disallow mark and the demolition mark, which sit in the
+ * middle row (`TokenBubbles` places them).
  * A Token is a circle at a point, so what these badges are about is its **instance id**, and
  * everything they need to draw arrives as a prop from `MatToken`, which already reads the
  * Token's details by id. Only the charge floater still listens for itself, because a `-1` is a
  * moment rather than a state.
  */
 
+const NAME_STYLE = Object.freeze({ textShadow: '0 1px 2px #000, 0 0 3px #000, 0 0 1px #000' });
 const FLOATER_STYLE = Object.freeze({ textShadow: '0 1px 2px #000, 0 0 3px #000, 0 0 1px #000' });
 const FLOATER_AT_REST_STYLE = Object.freeze({ ...FLOATER_STYLE, willChange: 'contents' });
 
 /**
  * TokenChargeDeltaFloater: floating numbers (-1, +50) when this Token's charges change.
- * `anchor="ring"`: just above the charges ring it is drawn inside; `"corner"`: the Token's
- * bottom-right, when no charges ring shows. Memoised: it draws from its own state, not from
- * its Token's redraws.
+ * `anchor="ring"`: just above the charges ring's spot, `slot` (`{left, top}` in the Token's box,
+ * the spot a ring `RING_D_U` across takes); `"corner"`: the Token's bottom-right, for a Token with
+ * no charges. Nothing at all is drawn while no number floats. Memoised: it draws from its own
+ * state, not from its Token's redraws.
  * ⚠️ `atRest` (no hero works the Token): the rise runs on the main thread, since among the resting
  * Tokens a compositor animation redrew every Token in front of it soft (tailwind.css, at
  * `.gi-token-land`). A worked Token is drawn in front of every resting one, so its -1, the usual
  * one, stays on the compositor: on the main thread the -1s alone cost a third more frame work.
  */
-export const TokenChargeDeltaFloater = memo(function TokenChargeDeltaFloater({ instanceId, anchor = 'corner', atRest = false }) {
+export const TokenChargeDeltaFloater = memo(function TokenChargeDeltaFloater({ instanceId, anchor = 'corner', atRest = false, slot = null }) {
     const [deltas, setDeltas] = useState([]);
     const timers = React.useRef(new Set());
 
@@ -54,7 +57,7 @@ export const TokenChargeDeltaFloater = memo(function TokenChargeDeltaFloater({ i
 
     if (!deltas.length) return null;
 
-    return (
+    const floats = (
         <div
             data-charge-floater={anchor}
             className={cn(
@@ -83,38 +86,44 @@ export const TokenChargeDeltaFloater = memo(function TokenChargeDeltaFloater({ i
             ))}
         </div>
     );
+    if (!slot) return floats;
+    return (
+        <div
+            data-bubble-slot="charges"
+            className="absolute z-20 pointer-events-none"
+            style={{ left: slot.left, top: slot.top, width: RING_D_U, height: RING_D_U }}
+        >
+            {floats}
+        </div>
+    );
 });
 
 /**
- * TokenNameBadge: the Token's name on hover, centred just above the Token's box so it never
- * covers a bubble. `lift` raises it further (mat units) when bubbles hang off the box's top
- * (a small Token's timer). Memoised: its Token redraws far more often than any of these change.
+ * TokenNameBadge: a Token's or hero's name once the pointer rests on it (`shown`), centred just
+ * above the box so it never covers a bubble. `lift` raises it further (mat units) when something
+ * hangs off the box's top (a small Token's timer, a health bar). Memoised: its Token redraws far
+ * more often than any of these change.
  */
-export const TokenNameBadge = memo(function TokenNameBadge({ name, isDragging, isHovered, lift = 0 }) {
-    if (!name || isDragging) return null;
+export const TokenNameBadge = memo(function TokenNameBadge({ name, isDragging, shown = false, lift = 0 }) {
+    // ⚠️ Not drawn at all until shown, never drawn hidden: the label's drop shadow is a filter
+    // Chrome draws on a layer of its own, and every Token drawn after a hidden label then needed
+    // a layer too, drawn soft and a pixel off.
+    if (!name || isDragging || !shown) return null;
 
     // A full-width flex row centres the label without a `transform`: a transform on every
     // Token of a busy mat costs more in compositing than it saves.
-    // ⚠️ Hidden means `invisible`, not only transparent. The label's drop shadow is a filter
-    // Chrome must draw on a layer of its own, and every Token drawn after an unseen, transparent
-    // label then needed a layer too, drawn soft and a pixel off. Visibility rides the
-    // opacity transition, so the fade in and out look as before.
     return (
         <div
             data-token-name="true"
             className={cn(
                 "absolute left-0 right-0 z-30 pointer-events-none",
-                "flex items-end justify-center text-center select-none",
-                "transition-[opacity,visibility] ease-out",
-                isHovered ? "opacity-100 duration-500 delay-[1200ms]" : "opacity-0 invisible duration-150 delay-0"
+                "flex items-end justify-center text-center select-none"
             )}
             style={{ bottom: `calc(100% + ${4 + lift}px)` }}
         >
             <span
-                className="w-max max-w-[240px] shrink-0 text-[10px] font-bold text-white leading-tight tracking-tight px-1 drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.95)]"
-                style={{
-                    textShadow: '0 1px 2px #000, 0 0 3px #000, 0 0 1px #000'
-                }}
+                className="ui-text-small w-max max-w-[240px] shrink-0 font-bold text-white leading-tight tracking-tight px-1 drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.95)]"
+                style={NAME_STYLE}
             >
                 {name}
             </span>
@@ -165,7 +174,7 @@ export const StationGearBadge = ({ isDragging, recipe, pulsing = false, isFounda
         >
             <button
                 type="button"
-                onClick={(e) => { e.stopPropagation(); onClick?.(); }}
+                onClick={(e) => { e.stopPropagation(); onClick?.(e); }}
                 aria-label={label}
                 className={cn(
                     'w-7 h-7 flex items-center justify-center p-0 cursor-pointer select-none',
@@ -243,25 +252,5 @@ export const MarkedBadge = ({ title }) => (
         className="shrink-0 select-none w-7 h-7 flex items-center justify-center rounded-full bg-black/70 border border-gi-warning/80 filter drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)]"
     >
         <SkillIcon skill={getSkill(DEMOLITION_SKILL_ID)} skillId={DEMOLITION_SKILL_ID} size={16} />
-    </div>
-);
-
-/**
- * StuckBadge: the warning mark in the middle row of a spawner that cannot spawn: yellow while
- * it waits on an item, red when there is no room or the mat's Token cap is full. `TokenBubbles`
- * shows it the whole time.
- */
-export const StuckBadge = ({ noRoom = false, matFull = false, title }) => (
-    <div
-        data-stuck-badge={matFull ? 'mat_full' : noRoom ? 'no_room' : 'needs_item'}
-        aria-label={title}
-        className="shrink-0 select-none w-7 h-7 flex items-center justify-center filter drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)]"
-    >
-        <img
-            src={noRoom ? '/assets/ui/u_alert_red.png' : '/assets/ui/u_alert_yellow.png'}
-            alt={title}
-            className="w-6 h-6 object-contain"
-            style={{ imageRendering: 'pixelated' }}
-        />
     </div>
 );

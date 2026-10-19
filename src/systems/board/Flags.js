@@ -936,8 +936,8 @@ export function furl(heroId, reason = 'recall') {
  * chooses again as normal, so they go back to work (or to their pinned Token). A re-plant, a recall
  * or a defeat ends it early, as any claim.
  *
- * Refused (false): no flag, no such enemy on the mat, a hero who cannot fight (a Recruit would
- * stand there forever: no fight can start), or an enemy another hero already holds.
+ * Refused (false): no flag, no such enemy on the mat, a hero who cannot fight, or an enemy
+ * another hero already holds.
  *
  * @returns {boolean} whether the hero is now fighting back
  */

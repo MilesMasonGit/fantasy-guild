@@ -42,7 +42,7 @@ describe('Hero System Enhancements', () => {
         for (const id of COMBAT_SKILL_IDS) expect(hero.skills[id], id).toBeUndefined();
     });
 
-    it('a Recruit holds NO combat skill, so they cannot fight', () => {
+    it('a Recruit holds NO combat skill (they fight as a level 1 fighter until promoted)', () => {
         const hero = generateHero();
         for (const combatId of COMBAT_SKILL_IDS) {
             expect(hero.skills[combatId]).toBeUndefined();

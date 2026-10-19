@@ -9,9 +9,9 @@ import * as Landmarks from './Landmarks.js';
 /**
  * Fixed and movable Tokens on the post-Atlas mat.
  *
- * Fixed: a map's node (`BoardState.isFixture`), a landmark (`MatCap.isLandmark`) and a planted
- * Token ({@link isPlanted}). A fixed Token is never dragged, binned or pushed; it still answers a
- * click. Everything else is movable.
+ * Fixed: a fixture (`BoardState.isFixture`: a map's node, or a Token the Starter Camp laid), a
+ * landmark (`MatCap.isLandmark`) and a planted Token ({@link isPlanted}). A fixed Token is never
+ * dragged, binned or pushed; it still answers a click. Everything else is movable.
  *
  * ⚠️ The Guild Hall is movable but never pushed ({@link holdsItsGround}): the player drags it,
  * nothing else moves it, and it never leaves the mat (`Placement.isPermanentToken`,
@@ -54,12 +54,34 @@ export function isPlanted(instance) {
     return !!def.grows || grownIntoIds().has(instance.typeId);
 }
 
-/** Whether a Token stays where it is, refusing a drag: a map's node, a landmark or planted. */
+/**
+ * Whether a Token stays where it is, refusing a drag: a fixture (a map's node or a Token the
+ * Starter Camp laid), a landmark or planted.
+ *
+ * ⚠️ The dev layout tool (`Landmarks.setLayoutEditing`) lifts the landmarks and the camp's
+ * fixtures, so the owner can lay the camp out again from a new game.
+ */
 export function isFixed(instance) {
     if (!instance) return false;
-    return BoardState.isFixture(instance)
-        || (MatCap.isLandmark(instance) && !Landmarks.isLayoutEditing())
+    const editing = Landmarks.isLayoutEditing();
+    return (BoardState.isFixture(instance) && !(editing && BoardState.isCampFixture(instance)))
+        || (MatCap.isLandmark(instance) && !editing)
         || isPlanted(instance);
+}
+
+/**
+ * Make the Tokens a Starter Camp has just laid down its fixtures (`BoardState.FIXTURE.CAMP`), all
+ * but the Guild Hall, which the player may still move. Called as a new game's camp is laid
+ * (`StarterCamp.layOnLiveBoard`); a Token the player buys, crafts or builds there later is not one.
+ *
+ * @param {object[]} instances the camp's Tokens, as they stand on the mat
+ * @returns {object[]} the same instances
+ */
+export function fixCampTokens(instances) {
+    for (const instance of instances || []) {
+        if (instance && !MatCap.isGuildHall(instance)) instance.fixture = BoardState.FIXTURE.CAMP;
+    }
+    return instances;
 }
 
 /** Whether nothing but the player may move a Token: a fixed one, and the Guild Hall. */

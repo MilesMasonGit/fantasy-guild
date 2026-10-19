@@ -19,8 +19,9 @@ function storedCmsUrl() {
 
 /**
  * Lay out the Starter Camp on the mat, then save it to the CMS: Place Token brings any Token
- * (endgame sites included) beside the Hall; "Move and remove landmarks" lets them be dragged, and
- * removed from their inspection, while it is ticked; "Save this mat as the Starter Camp" sends the mat and the Bank to the
+ * (endgame sites included) beside the Hall; "Move and remove landmarks and camp Tokens" lets them,
+ * and the Tokens a new game's camp laid, be dragged and removed from their inspection while it is
+ * ticked; "Save this mat as the Starter Camp" sends the mat and the Bank to the
  * CMS's Starter Camp page, to review and Sync.
  */
 export function StarterCampDevSection() {
@@ -78,7 +79,7 @@ export function StarterCampDevSection() {
             </div>
             <label className="flex items-center gap-2 text-xs text-gi-text cursor-pointer select-none">
                 <input type="checkbox" checked={editing} onChange={(e) => onEditing(e.target.checked)} />
-                Move and remove landmarks
+                Move and remove landmarks and camp Tokens
             </label>
             <div className="flex gap-1 items-center">
                 <span className="text-[10px] text-gi-muted shrink-0">CMS</span>

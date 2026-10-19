@@ -26,12 +26,15 @@ export const SPRITE_FX_VERSION = 3;
 
 /**
  * The outline colours, as RGB. `work` is `--color-gi-success` (#09b554);
- * `alert` is Tailwind red-500, the alert badges' red.
+ * `alert` is Tailwind red-500, the alert badges' red. `muted` (`--color-gi-muted`, #737373) and
+ * `danger` (`--color-gi-danger`, #ff2d55) are the map modes' hover outlines, Disallow and Demolish.
  */
 export const OUTLINE_COLOURS = Object.freeze({
     work: [9, 181, 84],
     hover: [255, 255, 255],
-    alert: [239, 68, 68]
+    alert: [239, 68, 68],
+    muted: [115, 115, 115],
+    danger: [255, 45, 85]
 });
 
 /**

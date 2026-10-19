@@ -1,4 +1,5 @@
 import { memo, useMemo, useRef, useState } from 'react';
+import { PixelTriangle } from '../base/ArrowScrollList.jsx';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { useEngine } from '../../hooks/useEngine.js';
@@ -14,7 +15,6 @@ import { useDragSettleHover } from './useDragSettleHover.js';
 import { equipOrAnnounce } from './dockEquip.js';
 import { useHeroBarBubbles, clearHeroBubbles, clearHeroBubble, BAR_BUBBLES_SHOWN, BAR_BUBBLE_FADE_MS } from './heroBarBubbles.js';
 import { BubbleText } from '../board/BubbleText.jsx';
-import { ChevronUp, ChevronDown } from 'lucide-react';
 import {
     DOCK_STRIP_PX, DOCK_LABEL_GAP_PX,
     isDeployedStatus, dockArtOffset, dockArtFilter, hpPercent, hpTone, HP_TONE_CLASS
@@ -326,15 +326,21 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
 /** The name and HP bar's height plus a small gap, so a bubble's tail stops clear of the name. */
 const LABEL_PX = 24;
 
+/** A wheel turn this soon after the last one is the same flick: one page per flick. */
+const WHEEL_GAP_MS = 200;
+
 /**
- * A hero's level-up bubbles, standing over the name: newest nearest the head, at most
- * `BAR_BUBBLES_SHOWN` at a time, with arrows paging back through older ones. Never wider than the
- * hero's slot; a line may wrap to two. A click on a bubble fades out and clears that one bubble
- * without opening the hero; they let the pointer through while something is being dragged.
+ * A hero's level-up alerts, standing over the name: newest nearest the head, at most
+ * `BAR_BUBBLES_SHOWN` at a time, with arrows (or the mouse wheel) paging back through older ones;
+ * each page slides a few pixels in from the side it came from. Never wider than the hero's slot;
+ * a line may wrap to two. A click on an alert fades out and clears that one alert without opening
+ * the hero; they let the pointer through while something is being dragged.
  */
 const BarBubbles = ({ heroId, bubbles, bottom }) => {
     const { isDragging: passive } = useActiveDrag();
     const [page, setPage] = useState(0);
+    const [slide, setSlide] = useState(null);
+    const lastWheelRef = useRef(-Infinity);
     const [fading, setFading] = useState(() => new Set());
     const pages = Math.max(1, Math.ceil(bubbles.length / BAR_BUBBLES_SHOWN));
     const shownPage = Math.min(page, pages - 1);
@@ -354,9 +360,24 @@ const BarBubbles = ({ heroId, bubbles, bottom }) => {
         }, BAR_BUBBLE_FADE_MS);
     };
     const stop = e => e.stopPropagation();
+    const go = (delta) => {
+        const next = Math.max(0, Math.min(pages - 1, shownPage + delta));
+        if (next === shownPage) return;
+        setPage(next);
+        setSlide(delta > 0 ? 'older' : 'newer');
+    };
     const turn = (delta) => (e) => {
         e.stopPropagation();
-        setPage(Math.max(0, Math.min(pages - 1, shownPage + delta)));
+        go(delta);
+    };
+    // Wheel up for older, down for newer, as the arrows stand.
+    const onWheel = (e) => {
+        e.stopPropagation();
+        if (pages <= 1 || !e.deltaY) return;
+        const now = Date.now();
+        const flick = now - lastWheelRef.current < WHEEL_GAP_MS;
+        lastWheelRef.current = now;
+        if (!flick) go(e.deltaY < 0 ? 1 : -1);
     };
 
     return (
@@ -371,6 +392,7 @@ const BarBubbles = ({ heroId, bubbles, bottom }) => {
             onPointerDown={stop}
             onClick={stop}
             onDoubleClick={stop}
+            onWheel={onWheel}
         >
             {pages > 1 && (
                 <div
@@ -386,7 +408,7 @@ const BarBubbles = ({ heroId, bubbles, bottom }) => {
                         onClick={turn(1)}
                         className="p-0.5 rounded-sm bg-black/60 enabled:hover:text-gi-gold enabled:cursor-pointer disabled:opacity-30"
                     >
-                        <ChevronUp size={10} />
+                        <PixelTriangle dir="up" />
                     </button>
                     <span data-bar-bubble-page className="tabular-nums">{`${shownPage + 1}/${pages}`}</span>
                     <button
@@ -397,35 +419,41 @@ const BarBubbles = ({ heroId, bubbles, bottom }) => {
                         onClick={turn(-1)}
                         className="p-0.5 rounded-sm bg-black/60 enabled:hover:text-gi-gold enabled:cursor-pointer disabled:opacity-30"
                     >
-                        <ChevronDown size={10} />
+                        <PixelTriangle dir="down" />
                     </button>
                 </div>
             )}
-            {shown.map((b, i) => {
-                const isFading = fading.has(b.key);
-                return (
-                    <div
-                        key={b.key}
-                        data-bar-bubble={b.key}
-                        data-bar-bubble-fading={isFading ? 'true' : undefined}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            if (!isFading) fadeOut(b.key);
-                        }}
-                        className={cn(
-                            'relative max-w-full px-1.5 py-0.5 rounded border border-yellow-500/70 bg-yellow-950/95 text-yellow-100',
-                            'text-[10px] font-bold leading-tight text-center shadow cursor-pointer transition-opacity ease-out',
-                            isFading ? 'opacity-0' : 'opacity-100'
-                        )}
-                        style={{ transitionDuration: `${BAR_BUBBLE_FADE_MS}ms` }}
-                    >
-                        <BubbleText text={b.text} />
-                        {i === shown.length - 1 && (
-                            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 rotate-45 border-r border-b border-yellow-500/70 bg-yellow-950/95" />
-                        )}
-                    </div>
-                );
-            })}
+            <div
+                key={shownPage}
+                data-bar-bubble-slide={slide || undefined}
+                className={cn('flex flex-col items-center gap-0.5 max-w-full', slide && `gi-bar-slide-${slide}`)}
+            >
+                {shown.map((b, i) => {
+                    const isFading = fading.has(b.key);
+                    return (
+                        <div
+                            key={b.key}
+                            data-bar-bubble={b.key}
+                            data-bar-bubble-fading={isFading ? 'true' : undefined}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (!isFading) fadeOut(b.key);
+                            }}
+                            className={cn(
+                                'relative max-w-full px-1.5 py-0.5 rounded border border-yellow-500/70 bg-yellow-950/95 text-yellow-100',
+                                'text-[10px] font-bold leading-tight text-center shadow cursor-pointer transition-opacity ease-out',
+                                isFading ? 'opacity-0' : 'opacity-100'
+                            )}
+                            style={{ transitionDuration: `${BAR_BUBBLE_FADE_MS}ms` }}
+                        >
+                            <BubbleText text={b.text} />
+                            {i === shown.length - 1 && (
+                                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 rotate-45 border-r border-b border-yellow-500/70 bg-yellow-950/95" />
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
         </div>
     );
 };

@@ -17,6 +17,15 @@ import { MatCapBadge, liveMatSummary } from '../ui/components/board/MatCapBadge.
 import * as SpawnerSystem from '../systems/board/SpawnerSystem.js';
 import * as MatCap from '../systems/board/MatCap.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
+import fs from 'node:fs';
+import path from 'node:path';
+import { MatRegionName, liveRegionName } from '../ui/components/board/MatRegionName.jsx';
+import { MatUpkeepBadge } from '../ui/components/board/MatUpkeepBadge.jsx';
+import { ModeBannerView, MapModeToggles } from '../ui/components/board/MatModeControls.jsx';
+import { MAP_MODE } from '../ui/hooks/useMapMode.js';
+import { PixelFrame } from '../ui/components/base/PixelFrame.jsx';
+import * as Atlas from '../systems/atlas/Atlas.js';
+import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 
 /**
  * Token Lifecycle feedback **B2.1** — the mat's top bar and the Token cap
@@ -101,7 +110,10 @@ describe('summariseMat (Token Summary)', () => {
 
 // --- The bar and the badge ---------------------------------------------------
 
-const badgeText = (c) => c.querySelector('[data-mat-cap-text]').textContent.replace(/\s+/g, ' ').trim();
+const badgeText = (c) => {
+    const badge = c.querySelector('[data-mat-cap-badge]');
+    return `${badge.querySelector('[data-item-bar-name]').textContent} ${badge.querySelector('[data-mat-cap-count]').textContent}`;
+};
 
 beforeEach(() => {
     GameState.initNew();
@@ -280,5 +292,109 @@ describe('⭐ Token Summary (MatCapBadge)', () => {
         placeAt(BoardState.createTokenInstance('fixture_mb_tree', null, null, BoardState.ORIGIN.SPAWNED), 320, 160);
         const s = liveMatSummary();
         expect(s.total).toBe(MatCap.tokenCount());
+    });
+});
+
+describe('⭐ the restyled bar (T-170)', () => {
+    const regionBar = (c) => c.querySelector('[data-mat-region-name]');
+
+    it('wears the studded pixel frame', () => {
+        const { container } = render(React.createElement(MatTopBar));
+        const bar = container.querySelector('[data-mat-top-bar]');
+        expect(bar.getAttribute('data-pixel-frame')).toBe('studs');
+        expect(bar.querySelector('.ui-frame-studs')).not.toBeNull();
+        expect(bar.querySelector('[data-pixel-frame-shadow]').className).toContain('ui-frame-shadow-studs');
+    });
+
+    it('left: the Region name, Tokens and Upkeep in that order, each an item bar; centre: the banner; right: the toggles', () => {
+        const { container } = render(React.createElement(MatTopBar, {
+            left: React.createElement(React.Fragment, null,
+                React.createElement(MatRegionName, { readName: () => ({ name: 'Elderfield', practical: 'Starter Camp' }) }),
+                React.createElement(MatCapBadge),
+                React.createElement(MatUpkeepBadge, { readTotal: () => 0 })),
+            middle: React.createElement(ModeBannerView, { mode: MAP_MODE.DEMOLISH }),
+            right: React.createElement(MapModeToggles)
+        }));
+        const left = container.querySelector('[data-mat-top-bar-left]');
+        expect([...left.children].map(e => e.getAttribute('data-mat-region-name') !== null ? 'region'
+            : e.getAttribute('data-mat-cap-badge') !== null ? 'tokens'
+                : e.getAttribute('data-mat-upkeep-badge') !== null ? 'upkeep' : '?')).toEqual(['region', 'tokens', 'upkeep']);
+        expect([...left.children].every(e => e.hasAttribute('data-item-bar'))).toBe(true);
+        const middle = container.querySelector('[data-mat-top-bar-middle]');
+        expect(middle.querySelector('[data-map-mode-banner="demolish"] [data-cancel-all-marks]')).not.toBeNull();
+        expect(container.querySelectorAll('[data-mat-top-bar-right] [data-map-mode-toggle]').length).toBe(2);
+    });
+
+    it('the Region name reads the Region the guild is in, and follows a rename', () => {
+        let name = { name: 'Elderfield', practical: 'Starter Camp' };
+        const { container } = render(React.createElement(MatRegionName, { readName: () => name }));
+        expect(regionBar(container).querySelector('[data-item-bar-name]').textContent).toBe('Elderfield');
+        name = { name: 'Rockblight Valley', practical: 'Starter Camp' };
+        act(() => { EventBus.publish(ENGINE_EVENTS.ATLAS_CHANGED, { reason: 'renamed' }); });
+        expect(regionBar(container).querySelector('[data-item-bar-name]').textContent).toBe('Rockblight Valley');
+    });
+
+    it('the live reader names the Starter Camp by its flavour name', () => {
+        Atlas.createStarterRegion();
+        const region = Atlas.activeRegion();
+        expect(region).not.toBeNull();
+        expect(liveRegionName()).toEqual({ name: region.flavourName, practical: region.practicalName });
+    });
+
+    it('⭐ a click on the Region name opens the Atlas, and so does Enter', () => {
+        const onOpenAtlas = vi.fn();
+        const { container } = render(React.createElement(MatRegionName, { onOpenAtlas, readName: () => ({ name: 'Elderfield', practical: '' }) }));
+        fireEvent.click(regionBar(container));
+        fireEvent.keyDown(regionBar(container), { key: 'Enter' });
+        expect(onOpenAtlas).toHaveBeenCalledTimes(2);
+    });
+
+    it('no Region yet, no name', () => {
+        const { container } = render(React.createElement(MatRegionName, { readName: () => null }));
+        expect(regionBar(container)).toBeNull();
+    });
+
+    it('⭐ the Token count turns red at the cap, and only there', () => {
+        setMatTuning('tokenCap', 2);
+        const { container } = render(React.createElement(MatCapBadge));
+        const count = () => container.querySelector('[data-mat-cap-count]');
+        const isRed = () => count().style.color === 'var(--color-ui-red)';
+        expect(isRed()).toBe(false);
+        const a = placeAt('fixture_mb_oak', 160, 160);
+        act(() => { EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: a.id }); });
+        expect(count().textContent).toBe('1/2');
+        expect(isRed()).toBe(false);
+        const b = placeAt('fixture_mb_bench', 320, 160);
+        act(() => { EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: b.id }); });
+        expect(count().textContent).toBe('2/2');
+        expect(isRed()).toBe(true);
+        expect(container.querySelector('[data-mat-cap-badge]').getAttribute('data-at-cap')).toBe('true');
+        // Only the count: the name stays its own colour.
+        expect(container.querySelector('[data-mat-cap-badge] [data-item-bar-name]').style.color).toBe('');
+        act(() => { setMatTuning('tokenCap', 3); });
+        expect(isRed()).toBe(false);
+    });
+});
+
+describe('PixelFrame', () => {
+    it('puts props on the outer box and the frame class on the box that holds the children', () => {
+        const { container } = render(React.createElement(PixelFrame, {
+            kind: 'chamfer', 'data-x': 'y', className: 'w-10', frameClassName: 'p-2'
+        }, React.createElement('span', { 'data-child': true })));
+        const outer = container.firstChild;
+        expect(outer.getAttribute('data-x')).toBe('y');
+        expect(outer.className).toContain('w-10');
+        const frame = container.querySelector('.ui-frame-chamfer');
+        expect(frame.className).toContain('p-2');
+        expect(frame.querySelector('[data-child]')).not.toBeNull();
+        expect(outer.querySelector('[data-pixel-frame-shadow]').className).toContain('ui-frame-shadow-chamfer');
+    });
+
+    it('its pictures are in public/assets/ui', () => {
+        for (const f of ['u_frame_studs', 'u_frame_studs_shadow', 'u_frame_chamfer', 'u_frame_chamfer_shadow']) {
+            expect(fs.existsSync(path.join('public/assets/ui', `${f}.png`)), f).toBe(true);
+        }
+        const css = fs.readFileSync('src/tailwind.css', 'utf8');
+        expect(css).toMatch(/\.ui-frame-studs\s*\{\s*border-image-source: url\('\/assets\/ui\/u_frame_studs\.png'\)/);
     });
 });

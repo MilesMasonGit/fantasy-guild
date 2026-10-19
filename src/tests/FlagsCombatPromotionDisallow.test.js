@@ -15,7 +15,7 @@ import { applyDefeatPenalties } from '../systems/combat/DefeatPenalties.js';
 import { LootSystem } from '../systems/combat/LootSystem.js';
 import { migrateState } from '../systems/core/SaveMigration.js';
 import { EventBus } from '../systems/core/EventBus.js';
-import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
+import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
@@ -76,7 +76,7 @@ function fighter(id, { level = 50, hp = 100 } = {}) {
     return hero;
 }
 
-/** A Recruit: no combat skill at all. */
+/** A Recruit: no combat skill at all, so they fight as a level 1 fighter. */
 function recruit(id) {
     const hero = generateHero({ name: id });
     hero.id = id;
@@ -203,7 +203,7 @@ describe('⭐ combat flags roam their radius (FP-32)', () => {
         expect(Flags.skipsOf(bear.id)).toEqual([{ heroId: 'h2', reason: Flags.SKIP.CLAIMED }]);
     });
 
-    it('a hero who cannot fight skips every enemy as unskilled, with no red mark (FP-60)', () => {
+    it('a Recruit, holding no combat skill, fights the nearest enemy like anyone (everyone fights)', () => {
         GameState.state.heroes = [recruit('r1')];
         const a = put(15, 'fixture_enemy');
         const b = put(16, 'fixture_enemy');
@@ -211,12 +211,11 @@ describe('⭐ combat flags roam their radius (FP-32)', () => {
         fightAt('r1', 14);
         run(2000);
 
-        expect(workTileOf('r1')).toBeNull();
-        expect(reasons(a)).toEqual([ALERT.UNSKILLED]);
-        expect(reasons(b)).toEqual([ALERT.UNSKILLED]);
+        expect(workTileOf('r1')).toBe(15);
+        expect(reasons(a)).toEqual([]);
+        expect(reasons(b)).toEqual([]);
         expect(a.alert ?? null).toBeNull();
-        expect(b.alert ?? null).toBeNull();
-        expect(BoardCombat.getFight(idAt(15))).toBeNull();
+        expect(BoardCombat.getFight(idAt(15))).not.toBeNull();
     });
 
     it('keeps its enemy through the rest after a kill, even when a nearer one appears (FP-57)', () => {

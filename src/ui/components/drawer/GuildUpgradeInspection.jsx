@@ -1,4 +1,3 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { GuildUpgradeManager } from '../../../systems/progression/GuildUpgradeManager.js';
@@ -10,8 +9,9 @@ import {
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { ItemIcon } from '../base/ItemIcon.jsx';
 import {
-    CheckCircle, Lock, Zap, Check, ChevronUp, ChevronDown, X
+    CheckCircle, Lock, Zap, Check, X
 } from 'lucide-react';
+import { ArrowScrollList } from '../base/ArrowScrollList.jsx';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 const itemName = (itemId) => getItem(itemId)?.name || itemId;
@@ -22,16 +22,15 @@ const priceText = (price) =>
         ? 'FREE'
         : price.map(p => `${p.quantity.toLocaleString()} ${itemName(p.itemId)}`).join(' + ');
 
+/** How far an arrow press scrolls the rank list: two rank rows (42 px at the default text size) and their gaps. */
+const RANK_SCROLL_STEP_PX = 96;
+
 /**
  * GuildUpgradeInspection: clean, focused upgrade inspection panel: a large central sprite, a
  * distinct upgrade button, simple non-redundant details, and a progression list with wide flat
  * scroll arrows.
  */
 export const GuildUpgradeInspection = ({ upgradeDef, onClose }) => {
-    const scrollRef = useRef(null);
-    const [canScrollUp, setCanScrollUp] = useState(false);
-    const [canScrollDown, setCanScrollDown] = useState(false);
-
     // Hall upgrades are paid in Bank items. The selector returns a flat signature string of
     // 'itemId:have' for the next rank's price, so the panel re-renders when any of those
     // counts changes (see `useGameState`'s selector contract).
@@ -54,25 +53,6 @@ export const GuildUpgradeInspection = ({ upgradeDef, onClose }) => {
         [ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, ENGINE_EVENTS.STATE_CHANGED]
     );
 
-    const checkScroll = useCallback(() => {
-        const el = scrollRef.current;
-        if (!el) return;
-        setCanScrollUp(el.scrollTop > 4);
-        setCanScrollDown(el.scrollTop + el.clientHeight < el.scrollHeight - 4);
-    }, []);
-
-    useEffect(() => {
-        checkScroll();
-        const el = scrollRef.current;
-        if (!el) return;
-        el.addEventListener('scroll', checkScroll, { passive: true });
-        window.addEventListener('resize', checkScroll);
-        return () => {
-            el.removeEventListener('scroll', checkScroll);
-            window.removeEventListener('resize', checkScroll);
-        };
-    }, [checkScroll, upgradeDef, ranks]);
-
     if (!upgradeDef) return null;
 
     const rank = ranks[upgradeDef.id] || 0;
@@ -93,14 +73,6 @@ export const GuildUpgradeInspection = ({ upgradeDef, onClose }) => {
         if (!accessible || isMax || !canAfford) return;
         EventBus.publish(ENGINE_EVENTS.AUDIO_PLAY, { clip: 'button_click' });
         GuildUpgradeManager.purchase(upgradeDef.id);
-    };
-
-    const scrollUp = () => {
-        scrollRef.current?.scrollBy({ top: -120, behavior: 'smooth' });
-    };
-
-    const scrollDown = () => {
-        scrollRef.current?.scrollBy({ top: 120, behavior: 'smooth' });
     };
 
     const allRanks = Array.from({ length: upgradeDef.maxRank }, (_, i) => {
@@ -212,7 +184,7 @@ export const GuildUpgradeInspection = ({ upgradeDef, onClose }) => {
                                 textShadow: '0 1px 0 #000, 1px 0 0 #000, 0 -1px 0 #000, -1px 0 0 #000, 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 0 1px 2px rgba(0,0,0,0.9)'
                             } : undefined}
                             className={cn(
-                                "w-full py-2.5 px-4 rounded-lg font-bold transition-all shadow-lg flex items-center justify-between gap-2 cursor-pointer",
+                                "ui-shine w-full py-2.5 px-4 rounded-lg font-bold transition-all shadow-lg flex items-center justify-between gap-2 cursor-pointer",
                                 canAfford
                                     ? "bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-400 hover:via-yellow-400 hover:to-amber-500 text-white font-extrabold shadow-[0_0_18px_rgba(245,158,11,0.4)] active:scale-[0.98] border border-amber-300/40"
                                     : "bg-white/5 border border-white/10 text-stone-500 cursor-not-allowed opacity-60"
@@ -273,19 +245,10 @@ export const GuildUpgradeInspection = ({ upgradeDef, onClose }) => {
                     </span>
                 </div>
 
-                {canScrollUp && (
-                    <button
-                        onClick={scrollUp}
-                        className="w-full py-1 bg-black/60 hover:bg-black/80 border border-white/10 hover:border-gi-gold/40 rounded-lg flex items-center justify-center text-gi-gold transition-colors shrink-0 mb-1 shadow active:scale-[0.99] cursor-pointer"
-                        title="Scroll up"
-                    >
-                        <ChevronUp size={14} />
-                    </button>
-                )}
-
-                <div
-                    ref={scrollRef}
-                    className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-1.5 p-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                <ArrowScrollList
+                    step={RANK_SCROLL_STEP_PX}
+                    compact
+                    className="flex-1 min-h-0 flex flex-col gap-1.5 p-1"
                 >
                     {allRanks.map(tier => {
                         const isCurrent = tier.isNext;
@@ -332,17 +295,7 @@ export const GuildUpgradeInspection = ({ upgradeDef, onClose }) => {
                             </div>
                         );
                     })}
-                </div>
-
-                {canScrollDown && (
-                    <button
-                        onClick={scrollDown}
-                        className="w-full py-1 bg-black/60 hover:bg-black/80 border border-white/10 hover:border-gi-gold/40 rounded-lg flex items-center justify-center text-gi-gold transition-colors shrink-0 mt-1 shadow active:scale-[0.99] cursor-pointer"
-                        title="Scroll down"
-                    >
-                        <ChevronDown size={14} />
-                    </button>
-                )}
+                </ArrowScrollList>
             </div>
         </div>
     );

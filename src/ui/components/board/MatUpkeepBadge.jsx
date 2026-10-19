@@ -6,6 +6,9 @@ import { computeUpkeepSummary } from '../../../systems/board/UpkeepSummary.js';
 import { UpkeepSummaryPanel, REFRESH_EVENTS, POLL_MS } from '../drawer/UpkeepSummaryPanel.jsx';
 import { CAP_EVENTS } from './MatCapBadge.jsx';
 import { placeUnder } from './tooltipPlacement.js';
+import { EntityRibbon } from '../base/EntityRibbon.jsx';
+import { PixelFrame, FRAME_KIND } from '../base/PixelFrame.jsx';
+import { TOP_BAR_ICON, TopBarIcon } from './MatTopBar.jsx';
 
 /**
  * What changes the badge's total: the Upkeep Summary's own events, the Token cap badge's (a
@@ -47,29 +50,32 @@ export function liveUpkeepTotal() {
 }
 
 /**
- * The hover popover: the whole Upkeep Summary, in a box styled like the Hall's Passive Production
- * tooltip. Unlike the cap popover it takes the pointer, so a long summary can be scrolled.
+ * The hover popover: the whole Upkeep Summary, one item bar per item, in the chamfer pixel frame.
+ * Unlike the cap popover it takes the pointer, so a long summary can be scrolled.
  */
 export const MatUpkeepPopover = ({ anchor, onMouseEnter, onMouseLeave }) => {
     if (typeof document === 'undefined') return null;
     return createPortal(
-        <div
+        <PixelFrame
+            kind={FRAME_KIND.CHAMFER}
             role="tooltip"
             data-mat-upkeep-popover
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}
-            className="fixed z-[90] flex flex-col rounded-lg bg-black/90 border border-gi-gold/40 shadow-[0_10px_30px_rgba(0,0,0,0.8)]"
-            style={{ width: POPOVER_WIDTH, maxHeight: POPOVER_MAX_HEIGHT, ...placeUnder(anchor, POPOVER_WIDTH, 360) }}
+            className="fixed z-[90]"
+            frameClassName="flex flex-col"
+            frameStyle={{ maxHeight: POPOVER_MAX_HEIGHT }}
+            style={{ width: POPOVER_WIDTH, ...placeUnder(anchor, POPOVER_WIDTH, 360) }}
         >
             <UpkeepSummaryPanel className="min-h-0" />
-        </div>,
+        </PixelFrame>,
         document.body
     );
 };
 
 /**
- * The Upkeep badge: `Upkeep 2/min`, the items per minute every ongoing cost on the mat takes,
- * summed. Hover opens the full Upkeep Summary.
+ * The Upkeep badge: `Upkeep 2/min` in the item bar style, the items per minute every ongoing
+ * cost on the mat takes, summed. Hover opens the full Upkeep Summary.
  * Always neutral, whatever the state: a Token waiting unpaid shows red in the summary and on
  * its own centre mark, never on this badge.
  * @param {{ readTotal?: () => number }} props  `readTotal` for tests
@@ -98,17 +104,18 @@ export const MatUpkeepBadge = ({ readTotal = liveUpkeepTotal }) => {
 
     return (
         <>
-            <div
+            <EntityRibbon
                 ref={ref}
                 data-mat-upkeep-badge
+                size="xs"
+                name="Upkeep"
+                title={null}
+                icon={<TopBarIcon src={TOP_BAR_ICON.UPKEEP} />}
+                countText={<span data-mat-upkeep-count>{formatTotal(total)}/min</span>}
                 onMouseEnter={show}
                 onMouseLeave={hide}
-                className="flex items-center gap-1 px-2 py-0.5 rounded bg-black/30 border border-[#2a1d15] cursor-default whitespace-nowrap"
-            >
-                <span data-mat-upkeep-text className="text-white tabular-nums">
-                    <span className="text-amber-200/80">Upkeep</span>{' '}{formatTotal(total)}/min
-                </span>
-            </div>
+                className="whitespace-nowrap cursor-default"
+            />
             {open && <MatUpkeepPopover anchor={ref.current} onMouseEnter={show} onMouseLeave={hide} />}
         </>
     );

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeAll, afterAll, afterEach, beforeEach, vi } from 'vitest';
 import React from 'react';
-import { render, cleanup, fireEvent, act } from '@testing-library/react';
+import { render, cleanup, act } from '@testing-library/react';
 import { DndContext } from '@dnd-kit/core';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
@@ -32,7 +32,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
     RegistryManager: { recordItemGain: vi.fn() }
 }));
 
-/** The Token inspection: live ring bubbles, sharp skill icons, the Disallow switch, the popup's shape. */
+/** The Token inspection: live ring bubbles, sharp skill icons, no map-mode controls, the popup's shape. */
 
 const TOKEN = { x: 400, y: 300 };
 const h = React.createElement;
@@ -171,35 +171,43 @@ describe('skill icons are sharp', () => {
     });
 });
 
-describe('the Disallow switch', () => {
-    const sw = (c) => c.querySelector('[data-disallow-switch] [role="switch"]');
+describe('⭐ Disallow and Demolish left the inspect pop-up for the map modes', () => {
+    const rect = { left: 400, top: 300, right: 464, bottom: 364, width: 64, height: 64, x: 400, y: 300 };
+    const popup = (instance) => mount(h(TokenInspectPopup, {
+        typeId: instance.typeId, instanceId: instance.id, anchorRect: rect, onClose: () => {}
+    }));
+    const noModeControls = (root) => {
+        expect(root.querySelector('[data-disallow-switch]')).toBeNull();
+        expect(root.querySelector('[role="switch"]')).toBeNull();
+        expect(root.querySelector('[data-demolish]')).toBeNull();
+        const words = [...root.querySelectorAll('button')].map(b => b.textContent);
+        expect(words).not.toContain('Demolish');
+        expect(words).not.toContain('Cancel demolition');
+    };
 
-    it('switching it on and off disallows and allows, and the mat bubble follows', async () => {
+    it('a Token a hero works has no Disallow switch and no Demolish button', () => {
         const forest = put(TOKEN, 'fixture_producer');
-        const { container } = mount(
-            h(MatBoard),
-            h(TokenInspection, { typeId: 'fixture_producer', instanceId: forest.id })
-        );
-        expect(sw(container).getAttribute('aria-checked')).toBe('false');
-        expect(container.querySelector('[data-bubble="disallow"]')).toBeNull();
-
-        await act(async () => { fireEvent.click(sw(container)); });
-        expect(Flags.isDisallowed(forest)).toBe(true);
-        expect(sw(container).getAttribute('aria-checked')).toBe('true');
-        expect(container.querySelector('[data-bubble="disallow"]')).not.toBeNull();
-
-        await act(async () => { fireEvent.click(sw(container)); });
-        expect(Flags.isDisallowed(forest)).toBe(false);
-        expect(sw(container).getAttribute('aria-checked')).toBe('false');
-        expect(container.querySelector('[data-bubble="disallow"]')).toBeNull();
+        popup(forest);
+        noModeControls(document.body);
     });
 
-    it('says Disallow, not Heroes may work this', () => {
+    it('a marked Token has no Cancel demolition, and the Guild Hall no refusal line', () => {
         const forest = put(TOKEN, 'fixture_producer');
-        const { container } = mount(h(TokenInspection, { typeId: 'fixture_producer', instanceId: forest.id }));
-        const row = container.querySelector('[data-disallow-switch]');
-        expect(row.textContent).toBe('Disallow');
-        expect(container.textContent).not.toContain('Heroes may work this');
+        forest.demolish = true;
+        popup(forest);
+        noModeControls(document.body);
+        cleanup();
+        const hall = put({ x: 880, y: 560 }, 'token_guild_hall');
+        popup(hall);
+        noModeControls(document.body);
+    });
+
+    it('the mat bubble still follows a Token disallowed', async () => {
+        const forest = put(TOKEN, 'fixture_producer');
+        const { container } = mount(h(MatBoard));
+        expect(container.querySelector('[data-bubble="disallow"]')).toBeNull();
+        await act(async () => { Flags.setDisallowed(forest.id, true); });
+        expect(container.querySelector('[data-bubble="disallow"]')).not.toBeNull();
     });
 });
 
@@ -228,23 +236,5 @@ describe('the Origin line', () => {
             spy.mockRestore();
             vi.unstubAllEnvs();
         }
-    });
-});
-
-describe('the popup shape', () => {
-    it('has the speech bubbles look: rounded, yellow-bordered, a turned-square tail', () => {
-        const forest = put(TOKEN, 'fixture_producer');
-        const rect = { top: 400, bottom: 480, left: 400, right: 480, width: 80, height: 80 };
-        const { container } = mount(h(TokenInspectPopup, {
-            typeId: 'fixture_producer', instanceId: forest.id, anchorRect: rect, onClose: () => {}
-        }));
-        const tail = container.querySelector('[data-inspect-tail]');
-        expect(tail).not.toBeNull();
-        expect(tail.className).toContain('rotate-45');
-        expect(tail.className).toContain('border-yellow-500/70');
-        const popup = tail.parentElement;
-        expect(popup.className).toContain('rounded-md');
-        expect(popup.className).toContain('border-yellow-500/70');
-        expect(popup.className).toContain('bg-yellow-950/95');
     });
 });

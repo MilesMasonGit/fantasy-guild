@@ -35,7 +35,7 @@ export const EntityRibbon = ({
     required,
     isDiscovered = true,
     // Optional hover text. Defaults to the entity's name; pass a sentence when
-    // the row needs explaining rather than naming.
+    // the row needs explaining rather than naming, or `null` for none.
     title,
     size = 'md',
     variant = 'default',
@@ -117,20 +117,32 @@ export const EntityRibbon = ({
     const hasHoverChance = chance !== undefined && chance !== null && qtyDisplay !== null;
     const hasAmount = typeof amount === 'number' && Number.isFinite(amount);
 
-    // Size configs: all display standard 32px sprites inside a 32px box.
+    // xs is the top bar's compact bar: no count column at all when there is no count.
+    const compact = size === 'xs';
+    const hasCount = hasAmount || countText != null || qtyDisplay !== null || (chance !== undefined && chance !== null);
+
+    // Size configs: 32px sprites in a 32px box, but for xs.
     const sizeConfig = {
+        // The mat's top bar: a 16 px sprite and body text, low enough for the slim bar.
+        xs: {
+            box: 'w-4 h-4',
+            iconSize: 16,
+            text: 'ui-text-body',
+            sub: 'ui-text-small',
+            pad: 'px-1.5 py-0.5 gap-1.5'
+        },
         sm: {
             box: 'w-8 h-8',
             iconSize: 32,
             text: 'text-xs',
-            sub: 'text-[9px]',
+            sub: 'text-(length:--font-size-xs)',
             pad: 'p-1.5 gap-2.5'
         },
         md: {
             box: 'w-8 h-8',
             iconSize: 32,
             text: 'text-xs md:text-sm',
-            sub: 'text-[10px]',
+            sub: 'text-(length:--font-size-xs)',
             pad: 'p-2 gap-2.5'
         },
         lg: {
@@ -144,7 +156,7 @@ export const EntityRibbon = ({
         box: 'w-8 h-8',
         iconSize: 32,
         text: 'text-xs md:text-sm',
-        sub: 'text-[10px]',
+        sub: 'text-(length:--font-size-xs)',
         pad: 'p-2 gap-2.5'
     };
 
@@ -162,7 +174,7 @@ export const EntityRibbon = ({
                 isInteractive && 'cursor-pointer hover:bg-[#201b18] active:scale-[0.99]',
                 className
             )}
-            title={title || displayName}
+            title={title === null ? undefined : (title || displayName)}
         >
             {/**
              * Sprite Box: 32px base, smoothly scales to 64px (scale-[2]) overflowing the
@@ -174,7 +186,7 @@ export const EntityRibbon = ({
                     'relative rounded-md bg-black border border-white/10 flex items-center justify-center shrink-0 shadow-inner group-hover:border-white/25 transition-colors overflow-visible z-10'
                 )}
             >
-                <div data-item-bar-sprite className="relative flex items-center justify-center w-8 h-8 transition-transform duration-200 ease-out group-hover:scale-[2] group-hover:z-50 group-hover:drop-shadow-[0_6px_14px_rgba(0,0,0,0.95)] pointer-events-none origin-center">
+                <div data-item-bar-sprite className={cn(sizeConfig.box, 'relative flex items-center justify-center transition-transform duration-200 ease-out group-hover:scale-[2] group-hover:z-50 group-hover:drop-shadow-[0_6px_14px_rgba(0,0,0,0.95)] pointer-events-none origin-center')}>
                     {icon ?? (!isDiscovered ? (
                         <HelpCircle size={18} className="text-gi-muted/50" />
                     ) : resolvedKind === 'xp' ? (
@@ -188,7 +200,7 @@ export const EntityRibbon = ({
                     ) : (
                         <ItemIcon
                             item={itemDef || rawId}
-                            size={32}
+                            size={sizeConfig.iconSize}
                             isDiscovered={isDiscovered}
                         />
                     ))}
@@ -213,7 +225,8 @@ export const EntityRibbon = ({
                 )}
             </div>
 
-            <div className="relative flex flex-col items-end justify-center shrink-0 tabular-nums font-mono min-w-[3.5rem]">
+            {(!compact || hasCount) && (
+            <div className={cn('relative flex flex-col items-end justify-center shrink-0 tabular-nums', !compact && 'min-w-[3.5rem]')}>
                 {hasAmount ? (
                     // Both counts share one grid cell, so the column is as wide as the longer one.
                     <div className="grid justify-items-end">
@@ -281,6 +294,7 @@ export const EntityRibbon = ({
                     </>
                 )}
             </div>
+            )}
         </div>
     );
 };

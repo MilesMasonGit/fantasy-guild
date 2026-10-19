@@ -109,8 +109,8 @@ describe('a load\'s catch-up on the hero bar', () => {
     it('a 2 h load with 3 level-ups leaves one bubble each on the right heroes', async () => {
         await loadTwoHoursLater();
         expect(CatchUp.lastResult().summary.levelUps).toHaveLength(3);
-        expect(texts('h1')).toEqual(['LVL UP! 3 Mining! (+2)', 'LVL UP! 2 Forestry!']);
-        expect(texts('h2')).toEqual(['LVL UP! 2 Mining!']);
+        expect(texts('h1')).toEqual(['3 Mining!', '2 Forestry!']);
+        expect(texts('h2')).toEqual(['2 Mining!']);
     });
 
     it('a later reset that keeps bubbles does not add the catch-up a second time', async () => {
@@ -118,8 +118,8 @@ describe('a load\'s catch-up on the hero bar', () => {
         clearHeroBubble('h1', 'level:Forestry');
         EventBus.publish(ENGINE_EVENTS.GAME_RESET, { reason: 'dev_time_skip' });
         EventBus.publish(ENGINE_EVENTS.GAME_RESET, { reason: 'catch_up' });
-        expect(texts('h1')).toEqual(['LVL UP! 3 Mining! (+2)']);
-        expect(texts('h2')).toEqual(['LVL UP! 2 Mining!']);
+        expect(texts('h1')).toEqual(['3 Mining!']);
+        expect(texts('h2')).toEqual(['2 Mining!']);
     });
 
     it('"Load as I left it" leaves no bubbles from the catch-up it turned down', async () => {
@@ -186,8 +186,8 @@ describe('a gap the live loop could not deliver, on the hero bar', () => {
         tickAfter(10 * MIN + 1000);
         const result = await done;
         expect(result.show).toBe(true);
-        expect(texts('h2')).toEqual(['LVL UP! 10 Fishing!']);
-        expect(texts('h1')).toEqual(['LVL UP! 6 Mining! (+2)', 'LVL UP! 2 Forestry!']);
+        expect(texts('h2')).toEqual(['10 Fishing!']);
+        expect(texts('h1')).toEqual(['6 Mining!', '2 Forestry!']);
     });
 
     it('a silent catch-up (a background tab) adds its level-ups and keeps what was there', () => {
@@ -195,8 +195,8 @@ describe('a gap the live loop could not deliver, on the hero bar', () => {
         levelUpsDuringCatchUp([[5, 'h1', 'Mining', 1, 2]]);
         tickAfter(61_000);
         expect(CatchUp.lastResult()).toMatchObject({ show: false });
-        expect(texts('h1')).toEqual(['LVL UP! 2 Mining!']);
-        expect(texts('h2')).toEqual(['LVL UP! 10 Fishing!']);
+        expect(texts('h1')).toEqual(['2 Mining!']);
+        expect(texts('h2')).toEqual(['10 Fishing!']);
     });
 
     it('a silent catch-up with no level-ups adds nothing and keeps what was there', () => {
@@ -205,6 +205,6 @@ describe('a gap the live loop could not deliver, on the hero bar', () => {
         expect(CatchUp.lastResult()).toMatchObject({ show: false });
         expect(CatchUp.lastResult().summary.levelUps).toEqual([]);
         expect(texts('h1')).toEqual([]);
-        expect(texts('h2')).toEqual(['LVL UP! 10 Fishing!']);
+        expect(texts('h2')).toEqual(['10 Fishing!']);
     });
 });

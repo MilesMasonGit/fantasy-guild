@@ -5,6 +5,7 @@ import { createStackWriter } from './stackWriter.js';
 import { pointerToMat } from './matPoint.js';
 import { installPressRouting } from './pressRouting.js';
 import { flagClothOver } from './flagCloth.js';
+import { useHoverRest } from './hoverRest.js';
 import { MatToken, MatTokenGrab } from './MatToken.jsx';
 import { MatHero, heroBoxAt } from './MatHero.jsx';
 import { MatRings } from './MatRings.jsx';
@@ -21,7 +22,10 @@ import { announce } from './dropOnMat.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { useActiveDrag } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND } from '../../dnd/dragConstants.js';
-import { useDisallowMode, flipDisallowed } from '../../hooks/useDisallowMode.js';
+import {
+    MAP_MODE, useMapMode, getMapMode, flipDisallowed, flipDisallowedType, flipDemolishMark
+} from '../../hooks/useMapMode.js';
+import { mapModeCursor } from './mapModeCursor.js';
 import { useMatFit } from './MatFitContext.jsx';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
@@ -32,11 +36,12 @@ import * as Placement from '../../../systems/board/Placement.js';
 import { showsNearRing } from '../../../systems/board/reachDisplay.js';
 import { activeRegion } from '../../../systems/atlas/Atlas.js';
 import { regionGround } from '../../../systems/atlas/regionGround.js';
-import { getTokenType } from '../../../config/registries/tokenRegistry.js';
+import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
 import { usePerfRenderCount } from '../../dev/perf/PerfProfiler.jsx';
 import { useDrawn } from '../../dev/perf/drawSwitches.js';
 import { watchSpawns } from './spawnMotion.js';
-import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
+import { ENGINE_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
+import { EventBus } from '../../../systems/core/EventBus.js';
 
 /**
  * The playmat as it is actually drawn. Every Token, hero and flag is drawn at its own mat
@@ -75,6 +80,9 @@ export const MatBoard = React.memo(function MatBoard({
 
     const [hoveredId, setHoveredId] = useState(null);
     const [hoverHeroId, setHoverHeroId] = useState(null);
+    // The outline follows the hover at once; the name, the rings and the HP bar wait for the
+    // pointer to rest (`useHoverRest`), so a Token's own rest redraws that Token alone.
+    const rest = useHoverRest(hoveredId, hoverHeroId);
     /** The pointer is on a Token's art circle, so every flag lets it through. */
     const [flagsYield, setFlagsYield] = useState(false);
     const { isDragging, activePayload } = useActiveDrag();
@@ -93,9 +101,10 @@ export const MatBoard = React.memo(function MatBoard({
         grab.listeners?.onPointerDown?.(e);
     }, []);
 
-    // Disallow mode. Read once here and handed to each Token as a prop, so a Token holds no
-    // subscription of its own for it.
-    const disallowMode = useDisallowMode();
+    // The map mode (Disallow or Demolish). Read once here and handed to each Token as a prop, so
+    // a Token holds no subscription of its own for it, and a hover redraws only the two Tokens
+    // whose hover changed.
+    const mapMode = useMapMode();
     const fit = useMatFit() || 1;
 
     // dnd-kit owns the pointer during a drag, and a Token re-ordering itself under the ghost
@@ -202,13 +211,13 @@ export const MatBoard = React.memo(function MatBoard({
                     name: hero?.name || 'Hero',
                     sprite: hero?.spriteId || hero?.classId || null,
                     // Not working productively: the Token it holds is stuck. Such a hero gets
-                    // no glow (the red badge says it alone) and stands idle instead of
-                    // swinging. The same test as the Token's own hit reaction (`strikesLive`).
+                    // no glow (the Token's problem mark says it alone) and stands idle instead
+                    // of swinging. The same test as the Token's own hit reaction (`strikesLive`).
                     stuck: !!worked && !strikesLive(heroId, worked.alert),
                     // Fighting: idle, one attack per real attack.
                     combat: !!worked && hitsOnAttack(hitSkillOf(getTokenType(worked.typeId))),
-                    // Which alert; the speech bubble says what is wrong.
-                    alert: worked?.alert || null
+                    // Below full health: the health bar shows.
+                    hurt: !!hero?.hp && hero.hp.current < hero.hp.max
                 });
             }
             return out;
@@ -306,19 +315,40 @@ export const MatBoard = React.memo(function MatBoard({
         announce(Placement.recallHeroById(heroId));
     }, []);
 
-    // A click on a Token in disallow mode (a Token no hero works: nothing).
-    const handleFlipDisallow = useCallback((instanceId) => { flipDisallowed(instanceId); }, []);
+    // A click on a Token in a map mode. Disallow: flip it, or with shift its whole type (a Token
+    // no hero works: nothing). Demolish: mark or unmark it, or say over it why it cannot go.
+    const handleModeClick = useCallback((instanceId, shift) => {
+        const mapMode = getMapMode();
+        if (mapMode === MAP_MODE.DISALLOW) {
+            if (shift) flipDisallowedType(instanceId);
+            else flipDisallowed(instanceId);
+            return;
+        }
+        if (mapMode !== MAP_MODE.DEMOLISH) return;
+        const result = flipDemolishMark(instanceId);
+        if (result.success || !result.reason) return;
+        const instance = BoardState.getTokenById(instanceId);
+        EventBus.publish(UI_EVENTS.UI_TOKEN_ALERT, {
+            instanceId,
+            severity: 'disallow',
+            type: 'demolish_refused',
+            name: instance ? tokenName(instance.typeId) : null,
+            title: result.reason,
+            rulesText: null,
+            message: result.reason
+        });
+    }, []);
 
 
 
     // Only a Token that acts on or depends on its neighbours shows a ring (`showsNearRing`).
     const hoveredCentre = useMemo(() => {
-        const t = hoveredId ? tokens.find(k => k.id === hoveredId) : null;
+        const t = rest.tokenId ? tokens.find(k => k.id === rest.tokenId) : null;
         if (!t || !showsNearRing(t.typeId)) return null;
         // A walker's own point is not in `tokens`: read it live.
         const at = t.x == null ? BoardState.getTokenById(t.id) : t;
         return at ? { x: at.x, y: at.y } : null;
-    }, [hoveredId, tokens]);
+    }, [rest.tokenId, tokens]);
 
     const workedBy = useMemo(() => {
         const out = new Map();
@@ -348,9 +378,9 @@ export const MatBoard = React.memo(function MatBoard({
         <div
             ref={rootRef}
             data-mat-board
-            data-disallow-mode={disallowMode ? 'on' : undefined}
+            data-map-mode={mapMode || undefined}
             className="absolute left-0 top-0"
-            style={{ width: mat.w, height: mat.h }}
+            style={{ width: mat.w, height: mat.h, '--map-mode-cursor': mapModeCursor(mapMode) || undefined }}
             onPointerMove={handlePointerMove}
             onPointerLeave={clearHover}
         >
@@ -395,14 +425,15 @@ export const MatBoard = React.memo(function MatBoard({
                     walkFacing={t.walkFacing}
                     stack={stack}
                     isHovered={hoveredId === t.id}
+                    isRested={rest.tokenId === t.id}
                     selected={inspectedTokenId != null && inspectedTokenId === t.id}
                     hasHero={workedBy.has(t.id)}
                     onInspectToken={onInspectToken}
                     onClearInspect={onClearInspect}
                     onOpenRecipes={onOpenRecipes}
                     onRecallHero={handleRecallHero}
-                    disallowMode={disallowMode}
-                    onFlipDisallow={handleFlipDisallow}
+                    mapMode={mapMode}
+                    onModeClick={handleModeClick}
                     dragging={carriedId === t.id}
                     onPress={handleTokenPress}
                 />
@@ -438,6 +469,8 @@ export const MatBoard = React.memo(function MatBoard({
                         facing={h.facing}
                         limp={h.limp}
                         fighting={h.combat}
+                        hurt={h.hurt}
+                        rested={rest.heroId === h.heroId}
                     />
                 );
             })}
@@ -468,37 +501,36 @@ export const MatBoard = React.memo(function MatBoard({
             {speechDrawn && <HeroBubbleLayer heroes={heroes} />}
 
             {/**
-             * Disallow mode's red dashed edge and hint, above everything and never in the
-             * pointer's way. Sized against the mat's fit so they read the same at any zoom.
+             * A map mode's dashed edge in the mode's colour, above everything and never in the
+             * pointer's way. Sized against the mat's fit so it reads the same at any zoom. What a
+             * click does is said by the banner on the top bar (`MatModeControls`).
              */}
-            {disallowMode && (
+            {mapMode && (
                 <div
-                    data-disallow-edge
+                    data-map-mode-edge={mapMode}
                     aria-hidden="true"
                     className="absolute left-0 top-0 pointer-events-none"
                     style={{
                         width: mat.w,
                         height: mat.h,
-                        zIndex: DISALLOW_EDGE_Z,
+                        zIndex: MODE_EDGE_Z,
                         borderRadius: MAT_EDGE.radius,
-                        border: `${3 / fit}px dashed #E24B4A`
+                        border: `${3 / fit}px dashed ${MODE_EDGE_COLOUR[mapMode]}`
                     }}
-                >
-                    <div
-                        data-disallow-hint
-                        className="absolute left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-[#791F1F]/90 border border-[#E24B4A] text-red-50 font-pixel"
-                        style={{ top: 12 / fit, fontSize: 11 / fit, padding: `${2 / fit}px ${8 / fit}px` }}
-                    >
-                        Click a Token to allow / disallow · Esc to finish
-                    </div>
-                </div>
+                />
             )}
         </div>
     );
 });
 
-/** Disallow mode's edge and hint: above the speech bubbles. */
-const DISALLOW_EDGE_Z = MAT_Z.HERO_BUBBLE + 40;
+/** A map mode's edge: above the speech bubbles. */
+const MODE_EDGE_Z = MAT_Z.HERO_BUBBLE + 40;
+
+/** The edge's colour per mode: muted grey for Disallow, red for Demolish. */
+const MODE_EDGE_COLOUR = Object.freeze({
+    [MAP_MODE.DISALLOW]: 'var(--color-ui-muted)',
+    [MAP_MODE.DEMOLISH]: 'var(--color-ui-red)'
+});
 
 /**
  * What the drawing needs of the active Region (`regionGround`): its seed, its stored cell map and

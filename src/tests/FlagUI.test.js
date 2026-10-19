@@ -207,7 +207,7 @@ describe('every skip reason the engine can record has hover text', () => {
     });
 
     it('names the hero whose rules switched a skill off (FPP-18)', () => {
-        expect(skipHint(Flags.SKIP.RULE_OFF, { hero: 'Aria' })).toBe('off in Aria’s rules');
-        expect(skipHint(Flags.SKIP.RULE_OFF)).toBe('off in the hero’s rules');
+        expect(skipHint(Flags.SKIP.RULE_OFF, { hero: 'Aria' })).toBe('off in Aria’s Work Permissions');
+        expect(skipHint(Flags.SKIP.RULE_OFF)).toBe('off in the hero’s Work Permissions');
     });
 });

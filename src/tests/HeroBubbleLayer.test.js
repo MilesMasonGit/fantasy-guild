@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { MAT_Z } from '../ui/components/board/matLayers.js';
 import { ALERT } from '../systems/board/boardEvents.js';
-import { blockedText, blockedLineFor, joinNames, readyToSpeak, speaksBlock, INPUTS_DELAY_MS } from '../ui/components/board/heroBubbles.js';
+import * as heroBubbles from '../ui/components/board/heroBubbles.js';
+import { blockedText, joinNames } from '../ui/components/board/heroBubbles.js';
+import { stackOf } from '../ui/components/board/heroSpeech.js';
 
 describe('Hero speech bubbles', () => {
     it('draw above every other mat layer', () => {
@@ -27,7 +29,7 @@ describe('Hero speech bubbles', () => {
     });
 
     it('drop the skill from the sentence when the Token names none (FB-54)', () => {
-        // `blockedLineFor` passes `skill: undefined` for such a Token.
+        // `pinRefusedLineFor` passes `skill: undefined` for such a Token.
         expect(blockedText(ALERT.ACCESS, { token: 'Campfire', skill: undefined })).toBe('My level is too low to work Campfire.');
         expect(blockedText(ALERT.UNSKILLED, { token: 'Campfire', skill: undefined })).toBe('I don’t have the skill to work Campfire.');
         expect(blockedText(ALERT.ACCESS, { token: 'Campfire' })).not.toMatch(/the right/);
@@ -37,25 +39,18 @@ describe('Hero speech bubbles', () => {
         expect(blockedText('something_new', { token: 'X' })).toBeNull();
     });
 
-    it('wait before speaking only for an item shortage (SB-6)', () => {
-        expect(readyToSpeak(ALERT.INPUTS, 0, INPUTS_DELAY_MS - 1)).toBe(false);
-        expect(readyToSpeak(ALERT.INPUTS, 0, INPUTS_DELAY_MS)).toBe(true);
-        expect(readyToSpeak(ALERT.CHARGES, 0, 0)).toBe(true);
-        expect(readyToSpeak(ALERT.NO_RECIPE, 0, 0)).toBe(true);
-    });
-
-    it('keep quiet about an unset station or Foundation, which shows only its gear (FB-21)', () => {
-        expect(speaksBlock(ALERT.CHOOSE_RECIPE)).toBe(false);
-        expect(speaksBlock(ALERT.CHOOSE_BUILD)).toBe(false);
-        expect(blockedLineFor('any-id', ALERT.CHOOSE_RECIPE)).toBeNull();
-        // Their wording is kept, so the owner can reinstate them.
-        expect(blockedText(ALERT.CHOOSE_RECIPE, { token: 'Workbench' })).toBe('Choose a recipe for Workbench.');
-    });
-
-    it('still speak about every real problem (FB-21)', () => {
-        for (const a of [ALERT.INPUTS, ALERT.NO_RECIPE, ALERT.CHARGES, ALERT.NO_ROOM, ALERT.ACCESS, ALERT.UNSKILLED]) {
-            expect(speaksBlock(a)).toBe(true);
+    it('⭐ heroes no longer speak about a Token’s problems (brief 120): nothing left to speak them', () => {
+        // The problem mark and its hover say what is wrong instead (problemMark.js).
+        for (const gone of ['blockedLineFor', 'speaksBlock', 'SILENT_BLOCKS', 'readyToSpeak', 'INPUTS_DELAY_MS']) {
+            expect(heroBubbles[gone], gone).toBeUndefined();
         }
-        expect(speaksBlock(null)).toBe(false);
+        // A hero's stack holds moments only.
+        const moments = [{ key: 'idle', text: 'No work in range.', until: 10 }];
+        expect(stackOf(moments, 0)).toEqual([{ id: 'idle', text: 'No work in range.', kind: 'moment' }]);
+    });
+
+    it('the retired lines keep their wording as the record (and 7 and 8 serve the pin-refused moment)', () => {
+        expect(blockedText(ALERT.CHOOSE_RECIPE, { token: 'Workbench' })).toBe('Choose a recipe for Workbench.');
+        expect(blockedText(ALERT.NO_ROOM, { token: 'Workbench' })).toBe('There is no room for what Workbench makes.');
     });
 });

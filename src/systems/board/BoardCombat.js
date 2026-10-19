@@ -53,11 +53,8 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
 const fights = new Map();
 
 /**
- * Whether this hero is able to fight anything at all.
- *
- * Possession of a combat skill, nothing else — an unpromoted Recruit holds
- * none and is refused. Exported so `BoardRunner` can raise the tile mark
- * without duplicating the rule.
+ * Whether this hero is able to fight anything at all: everyone can; a Recruit fights as a
+ * level 1 fighter (`CombatFormulas.getHeroCombatLevel`).
  */
 export function canFight(heroId) {
     return CombatFormulas.canHeroFight(HeroManager.getHero(heroId));
@@ -308,10 +305,8 @@ export function tickToken(instance, delta, heroId) {
         return;
     }
 
-    // ⚠️ An unpromoted hero cannot fight at all. Holding a combat skill decides if; how high it is
-    // never decides whether. A Recruit standing on an enemy simply stands there: no fight starts,
-    // no damage is dealt or taken, and the enemy stays whole. This is a possession gate, not a
-    // difficulty gate. `BoardRunner` raises the tile mark.
+    // A hero id with no hero record behind it cannot fight; the fight ends rather than reading
+    // an absent hero.
     if (!canFight(heroId)) {
         if (fights.has(id)) endFight(id);
         return;

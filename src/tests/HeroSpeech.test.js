@@ -14,37 +14,37 @@ describe('A hero’s stack of speech bubbles', () => {
         expect(list.map(m => m.text)).toEqual(['Mining is now level 3.']);
     });
 
-    it('puts the blocked line nearest the head, after the moments', () => {
+    it('puts the newest moment nearest the head', () => {
         let list = addMoment([], { key: 'a', text: 'A' }, 0);
         list = addMoment(list, { key: 'b', text: 'B' }, 1);
-        expect(stackOf(list, 'Stuck.', 2).map(b => b.text)).toEqual(['A', 'B', 'Stuck.']);
+        expect(stackOf(list, 2).map(b => b.text)).toEqual(['A', 'B']);
     });
 
-    it('never shows more than three — the oldest moment gives way, the blocked line stays', () => {
+    it('never shows more than three: the oldest moment gives way', () => {
         let list = [];
         ['a', 'b', 'c', 'd'].forEach((k, i) => { list = addMoment(list, { key: k, text: k }, i); });
-        const stack = stackOf(list, 'Stuck.', 10);
+        const stack = stackOf(list, 10);
         expect(stack).toHaveLength(MAX_BUBBLES);
-        expect(stack.map(b => b.text)).toEqual(['c', 'd', 'Stuck.']);
+        expect(stack.map(b => b.text)).toEqual(['b', 'c', 'd']);
+        expect(stack.every(b => b.kind === 'moment')).toBe(true);
     });
 
     it('has no stack when there is nothing to say', () => {
-        expect(stackOf([], null, 0)).toEqual([]);
+        expect(stackOf([], 0)).toEqual([]);
     });
 
     it('words the moments plainly', () => {
         expect(momentText.arrived('Campfire')).toBe('Working at Campfire.');
         expect(momentText.idle()).toBe('No work in range.');
-        expect(momentText.levelUp('Mining', 25, 4)).toBe('LVL UP! 25 Mining! (+4)');
-        expect(momentText.levelUp('Mining', 25, 2)).toBe('LVL UP! 25 Mining! (+2)');
-        expect(momentText.levelUp('Mining', 25, 1)).toBe('LVL UP! 25 Mining!');
         expect(momentText.depleted('Oak Tree')).toBe('Oak Tree Depleted');
     });
 
     it('says only unusual moments: arriving at a job is routine and silent (FB-21)', () => {
         expect(speaksMoment('arrived')).toBe(false);
         expect(speaksMoment('idle')).toBe(true);
-        expect(speaksMoment('levelUp')).toBe(true);
+        // A level-up is not a spoken line any more: it floats as an icon and number.
+        expect(speaksMoment('levelUp')).toBe(false);
+        expect(momentText.levelUp).toBeUndefined();
         expect(speaksMoment('depleted')).toBe(true);
         expect(speaksMoment('something_new')).toBe(false);
         expect(Object.keys(MOMENT_SPOKEN).sort()).toEqual(Object.keys(momentText).sort());

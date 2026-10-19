@@ -127,7 +127,7 @@ describe('⭐ the drawers', () => {
         expect(renders.of('ShopDrawer')).toBeGreaterThan(0);
         expect(renders.of('ShopContents')).toBe(0);
         expect(renders.of('ShopRowBody')).toBe(0);
-        expect(renders.of('ShopList')).toBe(0);
+        expect(renders.of('ArrowScrollList')).toBe(0);
         expect(renders.of('EntityRibbon')).toBe(0);
     });
 
@@ -140,7 +140,7 @@ describe('⭐ the drawers', () => {
                 h(DeckDndProvider, null, h(Item), h(BankTab, { onInspect: () => {} })))
         );
         view.getByTestId('item').getBoundingClientRect = () => box(2000, 2000, 50, 50);
-        expect(view.container.querySelectorAll('button[title*=" — drag to sort"]').length).toBe(2);
+        expect(view.container.querySelectorAll('button[data-bank-item]').length).toBe(2);
         renders.start();
         dragAbout(view.getByTestId);
         expect(renders.of('ItemTile')).toBeGreaterThan(0);

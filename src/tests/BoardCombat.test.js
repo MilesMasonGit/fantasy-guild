@@ -13,7 +13,7 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import * as RegenSystem from '../systems/hero/RegenSystem.js';
-import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
+import { tokenStartingUses, registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 
@@ -31,6 +31,20 @@ const idAt = (i) => tokenAt(i)?.id ?? null;
 
 /** What ran dry on spot `i`, or null. */
 
+registerTokenTypes({
+    /** A level 1 enemy at a quarter of the budget: weak enough for a fresh Recruit to beat. */
+    fixture_enemy_weak: {
+        id: 'fixture_enemy_weak', name: 'Fixture Weak Enemy', tokenType: 'enemy',
+        rarity: 'common', theme: 'fixture', uses: 20, sprite: 's_occult',
+        enemy: { level: 1, style: 'melee', budgetScale: 0.25 },
+        config: {
+            skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0,
+            inputs: [],
+            outputs: [{ itemId: 'item_blackberry', chance: 100, minQty: 1, maxQty: 1 }]
+        }
+    }
+});
+
 /**
  * Combat on the board — **ported, not rebuilt**.
  */
@@ -46,9 +60,8 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 /**
  * A hero strong enough to win, or weak enough to lose.
  *
- * ⚠️ **`generateHero` makes a Recruit, and a Recruit cannot fight** — holding a
- * combat skill is what decides whether a fight starts at all. Every hero in
- * this suite is therefore promoted by hand until the job tree exists (Phase 4).
+ * ⚠️ **`generateHero` makes a Recruit**, who fights only as a level 1 fighter.
+ * Every hero in this suite is therefore given a combat skill by hand.
  */
 function makeHero(id, { level = 50, hp = 100, style = 'melee' } = {}) {
     const hero = generateHero({ name: id });
@@ -60,7 +73,7 @@ function makeHero(id, { level = 50, hp = 100, style = 'melee' } = {}) {
     return hero;
 }
 
-/** A hero who has NOT been promoted: no combat skill, so no fight can start. */
+/** A hero who has NOT been promoted: no combat skill, so they fight as a level 1 fighter. */
 function makeRecruit(id, { hp = 100 } = {}) {
     const hero = generateHero({ name: id });
     hero.id = id;
@@ -128,52 +141,54 @@ describe('Enemies are inert until targeted (D-14)', () => {
     });
 });
 
-describe('An unpromoted hero cannot fight (D-249)', () => {
+describe('Everyone fights: a Recruit fights as a level 1 fighter', () => {
     beforeEach(() => {
         GameState.state.heroes = [makeRecruit('recruit_1'), makeHero('fighter_1')];
     });
 
-    it('a Recruit on an enemy starts no fight at all', () => {
-        const bear = place(10, 'fixture_enemy', 'recruit_1');
-        run(20000);
+    /** A real new Recruit, HP as generated, not the suite's padded 100. */
+    function freshRecruit(id) {
+        const hero = generateHero({ name: id });
+        hero.id = id;
+        hero.status = 'idle';
+        return hero;
+    }
 
-        expect(BoardCombat.getFight(idAt(10))).toBeNull();
-        // The enemy is untouched: no charge spent, no damage dealt.
-        expect(bear.usesRemaining).toBe(tokenStartingUses('fixture_enemy'));
-    });
-
-    it('...and takes no damage either — standing there is safe', () => {
+    it('a Recruit on an enemy starts a fight', () => {
         place(10, 'fixture_enemy', 'recruit_1');
-        run(20000);
-
-        const recruit = GameState.state.heroes.find(h => h.id === 'recruit_1');
-        expect(recruit.hp.current).toBe(100);
-        expect(recruit.status).not.toBe('wounded');
-    });
-
-    it('is skipped as unskilled, shown on hover, with no red mark (Free Playmat FP-60)', () => {
-        // Was: "says so on the tile" — a red UNSKILLED mark on the enemy. Under
-        // flags the Recruit never claims the enemy at all; the flag records why,
-        // and a skill problem is hover-only (slice 1.4c).
-        const bear = place(10, 'fixture_enemy', 'recruit_1');
-        run(1000);
-        expect(bear.alert ?? null).toBeNull();
-        expect(BoardState.workerOf(idAt(10))).toBeNull();
-        expect(Flags.skipsOf(bear.id).map(s => s.reason)).toEqual([BoardRunner.ALERT.UNSKILLED]);
-    });
-
-    it('is possession, not level — a level-1 fighter still fights', () => {
-        GameState.state.heroes = [makeHero('rookie', { level: 1 })];
-        place(10, 'fixture_enemy', 'rookie');
         run(1000);
 
         expect(BoardCombat.getFight(idAt(10))).not.toBeNull();
+        expect(BoardState.workerOf(idAt(10))).toBe('recruit_1');
+        expect(Flags.skipsOf(idAt(10))).toEqual([]);
     });
 
-    it('promoting the Recruit lets the same hero start fighting', () => {
+    it('a fresh Recruit beats a weak enemy, the loot is paid, and no combat XP is awarded', () => {
+        const recruit = freshRecruit('recruit_new');
+        GameState.state.heroes = [recruit];
+        const skillsBefore = JSON.stringify(recruit.skills);
+        const victories = [];
+        const unsub = EventBus.subscribe('combat_victory', p => victories.push(p));
+
+        const enemy = place(10, 'fixture_enemy_weak', 'recruit_new');
+        // Until the first kill: a fresh Recruit wins one with most of their HP left.
+        for (let t = 0; t < 60000 && !victories.length; t += 100) BoardRunner.tick(100);
+        run(3000);
+        unsub();
+
+        expect(recruit.status).not.toBe('wounded');
+        expect(victories.length).toBeGreaterThan(0);
+        expect(enemy.usesRemaining).toBeLessThan(tokenStartingUses('fixture_enemy_weak'));
+        // The kill's loot lands on the board as for anyone.
+        expect(SpriteLayer.countOnBoard('item_blackberry')).toBeGreaterThan(0);
+        // No combat skill appeared and no skill gained XP from the fights.
+        expect(JSON.stringify(recruit.skills)).toBe(skillsBefore);
+    });
+
+    it('promoting the Recruit keeps the same hero fighting, now on the real skill', () => {
         place(10, 'fixture_enemy', 'recruit_1');
-        run(5000);
-        expect(BoardCombat.getFight(idAt(10))).toBeNull();
+        run(1000);
+        expect(BoardCombat.getFight(idAt(10))).not.toBeNull();
 
         // What a first promotion does: grant one combat skill.
         GameState.state.heroes.find(h => h.id === 'recruit_1')

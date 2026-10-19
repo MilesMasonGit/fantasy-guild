@@ -221,7 +221,7 @@ export const CartographyTable = ({ version, onTravel }) => {
                     <button type="button" data-cartography-reroll className={buttonCls} disabled={!plan || cooling} onClick={reroll}>{SCREEN_TEXT.REROLL}</button>
                     <button type="button" data-cartography-cancel className={buttonCls} disabled={!filled.length} onClick={cancel}>{SCREEN_TEXT.CANCEL}</button>
                     <div className="flex-1" />
-                    <button type="button" data-cartography-settle className={buttonCls} disabled={!plan || noRoom} onClick={settle}>{SCREEN_TEXT.SETTLE}</button>
+                    <button type="button" data-cartography-settle className={`${buttonCls} ui-shine`} disabled={!plan || noRoom} onClick={settle}>{SCREEN_TEXT.SETTLE}</button>
                 </div>
                 {(message || noRoom) && (
                     <p role="status" data-cartography-message className="text-red-300">{message || TEXT.REFUSE_NO_ROOM}</p>

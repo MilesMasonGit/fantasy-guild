@@ -125,13 +125,7 @@ describe('⭐ nothing at rest on the mat splits it into layers', () => {
         placeAt('fixture_producer', 400, 400);
         placeAt('fixture_producer_alt', 520, 640);
         const { container } = render(engine(h(Board)));
-        const labels = [...container.querySelectorAll('[data-board-origin] [data-token-name]')];
-        expect(labels.length).toBe(2);
-        for (const label of labels) {
-            expect(label.className.split(/\s+/)).toContain('invisible');
-            // and it still fades: visibility rides the opacity transition
-            expect(label.className).toMatch(/transition-\[opacity,visibility\]/);
-        }
+        expect(container.querySelectorAll('[data-board-origin] [data-token-name]')).toHaveLength(0);
     });
 
     it('nothing on the mat asks for a layer of its own', () => {

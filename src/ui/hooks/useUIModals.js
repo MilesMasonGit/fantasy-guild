@@ -97,10 +97,10 @@ export const useUIModals = (engine) => {
 
     const [fullscreenView, setFullscreenView] = useState(null);
 
-    // The work rules drawer, and the hero whose row it opened lit (the hero panel's link).
+    // The Work Permissions drawer, and the hero whose row it opened lit (`open(heroId)`).
     const [flagRules, setFlagRules] = useState({ isOpen: false, heroId: null });
 
-    // The Bank, Shop and Work Rules drawers are one at a time: opening one closes the others.
+    // The Bank, Shop and Work Permissions drawers are one at a time: opening one closes the others.
     const closeBankPane = useCallback(() => setDrawerState({ panes: [], filters: {}, maximized: null }), []);
     const closeRules = useCallback(() => setFlagRules({ isOpen: false, heroId: null }), []);
     const openRules = useCallback((heroId) => {
@@ -303,9 +303,6 @@ export const useUIModals = (engine) => {
                 if (!tab || tab === 'heroes') return;
                 openDrawerTab(tab, data?.filter);
             }, UI_LISTENER),
-            engine.EventBus.subscribe(UI_EVENTS.UI_OPEN_FLAG_RULES, (data) => {
-                openRules(data?.heroId);
-            }, UI_LISTENER),
             // Nothing has happened to the hero yet: the tile holds the offer open and this
             // only decides to draw it.
             engine.EventBus.subscribe(BOARD_EVENTS.PROMOTION_READY, (data) => {
@@ -334,7 +331,7 @@ export const useUIModals = (engine) => {
             clearTimeout(initial);
             subs.forEach(unsub => unsub());
         };
-    }, [engine, openDrawerTab, openRules]);
+    }, [engine, openDrawerTab]);
 
     const isAnyModalOpen = isSettingsOpen ||
                            fullscreenView !== null;

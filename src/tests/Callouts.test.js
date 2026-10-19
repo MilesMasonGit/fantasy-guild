@@ -11,7 +11,7 @@ import * as Charges from '../systems/board/Charges.js';
 import { HeroBubbleLayer } from '../ui/components/board/HeroBubbleLayer.jsx';
 import { CalloutLayer } from '../ui/components/board/CalloutLayer.jsx';
 import { CALLOUT_MS, calloutText, addCallout, MAX_PER_ANCHOR, MAX_TOTAL } from '../ui/components/board/callouts.js';
-import { addMoment, levelUpFrom, momentText, DEPLETED_TTL_MS } from '../ui/components/board/heroSpeech.js';
+import { momentText, DEPLETED_TTL_MS } from '../ui/components/board/heroSpeech.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 
 /**
@@ -144,46 +144,14 @@ describe('depletion is said by the hero who used the Token up', () => {
 });
 
 describe('level-ups on the mat', () => {
-    const level = (heroId, skillName, oldLevel, newLevel) => {
+    it('are no longer a LVL UP! speech line: the hero says nothing', () => {
+        const { container } = render(h(HeroBubbleLayer, { heroes }));
         later();
-        act(() => { EventBus.publish(ENGINE_EVENTS.HERO_LEVELED, { heroId, skillName, oldLevel, newLevel }); });
-    };
-
-    it('one level reads "LVL UP! 25 Mining!" with no count', () => {
-        const { container } = render(h(HeroBubbleLayer, { heroes }));
-        level('h1', 'Mining', 24, 25);
-        expect(stackOf(container, 'h1')).toEqual(['LVL UP! 25 Mining!']);
-    });
-
-    it('quick level-ups coalesce into one bubble with the total gained', () => {
-        const { container } = render(h(HeroBubbleLayer, { heroes }));
-        for (let l = 21; l <= 25; l++) level('h1', 'Mining', l - 1, l);
-        expect(stackOf(container, 'h1')).toEqual(['LVL UP! 25 Mining! (+5)']);
-    });
-
-    it('counts per hero and per skill', () => {
-        const { container } = render(h(HeroBubbleLayer, { heroes }));
-        level('h1', 'Mining', 9, 10);
-        level('h1', 'Forestry', 3, 4);
-        level('h2', 'Mining', 19, 20);
-        level('h1', 'Mining', 10, 11);
-        expect(stackOf(container, 'h1')).toEqual(['LVL UP! 4 Forestry!', 'LVL UP! 11 Mining! (+2)']);
-        expect(stackOf(container, 'h2')).toEqual(['LVL UP! 20 Mining!']);
-    });
-
-    it('starts the count again once the earlier bubble has gone', () => {
-        const { container } = render(h(HeroBubbleLayer, { heroes }));
-        level('h1', 'Mining', 24, 25);
-        act(() => { vi.advanceTimersByTime(6000); });
-        level('h1', 'Mining', 25, 26);
-        expect(stackOf(container, 'h1')).toEqual(['LVL UP! 26 Mining!']);
-    });
-
-    it('levelUpFrom reads the start of the live bubble, else the level it started at', () => {
-        const list = addMoment([], { key: 'level:Mining', text: 'x', from: 20 }, 0);
-        expect(levelUpFrom(list, 'level:Mining', 24, 100)).toBe(20);
-        expect(levelUpFrom(list, 'level:Forestry', 4, 100)).toBe(4);
-        expect(levelUpFrom(list, 'level:Mining', 24, 1e9)).toBe(24);
+        act(() => { EventBus.publish(ENGINE_EVENTS.HERO_LEVELED, { heroId: 'h1', skillId: 'mining', skillName: 'Mining', oldLevel: 24, newLevel: 25 }); });
+        expect(stackOf(container, 'h1')).toEqual([]);
+        expect(container.textContent).not.toMatch(/LVL UP/i);
+        // The level-up floats instead (LevelUpFloat.test.js).
+        expect(container.querySelector('[data-hero-bubble-stack="h1"] [data-level-float="mining"]')).not.toBeNull();
     });
 });
 

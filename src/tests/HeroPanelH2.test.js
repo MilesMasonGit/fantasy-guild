@@ -231,13 +231,13 @@ describe('H2: skills', () => {
         expect(r.container.textContent).not.toMatch(/Lv\.|LVL|Level/);
         // Never the browser's own title tooltip.
         expect(r.container.querySelector('[data-skill-row][title], [data-skill-row] [title]')).toBeNull();
-        expect(document.body.querySelector('[data-top-bar-tip]')).toBeNull();
-        fireEvent.mouseEnter(row);
-        const tip = document.body.querySelector('[data-top-bar-tip]');
+        expect(document.body.querySelector('[data-tooltip]')).toBeNull();
+        fireEvent.pointerEnter(row);
+        const tip = document.body.querySelector('[data-tooltip]');
         expect(tip.textContent).toContain('Melee');
         expect(tip.textContent).toMatch(/10 \/ [\d,]+ XP/);
-        fireEvent.mouseLeave(row);
-        expect(document.body.querySelector('[data-top-bar-tip]')).toBeNull();
+        fireEvent.pointerLeave(row);
+        expect(document.body.querySelector('[data-tooltip]')).toBeNull();
     });
 
     it('shows one flat list with no Starting drawer, set aside skills, then the locked list shut', () => {

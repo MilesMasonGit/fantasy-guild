@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { HeartCrack } from 'lucide-react';
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
-import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
+import { ENGINE_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import * as CatchUp from '../../../systems/core/CatchUp.js';
 import { cn } from '../../utils/cn.js';
 import { EntityRibbon } from '../base/EntityRibbon.jsx';
@@ -51,6 +51,7 @@ export function CatchUpOverlay() {
         CatchUp.forgetUndo();
         setAsking(false);
         setResult(null);
+        EventBus.publish(UI_EVENTS.CATCH_UP_SUMMARY_CLOSED);
     };
 
     useEffect(() => {
@@ -67,6 +68,7 @@ export function CatchUpOverlay() {
             }
             CatchUp.forgetUndo();
             setResult(null);
+            EventBus.publish(UI_EVENTS.CATCH_UP_SUMMARY_CLOSED);
         };
         window.addEventListener('keydown', onKey, true);
         return () => window.removeEventListener('keydown', onKey, true);

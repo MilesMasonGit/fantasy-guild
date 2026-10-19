@@ -10,6 +10,7 @@ import { QUEST_TOKEN_TYPE } from '../config/registries/engineTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Flags from '../systems/board/Flags.js';
+import * as Landmarks from '../systems/board/Landmarks.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
@@ -42,6 +43,10 @@ registerTokenTypes({
     fxp_enemy: {
         id: 'fxp_enemy', name: 'Fxp Goblin', tokenType: 'enemy', rarity: 'common', theme: 'fixture',
         sprite: 's_nature', uses: 1, enemy: { level: 1, style: 'melee' }
+    },
+    fxp_site: {
+        id: 'fxp_site', name: 'Fxp Site', tokenType: 'resource', rarity: 'common', theme: 'fixture',
+        sprite: 's_nature', uses: null, landmark: true
     }
 });
 
@@ -51,6 +56,12 @@ const FIT = 0.87;
 function fixtureAt(x, y) {
     const instance = BoardState.createTokenInstance('fixture_producer', 100, null, BoardState.ORIGIN.PLACED);
     instance.fixture = true;
+    return BoardState.addToken(instance, x, y);
+}
+/** A Token the Starter Camp laid: placed, with the camp's fixture mark. */
+function campFixtureAt(x, y) {
+    const instance = BoardState.createTokenInstance('fixture_producer', 100, null, BoardState.ORIGIN.PLACED);
+    instance.fixture = BoardState.FIXTURE.CAMP;
     return BoardState.addToken(instance, x, y);
 }
 const spawnedAt = (typeId, x, y) =>
@@ -192,5 +203,42 @@ describe('⭐ only movable Tokens carry the marker and show the grab cursor', ()
         expect(artOf(container, node.id).className).not.toContain('cursor-grab');
         expect(artOf(container, node.id).className).toContain('cursor-pointer');
         expect(artOf(container, node.id).getAttribute('data-token-fixed')).toBe('true');
+    });
+});
+
+describe('⭐ the dev layout tool lifts a camp Token and a landmark already on the mat', () => {
+    const fixedMark = (container, id) => artOf(container, id).getAttribute('data-token-fixed');
+
+    it('a camp Token is not picked up until the tool is ticked, then is, with the grab cursor', () => {
+        const camp = campFixtureAt(600, 500);
+        const { container, started } = mount();
+        pressAndPull(hitOf(container, camp.id), 600, 500);
+        expect(started).toEqual([]);
+        expect(fixedMark(container, camp.id)).toBe('true');
+        try {
+            act(() => Landmarks.setLayoutEditing(true));
+            expect(fixedMark(container, camp.id)).toBeNull();
+            expect(artOf(container, camp.id).className).toContain('cursor-grab');
+            pressAndPull(hitOf(container, camp.id), 600, 500);
+            expect(started).toEqual([camp.id]);
+        } finally {
+            act(() => Landmarks.setLayoutEditing(false));
+        }
+    });
+
+    it('ticked and unticked, a camp Token and a landmark are lifted and fixed again; a map node never is', () => {
+        const camp = campFixtureAt(400, 400);
+        const site = placeAt('fxp_site', 800, 400);
+        const node = fixtureAt(1200, 400);
+        const { container } = mount();
+        const marks = () => [camp, site, node].map(t => fixedMark(container, t.id));
+        expect(marks()).toEqual(['true', 'true', 'true']);
+        try {
+            act(() => Landmarks.setLayoutEditing(true));
+            expect(marks()).toEqual([null, null, 'true']);
+        } finally {
+            act(() => Landmarks.setLayoutEditing(false));
+        }
+        expect(marks()).toEqual(['true', 'true', 'true']);
     });
 });

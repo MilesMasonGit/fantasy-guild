@@ -56,16 +56,15 @@ export function getHeroCombatStyle(hero) {
 }
 
 /**
- * The ONE combat skill a hero holds, and its level.
+ * The ONE combat skill a hero holds, and its level, exactly as saved.
  *
- * **A hero holds exactly one of Melee, Ranged, Magic or Stealth, or none at all.** This
- * is the single number the whole combat engine runs on: it supplies attack
- * *and* defence, max HP and block. A Melee 30 hero attacks at 30 and defends
- * at 30.
+ * **A hero holds exactly one of Melee, Ranged, Magic or Stealth, or none at all.** That
+ * single skill supplies attack *and* defence, max HP and block. A Melee 30 hero attacks at
+ * 30 and defends at 30.
  *
- * ⚠️ **A hero with no combat skill scores 0, not 1.** That is a Recruit, who
- * cannot fight (see `canHeroFight`); a floor of 1 would make them a weak
- * fighter instead of a non-combatant.
+ * ⚠️ **Not the number the combat maths uses.** A hero holding none (a Recruit) reads
+ * `{ id: null, level: 0 }` here, which is what decides that their fights earn no combat XP.
+ * The maths reads {@link getHeroCombatLevel}, which puts a Recruit at 1.
  *
  * @param {Object} hero
  * @returns {{ id: string|null, level: number }}
@@ -78,25 +77,35 @@ export function getHeroCombatSkillEntry(hero) {
     return { id: null, level: 0 };
 }
 
+/** The level a hero who holds no combat skill fights at: a level 1 fighter with what they hold. */
+export const UNSKILLED_COMBAT_LEVEL = 1;
+
 /**
- * Whether this hero can fight at all.
- *
- * Possession, never level: holding a combat skill decides *if*; how high it is
- * never decides *whether*. An unpromoted Recruit holds none and is refused.
+ * The combat level every combat formula uses: the held combat skill's level, or
+ * {@link UNSKILLED_COMBAT_LEVEL} for a hero who holds none. Nothing is written to the hero.
  */
-export function canHeroFight(hero) {
-    return getHeroCombatSkillEntry(hero).id !== null;
+export function getHeroCombatLevel(hero) {
+    const { id, level } = getHeroCombatSkillEntry(hero);
+    return id ? level : UNSKILLED_COMBAT_LEVEL;
 }
 
 /**
- * Get the hero's combat skill level.
+ * Whether this hero can fight at all. Everyone fights: a hero holding no combat skill fights
+ * as a level 1 fighter (see {@link getHeroCombatLevel}).
+ */
+export function canHeroFight(hero) {
+    return !!hero;
+}
+
+/**
+ * Get the hero's combat level (see {@link getHeroCombatLevel}).
  *
  * ⚠️ The `selectedStyle` argument is **ignored** and kept only so existing call
  * sites keep compiling. A hero has one style; the equipped weapon only decides
  * which side of the matchup cycle they fight on.
  */
 export function getHeroCombatSkill(hero, _selectedStyle = 'melee') {
-    return getHeroCombatSkillEntry(hero).level;
+    return getHeroCombatLevel(hero);
 }
 
 /**
@@ -105,17 +114,16 @@ export function getHeroCombatSkill(hero, _selectedStyle = 'melee') {
  * building is equipment.
  */
 export function getHeroDefenseSkill(hero) {
-    return getHeroCombatSkillEntry(hero).level;
+    return getHeroCombatLevel(hero);
 }
 
 /**
  * Hero max HP from skills; both terms of the formula use the single combat
  * skill.
  *
- * ⚠️ **A Recruit floors at level 1 for HP only.** They cannot fight, but they
- * stand on the board, take environmental damage and can be healed, so a max HP
- * of zero would make them unrepresentable. Everything that decides *combat*
- * reads the real 0 via `getHeroCombatSkillEntry`.
+ * A hero holding no combat skill gets the level 1 fighter's HP, matching
+ * {@link getHeroCombatLevel}. ⚠️ A held skill at level 0 also floors at 1 here,
+ * since a max HP of zero is unrepresentable.
  *
  * @param {Object} skills - hero.skills map
  * @returns {number}

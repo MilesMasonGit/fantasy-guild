@@ -91,6 +91,16 @@
   --color-gi-label-text: #ffffff;
   /* White text for matte labels */
 
+  /* The five colour meanings (UI_STYLE "Colours"), named by meaning so a panel says what it
+     means, not which shade. Red: short, can't, danger. Green: ready, enough. Gold: alert,
+     attention, upgrade, the selected tab. White: hover, selection. Muted: locked, unavailable.
+     ⚠️ A sixth meaning needs the owner's OK. */
+  --color-ui-red: var(--color-gi-danger);
+  --color-ui-green: var(--color-gi-success);
+  --color-ui-gold: var(--color-gi-gold);
+  --color-ui-white: #ffffff;
+  --color-ui-muted: var(--color-gi-muted);
+
   /* Legacy Colors (Mapped to new GI Typography truth) */
   --color-bg-primary: var(--color-gi-base);
   --color-bg-secondary: #141414;
@@ -108,6 +118,9 @@
   --color-hp: var(--color-gi-hp);
   --color-energy: #f6ad55;
   --color-xp: #9f7aea;
+  /* The work bar on a worked Token (the cycle ring's colours before it). */
+  --color-work-bar: #f4f1e8;
+  --color-work-bar-blocked: #8a8a8a;
 
   --color-task: #6090c0;
   --color-recipe: #50a060;
@@ -138,13 +151,8 @@
   --font-mono: "JetBrains Mono", monospace;
   --font-inter: "Inter", sans-serif;
 
-  /* Pixel-Crisp Font Sizes (Multiples of 8 / 4 for absolute sharpness) */
-  --font-size-xs: 12px;
-  --font-size-sm: 16px;
-  --font-size-base: 20px;
-  --font-size-lg: 24px;
-  --font-size-xl: 32px;
-  --font-size-2xl: 48px;
+  /* The --font-size-* steps live in main.css :root (14, 16, 18, 20, 24, 32, 48 px) and the Text
+     size setting overrides them on <html>; a copy here would lose to both. */
 
   /* Size-Based Text Outlines (User Specified) */
   --shadow-outline-1: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
@@ -175,8 +183,7 @@
 @layer base {
   body {
     @apply bg-gi-base text-gi-text font-base;
-    font-size: var(--font-size-sm);
-    /* Standard 16px */
+    /* No font-size here: main.css's unlayered body rule sets it (--font-size-base) and wins. */
     -webkit-font-smoothing: none;
     -moz-osx-font-smoothing: none;
     font-smooth: never;
@@ -406,6 +413,20 @@
   opacity: 0.85;
 }
 
+/* Demolish mode: a Token the engine will not let go is dimmed, so what can go reads at a glance. */
+.gi-token-protected {
+  filter: grayscale(0.6) brightness(0.45);
+}
+
+/* A map mode's cursor over a Token (`mapModeCursor.js`, handed down by the mat), and the
+   not-allowed cursor over one Demolish mode cannot mark. */
+[data-map-mode] [data-token-hit] {
+  cursor: var(--map-mode-cursor, pointer);
+}
+[data-map-mode] [data-token-protected] [data-token-hit] {
+  cursor: not-allowed;
+}
+
 /* A Token that has just become another one (feedback Q4, FB-11): a white-gold
  * flash of the art and a soft glow that swells out and fades, ~1 s
  * (`TokenGlows.GLOW_MS`). The glow is its own layer over the art box; the
@@ -549,6 +570,130 @@
   .gi-gear-alert { animation: none; }
 }
 
+/* The level-up float over a hero (`LevelUpFloat.jsx`): the old level flashes a one-art-pixel gold
+   outline, rolls up to the new one in stepped jumps, and fades at the end of its time. `--lvl-u` is
+   one art pixel. ⚠️ The text shadows need `!important` and a class: the global retro outline below
+   sets every text shadow with `!important`, and an animated text shadow would lose to it, so the
+   flash shows and hides a gold copy instead. */
+.gi-lvl-window {
+  height: 1.4em;
+  line-height: 1.4em;
+}
+
+.gi-lvl-num {
+  height: 1.4em;
+  line-height: 1.4em;
+  padding: 0 calc(2 * var(--lvl-u, 2px));
+  text-shadow: var(--text-outline-dark), calc(2 * var(--lvl-u, 2px)) calc(2 * var(--lvl-u, 2px)) 0 #000 !important;
+}
+
+.gi-lvl-gold {
+  text-shadow:
+    calc(-1 * var(--lvl-u, 2px)) 0 0 var(--color-ui-gold),
+    var(--lvl-u, 2px) 0 0 var(--color-ui-gold),
+    0 calc(-1 * var(--lvl-u, 2px)) 0 var(--color-ui-gold),
+    0 var(--lvl-u, 2px) 0 var(--color-ui-gold),
+    calc(-1 * var(--lvl-u, 2px)) calc(-1 * var(--lvl-u, 2px)) 0 var(--color-ui-gold),
+    var(--lvl-u, 2px) calc(-1 * var(--lvl-u, 2px)) 0 var(--color-ui-gold),
+    calc(-1 * var(--lvl-u, 2px)) var(--lvl-u, 2px) 0 var(--color-ui-gold),
+    var(--lvl-u, 2px) var(--lvl-u, 2px) 0 var(--color-ui-gold),
+    calc(2 * var(--lvl-u, 2px)) calc(2 * var(--lvl-u, 2px)) 0 #000 !important;
+}
+
+@keyframes gi-lvl-flash {
+  0%     { visibility: visible; }
+  16.6%  { visibility: hidden; }
+  33.3%  { visibility: visible; }
+  50%    { visibility: hidden; }
+  66.6%  { visibility: visible; }
+  83.3%, 100% { visibility: hidden; }
+}
+
+.gi-lvl-flash {
+  animation-name: gi-lvl-flash;
+  animation-timing-function: steps(1, end);
+  animation-fill-mode: both;
+}
+
+@keyframes gi-lvl-roll {
+  from { transform: translateY(0); }
+  to   { transform: translateY(var(--lvl-roll-y)); }
+}
+
+.gi-lvl-roll {
+  animation-name: gi-lvl-roll;
+  animation-fill-mode: both;
+}
+
+@keyframes gi-lvl-fade {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+.gi-lvl-float {
+  animation-name: gi-lvl-fade;
+  animation-timing-function: steps(3, end);
+  animation-fill-mode: both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gi-lvl-flash { animation: none; visibility: hidden; }
+  .gi-lvl-roll { animation-duration: 1ms !important; animation-delay: 0ms !important; }
+}
+
+/* The hero bar's level-up alerts turning a page: the new page slides a few whole pixels in from
+   the side it came from (older from above, newer from below), in stepped jumps. */
+@keyframes gi-bar-slide-older {
+  from { transform: translateY(-6px); }
+  to   { transform: translateY(0); }
+}
+
+@keyframes gi-bar-slide-newer {
+  from { transform: translateY(6px); }
+  to   { transform: translateY(0); }
+}
+
+.gi-bar-slide-older { animation: gi-bar-slide-older 150ms steps(3, end) both; }
+.gi-bar-slide-newer { animation: gi-bar-slide-newer 150ms steps(3, end) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .gi-bar-slide-older, .gi-bar-slide-newer { animation: none; }
+}
+
+/* The shine on a main-action button: one hard-edged diagonal band steps across the button's face
+   once per hover. ⚠️ The band is a negative-z layer inside the button's own stacking context
+   (`isolation`), so it paints over the button's background but under its text and icons, and
+   `overflow: hidden` keeps it on the face. No blur, no scaling. */
+.ui-shine {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.ui-shine::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(110deg, transparent 0 40%, rgba(255, 255, 255, 0.4) 40% 60%, transparent 60% 100%);
+}
+
+@keyframes ui-shine-sweep {
+  from { opacity: 1; transform: translateX(-100%); }
+  to   { opacity: 1; transform: translateX(100%); }
+}
+
+.ui-shine:hover:not(:disabled)::before {
+  animation: ui-shine-sweep 280ms steps(7, end) 1 both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-shine:hover:not(:disabled)::before { animation: none; }
+}
+
 /* ⚠️ These animations play among the resting Tokens, so they run on the main
    thread. The mat is scaled to fit, so a Token stands at a fractional screen
    position; an animation Chrome runs on the compositor gets a layer of its own,
@@ -558,11 +703,33 @@
    (MatToken does the same for an enemy's boxes and a resting Token's art,
    spawnMotion for the spawn pop, TokenBadges for a -1 on a resting Token.) */
 .gi-token-land,
+.gi-lvl-float,
+.gi-lvl-roll,
 .gi-transform-flash,
 .gi-transform-glow,
 .gi-quest-ready,
 .gi-gear-alert {
   will-change: contents;
+}
+
+/* The work bar along a worked Token's foot (`workBar.js`): a dark track, and its
+   fill as the track's own `::after`, scaled to `--work-bar-fill` (whole art pixels,
+   written on the shared step clock). Grey and still while the Token is blocked. */
+.gi-work-bar {
+  background: rgba(10, 8, 6, 0.72);
+}
+
+.gi-work-bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--color-work-bar);
+  transform-origin: left center;
+  transform: scaleX(var(--work-bar-fill, 0));
+}
+
+.gi-work-bar[data-work-bar-blocked]::after {
+  background: var(--color-work-bar-blocked);
 }
 
 /* A count ring gliding to its new value (owner, 2026-10-01): a Token's charges
@@ -775,6 +942,42 @@
 .text-\[32px\], .text-2xl {
   font-size: var(--font-size-2xl) !important;
 }
+
+/* The kit's text sizes (UI_STYLE "Text sizes"; textSizes.js lists them). Each reads one step of
+   the Text size setting. ⚠️ Font size only: the line height stays the element's own, so moving a
+   panel onto these changes nothing but the size. */
+.ui-text-title {
+  font-size: var(--font-size-sm) !important;
+}
+
+.ui-text-body {
+  font-size: var(--font-size-xs) !important;
+}
+
+.ui-text-small {
+  font-size: var(--font-size-xxs) !important;
+}
+
+.ui-text-display {
+  font-size: var(--font-size-xl) !important;
+}
+
+/* The kit's pixel frames (UI_STYLE "Pixel frames"; PixelFrame.jsx wears them). A 7×7 nine-slice
+   picture at 2×: 3 art-pixel corners make a 6 px band, `fill` paints the panel colour from the
+   picture's centre. The shadow classes are the same shape in solid black, for a layer behind the
+   frame offset 2 art pixels down-right. */
+.ui-frame-studs, .ui-frame-chamfer, .ui-frame-shadow-studs, .ui-frame-shadow-chamfer {
+  border-style: solid;
+  border-width: 6px;
+  border-image-slice: 3 fill;
+  border-image-width: 6px;
+  border-image-repeat: stretch;
+  image-rendering: pixelated;
+}
+.ui-frame-studs { border-image-source: url('/assets/ui/u_frame_studs.png'); }
+.ui-frame-chamfer { border-image-source: url('/assets/ui/u_frame_chamfer.png'); }
+.ui-frame-shadow-studs { border-image-source: url('/assets/ui/u_frame_studs_shadow.png'); transform: translate(4px, 4px); }
+.ui-frame-shadow-chamfer { border-image-source: url('/assets/ui/u_frame_chamfer_shadow.png'); transform: translate(4px, 4px); }
 
 /* All Caps Toggle Rules */
 body[data-allcaps="true"] *:not(input):not(textarea):not(code) {

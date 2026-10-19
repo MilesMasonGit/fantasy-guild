@@ -5,8 +5,9 @@ import { render, cleanup, act } from '@testing-library/react';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
-import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
+import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { HeroBubbleLayer } from '../ui/components/board/HeroBubbleLayer.jsx';
+import { DEPLETED_TTL_MS } from '../ui/components/board/heroSpeech.js';
 import { CalloutLayer } from '../ui/components/board/CalloutLayer.jsx';
 import { columnPlace, STACK_GAP_PX } from '../ui/components/board/speechColumns.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
@@ -55,13 +56,22 @@ const mat = (heroes) => h('div', null, h(CalloutLayer), h(HeroBubbleLayer, { her
 const spawnFrom = (token) => act(() => {
     EventBus.publish(BOARD_EVENTS.TOKEN_SPAWNED, { spawnerId: token.id, instanceId: 'tok_new', typeId: 'x', name: 'Oak Tree' });
 });
+/**
+ * The hero says something: they used a Token up (a moment, up for `DEPLETED_TTL_MS`). A
+ * millisecond passes first, as in play: the layer redraws on the clock it is told.
+ */
+const speak = (heroId) => act(() => {
+    vi.advanceTimersByTime(1);
+    EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { instanceId: 'tok_gone', typeId: 'fixture_producer', exhaustedBy: heroId });
+});
 
 describe('a hero and the Token they work, both speaking', () => {
     it('stack in one column: the callouts sit on top of the hero\'s stack, the standard gap apart', () => {
         const forest = placeAt('fixture_producer', 600, 500);
         // Where a hero stands to work it: beside it, the art radius and the stand gap away.
-        const heroes = [{ heroId: 'h1', state: 'working', x: 504, y: 500, moving: false, tokenId: forest.id, alert: ALERT.CHARGES }];
+        const heroes = [{ heroId: 'h1', state: 'working', x: 504, y: 500, moving: false, tokenId: forest.id }];
         const { container } = render(mat(heroes));
+        speak('h1');
         spawnFrom(forest);
 
         const hero = pointOf(heroStack(container, 'h1'));
@@ -74,19 +84,22 @@ describe('a hero and the Token they work, both speaking', () => {
         expect(callout.x).toBe(hero.x);
     });
 
-    it('a hero who starts speaking under a callout already up lifts it; when they stop, it drops back', () => {
+    it('a hero who starts speaking under a callout already up lifts it; once they stop, callouts sit over the Token again', () => {
         const forest = placeAt('fixture_producer', 600, 500);
-        const quiet = [{ heroId: 'h1', state: 'working', x: 504, y: 500, moving: false, tokenId: forest.id, alert: null }];
-        const { container, rerender } = render(mat(quiet));
+        const heroes = [{ heroId: 'h1', state: 'working', x: 504, y: 500, moving: false, tokenId: forest.id }];
+        const { container } = render(mat(heroes));
         spawnFrom(forest);
         const alone = pointOf(calloutGroup(container));
         expect(alone).toEqual({ x: 600, y: 500 - 64 - 6 });
 
-        rerender(mat([{ ...quiet[0], alert: ALERT.CHARGES }]));
+        speak('h1');
         const hero = pointOf(heroStack(container, 'h1'));
         expect(pointOf(calloutGroup(container))).toEqual({ x: hero.x, y: hero.y - STACK_H - STACK_GAP_PX });
 
-        rerender(mat(quiet));
+        // The moment lapses (the first callout with it); the next callout sits where it did alone.
+        act(() => { vi.advanceTimersByTime(DEPLETED_TTL_MS + 600); });
+        expect(heroStack(container, 'h1')).toBeNull();
+        spawnFrom(forest);
         expect(pointOf(calloutGroup(container))).toEqual(alone);
     });
 });
@@ -97,18 +110,21 @@ describe('everything else is where it was', () => {
         const other = placeAt('fixture_producer', 200, 500);
         // A hero speaking at ANOTHER Token, and one speaking with no Token at all.
         const heroes = [
-            { heroId: 'h1', state: 'working', x: 296, y: 500, moving: false, tokenId: other.id, alert: ALERT.CHARGES },
-            { heroId: 'h2', state: 'idle', x: 900, y: 500, moving: false, tokenId: null, alert: null }
+            { heroId: 'h1', state: 'working', x: 296, y: 500, moving: false, tokenId: other.id },
+            { heroId: 'h2', state: 'idle', x: 900, y: 500, moving: false, tokenId: null }
         ];
         const { container } = render(mat(heroes));
+        speak('h1');
+        speak('h2');
         spawnFrom(forest);
         expect(pointOf(calloutGroup(container))).toEqual({ x: 600, y: 500 - 64 - 6 });
     });
 
     it('a hero speaks where they did, callout or none', () => {
         const forest = placeAt('fixture_producer', 600, 500);
-        const heroes = [{ heroId: 'h1', state: 'working', x: 504, y: 500, moving: false, tokenId: forest.id, alert: ALERT.CHARGES }];
+        const heroes = [{ heroId: 'h1', state: 'working', x: 504, y: 500, moving: false, tokenId: forest.id }];
         const { container } = render(mat(heroes));
+        speak('h1');
         const before = heroStack(container, 'h1').style.transform;
         spawnFrom(forest);
         expect(heroStack(container, 'h1').style.transform).toBe(before);
@@ -116,8 +132,9 @@ describe('everything else is where it was', () => {
 
     it('callouts of one Token still share one group, the same gap apart, newest on top', () => {
         const forest = placeAt('fixture_producer', 600, 500);
-        const heroes = [{ heroId: 'h1', state: 'working', x: 504, y: 500, moving: false, tokenId: forest.id, alert: ALERT.CHARGES }];
+        const heroes = [{ heroId: 'h1', state: 'working', x: 504, y: 500, moving: false, tokenId: forest.id }];
         const { container } = render(mat(heroes));
+        speak('h1');
         spawnFrom(forest);
         act(() => { EventBus.publish(BOARD_EVENTS.EFFECT_FIRED, { instanceId: forest.id, title: 'Bountiful' }); });
         const callouts = [...container.querySelectorAll('[data-callout]')];
