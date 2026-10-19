@@ -37,9 +37,8 @@ import { useDrawn, isDrawn } from '../../dev/perf/drawSwitches.js';
  * (`get`, `subscribe`). One per mat.
  * ⚠️ Never hand a picture to a component as a prop: it holds the ground's plan, arrays of hundreds
  * of thousands of entries, and React's development build lists every entry of a changed prop in
- * its performance-timeline record of the render. The dev game froze for about 2.5 s on every new
- * picture (a travel, a resize, a Ground tuner slider) until the picture went this way
- * (`GroundPictureDevCost.test.js`).
+ * its performance-timeline record of the render: seconds frozen in the dev game on every new plan
+ * (a travel, a load, a Ground tuner slider). `GroundPictureDevCost.test.js` guards it.
  */
 export function createGroundPictures() {
     let picture = null;

@@ -38,12 +38,12 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 }));
 
 /**
- * ⭐ A new picture of the ground (a travel, a resize, a Ground tuner slider) reaches the ambient
- * life without React's development build listing it. The picture holds the ground's plan, whose
- * arrays run to hundreds of thousands of entries; handed on as a prop, React's development build
- * listed every entry of them in its performance-timeline record of the render (old and new), and
- * the dev game froze for about 2.5 s on every new picture (owner, 2026-10-18: "quite a bit of lag").
- * The production build never lists props.
+ * ⭐ A new picture of the ground (a travel, a load, a Ground tuner slider) reaches the ambient life
+ * without React's development build listing it. The picture holds the ground's plan, whose arrays
+ * run to hundreds of thousands of entries; handed on as a prop, React's development build lists
+ * every entry of them in its performance-timeline record of the render, old and new, and the dev
+ * game freezes for seconds on every new plan (3 s in Chrome, 6 s in Firefox). The production build
+ * never lists props.
  */
 
 const h = React.createElement;
