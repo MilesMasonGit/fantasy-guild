@@ -1,6 +1,6 @@
 # NOW — start here
 
-*Updated 2026-10-17. One screen: what is next and where the project stands.
+*Updated 2026-10-19. One screen: what is next and where the project stands.
 The state a fresh director resumes from is [HANDOFF.md](HANDOFF.md); the
 wave's living table and the morning/evening summaries are
 [STATUS.md](STATUS.md); finished work lives in git, the changelog and
@@ -12,10 +12,11 @@ wave's living table and the morning/evening summaries are
    100, 140, 110 and 120 and everyone-fights merged 2026-10-18; next 170 quest
    boards, 130 recipe list; timing and draw benches owed in a quiet window.
 
-1. **The art pass continues** ([HANDOFF.md](HANDOFF.md)): the owner's look at
-   the ground structure (brief 180 G1, on `crunch/ground-g1`), then the Studio
-   palette button and a Sync on `main`, then G2 (the owner's edge pieces).
-   Terrain advice: https://claude.ai/artifact/PLTLkP5bqjLqtTc8YYJSpg
+1. **Terrain and the mat's look** ([HANDOFF.md](HANDOFF.md)): generated ground,
+   water, placement, blended borders and the playmat style (Clean ground at 2x,
+   ambient life) all merged 2026-10-19. Next: each cell's biome stored, a river
+   along biome borders as real water, on-map scenery (design round first), the
+   bench baseline retake in a quiet 01:00 window.
 2. **Owner CMS to-do** (none urgent; `main` checked out, then Sync): the
    seedling sprite registration, re-accept the Starter Camp (Oak Seedling),
    map trade ratios, "Stands on" on real Tokens once a Dock or Sailboat
@@ -29,8 +30,8 @@ wave's living table and the morning/evening summaries are
 - **Version** 0.8.x on `main`.
 - **Crunch order:** UI rework ✓ → class rework v2 ✓ (engine) → hero bar and
   panel ✓ → offline progress ✓ → drag ✓ → deep optimization ✓ (cap128 at 4×
-  from 35 % to ~76 % of frames in budget) → Atlas ✓ → terrain ✓ (T0–T4) → art pass (brief 85: names ✓, Gentle bake ✓, ground
-  structure in progress) → wave 3 (briefs 100–170) →
+  from 35 % to ~76 % of frames in budget) → Atlas ✓ → terrain ✓ (T0–T4) → art pass (brief 85: names ✓, Gentle bake ✓, generated
+  ground, water, placement and playmat style ✓, briefs 180 and 190) → wave 3 (briefs 100–170) →
   Performance Envelope ([briefs](briefs/README.md)).
 - **Tests:** all green (~5010 on `main`; the file-scan tests time out only under load
   and pass alone). Anything red is new.
