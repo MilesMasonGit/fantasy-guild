@@ -262,6 +262,35 @@ function fillRow(ctx, r) {
 }
 
 /**
+ * A fade's middle steps (`TerrainBlend`): each pixel there takes some of the other ground's colour,
+ * row by row along the plan's span of them only.
+ */
+function tintFade(blend, data, grid, planCol, planRow, plan, from, to) {
+    const { tint, spans, amount, tones } = blend;
+    const keep = 1 - amount;
+    const mixed = tones.map(c => (c ? c.map(v => v * amount) : null));
+    const { cols, rows, unit } = grid;
+    for (let r = 0; r < rows; r++) {
+        const pr = planRow[r];
+        const py = pr / plan.width;
+        const lo = spans[2 * py];
+        if (lo < 0) continue;
+        const hi = spans[2 * py + 1];
+        for (let c = Math.max(from[r], Math.floor((lo * plan.unit) / unit) - 1); c < to[r]; c++) {
+            const pc = planCol[c];
+            if (pc > hi) break;
+            const v = pc < lo ? 0 : tint[pr + pc];
+            const m = v ? mixed[v - 1] : null;
+            if (!m) continue;
+            const d = (r * cols + c) * 4;
+            data[d] = data[d] * keep + m[0];
+            data[d + 1] = data[d + 1] * keep + m[1];
+            data[d + 2] = data[d + 2] * keep + m[2];
+        }
+    }
+}
+
+/**
  * The screen pass.
  *
  * @param {object} plan  `buildGroundPlan`'s result
@@ -348,6 +377,7 @@ export function buildScreenPass(plan, { mat, unit, sheet, prop = () => null, out
         grass: grassOf(plan, grid, planCol, planRow), shadeAt: plan.shadeAt || null
     };
     for (let r = 0; r < rows; r++) fillRow(fill, r);
+    if (plan.blend) tintFade(plan.blend, data, grid, planCol, planRow, plan, from, to);
 
     // ⚠️ Most of the picture lies where the inset shadow has faded below half a byte: there a pixel
     // is one 32-bit copy from the table of looks, the same bytes shading would leave. Only a band

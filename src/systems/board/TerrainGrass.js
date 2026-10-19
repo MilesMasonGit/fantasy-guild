@@ -196,7 +196,7 @@ export function grassNoise(px, py, seed, cell, channel) {
  * at `px` of that row is `top[px] + (bottom[px] - top[px]) * fy`, the reference's arithmetic in
  * its order. `at(px, py)` reads any pixel, for the calibration.
  */
-function noiseWalker(width, height, seed, cellX, cellY, channel) {
+export function noiseWalker(width, height, seed, cellX, cellY, channel) {
     const salt = saltOf(seed, channel);
     const gw = Math.floor((width - 1) / cellX) + 2;
     const gh = Math.floor((height - 1) / cellY) + 2;

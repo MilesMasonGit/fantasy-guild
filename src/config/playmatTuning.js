@@ -48,6 +48,28 @@ export const TUNABLES = Object.freeze([
         min: 0, max: 0.16, step: 0.005, def: 0.070
     },
     {
+        key: 'blendOn',
+        group: 'Biome borders',
+        label: 'Blended borders',
+        hint: 'Where two biomes’ ground meet, blend them in one of the owner’s styles: a mixed band, islands, fingers, a lawn between, or a fade. Off draws the plain border the cells give.',
+        toggle: true,
+        min: 0, max: 1, step: 1, def: 1
+    },
+    {
+        key: 'blendWidth',
+        group: 'Biome borders',
+        label: 'Blend width (u)',
+        hint: 'How wide the band across a border is, in mat units (a Token is 128). Islands and fingers reach half as far again.',
+        min: 16, max: 256, step: 8, def: 160
+    },
+    {
+        key: 'blendStyle',
+        group: 'Biome borders',
+        label: 'Blend style',
+        hint: '0 lets each Region pick by its seed. 1 mixed band, 2 islands, 3 fingers, 4 a lawn between (a wood beside rock or sand only), 5 fade.',
+        min: 0, max: 5, step: 1, def: 0
+    },
+    {
         key: 'beachWidth',
         group: 'Shorelines',
         label: 'Beach width (u)',

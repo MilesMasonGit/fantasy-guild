@@ -19,6 +19,12 @@ import { STYLE, STYLE_TERRAIN } from '../../systems/atlas/WaterShapes.js';
  * art is not CMS content.
  */
 
+/**
+ * The ground a transition blend lays between two biomes (`TerrainBlend`): a drawing id only, like
+ * the water's `STYLE_TERRAIN`. Nothing stores it, and the cells keep their own terrain.
+ */
+export const LAWN_TERRAIN = 'grass:lawn';
+
 /** A ground sheet's side in pixels: each is one seamless fill. */
 export const SHEET_PX = 64;
 
@@ -303,6 +309,20 @@ export const LOOKS = deepFreeze({
         },
         props: [{ sheet: 'p_rock', weight: 1 }],
         propDensity: 0.04
+    },
+    lawn: {
+        id: 'lawn', name: 'Lawn', terrain: TERRAIN.GRASS, sheets: ['grass'],
+        // `world3.py` B: the meadow's lawn with no earth, the strip a transition blend lays between
+        // a wood and the rock or sand beside it (`TerrainBlend`). Drawn only, at `LAWN_TERRAIN`.
+        generated: {
+            grass: [0.26, 0.44, 0.60], earth: null, earthShare: 0, tint: 0.06,
+            zones: { cell: 55 },
+            kinds: [
+                { id: 'lawn', blades: 0.02975, cluster: 4, heights: [2, 2, 3], tips: 0.15, shadow: 0.5, mounds: 16, strokes: null, tone: 3 }
+            ]
+        },
+        props: [{ sheet: 'p_flowers', weight: 1 }],
+        propDensity: 0.03
     }
 });
 
@@ -313,7 +333,8 @@ export const DEFAULT_LOOK = Object.freeze({
     [TERRAIN.SAND]: 'coast',
     [TERRAIN.WATER]: 'sea',
     [STYLE_TERRAIN[STYLE.LAKE]]: 'lake',
-    [STYLE_TERRAIN[STYLE.SULPHUR]]: 'sulphur'
+    [STYLE_TERRAIN[STYLE.SULPHUR]]: 'sulphur',
+    [LAWN_TERRAIN]: 'lawn'
 });
 
 /** A look by id, or null. */

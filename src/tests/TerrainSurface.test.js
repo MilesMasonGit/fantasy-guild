@@ -42,7 +42,9 @@ describe('Every pixel gets a sheet', () => {
 
     it('⭐ draws each look with its own sheet (TD-2 A)', () => {
         // Meadow grass is `g_grass`, forest ground `g_grass_dark`, rock `g_stone`, the beach
-        // `g_sand`, the sea `g_water`.
+        // `g_sand`, the sea `g_water`; a blend's lawn between the wood and the rock and sand the
+        // meadow's `g_grass`.
+        setTuning('blendStyle', 4);
         const byTerrain = (plan) => {
             const out = {};
             for (let i = 0; i < plan.sheetAt.length; i++) {
@@ -53,7 +55,7 @@ describe('Every pixel gets a sheet', () => {
             return Object.fromEntries(Object.entries(out).map(([t, s]) => [t, [...s]]));
         };
         expect(byTerrain(buildGroundPlan(hybrid()))).toEqual({
-            water: ['water'], sand: ['sand'], grass: ['grass_dark'], rock: ['stone']
+            water: ['water'], sand: ['sand'], grass: ['grass_dark'], rock: ['stone'], 'grass:lawn': ['grass']
         });
         expect(byTerrain(buildGroundPlan(meadow()))).toEqual({ grass: ['grass'] });
     });

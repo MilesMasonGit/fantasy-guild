@@ -6,7 +6,8 @@ import { buildWearMask } from './TerrainPatches.js';
 import { propsForGround } from './TerrainProps.js';
 import { buildShadePattern, buildWearEdges, composeShades } from './TerrainShade.js';
 import { buildGrassPlan, drawsGenerated, shadeRatio } from './TerrainGrass.js';
-import { getLook, LOOKS } from '../../config/registries/terrainRegistry.js';
+import { blendBorders, groundTone, FADE_TINT } from './TerrainBlend.js';
+import { getLook, LOOKS, DEFAULT_LOOK } from '../../config/registries/terrainRegistry.js';
 import { hallSpot, HALL_CLEARING } from '../atlas/Layout.js';
 import { tuning } from '../../config/playmatTuning.js';
 
@@ -44,7 +45,9 @@ export function sheetFor(look, seed) {
  *   bands: Array<{terrainId: string, look: string, mask: Uint8Array, pixels: number[], appearance: object|null}>,
  *   sheets: string[], sheetAt: Uint8Array, tints: Array<{tint: string, amount: number}>, tintAt: Int8Array,
  *   shades: number[], shadeAt: Uint8Array, pattern: object, edges: {rim: number[], fringe: number[]},
- *   props: object[], grass: object|null
+ *   props: object[], grass: object|null,
+ *   blend: {tint: Uint8Array, spans: Int32Array, amount: number, tones: Array<number[]|null>}|null,
+ *   blendPairs: Array<{soft: string, hard: string, style: string}>
  * }}
  *   Per pixel, row by row: `terrainAt` indexes `palette` (and `looks`, the look of each);
  *   `wearAt` 1 where the look's wear shows; each band's `mask` 1 inside it. The drawing answer:
@@ -53,12 +56,15 @@ export function sheetFor(look, seed) {
  *   say what each is made of, for a generated look's own share of the pattern. `pattern` and
  *   `edges` are the shade's parts (`TerrainShade`). `props` back to front (`TerrainProps`), each with the `shade` of the
  *   pattern under its foot. `grass` the shapes of the looks drawn by rules (`TerrainGrass`), null
- *   when none is: their sheet stays in `sheetAt` beneath, without wear. Pixels are `unit` mat units.
+ *   when none is: their sheet stays in `sheetAt` beneath, without wear. `blend` a fade's tint:
+ *   `tint[i]` one more than the palette entry whose `tones` colour pixel `i` takes `amount` of
+ *   (`spans` each row's first and last), null for none; `blendPairs` the style each pair of looks
+ *   meeting here took (`TerrainBlend`). Pixels are `unit` mat units.
  */
 export function buildGroundPlan(ground) {
-    const pixels = resolveArtPixels(ground);
+    const pixels = resolveArtPixels(ground, true, blendBorders);
     const { width, height, palette, at } = pixels;
-    const looks = palette.map(t => (getLook(ground.looks[t]) ? ground.looks[t] : LOOKS.meadow.id));
+    const looks = palette.map(t => (getLook(ground.looks[t]) ? ground.looks[t] : DEFAULT_LOOK[t] || LOOKS.meadow.id));
     // The generated sea measures furthest from the shore: first, so the bands reuse its walk.
     const hall = hallSpot(ground.mat);
     const grass = buildGrassPlan(pixels, ground.seed, looks, {
@@ -108,13 +114,18 @@ export function buildGroundPlan(ground) {
         else p.shade = levels[pattern.levelAt[p.footY * width + p.footX] + 1];
     }
 
+    // A fade's middle steps take some of the other ground's colour, mixed in on the screen.
+    const blend = pixels.blend?.tint
+        ? { tint: pixels.blend.tint, spans: pixels.blend.spans, amount: FADE_TINT, tones: looks.map(groundTone) }
+        : null;
+
     return {
         width, height, unit: PLAN_PIXEL_U, seed: ground.seed,
         palette, looks, terrainAt: at,
         wearAt: wear.mask, wear, bands,
         sheets, sheetAt, tints, tintAt,
         shades, shadeAt, shadeParts: parts, patternStep: step, lips, pattern, edges,
-        props, grass
+        props, grass, blend, blendPairs: pixels.blend?.pairs || []
     };
 }
 
