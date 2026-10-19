@@ -32,6 +32,34 @@ import { useDrawn, isDrawn } from '../../dev/perf/drawSwitches.js';
  * writes the game, and rolls its own dice (`ambientRandom`).
  */
 
+/**
+ * The ground's pictures as `TerrainCanvas` hands them on (`set`), for the ambient life to read
+ * (`get`, `subscribe`). One per mat.
+ * ⚠️ Never hand a picture to a component as a prop: it holds the ground's plan, arrays of hundreds
+ * of thousands of entries, and React's development build lists every entry of a changed prop in
+ * its performance-timeline record of the render. The dev game froze for about 2.5 s on every new
+ * picture (a travel, a resize, a Ground tuner slider) until the picture went this way
+ * (`GroundPictureDevCost.test.js`).
+ */
+export function createGroundPictures() {
+    let picture = null;
+    const listeners = new Set();
+    return {
+        set(next) {
+            if (next === picture) return;
+            picture = next;
+            for (const fn of [...listeners]) fn();
+        },
+        get: () => picture,
+        subscribe(fn) {
+            listeners.add(fn);
+            return () => listeners.delete(fn);
+        }
+    };
+}
+
+const NO_PICTURES = Object.freeze({ get: () => null, subscribe: () => () => {} });
+
 /** Whether the player asked the system for less motion; follows the setting live. */
 const REDUCED = '(prefers-reduced-motion: reduce)';
 function subscribeReduced(fn) {
@@ -168,11 +196,14 @@ function createSkyView(root) {
 const nextFrameAt = (now) => (Math.floor(now / FRAME_MS) + 1) * FRAME_MS;
 
 /**
- * @param {{picture: object|null, tokens: object[], workedBy: Map<string, string>,
- *   carriedId: string|null}} props  `picture` the ground's last (`TerrainCanvas`'s `onPicture`);
- *   the Tokens as `MatBoard` lists them, who works which, and the one in the hand
+ * @param {{pictures: object|null, tokens: object[], workedBy: Map<string, string>,
+ *   carriedId: string|null}} props  `pictures` the ground's pictures ({@link createGroundPictures},
+ *   null while the mat draws no ground); the Tokens as `MatBoard` lists them, who works which, and
+ *   the one in the hand
  */
-export const AmbientLife = React.memo(function AmbientLife({ picture, tokens, workedBy, carriedId = null }) {
+export const AmbientLife = React.memo(function AmbientLife({ pictures = null, tokens, workedBy, carriedId = null }) {
+    const source = pictures || NO_PICTURES;
+    const picture = useSyncExternalStore(source.subscribe, source.get, source.get);
     const reduced = usePrefersReducedMotion();
     const on = useSwitches();
     const life = picture?.life || null;

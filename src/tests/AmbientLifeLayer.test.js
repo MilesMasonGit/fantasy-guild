@@ -20,7 +20,7 @@ vi.mock('../ui/components/board/frameClock.js', async (original) => ({
     }
 }));
 
-const { AmbientLife } = await import('../ui/components/board/AmbientLife.jsx');
+const { AmbientLife, createGroundPictures } = await import('../ui/components/board/AmbientLife.jsx');
 
 /**
  * ⭐ The ambient life's layers on the mat: a canvas per ground effect under every Token, the sky's
@@ -64,7 +64,14 @@ function picture() {
     return { plan, mat: ground.mat, cols: pass.cols, rows: pass.rows, unit: pass.unit, pixel: 2, fit: 1, life: groundLife(pass, plan) };
 }
 
-const mount = (props = {}) => render(h('div', null, h(AmbientLife, { picture: picture(), tokens: [], workedBy: new Map(), carriedId: null, ...props })));
+/** The ground's pictures with one in, as `MatBoard` hands them on. */
+function picturesWith(p) {
+    const pictures = createGroundPictures();
+    pictures.set(p);
+    return pictures;
+}
+
+const mount = (props = {}) => render(h('div', null, h(AmbientLife, { pictures: picturesWith(picture()), tokens: [], workedBy: new Map(), carriedId: null, ...props })));
 const step = (n = 1) => act(() => {
     for (let k = 0; k < n; k++) for (const fn of [...clock.steps]) fn(performance.now());
 });
@@ -151,7 +158,17 @@ describe('⭐ the ambient life on the mat', () => {
     });
 
     it('draws nothing without a picture of the ground', () => {
-        const { container } = mount({ picture: null });
-        expect(container.firstChild.innerHTML).toBe('');
+        expect(mount({ pictures: null }).container.firstChild.innerHTML).toBe('');
+        cleanup();
+        expect(mount({ pictures: createGroundPictures() }).container.firstChild.innerHTML).toBe('');
+    });
+
+    it('starts on the ground\'s next picture as it is handed on', () => {
+        const pictures = createGroundPictures();
+        const { container } = mount({ pictures });
+        expect(container.querySelector('canvas[data-ambient="water"]')).toBeNull();
+        act(() => { pictures.set(picture()); });
+        expect(container.querySelector('canvas[data-ambient="water"]')).not.toBeNull();
+        expect(clock.steps).toHaveLength(1);
     });
 });
