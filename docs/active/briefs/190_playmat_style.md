@@ -50,7 +50,7 @@ before and after; engine work check same; `bench:draw --compare`; eye-check.
 Built on top of the G7 placement and G6 blends work (the owner's eye-checks of
 those come first).
 
-## P2 — Shadows (builder; eye-check; after brief 110 and 120 merge)
+## P2 — Shadows (dropped by the owner after the eye-check, 2026-10-18: back to no shadow at rest and the basic hard shadow while dragging)
 
 The game's hard shadow (`src/config/spriteFx.js`: a black silhouette 2 art
 pixels down-right, today only on lifted Tokens and floating loot) **under every
