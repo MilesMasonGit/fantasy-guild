@@ -247,3 +247,111 @@ JOBS2 = [('meadow', ('wind2',), 'v8_wind'), ('meadow', ('clouds2',), 'v8_clouds'
          ('meadow', ('wind2', 'water', 'clouds2', 'birds2', 'butterflies'), 'v8_all')]
 for b, fx, name in JOBS2:
     if name in only: run2(b, fx, name)
+
+
+# Round V9 (owner, after V8): slow, lazy, subtle. One slow gust now and then; the small 3-pixel birds (the former
+# butterflies) fly in, sit a while on an idle Token and leave; smaller, blockier clouds drifting slowly; calmer water.
+# One 20-second loop of a corner of the meadow, so the quiet stretches show.
+N9 = 160
+_s5 = open(os.path.join(HERE, 'style5.py')).read()
+exec(_s5[_s5.index('def blobs(mask):'):_s5.index('def scatter(')])
+CROP = (380, 0, 880, 330)
+
+
+def gust9(prep, t):
+    """One gust per loop, crossing the corner slowly (frames 30-90); the grass still the rest of the time."""
+    small, body, pieces = prep; out = small.copy(); op = out.load(); sp, bp = small.load(), body.load()
+    if 30 <= t <= 90:
+        front = 180 + (t - 30) / 60 * 300           # ground-grid x of the gust's front, moving west to east
+        moved = [(x, y) for x, y in pieces if 0 < front - x - (wn(x * 2, y * 2) - 0.5) * 30 < 26]
+        for x, y in moved: op[x, y] = bp[x, y]
+        for x, y in moved: op[x + 1, y] = sp[x, y]
+    return out.resize((out.width * 2, out.height * 2), Image.NEAREST).crop((0, 0, W, H))
+
+
+def shimmer9(g, water, t):
+    ph = t / N9 * TAU
+    f = field(lambda x, y: 255 if math.sin(x * 0.03 + y * 0.05 + ph * 2 + wn(x, y) * 5) > 0.82 else 0)
+    out = Image.composite(brighten(g, 1.05), g, ImageChops.multiply(f, water))
+    r = random.Random(500 + t // 4); wpx = water.load(); op = out.load()
+    for _ in range(40):
+        x, y = r.randrange(0, W - 2) // 2 * 2, r.randrange(0, H - 2) // 2 * 2
+        if wpx[x, y] and wpx[x + 1, y + 1]:
+            for yy in (y, y + 1):
+                for xx in (x, x + 1): op[xx, yy] = (225, 245, 250)
+    return out
+
+
+cl9 = vnoise(34, random.Random(14))
+
+
+def clouds9(img, t):
+    """Small blocky clouds of 12-pixel blocks, one shade step and a rim, drifting one ground pixel every two frames."""
+    dx = (t // 2) * 2; B = 12
+    cells = Image.new('L', (W // B + 2, H // B + 2)); cp = cells.load()
+    for y in range(cells.height):
+        for x in range(cells.width):
+            v = cl9((x * B - dx) % (W * 4), y * B)
+            cp[x, y] = 255 if v > 0.80 else 128 if v > 0.76 else 0
+    big = cells.resize((cells.width * B, cells.height * B), Image.NEAREST)
+    big = big.transform(big.size, Image.AFFINE, (1, 0, -(dx % B), 0, 1, 0)).crop((0, 0, W, H))
+    out = Image.composite(brighten(img, 0.92), img, big.point(lambda v: 255 if v >= 128 else 0))
+    return Image.composite(brighten(img, 0.85), out, big.point(lambda v: 255 if v == 255 else 0))
+
+
+FLY = [['X.X', '.B.'], ['.X.', 'XBX']]
+SIT = ['.X.', 'XBX']
+LOOK = ['X..', 'XBX']
+
+
+def perches(mask):
+    """Tree tops in the corner: the highest pixels of each big Token blob, where a bird can sit."""
+    out = []
+    for pts in blobs(mask):
+        xs = [p[0] for p in pts]; cx = sum(xs) / len(xs)
+        if not (CROP[0] + 30 < cx < CROP[2] - 30) or max(p[1] for p in pts) > CROP[3]: continue
+        top = min(p[1] for p in pts); row = [p[0] for p in pts if p[1] <= top + 2]
+        if top < 12: continue                           # the capture's top edge line, not a Token
+        out.append((sum(row) / len(row), top + 1))
+    return out
+
+
+def birds9(img, t, spots):
+    out = img.copy(); col = (66, 44, 34)
+    plan = [  # start, arrive, leave, gone, perch, offset, where from, where to
+        (8, 70, 112, 156, 0, -4, (CROP[0] - 20, 40), (CROP[2] + 20, 10)),
+        (20, 80, 120, 158, 0, 5, (CROP[0] - 20, 120), (CROP[2] + 20, 60)),
+        (60, 104, 136, 159, 1, 0, (CROP[2] + 20, 200), (CROP[0] - 20, 150)),
+    ]
+    for i, (s, a, l, g, pi, off, src, dst) in enumerate(plan):
+        if not spots or t < s or t > g: continue
+        px, py = spots[pi % len(spots)]; px += off; py -= 4
+        if t < a:
+            u = (t - s) / (a - s); u = u * u * (3 - 2 * u)
+            x = src[0] + (px - src[0]) * u; y = src[1] + (py - src[1]) * u - math.sin(u * math.pi) * 30
+            shape = FLY[(t // 2) % 2]
+        elif t < l:
+            x, y = px, py; shape = LOOK if (t // 9 + i) % 5 == 0 else SIT
+        else:
+            u = (t - l) / (g - l); u = u * u
+            x = px + (dst[0] - px) * u; y = py + (dst[1] - py) * u - math.sin(u * math.pi) * 25
+            shape = FLY[(t // 2) % 2]
+        stamp(out, shape, x - 3, y, col, 2)
+        stamp(out, [row.replace('X', '.').replace('B', 'X') for row in shape], x - 3, y, (236, 222, 196), 2)
+    return out
+
+
+def run9(b, name):
+    g, full, mask, water, grass, lava = setup(b)
+    prep = grass_pieces(g, grass); spots = perches(mask)
+    frames = []
+    for t in range(N9):
+        gg = shimmer9(gust9(prep, t), water, t)
+        img = clouds9(rim(shadowed(gg, full, mask)), t)
+        img = birds9(img, t, spots)
+        frames.append(img.crop(CROP))
+    frames[0].save(os.path.join(OUT7, name + '.webp'), save_all=True, append_images=frames[1:], duration=125, loop=0, quality=88, method=4)
+    print(name, 'perches', [(int(x), int(y)) for x, y in spots])
+
+
+if 'v9_meadow' in only: run9('meadow', 'v9_meadow')
