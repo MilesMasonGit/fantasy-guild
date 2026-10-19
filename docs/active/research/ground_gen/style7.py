@@ -169,3 +169,81 @@ JOBS = [('meadow', (), 'meadow_still'), ('meadow', ('wind',), 'meadow_wind'), ('
 only = sys.argv[1:]
 for b, fx, name in JOBS:
     if not only or name in only: run(b, fx, name)
+
+
+# Round V8 (owner, after V7): water shimmer, leaves, petals, embers and butterflies kept; the flock replaced by small
+# birds drawn like the butterflies, flying slowly; cloud shadows as blocky pixel clouds; wind moving only the drawn
+# grass pieces (blades, tufts), not brightening the grass.
+def grass_pieces(g, grass):
+    """The drawn grass pieces on the ground's 2x grid: pixels that stand out from the grass body round them."""
+    small = g.resize((W // 2, H // 2), Image.NEAREST); body = small.filter(ImageFilter.MedianFilter(5))
+    gm = grass.resize((W // 2, H // 2), Image.NEAREST)
+    sp, bp, mp_ = small.load(), body.load(), gm.load(); pieces = []
+    for y in range(small.height):
+        for x in range(small.width - 1):
+            if mp_[x, y] and sum(abs(a - b) for a, b in zip(sp[x, y], bp[x, y])) > 34: pieces.append((x, y))
+    return small, body, pieces
+
+
+def wind2(prep, t):
+    """A gust band runs west to east; grass pieces inside it lean one ground pixel downwind, then spring back."""
+    small, body, pieces = prep; out = small.copy(); op = out.load(); sp, bp = small.load(), body.load()
+    ph = t / N * TAU
+    for x, y in pieces:
+        if math.sin(x * 0.09 - y * 0.02 - ph * 3 + wn(x * 2, y * 2) * 3) > 0.55:
+            op[x, y] = bp[x, y]
+    for x, y in pieces:
+        if math.sin(x * 0.09 - y * 0.02 - ph * 3 + wn(x * 2, y * 2) * 3) > 0.55:
+            op[x + 1, y] = sp[x, y]
+    return out.resize((out.width * 2, out.height * 2), Image.NEAREST).crop((0, 0, W, H))
+
+
+def clouds2(img, t):
+    """Blocky clouds: puffs built of 8-pixel blocks with a stepped rim, drifting east one ground pixel at a time."""
+    dx = int(t / N * W) // 2 * 2; B = 8
+    cells = Image.new('L', (W // B + 2, H // B + 2)); cp = cells.load()
+    for y in range(cells.height):
+        for x in range(cells.width):
+            v = cl(((x * B - dx) % W), y * B)
+            cp[x, y] = 255 if v > 0.71 else 128 if v > 0.66 else 0
+    big = cells.resize((cells.width * B, cells.height * B), Image.NEAREST).crop((0, 0, W, H))
+    out = Image.composite(brighten(img, 0.90), img, big.point(lambda v: 255 if v >= 128 else 0))
+    return Image.composite(brighten(img, 0.82), out, big.point(lambda v: 255 if v == 255 else 0))
+
+
+BIRD_A = ['X...X', '.XXX.']
+BIRD_B = ['.....', 'XXXXX']
+
+
+def birds2(img, t):
+    """Small birds like the butterflies: a dark body, flapping, flying slowly in wide loops."""
+    out = img.copy(); r = random.Random(21)
+    for i in range(4):
+        cx, cy = r.uniform(150, W - 150), r.uniform(110, H - 110); rx, ry = r.uniform(90, 160), r.uniform(50, 90)
+        a = t / N * TAU * (1 if i % 2 else -1) + i * 1.7
+        x = cx + math.cos(a) * rx; y = cy + math.sin(a) * ry
+        shape = BIRD_A if (t // 2 + i) % 2 else BIRD_B
+        stamp(out, shape, x, y, (52, 44, 40), 2)
+    return out
+
+
+def run2(b, effects, name):
+    g, full, mask, water, grass, lava = setup(b)
+    prep = grass_pieces(g, grass) if 'wind2' in effects else None
+    frames = []
+    for t in range(N):
+        gg = g
+        if 'wind2' in effects: gg = wind2(prep, t)
+        if 'water' in effects: gg = shimmer(gg, water, t)
+        img = rim(shadowed(gg, full, mask))
+        if 'clouds2' in effects: img = clouds2(img, t)
+        if 'butterflies' in effects: img = butterflies(img, t)
+        if 'birds2' in effects: img = birds2(img, t)
+        frames.append(img)
+    save(frames, name)
+
+
+JOBS2 = [('meadow', ('wind2',), 'v8_wind'), ('meadow', ('clouds2',), 'v8_clouds'), ('meadow', ('birds2',), 'v8_birds'),
+         ('meadow', ('wind2', 'water', 'clouds2', 'birds2', 'butterflies'), 'v8_all')]
+for b, fx, name in JOBS2:
+    if name in only: run2(b, fx, name)
