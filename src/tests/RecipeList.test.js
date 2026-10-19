@@ -95,6 +95,15 @@ describe('recipeListFor', () => {
         expect(kinds(entries)).toContain('[a+b]');
     });
 
+    it('dividers with no row between them are one line, faces lowest level first', () => {
+        const { entries } = recipeListFor(STATION(), { heroes: [hero('top', 60), hero('mid', 45), hero('low', 2)] });
+        expect(kinds(entries)).toEqual(['r_broth', '[low]', 'r_pie', 'r_roast', 'r_banquet', 'r_feast', '[mid]', 'r_grand', '[top]']);
+        const searched = recipeListFor(STATION(), { heroes: [hero('top', 60), hero('mid', 45), hero('low', 2)], query: 'carrot' });
+        expect(kinds(searched.entries)).toEqual(['r_broth', '[low]', 'r_roast', '[mid]', 'r_grand', '[top]']);
+        const stacked = recipeListFor(STATION(), { heroes: [hero('a', 3), hero('b', 5)], query: 'blueberry' });
+        expect(kinds(stacked.entries)).toEqual(['[a+b]']);
+    });
+
     it('shows only the next two locked recipes, and none past the whole list', () => {
         const { entries } = recipeListFor(STATION(), { heroes: [hero('a', 2)] });
         const locked = entries.filter(e => e.kind === ENTRY.LOCKED).map(e => e.level);

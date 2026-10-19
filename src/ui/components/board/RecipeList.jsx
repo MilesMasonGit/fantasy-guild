@@ -190,7 +190,7 @@ export const RecipeList = ({ def, instanceId = null, selectedRecipeId = null, wo
         const r = row.getBoundingClientRect();
         const s = scroller.getBoundingClientRect();
         scroller.scrollTop += (r.top + r.height / 2) - (s.top + s.height / 2);
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    }, []);
 
     // Escape goes back to the card, one layer at a time, before the card's own Escape closes it.
     useEffect(() => {

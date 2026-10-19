@@ -86,7 +86,8 @@ export function matchesSearch(recipe, query, names = defaultNames) {
  * last row each permitted hero can run, carrying every permitted hero at that point (a hero who
  * can run none of the rows gets no face); then up to {@link SPOILER_COUNT} `locked` silhouettes
  * for the next levels past the whole roster. With a search, rows that do not match drop out,
- * silhouettes always drop out, and the dividers stay.
+ * silhouettes always drop out, and the dividers stay. Dividers with no row between them are one
+ * line: two lines in a row would say nothing the faces on one line don't.
  *
  * @param {object} def        the station or Foundation type
  * @param {{ workerId?: string|null, heroes?: object[], query?: string, names?: object }} [opts]
@@ -122,9 +123,20 @@ export function recipeListFor(def, { workerId = null, heroes = [], query = '', n
         }
     }
     while (pending.length) entries.push(divider(pending.pop()));
+    mergeAdjacentDividers(entries);
     if (!searching) {
         for (const row of locked) entries.push({ kind: ENTRY.LOCKED, level: row.level, key: row.recipe.id, recipe: row.recipe });
     }
 
     return { skill, guildLevel, entries };
+}
+
+/** Folds each run of dividers with no row between into the first of them, in place. */
+function mergeAdjacentDividers(entries) {
+    for (let i = entries.length - 1; i > 0; i--) {
+        if (entries[i].kind === ENTRY.HEROES && entries[i - 1].kind === ENTRY.HEROES) {
+            entries[i - 1] = { ...entries[i - 1], heroes: [...entries[i - 1].heroes, ...entries[i].heroes] };
+            entries.splice(i, 1);
+        }
+    }
 }

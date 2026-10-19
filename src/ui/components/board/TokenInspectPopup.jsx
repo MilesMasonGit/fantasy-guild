@@ -35,6 +35,11 @@ export const TokenInspectPopup = ({ typeId, instanceId = null, anchorRect, onClo
     // list), so the popup is placed again for its new size.
     const [layoutTick, setLayoutTick] = useState(0);
     const relayout = useCallback(() => setLayoutTick(t => t + 1), []);
+    /** The Token rectangle the popup was last placed against; cleared to place it afresh. */
+    const placedFor = useRef(null);
+    const placedAt = useRef({ top: 0, left: 0 });
+    // The card flipped between its blocks and its recipe list: place it afresh for its new face.
+    const onFlip = useCallback(() => { placedFor.current = null; relayout(); }, [relayout]);
 
     useEffect(() => {
         const el = popupRef.current;
@@ -82,6 +87,12 @@ export const TokenInspectPopup = ({ typeId, instanceId = null, anchorRect, onClo
         const margin = 12;
         const tailGap = 10;
 
+        // Only the card's size changed (a search narrowing the recipe list): stay put while it
+        // still fits, so the search box does not slide away under the pointer.
+        if (placedFor.current === targetRect
+            && placedAt.current.left + popupW <= viewportW - margin && placedAt.current.top + popupH <= viewportH - margin) return;
+        placedFor.current = targetRect;
+
         const spaceTop = targetRect.top - margin;
         const spaceBottom = viewportH - targetRect.bottom - margin;
         const spaceRight = viewportW - targetRect.right - margin;
@@ -127,6 +138,7 @@ export const TokenInspectPopup = ({ typeId, instanceId = null, anchorRect, onClo
         }
 
         // Whole pixels: a fractional position blurs the pixel-art icons inside.
+        placedAt.current = { top: Math.round(top), left: Math.round(left) };
         setCoords({ top: Math.round(top), left: Math.round(left), dir });
         requestAnimationFrame(() => setIsVisible(true));
     }, [targetRect, typeId, layoutTick]);
@@ -175,7 +187,7 @@ export const TokenInspectPopup = ({ typeId, instanceId = null, anchorRect, onClo
         >
             <PixelFrame kind={FRAME_KIND.CHAMFER}>
                 <ArrowScrollList step={POPUP_SCROLL_STEP_PX} compact className="max-h-[75vh]">
-                    <TokenCard typeId={typeId} instanceId={instanceId} onClose={onClose} onViewChange={relayout} />
+                    <TokenCard typeId={typeId} instanceId={instanceId} onClose={onClose} onViewChange={onFlip} />
                 </ArrowScrollList>
             </PixelFrame>
         </div>

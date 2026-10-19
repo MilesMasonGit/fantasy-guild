@@ -316,6 +316,9 @@ function useCardView(instanceId, onViewChange) {
 /** The art scale that covers the card as it is drawn now; re-measured after every render. */
 function useCoverScale(ref, active) {
     const [scale, setScale] = useState(1);
+    // No deps on purpose: the list's size follows its content (a search, a live count), and the
+    // guard below settles it within one extra render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     useLayoutEffect(() => {
         const el = ref.current;
         if (!active || !el) { if (scale !== 1) setScale(1); return; }
