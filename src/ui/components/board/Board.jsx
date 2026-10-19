@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useBoardScale } from '../../hooks/useBoardScale.js';
 import { useMatSize } from '../../hooks/useMatSize.js';
 import { dropOnMat } from './dropOnMat.js';
@@ -8,22 +8,16 @@ import { PerfProfiler } from '../../dev/perf/PerfProfiler.jsx';
 import { ErrorBoundary } from '../base/ErrorBoundary.jsx';
 import { MatFitProvider, setLiveMatFit } from './MatFitContext.jsx';
 import * as BoardState from '../../../systems/board/BoardState.js';
-import { GameState } from '../../../state/GameState.js';
-import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
 import { useEntityDrop } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
-import * as StationRecipe from '../../../systems/board/StationRecipe.js';
-import { bandStationRecipes } from '../../../systems/board/RecipeBands.js';
-import { StationRecipeModal } from './StationRecipeModal.jsx';
+import { requestRecipeList } from './recipeFlip.js';
 import { isShopPayload, pointerOverShopDrawer } from '../drawer/ShopDrawer.jsx';
 import { isMatBankLocked } from '../../hooks/useMatBankLock.js';
-import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
-import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
  * The playmat: one drop surface, scaled to fit, with `MatBoard` drawing what is on it.
- * This file owns only three things: **how big the mat is drawn**, **that the whole mat is a
- * single drop target**, and the station recipe picker. Everything drawn on the mat is
+ * This file owns only two things: **how big the mat is drawn** and **that the whole mat is a
+ * single drop target**. Everything drawn on the mat is
  * `MatBoard`'s, and everything that happens on a drop is `dropOnMat`'s.
  */
 
@@ -75,24 +69,14 @@ export const Board = ({ onInspectToken, onClearInspect, inspectedHeroId = null, 
         matDrop.setNodeRef(node);
     }, [matDrop.setNodeRef]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    /**
-     * Which station's recipe picker is open, by **Token instance id**. Kept here
-     * rather than in the global inspect selection because the picker belongs to
-     * one Token instance, not to a Token type.
-     */
-    const [recipeId, setRecipeId] = useState(null);
-    const handleOpenRecipes = useCallback((id) => setRecipeId(id), []);
-    const closeRecipes = useCallback(() => setRecipeId(null), []);
-    // The Token card's Change recipe opens the same picker as the gear.
-    useEffect(() => EventBus.subscribe(UI_EVENTS.OPEN_STATION_RECIPES, (p) => {
-        if (p?.instanceId) setRecipeId(p.instanceId);
-    }, UI_LISTENER), []);
-
-    const recipeInstance = recipeId ? BoardState.getTokenById(recipeId) : null;
-    const recipeDef = recipeInstance ? getTokenType(recipeInstance.typeId) : null;
-    const recipeBanding = recipeDef
-        ? bandStationRecipes(recipeDef, BoardState.workerOf(recipeId), GameState.state?.heroes || [])
-        : null;
+    // The recipe gear opens the Token's card on its recipe list.
+    const handleOpenRecipes = useCallback((id) => {
+        const instance = BoardState.getTokenById(id);
+        if (!instance) return;
+        requestRecipeList(id);
+        const rect = document.querySelector(`[data-token-id="${id}"]`)?.getBoundingClientRect() || null;
+        onInspectToken?.(instance.typeId, rect, id);
+    }, [onInspectToken]);
 
     /**
      * What the mat draws, as one element kept while its inputs hold.
@@ -124,15 +108,6 @@ export const Board = ({ onInspectToken, onClearInspect, inspectedHeroId = null, 
             </ErrorBoundary>
         </MatFitProvider>
     ), [fit.scale, inspectedHeroId, inspectedTokenId, onInspectToken, onClearInspect, handleOpenRecipes]);
-
-    const handleSelectRecipe = useCallback((selectedRecipeId) => {
-        if (!recipeId) return;
-        const instance = BoardState.getTokenById(recipeId);
-        // `setSelectedRecipe` is the only writer of `selectedRecipeId`, and it refuses any id
-        // outside this station's own pool. It announces its own change (`TILE_CHANGED`).
-        if (!StationRecipe.setSelectedRecipe(instance, selectedRecipeId)) return;
-        setRecipeId(null);
-    }, [recipeId]);
 
     return (
         // `min-w-0` / `min-h-0` are load-bearing: without them this box grows to
@@ -172,21 +147,6 @@ export const Board = ({ onInspectToken, onClearInspect, inspectedHeroId = null, 
                     {matContents}
                 </div>
             </div>
-
-            {/* Mounted only while open. Left mounted, the modal keeps rendering
-                after the picker closes — with no station selected it has no
-                pool to describe, so it reads as empty for a moment before
-                Headless UI's leave transition retires it. */}
-            {recipeId && recipeDef && (
-                <StationRecipeModal
-                    isOpen
-                    onClose={closeRecipes}
-                    tokenName={recipeInstance ? tokenName(recipeInstance.typeId) : null}
-                    banding={recipeBanding}
-                    selectedRecipeId={recipeInstance?.selectedRecipeId || null}
-                    onSelect={handleSelectRecipe}
-                />
-            )}
         </div>
     );
 };
