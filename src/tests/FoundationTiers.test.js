@@ -11,8 +11,7 @@ import {
 } from '../config/registries/tokenConstants.js';
 import * as StationRecipe from '../systems/board/StationRecipe.js';
 import { resolveRecipe } from '../systems/board/RecipeResolver.js';
-import { bandStationRecipes } from '../systems/board/RecipeBands.js';
-import { StationRecipeModal } from '../ui/components/board/StationRecipeModal.jsx';
+import { RecipeList } from '../ui/components/board/RecipeList.jsx';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -120,34 +119,33 @@ describe('the engine: a Foundation’s pool', () => {
     });
 });
 
-describe('the picker', () => {
+describe('the recipe list', () => {
+    /** A builder good enough for every recipe here, so every offered recipe is a row. */
+    const builder = [{ id: 'b', name: 'B', skills: { construction: { level: 99, xp: 0 } } }];
+    const list = (typeId) => render(React.createElement(RecipeList, {
+        def: getTokenType(typeId), heroes: builder, onChoose: () => {}
+    }));
     const offered = (typeId) => {
-        const banding = bandStationRecipes(getTokenType(typeId), null, []);
-        render(React.createElement(StationRecipeModal, {
-            isOpen: true, onClose: () => {}, tokenName: typeId, banding, selectedRecipeId: null, onSelect: () => {}
-        }));
+        list(typeId);
         const shown = [...document.body.querySelectorAll('[data-recipe-id]')].map(el => el.getAttribute('data-recipe-id'));
         cleanup();
         return shown;
     };
 
-    it('a tier-1 Foundation’s picker omits the tier-2 recipe', () => {
+    it('a tier-1 Foundation’s list omits the tier-2 recipe', () => {
         expect(offered('fixture_tier_1')).toEqual([CABIN]);
         expect(offered('fixture_tier_none')).toEqual([CABIN]);
     });
 
-    it('a tier-2 and a tier-3 Foundation’s picker offers it', () => {
+    it('a tier-2 and a tier-3 Foundation’s list offers it', () => {
         expect(offered('fixture_tier_2')).toEqual([CABIN, HALL]);
         expect(offered('fixture_tier_3')).toEqual([CABIN, HALL]);
     });
 
     it('a row that needs more than tier 1 says so; a tier-1 row does not', () => {
-        const banding = bandStationRecipes(getTokenType('fixture_tier_3'), null, []);
-        render(React.createElement(StationRecipeModal, {
-            isOpen: true, onClose: () => {}, tokenName: 'T3', banding, selectedRecipeId: null, onSelect: () => {}
-        }));
+        list('fixture_tier_3');
         const row = (id) => document.body.querySelector(`[data-recipe-id="${id}"]`).textContent;
-        expect(row(HALL)).toContain('Needs a fixture_tier_2 or better');
+        expect(row(HALL)).toContain('fixture_tier_2 or better');
         expect(row(CABIN)).not.toContain('or better');
     });
 });

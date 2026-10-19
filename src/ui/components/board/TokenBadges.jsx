@@ -2,7 +2,7 @@ import React, { memo, useState, useEffect } from 'react';
 import { cn } from '../../utils/cn.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { useTokenEvent } from './tokenEvents.js';
-import { inputSummary, outputSummary, contextSummary } from './StationRecipeModal.jsx';
+import { inputSummary, outputSummary, contextSummary } from './recipeText.js';
 import { SkillIcon } from '../base/SkillIcon.jsx';
 import { getSkill, DEMOLITION_SKILL_ID } from '../../../config/registries/skillRegistry.js';
 import { RING_D_U } from './ringRow.js';

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { cn } from '../../utils/cn.js';
 import { getTokenType, tokenName, getAllTokenTypes, productionRoutes, getProvidedTagsWithTiers } from '../../../config/registries/tokenRegistry.js';
 import { getSkill } from '../../../config/registries/skillRegistry.js';
@@ -14,6 +14,11 @@ import { CARD_BLOCK, tokenCardModel, cycleText } from './tokenCard.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
+import * as BoardState from '../../../systems/board/BoardState.js';
+import * as StationRecipe from '../../../systems/board/StationRecipe.js';
+import { GameState } from '../../../state/GameState.js';
+import { RecipeList } from './RecipeList.jsx';
+import { takeRecipeListRequest, onRecipeListRequest } from './recipeFlip.js';
 
 /** The card's width: the 256 px activity art at 1×, so it is never scaled off a whole pixel. */
 export const CARD_ART_PX = 256;
@@ -112,9 +117,7 @@ const CycleBlock = ({ cycleMs, uses }) => (
     </Box>
 );
 
-const openRecipes = (instanceId) => EventBus.publish(UI_EVENTS.OPEN_STATION_RECIPES, { instanceId });
-
-const RecipeBlock = ({ block, instanceId }) => (
+const RecipeBlock = ({ block, instanceId, onChangeRecipe }) => (
     <Box data-card-block="recipe">
         {block.recipeName && <span className="ui-text-body font-bold text-white">{block.recipeName}</span>}
         {block.change && !block.change.chosen && (
@@ -168,7 +171,7 @@ const RecipeBlock = ({ block, instanceId }) => (
             <button
                 type="button"
                 data-card-change-recipe
-                onClick={(e) => { e.stopPropagation(); openRecipes(instanceId); }}
+                onClick={(e) => { e.stopPropagation(); onChangeRecipe?.(); }}
                 className="ui-frame-chamfer self-start px-3 py-1 ui-text-body font-bold cursor-pointer"
                 style={{ color: 'var(--color-ui-gold)' }}
             >
@@ -286,13 +289,51 @@ function useCardClock(instanceId, enemy) {
     }, [instanceId, enemy]);
 }
 
+/** The whole multiple of the 256 px art that covers a card of this size. */
+export const coverScale = (w, h) => Math.max(1, Math.ceil(Math.max(Number(w) || 0, Number(h) || 0) / CARD_ART_PX));
+
+/**
+ * Which face of the card shows: its blocks, or the recipe list Change recipe flips it to. A list
+ * asked for before the card opened (the mat's recipe gear) opens it on the list.
+ */
+function useCardView(instanceId, onViewChange) {
+    const [view, setViewState] = useState(() => (takeRecipeListRequest(instanceId) ? 'recipes' : 'card'));
+    const setView = useCallback((next) => {
+        setViewState(next);
+        onViewChange?.(next);
+    }, [onViewChange]);
+    const first = useRef(true);
+    useEffect(() => {
+        if (first.current) { first.current = false; return; }
+        setView(takeRecipeListRequest(instanceId) ? 'recipes' : 'card');
+    }, [instanceId]); // eslint-disable-line react-hooks/exhaustive-deps
+    useEffect(() => onRecipeListRequest((id) => {
+        if (id === instanceId && takeRecipeListRequest(id)) setView('recipes');
+    }), [instanceId, setView]);
+    return [view, setView];
+}
+
+/** The art scale that covers the card as it is drawn now; re-measured after every render. */
+function useCoverScale(ref, active) {
+    const [scale, setScale] = useState(1);
+    useLayoutEffect(() => {
+        const el = ref.current;
+        if (!active || !el) { if (scale !== 1) setScale(1); return; }
+        const next = coverScale(el.offsetWidth, el.offsetHeight);
+        if (next !== scale) setScale(next);
+    });
+    return scale;
+}
+
 /**
  * The Token card: the full-art card a click on a Token opens. Its activity's 256 px scene fills
  * the card behind the information (a plain card when it has none); the blocks follow
  * `tokenCardModel`, each in a see-through box, every icon and number explained on hover.
  */
-export const TokenCard = ({ typeId, instanceId = null, onClose = null }) => {
+export const TokenCard = ({ typeId, instanceId = null, onClose = null, onViewChange = null }) => {
     const def = getTokenType(typeId);
+    const [view, setView] = useCardView(instanceId, onViewChange);
+    const cardRef = useRef(null);
     // Charges, a picked recipe, a hero arriving: re-read on this Token's own events.
     useTokenDetail(instanceId, def);
     useCardClock(instanceId, !!def?.enemy);
@@ -305,43 +346,73 @@ export const TokenCard = ({ typeId, instanceId = null, onClose = null }) => {
     }, [instanceId, typeId]);
 
     const model = tokenCardModel(typeId, instanceId);
+    const instance = instanceId != null ? BoardState.getTokenById(instanceId) : null;
+    const canList = !!model && !!instance && model.blocks.some(b => b.id === CARD_BLOCK.RECIPE && b.change);
+    const listing = view === 'recipes' && canList;
+    const artScale = useCoverScale(cardRef, listing);
     if (!model) return null;
     const { art } = model;
+    const artPx = CARD_ART_PX * artScale;
+
+    const choose = (recipeId) => {
+        // `setSelectedRecipe` is the only writer, and refuses an id outside this Token's pool.
+        if (StationRecipe.setSelectedRecipe(BoardState.getTokenById(instanceId), recipeId, def)) setView('card');
+    };
 
     return (
         <div
+            ref={cardRef}
             data-token-card={model.enemy ? 'enemy' : 'token'}
             data-card-art={art ? art.source : 'none'}
-            className="relative"
-            style={{ width: CARD_ART_PX, minHeight: art ? CARD_ART_PX : undefined }}
+            data-card-view={listing ? 'recipes' : 'card'}
+            className={cn('relative', listing && 'overflow-hidden')}
+            style={listing
+                ? { width: 'max-content', minWidth: CARD_ART_PX, maxWidth: 'calc(100vw - 48px)', minHeight: art ? CARD_ART_PX : undefined }
+                : { width: CARD_ART_PX, minHeight: art ? CARD_ART_PX : undefined }}
         >
             {art && (
                 <img
                     data-card-art-img
+                    data-card-art-scale={artScale}
                     src={art.path}
                     alt=""
                     draggable={false}
-                    className="absolute top-0 left-0 select-none pointer-events-none"
-                    style={{ width: CARD_ART_PX, height: CARD_ART_PX, imageRendering: 'pixelated' }}
+                    className="absolute top-0 left-0 max-w-none select-none pointer-events-none"
+                    style={{ width: artPx, height: artPx, imageRendering: 'pixelated' }}
                 />
             )}
-            <div className="relative flex flex-col gap-1.5 p-1.5">
-                {model.blocks.map(block => {
-                    switch (block.id) {
-                        case CARD_BLOCK.NAME: return <NameBlock key="name" name={block.name} onClose={onClose} />;
-                        case CARD_BLOCK.HP: return <HpBlock key="hp" cur={block.cur} max={block.max} />;
-                        case CARD_BLOCK.COMBAT: return <CombatBlock key="combat" {...block} />;
-                        case CARD_BLOCK.WORK: return <WorkBlock key="work" {...block} />;
-                        case CARD_BLOCK.CYCLE: return <CycleBlock key="cycle" {...block} />;
-                        case CARD_BLOCK.RECIPE: return <RecipeBlock key="recipe" block={block} instanceId={instanceId} />;
-                        case CARD_BLOCK.LIFECYCLE: return <LifecycleBlock key="lifecycle" lines={block.lines} />;
-                        case CARD_BLOCK.DROPS: return <DropsBlock key="drops" drops={block.drops} />;
-                        case CARD_BLOCK.MORE: return <MoreBlock key="more" typeId={typeId} />;
-                        default: return null;
-                    }
-                })}
-                {instanceId != null && <LeaveMatControl instanceId={instanceId} />}
-            </div>
+            {listing ? (
+                <div className="relative flex flex-col gap-1.5 p-1.5">
+                    <NameBlock name={model.name} onClose={onClose} />
+                    <RecipeList
+                        def={def}
+                        instanceId={instanceId}
+                        selectedRecipeId={instance.selectedRecipeId || null}
+                        workerId={BoardState.workerOf(instanceId) || null}
+                        heroes={GameState.state?.heroes || []}
+                        onChoose={choose}
+                        onBack={() => setView('card')}
+                    />
+                </div>
+            ) : (
+                <div className="relative flex flex-col gap-1.5 p-1.5">
+                    {model.blocks.map(block => {
+                        switch (block.id) {
+                            case CARD_BLOCK.NAME: return <NameBlock key="name" name={block.name} onClose={onClose} />;
+                            case CARD_BLOCK.HP: return <HpBlock key="hp" cur={block.cur} max={block.max} />;
+                            case CARD_BLOCK.COMBAT: return <CombatBlock key="combat" {...block} />;
+                            case CARD_BLOCK.WORK: return <WorkBlock key="work" {...block} />;
+                            case CARD_BLOCK.CYCLE: return <CycleBlock key="cycle" {...block} />;
+                            case CARD_BLOCK.RECIPE: return <RecipeBlock key="recipe" block={block} instanceId={instanceId} onChangeRecipe={() => setView('recipes')} />;
+                            case CARD_BLOCK.LIFECYCLE: return <LifecycleBlock key="lifecycle" lines={block.lines} />;
+                            case CARD_BLOCK.DROPS: return <DropsBlock key="drops" drops={block.drops} />;
+                            case CARD_BLOCK.MORE: return <MoreBlock key="more" typeId={typeId} />;
+                            default: return null;
+                        }
+                    })}
+                    {instanceId != null && <LeaveMatControl instanceId={instanceId} />}
+                </div>
+            )}
         </div>
     );
 };

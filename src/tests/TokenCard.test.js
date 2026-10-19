@@ -18,7 +18,8 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes, tokenStartingUses, getTokenType } from '../config/registries/tokenRegistry.js';
 import { resolveSpritePath } from '../utils/AssetManager.js';
 import { EngineContext } from '../ui/context/EngineContext';
-import { TokenCard } from '../ui/components/board/TokenCard.jsx';
+import { TokenCard, coverScale } from '../ui/components/board/TokenCard.jsx';
+import { requestRecipeList } from '../ui/components/board/recipeFlip.js';
 import { TokenInspectPopup } from '../ui/components/board/TokenInspectPopup.jsx';
 import { tokenCardModel, cardArtOf, activityOf, CARD_BLOCK } from '../ui/components/board/tokenCard.js';
 
@@ -165,12 +166,47 @@ describe('the blocks, top to bottom, per kind', () => {
         expect(recipe.tools.map(t => t.typeId)).toEqual(['fixture_context_a']);
         expect(recipe.change).toEqual({ label: 'Change recipe', chosen: true });
 
+    });
+
+    it('Change recipe flips the card to its list on the same art; a click on a row chooses it and flips back', () => {
+        GameState.state.heroes = [{ id: 'smith', name: 'Smith', skills: { fixture_station_skill: { level: 10, xp: 0 } } }];
+        const station = pickRecipe(put('fixture_station'), 'recipe_a');
+        // The card opens the list in place: no window over the mat.
         const opened = vi.fn();
         const unsub = EventBus.subscribe(UI_EVENTS.OPEN_STATION_RECIPES, opened);
         const { container } = mount(h(TokenCard, { typeId: 'fixture_station', instanceId: station.id }));
+        const card = () => container.querySelector('[data-token-card]');
         fireEvent.click(container.querySelector('[data-card-change-recipe]'));
         unsub();
-        expect(opened).toHaveBeenCalledWith(expect.objectContaining({ instanceId: station.id }));
+        expect(opened).not.toHaveBeenCalled();
+        expect(card().dataset.cardView).toBe('recipes');
+        expect(container.querySelector('[data-recipe-selected="true"]').dataset.recipeId).toBe('recipe_a');
+        expect(container.querySelector('[data-card-block="name"] h3').textContent).toBe('Fixture Station');
+
+        fireEvent.click(container.querySelector('[data-recipe-id="recipe_b"]'));
+        expect(BoardState.getTokenById(station.id).selectedRecipeId).toBe('recipe_b');
+        expect(card().dataset.cardView).toBe('card');
+    });
+
+    it('the list covers the card with the art at a whole multiple', () => {
+        expect(coverScale(256, 256)).toBe(1);
+        expect(coverScale(257, 100)).toBe(2);
+        expect(coverScale(300, 600)).toBe(3);
+        expect(coverScale(0, 0)).toBe(1);
+    });
+
+    it('a list asked for before the card opens (the mat gear) opens the card on it', () => {
+        GameState.state.heroes = [{ id: 'smith', name: 'Smith', skills: { fixture_station_skill: { level: 10, xp: 0 } } }];
+        const station = put('fixture_station');
+        requestRecipeList(station.id);
+        const { container } = mount(h(TokenCard, { typeId: 'fixture_station', instanceId: station.id }));
+        expect(container.querySelector('[data-token-card]').dataset.cardView).toBe('recipes');
+        cleanup();
+        // Taken once: the next opening is the card.
+        const again = mount(h(TokenCard, { typeId: 'fixture_station', instanceId: station.id }));
+        expect(again.container.querySelector('[data-token-card]').dataset.cardView).toBe('card');
+        act(() => requestRecipeList(station.id));
+        expect(again.container.querySelector('[data-token-card]').dataset.cardView).toBe('recipes');
     });
 
     it('a station with nothing chosen still offers the picker', () => {
@@ -332,6 +368,34 @@ describe('one card at a time', () => {
         mount(popup(vein, () => {}));
         const frame = document.querySelector('[data-pixel-frame]');
         expect(frame.getAttribute('data-pixel-frame')).toBe('chamfer');
-        expect(document.querySelector('[data-token-card-popup]').style.width).toBe(`${256 + 12}px`);
+        expect(document.querySelector('[data-token-card-popup]').style.minWidth).toBe(`${256 + 12}px`);
+    });
+
+    it('flipping to the list and choosing a recipe keep the card open; Escape in the list goes back first', async () => {
+        vi.useFakeTimers();
+        GameState.state.heroes = [{ id: 'smith', name: 'Smith', skills: { fixture_station_skill: { level: 10, xp: 0 } } }];
+        const station = pickRecipe(put('fixture_station'), 'recipe_a');
+        const onClose = vi.fn();
+        mount(popup(station, onClose));
+        await act(async () => { vi.advanceTimersByTime(60); });
+        const view = () => document.querySelector('[data-token-card]').dataset.cardView;
+
+        fireEvent.click(document.querySelector('[data-card-change-recipe]'));
+        expect(view()).toBe('recipes');
+        fireEvent.keyDown(window, { key: 'Escape' });
+        expect(view()).toBe('card');
+        expect(onClose).not.toHaveBeenCalled();
+
+        fireEvent.click(document.querySelector('[data-card-change-recipe]'));
+        fireEvent.click(document.querySelector('[data-recipe-id="recipe_b"]'));
+        expect(view()).toBe('card');
+        expect(onClose).not.toHaveBeenCalled();
+        // In the browser the flip has already removed the clicked element when the click
+        // reaches the window: that click is still inside the card.
+        const gone = document.createElement('button');
+        document.querySelector('[data-token-card]').appendChild(gone);
+        gone.addEventListener('click', () => gone.remove());
+        fireEvent.click(gone);
+        expect(onClose).not.toHaveBeenCalled();
     });
 });

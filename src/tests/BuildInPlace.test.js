@@ -10,7 +10,7 @@ import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as Flags from '../systems/board/Flags.js';
 import * as StationRecipe from '../systems/board/StationRecipe.js';
 import * as MatPlacement from '../systems/board/MatPlacement.js';
-import { bandStationRecipes, BAND } from '../systems/board/RecipeBands.js';
+import { recipeListFor, ENTRY } from '../systems/board/RecipeList.js';
 import { ALERT } from '../systems/board/boardEvents.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
@@ -192,15 +192,14 @@ describe('the level gate is the recipe’s (SP-49)', () => {
         expect(Flags.skipsOf(f.id).map(s => s.reason)).toContain(ALERT.ACCESS);
     });
 
-    it('the picker shows the recipe locked, with its level', () => {
+    it('the list shows the recipe as a locked silhouette, with its level', () => {
         const f = put('fixture_bip_stone_foundation');
         const def = { id: f.typeId, foundation: { kind: 'stone', skill: 'construction' } };
-        const banding = bandStationRecipes(def, null, GameState.state.heroes);
-        expect(banding.skill).toBe('construction');
-        expect(banding.rows).toHaveLength(1);
-        expect(banding.rows[0].level).toBe(3);
-        expect(banding.rows[0].band).toBe(BAND.LOCKED);
-        expect(banding.rows[0].selectable).toBe(false);
+        const list = recipeListFor(def, { heroes: GameState.state.heroes });
+        expect(list.skill).toBe('construction');
+        expect(list.entries).toHaveLength(1);
+        expect(list.entries[0].kind).toBe(ENTRY.LOCKED);
+        expect(list.entries[0].level).toBe(3);
     });
 });
 

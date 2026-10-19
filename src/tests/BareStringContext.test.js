@@ -7,7 +7,7 @@ import * as StationRecipe from '../systems/board/StationRecipe.js';
 import * as RecipeResolver from '../systems/board/RecipeResolver.js';
 import * as Charges from '../systems/board/Charges.js';
 import { showsNearRing } from '../systems/board/reachDisplay.js';
-import { contextSummary } from '../ui/components/board/StationRecipeModal.jsx';
+import { contextSummary } from '../ui/components/board/recipeText.js';
 import { registerRecipePools, contextRequirementsOf, contextTagsOf } from '../config/registries/recipePoolRegistry.js';
 import { registerTokenTypes, tokenStartingUses, productionRoutes } from '../config/registries/tokenRegistry.js';
 import { KEYWORD } from '../systems/effects/statements.js';

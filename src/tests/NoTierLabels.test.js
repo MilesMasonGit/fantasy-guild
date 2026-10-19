@@ -8,7 +8,7 @@ import { renderStatement } from '../systems/effects/statementText.js';
 import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
 import { toolNamer, foundationPhrase } from '../systems/effects/toolNames.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
-import { contextSummary, foundationTierSummary } from '../ui/components/board/StationRecipeModal.jsx';
+import { contextSummary, foundationTierSummary } from '../ui/components/board/recipeText.js';
 
 /**
  * ⭐ The game never says "tier" to the player: a tool or Foundation ladder is learnt from the

@@ -48,7 +48,12 @@ export function isPriority(value) {
  * value of the wrong type reads as the default rather than being trusted.
  */
 export function ruleOf(heroId, ruleId) {
-    const stored = heroRecord(heroId)?.flagRules?.[ruleId];
+    return ruleOfRecord(heroRecord(heroId), ruleId);
+}
+
+/** {@link ruleOf} for a hero record already in hand. */
+export function ruleOfRecord(hero, ruleId) {
+    const stored = hero?.flagRules?.[ruleId];
     return {
         allowed: stored?.allowed !== false,
         priority: isPriority(stored?.priority) ? stored.priority : PRIORITY_DEFAULT

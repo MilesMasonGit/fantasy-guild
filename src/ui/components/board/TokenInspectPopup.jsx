@@ -31,6 +31,22 @@ export const TokenInspectPopup = ({ typeId, instanceId = null, anchorRect, onClo
     const [coords, setCoords] = useState({ top: 0, left: 0, dir: 'top' });
     const [isVisible, setIsVisible] = useState(false);
     const [targetRect, setTargetRect] = useState(anchorRect || null);
+    // Bumped when the card changes size (it flips to its recipe list, a search narrows the
+    // list), so the popup is placed again for its new size.
+    const [layoutTick, setLayoutTick] = useState(0);
+    const relayout = useCallback(() => setLayoutTick(t => t + 1), []);
+
+    useEffect(() => {
+        const el = popupRef.current;
+        if (!el || typeof ResizeObserver === 'undefined') return undefined;
+        let last = null;
+        const ro = new ResizeObserver(() => {
+            const size = `${el.offsetWidth}x${el.offsetHeight}`;
+            if (size !== last) { last = size; relayout(); }
+        });
+        ro.observe(el);
+        return () => ro.disconnect();
+    }, [relayout]);
 
     /** Where the Token is on screen right now, falling back to where it was. */
     const measure = useCallback(() => {
@@ -113,11 +129,15 @@ export const TokenInspectPopup = ({ typeId, instanceId = null, anchorRect, onClo
         // Whole pixels: a fractional position blurs the pixel-art icons inside.
         setCoords({ top: Math.round(top), left: Math.round(left), dir });
         requestAnimationFrame(() => setIsVisible(true));
-    }, [targetRect, typeId]);
+    }, [targetRect, typeId, layoutTick]);
 
     useEffect(() => {
         const handleGlobalClick = (e) => {
-            if (popupRef.current && !popupRef.current.contains(e.target)) {
+            // The path as dispatched: a click that flips the card (Change recipe, a recipe row)
+            // has already removed its own target by the time the click reaches the window.
+            const path = typeof e.composedPath === 'function' ? e.composedPath() : [];
+            const inside = popupRef.current && (path.includes(popupRef.current) || popupRef.current.contains(e.target));
+            if (popupRef.current && !inside) {
                 // Clicking another Token just moves the inspection to it.
                 const onToken = e.target.closest('[data-token-id]');
                 if (!onToken) {
@@ -127,7 +147,7 @@ export const TokenInspectPopup = ({ typeId, instanceId = null, anchorRect, onClo
         };
 
         // One Escape, one layer: while a drag is live, Escape only cancels it, and while a window
-        // is open over the card (the recipe list its Change recipe opened), Escape closes that.
+        // is open over the card, Escape closes that. The card's own recipe list hears Escape first.
         const handleKey = (e) => {
             if (e.key !== 'Escape' || document.body.classList.contains('gi-dnd-active')) return;
             if (document.querySelector('[role="dialog"]')) return;
@@ -151,11 +171,11 @@ export const TokenInspectPopup = ({ typeId, instanceId = null, anchorRect, onClo
                 "fixed z-[80] transition-opacity duration-200 ease-out",
                 isVisible ? "opacity-100" : "opacity-0 pointer-events-none"
             )}
-            style={{ top: coords.top, left: coords.left, width: POPUP_W }}
+            style={{ top: coords.top, left: coords.left, minWidth: POPUP_W }}
         >
             <PixelFrame kind={FRAME_KIND.CHAMFER}>
                 <ArrowScrollList step={POPUP_SCROLL_STEP_PX} compact className="max-h-[75vh]">
-                    <TokenCard typeId={typeId} instanceId={instanceId} onClose={onClose} />
+                    <TokenCard typeId={typeId} instanceId={instanceId} onClose={onClose} onViewChange={relayout} />
                 </ArrowScrollList>
             </PixelFrame>
         </div>
