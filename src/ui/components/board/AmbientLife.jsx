@@ -154,6 +154,11 @@ function createSkyView(root) {
                 shown.delete(key);
             }
         },
+        /** Every sprite gone at once (a new Region). */
+        clear() {
+            for (const e of shown.values()) e.el.remove();
+            shown.clear();
+        },
         root,
         get count() { return shown.size; }
     };
@@ -192,6 +197,8 @@ export const AmbientLife = React.memo(function AmbientLife({ picture, tokens, wo
     if (!random.current) random.current = ambientRandom(Math.floor(performance.now() * 1000) ^ 0x5eed);
     const frame = useRef(0);
     const skyLife = useRef(null);
+    /** The Region the sky's life belongs to (its seed): another Region starts it afresh. */
+    const skyRegion = useRef(null);
     const cues = useRef({ gust: false, birds: false });
     useEffect(() => onAmbientCue((what) => { if (what in cues.current) cues.current[what] = true; }), []);
 
@@ -220,6 +227,11 @@ export const AmbientLife = React.memo(function AmbientLife({ picture, tokens, wo
         const lava = glowing && createLava(life.lava, { cols, out: glowing.out });
         if (sky && skyRef.current && skyView.current?.root !== skyRef.current) skyView.current = createSkyView(skyRef.current);
         const view = sky && skyRef.current ? skyView.current : null;
+        if (view && skyRegion.current !== picture.plan.seed) {
+            skyRegion.current = picture.plan.seed;
+            skyLife.current = null;
+            view.clear();
+        }
         if (view && !skyLife.current) skyLife.current = createSky({ random: rnd });
         const art = {
             perchOf(typeId) {

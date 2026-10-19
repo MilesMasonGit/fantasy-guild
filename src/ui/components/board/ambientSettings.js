@@ -25,6 +25,7 @@ export function ambientSettings(drawn = () => true) {
         birdGapFrames: (tuning('ambientBirdGap') * 1000) / FRAME_MS,
         birdPixel: Math.round(tuning('ambientBirdPixel')),
         cloudCount: Math.round(tuning('ambientCloudCount')),
+        cloudSize: tuning('ambientCloudSize'),
         cloudShade: tuning('ambientCloudShade'),
         particleRate: tuning('ambientParticleRate')
     };

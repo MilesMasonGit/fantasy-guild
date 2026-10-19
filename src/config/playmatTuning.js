@@ -476,9 +476,14 @@ function ambientRows() {
             min: 0, max: 8, step: 1, def: 3
         },
         {
+            key: 'ambientCloudSize', group, label: 'Cloud size',
+            hint: 'How big the clouds are: 1 as in the prototype (about half a Token to a Token across), 2 twice as big.',
+            min: 0.5, max: 3, step: 0.25, def: 1
+        },
+        {
             key: 'ambientCloudShade', group, label: 'Cloud shade',
-            hint: 'How dark a cloud’s shadow is: 0.12 makes what it covers 88 % as bright. One level, no soft edge.',
-            min: 0.04, max: 0.3, step: 0.01, def: 0.12
+            hint: 'How dark a cloud’s shadow is: 0.15 makes what it covers 85 % as bright, the body of the prototype’s clouds. One level, no soft edge.',
+            min: 0.04, max: 0.3, step: 0.01, def: 0.15
         }
     ];
 }

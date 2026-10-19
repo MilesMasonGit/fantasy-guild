@@ -333,8 +333,9 @@ export function createSky({ random }) {
     };
 
     const newCloud = (ctx, x) => {
-        const { world, mat } = ctx;
-        const shape = cloudShape(random, intBetween(random, CLOUDS.w), intBetween(random, CLOUDS.h));
+        const { world, mat, settings } = ctx;
+        const k = settings.cloudSize ?? 1;
+        const shape = cloudShape(random, Math.max(2, Math.round(intBetween(random, CLOUDS.w) * k)), Math.max(2, Math.round(intBetween(random, CLOUDS.h) * k)));
         const y = random() * (mat.h + shape.h * world.unitU) - shape.h * world.unitU / 2;
         clouds.push({ key: `cloud${nextKey++}`, shape, x, y });
     };
@@ -351,7 +352,7 @@ export function createSky({ random }) {
         for (const c of clouds) c.x += unitU / CLOUDS.framesPerPixel;
         clouds = clouds.filter(c => c.x < mat.w + unitU);
         if (clouds.length < settings.cloudCount && frame >= nextCloud) {
-            const shapeW = CLOUDS.w[1] * unitU;
+            const shapeW = CLOUDS.w[1] * (settings.cloudSize ?? 1) * unitU;
             newCloud(ctx, -shapeW);
             nextCloud = frame + Math.round((crossing / Math.max(1, settings.cloudCount)) * (0.5 + random()));
         }
@@ -434,7 +435,7 @@ export function createSky({ random }) {
          * mat units, the mat units per pixel of its `shape`, and its colour (`shade`: a cloud's
          * see-through black).
          */
-        sprites(shade = 0.12) {
+        sprites(shade = 0.15) {
             const world = lastWorld;
             if (!world) return [];
             const out = [];

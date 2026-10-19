@@ -263,6 +263,7 @@ describe('⭐ No dead sliders', () => {
         return sky.birds.map(b => b.px).join(',') || 'none';
     };
     const cloudsOut = () => String(skyRun(2).sky.clouds.length);
+    const cloudSizes = () => skyRun(2).sky.clouds.map(c => `${c.shape.w}x${c.shape.h}`).join(',');
     const cloudColour = () => skyRun(2).sprites.find(s => s.layer === 'cloud')?.colour || 'none';
     const particlesOut = () => String(skyRun(300).sky.particles.length);
 
@@ -326,6 +327,7 @@ describe('⭐ No dead sliders', () => {
         ambientBirdPixel: birdSize,
         ambientClouds: ambientSwitch('clouds'),
         ambientCloudCount: cloudsOut,
+        ambientCloudSize: cloudSizes,
         ambientCloudShade: cloudColour
     };
 
