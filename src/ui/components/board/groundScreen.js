@@ -357,6 +357,9 @@ export function propCell(src, index, pixel) {
     return { side, bytes };
 }
 
+/** How far round a prop the ground it is quietened toward reaches, in Token pixels: the blur's 6. */
+const QUIET_REACH = 6;
+
 /** Props at a ground pixel, by sheet bytes, then by pixel and cell. */
 const propCells = new WeakMap();
 function propCellOf(src, index, pixel) {
@@ -444,16 +447,19 @@ function drawProps(ctx) {
         const { side, bytes } = propCellOf(src, p.index, pixel);
         const left = Math.floor(((p.footX + 0.5) * planU) / unit) - (side >> 1);
         const top = Math.floor(((p.footY + 0.5) * planU) / unit) - (side - 1);
-        // What the prototype's blur saw round the prop: its box, the prop's own pixels in it.
+        // What the prototype's blur saw round the prop: its box and a margin of the blur's reach,
+        // the prop's own pixels in it.
         let ground = null;
         if (asDrawn && raw && amount > 0) {
             const sum = [0, 0, 0];
             let n = 0;
             let under = 0;
-            for (let r = Math.max(0, top); r < Math.min(rows, top + side); r++) {
-                for (let c = Math.max(from[r], left); c < Math.min(to[r], left + side); c++) {
+            const m = Math.ceil(QUIET_REACH / pixel);
+            for (let r = Math.max(0, top - m); r < Math.min(rows, top + side + m); r++) {
+                for (let c = Math.max(from[r], left - m); c < Math.min(to[r], left + side + m); c++) {
+                    const inside = r >= top && r < top + side && c >= left && c < left + side;
                     const s = ((r - top) * side + c - left) * 4;
-                    if (bytes[s + 3] !== 0) {
+                    if (inside && bytes[s + 3] !== 0) {
                         sum[0] += bytes[s]; sum[1] += bytes[s + 1]; sum[2] += bytes[s + 2];
                         n++;
                         continue;
