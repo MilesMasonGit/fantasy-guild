@@ -979,6 +979,70 @@
 .ui-frame-shadow-studs { border-image-source: url('/assets/ui/u_frame_studs_shadow.png'); transform: translate(4px, 4px); }
 .ui-frame-shadow-chamfer { border-image-source: url('/assets/ui/u_frame_chamfer_shadow.png'); transform: translate(4px, 4px); }
 
+/* Gold and red editions of the frames, drawn in code (the same 7x7 shapes as the pictures above):
+   gold for a first find and for milestone banners, red for problem banners. Placeholders until the
+   owner draws the banner ribbon (owner_art_list.md). */
+.ui-frame-chamfer-gold { border-image-source: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='7' height='7' shape-rendering='crispEdges'><path fill='%23facc15' d='M2 0h1v1h-1zM3 0h1v1h-1zM4 0h1v1h-1zM1 1h1v1h-1zM5 1h1v1h-1zM0 2h1v1h-1zM6 2h1v1h-1zM0 3h1v1h-1zM6 3h1v1h-1zM0 4h1v1h-1zM6 4h1v1h-1zM1 5h1v1h-1zM5 5h1v1h-1zM2 6h1v1h-1zM3 6h1v1h-1zM4 6h1v1h-1z'/><path fill='%230d0a08' d='M2 1h1v1h-1zM3 1h1v1h-1zM4 1h1v1h-1zM1 2h1v1h-1zM2 2h1v1h-1zM3 2h1v1h-1zM4 2h1v1h-1zM5 2h1v1h-1zM1 3h1v1h-1zM2 3h1v1h-1zM3 3h1v1h-1zM4 3h1v1h-1zM5 3h1v1h-1zM1 4h1v1h-1zM2 4h1v1h-1zM3 4h1v1h-1zM4 4h1v1h-1zM5 4h1v1h-1zM2 5h1v1h-1zM3 5h1v1h-1zM4 5h1v1h-1z'/></svg>"); }
+.ui-frame-studs-gold { border-image-source: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='7' height='7' shape-rendering='crispEdges'><path fill='%23eab308' d='M0 0h1v1h-1zM1 0h1v1h-1zM2 0h1v1h-1zM3 0h1v1h-1zM4 0h1v1h-1zM5 0h1v1h-1zM6 0h1v1h-1zM0 1h1v1h-1zM2 1h1v1h-1zM4 1h1v1h-1zM6 1h1v1h-1zM0 2h1v1h-1zM1 2h1v1h-1zM5 2h1v1h-1zM6 2h1v1h-1zM0 3h1v1h-1zM6 3h1v1h-1zM0 4h1v1h-1zM1 4h1v1h-1zM5 4h1v1h-1zM6 4h1v1h-1zM0 5h1v1h-1zM2 5h1v1h-1zM4 5h1v1h-1zM6 5h1v1h-1zM0 6h1v1h-1zM1 6h1v1h-1zM2 6h1v1h-1zM3 6h1v1h-1zM4 6h1v1h-1zM5 6h1v1h-1zM6 6h1v1h-1z'/><path fill='%23fef9c3' d='M1 1h1v1h-1zM5 1h1v1h-1zM1 5h1v1h-1zM5 5h1v1h-1z'/><path fill='%230d0a08' d='M3 1h1v1h-1zM2 2h1v1h-1zM3 2h1v1h-1zM4 2h1v1h-1zM1 3h1v1h-1zM2 3h1v1h-1zM3 3h1v1h-1zM4 3h1v1h-1zM5 3h1v1h-1zM2 4h1v1h-1zM3 4h1v1h-1zM4 4h1v1h-1zM3 5h1v1h-1z'/></svg>"); }
+.ui-frame-studs-red { border-image-source: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='7' height='7' shape-rendering='crispEdges'><path fill='%23dc2626' d='M0 0h1v1h-1zM1 0h1v1h-1zM2 0h1v1h-1zM3 0h1v1h-1zM4 0h1v1h-1zM5 0h1v1h-1zM6 0h1v1h-1zM0 1h1v1h-1zM2 1h1v1h-1zM4 1h1v1h-1zM6 1h1v1h-1zM0 2h1v1h-1zM1 2h1v1h-1zM5 2h1v1h-1zM6 2h1v1h-1zM0 3h1v1h-1zM6 3h1v1h-1zM0 4h1v1h-1zM1 4h1v1h-1zM5 4h1v1h-1zM6 4h1v1h-1zM0 5h1v1h-1zM2 5h1v1h-1zM4 5h1v1h-1zM6 5h1v1h-1zM0 6h1v1h-1zM1 6h1v1h-1zM2 6h1v1h-1zM3 6h1v1h-1zM4 6h1v1h-1zM5 6h1v1h-1zM6 6h1v1h-1z'/><path fill='%23fecaca' d='M1 1h1v1h-1zM5 1h1v1h-1zM1 5h1v1h-1zM5 5h1v1h-1z'/><path fill='%230d0a08' d='M3 1h1v1h-1zM2 2h1v1h-1zM3 2h1v1h-1zM4 2h1v1h-1zM1 3h1v1h-1zM2 3h1v1h-1zM3 3h1v1h-1zM4 3h1v1h-1zM5 3h1v1h-1zM2 4h1v1h-1zM3 4h1v1h-1zM4 4h1v1h-1zM3 5h1v1h-1z'/></svg>"); }
+
+/* Item stubs (ItemStubColumn.jsx): a stub fades out once its item has been still five minutes. */
+.gi-stub { transition: opacity 900ms steps(4, end); }
+.gi-stub[data-stub-fading="true"] { opacity: 0; }
+
+/* While anything is dragged, the stubs and banners let the pointer through: no panel pops open
+   over a drop, and nothing there can take it. */
+body.gi-dnd-active [data-item-stubs] *,
+body.gi-dnd-active [data-banners] * { pointer-events: none !important; }
+
+/* A first find's stub: the button shine passes across it once as it appears. */
+.gi-stub-new::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(110deg, transparent 0 40%, rgba(255, 255, 255, 0.4) 40% 60%, transparent 60% 100%);
+  animation: ui-shine-sweep 420ms steps(7, end) 1 both;
+}
+
+/* Banners (BannerStack.jsx): they drop from behind the top bar with one small overshoot, and lift
+   back up when clicked. A milestone gets one pass of the shine after it lands. */
+@keyframes gi-banner-drop {
+  0%   { transform: translateY(-120%); }
+  70%  { transform: translateY(6px); }
+  100% { transform: translateY(0); }
+}
+@keyframes gi-banner-lift {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-120%); }
+}
+.gi-banner { animation: gi-banner-drop 420ms ease-out both; }
+.gi-banner[data-banner-leaving="true"] { animation: gi-banner-lift 200ms ease-in both; }
+.gi-banner-shine::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(110deg, transparent 0 40%, rgba(255, 255, 255, 0.35) 40% 60%, transparent 60% 100%);
+  animation: ui-shine-sweep 560ms steps(9, end) 420ms 1 both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .gi-banner, .gi-banner[data-banner-leaving="true"] { animation: none; }
+  .gi-banner-shine::before, .gi-stub-new::before { animation: none; }
+}
+
+/* Hovering a banner about a hero or a Token outlines it: gold, red for a problem. Set only while
+   the banner is hovered (bannerHighlight.js), so it costs nothing otherwise. */
+[data-banner-outline="gold"] {
+  filter: drop-shadow(2px 0 0 #facc15) drop-shadow(-2px 0 0 #facc15) drop-shadow(0 2px 0 #facc15) drop-shadow(0 -2px 0 #facc15);
+}
+[data-banner-outline="red"] {
+  filter: drop-shadow(2px 0 0 #dc2626) drop-shadow(-2px 0 0 #dc2626) drop-shadow(0 2px 0 #dc2626) drop-shadow(0 -2px 0 #dc2626);
+}
+
 /* All Caps Toggle Rules */
 body[data-allcaps="true"] *:not(input):not(textarea):not(code) {
   text-transform: uppercase !important;

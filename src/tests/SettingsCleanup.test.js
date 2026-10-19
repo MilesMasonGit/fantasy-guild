@@ -43,7 +43,7 @@ describe('CR3-033: the four retired controls are gone', () => {
     });
 });
 
-describe('CR3-033: the four previously-ruled controls are disabled with "Coming soon"', () => {
+describe('CR3-033: the previously-ruled controls are disabled with "Coming soon"', () => {
     it('Theme Mode, Zoom to Cursor and Animations (Accessibility tab)', () => {
         mount();
         for (const key of ['gameplay.themeMode', 'ui.zoomToCursor', 'gameplay.enableAnimations']) {
@@ -54,27 +54,34 @@ describe('CR3-033: the four previously-ruled controls are disabled with "Coming 
         }
     });
 
-    it('Notification Position (Notifications tab)', () => {
+});
+
+describe('the Notifications tab is one switch, for the item stubs', () => {
+    it('shows only the item-stub switch: the position and message toggles are gone', () => {
         mount();
         openTab('Notifications');
-        const row = document.querySelector('[data-setting="notifications.position"]');
+        for (const key of ['notifications.position', 'showSystemMessages', 'showLevelUpMessages', 'showLootMessages']) {
+            expect(document.querySelector(`[data-setting="${key}"]`)).toBeNull();
+        }
+        expect(document.body.textContent).not.toContain('Notification Position');
+        const row = document.querySelector('[data-setting="notifications.itemStubs"]');
         expect(row).not.toBeNull();
-        expect(row.getAttribute('data-setting-disabled')).toBe('true');
-        expect(row.textContent).toContain('Coming soon');
+        expect(row.getAttribute('data-setting-disabled')).not.toBe('true');
+    });
+
+    it('the switch turns the item stubs off and on', () => {
+        mount();
+        openTab('Notifications');
+        const toggle = document.querySelector('[data-setting="notifications.itemStubs"] button');
+        expect(SettingsManager.get('notifications.itemStubs')).toBe(true);
+        fireEvent.click(toggle);
+        expect(SettingsManager.get('notifications.itemStubs')).toBe(false);
+        fireEvent.click(toggle);
+        expect(SettingsManager.get('notifications.itemStubs')).toBe(true);
     });
 });
 
-describe('CR3-033: the five unwired controls are disabled with "Coming soon"', () => {
-    it('System, Level Up and Loot Messages (Notifications tab)', () => {
-        mount();
-        openTab('Notifications');
-        for (const key of ['showSystemMessages', 'showLevelUpMessages', 'showLootMessages']) {
-            const row = document.querySelector(`[data-setting="${key}"]`);
-            expect(row).not.toBeNull();
-            expect(row.getAttribute('data-setting-disabled')).toBe('true');
-        }
-    });
-
+describe('CR3-033: the unwired controls are disabled with "Coming soon"', () => {
     it('Master Tooltips and Item Tooltips (Gameplay tab)', () => {
         mount();
         openTab('Gameplay');

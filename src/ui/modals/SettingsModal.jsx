@@ -126,28 +126,12 @@ export const SettingsModal = ({ isOpen, onClose }) => {
 
                     {activeTab === 'notifications' && (
                         <div className="flex flex-col gap-3 animate-in fade-in duration-300">
-                            {/**
-                             * These are not wired to anything yet (the setting is read
-                             * nowhere): disabled with 'coming soon' until something wires
-                             * them, rather than left to look live and do nothing.
-                             */}
-                            <SettingToggle settingKey="showSystemMessages" disabled label="System Messages" value={getVal('showSystemMessages')} onChange={(v) => handleSettingChange('showSystemMessages', v)} description="Show messages like game saved, errors, etc." />
-                            <SettingToggle settingKey="showLevelUpMessages" disabled label="Level Up Messages" value={getVal('showLevelUpMessages')} onChange={(v) => handleSettingChange('showLevelUpMessages', v)} />
-                            <SettingToggle settingKey="showLootMessages" disabled label="Loot Messages" value={getVal('showLootMessages')} onChange={(v) => handleSettingChange('showLootMessages', v)} />
-                            <SettingSelect
-                                settingKey="notifications.position"
-                                disabled
-                                label="Notification Position"
-                                value={getVal('notifications.position')}
-                                onChange={(v) => handleSettingChange('notifications.position', v)}
-                                options={[
-                                    { value: 'top_left', label: 'Top Left' },
-                                    { value: 'top_right', label: 'Top Right' },
-                                    { value: 'bottom_left', label: 'Bottom Left' },
-                                    { value: 'bottom_right', label: 'Bottom Right' },
-                                    { value: 'center_top', label: 'Center Top' },
-                                    { value: 'center_bottom', label: 'Center Bottom' }
-                                ]}
+                            <SettingToggle
+                                settingKey="notifications.itemStubs"
+                                label="Item Stubs"
+                                value={getVal('notifications.itemStubs') !== false}
+                                onChange={(v) => handleSettingChange('notifications.itemStubs', v)}
+                                description="Show items gained and spent at the top right of the mat"
                             />
                         </div>
                     )}

@@ -30,9 +30,6 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
     getQueue: vi.fn(() => [])
 }));
-vi.mock('../ui/components/base/ToastContainer.jsx', () => ({
-    default: () => null, ToastContainer: () => null
-}));
 vi.mock('../systems/progression/RegistryManager.js', () => ({
     RegistryManager: { recordItemGain: vi.fn() }
 }));

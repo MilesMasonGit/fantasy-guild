@@ -19,7 +19,8 @@ import { matW, matH } from '../config/matGeometry.js';
 import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
 import { Board } from '../ui/components/board/Board.jsx';
 import { ShopDrawer } from '../ui/components/drawer/ShopDrawer.jsx';
-import ToastContainer from '../ui/components/base/ToastContainer.jsx';
+import { ItemStubColumn } from '../ui/components/notifications/ItemStubColumn.jsx';
+import * as ItemStubs from '../systems/notifications/itemStubs.js';
 
 vi.mock('../systems/progression/RegistryManager.js', () => ({
     RegistryManager: { recordItemGain: vi.fn() }
@@ -27,9 +28,9 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 
 /**
  * ⭐ **What a drop sets off is drawn after the drop.** Buying from the Shop pays its price, which
- * re-reads every row's price and updates the notification column (the item spent), and each
- * re-measures its layout. Drawn in the same commit as the drop, they made the drop's frame the
- * longest of the drag. They now follow it, a frame later at most.
+ * re-reads every row's price and updates the item stubs (the item spent). Drawn in the same
+ * commit as the drop, they made the drop's frame the longest of the drag. They now follow it: the
+ * Shop a frame later at most, the stubs at their store's next emit (`itemStubs.EMIT_MS`).
  */
 
 const h = React.createElement;
@@ -53,6 +54,7 @@ beforeEach(() => {
     GameState.state.inventory.items = {};
     InventoryManager.addItem(WOOD, 30);
     NotificationSystem.dismissAll?.();
+    ItemStubs.reset();
 });
 afterEach(async () => {
     renders.stop();
@@ -61,14 +63,14 @@ afterEach(async () => {
     document.body.classList.remove('gi-dnd-active');
 });
 
-describe('⭐ a purchase drop: the Shop\'s prices and the notification column follow the drop', () => {
-    it('the drop commits first; the Shop list and the toasts draw in later commits', async () => {
+describe('⭐ a purchase drop: the Shop\'s prices and the item stubs follow the drop', () => {
+    it('the drop commits first; the Shop list and the stubs draw in later commits', async () => {
         const view = render(
             h(EngineContext.Provider, { value: { GameState, EventBus } },
                 h(DeckDndProvider, null,
                     h(Board, { onInspectToken: () => {}, onClearInspect: () => {} }),
                     h(ShopDrawer, { isOpen: true, onClose: () => {} }),
-                    h(ToastContainer)))
+                    h(ItemStubColumn)))
         );
         view.container.querySelector('[data-board-origin]').getBoundingClientRect = () => box(0, 0, matW(), matH());
         view.container.querySelector('[data-mat-board]').getBoundingClientRect = () => box(0, 0, matW(), matH());
@@ -85,6 +87,7 @@ describe('⭐ a purchase drop: the Shop\'s prices and the notification column fo
 
         renders.start();
         await act(async () => { fireEvent.pointerUp(document, ptr(700, 500)); });
+        await act(async () => { await new Promise(r => setTimeout(r, ItemStubs.EMIT_MS + 50)); });
         renders.stop();
 
         expect(BoardState.tokens().some(t => t.typeId === 'fixture_da_grove')).toBe(true);
@@ -93,10 +96,11 @@ describe('⭐ a purchase drop: the Shop\'s prices and the notification column fo
         const drop = commits.findIndex(c => c.has('DeckDndProvider'));
         expect(drop).toBeGreaterThanOrEqual(0);
         const shop = commits.findIndex(c => c.has('ShopContents'));
-        const toasts = commits.findIndex(c => c.has('ToastContainer'));
+        const toasts = commits.findIndex(c => c.has('ItemStubColumn'));
         expect(shop).toBeGreaterThan(drop);
         expect(toasts).toBeGreaterThan(drop);
         // And neither is in any commit before React has moved on from the drop's own work.
-        expect(commits.slice(0, drop + 1).some(c => c.has('ShopContents') || c.has('ToastContainer'))).toBe(false);
+        expect(commits.slice(0, drop + 1).some(c => c.has('ShopContents') || c.has('ItemStubColumn'))).toBe(false);
+        expect(view.container.querySelector('[data-item-stub="item_oak_wood"]')?.getAttribute('data-stub-net')).toBe('-5');
     });
 });

@@ -27,6 +27,9 @@ import { workBarPlace, filledSteps } from '../components/board/workBar.js';
 import { ALERT } from '../../systems/board/boardEvents.js';
 import { PixelGlyph, GLYPHS } from '../components/base/PixelGlyph.jsx';
 import { TokenCard } from '../components/board/TokenCard.jsx';
+import { Stub, COLUMN_PX } from '../components/notifications/ItemStubColumn.jsx';
+import { Banner } from '../components/notifications/BannerStack.jsx';
+import { bannerText } from '../../systems/notifications/bannerKinds.js';
 
 /** One art pixel of the UI, in screen pixels: UI sprites draw at 2×. */
 const ART_PX = 2;
@@ -401,6 +404,28 @@ const ArrowBarDemo = () => (
     </div>
 );
 
+/** Item stubs at rest: a gain, a loss, a first find and a pinned tracker. */
+const sampleStub = (itemId, added, removed, extra = {}) => ({
+    itemId, added, removed, firstAt: 0, lastChangedAt: 0, isNew: false, pinned: false, pinnedAt: null, fading: false, ...extra
+});
+const ItemStubDemo = () => (
+    <div className="flex flex-col items-end" style={{ width: COLUMN_PX }}>
+        <Stub stub={sampleStub(SAMPLE_ITEMS[0], 340, 0, { pinned: true, pinnedAt: 1 })} onHover={() => {}} onLeave={() => {}} />
+        <Stub stub={sampleStub(SAMPLE_ITEMS[1], 120, 40)} onHover={() => {}} onLeave={() => {}} />
+        <Stub stub={sampleStub(SAMPLE_ITEMS[2], 2, 14)} onHover={() => {}} onLeave={() => {}} />
+        <Stub stub={sampleStub(SAMPLE_ITEMS[2], 1, 0, { isNew: true })} onHover={() => {}} onLeave={() => {}} />
+    </div>
+);
+
+/** A milestone and a problem banner. */
+const sampleBanner = (id, kind, tone, parts, sprite) => ({ id, kind, tone, parts, sprite, subjects: [], ...bannerText(kind, parts) });
+const BannerDemo = () => (
+    <div className="flex flex-col gap-2">
+        <Banner banner={sampleBanner(-1, 'recipe', 'milestone', { heroes: ['Aela'], recipes: ['Cider', 'Apple Pie', 'Stew'] }, { kind: 'item', id: SAMPLE_ITEMS[2] })} />
+        <Banner banner={sampleBanner(-2, 'knockout', 'problem', { heroes: ['Bram'], lost: ['Copper Sword'] }, { kind: 'src', src: '/assets/heroes/hm_fighter_por.png' })} />
+    </div>
+);
+
 // ---------------------------------------------------------------------------------------------
 // The page's sections. `status` 'shared' renders a shared component; 'unapproved' a placeholder
 // or a new piece waiting for the owner's OK. `slot` names the phase that replaces the entry with
@@ -574,6 +599,16 @@ export const KIT_SECTIONS = [
         id: 'card-icons', title: 'Card icons', status: 'unapproved', source: 'PixelGlyph (the Token card’s lines)',
         rule: 'Placeholders drawn in code until the owner’s sprites: clock, charges, regrow, spawn, grow, turn. 8×8 at 2×, in the text colour.',
         Demo: CardIconsDemo
+    },
+    {
+        id: 'item-stubs', title: 'Item stubs', status: 'unapproved', source: 'ItemStubColumn (top right of the mat)',
+        rule: 'Amount then sprite in a chamfer frame, one stub per item showing its net flow: green gain, red loss. A first find is a gold frame led by "New!". Pinned stubs sit at the top and count since pinning. Hover opens a panel to the left with the name, gained and spent, the net per hour, the pin and (pinned) the reset. Pin and reset icons are code placeholders.',
+        Demo: ItemStubDemo
+    },
+    {
+        id: 'banners', title: 'Banners', status: 'unapproved', source: 'BannerStack (top centre of the mat)',
+        rule: 'About 480 px, a big sprite, a title and one line, studded frame: gold edge for a milestone (one shine pass), red for a problem. Drops from behind the top bar with one overshoot; a click dismisses. Three stack, then "+N". Gold and red frames are code placeholders until the owner draws the ribbon.',
+        Demo: BannerDemo
     },
     {
         id: 'map-modes', title: 'Map mode outlines and banners', status: 'unapproved',

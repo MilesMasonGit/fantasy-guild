@@ -33,7 +33,9 @@ import { FPSCounter } from './components/base/FPSCounter.jsx';
 import { ParticleOverlay } from './components/base/ParticleOverlay.jsx';
 import { TutorialAideOverlay } from './components/base/TutorialAideOverlay.jsx';
 import { ErrorBoundary } from './components/base/ErrorBoundary.jsx';
-import { NotificationSidebars } from './components/board/PopOutSidebars.jsx';
+import { ItemStubColumn } from './components/notifications/ItemStubColumn.jsx';
+import { BannerStack } from './components/notifications/BannerStack.jsx';
+import { ScreenCalloutLayer } from './components/notifications/ScreenCalloutLayer.jsx';
 import TestDashboard from './components/TestDashboard.jsx';
 import PlaymatTuner from './components/PlaymatTuner.jsx';
 import MatTuner from './components/MatTuner.jsx';
@@ -210,6 +212,7 @@ export const ReactRoot = ({ engine }) => {
                 <DeckDndProvider>
                 {particlesDrawn && <ParticleOverlay disabled={ui.isAnyModalOpen} />}
                 <TutorialAideOverlay />
+                <ScreenCalloutLayer />
                 <div className="react-overlay absolute inset-0 z-50 pointer-events-none flex flex-col">
                     <div 
                         className="flex-1 relative flex overflow-hidden bg-black"
@@ -259,14 +262,12 @@ export const ReactRoot = ({ engine }) => {
                                     </div>
                                 </aside>
                             ) : (
-                                isBankOpen ? (
+                                isBankOpen && (
                                     // The Bank's hero column: the hero panel (below) draws over it.
                                     <aside
                                         style={{ width: columnWidthCss(NOTIFICATION_COLUMN) }}
                                         className="shrink-0 h-full pointer-events-none"
                                     />
-                                ) : (
-                                    <NotificationSidebars menuRight />
                                 )
                             )
                         )}
@@ -316,6 +317,14 @@ export const ReactRoot = ({ engine }) => {
                                         onClearInspect={onClearInspect}
                                     />
                                 )}
+                                {/**
+                                 * Over the mat, under the top bar: the item stubs at the right,
+                                 * the banners at the centre. Neither takes any width from the mat.
+                                 */}
+                                <ErrorBoundary label="Notifications">
+                                    <ItemStubColumn />
+                                    <BannerStack />
+                                </ErrorBoundary>
                                 </div>
                             </div>
                             </div>
@@ -384,14 +393,12 @@ export const ReactRoot = ({ engine }) => {
                                     </div>
                                 </aside>
                             ) : (
-                                isBankOpen ? (
+                                isBankOpen && (
                                     // The Bank's hero column: the hero panel (below) draws over it.
                                     <aside
                                         style={{ width: columnWidthCss(NOTIFICATION_COLUMN) }}
                                         className="shrink-0 h-full pointer-events-none"
                                     />
-                                ) : (
-                                    <NotificationSidebars />
                                 )
                             )
                         )}
