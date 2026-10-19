@@ -12,7 +12,8 @@ highlight uses T-153's gold alert outline (wave 2).
 
 - **Change:** the log in the store: loot rows (gains and spends, merged per
   item per minute in the store, never per render, keeping today's per-hour
-  rate), level-up rows, banner rows; ~200 rows; pins with live loot trackers;
+  rate; `ItemRateTracker` also records spending so the net and the spent
+  total exist), level-up rows, banner rows; ~200 rows; pins with live loot trackers;
   the display mode; pins and mode saved (schema entry and a load test). Route
   every event as the concept's audit table says (owner, 2026-10-19),
   including the new hooks: recipe unlocked (first guild-wide, grouped per
@@ -23,12 +24,15 @@ highlight uses T-153's gold alert outline (wave 2).
 ## N2 — On screen
 
 - **Change:** the log button with its badge at the top right; loot toasts
-  slide out and back (max 3, mute from a toast; first find with a gold border
-  and "New!"); the **banner** at the top centre below the top bar (~4 s, one
+  slide out and back (max 3) as the concept's "A toast's
+  look" draws them: amount then sprite, one stub per item showing the net
+  flow (green gain, red loss), hover expands left over the mat with name,
+  gained/spent and net per hour, only the pin clickable, first find in a gold
+  frame led by "New!"; the **banner** at the top centre below the top bar (~4 s, one
   at a time, clickable, gold edge for milestones, red for problems); the
   drop-down log with tabs and Clear log; the three display modes (switch in
   the log's header; banners show in all three); the Settings Notifications
-  tab (gained and spent toggles, the position setting removed); hovering a
+  tab (one item pop-out switch, the position setting removed); hovering a
   row or banner outlines its hero or Token. The edge sidebar goes.
 - **Measure:** `bench:draw --compare` on a loot-heavy save; cost-log line. No
   backdrop blur on toasts.

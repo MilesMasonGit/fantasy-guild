@@ -48,7 +48,7 @@ Cider, ..."). No event exists for it today: derive it from the level-up.
 
 | Event | Goes to |
 |---|---|
-| Items gained, items spent | Toast (spent ones muted), log |
+| Items gained, items spent | Toast (one per item, net flow), log |
 | First time an item is found | Toast with the gold border and "New!", log |
 | Skill or combat level-up | The hero (moment and speech), log row (Heroes tab) |
 | New recipe unlocked | Banner, log |
@@ -65,11 +65,26 @@ Cider, ..."). No event exists for it today: derive it from the level-up.
 - **At most 3 toasts on screen**; extra ones go straight into the log and the
   badge.
 
-## A toast's look
+## A toast's look (owner interview, 2026-10-19)
 
-- **One line: a 16 px sprite and the amount** (and the rate), in a chamfer
-  pixel frame. Spent items muted.
-- **Hovering a toast expands it** with the details.
+- **The stub, at rest**: the **amount, then the item sprite** (`+12 [oak]`),
+  in a small **chamfer pixel frame**. Stubs stack in a narrow column under the
+  log button, one width, numbers right-aligned against their sprites.
+- **One stub per item, always**, showing the **net flow** whatever its
+  sources: a station eating Oak while woodcutters bring it in shows one Oak
+  stub. Its job is to show the overall flow, so a resource draining fast is
+  plain to see. **Green `+` when the net is a gain, red `-` when a loss.**
+- **Hover expands it out to the left over the mat**; nothing else moves, so
+  the mouse can run down the column reading each in turn. The panel, in the
+  same frame, shows: the **item name**; **`+120 gained  -40 spent`** over the
+  recent window; the **net rate `+80 / hr`** (today's 5-minute rolling rate,
+  `ItemRateTracker`, extended to record spending). Hovering holds the stub
+  out.
+- **Clicking does nothing** except the **pin icon** in the panel's corner,
+  which pins it as a live tracker. A stray click while working the mat is
+  harmless.
+- **First find**: the frame turns shiny gold (the button shine) and gold
+  **"New!" leads the stub** (`New! +1 [copper]`); it stays out ~4 s.
 
 ## The log
 
@@ -106,10 +121,9 @@ A small three-way control **in the log's header** (owner, 2026-10-14):
 
 ## Muting and Settings
 
-- **Mute from a toast**: a small menu on a toast ("Stop popping out spent
-  items"), the same switch as in Settings.
-- **Settings, Notifications tab**: pop-out toggles for items gained and items
-  spent; the log always records, and banners always show.
+- **Settings, Notifications tab**: one switch for item pop-outs (the display
+  mode in the log's header does the rest); the log always records, and
+  banners always show. No mute menu on a toast: only its pin is clickable.
 - **Hovering a log row or banner about a hero or a Token** gives it the gold
   attention outline on the mat (problems: red). The six-corner
   **Notification Position** setting goes (it does nothing today).
