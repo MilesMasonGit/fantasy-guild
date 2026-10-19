@@ -16,8 +16,8 @@ attention outline (ruled today).*
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| Brief 130 R1: the recipe list logic (T-169, absorbs T-142) | builder | `crunch/recipe-list` (`rl`) | building | Mon | |
-| Brief 130 R2: the list on screen, inside the Token card | builder | `crunch/recipe-list` (`rl`) | building | Mon | |
+| Brief 130 R1: the recipe list logic (T-169, absorbs T-142) | builder | `crunch/recipe-list` (`rl`) | ready (3cd47398; `RecipeList.js`, pure, 28 tests; director's gate on ed9949c0: 5413 tests, cycles, build) | Mon | Mon |
+| Brief 130 R2: the list on screen, inside the Token card | builder | `crunch/recipe-list` (`rl`) | eye-check (ed9949c0; card flips in place and grows, gear opens the card on its list, old modal and bands deleted, Board.jsx edit as its own commit 319358dd by the director's leave; builder used it in the game on a furnace and a Wood Foundation). Look questions: the Back button, the `???` silhouettes on dark art; calls kept: can-run measured on the whole roster, merged dividers, byproducts at 32 px muted, cover-scaled art only in list view | Mon | Mon |
 | Brief 150 N1: the store and routing for item stubs and banners (T-168, T-028, T-037; owner revised 2026-10-19, no log) | builder | `crunch/notifications` (`nt`) | building | Mon | |
 | Brief 150 N2: item stubs on screen (net flow per item, hover panel, pins, Clear all; replaces the edge sidebar) | builder | `crunch/notifications` (`nt`) | building | Mon | |
 | Brief 150 N3: banners on screen (top centre, gold milestones, red problems, stay until clicked, three then +N) | builder | `crunch/notifications` (`nt`) | building | Mon | |
