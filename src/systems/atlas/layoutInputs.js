@@ -6,7 +6,7 @@ import { getTokenType, standsOnOf } from '../../config/registries/tokenRegistry.
 import { KEYWORD, statementsWith } from '../effects/statements.js';
 import { isWithin, nearRadius } from '../board/nearby.js';
 import * as Restrictions from '../board/Restrictions.js';
-import { HALL_TYPE_ID } from './Layout.js';
+import { HALL_TYPE_ID, AFFINITY } from './Layout.js';
 import { allowsTerrain } from './TerrainMap.js';
 
 /**
@@ -80,6 +80,33 @@ export function terrainRule() {
     };
 }
 
+/**
+ * What each kind of Token prefers to stand near when a layout places it (`Layout.AFFINITY`), by a
+ * word in its id or its sprite's name: ore and stone by rock, berry bushes by water, trees on grass.
+ * A preference, never a rule: "Stands on" is the rule.
+ */
+export const KIND_WORDS = Object.freeze({
+    ore: AFFINITY.ROCK, vein: AFFINITY.ROCK, outcrop: AFFINITY.ROCK, deposit: AFFINITY.ROCK,
+    bush: AFFINITY.WATER,
+    tree: AFFINITY.GRASS, forest: AFFINITY.GRASS, sapling: AFFINITY.GRASS
+});
+
+/** The kind a Token type is by {@link KIND_WORDS}, its id's words first, then its sprite's; null for none. */
+export function kindOf(typeId) {
+    const words = [...String(typeId).split('_'), ...String(getTokenType(typeId)?.sprite || '').split('_')];
+    for (const word of words) if (Object.prototype.hasOwnProperty.call(KIND_WORDS, word)) return KIND_WORDS[word];
+    return null;
+}
+
+/** A layout `affinity` seam that reads each Token's kind ({@link kindOf}) once per layout. */
+export function affinityRule() {
+    const kinds = new Map();
+    return (typeId) => {
+        if (!kinds.has(typeId)) kinds.set(typeId, kindOf(typeId));
+        return kinds.get(typeId);
+    };
+}
+
 /** Everything `Layout.layout` needs besides the budget, as the game supplies it. */
 export function layoutOptions(summary, seed) {
     const entries = Array.isArray(summary) ? summary : (summary?.entries || []);
@@ -89,6 +116,7 @@ export function layoutOptions(summary, seed) {
         crowding: shippedCrowding(),
         artRadius: artRadiusOf,
         terrainAllows: terrainRule(),
-        allows: cannotCheck(entries.map(e => e.typeId))
+        allows: cannotCheck(entries.map(e => e.typeId)),
+        affinity: affinityRule()
     };
 }

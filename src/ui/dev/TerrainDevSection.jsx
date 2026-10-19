@@ -6,7 +6,7 @@ import { EventBus, UI_LISTENER } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 import * as Atlas from '../../systems/atlas/Atlas.js';
 import { lastGroundBuilds, onGroundBuilt } from '../components/board/groundBuilds.js';
-import { TERRAIN_DEV_REGIONS, TERRAIN_DEV_WATER, goToDevRegion, rerollDevRegion, backToStarterCamp, viewOf, placeGroundTestTokens } from './terrainDev.js';
+import { TERRAIN_DEV_REGIONS, TERRAIN_DEV_WATER, TERRAIN_DEV_PLACEMENT, goToDevRegion, rerollDevRegion, backToStarterCamp, viewOf, placeGroundTestTokens } from './terrainDev.js';
 
 const labelClass = 'text-[11px] font-bold uppercase tracking-wider text-gi-muted mb-1';
 const buttonClass = 'px-2 py-1 rounded bg-gi-primary/10 hover:bg-gi-primary/20 border border-gi-primary/40 text-xs font-bold transition-colors';
@@ -23,8 +23,8 @@ function whereNow() {
 const ms = (n) => (n == null ? '–' : `${n.toFixed(1)} ms`);
 
 /**
- * A button per view of the ground (each biome, each pair of the first three, then each kind of
- * water): each settles a dev Region for free and takes the guild there. Reroll it gives the one the guild is in a new seed; Back to the
+ * A button per view of the ground (each biome, each pair of the first three, each kind of water,
+ * then the placement views with a camp and a Test Chest): each settles a dev Region for free and takes the guild there. Reroll it gives the one the guild is in a new seed; Back to the
  * Starter Camp goes home. The dev Region left behind is removed. Place the ground test Tokens puts a
  * Token that needs water, one that needs the shore and one that needs rock near the Hall, for the
  * grid while placing. Under them, how long the ground's last build took.
@@ -71,6 +71,19 @@ export function TerrainDevSection() {
             <div className={labelClass}>Water</div>
             <div className="grid grid-cols-2 gap-1">
                 {TERRAIN_DEV_WATER.map(view => (
+                    <button
+                        key={view.id}
+                        data-terrain-view={view.id}
+                        onClick={() => run(() => goToDevRegion(view.maps), view.label)}
+                        className={buttonClass}
+                    >
+                        {view.label}
+                    </button>
+                ))}
+            </div>
+            <div className={labelClass}>Placement</div>
+            <div className="grid grid-cols-2 gap-1">
+                {TERRAIN_DEV_PLACEMENT.map(view => (
                     <button
                         key={view.id}
                         data-terrain-view={view.id}
