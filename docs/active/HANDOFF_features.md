@@ -63,11 +63,11 @@ will meet heavy changes in `MatToken.jsx`, `MatBoard.jsx`, `TokenBubbles.jsx`,
 
 ## Next phases (queue in `briefs/README.md`)
 
-1. **Brief 170, quest boards** (needs 120: done).
-2. **Brief 130, the recipe list** (needs 120: done).
-3. **Brief 150, notifications** or **160, the Atlas tome** (UI side only;
-   `src/systems/atlas/` is the terrain director's).
-4. Fillers: T-186, T-187, T-189, T-192.
+Owner 2026-10-19 chose **batch 5: brief 130, the recipe list, and brief 150,
+notifications**, one eye-check (rows in STATUS, planned only). Then brief 170
+(quest boards), then 160 (the Atlas tome; UI side only). Fillers: T-186,
+T-187, T-189, T-191, T-192. Also ruled 2026-10-19: Token outlines red for
+problems, gold for attention (UI_STYLE); Fight stays on for Recruits.
 
 ## Working with the terrain director
 

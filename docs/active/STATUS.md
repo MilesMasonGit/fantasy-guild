@@ -5,6 +5,22 @@ five-line summary at each batch's edges (proposed, looked at); anything older
 than two days is trimmed. States: queued · building · ready (tests, cycles,
 build green) · bench-queued · eye-check · merged.*
 
+## Features director, batch 5: the recipe list and notifications (owner 2026-10-19 chose this; build starts when the owner's token budget resets)
+
+*Planned only: no worktrees yet. R and N touch different files and may run as
+two code agents at once if the terrain director is idle; otherwise one after
+the other, recipe list first. One eye-check for both. At build start: run the
+suite on `main` (not run at planning), read each brief, and tell each agent
+which files the other holds. Notifications' hover highlight uses the gold
+attention outline (ruled today).*
+
+| Phase | Tier | Branch (worktree) | State | Planned | Done |
+|---|---|---|---|---|---|
+| Brief 130 R1: the recipe list logic (T-169, absorbs T-142) | builder | `crunch/recipe-list` (`rl`) | queued | next session | |
+| Brief 130 R2: the list on screen, inside the Token card | builder | `crunch/recipe-list` (`rl`) | queued | next session | |
+| Brief 150 N1: the notification store and log (T-168, T-028, T-037) | builder | `crunch/notifications` (`nt`) | queued | next session | |
+| Brief 150 N2: on screen (log button with unread count, pop-out toasts, pins; replaces the edge sidebar) | builder | `crunch/notifications` (`nt`) | queued | next session | |
+
 ## Features director, batch 1: the style kit (ruled 2026-10-17)
 
 **All of this batch merged to `main` 2026-10-18 (b68cd020), owner eye-check ok.**
@@ -134,11 +150,7 @@ branch), so it uses the kit and everyone fights; it merges after both.*
 *Design questions the director cannot answer, as multiple choice, recommendation
 first; asked with the next batch proposal and recorded where they belong.*
 
-- **Alert outline colour** (found by K1): UI_STYLE says alerts are a gold outline; the game draws Token alerts red (`outline="alert"`) and has for a while. Keep red for Tokens, switch to gold, or red for problems and gold for attention? Asked in the style kit's eye-check.
-
-- **Recruits and Fight by default** (found by T-167): Fight is on by default for everyone, so a Recruit's flag now goes after peaceful enemies in its reach (a Cow, which a level 1 fighter loses to) and hostiles attack Recruits. Keep Fight on for Recruits (everyone fights, the player turns it off), or default it off for Recruits until promotion (the player turns it on for the tutorial fight)? Asked with T-167's eye-check.
-
-Earlier: none open. (Ruled 2026-10-15: equip-by-drop opens the sheet a frame later,
+None open. (Ruled 2026-10-19: Token outlines red for problems, gold for attention, in UI_STYLE; Fight stays on for Recruits, everyone fights. Ruled 2026-10-15: equip-by-drop opens the sheet a frame later,
 T-186; the badges' soft shadows are settled inside T-013.)
 
 ## Bench queue (one at a time, weekdays 13:00–17:00 and 01:00–07:00, or when the owner says the PC is quiet)
@@ -148,6 +160,13 @@ T-186; the badges' soft shadows are settled inside T-013.)
 8. Terrain director: **bench baseline retake** on `main` at the next 01:00 window (engine and draw; every run since 16 Oct reads 10-20 % slow on unchanged code).
 
 ## Summaries
+
+**Mon 2026-10-19: features batch 5 proposed and ruled (planning only).**
+Where we are: the queue is clear, no features branches open, `planning` and
+`art/asset-reorg` have nothing ahead of `main`. Next: the recipe list (brief
+130) and notifications (brief 150), one eye-check; quest boards (170) and the
+Atlas tome (160) wait. Owner: the weak Starter Camp enemy and card art in the
+CMS when free. Blockers: the weekly token budget.
 
 **Mon 2026-10-19, morning: terrain session closed.** Where we are: generated
 ground, water in every Region, placement, blended borders and the playmat

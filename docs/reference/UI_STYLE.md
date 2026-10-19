@@ -81,8 +81,10 @@ normal text colour; a new meaning needs the owner's OK.
 | White | hover, selection |
 | Muted grey | locked, unavailable |
 
-- **Hover is a 1-art-pixel white outline**; **alerts are a gold one**, which
-  may pulse its colour between two golds but never move or resize. No glows,
+- **Hover is a 1-art-pixel white outline**; **attention is a gold one**
+  (look here: a quest ready, a level-up, a notification's highlight), which
+  may pulse its colour between two golds but never move or resize; **a
+  problem (stuck, no input) is a red one** (owner, 2026-10-19). No glows,
   no bobbing, no scaling (T-147, T-153).
 
 ## Sprites and icons
