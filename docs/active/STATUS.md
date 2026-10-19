@@ -7,18 +7,22 @@ build green) · bench-queued · eye-check · merged.*
 
 ## Features director, batch 1: the style kit (ruled 2026-10-17)
 
+**All of this batch merged to `main` 2026-10-18 (b68cd020), owner eye-check ok.**
+
 *The second director (owner, 2026-10-17) works the main queue; the terrain
 director keeps the rows below. One code agent at a time here while terrain
 runs one, so the PC holds two.*
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| Brief 100 K1: the style sheet page, every standard UI piece live (T-159) | builder | `crunch/style-kit` (`k1`) | eye-check (ca5bf7ff; director's gate: 5106 tests, cycles, build) | Sat | |
-| Brief 100 K2: one shared arrow-bar scroll list (T-160) | builder | `crunch/style-kit` (`k1`) | eye-check (14474430; director's gate: 5113 tests, cycles, build). Arrows now dim instead of hiding on the inspect column, pop-up and rank list (UI_STYLE); four look questions for the eye-check | Sat | Sat |
-| Brief 100 K3: three text sizes and the shared tooltip (T-161, T-038, T-030) | builder (tooltip spans several files) | `crunch/style-kit` (`k1`) | eye-check (7060a37f; director's gate on the whole kit: 5126 tests, cycles, build). Sizes 18/16/14, display 32 proposed; tooltip on the Bank, Shop and hero panel | Sat | Sat |
+| Brief 100 K1: the style sheet page, every standard UI piece live (T-159) | builder | `crunch/style-kit` (`k1`) | merged b68cd020 (ca5bf7ff; director's gate: 5106 tests, cycles, build) | Sat | |
+| Brief 100 K2: one shared arrow-bar scroll list (T-160) | builder | `crunch/style-kit` (`k1`) | merged b68cd020 (14474430; director's gate: 5113 tests, cycles, build). Arrows now dim instead of hiding on the inspect column, pop-up and rank list (UI_STYLE); four look questions for the eye-check | Sat | Sat |
+| Brief 100 K3: three text sizes and the shared tooltip (T-161, T-038, T-030) | builder (tooltip spans several files) | `crunch/style-kit` (`k1`) | merged b68cd020 (7060a37f; director's gate on the whole kit: 5126 tests, cycles, build). Sizes 18/16/14, display 32 proposed; tooltip on the Bank, Shop and hero panel | Sat | Sat |
 | Recruits get a weak basic attack so the tutorial's fight can be won (T-167); owner authors a safe enemy in the Starter Camp afterwards | builder | `fix/t167-recruit-attack` | eye-check (6790962d, with the QA Hire button making roster room; director's gate: 5109 tests, cycles, build; director saw a fresh Recruit beat a Goblin in ~10 s on 5197: Bones on the mat, skills unchanged, the hostile Goblin hit first). Bench-queued (work check; builder expects same) | Sat | |
 
 ## Features director, batch 4: the mat, hover and the Token card (owner 2026-10-18 chose brief 120 next)
+
+**All of this batch merged to `main` 2026-10-18 (b68cd020), owner eye-check ok.**
 
 *Built on `crunch/map-tools`; merges after it. Two eye-checks: after C2 (mat
 and hover) and after C3 (card). C1 needs a `bench:draw --compare` before and
@@ -31,6 +35,8 @@ after (director, quiet window); the engineer reports DOM counts meanwhile.*
 | Brief 120 C3: the Token card | builder | `crunch/info-layers` (`il`) | eye-check (dd93f7a8; director's gate: 5272 tests, cycles, build; no `data/` or art touched). Preview `ec` moved to dd93f7a8 | Sun | Sun |
 
 ## Features director, batch 3: map tools (owner 2026-10-17: keep going with the larger implementations; fine refinements later)
+
+**All of this batch merged to `main` 2026-10-18 (b68cd020), owner eye-check ok.**
 
 *Owner's look so far (2026-10-17, late): the style sheet looks good; the shine
 needs work (T-191, later); the Goblin fight doesn't start for the owner (being
@@ -46,6 +52,8 @@ until the owner says otherwise in the refinement pass. Built on
 | Brief 110 M3: top bar restyle (T-170) | builder | `crunch/map-tools` (`mt`) | eye-check (52beccc3, then `crunch/hero-bar` merged in; director's gate on the result: 5224 tests, cycles, build; frame pictures in LFS). Served on 5198 from `mt` for the one combined eye-check | Sun | Sun |
 
 ## Features director, batch 2: the hero bar (owner 2026-10-17: proceed while the kit's eye-check waits a few hours)
+
+**All of this batch merged to `main` 2026-10-18 (b68cd020), owner eye-check ok.**
 
 *Built on `crunch/style-kit` plus `fix/t167-recruit-attack` (merged into the
 branch), so it uses the kit and everyone fights; it merges after both.*
@@ -134,13 +142,21 @@ T-186; the badges' soft shadows are settled inside T-013.)
 
 ## Bench queue (one at a time, weekdays 13:00–17:00 and 01:00–07:00, or when the owner says the PC is quiet)
 
-1. `fix/t167-recruit-attack` (6790962d): engine work check (`npm run bench -- --compare`), features director.
-2. `crunch/style-kit` (7060a37f): engine work check and one `bench:draw --compare` for the cost log, features director.
-3. `crunch/hero-bar` (after H3): engine work check and `bench:draw --compare` (the level-up floats), features director.
-5. `crunch/info-layers` (C1): `bench:draw --compare` against `crunch/map-tools` (the mat must draw cheaper; if dearer, stop and report) and `bench:crisp`, features director.
-4. `crunch/map-tools`: engine work check (expect WORK CHANGED on S2, S3, S5, S6, S8 from the hostile flag watch; accept under the T-167 ruling) and `bench:draw --compare` (the top bar frame, the mode outlines), features director. The four branches stack: kit → Recruits → hero bar → map tools; one run on `map-tools` plus a work check per merge.
+1. **Features stack, merged 2026-10-18 (b68cd020) on the owner's word**: the engine work check ran on the merge (S2, S3, S5, S6, S8, S8L, S8F WORK CHANGED from the hostile flag watch, accepted under T-167; a control run of `main` bcf1324d was the same work; S1, S4, S7 same). Still owed in a quiet window on `main`: the engine timing re-run (daytime load read S3/S4/S7 slower on `main` too), and one `bench:draw --compare` plus `bench:crisp` for the cost log (brief 120 C1 must draw cheaper than before the stack; brief 110's top bar frame and mode outlines; the level-up floats). If C1 draws dearer, a ticket and a report to the owner.
 
 ## Summaries
+
+**Sun 2026-10-18, evening: features stack merged.** The owner's eye-check
+was good; the stack (briefs 100, 140, 110, 120 and the Recruits' fight with
+hostiles watching the flag) merged to `main` as b68cd020 after the gate on the
+merged result (5302 tests, cycles, build) and the engine work check (the
+expected change accepted under T-167). Twelve tickets closed; T-030 and T-038
+stay open with what's left. Worktrees `k1`, `t167`, `hb`, `mt`, `il`, `ec`,
+`mg` removed. Owed: timing and draw benches in a quiet window (queue above).
+**Note for the playmat agent (`sp`, crunch/style-p1):** `main` now changes
+`MatToken.jsx`, `MatBoard.jsx`, `TokenBubbles.jsx`, `MatTopBar.jsx` and
+`tailwind.css` heavily; merge `main` in before going further. Owner: the CMS
+steps (a safe Starter Camp enemy, card art).
 
 **Sun 2026-10-18, afternoon: features director's closing summary.** Where we
 are: four batches built and gated, none merged, stacked kit → Recruits (with
