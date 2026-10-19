@@ -42,3 +42,10 @@ three or four of each.
 - **C: Ore leaning to rock** in another biome's ground keeps its own ground, so
   a little patch of its biome forms around it. A (recommended): keep. B: no
   leaning; only bushes go by water.
+
+## Verdicts (owner, 2026-10-18)
+
+Looks accepted. A: the word table (about six kinds per map, one kind per
+grove). B: islands occasional, not forced; a special Token placed somewhere
+hidden is fine (as built). C: explained again in plain words; answer pending
+(as built: leaning keeps its own ground).
