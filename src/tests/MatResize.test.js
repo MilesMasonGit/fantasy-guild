@@ -163,7 +163,10 @@ describe('⭐ shrinking the mat pulls what no longer fits back inside (FP-98)', 
         // ...and one Token stranded off the edge, with nowhere to be pulled to.
         const stranded = placeAt('rs_small', 1700, 1000);
 
+        const said = [];
+        const off = EventBus.subscribe(BOARD_EVENTS.TILE_EVENT_ALERT, (p) => said.push(p));
         const summary = MatResize.fitToMat();
+        off();
 
         const moved = BoardState.getTokenById(stranded.id);
         expect(moved).not.toBeNull();                                  // never removed
@@ -171,9 +174,10 @@ describe('⭐ shrinking the mat pulls what no longer fits back inside (FP-98)', 
         // Exactly where the clamp put it: on the mat, overlapping a neighbour.
         expect({ x: moved.x, y: moved.y }).toEqual(MatPlacement.clampInside('rs_small', { x: 1700, y: 1000 }));
         expect(summary.crowded).toBe(1);
-        expect(NotificationSystem.warning).toHaveBeenCalledWith(
-            expect.stringContaining('overlapping')
-        );
+        // Said as a callout over the crowded Token, never a notification.
+        expect(said.filter(p => p.type === 'resize_crowded').map(p => [p.instanceId, p.title]))
+            .toEqual([[stranded.id, MatResize.CROWDED_TEXT]]);
+        expect(NotificationSystem.warning).not.toHaveBeenCalled();
     });
 
     it('a flag outside the new mat is clamped, and never nudged off another flag', () => {

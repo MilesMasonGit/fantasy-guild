@@ -55,20 +55,27 @@ describe('dead event wiring stays dead', () => {
      * promotes. A refused acceptance returns its reason to the ceremony (P4),
      * which shows it beside the button that was pressed.
      *
+     * ⚠️ **Repointed with the notifications rebuild.** A completed promotion is a banner now:
+     * `PromotionSystem` publishes `HERO_PROMOTED` and the notifications' routing table sends it
+     * to the promotion banner.
+     *
      * ⚠️ **Repointed in slice 2.2.** The Bank sale half is gone: gold is
      * retired and the Bank has no sell controls, so there is no refused sale to
      * announce. What is checked instead is that the Bank no longer sells.
      */
-    it('the job change reaches the player through NotificationSystem, and the Bank no longer sells (CR2-130, SP-65)', () => {
+    it('the job change reaches the player as a banner, and the Bank no longer sells (CR2-130, SP-65)', () => {
         const bank = CODE.find(f => f.path === 'ui/components/drawer/BankTab.jsx');
-        const promo = CODE.find(f => f.path === 'systems/board/BoardPromotion.js');
+        const promo = CODE.find(f => f.path === 'systems/hero/PromotionSystem.js');
+        const routing = CODE.find(f => f.path === 'systems/notifications/routing.js');
         expect(bank, 'BankTab.jsx').toBeDefined();
-        expect(promo, 'BoardPromotion.js').toBeDefined();
+        expect(promo, 'PromotionSystem.js').toBeDefined();
+        expect(routing, 'routing.js').toBeDefined();
 
         // Nothing sells to the merchant any more (slice 2.2).
         expect(bank.text).not.toMatch(/CommerceSystem|sellItem/);
         // A completed promotion says so.
-        expect(promo.text).toMatch(/NotificationSystem\.success\(/);
+        expect(promo.text).toMatch(/publish\(ENGINE_EVENTS\.HERO_PROMOTED/);
+        expect(routing.text).toMatch(/ENGINE_EVENTS\.HERO_PROMOTED, to: 'banner:promotion'/);
     });
 
     /**

@@ -123,7 +123,8 @@ function refuseWithAlert(point, typeId, decision) {
         rulesText: decision.rulesText || decision.reason,
         message: `Drop Rejected: ${vName}`
     });
-    return refuse(decision.reason, { full: true });
+    // `alerted`: the mat has said why already, so the drop does not say it twice.
+    return refuse(decision.reason, { full: true, alerted: true });
 }
 
 /**

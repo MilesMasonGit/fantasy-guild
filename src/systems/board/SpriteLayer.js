@@ -42,6 +42,18 @@ const MERGE_GRACE_MS = 900;
 let collecting = false;
 
 /**
+ * Items the player has been told the Bank refused (`BANK_FULL`). A full Bank refuses the same pile
+ * on every sweep, so each item is said once, until the Bank takes some of it again.
+ */
+const refusedSaid = new Set();
+
+function sayBankFull(itemId) {
+    if (!itemId || refusedSaid.has(itemId)) return;
+    refusedSaid.add(itemId);
+    EventBus.publish(ENGINE_EVENTS.BANK_FULL, { itemId });
+}
+
+/**
  * Sweep batching.
  *
  * A sweep is one player-visible event, the floor tidying itself, not forty. While `sweepDepth > 0`,
@@ -395,7 +407,12 @@ export function collectSprite(id) {
             }
 
             const added = InventoryManager.addItem(sprite.refId, sprite.quantity);
-            if (added <= 0) return false;               // Bank full — it stays put
+            if (added <= 0) {                           // Bank full — it stays put
+                // An item with no definition is refused too, but not for want of room.
+                if (getItem(sprite.refId)) sayBankFull(sprite.refId);
+                return false;
+            }
+            refusedSaid.delete(sprite.refId);
             if (added < sprite.quantity) {
                 sprite.quantity -= added;               // partial fit, remainder waits
                 changed = true;
@@ -434,7 +451,9 @@ function bankRefuses(sprite) {
 
 /** {@link collectSprite}, skipping a pile the Bank would refuse. For the sweeps. */
 function sweepOne(sprite) {
-    return bankRefuses(sprite) ? false : collectSprite(sprite.id);
+    if (!bankRefuses(sprite)) return collectSprite(sprite.id);
+    sayBankFull(sprite.refId);
+    return false;
 }
 
 /**
@@ -555,7 +574,10 @@ export function init() {
         // already on the board and re-adding it would duplicate it every sweep.
         if (collecting) return;
         addSprite('item', itemId, amount, null);
+        sayBankFull(itemId);
         logger.debug('SpriteLayer', `Bank full — ${amount}× ${itemId} stays on the board (D-138)`);
     });
+    // Another save: what it refuses has not been said yet.
+    EventBus.subscribe(ENGINE_EVENTS.GAME_LOADED, () => refusedSaid.clear());
     logger.info('SpriteLayer', 'Loot sprite layer ready');
 }

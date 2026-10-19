@@ -2,7 +2,6 @@ import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
-import * as NotificationSystem from '../core/NotificationSystem.js';
 import {
     GUILD_UPGRADES, getUpgradeDef, getUpgradePrice, totalPrice, isUpgradeAccessible, getLockReason,
     rosterLimitForRank
@@ -128,13 +127,10 @@ export const GuildUpgradeManager = {
             const hero = generateHero();
             rehydrateHero(hero);
             GameState.heroes.push(hero);
-            NotificationSystem.success(`New Hero Recruited: ${hero.name}! (${def.name} Level ${newRank})`);
             EventBus.publish(ENGINE_EVENTS.HERO_RECRUITED, {
                 heroId: hero.id,
                 name: hero.name
             });
-        } else {
-            NotificationSystem.success(`${def.name} upgraded — ${def.statLabel(newRank)}`);
         }
 
         EventBus.publish(ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, { upgradeId, rank: newRank });

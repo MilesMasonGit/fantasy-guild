@@ -7,9 +7,7 @@ import { getJob } from '../../config/registries/jobRegistry.js';
 import { KEYWORD, promotedJobOf, statementsWith } from '../effects/statements.js';
 import * as Charges from './Charges.js';
 import * as PromotionSystem from '../hero/PromotionSystem.js';
-import * as HeroManager from '../hero/HeroManager.js';
 import * as BoardState from './BoardState.js';
-import * as NotificationSystem from '../core/NotificationSystem.js';
 import { logger } from '../../utils/Logger.js';
 
 /**
@@ -222,8 +220,6 @@ export function accept(instanceId) {
     // Forest or Bear leaves.
     if (price > 0) Charges.applyDelta(instance, -price, { heroId });
 
-    const hero = HeroManager.getHero(heroId);
-    NotificationSystem.success(`${hero?.name || 'Your hero'} is now a ${job.name}!`);
     logger.info('BoardPromotion', `Token ${instance.id}: ${heroId} → ${job.id} (spent ${price})`);
 
     return { success: true, jobId: job.id, spent: price, ...result };

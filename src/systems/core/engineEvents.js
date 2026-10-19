@@ -91,6 +91,11 @@ export const ENGINE_EVENTS = Object.freeze({
     INVENTORY_UPDATED: 'inventory_updated',
     /** Items did not fit in the Bank. Payload: `{ itemId, amount }`. */
     INVENTORY_OVERFLOW: 'inventory_overflow',
+    /**
+     * The Bank has no room for an item, so it waits on the mat. Payload: `{ itemId }`. Said once
+     * per item until the Bank takes that item again (`SpriteLayer`).
+     */
+    BANK_FULL: 'bank_full',
 
     /** Payload: `{ upgradeId, rank }`. */
     GUILD_UPGRADES_UPDATED: 'guild_upgrades_updated',
@@ -137,12 +142,10 @@ export const ENGINE_EVENTS = Object.freeze({
      */
     CATCH_UP_FINISHED: 'catch_up_finished',
 
-    /** Payload: the notification object. */
+    /** A slot-screen message was raised. Payload: the message, `{ id, message, type, … }`. */
     NOTIFICATION_ADDED: 'notification_added',
     /** Payload: `{ id }`. */
     NOTIFICATION_DISMISSED: 'notification_dismissed',
-    /** Payload: `{ id, … }` (the changed fields). */
-    NOTIFICATION_UPDATED: 'notification_updated',
 
     /** Payload: `{ cardId, instanceId, heroId, enemyId, damage, hit, … }`. */
     COMBAT_HERO_ATTACK: 'combat_hero_attack',
@@ -214,6 +217,11 @@ export const UI_EVENTS = Object.freeze({
      * callout over that Token.
      */
     UI_TOKEN_ALERT: 'ui:token_alert',
+    /**
+     * A refusal off the mat (an equip a hero cannot take): said as a callout where the pointer
+     * let go. Payload: `{ text }`.
+     */
+    UI_SCREEN_CALLOUT: 'ui:screen_callout',
     /** Payload: `{ tab }`. */
     UI_OPEN_DRAWER: 'ui:open_drawer',
     /** Payload: `{ questId }`. */
@@ -263,7 +271,6 @@ export const ORPHAN_EVENTS = Object.freeze({
  */
 export const NO_LISTENER = Object.freeze({
     [ENGINE_EVENTS.REGISTRY_UPDATED]: 'console affordance; the discovery events below are the specific ones',
-    [ENGINE_EVENTS.ITEM_DISCOVERED]: 'first-seen moment, for a future "new item" notice',
     [ENGINE_EVENTS.ENEMY_DISCOVERED]: 'first-seen moment, for a future bestiary notice',
     [ENGINE_EVENTS.QUEST_SPAWNED]: 'quest moment; quest Tokens announce on the board',
     [ENGINE_EVENTS.TOKEN_RESTOCKED]: 'player action moment; the board events carry the redraw',

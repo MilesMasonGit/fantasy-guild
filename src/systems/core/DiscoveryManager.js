@@ -3,7 +3,6 @@
 import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
 import { logger } from '../../utils/Logger.js';
-import * as NotificationSystem from '../core/NotificationSystem.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { ENGINE_EVENTS } from './engineEvents.js';
 
@@ -59,7 +58,6 @@ export const DiscoveryManager = {
             const template = getTokenType(enemyId);
             const enemyName = template?.name || enemyId;
 
-            NotificationSystem.notify(`Unlock: ${enemyName}`, 'info', { category: 'discovery' });
             EventBus.publish(ENGINE_EVENTS.ENEMY_DISCOVERED, { enemyId, enemyName });
             EventBus.publish(ENGINE_EVENTS.STATE_CHANGED, { source: 'enemy_discovery' });
             logger.info('DiscoveryManager', `Encountered new enemy: ${enemyId}`);

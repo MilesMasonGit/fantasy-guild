@@ -34,7 +34,6 @@ import { PassiveProductionTooltip } from './PassiveProductionTooltip.jsx';
 import * as PassiveProduction from '../../../systems/board/PassiveProduction.js';
 import { QuestTooltip } from './QuestTooltip.jsx';
 import * as QuestTokens from '../../../systems/quests/QuestTokens.js';
-import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import { setTutorialAideTarget } from '../base/TutorialAideOverlay.jsx';
 import { TICK_INTERVAL_MS } from '../../../config/loopConstants.js';
 import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
@@ -496,7 +495,10 @@ export const MatToken = React.memo(function MatToken({
                         if (skipSlide) return;
                         const result = QuestTokens.claimQuest(id);
                         if (result && result.success === false && result.reason) {
-                            NotificationSystem.warning(result.reason);
+                            EventBus?.publish(UI_EVENTS.UI_TOKEN_ALERT, {
+                                instanceId: id, severity: 'disallow', type: 'claim_refused',
+                                title: result.reason, message: result.reason
+                            });
                         }
                         return;
                     }

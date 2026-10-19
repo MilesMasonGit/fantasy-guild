@@ -3,6 +3,7 @@ import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
+import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { SettingsManager } from '../systems/core/SettingsManager.js';
 import './fixtures/fixtureItems.js';
 
@@ -138,5 +139,37 @@ describe('A sprite sweep announces once, not once per sprite (CR2-056)', () => {
 
         expect(counts.total).toBeLessThan(280);      // was 322
         expect(counts.state_changed).toBeLessThan(100);  // was 120
+    });
+});
+
+describe('a full Bank says so once per item, not once per sweep', () => {
+    it('the first refused sweep says BANK_FULL for the item; later sweeps say nothing more', () => {
+        EventBus.publish(ENGINE_EVENTS.GAME_LOADED, {});        // a fresh game: nothing said yet
+        GameState.state.inventory.maxSlots = 0;
+        for (let i = 0; i < 5; i++) SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, null);
+
+        const first = countEvents(() => SpriteLayer.collectAll());
+        const second = countEvents(() => SpriteLayer.collectAll());
+
+        expect(first[ENGINE_EVENTS.BANK_FULL]).toBe(1);
+        expect(second.total).toBe(0);
+        expect(SpriteLayer.getSprites()).toHaveLength(5);        // nothing was lost
+    });
+
+    it('once the Bank takes the item again, a later refusal is said again', () => {
+        EventBus.publish(ENGINE_EVENTS.GAME_LOADED, {});
+        GameState.state.inventory.maxSlots = 0;
+        SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, null);
+        SpriteLayer.collectAll();
+
+        GameState.state.inventory.maxSlots = 50;
+        SpriteLayer.collectAll();
+        expect(SpriteLayer.getSprites()).toHaveLength(0);
+
+        GameState.state.inventory.maxSlots = 0;
+        GameState.state.inventory.items = {};
+        SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, null);
+        const again = countEvents(() => SpriteLayer.collectAll());
+        expect(again[ENGINE_EVENTS.BANK_FULL]).toBe(1);
     });
 });

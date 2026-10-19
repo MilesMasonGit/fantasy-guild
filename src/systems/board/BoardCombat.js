@@ -12,7 +12,6 @@ import * as HeroManager from '../hero/HeroManager.js';
 import * as HeroEffects from '../hero/HeroEffects.js';
 import { statementsOf } from '../effects/statements.js';
 import * as StatusEffectSystem from '../effects/StatusEffectSystem.js';
-import * as NotificationSystem from '../core/NotificationSystem.js';
 import * as RecipeResolver from './RecipeResolver.js';
 import * as TileModifiers from './TileModifiers.js';
 import * as BoardState from './BoardState.js';
@@ -520,7 +519,8 @@ function resolveDefeat(instance, heroId) {
     // `Flags.init` subscribes to the defeat event and furls the hero's flag; `EventBus.publish` is
     // synchronous, so the furl happens here, before the `TILE_CHANGED` / `COMBAT_RESOLVED`
     // publishes below.
-    EventBus.publish(BOARD_EVENTS.HERO_DEFEATED, { heroId });
+    // The knock-out banner says who fell and what it cost from this one event.
+    EventBus.publish(BOARD_EVENTS.HERO_DEFEATED, { heroId, heroName: hero?.name || null, lost });
     if (instance) {
         instance.cycleElapsedMs = 0;
         EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: instance.id, typeId: instance.typeId });
@@ -530,16 +530,7 @@ function resolveDefeat(instance, heroId) {
     }
     EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'board_combat_defeat' });
 
-    // One notification for the whole defeat: who fell and what it cost.
-    NotificationSystem.warning(defeatMessage(hero?.name, lost));
     logger.info('BoardCombat', `Defeat against ${instance?.id ?? 'nothing'}: ${heroId}`);
-}
-
-/** "X was defeated and carried home, injured. Lost: A, B." */
-export function defeatMessage(heroName, lost = []) {
-    const who = heroName || 'Your hero';
-    const what = lost.length ? `Lost: ${lost.join(', ')}.` : 'Nothing was lost.';
-    return `${who} was defeated and carried home, injured. ${what}`;
 }
 
 /**

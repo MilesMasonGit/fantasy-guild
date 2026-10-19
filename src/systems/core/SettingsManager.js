@@ -13,21 +13,9 @@ const DEV_MUTE_MIGRATION_KEY = 'fantasy_guild_dev_mute_applied';
 // Default settings configuration
 const defaultSettings = {
     notifications: {
-        masterToggle: true,
-        heroEvents: true,
-        inventoryEvents: true,
-        // ⚠️ Only the categories with a key here can be switched off. `notify()`
-        // maps category → key for `hero` and `item` only; anything else falls
-        // through to an `undefined` lookup, which is not `false`, so it always
-        // shows. Adding a key means adding the mapping AND publishing with that
-        // category.
-        defaultDuration: 5000,
-        systemDuration: 15000,      // 15 seconds
-        discoveryDuration: 15000,   // 15 seconds
-        itemDuration: 0,            // Persistent
-        heroDuration: 0,            // Persistent
-        maxVisible: 10,
-        position: 'top_right'
+        // The item stubs at the top right of the mat. Banners have no switch: they are what
+        // must not be missed.
+        itemStubs: true
     },
     ui: {
         tooltipsEnabled: true,

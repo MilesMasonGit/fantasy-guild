@@ -3,7 +3,7 @@ import * as GameClock from '../core/GameClock.js';
 /**
  * ItemRateTracker
  * Specialized logic for calculating harvest/production throughput.
- * Stores a sliding 5-minute window of inventory gains.
+ * Stores a sliding 5-minute window of inventory gains and spending (spending as negative gains).
  */
 
 // Private state: Map of itemId -> Array of { amount, timestamp }
@@ -76,6 +76,23 @@ export const ItemRateTracker = {
         const durationHours = durationMs / (1000 * 60 * 60);
         
         return totalAmount / durationHours;
+    },
+
+    /**
+     * What the window holds for an item, split: made (`gained`), spent (`spent`), and the net per
+     * hour (the same figure as {@link getRate}). The item stubs' hover reads it.
+     * @param {string} itemId
+     * @returns {{gained: number, spent: number, perHour: number}}
+     */
+    getFlow(itemId) {
+        this.prune(itemId);
+        let gained = 0;
+        let spent = 0;
+        for (const g of history.get(itemId) || []) {
+            if (g.amount >= 0) gained += g.amount;
+            else spent -= g.amount;
+        }
+        return { gained, spent, perHour: this.getRate(itemId) };
     },
 
     /**

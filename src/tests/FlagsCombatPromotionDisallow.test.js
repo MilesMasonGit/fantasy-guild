@@ -16,6 +16,8 @@ import { LootSystem } from '../systems/combat/LootSystem.js';
 import { migrateState } from '../systems/core/SaveMigration.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
+import * as Banners from '../systems/notifications/banners.js';
+import { wireNotifications, unwireNotifications } from '../systems/notifications/routing.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
@@ -339,21 +341,38 @@ describe('⭐ recall mid-fight (FP-43, G-4)', () => {
     });
 });
 
-describe('⭐ defeat furls the flag, with one notification (FP-42)', () => {
-    it('takes the flag down and sends exactly one message naming what was lost', () => {
+describe('⭐ defeat furls the flag, with one knock-out banner (FP-42)', () => {
+    /** The defeats heard, and the banners they raised (the notifications' own routing). */
+    function listen() {
+        const defeats = [];
+        const off = EventBus.subscribe(BOARD_EVENTS.HERO_DEFEATED, (p) => defeats.push(p));
+        Banners.reset();
+        wireNotifications();
+        return { defeats, stop: () => { off(); unwireNotifications(); } };
+    }
+
+    it('takes the flag down and raises exactly one banner naming what was lost', () => {
         const weak = fighter('Weakling', { level: 1, hp: 1 });
         GameState.state.heroes = [weak];
         put(14, 'fixture_enemy');
         fightAt('Weakling', 14);
 
-        run(30000);
+        const heard = listen();
+        try {
+            run(30000);
+        } finally {
+            heard.stop();
+        }
 
         expect(weak.status).toBe('wounded');
         expect(BoardState.flagOf('Weakling')).toBeNull();
         expect(applyDefeatPenalties).toHaveBeenCalledTimes(1);
-        expect(NotificationSystem.warning).toHaveBeenCalledTimes(1);
-        expect(NotificationSystem.warning.mock.calls[0][0])
-            .toBe('Weakling was defeated and carried home, injured. Lost: Sword.');
+        expect(heard.defeats).toHaveLength(1);
+        expect(heard.defeats[0].lost).toEqual(['Sword']);
+        const banners = Banners.getAll();
+        expect(banners.map(b => b.kind)).toEqual(['knockout']);
+        expect(banners[0].line).toMatch(/carried home, injured\. Lost: Sword\.$/);
+        expect(NotificationSystem.warning).not.toHaveBeenCalled();
     });
 
     it('says so when nothing was lost', () => {
@@ -363,10 +382,15 @@ describe('⭐ defeat furls the flag, with one notification (FP-42)', () => {
         put(14, 'fixture_enemy');
         fightAt('Weakling', 14);
 
-        run(30000);
+        const heard = listen();
+        try {
+            run(30000);
+        } finally {
+            heard.stop();
+        }
 
-        expect(NotificationSystem.warning).toHaveBeenCalledTimes(1);
-        expect(NotificationSystem.warning.mock.calls[0][0]).toMatch(/Nothing was lost\.$/);
+        expect(Banners.getAll()).toHaveLength(1);
+        expect(Banners.getAll()[0].line).toMatch(/Nothing was lost\.$/);
     });
 });
 
