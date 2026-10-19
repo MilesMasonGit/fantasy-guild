@@ -18,8 +18,9 @@ attention outline (ruled today).*
 |---|---|---|---|---|---|
 | Brief 130 R1: the recipe list logic (T-169, absorbs T-142) | builder | `crunch/recipe-list` (`rl`) | queued | next session | |
 | Brief 130 R2: the list on screen, inside the Token card | builder | `crunch/recipe-list` (`rl`) | queued | next session | |
-| Brief 150 N1: the notification store and log (T-168, T-028, T-037) | builder | `crunch/notifications` (`nt`) | queued | next session | |
-| Brief 150 N2: on screen (log button with unread count, pop-out toasts, pins; replaces the edge sidebar) | builder | `crunch/notifications` (`nt`) | queued | next session | |
+| Brief 150 N1: the store and routing for item stubs and banners (T-168, T-028, T-037; owner revised 2026-10-19, no log) | builder | `crunch/notifications` (`nt`) | queued | next session | |
+| Brief 150 N2: item stubs on screen (net flow per item, hover panel, pins, Clear all; replaces the edge sidebar) | builder | `crunch/notifications` (`nt`) | queued | next session | |
+| Brief 150 N3: banners on screen (top centre, gold milestones, red problems, stay until clicked, three then +N) | builder | `crunch/notifications` (`nt`) | queued | next session | |
 
 ## Features director, batch 1: the style kit (ruled 2026-10-17)
 

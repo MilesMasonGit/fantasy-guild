@@ -97,8 +97,11 @@ player for these is T-138 (built when the first strips exist).
   Token icon (Tokens 45/128) and an upkeep icon (Upkeep 2/min), and one for
   the Region name if wanted; shown at 16 px in the bar's item bars.
   Placeholders until drawn: the tree, coins and pennant from `public/assets/ui/`.
-- **Log button icon** (NEW, [concept_notifications.md](concept_notifications.md)):
-  a notepad or scroll, top right of the screen; placeholder until drawn.
+- **Banner ribbon** (NEW 2026-10-19, [concept_notifications.md](concept_notifications.md)
+  "Banners"): a wide scroll or ribbon (~480 px) with a gold-edged and a
+  red-edged version, room for a big sprite on the left and two lines of text;
+  the style kit's studded frame until drawn. (The log button icon is dropped
+  with the log, T-193.)
 - **Night-sky backdrop for the Hall screen** (**HAVE**, 2026-10-15:
   `playmat/screens/bg_nightsky_1.png` and `bg_nightsky_cloud_layer.png`;
   [concept_guild_hall.md](concept_guild_hall.md) "The look of the sky").
