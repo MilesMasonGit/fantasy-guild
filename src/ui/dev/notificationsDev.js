@@ -58,15 +58,16 @@ export function stopLootFlow() {
 /** One of an item never found before, through the Bank: its stub is gold, led by "New!". */
 export function findNewItem() {
     const found = GameState.state?.collection?.discoveredItems || {};
-    const item = getAllItems().find(i => i?.id && !found[i.id] && !i.id.includes('coin'));
+    const item = Object.values(getAllItems() || {}).find(i => i?.id && !found[i.id] && !i.id.includes('coin'));
     if (!item) return 'Every item has been found already';
     const added = InventoryManager.addItem(item.id, 1);
     return added ? `Found ${item.name}` : `The Bank had no room for ${item.name}`;
 }
 
 /**
- * Level a hero up to the next level that unlocks recipes nobody in the guild can run yet, through
- * the real XP path: the level-up moment plays on the hero and one grouped banner drops.
+ * Level a hero up, in one go, far enough to unlock three recipes nobody in the guild can run yet
+ * (or as many as are left), through the real XP path: the level-up moment plays on the hero and
+ * the unlocks drop as one grouped banner.
  */
 export function levelUpForRecipes() {
     const recipes = listRecipes();
@@ -74,14 +75,15 @@ export function levelUpForRecipes() {
     for (const hero of heroes()) {
         for (const [skillId, skill] of Object.entries(hero.skills || {})) {
             const floor = Math.max(skill.level, othersBestLevel(GameState.heroes, hero.id, skillId));
-            const next = recipes
-                .filter(r => r.skill === skillId && typeof r.levelRequirement === 'number' && r.levelRequirement > floor)
+            const levels = recipes
+                .filter(r => r.skill === skillId && typeof r.levelRequirement === 'number' && r.levelRequirement > floor && r.levelRequirement <= 99)
                 .map(r => r.levelRequirement)
-                .sort((a, b) => a - b)[0];
-            if (!next || next > 99) continue;
-            const count = recipes.filter(r => r.skill === skillId && r.levelRequirement === next).length;
-            if (!best || count > best.count || (count === best.count && next < best.level)) {
-                best = { hero, skillId, level: next, count };
+                .sort((a, b) => a - b);
+            if (!levels.length) continue;
+            const level = levels[Math.min(2, levels.length - 1)];
+            const count = levels.filter(l => l <= level).length;
+            if (!best || count > best.count || (count === best.count && level < best.level)) {
+                best = { hero, skillId, level, count };
             }
         }
     }

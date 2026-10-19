@@ -120,10 +120,14 @@ export function StubPanel({ itemId, top, onEnter, onLeave }) {
                     {signedAmount(-stub.removed)} spent
                 </span>
             </div>
-            <div className="ui-text-body tabular-nums" data-stub-rate>
-                <span style={{ color: TONE_COLOUR[toneOf(perHour)] }}>{rateText(perHour)}</span>
-                {stub.pinned && <span className="ui-text-small text-gi-muted"> &middot; {signedAmount(net)} since pinned</span>}
+            <div className="ui-text-body tabular-nums" data-stub-rate style={{ color: TONE_COLOUR[toneOf(perHour)] }}>
+                {rateText(perHour)}
             </div>
+            {stub.pinned && (
+                <div className="ui-text-small text-gi-muted whitespace-nowrap" data-stub-since>
+                    Pinned: {signedAmount(net)} since pinning
+                </div>
+            )}
         </PixelFrame>
     );
 }
@@ -148,6 +152,18 @@ export const ItemStubColumn = memo(function ItemStubColumn() {
         setBoxH(prev => (prev === h ? prev : h));
     }, []);
     useLayoutEffect(measure);
+    // The panel stays beside its stub when the column moves under a still pointer (a pin lifts
+    // the stub to the top, a new stub pushes it down), and goes when its stub does. Every render,
+    // since the stubs are not a dependency; it settles because it only moves a moved panel.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    useLayoutEffect(() => {
+        if (!hover) return;
+        const box = boxRef.current;
+        const row = box?.querySelector(`[data-item-stub="${CSS.escape(hover.itemId)}"]`);
+        if (!row) { setHover(null); return; }
+        const top = row.getBoundingClientRect().top - box.getBoundingClientRect().top;
+        if (Math.abs(top - hover.top) > 0.5) setHover({ ...hover, top });
+    });
     useEffect(() => {
         window.addEventListener('resize', measure);
         return () => window.removeEventListener('resize', measure);
