@@ -370,6 +370,19 @@ describe('⭐ one ground pixel is a whole number of Token pixels', () => {
             expect(alpha(0, picture.height >> 1), `fit ${fit}`).toBe(255);
         }
     });
+
+    it('⭐ follows the Ground pixel size slider: one Token pixel a ground pixel at 1, three at 3', () => {
+        vi.useFakeTimers();
+        const { container } = mountMat(1);
+        for (const pixel of [1, 3, 2]) {
+            act(() => { setTuning('groundPixel', pixel); });
+            settle(200);
+            const grid = GroundScreen.screenGrid(MAT(), pixel * boardScaleAt(1));
+            expect(groundCanvas(container).width, `pixel ${pixel}`).toBe(grid.cols);
+            expect(parseFloat(groundCanvas(container).style.width) / grid.cols).toBeCloseTo(pixel * boardScaleAt(1), 9);
+            expect(screens.mock.lastCall[1].pixel, `pixel ${pixel}`).toBe(pixel);
+        }
+    });
 });
 
 describe('⭐ the terrain draw switch', () => {
