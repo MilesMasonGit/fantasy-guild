@@ -13,7 +13,6 @@ import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as Flags from '../systems/board/Flags.js';
 import { EventBus } from '../systems/core/EventBus.js';
-import { UI_EVENTS } from '../systems/core/engineEvents.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes, tokenStartingUses, getTokenType } from '../config/registries/tokenRegistry.js';
 import { resolveSpritePath } from '../utils/AssetManager.js';
@@ -171,14 +170,11 @@ describe('the blocks, top to bottom, per kind', () => {
     it('Change recipe flips the card to its list on the same art; a click on a row chooses it and flips back', () => {
         GameState.state.heroes = [{ id: 'smith', name: 'Smith', skills: { fixture_station_skill: { level: 10, xp: 0 } } }];
         const station = pickRecipe(put('fixture_station'), 'recipe_a');
-        // The card opens the list in place: no window over the mat.
-        const opened = vi.fn();
-        const unsub = EventBus.subscribe(UI_EVENTS.OPEN_STATION_RECIPES, opened);
         const { container } = mount(h(TokenCard, { typeId: 'fixture_station', instanceId: station.id }));
         const card = () => container.querySelector('[data-token-card]');
         fireEvent.click(container.querySelector('[data-card-change-recipe]'));
-        unsub();
-        expect(opened).not.toHaveBeenCalled();
+        // In place: no window opens over the mat.
+        expect(document.querySelector('[role="dialog"]')).toBeNull();
         expect(card().dataset.cardView).toBe('recipes');
         expect(container.querySelector('[data-recipe-selected="true"]').dataset.recipeId).toBe('recipe_a');
         expect(container.querySelector('[data-card-block="name"] h3').textContent).toBe('Fixture Station');

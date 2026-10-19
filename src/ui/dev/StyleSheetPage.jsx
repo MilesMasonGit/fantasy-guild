@@ -27,6 +27,8 @@ import { workBarPlace, filledSteps } from '../components/board/workBar.js';
 import { ALERT } from '../../systems/board/boardEvents.js';
 import { PixelGlyph, GLYPHS } from '../components/base/PixelGlyph.jsx';
 import { TokenCard } from '../components/board/TokenCard.jsx';
+import { RecipeList } from '../components/board/RecipeList.jsx';
+import { listSkillOf } from '../../systems/board/RecipeList.js';
 
 /** One art pixel of the UI, in screen pixels: UI sprites draw at 2×. */
 const ART_PX = 2;
@@ -391,6 +393,28 @@ const TokenCardDemo = () => (
     </div>
 );
 
+/** Two made-up heroes, so the dividers show; the first is the worker. */
+const demoHeroes = (skill) => [
+    { id: 'kit_hero_a', name: 'Worker', skills: { [skill]: { level: 3, xp: 0 } } },
+    { id: 'kit_hero_b', name: 'Veteran', skills: { [skill]: { level: 20, xp: 0 } } }
+];
+
+const RecipeListDemo = () => (
+    <div className="flex items-start gap-6 flex-wrap">
+        {['token_furnace', 'token_wood_foundation'].map(id => {
+            const def = getTokenType(id);
+            if (!def) return null;
+            return (
+                <PixelFrame key={id} className="bg-gi-base/80">
+                    <div className="p-1.5" style={{ width: 'max-content', minWidth: 256 }}>
+                        <RecipeList def={def} heroes={demoHeroes(listSkillOf(def))} workerId="kit_hero_a" onChoose={() => {}} />
+                    </div>
+                </PixelFrame>
+            );
+        })}
+    </div>
+);
+
 const ArrowBarDemo = () => (
     <div className="flex flex-col w-64 h-48 bg-gi-base/60">
         <ArrowScrollList step={100} className="flex-1 min-h-0 p-2 flex flex-col gap-1">
@@ -569,6 +593,11 @@ export const KIT_SECTIONS = [
         id: 'token-card', title: 'Token card', status: 'unapproved', source: 'TokenCard (the card a click on a Token opens)',
         rule: 'The 256 px activity scene fills the card behind the information, at 1×; a Token with none gets a plain card. Each block sits in a see-through box: name and X; work; cycle; the current recipe (needs, tools as hollow bars, makes); lifecycle; drops. Every icon and number explains itself on hover.',
         Demo: TokenCardDemo
+    },
+    {
+        id: 'recipe-list', title: 'Recipe list', status: 'unapproved', source: 'RecipeList (the card’s Change recipe; a Foundation’s Choose what to build)',
+        rule: 'One line per recipe, by level: inputs as pills with have/need (red when short), needed Tokens as hollow bars (red when not beside it), then the main output as the headline, byproducts muted with their chance, XP and time muted at the end. A thin line with a hero’s face sits under the last recipe they can run; the worker’s face is ringed gold. The next two out of reach show as ??? silhouettes. Search box and Back at the top. Hover: white outline; the current recipe: gold.',
+        Demo: RecipeListDemo
     },
     {
         id: 'card-icons', title: 'Card icons', status: 'unapproved', source: 'PixelGlyph (the Token card’s lines)',
