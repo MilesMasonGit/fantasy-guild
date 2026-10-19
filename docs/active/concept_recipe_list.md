@@ -15,6 +15,9 @@ The look follows [UI_STYLE.md](../reference/UI_STYLE.md). Build ticket:
 - **Inside the Token card**: Change recipe flips the card to the list, on the
   same art backdrop; choosing a recipe flips it back. No separate modal over
   the mat.
+- **The card grows to whatever size the list needs** (owner, 2026-10-19), so
+  a row stays on one line as drawn below. The art is scaled up by whole
+  multiples to cover the card and is simply cut off where it overflows.
 - **Foundations use the same list** for choosing what to build: Construction
   level, materials → the building. One component for both.
 
@@ -52,9 +55,11 @@ The look follows [UI_STYLE.md](../reference/UI_STYLE.md). Build ticket:
 
 - **Between rows, at each hero's level in this skill, a thin line with that
   hero's small face.** Every recipe above a hero's face is one they can run.
+- **Only heroes whose Work Permissions allow this skill** get a face (owner,
+  2026-10-19); the station's current worker's face has a gold ring.
 - They replace today's two threshold markers (worker and guild) and the three
   bands.
-- Faces of heroes who can't reach any recipe in the list are left out.
+- Faces of permitted heroes who can't reach any recipe in the list are left out.
 
 ## Locked recipes: spoiler hints
 
