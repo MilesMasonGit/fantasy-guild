@@ -8,11 +8,13 @@ import { useSyncExternalStore } from 'react';
 
 // `alerts` is the callout layer (spawn, effect and refused-drop popups); `speech` is the hero bubbles;
 // `terrain` is the ground under the Tokens (off, it is not mounted and the surface draws its own edge).
+// `ambient…` are the mat's ambient life, one effect each (`AmbientLife.jsx`).
 export const DRAW_SWITCHES = [
     'rings', 'bubbles', 'alerts', 'speech', 'tooltips',
     'heroAnim', 'enemyAnim', 'walkDraw', 'itemFlight',
     'notifications', 'dock', 'drawers',
-    'spriteFx', 'background', 'terrain', 'particles', 'spawnMotion'
+    'spriteFx', 'background', 'terrain', 'particles', 'spawnMotion',
+    'ambientWater', 'ambientGust', 'ambientLava', 'ambientParticles', 'ambientBirds', 'ambientClouds'
 ];
 
 const off = new Set();

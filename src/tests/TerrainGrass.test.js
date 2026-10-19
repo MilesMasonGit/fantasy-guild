@@ -395,7 +395,8 @@ describe('⭐ Details per ground pixel', () => {
                 earth++;
                 const k = d.colour[i];
                 const kind = kindOf(d.kinds[i]);
-                const ok = (k >= COLOUR.EARTH && k <= COLOUR.MIDDLE) || k === kindColour(kind, 2) || k === kindColour(kind, 3);
+                const ok = (k >= COLOUR.EARTH && k <= COLOUR.MIDDLE) || k === COLOUR.PEBBLE || k === COLOUR.PEBBLE_DARK
+                    || k === kindColour(kind, 2) || k === kindColour(kind, 3);
                 if (!ok) throw new Error(`colour ${k} on earth at ${i}, unit ${unit}`);
             }
             expect(earth).toBeGreaterThan(1000);

@@ -1,12 +1,14 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import { screenGrid, buildScreenPass, MAT_EDGE } from '../ui/components/board/groundScreen.js';
 import { boardScaleAt, boardArtSteps } from '../ui/components/base/TokenSprite.jsx';
-import { SHEET_PX, PROP_PX, PROP_SHEET_CELLS, generatedOf } from '../config/registries/terrainRegistry.js';
+import { SHEET_PX, PROP_PX, PROP_SHEET_CELLS } from '../config/registries/terrainRegistry.js';
 import { buildGroundPlan } from '../systems/board/TerrainSurface.js';
-import { drawGrass, grassColours } from '../systems/board/TerrainGrass.js';
+import { drawGrass, grassTable } from '../systems/board/TerrainGrass.js';
 import { regionGround } from '../systems/atlas/regionGround.js';
 import { regionWith, flat } from './fixtures/ground.js';
-import { tuning } from '../config/playmatTuning.js';
+import { tuning, setTuning, resetTuning } from '../config/playmatTuning.js';
+
+afterEach(() => resetTuning());
 
 /**
  * The screen pass (terrain roadmap decisions 6 and 8): the ground plan, 2 mat units a pixel,
@@ -197,7 +199,8 @@ describe('⭐ the mat\'s edge is in the picture', () => {
         }
     });
 
-    it('darkens towards the edge as the surface\'s inset shadow did, most in the corners', () => {
+    it('darkens towards the edge as the surface\'s inset shadow did, most in the corners, with the rim off', () => {
+        setTuning('rimOn', 0);
         const plan = planOf();
         const pass = buildScreenPass(plan, { mat: MAT, unit: 2, sheet: fromTable({ flat: solid(200, 200, 200) }) });
         const red = (gx, gy) => px(pass, gx, gy)[0];
@@ -217,6 +220,7 @@ describe('⭐ the mat\'s edge is in the picture', () => {
     });
 
     it('lightens the outermost ground pixel all the way round, as the surface\'s faint edge did', () => {
+        setTuning('rimOn', 0);
         const plan = planOf();
         const pass = buildScreenPass(plan, { mat: MAT, unit: 2, sheet: fromTable({ flat: solid(100, 100, 100) }) });
         const red = (gx, gy) => px(pass, gx, gy)[0];
@@ -305,7 +309,7 @@ describe('the pass leaves what it cannot draw clear', () => {
 describe('⭐ generated looks', () => {
     it('⭐ draws a generated look in its own colours, unmuted, in the light of the shade pattern', () => {
         const plan = buildGroundPlan(regionGround({ seed: 77 }, MAT));
-        const table = grassColours(generatedOf('meadow'));
+        const table = grassTable('meadow').colours;
         for (const fit of [0.74, 1]) {
             const unit = boardScaleAt(fit);
             // The sheet beneath is a flat colour no ramp has: it must show nowhere.
@@ -333,7 +337,7 @@ describe('⭐ each generated look in its own share of the shade pattern', () => 
     it('⭐ steps the forest twice as far as the meadow, as its rules say', () => {
         const plan = buildGroundPlan(regionGround(regionWith(55, 36, flat('grass'), { seed: 78 }), MAT));
         expect(plan.grass.looks).toEqual(['forest']);
-        const table = grassColours(generatedOf('forest'));
+        const table = grassTable('forest').colours;
         const s = tuning('patternStrength');
         const unit = boardScaleAt(1);
         const pass = buildScreenPass(plan, { mat: MAT, unit, sheet: () => null });

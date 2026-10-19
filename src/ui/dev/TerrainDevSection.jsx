@@ -6,6 +6,7 @@ import { EventBus, UI_LISTENER } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 import * as Atlas from '../../systems/atlas/Atlas.js';
 import { lastGroundBuilds, onGroundBuilt } from '../components/board/groundBuilds.js';
+import { cueAmbient } from '../components/board/ambientCues.js';
 import { TERRAIN_DEV_REGIONS, TERRAIN_DEV_WATER, TERRAIN_DEV_PLACEMENT, goToDevRegion, rerollDevRegion, backToStarterCamp, viewOf, placeGroundTestTokens } from './terrainDev.js';
 
 const labelClass = 'text-[11px] font-bold uppercase tracking-wider text-gi-muted mb-1';
@@ -110,6 +111,25 @@ export function TerrainDevSection() {
             >
                 Place the ground test Tokens
             </button>
+            <div className={labelClass}>Ambient life</div>
+            <div className="grid grid-cols-2 gap-1">
+                <button
+                    data-ambient-cue="gust"
+                    onClick={() => cueAmbient('gust')}
+                    className={buttonClass}
+                    title="A gust crosses the mat now instead of in its own time (Ground tuner: Ambient life)."
+                >
+                    A gust now
+                </button>
+                <button
+                    data-ambient-cue="birds"
+                    onClick={() => cueAmbient('birds')}
+                    className={buttonClass}
+                    title="A bird (sometimes two) flies in now to a Token nobody is working."
+                >
+                    A bird now
+                </button>
+            </div>
             <div className="text-[10px] text-gi-text" data-terrain-where>{where}</div>
             <div className="text-[10px] text-gi-muted tabular-nums" data-terrain-builds>
                 Last ground build: plan {ms(builds.plan)}, picture {ms(builds.screen)}

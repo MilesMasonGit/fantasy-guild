@@ -72,7 +72,8 @@ function fakeContext() {
         imageSmoothingEnabled: true,
         createImageData: (w, hgt) => ({ width: w, height: hgt, data: new Uint8ClampedArray(w * hgt * 4) }),
         putImageData(image) { ctx.puts.push(image); },
-        clearRect() {}
+        clearRect() {},
+        fillRect() {}
     };
     return ctx;
 }
@@ -276,7 +277,7 @@ describe('⭐ never per frame', () => {
         settle(250);
         expect(screens).toHaveBeenCalledTimes(1);
         expect(plans).not.toHaveBeenCalled();
-        const grid = GroundScreen.screenGrid(MAT(), boardScaleAt(0.74));
+        const grid = GroundScreen.screenGrid(MAT(), GroundScreen.groundPixel() * boardScaleAt(0.74));
         expect(groundCanvas(container).width).toBe(grid.cols);
         expect(groundCanvas(container).height).toBe(grid.rows);
     });
@@ -331,8 +332,9 @@ describe('⭐ never per frame', () => {
     });
 });
 
-describe('⭐ one ground pixel is one Token pixel', () => {
-    it('⭐ the canvas holds one pixel per boardScaleAt(fit) mat units, for every fit from 0.5 to 1.6', () => {
+describe('⭐ one ground pixel is a whole number of Token pixels', () => {
+    it('⭐ the canvas holds one pixel per groundPixel() × boardScaleAt(fit) mat units, for every fit from 0.5 to 1.6', () => {
+        expect(GroundScreen.groundPixel()).toBe(2);
         vi.useFakeTimers();
         const { container, setFit } = mountMat(0.5);
         for (let i = 0; i <= 110; i++) {
@@ -340,7 +342,7 @@ describe('⭐ one ground pixel is one Token pixel', () => {
             setFit(fit);
             settle(260);
             const canvas = groundCanvas(container);
-            const unit = boardScaleAt(fit);
+            const unit = 2 * boardScaleAt(fit);
             const grid = GroundScreen.screenGrid(MAT(), unit);
             expect(canvas.width, `fit ${fit}`).toBe(grid.cols);
             expect(canvas.height, `fit ${fit}`).toBe(grid.rows);
@@ -367,6 +369,19 @@ describe('⭐ one ground pixel is one Token pixel', () => {
             expect(alpha(picture.width - 1, picture.height - 1), `fit ${fit}`).toBe(0);
             expect(alpha(picture.width >> 1, picture.height >> 1), `fit ${fit}`).toBe(255);
             expect(alpha(0, picture.height >> 1), `fit ${fit}`).toBe(255);
+        }
+    });
+
+    it('⭐ follows the Ground pixel size slider: one Token pixel a ground pixel at 1, three at 3', () => {
+        vi.useFakeTimers();
+        const { container } = mountMat(1);
+        for (const pixel of [1, 3, 2]) {
+            act(() => { setTuning('groundPixel', pixel); });
+            settle(200);
+            const grid = GroundScreen.screenGrid(MAT(), pixel * boardScaleAt(1));
+            expect(groundCanvas(container).width, `pixel ${pixel}`).toBe(grid.cols);
+            expect(parseFloat(groundCanvas(container).style.width) / grid.cols).toBeCloseTo(pixel * boardScaleAt(1), 9);
+            expect(screens.mock.lastCall[1].pixel, `pixel ${pixel}`).toBe(pixel);
         }
     });
 });

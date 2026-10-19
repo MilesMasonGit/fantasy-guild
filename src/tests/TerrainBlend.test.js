@@ -299,5 +299,6 @@ describe('⭐ Drawing only: the stored ground and placement are the blend\'s to 
                 expect(shore, names.join('+')).toBeGreaterThan(100);
             }
         }
-    });
+    // Twenty-four full-size plans: about 2.3 s alone, past the default 5 s beside the rest of the suite.
+    }, 15000);
 });

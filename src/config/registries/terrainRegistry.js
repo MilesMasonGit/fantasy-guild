@@ -69,7 +69,7 @@ function deepFreeze(value) {
 }
 
 /** A flower meadow's drifts: the meadow's dry grass with flowers for strokes, in their own patches. */
-const FLOWERS = { blades: 0.06, cluster: 4, heights: [1, 2], tips: 0.25, shadow: 0.5, mounds: 18, tone: 2, patch: { cell: 26, cut: 0.5, floor: 0.15 } };
+const FLOWERS = { blades: 0.06, cluster: 4, heights: [1, 2], tips: 0.25, shadow: 0.5, mounds: 18, tone: 2, patch: { cell: 26, cut: 0.5, floor: 0.15 }, sway: true };
 
 /**
  * The looks. Each draws one terrain:
@@ -88,6 +88,9 @@ const FLOWERS = { blades: 0.06, cluster: 4, heights: [1, 2], tips: 0.25, shadow:
  * - `generated`: the look is drawn by rules instead of its sheet and wear (`TerrainGrass`), from
  *   one of the owner's settled rule sets (`docs/active/research/ground_gen/`, named beside each).
  *   The sheet, wear and band stay for when the "Generated ground" switch is off.
+ * - `ambient`: the life over it (`ambientSky.js`): the one light colour of the small birds that
+ *   land on Tokens standing on it, and the `particles` that drift over it (leaves, petals or
+ *   embers), if any.
  *
  * A generated land look: colours are hue-shifted 5-colour ramps `[hue, lightness, saturation]`,
  * `grass` the body (each kind may have its own), `earth` the bare ground (null for none).
@@ -102,8 +105,11 @@ const FLOWERS = { blades: 0.06, cluster: 4, heights: [1, 2], tips: 0.25, shadow:
  * their `heights`, the chance of a lit `tips` and of a `shadow` pixel, the `mounds` noise cell (0
  * none) and how often a mound shows its lit top (`moundLight`), the body's two tones (`body`, steps
  * of its ramp), the stroke colour (step `tone` of its own `strokes` ramp, or of its body ramp
- * without one), and the `patch`es its strokes gather in. An `overlay` lays one kind over the zones
- * where its own noise is above `cut`, its blades reaching over the top edge and a shadow under the
+ * without one), and the `patch`es its strokes gather in; a kind that is grass (`sway`) has its
+ * blades and tufts lean in a passing gust, and one that `glow`s (the lava) pulses
+ * (`ambientGround.js`): cracks, ripples, petals, litter and moss lie still. An `overlay` lays one
+ * kind over the zones where its own noise is above `cut`, its blades reaching over the top edge
+ * and a shadow under the
  * bottom; `pools` are the sulphur lakes, `perFrame` of them in the prototype's 320 × 200 pixels;
  * `shore` the wet sand (up to `wet` pixels from the water) and the dithered waterline (up to
  * `line`) drawn where the look meets water, in the prototype's pixels.
@@ -129,13 +135,14 @@ export const LOOKS = deepFreeze({
             grass: [0.26, 0.44, 0.60], earth: [0.06, 0.38, 0.32], earthShare: 0.175, tint: 0.06,
             zones: { cell: 55, sliders: true },
             kinds: [
-                { id: 'tall', blades: 0.036, cluster: 5, heights: [3, 3, 4], tips: 0.15, shadow: 0.55, mounds: 12, strokes: [0.30, 0.36, 0.58], tone: 2 },
-                { id: 'lawn', blades: 0.02975, cluster: 4, heights: [2, 2, 3], tips: 0.15, shadow: 0.5, mounds: 16, strokes: null, tone: 3 },
-                { id: 'dry', blades: 0.054, cluster: 3, heights: [1, 2, 2], tips: 0.2, shadow: 0.5, mounds: 18, strokes: [0.16, 0.50, 0.62], tone: 2 }
+                { id: 'tall', blades: 0.036, cluster: 5, heights: [3, 3, 4], tips: 0.15, shadow: 0.55, mounds: 12, strokes: [0.30, 0.36, 0.58], tone: 2, sway: true },
+                { id: 'lawn', blades: 0.02975, cluster: 4, heights: [2, 2, 3], tips: 0.15, shadow: 0.5, mounds: 16, strokes: null, tone: 3, sway: true },
+                { id: 'dry', blades: 0.054, cluster: 3, heights: [1, 2, 2], tips: 0.2, shadow: 0.5, mounds: 18, strokes: [0.16, 0.50, 0.62], tone: 2, sway: true }
             ]
         },
         props: [{ sheet: 'p_flowers', weight: 2 }, { sheet: 'p_bush', weight: 1 }],
-        propDensity: 0.06
+        propDensity: 0.06,
+        ambient: { bird: '#f2ecd6' }
     },
     forest: {
         id: 'forest', name: 'Forest', terrain: TERRAIN.GRASS, sheets: ['grass_dark'],
@@ -146,15 +153,16 @@ export const LOOKS = deepFreeze({
             grass: [0.31, 0.36, 0.50], earth: [0.05, 0.30, 0.28], earthShare: 0.205, tint: 0.12,
             zones: { cell: 75, sliders: true },
             kinds: [
-                { id: 'fern', blades: 0.03, cluster: 6, heights: [3, 4, 4], tips: 0.15, shadow: 0.55, mounds: 12, strokes: [0.36, 0.30, 0.55], tone: 2 },
-                { id: 'lawn', blades: 0.02, cluster: 4, heights: [2, 2, 3], tips: 0.15, shadow: 0.5, mounds: 16, strokes: null, tone: 3 },
+                { id: 'fern', blades: 0.03, cluster: 6, heights: [3, 4, 4], tips: 0.15, shadow: 0.55, mounds: 12, strokes: [0.36, 0.30, 0.55], tone: 2, sway: true },
+                { id: 'lawn', blades: 0.02, cluster: 4, heights: [2, 2, 3], tips: 0.15, shadow: 0.5, mounds: 16, strokes: null, tone: 3, sway: true },
                 { id: 'litter', blades: 0.08, cluster: 3, heights: [1, 1, 2], tips: 0.15, shadow: 0.5, mounds: 18, strokes: [0.085, 0.38, 0.45], tone: 2 }
             ]
         },
         props: [
             { sheet: 'p_bush_dark', weight: 2 }, { sheet: 'p_mushroom', weight: 1 }, { sheet: 'p_flowers', weight: 1 }
         ],
-        propDensity: 0.1
+        propDensity: 0.1,
+        ambient: { bird: '#efe4c4', particles: 'leaves' }
     },
     mountain: {
         id: 'mountain', name: 'Mountain', terrain: TERRAIN.ROCK, sheets: ['stone'],
@@ -166,12 +174,13 @@ export const LOOKS = deepFreeze({
             zones: { cell: 60, stretch: [3, 1], cuts: [0.45, 0.55, 0.70], order: [0, 1, 0, 2], gap: { band: 1, cell: 9, cut: 0.45, to: 0 } },
             kinds: [
                 { id: 'rock', blades: 0.012, cluster: 2, heights: [1, 2], tips: 0, shadow: 0, mounds: 12, moundLight: 0.7, strokes: [0.60, 0.36, 0.14], tone: 1 },
-                { id: 'alpine', grass: [0.27, 0.42, 0.50], blades: 0.05, cluster: 4, heights: [2, 3, 3], tips: 0.15, shadow: 0.55, mounds: 12, strokes: [0.27, 0.36, 0.55], tone: 2 },
+                { id: 'alpine', grass: [0.27, 0.42, 0.50], blades: 0.05, cluster: 4, heights: [2, 3, 3], tips: 0.15, shadow: 0.55, mounds: 12, strokes: [0.27, 0.36, 0.55], tone: 2, sway: true },
                 { id: 'scree', blades: 0.05, cluster: 7, heights: [1], tips: 0, shadow: 0.8, mounds: 18, strokes: [0.60, 0.50, 0.06], tone: 3, patch: { cell: 14, cut: 0.55, floor: 0.05 } }
             ]
         },
         props: [{ sheet: 'p_rock', weight: 1 }],
-        propDensity: 0.05
+        propDensity: 0.05,
+        ambient: { bird: '#e2e9ef' }
     },
     coast: {
         id: 'coast', name: 'Coast', terrain: TERRAIN.SAND, sheets: ['sand'],
@@ -184,14 +193,15 @@ export const LOOKS = deepFreeze({
             grass: [0.11, 0.58, 0.42], earth: null, earthShare: 0, soft: 0.7, tint: 0.05,
             zones: { cell: 60 },
             kinds: [
-                { id: 'dune', blades: 0.05, cluster: 5, heights: [2, 3, 3], tips: 0.15, shadow: 0.55, mounds: 20, moundLight: 0.4, strokes: [0.22, 0.42, 0.45], tone: 2 },
+                { id: 'dune', blades: 0.05, cluster: 5, heights: [2, 3, 3], tips: 0.15, shadow: 0.55, mounds: 20, moundLight: 0.4, strokes: [0.22, 0.42, 0.45], tone: 2, sway: true },
                 { id: 'ripples', blades: 0.03, cluster: 3, heights: [1], tips: 0, shadow: 0, mounds: 20, moundLight: 0.4, strokes: [0.11, 0.50, 0.42], tone: 1 },
                 { id: 'shells', blades: 0.04, cluster: 2, heights: [1], tips: 0, shadow: 0.6, mounds: 20, moundLight: 0.4, strokes: [0.05, 0.62, 0.35], tone: 3, patch: { cell: 20, cut: 0.6, floor: 0 } }
             ],
             shore: { sand: [0.11, 0.58, 0.42], wet: 11.2, line: 3.2 }
         },
         props: [{ sheet: 'p_coast', weight: 2 }, { sheet: 'p_rock_sand', weight: 1 }],
-        propDensity: 0.05
+        propDensity: 0.05,
+        ambient: { bird: '#fcfcfa' }
     },
     sea: {
         id: 'sea', name: 'Sea', terrain: TERRAIN.WATER, sheets: ['water'],
@@ -246,13 +256,14 @@ export const LOOKS = deepFreeze({
             zones: { cell: 55, order: [0, 1, 2, 1, 3, 1] },
             kinds: [
                 { id: 'pink', ...FLOWERS, strokes: [0.92, 0.66, 0.55] },
-                { id: 'lawn', blades: 0.02975, cluster: 4, heights: [2, 2, 3], tips: 0.15, shadow: 0.5, mounds: 16, strokes: null, tone: 3 },
+                { id: 'lawn', blades: 0.02975, cluster: 4, heights: [2, 2, 3], tips: 0.15, shadow: 0.5, mounds: 16, strokes: null, tone: 3, sway: true },
                 { id: 'purple', ...FLOWERS, strokes: [0.78, 0.62, 0.5] },
                 { id: 'white', ...FLOWERS, strokes: [0.12, 0.85, 0.15] }
             ]
         },
         props: [{ sheet: 'p_flowers', weight: 3 }, { sheet: 'p_bush', weight: 1 }],
-        propDensity: 0.06
+        propDensity: 0.06,
+        ambient: { bird: '#dceaf8' }
     },
     cherry_grove: {
         id: 'cherry_grove', name: 'Cherry grove', terrain: TERRAIN.GRASS, sheets: ['grass'],
@@ -265,12 +276,13 @@ export const LOOKS = deepFreeze({
                 { id: 'magenta', blades: 0.06, cluster: 3, heights: [1, 1, 2], tips: 0.35, shadow: 0.5, mounds: 18, strokes: [0.92, 0.55, 0.75], tone: 2 },
                 { id: 'moss', blades: 0.03, cluster: 4, heights: [2, 2, 3], tips: 0.15, shadow: 0.5, mounds: 16, strokes: [0.86, 0.70, 0.35], tone: 3 },
                 { id: 'white', blades: 0.05, cluster: 3, heights: [1, 1, 2], tips: 0.35, shadow: 0.5, mounds: 18, strokes: [0.0, 0.92, 0.20], tone: 2 },
-                { id: 'green', grass: [0.30, 0.45, 0.55], blades: 0.045, cluster: 4, heights: [2, 2, 3], tips: 0.15, shadow: 0.5, mounds: 16, strokes: null, tone: 3 }
+                { id: 'green', grass: [0.30, 0.45, 0.55], blades: 0.045, cluster: 4, heights: [2, 2, 3], tips: 0.15, shadow: 0.5, mounds: 16, strokes: null, tone: 3, sway: true }
             ],
             overlay: { kind: 3, cell: 40, fineCell: 10, fine: 0.2, jagCell: 4, jag: 0.06, cut: 0.64, blades: 0.55, heights: [1, 2, 2, 3], shadow: 0.7, dim: 0.88 }
         },
         props: [{ sheet: 'p_flowers', weight: 1 }],
-        propDensity: 0.04
+        propDensity: 0.04,
+        ambient: { bird: '#fbfaf4', particles: 'petals' }
     },
     yellowstone: {
         id: 'yellowstone', name: 'Yellowstone', terrain: TERRAIN.GRASS, sheets: ['grass_dark'],
@@ -281,7 +293,7 @@ export const LOOKS = deepFreeze({
             grass: [0.40, 0.28, 0.40], earth: [0.06, 0.26, 0.25], earthShare: 0.122, tint: 0.10,
             zones: { cell: 60 },
             kinds: [
-                { id: 'fern', blades: 0.03, cluster: 6, heights: [3, 4, 4], tips: 0.15, shadow: 0.55, mounds: 12, strokes: [0.44, 0.22, 0.50], tone: 2 },
+                { id: 'fern', blades: 0.03, cluster: 6, heights: [3, 4, 4], tips: 0.15, shadow: 0.55, mounds: 12, strokes: [0.44, 0.22, 0.50], tone: 2, sway: true },
                 { id: 'moss', blades: 0.015, cluster: 4, heights: [2, 2, 3], tips: 0.15, shadow: 0.5, mounds: 16, strokes: null, tone: 3 },
                 { id: 'needles', blades: 0.07, cluster: 3, heights: [1, 2], tips: 0.1, shadow: 0.5, mounds: 18, strokes: [0.07, 0.26, 0.35], tone: 2 }
             ],
@@ -291,7 +303,8 @@ export const LOOKS = deepFreeze({
             }
         },
         props: [{ sheet: 'p_bush_dark', weight: 2 }, { sheet: 'p_mushroom', weight: 1 }],
-        propDensity: 0.08
+        propDensity: 0.08,
+        ambient: { bird: '#e8ecef' }
     },
     volcano: {
         id: 'volcano', name: 'Volcano', terrain: TERRAIN.ROCK, sheets: ['stone'],
@@ -303,12 +316,13 @@ export const LOOKS = deepFreeze({
             zones: { cell: 50, stretch: [2.2, 1], cuts: [0.475, 0.525, 0.68], order: [0, 1, 0, 2], gap: { band: 1, cell: 7, cut: 0.45, to: 0 } },
             kinds: [
                 { id: 'basalt', blades: 0.012, cluster: 2, heights: [1, 2], tips: 0, shadow: 0, mounds: 12, moundLight: 0.7, strokes: [0.04, 0.14, 0.10], tone: 1 },
-                { id: 'lava', grass: [0.09, 0.50, 0.95], body: [2, 3], blades: 0.08, cluster: 2, heights: [1, 2], tips: 0, shadow: 0, mounds: 0, strokes: [0.13, 0.62, 1.0], tone: 3 },
+                { id: 'lava', grass: [0.09, 0.50, 0.95], body: [2, 3], blades: 0.08, cluster: 2, heights: [1, 2], tips: 0, shadow: 0, mounds: 0, strokes: [0.13, 0.62, 1.0], tone: 3, glow: true },
                 { id: 'ash', grass: [0.06, 0.38, 0.05], blades: 0.03, cluster: 4, heights: [1], tips: 0, shadow: 0, mounds: 12, moundLight: 0.7, strokes: [0.06, 0.48, 0.05], tone: 3 }
             ]
         },
         props: [{ sheet: 'p_rock', weight: 1 }],
-        propDensity: 0.04
+        propDensity: 0.04,
+        ambient: { bird: '#e3ddd4', particles: 'embers' }
     },
     lawn: {
         id: 'lawn', name: 'Lawn', terrain: TERRAIN.GRASS, sheets: ['grass'],
@@ -318,11 +332,12 @@ export const LOOKS = deepFreeze({
             grass: [0.26, 0.44, 0.60], earth: null, earthShare: 0, tint: 0.06,
             zones: { cell: 55 },
             kinds: [
-                { id: 'lawn', blades: 0.02975, cluster: 4, heights: [2, 2, 3], tips: 0.15, shadow: 0.5, mounds: 16, strokes: null, tone: 3 }
+                { id: 'lawn', blades: 0.02975, cluster: 4, heights: [2, 2, 3], tips: 0.15, shadow: 0.5, mounds: 16, strokes: null, tone: 3, sway: true }
             ]
         },
         props: [{ sheet: 'p_flowers', weight: 1 }],
-        propDensity: 0.03
+        propDensity: 0.03,
+        ambient: { bird: '#f2ecd6' }
     }
 });
 

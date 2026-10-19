@@ -35,6 +35,21 @@ describe('the ground tuner', () => {
         expect(tuning('patchCoverage')).toBe(0.4);
     });
 
+    it('carries the ground look\'s controls: the pixel size, a look\'s Clean colours, the quieting and the rim', () => {
+        const { container } = mount();
+        open(container);
+        fireEvent.change(container.querySelector('input[aria-label="Ground pixel size"]'), { target: { value: '1' } });
+        expect(tuning('groundPixel')).toBe(1);
+        fireEvent.change(container.querySelector('input[aria-label="Forest hue"]'), { target: { value: '0.05' } });
+        expect(tuning('cleanHue_forest')).toBe(0.05);
+        fireEvent.change(container.querySelector('input[aria-label="Quiet decorations"]'), { target: { value: '0.25' } });
+        expect(tuning('decorQuiet')).toBe(0.25);
+        const rim = container.querySelector('input[aria-label="Darker rim"]');
+        expect(rim.type).toBe('checkbox');
+        fireEvent.click(rim);
+        expect(tuning('rimOn')).toBe(0);
+    });
+
     it('follows a value changed elsewhere', () => {
         const { container } = mount();
         open(container);

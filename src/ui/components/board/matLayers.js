@@ -31,14 +31,21 @@ export const MAT_Z = Object.freeze({
     SURFACE: 0,
     /** The ground's picture (`TerrainCanvas`): over the surface, under every Token. */
     GROUND: 1,
+    /** The ground's ambient life (`AmbientLife`: water shimmer, gusts, the lava's pulse): on the ground. */
+    GROUND_FX: 2,
     /** The grid while placing (`TerrainGridOverlay`): over the ground, under every Token. */
-    GROUND_GRID: 2,
+    GROUND_GRID: 3,
     /** Tokens, flags, their heroes and badges: `TOKEN_BASE + place * 3`. */
     TOKEN_BASE: 10,
     /** Heroes with no Token to stand on and no flag to stand beside. */
     WAITING_HERO: TOKEN_TOP + 10,
     /** Heroes on the move: above every Token they walk over. */
     WALKING_HERO: TOKEN_TOP + 15,
+    /**
+     * The sky's ambient life (`AmbientLife`): cloud shadows over everything on the mat below, then
+     * the drifting leaves, petals and embers and the small birds on the Tokens' tops.
+     */
+    AMBIENT_SKY: TOKEN_TOP + 20,
     /** Range rings: Near, and a flag's radius. */
     RINGS: TOKEN_TOP + 80,
     /** Loot on the floor. */

@@ -7,9 +7,14 @@ import { propsForGround } from '../systems/board/TerrainProps.js';
 import { buildWearMask } from '../systems/board/TerrainPatches.js';
 import { buildBandMasks, bandAppearance } from '../systems/board/TerrainBands.js';
 import { muteTexels, buildGroundPlan } from '../systems/board/TerrainSurface.js';
-import { drawGrass, grassColours } from '../systems/board/TerrainGrass.js';
+import { drawGrass, grassColours, grassTable } from '../systems/board/TerrainGrass.js';
 import { generatedOf } from '../config/registries/terrainRegistry.js';
+import { buildScreenPass, groundPixel } from '../ui/components/board/groundScreen.js';
+import { CLEAN_LOOKS, cleanKeys } from '../config/playmatTuning.js';
 import { groundWith, flat } from './fixtures/ground.js';
+import { ambientSettings } from '../ui/components/board/ambientSettings.js';
+import { groundLife, createShimmer, createGust, ambientRandom } from '../ui/components/board/ambientGround.js';
+import { createSky, perchProfile } from '../ui/components/board/ambientSky.js';
 
 /**
  * The playmat tuning store — the developer panel's sliders.
@@ -175,6 +180,25 @@ describe('⭐ No dead sliders', () => {
         return weighted(drawGrass(plan.grass, plan.seed, plan.width, plan.height, planCol, planRow).colour);
     };
     const grassColour = () => JSON.stringify(grassColours(generatedOf('forest')));
+    /** The details at the Ground pixel size the slider gives. */
+    const grassPixel = () => {
+        const plan = buildGroundPlan(ground());
+        const pixel = groundPixel();
+        const cols = Math.ceil(plan.width / pixel);
+        const rows = Math.ceil(plan.height / pixel);
+        const planCol = Int32Array.from({ length: cols }, (_, c) => Math.min(plan.width - 1, c * pixel));
+        const planRow = Int32Array.from({ length: rows }, (_, r) => Math.min(plan.height - 1, r * pixel) * plan.width);
+        return `${pixel}|${weighted(drawGrass(plan.grass, plan.seed, cols, rows, planCol, planRow, null, pixel).colour)}`;
+    };
+    /** A look's colours as the screen draws them. */
+    const lookTable = (id) => () => JSON.stringify(grassTable(id).colours);
+    /** The picture round the mat's edge. */
+    const matEdge = () => {
+        const g = ground();
+        const pass = buildScreenPass(buildGroundPlan(g), { mat: g.mat, unit: 2, sheet: () => null });
+        return weighted(pass.data);
+    };
+    const cleanObserved = Object.fromEntries(Object.keys(CLEAN_LOOKS).flatMap(id => Object.values(cleanKeys(id)).map(key => [key, lookTable(id)])));
     /** Yellowstone's sulphur lakes in the plan. */
     const lakes = () => {
         const g = groundWith(55, 36, flat('grass'), { seed, biomes: { main: 'yellowstone', terrains: { yellowstone: 'grass' } } });
@@ -187,7 +211,71 @@ describe('⭐ No dead sliders', () => {
         return `${weighted(plan.terrainAt)}|${JSON.stringify(plan.blendPairs)}`;
     };
 
+    /** The ambient life on the test ground's picture: its water and its swaying grass. */
+    const ambientGround = () => {
+        const g = ground();
+        const plan = buildGroundPlan(g);
+        return groundLife(buildScreenPass(plan, { mat: g.mat, unit: 4, pixel: 2, sheet: () => null, pieces: true }), plan);
+    };
+    const ambientSwitch = (key) => () => String(ambientSettings()[key]);
+    /** How many sparkles are out on the water after a few seconds. */
+    const sparklesOut = () => {
+        const life = ambientGround();
+        const out = new Uint32Array(life.cols * life.rows);
+        const shimmer = createShimmer(life.water, { cols: life.cols, out, random: ambientRandom(3) });
+        shimmer.paintAll(0);
+        for (let f = 1; f <= 40; f++) shimmer.step(f, { sparkles: ambientSettings().sparkles });
+        return String(shimmer.state.sparkles.size);
+    };
+    /** When the first gust sets off. */
+    const firstGust = () => {
+        const life = ambientGround();
+        const gust = createGust(life.gust, { cols: life.cols, matW: 768, out: new Uint32Array(life.cols * life.rows), random: ambientRandom(3) });
+        for (let f = 1; f < 5000; f++) {
+            gust.step(f, { gapFrames: ambientSettings().gustGapFrames });
+            if (gust.crossing) return String(f);
+        }
+        return 'never';
+    };
+    /** The sky over one idle Token for a while: its birds, clouds and particles. */
+    const skyRun = (frames) => {
+        const sky = createSky({ random: ambientRandom(9) });
+        const mask = { width: 4, height: 4, data: Uint8Array.from([0, 255, 255, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]) };
+        const profile = perchProfile(mask);
+        const ctx = (settings) => ({
+            world: { artU: 2, unitU: 4, birdColourAt: () => '#ffffff', spots: { leaves: Float32Array.from([300, 300, 320, 310]) }, share: { leaves: 1 } },
+            mat: { w: 768, h: 384 }, tokens: new Map([['t1', { id: 't1', typeId: 'x', x: 300, y: 200 }]]), worked: new Set(), carried: null,
+            art: { perchOf: () => ({ profile, size: 128 }) },
+            settings
+        });
+        const seen = new Set();
+        let sprites = [];
+        for (let f = 1; f <= frames; f++) {
+            sky.step(f, ctx(ambientSettings()));
+            for (const b of sky.birds) seen.add(b.key);
+            sprites = sky.sprites(ambientSettings().cloudShade);
+        }
+        return { seen, sprites, sky };
+    };
+    const birdVisits = () => String(skyRun(2400).seen.size);
+    const birdSize = () => {
+        const { sky } = skyRun(200);
+        return sky.birds.map(b => b.px).join(',') || 'none';
+    };
+    const cloudsOut = () => String(skyRun(2).sky.clouds.length);
+    const cloudSizes = () => skyRun(2).sky.clouds.map(c => `${c.shape.w}x${c.shape.h}`).join(',');
+    const cloudColour = () => skyRun(2).sprites.find(s => s.layer === 'cloud')?.colour || 'none';
+    const particlesOut = () => String(skyRun(300).sky.particles.length);
+
     const OBSERVES = {
+        groundPixel: grassPixel,
+        cleanOn: lookTable('meadow'),
+        decorQuiet: lookTable('flower_meadow'),
+        decorContrast: lookTable('flower_meadow'),
+        rimOn: matEdge,
+        rimWidth: matEdge,
+        rimDark: matEdge,
+        ...cleanObserved,
         edgeSwing: edges,
         edgeRoughness: edges,
         blendOn: blend,
@@ -226,7 +314,21 @@ describe('⭐ No dead sliders', () => {
         propGroupSpread: props,
         propScatter: props,
         muteBrightness: mute,
-        muteSaturation: mute
+        muteSaturation: mute,
+        ambientWater: ambientSwitch('water'),
+        ambientSparkles: sparklesOut,
+        ambientGust: ambientSwitch('gust'),
+        ambientGustGap: firstGust,
+        ambientLava: ambientSwitch('lava'),
+        ambientParticles: ambientSwitch('particles'),
+        ambientParticleRate: particlesOut,
+        ambientBirds: ambientSwitch('birds'),
+        ambientBirdGap: birdVisits,
+        ambientBirdPixel: birdSize,
+        ambientClouds: ambientSwitch('clouds'),
+        ambientCloudCount: cloudsOut,
+        ambientCloudSize: cloudSizes,
+        ambientCloudShade: cloudColour
     };
 
     it('every tunable in the table is claimed to change something', () => {

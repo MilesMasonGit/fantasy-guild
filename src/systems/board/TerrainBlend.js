@@ -539,14 +539,15 @@ export function blendBorders({ at, width, height, palette, present, idFor, looks
 
 /**
  * The colour a fade mixes in of a look: the mean of its kinds' bodies (each kind's soft tone), as
- * the Ground strength slider draws them. Null for a look not drawn by rules or a water.
+ * the screen draws them (its Clean colours, the Ground strength). Null for a look not drawn by
+ * rules or a water.
  *
  * @returns {number[]|null} `[r, g, b]` bytes
  */
 export function groundTone(lookId) {
     const spec = generatedOf(lookId);
     if (!spec || spec.water || !drawsGenerated(lookId)) return null;
-    const table = grassColours(spec);
+    const table = grassColours(spec, { look: lookId });
     const sum = [0, 0, 0];
     spec.kinds.forEach((_, k) => {
         const c = table[kindColour(k, COLOUR.SOFT)];
