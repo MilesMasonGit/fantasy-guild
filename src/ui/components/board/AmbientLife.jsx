@@ -188,7 +188,15 @@ export const AmbientLife = React.memo(function AmbientLife({ picture, tokens, wo
     const board = useRef({ tokens: null, map: new Map(), workedBy: new Map(), carriedId: null });
     useLayoutEffect(() => {
         const b = board.current;
-        if (b.tokens !== tokens) { b.tokens = tokens; b.map = boardOf(tokens); }
+        if (b.tokens !== tokens) {
+            b.tokens = tokens;
+            b.map = boardOf(tokens);
+            // Each Token's perch read ahead of the first bird: its art's alpha, once per sprite.
+            for (const t of b.map.values()) {
+                const src = t.enemy ? null : tokenSpritePath(t.typeId);
+                if (src) perchOfSprite(src);
+            }
+        }
         b.workedBy = workedBy || new Map();
         b.carriedId = carriedId;
     }, [tokens, workedBy, carriedId]);

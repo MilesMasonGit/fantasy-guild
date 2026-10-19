@@ -413,6 +413,27 @@ describe('⭐ the birds', () => {
         expect(most).toBe(BIRDS.max);
     });
 
+    it('sits a pair side by side on one Token, never one over the other', () => {
+        // Art of 64 pixels across 128 mat units, as a Token's is, with a flat top, so a second
+        // bird always has a column to sit on.
+        const flat = perchProfile({ width: 64, height: 64, data: new Uint8Array(64 * 64).fill(255) });
+        let pairs = 0;
+        for (let seed = 1; seed < 30; seed++) {
+            const sky = createSky({ random: ambientRandom(seed) });
+            const ctx = skyCtx({ a: { x: 800, y: 500 } }, { settings: { birdGapFrames: 1e9 } });
+            ctx.art = { perchOf: () => ({ profile: flat, size: 128 }) };
+            sky.visitNow(1);
+            for (let f = 1; f < 300; f++) {
+                sky.step(f, ctx);
+                const sitting = sky.sprites().filter((s, k) => sky.birds[k]?.state === 'sit');
+                if (sitting.length < 2) continue;
+                pairs++;
+                expect(Math.abs(sitting[0].x - sitting[1].x)).toBeGreaterThanOrEqual(3 * sitting[0].px + 2);
+            }
+        }
+        expect(pairs).toBeGreaterThan(0);
+    });
+
     it('takes its colour from the biome under its Token', () => {
         const { plan, life } = pictureOf(lookGround('coast'));
         const world = skyWorld({ plan, life, unitU: 4, artU: 2 }, ambientRandom(1));
@@ -519,7 +540,9 @@ describe('⭐ a switch per effect', () => {
         const ctx = skyCtx({ a: { x: 800, y: 500 } }, { settings: { clouds: true, cloudCount: 3 } });
         sky.visitNow(1);
         for (let f = 1; f < 120; f++) sky.step(f, ctx);
-        expect(sky.sprites().length).toBeGreaterThan(3);
+        expect(sky.birds.length).toBeGreaterThan(0);
+        expect(sky.sprites().some(x => x.layer === 'cloud')).toBe(true);
+        expect(sky.sprites().some(x => x.layer === 'life')).toBe(true);
         ctx.settings = { ...ctx.settings, birds: false, clouds: false };
         sky.step(120, ctx);
         expect(sky.sprites()).toEqual([]);

@@ -53,12 +53,14 @@ export const PARTICLE_SHAPES = Object.freeze({
 /**
  * Bird timings, in frames (8 a second) and mat units. They fly in at about `speed` a frame on an
  * arc `arc` high, sit `sit` frames, and leave faster; at most `max` at once; a visit brings a second
- * bird to the same Token `pairChance` of the time, `pairOffset` art pixels along its top.
+ * bird to the same Token `pairChance` of the time, along its top a bird's width and `pairGap` art
+ * pixels from the first (the prototype's pair sat nine art pixels apart). A visit that finds no
+ * Token free tries again `retry` frames later.
  */
 export const BIRDS = Object.freeze({
     max: 3, speed: 7.5, minFly: 32, maxFly: 112, arc: 60, outArc: 50, leave: Object.freeze([36, 56]), startled: Object.freeze([20, 30]),
     sit: Object.freeze([64, 144]), lookEvery: Object.freeze([24, 64]), lookFor: Object.freeze([6, 12]),
-    pairChance: 0.3, pairDelay: Object.freeze([6, 20]), pairOffset: 5, outside: 30, firstVisit: Object.freeze([40, 120])
+    pairChance: 0.3, pairDelay: Object.freeze([6, 20]), pairGap: 3, outside: 30, firstVisit: Object.freeze([40, 120]), retry: 8
 });
 
 /**
@@ -199,13 +201,14 @@ export function createSky({ random }) {
     let seeded = false;
     const owed = { leaves: 0, petals: 0, embers: 0 };
 
-    /** A point just off the mat's edge nearest `p`, or off a random edge. */
+    /** A point just off the mat's edge nearest `p` (now and then the next nearest), or off a random edge. */
     const offEdge = (p, mat, nearest) => {
         const o = BIRDS.outside;
         const sides = [
             { d: p.x, at: () => ({ x: -o, y: p.y + (random() - 0.5) * 500 }) },
             { d: mat.w - p.x, at: () => ({ x: mat.w + o, y: p.y + (random() - 0.5) * 500 }) },
-            { d: p.y, at: () => ({ x: p.x + (random() - 0.5) * 700, y: -o }) }
+            { d: p.y, at: () => ({ x: p.x + (random() - 0.5) * 700, y: -o }) },
+            { d: mat.h - p.y, at: () => ({ x: p.x + (random() - 0.5) * 700, y: mat.h + o }) }
         ];
         let side;
         if (nearest) {
@@ -213,7 +216,7 @@ export function createSky({ random }) {
             side = random() < 0.75 ? sides[0] : sides[1];
         } else side = sides[Math.floor(random() * sides.length)];
         const q = side.at();
-        return { x: Math.max(-o, Math.min(mat.w + o, q.x)), y: Math.max(-o, Math.min(mat.h, q.y)) };
+        return { x: Math.max(-o, Math.min(mat.w + o, q.x)), y: Math.max(-o, Math.min(mat.h + o, q.y)) };
     };
 
     const flightFrames = (a, b) => Math.round(Math.max(BIRDS.minFly, Math.min(BIRDS.maxFly, Math.hypot(b.x - a.x, b.y - a.y) / BIRDS.speed)));
@@ -229,7 +232,7 @@ export function createSky({ random }) {
         bird.frames = intBetween(random, range);
     };
 
-    /** A visit: one bird, sometimes two, to an idle Token whose top is clear. */
+    /** A visit: one bird, sometimes two, to an idle Token whose top is clear. Whether one came. */
     const visit = (frame, ctx) => {
         const { tokens, worked, carried } = ctx;
         const taken = new Set(birds.map(b => b.tokenId));
@@ -244,14 +247,15 @@ export function createSky({ random }) {
             const spot = perchSpot(token, ctx);
             if (!spot) continue;
             const pair = birds.length + 2 <= BIRDS.max && random() < BIRDS.pairChance;
-            const side = random() < 0.5 ? -1 : 1;
+            const offset = (random() < 0.5 ? -1 : 1) * (3 * ctx.settings.birdPixel + BIRDS.pairGap);
             add(frame, token, spot, ctx, 0);
             if (pair) {
-                const second = perchSpot(token, ctx, side * BIRDS.pairOffset);
-                if (second) add(frame + intBetween(random, BIRDS.pairDelay), token, second, ctx, side * BIRDS.pairOffset);
+                const second = perchSpot(token, ctx, offset);
+                if (second) add(frame + intBetween(random, BIRDS.pairDelay), token, second, ctx, offset);
             }
-            return;
+            return true;
         }
+        return false;
     };
 
     const add = (start, token, spot, ctx, offset) => {
@@ -416,8 +420,9 @@ export function createSky({ random }) {
                 if (nextVisit === null) nextVisit = frame + intBetween(random, BIRDS.firstVisit);
                 birds = birds.filter(b => stepBird(b, frame, ctx));
                 if (frame >= nextVisit) {
-                    if (birds.length < BIRDS.max) visit(frame, ctx);
-                    nextVisit = frame + Math.round(settings.birdGapFrames * (0.5 + random()));
+                    // No Token free to take one (or its art not read yet): look again in a second.
+                    const came = birds.length >= BIRDS.max || visit(frame, ctx);
+                    nextVisit = frame + (came ? Math.round(settings.birdGapFrames * (0.5 + random())) : BIRDS.retry);
                 }
             } else {
                 birds = [];
