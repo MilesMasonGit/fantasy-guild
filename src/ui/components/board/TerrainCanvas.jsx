@@ -7,7 +7,8 @@ import { groundSheetsReady, loadGroundSheets, onGroundSheetsReady, mutedSheet, d
 import { timedBuild } from './groundBuilds.js';
 import { buildGroundPlan } from '../../../systems/board/TerrainSurface.js';
 import { sheetPath, propSheetPath } from '../../../config/registries/terrainRegistry.js';
-import { onTuningChanged } from '../../../config/playmatTuning.js';
+import { onTuningChanged, isAmbientKey, tuning } from '../../../config/playmatTuning.js';
+import { groundLife } from './ambientGround.js';
 
 /**
  * The playmat's ground: the active Region's, drawn under every Token as one picture.
@@ -29,6 +30,9 @@ import { onTuningChanged } from '../../../config/playmatTuning.js';
  * (`groundSheets.js`); the corners, the light edge and the inset shadow are in the picture.
  *
  * Scenery only: no pointer, nothing to hover. Dropping and inspecting belong to the Tokens above.
+ * Each picture is handed on (`onPicture`) with what the ambient life needs of it (`groundLife`:
+ * the water, the lava, the swaying grass pieces), read at once because the next build reuses the
+ * buffers it is read from.
  */
 
 /** How long the fit must hold still before the picture is redrawn for it (a window being dragged). */
@@ -49,12 +53,16 @@ function useSheetsReady() {
     return ready;
 }
 
-/** A count that moves once per burst of tuning-slider moves. */
+/**
+ * A count that moves once per burst of tuning-slider moves. The ambient life's sliders draw no
+ * ground, except the gusts' switch: the picture finds the grass pieces only while gusts are on.
+ */
 function useTuningRevision() {
     const [revision, setRevision] = useState(0);
     useEffect(() => {
         let timer = null;
-        const off = onTuningChanged(() => {
+        const off = onTuningChanged((key) => {
+            if (isAmbientKey(key) && key !== 'ambientGust') return;
             if (timer) return;
             timer = setTimeout(() => {
                 timer = null;
@@ -91,10 +99,11 @@ const groundSheet = (id) => mutedSheet(sheetPath(id));
 const propSheet = (id, asDrawn) => (asDrawn ? drawnSheet(propSheetPath(id)) : mutedSheet(propSheetPath(id)));
 
 /**
- * @param {{ground: object}} props  the active Region's ground (`regionGround`), the same object
- *   while nothing about it changes
+ * @param {{ground: object, onPicture?: (picture: object) => void}} props  the active Region's ground
+ *   (`regionGround`), the same object while nothing about it changes; `onPicture` hears of each
+ *   picture drawn: its plan, its grid and its `groundLife`
  */
-export const TerrainCanvas = React.memo(function TerrainCanvas({ ground }) {
+export const TerrainCanvas = React.memo(function TerrainCanvas({ ground, onPicture = null }) {
     const fit = useMatFit() || 1;
     const ready = useSheetsReady();
     const tuningRevision = useTuningRevision();
@@ -129,12 +138,14 @@ export const TerrainCanvas = React.memo(function TerrainCanvas({ ground }) {
             image = ctx.createImageData(grid.cols, grid.rows);
             imageRef.current = image;
         }
-        timedBuild('screen', () => buildScreenPass(plan, {
-            mat: { w, h }, unit: grid.unit, pixel, sheet: groundSheet, prop: propSheet, out: image.data
+        const pass = timedBuild('screen', () => buildScreenPass(plan, {
+            mat: { w, h }, unit: grid.unit, pixel, sheet: groundSheet, prop: propSheet, out: image.data,
+            pieces: tuning('ambientGust') > 0
         }));
         ctx.putImageData(image, 0, 0);
         setHasPicture(true);
-    }, [plan, grid, pixel, w, h]);
+        onPicture?.({ plan, mat: { w, h }, cols: grid.cols, rows: grid.rows, unit: grid.unit, pixel, fit: drawFit, life: groundLife(pass, plan) });
+    }, [plan, grid, pixel, w, h, drawFit, onPicture]);
 
     return (
         <canvas

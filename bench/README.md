@@ -373,7 +373,8 @@ machine, CPU, Chrome version and the GPU / ANGLE backend Chrome reports.
 | 3 | the bench failed: a scene drew nothing or was hidden, a page reloaded mid-run, a click opened nothing, there is no baseline, or the baseline used another settle or window |
 
 **The cost table** (`--switches`): S2 (or the one board `--only` names) with everything drawn, then once with each
-of the 17 drawing switches off (`?off=<name>`, `src/ui/dev/perf/drawSwitches.js`).
+of the 23 drawing switches off (`?off=<name>`, `src/ui/dev/perf/drawSwitches.js`; the six `ambient…`
+ones are the mat's ambient life, an effect each).
 All-on is measured at the start, the middle and the end; its spread is the
 **noise**, and a system's cost is all-on minus switch-off. A cost inside the
 noise is printed but marked "above noise: no".

@@ -72,7 +72,8 @@ function fakeContext() {
         imageSmoothingEnabled: true,
         createImageData: (w, hgt) => ({ width: w, height: hgt, data: new Uint8ClampedArray(w * hgt * 4) }),
         putImageData(image) { ctx.puts.push(image); },
-        clearRect() {}
+        clearRect() {},
+        fillRect() {}
     };
     return ctx;
 }

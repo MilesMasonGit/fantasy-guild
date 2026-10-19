@@ -16,6 +16,7 @@ import { FlagLayer } from './FlagLayer.jsx';
 import { heroOutline } from './spriteOutline.js';
 import { SpriteLayerView } from './SpriteLayerView.jsx';
 import { TerrainCanvas } from './TerrainCanvas.jsx';
+import { AmbientLife } from './AmbientLife.jsx';
 import { TerrainGridOverlay } from './TerrainGridOverlay.jsx';
 import { MAT_EDGE, MAT_EDGE_CSS } from './groundScreen.js';
 import { announce } from './dropOnMat.js';
@@ -263,6 +264,8 @@ export const MatBoard = React.memo(function MatBoard({
         () => (terrainDrawn ? regionGround(groundSource, mat) : null),
         [terrainDrawn, groundSource, mat]
     );
+    /** The ground's last picture, for the ambient life drawn on it and over the Tokens. */
+    const [groundPicture, setGroundPicture] = useState(null);
 
 
     const handlePointerMove = useCallback((e) => {
@@ -409,7 +412,13 @@ export const MatBoard = React.memo(function MatBoard({
             />
 
             {/* `MAT_Z.GROUND`: the ground, under every Token. */}
-            {ground && <TerrainCanvas ground={ground} />}
+            {ground && <TerrainCanvas ground={ground} onPicture={setGroundPicture} />}
+
+            {/**
+             * `MAT_Z.GROUND_FX` and `MAT_Z.AMBIENT_SKY`: the water's shimmer, gusts and the lava's
+             * pulse on the ground; cloud shadows, drifting particles and small birds over the Tokens.
+             */}
+            <AmbientLife picture={ground ? groundPicture : null} tokens={tokens} workedBy={workedBy} carriedId={carriedId} />
 
             {/**
              * The stack (`MAT_Z.TOKEN_BASE` up): Tokens, the heroes on them, and what is written

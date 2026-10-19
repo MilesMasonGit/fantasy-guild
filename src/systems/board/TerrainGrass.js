@@ -418,7 +418,8 @@ export function quietDecorations(table, rules, amount, contrast) {
 /** A kind's numbers its rule set leaves out: the prototype's `ground` defaults. */
 const KIND_DEFAULTS = Object.freeze({
     body: Object.freeze([1, 2]), moundLight: GRASS_RULES.moundLight, tips: 0.15, shadow: 0.5,
-    heights: Object.freeze([2, 2, 3]), cluster: 1, tone: 3, strokes: null, mounds: 0
+    heights: Object.freeze([2, 2, 3]), cluster: 1, tone: 3, strokes: null, mounds: 0,
+    sway: false, glow: false
 });
 
 /** Where a kind's strokes gather when its rules do not say: the meadow's patches. */
@@ -1371,7 +1372,7 @@ function bodyRow(ctx, r) {
  * rather than a hash per pixel), and each is kept at its own kind's share of that chance.
  */
 function strokesRow(ctx, r) {
-    const { shape, kinds, colour, cols, rows, strokeKinds, sCentre, sPatch, sGap, gapLog, leanCut, strokeSalts, moreSalts } = ctx;
+    const { shape, kinds, colour, pieceAt, cols, rows, strokeKinds, sCentre, sPatch, sGap, gapLog, leanCut, strokeSalts, moreSalts } = ctx;
     const PATCH = BIT.PATCH;
     let c = -1;
     for (;;) {
@@ -1384,7 +1385,7 @@ function strokesRow(ctx, r) {
         if (!spec) continue;
         if (hash(c, r, sCentre) >= spec.keepCut) continue;
         if (!(shape[i] & PATCH) && hash(c, r, sPatch) >= spec.floorCut) continue;
-        const { tipCut, shadowAt, tone, tip, dark, reach, back } = spec;
+        const { tipCut, shadowAt, tone, tip, dark, reach, back, sway } = spec;
         const spread = spec.cluster > 1 && reach > 1;
         for (let s = 0; s < spec.cluster; s++) {
             const h = hash(c, r, strokeSalts[s]);
@@ -1401,11 +1402,17 @@ function strokesRow(ctx, r) {
                 const yy = y - t;
                 if (xx >= cols || yy < 0) continue;
                 const j = yy * cols + xx;
-                if ((shape[j] & ON_EARTH) === ON && kinds[j] === k) colour[j] = t === height - 1 && lit ? tip : tone;
+                if ((shape[j] & ON_EARTH) === ON && kinds[j] === k) {
+                    colour[j] = t === height - 1 && lit ? tip : tone;
+                    pieceAt[j] = sway;
+                }
             }
             if (x + 1 < cols && y + 1 < rows && (more >>> 16) < shadowAt) {
                 const j = (y + 1) * cols + x + 1;
-                if ((shape[j] & ON_EARTH) === ON && kinds[j] === k) colour[j] = dark;
+                if ((shape[j] & ON_EARTH) === ON && kinds[j] === k) {
+                    colour[j] = dark;
+                    pieceAt[j] = sway;
+                }
             }
         }
     }
@@ -1418,7 +1425,7 @@ function strokesRow(ctx, r) {
  * ground, as each of the prototype's layers drew its own.
  */
 function drawEarthDetails(ctx, seed) {
-    const { shape, kinds, colour, earth, cols, rows, count, base, small } = ctx;
+    const { shape, kinds, colour, pieceAt, sways, earth, cols, rows, count, base, small } = ctx;
     const R = GRASS_RULES;
     const isEarth = (j) => (shape[j] & ON_EARTH) === ON_EARTH;
     const isGrass = (j) => (shape[j] & ON_EARTH) === ON;
@@ -1457,11 +1464,18 @@ function drawEarthDetails(ctx, seed) {
             const hb = hash(c, r, bladeSalts[k]);
             const height = small.heights[hb & 3];
             const lit = ((hb >>> 8) & 255) < tipCut;
+            const sway = sways[kinds[j]];
             for (let t = 0; t < height && r - t >= 0; t++) {
                 const jt = j - t * cols;
-                if (shape[jt]) colour[jt] = base[kinds[jt]] + (t === height - 1 && lit ? 3 : 2);
+                if (shape[jt]) {
+                    colour[jt] = base[kinds[jt]] + (t === height - 1 && lit ? 3 : 2);
+                    pieceAt[jt] = sway;
+                }
             }
-            if (r + 1 < rows && isEarth(j + cols)) colour[j + cols] = E0;
+            if (r + 1 < rows && isEarth(j + cols)) {
+                colour[j + cols] = E0;
+                pieceAt[j + cols] = sway;
+            }
         }
     }
 
@@ -1476,12 +1490,17 @@ function drawEarthDetails(ctx, seed) {
         const g = base[kinds[i]];
         if (r > 0 && isGrass(i - cols)) {
             const h = hash(c, r, sEdge);
+            pieceAt[i] = 0;
             if ((h & 0xffff) < edgeCut) {
                 colour[i] = g + 3;
-                if (small.hang && ((h >>> 16) & 1) && r + 1 < rows && shape[i + cols]) colour[i + cols] = base[kinds[i + cols]] + 2;
+                if (small.hang && ((h >>> 16) & 1) && r + 1 < rows && shape[i + cols]) {
+                    colour[i + cols] = base[kinds[i + cols]] + 2;
+                    pieceAt[i + cols] = 0;
+                }
             } else colour[i] = E0;
         } else if (((c > 0 && isGrass(i - 1)) || (c < cols - 1 && isGrass(i + 1))) && hash(c, r, sSide) < sideCut) {
             colour[i] = g + 2;
+            pieceAt[i] = 0;
         }
     }
 }
@@ -1491,9 +1510,10 @@ function drawEarthDetails(ctx, seed) {
  * over its top edge into the ground round it, and a soft shadow under its bottom edge.
  */
 function drawOverlayEdges(ctx, seed, slot, ov) {
-    const { shape, kinds, colour, cols, rows, base, size } = ctx;
+    const { shape, kinds, colour, pieceAt, sways, cols, rows, base, size } = ctx;
     const heights = ov.heights.map(size);
     const patch = (slot << SLOT_SHIFT) | (ov.kind + 1);
+    const sway = sways[patch];
     const g = base[patch];
     const bladeCut = cut32(ov.blades);
     const dimCut = cut32(ov.shadow);
@@ -1511,7 +1531,10 @@ function drawOverlayEdges(ctx, seed, slot, ov) {
                 const height = heights[hash(c, r, sHeight) % heights.length];
                 for (let t = 0; t < height && r - t >= 0; t++) {
                     const j = i - t * cols;
-                    if (ours(j)) colour[j] = t === 0 ? g + 3 : g + 2;
+                    if (ours(j)) {
+                        colour[j] = t === 0 ? g + 3 : g + 2;
+                        pieceAt[j] = sway;
+                    }
                 }
             } else if (u === patch && colour[i] < COLOUR.DIM && hash(c, r, sDim) < dimCut) {
                 colour[i] += COLOUR.DIM;
@@ -1522,14 +1545,19 @@ function drawOverlayEdges(ctx, seed, slot, ov) {
 
 /** Wet sand, and a waterline dithered against it, on land whose plan pixel says so. */
 function drawShore(ctx) {
-    const { shape, colour, cols, rows, planCol, planRow, planShore } = ctx;
+    const { shape, colour, pieceAt, cols, rows, planCol, planRow, planShore } = ctx;
     for (let r = 0; r < rows; r++) {
         const pr = planRow[r];
         for (let c = 0, i = r * cols; c < cols; c++, i++) {
             if (!shape[i]) continue;
             const v = planShore[pr + planCol[c]];
-            if (v === SHORE.WET) colour[i] = COLOUR.WET;
-            else if (v === SHORE.LINE) colour[i] = (c + 2 * r) % 4 ? COLOUR.LINE : COLOUR.WET;
+            if (v === SHORE.WET) {
+                colour[i] = COLOUR.WET;
+                pieceAt[i] = 0;
+            } else if (v === SHORE.LINE) {
+                colour[i] = (c + 2 * r) % 4 ? COLOUR.LINE : COLOUR.WET;
+                pieceAt[i] = 0;
+            }
         }
     }
 }
@@ -1652,7 +1680,7 @@ function drawWater(ctx, grass, seed) {
 
 /** The banks round shaped water over everything else on the land. */
 function drawBanks(ctx) {
-    const { shape, colour, cols, rows, planCol, planRow, planShore } = ctx;
+    const { shape, colour, pieceAt, cols, rows, planCol, planRow, planShore } = ctx;
     const lo = SHORE.BANK;
     const hi = SHORE.BANK + BANK_COUNT;
     for (let r = 0; r < rows; r++) {
@@ -1660,22 +1688,44 @@ function drawBanks(ctx) {
         for (let c = 0, i = r * cols; c < cols; c++, i++) {
             if (!shape[i]) continue;
             const v = planShore[pr + planCol[c]];
-            if (v >= lo && v < hi) colour[i] = COLOUR.BANK + v - lo;
+            if (v >= lo && v < hi) {
+                colour[i] = COLOUR.BANK + v - lo;
+                pieceAt[i] = 0;
+            }
         }
     }
 }
 
 /** The lakes' rings over everything else on their look's ground. */
 function drawRings(ctx) {
-    const { shape, colour, cols, rows, planCol, planRow, planRing } = ctx;
+    const { shape, colour, pieceAt, cols, rows, planCol, planRow, planRing } = ctx;
     for (let r = 0; r < rows; r++) {
         const pr = planRow[r];
         for (let c = 0, i = r * cols; c < cols; c++, i++) {
             if (!shape[i]) continue;
             const v = planRing[pr + planCol[c]];
-            if (v) colour[i] = COLOUR.RING + v - 1;
+            if (v) {
+                colour[i] = COLOUR.RING + v - 1;
+                pieceAt[i] = 0;
+            }
         }
     }
+}
+
+/**
+ * The ground as it would be with every swaying grass piece lifted off: each piece pixel takes the
+ * colour its body (or earth) had before the blades and tufts were drawn over it, in shadow where
+ * the piece is (an overlay's soft shadow fell on both). Null when no piece sways.
+ */
+function bodyUnderPieces(colour, pieceAt, under, body, total) {
+    let pieces = 0;
+    body.set(colour);
+    for (let i = 0; i < total; i++) {
+        if (!pieceAt[i]) continue;
+        pieces++;
+        body[i] = colour[i] >= COLOUR.DIM ? under[i] + COLOUR.DIM : under[i];
+    }
+    return pieces ? body : null;
 }
 
 /**
@@ -1737,10 +1787,13 @@ export function detailRules(pixel = 1) {
  * @param {number} [pixel]  Token pixels across one ground pixel: the details are drawn for that
  *   size ({@link detailRules})
  * @returns {{colour: Uint8Array, kinds: Uint8Array, waves: Array<{x: number, y: number, length: number,
- *   far: boolean}>}} per ground pixel, row by row: `colour` a {@link COLOUR} index of the pixel's
- *   look ({@link COLOUR}.NONE where the ground is not generated), `kinds` the plan's kind byte
- *   under it (its slot is `kinds >> SLOT_SHIFT`); and the waves drawn, each by its crest's left end
- *   in ground pixels, `far` with a second crest.
+ *   far: boolean}>, body: Uint8Array|null}} per ground pixel, row by row: `colour` a {@link COLOUR}
+ *   index of the pixel's look ({@link COLOUR}.NONE where the ground is not generated), `kinds` the
+ *   plan's kind byte under it (its slot is `kinds >> SLOT_SHIFT`); the waves drawn, each by its
+ *   crest's left end in ground pixels, `far` with a second crest; and `body`, the same colours with
+ *   every grass piece of a kind that sways (its blades, their shadow pixels, its tufts in the earth,
+ *   an overlay's blades: `sway` in its rules) lifted off, so the colour under each piece: where the
+ *   two differ is a piece. Null when no piece sways.
  */
 export function drawGrass(grass, seed, cols, rows, planCol, planRow, scratch = null, pixel = 1) {
     const total = cols * rows;
@@ -1749,10 +1802,12 @@ export function drawGrass(grass, seed, cols, rows, planCol, planRow, scratch = n
         buffers = {
             total,
             shape: new Uint8Array(total), kinds: new Uint8Array(total),
-            colour: new Uint8Array(total), earth: new Int32Array(total), water: null, occ: null
+            colour: new Uint8Array(total), earth: new Int32Array(total), water: null, occ: null,
+            pieceAt: new Uint8Array(total), under: new Uint8Array(total), body: new Uint8Array(total)
         };
         if (scratch) Object.assign(scratch, buffers);
     }
+    buffers.pieceAt.fill(0);
     const hasWater = grass.bands.some(Boolean);
     if (hasWater && !buffers.water) {
         buffers.water = new Int32Array(total);
@@ -1766,6 +1821,7 @@ export function drawGrass(grass, seed, cols, rows, planCol, planRow, scratch = n
     const high = new Int16Array(256);
     const lightCuts = new Array(256).fill(0);
     const isWater = new Uint8Array(256);
+    const sways = new Uint8Array(256);
     const strength = Math.max(0, tuning('grassMounds'));
     const byKind = [];
     grass.looks.forEach((id, slot) => {
@@ -1776,13 +1832,14 @@ export function drawGrass(grass, seed, cols, rows, planCol, planRow, scratch = n
             base[b] = kindColour(k, COLOUR.GRASS);
             high[b] = base[b] + kind.body[1];
             lightCuts[b] = cut32(kind.moundLight * strength * detail.line);
+            sways[b] = kind.sway ? 1 : 0;
             byKind.push([b, kind]);
         });
     });
 
     const ctx = {
         shape: buffers.shape, kinds: buffers.kinds, colour: buffers.colour, earth: buffers.earth,
-        water: buffers.water, occ: buffers.occ, isWater, base, high, lightCuts,
+        water: buffers.water, occ: buffers.occ, pieceAt: buffers.pieceAt, isWater, base, high, lightCuts, sways,
         cols, rows, planCol, planRow, planKinds: grass.kinds, planBits: grass.bits,
         planShore: grass.shore, planRing: grass.ring, count: 0, wet: 0,
         size: detail.size, perSea: detail.count, sunken: detail.sunken, small: detail.small
@@ -1796,6 +1853,8 @@ export function drawGrass(grass, seed, cols, rows, planCol, planRow, scratch = n
     ctx.sShadow = saltOf(seed, SALT.SHADOW);
     ctx.sDiagonal = saltOf(seed, SALT.DIAGONAL);
     for (let r = 0; r < rows; r++) bodyRow(ctx, r);
+    // What lies under every blade and tuft drawn from here on.
+    buffers.under.set(buffers.colour);
 
     // Every look's kinds: the centres come at the busiest kind's chance.
     const density = Math.max(0, tuning('grassStrokes'));
@@ -1813,7 +1872,7 @@ export function drawGrass(grass, seed, cols, rows, planCol, planRow, scratch = n
                 cluster: clusters[j].count, heights: kind.heights.map(detail.size),
                 reach: detail.reach, back: detail.back,
                 tipCut: Math.round(kind.tips * 65536), shadowAt: Math.round(kind.shadow * 65536),
-                tone: strokes + kind.tone, tip: strokes + 4, dark: base[b]
+                tone: strokes + kind.tone, tip: strokes + 4, dark: base[b], sway: sways[b]
             };
         });
         ctx.gapLog = busiest >= 1 ? 0 : Math.log(1 - busiest);
@@ -1835,5 +1894,6 @@ export function drawGrass(grass, seed, cols, rows, planCol, planRow, scratch = n
     const waves = hasWater ? drawWater(ctx, grass, seed) : [];
     if (grass.ring) drawRings(ctx);
     if (grass.banked) drawBanks(ctx);
-    return { colour: buffers.colour, kinds: buffers.kinds, waves };
+    const body = bodyUnderPieces(buffers.colour, buffers.pieceAt, buffers.under, buffers.body, total);
+    return { colour: buffers.colour, kinds: buffers.kinds, waves, body };
 }

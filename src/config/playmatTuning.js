@@ -410,8 +410,81 @@ export const TUNABLES = Object.freeze([
         label: 'Saturation',
         hint: 'How colourful the ground sheets and their scatter are drawn: 1 is the art as drawn, 0 grey. The generated ground and its scatter are drawn as they are (see Ground strength).',
         min: 0, max: 1.2, step: 0.01, def: 0.7
-    }
+    },
+    ...ambientRows()
 ]);
+
+/**
+ * The mat's ambient life (`AmbientLife.jsx`): a switch per effect, and how much of each. Off
+ * under reduced motion whatever they say.
+ */
+function ambientRows() {
+    const group = 'Ambient life';
+    return [
+        {
+            key: 'ambientWater', group, label: 'Water shimmer', toggle: true, min: 0, max: 1, step: 1, def: 1,
+            hint: 'Lakes, rivers, springs and the sea: a slow faint swell and a few short-lived sparkles.'
+        },
+        {
+            key: 'ambientSparkles', group, label: 'Sparkles',
+            hint: 'How many sparkles on a mat that was all water, at once: the prototype’s 40. A pond gets its share.',
+            min: 0, max: 120, step: 5, def: 40
+        },
+        {
+            key: 'ambientGust', group, label: 'Gusts in the grass', toggle: true, min: 0, max: 1, step: 1, def: 1,
+            hint: 'Once in a while a gust crosses the mat from the west; the blades and tufts it passes lean one ground pixel and spring back. The grass colour is untouched.'
+        },
+        {
+            key: 'ambientGustGap', group, label: 'Seconds between gusts',
+            hint: 'About how long the grass stays still between gusts (each a little more or less).',
+            min: 10, max: 180, step: 5, def: 45
+        },
+        {
+            key: 'ambientLava', group, label: 'Lava pulse', toggle: true, min: 0, max: 1, step: 1, def: 1,
+            hint: 'The volcano’s lava cracks slowly brighten and dim, in hard steps.'
+        },
+        {
+            key: 'ambientParticles', group, label: 'Leaves, petals, embers', toggle: true, min: 0, max: 1, step: 1, def: 1,
+            hint: 'Falling leaves over the forest, drifting petals over the cherry grove, embers rising from the volcano’s lava. Sparse.'
+        },
+        {
+            key: 'ambientParticleRate', group, label: 'How many particles',
+            hint: '1 as it ships (a handful at once over a whole biome), 0 none, 3 three times as many.',
+            min: 0, max: 3, step: 0.25, def: 1
+        },
+        {
+            key: 'ambientBirds', group, label: 'Birds', toggle: true, min: 0, max: 1, step: 1, def: 1,
+            hint: 'Now and then a small bird (or two) flies in, sits a while on a Token nobody is working, turns its head now and then, and flies off. Three at most.'
+        },
+        {
+            key: 'ambientBirdGap', group, label: 'Seconds between birds',
+            hint: 'About how long between visits (each a little more or less).',
+            min: 5, max: 120, step: 5, def: 30
+        },
+        {
+            key: 'ambientBirdPixel', group, label: 'Bird pixel size',
+            hint: 'Token pixels across one pixel of a bird: 2 as in the prototype (one ground pixel), 1 half the size.',
+            min: 1, max: 2, step: 1, def: 2
+        },
+        {
+            key: 'ambientClouds', group, label: 'Cloud shadows', toggle: true, min: 0, max: 1, step: 1, def: 1,
+            hint: 'Small clouds’ shadows drifting slowly east over everything, each keeping its shape for its whole trip.'
+        },
+        {
+            key: 'ambientCloudCount', group, label: 'Clouds',
+            hint: 'How many cloud shadows on the mat at once.',
+            min: 0, max: 8, step: 1, def: 3
+        },
+        {
+            key: 'ambientCloudShade', group, label: 'Cloud shade',
+            hint: 'How dark a cloud’s shadow is: 0.12 makes what it covers 88 % as bright. One level, no soft edge.',
+            min: 0.04, max: 0.3, step: 0.01, def: 0.12
+        }
+    ];
+}
+
+/** Whether a key is one of the ambient life's, which change no picture of the ground. */
+export const isAmbientKey = (key) => typeof key === 'string' && key.startsWith('ambient');
 
 const DEFAULTS = Object.freeze(
     Object.fromEntries(TUNABLES.map(t => [t.key, t.def]))

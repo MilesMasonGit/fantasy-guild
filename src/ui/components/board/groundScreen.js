@@ -226,11 +226,12 @@ function shadeFor(plan, s, ratio) {
  * their colours with each of the plan's shades applied, in each look's own share of the pattern.
  * ⚠️ Not muted: the ramps are the final colours.
  *
- * @returns {{colour: Uint8Array, kinds: Uint8Array, words: Uint32Array, shadeCount: number}|null}
+ * @returns {{colour: Uint8Array, kinds: Uint8Array, body: Uint8Array|null, words: Uint32Array,
+ *   shadeCount: number}|null}
  */
 function grassOf(plan, grid, planCol, planRow, pixel) {
     if (!plan.grass) return null;
-    const { colour, kinds } = drawGrass(plan.grass, plan.seed, grid.cols, grid.rows, planCol, planRow, grassScratch, pixel);
+    const { colour, kinds, body } = drawGrass(plan.grass, plan.seed, grid.cols, grid.rows, planCol, planRow, grassScratch, pixel);
     const S = (plan.shades || [1]).length;
     const NC = COLOUR.COUNT;
     const tables = plan.grass.looks.map(id => grassTable(id));
@@ -250,7 +251,7 @@ function grassOf(plan, grid, planCol, planRow, pixel) {
             }
         }
     });
-    return { colour, kinds, words: new Uint32Array(bytes.buffer), shadeCount: S };
+    return { colour, kinds, body, words: new Uint32Array(bytes.buffer), shadeCount: S };
 }
 
 /**
@@ -421,12 +422,13 @@ function rimOf(plan, grid, mat) {
  * like the ground under it (muted, the scatter read grey against the ramps), its loud pixels
  * quietened toward the ground under it as the ground's own decorations are (`quietDecorations`:
  * both as the rules draw them, as the prototype did before its Clean colours), then in its look's
- * Clean colours.
+ * Clean colours. Placed once ({@link placeProps}), painted into each picture that needs them
+ * ({@link paintProps}).
  */
-function drawProps(ctx) {
-    const { plan, data, cols, rows, from, to, unit, pixel, prop, grass } = ctx;
+function placeProps(ctx) {
+    const { plan, cols, rows, from, to, unit, pixel, prop, grass } = ctx;
     const props = plan.props || [];
-    if (!props.length) return;
+    if (!props.length) return null;
     const planU = plan.unit;
     const generated = new Set(plan.grass?.looks || []);
     const amount = tuning('decorQuiet');
@@ -478,8 +480,16 @@ function drawProps(ctx) {
         }
         placed.push({ p, side, bytes, left, top, ground, clean: asDrawn ? cleanOf(p.look) : null });
     }
+    return { placed, coloured: new Map(), contrast, amount };
+}
 
-    const coloured = new Map();
+/**
+ * Paint the placed props into `data`; with `covered`, mark each ground pixel a prop covers.
+ */
+function paintProps(ctx, props, data, covered = null) {
+    if (!props) return;
+    const { cols, rows, from, to } = ctx;
+    const { placed, coloured, contrast, amount } = props;
     for (const { p, side, bytes, left, top, ground, clean } of placed) {
         const f = p.shade ?? 1;
         for (let y = 0; y < side; y++) {
@@ -511,6 +521,7 @@ function drawProps(ctx) {
                 data[d + 1] = green * f;
                 data[d + 2] = blue * f;
                 data[d + 3] = 255;
+                if (covered) covered[r * cols + c] = 1;
             }
         }
     }
@@ -530,9 +541,16 @@ function drawProps(ctx) {
  * @param {(id: string, asDrawn: boolean) => Uint8ClampedArray|null} [options.prop]  a prop sheet's
  *   RGBA: muted, or as drawn for a prop standing on a generated look
  * @param {Uint8ClampedArray} [options.out]  where to write (`cols × rows × 4` bytes); else a new one
- * @returns {{cols: number, rows: number, unit: number, data: Uint8ClampedArray}}
+ * @param {boolean} [options.pieces]  also find the swaying grass pieces ({@link piecesOf}), for the
+ *   gust (`ambientGround.js`): the picture is painted a second time with them lifted off
+ * @returns {{cols: number, rows: number, unit: number, data: Uint8ClampedArray,
+ *   grass: {colour: Uint8Array, kinds: Uint8Array}|null, covered: Uint8Array,
+ *   pieces: {at: Int32Array, colour: Uint32Array, body: Uint32Array}|null,
+ *   from: Int32Array, to: Int32Array}} `grass` the generated ground's colour indices and kind
+ *   bytes per ground pixel (⚠️ reused by the next pass: read them before it), `covered` 1 where a
+ *   prop is drawn, `from`/`to` each row's span inside the mat
  */
-export function buildScreenPass(plan, { mat, unit, pixel = 1, sheet, prop = () => null, out = null }) {
+export function buildScreenPass(plan, { mat, unit, pixel = 1, sheet, prop = () => null, out = null, pieces: findPieces = false }) {
     const grid = screenGrid(mat, unit);
     const { cols, rows } = grid;
     const data = out || new Uint8ClampedArray(cols * rows * 4);
@@ -569,13 +587,75 @@ export function buildScreenPass(plan, { mat, unit, pixel = 1, sheet, prop = () =
     const { from, to } = spans(grid, mat);
 
     const grass = grassOf(plan, grid, planCol, planRow, pixel);
-    const fill = { out32, cols, from, to, planRow, planCol, lookAt, lookWords, texCol, grass, shadeAt: plan.shadeAt || null };
-    for (let r = 0; r < rows; r++) fillRow(fill, r);
-    if (plan.blend) tintFade(plan.blend, data, grid, planCol, planRow, plan, from, to);
-    drawProps({ plan, data, cols, rows, from, to, unit, pixel, prop, grass });
+    const shadeAt = plan.shadeAt || null;
+    const props = placeProps({ plan, cols, rows, from, to, unit, pixel, prop, grass });
+    const edge = { plan, grid, mat, from, to };
+    const wantPieces = findPieces && !!grass?.body;
+    const covered = new Uint8Array(cols * rows);
 
-    // The mat's edge, over the ground and its props alike: the rim or the soft inset shadow, then
-    // the faint light edge round the outermost pixels.
+    /** The picture into `target`: the ground, a fade's tint, the props, the mat's edge. */
+    const paint = (target, target32, withGrass, mark) => {
+        const fill = { out32: target32, cols, from, to, planRow, planCol, lookAt, lookWords, texCol, grass: withGrass, shadeAt };
+        for (let r = 0; r < rows; r++) fillRow(fill, r);
+        if (plan.blend) tintFade(plan.blend, target, grid, planCol, planRow, plan, from, to);
+        paintProps({ cols, rows, from, to }, props, target, mark);
+        drawEdge(target, edge);
+    };
+    paint(data, out32, grass, covered);
+
+    let pieces = null;
+    if (wantPieces) {
+        const lifted = bodyPictureOf(cols * rows);
+        paint(lifted.bytes, lifted.words, { ...grass, colour: grass.body }, null);
+        pieces = piecesOf(grass.colour, grass.body, out32, lifted.words);
+    }
+    return {
+        cols, rows, unit, data,
+        grass: grass ? { colour: grass.colour, kinds: grass.kinds } : null,
+        covered, pieces, from, to
+    };
+}
+
+/** The picture painted with the pieces lifted off, kept from one pass to the next. */
+let bodyPicture = null;
+function bodyPictureOf(total) {
+    if (!bodyPicture || bodyPicture.words.length !== total) {
+        const bytes = new Uint8ClampedArray(total * 4);
+        bodyPicture = { bytes, words: new Uint32Array(bytes.buffer) };
+    }
+    bodyPicture.bytes.fill(0);
+    return bodyPicture;
+}
+
+/**
+ * The swaying grass pieces as drawn on the screen: each ground pixel where the generator drew a
+ * piece (`body` differs from `colour`) and the finished picture shows it (a prop drawn over it
+ * shows the same in both pictures), with its colour and the colour under it, both finished (shaded,
+ * faded, rimmed) as RGBA words.
+ */
+export function piecesOf(colour, body, words, liftedWords) {
+    const total = colour.length;
+    let n = 0;
+    for (let i = 0; i < total; i++) if (body[i] !== colour[i] && words[i] !== liftedWords[i]) n++;
+    const at = new Int32Array(n);
+    const shown = new Uint32Array(n);
+    const under = new Uint32Array(n);
+    for (let i = 0, k = 0; i < total; i++) {
+        if (body[i] === colour[i] || words[i] === liftedWords[i]) continue;
+        at[k] = i;
+        shown[k] = words[i];
+        under[k] = liftedWords[i];
+        k++;
+    }
+    return { at, colour: shown, body: under };
+}
+
+/**
+ * The mat's edge, over the ground and its props alike: the rim or the soft inset shadow, then the
+ * faint light edge round the outermost pixels.
+ */
+function drawEdge(data, { plan, grid, mat, from, to }) {
+    const { cols, rows, unit } = grid;
     const light = MAT_EDGE.borderLight;
     const keepLight = 1 - light;
     const lightAdd = 255 * light;
@@ -629,7 +709,7 @@ export function buildScreenPass(plan, { mat, unit, pixel = 1, sheet, prop = () =
                 if (data[d + 3] !== 0) shade(d, rim.factor(c, r), c < lo || c >= hi);
             }
         }
-        return { cols, rows, unit, data };
+        return;
     }
 
     const alongX = insideAlong(cols, unit, mat.w);
@@ -661,6 +741,4 @@ export function buildScreenPass(plan, { mat, unit, pixel = 1, sheet, prop = () =
             if (data[d + 3] !== 0) shade(d, 1 - shadow * (1 - alongX[c] * alongY[r]), c < lo || c >= hi);
         }
     }
-
-    return { cols, rows, unit, data };
 }
