@@ -2,7 +2,7 @@ import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 're
 import { useMatFit } from './MatFitContext.jsx';
 import { boardScaleAt } from '../base/TokenSprite.jsx';
 import { MAT_Z } from './matLayers.js';
-import { buildScreenPass, screenGrid } from './groundScreen.js';
+import { buildScreenPass, screenGrid, groundPixel } from './groundScreen.js';
 import { groundSheetsReady, loadGroundSheets, onGroundSheetsReady, mutedSheet, drawnSheet } from './groundSheets.js';
 import { timedBuild } from './groundBuilds.js';
 import { buildGroundPlan } from '../../../systems/board/TerrainSurface.js';
@@ -17,8 +17,9 @@ import { onTuningChanged } from '../../../config/playmatTuning.js';
  *   when the Region's ground changes (a travel, a load), a tuning slider moves, or the sheets first
  *   arrive;
  * - **the screen pass** (`groundScreen.js`: the plan resampled onto ground pixels of
- *   `boardScaleAt(fit)` mat units, so one ground pixel is one Token pixel on screen), when the
- *   plan changes or the fit does, {@link FIT_SETTLE_MS} after the fit stops moving.
+ *   `groundPixel() × boardScaleAt(fit)` mat units, so one ground pixel is a whole number of Token
+ *   pixels on screen, two as it ships), when the plan changes or the fit does,
+ *   {@link FIT_SETTLE_MS} after the fit stops moving.
  *
  * ⚠️ **It must stay in the mat's own layer** (`MatPixelLayers.test.js`, `bench:profile`). An
  * accelerated canvas is a composited layer, and every Token drawn after it would be pushed onto a
@@ -105,7 +106,10 @@ export const TerrainCanvas = React.memo(function TerrainCanvas({ ground }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const plan = useMemo(() => (ready ? timedBuild('plan', () => buildGroundPlan(ground)) : null), [ready, ground, tuningRevision]);
 
-    const unit = boardScaleAt(drawFit);
+    // ⚠️ `tuningRevision` again: the Ground pixel size slider changes the grid.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const pixel = useMemo(() => groundPixel(), [tuningRevision]);
+    const unit = pixel * boardScaleAt(drawFit);
     const { w, h } = ground.mat;
     const grid = useMemo(() => screenGrid({ w, h }, unit), [w, h, unit]);
 
@@ -126,11 +130,11 @@ export const TerrainCanvas = React.memo(function TerrainCanvas({ ground }) {
             imageRef.current = image;
         }
         timedBuild('screen', () => buildScreenPass(plan, {
-            mat: { w, h }, unit: grid.unit, sheet: groundSheet, prop: propSheet, out: image.data
+            mat: { w, h }, unit: grid.unit, pixel, sheet: groundSheet, prop: propSheet, out: image.data
         }));
         ctx.putImageData(image, 0, 0);
         setHasPicture(true);
-    }, [plan, grid, w, h]);
+    }, [plan, grid, pixel, w, h]);
 
     return (
         <canvas

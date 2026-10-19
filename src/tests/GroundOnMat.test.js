@@ -276,7 +276,7 @@ describe('⭐ never per frame', () => {
         settle(250);
         expect(screens).toHaveBeenCalledTimes(1);
         expect(plans).not.toHaveBeenCalled();
-        const grid = GroundScreen.screenGrid(MAT(), boardScaleAt(0.74));
+        const grid = GroundScreen.screenGrid(MAT(), GroundScreen.groundPixel() * boardScaleAt(0.74));
         expect(groundCanvas(container).width).toBe(grid.cols);
         expect(groundCanvas(container).height).toBe(grid.rows);
     });
@@ -331,8 +331,9 @@ describe('⭐ never per frame', () => {
     });
 });
 
-describe('⭐ one ground pixel is one Token pixel', () => {
-    it('⭐ the canvas holds one pixel per boardScaleAt(fit) mat units, for every fit from 0.5 to 1.6', () => {
+describe('⭐ one ground pixel is a whole number of Token pixels', () => {
+    it('⭐ the canvas holds one pixel per groundPixel() × boardScaleAt(fit) mat units, for every fit from 0.5 to 1.6', () => {
+        expect(GroundScreen.groundPixel()).toBe(2);
         vi.useFakeTimers();
         const { container, setFit } = mountMat(0.5);
         for (let i = 0; i <= 110; i++) {
@@ -340,7 +341,7 @@ describe('⭐ one ground pixel is one Token pixel', () => {
             setFit(fit);
             settle(260);
             const canvas = groundCanvas(container);
-            const unit = boardScaleAt(fit);
+            const unit = 2 * boardScaleAt(fit);
             const grid = GroundScreen.screenGrid(MAT(), unit);
             expect(canvas.width, `fit ${fit}`).toBe(grid.cols);
             expect(canvas.height, `fit ${fit}`).toBe(grid.rows);

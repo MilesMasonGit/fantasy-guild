@@ -4,7 +4,7 @@ import { PLAN_PIXEL_U, distanceFields } from './TerrainLattice.js';
 import { spreadSamples, CALIBRATION_SAMPLES } from './TerrainPatches.js';
 import { generatedOf, DEFAULT_LOOK } from '../../config/registries/terrainRegistry.js';
 import { STYLE, STYLE_TERRAIN } from '../atlas/WaterShapes.js';
-import { tuning, tuningDefault } from '../../config/playmatTuning.js';
+import { tuning, tuningDefault, CLEAN_LOOKS, cleanKeys } from '../../config/playmatTuning.js';
 
 /**
  * The owner's settled ground rules (`docs/active/research/ground_gen/gen.py`: `ground`, `mixed`,
@@ -60,20 +60,28 @@ export const GRASS_RULES = Object.freeze({
     // `pools`: each lake's noisy, squashed rings, kept off the mat's edge.
     poolCell: 14, poolNoise: 0.35, poolFineCell: 5, poolFineNoise: 0.08, poolSquash: 0.75, poolMargin: 0.1,
     /** The prototype's picture, in its pixels: counts given per picture scale with the plan's area. */
-    frame: Object.freeze({ w: 320, h: 200 })
+    frame: Object.freeze({ w: 320, h: 200 }),
+    // At a ground pixel `s` Token pixels across, a cluster of blades or a tuft comes `s ^ marksAt`
+    // times as often per ground pixel as the prototype's per Token pixel. ⚠️ Measured, not derived:
+    // 0.5 matches the owner's pick (`style4.py`'s 2x pictures) in how many neighbouring ground
+    // pixels differ, each biome within 0.03 (2.37 against 2.32 summed over the eight), and in how
+    // much of the meadow and the forest is yellow dry grass or litter; 2 (as many to the mat) came
+    // out 40 % busier, 0 (as many to a ground pixel) calmer with the flower drifts thin.
+    marksAt: 0.5
 });
 
 /**
  * Where each colour sits in a look's table. A land look: its earth ramp (`EARTH + 0` darkest to
  * `+ 4`), the earth's lighter middle, the wet sand and the waterline, the lakes' five rings, the
- * banks round shaped water (`BANK`: each water look's steps, {@link BANK_SLOTS}), then a block of
- * `STRIDE` per kind: its body ramp (`GRASS + 0..4`), the body's soft tone and its strokes' ramp. A
- * water look: the sea's ramp (a ringed water's rings), the foam's two whites and the far trough.
- * `DIM` added to an index is the same colour in shadow (a patch's soft shadow). `COUNT` is the
- * table's length.
+ * banks round shaped water (`BANK`: each water look's steps, {@link BANK_SLOTS}), the pebbles' light
+ * and shadow (the earth's lightest-but-one and darkest, apart so they can be quietened alone), then
+ * a block of `STRIDE` per kind: its body ramp (`GRASS + 0..4`), the body's soft tone and its
+ * strokes' ramp (its body ramp again when it has none). A water look: the sea's ramp (a ringed
+ * water's rings), the foam's two whites and the far trough. `DIM` added to an index is the same
+ * colour in shadow (a patch's soft shadow). `COUNT` is the table's length.
  */
 export const COLOUR = Object.freeze({
-    EARTH: 0, MIDDLE: 5, WET: 6, LINE: 7, RING: 8, BANK: 13, KIND: 17, STRIDE: 11,
+    EARTH: 0, MIDDLE: 5, WET: 6, LINE: 7, RING: 8, BANK: 13, PEBBLE: 17, PEBBLE_DARK: 18, KIND: 19, STRIDE: 11,
     GRASS: 0, SOFT: 5, STROKES: 6,
     SEA: 0, FOAM: 5, FOAM2: 6, TROUGH: 7,
     DIM: 128, COUNT: 256, NONE: 255
@@ -316,6 +324,94 @@ export function toward([r, g, b], middle, k) {
     return [r, g, b].map(v => Math.min(255, Math.max(0, Math.round(m + (v - m) * k))));
 }
 
+/** `colorsys.rgb_to_hsv`. */
+function rgbToHsv(r, g, b) {
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    if (max === min) return [0, 0, max];
+    const range = max - min;
+    const rc = (max - r) / range;
+    const gc = (max - g) / range;
+    const bc = (max - b) / range;
+    const h = r === max ? bc - gc : g === max ? 2 + rc - bc : 4 + gc - rc;
+    return [(((h / 6) % 1) + 1) % 1, range / max, max];
+}
+
+/** `colorsys.hsv_to_rgb`. */
+function hsvToRgb(h, s, v) {
+    if (s === 0) return [v, v, v];
+    const i = Math.floor(h * 6);
+    const f = h * 6 - i;
+    const p = v * (1 - s);
+    const q = v * (1 - s * f);
+    const t = v * (1 - s * (1 - f));
+    return [[v, t, p], [q, v, p], [p, v, t], [p, q, v], [t, p, v], [v, p, q]][((i % 6) + 6) % 6];
+}
+
+const clampByte = (v) => Math.min(255, Math.max(0, v));
+
+/**
+ * A colour in a look's Clean colours, as `style4.py`'s `colour_only` made them: its hue turned by
+ * `hue` of the wheel (in HSV, as PIL turns it), its colour strength scaled about its own grey
+ * (PIL's `Color` enhance), then its brightness scaled (PIL's `Brightness`).
+ *
+ * @param {number[]} rgb  `[r, g, b]` bytes
+ * @param {number[]} clean  `[strength, hue, brightness]`
+ * @returns {number[]} `[r, g, b]` bytes
+ */
+export function cleanColour([r, g, b], [strength, hue, bright]) {
+    let rgb = [r, g, b];
+    if (hue) {
+        const [h, s, v] = rgbToHsv(r / 255, g / 255, b / 255);
+        rgb = hsvToRgb((((h + hue) % 1) + 1) % 1, s, v).map(x => x * 255);
+    }
+    const grey = 0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2];
+    return rgb.map(v => Math.round(clampByte(clampByte(grey + (v - grey) * strength) * bright)));
+}
+
+/** A look's Clean colours from its sliders, or null where they are off or it has none. */
+export function cleanOf(lookId) {
+    if (!(tuning('cleanOn') > 0) || !Object.prototype.hasOwnProperty.call(CLEAN_LOOKS, lookId)) return null;
+    const keys = cleanKeys(lookId);
+    return [tuning(keys.strength), tuning(keys.hue), tuning(keys.bright)];
+}
+
+/** How far apart two colours are: their red, green and blue differences summed. */
+const contrastOf = (a, b) => Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]) + Math.abs(a[2] - b[2]);
+
+const meanOf = (a, b) => [0, 1, 2].map(ch => (a[ch] + b[ch]) / 2);
+
+/**
+ * A land look's loud little things pulled toward the ground round them, as `style5.py`'s
+ * `quiet_decor` did, but on the palette: every kind's stroke colours (blades, flowers, petals,
+ * shells, scree) against that kind's ground, and the pebbles against the earth's. A colour further
+ * from its ground than `contrast` (red, green and blue differences summed) moves `amount` of the
+ * way to it, in colour and brightness at once. A kind's ground is its body's two tones with as much
+ * of its own strokes as cover it, as the prototype's blur of the picture took them in.
+ *
+ * ⚠️ Replaces entries, never changes one in place: a kind with no strokes ramp shares its body's
+ * colours with its strokes' slots.
+ */
+export function quietDecorations(table, rules, amount, contrast) {
+    if (!(amount > 0)) return table;
+    const pull = (i, ground) => {
+        const c = table[i];
+        if (contrastOf(c, ground) > contrast) table[i] = c.map((v, ch) => Math.round(v + (ground[ch] - v) * amount));
+    };
+    const earthGround = meanOf(table[COLOUR.EARTH + 1], table[COLOUR.EARTH + 2]);
+    pull(COLOUR.PEBBLE, earthGround);
+    pull(COLOUR.PEBBLE_DARK, earthGround);
+    rules.kinds.forEach((kind, k) => {
+        const body = meanOf(table[kindColour(k, COLOUR.SOFT)], table[kindColour(k, COLOUR.GRASS + kind.body[1])]);
+        const tone = table[kindColour(k, COLOUR.STROKES + kind.tone)];
+        const height = kind.heights.reduce((a, b) => a + b, 0) / kind.heights.length;
+        const cover = Math.min(0.5, kind.blades * kind.cluster * height);
+        const ground = body.map((v, ch) => v + (tone[ch] - v) * cover);
+        for (let s = 0; s < 5; s++) pull(kindColour(k, COLOUR.STROKES + s), ground);
+    });
+    return table;
+}
+
 // ---------------------------------------------------------------------------------------------
 // A look's rules
 
@@ -381,13 +477,16 @@ export function shadeRatio(lookId) {
 
 /**
  * A look's colour table, indexed by {@link COLOUR}: `[r, g, b]` bytes, with the Ground strength
- * slider applied (every colour pulled toward the grey of the look's middle tone).
+ * slider applied (every colour pulled toward the grey of the look's middle tone). Given the look's
+ * id, its decorations quietened ({@link quietDecorations}) and its Clean colours ({@link cleanOf})
+ * first, each by its sliders: the colours the screen draws.
  *
  * @param {object} spec  `generatedOf(look)`
- * @param {{soft?: number, strength?: number}} [options]  the body's softness (how far its darker
- *   tone moves toward its lighter one) and the strength, each else from its slider
+ * @param {{soft?: number, strength?: number, look?: string}} [options]  the body's softness (how far
+ *   its darker tone moves toward its lighter one) and the strength, each else from its slider; the
+ *   look whose Clean colours and quietening apply (none without it: the rules' own colours)
  */
-export function grassColours(spec, { soft, strength } = {}) {
+export function grassColours(spec, { soft, strength, look } = {}) {
     const rules = rulesOf(spec);
     const k = strength ?? tuning('groundStrength');
     let table;
@@ -408,7 +507,7 @@ export function grassColours(spec, { soft, strength } = {}) {
         const sand = rules.shore ? ramp(...rules.shore.sand, 5, 0.02, 0.06) : earth;
         const rings = rules.pools ? rules.pools.rings.map(([, rgb]) => [...rgb]) : [];
         while (rings.length < 5) rings.push(earth[2]);
-        table = [...earth, lighten(earth[2], 1.08), sand[1], sand[0], ...rings, ...bankColours()];
+        table = [...earth, lighten(earth[2], 1.08), sand[1], sand[0], ...rings, ...bankColours(), earth[3], earth[0]];
         for (const kind of rules.kinds) {
             const body = ramp(...kind.grass);
             const [a, b] = [body[kind.body[0]], body[kind.body[1]]];
@@ -416,6 +515,12 @@ export function grassColours(spec, { soft, strength } = {}) {
             table.push(...body, softTone, ...(kind.strokes ? ramp(...kind.strokes) : body));
         }
         middle = ramp(...rules.grass)[2];
+        if (look) quietDecorations(table, rules, tuning('decorQuiet'), tuning('decorContrast'));
+    }
+    const clean = look ? cleanOf(look) : null;
+    if (clean) {
+        table = table.map(c => cleanColour(c, clean));
+        middle = cleanColour(middle, clean);
     }
     return k === 1 ? table : table.map(c => toward(c, middle, k));
 }
@@ -440,7 +545,7 @@ function bankColours() {
  */
 export function grassTable(lookId) {
     const rules = lookRules(lookId);
-    const base = grassColours(generatedOf(lookId));
+    const base = grassColours(generatedOf(lookId), { look: lookId });
     const dim = rules.overlay?.dim ?? 1;
     const colours = new Array(COLOUR.COUNT).fill(null).map(() => [0, 0, 0]);
     base.forEach((c, i) => {
@@ -1205,9 +1310,9 @@ function resampleRow(ctx, r) {
  * generated) counts as the pixel itself, so a mound never draws an edge along a zone or a beach.
  */
 function bodyRow(ctx, r) {
-    const { shape, kinds, colour, cols, rows, mounds, shadowCut, diagonalCut, lightCuts, base, high, sLight, sShadow, sDiagonal } = ctx;
+    const { shape, kinds, colour, cols, rows, mounds, shadowCut, diagonalCut, lightCuts, base, high, sLight, sShadow, sDiagonal, sunken } = ctx;
     const up = r > 0 ? -cols : 0;
-    const up2 = r > 1 ? -2 * cols : up;
+    const up2 = r > 1 && sunken > 1 ? -2 * cols : up;
     const down = r < rows - 1 ? cols : 0;
     const MOUND = BIT.MOUND;
     const HIGH = BIT.HIGH;
@@ -1279,12 +1384,12 @@ function strokesRow(ctx, r) {
         if (!spec) continue;
         if (hash(c, r, sCentre) >= spec.keepCut) continue;
         if (!(shape[i] & PATCH) && hash(c, r, sPatch) >= spec.floorCut) continue;
-        const { tipCut, shadowAt, tone, tip, dark } = spec;
-        const spread = spec.cluster > 1;
+        const { tipCut, shadowAt, tone, tip, dark, reach, back } = spec;
+        const spread = spec.cluster > 1 && reach > 1;
         for (let s = 0; s < spec.cluster; s++) {
             const h = hash(c, r, strokeSalts[s]);
-            const x = c + (spread ? (((h & 255) * 3) >>> 8) - 1 : 0);
-            const y = r + (spread ? ((((h >>> 8) & 255) * 3) >>> 8) - 1 : 0);
+            const x = c + (spread ? (((h & 255) * reach) >>> 8) - back : 0);
+            const y = r + (spread ? ((((h >>> 8) & 255) * reach) >>> 8) - back : 0);
             if (x < 0 || x >= cols || y < 0 || y >= rows) continue;
             if ((shape[y * cols + x] & ON_EARTH) !== ON) continue;
             const height = spec.heights[(((h >>> 16) & 255) * spec.heights.length) >>> 8];
@@ -1313,14 +1418,16 @@ function strokesRow(ctx, r) {
  * ground, as each of the prototype's layers drew its own.
  */
 function drawEarthDetails(ctx, seed) {
-    const { shape, kinds, colour, earth, cols, rows, count, base } = ctx;
+    const { shape, kinds, colour, earth, cols, rows, count, base, small } = ctx;
     const R = GRASS_RULES;
     const isEarth = (j) => (shape[j] & ON_EARTH) === ON_EARTH;
     const isGrass = (j) => (shape[j] & ON_EARTH) === ON;
+    const PEBBLE = COLOUR.PEBBLE;
 
     // One hash a pixel says whether a pebble and whether a tuft starts there.
-    const pebbleCut = Math.round(R.pebbles * 65536);
-    const tuftCut = Math.round(R.earthTufts * 65536);
+    const pebbleCut = Math.round(small.pebbles * 65536);
+    const tuftCut = Math.round(small.tufts * 65536);
+    const wide = small.wide;
     const sSmall = saltOf(seed, SALT.SMALL);
     const tufts = [];
     for (let e = 0; e < count; e++) {
@@ -1330,25 +1437,25 @@ function drawEarthDetails(ctx, seed) {
         const h = hash(c, r, sSmall);
         if ((h >>> 16) < tuftCut) tufts.push(i);
         if ((h & 0x7fff) * 2 >= pebbleCut || c + 1 >= cols || r + 1 >= rows || !isEarth(i + cols + 1)) continue;
-        colour[i] = E3;
-        if ((h & 0x8000) && isEarth(i + 1)) colour[i + 1] = E3;
-        colour[i + cols + 1] = E0;
+        colour[i] = PEBBLE;
+        if (wide && (h & 0x8000) && isEarth(i + 1)) colour[i + 1] = PEBBLE;
+        colour[i + cols + 1] = COLOUR.PEBBLE_DARK;
     }
 
     const sTuftSize = saltOf(seed, SALT.TUFT_SIZE);
     const tipCut = Math.round(R.earthTuftTip * 256);
-    const bladeSalts = Array.from({ length: Math.max(...R.earthTuftBlades) }, (_, k) => saltOf(seed, SALT.TUFT_BLADE + k));
+    const bladeSalts = Array.from({ length: Math.max(...small.blades) }, (_, k) => saltOf(seed, SALT.TUFT_BLADE + k));
     for (const i of tufts) {
         const r = (i / cols) | 0;
         const c = i - r * cols;
-        const blades = R.earthTuftBlades[hash(c, r, sTuftSize) & 3];
+        const blades = small.blades[hash(c, r, sTuftSize) & 3];
         for (let k = 0; k < blades; k++) {
             const xx = c + k - 1;
             if (xx < 0 || xx >= cols) continue;
             const j = r * cols + xx;
             if (!isEarth(j)) continue;
             const hb = hash(c, r, bladeSalts[k]);
-            const height = R.earthTuftHeights[hb & 3];
+            const height = small.heights[hb & 3];
             const lit = ((hb >>> 8) & 255) < tipCut;
             for (let t = 0; t < height && r - t >= 0; t++) {
                 const jt = j - t * cols;
@@ -1371,7 +1478,7 @@ function drawEarthDetails(ctx, seed) {
             const h = hash(c, r, sEdge);
             if ((h & 0xffff) < edgeCut) {
                 colour[i] = g + 3;
-                if (((h >>> 16) & 1) && r + 1 < rows && shape[i + cols]) colour[i + cols] = base[kinds[i + cols]] + 2;
+                if (small.hang && ((h >>> 16) & 1) && r + 1 < rows && shape[i + cols]) colour[i + cols] = base[kinds[i + cols]] + 2;
             } else colour[i] = E0;
         } else if (((c > 0 && isGrass(i - 1)) || (c < cols - 1 && isGrass(i + 1))) && hash(c, r, sSide) < sideCut) {
             colour[i] = g + 2;
@@ -1384,7 +1491,8 @@ function drawEarthDetails(ctx, seed) {
  * over its top edge into the ground round it, and a soft shadow under its bottom edge.
  */
 function drawOverlayEdges(ctx, seed, slot, ov) {
-    const { shape, kinds, colour, cols, rows, base } = ctx;
+    const { shape, kinds, colour, cols, rows, base, size } = ctx;
+    const heights = ov.heights.map(size);
     const patch = (slot << SLOT_SHIFT) | (ov.kind + 1);
     const g = base[patch];
     const bladeCut = cut32(ov.blades);
@@ -1400,7 +1508,7 @@ function drawOverlayEdges(ctx, seed, slot, ov) {
             const u = kinds[i - cols];
             if (k === patch) {
                 if (u === patch || !ours(i - cols) || hash(c, r, sEdge) >= bladeCut) continue;
-                const height = ov.heights[hash(c, r, sHeight) % ov.heights.length];
+                const height = heights[hash(c, r, sHeight) % heights.length];
                 for (let t = 0; t < height && r - t >= 0; t++) {
                     const j = i - t * cols;
                     if (ours(j)) colour[j] = t === 0 ? g + 3 : g + 2;
@@ -1464,9 +1572,15 @@ function waterClasses(water, bands) {
  * out, none within `waveGap` pixels of another's crest, far out with a second, shorter crest above.
  */
 function drawWater(ctx, grass, seed) {
-    const { colour, kinds, cols, rows, water, wet, planCol, planRow, planBits, planShore, occ, isWater } = ctx;
-    const classesBySlot = grass.looks.map((id, slot) => (grass.bands[slot] ? waterClasses(lookRules(id).water, grass.bands[slot]) : null));
-    const specBySlot = grass.looks.map(id => lookRules(id).water);
+    const { colour, kinds, cols, rows, water, wet, planCol, planRow, planBits, planShore, occ, isWater, size, perSea } = ctx;
+    const classesBySlot = grass.looks.map((id, slot) => (grass.bands[slot]
+        ? waterClasses(lookRules(id).water, grass.bands[slot]).map(cls => (cls?.lengths ? { ...cls, lengths: cls.lengths.map(size) } : cls))
+        : null));
+    // Waves sized for the ground pixel, as many to a piece of the sea as at a Token pixel.
+    const specBySlot = grass.looks.map((id) => {
+        const w = lookRules(id).water;
+        return w ? { flecks: w.flecks, waves: perSea(w.waves || 0), waveGap: size(w.waveGap) } : null;
+    });
     const classAt = (i) => {
         const r = (i / cols) | 0;
         return classesBySlot[kinds[i] >> SLOT_SHIFT][planShore[planRow[r] + planCol[i - r * cols]]];
@@ -1565,6 +1679,50 @@ function drawRings(ctx) {
 }
 
 /**
+ * The details' rules sized for a ground pixel `pixel` Token pixels across (the prototype drew them
+ * at one). Drawn at that size, not shrunk from a finer picture:
+ * - a length in Token pixels (a blade, a tuft's blade, a wave, the gap between waves, the earth's
+ *   sunken edge) becomes the nearest whole number of ground pixels, never none (`size`);
+ * - a cluster of blades or a tuft in the earth comes `s ^ marksAt` times as often per ground pixel
+ *   (`many`, {@link GRASS_RULES}: calmer than as many to the mat, as the owner's pick was); a
+ *   cluster spreads over a footprint the same size in Token pixels (`reach` ground pixels square,
+ *   `back` of them left and up of its centre) with as many blades to its area (`clusterOf`), and
+ *   where that is under one blade the cluster comes that much rarer instead;
+ * - a wave comes as often to a piece of the sea (`count`): the owner set how few there are;
+ * - a mark one pixel big (a pebble) keeps the share of the ground it covers, so it comes rarer as it
+ *   grows; the pebble's second pixel and the hanging tuft's second pixel go, being one Token pixel;
+ * - a line one pixel thick (a mound's lit top and its shadows) keeps its share of the ground too:
+ *   drawn on `line` of its pixels.
+ * At 1 every rule is the prototype's.
+ */
+export function detailRules(pixel = 1) {
+    const s = Math.max(1, Math.round(pixel));
+    const size = (L) => (Number.isFinite(L) ? Math.max(1, Math.round(L / s)) : L);
+    const marks = s ** GRASS_RULES.marksAt;
+    const many = (p) => Math.min(1, p * marks);
+    const count = (p) => Math.min(1, p * s * s);
+    const reach = size(3);
+    const R = GRASS_RULES;
+    const wide = size(2) > 1;
+    return {
+        pixel: s, size, many, count, line: 1 / s, reach, back: (reach - 1) >> 1, sunken: size(2),
+        /** A cluster of `n` blades: how many it draws, and how much rarer it comes. */
+        clusterOf: (n) => {
+            const per = (n * reach * reach) / 9;
+            return { count: Math.max(1, Math.ceil(per)), rarer: Math.min(1, per) };
+        },
+        small: {
+            pebbles: wide ? R.pebbles : (R.pebbles * 2.5) / 2,
+            wide,
+            tufts: many(R.earthTufts),
+            blades: R.earthTuftBlades.map(size),
+            heights: R.earthTuftHeights.map(size),
+            hang: wide
+        }
+    };
+}
+
+/**
  * The generated ground's colours on the screen's ground pixels.
  *
  * @param {object} grass  The plan's `grass` ({@link buildGrassPlan}).
@@ -1576,13 +1734,15 @@ function drawRings(ctx) {
  * @param {object} [scratch]  Any object the caller keeps, to hold the buffers between calls: a
  *   resize then reuses them instead of allocating several screens' worth. The arrays returned
  *   belong to it and the next call overwrites them.
+ * @param {number} [pixel]  Token pixels across one ground pixel: the details are drawn for that
+ *   size ({@link detailRules})
  * @returns {{colour: Uint8Array, kinds: Uint8Array, waves: Array<{x: number, y: number, length: number,
  *   far: boolean}>}} per ground pixel, row by row: `colour` a {@link COLOUR} index of the pixel's
  *   look ({@link COLOUR}.NONE where the ground is not generated), `kinds` the plan's kind byte
  *   under it (its slot is `kinds >> SLOT_SHIFT`); and the waves drawn, each by its crest's left end
  *   in ground pixels, `far` with a second crest.
  */
-export function drawGrass(grass, seed, cols, rows, planCol, planRow, scratch = null) {
+export function drawGrass(grass, seed, cols, rows, planCol, planRow, scratch = null, pixel = 1) {
     const total = cols * rows;
     let buffers = scratch;
     if (!buffers || buffers.total !== total) {
@@ -1599,6 +1759,7 @@ export function drawGrass(grass, seed, cols, rows, planCol, planRow, scratch = n
         buffers.occ = new Uint8Array(total);
     }
     const R = GRASS_RULES;
+    const detail = detailRules(pixel);
 
     // Per kind byte: where its colours start, its body's lighter tone, its mounds' light, its strokes.
     const base = new Int16Array(256);
@@ -1614,7 +1775,7 @@ export function drawGrass(grass, seed, cols, rows, planCol, planRow, scratch = n
             const b = (slot << SLOT_SHIFT) | (k + 1);
             base[b] = kindColour(k, COLOUR.GRASS);
             high[b] = base[b] + kind.body[1];
-            lightCuts[b] = cut32(kind.moundLight * strength);
+            lightCuts[b] = cut32(kind.moundLight * strength * detail.line);
             byKind.push([b, kind]);
         });
     });
@@ -1623,13 +1784,14 @@ export function drawGrass(grass, seed, cols, rows, planCol, planRow, scratch = n
         shape: buffers.shape, kinds: buffers.kinds, colour: buffers.colour, earth: buffers.earth,
         water: buffers.water, occ: buffers.occ, isWater, base, high, lightCuts,
         cols, rows, planCol, planRow, planKinds: grass.kinds, planBits: grass.bits,
-        planShore: grass.shore, planRing: grass.ring, count: 0, wet: 0
+        planShore: grass.shore, planRing: grass.ring, count: 0, wet: 0,
+        size: detail.size, perSea: detail.count, sunken: detail.sunken, small: detail.small
     };
     for (let r = 0; r < rows; r++) resampleRow(ctx, r);
 
     ctx.mounds = strength > 0;
-    ctx.shadowCut = cut32(strength);
-    ctx.diagonalCut = cut32(R.moundDiagonal * strength);
+    ctx.shadowCut = cut32(strength * detail.line);
+    ctx.diagonalCut = cut32(R.moundDiagonal * strength * detail.line);
     ctx.sLight = saltOf(seed, SALT.LIGHT);
     ctx.sShadow = saltOf(seed, SALT.SHADOW);
     ctx.sDiagonal = saltOf(seed, SALT.DIAGONAL);
@@ -1637,17 +1799,19 @@ export function drawGrass(grass, seed, cols, rows, planCol, planRow, scratch = n
 
     // Every look's kinds: the centres come at the busiest kind's chance.
     const density = Math.max(0, tuning('grassStrokes'));
-    const chances = byKind.map(([, kind]) => Math.min(1, kind.blades * density));
+    const clusters = byKind.map(([, kind]) => detail.clusterOf(kind.cluster));
+    const chances = byKind.map(([, kind], j) => detail.many(kind.blades * density * clusters[j].rarer));
     const busiest = Math.max(0, ...chances);
     if (busiest > 0) {
-        const mostStrokes = Math.max(...byKind.map(([, kind]) => kind.cluster));
+        const mostStrokes = Math.max(...clusters.map(c => c.count));
         ctx.strokeKinds = new Array(256).fill(null);
         byKind.forEach(([b, kind], j) => {
-            const strokes = base[b] + (kind.strokes ? COLOUR.STROKES : COLOUR.GRASS);
+            const strokes = base[b] + COLOUR.STROKES;
             ctx.strokeKinds[b] = {
                 keepCut: cut32(chances[j] / busiest),
                 floorCut: cut32(patchFloor(kind)),
-                cluster: kind.cluster, heights: kind.heights,
+                cluster: clusters[j].count, heights: kind.heights.map(detail.size),
+                reach: detail.reach, back: detail.back,
                 tipCut: Math.round(kind.tips * 65536), shadowAt: Math.round(kind.shadow * 65536),
                 tone: strokes + kind.tone, tip: strokes + 4, dark: base[b]
             };

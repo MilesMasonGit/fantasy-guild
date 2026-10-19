@@ -1,25 +1,48 @@
 // the ground's screen pass: the ground plan resampled onto the screen's ground pixels
 
-import { SHEET_PX, PROP_PX, PROP_SHEET_CELLS } from '../../../config/registries/terrainRegistry.js';
-import { drawGrass, grassTable, shadeRatio, COLOUR, SLOT_SHIFT } from '../../../systems/board/TerrainGrass.js';
+import { SHEET_PX, PROP_PX, PROP_SHEET_CELLS, generatedOf } from '../../../config/registries/terrainRegistry.js';
+import {
+    drawGrass, grassTable, grassColours, shadeRatio, cleanOf, cleanColour, grassNoise, COLOUR, SLOT_SHIFT
+} from '../../../systems/board/TerrainGrass.js';
+import { tuning } from '../../../config/playmatTuning.js';
 
 /**
  * The second of the ground's two stages (the first is `TerrainSurface.buildGroundPlan`, 2 mat units
  * a pixel and independent of the window). Pure: the plan, the mat, the size of a ground pixel and
  * the decoded sheets in; RGBA bytes out, one per ground pixel, for one `putImageData`.
  *
- * ⭐ **One ground pixel is one Token pixel on screen.** The mat is scaled to the window by a CSS
+ * ⭐ **One ground pixel is a whole number of Token pixels on screen**: `pixel` of them across (the
+ * Ground pixel size slider, {@link groundPixel}; 2 ships). The mat is scaled to the window by a CSS
  * transform, and Token art steps to a whole number of screen pixels per art pixel through it
- * (`boardScaleAt`, `TokenSprite.jsx`). The caller passes `unit = boardScaleAt(fit)`: a ground pixel
- * is that many mat units, so the transform lands it on exactly `boardArtSteps(fit)` screen pixels,
- * the size of a Token's. The 2-unit plan is read at each ground pixel's centre.
+ * (`boardScaleAt`, `TokenSprite.jsx`). The caller passes `unit = pixel × boardScaleAt(fit)`: a
+ * ground pixel is that many mat units, so the transform lands it on exactly
+ * `pixel × boardArtSteps(fit)` screen pixels. The 2-unit plan is read at each ground pixel's
+ * centre; the details are drawn for the pixel's size (`TerrainGrass.detailRules`), and the props
+ * keep their size in Token pixels, drawn at the ground's pixel ({@link propCell}).
  *
  * ⚠️ **The mat's edge is in the picture.** The picture covers the mat's surface, so the surface's
- * rounded corners, its faint light edge and its inset shadow (`MAT_EDGE`) are drawn here, per
- * ground pixel, and the surface stops drawing them while the ground is drawn. A soft CSS shadow
- * painted under an opaque picture costs a blur on every repaint of the tiles it covers and shows
- * nothing.
+ * rounded corners and its faint light edge (`MAT_EDGE`) are drawn here, per ground pixel, with the
+ * darker rim ({@link RIM}) or, the rim off, the surface's soft inset shadow; the surface stops
+ * drawing them while the ground is drawn. A soft CSS shadow painted under an opaque picture costs
+ * a blur on every repaint of the tiles it covers and shows nothing.
  */
+
+/** Token pixels across one ground pixel, from its slider: a whole number from 1 to 3. */
+export function groundPixel() {
+    return Math.min(3, Math.max(1, Math.round(tuning('groundPixel')) || 1));
+}
+
+/**
+ * The mat's darker rim (`docs/active/research/ground_gen/style5.py`, `rim`), as shares of its
+ * width (the Rim width slider): the mat's own ground `1 - dark` as bright in a step `edge` of the
+ * width deep, then `1 - dark × band` as bright to the full width, the line between ragged by up to
+ * `rag` of the width either way on a noise of `cell` of it. The prototype's picture: 4 and 11 Token
+ * pixels, 0.62 and 0.80 as bright, ragged by 3 on a noise of 14 / 3.
+ */
+export const RIM = Object.freeze({ edge: 4 / 11, band: 0.2 / 0.38, rag: 3 / 11, cell: 14 / 3 / 11 });
+
+/** The noise channel of the rim's ragged edge. */
+const RIM_CHANNEL = 0x7e01;
 
 /**
  * The mat surface's edge, in mat units: its corner radius, its 2-unit light edge and its inset
@@ -205,9 +228,9 @@ function shadeFor(plan, s, ratio) {
  *
  * @returns {{colour: Uint8Array, kinds: Uint8Array, words: Uint32Array, shadeCount: number}|null}
  */
-function grassOf(plan, grid, planCol, planRow) {
+function grassOf(plan, grid, planCol, planRow, pixel) {
     if (!plan.grass) return null;
-    const { colour, kinds } = drawGrass(plan.grass, plan.seed, grid.cols, grid.rows, planCol, planRow, grassScratch);
+    const { colour, kinds } = drawGrass(plan.grass, plan.seed, grid.cols, grid.rows, planCol, planRow, grassScratch, pixel);
     const S = (plan.shades || [1]).length;
     const NC = COLOUR.COUNT;
     const tables = plan.grass.looks.map(id => grassTable(id));
@@ -291,12 +314,211 @@ function tintFade(blend, data, grid, planCol, planRow, plan, from, to) {
 }
 
 /**
+ * A prop drawn at the ground's pixel: each `pixel` × `pixel` block of its 16-pixel cell takes the
+ * most common colour among its opaque pixels (the first found on a tie), when at least half the
+ * block is opaque, else is clear; as `style4.py`'s chunky took a block's most common colour. So a
+ * prop keeps its size in Token pixels whatever the ground's pixel. At 1, the cell as drawn.
+ *
+ * @returns {{side: number, bytes: Uint8ClampedArray}} `side` ground pixels square, RGBA
+ */
+export function propCell(src, index, pixel) {
+    const sheetPx = PROP_PX * PROP_SHEET_CELLS;
+    const ox = (index % PROP_SHEET_CELLS) * PROP_PX;
+    const oy = Math.floor(index / PROP_SHEET_CELLS) * PROP_PX;
+    const side = Math.ceil(PROP_PX / pixel);
+    const bytes = new Uint8ClampedArray(side * side * 4);
+    for (let by = 0; by < side; by++) {
+        for (let bx = 0; bx < side; bx++) {
+            const counts = new Map();
+            let opaque = 0;
+            let area = 0;
+            let best = -1;
+            let bestCount = 0;
+            for (let y = by * pixel; y < Math.min(PROP_PX, (by + 1) * pixel); y++) {
+                for (let x = bx * pixel; x < Math.min(PROP_PX, (bx + 1) * pixel); x++) {
+                    area++;
+                    const s = ((oy + y) * sheetPx + ox + x) * 4;
+                    if (src[s + 3] === 0) continue;
+                    opaque++;
+                    const key = (src[s] << 16) | (src[s + 1] << 8) | src[s + 2];
+                    const n = (counts.get(key) || 0) + 1;
+                    counts.set(key, n);
+                    if (n > bestCount) { best = key; bestCount = n; }
+                }
+            }
+            if (opaque * 2 < area) continue;
+            const d = (by * side + bx) * 4;
+            bytes[d] = (best >> 16) & 255;
+            bytes[d + 1] = (best >> 8) & 255;
+            bytes[d + 2] = best & 255;
+            bytes[d + 3] = 255;
+        }
+    }
+    return { side, bytes };
+}
+
+/** Props at a ground pixel, by sheet bytes, then by pixel and cell. */
+const propCells = new WeakMap();
+function propCellOf(src, index, pixel) {
+    let bySheet = propCells.get(src);
+    if (!bySheet) { bySheet = new Map(); propCells.set(src, bySheet); }
+    const key = pixel * 64 + index;
+    let cell = bySheet.get(key);
+    if (!cell) { cell = propCell(src, index, pixel); bySheet.set(key, cell); }
+    return cell;
+}
+
+/**
+ * The rim's brightness at a mat point (mat units): `1 - dark` in its outer step, `1 - dark × band`
+ * in its inner one, 1 further in; its steps measured in from the mat's rounded edge, ragged by a
+ * noise of the Region's seed. `reach` is as deep as it ever goes.
+ *
+ * @param {{w: number, h: number}} mat
+ * @param {number} seed
+ * @param {{width: number, dark: number}} rim  the Rim width (mat units) and darkness
+ * @returns {{at: (x: number, y: number) => number, reach: number}}
+ */
+export function rimShade(mat, seed, { width, dark }) {
+    const edgeAt = RIM.edge * width;
+    const rag = RIM.rag * width;
+    const cell = RIM.cell * width;
+    const edgeKeep = 1 - dark;
+    const bandKeep = 1 - dark * RIM.band;
+    const reach = width + rag;
+    const R = MAT_EDGE.radius;
+    const halfW = mat.w / 2;
+    const halfH = mat.h / 2;
+    const at = (x, y) => {
+        const qx = Math.abs(x - halfW) - (halfW - R);
+        const qy = Math.abs(y - halfH) - (halfH - R);
+        const depth = R - Math.min(Math.max(qx, qy), 0) - Math.hypot(Math.max(qx, 0), Math.max(qy, 0));
+        if (depth >= reach) return 1;
+        const d = depth + (grassNoise(x, y, seed, cell, RIM_CHANNEL) - 0.5) * 2 * rag;
+        return d < edgeAt ? edgeKeep : d < width ? bandKeep : 1;
+    };
+    return { at, reach };
+}
+
+/** The rim for this pass from its sliders, or null where it is off. */
+function rimOf(plan, grid, mat) {
+    if (!(tuning('rimOn') > 0)) return null;
+    const { at, reach } = rimShade(mat, plan.seed, { width: tuning('rimWidth'), dark: tuning('rimDark') });
+    const { unit } = grid;
+    return {
+        factor: (c, r) => at((c + 0.5) * unit, (r + 0.5) * unit),
+        near: Math.max(reach, MAT_EDGE.radius),
+        reach
+    };
+}
+
+/**
+ * The props, back to front: each drawn at the ground's pixel ({@link propCell}), its foot on the
+ * ground pixel under the plan's foot, opaque pixels only, never outside the drawn ground, in the
+ * light of the ground under the foot (`shade`). ⚠️ A prop on a generated look is drawn as drawn,
+ * like the ground under it (muted, the scatter read grey against the ramps), its loud pixels
+ * quietened toward the ground under it as the ground's own decorations are (`quietDecorations`:
+ * both as the rules draw them, as the prototype did before its Clean colours), then in its look's
+ * Clean colours.
+ */
+function drawProps(ctx) {
+    const { plan, data, cols, rows, from, to, unit, pixel, prop, grass } = ctx;
+    const props = plan.props || [];
+    if (!props.length) return;
+    const planU = plan.unit;
+    const generated = new Set(plan.grass?.looks || []);
+    const amount = tuning('decorQuiet');
+    const contrast = tuning('decorContrast');
+    // The rules' own colours of the ground under each prop, before any prop is drawn over it.
+    const raw = grass ? plan.grass.looks.map(id => (generatedOf(id)?.water ? null : grassColours(generatedOf(id)))) : null;
+    const texels = new Map();
+    const placed = [];
+    for (const p of props) {
+        const asDrawn = generated.has(p.look);
+        const key = `${p.sheet}|${asDrawn}`;
+        if (!texels.has(key)) {
+            const t = prop(p.sheet, asDrawn);
+            texels.set(key, t && t.length === PROP_SHEET_PX * PROP_SHEET_PX * 4 ? t : null);
+        }
+        const src = texels.get(key);
+        if (!src) continue;
+        const { side, bytes } = propCellOf(src, p.index, pixel);
+        const left = Math.floor(((p.footX + 0.5) * planU) / unit) - (side >> 1);
+        const top = Math.floor(((p.footY + 0.5) * planU) / unit) - (side - 1);
+        // What the prototype's blur saw round the prop: its box, the prop's own pixels in it.
+        let ground = null;
+        if (asDrawn && raw && amount > 0) {
+            const sum = [0, 0, 0];
+            let n = 0;
+            let under = 0;
+            for (let r = Math.max(0, top); r < Math.min(rows, top + side); r++) {
+                for (let c = Math.max(from[r], left); c < Math.min(to[r], left + side); c++) {
+                    const s = ((r - top) * side + c - left) * 4;
+                    if (bytes[s + 3] !== 0) {
+                        sum[0] += bytes[s]; sum[1] += bytes[s + 1]; sum[2] += bytes[s + 2];
+                        n++;
+                        continue;
+                    }
+                    const i = r * cols + c;
+                    const k = grass.colour[i];
+                    const table = k === COLOUR.NONE ? null : raw[grass.kinds[i] >> SLOT_SHIFT];
+                    if (!table) continue;
+                    const rgb = table[k & (COLOUR.DIM - 1)];
+                    sum[0] += rgb[0]; sum[1] += rgb[1]; sum[2] += rgb[2];
+                    n++;
+                    under++;
+                }
+            }
+            if (under) ground = sum.map(v => v / n);
+        }
+        placed.push({ p, side, bytes, left, top, ground, clean: asDrawn ? cleanOf(p.look) : null });
+    }
+
+    const coloured = new Map();
+    for (const { p, side, bytes, left, top, ground, clean } of placed) {
+        const f = p.shade ?? 1;
+        for (let y = 0; y < side; y++) {
+            const r = top + y;
+            if (r < 0 || r >= rows) continue;
+            for (let x = 0; x < side; x++) {
+                const c = left + x;
+                if (c < from[r] || c >= to[r]) continue;
+                const s = (y * side + x) * 4;
+                if (bytes[s + 3] === 0) continue;
+                let red = bytes[s];
+                let green = bytes[s + 1];
+                let blue = bytes[s + 2];
+                if (ground || clean) {
+                    const key = `${red},${green},${blue}|${ground ? ground.join() : ''}|${clean ? clean.join() : ''}`;
+                    let rgb = coloured.get(key);
+                    if (!rgb) {
+                        rgb = [red, green, blue];
+                        if (ground && Math.abs(red - ground[0]) + Math.abs(green - ground[1]) + Math.abs(blue - ground[2]) > contrast) {
+                            rgb = rgb.map((v, ch) => Math.round(v + (ground[ch] - v) * amount));
+                        }
+                        if (clean) rgb = cleanColour(rgb, clean);
+                        coloured.set(key, rgb);
+                    }
+                    [red, green, blue] = rgb;
+                }
+                const d = (r * cols + c) * 4;
+                data[d] = red * f;
+                data[d + 1] = green * f;
+                data[d + 2] = blue * f;
+                data[d + 3] = 255;
+            }
+        }
+    }
+}
+
+/**
  * The screen pass.
  *
  * @param {object} plan  `buildGroundPlan`'s result
  * @param {object} options
  * @param {{w: number, h: number}} options.mat  the mat, in mat units
- * @param {number} options.unit  mat units per ground pixel (`boardScaleAt(fit)`)
+ * @param {number} options.unit  mat units per ground pixel (`pixel × boardScaleAt(fit)`)
+ * @param {number} [options.pixel]  Token pixels across one ground pixel ({@link groundPixel}): the
+ *   details and the props are drawn for it
  * @param {(id: string) => Uint8ClampedArray|null} options.sheet  a ground sheet's muted RGBA,
  *   `SHEET_PX` square; null leaves its pixels clear
  * @param {(id: string, asDrawn: boolean) => Uint8ClampedArray|null} [options.prop]  a prop sheet's
@@ -304,7 +526,7 @@ function tintFade(blend, data, grid, planCol, planRow, plan, from, to) {
  * @param {Uint8ClampedArray} [options.out]  where to write (`cols × rows × 4` bytes); else a new one
  * @returns {{cols: number, rows: number, unit: number, data: Uint8ClampedArray}}
  */
-export function buildScreenPass(plan, { mat, unit, sheet, prop = () => null, out = null }) {
+export function buildScreenPass(plan, { mat, unit, pixel = 1, sheet, prop = () => null, out = null }) {
     const grid = screenGrid(mat, unit);
     const { cols, rows } = grid;
     const data = out || new Uint8ClampedArray(cols * rows * 4);
@@ -338,14 +560,19 @@ export function buildScreenPass(plan, { mat, unit, sheet, prop = () => null, out
     const lookBytes = looksOf(texels, tints, plan.shades || [1], combos);
     const lookWords = new Uint32Array(lookBytes.buffer);
     const out32 = new Uint32Array(data.buffer, data.byteOffset, cols * rows);
+    const { from, to } = spans(grid, mat);
 
-    const alongX = insideAlong(cols, unit, mat.w);
-    const alongY = insideAlong(rows, unit, mat.h);
-    const shadow = MAT_EDGE.shadowAlpha;
+    const grass = grassOf(plan, grid, planCol, planRow, pixel);
+    const fill = { out32, cols, from, to, planRow, planCol, lookAt, lookWords, texCol, grass, shadeAt: plan.shadeAt || null };
+    for (let r = 0; r < rows; r++) fillRow(fill, r);
+    if (plan.blend) tintFade(plan.blend, data, grid, planCol, planRow, plan, from, to);
+    drawProps({ plan, data, cols, rows, from, to, unit, pixel, prop, grass });
+
+    // The mat's edge, over the ground and its props alike: the rim or the soft inset shadow, then
+    // the faint light edge round the outermost pixels.
     const light = MAT_EDGE.borderLight;
     const keepLight = 1 - light;
     const lightAdd = 255 * light;
-    const { from, to } = spans(grid, mat);
 
     /** The outer ring's columns of row `r` lie before `[lo, hi)`: a neighbour across an edge is not drawn. */
     const rimSpan = (r) => {
@@ -356,13 +583,12 @@ export function buildScreenPass(plan, { mat, unit, sheet, prop = () => null, out
         ];
     };
 
-    /** Shade one written pixel as the surface's edge did: the inset shadow, then the light edge. */
-    const shade = (d, c, r, rim) => {
-        const m = 1 - shadow * (1 - alongX[c] * alongY[r]);
+    /** Scale one written pixel by `m`, then lift it by the light edge where `edge`. */
+    const shade = (d, m, edge) => {
         let red = data[d] * m;
         let green = data[d + 1] * m;
         let blue = data[d + 2] * m;
-        if (rim) {
+        if (edge) {
             red = red * keepLight + lightAdd;
             green = green * keepLight + lightAdd;
             blue = blue * keepLight + lightAdd;
@@ -372,13 +598,37 @@ export function buildScreenPass(plan, { mat, unit, sheet, prop = () => null, out
         data[d + 2] = blue;
     };
 
-    const fill = {
-        out32, cols, from, to, planRow, planCol, lookAt, lookWords, texCol,
-        grass: grassOf(plan, grid, planCol, planRow), shadeAt: plan.shadeAt || null
-    };
-    for (let r = 0; r < rows; r++) fillRow(fill, r);
-    if (plan.blend) tintFade(plan.blend, data, grid, planCol, planRow, plan, from, to);
+    const rim = rimOf(plan, grid, mat);
+    if (rim) {
+        // ⚠️ Only the band round the edge is visited: a row nearer the top or bottom than the rim
+        // reaches (or the corners' radius) whole, any other its two ends.
+        for (let r = 0; r < rows; r++) {
+            const a = from[r];
+            const b = to[r];
+            if (a === b) continue;
+            const y = (r + 0.5) * unit;
+            const whole = Math.min(y, mat.h - y) < rim.near;
+            const [lo, hi] = rimSpan(r);
+            const rowBase = r * cols;
+            for (let c = a; c < b; c++) {
+                if (!whole) {
+                    const x = (c + 0.5) * unit;
+                    if (x >= rim.reach && x <= mat.w - rim.reach) {
+                        // Skip to the right end's band.
+                        const next = Math.ceil((mat.w - rim.reach) / unit - 0.5);
+                        if (next > c) { c = next - 1; continue; }
+                    }
+                }
+                const d = (rowBase + c) * 4;
+                if (data[d + 3] !== 0) shade(d, rim.factor(c, r), c < lo || c >= hi);
+            }
+        }
+        return { cols, rows, unit, data };
+    }
 
+    const alongX = insideAlong(cols, unit, mat.w);
+    const alongY = insideAlong(rows, unit, mat.h);
+    const shadow = MAT_EDGE.shadowAlpha;
     // ⚠️ Most of the picture lies where the inset shadow has faded below half a byte: there a pixel
     // is one 32-bit copy from the table of looks, the same bytes shading would leave. Only a band
     // round the edge, about 120 units deep, is shaded byte by byte.
@@ -402,52 +652,7 @@ export function buildScreenPass(plan, { mat, unit, sheet, prop = () => null, out
         for (let c = a; c < b; c++) {
             if (c === f0 && f1 > f0) { c = f1 - 1; continue; }
             const d = (rowBase + c) * 4;
-            if (data[d + 3] !== 0) shade(d, c, r, c < lo || c >= hi);
-        }
-    }
-
-    // Props, back to front: one prop pixel per ground pixel, the foot on the ground pixel under the
-    // plan's foot, opaque pixels only, never outside the drawn ground, in the light of the ground
-    // under the foot (`shade`).
-    const half = PROP_PX / 2;
-    const perRow = PROP_SHEET_CELLS;
-    // ⚠️ A prop on a generated look is drawn as drawn, like the ground under it: muted, the
-    // scatter read grey against the ramps.
-    const generated = new Set(plan.grass?.looks || []);
-    const propTexels = new Map();
-    for (const p of plan.props || []) {
-        const asDrawn = generated.has(p.look);
-        const key = `${p.sheet}|${asDrawn}`;
-        if (!propTexels.has(key)) {
-            const t = prop(p.sheet, asDrawn);
-            propTexels.set(key, t && t.length === PROP_SHEET_PX * PROP_SHEET_PX * 4 ? t : null);
-        }
-        const src = propTexels.get(key);
-        if (!src) continue;
-        const footC = Math.floor(((p.footX + 0.5) * planU) / unit);
-        const footR = Math.floor(((p.footY + 0.5) * planU) / unit);
-        const left = footC - half;
-        const top = footR - (PROP_PX - 1);
-        const ox = (p.index % perRow) * PROP_PX;
-        const oy = Math.floor(p.index / perRow) * PROP_PX;
-        const f = p.shade ?? 1;
-        for (let y = 0; y < PROP_PX; y++) {
-            const r = top + y;
-            if (r < 0 || r >= rows) continue;
-            const [lo, hi] = rimSpan(r);
-            const rowStart = ((oy + y) * PROP_SHEET_PX + ox) * 4;
-            for (let x = 0; x < PROP_PX; x++) {
-                const c = left + x;
-                if (c < from[r] || c >= to[r]) continue;
-                const s = rowStart + x * 4;
-                if (src[s + 3] === 0) continue;
-                const d = (r * cols + c) * 4;
-                data[d] = src[s] * f;
-                data[d + 1] = src[s + 1] * f;
-                data[d + 2] = src[s + 2] * f;
-                data[d + 3] = 255;
-                shade(d, c, r, c < lo || c >= hi);
-            }
+            if (data[d + 3] !== 0) shade(d, 1 - shadow * (1 - alongX[c] * alongY[r]), c < lo || c >= hi);
         }
     }
 

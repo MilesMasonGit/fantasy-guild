@@ -7,8 +7,10 @@ import { propsForGround } from '../systems/board/TerrainProps.js';
 import { buildWearMask } from '../systems/board/TerrainPatches.js';
 import { buildBandMasks, bandAppearance } from '../systems/board/TerrainBands.js';
 import { muteTexels, buildGroundPlan } from '../systems/board/TerrainSurface.js';
-import { drawGrass, grassColours } from '../systems/board/TerrainGrass.js';
+import { drawGrass, grassColours, grassTable } from '../systems/board/TerrainGrass.js';
 import { generatedOf } from '../config/registries/terrainRegistry.js';
+import { buildScreenPass, groundPixel } from '../ui/components/board/groundScreen.js';
+import { CLEAN_LOOKS, cleanKeys } from '../config/playmatTuning.js';
 import { groundWith, flat } from './fixtures/ground.js';
 
 /**
@@ -175,6 +177,25 @@ describe('⭐ No dead sliders', () => {
         return weighted(drawGrass(plan.grass, plan.seed, plan.width, plan.height, planCol, planRow).colour);
     };
     const grassColour = () => JSON.stringify(grassColours(generatedOf('forest')));
+    /** The details at the Ground pixel size the slider gives. */
+    const grassPixel = () => {
+        const plan = buildGroundPlan(ground());
+        const pixel = groundPixel();
+        const cols = Math.ceil(plan.width / pixel);
+        const rows = Math.ceil(plan.height / pixel);
+        const planCol = Int32Array.from({ length: cols }, (_, c) => Math.min(plan.width - 1, c * pixel));
+        const planRow = Int32Array.from({ length: rows }, (_, r) => Math.min(plan.height - 1, r * pixel) * plan.width);
+        return `${pixel}|${weighted(drawGrass(plan.grass, plan.seed, cols, rows, planCol, planRow, null, pixel).colour)}`;
+    };
+    /** A look's colours as the screen draws them. */
+    const lookTable = (id) => () => JSON.stringify(grassTable(id).colours);
+    /** The picture round the mat's edge. */
+    const matEdge = () => {
+        const g = ground();
+        const pass = buildScreenPass(buildGroundPlan(g), { mat: g.mat, unit: 2, sheet: () => null });
+        return weighted(pass.data);
+    };
+    const cleanObserved = Object.fromEntries(Object.keys(CLEAN_LOOKS).flatMap(id => Object.values(cleanKeys(id)).map(key => [key, lookTable(id)])));
     /** Yellowstone's sulphur lakes in the plan. */
     const lakes = () => {
         const g = groundWith(55, 36, flat('grass'), { seed, biomes: { main: 'yellowstone', terrains: { yellowstone: 'grass' } } });
@@ -188,6 +209,14 @@ describe('⭐ No dead sliders', () => {
     };
 
     const OBSERVES = {
+        groundPixel: grassPixel,
+        cleanOn: lookTable('meadow'),
+        decorQuiet: lookTable('flower_meadow'),
+        decorContrast: lookTable('flower_meadow'),
+        rimOn: matEdge,
+        rimWidth: matEdge,
+        rimDark: matEdge,
+        ...cleanObserved,
         edgeSwing: edges,
         edgeRoughness: edges,
         blendOn: blend,

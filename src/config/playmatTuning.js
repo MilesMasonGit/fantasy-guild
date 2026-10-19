@@ -26,6 +26,63 @@
  */
 
 /**
+ * Each generated look's Clean colours (`docs/active/research/ground_gen/style2.py`, its table `P`):
+ * `[strength, hue, brightness]`, colour strength as PIL's `Color` enhance, the hue nudge as a share
+ * of the wheel, brightness as its `Brightness` enhance. The waters and the lawn strip were drawn
+ * inside a biome's picture there: the sea takes the coast's, the sulphur springs Yellowstone's and
+ * the lawn the meadow's; a lake, found in five biomes, their mean, and no water takes a hue nudge.
+ */
+export const CLEAN_LOOKS = Object.freeze({
+    meadow: Object.freeze([0.72, -0.022, 1.04]),
+    flower_meadow: Object.freeze([0.70, -0.010, 1.06]),
+    forest: Object.freeze([0.80, 0.030, 1.00]),
+    cherry_grove: Object.freeze([0.78, 0, 1.04]),
+    yellowstone: Object.freeze([0.80, 0.020, 1.00]),
+    mountain: Object.freeze([0.75, 0.010, 1.04]),
+    coast: Object.freeze([0.85, 0, 1.03]),
+    volcano: Object.freeze([0.85, 0, 1.00]),
+    sea: Object.freeze([0.85, 0, 1.03]),
+    lake: Object.freeze([0.75, 0, 1.04]),
+    sulphur: Object.freeze([0.80, 0, 1.00]),
+    lawn: Object.freeze([0.72, -0.022, 1.04])
+});
+
+/** A look's name as the Clean sliders' labels show it. */
+const lookLabel = (id) => id.charAt(0).toUpperCase() + id.slice(1).replace(/_/g, ' ');
+
+/** The Clean sliders' keys for a look. */
+export const cleanKeys = (lookId) => ({
+    strength: `cleanStrength_${lookId}`,
+    hue: `cleanHue_${lookId}`,
+    bright: `cleanBright_${lookId}`
+});
+
+/** Three sliders per look: its Clean strength, hue nudge and brightness. */
+function cleanRows() {
+    return Object.entries(CLEAN_LOOKS).flatMap(([id, [strength, hue, bright]]) => {
+        const keys = cleanKeys(id);
+        const name = lookLabel(id);
+        return [
+            {
+                key: keys.strength, group: 'Clean colours', label: `${name} strength`,
+                hint: `How colourful the ${name.toLowerCase()} is drawn: 1 as its rules make it, 0 grey.`,
+                min: 0, max: 1.2, step: 0.01, def: strength
+            },
+            {
+                key: keys.hue, group: 'Clean colours', label: `${name} hue`,
+                hint: 'Turns its colours round the wheel, as a share of it: below 0 toward yellow and olive, above toward blue-green.',
+                min: -0.1, max: 0.1, step: 0.002, def: hue
+            },
+            {
+                key: keys.bright, group: 'Clean colours', label: `${name} brightness`,
+                hint: 'How bright it is drawn: 1 as its rules make it.',
+                min: 0.7, max: 1.3, step: 0.01, def: bright
+            }
+        ];
+    });
+}
+
+/**
  * Every adjustable number, with the range that is actually sensible for it.
  *
  * `group` only decides which heading it appears under. `step` should be fine
@@ -33,6 +90,58 @@
  * places invites false precision on a number whose effect is judged by eye.
  */
 export const TUNABLES = Object.freeze([
+    {
+        key: 'groundPixel',
+        group: 'Ground look',
+        label: 'Ground pixel size',
+        hint: 'How many Token pixels across one pixel of the ground: 1 as fine as the Tokens, 2 twice their pixel (the owner’s pick), 3 coarser still. The ground draws its blades, tufts, pebbles and waves for the size; the Tokens keep theirs.',
+        min: 1, max: 3, step: 1, def: 2
+    },
+    {
+        key: 'cleanOn',
+        group: 'Ground look',
+        label: 'Clean colours',
+        hint: 'Each generated look in its Clean colours (the Clean colours sliders below). Off draws them as their rules make them.',
+        toggle: true,
+        min: 0, max: 1, step: 1, def: 1
+    },
+    {
+        key: 'decorQuiet',
+        group: 'Ground look',
+        label: 'Quiet decorations',
+        hint: 'How far the ground’s loud little things (flowers, blade tips, pebbles, props) are pulled toward the ground round them, in colour and brightness: 0.5 halfway, 0 as drawn. Water is left alone.',
+        min: 0, max: 1, step: 0.05, def: 0.5
+    },
+    {
+        key: 'decorContrast',
+        group: 'Ground look',
+        label: 'Quiet above contrast',
+        hint: 'Only a decoration this far from the ground round it is quietened: the sum of its red, green and blue differences, 0 to 765.',
+        min: 0, max: 300, step: 5, def: 90
+    },
+    {
+        key: 'rimOn',
+        group: 'Ground look',
+        label: 'Darker rim',
+        hint: 'The mat’s own ground two hard steps darker in a ragged band round its edge, in place of the soft inset shadow. Off draws the soft shadow.',
+        toggle: true,
+        min: 0, max: 1, step: 1, def: 1
+    },
+    {
+        key: 'rimWidth',
+        group: 'Ground look',
+        label: 'Rim width (u)',
+        hint: 'How far in from the edge the rim reaches, in mat units (a Token is 128); its darker outer step is a little over a third of that.',
+        min: 8, max: 64, step: 2, def: 22
+    },
+    {
+        key: 'rimDark',
+        group: 'Ground look',
+        label: 'Rim darkness',
+        hint: 'How much darker the outer step is (0.38: 38 % darker); the inner step is about half as dark.',
+        min: 0.04, max: 0.6, step: 0.02, def: 0.38
+    },
+    ...cleanRows(),
     {
         key: 'edgeSwing',
         group: 'Terrain boundaries',
