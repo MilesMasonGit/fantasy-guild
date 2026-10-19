@@ -1,0 +1,349 @@
+import { useEffect, useState } from 'react';
+import { cn } from '../../utils/cn.js';
+import { getTokenType, tokenName, getAllTokenTypes, productionRoutes, getProvidedTagsWithTiers } from '../../../config/registries/tokenRegistry.js';
+import { getSkill } from '../../../config/registries/skillRegistry.js';
+import { EntityRibbon } from '../base/EntityRibbon.jsx';
+import { SkillIcon } from '../base/SkillIcon.jsx';
+import { Tooltip } from '../base/Tooltip.jsx';
+import { PixelGlyph } from '../base/PixelGlyph.jsx';
+import { LandmarkBlock } from '../drawer/LandmarkBlock.jsx';
+import { LeaveMatControl } from '../drawer/TokenInspection.jsx';
+import { useTokenDetail } from './useTokenDetail.js';
+import { subscribeToken } from './tokenEvents.js';
+import { CARD_BLOCK, tokenCardModel, cycleText } from './tokenCard.js';
+import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
+import { EventBus } from '../../../systems/core/EventBus.js';
+import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
+
+/** The card's width: the 256 px activity art at 1×, so it is never scaled off a whole pixel. */
+export const CARD_ART_PX = 256;
+
+/** Clocks move without events: the card re-reads them this often while open. */
+const CARD_REFRESH_MS = 1000;
+
+/** The red close X, 16 px art at 2×. */
+const CLOSE_PX = 32;
+
+const TONE_COLOUR = {
+    warning: 'var(--color-ui-gold)',
+    danger: 'var(--color-ui-red)'
+};
+
+const skillName = (id) => getSkill(id)?.name || (id ? id.charAt(0).toUpperCase() + id.slice(1) : '');
+
+/** A slightly see-through box, so text reads over the art. */
+const Box = ({ children, className, ...rest }) => (
+    <div className={cn('rounded-sm bg-black/65 px-2 py-1.5 flex flex-col gap-1', className)} {...rest}>
+        {children}
+    </div>
+);
+
+const Heading = ({ children }) => (
+    <span className="ui-text-small font-bold gi-caps tracking-wider text-gi-muted">{children}</span>
+);
+
+/** An icon and a number with a hover sentence. */
+const Stat = ({ icon, text, tip, tone, ...rest }) => (
+    <Tooltip title={tip}>
+        <span className="inline-flex items-center gap-1 cursor-help" style={tone ? { color: TONE_COLOUR[tone] } : undefined} {...rest}>
+            {icon}
+            <span className="tabular-nums font-bold">{text}</span>
+        </span>
+    </Tooltip>
+);
+
+const Dot = () => <span className="text-gi-muted">·</span>;
+
+const NameBlock = ({ name, onClose }) => (
+    <div data-card-block="name" className="flex items-start gap-2">
+        <Box className="flex-1 min-w-0">
+            <h3 className="ui-text-title font-bold text-white leading-tight select-text">{name}</h3>
+        </Box>
+        {onClose && (
+            <button
+                type="button"
+                data-card-close
+                aria-label="Close"
+                title="Close"
+                onClick={(e) => { e.stopPropagation(); onClose(); }}
+                className="shrink-0 cursor-pointer gi-hover-pulse"
+            >
+                <img
+                    src="/assets/ui/u_cancel_red.png"
+                    alt="Close"
+                    draggable={false}
+                    className="select-none pointer-events-none"
+                    style={{ width: CLOSE_PX, height: CLOSE_PX, imageRendering: 'pixelated' }}
+                />
+            </button>
+        )}
+    </div>
+);
+
+const WorkBlock = ({ skillId, level, xp }) => (
+    <Box data-card-block="work" className="flex-row items-center gap-2 ui-text-body text-gi-text">
+        <Stat
+            icon={<SkillIcon skillId={skillId} size={16} />}
+            text={level}
+            tip={`${skillName(skillId)}: a hero needs level ${level} to work this`}
+            data-card-skill={skillId}
+        />
+        {xp > 0 && (
+            <>
+                <Dot />
+                <Stat text={`+${xp.toLocaleString('en-US')} XP`} tip={`${xp.toLocaleString('en-US')} ${skillName(skillId)} XP each time a round of work finishes`} />
+            </>
+        )}
+    </Box>
+);
+
+const CycleBlock = ({ cycleMs, uses }) => (
+    <Box data-card-block="cycle" className="flex-row items-center gap-2 ui-text-body text-gi-text">
+        {cycleMs > 0 && (
+            <Stat icon={<PixelGlyph name="clock" />} text={cycleText(cycleMs)} tip="One round of work takes this long" data-card-cycle />
+        )}
+        {cycleMs > 0 && <Dot />}
+        <Stat
+            icon={<PixelGlyph name="charges" />}
+            text={uses == null ? '∞' : uses.toLocaleString('en-US')}
+            tip={uses == null ? 'Charges: unlimited' : `Charges: ${uses.toLocaleString('en-US')} left. Each round of work uses one`}
+            data-card-charges
+        />
+    </Box>
+);
+
+const openRecipes = (instanceId) => EventBus.publish(UI_EVENTS.OPEN_STATION_RECIPES, { instanceId });
+
+const RecipeBlock = ({ block, instanceId }) => (
+    <Box data-card-block="recipe">
+        {block.recipeName && <span className="ui-text-body font-bold text-white">{block.recipeName}</span>}
+        {block.change && !block.change.chosen && (
+            <span className="ui-text-body" style={{ color: 'var(--color-ui-gold)' }}>
+                {block.change.label === 'Change recipe' ? 'No recipe chosen' : 'Nothing chosen to build'}
+            </span>
+        )}
+        {block.needs.length > 0 && (
+            <div data-card-needs className="flex flex-col gap-1">
+                <Heading>Needs</Heading>
+                {block.needs.map(n => (
+                    <EntityRibbon key={n.itemId} kind="item" id={n.itemId} have={n.have} required={n.need} size="sm" />
+                ))}
+            </div>
+        )}
+        {block.tools.length > 0 && (
+            <div data-card-tools className="flex flex-col gap-1">
+                <Heading>Tools</Heading>
+                {block.tools.map(t => (
+                    <EntityRibbon
+                        key={t.typeId || t.name}
+                        kind={t.typeId ? 'token' : 'item'}
+                        id={t.typeId || undefined}
+                        name={t.name}
+                        size="sm"
+                        countText=""
+                        title={`Needs a ${t.name} nearby`}
+                        data-card-tool={t.typeId || t.tag}
+                        className="bg-transparent border-white/40"
+                    />
+                ))}
+            </div>
+        )}
+        {block.makes.length > 0 && (
+            <div data-card-makes className="flex flex-col gap-1">
+                <Heading>Makes</Heading>
+                {block.makes.map(m => (
+                    <EntityRibbon
+                        key={m.itemId}
+                        kind="item"
+                        id={m.itemId}
+                        minQty={m.min}
+                        maxQty={m.max}
+                        chance={m.chance != null ? `${m.chance}%` : undefined}
+                        size="sm"
+                    />
+                ))}
+            </div>
+        )}
+        {block.change && instanceId != null && (
+            <button
+                type="button"
+                data-card-change-recipe
+                onClick={(e) => { e.stopPropagation(); openRecipes(instanceId); }}
+                className="ui-frame-chamfer self-start px-3 py-1 ui-text-body font-bold cursor-pointer"
+                style={{ color: 'var(--color-ui-gold)' }}
+            >
+                {block.change.label}
+            </button>
+        )}
+    </Box>
+);
+
+const LifecycleBlock = ({ lines }) => (
+    <Box data-card-block="lifecycle" className="ui-text-body text-gi-text">
+        {lines.map((line, i) => (
+            <div key={i} data-card-life={line.icon}>
+                <Stat icon={<PixelGlyph name={line.icon} />} text={line.text} tip={line.tip} tone={line.tone} />
+            </div>
+        ))}
+    </Box>
+);
+
+const DropsBlock = ({ drops }) => (
+    <Box data-card-block="drops">
+        <Heading>Drops</Heading>
+        {drops.map(d => (
+            <EntityRibbon key={d.itemId} kind="item" id={d.itemId} minQty={d.min} maxQty={d.max} chance={`${d.chance}%`} size="sm" />
+        ))}
+    </Box>
+);
+
+const HpBlock = ({ cur, max }) => {
+    const pct = Math.max(0, Math.min(100, (cur / Math.max(1, max)) * 100));
+    return (
+        <Box data-card-block="hp" className="flex-row items-center gap-2">
+            <div className="h-1.5 flex-1 bg-black/60 overflow-hidden">
+                <div data-card-hp-fill className="h-full bg-gi-hp" style={{ width: `${pct}%` }} />
+            </div>
+            <span data-card-hp-text className="shrink-0 ui-text-body tabular-nums text-white/90">
+                {`${Math.round(cur).toLocaleString('en-US')}/${Math.round(max).toLocaleString('en-US')}`}
+            </span>
+        </Box>
+    );
+};
+
+const CombatBlock = ({ skillId, level, xp }) => (
+    <Box data-card-block="combat" className="flex-row items-center gap-2 ui-text-body text-gi-text">
+        <Stat
+            icon={<SkillIcon skillId={skillId} size={16} />}
+            text={level}
+            tip={`${skillName(skillId)}, level ${level}`}
+            data-card-skill={skillId}
+        />
+        <Dot />
+        <Stat text={`+${Number(xp).toLocaleString('en-US')} XP`} tip={`${Number(xp).toLocaleString('en-US')} XP for each one beaten`} />
+    </Box>
+);
+
+/** What the card's layout has no block for yet: a landmark's challenge, a buff, the stations a tool drives. */
+const MoreBlock = ({ typeId }) => {
+    const def = getTokenType(typeId);
+    if (!def) return null;
+    return (
+        <div data-card-block="more" className="flex flex-col gap-1.5">
+            <LandmarkBlock def={def} />
+            {def.buff && (
+                <Box className="ui-text-body text-gi-text">
+                    <Heading>Buffs {def.buff.target === 'hero' ? 'the hero on it' : 'nearby Tokens'}</Heading>
+                    {def.buff.modifiers.map((m, i) => (
+                        <span key={i}>
+                            {m.type.replace(/_/g, ' ').toLowerCase()}{' '}
+                            <span className="tabular-nums" style={{ color: 'var(--color-ui-green)' }}>
+                                {m.bucket === 'percentage'
+                                    ? `${m.value > 0 ? '+' : ''}${Math.round(m.value * 100)}%`
+                                    : `${m.value > 0 ? '+' : ''}${m.value}`}
+                            </span>
+                        </span>
+                    ))}
+                </Box>
+            )}
+            {Object.keys(getProvidedTagsWithTiers(def)).length > 0 && <DrivesLine def={def} />}
+        </div>
+    );
+};
+
+const DrivesLine = ({ def }) => {
+    const tags = new Set(Object.keys(getProvidedTagsWithTiers(def)));
+    const driven = Object.keys(getAllTokenTypes()).filter(id =>
+        productionRoutes(id).some(r => r.requiresContext.some(t => tags.has(t)))
+    );
+    return (
+        <Box className="ui-text-body text-gi-text">
+            <Tooltip title="Serves every nearby station, and wears once per cycle it serves">
+                <span className="cursor-help">
+                    <Heading>{def.isTool ? 'Tool for' : 'Drives'}</Heading>{' '}
+                    {driven.length ? driven.map(tokenName).join(', ') : 'nothing yet'}
+                </span>
+            </Tooltip>
+        </Box>
+    );
+};
+
+/** Re-render each second while open, and on a fight's HP change. */
+function useCardClock(instanceId, enemy) {
+    const [, setNow] = useState(0);
+    useEffect(() => {
+        const timer = setInterval(() => setNow(n => n + 1), CARD_REFRESH_MS);
+        return () => clearInterval(timer);
+    }, []);
+    useEffect(() => {
+        if (!enemy || instanceId == null) return undefined;
+        let last = null;
+        return subscribeToken(BOARD_EVENTS.PROGRESS, instanceId, (p) => {
+            if (!p?.combat || p.enemyHp === last) return;
+            last = p.enemyHp;
+            setNow(n => n + 1);
+        });
+    }, [instanceId, enemy]);
+}
+
+/**
+ * The Token card: the full-art card a click on a Token opens. Its activity's 256 px scene fills
+ * the card behind the information (a plain card when it has none); the blocks follow
+ * `tokenCardModel`, each in a see-through box, every icon and number explained on hover.
+ */
+export const TokenCard = ({ typeId, instanceId = null, onClose = null }) => {
+    const def = getTokenType(typeId);
+    // Charges, a picked recipe, a hero arriving: re-read on this Token's own events.
+    useTokenDetail(instanceId, def);
+    useCardClock(instanceId, !!def?.enemy);
+
+    // ⚠️ The engine cannot see a card open: this tells it, once per Token shown, and the
+    // tutorial's "inspect an endgame site" step counts it (`QuestManager`).
+    useEffect(() => {
+        if (instanceId == null || !typeId) return;
+        EventBus.publish(UI_EVENTS.TOKEN_INSPECTED, { instanceId, typeId });
+    }, [instanceId, typeId]);
+
+    const model = tokenCardModel(typeId, instanceId);
+    if (!model) return null;
+    const { art } = model;
+
+    return (
+        <div
+            data-token-card={model.enemy ? 'enemy' : 'token'}
+            data-card-art={art ? art.source : 'none'}
+            className="relative"
+            style={{ width: CARD_ART_PX, minHeight: art ? CARD_ART_PX : undefined }}
+        >
+            {art && (
+                <img
+                    data-card-art-img
+                    src={art.path}
+                    alt=""
+                    draggable={false}
+                    className="absolute top-0 left-0 select-none pointer-events-none"
+                    style={{ width: CARD_ART_PX, height: CARD_ART_PX, imageRendering: 'pixelated' }}
+                />
+            )}
+            <div className="relative flex flex-col gap-1.5 p-1.5">
+                {model.blocks.map(block => {
+                    switch (block.id) {
+                        case CARD_BLOCK.NAME: return <NameBlock key="name" name={block.name} onClose={onClose} />;
+                        case CARD_BLOCK.HP: return <HpBlock key="hp" cur={block.cur} max={block.max} />;
+                        case CARD_BLOCK.COMBAT: return <CombatBlock key="combat" {...block} />;
+                        case CARD_BLOCK.WORK: return <WorkBlock key="work" {...block} />;
+                        case CARD_BLOCK.CYCLE: return <CycleBlock key="cycle" {...block} />;
+                        case CARD_BLOCK.RECIPE: return <RecipeBlock key="recipe" block={block} instanceId={instanceId} />;
+                        case CARD_BLOCK.LIFECYCLE: return <LifecycleBlock key="lifecycle" lines={block.lines} />;
+                        case CARD_BLOCK.DROPS: return <DropsBlock key="drops" drops={block.drops} />;
+                        case CARD_BLOCK.MORE: return <MoreBlock key="more" typeId={typeId} />;
+                        default: return null;
+                    }
+                })}
+                {instanceId != null && <LeaveMatControl instanceId={instanceId} />}
+            </div>
+        </div>
+    );
+};
+
+export default TokenCard;

@@ -375,13 +375,13 @@ describe('the flag answers clicks on its round area (owner, 2026-09-21)', () => 
 });
 
 describe('opening the rules drawer (FP-73)', () => {
-    it('a request opens the drawer with that hero lit, another swaps hero; the button toggles it', () => {
+    it('opening on a hero lights them, another swaps hero; the launcher toggles it', () => {
         const { result } = renderHook(() => useUIModals(engine));
         expect(result.current.flagRules.isOpen).toBe(false);
-        act(() => { EventBus.publish('ui:open_flag_rules', { heroId: 'h1' }); });
+        act(() => { result.current.flagRules.open('h1'); });
         expect(result.current.flagRules.isOpen).toBe(true);
         expect(result.current.flagRules.heroId).toBe('h1');
-        act(() => { EventBus.publish('ui:open_flag_rules', { heroId: 'fighter' }); });
+        act(() => { result.current.flagRules.open('fighter'); });
         expect(result.current.flagRules.heroId).toBe('fighter');
         act(() => { result.current.flagRules.close(); });
         expect(result.current.flagRules.isOpen).toBe(false);
@@ -404,21 +404,22 @@ describe('the rules grid (FP-71, FP-79, FPP-17)', () => {
     const grid = () => mount(h(WorkRulesDrawer, { open: true, litHeroId: null, onClose: () => {} }));
     const cell = (container, heroId, ruleId) => container.querySelector(`[data-rules-cell="${heroId}:${ruleId}"]`);
 
-    it('a rule cell per held work skill, and a Fight rule only for a hero who can fight', () => {
+    it('a rule cell per held work skill, and a Combat rule for every hero, combat skill or not', () => {
         const { container } = grid();
         expect(cell(container, 'h1', 'forestry').getAttribute('data-cell')).toBe('rule');
         expect(cell(container, 'h1', 'mining').getAttribute('data-cell')).toBe('rule');
-        expect(cell(container, 'h1', FlagRules.FIGHT).getAttribute('data-cell')).toBe('missing');
+        expect(cell(container, 'h1', FlagRules.FIGHT).getAttribute('data-cell')).toBe('rule');
         expect(cell(container, 'fighter', FlagRules.FIGHT).getAttribute('data-cell')).toBe('rule');
-        expect(cell(container, 'fighter', 'melee').getAttribute('data-cell')).toBe('level');   // combat skills are one Fight rule
+        expect(cell(container, 'fighter', 'melee')).toBeNull();   // combat skills are the one Combat column
     });
 
     it('shows the level and the default rule: allowed, priority 3', () => {
         const { container } = grid();
         const forestry = () => cell(container, 'h1', 'forestry');
         expect(forestry().getAttribute('data-cell-on')).toBe('true');
-        fireEvent.mouseEnter(forestry());
-        expect(document.querySelector('[data-top-bar-tip]').textContent).toContain('50/99');
+        fireEvent.pointerEnter(forestry());
+        expect(document.querySelector('[data-tooltip]').textContent).toContain('50/99');
+        fireEvent.pointerLeave(forestry());
         fireEvent.click(container.querySelector('[data-rules-mode]'));
         expect(forestry().textContent).toBe('3');
     });

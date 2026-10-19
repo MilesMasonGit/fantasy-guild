@@ -2,33 +2,14 @@
 import { ALERT } from '../../../systems/board/boardEvents.js';
 
 /**
- * Engine alerts (`instance.alert`) that are not problems: a station or a Foundation with
- * nothing chosen is waiting for the player, not broken, and its pulsing gear says so on its
- * own. Nothing red is drawn for them. Heroes still skip such a Token; only the look changed.
+ * Engine alerts (`instance.alert`) that are a choice waiting, not a fault: a station or a
+ * Foundation with nothing chosen. The Token summary does not count them as blocked; on the mat
+ * they are a yellow problem mark, "Choose a recipe" (`problemMark.js`).
  */
 export const GEAR_ONLY_ALERTS = new Set([ALERT.CHOOSE_BUILD, ALERT.CHOOSE_RECIPE]);
 
-/** Whether an engine alert is one the gear says instead of a red or yellow mark. */
+/** Whether an engine alert is a choice waiting rather than a fault. */
 export const isGearOnlyAlert = (alert) => GEAR_ONLY_ALERTS.has(alert);
-
-/**
- * A worked Token's live problem: the alert that greys its cycle ring, or null.
- * - Only while a hero is on the Token.
- * - The engine's `instance.alert` first, unless the gear says it ({@link isGearOnlyAlert}), in
- * which case nothing at all: a station with nothing chosen is waiting for the player, whatever
- * else it lacks.
- * - Otherwise what `getMissingRequirements` finds: missing Tokens read as `no_recipe`, missing
- * items as `inputs`.
- * @param {{hasHero?: boolean, alert?: string|null, missingType?: string|null}} worked
- * @returns {string|null} an `ALERT` value
- */
-export function workedAlertOf({ hasHero = false, alert = null, missingType = null } = {}) {
-    if (!hasHero) return null;
-    if (alert) return isGearOnlyAlert(alert) ? null : alert;
-    if (missingType === 'tokens') return ALERT.NO_RECIPE;
-    if (missingType === 'items') return ALERT.INPUTS;
-    return null;
-}
 
 /** A spawner's live count against its cap, as drawn in its ring. */
 export function spawnerCountText(counts) {

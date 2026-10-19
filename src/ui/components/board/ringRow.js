@@ -2,8 +2,9 @@
 import { spawnerCountText } from './centreAlert.js';
 
 /**
- * Bubbles: a Token's live numbers are rings that fill or empty with the number inside, each in
- * its own fixed spot inside the Token's box ({@link bubbleSlot}).
+ * Bubbles: a hovered Token's numbers are rings that fill or empty with the number inside, each in
+ * its own fixed spot inside the Token's box ({@link bubbleSlot}). The inspection draws the same
+ * rings.
  */
 
 /**
@@ -46,8 +47,8 @@ export const RING_GREY = '#8a8a8a';
 /**
  * Where each bubble sits inside a Token's box, in mat units from the box's top-left. The
  * layout is fixed: timer top-left, cycle bottom-left, quest bottom-centre, charges bottom-right
- * and the middle row (gear, spawner count,
- * disallow mark) centred on the box.
+ * and the middle row (gear, spawner count, problem mark, demolition and disallow marks) centred
+ * on the box.
  * A small Token's box is half as wide as three bubbles, so its corner bubbles hang off the box
  * by {@link SMALL_OVERHANG_U} instead of sitting inside it.
  * @param {'timer'|'cycle'|'quest'|'charges'} slot
@@ -71,18 +72,6 @@ export const BUBBLE_INSET_U = 2;
 
 /** How far a small Token's corner bubbles hang off its box: three side by side then just touch. */
 export const SMALL_OVERHANG_U = RING_D_U * 0.75;
-
-/** How long a count bubble stays up after its number changes. */
-export const BUBBLE_RECENT_MS = 2000;
-
-/** A timer bubble shows by itself once this little time is left. */
-export const TIMER_SOON_MS = 10000;
-
-/** Whether a timer bubble shows: while hovered, and in its last {@link TIMER_SOON_MS}. */
-export function timerVisible(hovered, inMs) {
-    if (inMs == null) return false;
-    return !!hovered || inMs <= TIMER_SOON_MS;
-}
 
 /**
  * The cycle ring's number: whole seconds left, rounded up, never below 1s

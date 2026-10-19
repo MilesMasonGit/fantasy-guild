@@ -6,7 +6,7 @@ import { useEngine } from '../../hooks/useEngine.js';
 import { useEntityDrop } from '../../dnd/DndKit.jsx';
 import { DND_SURFACE } from '../../dnd/dragConstants.js';
 import { DockHeroFigure } from './DockHeroFigure.jsx';
-import { WorkRulesButton } from './WorkRulesDrawer.jsx';
+import { WorkRulesButton, LAUNCHER_PX } from './WorkRulesDrawer.jsx';
 import { DOCK_STRIP_PX, DOCK_SLOT_PX, DOCK_SLOT_MIN_PX, dockArtPx } from './dockHeroView.js';
 import { useLiveMatFit } from '../board/MatFitContext.jsx';
 import { HeroManager } from '../../../systems/hero/HeroManager.js';
@@ -30,7 +30,8 @@ export function showsBottomHeroDock(fullscreenView) {
  * and sunk.
  * The strip stays a drop target for recalls (a flag, or a hero dragged off the mat). Clicking a
  * hero opens the side hero panel (`BankHeroPanel`); `selectedHeroId` only marks it here.
- * The Work Rules button at the left end toggles the rules drawer (`WorkRulesDrawer`).
+ * The Work Permissions launcher, in its own slot at the left end, toggles the drawer
+ * (`WorkRulesDrawer`); the heroes stand to its right.
  */
 export const BottomHeroDock = ({
     selectedHeroId,
@@ -59,7 +60,10 @@ export const BottomHeroDock = ({
              * The heroes, one row. On a narrow window each slot shrinks (`DOCK_SLOT_PX` down to `DOCK_SLOT_MIN_PX`)
              * before the row runs out of room.
              */}
-            <div className="absolute inset-0 flex flex-row items-end justify-center px-2 z-40">
+            <div
+                className="absolute inset-y-0 right-0 flex flex-row items-end justify-center px-2 z-40"
+                style={{ left: onToggleRules ? LAUNCHER_PX : 0 }}
+            >
                 {heroIds.map((heroId, index) => (
                     <motion.div
                         key={heroId}

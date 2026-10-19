@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
 import React from 'react';
 import { render, cleanup, act, fireEvent } from '@testing-library/react';
 import { DndContext } from '@dnd-kit/core';
@@ -14,6 +14,12 @@ import { TokenBubbles } from '../ui/components/board/TokenBubbles.jsx';
 import { MatHero, HERO_BAR_LINGER_MS } from '../ui/components/board/MatHero.jsx';
 import { healthFraction, healthText, enemyBarPlace, HEALTH_BAR_H_U } from '../ui/components/board/healthBar.js';
 import { setDrawn, resetDrawSwitches } from '../ui/dev/perf/drawSwitches.js';
+import { MatBoard } from '../ui/components/board/MatBoard.jsx';
+import * as Flags from '../systems/board/Flags.js';
+import * as SpriteLayer from '../systems/board/SpriteLayer.js';
+import { InventoryManager } from '../systems/inventory/InventoryManager.js';
+import { resetMatTuning } from '../config/matTuning.js';
+import { restHover } from './fixtures/hoverRest.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -24,8 +30,9 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * Health bars: one over a fighting hero, one over the enemy, the enemy's also while it is
- * hovered. The exact number shows on hover of the bar. The old enemy-HP bubble is gone.
+ * Health bars show only when they say something (brief 120): over a hero who is hurt, fighting
+ * or hovered; over an enemy in a fight (the only time it is hurt: a fight that ends heals it) or
+ * hovered. Full health and nothing going on: no bar. The exact number is drawn on the bar.
  */
 
 registerTokenTypes({
@@ -147,6 +154,19 @@ describe('the hero bar', () => {
         expect(bar(container, 'hero').getAttribute('data-health-text')).toBe('80/100');
     });
 
+    it('⭐ shows while hurt, or rested on; not at full health with nothing going on', () => {
+        const { container, rerender } = mount(hero());
+        expect(bar(container, 'hero')).toBeNull();
+        rerender(tree(hero({ hurt: true })));
+        expect(bar(container, 'hero').getAttribute('data-health-text')).toBe('80/100');
+        rerender(tree(hero({ hurt: false })));
+        expect(bar(container, 'hero')).toBeNull();
+        rerender(tree(hero({ rested: true })));
+        expect(bar(container, 'hero')).not.toBeNull();
+        rerender(tree(hero({ rested: false })));
+        expect(bar(container, 'hero')).toBeNull();
+    });
+
     it('lingers 3 s after the fight ends, then goes; a new fight cancels the countdown', () => {
         vi.useFakeTimers();
         try {
@@ -179,5 +199,50 @@ describe('the hero bar', () => {
         setDrawn('bubbles', false);
         const { container } = mount(hero({ fighting: true }));
         expect(bar(container, 'hero')).toBeNull();
+    });
+});
+
+describe('⭐ on the mat: the hero bar follows the hero’s health and the pointer', () => {
+    beforeAll(() => Flags.init());
+    afterAll(() => { Flags.teardown(); resetMatTuning(); });
+    beforeEach(() => {
+        resetMatTuning();
+        GameState.initNew();
+        InventoryManager.init();
+        SpriteLayer.init();
+        GameState.state.heroes = [{
+            id: 'h1', name: 'h1', spriteId: 'recruit', status: 'idle', level: 5,
+            skills: {}, hp: { current: 100, max: 100 }
+        }];
+    });
+
+    it('none at full health; one once hurt; one while hovered at full health', async () => {
+        Flags.plant('h1', { x: 600, y: 400 });
+        const { container } = mount(h(MatBoard));
+        const figure = container.querySelector('[data-board-hero="h1"]');
+        expect(figure).not.toBeNull();
+        expect(bar(container, 'hero')).toBeNull();
+
+        await act(async () => {
+            GameState.state.heroes[0].hp.current = 60;
+            EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'test' });
+        });
+        expect(bar(container, 'hero').getAttribute('data-health-text')).toBe('60/100');
+
+        await act(async () => {
+            GameState.state.heroes[0].hp.current = 100;
+            EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'test' });
+        });
+        expect(bar(container, 'hero')).toBeNull();
+
+        vi.useFakeTimers();
+        try {
+            fireEvent.mouseEnter(figure);
+            expect(bar(container, 'hero')).toBeNull();
+            restHover();
+            expect(bar(container, 'hero')).not.toBeNull();
+            fireEvent.mouseLeave(figure);
+            expect(bar(container, 'hero')).toBeNull();
+        } finally { vi.useRealTimers(); }
     });
 });

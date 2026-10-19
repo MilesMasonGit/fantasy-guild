@@ -21,7 +21,8 @@ export default function TokenEditor() {
   const recipePools = useEntityStore((s) => s.recipePools);
   const effects = useEntityStore((s) => s.effects);
 
-  const [isPickerOpen, setPickerOpen] = useState(false);
+  // Which field the sprite picker fills: 'sprite', 'cardArt', or null when closed.
+  const [pickerFor, setPickerFor] = useState(null);
   const [tagDraft, setTagDraft] = useState('');
 
   const update = (key, value) => updateToken(activeId, { [key]: value });
@@ -44,6 +45,7 @@ export default function TokenEditor() {
   const skillName = (id) => SKILLS.find((s) => s.id === id)?.name || id;
   const isUnlimited = token?.uses == null;
   const spritePath = token?.sprite ? resolveSpritePath(token.sprite) : null;
+  const cardArtPath = token?.cardArt ? resolveSpritePath(token.cardArt) : null;
 
   // ⚠️ The type and the rules text are DERIVED, never typed: a picker can disagree with what it classifies. Both read the Token's statements, which are references to the effect library, so the Token is expanded first; an unexpanded Token would show every station as an untyped resource and every rules panel as empty.
   const expanded = useMemo(() => expandBearer(token, effects), [token, effects]);
@@ -95,7 +97,7 @@ export default function TokenEditor() {
                 placeholder="sprite_id or assets/..."
                 className="flex-1 min-w-0"
               />
-              <button onClick={() => setPickerOpen(true)} className="btn-ghost text-xs" style={{ padding: '6px 10px' }}>
+              <button onClick={() => setPickerFor('sprite')} className="btn-ghost text-xs" style={{ padding: '6px 10px' }}>
                 Browse
               </button>
             </div>
@@ -150,6 +152,44 @@ export default function TokenEditor() {
             </select>
             <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
               Small: half-size art, hit area and spacing. Its rings stay full size.
+            </p>
+          </Field>
+
+          {/* The picture behind this Token's card in the game (`tokenCard.cardArtOf`). Empty: the scene for its activity, or a plain card. Written only when set, so every other Token's record stays unchanged. */}
+          <Field label="Card art" className="col-span-2">
+            <div className="flex gap-2 items-center">
+              <div className="w-10 h-10 rounded border border-white/10 bg-black/40 flex items-center justify-center overflow-hidden flex-shrink-0">
+                {cardArtPath ? (
+                  <img
+                    data-card-art-preview
+                    src={cardArtPath.startsWith('/') ? cardArtPath : `/${cardArtPath}`}
+                    className="w-10 h-10 object-cover pixel-art"
+                    alt=""
+                    onError={(e) => { e.target.style.visibility = 'hidden'; }}
+                  />
+                ) : (
+                  <HelpCircle size={16} className="text-gray-600" />
+                )}
+              </div>
+              <input
+                type="text"
+                aria-label="Card art"
+                value={token.cardArt || ''}
+                onChange={(e) => update('cardArt', e.target.value.trim() ? e.target.value : undefined)}
+                placeholder="Empty: the scene for its activity"
+                className="flex-1 min-w-0"
+              />
+              <button onClick={() => setPickerFor('cardArt')} className="btn-ghost text-xs" style={{ padding: '6px 10px' }}>
+                Browse
+              </button>
+              {token.cardArt && (
+                <button data-card-art-clear onClick={() => update('cardArt', undefined)} className="btn-ghost text-xs" style={{ padding: '6px 10px' }}>
+                  Clear
+                </button>
+              )}
+            </div>
+            <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
+              A 256 px picture from backgrounds/, shown behind this Token's card. Empty uses its activity's scene.
             </p>
           </Field>
         </div>
@@ -519,7 +559,7 @@ export default function TokenEditor() {
               </Field>
             </div>
 
-            {/* A hostile enemy attacks a hero who comes inside the flag radius around its spawner; a peaceful one fights only when attacked. Written ONLY when ticked; missing means peaceful, which is what the game reads. */}
+            {/* A hostile enemy attacks a hero whose flag stands inside the flag radius around its spawner (or itself); a peaceful one fights only when attacked. Written ONLY when ticked; missing means peaceful, which is what the game reads. */}
             <label className="flex items-center gap-2.5 cursor-pointer select-none mt-3">
               <input
                 type="checkbox"
@@ -534,7 +574,7 @@ export default function TokenEditor() {
               />
               <span className="text-[11px] text-gray-300">Hostile</span>
               <span className="text-[10px] text-gray-600">
-                attacks heroes who come near its spawner; otherwise it fights only when attacked
+                attacks heroes whose flag is planted near it (or its spawner); otherwise it fights only when attacked
               </span>
             </label>
 
@@ -567,9 +607,9 @@ export default function TokenEditor() {
       <LifecycleBlocks token={token} onChange={update} />
 
       <SpritePickerModal
-        isOpen={isPickerOpen}
-        onClose={() => setPickerOpen(false)}
-        onSelect={(spriteId) => update('sprite', spriteId)}
+        isOpen={pickerFor != null}
+        onClose={() => setPickerFor(null)}
+        onSelect={(spriteId) => update(pickerFor === 'cardArt' ? 'cardArt' : 'sprite', spriteId)}
       />
     </div>
   );

@@ -232,17 +232,20 @@ describe('rules switched off (FPP-18)', () => {
 });
 
 describe('Flags.setRule and resetRules (FPP-17)', () => {
-    it('refuses an unheld skill, Fight for a hero who cannot fight, and a priority outside 1–5', () => {
+    it('refuses an unheld skill and a priority outside 1–5; Fight applies to everyone', () => {
         GameState.state.heroes = [hero('h1', { forestry: 50 })];
         const refused = (ruleId, change) => Flags.setRule('h1', ruleId, change).success === false;
 
         expect(refused('mining', { priority: 1 })).toBe(true);
-        expect(refused(FlagRules.FIGHT, { allowed: false })).toBe(true);
+        expect(Flags.setRule('nobody', FlagRules.FIGHT, { allowed: false }).success).toBe(false);
         for (const priority of [0, 6, 2.5, '1', -1]) expect(refused('forestry', { priority })).toBe(true);
         expect(refused('forestry', { allowed: 'no' })).toBe(true);
         expect(Flags.setRule('nobody', 'forestry', { priority: 1 }).success).toBe(false);
 
         expect(FlagRules.heroRecord('h1').flagRules ?? {}).toEqual({});
+
+        // A hero holding no combat skill still fights, so their Fight rule is theirs to set.
+        expect(Flags.setRule('h1', FlagRules.FIGHT, { allowed: false }).success).toBe(true);
     });
 
     it('stores rules sparsely: a rule back at the default is no entry', () => {
@@ -374,7 +377,7 @@ describe('Flags.setRule and resetRules (FPP-17)', () => {
 });
 
 describe('FlagRules.rowsFor — what a rules panel lists', () => {
-    it('held work skills by level then name, then one Fight row only for a hero who can fight', () => {
+    it('held work skills by level then name, then one Fight row for every hero', () => {
         GameState.state.heroes = [
             hero('w', { mining: 40, forestry: 50, cooking: 50 }),
             hero('f', { mining: 40, melee: 10 })
@@ -384,18 +387,21 @@ describe('FlagRules.rowsFor — what a rules panel lists', () => {
         expect(FlagRules.rowsFor('w')).toEqual([
             expect.objectContaining({ ruleId: 'cooking', level: 50, combat: false, allowed: true, priority: 3 }),
             expect.objectContaining({ ruleId: 'forestry', level: 50, allowed: true, priority: 3 }),
-            expect.objectContaining({ ruleId: 'mining', level: 40, allowed: false, priority: 5 })
+            expect.objectContaining({ ruleId: 'mining', level: 40, allowed: false, priority: 5 }),
+            expect.objectContaining({ ruleId: FlagRules.FIGHT, combat: true, level: null })
         ]);
         expect(FlagRules.rowsFor('f').map(r => r.ruleId)).toEqual(['mining', FlagRules.FIGHT]);
         expect(FlagRules.rowsFor('f')[1]).toMatchObject({ name: 'Fight', combat: true, level: null });
     });
 
-    it('a new Recruit gets an allow/priority row for each of its nine skills, and no Fight row (slice 1.1)', () => {
+    it('a new Recruit gets an allow/priority row for each of its nine skills, then the Fight row', () => {
         GameState.state.heroes = [];
         const h = generateHero();
         HeroManager.addHero(h);
 
-        const rows = FlagRules.rowsFor(h.id);
+        const all = FlagRules.rowsFor(h.id);
+        expect(all.at(-1)).toMatchObject({ ruleId: FlagRules.FIGHT, name: 'Fight', combat: true });
+        const rows = all.slice(0, -1);
         expect(rows.map(r => r.ruleId).sort()).toEqual([
             'alchemy', 'construction', 'cooking', 'crafting', 'farming',
             'fishing', 'forestry', 'mining', 'smithing'

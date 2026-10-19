@@ -1,13 +1,16 @@
-import { useRef, useState, useEffect, useCallback } from 'react';
 import { useGameState } from '../../hooks/useGameState.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { ItemInspection } from './BankTab.jsx';
 import TokenInspection from './TokenInspection.jsx';
 import GuildUpgradeInspection from './GuildUpgradeInspection.jsx';
 import { getUpgradeDef } from '../../../config/guildUpgrades.js';
-import { SearchCheck, Search, X, ChevronUp, ChevronDown } from 'lucide-react';
+import { SearchCheck, Search, X } from 'lucide-react';
+import { ArrowScrollList } from '../base/ArrowScrollList.jsx';
 import { cn } from '../../utils/cn.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
+
+/** How far an arrow press scrolls the inspection sheet. */
+const INSPECT_SCROLL_STEP_PX = 180;
 
 /**
  * InspectionPanel: the shared inspection column, a fixed-width column shown while its drawer
@@ -22,10 +25,6 @@ export const InspectionPanel = ({
     onSearchChange,
     activePane = null
 }) => {
-    const scrollRef = useRef(null);
-    const [canScrollUp, setCanScrollUp] = useState(false);
-    const [canScrollDown, setCanScrollDown] = useState(false);
-
     // Item context: the sell controls need the live banked count.
     const itemId = selection?.type === 'item' ? selection.id : null;
     const itemCount = useGameState(
@@ -36,10 +35,14 @@ export const InspectionPanel = ({
     );
 
     let body = null;
+    // The upgrade sheet keeps its header still and scrolls only its rank list, with its own
+    // arrow bars; a second pair around it would be a list inside a list.
+    let scrollsItself = false;
     const isShop = activePane === 'shop';
 
     if (selection?.type === 'guild_upgrade') {
         const upgradeDef = selection.upgradeDef || selection.source?.upgradeDef || getUpgradeDef(selection.id);
+        scrollsItself = true;
         body = (
             <GuildUpgradeInspection
                 upgradeDef={upgradeDef}
@@ -65,33 +68,6 @@ export const InspectionPanel = ({
             );
         }
     }
-
-    const checkScroll = useCallback(() => {
-        const el = scrollRef.current;
-        if (!el) return;
-        setCanScrollUp(el.scrollTop > 6);
-        setCanScrollDown(el.scrollTop + el.clientHeight < el.scrollHeight - 6);
-    }, []);
-
-    useEffect(() => {
-        checkScroll();
-        const el = scrollRef.current;
-        if (!el) return;
-        el.addEventListener('scroll', checkScroll, { passive: true });
-        window.addEventListener('resize', checkScroll);
-        return () => {
-            el.removeEventListener('scroll', checkScroll);
-            window.removeEventListener('resize', checkScroll);
-        };
-    }, [checkScroll, body, selection]);
-
-    const scrollUp = () => {
-        scrollRef.current?.scrollBy({ top: -180, behavior: 'smooth' });
-    };
-
-    const scrollDown = () => {
-        scrollRef.current?.scrollBy({ top: 180, behavior: 'smooth' });
-    };
 
     return (
         <div className={cn("w-80 shrink-0 bg-gi-base/40 flex flex-col min-h-0 relative", className)}>
@@ -121,39 +97,20 @@ export const InspectionPanel = ({
                 </div>
             )}
 
-            {canScrollUp && (
-                <button
-                    onClick={scrollUp}
-                    className="w-full py-1 bg-black/60 hover:bg-black/80 border-b border-white/10 hover:border-gi-gold/40 flex items-center justify-center text-gi-gold transition-colors shrink-0 shadow active:scale-[0.99] cursor-pointer"
-                    title="Scroll up"
-                >
-                    <ChevronUp size={14} />
-                </button>
-            )}
-
-            <div
-                ref={scrollRef}
-                className="flex-1 min-h-0 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-            >
-                {body || (
-                    <div className="h-full flex flex-col items-center justify-center gap-3 text-gi-muted/50 p-6 text-center">
-                        <SearchCheck size={36} />
-                        <span className="text-xs gi-caps tracking-widest font-bold">Nothing selected</span>
-                        <span className="text-[10px] normal-case tracking-normal">
-                            Click an item or Token in any pane to see its details here.
-                        </span>
-                    </div>
-                )}
-            </div>
-
-            {canScrollDown && (
-                <button
-                    onClick={scrollDown}
-                    className="w-full py-1 bg-black/60 hover:bg-black/80 border-t border-white/10 hover:border-gi-gold/40 flex items-center justify-center text-gi-gold transition-colors shrink-0 shadow active:scale-[0.99] cursor-pointer"
-                    title="Scroll down"
-                >
-                    <ChevronDown size={14} />
-                </button>
+            {scrollsItself ? (
+                <div className="flex-1 min-h-0 overflow-hidden">{body}</div>
+            ) : (
+                <ArrowScrollList step={INSPECT_SCROLL_STEP_PX} compact className="flex-1 min-h-0">
+                    {body || (
+                        <div className="h-full flex flex-col items-center justify-center gap-3 text-gi-muted/50 p-6 text-center">
+                            <SearchCheck size={36} />
+                            <span className="text-xs gi-caps tracking-widest font-bold">Nothing selected</span>
+                            <span className="text-[10px] normal-case tracking-normal">
+                                Click an item or Token in any pane to see its details here.
+                            </span>
+                        </div>
+                    )}
+                </ArrowScrollList>
             )}
         </div>
     );

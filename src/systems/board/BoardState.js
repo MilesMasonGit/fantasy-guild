@@ -84,12 +84,29 @@ export function originOf(instance) {
 }
 
 /**
- * A map's node: a Token a map wrote into its Region when the Region was settled (`Atlas.settle`),
- * saved as `fixture: true` beside the `biome` it stands in. Always `placed`, so no spawn pushes it.
- * A transform keeps the mark (`EffectActions.transformInstance`), as it keeps `origin`.
+ * A fixture: a Token laid down with its Region, which the guild never moves, pushes or demolishes
+ * (`FixedTokens.isFixed`). Saved on the instance as `fixture`, naming who laid it:
+ * - `MAP`: a node a map wrote when its Region was settled (`Atlas.settle`), saved beside the
+ * `biome` it stands in.
+ * - `CAMP`: a Token the Starter Camp laid down when the game began (`FixedTokens.fixCampTokens`).
+ * Never the Guild Hall, which the player may still move.
+ *
+ * Always `placed`, so no spawn pushes it. A transform keeps the mark as it was
+ * (`EffectActions.transformInstance`), as it keeps `origin`.
+ *
+ * ⚠️ `MAP` is `true`, not a word: saves from before the camp's fixtures hold it.
  */
+export const FIXTURE = Object.freeze({ MAP: true, CAMP: 'camp' });
+
+/** Whether a Token is a fixture, a map's or the Starter Camp's. */
 export function isFixture(instance) {
-    return instance?.fixture === true;
+    const mark = instance?.fixture;
+    return mark === FIXTURE.MAP || mark === FIXTURE.CAMP;
+}
+
+/** Whether a Token is one the Starter Camp laid down: a fixture the dev layout tool may lift. */
+export function isCampFixture(instance) {
+    return instance?.fixture === FIXTURE.CAMP;
 }
 
 /**

@@ -11,8 +11,8 @@ import { heroMaxHpFromSkills } from '../../utils/CombatFormulas.js';
  * HeroGenerator - creates new heroes.
  *
  * Every hero starts as a Recruit: the Foundation skills at level 1 and nothing
- * else, so an unpromoted hero holds no combat skill and cannot fight. The way to
- * gain one is promotion.
+ * else, so an unpromoted hero holds no combat skill (they still fight, as a level 1
+ * fighter, but earn no combat XP). The way to gain one is promotion.
  *
  * `classId` and `traitId` are still written as `null` only to keep the saved
  * hero shape unchanged.

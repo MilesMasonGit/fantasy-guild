@@ -193,6 +193,10 @@ export const UI_EVENTS = Object.freeze({
 
     /** Payload: `{ heroId }`. */
     INSPECT_HERO: 'inspect_hero',
+    /** The Token card's Change recipe: open that station's recipe picker. Payload: `{ instanceId }`. */
+    OPEN_STATION_RECIPES: 'ui:open_station_recipes',
+    /** "While you were away" was closed: what it covered may now play on the mat. No payload. */
+    CATCH_UP_SUMMARY_CLOSED: 'ui:catch_up_summary_closed',
     /** A collect particle reached its Token. Payload: `{ instanceId, … }`. */
     PARTICLE_LANDED: 'particle_landed',
     /**
@@ -212,8 +216,6 @@ export const UI_EVENTS = Object.freeze({
     UI_TOKEN_ALERT: 'ui:token_alert',
     /** Payload: `{ tab }`. */
     UI_OPEN_DRAWER: 'ui:open_drawer',
-    /** Payload: `{ heroId }`. */
-    UI_OPEN_FLAG_RULES: 'ui:open_flag_rules',
     /** Payload: `{ questId }`. */
     TUTORIAL_AIDE_HOVER: 'tutorial_aide:hover',
     /** Payload: none. */

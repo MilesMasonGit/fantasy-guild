@@ -489,7 +489,7 @@ export function tick(delta) {
     // already holds still for them.
     EnemyMotion.tick(delta);
 
-    // Hostile enemies attack heroes inside the flag radius of their spawner: after the enemies'
+    // Hostile enemies attack heroes whose flag is inside the radius of their spawner: after the enemies'
     // steps, and before any Token ticks, so an attacked hero standing beside the enemy fights this
     // same tick.
     Hostiles.tick(delta);
@@ -533,9 +533,8 @@ export function tick(delta) {
         // hostile enemy gets a hero onto it through `Hostiles` and `Flags.ambush`, not through this
         // function.
         if (BoardCombat.isEnemyToken(instance)) {
-            // A hero who holds no combat skill cannot fight. Under flags that hero never claims an
-            // enemy at all: the flag records `unskilled` against it, shown on hover only, so an
-            // enemy Token never carries a red mark.
+            // A hero who cannot fight never claims an enemy under flags: the flag records
+            // `unskilled` against it, shown on hover only, so an enemy Token never carries a red mark.
             setAlert(instance,null);
 
             // Called unconditionally: `tickToken` also owns ENDING a fight when the hero has gone.

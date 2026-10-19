@@ -15,11 +15,12 @@ import * as Landmarks from './Landmarks.js';
  * Two questions about removing a Token for good.
  *
  * {@link canDemolish}: may it be taken off at all? Never the Guild Hall (or a type that cannot
- * leave the mat) and never a landmark, except while the dev layout tool is on
- * (`Landmarks.setLayoutEditing`). `Placement.removePlacedToken` asks it.
+ * leave the mat), and never a landmark or a Token the Starter Camp laid, except while the dev layout
+ * tool is on (`Landmarks.setLayoutEditing`). `Placement.removePlacedToken` asks it.
  *
- * {@link canMark}: may the player mark it for demolition? Narrower: nor a map's nodes (the settled
- * layout is permanent), quests or enemies, and never a landmark, dev tool or not. A marked Token
+ * {@link canMark}: may the player mark it for demolition? Narrower: nor a fixture (a map's nodes
+ * and the Starter Camp's Tokens: the layout is permanent), quests or enemies, and never a landmark
+ * or a camp Token, dev tool or not. A marked Token
  * (`instance.demolish: true`, saved) is taken away by a hero holding Construction: no refund, no
  * loot, never a depletion.
  *
@@ -60,6 +61,7 @@ export const REFUSAL = Object.freeze({
     GUILD_HALL: 'guild_hall',
     LANDMARK: 'landmark',
     MAP_NODE: 'map_node',
+    CAMP: 'camp',
     QUEST: 'quest',
     ENEMY: 'enemy'
 });
@@ -70,6 +72,7 @@ export const REFUSAL_TEXT = Object.freeze({
     [REFUSAL.GUILD_HALL]: 'The Guild Hall cannot be demolished.',
     [REFUSAL.LANDMARK]: 'Landmarks cannot be demolished.',
     [REFUSAL.MAP_NODE]: 'This was here when the Region was settled, so it cannot be demolished.',
+    [REFUSAL.CAMP]: 'This came with the Starter Camp, so it cannot be demolished.',
     [REFUSAL.QUEST]: 'Quests cannot be demolished.',
     [REFUSAL.ENEMY]: 'Enemies cannot be demolished.'
 });
@@ -85,7 +88,8 @@ function isPermanent(instance) {
 export function canDemolish(instance) {
     if (!instance?.typeId) return false;
     if (isPermanent(instance)) return false;
-    return !Landmarks.isLandmark(instance) || Landmarks.isLayoutEditing();
+    const laidOut = Landmarks.isLandmark(instance) || BoardState.isCampFixture(instance);
+    return !laidOut || Landmarks.isLayoutEditing();
 }
 
 /** Whether this Token is marked for demolition. */
@@ -106,7 +110,7 @@ export function refusalOf(instance) {
     if (!instance?.typeId) return REFUSAL.NO_TOKEN;
     if (isPermanent(instance)) return REFUSAL.GUILD_HALL;
     if (Landmarks.isLandmark(instance)) return REFUSAL.LANDMARK;
-    if (BoardState.isFixture(instance)) return REFUSAL.MAP_NODE;
+    if (BoardState.isFixture(instance)) return BoardState.isCampFixture(instance) ? REFUSAL.CAMP : REFUSAL.MAP_NODE;
     if (instance.typeId === QUEST_TOKEN_TYPE) return REFUSAL.QUEST;
     if (isEnemyDef(getTokenType(instance.typeId))) return REFUSAL.ENEMY;
     return null;

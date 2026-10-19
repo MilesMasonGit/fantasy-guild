@@ -24,9 +24,9 @@ import { DndContext } from '@dnd-kit/core';
 import * as Charges from '../systems/board/Charges.js';
 import { TokenBubbles } from '../ui/components/board/TokenBubbles.jsx';
 import { HeroBubbleLayer } from '../ui/components/board/HeroBubbleLayer.jsx';
-import { ALERT } from '../systems/board/boardEvents.js';
-import { MOMENT_TTL_MS } from '../ui/components/board/heroSpeech.js';
-import { INPUTS_DELAY_MS } from '../ui/components/board/heroBubbles.js';
+import { ALERT, BOARD_EVENTS } from '../systems/board/boardEvents.js';
+import { DEPLETED_TTL_MS } from '../ui/components/board/heroSpeech.js';
+import { FLOAT_MS, clearAllFloats } from '../ui/components/board/levelUpFloats.js';
 import { useGameState } from '../ui/hooks/useGameState.js';
 import { useTokenState } from '../ui/components/board/tokenEvents.js';
 import { shareEqual } from '../ui/hooks/structuralShare.js';
@@ -244,7 +244,7 @@ describe('⭐ on the mat: a change to one hero\'s flag redraws that flag alone',
     });
 });
 
-describe('⭐ a charge spent: the Token redraws, its art does not, and its bubble comes up in the same commit', () => {
+describe('⭐ a charge spent: the Token redraws, its art does not, and its -1 comes up in the same commit', () => {
     beforeAll(() => Flags.init());
     afterAll(() => { Flags.teardown(); resetMatTuning(); });
     beforeEach(() => {
@@ -264,7 +264,7 @@ describe('⭐ a charge spent: the Token redraws, its art does not, and its bubbl
         cleanup();
     });
 
-    it('on the mat: one charge spent draws the Token and its bubbles, never its art, sprite or name', async () => {
+    it('on the mat: one charge spent draws the Token and its floater, never its art, sprite or name, and no ring', async () => {
         const t = placeAt('fixture_producer', 600, 400);
         placeAt('fixture_producer', 1000, 400);
         const view = render(
@@ -278,7 +278,9 @@ describe('⭐ a charge spent: the Token redraws, its art does not, and its bubbl
         await act(async () => { Charges.applyDelta(t, -1); });
         await flush();
         renders.stop();
-        expect(view.container.querySelector(`[data-bubble="charges"][data-bubble-of="${t.id}"]`)).not.toBeNull();
+        // The ring no longer comes up by itself (brief 120); the -1 does.
+        expect(view.container.querySelector(`[data-bubble="charges"][data-bubble-of="${t.id}"]`)).toBeNull();
+        expect(view.container.querySelector(`[data-token-overlay="${t.id}"] [data-charge-floater]`).textContent).toBe('-1');
         const all = JSON.stringify(renders.all());
         expect(renders.of('MatToken'), all).toBe(1);
         expect(renders.of('TokenBubbles'), all).toBe(1);
@@ -286,35 +288,33 @@ describe('⭐ a charge spent: the Token redraws, its art does not, and its bubbl
         expect(renders.of('TokenSprite'), all).toBe(0);
         expect(renders.of('PixelArt'), all).toBe(0);
         expect(renders.of('TokenNameBadge'), all).toBe(0);
-        // One commit: the charges bubble came up with the charge, not a commit later.
+        // One commit: the floater came up with the charge, not a commit later.
         expect(renders.commits().length, all).toBe(1);
     });
 
-    it('a worked Token: a charge spent mounts the charges bubble alone; the cycle bubble does not draw again', async () => {
+    it('a worked Token: a charge spent mounts nothing at rest, and the work bar does not draw again', async () => {
         const tokenOf = (n) => ({ typeId: 'fixture_producer', instanceId: 'tok_tr', heroId: 'hero_1', alert: null, usesRemaining: n });
         const tree = (n) => h(EngineContext.Provider, { value: { GameState, EventBus } },
             h(DndContext, null, h(TokenBubbles, { instanceId: 'tok_tr', token: tokenOf(n) })));
         const view = render(tree(10));
         await flush();
-        expect(view.container.querySelector('[data-bubble="cycle"]')).not.toBeNull();
-        expect(view.container.querySelector('[data-bubble="charges"]')).toBeNull();
+        const bar = view.container.querySelector('[data-work-bar]');
+        expect(bar).not.toBeNull();
         renders.start();
         await act(async () => { view.rerender(tree(9)); });
         renders.stop();
-        expect(view.container.querySelector('[data-bubble="charges"]')).not.toBeNull();
+        expect(view.container.querySelector('[data-bubble="charges"]')).toBeNull();
+        expect(view.container.querySelector('[data-work-bar]')).toBe(bar);
         const all = JSON.stringify(renders.all());
         expect(renders.commits().length, all).toBe(1);
-        // The charges bubble mounting; the cycle bubble sat it out.
-        expect(renders.of('Bubble'), all).toBe(1);
-        expect(renders.of('RingBadge'), all).toBe(1);
-        // The ring shows the old count first, so it has something to glide from.
-        expect(view.container.querySelector('[data-bubble="charges"] [data-ring="charges"]').getAttribute('data-ring-text')).toBe('10');
+        expect(renders.of('Bubble'), all).toBe(0);
+        expect(renders.of('RingBadge'), all).toBe(0);
     });
 });
 
 describe('⭐ speech bubbles: the twice-a-second look draws only when what is said changes', () => {
-    // A stuck hero is "busy" for as long as they stay stuck, and the layer used to draw itself
-    // twice a second for all that time, saying the same thing.
+    // A stuck hero used to be "busy" for as long as they stayed stuck, and their line was looked at
+    // twice a second; heroes no longer speak a Token's problems at all (brief 120).
     let token;
     beforeEach(() => {
         resetMatTuning();
@@ -332,39 +332,51 @@ describe('⭐ speech bubbles: the twice-a-second look draws only when what is sa
     const said = (c) => [...c.querySelectorAll('[data-hero-bubble]')].map(el => el.textContent);
     const wait = (ms) => act(() => { vi.advanceTimersByTime(ms); });
 
-    it('a hero stuck on the same thing: no redraw however long it lasts', () => {
-        const { container } = render(h(HeroBubbleLayer, { heroes: stuck(ALERT.CHARGES) }));
-        expect(said(container)).toEqual(['Fixture Producer has too few charges left.']);
-        renders.start();
-        for (let i = 0; i < 10; i++) wait(500);
-        renders.stop();
-        expect(renders.of('HeroBubbleLayer'), JSON.stringify(renders.all())).toBe(0);
-        expect(said(container)).toEqual(['Fixture Producer has too few charges left.']);
+    it('⭐ a hero stuck on a Token says nothing, however long it lasts, and nothing looks twice a second', () => {
+        for (const alert of [ALERT.CHARGES, ALERT.INPUTS, ALERT.NO_ROOM, ALERT.ACCESS]) {
+            const { container, unmount } = render(h(HeroBubbleLayer, { heroes: stuck(alert) }));
+            expect(said(container), alert).toEqual([]);
+            expect(vi.getTimerCount(), alert).toBe(0);
+            renders.start();
+            for (let i = 0; i < 10; i++) wait(500);
+            renders.stop();
+            expect(renders.of('HeroBubbleLayer'), alert).toBe(0);
+            expect(said(container), alert).toEqual([]);
+            unmount();
+        }
     });
 
     it('a moment that lapses is taken down, at the next look', () => {
         const { container } = render(h(HeroBubbleLayer, { heroes: stuck(ALERT.CHARGES) }));
         wait(10);
-        act(() => { EventBus.publish(ENGINE_EVENTS.HERO_LEVELED, { heroId: 'hs', skillName: 'Forestry', newLevel: 5, oldLevel: 4 }); });
-        expect(said(container)).toHaveLength(2);
+        act(() => { EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { instanceId: 'o', x: 1, y: 1, typeId: 'fixture_producer', exhaustedBy: 'hs' }); });
+        expect(said(container)).toEqual(['Fixture Producer Depleted']);
         renders.start();
-        wait(MOMENT_TTL_MS + 500);
+        wait(DEPLETED_TTL_MS + 500);
         renders.stop();
-        expect(said(container)).toEqual(['Fixture Producer has too few charges left.']);
+        expect(said(container)).toEqual([]);
         // The look that found it lapsed, and the layout pass after measuring the shorter stack.
         expect(renders.of('HeroBubbleLayer')).toBeGreaterThan(0);
         expect(renders.of('HeroBubbleLayer')).toBeLessThanOrEqual(2);
+        // Nothing left to look at: the look stops.
+        expect(vi.getTimerCount()).toBe(0);
     });
 
-    it('a shortage that has waited its delay is spoken, at the next look', () => {
-        const { container } = render(h(HeroBubbleLayer, { heroes: stuck(ALERT.INPUTS) }));
-        expect(said(container)).toEqual([]);
+    it('a level-up float that runs out is taken down, at the next look; it does not redraw while it plays', () => {
+        clearAllFloats();
+        const { container } = render(h(HeroBubbleLayer, { heroes: stuck(ALERT.CHARGES) }));
+        wait(10);
+        act(() => { EventBus.publish(ENGINE_EVENTS.HERO_LEVELED, { heroId: 'hs', skillId: 'logging', skillName: 'Forestry', newLevel: 5, oldLevel: 4 }); });
+        expect(container.querySelector('[data-level-float]')).not.toBeNull();
         renders.start();
-        wait(INPUTS_DELAY_MS + 500);
+        wait(FLOAT_MS - 1000);
         renders.stop();
-        expect(said(container)).toHaveLength(1);
-        expect(said(container)[0]).toMatch(/^I need /);
-        // The look that found it ready, and the layout pass after measuring the new line.
+        expect(renders.of('HeroBubbleLayer')).toBe(0);
+        renders.start();
+        wait(1500);
+        renders.stop();
+        expect(container.querySelector('[data-level-float]')).toBeNull();
+        expect(said(container)).toEqual([]);
         expect(renders.of('HeroBubbleLayer')).toBeGreaterThan(0);
         expect(renders.of('HeroBubbleLayer')).toBeLessThanOrEqual(2);
     });

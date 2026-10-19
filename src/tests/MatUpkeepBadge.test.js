@@ -69,7 +69,10 @@ registerTokenTypes({
     })
 });
 
-const badgeText = (c) => c.querySelector('[data-mat-upkeep-text]').textContent.replace(/\s+/g, ' ').trim();
+const badgeText = (c) => {
+    const badge = c.querySelector('[data-mat-upkeep-badge]');
+    return `${badge.querySelector('[data-item-bar-name]').textContent} ${badge.querySelector('[data-mat-upkeep-count]').textContent}`;
+};
 const popover = () => document.body.querySelector('[data-mat-upkeep-popover]');
 const tileChanged = (instanceId) => act(() => { EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId }); });
 
@@ -193,6 +196,26 @@ describe('⭐ MatUpkeepBadge (B2.2, FB-29)', () => {
         expect(tip.textContent).toContain('Fixture Badge Seed');
         expect(tip.textContent).toContain('3/min');
         expect(tip.textContent).toContain('Waiting: Fixture Ub Forest');
+    });
+
+    it('⭐ the hover lists one item bar per item, each with its own rate', () => {
+        InventoryManager.addItem(SEED, 50);
+        InventoryManager.addItem(ORE, 50);
+        placeAt('fixture_ub_forest', 500, 500);
+        placeAt('fixture_ub_mine', 900, 500);
+        const { container } = render(React.createElement(MatUpkeepBadge));
+        fireEvent.mouseEnter(container.querySelector('[data-mat-upkeep-badge]'));
+        const bars = [...popover().querySelectorAll('[data-item-id] > [data-item-bar]')];
+        const read = bars.map(b => [b.querySelector('[data-item-bar-name]').textContent, b.querySelector('[data-upkeep-rate]').textContent]);
+        expect(read.sort()).toEqual([['Fixture Badge Ore', '1.33/min'], ['Fixture Badge Seed', '3/min']]);
+    });
+
+    it('the bar reads in the item bar style, and its popover wears the chamfer pixel frame', () => {
+        const { container } = render(React.createElement(MatUpkeepBadge));
+        const badge = container.querySelector('[data-mat-upkeep-badge]');
+        expect(badge.hasAttribute('data-item-bar')).toBe(true);
+        fireEvent.mouseEnter(badge);
+        expect(popover().getAttribute('data-pixel-frame')).toBe('chamfer');
     });
 
     it('the popover stays while the pointer is over it, and closes after leaving', () => {

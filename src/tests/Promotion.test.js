@@ -10,7 +10,7 @@ import {
 } from '../config/registries/jobRegistry.js';
 import { STARTING_SKILL_IDS } from '../config/registries/skillRegistry.js';
 import { restoreBankedStarting } from '../systems/hero/logic/HeroRehydration.js';
-import { canHeroFight } from '../utils/CombatFormulas.js';
+import { canHeroFight, getHeroCombatSkillEntry } from '../utils/CombatFormulas.js';
 import { listNames } from '../ui/components/hero/PromotionTrade.jsx';
 
 /**
@@ -195,13 +195,15 @@ describe('A promotion swaps the sheet', () => {
         expect(JSON.stringify(hero.skills)).toBe(skillsBefore);
     });
 
-    it('turns a Recruit into someone who can fight', () => {
+    it('gives a Recruit, who already fights at level 1, the real combat skill from level 1', () => {
         const hero = makeQualified('fighter');
-        expect(canHeroFight(hero)).toBe(false);
+        expect(canHeroFight(hero)).toBe(true);
+        expect(getHeroCombatSkillEntry(hero).id).toBeNull();
 
         PromotionSystem.promote(hero.id, 'fighter');
 
         expect(canHeroFight(hero)).toBe(true);
+        expect(getHeroCombatSkillEntry(hero)).toEqual({ id: 'melee', level: 1 });
         expect(hero.hp.max).toBeGreaterThan(0);
     });
 });

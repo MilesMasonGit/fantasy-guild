@@ -19,7 +19,8 @@ import * as StationRecipe from '../systems/board/StationRecipe.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as TimedChanges from '../systems/board/TimedChanges.js';
 import * as WorkCheck from '../systems/board/WorkCheck.js';
-import { blockedLineFor } from '../ui/components/board/heroBubbles.js';
+import { problemText } from '../ui/components/board/problemMark.js';
+import { MASTERY_LEVEL } from '../systems/hero/PromotionSystem.js';
 import { LootSystem } from '../systems/combat/LootSystem.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
@@ -348,10 +349,12 @@ describe('a marked Token is Construction work', () => {
         expect(on(tree)).toBe(tree);
     });
 
-    it('a hero stuck below the level says so in Construction words', () => {
+    it('a hero stuck below the level: the problem mark says so in Construction words', () => {
         const tree = place(10, 'demo_tree');
         Demolition.mark(tree.id);
-        expect(blockedLineFor(tree.id, ALERT.ACCESS)).toBe('My Construction level is too low to work Demo Tree.');
+        expect(problemText({ kind: ALERT.ACCESS }, tree.id))
+            .toBe(`Needs Construction ${Demolition.DEMOLITION_CONFIG.skillRequired}/${MASTERY_LEVEL}`);
+        expect(problemText({ kind: ALERT.UNSKILLED }, tree.id)).toBe('Needs the Construction skill');
     });
 
     it('a spawner, which no hero works, becomes work a flag claims and a pin holds', () => {

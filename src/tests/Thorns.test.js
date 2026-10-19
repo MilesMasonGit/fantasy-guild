@@ -72,11 +72,9 @@ const hp = (id) => HeroManager.getHero(id).hp.current;
 /**
  * A promoted hero who can actually fight.
  *
- * ⚠️ `hero.skills.melee` must be **added**, not merely levelled. `canHeroFight`
- * tests *possession* of a combat skill and never its level — an unpromoted
- * Recruit holds none and starts no fight at all, so a hero built without this
- * line stands on an enemy doing nothing, and every assertion downstream passes
- * for the wrong reason.
+ * ⚠️ `hero.skills.melee` must be **added**, not merely levelled. A hero holding
+ * no combat skill fights as a level 1 fighter whatever their other skills'
+ * levels, so a hero built without this line fights far weaker than assumed.
  */
 function makeFighter(id) {
     const hero = generateHero({ name: id });

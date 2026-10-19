@@ -244,7 +244,7 @@ export const useDragPointer = () => React.useContext(DragPointerContext);
 export const DragSurfaceContext = React.createContext(undefined);
 export const useDragSurface = () => React.useContext(DragSurfaceContext);
 import { isElementOpaqueAtPoint } from '../utils/alphaHitTest.js';
-import { isDisallowMode } from '../hooks/useDisallowMode.js';
+import { isMapModeOn } from '../hooks/useMapMode.js';
 import { isMatBankLocked } from '../hooks/useMatBankLock.js';
 import { ENGINE_EVENTS, UI_EVENTS } from '../../systems/core/engineEvents.js';
 
@@ -298,12 +298,12 @@ export class AlphaPointerSensor extends PointerSensor {
                 if (!event.isPrimary || event.button !== 0) {
                     return false;
                 }
-                // Dragging ON THE MAT pauses in disallow mode: Tokens, heroes and flags all
+                // Dragging ON THE MAT pauses in a map mode: Tokens, heroes and flags all
                 // live inside the mat's `data-board-origin` box. The dock and the Bank still
-                // drag. A refused press stays a plain click, which the mode turns into a flip.
+                // drag. A refused press stays a plain click, which the mode acts on.
                 // While the Bank is open the mat is not interactive at all, so nothing on it
                 // may even start a drag.
-                if ((isDisallowMode() || isMatBankLocked()) && event.target?.closest?.('[data-board-origin]')) return false;
+                if ((isMapModeOn() || isMatBankLocked()) && event.target?.closest?.('[data-board-origin]')) return false;
                 const target = event.target;
                 const alphaEl = target?.closest?.('[data-alpha-test]');
                 if (alphaEl) {

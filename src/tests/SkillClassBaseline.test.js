@@ -181,14 +181,15 @@ describe('One combat skill supplies both halves (Phase 2)', () => {
         expect(CombatFormulas.getHeroDefenseSkill(hero)).toBe(30);
     });
 
-    it('a Recruit scores 0, not 1 — they are a non-combatant, not a weak one', () => {
+    it('a Recruit holds no combat skill, yet fights at level 1, whatever their work skills', () => {
         const recruit = {
             skills: Object.fromEntries(STARTING_SKILL_IDS.map(id => [id, { level: 40 }]))
         };
 
-        expect(CombatFormulas.getHeroCombatSkillEntry(recruit).id).toBeNull();
-        expect(CombatFormulas.getHeroCombatSkill(recruit)).toBe(0);
-        expect(CombatFormulas.canHeroFight(recruit)).toBe(false);
+        expect(CombatFormulas.getHeroCombatSkillEntry(recruit)).toEqual({ id: null, level: 0 });
+        expect(CombatFormulas.getHeroCombatSkill(recruit)).toBe(1);
+        expect(CombatFormulas.getHeroDefenseSkill(recruit)).toBe(1);
+        expect(CombatFormulas.canHeroFight(recruit)).toBe(true);
     });
 
     it('max HP tracks the combat skill, and production skills never touch it', () => {

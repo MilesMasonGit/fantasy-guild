@@ -1,106 +1,59 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BOARD_EVENTS, ALERT } from '../../../systems/board/boardEvents.js';
 import * as SpawnerSystem from '../../../systems/board/SpawnerSystem.js';
-import { getItem } from '../../../config/registries/itemRegistry.js';
-import { joinNames } from './heroBubbles.js';
-import * as BoardState from '../../../systems/board/BoardState.js';
-import { getMissingRequirements } from '../../../systems/board/RecipeResolver.js';
 import { getTokenType, tokenStartingUses } from '../../../config/registries/tokenRegistry.js';
 import { enemyProfileOf } from '../../../config/registries/enemyProfile.js';
 import { subscribeToken } from './tokenEvents.js';
-import { workedAlertOf } from './centreAlert.js';
-import { RingBadge, paintRing } from './RingBadge.jsx';
+import { RingBadge } from './RingBadge.jsx';
 import { Bubble } from './Bubble.jsx';
 import { HealthBar } from './HealthBar.jsx';
 import { enemyBarPlace } from './healthBar.js';
 import { TimerBubble } from './TimerBubble.jsx';
-import {
-    BUBBLE_RECENT_MS, RING_D_U, bubbleSlot, chargesFraction, cycleSecondsText, ringCount
-} from './ringRow.js';
-import { TokenChargeDeltaFloater, StationGearBadge, DisallowBadge, StuckBadge, MarkedBadge } from './TokenBadges.jsx';
-import { onStep } from './frameClock.js';
+import { bubbleSlot, chargesFraction, ringCount } from './ringRow.js';
+import { TokenChargeDeltaFloater, StationGearBadge, DisallowBadge, MarkedBadge } from './TokenBadges.jsx';
+import { ProblemMark } from './ProblemMark.jsx';
+import { problemOf, problemText, PROBLEM_MARK_ART_PX } from './problemMark.js';
+import { createWorkBar, workBarPlace } from './workBar.js';
 import { shareCycle } from './cycleShare.js';
 
-const NO_MISSING = Object.freeze({ type: null, items: [] });
-
-/**
- * After a count changes, how long the bubble keeps showing the OLD number before it takes the
- * new one: a bubble that appears because of the change needs a painted frame at the old value
- * for its ring to glide from.
- */
-export const GLIDE_START_MS = 50;
-
-/** What each bubble's tooltip says. */
+/** What each hover ring's and player mark's tooltip says. */
 export const BUBBLE_TIPS = Object.freeze({
-    cycle: 'Work cycle: time left until this round of work finishes',
-    cycleBlocked: 'Work cycle paused: this Token is missing something',
     charges: (n) => `Charges: ${Number(n).toLocaleString()} left`,
     quest: (text) => `Quest progress: ${text}`,
     spawner: (text) => `Spawned: ${text}. It stops at the limit`,
     disallow: 'Heroes may not work this',
-    marked: 'Marked for demolition: a hero with Construction will take it away',
-    /** A stuck spawner's warning: `{ alert, needs }` from `SpawnerSystem.spawnerAlertOf`. */
-    stuck: (state) => {
-        if (state?.alert === ALERT.SPAWN_MAT_FULL) return 'Token cap full';
-        if (state?.alert !== ALERT.SPAWN_NEEDS_ITEM) return 'No room to spawn';
-        const names = (state.needs || []).map(id => getItem(id)?.name || id);
-        return names.length ? `Needs ${joinNames(names)} to spawn` : 'Needs items to spawn';
-    }
+    marked: 'Marked for demolition: a hero with Construction will take it away'
 });
 
-/**
- * A count bubble's value, with the two things the visibility rules need: `recent`, true for
- * {@link BUBBLE_RECENT_MS} after the value changes (never on the first render), and `shown`,
- * the value to DRAW, which trails a change by {@link GLIDE_START_MS} so a ring that appears
- * with the change still glides to it.
- * `recent` turns on in the very render that sees the change (React draws the component again
- * at once, before committing), so the bubble comes up in the same commit as the change that
- * raised it. Turned on from an effect, it cost a commit of its own on every count change.
- */
-export function useChangeFlash(value, ms = BUBBLE_RECENT_MS) {
-    const key = value == null ? '' : JSON.stringify(value);
-    // `next` is the value the glide moves `shown` to.
-    const [flash, setFlash] = useState(() => ({ key, recent: false, shown: value, next: value }));
-    if (flash.key !== key) {
-        setFlash({ key, recent: true, shown: flash.shown, next: value });
-    }
-    useEffect(() => {
-        if (!flash.recent) return undefined;
-        const at = flash.key;
-        const glide = setTimeout(() => setFlash(f => (f.key === at ? { ...f, shown: f.next } : f)), GLIDE_START_MS);
-        const done = setTimeout(() => setFlash(f => (f.key === at ? { ...f, recent: false } : f)), ms);
-        return () => { clearTimeout(glide); clearTimeout(done); };
-    }, [flash.key, flash.recent, ms]);
-    return { recent: flash.recent, shown: flash.shown ?? value };
-}
+const CHOOSE_KINDS = new Set([ALERT.CHOOSE_RECIPE, ALERT.CHOOSE_BUILD]);
+
+/** The disallow and demolition badges' size (`w-7 h-7`), and the gap in a row, in mat units. */
+const BADGE_U = 28;
+const ROW_GAP_U = 4;
 
 /**
- * TokenBubbles: a Token's bubbles, drawn inside its box (`bubbleSlot` places each).
- * - **Cycle** (bottom-left): the whole time a hero works the Token and it is not a fight. Fills
- * as the cycle runs; the number is seconds left, rounded up. Between engine ticks it moves on the
- * shared step clock (`onStep`: ten steps a second, every ring in the same frame), and goes back
- * to empty on `CYCLE_COMPLETE`. Blocked (`workedAlertOf`, the same test the centre mark uses):
- * grey, frozen, no number. The inspection's rings read the same cycle (`shareCycle`).
- * - **Charges** (bottom-right), **quest progress** (bottom-centre), **spawner count** (middle
- * row): for {@link BUBBLE_RECENT_MS} after the number changes, and while hovered. Their rings
- * glide when the number jumps.
- * - **Timer** (top-left, `TimerBubble`): a growing, turning or resting Token's countdown, hovered or in
- * its last seconds.
- * - **Gear** (middle row): always while a choice is needed (nothing chosen), otherwise hovered;
- * never while marked for demolition.
- * - **Disallow mark** (middle row): the whole time it is disallowed.
- * - **Demolition mark** (middle row): the whole time it is marked for demolition.
- * - **Stuck warning** (middle row): the whole time a spawner waits on an item or on room
- * (`SPAWNER_ALERT_CHANGED`, read once on mount); yellow for an item, red for no room.
- * - **Enemy health bar** (above the Token's box, not a bubble): in a fight (`PROGRESS` with
- * `combat: true`), and while an enemy is hovered. No cycle in a fight.
+ * TokenBubbles: what is drawn on a Token's box besides its art. The mat shows that something is
+ * happening and what is wrong, and no numbers (docs/active/concept_info_layers.md):
+ * - **Work bar** (`workBar.js`), along the foot: the whole time a hero works the Token and it is
+ * not a fight. Fills each cycle on the shared step clock; empty again on `CYCLE_COMPLETE`. Any
+ * engine alert on the worked Token stops the cycle, so the bar holds there, grey.
+ * - **Problem mark** (`ProblemMark`, the middle row): one, yellow while it waits (items, a Token
+ * beside it, charges, a choice) or red when it can't (no room, the cap, a hero who can't do the
+ * work); its hover says exactly what (`problemMark.js`). From the engine's alert, a spawner's
+ * stuck alert (`SPAWNER_ALERT_CHANGED`, read once on mount), or nothing chosen on a station.
+ * - **Disallow and demolition marks** (the middle row): the whole time they apply.
+ * - **The -1 / +50 floater**: whenever the charges change.
+ * - **Enemy health bar** (above the box): in a fight, and while an enemy is hovered.
+ * - **Hovered only**: the charges, quest and spawner rings, the timer ring (growing, turning,
+ * resting) and the recipe gear; the gear and the spawner ring in a row of their own.
+ * `isHovered` is the mat's rest (`useHoverRest`), not the bare hover: the pointer has stayed on
+ * the Token for a moment, so a sweep across the mat mounts none of these.
  * - While the Token is dragged: nothing.
- * Every bubble has a tooltip, and pressing one grabs the Token (`dragProps`).
- * The subscriptions are keyed on the Token and nothing else. Hovering, the alert, the hero and
- * the fresh `token` object the mat builds on every state change must not tear down the
- * subscriptions or stop the step: everything the handlers read lives in `liveRef`. They go
- * through `tokenEvents.js`, so every Token shares one bus subscription per event type. A ring
- * steps only while its cycle is live, never for an idle, blocked or fought Token.
+ * Pressing anything here that takes the pointer grabs the Token (`dragProps`).
+ * The subscriptions are keyed on the Token and nothing else: hovering, the alert, the hero and
+ * the fresh `token` object the mat builds on every state change must not tear them down or stop
+ * the bar; what the handlers read lives in `liveRef`. They go through `tokenEvents.js`, so every
+ * Token shares one bus subscription per event type.
  */
 export const TokenBubbles = ({
     instanceId = null,
@@ -108,6 +61,8 @@ export const TokenBubbles = ({
     isHovered = false,
     isDragging = false,
     boxPx = 128,
+    artPx = boxPx,
+    artUnit = 2,
     small = false,
     spawner = null,
     quest = null,
@@ -120,20 +75,12 @@ export const TokenBubbles = ({
     const typeId = token?.typeId ?? null;
     const hasHero = !!token?.heroId;
     const usesRemaining = token?.usesRemaining ?? null;
+    const alert = token?.alert ?? null;
+    // Every engine alert on a worked Token means its cycle is not running.
+    const blocked = hasHero && !!alert;
 
-    // Blocked exactly when the centre mark shows a worked problem. ⚠️ The live instance, not
-    // `token`: the slim projection has no recipe.
-    const missing = useMemo(
-        () => {
-            if (!hasHero || !instanceId) return NO_MISSING;
-            return getMissingRequirements(instanceId, BoardState.getTokenById(instanceId) ?? token);
-        },
-        [instanceId, token, hasHero]
-    );
-    const blocked = !!workedAlertOf({ hasHero, alert: token?.alert ?? null, missingType: missing.type });
-
-    // A fight shows HP, not a cycle. Guessed from the Token (an enemy) until
-    // the engine's first progress says otherwise.
+    // A fight shows HP, not a work bar. Guessed from the Token (an enemy) until the engine's
+    // first progress says otherwise.
     const [combat, setCombat] = useState(() => !!getTokenType(typeId)?.enemy);
     const [hp, setHp] = useState(null);
     const combatRef = useRef(combat);
@@ -143,72 +90,12 @@ export const TokenBubbles = ({
     const liveRef = useRef({ hasHero, blocked });
     liveRef.current = { hasHero, blocked };
 
-    const cycleRef = useRef(null);
-    const applyCurrentRef = useRef(null);
-    // Draws the cycle ring as it stands, at once: for a ring that (re)mounts mid-cycle, which
-    // would otherwise show empty until the next step.
-    const paintNowRef = useRef(null);
-    const setCycleRoot = useCallback((el) => {
-        cycleRef.current = el;
-        if (el) paintNowRef.current?.();
-    }, []);
+    const [bar] = useState(() => createWorkBar());
+    const barPlace = useMemo(() => workBarPlace(boxPx, artUnit, small, artPx), [boxPx, artUnit, small, artPx]);
+    const setBarRoot = useCallback((el) => bar.attach(el, barPlace.steps), [bar, barPlace.steps]);
 
     useEffect(() => {
         if (!instanceId) return undefined;
-
-        // The cycle as last told: `elapsed` at `stamp`. While `running` it moves on with the
-        // wall clock between engine ticks, up to `cycleTime`; stopped, it holds.
-        let running = false;
-        let elapsed = 0;
-        let stamp = 0;
-        let cycleTime = null;
-        // The shared step clock's unsubscribe while the ring runs.
-        let offStep = null;
-
-        const elapsedAt = (now) => (running && cycleTime
-            ? Math.min(cycleTime, elapsed + Math.max(0, now - stamp))
-            : elapsed);
-
-        // Write the ring only when what it draws changes (a ring held full or frozen writes
-        // nothing). A remounted ring always writes.
-        let lastKey = null;
-        let lastRoot = null;
-        const paint = (now) => {
-            const root = cycleRef.current;
-            const e = elapsedAt(now);
-            const f = cycleTime ? e / cycleTime : 0;
-            const text = liveRef.current.blocked ? '' : cycleSecondsText(e, cycleTime);
-            const key = `${Math.max(0, Math.min(1, f)).toFixed(3)}|${text}`;
-            if (root === lastRoot && key === lastKey) return;
-            lastRoot = root;
-            lastKey = key;
-            paintRing(root, f, text);
-        };
-        /** Any other write to the ring: the next step must write too. */
-        const paintOnce = (f, text) => {
-            lastRoot = null;
-            paintRing(cycleRef.current, f, text);
-        };
-        paintNowRef.current = () => {
-            lastRoot = null;
-            if (cycleTime && (running || liveRef.current.blocked)) paint(performance.now());
-        };
-
-        // ⚠️ While it runs, the ring is written on the shared step and nowhere else: an engine
-        // event only moves the model. So every ring on the mat changes in the same frame, ten
-        // times a second, and the frames between write nothing. Rings written on frames of
-        // their own would make nearly every frame of play restyle, repaint and re-layer the page.
-        const run = () => {
-            running = true;
-            if (!offStep) offStep = onStep(paint);
-        };
-        /** Hold the ring where the cycle stands now. */
-        const stop = () => {
-            elapsed = elapsedAt(performance.now());
-            running = false;
-            offStep?.();
-            offStep = null;
-        };
 
         const setFight = (on) => {
             if (combatRef.current === on) return;
@@ -218,7 +105,7 @@ export const TokenBubbles = ({
 
         const apply = (p) => {
             if (p?.combat) {
-                stop();
+                bar.freeze();
                 setFight(true);
                 const next = { cur: p.enemyHp, max: p.enemyMaxHp };
                 const prev = hpRef.current;
@@ -228,78 +115,44 @@ export const TokenBubbles = ({
                 }
                 return;
             }
-            // A plain cycle. A payload with no cycle time (promotion training,
-            // a reset) keeps the one it knew; with none known, no number.
+            // A plain cycle. A payload with no cycle time (promotion training, a reset) keeps the
+            // one the bar knew.
             if (p?.cycleTimeMs) setFight(false);
-            if (liveRef.current.blocked) return;   // frozen while blocked
-            if (p?.cycleTimeMs) cycleTime = p.cycleTimeMs;
-            elapsed = p?.elapsedMs != null
-                ? p.elapsedMs
-                : cycleTime ? ((p?.percent || 0) / 100) * cycleTime : 0;
-            stamp = performance.now();
-            if (!cycleTime) {
-                paintOnce((p?.percent || 0) / 100, '');
-                return;
-            }
-            if (liveRef.current.hasHero) run();
+            if (liveRef.current.blocked) return;   // held while blocked
+            bar.progress(p, liveRef.current.hasHero);
         };
 
         const onCycleComplete = () => {
             if (liveRef.current.blocked || combatRef.current) return;
-            elapsed = 0;
-            stamp = performance.now();
-            if (cycleTime && liveRef.current.hasHero) run();
-            else paintOnce(0, '');
-        };
-
-        const onTokenChanged = () => {
-            stop();
-        };
-
-        // Called on mount and whenever staffing or the block changes.
-        applyCurrentRef.current = () => {
-            const { hasHero: heroNow, blocked: blockedNow } = liveRef.current;
-            if (!heroNow) {
-                stop();
-                elapsed = 0;
-                if (hpRef.current) { hpRef.current = null; setHp(null); }
-                return;
-            }
-            if (blockedNow) {
-                // Frozen where it was; the number goes.
-                stop();
-                paintOnce(cycleTime ? elapsed / cycleTime : 0, '');
-            }
+            bar.complete(liveRef.current.hasHero);
         };
 
         const unsubs = [
             subscribeToken(BOARD_EVENTS.PROGRESS, instanceId, apply),
             subscribeToken(BOARD_EVENTS.CYCLE_COMPLETE, instanceId, onCycleComplete),
-            subscribeToken(BOARD_EVENTS.TILE_CHANGED, instanceId, onTokenChanged),
+            subscribeToken(BOARD_EVENTS.TILE_CHANGED, instanceId, () => bar.freeze()),
             shareCycle(instanceId, (now) => (
-                cycleTime && liveRef.current.hasHero && !combatRef.current
-                    ? { elapsedMs: elapsedAt(now), cycleMs: cycleTime }
-                    : null
+                liveRef.current.hasHero && !combatRef.current ? bar.read(now) : null
             ))
         ];
 
         return () => {
-            stop();
-            applyCurrentRef.current = null;
-            paintNowRef.current = null;
+            bar.reset();
             unsubs.forEach(u => u());
         };
-        // ⚠️ `instanceId` ONLY — everything else is read from refs.
-    }, [instanceId]);
+        // ⚠️ `instanceId` ONLY (the bar is this component's own): everything else is read from refs.
+    }, [instanceId, bar]);
 
+    // Staffing and the block: the hero gone, the bar starts over next time; blocked, it holds.
     useEffect(() => {
-        applyCurrentRef.current?.();
-    }, [instanceId, hasHero, blocked]);
+        if (!hasHero) {
+            bar.reset();
+            if (hpRef.current) { hpRef.current = null; setHp(null); }
+            return;
+        }
+        if (blocked) bar.freeze();
+    }, [instanceId, hasHero, blocked, bar]);
 
-    const startingUses = typeId ? tokenStartingUses(typeId) : null;
-    const hasCharges = usesRemaining != null;
-    const chargesFlash = useChangeFlash(hasCharges ? { n: usesRemaining, f: chargesFraction(usesRemaining, startingUses) } : null);
-    const questFlash = useChangeFlash(quest ? { text: quest.text, fraction: quest.fraction } : null);
     // The engine decides when a spawner is stuck and says so on the change; nothing polls.
     const [stuck, setStuck] = useState(() => (instanceId ? SpawnerSystem.spawnerAlertOf(instanceId) : null));
     useEffect(() => {
@@ -309,40 +162,57 @@ export const TokenBubbles = ({
             setStuck(p?.alert ? { alert: p.alert, needs: p.needs || [] } : null);
         });
     }, [instanceId]);
-    const spawnerFlash = useChangeFlash(spawner ? { text: spawner.text, fraction: spawner.fraction } : null);
 
-    // The cycle bubble, kept as the same element while nothing it draws from changes: the ring
-    // inside is written on the step clock, never by a render, and the Token redraws far more
-    // often than its tip, place or grey change.
-    const cycleTip = blocked ? BUBBLE_TIPS.cycleBlocked : BUBBLE_TIPS.cycle;
-    const cycleBubble = useMemo(() => (
-        <Bubble of={instanceId} kind="cycle" style={bubbleSlot('cycle', { boxPx, small })} tip={cycleTip} dragProps={dragProps}>
-            <RingBadge kind="cycle" rootRef={setCycleRoot} greyed={blocked} title={cycleTip} />
-        </Bubble>
-    ), [instanceId, boxPx, small, cycleTip, dragProps, setCycleRoot, blocked]);
+    // A marked Token runs no recipe, so there is nothing to choose.
+    const choose = gear?.pulsing && !marked ? (gear.isFoundation ? 'build' : 'recipe') : null;
+    const problem = useMemo(() => problemOf({ alert, spawner: stuck, choose }), [alert, stuck, choose]);
+    const problemTip = useCallback(() => problemText(problem, instanceId), [problem, instanceId]);
+    const problemClick = problem && CHOOSE_KINDS.has(problem.kind) ? gear?.onClick ?? null : null;
+
+    const chargesSlot = useMemo(() => bubbleSlot('charges', { boxPx, small }), [boxPx, small]);
+
+    // The bar, kept as the same element while nothing it draws from changes: its fill is
+    // written on the step clock, never by a render.
+    const workBar = useMemo(() => (
+        <div
+            ref={setBarRoot}
+            data-work-bar={instanceId || undefined}
+            data-work-bar-blocked={blocked ? 'true' : undefined}
+            aria-hidden="true"
+            className="gi-work-bar absolute z-20 pointer-events-none"
+            style={{ left: barPlace.left, top: barPlace.top, width: barPlace.width, height: barPlace.height }}
+        />
+    ), [setBarRoot, instanceId, blocked, barPlace]);
 
     if (isDragging) return null;
 
     const fight = hasHero && combat;
-    const showCycle = hasHero && !fight;
-    const showCharges = hasCharges && (isHovered || chargesFlash.recent) && !!chargesFlash.shown;
-    const showQuest = !!quest && (isHovered || questFlash.recent) && !!questFlash.shown;
-    const showSpawner = !!spawner && (isHovered || spawnerFlash.recent) && !!spawnerFlash.shown;
+    const showWork = hasHero && !fight;
+    const hasCharges = usesRemaining != null;
+    const showCharges = hasCharges && isHovered;
+    const showQuest = !!quest && isHovered;
+    const showSpawner = !!spawner && isHovered;
     // The bar's numbers: the fight's, else a full enemy (an enemy nobody fights is whole).
     const barHp = hp ?? (enemyHp ? { cur: enemyHp, max: enemyHp } : null);
-    const showBar = (fight || (isHovered && !!enemyHp)) && !!barHp && barHp.max > 0;
-    // A marked Token runs no recipe, so there is nothing to choose.
-    const showGear = !!gear?.show && !marked && (gear.pulsing || isHovered);
-    const showStuck = !!stuck?.alert;
-    const showMiddle = showGear || showSpawner || showStuck || disallowed || marked;
-    const slot = (name) => bubbleSlot(name, { boxPx, small });
+    const showHp = (fight || (isHovered && !!enemyHp)) && !!barHp && barHp.max > 0;
+    const showGear = !!gear?.show && !marked && isHovered;
+    const showRest = !!problem || disallowed || marked;
+    const showHoverRow = showGear || showSpawner;
+    const startingUses = hasCharges && typeId ? tokenStartingUses(typeId) : null;
+    // ⚠️ The hover row never shares the marks' row: inserted beside them it would slide the mark
+    // out from under the pointer the moment the pointer reached it. With marks showing it sits
+    // just above them; alone, at the centre.
+    const restHalf = Math.max(PROBLEM_MARK_ART_PX * artUnit, BADGE_U) / 2;
+    const hoverRowStyle = showRest
+        ? { left: 0, width: boxPx, top: boxPx / 2 - restHalf - ROW_GAP_U, transform: 'translateY(-100%)', gap: ROW_GAP_U }
+        : { left: 0, width: boxPx, top: boxPx / 2, transform: 'translateY(-50%)', gap: ROW_GAP_U };
 
     return (
         <>
-            {readTimer && (
-                <TimerBubble read={readTimer} hovered={isHovered} boxPx={boxPx} small={small} dragProps={dragProps} />
+            {readTimer && isHovered && (
+                <TimerBubble read={readTimer} boxPx={boxPx} small={small} dragProps={dragProps} />
             )}
-            {showBar && (
+            {showHp && (
                 <HealthBar
                     who="enemy"
                     of={instanceId}
@@ -353,11 +223,11 @@ export const TokenBubbles = ({
                 />
             )}
 
-            {showMiddle && (
+            {showHoverRow && (
                 <div
-                    data-bubble-row="middle"
+                    data-bubble-row="hover"
                     className="absolute z-20 flex items-center justify-center pointer-events-none"
-                    style={{ left: 0, width: boxPx, top: boxPx / 2, transform: 'translateY(-50%)', gap: 4 }}
+                    style={hoverRowStyle}
                 >
                     {showGear && (
                         <div {...dragProps} className="relative shrink-0 pointer-events-auto">
@@ -371,18 +241,20 @@ export const TokenBubbles = ({
                     )}
                     {showSpawner && (
                         <Bubble of={instanceId} kind="spawner" inline tip={BUBBLE_TIPS.spawner(spawner.text)} dragProps={dragProps}>
-                            <RingBadge
-                                kind="spawner"
-                                fraction={spawnerFlash.shown.fraction}
-                                text={spawnerFlash.shown.text}
-                                title={BUBBLE_TIPS.spawner(spawner.text)}
-                            />
+                            <RingBadge kind="spawner" fraction={spawner.fraction} text={spawner.text} title={BUBBLE_TIPS.spawner(spawner.text)} />
                         </Bubble>
                     )}
-                    {showStuck && (
-                        <Bubble of={instanceId} kind="stuck" inline tip={BUBBLE_TIPS.stuck(stuck)} dragProps={dragProps}>
-                            <StuckBadge noRoom={stuck.alert !== ALERT.SPAWN_NEEDS_ITEM} matFull={stuck.alert === ALERT.SPAWN_MAT_FULL} title={BUBBLE_TIPS.stuck(stuck)} />
-                        </Bubble>
+                </div>
+            )}
+
+            {showRest && (
+                <div
+                    data-bubble-row="middle"
+                    className="absolute z-20 flex items-center justify-center pointer-events-none"
+                    style={{ left: 0, width: boxPx, top: boxPx / 2, transform: 'translateY(-50%)', gap: ROW_GAP_U }}
+                >
+                    {problem && (
+                        <ProblemMark problem={problem} tip={problemTip} artUnit={artUnit} dragProps={dragProps} onClick={problemClick} />
                     )}
                     {marked && (
                         <Bubble of={instanceId} kind="marked" inline tip={BUBBLE_TIPS.marked} dragProps={dragProps}>
@@ -397,49 +269,29 @@ export const TokenBubbles = ({
                 </div>
             )}
 
-            {showCycle && cycleBubble}
+            {showWork && workBar}
             {showQuest && (
-                <Bubble of={instanceId} kind="quest" style={slot('quest')} tip={BUBBLE_TIPS.quest(quest.text)} dragProps={dragProps}>
+                <Bubble of={instanceId} kind="quest" style={bubbleSlot('quest', { boxPx, small })} tip={BUBBLE_TIPS.quest(quest.text)} dragProps={dragProps}>
+                    <RingBadge kind="quest" fraction={quest.fraction} text={quest.text} title={BUBBLE_TIPS.quest(quest.text)} />
+                </Bubble>
+            )}
+            {showCharges && (
+                <Bubble of={instanceId} kind="charges" style={chargesSlot} tip={BUBBLE_TIPS.charges(usesRemaining)} dragProps={dragProps}>
                     <RingBadge
-                        kind="quest"
-                        fraction={questFlash.shown.fraction}
-                        text={questFlash.shown.text}
-                        title={BUBBLE_TIPS.quest(quest.text)}
+                        kind="charges"
+                        fraction={chargesFraction(usesRemaining, startingUses)}
+                        text={ringCount(usesRemaining)}
+                        title={BUBBLE_TIPS.charges(usesRemaining)}
                     />
                 </Bubble>
             )}
-            {/**
-             * The -1 / +50 floater always lives in the charges slot (bubble shown or not), so a
-             * change that makes the bubble appear does not remount it and lose the number. A
-             * Token with no charges floats it from the corner instead.
-             */}
-            {hasCharges ? (
-                <div
-                    data-bubble-slot="charges"
-                    className="absolute z-20 pointer-events-none"
-                    style={{ ...slot('charges'), width: RING_D_U, height: RING_D_U }}
-                >
-                    {showCharges && (
-                        <Bubble
-                            of={instanceId}
-                            kind="charges"
-                            style={{ left: 0, top: 0 }}
-                            tip={BUBBLE_TIPS.charges(usesRemaining)}
-                            dragProps={dragProps}
-                        >
-                            <RingBadge
-                                kind="charges"
-                                fraction={chargesFlash.shown.f}
-                                text={ringCount(chargesFlash.shown.n)}
-                                title={BUBBLE_TIPS.charges(usesRemaining)}
-                            />
-                        </Bubble>
-                    )}
-                    <TokenChargeDeltaFloater instanceId={instanceId} anchor="ring" atRest={!hasHero} />
-                </div>
-            ) : (
-                <TokenChargeDeltaFloater instanceId={instanceId} anchor="corner" atRest={!hasHero} />
-            )}
+            {/* Last, so showing a ring never moves it: a number in flight is not lost. */}
+            <TokenChargeDeltaFloater
+                instanceId={instanceId}
+                anchor={hasCharges ? 'ring' : 'corner'}
+                slot={hasCharges ? chargesSlot : null}
+                atRest={!hasHero}
+            />
         </>
     );
 };

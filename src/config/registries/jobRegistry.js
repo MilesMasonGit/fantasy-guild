@@ -16,7 +16,7 @@ import {
  * re-training across branches, swaps) class skills:
  *
  * ```
- * RECRUIT        9 Starting · no combat skill · cannot fight            (9)
+ * RECRUIT        9 Starting · no combat skill · fights as level 1       (9)
  *    │  promote    +1 combat  +1 advanced
  *    ▼
  * BASIC CLASS    9 Starting · 1 combat · 1 advanced                    (11)
@@ -77,7 +77,7 @@ export const JOBS = {
     // === Tier 0 ==========================================================
     recruit: {
         id: 'recruit', name: 'Recruit', tier: JOB_TIERS.RECRUIT, parent: null,
-        description: 'Wide and shallow — a little of everything, badly. Cannot fight.',
+        description: 'Wide and shallow — a little of everything, badly, fighting included.',
         icon: '🧑',
         skills: [...STARTING_SKILL_IDS]
     },
@@ -233,8 +233,8 @@ export function getJobMasterSkill(jobId) {
     return getJobSkillsByLayer(jobId, SKILL_LAYERS.MASTER)[0] || null;
 }
 
-/** Whether a hero on this job can fight at all. */
-export function jobCanFight(jobId) {
+/** Whether this job grants a combat skill (every job but the Recruit). */
+export function jobHoldsCombatSkill(jobId) {
     return getJobCombatSkill(jobId) !== null;
 }
 

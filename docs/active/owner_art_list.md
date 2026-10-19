@@ -69,11 +69,34 @@ player for these is T-138 (built when the first strips exist).
   [concept_info_layers.md](concept_info_layers.md)): the full-art backdrop
   behind a Token's card. One per Starting skill and trade (mining, forestry,
   farming, cooking, smithing and the rest); a Token can also name its own
-  picture in the CMS. Exists today: one fishing scene and four stations in
+  picture in the CMS (Token editor, **Card art**). Exists today: one fishing scene and four stations in
   `public/assets/backgrounds/`.
+  - **In use since brief 120 C3**: fishing (`skills/b_fishing`), mining
+    (`cards/b_mine`), smithing (`station/b_smithy`), cooking
+    (`station/b_kitchen`). A spawner uses the scene of what it spawns.
+  - **Missing, so those cards are plain**: forestry, farming, crafting,
+    commerce, construction, and one for fights (enemies). Name a new one
+    `backgrounds/skills/b_<skill>.png` (`b_forestry.png`) and the game picks
+    it up for that skill with no code change.
 - **Small UI icons** for the card's lines and the mat (NEW; placeholders until
-  drawn): clock (cycle time), charges, regrow, spawn, grow, the problem mark
+  drawn): clock (cycle time), charges, regrow, spawn, grow, turn, the problem mark
   ("!", recoloured yellow and red in code).
+  - **The card's icons are on the card now** (brief 120 C3), 8 × 8 drawn at
+    2×, in the text colour. The placeholders are drawn in code
+    (`PixelGlyph`; the style sheet page shows them under "Card icons").
+    **Turn** (a Token that may turn into another) joins the list.
+  - **The problem mark is on the mat now** (brief 120 C1), 16 × 16, drawn at
+    the Token's own pixel size at a Token's centre with a hard black shadow.
+    The placeholder is today's `ui/u_alert_yellow.png` and `ui/u_alert_red.png`;
+    a new single "!" replaces both.
+- **Map mode cursors** (NEW, [concept_map_tools.md](concept_map_tools.md)):
+  the cursor over a Token in Disallow mode (muted grey) and in Demolish mode
+  (red); about 11 × 11, drawn at 2×. Code-drawn placeholders (a crossed
+  circle, an X) stand in until then.
+- **Top bar icons** (NEW, [concept_map_tools.md](concept_map_tools.md)): a
+  Token icon (Tokens 45/128) and an upkeep icon (Upkeep 2/min), and one for
+  the Region name if wanted; shown at 16 px in the bar's item bars.
+  Placeholders until drawn: the tree, coins and pennant from `public/assets/ui/`.
 - **Log button icon** (NEW, [concept_notifications.md](concept_notifications.md)):
   a notepad or scroll, top right of the screen; placeholder until drawn.
 - **Night-sky backdrop for the Hall screen** (**HAVE**, 2026-10-15:

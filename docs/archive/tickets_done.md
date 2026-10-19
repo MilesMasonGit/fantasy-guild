@@ -60,3 +60,15 @@ T-183 — Floor loot lands on its spot and draws crisp; piles no longer jump int
 T-184 — The dev panel's Scatter Loot button throws real items — bf57730c — 2026-10-15
 T-188 — Sync to Game lists the content it would remove or bring back and asks first, offering Restore from Game — 1873d62f — 2026-10-17
 T-190 — The event-publisher scan test gets a 20 s timeout (slow only under load) — 2a6ee4d9 — 2026-10-17
+T-159 — The style sheet page (QA → Style Sheet): every standard UI piece live, shared and new-unapproved groups; colour meanings as CSS variables — 3016df8b — 2026-10-18
+T-160 — One shared arrow-bar scroll list (ArrowScrollList) for the Shop, Inspect column, Token pop-up and Guild upgrade ranks — 3016df8b — 2026-10-18
+T-161 — Title/body/small/display text-size classes reading the Text size setting (panels move onto them as touched) — 3016df8b — 2026-10-18
+T-164 — Work Permissions: launcher, square centred cells, one Combat column with priorities, purpose tooltips — 3016df8b — 2026-10-18
+T-156 — Hero panel tidy: Requires <class> on locked skills, Work Rules link gone, close X at sprite size — 3016df8b — 2026-10-18
+T-177 — The level-up moment: icon and rolling number above the hero, side by side, after time away — 3016df8b — 2026-10-18
+T-149 — Hero bar alerts read [level] [skill]! with wheel paging and pixel arrows — 3016df8b — 2026-10-18
+T-178 — The shine on Upgrade and Settle (refinement in T-191) — 3016df8b — 2026-10-18
+T-165 — Starter Camp Tokens are fixtures: no drag, push or demolish; the dev layout tool lifts them — 3016df8b — 2026-10-18
+T-166 — Demolish mode beside Disallow mode: banners, mode outlines and cursors, protected Tokens dim with the reason, shift-click a type, Cancel all marks — 3016df8b — 2026-10-18
+T-170 — Top bar restyle: studded pixel frame, Region name, Tokens and Upkeep item bars, mode banner, toggles — 3016df8b — 2026-10-18
+T-167 — Everyone fights: a Recruit fights as level 1, no combat XP until promotion; hostiles watch the flag, the same on every side (work change accepted) — 3016df8b — 2026-10-18

@@ -9,9 +9,8 @@ wave's living table and the morning/evening summaries are
 ## Next
 
 0. **Features director** ([HANDOFF_features.md](HANDOFF_features.md)): briefs
-   100, 140, 110 and 120 and the Recruits' fight are built on a stack of
-   branches, waiting for the bench and the owner's eye-check on
-   http://localhost:5198/; next 170 quest boards, 130 recipe list.
+   100, 140, 110 and 120 and everyone-fights merged 2026-10-18; next 170 quest
+   boards, 130 recipe list; timing and draw benches owed in a quiet window.
 
 1. **The art pass continues** ([HANDOFF.md](HANDOFF.md)): the owner's look at
    the ground structure (brief 180 G1, on `crunch/ground-g1`), then the Studio

@@ -48,21 +48,6 @@
       "port": 5195
     },
     {
-      "name": "eyecheck",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": [
-        "--prefix",
-        ".claude/worktrees/ec",
-        "run",
-        "dev",
-        "--",
-        "--port",
-        "5198",
-        "--strictPort"
-      ],
-      "port": 5198
-    },
-    {
       "name": "g6-blends",
       "runtimeExecutable": "npm",
       "runtimeArgs": [

@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import { getSkill, getSkillIdsByLayer, SKILL_LAYERS } from '../../../config/registries/skillRegistry.js';
 import { isMastered, MASTERY_LEVEL } from '../../../systems/hero/PromotionSystem.js';
+import { getAllJobIds, getJob, grantsOf } from '../../../config/registries/jobRegistry.js';
 import { getXpProgress, xpForLevel } from '../../../utils/XPCurve.js';
 
 /** The panel's one list: combat, then the Starting skills, then the specialist layers. */
@@ -39,6 +40,22 @@ export function heroSkillList(hero) {
         bankedRows: all.filter(id => banked[id] && !held[id]).map(id => ({ ...row(id, banked[id]), mastered: false })),
         lockedRows: all.filter(id => !held[id] && !banked[id]).map(id => ({ ...row(id, null), mastered: false }))
     };
+}
+
+/**
+ * The classes whose promotion grants `skillId`, in the job list's order: a basic class that has
+ * it, and any master class that adds it from another branch.
+ */
+export function classesGranting(skillId) {
+    return getAllJobIds().filter(id => getJob(id)?.parent && grantsOf(id).includes(skillId)).map(id => getJob(id).name);
+}
+
+/** A locked skill's tooltip line: `Requires Ranger.`, or `Requires Wizard, Paladin or Beastmaster.` */
+export function requiresText(skillId) {
+    const names = classesGranting(skillId);
+    if (names.length === 0) return 'Not on this hero’s job.';
+    const list = names.length === 1 ? names[0] : `${names.slice(0, -1).join(', ')} or ${names[names.length - 1]}`;
+    return `Requires ${list}.`;
 }
 
 /** `25/99`: the panel's level text. */

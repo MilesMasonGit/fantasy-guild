@@ -46,12 +46,14 @@ export const SKILLS = {
     mining: {
         id: 'mining', name: 'Mining', layer: SKILL_LAYERS.STARTING,
         description: 'Extracting ore, stone and gems from veins and quarries.',
+        purpose: 'Mines ore, stone and gems from veins, for Smithing, Crafting and Construction.',
         icon: '⛏️',
         sprite: 'assets/skills/s_mining.png'
     },
     forestry: {
         id: 'forestry', name: 'Forestry', layer: SKILL_LAYERS.STARTING,
         description: 'Felling trees for timber, sap and bark.',
+        purpose: 'Fells trees for logs, sap and bark, for Construction, Crafting and fuel.',
         icon: '🪓',
         // ⚠️ The art kept its Logging file name when the skill was renamed.
         sprite: 'assets/skills/s_logging.png'
@@ -59,40 +61,47 @@ export const SKILLS = {
     fishing: {
         id: 'fishing', name: 'Fishing', layer: SKILL_LAYERS.STARTING,
         description: 'Working ponds, rivers and deep water for fish and salvage.',
+        purpose: 'Catches fish and finds from the water, for Cooking and Crafting.',
         icon: '🎣',
         sprite: 'assets/skills/s_fishing.png'
     },
     smithing: {
         id: 'smithing', name: 'Smithing', layer: SKILL_LAYERS.STARTING,
         description: 'Smelting ore into bars, and forging tools and weapons.',
+        purpose: 'Smelts ingots and forges tools, weapons and metal armour for heroes.',
         icon: '🔨',
         sprite: 'assets/skills/s_smithing.png'
     },
     crafting: {
         id: 'crafting', name: 'Crafting', layer: SKILL_LAYERS.STARTING,
         description: 'Assembling wood, leather and fibre into gear and containers.',
+        purpose: 'Makes rope, cloth, glass, leather gear and the everyday parts other skills need.',
         icon: '🪡',
         sprite: 'assets/skills/s_crafting.png'
     },
     cooking: {
         id: 'cooking', name: 'Cooking', layer: SKILL_LAYERS.STARTING,
         description: 'Preparing meals and curative broths that keep heroes working.',
+        purpose: 'Cooks food and drinks that heal heroes in fights.',
         icon: '🍳',
         sprite: 'assets/skills/s_cooking.png'
     },
     farming: {
         id: 'farming', name: 'Farming', layer: SKILL_LAYERS.STARTING,
         description: 'Planting and harvesting crops and fruit.',
+        purpose: 'Plants and harvests crops, fruit, herbs and saplings, for Cooking, Alchemy and Forestry.',
         icon: '🌾'
     },
     alchemy: {
         id: 'alchemy', name: 'Alchemy', layer: SKILL_LAYERS.STARTING,
         description: 'Compounding reagents into potions, salves and flasks.',
+        purpose: 'Brews potions heroes use in fights and at work.',
         icon: '🧪'
     },
     construction: {
         id: 'construction', name: 'Construction', layer: SKILL_LAYERS.STARTING,
         description: 'Building stations on Foundations.',
+        purpose: 'Builds stations and buildings on Foundations, and takes down marked Tokens.',
         icon: '🧱'
     },
 
@@ -188,6 +197,21 @@ export const SKILLS = {
         icon: '🌑'
     }
 };
+
+/**
+ * What the Work Permissions Combat column is for. Combat is one rule, not a skill (a hero fights
+ * with whichever combat skill they hold), so its line lives here rather than on a skill.
+ */
+export const COMBAT_PURPOSE = 'Fights enemies within the hero’s reach for loot, Maps and combat XP.';
+
+/**
+ * A skill's one line for a Work Permissions header: its `purpose` (what it does and what it
+ * feeds), else its `description` for the placeholder skills that have no purpose yet.
+ */
+export function skillPurpose(skillId) {
+    const skill = SKILLS[skillId];
+    return skill ? (skill.purpose || skill.description || null) : null;
+}
 
 /** Every skill id, in registry order. */
 export function getAllSkillIds() {
