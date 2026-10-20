@@ -13,6 +13,14 @@ banners), **T-174** (camera moves).*
 
 ## The view
 
+- **Owner, 2026-10-20 (supersedes the lines below where they differ)**: the
+  book is the owner's sprite `playmat/atlas_book_gold.png` (128 px, the
+  right page; **mirrored for the left page**), drawn at **4×**. The Atlas
+  and Cartography UI sit **inside the pages**. **The playmat and the book
+  both rest on the wood table**; opening the Atlas is **a camera move, the
+  player looking away from the playmat up to the book** on the same table;
+  closing looks back down. Built as T4 (engineer) after the book art.
+
 - **The camera tilts down from the mat onto the cartographer's map table**
   (D6), where **a giant tome lies open**; the table's edge and props (a
   candle, a compass) peek around it. Quick (under a second), skippable, with a

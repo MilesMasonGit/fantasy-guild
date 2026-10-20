@@ -28,6 +28,19 @@ Region name).
   terrain director's files); the banner slice on the top bar, the arrival
   card on travel, the banner behind the layout preview.
 
+## T1b — The owner's book (owner, 2026-10-20)
+
+- **Change:** the code-drawn book becomes `playmat/atlas_book_gold.png` at
+  4×, mirrored for the left page; the Cartography and Regions UI fitted
+  inside the pages; ribbons on the book's top edge.
+
+## T4a — The camera move to the Atlas (owner, 2026-10-20; engineer)
+
+- **Change:** the playmat and the book rest on one wood table; opening the
+  Atlas glides the camera up from the mat to the book, closing glides back;
+  quick, skippable, reduced motion respected. `bench:draw --compare`
+  cost-log line. (The Hall sky's tilt, T3/T4, stays for later.)
+
 ## T3 — The Hall's sky (T-171, builder)
 
 - **Change:** as "The look of the sky" says, including the two drifting

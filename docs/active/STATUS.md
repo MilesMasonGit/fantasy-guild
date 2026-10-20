@@ -5,6 +5,18 @@ five-line summary at each batch's edges (proposed, looked at); anything older
 than two days is trimmed. States: queued · building · ready (tests, cycles,
 build green) · bench-queued · eye-check · merged.*
 
+## Features director, batch 6: the Atlas tome, first half (owner 2026-10-20; quest board postponed by the owner)
+
+*T1 then T2 on one branch, one eye-check after T2. The flaky-test fix runs
+alongside. Banners without a CMS pick default by the Region's main biome
+(owner, 2026-10-20).*
+
+| Phase | Tier | Branch (worktree) | State | Planned | Done |
+|---|---|---|---|---|---|
+| Brief 160 T1: the Atlas as a tome (~90 % of the window), bookmark tabs and page turn, Cartography over both pages, drag maps to slots (T-172) | builder | `crunch/atlas-tome` (`at`) | ready (d1a0ed96; director's gate: 5511 tests, cycles, build; no `src/systems` touched; QA → Atlas → Grant test maps for the eye-check). Look questions: Regions or Cartography first; dark panels over the pages; Reroll/Cancel as framed text buttons | Tue | Tue |
+| Brief 160 T2: Region rows on area banners, Travel and the … menu, CMS banner field, top bar slice, arrival card, preview backdrop (T-173) | builder | `crunch/atlas-tome` (`at`) | building | Tue | |
+| Flaky loot-landing test (T-192) | builder-lite | `fix/t192-flaky-loot-test` (`fx`) | merged (2aa314e8, test-only: -0 vs +0 compared with toBeCloseTo; 15 lone runs green, suite 5500) | Tue | Tue |
+
 ## Features director, batch 5: the recipe list and notifications
 
 **All of this batch merged to `main` 2026-10-20 (9fa5572e), owner eye-check ok ("The tick is enough, no flash needed. Go ahead and merge."). Work check owed at 13:00 on `main`.** (owner 2026-10-19 chose this; build starts when the owner's token budget resets)
@@ -168,6 +180,13 @@ T-186; the badges' soft shadows are settled inside T-013.)
 8. Terrain director: **bench baseline retake** on `main` at the next 01:00 window (engine and draw; every run since 16 Oct reads 10-20 % slow on unchanged code).
 
 ## Summaries
+
+**Tue 2026-10-20, morning: batch 6 proposed and ruled.** Where we are:
+batch 5 (recipe list, notifications) merged to `main` 9fa5572e on the
+owner's word; the quest board was interviewed, written (brief 170) and
+postponed by the owner. Next: the Atlas tome T1 then T2, the flaky test
+alongside; batch 5's work check and draw compare at 13:00. Owner: nothing
+until the eye-check. Blockers: none.
 
 **Tue 2026-10-20, 07:30: batch 5, fourth look.** Where we are: the owner
 okayed the recipe list and banners; the item stubs went through three looks
