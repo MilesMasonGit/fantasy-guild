@@ -13,8 +13,8 @@ alongside. Banners without a CMS pick default by the Region's main biome
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| Brief 160 T1: the Atlas as a tome (~90 % of the window), bookmark tabs and page turn, Cartography over both pages, drag maps to slots (T-172) | builder | `crunch/atlas-tome` (`at`) | building | Tue | |
-| Brief 160 T2: Region rows on area banners, Travel and the … menu, CMS banner field, top bar slice, arrival card, preview backdrop (T-173) | builder | `crunch/atlas-tome` (`at`) | queued after T1 | Tue | |
+| Brief 160 T1: the Atlas as a tome (~90 % of the window), bookmark tabs and page turn, Cartography over both pages, drag maps to slots (T-172) | builder | `crunch/atlas-tome` (`at`) | ready (d1a0ed96; director's gate: 5511 tests, cycles, build; no `src/systems` touched; QA → Atlas → Grant test maps for the eye-check). Look questions: Regions or Cartography first; dark panels over the pages; Reroll/Cancel as framed text buttons | Tue | Tue |
+| Brief 160 T2: Region rows on area banners, Travel and the … menu, CMS banner field, top bar slice, arrival card, preview backdrop (T-173) | builder | `crunch/atlas-tome` (`at`) | building | Tue | |
 | Flaky loot-landing test (T-192) | builder-lite | `fix/t192-flaky-loot-test` (`fx`) | merged (2aa314e8, test-only: -0 vs +0 compared with toBeCloseTo; 15 lone runs green, suite 5500) | Tue | Tue |
 
 ## Features director, batch 5: the recipe list and notifications
