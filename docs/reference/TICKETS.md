@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-194**
+**Next free number: T-195**
 
 ---
 
@@ -182,6 +182,7 @@ first, when content that uses it is authored.*
 | T-091 | Stage 3 | Tokens teleport; mat size is dev tuning. | CR3-565 |
 | T-092 | design | The free-playmat plan's "Map stays unopened" overflow rule (FP-46) is unbuilt; overflow drops as loot. | FMR |
 | T-100 | before release | Master volume defaults to 0 so the owner can work in silence; set an audible default before shipping. | GDD §16.10 |
+| T-194 | P3 | open | **Reuse the camera glide for the Guild Hall upgrade screen** (owner 2026-10-20): the glide from the mat up a shared wood table to the Atlas book was built (brief 160 T4a: `AtlasCamera.jsx`, one transform on one wrapper, skippable, reduced motion swaps; the mat never re-renders) and set aside when the Atlas became a pop-up. Kept at git tag `atlas-camera-move` (7a678567). Bring it back when the upgrade screen is built. | brief 160 T4a |
 | T-193 | P3 | open | **A notification log** (owner 2026-10-19: low priority, build only if it proves needed; [concept_notifications.md](../active/concept_notifications.md) "Later: the log"): opens as a modal; plain-text rows like the item stubs, no sprite; a new-items dot, no count. Builder. Eye-check. | brief 150 |
 | T-186 | P3 | open | **Equipping by drop opens the hero sheet one frame after the drop** (owner 2026-10-15): today the sheet opens inside the drop's own frame, the heaviest drop in the game (~240 renders, found in P2-9). Open it in a transition one frame later, as brief 60 D3 did for the Shop list and the toasts; no visible difference. builder-lite. | P2-9 |
 | T-187 | P3 | open | **Flag drags on a full board sometimes pick up a neighbouring hero's flag or a Token** (drag bench, cap128 at 4×, 2026-10-15 night: 1–2 in 100 drags, the same before and after the placing grid, so not caused by it). Find out whether it is overlapping flags under the pointer (expected; then teach the bench to pick a clear flag) or a hit-test bug in the game. Engineer, read-only first. | Drag pair for terrain T4 |

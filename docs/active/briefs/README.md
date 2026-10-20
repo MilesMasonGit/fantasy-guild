@@ -35,6 +35,7 @@ multiple choice at wave start.
 | 18 | ~~[170 The quest board](170_quest_boards.md)~~ **postponed** (owner 2026-10-20: written, not built until later mechanics settle what quests are for) | 13, 14, 16 | yes |
 | 19 | [180 Ground structure](180_ground_structure.md): tint pattern, organic earth, grouped props, the owner's edge pieces | 10 | yes |
 | 19b | [190 Playmat style](190_playmat_style.md): Clean ground at 2×, quieter decorations, darker rim, shadows, ambient life | 19, 12, 13 (P2) | yes, per phase |
+| 19c | [200 CMS change packs](200_cms_change_packs.md): agents author content for the owner to review (T-133); first pack: the starting maps | — | yes (CMS) |
 | 20 | [90 Performance Envelope](90_performance_envelope.md) | 10–19 | — |
 
 Order ruled by the owner 2026-10-07: UI phases that don't touch skills first,

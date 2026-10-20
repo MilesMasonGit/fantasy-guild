@@ -41,6 +41,23 @@ Region name).
   quick, skippable, reduced motion respected. `bench:draw --compare`
   cost-log line. (The Hall sky's tilt, T3/T4, stays for later.)
 
+## T5 — The book and Regions, reworked (owner, 2026-10-20; builder)
+
+- **Change:** the book always at 4×; the section tabs down the book's left
+  side, drawn as if coming out from between the pages; Region rows with only
+  the banner, the names, Travel and "…", the current Region marked by the
+  hero flag sprite (no Token pills, count, heroes or settle day). See the
+  concept's "The Atlas UI rework".
+
+## T6 — Cartography as a crafting table (owner, 2026-10-20; engineer for the preview)
+
+- **Change:** left page, the map collection as a grid of 64 px map sprites
+  with counts (mixed Base Maps and Modifiers, any slot takes any map); right
+  page, 4 map-outline slots, the preview as a tiny real map (ground colours,
+  water, mini Token sprites; drawn only while open), the contents as Token
+  sprites with counts, Reroll and Settle. Map sprites from each map item's
+  CMS sprite field. `bench:draw --compare` for the preview's cost.
+
 ## T3 — The Hall's sky (T-171, builder)
 
 - **Change:** as "The look of the sky" says, including the two drifting
