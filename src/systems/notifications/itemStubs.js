@@ -24,7 +24,7 @@ export const FADE_MS = 5 * 60 * 1000;
 export const FADE_OUT_MS = 1000;
 
 /** How long a cleared stub is drawn sliding out before it goes. */
-export const LEAVE_MS = 300;
+export const LEAVE_MS = 320;
 
 /** How long after it appears a stub still slides in when drawn (it is first drawn up to {@link EMIT_MS} late). */
 export const ARRIVE_MS = 600;
@@ -34,7 +34,7 @@ export const EMIT_MS = 250;
 
 let clock = () => Date.now();
 
-/** itemId -> stub, in the order the stubs first appeared. */
+/** itemId -> stub. Their order on screen is `slot` and `pinSlot` ({@link getStubs}). */
 const stubs = new Map();
 /** Items found for the first time whose stub has not been made yet. */
 const pendingNew = new Set();
@@ -74,9 +74,20 @@ export function getVersion() {
     return version;
 }
 
+/**
+ * Where stubs sit, kept calm: a new stub joins the bottom (`slot` counts up), an unpinned one goes
+ * to the top of the unpinned stubs (counts down), a new pin goes to the bottom of the pins.
+ * Nothing else reorders.
+ */
+let lastSlot = 0;
+let firstSlot = 0;
+let lastPinSlot = 0;
+
 function freshStub(itemId, now) {
     return {
         itemId,
+        slot: ++lastSlot,
+        pinSlot: 0,
         added: 0,
         removed: 0,
         firstAt: now,
@@ -135,12 +146,12 @@ export const netOf = (stub) => (stub ? stub.added - stub.removed : 0);
 
 /**
  * The stubs as the column draws them: pinned ones first, in the order they were pinned, then the
- * rest, the newest arrival on top.
+ * rest, the newest arrival at the bottom and the most recently unpinned at the top.
  */
 export function getStubs() {
     const all = [...stubs.values()];
-    const pinned = all.filter(s => s.pinned).sort((a, b) => a.pinnedAt - b.pinnedAt);
-    const rest = all.filter(s => !s.pinned).reverse();
+    const pinned = all.filter(s => s.pinned).sort((a, b) => a.pinSlot - b.pinSlot);
+    const rest = all.filter(s => !s.pinned).sort((a, b) => a.slot - b.slot);
     return [...pinned, ...rest];
 }
 
@@ -209,7 +220,7 @@ export function pin(itemId) {
     const s = stubs.get(itemId);
     if (!s || s.pinned || s.leaving) return;
     const now = clock();
-    stubs.set(itemId, { ...s, pinned: true, pinnedAt: now, fading: false, lastChangedAt: now });
+    stubs.set(itemId, { ...s, pinned: true, pinnedAt: now, pinSlot: ++lastPinSlot, fading: false, lastChangedAt: now });
     emitNow();
 }
 
@@ -217,7 +228,7 @@ export function pin(itemId) {
 export function unpin(itemId) {
     const s = stubs.get(itemId);
     if (!s || !s.pinned) return;
-    stubs.set(itemId, { ...s, pinned: false, pinnedAt: null, lastChangedAt: clock() });
+    stubs.set(itemId, { ...s, pinned: false, pinnedAt: null, slot: --firstSlot, lastChangedAt: clock() });
     emitNow();
 }
 
@@ -247,7 +258,6 @@ export function serializePins() {
 export function loadPins(list) {
     if (!Array.isArray(list)) return;
     const now = clock();
-    let order = 0;
     for (const p of list) {
         if (!p || typeof p.itemId !== 'string' || !p.itemId) continue;
         const added = Number.isFinite(p.added) && p.added > 0 ? p.added : 0;
@@ -257,7 +267,8 @@ export function loadPins(list) {
             added,
             removed,
             pinned: true,
-            pinnedAt: now + order++
+            pinnedAt: now,
+            pinSlot: ++lastPinSlot
         });
     }
     emitNow();

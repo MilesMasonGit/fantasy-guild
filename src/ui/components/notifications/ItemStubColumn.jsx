@@ -12,12 +12,14 @@ import { ItemIcon } from '../base/ItemIcon.jsx';
 import { useDrawn } from '../../dev/perf/drawSwitches.js';
 import { cn } from '../../utils/cn.js';
 import { TONE_COLOUR, rateText, signedAmount, toneOf } from './stubText.js';
+import { useStubGlide, glideShift } from './stubGlide.js';
 
 /**
  * The item stubs: a column flush against the right edge of the mat, under the top bar, like tabs
  * pulled out of the side, each as wide as its content. One stub per item, the amount then the
- * sprite (`+12 [oak]`), green for a net gain and red for a loss. Pinned stubs are held at the top
- * under a "Pinned" header, always open; the rest scroll with the arrow bars once they no longer fit.
+ * sprite (`+12 [oak]`), green for a net gain and red for a loss. Pinned stubs are held at the top,
+ * always open; the rest scroll with the arrow bars once they no longer fit. A new stub joins the
+ * bottom; when a stub's place changes it glides there (`stubGlide.js`).
  *
  * Hovering a stub grows the same box left over the mat into one line: amount, sprite, name, net
  * per hour. It is drawn over the stub rather than inside the column so the scroll box cannot clip
@@ -38,11 +40,8 @@ const ROW_GAP_PX = 4;
 export const STUB_PX = SPRITE_PX + FRAME_BAND_PX * 2;
 const GAP_PX = 4;
 const PITCH_PX = STUB_PX + GAP_PX;
-/** The Clear all row's height, and the "Pinned" header's. */
+/** The Clear all row's height. */
 const HEADER_PX = 24;
-const PINNED_HEADER_PX = 20;
-/** Extra room under the pinned group, so where it ends reads at a glance. */
-const PINNED_GAP_PX = 8;
 /** How long the open stub waits before closing, so the pointer can cross onto it from its stub. */
 const OPEN_CLOSE_MS = 120;
 
@@ -187,7 +186,7 @@ export function OpenStub({ itemId, top, startPx, onEnter, onLeave, onCleared, on
 
 /** How many unpinned stubs fit under the pinned ones, given the column's height. */
 export function stubsThatFit(columnPx, pinnedCount) {
-    const room = columnPx - HEADER_PX - (pinnedCount ? PINNED_HEADER_PX + pinnedCount * PITCH_PX + PINNED_GAP_PX : 0);
+    const room = columnPx - HEADER_PX - pinnedCount * PITCH_PX;
     return Math.max(0, Math.floor((room + GAP_PX) / PITCH_PX));
 }
 
@@ -205,6 +204,7 @@ export const ItemStubColumn = memo(function ItemStubColumn() {
         setBoxH(prev => (prev === h ? prev : h));
     }, []);
     useLayoutEffect(measure);
+    useStubGlide(boxRef);
     // The open stub stays over its stub when the column moves under a still pointer (a new stub
     // pushes it down), and closes when its stub goes or is pinned (a pinned stub is always open). Every render,
     // since the stubs are not a dependency; it settles because it only moves a moved box.
@@ -215,7 +215,8 @@ export const ItemStubColumn = memo(function ItemStubColumn() {
         const row = box && [...box.querySelectorAll('[data-item-stub]')].find(el => el.dataset.itemStub === hover.itemId);
         const stub = ItemStubs.getStub(hover.itemId);
         if (!row || !stub || stub.pinned || stub.leaving || stub.fading) { setHover(null); return; }
-        const top = row.getBoundingClientRect().top - box.getBoundingClientRect().top;
+        // Where the stub rests, not where a glide has it this frame.
+        const top = row.getBoundingClientRect().top - box.getBoundingClientRect().top - glideShift(row);
         if (Math.abs(top - hover.top) > 0.5) setHover({ ...hover, top });
     });
     useEffect(() => {
@@ -234,7 +235,7 @@ export const ItemStubColumn = memo(function ItemStubColumn() {
         clearTimeout(closeTimer.current);
         const box = boxRef.current?.getBoundingClientRect();
         const row = el.getBoundingClientRect();
-        setHover({ itemId, top: box ? row.top - box.top : 0, startPx: row.width });
+        setHover({ itemId, top: box ? row.top - box.top - glideShift(el) : 0, startPx: row.width });
     }, []);
     // The open stub sits over the scroll box: the wheel still scrolls the list beneath it.
     const scrollUnder = useCallback((e) => {
@@ -269,14 +270,7 @@ export const ItemStubColumn = memo(function ItemStubColumn() {
                 )}
             </div>
             {pinned.length > 0 && (
-                <div data-stubs-pinned className="shrink-0 flex flex-col items-end" style={{ marginBottom: PINNED_GAP_PX }}>
-                    <div
-                        data-stubs-pinned-header
-                        className="font-pixel ui-text-small px-2 flex items-center"
-                        style={{ height: PINNED_HEADER_PX, color: 'var(--color-ui-gold)' }}
-                    >
-                        Pinned
-                    </div>
+                <div data-stubs-pinned className="shrink-0 flex flex-col items-end">
                     {pinned.map(pinnedRow)}
                 </div>
             )}
