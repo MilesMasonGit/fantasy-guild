@@ -1,5 +1,9 @@
 # Brief 170 — The quest board
 
+> **Postponed** (owner, 2026-10-20): the brief is ready but is not built
+> until later mechanics show what quests should be for. Re-check the concept
+> with the owner before building.
+
 **Source of truth:** [`concept_quests_tutorial.md`](../concept_quests_tutorial.md)
 "The quest board" (owner interview 2026-10-20, which replaces the three-board
 design). Ticket **T-176**.

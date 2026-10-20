@@ -1,4 +1,4 @@
-Status: approved 2026-10-20 (the quest board, owner interview; brief 170 rewritten); tutorial built (Atlas A8)
+Status: approved 2026-10-20, build postponed by the owner (the quest board; brief 170); tutorial built (Atlas A8)
 
 # Quests and the tutorial
 

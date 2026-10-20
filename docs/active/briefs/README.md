@@ -32,7 +32,7 @@ multiple choice at wave start.
 | 15 | [140 Hero bar](140_hero_bar.md): Work Permissions, level-up, shine | 11, T-152 | yes |
 | 16 | [150 Notifications](150_notifications.md) | 11, 15 | yes |
 | 17 | [160 Atlas tome and Hall sky](160_atlas_tome.md): tome, banners, sky, camera moves | 11, 12 | yes, two batches |
-| 18 | [170 The quest board](170_quest_boards.md) (rewritten 2026-10-20) | 13, 14, 16 | yes |
+| 18 | ~~[170 The quest board](170_quest_boards.md)~~ **postponed** (owner 2026-10-20: written, not built until later mechanics settle what quests are for) | 13, 14, 16 | yes |
 | 19 | [180 Ground structure](180_ground_structure.md): tint pattern, organic earth, grouped props, the owner's edge pieces | 10 | yes |
 | 19b | [190 Playmat style](190_playmat_style.md): Clean ground at 2×, quieter decorations, darker rim, shadows, ambient life | 19, 12, 13 (P2) | yes, per phase |
 | 20 | [90 Performance Envelope](90_performance_envelope.md) | 10–19 | — |
