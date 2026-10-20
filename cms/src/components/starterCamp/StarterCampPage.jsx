@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Tent, Package, Map as MapIcon, Inbox, X, Plus, Trash2 } from 'lucide-react';
+import { Tent, Package, Map as MapIcon, Inbox, X, Plus, Trash2, Image as ImageIcon } from 'lucide-react';
 import { useEntityStore } from '../../stores/useEntityStore';
 import { Section } from '../shared/EditorLayout';
 import { fetchPendingFromGame, clearPendingFromGame, isEmptyStarterCamp } from '../../engine/starterCamp';
+import BannerPicker from '../shared/BannerPicker';
+import { defaultBannerFor, STARTER_CAMP_BIOME } from '../../../../src/config/areaBanners.js';
 
 /**
  * The Starter Camp page: the Region a new game opens in, as the game's dev button saved it ("Save
@@ -37,7 +39,8 @@ export default function StarterCampPage() {
   }, []);
 
   const takePending = async () => {
-    setStarterCamp(pending.camp);
+    // A layout from the game carries no banner: the one picked here stays.
+    setStarterCamp(camp?.banner ? { ...pending.camp, banner: camp.banner } : pending.camp);
     setPending(null);
     try { await clearPendingFromGame(); } catch (err) { setError(err.message); }
   };
@@ -137,6 +140,17 @@ export default function StarterCampPage() {
                 ))}
               </tbody>
             </table>
+          </Section>
+          <Section title="Banner" icon={<ImageIcon size={14} />}>
+            <BannerPicker
+              value={camp.banner || null}
+              defaultBanner={defaultBannerFor(STARTER_CAMP_BIOME)}
+              onChange={(id) => setStarterCamp({ ...camp, banner: id || undefined })}
+            />
+            <p className="text-[10px] text-gray-600 leading-relaxed">
+              The picture the Starter Camp shows in the Atlas, behind the Region name on the top bar
+              and on arrival. Default picks by its biome (meadow).
+            </p>
           </Section>
           <Section title="Opening Bank" icon={<Package size={14} />}>
             <BankRows camp={camp} itemName={itemName} items={items} setBankCount={setBankCount} />

@@ -7,8 +7,11 @@
  * { version: 1, savedAt: '2026-10-09T14:02:00.000Z', mat: { w: 1760, h: 1126 },
  *   hall: { x: 880, y: 563 },
  *   tokens: [{ typeId: 'token_oak_forest', x: 560, y: 563 }, ...],
- *   bank: { item_oak_seedling: 3, item_oak_wood: 10 } }
+ *   bank: { item_oak_seedling: 3, item_oak_wood: 10 }, banner: 'b_village' }
  * ```
+ *
+ * `banner` (optional) is the area banner the Starter Camp shows (`areaBanners.js`), picked on the
+ * CMS's Starter Camp page; without one the game picks by its biome.
  *
  * Points are mat units on the mat it was saved from (`mat`); the game moves the whole layout so its
  * centre lands on the centre of the mat it opens on. `tokens` never holds the Guild Hall (that is
@@ -36,7 +39,7 @@ function pointOf(raw) {
  *
  * @returns {{version: number, savedAt: string|null, mat: {w: number, h: number}|null,
  *          hall: {x: number, y: number}|null, tokens: {typeId: string, x: number, y: number}[],
- *          bank: Record<string, number>}|null}
+ *          bank: Record<string, number>, banner?: string}|null}
  */
 export function normaliseStarterCamp(raw) {
     if (!isObject(raw)) return null;
@@ -60,13 +63,15 @@ export function normaliseStarterCamp(raw) {
     const mat = isObject(raw.mat) && finite(raw.mat.w) && finite(raw.mat.h) && raw.mat.w > 0 && raw.mat.h > 0
         ? { w: Math.round(raw.mat.w), h: Math.round(raw.mat.h) }
         : null;
+    const banner = typeof raw.banner === 'string' ? raw.banner.trim() : '';
     return {
         version: STARTER_CAMP_VERSION,
         savedAt: typeof raw.savedAt === 'string' ? raw.savedAt : null,
         mat,
         hall,
         tokens,
-        bank
+        bank,
+        ...(banner ? { banner } : {})
     };
 }
 

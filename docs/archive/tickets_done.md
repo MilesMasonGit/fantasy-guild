@@ -78,3 +78,6 @@ T-168 — Notifications: item stubs and banners, no log (brief 150; log is T-193
 T-028 — Toast types and merged counts: superseded by item stubs and banners — 9fa5572e — 2026-10-20
 T-037 — Two ways to hide notifications: one item-stub switch in Settings — 9fa5572e — 2026-10-20
 T-192 — Flaky loot-landing test: zero offsets compared with toBeCloseTo (-0 vs +0) — 2aa314e8 — 2026-10-20
+T-172 — The Atlas as a tome: the owner's 256 px pages at 4x, pop-up from the bottom, ribbons and page turn, Cartography over both pages with drag to slot — 5f3c3e0d — 2026-10-20
+T-173 — Region rows on area banners, Travel and the … menu, CMS banner pick with a default by biome, top bar slice, arrival card, preview backdrop — 5f3c3e0d — 2026-10-20
+T-174 — Camera move to the Atlas: built, then set aside by the owner for the Guild Hall upgrade screen (T-194, tag atlas-camera-move) — 5f3c3e0d — 2026-10-20

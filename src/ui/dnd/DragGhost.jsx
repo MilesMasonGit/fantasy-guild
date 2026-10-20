@@ -45,6 +45,7 @@ export const DragGhost = ({ payload, bold }) => {
                 ? <GuildHallGhost payload={payload} bold={bold} />
                 : <CarriedToken payload={payload} bold={bold} offBoard={false} />;
         case DRAG_KIND.HERO: return <div style={NOT_DIMMED} className="transition-opacity duration-150"><HeroGhost payload={payload} bold={bold} /></div>;
+        case DRAG_KIND.MAP:
         case DRAG_KIND.ITEM: return <div style={NOT_DIMMED} className="transition-opacity duration-150"><ItemGhost payload={payload} bold={bold} /></div>;
         case DRAG_KIND.FLAG: return <FlagGhost payload={payload} bold={bold} />;
         default: return null;

@@ -1,4 +1,5 @@
 import React, { useEffect, useCallback } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import { cn } from './utils/cn.js';
 import { SettingsManager } from '../systems/core/SettingsManager.js';
@@ -16,6 +17,7 @@ import Board from './components/board/Board.jsx';
 import BankDrawer from './components/drawer/BankDrawer.jsx';
 import ShopDrawer from './components/drawer/ShopDrawer.jsx';
 import AtlasScreen from './components/atlas/AtlasScreen.jsx';
+import ArrivalCard from './components/atlas/ArrivalCard.jsx';
 
 import BubbleMenu from './components/nav/BubbleMenu.jsx';
 import BottomHeroDock, { showsBottomHeroDock } from './components/dock/BottomHeroDock.jsx';
@@ -214,7 +216,7 @@ export const ReactRoot = ({ engine }) => {
                 <TutorialAideOverlay />
                 <ScreenCalloutLayer />
                 <div className="react-overlay absolute inset-0 z-50 pointer-events-none flex flex-col">
-                    <div 
+                    <div
                         className="flex-1 relative flex overflow-hidden bg-black"
                         style={{
                             backgroundImage: backgroundDrawn ? `url('/assets/ui/${backgroundTile}.png')` : 'none',
@@ -271,7 +273,8 @@ export const ReactRoot = ({ engine }) => {
                                 )
                             )
                         )}
-                        <div className="flex-1 relative flex flex-col overflow-hidden z-10">
+                        {/* `min-w-0`: the column takes the room it is given, not its widest content's. */}
+                        <div className="flex-1 min-w-0 relative flex flex-col overflow-hidden z-10">
                             <div className="flex-1 flex min-h-0 relative">
                             {/**
                              * The Guild Hall Effects list: always LEFT of the upgrade web,
@@ -358,10 +361,15 @@ export const ReactRoot = ({ engine }) => {
                                     />
                                 </ErrorBoundary>
                             )}
-                            {/* The Atlas covers the mat column only: the nav beside it stays reachable to close it. */}
-                            {isAtlasOpen && <ErrorBoundary label="AtlasScreen">
-                                <AtlasScreen onClose={ui.fullscreen.close} closePromotion={ui.dock.closePromotion} />
-                            </ErrorBoundary>}
+                            {/* The Atlas pops up over the mat column only: the nav beside it stays reachable to close it. */}
+                            <AnimatePresence>
+                                {isAtlasOpen && (
+                                    <ErrorBoundary key="atlas" label="AtlasScreen">
+                                        <AtlasScreen onClose={ui.fullscreen.close} closePromotion={ui.dock.closePromotion} />
+                                    </ErrorBoundary>
+                                )}
+                            </AnimatePresence>
+                            <ErrorBoundary label="ArrivalCard"><ArrivalCard /></ErrorBoundary>
                         </div>
                         {!menuRight && (
                             isGuildView ? (

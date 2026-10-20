@@ -77,6 +77,28 @@ async function openHall(page) {
     return `clicked the Guild Hall bubble (real input${n > 1 ? `, ${n} clicks` : ''}); ${beacons} tutorial beacon(s) showing`;
 }
 
+/**
+ * The Atlas opened and closed over the busy mat every 1.5 s from a page timer: a click at the
+ * centre of the Atlas bubble (it takes a click only inside its circle): each open and close slides
+ * the book up over the mat and back down.
+ */
+async function atlasToggle(page) {
+    const ok = await page.evaluate(`(() => {
+        const button = document.querySelector('#atlas-bubble-target button');
+        if (!button) return false;
+        const press = () => {
+            const r = button.getBoundingClientRect();
+            button.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 }));
+        };
+        press();
+        window.__benchTimer = setInterval(press, 1500);
+        return true;
+    })()`);
+    if (!ok) throw new Error('no Atlas bubble to click');
+    await page.waitFor(`!!document.querySelector('[data-atlas-screen]')`, { timeoutMs: 4000, what: 'the Atlas' });
+    return 'the Atlas bubble clicked every 1.5 s from a page timer (open, close, open…)';
+}
+
 /** 20 notifications every 4 s (each lives 5 s, so the column stays full and keeps changing). */
 async function notifyBurst(page) {
     const n = await page.evaluate(`(() => {
@@ -145,8 +167,9 @@ export const SCENES = {
     cap128: { id: 'cap128', name: 'S2 mix at cap 128', stress: 'cap128' },
     camp128: { id: 'camp128', name: 'Starter Camp at 128', stress: 'camp128' },
     cap256: { id: 'cap256', name: 'S2 mix at cap 256', stress: 'cap256' },
-    // Not in the default run either (`--only=hall`).
-    hall: { id: 'hall', name: 'S2 + Guild Hall (beacons)', stress: 'realistic', ui: openHall }
+    // Not in the default run either (`--only=hall`, `--only=atlas`).
+    hall: { id: 'hall', name: 'S2 + Guild Hall (beacons)', stress: 'realistic', ui: openHall },
+    atlas: { id: 'atlas', name: 'S2 + Atlas open/close every 1.5 s', stress: 'realistic', ui: atlasToggle }
 };
 
 const STRESS_IDS = { quiet: 'S1', realistic: 'S2', torture: 'S3', cap128: 'C128', camp128: 'K128', cap256: 'C256' };

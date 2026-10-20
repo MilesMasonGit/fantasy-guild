@@ -66,6 +66,8 @@ registerItems({
 const bank = (id) => InventoryManager.getItemCount(id);
 const regionCount = () => Object.keys(GameState.state.atlas.regions).length;
 const q = (container, sel) => container.querySelector(sel);
+/** Open Region `id`'s "…" menu (Rename, Archive, Abandon). */
+const openMenu = (container, id) => fireEvent.click(container.querySelector(`[data-region-menu="${id}"]`));
 const slotItems = (container) => [...container.querySelectorAll('[data-cartography-slot]')].map(b => b.getAttribute('data-slot-item'));
 
 function newGame() {
@@ -298,12 +300,14 @@ describe('the Region list', () => {
         const starter = Atlas.activeRegionId();
         const { container } = renderList();
 
+        openMenu(container, starter);
         const activeAbandon = q(container, `[data-region-abandon="${starter}"]`);
         expect(activeAbandon.disabled).toBe(true);
         expect(activeAbandon.getAttribute('title')).toBe(TEXT.REFUSE_ACTIVE);
         fireEvent.click(activeAbandon);
         expect(q(container, '[data-region-abandon-confirm]')).toBeNull();
 
+        openMenu(container, region.id);
         fireEvent.click(q(container, `[data-region-abandon="${region.id}"]`));
         expect(q(container, `[data-region-abandon-confirm="${region.id}"]`)).toBeTruthy();
         expect(Atlas.getRegion(region.id)).toBeTruthy();
@@ -311,6 +315,7 @@ describe('the Region list', () => {
         expect(q(container, '[data-region-abandon-confirm]')).toBeNull();
         expect(Atlas.getRegion(region.id)).toBeTruthy();
 
+        openMenu(container, region.id);
         fireEvent.click(q(container, `[data-region-abandon="${region.id}"]`));
         fireEvent.click(q(container, `[data-region-abandon-yes="${region.id}"]`));
         expect(Atlas.getRegion(region.id)).toBeNull();
@@ -322,6 +327,7 @@ describe('the Region list', () => {
         const starter = Atlas.activeRegionId();
         expect(Atlas.travel(region.id).success).toBe(true);
         const { container } = renderList();
+        openMenu(container, starter);
         const button = q(container, `[data-region-abandon="${starter}"]`);
         expect(button.disabled).toBe(true);
         expect(button.getAttribute('title')).toBe(TEXT.REFUSE_STARTER);
@@ -330,6 +336,7 @@ describe('the Region list', () => {
     it('renames the flavour name inline: Enter keeps it, Escape does not', () => {
         const { region } = Atlas.createRegion({ ingredients: [WOOD_ITEM] });
         const { container } = renderList();
+        openMenu(container, region.id);
         fireEvent.click(q(container, `[data-region-rename="${region.id}"]`));
         let input = q(container, `[data-region-rename-input="${region.id}"]`);
         fireEvent.change(input, { target: { value: '  Copper Hollow  ' } });
@@ -337,6 +344,7 @@ describe('the Region list', () => {
         expect(Atlas.getRegion(region.id).flavourName).toBe('Copper Hollow');
         expect(q(container, `[data-region-row="${region.id}"]`).textContent).toContain('Copper Hollow');
 
+        openMenu(container, region.id);
         fireEvent.click(q(container, `[data-region-rename="${region.id}"]`));
         input = q(container, `[data-region-rename-input="${region.id}"]`);
         fireEvent.change(input, { target: { value: 'Never Mind' } });
@@ -344,6 +352,7 @@ describe('the Region list', () => {
         fireEvent.blur(input);
         expect(Atlas.getRegion(region.id).flavourName).toBe('Copper Hollow');
 
+        openMenu(container, region.id);
         fireEvent.click(q(container, `[data-region-rename="${region.id}"]`));
         input = q(container, `[data-region-rename-input="${region.id}"]`);
         fireEvent.change(input, { target: { value: '   ' } });
@@ -355,12 +364,17 @@ describe('the Region list', () => {
     it('archives a Region into the archive list and restores it', () => {
         const { region } = Atlas.createRegion({ ingredients: [WOOD_ITEM] });
         const { container } = renderList();
+        openMenu(container, region.id);
         fireEvent.click(q(container, `[data-region-archive="${region.id}"]`));
+        // The archive sits behind a toggle at the foot of the list.
+        expect(q(container, '[data-region-archive-list]')).toBeNull();
+        fireEvent.click(q(container, '[data-region-archive-toggle]'));
         const archive = q(container, '[data-region-archive-list]');
         expect(q(archive, `[data-region-row="${region.id}"]`)).toBeTruthy();
         expect(q(archive, `[data-region-travel="${region.id}"]`)).toBeNull();
         fireEvent.click(q(archive, `[data-region-restore="${region.id}"]`));
         expect(q(container, '[data-region-archive-list]')).toBeNull();
+        expect(q(container, '[data-region-archive-toggle]')).toBeNull();
         expect(Atlas.getRegion(region.id).archived).toBe(false);
     });
 });
@@ -442,6 +456,30 @@ describe('the Atlas screen', () => {
         expect(slotItems(container)[0]).toBe(WOOD_ITEM);
         fireEvent.keyDown(document, { key: 'Escape' });
         expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('lies on the table as a tome: a press on the table closes it, a press on the book does not', () => {
+        const onClose = vi.fn();
+        const { container } = screen({ onClose });
+        fireEvent.pointerDown(q(container, '[data-atlas-screen]'));
+        fireEvent.pointerDown(q(container, '[data-tome-pages]'));
+        expect(onClose).not.toHaveBeenCalled();
+        fireEvent.pointerDown(q(container, '[data-atlas-overlay]'));
+        expect(onClose).toHaveBeenCalledTimes(1);
+        fireEvent.click(q(container, '[data-atlas-close]'));
+        expect(onClose).toHaveBeenCalledTimes(2);
+    });
+
+    it('lays Cartography over both pages: the maps and slots on the left, the preview and buttons on the right', () => {
+        InventoryManager.addItem(WOOD_ITEM, 1);
+        const { container } = screen({ initialTab: ATLAS_TAB.CARTOGRAPHY });
+        const left = q(container, '[data-cartography] [data-tome-left]');
+        const right = q(container, '[data-cartography] [data-tome-right]');
+        expect(q(left, '[data-cartography-slot="0"]')).toBeTruthy();
+        expect(q(left, `[data-map-item="${WOOD_ITEM}"]`)).toBeTruthy();
+        expect(q(right, '[data-layout-preview]')).toBeTruthy();
+        expect(q(right, '[data-node-summary]')).toBeTruthy();
+        expect(q(right, '[data-cartography-settle]')).toBeTruthy();
     });
 
     it('redraws the list when the Atlas changes (ATLAS_CHANGED has a listener now)', () => {
