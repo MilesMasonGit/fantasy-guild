@@ -78,3 +78,10 @@ picked by eye. Built in 7e0f9a17; the preview now serves it (reload).
 
 13. Maps → any Base Map → **Banner**; Starter Camp → **Banner**: pick
     pictures, then Sync on `main`.
+
+## Owner, second look (2026-10-20)
+
+"4x looks best, go with that and merge." Merged to `main` 5f3c3e0d (book fixed
+at 4×, switch removed). Further rework from the owner's notes (tabs down the
+left, slim Region rows with the hero flag, Cartography as a crafting table)
+is brief 160 T5 and T6.

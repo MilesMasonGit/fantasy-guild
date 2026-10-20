@@ -5,7 +5,9 @@ five-line summary at each batch's edges (proposed, looked at); anything older
 than two days is trimmed. States: queued · building · ready (tests, cycles,
 build green) · bench-queued · eye-check · merged.*
 
-## Features director, batch 6: the Atlas tome, first half (owner 2026-10-20; quest board postponed by the owner)
+## Features director, batch 6: the Atlas tome, first half
+
+**Merged to `main` 2026-10-20 (5f3c3e0d) on the owner's word ("4x looks best, go with that and merge"); work check owed at 13:00 with batch 5's.** (owner 2026-10-20; quest board postponed by the owner)
 
 *T1 then T2 on one branch, one eye-check after T2. The flaky-test fix runs
 alongside. Banners without a CMS pick default by the Region's main biome
@@ -17,7 +19,7 @@ alongside. Banners without a CMS pick default by the Region's main biome
 | Brief 160 T2: Region rows on area banners, Travel and the … menu, CMS banner field, top bar slice, arrival card, preview backdrop (T-173) | builder | `crunch/atlas-tome` (`at`) | ready (a775cbf6; director's gate: 5533 tests, cycles, build; no `src/systems` or `data/`; CMS banner picker on Base Maps and the Starter Camp page). Look questions: two columns of rows, the four stand-in biome banners, the crop, the … icon | Tue | Tue |
 | Brief 160 T1b (owner 2026-10-20): the owner's book sprite at 4×, mirrored for the left page, the UI inside the pages | builder | `crunch/atlas-tome` (`at`) | ready (6ff6b483; director's gate: 5535 tests, cycles, build; fixed 4×, fits 1280×720 with ~50 px of table each side; about 60 % of the mat column at 1600×900: look question) | Tue | Tue |
 | Brief 160 T4a (owner 2026-10-20): the mat and the book on one wood table; opening the Atlas is a camera move from the mat up to the book | engineer | `crunch/atlas-tome` (`at`) | set aside by the owner after the first look (the Atlas becomes a pop-up; the glide kept at tag `atlas-camera-move` for the Guild Hall upgrade screen, T-194) | Tue | Tue |
-| Atlas pop-up (owner, first look 2026-10-20): slides up from the bottom over the undimmed mat, no table; the 256 px left and right pages; a QA switch for 2×/3×/4× so the owner picks the scale by eye | builder | `crunch/atlas-tome` (`at`) | owner ok at 4× ("4x looks best, go with that and merge"); builder-lite fixing 4× and removing the scale switch, then merge | Tue | Tue |
+| Atlas pop-up (owner, first look 2026-10-20): slides up from the bottom over the undimmed mat, no table; the 256 px left and right pages; a QA switch for 2×/3×/4× so the owner picks the scale by eye | builder | `crunch/atlas-tome` (`at`) | merged 5f3c3e0d (e6e5c4e3 fixes 4×; director's gate on the merged result: 5536 tests, cycles, build) | Tue | Tue |
 | Brief 160 T5: book tabs down the left side, slim Region rows with the hero flag (owner interview 2026-10-20) | builder | `crunch/atlas-rework` | queued after the 4× merge | Tue | |
 | Brief 160 T6: Cartography as a crafting table (map sprite grid, 4 outline slots, the preview as a tiny real map, contents as sprites) | engineer | `crunch/atlas-rework` | queued after T5 | | |
 | Brief 200 P1–P2: CMS change packs (autosave, inbox, review per entry, undo) (T-133) | builder | `crunch/change-packs` (`cp`) | building | Tue | |
@@ -180,7 +182,7 @@ T-186; the badges' soft shadows are settled inside T-013.)
 
 ## Bench queue (one at a time, weekdays 13:00–17:00 and 01:00–07:00, or when the owner says the PC is quiet)
 
-00. **Batch 6, `crunch/atlas-tome` (7e0f9a17, after the owner picks a scale)**: engine work check (expect same: no engine code); `bench:draw -- --compare --only=S2` (rest state unchanged) and the new open/close scene `bench:draw -- --only=S2,atlas --ab=<main served on a port>` for the cost log.
+00. **Batch 6, merged to `main` 5f3c3e0d**: engine work check (expect same: no engine code); `bench:draw -- --compare --only=S2` (rest state unchanged) and the new open/close scene `bench:draw -- --only=S2,atlas --ab=<main served on a port>` for the cost log.
 
 0. **Batch 5, merged to `main` 9fa5572e on the owner's word**: engine work check on `main` (expect same: no engine rules changed, but the routing hears inventory events); one `bench:draw --compare` on S2 Realistic with auto-collect on (loot flying to stubs: the engineer measured ~+1.8 column redraws a second, ~2 ms each in the dev build; production not measured) for the cost log (stubs replace the sidebar). Bench follow-ups from the builder: the `notify` scene fires `NotificationSystem.info`, which now draws nothing (repoint at item flow); `bench/drag.mjs` rests the pointer on the old sidebar strip spot, now the top bar.
 
@@ -194,7 +196,7 @@ T-186; the badges' soft shadows are settled inside T-013.)
 Atlas tome is built (the owner's book at 4×, Cartography with drag to slot,
 Region rows on banners, the CMS banner pick, the camera glide from the mat to
 the book), gated (5551 tests, cycles, build) and served on 5198 with a
-[13-check file](eyecheck/2026-10-20_atlas-tome.md). Next: the owner's look;
+[13-check file](../archive/eyecheck/2026-10-20_atlas-tome.md). Next: the owner's look;
 benches from 13:00 (batch 5's work check on `main`, then this branch). Owner:
 the eye-check. Blockers: none.
 
