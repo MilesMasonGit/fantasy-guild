@@ -313,12 +313,12 @@ function EntryRow({ entry, index, state, ws, onAccept, onForce, onReject, onOpen
       <BeforeAfter op={entry.op} before={before} after={after} />
 
       <div className="flex gap-2">
-        <button className="btn-ghost flex items-center gap-1 text-xs" disabled={state.decision === 'accepted' || (state.conflict && !state.forced)} onClick={onAccept}><Check size={13} /> Accept</button>
-        <button className="btn-ghost flex items-center gap-1 text-xs" disabled={state.decision === 'rejected'} onClick={onReject}><X size={13} /> Reject</button>
+        <button className="btn-ghost flex items-center gap-1 text-xs disabled:opacity-40 disabled:cursor-not-allowed" disabled={state.decision === 'accepted' || (state.conflict && !state.forced)} onClick={onAccept}><Check size={13} /> Accept</button>
+        <button className="btn-ghost flex items-center gap-1 text-xs disabled:opacity-40 disabled:cursor-not-allowed" disabled={state.decision === 'rejected'} onClick={onReject}><X size={13} /> Reject</button>
         {entry.op === 'delete' ? (
-          now && <button className="btn-ghost flex items-center gap-1 text-xs" onClick={onOpen}><Eye size={13} /> View in the editor</button>
+          now && <button className="btn-ghost flex items-center gap-1 text-xs disabled:opacity-40 disabled:cursor-not-allowed" onClick={onOpen}><Eye size={13} /> View in the editor</button>
         ) : (
-          <button className="btn-ghost flex items-center gap-1 text-xs" disabled={state.conflict && !state.forced} onClick={onOpen}><Pencil size={13} /> Open in the editor</button>
+          <button className="btn-ghost flex items-center gap-1 text-xs disabled:opacity-40 disabled:cursor-not-allowed" disabled={state.conflict && !state.forced} onClick={onOpen}><Pencil size={13} /> Open in the editor</button>
         )}
       </div>
     </article>

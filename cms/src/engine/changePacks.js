@@ -108,7 +108,7 @@ export function validatePack(pack, { fileName } = {}) {
         if (op === 'delete' && value !== undefined) errors.push(`${label}: a delete carries no "value".`);
         if (op === 'edit' || op === 'delete') {
             if (typeof entry.fingerprint !== 'string' || !FINGERPRINT.test(entry.fingerprint)) {
-                errors.push(`${label}: an ${op} needs "fingerprint" ("fp:" and 16 hex digits) of the value it was made against; run "node cms/changePackTool.mjs stamp <file>".`);
+                errors.push(`${label}: ${op === 'edit' ? 'an' : 'a'} ${op} needs "fingerprint" ("fp:" and 16 hex digits) of the value it was made against; run "node cms/changePackTool.mjs stamp <file>".`);
             }
         }
         if (op === 'create' && entry.fingerprint !== undefined) errors.push(`${label}: a create carries no "fingerprint".`);
