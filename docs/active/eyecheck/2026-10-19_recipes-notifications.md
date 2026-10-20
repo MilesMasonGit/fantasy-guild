@@ -87,3 +87,13 @@ happen on demand.
 Fixes go on the branch, then it merges to `main`. No CMS steps for this
 batch. Your art list has the **banner ribbon** (gold and red); the code-drawn
 frame stands in until then.
+
+## Owner's verdict, first pass (2026-10-19)
+
+"Generally looks good for the first pass." Everything ok except the item
+stubs (checks 8–11): the stub pops out of the side and the SAME box expands
+over the mat as one line (amount, sprite, name, rate), not a second box; no
+gained/spent text; the sprite at 2× like floating loot; left-click pins under
+a "Pinned" header, right-click clears (resets a pinned one); no pin icons.
+Interviewed and written into concept_notifications.md "Item stubs"; the fix
+is being built on `crunch/notifications`, then a second look at checks 8–11.
