@@ -77,3 +77,4 @@ T-142 — Recipe rows no longer truncated (absorbed by T-169) — 9fa5572e — 2
 T-168 — Notifications: item stubs and banners, no log (brief 150; log is T-193) — 9fa5572e — 2026-10-20
 T-028 — Toast types and merged counts: superseded by item stubs and banners — 9fa5572e — 2026-10-20
 T-037 — Two ways to hide notifications: one item-stub switch in Settings — 9fa5572e — 2026-10-20
+T-192 — Flaky loot-landing test: zero offsets compared with toBeCloseTo (-0 vs +0) — 2aa314e8 — 2026-10-20
