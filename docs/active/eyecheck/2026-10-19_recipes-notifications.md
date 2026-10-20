@@ -97,3 +97,21 @@ gained/spent text; the sprite at 2× like floating loot; left-click pins under
 a "Pinned" header, right-click clears (resets a pinned one); no pin icons.
 Interviewed and written into concept_notifications.md "Item stubs"; the fix
 is being built on `crunch/notifications`, then a second look at checks 8–11.
+
+## Second look: item stubs only (built 9b9e873e, merged into `crunch/batch5` 137d95ec)
+
+Same address, http://localhost:5198/ (reload the page). QA → Notifications →
+Busy minute of loot, then Find a new item.
+
+17. Stubs sit flush against the right edge and slide out of it; sprites at
+    64 px; the "New!" stub is gold.
+    Verdict:
+18. Hover a stub: the same box grows left into one line (amount, sprite,
+    name, rate per hour); the other stubs stay put.
+    Verdict:
+19. Left-click pins it under a gold "Pinned" header (a small gap under the
+    pinned group); left-click again unpins. Pinning keeps the count.
+    Verdict:
+20. Right-click a pinned stub: back to +0, still pinned. Right-click an
+    unpinned one: it slides away. No browser menu.
+    Verdict:
