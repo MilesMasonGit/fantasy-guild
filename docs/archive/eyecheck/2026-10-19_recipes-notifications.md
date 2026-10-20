@@ -163,3 +163,8 @@ pane was hidden), so the feel of every slide is yours to judge.
 28. Should a stub give a small flash when loot lands, or is the number
     ticking enough? (Builder's recommendation: the tick is enough.)
     Verdict:
+
+## Owner, fourth look (2026-10-20)
+
+"The tick is enough, no flash needed. Go ahead and merge." Merged to `main`
+9fa5572e; the copy's ~0.9 s linger kept.
