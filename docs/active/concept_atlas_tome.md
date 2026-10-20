@@ -101,3 +101,39 @@ The owner's 256 px environment pieces (`public/assets/backgrounds/area/`,
 - **Art (owner)**: the open-tome spread, the table edge with its props, the
   bookmark ribbons; placeholders until drawn (on the art list). Every piece
   changes the look: owner eye-check.
+
+## The Atlas UI rework (owner interview, 2026-10-20, after the second look)
+
+The book is drawn at **4×, always** (owner's pick; it overflows the screen
+and is cropped).
+
+**Book**
+- **The section tabs run down the left side of the book**, drawn as if they
+  come out from between the pages (ribbon or page-tab style), not along the
+  top edge.
+
+**Regions**
+- The current Region shows **the hero flag** (the flag heroes plant on the
+  mat), small on its row, instead of "Here".
+- A row shows **only the banner and the names** (flavour and practical),
+  Travel and the "…" menu: **no Token pills, no Token count, no heroes**
+  (the settle day goes too).
+
+**Cartography: a crafting table**
+- Maps are ingredients; the slots are the centrepiece; the preview is the
+  result, updating with each map added.
+- **Left page: your maps** as a **grid of 64 px map sprites with counts**
+  (like the Bank; hover names a map and says what it does); Base Maps and
+  Modifiers **mixed in one collection**, and **any slot takes any map**
+  (today's rule). Drag or click to slot.
+- **Right page, top to bottom**: **4 slots** (an empty slot is a faint dashed
+  map outline; a filled one shows the map sprite at 64 px); the **preview as
+  a tiny real map** (the Region's ground colours and water, each Token as a
+  small sprite; drawn only while the Atlas is open); under it **what it will
+  contain as Token sprites with counts** in a few rows, biggest first (hover
+  names them); then Reroll and **Settle**.
+- **Map sprites**: each map item's sprite is set in the CMS from
+  `tokens/map/` (29 placeholders, 64 px). **The starting batch of map items
+  is prepared by an agent as a CMS change pack** (T-133, built first) with
+  sprites chosen from the placeholders; the owner reviews it in the CMS and
+  Syncs on `main`.
