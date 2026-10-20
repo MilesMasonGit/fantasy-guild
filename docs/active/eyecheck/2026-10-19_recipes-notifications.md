@@ -119,3 +119,18 @@ Busy minute of loot, then Find a new item.
 Owner, second look: back to 1× (32 px) sprites; no blank space on the left of
 a stub, at rest or hovered; a pinned stub always shows the expanded line.
 Being fixed on `crunch/notifications`; then a third look at 17–20.
+
+## Third look: item stubs (599bd237, merged into `crunch/batch5` 900c4cc4)
+
+Same address, reload. QA → Notifications → Busy minute of loot, Find a new
+item.
+
+21. Sprites at 1× (32 px); each stub as wide as its content, no blank space
+    on the left, at rest or hovered; the column's left edge is ragged.
+    Verdict:
+22. Pin a stub: under "Pinned" it always shows the full line (amount, sprite,
+    name, rate), hovered or not.
+    Verdict:
+
+Note: items from the QA button go straight to the Bank, so their rate reads
+`+0/hr`; real work (loot dropping on the mat) counts the rate.
