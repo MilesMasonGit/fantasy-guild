@@ -13,7 +13,12 @@ export const DRAG_KIND = {
      * hero on the board**: the player never moves a hero. Dropping it on the Dock recalls.
      * `HERO` is only a hero carried out of the Dock or the hero sheet.
      */
-    FLAG: 'flag'
+    FLAG: 'flag',
+    /**
+     * A map for the Atlas's Cartography slots: carries `itemId`, and `fromSlot` when it is lifted
+     * out of a slot. A kind of its own so no Bank or hero target under the Atlas takes it.
+     */
+    MAP: 'atlas_map'
 };
 
 /**
@@ -40,6 +45,7 @@ export const DRAG_SFX = {
         [DRAG_KIND.TOKEN]: 'card_place',
         [DRAG_KIND.HERO]: 'hero_assign',
         [DRAG_KIND.FLAG]: 'hero_assign',
-        [DRAG_KIND.ITEM]: 'item_equip'
+        [DRAG_KIND.ITEM]: 'item_equip',
+        [DRAG_KIND.MAP]: 'item_equip'
     }
 };

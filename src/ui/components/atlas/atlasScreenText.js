@@ -22,6 +22,7 @@ export const SCREEN_TEXT = Object.freeze({
     NO_MAPS: 'No maps yet. Rare enemies and quests drop them.',
     SLOTS_HEADING: 'Slots',
     EMPTY_SLOT: 'Empty slot',
+    SLOTS_HINT: 'Click a map or drag it onto a slot.',
     SUMMARY_HEADING: 'Node Summary',
     SUMMARY_EMPTY: 'Slot a map to see what it writes.',
     PREVIEW_HEADING: 'Layout',

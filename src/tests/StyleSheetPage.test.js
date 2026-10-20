@@ -88,7 +88,9 @@ describe('Main-action button shine', () => {
         const upgrade = read('ui/components/drawer/GuildUpgradeInspection.jsx');
         expect(upgrade).toMatch(/id="guild-upgrade-button"[\s\S]*?"ui-shine /);
         const settle = read('ui/components/atlas/CartographyTable.jsx');
-        expect(settle).toMatch(/data-cartography-settle className=\{`\$\{buttonCls\} ui-shine`\}/);
+        // Settle is the table's main button, and the main button wears the shine.
+        expect(settle).toMatch(/<TableButton main data-cartography-settle/);
+        expect(settle).toMatch(/main && 'ui-shine'/);
         expect(read('ui/dev/StyleSheetPage.jsx')).toMatch(/data-kit-main-button\s+className=\{cn\('ui-shine /);
     });
 

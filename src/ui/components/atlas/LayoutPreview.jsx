@@ -1,6 +1,7 @@
 import { HALL_CLEARING } from '../../../systems/atlas/Layout.js';
 import { ROLE } from '../../../systems/atlas/Budget.js';
 import { tokenName } from '../../../config/registries/tokenRegistry.js';
+import { cn } from '../../utils/cn.js';
 
 /** One colour per budget role, shared with the Node Summary's dots. */
 export const ROLE_COLOUR = Object.freeze({
@@ -12,6 +13,7 @@ export const ROLE_COLOUR = Object.freeze({
 /** The ground, drawn faint under the dots. */
 const GROUND_COLOUR = Object.freeze({ grass: '#3f7a3a', rock: '#7a756c', sand: '#b8a165', water: '#2f6496' });
 const GROUND_OPACITY = 0.45;
+const BACKING = '#1a1612';
 
 /** Dots are drawn this size in mat units, whatever a Token's art: the preview reads where, not how big. */
 const DOT_RADIUS = 28;
@@ -36,12 +38,12 @@ export function terrainRuns(terrain) {
 }
 
 /**
- * A small drawing of a generated layout (`plan.layout`): the mat's shape, its ground faint
+ * A drawing of a generated layout (`plan.layout`): the mat's shape, its ground faint
  * underneath, the Hall's clearing in the middle, and each Token a dot coloured by its role.
  */
 export const LayoutPreview = ({ layout, className = '' }) => {
     if (!layout?.mat) {
-        return <div data-layout-preview="empty" className={`aspect-[16/10] w-full bg-white/5 ${className}`} />;
+        return <div data-layout-preview="empty" className={cn('aspect-[16/10] w-full bg-black/30', className)} />;
     }
     const { mat, hall, nodes = [], terrain } = layout;
     const cell = terrain?.cell || 32;
@@ -50,10 +52,12 @@ export const LayoutPreview = ({ layout, className = '' }) => {
             data-layout-preview
             viewBox={`0 0 ${mat.w} ${mat.h}`}
             preserveAspectRatio="xMidYMid meet"
-            className={`w-full h-auto block bg-[#1a1612] ${className}`}
+            className={cn('w-full h-auto block', className)}
             role="img"
             aria-label="Layout preview"
         >
+            {/* The backing is drawn, not the element's: a preview sized to its box letterboxes clear. */}
+            <rect x={0} y={0} width={mat.w} height={mat.h} fill={BACKING} />
             <g opacity={GROUND_OPACITY} shapeRendering="crispEdges">
                 {terrainRuns(terrain).map(run => (
                     <rect

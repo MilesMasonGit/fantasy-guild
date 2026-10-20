@@ -32,6 +32,7 @@ import { listSkillOf } from '../../systems/board/RecipeList.js';
 import { Stub } from '../components/notifications/ItemStubColumn.jsx';
 import { Banner } from '../components/notifications/BannerStack.jsx';
 import { bannerText } from '../../systems/notifications/bannerKinds.js';
+import { BookmarkRibbon } from '../components/atlas/AtlasTome.jsx';
 
 /** One art pixel of the UI, in screen pixels: UI sprites draw at 2×. */
 const ART_PX = 2;
@@ -164,6 +165,24 @@ const KitTabs = () => {
                     </button>
                 );
             })}
+        </div>
+    );
+};
+
+const KIT_RIBBONS = [
+    { id: 'cartography', label: 'Cartography', colour: '#7a1f1f' },
+    { id: 'regions', label: 'Regions', colour: '#1f3f6e' }
+];
+
+/** The Atlas's bookmark ribbons, tucked under a strip of book cover as on the tome. */
+const RibbonDemo = () => {
+    const [open, setOpen] = useState(KIT_RIBBONS[0].id);
+    return (
+        <div className="relative inline-block pt-2 px-6">
+            <div role="tablist" className="flex items-end gap-2">
+                {KIT_RIBBONS.map(t => <BookmarkRibbon key={t.id} {...t} selected={t.id === open} onSelect={setOpen} />)}
+            </div>
+            <div className="relative -mt-4 h-6 w-72" style={{ background: '#4a2a1a' }} />
         </div>
     );
 };
@@ -572,7 +591,7 @@ export const KIT_SECTIONS = [
         )
     },
     {
-        id: 'tabs', title: 'Tabs', status: 'unapproved', source: 'none shared: the Atlas tabs are the nearest',
+        id: 'tabs', title: 'Tabs', status: 'unapproved', source: 'none shared (the Atlas has its own ribbons, below)',
         rule: 'Sprite + word. The open one has a 1-art-pixel gold line under it and bright text; the others muted. Never boxed.',
         Demo: KitTabs
     },
@@ -639,6 +658,11 @@ export const KIT_SECTIONS = [
         id: 'banners', title: 'Banners', status: 'unapproved', source: 'BannerStack (top centre of the mat)',
         rule: 'About 480 px, a big sprite, a title and one line, studded frame: gold edge for a milestone (one shine pass), red for a problem. Drops from behind the top bar with one overshoot; a click dismisses. Three stack, then "+N". Gold and red frames are code placeholders until the owner draws the ribbon.',
         Demo: BannerDemo
+    },
+    {
+        id: 'atlas-ribbons', title: 'Atlas bookmark ribbons', status: 'unapproved', source: 'AtlasTome (the Atlas only)',
+        rule: 'The Atlas’s own variant of the tabs: cloth ribbons standing up from the top edge of the book, tucked under its cover. The open one stands taller with bright text and a 1-art-pixel gold edge down each side; the others are muted. Code placeholders until the owner draws the ribbons.',
+        Demo: RibbonDemo
     },
     {
         id: 'map-modes', title: 'Map mode outlines and banners', status: 'unapproved',

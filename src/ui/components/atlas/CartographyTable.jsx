@@ -8,6 +8,11 @@ import { getItem } from '../../../config/registries/itemRegistry.js';
 import { TEXT } from '../../../systems/atlas/regionNames.js';
 import { ItemIcon } from '../base/ItemIcon.jsx';
 import { cn } from '../../utils/cn.js';
+import { useEntityDrag, useEntityDrop, mergeRefs } from '../../dnd/DndKit.jsx';
+import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
+import { PixelFrame } from '../base/PixelFrame.jsx';
+import { ArrowScrollList } from '../base/ArrowScrollList.jsx';
+import { TomeSpread } from './AtlasTome.jsx';
 import { NodeSummary } from './NodeSummary.jsx';
 import { LayoutPreview } from './LayoutPreview.jsx';
 import { SCREEN_TEXT } from './atlasScreenText.js';
@@ -42,16 +47,157 @@ function nameOf(recipe) {
     return getItem(recipe.id)?.name || recipe.name || recipe.id;
 }
 
+/**
+ * The slots after a carried map is dropped on slot `index`, or null when it cannot go there. A
+ * map lifted from a slot (`payload.fromSlot`) swaps with what is in the target, so dropping it
+ * on a full slot trades their places; a map from the list fills or replaces the slot, never
+ * slotting more copies than the Bank holds.
+ */
+export function dropOnSlot(slots, payload, index, heldById) {
+    const id = payload?.itemId;
+    if (id == null || !Number.isInteger(index) || index < 0 || index >= slots.length) return null;
+    const from = payload.fromSlot;
+    if (from != null) {
+        if (slots[from] !== id) return null;
+        if (from === index) return slots;
+        const next = [...slots];
+        next[from] = slots[index];
+        next[index] = id;
+        return next;
+    }
+    const others = slots.filter((x, i) => x === id && i !== index).length;
+    if (others >= (heldById.get(id)?.count || 0)) return null;
+    const next = [...slots];
+    next[index] = id;
+    return next;
+}
+
+/** The slots after slot `index` is emptied, if it still holds `id`; unchanged otherwise. */
+export function liftFromSlot(slots, index, id) {
+    if (slots[index] == null || (id != null && slots[index] !== id)) return slots;
+    return slots.map((x, i) => (i === index ? null : x));
+}
+
 /** A map item's own art; a dev recipe has none. */
 const IngredientIcon = ({ recipe, size = 32 }) => (getItem(recipe.id)
     ? <ItemIcon item={recipe.id} size={size} />
     : <MapIcon className="text-amber-200/80" style={{ width: size * 0.75, height: size * 0.75 }} />);
 
-const buttonCls = 'px-3 py-1 rounded border border-gi-gold/40 text-amber-100 hover:border-gi-gold hover:text-white disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-gi-gold/40';
+const headingCls = 'font-pixel ui-text-small uppercase tracking-wide text-white/60 mb-1';
+
+/** The table's buttons: chamfer-framed, gold text for the main one, greyed while they can't be used. */
+const TableButton = ({ main = false, disabled = false, className, ...rest }) => (
+    <PixelFrame kind="chamfer" className={cn('inline-block', disabled && 'opacity-50 grayscale')}>
+        <button
+            type="button"
+            disabled={disabled}
+            className={cn(
+                'px-3 py-0.5 whitespace-nowrap font-pixel ui-text-body font-bold disabled:cursor-not-allowed',
+                main && 'ui-shine',
+                className
+            )}
+            style={{ color: disabled ? 'var(--color-ui-muted)' : main ? 'var(--color-ui-gold)' : 'var(--color-ui-white)' }}
+            {...rest}
+        />
+    </PixelFrame>
+);
+
+/** A slot's box and the map art in it, in screen px: the art at 2×. */
+const SLOT_PX = 72;
+const SLOT_ART_PX = 64;
+
+/** A map the guild holds: click to slot it in the next free slot, or carry it onto a slot. */
+const MapRow = ({ entry, left, canClick, onSlot, offer, onTrade }) => {
+    const { recipe } = entry;
+    const out = left <= 0;
+    const { setNodeRef, isDragging, handleProps } = useEntityDrag({
+        id: `atlas-map-${recipe.id}`,
+        kind: DRAG_KIND.MAP,
+        payload: { itemId: recipe.id, fromSlot: null },
+        disabled: out,
+        keyboardAccessible: false
+    });
+    return (
+        <div role="listitem" className="flex flex-col">
+            <button
+                ref={setNodeRef}
+                {...handleProps}
+                type="button"
+                data-map-item={recipe.id}
+                data-slotted-out={out}
+                disabled={out || !canClick}
+                onClick={() => onSlot(recipe.id)}
+                className={cn(
+                    'flex-1 min-w-0 flex items-center gap-2 px-1 py-0.5 text-left touch-none hover:bg-white/10 disabled:cursor-not-allowed',
+                    out && 'opacity-35 grayscale',
+                    isDragging && 'opacity-50'
+                )}
+            >
+                <IngredientIcon recipe={recipe} />
+                <span className="flex-1 min-w-0">{nameOf(recipe)}</span>
+                <span className="tabular-nums text-white/70">×{Math.max(0, left)}</span>
+            </button>
+            {offer && (
+                <button
+                    type="button"
+                    data-map-upcycle={recipe.id}
+                    disabled={!!offer.reason}
+                    title={offer.reason || undefined}
+                    onClick={() => onTrade(recipe.id)}
+                    className="self-start ml-10 mb-1 text-left font-pixel ui-text-small text-gi-gold/80 hover:text-white disabled:text-white/40 disabled:cursor-not-allowed"
+                >
+                    {SCREEN_TEXT.upcycle(offer.ratio, offer.toName)}
+                </button>
+            )}
+        </div>
+    );
+};
 
 /**
- * The Cartography table: the maps the guild holds on the left (click one to slot it), then the
- * slots, the Node Summary and the layout preview; Reroll, Cancel and Settle. Nothing leaves the
+ * One Cartography slot: a drop target for a carried map, and, while it holds one, a drag source
+ * (carry it to another slot to swap, or off the slots to empty it) and a click to empty it.
+ */
+const Slot = ({ index, id, recipe, accepts, onDrop, onUnslot, onLift }) => {
+    const filled = !!recipe;
+    const drag = useEntityDrag({
+        id: `atlas-slot-${index}`,
+        kind: DRAG_KIND.MAP,
+        payload: { itemId: id, fromSlot: index, onMiss: onLift },
+        disabled: !filled,
+        keyboardAccessible: false
+    });
+    const drop = useEntityDrop({ id: `atlas-slot-drop-${index}`, surface: DND_SURFACE.DRAWER, accepts, onDrop });
+    const label = recipe ? nameOf(recipe) : SCREEN_TEXT.EMPTY_SLOT;
+    return (
+        <button
+            ref={mergeRefs(drag.setNodeRef, drop.setNodeRef)}
+            {...drag.handleProps}
+            {...drop.droppableProps}
+            type="button"
+            data-cartography-slot={index}
+            data-slot-item={id ?? ''}
+            title={label}
+            aria-label={label}
+            disabled={!filled}
+            onClick={() => onUnslot(index)}
+            className={cn(
+                'flex items-center justify-center touch-none',
+                filled ? 'bg-black/40 hover:bg-black/25' : 'bg-black/20 border-2 border-dashed border-white/25',
+                drop.valid && 'outline outline-2 outline-[var(--color-ui-green)]',
+                drop.invalid && 'outline outline-2 outline-[var(--color-ui-red)]',
+                drag.isDragging && 'opacity-40'
+            )}
+            style={{ width: SLOT_PX, height: SLOT_PX }}
+        >
+            {recipe && <IngredientIcon recipe={recipe} size={SLOT_ART_PX} />}
+        </button>
+    );
+};
+
+/**
+ * The Cartography table over both pages of the tome: on the left the slots and the maps the guild
+ * holds (click one into the next free slot, or carry it onto a slot); on the right the big layout
+ * preview, the Node Summary under it, and Reroll, Cancel and Settle. Nothing leaves the
  * Bank until Settle (`Atlas.settle`); Cancel or closing the screen just forgets the slots.
  *
  * @param {object} props
@@ -130,110 +276,111 @@ export const CartographyTable = ({ version, onTravel }) => {
         setMessage(result.success ? null : result.reason);
     };
 
+    // What a drop is checked against at release: the table as it is then, not as last drawn.
+    const live = useRef(null);
+    live.current = { slots, heldById };
+    const acceptsAt = (index) => (payload) =>
+        payload?.kind === DRAG_KIND.MAP && dropOnSlot(live.current.slots, payload, index, live.current.heldById) != null;
+    const dropAt = (index) => (payload) => {
+        const next = dropOnSlot(live.current.slots, payload, index, live.current.heldById);
+        if (!next) return false;
+        setMessage(null);
+        if (payload.fromSlot == null) setSettled(null);
+        setSlots(next);
+        return true;
+    };
+    // A map carried off the slots and let go anywhere else goes back to the list.
+    const liftAt = (index) => (payload) => {
+        setMessage(null);
+        setSlots(prev => liftFromSlot(prev, index, payload?.itemId));
+        const row = typeof document !== 'undefined' ? document.querySelector(`[data-map-item="${payload?.itemId}"]`) : null;
+        const r = row?.getBoundingClientRect();
+        return r ? { x: r.left + r.width / 2, y: r.top + r.height / 2 } : { x: 0, y: 0 };
+    };
+
     const noRoom = plan && !plan.fits;
 
-    return (
-        <div data-cartography className="grid grid-cols-[minmax(150px,200px)_1fr] gap-4 min-h-0">
-            <section data-cartography-inventory className="min-h-0 overflow-y-auto custom-scrollbar pr-1">
-                <h3 className="text-[10px] uppercase tracking-wide text-white/50 mb-1">{SCREEN_TEXT.MAPS_HEADING}</h3>
+    const left = (
+        <>
+            <PixelFrame kind="studs" className="shrink-0" frameClassName="p-3 bg-gi-surface/95">
+                <h3 className={headingCls}>{SCREEN_TEXT.SLOTS_HEADING}</h3>
+                <div data-cartography-slots className="flex flex-wrap gap-2">
+                    {slots.map((id, i) => (
+                        <Slot
+                            key={i}
+                            index={i}
+                            id={id}
+                            recipe={id != null ? heldById.get(id)?.recipe : null}
+                            accepts={acceptsAt(i)}
+                            onDrop={dropAt(i)}
+                            onUnslot={unslot}
+                            onLift={liftAt(i)}
+                        />
+                    ))}
+                </div>
+                <p className="mt-1 font-pixel ui-text-small text-white/50">{SCREEN_TEXT.SLOTS_HINT}</p>
+            </PixelFrame>
+            <PixelFrame kind="studs" className="mt-4 flex-1 min-h-0 flex flex-col" frameClassName="flex-1 min-h-0 flex flex-col p-3 bg-gi-surface/95">
+                <h3 className={headingCls}>{SCREEN_TEXT.MAPS_HEADING}</h3>
                 {held.length === 0 && <p className="text-white/50">{SCREEN_TEXT.NO_MAPS}</p>}
-                <ul className="flex flex-col">
-                    {held.map(entry => {
-                        const { recipe } = entry;
-                        const left = entry.count - slottedCount(recipe.id);
-                        const out = left <= 0;
-                        const offer = Atlas.upcycleOffer(recipe.id);
-                        return (
-                            <li key={recipe.id} className="flex flex-col">
-                                <button
-                                    type="button"
-                                    data-map-item={recipe.id}
-                                    data-slotted-out={out}
-                                    disabled={out || firstEmpty < 0}
-                                    onClick={() => slot(recipe.id)}
-                                    className={cn(
-                                        'flex-1 min-w-0 flex items-center gap-2 px-1 py-0.5 rounded-sm text-left hover:bg-white/10 disabled:cursor-not-allowed',
-                                        out && 'opacity-35 grayscale'
-                                    )}
-                                >
-                                    <IngredientIcon recipe={recipe} />
-                                    <span className="flex-1 min-w-0 truncate">{nameOf(recipe)}</span>
-                                    <span className="tabular-nums text-white/70">×{Math.max(0, left)}</span>
-                                </button>
-                                {offer && (
-                                    <button
-                                        type="button"
-                                        data-map-upcycle={recipe.id}
-                                        disabled={!!offer.reason}
-                                        title={offer.reason || undefined}
-                                        onClick={() => trade(recipe.id)}
-                                        className="self-start ml-2 mb-1 text-left text-[11px] text-gi-gold/80 hover:text-white disabled:text-white/40 disabled:cursor-not-allowed"
-                                    >
-                                        {SCREEN_TEXT.upcycle(offer.ratio, offer.toName)}
-                                    </button>
-                                )}
-                            </li>
-                        );
-                    })}
-                </ul>
-            </section>
+                <section data-cartography-inventory className="flex-1 min-h-0 flex flex-col">
+                    <ArrowScrollList step={80} className="flex-1 min-h-0" compact listProps={{ role: 'list' }}>
+                        {held.map(entry => (
+                            <MapRow
+                                key={entry.recipe.id}
+                                entry={entry}
+                                left={entry.count - slottedCount(entry.recipe.id)}
+                                canClick={firstEmpty >= 0}
+                                onSlot={slot}
+                                offer={Atlas.upcycleOffer(entry.recipe.id)}
+                                onTrade={trade}
+                            />
+                        ))}
+                    </ArrowScrollList>
+                </section>
+            </PixelFrame>
+        </>
+    );
 
-            <section data-cartography-bench className="min-w-0 flex flex-col gap-3">
-                <div>
-                    <h3 className="text-[10px] uppercase tracking-wide text-white/50 mb-1">{SCREEN_TEXT.SLOTS_HEADING}</h3>
-                    <div className="flex flex-wrap gap-2">
-                        {slots.map((id, i) => {
-                            const recipe = id != null ? heldById.get(id)?.recipe : null;
-                            return (
-                                <button
-                                    key={i}
-                                    type="button"
-                                    data-cartography-slot={i}
-                                    data-slot-item={id ?? ''}
-                                    title={recipe ? nameOf(recipe) : SCREEN_TEXT.EMPTY_SLOT}
-                                    aria-label={recipe ? nameOf(recipe) : SCREEN_TEXT.EMPTY_SLOT}
-                                    disabled={!recipe}
-                                    onClick={() => unslot(i)}
-                                    className={cn(
-                                        'w-12 h-12 flex items-center justify-center rounded-sm',
-                                        recipe ? 'bg-white/10 hover:bg-white/20' : 'border border-dashed border-white/20'
-                                    )}
-                                >
-                                    {recipe && <IngredientIcon recipe={recipe} />}
-                                </button>
-                            );
-                        })}
-                    </div>
+    const right = (
+        <section data-cartography-bench className="flex-1 min-h-0 flex flex-col">
+            <PixelFrame kind="studs" className="flex-1 min-h-0 flex flex-col" frameClassName="flex-1 min-h-0 flex flex-col p-3 bg-gi-surface/95">
+                <h3 className={headingCls}>{SCREEN_TEXT.PREVIEW_HEADING}</h3>
+                <div data-cartography-preview className="flex-1 min-h-[160px] flex items-center justify-center">
+                    <LayoutPreview layout={plan?.layout ?? null} className="w-full h-full" />
                 </div>
-
-                <div className="grid grid-cols-[minmax(160px,1fr)_minmax(200px,1.4fr)] gap-4 pt-2 border-t border-white/10">
-                    <div>
-                        <h3 className="text-[10px] uppercase tracking-wide text-white/50 mb-1">{SCREEN_TEXT.SUMMARY_HEADING}</h3>
+                <div className="mt-2 pt-2 border-t border-white/10 shrink-0 max-h-[35%] min-h-0 flex flex-col">
+                    <h3 className={headingCls}>{SCREEN_TEXT.SUMMARY_HEADING}</h3>
+                    <ArrowScrollList step={48} compact className="min-h-0 flex-1">
                         <NodeSummary summary={plan?.summary ?? null} />
-                    </div>
-                    <div>
-                        <h3 className="text-[10px] uppercase tracking-wide text-white/50 mb-1">{SCREEN_TEXT.PREVIEW_HEADING}</h3>
-                        <LayoutPreview layout={plan?.layout ?? null} />
-                    </div>
+                    </ArrowScrollList>
                 </div>
-
-                <div className="flex items-center gap-2 pt-2 border-t border-white/10">
-                    <button type="button" data-cartography-reroll className={buttonCls} disabled={!plan || cooling} onClick={reroll}>{SCREEN_TEXT.REROLL}</button>
-                    <button type="button" data-cartography-cancel className={buttonCls} disabled={!filled.length} onClick={cancel}>{SCREEN_TEXT.CANCEL}</button>
-                    <div className="flex-1" />
-                    <button type="button" data-cartography-settle className={`${buttonCls} ui-shine`} disabled={!plan || noRoom} onClick={settle}>{SCREEN_TEXT.SETTLE}</button>
+            </PixelFrame>
+            <div className="mt-3 shrink-0 flex flex-col items-end gap-1">
+                <div className="flex items-center gap-3">
+                    <TableButton data-cartography-reroll disabled={!plan || cooling} onClick={reroll}>{SCREEN_TEXT.REROLL}</TableButton>
+                    <TableButton data-cartography-cancel disabled={!filled.length} onClick={cancel}>{SCREEN_TEXT.CANCEL}</TableButton>
+                    <TableButton main data-cartography-settle disabled={!plan || noRoom} onClick={settle}>{SCREEN_TEXT.SETTLE}</TableButton>
                 </div>
                 {(message || noRoom) && (
-                    <p role="status" data-cartography-message className="text-red-300">{message || TEXT.REFUSE_NO_ROOM}</p>
+                    <p role="status" data-cartography-message className="font-pixel ui-text-small text-[var(--color-ui-red)] bg-black/70 px-2">{message || TEXT.REFUSE_NO_ROOM}</p>
                 )}
                 {settled && (
-                    <div data-cartography-settled className="flex items-center gap-2 text-emerald-200">
-                        <span className="flex-1">{SCREEN_TEXT.settled(settled.flavour, settled.practical)}</span>
-                        <button type="button" data-settled-travel className={buttonCls} onClick={() => onTravel?.(settled.id)}>{SCREEN_TEXT.TRAVEL_THERE}</button>
-                        <button type="button" data-settled-stay className={buttonCls} onClick={() => setSettled(null)}>{SCREEN_TEXT.STAY}</button>
-                    </div>
+                    <PixelFrame kind="chamfer" frameClassName="px-2 py-1">
+                        <div data-cartography-settled className="flex items-center gap-3">
+                            <span className="text-[var(--color-ui-green)]">{SCREEN_TEXT.settled(settled.flavour, settled.practical)}</span>
+                            <TableButton main data-settled-travel onClick={() => onTravel?.(settled.id)}>{SCREEN_TEXT.TRAVEL_THERE}</TableButton>
+                            <TableButton data-settled-stay onClick={() => setSettled(null)}>{SCREEN_TEXT.STAY}</TableButton>
+                        </div>
+                    </PixelFrame>
                 )}
-            </section>
+            </div>
+        </section>
+    );
+
+    return (
+        <div data-cartography className="flex-1 min-h-0 flex flex-col">
+            <TomeSpread left={left} right={right} />
         </div>
     );
 };

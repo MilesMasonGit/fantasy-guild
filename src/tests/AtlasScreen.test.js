@@ -444,6 +444,30 @@ describe('the Atlas screen', () => {
         expect(onClose).toHaveBeenCalledTimes(1);
     });
 
+    it('lies on the table as a tome: a press on the table closes it, a press on the book does not', () => {
+        const onClose = vi.fn();
+        const { container } = screen({ onClose });
+        fireEvent.pointerDown(q(container, '[data-atlas-screen]'));
+        fireEvent.pointerDown(q(container, '[data-tome-pages]'));
+        expect(onClose).not.toHaveBeenCalled();
+        fireEvent.pointerDown(q(container, '[data-atlas-overlay]'));
+        expect(onClose).toHaveBeenCalledTimes(1);
+        fireEvent.click(q(container, '[data-atlas-close]'));
+        expect(onClose).toHaveBeenCalledTimes(2);
+    });
+
+    it('lays Cartography over both pages: the maps and slots on the left, the preview and buttons on the right', () => {
+        InventoryManager.addItem(WOOD_ITEM, 1);
+        const { container } = screen({ initialTab: ATLAS_TAB.CARTOGRAPHY });
+        const left = q(container, '[data-cartography] [data-tome-left]');
+        const right = q(container, '[data-cartography] [data-tome-right]');
+        expect(q(left, '[data-cartography-slot="0"]')).toBeTruthy();
+        expect(q(left, `[data-map-item="${WOOD_ITEM}"]`)).toBeTruthy();
+        expect(q(right, '[data-layout-preview]')).toBeTruthy();
+        expect(q(right, '[data-node-summary]')).toBeTruthy();
+        expect(q(right, '[data-cartography-settle]')).toBeTruthy();
+    });
+
     it('redraws the list when the Atlas changes (ATLAS_CHANGED has a listener now)', () => {
         expect(Object.keys(NO_LISTENER)).not.toContain(ENGINE_EVENTS.ATLAS_CHANGED);
         const { container } = screen();

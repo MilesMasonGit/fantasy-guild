@@ -167,7 +167,7 @@ describe('the tutorial aide\'s beacons', () => {
         expect(read('ui/components/board/SpriteLayerView.jsx')).toContain('data-item-sprite="true"');
         expect(read('ui/components/drawer/ShopDrawer.jsx')).toMatch(/data-shop-item=\{chosen\.typeId\}/);
         expect(read('ui/components/board/GuildHallBoard.jsx')).toContain('data-guild-roster-upgrade=');
-        expect(read('ui/components/atlas/AtlasScreen.jsx')).toContain('data-atlas-tab={id}');
+        expect(read('ui/components/atlas/AtlasTome.jsx')).toContain('data-atlas-tab={id}');
         expect(read('ui/components/atlas/AtlasScreen.jsx')).toContain("CARTOGRAPHY: 'cartography'");
         const atlas = read('ui/components/atlas/CartographyTable.jsx') + read('ui/components/atlas/RegionList.jsx');
         for (const attr of ['data-cartography-settle', 'data-settled-travel', 'data-region-travel']) {
