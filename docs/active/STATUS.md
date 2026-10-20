@@ -14,7 +14,9 @@ alongside. Banners without a CMS pick default by the Region's main biome
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
 | Brief 160 T1: the Atlas as a tome (~90 % of the window), bookmark tabs and page turn, Cartography over both pages, drag maps to slots (T-172) | builder | `crunch/atlas-tome` (`at`) | ready (d1a0ed96; director's gate: 5511 tests, cycles, build; no `src/systems` touched; QA → Atlas → Grant test maps for the eye-check). Look questions: Regions or Cartography first; dark panels over the pages; Reroll/Cancel as framed text buttons | Tue | Tue |
-| Brief 160 T2: Region rows on area banners, Travel and the … menu, CMS banner field, top bar slice, arrival card, preview backdrop (T-173) | builder | `crunch/atlas-tome` (`at`) | building | Tue | |
+| Brief 160 T2: Region rows on area banners, Travel and the … menu, CMS banner field, top bar slice, arrival card, preview backdrop (T-173) | builder | `crunch/atlas-tome` (`at`) | ready (a775cbf6; director's gate: 5533 tests, cycles, build; no `src/systems` or `data/`; CMS banner picker on Base Maps and the Starter Camp page). Look questions: two columns of rows, the four stand-in biome banners, the crop, the … icon | Tue | Tue |
+| Brief 160 T1b (owner 2026-10-20): the owner's book sprite at 4×, mirrored for the left page, the UI inside the pages | builder | `crunch/atlas-tome` (`at`) | ready (6ff6b483; director's gate: 5535 tests, cycles, build; fixed 4×, fits 1280×720 with ~50 px of table each side; about 60 % of the mat column at 1600×900: look question) | Tue | Tue |
+| Brief 160 T4a (owner 2026-10-20): the mat and the book on one wood table; opening the Atlas is a camera move from the mat up to the book | engineer | `crunch/atlas-tome` (`at`) | eye-check (b9c967e8, 7a678567; one wood table, glide 0.56 s, skippable, reduced motion swaps, travel glides back then the arrival card; the mat never re-renders on open/close (measured); director's gate: 5551 tests, cycles, build). Served on 5198 from `p23b` at 7a678567, [file](eyecheck/2026-10-20_atlas-tome.md) | Tue | Tue |
 | Flaky loot-landing test (T-192) | builder-lite | `fix/t192-flaky-loot-test` (`fx`) | merged (2aa314e8, test-only: -0 vs +0 compared with toBeCloseTo; 15 lone runs green, suite 5500) | Tue | Tue |
 
 ## Features director, batch 5: the recipe list and notifications
@@ -173,6 +175,8 @@ T-186; the badges' soft shadows are settled inside T-013.)
 
 ## Bench queue (one at a time, weekdays 13:00–17:00 and 01:00–07:00, or when the owner says the PC is quiet)
 
+00. **Batch 6, `crunch/atlas-tome` (7a678567)**: engine work check (expect same: no engine code); `bench:draw -- --compare --only=S2` (rest state unchanged) and the new open/close scene `bench:draw -- --only=S2,atlas --ab=<main served on a port>` for the cost log.
+
 0. **Batch 5, merged to `main` 9fa5572e on the owner's word**: engine work check on `main` (expect same: no engine rules changed, but the routing hears inventory events); one `bench:draw --compare` on S2 Realistic with auto-collect on (loot flying to stubs: the engineer measured ~+1.8 column redraws a second, ~2 ms each in the dev build; production not measured) for the cost log (stubs replace the sidebar). Bench follow-ups from the builder: the `notify` scene fires `NotificationSystem.info`, which now draws nothing (repoint at item flow); `bench/drag.mjs` rests the pointer on the old sidebar strip spot, now the top bar.
 
 1. **Features stack, merged 2026-10-18 (b68cd020) on the owner's word**: the engine work check ran on the merge (S2, S3, S5, S6, S8, S8L, S8F WORK CHANGED from the hostile flag watch, accepted under T-167; a control run of `main` bcf1324d was the same work; S1, S4, S7 same). Still owed in a quiet window on `main`: the engine timing re-run (daytime load read S3/S4/S7 slower on `main` too), and one `bench:draw --compare` plus `bench:crisp` for the cost log (brief 120 C1 must draw cheaper than before the stack; brief 110's top bar frame and mode outlines; the level-up floats). If C1 draws dearer, a ticket and a report to the owner.
@@ -180,6 +184,14 @@ T-186; the badges' soft shadows are settled inside T-013.)
 8. Terrain director: **bench baseline retake** on `main` at the next 01:00 window (engine and draw; every run since 16 Oct reads 10-20 % slow on unchanged code).
 
 ## Summaries
+
+**Tue 2026-10-20, 11:30: batch 6 at the eye-check.** Where we are: the
+Atlas tome is built (the owner's book at 4×, Cartography with drag to slot,
+Region rows on banners, the CMS banner pick, the camera glide from the mat to
+the book), gated (5551 tests, cycles, build) and served on 5198 with a
+[13-check file](eyecheck/2026-10-20_atlas-tome.md). Next: the owner's look;
+benches from 13:00 (batch 5's work check on `main`, then this branch). Owner:
+the eye-check. Blockers: none.
 
 **Tue 2026-10-20, morning: batch 6 proposed and ruled.** Where we are:
 batch 5 (recipe list, notifications) merged to `main` 9fa5572e on the
