@@ -1,8 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '../../utils/cn.js';
-import { TOME_ART, COVER_ART, spreadSize, pageRects } from './tomeArt.js';
-import { useTomeScale } from './tomeScale.js';
+import { TOME_ART, TOME_SCALE, COVER_ART, spreadSize, pageRects } from './tomeArt.js';
 
 /** One art pixel of the ribbons, in screen pixels: UI sprites draw at 2×. */
 const ART_PX = 2;
@@ -156,7 +155,7 @@ const PageRectsContext = createContext(null);
  * @param {string} props.label
  */
 export const AtlasTome = ({ tabs, tab, onTab, closeButton, label, children }) => {
-    const scale = useTomeScale();
+    const scale = TOME_SCALE;
     const [turn, setTurn] = useState(null);
     const turns = useRef(0);
     const stage = useRef(null);

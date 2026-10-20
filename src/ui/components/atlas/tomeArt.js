@@ -22,9 +22,8 @@ export const PARCHMENT_ART = Object.freeze({
 /** The covers' outer edges on the spread, in art pixels (the opaque part of both pictures). */
 export const COVER_ART = Object.freeze({ x0: 39, y0: 4, x1: 256 + 238, y1: 252 });
 
-/** The scales the book may be drawn at, chosen by eye (dev switch in QA → Atlas). */
-export const TOME_SCALES = Object.freeze([2, 3, 4]);
-export const DEFAULT_TOME_SCALE = 2;
+/** The book is always drawn at a whole 4×: bigger than the screen, centred and cropped. */
+export const TOME_SCALE = 4;
 
 /** The spread's size at `scale`: two pages side by side. */
 export function spreadSize(scale) {
