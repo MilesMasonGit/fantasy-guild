@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '../../utils/cn.js';
-import { TOME_ART, TOME_FILL } from './tomeArt.js';
+import { TOME_ART, PAGE_PX, SPREAD_W, SPREAD_H, TOME_SCALE, COVER_ART, parchmentRects } from './tomeArt.js';
 
-/** One art pixel of the placeholder book, in screen pixels: UI sprites draw at 2×. */
+/** One art pixel of the ribbons, in screen pixels: UI sprites draw at 2×. */
 const ART_PX = 2;
 
 /** The page turn: each half of the leaf moves in this many held frames over this long. */
@@ -16,60 +16,34 @@ export const prefersReducedMotion = () =>
     typeof window !== 'undefined' && typeof window.matchMedia === 'function'
     && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-const PARCHMENT = '#e9d9b0';
-const PARCHMENT_EDGE = '#c9b282';
-const COVER = '#4a2a1a';
-const COVER_EDGE = '#2a160c';
-
-/** The spine's shadow on each page, darkest at the fold. */
-const pageShade = (side) => `linear-gradient(${side === 'left' ? 'to left' : 'to right'}, rgba(74,42,26,0.35) 0, rgba(74,42,26,0) 48px)`;
-
-/** One placeholder page: parchment, a faint ruled edge, the spine's shadow. */
-const Page = ({ side }) => (
-    <div
+/** One page of the owner's book: the right page as drawn, the left one mirrored. */
+const PageArt = ({ side, style, className }) => (
+    <img
         aria-hidden="true"
         data-tome-page={side}
-        className="absolute inset-y-0 w-1/2"
+        src={TOME_ART.page}
+        alt=""
+        draggable={false}
+        className={cn('absolute top-0 select-none pointer-events-none', className)}
         style={{
-            [side]: 0,
-            background: `${pageShade(side)}, ${PARCHMENT}`,
-            boxShadow: `inset 0 0 0 ${ART_PX}px ${PARCHMENT_EDGE}`
+            width: PAGE_PX,
+            height: PAGE_PX,
+            // ⚠️ Inline: a global img rule would cap the width and squash the art.
+            maxWidth: 'none',
+            imageRendering: 'pixelated',
+            transform: side === 'left' ? 'scaleX(-1)' : undefined,
+            ...style
         }}
     />
 );
 
-/**
- * The open book behind the Atlas's panels. The owner's spread picture when there is one
- * (`TOME_ART.spread`), else a code-drawn book: a leather cover, two parchment pages, a spine.
- */
-const TomeBackdrop = () => {
-    if (TOME_ART.spread) {
-        return (
-            <img
-                aria-hidden="true"
-                data-tome-art
-                src={TOME_ART.spread}
-                alt=""
-                draggable={false}
-                className="absolute inset-0 w-full h-full select-none pointer-events-none"
-                style={{ imageRendering: 'pixelated' }}
-            />
-        );
-    }
-    return (
-        <div aria-hidden="true" data-tome-art="placeholder" className="absolute inset-0 pointer-events-none">
-            <div
-                className="absolute inset-0"
-                style={{ background: COVER, boxShadow: `inset 0 0 0 ${ART_PX}px ${COVER_EDGE}, ${2 * ART_PX}px ${2 * ART_PX}px 0 0 #000` }}
-            />
-            <div className="absolute" style={{ inset: 6 * ART_PX }}>
-                <Page side="left" />
-                <Page side="right" />
-                <div className="absolute inset-y-0 left-1/2 -translate-x-1/2" style={{ width: ART_PX * 2, background: COVER_EDGE }} />
-            </div>
-        </div>
-    );
-};
+/** The open book behind the Atlas's panels: the owner's page at 4×, twice, spine to spine. */
+const TomeBackdrop = () => (
+    <div aria-hidden="true" data-tome-art className="absolute inset-0 pointer-events-none">
+        <PageArt side="left" style={{ left: 0 }} />
+        <PageArt side="right" style={{ left: PAGE_PX }} />
+    </div>
+);
 
 /** How far a ribbon stands above the book, and how far it tucks in under the cover. */
 const RIBBON_UP_PX = 34;
@@ -111,32 +85,39 @@ const PageTurn = ({ turn, onDone }) => {
     const forward = turn.forward;
     const from = forward ? 'right' : 'left';
     const to = forward ? 'left' : 'right';
-    const leaf = { background: PARCHMENT, boxShadow: `inset 0 0 0 ${ART_PX}px ${PARCHMENT_EDGE}` };
+    // The spine is at the middle of the spread: each half of the leaf folds about it.
+    const origin = (side) => (side === 'right' ? 'left center' : 'right center');
+    const at = (side) => (side === 'right' ? PAGE_PX : 0);
     return (
-        <div aria-hidden="true" data-page-turn={forward ? 'forward' : 'back'} className="absolute pointer-events-none z-20" style={{ inset: 6 * ART_PX }}>
+        <div aria-hidden="true" data-page-turn={forward ? 'forward' : 'back'} className="absolute inset-0 pointer-events-none z-20">
             <motion.div
-                className="absolute inset-y-0 w-1/2"
-                style={{ ...leaf, [from]: 0, transformOrigin: from === 'right' ? 'left center' : 'right center' }}
+                className="absolute top-0"
+                style={{ left: at(from), width: PAGE_PX, height: PAGE_PX, transformOrigin: origin(from) }}
                 initial={{ scaleX: 1 }}
                 animate={{ scaleX: 0 }}
                 transition={{ duration: PAGE_TURN_HALF_S, ease: stepped(PAGE_TURN_STEPS) }}
-            />
+            >
+                <PageArt side={from} style={{ left: 0 }} />
+            </motion.div>
             <motion.div
-                className="absolute inset-y-0 w-1/2"
-                style={{ ...leaf, [to]: 0, transformOrigin: to === 'right' ? 'left center' : 'right center' }}
+                className="absolute top-0"
+                style={{ left: at(to), width: PAGE_PX, height: PAGE_PX, transformOrigin: origin(to) }}
                 initial={{ scaleX: 0 }}
                 animate={{ scaleX: 1 }}
                 transition={{ delay: PAGE_TURN_HALF_S, duration: PAGE_TURN_HALF_S, ease: stepped(PAGE_TURN_STEPS) }}
                 onAnimationComplete={onDone}
-            />
+            >
+                <PageArt side={to} style={{ left: 0 }} />
+            </motion.div>
         </div>
     );
 };
 
 /**
- * The Atlas as an open tome lying on the map table, nearly filling its area. Bookmark ribbons on
- * its top edge switch the section, with a quick page turn (none under reduced motion); the
- * section's own panels lie over the pages (`TomeSpread`).
+ * The Atlas as the owner's open book lying on the map table, drawn at exactly 4× (1024 × 512) and
+ * never scaled: a mat column smaller than that crops the table around it. Bookmark ribbons on its
+ * top edge switch the section, with a quick page turn (none under reduced motion); the section's
+ * own panels lie inside the pages' parchment (`TomeSpread`).
  *
  * @param {object} props
  * @param {{ id: string, label: string, colour: string }[]} props.tabs  in page order
@@ -169,18 +150,24 @@ export const AtlasTome = ({ tabs, tab, onTab, closeButton, label, children }) =>
             role="dialog"
             aria-label={label}
             data-atlas-screen
-            className="relative text-white"
-            style={{ width: `${TOME_FILL * 100}%`, height: `calc(${TOME_FILL * 100}% - ${RIBBON_UP_PX + RIBBON_LIFT_PX}px)`, marginTop: RIBBON_UP_PX + RIBBON_LIFT_PX }}
+            className="relative shrink-0 text-white"
+            style={{ width: SPREAD_W, height: SPREAD_H, marginTop: RIBBON_UP_PX + RIBBON_LIFT_PX }}
         >
             {/* Before the book, so the ribbons tuck in under its cover. */}
-            <div role="tablist" className="absolute bottom-full left-[8%] flex items-end gap-2" style={{ marginBottom: -RIBBON_TUCK_PX }}>
+            <div
+                role="tablist"
+                className="absolute bottom-full flex items-end gap-2"
+                style={{ left: PAGE_PX - COVER_ART.x1 * TOME_SCALE + 48, marginBottom: -RIBBON_TUCK_PX - COVER_ART.y0 * TOME_SCALE }}
+            >
                 {tabs.map(t => (
                     <BookmarkRibbon key={t.id} {...t} selected={t.id === tab} onSelect={select} />
                 ))}
             </div>
             <TomeBackdrop />
-            {closeButton && <div className="absolute z-30 -top-3 -right-3">{closeButton}</div>}
-            <div data-tome-pages className="absolute flex flex-col min-h-0" style={{ inset: 6 * ART_PX }}>
+            {closeButton && (
+                <div className="absolute z-30" style={{ left: PAGE_PX + COVER_ART.x1 * TOME_SCALE - 20, top: COVER_ART.y0 * TOME_SCALE - 12 }}>{closeButton}</div>
+            )}
+            <div data-tome-pages className="absolute inset-0">
                 {children}
             </div>
             {turn && <PageTurn key={turn.key} turn={turn} onDone={() => setTurn(null)} />}
@@ -188,24 +175,18 @@ export const AtlasTome = ({ tabs, tab, onTab, closeButton, label, children }) =>
     );
 };
 
-/** The width of the gutter either side of the spine, where nothing is laid. */
-export const TOME_GUTTER_PX = 28;
-const GUTTER = TOME_GUTTER_PX;
+/** Where the panels go on each page: inside the parchment, clear of the gold border. */
+export const PAGE_RECTS = parchmentRects();
 
 /**
- * The two pages as places to lay panels: `left` and `right` each fill their page, kept clear of
- * the spine; `spread` lays one thing across both.
+ * The two pages as places to lay panels: `left` and `right` each fill their page's parchment and
+ * nothing spills past its gold border.
  */
-export const TomeSpread = ({ left, right, spread, className }) => {
-    if (spread) {
-        return <div data-tome-spread className={cn('flex-1 min-h-0 flex flex-col', className)}>{spread}</div>;
-    }
-    return (
-        <div data-tome-spread className={cn('flex-1 min-h-0 grid grid-cols-2', className)} style={{ columnGap: GUTTER * 2 }}>
-            <div data-tome-left className="min-h-0 min-w-0 flex flex-col p-5 pr-0">{left}</div>
-            <div data-tome-right className="min-h-0 min-w-0 flex flex-col p-5 pl-0">{right}</div>
-        </div>
-    );
-};
+export const TomeSpread = ({ left, right }) => (
+    <div data-tome-spread className="absolute inset-0">
+        <div data-tome-left className="absolute flex flex-col min-h-0 min-w-0" style={PAGE_RECTS.left}>{left}</div>
+        <div data-tome-right className="absolute flex flex-col min-h-0 min-w-0" style={PAGE_RECTS.right}>{right}</div>
+    </div>
+);
 
 export default AtlasTome;

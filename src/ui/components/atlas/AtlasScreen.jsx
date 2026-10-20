@@ -6,7 +6,7 @@ import { CartographyTable } from './CartographyTable.jsx';
 import { useAtlasRefresh } from './useAtlasRefresh.js';
 import { travelFromScreen, END_DRAG_MARK } from './travelFromScreen.js';
 import { SCREEN_TEXT } from './atlasScreenText.js';
-import { AtlasTome, TomeSpread } from './AtlasTome.jsx';
+import { AtlasTome } from './AtlasTome.jsx';
 import { TOME_ART } from './tomeArt.js';
 
 export const ATLAS_TAB = Object.freeze({ REGIONS: 'regions', CARTOGRAPHY: 'cartography' });
@@ -78,7 +78,7 @@ export const AtlasScreen = ({ onClose, closePromotion, initialTab = ATLAS_TAB.RE
     return (
         <div
             data-atlas-overlay
-            className="absolute inset-0 z-[100] pointer-events-auto flex items-center justify-center text-[12px] leading-snug"
+            className="absolute inset-0 z-[100] pointer-events-auto overflow-hidden flex items-center justify-center text-[12px] leading-snug"
             style={{
                 backgroundColor: '#3b2414',
                 backgroundImage: `url(${TOME_ART.table})`,
@@ -89,10 +89,10 @@ export const AtlasScreen = ({ onClose, closePromotion, initialTab = ATLAS_TAB.RE
         >
             <AtlasTome tabs={TABS} tab={tab} onTab={setTab} closeButton={closeButton} label={SCREEN_TEXT.TITLE}>
                 {/* Both stay mounted, so moving between the tabs keeps what is slotted. */}
-                <div className={cn('flex-1 min-h-0 flex flex-col', tab !== ATLAS_TAB.REGIONS && 'hidden')}>
-                    <TomeSpread spread={<RegionList version={version} onTravel={travel} message={message} onMessage={setMessage} />} />
+                <div className={cn('absolute inset-0', tab !== ATLAS_TAB.REGIONS && 'hidden')}>
+                    <RegionList version={version} onTravel={travel} message={message} onMessage={setMessage} />
                 </div>
-                <div className={cn('flex-1 min-h-0 flex flex-col', tab !== ATLAS_TAB.CARTOGRAPHY && 'hidden')}>
+                <div className={cn('absolute inset-0', tab !== ATLAS_TAB.CARTOGRAPHY && 'hidden')}>
                     <CartographyTable version={version} onTravel={travel} />
                 </div>
             </AtlasTome>

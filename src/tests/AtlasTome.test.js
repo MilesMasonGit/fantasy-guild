@@ -5,6 +5,7 @@ import { render, fireEvent, cleanup } from '@testing-library/react';
 import { AtlasTome, TomeSpread } from '../ui/components/atlas/AtlasTome.jsx';
 import { dropOnSlot, liftFromSlot } from '../ui/components/atlas/CartographyTable.jsx';
 import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
+import { TOME_ART, TOME_SCALE, PAGE_PX, SPREAD_W, SPREAD_H, PARCHMENT_ART, parchmentRects } from '../ui/components/atlas/tomeArt.js';
 
 /**
  * The Atlas tome: the bookmark ribbons switch the section with a page turn (none under reduced
@@ -108,5 +109,39 @@ describe('the tome', () => {
         fireEvent.click(second.container.querySelector('[data-atlas-tab="cartography"]'));
         expect(onTab).toHaveBeenCalledWith('cartography');
         expect(second.container.querySelector('[data-page-turn]')).toBeNull();
+    });
+});
+
+describe('the owner book', () => {
+    afterEach(cleanup);
+
+    it('is the page sprite at exactly 4×, the left page its mirror, spine to spine', () => {
+        expect(TOME_SCALE).toBe(4);
+        expect([PAGE_PX, SPREAD_W, SPREAD_H]).toEqual([512, 1024, 512]);
+        const { container } = render(React.createElement(AtlasTome, { tabs: [], tab: null, onTab: vi.fn(), label: 'Atlas' }));
+        const screen = container.querySelector('[data-atlas-screen]');
+        expect([screen.style.width, screen.style.height]).toEqual(['1024px', '512px']);
+        const left = container.querySelector('[data-tome-page="left"]');
+        const right = container.querySelector('[data-tome-page="right"]');
+        for (const img of [left, right]) {
+            expect(img.getAttribute('src')).toBe(TOME_ART.page);
+            expect([img.style.width, img.style.height, img.style.imageRendering]).toEqual(['512px', '512px', 'pixelated']);
+        }
+        expect(left.style.transform).toBe('scaleX(-1)');
+        expect([left.style.left, right.style.left]).toEqual(['0px', '512px']);
+        expect(right.style.transform).toBe('');
+    });
+
+    it('lays each page panels inside its parchment, mirrored about the spine', () => {
+        const { left, right } = parchmentRects();
+        expect(right.left).toBe(PAGE_PX + PARCHMENT_ART.x0 * 4);
+        expect(left.left + left.width).toBe(PAGE_PX - PARCHMENT_ART.x0 * 4);
+        expect(left.width).toBe(right.width);
+        expect(right.left + right.width).toBeLessThanOrEqual(SPREAD_W);
+        expect(left.left).toBeGreaterThanOrEqual(0);
+        expect(left.top + left.height).toBeLessThanOrEqual(SPREAD_H);
+        const { container } = render(React.createElement(TomeSpread, { left: 'L', right: 'R' }));
+        const page = container.querySelector('[data-tome-right]');
+        expect([page.style.left, page.style.top, page.style.width]).toEqual([`${right.left}px`, `${right.top}px`, `${right.width}px`]);
     });
 });

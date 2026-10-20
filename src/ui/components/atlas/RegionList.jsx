@@ -13,14 +13,14 @@ import { ArrowScrollList } from '../base/ArrowScrollList.jsx';
 import { BannerArt } from '../base/BannerArt.jsx';
 import { TokenSprite, TOKEN_SURFACE, PixelArt } from '../base/TokenSprite.jsx';
 import { AtlasButton } from './AtlasButton.jsx';
-import { TOME_GUTTER_PX } from './AtlasTome.jsx';
+import { TomeSpread } from './AtlasTome.jsx';
 import { bannerForRegion } from './regionBanner.js';
 import { SCREEN_TEXT, dayOf } from './atlasScreenText.js';
 
 /** How many of a Region's most common Tokens its row shows. */
 const NODE_PILLS = 3;
 /** A row's height in screen px: room for the name, the facts and a slice of the banner. */
-const ROW_PX = 128;
+const ROW_PX = 104;
 
 /** Why Region `region` cannot be abandoned, or null when it can. The engine refuses the same. */
 export function abandonRefusal(region) {
@@ -127,10 +127,10 @@ const RegionRow = ({ region, banner, nodes, heroes, onTravel, onMessage }) => {
         onMessage(result.success ? null : result.reason);
     };
     return (
-        <div role="listitem" data-region-row={region.id} data-region-active={region.active} className="relative" style={{ height: ROW_PX }}>
-            <PixelFrame kind="studs" className="h-full" frameClassName="relative h-full overflow-hidden">
+        <div role="listitem" data-region-row={region.id} data-region-active={region.active} className="relative shrink-0 flex flex-col" style={{ minHeight: ROW_PX }}>
+            <PixelFrame kind="studs" className="flex-1 flex flex-col" frameClassName="relative flex-1 flex flex-col overflow-hidden">
                 <BannerArt banner={banner} />
-                <div className="relative h-full flex flex-col justify-between p-2 gap-1">
+                <div className="relative flex-1 flex flex-col justify-between p-2 gap-1">
                     <div className="flex items-start gap-2">
                         <div className={cn(boxCls, 'min-w-0')}>
                             <FlavourName region={region} draft={draft} setDraft={setDraft} onMessage={onMessage} />
@@ -216,7 +216,7 @@ function rowFacts(region, out) {
 }
 
 /**
- * Every Region the guild has settled, over both pages of the tome, one row per Region on its area
+ * Every Region the guild has settled, down the left page and on down the right, one row per Region on its area
  * banner: its names, its main Tokens, the day it was settled, its Token count and the heroes there;
  * Travel, and a "…" menu for Rename, Archive and Abandon (asked first). The Region the guild is in
  * reads "Here". The Starter Camp comes first, then by the day settled; the archive sits behind a
@@ -228,27 +228,40 @@ export const RegionList = ({ version, onTravel, message, onMessage }) => {
     const out = useMemo(() => heroesOut(), [version]); // eslint-disable-line react-hooks/exhaustive-deps
     const [showArchive, setShowArchive] = useState(false);
     const row = (r) => <RegionRow key={r.id} region={r} {...rowFacts(r, out)} onTravel={onTravel} onMessage={onMessage} />;
-    const grid = { columnGap: TOME_GUTTER_PX * 2 };
+    // Read like a book: the first half down the left page, the rest down the right.
+    const half = Math.ceil(regions.length / 2);
+    const page = (children) => (
+        <ArrowScrollList step={ROW_PX + 8} compact className="flex-1 min-h-0 flex flex-col gap-2 py-1">{children}</ArrowScrollList>
+    );
+    const left = page(<div role="list" className="flex flex-col gap-2">{regions.slice(0, half).map(row)}</div>);
+    const right = (
+        <>
+            {page(
+                <>
+                    <div role="list" className="flex flex-col gap-2">{regions.slice(half).map(row)}</div>
+                    {showArchive && archived.length > 0 && (
+                        <div data-region-archive-list className="flex flex-col gap-2">
+                            <h3 className="font-pixel ui-text-small uppercase tracking-wide bg-black/65 self-start px-2 text-white/70">{SCREEN_TEXT.ARCHIVED_HEADING}</h3>
+                            <div role="list" className="flex flex-col gap-2">{archived.map(row)}</div>
+                        </div>
+                    )}
+                </>
+            )}
+            {(message || archived.length > 0) && (
+                <div className="shrink-0 pt-1 flex flex-wrap items-center justify-end gap-2">
+                    {message && <p role="status" data-region-message className="flex-1 font-pixel ui-text-small bg-black/80 px-2" style={{ color: 'var(--color-ui-red)' }}>{message}</p>}
+                    {archived.length > 0 && (
+                        <AtlasButton data-region-archive-toggle aria-pressed={showArchive} onClick={() => setShowArchive(s => !s)}>
+                            {showArchive ? SCREEN_TEXT.HIDE_ARCHIVE : SCREEN_TEXT.showArchive(archived.length)}
+                        </AtlasButton>
+                    )}
+                </div>
+            )}
+        </>
+    );
     return (
-        <div data-region-list className="flex-1 min-h-0 flex flex-col p-5">
-            <ArrowScrollList step={ROW_PX + 12} className="flex-1 min-h-0 flex flex-col gap-3 py-1">
-                <div role="list" className="grid grid-cols-2 gap-y-3" style={grid}>{regions.map(row)}</div>
-                {showArchive && archived.length > 0 && (
-                    <div data-region-archive-list className="flex flex-col gap-2">
-                        <h3 className="font-pixel ui-text-small uppercase tracking-wide bg-black/65 self-start px-2 text-white/70">{SCREEN_TEXT.ARCHIVED_HEADING}</h3>
-                        <div role="list" className="grid grid-cols-2 gap-y-3" style={grid}>{archived.map(row)}</div>
-                    </div>
-                )}
-            </ArrowScrollList>
-            <div className="shrink-0 pt-2 flex items-center gap-3">
-                {message && <p role="status" data-region-message className="font-pixel ui-text-small bg-black/80 px-2" style={{ color: 'var(--color-ui-red)' }}>{message}</p>}
-                <div className="flex-1" />
-                {archived.length > 0 && (
-                    <AtlasButton data-region-archive-toggle aria-pressed={showArchive} onClick={() => setShowArchive(s => !s)}>
-                        {showArchive ? SCREEN_TEXT.HIDE_ARCHIVE : SCREEN_TEXT.showArchive(archived.length)}
-                    </AtlasButton>
-                )}
-            </div>
+        <div data-region-list className="absolute inset-0">
+            <TomeSpread left={left} right={right} />
         </div>
     );
 };

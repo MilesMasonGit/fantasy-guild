@@ -92,7 +92,7 @@ const headingCls = 'font-pixel ui-text-small uppercase tracking-wide text-white/
 const PREVIEW_OVER_BANNER = 0.7;
 
 /** A slot's box and the map art in it, in screen px: the art at 2×. */
-const SLOT_PX = 72;
+const SLOT_PX = 68;
 const SLOT_ART_PX = 64;
 
 /** A map the guild holds: click to slot it in the next free slot, or carry it onto a slot. */
@@ -292,9 +292,9 @@ export const CartographyTable = ({ version, onTravel }) => {
 
     const left = (
         <>
-            <PixelFrame kind="studs" className="shrink-0" frameClassName="p-3 bg-gi-surface/95">
+            <PixelFrame kind="studs" className="shrink-0" frameClassName="p-2 bg-gi-surface/95">
                 <h3 className={headingCls}>{SCREEN_TEXT.SLOTS_HEADING}</h3>
-                <div data-cartography-slots className="flex flex-wrap gap-2">
+                <div data-cartography-slots className="flex flex-wrap gap-1.5">
                     {slots.map((id, i) => (
                         <Slot
                             key={i}
@@ -310,7 +310,7 @@ export const CartographyTable = ({ version, onTravel }) => {
                 </div>
                 <p className="mt-1 font-pixel ui-text-small text-white/50">{SCREEN_TEXT.SLOTS_HINT}</p>
             </PixelFrame>
-            <PixelFrame kind="studs" className="mt-4 flex-1 min-h-0 flex flex-col" frameClassName="flex-1 min-h-0 flex flex-col p-3 bg-gi-surface/95">
+            <PixelFrame kind="studs" className="mt-2 flex-1 min-h-0 flex flex-col" frameClassName="flex-1 min-h-0 flex flex-col p-2 bg-gi-surface/95">
                 <h3 className={headingCls}>{SCREEN_TEXT.MAPS_HEADING}</h3>
                 {held.length === 0 && <p className="text-white/50">{SCREEN_TEXT.NO_MAPS}</p>}
                 <section data-cartography-inventory className="flex-1 min-h-0 flex flex-col">
@@ -334,21 +334,21 @@ export const CartographyTable = ({ version, onTravel }) => {
 
     const right = (
         <section data-cartography-bench className="flex-1 min-h-0 flex flex-col">
-            <PixelFrame kind="studs" className="flex-1 min-h-0 flex flex-col" frameClassName="flex-1 min-h-0 flex flex-col p-3 bg-gi-surface/95">
+            <PixelFrame kind="studs" className="flex-1 min-h-0 flex flex-col" frameClassName="flex-1 min-h-0 flex flex-col p-2 bg-gi-surface/95">
                 <h3 className={headingCls}>{SCREEN_TEXT.PREVIEW_HEADING}</h3>
-                <div data-cartography-preview className="relative flex-1 min-h-[160px] flex items-center justify-center">
+                <div data-cartography-preview className="relative flex-1 min-h-[120px] flex items-center justify-center">
                     {banner && <BannerArt banner={banner} />}
                     <LayoutPreview layout={plan?.layout ?? null} className="relative w-full h-full" backingOpacity={banner ? PREVIEW_OVER_BANNER : 1} />
                 </div>
-                <div className="mt-2 pt-2 border-t border-white/10 shrink-0 max-h-[35%] min-h-0 flex flex-col">
+                <div className="mt-2 pt-2 border-t border-white/10 shrink-0 max-h-[45%] min-h-0 flex flex-col">
                     <h3 className={headingCls}>{SCREEN_TEXT.SUMMARY_HEADING}</h3>
                     <ArrowScrollList step={48} compact className="min-h-0 flex-1">
                         <NodeSummary summary={plan?.summary ?? null} />
                     </ArrowScrollList>
                 </div>
             </PixelFrame>
-            <div className="mt-3 shrink-0 flex flex-col items-end gap-1">
-                <div className="flex items-center gap-3">
+            <div className="mt-2 shrink-0 flex flex-col items-end gap-1">
+                <div className="flex flex-wrap justify-end items-center gap-2">
                     <AtlasButton data-cartography-reroll disabled={!plan || cooling} onClick={reroll}>{SCREEN_TEXT.REROLL}</AtlasButton>
                     <AtlasButton data-cartography-cancel disabled={!filled.length} onClick={cancel}>{SCREEN_TEXT.CANCEL}</AtlasButton>
                     <AtlasButton main data-cartography-settle disabled={!plan || noRoom} onClick={settle}>{SCREEN_TEXT.SETTLE}</AtlasButton>
@@ -358,7 +358,7 @@ export const CartographyTable = ({ version, onTravel }) => {
                 )}
                 {settled && (
                     <PixelFrame kind="chamfer" frameClassName="px-2 py-1">
-                        <div data-cartography-settled className="flex items-center gap-3">
+                        <div data-cartography-settled className="flex flex-wrap items-center justify-end gap-2">
                             <span className="text-[var(--color-ui-green)]">{SCREEN_TEXT.settled(settled.flavour, settled.practical)}</span>
                             <AtlasButton main data-settled-travel onClick={() => onTravel?.(settled.id)}>{SCREEN_TEXT.TRAVEL_THERE}</AtlasButton>
                             <AtlasButton data-settled-stay onClick={() => setSettled(null)}>{SCREEN_TEXT.STAY}</AtlasButton>
@@ -370,7 +370,7 @@ export const CartographyTable = ({ version, onTravel }) => {
     );
 
     return (
-        <div data-cartography className="flex-1 min-h-0 flex flex-col">
+        <div data-cartography className="absolute inset-0">
             <TomeSpread left={left} right={right} />
         </div>
     );
