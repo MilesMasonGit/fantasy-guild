@@ -9,26 +9,31 @@ authored yet, so this gives you some to play with).
 Write `ok` or what to change after each `Verdict:`. The builders could not
 watch motion at full speed; the feel of every move is yours to judge.
 
-## The camera move
+## Owner, first look (2026-10-20)
 
-1. Click the **Atlas** bubble (the map, left strip). The view glides up the
-   wood table from the mat to your book (~0.6 s). Close it (the bubble again,
-   Escape, or a click on the wood): it glides back down. Speed and feel ok?
-   (Smooth today; could be stepped like the page turn.)
+"This is a great start." Instead of the camera move, the Atlas pops up from
+the bottom over the mat (the glide is kept for the Guild Hall upgrade screen,
+tag `atlas-camera-move`, T-194); new 256 px left and right pages; scale to be
+picked by eye. Built in 7e0f9a17; the preview now serves it (reload).
+
+## The pop-up and the scale (second look)
+
+1. Click the **Atlas** bubble: the book slides up from below the screen and
+   settles over the mat (~0.3 s, a small overshoot); the mat stays bright
+   behind it, no table. Close (bubble, Escape, X or a click outside): it
+   slides back down. Feel ok?
    Verdict:
-2. Click or press a key during a glide: it finishes at once. Open, then press
-   Escape mid-way up: it turns back.
-   Verdict:
-3. The wood under the book is the table you picked in Settings, the same as
-   around the mat. The top bar and hero dock move with the mat. Ok? (Or:
-   always oak; or the bars stay fixed over the book.)
+2. **QA → Atlas → Book size 2× / 3× / 4×** (default 2×). Open the Atlas at
+   each: 2× fits with mat around it; 3× crops the sides on a 1600-wide
+   window; 4× matches the wood and terrain pixel size but covers the mat and
+   crops on all sides (ribbons then lie on the book's visible top). Which
+   one?
    Verdict:
 
 ## The book
 
-4. Your page at 4×, mirrored on the left; ribbons (Cartography, Regions) on
-   the top edge; a page turn between them. At a large window the book fills
-   about 60 % of the mat area. Keep 4×, or 5× on wide windows?
+4. Your new pages; ribbons (Cartography, Regions) on the top edge; a page
+   turn between them; your drawn ribbon on the right page is decoration.
    Verdict:
 5. Which section should open first? (Regions today.)
    Verdict:
@@ -64,8 +69,7 @@ watch motion at full speed; the feel of every move is yours to judge.
     Starter Camp with the reason on hover). The … is three drawn pixels:
     want a sprite on your art list?
     Verdict:
-12. **Travel** to another Region: the view glides back down to the new mat,
-    then that Region's banner shows across the mat with its name for a moment
+12. **Travel** to another Region: the Atlas closes, then that Region's banner shows across the mat with its name for a moment
     (click to skip). The top bar's Region name has a slice of the banner
     behind it.
     Verdict:
