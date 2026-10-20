@@ -33,6 +33,7 @@ import { Stub } from '../components/notifications/ItemStubColumn.jsx';
 import { Banner } from '../components/notifications/BannerStack.jsx';
 import { bannerText } from '../../systems/notifications/bannerKinds.js';
 import { BookTab } from '../components/atlas/AtlasTome.jsx';
+import { MapSprite, MapOutline, MAP_PX, SLOT_PX } from '../components/atlas/MapPieces.jsx';
 
 /** One art pixel of the UI, in screen pixels: UI sprites draw at 2×. */
 const ART_PX = 2;
@@ -186,6 +187,21 @@ const BookTabDemo = () => {
         </div>
     );
 };
+
+/** The Cartography table's maps: a tile, one with every copy slotted, an empty slot and a filled one. */
+const KIT_MAP = { id: 'dev_map_forest', biome: 'forest' };
+const MapPiecesDemo = () => (
+    <div data-kit-map-pieces className="inline-flex items-end gap-3 p-2 bg-gi-surface/95">
+        {[2, 0].map(n => (
+            <div key={n} className={cn('flex flex-col items-center bg-black/30', n === 0 && 'opacity-35 grayscale')} style={{ width: MAP_PX }}>
+                <MapSprite recipe={KIT_MAP} />
+                <span className="font-pixel ui-text-small tabular-nums text-white/85 leading-none pb-0.5">×{n}</span>
+            </div>
+        ))}
+        <div className="flex items-center justify-center bg-black/20" style={{ width: SLOT_PX, height: SLOT_PX }}><MapOutline /></div>
+        <div className="flex items-center justify-center bg-black/40" style={{ width: SLOT_PX, height: SLOT_PX }}><MapSprite recipe={KIT_MAP} /></div>
+    </div>
+);
 
 const KitXpBar = ({ cur, max }) => (
     <div
@@ -663,6 +679,11 @@ export const KIT_SECTIONS = [
         id: 'atlas-tabs', title: 'Atlas page tabs', status: 'unapproved', source: 'AtlasTome (the Atlas only)',
         rule: 'The Atlas’s own variant of the tabs: cloth page tabs stacked down the left edge of the book, coming out from under its cover. The open one stands further out with bright text and a 1-art-pixel gold edge along each long side; the others are muted. Code placeholders until the owner draws the tabs.',
         Demo: BookTabDemo
+    },
+    {
+        id: 'atlas-maps', title: 'Cartography maps and slots', status: 'unapproved', source: 'CartographyTable, MapPieces (the Atlas only)',
+        rule: 'Each map is its 64 px sprite at 1× with its count under it, like the Bank’s tiles, greyed once every copy is slotted; hover names it and says what it adds. A slot is a 68 px box: empty, a faint dashed outline of a map; filled, the map’s sprite. The Region’s preview beside them is a tiny real map: the mat’s own ground and each Token’s sprite shrunk by a whole number, drawn at the UI’s 2×.',
+        Demo: MapPiecesDemo
     },
     {
         id: 'map-modes', title: 'Map mode outlines and banners', status: 'unapproved',

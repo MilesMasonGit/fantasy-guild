@@ -18,7 +18,8 @@ import { bannerForPlan, bannerForRegion } from './regionBanner.js';
 import { MapPreview } from './MapPreview.jsx';
 import { PlanContents } from './PlanContents.jsx';
 import { previewFit } from './mapPreview.js';
-import { mapSpritePath, mapName, mapHoverLines, MAP_OUTLINE_POINTS } from './mapArt.js';
+import { mapSpritePath, mapName, mapHoverLines } from './mapArt.js';
+import { MapSprite, MapOutline, MAP_PX, SLOT_PX } from './MapPieces.jsx';
 import { SCREEN_TEXT } from './atlasScreenText.js';
 
 /** The pause after a reroll before the next (D-9): snappy, but no macro-spamming. */
@@ -77,38 +78,18 @@ export function liftFromSlot(slots, index, id) {
     return slots.map((x, i) => (i === index ? null : x));
 }
 
-/** A map sprite and a slot, in screen px: the 64 px art at 1×, as the Bank draws items. */
-const MAP_PX = 64;
-const SLOT_PX = 68;
-
 /**
- * What the right page keeps besides the preview, in screen px: the slots, the contents with
- * their arrow bars, the buttons and a message line, the panel's frame and gaps.
+ * What the right page keeps besides the preview, in screen px: one row of slots, the contents with
+ * their arrow bars, the buttons and a message line, the panel's frame and gaps; and each further
+ * row of slots (the Cartography Table upgrade adds slots).
  */
 const RIGHT_PAGE_RESERVED_PX = 330;
+const SLOT_GAP_PX = 6;
 /** The panel's frame and padding on each side, and the band of banner round the map. */
 const PANEL_INSET_PX = FRAME_BAND_PX + 8;
 const PREVIEW_MARGIN_PX = 4;
 
 const headingCls = 'font-pixel ui-text-small uppercase tracking-wide text-white/60 mb-1';
-
-/** A map's own picture at 1×. */
-const MapSprite = ({ recipe, size = MAP_PX }) => (
-    <img
-        src={mapSpritePath(recipe)}
-        alt=""
-        draggable={false}
-        className="pointer-events-none select-none"
-        style={{ width: size, height: size, maxWidth: 'none', imageRendering: 'pixelated' }}
-    />
-);
-
-/** An empty slot: a faint dashed outline of a map. */
-const MapOutline = () => (
-    <svg width={MAP_PX} height={MAP_PX} viewBox={`0 0 ${MAP_PX} ${MAP_PX}`} shapeRendering="crispEdges" aria-hidden="true" data-slot-outline>
-        <polygon points={MAP_OUTLINE_POINTS} fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.35)" strokeWidth={1} strokeDasharray="3 2" />
-    </svg>
-);
 
 /** A map the guild holds, as a tile: click to slot it in the next free slot, or carry it onto a slot. */
 const MapTile = ({ entry, left, canClick, onSlot, cap }) => {
@@ -123,28 +104,30 @@ const MapTile = ({ entry, left, canClick, onSlot, cap }) => {
         keyboardAccessible: false
     });
     const lines = useMemo(() => mapHoverLines(recipe, cap), [recipe, cap]);
+    // The hover sits on a box round the tile: a disabled button (every copy slotted) hears no pointer.
     return (
         <Tooltip title={mapName(recipe)} lines={lines}>
-            <button
-                ref={setNodeRef}
-                {...handleProps}
-                type="button"
-                role="listitem"
-                data-map-item={recipe.id}
-                data-slotted-out={out}
-                aria-label={mapName(recipe)}
-                disabled={out || !canClick}
-                onClick={() => onSlot(recipe.id)}
-                className={cn(
-                    'flex flex-col items-center touch-none bg-black/30 hover:outline hover:outline-2 hover:outline-white/80 disabled:cursor-not-allowed disabled:hover:outline-none',
-                    out && 'opacity-35 grayscale',
-                    isDragging && 'opacity-50'
-                )}
-                style={{ width: MAP_PX }}
-            >
-                <MapSprite recipe={recipe} />
-                <span className="font-pixel ui-text-small tabular-nums text-white/85 leading-none pb-0.5">×{Math.max(0, left)}</span>
-            </button>
+            <div role="listitem">
+                <button
+                    ref={setNodeRef}
+                    {...handleProps}
+                    type="button"
+                    data-map-item={recipe.id}
+                    data-slotted-out={out}
+                    aria-label={mapName(recipe)}
+                    disabled={out || !canClick}
+                    onClick={() => onSlot(recipe.id)}
+                    className={cn(
+                        'flex flex-col items-center touch-none bg-black/30 hover:outline hover:outline-2 hover:outline-white/80 disabled:cursor-not-allowed disabled:hover:outline-none',
+                        out && 'opacity-35 grayscale',
+                        isDragging && 'opacity-50'
+                    )}
+                    style={{ width: MAP_PX }}
+                >
+                    <MapSprite recipe={recipe} />
+                    <span className="font-pixel ui-text-small tabular-nums text-white/85 leading-none pb-0.5">×{Math.max(0, left)}</span>
+                </button>
+            </div>
         </Tooltip>
     );
 };
@@ -326,7 +309,9 @@ export const CartographyTable = ({ version, onTravel }) => {
     // The preview's size: the finest whole-pixel map that fits the page's parchment on screen.
     const rects = usePageRects();
     const boxW = Math.max(0, Math.floor(rects.right.width - 2 * PANEL_INSET_PX));
-    const maxH = Math.max(0, Math.floor(rects.right.height - RIGHT_PAGE_RESERVED_PX));
+    const perRow = Math.max(1, Math.floor((boxW + SLOT_GAP_PX) / (SLOT_PX + SLOT_GAP_PX)));
+    const slotRows = Math.ceil(slots.length / perRow);
+    const maxH = Math.max(0, Math.floor(rects.right.height - RIGHT_PAGE_RESERVED_PX - (slotRows - 1) * (SLOT_PX + SLOT_GAP_PX)));
     // The mat a travel lands the Region on: the mat as it is now (`mapPreview.js`).
     const wide = matW();
     const high = matH();
@@ -373,7 +358,7 @@ export const CartographyTable = ({ version, onTravel }) => {
     const right = (
         <section data-cartography-bench className="flex-1 min-h-0 flex flex-col">
             <PixelFrame kind="studs" className="shrink min-h-0 flex flex-col" frameClassName="min-h-0 flex flex-col items-center gap-2 p-2 bg-gi-surface/95">
-                <div data-cartography-slots className="shrink-0 flex flex-wrap justify-center gap-1.5">
+                <div data-cartography-slots className="shrink-0 flex flex-wrap justify-center" style={{ gap: SLOT_GAP_PX }}>
                     {slots.map((id, i) => (
                         <Slot
                             key={i}
