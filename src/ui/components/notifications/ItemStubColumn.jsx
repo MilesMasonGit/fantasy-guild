@@ -13,6 +13,8 @@ import { useDrawn } from '../../dev/perf/drawSwitches.js';
 import { cn } from '../../utils/cn.js';
 import { TONE_COLOUR, rateText, signedAmount, toneOf } from './stubText.js';
 import { useStubGlide, glideShift } from './stubGlide.js';
+import { getCopies, getCopiesVersion, subscribeCopies } from './stubLanding.js';
+import { GAP_PX, HEADER_PX, PAD_LEFT_PX, PAD_RIGHT_PX, PITCH_PX, ROW_GAP_PX, SPRITE_PX, STUB_PX } from './stubGeometry.js';
 
 /**
  * The item stubs: a column flush against the right edge of the mat, under the top bar, like tabs
@@ -26,22 +28,13 @@ import { useStubGlide, glideShift } from './stubGlide.js';
  * it, and nothing else in the column moves. Left-click pins or unpins; right-click clears an
  * unpinned stub and sets a pinned one back to +0.
  *
+ * Collected loot flies to its stub and the count ticks as it lands (`stubLanding.js`); a stub out
+ * of view gets a copy popped out over the bottom stubs for the landing, drawn here.
+ *
  * The stubs are merged in `itemStubs.js`; this column draws what it is handed, at most once per
- * {@link ItemStubs.EMIT_MS}. No backdrop blur: every stub is a solid frame.
+ * {@link ItemStubs.EMIT_MS} and once per landing. No backdrop blur: every stub is a solid frame.
  */
 
-/** The item sprite at its own size. */
-const SPRITE_PX = 32;
-/** Padding inside the frame: tight on the left (the frame band is there), a little more at the screen edge. */
-const PAD_LEFT_PX = 2;
-const PAD_RIGHT_PX = 4;
-const ROW_GAP_PX = 4;
-/** One stub's height plus the gap below it. Each stub is as wide as its content. */
-export const STUB_PX = SPRITE_PX + FRAME_BAND_PX * 2;
-const GAP_PX = 4;
-const PITCH_PX = STUB_PX + GAP_PX;
-/** The Clear all row's height. */
-const HEADER_PX = 24;
 /** How long the open stub waits before closing, so the pointer can cross onto it from its stub. */
 const OPEN_CLOSE_MS = 120;
 
@@ -81,7 +74,9 @@ function StubRow({ stub, net, children, rowRef }) {
                 {stub.isNew && <span className="ui-text-small font-bold" style={{ color: 'var(--color-ui-gold)' }}>New!</span>}
                 <span className="tabular-nums font-bold" style={{ color: TONE_COLOUR[toneOf(net)] }}>{signedAmount(net)}</span>
             </span>
-            <ItemIcon item={stub.itemId} size={SPRITE_PX} title={null} className="shrink-0" />
+            <span data-stub-sprite className="shrink-0 flex">
+                <ItemIcon item={stub.itemId} size={SPRITE_PX} title={null} />
+            </span>
             {children}
         </div>
     );
@@ -99,7 +94,7 @@ const frameClass = (stub, shine = true) => cn(
  */
 export const Stub = memo(function Stub({ stub, onHover, onLeave, onCleared, interactive = true, openRate }) {
     const open = openRate !== undefined;
-    const net = ItemStubs.netOf(stub);
+    const net = ItemStubs.shownNetOf(stub);
     return (
         <div
             data-item-stub={stub.itemId}
@@ -162,7 +157,7 @@ export function OpenStub({ itemId, top, startPx, onEnter, onLeave, onCleared, on
         if (box.style.width !== full) box.style.width = full;
     });
     if (!stub) return null;
-    const net = ItemStubs.netOf(stub);
+    const net = ItemStubs.shownNetOf(stub);
     const { perHour } = ItemRateTracker.getFlow(itemId);
     return (
         <div
@@ -184,6 +179,30 @@ export function OpenStub({ itemId, top, startPx, onEnter, onLeave, onCleared, on
     );
 }
 
+/**
+ * A copy of a stub that is out of view, popped out of the edge over the bottom stubs to take
+ * collected loot landing on it (`stubLanding.js`), then slid back. Only a picture: it takes no
+ * clicks, and nothing that looks for stubs finds it.
+ */
+const StubCopy = memo(function StubCopy({ copy, stub }) {
+    if (!stub) return null;
+    const net = ItemStubs.shownNetOf(stub);
+    return (
+        <div
+            data-stub-copy={copy.itemId}
+            data-stub-net={net}
+            data-stub-arriving="true"
+            data-stub-leaving={copy.leaving ? 'true' : undefined}
+            className="gi-stub absolute right-0 z-10 pointer-events-none"
+            style={{ top: copy.top, height: STUB_PX }}
+        >
+            <PixelFrame kind={FRAME_KIND.CHAMFER} className="h-full" frameClassName={frameClass(stub, false)}>
+                <StubRow stub={stub} net={net} />
+            </PixelFrame>
+        </div>
+    );
+});
+
 /** How many unpinned stubs fit under the pinned ones, given the column's height. */
 export function stubsThatFit(columnPx, pinnedCount) {
     const room = columnPx - HEADER_PX - pinnedCount * PITCH_PX;
@@ -194,6 +213,7 @@ export const ItemStubColumn = memo(function ItemStubColumn() {
     const on = useSetting('notifications.itemStubs') !== false;
     const drawn = useDrawn('notifications');
     useSyncExternalStore(ItemStubs.subscribe, ItemStubs.getVersion);
+    useSyncExternalStore(subscribeCopies, getCopiesVersion);
     const boxRef = useRef(null);
     const [boxH, setBoxH] = useState(0);
     const [hover, setHover] = useState(null);
@@ -288,6 +308,7 @@ export const ItemStubColumn = memo(function ItemStubColumn() {
             ) : (
                 <div className="flex flex-col items-end">{rest.map(row)}</div>
             )}
+            {getCopies().map(c => <StubCopy key={c.key} copy={c} stub={ItemStubs.getStub(c.itemId)} />)}
             {hover && (
                 <OpenStub
                     key={hover.itemId}

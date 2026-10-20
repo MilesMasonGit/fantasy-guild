@@ -988,10 +988,12 @@
 
 /* Item stubs (ItemStubColumn.jsx): tabs pulled out of the screen's right edge, so the frame has no
    right side. A new stub slides out from beyond the edge; one fading (its item still five minutes)
-   or cleared slides back out. The open (hovered) stub grows left from the stub's own width. */
+   or cleared slides back out. The open (hovered) stub grows left from the stub's own width. A copy of
+   a stub out of view (the loot flying to it lands there) slides out and back the same way. */
 .gi-stub-frame,
 [data-item-stub] [data-pixel-frame-shadow],
-[data-stub-open] [data-pixel-frame-shadow] { border-right-width: 0; border-image-width: 6px 0 6px 6px; }
+[data-stub-open] [data-pixel-frame-shadow],
+[data-stub-copy] [data-pixel-frame-shadow] { border-right-width: 0; border-image-width: 6px 0 6px 6px; }
 @keyframes gi-stub-in {
   from { transform: translateX(calc(100% + 8px)); }
   to   { transform: translateX(0); }
