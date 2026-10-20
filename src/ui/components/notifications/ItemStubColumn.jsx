@@ -15,9 +15,9 @@ import { TONE_COLOUR, rateText, signedAmount, toneOf } from './stubText.js';
 
 /**
  * The item stubs: a column flush against the right edge of the mat, under the top bar, like tabs
- * pulled out of the side. One stub per item, the amount then the sprite at 2x (`+12 [oak]`),
- * green for a net gain and red for a loss. Pinned stubs are held at the top under a "Pinned"
- * header; the rest scroll with the arrow bars once they no longer fit.
+ * pulled out of the side, each as wide as its content. One stub per item, the amount then the
+ * sprite (`+12 [oak]`), green for a net gain and red for a loss. Pinned stubs are held at the top
+ * under a "Pinned" header, always open; the rest scroll with the arrow bars once they no longer fit.
  *
  * Hovering a stub grows the same box left over the mat into one line: amount, sprite, name, net
  * per hour. It is drawn over the stub rather than inside the column so the scroll box cannot clip
@@ -28,15 +28,13 @@ import { TONE_COLOUR, rateText, signedAmount, toneOf } from './stubText.js';
  * {@link ItemStubs.EMIT_MS}. No backdrop blur: every stub is a solid frame.
  */
 
-/** The item sprite at 2x: the size of floating loot on the mat. */
-const SPRITE_PX = 64;
-/** The amount's box: wide enough for `New! +1.2K`, right-aligned against the sprite. */
-const AMOUNT_PX = 76;
-/** Padding inside the frame, each side of the content. */
-const PAD_PX = 4;
-const ROW_GAP_PX = 6;
-/** The column's width (one stub at rest: no frame on the right), and one stub's height plus the gap below it. */
-export const COLUMN_PX = FRAME_BAND_PX + PAD_PX + AMOUNT_PX + ROW_GAP_PX + SPRITE_PX + PAD_PX;
+/** The item sprite at its own size. */
+const SPRITE_PX = 32;
+/** Padding inside the frame: tight on the left (the frame band is there), a little more at the screen edge. */
+const PAD_LEFT_PX = 2;
+const PAD_RIGHT_PX = 4;
+const ROW_GAP_PX = 4;
+/** One stub's height plus the gap below it. Each stub is as wide as its content. */
 export const STUB_PX = SPRITE_PX + FRAME_BAND_PX * 2;
 const GAP_PX = 4;
 const PITCH_PX = STUB_PX + GAP_PX;
@@ -79,8 +77,8 @@ const OpenTail = ({ itemId, perHour }) => (
 /** A stub's content, left to right: the amount (led by "New!"), the sprite, and when open the name and rate. */
 function StubRow({ stub, net, children, rowRef }) {
     return (
-        <div ref={rowRef} className="h-full w-max flex items-center whitespace-nowrap" style={{ gap: ROW_GAP_PX, paddingLeft: PAD_PX, paddingRight: PAD_PX }}>
-            <span className="shrink-0 flex justify-end items-baseline gap-1" style={{ width: AMOUNT_PX }}>
+        <div ref={rowRef} className="h-full w-max flex items-center whitespace-nowrap" style={{ gap: ROW_GAP_PX, paddingLeft: PAD_LEFT_PX, paddingRight: PAD_RIGHT_PX }}>
+            <span className="shrink-0 flex items-baseline gap-1">
                 {stub.isNew && <span className="ui-text-small font-bold" style={{ color: 'var(--color-ui-gold)' }}>New!</span>}
                 <span className="tabular-nums font-bold" style={{ color: TONE_COLOUR[toneOf(net)] }}>{signedAmount(net)}</span>
             </span>
@@ -97,8 +95,8 @@ const frameClass = (stub, shine = true) => cn(
 );
 
 /**
- * One stub at rest. Exported for the style sheet page, which leaves out the handlers and can
- * draw it open (`openRate`: the per-hour rate to show).
+ * One stub at rest. Exported for the style sheet page, which leaves out the handlers. With
+ * `openRate` (the per-hour rate to show) it is drawn open: a pinned stub always is.
  */
 export const Stub = memo(function Stub({ stub, onHover, onLeave, onCleared, interactive = true, openRate }) {
     const open = openRate !== undefined;
@@ -113,7 +111,7 @@ export const Stub = memo(function Stub({ stub, onHover, onLeave, onCleared, inte
             data-stub-leaving={stub.leaving ? 'true' : undefined}
             data-stub-arriving={ItemStubs.isFresh(stub) ? 'true' : undefined}
             className={cn('gi-stub shrink-0', interactive && 'pointer-events-auto cursor-pointer')}
-            style={{ width: open ? undefined : COLUMN_PX, height: STUB_PX, marginBottom: GAP_PX }}
+            style={{ height: STUB_PX, marginBottom: GAP_PX }}
             onMouseEnter={onHover ? (e) => { if (e.buttons === 0) onHover(stub.itemId, e.currentTarget); } : undefined}
             onMouseLeave={onLeave}
             {...(interactive ? pressHandlers(stub.itemId, onCleared) : null)}
@@ -125,12 +123,22 @@ export const Stub = memo(function Stub({ stub, onHover, onLeave, onCleared, inte
     );
 });
 
+/** A pinned stub: always open, its rate live. */
+const PinnedStub = memo(function PinnedStub({ stub, onCleared }) {
+    const [, tick] = useState(0);
+    useEffect(() => {
+        const t = setInterval(() => tick(n => n + 1), 1000);
+        return () => clearInterval(t);
+    }, []);
+    return <Stub stub={stub} onCleared={onCleared} openRate={ItemRateTracker.getFlow(stub.itemId).perHour} />;
+});
+
 /**
  * The hovered stub, open: the same box, grown left over the mat. It opens from the stub's own
  * width, so the amount and sprite slide left as the name and rate come out from under them.
  * Live while open: the rate moves on its own.
  */
-export function OpenStub({ itemId, top, onEnter, onLeave, onCleared, onWheel }) {
+export function OpenStub({ itemId, top, startPx, onEnter, onLeave, onCleared, onWheel }) {
     const stub = ItemStubs.getStub(itemId);
     const boxRef = useRef(null);
     const rowRef = useRef(null);
@@ -146,10 +154,10 @@ export function OpenStub({ itemId, top, onEnter, onLeave, onCleared, onWheel }) 
         const box = boxRef.current;
         const row = rowRef.current;
         if (!box || !row) return;
-        const full = `${Math.max(COLUMN_PX, FRAME_BAND_PX + row.offsetWidth)}px`;
+        const full = `${Math.max(startPx, FRAME_BAND_PX + row.offsetWidth)}px`;
         if (!opened.current) {
             opened.current = true;
-            box.style.width = `${COLUMN_PX}px`;
+            box.style.width = `${startPx}px`;
             box.getBoundingClientRect();
         }
         if (box.style.width !== full) box.style.width = full;
@@ -162,7 +170,7 @@ export function OpenStub({ itemId, top, onEnter, onLeave, onCleared, onWheel }) 
             ref={boxRef}
             data-stub-open={itemId}
             className="gi-stub-open absolute right-0 pointer-events-auto cursor-pointer"
-            style={{ top, height: STUB_PX, width: COLUMN_PX }}
+            style={{ top, height: STUB_PX, width: startPx }}
             onMouseEnter={onEnter}
             onMouseLeave={onLeave}
             onWheel={onWheel}
@@ -197,8 +205,8 @@ export const ItemStubColumn = memo(function ItemStubColumn() {
         setBoxH(prev => (prev === h ? prev : h));
     }, []);
     useLayoutEffect(measure);
-    // The open stub stays over its stub when the column moves under a still pointer (a pin lifts
-    // the stub to the top, a new stub pushes it down), and closes when its stub goes. Every render,
+    // The open stub stays over its stub when the column moves under a still pointer (a new stub
+    // pushes it down), and closes when its stub goes or is pinned (a pinned stub is always open). Every render,
     // since the stubs are not a dependency; it settles because it only moves a moved box.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     useLayoutEffect(() => {
@@ -206,7 +214,7 @@ export const ItemStubColumn = memo(function ItemStubColumn() {
         const box = boxRef.current;
         const row = box && [...box.querySelectorAll('[data-item-stub]')].find(el => el.dataset.itemStub === hover.itemId);
         const stub = ItemStubs.getStub(hover.itemId);
-        if (!row || !stub || stub.leaving || stub.fading) { setHover(null); return; }
+        if (!row || !stub || stub.pinned || stub.leaving || stub.fading) { setHover(null); return; }
         const top = row.getBoundingClientRect().top - box.getBoundingClientRect().top;
         if (Math.abs(top - hover.top) > 0.5) setHover({ ...hover, top });
     });
@@ -226,7 +234,7 @@ export const ItemStubColumn = memo(function ItemStubColumn() {
         clearTimeout(closeTimer.current);
         const box = boxRef.current?.getBoundingClientRect();
         const row = el.getBoundingClientRect();
-        setHover({ itemId, top: box ? row.top - box.top : 0 });
+        setHover({ itemId, top: box ? row.top - box.top : 0, startPx: row.width });
     }, []);
     // The open stub sits over the scroll box: the wheel still scrolls the list beneath it.
     const scrollUnder = useCallback((e) => {
@@ -240,13 +248,13 @@ export const ItemStubColumn = memo(function ItemStubColumn() {
     const rest = stubs.filter(s => !s.pinned);
     const scrolls = boxH > 0 && rest.length > stubsThatFit(boxH, pinned.length);
     const row = (s) => <Stub key={s.itemId} stub={s} onHover={openFor} onLeave={closeSoon} onCleared={closeNow} />;
+    const pinnedRow = (s) => <PinnedStub key={s.itemId} stub={s} onCleared={closeNow} />;
 
     return (
         <div
             ref={boxRef}
             data-item-stubs
             className="absolute top-2 right-0 bottom-2 flex flex-col items-end pointer-events-none select-none z-30"
-            style={{ width: COLUMN_PX }}
         >
             <div className="shrink-0 flex justify-end items-center" style={{ height: HEADER_PX }}>
                 {rest.some(s => !s.leaving) && (
@@ -269,11 +277,11 @@ export const ItemStubColumn = memo(function ItemStubColumn() {
                     >
                         Pinned
                     </div>
-                    {pinned.map(row)}
+                    {pinned.map(pinnedRow)}
                 </div>
             )}
             {scrolls ? (
-                <div className="flex-1 min-h-0 w-full flex flex-col pointer-events-auto">
+                <div className="flex-1 min-h-0 flex flex-col pointer-events-auto">
                     <ArrowScrollList
                         compact
                         step={PITCH_PX * 2}
@@ -291,6 +299,7 @@ export const ItemStubColumn = memo(function ItemStubColumn() {
                     key={hover.itemId}
                     itemId={hover.itemId}
                     top={hover.top}
+                    startPx={hover.startPx}
                     onEnter={keepOpen}
                     onLeave={closeSoon}
                     onCleared={closeNow}
