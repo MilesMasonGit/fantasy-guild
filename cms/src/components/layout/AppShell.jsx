@@ -2,6 +2,10 @@ import { useState, useEffect } from 'react';
 import { useEntityStore } from '../../stores/useEntityStore';
 import { snapshot } from '../../engine/fileUtils';
 import { startAutosave } from '../../engine/autosave';
+import { useReviewStore } from '../../stores/useReviewStore';
+
+/** How often the Changes to review badge reads the change-pack inbox (and on every return to the tab). */
+const INBOX_POLL_MS = 20000;
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
 import GenerateModal from '../shared/GenerateModal';
@@ -19,6 +23,16 @@ export default function AppShell({ children }) {
   const [fileManagerOpen, setFileManagerOpen] = useState(false);
 
   useEffect(() => startAutosave(useEntityStore, snapshot).stop, []);
+  useEffect(() => {
+    const refresh = useReviewStore.getState().refresh;
+    refresh();
+    const timer = setInterval(refresh, INBOX_POLL_MS);
+    window.addEventListener('focus', refresh);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('focus', refresh);
+    };
+  }, []);
 
   const openGenerate = (prefill = null) => {
     setGeneratePrefill(prefill);

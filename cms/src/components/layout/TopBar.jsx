@@ -1,12 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Settings, DatabaseBackup, Download, Sparkles, Calculator, Check, UploadCloud, AlertCircle, Inbox } from 'lucide-react';
 import { exportWorkspace, syncToGame, sendSync, restoreFromGame } from '../../engine/fileUtils';
 import SyncGuardPanel from '../shared/SyncGuardPanel';
 import { useEntityStore } from '../../stores/useEntityStore';
 import { useGlobalStore } from '../../stores/useGlobalStore';
 import { useReviewStore } from '../../stores/useReviewStore';
-
-const INBOX_POLL_MS = 20000;
 
 const VIEWS = [
   { key: 'editor', label: 'Editor' },
@@ -25,17 +23,6 @@ export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOp
   const recalculateEconomy = useEntityStore((s) => s.recalculateEconomy);
   const globals = useGlobalStore();
   const waiting = useReviewStore((s) => s.listing?.inbox?.length ?? 0);
-
-  useEffect(() => {
-    const refresh = useReviewStore.getState().refresh;
-    refresh();
-    const timer = setInterval(refresh, INBOX_POLL_MS);
-    window.addEventListener('focus', refresh);
-    return () => {
-      clearInterval(timer);
-      window.removeEventListener('focus', refresh);
-    };
-  }, []);
 
   const handleRecalculate = () => {
     recalculateEconomy(globals);

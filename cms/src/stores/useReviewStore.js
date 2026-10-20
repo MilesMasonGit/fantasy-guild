@@ -31,8 +31,9 @@ export const useReviewStore = create(
             sessionFor: (file) => get().sessions[file] || emptySession(),
             setSession: (file, session) => set((s) => ({ sessions: { ...s.sessions, [file]: session } })),
             dropSession: (file) => set((s) => {
-                const { [file]: _gone, ...rest } = s.sessions;
-                return { sessions: rest };
+                const sessions = { ...s.sessions };
+                delete sessions[file];
+                return { sessions };
             }),
         }),
         {
