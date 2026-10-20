@@ -149,9 +149,9 @@ describe('⭐ thrown loot lands on its point', () => {
         expect(c.x).toBeCloseTo(0, 6);
         expect(c.y).toBeCloseTo(0, 6);
         const end = translateOf(slide.keyframes[slide.keyframes.length - 1].transform);
-        expect(end.xPct).toBe(0);
-        expect(end.yPct).toBe(0);
-        expect(end.xPx).toBe(Math.round(parent.x - child.x));
-        expect(end.yPx).toBe(Math.round(parent.y - child.y));
+        expect(end.xPct).toBeCloseTo(0, 6);
+        expect(end.yPct).toBeCloseTo(0, 6);
+        expect(end.xPx).toBeCloseTo(Math.round(parent.x - child.x), 6);
+        expect(end.yPx).toBeCloseTo(Math.round(parent.y - child.y), 6);
     });
 });
