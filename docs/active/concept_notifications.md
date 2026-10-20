@@ -66,8 +66,17 @@ level-up.
   rate is the net per hour (today's 5-minute rolling rate, `ItemRateTracker`
   with spending recorded). Nothing else in the column moves.
 - **Left-click pins or unpins.** Pinned stubs sit at the top of the column
-  under a **"Pinned" group header** and **always show the expanded one-line
-  style**, hovered or not; no pin icon anywhere. A pinned stub is a
+  and **always show the expanded one-line style**, hovered or not; no pin
+  icon and **no header**: only the normal gap between the pinned and the
+  unpinned stubs (owner, third look).
+- **Order stays calm** (owner, third look): **new items join the bottom** of
+  the stack; a pinned stub goes to the bottom of the pinned group; **an
+  unpinned stub goes to the top of the unpinned stack**, not to the end.
+  Nothing else reorders.
+- **Motion is smooth**: a stub **slides out** of the edge on arrival and
+  **slides back** into it on leaving; when a stub's place changes (one above
+  leaves, a pin or unpin) it **glides to its new place** rather than
+  jumping. A pinned stub is a
   live tracker and never fades. **Pins are saved with the game.**
 - **Right-click clears**: on an unpinned stub it removes it (the next flow
   of that item starts a fresh stub at +0); on a pinned stub it resets the
@@ -78,6 +87,13 @@ level-up.
   rest (brief 100's arrow-bar list); pinned stubs stay in view at the top
   while the rest scroll. A **Clear all** button sits at the top of the column
   and removes every unpinned stub.
+- **Collected loot flies to its stub** (owner, third look), replacing
+  today's flight to the Guild Hall button; the stub's count ticks up as each
+  item lands. A new item's stub slides out (at +0) as the flight starts, so
+  the loot has somewhere to land. If the stub is out of view (scrolled away,
+  or a new one below a full column), **a copy of it pops out over the bottom
+  stubs**, takes the landing, then slides back. With item stubs switched off
+  in Settings, loot flies to the Guild Hall as today.
 - **First find**: the frame turns shiny gold (the button shine) and gold
   **"New!" leads the stub** (`New! +1 [copper]`).
 - **Settings, Notifications tab**: one switch for item stubs. The six-corner
