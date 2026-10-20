@@ -742,6 +742,10 @@ export const useEntityStore = create(
             activeEntityId: null,
             activeEntityType: null,
 
+            /** A recipe the Recipes screen should open on next, by id (the change-pack review's Open in editor). Not persisted. */
+            recipeFocus: null,
+            focusRecipe: (recipeId) => set({ recipeFocus: recipeId }),
+
             setActiveEntity: (id, type) => set({ activeEntityId: id, activeEntityType: type }),
             clearActiveEntity: () => set({ activeEntityId: null, activeEntityType: null }),
 
