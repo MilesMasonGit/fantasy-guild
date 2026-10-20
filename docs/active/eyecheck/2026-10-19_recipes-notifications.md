@@ -134,3 +134,32 @@ item.
 
 Note: items from the QA button go straight to the Bank, so their rate reads
 `+0/hr`; real work (loot dropping on the mat) counts the rate.
+
+## Fourth look: stub order, motion and the loot flight (merged into `crunch/batch5` ba7de155)
+
+Same address, reload. The builders could not watch motion at full speed (the
+pane was hidden), so the feel of every slide is yours to judge.
+
+23. **Order**: new items join the bottom. Pin one: it goes to the bottom of
+    the pinned group; unpin it: it goes to the top of the unpinned stubs. No
+    "Pinned" heading, just the normal gap.
+    Verdict:
+24. **Motion**: stubs ease out of the edge and back in; when one above leaves
+    (right-click it), the ones below glide up rather than jump.
+    Verdict:
+25. **Loot flies to its stub**: QA → Performance → S2 Realistic (workers
+    making loot). Collected loot flies to its own item's stub (not the Guild
+    Hall) and the number ticks up as each piece lands. A brand-new item's stub
+    slides out at +0 first and catches its loot.
+    Verdict:
+26. **Out of view**: fill the column (QA → Notifications → Find a new item,
+    ~15 presses, or a shorter window), then right-click the Oak stub away. The
+    next oak makes a new stub below the full column: a copy pops out over the
+    bottom stubs, catches the loot, stays ~0.9 s, slides back. Long enough?
+    Verdict:
+27. **Stubs off**: Settings → Notifications → item stubs off: loot flies to
+    the Guild Hall as before. (Switch it back on after.)
+    Verdict:
+28. Should a stub give a small flash when loot lands, or is the number
+    ticking enough? (Builder's recommendation: the tick is enough.)
+    Verdict:

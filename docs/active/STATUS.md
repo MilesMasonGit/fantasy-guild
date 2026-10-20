@@ -22,8 +22,8 @@ attention outline (ruled today).*
 | Brief 150 N1: the store and routing for item stubs and banners (T-168, T-028, T-037; owner revised 2026-10-19, no log) | builder | `crunch/notifications` (`nt`) | ready (3ea827a6; `src/systems/notifications/`, routing table, pins in `ui.pinnedStubs`) | Mon | Mon |
 | Brief 150 N2: item stubs on screen (net flow per item, hover panel, pins, Clear all; replaces the edge sidebar) | builder | `crunch/notifications` (`nt`) | eye-check (2f98f7f8, 4be5dd07; edge sidebar, Toast and ToastContainer deleted) | Mon | Mon |
 | Brief 150 N3: banners on screen (top centre, gold milestones, red problems, stay until clicked, three then +N) | builder | `crunch/notifications` (`nt`) | eye-check (2f98f7f8; QA → Notifications triggers every case) | Mon | Mon |
-| Item stubs, owner's eye-check rounds 1–3 (one line on hover, 1× sprites, content width, pinned always open; then calm order, no header, smooth slide and glide) | builder | `crunch/notifications` (`nt`) | building round 3 (rounds 1–2: 9b9e873e, 599bd237, merged into `crunch/batch5` 900c4cc4; director's gate 5461 tests, cycles, build) | Mon | |
-| Brief 150 N4 (owner, third look): collected loot flies to its stub instead of the Guild Hall; a copy pops out over the bottom stubs when the stub is out of view | engineer | `crunch/notifications` (`nt`) | queued after the round-3 stub commit | Mon | |
+| Item stubs, owner's eye-check rounds 1–3 (one line on hover, 1× sprites, content width, pinned always open; then calm order, no header, smooth slide and glide) | builder | `crunch/notifications` (`nt`) | eye-check (round 3 c0cb927b: calm order, no header, slide and glide; merged into `crunch/batch5` ba7de155) | Mon | Tue |
+| Brief 150 N4 (owner, third look): collected loot flies to its stub instead of the Guild Hall; a copy pops out over the bottom stubs when the stub is out of view | engineer | `crunch/notifications` (`nt`) | eye-check (4114e6b6, 4fed7e5c: the count is held back until landing, Bank credited exactly as before, no engine file touched; director's gate on ba7de155: 5501 tests, cycles, build) | Mon | Tue |
 
 ## Features director, batch 1: the style kit (ruled 2026-10-17)
 
@@ -159,13 +159,20 @@ T-186; the badges' soft shadows are settled inside T-013.)
 
 ## Bench queue (one at a time, weekdays 13:00–17:00 and 01:00–07:00, or when the owner says the PC is quiet)
 
-0. **Batch 5, `crunch/batch5`**: engine work check before merging (expect same: no engine rules changed, but the routing hears inventory events); one `bench:draw --compare` on S2 Realistic for the cost log (stubs replace the sidebar). Bench follow-ups from the builder: the `notify` scene fires `NotificationSystem.info`, which now draws nothing (repoint at item flow); `bench/drag.mjs` rests the pointer on the old sidebar strip spot, now the top bar.
+0. **Batch 5, `crunch/batch5`**: engine work check before merging (expect same: no engine rules changed, but the routing hears inventory events); one `bench:draw --compare` on S2 Realistic with auto-collect on (loot flying to stubs: the engineer measured ~+1.8 column redraws a second, ~2 ms each in the dev build; production not measured) for the cost log (stubs replace the sidebar). Bench follow-ups from the builder: the `notify` scene fires `NotificationSystem.info`, which now draws nothing (repoint at item flow); `bench/drag.mjs` rests the pointer on the old sidebar strip spot, now the top bar.
 
 1. **Features stack, merged 2026-10-18 (b68cd020) on the owner's word**: the engine work check ran on the merge (S2, S3, S5, S6, S8, S8L, S8F WORK CHANGED from the hostile flag watch, accepted under T-167; a control run of `main` bcf1324d was the same work; S1, S4, S7 same). Still owed in a quiet window on `main`: the engine timing re-run (daytime load read S3/S4/S7 slower on `main` too), and one `bench:draw --compare` plus `bench:crisp` for the cost log (brief 120 C1 must draw cheaper than before the stack; brief 110's top bar frame and mode outlines; the level-up floats). If C1 draws dearer, a ticket and a report to the owner.
 
 8. Terrain director: **bench baseline retake** on `main` at the next 01:00 window (engine and draw; every run since 16 Oct reads 10-20 % slow on unchanged code).
 
 ## Summaries
+
+**Tue 2026-10-20, 07:30: batch 5, fourth look.** Where we are: the owner
+okayed the recipe list and banners; the item stubs went through three looks
+(one line, 1×, content width, pinned open, calm order, smooth motion) and
+collected loot now flies to its stub. All on `crunch/batch5` (gate: 5501
+tests, cycles, build), served on 5198. Next: the owner's checks 23–28; the
+work check and draw compare at 13:00; merge. Blockers: none.
 
 **Mon 2026-10-19, 11:50: batch 5 at the eye-check.** Where we are: the
 recipe list and notifications (item stubs, banners) are built, verified and
