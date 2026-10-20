@@ -115,3 +115,7 @@ Busy minute of loot, then Find a new item.
 20. Right-click a pinned stub: back to +0, still pinned. Right-click an
     unpinned one: it slides away. No browser menu.
     Verdict:
+
+Owner, second look: back to 1× (32 px) sprites; no blank space on the left of
+a stub, at rest or hovered; a pinned stub always shows the expanded line.
+Being fixed on `crunch/notifications`; then a third look at 17–20.

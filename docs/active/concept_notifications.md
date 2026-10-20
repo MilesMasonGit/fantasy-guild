@@ -50,8 +50,9 @@ level-up.
 ## Item stubs (owner, 2026-10-19; revised after the first eye-check)
 
 - **At rest**: the **amount, then the item sprite** (`+12 [oak]`), in a small
-  **chamfer pixel frame**, the sprite at **2× (64 px, the size of floating
-  loot on the mat)**. Stubs sit **flush against the screen's right edge**
+  **chamfer pixel frame**, the sprite at **1× (32 px)** (owner, second
+  look: back from 2×), **sized to its content with no blank space** on the
+  left. Stubs sit **flush against the screen's right edge**
   (no gap, no frame edge on that side), stacked down from under the top bar.
   A new stub **slides out of the side**; a fading one slides back in.
 - **One stub per item, always**, showing the **net flow** whatever its
@@ -65,7 +66,8 @@ level-up.
   rate is the net per hour (today's 5-minute rolling rate, `ItemRateTracker`
   with spending recorded). Nothing else in the column moves.
 - **Left-click pins or unpins.** Pinned stubs sit at the top of the column
-  under a **"Pinned" group header**; no pin icon anywhere. A pinned stub is a
+  under a **"Pinned" group header** and **always show the expanded one-line
+  style**, hovered or not; no pin icon anywhere. A pinned stub is a
   live tracker and never fades. **Pins are saved with the game.**
 - **Right-click clears**: on an unpinned stub it removes it (the next flow
   of that item starts a fresh stub at +0); on a pinned stub it resets the
