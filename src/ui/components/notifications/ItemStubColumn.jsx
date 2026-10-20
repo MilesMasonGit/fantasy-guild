@@ -181,10 +181,11 @@ export function OpenStub({ itemId, top, startPx, onEnter, onLeave, onCleared, on
 
 /**
  * A copy of a stub that is out of view, popped out of the edge over the bottom stubs to take
- * collected loot landing on it (`stubLanding.js`), then slid back. Only a picture: it takes no
- * clicks, and nothing that looks for stubs finds it.
+ * collected loot landing on it (`stubLanding.js`), then slid back. Clicked, it pins or clears its
+ * own item like the stub it copies (it covers another stub, which must not take the click); it
+ * opens nothing on hover, and nothing that looks for stubs finds it.
  */
-const StubCopy = memo(function StubCopy({ copy, stub }) {
+const StubCopy = memo(function StubCopy({ copy, stub, onCleared }) {
     if (!stub) return null;
     const net = ItemStubs.shownNetOf(stub);
     return (
@@ -193,8 +194,9 @@ const StubCopy = memo(function StubCopy({ copy, stub }) {
             data-stub-net={net}
             data-stub-arriving="true"
             data-stub-leaving={copy.leaving ? 'true' : undefined}
-            className="gi-stub absolute right-0 z-10 pointer-events-none"
+            className="gi-stub absolute right-0 z-10 pointer-events-auto cursor-pointer"
             style={{ top: copy.top, height: STUB_PX }}
+            {...pressHandlers(copy.itemId, onCleared)}
         >
             <PixelFrame kind={FRAME_KIND.CHAMFER} className="h-full" frameClassName={frameClass(stub, false)}>
                 <StubRow stub={stub} net={net} />
@@ -308,7 +310,7 @@ export const ItemStubColumn = memo(function ItemStubColumn() {
             ) : (
                 <div className="flex flex-col items-end">{rest.map(row)}</div>
             )}
-            {getCopies().map(c => <StubCopy key={c.key} copy={c} stub={ItemStubs.getStub(c.itemId)} />)}
+            {getCopies().map(c => <StubCopy key={c.key} copy={c} stub={ItemStubs.getStub(c.itemId)} onCleared={closeNow} />)}
             {hover && (
                 <OpenStub
                     key={hover.itemId}

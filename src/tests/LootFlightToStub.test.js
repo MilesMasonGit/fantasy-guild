@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, afterAll, vi } from 'vitest';
 import React from 'react';
-import { render, cleanup, act } from '@testing-library/react';
+import { render, cleanup, act, fireEvent } from '@testing-library/react';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { GameState } from '../state/GameState.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
@@ -228,6 +228,22 @@ describe('⭐ collected loot flies to its stub', () => {
         expect(getCopies()).toEqual([]);
         expect(view.container.querySelector('[data-stub-copy]')).toBeNull();
         vi.useRealTimers();
+    });
+
+    it('a click on the copy acts on its own item, never on the stub it covers', async () => {
+        columnHeight = HEADER_PX + 3 * PITCH_PX;
+        for (let i = 0; i < 10; i++) ItemStubs.recordFlow(`filler_${i}`, { added: 1 });
+        const view = mountGame();
+        act(() => ItemStubs.flush());
+        await collectPile('fixture_oak_wood', 3);
+        const copy = () => view.container.querySelector('[data-stub-copy="fixture_oak_wood"]');
+        act(() => { fireEvent.click(copy()); });
+        expect(ItemStubs.getStub('fixture_oak_wood').pinned).toBe(true);
+        expect(ItemStubs.getStubs().filter(s => s.pinned).map(s => s.itemId)).toEqual(['fixture_oak_wood']);
+        act(() => { fireEvent.contextMenu(copy()); });
+        // A pinned stub is reset by a right-click; the stubs beneath are untouched.
+        expect(ItemStubs.shownNetOf(ItemStubs.getStub('fixture_oak_wood'))).toBe(0);
+        expect(ItemStubs.getStubs().filter(s => s.itemId.startsWith('filler_')).every(s => !s.pinned && !s.leaving)).toBe(true);
     });
 
     it('a flight the overlay drops (a window opened over the game) lets its count through at once', async () => {
