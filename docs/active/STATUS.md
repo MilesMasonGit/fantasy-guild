@@ -22,6 +22,8 @@ attention outline (ruled today).*
 | Brief 150 N1: the store and routing for item stubs and banners (T-168, T-028, T-037; owner revised 2026-10-19, no log) | builder | `crunch/notifications` (`nt`) | ready (3ea827a6; `src/systems/notifications/`, routing table, pins in `ui.pinnedStubs`) | Mon | Mon |
 | Brief 150 N2: item stubs on screen (net flow per item, hover panel, pins, Clear all; replaces the edge sidebar) | builder | `crunch/notifications` (`nt`) | eye-check (2f98f7f8, 4be5dd07; edge sidebar, Toast and ToastContainer deleted) | Mon | Mon |
 | Brief 150 N3: banners on screen (top centre, gold milestones, red problems, stay until clicked, three then +N) | builder | `crunch/notifications` (`nt`) | eye-check (2f98f7f8; QA → Notifications triggers every case) | Mon | Mon |
+| Item stubs, owner's eye-check rounds 1–3 (one line on hover, 1× sprites, content width, pinned always open; then calm order, no header, smooth slide and glide) | builder | `crunch/notifications` (`nt`) | building round 3 (rounds 1–2: 9b9e873e, 599bd237, merged into `crunch/batch5` 900c4cc4; director's gate 5461 tests, cycles, build) | Mon | |
+| Brief 150 N4 (owner, third look): collected loot flies to its stub instead of the Guild Hall; a copy pops out over the bottom stubs when the stub is out of view | engineer | `crunch/notifications` (`nt`) | queued after the round-3 stub commit | Mon | |
 
 ## Features director, batch 1: the style kit (ruled 2026-10-17)
 
