@@ -113,8 +113,12 @@ describe('the camera between the mat and the book', () => {
         const stage = q(container, '[data-atlas-stage]');
         expect(q(stage, '[data-test-book]')).toBeTruthy();
         expect([stage.style.top, stage.style.height]).toEqual(['-100%', '100%']);
-        // The table is laid in the element the wood around the mat is drawn on: under the nav too.
-        expect(table().parentElement).toBe(anchor);
+        // The table is laid in the element the wood around the mat is drawn on, under the nav too,
+        // in a clipped box: moved down, it must not make that element scrollable.
+        const clip = table().parentElement;
+        expect(clip.parentElement).toBe(anchor);
+        expect(clip.className).toContain('overflow-clip');
+        expect(clip.className).toContain('inset-0');
         expect([table().style.top, table().style.height, table().style.backgroundColor]).toEqual(['-100%', '200%', 'rgb(1, 2, 3)']);
 
         expect(anims).toHaveLength(2);

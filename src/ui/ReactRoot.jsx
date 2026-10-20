@@ -281,9 +281,11 @@ export const ReactRoot = ({ engine }) => {
                          * The mat's column, under one camera: the Atlas book lies on the table
                          * above the mat and the view glides up to it. ⚠️ `overflow-clip`, not
                          * `overflow-hidden`: with the camera up, the mat sits below the column's
-                         * box, and focus landing there would scroll a hidden box to it.
+                         * box, and focus landing there would scroll a hidden box to it. A clipped
+                         * box is no scroll container, so `min-w-0` keeps its width the room it is
+                         * given rather than its content's widest.
                          */}
-                        <div className="flex-1 relative flex flex-col overflow-clip z-10">
+                        <div className="flex-1 min-w-0 relative flex flex-col overflow-clip z-10">
                             <AtlasCamera
                                 open={isAtlasOpen}
                                 away={ui.fullscreen.view !== null && !isAtlasOpen}

@@ -143,21 +143,24 @@ export const AtlasCamera = ({ open, away = false, book, table, tableAnchor, arri
     const tableHost = up ? tableAnchor?.current : null;
     return (
         <>
+            {/* ⚠️ Clipped: the moved wood would otherwise make its host scrollable, and focus
+                landing on the mat below would scroll the whole screen away. */}
             {tableHost && createPortal(
-                <div
-                    ref={tableRef}
-                    aria-hidden="true"
-                    data-atlas-table
-                    className="absolute inset-x-0 pointer-events-none"
-                    style={{
-                        ...table,
-                        backgroundPosition: `0px ${tableTileY(table?.backgroundSize)}`,
-                        top: '-100%',
-                        height: '200%',
-                        transform: onBookSide(phase) ? 'translateY(50%)' : 'translateY(0px)',
-                        willChange: 'transform'
-                    }}
-                />,
+                <div aria-hidden="true" data-atlas-table-clip className="absolute inset-0 overflow-clip pointer-events-none">
+                    <div
+                        ref={tableRef}
+                        data-atlas-table
+                        className="absolute inset-x-0"
+                        style={{
+                            ...table,
+                            backgroundPosition: `0px ${tableTileY(table?.backgroundSize)}`,
+                            top: '-100%',
+                            height: '200%',
+                            transform: onBookSide(phase) ? 'translateY(50%)' : 'translateY(0px)',
+                            willChange: 'transform'
+                        }}
+                    />
+                </div>,
                 tableHost
             )}
             <div
