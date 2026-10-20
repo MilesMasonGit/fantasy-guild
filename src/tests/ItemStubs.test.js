@@ -68,12 +68,33 @@ describe('merging', () => {
         }
     });
 
-    it('lists the newest arrival on top, below the pins', () => {
-        ItemStubs.recordFlow('a', { added: 1 });
-        ItemStubs.recordFlow('b', { added: 1 });
-        ItemStubs.recordFlow('c', { added: 1 });
+    it('keeps the order calm: new at the bottom, a new pin at the bottom of the pins, an unpinned stub at the top of the rest', () => {
+        const order = () => ItemStubs.getStubs().map(s => s.itemId);
+        for (const id of ['a', 'b', 'c', 'd']) ItemStubs.recordFlow(id, { added: 1 });
+        expect(order()).toEqual(['a', 'b', 'c', 'd']);
+        ItemStubs.pin('c');
         ItemStubs.pin('a');
-        expect(ItemStubs.getStubs().map(s => s.itemId)).toEqual(['a', 'c', 'b']);
+        expect(order()).toEqual(['c', 'a', 'b', 'd']);
+        ItemStubs.unpin('c');
+        expect(order()).toEqual(['a', 'c', 'b', 'd']);
+        ItemStubs.recordFlow('e', { added: 1 });
+        ItemStubs.recordFlow('b', { added: 5 });
+        expect(order()).toEqual(['a', 'c', 'b', 'd', 'e']);
+        ItemStubs.unpin('a');
+        expect(order()).toEqual(['a', 'c', 'b', 'd', 'e']);
+    });
+
+    it('a stub cleared and started again joins the bottom', () => {
+        vi.useFakeTimers();
+        try {
+            for (const id of ['a', 'b', 'c']) ItemStubs.recordFlow(id, { added: 1 });
+            ItemStubs.remove('a');
+            vi.advanceTimersByTime(ItemStubs.LEAVE_MS);
+            ItemStubs.recordFlow('a', { added: 1 });
+            expect(ItemStubs.getStubs().map(s => s.itemId)).toEqual(['b', 'c', 'a']);
+        } finally {
+            vi.useRealTimers();
+        }
     });
 });
 

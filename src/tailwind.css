@@ -988,19 +988,24 @@
 
 /* Item stubs (ItemStubColumn.jsx): tabs pulled out of the screen's right edge, so the frame has no
    right side. A new stub slides out from beyond the edge; one fading (its item still five minutes)
-   or cleared slides back out. The open (hovered) stub grows left from the stub's own width. */
+   or cleared slides back out. The open (hovered) stub grows left from the stub's own width. A copy of
+   a stub out of view (the loot flying to it lands there) slides out and back the same way. */
 .gi-stub-frame,
 [data-item-stub] [data-pixel-frame-shadow],
-[data-stub-open] [data-pixel-frame-shadow] { border-right-width: 0; border-image-width: 6px 0 6px 6px; }
+[data-stub-open] [data-pixel-frame-shadow],
+[data-stub-copy] [data-pixel-frame-shadow] { border-right-width: 0; border-image-width: 6px 0 6px 6px; }
 @keyframes gi-stub-in {
   from { transform: translateX(calc(100% + 8px)); }
   to   { transform: translateX(0); }
 }
-.gi-stub { transition: transform 240ms steps(6, end); }
-.gi-stub[data-stub-arriving="true"] { animation: gi-stub-in 240ms steps(6, end) backwards; }
+/* `translate` is the glide to a new place (stubGlide.js); `data-stub-snap` holds it still for the
+   one frame its starting offset is set. */
+.gi-stub { transition: transform 300ms ease-out, translate 280ms ease-in-out; }
+.gi-stub[data-stub-snap="true"] { transition: transform 300ms ease-out; }
+.gi-stub[data-stub-arriving="true"] { animation: gi-stub-in 300ms ease-out backwards; }
 .gi-stub[data-stub-fading="true"],
-.gi-stub[data-stub-leaving="true"] { transform: translateX(calc(100% + 8px)); pointer-events: none; }
-.gi-stub-open { transition: width 160ms steps(5, end); }
+.gi-stub[data-stub-leaving="true"] { transform: translateX(calc(100% + 8px)); pointer-events: none; transition: transform 300ms ease-in, translate 280ms ease-in-out; }
+.gi-stub-open { transition: width 200ms ease-out; }
 
 /* While anything is dragged, the stubs and banners let the pointer through: no panel pops open
    over a drop, and nothing there can take it. */
@@ -1044,7 +1049,7 @@ body.gi-dnd-active [data-banners] * { pointer-events: none !important; }
 @media (prefers-reduced-motion: reduce) {
   .gi-banner, .gi-banner[data-banner-leaving="true"] { animation: none; }
   .gi-banner-shine::before, .gi-stub-new::before { animation: none; }
-  .gi-stub, .gi-stub-open { transition: none; }
+  .gi-stub, .gi-stub-open, .gi-stub[data-stub-snap="true"] { transition: none; }
   .gi-stub[data-stub-arriving="true"] { animation: none; }
 }
 

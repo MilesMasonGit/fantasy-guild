@@ -7,7 +7,7 @@ import * as ItemStubs from '../systems/notifications/itemStubs.js';
 
 /**
  * The stub column's clicks and hover (owner, after the first eye-check): left-click pins or
- * unpins, pinned stubs sit under a "Pinned" header, right-click clears or resets and never opens
+ * unpins, pinned stubs sit at the top with no header, right-click clears or resets and never opens
  * the browser's menu, and hover grows the same box into one line with no second panel.
  */
 
@@ -28,15 +28,15 @@ afterEach(() => {
 });
 
 describe('left-click pins', () => {
-    it('pins under a Pinned header, and a second click unpins', () => {
-        flow('oak', 3);
+    it('pins to the top with no header, and a second click unpins', () => {
         flow('stone', 2);
+        flow('oak', 3);
         const view = render(h(ItemStubColumn));
-        expect(view.container.querySelector('[data-stubs-pinned-header]')).toBeNull();
 
         act(() => { fireEvent.click(stubEl(view, 'oak')); });
         const group = view.container.querySelector('[data-stubs-pinned]');
-        expect(group.querySelector('[data-stubs-pinned-header]').textContent).toBe('Pinned');
+        expect(group.textContent).not.toMatch(/Pinned/);
+        expect([...view.container.querySelectorAll('[data-item-stub]')].map(e => e.dataset.itemStub)).toEqual(['oak', 'stone']);
         expect(group.querySelector('[data-item-stub="oak"]')?.getAttribute('data-stub-pinned')).toBe('true');
         expect(stubEl(view, 'oak').getAttribute('data-stub-net')).toBe('3');
         // Pinned, it shows the open line at rest: amount, sprite, name, rate.

@@ -14,6 +14,10 @@
  * A stub cleared by hand (right-click, Clear all) is marked `leaving` for {@link LEAVE_MS} so the
  * column can slide it out, then goes.
  *
+ * Collected loot is in the Bank before its flight reaches the stub: the stub holds that much back
+ * from what it shows until the flight lands ({@link holdForFlight}, {@link landFlight}), so the
+ * count ticks up as each item arrives. The Bank's own count and timing never wait for a flight.
+ *
  * Pure apart from the clock and the timer, which tests replace ({@link setClock}, {@link flush}).
  */
 
@@ -24,7 +28,7 @@ export const FADE_MS = 5 * 60 * 1000;
 export const FADE_OUT_MS = 1000;
 
 /** How long a cleared stub is drawn sliding out before it goes. */
-export const LEAVE_MS = 300;
+export const LEAVE_MS = 320;
 
 /** How long after it appears a stub still slides in when drawn (it is first drawn up to {@link EMIT_MS} late). */
 export const ARRIVE_MS = 600;
@@ -34,10 +38,14 @@ export const EMIT_MS = 250;
 
 let clock = () => Date.now();
 
-/** itemId -> stub, in the order the stubs first appeared. */
+/** itemId -> stub. Their order on screen is `slot` and `pinSlot` ({@link getStubs}). */
 const stubs = new Map();
 /** Items found for the first time whose stub has not been made yet. */
 const pendingNew = new Set();
+/** Items whose stub was made since listeners last heard: not drawn yet. */
+const unseen = new Set();
+/** Tells one stub from the next for the same item, so a flight booked on a cleared or reset stub lands on nothing. */
+let nextUid = 0;
 
 let version = 0;
 let emitTimer = null;
@@ -50,6 +58,7 @@ export function setClock(fn) {
 
 function emitNow() {
     if (emitTimer) { clearTimeout(emitTimer); emitTimer = null; }
+    unseen.clear();
     version++;
     for (const fn of [...listeners]) fn();
 }
@@ -74,11 +83,26 @@ export function getVersion() {
     return version;
 }
 
+/**
+ * Where stubs sit, kept calm: a new stub joins the bottom (`slot` counts up), an unpinned one goes
+ * to the top of the unpinned stubs (counts down), a new pin goes to the bottom of the pins.
+ * Nothing else reorders.
+ */
+let lastSlot = 0;
+let firstSlot = 0;
+let lastPinSlot = 0;
+
 function freshStub(itemId, now) {
+    unseen.add(itemId);
     return {
         itemId,
+        uid: ++nextUid,
+        slot: ++lastSlot,
+        pinSlot: 0,
         added: 0,
         removed: 0,
+        /** Collected and banked, still flying here: not shown until it lands. */
+        held: 0,
         firstAt: now,
         lastChangedAt: now,
         isNew: false,
@@ -133,14 +157,46 @@ export function markNew(itemId) {
 /** The stub's net flow: gained minus spent. */
 export const netOf = (stub) => (stub ? stub.added - stub.removed : 0);
 
+/** What the stub shows: its net flow less the loot still flying to it. */
+export const shownNetOf = (stub) => (stub ? stub.added - stub.removed - stub.held : 0);
+
+/**
+ * Collected loot of `itemId` is flying to its stub: hold `qty` back from the count until it lands.
+ * Call it straight after the Bank change that counted it, before listeners hear (they hear on a
+ * timer), so the count never shows it early. A stub made by that very change is drawn at once, so
+ * it slides out at +0 as the flight starts and the loot has somewhere to land.
+ * @returns {{ itemId: string, uid: number, qty: number } | null} what {@link landFlight} takes;
+ *   null when the item has no stub
+ */
+export function holdForFlight(itemId, qty) {
+    const s = stubs.get(itemId);
+    const q = Number(qty) > 0 ? Number(qty) : 0;
+    if (!s || s.leaving || !q) return null;
+    stubs.set(itemId, { ...s, held: s.held + q });
+    if (unseen.has(itemId)) emitNow();
+    return { itemId, uid: s.uid, qty: q };
+}
+
+/**
+ * A held flight landed (or will never land): its amount shows now, and listeners hear at once so
+ * the count ticks as the item arrives. A flight held on a stub since cleared or reset adds nothing.
+ */
+export function landFlight(hold) {
+    if (!hold) return;
+    const s = stubs.get(hold.itemId);
+    if (!s || s.uid !== hold.uid || !s.held) return;
+    stubs.set(hold.itemId, { ...s, held: Math.max(0, s.held - hold.qty) });
+    emitNow();
+}
+
 /**
  * The stubs as the column draws them: pinned ones first, in the order they were pinned, then the
- * rest, the newest arrival on top.
+ * rest, the newest arrival at the bottom and the most recently unpinned at the top.
  */
 export function getStubs() {
     const all = [...stubs.values()];
-    const pinned = all.filter(s => s.pinned).sort((a, b) => a.pinnedAt - b.pinnedAt);
-    const rest = all.filter(s => !s.pinned).reverse();
+    const pinned = all.filter(s => s.pinned).sort((a, b) => a.pinSlot - b.pinSlot);
+    const rest = all.filter(s => !s.pinned).sort((a, b) => a.slot - b.slot);
     return [...pinned, ...rest];
 }
 
@@ -209,7 +265,7 @@ export function pin(itemId) {
     const s = stubs.get(itemId);
     if (!s || s.pinned || s.leaving) return;
     const now = clock();
-    stubs.set(itemId, { ...s, pinned: true, pinnedAt: now, fading: false, lastChangedAt: now });
+    stubs.set(itemId, { ...s, pinned: true, pinnedAt: now, pinSlot: ++lastPinSlot, fading: false, lastChangedAt: now });
     emitNow();
 }
 
@@ -217,15 +273,15 @@ export function pin(itemId) {
 export function unpin(itemId) {
     const s = stubs.get(itemId);
     if (!s || !s.pinned) return;
-    stubs.set(itemId, { ...s, pinned: false, pinnedAt: null, lastChangedAt: clock() });
+    stubs.set(itemId, { ...s, pinned: false, pinnedAt: null, slot: --firstSlot, lastChangedAt: clock() });
     emitNow();
 }
 
-/** A pinned stub back to +0. */
+/** A pinned stub back to +0. Loot already flying to it was counted before the reset, so it is let go. */
 export function resetPin(itemId) {
     const s = stubs.get(itemId);
     if (!s || !s.pinned) return;
-    stubs.set(itemId, { ...s, added: 0, removed: 0 });
+    stubs.set(itemId, { ...s, added: 0, removed: 0, held: 0, uid: ++nextUid });
     emitNow();
 }
 
@@ -247,7 +303,6 @@ export function serializePins() {
 export function loadPins(list) {
     if (!Array.isArray(list)) return;
     const now = clock();
-    let order = 0;
     for (const p of list) {
         if (!p || typeof p.itemId !== 'string' || !p.itemId) continue;
         const added = Number.isFinite(p.added) && p.added > 0 ? p.added : 0;
@@ -257,7 +312,8 @@ export function loadPins(list) {
             added,
             removed,
             pinned: true,
-            pinnedAt: now + order++
+            pinnedAt: now,
+            pinSlot: ++lastPinSlot
         });
     }
     emitNow();
@@ -267,5 +323,6 @@ export function loadPins(list) {
 export function reset() {
     stubs.clear();
     pendingNew.clear();
+    unseen.clear();
     emitNow();
 }
