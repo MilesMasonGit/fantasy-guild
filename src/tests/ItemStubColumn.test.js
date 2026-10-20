@@ -39,10 +39,31 @@ describe('left-click pins', () => {
         expect(group.querySelector('[data-stubs-pinned-header]').textContent).toBe('Pinned');
         expect(group.querySelector('[data-item-stub="oak"]')?.getAttribute('data-stub-pinned')).toBe('true');
         expect(stubEl(view, 'oak').getAttribute('data-stub-net')).toBe('3');
+        // Pinned, it shows the open line at rest: amount, sprite, name, rate.
+        expect(stubEl(view, 'oak').querySelector('[data-stub-name]')).not.toBeNull();
+        expect(stubEl(view, 'oak').querySelector('[data-stub-rate]').textContent).toMatch(/\/hr$/);
+        expect(stubEl(view, 'stone').querySelector('[data-stub-name]')).toBeNull();
 
         act(() => { fireEvent.click(stubEl(view, 'oak')); });
         expect(view.container.querySelector('[data-stubs-pinned]')).toBeNull();
         expect(stubEl(view, 'oak').getAttribute('data-stub-pinned')).toBeNull();
+        expect(stubEl(view, 'oak').querySelector('[data-stub-name]')).toBeNull();
+    });
+
+    it('every stub is as wide as its content: no fixed width, no fixed amount box', () => {
+        flow('oak', 3);
+        const view = render(h(ItemStubColumn));
+        expect(stubEl(view, 'oak').style.width).toBe('');
+        expect(view.container.querySelector('[data-item-stubs]').style.width).toBe('');
+        expect([...stubEl(view, 'oak').querySelectorAll('span')].some(e => e.style.width)).toBe(false);
+    });
+
+    it('hovering a pinned stub opens nothing more: it is already open', () => {
+        flow('oak', 3);
+        const view = render(h(ItemStubColumn));
+        act(() => { fireEvent.click(stubEl(view, 'oak')); });
+        act(() => { fireEvent.mouseEnter(stubEl(view, 'oak')); });
+        expect(view.container.querySelector('[data-stub-open]')).toBeNull();
     });
 
     it('has no pin or reset icon anywhere, open or at rest', () => {
@@ -98,13 +119,16 @@ describe('hover', () => {
         expect(after).toEqual(before);
     });
 
-    it('a left-click on the open box pins its stub; a right-click on it clears and closes it', () => {
+    it('a left-click on the open box pins its stub (which then stays open itself); a right-click on it clears and closes it', () => {
         flow('oak', 12);
         const view = render(h(ItemStubColumn));
         act(() => { fireEvent.mouseEnter(stubEl(view, 'oak')); });
         act(() => { fireEvent.click(view.container.querySelector('[data-stub-open]')); });
         expect(ItemStubs.getStub('oak').pinned).toBe(true);
-        act(() => { fireEvent.click(view.container.querySelector('[data-stub-open]')); });
+        expect(view.container.querySelector('[data-stub-open]')).toBeNull();
+        expect(stubEl(view, 'oak').querySelector('[data-stub-name]')).not.toBeNull();
+        act(() => { fireEvent.click(stubEl(view, 'oak')); });
+        act(() => { fireEvent.mouseEnter(stubEl(view, 'oak')); });
         act(() => { fireEvent.contextMenu(view.container.querySelector('[data-stub-open]')); });
         expect(ItemStubs.getStub('oak').leaving).toBe(true);
         expect(view.container.querySelector('[data-stub-open]')).toBeNull();
