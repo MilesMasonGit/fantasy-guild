@@ -6,7 +6,7 @@ import { syncFiles } from './recipeSync';
 /** Workspace save, load, and one-way game data sync. */
 
 /** The collections a workspace file carries. One place, so save and load agree. */
-function snapshot(state) {
+export function snapshot(state) {
   return {
     items: state.items,
     tokens: state.tokens,

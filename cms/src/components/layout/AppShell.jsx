@@ -1,4 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useEntityStore } from '../../stores/useEntityStore';
+import { snapshot } from '../../engine/fileUtils';
+import { startAutosave } from '../../engine/autosave';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
 import GenerateModal from '../shared/GenerateModal';
@@ -14,6 +17,8 @@ export default function AppShell({ children }) {
   const [generatePrefill, setGeneratePrefill] = useState(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [fileManagerOpen, setFileManagerOpen] = useState(false);
+
+  useEffect(() => startAutosave(useEntityStore, snapshot).stop, []);
 
   const openGenerate = (prefill = null) => {
     setGeneratePrefill(prefill);
