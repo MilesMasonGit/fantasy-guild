@@ -13,6 +13,16 @@ banners), **T-174** (camera moves).*
 
 ## The view
 
+- **Owner, 2026-10-20, after the first look (supersedes the camera move
+  below)**: the Atlas **pops up from the bottom over the playmat** (slides
+  up, the mat behind not dimmed, no table under the book; slides back down
+  on close). The book is the owner's **256 px pages `atlas_book_left.png`
+  and `atlas_book_right.png`** (the right page's drawn ribbon is decoration;
+  the section ribbons stay on the top edge). **Scale to be chosen by eye**:
+  2×, 3× or 4× (4× matches the wood and terrain pixel size but overflows the
+  screen). The camera glide is kept for the Guild Hall upgrade screen
+  (T-194, tag `atlas-camera-move`).
+
 - **Owner, 2026-10-20 (supersedes the lines below where they differ)**: the
   book is the owner's sprite `playmat/atlas_book_gold.png` (128 px, the
   right page; **mirrored for the left page**), drawn at **4×**. The Atlas
