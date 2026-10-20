@@ -32,7 +32,7 @@ import { listSkillOf } from '../../systems/board/RecipeList.js';
 import { Stub } from '../components/notifications/ItemStubColumn.jsx';
 import { Banner } from '../components/notifications/BannerStack.jsx';
 import { bannerText } from '../../systems/notifications/bannerKinds.js';
-import { BookmarkRibbon } from '../components/atlas/AtlasTome.jsx';
+import { BookTab } from '../components/atlas/AtlasTome.jsx';
 
 /** One art pixel of the UI, in screen pixels: UI sprites draw at 2×. */
 const ART_PX = 2;
@@ -169,20 +169,20 @@ const KitTabs = () => {
     );
 };
 
-const KIT_RIBBONS = [
+const KIT_BOOK_TABS = [
     { id: 'cartography', label: 'Cartography', colour: '#7a1f1f' },
     { id: 'regions', label: 'Regions', colour: '#1f3f6e' }
 ];
 
-/** The Atlas's bookmark ribbons, tucked under a strip of book cover as on the tome. */
-const RibbonDemo = () => {
-    const [open, setOpen] = useState(KIT_RIBBONS[0].id);
+/** The Atlas's page tabs, tucked under a strip of book cover as on the tome. */
+const BookTabDemo = () => {
+    const [open, setOpen] = useState(KIT_BOOK_TABS[0].id);
     return (
-        <div className="relative inline-block pt-2 px-6">
-            <div role="tablist" className="flex items-end gap-2">
-                {KIT_RIBBONS.map(t => <BookmarkRibbon key={t.id} {...t} selected={t.id === open} onSelect={setOpen} />)}
+        <div className="relative inline-flex items-start py-2">
+            <div role="tablist" aria-orientation="vertical" className="flex flex-col items-end gap-2">
+                {KIT_BOOK_TABS.map(t => <BookTab key={t.id} {...t} selected={t.id === open} onSelect={setOpen} />)}
             </div>
-            <div className="relative -mt-4 h-6 w-72" style={{ background: '#4a2a1a' }} />
+            <div className="relative -ml-4 w-6 self-stretch" style={{ background: '#4a2a1a' }} />
         </div>
     );
 };
@@ -591,7 +591,7 @@ export const KIT_SECTIONS = [
         )
     },
     {
-        id: 'tabs', title: 'Tabs', status: 'unapproved', source: 'none shared (the Atlas has its own ribbons, below)',
+        id: 'tabs', title: 'Tabs', status: 'unapproved', source: 'none shared (the Atlas has its own page tabs, below)',
         rule: 'Sprite + word. The open one has a 1-art-pixel gold line under it and bright text; the others muted. Never boxed.',
         Demo: KitTabs
     },
@@ -660,9 +660,9 @@ export const KIT_SECTIONS = [
         Demo: BannerDemo
     },
     {
-        id: 'atlas-ribbons', title: 'Atlas bookmark ribbons', status: 'unapproved', source: 'AtlasTome (the Atlas only)',
-        rule: 'The Atlas’s own variant of the tabs: cloth ribbons standing up from the top edge of the book, tucked under its cover. The open one stands taller with bright text and a 1-art-pixel gold edge down each side; the others are muted. Code placeholders until the owner draws the ribbons.',
-        Demo: RibbonDemo
+        id: 'atlas-tabs', title: 'Atlas page tabs', status: 'unapproved', source: 'AtlasTome (the Atlas only)',
+        rule: 'The Atlas’s own variant of the tabs: cloth page tabs stacked down the left edge of the book, coming out from under its cover. The open one stands further out with bright text and a 1-art-pixel gold edge along each long side; the others are muted. Code placeholders until the owner draws the tabs.',
+        Demo: BookTabDemo
     },
     {
         id: 'map-modes', title: 'Map mode outlines and banners', status: 'unapproved',

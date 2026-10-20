@@ -278,7 +278,7 @@ describe('the Region list', () => {
         return { ...view, onTravel };
     };
 
-    it('lists each Region with its names, its day and its Token count; the active one reads Here', () => {
+    it('lists each Region with its names; the active one shows the hero flag, not Travel', () => {
         const { region } = Atlas.createRegion({ ingredients: [WOOD_ITEM] });
         const starter = Atlas.activeRegionId();
         const { container } = renderList();
@@ -287,8 +287,8 @@ describe('the Region list', () => {
         expect(q(here, '[data-region-here]')).toBeTruthy();
         expect(q(here, '[data-region-travel]')).toBeNull();
         expect(here.textContent).toContain(TEXT.STARTER_CAMP);
-        expect(here.textContent).toContain('Settled day 1');
-        expect(here.textContent).toContain('0 Tokens');
+        expect(here.textContent).not.toContain('Settled day');
+        expect(here.textContent).not.toContain('Token');
         const other = q(container, `[data-region-row="${region.id}"]`);
         expect(other.textContent).toContain(region.flavourName);
         expect(other.textContent).toContain('Wood');

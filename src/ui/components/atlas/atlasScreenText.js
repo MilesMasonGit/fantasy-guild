@@ -6,7 +6,7 @@ export const SCREEN_TEXT = Object.freeze({
     TAB_CARTOGRAPHY: 'Cartography',
     CLOSE: 'Close',
 
-    HERE: 'Here',
+    HERE: 'The guild is here',
     TRAVEL: 'Travel',
     ARCHIVE: 'Archive',
     RESTORE: 'Restore',
@@ -16,8 +16,6 @@ export const SCREEN_TEXT = Object.freeze({
     MORE: 'More',
     showArchive: (n) => `Archive (${n})`,
     HIDE_ARCHIVE: 'Hide archive',
-    settledDay: (day) => `Settled day ${day}`,
-    tokens: (n) => `${n} Token${n === 1 ? '' : 's'}`,
     abandonQuestion: (name) => `Abandon ${name} for good? Everything on it is lost.`,
     KEEP: 'Keep',
 
@@ -37,9 +35,3 @@ export const SCREEN_TEXT = Object.freeze({
     TRAVEL_THERE: 'Travel there',
     STAY: 'Stay here'
 });
-
-/** The guild's day a game time falls on: day 1 is the first 24 hours. */
-export function dayOf(gameTimeMs) {
-    const ms = Number(gameTimeMs);
-    return Math.floor((Number.isFinite(ms) && ms > 0 ? ms : 0) / 86400000) + 1;
-}
