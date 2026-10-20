@@ -1,4 +1,4 @@
-Status: approved 2026-10-09 (ticket T-133; not briefed)
+Status: built 2026-10-20 (brief 200; merged 1b6c55af)
 
 # Agents author content through the CMS
 
