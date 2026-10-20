@@ -19,12 +19,11 @@ const TABS = [
 const CLOSE_SPRITE = '/assets/ui/u_cancel_red.png';
 
 /**
- * The Atlas: an open tome lying on the wood table above the mat (`AtlasCamera` glides the view up
- * to it and back; the table is the one around the mat, drawn there), opened from its bubble, with two
- * sections behind bookmark ribbons. **Regions** lists every Region the guild has settled (travel,
- * rename, archive, abandon); **Cartography** writes a new one from maps. Escape, the close button
- * or a press on the table outside the book closes it, and closing takes nothing: the Cartography
- * slots are only remembered while it is open.
+ * The Atlas: the owner's open book popping up over the mat (the mat stays as it is behind it),
+ * opened from its bubble, with two sections behind bookmark ribbons. **Regions** lists every
+ * Region the guild has settled (travel, rename, archive, abandon); **Cartography** writes a new
+ * one from maps. Escape, the close button or a press outside the book closes it, and closing
+ * takes nothing: the Cartography slots are only remembered while it is open.
  *
  * @param {object} props
  * @param {() => void} props.onClose
@@ -78,7 +77,7 @@ export const AtlasScreen = ({ onClose, closePromotion, initialTab = ATLAS_TAB.RE
     return (
         <div
             data-atlas-overlay
-            className="absolute inset-0 z-[100] pointer-events-auto overflow-hidden flex items-center justify-center text-[12px] leading-snug"
+            className="absolute inset-0 z-[100] pointer-events-auto overflow-hidden text-[12px] leading-snug"
             onPointerDown={(e) => { if (e.target === e.currentTarget) onClose?.(); }}
         >
             <AtlasTome tabs={TABS} tab={tab} onTab={setTab} closeButton={closeButton} label={SCREEN_TEXT.TITLE}>

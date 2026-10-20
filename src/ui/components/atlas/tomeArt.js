@@ -1,38 +1,60 @@
-// the Atlas tome's pictures and where its pages' parchment lies: the one place to point at new art
+// the Atlas book's pictures and where their parchment lies: the one place to point at new art
 
 /**
- * `page`: the owner's right-hand page (spine on its left edge), drawn mirrored for the left page.
- * The book lies on the same wood as the mat (the background chosen in Settings), not a table of its own.
+ * The owner's two pages, drawn side by side spine to spine: the left picture's spine is its right
+ * edge, the right picture's its left edge. The ribbon drawn on the right page is decoration.
  */
 export const TOME_ART = Object.freeze({
-    page: '/assets/playmat/atlas_book_gold.png',
-    pageArtPx: 128
+    left: '/assets/playmat/atlas_book_left.png',
+    right: '/assets/playmat/atlas_book_right.png',
+    pageArtPx: 256
 });
 
-/** The book is drawn at exactly this many screen pixels per art pixel, never scaled. */
-export const TOME_SCALE = 4;
+/**
+ * Each page's parchment, in art pixels of its own picture, a little in from the torn edge and the
+ * cover. ⚠️ Measured from the pictures: a redrawn page needs measuring again.
+ */
+export const PARCHMENT_ART = Object.freeze({
+    left: Object.freeze({ x0: 71, y0: 24, x1: 236, y1: 219 }),
+    right: Object.freeze({ x0: 20, y0: 22, x1: 174, y1: 219 })
+});
 
-/** One page in screen pixels; the spread is two of them side by side. */
-export const PAGE_PX = TOME_ART.pageArtPx * TOME_SCALE;
-export const SPREAD_W = PAGE_PX * 2;
-export const SPREAD_H = PAGE_PX;
+/** The covers' outer edges on the spread, in art pixels (the opaque part of both pictures). */
+export const COVER_ART = Object.freeze({ x0: 39, y0: 4, x1: 256 + 238, y1: 252 });
+
+/** The scales the book may be drawn at, chosen by eye (dev switch in QA → Atlas). */
+export const TOME_SCALES = Object.freeze([2, 3, 4]);
+export const DEFAULT_TOME_SCALE = 2;
+
+/** The spread's size at `scale`: two pages side by side. */
+export function spreadSize(scale) {
+    return { w: TOME_ART.pageArtPx * 2 * scale, h: TOME_ART.pageArtPx * scale };
+}
+
+const intersect = (a, b) => {
+    const left = Math.max(a.left, b.left);
+    const top = Math.max(a.top, b.top);
+    const right = Math.min(a.left + a.width, b.left + b.width);
+    const bottom = Math.min(a.top + a.height, b.top + b.height);
+    return { left, top, width: Math.max(0, right - left), height: Math.max(0, bottom - top) };
+};
 
 /**
- * The right page's parchment inside its gold border, in art pixels of the page picture (a little
- * in from the torn edge). Measured from `atlas_book_gold.png`; a redrawn page needs it measured again.
+ * Where each page's panels go on the spread at `scale`, in screen pixels of the spread: the page's
+ * parchment, cut to `visible` (the part of the spread on screen, inset by `margin`) when the book
+ * is bigger than its room.
  */
-export const PARCHMENT_ART = Object.freeze({ x0: 5, y0: 12, x1: 94, y1: 106 });
-
-/** The book's covers across the spread, in art pixels of one page (its opaque part, spine at 0). */
-export const COVER_ART = Object.freeze({ x1: 110, y0: 2, y1: 126 });
-
-/** Where each page's parchment lies on the spread, in screen pixels: the left page mirrors the right. */
-export function parchmentRects(art = PARCHMENT_ART, scale = TOME_SCALE, pagePx = PAGE_PX) {
-    const width = (art.x1 - art.x0) * scale;
-    const height = (art.y1 - art.y0) * scale;
-    const top = art.y0 * scale;
-    return {
-        left: { left: pagePx - art.x1 * scale, top, width, height },
-        right: { left: pagePx + art.x0 * scale, top, width, height }
-    };
+export function pageRects(scale, visible = null, margin = 8) {
+    const page = TOME_ART.pageArtPx * scale;
+    const rect = (art, offset) => ({
+        left: offset + art.x0 * scale,
+        top: art.y0 * scale,
+        width: (art.x1 - art.x0) * scale,
+        height: (art.y1 - art.y0) * scale
+    });
+    const left = rect(PARCHMENT_ART.left, 0);
+    const right = rect(PARCHMENT_ART.right, page);
+    if (!visible) return { left, right };
+    const room = { left: visible.left + margin, top: visible.top + margin, width: visible.width - 2 * margin, height: visible.height - 2 * margin };
+    return { left: intersect(left, room), right: intersect(right, room) };
 }

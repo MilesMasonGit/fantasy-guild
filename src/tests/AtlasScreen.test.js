@@ -24,8 +24,6 @@ import * as Cartography from '../systems/atlas/Cartography.js';
 import { TEXT } from '../systems/atlas/regionNames.js';
 import { DeckDndContext } from '../ui/dnd/DndKit.jsx';
 import { AtlasScreen, ATLAS_TAB } from '../ui/components/atlas/AtlasScreen.jsx';
-import { AtlasCamera, CAMERA } from '../ui/components/atlas/AtlasCamera.jsx';
-import { ArrivalCard } from '../ui/components/atlas/ArrivalCard.jsx';
 import { CartographyTable, REROLL_COOLDOWN_MS, fitSlots } from '../ui/components/atlas/CartographyTable.jsx';
 import { RegionList } from '../ui/components/atlas/RegionList.jsx';
 import { LayoutPreview, terrainRuns } from '../ui/components/atlas/LayoutPreview.jsx';
@@ -394,46 +392,6 @@ describe('the Atlas screen', () => {
         await act(async () => { fireEvent.click(q(container, `[data-region-travel="${region.id}"]`)); });
         expect(Atlas.activeRegionId()).toBe(region.id);
         expect(onClose).toHaveBeenCalledTimes(1);
-    });
-
-    it('travel: the camera glides back down to the new mat first, then the arrival card shows', async () => {
-        const anims = [];
-        HTMLElement.prototype.animate = function (keyframes) {
-            const anim = { keyframes, onfinish: null, finish() { this.onfinish?.(); }, cancel() {} };
-            anims.push(anim);
-            return anim;
-        };
-        // jsdom lays nothing out: a column of no height has nothing to glide over.
-        const tall = vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(800);
-        try {
-            const { region } = Atlas.createRegion({ ingredients: [WOOD_ITEM] });
-            const Harness = () => {
-                const [open, setOpen] = React.useState(true);
-                return React.createElement(
-                    DeckDndContext.Provider, { value: { activePayload: null, isDragging: false } },
-                    React.createElement(AtlasCamera, {
-                        open,
-                        book: React.createElement(AtlasScreen, { onClose: () => setOpen(false), closePromotion: vi.fn() }),
-                        arrival: (held) => React.createElement(ArrivalCard, { held })
-                    }, React.createElement('div', { 'data-test-mat': '' }))
-                );
-            };
-            const { container } = render(React.createElement(Harness));
-            const camera = () => q(container, '[data-atlas-camera]').getAttribute('data-atlas-camera');
-            expect(camera()).toBe(CAMERA.BOOK);
-            await act(async () => { fireEvent.click(q(container, `[data-region-travel="${region.id}"]`)); });
-            expect(Atlas.activeRegionId()).toBe(region.id);
-            expect(camera()).toBe(CAMERA.TO_MAT);
-            expect(q(container, '[data-atlas-screen]')).toBeTruthy();
-            expect(q(container, '[data-arrival-card]')).toBeNull();
-            act(() => anims.at(-1).finish());
-            expect(camera()).toBe(CAMERA.MAT);
-            expect(q(container, '[data-atlas-screen]')).toBeNull();
-            expect(q(container, `[data-arrival-card="${region.id}"]`)).toBeTruthy();
-        } finally {
-            tall.mockRestore();
-            delete HTMLElement.prototype.animate;
-        }
     });
 
     it('refuses to travel while a catch-up runs, and says why', async () => {

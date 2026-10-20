@@ -79,8 +79,8 @@ async function openHall(page) {
 
 /**
  * The Atlas opened and closed over the busy mat every 1.5 s from a page timer: a click at the
- * centre of the Atlas bubble (it takes a click only inside its circle). Where the build has the
- * camera move, each open and close is a glide between the mat and the book; before it, a swap.
+ * centre of the Atlas bubble (it takes a click only inside its circle): each open and close slides
+ * the book up over the mat and back down.
  */
 async function atlasToggle(page) {
     const ok = await page.evaluate(`(() => {

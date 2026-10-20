@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import * as Atlas from '../../../systems/atlas/Atlas.js';
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
@@ -23,28 +23,32 @@ export function arrivalOf(id) {
 
 /**
  * The arrival card: on travel, the destination's area banner across the mat for a moment with its
- * name. A click skips it; under reduced motion it comes and goes without fading. While `held` (the
- * camera still gliding back from the Atlas) it waits, and its moment starts once it shows.
+ * name. A click skips it; under reduced motion it comes and goes without fading.
  */
-export const ArrivalCard = ({ durationMs = ARRIVAL_MS, held = false }) => {
+export const ArrivalCard = ({ durationMs = ARRIVAL_MS }) => {
     const [card, setCard] = useState(null);
+    const timer = useRef(null);
     useEffect(() => {
         const off = EventBus.subscribe(ENGINE_EVENTS.ATLAS_CHANGED, (payload) => {
             if (payload?.reason !== 'travelled') return;
             const next = arrivalOf(payload.regionId);
-            if (next) setCard({ ...next, key: Date.now() });
+            if (!next) return;
+            setCard({ ...next, key: Date.now() });
+            clearTimeout(timer.current);
+            timer.current = setTimeout(() => setCard(null), durationMs);
         }, UI_LISTENER);
-        return () => off?.();
-    }, []);
-    useEffect(() => {
-        if (!card || held) return undefined;
-        const timer = setTimeout(() => setCard(null), durationMs);
-        return () => clearTimeout(timer);
-    }, [card, held, durationMs]);
+        return () => {
+            off?.();
+            clearTimeout(timer.current);
+        };
+    }, [durationMs]);
 
-    if (!card || held) return null;
+    if (!card) return null;
     const still = prefersReducedMotion();
-    const skip = () => setCard(null);
+    const skip = () => {
+        clearTimeout(timer.current);
+        setCard(null);
+    };
     return (
         <div className="absolute inset-0 z-[105] flex items-center pointer-events-none">
             <motion.div
