@@ -17,6 +17,7 @@ import BankDrawer from './components/drawer/BankDrawer.jsx';
 import ShopDrawer from './components/drawer/ShopDrawer.jsx';
 import AtlasScreen from './components/atlas/AtlasScreen.jsx';
 import ArrivalCard from './components/atlas/ArrivalCard.jsx';
+import AtlasCamera from './components/atlas/AtlasCamera.jsx';
 
 import BubbleMenu from './components/nav/BubbleMenu.jsx';
 import BottomHeroDock, { showsBottomHeroDock } from './components/dock/BottomHeroDock.jsx';
@@ -99,6 +100,15 @@ export const ReactRoot = ({ engine }) => {
     // Bubble menu side: left by default, right via the Settings toggle.
     const [menuRight, setMenuRight] = React.useState(() => SettingsManager.get('ui.bubbleMenuRight') ?? false);
     const [backgroundTile, setBackgroundTile] = React.useState(() => SettingsManager.get('ui.backgroundTile') ?? 'u_table_wood_spruce');
+    // The wood table: drawn around the mat, and carried on above it under the Atlas book.
+    const tableBackground = {
+        backgroundImage: backgroundDrawn ? `url('/assets/ui/${backgroundTile}.png')` : 'none',
+        backgroundRepeat: 'repeat',
+        backgroundSize: '512px',
+        imageRendering: 'pixelated',
+        backgroundColor: '#0a0a0a'
+    };
+    const tableRef = React.useRef(null);
 
     React.useEffect(() => {
         const unsubscribe = EventBus.subscribe(ENGINE_EVENTS.SETTINGS_UPDATED, (s) => {
@@ -215,15 +225,10 @@ export const ReactRoot = ({ engine }) => {
                 <TutorialAideOverlay />
                 <ScreenCalloutLayer />
                 <div className="react-overlay absolute inset-0 z-50 pointer-events-none flex flex-col">
-                    <div 
+                    <div
+                        ref={tableRef}
                         className="flex-1 relative flex overflow-hidden bg-black"
-                        style={{
-                            backgroundImage: backgroundDrawn ? `url('/assets/ui/${backgroundTile}.png')` : 'none',
-                            backgroundRepeat: 'repeat',
-                            backgroundSize: '512px',
-                            imageRendering: 'pixelated',
-                            backgroundColor: '#0a0a0a'
-                        }}
+                        style={tableBackground}
                     >
                         <div
                             className={cn(
@@ -272,7 +277,25 @@ export const ReactRoot = ({ engine }) => {
                                 )
                             )
                         )}
-                        <div className="flex-1 relative flex flex-col overflow-hidden z-10">
+                        {/**
+                         * The mat's column, under one camera: the Atlas book lies on the table
+                         * above the mat and the view glides up to it. ⚠️ `overflow-clip`, not
+                         * `overflow-hidden`: with the camera up, the mat sits below the column's
+                         * box, and focus landing there would scroll a hidden box to it.
+                         */}
+                        <div className="flex-1 relative flex flex-col overflow-clip z-10">
+                            <AtlasCamera
+                                open={isAtlasOpen}
+                                away={ui.fullscreen.view !== null && !isAtlasOpen}
+                                table={tableBackground}
+                                tableAnchor={tableRef}
+                                book={
+                                    <ErrorBoundary label="AtlasScreen">
+                                        <AtlasScreen onClose={ui.fullscreen.close} closePromotion={ui.dock.closePromotion} />
+                                    </ErrorBoundary>
+                                }
+                                arrival={(held) => <ErrorBoundary label="ArrivalCard"><ArrivalCard held={held} /></ErrorBoundary>}
+                            >
                             <div className="flex-1 flex min-h-0 relative">
                             {/**
                              * The Guild Hall Effects list: always LEFT of the upgrade web,
@@ -359,11 +382,7 @@ export const ReactRoot = ({ engine }) => {
                                     />
                                 </ErrorBoundary>
                             )}
-                            {/* The Atlas covers the mat column only: the nav beside it stays reachable to close it. */}
-                            {isAtlasOpen && <ErrorBoundary label="AtlasScreen">
-                                <AtlasScreen onClose={ui.fullscreen.close} closePromotion={ui.dock.closePromotion} />
-                            </ErrorBoundary>}
-                            <ErrorBoundary label="ArrivalCard"><ArrivalCard /></ErrorBoundary>
+                            </AtlasCamera>
                         </div>
                         {!menuRight && (
                             isGuildView ? (

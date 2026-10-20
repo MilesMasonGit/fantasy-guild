@@ -2,13 +2,11 @@
 
 /**
  * `page`: the owner's right-hand page (spine on its left edge), drawn mirrored for the left page.
- * `table`: the wood the book lies on, tiled at 2×.
+ * The book lies on the same wood as the mat (the background chosen in Settings), not a table of its own.
  */
 export const TOME_ART = Object.freeze({
     page: '/assets/playmat/atlas_book_gold.png',
-    pageArtPx: 128,
-    table: '/assets/ui/u_table_wood_planks_oak.png',
-    tableArtPx: 128
+    pageArtPx: 128
 });
 
 /** The book is drawn at exactly this many screen pixels per art pixel, never scaled. */

@@ -215,6 +215,23 @@ describe('where the banner shows', () => {
         expect(q(container, '[data-arrival-card]')).toBeNull();
     });
 
+    it('the arrival card waits while held (the camera gliding back to the mat), then stays its full time', () => {
+        vi.useFakeTimers();
+        const { region } = Atlas.createRegion({ ingredients: [FOREST], ground: { main: 'forest' } });
+        const card = (held) => React.createElement(ArrivalCard, { durationMs: 1000, held });
+        const { container, rerender } = render(card(true));
+        act(() => { Atlas.travel(region.id); });
+        expect(q(container, '[data-arrival-card]')).toBeNull();
+        act(() => { vi.advanceTimersByTime(1500); });
+        expect(q(container, '[data-arrival-card]')).toBeNull();
+        rerender(card(false));
+        expect(q(container, `[data-arrival-card="${region.id}"]`)).toBeTruthy();
+        act(() => { vi.advanceTimersByTime(999); });
+        expect(q(container, '[data-arrival-card]')).toBeTruthy();
+        act(() => { vi.advanceTimersByTime(2); });
+        expect(q(container, '[data-arrival-card]')).toBeNull();
+    });
+
     it('a rename is not an arrival', () => {
         const { region } = Atlas.createRegion({ ingredients: [FOREST] });
         const { container } = render(React.createElement(ArrivalCard));

@@ -7,7 +7,6 @@ import { useAtlasRefresh } from './useAtlasRefresh.js';
 import { travelFromScreen, END_DRAG_MARK } from './travelFromScreen.js';
 import { SCREEN_TEXT } from './atlasScreenText.js';
 import { AtlasTome } from './AtlasTome.jsx';
-import { TOME_ART } from './tomeArt.js';
 
 export const ATLAS_TAB = Object.freeze({ REGIONS: 'regions', CARTOGRAPHY: 'cartography' });
 
@@ -20,7 +19,8 @@ const TABS = [
 const CLOSE_SPRITE = '/assets/ui/u_cancel_red.png';
 
 /**
- * The Atlas: an open tome on the map table, covering the mat, opened from its bubble, with two
+ * The Atlas: an open tome lying on the wood table above the mat (`AtlasCamera` glides the view up
+ * to it and back; the table is the one around the mat, drawn there), opened from its bubble, with two
  * sections behind bookmark ribbons. **Regions** lists every Region the guild has settled (travel,
  * rename, archive, abandon); **Cartography** writes a new one from maps. Escape, the close button
  * or a press on the table outside the book closes it, and closing takes nothing: the Cartography
@@ -79,12 +79,6 @@ export const AtlasScreen = ({ onClose, closePromotion, initialTab = ATLAS_TAB.RE
         <div
             data-atlas-overlay
             className="absolute inset-0 z-[100] pointer-events-auto overflow-hidden flex items-center justify-center text-[12px] leading-snug"
-            style={{
-                backgroundColor: '#3b2414',
-                backgroundImage: `url(${TOME_ART.table})`,
-                backgroundSize: `${TOME_ART.tableArtPx * 2}px`,
-                imageRendering: 'pixelated'
-            }}
             onPointerDown={(e) => { if (e.target === e.currentTarget) onClose?.(); }}
         >
             <AtlasTome tabs={TABS} tab={tab} onTab={setTab} closeButton={closeButton} label={SCREEN_TEXT.TITLE}>
