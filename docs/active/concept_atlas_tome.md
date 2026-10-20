@@ -59,6 +59,9 @@ The owner's 256 px environment pieces (`public/assets/backgrounds/area/`,
 
 - **Which banner**: **each Base Map item names its banner in the CMS**; the
   Starter Camp names its own. Modifiers don't change it.
+- **Without a CMS pick** (owner, 2026-10-20): the game picks a banner by the
+  Region's **main biome** (forest → lush forest, coast → beach, mountain →
+  snowy mountains…, one default per biome); a CMS pick overrides it.
 - **Where it shows**:
   - the Region row's backdrop (above);
   - **behind the Region name on the top bar**, as a thin slice (T-170);

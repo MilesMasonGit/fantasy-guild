@@ -23,7 +23,9 @@ Region name).
 
 - **Change:** one row per Region on its banner; Travel main, the "…" menu for
   Rename, Archive, Abandon; a CMS banner field on Base Map items and the
-  Starter Camp page (CMS code); the banner slice on the top bar, the arrival
+  Starter Camp page (CMS code); without a pick, a default banner by the
+  Region's main biome (owner, 2026-10-20; read the biome, don't edit the
+  terrain director's files); the banner slice on the top bar, the arrival
   card on travel, the banner behind the layout preview.
 
 ## T3 — The Hall's sky (T-171, builder)
