@@ -185,9 +185,19 @@ export function unwireNotifications() {
     Banners.setOnShow(null);
 }
 
-/** The pin controls, for the stub column: each keeps the save's copy in step. */
+/** The stub column's clicks: each keeps the save's copy of the pins in step. */
 export const pins = Object.freeze({
     pin(itemId) { ItemStubs.pin(itemId); savePins(); },
     unpin(itemId) { ItemStubs.unpin(itemId); savePins(); ensureFadeTimer(); },
-    reset(itemId) { ItemStubs.resetPin(itemId); savePins(); }
+    reset(itemId) { ItemStubs.resetPin(itemId); savePins(); },
+    /** Left-click: pin or unpin. */
+    toggle(itemId) {
+        if (ItemStubs.getStub(itemId)?.pinned) pins.unpin(itemId);
+        else pins.pin(itemId);
+    },
+    /** Right-click: a pinned stub back to +0, an unpinned one cleared. */
+    clear(itemId) {
+        if (ItemStubs.getStub(itemId)?.pinned) pins.reset(itemId);
+        else ItemStubs.remove(itemId);
+    }
 });

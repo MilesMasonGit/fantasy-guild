@@ -13,15 +13,15 @@ export const TONE_COLOUR = Object.freeze({
     even: 'inherit'
 });
 
-/** "+12", "-4", "0"; thousands compacted ("+1.2K"). */
+/** "+12", "-4", "+0"; thousands compacted ("+1.2K"). */
 export function signedAmount(n) {
     const v = Math.round(Number(n) || 0);
-    if (v === 0) return '0';
+    if (v === 0) return '+0';
     const body = Math.abs(v) < 1000 ? Math.abs(v).toLocaleString('en-US') : formatCompact(Math.abs(v), 1);
     return `${v > 0 ? '+' : '-'}${body}`;
 }
 
-/** "+80 / hr". */
+/** "+80/hr". */
 export function rateText(perHour) {
-    return `${signedAmount(perHour)} / hr`;
+    return `${signedAmount(perHour)}/hr`;
 }

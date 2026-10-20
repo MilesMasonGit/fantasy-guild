@@ -6,7 +6,8 @@ import { GAME_VERSION } from '../state/StateSchema.js';
 
 /**
  * The item stubs' store: one stub per item, its net flow merged here (never per render), a fade
- * five minutes after the item last moved, and pins that count since pinning and are saved.
+ * five minutes after the item last moved, a right-click that clears or resets, and pins that keep
+ * their count, never fade and are saved.
  */
 
 let now = 1_000_000;
@@ -108,12 +109,76 @@ describe('fading', () => {
         expect(ItemStubs.getStub('oak').fading).toBe(false);
     });
 
-    it('Clear all removes every unpinned stub and leaves the pins', () => {
+    it('Clear all slides every unpinned stub out, then they go, and the pins stay', () => {
+        vi.useFakeTimers();
+        try {
+            ItemStubs.recordFlow('oak', { added: 1 });
+            ItemStubs.recordFlow('stone', { added: 1 });
+            ItemStubs.pin('stone');
+            ItemStubs.clearUnpinned();
+            expect(ItemStubs.getStub('oak').leaving).toBe(true);
+            expect(ItemStubs.hasUnpinned()).toBe(false);
+            vi.advanceTimersByTime(ItemStubs.LEAVE_MS);
+            expect(ItemStubs.getStubs().map(s => s.itemId)).toEqual(['stone']);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+});
+
+describe('right-click', () => {
+    it('clears an unpinned stub: it slides out, then goes', () => {
+        vi.useFakeTimers();
+        try {
+            ItemStubs.recordFlow('oak', { added: 7 });
+            ItemStubs.remove('oak');
+            expect(ItemStubs.getStub('oak').leaving).toBe(true);
+            vi.advanceTimersByTime(ItemStubs.LEAVE_MS);
+            expect(ItemStubs.getStub('oak')).toBeNull();
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('the next flow of a cleared item starts a fresh stub at +0, even while the old one slides out', () => {
+        vi.useFakeTimers();
+        try {
+            ItemStubs.recordFlow('oak', { added: 7 });
+            ItemStubs.remove('oak');
+            advance(10);
+            ItemStubs.recordFlow('oak', { added: 2 });
+            const oak = ItemStubs.getStub('oak');
+            expect([oak.leaving, ItemStubs.netOf(oak), oak.firstAt]).toEqual([false, 2, now]);
+            vi.advanceTimersByTime(ItemStubs.LEAVE_MS);
+            expect(ItemStubs.netOf(ItemStubs.getStub('oak'))).toBe(2);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('on a pinned stub resets it to +0 and keeps it pinned', () => {
+        ItemStubs.recordFlow('oak', { added: 9, removed: 1 });
+        ItemStubs.pin('oak');
+        ItemStubs.remove('oak');
+        const oak = ItemStubs.getStub('oak');
+        expect([oak.pinned, oak.leaving, ItemStubs.netOf(oak)]).toEqual([true, false, 0]);
+    });
+
+    it('a stub on its way out cannot be pinned', () => {
         ItemStubs.recordFlow('oak', { added: 1 });
-        ItemStubs.recordFlow('stone', { added: 1 });
-        ItemStubs.pin('stone');
-        ItemStubs.clearUnpinned();
-        expect(ItemStubs.getStubs().map(s => s.itemId)).toEqual(['stone']);
+        ItemStubs.remove('oak');
+        ItemStubs.pin('oak');
+        expect(ItemStubs.getStub('oak').pinned).toBe(false);
+    });
+});
+
+describe('arriving', () => {
+    it('a stub is fresh (it slides in) only just after it appears', () => {
+        ItemStubs.recordFlow('oak', { added: 1 });
+        expect(ItemStubs.isFresh(ItemStubs.getStub('oak'))).toBe(true);
+        advance(ItemStubs.ARRIVE_MS);
+        ItemStubs.recordFlow('oak', { added: 1 });
+        expect(ItemStubs.isFresh(ItemStubs.getStub('oak'))).toBe(false);
     });
 });
 
@@ -133,17 +198,17 @@ describe('first find', () => {
 });
 
 describe('pins', () => {
-    it('a pinned stub counts since it was pinned and never fades', () => {
+    it('a pinned stub keeps its count (since the stub appeared) and never fades', () => {
         ItemStubs.recordFlow('oak', { added: 40 });
         ItemStubs.pin('oak');
-        expect(ItemStubs.netOf(ItemStubs.getStub('oak'))).toBe(0);
+        expect(ItemStubs.netOf(ItemStubs.getStub('oak'))).toBe(40);
         ItemStubs.recordFlow('oak', { added: 12 });
         ItemStubs.recordFlow('oak', { removed: 2 });
         advance(ItemStubs.FADE_MS * 10);
         ItemStubs.prune();
         const oak = ItemStubs.getStub('oak');
         expect(oak.pinned).toBe(true);
-        expect([oak.added, oak.removed]).toEqual([12, 2]);
+        expect([oak.added, oak.removed]).toEqual([52, 2]);
     });
 
     it('reset sets a pinned stub back to +0', () => {
@@ -177,8 +242,8 @@ describe('pins', () => {
         ItemStubs.recordFlow('stone', { removed: 7 });
         const saved = ItemStubs.serializePins();
         expect(saved).toEqual([
-            { itemId: 'stone', added: 0, removed: 7 },
-            { itemId: 'oak', added: 340, removed: 0 }
+            { itemId: 'stone', added: 1, removed: 7 },
+            { itemId: 'oak', added: 341, removed: 0 }
         ]);
         ItemStubs.reset();
         ItemStubs.loadPins(saved);

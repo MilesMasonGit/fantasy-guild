@@ -8,8 +8,11 @@
  * moved, and listeners hear at most one change per {@link EMIT_MS}.
  *
  * A stub fades {@link FADE_MS} after its item last changed. A pinned stub never fades: it is a live
- * tracker counting since it was pinned (or last reset), and it is saved with the game
- * ({@link serializePins} / {@link loadPins}).
+ * tracker, and it is saved with the game ({@link serializePins} / {@link loadPins}). Every stub
+ * counts since it appeared or was last reset.
+ *
+ * A stub cleared by hand (right-click, Clear all) is marked `leaving` for {@link LEAVE_MS} so the
+ * column can slide it out, then goes.
  *
  * Pure apart from the clock and the timer, which tests replace ({@link setClock}, {@link flush}).
  */
@@ -19,6 +22,12 @@ export const FADE_MS = 5 * 60 * 1000;
 
 /** How long a stub takes to fade out once its time is up. */
 export const FADE_OUT_MS = 1000;
+
+/** How long a cleared stub is drawn sliding out before it goes. */
+export const LEAVE_MS = 300;
+
+/** How long after it appears a stub still slides in when drawn (it is first drawn up to {@link EMIT_MS} late). */
+export const ARRIVE_MS = 600;
 
 /** The longest a change waits before listeners hear of it. */
 export const EMIT_MS = 250;
@@ -75,7 +84,8 @@ function freshStub(itemId, now) {
         isNew: false,
         pinned: false,
         pinnedAt: null,
-        fading: false
+        fading: false,
+        leaving: false
     };
 }
 
@@ -90,7 +100,9 @@ export function recordFlow(itemId, { added = 0, removed = 0 } = {}) {
     const rem = Number(removed) > 0 ? Number(removed) : 0;
     if (!add && !rem) return;
     const now = clock();
-    const old = stubs.get(itemId) || freshStub(itemId, now);
+    const kept = stubs.get(itemId);
+    // A stub on its way out was cleared: the next flow starts a fresh one at +0.
+    const old = kept && !kept.leaving ? kept : freshStub(itemId, now);
     const next = {
         ...old,
         added: old.added + add,
@@ -136,6 +148,9 @@ export function getStub(itemId) {
     return stubs.get(itemId) || null;
 }
 
+/** Whether the stub appeared just now, so the column slides it in from the side. */
+export const isFresh = (stub) => !!stub && clock() - stub.firstAt < ARRIVE_MS;
+
 /**
  * Fade stubs whose item has been still for {@link FADE_MS}, and drop them {@link FADE_OUT_MS}
  * later. Pinned stubs never fade.
@@ -145,7 +160,7 @@ export function prune() {
     const now = clock();
     let any = false;
     for (const [itemId, s] of stubs) {
-        if (s.pinned) continue;
+        if (s.pinned || s.leaving) continue;
         const idle = now - s.lastChangedAt;
         if (idle >= FADE_MS + FADE_OUT_MS) {
             stubs.delete(itemId);
@@ -161,25 +176,40 @@ export function prune() {
 
 /** Whether any stub could still fade, so the fade timer has work. */
 export function hasUnpinned() {
-    for (const s of stubs.values()) if (!s.pinned) return true;
+    for (const s of stubs.values()) if (!s.pinned && !s.leaving) return true;
     return false;
+}
+
+function startLeaving(itemId, s) {
+    const out = { ...s, leaving: true };
+    stubs.set(itemId, out);
+    setTimeout(() => { if (stubs.get(itemId) === out) { stubs.delete(itemId); emitNow(); } }, LEAVE_MS);
+}
+
+/** Clear one unpinned stub (right-click): it slides out and goes. A pinned stub is reset instead. */
+export function remove(itemId) {
+    const s = stubs.get(itemId);
+    if (!s || s.leaving) return;
+    if (s.pinned) { resetPin(itemId); return; }
+    startLeaving(itemId, s);
+    emitNow();
 }
 
 /** Clear all: every unpinned stub goes. */
 export function clearUnpinned() {
     let any = false;
     for (const [itemId, s] of stubs) {
-        if (!s.pinned) { stubs.delete(itemId); any = true; }
+        if (!s.pinned && !s.leaving) { startLeaving(itemId, s); any = true; }
     }
     if (any) emitNow();
 }
 
-/** Pin a stub: from now on it counts since this moment, and never fades. */
+/** Pin a stub: it keeps its count and never fades. */
 export function pin(itemId) {
     const s = stubs.get(itemId);
-    if (!s || s.pinned) return;
+    if (!s || s.pinned || s.leaving) return;
     const now = clock();
-    stubs.set(itemId, { ...s, pinned: true, pinnedAt: now, added: 0, removed: 0, fading: false, lastChangedAt: now });
+    stubs.set(itemId, { ...s, pinned: true, pinnedAt: now, fading: false, lastChangedAt: now });
     emitNow();
 }
 
