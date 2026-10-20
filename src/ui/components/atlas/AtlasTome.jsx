@@ -258,12 +258,15 @@ export const AtlasTome = ({ tabs, tab, onTab, closeButton, label, children }) =>
     );
 };
 
+/** Where each page's panels go (`pageRects`), in screen pixels of the spread: what `TomeSpread` lays out. */
+export const usePageRects = () => useContext(PageRectsContext) || pageRects(TOME_SCALE);
+
 /**
  * The two pages as places to lay panels: `left` and `right` each fill the part of their page's
  * parchment on screen, and nothing spills past its border.
  */
 export const TomeSpread = ({ left, right }) => {
-    const rects = useContext(PageRectsContext) || pageRects(2);
+    const rects = usePageRects();
     return (
         <div data-tome-spread className="absolute inset-0">
             <div data-tome-left className="absolute flex flex-col min-h-0 min-w-0" style={rects.left}>{left}</div>

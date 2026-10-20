@@ -150,11 +150,12 @@ const ItemGhost = ({ payload }) => {
             ×{multi}
         </span>
     );
-    const src = item ? resolveSpritePath(item) : null;
+    // A carried map says its own picture: a dev map is a recipe with no item to read it from.
+    const src = payload.sprite || (item ? resolveSpritePath(item) : null);
     return (
         <div className="relative flex items-center justify-center w-[64px] h-[64px]" data-item-ghost={payload.itemId}>
             {src
-                ? <PixelArt src={src} alt={item.name || payload.itemId} size={64} lifted />
+                ? <PixelArt src={src} alt={item?.name || payload.itemId} size={64} lifted />
                 : <ItemIcon item={item || payload.itemId} size={64} />}
             {badge}
         </div>

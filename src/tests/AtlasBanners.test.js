@@ -237,12 +237,15 @@ describe('where the banner shows', () => {
         expect(q(slice, '[data-mat-region-name]').textContent).toContain('Elderfield');
     });
 
-    it('it lies behind the Cartography layout preview, tinting through the map', () => {
+    it('it lies behind the Cartography preview, round the map, which is drawn as the mat draws it', () => {
         InventoryManager.addItem(FOREST, 1);
         const { container } = render(React.createElement(CartographyTable, { version: 0 }));
         expect(q(container, '[data-cartography-preview] [data-banner-art]')).toBeNull();
         fireEvent.click(q(container, `[data-map-item="${FOREST}"]`));
-        expect(q(container, '[data-cartography-preview] [data-banner-art]').getAttribute('data-banner-art')).toBe('b_swamp');
-        expect(Number(q(container, '[data-layout-preview] rect').getAttribute('fill-opacity'))).toBeLessThan(1);
+        const preview = q(container, '[data-cartography-preview]');
+        expect(q(preview, '[data-banner-art]').getAttribute('data-banner-art')).toBe('b_swamp');
+        // Behind the map, not over it.
+        const map = q(preview, 'canvas[data-map-preview]');
+        expect(q(preview, '[data-banner-art]').compareDocumentPosition(map) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     });
 });
