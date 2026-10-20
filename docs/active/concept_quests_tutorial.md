@@ -1,4 +1,4 @@
-Status: built for the tutorial (Atlas A8); Quest boards briefed 2026-10-14 (brief 170)
+Status: approved 2026-10-20 (the quest board, owner interview; brief 170 rewritten); tutorial built (Atlas A8)
 
 # Quests and the tutorial
 
@@ -29,30 +29,35 @@ the Starter Camp is in [concept_progression.md](concept_progression.md).*
 - **Rewards**: **maps and modifiers** (a reliable map source, as the Atlas
   plans) and **materials**.
 
-## Quest boards (interim, until NPCs)
+## The quest board (owner interview, 2026-10-20; replaces the three-board design of 2026-10-13)
 
-*Owner interview, 2026-10-13 (refinement pass §3, "Quest Billboard Token");
-**done** for now. Build ticket **T-176**. The owner may later have NPCs bring
-boards; this is the design until then.*
+*The owner is not yet sure what job bounties do in the long run (map source,
+side goal or cut); this is a light, cheap design that keeps every option
+open. Build ticket **T-176**, brief 170.*
 
-- **Three quest boards stand on the mat**, **placed by code on free cells near the
-  Hall** in a new game, not in the CMS Starter Camp layout (owner, 2026-10-14). They are **movable**, **can't be
-  demolished**, and **count toward the Token cap**.
-- **A board persists**: claiming a quest pays out (the reward drops as loot
-  beside the board, as today), and the **board stays**. It **stands blank
-  until the next posting**; hovering it says when ("New notice in 2:10"). The
-  next quest is pinned onto that same board with a small pop.
-- **Posters**:
-  - an item quest shows the item, as today;
-  - **a hunt quest shows the target enemy**: the first frame of its idle
-    animation, **at exactly half size** so it matches the items (an exception
-    UI_STYLE allows for posters only);
-  - the **count** sits in the same place for both.
-- **A badge on every board's corner**: **yellow "!"** while in progress,
-  **green check** when ready to claim, on item, hunt and itemless (tutorial)
-  quests alike.
-- **Dragging a board keeps its poster on it** (today the item disappears while
-  carried).
-- **Fresh saves**: no conversion of old saves' loose quest Tokens (owner).
-- **Dismiss** stays as it is until the quest rework.
+- **One quest board Token, a fixture at the bottom-left corner of every
+  Region's mat**: it can't be dragged or demolished and doesn't use the Token
+  cap. It shows the same guild-wide list wherever the player is.
+- **Clicking it opens its Token card on the quest list** (the card grows to
+  fit, like the recipe list): one row per quest with what it asks, progress,
+  reward and **Claim**; a Dismiss on bounty rows as today.
+- **At rest**: the **gold attention outline plus a small count badge** of
+  quests ready to claim; otherwise quiet.
+- **Supply**: **up to 3 bounties**; below 3, a new one arrives every interval
+  of game time (as today); the list says when the next one comes. Claiming or
+  dismissing frees a place.
+- **Kinds**: **collect** and **hunt**, as today, **generated from what the
+  guild can reach now** (items its current chains make, enemies it has met),
+  amounts scaled to progress.
+- **Counting**: a collect quest shows **have/need from the Bank** (like the
+  recipe list) and is ready once the Bank holds enough; **Claim takes the
+  items**. A hunt counts **kills after the quest arrived, in any Region**.
+- **Claiming**: the reward **bursts out of the board onto the mat as floating
+  loot**, then is collected like any loot (and flies to its item stub).
+- **Rewards**: **materials only** for now (no maps) until the purpose is
+  settled.
+- **The tutorial**: the cartographer's current step is **the board's top row,
+  pinned, in his voice**, and can't be dismissed. The separate tutorial quest
+  Token goes; the board teaches itself.
+- **Fresh saves**: no conversion of old saves' loose quest Tokens.
 
