@@ -1,4 +1,4 @@
-Status: briefed 2026-10-14, revised 2026-10-19 (owner interviews; brief 150)
+Status: built 2026-10-20 (merged 9fa5572e; briefed 2026-10-14, revised 2026-10-19 (owner interviews; brief 150))
 
 # Notifications: item stubs and banners
 

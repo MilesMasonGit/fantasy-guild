@@ -1,4 +1,4 @@
-Status: briefed 2026-10-14 (approved 2026-10-14; brief 130)
+Status: built 2026-10-20 (merged 9fa5572e; briefed 2026-10-14 (approved 2026-10-14; brief 130))
 
 # The recipe list
 

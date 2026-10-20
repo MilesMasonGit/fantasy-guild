@@ -5,7 +5,9 @@ five-line summary at each batch's edges (proposed, looked at); anything older
 than two days is trimmed. States: queued · building · ready (tests, cycles,
 build green) · bench-queued · eye-check · merged.*
 
-## Features director, batch 5: the recipe list and notifications (owner 2026-10-19 chose this; build starts when the owner's token budget resets)
+## Features director, batch 5: the recipe list and notifications
+
+**All of this batch merged to `main` 2026-10-20 (9fa5572e), owner eye-check ok ("The tick is enough, no flash needed. Go ahead and merge."). Work check owed at 13:00 on `main`.** (owner 2026-10-19 chose this; build starts when the owner's token budget resets)
 
 *Building since Mon 2026-10-19 morning (owner: go ahead; resume after the 5 AM budget reset if cut off). Suite on `main` before start: 5400 passed. Was planned only. R and N touch different files and may run as
 two code agents at once if the terrain director is idle; otherwise one after
@@ -16,7 +18,7 @@ attention outline (ruled today).*
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| **Combined eye-check branch** `crunch/batch5` (both merged, keep-both conflicts in CHANGELOG and the style sheet page) | director | `crunch/batch5` (`p23b`) | eye-check at http://localhost:5198/ ([file](eyecheck/2026-10-19_recipes-notifications.md)); director's gate on a3674433: 5446 tests, cycles, build. Notifications' own gate: 5434 | Mon | Mon |
+| **Combined eye-check branch** `crunch/batch5` (both merged, keep-both conflicts in CHANGELOG and the style sheet page) | director | `crunch/batch5` (`p23b`) | eye-check at http://localhost:5198/ ([file](../archive/eyecheck/2026-10-19_recipes-notifications.md)); director's gate on a3674433: 5446 tests, cycles, build. Notifications' own gate: 5434 | Mon | Mon |
 | Brief 130 R1: the recipe list logic (T-169, absorbs T-142) | builder | `crunch/recipe-list` (`rl`) | ready (3cd47398; `RecipeList.js`, pure, 28 tests; director's gate on ed9949c0: 5413 tests, cycles, build) | Mon | Mon |
 | Brief 130 R2: the list on screen, inside the Token card | builder | `crunch/recipe-list` (`rl`) | eye-check (ed9949c0; card flips in place and grows, gear opens the card on its list, old modal and bands deleted, Board.jsx edit as its own commit 319358dd by the director's leave; builder used it in the game on a furnace and a Wood Foundation). Look questions: the Back button, the `???` silhouettes on dark art; calls kept: can-run measured on the whole roster, merged dividers, byproducts at 32 px muted, cover-scaled art only in list view | Mon | Mon |
 | Brief 150 N1: the store and routing for item stubs and banners (T-168, T-028, T-037; owner revised 2026-10-19, no log) | builder | `crunch/notifications` (`nt`) | ready (3ea827a6; `src/systems/notifications/`, routing table, pins in `ui.pinnedStubs`) | Mon | Mon |
@@ -159,7 +161,7 @@ T-186; the badges' soft shadows are settled inside T-013.)
 
 ## Bench queue (one at a time, weekdays 13:00–17:00 and 01:00–07:00, or when the owner says the PC is quiet)
 
-0. **Batch 5, `crunch/batch5`**: engine work check before merging (expect same: no engine rules changed, but the routing hears inventory events); one `bench:draw --compare` on S2 Realistic with auto-collect on (loot flying to stubs: the engineer measured ~+1.8 column redraws a second, ~2 ms each in the dev build; production not measured) for the cost log (stubs replace the sidebar). Bench follow-ups from the builder: the `notify` scene fires `NotificationSystem.info`, which now draws nothing (repoint at item flow); `bench/drag.mjs` rests the pointer on the old sidebar strip spot, now the top bar.
+0. **Batch 5, merged to `main` 9fa5572e on the owner's word**: engine work check on `main` (expect same: no engine rules changed, but the routing hears inventory events); one `bench:draw --compare` on S2 Realistic with auto-collect on (loot flying to stubs: the engineer measured ~+1.8 column redraws a second, ~2 ms each in the dev build; production not measured) for the cost log (stubs replace the sidebar). Bench follow-ups from the builder: the `notify` scene fires `NotificationSystem.info`, which now draws nothing (repoint at item flow); `bench/drag.mjs` rests the pointer on the old sidebar strip spot, now the top bar.
 
 1. **Features stack, merged 2026-10-18 (b68cd020) on the owner's word**: the engine work check ran on the merge (S2, S3, S5, S6, S8, S8L, S8F WORK CHANGED from the hostile flag watch, accepted under T-167; a control run of `main` bcf1324d was the same work; S1, S4, S7 same). Still owed in a quiet window on `main`: the engine timing re-run (daytime load read S3/S4/S7 slower on `main` too), and one `bench:draw --compare` plus `bench:crisp` for the cost log (brief 120 C1 must draw cheaper than before the stack; brief 110's top bar frame and mode outlines; the level-up floats). If C1 draws dearer, a ticket and a report to the owner.
 
@@ -177,7 +179,7 @@ work check and draw compare at 13:00; merge. Blockers: none.
 **Mon 2026-10-19, 11:50: batch 5 at the eye-check.** Where we are: the
 recipe list and notifications (item stubs, banners) are built, verified and
 combined on `crunch/batch5`, served on http://localhost:5198/ with a
-[16-check file](eyecheck/2026-10-19_recipes-notifications.md). Next: the
+[16-check file](../archive/eyecheck/2026-10-19_recipes-notifications.md). Next: the
 owner's look, fixes, the work check and a draw compare from 13:00, merge.
 Owner: the eye-check. Blockers: none.
 

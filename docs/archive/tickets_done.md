@@ -72,3 +72,8 @@ T-165 — Starter Camp Tokens are fixtures: no drag, push or demolish; the dev l
 T-166 — Demolish mode beside Disallow mode: banners, mode outlines and cursors, protected Tokens dim with the reason, shift-click a type, Cancel all marks — 3016df8b — 2026-10-18
 T-170 — Top bar restyle: studded pixel frame, Region name, Tokens and Upkeep item bars, mode banner, toggles — 3016df8b — 2026-10-18
 T-167 — Everyone fights: a Recruit fights as level 1, no combat XP until promotion; hostiles watch the flag, the same on every side (work change accepted) — 3016df8b — 2026-10-18
+T-169 — The recipe list inside the Token card (brief 130) — 9fa5572e — 2026-10-20
+T-142 — Recipe rows no longer truncated (absorbed by T-169) — 9fa5572e — 2026-10-20
+T-168 — Notifications: item stubs and banners, no log (brief 150; log is T-193) — 9fa5572e — 2026-10-20
+T-028 — Toast types and merged counts: superseded by item stubs and banners — 9fa5572e — 2026-10-20
+T-037 — Two ways to hide notifications: one item-stub switch in Settings — 9fa5572e — 2026-10-20
