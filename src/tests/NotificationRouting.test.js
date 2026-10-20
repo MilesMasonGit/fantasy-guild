@@ -95,11 +95,24 @@ describe('items go to the stubs', () => {
         EventBus.publish(ENGINE_EVENTS.INVENTORY_UPDATED, { itemId: 'item_oak', added: 5 });
         pins.pin('item_oak');
         EventBus.publish(ENGINE_EVENTS.INVENTORY_UPDATED, { itemId: 'item_oak', added: 4 });
-        expect(GameState.state.ui.pinnedStubs).toEqual([{ itemId: 'item_oak', added: 4, removed: 0 }]);
+        expect(GameState.state.ui.pinnedStubs).toEqual([{ itemId: 'item_oak', added: 9, removed: 0 }]);
         pins.reset('item_oak');
         expect(GameState.state.ui.pinnedStubs).toEqual([{ itemId: 'item_oak', added: 0, removed: 0 }]);
         pins.unpin('item_oak');
         expect(GameState.state.ui.pinnedStubs).toEqual([]);
+    });
+
+    it('left-click toggles the pin; right-click resets a pinned stub and clears an unpinned one, each kept in the save', () => {
+        EventBus.publish(ENGINE_EVENTS.INVENTORY_UPDATED, { itemId: 'item_oak', added: 5 });
+        pins.toggle('item_oak');
+        expect(GameState.state.ui.pinnedStubs).toEqual([{ itemId: 'item_oak', added: 5, removed: 0 }]);
+        pins.clear('item_oak');
+        expect(GameState.state.ui.pinnedStubs).toEqual([{ itemId: 'item_oak', added: 0, removed: 0 }]);
+        expect(ItemStubs.getStub('item_oak').pinned).toBe(true);
+        pins.toggle('item_oak');
+        expect(GameState.state.ui.pinnedStubs).toEqual([]);
+        pins.clear('item_oak');
+        expect(ItemStubs.getStub('item_oak').leaving).toBe(true);
     });
 
     it('a load brings back that save\'s pins and nothing else', () => {

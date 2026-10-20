@@ -27,7 +27,7 @@ import { workBarPlace, filledSteps } from '../components/board/workBar.js';
 import { ALERT } from '../../systems/board/boardEvents.js';
 import { PixelGlyph, GLYPHS } from '../components/base/PixelGlyph.jsx';
 import { TokenCard } from '../components/board/TokenCard.jsx';
-import { Stub, COLUMN_PX } from '../components/notifications/ItemStubColumn.jsx';
+import { Stub } from '../components/notifications/ItemStubColumn.jsx';
 import { Banner } from '../components/notifications/BannerStack.jsx';
 import { bannerText } from '../../systems/notifications/bannerKinds.js';
 
@@ -404,16 +404,18 @@ const ArrowBarDemo = () => (
     </div>
 );
 
-/** Item stubs at rest: a gain, a loss, a first find and a pinned tracker. */
+/** Item stubs: a pinned tracker under its header, a gain, a loss, a first find, and one hovered open. */
 const sampleStub = (itemId, added, removed, extra = {}) => ({
-    itemId, added, removed, firstAt: 0, lastChangedAt: 0, isNew: false, pinned: false, pinnedAt: null, fading: false, ...extra
+    itemId, added, removed, firstAt: 0, lastChangedAt: 0, isNew: false, pinned: false, pinnedAt: null, fading: false, leaving: false, ...extra
 });
 const ItemStubDemo = () => (
-    <div className="flex flex-col items-end" style={{ width: COLUMN_PX }}>
-        <Stub stub={sampleStub(SAMPLE_ITEMS[0], 340, 0, { pinned: true, pinnedAt: 1 })} onHover={() => {}} onLeave={() => {}} />
-        <Stub stub={sampleStub(SAMPLE_ITEMS[1], 120, 40)} onHover={() => {}} onLeave={() => {}} />
-        <Stub stub={sampleStub(SAMPLE_ITEMS[2], 2, 14)} onHover={() => {}} onLeave={() => {}} />
-        <Stub stub={sampleStub(SAMPLE_ITEMS[2], 1, 0, { isNew: true })} onHover={() => {}} onLeave={() => {}} />
+    <div className="flex flex-col items-end">
+        <div className="font-pixel ui-text-small px-2" style={{ color: 'var(--color-ui-gold)' }}>Pinned</div>
+        <Stub interactive={false} stub={sampleStub(SAMPLE_ITEMS[0], 340, 0, { pinned: true, pinnedAt: 1 })} />
+        <Stub interactive={false} stub={sampleStub(SAMPLE_ITEMS[1], 120, 40)} />
+        <Stub interactive={false} stub={sampleStub(SAMPLE_ITEMS[2], 2, 14)} />
+        <Stub interactive={false} stub={sampleStub(SAMPLE_ITEMS[2], 1, 0, { isNew: true })} />
+        <Stub interactive={false} stub={sampleStub(SAMPLE_ITEMS[1], 12, 0)} openRate={80} />
     </div>
 );
 
@@ -602,7 +604,7 @@ export const KIT_SECTIONS = [
     },
     {
         id: 'item-stubs', title: 'Item stubs', status: 'unapproved', source: 'ItemStubColumn (top right of the mat)',
-        rule: 'Amount then sprite in a chamfer frame, one stub per item showing its net flow: green gain, red loss. A first find is a gold frame led by "New!". Pinned stubs sit at the top and count since pinning. Hover opens a panel to the left with the name, gained and spent, the net per hour, the pin and (pinned) the reset. Pin and reset icons are code placeholders.',
+        rule: 'Amount then the sprite at 2x (64 px) in a chamfer frame flush to the right edge of the screen (no right side), sliding out of the edge when new and back in when it fades or is cleared. One stub per item showing its net flow since it appeared or was reset: green gain, red loss. A first find is a gold frame led by "New!". Hover grows the same box left into one line: amount, sprite, name, net per hour. Left-click pins or unpins; pinned stubs sit at the top under a "Pinned" header and never fade. Right-click clears an unpinned stub and sets a pinned one back to +0. No icons.',
         Demo: ItemStubDemo
     },
     {

@@ -986,9 +986,21 @@
 .ui-frame-studs-gold { border-image-source: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='7' height='7' shape-rendering='crispEdges'><path fill='%23eab308' d='M0 0h1v1h-1zM1 0h1v1h-1zM2 0h1v1h-1zM3 0h1v1h-1zM4 0h1v1h-1zM5 0h1v1h-1zM6 0h1v1h-1zM0 1h1v1h-1zM2 1h1v1h-1zM4 1h1v1h-1zM6 1h1v1h-1zM0 2h1v1h-1zM1 2h1v1h-1zM5 2h1v1h-1zM6 2h1v1h-1zM0 3h1v1h-1zM6 3h1v1h-1zM0 4h1v1h-1zM1 4h1v1h-1zM5 4h1v1h-1zM6 4h1v1h-1zM0 5h1v1h-1zM2 5h1v1h-1zM4 5h1v1h-1zM6 5h1v1h-1zM0 6h1v1h-1zM1 6h1v1h-1zM2 6h1v1h-1zM3 6h1v1h-1zM4 6h1v1h-1zM5 6h1v1h-1zM6 6h1v1h-1z'/><path fill='%23fef9c3' d='M1 1h1v1h-1zM5 1h1v1h-1zM1 5h1v1h-1zM5 5h1v1h-1z'/><path fill='%230d0a08' d='M3 1h1v1h-1zM2 2h1v1h-1zM3 2h1v1h-1zM4 2h1v1h-1zM1 3h1v1h-1zM2 3h1v1h-1zM3 3h1v1h-1zM4 3h1v1h-1zM5 3h1v1h-1zM2 4h1v1h-1zM3 4h1v1h-1zM4 4h1v1h-1zM3 5h1v1h-1z'/></svg>"); }
 .ui-frame-studs-red { border-image-source: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='7' height='7' shape-rendering='crispEdges'><path fill='%23dc2626' d='M0 0h1v1h-1zM1 0h1v1h-1zM2 0h1v1h-1zM3 0h1v1h-1zM4 0h1v1h-1zM5 0h1v1h-1zM6 0h1v1h-1zM0 1h1v1h-1zM2 1h1v1h-1zM4 1h1v1h-1zM6 1h1v1h-1zM0 2h1v1h-1zM1 2h1v1h-1zM5 2h1v1h-1zM6 2h1v1h-1zM0 3h1v1h-1zM6 3h1v1h-1zM0 4h1v1h-1zM1 4h1v1h-1zM5 4h1v1h-1zM6 4h1v1h-1zM0 5h1v1h-1zM2 5h1v1h-1zM4 5h1v1h-1zM6 5h1v1h-1zM0 6h1v1h-1zM1 6h1v1h-1zM2 6h1v1h-1zM3 6h1v1h-1zM4 6h1v1h-1zM5 6h1v1h-1zM6 6h1v1h-1z'/><path fill='%23fecaca' d='M1 1h1v1h-1zM5 1h1v1h-1zM1 5h1v1h-1zM5 5h1v1h-1z'/><path fill='%230d0a08' d='M3 1h1v1h-1zM2 2h1v1h-1zM3 2h1v1h-1zM4 2h1v1h-1zM1 3h1v1h-1zM2 3h1v1h-1zM3 3h1v1h-1zM4 3h1v1h-1zM5 3h1v1h-1zM2 4h1v1h-1zM3 4h1v1h-1zM4 4h1v1h-1zM3 5h1v1h-1z'/></svg>"); }
 
-/* Item stubs (ItemStubColumn.jsx): a stub fades out once its item has been still five minutes. */
-.gi-stub { transition: opacity 900ms steps(4, end); }
-.gi-stub[data-stub-fading="true"] { opacity: 0; }
+/* Item stubs (ItemStubColumn.jsx): tabs pulled out of the screen's right edge, so the frame has no
+   right side. A new stub slides out from beyond the edge; one fading (its item still five minutes)
+   or cleared slides back out. The open (hovered) stub grows left from the stub's own width. */
+.gi-stub-frame,
+[data-item-stub] [data-pixel-frame-shadow],
+[data-stub-open] [data-pixel-frame-shadow] { border-right-width: 0; border-image-width: 6px 0 6px 6px; }
+@keyframes gi-stub-in {
+  from { transform: translateX(calc(100% + 8px)); }
+  to   { transform: translateX(0); }
+}
+.gi-stub { transition: transform 240ms steps(6, end); }
+.gi-stub[data-stub-arriving="true"] { animation: gi-stub-in 240ms steps(6, end) backwards; }
+.gi-stub[data-stub-fading="true"],
+.gi-stub[data-stub-leaving="true"] { transform: translateX(calc(100% + 8px)); pointer-events: none; }
+.gi-stub-open { transition: width 160ms steps(5, end); }
 
 /* While anything is dragged, the stubs and banners let the pointer through: no panel pops open
    over a drop, and nothing there can take it. */
@@ -1032,6 +1044,8 @@ body.gi-dnd-active [data-banners] * { pointer-events: none !important; }
 @media (prefers-reduced-motion: reduce) {
   .gi-banner, .gi-banner[data-banner-leaving="true"] { animation: none; }
   .gi-banner-shine::before, .gi-stub-new::before { animation: none; }
+  .gi-stub, .gi-stub-open { transition: none; }
+  .gi-stub[data-stub-arriving="true"] { animation: none; }
 }
 
 /* Hovering a banner about a hero or a Token outlines it: gold, red for a problem. Set only while
