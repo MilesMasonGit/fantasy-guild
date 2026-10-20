@@ -16,6 +16,7 @@ import Board from './components/board/Board.jsx';
 import BankDrawer from './components/drawer/BankDrawer.jsx';
 import ShopDrawer from './components/drawer/ShopDrawer.jsx';
 import AtlasScreen from './components/atlas/AtlasScreen.jsx';
+import ArrivalCard from './components/atlas/ArrivalCard.jsx';
 
 import BubbleMenu from './components/nav/BubbleMenu.jsx';
 import BottomHeroDock, { showsBottomHeroDock } from './components/dock/BottomHeroDock.jsx';
@@ -362,6 +363,7 @@ export const ReactRoot = ({ engine }) => {
                             {isAtlasOpen && <ErrorBoundary label="AtlasScreen">
                                 <AtlasScreen onClose={ui.fullscreen.close} closePromotion={ui.dock.closePromotion} />
                             </ErrorBoundary>}
+                            <ErrorBoundary label="ArrivalCard"><ArrivalCard /></ErrorBoundary>
                         </div>
                         {!menuRight && (
                             isGuildView ? (

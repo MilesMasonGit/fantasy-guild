@@ -13,6 +13,9 @@ import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { PixelFrame } from '../base/PixelFrame.jsx';
 import { ArrowScrollList } from '../base/ArrowScrollList.jsx';
 import { TomeSpread } from './AtlasTome.jsx';
+import { AtlasButton } from './AtlasButton.jsx';
+import { BannerArt } from '../base/BannerArt.jsx';
+import { bannerForPlan } from './regionBanner.js';
 import { NodeSummary } from './NodeSummary.jsx';
 import { LayoutPreview } from './LayoutPreview.jsx';
 import { SCREEN_TEXT } from './atlasScreenText.js';
@@ -85,22 +88,8 @@ const IngredientIcon = ({ recipe, size = 32 }) => (getItem(recipe.id)
 
 const headingCls = 'font-pixel ui-text-small uppercase tracking-wide text-white/60 mb-1';
 
-/** The table's buttons: chamfer-framed, gold text for the main one, greyed while they can't be used. */
-const TableButton = ({ main = false, disabled = false, className, ...rest }) => (
-    <PixelFrame kind="chamfer" className={cn('inline-block', disabled && 'opacity-50 grayscale')}>
-        <button
-            type="button"
-            disabled={disabled}
-            className={cn(
-                'px-3 py-0.5 whitespace-nowrap font-pixel ui-text-body font-bold disabled:cursor-not-allowed',
-                main && 'ui-shine',
-                className
-            )}
-            style={{ color: disabled ? 'var(--color-ui-muted)' : main ? 'var(--color-ui-gold)' : 'var(--color-ui-white)' }}
-            {...rest}
-        />
-    </PixelFrame>
-);
+/** How solid the layout's backing is over the Region's banner: the map reads first, the banner tints it. */
+const PREVIEW_OVER_BANNER = 0.7;
 
 /** A slot's box and the map art in it, in screen px: the art at 2×. */
 const SLOT_PX = 72;
@@ -299,6 +288,7 @@ export const CartographyTable = ({ version, onTravel }) => {
     };
 
     const noRoom = plan && !plan.fits;
+    const banner = useMemo(() => bannerForPlan(plan), [plan]);
 
     const left = (
         <>
@@ -346,8 +336,9 @@ export const CartographyTable = ({ version, onTravel }) => {
         <section data-cartography-bench className="flex-1 min-h-0 flex flex-col">
             <PixelFrame kind="studs" className="flex-1 min-h-0 flex flex-col" frameClassName="flex-1 min-h-0 flex flex-col p-3 bg-gi-surface/95">
                 <h3 className={headingCls}>{SCREEN_TEXT.PREVIEW_HEADING}</h3>
-                <div data-cartography-preview className="flex-1 min-h-[160px] flex items-center justify-center">
-                    <LayoutPreview layout={plan?.layout ?? null} className="w-full h-full" />
+                <div data-cartography-preview className="relative flex-1 min-h-[160px] flex items-center justify-center">
+                    {banner && <BannerArt banner={banner} />}
+                    <LayoutPreview layout={plan?.layout ?? null} className="relative w-full h-full" backingOpacity={banner ? PREVIEW_OVER_BANNER : 1} />
                 </div>
                 <div className="mt-2 pt-2 border-t border-white/10 shrink-0 max-h-[35%] min-h-0 flex flex-col">
                     <h3 className={headingCls}>{SCREEN_TEXT.SUMMARY_HEADING}</h3>
@@ -358,9 +349,9 @@ export const CartographyTable = ({ version, onTravel }) => {
             </PixelFrame>
             <div className="mt-3 shrink-0 flex flex-col items-end gap-1">
                 <div className="flex items-center gap-3">
-                    <TableButton data-cartography-reroll disabled={!plan || cooling} onClick={reroll}>{SCREEN_TEXT.REROLL}</TableButton>
-                    <TableButton data-cartography-cancel disabled={!filled.length} onClick={cancel}>{SCREEN_TEXT.CANCEL}</TableButton>
-                    <TableButton main data-cartography-settle disabled={!plan || noRoom} onClick={settle}>{SCREEN_TEXT.SETTLE}</TableButton>
+                    <AtlasButton data-cartography-reroll disabled={!plan || cooling} onClick={reroll}>{SCREEN_TEXT.REROLL}</AtlasButton>
+                    <AtlasButton data-cartography-cancel disabled={!filled.length} onClick={cancel}>{SCREEN_TEXT.CANCEL}</AtlasButton>
+                    <AtlasButton main data-cartography-settle disabled={!plan || noRoom} onClick={settle}>{SCREEN_TEXT.SETTLE}</AtlasButton>
                 </div>
                 {(message || noRoom) && (
                     <p role="status" data-cartography-message className="font-pixel ui-text-small text-[var(--color-ui-red)] bg-black/70 px-2">{message || TEXT.REFUSE_NO_ROOM}</p>
@@ -369,8 +360,8 @@ export const CartographyTable = ({ version, onTravel }) => {
                     <PixelFrame kind="chamfer" frameClassName="px-2 py-1">
                         <div data-cartography-settled className="flex items-center gap-3">
                             <span className="text-[var(--color-ui-green)]">{SCREEN_TEXT.settled(settled.flavour, settled.practical)}</span>
-                            <TableButton main data-settled-travel onClick={() => onTravel?.(settled.id)}>{SCREEN_TEXT.TRAVEL_THERE}</TableButton>
-                            <TableButton data-settled-stay onClick={() => setSettled(null)}>{SCREEN_TEXT.STAY}</TableButton>
+                            <AtlasButton main data-settled-travel onClick={() => onTravel?.(settled.id)}>{SCREEN_TEXT.TRAVEL_THERE}</AtlasButton>
+                            <AtlasButton data-settled-stay onClick={() => setSettled(null)}>{SCREEN_TEXT.STAY}</AtlasButton>
                         </div>
                     </PixelFrame>
                 )}

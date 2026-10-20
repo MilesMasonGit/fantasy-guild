@@ -316,10 +316,12 @@ describe('⭐ the restyled bar (T-170)', () => {
             right: React.createElement(MapModeToggles)
         }));
         const left = container.querySelector('[data-mat-top-bar-left]');
-        expect([...left.children].map(e => e.getAttribute('data-mat-region-name') !== null ? 'region'
+        // The Region name sits inside its banner slice.
+        const bars = [...left.children].map(e => (e.hasAttribute('data-mat-region-banner') ? e.querySelector('[data-mat-region-name]') : e));
+        expect(bars.map(e => e.getAttribute('data-mat-region-name') !== null ? 'region'
             : e.getAttribute('data-mat-cap-badge') !== null ? 'tokens'
                 : e.getAttribute('data-mat-upkeep-badge') !== null ? 'upkeep' : '?')).toEqual(['region', 'tokens', 'upkeep']);
-        expect([...left.children].every(e => e.hasAttribute('data-item-bar'))).toBe(true);
+        expect(bars.every(e => e.hasAttribute('data-item-bar'))).toBe(true);
         const middle = container.querySelector('[data-mat-top-bar-middle]');
         expect(middle.querySelector('[data-map-mode-banner="demolish"] [data-cancel-all-marks]')).not.toBeNull();
         expect(container.querySelectorAll('[data-mat-top-bar-right] [data-map-mode-toggle]').length).toBe(2);

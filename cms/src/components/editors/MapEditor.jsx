@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { Settings2, Map as MapIcon, Sparkles, Repeat, Coins, X, Plus, AlertTriangle, ScrollText, HelpCircle } from 'lucide-react';
+import { Settings2, Map as MapIcon, Sparkles, Repeat, Coins, X, Plus, AlertTriangle, ScrollText, HelpCircle, Image as ImageIcon } from 'lucide-react';
 import { useEntityStore } from '../../stores/useEntityStore';
 import { Header, Section, Field, Empty } from '../shared/EditorLayout';
 import SpritePickerModal from './SpritePickerModal';
+import BannerPicker from '../shared/BannerPicker';
+import { defaultBannerFor } from '../../../../src/config/areaBanners.js';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 import { STARTING_TOKEN_CAP } from '../../utils/constants';
 import {
@@ -114,6 +116,21 @@ export default function MapEditor() {
           </Field>
         </div>
       </Section>
+
+      {!isModifier(map) && (
+        <Section title="Banner" icon={<ImageIcon size={14} />}>
+          <BannerPicker
+            value={map.banner || null}
+            defaultBanner={defaultBannerFor(c.biome)}
+            onChange={(id) => update('banner', id || undefined)}
+          />
+          <p className="text-[10px] text-gray-600 leading-relaxed">
+            The picture a Region written from this map shows in the Atlas, behind the Region name on
+            the top bar and on arrival. Several Base Maps slotted together: the main biome's map
+            decides. Modifiers never change it. Default picks by this map's biome.
+          </p>
+        </Section>
+      )}
 
       {isModifier(map)
         ? <EffectsSection effects={c.effects || []} tokens={tokens} onChange={(effects) => setCartography({ effects })} />

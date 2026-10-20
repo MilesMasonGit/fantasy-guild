@@ -8,7 +8,6 @@ import { travelFromScreen, END_DRAG_MARK } from './travelFromScreen.js';
 import { SCREEN_TEXT } from './atlasScreenText.js';
 import { AtlasTome, TomeSpread } from './AtlasTome.jsx';
 import { TOME_ART } from './tomeArt.js';
-import { PixelFrame } from '../base/PixelFrame.jsx';
 
 export const ATLAS_TAB = Object.freeze({ REGIONS: 'regions', CARTOGRAPHY: 'cartography' });
 
@@ -91,14 +90,7 @@ export const AtlasScreen = ({ onClose, closePromotion, initialTab = ATLAS_TAB.RE
             <AtlasTome tabs={TABS} tab={tab} onTab={setTab} closeButton={closeButton} label={SCREEN_TEXT.TITLE}>
                 {/* Both stay mounted, so moving between the tabs keeps what is slotted. */}
                 <div className={cn('flex-1 min-h-0 flex flex-col', tab !== ATLAS_TAB.REGIONS && 'hidden')}>
-                    <TomeSpread spread={(
-                        <div className="w-full max-w-[860px] mx-auto min-h-0 flex flex-col">
-                            <PixelFrame kind="studs" className="min-h-0 flex flex-col" frameClassName="min-h-0 flex flex-col p-3 bg-gi-surface/95">
-                                <RegionList version={version} onTravel={travel} message={message} onMessage={setMessage} />
-                            </PixelFrame>
-                        </div>
-                    )}
-                    />
+                    <TomeSpread spread={<RegionList version={version} onTravel={travel} message={message} onMessage={setMessage} />} />
                 </div>
                 <div className={cn('flex-1 min-h-0 flex flex-col', tab !== ATLAS_TAB.CARTOGRAPHY && 'hidden')}>
                     <CartographyTable version={version} onTravel={travel} />

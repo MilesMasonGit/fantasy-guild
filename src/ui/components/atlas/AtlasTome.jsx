@@ -189,7 +189,8 @@ export const AtlasTome = ({ tabs, tab, onTab, closeButton, label, children }) =>
 };
 
 /** The width of the gutter either side of the spine, where nothing is laid. */
-const GUTTER = 28;
+export const TOME_GUTTER_PX = 28;
+const GUTTER = TOME_GUTTER_PX;
 
 /**
  * The two pages as places to lay panels: `left` and `right` each fill their page, kept clear of
@@ -197,7 +198,7 @@ const GUTTER = 28;
  */
 export const TomeSpread = ({ left, right, spread, className }) => {
     if (spread) {
-        return <div data-tome-spread className={cn('flex-1 min-h-0 flex flex-col p-6', className)}>{spread}</div>;
+        return <div data-tome-spread className={cn('flex-1 min-h-0 flex flex-col', className)}>{spread}</div>;
     }
     return (
         <div data-tome-spread className={cn('flex-1 min-h-0 grid grid-cols-2', className)} style={{ columnGap: GUTTER * 2 }}>

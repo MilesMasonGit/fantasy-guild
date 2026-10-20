@@ -40,8 +40,9 @@ export function terrainRuns(terrain) {
 /**
  * A drawing of a generated layout (`plan.layout`): the mat's shape, its ground faint
  * underneath, the Hall's clearing in the middle, and each Token a dot coloured by its role.
+ * `backingOpacity` below 1 lets what lies behind it (the Region's banner) show through.
  */
-export const LayoutPreview = ({ layout, className = '' }) => {
+export const LayoutPreview = ({ layout, className = '', backingOpacity = 1 }) => {
     if (!layout?.mat) {
         return <div data-layout-preview="empty" className={cn('aspect-[16/10] w-full bg-black/30', className)} />;
     }
@@ -57,7 +58,7 @@ export const LayoutPreview = ({ layout, className = '' }) => {
             aria-label="Layout preview"
         >
             {/* The backing is drawn, not the element's: a preview sized to its box letterboxes clear. */}
-            <rect x={0} y={0} width={mat.w} height={mat.h} fill={BACKING} />
+            <rect x={0} y={0} width={mat.w} height={mat.h} fill={BACKING} fillOpacity={backingOpacity} />
             <g opacity={GROUND_OPACITY} shapeRendering="crispEdges">
                 {terrainRuns(terrain).map(run => (
                     <rect
