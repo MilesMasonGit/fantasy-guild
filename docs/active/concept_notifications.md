@@ -47,31 +47,35 @@ One level-up that unlocks several gives one banner ("Aela unlocked 3 recipes:
 Cider, Apple Pie, ..."). No event exists for it today: derive it from the
 level-up.
 
-## Item stubs
+## Item stubs (owner, 2026-10-19; revised after the first eye-check)
 
 - **At rest**: the **amount, then the item sprite** (`+12 [oak]`), in a small
-  **chamfer pixel frame**. Stubs stack in a column at the top right under the
-  top bar, one width, numbers right-aligned against their sprites.
+  **chamfer pixel frame**, the sprite at **2× (64 px, the size of floating
+  loot on the mat)**. Stubs sit **flush against the screen's right edge**
+  (no gap, no frame edge on that side), stacked down from under the top bar.
+  A new stub **slides out of the side**; a fading one slides back in.
 - **One stub per item, always**, showing the **net flow** whatever its
   sources: a station eating Oak while woodcutters bring it in shows one Oak
   stub. Its job is to show the overall flow, so a resource draining fast is
   plain to see. **Green `+` when the net is a gain, red `-` when a loss.**
+  The amount counts the net **since the stub appeared** (or was reset).
+- **Hover: the same box grows left over the mat into one line**, never a
+  second box: **amount, sprite, name, rate** (`+12 [oak] Oak Log +80/hr`);
+  the amount and sprite slide left as it opens. No gained/spent text. The
+  rate is the net per hour (today's 5-minute rolling rate, `ItemRateTracker`
+  with spending recorded). Nothing else in the column moves.
+- **Left-click pins or unpins.** Pinned stubs sit at the top of the column
+  under a **"Pinned" group header**; no pin icon anywhere. A pinned stub is a
+  live tracker and never fades. **Pins are saved with the game.**
+- **Right-click clears**: on an unpinned stub it removes it (the next flow
+  of that item starts a fresh stub at +0); on a pinned stub it resets the
+  count to +0 and it stays pinned.
 - **Lifetime**: a stub stays while its item keeps flowing and **fades about
   5 minutes after the item last changed**.
 - **The column**: shows as many stubs as fit on screen and **scrolls** for the
-  rest (brief 100's arrow-bar list); **pinned stubs stay in view at the top**
+  rest (brief 100's arrow-bar list); pinned stubs stay in view at the top
   while the rest scroll. A **Clear all** button sits at the top of the column
   and removes every unpinned stub.
-- **Hover expands a stub out to the left over the mat**; nothing else moves,
-  so the mouse can run down the column reading each in turn. The panel, in
-  the same frame, shows: the **item name**; **`+120 gained  -40 spent`** over
-  the recent window; the **net rate `+80 / hr`** (today's 5-minute rolling
-  rate, `ItemRateTracker`, extended to record spending).
-- **Clicking does nothing** except the **pin icon** in the panel's corner. A
-  stray click while working the mat is harmless.
-- **A pinned stub is a live tracker**: it never fades, keeps counting since it
-  was pinned (`+340`), and a reset icon beside the pin sets it back to +0, for
-  measuring a setup's output. **Pins are saved with the game.**
 - **First find**: the frame turns shiny gold (the button shine) and gold
   **"New!" leads the stub** (`New! +1 [copper]`).
 - **Settings, Notifications tab**: one switch for item stubs. The six-corner
