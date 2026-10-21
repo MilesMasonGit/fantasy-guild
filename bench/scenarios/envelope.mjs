@@ -5,8 +5,9 @@
 //               below ~96 S2's list holds fewer than two goblin camps, so the heroes S2 puts by
 //               them go to producers instead)
 //   heroes<N>   cap128 with N heroes instead of 8 (the roster's top is 8; more is headroom)
-//   enemies<N>  cap128 with producers swapped for war camps until N goblins can stand (they wander
-//               their camps; no hero is near the new camps, so they do not fight)
+//   enemies<N>  cap128 with Forests and Quarries, then producers, swapped for war camps until N
+//               goblins have room under the cap (they wander their camps; no hero is near the new
+//               camps, so they do not fight)
 //   fights<N>   cap128 with N of the 8 heroes each beside a camp of one tough, hostile brute that
 //               never runs out: N fights going on at once, the rest as S2
 //
@@ -54,13 +55,22 @@ const GOBLINS = { bench_camp: 3, bench_warcamp: 5 };
 const goblinRoom = (list) => list.reduce((n, t) => n + (GOBLINS[t] || 0), 0);
 const isProducer = (t) => /^fixture_producer/.test(t);
 
-/** cap128's placed list with producers (then Forests and Quarries) swapped for war camps until `n` goblins fit. */
+/**
+ * cap128's placed list with room for `n` goblins. The cap leaves 80 places for spawned Tokens, and
+ * a Forest refills every 5 s where a camp waits 30 s, so trees take any room a camp could use:
+ * Forests and Quarries beyond what the other 80 − n places hold become war camps first, then
+ * producers, until the camps hold `n`.
+ */
 export function enemyPlaced(n) {
     const list = capPlaced(BASE_CAP);
-    for (const pick of [isProducer, (t) => t === 'bench_forest' || t === 'bench_quarry']) {
-        for (let i = list.length - 1; i >= 0 && goblinRoom(list) < n; i--) {
-            if (pick(list[i])) list[i] = 'bench_warcamp';
-        }
+    const room = BASE_CAP - list.length;
+    const isTrees = (t) => t === 'bench_forest' || t === 'bench_quarry';
+    let trees = list.filter(isTrees).length;
+    for (let i = list.length - 1; i >= 0 && trees * 10 > room - n; i--) {
+        if (isTrees(list[i])) { list[i] = 'bench_warcamp'; trees--; }
+    }
+    for (let i = list.length - 1; i >= 0 && goblinRoom(list) < n; i--) {
+        if (isProducer(list[i])) list[i] = 'bench_warcamp';
     }
     return list;
 }
