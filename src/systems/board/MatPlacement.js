@@ -470,6 +470,10 @@ export function forceSpot(typeId, point, options = {}) {
  * between their centres — all of it onto the free one when the other is fixed
  * (the newcomer always is), half each otherwise — then pushed Tokens are
  * clamped back onto the mat. Positions are not rounded (see the loop).
+ *
+ * Only the newcomer and what it pushes, in a chain, take part: a pair neither of which this push
+ * has touched is left as it is, however it overlaps (an enemy strolling over a tree, a pair a mat
+ * shrink left crowded).
  */
 function relax(typeId, at, excludeId, fixedIds) {
     // The newcomer stands exactly where it aims, so no push can help one aimed at ground it may not
@@ -489,6 +493,7 @@ function relax(typeId, at, excludeId, fixedIds) {
     const newcomer = { id: null, typeId, x: at.x, y: at.y, h: hitRadiusOf(typeId), fixed: true };
     bodies.push(newcomer);
 
+    const answerable = (t) => t === newcomer || t.pushed;
     for (let pass = 0; pass < PUSH_PASSES; pass++) {
         let moved = false;
         for (let i = 0; i < bodies.length; i++) {
@@ -496,6 +501,7 @@ function relax(typeId, at, excludeId, fixedIds) {
                 const a = bodies[i];
                 const b = bodies[j];
                 if (a.fixed && b.fixed) continue;
+                if (!answerable(a) && !answerable(b)) continue;
                 const gap = (a.h + b.h) * factor;
                 const dx = b.x - a.x;
                 const dy = b.y - a.y;
@@ -535,7 +541,6 @@ function relax(typeId, at, excludeId, fixedIds) {
     // Every pair the push is answerable for must now be clear: the newcomer's, and every moved
     // Token's. Two Tokens that were already overlapping before (a mat shrink can leave them so) are
     // not this push's business; counting them would make every push on that mat fail.
-    const answerable = (t) => t === newcomer || t.pushed;
     for (let i = 0; i < bodies.length; i++) {
         for (let j = i + 1; j < bodies.length; j++) {
             const a = bodies[i];
