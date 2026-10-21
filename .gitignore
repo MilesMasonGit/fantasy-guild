@@ -46,6 +46,10 @@ cms/inbox/
 # Import adds one to data/palettes/. Scratch, except its README.
 cms/palettes-inbox/*
 !cms/palettes-inbox/README.md
+# The change-pack inbox and its archive (cms/incoming/README.md): local review state, never
+# content. Sync writes data/.
+cms/incoming/*
+!cms/incoming/README.md
 cms/dist-studio/
 
 # Game assets

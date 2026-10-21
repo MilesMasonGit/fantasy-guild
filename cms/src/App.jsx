@@ -9,6 +9,7 @@ import SpriteAuditDashboard from './components/audit/SpriteAuditDashboard';
 import AuditPanel from './components/audit/AuditPanel';
 import ProgressionPanel from './components/progression/ProgressionPanel';
 import StarterCampPage from './components/starterCamp/StarterCampPage';
+import ChangesPage from './components/changes/ChangesPage';
 import { useEntityStore } from './stores/useEntityStore';
 import { isMapItem } from '../../src/systems/atlas/mapItems.js';
 import { Package, Boxes, Map as MapIcon } from 'lucide-react';
@@ -23,10 +24,11 @@ const EDITOR_MAP = {
 function App() {
   return (
     <AppShell>
-      {({ currentView, openGenerate }) => {
+      {({ currentView, openGenerate, setCurrentView }) => {
         if (currentView === 'recipes') return <RecipeEditor />;
         if (currentView === 'progression') return <ProgressionPanel />;
         if (currentView === 'starterCamp') return <div className="h-full overflow-y-auto"><StarterCampPage /></div>;
+        if (currentView === 'changes') return <ChangesPage setCurrentView={setCurrentView} />;
         if (currentView === 'sprites') return <SpriteAuditDashboard />;
         if (currentView === 'audit') return <div className="p-4 h-full"><AuditPanel openGenerate={openGenerate} /></div>;
         return (

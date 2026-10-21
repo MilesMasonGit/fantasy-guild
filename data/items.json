@@ -936,5 +936,283 @@
         "scale": 1
       }
     ]
+  },
+  "map_forest": {
+    "id": "map_forest",
+    "name": "Forest Map",
+    "description": "A wooded country of oak, with berry bushes in the clearings.",
+    "type": "map",
+    "tags": [],
+    "sprite": "t_map_forest",
+    "stackable": true,
+    "autoSyncId": false,
+    "cartography": {
+      "biome": "forest",
+      "points": 40,
+      "nodes": [
+        {
+          "typeId": "token_oak_tree",
+          "weight": 6
+        },
+        {
+          "typeId": "token_redberry_bush",
+          "weight": 1
+        },
+        {
+          "typeId": "token_blackberry_bush",
+          "weight": 1
+        }
+      ],
+      "camps": [],
+      "treasures": []
+    }
+  },
+  "map_mountain": {
+    "id": "map_mountain",
+    "name": "Mountain Map",
+    "description": "Rocky slopes seamed with copper and coal.",
+    "type": "map",
+    "tags": [],
+    "sprite": "t_map_mountain",
+    "stackable": true,
+    "autoSyncId": false,
+    "cartography": {
+      "biome": "mountain",
+      "points": 36,
+      "nodes": [
+        {
+          "typeId": "token_copper_ore_vein",
+          "weight": 3
+        },
+        {
+          "typeId": "token_coal_vein",
+          "weight": 2
+        },
+        {
+          "typeId": "token_stone_outcrop",
+          "weight": 2
+        }
+      ],
+      "camps": [],
+      "treasures": []
+    }
+  },
+  "map_coast": {
+    "id": "map_coast",
+    "name": "Coast Map",
+    "description": "A sandy shore where the land meets the sea.",
+    "type": "map",
+    "tags": [],
+    "sprite": "t_map_shore",
+    "stackable": true,
+    "autoSyncId": false,
+    "cartography": {
+      "biome": "coast",
+      "points": 12,
+      "nodes": [
+        {
+          "typeId": "token_coast",
+          "weight": 1
+        }
+      ],
+      "camps": [],
+      "treasures": []
+    }
+  },
+  "map_meadow": {
+    "id": "map_meadow",
+    "name": "Meadow Map",
+    "description": "Open grassland with apple trees and berry bushes, and a lake or river.",
+    "type": "map",
+    "tags": [],
+    "sprite": "t_map_farmland",
+    "stackable": true,
+    "autoSyncId": false,
+    "cartography": {
+      "biome": "meadow",
+      "points": 20,
+      "nodes": [
+        {
+          "typeId": "token_apple_tree",
+          "weight": 2
+        },
+        {
+          "typeId": "token_redberry_bush",
+          "weight": 1
+        }
+      ],
+      "camps": [],
+      "treasures": []
+    }
+  },
+  "map_flower_meadow": {
+    "id": "map_flower_meadow",
+    "name": "Flower Meadow Map",
+    "description": "A meadow in bloom: strawberries, blueberries and the odd apple tree.",
+    "type": "map",
+    "tags": [],
+    "sprite": "t_map_flowers",
+    "stackable": true,
+    "autoSyncId": false,
+    "cartography": {
+      "biome": "flower_meadow",
+      "points": 16,
+      "nodes": [
+        {
+          "typeId": "token_strawberry_bush",
+          "weight": 2
+        },
+        {
+          "typeId": "token_blueberry_bush",
+          "weight": 1
+        },
+        {
+          "typeId": "token_apple_tree",
+          "weight": 1
+        }
+      ],
+      "camps": [],
+      "treasures": []
+    }
+  },
+  "map_cherry_grove": {
+    "id": "map_cherry_grove",
+    "name": "Cherry Grove Map",
+    "description": "Cherry trees in rows, with a few peaches among them.",
+    "type": "map",
+    "tags": [],
+    "sprite": "t_map_village",
+    "stackable": true,
+    "autoSyncId": false,
+    "cartography": {
+      "biome": "cherry_grove",
+      "points": 20,
+      "nodes": [
+        {
+          "typeId": "token_cherry_tree",
+          "weight": 4
+        },
+        {
+          "typeId": "token_peach_tree",
+          "weight": 1
+        }
+      ],
+      "camps": [],
+      "treasures": []
+    }
+  },
+  "map_yellowstone": {
+    "id": "map_yellowstone",
+    "name": "Yellowstone Map",
+    "description": "Fir-clad hills around steaming sulphur springs.",
+    "type": "map",
+    "tags": [],
+    "sprite": "t_map_swamp",
+    "stackable": true,
+    "autoSyncId": false,
+    "cartography": {
+      "biome": "yellowstone",
+      "points": 24,
+      "nodes": [
+        {
+          "typeId": "token_fir_tree",
+          "weight": 4
+        },
+        {
+          "typeId": "token_stone_outcrop",
+          "weight": 1
+        }
+      ],
+      "camps": [],
+      "treasures": []
+    }
+  },
+  "map_volcano": {
+    "id": "map_volcano",
+    "name": "Volcano Map",
+    "description": "Black rock and ash, rich in coal and iron.",
+    "type": "map",
+    "tags": [],
+    "sprite": "t_map_volcano",
+    "stackable": true,
+    "autoSyncId": false,
+    "cartography": {
+      "biome": "volcano",
+      "points": 20,
+      "nodes": [
+        {
+          "typeId": "token_coal_vein",
+          "weight": 2
+        },
+        {
+          "typeId": "token_stone_outcrop",
+          "weight": 2
+        },
+        {
+          "typeId": "token_iron_ore_vein",
+          "weight": 1
+        }
+      ],
+      "camps": [],
+      "treasures": []
+    }
+  },
+  "mod_overgrown": {
+    "id": "mod_overgrown",
+    "name": "Overgrown",
+    "description": "The woods run wild: many more oak trees.",
+    "type": "modifier",
+    "tags": [],
+    "sprite": "t_map_jungle",
+    "stackable": true,
+    "autoSyncId": false,
+    "cartography": {
+      "effects": [
+        {
+          "kind": "density",
+          "typeId": "token_oak_tree",
+          "points": 16
+        }
+      ]
+    }
+  },
+  "mod_fir_grove": {
+    "id": "mod_fir_grove",
+    "name": "Fir Grove",
+    "description": "Firs grow where the oaks would: every oak becomes a fir.",
+    "type": "modifier",
+    "tags": [],
+    "sprite": "t_map_frozenpeak",
+    "stackable": true,
+    "autoSyncId": false,
+    "cartography": {
+      "effects": [
+        {
+          "kind": "replace",
+          "from": "token_oak_tree",
+          "to": "token_fir_tree",
+          "share": 1
+        }
+      ]
+    }
+  },
+  "mod_goblin_camp": {
+    "id": "mod_goblin_camp",
+    "name": "Goblin Camp",
+    "description": "Goblins have made camp here.",
+    "type": "modifier",
+    "tags": [],
+    "sprite": "t_map_spooky",
+    "stackable": true,
+    "autoSyncId": false,
+    "cartography": {
+      "effects": [
+        {
+          "kind": "threat",
+          "typeId": "token_goblin_camp",
+          "count": 1
+        }
+      ]
+    }
   }
 }

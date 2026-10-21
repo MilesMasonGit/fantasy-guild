@@ -136,7 +136,6 @@ here.
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
-| T-133 | P2 | open | **CMS change packs for agent-authored content** (owner 2026-10-09): autosave the workspace to disk every few minutes (the server's last-5 rotation exists, nothing calls it); an inbox (`cms/incoming/`) of change packs reviewed per entry with before/after, edit-before-accept, conflict flags, per-pack undo, notes, placeholder-art flags. Design: `docs/active/concept_cms_agent_authoring.md`. Builder; CMS only, no game code. | concept_cms_agent_authoring.md |
 | T-065 | P2 | open | 3 of 7 test fixtures still borrow real `item_` ids — their rename changes the bench fingerprint, so land it as its own accepted commit. | CR3-551 |
 | T-067 | P3 | open | Skipped tests: the Map-burst rule skips still need a ruling or deletion. | CR3-554 |
 | T-068 | P3 | open | Build ships and preloads scrap art (`archive`/`maybe`/`waste`); keep it out of the build and the preload list. | CR3-508 |

@@ -7,6 +7,7 @@ import { BAKE_KEY, splitLibrary } from './paletteBrighten.js';
 import { resolveSpritePath, currentSpriteName } from '../src/utils/AssetManager.js';
 import { studioAssetPath } from './assetNaming.js';
 import { compareSync } from './src/engine/syncGuard.js';
+import { listPacks, getPack, archivePack, restorePack } from './changePackInbox.js';
 
 
 /**
@@ -154,6 +155,49 @@ function starterCampRoute(req, res, inboxDir) {
   send(405, { error: 'Method not allowed' });
 }
 
+/**
+ * `/api/change-packs`: the agents' change-pack inbox (`changePackInbox.js`).
+ * - `GET /api/change-packs`: `{ inbox, applied }`, one summary per pack (a malformed one with its `errors`)
+ * - `GET /api/change-packs/inbox/<file>` or `/applied/<file>`: the pack
+ * - `POST /api/change-packs/inbox/<file>/archive` `{ review }`: finish a review, into the archive
+ * - `POST /api/change-packs/applied/<file>/restore` `{ undone }`: after an undo, back to the inbox
+ */
+function changePackRoute(req, res, url, incoming) {
+  const send = ({ status, body }) => {
+    res.statusCode = status;
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify(body));
+  };
+  const parts = url.split('/').slice(3);
+  try {
+    if (req.method === 'GET' && parts.length === 0) return send({ status: 200, body: listPacks(incoming) });
+    const [where, file, action] = parts;
+    if (req.method === 'GET' && parts.length === 2 && (where === 'inbox' || where === 'applied')) {
+      return send(getPack(incoming, decodeURIComponent(file), { archived: where === 'applied' }));
+    }
+    if (req.method === 'POST' && parts.length === 3) {
+      const run = where === 'inbox' && action === 'archive'
+        ? (body) => archivePack(incoming, decodeURIComponent(file), body?.review)
+        : where === 'applied' && action === 'restore'
+          ? (body) => restorePack(incoming, decodeURIComponent(file), { undone: Array.isArray(body?.undone) ? body.undone : [] })
+          : null;
+      if (run) {
+        readJson(req, (body) => {
+          try {
+            send(run(body));
+          } catch (err) {
+            send({ status: 500, body: { error: 'Failed to move the pack: ' + err.message } });
+          }
+        }, (err) => send({ status: 400, body: { error: 'Invalid JSON: ' + err.message } }));
+        return;
+      }
+    }
+  } catch (err) {
+    return send({ status: 500, body: { error: 'Failed to read the change-pack inbox: ' + err.message } });
+  }
+  send({ status: 404, body: { error: 'No such change-pack route' } });
+}
+
 /** The only API routes the Studio's server answers: palettes, sprites and animation runs, never game data. */
 const STUDIO_ROUTES = ['/api/custom-palettes', '/api/palette-groups', '/api/palette-inbox', '/api/save-recolored-asset', '/api/animation-runs'];
 
@@ -166,13 +210,16 @@ const STUDIO_ROUTES = ['/api/custom-palettes', '/api/palette-groups', '/api/pale
  * @param {string} [options.dataDir] the game's content files read by Restore from Game and written by Sync
  *        (default `data/`). ⚠️ When set, Sync does not commit: the commit stages the project's `data/`, not this folder.
  * @param {boolean} [options.studio] the Studio's server: refuses every API route outside `STUDIO_ROUTES`
+ * @param {string} [options.incomingDir] the change-pack inbox (default `cms/incoming/`; archive in its `applied/`)
+ * @param {string} [options.backupsDir] workspace backups and autosaves (default `backups/` under the server's folder)
  */
-export default function cmsFileApi({ inboxDir, paletteInboxDir, palettesDir, dataDir, studio = false } = {}) {
+export default function cmsFileApi({ inboxDir, paletteInboxDir, palettesDir, dataDir, incomingDir, backupsDir: backupsDirOption, studio = false } = {}) {
   const projectRoot = process.cwd().endsWith('cms') ? path.resolve(process.cwd(), '..') : process.cwd();
   const inbox = inboxDir || path.resolve(projectRoot, 'cms', 'inbox');
   const paletteInbox = paletteInboxDir || path.resolve(projectRoot, 'cms', 'palettes-inbox');
   const palettesRoot = palettesDir || path.resolve(projectRoot, 'data', 'palettes');
   const dataRoot = dataDir || path.resolve(projectRoot, 'data');
+  const incoming = incomingDir || path.resolve(projectRoot, 'cms', 'incoming');
   const library = libraryFiles(palettesRoot);
   return {
     name: 'cms-file-api',
@@ -188,6 +235,7 @@ export default function cmsFileApi({ inboxDir, paletteInboxDir, palettesDir, dat
         }
 
         if (url === '/api/starter-camp') return starterCampRoute(req, res, inbox);
+        if (url === '/api/change-packs' || url.startsWith('/api/change-packs/')) return changePackRoute(req, res, url, incoming);
 
         // --- The palette drop folder: list it, and import one file into the Material Library ---
         if (req.method === 'GET' && url === '/api/palette-inbox') {
@@ -335,7 +383,7 @@ export default function cmsFileApi({ inboxDir, paletteInboxDir, palettesDir, dat
           return next();
         }
 
-        const backupsDir = path.resolve(process.cwd(), 'backups');
+        const backupsDir = backupsDirOption || path.resolve(process.cwd(), 'backups');
         if (!fs.existsSync(backupsDir) && url.startsWith('/api/backups')) {
           fs.mkdirSync(backupsDir, { recursive: true });
         }
@@ -388,7 +436,8 @@ export default function cmsFileApi({ inboxDir, paletteInboxDir, palettesDir, dat
                 const autoSaves = fs.readdirSync(backupsDir)
                   .filter(f => f.startsWith('autosave_'))
                   .map(f => ({ name: f, time: fs.statSync(path.join(backupsDir, f)).mtimeMs }))
-                  .sort((a, b) => b.time - a.time);
+                  // Names carry the time too: two saves in one clock tick must still drop the older.
+                  .sort((a, b) => b.time - a.time || b.name.localeCompare(a.name));
 
                 // Delete any autosaves beyond the 5th
                 if (autoSaves.length > 5) {

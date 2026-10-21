@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { BookOpen, Plus, Trash2, X, AlertTriangle, Boxes, Hammer } from 'lucide-react';
 import {
   useEntityStore, makeInputEntry, makeOutputEntry, makeTokenOutputEntry,
@@ -23,10 +23,23 @@ export default function RecipeEditor() {
   const deleteRecipe = useEntityStore((s) => s.deleteRecipe);
   const setActiveEntity = useEntityStore((s) => s.setActiveEntity);
 
-  const [activeSkill, setActiveSkill] = useState(SKILLS[0]?.id || '');
+  // Opened on one recipe when something asked for it (`focusRecipe`), else the first skill.
+  const [focused] = useState(() => {
+    const id = useEntityStore.getState().recipeFocus;
+    if (!id) return null;
+    for (const [skill, pool] of Object.entries(recipePools)) {
+      const index = (pool || []).findIndex((r) => r?.id === id);
+      if (index !== -1) return { skill, index };
+    }
+    return null;
+  });
+  const [activeSkill, setActiveSkill] = useState(focused?.skill || SKILLS[0]?.id || '');
   // Which recipe the side columns are editing. Index rather than id because a
   // pool is an array and `updateRecipe` addresses it that way.
-  const [activeIdx, setActiveIdx] = useState(0);
+  const [activeIdx, setActiveIdx] = useState(focused?.index || 0);
+  useEffect(() => {
+    if (useEntityStore.getState().recipeFocus) useEntityStore.getState().focusRecipe(null);
+  }, []);
 
   /** A Foundation counts as drawing its `foundation.skill` pool even without a `Works as` statement; otherwise the Construction pool would read as nothing can make these. */
   const poolConsumers = useMemo(() => {
