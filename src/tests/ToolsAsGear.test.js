@@ -29,7 +29,8 @@ import {
 import { toolFindings } from '../systems/core/toolRule.js';
 import { problemText, PROBLEM_SEVERITY, SEVERITY } from '../ui/components/board/problemMark.js';
 import { blockedText, pinRefusedLineFor } from '../ui/components/board/heroBubbles.js';
-import { SKIP_HINT } from '../ui/components/board/boardConstants.js';
+import { SKIP_HINT, skipHint } from '../ui/components/board/boardConstants.js';
+import { skipLine, tokenSkipLines } from '../ui/components/board/flagText.js';
 import { calloutText, dueAgain, TOOL_CALLOUT_GAP_MS } from '../ui/components/board/callouts.js';
 import { toolItems, TOKEN_NEEDS } from '../ui/dev/toolsPackContent.js';
 
@@ -300,6 +301,9 @@ describe('choosing work: the hero does other allowed work, and the Token says wh
         expect(BoardState.claimOfHero(hero.id)?.instanceId).toBe(tree.id);
         expect(Flags.skipsOf(vein.id)).toEqual([{ heroId: hero.id, reason: ALERT.NO_TOOL }]);
         expect(heard).toContainEqual({ instanceId: vein.id, heroId: hero.id, kind: 'pickaxe', minTier: 1 });
+        // The flag's hover and the vein's own hover name the tool.
+        expect(skipLine({ instanceId: vein.id, reason: ALERT.NO_TOOL, typeId: 'fx_vein' }, hero.id)).toBe('Fixture Vein — needs a Pickaxe in hand');
+        expect(tokenSkipLines(vein.id)).toEqual([`${hero.name}’s flag skipped this: needs a Pickaxe in hand`]);
         // The pass-over is not a badge on the vein: the problem is the hero's.
         tick(5);
         expect(vein.alert ?? null).toBeNull();
@@ -403,7 +407,9 @@ describe('the words: the bubble, the mark, the flag\'s hover', () => {
         expect(blockedText(ALERT.NO_TOOL, { token: 'Oak Tree', tool: 'Woodaxe' })).toBe('I need a Woodaxe to work Oak Tree.');
         expect(blockedText(ALERT.NO_TOOL, { token: 'Gold Ore Vein', tool: 'Iron Pickaxe or better' }))
             .toBe('I need an Iron Pickaxe or better to work Gold Ore Vein.');
-        expect(SKIP_HINT[ALERT.NO_TOOL]).toBe('needs a tool in hand');
+        expect(SKIP_HINT[ALERT.NO_TOOL]).toBe('needs {tool} in hand');
+        expect(skipHint(ALERT.NO_TOOL, { tool: 'a Pickaxe' })).toBe('needs a Pickaxe in hand');
+        expect(skipHint(ALERT.NO_TOOL)).toBe('needs a tool in hand');
         expect(WorkCheck.HERO_GATES.has(ALERT.NO_TOOL)).toBe(true);
         expect(WorkCheck.FIXABLE.has(ALERT.NO_TOOL)).toBe(false);
     });
