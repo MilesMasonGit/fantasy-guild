@@ -230,32 +230,10 @@ export const INITIAL_STATE = {
 
 
     // === Collection ===
-    // The card-ownership half of this section is retired with the deck loop
-    // (binders, universals, playsets, mastery, pack purchases). It is left in
-    // place, empty, rather than removed, because **it is part of the shape a
-    // save is written in** — the same reason `dur` is still here. Inert fields stay; removing one changes what an
-    // existing save round-trips to, for no gain.
-    //
-    // ⚠️ Corrected 2026-08-26 (CR2-108 sweep). This note used to give two
-    // reasons that were both true once and are both false now: the card-shape
-    // checks in `validateSaveData` were deleted with CR2-043 (see the note at
-    // its old site below), and **nothing anywhere reads `unlockedAreaSets`** —
-    // the dormant quest system does not, and neither does anything else in
-    // `src/` or `cms/src/`. Verified by search, not by reading this comment.
-    //
-    // What SURVIVES here is the discovery/statistics half, which is not
-    // area-scoped and which the board still feeds.
+    // Discovery and statistics. An older save may still carry the retired
+    // card-ownership fields (binders, playsets, packs…); `migrateState` only
+    // back-fills missing keys, so they ride along unread.
     collection: {
-        binders: {},             // retired — per-area card ownership (D-3)
-        universals: {},          // retired — the Universal Bucket (D-46)
-        playsets: {},            // retired — global card ownership
-        mastery: {},             // retired — playset completion bonuses
-        unlockedAreaSets: ['area_guild_hall'],  // inert — written into saves, read by nothing
-        areaPacksBought: {},     // retired — the pack economy (D-153)
-        pendingPackAreaId: null,
-        pendingPackOptions: [],
-
-        // --- Live ---
         discoveredItems: {},     // { [itemId]: true }
         discoveredEnemies: {},   // { [enemyId]: true }
         itemLifetimeCounts: {},  // { [itemId]: number }
@@ -391,12 +369,6 @@ export function validateSaveData(saveData) {
             errors.push('state.inventory.groupOrder must be an array');
         }
     }
-
-    // The card-ownership validation that used to live here — ~30 lines
-    // enforcing that `collection.playsets` and `collection.binders` were maps
-    // of counts between 0 and 4 — was deleted with CR2-043. Playsets, binders,
-    // areas and cards are all retired; the fields survive as inert empty
-    // objects (see `collection` above) and nothing can put counts in them.
 
     // The areaStates validation block was removed with areas. There is
     // deliberately no deep board check: `migrateState` now backfills a

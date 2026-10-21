@@ -80,7 +80,7 @@ class GameStateClass {
     get inventory() { return this.state?.inventory || { items: {} }; }
     get progress() { return this.state?.progress || {}; }
     get time() { return this.state?.time || { gameTimeMs: 0 }; }
-    get collection() { return this.state?.collection || { playsets: {} }; }
+    get collection() { return this.state?.collection || {}; }
     get discoveredItems() { return this.state?.collection?.discoveredItems || {}; }
     get discoveredEnemies() { return this.state?.collection?.discoveredEnemies || {}; }
     get itemLifetimeCounts() { return this.state?.collection?.itemLifetimeCounts || {}; }
