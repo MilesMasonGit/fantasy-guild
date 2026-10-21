@@ -86,13 +86,15 @@ export const BubbleMenu = ({ ui, side = 'left' }) => {
                 // `relative` so the z-index below actually applies: it is what keeps the nav
                 // ABOVE the bank drawer (z-[90]).
                 'pointer-events-auto relative shrink-0 flex flex-col items-center gap-4 py-6 px-3 min-w-[80px] md:min-w-[150px]',
+                // The 32 px strip at a whole scale, never stretched to the menu's width: 2×, 4× from md.
+                'bg-[length:64px_64px] md:bg-[length:128px_128px]',
                 aboveOwnModal ? 'z-[310]' : 'z-[110]'
             )}
+            data-bubble-menu-side={side}
             style={{
                 backgroundImage: `url('/assets/ui/u_bar.png')`,
                 backgroundRepeat: 'repeat-y',
-                backgroundPosition: side === 'left' ? 'left top' : 'right top',
-                backgroundSize: '100% auto',
+                backgroundPosition: 'left top',
                 imageRendering: 'pixelated'
             }}
         >
