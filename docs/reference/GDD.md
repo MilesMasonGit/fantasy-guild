@@ -232,7 +232,7 @@ has none yet), melee, magic and commerce have content today.
 - XP comes from work cycles (the recipe's or Token's `xp`) and kills (into the
   hero's one combat skill). Level cap 99; XP to level 99 ≈ 13 million
   (RuneScape-style curve, `XPCurve.js`).
-- Each level gives +0.5 % speed to that skill's work.
+- A skill level gives no work speed: a cycle takes its authored time whoever works it (owner 2026-10-09, T-125).
 - **Hero level** = the average of held skills (display only).
 - **Content that still says `logging`** (data/ and the CMS workspace, until the
   owner's next Sync) is read as `forestry` as it loads

@@ -31,7 +31,7 @@ export const modifyHeroEnergy = State.modifyHeroEnergy;
 
 // --- Rehydration Exports ---
 export const rehydrateHero = Rehydration.rehydrateHero;
-export const updateHeroSkillModifiers = Rehydration.updateHeroSkillModifiers;
+export const updateHeroFromSkills = Rehydration.updateHeroFromSkills;
 
 export const HeroManager = {
     createHero,
@@ -51,7 +51,7 @@ export const HeroManager = {
     modifyHeroHp,
     modifyHeroEnergy,
     rehydrateHero,
-    updateHeroSkillModifiers
+    updateHeroFromSkills
 };
 
 export default HeroManager;

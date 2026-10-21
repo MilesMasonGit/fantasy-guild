@@ -64,15 +64,11 @@ export { ALERT };
  * mark, because that is a problem the player can act on. Fail 2 alone raises nothing: most of the
  * board is unstaffed at any moment, and flagging all of it would make the mark meaningless.
  *
- * Hero effects on the board: of the three (Speed, Access, Efficiency) Speed and Access are
- * implemented. Access is the skill gate in rule 3; Speed is `heroSpeedFactor` at the cycle-time
- * line below (`SKILL_SPEED_FACTOR` in `FormulaRegistry`, written as one SPEED modifier per held
- * skill by `HeroRehydration.updateHeroSkillModifiers`).
- *
+ * Hero effects on the board: only Access, the skill gate in rule 3. ⚠️ A skill level deliberately
+ * adds no work speed: an invisible per-level bonus was removed as one more number to balance.
  * Efficiency is not implemented: input cost is resolved in `completeCycle` through
- * `TileModifiers.resolveAxis(INPUT_COST)`, which reads tile, neighbour and guild-wide effects, and
- * heroes contribute no modifiers except SPEED. ⚠️ Deferred to the hero rework: do not quietly fill
- * it in because it looks missing.
+ * `TileModifiers.resolveAxis(INPUT_COST)`, which reads tile, neighbour and guild-wide effects.
+ * ⚠️ Deferred to the hero rework: do not quietly fill it in because it looks missing.
  */
 
 /** Tick counter, so progress events don't fire at full rate. */
@@ -93,28 +89,6 @@ let carryOut = new Map();
 
 // Why the hero on a Token cannot work it (possession, then level) lives in `WorkCheck.heroReason`,
 // shared with the flags that choose which Token to work.
-
-/**
- * How much faster the working hero is than a raw beginner: the SPEED axis read off the HERO, not
- * off the tile.
- *
- * This is the only consumer of `EFFECT_TYPES.SPEED` on the board. It sits beside `WORK_TIME` rather
- * than inside it: `TileModifiers` merges the tile and guild scopes only, and a hero's skill is
- * neither, it travels with the person. So the tile's authored time is resolved first and then
- * DIVIDED by this factor, because SPEED is how fast while WORK_TIME is how long; they pull in
- * opposite directions.
- *
- * Returns 1 (no change) for an empty tile, an unknown hero, or a Token that names no skill.
- *
- * @returns {number} ≥ 1 in practice; `combinePercentages` clamps at 0.
- */
-function heroSpeedFactor(heroId, skill) {
-    if (!heroId || !skill) return 1;
-    const aggregator = HeroManager.getHero(heroId)?.aggregator;
-    if (!aggregator) return 1;
-    const factor = aggregator.getPercentageBucket(EFFECT_TYPES.SPEED, skill);
-    return factor > 0 ? factor : 1;
-}
 
 /**
  * Set or clear a tile's alert, publishing only on an actual change.
@@ -713,7 +687,7 @@ export function tick(delta) {
             ? (config.cycleTimeMs || 10000)
             : Math.max(1000, TileModifiers.resolveAxis(
                 id, EFFECT_TYPES.WORK_TIME, io.cycleTimeMs || config.cycleTimeMs || 10000, config.skill
-            ) / heroSpeedFactor(heroId, config.skill));
+            ));
 
         if (instance.cycleElapsedMs >= cycleTime) {
             // Only a cycle that crossed its end during this tick has a leftover; one that held at

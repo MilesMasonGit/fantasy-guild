@@ -6,7 +6,6 @@
 import { bandFor } from '../../../../src/config/registries/tempoBands.js';
 import { gphAt, purposeGoldFactor, toleranceFor, DEFAULT_DIALS } from './dials.js';
 import { isDeferredKind } from './fieldAdapter.js';
-import { speedAt } from './tempoPass.js';
 import { makeRow, SEVERITY } from './rows.js';
 import { makeRefusal } from './refusals.js';
 
@@ -19,9 +18,9 @@ export const PRIMARY_CHANCE_FLOOR = 5;
 /** A cap on how far the quantity search walks, so a pathological r cannot hang it. */
 const MAX_QUANTITY_STEPS = 100000;
 
-export function cyclesPerHour(cycleTimeMs, level) {
+export function cyclesPerHour(cycleTimeMs) {
     if (!Number.isFinite(cycleTimeMs) || cycleTimeMs <= 0) return 0;
-    return (3600 / (cycleTimeMs / 1000)) * speedAt(level);
+    return 3600 / (cycleTimeMs / 1000);
 }
 
 /** Is `profit` inside `±band` of `target`? A target of zero can never be hit. */
@@ -67,7 +66,7 @@ function withOutput(state, index, patch) {
 
 /** What a source earns per hour in a given state: everything its outputs are worth, less everything its inputs cost, at the rate its cycle implies. An output or input whose item has no value contributes nothing; an entity with an unpriced input is not judged at all, because its costs would be understated. */
 export function earningsPerHour(entity, state, values) {
-    const cph = cyclesPerHour(state.cycleTimeMs, entity.level);
+    const cph = cyclesPerHour(state.cycleTimeMs);
     let revenue = 0;
     for (const o of state.outputs) {
         if (!o.itemId || !values.has(o.itemId)) continue;

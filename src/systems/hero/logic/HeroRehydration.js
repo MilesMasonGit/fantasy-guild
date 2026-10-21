@@ -1,6 +1,4 @@
 import { ModifierAggregator } from '../../effects/ModifierAggregator.js';
-import { skillSpeedBonus } from '../../../config/FormulaRegistry.js';
-import { EFFECT_TYPES } from '../../effects/constants.js';
 import { calculateHeroLevel } from '../HeroGenerator.js';
 import { heroMaxHpFromSkills } from '../../../utils/CombatFormulas.js';
 import { GameState } from '../../../state/GameState.js';
@@ -48,7 +46,7 @@ export function rehydrateHero(hero) {
     // sheet. Runs before the derived stats.
     restoreBankedStarting(hero);
 
-    updateHeroSkillModifiers(hero);
+    updateHeroFromSkills(hero);
 
     hero.level = calculateHeroLevel(hero.skills);
     updateHeroMaxHp(hero);
@@ -94,33 +92,13 @@ export function updateHeroMaxHp(hero) {
     hero.hp.current = Math.min(hero.hp.current, maxHp);
 }
 
-export function updateHeroSkillModifiers(heroOrId) {
+/** Max HP and hero level, both derived from skills. A skill level adds no work speed. */
+export function updateHeroFromSkills(heroOrId) {
     const hero = typeof heroOrId === 'string' ? lookupHeroById(heroOrId) : heroOrId;
     if (!hero || !hero.aggregator) return;
 
-    // Combat-skill level-ups change max HP and hero level
     updateHeroMaxHp(hero);
     hero.level = calculateHeroLevel(hero.skills);
-
-    for (const skillId of Object.keys(hero.skills)) {
-        hero.aggregator.removeModifiersBySource(`skill:${skillId}`);
-    }
-
-    for (const [skillId, skillData] of Object.entries(hero.skills)) {
-        const level = typeof skillData === 'number' ? skillData : (skillData.level || 0);
-        if (level > 0) {
-            hero.aggregator.addModifier({
-                source: `skill:${skillId}`,
-                type: EFFECT_TYPES.SPEED,
-                // ⚠️ Lower-case: category ids are lower-case and `_forEachMatching`
-                // compares them case-SENSITIVELY, so an upper-cased key is one no
-                // reader could match and the query would silently return 0.
-                target: { category: skillId },
-                value: skillSpeedBonus(level),
-                persistent: true
-            });
-        }
-    }
 }
 
 /**
