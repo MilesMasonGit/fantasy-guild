@@ -5,8 +5,8 @@ rework. This is the "before" every UI change is measured against
 ("measure, don't fix"). Re-record it only on a quiet machine, and say why.
 
 How to keep it fast while building: "Keeping it fast", below the measuring
-table. The Performance Envelope (design limits) goes in the GDD §14 at the
-end of the crunch.
+table. The Performance Envelope (design limits) goes in the GDD §14; its
+measurements are "Performance Envelope (2026-10-21)", at the end of this file.
 
 ## The machine and conditions
 
@@ -30,6 +30,7 @@ end of the crunch.
 | `npm run bench:draw -- --quick` | One quick S2 check (not comparable with full runs) | ~1 min |
 | `npm run bench:draw -- --switches --cpu=4` | Cost of each system: S2 with one switch off at a time (`--only=cap128` for another board) | ~13 min |
 | `npm run bench:draw -- --only=cap128,camp128,cap256` | The realistic mix at the Token cap: 128, the Starter Camp at 128, 256 | ~6 min per condition |
+| `npm run bench:draw -- --only=cap96,heroes12,floor40 --cpu=3.2 --slowdown-target=4` | The Performance Envelope's scenes: one thing turned up on the 128 board (`cap<N>`, `heroes<N>`, `enemies<N>`, `fights<N>`, `floor<N>`, `notify<N>`), with what was on the mat sampled; "Performance Envelope (2026-10-21)", at the end | ~50 s a window |
 | `npm run bench:profile -- --scene=cap128 --cpu=4` | Where a frame's time goes: a trace, a CPU profile and the composited layers | ~2 min |
 | `npm run bench:drag` | Drag reliability, real mouse input, and frame stalls at pickup, carry and drop | ~19 min |
 | `npm run bench:crisp` | Not timing: whether anything animating on the mat changes how still Tokens are drawn (T-145); `--neuter` shows the fault | ~1 min |
@@ -1226,3 +1227,302 @@ chips, copies and the knockout among the resting Tokens).
   mat once settled (trees used up and refilled).
 - The Perf HUD's "≤ 6.06" columns kept every 4× figure near 0 %; the 60 Hz line
   (`≤16.7 %`) is now beside it.
+
+## Performance Envelope (2026-10-21)
+
+Brief 90 E1: the game's limits, measured one thing at a time on the realistic board at the base
+cap, for the design rules in the GDD §14 (E2). Branch `crunch/envelope` from `main` `f19a2e30`,
+13:58–16:00 Vancouver time, the owner away, no other agent or bench running (an idle Vite dev
+server stood in the main checkout throughout).
+
+**How.** `npm run bench:draw` on the perf build, 1600 × 1000, the standard 20 s settle and 20 s
+window, three windows per scene unless said (the median, with the range in brackets), on the
+Envelope's scenes (`bench/README.md`, "The Performance Envelope's scenes"): `cap<N>`, `heroes<N>`,
+`enemies<N>`, `fights<N>` (boards in `bench/scenarios/envelope.mjs`), `floor<N>`, `floorstill<N>`
+and `notify<N>` (the 128 board with something done from a page timer). Each window samples what is
+really on the mat every 500 ms (Tokens, enemies, fights going on, heroes, loot piles, stub rows,
+banners); every number below is stated against what was there, not what was asked for. Raw JSON:
+`bench/results/draw/` on the owner's PC (git-ignored).
+
+**The slowdown.** Asked for 4×, Chrome delivered 4.1–5.2× today, and the bench's guard rejects a
+window more than 25 % off. So the scenes were asked for 3.2× with the new `--slowdown-target=4`:
+a window counts when the slowdown Chrome delivered, timed before and after it, is within 3–5×. It
+delivered **3.0–4.9×, median about 3.8×**: a shade easier than 4×. The refinement run (below) asked
+3.4× and got a median of 4.0×, and the same boards read **2–5 points lower** on the 16.7 ms line
+there. "Smooth" below is judged on the windows as delivered, **not corrected**; the delivered
+range is in every row, and where the verdict depends on it, both readings are given.
+
+**Smooth** is brief 60's line ("Smooth, defined", above): at 4×, ≥ 95 % of frames' work within
+16.7 ms, and a frame interval p99.9 ≤ 33.4 ms. ⚠️ The p99.9 interval moves in steps of the headless
+frame clock (6.06 ms): near the line it reads 30.3 ms (five frames: passes) or 36.4 ms (six:
+fails), so on a board at the edge it flips window to window; the ≤ 16.7 ms share is the steadier
+line. Drags (the third test) were measured on the 128 board only (below).
+
+### The limits at a glance
+
+The reference is the 128 board (`cap128`: S2's mix at the base cap, 8 heroes, 130 on the mat): at
+~3.8× **92.6 %** of frames within 16.7 ms, p99.9 36.3 ms; at 4.0×, 87.7 %, 42.4 ms. **It is just
+under smooth.** So every limit below is where that board, with one thing turned up, falls further;
+and the only way found to reach the line on a busy mat is fewer heroes.
+
+| What | Smooth at ~4× (≥ 95 %) | Near the 128 board (88–93 %) | Under it (< 88 %) | Cost of one more, frame work p50 at ~4× |
+|---|---|---|---|---|
+| Tokens on a Region (8 heroes) | ~100 at 3.8× (cap96 95.0 %); none at 4.0× (cap96 93.2 %) | 112–128 | 160 (87.3 %), 192 (84.6 %), 224 (77.8 %), 256 (61.9 %) | ~0.04 ms to 192; ~0.09 ms from 192 to 256 |
+| Heroes (128 Tokens) | **4** (97.4 %) | 6–8 (92.3 %, 92.6 %) | 12 (79.0 %), 16 (72.8 %) | 0.6–0.9 ms (~20 Tokens' worth) |
+| Enemies alive at once (128 board) | none measured: the board's own ~3–6 already sit at 92.6 % | ~3–6 | 8 (86.8 %, two windows), 13 (87.9 %), 24 (76.4 %), 68 (45.4 %) | 0.15–0.4 ms (~4–10 Tokens; the first ten the dearest), and engine time |
+| Fights at once | none measured: 0–1 is the reference | 1 (89.4 %) | 2 (85.3 %), 4 (78.0 %), 7 (68.6 %) | 1–1.5 ms (~30 Tokens), with its enemy |
+| Loot piles on the floor | none measured: 2–3 is the reference | 8 (88.9 %) | 18 (84.6 %), **38 = the shipped pile cap** (72.2 %), 78 (47.1 %) | 0.11–0.18 ms (~4 Tokens) |
+| Notifications a minute | any rate: 60 → 1,200 a minute costs ~1 ms | ~5 stub rows | ~26 stub rows (80–86 % at any rate) | a stub row ~0.1 ms (~3 Tokens); the rate ~nothing |
+| 24 h offline catch-up (target: under 30 s on the owner's PC) | 19.1 s (cap128) | | **38.3 s at 256 Tokens, 35.6 s with ~70 enemies**; 122 s for cap128 at 4× | the engine's tick: Tokens and wandering enemies |
+
+The refinement run (asked 3.4×, delivered 3.7–4.9×, median 4.0×; `--only=cap96,cap112,cap128,heroes6`)
+read every board lower: cap96 93.2 % (92.7–93.3), cap112 91.0 % (90.3–92.5), cap128 87.7 %
+(86.5–89.8), 6 heroes on the 128 board 92.3 % (92.2–93.8); p99.9 36–42 ms. **At a true 4× no board
+with 8 heroes measured smooth** (cap64, 66 on the mat, read 94.6 % at a median 4.04×); the Token
+count moves it by a few points, the heroes by tens.
+
+### Exchange rates
+
+What one more of each costs in median frame work on the 128 board at ~4×, and in Tokens' worth
+(a Token ≈ 0.04 ms):
+
+| One more… | Frame work p50 | Tokens' worth | Where it is spent (measured: cost tables; reasoned: the rest) |
+|---|---|---|---|
+| Token | ~0.04 ms (0.09 ms past 192) | 1 | the mat's DOM, style and layers; the engine tick |
+| loot pile on the floor | 0.11–0.18 ms | ~4 | **its hover animation**: with it stopped, 38 piles cost nothing measurable (measured, `floorstill40`) |
+| stub row | ~0.1 ms | ~3 | the column's rows, redrawn on each change (at most 4 a second); 300 flows and 30 banners a minute over 4 items cost nothing measurable (measured, `notify300i4`) |
+| enemy | 0.15–0.4 ms | ~4–10 | its walk and frames on the mat, and its pottering in the engine tick |
+| hero | 0.6–0.9 ms | ~20 | work bubbles, sprite frames, the hero bar, the worked Token's strike chips, walking (cost table below) |
+| fight | 1–1.5 ms | ~30 | every blow's effects (hit loop, white hit, afterimages, number, health bars), the kills' knockouts; includes its enemy |
+
+### Tokens on a Region
+
+S2's mix (placed share, spawners filled to the cap), 8 heroes, the shipped 11-step mat
+(`cap<N>`, `cap128` and `cap256` as before). Three windows each.
+
+| Board | On the mat | fps | Frame work p50 / p95 / p99 | ≤ 16.7 ms | Interval p99.9 | Delivered |
+|---|---|---|---|---|---|---|
+| S1 quiet (1 hero) | 7 | 164.6 | 2.1 / 4.9 / 7.1 ms | 99.9 % | 12.1 ms | 3.0–4.9× |
+| cap64 | 66 | 136.3 | 5.7 / 16.9 / 24.4 ms | 94.6 % (92.4–96.3) | 30.4 ms (30.3–36.4) | 3.5–4.4× |
+| cap96 | 98 | 135.5 | 5.5 / 16.7 / 23.6 ms | **95.0 %** (95.0–95.4) | **30.3 ms** (30.2–36.4) | 3.5–4.9× |
+| **cap128** | 130 | 127.8 | 6.6 / 18.3 / 27.7 ms | 92.6 % (92.5–93.8) | 36.3 ms (30.4–36.3) | 3.4–4.1× |
+| cap160 | 162 | 114.1 | 9.3 / 21.3 / 31.6 ms | 87.3 % (87.3–87.8) | 36.3 ms | 3.5–4.4× |
+| cap192 | 194 | 108.5 | 9.4 / 22.8 / 31.4 ms | 84.6 % (80.9–84.8) | 36.4 ms | 3.2–3.9× |
+| cap224 | 218 | 98.0 | 11.0 / 26.3 / 37.5 ms | 77.8 % (73.1–79.5) | 60.5 ms (48.5–66.7) | 3.5–4.3× |
+| cap256 | 258 | 78.9 | 15.0 / 31.0 / 45.0 ms | 61.9 % (56.7–68.5) | 54.5 ms (54.5–66.7) | 3.5–4.5× |
+| *at a median 4.0× (asked 3.4×):* cap96 | 98 | 129.4 | 6.1 / 18.1 / 27.5 ms | 93.2 % (92.7–93.3) | 36.4 ms (30.4–42.4) | 3.7–4.5× |
+| *4.0×:* cap112 | 114 | 125.4 | 6.5 / 20.0 / 29.4 ms | 91.0 % (90.3–92.5) | 36.2 ms (30.3–36.4) | 3.9–4.9× |
+| *4.0×:* cap128 | 130 | 117.2 | 8.0 / 21.5 / 32.1 ms | 87.7 % (86.5–89.8) | 42.4 ms (36.3–42.4) | 3.7–4.5× |
+
+- ⚠️ The interval p99.9 moves in steps of the headless frame clock (6.06 ms): near the line it
+  reads 30.3 ms (five frames, passes) or 36.4 ms (six, fails), so it flips window to window on a
+  board at the edge. The ≤ 16.7 ms share is the steadier of the two lines.
+- **Below ~100 Tokens the count hardly matters**: 66 and 98 Tokens cost the same (5.5–5.7 ms p50),
+  and S1 with one hero is at 2.1 ms. The floor of a busy mat is its heroes (below).
+- From 98 to 194 Tokens the median frame grows ~0.04 ms a Token at ~4× (~0.6 ms per Hall rank of
+  16) and the in-budget share drops ~1.5–2.5 points a rank; from 194 to 258 it doubles to ~0.09 ms
+  a Token. The 256 board is every cell built and more Forests and Quarries, so (reasoned, not
+  measured) more of its Tokens are spawned, pushed and arriving at once. The engine tick grows with it (p50 1.4 ms at 128, 2.4 ms at 258, p99
+  4–5 → 10–13 ms at ~4×).
+- Long animation frames (over 50 ms) appear from 160 Tokens up: one or two a 20 s window, 55–65 ms;
+  at 256 one to three, up to 103 ms.
+
+**Limit**: with 8 heroes the mat reaches the line at **~100 Tokens** only at a delivered ~3.8×
+(cap96 95.0 %); at a true 4× nothing with 8 heroes does (cap96 93.2 %). The base cap of 128 is
+just under (92.6 % at ~3.8×, 87.7 % at 4.0×; the 1-in-1,000 frame six or seven refreshes). Each
+Hall rank of 16 costs ~1.5–2.5 points up to 192 (84.6 %), then faster: 224 at 77.8 % (the board
+fell short of its cap, 218), 256 at 61.9 % with a 1-in-1,000 frame of 55–67 ms.
+
+### Heroes
+
+`heroes<N>`: the 128 board with N heroes (planted as S2's, one pinned to a smelter, two by goblin
+camps, the rest on producers, so all of them walk and work). The roster's top is 8 (`ROSTER_MAX`).
+
+| Heroes | fps | Frame work p50 / p95 / p99 | ≤ 16.7 ms | Interval p99.9 | Delivered |
+|---|---|---|---|---|---|
+| 4 | 146.9 | 4.3 / 14.2 / 20.6 ms | **97.4 %** (97.1–98.2) | **24.3 ms** | 3.6–4.2× |
+| 8 (cap128) | 127.8 | 6.6 / 18.3 / 27.7 ms | 92.6 % | 36.3 ms | 3.4–4.1× |
+| 12 | 101.1 | 10.1 / 24.9 / 35.1 ms | 79.0 % (76.4–82.6) | 48.4 ms | 3.5–4.9× |
+| 16 | 89.9 | 11.5 / 28.6 / 39.5 ms | 72.8 % (69.6–75.6) | 54.5 ms | 3.6–4.3× |
+
+**A hero costs what 15–20 Tokens cost**: ~0.6–0.9 ms of median frame work each at ~4× (4 → 8 →
+12 heroes: 4.3 → 6.6 → 10.1 ms), against ~0.04 ms a Token.
+
+**Limit**: on the 128 board the mat is smooth with **4 heroes** and just under the line with the
+roster's top of 8; past 8 it falls off fast (12: 79 %).
+
+### Enemies at once
+
+`enemies<N>`: the 128 board with Forests and Quarries, then producers, turned into war camps so the
+goblins get the room under the cap; no hero stands by the new camps, so they wander (and the ones
+that wander into a hero's flag fight). The sampled count is what was really there.
+
+| Enemies on the mat (sampled) | On the mat | fps | Frame work p50 / p95 / p99 | ≤ 16.7 ms | Interval p99.9 | Engine tick p99 | Delivered |
+|---|---|---|---|---|---|---|---|
+| ~3–6 (cap128) | 130 | 127.8 | 6.6 / 18.3 / 27.7 ms | 92.6 % | 36.3 ms | 3.7–5.2 ms | 3.4–4.1× |
+| 8 (two windows) | 128 | 112.6 | 10.1 / 22.2 / 32.9 ms | 86.8 % (84.5–89.2) | 42.5 ms | 7.8–14.8 ms | 3.4–4.2× |
+| 13 | 123 | 112.9 | 9.8 / 22.3 / 36.2 ms | 87.9 % (77.3–88.1) | 42.4 ms | 10.9–11.6 ms | 3.5–4.4× |
+| 24 | 114 | 95.3 | 11.9 / 28.4 / 49.0 ms | 76.4 % (75.5–76.6) | 72.7 ms (48.5–78.8) | 13.6–17.6 ms | 3.3–4.0× |
+| 68 | 118 | 63.9 | 17.5 / 39.6 / 60.4 ms | 45.4 % (43.0–52.2) | 90.9 ms (66.6–109.2) | 17.4–22.7 ms | 3.5–4.6× |
+
+**An enemy costs what 4–10 Tokens cost** (0.15–0.4 ms of median frame work each at ~4×; the first
+ten above the board's own the dearest, though turning Forests into camps also changes what the
+heroes walk to), and,
+unlike a Token, it costs the **engine** too: the tick's p99 goes from ~4–5 ms to 11 ms with 13
+enemies and 17–23 ms with 68 (enemies potter about their camps on the tick, `EnemyMotion`), and
+long animation frames of 85–137 ms appear.
+
+### Simultaneous fights
+
+`fights<N>`: the 128 board with N producers turned into camps of one tough hostile brute that never
+runs out (a kill costs one of 1000 uses; it is back after the 2 s pause and ambushes again), and N
+of the 8 heroes beside them. The sampled count held steady (4 of 4; 7 of 8, one hero always
+between brutes).
+
+| Fights going on (sampled) | fps | Frame work p50 / p95 / p99 | ≤ 16.7 ms | Interval p99.9 | Delivered |
+|---|---|---|---|---|---|
+| ~0–1 (cap128) | 127.8 | 6.6 / 18.3 / 27.7 ms | 92.6 % | 36.3 ms | 3.4–4.1× |
+| 1 | 117.8 | 8.9 / 20.9 / 29.6 ms | 89.4 % (86.3–92.3) | 36.3 ms (30.4–36.4) | 3.4–4.3× |
+| 2 | 110.3 | 10.2 / 21.7 / 29.2 ms | 85.3 % (84.4–87.5) | 36.2 ms (30.4–36.3) | 3.2–4.8× |
+| 4 | 97.6 | 12.6 / 23.1 / 32.4 ms | 78.0 % (77.6–82.9) | 36.3 ms (30.4–36.5) | 3.6–4.1× |
+| 7 | 87.1 | 14.7 / 26.8 / 35.5 ms | 68.6 % (58.4–71.6) | 42.5 ms | 3.4–4.4× |
+
+**A fight costs what 25–35 Tokens cost** (~1–1.5 ms of median frame work each at ~4×): every blow
+plays the hit loop, the white hit and its afterimages, a damage number and the health bars; every
+kill the knockout. The fighting heroes stand still, so it is not their walking.
+
+### Loot piles on the floor
+
+`floor<N>`: auto-collect off (the shipped default, D-233) and the game's own pile cap
+(`gameplay.maxItemStacks`, **40 shipped**) set to N; the floor is filled to it first and the board's
+own drops keep it there, the oldest pile flying to the Bank. The realistic boards run with
+auto-collect on, so they hold 2–3 piles.
+
+| Piles (sampled) | fps | Frame work p50 / p95 / p99 | ≤ 16.7 ms | Interval p99.9 | Delivered |
+|---|---|---|---|---|---|
+| ~2–3 (cap128, auto-collect on) | 127.8 | 6.6 / 18.3 / 27.7 ms | 92.6 % | 36.3 ms | 3.4–4.1× |
+| 8 | 117.3 | 8.4 / 20.8 / 29.1 ms | 88.9 % (86.9–89.8) | 36.3 ms (30.4–36.4) | 3.6–4.9× |
+| 18 | 108.3 | 8.7 / 23.1 / 32.3 ms | 84.6 % (81.2–85.1) | 42.3 ms (36.4–42.5) | 3.6–4.0× |
+| 38 (the shipped cap) | 88.5 | 10.9 / 27.1 / 37.2 ms | 72.2 % (69.3–75.7) | 48.4 ms | 3.4–4.3× |
+| 78 | 63.2 | 17.4 / 34.9 / 46.7 ms | 47.1 % (44.7–48.9) | 60.5 ms | 3.7–4.1× |
+| 158 | 30.9 | 34.9 / 55.1 / 71.2 ms | 11.7 % (8.9–12.7) | 84.9 ms | 3.5–4.5× |
+
+**A pile on the floor costs what 3–4 Tokens cost** (~0.11–0.18 ms of median frame work each at
+~4×, straight-line from 38 to 158 piles). **The cost is the piles' hover**: `floorstill40`, the
+same 38 piles with their hover animation (`gi-sprite-hover`) stopped by a page style, read 123.6 fps,
+7.3 ms p50, **91.7 %** (89.8–93.6; two windows, 3.4–3.9×), the 128 board's own level. ⚠️ The floor scenes also hold ~8–12 stub rows (each pile
+the cap sweeps to the Bank is a distinct item) against the 128 board's ~5: about 0.5 ms of the
+difference is the stubs (below).
+
+### Notifications
+
+`notify<N>`: N notifications a minute on top of the board's own (~30 item flows a minute), every
+tenth a banner (the oldest dismissed when three show, as a player clicking) and the rest item flows
+into the Bank over 24 items, so the stub column holds ~25–28 rows.
+
+| Rate (measured) | Stub rows | fps | Frame work p50 / p95 / p99 | ≤ 16.7 ms | Interval p99.9 | Delivered |
+|---|---|---|---|---|---|---|
+| board's own, ~30 flows/min (cap128) | ~5 | 127.8 | 6.6 / 18.3 / 27.7 ms | 92.6 % | 36.3 ms | 3.4–4.1× |
+| 84 flows + 6 banners/min | 25.7 | 110.0 | 8.9 / 22.0 / 34.3 ms | 85.5 % (85.0–85.8) | 42.4 ms | 3.0–4.8× |
+| 306 flows + 30 banners/min | 27.9 | 103.3 | 9.9 / 23.8 / 36.5 ms | 81.6 % (81.1–84.5) | 48.5 ms | 3.6–4.0× |
+| 1108 flows + 120 banners/min | 27.9 | 102.3 | 10.0 / 24.4 / 36.0 ms | 80.1 % (75.6–80.7) | 42.4 ms | 3.5–4.1× |
+| 304 flows + 30 banners/min **over 4 items** (`notify300i4`, two windows) | 8.9 | 128.5 | 7.1 / 18.1 / 27.7 ms | 93.1 % (93.1–93.1) | 33.3 ms (30.3–36.3) | 3.3–4.1× |
+
+**The rate hardly matters; the rows do.** Fourteen times the rate costs ~1 ms (the column hears at
+most one change every 250 ms, `itemStubs.js` `EMIT_MS`); going from ~5 rows to ~26 costs ~2.5 ms.
+
+### Where a hero's cost goes (cost table, 16 heroes on the 128 board)
+
+`npm run bench:draw -- --only=heroes16 --switch-only=heroAnim,walkDraw,bubbles,speech,dock,tokenFx,matFx --cpu=3.2 --slowdown-target=4`:
+all on three times (start, middle, end; spread 0.49 ms p50), each switch off once, delivered
+3.3–4.8×. All on: 87.5 fps, 12.0 ms p50, 70.2 % within 16.7 ms.
+
+| Switch off | fps | Saved p50 | Saved p99 | ≤ 16.7 ms | What it draws |
+|---|---|---|---|---|---|
+| bubbles | 106.2 | **3.4 ms** | 10.1 ms | 82.2 % | the work-cycle and HP bubbles over heroes and worked Tokens |
+| heroAnim | 104.1 | **2.5 ms** | 3.2 ms | 82.6 % | the heroes' sprite frames |
+| dock | 101.2 | 1.8 ms | 8.6 ms | 80.9 % | the hero bar (16 figures) |
+| tokenFx | 101.4 | 1.5 ms | 9.0 ms | 80.5 % | effects on a Token's own art: the strike chips of every worked Token |
+| walkDraw | 91.0 | 1.0 ms | −0.9 ms | 74.0 % | walking drawn between positions |
+| matFx | 92.0 | 0.9 ms | 1.6 ms | 74.8 % | effects standing on the mat |
+| speech | 83.2 | −1.7 ms | 0.3 ms | 65.8 % | speech bubbles (a slow window: 3.4–3.6× delivered; read as none) |
+
+One window per switch, so each figure is ±0.5 ms; together they account for ~11 of the 12 ms. A
+hero's cost is mostly what it puts on the mat while it works (its bubble, its frames, the chips on
+the Token it works), then the hero bar. None of it is the Token count.
+
+### Offline catch-up at 24 h
+
+`node bench/catchup/page.mjs --hours=24 --modes=catchup --scene=<board> [--cpu=3.4]`: the game's own
+catch-up (`CatchUp.run`: 1000 ms steps, the bus quiet, 50 ms slices with yields) for a full 24 h
+in the perf build, after the 20 s settle.
+
+| Board | CPU | Wall time for 24 h | Per step | Delivered |
+|---|---|---|---|---|
+| cap128 (130 on the mat) | 1× | **19.1 s, 19.2 s** | 0.22 ms | |
+| cap128 | asked 3.4× | **122.4 s** | 1.42 ms | 4.0–4.1× |
+| cap256 (257 on the mat) | 1× | **38.3 s** | 0.44 ms | |
+| ~70 goblins on the 128 board (`enemies80`, 116 on the mat) | 1× | **35.6 s** | 0.41 ms | |
+
+The target (concept_offline_progress.md: "a full 24 h catches up in under 30 seconds on the owner's
+PC") holds on the 128 board with 36 % to spare, and **fails at the top cap (38.3 s) and with ~70
+enemies (35.6 s)**: the catch-up is the engine's tick, and the tick grows with Tokens and with
+wandering enemies. One run each. On a 4× slower machine the same catch-up takes
+two minutes: 6.4 times the full-speed time, more than the 4× (the slices' yields and the bar's
+frames are stretched too). The catch-up's 24 h cap (`CATCH_UP.CAP_MS`) bounds it. The engine bench's
+S8 (one game-hour of the same catch-up on S2, headless) reads 1.99 s in today's baseline.
+
+### At full speed (the owner's PC, 1×)
+
+One window each, perf build, no slowdown (`--cpu=1`); the headless frame clock is ~165 Hz, so the
+owner's screen line is 6.06 ms:
+
+| Board | fps | Frame work p50 / p95 / p99 | ≤ 6.06 ms | ≤ 16.7 ms | Interval p99.9 |
+|---|---|---|---|---|---|
+| cap128 | 161.5 | 1.7 / 4.6 / 9.7 ms | 97.2 % | 99.9 % | 24.2 ms |
+| cap256 | 160.0 | 2.5 / 7.3 / 12.8 ms | 93.4 % | 99.8 % | 18.1 ms |
+| 16 heroes on the 128 board | 163.1 | 2.4 / 5.2 / 8.9 ms | 96.9 % | 100 % | 12.3 ms |
+| ~70 enemies | 150.0 | 3.0 / 11.4 / 17.2 ms | **86.1 %** | 98.6 % | 24.4 ms |
+| 8 heroes fighting | 159.3 | 2.6 / 6.2 / 10.6 ms | 94.6 % | 99.9 % | 18.2 ms |
+| 40 loot piles | 158.1 | 2.6 / 6.9 / 14.3 ms | 93.8 % | 99.5 % | 24.3 ms |
+| 300 notifications a minute, ~28 rows | 163.7 | 2.0 / 4.6 / 9.1 ms | 97.4 % | 100 % | 12.2 ms |
+
+At full speed every board stays near the screen's ceiling; none reaches the certification's 99 %
+within 6.06 ms in a single window today (brief 60 read cap128 at 99.5 % on 2026-10-09; one window is
+not enough to call that a change). The enemies are the one thing that bites even here: ~70 goblins
+wandering put 14 % of frames over 6.06 ms and the engine tick's p99 at 6.3 ms.
+
+### Drags (smooth's third test), the 128 board at ~4×
+
+`npm run bench:drag -- --board=cap128 --cpu=3.4 --no-overlays --n=10` (delivered 3.3–4.1× on the
+measured kinds): every drag landed (hero bar → mat, flag → mat, Token → mat, 10 of 10 each), but
+**the median drag's longest frame was 55–61 ms at pickup and 73–109 ms at drop** (the line is
+33.4 ms); carrying, 30–42 ms. Every drag had frames over 16.7 ms in each phase. The Shop kind was
+skipped (the cap is full, by design) and so was the Bank kind ("no equippable item tile visible":
+a bench issue on this board). At ~4× the 128 board **fails smooth's drag test by about twice**,
+before anything is turned up.
+
+### What it says about the canvas mat (T-071)
+
+A canvas mat draws Tokens into one picture instead of one page element each (R6, CR3-355; the
+hybrid keeps everything interactive as elements). What it can save is the Tokens' own share of the
+frame, and on the realistic mat that share is small: from 98 to 194 Tokens the median frame grows
+3.9 ms at ~4× (~0.04 ms a Token), from 194 to 258 another 5.6 ms. So at the base cap a canvas mat
+would save at most the ~1 ms between cap96 and cap128 (an upper bound: drawing a canvas is not free),
+which does not reach the line while 8 heroes cost ~5 ms and one fight, eight loot piles or twenty
+stub rows each cost 2 ms. It would matter for the top cap (256 at 62 %), or for S3.
+Recommendation in the report to the director.
+
+### What was not measured today
+
+- **Drags on the bigger boards**, and the Shop and Bank drags: see "Drags" above; only cap128's
+  three mat kinds were measured, 10 drags each.
+- **The Starter Camp** (`camp128`): its premise (25 endgame sites that do not count) no longer
+  matches the code or the GDD (landmarks count toward the cap); as a number it is a 153-Token board,
+  between cap128 and cap160 above.
+- **S3** (the torture board, 310): not re-run; brief 60 had it at 0.3–3.6 % within 16.7 ms at 4×.
+- **Combinations**: each limit was measured with everything else at the 128 board. The exchange
+  rates add up roughly on these boards (the heroes' switches sum to their cost), but a mat with, say,
+  4 fights and 40 piles at once was not measured.
+- Each envelope scene's frame work was measured on the bench's fixture Tokens (`bench_*`,
+  `fixture_*`); shipped Tokens with their own art, statuses or rules were not.
