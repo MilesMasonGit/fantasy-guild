@@ -99,7 +99,6 @@ class GameStateClass {
 
     updateTime(updates) {
         Object.assign(this.state.time, updates);
-        this.state.time._rev = (this.state.time._rev || 0) + 1;
     }
 
 

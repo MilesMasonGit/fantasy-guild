@@ -223,9 +223,7 @@ export const INITIAL_STATE = {
 
     // === Time ===
     time: {
-        gameTimeMs: 0,
-        lastTickAt: null,
-        isPaused: false
+        gameTimeMs: 0
     },
 
 
@@ -388,6 +386,5 @@ export function validateSaveData(saveData) {
 export function createInitialState() {
     const state = structuredClone(INITIAL_STATE);
     state.meta.createdAt = Date.now();
-    state.time.lastTickAt = Date.now();
     return state;
 }
