@@ -219,6 +219,12 @@ export const UI_EVENTS = Object.freeze({
      * let go. Payload: `{ text }`.
      */
     UI_SCREEN_CALLOUT: 'ui:screen_callout',
+    /**
+     * Play one of the mat's effects on one Token, for the eye only: the QA panel's effect buttons
+     * and the Region settle. Payload: `{ instanceId, fx, ...that effect's options }`
+     * (`tokenFx.js`).
+     */
+    UI_TOKEN_FX: 'ui:token_fx',
     /** Payload: `{ questId }`. */
     TUTORIAL_AIDE_HOVER: 'tutorial_aide:hover',
     /** Payload: none. */

@@ -8,7 +8,7 @@ export const DRAW_SWITCHES = [
     'rings', 'bubbles', 'alerts', 'speech', 'tooltips',
     'heroAnim', 'enemyAnim', 'walkDraw', 'itemFlight',
     'notifications', 'dock', 'drawers',
-    'spriteFx', 'background', 'terrain', 'particles', 'spawnMotion',
+    'spriteFx', 'background', 'terrain', 'particles', 'spawnMotion', 'tokenFx', 'matFx',
     'ambientWater', 'ambientGust', 'ambientLava', 'ambientParticles', 'ambientBirds', 'ambientClouds'
 ];
 

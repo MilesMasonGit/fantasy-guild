@@ -22,7 +22,7 @@
 export const SPRITE_FX_DIR = '_gen/sprite-fx';
 
 /** Bump to make every machine regenerate everything on its next start. */
-export const SPRITE_FX_VERSION = 3;
+export const SPRITE_FX_VERSION = 4;
 
 /**
  * The outline colours, as RGB. `work` is `--color-gi-success` (#09b554);
@@ -91,9 +91,44 @@ export const SKIPPED_DIRS = Object.freeze(['archive', 'audio', 'backgrounds', 'm
 export const MAX_SILHOUETTE_PX = 512;
 export const MAX_OUTLINE_PX = 512;
 
+/**
+ * Solid-colour copies of a mat sprite, for the mat's flashes (a hit's white, a rare find's gold, a
+ * heal's green): the art's own shape, every pixel one colour, at the art's own size (a sheet keeps
+ * its grid). RGB.
+ */
+export const TINT_COLOURS = Object.freeze({
+    white: [255, 255, 255],
+    gold: [255, 214, 90],
+    green: [74, 222, 128]
+});
+
+/**
+ * Pixel dissolve: the art in its own colours with only this share (%) of its pixels kept, on a
+ * checkerboard of art pixels. Each smaller share keeps a subset of the larger one's pixels, so a
+ * dissolve only ever takes pixels away (100 → 50 → 25 → gone).
+ */
+export const DITHER_STEPS = Object.freeze([50, 25]);
+
+/**
+ * Which sprites get dithered copies: only what a dissolve plays on (a beaten enemy, loot sliding
+ * into its pile). Full-colour copies weigh far more than the one-colour ones.
+ */
+export function isDissolved(rel) {
+    return /^assets\/(enemies|items)\//i.test(rel);
+}
+
+/** Whether art pixel (x, y) survives at `share` % ({@link DITHER_STEPS}). */
+export function ditherKeeps(x, y, share) {
+    if (share >= 100) return true;
+    if (share >= 50) return (x + y) % 2 === 0;
+    return x % 2 === 0 && y % 2 === 0;
+}
+
 /** Folder names, relative to `SPRITE_FX_DIR`. */
 export const silhouetteFolder = () => 'sil';
 export const outlineFolder = (colour) => `ol-${colour}`;
+export const tintFolder = (colour) => `tint-${colour}`;
+export const ditherFolder = (share) => `dither-${share}`;
 
 /**
  * The hard shadow's offset, in whole screen pixels: 2 art pixels, where one

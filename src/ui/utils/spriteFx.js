@@ -2,7 +2,7 @@
 import { useSyncExternalStore } from 'react';
 import { isDrawn } from '../dev/perf/drawSwitches.js';
 import {
-    SPRITE_FX_DIR, shadowScreenPx, outlineFolder, silhouetteFolder
+    SPRITE_FX_DIR, shadowScreenPx, outlineFolder, silhouetteFolder, tintFolder, ditherFolder, isDissolved
 } from '../../config/spriteFx.js';
 
 /**
@@ -148,6 +148,28 @@ export function sheetOutlineLayer(src, colour, size) {
         cols: entry.cols,
         rows: entry.rows
     };
+}
+
+/**
+ * The generated solid-colour copy of a mat sprite (or sheet: same grid, same size) in `colour`
+ * (a `TINT_COLOURS` name), or null where the generator made none.
+ */
+export function tintUrl(src, colour) {
+    if (!isDrawn('spriteFx')) return null;
+    const entry = spriteFxEntry(src);
+    if (!entry || !entry.outlined || !colour) return null;
+    return url(tintFolder(colour), entry.key);
+}
+
+/**
+ * The generated dithered copy of a mat sprite (or sheet), `share` % of its pixels kept
+ * (`DITHER_STEPS`), or null where the generator made none.
+ */
+export function ditherUrl(src, share) {
+    if (!isDrawn('spriteFx')) return null;
+    const entry = spriteFxEntry(src);
+    if (!entry || !entry.outlined || !share || !isDissolved(entry.key)) return null;
+    return url(ditherFolder(share), entry.key);
 }
 
 /** The background position of frame (`col`, `row`) in an outline sheet of `cell`-px cells. */

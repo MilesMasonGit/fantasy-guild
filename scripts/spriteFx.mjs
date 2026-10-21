@@ -18,6 +18,11 @@
 //                                    every side; a sprite sheet pads every
 //                                    frame cell by 1, so art touching a
 //                                    frame's edge keeps its ring)
+//   tint-<colour>/<path>             the art's shape in one solid colour, at
+//                                    its own size (mat sprites only)
+//   dither-<share>/<path>            the art in its own colours with only
+//                                    that share of its pixels, checkerboarded
+//                                    (enemies and items only)
 //   manifest.json                    what exists, and each source's hash
 import fs from 'fs';
 import path from 'path';
@@ -26,9 +31,9 @@ import { fork } from 'child_process';
 import { fileURLToPath, pathToFileURL } from 'url';
 import sharp from 'sharp';
 import {
-    SPRITE_FX_DIR, SPRITE_FX_VERSION, OUTLINE_COLOURS,
+    SPRITE_FX_DIR, SPRITE_FX_VERSION, OUTLINE_COLOURS, TINT_COLOURS, DITHER_STEPS,
     sheetGridOf, isOutlined, SKIPPED_DIRS, MAX_SILHOUETTE_PX, MAX_OUTLINE_PX,
-    silhouetteFolder, outlineFolder
+    silhouetteFolder, outlineFolder, tintFolder, ditherFolder, ditherKeeps, isDissolved
 } from '../src/config/spriteFx.js';
 
 const SCRIPT_FILE = fileURLToPath(import.meta.url);
@@ -92,6 +97,17 @@ export function outlineMask(mask, w, h, { grid = null } = {}) {
     return { mask: out, width: W, height: H };
 }
 
+/** The art with only the pixels `ditherKeeps` keeps at `share` %, the rest clear. w×h×4 bytes. */
+export function ditherRgba(rgba, w, h, share) {
+    const out = Buffer.from(rgba);
+    for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+            if (!ditherKeeps(x, y, share)) out[(y * w + x) * 4 + 3] = 0;
+        }
+    }
+    return out;
+}
+
 /** A mask filled with one colour, opaque. W×H×4 bytes. */
 export function colourRgba(mask, W, H, [cr, cg, cb]) {
     const out = Buffer.alloc(W * H * 4);
@@ -135,11 +151,19 @@ const writePng = (file, rgba, width, height) => {
         .toFile(file);
 };
 
+/** The art's own colours (a dithered copy): a full-colour PNG. */
+const writeArtPng = (file, rgba, width, height) => {
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    return sharp(rgba, { raw: { width, height, channels: 4 } }).png({ compressionLevel: 9 }).toFile(file);
+};
+
 /** Every output file one source makes, relative to the output folder. */
 function outputsOf(rel, entry) {
     const files = [`${silhouetteFolder()}/${rel}`];
     if (entry?.outlined) {
         for (const colour of Object.keys(OUTLINE_COLOURS)) files.push(`${outlineFolder(colour)}/${rel}`);
+        for (const colour of Object.keys(TINT_COLOURS)) files.push(`${tintFolder(colour)}/${rel}`);
+        if (isDissolved(rel)) for (const share of DITHER_STEPS) files.push(`${ditherFolder(share)}/${rel}`);
     }
     return files;
 }
@@ -163,6 +187,12 @@ async function generateOne(root, outDir, rel, hash) {
                 colourRgba(ring.mask, ring.width, ring.height, rgb),
                 ring.width, ring.height
             ));
+        }
+        for (const [colour, rgb] of Object.entries(TINT_COLOURS)) {
+            jobs.push(writePng(path.join(outDir, tintFolder(colour), rel), colourRgba(mask, w, h, rgb), w, h));
+        }
+        for (const share of isDissolved(rel) ? DITHER_STEPS : []) {
+            jobs.push(writeArtPng(path.join(outDir, ditherFolder(share), rel), ditherRgba(data, w, h, share), w, h));
         }
     }
     await Promise.all(jobs);
