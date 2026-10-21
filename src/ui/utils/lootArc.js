@@ -1,4 +1,4 @@
-import { FX_FRAME_MS, heldPoses, prefersReducedMotion } from '../components/board/fx/pixelSteps.js';
+import { FX_FRAME_MS, arcPoses, heldPoses, prefersReducedMotion } from '../components/board/fx/pixelSteps.js';
 import { afterimages, playIn } from '../components/board/fx/tokenFx.js';
 import { spriteOf, makeCopy } from '../components/board/fx/spriteCopy.js';
 
@@ -26,18 +26,8 @@ const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
  * @param {number} unit mat units per art pixel
  */
 export function lootHopPoses(fx, fy, unit = 1) {
-    const ax = fx / unit;
-    const ay = fy / unit;
-    const peak = clamp(Math.round(Math.hypot(ax, ay) / 3), 6, 18);
-    const poses = [];
-    for (let i = 0; i < HOP_POSES; i++) {
-        const k = i / HOP_POSES;
-        const lift = Math.round(peak * 4 * k * (1 - k));
-        poses.push({ ms: HOP_POSE_MS, x: ax * (1 - k), y: ay * (1 - k) - lift, lift });
-    }
-    poses.push({ ms: HOP_POSE_MS, x: 0, y: 0, lift: 0 });
-    poses.push({ ms: HOP_POSE_MS, x: 0, y: -1, lift: 1 });
-    return poses;
+    const peak = clamp(Math.round(Math.hypot(fx / unit, fy / unit) / 3), 6, 18);
+    return arcPoses(fx, fy, { unit, peak, steps: HOP_POSES, ms: HOP_POSE_MS });
 }
 
 /**

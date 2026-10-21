@@ -369,8 +369,10 @@ export const MatToken = React.memo(function MatToken({
         const dx = from.x - px;
         const dy = from.y - py;
         if (!Number.isFinite(dx) || !Number.isFinite(dy)) return;
-        playSpawn(artRef.current, dx, dy);
-        playSpawn(overlayRef.current, dx, dy);
+        // Over the top of the spawner's picture: half its drawn size above its point.
+        const over = from.typeId ? tokenSizeFor(TOKEN_SURFACE.BOARD, from.typeId, artScale) / 2 : 0;
+        playSpawn(artRef.current, dx, dy, { unit: artScale, over });
+        playSpawn(overlayRef.current, dx, dy, { unit: artScale, over });
     }, []);   // eslint-disable-line react-hooks/exhaustive-deps
 
     const token = React.useMemo(

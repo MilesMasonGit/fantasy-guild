@@ -9,6 +9,7 @@ import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { HeroBubbleLayer } from '../ui/components/board/HeroBubbleLayer.jsx';
 import { DEPLETED_TTL_MS } from '../ui/components/board/heroSpeech.js';
 import { CalloutLayer } from '../ui/components/board/CalloutLayer.jsx';
+import { SPAWN_MS } from '../ui/components/board/spawnMotion.js';
 import { columnPlace, STACK_GAP_PX } from '../ui/components/board/speechColumns.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 
@@ -53,8 +54,10 @@ const pointOf = (el) => {
 const heroStack = (c, heroId) => c.querySelector(`[data-hero-bubble-stack="${heroId}"]`);
 const calloutGroup = (c) => c.querySelector('[data-callout]').parentElement;
 const mat = (heroes) => h('div', null, h(CalloutLayer), h(HeroBubbleLayer, { heroes }));
+/** A spawn's callout, said as the new Token lands (`SPAWN_MS` later). */
 const spawnFrom = (token) => act(() => {
     EventBus.publish(BOARD_EVENTS.TOKEN_SPAWNED, { spawnerId: token.id, instanceId: 'tok_new', typeId: 'x', name: 'Oak Tree' });
+    vi.advanceTimersByTime(SPAWN_MS);
 });
 /**
  * The hero says something: they used a Token up (a moment, up for `DEPLETED_TTL_MS`). A

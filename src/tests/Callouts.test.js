@@ -11,6 +11,7 @@ import * as Charges from '../systems/board/Charges.js';
 import { HeroBubbleLayer } from '../ui/components/board/HeroBubbleLayer.jsx';
 import { CalloutLayer } from '../ui/components/board/CalloutLayer.jsx';
 import { CALLOUT_MS, calloutText, addCallout, MAX_PER_ANCHOR, MAX_TOTAL } from '../ui/components/board/callouts.js';
+import { SPAWN_MS } from '../ui/components/board/spawnMotion.js';
 import { momentText, DEPLETED_TTL_MS } from '../ui/components/board/heroSpeech.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 
@@ -41,12 +42,15 @@ const stackOf = (container, heroId) =>
     [...container.querySelectorAll(`[data-hero-bubble-stack="${heroId}"] [data-hero-bubble]`)].map(n => n.textContent);
 
 describe('the spawn callout', () => {
-    it('says "! Spawned {name}" over the spawner, and fades on its own', () => {
+    it('says "! Spawned {name}" over the spawner as the new Token lands, and fades on its own', () => {
         const forest = placeAt('fixture_producer', 600, 500);
         const { container } = render(h(CalloutLayer));
         act(() => {
             EventBus.publish(BOARD_EVENTS.TOKEN_SPAWNED, { spawnerId: forest.id, instanceId: 'tok_new', typeId: 'x', name: 'Oak Tree' });
         });
+        // Not over the hop out of the spawner (T-155): it waits for the landing.
+        expect(container.querySelector('[data-callout]')).toBeNull();
+        act(() => { vi.advanceTimersByTime(SPAWN_MS); });
         const bubble = container.querySelector('[data-callout]');
         expect(bubble.textContent).toBe('! Spawned Oak Tree');
         expect(calloutText.spawned('Oak Tree')).toBe('! Spawned Oak Tree');
@@ -60,6 +64,7 @@ describe('the spawn callout', () => {
         act(() => {
             EventBus.publish(BOARD_EVENTS.TOKEN_SPAWNED, { spawnerId: forest.id, instanceId: 'tok_new', typeId: 'x', name: 'Oak Tree' });
         });
+        act(() => { vi.advanceTimersByTime(SPAWN_MS); });
         const group = container.querySelector('[data-callout]').parentElement;
         expect(group.style.transform).toContain('translate(600px');
     });

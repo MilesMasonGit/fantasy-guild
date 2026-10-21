@@ -10,6 +10,7 @@ import { CALLOUT_MS, addCallout, anchorKeyOf, calloutText, dueAgain } from './ca
 import { getAllItems } from '../../../config/registries/itemRegistry.js';
 import { toolNeedPhrase } from '../../../config/registries/toolKinds.js';
 import { columnPlace, heroColumnAt, heroColumnsVersion, subscribeHeroColumns } from './speechColumns.js';
+import { SPAWN_MS } from './spawnMotion.js';
 
 /** Clear air between the top of a Token's art and the bottom of its callout's tail, in mat units. */
 const GAP_PX = 6;
@@ -52,8 +53,14 @@ export const CalloutLayer = memo(function CalloutLayer() {
             }, CALLOUT_MS));
         };
         const unsubs = [
+            // Said as the new Token lands: over the spawner, the callout would hide its hop out of it.
             EventBus.subscribe(BOARD_EVENTS.TOKEN_SPAWNED, (p) => {
-                if (p?.spawnerId && p.name) say({ anchorId: p.spawnerId, text: calloutText.spawned(p.name) });
+                if (!p?.spawnerId || !p.name) return;
+                const id = nextId++;
+                pending.set(id, setTimeout(() => {
+                    pending.delete(id);
+                    say({ anchorId: p.spawnerId, text: calloutText.spawned(p.name) });
+                }, SPAWN_MS));
             }, UI_LISTENER),
             EventBus.subscribe(BOARD_EVENTS.EFFECT_FIRED, (p) => {
                 if (p?.instanceId && p.title) say({ anchorId: p.instanceId, text: calloutText.effect(p.title) });

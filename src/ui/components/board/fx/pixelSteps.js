@@ -57,6 +57,33 @@ export function playPoses(el, poses, { unit = 1, rest = null, delay = 0, fill = 
     return el.animate(keyframes, { duration, delay, fill });
 }
 
+/**
+ * A hop up and over, as held poses in art pixels from where it lands: from (`fx`, `fy`) mat units
+ * away, along a straight line lifted into an arc (`peak` art pixels at the middle), then the impact
+ * and a one-pixel bounce. Each pose says how high it is off the ground there (`lift`).
+ * @param {number} fx mat units from the landing spot back to the start, across
+ * @param {number} fy the same, down
+ * @param {object} [options]
+ * @param {number} [options.unit] mat units per art pixel
+ * @param {number} [options.peak] how high the arc rises, art pixels
+ * @param {number} [options.steps] poses in the air
+ * @param {number} [options.ms] how long each pose holds
+ * @returns {Array<{ms: number, x: number, y: number, lift: number}>}
+ */
+export function arcPoses(fx, fy, { unit = 1, peak = 8, steps = 12, ms = 40 } = {}) {
+    const ax = fx / unit;
+    const ay = fy / unit;
+    const poses = [];
+    for (let i = 0; i < steps; i++) {
+        const k = i / steps;
+        const lift = Math.round(peak * 4 * k * (1 - k));
+        poses.push({ ms, x: ax * (1 - k), y: ay * (1 - k) - lift, lift });
+    }
+    poses.push({ ms, x: 0, y: 0, lift: 0 });
+    poses.push({ ms, x: 0, y: -1, lift: 1 });
+    return poses;
+}
+
 /** Whether the player asked for less motion. */
 export function prefersReducedMotion() {
     try {

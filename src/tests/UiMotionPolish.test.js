@@ -87,18 +87,25 @@ describe('spawn pop-out', () => {
     }
     const forChild = (child) => animateCalls.filter(c => c.el.getAttribute('data-token-id') === child.id);
 
-    it('plays from the spawner toward the Token spot, on both boxes', async () => {
+    it('hops from the spawner up over it and lands on the Token spot, on both boxes (T-155)', async () => {
         const { child } = await spawnOne();
         const calls = forChild(child);
         expect(calls).toHaveLength(2);
-        const [first, last] = calls[0].keyframes;
-        // The spawner stands 400 mat units left of the new spot.
-        expect(first.transform).toContain('translate(-400px, 0px)');
-        expect(last.transform).toContain('translate(0px, 0px)');
+        const k = calls[0].keyframes;
+        // The spawner stands 400 mat units left of the new spot (whole art pixels of 2 units).
+        expect(k[0].transform).toBe('translate(-400px, 0px)');
+        expect(k.at(-1).transform).toBe('translate(0px, 0px)');
+        // Up and over: well above the line between them in the middle of the hop.
+        const mid = /translate\((-?[\d.]+)px, (-?[\d.]+)px\)/.exec(k[Math.floor(k.length / 2) - 1].transform);
+        expect(Number(mid[2])).toBeLessThan(-40);
         expect(calls[0].options.duration).toBe(SPAWN_MS);
         expect(calls[0].options.composite).toBe('add');
-        // Transform only: nothing that moves layout.
-        expect(Object.keys(first)).toEqual(['transform']);
+        // Transform only, stepped, at its own size: nothing that moves layout, no scale.
+        for (const f of k) {
+            expect(Object.keys(f).filter(p => p !== 'offset' && p !== 'easing')).toEqual(['transform']);
+            expect(f.transform).not.toMatch(/scale/);
+        }
+        expect(k.slice(0, -1).every(f => f.easing === 'steps(1, end)')).toBe(true);
     });
 
     it('does not play when the Token was already on the mat', () => {
