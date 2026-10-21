@@ -91,7 +91,7 @@ switched off together with the `alerts` draw switch.
 | C1 | ! Spawned {token} | A spawner makes a Token, shown over the **spawner**. The Guild Hall says it for a new quest ("! Spawned quest" / "! Spawned tutorial quest"). Not shown during a catch-up. |
 | C2 | {effect name} | A named effect fires on a Token (a bonus drop, a status landing), shown over that Token. The wording is the effect's own title. |
 | C3 | {reason} | A drop the mat refused: the rule's reason (or "Drop Rejected: {token}") at the spot you aimed at. The Guild Hall dragged off the mat says "Guild Hall cannot be removed from the playmat." over the Hall. |
-| C4 | Needs {Pickaxe} | A hero's flag passed this Token over because the hero holds no tool of the kind it needs (or not a good enough one: "Needs Iron Pickaxe or better"), shown over the **Token**. Said when the flag looks, then at most once every 8 seconds while a flag keeps passing it over (an idle hero's flag looks every second). |
+| C4 | Needs {Pickaxe} | A hero's flag passed this Token over because the hero holds no tool of the kind it needs (or not a good enough one: "Needs Iron Pickaxe or better"), shown over the **Token**: only the one the hero would have worked (the first passed over for want of a tool, nearest at the same priority), so a cluster of veins says it once. Said when the flag looks, then at most once every 8 seconds per Token while a flag keeps passing it over (an idle hero's flag looks every second). |
 
 The "-1" / "+50" charge number is not a callout: it is a small number rising from the Token's
 charges corner.

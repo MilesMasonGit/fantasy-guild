@@ -305,6 +305,17 @@ describe('choosing work: the hero does other allowed work, and the Token says wh
         expect(vein.alert ?? null).toBeNull();
     });
 
+    it('only the Token the hero would have worked says it: one bubble per look, however many veins', () => {
+        const hero = addHero();
+        const near = put('fx_vein', VEIN);
+        const far = put('fx_vein', TREE);
+        Flags.plant(hero.id, { x: 420, y: 400 });
+        expect(Flags.skipsOf(near.id)).toEqual([{ heroId: hero.id, reason: ALERT.NO_TOOL }]);
+        expect(Flags.skipsOf(far.id)).toEqual([{ heroId: hero.id, reason: ALERT.NO_TOOL }]);
+        expect(heard).toHaveLength(1);
+        expect([near.id, far.id]).toContain(heard[0].instanceId);
+    });
+
     it('an idle hero takes the vein as soon as a pickaxe is in hand', () => {
         const hero = addHero();
         // In the Bank already: taking it up is the only change, and it alone wakes the flag.

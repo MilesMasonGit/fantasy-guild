@@ -357,13 +357,19 @@ function recordSkips(r, heroId, skips) {
     clearSkips(r, heroId);
     if (!skips.length) return;
     const ids = [];
+    let toolSaid = false;
     for (const { instanceId, reason } of skips) {
         if (!instanceId) continue;
         const list = r.skips.get(instanceId) || [];
         list.push({ heroId, reason });
         r.skips.set(instanceId, list);
         ids.push(instanceId);
-        if (reason === ALERT.NO_TOOL) announceToolNeeded(instanceId, heroId);
+        // Only the Token the hero would have worked says it: the first passed over for want of a
+        // tool, in the flag's order. Three veins side by side would otherwise say it three times.
+        if (reason === ALERT.NO_TOOL && !toolSaid) {
+            toolSaid = true;
+            announceToolNeeded(instanceId, heroId);
+        }
     }
     r.skipsByHero.set(heroId, ids);
 }
