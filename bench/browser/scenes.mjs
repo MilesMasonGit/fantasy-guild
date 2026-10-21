@@ -181,6 +181,7 @@ const STRESS_IDS = { quiet: 'S1', realistic: 'S2', torture: 'S3', cap128: 'C128'
 //   floor<N>    cap128 with N loot piles resting on the floor: auto-collect off and the game's own
 //               pile cap (`gameplay.maxItemStacks`, 40 shipped) set to N, the floor filled to it
 //               first; the board's own drops then keep it at N, the oldest pile flying to the Bank
+//   floorstill<N>  the same with the piles' hover animation stopped: what the hover costs
 //   notify<N>   cap128 with N notifications a minute on top of the board's own: every tenth a
 //               banner (the oldest on screen dismissed when three show, as a player clicking), the
 //               rest item flows into the Bank (`InventoryManager.addItem`), which the item stubs
@@ -259,6 +260,20 @@ async function floorPiles(page, n) {
     return `auto-collect off, maxItemStacks ${n}, ${made} piles scattered (then the board's own drops)`;
 }
 
+/**
+ * floorstill<N>: the same floor with the piles' hover (`gi-sprite-hover`, a stepped transform on
+ * each pile's picture, `TokenSprite.jsx`) stopped by a page style: what the hover itself costs.
+ */
+async function stillPiles(page) {
+    await page.evaluate(`(() => {
+        const st = document.createElement('style');
+        st.textContent = '.gi-sprite-hover { animation: none !important; }';
+        document.head.appendChild(st);
+        return true;
+    })()`);
+    return 'the piles hover animation stopped (a page style)';
+}
+
 /** notify<N>: N notifications a minute, every tenth a banner. */
 async function notifyRate(page, n) {
     await startSampler(page);
@@ -300,9 +315,15 @@ export function sceneFor(id) {
             ui: async (page) => { await startSampler(page); return null; }, probe: ENVELOPE_PROBE
         };
     }
-    m = /^floor(\d+)$/.exec(key);
+    m = /^floor(still)?(\d+)$/.exec(key);
     if (m) {
-        const n = Number(m[1]);
+        const n = Number(m[2]);
+        if (m[1]) {
+            return {
+                id: `floorstill${n}`, name: `cap128, ${n} loot piles, not hovering`, stress: 'cap128', probe: ENVELOPE_PROBE,
+                ui: async (page) => `${await floorPiles(page, n)}; ${await stillPiles(page)}`
+            };
+        }
         return { id: `floor${n}`, name: `cap128, ${n} loot piles on the floor`, stress: 'cap128', ui: (page) => floorPiles(page, n), probe: ENVELOPE_PROBE };
     }
     m = /^notify(\d+)$/.exec(key);

@@ -22,7 +22,7 @@ export const SCENE_IDS = ['S1', 'S2', 'S3', 'bank', 'shop', 'notify', 'loot', 'i
  */
 export const EXTRA_SCENE_IDS = ['cap128', 'camp128', 'cap256', 'hall', 'atlas'];
 /** The Performance Envelope's scenes, any number (`bench/browser/scenes.mjs`, `sceneFor`). */
-export const ENVELOPE_SCENE = /^(cap|heroes|enemies|fights|floor|notify)\d+$/;
+export const ENVELOPE_SCENE = /^(cap|heroes|enemies|fights|floor|floorstill|notify)\d+$/;
 
 export const DEFAULTS = {
     settleS: 20,
