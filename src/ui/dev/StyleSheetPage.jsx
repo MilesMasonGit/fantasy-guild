@@ -572,7 +572,7 @@ export const KIT_SECTIONS = [
     },
     {
         id: 'shine', title: 'Shine', status: 'unapproved', source: 'ui-shine (src/tailwind.css); Upgrade and Settle use it',
-        rule: 'Main-action buttons only: one fast, stepped diagonal glint across the button face when hovered, once per hover. It passes under the text and icons, never over the art. No glint with reduced motion.',
+        rule: 'Main-action buttons only: one fast, stepped, solid diagonal glint across the whole button when hovered, once per hover, over its text and icons. No glint with reduced motion.',
         Demo: () => (
             <div className="flex flex-wrap items-start gap-6">
                 <KitMainButton label="Hover me" cost={[{ itemId: SAMPLE_ITEMS[0], have: 10, need: 10 }]} />

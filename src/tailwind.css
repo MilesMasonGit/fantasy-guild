@@ -660,9 +660,8 @@
   .gi-bar-slide-older, .gi-bar-slide-newer { animation: none; }
 }
 
-/* The shine on a main-action button: one hard-edged diagonal band steps across the button's face
-   once per hover. ⚠️ The band is a negative-z layer inside the button's own stacking context
-   (`isolation`), so it paints over the button's background but under its text and icons, and
+/* The shine on a main-action button: one solid, hard-edged diagonal band steps across the whole
+   button once per hover, over its text and icons (owner: the glint covers the art too).
    `overflow: hidden` keeps it on the face. No blur, no scaling. */
 .ui-shine {
   position: relative;
@@ -674,11 +673,11 @@
   content: '';
   position: absolute;
   inset: 0;
-  z-index: -1;
+  z-index: 1;
   pointer-events: none;
   opacity: 0;
   transform: translateX(-100%);
-  background: linear-gradient(110deg, transparent 0 40%, rgba(255, 255, 255, 0.4) 40% 60%, transparent 60% 100%);
+  background: linear-gradient(110deg, transparent 0 38%, rgba(255, 255, 255, 0.75) 38% 62%, transparent 62% 100%);
 }
 
 @keyframes ui-shine-sweep {
