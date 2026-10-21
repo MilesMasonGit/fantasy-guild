@@ -1,9 +1,6 @@
 /**
- * Ultra-smooth physics ballistic arc animation powered by Web Animations API (WAAPI).
- *
- * Rather than relying on multi-segment CSS keyframes that reapply curve tangents
- * at intermediate stops (which causes stepping/stuttering), this computes a densely
- * sampled mathematical projectile trajectory running natively on the GPU compositor.
+ * A collected sprite's short slide in, by the Web Animations API: three keyframes, fading in
+ * over the first eighth and easing out along a straight line from its source offset to rest.
  *
  * ⚠️ The keyframes carry only the flight's offset, never the element's own centring: the
  * sprite centres itself with the CSS `translate` property (Tailwind's `-translate-x-1/2`),

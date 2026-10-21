@@ -199,7 +199,7 @@ describe('keyframes in a strike loop, and reduced motion', () => {
         const lastMove = k[k.length - 2];
         expect(lastMove.offset).toBeCloseTo(anim.ms / HIT_PERIOD_MS, 5);
         expect(k[k.length - 1].offset).toBe(1);
-        expect(k[k.length - 1].transform).toBe('translate(0%, 0%) rotate(0deg) scale(1, 1)');
+        expect(k[k.length - 1].transform).toBe('translate(0%, 0%) rotate(0deg)');
     });
 
     it('reduced motion: work plays nothing; combat keeps only its flash', () => {
@@ -507,5 +507,19 @@ describe('spawn in place glows like a transform (FB-51)', () => {
         const result = EffectActions.spawn(spawnOf(PLACEMENT.NEAREST_FREE), { self: bearer.id });
         expect(result.replacedBearer).toBe(false);
         expect(TokenGlows.glowOf(result.instanceId)).toBeNull();
+    });
+});
+
+describe('hit reactions never scale the pixel art', () => {
+    it('no animation names a scale, and no keyframe carries one', () => {
+        for (const [name, anim] of Object.entries(HIT_ANIMATIONS)) {
+            for (const f of anim.frames) {
+                expect(f, name).not.toHaveProperty('sx');
+                expect(f, name).not.toHaveProperty('sy');
+            }
+            for (const k of buildHitKeyframes(anim, { periodMs: HIT_PERIOD_MS })) {
+                expect(k.transform, name).not.toMatch(/scale/);
+            }
+        }
     });
 });
