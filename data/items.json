@@ -926,16 +926,15 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "hand",
-    "value": null,
-    "valueSource": null,
+    "value": 28,
+    "valueSource": "recipe_copper_pickaxe",
     "autoSyncId": true,
     "id": "item_copper_pickaxe",
-    "effects": [
-      {
-        "effectId": "effect_capability",
-        "scale": 1
-      }
-    ]
+    "tool": {
+      "kind": "pickaxe",
+      "tier": 1,
+      "starter": true
+    }
   },
   "map_forest": {
     "id": "map_forest",
@@ -1213,6 +1212,128 @@
           "count": 1
         }
       ]
+    }
+  },
+  "item_iron_pickaxe": {
+    "name": "Iron Pickaxe",
+    "description": "",
+    "type": "tool",
+    "sprite": "i_pick_iron",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_iron_pickaxe",
+    "tool": {
+      "kind": "pickaxe",
+      "tier": 2
+    }
+  },
+  "item_mythril_pickaxe": {
+    "name": "Mythril Pickaxe",
+    "description": "",
+    "type": "tool",
+    "sprite": "i_pick_myth",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_mythril_pickaxe",
+    "tool": {
+      "kind": "pickaxe",
+      "tier": 3
+    }
+  },
+  "item_adamantium_pickaxe": {
+    "name": "Adamantium Pickaxe",
+    "description": "",
+    "type": "tool",
+    "sprite": "i_pick_addy",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_adamantium_pickaxe",
+    "tool": {
+      "kind": "pickaxe",
+      "tier": 4
+    }
+  },
+  "item_darkmetal_pickaxe": {
+    "name": "Darkmetal Pickaxe",
+    "description": "",
+    "type": "tool",
+    "sprite": "i_pick_dark",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_darkmetal_pickaxe",
+    "tool": {
+      "kind": "pickaxe",
+      "tier": 5
+    }
+  },
+  "item_copper_woodaxe": {
+    "name": "Copper Woodaxe",
+    "description": "",
+    "type": "tool",
+    "sprite": "i_woodaxe_copper",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": 7,
+    "valueSource": "recipe_mtozw3la",
+    "autoSyncId": true,
+    "id": "item_copper_woodaxe",
+    "tool": {
+      "kind": "woodaxe",
+      "tier": 1,
+      "starter": true
+    }
+  },
+  "item_fishing_rod": {
+    "name": "Fishing Rod",
+    "description": "",
+    "type": "tool",
+    "sprite": "i_rod_wood",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_fishing_rod",
+    "tool": {
+      "kind": "fishing_rod",
+      "tier": 1,
+      "starter": true
+    }
+  },
+  "item_copper_sickle": {
+    "name": "Copper Sickle",
+    "description": "",
+    "type": "tool",
+    "sprite": "i_chisel_copper",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_copper_sickle",
+    "tool": {
+      "kind": "sickle",
+      "tier": 1,
+      "starter": true
     }
   }
 }
