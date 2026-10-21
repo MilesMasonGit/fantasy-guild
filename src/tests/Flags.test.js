@@ -52,7 +52,7 @@ registerTokenTypes({
         config: {
             skill: 'forestry', skillRequired: 1, cycleTimeMs: 12000, xp: 1,
             inputs: [{ itemId: 'item_coal', quantity: 2 }],
-            outputs: [{ itemId: 'item_glowcap', quantity: 1, chance: 100 }]
+            outputs: [{ itemId: 'fixture_glowcap', quantity: 1, chance: 100 }]
         }
     }
 });

@@ -69,8 +69,8 @@ function runShortage(woodPerTick, durationMs) {
         BoardRunner.tick(100);
     }
 
-    const shallowCompletions = SpriteLayer.countOnBoard('item_glowcap');
-    const deepCompletions = SpriteLayer.countOnBoard('item_spider_silk');
+    const shallowCompletions = SpriteLayer.countOnBoard('fixture_glowcap');
+    const deepCompletions = SpriteLayer.countOnBoard('fixture_spider_silk');
 
     return {
         shallowCompletions,
@@ -156,6 +156,6 @@ describe('Shortfall is per ITEM, so throttling cascades without cascade logic', 
         for (let t = 0; t < 20000; t += 100) BoardRunner.tick(100);
 
         expect(SpriteLayer.countOnBoard('fixture_copper_ore')).toBeGreaterThan(0);
-        expect(SpriteLayer.countOnBoard('item_glowcap')).toBe(0);
+        expect(SpriteLayer.countOnBoard('fixture_glowcap')).toBe(0);
     });
 });

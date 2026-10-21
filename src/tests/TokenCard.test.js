@@ -161,7 +161,7 @@ describe('the blocks, top to bottom, per kind', () => {
         expect(ids(model)).toEqual([CARD_BLOCK.NAME, CARD_BLOCK.WORK, CARD_BLOCK.CYCLE, CARD_BLOCK.RECIPE]);
         const recipe = model.blocks[3];
         expect(recipe.needs.map(n => n.itemId)).toEqual(['item_coal']);
-        expect(recipe.makes.map(m => m.itemId)).toEqual(['item_spider_silk']);
+        expect(recipe.makes.map(m => m.itemId)).toEqual(['fixture_spider_silk']);
         expect(recipe.tools.map(t => t.typeId)).toEqual(['fixture_context_a']);
         expect(recipe.change).toEqual({ label: 'Change recipe', chosen: true });
 
