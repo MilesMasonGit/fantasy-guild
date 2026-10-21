@@ -19,6 +19,7 @@ import { questRing, RING_COLOUR } from '../ui/components/board/ringRow.js';
 import { questNeedLine, questRewardsShown } from '../ui/components/board/QuestTooltip.jsx';
 import { TUTORIAL_TEXT } from '../systems/quests/tutorialText.js';
 import { registerItems, getAllItems } from '../config/registries/itemRegistry.js';
+import { isMapItem } from '../systems/atlas/mapItems.js';
 import {
     activeTutorialQuest, TUTORIAL_AIDE_EVENTS
 } from '../ui/components/base/TutorialAideOverlay.jsx';
@@ -198,14 +199,19 @@ describe('hover to read (B6.2)', () => {
 
     it('the first-maps step shows the maps the registry holds now, and only its items with none', () => {
         const step = { tutorial: true, firstMaps: true, rewardItems: [{ itemId: 'item_oak_wood', quantity: 10 }] };
-        const none = questRewardsShown(step);
-        expect(none).toEqual([{ itemId: 'item_oak_wood', quantity: 10 }]);
-        registerItems({ map_ui_test: { id: 'map_ui_test', name: 'Test Map', type: 'map', cartography: { biome: 'forest', points: 4, nodes: [] } } });
+        // ⚠️ The shipped maps are hidden for the case, so it does not move when the owner authors a map.
+        const items = getAllItems();
+        const shippedMaps = Object.fromEntries(Object.entries(items).filter(([, def]) => isMapItem(def)));
+        for (const id of Object.keys(shippedMaps)) delete items[id];
         try {
+            const none = questRewardsShown(step);
+            expect(none).toEqual([{ itemId: 'item_oak_wood', quantity: 10 }]);
+            registerItems({ map_ui_test: { id: 'map_ui_test', name: 'Test Map', type: 'map', cartography: { biome: 'forest', points: 4, nodes: [] } } });
             expect(questRewardsShown(step).map(r => r.itemId)).toEqual(['item_oak_wood', 'map_ui_test']);
             expect(questRewardsShown({ ...step, tutorial: false }).map(r => r.itemId)).toEqual(['item_oak_wood']);
         } finally {
-            delete getAllItems().map_ui_test;
+            delete items.map_ui_test;
+            registerItems(shippedMaps);
         }
     });
 
@@ -222,7 +228,13 @@ describe('click to claim (B6.2, FB-41)', () => {
         const before = SpriteLayer.getSprites().length;
         const onInspectToken = vi.fn();
         const { container } = mount(tokenEl(q, { onInspectToken }));
-        await act(async () => { fireEvent.click(art(container, q)); });
+        // ⚠️ A claimed bounty may also pay a map, drawn on Math.random, once any map is authored: pin the draw to miss so the one sprite is the reward.
+        const random = vi.spyOn(Math, 'random').mockReturnValue(0.99);
+        try {
+            await act(async () => { fireEvent.click(art(container, q)); });
+        } finally {
+            random.mockRestore();
+        }
         expect(BoardState.getTokenById(q.id)).toBeFalsy();
         expect(SpriteLayer.getSprites().length).toBe(before + 1);
         expect(SpriteLayer.getSprites().some(s => s.refId === 'item_oak_wood' || s.itemId === 'item_oak_wood')).toBe(true);
