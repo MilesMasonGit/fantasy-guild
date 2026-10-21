@@ -2,7 +2,7 @@
 // ⚠️ DEV BUILDS ONLY: TestDashboard renders this behind `import.meta.env.DEV && …`.
 
 import { useState } from 'react';
-import { enemies, worked, everyToken, some, playOn, neighbours } from './animationDev.js';
+import { enemies, worked, everyToken, some, playOn, neighbours, dropLootFrom } from './animationDev.js';
 import { floatNumber, spark, knockoutGhost, KNOCKOUT_MS } from '../components/board/fx/matFx.js';
 
 const labelClass = 'ui-text-title font-bold uppercase tracking-wider text-gi-muted mb-1';
@@ -22,6 +22,7 @@ const EFFECTS = [
             return knockoutGhost(t.id);
         }).length
     },
+    { id: 'loot', label: 'Loot hop, ground shadow, afterimages (adds 3 loot)', run: () => dropLootFrom(some(everyToken(), 3)).length },
     { id: 'cycle', label: 'Cycle finished: outline blinks white (worked Tokens)', run: () => playOn(some(worked(), 4), { fx: 'cycle' }) },
     { id: 'transform', label: 'Transform: white outline, 3 frames (3 Tokens)', run: () => playOn(some(everyToken(), 3), { fx: 'transform' }) },
     { id: 'echo', label: 'Rule fired: echo ring (3 Tokens)', run: () => playOn(some(everyToken(), 3), { fx: 'echo' }) },

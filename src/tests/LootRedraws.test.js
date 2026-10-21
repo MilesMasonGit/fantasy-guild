@@ -40,8 +40,9 @@ const redrawn = (before) => Object.fromEntries(ITEMS.map(id => [id, (drawn.get(n
 
 /** The WAAPI calls the floor sprites make: the throw's arc, and the slide into a stack. */
 let animations;
-const slides = () => animations.filter(a => String(a.keyframes?.[1]?.transform).includes('scale(0.6)'));
-const arcs = () => animations.filter(a => !String(a.keyframes?.[1]?.transform).includes('scale(0.6)'));
+const own = () => animations.filter(a => a.el.getAttribute?.('data-item-sprite') === 'true');
+const slides = () => own().filter(a => a.options?.fill === 'forwards');
+const arcs = () => own().filter(a => a.options?.fill !== 'forwards');
 
 const mount = () => render(h(SpriteLayerView));
 const flush = (fn) => act(async () => { fn(); });

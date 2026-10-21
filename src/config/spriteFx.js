@@ -110,6 +110,12 @@ export const TINT_COLOURS = Object.freeze({
 export const DITHER_STEPS = Object.freeze([50, 25]);
 
 /**
+ * The afterimage trail's colour: the dithered steps are also made in this one solid colour, so a
+ * copy trailing a moving sprite is a light speckle, not a second solid silhouette.
+ */
+export const TRAIL_TINT = 'white';
+
+/**
  * Which sprites get dithered copies: only what a dissolve plays on (a beaten enemy, loot sliding
  * into its pile). Full-colour copies weigh far more than the one-colour ones.
  */
@@ -128,7 +134,7 @@ export function ditherKeeps(x, y, share) {
 export const silhouetteFolder = () => 'sil';
 export const outlineFolder = (colour) => `ol-${colour}`;
 export const tintFolder = (colour) => `tint-${colour}`;
-export const ditherFolder = (share) => `dither-${share}`;
+export const ditherFolder = (share, tint = null) => (tint ? `dither-${tint}-${share}` : `dither-${share}`);
 
 /**
  * The hard shadow's offset, in whole screen pixels: 2 art pixels, where one

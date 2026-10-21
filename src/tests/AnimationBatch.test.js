@@ -19,6 +19,7 @@ import { flashTint, afterimages, ringBlink, echoRing } from '../ui/components/bo
 import * as MatFx from '../ui/components/board/fx/matFx.js';
 import { startStrikeChips, CHIP_COUNT } from '../ui/components/board/fx/strikeChips.js';
 import { setDrawingPaused } from '../ui/components/board/frameClock.js';
+import { lootHopPoses, HOP_POSES, playLootArc, playAbsorptionSlide } from '../ui/utils/lootArc.js';
 
 /**
  * The animation batch (T-137): the shared pieces every effect stands on, and each effect's own
@@ -48,9 +49,9 @@ function recordAnimate() {
 }
 
 /** A Token's hit wrapper holding a still sprite, as `TokenHitArt` draws it. */
-function stillWrapper(size = 128) {
+function stillWrapper(size = 128, src = SPRITE) {
     const wrapper = document.createElement('div');
-    wrapper.innerHTML = `<span><span><img src="/${SPRITE}" style="width: ${size}px; height: ${size}px"></span></span>`;
+    wrapper.innerHTML = `<span><span><img src="/${src}" style="width: ${size}px; height: ${size}px"></span></span>`;
     document.body.appendChild(wrapper);
     return wrapper;
 }
@@ -192,11 +193,13 @@ describe('effects on a Token’s art leave nothing behind', () => {
         expect(w.querySelector('[data-fx-copy]')).toBeNull();
     });
 
-    it('afterimage trail: copies under the sprite, where it was one and two poses before', () => {
-        const w = stillWrapper();
+    it('afterimage trail: white speckled copies under the sprite, where it was one and two poses before', () => {
+        const w = stillWrapper(64, ITEM);
         const poses = [{ ms: 60, x: 3 }, { ms: 60, x: 5 }, { ms: 60, x: 4 }, { ms: 60, x: 2 }, { ms: 60, x: 1 }];
-        afterimages(w, poses, { unit: 2, count: 2 });
-        expect(w.firstChild.getAttribute('data-fx-copy')).toBe('white');   // under the art
+        afterimages(w, poses, { unit: 2 });
+        // Under the art: the older (a quarter of the pixels) first, then the nearer (half).
+        expect([...w.children].slice(0, 2).map(c => c.getAttribute('data-fx-copy'))).toEqual(['white-dither-50', 'white-dither-25']);
+        expect(w.querySelector('[data-fx-copy="white-dither-50"]').firstChild.style.backgroundImage).toBe(`url("/_gen/sprite-fx/dither-white-50/${ITEM}")`);
         expect(rec.calls).toHaveLength(2);
         const [older, newer] = rec.calls;   // the older copy is made first
         // The newer copy, at pose 2 (art at 4), stands where pose 1 was (5): +1 art px = 2 mat units.
@@ -207,6 +210,11 @@ describe('effects on a Token’s art leave nothing behind', () => {
         expect(newer.keyframes[4].visibility).toBe('visible');
         for (const a of rec.calls) a.finish();
         expect(w.querySelector('[data-fx-copy]')).toBeNull();
+    });
+
+    it('a Token with no trail copies (not an enemy, not loot) plays no trail', () => {
+        afterimages(stillWrapper(), [{ ms: 60, x: 3 }, { ms: 60, x: 1 }]);
+        expect(rec.calls).toHaveLength(0);
     });
 
     it('cycle blink (effect 3): the white outline, one frame, over the green one', () => {
@@ -361,5 +369,53 @@ describe('the effect announcement names its neighbour and what landed', () => {
             { instanceId: 't1', title: 'Coal', fromTokenId: 't2', amount: 2 },
             { instanceId: 't1', title: 'Coal' }
         ]);
+    });
+});
+
+describe('loot hop (effect 4), ground shadow and the slide into a pile', () => {
+    let rec;
+    beforeEach(() => { rec = recordAnimate(); });
+    afterEach(() => rec.restore());
+
+    /** A loot sprite's box as `SpriteLayerView` draws it: the art, its shadow, a count. */
+    function lootBox(size = 64) {
+        const box = document.createElement('button');
+        box.innerHTML = `<div><span><span><span data-sprite-shadow="true"></span><img src="/${ITEM}" style="width: ${size}px; height: ${size}px"></span></span></div><span>3</span>`;
+        document.body.appendChild(box);
+        return box;
+    }
+
+    it('arcs up and over from its Token in whole art pixels and lands with a one-pixel bounce', () => {
+        const poses = lootHopPoses(-120, 60, 2);
+        expect(poses).toHaveLength(HOP_POSES + 2);
+        expect(poses[0]).toMatchObject({ x: -60, y: 30, lift: 0 });
+        expect(Math.max(...poses.map(p => p.lift))).toBeGreaterThanOrEqual(6);
+        expect(poses.slice(-2).map(p => [p.x, p.y])).toEqual([[0, 0], [0, -1]]);
+    });
+
+    it('steps the box, keeps the shadow on the ground, trails two copies, and scales nothing', () => {
+        const box = lootBox();
+        playLootArc(box, -120, 60, { unit: 2 });
+        const hop = rec.calls.find(a => a.el === box);
+        const ground = rec.calls.find(a => a.el.getAttribute('data-sprite-shadow'));
+        expect(hop.keyframes.slice(0, -1).every(k => k.easing === 'steps(1, end)')).toBe(true);
+        // Mid-air the box is lifted and the shadow is pushed back down by the same height.
+        const i = HOP_POSES / 2;
+        const lift = lootHopPoses(-120, 60, 2)[i].lift;
+        expect(ground.keyframes[i].transform).toBe(`translate(0px, ${lift * 2}px)`);
+        expect(box.querySelectorAll('[data-fx-copy^="white-dither"]')).toHaveLength(2);
+        expect(rec.calls.every(a => a.keyframes.every(k => !/scale/.test(k.transform || '') && k.opacity === undefined))).toBe(true);
+    });
+
+    it('slides into its pile in three steps, then dissolves: half its pixels, a quarter, gone', () => {
+        const box = lootBox();
+        playAbsorptionSlide(box, 30, 0, { unit: 2 });
+        const slide = rec.calls.find(a => a.el === box);
+        expect(slide.keyframes.map(k => k.transform)).toEqual([
+            'translate(10px, 0px)', 'translate(20px, 0px)', 'translate(30px, 0px)', 'translate(30px, 0px)', 'translate(30px, 0px)', 'translate(30px, 0px)'
+        ]);
+        expect(slide.keyframes[5].visibility).toBe('hidden');
+        expect([...box.querySelectorAll('[data-fx-copy]')].map(c => c.getAttribute('data-fx-copy'))).toEqual(['dither-50', 'dither-25']);
+        expect(rec.calls.every(a => a.keyframes.every(k => !/scale/.test(k.transform || '') && k.opacity === undefined))).toBe(true);
     });
 });

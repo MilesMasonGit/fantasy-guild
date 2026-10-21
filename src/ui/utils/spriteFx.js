@@ -163,13 +163,14 @@ export function tintUrl(src, colour) {
 
 /**
  * The generated dithered copy of a mat sprite (or sheet), `share` % of its pixels kept
- * (`DITHER_STEPS`), or null where the generator made none.
+ * (`DITHER_STEPS`), in its own colours or all `tint` (`TRAIL_TINT`), or null where the generator
+ * made none.
  */
-export function ditherUrl(src, share) {
+export function ditherUrl(src, share, tint = null) {
     if (!isDrawn('spriteFx')) return null;
     const entry = spriteFxEntry(src);
     if (!entry || !entry.outlined || !share || !isDissolved(entry.key)) return null;
-    return url(ditherFolder(share), entry.key);
+    return url(ditherFolder(share, tint), entry.key);
 }
 
 /** The background position of frame (`col`, `row`) in an outline sheet of `cell`-px cells. */

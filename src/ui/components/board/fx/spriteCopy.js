@@ -44,8 +44,8 @@ export function spriteOf(wrapper) {
  * A copy of `sprite` (from {@link spriteOf}) as a new element, not yet in the page: centred where
  * the sprite is drawn in the same wrapper, hidden until an animation shows it, taking no pointer.
  * The outer element is the one to move; the inner one holds the picture (and a sheet's facing).
- * `tint`: a `TINT_COLOURS` name; `dither`: a `DITHER_STEPS` share of the art's own pixels;
- * neither: the art itself.
+ * `tint`: a `TINT_COLOURS` name; `dither`: a `DITHER_STEPS` share of the art's pixels, in its own
+ * colours or (with `tint`, the `TRAIL_TINT` only) all that colour; neither: the art itself.
  * @returns {HTMLElement|null} null where no copy can be drawn (no generated tint for this sprite)
  */
 export function makeCopy(sprite, { tint = null, dither = null } = {}) {
@@ -66,12 +66,12 @@ export function makeCopy(sprite, { tint = null, dither = null } = {}) {
         backgroundPosition: bgPos,
         transform: sheet?.transform || ''
     });
-    const picture = tint ? tintUrl(src, tint) : dither ? ditherUrl(src, dither) : src;
+    const picture = dither ? ditherUrl(src, dither, tint) : tint ? tintUrl(src, tint) : src;
     if (!picture) return null;
     inner.style.backgroundImage = `url("${picture}")`;
     const outer = document.createElement('span');
     outer.setAttribute('aria-hidden', 'true');
-    outer.setAttribute('data-fx-copy', tint || (dither ? `dither-${dither}` : 'art'));
+    outer.setAttribute('data-fx-copy', [tint, dither ? `dither-${dither}` : null].filter(Boolean).join('-') || 'art');
     Object.assign(outer.style, {
         position: 'absolute',
         inset: '0px',

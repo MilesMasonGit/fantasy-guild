@@ -23,6 +23,8 @@
 //   dither-<share>/<path>            the art in its own colours with only
 //                                    that share of its pixels, checkerboarded
 //                                    (enemies and items only)
+//   dither-white-<share>/<path>      the same pixels, all white: the
+//                                    afterimage trail's copies
 //   manifest.json                    what exists, and each source's hash
 import fs from 'fs';
 import path from 'path';
@@ -31,7 +33,7 @@ import { fork } from 'child_process';
 import { fileURLToPath, pathToFileURL } from 'url';
 import sharp from 'sharp';
 import {
-    SPRITE_FX_DIR, SPRITE_FX_VERSION, OUTLINE_COLOURS, TINT_COLOURS, DITHER_STEPS,
+    SPRITE_FX_DIR, SPRITE_FX_VERSION, OUTLINE_COLOURS, TINT_COLOURS, DITHER_STEPS, TRAIL_TINT,
     sheetGridOf, isOutlined, SKIPPED_DIRS, MAX_SILHOUETTE_PX, MAX_OUTLINE_PX,
     silhouetteFolder, outlineFolder, tintFolder, ditherFolder, ditherKeeps, isDissolved
 } from '../src/config/spriteFx.js';
@@ -163,7 +165,9 @@ function outputsOf(rel, entry) {
     if (entry?.outlined) {
         for (const colour of Object.keys(OUTLINE_COLOURS)) files.push(`${outlineFolder(colour)}/${rel}`);
         for (const colour of Object.keys(TINT_COLOURS)) files.push(`${tintFolder(colour)}/${rel}`);
-        if (isDissolved(rel)) for (const share of DITHER_STEPS) files.push(`${ditherFolder(share)}/${rel}`);
+        if (isDissolved(rel)) {
+            for (const share of DITHER_STEPS) files.push(`${ditherFolder(share)}/${rel}`, `${ditherFolder(share, TRAIL_TINT)}/${rel}`);
+        }
     }
     return files;
 }
@@ -193,6 +197,8 @@ async function generateOne(root, outDir, rel, hash) {
         }
         for (const share of isDissolved(rel) ? DITHER_STEPS : []) {
             jobs.push(writeArtPng(path.join(outDir, ditherFolder(share), rel), ditherRgba(data, w, h, share), w, h));
+            const tinted = ditherRgba(colourRgba(mask, w, h, TINT_COLOURS[TRAIL_TINT]), w, h, share);
+            jobs.push(writePng(path.join(outDir, ditherFolder(share, TRAIL_TINT), rel), tinted, w, h));
         }
     }
     await Promise.all(jobs);

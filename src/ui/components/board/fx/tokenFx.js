@@ -2,6 +2,7 @@ import { FX_FRAME_MS, heldPoses } from './pixelSteps.js';
 import { spriteOf, makeCopy } from './spriteCopy.js';
 import { onDue } from '../frameClock.js';
 import { outlineLayer } from '../../../utils/spriteFx.js';
+import { TRAIL_TINT } from '../../../../config/spriteFx.js';
 
 /**
  * Effects played on one Token's art, inside its hit wrapper (`TokenHitArt`), so they move with
@@ -59,13 +60,18 @@ export function flashTint(wrapper, tint, { frames = 2, delay = 0 } = {}) {
     return playIn(wrapper, copy, SHOWN, { duration: frames * FX_FRAME_MS, delay });
 }
 
+/** Each trailing copy keeps fewer pixels the further behind it is: half, then a quarter. */
+const TRAIL_DITHER = Object.freeze([50, 25]);
+
 /**
- * Afterimage trail: `count` tinted copies under the sprite, each where the art was `k` poses
- * before, while the art plays `poses` (art pixels, as `heldPoses` takes them). The oldest copy goes
- * first; the last one is gone as the art comes home.
+ * Afterimage trail: two tinted copies under the sprite, each where the art was `k` poses before,
+ * while the art plays `poses` (art pixels, as `heldPoses` takes them): the nearer keeps half its
+ * pixels, the older a quarter, all in the trail's tint. The older copy goes first; the last one is
+ * gone as the art comes home. Only what has trail copies plays it (enemies and loot).
  * @returns {Animation[]}
  */
-export function afterimages(wrapper, poses, { unit = 1, delay = 0, tint = 'white', count = 2 } = {}) {
+export function afterimages(wrapper, poses, { unit = 1, delay = 0 } = {}) {
+    const count = TRAIL_DITHER.length;
     const sprite = spriteOf(wrapper);
     if (!sprite || !poses?.length) return [];
     const out = [];
@@ -82,7 +88,7 @@ export function afterimages(wrapper, poses, { unit = 1, delay = 0, tint = 'white
             };
         });
         const { keyframes, duration } = heldPoses(trail, { unit, rest: { visibility: 'hidden' } });
-        const copy = makeCopy(sprite, { tint });
+        const copy = makeCopy(sprite, { tint: TRAIL_TINT, dither: TRAIL_DITHER[k - 1] });
         const anim = copy ? playIn(wrapper, copy, keyframes, { duration, delay }, { under: true }) : null;
         if (anim) out.push(anim);
     }

@@ -9,6 +9,8 @@ import { UI_EVENTS } from '../../systems/core/engineEvents.js';
 import * as BoardState from '../../systems/board/BoardState.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import * as MatFx from '../components/board/fx/matFx.js';
+import * as SpriteLayer from '../../systems/board/SpriteLayer.js';
+import { getAllItems } from '../../config/registries/itemRegistry.js';
 
 /** The Tokens on the mat, in arrival order. */
 const onMat = () => BoardState.tokens().filter(t => Number.isFinite(t.x) && Number.isFinite(t.y));
@@ -47,6 +49,22 @@ export function playOn(tokens, payload) {
     return tokens.length;
 }
 
+/** An item that drops as loot: the first plain one in the item registry. */
+function someItemId() {
+    const items = Object.values(getAllItems() || {});
+    return (items.find(i => i?.id && !i.equipSlot && /wood|ore|berry|log/i.test(i.id)) || items.find(i => i?.id && !i.equipSlot))?.id || null;
+}
+
+/**
+ * One loot item hops out of each of `tokens`, as a finished cycle's output does. ⚠️ Real loot: it
+ * lies on the floor and can be collected, like the QA panel's Scatter Loot. Returns the sprites.
+ */
+export function dropLootFrom(tokens) {
+    const itemId = someItemId();
+    if (!itemId) return [];
+    return tokens.map(t => SpriteLayer.addSprite('item', itemId, 1, t.id)).filter(Boolean);
+}
+
 /**
  * The tinted-copy cost check: every Token on the mat flashes white for `frames` effect frames,
  * every `everyMs`, for `forMs`. Returns a stop function.
@@ -62,4 +80,4 @@ export function flashStorm({ everyMs = 240, forMs = 10000, frames = 2 } = {}) {
 
 // The measuring scripts reach the page's own copies of these through here (a module imported
 // again from the console can be a second copy with none of the page's state).
-globalThis.__fxDev = { enemies, worked, everyToken, neighbours, some, playOn, flashStorm, MatFx };
+globalThis.__fxDev = { enemies, worked, everyToken, neighbours, some, playOn, flashStorm, dropLootFrom, MatFx };

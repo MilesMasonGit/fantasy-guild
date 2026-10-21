@@ -49,6 +49,11 @@ afterEach(() => {
 
 const mount = () => render(h(SpriteLayerView));
 
+/** One art pixel of the board at the test's fit (1): the hop moves in whole ones. */
+const UNIT = 2;
+/** The loot sprite's own animations (its shadow and trail copies animate too). */
+const own = () => animations.filter(a => a.el.getAttribute?.('data-item-sprite') === 'true');
+
 /** The share of the element's own size (in %) and the pixels that a translate-like value moves it by, per axis. */
 function translateOf(value) {
     const out = { xPct: 0, yPct: 0, xPx: 0, yPx: 0 };
@@ -109,8 +114,8 @@ describe('⭐ thrown loot lands on its point', () => {
         const sprite = throwLoot();
         expect(sprite.fromX !== sprite.x || sprite.fromY !== sprite.y).toBe(true);
         await act(async () => { mount(); });
-        expect(animations).toHaveLength(1);
-        const arc = animations[0];
+        expect(own()).toHaveLength(1);
+        const arc = own()[0];
         expect(parseFloat(arc.el.style.width)).toBeGreaterThan(0);
         expect(translatePropertyOf(arc.el)).toEqual({ xPct: -50, yPct: -50 });
         const c = restingCentre(arc);
@@ -118,18 +123,19 @@ describe('⭐ thrown loot lands on its point', () => {
         expect(c.y).toBeCloseTo(0, 6);
     });
 
-    it('the arc starts centred on where the loot came from', async () => {
+    it('the arc starts centred on where the loot came from, to the nearest whole art pixel', async () => {
         const sprite = throwLoot();
         await act(async () => { mount(); });
-        const c = startCentre(animations[0]);
-        expect(c.x).toBeCloseTo(Math.round(sprite.fromX - sprite.x), 6);
-        expect(c.y).toBeCloseTo(Math.round(sprite.fromY - sprite.y), 6);
+        const c = startCentre(own()[0]);
+        expect(Math.abs(c.x - Math.round(sprite.fromX - sprite.x))).toBeLessThanOrEqual(UNIT / 2);
+        expect(Math.abs(c.y - Math.round(sprite.fromY - sprite.y))).toBeLessThanOrEqual(UNIT / 2);
+        expect(c.x % UNIT).toBeCloseTo(0, 6);
     });
 
     it('no transform is held on the sprite once it has landed', async () => {
         throwLoot();
         await act(async () => { mount(); });
-        const { options } = animations[0];
+        const { options } = own()[0];
         expect(['both', 'forwards']).not.toContain(options.fill);
     });
 
@@ -141,15 +147,17 @@ describe('⭐ thrown loot lands on its point', () => {
         await act(async () => { child = SpriteLayer.addSprite('item', 'fixture_oak_wood', 2, { centre: { x: 310, y: 310 } }); });
         expect(child.targetStackId).toBe(parent.id);
         await act(async () => { vi.advanceTimersByTime(850); });
-        const slide = animations.find(a => String(a.keyframes?.[1]?.transform).includes('scale('));
+        const slide = own().find(a => a.options?.fill === 'forwards');
         expect(slide).toBeTruthy();
+        // It steps over to the pile: a third of the way on its first pose, never a scale.
         const c = startCentre(slide);
-        expect(c.x).toBeCloseTo(0, 6);
-        expect(c.y).toBeCloseTo(0, 6);
+        expect(Math.abs(c.x - Math.round(parent.x - child.x) / 3)).toBeLessThanOrEqual(UNIT / 2);
+        expect(Math.abs(c.y - Math.round(parent.y - child.y) / 3)).toBeLessThanOrEqual(UNIT / 2);
+        expect(slide.keyframes.some(k => /scale/.test(k.transform))).toBe(false);
         const end = translateOf(slide.keyframes[slide.keyframes.length - 1].transform);
         expect(end.xPct).toBeCloseTo(0, 6);
         expect(end.yPct).toBeCloseTo(0, 6);
-        expect(end.xPx).toBeCloseTo(Math.round(parent.x - child.x), 6);
-        expect(end.yPx).toBeCloseTo(Math.round(parent.y - child.y), 6);
+        expect(Math.abs(end.xPx - Math.round(parent.x - child.x))).toBeLessThanOrEqual(UNIT / 2);
+        expect(Math.abs(end.yPx - Math.round(parent.y - child.y))).toBeLessThanOrEqual(UNIT / 2);
     });
 });

@@ -13,6 +13,7 @@ import * as SpriteLayer from '../../../systems/board/SpriteLayer.js';
 import { playLootArc, playAbsorptionSlide } from '../../utils/lootArc.js';
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { useMatFit } from './MatFitContext.jsx';
+import { boardScaleAt } from '../base/TokenSprite.jsx';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 import { isDrawn } from '../../dev/perf/drawSwitches.js';
 
@@ -106,12 +107,17 @@ const LootSprite = React.memo(function LootSprite({
     const elementRef = React.useRef(null);
     const fit = useMatFit();
 
-    React.useEffect(() => {
+    // One art pixel of the board, in mat units: the hop and the slide move in whole ones.
+    const unitRef = React.useRef(1);
+    unitRef.current = boardScaleAt(fit);
+
+    // Before the first paint, so the item is never seen at its landing spot before it hops there.
+    React.useLayoutEffect(() => {
         if (!justThrown(bornAt) || !isDrawn('itemFlight')) return;
         const fx = Math.round((fromX ?? x) - x);
         const fy = Math.round((fromY ?? y) - y);
         if (elementRef.current && (fx !== 0 || fy !== 0)) {
-            playLootArc(elementRef.current, fx, fy);
+            playLootArc(elementRef.current, fx, fy, { unit: unitRef.current });
         }
     }, [fromX, fromY, x, y]);
 
@@ -125,7 +131,7 @@ const LootSprite = React.memo(function LootSprite({
             if (elementRef.current && isDrawn('itemFlight')) {
                 const dx = Math.round(parentX - x);
                 const dy = Math.round(parentY - y);
-                playAbsorptionSlide(elementRef.current, dx, dy, 300);
+                playAbsorptionSlide(elementRef.current, dx, dy, { unit: unitRef.current });
             }
         }, delay);
 
