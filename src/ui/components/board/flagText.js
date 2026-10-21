@@ -1,7 +1,10 @@
 
 import * as Flags from '../../../systems/board/Flags.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
-import { tokenName } from '../../../config/registries/tokenRegistry.js';
+import { tokenName, getTokenType } from '../../../config/registries/tokenRegistry.js';
+import { getAllItems } from '../../../config/registries/itemRegistry.js';
+import { neededToolOf, toolNeedPhrase } from '../../../config/registries/toolKinds.js';
+import { withArticle } from '../../../systems/effects/toolNames.js';
 import { GameState } from '../../../state/GameState.js';
 import { skipHint } from './boardConstants.js';
 
@@ -15,6 +18,12 @@ import { skipHint } from './boardConstants.js';
 
 /** A pennant lists at most this many skipped Tokens, then "+N more". */
 export const MAX_SKIP_LINES = 5;
+
+/** "a Pickaxe", "an Iron Pickaxe or better": the tool a Token's work needs, or null. */
+function toolOfType(typeId) {
+    const need = neededToolOf(getTokenType(typeId));
+    return need ? withArticle(toolNeedPhrase(need, getAllItems())) : null;
+}
 
 function heroName(heroId) {
     if (!heroId) return null;
@@ -36,7 +45,7 @@ export function flagStatusLine(heroId) {
 /** One skipped Token as "Iron Forge — needs materials" — by `heroId`'s flag, for "off in X's rules". */
 export function skipLine(skip, heroId = null) {
     const holder = skip.reason === Flags.SKIP.CLAIMED ? heroName(BoardState.heroOfInstance(skip.instanceId)) : null;
-    return `${tokenName(skip.typeId) || 'A Token'} — ${skipHint(skip.reason, { holder, hero: heroName(heroId) })}`;
+    return `${tokenName(skip.typeId) || 'A Token'} — ${skipHint(skip.reason, { holder, hero: heroName(heroId), tool: toolOfType(skip.typeId) })}`;
 }
 
 /**
@@ -71,7 +80,8 @@ export function tokenSkipLines(instanceId) {
     if (!instanceId) return [];
     return Flags.skipsOf(instanceId).map(s => {
         const holder = s.reason === Flags.SKIP.CLAIMED ? heroName(BoardState.heroOfInstance(instanceId)) : null;
-        return `${heroName(s.heroId)}’s flag skipped this: ${skipHint(s.reason, { holder, hero: heroName(s.heroId) })}`;
+        const tool = toolOfType(BoardState.getTokenById(instanceId)?.typeId);
+        return `${heroName(s.heroId)}’s flag skipped this: ${skipHint(s.reason, { holder, hero: heroName(s.heroId), tool })}`;
     });
 }
 

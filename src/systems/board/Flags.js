@@ -4,6 +4,7 @@ import { EventBus } from '../core/EventBus.js';
 import { GameState } from '../../state/GameState.js';
 import { BOARD_EVENTS, ALERT } from './boardEvents.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
+import { neededToolOf } from '../../config/registries/toolKinds.js';
 import { matTuning, onMatTuningChanged } from '../../config/matTuning.js';
 import { artRadiusOf } from '../../config/matGeometry.js';
 import * as BoardState from './BoardState.js';
@@ -43,8 +44,9 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
  * 5. another flag already holds it: `claimed`;
  * 6. a Promotion Token that would not train this hero: `same_job` or its gate reason, so a hero who
  * has just accepted goes back to work;
- * 7. the shared `WorkCheck` says it cannot run: skipped with that reason (level too low, missing
- * inputs, no recipe, charges, resting until it respawns);
+ * 7. the shared `WorkCheck` says it cannot run: skipped with that reason (level too low, no tool
+ * in hand for it, missing inputs, no recipe, charges, resting until it respawns); a no-tool skip
+ * also says "Needs Pickaxe" over the Token (`TOOL_NEEDED`);
  * 8. otherwise claimed.
  *
  * Nothing claimable: retry in a second of game time (or sooner, when the board changes: see dirty).
@@ -52,7 +54,7 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
  * Keeping a claim (phase 1) is sticky: a claim is kept while its Token is workable, wherever that
  * Token now is, so a moved Token carries its hero, even outside the radius. It is let go when the
  * Token stops being eligible (resting until it respawns included), or the hero can no longer work
- * it (skill, or its rule switched off), or, for a fixable problem (inputs, charges, no recipe),
+ * it (skill, level, tool, or its rule switched off), or, for a fixable problem (inputs, charges, no recipe),
  * only once another Token in range can run.
  *
  * Better work appears: a hero never leaves mid-cycle for a higher priority. When the hero's cycle
@@ -75,9 +77,9 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
  * Token: the radius, the priorities, other Tokens, enemies they would seek and anything under the
  * flag's point are all ignored (`evaluate`).
  * - Only a Token the hero can work is pinned (`pinRefusal`): a worked Token or an enemy, not
- * disallowed, naming a skill, held at the level it asks, with the hero's rule on. A spawner (or
- * anything else no hero works; promotion Tokens and the Guild Hall keep their own under-the-flag
- * rule) is silently a normal area flag. A skill or level refusal plants a normal area flag at the
+ * disallowed, naming a skill, held at the level it asks, with the tool it needs in hand, with the
+ * hero's rule on. A spawner (or anything else no hero works; promotion Tokens and the Guild Hall
+ * keep their own under-the-flag rule) is silently a normal area flag. A skill, level or tool refusal plants a normal area flag at the
  * drop point and publishes `PIN_REFUSED`, which the hero's speech bubble says. A fixable problem
  * (inputs, charges, no recipe) does not refuse: the hero can work it once it is fixed.
  * - While pinned the flag's point is the Token's centre: `BoardState` moves it with the Token, so a
@@ -345,16 +347,29 @@ function clearSkips(r, heroId) {
     r.skipsByHero.delete(heroId);
 }
 
+/** The Token wants a tool its hero does not hold: the mat says which, over the Token. */
+function announceToolNeeded(instanceId, heroId) {
+    const need = neededToolOf(getTokenType(BoardState.getTokenById(instanceId)?.typeId));
+    if (need) EventBus.publish(BOARD_EVENTS.TOOL_NEEDED, { instanceId, heroId, ...need });
+}
+
 function recordSkips(r, heroId, skips) {
     clearSkips(r, heroId);
     if (!skips.length) return;
     const ids = [];
+    let toolSaid = false;
     for (const { instanceId, reason } of skips) {
         if (!instanceId) continue;
         const list = r.skips.get(instanceId) || [];
         list.push({ heroId, reason });
         r.skips.set(instanceId, list);
         ids.push(instanceId);
+        // Only the Token the hero would have worked says it: the first passed over for want of a
+        // tool, in the flag's order. Three veins side by side would otherwise say it three times.
+        if (reason === ALERT.NO_TOOL && !toolSaid) {
+            toolSaid = true;
+            announceToolNeeded(instanceId, heroId);
+        }
     }
     r.skipsByHero.set(heroId, ids);
 }
@@ -576,7 +591,7 @@ function keepOrRelease(r, heroId, dirty) {
         // The runner raised this last tick from the same `WorkCheck`.
         const alert = instance.alert || null;
 
-        if (alert === ALERT.ACCESS || alert === ALERT.UNSKILLED) {
+        if (WorkCheck.HERO_GATES.has(alert)) {
             release(heroId);
             r.nextTryAt.delete(heroId);
             announceMoved(heroId);
@@ -717,7 +732,7 @@ export function pinRefusal(heroId, instance) {
     if (!FlagRules.holdsRule(heroId, ruleId)) return { reason: ALERT.UNSKILLED, silent: false };
     if (!FlagRules.ruleOf(heroId, ruleId).allowed) return { reason: SKIP.RULE_OFF, silent: false };
     if (kind === 'work') {
-        const reason = WorkCheck.heroReason(heroId, workConfigOf(def, instance));
+        const reason = WorkCheck.heroReason(heroId, workConfigOf(def, instance), instance);
         if (reason) return { reason, silent: false };
     }
     return null;
@@ -1152,7 +1167,7 @@ export function teardown() {
 export function init() {
     teardown();
     const dirty = () => markDirty();
-    for (const event of [BOARD_EVENTS.TILE_CHANGED, BOARD_EVENTS.TOKEN_PLACED, ENGINE_EVENTS.INVENTORY_UPDATED, BOARD_EVENTS.TOKEN_RESPAWNED]) {
+    for (const event of [BOARD_EVENTS.TILE_CHANGED, BOARD_EVENTS.TOKEN_PLACED, ENGINE_EVENTS.INVENTORY_UPDATED, BOARD_EVENTS.TOKEN_RESPAWNED, ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED]) {
         unsubscribers.push(EventBus.subscribe(event, dirty));
     }
     unsubscribers.push(EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, (payload = {}) => cycleCompleted(payload.heroId)));

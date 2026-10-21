@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Settings2, Tag as TagIcon, Timer, HelpCircle, Swords, Lock, BookOpen, Sparkles, X, Plus, Gauge } from 'lucide-react';
 import { useEntityStore, makeTokenConfig } from '../../stores/useEntityStore';
 import { useSimulationStore } from '../../stores/useSimulationStore';
-import { TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, stationSkillOf, ENEMY_STYLES, enemyCombatBudget, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, STANDS_ON_CHOICES } from '../../utils/constants';
+import { TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, stationSkillOf, ENEMY_STYLES, enemyCombatBudget, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, STANDS_ON_CHOICES, TOOL_KINDS, tierValue } from '../../utils/constants';
 import { Header, Section, Field, Empty } from '../shared/EditorLayout';
 import SimIntentControls from '../shared/SimIntentControls';
 import SimAnswer from '../shared/SimAnswer';
@@ -267,6 +267,44 @@ export default function TokenEditor() {
                     onChange={(e) => updateConfig({ xp: Number(e.target.value) })}
                     className="w-full"
                   />
+                </Field>
+              )}
+            </div>
+            {/* `needsTool: { kind, minTier }`, written only when a kind is picked: a hero must hold a tool of that kind, at that tier or better, in hand to work this Token. */}
+            <div className="grid grid-cols-2 gap-4 mt-4">
+              <Field label="Needs tool">
+                <select
+                  aria-label="Needs tool"
+                  data-field="needs-tool"
+                  value={token.needsTool?.kind || ''}
+                  onChange={(e) => update('needsTool', e.target.value
+                    ? { kind: e.target.value, minTier: tierValue(token.needsTool?.minTier) }
+                    : undefined)}
+                  className="w-full"
+                >
+                  <option value="">No tool</option>
+                  {TOOL_KINDS.map((k) => (
+                    <option key={k.id} value={k.id}>{k.label}</option>
+                  ))}
+                </select>
+                <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
+                  Only a hero holding this kind of tool in hand may work it.
+                </p>
+              </Field>
+              {token.needsTool?.kind && (
+                <Field label="Lowest tool tier">
+                  <input
+                    type="number"
+                    min={1}
+                    aria-label="Lowest tool tier"
+                    data-field="needs-tool-tier"
+                    value={tierValue(token.needsTool.minTier)}
+                    onChange={(e) => update('needsTool', { ...token.needsTool, minTier: tierValue(Number(e.target.value)) })}
+                    className="w-full"
+                  />
+                  <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
+                    A tool of this tier or higher (an item's Tool Tier) will do.
+                  </p>
                 </Field>
               )}
             </div>

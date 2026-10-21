@@ -58,7 +58,7 @@ export { ALERT };
  * 1. It has a config: Context, Buff and Structure Tokens are inert by design; they work by
  * adjacency, not by running.
  * 2. It has a hero, unless it is a Passive Generator.
- * 3. That hero meets its skill requirement (Access).
+ * 3. That hero meets its skill requirement (Access) and holds the tool its work needs.
  * 4. Its inputs are available. No partial cycles: full speed or waiting.
  *
  * Fail 2 and the tile is quietly idle. Fail 3 or 4 with a hero present and it raises a red alert
@@ -88,7 +88,7 @@ const PROGRESS_EVERY = 3;
 let carryIn = new Map();
 let carryOut = new Map();
 
-// Why the hero on a Token cannot work it (possession, then level) lives in `WorkCheck.heroReason`,
+// Why the hero on a Token cannot work it (possession, level, then tool) lives in `WorkCheck.heroReason`,
 // shared with the flags that choose which Token to work.
 
 /**
@@ -530,7 +530,7 @@ export function tick(delta) {
         }
 
         if (needsHero) {
-            const skillAlert = WorkCheck.heroReason(heroId, config);
+            const skillAlert = WorkCheck.heroReason(heroId, config, instance);
             if (skillAlert) {
                 setAlert(instance,skillAlert);
                 continue;

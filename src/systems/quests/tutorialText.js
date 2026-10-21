@@ -20,6 +20,11 @@ export const TUTORIAL_TEXT = Object.freeze({
             says: 'Another guildmaster. Or the same one again? No matter. You will need hands.',
             instruction: 'Open the Guild Hall (purple orb, top left) and buy Bunk Beds. The first Hero is free.'
         }),
+        cart_tool: Object.freeze({
+            title: 'Equip a Tool',
+            says: 'Bare hands move nothing. Give them a pick, or an axe. Whichever you trust.',
+            instruction: 'Open the Item Bank (yellow orb) and drag a Pickaxe or a Woodaxe onto your Hero. A Hero needs the right tool in hand to mine, chop, fish or reap.'
+        }),
         cart_flag: Object.freeze({
             title: 'Plant a Flag',
             says: 'Put them somewhere. Not anywhere. Somewhere with work in it.',

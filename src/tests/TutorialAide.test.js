@@ -10,6 +10,7 @@ import {
 import { EventBus } from '../systems/core/EventBus.js';
 import { TUTORIAL_QUESTS } from '../systems/quests/tutorialQuests.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
+import { registerItems } from '../config/registries/itemRegistry.js';
 
 /**
  * The beacon for each step of the cartographer's chain. The fixture mirrors the attributes the
@@ -20,6 +21,10 @@ import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
  */
 
 const SITE = 'fixture_aide_site';
+const AXE = 'fixture_aide_woodaxe';
+registerItems({
+    [AXE]: { id: AXE, name: 'Fixture Woodaxe', type: 'tool', equipSlot: 'hand', stackable: true, tool: { kind: 'woodaxe', tier: 1 } }
+});
 registerTokenTypes({
     [SITE]: {
         id: SITE, name: 'Old Site', landmark: true, tokenType: 'resource', rarity: 'common',
@@ -77,6 +82,8 @@ describe('the tutorial aide\'s beacons', () => {
 
     it('points at the right thing for each step', () => {
         expect(el('cart_recruit').id).toBe('guild-bubble-target');
+        // The Bank closed: its orb.
+        expect(el('cart_tool').id).toBe('bank-bubble-target');
         // The hero bar: a hero not yet on the mat first.
         expect(el('cart_flag').getAttribute('data-dock-hero')).toBe('hero_2');
         // Something a hero can gather, not the sapling or the endgame site.
@@ -97,6 +104,16 @@ describe('the tutorial aide\'s beacons', () => {
         expect(el('cart_flag').getAttribute('data-dock-hero')).toBe('hero_1');
         document.querySelector('[data-hero-bar]').remove();
         expect(el('cart_flag').id).toBe('guild-bubble-target');
+    });
+
+    it('with the Bank open, points at a tool in it, never another item', () => {
+        document.body.insertAdjacentHTML('beforeend', `
+            <div data-bank>
+                <div data-bank-item="item_oak_wood">Oak Wood tile</div>
+                <div data-bank-item="${AXE}">Woodaxe tile</div>
+            </div>
+        `);
+        expect(text('cart_tool')).toBe('Woodaxe tile');
     });
 
     it('prefers the Guild Hall board\'s Bunk Beds once it is open', () => {
@@ -167,6 +184,7 @@ describe('the tutorial aide\'s beacons', () => {
         expect(read('ui/components/board/SpriteLayerView.jsx')).toContain('data-item-sprite="true"');
         expect(read('ui/components/drawer/ShopDrawer.jsx')).toMatch(/data-shop-item=\{chosen\.typeId\}/);
         expect(read('ui/components/board/GuildHallBoard.jsx')).toContain('data-guild-roster-upgrade=');
+        expect(read('ui/components/drawer/BankTab.jsx')).toContain('data-bank-item={template.id}');
         expect(read('ui/components/atlas/AtlasTome.jsx')).toContain('data-atlas-tab={id}');
         expect(read('ui/components/atlas/AtlasScreen.jsx')).toContain("CARTOGRAPHY: 'cartography'");
         const atlas = read('ui/components/atlas/CartographyTable.jsx') + read('ui/components/atlas/RegionList.jsx');

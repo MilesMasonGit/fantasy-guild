@@ -345,6 +345,7 @@ describe('saves (B6.1)', () => {
         logToken.quest.currentCount = 3;
         logToken.quest.done = true;
         expect(QuestTokens.claimQuest(logToken.id).success).toBe(true);
-        expect(tutorials().map(t => t.quest.id)).toEqual(['cart_loot']);
+        // The first step not yet claimed: the tool step, which this save's chain never had.
+        expect(tutorials().map(t => t.quest.id)).toEqual(['cart_tool']);
     });
 });

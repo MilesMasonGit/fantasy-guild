@@ -4,6 +4,8 @@ import * as BoardState from '../../../systems/board/BoardState.js';
 import { workConfigOf } from '../../../systems/board/StationRecipe.js';
 import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
 import { getSkill } from '../../../config/registries/skillRegistry.js';
+import { getAllItems } from '../../../config/registries/itemRegistry.js';
+import { neededToolOf, toolNeedPhrase } from '../../../config/registries/toolKinds.js';
 
 /**
  * A hero's sentence for a Token they cannot work. Heroes no longer speak a Token's problems (its
@@ -26,9 +28,10 @@ const withArticle = (name) => `${/^[aeiou]/i.test(name) ? 'an' : 'a'} ${name}`;
  * Pure — every fact it needs is passed in.
  *
  * @param {string} alert  an `ALERT` value
- * @param {{token: string, missing?: {type: ('tokens'|'items'|null), items: string[]}, skill?: string}} facts
+ * @param {{token: string, missing?: {type: ('tokens'|'items'|null), items: string[]}, skill?: string, tool?: string}} facts
+ *        `tool`: the words for the tool the work needs ("Pickaxe", "Iron Pickaxe or better")
  */
-export function blockedText(alert, { token, missing = null, skill = null }) {
+export function blockedText(alert, { token, missing = null, skill = null, tool = null }) {
     const items = missing?.items || [];
     switch (alert) {
         case ALERT.INPUTS:
@@ -49,6 +52,8 @@ export function blockedText(alert, { token, missing = null, skill = null }) {
             return skill ? `My ${skill} level is too low to work ${token}.` : `My level is too low to work ${token}.`;
         case ALERT.UNSKILLED:
             return skill ? `I don’t have the ${skill} skill to work ${token}.` : `I don’t have the skill to work ${token}.`;
+        case ALERT.NO_TOOL:
+            return tool ? `I need ${withArticle(tool)} to work ${token}.` : `I need a tool to work ${token}.`;
         default:
             return null;
     }
@@ -57,7 +62,7 @@ export function blockedText(alert, { token, missing = null, skill = null }) {
 /**
  * What a hero says when their flag, dropped on a Token, could not be pinned to it: the **same
  * sentence** they would say stuck on that Token for that reason (level too low, skill not
- * held; see `docs/reference/speech_bubble_lines.md`). Null for a reason with no wording (a
+ * held, no tool for it in hand; see `docs/reference/speech_bubble_lines.md`). Null for a reason with no wording (a
  * Token the player disallowed, or the hero's own rule switched off): the flag's hover still
  * says it. Spoken as a moment (`heroSpeech.MOMENT_SPOKEN.pinRefused`).
  */
@@ -67,8 +72,10 @@ export function pinRefusedLineFor(tokenId, reason) {
     if (!token) return null;
     const def = getTokenType(token.typeId);
     const skillId = workConfigOf(def, token)?.skill;
+    const need = neededToolOf(def);
     return blockedText(reason, {
         token: def?.name || tokenName(token.typeId) || token.typeId,
-        skill: skillId ? (getSkill(skillId)?.name || skillId) : undefined
+        skill: skillId ? (getSkill(skillId)?.name || skillId) : undefined,
+        tool: need ? toolNeedPhrase(need, getAllItems()) : undefined
     });
 }

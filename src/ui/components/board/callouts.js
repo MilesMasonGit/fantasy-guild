@@ -17,8 +17,22 @@ export const MAX_TOTAL = 24;
 export const calloutText = {
     spawned: (name) => `! Spawned ${name}`,
     demolished: (name) => `Demolished ${name}`,
-    effect: (title) => title
+    effect: (title) => title,
+    // Over a Token a hero would work but holds no tool for: "Needs Pickaxe".
+    needsTool: (tool) => `Needs ${tool}`
 };
+
+/**
+ * How long a Token waits before saying "Needs Pickaxe" again. A flag with nothing else to do looks
+ * again every second, and each look is a reason to say it; once in this long reminds the player
+ * without a bubble that never goes away.
+ */
+export const TOOL_CALLOUT_GAP_MS = 8000;
+
+/** Whether a reminder last said at `lastAt` (or never: null) may be said again at `now`. */
+export function dueAgain(lastAt, now, gapMs = TOOL_CALLOUT_GAP_MS) {
+    return lastAt == null || now - lastAt >= gapMs;
+}
 
 /** Where a callout is said: over a Token (by id), or over a bare mat point. */
 export function anchorKeyOf({ anchorId = null, x, y }) {

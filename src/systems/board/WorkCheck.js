@@ -8,6 +8,9 @@ import * as Charges from './Charges.js';
 import * as Respawn from './Respawn.js';
 import * as Demolition from './Demolition.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
+import * as HeroTools from '../equipment/HeroTools.js';
+import { getTokenType } from '../../config/registries/tokenRegistry.js';
+import { neededToolOf } from '../../config/registries/toolKinds.js';
 
 /**
  * One answer to why a Token can't run, shared by the board runner (while a hero works a Token) and
@@ -22,18 +25,23 @@ import * as SkillSystem from '../hero/SkillSystem.js';
 /** Reasons a player can fix from the board: these keep a red badge. */
 export const FIXABLE = new Set([ALERT.INPUTS, ALERT.CHARGES, ALERT.NO_RECIPE, ALERT.CHOOSE_BUILD, ALERT.CHOOSE_RECIPE]);
 
+/** The hero's own gates: a hero stopped by one lets go of the Token at once. Never a badge. */
+export const HERO_GATES = new Set([ALERT.ACCESS, ALERT.UNSKILLED, ALERT.NO_TOOL]);
+
 /**
  * Why `heroId` cannot work a Token with this `config`, or null if they can.
  *
- * Two gates, in order: possession, then level. Possession is checked even when the Token sets no
- * level requirement.
+ * Three gates, in order: possession, then level, then the gathering tool the Token's work needs
+ * (`needsTool`), held in the hero's hands. Possession is checked even when the Token sets no level
+ * requirement. The tool is read from `instance`'s type; without an instance, or on a Token marked
+ * for demolition (Construction work, whatever the Token is), no tool is asked for.
  *
  * A Token naming no `skill` needs nothing but a body here; whether such a Token is workable at all
  * is `Flags`' question.
  *
- * @returns {'access'|'unskilled'|null} an `ALERT` reason, or null
+ * @returns {'access'|'unskilled'|'no_tool'|null} an `ALERT` reason, or null
  */
-export function heroReason(heroId, config) {
+export function heroReason(heroId, config, instance = null) {
     if (!config?.skill) return null;
     if (!heroId) return ALERT.UNSKILLED;
 
@@ -44,6 +52,10 @@ export function heroReason(heroId, config) {
 
     if (failure === 'POSSESSION') return ALERT.UNSKILLED;
     if (failure === 'LEVEL') return ALERT.ACCESS;
+    if (instance && !Demolition.isMarked(instance)
+        && !HeroTools.holdsToolFor(heroId, neededToolOf(getTokenType(instance.typeId)))) {
+        return ALERT.NO_TOOL;
+    }
     return null;
 }
 
@@ -93,7 +105,7 @@ export function fixableReason(instanceId, instance) {
  * first, then the Token's — or null if they can. What a flag records as a skip.
  */
 export function whyCannotRun(instanceId, instance, heroId, config) {
-    const hero = heroReason(heroId, config);
+    const hero = heroReason(heroId, config, instance);
     if (hero) return hero;
     return fixableReason(instanceId, instance).reason;
 }

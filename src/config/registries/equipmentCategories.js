@@ -45,7 +45,9 @@ export const EQUIPMENT_CATEGORY_DEFS = [
         kind: CATEGORY_KINDS.GEAR,
         cap: 2,
         // Two free hands, no main/off distinction: either hand takes any
-        // weapon and their bonuses stack.
+        // weapon and their bonuses stack. A gathering tool takes one hand and
+        // is not a weapon; a two-handed weapon (`hands: 2`) takes both
+        // (`toolKinds.handsOf`, enforced by `EquipmentManager.equipItem`).
         weapon: true
     },
     { id: 'hat',     label: 'Hat',     icon: '🎩',  kind: CATEGORY_KINDS.GEAR, cap: 1 },

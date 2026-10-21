@@ -25,6 +25,7 @@ import { warnMissingContent } from '../../utils/missingContent.js';
 import { isWorkedWithoutSkill, WORK_SKILL_WHY } from './workSkillRule.js';
 import { auditLifecycleBlocks } from './lifecycleAudit.js';
 import { findUnknownRefs } from './unknownRefRule.js';
+import { toolFindings } from './toolRule.js';
 import { SKILLS } from '../../config/registries/skillRegistry.js';
 import { listRecipes } from '../../config/registries/recipePoolRegistry.js';
 
@@ -688,13 +689,23 @@ function auditUnknownRefs(out) {
 }
 
 /**
+ * Gathering tools: a tool no hero can hold, a need no tool answers, and content still written as
+ * tool Tokens. The rule lives in `toolRule.js`, shared with the CMS Economy Audit.
+ */
+function auditTools(out) {
+    for (const f of toolFindings({ tokens: TOKENS, items: ITEMS, recipes: listRecipes() })) {
+        out.push(finding(`${f.entityType} "${f.entityId}"`, f.message));
+    }
+}
+
+/**
  * Walk everything and return the findings.
  * Exported separately from the reporting so a test can assert on the list.
  */
 export function auditContent({ starterCamp = null } = {}) {
     const out = [];
     const steps = [
-        auditTokens, auditEffects, auditItems, auditItemEffects, auditLifecycle, auditUnknownRefs, auditMapItems,
+        auditTokens, auditEffects, auditItems, auditItemEffects, auditLifecycle, auditUnknownRefs, auditMapItems, auditTools,
         auditHardcodedLists, (o) => auditStarterCamp(o, starterCamp)
     ];
     for (const step of steps) {

@@ -7,7 +7,8 @@ import { workConfigOf } from '../../../systems/board/StationRecipe.js';
 import { MASTERY_LEVEL } from '../../../systems/hero/PromotionSystem.js';
 import { getTokenType } from '../../../config/registries/tokenRegistry.js';
 import { getSkill } from '../../../config/registries/skillRegistry.js';
-import { getItem } from '../../../config/registries/itemRegistry.js';
+import { getItem, getAllItems } from '../../../config/registries/itemRegistry.js';
+import { neededToolOf, toolNeedPhrase } from '../../../config/registries/toolKinds.js';
 import { joinNames } from './heroBubbles.js';
 
 /**
@@ -30,6 +31,7 @@ export const PROBLEM_SEVERITY = Object.freeze({
     [ALERT.NO_ROOM]: SEVERITY.CANT,
     [ALERT.ACCESS]: SEVERITY.CANT,
     [ALERT.UNSKILLED]: SEVERITY.CANT,
+    [ALERT.NO_TOOL]: SEVERITY.CANT,
     [ALERT.SPAWN_NO_ROOM]: SEVERITY.CANT,
     [ALERT.SPAWN_MAT_FULL]: SEVERITY.CANT
 });
@@ -131,6 +133,10 @@ export function problemText(problem, instanceId) {
         case ALERT.UNSKILLED: {
             const skill = instance ? skillNeeded(instance) : { name: null };
             return skill.name ? `Needs the ${skill.name} skill` : 'Hero lacks the skill';
+        }
+        case ALERT.NO_TOOL: {
+            const need = neededToolOf(getTokenType(instance?.typeId));
+            return need ? `Needs ${toolNeedPhrase(need, getAllItems())}` : 'Needs a tool in hand';
         }
         case ALERT.SPAWN_NEEDS_ITEM: {
             const names = (problem.needs || []).map(id => getItem(id)?.name || id);

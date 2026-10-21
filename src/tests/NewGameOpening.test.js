@@ -12,7 +12,8 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { getTokenType, getAllTokenTypes, registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { setStarterCampForTests, resetStarterCampForTests } from '../config/registries/starterCampRegistry.js';
 import { recipesForToken } from '../config/registries/recipePoolRegistry.js';
-import { getItem, registerItems } from '../config/registries/itemRegistry.js';
+import { getItem, getAllItems, registerItems } from '../config/registries/itemRegistry.js';
+import { starterToolIds, neededToolOf, toolOf, toolMeets } from '../config/registries/toolKinds.js';
 import { matW, matH } from '../config/matGeometry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 
@@ -74,6 +75,9 @@ function newGame() {
 
 const at = (t) => ({ typeId: t.typeId, x: t.x, y: t.y });
 
+/** Besides the camp's Bank, a new game holds one of each starter tool (none until content marks some). */
+const withStarterTools = (ids) => [...new Set([...ids, ...starterToolIds(getAllItems())])].sort();
+
 beforeEach(() => {
     resetMatTuning();
 });
@@ -100,12 +104,12 @@ describe('with no Starter Camp file, a new game opens on the built-in camp', () 
         expect(onMat.find(t => t.typeId === 'token_oak_forest').usesRemaining ?? null).toBeNull();
     });
 
-    it('the Bank holds 3 Oak Seedling, 10 Oak Wood and 2 Wheat Seed, and nothing else', () => {
+    it('the Bank holds 3 Oak Seedling, 10 Oak Wood and 2 Wheat Seed, the starter tools, and nothing else', () => {
         expect(InventoryManager.getItemCount('item_oak_seedling')).toBe(3);
         expect(InventoryManager.getItemCount('item_oak_wood')).toBe(10);
         expect(InventoryManager.getItemCount('item_wheat_seed')).toBe(2);
         expect(Object.keys(GameState.state.inventory.items).sort())
-            .toEqual(['item_oak_seedling', 'item_oak_wood', 'item_wheat_seed']);
+            .toEqual(withStarterTools(['item_oak_seedling', 'item_oak_wood', 'item_wheat_seed']));
     });
 
     it('every built-in Token and item exists', () => {
@@ -140,10 +144,10 @@ describe('a new game opens in the Starter Camp the owner laid out', () => {
         expect(BoardState.tokens().every(t => t.origin === 'placed')).toBe(true);
     });
 
-    it('the Bank holds the camp\'s Bank, and nothing else', () => {
+    it('the Bank holds the camp\'s Bank, the starter tools, and nothing else', () => {
         expect(InventoryManager.getItemCount('fixture_ngo_wood')).toBe(7);
         expect(InventoryManager.getItemCount('fixture_ngo_ore')).toBe(2);
-        expect(Object.keys(GameState.state.inventory.items).sort()).toEqual(['fixture_ngo_ore', 'fixture_ngo_wood']);
+        expect(Object.keys(GameState.state.inventory.items).sort()).toEqual(withStarterTools(['fixture_ngo_ore', 'fixture_ngo_wood']));
     });
 
     it('the endgame sites count toward the Token cap: the two sites and the two producers', () => {
@@ -204,16 +208,21 @@ describe('a new game opens in the Starter Camp the owner laid out', () => {
 
 /**
  * Close over what the player can get: Tokens (in the Starter Camp, bought, spawned, grown, turned
- * into, built) and items (the camp's Bank, trickle, worked from a Token whose inputs are already
- * reachable). A Token is bought once its whole price is reachable; a recipe runs once its inputs
- * are. The cartographer's maps join this once the tutorial gives them (Atlas A8).
+ * into, built) and items (the camp's Bank and the starter tools, trickle, worked from a Token whose
+ * inputs are already reachable). A Token is bought once its whole price is reachable; a recipe runs
+ * once its inputs are; a Token whose work needs a tool is worked once a tool that will do is. The
+ * cartographer's maps join this once the tutorial gives them (Atlas A8).
  */
 function reachable() {
     const camp = StarterCamp.starterCamp();
     const tokens = new Set(StarterCamp.placementsOf(camp).map(t => t.typeId));
-    const items = new Set(StarterCamp.openingBank(camp).map(i => i.itemId));
+    const items = new Set([...StarterCamp.openingBank(camp).map(i => i.itemId), ...starterToolIds(getAllItems())]);
     const all = Object.values(getAllTokenTypes());
     const have = (list) => (list || []).every(x => items.has(x.itemId));
+    const toolFor = (def) => {
+        const need = neededToolOf(def);
+        return !need || [...items].some(id => toolMeets(toolOf(getItem(id)), need));
+    };
 
     let grew = true;
     while (grew) {
@@ -225,7 +234,7 @@ function reachable() {
             for (const s of def.spawner?.spawns || []) tokens.add(s.typeId);
             if (def.grows?.into) tokens.add(def.grows.into);
             for (const t of def.turns?.into || []) tokens.add(t.typeId);
-            if (def.config && have(def.config.inputs)) {
+            if (def.config && have(def.config.inputs) && toolFor(def)) {
                 for (const o of def.config.outputs || []) {
                     if (o.itemId) items.add(o.itemId);
                     if (o.tokenId) tokens.add(o.tokenId);
