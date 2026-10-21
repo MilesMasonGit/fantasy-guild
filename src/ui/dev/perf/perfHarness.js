@@ -26,6 +26,9 @@ import * as MatCap from '../../../systems/board/MatCap.js';
 import * as FixedTokens from '../../../systems/board/FixedTokens.js';
 import * as EquipmentValidator from '../../../systems/equipment/EquipmentValidator.js';
 import { getAllItems } from '../../../config/registries/itemRegistry.js';
+import { SettingsManager } from '../../../systems/core/SettingsManager.js';
+import * as ItemStubs from '../../../systems/notifications/itemStubs.js';
+import * as Banners from '../../../systems/notifications/banners.js';
 
 const REPORT_VERSION = 1;
 const THRESHOLDS = [6.06, 8.33, 16.7];
@@ -554,7 +557,7 @@ export async function installPerf() {
         // The engine modules, for the drawing and drag benches: `window.Game` exists only in
         // dev builds, and the benches also run on the perf build.
         get game() {
-            return { ...EngineBootstrap.getEngine(), NotificationSystem, Shop, MatCap, FixedTokens, EquipmentValidator, getAllItems };
+            return { ...EngineBootstrap.getEngine(), NotificationSystem, Shop, MatCap, FixedTokens, EquipmentValidator, getAllItems, SettingsManager, ItemStubs, Banners };
         },
         get running() { return running; },
         get profilingArmed() { return profilingArmed(); }

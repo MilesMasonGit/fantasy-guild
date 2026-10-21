@@ -21,6 +21,8 @@ export const SCENE_IDS = ['S1', 'S2', 'S3', 'bank', 'shop', 'notify', 'loot', 'i
  * over and over (the Atlas pop-up's cost).
  */
 export const EXTRA_SCENE_IDS = ['cap128', 'camp128', 'cap256', 'hall', 'atlas'];
+/** The Performance Envelope's scenes, any number (`bench/browser/scenes.mjs`, `sceneFor`). */
+export const ENVELOPE_SCENE = /^(cap|heroes|enemies|fights|floor|notify)\d+$/;
 
 export const DEFAULTS = {
     settleS: 20,
@@ -59,7 +61,7 @@ export function parseArgs(argv) {
     const args = {
         builds: ['perf'], cpus: [1, 4], quick: false, only: null, switches: false,
         repeats: 1, compare: false, saveBaseline: false, ab: null, build: true,
-        settleS: null, windowS: null, port: null, cpuGiven: false, repeatsGiven: false
+        settleS: null, windowS: null, port: null, cpuGiven: false, repeatsGiven: false, slowdownTarget: null
     };
     for (const a of argv) {
         const [key, ...rest] = a.replace(/^--/, '').split('=');
@@ -85,6 +87,7 @@ export function parseArgs(argv) {
                 args.cpuGiven = true;
                 break;
             }
+            case 'slowdown-target': args.slowdownTarget = positive(value, '--slowdown-target'); break;
             case 'settle': args.settleS = positive(value, '--settle'); break;
             case 'window': args.windowS = positive(value, '--window'); break;
             case 'port': args.port = Math.floor(positive(value, '--port')); break;
@@ -94,9 +97,9 @@ export function parseArgs(argv) {
     if (args.only) {
         const ids = [...SCENE_IDS, ...EXTRA_SCENE_IDS];
         const known = new Set(ids.map(s => s.toLowerCase()));
-        const bad = args.only.filter(s => !known.has(s.toLowerCase()));
-        if (bad.length) throw new Error(`unknown scene ${bad.join(', ')}; known: ${ids.join(', ')}`);
-        args.only = args.only.map(s => ids.find(id => id.toLowerCase() === s.toLowerCase()));
+        const bad = args.only.filter(s => !known.has(s.toLowerCase()) && !ENVELOPE_SCENE.test(s.toLowerCase()));
+        if (bad.length) throw new Error(`unknown scene ${bad.join(', ')}; known: ${ids.join(', ')}, and the envelope's cap<N>, heroes<N>, enemies<N>, fights<N>, floor<N>, notify<N>`);
+        args.only = args.only.map(s => ids.find(id => id.toLowerCase() === s.toLowerCase()) || s.toLowerCase());
     }
     // The cost table is one condition: the plan's "perf build, 1×" unless --cpu says otherwise.
     if (args.switches && !args.cpuGiven) args.cpus = [1];

@@ -27,7 +27,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { launchChrome, sleep, runCleanups } from './browser/cdp.mjs';
 import { startDevServer, startPerfServer, buildPerf, perfBuildInfo } from './browser/servers.mjs';
-import { SCENES, sceneUrl, openBoard, deliveredSlowdown } from './browser/scenes.mjs';
+import { SCENES, sceneFor, sceneUrl, openBoard, deliveredSlowdown } from './browser/scenes.mjs';
 import {
     parseArgs, SCENE_IDS, DRAW_SWITCHES, metricsOf, rejectReason, aggregate, costTable, compareToBaseline,
     baselineEntry, abOrder, conditionKey, sceneTable, costTableText, table, EXIT, TOLERANCE, settingsMismatch
@@ -55,18 +55,20 @@ function gitInfo() {
 /** One measured window of one scene. */
 async function measure(chrome, baseUrl, scene, cpu, args, off = []) {
     const url = sceneUrl(baseUrl, scene, off);
-    const page = await openBoard(chrome, url, { cpu, stress: scene.stress });
+    const page = await openBoard(chrome, url, { cpu, stress: scene.stress, stressId: scene.stressId });
     try {
         const how = scene.ui ? await scene.ui(page) : null;
         await sleep(args.settleS * 1000);
         const slowdownBefore = await deliveredSlowdown(page, cpu);
-        await page.evaluate('window.__perf.reset(), true');
+        await page.evaluate('window.__envWindowStart = performance.now(), window.__perf.reset(), true');
         await sleep(args.windowS * 1000);
         const report = await page.evaluate('window.__perf.report()');
+        const envelope = scene.probe ? await page.evaluate(scene.probe) : null;
         const slowdownAfter = await deliveredSlowdown(page, cpu);
         const m = metricsOf(report);
         m.slowdown = [slowdownBefore, slowdownAfter];
-        m.reject = rejectReason(m) || slowdownReject(m.slowdown, cpu);
+        if (envelope) m.envelope = envelope;
+        m.reject = rejectReason(m) || slowdownReject(m.slowdown, args.slowdownTarget ?? cpu);
         m.slowdownOff = !rejectReason(m) && !!m.reject;
         if (page.navigations > 1) m.reject = `the page reloaded during the run (${page.navigations} loads)`;
         m.how = how;
@@ -98,6 +100,14 @@ async function measureWithRetry(...a) {
 }
 
 const SLOWDOWN_RETRIES = 2;
+
+/** An envelope scene's counts over the window (mean, and the range when it moved). */
+function envelopeNote(m) {
+    const e = m.envelope;
+    if (!e) return '';
+    const v = (k) => (e[k] ? `${e[k].mean}${e[k].min !== e[k].max ? ` (${e[k].min}–${e[k].max})` : ''}` : '?');
+    return ` · Tokens ${v('tokens')}, enemies ${v('enemies')}, fights ${v('fights')}, heroes ${v('heroes')}, piles ${v('piles')}, stubs ${v('stubs')}, banners ${v('banners')}, flows ${e.flowsPerMin}/min, banners ${e.bannersPerMin}/min`;
+}
 
 /** Why a throttled window cannot be used: Chrome delivered more than 25 % off the slowdown asked. */
 function slowdownReject(slowdown, cpu) {
@@ -133,8 +143,8 @@ async function main() {
     };
 
     // The cost table runs on one board: S2, or the one `--only` names (a cap board, say).
-    const switchScene = SCENES[args.only?.[0] ?? 'S2'];
-    const scenes = (args.switches ? [switchScene.id] : (args.only || SCENE_IDS)).map(id => SCENES[id]);
+    const switchScene = sceneFor(args.only?.[0] ?? 'S2');
+    const scenes = args.switches ? [switchScene] : (args.only || SCENE_IDS).map(id => sceneFor(id));
     console.log(`Fantasy Guild drawing bench — ${meta.commit} on ${meta.branch}${meta.dirty && Object.values(meta.dirty).some(Boolean) ? ` (uncommitted: ${Object.entries(meta.dirty).filter(([, v]) => v).map(([k]) => k).join(', ')})` : ''} · ${meta.machine} · ${meta.cpu}`);
 
     const servers = {};
@@ -191,7 +201,7 @@ async function main() {
                             const lbl = sw ? `${sw} off` : 'all on';
                             process.stdout.write(`  ${switchScene.name} ${lbl}…`);
                             const m = await measureWithRetry(chrome, baseUrl, switchScene, cpu, args, sw ? [sw] : []);
-                            console.log(` ${m.fps} fps, work p50 ${m.workP50} ms${slowdownNote(m, cpu)}${m.reject ? ` ✗ ${m.reject}` : ''}`);
+                            console.log(` ${m.fps} fps, work p50 ${m.workP50} ms${slowdownNote(m, args.slowdownTarget ?? cpu)}${envelopeNote(m)}${m.reject ? ` ✗ ${m.reject}` : ''}`);
                             if (m.reject) failed = true;
                             if (sw) (offRuns[sw] ||= []).push(m); else allOn.push(m);
                         }
@@ -208,7 +218,7 @@ async function main() {
                             for (const side of abOrder(1)) {
                                 process.stdout.write(`  ${scene.name} ${side}…`);
                                 const m = await measureWithRetry(chrome, side === 'A' ? baseUrl : args.ab, scene, cpu, args);
-                                console.log(` ${m.fps} fps, work p50 ${m.workP50} ms${slowdownNote(m, cpu)}${m.reject ? ` ✗ ${m.reject}` : ''}`);
+                                console.log(` ${m.fps} fps, work p50 ${m.workP50} ms${slowdownNote(m, args.slowdownTarget ?? cpu)}${envelopeNote(m)}${m.reject ? ` ✗ ${m.reject}` : ''}`);
                                 if (m.reject) failed = true;
                                 pair[side].push(m);
                             }
@@ -220,7 +230,7 @@ async function main() {
                     for (let r = 0; r < args.repeats; r++) {
                         process.stdout.write(`  ${scene.name}${args.repeats > 1 ? ` ${r + 1}/${args.repeats}` : ''}…`);
                         const m = await measureWithRetry(chrome, baseUrl, scene, cpu, args);
-                        console.log(` ${m.fps} fps, work p50 ${m.workP50} ms${slowdownNote(m, cpu)}${m.reject ? ` ✗ ${m.reject}` : ''}${m.how ? ` · ${m.how}` : ''}`);
+                        console.log(` ${m.fps} fps, work p50 ${m.workP50} ms${slowdownNote(m, args.slowdownTarget ?? cpu)}${envelopeNote(m)}${m.reject ? ` ✗ ${m.reject}` : ''}${m.how ? ` · ${m.how}` : ''}`);
                         if (m.reject) failed = true;
                         runs.push(m);
                     }
@@ -249,7 +259,7 @@ async function main() {
             const ok = runs.filter(r => !r.reject);
             const agg = aggregate(ok.length ? ok : runs);
             medians[cond][id] = agg;
-            rows.push({ label: label(SCENES[id], ok.length ? null : runs[0]), m: agg });
+            rows.push({ label: label(sceneFor(id), ok.length ? null : runs[0]), m: agg });
         }
         if (rows.length && !args.switches) console.log(`\n${cond}\n${sceneTable(rows)}`);
     }
@@ -267,7 +277,7 @@ async function main() {
             const B = aggregate(pair.B.filter(r => !r.reject));
             abSummary[cond][id] = { A, B };
             const pct = (b, a) => (Number.isFinite(a) && a ? `${(((b - a) / a) * 100).toFixed(1)} %` : '—');
-            lines.push([SCENES[id].name, A.fps?.toFixed(1) ?? '—', B.fps?.toFixed(1) ?? '—', pct(B.fps, A.fps),
+            lines.push([sceneFor(id).name, A.fps?.toFixed(1) ?? '—', B.fps?.toFixed(1) ?? '—', pct(B.fps, A.fps),
                 A.workP50?.toFixed(2) ?? '—', B.workP50?.toFixed(2) ?? '—', pct(B.workP50, A.workP50),
                 A.workP99?.toFixed(2) ?? '—', B.workP99?.toFixed(2) ?? '—']);
         }

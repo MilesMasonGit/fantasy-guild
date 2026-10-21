@@ -174,6 +174,146 @@ export const SCENES = {
 
 const STRESS_IDS = { quiet: 'S1', realistic: 'S2', torture: 'S3', cap128: 'C128', camp128: 'K128', cap256: 'C256' };
 
+// --- The Performance Envelope's scenes (brief 90) ------------------------------------------------
+//
+// Named with a number, any number, so a limit can be swept (`--only=cap96,cap128,cap160`):
+//   cap<N> heroes<N> enemies<N> fights<N>   the boards of `bench/scenarios/envelope.mjs`
+//   floor<N>    cap128 with N loot piles resting on the floor: auto-collect off and the game's own
+//               pile cap (`gameplay.maxItemStacks`, 40 shipped) set to N, the floor filled to it
+//               first; the board's own drops then keep it at N, the oldest pile flying to the Bank
+//   notify<N>   cap128 with N notifications a minute on top of the board's own: every tenth a
+//               banner (the oldest on screen dismissed when three show, as a player clicking), the
+//               rest item flows into the Bank (`InventoryManager.addItem`), which the item stubs
+//               show, over 24 items in turn
+// Each also samples what is on the mat every 500 ms (Tokens, enemies, fights going on, loot piles,
+// stub rows, banners) and counts the item flows and banners the window saw: the scene's `probe`,
+// kept in the results JSON as `envelope` and printed.
+
+const ENVELOPE_BOARD = /^(cap|heroes|enemies|fights)(\d+)$/;
+const ENVELOPE_ID = { cap: 'C', heroes: 'H', enemies: 'E', fights: 'F' };
+const ENVELOPE_LABEL = {
+    cap: (n) => `S2 mix at cap ${n}`,
+    heroes: (n) => `cap128, ${n} heroes`,
+    enemies: (n) => `cap128, room for ${n} goblins`,
+    fights: (n) => `cap128, ${n} heroes fighting`
+};
+
+/** What is on the mat, every 500 ms, and the notifications the window sees. */
+const SAMPLER = `(() => {
+    const G = window.__perf.game;
+    const S = window.__envSamples = [];
+    window.__envFlows = []; window.__envBanners = window.__envBanners || [];
+    G.EventBus.subscribe('inventory_updated', (p) => { if (p && p.itemId && (p.added > 0 || p.removed > 0)) window.__envFlows.push(performance.now()); });
+    window.__envSampler = setInterval(() => {
+        const tokens = G.BoardState.tokens();
+        let enemies = 0;
+        for (const t of tokens) if (G.BoardCombat.isEnemyToken(t)) enemies++;
+        let fights = 0;
+        for (const h of G.GameState.heroes || []) if (h && G.BoardCombat.fightOfHero(h.id)) fights++;
+        S.push({ t: performance.now(), tokens: tokens.length, enemies, fights, heroes: (G.GameState.heroes || []).length,
+            piles: G.SpriteLayer.getSprites().length, stubs: G.ItemStubs.getStubs().length, banners: G.Banners.getView().shown.length });
+    }, 500);
+    return true;
+})()`;
+
+/** The samples since the window started, summarised (mean, min, max) per count, and the flows a minute. */
+export const ENVELOPE_PROBE = `(() => {
+    const from = window.__envWindowStart || 0, now = performance.now();
+    const S = (window.__envSamples || []).filter(s => s.t >= from);
+    const out = { samples: S.length };
+    for (const k of ['tokens', 'enemies', 'fights', 'heroes', 'piles', 'stubs', 'banners']) {
+        const v = S.map(s => s[k]);
+        out[k] = v.length ? { mean: Math.round(10 * v.reduce((a, b) => a + b, 0) / v.length) / 10, min: Math.min(...v), max: Math.max(...v) } : null;
+    }
+    const minutes = (now - from) / 60000;
+    out.flowsPerMin = Math.round((window.__envFlows || []).filter(t => t >= from).length / minutes);
+    out.bannersPerMin = Math.round((window.__envBanners || []).filter(t => t >= from).length / minutes);
+    return out;
+})()`;
+
+async function startSampler(page) {
+    await page.evaluate(SAMPLER);
+}
+
+/** floor<N>: the floor kept at N resting loot piles. */
+async function floorPiles(page, n) {
+    await startSampler(page);
+    const made = await page.evaluate(`(() => {
+        const G = window.__perf.game;
+        G.SettingsManager.set('gameplay.autoCollectLoot', false);
+        G.SettingsManager.set('gameplay.maxItemStacks', ${n});
+        // Distinct items, on a grid over the mat, so no two piles merge (same item within 2¼ steps).
+        const items = Object.values(G.getAllItems()).filter(i => i && i.id && !i.equipSlot).map(i => i.id);
+        const mat = document.querySelector('[data-board-origin]');
+        const w = Number(mat.dataset.naturalWidth);
+        const h = mat.getBoundingClientRect().height / Number(mat.dataset.boardScale);
+        const cols = Math.ceil(Math.sqrt(${n} * w / h));
+        const rows = Math.ceil(${n} / cols);
+        for (let i = 0; i < ${n}; i++) {
+            const c = i % cols, r = Math.floor(i / cols);
+            const at = { centre: { x: w * (0.06 + 0.88 * (c + 0.5) / cols), y: h * (0.08 + 0.84 * (r + 0.5) / rows) } };
+            G.SpriteLayer.addSprite('item', items[i % items.length], 1 + (i % 4), at);
+        }
+        return G.SpriteLayer.getSprites().length;
+    })()`);
+    return `auto-collect off, maxItemStacks ${n}, ${made} piles scattered (then the board's own drops)`;
+}
+
+/** notify<N>: N notifications a minute, every tenth a banner. */
+async function notifyRate(page, n) {
+    await startSampler(page);
+    await page.evaluate(`(() => {
+        const G = window.__perf.game;
+        const items = Object.values(G.getAllItems()).filter(i => i && i.id && !i.equipSlot).slice(0, 24).map(i => i.id);
+        let k = 0;
+        const one = () => {
+            k++;
+            if (k % 10 === 0) {
+                const view = G.Banners.getView();
+                if (view.shown.length >= G.Banners.MAX_SHOWN) G.Banners.dismiss(view.shown[view.shown.length - 1].id);
+                G.Banners.push({ kind: 'save', groupKey: 'env' + k, parts: { title: 'Bench banner ' + k, message: 'A banner from the envelope bench' } });
+                window.__envBanners.push(performance.now());
+            } else {
+                G.InventoryManager.addItem(items[k % items.length], 1, 'bench');
+            }
+        };
+        // At most every 50 ms; faster rates send several at once.
+        const every = Math.max(50, 60000 / ${n});
+        const per = Math.max(1, Math.round(${n} * every / 60000));
+        window.__benchTimer = setInterval(() => { for (let i = 0; i < per; i++) one(); }, every);
+        return true;
+    })()`);
+    return `${n} notifications a minute from a page timer (every tenth a banner, the rest item flows over 24 items)`;
+}
+
+/** The scene an id names: one of `SCENES`, or an envelope scene with a number. Null if none. */
+export function sceneFor(id) {
+    if (SCENES[id]) return SCENES[id];
+    const key = String(id || '').trim().toLowerCase();
+    const known = Object.keys(SCENES).find(k => k.toLowerCase() === key);
+    if (known) return SCENES[known];
+    let m = ENVELOPE_BOARD.exec(key);
+    if (m) {
+        const n = Number(m[2]);
+        return {
+            id: `${m[1]}${n}`, name: ENVELOPE_LABEL[m[1]](n), stress: `${m[1]}${n}`, stressId: `${ENVELOPE_ID[m[1]]}${n}`,
+            ui: async (page) => { await startSampler(page); return null; }, probe: ENVELOPE_PROBE
+        };
+    }
+    m = /^floor(\d+)$/.exec(key);
+    if (m) {
+        const n = Number(m[1]);
+        return { id: `floor${n}`, name: `cap128, ${n} loot piles on the floor`, stress: 'cap128', ui: (page) => floorPiles(page, n), probe: ENVELOPE_PROBE };
+    }
+    m = /^notify(\d+)$/.exec(key);
+    if (m) {
+        const n = Number(m[1]);
+        return { id: `notify${n}`, name: `cap128, ${n} notifications a minute`, stress: 'cap128', ui: (page) => notifyRate(page, n), probe: ENVELOPE_PROBE };
+    }
+    return null;
+}
+
+
 export function sceneUrl(base, scene, offSwitches = []) {
     const q = new URLSearchParams({ stress: scene.stress });
     if (offSwitches.length) q.set('off', offSwitches.join(','));
@@ -184,12 +324,12 @@ export function sceneUrl(base, scene, offSwitches = []) {
  * Load a stress board in a fresh tab and wait until it is built and measuring. Returns the page.
  * `cpu` is set before the load, so the build itself runs at that speed too.
  */
-export async function openBoard(chrome, url, { cpu = 1, stress = 'realistic', timeoutMs = 180000 } = {}) {
+export async function openBoard(chrome, url, { cpu = 1, stress = 'realistic', stressId = null, timeoutMs = 180000 } = {}) {
     const page = await chrome.newPage();
     try {
         await page.setCpuThrottling(cpu);
         await page.navigate(url);
-        const id = STRESS_IDS[stress] || 'S2';
+        const id = stressId || STRESS_IDS[stress] || 'S2';
         await page.waitFor(`window.__perf?.running === true && window.__perf.report().scenario?.id === ${JSON.stringify(id)}`,
             { timeoutMs, intervalMs: 500, what: `the ${id} board` });
         return page;

@@ -60,11 +60,35 @@ const ALIASES = {
     'quiet-hall': 'quiet', 'push-storm': 'push', 'rebuild-storm': 'rebuild', 'late': 'realistic'
 };
 
+/**
+ * The Performance Envelope's boards (`bench/scenarios/envelope.mjs`, brief 90), by a name with a
+ * number: `cap160`, `heroes16`, `enemies40`, `fights8`. Their ids are a letter and the number
+ * (`C160`, `H16`, `E40`, `F8`).
+ */
+const ENVELOPE = /^(cap|heroes|enemies|fights)(\d+)$/;
+const ENVELOPE_ID = { cap: 'C', heroes: 'H', enemies: 'E', fights: 'F' };
+
+function envelopeEntry(key) {
+    const m = ENVELOPE.exec(key);
+    if (!m) return null;
+    const name = `${m[1]}${Number(m[2])}`;
+    return {
+        name,
+        id: `${ENVELOPE_ID[m[1]]}${Number(m[2])}`,
+        label: `Envelope: ${name}`,
+        load: () => import('../../../../bench/scenarios/envelope.mjs').then(mod => {
+            const scenario = mod.envelopeScenario(name);
+            if (!scenario) throw new Error(`No envelope board "${name}"`);
+            return { default: scenario };
+        })
+    };
+}
+
 export function resolveStress(name) {
     if (!name) return null;
     const key = String(name).trim().toLowerCase();
     const canonical = ALIASES[key] || key;
-    return STRESS_SCENARIOS.find(s => s.name === canonical || s.id.toLowerCase() === canonical) || null;
+    return STRESS_SCENARIOS.find(s => s.name === canonical || s.id.toLowerCase() === canonical) || envelopeEntry(canonical);
 }
 
 /** Run `fn`, then put the protected localStorage keys back exactly as they were. */
