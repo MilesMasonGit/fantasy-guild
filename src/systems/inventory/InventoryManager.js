@@ -8,6 +8,23 @@ import { DEFAULT_MAX_STACK } from '../../config/registries/itemRegistry.js';
 import { RegistryManager } from '../progression/RegistryManager.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
+/** Batching depth: while > 0, Bank changes are summed per item and announced when it ends. */
+let batchDepth = 0;
+/** @type {Map<string, {added: number, removed: number}>} what the open batch changed, per item */
+let batched = new Map();
+
+/** Say a Bank change now, or add it to the open batch. */
+function announce(itemId, quantity, { added = 0, removed = 0 }) {
+    if (batchDepth > 0) {
+        const sum = batched.get(itemId) || { added: 0, removed: 0 };
+        sum.added += added;
+        sum.removed += removed;
+        batched.set(itemId, sum);
+        return;
+    }
+    EventBus.publish(ENGINE_EVENTS.INVENTORY_UPDATED, { itemId, amount: quantity, ...(added ? { added } : { removed }) });
+}
+
 /**
  * InventoryManager - Transaction Hub for player inventory.
  * Focuses on atomic additions and removals.
@@ -95,7 +112,7 @@ export const InventoryManager = {
         InventoryFormatter.invalidate();
 
         RegistryManager.recordItemGain(itemId, addedCount, sourceId);
-        EventBus.publish(ENGINE_EVENTS.INVENTORY_UPDATED, { itemId, amount: entry.quantity, added: addedCount });
+        announce(itemId, entry.quantity, { added: addedCount });
 
         logger.debug('InventoryManager', `Added ${addedCount}x ${itemId} (Total: ${entry.quantity})`);
         return addedCount;
@@ -118,10 +135,38 @@ export const InventoryManager = {
         }
 
         InventoryFormatter.invalidate();
-        EventBus.publish(ENGINE_EVENTS.INVENTORY_UPDATED, { itemId, amount: entry.quantity, removed: amount });
+        announce(itemId, entry.quantity, { removed: amount });
 
         logger.debug('InventoryManager', `Removed ${amount}x ${itemId} (Remaining: ${entry.quantity})`);
         return true;
+    },
+
+    /**
+     * Run `fn` with the Bank's news held back: every item it changed is announced once when it ends
+     * (`INVENTORY_UPDATED { itemId, amount, added?, removed? }`, the sums and the final count), in
+     * the order the items were first changed. A loot sweep runs in one, so forty piles are not forty
+     * announcements. Nests; a batch that throws still announces what it did. `INVENTORY_OVERFLOW`
+     * is never held: the floor must take the overflow at once.
+     */
+    batch(fn) {
+        batchDepth++;
+        try {
+            return fn();
+        } finally {
+            batchDepth--;
+            if (batchDepth === 0 && batched.size) {
+                const changes = batched;
+                batched = new Map();
+                for (const [itemId, { added, removed }] of changes) {
+                    EventBus.publish(ENGINE_EVENTS.INVENTORY_UPDATED, {
+                        itemId,
+                        amount: InventoryStore.getEntry(itemId)?.quantity || 0,
+                        ...(added ? { added } : {}),
+                        ...(removed ? { removed } : {})
+                    });
+                }
+            }
+        }
     },
 
     /**

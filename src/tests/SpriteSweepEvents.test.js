@@ -130,14 +130,15 @@ describe('A sprite sweep announces once, not once per sprite (CR2-056)', () => {
     });
 
     it('the whole sweep costs far fewer events than it did', () => {
-        // The headline number, held as a ceiling rather than an exact figure —
-        // the per-sprite inventory and registry events are not this ticket's.
+        // The headline number, held as a ceiling rather than an exact figure. Per pile, only
+        // `sprite_collected` (by design) and the registry's own note are left.
         for (let i = 0; i < 40; i++) SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, null);
 
         const counts = countEvents(() => SpriteLayer.collectAll());
 
-        expect(counts.total).toBeLessThan(280);      // was 322
+        expect(counts.total).toBeLessThan(100);      // was 322
         expect(counts.state_changed).toBeUndefined();  // was 120; the event is retired
+        expect(counts[ENGINE_EVENTS.INVENTORY_UPDATED]).toBe(1);  // was 40
     });
 });
 

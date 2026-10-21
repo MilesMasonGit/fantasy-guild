@@ -58,7 +58,8 @@ function sayBankFull(itemId) {
  *
  * A sweep is one player-visible event, the floor tidying itself, not forty. While `sweepDepth > 0`,
  * `collectSprite` records that the floor changed instead of announcing it, and the sweep publishes
- * once at the end.
+ * once at the end. The Bank's news is held the same way (`InventoryManager.batch`): one
+ * `inventory_updated` per item, after the last pile.
  *
  * ⚠️ `board:sprite_collected` is NOT batched and must not be: it is per-sprite by design (it
  * carries the position the particle flies from, and `QuestManager` counts it). Only
@@ -89,7 +90,7 @@ function announceSpriteChange() {
 function asSweep(fn) {
     sweepDepth++;
     try {
-        return fn();
+        return InventoryManager.batch(fn);
     } finally {
         sweepDepth--;
         if (sweepDepth === 0 && sweepDirty) {
