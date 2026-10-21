@@ -5,20 +5,15 @@ import { useGameState } from '../hooks/useGameState.js';
 import { GIModal } from '../components/base/GIModal.jsx';
 import { ItemIcon } from '../components/base/ItemIcon.jsx';
 import { HERO_PORTRAITS, HERO_NAME_MAX } from '../../config/registries/heroPortraits.js';
-import { HeroSkillSheet } from '../components/hero/HeroSkillSheet.jsx';
 import { Check, Repeat } from 'lucide-react';
 import { FLAG_COLOURS, isFlagColour } from '../../systems/board/FlagColours.js';
 import { FlagMark } from '../components/board/FlagMark.jsx';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 
 /**
- * HeroEditModal: the hero's full sheet, plus everything about them that isn't drag-and-drop:
- * rename, repick their portrait, change job.
- * The dock handles deploying, recalling and equipping by drag; this handles the rest, opened
- * by the Edit button on a pinned dock card.
- * ⚠️ It is also the only place banked skills are visible. The dock card shows the six a hero
- * can use *now* and nothing else, because it is a glance surface; what someone used to be able
- * to do belongs where the decision to re-train is actually made, which is here.
+ * HeroEditModal: everything about a hero that isn't drag-and-drop: rename, repick their
+ * portrait, flag colour, change job. Opened by the Edit button on the hero panel, which shows
+ * their skills (held, banked and locked); this modal does not repeat them.
  */
 export const HeroEditModal = ({ heroId, isOpen, onClose, onChangeJob }) => {
     const engine = useEngine();
@@ -75,17 +70,6 @@ export const HeroEditModal = ({ heroId, isOpen, onClose, onChangeJob }) => {
     return (
         <GIModal isOpen={isOpen} onClose={onClose} title={`Edit ${hero.name}`} maxWidth="max-w-lg">
             <div className="flex flex-col gap-4 p-4">
-                {/**
-                 * What this hero IS, before what you can change about them. This is the only
-                 * surface in the game that shows banked skills (the dock card deliberately
-                 * does not), so it is also where a re-training decision gets made.
-                 */}
-                <HeroSkillSheet heroId={heroId} />
-
-                {/**
-                 * The one action that changes what this hero IS, kept next to the sheet it
-                 * rewrites rather than buried with rename.
-                 */}
                 <button
                     onClick={onChangeJob}
                     className={cn(

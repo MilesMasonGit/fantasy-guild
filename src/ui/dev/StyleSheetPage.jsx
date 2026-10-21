@@ -8,7 +8,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { cn } from '../utils/cn.js';
 import { EntityRibbon } from '../components/base/EntityRibbon.jsx';
 import { ItemIcon } from '../components/base/ItemIcon.jsx';
-import { VitalBar } from '../components/base/VitalBar.jsx';
+import { VitalBar, vitalTone } from '../components/base/VitalBar.jsx';
 import { TokenSprite, TOKEN_SURFACE } from '../components/base/TokenSprite.jsx';
 import { StationGearBadge } from '../components/board/TokenBadges.jsx';
 import { Tooltip } from '../components/base/Tooltip.jsx';
@@ -515,12 +515,13 @@ export const KIT_SECTIONS = [
         )
     },
     {
-        id: 'bars', title: 'Bars', status: 'shared', source: 'VitalBar',
+        id: 'bars', title: 'Bars', status: 'shared', source: 'VitalBar (the hero panel)',
         rule: 'HP is a bar; in the hero panel its numbers show beside it.',
         Demo: () => (
             <div className="w-48 flex flex-col gap-1">
-                <VitalBar label="HP" value={62} max={100} barClass="bg-gi-hp" />
-                <VitalBar label="NRJ" value={30} max={100} barClass="bg-[var(--color-energy)]" />
+                {[[62, 100], [30, 100], [12, 100]].map(([value, max]) => (
+                    <VitalBar key={value} value={value} max={max} barClass={vitalTone(value, max)} />
+                ))}
             </div>
         )
     },
