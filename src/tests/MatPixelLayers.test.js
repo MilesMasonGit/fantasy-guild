@@ -10,7 +10,6 @@ import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { Board } from '../ui/components/board/Board.jsx';
 import { TokenChargeDeltaFloater } from '../ui/components/board/TokenBadges.jsx';
 import { playSpawn } from '../ui/components/board/spawnMotion.js';
@@ -51,7 +50,7 @@ const TAILWIND = readFileSync(resolve(__dirname, '../tailwind.css'), 'utf8');
 beforeEach(() => { GameState.initNew(); InventoryManager.init(); clearMat(); });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
-const engine = (el) => h(EngineContext.Provider, { value: { GameState, EventBus } }, h(DndContext, null, el));
+const engine = (el) => h(DndContext, null, el);
 const boxesOf = (container, id) => [
     container.querySelector(`[data-token-art][data-token-id="${id}"]`),
     container.querySelector(`[data-token-overlay="${id}"]`)

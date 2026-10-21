@@ -15,7 +15,6 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
 import { getTokenType, tokenStartingUses } from '../config/registries/tokenRegistry.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { TokenBubbles } from '../ui/components/board/TokenBubbles.jsx';
 import { InspectBubbles } from '../ui/components/drawer/InspectBubbles.jsx';
 import { WORK_BAR_ART_W, filledSteps } from '../ui/components/board/workBar.js';
@@ -38,7 +37,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
  */
 
 const h = React.createElement;
-const tree = (...els) => h(EngineContext.Provider, { value: { GameState, EventBus } }, h(DndContext, null, ...els));
+const tree = (...els) => h(DndContext, null, ...els);
 const token = (id, extra = {}) => ({ typeId: 'fixture_producer', instanceId: id, heroId: 'hero_1', alert: null, usesRemaining: null, ...extra });
 const rows = (ids, extra = {}) => tree(...ids.map(id => h(TokenBubbles, { key: id, instanceId: id, token: token(id, extra[id]) })));
 

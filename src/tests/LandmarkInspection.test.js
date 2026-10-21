@@ -8,8 +8,6 @@ import { landmarkLines, LANDMARK_TEXT } from '../ui/components/drawer/landmarkLi
 import { TokenInspection } from '../ui/components/drawer/TokenInspection.jsx';
 import { EventBus } from '../systems/core/EventBus.js';
 import { UI_EVENTS } from '../systems/core/engineEvents.js';
-import { GameState } from '../state/GameState.js';
-import { EngineContext } from '../ui/context/EngineContext';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -88,8 +86,7 @@ describe('opening a Token sheet tells the engine (the tutorial counts it)', () =
             render(React.createElement(TokenInspection, { typeId: SITE.id }));
             expect(seen).toEqual([]);
             cleanup();
-            const onMat = () => React.createElement(EngineContext.Provider, { value: { GameState, EventBus } },
-                React.createElement(TokenInspection, { typeId: SITE.id, instanceId: 'tok_li_1' }));
+            const onMat = () => React.createElement(TokenInspection, { typeId: SITE.id, instanceId: 'tok_li_1' });
             const sheet = render(onMat());
             sheet.rerender(onMat());
             expect(seen).toEqual([{ instanceId: 'tok_li_1', typeId: SITE.id }]);

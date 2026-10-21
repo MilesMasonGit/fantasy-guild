@@ -9,9 +9,7 @@ import { render, fireEvent, act } from '@testing-library/react';
 import { GuildHallBoard } from '../ui/components/board/GuildHallBoard.jsx';
 import { GuildHallEffectsPanel } from '../ui/components/board/GuildHallEffectsPanel.jsx';
 import { InspectionPanel } from '../ui/components/drawer/InspectionPanel.jsx';
-import { EngineProvider } from '../ui/context/EngineContext.jsx';
 import { GameState } from '../state/GameState.js';
-import { EventBus } from '../systems/core/EventBus.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
 import { GUILD_UPGRADES, HALL_NODE, getUpgradeDef, getUpgradeWebLinks } from '../config/guildUpgrades.js';
@@ -20,8 +18,7 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
     success: vi.fn(), warning: vi.fn(), error: vi.fn(), info: vi.fn(), notify: vi.fn()
 }));
 
-const withEngine = (el) => React.createElement(EngineProvider, { engine: { GameState, EventBus } }, el);
-const renderWeb = (props = {}) => render(withEngine(React.createElement(GuildHallBoard, props)));
+const renderWeb = (props = {}) => render((React.createElement(GuildHallBoard, props)));
 
 const stateOf = (container, id) =>
     container.querySelector(`[data-hall-node="${id}"]`)?.getAttribute('data-node-state');
@@ -103,7 +100,7 @@ describe('the Guild Hall upgrade web', () => {
 
     it('opens the inspection for a selection made by id, and buying there updates the web', async () => {
         InventoryManager.addItem('item_oak_wood', 10);
-        const { container } = render(withEngine(React.createElement(React.Fragment, null,
+        const { container } = render((React.createElement(React.Fragment, null,
             React.createElement(GuildHallBoard, {}),
             React.createElement(InspectionPanel, { selection: { type: 'guild_upgrade', id: 'bank_slots', pane: 'guild' } })
         )));
@@ -124,7 +121,7 @@ describe('the Guild Hall upgrade web', () => {
 
 describe('the Effects list sits left of the web (FB-38)', () => {
     it('carries its probe hook', () => {
-        const { container } = render(withEngine(React.createElement(GuildHallEffectsPanel)));
+        const { container } = render((React.createElement(GuildHallEffectsPanel)));
         expect(container.querySelector('[data-hall-effects]')).toBeTruthy();
     });
 

@@ -58,7 +58,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     SettingsManager.init();
     SaveManager.init();
 
-    // 3. Assemble Full Engine Suite
+    // 3. The engine as one object, for the console (`window.Game`, dev builds). The UI imports
+    //    the engine's modules itself.
     const engine = EngineBootstrap.getEngine();
 
     // 4. Configure Development Environment (Debug Hooks)
@@ -100,7 +101,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // one only catches whatever isn't under a named surface yet.
         root.render(
             <ErrorBoundary label="App">
-                <ReactRoot engine={engine} />
+                <ReactRoot />
             </ErrorBoundary>
         );
         logger.info('main', 'React UI Engine online.');

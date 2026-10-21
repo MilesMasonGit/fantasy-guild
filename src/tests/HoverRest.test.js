@@ -14,7 +14,6 @@ import * as TileModifiers from '../systems/board/TileModifiers.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { resetMatTuning } from '../config/matTuning.js';
 import { matW, matH } from '../config/matGeometry.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
@@ -38,7 +37,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 
 const h = React.createElement;
 const mount = () => render(
-    h(EngineContext.Provider, { value: { GameState, EventBus } }, h(DndContext, null, h(MatBoard)))
+    h(DndContext, null, h(MatBoard))
 );
 const later = (ms) => act(() => { vi.advanceTimersByTime(ms); });
 const overlay = (c, id) => c.querySelector(`[data-token-overlay="${id}"]`);

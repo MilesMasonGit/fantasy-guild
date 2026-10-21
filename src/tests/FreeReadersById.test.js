@@ -32,7 +32,6 @@ import * as MatPlacement from '../systems/board/MatPlacement.js';
 import { TokenBubbles } from '../ui/components/board/TokenBubbles.jsx';
 import { STEP_MS } from '../ui/components/board/frameClock.js';
 import { WORK_BAR_ART_W } from '../ui/components/board/workBar.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { placeAt, clearMat } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -355,10 +354,7 @@ describe('⭐ the mat draws each Token by its instance id (slice 1.6c-2)', () =>
             clearMat();
             const tok = placeAt('fixture_producer', C(14).x, C(14).y);
             const other = placeAt('fixture_producer', C(15).x, C(15).y);
-            const { container } = render(React.createElement(
-                EngineContext.Provider, { value: { EventBus } },
-                React.createElement(TokenBubbles, { instanceId: tok.id, token: { typeId: tok.typeId, heroId: 'hero_1', instanceId: tok.id } })
-            ));
+            const { container } = render(React.createElement(TokenBubbles, { instanceId: tok.id, token: { typeId: tok.typeId, heroId: 'hero_1', instanceId: tok.id } }));
             const bar = container.querySelector('[data-work-bar]');
             // The bar draws on the shared step clock's next step, in art pixels.
             const step = () => act(() => { vi.advanceTimersByTime(STEP_MS + 20); });

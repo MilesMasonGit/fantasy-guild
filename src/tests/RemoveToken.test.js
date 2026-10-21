@@ -16,7 +16,6 @@ import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { resetMatTuning, setMatTuning } from '../config/matTuning.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { TokenInspection } from '../ui/components/drawer/TokenInspection.jsx';
 import { clearMat } from './fixtures/mat.js';
 import { centreOf } from '../systems/board/nearby.js';
@@ -55,7 +54,7 @@ function put(point, typeId, origin = BoardState.ORIGIN.PLACED) {
     return BoardState.addToken(instance, point.x, point.y);
 }
 
-const mount = (el) => render(h(EngineContext.Provider, { value: { GameState, EventBus } }, el));
+const mount = (el) => render(el);
 const removeBox = (container) => container.querySelector('[data-remove-token]');
 
 beforeAll(() => Flags.init());

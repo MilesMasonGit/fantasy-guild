@@ -12,7 +12,6 @@ import * as QuestTokens from '../systems/quests/QuestTokens.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { QUEST_TOKEN_TYPE } from '../config/registries/engineTokens.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { TokenInspection } from '../ui/components/drawer/TokenInspection.jsx';
 import { CalloutLayer } from '../ui/components/board/CalloutLayer.jsx';
 import { calloutText } from '../ui/components/board/callouts.js';
@@ -35,7 +34,7 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 
 const h = React.createElement;
 const mount = (...els) => render(
-    h(EngineContext.Provider, { value: { GameState, EventBus } }, h(DndContext, null, ...els))
+    h(DndContext, null, ...els)
 );
 const inspect = (instance) => mount(h(TokenInspection, { typeId: instance.typeId, instanceId: instance.id }));
 const control = (c) => c.querySelector('[data-demolish]');

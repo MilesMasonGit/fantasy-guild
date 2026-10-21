@@ -15,7 +15,6 @@ import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
-import { EngineContext } from '../ui/context/EngineContext';
 import { BottomHeroDock } from '../ui/components/dock/BottomHeroDock.jsx';
 import { DOCK_SLOT_PX } from '../ui/components/dock/dockHeroView.js';
 import { addLevelUp, barLevelUpText, clearAllHeroBubbles, clearHeroBubble, BAR_BUBBLES_SHOWN, BAR_BUBBLE_FADE_MS } from '../ui/components/dock/heroBarBubbles.js';
@@ -30,12 +29,10 @@ import { setLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
 
 const h = React.createElement;
 const hero = (id, name) => ({ id, name, spriteId: 'hn_recruit_por', hp: { current: 100, max: 100 }, status: 'idle', equipment: {} });
-const engine = { GameState, EventBus, BoardPlacement: { recallHeroById: vi.fn() }, EquipmentManager: { equipItem: vi.fn() } };
 
 function mount(props = {}) {
     return render(
-        h(EngineContext.Provider, { value: engine },
-            h(DeckDndProvider, null, h(BottomHeroDock, { selectedHeroId: null, ...props })))
+        h(DeckDndProvider, null, h(BottomHeroDock, { selectedHeroId: null, ...props }))
     );
 }
 

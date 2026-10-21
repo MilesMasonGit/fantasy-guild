@@ -16,7 +16,6 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { SettingsManager } from '../systems/core/SettingsManager.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { TokenInspection } from '../ui/components/drawer/TokenInspection.jsx';
 import { TokenInspectPopup } from '../ui/components/board/TokenInspectPopup.jsx';
@@ -44,7 +43,7 @@ function put(point, typeId) {
 }
 
 const mount = (...els) => render(
-    h(EngineContext.Provider, { value: { GameState, EventBus } }, h(DndContext, null, ...els))
+    h(DndContext, null, ...els)
 );
 
 const ring = (c, name) => c.querySelector(`[data-inspect-bubble="${name}"] [data-ring]`);

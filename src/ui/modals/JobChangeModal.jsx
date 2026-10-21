@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { cn } from '../utils/cn.js';
-import { useEngine } from '../hooks/useEngine.js';
+import { HeroManager } from '../../systems/hero/HeroManager.js';
+import * as PromotionSystem from '../../systems/hero/PromotionSystem.js';
 import { useGameState } from '../hooks/useGameState.js';
 import { GIModal } from '../components/base/GIModal.jsx';
 import {
@@ -29,7 +30,6 @@ import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
  * tells the player exactly what to go and do.
  */
 export const JobChangeModal = ({ heroId, isOpen, onClose }) => {
-    const engine = useEngine();
     const [selected, setSelected] = useState(null);
 
     // Re-read on any hero change so the list reflects a promotion the moment it lands on the
@@ -48,10 +48,10 @@ export const JobChangeModal = ({ heroId, isOpen, onClose }) => {
 
     if (!isOpen || !stamp) return null;
 
-    const hero = engine.HeroManager.getHero(heroId);
+    const hero = HeroManager.getHero(heroId);
     if (!hero) return null;
 
-    const P = engine.PromotionSystem;
+    const P = PromotionSystem;
     const currentJob = getJob(hero.jobId);
     const preview = selected ? P.previewPromotion(heroId, selected) : null;
 

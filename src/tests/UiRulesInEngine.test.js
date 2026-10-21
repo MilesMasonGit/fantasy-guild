@@ -8,7 +8,6 @@ import { UI_EVENTS } from '../systems/core/engineEvents.js';
 import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
 import { getUpgradeDef } from '../config/guildUpgrades.js';
 import { GuildUpgradeInspection } from '../ui/components/drawer/GuildUpgradeInspection.jsx';
-import { EngineProvider } from '../ui/context/EngineContext.jsx';
 import { sourceCode } from './fixtures/sourceScan.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -35,8 +34,7 @@ describe('permanence: the UI asks Placement.isPermanentToken', () => {
 describe('the Hall upgrade button: the engine decides affordability and says a refusal', () => {
     const def = getUpgradeDef('roster_size');
     const mount = () => render(
-        React.createElement(EngineProvider, { engine: { GameState, EventBus } },
-            React.createElement(GuildUpgradeInspection, { upgradeDef: def }))
+        React.createElement(GuildUpgradeInspection, { upgradeDef: def })
     );
     const button = (c) => c.querySelector('#guild-upgrade-button');
 

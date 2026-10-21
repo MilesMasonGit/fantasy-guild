@@ -2,9 +2,6 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import React from 'react';
 import { render, cleanup, act, fireEvent } from '@testing-library/react';
-import { GameState } from '../state/GameState.js';
-import { EventBus } from '../systems/core/EventBus.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { PlaymatTuner } from '../ui/components/PlaymatTuner.jsx';
 import { tuning, setTuning, resetTuning, tuningReport } from '../config/playmatTuning.js';
 
@@ -15,7 +12,7 @@ import { tuning, setTuning, resetTuning, tuningReport } from '../config/playmatT
  */
 
 const h = React.createElement;
-const mount = () => render(h(EngineContext.Provider, { value: { GameState, EventBus } }, h(PlaymatTuner)));
+const mount = () => render(h(PlaymatTuner));
 const open = (container) => fireEvent.click(container.querySelector('button[title^="Open the ground"]'));
 
 afterEach(() => {

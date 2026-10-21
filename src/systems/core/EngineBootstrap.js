@@ -67,7 +67,7 @@ export function openingMat() {
 
 /** EngineBootstrap - Orchestrates game lifecycle and system registration. */
 export const EngineBootstrap = {
-    /** Assemble all core systems into a unified Engine object for context-based UI access. */
+    /** Every core system on one object: the console's `window.Game` in a dev build. */
     getEngine() {
         return {
             GameState,

@@ -22,7 +22,6 @@ import * as TerrainSurface from '../systems/board/TerrainSurface.js';
 import { matW, matH } from '../config/matGeometry.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { setTuning, resetTuning } from '../config/playmatTuning.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { MatFitProvider } from '../ui/components/board/MatFitContext.jsx';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { boardScaleAt } from '../ui/components/base/TokenSprite.jsx';
@@ -89,9 +88,8 @@ let matCommits = 0;
 const countCommit = () => { matCommits++; };
 
 function mountMat(fit = 1) {
-    const tree = (f) => h(EngineContext.Provider, { value: { GameState, EventBus } },
-        h(DndContext, null, h(MatFitProvider, { value: f },
-            h(React.Profiler, { id: 'mat', onRender: countCommit }, h(MatBoard)))));
+    const tree = (f) => h(DndContext, null, h(MatFitProvider, { value: f },
+            h(React.Profiler, { id: 'mat', onRender: countCommit }, h(MatBoard))));
     const out = render(tree(fit));
     return { ...out, setFit: (f) => out.rerender(tree(f)) };
 }
@@ -422,8 +420,7 @@ describe('⭐ the terrain draw switch', () => {
 describe('the Terrain dev section beside the mat', () => {
     it('a button travels, the ground rebuilds once, and the section shows the build without React complaining', async () => {
         const errors = vi.spyOn(console, 'error');
-        const { container } = render(h(EngineContext.Provider, { value: { GameState, EventBus } },
-            h(DndContext, null, h(MatFitProvider, { value: 1 }, h(TerrainDevSection), h(MatBoard)))));
+        const { container } = render(h(DndContext, null, h(MatFitProvider, { value: 1 }, h(TerrainDevSection), h(MatBoard))));
         plans.mockClear();
         await act(async () => {
             container.querySelector('[data-terrain-view="forest_coast"]').click();

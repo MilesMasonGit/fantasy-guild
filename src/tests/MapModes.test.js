@@ -16,7 +16,6 @@ import * as NotificationSystem from '../systems/core/NotificationSystem.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { UI_EVENTS } from '../systems/core/engineEvents.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { MatToken } from '../ui/components/board/MatToken.jsx';
 import { CalloutLayer } from '../ui/components/board/CalloutLayer.jsx';
@@ -62,8 +61,7 @@ const WORKABLE = 'fixture_producer';
 const OTHER = 'fixture_station';
 
 const mountMat = (props = {}) => render(
-    h(EngineContext.Provider, { value: { GameState, EventBus } },
-        h(DndContext, null, h(MatBoard, props), h(CalloutLayer)))
+    h(DndContext, null, h(MatBoard, props), h(CalloutLayer))
 );
 /** The bar as the game draws it: banner in the middle, toggles on the right. */
 const mountBar = () => render(h(MatTopBar, { middle: h(MapModeBanner), right: h(MapModeToggles) }));

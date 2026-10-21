@@ -16,7 +16,6 @@ import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { matW } from '../config/matGeometry.js';
 import { resetMatTuning } from '../config/matTuning.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { MatCapBadge } from '../ui/components/board/MatCapBadge.jsx';
 import { ShopDrawer } from '../ui/components/drawer/ShopDrawer.jsx';
@@ -40,7 +39,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
  */
 
 const h = React.createElement;
-const withEngine = (el) => h(EngineContext.Provider, { value: { GameState, EventBus } }, h(DndContext, null, el));
+const withEngine = (el) => h(DndContext, null, el);
 
 beforeEach(() => {
     resetMatTuning();
@@ -99,8 +98,7 @@ describe('the routes that used to need the catch-all', () => {
             }
         });
         SpriteLayer.addSprite('item', 'fixture_glowcap', 2, null);
-        const { container } = render(h(EngineContext.Provider, { value: { GameState, EventBus } },
-            h(DeckDndProvider, null, h(ShopDrawer, { isOpen: true, onClose: () => {} }))));
+        const { container } = render(h(DeckDndProvider, null, h(ShopDrawer, { isOpen: true, onClose: () => {} })));
         const affordable = () => container.querySelector('[data-shop-row="sc_shop"]').getAttribute('data-shop-affordable');
         expect(affordable()).toBe('true');
         await act(async () => { SpriteLayer.consumeFromSprites('fixture_glowcap', 2); await Promise.resolve(); });

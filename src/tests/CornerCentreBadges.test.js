@@ -22,7 +22,6 @@ import { registerRecipePools } from '../config/registries/recipePoolRegistry.js'
 import { registerItems } from '../config/registries/itemRegistry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { KEYWORD } from '../systems/effects/statements.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { TokenBubbles } from '../ui/components/board/TokenBubbles.jsx';
 import * as TokenBadges from '../ui/components/board/TokenBadges.jsx';
@@ -110,7 +109,7 @@ function put(typeId, point = AT) {
 }
 
 const mount = (el) => render(
-    h(EngineContext.Provider, { value: { GameState, EventBus } }, h(DndContext, null, el))
+    h(DndContext, null, el)
 );
 const overlay = (container, id) => container.querySelector(`[data-token-overlay="${id}"]`);
 

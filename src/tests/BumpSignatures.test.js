@@ -12,7 +12,6 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { resetMatTuning } from '../config/matTuning.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { MatCapBadge } from '../ui/components/board/MatCapBadge.jsx';
 import { AllowAllButton } from '../ui/components/board/MatModeControls.jsx';
 import { MatRegionName } from '../ui/components/board/MatRegionName.jsx';
@@ -33,8 +32,7 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 const h = React.createElement;
 function mountCounting(el) {
     const counts = { n: 0 };
-    const r = render(h(EngineContext.Provider, { value: { GameState, EventBus } },
-        h(DndContext, null, h(Profiler, { id: 'x', onRender: () => { counts.n++; } }, el))));
+    const r = render(h(DndContext, null, h(Profiler, { id: 'x', onRender: () => { counts.n++; } }, el)));
     return { ...r, counts };
 }
 

@@ -8,18 +8,15 @@ import { EventBus } from '../systems/core/EventBus.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as BoardPromotion from '../systems/board/BoardPromotion.js';
-import * as PromotionSystem from '../systems/hero/PromotionSystem.js';
 import * as HeroManager from '../systems/hero/HeroManager.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { getPromotionCost, getPromotionGateSkills } from '../config/registries/jobRegistry.js';
 
-vi.mock('../ui/hooks/useEngine.js', () => ({ useEngine: vi.fn() }));
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
     getQueue: vi.fn(() => [])
 }));
 
-import { useEngine } from '../ui/hooks/useEngine.js';
 import { PromotionCeremonyModal } from '../ui/modals/PromotionCeremonyModal.jsx';
 import { useUIModals, standingPromotionOffer } from '../ui/hooks/useUIModals.js';
 
@@ -47,7 +44,6 @@ function workTileOf(heroId) {
  */
 
 const TILE = 24;
-const engine = { HeroManager, PromotionSystem, BoardPromotion, BoardState, EventBus };
 
 function qualifiedHero() {
     const hero = generateHero({ name: 'Ada' });
@@ -77,7 +73,6 @@ beforeEach(() => {
     GameState.state.progress.rosterLimit = 20;
     GameState.state.heroes = [];
     BoardState.init?.();
-    useEngine.mockReturnValue(engine);
 });
 afterEach(() => cleanup());
 
@@ -176,7 +171,7 @@ describe('declining', () => {
 describe('⭐ the game opens it', () => {
     it('opens when training completes', () => {
         const hero = qualifiedHero();
-        const { result } = renderHook(() => useUIModals(engine));
+        const { result } = renderHook(() => useUIModals());
         expect(result.current.dock.promotionOffer).toBeNull();
 
         act(() => { standingOffer(hero); });
@@ -189,7 +184,7 @@ describe('⭐ the game opens it', () => {
     it('⚠️ re-finds an unanswered offer when a save loads', () => {
         const hero = qualifiedHero();
         standingOffer(hero);
-        const { result } = renderHook(() => useUIModals(engine));
+        const { result } = renderHook(() => useUIModals());
 
         act(() => { EventBus.publish('game_loaded', { slot: 0 }); });
 
@@ -201,17 +196,17 @@ describe('⭐ the game opens it', () => {
         standingOffer(hero);
         BoardPromotion.decline(idAt(TILE));
 
-        expect(standingPromotionOffer(engine)).toBeNull();
-        const { result } = renderHook(() => useUIModals(engine));
+        expect(standingPromotionOffer()).toBeNull();
+        const { result } = renderHook(() => useUIModals());
         act(() => { EventBus.publish('game_loaded', { slot: 0 }); });
         expect(result.current.dock.promotionOffer).toBeNull();
     });
 
     it('finds nothing — and does not throw — with no game in progress', () => {
-        expect(standingPromotionOffer({})).toBeNull();
-        // ⚠️ Stubs the reader `standingPromotionOffer` actually calls. It used to
-        // stub `occupiedTiles`, which the guard never reached — so the try/catch
-        // this is named for was never exercised at all.
-        expect(standingPromotionOffer({ BoardState: { tokens: () => { throw new Error('no board'); } }, BoardPromotion })).toBeNull();
+        expect(standingPromotionOffer()).toBeNull();
+        // ⚠️ Breaks the reader `standingPromotionOffer` actually calls (`BoardState.tokens`), so
+        // the try/catch this is named for is exercised.
+        Object.defineProperty(GameState.state.board, 'tokens', { get() { throw new Error('no board'); }, configurable: true });
+        expect(standingPromotionOffer()).toBeNull();
     });
 });

@@ -2,11 +2,16 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useGameState } from '../ui/hooks/useGameState';
-import { useEngine } from '../ui/hooks/useEngine';
 
-// Mock the useEngine hook
-vi.mock('../ui/hooks/useEngine.js', () => ({
-    useEngine: vi.fn()
+// The hook reads the engine's own GameState and EventBus modules; these stand in for them.
+const mocks = vi.hoisted(() => ({ gameState: {}, bus: null }));
+vi.mock('../state/GameState.js', () => ({ GameState: mocks.gameState }));
+vi.mock('../systems/core/EventBus.js', () => ({
+    EventBus: {
+        subscribe: (...args) => mocks.bus.subscribe(...args),
+        publish: (...args) => mocks.bus.publish(...args)
+    },
+    UI_LISTENER: Object.freeze({ ui: true })
 }));
 
 describe('useGameState', () => {
@@ -14,12 +19,13 @@ describe('useGameState', () => {
     let mockGameState;
 
     beforeEach(() => {
-        // Setup mock GameState
-        mockGameState = {
+        // Setup mock GameState: the one object the mocked module hands out, refilled per test.
+        for (const key of Object.keys(mocks.gameState)) delete mocks.gameState[key];
+        mockGameState = Object.assign(mocks.gameState, {
             currency: { gold: 100, gems: 0 },
             heroes: [{ id: 'h1', name: 'Arthur' }],
             inventory: new Map([['item1', 5]])
-        };
+        });
 
         // Setup mock EventBus pub/sub
         const subscribers = new Map();
@@ -36,11 +42,7 @@ describe('useGameState', () => {
             }
         };
 
-        // Provide the mocks to the useEngine mock
-        useEngine.mockReturnValue({
-            GameState: mockGameState,
-            EventBus: mockEventBus
-        });
+        mocks.bus = mockEventBus;
 
         // Use fake timers to process the microtask queue predictably
         vi.useFakeTimers();

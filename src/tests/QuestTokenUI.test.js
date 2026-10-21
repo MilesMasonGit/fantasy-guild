@@ -13,7 +13,6 @@ import { QuestManager } from '../systems/quests/QuestManager.js';
 import * as QuestTokens from '../systems/quests/QuestTokens.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { MatToken } from '../ui/components/board/MatToken.jsx';
 import { questRing, RING_COLOUR } from '../ui/components/board/ringRow.js';
 import { questNeedLine, questRewardsShown } from '../ui/components/board/QuestTooltip.jsx';
@@ -42,7 +41,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 
 const HALL = { x: 880, y: 560 };
 const h = React.createElement;
-const tree = (el) => h(EngineContext.Provider, { value: { GameState, EventBus } }, h(DndContext, null, el));
+const tree = (el) => h(DndContext, null, el);
 const mount = (el) => render(tree(el));
 
 function newGame() {
@@ -118,7 +117,7 @@ describe('a quest Token on the mat (B6.2)', () => {
         expect(o.getAttribute('data-quest-done')).toBe('false');
         expect(o.querySelector('[data-ring="quest"]')).toBeNull();
 
-        rerender(h(EngineContext.Provider, { value: { GameState, EventBus } }, h(DndContext, null, tokenEl(q, { isHovered: true, isRested: true }))));
+        rerender(h(DndContext, null, tokenEl(q, { isHovered: true, isRested: true })));
         const ring = o.querySelector('[data-bubble="quest"] [data-ring="quest"]');
         expect(ring).not.toBeNull();
         expect(ring.getAttribute('data-ring-text')).toBe('1/3');

@@ -48,13 +48,10 @@ vi.mock('../systems/hero/HeroManager.js', () => ({
 }));
 
 import { GameState } from '../state/GameState.js';
-import { EventBus } from '../systems/core/EventBus.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { BankHeroPanel } from '../ui/components/dock/BankHeroPanel.jsx';
 
 const h = React.createElement;
-const engine = { GameState, EventBus };
-const mount = (props) => render(h(EngineContext.Provider, { value: engine }, h(BankHeroPanel, props)));
+const mount = (props) => render(h(BankHeroPanel, props));
 
 beforeEach(() => {
     capturedTabProps.length = 0;

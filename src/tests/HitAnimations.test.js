@@ -17,7 +17,6 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes, getTokenType } from '../config/registries/tokenRegistry.js';
 import { KEYWORD } from '../systems/effects/statements.js';
 import { COMBAT_SKILL_IDS } from '../config/registries/skillRegistry.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { TokenHitArt, COMBAT_ATTACK_EVENT } from '../ui/components/board/TokenHitArt.jsx';
 import {
@@ -87,7 +86,7 @@ registerTokenTypes({
 
 const h = React.createElement;
 const mount = (el) => render(
-    h(EngineContext.Provider, { value: { GameState, EventBus } }, h(DndContext, null, el))
+    h(DndContext, null, el)
 );
 
 beforeEach(() => {
@@ -270,8 +269,8 @@ describe('TokenHitArt', () => {
             expect(el.getAttribute('data-token-hit-live')).toBe('true');
 
             // Stuck (an alert): the hero is not really striking.
-            rerender(h(EngineContext.Provider, { value: { GameState, EventBus } }, h(DndContext, null,
-                h(TokenHitArt, { instanceId: 't1', skill: 'forestry', heroId: 'hero_1', active: false, tokenX: 500 }, h('span')))));
+            rerender(h(DndContext, null,
+                h(TokenHitArt, { instanceId: 't1', skill: 'forestry', heroId: 'hero_1', active: false, tokenX: 500 }, h('span'))));
             expect(loop.cancel).toHaveBeenCalled();
             expect(anim.calls).toHaveLength(1);
         } finally {

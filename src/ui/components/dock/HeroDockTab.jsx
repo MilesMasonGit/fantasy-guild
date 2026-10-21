@@ -1,7 +1,8 @@
 import { memo, useCallback, useMemo, useRef } from 'react';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
-import { useEngine } from '../../hooks/useEngine.js';
+import * as Placement from '../../../systems/board/Placement.js';
+import * as EquipmentManager from '../../../systems/equipment/EquipmentManager.js';
 import { useEntityDrag, useEntityDrop, useActiveDrag, mergeRefs } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { getJob } from '../../../config/registries/jobRegistry.js';
@@ -34,7 +35,6 @@ export const HeroDockTab = ({
     onReorder,
     isDockLeft = false
 }) => {
-    const engine = useEngine();
     const { isDragging: globalDragging } = useActiveDrag();
     const { isHovered, settling: isDragSettling, onHoverChange } = useDragSettleHover(globalDragging);
 
@@ -67,9 +67,9 @@ export const HeroDockTab = ({
             || (p.kind === DRAG_KIND.HERO && p.heroId !== heroId),
         onDrop: p => {
             if (isRecallDrop(p)) {
-                recallFromDrop(engine.BoardPlacement, p);
+                recallFromDrop(Placement, p);
             } else if (p.kind === DRAG_KIND.ITEM && p.itemId) {
-                if (!equipOrAnnounce(engine, heroId, p.itemId)) return false;
+                if (!equipOrAnnounce(EquipmentManager, heroId, p.itemId)) return false;
                 justDroppedRef.current = true;
                 setTimeout(() => { justDroppedRef.current = false; }, 250);
                 EventBus.publish(UI_EVENTS.INSPECT_HERO, { heroId });

@@ -1,6 +1,5 @@
 import React, { useState, useCallback } from 'react';
 import { Ruler, X, RotateCcw } from 'lucide-react';
-import { useEngine } from '../hooks/useEngine.js';
 import {
     MAT_TUNABLES, matTuning, setMatTuning, resetMatTuning, isMatTuned, matTuningDefault
 } from '../../config/matTuning.js';
@@ -13,13 +12,10 @@ import {
  * every tile; whatever draws a tuned number hears `onMatTuningChanged` itself.
  */
 export const MatTuner = React.memo(() => {
-    const engine = useEngine();
     const [isOpen, setIsOpen] = useState(false);
     const [, bump] = useState(0);
 
     const refresh = useCallback(() => bump(n => n + 1), []);
-
-    if (!engine) return null;
 
     const groups = [...new Set(MAT_TUNABLES.map(t => t.group))];
 

@@ -13,12 +13,10 @@ import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as Flags from '../systems/board/Flags.js';
-import { EventBus } from '../systems/core/EventBus.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { tokenStartingUses, tokenSpritePath } from '../config/registries/tokenRegistry.js';
 import { ALERT } from '../systems/board/boardEvents.js';
 import { resetMatTuning, MAT_TUNABLES } from '../config/matTuning.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { MatFitProvider } from '../ui/components/board/MatFitContext.jsx';
 import { PixelArt, TokenSprite, TOKEN_SURFACE } from '../ui/components/base/TokenSprite.jsx';
@@ -287,7 +285,7 @@ describe('on the mat: no shadow at rest; outlines from the game’s own state', 
         Placement.placeTokenAt(instance, point);
         return instance;
     };
-    const mount = (el) => render(h(EngineContext.Provider, { value: { GameState, EventBus } }, h(DndContext, null, el)));
+    const mount = (el) => render(h(DndContext, null, el));
 
     beforeAll(() => Flags.init());
     afterAll(() => Flags.teardown());

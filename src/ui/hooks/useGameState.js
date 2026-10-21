@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { useEngine } from './useEngine';
+import { GameState } from '../../state/GameState.js';
 import isEqual from 'fast-deep-equal/es6';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
-import { UI_LISTENER } from '../../systems/core/EventBus.js';
+import { EventBus, UI_LISTENER } from '../../systems/core/EventBus.js';
 import { shareEqual } from './structuralShare.js';
 
 /**
@@ -49,8 +49,6 @@ import { shareEqual } from './structuralShare.js';
  * @returns {any} The selected slice
  */
 export const useGameState = (selector = (state) => state, events = [ENGINE_EVENTS.GAME_RESET], eventFilter = null, options = {}) => {
-    const { GameState, EventBus } = useEngine();
-
     const selectorRef = useRef(selector);
     const eventsRef = useRef(events);
     const eventFilterRef = useRef(eventFilter);
@@ -123,7 +121,7 @@ export const useGameState = (selector = (state) => state, events = [ENGINE_EVENT
         };
         const cleanupFns = eventsRef.current.map(event => EventBus.subscribe(event, handleStateChange, UI_LISTENER));
         return () => cleanupFns.forEach(cleanup => cleanup());
-    }, [EventBus, GameState]);
+    }, []);
 
     // Prop-driven sync: runs when props like 'heroId' change, so we don't wait for a game
     // event.

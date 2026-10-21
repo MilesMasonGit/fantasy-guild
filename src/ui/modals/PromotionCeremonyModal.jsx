@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { cn } from '../utils/cn.js';
-import { useEngine } from '../hooks/useEngine.js';
+import { HeroManager } from '../../systems/hero/HeroManager.js';
+import * as PromotionSystem from '../../systems/hero/PromotionSystem.js';
+import * as BoardPromotion from '../../systems/board/BoardPromotion.js';
 import { GIModal } from '../components/base/GIModal.jsx';
 import { PromotionTrade } from '../components/hero/PromotionTrade.jsx';
 import { getJob } from '../../config/registries/jobRegistry.js';
@@ -37,12 +39,11 @@ function refusalText(result) {
  * so the player can close the game mid-decision and be asked again.
  */
 export const PromotionCeremonyModal = ({ offer, onClose }) => {
-    const engine = useEngine();
     const [done, setDone] = useState(null);
 
     if (!offer) return null;
 
-    const hero = engine.HeroManager.getHero(offer.heroId);
+    const hero = HeroManager.getHero(offer.heroId);
     if (!hero) return null;
 
     const job = getJob(offer.jobId);
@@ -54,14 +55,14 @@ export const PromotionCeremonyModal = ({ offer, onClose }) => {
     // 'nothing changes' and the arrow reads 'Wizard → Wizard'. The moment the player most
     // wants to see what they gave up is the moment after they gave it up, so the answered
     // state renders the frozen copy.
-    const livePreview = engine.PromotionSystem.previewPromotion(offer.heroId, offer.jobId);
+    const livePreview = PromotionSystem.previewPromotion(offer.heroId, offer.jobId);
     const preview = done?.preview || livePreview;
     const fromJob = done?.fromJob || getJob(hero.jobId);
 
     const accept = () => {
         // Captured first — `accept` mutates the hero.
         const snapshot = { preview: livePreview, fromJob: getJob(hero.jobId) };
-        const result = engine.BoardPromotion.accept(offer.instanceId);
+        const result = BoardPromotion.accept(offer.instanceId);
         if (!result.success) {
             // Re-checked at the last moment and refused: say so rather than closing silently,
             // because the tile will still be holding.
@@ -72,7 +73,7 @@ export const PromotionCeremonyModal = ({ offer, onClose }) => {
     };
 
     const decline = () => {
-        engine.BoardPromotion.decline(offer.instanceId);
+        BoardPromotion.decline(offer.instanceId);
         onClose();
     };
 
