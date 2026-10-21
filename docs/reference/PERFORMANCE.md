@@ -1293,7 +1293,7 @@ What one more of each costs in median frame work on the 128 board at ~4×, and i
 | stub row | ~0.1 ms | ~3 | the column's rows, redrawn on each change (at most 4 a second); 300 flows and 30 banners a minute over 4 items cost nothing measurable (measured, `notify300i4`) |
 | enemy | 0.15–0.4 ms | ~4–10 | its walk and frames on the mat, and its pottering in the engine tick |
 | hero | 0.6–0.9 ms | ~20 | work bubbles, sprite frames, the hero bar, the worked Token's strike chips, walking (cost table below) |
-| fight | 1–1.5 ms | ~30 | every blow's effects (hit loop, white hit, afterimages, number, health bars), the kills' knockouts; includes its enemy |
+| fight | 1–1.5 ms | ~30 | **its bubbles** (the bubbles and health bars over the fighters): 5.2 of 15.7 ms with 7 fights; then the heroes' frames (1.8 ms); the blows' effects (`tokenFx`, `matFx`) inside the noise (measured, cost table below); includes its enemy |
 
 ### Tokens on a Region
 
@@ -1387,9 +1387,19 @@ between brutes).
 | 4 | 97.6 | 12.6 / 23.1 / 32.4 ms | 78.0 % (77.6–82.9) | 36.3 ms (30.4–36.5) | 3.6–4.1× |
 | 7 | 87.1 | 14.7 / 26.8 / 35.5 ms | 68.6 % (58.4–71.6) | 42.5 ms | 3.4–4.4× |
 
-**A fight costs what 25–35 Tokens cost** (~1–1.5 ms of median frame work each at ~4×): every blow
-plays the hit loop, the white hit and its afterimages, a damage number and the health bars; every
-kill the knockout. The fighting heroes stand still, so it is not their walking.
+**A fight costs what 25–35 Tokens cost** (~1–1.5 ms of median frame work each at ~4×), and **most of
+it is the fighters' bubbles**, not the blows' effects. Cost table on `fights8`
+(`--switch-only=tokenFx,matFx,bubbles,heroAnim`, all on three times, noise 0.99 ms p50, delivered
+3.3–4.5×): all on 79.1 fps, 15.7 ms p50, 60.2 % within 16.7 ms.
+
+| Switch off | fps | Saved p50 | Saved p99 | ≤ 16.7 ms | Above noise |
+|---|---|---|---|---|---|
+| bubbles | 115.4 | **5.2 ms** | 9.5 ms | 88.3 % | yes |
+| heroAnim | 90.5 | 1.8 ms | 4.7 ms | 71.2 % | yes |
+| matFx (numbers, puffs, the knockout) | 81.9 | 0.4 ms | 3.7 ms | 64.6 % | no |
+| tokenFx (white hit, afterimages, chips) | 77.0 | −0.4 ms | −0.7 ms | 55.1 % | no |
+
+With the bubbles off, seven fights at once read 88.3 % within 16.7 ms: the 128 board's own level.
 
 ### Loot piles on the floor
 
