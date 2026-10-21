@@ -40,7 +40,6 @@ vi.mock('../systems/hero/HeroManager.js', () => ({
     getHero: vi.fn(() => hero),
     setHeroStatus: vi.fn((_id, s) => { hero.status = s; }),
     modifyHeroHp: vi.fn(),
-    modifyHeroEnergy: vi.fn()
 }));
 
 vi.mock('../systems/inventory/InventoryManager.js', () => ({
@@ -64,7 +63,7 @@ function seed() {
     GameState.initNew();
     hero = {
         id: 'hero_1', name: 'Tester', status: 'working',
-        hp: { current: 0, max: 100 }, energy: { current: 50, max: 100 },
+        hp: { current: 0, max: 100 },
         _equipped: [
             { index: 0, category: 'hand', itemId: 'g_sword' },
             { index: 1, category: 'food', itemId: 'c_pie' },
@@ -109,7 +108,7 @@ describe('Consumable loss walks the HERO GRID (D-19 + C-7/C-8)', () => {
         applyDefeatPenalties('hero_1');
 
         expect(bank.c_pie).toBe(75);        // eaten for real by tryEat
-        expect(bank.c_ale).toBe(30);        // dormant, but by its own 184 decision
+        expect(bank.c_ale).toBe(30);
     });
 
     it('uses the tunable ratio rather than a hardcoded quarter', () => {

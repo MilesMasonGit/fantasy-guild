@@ -12,11 +12,10 @@
 
 import { describe, it, expect } from 'vitest';
 
-import { runTempoPass, bandMiddleMs, speedAt, unitsPerHour } from '../../cms/src/engine/sim/tempoPass.js';
+import { runTempoPass, bandMiddleMs, unitsPerHour } from '../../cms/src/engine/sim/tempoPass.js';
 import { runSim } from '../../cms/src/engine/sim/simRunner.js';
 import { adaptCorpus, adaptToken, liveCharges, expectedQuantity } from '../../cms/src/engine/sim/fieldAdapter.js';
 import { bandFor } from '../config/registries/tempoBands.js';
-import { SKILL_SPEED_FACTOR } from '../config/FormulaRegistry.js';
 import { expectedOutputQuantity } from '../config/registries/tokenRegistry.js';
 
 import tokenData from '../../data/tokens.json';
@@ -102,14 +101,9 @@ describe('EconSim — TIME pass', () => {
             }
         });
 
-        it('uses the game\'s SKILL_SPEED_FACTOR rather than a copy of 0.005', () => {
-            expect(speedAt(1)).toBe(1 + SKILL_SPEED_FACTOR);
-            expect(speedAt(20)).toBeCloseTo(1.1, 10);
-        });
-
-        it('computes units/hour as avg qty × chance ÷ cycle × 3600 × speed', () => {
+        it('computes units/hour as avg qty × chance ÷ cycle × 3600, with no skill speed', () => {
             const output = { abundance: 1.5 * 0.5 };
-            expect(unitsPerHour(output, 10000, 1)).toBeCloseTo((0.75 / 10) * 3600 * 1.005, 8);
+            expect(unitsPerHour(output, 10000)).toBeCloseTo((0.75 / 10) * 3600, 8);
         });
     });
 

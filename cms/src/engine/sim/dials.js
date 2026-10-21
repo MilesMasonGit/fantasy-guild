@@ -3,7 +3,7 @@
  * ⚠️ The one dial no pass reads is `skillMasteryHours`: it is an expectation, not an input, so turning it does not move the curve (see `PaceDials`).
  */
 
-/** Gold per hour, as pinned points: the developer edits ten pins, not 99 cells. A flat 7.5%/level compounding to level 70, then 2%/level to 99. The curve is a floor, not an average: it balances the just-qualified worker, and a hero levelled past the gate out-earns it through the speed bonus, deliberately unmodelled. */
+/** Gold per hour, as pinned points: the developer edits ten pins, not 99 cells. A flat 7.5%/level compounding to level 70, then 2%/level to 99. It is what a worker earns on content at its required level; a skill level adds no work speed. */
 export const GPH_PINS = Object.freeze({
     1: 1200,
     10: 2300,

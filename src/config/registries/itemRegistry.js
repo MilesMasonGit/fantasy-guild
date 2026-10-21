@@ -9,8 +9,8 @@
  * - tool: Equipment that boosts skills
  * - weapon: Equipment for combat
  * - armor: Equipment for defence
- * - food: Restores HP/Energy
- * - drink: Restores Energy
+ * - food: Restores HP
+ * - drink: Restores HP, from its own slot
  * - potion: Buff consumables
  * - currency: Special tracking items
  * - drop: Monster parts/loot

@@ -26,7 +26,7 @@ import { DeckDndContext } from '../ui/dnd/DndKit.jsx';
 import { AtlasScreen, ATLAS_TAB } from '../ui/components/atlas/AtlasScreen.jsx';
 import { CartographyTable, REROLL_COOLDOWN_MS, fitSlots } from '../ui/components/atlas/CartographyTable.jsx';
 import { RegionList } from '../ui/components/atlas/RegionList.jsx';
-import { LayoutPreview, terrainRuns } from '../ui/components/atlas/LayoutPreview.jsx';
+import { contentsOf } from '../ui/components/atlas/PlanContents.jsx';
 import { BubbleMenu } from '../ui/components/nav/BubbleMenu.jsx';
 import { placeAt } from './fixtures/mat.js';
 import './fixtures/testTokens.js';
@@ -195,32 +195,44 @@ describe('the Cartography table', () => {
             .toEqual([WOOD_ITEM, null, THICKET_ITEM, THICKET_ITEM]);
     });
 
-    it('shows the Node Summary and the layout of what is slotted', () => {
+    it('shows what the slotted maps write as Token sprites with counts, biggest first, over the preview of their Region', () => {
         InventoryManager.addItem(WOOD_ITEM, 1);
         InventoryManager.addItem(THICKET_ITEM, 1);
         const { container } = render(React.createElement(CartographyTable, { version: 0 }));
-        expect(q(container, '[data-node-summary="empty"]')).toBeTruthy();
+        expect(q(container, '[data-map-preview="empty"]')).toBeTruthy();
+        expect(q(container, '[data-plan-contents]')).toBeNull();
         fireEvent.click(q(container, `[data-map-item="${WOOD_ITEM}"]`));
         fireEvent.click(q(container, `[data-map-item="${THICKET_ITEM}"]`));
         const plan = Atlas.preview([WOOD_ITEM, THICKET_ITEM], { seed: 1 });
-        expect(q(container, '[data-node-summary-headline]').textContent).toBe(`${plan.summary.total} Tokens`);
-        expect(q(container, `[data-node-summary-line="${OAK}"]`).textContent).toContain(`${plan.summary.entries[0].count} ×`);
-        expect(container.querySelectorAll('[data-preview-node]').length).toBe(plan.summary.total);
-        expect(q(container, '[data-preview-hall]')).toBeTruthy();
+        expect(q(container, '[data-plan-headline]').textContent).toBe(`${plan.summary.total} Tokens`);
+        const shown = [...container.querySelectorAll('[data-plan-token]')].map(li => [li.getAttribute('data-plan-token'), Number(li.getAttribute('data-count'))]);
+        expect(shown).toEqual(contentsOf(plan.summary).map(e => [e.typeId, e.count]));
+        expect(q(container, `[data-plan-token="${OAK}"]`).textContent).toBe(`×${plan.summary.entries[0].count}`);
+        expect(q(container, 'canvas[data-map-preview]')).toBeTruthy();
+        expect(q(container, '[data-map-preview="empty"]')).toBeNull();
     });
 
-    it('rerolls the layout but not the summary, then waits out the cooldown', () => {
+    it('lists the contents biggest first, whatever their role', () => {
+        const summary = { entries: [
+            { typeId: 'a', role: 'node', count: 3 }, { typeId: 'b', role: 'node', count: 9 },
+            { typeId: 'c', role: 'camp', count: 12 }, { typeId: 'd', role: 'treasure', count: 3 }
+        ] };
+        expect(contentsOf(summary).map(e => e.typeId)).toEqual(['c', 'b', 'a', 'd']);
+        expect(contentsOf(null)).toEqual([]);
+    });
+
+    it('rerolls the layout but not the contents, then waits out the cooldown', () => {
         vi.useFakeTimers();
         InventoryManager.addItem(WOOD_ITEM, 1);
         const { container } = render(React.createElement(CartographyTable, { version: 0 }));
         fireEvent.click(q(container, `[data-map-item="${WOOD_ITEM}"]`));
-        const dots = () => [...container.querySelectorAll('[data-preview-node]')].map(c => `${c.getAttribute('cx')},${c.getAttribute('cy')}`).join(' ');
-        const summary = q(container, '[data-node-summary]').textContent;
-        const before = dots();
+        const seed = () => q(container, 'canvas[data-map-preview]').getAttribute('data-preview-seed');
+        const contents = q(container, '[data-plan-contents]').textContent;
+        const before = seed();
         const reroll = q(container, '[data-cartography-reroll]');
         fireEvent.click(reroll);
-        expect(dots()).not.toBe(before);
-        expect(q(container, '[data-node-summary]').textContent).toBe(summary);
+        expect(seed()).not.toBe(before);
+        expect(q(container, '[data-plan-contents]').textContent).toBe(contents);
         expect(reroll.disabled).toBe(true);
         act(() => { vi.advanceTimersByTime(REROLL_COOLDOWN_MS - 10); });
         expect(reroll.disabled).toBe(true);
@@ -228,16 +240,21 @@ describe('the Cartography table', () => {
         expect(reroll.disabled).toBe(false);
     });
 
-    it('Cancel, or closing, takes nothing', () => {
+    it('emptying the slots, or closing, takes nothing; there is no Cancel', () => {
         InventoryManager.addItem(WOOD_ITEM, 1);
         InventoryManager.addItem(THICKET_ITEM, 1);
         const regions = regionCount();
         const { container, unmount } = render(React.createElement(CartographyTable, { version: 0 }));
+        expect(q(container, '[data-cartography-cancel]')).toBeNull();
         fireEvent.click(q(container, `[data-map-item="${WOOD_ITEM}"]`));
         fireEvent.click(q(container, `[data-map-item="${THICKET_ITEM}"]`));
-        fireEvent.click(q(container, '[data-cartography-cancel]'));
+        fireEvent.click(q(container, '[data-cartography-slot="0"]'));
+        fireEvent.click(q(container, '[data-cartography-slot="1"]'));
         expect(slotItems(container)).toEqual(['', '', '', '']);
-        expect(q(container, '[data-node-summary="empty"]')).toBeTruthy();
+        expect(q(container, '[data-map-preview="empty"]')).toBeTruthy();
+        // An empty slot takes nothing out.
+        fireEvent.click(q(container, '[data-cartography-slot="2"]'));
+        expect(slotItems(container)).toEqual(['', '', '', '']);
         fireEvent.click(q(container, `[data-map-item="${WOOD_ITEM}"]`));
         unmount();
         expect([bank(WOOD_ITEM), bank(THICKET_ITEM), regionCount()]).toEqual([1, 1, regions]);
@@ -278,7 +295,7 @@ describe('the Region list', () => {
         return { ...view, onTravel };
     };
 
-    it('lists each Region with its names, its day and its Token count; the active one reads Here', () => {
+    it('lists each Region with its names; the active one shows the hero flag, not Travel', () => {
         const { region } = Atlas.createRegion({ ingredients: [WOOD_ITEM] });
         const starter = Atlas.activeRegionId();
         const { container } = renderList();
@@ -287,8 +304,8 @@ describe('the Region list', () => {
         expect(q(here, '[data-region-here]')).toBeTruthy();
         expect(q(here, '[data-region-travel]')).toBeNull();
         expect(here.textContent).toContain(TEXT.STARTER_CAMP);
-        expect(here.textContent).toContain('Settled day 1');
-        expect(here.textContent).toContain('0 Tokens');
+        expect(here.textContent).not.toContain('Settled day');
+        expect(here.textContent).not.toContain('Token');
         const other = q(container, `[data-region-row="${region.id}"]`);
         expect(other.textContent).toContain(region.flavourName);
         expect(other.textContent).toContain('Wood');
@@ -470,16 +487,20 @@ describe('the Atlas screen', () => {
         expect(onClose).toHaveBeenCalledTimes(2);
     });
 
-    it('lays Cartography over both pages: the maps and slots on the left, the preview and buttons on the right', () => {
+    it('lays Cartography over both pages: the maps on the left; the slots, preview, contents and buttons down the right', () => {
         InventoryManager.addItem(WOOD_ITEM, 1);
         const { container } = screen({ initialTab: ATLAS_TAB.CARTOGRAPHY });
         const left = q(container, '[data-cartography] [data-tome-left]');
         const right = q(container, '[data-cartography] [data-tome-right]');
-        expect(q(left, '[data-cartography-slot="0"]')).toBeTruthy();
-        expect(q(left, `[data-map-item="${WOOD_ITEM}"]`)).toBeTruthy();
-        expect(q(right, '[data-layout-preview]')).toBeTruthy();
-        expect(q(right, '[data-node-summary]')).toBeTruthy();
-        expect(q(right, '[data-cartography-settle]')).toBeTruthy();
+        expect(q(left, `[data-map-item="${WOOD_ITEM}"] img`)).toBeTruthy();
+        expect(q(left, '[data-cartography-slot]')).toBeNull();
+        fireEvent.click(q(container, `[data-map-item="${WOOD_ITEM}"]`));
+        const order = ['[data-cartography-slots]', 'canvas[data-map-preview]', '[data-plan-contents]', '[data-cartography-reroll]', '[data-cartography-settle]']
+            .map(sel => q(right, sel));
+        expect(order.every(Boolean)).toBe(true);
+        for (let i = 1; i < order.length; i++) {
+            expect(order[i - 1].compareDocumentPosition(order[i]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        }
     });
 
     it('redraws the list when the Atlas changes (ATLAS_CHANGED has a listener now)', () => {
@@ -496,24 +517,14 @@ describe('the Atlas screen', () => {
         InventoryManager.addItem(WOOD_ITEM, 1);
         const { container } = screen({ initialTab: ATLAS_TAB.CARTOGRAPHY });
         fireEvent.click(q(container, `[data-map-item="${WOOD_ITEM}"]`));
-        const dots = () => [...container.querySelectorAll('[data-preview-node]')].map(c => `${c.getAttribute('cx')},${c.getAttribute('cy')}`).join(' ');
-        const before = dots();
+        const seed = () => q(container, 'canvas[data-map-preview]').getAttribute('data-preview-seed');
+        const before = seed();
         act(() => { InventoryManager.addItem('item_oak_wood', 3); });
-        expect(dots()).toBe(before);
+        expect(seed()).toBe(before);
     });
 });
 
-describe('the layout preview and the bubble', () => {
-    it('draws the ground as runs that cover every terrain cell once', () => {
-        const plan = Atlas.preview([WOOD_ITEM], { seed: 5 });
-        const runs = terrainRuns(plan.layout.terrain);
-        const { cols, rows } = plan.layout.terrain;
-        expect(runs.reduce((n, r) => n + r.length, 0)).toBe(cols * rows);
-        const { container } = render(React.createElement(LayoutPreview, { layout: plan.layout }));
-        expect(container.querySelectorAll('[data-preview-node]').length).toBe(plan.layout.nodes.length);
-        expect(q(container, '[data-layout-preview]').getAttribute('viewBox')).toBe(`0 0 ${plan.layout.mat.w} ${plan.layout.mat.h}`);
-    });
-
+describe('the bubble', () => {
     it('the bubble menu has an Atlas bubble that toggles the atlas view', () => {
         const toggle = vi.fn();
         const ui = { nav: { isActive: (t) => t === 'atlas', toggle } };

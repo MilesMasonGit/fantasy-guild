@@ -44,7 +44,7 @@ export const CATCH_UP = Object.freeze({
 });
 
 /**
- * Consume Threshold — the fraction of max HP/Energy below which a hero
+ * Consume Threshold — the fraction of max HP below which a hero
  * reaches for supplies on their own (the 25% rule).
  *
  * Food and drink are need-driven, not scheduled: consumption becomes a

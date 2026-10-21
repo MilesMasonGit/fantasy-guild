@@ -504,7 +504,7 @@ export const ItemInspection = ({ entry }) => {
                         <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-[#181412] border border-white/10 text-xs">
                             <span className="text-gi-muted">Restores</span>
                             <span className="font-bold text-gi-text">
-                                +{template.restoreAmount} {template.tags?.includes('drink') ? 'Energy' : 'HP'}
+                                +{template.restoreAmount} HP
                             </span>
                         </div>
                     )}

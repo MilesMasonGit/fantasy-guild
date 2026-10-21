@@ -173,7 +173,7 @@ export function promote(heroId, jobId) {
     hero.jobId = jobId;
 
     // Max HP and hero level both derive from skills.
-    HeroManager.updateHeroSkillModifiers(hero);
+    HeroManager.updateHeroFromSkills(hero);
 
     EventBus.publish(ENGINE_EVENTS.HERO_PROMOTED, {
         heroId, heroName: hero.name,

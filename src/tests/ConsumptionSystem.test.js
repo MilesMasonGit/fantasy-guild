@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// heroes feed themselves from their own loadout grid. Food and drink are
-// NEED-driven (the 25% rule); Consumables are not need driven at all and
+// heroes feed themselves from their own loadout grid. Food and drink both heal
+// and are NEED-driven (the 25% rule); Consumables are not need driven at all and
 // fire at the head of every loop.
 
 const { bank, ITEMS, hero } = vi.hoisted(() => ({
@@ -13,7 +13,7 @@ const { bank, ITEMS, hero } = vi.hoisted(() => ({
         scroll: { id: 'scroll', equipSlot: 'consumable', loopEffect: { type: 'YIELD', value: 0.25 } },
         sword:  { id: 'sword',  equipSlot: 'hand' }
     },
-    hero: { id: 'h1', name: 'Tester', hp: { current: 100, max: 100 }, energy: { current: 100, max: 100 }, equipment: [] }
+    hero: { id: 'h1', name: 'Tester', hp: { current: 100, max: 100 }, equipment: [] }
 }));
 
 vi.mock('../config/registries/itemRegistry.js', () => ({
@@ -30,8 +30,7 @@ vi.mock('../systems/inventory/InventoryManager.js', () => ({
 
 vi.mock('../systems/hero/HeroManager.js', () => ({
     getHero: vi.fn(() => hero),
-    modifyHeroHp: vi.fn((_id, d) => { hero.hp.current = Math.min(hero.hp.max, hero.hp.current + d); }),
-    modifyHeroEnergy: vi.fn((_id, d) => { hero.energy.current = Math.min(hero.energy.max, hero.energy.current + d); })
+    modifyHeroHp: vi.fn((_id, d) => { hero.hp.current = Math.min(hero.hp.max, hero.hp.current + d); })
 }));
 
 import * as ConsumptionSystem from '../systems/hero/ConsumptionSystem.js';
@@ -39,7 +38,6 @@ import * as ConsumptionSystem from '../systems/hero/ConsumptionSystem.js';
 beforeEach(() => {
     bank.clear();
     hero.hp = { current: 100, max: 100 };
-    hero.energy = { current: 100, max: 100 };
     hero.equipment = ['sword', 'bread', 'ale', 'elixir', 'scroll', null, null, null, null];
     vi.clearAllMocks();
 });
@@ -47,15 +45,15 @@ beforeEach(() => {
 describe('the 25% rule (D-17)', () => {
     it('does not eat while HP is healthy', () => {
         bank.set('bread', 5);
-        expect(ConsumptionSystem.tryEat('h1')).toBeNull();
+        expect(ConsumptionSystem.tryEat('h1')).toEqual([]);
         expect(bank.get('bread')).toBe(5);
     });
 
     it('eats once HP drops below the threshold', () => {
         bank.set('bread', 5);
         hero.hp.current = 20;                       // 20% of 100
-        const meal = ConsumptionSystem.tryEat('h1');
-        expect(meal).toMatchObject({ itemId: 'bread', amount: 20 });
+        const meals = ConsumptionSystem.tryEat('h1');
+        expect(meals).toEqual([expect.objectContaining({ itemId: 'bread', amount: 20 })]);
         expect(hero.hp.current).toBe(40);
         expect(bank.get('bread')).toBe(4);
     });
@@ -63,23 +61,38 @@ describe('the 25% rule (D-17)', () => {
     it('treats exactly 25% as still healthy', () => {
         bank.set('bread', 5);
         hero.hp.current = 25;
-        expect(ConsumptionSystem.tryEat('h1')).toBeNull();
+        expect(ConsumptionSystem.tryEat('h1')).toEqual([]);
     });
 
-    it('drinks on low energy, not on low HP', () => {
+    it('drinks too, from its own slot, when food leaves HP still low', () => {
+        bank.set('bread', 5);
         bank.set('ale', 5);
-        hero.hp.current = 5;
-        expect(ConsumptionSystem.tryDrink('h1')).toBeNull();   // energy is fine
+        hero.hp.current = 2;                        // bread brings it to 22: still low
+        const meals = ConsumptionSystem.tryEat('h1');
+        expect(meals.map(m => m.itemId)).toEqual(['bread', 'ale']);
+        expect(hero.hp.current).toBe(37);
+        expect(bank.get('bread')).toBe(4);
+        expect(bank.get('ale')).toBe(4);
+    });
 
-        hero.energy.current = 10;
-        expect(ConsumptionSystem.tryDrink('h1')).toMatchObject({ itemId: 'ale' });
-        expect(hero.energy.current).toBe(25);
+    it('keeps the drink when the food is enough', () => {
+        bank.set('bread', 5);
+        bank.set('ale', 5);
+        hero.hp.current = 10;                       // bread brings it to 30
+        expect(ConsumptionSystem.tryEat('h1').map(m => m.itemId)).toEqual(['bread']);
+        expect(bank.get('ale')).toBe(5);
+    });
+
+    it('drinks alone when there is no food to eat', () => {
+        bank.set('ale', 5);                         // bread equipped but unstocked
+        hero.hp.current = 10;
+        expect(ConsumptionSystem.tryEat('h1').map(m => m.itemId)).toEqual(['ale']);
+        expect(hero.hp.current).toBe(25);
     });
 
     it('reports need without consuming', () => {
         hero.hp.current = 10;
         expect(ConsumptionSystem.needsFood('h1')).toBe(true);
-        expect(ConsumptionSystem.needsDrink('h1')).toBe(false);
         expect(bank.get('bread')).toBeUndefined();
     });
 });
@@ -87,7 +100,7 @@ describe('the 25% rule (D-17)', () => {
 describe('supply chain, not timing', () => {
     it('goes without when the bank is empty, rather than stalling', () => {
         hero.hp.current = 10;
-        expect(ConsumptionSystem.tryEat('h1')).toBeNull();
+        expect(ConsumptionSystem.tryEat('h1')).toEqual([]);
         expect(hero.hp.current).toBe(10);           // still hurt, still running
     });
 
@@ -95,7 +108,7 @@ describe('supply chain, not timing', () => {
         bank.set('bread', 5);
         hero.equipment = ['sword', null, null, null, null, null, null, null, null];
         hero.hp.current = 10;
-        expect(ConsumptionSystem.tryEat('h1')).toBeNull();
+        expect(ConsumptionSystem.tryEat('h1')).toEqual([]);
         expect(bank.get('bread')).toBe(5);
     });
 
@@ -111,9 +124,9 @@ describe('eating is uncapped (D-31)', () => {
     it('eats again immediately if still low — no cooldown', () => {
         bank.set('bread', 5);
         hero.hp.current = 10;
-        expect(ConsumptionSystem.tryEat('h1')).toBeTruthy();
+        expect(ConsumptionSystem.tryEat('h1')).toHaveLength(1);
         hero.hp.current = 10;                        // knocked straight back down
-        expect(ConsumptionSystem.tryEat('h1')).toBeTruthy();
+        expect(ConsumptionSystem.tryEat('h1')).toHaveLength(1);
         expect(bank.get('bread')).toBe(3);
     });
 });
@@ -131,7 +144,6 @@ describe('the Consumable class (D-20/D-56)', () => {
     it('is not need-driven — it fires at full health', () => {
         bank.set('elixir', 1);
         hero.hp.current = hero.hp.max;
-        hero.energy.current = hero.energy.max;
         expect(ConsumptionSystem.consumeLoopConsumables('h1')).toHaveLength(1);
     });
 

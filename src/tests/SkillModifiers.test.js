@@ -1,13 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GameState } from '../state/GameState.js';
-import { rehydrateHero, updateHeroSkillModifiers } from '../systems/hero/logic/HeroRehydration.js';
+import { rehydrateHero, updateHeroFromSkills } from '../systems/hero/logic/HeroRehydration.js';
 import * as SkillSystem from '../systems/hero/SkillSystem.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
-import { SKILL_SPEED_FACTOR } from '../config/FormulaRegistry.js';
 
 /**
- * **The two hero-side modifier wires that were connected at one end only.**
+ * Skill levels and the hero's modifiers: a level gives no work speed, and XP bonuses reach the bar.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -29,36 +28,15 @@ beforeEach(() => {
     GameState.initNew();
 });
 
-describe('Skill speed is filed where a reader can find it (CR2-072)', () => {
-    it('registers the SPEED modifier under the LOWER-case skill id', () => {
+describe('A skill level adds no work speed', () => {
+    it('registers no SPEED modifier for a held skill, on rehydrate or on a level-up', () => {
         const hero = heroWithSkill('mining', 60);
+        expect(hero.aggregator.getPercentageBucket(EFFECT_TYPES.SPEED, 'mining')).toBe(1);
 
-        // The exact query a consumer makes. Before the fix this was 0 and the
-        // upper-cased spelling was the only one that answered.
-        expect(hero.aggregator.query(EFFECT_TYPES.SPEED, 'mining')).toBeCloseTo(0.3);
-        expect(hero.aggregator.query(EFFECT_TYPES.SPEED, 'MINING')).toBe(0);
-    });
-
-    it('resolves to a percentage bucket a cycle time can be divided by', () => {
-        const hero = heroWithSkill('mining', 60);
-
-        expect(hero.aggregator.getPercentageBucket(EFFECT_TYPES.SPEED, 'mining'))
-            .toBeCloseTo(1 + 60 * SKILL_SPEED_FACTOR);
-    });
-
-    it('grows with the level, and is neutral at level 0', () => {
-        const novice = heroWithSkill('mining', 0);
-        expect(novice.aggregator.getPercentageBucket(EFFECT_TYPES.SPEED, 'mining')).toBe(1);
-
-        novice.skills.mining.level = 40;
-        updateHeroSkillModifiers(novice);
-        expect(novice.aggregator.getPercentageBucket(EFFECT_TYPES.SPEED, 'mining'))
-            .toBeCloseTo(1 + 40 * SKILL_SPEED_FACTOR);
-    });
-
-    it('does not make a hero faster at a skill they did not level', () => {
-        const hero = heroWithSkill('mining', 60);
-        expect(hero.aggregator.getPercentageBucket(EFFECT_TYPES.SPEED, 'cooking')).toBe(1);
+        hero.skills.mining.level = 99;
+        updateHeroFromSkills(hero);
+        expect(hero.aggregator.getPercentageBucket(EFFECT_TYPES.SPEED, 'mining')).toBe(1);
+        expect(hero.level).toBe(99);
     });
 });
 

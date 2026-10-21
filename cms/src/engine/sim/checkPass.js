@@ -99,7 +99,7 @@ export function progressionGuardRows(dials = DEFAULT_DIALS) {
 export function lifetimeOf(entity, { cycleTimeMs, dials = DEFAULT_DIALS } = {}) {
     const charges = entity?.charges;
     const unlimited = !Number.isFinite(charges) || charges <= 0;
-    const cph = cyclesPerHour(cycleTimeMs, entity?.level);
+    const cph = cyclesPerHour(cycleTimeMs);
     if (unlimited) {
         return {
             charges: null,

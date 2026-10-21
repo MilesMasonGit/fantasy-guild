@@ -126,7 +126,7 @@ export function addXP(heroId, skillId, amount) {
     if (levelsGained > 0) {
         skill.level = newLevel;
 
-        HeroManager.updateHeroSkillModifiers(hero);
+        HeroManager.updateHeroFromSkills(hero);
 
         for (let i = oldLevel + 1; i <= newLevel; i++) {
             EventBus.publish(ENGINE_EVENTS.HERO_LEVELED, {

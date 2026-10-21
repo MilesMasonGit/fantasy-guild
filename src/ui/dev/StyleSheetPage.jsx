@@ -32,7 +32,8 @@ import { listSkillOf } from '../../systems/board/RecipeList.js';
 import { Stub } from '../components/notifications/ItemStubColumn.jsx';
 import { Banner } from '../components/notifications/BannerStack.jsx';
 import { bannerText } from '../../systems/notifications/bannerKinds.js';
-import { BookmarkRibbon } from '../components/atlas/AtlasTome.jsx';
+import { BookTab } from '../components/atlas/AtlasTome.jsx';
+import { MapSprite, MapOutline, MAP_PX, SLOT_PX } from '../components/atlas/MapPieces.jsx';
 
 /** One art pixel of the UI, in screen pixels: UI sprites draw at 2×. */
 const ART_PX = 2;
@@ -169,23 +170,38 @@ const KitTabs = () => {
     );
 };
 
-const KIT_RIBBONS = [
+const KIT_BOOK_TABS = [
     { id: 'cartography', label: 'Cartography', colour: '#7a1f1f' },
     { id: 'regions', label: 'Regions', colour: '#1f3f6e' }
 ];
 
-/** The Atlas's bookmark ribbons, tucked under a strip of book cover as on the tome. */
-const RibbonDemo = () => {
-    const [open, setOpen] = useState(KIT_RIBBONS[0].id);
+/** The Atlas's page tabs, tucked under a strip of book cover as on the tome. */
+const BookTabDemo = () => {
+    const [open, setOpen] = useState(KIT_BOOK_TABS[0].id);
     return (
-        <div className="relative inline-block pt-2 px-6">
-            <div role="tablist" className="flex items-end gap-2">
-                {KIT_RIBBONS.map(t => <BookmarkRibbon key={t.id} {...t} selected={t.id === open} onSelect={setOpen} />)}
+        <div className="relative inline-flex items-start py-2">
+            <div role="tablist" aria-orientation="vertical" className="flex flex-col items-end gap-2">
+                {KIT_BOOK_TABS.map(t => <BookTab key={t.id} {...t} selected={t.id === open} onSelect={setOpen} />)}
             </div>
-            <div className="relative -mt-4 h-6 w-72" style={{ background: '#4a2a1a' }} />
+            <div className="relative -ml-4 w-6 self-stretch" style={{ background: '#4a2a1a' }} />
         </div>
     );
 };
+
+/** The Cartography table's maps: a tile, one with every copy slotted, an empty slot and a filled one. */
+const KIT_MAP = { id: 'dev_map_forest', biome: 'forest' };
+const MapPiecesDemo = () => (
+    <div data-kit-map-pieces className="inline-flex items-end gap-3 p-2 bg-gi-surface/95">
+        {[2, 0].map(n => (
+            <div key={n} className={cn('flex flex-col items-center bg-black/30', n === 0 && 'opacity-35 grayscale')} style={{ width: MAP_PX }}>
+                <MapSprite recipe={KIT_MAP} />
+                <span className="font-pixel ui-text-small tabular-nums text-white/85 leading-none pb-0.5">×{n}</span>
+            </div>
+        ))}
+        <div className="flex items-center justify-center bg-black/20" style={{ width: SLOT_PX, height: SLOT_PX }}><MapOutline /></div>
+        <div className="flex items-center justify-center bg-black/40" style={{ width: SLOT_PX, height: SLOT_PX }}><MapSprite recipe={KIT_MAP} /></div>
+    </div>
+);
 
 const KitXpBar = ({ cur, max }) => (
     <div
@@ -520,7 +536,6 @@ export const KIT_SECTIONS = [
         Demo: () => (
             <div className="w-48 flex flex-col gap-1">
                 <VitalBar label="HP" value={62} max={100} barClass="bg-gi-hp" />
-                <VitalBar label="NRJ" value={30} max={100} barClass="bg-[var(--color-energy)]" />
             </div>
         )
     },
@@ -591,7 +606,7 @@ export const KIT_SECTIONS = [
         )
     },
     {
-        id: 'tabs', title: 'Tabs', status: 'unapproved', source: 'none shared (the Atlas has its own ribbons, below)',
+        id: 'tabs', title: 'Tabs', status: 'unapproved', source: 'none shared (the Atlas has its own page tabs, below)',
         rule: 'Sprite + word. The open one has a 1-art-pixel gold line under it and bright text; the others muted. Never boxed.',
         Demo: KitTabs
     },
@@ -660,9 +675,14 @@ export const KIT_SECTIONS = [
         Demo: BannerDemo
     },
     {
-        id: 'atlas-ribbons', title: 'Atlas bookmark ribbons', status: 'unapproved', source: 'AtlasTome (the Atlas only)',
-        rule: 'The Atlas’s own variant of the tabs: cloth ribbons standing up from the top edge of the book, tucked under its cover. The open one stands taller with bright text and a 1-art-pixel gold edge down each side; the others are muted. Code placeholders until the owner draws the ribbons.',
-        Demo: RibbonDemo
+        id: 'atlas-tabs', title: 'Atlas page tabs', status: 'unapproved', source: 'AtlasTome (the Atlas only)',
+        rule: 'The Atlas’s own variant of the tabs: cloth page tabs stacked down the left edge of the book, coming out from under its cover. The open one stands further out with bright text and a 1-art-pixel gold edge along each long side; the others are muted. Code placeholders until the owner draws the tabs.',
+        Demo: BookTabDemo
+    },
+    {
+        id: 'atlas-maps', title: 'Cartography maps and slots', status: 'unapproved', source: 'CartographyTable, MapPieces (the Atlas only)',
+        rule: 'Each map is its 64 px sprite at 1× with its count under it, like the Bank’s tiles, greyed once every copy is slotted; hover names it and says what it adds. A slot is a 68 px box: empty, a faint dashed outline of a map; filled, the map’s sprite. The Region’s preview beside them is a tiny real map: the mat’s own ground and each Token’s sprite shrunk by a whole number, drawn at the UI’s 2×.',
+        Demo: MapPiecesDemo
     },
     {
         id: 'map-modes', title: 'Map mode outlines and banners', status: 'unapproved',

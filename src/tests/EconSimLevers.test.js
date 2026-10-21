@@ -173,7 +173,7 @@ describe('EconSim — the lever policy (plan §5)', () => {
                         outputs: [out('item_x', { minQty: 1, maxQty: 1, chance: 100, variable: true })],
                     }),
                 },
-                values: { item_x: 6 },   // 6, not 8, moved Fast's middle from 10s to 8s,
+                values: { item_x: 7 },   // 7: at 6 the cycle lever (Fast reaches 12s) lands it, so nothing would be refused
             });
 
             const record = tunings.get('token_second');

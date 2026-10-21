@@ -24,7 +24,7 @@ function rollStatusOnHit(source, applyFn) {
 }
 
 /**
- * No energy cost in combat: HP/food is the attrition currency.
+ * HP, food and drink are combat's attrition currency.
  *
  * `combat_hero_attack` names the enemy Token (`instanceId`) so the mat can
  * route a landed hit's knockback to it.
@@ -34,11 +34,13 @@ export function handleHeroAttack(fight, hero, enemy, combatStyle, attackSpeed) {
     // Eating mid-fight: the hero skips this attack while the enemy's timer keeps
     // running, so the enemy gets a free swing. That price keeps HP management
     // tense. Uncapped on purpose: a hero who can't out-heal the damage should lose.
-    const meal = ConsumptionSystem.tryEat(hero.id);
-    if (meal) {
-        EventBus.publish(ENGINE_EVENTS.COMBAT_HERO_ATE, {
-            cardId: fight.id, heroId: hero.id, itemId: meal.itemId, healed: meal.amount
-        });
+    const meals = ConsumptionSystem.tryEat(hero.id);
+    if (meals.length) {
+        for (const meal of meals) {
+            EventBus.publish(ENGINE_EVENTS.COMBAT_HERO_ATE, {
+                cardId: fight.id, heroId: hero.id, itemId: meal.itemId, healed: meal.amount
+            });
+        }
         fight.combat.heroTickProcesses[hero.id] -= attackSpeed;
         return;
     }

@@ -2,7 +2,7 @@
  * Economic simulator, pass 5's XP half. `xp per cycle = XPH curve(required level) × purpose XP factor × cycle hours`, rounded, minimum 1. Recalculate derives it like every other number the game reads.
  * 1. XP is derived, never targeted: nothing asks whether a Token's XP is right and adjusts something to match, so the gold/XP seesaw below can never produce a conflict.
  * 2. The Purpose tag is a seesaw: the XP factors run the opposite way to the gold factors, so a GPH source pays well and teaches a trickle, an XPH source teaches fast and pays a trickle, and IPH sits between.
- * 3. The curve is a floor, not an average: `cycle hours` is the authored cycle length with no speed bonus, so a hero levelled past the gate out-trains it, deliberately unmodelled.
+ * 3. `cycle hours` is the authored cycle length, which every hero runs at: a skill level adds no work speed.
  * ⚠️ The granularity wobble is accepted, not a bug: the minimum-1 rule makes a Fast, GPH-tagged source at low levels over-teach (1 XP on a 10-second cycle is far above its target). It is documented here and files an Info row (`xp-granularity`) so nobody mistakes it for a defect.
  * It writes nothing: like every pass it returns Maps, and `sim/writeBack.js` is the one place a result becomes a stored field.
  */
@@ -161,7 +161,7 @@ export function runXpPass(entities = [], {
         if (awarded === null) continue;
         xp.set(entity.id, awarded);
 
-        // Delivered XP/hour against the target the curve set. Cycles per hour here is the plain cycle rate, matching the formula's own reading: the speed bonus lifts both sides equally and cancels.
+        // Delivered XP/hour against the target the curve set. Cycles per hour here is the plain cycle rate, matching the formula's own reading.
         const cyclesPerHour = 3600000 / cycleTimeMs;
         const delivered = awarded * cyclesPerHour;
         const target = xphAt(entity.level, dials) * purposeXpFactor(entity.purpose, dials);

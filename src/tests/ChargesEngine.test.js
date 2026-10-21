@@ -13,7 +13,6 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { ALERT } from '../systems/board/boardEvents.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
-import { SKILL_SPEED_FACTOR } from '../config/FormulaRegistry.js';
 import { pickRecipe } from './fixtures/stations.js';
 
 /**
@@ -27,11 +26,6 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 vi.mock('../systems/progression/RegistryManager.js', () => ({
     RegistryManager: { recordItemGain: vi.fn() }
 }));
-
-/** Skill speed shortens every authored cycle — see `TokenCycle.test.js`. */
-function cycleMs(base, level = 50) {
-    return base / (1 + level * SKILL_SPEED_FACTOR);
-}
 
 function makeHero(id, level = 50) {
     const skills = {};
@@ -184,7 +178,7 @@ describe('A cycle it cannot pay for in full deducts nothing', () => {
         place(STATION, 'fixture_charge_station', 'hero_1', 2);
         const context = place(CONTEXT, 'fixture_charged_context');
 
-        run(cycleMs(10000) + 2000);
+        run(10000 + 2000);
 
         expect(InventoryManager.getItemCount('item_coal')).toBe(5);
         expect(tokenAt(STATION).usesRemaining).toBe(2);
@@ -199,7 +193,7 @@ describe('A cycle it cannot pay for in full deducts nothing', () => {
         place(STATION, 'fixture_charge_station', 'hero_1');
         const context = place(CONTEXT, 'fixture_charged_context', null, 1);
 
-        run(cycleMs(10000) + 2000);
+        run(10000 + 2000);
 
         expect(InventoryManager.getItemCount('item_coal')).toBe(5);
         expect(tokenAt(STATION).usesRemaining).toBe(10);
@@ -213,7 +207,7 @@ describe('A cycle it cannot pay for in full deducts nothing', () => {
         place(STATION, 'fixture_charge_station', 'hero_1');
         const context = place(CONTEXT, 'fixture_charged_context');
 
-        run(cycleMs(10000) + 2000);
+        run(10000 + 2000);
 
         expect(tokenAt(STATION).usesRemaining).toBe(10);
         expect(context.usesRemaining).toBe(6);
@@ -225,7 +219,7 @@ describe('A cycle it cannot pay for in full deducts nothing', () => {
         place(STATION, 'fixture_charge_station', 'hero_1');
         const context = place(CONTEXT, 'fixture_charged_context');
 
-        run(cycleMs(10000) + 300);
+        run(10000 + 300);
 
         expect(InventoryManager.getItemCount('item_coal')).toBe(4);
         expect(tokenAt(STATION).usesRemaining).toBe(7);   // 10 − 3
@@ -300,13 +294,13 @@ describe('Nearby context Tokens are chosen and shared', () => {
         place(OTHER_STATION, 'fixture_charge_station', 'hero_2');
         const context = place(CONTEXT, 'fixture_charged_context');   // 6 charges
 
-        run(cycleMs(10000) + 300);
+        run(10000 + 300);
 
         // Both stations completed the same cycle and each took 2.
         expect(context.usesRemaining).toBe(2);
         expect(SpriteLayer.countOnBoard('fixture_charcoal')).toBe(2);
 
-        run(cycleMs(10000) + 300);
+        run(10000 + 300);
 
         // The second round could only afford one of them; the Token is gone and
         // the tile it stood on is empty.
@@ -328,14 +322,14 @@ describe('An effect block spends its own charge delta', () => {
 
     it('spends nothing on a zero delta', () => {
         const buff = producerBeside(STATION, 'fixture_trigger_free');
-        run(cycleMs(12000) * 2 + 600);
+        run(12000 * 2 + 600);
         expect(buff.usesRemaining).toBe(3);
         expect(tokenAt(STATION + 1)).toBe(buff);
     });
 
     it('spends the authored amount on a negative delta', () => {
         const buff = producerBeside(STATION, 'fixture_trigger_costly');   // −2 of 3
-        run(cycleMs(12000) + 300);
+        run(12000 + 300);
         expect(buff.usesRemaining).toBe(1);
     });
 
@@ -346,22 +340,22 @@ describe('An effect block spends its own charge delta', () => {
      */
     it('cannot fire at all once its cost exceeds the charges left', () => {
         const buff = producerBeside(STATION, 'fixture_trigger_costly');
-        run(cycleMs(12000) * 4 + 600);
+        run(12000 * 4 + 600);
         expect(buff.usesRemaining).toBe(1);
         expect(tokenAt(STATION + 1)).toBe(buff);
     });
 
     it('restores on a positive delta, ceilinged at the starting charges', () => {
         const buff = producerBeside(STATION, 'fixture_trigger_restoring', 1);  // +2 of 4
-        run(cycleMs(12000) + 300);
+        run(12000 + 300);
         expect(buff.usesRemaining).toBe(3);
-        run(cycleMs(12000) * 3 + 600);
+        run(12000 * 3 + 600);
         expect(buff.usesRemaining).toBe(4);            // never 5, 7, 9…
     });
 
     it('leaves an unlimited Token alone whatever the delta says (R-4)', () => {
         const buff = producerBeside(STATION, 'fixture_trigger_unlimited');
-        run(cycleMs(12000) * 3 + 600);
+        run(12000 * 3 + 600);
         expect(buff.usesRemaining).toBeNull();
         expect(tokenAt(STATION + 1)).toBe(buff);
     });
@@ -369,7 +363,7 @@ describe('An effect block spends its own charge delta', () => {
     /** No `chargeDelta` authored means one charge, as every statement did before. */
     it('spends one charge for a statement that authors no delta', () => {
         const buff = producerBeside(STATION, 'fixture_trigger_wearing');   // uses: 3
-        run(cycleMs(12000) + 300);
+        run(12000 + 300);
         expect(buff.usesRemaining).toBe(2);
     });
 });
