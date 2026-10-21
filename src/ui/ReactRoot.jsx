@@ -25,6 +25,7 @@ import BankHeroPanel from './components/dock/BankHeroPanel.jsx';
 import WorkRulesDrawer from './components/dock/WorkRulesDrawer.jsx';
 import GuildHallBoard from './components/board/GuildHallBoard.jsx';
 import GuildHallEffectsPanel from './components/board/GuildHallEffectsPanel.jsx';
+import HallSky from './components/board/HallSky.jsx';
 import { InspectionPanel } from './components/drawer/InspectionPanel.jsx';
 import { SIDE_COLUMN_PX, NOTIFICATION_COLUMN, columnWidthCss } from './components/board/boardConstants.js';
 import { getUpgradeDef } from '../config/guildUpgrades.js';
@@ -121,6 +122,8 @@ export const ReactRoot = ({ engine }) => {
 
     // The Hall's upgrade web selects by upgrade id; it has no tiles.
     const [selectedUpgradeId, setSelectedUpgradeId] = React.useState('roster_size');
+    // The star under the pointer: the details panel shows it until the pointer leaves.
+    const [hoveredUpgradeId, setHoveredUpgradeId] = React.useState(null);
     const isGuildView = ui.fullscreen.view === 'guild';
     const isAtlasOpen = ui.fullscreen.view === 'atlas';
     const isBankOpen = ui.drawer.panes.includes('bank');
@@ -133,6 +136,7 @@ export const ReactRoot = ({ engine }) => {
     const handleOpenGuildHall = React.useCallback(() => {
         ui.fullscreen.open('guild');
         setSelectedUpgradeId('roster_size');
+        setHoveredUpgradeId(null);
         const def = getUpgradeDef('roster_size');
         if (def) {
             ui.inspect.set('guild_upgrade', def.id, { upgradeDef: def }, 'guild');
@@ -148,6 +152,7 @@ export const ReactRoot = ({ engine }) => {
 
     const handleCloseGuildHall = useCallback(() => {
         ui.fullscreen.close();
+        setHoveredUpgradeId(null);
         ui.inspect.clear('guild');
     }, [ui.fullscreen, ui.inspect]);
 
@@ -199,6 +204,9 @@ export const ReactRoot = ({ engine }) => {
         selectedUpgradeId,
         getUpgradeDefFn: getUpgradeDef
     });
+    const guildShownSelection = hoveredUpgradeId
+        ? selectGuildInspectSelection({ hoveredUpgradeId, getUpgradeDefFn: getUpgradeDef })
+        : guildInspectSelection;
 
     // Close must clear BOTH the pane's explicit selection and the web's own 'last picked' id:
     // clearing only the pane left the fallback chain above re-deriving the same selection on
@@ -232,46 +240,15 @@ export const ReactRoot = ({ engine }) => {
                                 (isGuildView || isBankOpen) ? "opacity-100" : "opacity-0"
                             )}
                         />
+                        {isGuildView && <HallSky />}
 
                         {!menuRight && <BubbleMenu ui={ui} side="left" />}
-                        {menuRight && (
-                            isGuildView ? (
-                                <aside
-                                    style={{ width: columnWidthCss(NOTIFICATION_COLUMN) }}
-                                    className="shrink-0 h-full flex flex-col items-center justify-center py-8 bg-transparent pointer-events-auto relative select-none pr-8 pl-0 z-10"
-                                >
-                                    <div
-                                        className="w-full relative shrink-0 flex flex-col gap-2.5"
-                                        style={{ height: SIDE_COLUMN_PX, maxHeight: '100%' }}
-                                    >
-                                        <button
-                                            onClick={() => {
-                                                EventBus.publish(ENGINE_EVENTS.AUDIO_PLAY, { clip: 'button_click' });
-                                                handleCloseGuildHall();
-                                            }}
-                                            className="w-full shrink-0 py-2.5 px-4 rounded-xl border-2 border-[#5c3e2e] hover:border-gi-gold/70 bg-[#2a1d15]/95 hover:bg-[#3d2a1f] text-amber-200 hover:text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition-all duration-150 cursor-pointer active:scale-[0.98] group"
-                                        >
-                                            <ArrowLeft size={16} className="text-gi-gold group-hover:-translate-x-1 transition-transform" />
-                                            <span>Return to Playmat</span>
-                                        </button>
-                                        <div className="w-full flex-1 min-h-0 relative flex flex-col rounded-2xl border-4 border-[#3a271d] shadow-2xl overflow-hidden">
-                                            <InspectionPanel
-                                                className="w-full h-full flex-1"
-                                                selection={guildInspectSelection}
-                                                onClear={handleClearGuildInspect}
-                                            />
-                                        </div>
-                                    </div>
-                                </aside>
-                            ) : (
-                                isBankOpen && (
-                                    // The Bank's hero column: the hero panel (below) draws over it.
-                                    <aside
-                                        style={{ width: columnWidthCss(NOTIFICATION_COLUMN) }}
-                                        className="shrink-0 h-full pointer-events-none"
-                                    />
-                                )
-                            )
+                        {menuRight && isBankOpen && !isGuildView && (
+                            // The Bank's hero column: the hero panel (below) draws over it.
+                            <aside
+                                style={{ width: columnWidthCss(NOTIFICATION_COLUMN) }}
+                                className="shrink-0 h-full pointer-events-none"
+                            />
                         )}
                         {/* `min-w-0`: the column takes the room it is given, not its widest content's. */}
                         <div className="flex-1 min-w-0 relative flex flex-col overflow-hidden z-10">
@@ -309,6 +286,7 @@ export const ReactRoot = ({ engine }) => {
                                             setSelectedUpgradeId(def.id);
                                             ui.inspect.set('guild_upgrade', def.id, { upgradeDef: def }, 'guild');
                                         }}
+                                        onHoverUpgrade={setHoveredUpgradeId}
                                         onClose={handleCloseGuildHall}
                                     />
                                 ) : (
@@ -371,44 +349,46 @@ export const ReactRoot = ({ engine }) => {
                             </AnimatePresence>
                             <ErrorBoundary label="ArrivalCard"><ArrivalCard /></ErrorBoundary>
                         </div>
-                        {!menuRight && (
-                            isGuildView ? (
-                                <aside
-                                    style={{ width: columnWidthCss(NOTIFICATION_COLUMN) }}
-                                    className="shrink-0 h-full flex flex-col items-center justify-center py-8 bg-transparent pointer-events-auto relative select-none pl-8 pr-0 z-10"
+                        {/**
+                         * The Hall's details panel: always RIGHT of the upgrade web, whichever
+                         * side the nav is on, as the Effects list is always left of it.
+                         */}
+                        {isGuildView && (
+                            <aside
+                                data-hall-details
+                                style={{ width: columnWidthCss(NOTIFICATION_COLUMN) }}
+                                className="shrink-0 h-full flex flex-col items-center justify-center py-8 bg-transparent pointer-events-auto relative select-none pl-8 pr-0 z-10"
+                            >
+                                <div
+                                    className="w-full relative shrink-0 flex flex-col gap-2.5"
+                                    style={{ height: SIDE_COLUMN_PX, maxHeight: '100%' }}
                                 >
-                                    <div
-                                        className="w-full relative shrink-0 flex flex-col gap-2.5"
-                                        style={{ height: SIDE_COLUMN_PX, maxHeight: '100%' }}
+                                    <button
+                                        onClick={() => {
+                                            EventBus.publish(ENGINE_EVENTS.AUDIO_PLAY, { clip: 'button_click' });
+                                            handleCloseGuildHall();
+                                        }}
+                                        className="w-full shrink-0 py-2.5 px-4 rounded-xl border-2 border-[#5c3e2e] hover:border-gi-gold/70 bg-[#2a1d15]/95 hover:bg-[#3d2a1f] text-amber-200 hover:text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition-all duration-150 cursor-pointer active:scale-[0.98] group"
                                     >
-                                        <button
-                                            onClick={() => {
-                                                EventBus.publish(ENGINE_EVENTS.AUDIO_PLAY, { clip: 'button_click' });
-                                                handleCloseGuildHall();
-                                            }}
-                                            className="w-full shrink-0 py-2.5 px-4 rounded-xl border-2 border-[#5c3e2e] hover:border-gi-gold/70 bg-[#2a1d15]/95 hover:bg-[#3d2a1f] text-amber-200 hover:text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition-all duration-150 cursor-pointer active:scale-[0.98] group"
-                                        >
-                                            <ArrowLeft size={16} className="text-gi-gold group-hover:-translate-x-1 transition-transform" />
-                                            <span>Return to Playmat</span>
-                                        </button>
-                                        <div className="w-full flex-1 min-h-0 relative flex flex-col rounded-2xl border-4 border-[#3a271d] shadow-2xl overflow-hidden">
-                                            <InspectionPanel
-                                                className="w-full h-full flex-1"
-                                                selection={guildInspectSelection}
-                                                onClear={handleClearGuildInspect}
-                                            />
-                                        </div>
+                                        <ArrowLeft size={16} className="text-gi-gold group-hover:-translate-x-1 transition-transform" />
+                                        <span>Return to Playmat</span>
+                                    </button>
+                                    <div className="w-full flex-1 min-h-0 relative flex flex-col rounded-2xl border-4 border-[#3a271d] shadow-2xl overflow-hidden">
+                                        <InspectionPanel
+                                            className="w-full h-full flex-1"
+                                            selection={guildShownSelection}
+                                            onClear={handleClearGuildInspect}
+                                        />
                                     </div>
-                                </aside>
-                            ) : (
-                                isBankOpen && (
-                                    // The Bank's hero column: the hero panel (below) draws over it.
-                                    <aside
-                                        style={{ width: columnWidthCss(NOTIFICATION_COLUMN) }}
-                                        className="shrink-0 h-full pointer-events-none"
-                                    />
-                                )
-                            )
+                                </div>
+                            </aside>
+                        )}
+                        {!menuRight && isBankOpen && !isGuildView && (
+                            // The Bank's hero column: the hero panel (below) draws over it.
+                            <aside
+                                style={{ width: columnWidthCss(NOTIFICATION_COLUMN) }}
+                                className="shrink-0 h-full pointer-events-none"
+                            />
                         )}
                         {menuRight && <BubbleMenu ui={ui} side="right" />}
                         {/**

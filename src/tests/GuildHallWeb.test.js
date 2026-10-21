@@ -76,9 +76,9 @@ describe('the Guild Hall upgrade web', () => {
         expect(litOf(container, 'bank_tabs:bank_slots')).toBe('false');  // only one end bought
         expect(litOf(container, `roster_size:${HALL_NODE}`)).toBe('false');
 
-        // The rank reads on the node's plaque.
-        const plaque = container.querySelector('[data-hall-node="bank_slots"]').parentElement;
-        expect(plaque.textContent).toContain('II/X');
+        // The rank reads on the star's tag, as `rank/max`.
+        const tag = container.querySelector('[data-hall-node="bank_slots"]').parentElement;
+        expect(tag.textContent).toContain('Bank Slots 2/10');
     });
 
     it('selects a node by upgrade id, and the Hall closes the screen', () => {

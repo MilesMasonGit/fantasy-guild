@@ -45,6 +45,8 @@ export const UPGRADE_SPRITES = {
  *   `node`  — `{ x, y }` in a unit space centred on the Hall (0, 0); +x is
  *             right, +y is down. The first ring sits about 0.5 out. The screen
  *             turns these into pixels (`GuildHallBoard`).
+ *   `tag`   — where its name and rank sit beside its star: 'below' (when left out),
+ *             'above', 'left' or 'right', so neighbouring tags do not overlap.
  *   `links` — ids of the nodes it is joined to, or `HALL_NODE` for the Hall.
  *             A link is a line, so it counts from both ends (see
  *             {@link getUpgradeLinks}); each is written once, on the outer node.
@@ -124,9 +126,23 @@ export function tokenCapForRank(rank) {
     return TOKEN_CAP_BASE + r * TOKEN_CAP_PER_RANK;
 }
 
+/**
+ * The sky's constellations: each upgrade names one in `constellation`. `label` is where the
+ * name sits, in the same unit space as a node's `node`. A constellation is finished when every
+ * star in it is lit (rank 1 or more).
+ */
+export const CONSTELLATIONS = [
+    { id: 'hearth', name: 'The Hearth', label: { x: 0, y: -0.8 } },
+    { id: 'vault', name: 'The Vault', label: { x: -0.72, y: 0.3 } },
+    { id: 'compass', name: 'The Compass', label: { x: 0.9, y: 0.3 } },
+    { id: 'well', name: 'The Well', label: { x: 0, y: 0.8 } }
+];
+
 export const GUILD_UPGRADES = [
     {
         id: 'bank_tabs',
+        tag: 'above',
+        constellation: 'vault',
         name: 'Bank Tabs',
         description: 'Unlock another Bank tab for organizing items in storage.',
         node: { x: -0.95, y: 0 },
@@ -139,6 +155,7 @@ export const GUILD_UPGRADES = [
     },
     {
         id: 'bank_slots',
+        constellation: 'vault',
         name: 'Bank Slots',
         description: 'Store 32 more kinds of items in the Bank.',
         node: { x: -0.5, y: 0 },
@@ -151,6 +168,7 @@ export const GUILD_UPGRADES = [
     },
     {
         id: 'roster_size',
+        constellation: 'hearth',
         name: 'Bunk Beds',
         description: 'Expand guild sleeping quarters to recruit new heroes and increase roster capacity.',
         node: { x: 0, y: -0.5 },
@@ -164,6 +182,8 @@ export const GUILD_UPGRADES = [
     },
     {
         id: 'flag_radius',
+        tag: 'above',
+        constellation: 'compass',
         name: 'Scouting Flags',
         description: 'Increases the radius heroes look for work from their flags.',
         // Between Bunk Beds and Bank Slots: either one bought opens it.
@@ -177,6 +197,7 @@ export const GUILD_UPGRADES = [
     },
     {
         id: 'wishing_well',
+        constellation: 'well',
         name: 'Wishing Well',
         description: 'The Guild Hall draws fresh Water as Passive Production every 5 minutes. No hero needed.',
         node: { x: 0, y: 0.5 },
@@ -191,6 +212,7 @@ export const GUILD_UPGRADES = [
         // Each rank lets the Guild Hall keep one more bounty quest on the mat.
         // The base and the ceiling are Mat Tuner rows (`questCap`, `questCapMax`), read by `QuestTokens.questCap`.
         id: 'notice_board',
+        constellation: 'compass',
         name: 'Notice Board',
         description: 'The Guild Hall keeps one more quest on the mat at a time.',
         node: { x: 0.5, y: 0 },
@@ -203,6 +225,8 @@ export const GUILD_UPGRADES = [
     },
     {
         id: 'cartography_slots',
+        tag: 'above',
+        constellation: 'compass',
         name: 'Cartography Table',
         description: 'One more slot on the Cartography table, to write a Region from more maps.',
         node: { x: 0.55, y: 0.55 },
@@ -215,6 +239,8 @@ export const GUILD_UPGRADES = [
     },
     {
         id: 'token_cap',
+        tag: 'above',
+        constellation: 'compass',
         name: 'Token Cap',
         description: `Room for ${TOKEN_CAP_PER_RANK} more Tokens on the mat.`,
         node: { x: 0.55, y: -0.55 },
