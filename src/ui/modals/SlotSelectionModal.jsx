@@ -149,7 +149,7 @@ export const SlotSelectionModal = ({ isOpen, onSelect }) => {
                                 onClick={() => handleSelect(index)}
                                 className="bg-white/10 hover:bg-white text-white hover:text-black font-bold py-2 px-6 rounded transition-colors flex items-center gap-2 font-pixel tracking-widest uppercase text-xs border border-white/10"
                             >
-                                <Play size={14} /> Load Sync
+                                <Play size={14} /> Load
                             </button>
                             <button
                                 onClick={() => setDeleteAttemptIndex(index)}
@@ -169,11 +169,11 @@ export const SlotSelectionModal = ({ isOpen, onSelect }) => {
         <GIModal
             isOpen={isOpen}
             hideClose={true}
-            title="SYSTEM BOOT"
+            title="Choose a Save"
             className="w-full max-w-2xl bg-gray-900 border-gi-primary/50 text-white mt-[-10vh]"
         >
             <div className="flex flex-col gap-4 py-2 font-pixel">
-                <p className="text-sm text-gray-400 mb-2 uppercase tracking-widest">Select a neural sync slot to continue:</p>
+                <p className="text-sm text-gray-400 mb-2 uppercase tracking-widest">Pick a save slot to play:</p>
                 <div className="flex flex-col gap-3">
                     {[0, 1, 2].map(renderSlotCard)}
                 </div>

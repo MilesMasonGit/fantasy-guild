@@ -22,22 +22,22 @@ const closeButton = (container) =>
 
 describe('GIModal — whether a close control is offered', () => {
     it('renders no dismiss control when the caller supplies no onClose', () => {
-        render(React.createElement(GIModal, { isOpen: true, title: 'SYSTEM BOOT' }, 'body'));
-        const header = screen.getByText('SYSTEM BOOT').parentElement;
+        render(React.createElement(GIModal, { isOpen: true, title: 'Choose a Save' }, 'body'));
+        const header = screen.getByText('Choose a Save').parentElement;
         expect(header.querySelectorAll('button').length).toBe(0);
     });
 
     it('renders no dismiss control when hideClose is passed, even with an onClose', () => {
         const onClose = vi.fn();
-        render(React.createElement(GIModal, { isOpen: true, title: 'SYSTEM BOOT', hideClose: true, onClose }, 'body'));
-        const header = screen.getByText('SYSTEM BOOT').parentElement;
+        render(React.createElement(GIModal, { isOpen: true, title: 'Choose a Save', hideClose: true, onClose }, 'body'));
+        const header = screen.getByText('Choose a Save').parentElement;
         expect(header.querySelectorAll('button').length).toBe(0);
     });
 
     it('renders a dismiss control that calls onClose when one is supplied', () => {
         const onClose = vi.fn();
-        render(React.createElement(GIModal, { isOpen: true, title: 'Protocol Settings', onClose }, 'body'));
-        const header = screen.getByText('Protocol Settings').parentElement;
+        render(React.createElement(GIModal, { isOpen: true, title: 'Settings', onClose }, 'body'));
+        const header = screen.getByText('Settings').parentElement;
         const btn = header.querySelector('button');
         expect(btn).toBeTruthy();
         fireEvent.click(btn);
