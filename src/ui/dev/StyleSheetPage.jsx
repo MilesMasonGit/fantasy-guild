@@ -6,13 +6,15 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { cn } from '../utils/cn.js';
+import { useEscapeLayer } from '../utils/escapeLayers.js';
 import { EntityRibbon } from '../components/base/EntityRibbon.jsx';
 import { ItemIcon } from '../components/base/ItemIcon.jsx';
-import { VitalBar } from '../components/base/VitalBar.jsx';
+import { VitalBar, vitalTone } from '../components/base/VitalBar.jsx';
 import { TokenSprite, TOKEN_SURFACE } from '../components/base/TokenSprite.jsx';
 import { StationGearBadge } from '../components/board/TokenBadges.jsx';
 import { Tooltip } from '../components/base/Tooltip.jsx';
 import { PixelFrame } from '../components/base/PixelFrame.jsx';
+import { CloseX, PanelHeader } from '../components/base/CloseX.jsx';
 import { TEXT_SIZES } from '../components/base/textSizes.js';
 import { ArrowScrollList } from '../components/base/ArrowScrollList.jsx';
 import { LevelUpFloats } from '../components/board/LevelUpFloat.jsx';
@@ -127,11 +129,8 @@ const KitMainButton = ({ label, cost = [], blockedReason = null }) => {
 };
 
 const KitHeader = ({ title, sprite }) => (
-    <div data-kit-header className="flex items-center gap-2 px-2 py-1">
-        {sprite && <UiSprite src={sprite} artSize={16} />}
-        <span className="font-bold text-gi-text">{title}</span>
-        <span className="flex-1" />
-        <KitIconButton src="/assets/ui/u_cancel_red.png" label="Close" />
+    <div data-kit-header>
+        <PanelHeader title={title} sprite={sprite && <UiSprite src={sprite} artSize={16} />} onClose={() => {}} className="px-2 py-1" />
     </div>
 );
 
@@ -195,7 +194,7 @@ const MapPiecesDemo = () => (
         {[2, 0].map(n => (
             <div key={n} className={cn('flex flex-col items-center bg-black/30', n === 0 && 'opacity-35 grayscale')} style={{ width: MAP_PX }}>
                 <MapSprite recipe={KIT_MAP} />
-                <span className="font-pixel ui-text-small tabular-nums text-white/85 leading-none pb-0.5">×{n}</span>
+                <span className="ui-text-small tabular-nums text-white/85 leading-none pb-0.5">×{n}</span>
             </div>
         ))}
         <div className="flex items-center justify-center bg-black/20" style={{ width: SLOT_PX, height: SLOT_PX }}><MapOutline /></div>
@@ -279,7 +278,7 @@ const MapModesDemo = () => {
                 </div>
             )}
             {[MAP_MODE.DISALLOW, MAP_MODE.DEMOLISH].map(mode => (
-                <PixelFrame key={mode} kind="studs" style={{ height: MAT_TOP_BAR_PX }} frameClassName="px-2 font-pixel ui-text-body text-amber-100">
+                <PixelFrame key={mode} kind="studs" style={{ height: MAT_TOP_BAR_PX }} frameClassName="px-2 ui-text-body text-amber-100">
                     <ModeBannerView mode={mode} />
                 </PixelFrame>
             ))}
@@ -531,11 +530,13 @@ export const KIT_SECTIONS = [
         )
     },
     {
-        id: 'bars', title: 'Bars', status: 'shared', source: 'VitalBar',
+        id: 'bars', title: 'Bars', status: 'shared', source: 'VitalBar (the hero panel)',
         rule: 'HP is a bar; in the hero panel its numbers show beside it.',
         Demo: () => (
             <div className="w-48 flex flex-col gap-1">
-                <VitalBar label="HP" value={62} max={100} barClass="bg-gi-hp" />
+                {[[62, 100], [30, 100], [12, 100]].map(([value, max]) => (
+                    <VitalBar key={value} value={value} max={max} barClass={vitalTone(value, max)} />
+                ))}
             </div>
         )
     },
@@ -546,7 +547,7 @@ export const KIT_SECTIONS = [
     },
     {
         id: 'text-sizes', title: 'Text sizes', status: 'unapproved',
-        source: 'ui-text-title, ui-text-body, ui-text-small, ui-text-display (src/tailwind.css); no panel uses them yet',
+        source: 'ui-text-title, ui-text-body, ui-text-small, ui-text-display (src/tailwind.css); what the old bracketed pixel sizes are now written as',
         rule: 'Three sizes in panels (title, body, small), plus one display size for mat celebrations. The Text size setting scales all four.',
         Demo: TextSizesDemo
     },
@@ -561,8 +562,8 @@ export const KIT_SECTIONS = [
         )
     },
     {
-        id: 'header', title: 'Panel header and close X', status: 'unapproved',
-        source: 'none shared: Bank, Shop and hero panel each draw their own',
+        id: 'header', title: 'Panel header and close X', status: 'shared',
+        source: 'PanelHeader and CloseX (every window, the Bank, the Shop, the hero panel, the Token card)',
         rule: 'Title on the left with an optional sprite; ui_cancel_red.png (16 px) at 2× top right.',
         Demo: () => (
             <div className="w-80 bg-gi-surface">
@@ -587,7 +588,7 @@ export const KIT_SECTIONS = [
     },
     {
         id: 'shine', title: 'Shine', status: 'unapproved', source: 'ui-shine (src/tailwind.css); Upgrade and Settle use it',
-        rule: 'Main-action buttons only: one fast, stepped diagonal glint across the button face when hovered, once per hover. It passes under the text and icons, never over the art. No glint with reduced motion.',
+        rule: 'Main-action buttons only: one fast, stepped, solid diagonal glint across the whole button when hovered, once per hover, over its text and icons. No glint with reduced motion.',
         Demo: () => (
             <div className="flex flex-wrap items-start gap-6">
                 <KitMainButton label="Hover me" cost={[{ itemId: SAMPLE_ITEMS[0], have: 10, need: 10 }]} />
@@ -599,7 +600,7 @@ export const KIT_SECTIONS = [
         rule: 'The bare sprite, white outline on hover.',
         Demo: () => (
             <div className="flex gap-4 items-center">
-                <KitIconButton src="/assets/ui/u_cancel_red.png" label="Close" />
+                <CloseX onClick={() => {}} />
                 <KitIconButton src="/assets/ui/u_upgrade.png" label="Upgrade" />
                 <KitIconButton src="/assets/ui/u_add_green.png" label="Add" />
             </div>
@@ -709,11 +710,7 @@ const SectionCard = ({ section }) => {
 
 /** The style sheet page itself: a full-screen dev overlay. Escape or the X closes it. */
 export const StyleSheetPage = ({ onClose }) => {
-    useEffect(() => {
-        const onKey = (e) => { if (e.key === 'Escape') onClose?.(); };
-        document.addEventListener('keydown', onKey);
-        return () => document.removeEventListener('keydown', onKey);
-    }, [onClose]);
+    useEscapeLayer(true, () => onClose?.());
 
     const shared = KIT_SECTIONS.filter(s => s.status === 'shared');
     const unapproved = KIT_SECTIONS.filter(s => s.status === 'unapproved');
@@ -722,22 +719,14 @@ export const StyleSheetPage = ({ onClose }) => {
             data-style-sheet-page
             role="dialog"
             aria-label="Style sheet"
-            className="fixed inset-0 z-[10000] bg-gi-base text-gi-text overflow-y-auto pointer-events-auto"
+            className="fixed inset-0 z-(--z-style-sheet) bg-gi-base text-gi-text overflow-y-auto pointer-events-auto"
         >
             <div className="max-w-4xl mx-auto px-6 py-4">
-                <div className="sticky top-0 z-[60] bg-gi-base flex items-center gap-3 py-2 border-b border-white/10">
+                <div className="sticky top-0 z-60 bg-gi-base flex items-center gap-3 py-2 border-b border-white/10">
                     <h2 className="font-bold">Style sheet</h2>
                     <span className="text-xs text-gi-muted">Every standard piece from UI_STYLE, live.</span>
                     <span className="flex-1" />
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        aria-label="Close style sheet"
-                        data-style-sheet-close
-                        className="p-0 cursor-pointer"
-                    >
-                        <UiSprite src="/assets/ui/u_cancel_red.png" alt="Close" />
-                    </button>
+                    <CloseX onClick={onClose} label="Close style sheet" data-style-sheet-close />
                 </div>
 
                 <h2 data-kit-group="shared" className="mt-4 font-bold" style={{ color: ui('--color-ui-green') }}>

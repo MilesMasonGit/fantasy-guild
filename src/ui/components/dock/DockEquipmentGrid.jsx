@@ -158,13 +158,13 @@ const EquipSlotBody = memo(function EquipSlotBody({ heroId, slot, itemId, quanti
                     <ItemIcon item={item} size={64} />
                 </span>
             ) : (
-                <span className="text-sm font-mono opacity-20 text-gi-muted pointer-events-none">+</span>
+                <span className="text-sm opacity-20 text-gi-muted pointer-events-none">+</span>
             )}
             {showQuantity && (
                 <span className={cn(
                     'absolute -bottom-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full pointer-events-none',
                     'bg-gi-label-bg text-gi-label-text border border-black/60 shadow',
-                    'text-[10px] font-bold leading-none tabular-nums flex items-center justify-center',
+                    'ui-text-body font-bold leading-none tabular-nums flex items-center justify-center',
                     quantity === 0 && 'bg-gi-danger text-white'
                 )}>
                     {formatCompact(quantity, 1)}

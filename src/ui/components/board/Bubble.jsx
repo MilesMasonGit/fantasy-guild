@@ -1,26 +1,15 @@
 import { useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { useActiveDrag } from '../../dnd/DndKit.jsx';
-import { placeUnder } from './tooltipPlacement.js';
+import { FloatingTip } from '../base/Tooltip.jsx';
 import { RING_D_U } from './ringRow.js';
 
 const TIP_WIDTH = 220;
 
-/** The tooltip itself: a portal to the page so the mat's scale does not shrink the text. */
+/** The tooltip itself: the shared one, outside the mat so the mat's scale does not shrink the text. */
 export const BubbleTip = ({ anchor, text }) => {
     const { isDragging } = useActiveDrag();
-    if (isDragging || !text || typeof document === 'undefined') return null;
-    return createPortal(
-        <div
-            role="tooltip"
-            data-bubble-tip="true"
-            className="fixed z-[90] w-max max-w-[220px] px-2 py-1 rounded pointer-events-none bg-black/90 border border-gi-gold/40 text-[11px] leading-snug text-white"
-            style={placeUnder(anchor, TIP_WIDTH, 44)}
-        >
-            {text}
-        </div>,
-        document.body
-    );
+    if (isDragging || !text) return null;
+    return <FloatingTip anchor={anchor} lines={[text]} maxWidth={TIP_WIDTH} tipProps={{ 'data-bubble-tip': 'true' }} />;
 };
 
 /**

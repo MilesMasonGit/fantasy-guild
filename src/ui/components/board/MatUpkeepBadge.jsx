@@ -62,7 +62,7 @@ export const MatUpkeepPopover = ({ anchor, onMouseEnter, onMouseLeave }) => {
             data-mat-upkeep-popover
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}
-            className="fixed z-[90]"
+            className="fixed z-(--z-mat-tip)"
             frameClassName="flex flex-col"
             frameStyle={{ maxHeight: POPOVER_MAX_HEIGHT }}
             style={{ width: POPOVER_WIDTH, ...placeUnder(anchor, POPOVER_WIDTH, 360) }}

@@ -1,11 +1,15 @@
 import { Fragment } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
-import { X } from 'lucide-react';
 import { cn } from '../../utils/cn.js';
+import { useEscapeLayer } from '../../utils/escapeLayers.js';
+import { CloseX } from './CloseX.jsx';
 
 /**
  * GIModal: A standardized, accessible overlay component built on Headless UI Dialog.
- * Handles focus trapping, escape-to-close, and smooth enter/exit animations.
+ * Handles focus trapping and smooth enter/exit animations.
+ * ⚠️ A window closes on its X, its own buttons and Escape, never on a click outside it (only
+ * light pop-ups do that). So Headless UI's own close is switched off and Escape comes from the
+ * shared layers (`escapeLayers.js`), one layer per press.
  */
 const NOOP = () => { };
 
@@ -16,16 +20,18 @@ export const GIModal = ({
     children,
     className,
     maxWidth = "max-w-2xl",
-    hideClose = false
+    hideClose = false,
+    layer = 'modal'
 }) => {
     // Headless UI always needs a function here, but 'can this be dismissed?' is decided
     // explicitly: a caller that supplies no `onClose`, or passes `hideClose`, gets no dismiss
     // control (so the un-dismissable boot screen shows no X).
     const canClose = !hideClose && typeof onClose === 'function';
-    const handleClose = canClose ? onClose : NOOP;
+    // A window with no X still holds its layer, so Escape closes nothing under it.
+    useEscapeLayer(!!isOpen, canClose ? onClose : null);
     return (
         <Transition appear show={isOpen} as={Fragment}>
-            <Dialog as="div" className="relative z-[300]" onClose={handleClose}>
+            <Dialog as="div" className={cn('relative', layer === 'inner' ? 'z-(--z-modal-inner)' : 'z-(--z-modal)')} onClose={NOOP}>
                 <Transition.Child
                     as={Fragment}
                     enter="ease-out duration-300"
@@ -52,7 +58,7 @@ export const GIModal = ({
                             <Dialog.Panel
                                 className={cn(
                                     "w-full transform overflow-hidden rounded-lg bg-gi-base border border-gi-border",
-                                    "text-left align-middle gi-shadow-deep transition-all relative font-sans flex flex-col",
+                                    "text-left align-middle gi-shadow-deep transition-all relative flex flex-col",
                                     maxWidth,
                                     className
                                 )}
@@ -60,20 +66,12 @@ export const GIModal = ({
                                 {(title || canClose) && (
                                     <div className="flex items-center justify-between p-6 border-b border-gi-border/50 bg-gi-surface/30 shrink-0">
                                         {title && (
-                                            <Dialog.Title as="h3" className="text-xl font-bold font-base text-gi-primary tracking-wide uppercase">
+                                            <Dialog.Title as="h3" className="text-xl font-bold text-gi-primary tracking-wide uppercase">
                                                 {title}
                                             </Dialog.Title>
                                         )}
 
-                                        {canClose && (
-                                            <button
-                                                type="button"
-                                                className="ml-auto rounded-md text-gi-muted hover:text-gi-danger hover:bg-gi-danger/10 transition-colors p-1"
-                                                onClick={onClose}
-                                            >
-                                                <X className="w-5 h-5" />
-                                            </button>
-                                        )}
+                                        {canClose && <CloseX onClick={onClose} className="ml-auto" />}
                                     </div>
                                 )}
 

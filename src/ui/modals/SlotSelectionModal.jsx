@@ -8,11 +8,10 @@ import { formatTimeAgo } from '../../utils/Formatters.js';
 import { cn } from '../utils/cn.js';
 import { Play, Plus, Trash2, AlertTriangle } from 'lucide-react';
 
-/**
- * Format playtime seconds to readable string
- */
-function formatPlaytime(seconds) {
-    if (!seconds || seconds < 60) return '< 1 min';
+/** Lifetime playtime, saved in milliseconds (the game clock's tick deltas), as `2h 5m`. */
+export function formatPlaytime(ms) {
+    const seconds = Math.floor((ms || 0) / 1000);
+    if (seconds < 60) return '< 1 min';
     const hours = Math.floor(seconds / 3600);
     const mins = Math.floor((seconds % 3600) / 60);
     if (hours > 0) return `${hours}h ${mins}m`;
@@ -74,12 +73,12 @@ export const SlotSelectionModal = ({ isOpen, onSelect }) => {
             return (
                 <div key={index} className="flex justify-between items-center p-4 bg-black/40 rounded-lg border border-dashed border-white/20 hover:border-gi-primary/50 transition-colors w-full">
                     <div className="flex flex-col">
-                        <span className="font-pixel text-gray-500 font-bold uppercase tracking-widest text-sm">Slot {slotNumber} — Empty</span>
-                        <span className="text-[10px] text-gray-600 uppercase tracking-widest">No save data</span>
+                        <span className="text-gray-500 font-bold uppercase tracking-widest text-sm">Slot {slotNumber} — Empty</span>
+                        <span className="ui-text-body text-gray-600 uppercase tracking-widest">No save data</span>
                     </div>
                     <button
                         onClick={() => handleSelect(index)}
-                        className="bg-gi-primary/20 hover:bg-gi-primary text-gi-primary hover:text-black font-bold py-2 px-6 rounded transition-colors flex items-center gap-2 font-pixel tracking-widest uppercase text-xs border border-gi-primary/50"
+                        className="bg-gi-primary/20 hover:bg-gi-primary text-gi-primary hover:text-black font-bold py-2 px-6 rounded transition-colors flex items-center gap-2 tracking-widest uppercase text-xs border border-gi-primary/50"
                     >
                         <Plus size={16} /> New Game
                     </button>
@@ -102,15 +101,15 @@ export const SlotSelectionModal = ({ isOpen, onSelect }) => {
                         : "bg-black/60 border-white/10 hover:border-white/30")
             )}>
                 {isLastActive && !isPendingDelete && (
-                    <div className="absolute top-0 right-0 bg-gi-primary text-black px-2 py-0.5 text-[8px] font-bold uppercase tracking-widest z-10 font-pixel">
+                    <div className="absolute top-0 right-0 bg-gi-primary text-black px-2 py-0.5 ui-text-small font-bold uppercase tracking-widest z-10">
                         Last Played
                     </div>
                 )}
 
                 <div className="flex flex-col">
-                    <span className="font-pixel text-white font-bold tracking-widest mb-1 text-sm group-hover:text-gi-primary transition-colors">
+                    <span className="text-white font-bold tracking-widest mb-1 text-sm group-hover:text-gi-primary transition-colors">
                         Slot {slotNumber}
-                        <span className="ml-2 text-[10px] text-gray-500 font-normal uppercase tracking-tighter">ver {version}</span>
+                        <span className="ml-2 ui-text-body text-gray-500 font-normal uppercase tracking-tighter">ver {version}</span>
                     </span>
                     <div className="flex items-center gap-4 text-xs text-gray-400">
                         <span className="flex items-center gap-1" title="Heroes">
@@ -133,13 +132,13 @@ export const SlotSelectionModal = ({ isOpen, onSelect }) => {
                             </div>
                             <button
                                 onClick={() => handleDelete(index)}
-                                className="bg-red-600 hover:bg-red-500 text-white font-bold py-1.5 px-3 rounded transition-colors text-xs font-pixel"
+                                className="bg-red-600 hover:bg-red-500 text-white font-bold py-1.5 px-3 rounded transition-colors text-xs"
                             >
                                 Confirm
                             </button>
                             <button
                                 onClick={() => setDeleteAttemptIndex(null)}
-                                className="bg-black/80 hover:bg-gray-800 border border-white/20 text-gray-300 py-1.5 px-3 rounded transition-colors text-xs font-pixel"
+                                className="bg-black/80 hover:bg-gray-800 border border-white/20 text-gray-300 py-1.5 px-3 rounded transition-colors text-xs"
                             >
                                 Cancel
                             </button>
@@ -148,9 +147,9 @@ export const SlotSelectionModal = ({ isOpen, onSelect }) => {
                         <>
                             <button
                                 onClick={() => handleSelect(index)}
-                                className="bg-white/10 hover:bg-white text-white hover:text-black font-bold py-2 px-6 rounded transition-colors flex items-center gap-2 font-pixel tracking-widest uppercase text-xs border border-white/10"
+                                className="bg-white/10 hover:bg-white text-white hover:text-black font-bold py-2 px-6 rounded transition-colors flex items-center gap-2 tracking-widest uppercase text-xs border border-white/10"
                             >
-                                <Play size={14} /> Load Sync
+                                <Play size={14} /> Load
                             </button>
                             <button
                                 onClick={() => setDeleteAttemptIndex(index)}
@@ -170,11 +169,11 @@ export const SlotSelectionModal = ({ isOpen, onSelect }) => {
         <GIModal
             isOpen={isOpen}
             hideClose={true}
-            title="SYSTEM BOOT"
+            title="Choose a Save"
             className="w-full max-w-2xl bg-gray-900 border-gi-primary/50 text-white mt-[-10vh]"
         >
-            <div className="flex flex-col gap-4 py-2 font-pixel">
-                <p className="text-sm text-gray-400 mb-2 uppercase tracking-widest">Select a neural sync slot to continue:</p>
+            <div className="flex flex-col gap-4 py-2">
+                <p className="text-sm text-gray-400 mb-2 uppercase tracking-widest">Pick a save slot to play:</p>
                 <div className="flex flex-col gap-3">
                     {[0, 1, 2].map(renderSlotCard)}
                 </div>

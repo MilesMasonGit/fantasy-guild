@@ -6,7 +6,7 @@ import { getAllTokenTypes } from '../../config/registries/tokenRegistry.js';
 import * as Landmarks from '../../systems/board/Landmarks.js';
 import { saveLiveMatToCms, devPlaceToken, placeableTypes, DEFAULT_CMS_URL } from './starterCampDev.js';
 
-const labelClass = 'text-[11px] font-bold uppercase tracking-wider text-gi-muted mb-1';
+const labelClass = 'ui-text-title font-bold uppercase tracking-wider text-gi-muted mb-1';
 const inputClass = 'min-w-0 px-2 py-1 rounded bg-gi-base border border-gi-border text-xs text-gi-text focus:outline-none focus:border-gi-primary/50';
 const buttonClass = 'shrink-0 px-2 py-1 rounded bg-gi-primary/10 hover:bg-gi-primary/20 border border-gi-primary/40 text-xs font-bold transition-colors';
 
@@ -82,7 +82,7 @@ export function StarterCampDevSection() {
                 Move and remove landmarks and camp Tokens
             </label>
             <div className="flex gap-1 items-center">
-                <span className="text-[10px] text-gi-muted shrink-0">CMS</span>
+                <span className="ui-text-body text-gi-muted shrink-0">CMS</span>
                 <input
                     type="text"
                     value={cmsUrl}
@@ -94,7 +94,7 @@ export function StarterCampDevSection() {
             <button onClick={onSave} disabled={saving} className={`${buttonClass} w-full`}>
                 Save this mat as the Starter Camp
             </button>
-            {status && <div className="text-[10px] text-gi-muted break-words" role="status">{status}</div>}
+            {status && <div className="ui-text-body text-gi-muted break-words" role="status">{status}</div>}
         </div>
     );
 }

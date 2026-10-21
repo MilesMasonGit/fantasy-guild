@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '../../utils/cn.js';
+import { useEscapeLayer } from '../../utils/escapeLayers.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { useEngine } from '../../hooks/useEngine.js';
 import { useEntityDrop } from '../../dnd/DndKit.jsx';
@@ -71,22 +72,11 @@ export const BankHeroPanel = ({
             onCloseHero?.();
         };
 
-        const handleKeyDown = (e) => {
-            // One Escape, one layer: while a drag is live, Escape only cancels it. dnd-kit's
-            // Escape listener attaches at pointerdown, after this one, so the class is still
-            // on the body when this runs.
-            if (e.key === 'Escape' && !document.body.classList.contains('gi-dnd-active')) {
-                onCloseHero?.();
-            }
-        };
-
         document.addEventListener('pointerdown', handlePointerDown);
-        document.addEventListener('keydown', handleKeyDown);
-        return () => {
-            document.removeEventListener('pointerdown', handlePointerDown);
-            document.removeEventListener('keydown', handleKeyDown);
-        };
+        return () => document.removeEventListener('pointerdown', handlePointerDown);
     }, [selectedHeroId, onCloseHero]);
+
+    useEscapeLayer(!!selectedHeroId, () => onCloseHero?.());
 
     // The open panel's whole box is a drawer target: a hero or flag dropped on it goes home,
     // and anything else is a miss rather than landing on the mat hidden under the panel.
@@ -113,7 +103,7 @@ export const BankHeroPanel = ({
             data-hero-panel="true"
             style={{ width: columnWidthCss(NOTIFICATION_COLUMN) }}
             className={cn(
-                'absolute inset-y-0 z-[100] pointer-events-none',
+                'absolute inset-y-0 z-(--z-hero-panel) pointer-events-none',
                 isLeft ? 'left-0' : 'right-0'
             )}
         >
@@ -141,7 +131,7 @@ export const BankHeroPanel = ({
             )}
 
             {showTabs && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 py-4 z-[110]">
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 py-4 z-10">
                     {heroIds.map((heroId, index) => (
                         <div key={heroId} className="w-full h-[72px] relative">
                             <HeroDockTab

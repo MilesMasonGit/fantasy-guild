@@ -39,7 +39,7 @@ export const SettingsModal = ({ isOpen, onClose }) => {
     const getVal = (path) => path.split('.').reduce((acc, k) => (acc && acc[k] !== undefined) ? acc[k] : undefined, settings);
 
     return (
-        <GIModal isOpen={isOpen} onClose={onClose} title="Protocol Settings" className="w-full max-w-3xl bg-gray-900 border-gi-primary/50 text-white">
+        <GIModal isOpen={isOpen} onClose={onClose} title="Settings" className="w-full max-w-3xl bg-gray-900 border-gi-primary/50 text-white">
             <div className="flex flex-col md:flex-row gap-4 h-full min-h-[400px]">
                 <div className="w-full md:w-48 flex flex-col gap-2 border-r border-white/10 pr-4">
                     {tabs.map(tab => (
@@ -66,10 +66,10 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                         <div className="flex flex-col gap-3 animate-in fade-in duration-300">
                             <div className="p-3.5 bg-black/40 rounded-lg border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
                                 <div className="flex flex-col">
-                                    <span className="text-sm font-bold text-white font-pixel tracking-wide flex items-center gap-2">
+                                    <span className="text-sm font-bold text-white tracking-wide flex items-center gap-2">
                                         <Type className="w-4 h-4 text-gi-primary" /> Typography Scale
                                     </span>
-                                    <span className="text-[10px] text-gray-400 mt-0.5">
+                                    <span className="ui-text-body text-gray-400 mt-0.5">
                                         Customize font sizes from XXS (14px) to 2XL (48px) with real-time UI preview
                                     </span>
                                 </div>
@@ -152,7 +152,7 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                             <div className="pt-4 border-t border-white/10">
                                 <button
                                     onClick={() => SaveManager.save(true)}
-                                    className="w-full flex items-center justify-center gap-2 py-3 bg-gi-primary text-black font-bold uppercase tracking-widest rounded hover:brightness-110 transition-all font-pixel shadow-lg"
+                                    className="w-full flex items-center justify-center gap-2 py-3 bg-gi-primary text-black font-bold uppercase tracking-widest rounded hover:brightness-110 transition-all shadow-lg"
                                 >
                                     <Save className="w-4 h-4" /> Save Game Now
                                 </button>
@@ -170,11 +170,11 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                             />
 
                             <div className="pt-4 mt-2 border-t border-white/10 flex flex-col gap-2">
-                                <span className="text-[10px] font-bold text-gi-primary uppercase tracking-[0.2em] mb-1 opacity-80">UI & HUD Toggles</span>
+                                <span className="ui-text-body font-bold text-gi-primary uppercase tracking-[0.2em] mb-1 opacity-80">UI & HUD Toggles</span>
                                 <SettingToggle label="Menu on Right Side" value={getVal('ui.bubbleMenuRight')} onChange={(v) => handleSettingChange('ui.bubbleMenuRight', v)} description="Dock the bubble menu on the right edge of the screen" />
                                 <SettingToggle settingKey="ui.tooltipsEnabled" disabled label="Master Tooltips" value={getVal('ui.tooltipsEnabled')} onChange={(v) => handleSettingChange('ui.tooltipsEnabled', v)} />
                                 <SettingToggle settingKey="ui.tooltipsItems" disabled label="Item Tooltips" value={getVal('ui.tooltipsItems')} onChange={(v) => handleSettingChange('ui.tooltipsItems', v)} />
-                                <SettingToggle label="Item Fly Particles" value={getVal('ui.itemParticles')} onChange={(v) => handleSettingChange('ui.itemParticles', v)} description="Show items flying between cards and inventory" />
+                                <SettingToggle settingKey="ui.itemParticles" label="Flying Items" value={getVal('ui.itemParticles')} onChange={(v) => handleSettingChange('ui.itemParticles', v)} description="Show collected items flying from the mat to the item stubs or the Guild Hall" />
                             </div>
                         </div>
                     )}
@@ -199,18 +199,20 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                 <button onClick={() => { SettingsManager.resetOptions(); setSettings(SettingsManager.getAll()); }} className="text-gray-500 hover:text-red-400 font-bold transition-colors text-sm px-4">
                     Reset Defaults
                 </button>
-                <button onClick={onClose} className="bg-gi-primary text-black font-bold uppercase tracking-widest px-8 py-2 rounded hover:brightness-110 transition-all font-pixel shadow-lg">
+                <button onClick={onClose} className="bg-gi-primary text-black font-bold uppercase tracking-widest px-8 py-2 rounded hover:brightness-110 transition-all shadow-lg">
                     Done
                 </button>
             </div>
 
-            <TypographyScaleModal
-                isOpen={isTypographyOpen}
-                onClose={() => {
-                    setIsTypographyOpen(false);
-                    setSettings(SettingsManager.getAll());
-                }}
-            />
+            {isTypographyOpen && (
+                <TypographyScaleModal
+                    isOpen
+                    onClose={() => {
+                        setIsTypographyOpen(false);
+                        setSettings(SettingsManager.getAll());
+                    }}
+                />
+            )}
         </GIModal>
     );
 };
@@ -223,11 +225,11 @@ export const SettingsModal = ({ isOpen, onClose }) => {
 const SettingToggle = ({ label, value, onChange, description, disabled = false, settingKey }) => (
     <div data-setting={settingKey} data-setting-disabled={disabled || undefined} className={cn("flex items-center justify-between p-3 bg-black/40 rounded border border-white/5", disabled && "opacity-50")}>
         <div className="flex flex-col">
-            <span className="text-sm font-bold text-white font-pixel tracking-wide">
+            <span className="text-sm font-bold text-white tracking-wide">
                 {label}
-                {disabled && <span className="ml-2 text-[9px] font-normal normal-case text-gi-muted">(Coming soon)</span>}
+                {disabled && <span className="ml-2 ui-text-body font-normal normal-case text-gi-muted">(Coming soon)</span>}
             </span>
-            {description && <span className="text-[10px] text-gray-500">{description}</span>}
+            {description && <span className="ui-text-body text-gray-500">{description}</span>}
         </div>
         <button
             onClick={() => { if (!disabled) onChange(!value); }}
@@ -246,8 +248,8 @@ const SettingToggle = ({ label, value, onChange, description, disabled = false, 
 const SettingSlider = ({ label, value = 100, onChange }) => (
     <div className="flex flex-col gap-2 p-3 bg-black/40 rounded border border-white/5">
         <div className="flex items-center justify-between">
-            <span className="text-sm font-bold text-white font-pixel tracking-wide">{label}</span>
-            <span className="text-gi-primary font-pixel text-sm">{value}%</span>
+            <span className="text-sm font-bold text-white tracking-wide">{label}</span>
+            <span className="text-gi-primary text-sm">{value}%</span>
         </div>
         <input type="range" min="0" max="100" value={value} onChange={(e) => onChange(parseInt(e.target.value))} className="w-full accent-gi-primary h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
     </div>
@@ -255,9 +257,9 @@ const SettingSlider = ({ label, value = 100, onChange }) => (
 
 const SettingSelect = ({ label, value, options, onChange, disabled = false, settingKey }) => (
     <div data-setting={settingKey} data-setting-disabled={disabled || undefined} className={cn("flex items-center justify-between p-3 bg-black/40 rounded border border-white/5", disabled && "opacity-50")}>
-        <span className="text-sm font-bold text-white font-pixel tracking-wide">
+        <span className="text-sm font-bold text-white tracking-wide">
             {label}
-            {disabled && <span className="ml-2 text-[9px] font-normal normal-case text-gi-muted">(Coming soon)</span>}
+            {disabled && <span className="ml-2 ui-text-body font-normal normal-case text-gi-muted">(Coming soon)</span>}
         </span>
         <select
             value={String(value)}

@@ -45,14 +45,14 @@ export const PromotionTrade = ({ preview, size = 'sm' }) => {
                 empty="nothing new"
             />
             {preview.cost?.skillLevel != null && (
-                <span className={cn('text-gi-muted/70', big ? 'text-[11px]' : 'text-[9px]')}>
+                <span className={cn('text-gi-muted/70', big ? 'ui-text-title' : 'ui-text-body')}>
                     {preview.gate?.length
                         ? `Requires ${listNames(preview.gate)} at level ${preview.cost.skillLevel}.`
                         : `Requires level ${preview.cost.skillLevel}.`}
                 </span>
             )}
             {!preview.ok && preview.detail && (
-                <span className={cn('text-gi-danger', big ? 'text-[11px]' : 'text-[9px]')}>
+                <span className={cn('text-gi-danger', big ? 'ui-text-title' : 'ui-text-body')}>
                     {preview.detail}
                 </span>
             )}
@@ -69,19 +69,16 @@ const TradeList = ({ title, tone, rows, empty, size }) => {
     const big = size === 'lg';
     return (
         <div className="flex flex-col gap-0.5">
-            <span className={cn(
-                'gi-caps tracking-wider text-gi-muted/60',
-                big ? 'text-[10px]' : 'text-[9px]'
-            )}>
+            <span className="gi-caps tracking-wider text-gi-muted/60 ui-text-body">
                 {title}
             </span>
             {rows.length === 0
-                ? <span className={cn('text-gi-muted/50 italic', big ? 'text-[11px]' : 'text-[10px]')}>{empty}</span>
+                ? <span className={cn('text-gi-muted/50 italic', big ? 'ui-text-title' : 'ui-text-body')}>{empty}</span>
                 : rows.map(r => (
                     <span
                         key={r}
                         className={cn(
-                            big ? 'text-[13px]' : 'text-[10px]',
+                            big ? 'ui-text-title' : 'ui-text-body',
                             tone === 'loss' ? 'text-gi-danger/80' : 'text-gi-text'
                         )}
                     >

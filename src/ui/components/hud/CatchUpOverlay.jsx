@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { HeartCrack } from 'lucide-react';
+import { useEscapeLayer } from '../../utils/escapeLayers.js';
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { ENGINE_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import * as CatchUp from '../../../systems/core/CatchUp.js';
@@ -54,32 +55,24 @@ export function CatchUpOverlay() {
         EventBus.publish(UI_EVENTS.CATCH_UP_SUMMARY_CLOSED);
     };
 
-    useEffect(() => {
-        if (!result || run) return undefined;
-        // Capturing, and stopped there: Esc closes this and nothing underneath it. While the
-        // undo is being asked about, Esc only cancels the question.
-        const onKey = (e) => {
-            if (e.key !== 'Escape') return;
-            e.stopImmediatePropagation();
-            e.preventDefault();
-            if (asking) {
-                setAsking(false);
-                return;
-            }
-            CatchUp.forgetUndo();
-            setResult(null);
-            EventBus.publish(UI_EVENTS.CATCH_UP_SUMMARY_CLOSED);
-        };
-        window.addEventListener('keydown', onKey, true);
-        return () => window.removeEventListener('keydown', onKey, true);
-    }, [result, run, asking]);
+    // Esc closes this and nothing underneath it. While the undo is being asked about, Esc only
+    // cancels the question.
+    useEscapeLayer(!!result && !run, () => {
+        if (asking) {
+            setAsking(false);
+            return;
+        }
+        CatchUp.forgetUndo();
+        setResult(null);
+        EventBus.publish(UI_EVENTS.CATCH_UP_SUMMARY_CLOSED);
+    });
 
     if (!run && !result) return null;
 
     return (
         <div
             data-catch-up-overlay
-            className="fixed inset-0 z-[350] flex items-center justify-center p-4 bg-black/75 font-sans"
+            className="fixed inset-0 z-(--z-catch-up) flex items-center justify-center p-4 bg-black/75"
         >
             {run
                 ? <LoadingBar run={run} />
@@ -100,7 +93,7 @@ export function CatchUpOverlay() {
 function LoadingBar({ run }) {
     return (
         <div data-catch-up-bar role="status" className={`${PANEL} w-80 max-w-full px-4 py-3 flex flex-col gap-2`}>
-            <div data-catch-up-title className="text-[13px] font-bold text-gi-gold">{catchUpTitle(run.awayMs)}</div>
+            <div data-catch-up-title className="ui-text-title font-bold text-gi-gold">{catchUpTitle(run.awayMs)}</div>
             <div className="relative h-2.5 overflow-hidden rounded-full bg-white/10">
                 <div
                     data-catch-up-fill
@@ -109,7 +102,7 @@ function LoadingBar({ run }) {
                 />
                 <div className="catch-up-sheen absolute inset-y-0 w-1/3 bg-white/25" />
             </div>
-            <div className="text-[11px] text-white/60">Your heroes kept working while you were gone.</div>
+            <div className="ui-text-title text-white/60">Your heroes kept working while you were gone.</div>
         </div>
     );
 }
@@ -148,7 +141,7 @@ function Section({ id, title, enter, children }) {
             <div
                 data-summary-heading
                 style={e.style}
-                className={cn('px-1 mb-1 text-[10px] uppercase tracking-wide text-white/50', e.className)}
+                className={cn('px-1 mb-1 ui-text-body uppercase tracking-wide text-white/50', e.className)}
             >
                 {title}
             </div>
@@ -178,7 +171,7 @@ function CountBars({ rows, idKey, idAttr, kind, sign, enter }) {
     });
 }
 
-const BUTTON = 'w-full px-2 py-1.5 rounded border text-[12px] font-bold transition-colors';
+const BUTTON = 'w-full px-2 py-1.5 rounded border ui-text-title font-bold transition-colors';
 const SECONDARY = `${BUTTON} border-white/20 bg-white/5 hover:bg-white/10 text-white/80`;
 
 function Summary({ result, asking, onClose, onAsk, onCancel, onUndo }) {
@@ -190,10 +183,10 @@ function Summary({ result, asking, onClose, onAsk, onCancel, onUndo }) {
             data-catch-up-summary
             role="dialog"
             aria-label="While you were away"
-            className={`${PANEL} w-[28rem] max-w-full max-h-[85vh] flex flex-col text-[12px] leading-snug`}
+            className={`${PANEL} w-[28rem] max-w-full max-h-[85vh] flex flex-col ui-text-title leading-snug`}
         >
             <div className="px-3 pt-2.5 pb-1 shrink-0">
-                <div role="heading" aria-level={2} className="text-[13px] font-bold text-gi-gold">While you were away</div>
+                <div role="heading" aria-level={2} className="ui-text-title font-bold text-gi-gold">While you were away</div>
                 <div data-summary-away>You were away {view.awayText}.</div>
                 {view.droppedText && <div data-summary-dropped className="text-white/60">{view.droppedText}</div>}
             </div>

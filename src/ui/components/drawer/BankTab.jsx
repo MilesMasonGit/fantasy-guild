@@ -341,7 +341,7 @@ const ItemTileBody = memo(function ItemTileBody({ entry, selected, onSelect, che
                 </span>
             )}
             <ItemIcon item={template} size={64} className="shrink-0" title={null} />
-            <span className="text-xs md:text-sm font-bold text-gi-text mt-1.5 tabular-nums">
+            <span className="text-xs md:leading-[calc(1.25/0.875)] font-bold text-gi-text mt-1.5 tabular-nums">
                 {formatCompact(count, 1)}
             </span>
         </button>
@@ -437,7 +437,7 @@ export const ItemInspection = ({ entry }) => {
                 <div className="flex items-center justify-center w-32 h-32 mb-1">
                     <ItemIcon item={template} size={128} className="shrink-0" />
                 </div>
-                <h3 className="text-base md:text-lg font-bold text-gi-text mt-1 leading-tight select-text">
+                <h3 className="text-base md:leading-[calc(1.75/1.125)] font-bold text-gi-text mt-1 leading-tight select-text">
                     {template.name}
                 </h3>
                 <span className="text-xs text-gi-muted uppercase tracking-wider mt-1 select-text">

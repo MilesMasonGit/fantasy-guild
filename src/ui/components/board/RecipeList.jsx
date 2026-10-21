@@ -1,4 +1,5 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
+import { useEscapeLayer } from '../../utils/escapeLayers.js';
 import { cn } from '../../utils/cn.js';
 import { ItemIcon } from '../base/ItemIcon.jsx';
 import { TokenSprite, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
@@ -193,16 +194,7 @@ export const RecipeList = ({ def, instanceId = null, selectedRecipeId = null, wo
     }, []);
 
     // Escape goes back to the card, one layer at a time, before the card's own Escape closes it.
-    useEffect(() => {
-        if (!onBack) return undefined;
-        const onKey = (e) => {
-            if (e.key !== 'Escape' || document.body.classList.contains('gi-dnd-active')) return;
-            e.stopPropagation();
-            onBack();
-        };
-        window.addEventListener('keydown', onKey, true);
-        return () => window.removeEventListener('keydown', onKey, true);
-    }, [onBack]);
+    useEscapeLayer(!!onBack, () => onBack?.());
 
     const hasRecipes = entries.some(e => e.kind === ENTRY.RECIPE || e.kind === ENTRY.LOCKED);
 

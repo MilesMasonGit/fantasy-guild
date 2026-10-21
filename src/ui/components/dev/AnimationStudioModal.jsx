@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Play, Pause, ChevronLeft, ChevronRight, X, RotateCcw, Grid, Move, Sparkles } from 'lucide-react';
+import { useEscapeLayer } from '../../utils/escapeLayers.js';
+import { Play, Pause, ChevronLeft, ChevronRight, RotateCcw, Grid, Move, Sparkles } from 'lucide-react';
 import { cn } from '../../utils/cn.js';
+import { CloseX } from '../base/CloseX.jsx';
 
 const ROW_MAP = {
     idle: { index: 0, label: 'Idle', color: 'text-blue-400' },
@@ -88,15 +90,13 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
                 e.preventDefault();
                 setIsPlaying(false);
                 setFrame(f => (f + 1) % 8);
-            } else if (e.code === 'Escape') {
-                e.preventDefault();
-                onClose();
             }
         };
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isOpen, onClose]);
+    useEscapeLayer(!!isOpen, () => onClose?.());
 
     if (!isOpen) return null;
 
@@ -175,7 +175,7 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
                             className="absolute left-0 right-0 h-px bg-amber-400 shadow-[0_0_3px_orange]"
                             style={{ top: `${(floorY / 64) * 100}%` }}
                         >
-                            <span className="absolute right-1 bottom-0.5 text-[9px] font-mono text-amber-300 font-bold bg-black/70 px-1 rounded">
+                            <span className="absolute right-1 bottom-0.5 ui-text-body text-amber-300 font-bold bg-black/70 px-1 rounded">
                                 Y:{floorY}
                             </span>
                         </div>
@@ -186,7 +186,7 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 pointer-events-auto select-none">
+        <div className="fixed inset-0 z-(--z-dev-modal) flex items-center justify-center bg-black/85 backdrop-blur-md p-4 pointer-events-auto select-none">
             <div className="w-[1100px] max-w-full max-h-[92vh] bg-gi-surface border-2 border-gi-primary/50 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-gi-text">
                 
                 <div className="flex items-center justify-between px-6 py-3.5 border-b border-gi-border bg-gi-base/80">
@@ -195,9 +195,9 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
                             🎞️
                         </div>
                         <div>
-                            <h2 className="font-display font-bold text-lg text-gi-primary leading-none flex items-center gap-2">
+                            <h2 className="font-bold text-lg text-gi-primary leading-none flex items-center gap-2">
                                 Sprite Animation Studio
-                                <span className="text-xs font-mono font-normal px-2 py-0.5 rounded bg-gi-primary/15 text-gi-primary border border-gi-primary/30">
+                                <span className="text-xs font-normal px-2 py-0.5 rounded bg-gi-primary/15 text-gi-primary border border-gi-primary/30">
                                     8-Frame Inspector
                                 </span>
                             </h2>
@@ -235,13 +235,7 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
                         </button>
                     </div>
 
-                    <button
-                        onClick={onClose}
-                        className="p-1.5 hover:bg-gi-danger/20 hover:text-gi-danger rounded-lg text-gi-muted transition-colors"
-                        title="Close (Esc)"
-                    >
-                        <X className="w-5 h-5" />
-                    </button>
+                    <CloseX onClick={onClose} label="Close (Esc)" />
                 </div>
 
                 <div className="flex-1 flex overflow-hidden">
@@ -253,19 +247,19 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
                                 <span className="text-gi-muted font-bold">Surface:</span>
                                 <button
                                     onClick={() => setBgMode('dark')}
-                                    className={cn('px-2 py-0.5 rounded border text-[11px]', bgMode === 'dark' ? 'border-gi-primary bg-gi-primary/20 text-gi-primary' : 'border-white/10 text-gi-muted')}
+                                    className={cn('px-2 py-0.5 rounded border ui-text-title', bgMode === 'dark' ? 'border-gi-primary bg-gi-primary/20 text-gi-primary' : 'border-white/10 text-gi-muted')}
                                 >
                                     Dark
                                 </button>
                                 <button
                                     onClick={() => setBgMode('grid')}
-                                    className={cn('px-2 py-0.5 rounded border text-[11px]', bgMode === 'grid' ? 'border-gi-primary bg-gi-primary/20 text-gi-primary' : 'border-white/10 text-gi-muted')}
+                                    className={cn('px-2 py-0.5 rounded border ui-text-title', bgMode === 'grid' ? 'border-gi-primary bg-gi-primary/20 text-gi-primary' : 'border-white/10 text-gi-muted')}
                                 >
                                     Checker
                                 </button>
                                 <button
                                     onClick={() => setBgMode('wood')}
-                                    className={cn('px-2 py-0.5 rounded border text-[11px]', bgMode === 'wood' ? 'border-gi-primary bg-gi-primary/20 text-gi-primary' : 'border-white/10 text-gi-muted')}
+                                    className={cn('px-2 py-0.5 rounded border ui-text-title', bgMode === 'wood' ? 'border-gi-primary bg-gi-primary/20 text-gi-primary' : 'border-white/10 text-gi-muted')}
                                 >
                                     Table Wood
                                 </button>
@@ -278,7 +272,7 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
                                         key={z}
                                         onClick={() => setZoom(z)}
                                         className={cn(
-                                            'px-2 py-0.5 rounded text-[11px] font-mono transition-colors',
+                                            'px-2 py-0.5 rounded ui-text-title transition-colors',
                                             zoom === z
                                                 ? 'bg-gi-primary text-black font-bold'
                                                 : 'text-gi-muted hover:bg-white/5'
@@ -307,7 +301,7 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
                                     >
                                         {renderFrameView(action, 3)}
                                     </div>
-                                    <div className="absolute top-2 left-3 text-[11px] font-mono text-gi-muted">
+                                    <div className="absolute top-2 left-3 ui-text-title text-gi-muted">
                                         Walking Track Simulator ({runwayPos.toFixed(0)}%)
                                     </div>
                                 </div>
@@ -319,7 +313,7 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
                                                 <span className={cn('text-xs font-bold uppercase tracking-wider', ROW_MAP[act].color)}>
                                                     {ROW_MAP[act].label}
                                                 </span>
-                                                <span className="text-[10px] font-mono text-gi-muted">
+                                                <span className="ui-text-body text-gi-muted">
                                                     Row {ROW_MAP[act].index}
                                                 </span>
                                             </div>
@@ -334,7 +328,7 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
                                     <div className="p-4 bg-black/50 rounded-2xl border border-gi-border shadow-2xl relative group">
                                         {renderFrameView(action, zoom)}
                                     </div>
-                                    <div className="flex items-center gap-3 bg-gi-surface/80 border border-gi-border px-3 py-1.5 rounded-full text-xs font-mono">
+                                    <div className="flex items-center gap-3 bg-gi-surface/80 border border-gi-border px-3 py-1.5 rounded-full text-xs">
                                         <span className={cn('font-bold uppercase', ROW_MAP[action]?.color)}>
                                             {ROW_MAP[action]?.label}
                                         </span>
@@ -365,13 +359,13 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
                                 {motionRunway && (
                                     <button
                                         onClick={() => setRunwayPos(50)}
-                                        className="px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 text-[11px] text-gi-muted"
+                                        className="px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 ui-text-title text-gi-muted"
                                     >
                                         Reset Position
                                     </button>
                                 )}
                             </div>
-                            <span className="text-gi-muted text-[11px]">
+                            <span className="text-gi-muted ui-text-title">
                                 Shortcuts: <kbd className="px-1 py-0.5 bg-black/40 border border-white/10 rounded">Space</kbd> Play/Pause, <kbd className="px-1 py-0.5 bg-black/40 border border-white/10 rounded">←</kbd> <kbd className="px-1 py-0.5 bg-black/40 border border-white/10 rounded">→</kbd> Step Frame
                             </span>
                         </div>
@@ -384,7 +378,7 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
                                 <span className="text-xs font-bold uppercase tracking-wider text-gi-muted">
                                     Playback
                                 </span>
-                                <span className="font-mono text-xs font-bold text-gi-primary">
+                                <span className="text-xs font-bold text-gi-primary">
                                     {fps} FPS ({Math.round(1000 / fps)}ms/f)
                                 </span>
                             </div>
@@ -429,7 +423,7 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
                             <div className="flex flex-col gap-1.5 pt-1">
                                 <div className="flex items-center justify-between text-xs">
                                     <span className="text-gi-muted">Scrubber</span>
-                                    <span className="font-mono font-bold text-gi-text">Frame #{currentFrame}</span>
+                                    <span className="font-bold text-gi-text">Frame #{currentFrame}</span>
                                 </div>
                                 <input
                                     type="range"
@@ -442,7 +436,7 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
                                     }}
                                     className="w-full accent-gi-primary cursor-pointer"
                                 />
-                                <div className="flex justify-between text-[10px] font-mono text-gi-muted px-0.5">
+                                <div className="flex justify-between ui-text-body text-gi-muted px-0.5">
                                     {[0, 1, 2, 3, 4, 5, 6, 7].map(num => (
                                         <span
                                             key={num}
@@ -470,7 +464,7 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
                                                 key={preset}
                                                 onClick={() => setFps(preset)}
                                                 className={cn(
-                                                    'px-1.5 py-0.5 rounded text-[10px] font-mono',
+                                                    'px-1.5 py-0.5 rounded ui-text-body',
                                                     fps === preset
                                                         ? 'bg-gi-primary text-black font-bold'
                                                         : 'bg-gi-surface text-gi-muted hover:text-gi-text'
@@ -562,7 +556,7 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
                                         />
                                         Floor Baseline
                                     </label>
-                                    <span className="font-mono font-bold text-amber-300">Y: {floorY}px</span>
+                                    <span className="font-bold text-amber-300">Y: {floorY}px</span>
                                 </div>
                                 <input
                                     type="range"
@@ -573,7 +567,7 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
                                     disabled={!showFloor}
                                     className="w-full accent-amber-400 cursor-pointer disabled:opacity-30"
                                 />
-                                <span className="text-[10px] text-gi-muted">
+                                <span className="ui-text-body text-gi-muted">
                                     Align the bottom of the hero's feet to this line to prevent ground jitter.
                                 </span>
                             </div>
@@ -587,13 +581,13 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
                                 type="text"
                                 value={sheetPath}
                                 onChange={e => setSheetPath(e.target.value)}
-                                className="w-full bg-gi-surface border border-gi-border rounded px-2.5 py-1.5 text-xs font-mono text-gi-text focus:border-gi-primary outline-none"
+                                className="w-full bg-gi-surface border border-gi-border rounded px-2.5 py-1.5 text-xs text-gi-text focus:border-gi-primary outline-none"
                                 placeholder="/assets/heroes/hn_recruit_sheet.png"
                             />
                             <div className="flex gap-1 mt-1">
                                 <button
                                     onClick={() => setSheetPath('/assets/heroes/hn_recruit_sheet.png')}
-                                    className="text-[10px] px-2 py-0.5 rounded bg-gi-surface hover:bg-gi-primary/20 text-gi-primary border border-gi-border"
+                                    className="ui-text-body px-2 py-0.5 rounded bg-gi-surface hover:bg-gi-primary/20 text-gi-primary border border-gi-border"
                                 >
                                     Default: hn_recruit_sheet
                                 </button>
@@ -609,12 +603,12 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
                             <span className="font-bold text-gi-primary uppercase tracking-wider">
                                 Master Sheet Frame Map
                             </span>
-                            <span className="text-gi-muted font-mono text-[11px]">
+                            <span className="text-gi-muted ui-text-title">
                                 (512 × 192 px • 3 Rows × 8 Frames • Click any frame to inspect)
                             </span>
                         </div>
-                        <span className="text-gi-muted text-[11px]">
-                            Selected: <strong className="text-gi-primary font-mono">{ROW_MAP[action]?.label || 'Idle'} #{currentFrame}</strong>
+                        <span className="text-gi-muted ui-text-title">
+                            Selected: <strong className="text-gi-primary">{ROW_MAP[action]?.label || 'Idle'} #{currentFrame}</strong>
                         </span>
                     </div>
 
@@ -650,7 +644,7 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
                                             title={`${ROW_MAP[actKey].label} Frame ${fIndex}`}
                                         >
                                             <span className={cn(
-                                                'text-[8px] font-mono leading-none font-bold px-1 py-0.5 rounded bg-black/60',
+                                                'ui-text-small leading-none font-bold px-1 py-0.5 rounded bg-black/60',
                                                 isCurrent ? 'text-gi-primary bg-black/90' : 'text-white/40 group-hover:text-white'
                                             )}>
                                                 {fIndex}

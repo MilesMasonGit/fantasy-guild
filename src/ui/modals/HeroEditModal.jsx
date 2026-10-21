@@ -5,20 +5,15 @@ import { useGameState } from '../hooks/useGameState.js';
 import { GIModal } from '../components/base/GIModal.jsx';
 import { ItemIcon } from '../components/base/ItemIcon.jsx';
 import { HERO_PORTRAITS, HERO_NAME_MAX } from '../../config/registries/heroPortraits.js';
-import { HeroSkillSheet } from '../components/hero/HeroSkillSheet.jsx';
 import { Check, Repeat } from 'lucide-react';
 import { FLAG_COLOURS, isFlagColour } from '../../systems/board/FlagColours.js';
 import { FlagMark } from '../components/board/FlagMark.jsx';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 
 /**
- * HeroEditModal: the hero's full sheet, plus everything about them that isn't drag-and-drop:
- * rename, repick their portrait, change job.
- * The dock handles deploying, recalling and equipping by drag; this handles the rest, opened
- * by the Edit button on a pinned dock card.
- * ⚠️ It is also the only place banked skills are visible. The dock card shows the six a hero
- * can use *now* and nothing else, because it is a glance surface; what someone used to be able
- * to do belongs where the decision to re-train is actually made, which is here.
+ * HeroEditModal: everything about a hero that isn't drag-and-drop: rename, repick their
+ * portrait, flag colour, change job. Opened by the Edit button on the hero panel, which shows
+ * their skills (held, banked and locked); this modal does not repeat them.
  */
 export const HeroEditModal = ({ heroId, isOpen, onClose, onChangeJob }) => {
     const engine = useEngine();
@@ -75,22 +70,11 @@ export const HeroEditModal = ({ heroId, isOpen, onClose, onChangeJob }) => {
     return (
         <GIModal isOpen={isOpen} onClose={onClose} title={`Edit ${hero.name}`} maxWidth="max-w-lg">
             <div className="flex flex-col gap-4 p-4">
-                {/**
-                 * What this hero IS, before what you can change about them. This is the only
-                 * surface in the game that shows banked skills (the dock card deliberately
-                 * does not), so it is also where a re-training decision gets made.
-                 */}
-                <HeroSkillSheet heroId={heroId} />
-
-                {/**
-                 * The one action that changes what this hero IS, kept next to the sheet it
-                 * rewrites rather than buried with rename.
-                 */}
                 <button
                     onClick={onChangeJob}
                     className={cn(
                         'flex items-center justify-center gap-1.5 px-2 py-2 rounded border',
-                        'text-[10px] font-bold gi-caps tracking-wide transition-colors',
+                        'ui-text-body font-bold gi-caps tracking-wide transition-colors',
                         'border-gi-primary/50 bg-gi-primary/10 text-gi-text hover:bg-gi-primary/20'
                     )}
                 >
@@ -100,7 +84,7 @@ export const HeroEditModal = ({ heroId, isOpen, onClose, onChangeJob }) => {
                 <div className="border-t border-gi-border/40" />
 
                 <label className="flex flex-col gap-1.5">
-                    <span className="text-[10px] font-bold gi-caps tracking-widest text-gi-muted">Name</span>
+                    <span className="ui-text-body font-bold gi-caps tracking-widest text-gi-muted">Name</span>
                     <input
                         type="text"
                         value={name}
@@ -112,13 +96,13 @@ export const HeroEditModal = ({ heroId, isOpen, onClose, onChangeJob }) => {
                             'border-gi-border focus:border-gi-primary focus:outline-none transition-colors'
                         )}
                     />
-                    <span className="text-[9px] text-gi-muted/70 tabular-nums self-end">
+                    <span className="ui-text-body text-gi-muted/70 tabular-nums self-end">
                         {trimmed.length}/{HERO_NAME_MAX}
                     </span>
                 </label>
 
                 <div className="flex flex-col gap-1.5">
-                    <span className="text-[10px] font-bold gi-caps tracking-widest text-gi-muted">Portrait</span>
+                    <span className="ui-text-body font-bold gi-caps tracking-widest text-gi-muted">Portrait</span>
                     <div className="grid grid-cols-8 gap-1.5 max-h-56 overflow-y-auto custom-scrollbar p-1">
                         {HERO_PORTRAITS.map(id => (
                             <button
@@ -145,7 +129,7 @@ export const HeroEditModal = ({ heroId, isOpen, onClose, onChangeJob }) => {
                  * Full hero recolouring is later.
                  */}
                 <div className="flex flex-col gap-1.5">
-                    <span className="text-[10px] font-bold gi-caps tracking-widest text-gi-muted">Flag colour</span>
+                    <span className="ui-text-body font-bold gi-caps tracking-widest text-gi-muted">Flag colour</span>
                     <div className="grid grid-cols-8 gap-1.5 p-1">
                         {FLAG_COLOURS.map(colour => (
                             <button
@@ -171,7 +155,7 @@ export const HeroEditModal = ({ heroId, isOpen, onClose, onChangeJob }) => {
                 <div className="flex justify-end gap-2">
                     <button
                         onClick={onClose}
-                        className="px-3 py-1.5 rounded border border-gi-border text-[10px] font-bold gi-caps tracking-wide text-gi-muted hover:text-gi-text transition-colors"
+                        className="px-3 py-1.5 rounded border border-gi-border ui-text-body font-bold gi-caps tracking-wide text-gi-muted hover:text-gi-text transition-colors"
                     >
                         Cancel
                     </button>
@@ -179,7 +163,7 @@ export const HeroEditModal = ({ heroId, isOpen, onClose, onChangeJob }) => {
                         onClick={handleSave}
                         disabled={!canSave}
                         className={cn(
-                            'flex items-center gap-1.5 px-3 py-1.5 rounded border text-[10px] font-bold gi-caps tracking-wide transition-colors',
+                            'flex items-center gap-1.5 px-3 py-1.5 rounded border ui-text-body font-bold gi-caps tracking-wide transition-colors',
                             canSave
                                 ? 'border-gi-primary bg-gi-primary/15 text-gi-text hover:bg-gi-primary/25'
                                 : 'border-gi-border/40 text-gi-muted/50 cursor-not-allowed'

@@ -1,15 +1,10 @@
-import { useLayoutEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { useActiveDrag } from '../../dnd/DndKit.jsx';
 import { tokenName } from '../../../config/registries/tokenRegistry.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { ItemIcon } from '../base/ItemIcon.jsx';
-import { placeUnder } from './tooltipPlacement.js';
+import { FloatingTip } from '../base/Tooltip.jsx';
 import { TUTORIAL_TEXT } from '../../../systems/quests/tutorialText.js';
 import { firstMapsReward } from '../../../systems/quests/tutorialQuests.js';
-
-/** The width it is placed with before it has been measured. */
-const START_WIDTH = 240;
 
 /** The Token's art on the mat, which the tooltip hangs under. */
 function artOf(instanceId) {
@@ -47,37 +42,24 @@ export function questRewardsShown(quest) {
  * cartographer's line on a tutorial step, the instruction, what is still needed, the reward as
  * item icons with counts, and 'Click to claim' once done. Every tutorial word is in
  * `tutorialText.js`.
- * Styled and placed like the Guild Hall's `PassiveProductionTooltip`: a portal to `document.body`, fixed
- * under the Token's art, `pointer-events: none` (so clicking and dragging the Token work
- * through it), hidden while anything is dragged. The quest comes in as a prop (`MatToken`'s
+ * The shared tooltip (`FloatingTip`): `pointer-events: none` (so clicking and dragging the Token
+ * work through it), hidden while anything is dragged. The quest comes in as a prop (`MatToken`'s
  * own projection), so the tooltip holds no subscription.
  * @param {{ instanceId: string, quest: object, anchorOf?: (instanceId: string) => Element|null
  * }} props  `anchorOf` is for tests
  */
 export const QuestTooltip = ({ instanceId, quest, anchorOf = artOf }) => {
     const { isDragging: anyDrag } = useActiveDrag();
-    const boxRef = useRef(null);
-    const [width, setWidth] = useState(START_WIDTH);
-    useLayoutEffect(() => {
-        const measured = boxRef.current?.offsetWidth;
-        if (measured > 0 && measured !== width) setWidth(measured);
-    });
-    if (anyDrag || !quest || typeof document === 'undefined') return null;
+    if (anyDrag || !quest) return null;
 
     const rewards = questRewardsShown(quest);
 
-    return createPortal(
-        <div
-            ref={boxRef}
-            role="tooltip"
-            data-quest-tooltip={instanceId}
-            className="fixed z-[90] w-max max-w-[min(280px,calc(100vw-16px))] p-2 rounded-lg pointer-events-none bg-black/90 border border-gi-gold/40 shadow-[0_10px_30px_rgba(0,0,0,0.8)] text-[11px] leading-snug text-white"
-            style={placeUnder(anchorOf(instanceId), width, 110)}
-        >
+    return (
+        <FloatingTip anchor={anchorOf(instanceId)} tipProps={{ 'data-quest-tooltip': instanceId }} content={<>
             <div className="flex items-center gap-1.5">
                 <span data-quest-title className="font-bold text-gi-gold">{quest.title}</span>
                 {quest.tutorial && (
-                    <span data-quest-tutorial className="px-1 rounded bg-sky-900/70 border border-sky-400/40 text-[9px] font-bold uppercase text-sky-200">
+                    <span data-quest-tutorial className="px-1 rounded bg-sky-900/70 border border-sky-400/40 ui-text-body font-bold uppercase text-sky-200">
                         {TUTORIAL_TEXT.tag}
                     </span>
                 )}
@@ -113,8 +95,7 @@ export const QuestTooltip = ({ instanceId, quest, anchorOf = artOf }) => {
             {quest.done && (
                 <div data-quest-claim className="mt-1 font-bold text-gi-gold">Click to claim</div>
             )}
-        </div>,
-        document.body
+        </>} />
     );
 };
 

@@ -178,6 +178,30 @@
   --shadow-progress-glow: 0 0 12px rgba(233, 69, 96, 0.4);
 }
 
+/* The screen's layers, back to front: every z-index above the mat is one of these, written as
+   `z-(--z-name)` (or `var(--z-name)` in a style). The mat's own order is `MAT_Z` in
+   `board/matLayers.js`; the board is a stacking context, so its numbers stay inside it.
+   Small `z-10`-style values that only order siblings inside one component stay local. */
+:root {
+  --z-token-popup: 80;        /* a Token's card (TokenInspectPopup) */
+  --z-drawer: 90;             /* the Bank and Shop drawers */
+  --z-mat-tip: 90;            /* the mat's hover pop-ups: flags, the cap and upkeep badges */
+  --z-hero-panel: 100;        /* the hero panel and its tabs */
+  --z-atlas: 100;             /* the Atlas over the mat (AtlasScreen; its arrival card is 105) */
+  --z-nav: 110;               /* the bubble menu: over the drawers */
+  --z-modal: 300;             /* GIModal dialogs: Settings, the slot screen, Edit Hero */
+  --z-modal-inner: 320;       /* a window opened from inside a modal (Typography, from Settings) */
+  --z-catch-up: 350;          /* the while-you-were-away summary */
+  --z-tutorial: 9990;         /* the tutorial aide */
+  --z-tutorial-ring: 9999;    /* the aide's pointer ring */
+  --z-screen-callouts: 9999;  /* callouts pinned to the screen */
+  --z-dev-tools: 9999;        /* the QA panel, tuners, FPS counter */
+  --z-particles: 10000;       /* flying items */
+  --z-style-sheet: 10000;     /* the style sheet page */
+  --z-dev-modal: 99999;       /* dev windows: Animation Studio, Spawn Item */
+  --z-tooltip: 100000;        /* the shared Tooltip: over everything */
+}
+
 /* Custom Global Layer */
 @layer base {
   body {
@@ -648,9 +672,15 @@
   .gi-bar-slide-older, .gi-bar-slide-newer { animation: none; }
 }
 
-/* The shine on a main-action button: one hard-edged diagonal band steps across the button's face
-   once per hover. ⚠️ The band is a negative-z layer inside the button's own stacking context
-   (`isolation`), so it paints over the button's background but under its text and icons, and
+/* An icon button (UI_STYLE "Buttons"): the bare sprite, a 1-art-pixel white outline on hover.
+   Hard drop shadows, no blur. */
+.ui-icon-button:hover:not(:disabled) > img {
+  filter: drop-shadow(2px 0 0 var(--color-ui-white)) drop-shadow(-2px 0 0 var(--color-ui-white))
+    drop-shadow(0 2px 0 var(--color-ui-white)) drop-shadow(0 -2px 0 var(--color-ui-white));
+}
+
+/* The shine on a main-action button: one solid, hard-edged diagonal band steps across the whole
+   button once per hover, over its text and icons (owner: the glint covers the art too).
    `overflow: hidden` keeps it on the face. No blur, no scaling. */
 .ui-shine {
   position: relative;
@@ -662,11 +692,11 @@
   content: '';
   position: absolute;
   inset: 0;
-  z-index: -1;
+  z-index: 1;
   pointer-events: none;
   opacity: 0;
   transform: translateX(-100%);
-  background: linear-gradient(110deg, transparent 0 40%, rgba(255, 255, 255, 0.4) 40% 60%, transparent 60% 100%);
+  background: linear-gradient(110deg, transparent 0 38%, rgba(255, 255, 255, 0.75) 38% 62%, transparent 62% 100%);
 }
 
 @keyframes ui-shine-sweep {

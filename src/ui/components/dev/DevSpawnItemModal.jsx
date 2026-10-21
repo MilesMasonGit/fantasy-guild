@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
-import { X, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { cn } from '../../utils/cn.js';
 import { ItemIcon } from '../base/ItemIcon.jsx';
 import { getAllItems, ITEM_TYPES } from '../../../config/registries/itemRegistry.js';
+import { CloseX } from '../base/CloseX.jsx';
 
 const TYPE_LABEL = {
     [ITEM_TYPES.MATERIAL]: 'Material',
@@ -45,18 +46,13 @@ export const DevSpawnItemModal = ({ engine, onClose }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 pointer-events-auto">
+        <div className="fixed inset-0 z-(--z-dev-modal) flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 pointer-events-auto">
             <div className="w-[480px] max-w-full bg-gi-surface border-2 border-gi-primary/50 rounded-2xl shadow-2xl flex flex-col max-h-[85vh]">
                 <div className="flex items-center justify-between px-5 py-4 border-b border-gi-border bg-gi-base/60">
-                    <span className="font-display font-bold text-base text-gi-primary uppercase tracking-widest">
+                    <span className="font-bold text-base text-gi-primary uppercase tracking-widest">
                         Spawn Items
                     </span>
-                    <button
-                        onClick={onClose}
-                        className="p-1 hover:bg-gi-danger/20 hover:text-gi-danger rounded text-gi-muted transition-colors"
-                    >
-                        <X className="w-5 h-5" />
-                    </button>
+                    <CloseX onClick={onClose} />
                 </div>
 
                 <div className="p-4 space-y-2 border-b border-gi-border">
@@ -76,7 +72,7 @@ export const DevSpawnItemModal = ({ engine, onClose }) => {
                                 key={t}
                                 onClick={() => setTypeFilter(t)}
                                 className={cn(
-                                    'px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border transition-colors',
+                                    'px-2 py-0.5 rounded-full ui-text-body font-bold uppercase tracking-wider border transition-colors',
                                     typeFilter === t
                                         ? 'bg-gi-primary/20 border-gi-primary text-gi-primary'
                                         : 'border-gi-border text-gi-muted hover:border-gi-primary/40'
@@ -102,7 +98,7 @@ export const DevSpawnItemModal = ({ engine, onClose }) => {
                             </div>
                             <div className="min-w-0 flex-1">
                                 <div className="text-xs font-bold truncate">{item.name}</div>
-                                <div className="text-[9px] text-gi-muted uppercase tracking-wider">
+                                <div className="ui-text-body text-gi-muted uppercase tracking-wider">
                                     {TYPE_LABEL[item.type] || item.type}
                                 </div>
                             </div>

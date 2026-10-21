@@ -11,6 +11,7 @@ import { onMatTuningChanged } from '../../../config/matTuning.js';
 import { useEntityDrag, useActiveDrag, useDragSurface } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
+import { PanelHeader } from '../base/CloseX.jsx';
 
 /**
  * The Shop drawer.
@@ -113,7 +114,7 @@ export const ShopDrawer = ({ isOpen, onClose, menuRight = false }) => {
             data-shop-drawer-state={state}
             aria-hidden={state === 'closed'}
             className={cn(
-                'absolute inset-y-0 z-[90] flex flex-col bg-gi-surface border-r border-gi-primary/30 shadow-[0_0_40px_rgba(0,0,0,0.6)]',
+                'absolute inset-y-0 z-(--z-drawer) flex flex-col bg-gi-surface border-r border-gi-primary/30 shadow-[0_0_40px_rgba(0,0,0,0.6)]',
                 'w-[33.333vw] min-w-[300px]',
                 // Beside the nav when it is on the left (84 / 152 px, as the
                 // Bank drawer pads for it); at the screen's edge otherwise.
@@ -157,26 +158,16 @@ const ShopContents = memo(function ShopContents({ isOpen, onClose }) {
 
     return (
         <>
-            <div className="shrink-0 flex items-center justify-between px-3.5 py-1.5 border-b border-gi-border/40 bg-gi-base/80 min-h-[44px]">
-                <span className="text-sm md:text-base font-bold tracking-wide text-gi-text">Shop</span>
-                <div className="flex items-center gap-2.5">
-                    <span data-shop-cap className="text-xs font-semibold text-gi-muted tabular-nums">
-                        Tokens {cap.count} / {cap.cap}
-                    </span>
-                    <button
-                        onClick={onClose}
-                        title="Close Shop"
-                        className="p-0.5 rounded cursor-pointer flex items-center justify-center gi-hover-pulse"
-                    >
-                        <img
-                            src="/assets/ui/u_cancel_red.png"
-                            alt="Close"
-                            className="w-8 h-8 object-contain select-none pointer-events-none"
-                            style={{ width: '32px', height: '32px', imageRendering: 'pixelated' }}
-                        />
-                    </button>
-                </div>
-            </div>
+            <PanelHeader
+                title="Shop"
+                onClose={onClose}
+                closeLabel="Close Shop"
+                className="px-3.5 py-1.5 border-b border-gi-border/40 bg-gi-base/80 min-h-[44px]"
+            >
+                <span data-shop-cap className="text-xs font-semibold text-gi-muted tabular-nums">
+                    Tokens {cap.count} / {cap.cap}
+                </span>
+            </PanelHeader>
 
             <ArrowScrollList step={SHOP_SCROLL_STEP_PX} className="flex-1 min-h-0 p-3 flex flex-col gap-3">
                 <p className="text-(length:--font-size-sm) text-gi-muted">Drag a Token onto the mat to buy it.</p>

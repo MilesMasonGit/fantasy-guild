@@ -7,6 +7,7 @@ import {
 } from '../../hooks/useMapMode.js';
 import { Tooltip } from '../base/Tooltip.jsx';
 import { cn } from '../../utils/cn.js';
+import { useEscapeLayer } from '../../utils/escapeLayers.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /** The bar's button look, shared with the Token cap and Upkeep badges. */
@@ -62,18 +63,7 @@ const ModeToggle = ({ mode, label, icon, tip, on }) => (
 export const MapModeToggles = () => {
     const mode = useMapMode();
 
-    useEffect(() => {
-        if (!mode) return undefined;
-        // One Escape, one layer: while a drag is live, Escape only cancels it. dnd-kit's own
-        // Escape-to-cancel listener attaches at pointerdown, after this one (registered the
-        // moment the mode turned on), so it always runs AFTER this check; by the time it
-        // fires, `gi-dnd-active` is still present here.
-        const onKey = (e) => {
-            if (e.key === 'Escape' && !document.body.classList.contains('gi-dnd-active')) setMapMode(null);
-        };
-        document.addEventListener('keydown', onKey);
-        return () => document.removeEventListener('keydown', onKey);
-    }, [mode]);
+    useEscapeLayer(!!mode, () => setMapMode(null));
 
     // Off the playmat, the mode is off: the bar is only drawn there.
     useEffect(() => () => setMapMode(null), []);

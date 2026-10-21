@@ -236,7 +236,7 @@ export const KEYWORDS = Object.freeze([
          */
         id: KEYWORD.SPAWNS,
         label: 'Spawns',
-        blurb: 'Puts a Token on the board — where this one stands, or on a free tile.',
+        blurb: 'Puts a Token on the board, where this one stands or on a free spot.',
         /**
          * ⚠️ Its chance is rolled BEFORE the rule fires, unlike a `Grants` proc, which rolls after
          * the charge is spent. An ambush is a risk of working the node, not a service the node

@@ -106,7 +106,7 @@ export const CalloutLayer = memo(function CalloutLayer() {
                         style={{ left: 0, top: 0, transform: `translate(${x}px, ${top}px) translate(-50%, -100%)` }}
                     >
                         {list.map(c => (
-                            <div key={c.id} data-callout={c.text} className="callout-bubble relative whitespace-nowrap px-2 py-1 rounded-md border border-emerald-400/70 bg-emerald-950/95 text-emerald-100 text-[11px] font-bold shadow-lg">
+                            <div key={c.id} data-callout={c.text} className="callout-bubble relative whitespace-nowrap px-2 py-1 rounded-md border border-emerald-400/70 bg-emerald-950/95 text-emerald-100 ui-text-title font-bold shadow-lg">
                                 {c.text}
                                 <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 rotate-45 border-r border-b border-emerald-400/70 bg-emerald-950/95" />
                             </div>

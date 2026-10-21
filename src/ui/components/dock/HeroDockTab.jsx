@@ -272,7 +272,7 @@ const HeroDockTabBody = memo(function HeroDockTabBody({
                 </div>
                 <span
                     className={cn(
-                        'max-w-full truncate text-[10px] font-bold leading-none',
+                        'max-w-full truncate ui-text-body font-bold leading-none',
                         isSelected ? 'text-gi-gold' : isWounded ? 'text-red-300' : 'text-white'
                     )}
                 >

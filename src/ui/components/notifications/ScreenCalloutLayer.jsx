@@ -44,7 +44,7 @@ export function ScreenCalloutLayer() {
 
     if (!callouts.length || typeof document === 'undefined') return null;
     return createPortal(
-        <div data-screen-callouts className="fixed inset-0 pointer-events-none z-[9999]">
+        <div data-screen-callouts className="fixed inset-0 pointer-events-none z-(--z-screen-callouts)">
             {callouts.map(c => (
                 // The outer box places it; the bubble's own transform is its pop (`callout-pop`).
                 <div key={c.id} className="absolute" style={{ left: c.x, top: c.y - 12, transform: 'translate(-50%, -100%)' }}>

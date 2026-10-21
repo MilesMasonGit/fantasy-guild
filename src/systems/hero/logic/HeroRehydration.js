@@ -37,7 +37,7 @@ export function rehydrateHero(hero) {
 
     hero.aggregator = new ModifierAggregator(hero.id);
 
-    hero.className = hero.isVillager ? 'Villager' : 'Adventurer';
+    hero.className = hero.isVillager ? 'Villager' : 'Recruit';
     hero.traitName = '';
     if (!hero.spriteId) hero.spriteId = 'hn_recruit_por';
     if (!hero.icon) hero.icon = 'hn_recruit_icon_por';

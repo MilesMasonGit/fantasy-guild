@@ -10,6 +10,7 @@ import { boardArtSteps } from '../base/TokenSprite.jsx';
 import { AnimatedHeroSprite } from '../board/AnimatedHeroSprite.jsx';
 import { FlagMark } from '../board/FlagMark.jsx';
 import { Tooltip } from '../base/Tooltip.jsx';
+import { VitalBar, vitalTone } from '../base/VitalBar.jsx';
 import { useLiveMatFit } from '../board/MatFitContext.jsx';
 import { useEntityDrag } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
@@ -21,9 +22,7 @@ import {
     useLockedListOpen, setLockedListOpen
 } from '../dock/heroPanelSkills.js';
 import { ENGINE_EVENTS, ORPHAN_EVENTS } from '../../../systems/core/engineEvents.js';
-
-/** The close X: its 16 px sprite at 2×, as every panel header draws it. */
-const CLOSE_PX = 32;
+import { CloseX } from '../base/CloseX.jsx';
 
 /** Advanced and Master rows' own backgrounds. */
 const TIER_BG = {
@@ -71,8 +70,6 @@ export const HeroInspectionSheet = memo(function HeroInspectionSheet({ heroId, o
 
     const job = hero.jobId ? getJob(hero.jobId) : null;
     const jobTitle = job ? job.name : (hero.className || 'Recruit');
-    const hpPct = Math.min(100, Math.round((hero.hp / hero.hpMax) * 100));
-    const hpTone = hpPct > 50 ? 'bg-emerald-500' : hpPct > 20 ? 'bg-amber-500' : 'bg-red-500';
     const toggle = (id) => setExpandedId(prev => (prev === id ? null : id));
 
     return (
@@ -89,21 +86,7 @@ export const HeroInspectionSheet = memo(function HeroInspectionSheet({ heroId, o
                         {/* ⚠️ Placeholder quill until the owner draws one. */}
                         <Feather size={16} />
                     </button>
-                    <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); onClose?.(); }}
-                        data-hero-panel-close
-                        aria-label="Close"
-                        className="p-0.5 rounded flex items-center justify-center cursor-pointer gi-hover-pulse"
-                    >
-                        <img
-                            src="/assets/ui/u_cancel_red.png"
-                            alt="Close"
-                            draggable={false}
-                            className="select-none pointer-events-none"
-                            style={{ width: CLOSE_PX, height: CLOSE_PX, imageRendering: 'pixelated' }}
-                        />
-                    </button>
+                    <CloseX data-hero-panel-close onClick={(e) => { e.stopPropagation(); onClose?.(); }} />
                 </div>
 
                 <HeroFigure
@@ -117,14 +100,7 @@ export const HeroInspectionSheet = memo(function HeroInspectionSheet({ heroId, o
                         <h3 className="min-w-0 text-sm font-bold text-white truncate">{hero.name}</h3>
                         <span data-hero-panel-job className="ml-auto shrink-0 text-xs text-gi-muted truncate">{jobTitle}</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <div data-hero-panel-hp className="h-1.5 flex-1 bg-black/60 rounded-full overflow-hidden">
-                            <div className={cn('h-full transition-all duration-300', hpTone)} style={{ width: `${hpPct}%` }} />
-                        </div>
-                        <span data-hero-panel-hp-text className="shrink-0 text-(length:--font-size-sm) tabular-nums text-white/80">
-                            {`${hero.hp.toLocaleString('en-US')} / ${hero.hpMax.toLocaleString('en-US')}`}
-                        </span>
-                    </div>
+                    <VitalBar value={hero.hp} max={hero.hpMax} barClass={vitalTone(hero.hp, hero.hpMax)} />
                 </div>
             </div>
 

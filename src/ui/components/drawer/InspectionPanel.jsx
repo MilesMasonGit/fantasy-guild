@@ -62,7 +62,7 @@ export const InspectionPanel = ({
     return (
         <div className={cn("w-80 shrink-0 bg-gi-base/40 flex flex-col min-h-0 relative", className)}>
             <div className="shrink-0 flex items-center px-3.5 py-2 border-b border-gi-border/40 bg-gi-base/80">
-                <span className="flex items-center gap-2.5 text-sm md:text-base font-bold tracking-wide text-gi-text">
+                <span className="flex items-center gap-2.5 text-sm md:leading-normal font-bold tracking-wide text-gi-text">
                     <SearchCheck size={18} className="text-gi-primary" /> Inspect
                 </span>
             </div>
@@ -95,7 +95,7 @@ export const InspectionPanel = ({
                         <div className="h-full flex flex-col items-center justify-center gap-3 text-gi-muted/50 p-6 text-center">
                             <SearchCheck size={36} />
                             <span className="text-xs gi-caps tracking-widest font-bold">Nothing selected</span>
-                            <span className="text-[10px] normal-case tracking-normal">
+                            <span className="ui-text-body normal-case tracking-normal">
                                 Click an item or Token in any pane to see its details here.
                             </span>
                         </div>

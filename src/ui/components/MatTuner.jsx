@@ -1,10 +1,11 @@
 import React, { useState, useCallback } from 'react';
-import { Ruler, X, RotateCcw } from 'lucide-react';
+import { Ruler, RotateCcw } from 'lucide-react';
 import { useEngine } from '../hooks/useEngine.js';
 import {
     MAT_TUNABLES, matTuning, setMatTuning, resetMatTuning, isMatTuned, matTuningDefault
 } from '../../config/matTuning.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
+import { CloseX } from './base/CloseX.jsx';
 
 /**
  * MatTuner: developer panel for the free playmat's rules, separate from the terrain
@@ -32,7 +33,7 @@ export const MatTuner = React.memo(() => {
         return (
             <button
                 onClick={() => setIsOpen(true)}
-                className="fixed bottom-4 right-48 z-[9999] p-3 rounded-full bg-gi-primary text-black shadow-lg hover:scale-110 transition-transform flex items-center gap-2 font-bold font-display"
+                className="fixed bottom-4 right-48 z-(--z-dev-tools) p-3 rounded-full bg-gi-primary text-black shadow-lg hover:scale-110 transition-transform flex items-center gap-2 font-bold"
                 title="Open Mat Tuner"
             >
                 <Ruler className="w-5 h-5" /> TUNER
@@ -41,9 +42,9 @@ export const MatTuner = React.memo(() => {
     }
 
     return (
-        <div className="fixed bottom-4 right-[18rem] z-[9999] w-72 bg-gi-surface/95 border border-gi-primary rounded-xl p-4 flex flex-col pointer-events-auto">
+        <div className="fixed bottom-4 right-[18rem] z-(--z-dev-tools) w-72 bg-gi-surface/95 border border-gi-primary rounded-xl p-4 flex flex-col pointer-events-auto">
             <div className="flex items-center justify-between mb-3 border-b border-gi-border pb-2">
-                <div className="flex items-center gap-2 text-gi-primary font-bold font-display">
+                <div className="flex items-center gap-2 text-gi-primary font-bold">
                     <Ruler className="w-4 h-4" /> MAT TUNER
                 </div>
                 <div className="flex items-center gap-1">
@@ -55,19 +56,14 @@ export const MatTuner = React.memo(() => {
                     >
                         <RotateCcw className="w-4 h-4" />
                     </button>
-                    <button
-                        onClick={() => setIsOpen(false)}
-                        className="p-1 hover:bg-gi-danger/20 hover:text-gi-danger rounded text-gi-muted transition-colors"
-                    >
-                        <X className="w-4 h-4" />
-                    </button>
+                    <CloseX onClick={() => setIsOpen(false)} />
                 </div>
             </div>
 
             <div className="overflow-y-auto max-h-[60vh] custom-scrollbar pr-1 space-y-4">
                 {groups.map(group => (
                     <div key={group}>
-                        <div className="text-[10px] font-bold uppercase tracking-wider text-gi-muted mb-2">
+                        <div className="ui-text-body font-bold uppercase tracking-wider text-gi-muted mb-2">
                             {group}
                         </div>
                         <div className="space-y-3">
@@ -76,11 +72,11 @@ export const MatTuner = React.memo(() => {
                                 const changed = value !== matTuningDefault(t.key);
                                 return (
                                     <div key={t.key}>
-                                        <div className="flex items-baseline justify-between text-[11px] mb-0.5">
+                                        <div className="flex items-baseline justify-between ui-text-title mb-0.5">
                                             <span className={changed ? 'text-gi-primary font-bold' : 'text-gi-muted'}>
                                                 {t.label}
                                             </span>
-                                            <span className="text-gi-primary tabular-nums text-[10px]" data-testid={`mat-tuner-${t.key}`}>
+                                            <span className="text-gi-primary tabular-nums ui-text-body" data-testid={`mat-tuner-${t.key}`}>
                                                 {t.format ? t.format(value) : value}
                                             </span>
                                         </div>
@@ -94,7 +90,7 @@ export const MatTuner = React.memo(() => {
                                             }}
                                             className="w-full accent-gi-primary cursor-pointer"
                                         />
-                                        <div className="text-[9px] leading-tight text-gi-muted/80 mt-0.5">
+                                        <div className="ui-text-body leading-tight text-gi-muted/80 mt-0.5">
                                             {t.hint} Default {t.format ? t.format(t.def) : t.def}.
                                         </div>
                                     </div>
@@ -105,7 +101,7 @@ export const MatTuner = React.memo(() => {
                 ))}
             </div>
 
-            <div className="text-[10px] text-center text-gi-muted mt-3 uppercase tracking-widest font-bold">
+            <div className="ui-text-body text-center text-gi-muted mt-3 uppercase tracking-widest font-bold">
                 Dev only — changes play on this device
             </div>
         </div>

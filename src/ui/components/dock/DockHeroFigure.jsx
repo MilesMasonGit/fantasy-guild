@@ -288,7 +288,7 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
                 <span
                     data-dock-name={heroId}
                     className={cn(
-                        'max-w-full truncate px-1 text-[10px] font-bold leading-none tracking-wide',
+                        'max-w-full truncate px-1 ui-text-body font-bold leading-none tracking-wide',
                         isSelected ? 'text-gi-gold' : isWounded ? 'text-red-300' : 'text-white'
                     )}
                     style={{ textShadow: '0 1px 3px #000, 0 0 4px #000' }}
@@ -397,7 +397,7 @@ const BarBubbles = ({ heroId, bubbles, bottom }) => {
             {pages > 1 && (
                 <div
                     data-bar-bubble-pager
-                    className="flex items-center gap-0.5 text-[9px] font-bold leading-none text-yellow-100"
+                    className="flex items-center gap-0.5 ui-text-body font-bold leading-none text-yellow-100"
                     style={{ textShadow: '0 1px 2px #000' }}
                 >
                     <button
@@ -441,7 +441,7 @@ const BarBubbles = ({ heroId, bubbles, bottom }) => {
                             }}
                             className={cn(
                                 'relative max-w-full px-1.5 py-0.5 rounded border border-yellow-500/70 bg-yellow-950/95 text-yellow-100',
-                                'text-[10px] font-bold leading-tight text-center shadow cursor-pointer transition-opacity ease-out',
+                                'ui-text-body font-bold leading-tight text-center shadow cursor-pointer transition-opacity ease-out',
                                 isFading ? 'opacity-0' : 'opacity-100'
                             )}
                             style={{ transitionDuration: `${BAR_BUBBLE_FADE_MS}ms` }}

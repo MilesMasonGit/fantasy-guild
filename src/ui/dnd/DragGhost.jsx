@@ -146,7 +146,7 @@ const ItemGhost = ({ payload }) => {
     const item = useMemo(() => getItem(payload.itemId), [payload.itemId]);
     const multi = payload.selection?.length > 1 ? payload.selection.length : null;
     const badge = multi && (
-        <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-gi-primary text-black text-[11px] font-bold flex items-center justify-center border border-black/40">
+        <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-gi-primary text-black ui-text-title font-bold flex items-center justify-center border border-black/40">
             ×{multi}
         </span>
     );

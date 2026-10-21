@@ -117,7 +117,7 @@ export const RingBadge = ({ kind, fraction, text, greyed = false, title, rootRef
             </svg>
             <span
                 data-ring-label="true"
-                className="absolute inset-0 flex items-center justify-center font-mono font-bold tabular-nums leading-none tracking-tight"
+                className="absolute inset-0 flex items-center justify-center font-bold tabular-nums leading-none tracking-tight"
                 style={{
                     color: colour,
                     fontSize: fontFor(shown),

@@ -1,4 +1,5 @@
 import { useRef, useLayoutEffect, useState, useEffect, useCallback } from 'react';
+import { useEscapeLayer } from '../../utils/escapeLayers.js';
 import { cn } from '../../utils/cn.js';
 import { TokenCard, CARD_ART_PX } from './TokenCard.jsx';
 import { ArrowScrollList } from '../base/ArrowScrollList.jsx';
@@ -158,29 +159,21 @@ export const TokenInspectPopup = ({ typeId, instanceId = null, anchorRect, onClo
             }
         };
 
-        // One Escape, one layer: while a drag is live, Escape only cancels it, and while a window
-        // is open over the card, Escape closes that. The card's own recipe list hears Escape first.
-        const handleKey = (e) => {
-            if (e.key !== 'Escape' || document.body.classList.contains('gi-dnd-active')) return;
-            if (document.querySelector('[role="dialog"]')) return;
-            onClose();
-        };
-
         const timer = setTimeout(() => window.addEventListener('click', handleGlobalClick), 50);
-        window.addEventListener('keydown', handleKey);
         return () => {
             clearTimeout(timer);
             window.removeEventListener('click', handleGlobalClick);
-            window.removeEventListener('keydown', handleKey);
         };
     }, [onClose]);
+
+    useEscapeLayer(true, onClose);
 
     return (
         <div
             ref={popupRef}
             data-token-card-popup={coords.dir}
             className={cn(
-                "fixed z-[80] transition-opacity duration-200 ease-out",
+                "fixed z-(--z-token-popup) transition-opacity duration-200 ease-out",
                 isVisible ? "opacity-100" : "opacity-0 pointer-events-none"
             )}
             style={{ top: coords.top, left: coords.left, minWidth: POPUP_W }}

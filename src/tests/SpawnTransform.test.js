@@ -163,7 +163,7 @@ describe('⭐ Spawns — putting a Token on the board', () => {
         expect(tokenAt(A).typeId).toBe('fixture_passive');
     });
 
-    it('lands on the nearest free tile when told to', () => {
+    it('lands on the nearest free spot when told to', () => {
         actingProducer('fixture_seeder', KEYWORD.SPAWNS, {
             typeId: 'fixture_passive', placement: PLACEMENT.NEAREST_FREE
         });
@@ -254,11 +254,11 @@ describe('the sentence says where it lands', () => {
     it('names the destination, so it is never a hidden rule', () => {
         expect(renderStatement(
             { ...makeStatement(KEYWORD.SPAWNS), payload: { typeId: 't_stump', placement: 'here' } }, names
-        )).toContain('spawns Stump on this Token’s tile');
+        )).toContain('spawns Stump where this one stands');
 
         expect(renderStatement(
             { ...makeStatement(KEYWORD.SPAWNS), payload: { typeId: 't_stump', placement: 'random_free' } }, names
-        )).toContain('on a random free tile');
+        )).toContain('on a random free spot');
     });
 
     it('reads a transform plainly', () => {

@@ -401,7 +401,7 @@ export function isAuthorableModifier(type) {
  * different precision — see `TileModifiers.matchesTokenTarget`.
  */
 export const TARGET_MODES = [
-    { mode: 'all', label: 'Every nearby Token', hint: 'No filter at all — everything on the 8 surrounding tiles.' },
+    { mode: 'all', label: 'Every nearby Token', hint: 'No filter at all: every Token within reach of this one.' },
     { mode: 'tag', label: 'Tokens tagged', hint: 'Every Token carrying this tag — "all nearby Coast tokens".' },
     { mode: 'id', label: 'One exact Token', hint: 'One specific Token type — "Shrimp Beds only".' }
 ];

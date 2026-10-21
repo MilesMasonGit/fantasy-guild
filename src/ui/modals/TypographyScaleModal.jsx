@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { X, RotateCcw, Check } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { RotateCcw, Check } from 'lucide-react';
 import { SettingsManager } from '../../systems/core/SettingsManager.js';
+import { GIModal } from '../components/base/GIModal.jsx';
 
 export const DEFAULT_FONT_SIZES = [
     { key: '--font-size-xxs', label: 'XXS (Extra Extra Small)', defaultVal: 14 },
@@ -12,6 +13,13 @@ export const DEFAULT_FONT_SIZES = [
     { key: '--font-size-2xl', label: '2XL (Double Large)', defaultVal: 48 },
 ];
 
+/**
+ * The Typography Scale window: sliders that preview every text size live. Save & Close keeps
+ * them; Escape and the X put back the sizes it opened with. Mount it only while open, so it
+ * reads the sizes afresh each time.
+ * ⚠️ A window of its own (a nested dialog), not an overlay drawn inside Settings: Settings'
+ * panel is transformed, which would make it the box a `fixed` child is laid out in.
+ */
 export const TypographyScaleModal = ({ isOpen, onClose }) => {
     const [sizes, setSizes] = useState(() => {
         const saved = SettingsManager.get('ui.fontSizes') || {};
@@ -29,6 +37,7 @@ export const TypographyScaleModal = ({ isOpen, onClose }) => {
         });
         return initial;
     });
+    const openedWith = useRef(sizes);
 
     if (!isOpen) return null;
 
@@ -57,23 +66,16 @@ export const TypographyScaleModal = ({ isOpen, onClose }) => {
         onClose();
     };
 
-    return (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 pointer-events-auto">
-            <div className="w-[540px] max-w-full bg-gi-surface border-2 border-gi-primary/50 rounded-2xl shadow-2xl flex flex-col max-h-[90vh] text-gi-text animate-in fade-in zoom-in-95 duration-200">
-                <div className="flex items-center justify-between px-5 py-4 border-b border-gi-border bg-gi-base/60">
-                    <span className="font-display font-bold text-base text-gi-primary uppercase tracking-widest">
-                        Typography Scale
-                    </span>
-                    <button
-                        onClick={handleSaveAndClose}
-                        className="p-1 hover:bg-gi-danger/20 hover:text-gi-danger rounded text-gi-muted transition-colors"
-                        title="Close"
-                    >
-                        <X className="w-5 h-5" />
-                    </button>
-                </div>
+    // Leaving without saving puts back the sizes the window opened with: the preview goes too.
+    const handleCancel = () => {
+        SettingsManager.applyFontSizes(openedWith.current);
+        onClose();
+    };
 
-                <div className="flex-1 overflow-y-auto p-5 space-y-5 custom-scrollbar">
+    return (
+        <GIModal isOpen={isOpen} onClose={handleCancel} title="Typography Scale" maxWidth="max-w-[540px]" layer="inner">
+            <div data-typography-window className="flex flex-col max-h-[70vh] text-gi-text">
+                <div className="flex-1 min-h-0 overflow-y-auto space-y-5 custom-scrollbar pr-1">
                     <p className="text-xs text-gi-muted normal-case tracking-normal">
                         Drag the sliders to adjust typography sizing in real time. The entire game interface will immediately scale to preview your layout fit.
                     </p>
@@ -83,9 +85,9 @@ export const TypographyScaleModal = ({ isOpen, onClose }) => {
                             const currentVal = sizes[f.key] ?? f.defaultVal;
                             return (
                                 <div key={f.key} className="space-y-2 p-3 rounded-lg bg-black/25 border border-white/5 shadow-sm">
-                                    <div className="flex justify-between items-baseline text-xs font-bold font-display text-gi-primary">
+                                    <div className="flex justify-between items-baseline text-xs font-bold text-gi-primary">
                                         <span>{f.label}</span>
-                                        <span className="text-xs text-gi-gold tabular-nums font-mono font-bold">
+                                        <span className="text-xs text-gi-gold tabular-nums font-bold">
                                             {currentVal}px
                                         </span>
                                     </div>
@@ -100,7 +102,7 @@ export const TypographyScaleModal = ({ isOpen, onClose }) => {
                                     <div className="border border-dashed border-white/10 p-2.5 rounded bg-black/40 text-center mt-1">
                                         <div
                                             style={{ fontSize: `${currentVal}px` }}
-                                            className="font-base uppercase leading-tight tracking-wider truncate"
+                                            className="uppercase leading-tight tracking-wider truncate"
                                         >
                                             12 Nature: Harvesting 99 Oak.
                                         </div>
@@ -111,7 +113,7 @@ export const TypographyScaleModal = ({ isOpen, onClose }) => {
                     </div>
                 </div>
 
-                <div className="px-5 py-3 border-t border-gi-border bg-gi-base/40 flex items-center justify-between gap-3">
+                <div className="pt-3 mt-3 border-t border-gi-border flex items-center justify-between gap-3">
                     <button
                         onClick={handleReset}
                         className="flex items-center gap-1.5 px-4 py-2 rounded border border-gi-muted/50 text-xs font-bold text-gi-muted hover:text-white hover:border-white transition-colors uppercase tracking-wider"
@@ -120,13 +122,13 @@ export const TypographyScaleModal = ({ isOpen, onClose }) => {
                     </button>
                     <button
                         onClick={handleSaveAndClose}
-                        className="flex items-center gap-1.5 px-6 py-2 rounded bg-gi-primary text-black text-xs font-bold uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all shadow-md font-pixel"
+                        className="flex items-center gap-1.5 px-6 py-2 rounded bg-gi-primary text-black text-xs font-bold uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all shadow-md"
                     >
                         <Check className="w-4 h-4" /> Save & Close
                     </button>
                 </div>
             </div>
-        </div>
+        </GIModal>
     );
 };
 

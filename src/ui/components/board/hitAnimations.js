@@ -13,7 +13,9 @@ import { isCombatSkill } from '../../../config/registries/skillRegistry.js';
  * its attack row once per attack, and the knockback waits for that play-through's strike frame
  * ({@link STRIKE_DELAY_MS}).
  * {@link HIT_ANIMATIONS} is data: a skill names an animation, and an animation is a list of
- * frames of plain numbers (`x`/`y` in % of the art, `rotate` in degrees, `sx`/`sy` scale).
+ * frames of plain numbers (`x`/`y` in % of the art, `rotate` in degrees).
+ * ⚠️ No scale: a non-whole scale resamples the pixel art and blurs it (the rule in
+ * `tailwind.css` above the landing keyframes). A squash or a pulse is sold by movement alone.
  * {@link buildHitKeyframes} turns one into Web Animations keyframes.
  * Only the Token's art moves (a wrapper inside the art box), so its point, round hit area,
  * badges and drag are untouched.
@@ -91,41 +93,41 @@ export const HIT_ANIMATIONS = Object.freeze({
         ms: 280,
         origin: '50% 100%',
         frames: [
-            { offset: 0, sx: 1, sy: 1 },
-            { offset: 0.12, sx: 1.1, sy: 0.82 },
-            { offset: 0.5, sx: 0.97, sy: 1.04 },
-            { offset: 1, sx: 1, sy: 1 }
+            { offset: 0, y: 0 },
+            { offset: 0.12, y: 3 },
+            { offset: 0.5, y: -1 },
+            { offset: 1, y: 0 }
         ]
     },
     hop: {
         ms: 340,
         origin: '50% 100%',
         frames: [
-            { offset: 0, y: 0, sx: 1, sy: 1 },
-            { offset: 0.4, y: -7, sx: 0.97, sy: 1.03 },
-            { offset: 0.8, y: 0, sx: 1.04, sy: 0.96 },
-            { offset: 1, y: 0, sx: 1, sy: 1 }
+            { offset: 0, y: 0 },
+            { offset: 0.4, y: -7 },
+            { offset: 0.8, y: 1 },
+            { offset: 1, y: 0 }
         ]
     },
     pulse: {
         ms: 440,
         origin: '50% 70%',
         frames: [
-            { offset: 0, sx: 1, sy: 1 },
-            { offset: 0.2, sx: 1.06, sy: 1.06 },
-            { offset: 0.4, sx: 1, sy: 1 },
-            { offset: 0.6, sx: 1.05, sy: 1.05 },
-            { offset: 1, sx: 1, sy: 1 }
+            { offset: 0, y: 0 },
+            { offset: 0.2, y: -2 },
+            { offset: 0.4, y: 0 },
+            { offset: 0.6, y: -1.5 },
+            { offset: 1, y: 0 }
         ]
     },
     thump: {
         ms: 360,
         origin: '50% 100%',
         frames: [
-            { offset: 0, y: 0, sx: 1, sy: 1 },
-            { offset: 0.15, y: 4, sx: 1.06, sy: 0.92 },
-            { offset: 0.45, y: -1.5, sx: 0.99, sy: 1.02 },
-            { offset: 1, y: 0, sx: 1, sy: 1 }
+            { offset: 0, y: 0 },
+            { offset: 0.15, y: 4 },
+            { offset: 0.45, y: -1.5 },
+            { offset: 1, y: 0 }
         ]
     },
     rustle: {
@@ -218,9 +220,7 @@ function transformOf(f, dir) {
     const x = (f.x || 0) * dir;
     const y = f.y || 0;
     const rotate = (f.rotate || 0) * dir;
-    const sx = f.sx ?? 1;
-    const sy = f.sy ?? 1;
-    return `translate(${x}%, ${y}%) rotate(${rotate}deg) scale(${sx}, ${sy})`;
+    return `translate(${x}%, ${y}%) rotate(${rotate}deg)`;
 }
 
 /**

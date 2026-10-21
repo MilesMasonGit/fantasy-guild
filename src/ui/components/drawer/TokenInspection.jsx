@@ -107,7 +107,7 @@ export const TokenInspection = ({
                     </div>
                 )}
 
-                <h3 className="text-base md:text-lg font-bold text-gi-text mt-1 leading-tight select-text">
+                <h3 className="text-base md:leading-[calc(1.75/1.125)] font-bold text-gi-text mt-1 leading-tight select-text">
                     {tokenName(typeId)}
                 </h3>
                 <div className="flex items-center justify-center gap-1.5 text-xs text-gi-muted uppercase tracking-wider mt-1 select-text">
@@ -123,7 +123,7 @@ export const TokenInspection = ({
                         {allTags.map(tag => (
                             <span
                                 key={tag}
-                                className="px-2 py-0.5 rounded border border-gi-border/50 text-[10px] font-medium text-gi-muted uppercase tracking-wider"
+                                className="px-2 py-0.5 rounded border border-gi-border/50 ui-text-body font-medium text-gi-muted uppercase tracking-wider"
                             >
                                 {tag}
                             </span>
@@ -175,7 +175,7 @@ export const TokenInspection = ({
 
             {routes.length > 0 && (
                 <div className="flex flex-col gap-2 pt-1">
-                    <span className="text-[10px] font-bold gi-caps tracking-wider text-gi-muted">
+                    <span className="ui-text-body font-bold gi-caps tracking-wider text-gi-muted">
                         Production
                     </span>
                     {routes.map((route, i) => (
@@ -189,7 +189,7 @@ export const TokenInspection = ({
                     <Label>Buffs {def.buff.target === 'hero' ? 'the hero on it' : 'nearby Tokens'}</Label>
                     <ul className="mt-1 flex flex-col gap-0.5">
                         {def.buff.modifiers.map((m, i) => (
-                            <li key={i} className="text-[10px] text-gi-text">
+                            <li key={i} className="ui-text-body text-gi-text">
                                 {m.type.replace(/_/g, ' ').toLowerCase()}{' '}
                                 <span className="text-gi-primary tabular-nums">
                                     {m.bucket === 'percentage'
@@ -200,7 +200,7 @@ export const TokenInspection = ({
                         ))}
                     </ul>
                     {def.noStackDuplicates && (
-                        <p className="mt-1 text-[9px] text-gi-warning">Duplicates do not stack.</p>
+                        <p className="mt-1 ui-text-body text-gi-warning">Duplicates do not stack.</p>
                     )}
                 </div>
             )}
@@ -319,7 +319,7 @@ const LifecycleLines = ({ instanceId }) => {
 };
 
 const DetailLine = ({ label, value, highlight }) => (
-    <div className="flex items-center justify-between gap-2 text-xs md:text-sm">
+    <div className="flex items-center justify-between gap-2 text-xs md:leading-[calc(1.25/0.875)]">
         <span className="text-gi-muted">{label}</span>
         <span className={cn('font-bold capitalize tabular-nums', highlight || 'text-gi-text')}>{value}</span>
     </div>
@@ -333,7 +333,7 @@ const RARITY_TONE = {
 };
 
 const Label = ({ children }) => (
-    <span className="text-[9px] font-bold gi-caps tracking-widest text-gi-muted">{children}</span>
+    <span className="ui-text-body font-bold gi-caps tracking-widest text-gi-muted">{children}</span>
 );
 
 /** One way this Token can produce: its cost, its output, and what unlocks it. */
@@ -349,7 +349,7 @@ const RouteBlock = ({ route }) => {
 
             {route.inputs.length > 0 && (
                 <div className="flex flex-col gap-1">
-                    <span className="text-[9px] font-bold gi-caps tracking-wider text-gi-danger/80">
+                    <span className="ui-text-body font-bold gi-caps tracking-wider text-gi-danger/80">
                         Inputs:
                     </span>
                     {route.inputs.map((i, idx) => (
@@ -368,7 +368,7 @@ const RouteBlock = ({ route }) => {
             {/* A currency output pays nothing, so it is not listed. */}
             {route.outputs.some(o => !o.currency) && (
                 <div className="flex flex-col gap-1">
-                    <span className="text-[9px] font-bold gi-caps tracking-wider text-gi-success/80">
+                    <span className="ui-text-body font-bold gi-caps tracking-wider text-gi-success/80">
                         Outputs:
                     </span>
                     {route.outputs.filter(o => !o.currency).map((o, idx) => (
@@ -399,10 +399,10 @@ const DrivesBlock = ({ def }) => {
     return (
         <div className="rounded border border-gi-border/40 bg-gi-base/40 p-2">
             <Label>{def.isTool ? 'Tool — unlocks' : 'Drives'}</Label>
-            <p className="mt-1 text-[10px] text-gi-text">
+            <p className="mt-1 ui-text-body text-gi-text">
                 {driven.length ? driven.map(id => tokenName(id)).join(', ') : 'Nothing yet'}
             </p>
-            <p className="mt-1 text-[9px] text-gi-muted">
+            <p className="mt-1 ui-text-body text-gi-muted">
                 {/* Sharing is a rate trade, not free value. */}
                 Serves every nearby station, and wears once per cycle it serves.
             </p>

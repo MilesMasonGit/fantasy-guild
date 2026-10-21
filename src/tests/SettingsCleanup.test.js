@@ -136,3 +136,14 @@ describe('CR3-033: unknown/stale keys in saved settings stay harmless', () => {
         expect(() => mount()).not.toThrow();
     });
 });
+
+describe('the flying-items switch says what it does today', () => {
+    it('names the mat and where items land, not cards and inventory', () => {
+        mount();
+        openTab('Gameplay');
+        const row = document.querySelector('[data-setting="ui.itemParticles"]');
+        expect(row).not.toBeNull();
+        expect(row.textContent).not.toMatch(/cards|inventory|Particles/i);
+        expect(row.textContent).toContain('item stubs');
+    });
+});

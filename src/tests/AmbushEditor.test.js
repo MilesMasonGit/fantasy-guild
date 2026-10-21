@@ -54,7 +54,7 @@ describe('the Spawns chance in the rules editor', () => {
     it('reads as the game prints it, with the chance a word of its own', () => {
         const st = ambush(5);
         const { line } = mount([st]);
-        expect(line().textContent).toBe('On Cycle: a 5% chance to spawn Rock Elemental on the nearest free tile.');
+        expect(line().textContent).toBe('On Cycle: a 5% chance to spawn Rock Elemental on the nearest free spot.');
         expect(line().textContent).toBe(renderStatement(st, names));
         expect(line().querySelector('[data-slot="chance"]').textContent).toBe('5%');
     });
@@ -70,7 +70,7 @@ describe('the Spawns chance in the rules editor', () => {
 
     it('a rule that always fires offers its chance beneath the line', () => {
         const { line, container } = mount([ambush(100)]);
-        expect(line().textContent).toBe('On Cycle: spawns Rock Elemental on the nearest free tile.');
+        expect(line().textContent).toBe('On Cycle: spawns Rock Elemental on the nearest free spot.');
         const offer = container.querySelector('[data-rules-more] [data-slot="chance"]');
         expect(offer?.textContent).toBe('chance (%): 100');
     });

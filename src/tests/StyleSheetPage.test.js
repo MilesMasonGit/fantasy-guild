@@ -94,9 +94,10 @@ describe('Main-action button shine', () => {
         expect(read('ui/dev/StyleSheetPage.jsx')).toMatch(/data-kit-main-button\s+className=\{cn\('ui-shine /);
     });
 
-    it('is a stepped, once-only band under the content that stops for reduced motion', () => {
+    it('is a stepped, once-only solid band over the whole button that stops for reduced motion', () => {
         const css = read('tailwind.css');
-        expect(css).toMatch(/\.ui-shine::before\s*\{[^}]*z-index: -1/);
+        expect(css).toMatch(/\.ui-shine::before\s*\{[^}]*z-index: 1;/);
+        expect(css).toMatch(/\.ui-shine::before\s*\{[^}]*rgba\(255, 255, 255, 0\.75\)/);
         expect(css).toMatch(/animation: ui-shine-sweep 280ms steps\(7, end\) 1 both/);
         expect(css).toMatch(/prefers-reduced-motion: reduce\)\s*\{\s*\.ui-shine:hover:not\(:disabled\)::before \{ animation: none; \}/);
     });

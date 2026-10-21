@@ -257,7 +257,7 @@ export const HeroBubbleLayer = ({ heroes }) => {
                                 key={b.id}
                                 data-hero-bubble={b.id}
                                 data-hero-bubble-kind={b.kind}
-                                className="relative whitespace-nowrap px-2 py-1 rounded-md border border-yellow-500/70 bg-yellow-950/95 text-yellow-100 text-[11px] font-bold shadow-lg"
+                                className="relative whitespace-nowrap px-2 py-1 rounded-md border border-yellow-500/70 bg-yellow-950/95 text-yellow-100 ui-text-title font-bold shadow-lg"
                             >
                                 {b.text}
                                 {/* The tail is on the bubble nearest the head, and points at the

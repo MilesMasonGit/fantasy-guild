@@ -186,19 +186,19 @@ describe('the chance is authored on the Spawns rule', () => {
     it('reads "a 5% chance to spawn …", with the number and the verb clickable', () => {
         const names = { token: () => 'Goblin' };
         const st = { ...makeStatement(KEYWORD.SPAWNS), payload: { typeId: 'g', placement: 'nearest_free', chance: 5 } };
-        expect(renderStatement(st, names)).toBe('On Cycle: a 5% chance to spawn Goblin on the nearest free tile.');
+        expect(renderStatement(st, names)).toBe('On Cycle: a 5% chance to spawn Goblin on the nearest free spot.');
         const segs = renderSegments(st, names);
         expect(segs.find(s => s.slot === 'chance')?.text).toBe('5%');
         expect(segs.find(s => s.slot === 'keyword')?.text).toBe('spawn');
         // Without a moment the sentence starts with the capital.
-        expect(renderStatement({ ...st, when: null }, names)).toBe('A 5% chance to spawn Goblin on the nearest free tile.');
+        expect(renderStatement({ ...st, when: null }, names)).toBe('A 5% chance to spawn Goblin on the nearest free spot.');
     });
 
     it('says nothing about chance when it always fires', () => {
         const names = { token: () => 'Goblin' };
         for (const chance of [100, undefined]) {
             const st = { ...makeStatement(KEYWORD.SPAWNS), payload: { typeId: 'g', placement: 'nearest_free', chance } };
-            expect(renderStatement(st, names)).toBe('On Cycle: spawns Goblin on the nearest free tile.');
+            expect(renderStatement(st, names)).toBe('On Cycle: spawns Goblin on the nearest free spot.');
         }
     });
 

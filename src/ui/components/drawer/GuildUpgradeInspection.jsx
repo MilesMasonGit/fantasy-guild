@@ -9,10 +9,11 @@ import {
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { ItemIcon } from '../base/ItemIcon.jsx';
 import {
-    CheckCircle, Lock, Zap, Check, X
+    CheckCircle, Lock, Zap, Check
 } from 'lucide-react';
 import { ArrowScrollList } from '../base/ArrowScrollList.jsx';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
+import { CloseX } from '../base/CloseX.jsx';
 
 const itemName = (itemId) => getItem(itemId)?.name || itemId;
 
@@ -101,15 +102,7 @@ export const GuildUpgradeInspection = ({ upgradeDef, onClose }) => {
                  * node or closing the whole drawer.
                  */}
                 {onClose && (
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        title="Close"
-                        aria-label="Close"
-                        className="absolute top-2 right-2 z-10 p-1 rounded-md text-gi-muted hover:text-gi-danger hover:bg-gi-danger/10 transition-colors cursor-pointer"
-                    >
-                        <X size={16} />
-                    </button>
+                    <CloseX onClick={onClose} className="absolute top-2 right-2 z-10" />
                 )}
                 <div className="w-36 h-36 rounded-xl bg-black/60 border border-white/10 flex items-center justify-center relative overflow-hidden shadow-lg mb-2.5 shrink-0">
                     <img
@@ -138,7 +131,6 @@ export const GuildUpgradeInspection = ({ upgradeDef, onClose }) => {
                 </h2>
                 <div
                     className="text-xs font-semibold text-gi-gold mt-0.5 tracking-wide"
-                    style={{ fontFamily: "'Silkscreen', cursive, monospace" }}
                 >
                     {isMax ? 'MAX LEVEL' : `Rank ${toRoman(rank)} / ${toRoman(upgradeDef.maxRank)}`}
                 </div>
@@ -168,7 +160,7 @@ export const GuildUpgradeInspection = ({ upgradeDef, onClose }) => {
                      * future skill-gate reasons.
                      */}
                     {lockReason && (
-                        <p className="mt-2 text-[11px] leading-snug text-red-300/90 text-center">
+                        <p className="mt-2 ui-text-title leading-snug text-red-300/90 text-center">
                             {lockReason}
                         </p>
                     )}
@@ -219,7 +211,7 @@ export const GuildUpgradeInspection = ({ upgradeDef, onClose }) => {
                      * is missing.
                      */}
                     {!isMax && accessible && price && price.length > 0 && (
-                        <div className="mt-2 flex flex-col gap-0.5 text-[11px]" data-upgrade-bank-check>
+                        <div className="mt-2 flex flex-col gap-0.5 ui-text-title" data-upgrade-bank-check>
                             {price.map(p => {
                                 const have = haveCounts[p.itemId] || 0;
                                 const ok = have >= p.quantity;
@@ -237,10 +229,10 @@ export const GuildUpgradeInspection = ({ upgradeDef, onClose }) => {
 
             <div className="flex-1 flex flex-col min-h-0 relative">
                 <div className="flex items-center justify-between pb-1.5 px-1 shrink-0">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-gi-muted">
+                    <span className="ui-text-title font-bold uppercase tracking-wider text-gi-muted">
                         Progression
                     </span>
-                    <span className="text-[11px] font-mono text-gi-gold">
+                    <span className="ui-text-title text-gi-gold">
                         {rank} / {upgradeDef.maxRank}
                     </span>
                 </div>
@@ -268,8 +260,7 @@ export const GuildUpgradeInspection = ({ upgradeDef, onClose }) => {
                             >
                                 <div className="flex items-center gap-2 min-w-0">
                                     <span
-                                        className="text-[11px] font-bold tracking-tight shrink-0"
-                                        style={{ fontFamily: "'Silkscreen', cursive, monospace" }}
+                                        className="ui-text-title font-bold tracking-tight shrink-0"
                                     >
                                         Rank {tier.roman}
                                     </span>
@@ -278,7 +269,7 @@ export const GuildUpgradeInspection = ({ upgradeDef, onClose }) => {
                                     </span>
                                 </div>
 
-                                <div className="text-right shrink-0 font-mono text-xs">
+                                <div className="text-right shrink-0 text-xs">
                                     {isOwned ? (
                                         <span className="text-emerald-400 font-bold flex items-center gap-1">
                                             <Check size={12} /> Active

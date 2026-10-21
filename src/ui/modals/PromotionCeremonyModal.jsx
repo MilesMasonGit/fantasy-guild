@@ -88,20 +88,20 @@ export const PromotionCeremonyModal = ({ offer, onClose }) => {
                 <div className="flex items-center justify-center gap-3 py-2">
                     <div className="flex flex-col items-center gap-0.5 opacity-60">
                         <span className="text-2xl">{fromJob?.icon || '🧑'}</span>
-                        <span className="text-[10px] gi-caps tracking-wider text-gi-muted" data-from-job>
+                        <span className="ui-text-body gi-caps tracking-wider text-gi-muted" data-from-job>
                             {fromJob?.name || hero.jobId}
                         </span>
                     </div>
                     <ArrowRight size={16} className="text-gi-muted/50 shrink-0" />
                     <div className="flex flex-col items-center gap-0.5">
                         <span className="text-4xl">{job.icon}</span>
-                        <span className="text-[12px] font-bold gi-caps tracking-wider text-gi-gold" data-to-job>
+                        <span className="ui-text-title font-bold gi-caps tracking-wider text-gi-gold" data-to-job>
                             {job.name}
                         </span>
                     </div>
                 </div>
 
-                <p className="text-center text-[12px] text-gi-text">
+                <p className="text-center ui-text-title text-gi-text">
                     <span className="font-bold">{hero.name}</span>
                     {done && !done.failed
                         ? <> is now a <span className="text-gi-gold font-bold">{job.name}</span>.</>
@@ -109,7 +109,7 @@ export const PromotionCeremonyModal = ({ offer, onClose }) => {
                 </p>
 
                 {job.description && !done && (
-                    <p className="text-center text-[11px] text-gi-muted italic">{job.description}</p>
+                    <p className="text-center ui-text-title text-gi-muted italic">{job.description}</p>
                 )}
 
                 {/* The trade — the same component the Change Job screen uses, so
@@ -119,14 +119,14 @@ export const PromotionCeremonyModal = ({ offer, onClose }) => {
                 </div>
 
                 {!done && (
-                    <p className="text-center text-[10px] text-gi-muted/70">
+                    <p className="text-center ui-text-body text-gi-muted/70">
                         Nothing is set aside for good — a skill that comes off the sheet keeps
                         its level and returns if a later job needs it.
                     </p>
                 )}
 
                 {done?.failed && (
-                    <p className="text-center text-[11px] text-gi-danger" data-promotion-refusal>{done.detail}</p>
+                    <p className="text-center ui-text-title text-gi-danger" data-promotion-refusal>{done.detail}</p>
                 )}
 
                 <div className="flex gap-2">
@@ -135,7 +135,7 @@ export const PromotionCeremonyModal = ({ offer, onClose }) => {
                             onClick={onClose}
                             className={cn(
                                 'flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded border',
-                                'text-[11px] font-bold gi-caps tracking-wide transition-colors',
+                                'ui-text-title font-bold gi-caps tracking-wide transition-colors',
                                 'border-gi-primary bg-gi-primary/15 text-gi-text hover:bg-gi-primary/25'
                             )}
                         >
@@ -157,7 +157,7 @@ export const PromotionCeremonyModal = ({ offer, onClose }) => {
                                 title="Nothing is spent. Your hero stays where they are, and the Token waits."
                                 className={cn(
                                     'flex items-center justify-center gap-1.5 px-3 py-2.5 rounded border',
-                                    'text-[11px] font-bold gi-caps tracking-wide transition-colors',
+                                    'ui-text-title font-bold gi-caps tracking-wide transition-colors',
                                     'border-gi-border/50 text-gi-muted hover:border-gi-muted hover:text-gi-text'
                                 )}
                             >
@@ -169,7 +169,7 @@ export const PromotionCeremonyModal = ({ offer, onClose }) => {
                                 title={preview?.ok ? undefined : preview?.detail}
                                 className={cn(
                                     'flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded border',
-                                    'text-[11px] font-bold gi-caps tracking-wide transition-colors',
+                                    'ui-text-title font-bold gi-caps tracking-wide transition-colors',
                                     preview?.ok
                                         ? 'border-gi-gold bg-gi-gold/20 text-gi-text hover:bg-gi-gold/30'
                                         : 'border-gi-border/40 text-gi-muted/50 cursor-not-allowed'

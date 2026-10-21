@@ -72,7 +72,7 @@ const InspectBubble = ({ name, label, bubble, rootRef = null }) => (
         {rootRef
             ? <RingBadge key="live" kind={bubble.kind} title={bubble.title} rootRef={rootRef} />
             : <RingBadge key="still" kind={bubble.kind} fraction={bubble.fraction} text={bubble.text} title={bubble.title} />}
-        <span className="text-[10px] uppercase tracking-wider text-gi-muted">{label}</span>
+        <span className="ui-text-body uppercase tracking-wider text-gi-muted">{label}</span>
     </div>
 );
 
