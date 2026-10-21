@@ -12,7 +12,7 @@ import {
     CheckCircle, Lock, Zap, Check, X
 } from 'lucide-react';
 import { ArrowScrollList } from '../base/ArrowScrollList.jsx';
-import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
+import { ENGINE_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
 
 const itemName = (itemId) => getItem(itemId)?.name || itemId;
 
@@ -66,13 +66,15 @@ export const GuildUpgradeInspection = ({ upgradeDef, onClose }) => {
     // (`LOCK_KIND.SKILL`, set through an upgrade's `gate`).
     const lockReason = lock && lock.kind !== LOCK_KIND.LINK ? lock.text : null;
     const price = !isMax ? getUpgradePrice(upgradeDef, rank) : null;
-    const canAfford = price != null
-        && price.every(p => (haveCounts[p.itemId] || 0) >= p.quantity);
+    const canAfford = price != null && GuildUpgradeManager.canAfford(upgradeDef.id);
 
     const handleUpgrade = () => {
         if (!accessible || isMax || !canAfford) return;
         EventBus.publish(ENGINE_EVENTS.AUDIO_PLAY, { clip: 'button_click' });
-        GuildUpgradeManager.purchase(upgradeDef.id);
+        const result = GuildUpgradeManager.purchase(upgradeDef.id);
+        if (!result?.success) {
+            EventBus.publish(UI_EVENTS.UI_SCREEN_CALLOUT, { text: result?.error || 'Could not buy that upgrade' });
+        }
     };
 
     const allRanks = Array.from({ length: upgradeDef.maxRank }, (_, i) => {

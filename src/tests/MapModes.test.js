@@ -290,6 +290,25 @@ describe('⭐ Disallow mode on the mat', () => {
         expect(disallowedCount()).toBe(0);
     });
 
+    it('a click on a Token no hero works shows the engine’s reason over it, alone or by type', () => {
+        vi.useFakeTimers();
+        try {
+            const rock = placeAt('dm_scenery', 400, 200);
+            const other = placeAt('dm_scenery', 720, 200);
+            const { container } = mountMat();
+            act(() => setMapMode(MAP_MODE.DISALLOW));
+            act(() => { fireEvent.click(artOf(container, rock.id)); });
+            act(() => { fireEvent.click(artOf(container, other.id), { shiftKey: true }); });
+            expect(disallowedCount()).toBe(0);
+            // One callout layer's worth: the harness mounts a second layer beside the mat's own.
+            const layer = container.querySelector('[data-callouts]');
+            const said = [...layer.querySelectorAll('[data-callout]')].map(c => c.textContent);
+            expect(said).toEqual([Flags.NO_HERO_WORKS, Flags.NO_HERO_WORKS]);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
     it('the mat carries the mode, a dashed edge in its colour and its cursor only while on', () => {
         placeAt(WORKABLE, 400, 200);
         const { container } = mountMat();

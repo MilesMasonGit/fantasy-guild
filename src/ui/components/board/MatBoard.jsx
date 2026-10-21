@@ -320,23 +320,20 @@ export const MatBoard = React.memo(function MatBoard({
         announce(Placement.recallHeroById(heroId), at);
     }, []);
 
-    // A click on a Token in a map mode. Disallow: flip it, or with shift its whole type (a Token
-    // no hero works: nothing). Demolish: mark or unmark it, or say over it why it cannot go.
+    // A click on a Token in a map mode. Disallow: flip it, or with shift its whole type.
+    // Demolish: mark or unmark it. Either way an engine refusal is said over the Token.
     const handleModeClick = useCallback((instanceId, shift) => {
         const mapMode = getMapMode();
-        if (mapMode === MAP_MODE.DISALLOW) {
-            if (shift) flipDisallowedType(instanceId);
-            else flipDisallowed(instanceId);
-            return;
-        }
-        if (mapMode !== MAP_MODE.DEMOLISH) return;
-        const result = flipDemolishMark(instanceId);
+        let result;
+        if (mapMode === MAP_MODE.DISALLOW) result = shift ? flipDisallowedType(instanceId) : flipDisallowed(instanceId);
+        else if (mapMode === MAP_MODE.DEMOLISH) result = flipDemolishMark(instanceId);
+        else return;
         if (result.success || !result.reason) return;
         const instance = BoardState.getTokenById(instanceId);
         EventBus.publish(UI_EVENTS.UI_TOKEN_ALERT, {
             instanceId,
             severity: 'disallow',
-            type: 'demolish_refused',
+            type: mapMode === MAP_MODE.DISALLOW ? 'disallow_refused' : 'demolish_refused',
             name: instance ? tokenName(instance.typeId) : null,
             title: result.reason,
             rulesText: null,
