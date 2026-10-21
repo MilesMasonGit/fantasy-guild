@@ -5,6 +5,18 @@ five-line summary at each batch's edges (proposed, looked at); anything older
 than two days is trimmed. States: queued · building · ready (tests, cycles,
 build green) · bench-queued · eye-check · merged.*
 
+## Features director, wrap-up round 1 (owner 2026-10-20: wrap up the outstanding list faster, more agents; two rounds of four, then the Envelope; rule changes accepted under the old rulings)
+
+| Phase | Tier | Branch (worktree) | State | Planned | Done |
+|---|---|---|---|---|---|
+| Fix main: Recalculate covers map items; quest tests and the rules golden for authored maps | builder | `fix/maps-recalc-tests` (`fm`) | building | Tue | |
+| Game-rule cleanups: T-125 skill speed, T-098 hero energy, T-017 kill loot rules, T-018 crafted charges, T-022 rate trackers on load, T-023 combat XP multiplier (WORK CHANGED accepted under the rulings) | builder | `crunch/rules-cleanup` (`rr`) | building | Tue | |
+| Hygiene sweep: ~26 dead-code and stale-comment tickets (T-045…T-064, T-093, T-094, T-103, T-108, T-139, T-140, T-163, T-068, T-116), no behaviour change | builder | `crunch/hygiene` (`hy`) | building | Tue | |
+| UI consistency: T-029, T-030, T-031, T-032, T-036, T-038, T-039, T-040, T-041, T-042, T-121, T-122, T-134, T-135, T-191, T-043 | builder | `crunch/ui-consistency` (`ui`) | building | Tue | |
+| Atlas rework (T5 + T6), owner: "good place for now" | — | `crunch/atlas-rework` (`at`) | merges after `fm` makes main green | Tue | |
+
+**Round 2 (next):** the animation batch and motion (T-137, T-154, T-155); the Hall's sky and tilt (brief 160 T3, T4; T-171, T-128, T-194); engine plumbing (T-015, T-016, T-019, T-020, T-021, T-035, T-065, T-097); drag hitches and flag misses (T-033, T-132, T-187, T-186, T-143); tools as hero gear (T-126, designed today) and the strings file (T-119); docs (T-069, T-070, T-124, T-118, T-111). Then brief 90, the Envelope.
+
 ## Features director, batch 6: the Atlas tome, first half
 
 **Merged to `main` 2026-10-20 (5f3c3e0d) on the owner's word ("4x looks best, go with that and merge"); work check owed at 13:00 with batch 5's.** (owner 2026-10-20; quest board postponed by the owner)
