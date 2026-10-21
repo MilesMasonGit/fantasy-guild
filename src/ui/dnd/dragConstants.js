@@ -1,6 +1,6 @@
 // Drag system constants: the shared vocabulary of the pointer-tracked drag-and-drop built on
-// dnd-kit (see DndKit.jsx): payload kinds, the surfaces the pointer can be over (drives the
-// 'bloom' ghost), and the SFX clip names (all already present in AudioSystem's map).
+// dnd-kit (see DndKit.jsx): payload kinds, the surfaces the pointer can be over, and the SFX
+// clip names (all already present in AudioSystem's map).
 
 /** Payload kinds a draggable can carry. */
 export const DRAG_KIND = {
@@ -22,9 +22,10 @@ export const DRAG_KIND = {
 };
 
 /**
- * Surfaces the pointer can hover over during a drag. Containers tag themselves with
- * `data-dnd-surface="drawer|board"`; the provider hit-tests the pointer against the nearest
- * tagged ancestor each move.
+ * Surfaces the pointer can hover over during a drag. The big containers tag themselves with
+ * `data-dnd-region="drawer|board"`, and the provider hit-tests the pointer against their rects,
+ * snapshotted at drag start (`surfaceWithinRegions`). Drop targets carry their own surface as
+ * `data-dnd-surface`.
  */
 export const DND_SURFACE = {
     DRAWER: 'drawer',

@@ -110,7 +110,7 @@ function pointerWithinBoxes({ droppableContainers, droppableRects, pointerCoordi
 
 /**
  * Collision: the pointer's containing targets, smallest-area first, so a nested child target
- * (e.g. a card tile) wins over its parent while the parent still resolves over its own empty
+ * (e.g. a Bank tile) wins over its parent while the parent still resolves over its own empty
  * space.
  */
 export function smallestWithin(args) {
@@ -388,8 +388,8 @@ export const DeckDndProvider = ({ children }) => {
 
     const sensors = useSensors(useSensor(AlphaPointerSensor, SENSOR_OPTIONS));
 
-    // While a drag is live, track which surface the cursor is over so the ghost can bloom bold
-    // over the board and stay compact over a drawer.
+    // While a drag is live, track which surface the cursor is over: the ghost is told `bold`
+    // over the board (`DragGhost` says which ghosts read it).
     useEffect(() => {
         if (!activePayload) return;
         regionsRef.current = snapshotDndRegions();
@@ -420,7 +420,7 @@ export const DeckDndProvider = ({ children }) => {
         sfx(DRAG_SFX.pickup);
 
         // Starting a hero drag from the dock tab or inspection panel while the hero is already
-        // on the playmat shoots a flying sprite from the playmat tile straight to the cursor.
+        // on the playmat shoots a flying sprite from where the hero stands straight to the cursor.
         if (payload?.kind === DRAG_KIND.HERO && payload.heroId && payload.from?.dock) {
             const at = displayPointOf(payload.heroId);
             if (at) {
@@ -522,7 +522,7 @@ export const DeckDndProvider = ({ children }) => {
                 ];
             }
             // ⚠️ On a SUCCESSFUL drop the ghost must vanish at once, not glide. State updates
-            // synchronously in `handleDragEnd`, so the real Token is already on the tile, and
+            // synchronously in `handleDragEnd`, so the real Token is already in place, and
             // a glide would draw the same sprite twice in the same place. The destination's
             // landing animation starts raised and drops where the ghost was, so the instant
             // handover is invisible. A MISS still animates: the branch above springs the ghost

@@ -488,23 +488,3 @@ table {
     flex-direction: column;
     overflow: hidden;
 }
-
-/* ============================================
-   DND HIGHLIGHTING (OPTION C: CSS-DRIVEN)
-   ============================================ */
-
-/* --- Tile Placement Constraints --- */
-
-/* Blocked state - Red outline and tint */
-[data-tile-blocked="true"] {
-    outline: 3px solid rgba(239, 68, 68, 0.6) !important;
-    background-color: rgba(239, 68, 68, 0.15) !important;
-    transform: scale(0.98);
-}
-
-/* Allowed state - Blue/Cyan pulse when hovering over a special tile */
-[data-tile-id]:not([data-tile-id="plains"])[data-drag-over="true"]:not([data-tile-blocked="true"]) {
-    outline: 3px solid rgba(56, 189, 248, 0.6) !important;
-    background-color: rgba(56, 189, 248, 0.1) !important;
-    box-shadow: 0 0 20px rgba(56, 189, 248, 0.2);
-}
