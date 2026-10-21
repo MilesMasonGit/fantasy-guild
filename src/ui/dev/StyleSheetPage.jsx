@@ -194,7 +194,7 @@ const MapPiecesDemo = () => (
         {[2, 0].map(n => (
             <div key={n} className={cn('flex flex-col items-center bg-black/30', n === 0 && 'opacity-35 grayscale')} style={{ width: MAP_PX }}>
                 <MapSprite recipe={KIT_MAP} />
-                <span className="font-pixel ui-text-small tabular-nums text-white/85 leading-none pb-0.5">×{n}</span>
+                <span className="ui-text-small tabular-nums text-white/85 leading-none pb-0.5">×{n}</span>
             </div>
         ))}
         <div className="flex items-center justify-center bg-black/20" style={{ width: SLOT_PX, height: SLOT_PX }}><MapOutline /></div>
