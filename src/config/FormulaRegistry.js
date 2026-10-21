@@ -161,5 +161,4 @@ export const MIN_ATTACK_SPEED_MS = 500;
 /** Regen configuration: amount healed per interval */
 export const REGEN_CONFIG = {
     hp:     { amount: 1, interval: 5.0 },   // 1 HP every 5 seconds
-    energy: { amount: 1, interval: 5.0 },   // 1 Energy every 5 seconds
 };

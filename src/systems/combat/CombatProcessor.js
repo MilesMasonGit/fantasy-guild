@@ -88,7 +88,6 @@ export function processCombat(fight, trait, deltaTime) {
         heroStatsForUi.push({
             id: hero.id,
             hp: hero.hp,
-            energy: hero.energy,
             progress: combat.heroTickProcesses[heroId],
             attackSpeed: attackSpeed,
             isFleeing: fight.isFleeing

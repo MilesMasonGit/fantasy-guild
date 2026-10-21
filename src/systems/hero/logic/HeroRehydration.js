@@ -72,6 +72,8 @@ export function rehydrateHero(hero) {
     hero.equipment = equipment;
     delete hero.lastEatenAt;
     delete hero.lastDrunkAt;
+    // Heroes no longer have energy; older saves still carry the field.
+    delete hero.energy;
 
     // UI change counter.
     hero._rev = (hero._rev || 0) + 1;

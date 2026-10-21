@@ -1,7 +1,7 @@
 import { cn } from '../../utils/cn.js';
 
 /**
- * VitalBar: a labelled HP/Energy bar with the raw number beside it. Generic; the Hero Dock is
+ * VitalBar: a labelled vital bar (HP) with the raw number beside it. Generic; the Hero Dock is
  * its only remaining consumer, so it lives in `base/` rather than in a feature folder.
  * @param {string} label     short tag, e.g. 'HP'
  * @param {number} value     current value, already rounded by the caller

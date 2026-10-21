@@ -27,7 +27,6 @@ export const setAssignment = State.setAssignment;
 export const updateHeroProfile = State.updateHeroProfile;
 
 export const modifyHeroHp = State.modifyHeroHp;
-export const modifyHeroEnergy = State.modifyHeroEnergy;
 
 // --- Rehydration Exports ---
 export const rehydrateHero = Rehydration.rehydrateHero;
@@ -49,7 +48,6 @@ export const HeroManager = {
     setAssignment,
     updateHeroProfile,
     modifyHeroHp,
-    modifyHeroEnergy,
     rehydrateHero,
     updateHeroFromSkills
 };

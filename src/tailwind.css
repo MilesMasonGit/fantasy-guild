@@ -116,7 +116,6 @@
   --color-warning: var(--color-gi-warning);
   --color-error: var(--color-gi-danger);
   --color-hp: var(--color-gi-hp);
-  --color-energy: #f6ad55;
   --color-xp: #9f7aea;
   /* The work bar on a worked Token (the cycle ring's colours before it). */
   --color-work-bar: #f4f1e8;

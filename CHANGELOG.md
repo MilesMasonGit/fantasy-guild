@@ -5,6 +5,7 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Drinks heal like food, and heroes have no energy.** Below a quarter of their HP a hero eats one of the food in their food slot and, if still below, drinks one from their drink slot, in a fight (one skipped attack for both) or out of it; a drink with no food to eat is drunk on its own. The Bank's tooltip on a drink now reads "+N HP". Energy, which nothing spent, is gone from heroes, saves, regeneration and the dev panel's Drain NRJ button. (T-098)
 - **A skill level no longer makes a hero work faster.** The hidden +0.5 % work speed per level is gone: every hero runs a Token or recipe at its authored cycle time, so a levelled hero finishes fewer cycles than before (a level 50 hero a fifth fewer). The CMS simulator drops the same ramp, so the next Recalculate prices outputs for the plain cycle rate. (T-125)
 - **Loading a save or starting a new game clears the per-hour rates.** The item stubs' "per hour" and the hero panel's XP per hour and time to level no longer show the previous game's numbers after switching saves. (T-022)
 - **Removed an unused combat-XP dial.** `GLOBAL_COMBAT_XP_MULTIPLIER` (1.0) was never read; it is deleted rather than wired, so nothing in the game changes. (T-023)
