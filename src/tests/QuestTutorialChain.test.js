@@ -5,6 +5,7 @@ import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { UI_EVENTS } from '../systems/core/engineEvents.js';
 import { QuestManager } from '../systems/quests/QuestManager.js';
+import * as EquipmentManager from '../systems/equipment/EquipmentManager.js';
 import { TUTORIAL_QUESTS, firstMapsReward } from '../systems/quests/tutorialQuests.js';
 import { TUTORIAL_TEXT } from '../systems/quests/tutorialText.js';
 import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
@@ -41,6 +42,11 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
  */
 
 const SITE = 'fixture_tut_site';
+/** The first tool, until the owner's starter tools are content. A woodaxe, for the Oak Tree. */
+const AXE = 'fixture_tut_woodaxe';
+registerItems({
+    [AXE]: { id: AXE, name: 'Fixture Woodaxe', type: 'tool', equipSlot: 'hand', stackable: true, sprite: 'i_woodaxe_copper', tool: { kind: 'woodaxe', tier: 1 } }
+});
 registerTokenTypes({
     [SITE]: {
         id: SITE, name: 'Old Site', landmark: true, tokenType: 'resource', rarity: 'common',
@@ -157,17 +163,25 @@ describe('⭐ the cartographer\'s chain, step by step, through the real systems'
         const heroId = GameState.heroes[0].id;
         claim('cart_recruit');
 
-        // 2. Plant a Flag beside an Oak Tree.
+        // 2. Equip a tool: food does not count, a woodaxe does.
+        give('item_steak', 1);
+        expect(EquipmentManager.equipItem(heroId, 'item_steak').success).toBe(true);
+        expect(complete('cart_tool')).toBe(false);
+        give(AXE, 1);
+        expect(EquipmentManager.equipItem(heroId, AXE).success).toBe(true);
+        claim('cart_tool');
+
+        // 3. Plant a Flag beside an Oak Tree.
         Placement.placeTokenAt(
             BoardState.createTokenInstance('token_oak_tree', tokenStartingUses('token_oak_tree')), SPOT.tree);
         expect(Flags.plant(heroId, SPOT.tree).success).toBe(true);
         claim('cart_flag');
 
-        // 3. Gather three times.
+        // 4. Gather three times.
         expect(runUntil(() => complete('cart_gather'), 5 * 60_000)).toBe(true);
         claim('cart_gather');
 
-        // 4. Collect 10 items by hovering (the hover calls `collectSprite`).
+        // 5. Collect 10 items by hovering (the hover calls `collectSprite`).
         expect(runUntil(() => {
             collectAll();
             if (!onMat('token_oak_tree').length) {
@@ -178,7 +192,7 @@ describe('⭐ the cartographer\'s chain, step by step, through the real systems'
         claim('cart_loot');
         Flags.furl(heroId);
 
-        // 5. Buy a Wood Foundation; another purchase does not count for it.
+        // 6. Buy a Wood Foundation; another purchase does not count for it.
         give('item_oak_wood', 15);
         const quarry = Shop.buy('token_quarry');
         expect(quarry.success, quarry.reason).toBe(true);
@@ -188,7 +202,7 @@ describe('⭐ the cartographer\'s chain, step by step, through the real systems'
         const foundation = buyAt('token_wood_foundation', SPOT.build);
         claim('cart_foundation');
 
-        // 6. Build a station on it (a Workbench).
+        // 7. Build a station on it (a Workbench).
         StationRecipe.setSelectedRecipe(foundation, 'recipe_muily2pb');
         give('item_oak_wood', 5);
         Flags.plant(heroId, SPOT.build);
@@ -196,7 +210,7 @@ describe('⭐ the cartographer\'s chain, step by step, through the real systems'
         expect(onMat('token_workbench')).toHaveLength(1);
         claim('cart_station');
 
-        // 7. Craft a recipe there. A new Workbench has no recipe, so nothing is crafted until the
+        // 8. Craft a recipe there. A new Workbench has no recipe, so nothing is crafted until the
         // player picks one (Charcoal).
         give('item_oak_wood', 10);
         const workbench = onMat('token_workbench')[0];
@@ -207,7 +221,7 @@ describe('⭐ the cartographer\'s chain, step by step, through the real systems'
         claim('cart_craft');
         Flags.furl(heroId);
 
-        // 8. Win a first fight, against a Cow (it never attacks first).
+        // 9. Win a first fight, against a Cow (it never attacks first).
         // ⚠️ Fixture: a Recruit fights as a level 1 fighter, and a level-1 or level-10 hero is
         // often knocked out by a Cow before the first kill, so the hero is lent a combat skill at
         // level 40.
@@ -218,7 +232,7 @@ describe('⭐ the cartographer\'s chain, step by step, through the real systems'
         claim('cart_fight');
         Flags.furl(heroId);
 
-        // 9. Inspect an endgame site. Inspecting anything else does not count.
+        // 10. Inspect an endgame site. Inspecting anything else does not count.
         inspect(onMat('token_workbench')[0]);
         expect(complete('cart_inspect')).toBe(false);
         inspect(placeSite());
@@ -231,12 +245,12 @@ describe('⭐ the cartographer\'s chain, step by step, through the real systems'
         expect(bank('map_tut_woods')).toBe(1);
         expect(bank('map_tut_hills')).toBe(1);
 
-        // 10. Write the first world: settle a Region from a map.
+        // 11. Write the first world: settle a Region from a map.
         const settled = Atlas.settle({ ingredients: ['map_tut_woods'], seed: 7 });
         expect(settled.success, settled.reason).toBe(true);
         claim('cart_settle');
 
-        // 11. Move the guild there. The step travels beside the Hall and counts on arrival.
+        // 12. Move the guild there. The step travels beside the Hall and counts on arrival.
         const moved = Atlas.travel(settled.region.id);
         expect(moved.success, moved.reason).toBe(true);
         expect(Atlas.activeRegionId()).toBe(settled.region.id);
@@ -321,7 +335,7 @@ describe('the chain\'s words come from one text module', () => {
 
     it('the chain is the cartographer\'s, in order, with new ids', () => {
         expect(TUTORIAL_QUESTS.map(t => t.id)).toEqual([
-            'cart_recruit', 'cart_flag', 'cart_gather', 'cart_loot', 'cart_foundation', 'cart_station',
+            'cart_recruit', 'cart_tool', 'cart_flag', 'cart_gather', 'cart_loot', 'cart_foundation', 'cart_station',
             'cart_craft', 'cart_fight', 'cart_inspect', 'cart_settle', 'cart_travel'
         ]);
     });

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Settings2, Shield, HelpCircle, Lock, Sparkles } from 'lucide-react';
 import { useEntityStore } from '../../stores/useEntityStore';
-import { EQUIP_CATEGORIES } from '../../utils/constants';
+import { EQUIP_CATEGORIES, TOOL_KINDS, HAND_CATEGORY, tierValue } from '../../utils/constants';
 import { Header, Section, Field, Empty, DerivedMark } from '../shared/EditorLayout';
 import SpritePickerModal from './SpritePickerModal';
 import Statements from './Statements';
@@ -40,8 +40,20 @@ export default function ItemEditor() {
       equipSlot: slot,
       type: slotToType(slot),
       restoreAmount: RESTORING_CATEGORIES.has(slot) ? (item.restoreAmount || 5) : 0,
+      // Tools and two-handed weapons are held in the hands; out of them, neither means anything.
+      ...(slot === HAND_CATEGORY ? {} : { tool: undefined, hands: undefined }),
     });
   };
+
+  // `tool: { kind, tier, starter? }`, written whole; no kind clears it. `starter` is written only when ticked.
+  const setTool = (patch) => {
+    if (patch === null) return updateItem(activeId, { tool: undefined });
+    const next = { kind: item.tool?.kind, tier: tierValue(item.tool?.tier), ...(item.tool?.starter ? { starter: true } : {}), ...patch };
+    if (!next.starter) delete next.starter;
+    updateItem(activeId, { tool: next, hands: undefined });
+  };
+  const isHand = item.equipSlot === HAND_CATEGORY;
+  const isTool = isHand && !!item.tool?.kind;
 
   const isRestoring = RESTORING_CATEGORIES.has(item.equipSlot);
   const spritePath = item.sprite ? resolveSpritePath(item.sprite) : null;
@@ -125,6 +137,75 @@ export default function ItemEditor() {
               Equip slot and loadout category on the hero's grid.
             </p>
           </Field>
+
+          {isHand && (
+            <Field label="Tool" className="col-span-1">
+              <select
+                aria-label="Tool"
+                data-field="tool-kind"
+                value={item.tool?.kind || ''}
+                onChange={(e) => setTool(e.target.value ? { kind: e.target.value } : null)}
+                className="w-full"
+              >
+                <option value="">Not a tool (a weapon, or anything else held)</option>
+                {TOOL_KINDS.map((k) => (
+                  <option key={k.id} value={k.id}>{k.label}</option>
+                ))}
+              </select>
+              <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
+                A hero holding it may work Tokens that need this kind of tool. A tool takes one hand.
+              </p>
+            </Field>
+          )}
+
+          {isTool && (
+            <Field label="Tool Tier" className="col-span-1">
+              <input
+                type="number"
+                min={1}
+                aria-label="Tool Tier"
+                data-field="tool-tier"
+                value={tierValue(item.tool?.tier)}
+                onChange={(e) => setTool({ tier: tierValue(Number(e.target.value)) })}
+                className="w-full"
+              />
+              <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
+                Works every Token that needs this tier or lower (a Token's Needs tool). The player never sees the number.
+              </p>
+            </Field>
+          )}
+
+          {isHand && !isTool && (
+            <Field label="Hands" className="col-span-1">
+              <select
+                aria-label="Hands"
+                data-field="hands"
+                value={item.hands === 2 ? 2 : 1}
+                onChange={(e) => update('hands', Number(e.target.value) === 2 ? 2 : undefined)}
+                className="w-full"
+              >
+                <option value={1}>One hand</option>
+                <option value={2}>Two hands</option>
+              </select>
+              <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
+                A hero has two hands. A two-handed weapon leaves no hand for a tool.
+              </p>
+            </Field>
+          )}
+
+          {isTool && (
+            <label className="col-span-2 flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                aria-label="Starter tool"
+                data-field="tool-starter"
+                checked={item.tool?.starter === true}
+                onChange={(e) => setTool({ starter: e.target.checked })}
+                className="rounded border-white/10 text-emerald-500 cursor-pointer"
+              />
+              <span className="text-xs text-gray-300">Starter tool: a new game's Bank holds one</span>
+            </label>
+          )}
 
           {isRestoring && (
             <Field label="HP Restore Amount" className="col-span-1">

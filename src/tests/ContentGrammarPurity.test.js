@@ -13,7 +13,8 @@ const CONTENT_GRAMMAR = [
     'systems/effects/statementSlots.js',
     'systems/effects/constants.js',
     'systems/core/lifecycleAudit.js',
-    'systems/core/workSkillRule.js'
+    'systems/core/workSkillRule.js',
+    'systems/core/toolRule.js'
 ];
 
 /** What a pure content module must never load, and why. */

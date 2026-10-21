@@ -1,4 +1,4 @@
-import { SKILLS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, auditLifecycleBlocks, findUnknownRefs } from '../utils/constants';
+import { SKILLS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, auditLifecycleBlocks, findUnknownRefs, toolFindings } from '../utils/constants';
 import { isMapItem, mapItemFindings } from '../../../src/systems/atlas/mapItems.js';
 
 /** Connectivity & Graph Auditor: audits the Token, Recipe and Item graph in three pillars: Data Integrity (missing references, invalid IDs, solver refusals), Economic Blockers (orphaned inputs, unreachable items, dead ends) and Pacing Gaps (level gaps in skills). */
@@ -133,6 +133,18 @@ export function auditConnectivity(entities, solverRefusals = []) {
       issueType: 'Data Integrity',
       severity: 'Critical',
       details: f.message,
+    });
+  }
+
+  // Gathering tools: a tool no hero can hold, a need no tool answers, content still written as tool Tokens. The game's own rule (`toolRule.js`), so this tab and the boot audit say the same thing. Expanded Tokens, so a tool Token's Acts as is seen.
+  for (const f of toolFindings({ items, tokens: expandedTokens, recipes })) {
+    issues.push({
+      entityId: f.entityId,
+      entityName: f.entityName,
+      entityType: f.entityType,
+      issueType: 'Data Integrity',
+      severity: 'Warning',
+      details: f.message.charAt(0).toUpperCase() + f.message.slice(1) + '.',
     });
   }
 

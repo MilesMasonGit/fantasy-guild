@@ -123,6 +123,18 @@ export { auditLifecycleBlocks } from '../../../src/systems/core/lifecycleAudit.j
 // Content naming a skill or job the game does not have (a renamed or dropped one). The game's own rule and wording.
 export { findUnknownRefs } from '../../../src/systems/core/unknownRefRule.js';
 
+// Gathering tools: the kinds an item's Tool and a Token's Needs tool may name, and the content checks for them. The game's own vocabulary, rule and wording.
+export {
+  TOOL_KINDS,
+  HAND_CATEGORY,
+  toolOf,
+  neededToolOf,
+  toolKindLabel,
+  toolNeedPhrase,
+  tierValue,
+} from '../../../src/config/registries/toolKinds.js';
+export { toolFindings } from '../../../src/systems/core/toolRule.js';
+
 // `tokenType` is derived from what a Token has rather than picked. The CMS computes it and writes it into the file.
 export {
   deriveTokenType,

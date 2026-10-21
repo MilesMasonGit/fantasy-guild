@@ -1,4 +1,4 @@
-import { statementsOf, stationSkillOf, renderStatement, derivedTokenType, toolNamer } from '../utils/constants';
+import { statementsOf, stationSkillOf, renderStatement, derivedTokenType, toolNamer, neededToolOf, toolNeedPhrase } from '../utils/constants';
 
 /** Description Dictionary Engine: composes mechanical descriptions for Tokens from their production, recipes, effects, triggers and lifecycle. */
 
@@ -112,6 +112,20 @@ export function getAcceptedTokensClause(token, tool = toolNamer()) {
 }
 
 /**
+ * The tool a hero must hold to work this Token ("Needs a Pickaxe in hand."), named like a
+ * requirement: the kind at the bottom rung, the first tool item that reaches the tier above it.
+ * @param {object} token
+ * @param {Record<string, object>} items
+ * @returns {string|null}
+ */
+export function getNeedsToolClause(token, items = {}) {
+  const need = neededToolOf(token);
+  if (!need) return null;
+  const phrase = toolNeedPhrase(need, items);
+  return `Needs ${/^[aeiou]/i.test(phrase) ? 'an' : 'a'} ${phrase} in hand.`;
+}
+
+/**
  * Generates combat loot clauses for enemies.
  * @param {object} token
  * @param {Record<string, object>} items
@@ -163,6 +177,9 @@ export function composeTokenDescription(token, items = {}, recipePools = {}, tok
   const tool = toolNamer(tokens);
   const acceptedClause = getAcceptedTokensClause(token, tool);
   if (acceptedClause) clauses.push(acceptedClause);
+
+  const toolClause = getNeedsToolClause(token, items);
+  if (toolClause) clauses.push(toolClause);
 
   const prodClause = getProductionClause(token, items, recipePools);
   if (prodClause) clauses.push(prodClause);
