@@ -8,11 +8,22 @@ import { migrateState, IncompatibleSaveError } from './SaveMigration.js';
 import * as SlotHelper from './SaveSlotHelper.js';
 import { validateSaveData } from '../../state/StateSchema.js';
 import { ENGINE_EVENTS } from './engineEvents.js';
+import { ItemRateTracker } from '../inventory/ItemRateTracker.js';
+import { XpRateTracker } from '../hero/XpRateTracker.js';
 
 const LAST_SLOT_KEY = 'fantasy_guild_last_slot';
 /** sessionStorage: the slot the next page load opens by itself, without a catch-up. */
 const RESUME_SLOT_KEY = 'fantasy_guild_resume_slot';
 const MAX_SLOTS = 3;
+
+/**
+ * The rate windows belong to the game being played: the previous game's gains carry that game's
+ * clock, so after a switch they would show its rates for minutes, or never age out at all.
+ */
+function clearRateTrackers() {
+    ItemRateTracker.clearAll();
+    XpRateTracker.clearAll();
+}
 // A placeholder until `syncSettings()` reads `gameplay.autoSaveIntervalMinutes`
 // at init. The real default is 10 minutes (SettingsManager's defaults).
 let AUTO_SAVE_INTERVAL = 60000;
@@ -263,6 +274,7 @@ export const SaveManager = {
             }
 
             await GameState.initFromSave(state);
+            clearRateTrackers();
             this.currentSlot = slotIndex;
             this.loadedSavedAt = catchUp ? (Number(data.savedAt) || null) : null;
             this.loadedJson = catchUp ? json : null;
@@ -365,6 +377,7 @@ export const SaveManager = {
 
         // Initialize fresh state
         GameState.initNew();
+        clearRateTrackers();
         this.currentSlot = slotIndex;
         this.loadedSavedAt = null;
         this.loadedJson = null;
