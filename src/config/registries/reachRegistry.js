@@ -58,7 +58,7 @@ export const REACHES = Object.freeze([
     {
         id: REACH.NEARBY,
         label: 'Nearby Tokens',
-        hint: 'The 8 surrounding tiles, and not this Token itself. This is what every rule means unless you change it.'
+        hint: 'Tokens within reach of this one, not this Token itself. This is what every rule means unless you change it.'
     },
     {
         id: REACH.SELF,
@@ -68,7 +68,7 @@ export const REACHES = Object.freeze([
     {
         id: REACH.SELF_AND_NEARBY,
         label: 'This Token and its neighbours',
-        hint: 'Both at once — the surrounding tiles and this Token as well.'
+        hint: 'Both at once: the Tokens within reach of this one, and this Token as well.'
     },
     {
         /**

@@ -36,18 +36,18 @@ export const PLACEMENT = Object.freeze({
 export const PLACEMENTS = Object.freeze([
     {
         id: PLACEMENT.HERE,
-        label: 'on this Token’s tile',
+        label: 'where this one stands',
         hint: 'Replaces this Token where it stands. How a thing leaves something behind when it goes.'
     },
     {
         id: PLACEMENT.NEAREST_FREE,
-        label: 'on the nearest free tile',
-        hint: 'The closest empty tile. Nothing happens if the board is full.'
+        label: 'on the nearest free spot',
+        hint: 'The closest empty spot. Nothing happens if the board is full.'
     },
     {
         id: PLACEMENT.RANDOM_FREE,
-        label: 'on a random free tile',
-        hint: 'Any empty tile at all. Nothing happens if the board is full.'
+        label: 'on a random free spot',
+        hint: 'Any empty spot at all. Nothing happens if the board is full.'
     }
 ]);
 
