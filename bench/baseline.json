@@ -121,6 +121,107 @@
             "depleted"
           ]
         }
+      },
+      {
+        "ticket": "T-125/T-017/T-065/T-168-chime",
+        "commit": "2fa608a6",
+        "branch": "main",
+        "dirty": false,
+        "date": "2026-10-21T08:41:58.469Z",
+        "node": "v24.11.1",
+        "scenarios": {
+          "S1": [
+            "uses",
+            "heroXp",
+            "tokensHash",
+            "heroHash",
+            "spriteHash",
+            "randomDraws"
+          ],
+          "S2": [
+            "uses",
+            "bankItems",
+            "heroXp",
+            "tokensHash",
+            "bankHash",
+            "heroHash",
+            "spriteHash",
+            "randomDraws"
+          ],
+          "S3": [
+            "uses",
+            "bankItems",
+            "heroXp",
+            "sprites",
+            "tokensHash",
+            "bankHash",
+            "heroHash",
+            "spriteHash",
+            "randomDraws"
+          ],
+          "S5": [
+            "uses",
+            "bankItems",
+            "heroXp",
+            "sprites",
+            "tokensHash",
+            "bankHash",
+            "heroHash",
+            "spriteHash",
+            "randomDraws"
+          ],
+          "S6": [
+            "uses",
+            "bankItems",
+            "heroXp",
+            "sprites",
+            "tokensHash",
+            "bankHash",
+            "heroHash",
+            "spriteHash",
+            "randomDraws"
+          ],
+          "S7": [
+            "tokensHash",
+            "heroHash"
+          ],
+          "S8": [
+            "uses",
+            "bankItems",
+            "heroXp",
+            "sprites",
+            "tokensHash",
+            "bankHash",
+            "heroHash",
+            "spriteHash",
+            "randomDraws",
+            "cycles"
+          ],
+          "S8L": [
+            "uses",
+            "bankItems",
+            "heroXp",
+            "sprites",
+            "tokensHash",
+            "bankHash",
+            "heroHash",
+            "spriteHash",
+            "randomDraws",
+            "cycles"
+          ],
+          "S8F": [
+            "uses",
+            "bankItems",
+            "heroXp",
+            "sprites",
+            "tokensHash",
+            "bankHash",
+            "heroHash",
+            "spriteHash",
+            "randomDraws",
+            "cycles"
+          ]
+        }
       }
     ]
   },
@@ -130,17 +231,17 @@
       "p99": 0.12019999999984066,
       "fingerprint": {
         "tokens": 9,
-        "uses": 22934,
+        "uses": 22942,
         "bankItems": 0,
-        "heroXp": 61558,
+        "heroXp": 61526,
         "sprites": 1,
         "gameTimeMs": 700000,
-        "tokensHash": "a052b4c6",
+        "tokensHash": "920b383c",
         "bankHash": "811c9dc5",
-        "heroHash": "18b01a2f",
-        "spriteHash": "72cb17d8",
+        "heroHash": "5ebed4d4",
+        "spriteHash": "46d39f2f",
         "binHash": "811c9dc5",
-        "randomDraws": 288
+        "randomDraws": 256
       },
       "fingerprintOptions": {
         "seed": 1
@@ -151,17 +252,17 @@
       "p99": 0.7251000000001113,
       "fingerprint": {
         "tokens": 103,
-        "uses": 125715,
-        "bankItems": 477,
-        "heroXp": 491433,
+        "uses": 125740,
+        "bankItems": 429,
+        "heroXp": 491331,
         "sprites": 3,
         "gameTimeMs": 400000,
-        "tokensHash": "0480f4de",
-        "bankHash": "2f777636",
-        "heroHash": "d211be3d",
-        "spriteHash": "144cc4b5",
+        "tokensHash": "1936bb86",
+        "bankHash": "e6935681",
+        "heroHash": "38bc78a7",
+        "spriteHash": "928f34b7",
         "binHash": "811c9dc5",
-        "randomDraws": 1723
+        "randomDraws": 1659
       },
       "fingerprintOptions": {
         "seed": 1
@@ -172,17 +273,17 @@
       "p99": 1.955699999999979,
       "fingerprint": {
         "tokens": 308,
-        "uses": 715127,
-        "bankItems": 109,
-        "heroXp": 490575,
-        "sprites": 3,
+        "uses": 715133,
+        "bankItems": 103,
+        "heroXp": 490557,
+        "sprites": 2,
         "gameTimeMs": 80000,
-        "tokensHash": "0afaf813",
-        "bankHash": "0300eb6b",
-        "heroHash": "3aea43d2",
-        "spriteHash": "7d6787d8",
+        "tokensHash": "b08a1f5b",
+        "bankHash": "1790699c",
+        "heroHash": "8435e9b3",
+        "spriteHash": "e31cff5c",
         "binHash": "811c9dc5",
-        "randomDraws": 5661
+        "randomDraws": 5750
       },
       "fingerprintOptions": {
         "seed": 1
@@ -227,17 +328,17 @@
       "p99": 0.9288000000001375,
       "fingerprint": {
         "tokens": 103,
-        "uses": 125820,
-        "bankItems": 240,
-        "heroXp": 490892,
-        "sprites": 2,
+        "uses": 125834,
+        "bankItems": 211,
+        "heroXp": 490838,
+        "sprites": 3,
         "gameTimeMs": 200000,
-        "tokensHash": "8860854e",
-        "bankHash": "205d1bd6",
-        "heroHash": "21200150",
-        "spriteHash": "2996e6d0",
+        "tokensHash": "4ebe1a90",
+        "bankHash": "e7f7c98c",
+        "heroHash": "cdf78179",
+        "spriteHash": "a0ea0f16",
         "binHash": "811c9dc5",
-        "randomDraws": 1046
+        "randomDraws": 1007
       },
       "fingerprintOptions": {
         "seed": 1
@@ -248,17 +349,17 @@
       "p99": 0.6585999999997512,
       "fingerprint": {
         "tokens": 103,
-        "uses": 124864,
-        "bankItems": 2252,
-        "heroXp": 495080,
-        "sprites": 1,
+        "uses": 124976,
+        "bankItems": 2023,
+        "heroXp": 494613,
+        "sprites": 3,
         "gameTimeMs": 1900000,
-        "tokensHash": "7e486349",
-        "bankHash": "71078093",
-        "heroHash": "a003030d",
-        "spriteHash": "bd721940",
+        "tokensHash": "9da2e3ac",
+        "bankHash": "2ee74cce",
+        "heroHash": "60df5042",
+        "spriteHash": "809ebbee",
         "binHash": "811c9dc5",
-        "randomDraws": 6765
+        "randomDraws": 6394
       },
       "fingerprintOptions": {
         "seed": 1,
@@ -275,9 +376,9 @@
         "heroXp": 101333,
         "sprites": 40,
         "gameTimeMs": 180000,
-        "tokensHash": "86d71c01",
+        "tokensHash": "ed348df6",
         "bankHash": "9ccecbd4",
-        "heroHash": "84d39fd4",
+        "heroHash": "56be01ff",
         "spriteHash": "200b58b1",
         "binHash": "811c9dc5",
         "randomDraws": 4641
@@ -290,18 +391,18 @@
       "runMs": 2206.0818000000004,
       "fingerprint": {
         "tokens": 103,
-        "uses": 123794,
-        "bankItems": 4323,
-        "heroXp": 499318,
-        "sprites": 4,
+        "uses": 124016,
+        "bankItems": 3883,
+        "heroXp": 498393,
+        "sprites": 3,
         "gameTimeMs": 3700000,
-        "tokensHash": "a5903aae",
-        "bankHash": "7569af7d",
-        "heroHash": "b7cfa0c6",
-        "spriteHash": "a18022b9",
+        "tokensHash": "9cfff530",
+        "bankHash": "f7aeb365",
+        "heroHash": "be2759f2",
+        "spriteHash": "23e5c08a",
         "binHash": "811c9dc5",
-        "randomDraws": 12922,
-        "cycles": 2457,
+        "randomDraws": 12287,
+        "cycles": 2242,
         "depleted": 243,
         "steps": 3600
       },
@@ -312,18 +413,18 @@
     "S8L": {
       "fingerprint": {
         "tokens": 103,
-        "uses": 123794,
-        "bankItems": 4323,
-        "heroXp": 499318,
-        "sprites": 4,
+        "uses": 124016,
+        "bankItems": 3883,
+        "heroXp": 498393,
+        "sprites": 3,
         "gameTimeMs": 3700000,
-        "tokensHash": "a5903aae",
-        "bankHash": "7569af7d",
-        "heroHash": "b7cfa0c6",
-        "spriteHash": "a18022b9",
+        "tokensHash": "9cfff530",
+        "bankHash": "f7aeb365",
+        "heroHash": "be2759f2",
+        "spriteHash": "23e5c08a",
         "binHash": "811c9dc5",
-        "randomDraws": 12922,
-        "cycles": 2457,
+        "randomDraws": 12287,
+        "cycles": 2242,
         "depleted": 243,
         "steps": 3600
       },
@@ -334,18 +435,18 @@
     "S8F": {
       "fingerprint": {
         "tokens": 103,
-        "uses": 123794,
-        "bankItems": 4323,
-        "heroXp": 499318,
-        "sprites": 4,
+        "uses": 124017,
+        "bankItems": 3881,
+        "heroXp": 498388,
+        "sprites": 3,
         "gameTimeMs": 3700000,
-        "tokensHash": "1a9debc4",
-        "bankHash": "7569af7d",
-        "heroHash": "a537ccf8",
-        "spriteHash": "7f6e49ad",
+        "tokensHash": "72efe1cc",
+        "bankHash": "7ee4b50f",
+        "heroHash": "3ed857e5",
+        "spriteHash": "33fb8de7",
         "binHash": "811c9dc5",
-        "randomDraws": 12898,
-        "cycles": 2457,
+        "randomDraws": 12283,
+        "cycles": 2241,
         "depleted": 243,
         "steps": 36000
       },
