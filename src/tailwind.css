@@ -996,9 +996,13 @@
 .gi-stub-open { transition: width 200ms ease-out; }
 
 /* While anything is dragged, the stubs and banners let the pointer through: no panel pops open
-   over a drop, and nothing there can take it. */
-body.gi-dnd-active [data-item-stubs] *,
-body.gi-dnd-active [data-banners] * { pointer-events: none !important; }
+   over a drop, and nothing there can take it. Their boxes let it through already; the parts that
+   take it back do so with `pointer-events-auto`, and everything inside those inherits.
+   ⚠️ Never end a selector keyed on <body>'s drag class in `*`: with nothing to match on the
+   element itself, the browser restyles the whole page at every pickup and drop (~20 ms on the
+   128 board, DragClassRestyle.test.js). */
+body.gi-dnd-active :is([data-item-stubs], [data-banners]),
+body.gi-dnd-active :is([data-item-stubs], [data-banners]) .pointer-events-auto { pointer-events: none !important; }
 
 /* A first find's stub: the button shine passes across it once as it appears. */
 .gi-stub-new::before {
