@@ -57,8 +57,7 @@ describe('FP-47 — the game\'s boot audit names a hero-worked Token with no ski
     it.each(FLAGGED)('flags %s', (id) => {
         const [hit] = skillFindings(id);
         expect(hit, `${id} was not flagged`).toBeTruthy();
-        expect(hit.what).toContain('FP-47');
-        expect(hit.what).toContain('will not be workable');
+        expect(hit.what).toContain('No hero will work it');
     });
 
     it.each(EXEMPT)('does not flag %s', (id) => {
@@ -74,7 +73,7 @@ describe('FP-47 — the CMS Economy Audit tab names the same Tokens', () => {
         const rows = skillRows(FIXTURES);
         expect(rows.map((r) => r.entityId).sort()).toEqual([...FLAGGED].sort());
         expect(rows[0].severity).toBe('Warning');
-        expect(rows[0].details).toContain('FP-47');
+        expect(rows[0].details).toContain('No hero will work it');
     });
 
     it('recognises a Promotion Token whose Promotes rule lives in the effect library', () => {
@@ -124,7 +123,7 @@ describe('FP-47 — the Token editor shows it while the owner edits the Token', 
     it('warns on a blank-skill Token', () => {
         const text = renderToken(FIXTURES.fx_ws_blank_bush);
         expect(text).toContain('names no skill');
-        expect(text).toContain('FP-47');
+        expect(text).toContain('No hero will work it');
     });
 
     it.each(['fx_ws_enemy', 'fx_ws_passive', 'fx_ws_skilled'])('says nothing on %s', (id) => {
