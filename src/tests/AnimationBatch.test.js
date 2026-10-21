@@ -500,3 +500,34 @@ describe('the Guild Hall dips a pixel as loot lands on it (effect 5)', () => {
         }
     });
 });
+
+describe('colour flash on a hero: green when food heals them in a fight', () => {
+    it('copies the hero’s sheet holder, frame and facing kept, with the green picture; gone after two frames', () => {
+        const rec = recordAnimate();
+        const host = document.createElement('div');
+        document.body.appendChild(host);
+        MatFx.attachFxHost(host, 2);
+        const unwatch = MatFx.watchMatFx();
+        try {
+            const hero = document.createElement('button');
+            hero.setAttribute('data-board-hero', 'h1');
+            hero.innerHTML = `<div><span data-sprite-ring="work"></span><div class="absolute inset-0 overflow-hidden"><div style="transform: scaleX(-1)">` +
+                `<img src="/${SHEET}" style="transform: translate(-128px, -256px)"></div></div></div>`;
+            document.body.appendChild(hero);
+            EventBus.publish(ENGINE_EVENTS.COMBAT_HERO_ATE, { heroId: 'h1', healed: 0 });
+            expect(hero.querySelector('[data-fx-copy]')).toBeNull();
+            EventBus.publish(ENGINE_EVENTS.COMBAT_HERO_ATE, { heroId: 'h1', healed: 12 });
+            const copy = hero.querySelector('[data-fx-copy="green"]');
+            expect(copy.querySelector('img').getAttribute('src')).toBe(`/_gen/sprite-fx/tint-green/${SHEET}`);
+            expect(copy.querySelector('img').style.transform).toBe('translate(-128px, -256px)');
+            expect(copy.firstChild.style.transform).toBe('scaleX(-1)');
+            expect(copy.querySelector('[data-sprite-ring]')).toBeNull();
+            rec.calls.find(a => a.el === copy).finish();
+            expect(hero.querySelector('[data-fx-copy]')).toBeNull();
+        } finally {
+            unwatch();
+            MatFx.attachFxHost(null);
+            rec.restore();
+        }
+    });
+});

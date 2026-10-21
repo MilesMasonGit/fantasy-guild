@@ -7,6 +7,7 @@ import { isDrawn } from '../../../dev/perf/drawSwitches.js';
 import { STRIKE_DELAY_MS } from '../hitAnimations.js';
 import { FX_FRAME_MS, heldPoses } from './pixelSteps.js';
 import { spriteOf, makeCopy } from './spriteCopy.js';
+import { tintUrl } from '../../../utils/spriteFx.js';
 
 /**
  * The mat's effects that stand on the mat rather than on one Token's art: numbers rising off a
@@ -174,8 +175,39 @@ function knockoutInPlace(instanceId) {
 }
 
 /**
+ * Colour flash on a hero on the mat: their sprite, as it stands this frame, in one solid colour for
+ * `frames` effect frames (green when they are healed). A copy of the hero's own art holder with the
+ * generated tint picture in it, so a sheet keeps its frame and facing.
+ * @returns {boolean} whether it played
+ */
+export function heroFlash(heroId, tint = 'green', { frames = 2 } = {}) {
+    if (typeof document === 'undefined' || !heroId) return false;
+    const img = document.querySelector(`[data-board-hero="${heroId}"] img`);
+    const picture = img ? tintUrl(img.getAttribute('src'), tint) : null;
+    if (!picture) return false;
+    // A sheet is cropped by the box two levels up; a still sprite sits in its own span.
+    const sheet = img.parentElement?.parentElement?.classList.contains('overflow-hidden');
+    const holder = sheet ? img.parentElement.parentElement : img.parentElement;
+    if (!holder?.parentElement || typeof holder.animate !== 'function') return false;
+    const copy = holder.cloneNode(true);
+    copy.querySelectorAll('[data-sprite-ring], [data-sprite-shadow]').forEach(el => el.remove());
+    copy.querySelector('img').src = picture;
+    copy.setAttribute('aria-hidden', 'true');
+    copy.setAttribute('data-fx-copy', tint);
+    copy.style.pointerEvents = 'none';
+    copy.style.visibility = 'hidden';
+    holder.parentElement.appendChild(copy);
+    const anim = copy.animate([{ visibility: 'visible' }, { visibility: 'visible' }], { duration: frames * FX_FRAME_MS, fill: 'none' });
+    const done = () => copy.remove();
+    anim.onfinish = done;
+    anim.oncancel = done;
+    return true;
+}
+
+/**
  * The layer's listeners: a damage number on every landed hit (on the strike frame), a rule's
- * number and its neighbour's spark when a rule fires, the knockout when a fight is won.
+ * number and its neighbour's spark when a rule fires, a hero's green flash when food heals them in
+ * a fight, the knockout when a fight is won.
  * @returns {() => void} unsubscribe
  */
 export function watchMatFx() {
@@ -191,6 +223,9 @@ export function watchMatFx() {
             if (from) spark(from, p.instanceId);
             const n = Number(p.amount);
             if (n > 0) floatNumber(p.instanceId, `+${n}`, 'gain', { delay: from ? SPARK_MS : 0 });
+        }, UI_LISTENER),
+        EventBus.subscribe(ENGINE_EVENTS.COMBAT_HERO_ATE, (p) => {
+            if (p?.heroId && Number(p.healed) > 0 && isDrawn('matFx')) heroFlash(p.heroId, 'green');
         }, UI_LISTENER),
         EventBus.subscribe(BOARD_EVENTS.COMBAT_RESOLVED, (p) => {
             if (p?.outcome !== 'victory' || !p.instanceId || !isDrawn('matFx')) return;

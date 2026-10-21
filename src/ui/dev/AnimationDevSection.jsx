@@ -3,7 +3,8 @@
 
 import { useState } from 'react';
 import { enemies, worked, everyToken, some, playOn, neighbours, dropLootFrom, dropRareFrom } from './animationDev.js';
-import { floatNumber, spark, knockoutGhost, KNOCKOUT_MS } from '../components/board/fx/matFx.js';
+import { floatNumber, spark, knockoutGhost, heroFlash, KNOCKOUT_MS } from '../components/board/fx/matFx.js';
+import * as BoardState from '../../systems/board/BoardState.js';
 
 const labelClass = 'ui-text-title font-bold uppercase tracking-wider text-gi-muted mb-1';
 const buttonClass = 'px-2 py-1 rounded bg-gi-primary/10 hover:bg-gi-primary/20 border border-gi-primary/40 text-xs font-bold transition-colors text-left';
@@ -21,6 +22,10 @@ const EFFECTS = [
             playOn([t], { fx: 'hide', ms: KNOCKOUT_MS });
             return knockoutGhost(t.id);
         }).length
+    },
+    {
+        id: 'heal', label: 'Heal: green flash (heroes on the mat)',
+        run: () => BoardState.heroBodies().filter(([heroId]) => heroFlash(heroId, 'green')).length
     },
     { id: 'loot', label: 'Loot hop, ground shadow, afterimages (adds 3 loot)', run: () => dropLootFrom(some(everyToken(), 3)).length },
     { id: 'rare', label: 'Rare find: gold flash and star (adds 2 loot)', run: () => dropRareFrom(some(everyToken(), 2)).length },
