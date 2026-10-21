@@ -104,3 +104,8 @@ T-064 — Dead clock surfaces removed per ruling A (TimeManager pause/game time,
 T-093 — Last stale survey comments fixed (QA level-up skill count, Card wording); the rest already read correctly — f00b2c03 — 2026-10-20
 T-068 — Scrap folders (archive, maybe, waste) kept out of the build and the preload manifest — 29a4d8c7 — 2026-10-20
 T-163 — useLiveDropTarget and the live drop-target registry removed — 1db1f197 — 2026-10-20
+T-069 — Keeping it fast: 21 rules in PERFORMANCE.md, each checked against the code — 9a103fbb — 2026-10-20
+T-070 — window.Game documented (WINDOW_GAME.md) with a guard test against the engine — 9a103fbb — 2026-10-20
+T-124 — CREDITS.md: every third-party pack, licence and use (background music provenance is an open owner question) — 9a103fbb — 2026-10-20
+T-118 — bench --cpu-prof keeps the engine thread profile — 9a103fbb — 2026-10-20
+T-111 — bench/README: reading timing under load — 9a103fbb — 2026-10-20

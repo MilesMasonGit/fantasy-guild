@@ -15,7 +15,7 @@ build green) · bench-queued · eye-check · merged.*
 | UI consistency: T-029, T-030, T-031, T-032, T-036, T-038, T-039, T-040, T-041, T-042, T-121, T-122, T-134, T-135, T-191, T-043 | builder | `crunch/ui-consistency` (`ui`) | building | Tue | |
 | Atlas rework (T5 + T6), owner: "good place for now" | — | `crunch/atlas-rework` (`at`) | merged 98bd5d8a (gate on the merged result: 5570 tests, cycles, build) | Tue | Tue |
 | Hall sky (brief 160 T3; T-171, T-128) | builder | `crunch/hall-sky` (`hs`) | eye-check pending with the UI batch (80a21eee + merge d1d6d739; gate: 5574 + the 7 expected red; cycles; build) | Tue | |
-| Docs and tooling: T-119 strings file, T-069, T-070, T-124, T-118, T-111 | builder | `crunch/docs-infra` (`dx`) | building | Tue | |
+| Docs and tooling: T-119 strings file, T-069, T-070, T-124, T-118, T-111 | builder | `crunch/docs-infra` (`dx`) | merged 9a103fbb (gate: 5565 tests, cycles, build; T-069, T-070, T-124, T-118, T-111 closed; T-119 narrowed to converting old screens) | Tue | Tue |
 | Tools as hero gear (T-126) + a content change pack | engineer | `crunch/tools-gear` (`tg`) | building | Tue | |
 | Engine plumbing: T-015, T-016, T-019, T-020, T-021, T-035, T-065, T-097 | engineer | `crunch/engine-plumbing` (`ep`) | building | Tue | |
 
@@ -189,6 +189,8 @@ branch), so it uses the kit and everyone fights; it merges after both.*
 
 
 ## Questions for the owner
+
+- **Background music provenance** (found by the credits work, T-124): the 8 playlist tracks and 2 in `bgm/maybe/` have no recorded source or licence. Where are they from, and what does the licence require? Needed before release; asked with the next proposal.
 
 *Design questions the director cannot answer, as multiple choice, recommendation
 first; asked with the next batch proposal and recorded where they belong.*
