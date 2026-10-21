@@ -3,6 +3,7 @@ import { AnimatePresence } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import { cn } from './utils/cn.js';
 import { SettingsManager } from '../systems/core/SettingsManager.js';
+import { EngineBootstrap } from '../systems/core/EngineBootstrap.js';
 import { EventBus, UI_LISTENER } from '../systems/core/EventBus.js';
 
 import { EngineProvider } from './context/EngineContext.jsx';
@@ -65,19 +66,10 @@ export const ReactRoot = ({ engine }) => {
     const ui = useUIModals(engine);
     const { onInspectToken, onClearInspect } = useInspectTokenHandlers(ui.inspect);
 
-    const handleSlotSelect = async (index, { catchUp = true } = {}) => {
-        const isEmpty = !engine.SaveManager.hasSlot(index);
-        if (isEmpty) {
-            engine.SaveManager.newGame(index);
-        } else {
-            const loaded = await engine.SaveManager.loadSlot(index, { catchUp });
-            // Refused (incompatible version) or corrupted — stay on the slot
-            // screen; the notification explains why.
-            if (!loaded) return;
-        }
-        ui.slotSelection.close();
-        engine.EventBus.publish(UI_EVENTS.REACT_SLOT_SELECTED, { index, isNewGame: isEmpty });
-    };
+    // A refused save (incompatible or corrupted) leaves the slot screen up; the notification
+    // says why.
+    const handleSlotSelect = (index, { catchUp = true } = {}) =>
+        EngineBootstrap.startSlot(index, { catchUp, onOpened: ui.slotSelection.close });
 
     // "Load as I left it" reloads the page into the slot it put back: open it at once, as it was.
     const resumeRef = React.useRef(handleSlotSelect);

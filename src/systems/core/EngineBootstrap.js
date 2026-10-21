@@ -259,8 +259,35 @@ export const EngineBootstrap = {
     },
 
     /**
-     * Finalize game preparation once a slot is selected. A loaded save first catches up the time
-     * since it was written, before the loop starts.
+     * ⭐ Start a save slot: a new game in an empty slot, or the save in it loaded and caught up,
+     * then the loop running. The one way a game starts: the slot screen calls it, and so can a
+     * run with no React at all.
+     *
+     * @param {number} slotIndex
+     * @param {{ catchUp?: boolean, onOpened?: () => void }} [options] `catchUp: false` loads a save
+     * as it was left; `onOpened` runs once the slot is open, before a load's catch-up plays
+     * @returns {Promise<boolean>} false when the save was refused (the reason is already said)
+     */
+    async startSlot(slotIndex, { catchUp = true, onOpened } = {}) {
+        const isNewGame = !SaveManager.hasSlot(slotIndex);
+        if (isNewGame) {
+            SaveManager.newGame(slotIndex);
+        } else if (!(await SaveManager.loadSlot(slotIndex, { catchUp }))) {
+            return false;
+        }
+        onOpened?.();
+        QuestManager.onSlotOpened();
+        try {
+            await this.onSlotSelected(slotIndex, isNewGame);
+        } catch (err) {
+            console.error('[Engine] Starting the chosen slot failed', err);
+        }
+        return true;
+    },
+
+    /**
+     * Finalize game preparation once a slot is open ({@link startSlot}). A loaded save first
+     * catches up the time since it was written, before the loop starts.
      *
      * ⚠️ Async only for a load: a new game runs to the end synchronously.
      */

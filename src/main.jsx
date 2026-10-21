@@ -19,7 +19,7 @@ import { SettingsManager } from './systems/core/SettingsManager.js';
 import { preloadGameArt } from './systems/core/AssetPreloader.js';
 import { loadSpriteFxManifest } from './ui/utils/spriteFx.js';
 import { logger } from './utils/Logger.js';
-import { ENGINE_EVENTS, UI_EVENTS } from './systems/core/engineEvents.js';
+import { ENGINE_EVENTS } from './systems/core/engineEvents.js';
 
 /**
  * Fantasy Guild Idle - Bootstrap Lifecycle
@@ -119,13 +119,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         splash.style.opacity = '0';
         setTimeout(() => splash.remove(), 350);
     }
-
-    // 7. Handle Post-UI Lifecycle Events
-    EventBus.subscribe(UI_EVENTS.REACT_SLOT_SELECTED, (data) => {
-        EngineBootstrap.onSlotSelected(data.index, data.isNewGame)
-            .catch(err => console.error('[main] Starting the chosen slot failed', err));
-    });
-
 
     logger.info('main', 'Bootstrap complete. Waiting for user interaction.');
 });

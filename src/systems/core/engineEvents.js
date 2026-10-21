@@ -15,11 +15,11 @@
  *   panels listed in `UiEventOwnership.test.js` (they fake engine changes
  *   on purpose).
  * * `UI_EVENTS` — published by the UI. Most are UI-to-UI (`ui:*`, `dev:*`,
- *   `inspect_hero`). Three are **declared UI → engine notices**, facts the
- *   engine cannot observe for itself: `react:slot_selected` (a slot was
- *   chosen; the engine boots on it), `ui_modal:opened` (a quest counts
+ *   `inspect_hero`). Two are **declared UI → engine notices**, facts the
+ *   engine cannot observe for itself: `ui_modal:opened` (a quest counts
  *   "open the Bank") and `ui:token_inspected` (the tutorial counts
- *   "inspect an endgame site").
+ *   "inspect an endgame site"). A game starts by a call, not a notice:
+ *   `EngineBootstrap.startSlot`.
  *
  * `audio:play` is shared: the engine and the UI both ask for a sound.
  *
@@ -184,8 +184,6 @@ export const ENGINE_EVENTS = Object.freeze({
 export const HEARD_WHILE_QUIET = Object.freeze([ENGINE_EVENTS.CATCH_UP_STARTED, ENGINE_EVENTS.CATCH_UP_PROGRESS]);
 
 export const UI_EVENTS = Object.freeze({
-    /** ⭐ UI → engine notice: a save slot was chosen. Payload: `{ index, isNewGame }`. The engine boots on it. */
-    REACT_SLOT_SELECTED: 'react:slot_selected',
     /** ⭐ UI → engine notice: a window opened. Payload: `{ modalId }`. The tutorial counts it. */
     UI_MODAL_OPENED: 'ui_modal:opened',
     /**
