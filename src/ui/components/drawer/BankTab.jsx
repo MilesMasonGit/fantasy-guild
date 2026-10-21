@@ -425,11 +425,10 @@ const BankTabButtonBody = memo(function BankTabButtonBody({ tab, index, first, a
 });
 
 /**
- * Item details, rendered by the shared InspectionPanel. `showSell` is still accepted but
- * ignored: nothing sells.
+ * Item details, rendered by the shared InspectionPanel. Nothing sells, so there are no sell
+ * controls.
  */
-// eslint-disable-next-line no-unused-vars
-export const ItemInspection = ({ entry, showSell = true }) => {
+export const ItemInspection = ({ entry }) => {
     const { template, count } = entry;
     const writes = isMapItem(template) ? whatItWrites(template, { cap: matCap() }) : null;
     return (

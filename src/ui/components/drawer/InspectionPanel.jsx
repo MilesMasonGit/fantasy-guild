@@ -25,7 +25,7 @@ export const InspectionPanel = ({
     onSearchChange,
     activePane = null
 }) => {
-    // Item context: the sell controls need the live banked count.
+    // An item is shown only while some is banked, with the live count.
     const itemId = selection?.type === 'item' ? selection.id : null;
     const itemCount = useGameState(
         state => itemId ? (state.inventory?.items?.[itemId]?.quantity || 0) : 0,
@@ -38,7 +38,6 @@ export const InspectionPanel = ({
     // The upgrade sheet keeps its header still and scrolls only its rank list, with its own
     // arrow bars; a second pair around it would be a list inside a list.
     let scrollsItself = false;
-    const isShop = activePane === 'shop';
 
     if (selection?.type === 'guild_upgrade') {
         const upgradeDef = selection.upgradeDef || selection.source?.upgradeDef || getUpgradeDef(selection.id);
@@ -51,20 +50,12 @@ export const InspectionPanel = ({
         );
     } else if (selection?.type === 'token') {
         body = (
-            <TokenInspection
-                typeId={selection.id}
-                showSell={!isShop}
-            />
+            <TokenInspection typeId={selection.id} />
         );
     } else if (selection?.type === 'item') {
         const template = getItem(selection.id);
-        if (template && (itemCount > 0 || isShop)) {
-            body = (
-                <ItemInspection
-                    entry={{ id: selection.id, count: itemCount, template }}
-                    showSell={!isShop}
-                />
-            );
+        if (template && itemCount > 0) {
+            body = <ItemInspection entry={{ id: selection.id, count: itemCount, template }} />;
         }
     }
 
