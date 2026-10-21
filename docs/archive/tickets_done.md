@@ -88,3 +88,19 @@ T-017 — Kill loot follows the yield, double-loot and bonus-drop rules (shared 
 T-022 — Rate trackers cleared on load and new game — d96e5912 — 2026-10-20
 T-023 — GLOBAL_COMBAT_XP_MULTIPLIER deleted (unused, 1.0) — d96e5912 — 2026-10-20
 T-018 — Closed as obsolete (owner 2026-10-20: the R3-Q1 ruling predates the current game; tools become hero gear, T-126) — d96e5912 — 2026-10-20
+T-139 — 56 sprite-manifest entries with no file and no reader removed; item_dough/flour/wheat kept — e5169a69 — 2026-10-20
+T-045 — Dead combat and wound code: combat.stats, fight._rev, write-only attack-speed fields, unused WoundedSystem helpers, LootSystem.previewDrops (thorns branch kept as the hook for enemy traits) — f60df7ef, 47e6cfa9 — 2026-10-20
+T-046 — Roster upgrade recruits through HeroLifecycle.createHero — 97d09796 — 2026-10-20
+T-047 — Eight retired collection fields dropped from the save schema — 00bd274e — 2026-10-20
+T-048 — Listeners with no publisher and the dead ui:open_drawer chain removed (Bank type filter, View in Item Bank) — 405ab3da — 2026-10-20
+T-049 — Already done: triggersOf, hasUpkeep, resetNotices gone; SpawnerSystem.resetAlerts runs on BOARD_SWAPPED; starvation stats kept for tests — no commit — 2026-10-20
+T-050 — Stale board-state comments corrected (whole-number centres, Cartographer, Displacement) — d160d6af — 2026-10-20
+T-051 — Placement and HeroMotion use MatCap.isGuildHall and clampToMat — 32b87947 — 2026-10-20
+T-052 — Dead drag CSS deleted; drag comments and dragConstants corrected (DeckDnd rename moved to T-056) — d4c783ab — 2026-10-20
+T-055 — Equip-flash timer cleared when the grid unsubscribes, with a red-first test — f49d52d7 — 2026-10-20
+T-061 — Inspection panel's unreachable Shop branches and ignored showSell props removed (cardSizeStore already gone) — ade2b55f — 2026-10-20
+T-062 — statementText.js marker written as an escape, so git diffs the file — 1792b38e — 2026-10-20
+T-064 — Dead clock surfaces removed per ruling A (TimeManager pause/game time, setTickInterval, forceTick, lastTickAt, time._rev, exploration); cardUseCounts left to T-108 — 12021521 — 2026-10-20
+T-093 — Last stale survey comments fixed (QA level-up skill count, Card wording); the rest already read correctly — f00b2c03 — 2026-10-20
+T-068 — Scrap folders (archive, maybe, waste) kept out of the build and the preload manifest — 29a4d8c7 — 2026-10-20
+T-163 — useLiveDropTarget and the live drop-target registry removed — 1db1f197 — 2026-10-20
