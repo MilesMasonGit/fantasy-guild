@@ -9,8 +9,8 @@ build green) · bench-queued · eye-check · merged.*
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| Timing baselines retaken on a quiet machine (engine and draw) | director | `main` | queued 13:00 (timer running) | Wed | |
-| E1: measure the limits at perf build, 4× slowdown, smooth (Tokens on a Region, heroes, enemies, loot piles, fights, notifications per minute, 24 h catch-up) | engineer | `crunch/envelope` | queued after the baselines, inside 13:00–17:00 | Wed | |
+| Timing baselines retaken on a quiet machine (engine and draw) | director | `main` | engine: done 13:00, committed f19a2e30. Draw: run refused to save (Chrome delivered ~5× for the 4× scenes, the bench's guard); retry queued 01:00 Thu (timer running) | Wed | Wed |
+| E1: measure the limits at perf build, 4× slowdown, smooth (Tokens on a Region, heroes, enemies, loot piles, fights, notifications per minute, 24 h catch-up) | engineer | `crunch/envelope` | building (engineer may bench until 16:50 today; the PC otherwise idle) | Wed | |
 | E2: the limits as design rules in GDD §14; T-071 decided against them; issues as tickets | director | `main` | queued after E1 | Wed | |
 
 ## Features director, wrap-up round 1
