@@ -398,6 +398,7 @@ and dock subtrees), **Tokens** on the mat, **DOM** nodes and JS **heap**.
 | `npm run bench:draw -- --cpu=1` | CPU slowdowns to run (default `1,4`) | |
 | `npm run bench:draw -- --switches` | the **cost table** (below); perf, 1× unless `--cpu` is given | ~12 min |
 | `npm run bench:draw -- --switches --cpu=4 --only=cap128` | the cost table on another board | ~15 min |
+| `npm run bench:draw -- --only=heroes16 --switch-only=heroAnim,walkDraw` | the cost table with only some switches (implies `--switches`) | |
 | `npm run bench:draw -- --only=S2,cap128,camp128,cap256` | the cap boards beside S2 | |
 | `npm run bench:draw -- --repeats=3` | windows per scene; the median is reported with its min–max spread | |
 | `npm run bench:draw -- --compare` | compare with `bench/draw-baseline.json` (2 windows per scene unless `--repeats`) | about twice the default |

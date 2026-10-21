@@ -61,7 +61,7 @@ export function parseArgs(argv) {
     const args = {
         builds: ['perf'], cpus: [1, 4], quick: false, only: null, switches: false,
         repeats: 1, compare: false, saveBaseline: false, ab: null, build: true,
-        settleS: null, windowS: null, port: null, cpuGiven: false, repeatsGiven: false, slowdownTarget: null
+        settleS: null, windowS: null, port: null, cpuGiven: false, repeatsGiven: false, slowdownTarget: null, switchOnly: null
     };
     for (const a of argv) {
         const [key, ...rest] = a.replace(/^--/, '').split('=');
@@ -88,6 +88,14 @@ export function parseArgs(argv) {
                 break;
             }
             case 'slowdown-target': args.slowdownTarget = positive(value, '--slowdown-target'); break;
+            case 'switch-only': {
+                const names = value.split(',').map(x => x.trim()).filter(Boolean);
+                const bad = names.filter(n => !DRAW_SWITCHES.includes(n));
+                if (!names.length || bad.length) throw new Error(`--switch-only takes drawing switches (${DRAW_SWITCHES.join(', ')})${bad.length ? `, not ${bad.join(', ')}` : ''}`);
+                args.switchOnly = names;
+                args.switches = true;
+                break;
+            }
             case 'settle': args.settleS = positive(value, '--settle'); break;
             case 'window': args.windowS = positive(value, '--window'); break;
             case 'port': args.port = Math.floor(positive(value, '--port')); break;

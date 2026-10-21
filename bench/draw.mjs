@@ -193,7 +193,7 @@ async function main() {
                     // drift over the run shows up in it rather than in one switch's cost.
                     const allOn = [];
                     const offRuns = {};
-                    const order = [...DRAW_SWITCHES];
+                    const order = args.switchOnly || [...DRAW_SWITCHES];
                     const half = Math.ceil(order.length / 2);
                     const plan = [null, ...order.slice(0, half), null, ...order.slice(half), null];
                     for (let r = 0; r < args.repeats; r++) {
