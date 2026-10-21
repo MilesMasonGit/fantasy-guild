@@ -117,3 +117,31 @@ T-016 — A loot sweep sends one Bank update per item — 48fd719c — 2026-10-2
 T-035 — A push moves only the newcomer's chain (work changed on S3, accepted) — 48fd719c — 2026-10-21
 T-097 — Mat size and bounty numbers are game values; shipped builds have no Mat Tuner, Debug Mode or QA tools — 48fd719c — 2026-10-21
 T-021 — One way into the engine: EngineProvider and useEngine deleted — 48fd719c — 2026-10-21
+T-029 — One closing rule: Escape closes the top layer; click-outside closes light pop-ups only — fa214742 — 2026-10-21
+T-030 — One shared tooltip (FloatingTip) — fa214742 — 2026-10-21
+T-031 — One z-index table (--z-*) — fa214742 — 2026-10-21
+T-032 — Typography window above Settings; Escape restores the preview — fa214742 — 2026-10-21
+T-036 — One panel header with the red pixel X (CloseX, PanelHeader) — fa214742 — 2026-10-21
+T-038 — Text sizes on the shared steps; dead font classes removed — fa214742 — 2026-10-21
+T-039 — Plain words instead of sci-fi ones — fa214742 — 2026-10-21
+T-040 — Rules text: "where this one stands", "a free spot" — fa214742 — 2026-10-21
+T-041 — A new hero with no job reads Recruit — fa214742 — 2026-10-21
+T-042 — Flying Items setting wording — fa214742 — 2026-10-21
+T-121 — Slot playtime in the right unit — fa214742 — 2026-10-21
+T-122 — Edit Hero has no duplicate skill sheet — fa214742 — 2026-10-21
+T-134 — Bubble menu bar at whole-pixel scale — fa214742 — 2026-10-21
+T-135 — Hit reactions move, never scale — fa214742 — 2026-10-21
+T-191 — The shine covers the whole button — fa214742 — 2026-10-21
+T-043 — Not reproducible (no duplicate key on a 4-hero, 35-Token load) — fa214742 — 2026-10-21
+T-053 — Remaining nav-over-modal code removed — fa214742 — 2026-10-21
+T-171 — The Guild Hall night sky: drifting layers, stars by state, constellations — fa214742 — 2026-10-21
+T-128 — Hall web clipped, focus cannot scroll it — fa214742 — 2026-10-21
+T-126 — Gathering tools are hero gear (hands, tier gates, Needs bubble, starter tools; content synced) — fa214742 — 2026-10-21
+T-033 — Drag pauses: a page-wide restyle on every pickup and drop removed (~2,200 to ~300 elements); one mat commit on pickup — fa214742 — 2026-10-21
+T-132 — A hero health bar counts as the hero for presses — fa214742 — 2026-10-21
+T-187 — Drag bench presses flags at a clear point and names every miss — fa214742 — 2026-10-21
+T-186 — Equipping by drop opens the hero sheet after the drop — fa214742 — 2026-10-21
+T-143 — Drag bench skips fixed Tokens — fa214742 — 2026-10-21
+T-137 — Code-only animation batch and tinted-copy effects — fa214742 — 2026-10-21
+T-154 — A picked-up Token flies to the cursor — fa214742 — 2026-10-21
+T-155 — World spawns hop out of their parent — fa214742 — 2026-10-21
