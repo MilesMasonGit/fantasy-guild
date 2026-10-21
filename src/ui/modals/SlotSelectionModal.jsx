@@ -8,11 +8,10 @@ import { formatTimeAgo } from '../../utils/Formatters.js';
 import { cn } from '../utils/cn.js';
 import { Play, Plus, Trash2, AlertTriangle } from 'lucide-react';
 
-/**
- * Format playtime seconds to readable string
- */
-function formatPlaytime(seconds) {
-    if (!seconds || seconds < 60) return '< 1 min';
+/** Lifetime playtime, saved in milliseconds (the game clock's tick deltas), as `2h 5m`. */
+export function formatPlaytime(ms) {
+    const seconds = Math.floor((ms || 0) / 1000);
+    if (seconds < 60) return '< 1 min';
     const hours = Math.floor(seconds / 3600);
     const mins = Math.floor((seconds % 3600) / 60);
     if (hours > 0) return `${hours}h ${mins}m`;
