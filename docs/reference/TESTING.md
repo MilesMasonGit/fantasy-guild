@@ -56,7 +56,8 @@ port `preview_start` returns**, never a guessed one: another chat may hold
 switch method). Most past browser failures came from fighting a hidden pane.
 
 **Reading state.** Prefer `read_page`, `read_console_messages` and
-`javascript_tool` probes on `window.Game` and `window.GameState`. Dynamic
+`javascript_tool` probes on `window.Game` and `window.GameState` (every entry
+and what it is for: [`WINDOW_GAME.md`](WINDOW_GAME.md)). Dynamic
 `import('/src/…')` works if the path matches the one the app loaded; after a
 code edit Vite may serve a `?t=` copy (a second module instance whose state is
 empty). If reads look impossible, restart the dev server.

@@ -445,7 +445,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 43,
+    "value": 52,
     "valueSource": "token_maple_tree",
     "autoSyncId": true,
     "id": "item_maple_wood"
@@ -458,7 +458,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 307,
+    "value": 422,
     "valueSource": "token_mahogany_tree",
     "autoSyncId": true,
     "id": "item_mahogany_wood"
@@ -471,7 +471,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 427,
+    "value": 619,
     "valueSource": "token_ebony_tree",
     "autoSyncId": true,
     "id": "item_ebony_wood"
@@ -484,7 +484,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 124,
+    "value": 161,
     "valueSource": "token_cedar_tree",
     "autoSyncId": true,
     "id": "item_cedar_wood"
@@ -497,7 +497,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 13,
+    "value": 15,
     "valueSource": "token_birch_forest",
     "autoSyncId": true,
     "id": "item_birch_wood"
@@ -523,7 +523,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 13,
+    "value": 15,
     "valueSource": "token_silver_ore_vein",
     "autoSyncId": true,
     "id": "item_silver_ore"
@@ -536,7 +536,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 43,
+    "value": 52,
     "valueSource": "token_gold_ore_vein",
     "autoSyncId": true,
     "id": "item_gold_ore"
@@ -549,7 +549,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 124,
+    "value": 161,
     "valueSource": "token_mythril_ore_vein",
     "autoSyncId": true,
     "id": "item_mythril_ore"
@@ -562,7 +562,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 460,
+    "value": 633,
     "valueSource": "token_adamantine_ore_vein",
     "autoSyncId": true,
     "id": "item_adamantine_ore"
@@ -575,7 +575,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 427,
+    "value": 619,
     "valueSource": "token_darkmetal_ore_vein",
     "autoSyncId": true,
     "id": "item_darkmetal_ore"
@@ -588,7 +588,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 32,
+    "value": 33,
     "valueSource": "recipe_mtp8qjj0",
     "autoSyncId": true,
     "id": "item_iron_ingot"
@@ -601,7 +601,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 1431,
+    "value": 1856,
     "valueSource": "recipe_mtp8qjj3",
     "autoSyncId": true,
     "id": "item_mythril_ingot"
@@ -614,7 +614,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 410,
+    "value": 496,
     "valueSource": "recipe_mtp8qjj1",
     "autoSyncId": true,
     "id": "item_gold_ingot"
@@ -627,7 +627,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 125,
+    "value": 144,
     "valueSource": "recipe_mtp8qjj2",
     "autoSyncId": true,
     "id": "item_silver_ingot"
@@ -640,7 +640,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 6355,
+    "value": 8742,
     "valueSource": "recipe_mtp8qjj4",
     "autoSyncId": true,
     "id": "item_adamantine_ingot"
@@ -653,7 +653,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 7866,
+    "value": 11399,
     "valueSource": "recipe_mtp8qjj5",
     "autoSyncId": true,
     "id": "item_darkmetal_ingot"
@@ -705,7 +705,7 @@
     "stackable": true,
     "restoreAmount": 15,
     "equipSlot": "drink",
-    "value": 10,
+    "value": 11,
     "valueSource": "recipe_mtp8qjj9",
     "autoSyncId": true,
     "id": "item_beer"
