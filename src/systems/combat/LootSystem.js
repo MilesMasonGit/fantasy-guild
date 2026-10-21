@@ -8,6 +8,7 @@ import { randomInt } from '../../utils/RNG.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import * as SpriteLayer from '../board/SpriteLayer.js';
 import * as OutputRules from '../board/OutputRules.js';
+import * as RareDrops from '../board/RareDrops.js';
 import * as BoardState from '../board/BoardState.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
@@ -58,7 +59,8 @@ const LootSystem = {
             // happened and is not banked until collected; banking it directly
             // would skip the sprite layer.
             for (const drop of generatedDrops) {
-                SpriteLayer.addSprite('item', drop.itemId, drop.quantity, instanceId);
+                const line = (sourceData.drops || []).find(e => e?.itemId === drop.itemId);
+                RareDrops.noteDrop(SpriteLayer.addSprite('item', drop.itemId, drop.quantity, instanceId), line?.chance ?? 100);
             }
             OutputRules.dropBonusGrants(instanceId);
         } else {

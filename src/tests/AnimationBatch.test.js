@@ -20,6 +20,8 @@ import * as MatFx from '../ui/components/board/fx/matFx.js';
 import { startStrikeChips, CHIP_COUNT } from '../ui/components/board/fx/strikeChips.js';
 import { setDrawingPaused } from '../ui/components/board/frameClock.js';
 import { lootHopPoses, HOP_POSES, playLootArc, playAbsorptionSlide } from '../ui/utils/lootArc.js';
+import * as RareDrops from '../systems/board/RareDrops.js';
+import { recordRareDrop, takeRareDrop, playRareTwinkle } from '../ui/components/board/fx/rareTwinkle.js';
 
 /**
  * The animation batch (T-137): the shared pieces every effect stands on, and each effect's own
@@ -417,5 +419,46 @@ describe('loot hop (effect 4), ground shadow and the slide into a pile', () => {
         expect(slide.keyframes[5].visibility).toBe('hidden');
         expect([...box.querySelectorAll('[data-fx-copy]')].map(c => c.getAttribute('data-fx-copy'))).toEqual(['dither-50', 'dither-25']);
         expect(rec.calls.every(a => a.keyframes.every(k => !/scale/.test(k.transform || '') && k.opacity === undefined))).toBe(true);
+    });
+});
+
+describe('rare drop twinkle (effect 10)', () => {
+    it('a drop from a line at 10 % or less is announced; anything commoner, or nothing, is not', () => {
+        const heard = [];
+        const off = EventBus.subscribe(BOARD_EVENTS.RARE_DROP, (p) => heard.push(p));
+        RareDrops.noteDrop({ id: 's1', refId: 'i' }, 10);
+        RareDrops.noteDrop({ id: 's2', refId: 'i' }, 25);
+        RareDrops.noteDrop({ id: 's3', refId: 'i' }, 100);
+        RareDrops.noteDrop(null, 5);
+        off();
+        expect(heard).toEqual([{ spriteId: 's1', itemId: 'i', chance: 10 }]);
+        expect(RareDrops.RARE_DROP_CHANCE).toBe(10);
+    });
+
+    it('the floor’s sprite learns it once, as it appears', () => {
+        recordRareDrop({ spriteId: 'sx' }, 1000);
+        expect(takeRareDrop('sx', 1500)).toBe(true);
+        expect(takeRareDrop('sx', 1500)).toBe(false);
+        recordRareDrop({ spriteId: 'sy' }, 1000);
+        expect(takeRareDrop('sy', 9000)).toBe(false);
+    });
+
+    it('once landed: a gold copy for two frames, then a five-pixel plus star flickering twice', () => {
+        const rec = recordAnimate();
+        try {
+            const box = document.createElement('button');
+            box.innerHTML = `<div><span><span><img src="/${ITEM}" style="width: 64px; height: 64px"></span></span></div>`;
+            document.body.appendChild(box);
+            playRareTwinkle(box, { unit: 2, delay: 560 });
+            const gold = box.querySelector('[data-fx-copy="gold"]');
+            expect(gold.firstChild.style.backgroundImage).toBe(`url("/_gen/sprite-fx/tint-gold/${ITEM}")`);
+            const star = box.querySelector('[data-fx-star]');
+            expect([...star.children].map(b => [b.style.width, b.style.height])).toEqual([['10px', '2px'], ['2px', '10px']]);
+            const flicker = rec.calls.find(a => a.el === star);
+            expect(flicker.options.delay).toBe(560 + 2 * FX_FRAME_MS);
+            expect(flicker.keyframes.map(k => k.visibility)).toEqual(['visible', 'visible', 'hidden', 'visible', 'visible', 'hidden', 'hidden']);
+        } finally {
+            rec.restore();
+        }
     });
 });

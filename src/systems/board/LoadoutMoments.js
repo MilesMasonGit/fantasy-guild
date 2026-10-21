@@ -7,6 +7,7 @@ import * as DealDamage from './DealDamage.js';
 import * as EffectActions from './EffectActions.js';
 import * as SpriteLayer from './SpriteLayer.js';
 import * as EffectFeedback from './EffectFeedback.js';
+import * as RareDrops from './RareDrops.js';
 import { KEYWORD } from '../effects/statements.js';
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
@@ -70,7 +71,7 @@ export function fire(instanceId, heroId, eventId) {
         } else if (statement.keyword === KEYWORD.GRANTS && payload.itemId) {
             const chance = payload.chance ?? 100;
             if (chance >= 100 || Math.random() * 100 < chance) {
-                SpriteLayer.addSprite('item', payload.itemId, Math.max(1, payload.quantity || 1), instanceId);
+                RareDrops.noteDrop(SpriteLayer.addSprite('item', payload.itemId, Math.max(1, payload.quantity || 1), instanceId), chance);
                 acted = true;
             }
         }

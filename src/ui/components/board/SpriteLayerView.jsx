@@ -10,7 +10,8 @@ import { getItem } from '../../../config/registries/itemRegistry.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { useActiveDrag } from '../../dnd/DndKit.jsx';
 import * as SpriteLayer from '../../../systems/board/SpriteLayer.js';
-import { playLootArc, playAbsorptionSlide } from '../../utils/lootArc.js';
+import { playLootArc, playAbsorptionSlide, HOP_POSES, HOP_POSE_MS } from '../../utils/lootArc.js';
+import { watchRareDrops, takeRareDrop, playRareTwinkle } from './fx/rareTwinkle.js';
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { useMatFit } from './MatFitContext.jsx';
 import { boardScaleAt } from '../base/TokenSprite.jsx';
@@ -37,6 +38,7 @@ export const SpriteLayerView = () => {
     );
 
     const collect = useCallback((id) => { SpriteLayer.collectSprite(id); }, []);
+    React.useEffect(() => watchRareDrops(), []);
 
     if (!sprites?.length) return null;
 
@@ -113,11 +115,15 @@ const LootSprite = React.memo(function LootSprite({
 
     // Before the first paint, so the item is never seen at its landing spot before it hops there.
     React.useLayoutEffect(() => {
-        if (!justThrown(bornAt) || !isDrawn('itemFlight')) return;
+        const rare = takeRareDrop(id);
+        if (!justThrown(bornAt)) return;
         const fx = Math.round((fromX ?? x) - x);
         const fy = Math.round((fromY ?? y) - y);
-        if (elementRef.current && (fx !== 0 || fy !== 0)) {
-            playLootArc(elementRef.current, fx, fy, { unit: unitRef.current });
+        const hops = isDrawn('itemFlight') && elementRef.current && (fx !== 0 || fy !== 0);
+        if (hops) playLootArc(elementRef.current, fx, fy, { unit: unitRef.current });
+        // A rare find twinkles once it has landed.
+        if (rare && isDrawn('matFx')) {
+            playRareTwinkle(elementRef.current, { unit: unitRef.current, delay: hops ? (HOP_POSES + 2) * HOP_POSE_MS : 0 });
         }
     }, [fromX, fromY, x, y]);
 

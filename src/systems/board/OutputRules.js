@@ -1,6 +1,7 @@
 import * as TileModifiers from './TileModifiers.js';
 import * as SpriteLayer from './SpriteLayer.js';
 import * as EffectFeedback from './EffectFeedback.js';
+import * as RareDrops from './RareDrops.js';
 import * as HeroEffects from '../hero/HeroEffects.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 
@@ -53,7 +54,7 @@ export function dropBonusGrants(instanceId) {
         // Token's grant carries no `sourceItemIds` and pays nothing here.
         if (!HeroEffects.payLoadoutCost(grant)) continue;
         const quantity = Math.max(1, grant.quantity || 1);
-        SpriteLayer.addSprite('item', grant.itemId, quantity, instanceId);
+        RareDrops.noteDrop(SpriteLayer.addSprite('item', grant.itemId, quantity, instanceId), chance);
         landed.push(grant.itemId);
         // Announced only once the roll has actually landed: a 5% grant that missed did nothing,
         // and saying its name would teach the player the opposite of how often it works.

@@ -6,6 +6,7 @@
 
 import { EventBus } from '../../systems/core/EventBus.js';
 import { UI_EVENTS } from '../../systems/core/engineEvents.js';
+import { BOARD_EVENTS } from '../../systems/board/boardEvents.js';
 import * as BoardState from '../../systems/board/BoardState.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import * as MatFx from '../components/board/fx/matFx.js';
@@ -66,6 +67,16 @@ export function dropLootFrom(tokens) {
 }
 
 /**
+ * As {@link dropLootFrom}, each drop said to be a rare find (`BOARD_EVENTS.RARE_DROP`, which only
+ * the mat listens to), so it twinkles as it lands.
+ */
+export function dropRareFrom(tokens) {
+    const sprites = dropLootFrom(tokens);
+    for (const s of sprites) EventBus.publish(BOARD_EVENTS.RARE_DROP, { spriteId: s.id, itemId: s.refId, chance: 5 });
+    return sprites;
+}
+
+/**
  * The tinted-copy cost check: every Token on the mat flashes white for `frames` effect frames,
  * every `everyMs`, for `forMs`. Returns a stop function.
  */
@@ -80,4 +91,4 @@ export function flashStorm({ everyMs = 240, forMs = 10000, frames = 2 } = {}) {
 
 // The measuring scripts reach the page's own copies of these through here (a module imported
 // again from the console can be a second copy with none of the page's state).
-globalThis.__fxDev = { enemies, worked, everyToken, neighbours, some, playOn, flashStorm, dropLootFrom, MatFx };
+globalThis.__fxDev = { enemies, worked, everyToken, neighbours, some, playOn, flashStorm, dropLootFrom, dropRareFrom, MatFx };

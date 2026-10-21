@@ -167,6 +167,12 @@ export const BOARD_EVENTS = {
      */
     TOKEN_SPAWNED: 'board:token_spawned',
 
+    /**
+     * Loot just dropped from a line rolled at a low chance (`RareDrops.RARE_DROP_CHANCE`). Payload:
+     * `{ spriteId, itemId, chance }`. For the eye only: the mat makes the item twinkle.
+     */
+    RARE_DROP: 'board:rare_drop',
+
     /** Combat on an enemy Token resolved. Payload: `{ instanceId, outcome: 'victory'|'defeat', heroId, typeId }` */
     COMBAT_RESOLVED: 'board:combat_resolved',
 

@@ -31,6 +31,7 @@ import * as Placement from './Placement.js';
 import * as MatPlacement from './MatPlacement.js';
 import * as StatusApplication from './StatusApplication.js';
 import * as EffectFeedback from './EffectFeedback.js';
+import * as RareDrops from './RareDrops.js';
 import * as OutputRules from './OutputRules.js';
 import * as LoadoutMoments from './LoadoutMoments.js';
 import * as HeroEffects from '../hero/HeroEffects.js';
@@ -275,7 +276,7 @@ function completeCycle(instance, def, io, heroId, config = def.config) {
         // An output names a Token or an item. One that names neither pays nothing: the cycle still
         // runs and still takes its inputs.
         if (output.itemId) {
-            SpriteLayer.addSprite('item', output.itemId, quantity, id);
+            RareDrops.noteDrop(SpriteLayer.addSprite('item', output.itemId, quantity, id), chance);
             produced.push(output.itemId);
         }
     }
