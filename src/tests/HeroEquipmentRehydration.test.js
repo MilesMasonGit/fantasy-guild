@@ -143,3 +143,23 @@ describe('CR2-040: hero loadout survives rehydration at its own indices', () => 
         ]);
     });
 });
+
+describe('a hero with no job reads Recruit', () => {
+    beforeEach(() => {
+        GameState.initNew();
+    });
+
+    it('names the class Recruit, never Adventurer', () => {
+        const hero = generateHero();
+        delete hero.jobId;
+        rehydrateHero(hero);
+        expect(hero.className).toBe('Recruit');
+    });
+
+    it('a villager still reads Villager', () => {
+        const hero = generateHero();
+        hero.isVillager = true;
+        rehydrateHero(hero);
+        expect(hero.className).toBe('Villager');
+    });
+});
