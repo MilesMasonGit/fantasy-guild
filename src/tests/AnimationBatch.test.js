@@ -130,6 +130,8 @@ describe('visual randomness never touches the game’s random numbers', () => {
             ringBlink(w, 'hover');
             echoRing(w, 'hover');
             const stop = startStrikeChips(w, { skill: 'mining', firstStrike: 0, periodMs: 1000, dir: () => 1, seed: 'tok_1' });
+            stop.strike();
+            stop.strike();
             stop();
             expect(spy).not.toHaveBeenCalled();
         } finally {
@@ -265,6 +267,14 @@ describe('strike chips (effect 2)', () => {
         const chips = w.querySelectorAll('[data-fx-chip]');
         expect(chips).toHaveLength(CHIP_COUNT);
         expect([...chips].every(c => c.style.visibility === 'hidden' && c.style.willChange === 'contents')).toBe(true);
+        // A strike: each chip pops off away from the hero and falls, four held frames, then hides.
+        stop.strike();
+        expect(rec.calls).toHaveLength(CHIP_COUNT);
+        for (const a of rec.calls) {
+            expect(a.options.duration).toBe(4 * FX_FRAME_MS);
+            expect(a.keyframes.slice(0, -1).every(k => k.visibility === 'visible' && k.easing === 'steps(1, end)')).toBe(true);
+            expect(a.keyframes.at(-1).visibility).toBe('hidden');
+        }
         stop();
         expect(w.querySelectorAll('[data-fx-chip]')).toHaveLength(0);
         const none = startStrikeChips(w, { skill: 'commerce', firstStrike: 0, periodMs: 1000, dir: () => 1 });

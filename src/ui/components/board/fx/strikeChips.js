@@ -43,7 +43,8 @@ export const CHIP_MS = PATHS[0].length * FX_FRAME_MS;
  * @param {() => number} options.dir +1 when the hero stands left of the Token, -1 when right
  * @param {number} options.unit mat units per art pixel
  * @param {string} options.seed what the scatter is fixed by (the Token's id)
- * @returns {() => void} stop: the chips are taken away
+ * @returns {(() => void) & {strike: () => void}} stop: the chips are taken away; `strike` plays
+ *          one strike's chips now
  */
 export function startStrikeChips(wrapper, { skill, firstStrike, periodMs, dir, unit = 1, seed = '' }) {
     const colour = CHIP_COLOURS[String(skill || '').toLowerCase()];
@@ -94,11 +95,13 @@ export function startStrikeChips(wrapper, { skill, firstStrike, periodMs, dir, u
         return next(now + 1);
     };
     const off = onDue(step, next(performance.now()));
-    return () => {
+    const stop = () => {
         off();
         for (const el of chips) {
             for (const a of el.getAnimations?.() || []) a.cancel();
             el.remove();
         }
     };
+    stop.strike = play;
+    return stop;
 }

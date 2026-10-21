@@ -49,8 +49,9 @@ describe('the spawn callout', () => {
             EventBus.publish(BOARD_EVENTS.TOKEN_SPAWNED, { spawnerId: forest.id, instanceId: 'tok_new', typeId: 'x', name: 'Oak Tree' });
         });
         // Not over the hop out of the spawner (T-155): it waits for the landing.
+        act(() => { vi.advanceTimersByTime(SPAWN_MS - 1); });
         expect(container.querySelector('[data-callout]')).toBeNull();
-        act(() => { vi.advanceTimersByTime(SPAWN_MS); });
+        act(() => { vi.advanceTimersByTime(1); });
         const bubble = container.querySelector('[data-callout]');
         expect(bubble.textContent).toBe('! Spawned Oak Tree');
         expect(calloutText.spawned('Oak Tree')).toBe('! Spawned Oak Tree');
