@@ -82,3 +82,9 @@ T-172 — The Atlas as a tome: the owner's 256 px pages at 4x, pop-up from the b
 T-173 — Region rows on area banners, Travel and the … menu, CMS banner pick with a default by biome, top bar slice, arrival card, preview backdrop — 5f3c3e0d — 2026-10-20
 T-174 — Camera move to the Atlas: built, then set aside by the owner for the Guild Hall upgrade screen (T-194, tag atlas-camera-move) — 5f3c3e0d — 2026-10-20
 T-133 — CMS change packs: autosave, inbox, per-entry review with conflicts and undo; first pack the starting maps — 1b6c55af — 2026-10-20
+T-125 — Skill work-speed bonus removed in game and simulator (owner Recalculate + Sync follows) — d96e5912 — 2026-10-20
+T-098 — Hero energy removed; drinks heal like food below 25 % HP — d96e5912 — 2026-10-20
+T-017 — Kill loot follows the yield, double-loot and bonus-drop rules (shared OutputRules) — d96e5912 — 2026-10-20
+T-022 — Rate trackers cleared on load and new game — d96e5912 — 2026-10-20
+T-023 — GLOBAL_COMBAT_XP_MULTIPLIER deleted (unused, 1.0) — d96e5912 — 2026-10-20
+T-018 — Closed as obsolete (owner 2026-10-20: the R3-Q1 ruling predates the current game; tools become hero gear, T-126) — d96e5912 — 2026-10-20
