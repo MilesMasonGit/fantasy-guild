@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { applyToolsPreview, toolsPreviewOn } from './toolsPreview.js';
 
-const labelClass = 'text-[11px] font-bold uppercase tracking-wider text-gi-muted mb-1';
+const labelClass = 'ui-text-title font-bold uppercase tracking-wider text-gi-muted mb-1';
 const buttonClass = 'px-2 py-1 rounded bg-gi-primary/10 hover:bg-gi-primary/20 border border-gi-primary/40 text-xs font-bold transition-colors';
 
 /**
@@ -21,7 +21,7 @@ export function ToolsDevSection() {
         <div className="mb-3 pb-3 border-b border-gi-border space-y-2" data-testid="qa-tools">
             <div className={labelClass}>Tools (dev only)</div>
             <button type="button" data-qa-tools-preview className={buttonClass} onClick={preview}>Preview the tools pack</button>
-            {status && <div className="text-[10px] text-gi-muted" data-qa-tools-status>{status}</div>}
+            {status && <div className="ui-text-body text-gi-muted" data-qa-tools-status>{status}</div>}
         </div>
     );
 }
