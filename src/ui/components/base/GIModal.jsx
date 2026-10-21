@@ -20,7 +20,8 @@ export const GIModal = ({
     children,
     className,
     maxWidth = "max-w-2xl",
-    hideClose = false
+    hideClose = false,
+    layer = 'modal'
 }) => {
     // Headless UI always needs a function here, but 'can this be dismissed?' is decided
     // explicitly: a caller that supplies no `onClose`, or passes `hideClose`, gets no dismiss
@@ -30,7 +31,7 @@ export const GIModal = ({
     useEscapeLayer(!!isOpen, canClose ? onClose : null);
     return (
         <Transition appear show={isOpen} as={Fragment}>
-            <Dialog as="div" className="relative z-(--z-modal)" onClose={NOOP}>
+            <Dialog as="div" className={cn('relative', layer === 'inner' ? 'z-(--z-modal-inner)' : 'z-(--z-modal)')} onClose={NOOP}>
                 <Transition.Child
                     as={Fragment}
                     enter="ease-out duration-300"

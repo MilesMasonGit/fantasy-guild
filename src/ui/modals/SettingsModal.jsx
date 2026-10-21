@@ -204,13 +204,15 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                 </button>
             </div>
 
-            <TypographyScaleModal
-                isOpen={isTypographyOpen}
-                onClose={() => {
-                    setIsTypographyOpen(false);
-                    setSettings(SettingsManager.getAll());
-                }}
-            />
+            {isTypographyOpen && (
+                <TypographyScaleModal
+                    isOpen
+                    onClose={() => {
+                        setIsTypographyOpen(false);
+                        setSettings(SettingsManager.getAll());
+                    }}
+                />
+            )}
         </GIModal>
     );
 };
