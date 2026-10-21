@@ -33,6 +33,9 @@ function playAt(el, x, y, keyframes, duration, delay = 0) {
     el.style.position = 'absolute';
     el.style.left = `${x}px`;
     el.style.top = `${y}px`;
+    // ⚠️ On the main thread: on the compositor it would put the speech bubbles and callouts drawn
+    // after it on layers of their own, drawn soft (tailwind.css, at `.gi-token-land`).
+    el.style.willChange = 'contents';
     host.appendChild(el);
     const anim = el.animate(keyframes, { duration, delay, fill: 'none' });
     const done = () => el.remove();

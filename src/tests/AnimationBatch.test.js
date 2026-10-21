@@ -300,6 +300,8 @@ describe('effects standing on the mat', () => {
         const n = host.querySelector('[data-fx-number="damage"]');
         expect(n.textContent).toBe('8');
         expect(n.className).toContain('gi-fx-number');
+        // Kept off the compositor, like every animation among the Tokens (T-145).
+        expect(n.style.willChange).toBe('contents');
         expect(rec.calls[0].options.delay).toBeGreaterThan(0);
         rec.calls[0].finish();
         expect(host.children).toHaveLength(0);
