@@ -16,7 +16,7 @@ build green) · bench-queued · eye-check · merged.*
 | Atlas rework (T5 + T6), owner: "good place for now" | — | `crunch/atlas-rework` (`at`) | merged 98bd5d8a (gate on the merged result: 5570 tests, cycles, build) | Tue | Tue |
 | Hall sky (brief 160 T3; T-171, T-128) | builder | `crunch/hall-sky` (`hs`) | eye-check on `crunch/eyecheck-r1` with the UI batch | Tue | Tue |
 | Docs and tooling: T-119 strings file, T-069, T-070, T-124, T-118, T-111 | builder | `crunch/docs-infra` (`dx`) | merged 9a103fbb (gate: 5565 tests, cycles, build; T-069, T-070, T-124, T-118, T-111 closed; T-119 narrowed to converting old screens) | Tue | Tue |
-| Tools as hero gear (T-126) + a content change pack | engineer | `crunch/tools-gear` (`tg`) | building | Tue | |
+| Tools as hero gear (T-126) + a content change pack | engineer | `crunch/tools-gear` (`tg`) | eye-check on `crunch/eyecheck-r1` (6 commits + the QA size fix; gate after merging main: 5618 green; pack 46 entries OK; expected work check: same). Owner answers: an ore needs the pick of the tier below, no Rusty tools (Copper starters), keep the old-save grant and the 8 s bubble; the agent is updating the pack | Tue | |
 | Engine plumbing: T-015, T-016, T-019, T-020, T-021, T-035, T-065, T-097 | engineer | `crunch/engine-plumbing` (`ep`) | building | Tue | |
 | Drag hitches and flag misses: T-033 (P1), T-132, T-187, T-186, T-143 | engineer | `crunch/drag-hitches` (`dh`) | building | Tue | |
 

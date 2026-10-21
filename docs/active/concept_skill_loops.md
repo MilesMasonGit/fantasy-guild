@@ -47,12 +47,15 @@ sketches only. Builds on [concept_progression.md](concept_progression.md)
   - **Needed by kind; the tool's tier gates node tiers**: no pickaxe, no
     mining; a Copper Pickaxe mines copper and stone, iron ore needs an Iron
     Pickaxe or better. **Gating only for now** (no speed or yield from the
-    tool; numbers later).
+    tool; numbers later). **Owner 2026-10-20 (supersedes the example): an
+    ore needs the pick of the tier below it** — iron is mined with a copper
+    pick, mythril with an iron pick, and so on.
   - **No tool**: the hero does other allowed work; the Token they'd work
     shows a **"Needs Pickaxe" speech bubble** (the kind of tool it needs).
   - **Swapping is by hand only**, like weapons, from the Bank.
-  - **First tools**: a new game starts with a basic pickaxe, woodaxe,
-    fishing rod and sickle **in the Bank**; the tutorial has a hero equip
+  - **First tools**: a new game starts with a **Copper** pickaxe, woodaxe
+    and sickle and a fishing rod **in the Bank** (owner: no Rusty tier); an
+    old save from before tools gets them once on load; the tutorial has a hero equip
     one. Better tools are smithed. New heroes arrive empty-handed.
   - **Content**: tools become **items** (a hand slot and a tier); tool
     Tokens on the mat and recipes that need or spend tool charges go. The
