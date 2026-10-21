@@ -9,6 +9,7 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import * as CatchUp from '../systems/core/CatchUp.js';
 import { grantStarterTools } from '../systems/equipment/StarterTools.js';
 import { registerItems, getAllItems } from '../config/registries/itemRegistry.js';
+import { starterToolIds } from '../config/registries/toolKinds.js';
 import { resetMatTuning } from '../config/matTuning.js';
 
 /**
@@ -50,6 +51,11 @@ async function load() {
 
 const bank = () => Object.keys(GameState.state.inventory.items).filter(id => id.startsWith('fx_load_')).sort();
 
+// The shipped starter tools, set aside so the fixtures stand in for them: content with none, then
+// content with the fixtures as its only starters.
+const SHIPPED_STARTERS = Object.fromEntries(starterToolIds(getAllItems()).map(id => [id, getAllItems()[id]]));
+const hideShippedStarters = () => { for (const id of Object.keys(SHIPPED_STARTERS)) delete getAllItems()[id]; };
+
 beforeAll(() => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
     vi.stubGlobal('Audio', SilentAudio);
@@ -59,6 +65,7 @@ beforeAll(() => {
 });
 
 beforeEach(() => {
+    hideShippedStarters();
     localStorage.clear();
     vi.spyOn(Date, 'now').mockReturnValue(NOW);
 });
@@ -74,6 +81,7 @@ afterEach(() => {
     sessionStorage.clear();
     vi.mocked(Date.now).mockRestore();
     for (const id of Object.keys(STARTERS)) delete getAllItems()[id];
+    registerItems(SHIPPED_STARTERS);
 });
 
 afterAll(() => {
@@ -107,6 +115,15 @@ describe('a save from before tools were gear', () => {
         registerItems(STARTERS);
         await load();
         expect(bank()).toEqual(['fx_load_axe', 'fx_load_pick']);
+    });
+
+    it('with the shipped content, an old save receives its starter tools: one of each kind', async () => {
+        registerItems(SHIPPED_STARTERS);
+        writeOldSlot();
+        await load();
+        const held = Object.keys(GameState.state.inventory.items).filter(id => id in SHIPPED_STARTERS);
+        expect(held.map(id => getAllItems()[id].tool.kind).sort()).toEqual(['fishing_rod', 'pickaxe', 'sickle', 'woodaxe']);
+        expect(held.every(id => InventoryManager.getItemCount(id) === 1)).toBe(true);
     });
 
     it('a starter tool the Bank already holds is not doubled', () => {

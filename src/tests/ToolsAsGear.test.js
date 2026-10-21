@@ -1,4 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
+import fs from 'fs';
+import path from 'path';
 import './fixtures/fixtureItems.js';
 import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
@@ -32,7 +34,6 @@ import { blockedText, pinRefusedLineFor } from '../ui/components/board/heroBubbl
 import { SKIP_HINT, skipHint } from '../ui/components/board/boardConstants.js';
 import { skipLine, tokenSkipLines } from '../ui/components/board/flagText.js';
 import { calloutText, dueAgain, TOOL_CALLOUT_GAP_MS } from '../ui/components/board/callouts.js';
-import { toolItems, TOKEN_NEEDS } from '../ui/dev/toolsPackContent.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -494,18 +495,18 @@ describe('content: the rules the audit checks', () => {
         expect(found.find(f => f.entityId === 'reed').message).toMatch(/no item is a Sickle/);
     });
 
-    it('the pack\'s content answers every need it sets, and the starter tools cover every kind', () => {
-        const TOOL_ITEMS = toolItems();
-        const shipped = Object.fromEntries(Object.entries(getAllItems()).filter(([id]) => !id.startsWith('fx_')));
-        const items = { ...shipped, ...TOOL_ITEMS };
-        for (const [tokenId, [kind, minTier]] of Object.entries(TOKEN_NEEDS)) {
-            expect(toolItemFor({ kind, minTier }, TOOL_ITEMS), tokenId).toBeTruthy();
-            expect(getTokenType(tokenId), tokenId).toBeTruthy();
+    it('the shipped content answers every need it sets, the starter tools cover every kind, and the audit finds nothing', () => {
+        const read = (f) => JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../data', f), 'utf8'));
+        const items = read('items.json');
+        const tokens = read('tokens.json');
+        const needing = Object.entries(tokens).filter(([, def]) => neededToolOf(def));
+        expect(needing.length).toBeGreaterThan(0);
+        for (const [tokenId, def] of needing) {
+            expect(toolItemFor(neededToolOf(def), items), tokenId).toBeTruthy();
         }
-        const starters = starterToolIds(TOOL_ITEMS).map(id => TOOL_ITEMS[id].tool.kind);
+        const starters = starterToolIds(items).map(id => items[id].tool.kind);
         expect(starters).toEqual(TOOL_KINDS.map(k => k.id));
-        const tokens = Object.fromEntries(Object.keys(TOKEN_NEEDS).map(id => [id, { id, needsTool: { kind: TOKEN_NEEDS[id][0], minTier: TOKEN_NEEDS[id][1] } }]));
-        expect(toolFindings({ items, tokens, recipes: [] })).toEqual([]);
+        expect(toolFindings({ items, tokens, recipes: read('tokenRecipes.json') })).toEqual([]);
     });
 });
 

@@ -122,15 +122,16 @@ describe('⭐ the Token editor: Needs tool', () => {
 
 describe('⭐ the fields survive Recalculate and Sync, and the description says what a hero must hold', () => {
     it('Tool, Hands and Needs tool reach the files as written', () => {
-        const pick = store().addItem({ name: 'Round Trip Pick', equipSlot: 'hand', type: 'tool', tool: { kind: 'pickaxe', tier: 2, starter: true } });
+        // A tier no shipped pickaxe reaches, so the description can only name this one.
+        const pick = store().addItem({ name: 'Round Trip Pick', equipSlot: 'hand', type: 'tool', tool: { kind: 'pickaxe', tier: 9, starter: true } });
         const sword = store().addItem({ name: 'Round Trip Greatsword', equipSlot: 'hand', type: 'tool', hands: 2 });
         const veinId = Object.values(store().tokens).find(t => t.config?.skill === 'mining')?.id;
-        store().updateToken(veinId, { needsTool: { kind: 'pickaxe', minTier: 2 } });
+        store().updateToken(veinId, { needsTool: { kind: 'pickaxe', minTier: 9 } });
 
         const files = syncPayload();
-        expect(files['items.json'][pick].tool).toEqual({ kind: 'pickaxe', tier: 2, starter: true });
+        expect(files['items.json'][pick].tool).toEqual({ kind: 'pickaxe', tier: 9, starter: true });
         expect(files['items.json'][sword].hands).toBe(2);
-        expect(files['tokens.json'][veinId].needsTool).toEqual({ kind: 'pickaxe', minTier: 2 });
+        expect(files['tokens.json'][veinId].needsTool).toEqual({ kind: 'pickaxe', minTier: 9 });
         expect(files['tokens.json'][veinId].description).toContain('Needs a Round Trip Pick or better in hand.');
     });
 

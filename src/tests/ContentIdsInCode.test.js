@@ -12,8 +12,15 @@ import { asLoaded } from './fixtures/shippedAsLoaded.js';
 // Whole files whose ids are not content references.
 const SKIPPED_FILES = {
     'config/registries/sprite-manifest.js': 'generated art manifest: keys are image file names, many for art with no data entry yet',
-    'config/registries/legacySpriteNames.js': 'generated table of old image file names, not content ids',
-    'ui/dev/toolsPackContent.js': 'dev-only preview of a pending change pack: names the items it creates and the Tokens it retires, so some ids are missing before the owner Syncs it and others after'
+    'config/registries/legacySpriteNames.js': 'generated table of old image file names, not content ids'
+};
+
+// Dead references already ticketed in a file another session owns, by file then id. Each must still
+// be dead: once it is fixed the last test below fails until its entry is removed.
+const KNOWN_DEAD = {
+    'ui/dev/terrainDev.js': {
+        token_fishing_net: 'the dev Test Boat borrows the look of a Token the tools pack deleted; the terrain director repoints it (T-195)'
+    }
 };
 
 // Literals that look like content ids but are not. Keep this short; each needs a reason.
@@ -97,7 +104,7 @@ export function deadIdReport(files, known) {
         const rel = path.relative(SRC, file).split(path.sep).join('/');
         if (rel in SKIPPED_FILES) continue;
         for (const { id, line } of findIdLiterals(fs.readFileSync(file, 'utf8'))) {
-            if (id in NOT_CONTENT_IDS || known.has(id)) continue;
+            if (id in NOT_CONTENT_IDS || known.has(id) || id in (KNOWN_DEAD[rel] || {})) continue;
             dead.push(`${rel}:${line} names ${id}, which is not in data/items.json or data/tokens.json`);
         }
     }
@@ -115,6 +122,15 @@ describe('Content ids named in code exist in data/ (T-182)', () => {
     it('the scan sees the ids it should (guards against an empty scan)', () => {
         const hits = walk(SRC).flatMap((f) => findIdLiterals(fs.readFileSync(f, 'utf8')));
         expect(hits.length).toBeGreaterThan(50);
+    });
+
+    it('every known dead reference is still in its file and still dead', () => {
+        for (const [rel, ids] of Object.entries(KNOWN_DEAD)) {
+            const named = new Set(findIdLiterals(fs.readFileSync(path.join(SRC, rel), 'utf8')).map((h) => h.id));
+            for (const id of Object.keys(ids)) {
+                expect(named.has(id) && !known.has(id), `${rel} ${id}: fixed, so remove it from KNOWN_DEAD`).toBe(true);
+            }
+        }
     });
 
     it('names the file, line and id of a dead reference', () => {

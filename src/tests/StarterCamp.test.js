@@ -6,6 +6,8 @@ import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as StarterCamp from '../systems/atlas/StarterCamp.js';
 import { auditContent } from '../systems/core/ContentAudit.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
+import { getAllItems } from '../config/registries/itemRegistry.js';
+import { starterToolIds } from '../config/registries/toolKinds.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import {
     authoredStarterCamp, setStarterCampForTests, resetStarterCampForTests
@@ -150,8 +152,11 @@ describe('the dev button saves the live mat in the shape the loader reads', () =
         ]);
         expect(InventoryManager.getItemCount('fixture_oak_wood')).toBe(12);
         expect(InventoryManager.getItemCount('fixture_charcoal')).toBe(1);
-        // Saving that new game again writes the same camp.
-        expect(StarterCamp.campFromLiveMat({ savedAt: 'then' }).camp).toEqual(camp);
+        // Saving that new game again writes the same camp, plus the starter tools every new game is given.
+        const starters = starterToolIds(getAllItems());
+        expect(starters.length).toBeGreaterThan(0);
+        const again = StarterCamp.campFromLiveMat({ savedAt: 'then' }).camp;
+        expect(again).toEqual({ ...camp, bank: { ...camp.bank, ...Object.fromEntries(starters.map(id => [id, 1])) } });
     });
 });
 
