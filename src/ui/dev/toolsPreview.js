@@ -8,7 +8,7 @@ import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { RETIRED_TOOL_TAGS, starterToolIds } from '../../config/registries/toolKinds.js';
 import { InventoryManager } from '../../systems/inventory/InventoryManager.js';
 import * as Flags from '../../systems/board/Flags.js';
-import { TOOL_ITEMS, TOKEN_NEEDS } from './toolsPackContent.js';
+import { toolItems, TOKEN_NEEDS } from './toolsPackContent.js';
 
 /**
  * Register the pack's tool items, give its gathering Tokens their Needs tool (dropping their old
@@ -19,7 +19,7 @@ import { TOOL_ITEMS, TOKEN_NEEDS } from './toolsPackContent.js';
  */
 export function applyToolsPreview() {
     const items = {};
-    for (const [id, def] of Object.entries(TOOL_ITEMS)) items[id] = { ...(getItem(id) || {}), ...def };
+    for (const [id, def] of Object.entries(toolItems())) items[id] = { ...(getItem(id) || {}), ...def };
     registerItems(items);
 
     let tokens = 0;

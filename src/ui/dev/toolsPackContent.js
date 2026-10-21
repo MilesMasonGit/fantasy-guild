@@ -19,8 +19,11 @@ const tool = (id, name, sprite, kind, tier, { starter = false, description = '' 
     tool: { kind, tier, ...(starter ? { starter: true } : {}) }
 });
 
-/** Every tool item, by id. `item_copper_pickaxe` is the owner's, given its Tool. */
-export const TOOL_ITEMS = Object.freeze({
+/**
+ * Every tool item, by id. `item_copper_pickaxe` is the owner's, given its Tool.
+ * ⚠️ Built on call, not at load: a module-level call keeps this file in the production bundle.
+ */
+export const toolItems = () => ({
     item_rusty_pickaxe: tool('item_rusty_pickaxe', 'Rusty Pickaxe', 'i_pick_copper', 'pickaxe', 1, { starter: true }),
     item_copper_pickaxe: tool('item_copper_pickaxe', 'Copper Pickaxe', 'i_pick_copper', 'pickaxe', 1),
     item_iron_pickaxe: tool('item_iron_pickaxe', 'Iron Pickaxe', 'i_pick_iron', 'pickaxe', 2),
@@ -34,7 +37,7 @@ export const TOOL_ITEMS = Object.freeze({
 });
 
 /** The tool each gathering Token needs, by Token id: `[kind, minTier]`. */
-export const TOKEN_NEEDS = Object.freeze({
+export const TOKEN_NEEDS = {
     token_copper_ore_vein: ['pickaxe', 1],
     token_iron_ore_vein: ['pickaxe', 2],
     token_silver_ore_vein: ['pickaxe', 2],
@@ -60,17 +63,17 @@ export const TOKEN_NEEDS = Object.freeze({
     token_mahogany_forest: ['woodaxe', 1],
     token_shrimp_coast: ['fishing_rod', 1],
     token_ripe_wheat: ['sickle', 1]
-});
+};
 
 /** The retired tool Tokens: tools are items now. */
-export const RETIRED_TOOL_TOKENS = Object.freeze([
+export const RETIRED_TOOL_TOKENS = [
     'token_rusty_pickaxe', 'token_copper_pickaxe', 'token_iron_pickaxe', 'token_mythril_pickaxe',
     'token_adamantium_pickaxe', 'token_darkmetal_pickaxe', 'token_rusty_woodaxe', 'token_copper_woodaxe',
     'token_fishing_net'
-]);
+];
 
 /** Recipes that made a tool Token and now make the tool item: recipe id → [old Token, new item]. */
-export const RECIPE_OUTPUTS = Object.freeze({
+export const RECIPE_OUTPUTS = {
     recipe_copper_pickaxe: ['token_copper_pickaxe', 'item_copper_pickaxe'],
     recipe_mtozw3la: ['token_copper_woodaxe', 'item_copper_woodaxe']
-});
+};

@@ -31,7 +31,7 @@ import { problemText, PROBLEM_SEVERITY, SEVERITY } from '../ui/components/board/
 import { blockedText, pinRefusedLineFor } from '../ui/components/board/heroBubbles.js';
 import { SKIP_HINT } from '../ui/components/board/boardConstants.js';
 import { calloutText, dueAgain, TOOL_CALLOUT_GAP_MS } from '../ui/components/board/callouts.js';
-import { TOOL_ITEMS, TOKEN_NEEDS } from '../ui/dev/toolsPackContent.js';
+import { toolItems, TOKEN_NEEDS } from '../ui/dev/toolsPackContent.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -307,6 +307,8 @@ describe('choosing work: the hero does other allowed work, and the Token says wh
 
     it('an idle hero takes the vein as soon as a pickaxe is in hand', () => {
         const hero = addHero();
+        // In the Bank already: taking it up is the only change, and it alone wakes the flag.
+        give('fx_pick');
         const vein = put('fx_vein', VEIN);
         Flags.plant(hero.id, VEIN);
         tick(3);
@@ -476,6 +478,7 @@ describe('content: the rules the audit checks', () => {
     });
 
     it('the pack\'s content answers every need it sets, and the starter tools cover every kind', () => {
+        const TOOL_ITEMS = toolItems();
         const shipped = Object.fromEntries(Object.entries(getAllItems()).filter(([id]) => !id.startsWith('fx_')));
         const items = { ...shipped, ...TOOL_ITEMS };
         for (const [tokenId, [kind, minTier]] of Object.entries(TOKEN_NEEDS)) {
