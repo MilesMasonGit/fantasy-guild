@@ -12,8 +12,6 @@ import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { EventBus } from '../systems/core/EventBus.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { resetMatTuning } from '../config/matTuning.js';
 import { matW, matH } from '../config/matGeometry.js';
 import { Board } from '../ui/components/board/Board.jsx';
@@ -70,10 +68,7 @@ function scene() {
     Flags.plant('h1', { x: 640, y: 380 });
     const a = placeAt('fixture_producer', 600, 400);
     const b = placeAt('fixture_producer', 1000, 500);
-    const view = render(
-        h(EngineContext.Provider, { value: { GameState, EventBus } },
-            h(DeckDndProvider, null, h(Board, { onInspectToken: () => {}, onClearInspect: () => {} })))
-    );
+    const view = render(h(DeckDndProvider, null, h(Board, { onInspectToken: () => {}, onClearInspect: () => {} })));
     view.container.querySelector('[data-board-origin]').getBoundingClientRect = () => box(0, 0, matW(), matH());
     view.container.querySelector('[data-mat-board]').getBoundingClientRect = () => box(0, 0, matW(), matH());
     return { a, b, ...view };

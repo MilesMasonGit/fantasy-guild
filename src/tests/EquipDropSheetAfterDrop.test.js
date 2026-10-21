@@ -10,7 +10,6 @@ import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
 import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { ENGINE_EVENTS, UI_EVENTS } from '../systems/core/engineEvents.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { BottomHeroDock } from '../ui/components/dock/BottomHeroDock.jsx';
 import { BankHeroPanel } from '../ui/components/dock/BankHeroPanel.jsx';
 import { setLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
@@ -19,6 +18,9 @@ import { useHeroSheetRequests } from '../ui/hooks/useHeroSheetRequests.js';
 vi.mock('../ui/components/drawer/HeroInspectionSheet.jsx', () => ({
     HeroInspectionSheet: () => React.createElement('div', { 'data-testid': 'hero-sheet' })
 }));
+// As the engine's: an equip that succeeds says so before it returns.
+const equipItem = vi.hoisted(() => vi.fn());
+vi.mock('../systems/equipment/EquipmentManager.js', async (orig) => ({ ...(await orig()), equipItem }));
 
 /**
  * ⭐ **Equipping by drop opens the hero sheet after the drop, not in it.** The sheet mounting
@@ -31,16 +33,6 @@ const h = React.createElement;
 const box = (left, top, width, height) => ({ left, top, width, height, right: left + width, bottom: top + height, x: left, y: top });
 const ptr = (x, y) => ({ pointerId: 1, clientX: x, clientY: y, isPrimary: true, button: 0 });
 
-// As the engine's: an equip that succeeds says so before it returns.
-const engine = {
-    GameState, EventBus, BoardPlacement: { recallHeroById: vi.fn() },
-    EquipmentManager: {
-        equipItem: vi.fn((heroId, itemId) => {
-            EventBus.publish(ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, { heroId, slot: 0, itemId, action: 'equip' });
-            return { success: true };
-        })
-    }
-};
 const hero = (id) => ({
     id, name: id, spriteId: 'hn_recruit_por', status: 'idle', level: 50, equipment: {},
     skills: {}, hp: { current: 100, max: 100 }
@@ -63,6 +55,10 @@ function SheetHost() {
 
 beforeEach(() => {
     vi.clearAllMocks();
+    equipItem.mockImplementation((heroId, itemId) => {
+        EventBus.publish(ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, { heroId, slot: 0, itemId, action: 'equip' });
+        return { success: true };
+    });
     GameState.initNew();
     GameState.state.heroes = ['h1', 'h2'].map(hero);
     setLiveMatFit(1);
@@ -100,11 +96,10 @@ function order() {
 
 describe('⭐ the hero sheet an equip drop opens', () => {
     it('a drop on a hero in the bar: the drop commits first, the sheet after it', async () => {
-        const view = render(h(EngineContext.Provider, { value: engine },
-            h(DeckDndProvider, null, h(Item), h(BottomHeroDock, { selectedHeroId: null }), h(SheetHost))));
+        const view = render(h(DeckDndProvider, null, h(Item), h(BottomHeroDock, { selectedHeroId: null }), h(SheetHost)));
         await dropOn(view, view.container.querySelector('[data-dock-hero="h1"]'));
 
-        expect(engine.EquipmentManager.equipItem).toHaveBeenCalledWith('h1', 'item_copper_sword', null);
+        expect(equipItem).toHaveBeenCalledWith('h1', 'item_copper_sword', null);
         expect(view.getByTestId('sheet').getAttribute('data-hero')).toBe('h1');
         const { drop, sheet } = order();
         expect(drop).toBeGreaterThanOrEqual(0);
@@ -112,13 +107,12 @@ describe('⭐ the hero sheet an equip drop opens', () => {
     });
 
     it('a drop on a hero tab beside the Bank: the same', async () => {
-        const view = render(h(EngineContext.Provider, { value: engine },
-            h(DeckDndProvider, null, h(Item), h(BankHeroPanel, { selectedHeroId: null, showTabs: true, menuRight: false }), h(SheetHost))));
+        const view = render(h(DeckDndProvider, null, h(Item), h(BankHeroPanel, { selectedHeroId: null, showTabs: true, menuRight: false }), h(SheetHost)));
         const tab = view.container.querySelector('[data-dnd-droppable-id$="-drop-h2"]');
         expect(tab).not.toBeNull();
         await dropOn(view, tab);
 
-        expect(engine.EquipmentManager.equipItem).toHaveBeenCalledWith('h2', 'item_copper_sword', null);
+        expect(equipItem).toHaveBeenCalledWith('h2', 'item_copper_sword', null);
         expect(view.getByTestId('sheet').getAttribute('data-hero')).toBe('h2');
         const { drop, sheet } = order();
         expect(drop).toBeGreaterThanOrEqual(0);
