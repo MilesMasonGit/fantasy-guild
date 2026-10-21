@@ -587,7 +587,9 @@ page with the bench's own copy of them:
   solid there takes the press, by design, and which pixels are solid changes frame
   by frame). Anything else on the mat drawn on top there, a ring, a callout, a
   bubble, is kept: that is what the bench is looking for. An enemy in a fight is
-  not picked: it can be killed while carried, and then nothing lands.
+  not picked: it can be killed while carried, and then nothing lands. Nor is a
+  fixed Token (`FixedTokens.isFixed`: a fixture, a landmark, a planted Sapling and
+  what it grows into), which refuses every drag by design.
 - **A flag** is pressed at its highest point clear of every Token's round body
   (by design a flag over a Token lets the pointer through to the Token,
   `FlagLayer.jsx`, `yieldToTokens`), where the flag, or its own hero, is what is

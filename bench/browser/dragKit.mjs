@@ -279,12 +279,16 @@ export function installDragKit() {
     };
 
     // ---- Pickers: a source to press, a target to drop on, and what should be true after ----
+    // A fixed Token (a fixture, a landmark, a planted Sapling and what it grows into) refuses every
+    // drag by design. A build from before `__perf.game` carried `FixedTokens` (an A/B against an
+    // older branch) is read from what its Token draws.
+    const isFixed = (t, el) => (G.FixedTokens ? G.FixedTokens.isFixed(t) : el.hasAttribute('data-token-fixed'));
     const draggableTokens = () => G.BoardState.tokens().filter(t => {
         const el = document.querySelector(`[data-token-art][data-token-id="${t.id}"]`);
         // An enemy in a fight can be killed before the drop, and then nothing lands: not a press
         // fault, so it is passed over (an owner question: should a Token in the hand be safe?).
         return el && !el.hasAttribute('data-guild-hall') && !t.quest?.tutorial && !G.BoardPlacement.isPermanentToken(t.typeId, t)
-            && !G.BoardCombat?.getFight?.(t.id);
+            && !isFixed(t, el) && !G.BoardCombat?.getFight?.(t.id);
     });
     // ---- Where the game gives a press: the bench's own copy of the rules, read from the page ----
     // A flag's cloth inside its drawn box, as shares of its size (the flag art, `flagGeometry.js`).
