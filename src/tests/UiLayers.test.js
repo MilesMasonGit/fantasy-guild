@@ -42,6 +42,18 @@ describe('the screen layers table', () => {
         expect(unknown).toEqual([]);
     });
 
+    it('is the only place a --z-* layer is defined (a second :root copy would win and reorder them)', () => {
+        const others = [];
+        const walk = (dir) => readdirSync(dir).forEach(name => {
+            const path = join(dir, name);
+            if (statSync(path).isDirectory()) return walk(path);
+            if (!path.endsWith('.css') || path.endsWith('tailwind.css')) return;
+            if (/^\s*--z-[a-z-]+:/m.test(readFileSync(path, 'utf8'))) others.push(relative(SRC, path));
+        });
+        walk(SRC);
+        expect(others).toEqual([]);
+    });
+
     it('keeps the order the screens rely on', () => {
         expect(table.nav).toBeGreaterThan(table.drawer);
         expect(table.nav).toBeGreaterThan(table['hero-panel']);
