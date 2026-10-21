@@ -6,7 +6,6 @@ import { GameState } from '../state/GameState.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
-import { EventBus } from '../systems/core/EventBus.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import * as fixtures from '../../bench/fixtures.mjs';
 import S4 from '../../bench/scenarios/s4-push-storm.mjs';
@@ -63,7 +62,6 @@ describe('⭐ the S4 push storm lands every Token on the same point (CR3-003, CR
         const ctx = { fixtures, setMatTuning, now: () => 0 };
         await S4.build(ctx);
         TileModifiers.rebuildAll();
-        EventBus.publish('state_changed');
 
         const result = await S4.custom(ctx);
         seen.identity = result.identity;

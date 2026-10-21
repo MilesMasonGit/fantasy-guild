@@ -226,7 +226,7 @@ describe('refusals are callouts, never notifications', () => {
         const said = [];
         const off = EventBus.subscribe(UI_EVENTS.UI_SCREEN_CALLOUT, (p) => said.push(p.text));
         const engine = { EquipmentManager: { equipItem: () => ({ success: false, error: 'No free slot in the loadout' }) } };
-        expect(equipOrAnnounce(engine, 'h1', 'item_sword')).toBe(false);
+        expect(equipOrAnnounce(engine.EquipmentManager, 'h1', 'item_sword')).toBe(false);
         off();
         expect(said).toEqual(['No free slot in the loadout']);
         expect(toasts).toEqual([]);

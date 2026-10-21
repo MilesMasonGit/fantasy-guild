@@ -31,7 +31,7 @@ export const SpriteLayerView = () => {
     const mat = useMatSize();
     const sprites = useGameState(
         selectFloorLoot,
-        [BOARD_EVENTS.SPRITES_CHANGED, ENGINE_EVENTS.STATE_CHANGED],
+        [BOARD_EVENTS.SPRITES_CHANGED, ENGINE_EVENTS.GAME_RESET],
         null
     );
 

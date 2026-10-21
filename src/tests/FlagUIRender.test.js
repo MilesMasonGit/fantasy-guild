@@ -11,12 +11,10 @@ import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as Flags from '../systems/board/Flags.js';
-import { EventBus } from '../systems/core/EventBus.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { ALERT } from '../systems/board/boardEvents.js';
 import { resetMatTuning, setMatTuning } from '../config/matTuning.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { FlagLayer } from '../ui/components/board/FlagLayer.jsx';
 import { dockStatusLine, flagTooltip } from '../ui/components/board/flagText.js';
@@ -63,7 +61,7 @@ function put(point, typeId) {
 
 /** Render inside the two providers every board component expects. */
 const mount = (el) => render(
-    h(EngineContext.Provider, { value: { GameState, EventBus } }, h(DndContext, null, el))
+    h(DndContext, null, el)
 );
 
 beforeAll(() => Flags.init());
@@ -196,8 +194,7 @@ describe('the reach ring (FP-64, A-4)', () => {
         const { container, rerender } = mount(h(FlagLayer, { onHoverHero: (id) => { hovered = id; } }));
         fireEvent.mouseEnter(container.querySelector('[data-flag="h1"]'));
         expect(hovered).toBe('h1');
-        rerender(h(EngineContext.Provider, { value: { GameState, EventBus } },
-            h(DndContext, null, h(FlagLayer, { hoverHeroId: hovered }))));
+        rerender(h(DndContext, null, h(FlagLayer, { hoverHeroId: hovered })));
         expect(ring(container)).toBeTruthy();
     });
 });

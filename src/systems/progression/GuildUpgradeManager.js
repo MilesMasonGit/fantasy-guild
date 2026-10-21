@@ -125,7 +125,6 @@ export const GuildUpgradeManager = {
         if (upgradeId === 'roster_size') createHero();
 
         EventBus.publish(ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, { upgradeId, rank: newRank });
-        EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
         logger.info('GuildUpgradeManager', `Purchased ${upgradeId} rank ${newRank} for ${price.map(p => `${p.quantity}x ${p.itemId}`).join(', ') || 'free'}`);
         return { success: true };
     },

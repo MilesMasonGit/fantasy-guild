@@ -58,11 +58,12 @@ function sayBankFull(itemId) {
  *
  * A sweep is one player-visible event, the floor tidying itself, not forty. While `sweepDepth > 0`,
  * `collectSprite` records that the floor changed instead of announcing it, and the sweep publishes
- * once at the end.
+ * once at the end. The Bank's news is held the same way (`InventoryManager.batch`): one
+ * `inventory_updated` per item, after the last pile.
  *
  * ⚠️ `board:sprite_collected` is NOT batched and must not be: it is per-sprite by design (it
- * carries the position the particle flies from, and `QuestManager` counts it). Only `state_changed`
- * and `board:sprites_changed`, which just mean re-read the world, collapse here.
+ * carries the position the particle flies from, and `QuestManager` counts it). Only
+ * `board:sprites_changed`, which just means re-read the floor, collapses here.
  */
 let sweepDepth = 0;
 let sweepDirty = false;
@@ -80,7 +81,6 @@ function announceSpriteChange() {
         return;
     }
     EventBus.publish(BOARD_EVENTS.SPRITES_CHANGED, {});
-    EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
 }
 
 /**
@@ -90,13 +90,12 @@ function announceSpriteChange() {
 function asSweep(fn) {
     sweepDepth++;
     try {
-        return fn();
+        return InventoryManager.batch(fn);
     } finally {
         sweepDepth--;
         if (sweepDepth === 0 && sweepDirty) {
             sweepDirty = false;
             EventBus.publish(BOARD_EVENTS.SPRITES_CHANGED, {});
-            EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
         }
     }
 }
@@ -495,10 +494,7 @@ export function consumeFromSprites(itemId, amount) {
         if (sprite.quantity <= 0) takeSprite(sprite.id);
     }
     const taken = amount - remaining;
-    if (taken > 0) {
-        EventBus.publish(BOARD_EVENTS.SPRITES_CHANGED, {});
-        EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
-    }
+    if (taken > 0) EventBus.publish(BOARD_EVENTS.SPRITES_CHANGED, {});
     return taken;
 }
 
@@ -536,7 +532,7 @@ export function tick(deltaMs) {
     }
 
     // Both sweeps below are batched: they run every tick against a full Bank, and would otherwise
-    // republish `state_changed` per refused sprite while nothing moved.
+    // republish `sprites_changed` per refused sprite while nothing moved.
     if (list.length > cap) {
         const excess = [...list].sort((a, b) => a.bornAt - b.bornAt).slice(0, list.length - cap);
         asSweep(() => {

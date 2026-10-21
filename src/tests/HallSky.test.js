@@ -11,7 +11,6 @@ import {
 } from '../ui/components/board/GuildHallBoard.jsx';
 import { HallSky, SKY_TILE_PX, SKY_STARS_SRC, SKY_CLOUDS_SRC } from '../ui/components/board/HallSky.jsx';
 import { selectGuildInspectSelection } from '../ui/guildInspectSelection.js';
-import { EngineProvider } from '../ui/context/EngineContext.jsx';
 import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
@@ -23,8 +22,7 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
     success: vi.fn(), warning: vi.fn(), error: vi.fn(), info: vi.fn(), notify: vi.fn()
 }));
 
-const withEngine = (el) => React.createElement(EngineProvider, { engine: { GameState, EventBus } }, el);
-const renderWeb = (props = {}) => render(withEngine(React.createElement(GuildHallBoard, props)));
+const renderWeb = (props = {}) => render(React.createElement(GuildHallBoard, props));
 const star = (container, id) => container.querySelector(`[data-hall-node="${id}"] img`);
 const src = (rel) => readFileSync(resolve(__dirname, rel), 'utf8');
 

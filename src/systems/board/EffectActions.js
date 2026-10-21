@@ -18,7 +18,6 @@ import * as TokenGlows from './TokenGlows.js';
 import * as FixedTokens from './FixedTokens.js';
 import { getTokenType, tokenStartingUses } from '../../config/registries/tokenRegistry.js';
 import { PLACEMENT, RANDOM_FREE_DARTS, placementOf } from '../../config/registries/placementRegistry.js';
-import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
  * `Heals`, `Restores` and `Removes`, the rest of the action set. Each ships with a reader that
@@ -304,7 +303,6 @@ export function spawn(statement, roles, random = Math.random) {
     if (replacesBearer) TokenGlows.raiseGlow(instance.id, { fromTypeId: bearer?.typeId ?? null, typeId });
     EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: instance.id, typeId });
     TileModifiers.rebuildAround([from, { x: where.x, y: where.y }, ...touched]);
-    if (touched.length) EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
 
     logger.debug('EffectActions', `Spawned ${typeId} at (${where.x}, ${where.y})`);
     return { instanceId: instance.id, x: where.x, y: where.y, replacedBearer: replacesBearer };
@@ -376,7 +374,6 @@ export function transformInstance(old, typeId, options = {}) {
     TokenGlows.raiseGlow(instance.id, { fromTypeId: old.typeId, typeId });
     EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: instance.id, typeId });
     TileModifiers.rebuildAround([from, at, ...touched]);
-    if (touched.length) EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
 
     logger.debug('EffectActions', `Transformed ${old.id} into ${typeId} at (${at.x}, ${at.y})`);
     return instance;

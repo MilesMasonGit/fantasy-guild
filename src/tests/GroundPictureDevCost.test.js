@@ -24,7 +24,6 @@ const { DEV_MAPS } = await import('../systems/atlas/devMaps.js');
 const { matW, matH } = await import('../config/matGeometry.js');
 const { resetMatTuning } = await import('../config/matTuning.js');
 const { resetTuning } = await import('../config/playmatTuning.js');
-const { EngineContext } = await import('../ui/context/EngineContext');
 const { MatFitProvider } = await import('../ui/components/board/MatFitContext.jsx');
 const { MatBoard } = await import('../ui/components/board/MatBoard.jsx');
 const { primeGroundSheets, resetGroundSheets } = await import('../ui/components/board/groundSheets.js');
@@ -74,8 +73,7 @@ function settledRegion(names, seed) {
     return Atlas.createRegion({ seed, ground: summary.ground, terrain: result.terrain }).region;
 }
 
-const mountMat = () => render(h(EngineContext.Provider, { value: { GameState, EventBus } },
-    h(DndContext, null, h(MatFitProvider, { value: 1 }, h(MatBoard)))));
+const mountMat = () => render(h(DndContext, null, h(MatFitProvider, { value: 1 }, h(MatBoard))));
 
 /**
  * The props React listed in each performance-timeline record it made, the longest per component.

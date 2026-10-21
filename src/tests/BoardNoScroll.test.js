@@ -5,8 +5,6 @@ import { render, cleanup } from '@testing-library/react';
 import { DndContext } from '@dnd-kit/core';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
-import { EventBus } from '../systems/core/EventBus.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { Board } from '../ui/components/board/Board.jsx';
 import { clearMat } from './fixtures/mat.js';
 
@@ -29,8 +27,7 @@ describe('⭐ the mat\'s cell clips its overhang and cannot be scrolled', () => 
 
     it('the box the mat is fitted into clips (overflow: clip), never hides (a scroll container)', () => {
         const { container } = render(
-            React.createElement(EngineContext.Provider, { value: { GameState, EventBus } },
-                React.createElement(DndContext, null, React.createElement(Board)))
+            React.createElement(DndContext, null, React.createElement(Board))
         );
         const mat = container.querySelector('[data-board-origin]');
         const cell = mat.parentElement.parentElement;

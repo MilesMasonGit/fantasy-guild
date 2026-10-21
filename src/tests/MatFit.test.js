@@ -10,8 +10,6 @@ import * as BoardState from '../systems/board/BoardState.js';
 import * as Flags from '../systems/board/Flags.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { EventBus } from '../systems/core/EventBus.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { ART_PX, artRadius, matW, matH } from '../config/matGeometry.js';
 import { fitScale, MIN_BOARD_SCALE } from '../ui/hooks/useBoardScale.js';
 import {
@@ -43,9 +41,8 @@ const h = React.createElement;
 
 /** The mat rendered at a given on-screen fit. */
 const mountAt = (fit) => render(
-    h(EngineContext.Provider, { value: { GameState, EventBus } },
-        h(DndContext, null,
-            h(MatFitProvider, { value: fit }, h(MatBoard))))
+    h(DndContext, null,
+            h(MatFitProvider, { value: fit }, h(MatBoard)))
 );
 
 const spriteOf = (container, id) =>
@@ -186,8 +183,7 @@ describe('⭐ the drawn Token, on the mat (FP-99)', () => {
         const tok = placeAt('fixture_producer', 600, 400);
         // No provider: the context default of 1 stands in.
         const { container } = render(
-            h(EngineContext.Provider, { value: { GameState, EventBus } },
-                h(DndContext, null, h(MatBoard)))
+            h(DndContext, null, h(MatBoard))
         );
 
         const box = boxOf(container, tok.id);

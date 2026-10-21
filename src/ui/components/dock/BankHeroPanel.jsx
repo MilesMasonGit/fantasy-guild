@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { cn } from '../../utils/cn.js';
 import { useEscapeLayer } from '../../utils/escapeLayers.js';
 import { useGameState } from '../../hooks/useGameState.js';
-import { useEngine } from '../../hooks/useEngine.js';
+import * as Placement from '../../../systems/board/Placement.js';
 import { useEntityDrop } from '../../dnd/DndKit.jsx';
 import { DND_SURFACE } from '../../dnd/dragConstants.js';
 import { HeroDockTab } from './HeroDockTab.jsx';
@@ -32,7 +32,6 @@ export const BankHeroPanel = ({
     onEditHero
 }) => {
     const asideRef = useRef(null);
-    const engine = useEngine();
     const [shownHeroId, setShownHeroId] = useState(selectedHeroId);
 
     // ⚠️ The loadout slots are live drop targets and dnd-kit ignores opacity and
@@ -49,7 +48,7 @@ export const BankHeroPanel = ({
 
     const heroIds = useGameState(
         state => (state.heroes || []).map(h => h.id),
-        [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.STATE_CHANGED]
+        [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.GAME_RESET]
     ) || [];
 
     useEffect(() => {
@@ -84,7 +83,7 @@ export const BankHeroPanel = ({
         id: 'hero-panel-drop',
         surface: DND_SURFACE.DRAWER,
         accepts: isRecallDrop,
-        onDrop: p => recallFromDrop(engine.BoardPlacement, p),
+        onDrop: p => recallFromDrop(Placement, p),
         disabled: !shownHeroId
     });
 

@@ -10,8 +10,8 @@ import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
  * out of stock) look exactly like a successful one, with nothing on screen saying why.
  * @returns {boolean} whether the equip actually happened
  */
-export function equipOrAnnounce(engine, heroId, itemId, preferredSlot = null) {
-    const result = engine.EquipmentManager.equipItem(heroId, itemId, preferredSlot);
+export function equipOrAnnounce(equipment, heroId, itemId, preferredSlot = null) {
+    const result = equipment.equipItem(heroId, itemId, preferredSlot);
     if (!result?.success) {
         EventBus.publish(UI_EVENTS.UI_SCREEN_CALLOUT, { text: result?.error || 'Could not equip that' });
         return false;

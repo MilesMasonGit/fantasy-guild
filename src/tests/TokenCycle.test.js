@@ -132,7 +132,7 @@ describe('Output quantity ranges (CMS-41)', () => {
         const CYCLES = 40;
         run(12000 * CYCLES + 1000);
 
-        const total = SpriteLayer.countOnBoard('item_yew_log');
+        const total = SpriteLayer.countOnBoard('fixture_yew_log');
         expect(total).toBeGreaterThanOrEqual(CYCLES * 1);
         expect(total).toBeLessThanOrEqual(CYCLES * 5);
     });
@@ -142,7 +142,7 @@ describe('Output quantity ranges (CMS-41)', () => {
 
         const CYCLES = 40;
         run(12000 * CYCLES + 1000);
-        const total = SpriteLayer.countOnBoard('item_yew_log');
+        const total = SpriteLayer.countOnBoard('fixture_yew_log');
 
         // Over 40 rolls of 1–5, landing exactly on a bound every single time is
         // about 1 in 10^27 — so this is a real assertion, not a flaky one.
@@ -156,7 +156,7 @@ describe('Output quantity ranges (CMS-41)', () => {
         const CYCLES = 200;
         run(12000 * CYCLES + 1000);
 
-        const mean = SpriteLayer.countOnBoard('item_yew_log') / CYCLES;
+        const mean = SpriteLayer.countOnBoard('fixture_yew_log') / CYCLES;
         // Midpoint of 1–5 is 3. A generous band: this is checking the roll is
         // roughly uniform, not that the RNG is well-behaved.
         expect(mean).toBeGreaterThan(2.4);
@@ -243,7 +243,7 @@ describe('Inputs (D-24, D-127)', () => {
 
         run(19000);
 
-        expect(SpriteLayer.countOnBoard('item_glowcap')).toBe(1);
+        expect(SpriteLayer.countOnBoard('fixture_glowcap')).toBe(1);
         expect(InventoryManager.getItemCount('fixture_oak_wood')).toBe(8);
     });
 
@@ -251,7 +251,7 @@ describe('Inputs (D-24, D-127)', () => {
         const token = place(10, 'fixture_consumer', 'hero_1');
         run(25000);
 
-        expect(SpriteLayer.countOnBoard('item_glowcap')).toBe(0);
+        expect(SpriteLayer.countOnBoard('fixture_glowcap')).toBe(0);
         expect(token.alert).toBe(BoardRunner.ALERT.INPUTS);
     });
 
@@ -262,7 +262,7 @@ describe('Inputs (D-24, D-127)', () => {
 
         InventoryManager.addItem('fixture_oak_wood', 10);
         run(19000);
-        expect(SpriteLayer.countOnBoard('item_glowcap')).toBe(1);
+        expect(SpriteLayer.countOnBoard('fixture_glowcap')).toBe(1);
     });
 
     it('eats loot off the floor when the Bank is short (D-42)', () => {
@@ -272,7 +272,7 @@ describe('Inputs (D-24, D-127)', () => {
 
         run(19000);
 
-        expect(SpriteLayer.countOnBoard('item_glowcap')).toBe(1);
+        expect(SpriteLayer.countOnBoard('fixture_glowcap')).toBe(1);
         expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(2);
     });
 
@@ -302,8 +302,8 @@ describe('⚠️ Risk 13 — first-come allocation starves deep chains (D-127)',
 
         run(19000);
 
-        expect(SpriteLayer.countOnBoard('item_glowcap')).toBe(1);      // cheap ran
-        expect(SpriteLayer.countOnBoard('item_spider_silk')).toBe(0);  // deep starved
+        expect(SpriteLayer.countOnBoard('fixture_glowcap')).toBe(1);      // cheap ran
+        expect(SpriteLayer.countOnBoard('fixture_spider_silk')).toBe(0);  // deep starved
     });
 
     it('counts blocked ticks per Token type so the balance pass has data', () => {
@@ -327,7 +327,7 @@ describe('⚠️ Risk 13 — first-come allocation starves deep chains (D-127)',
         run(16000);
 
         expect(SpriteLayer.countOnBoard('fixture_copper_ore')).toBe(2);
-        expect(SpriteLayer.countOnBoard('item_glowcap')).toBe(0);
+        expect(SpriteLayer.countOnBoard('fixture_glowcap')).toBe(0);
     });
 });
 

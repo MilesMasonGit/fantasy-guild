@@ -2,11 +2,16 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useGameState } from '../ui/hooks/useGameState';
-import { useEngine } from '../ui/hooks/useEngine';
 
-// Mock the useEngine hook
-vi.mock('../ui/hooks/useEngine.js', () => ({
-    useEngine: vi.fn()
+// The hook reads the engine's own GameState and EventBus modules; these stand in for them.
+const mocks = vi.hoisted(() => ({ gameState: {}, bus: null }));
+vi.mock('../state/GameState.js', () => ({ GameState: mocks.gameState }));
+vi.mock('../systems/core/EventBus.js', () => ({
+    EventBus: {
+        subscribe: (...args) => mocks.bus.subscribe(...args),
+        publish: (...args) => mocks.bus.publish(...args)
+    },
+    UI_LISTENER: Object.freeze({ ui: true })
 }));
 
 describe('useGameState', () => {
@@ -14,12 +19,13 @@ describe('useGameState', () => {
     let mockGameState;
 
     beforeEach(() => {
-        // Setup mock GameState
-        mockGameState = {
+        // Setup mock GameState: the one object the mocked module hands out, refilled per test.
+        for (const key of Object.keys(mocks.gameState)) delete mocks.gameState[key];
+        mockGameState = Object.assign(mocks.gameState, {
             currency: { gold: 100, gems: 0 },
             heroes: [{ id: 'h1', name: 'Arthur' }],
             inventory: new Map([['item1', 5]])
-        };
+        });
 
         // Setup mock EventBus pub/sub
         const subscribers = new Map();
@@ -36,11 +42,7 @@ describe('useGameState', () => {
             }
         };
 
-        // Provide the mocks to the useEngine mock
-        useEngine.mockReturnValue({
-            GameState: mockGameState,
-            EventBus: mockEventBus
-        });
+        mocks.bus = mockEventBus;
 
         // Use fake timers to process the microtask queue predictably
         vi.useFakeTimers();
@@ -71,7 +73,7 @@ describe('useGameState', () => {
 
         // Simulate an engine tick that fires an event but data is exactly the same
         await act(async () => {
-            mockEventBus.publish('state_changed');
+            mockEventBus.publish('game_reset');
             // Advance microtasks
             await Promise.resolve();
         });
@@ -90,7 +92,7 @@ describe('useGameState', () => {
             // Mutate the mock GameState
             mockGameState.currency.gold = 150;
             // Fire event
-            mockEventBus.publish('state_changed');
+            mockEventBus.publish('game_reset');
             // Flush microtasks
             await Promise.resolve();
         });
@@ -122,7 +124,7 @@ describe('useGameState', () => {
 
         await act(async () => {
             mockGameState.heroes[0].hp.current = 17;   // in-place, like modifyHeroHp
-            mockEventBus.publish('state_changed');
+            mockEventBus.publish('game_reset');
             await Promise.resolve();
         });
 
@@ -147,7 +149,7 @@ describe('useGameState', () => {
 
         await act(async () => {
             mockGameState.heroes[0].hp.current = 17;
-            mockEventBus.publish('state_changed');
+            mockEventBus.publish('game_reset');
             await Promise.resolve();
         });
 
@@ -163,7 +165,7 @@ describe('useGameState', () => {
         };
 
         // Subscribing to multiple events
-        renderHook(() => useGameState(selector, ['state_changed', 'heroes_updated']));
+        renderHook(() => useGameState(selector, ['game_reset', 'heroes_updated']));
 
         // Let component mount fully
         const countAfterMount = renderCount;
@@ -172,7 +174,7 @@ describe('useGameState', () => {
             // Simulate game engine firing multiple events in one synchronous pass
             mockGameState.heroes.push({ id: 'h2', name: 'Lancelot' });
 
-            mockEventBus.publish('state_changed');
+            mockEventBus.publish('game_reset');
             mockEventBus.publish('heroes_updated');
 
             // Advance microtask queue
@@ -193,7 +195,7 @@ describe('useGameState', () => {
         // Only process events where cardId === 'my-card'
         const filter = (eventData) => !eventData?.cardId || eventData.cardId === 'my-card';
 
-        renderHook(() => useGameState(selector, ['state_changed'], filter));
+        renderHook(() => useGameState(selector, ['game_reset'], filter));
 
         // Wait for mount + initial sync to complete
         await act(async () => {
@@ -203,7 +205,7 @@ describe('useGameState', () => {
 
         await act(async () => {
             // Publish event for a DIFFERENT card — should be filtered out
-            mockEventBus.publish('state_changed', { cardId: 'other-card' });
+            mockEventBus.publish('game_reset', { cardId: 'other-card' });
             await Promise.resolve();
         });
 
@@ -215,13 +217,13 @@ describe('useGameState', () => {
         const selector = (state) => state.currency;
         const filter = (eventData) => !eventData?.cardId || eventData.cardId === 'my-card';
 
-        const { result } = renderHook(() => useGameState(selector, ['state_changed'], filter));
+        const { result } = renderHook(() => useGameState(selector, ['game_reset'], filter));
         const initialRef = result.current;
 
         await act(async () => {
             mockGameState.currency.gold = 200;
             // Publish event for OUR card — should pass filter
-            mockEventBus.publish('state_changed', { cardId: 'my-card' });
+            mockEventBus.publish('game_reset', { cardId: 'my-card' });
             await Promise.resolve();
         });
 
@@ -233,13 +235,13 @@ describe('useGameState', () => {
         const selector = (state) => state.currency;
         const filter = (eventData) => !eventData?.cardId || eventData.cardId === 'my-card';
 
-        const { result } = renderHook(() => useGameState(selector, ['state_changed'], filter));
+        const { result } = renderHook(() => useGameState(selector, ['game_reset'], filter));
         const initialRef = result.current;
 
         await act(async () => {
             mockGameState.currency.gold = 300;
             // Publish event with NO data — should pass filter (backwards compat)
-            mockEventBus.publish('state_changed');
+            mockEventBus.publish('game_reset');
             await Promise.resolve();
         });
 

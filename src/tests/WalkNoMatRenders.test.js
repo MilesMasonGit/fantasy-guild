@@ -14,10 +14,8 @@ import * as HeroMotion from '../systems/board/HeroMotion.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { EventBus } from '../systems/core/EventBus.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { walkerSortY } from '../ui/components/board/matLayers.js';
 import { heroBoxAt } from '../ui/components/board/MatHero.jsx';
@@ -55,7 +53,7 @@ registerTokenTypes({
 });
 
 const h = React.createElement;
-const mount = () => render(h(EngineContext.Provider, { value: { GameState, EventBus } }, h(DndContext, null, h(MatBoard))));
+const mount = () => render(h(DndContext, null, h(MatBoard)));
 
 function seeded(seed = 11) {
     let s = seed;

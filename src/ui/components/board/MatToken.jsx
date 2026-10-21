@@ -13,6 +13,7 @@ import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as Flags from '../../../systems/board/Flags.js';
+import * as Placement from '../../../systems/board/Placement.js';
 import * as TimedChanges from '../../../systems/board/TimedChanges.js';
 import * as Respawn from '../../../systems/board/Respawn.js';
 import * as Hand from '../../../systems/board/Hand.js';
@@ -151,7 +152,7 @@ export const MatToken = React.memo(function MatToken({
     const def = getTokenType(typeId);
     const label = tokenName(typeId);
     const isGuildHallToken = typeId === 'token_guild_hall';
-    const isPermanent = !!(def?.cannotLeaveBoard || def?.isGuildHall || isGuildHallToken);
+    const isPermanent = Placement.isPermanentToken(typeId);
     // Read once per instance: nothing that decides it (the fixture mark, origin, type) changes
     // while the instance lives, except the dev layout tool, which lifts landmarks and the camp's
     // fixtures while it is on. A fixed Token is never picked up; a movable one bought or built
@@ -405,7 +406,7 @@ export const MatToken = React.memo(function MatToken({
     // In a map mode the hovered Token takes the mode's colour, or muted grey where the mode cannot
     // act on it.
     const modeUnavailable = isHovered && mapMode
-        ? (mapMode === MAP_MODE.DEMOLISH ? demolishProtected : !Flags.isHeroWorkable(BoardState.getTokenById(id)))
+        ? (mapMode === MAP_MODE.DEMOLISH ? demolishProtected : Flags.disallowRefusalOf(BoardState.getTokenById(id)) !== null)
         : false;
     const outline = tokenOutline({ hovered: isHovered, selected, alert: !!alert, working: staffed, mode: mapMode, unavailable: modeUnavailable });
     const gearState = gearStateOf(detail || {});

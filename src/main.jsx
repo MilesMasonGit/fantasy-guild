@@ -19,7 +19,7 @@ import { SettingsManager } from './systems/core/SettingsManager.js';
 import { preloadGameArt } from './systems/core/AssetPreloader.js';
 import { loadSpriteFxManifest } from './ui/utils/spriteFx.js';
 import { logger } from './utils/Logger.js';
-import { ENGINE_EVENTS, UI_EVENTS } from './systems/core/engineEvents.js';
+import { ENGINE_EVENTS } from './systems/core/engineEvents.js';
 
 /**
  * Fantasy Guild Idle - Bootstrap Lifecycle
@@ -58,7 +58,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     SettingsManager.init();
     SaveManager.init();
 
-    // 3. Assemble Full Engine Suite
+    // 3. The engine as one object, for the console (`window.Game`, dev builds). The UI imports
+    //    the engine's modules itself.
     const engine = EngineBootstrap.getEngine();
 
     // 4. Configure Development Environment (Debug Hooks)
@@ -100,7 +101,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // one only catches whatever isn't under a named surface yet.
         root.render(
             <ErrorBoundary label="App">
-                <ReactRoot engine={engine} />
+                <ReactRoot />
             </ErrorBoundary>
         );
         logger.info('main', 'React UI Engine online.');
@@ -119,13 +120,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         splash.style.opacity = '0';
         setTimeout(() => splash.remove(), 350);
     }
-
-    // 7. Handle Post-UI Lifecycle Events
-    EventBus.subscribe(UI_EVENTS.REACT_SLOT_SELECTED, (data) => {
-        EngineBootstrap.onSlotSelected(data.index, data.isNewGame)
-            .catch(err => console.error('[main] Starting the chosen slot failed', err));
-    });
-
 
     logger.info('main', 'Bootstrap complete. Waiting for user interaction.');
 });

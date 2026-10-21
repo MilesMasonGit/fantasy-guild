@@ -59,7 +59,6 @@ export const DiscoveryManager = {
             const enemyName = template?.name || enemyId;
 
             EventBus.publish(ENGINE_EVENTS.ENEMY_DISCOVERED, { enemyId, enemyName });
-            EventBus.publish(ENGINE_EVENTS.STATE_CHANGED, { source: 'enemy_discovery' });
             logger.info('DiscoveryManager', `Encountered new enemy: ${enemyId}`);
         }
     },

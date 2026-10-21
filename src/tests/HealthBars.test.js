@@ -9,7 +9,6 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { TokenBubbles } from '../ui/components/board/TokenBubbles.jsx';
 import { MatHero, HERO_BAR_LINGER_MS } from '../ui/components/board/MatHero.jsx';
 import { healthFraction, healthText, enemyBarPlace, HEALTH_BAR_H_U } from '../ui/components/board/healthBar.js';
@@ -45,7 +44,7 @@ registerTokenTypes({
 });
 
 const h = React.createElement;
-const tree = (el) => h(EngineContext.Provider, { value: { GameState, EventBus } }, h(DndContext, null, el));
+const tree = (el) => h(DndContext, null, el);
 const mount = (el) => render(tree(el));
 const bar = (c, who) => c.querySelector(`[data-health-bar="${who}"]`);
 const progress = (p) => act(() => { EventBus.publish(BOARD_EVENTS.PROGRESS, { instanceId: 'tok_e', ...p }); });

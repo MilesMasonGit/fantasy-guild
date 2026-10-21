@@ -367,6 +367,31 @@ describe('an arrival pushes instead of falling back (FP-17)', () => {
         expect(BoardState.getTokenById(hall.id)).toMatchObject({ x: 800, y: 600 });
     });
 
+    it('⭐ moves only what the newcomer crowds: an overlapping pair across the mat stays put', () => {
+        // A goblin standing on a tree far away (enemies stroll with no collision), or two Tokens a
+        // shrink left crowded: not this arrival's business.
+        const lone = placeAt('mp_small', 1400, 300);
+        const farA = placeAt('mp_small', 300, 900);
+        const farB = placeAt('mp_small', 320, 900);
+
+        const where = MatPlacement.forceSpot('mp_small', { x: 1420, y: 300 });
+
+        expect(where).toMatchObject({ x: 1420, y: 300 });
+        expect(where.pushed.map(p => p.id)).toEqual([lone.id]);
+        expect(BoardState.getTokenById(farA.id)).toMatchObject({ x: 300, y: 900 });
+        expect(BoardState.getTokenById(farB.id)).toMatchObject({ x: 320, y: 900 });
+    });
+
+    it('⭐ and what that pushes into, in a chain', () => {
+        // A row touching edge to edge: the newcomer shoves the first, which shoves the next.
+        const row = [0, 1, 2].map(i => placeAt('mp_small', 800 + i * 62, 600));
+
+        const where = MatPlacement.forceSpot('mp_small', { x: 790, y: 600 });
+
+        expect(where).toMatchObject({ x: 790, y: 600 });
+        expect(where.pushed.map(p => p.id).sort()).toEqual(row.map(t => t.id).sort());
+    });
+
     it('never pushes a Token over a Cannot line — it falls back to free space', () => {
         // Two Coasts may never be Near; the only push that clears the newcomer
         // would carry this one next to the other.

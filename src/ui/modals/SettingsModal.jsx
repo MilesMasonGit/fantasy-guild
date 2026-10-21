@@ -34,7 +34,8 @@ export const SettingsModal = ({ isOpen, onClose }) => {
         { id: 'gameplay', label: 'Gameplay', icon: <MonitorPlay size={16} /> },
         { id: 'audio', label: 'Audio', icon: <Volume2 size={16} /> },
         { id: 'dev', label: 'Dev Tools', icon: <Wrench size={16} /> },
-    ];
+    // Debug Mode is for dev and perf builds: a shipped build has no Dev Tools tab.
+    ].filter(tab => tab.id !== 'dev' || import.meta.env.DEV || import.meta.env.MODE === 'perf');
 
     const getVal = (path) => path.split('.').reduce((acc, k) => (acc && acc[k] !== undefined) ? acc[k] : undefined, settings);
 

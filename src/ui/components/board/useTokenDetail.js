@@ -103,8 +103,8 @@ const SPAWNER_BROADCAST = Object.freeze([
 ]);
 
 /**
- * The hook: `tokenDetailOf`, woken only by events about this Token, never by the catch-all
- * `state_changed` and never by `board:progress`.
+ * The hook: `tokenDetailOf`, woken only by events about this Token, never by
+ * `board:progress`.
  * * by instance id: {@link BY_ID};
  * * by the hero working it: `HERO_MOVED` names the Token a hero went TO, so the one they LEFT
  * hears it through their `heroId`;

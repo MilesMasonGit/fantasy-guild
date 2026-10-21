@@ -3,7 +3,6 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import React from 'react';
 import { render, cleanup } from '@testing-library/react';
 import { TokenBubbles } from '../ui/components/board/TokenBubbles.jsx';
-import { EngineContext } from '../ui/context/EngineContext';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 
@@ -43,11 +42,7 @@ const withSubscriptionCounter = () => {
 
 const bar = (props) => React.createElement(TokenBubbles, props);
 
-const tree = (props) => React.createElement(
-    EngineContext.Provider,
-    { value: { EventBus } },
-    bar(props)
-);
+const tree = (props) => bar(props);
 
 describe('TokenBubbles subscription churn ', () => {
     let meter;
@@ -73,7 +68,7 @@ describe('TokenBubbles subscription churn ', () => {
             instanceId: `tok_${i}`,
             token: { typeId: 'fixture_producer', heroId: 'hero_1' }
         }));
-        render(React.createElement(EngineContext.Provider, { value: { EventBus } }, bars));
+        render(bars);
 
         expect(meter.counts.subscribe).toBe(3);
         expect(meter.counts.unsubscribe).toBe(0);
@@ -93,7 +88,7 @@ describe('TokenBubbles subscription churn ', () => {
 
     it('does not resubscribe when the token object is rebuilt with the same content', () => {
         // The mat rebuilds a fresh projection object per Token on every
-        // `state_changed`, so the `token` prop changes identity every tick.
+        // redraw, so the `token` prop changes identity every tick.
         // That used to invalidate `missingReqs` and with it the subscriptions.
         const { rerender } = render(tree({
             instanceId: 'tok_a',

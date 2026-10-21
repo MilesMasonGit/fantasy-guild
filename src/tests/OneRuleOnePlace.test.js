@@ -3,7 +3,6 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import React from 'react';
 import { render, cleanup } from '@testing-library/react';
 import { TokenInspection } from '../ui/components/drawer/TokenInspection.jsx';
-import { EngineContext } from '../ui/context/EngineContext';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import { EventBus } from '../systems/core/EventBus.js';
@@ -164,11 +163,7 @@ describe('CR2-192: a Token\'s XP lives on config, nowhere else', () => {
 
         for (const def of noConfigTokens) {
             const { container } = render(
-                React.createElement(
-                    EngineContext.Provider,
-                    { value: { EventBus } },
-                    React.createElement(TokenInspection, { typeId: def.id })
-                )
+                React.createElement(TokenInspection, { typeId: def.id })
             );
             // `RecipeResolver`/`BoardRunner` read `config.xp`; with no config
             // there is nothing to award, so no XP badge may be drawn at all.
@@ -186,11 +181,7 @@ describe('CR2-192: a Token\'s XP lives on config, nowhere else', () => {
         );
         expect(withXp, 'no authored Token awards XP').toBeTruthy();
         const { container } = render(
-            React.createElement(
-                EngineContext.Provider,
-                { value: { EventBus } },
-                React.createElement(TokenInspection, { typeId: withXp.id })
-            )
+            React.createElement(TokenInspection, { typeId: withXp.id })
         );
         expect(container.textContent).toContain(`+${withXp.config.xp}`);
         cleanup();

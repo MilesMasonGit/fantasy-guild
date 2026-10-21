@@ -12,8 +12,7 @@ describe('GAME_RESET (CR3-305 stage 1)', () => {
     it('the dev time-skip announces it once, after the ticks ran', () => {
         const order = [];
         const off = [
-            EventBus.subscribe(ENGINE_EVENTS.GAME_RESET, (p) => order.push(['reset', p.reason])),
-            EventBus.subscribe(ENGINE_EVENTS.STATE_CHANGED, () => order.push(['state']))
+            EventBus.subscribe(ENGINE_EVENTS.GAME_RESET, (p) => order.push(['reset', p.reason]))
         ];
         let ticks = 0;
         try {
@@ -21,6 +20,6 @@ describe('GAME_RESET (CR3-305 stage 1)', () => {
             expect(res.ok).toBe(true);
         } finally { off.forEach(f => f()); }
         expect(ticks).toBe(2);
-        expect(order).toEqual([['tick'], ['tick'], ['reset', 'dev_time_skip'], ['state']]);
+        expect(order).toEqual([['tick'], ['tick'], ['reset', 'dev_time_skip']]);
     });
 });

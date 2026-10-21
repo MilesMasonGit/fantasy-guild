@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { SlidersHorizontal, RotateCcw, Copy } from 'lucide-react';
-import { useEngine } from '../hooks/useEngine.js';
 import {
     TUNABLES, tuning, setTuning, resetTuning, isTuned, tuningDefault, onTuningChanged, tuningReport
 } from '../../config/playmatTuning.js';
@@ -18,7 +17,6 @@ import { CloseX } from './base/CloseX.jsx';
  * into chat after the eye-check; where the clipboard is refused, the text is shown to select.
  */
 export const PlaymatTuner = React.memo(() => {
-    const engine = useEngine();
     const [isOpen, setIsOpen] = useState(false);
     const [copied, setCopied] = useState('');
     const [manual, setManual] = useState(null);
@@ -44,8 +42,6 @@ export const PlaymatTuner = React.memo(() => {
             setCopied('Select the text below and copy it');
         }
     }, []);
-
-    if (!engine) return null;
 
     const groups = [...new Set(TUNABLES.map(t => t.group))];
 

@@ -14,7 +14,6 @@ import * as TileModifiers from '../systems/board/TileModifiers.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { resetMatTuning } from '../config/matTuning.js';
 import { matW, matH } from '../config/matGeometry.js';
 import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
@@ -134,29 +133,22 @@ describe('⭐ the stores: one changed element redraws its own child only', () =>
     afterEach(() => cleanup());
 
     it('useGameState: a flat projection of a list, one element changed', async () => {
-        const bus = (() => {
-            const subs = new Map();
-            return {
-                subscribe: (e, fn) => { if (!subs.has(e)) subs.set(e, new Set()); subs.get(e).add(fn); return () => subs.get(e).delete(fn); },
-                publish: (e, p) => subs.get(e)?.forEach(fn => fn(p))
-            };
-        })();
         function List() {
             // Rebuilt on every read, as the contract asks.
-            const list = useGameState(s => s.list.map(x => ({ id: x.id, n: x.n })), ['changed']);
+            const list = useGameState(() => store.list.map(x => ({ id: x.id, n: x.n })), ['tick_test_changed']);
             return h('ul', null, list.map(item => h(Row, { key: item.id, item })));
         }
-        const view = render(h(EngineContext.Provider, { value: { GameState: store, EventBus: bus } }, h(List)));
+        const view = render(h(List));
         expect(Object.fromEntries(drawn)).toEqual({ a: 1, b: 1, c: 1 });
 
         store.list[1].n = 7;
-        bus.publish('changed');
+        EventBus.publish('tick_test_changed');
         await flush();
         expect(view.container.textContent).toBe('a:1b:7c:3');
         expect(Object.fromEntries(drawn)).toEqual({ a: 1, b: 2, c: 1 });
 
         // Nothing changed: nothing draws.
-        bus.publish('changed');
+        EventBus.publish('tick_test_changed');
         await flush();
         expect(Object.fromEntries(drawn)).toEqual({ a: 1, b: 2, c: 1 });
     });
@@ -207,9 +199,8 @@ describe('⭐ on the mat: a change to one hero\'s flag redraws that flag alone',
         // Each on a row of its own: a flag moved sideways keeps its place in the stack.
         ids.forEach((id, i) => Flags.plant(id, { x: 300 + i * 400, y: 200 + i * 200 }));
         const view = render(
-            h(EngineContext.Provider, { value: { GameState, EventBus } },
-                h(DeckDndProvider, null,
-                    h(Board, { onInspectToken: () => {}, onClearInspect: () => {} })))
+            h(DeckDndProvider, null,
+                    h(Board, { onInspectToken: () => {}, onClearInspect: () => {} }))
         );
         view.container.querySelector('[data-board-origin]').getBoundingClientRect = () => box(0, 0, matW(), matH());
         view.container.querySelector('[data-mat-board]').getBoundingClientRect = () => box(0, 0, matW(), matH());
@@ -268,9 +259,8 @@ describe('⭐ a charge spent: the Token redraws, its art does not, and its -1 co
         const t = placeAt('fixture_producer', 600, 400);
         placeAt('fixture_producer', 1000, 400);
         const view = render(
-            h(EngineContext.Provider, { value: { GameState, EventBus } },
-                h(DeckDndProvider, null,
-                    h(Board, { onInspectToken: () => {}, onClearInspect: () => {} })))
+            h(DeckDndProvider, null,
+                    h(Board, { onInspectToken: () => {}, onClearInspect: () => {} }))
         );
         view.container.querySelector('[data-board-origin]').getBoundingClientRect = () => box(0, 0, matW(), matH());
         await flush();
@@ -294,8 +284,7 @@ describe('⭐ a charge spent: the Token redraws, its art does not, and its -1 co
 
     it('a worked Token: a charge spent mounts nothing at rest, and the work bar does not draw again', async () => {
         const tokenOf = (n) => ({ typeId: 'fixture_producer', instanceId: 'tok_tr', heroId: 'hero_1', alert: null, usesRemaining: n });
-        const tree = (n) => h(EngineContext.Provider, { value: { GameState, EventBus } },
-            h(DndContext, null, h(TokenBubbles, { instanceId: 'tok_tr', token: tokenOf(n) })));
+        const tree = (n) => h(DndContext, null, h(TokenBubbles, { instanceId: 'tok_tr', token: tokenOf(n) }));
         const view = render(tree(10));
         await flush();
         const bar = view.container.querySelector('[data-work-bar]');

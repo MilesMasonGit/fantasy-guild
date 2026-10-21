@@ -15,8 +15,6 @@ import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { EventBus } from '../systems/core/EventBus.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { resetMatTuning } from '../config/matTuning.js';
 import { matW, matH } from '../config/matGeometry.js';
 import { Board } from '../ui/components/board/Board.jsx';
@@ -81,7 +79,6 @@ afterEach(async () => {
     document.body.classList.remove('gi-dnd-active');
 });
 
-const engine = { GameState, EventBus, BoardPlacement: { recallHeroById: vi.fn() }, EquipmentManager: { equipItem: vi.fn() } };
 const hero = (id) => ({
     id, name: id, spriteId: 'hn_recruit_por', status: 'idle', level: 50, equipment: {},
     skills: { forestry: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 }
@@ -101,12 +98,11 @@ function scene() {
     placeAt('fixture_producer', 1000, 500);
     placeAt('fixture_producer', 600, 900);
     const view = render(
-        h(EngineContext.Provider, { value: engine },
-            h(DeckDndProvider, null,
+        h(DeckDndProvider, null,
                 h(Board, { onInspectToken: () => {}, onClearInspect: () => {} }),
                 h(BottomHeroDock, { selectedHeroId: null }),
                 h(Item),
-                h(DropTarget, { id: 'beside', accepts: () => true, onDrop: () => false, 'data-testid': 'beside' })))
+                h(DropTarget, { id: 'beside', accepts: () => true, onDrop: () => false, 'data-testid': 'beside' }))
     );
     // jsdom lays nothing out: the mat stands at the viewport's corner at its natural size.
     view.container.querySelector('[data-board-origin]').getBoundingClientRect = () => box(0, 0, matW(), matH());
@@ -317,7 +313,7 @@ describe('a drag through the shared source behaves as before', () => {
 
     it('a hero carried out of the bar is drawn held while it is in the hand, and only it', () => {
         GameState.state.heroes = ['h1', 'h2', 'h3'].map(hero);
-        const view = render(h(EngineContext.Provider, { value: engine }, h(DeckDndProvider, null, h(BottomHeroDock, { selectedHeroId: null }))));
+        const view = render(h(DeckDndProvider, null, h(BottomHeroDock, { selectedHeroId: null })));
         const fig = (id) => view.container.querySelector(`[data-dock-hero="${id}"]`);
         ['h1', 'h2', 'h3'].forEach((id, i) => { fig(id).getBoundingClientRect = () => box(500 + i * 100, 900, 100, 100); });
         act(() => {
@@ -335,8 +331,7 @@ describe('⭐ the hero bar after a drop', () => {
     function bar() {
         GameState.state.heroes = ['h1', 'h2', 'h3', 'h4'].map(hero);
         const view = render(
-            h(EngineContext.Provider, { value: engine },
-                h(DeckDndProvider, null, h(Item), h(BottomHeroDock, { selectedHeroId: null })))
+            h(DeckDndProvider, null, h(Item), h(BottomHeroDock, { selectedHeroId: null }))
         );
         const fig = (id) => view.container.querySelector(`[data-dock-hero="${id}"]`);
         view.getByTestId('item-src').getBoundingClientRect = () => box(0, 0, 50, 50);
@@ -380,8 +375,7 @@ describe('⭐ the hero bar after a drop', () => {
     it('the hero column beside the Bank: a drag ending redraws no tab but in the drag\'s own commits, and a tab hovered in the 320 ms shows its tip only after them', async () => {
         GameState.state.heroes = ['h1', 'h2', 'h3'].map(hero);
         const view = render(
-            h(EngineContext.Provider, { value: engine },
-                h(DeckDndProvider, null, h(Item), h(BankHeroPanel, { selectedHeroId: 'h1', showTabs: true, menuRight: false })))
+            h(DeckDndProvider, null, h(Item), h(BankHeroPanel, { selectedHeroId: 'h1', showTabs: true, menuRight: false }))
         );
         view.getByTestId('item-src').getBoundingClientRect = () => box(0, 0, 50, 50);
         const tabs = view.container.querySelectorAll('[data-hero-tab-face]');

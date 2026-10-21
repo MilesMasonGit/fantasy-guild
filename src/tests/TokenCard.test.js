@@ -13,11 +13,9 @@ import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as Flags from '../systems/board/Flags.js';
-import { EventBus } from '../systems/core/EventBus.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes, tokenStartingUses, getTokenType } from '../config/registries/tokenRegistry.js';
 import { resolveSpritePath } from '../utils/AssetManager.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { TokenCard, coverScale } from '../ui/components/board/TokenCard.jsx';
 import { requestRecipeList } from '../ui/components/board/recipeFlip.js';
 import { TokenInspectPopup } from '../ui/components/board/TokenInspectPopup.jsx';
@@ -93,7 +91,7 @@ registerTokenTypes(CARD_TOKENS);
 
 const h = React.createElement;
 const mount = (...els) => render(
-    h(EngineContext.Provider, { value: { GameState, EventBus } }, h(DndContext, null, ...els))
+    h(DndContext, null, ...els)
 );
 
 function put(typeId, x = 400, y = 300) {
@@ -162,7 +160,7 @@ describe('the blocks, top to bottom, per kind', () => {
         expect(ids(model)).toEqual([CARD_BLOCK.NAME, CARD_BLOCK.WORK, CARD_BLOCK.CYCLE, CARD_BLOCK.RECIPE]);
         const recipe = model.blocks[3];
         expect(recipe.needs.map(n => n.itemId)).toEqual(['item_coal']);
-        expect(recipe.makes.map(m => m.itemId)).toEqual(['item_spider_silk']);
+        expect(recipe.makes.map(m => m.itemId)).toEqual(['fixture_spider_silk']);
         expect(recipe.tools.map(t => t.typeId)).toEqual(['fixture_context_a']);
         expect(recipe.change).toEqual({ label: 'Change recipe', chosen: true });
 
@@ -321,7 +319,7 @@ describe('one card at a time', () => {
         const onClose = vi.fn();
         const view = mount(popup(vein, onClose));
         expect(document.querySelectorAll('[data-token-card]')).toHaveLength(1);
-        view.rerender(h(EngineContext.Provider, { value: { GameState, EventBus } }, h(DndContext, null, popup(tree, onClose))));
+        view.rerender(h(DndContext, null, popup(tree, onClose)));
         const cards = document.querySelectorAll('[data-token-card]');
         expect(cards).toHaveLength(1);
         expect(cards[0].querySelector('h3').textContent).toBe('Card Tree');

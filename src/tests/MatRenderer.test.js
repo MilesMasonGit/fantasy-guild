@@ -14,7 +14,6 @@ import * as TileModifiers from '../systems/board/TileModifiers.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { matW, matH } from '../config/matGeometry.js';
 import { WEB_W, WEB_H } from '../ui/components/board/GuildHallBoard.jsx';
 import { fitScale, useBoardScale } from '../ui/hooks/useBoardScale.js';
@@ -58,7 +57,7 @@ const h = React.createElement;
 const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
 
 const mount = (el) => render(
-    h(EngineContext.Provider, { value: { GameState, EventBus } }, h(DndContext, null, el))
+    h(DndContext, null, el)
 );
 
 const artOf = (container, id) => container.querySelector(`[data-token-id="${id}"][data-token-art]`);

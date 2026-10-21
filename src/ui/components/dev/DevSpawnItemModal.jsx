@@ -4,6 +4,7 @@ import { cn } from '../../utils/cn.js';
 import { ItemIcon } from '../base/ItemIcon.jsx';
 import { getAllItems, ITEM_TYPES } from '../../../config/registries/itemRegistry.js';
 import { CloseX } from '../base/CloseX.jsx';
+import { InventoryManager } from '../../../systems/inventory/InventoryManager.js';
 
 const TYPE_LABEL = {
     [ITEM_TYPES.MATERIAL]: 'Material',
@@ -22,7 +23,7 @@ const TYPE_LABEL = {
  * DevSpawnItemModal: QA tool: search the full item registry and drop copies straight into the
  * bank so they can be dragged onto a hero to test equipability.
  */
-export const DevSpawnItemModal = ({ engine, onClose }) => {
+export const DevSpawnItemModal = ({ onClose }) => {
     const [query, setQuery] = useState('');
     const [typeFilter, setTypeFilter] = useState('all');
 
@@ -41,7 +42,7 @@ export const DevSpawnItemModal = ({ engine, onClose }) => {
     }, [items, query, typeFilter]);
 
     const spawn = (itemId, amount) => {
-        const added = engine.InventoryManager.addItem(itemId, amount);
+        const added = InventoryManager.addItem(itemId, amount);
         console.log(`[Dev] Spawned ${added}x ${itemId}`);
     };
 

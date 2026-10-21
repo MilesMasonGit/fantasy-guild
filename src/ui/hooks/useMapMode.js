@@ -59,15 +59,14 @@ export function useMapMode() {
 }
 
 /**
- * A click on a Token in disallow mode: allowed → disallowed, or back. Only a Token a hero could
- * work flips (`Flags.isHeroWorkable`); a click on any other does nothing.
+ * A click on a Token in disallow mode: allowed → disallowed, or back. The engine refuses a Token
+ * no hero works (`Flags.setDisallowed`), and its reason comes back.
  *
  * @returns {{ success: boolean, reason?: string, disallowed?: boolean }}
  */
 export function flipDisallowed(instanceId) {
     const instance = BoardState.getTokenById(instanceId);
     if (!instance) return { success: false, reason: 'No Token there' };
-    if (!Flags.isHeroWorkable(instance)) return { success: false, reason: 'No hero works this' };
     const next = !Flags.isDisallowed(instance);
     const result = Flags.setDisallowed(instanceId, next);
     return result.success ? { success: true, disallowed: next } : result;
@@ -75,19 +74,20 @@ export function flipDisallowed(instanceId) {
 
 /**
  * A shift-click in disallow mode: every Token of the clicked one's type on the mat disallowed,
- * or, when the clicked one is disallowed already, every one of them allowed again. Only Tokens a
- * hero could work change.
+ * or, when the clicked one is disallowed already, every one of them allowed again. When the
+ * engine refuses the clicked one, its reason comes back and nothing changes.
  *
  * @returns {{ success: boolean, reason?: string, disallowed?: boolean, changed?: number }}
  */
 export function flipDisallowedType(instanceId) {
     const clicked = BoardState.getTokenById(instanceId);
     if (!clicked) return { success: false, reason: 'No Token there' };
-    if (!Flags.isHeroWorkable(clicked)) return { success: false, reason: 'No hero works this' };
     const next = !Flags.isDisallowed(clicked);
+    const refusal = next ? Flags.disallowRefusalOf(clicked) : null;
+    if (refusal) return { success: false, reason: refusal };
     let changed = 0;
     for (const instance of BoardState.tokens()) {
-        if (instance.typeId !== clicked.typeId || !Flags.isHeroWorkable(instance)) continue;
+        if (instance.typeId !== clicked.typeId) continue;
         if (Flags.isDisallowed(instance) === next) continue;
         if (Flags.setDisallowed(instance.id, next).success) changed++;
     }

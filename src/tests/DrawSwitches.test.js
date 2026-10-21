@@ -13,7 +13,6 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { resetMatTuning } from '../config/matTuning.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import {
     DRAW_SWITCHES, applyOffFromUrl, setDrawn, drawnSwitches, isDrawn, resetDrawSwitches
 } from '../ui/dev/perf/drawSwitches.js';
@@ -48,7 +47,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 
 const h = React.createElement;
 const mount = (el) => render(
-    h(EngineContext.Provider, { value: { GameState, EventBus } }, h(DndContext, null, el))
+    h(DndContext, null, el)
 );
 
 beforeAll(() => Flags.init());

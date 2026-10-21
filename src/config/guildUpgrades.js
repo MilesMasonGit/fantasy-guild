@@ -210,7 +210,7 @@ export const GUILD_UPGRADES = [
     },
     {
         // Each rank lets the Guild Hall keep one more bounty quest on the mat.
-        // The base and the ceiling are Mat Tuner rows (`questCap`, `questCapMax`), read by `QuestTokens.questCap`.
+        // The base and the ceiling are game values (`QuestTokens.QUEST_CAP_BASE`, `QUEST_CAP_MAX`), read by `QuestTokens.questCap`.
         id: 'notice_board',
         constellation: 'compass',
         name: 'Notice Board',

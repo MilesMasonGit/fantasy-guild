@@ -12,7 +12,6 @@ import * as Flags from '../systems/board/Flags.js';
 import * as HeroMotion from '../systems/board/HeroMotion.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { EventBus } from '../systems/core/EventBus.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import {
     artRadiusOf, isSmallToken, tokenBodyScale, matW, matH, SMALL_TOKEN_SCALE
@@ -21,7 +20,6 @@ import { resetMatTuning } from '../config/matTuning.js';
 import {
     tokenSizeFor, TOKEN_SURFACE, boardScaleAt, boardArtSteps
 } from '../ui/components/base/TokenSprite.jsx';
-import { EngineContext } from '../ui/context/EngineContext';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { MatFitProvider } from '../ui/components/board/MatFitContext.jsx';
 import { RING_D_U } from '../ui/components/board/ringRow.js';
@@ -213,8 +211,7 @@ describe('drawing: half-size art, whole pixel steps', () => {
 
 describe('on the mat (MatBoard)', () => {
     const h = React.createElement;
-    const mount = (fit = 1) => render(h(EngineContext.Provider, { value: { GameState, EventBus } },
-        h(MatFitProvider, { value: fit }, h(DndContext, null, h(MatBoard)))));
+    const mount = (fit = 1) => render(h(MatFitProvider, { value: fit }, h(DndContext, null, h(MatBoard))));
 
     beforeAll(() => Flags.init());
     afterAll(() => { Flags.teardown(); resetMatTuning(); });

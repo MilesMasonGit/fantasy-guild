@@ -27,7 +27,7 @@ afterEach(() => offs.forEach(off => off()));
 describe('CR3-405: equipOrAnnounce reports a refused equip instead of hiding it', () => {
     it('a refused equip (success:false) returns false and says the engine\'s reason as a callout', () => {
         const engine = { EquipmentManager: { equipItem: vi.fn(() => ({ success: false, error: 'No free slot in the loadout' })) } };
-        const ok = equipOrAnnounce(engine, 'h1', 'item_copper_pickaxe');
+        const ok = equipOrAnnounce(engine.EquipmentManager, 'h1', 'item_copper_pickaxe');
         expect(ok).toBe(false);
         expect(said).toEqual(['No free slot in the loadout']);
         expect(toasts).toEqual([]);
@@ -35,14 +35,14 @@ describe('CR3-405: equipOrAnnounce reports a refused equip instead of hiding it'
 
     it('a mocked {success:false} with no error still says something, rather than silence', () => {
         const engine = { EquipmentManager: { equipItem: vi.fn(() => ({ success: false })) } };
-        const ok = equipOrAnnounce(engine, 'h1', 'item_x');
+        const ok = equipOrAnnounce(engine.EquipmentManager, 'h1', 'item_x');
         expect(ok).toBe(false);
         expect(said).toEqual(['Could not equip that']);
     });
 
     it('a successful equip returns true and says nothing', () => {
         const engine = { EquipmentManager: { equipItem: vi.fn(() => ({ success: true })) } };
-        const ok = equipOrAnnounce(engine, 'h1', 'item_copper_pickaxe');
+        const ok = equipOrAnnounce(engine.EquipmentManager, 'h1', 'item_copper_pickaxe');
         expect(ok).toBe(true);
         expect(said).toEqual([]);
     });

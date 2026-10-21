@@ -10,7 +10,7 @@
  * `instanceId`. A `tile` field in any payload published from `src/systems` fails
  * `FreeMatGuards.test.js`.
  *
- * Truly global changes (`inventory_updated`, `state_changed`, …) keep their global names. Those
+ * Truly global changes (`inventory_updated`, `game_reset`, …) keep their global names. Those
  * must never trigger per-tile stat recalculation: only the events below do that.
  *
  * Always by constant, never by raw string: a raw `'board:…'` string outside this file fails

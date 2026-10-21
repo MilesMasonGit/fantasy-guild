@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { cn } from '../utils/cn.js';
-import { useEngine } from '../hooks/useEngine.js';
+import { HeroManager } from '../../systems/hero/HeroManager.js';
 import { useGameState } from '../hooks/useGameState.js';
 import { GIModal } from '../components/base/GIModal.jsx';
 import { ItemIcon } from '../components/base/ItemIcon.jsx';
@@ -16,7 +16,6 @@ import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
  * their skills (held, banked and locked); this modal does not repeat them.
  */
 export const HeroEditModal = ({ heroId, isOpen, onClose, onChangeJob }) => {
-    const engine = useEngine();
 
     // Flat projection per the useGameState selector contract.
     const hero = useGameState(
@@ -59,7 +58,7 @@ export const HeroEditModal = ({ heroId, isOpen, onClose, onChangeJob }) => {
     const canSave = trimmed.length > 0 && dirty;
 
     const handleSave = () => {
-        engine.HeroManager.updateHeroProfile(heroId, {
+        HeroManager.updateHeroProfile(heroId, {
             name: trimmed,
             spriteId,
             ...(flagColour ? { flagColour } : {})

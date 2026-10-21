@@ -282,11 +282,11 @@ describe('frozen Regions stand still', () => {
         // One pile the Bank cannot take stays on the floor.
         SpriteLayer.collectAll();
         GameState.state.inventory.maxSlots = Object.keys(GameState.state.inventory.items).length;
-        SpriteLayer.addSprite('item', 'item_glowcap', 3, null);
+        SpriteLayer.addSprite('item', 'fixture_glowcap', 3, null);
         const a = Atlas.activeRegionId();
         Atlas.travel(Atlas.devCreateEmptyRegion().id);
         const frozen = JSON.stringify(Atlas.getRegion(a).board);
-        expect(Atlas.getRegion(a).board.sprites.map(s => s.refId)).toEqual(['item_glowcap']);
+        expect(Atlas.getRegion(a).board.sprites.map(s => s.refId)).toEqual(['fixture_glowcap']);
 
         const before = GameState.state.time.gameTimeMs;
         step(3600, 1000);

@@ -26,7 +26,6 @@ export function devSetGuildRanks(ranks) {
     progress.guildUpgrades = { ...ranks };
     GuildUpgradeManager.recompute();
     EventBus.publish(ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, {});
-    EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
 }
 
 export function GuildHallDevSection() {

@@ -131,7 +131,7 @@ function useFlagDragPoint(matRef) {
 export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverHero, dragRing = null, matRef = null, flagZ = null, yieldToTokens = false }) => {
     const flags = useGameState(
         projectFlags,
-        [BOARD_EVENTS.HERO_MOVED, BOARD_EVENTS.TILE_CHANGED, ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.STATE_CHANGED]
+        [BOARD_EVENTS.HERO_MOVED, BOARD_EVENTS.TILE_CHANGED, ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.GAME_RESET]
     ) || [];
     const radius = useFlagRadius();
     const mat = useMatSize();

@@ -6,7 +6,6 @@ import { DndContext } from '@dnd-kit/core';
 import './fixtures/testTokens.js';
 import { TokenBubbles } from '../ui/components/board/TokenBubbles.jsx';
 import { ALERT, BOARD_EVENTS } from '../systems/board/boardEvents.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { EventBus } from '../systems/core/EventBus.js';
 import { GameState } from '../state/GameState.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
@@ -22,11 +21,7 @@ const ALERT_VALUES = Object.values(ALERT);
 /** Every alert the engine writes on a Token: all but resting, which is never written as one. */
 const TOKEN_ALERTS = ALERT_VALUES.filter(a => a !== ALERT.RESTING);
 
-const tree = (el) => React.createElement(
-    EngineContext.Provider,
-    { value: { GameState, EventBus } },
-    React.createElement(DndContext, null, el)
-);
+const tree = (el) => React.createElement(DndContext, null, el);
 
 const worked = (alert, extra = {}) => ({ typeId: 'fixture_missing_type', instanceId: 'tok_1', heroId: 'hero_1', alert, ...extra });
 

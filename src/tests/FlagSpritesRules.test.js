@@ -19,7 +19,6 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { FlagLayer } from '../ui/components/board/FlagLayer.jsx';
@@ -107,8 +106,7 @@ function put(tile, typeId) {
     return instance;
 }
 
-const engine = { GameState, EventBus, HeroManager: HeroManager.HeroManager };
-const mount = (el) => render(h(EngineContext.Provider, { value: engine }, h(DndContext, null, el)));
+const mount = (el) => render(h(DndContext, null, el));
 
 function counting(event, fn) {
     let n = 0;
@@ -366,8 +364,7 @@ describe('the flag answers clicks on its round area (owner, 2026-09-21)', () => 
         Flags.plant('h1', C(20));
         const beneath = vi.fn();
         const { container } = render(
-            h(EngineContext.Provider, { value: engine },
-                h(DndContext, null, h('div', { onClick: beneath }, h(FlagLayer))))
+            h(DndContext, null, h('div', { onClick: beneath }, h(FlagLayer)))
         );
         fireEvent.click(container.querySelector('[data-flag="h1"]'));
         expect(beneath).not.toHaveBeenCalled();
@@ -376,7 +373,7 @@ describe('the flag answers clicks on its round area (owner, 2026-09-21)', () => 
 
 describe('opening the rules drawer (FP-73)', () => {
     it('opening on a hero lights them, another swaps hero; the launcher toggles it', () => {
-        const { result } = renderHook(() => useUIModals(engine));
+        const { result } = renderHook(() => useUIModals());
         expect(result.current.flagRules.isOpen).toBe(false);
         act(() => { result.current.flagRules.open('h1'); });
         expect(result.current.flagRules.isOpen).toBe(true);

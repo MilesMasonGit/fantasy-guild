@@ -38,7 +38,7 @@ export const FIXTURE_TOKENS = {
         config: {
             skill: 'forestry', skillRequired: 1, cycleTimeMs: 12000, xp: 4,
             inputs: [],
-            outputs: [{ itemId: 'item_yew_log', minQty: 1, maxQty: 5, chance: 100 }]
+            outputs: [{ itemId: 'fixture_yew_log', minQty: 1, maxQty: 5, chance: 100 }]
         }
     },
 
@@ -60,7 +60,7 @@ export const FIXTURE_TOKENS = {
         config: {
             skill: 'alchemy', skillRequired: 1, cycleTimeMs: 18000, xp: 8,
             inputs: [{ itemId: 'fixture_oak_wood', quantity: 2 }],
-            outputs: [{ itemId: 'item_glowcap', quantity: 1, chance: 100 }]
+            outputs: [{ itemId: 'fixture_glowcap', quantity: 1, chance: 100 }]
         }
     },
 
@@ -78,7 +78,7 @@ export const FIXTURE_TOKENS = {
         config: {
             skill: 'smithing', skillRequired: 1, cycleTimeMs: 18000, xp: 20,
             inputs: [{ itemId: 'fixture_oak_wood', quantity: 5 }],
-            outputs: [{ itemId: 'item_spider_silk', quantity: 1, chance: 100 }]
+            outputs: [{ itemId: 'fixture_spider_silk', quantity: 1, chance: 100 }]
         }
     },
 
@@ -701,14 +701,14 @@ export const FIXTURE_RECIPE_POOLS = {
             levelRequirement: 1,
             requiresContext: [{ tag: 'ctx_fixture_a', minTier: 1, chargeCost: 0 }],
             inputs: [{ itemId: 'item_coal', quantity: 1 }],
-            outputs: [{ itemId: 'item_spider_silk', quantity: 1, chance: 100 }]
+            outputs: [{ itemId: 'fixture_spider_silk', quantity: 1, chance: 100 }]
         },
         {
             id: 'recipe_b',
             levelRequirement: 10,
             requiresContext: [{ tag: 'ctx_fixture_b', minTier: 1, chargeCost: 0 }],
             inputs: [{ itemId: 'fixture_oak_wood', quantity: 1 }],
-            outputs: [{ itemId: 'item_glowcap', quantity: 2, chance: 100 }]
+            outputs: [{ itemId: 'fixture_glowcap', quantity: 2, chance: 100 }]
         }
     ],
 
@@ -718,7 +718,7 @@ export const FIXTURE_RECIPE_POOLS = {
             id: 'gated',
             requiresContext: [{ tag: 'ctx_fixture_tool', minTier: 1, chargeCost: 0 }],
             inputs: [],
-            outputs: [{ itemId: 'item_yew_log', quantity: 3, chance: 100 }]
+            outputs: [{ itemId: 'fixture_yew_log', quantity: 3, chance: 100 }]
         }
     ],
 
@@ -778,9 +778,9 @@ export const FIXTURE_ITEMS = {
     // Raw materials — the generic "something was produced" markers.
     item_coal: fixtureItem('item_coal', 'Coal', 'material', 'ore_copper'),
     item_bones: fixtureItem('item_bones', 'Bones', 'drop', 'ore_copper'),
-    item_yew_log: fixtureItem('item_yew_log', 'Yew Log', 'material', 'wood_oak'),
-    item_spider_silk: fixtureItem('item_spider_silk', 'Spider Silk', 'drop', 'ore_copper'),
-    item_glowcap: fixtureItem('item_glowcap', 'Glowcap', 'material', 'wood_oak'),
+    fixture_yew_log: fixtureItem('fixture_yew_log', 'Yew Log', 'material', 'wood_oak'),
+    fixture_spider_silk: fixtureItem('fixture_spider_silk', 'Spider Silk', 'drop', 'ore_copper'),
+    fixture_glowcap: fixtureItem('fixture_glowcap', 'Glowcap', 'material', 'wood_oak'),
 
     /**
      * The last three content-coupled ids — `item_oak_wood`, `item_charcoal` and

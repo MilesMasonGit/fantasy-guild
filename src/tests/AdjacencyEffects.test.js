@@ -191,7 +191,7 @@ describe('Context crafting — adjacency GATES what a station makes (rework §2)
 
         run(20000);
 
-        expect(SpriteLayer.countOnBoard('item_spider_silk')).toBe(0);
+        expect(SpriteLayer.countOnBoard('fixture_spider_silk')).toBe(0);
         expect(forge.alert).toBe(BoardRunner.ALERT.NO_RECIPE);
     });
 
@@ -202,7 +202,7 @@ describe('Context crafting — adjacency GATES what a station makes (rework §2)
 
         run(17000);
 
-        expect(SpriteLayer.countOnBoard('item_spider_silk')).toBe(1);
+        expect(SpriteLayer.countOnBoard('fixture_spider_silk')).toBe(1);
         expect(tokenAt(A).alert).toBeFalsy();
     });
 
@@ -213,14 +213,14 @@ describe('Context crafting — adjacency GATES what a station makes (rework §2)
         const forge = place(A, 'fixture_station', 'hero_1');
         place(NEIGHBOUR, 'fixture_context_a');
         run(17000);
-        expect(SpriteLayer.countOnBoard('item_spider_silk')).toBe(1);
+        expect(SpriteLayer.countOnBoard('fixture_spider_silk')).toBe(1);
 
         Placement.removePlacedToken(idAt(NEIGHBOUR));
         TileModifiers.rebuildAround([NEIGHBOUR]);
         place(NEIGHBOUR, 'fixture_context_b');
         run(17000);
 
-        expect(SpriteLayer.countOnBoard('item_glowcap')).toBe(0);
+        expect(SpriteLayer.countOnBoard('fixture_glowcap')).toBe(0);
         expect(forge.alert).toBe(BoardRunner.ALERT.NO_RECIPE);
     });
 
@@ -232,7 +232,7 @@ describe('Context crafting — adjacency GATES what a station makes (rework §2)
         expect(StationRecipe.setSelectedRecipe(forge, 'recipe_b')).toBe(true);
         run(17000);
 
-        expect(SpriteLayer.countOnBoard('item_glowcap')).toBe(2);
+        expect(SpriteLayer.countOnBoard('fixture_glowcap')).toBe(2);
     });
 
     it('two context Tokens are no longer a conflict — the selection decides', () => {
@@ -247,8 +247,8 @@ describe('Context crafting — adjacency GATES what a station makes (rework §2)
         run(20000);
 
         expect(forge.alert).toBeFalsy();
-        expect(SpriteLayer.countOnBoard('item_spider_silk')).toBe(1);
-        expect(SpriteLayer.countOnBoard('item_glowcap')).toBe(0);
+        expect(SpriteLayer.countOnBoard('fixture_spider_silk')).toBe(1);
+        expect(SpriteLayer.countOnBoard('fixture_glowcap')).toBe(0);
     });
 
     it('a context Token serves EVERY nearby station (D-113)', () => {
@@ -260,7 +260,7 @@ describe('Context crafting — adjacency GATES what a station makes (rework §2)
 
         run(17000);
 
-        expect(SpriteLayer.countOnBoard('item_spider_silk')).toBe(2);
+        expect(SpriteLayer.countOnBoard('fixture_spider_silk')).toBe(2);
     });
 
     it('a context Token with nothing relevant nearby is inert (D-19)', () => {
@@ -633,10 +633,10 @@ describe('Skill-pooled recipes (CMS-39, CMS-76, CMS-77)', () => {
         place(NEIGHBOUR, 'fixture_context_a');
 
         run(16000 - 600);
-        expect(SpriteLayer.countOnBoard('item_spider_silk')).toBe(0);
+        expect(SpriteLayer.countOnBoard('fixture_spider_silk')).toBe(0);
 
         run(1200);
-        expect(SpriteLayer.countOnBoard('item_spider_silk')).toBe(1);
+        expect(SpriteLayer.countOnBoard('fixture_spider_silk')).toBe(1);
     });
 });
 
@@ -746,7 +746,7 @@ describe('Support wears per cycle SERVED (D-126, D-157)', () => {
         run(20000);
         // With its context gone the Forge is back to making nothing at all.
         expect(forge.alert).toBe(BoardRunner.ALERT.NO_RECIPE);
-        expect(SpriteLayer.countOnBoard('item_spider_silk')).toBe(1);
+        expect(SpriteLayer.countOnBoard('fixture_spider_silk')).toBe(1);
     });
 });
 

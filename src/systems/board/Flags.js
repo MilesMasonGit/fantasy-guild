@@ -982,6 +982,14 @@ export function ambusherOf(heroId) {
     return rt()?.ambushes.get(heroId) ?? null;
 }
 
+/** Why a Token cannot be disallowed: no hero could ever work it. */
+export const NO_HERO_WORKS = 'No hero works this';
+
+/** Why `instance` cannot be disallowed, or null when it can (`isHeroWorkable`). */
+export function disallowRefusalOf(instance) {
+    return isHeroWorkable(instance) ? null : NO_HERO_WORKS;
+}
+
 /**
  * Mark a Token heroes may not work, or allow it again.
  *
@@ -991,7 +999,8 @@ export function ambusherOf(heroId) {
  * Hall alike. Nothing else about the Token changes: its rules and triggers carry on (see
  * `isDisallowed`).
  *
- * The Token panel's Disallow switch calls this; from the console:
+ * Only a Token a hero could work can be disallowed ({@link disallowRefusalOf}); allowing is never
+ * refused. Disallow mode calls this; from the console:
  * `Game.Flags.setDisallowed(instanceId, true)`.
  *
  * @returns {{ success: boolean, reason?: string, unchanged?: boolean }}
@@ -1001,6 +1010,8 @@ export function setDisallowed(instanceId, on = true) {
     if (!instance) return { success: false, reason: 'No Token there' };
     const next = !!on;
     if (isDisallowed(instance) === next) return { success: true, unchanged: true };
+    const refusal = next ? disallowRefusalOf(instance) : null;
+    if (refusal) return { success: false, reason: refusal };
 
     if (next) instance.disallowed = true;
     else delete instance.disallowed;
@@ -1016,7 +1027,6 @@ export function setDisallowed(instanceId, on = true) {
 
     markDirty();
     EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: instance.id, typeId: instance.typeId });
-    EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
     return { success: true };
 }
 

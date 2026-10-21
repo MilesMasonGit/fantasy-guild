@@ -536,7 +536,7 @@ drawers**. The menu can be flipped to the right.
     12–20 s, slow 20–30 s, heavy 30–120 s; slower by `1 + (level−1)/70`.
   - The simulator still speaks of "gold per hour" as an abstract design
     currency; the game has no gold.
-- **Dev tools** (dev build, or Debug Mode on in a built game): QA panel (give
+- **Dev tools** (dev builds, or a perf build with Debug Mode on; shipped builds have none): QA panel (give
   items, advance time, hire heroes, …), **Mat Tuner** (mat size, Token cap,
   quest cap, radii, speeds — stored per device, not in the save), FPS counter.
   Dev build only: the **Perf HUD** and stress boards (`?stress=realistic`), and

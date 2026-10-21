@@ -16,7 +16,6 @@ import { registerItems } from '../config/registries/itemRegistry.js';
 import { tokenStartingUses, registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { matW, matH } from '../config/matGeometry.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { TokenBubbles, BUBBLE_TIPS } from '../ui/components/board/TokenBubbles.jsx';
 import {
@@ -63,7 +62,7 @@ registerTokenTypes({
 });
 
 const h = React.createElement;
-const tree = (el) => h(EngineContext.Provider, { value: { GameState, EventBus } }, h(DndContext, null, h('div', { 'data-under-test': '' }, el)));
+const tree = (el) => h(DndContext, null, h('div', { 'data-under-test': '' }, el));
 const mount = (el) => render(tree(el));
 
 const worked = (extra = {}) => ({ typeId: 'fixture_producer', instanceId: 'tok_r', heroId: 'hero_1', alert: null, usesRemaining: null, ...extra });

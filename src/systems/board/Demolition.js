@@ -1,7 +1,6 @@
 // Demolition: which Tokens may be taken off the mat for good, and the job that takes them
 
 import { EventBus } from '../core/EventBus.js';
-import { ENGINE_EVENTS } from '../core/engineEvents.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { QUEST_TOKEN_TYPE } from '../../config/registries/engineTokens.js';
@@ -143,7 +142,6 @@ function restart(instance) {
 /** Tell the mat a Token's mark changed: flags look again, badges re-read, the game saves. */
 function announce(instance) {
     EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: instance.id, typeId: instance.typeId });
-    EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
 }
 
 /**
@@ -201,6 +199,5 @@ export function finish(instance, { heroId = null } = {}) {
     EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: token.id, ...at, typeId: null });
     if (heroId) EventBus.publish(BOARD_EVENTS.HERO_MOVED, { heroId, ...at });
     EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { points: [at] });
-    EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
     return true;
 }

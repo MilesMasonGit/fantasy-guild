@@ -6,8 +6,6 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { EventBus } from '../systems/core/EventBus.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { getItem } from '../config/registries/itemRegistry.js';
 import { SpriteLayerView } from '../ui/components/board/SpriteLayerView.jsx';
 
@@ -45,7 +43,7 @@ let animations;
 const slides = () => animations.filter(a => String(a.keyframes?.[1]?.transform).includes('scale(0.6)'));
 const arcs = () => animations.filter(a => !String(a.keyframes?.[1]?.transform).includes('scale(0.6)'));
 
-const mount = () => render(h(EngineContext.Provider, { value: { GameState, EventBus } }, h(SpriteLayerView)));
+const mount = () => render(h(SpriteLayerView));
 const flush = (fn) => act(async () => { fn(); });
 
 beforeEach(() => {

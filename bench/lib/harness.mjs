@@ -100,7 +100,6 @@ export function boot(seed) {
 /** What `onSlotSelected` publishes once the game is ready. */
 export function announceReady() {
     TileModifiers.rebuildAll();
-    EventBus.publish('state_changed');
     EventBus.publish('heroes_updated');
     EventBus.publish('inventory_updated');
 }

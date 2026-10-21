@@ -12,7 +12,7 @@ import { liveRegionBanner } from '../atlas/regionBanner.js';
 export const REGION_NAME_EVENTS = Object.freeze([
     ENGINE_EVENTS.ATLAS_CHANGED,
     ENGINE_EVENTS.GAME_LOADED,
-    ENGINE_EVENTS.STATE_CHANGED
+    ENGINE_EVENTS.GAME_RESET
 ]);
 
 /** The Region the guild is in, as the bar names it: its flavour name (the one the player renames) and its practical name. */

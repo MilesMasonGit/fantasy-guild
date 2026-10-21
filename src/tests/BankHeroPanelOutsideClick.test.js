@@ -18,9 +18,7 @@ vi.mock('../ui/components/drawer/HeroInspectionSheet.jsx', () => ({
 }));
 
 import { GameState } from '../state/GameState.js';
-import { EventBus } from '../systems/core/EventBus.js';
 import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
-import { EngineContext } from '../ui/context/EngineContext';
 import { BottomHeroDock } from '../ui/components/dock/BottomHeroDock.jsx';
 import { BankHeroPanel } from '../ui/components/dock/BankHeroPanel.jsx';
 
@@ -30,12 +28,6 @@ const hero = (id, name, hp = 100) => (
     { id, name, spriteId: 'hn_recruit_por', hp: { current: hp, max: 100 }, status: 'idle', equipment: {} }
 );
 
-const engine = {
-    GameState,
-    EventBus,
-    BoardPlacement: { recallHeroById: vi.fn() },
-    EquipmentManager: { equipItem: vi.fn() }
-};
 
 /**
  * Both `BottomHeroDock` and `BankHeroPanel` are mounted together, as they are
@@ -45,8 +37,7 @@ const engine = {
  */
 function mount({ onCloseHero } = {}) {
     return render(
-        h(EngineContext.Provider, { value: engine },
-            h(DeckDndProvider, null,
+        h(DeckDndProvider, null,
                 h('div', null,
                     h(BottomHeroDock, { selectedHeroId: 'h1', onCloseHero }),
                     h('div', { 'data-testid': 'bank-panel-wrapper' },
@@ -54,7 +45,6 @@ function mount({ onCloseHero } = {}) {
                     h('div', { 'data-testid': 'playmat' }, 'the playmat')
                 )
             )
-        )
     );
 }
 

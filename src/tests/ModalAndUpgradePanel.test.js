@@ -8,9 +8,6 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { GIModal } from '../ui/components/base/GIModal.jsx';
 import { GuildUpgradeInspection } from '../ui/components/drawer/GuildUpgradeInspection.jsx';
-import { EngineProvider } from '../ui/context/EngineContext.jsx';
-import { GameState } from '../state/GameState.js';
-import { EventBus } from '../systems/core/EventBus.js';
 import {
     getUpgradeDef, getLockDetail, getLockReason, isUpgradeAccessible, LOCK_KIND, GUILD_UPGRADES
 } from '../config/guildUpgrades.js';
@@ -66,8 +63,6 @@ describe('guildUpgrades — lock reasons carry their kind', () => {
 describe('GuildUpgradeInspection', () => {
     const def = getUpgradeDef('roster_size');
     const lockedId = GUILD_UPGRADES.find(d => !isUpgradeAccessible(d.id, {}))?.id;
-    // The panel reads state through useGameState, which insists on an engine.
-    const withEngine = (el) => React.createElement(EngineProvider, { engine: { GameState, EventBus } }, el);
 
     it('offers a way out of the panel', () => {
         // This only proves the X calls whatever `onClose` it was given — it
@@ -77,7 +72,7 @@ describe('GuildUpgradeInspection', () => {
         // that actually covers the bug.
         const onClose = vi.fn();
         const { container } = render(
-            withEngine(React.createElement(GuildUpgradeInspection, { upgradeDef: def, onClose }))
+            (React.createElement(GuildUpgradeInspection, { upgradeDef: def, onClose }))
         );
         const btn = closeButton(container);
         expect(btn).toBeTruthy();
@@ -87,7 +82,7 @@ describe('GuildUpgradeInspection', () => {
 
     it('stays silent about the link lock — the web already shows it', () => {
         const { container } = render(
-            withEngine(React.createElement(GuildUpgradeInspection, {
+            (React.createElement(GuildUpgradeInspection, {
                 upgradeDef: getUpgradeDef(lockedId)
             }))
         );
@@ -132,8 +127,6 @@ describe('selectGuildInspectSelection — the Guild Hall panel\'s fallback chain
 });
 
 describe('The Guild Hall panel actually closes on Close (CR3-451)', () => {
-    // The panel reads state through useGameState, which insists on an engine.
-    const withEngine = (el) => React.createElement(EngineProvider, { engine: { GameState, EventBus } }, el);
 
     // A minimal stand-in for ReactRoot's own wiring: the `selectedUpgradeId`
     // state, the pane-selection state `ui.inspect` would hold, and the same
@@ -162,7 +155,7 @@ describe('The Guild Hall panel actually closes on Close (CR3-451)', () => {
     }
 
     it('disappears after Close, instead of re-showing the same upgrade', () => {
-        const { container } = render(withEngine(React.createElement(GuildPaneHarness)));
+        const { container } = render((React.createElement(GuildPaneHarness)));
         expect(closeButton(container)).toBeTruthy();
         fireEvent.click(closeButton(container));
         expect(container.querySelector('[data-testid="guild-panel-empty"]')).not.toBeNull();

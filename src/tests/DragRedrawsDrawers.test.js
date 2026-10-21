@@ -8,8 +8,6 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as NotificationSystem from '../systems/core/NotificationSystem.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { EventBus } from '../systems/core/EventBus.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { resetMatTuning } from '../config/matTuning.js';
 import { DeckDndProvider, useEntityDrag } from '../ui/dnd/DndKit.jsx';
 import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
@@ -91,8 +89,7 @@ describe('⭐ the notifications over the mat', () => {
         ItemStubs.flush();
         Banners.push({ kind: 'hero', parts: { heroes: ['Aela'] } });
         const view = render(
-            h(EngineContext.Provider, { value: { GameState, EventBus } },
-                h(DeckDndProvider, null, h(Item), h(ItemStubColumn), h(BannerStack)))
+            h(DeckDndProvider, null, h(Item), h(ItemStubColumn), h(BannerStack))
         );
         view.getByTestId('item').getBoundingClientRect = () => box(2000, 2000, 50, 50);
         expect(view.container.querySelector('[data-item-stub]')).not.toBeNull();
@@ -116,15 +113,13 @@ registerTokenTypes({
 });
 
 describe('⭐ the drawers', () => {
-    const engine = { GameState, EventBus, BoardPlacement: { recallHeroById: vi.fn() }, EquipmentManager: { equipItem: vi.fn() } };
-
+    
     it('the Shop: a drag elsewhere redraws neither its list nor any row', () => {
         EngineBootstrap.createDefaultGameData();
         GameState.state.inventory.items = {};
         InventoryManager.addItem(WOOD, 30);
         const view = render(
-            h(EngineContext.Provider, { value: { GameState, EventBus } },
-                h(DeckDndProvider, null, h(Item), h(ShopDrawer, { isOpen: true, onClose: () => {} })))
+            h(DeckDndProvider, null, h(Item), h(ShopDrawer, { isOpen: true, onClose: () => {} }))
         );
         view.getByTestId('item').getBoundingClientRect = () => box(2000, 2000, 50, 50);
         expect(view.container.querySelector('[data-shop-row="fixture_dr_grove"]')).not.toBeNull();
@@ -142,8 +137,7 @@ describe('⭐ the drawers', () => {
         InventoryManager.addItem(WOOD, 30);
         InventoryManager.addItem('item_coal', 4);
         const view = render(
-            h(EngineContext.Provider, { value: { GameState, EventBus } },
-                h(DeckDndProvider, null, h(Item), h(BankTab, { onInspect: () => {} })))
+            h(DeckDndProvider, null, h(Item), h(BankTab, { onInspect: () => {} }))
         );
         view.getByTestId('item').getBoundingClientRect = () => box(2000, 2000, 50, 50);
         expect(view.container.querySelectorAll('button[data-bank-item]').length).toBe(2);
@@ -158,8 +152,7 @@ describe('⭐ the drawers', () => {
     it('the hero column and the hero sheet: a drag elsewhere redraws no tab and not the sheet', () => {
         GameState.state.heroes = ['h1', 'h2', 'h3'].map(id => ({ id, name: id, spriteId: 'hn_recruit_por', hp: { current: 100, max: 100 }, status: 'idle', equipment: {}, skills: {} }));
         const view = render(
-            h(EngineContext.Provider, { value: engine },
-                h(DeckDndProvider, null, h(Item), h(BankHeroPanel, { selectedHeroId: 'h1', showTabs: true, menuRight: false })))
+            h(DeckDndProvider, null, h(Item), h(BankHeroPanel, { selectedHeroId: 'h1', showTabs: true, menuRight: false }))
         );
         view.getByTestId('item').getBoundingClientRect = () => box(2000, 2000, 50, 50);
         expect(view.container.querySelectorAll('[data-hero-dock-tab]').length).toBe(3);

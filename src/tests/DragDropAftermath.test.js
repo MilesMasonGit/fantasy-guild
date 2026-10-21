@@ -11,8 +11,6 @@ import * as BoardState from '../systems/board/BoardState.js';
 import * as NotificationSystem from '../systems/core/NotificationSystem.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EngineBootstrap } from '../systems/core/EngineBootstrap.js';
-import { EventBus } from '../systems/core/EventBus.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { matW, matH } from '../config/matGeometry.js';
@@ -66,11 +64,10 @@ afterEach(async () => {
 describe('⭐ a purchase drop: the Shop\'s prices and the item stubs follow the drop', () => {
     it('the drop commits first; the Shop list and the stubs draw in later commits', async () => {
         const view = render(
-            h(EngineContext.Provider, { value: { GameState, EventBus } },
-                h(DeckDndProvider, null,
+            h(DeckDndProvider, null,
                     h(Board, { onInspectToken: () => {}, onClearInspect: () => {} }),
                     h(ShopDrawer, { isOpen: true, onClose: () => {} }),
-                    h(ItemStubColumn)))
+                    h(ItemStubColumn))
         );
         view.container.querySelector('[data-board-origin]').getBoundingClientRect = () => box(0, 0, matW(), matH());
         view.container.querySelector('[data-mat-board]').getBoundingClientRect = () => box(0, 0, matW(), matH());

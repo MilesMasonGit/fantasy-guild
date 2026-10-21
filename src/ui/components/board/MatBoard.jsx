@@ -160,7 +160,8 @@ export const MatBoard = React.memo(function MatBoard({
                 return { id: t.id, typeId: t.typeId, x: null, y: walkerSortY(t.y, others), placedAt: t.placedAt ?? 0, walkFacing };
             });
         },
-        [BOARD_EVENTS.TILE_CHANGED, BOARD_EVENTS.TOKEN_DEPLETED, BOARD_EVENTS.ENEMIES_WALKED, ENGINE_EVENTS.STATE_CHANGED],
+        // `ADJACENCY_DIRTY`: the mat's edge pulling Tokens back in moves them with no other news.
+        [BOARD_EVENTS.TILE_CHANGED, BOARD_EVENTS.TOKEN_DEPLETED, BOARD_EVENTS.ENEMIES_WALKED, BOARD_EVENTS.ADJACENCY_DIRTY, ENGINE_EVENTS.GAME_RESET],
         null
     );
     const tokens = useMemo(() => tokensRaw || [], [tokensRaw]);
@@ -229,7 +230,7 @@ export const MatBoard = React.memo(function MatBoard({
             BOARD_EVENTS.TILE_CHANGED,
             BOARD_EVENTS.ALERT_CHANGED,
             ENGINE_EVENTS.HEROES_UPDATED,
-            ENGINE_EVENTS.STATE_CHANGED
+            ENGINE_EVENTS.GAME_RESET
         ],
         null
     );
@@ -245,7 +246,7 @@ export const MatBoard = React.memo(function MatBoard({
             }
             return out;
         },
-        [BOARD_EVENTS.HERO_MOVED, BOARD_EVENTS.TILE_CHANGED, ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.STATE_CHANGED],
+        [BOARD_EVENTS.HERO_MOVED, BOARD_EVENTS.TILE_CHANGED, ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.GAME_RESET],
         null
     );
     const flagPoints = useMemo(() => flagsRaw || [], [flagsRaw]);
@@ -257,7 +258,7 @@ export const MatBoard = React.memo(function MatBoard({
      */
     const groundSource = useGameState(
         activeGroundSource,
-        [ENGINE_EVENTS.ATLAS_CHANGED, ENGINE_EVENTS.GAME_RESET, ENGINE_EVENTS.STATE_CHANGED],
+        [ENGINE_EVENTS.ATLAS_CHANGED, ENGINE_EVENTS.GAME_RESET],
         null
     );
     const ground = useMemo(
@@ -320,23 +321,20 @@ export const MatBoard = React.memo(function MatBoard({
         announce(Placement.recallHeroById(heroId), at);
     }, []);
 
-    // A click on a Token in a map mode. Disallow: flip it, or with shift its whole type (a Token
-    // no hero works: nothing). Demolish: mark or unmark it, or say over it why it cannot go.
+    // A click on a Token in a map mode. Disallow: flip it, or with shift its whole type.
+    // Demolish: mark or unmark it. Either way an engine refusal is said over the Token.
     const handleModeClick = useCallback((instanceId, shift) => {
         const mapMode = getMapMode();
-        if (mapMode === MAP_MODE.DISALLOW) {
-            if (shift) flipDisallowedType(instanceId);
-            else flipDisallowed(instanceId);
-            return;
-        }
-        if (mapMode !== MAP_MODE.DEMOLISH) return;
-        const result = flipDemolishMark(instanceId);
+        let result;
+        if (mapMode === MAP_MODE.DISALLOW) result = shift ? flipDisallowedType(instanceId) : flipDisallowed(instanceId);
+        else if (mapMode === MAP_MODE.DEMOLISH) result = flipDemolishMark(instanceId);
+        else return;
         if (result.success || !result.reason) return;
         const instance = BoardState.getTokenById(instanceId);
         EventBus.publish(UI_EVENTS.UI_TOKEN_ALERT, {
             instanceId,
             severity: 'disallow',
-            type: 'demolish_refused',
+            type: mapMode === MAP_MODE.DISALLOW ? 'disallow_refused' : 'demolish_refused',
             name: instance ? tokenName(instance.typeId) : null,
             title: result.reason,
             rulesText: null,

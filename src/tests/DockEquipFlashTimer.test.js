@@ -7,12 +7,10 @@ import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
-import { EngineContext } from '../ui/context/EngineContext';
 import { DockEquipmentGrid } from '../ui/components/dock/DockEquipmentGrid.jsx';
 import { SLOT_ORDER } from '../config/registries/equipmentConstants.js';
 
 const h = React.createElement;
-const engine = { GameState, EventBus, BoardPlacement: {}, EquipmentManager: {} };
 const FLASH_MS = 800;
 
 beforeEach(() => {
@@ -33,8 +31,7 @@ describe('the equip flash timer', () => {
     it('is cleared when the grid unmounts', () => {
         const setSpy = vi.spyOn(globalThis, 'setTimeout');
         const clearSpy = vi.spyOn(globalThis, 'clearTimeout');
-        const r = render(h(EngineContext.Provider, { value: engine },
-            h(DeckDndProvider, null, h(DockEquipmentGrid, { heroId: 'h1' }))));
+        const r = render(h(DeckDndProvider, null, h(DockEquipmentGrid, { heroId: 'h1' })));
 
         act(() => {
             EventBus.publish(ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, { action: 'equip', heroId: 'h1', slot: SLOT_ORDER[0] });

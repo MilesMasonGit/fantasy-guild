@@ -13,8 +13,6 @@ import * as BoardState from '../systems/board/BoardState.js';
 import * as Flags from '../systems/board/Flags.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { EventBus } from '../systems/core/EventBus.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { matW, matH, artRadiusOf } from '../config/matGeometry.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { MAT_TOKEN_DRAG_ID } from '../ui/components/board/MatToken.jsx';
@@ -55,9 +53,8 @@ const OWNER_FIT = 0.87;
 
 function mountAt(fit, props = {}) {
     const out = render(
-        h(EngineContext.Provider, { value: { GameState, EventBus } },
-            h(DndContext, null,
-                h(MatFitProvider, { value: fit }, h(MatBoard, props))))
+        h(DndContext, null,
+                h(MatFitProvider, { value: fit }, h(MatBoard, props)))
     );
     // jsdom lays nothing out: give the mat its natural box, so a client point IS a mat point.
     const mat = out.container.querySelector('[data-mat-board]');
@@ -226,9 +223,8 @@ describe('⭐ a press through a hero\'s see-through pixel reaches what is beneat
         const started = [];
         const Spy = () => { useDndMonitor({ onDragStart: (e) => started.push(startedName(e.active)) }); return null; };
         const view = render(
-            h(EngineContext.Provider, { value: { GameState, EventBus } },
-                h(DeckDndProvider, null,
-                    h(MatFitProvider, { value: OWNER_FIT }, h(MatBoard), h(Spy))))
+            h(DeckDndProvider, null,
+                    h(MatFitProvider, { value: OWNER_FIT }, h(MatBoard), h(Spy)))
         );
         const mat = view.container.querySelector('[data-mat-board]');
         mat.getBoundingClientRect = () => ({ left: 0, top: 0, x: 0, y: 0, width: matW(), height: matH(), right: matW(), bottom: matH() });
@@ -353,9 +349,8 @@ describe('⭐ a flag\'s cloth drawn in front of a Token takes the pointer there'
         const started = [];
         const Spy = () => { useDndMonitor({ onDragStart: (e) => started.push(startedName(e.active)) }); return null; };
         const view = render(
-            h(EngineContext.Provider, { value: { GameState, EventBus } },
-                h(DeckDndProvider, null,
-                    h(MatFitProvider, { value: OWNER_FIT }, h(MatBoard), h(Spy))))
+            h(DeckDndProvider, null,
+                    h(MatFitProvider, { value: OWNER_FIT }, h(MatBoard), h(Spy)))
         );
         const mat = view.container.querySelector('[data-mat-board]');
         mat.getBoundingClientRect = () => ({ left: 0, top: 0, x: 0, y: 0, width: matW(), height: matH(), right: matW(), bottom: matH() });
