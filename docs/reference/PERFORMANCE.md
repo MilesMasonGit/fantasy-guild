@@ -1071,9 +1071,10 @@ with the Bank open): the whole page. The cause was a rule added with the item st
 `body.gi-dnd-active [data-item-stubs] *`, which lets the pointer through the stubs and banners while
 something is carried. Its own element is matched by `*` alone, so when `<body>`'s drag class
 changes the browser has nothing to look for and restyles every element: ~20 ms a toggle in the perf
-build (`classList.toggle` + a forced layout, median of 9: 21–22 ms with the rule, 0.0 without it,
-0.1–1.6 ms for rules that name their elements), twice a drag. A Long Animation Frame read of the
-drops showed it as ~35 ms of forced style inside dnd-kit's `pointerup` handler.
+build (`classList.toggle` + a forced layout in the desktop app's browser pane, median of 9: 21–22
+ms with the rule, 0.0 without it, 0.1–1.6 ms for rules that name their elements), twice a drag. A
+Long Animation Frame read of the drops (headless) showed it as 33–43 ms of forced style and layout
+inside dnd-kit's `pointerup` handler.
 
 **What changed**:
 1. The rule names what it styles: the two boxes, and their parts that take the pointer back

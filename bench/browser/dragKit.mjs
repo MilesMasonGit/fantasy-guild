@@ -413,7 +413,7 @@ export function installDragKit() {
     const alphaOf = (img) => {
         const src = img.currentSrc || img.src;
         if (!sheetAlpha.has(src)) {
-            let m = null;
+            let m;
             try {
                 const c = document.createElement('canvas');
                 c.width = img.naturalWidth; c.height = img.naturalHeight;
