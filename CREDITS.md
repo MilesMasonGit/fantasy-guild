@@ -14,7 +14,7 @@ Checked against the files on 2026-10-20.
 | RPG Audio | `kenney_rpg-audio/` (51 sounds in `Audio/`) | Kenney Vleugels, [kenney.nl](https://www.kenney.nl) | Creative Commons Zero (CC0), `License.txt` | Not required; the licence says credit "would be nice": `Sound effects by Kenney (www.kenney.nl)` The clip map in `src/systems/core/AudioSystem.js` (`_getSfxPath`) points these at it: drag and drop (Tokens, cards, heroes), equipping and assigning items, tools and blueprints, unassigning, level-up, invasion, combat hit, victory, defeat, task done |
 | Calculator buttons | `zapsplat_pack_calculator_buttons_mp3/` (10 sounds) | ZapSplat | ZapSplat Standard Licence, `ZapSplat-License-Agreement.pdf` (points to zapsplat.com/license-type/standard-license) | **Required**: `Sound effects obtained from https://www.zapsplat.com` Mapped to button and UI clicks and dock pin and unpin |
 | Handling coins | `zapsplat_pack_handling_coins_mp3/` (90 sounds) | ZapSplat | ZapSplat Standard Licence, `ZapSplat-EULA-Standard-License.pdf` | **Required**: as above Mapped to claiming a quest (4 of the 90 sounds) |
-| Playing cards | `zapsplat_pack_playing_cards_mp3/` (85 sounds) | ZapSplat | ZapSplat Standard Licence, `ZapSplat-License-Agreement.pdf` | **Required**: as above | Nothing today: `AudioSystem.js` lists four of them but no sound plays them |
+| Playing cards | `zapsplat_pack_playing_cards_mp3/` (85 sounds) | ZapSplat | ZapSplat Standard Licence, `ZapSplat-License-Agreement.pdf` | **Required**: as above | Nothing today: no code names them |
 
 ZapSplat's terms, in short: credit is required on a free account and must sit
 in the game itself (a credits page counts), on every platform the game ships
