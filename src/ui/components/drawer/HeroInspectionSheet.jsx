@@ -22,9 +22,7 @@ import {
     useLockedListOpen, setLockedListOpen
 } from '../dock/heroPanelSkills.js';
 import { ENGINE_EVENTS, ORPHAN_EVENTS } from '../../../systems/core/engineEvents.js';
-
-/** The close X: its 16 px sprite at 2×, as every panel header draws it. */
-const CLOSE_PX = 32;
+import { CloseX } from '../base/CloseX.jsx';
 
 /** Advanced and Master rows' own backgrounds. */
 const TIER_BG = {
@@ -88,21 +86,7 @@ export const HeroInspectionSheet = memo(function HeroInspectionSheet({ heroId, o
                         {/* ⚠️ Placeholder quill until the owner draws one. */}
                         <Feather size={16} />
                     </button>
-                    <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); onClose?.(); }}
-                        data-hero-panel-close
-                        aria-label="Close"
-                        className="p-0.5 rounded flex items-center justify-center cursor-pointer gi-hover-pulse"
-                    >
-                        <img
-                            src="/assets/ui/u_cancel_red.png"
-                            alt="Close"
-                            draggable={false}
-                            className="select-none pointer-events-none"
-                            style={{ width: CLOSE_PX, height: CLOSE_PX, imageRendering: 'pixelated' }}
-                        />
-                    </button>
+                    <CloseX data-hero-panel-close onClick={(e) => { e.stopPropagation(); onClose?.(); }} />
                 </div>
 
                 <HeroFigure

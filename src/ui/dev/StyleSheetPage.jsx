@@ -14,6 +14,7 @@ import { TokenSprite, TOKEN_SURFACE } from '../components/base/TokenSprite.jsx';
 import { StationGearBadge } from '../components/board/TokenBadges.jsx';
 import { Tooltip } from '../components/base/Tooltip.jsx';
 import { PixelFrame } from '../components/base/PixelFrame.jsx';
+import { CloseX, PanelHeader } from '../components/base/CloseX.jsx';
 import { TEXT_SIZES } from '../components/base/textSizes.js';
 import { ArrowScrollList } from '../components/base/ArrowScrollList.jsx';
 import { LevelUpFloats } from '../components/board/LevelUpFloat.jsx';
@@ -127,11 +128,8 @@ const KitMainButton = ({ label, cost = [], blockedReason = null }) => {
 };
 
 const KitHeader = ({ title, sprite }) => (
-    <div data-kit-header className="flex items-center gap-2 px-2 py-1">
-        {sprite && <UiSprite src={sprite} artSize={16} />}
-        <span className="font-bold text-gi-text">{title}</span>
-        <span className="flex-1" />
-        <KitIconButton src="/assets/ui/u_cancel_red.png" label="Close" />
+    <div data-kit-header>
+        <PanelHeader title={title} sprite={sprite && <UiSprite src={sprite} artSize={16} />} onClose={() => {}} className="px-2 py-1" />
     </div>
 );
 
@@ -548,8 +546,8 @@ export const KIT_SECTIONS = [
         )
     },
     {
-        id: 'header', title: 'Panel header and close X', status: 'unapproved',
-        source: 'none shared: Bank, Shop and hero panel each draw their own',
+        id: 'header', title: 'Panel header and close X', status: 'shared',
+        source: 'PanelHeader and CloseX (every window, the Bank, the Shop, the hero panel, the Token card)',
         rule: 'Title on the left with an optional sprite; ui_cancel_red.png (16 px) at 2× top right.',
         Demo: () => (
             <div className="w-80 bg-gi-surface">
@@ -586,7 +584,7 @@ export const KIT_SECTIONS = [
         rule: 'The bare sprite, white outline on hover.',
         Demo: () => (
             <div className="flex gap-4 items-center">
-                <KitIconButton src="/assets/ui/u_cancel_red.png" label="Close" />
+                <CloseX onClick={() => {}} />
                 <KitIconButton src="/assets/ui/u_upgrade.png" label="Upgrade" />
                 <KitIconButton src="/assets/ui/u_add_green.png" label="Add" />
             </div>
@@ -707,15 +705,7 @@ export const StyleSheetPage = ({ onClose }) => {
                     <h2 className="font-bold">Style sheet</h2>
                     <span className="text-xs text-gi-muted">Every standard piece from UI_STYLE, live.</span>
                     <span className="flex-1" />
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        aria-label="Close style sheet"
-                        data-style-sheet-close
-                        className="p-0 cursor-pointer"
-                    >
-                        <UiSprite src="/assets/ui/u_cancel_red.png" alt="Close" />
-                    </button>
+                    <CloseX onClick={onClose} label="Close style sheet" data-style-sheet-close />
                 </div>
 
                 <h2 data-kit-group="shared" className="mt-4 font-bold" style={{ color: ui('--color-ui-green') }}>

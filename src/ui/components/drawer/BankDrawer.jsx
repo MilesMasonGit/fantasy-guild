@@ -6,6 +6,7 @@ import { useGameState } from '../../hooks/useGameState.js';
 import BankTab from './BankTab.jsx';
 import InspectionPanel from './InspectionPanel.jsx';
 import { columnWidthCss, NOTIFICATION_COLUMN } from '../board/boardConstants.js';
+import { PanelHeader } from '../base/CloseX.jsx';
 
 /**
  * BankDrawer: slides in from the side and holds the item Bank.
@@ -92,25 +93,13 @@ export const BankDrawer = ({ drawer, inspect, menuRight = false }) => {
                         const selId = activeSelection?.type === PANE_SELECTION_TYPE[key] ? activeSelection.id : null;
                         return (
                             <section key={key} className="flex-1 min-w-0 flex flex-col border-r border-gi-border/50">
-                                <div className="shrink-0 flex items-center justify-between px-3.5 py-1.5 border-b border-gi-border/40 bg-gi-base/80 min-h-[44px]">
-                                    <span className="flex items-center gap-2.5 text-sm md:text-base font-bold tracking-wide text-gi-text">
-                                        <Icon size={18} className="text-gi-primary" /> {label}
-                                    </span>
-                                    <div className="flex items-center gap-2.5">
-                                        <button
-                                            onClick={() => drawer.closePane(key)}
-                                            title={`Close ${label}`}
-                                            className="p-0.5 rounded cursor-pointer flex items-center justify-center gi-hover-pulse"
-                                        >
-                                            <img
-                                                src="/assets/ui/u_cancel_red.png"
-                                                alt="Close"
-                                                className="w-8 h-8 object-contain select-none pointer-events-none"
-                                                style={{ width: '32px', height: '32px', imageRendering: 'pixelated' }}
-                                            />
-                                        </button>
-                                    </div>
-                                </div>
+                                <PanelHeader
+                                    title={label}
+                                    sprite={<Icon size={18} className="text-gi-primary" />}
+                                    onClose={() => drawer.closePane(key)}
+                                    closeLabel={`Close ${label}`}
+                                    className="px-3.5 py-1.5 border-b border-gi-border/40 bg-gi-base/80 min-h-[44px]"
+                                />
 
                                 <div className="flex-1 min-h-0">
                                     <Component

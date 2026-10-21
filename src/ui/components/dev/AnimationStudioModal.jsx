@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useEscapeLayer } from '../../utils/escapeLayers.js';
-import { Play, Pause, ChevronLeft, ChevronRight, X, RotateCcw, Grid, Move, Sparkles } from 'lucide-react';
+import { Play, Pause, ChevronLeft, ChevronRight, RotateCcw, Grid, Move, Sparkles } from 'lucide-react';
 import { cn } from '../../utils/cn.js';
+import { CloseX } from '../base/CloseX.jsx';
 
 const ROW_MAP = {
     idle: { index: 0, label: 'Idle', color: 'text-blue-400' },
@@ -234,13 +235,7 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
                         </button>
                     </div>
 
-                    <button
-                        onClick={onClose}
-                        className="p-1.5 hover:bg-gi-danger/20 hover:text-gi-danger rounded-lg text-gi-muted transition-colors"
-                        title="Close (Esc)"
-                    >
-                        <X className="w-5 h-5" />
-                    </button>
+                    <CloseX onClick={onClose} label="Close (Esc)" />
                 </div>
 
                 <div className="flex-1 flex overflow-hidden">

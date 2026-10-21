@@ -1,10 +1,11 @@
 import React, { useState, useCallback } from 'react';
-import { Ruler, X, RotateCcw } from 'lucide-react';
+import { Ruler, RotateCcw } from 'lucide-react';
 import { useEngine } from '../hooks/useEngine.js';
 import {
     MAT_TUNABLES, matTuning, setMatTuning, resetMatTuning, isMatTuned, matTuningDefault
 } from '../../config/matTuning.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
+import { CloseX } from './base/CloseX.jsx';
 
 /**
  * MatTuner: developer panel for the free playmat's rules, separate from the terrain
@@ -55,12 +56,7 @@ export const MatTuner = React.memo(() => {
                     >
                         <RotateCcw className="w-4 h-4" />
                     </button>
-                    <button
-                        onClick={() => setIsOpen(false)}
-                        className="p-1 hover:bg-gi-danger/20 hover:text-gi-danger rounded text-gi-muted transition-colors"
-                    >
-                        <X className="w-4 h-4" />
-                    </button>
+                    <CloseX onClick={() => setIsOpen(false)} />
                 </div>
             </div>
 

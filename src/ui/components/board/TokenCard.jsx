@@ -19,15 +19,13 @@ import * as StationRecipe from '../../../systems/board/StationRecipe.js';
 import { GameState } from '../../../state/GameState.js';
 import { RecipeList } from './RecipeList.jsx';
 import { takeRecipeListRequest, onRecipeListRequest } from './recipeFlip.js';
+import { CloseX } from '../base/CloseX.jsx';
 
 /** The card's width: the 256 px activity art at 1×, so it is never scaled off a whole pixel. */
 export const CARD_ART_PX = 256;
 
 /** Clocks move without events: the card re-reads them this often while open. */
 const CARD_REFRESH_MS = 1000;
-
-/** The red close X, 16 px art at 2×. */
-const CLOSE_PX = 32;
 
 const TONE_COLOUR = {
     warning: 'var(--color-ui-gold)',
@@ -65,22 +63,7 @@ const NameBlock = ({ name, onClose }) => (
             <h3 className="ui-text-title font-bold text-white leading-tight select-text">{name}</h3>
         </Box>
         {onClose && (
-            <button
-                type="button"
-                data-card-close
-                aria-label="Close"
-                title="Close"
-                onClick={(e) => { e.stopPropagation(); onClose(); }}
-                className="shrink-0 cursor-pointer gi-hover-pulse"
-            >
-                <img
-                    src="/assets/ui/u_cancel_red.png"
-                    alt="Close"
-                    draggable={false}
-                    className="select-none pointer-events-none"
-                    style={{ width: CLOSE_PX, height: CLOSE_PX, imageRendering: 'pixelated' }}
-                />
-            </button>
+            <CloseX data-card-close onClick={(e) => { e.stopPropagation(); onClose(); }} />
         )}
     </div>
 );

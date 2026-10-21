@@ -685,6 +685,13 @@
   .gi-bar-slide-older, .gi-bar-slide-newer { animation: none; }
 }
 
+/* An icon button (UI_STYLE "Buttons"): the bare sprite, a 1-art-pixel white outline on hover.
+   Hard drop shadows, no blur. */
+.ui-icon-button:hover:not(:disabled) > img {
+  filter: drop-shadow(2px 0 0 var(--color-ui-white)) drop-shadow(-2px 0 0 var(--color-ui-white))
+    drop-shadow(0 2px 0 var(--color-ui-white)) drop-shadow(0 -2px 0 var(--color-ui-white));
+}
+
 /* The shine on a main-action button: one solid, hard-edged diagonal band steps across the whole
    button once per hover, over its text and icons (owner: the glint covers the art too).
    `overflow: hidden` keeps it on the face. No blur, no scaling. */

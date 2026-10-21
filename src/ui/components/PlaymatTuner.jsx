@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { SlidersHorizontal, X, RotateCcw, Copy } from 'lucide-react';
+import { SlidersHorizontal, RotateCcw, Copy } from 'lucide-react';
 import { useEngine } from '../hooks/useEngine.js';
 import {
     TUNABLES, tuning, setTuning, resetTuning, isTuned, tuningDefault, onTuningChanged, tuningReport
 } from '../../config/playmatTuning.js';
+import { CloseX } from './base/CloseX.jsx';
 
 /**
  * PlaymatTuner: a developer panel for finding the ground's look (dev builds only, `ReactRoot`).
@@ -78,12 +79,7 @@ export const PlaymatTuner = React.memo(() => {
                     >
                         <RotateCcw className="w-4 h-4" />
                     </button>
-                    <button
-                        onClick={() => setIsOpen(false)}
-                        className="p-1 hover:bg-gi-danger/20 hover:text-gi-danger rounded text-gi-muted transition-colors"
-                    >
-                        <X className="w-4 h-4" />
-                    </button>
+                    <CloseX onClick={() => setIsOpen(false)} />
                 </div>
             </div>
 

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useEngine } from '../hooks/useEngine.js';
 import { matW, matH } from '../../config/matGeometry.js';
 import { generateHero } from '../../systems/hero/HeroGenerator.js';
-import { Bug, Plus, X } from 'lucide-react';
+import { Bug, Plus } from 'lucide-react';
 import { DevSpawnItemModal } from './dev/DevSpawnItemModal.jsx';
 import { AnimationStudioModal } from './dev/AnimationStudioModal.jsx';
 import { TypographyScaleModal } from '../modals/TypographyScaleModal.jsx';
@@ -20,6 +20,7 @@ import { AtlasDevSection } from '../dev/AtlasDevSection.jsx';
 import { StyleSheetPage } from '../dev/StyleSheetPage.jsx';
 import { ENGINE_EVENTS, ORPHAN_EVENTS } from '../../systems/core/engineEvents.js';
 import { UI_LISTENER } from '../../systems/core/EventBus.js';
+import { CloseX } from './base/CloseX.jsx';
 
 const DEV_ADVANCE_MAX_MINUTES = (DEV_ADVANCE_STEP_MS * DEV_ADVANCE_MAX_STEPS) / 60_000;
 const devInputClass = 'min-w-0 px-2 py-1 rounded bg-gi-base border border-gi-border text-xs text-gi-text focus:outline-none focus:border-gi-primary/50';
@@ -318,12 +319,7 @@ export const TestDashboard = React.memo(() => {
                         <div className="flex items-center gap-2 text-gi-primary font-bold font-display">
                             <Bug className="w-4 h-4" /> QA TESTER
                         </div>
-                        <button
-                            onClick={() => setIsOpen(false)}
-                            className="p-1 hover:bg-gi-danger/20 hover:text-gi-danger rounded text-gi-muted transition-colors"
-                        >
-                            <X className="w-4 h-4" />
-                        </button>
+                        <CloseX onClick={() => setIsOpen(false)} />
                     </div>
 
                     {/**

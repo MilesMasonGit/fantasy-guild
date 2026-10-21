@@ -1,8 +1,8 @@
 import { Fragment } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
-import { X } from 'lucide-react';
 import { cn } from '../../utils/cn.js';
 import { useEscapeLayer } from '../../utils/escapeLayers.js';
+import { CloseX } from './CloseX.jsx';
 
 /**
  * GIModal: A standardized, accessible overlay component built on Headless UI Dialog.
@@ -71,15 +71,7 @@ export const GIModal = ({
                                             </Dialog.Title>
                                         )}
 
-                                        {canClose && (
-                                            <button
-                                                type="button"
-                                                className="ml-auto rounded-md text-gi-muted hover:text-gi-danger hover:bg-gi-danger/10 transition-colors p-1"
-                                                onClick={onClose}
-                                            >
-                                                <X className="w-5 h-5" />
-                                            </button>
-                                        )}
+                                        {canClose && <CloseX onClick={onClose} className="ml-auto" />}
                                     </div>
                                 )}
 

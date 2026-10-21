@@ -9,10 +9,11 @@ import {
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { ItemIcon } from '../base/ItemIcon.jsx';
 import {
-    CheckCircle, Lock, Zap, Check, X
+    CheckCircle, Lock, Zap, Check
 } from 'lucide-react';
 import { ArrowScrollList } from '../base/ArrowScrollList.jsx';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
+import { CloseX } from '../base/CloseX.jsx';
 
 const itemName = (itemId) => getItem(itemId)?.name || itemId;
 
@@ -101,15 +102,7 @@ export const GuildUpgradeInspection = ({ upgradeDef, onClose }) => {
                  * node or closing the whole drawer.
                  */}
                 {onClose && (
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        title="Close"
-                        aria-label="Close"
-                        className="absolute top-2 right-2 z-10 p-1 rounded-md text-gi-muted hover:text-gi-danger hover:bg-gi-danger/10 transition-colors cursor-pointer"
-                    >
-                        <X size={16} />
-                    </button>
+                    <CloseX onClick={onClose} className="absolute top-2 right-2 z-10" />
                 )}
                 <div className="w-36 h-36 rounded-xl bg-black/60 border border-white/10 flex items-center justify-center relative overflow-hidden shadow-lg mb-2.5 shrink-0">
                     <img

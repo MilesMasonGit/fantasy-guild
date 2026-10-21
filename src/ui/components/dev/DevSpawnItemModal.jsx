@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
-import { X, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { cn } from '../../utils/cn.js';
 import { ItemIcon } from '../base/ItemIcon.jsx';
 import { getAllItems, ITEM_TYPES } from '../../../config/registries/itemRegistry.js';
+import { CloseX } from '../base/CloseX.jsx';
 
 const TYPE_LABEL = {
     [ITEM_TYPES.MATERIAL]: 'Material',
@@ -51,12 +52,7 @@ export const DevSpawnItemModal = ({ engine, onClose }) => {
                     <span className="font-display font-bold text-base text-gi-primary uppercase tracking-widest">
                         Spawn Items
                     </span>
-                    <button
-                        onClick={onClose}
-                        className="p-1 hover:bg-gi-danger/20 hover:text-gi-danger rounded text-gi-muted transition-colors"
-                    >
-                        <X className="w-5 h-5" />
-                    </button>
+                    <CloseX onClick={onClose} />
                 </div>
 
                 <div className="p-4 space-y-2 border-b border-gi-border">
