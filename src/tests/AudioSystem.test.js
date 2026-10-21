@@ -63,6 +63,19 @@ describe('AudioSystem Soundtrack & Playlist Engine', () => {
         expect(path.endsWith('.mp3')).toBe(true);
     });
 
+    it('a numbered variant takes that file of the pool, wrapping, and draws no random number', () => {
+        const random = vi.spyOn(Math, 'random');
+        try {
+            const files = [0, 1, 2, 3, 4].map(v => AudioSystem._getSfxPath('quest_claim', v));
+            expect(new Set(files.slice(0, 4)).size).toBe(4);
+            expect(files[4]).toBe(files[0]);
+            expect(AudioSystem._getSfxPath('invasion', 3)).toBe(AudioSystem._getSfxPath('invasion'));
+            expect(random).not.toHaveBeenCalled();
+        } finally {
+            random.mockRestore();
+        }
+    });
+
     it('resolves hero_assign to sibling book/leather drop audio variations', () => {
         const path = AudioSystem._getSfxPath('hero_assign');
         expect(path).toMatch(/(bookPlace[1-3]|dropLeather)\.ogg$/);

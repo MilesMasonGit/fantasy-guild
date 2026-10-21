@@ -233,7 +233,7 @@ class AudioSystemClass {
     playSfx(clipName, options = {}) {
         if (typeof Audio === 'undefined') return;
 
-        const src = this._getSfxPath(clipName);
+        const src = this._getSfxPath(clipName, options?.variant);
         if (!src) {
             logger.warn('AudioSystem', `No path found for clip: ${clipName}`);
             return;
@@ -302,10 +302,11 @@ class AudioSystemClass {
 
     /**
      * Resolve clip name to file path (supporting randomized variation pools)
-     * @param {string} clip 
+     * @param {string} clip
+     * @param {number} [variant] a pool's file by number, wrapping; without it, a random one
      * @returns {string|null}
      */
-    _getSfxPath(clip) {
+    _getSfxPath(clip, variant) {
         const kenneyBase = '/assets/audio/sfx/kenney_rpg-audio/Audio/';
         const map = {
             'levelup': `${kenneyBase}handleSmallLeather.ogg`,
@@ -335,7 +336,9 @@ class AudioSystemClass {
         const target = map[clip];
         if (!target) return null;
         if (Array.isArray(target)) {
-            const idx = Math.floor(Math.random() * target.length);
+            const idx = Number.isInteger(variant)
+                ? Math.abs(variant) % target.length
+                : Math.floor(Math.random() * target.length);
             return target[idx];
         }
         return target;
