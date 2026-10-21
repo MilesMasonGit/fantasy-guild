@@ -269,7 +269,6 @@ export const NO_LISTENER = Object.freeze({
     [ENGINE_EVENTS.LOOT_GENERATED]: 'combat moment; loot lands as sprites',
     [ENGINE_EVENTS.HERO_RECOVERED]: 'combat moment; HEROES_UPDATED carries the redraw',
     [ENGINE_EVENTS.HERO_CONSUMED]: 'combat moment; INVENTORY_UPDATED carries the redraw',
-    [ENGINE_EVENTS.COMBAT_HERO_ATE]: 'combat moment, for a future floating-text cue',
     [ENGINE_EVENTS.COMBAT_ENEMY_TRAIT_TRIGGER]: 'combat moment, for a future floating-text cue',
     [ENGINE_EVENTS.STATUS_APPLIED]: 'status moment (Effects Grammar v2 will listen)',
     [ENGINE_EVENTS.STATUS_BLOCKED]: 'status moment (Effects Grammar v2 will listen)',
