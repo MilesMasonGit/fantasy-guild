@@ -5,7 +5,8 @@ import { getItem } from '../../config/registries/itemRegistry.js';
 import { logger } from '../../utils/Logger.js';
 import {
     createEmptyEquipment, getGrid,
-    findFreeSlot, slotsInCategory, getCategoryCap, isEquipCategory
+    findFreeSlot, slotsInCategory, getCategoryCap, isEquipCategory,
+    handEntries, handsOfItem, HANDS
 } from '../../config/registries/equipmentConstants.js';
 import * as EquipmentValidator from './EquipmentValidator.js';
 import * as HeroEffects from '../hero/HeroEffects.js';
@@ -34,6 +35,23 @@ export function resolveTargetSlot(hero, category) {
     const free = findFreeSlot(hero);
     if (free === -1) return null;
     return { slot: free, displaces: null };
+}
+
+/**
+ * Make room in the hands for `itemId` going into grid slot `slot`: while the other hand items and
+ * it need more than two hands, the first of them in grid order is put down. So a two-handed weapon
+ * clears the hands, and a tool or a one-handed weapon taken up puts a two-handed weapon down.
+ */
+function freeHands(heroId, hero, itemId, slot) {
+    const need = handsOfItem(itemId);
+    if (!need) return;
+    const others = handEntries(hero, slot);
+    let used = others.reduce((n, e) => n + e.hands, 0);
+    for (const entry of others) {
+        if (used + need <= HANDS) break;
+        unequipItem(heroId, entry.index);
+        used -= entry.hands;
+    }
 }
 
 /**
@@ -83,6 +101,7 @@ export function equipItem(heroId, itemId, preferredSlot = null) {
     }
 
     if (getGrid(hero)[slot]) unequipItem(heroId, slot);
+    freeHands(heroId, hero, itemId, slot);
 
     if (!Array.isArray(hero.equipment)) hero.equipment = createEmptyEquipment();
     hero.equipment[slot] = itemId;

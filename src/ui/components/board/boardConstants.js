@@ -73,6 +73,7 @@ export const SKIP_HINT = {
     [ALERT.INPUTS]: 'needs materials',
     [ALERT.ACCESS]: 'skill too low',
     [ALERT.UNSKILLED]: 'doesn’t have the skill',
+    [ALERT.NO_TOOL]: 'needs a tool in hand',
     [ALERT.NO_RECIPE]: 'missing a Token its recipe needs beside it',
     [ALERT.CHARGES]: 'not enough charges for a cycle',
     [ALERT.CHOOSE_BUILD]: 'nothing chosen to build',

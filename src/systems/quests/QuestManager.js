@@ -7,6 +7,8 @@ import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from '../board/boardEvents.js';
 import { tutorialTemplate } from './tutorialQuests.js';
 import { getTokenType, isLandmarkType } from '../../config/registries/tokenRegistry.js';
+import { getItem } from '../../config/registries/itemRegistry.js';
+import { toolOf } from '../../config/registries/toolKinds.js';
 import * as RecipeResolver from '../board/RecipeResolver.js';
 // One way only: QuestTokens does not import this module, so the bounty and
 // reward helpers live in the leaf `questBounties.js` and are re-exported below.
@@ -212,8 +214,11 @@ export const QuestManager = {
             // ⚠️ `hero_equipped` is NOT an engine event. Equipping is announced as
             // `hero_equipment_changed` with `action: 'equip'`, which feeds the
             // `hero_equipped` quest target.
+            // `tool`: whether what was equipped is a gathering tool, for the tutorial's first tool.
             EventBus.subscribe(ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, (data) => {
-                if (data?.action === 'equip') this.reportProgress('hero_equipped');
+                if (data?.action === 'equip') {
+                    this.reportProgress('hero_equipped', 1, { itemId: data.itemId, tool: !!toolOf(getItem(data.itemId)) });
+                }
             }),
             // ⚠️ `token_exhausted` is a quest TARGET name and a tile-log entry type,
             // NOT an engine event; `BOARD_EVENTS.TOKEN_DEPLETED` is the one that

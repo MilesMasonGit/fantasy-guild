@@ -86,10 +86,18 @@ export const BOARD_EVENTS = {
     /**
      * A flag dropped on a Token was NOT pinned to it because its hero cannot work it: it stands
      * there as a normal area flag instead. Payload: `{ heroId, instanceId, reason }`, `reason` a
-     * skip reason (`ALERT.UNSKILLED`, `ALERT.ACCESS`, `disallowed`, `rule_off`). The hero's speech
+     * skip reason (`ALERT.UNSKILLED`, `ALERT.ACCESS`, `ALERT.NO_TOOL`, `disallowed`, `rule_off`). The hero's speech
      * bubble says why (`HeroBubbleLayer`). Published by `Flags.plant`.
      */
     PIN_REFUSED: 'board:pin_refused',
+
+    /**
+     * A flag passed over a Token because its hero holds no tool that can work it (`ALERT.NO_TOOL`).
+     * Payload: `{ instanceId, heroId, kind, minTier }`, the Token's need. Published by `Flags` each
+     * time a flag records that skip, so an idle hero's flag says it about once a second; the mat's
+     * "Needs Pickaxe" callout over the Token spaces itself out (`CalloutLayer`).
+     */
+    TOOL_NEEDED: 'board:tool_needed',
 
     /**
      * A Foundation finished its build and became the Token it built, in place (Farmland planted by
@@ -268,6 +276,11 @@ export const ALERT = {
      * levelling fixes it. A different hero, or a promotion, is the answer.
      */
     UNSKILLED: 'unskilled',
+    /**
+     * The Token's work needs a gathering tool (`needsTool`) and the hero holds none of that kind at
+     * that tier in their hands. A hero gate like the two above: equipping the tool fixes it.
+     */
+    NO_TOOL: 'no_tool',
     /**
      * The station cannot run the recipe it is set to, because the context Tokens that recipe names
      * are not beside it. (A station with nothing picked says `CHOOSE_RECIPE` instead.)

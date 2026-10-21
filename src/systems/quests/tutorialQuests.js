@@ -55,6 +55,13 @@ const STEPS = [
         rewardItems: TUTORIAL_REWARD_ITEMS
     },
     {
+        id: 'cart_tool',
+        targetType: 'hero_equipped',
+        match: { tool: true },
+        requiredCount: 1,
+        rewardItems: TUTORIAL_REWARD_ITEMS
+    },
+    {
         id: 'cart_flag',
         targetType: 'hero_deployed',
         requiredCount: 1,

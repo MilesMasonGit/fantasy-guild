@@ -6,7 +6,9 @@ import * as BoardState from '../../../systems/board/BoardState.js';
 import { artRadiusOf } from '../../../config/matGeometry.js';
 import { tokenName } from '../../../config/registries/tokenRegistry.js';
 import { MAT_Z } from './matLayers.js';
-import { CALLOUT_MS, addCallout, anchorKeyOf, calloutText } from './callouts.js';
+import { CALLOUT_MS, addCallout, anchorKeyOf, calloutText, dueAgain } from './callouts.js';
+import { getAllItems } from '../../../config/registries/itemRegistry.js';
+import { toolNeedPhrase } from '../../../config/registries/toolKinds.js';
 import { columnPlace, heroColumnAt, heroColumnsVersion, subscribeHeroColumns } from './speechColumns.js';
 
 /** Clear air between the top of a Token's art and the bottom of its callout's tail, in mat units. */
@@ -18,7 +20,8 @@ const NO_SUBSCRIPTION = () => () => {};
 
 /**
  * Quick popups over the mat, one style: "! Spawned Oak Tree" over the spawner, an effect's name
- * over the Token it fired on, "Demolished Oak Tree" where a demolished Token stood, and the reason
+ * over the Token it fired on, "Needs Pickaxe" over a Token a hero passed over for want of the tool,
+ * "Demolished Oak Tree" where a demolished Token stood, and the reason
  * for a refused action (a drop, a quest claim, a shrink that left a Token crowded) over the spot or
  * Token involved. Refusals are never notifications.
  * They appear, hold for a moment and fade (`callout-pop` in `components.css`); nothing to click,
@@ -34,6 +37,7 @@ export const CalloutLayer = memo(function CalloutLayer() {
 
     useEffect(() => {
         const pending = timers.current;
+        const toolSaidAt = new Map();   // instanceId → when "Needs Pickaxe" was last said over it
         const say = ({ anchorId = null, x = null, y = null, typeId = null, text }) => {
             if (!text) return;
             const anchor = anchorId ? BoardState.getTokenById(anchorId) : null;
@@ -53,6 +57,17 @@ export const CalloutLayer = memo(function CalloutLayer() {
             }, UI_LISTENER),
             EventBus.subscribe(BOARD_EVENTS.EFFECT_FIRED, (p) => {
                 if (p?.instanceId && p.title) say({ anchorId: p.instanceId, text: calloutText.effect(p.title) });
+            }, UI_LISTENER),
+            // A flag passed this Token over for want of a tool: the Token says which, now and then.
+            EventBus.subscribe(BOARD_EVENTS.TOOL_NEEDED, (p) => {
+                if (!p?.instanceId || !p.kind) return;
+                const now = Date.now();
+                if (!dueAgain(toolSaidAt.get(p.instanceId) ?? null, now)) return;
+                if (toolSaidAt.size > 256) {
+                    for (const [id, at] of toolSaidAt) if (dueAgain(at, now)) toolSaidAt.delete(id);
+                }
+                toolSaidAt.set(p.instanceId, now);
+                say({ anchorId: p.instanceId, text: calloutText.needsTool(toolNeedPhrase(p, getAllItems())) });
             }, UI_LISTENER),
             // The Token is gone by now: said where it stood, over where its art was.
             EventBus.subscribe(BOARD_EVENTS.TOKEN_DEMOLISHED, (p) => {

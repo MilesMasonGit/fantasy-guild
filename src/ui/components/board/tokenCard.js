@@ -2,7 +2,8 @@ import {
     getTokenType, getAllTokenTypes, tokenName, getProvidedTagsWithTiers, outputRange
 } from '../../../config/registries/tokenRegistry.js';
 import { contextRequirementsOf } from '../../../config/registries/recipePoolRegistry.js';
-import { getItem } from '../../../config/registries/itemRegistry.js';
+import { getItem, getAllItems } from '../../../config/registries/itemRegistry.js';
+import { neededToolOf, toolNeedPhrase, toolItemFor } from '../../../config/registries/toolKinds.js';
 import { enemyProfileOf } from '../../../config/registries/enemyProfile.js';
 import { turnTiming } from '../../../config/registries/tokenConstants.js';
 import { stationSkillOf } from '../../../systems/effects/statements.js';
@@ -109,6 +110,7 @@ export function liveCardSources() {
         demolishMs: Demolition.DEMOLISH_MS,
         demolitionConfig: Demolition.DEMOLITION_CONFIG,
         allTypes: getAllTokenTypes,
+        allItems: getAllItems,
         art: (def) => cardArtOf(def)
     };
 }
@@ -126,11 +128,17 @@ function toolsOf(def, recipe, src) {
     const out = [];
     const seen = new Set();
     const add = (entry) => {
-        const key = entry.typeId || entry.name;
+        const key = entry.typeId || entry.itemId || entry.name;
         if (seen.has(key)) return;
         seen.add(key);
         out.push(entry);
     };
+    // The tool a hero must hold to work it, named by the first tool item that will do.
+    const need = neededToolOf(def);
+    if (need) {
+        const items = src.allItems?.() || {};
+        add({ itemId: toolItemFor(need, items), name: toolNeedPhrase(need, items), tag: need.kind, inHand: true });
+    }
     for (const req of Array.isArray(def.acceptedTokens) ? def.acceptedTokens : []) {
         if (req?.tag) {
             const typeId = toolTokenFor(req.tag, req.minTier || 1, src.allTypes());

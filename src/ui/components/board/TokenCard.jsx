@@ -11,6 +11,7 @@ import { LeaveMatControl } from '../drawer/TokenInspection.jsx';
 import { useTokenDetail } from './useTokenDetail.js';
 import { subscribeToken } from './tokenEvents.js';
 import { CARD_BLOCK, tokenCardModel, cycleText } from './tokenCard.js';
+import { withArticle } from '../../../systems/effects/toolNames.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
@@ -138,14 +139,14 @@ const RecipeBlock = ({ block, instanceId, onChangeRecipe }) => (
                 <Heading>Tools</Heading>
                 {block.tools.map(t => (
                     <EntityRibbon
-                        key={t.typeId || t.name}
+                        key={t.typeId || t.itemId || t.name}
                         kind={t.typeId ? 'token' : 'item'}
-                        id={t.typeId || undefined}
+                        id={t.typeId || t.itemId || undefined}
                         name={t.name}
                         size="sm"
                         countText=""
-                        title={`Needs a ${t.name} nearby`}
-                        data-card-tool={t.typeId || t.tag}
+                        title={t.inHand ? `A Hero needs ${withArticle(t.name)} in hand to work this` : `Needs a ${t.name} nearby`}
+                        data-card-tool={t.typeId || t.itemId || t.tag}
                         className="bg-transparent border-white/40"
                     />
                 ))}
