@@ -377,15 +377,9 @@ export const MatToken = React.memo(function MatToken({
     // The skill whose hit animation this Token plays when struck.
     const hitSkill = React.useMemo(() => hitSkillOf(def), [def]);
 
-    // A Token that has just become this one glows as it appears. The glow was raised under
-    // this (new) id before it was drawn (`TokenGlows`).
-    const [transformGlow, setTransformGlow] = React.useState(() => TokenGlows.glowOf(id));
-    React.useEffect(() => {
-        if (!transformGlow) return undefined;
-        const timer = setTimeout(() => setTransformGlow(null), transformGlow.remainingMs);
-        return () => clearTimeout(timer);
-    }, [transformGlow]);
-    const glowDelay = transformGlow ? `-${TokenGlows.GLOW_MS - transformGlow.remainingMs}ms` : undefined;
+    // A Token that has just become this one flashes its white outline as it appears. The glow
+    // was raised under this (new) id before it was drawn (`TokenGlows`); read once, at mount.
+    const [flashOnMount] = React.useState(() => !!TokenGlows.glowOf(id));
 
     const [received, setReceived] = React.useState(false);
     const receivedTimer = React.useRef(null);
@@ -426,7 +420,6 @@ export const MatToken = React.memo(function MatToken({
     // on every change to its charges, alert or hero, and its art (hit loop, sprite, its layers)
     // drew again each time for nothing.
     const strikes = strikesLive(heroId, alert);
-    const flashing = !!transformGlow;
     const art = React.useMemo(() => {
         const spriteClass = cn('absolute inset-0 m-auto', landing && 'gi-token-land');
         return (
@@ -436,7 +429,8 @@ export const MatToken = React.memo(function MatToken({
                 heroId={heroId}
                 active={strikes}
                 tokenX={x}
-                className={flashing ? 'gi-transform-flash' : null}
+                unit={artScale}
+                flashOnMount={flashOnMount}
             >
                 {enemyAnimSrc ? (
                     <AnimatedEnemySprite
@@ -460,7 +454,7 @@ export const MatToken = React.memo(function MatToken({
                 )}
             </TokenHitArt>
         );
-    }, [id, hitSkill, heroId, strikes, x, flashing, enemyAnimSrc, walkFacing, label, artPx, outline, landing, typeId, artScale]);
+    }, [id, hitSkill, heroId, strikes, x, flashOnMount, enemyAnimSrc, walkFacing, label, artPx, outline, landing, typeId, artScale]);
 
     return (
         <>
@@ -535,8 +529,8 @@ export const MatToken = React.memo(function MatToken({
                     }}
                 />
                 {/**
-                 * A done quest glows until claimed: the transform glow's gold, held as a halo
-                 * behind the art that breathes (`gi-quest-ready`), spilling past it.
+                 * A done quest glows until claimed: a gold halo behind the art that breathes
+                 * (`gi-quest-ready`), spilling past it.
                  */}
                 {questDone && (
                     <div
@@ -563,14 +557,6 @@ export const MatToken = React.memo(function MatToken({
                         <QuestPosterItem itemId={quest.itemId} boxPx={boxPx} artPx={artPx} fit={fit} />
                     )}
                 </div>
-                {transformGlow && (
-                    <div
-                        aria-hidden="true"
-                        data-transform-glow="true"
-                        className="gi-transform-glow absolute inset-0 pointer-events-none"
-                        style={glowDelay ? { animationDelay: glowDelay } : undefined}
-                    />
-                )}
             </div>
 
             <div

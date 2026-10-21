@@ -50,6 +50,8 @@ export const MAT_Z = Object.freeze({
     RINGS: TOKEN_TOP + 80,
     /** Loot on the floor. */
     LOOT: TOKEN_TOP + 120,
+    /** The mat's effects that stand on the mat: rising numbers, sparks, puffs, a knockout (`MatFxLayer`). */
+    FX: TOKEN_TOP + 150,
     /**
      * Flags drawn WITHOUT the mat's order: `FlagLayer` on its own, as its tests mount it. On
      * the mat, flags sort with the Tokens.

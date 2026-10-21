@@ -1,6 +1,7 @@
 
 import { stationSkillOf } from '../../../systems/effects/statements.js';
 import { isCombatSkill } from '../../../config/registries/skillRegistry.js';
+import { heldPoses } from './fx/pixelSteps.js';
 
 /**
  * The Token reacts each time its hero strikes it, one animation per skill.
@@ -9,13 +10,15 @@ import { isCombatSkill } from '../../../config/registries/skillRegistry.js';
  * clocks are pure functions of the time and the hero's id ({@link heroFrameAt}, {@link
  * strikeStartTime}), so they cannot drift apart and need no shared state.
  * - **Combat** has a real signal: `combat_hero_attack`. A landed hit knocks the enemy back,
- * away from the hero, with a red flash; a miss does nothing. A fighting hero idles and plays
- * its attack row once per attack, and the knockback waits for that play-through's strike frame
- * ({@link STRIKE_DELAY_MS}).
- * {@link HIT_ANIMATIONS} is data: a skill names an animation, and an animation is a list of
- * frames of plain numbers (`x`/`y` in % of the art, `rotate` in degrees).
- * ⚠️ No scale: a non-whole scale resamples the pixel art and blurs it (the rule in
- * `tailwind.css` above the landing keyframes). A squash or a pulse is sold by movement alone.
+ * away from the hero (and flashes it white, `tokenFx.js`); a miss does nothing. A fighting hero
+ * idles and plays its attack row once per attack, and the knockback waits for that
+ * play-through's strike frame ({@link STRIKE_DELAY_MS}).
+ * {@link HIT_ANIMATIONS} is data: a skill names an animation, and an animation is a list of held
+ * poses, `x`/`y` in whole art pixels, each held for its `ms` and then jumped from
+ * (`fx/pixelSteps.js`), the way the landing hop moves.
+ * ⚠️ No scale and no rotation: either resamples the pixel art and blurs it (the rule in
+ * `tailwind.css` above the landing keyframes). A squash, a sway or a pulse is sold by whole-pixel
+ * movement alone.
  * {@link buildHitKeyframes} turns one into Web Animations keyframes.
  * Only the Token's art moves (a wrapper inside the art box), so its point, round hit area,
  * badges and drag are untouched.
@@ -34,125 +37,51 @@ export const STRIKE_FRAME = 5;
 
 export const COMBAT = 'combat';
 
-const ease = 'ease-out';
+/** An animation from its poses: `ms` is how long the movement lasts, the rest of a loop is still. */
+const moves = (poses, extra = {}) => Object.freeze({
+    ms: poses.reduce((sum, p) => sum + p.ms, 0),
+    poses: Object.freeze(poses.map(p => Object.freeze(p))),
+    ...extra
+});
 
 /**
- * skill to animation. `ms` is how long the movement lasts inside the 1 s strike loop (work) or on its own (combat); the rest of the loop is still. `origin` is the CSS transform-origin; `directional` animations point their `x` away from the hero; `flash` is a filter played alongside.
+ * skill to animation, in art pixels. `directional` animations point their `x` away from the hero.
  */
 export const HIT_ANIMATIONS = Object.freeze({
-    shake: {
-        ms: 380,
-        origin: '50% 50%',
-        frames: [
-            { offset: 0, x: 0 },
-            { offset: 0.15, x: -4 },
-            { offset: 0.35, x: 4 },
-            { offset: 0.55, x: -3 },
-            { offset: 0.75, x: 1.5 },
-            { offset: 1, x: 0 }
-        ]
-    },
-    jitter: {
-        ms: 340,
-        origin: '50% 50%',
-        frames: [
-            { offset: 0, x: 0, y: 0 },
-            { offset: 0.14, x: -3, y: 2 },
-            { offset: 0.28, x: 3, y: -2 },
-            { offset: 0.42, x: -2, y: -3 },
-            { offset: 0.57, x: 2, y: 3 },
-            { offset: 0.71, x: -2, y: 1 },
-            { offset: 0.85, x: 1, y: -1 },
-            { offset: 1, x: 0, y: 0 }
-        ]
-    },
-    bob: {
-        ms: HIT_PERIOD_MS,
-        origin: '50% 50%',
-        easing: 'ease-in-out',
-        frames: [
-            { offset: 0, y: 0 },
-            { offset: 0.3, y: -3.5 },
-            { offset: 0.7, y: 1.5 },
-            { offset: 1, y: 0 }
-        ]
-    },
-    sway: {
-        ms: 800,
-        origin: '50% 100%',
-        easing: 'ease-in-out',
-        frames: [
-            { offset: 0, rotate: 0 },
-            { offset: 0.25, rotate: 5 },
-            { offset: 0.55, rotate: -3 },
-            { offset: 0.8, rotate: 1.5 },
-            { offset: 1, rotate: 0 }
-        ]
-    },
-    squash: {
-        ms: 280,
-        origin: '50% 100%',
-        frames: [
-            { offset: 0, y: 0 },
-            { offset: 0.12, y: 3 },
-            { offset: 0.5, y: -1 },
-            { offset: 1, y: 0 }
-        ]
-    },
-    hop: {
-        ms: 340,
-        origin: '50% 100%',
-        frames: [
-            { offset: 0, y: 0 },
-            { offset: 0.4, y: -7 },
-            { offset: 0.8, y: 1 },
-            { offset: 1, y: 0 }
-        ]
-    },
-    pulse: {
-        ms: 440,
-        origin: '50% 70%',
-        frames: [
-            { offset: 0, y: 0 },
-            { offset: 0.2, y: -2 },
-            { offset: 0.4, y: 0 },
-            { offset: 0.6, y: -1.5 },
-            { offset: 1, y: 0 }
-        ]
-    },
-    thump: {
-        ms: 360,
-        origin: '50% 100%',
-        frames: [
-            { offset: 0, y: 0 },
-            { offset: 0.15, y: 4 },
-            { offset: 0.45, y: -1.5 },
-            { offset: 1, y: 0 }
-        ]
-    },
-    rustle: {
-        ms: 900,
-        origin: '50% 90%',
-        easing: 'ease-in-out',
-        frames: [
-            { offset: 0, rotate: 0, x: 0 },
-            { offset: 0.2, rotate: -2.5, x: -1 },
-            { offset: 0.45, rotate: 2.5, x: 1 },
-            { offset: 0.7, rotate: -1.2, x: -0.5 },
-            { offset: 1, rotate: 0, x: 0 }
-        ]
-    },
-    knockback: {
-        ms: 380,
-        origin: '50% 100%',
-        directional: true,
-        frames: [
-            { offset: 0, x: 0, rotate: 0, flash: 0 },
-            { offset: 0.18, x: 10, rotate: 6, flash: 1 },
-            { offset: 0.5, x: 4, rotate: 2, flash: 0.4 },
-            { offset: 1, x: 0, rotate: 0, flash: 0 }
-        ]
-    }
+    shake: moves([
+        { ms: 60, x: -2 }, { ms: 60, x: 2 }, { ms: 60, x: -2 }, { ms: 60, x: 1 }, { ms: 60, x: -1 }
+    ]),
+    jitter: moves([
+        { ms: 50, x: -1, y: 1 }, { ms: 50, x: 1, y: -1 }, { ms: 50, x: -1, y: -1 },
+        { ms: 50, x: 1, y: 1 }, { ms: 50, x: -1, y: 0 }, { ms: 50, x: 1, y: 0 }
+    ]),
+    bob: moves([
+        { ms: 125, y: -1 }, { ms: 250, y: -2 }, { ms: 125, y: -1 }, { ms: 125, y: 0 },
+        { ms: 125, y: 1 }, { ms: 125, y: 0 }
+    ]),
+    sway: moves([
+        { ms: 100, x: 1 }, { ms: 150, x: 2 }, { ms: 100, x: 1 }, { ms: 100, x: -1 },
+        { ms: 150, x: -2 }, { ms: 100, x: -1 }
+    ]),
+    squash: moves([
+        { ms: 40, y: 1 }, { ms: 80, y: 2 }, { ms: 80, y: -1 }
+    ]),
+    hop: moves([
+        { ms: 40, y: -1 }, { ms: 40, y: -2 }, { ms: 60, y: -4 }, { ms: 40, y: -3 },
+        { ms: 40, y: -1 }, { ms: 60, y: 1 }
+    ]),
+    pulse: moves([
+        { ms: 90, y: -1 }, { ms: 90, y: 0 }, { ms: 90, y: -1 }
+    ]),
+    thump: moves([
+        { ms: 55, y: 1 }, { ms: 55, y: 2 }, { ms: 80, y: 1 }, { ms: 80, y: -1 }
+    ]),
+    rustle: moves([
+        { ms: 150, x: -1 }, { ms: 150, x: 1 }, { ms: 150, x: -1 }, { ms: 150, x: 0 }
+    ]),
+    knockback: moves([
+        { ms: 60, x: 3 }, { ms: 60, x: 5 }, { ms: 60, x: 4 }, { ms: 60, x: 2 }, { ms: 60, x: 1 }
+    ], { directional: true })
 });
 
 /** Which animation each skill plays. A skill not listed plays nothing. */
@@ -210,49 +139,23 @@ export function knockbackDir(tokenX, heroX, heroSide = null) {
     return 1;
 }
 
-export function redFlash(t) {
-    const s = Math.max(0, Math.min(1, Number(t) || 0));
-    if (!s) return 'none';
-    return `sepia(${s}) saturate(${1 + 5 * s}) hue-rotate(${-45 * s}deg)`;
-}
-
-function transformOf(f, dir) {
-    const x = (f.x || 0) * dir;
-    const y = f.y || 0;
-    const rotate = (f.rotate || 0) * dir;
-    return `translate(${x}%, ${y}%) rotate(${rotate}deg)`;
-}
-
 /**
  * Web Animations keyframes for one animation.
  * @param {object} anim an entry of {@link HIT_ANIMATIONS} (or {@link hitAnimationFor})
  * @param {object} [options]
  * @param {number} [options.dir] +1 / -1, for a directional animation
- * @param {number} [options.periodMs] squeeze the movement into the start of a loop this long
- * (work), holding still for the rest; omit for a one-shot
- * @param {boolean} [options.reducedMotion] no movement: only a flash, if any
+ * @param {number} [options.periodMs] the movement at the start of a loop this long (work),
+ * holding still for the rest; omit for a one-shot
+ * @param {boolean} [options.reducedMotion] no movement, so nothing to play
+ * @param {number} [options.unit] mat units (CSS px) per art pixel
  * @returns {Array<object>} keyframes (empty when there is nothing to play)
  */
-export function buildHitKeyframes(anim, { dir = 1, periodMs = null, reducedMotion = false } = {}) {
-    if (!anim?.frames?.length) return [];
+export function buildHitKeyframes(anim, { dir = 1, periodMs = null, reducedMotion = false, unit = 1 } = {}) {
+    if (!anim?.poses?.length || reducedMotion) return [];
     const d = anim.directional ? (dir < 0 ? -1 : 1) : 1;
-    const hasFlash = anim.frames.some(f => f.flash);
-    if (reducedMotion && !hasFlash) return [];
-    const squeeze = periodMs ? Math.min(1, anim.ms / periodMs) : 1;
-
-    const out = anim.frames.map(f => {
-        const k = { offset: f.offset * squeeze };
-        k.transform = reducedMotion ? 'none' : transformOf(f, d);
-        if (hasFlash) k.filter = redFlash(f.flash);
-        k.easing = anim.easing || ease;
-        return k;
-    });
-    if (squeeze < 1) {
-        const rest = { offset: 1, transform: reducedMotion ? 'none' : transformOf({}, d) };
-        if (hasFlash) rest.filter = 'none';
-        out.push(rest);
-    }
-    return out;
+    const poses = anim.poses.map(p => ({ ms: p.ms, x: (p.x || 0) * d, y: p.y || 0 }));
+    if (periodMs && periodMs > anim.ms) poses.push({ ms: periodMs - anim.ms, x: 0, y: 0 });
+    return heldPoses(poses, { unit }).keyframes;
 }
 
 

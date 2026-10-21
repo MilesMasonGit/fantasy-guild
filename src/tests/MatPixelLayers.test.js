@@ -70,8 +70,8 @@ function rulesFor(css, cls) {
 }
 
 describe('⭐ an animation among the resting Tokens never runs on the compositor', () => {
-    it('the hop, the flash, the glow, the quest halo and the gear alert outline keep it on the main thread', () => {
-        for (const cls of ['gi-token-land', 'gi-transform-flash', 'gi-transform-glow', 'gi-quest-ready', 'gi-gear-alert']) {
+    it('the hop, the quest halo and the gear alert outline keep it on the main thread', () => {
+        for (const cls of ['gi-token-land', 'gi-quest-ready', 'gi-gear-alert']) {
             const rules = rulesFor(TAILWIND, cls);
             expect(rules.length, cls).toBeGreaterThan(0);
             expect(rules.some(r => /will-change:\s*contents/.test(r)), cls).toBe(true);

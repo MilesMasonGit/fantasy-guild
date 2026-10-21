@@ -57,7 +57,7 @@ export function dropBonusGrants(instanceId) {
         landed.push(grant.itemId);
         // Announced only once the roll has actually landed: a 5% grant that missed did nothing,
         // and saying its name would teach the player the opposite of how often it works.
-        EffectFeedback.announce(instanceId, grant);
+        EffectFeedback.announce(instanceId, grant, { amount: quantity });
     }
     return landed;
 }

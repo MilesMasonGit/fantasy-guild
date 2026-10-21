@@ -22,10 +22,14 @@ import { TokenHitArt, COMBAT_ATTACK_EVENT } from '../ui/components/board/TokenHi
 import {
     HIT_ANIMATIONS, SKILL_HIT, HIT_PERIOD_MS, STRIKE_FRAME, HERO_FRAMES,
     hitSkillOf, hitAnimationNameFor, hitAnimationFor, hitsOnAttack, knockbackDir,
-    buildHitKeyframes, heroFrameAt, strikeStartTime, heroPhaseMs, redFlash,
+    buildHitKeyframes, heroFrameAt, strikeStartTime, heroPhaseMs,
     strikesLive, heroAnimationState, heroSpriteFrame, isRealAttack, STRIKE_DELAY_MS, ATTACK_ONCE_MS, HERO_FRAME_MS
 } from '../ui/components/board/hitAnimations.js';
 import { MatHero } from '../ui/components/board/MatHero.jsx';
+import { TRANSFORM_FLASH_FRAMES } from '../ui/components/board/TokenHitArt.jsx';
+import { FX_FRAME_MS } from '../ui/components/board/fx/pixelSteps.js';
+import { setSpriteFxManifest, assetKey } from '../ui/utils/spriteFx.js';
+import { tokenSpritePath } from '../config/registries/tokenRegistry.js';
 import { PLACEMENT } from '../config/registries/placementRegistry.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 
@@ -85,6 +89,8 @@ registerTokenTypes({
 });
 
 const h = React.createElement;
+/** The fixture trees' sprite, as the generated pictures' manifest names it. */
+const SPRITE_KEY = assetKey(tokenSpritePath('fixture_q4_tree'));
 const mount = (el) => render(
     h(DndContext, null, el)
 );
@@ -142,13 +148,30 @@ describe('skill → hit animation (FB-10, the owner-approved list)', () => {
         expect(hitAnimationFor('commerce')).toBeNull();
     });
 
-    it('every table entry is a playable animation', () => {
+    it('every table entry is a playable animation of held whole-pixel poses', () => {
         for (const [name, anim] of Object.entries(HIT_ANIMATIONS)) {
             expect(anim.ms, name).toBeGreaterThan(0);
             expect(anim.ms, name).toBeLessThanOrEqual(HIT_PERIOD_MS);
-            expect(anim.frames[0].offset, name).toBe(0);
-            expect(anim.frames[anim.frames.length - 1].offset, name).toBe(1);
-            expect(buildHitKeyframes(anim).length, name).toBeGreaterThan(1);
+            expect(anim.ms, name).toBe(anim.poses.reduce((sum, p) => sum + p.ms, 0));
+            for (const p of anim.poses) {
+                expect(Number.isInteger(p.x ?? 0) && Number.isInteger(p.y ?? 0), name).toBe(true);
+            }
+            const k = buildHitKeyframes(anim);
+            expect(k.length, name).toBeGreaterThan(1);
+            expect(k[0].offset, name).toBe(0);
+            expect(k[k.length - 1].offset, name).toBe(1);
+        }
+    });
+
+    it('steps from pose to pose, never easing through the pixels between (effect 1)', () => {
+        for (const [name, anim] of Object.entries(HIT_ANIMATIONS)) {
+            const k = buildHitKeyframes(anim, { unit: 2.5 });
+            for (const f of k.slice(0, -1)) expect(f.easing, name).toBe('steps(1, end)');
+            // Each pose is a whole number of art pixels, `unit` mat units each.
+            for (const f of k) {
+                const [, x, y] = /^translate\((-?[\d.]+)px, (-?[\d.]+)px\)$/.exec(f.transform);
+                expect(Number.isInteger(Number(x) / 2.5) && Number.isInteger(Number(y) / 2.5), `${name} ${f.transform}`).toBe(true);
+            }
         }
     });
 
@@ -174,15 +197,14 @@ describe('knockback direction (FB-10 combat)', () => {
         expect(knockbackDir(500, null, null)).toBe(1);
     });
 
-    it('points the keyframes the way it is told, and flashes red', () => {
+    it('points the keyframes the way it is told, with no filter (the flash is a white copy now)', () => {
         const anim = hitAnimationFor('melee');
         const right = buildHitKeyframes(anim, { dir: 1 });
         const left = buildHitKeyframes(anim, { dir: -1 });
-        expect(right[1].transform).toMatch(/^translate\(10%/);
-        expect(left[1].transform).toMatch(/^translate\(-10%/);
-        expect(right[1].filter).toBe(redFlash(1));
-        expect(right[0].filter).toBe('none');
-        expect(right[right.length - 1].filter).toBe('none');
+        expect(right[1].transform).toBe('translate(5px, 0px)');
+        expect(left[1].transform).toBe('translate(-5px, 0px)');
+        expect(right.some(f => 'filter' in f)).toBe(false);
+        expect(right[right.length - 1].transform).toBe('translate(0px, 0px)');
     });
 
     it('a non-directional animation ignores the direction', () => {
@@ -195,18 +217,16 @@ describe('keyframes in a strike loop, and reduced motion', () => {
     it('squeezes the move into the start of the loop and rests until the next strike', () => {
         const anim = hitAnimationFor('forestry');
         const k = buildHitKeyframes(anim, { periodMs: HIT_PERIOD_MS });
-        const lastMove = k[k.length - 2];
-        expect(lastMove.offset).toBeCloseTo(anim.ms / HIT_PERIOD_MS, 5);
+        const rest = k[k.length - 2];
+        expect(rest.offset).toBeCloseTo(anim.ms / HIT_PERIOD_MS, 5);
+        expect(rest.transform).toBe('translate(0px, 0px)');
         expect(k[k.length - 1].offset).toBe(1);
-        expect(k[k.length - 1].transform).toBe('translate(0%, 0%) rotate(0deg)');
+        expect(k[k.length - 1].transform).toBe('translate(0px, 0px)');
     });
 
-    it('reduced motion: work plays nothing; combat keeps only its flash', () => {
+    it('reduced motion: nothing moves (combat keeps its white flash, drawn apart from the knockback)', () => {
         expect(buildHitKeyframes(hitAnimationFor('mining'), { reducedMotion: true })).toEqual([]);
-        const k = buildHitKeyframes(hitAnimationFor('magic'), { reducedMotion: true, dir: 1 });
-        expect(k.length).toBeGreaterThan(0);
-        expect(k.every(f => f.transform === 'none')).toBe(true);
-        expect(k.some(f => f.filter !== 'none')).toBe(true);
+        expect(buildHitKeyframes(hitAnimationFor('magic'), { reducedMotion: true, dir: 1 })).toEqual([]);
     });
 });
 
@@ -307,7 +327,7 @@ describe('TokenHitArt', () => {
             // It waits for the hero's strike frame.
             expect(anim.calls[0].options).toEqual({ duration: HIT_ANIMATIONS.knockback.ms, delay: STRIKE_DELAY_MS });
             // Hero to the right (x 700 > 600): knocked left.
-            expect(anim.calls[0].keyframes[1].transform).toMatch(/^translate\(-10%/);
+            expect(anim.calls[0].keyframes[1].transform).toBe('translate(-5px, 0px)');
             expect(container.querySelector('[data-token-hit="knockback"]').dataset.hitDir).toBe('-1');
 
             // Another Token's attack does not reach this one.
@@ -365,22 +385,46 @@ describe('transform glow (FB-11)', () => {
         expect(TokenGlows.glowOf('x', 1000 + TokenGlows.GLOW_MS)).toBeNull();
     });
 
-    it('the new Token is drawn glowing', async () => {
+    it('the new Token flashes its white outline for three frames (effect 17), with no filter or glow', async () => {
+        setSpriteFxManifest({ sprites: { [SPRITE_KEY]: { w: 64, h: 64, outlined: true, hash: 'x' } } });
         const old = placeAt('fixture_q4_sapling', 500, 500);
         const { container } = mount(h(MatBoard, {}));
-        let made;
-        await act(async () => { made = EffectActions.transformInstance(old, 'fixture_q4_tree'); });
-        const art = container.querySelector(`[data-token-art][data-token-id="${made.id}"]`);
-        expect(art).not.toBeNull();
-        expect(art.querySelector('[data-transform-glow]')).not.toBeNull();
-        expect(art.querySelector('.gi-transform-flash')).not.toBeNull();
+        const played = [];
+        const proto = window.HTMLElement.prototype;
+        const had = Object.prototype.hasOwnProperty.call(proto, 'animate');
+        const original = proto.animate;
+        proto.animate = function animate(keyframes, options) {
+            played.push({ el: this, keyframes, options });
+            return { cancel: vi.fn(), onfinish: null, oncancel: null };
+        };
+        try {
+            let made;
+            await act(async () => { made = EffectActions.transformInstance(old, 'fixture_q4_tree'); });
+            const art = container.querySelector(`[data-token-art][data-token-id="${made.id}"]`);
+            expect(art).not.toBeNull();
+            const ring = art.querySelector('[data-fx-ring="hover"]');
+            expect(ring).not.toBeNull();
+            const flash = played.find(p => p.el === ring);
+            expect(flash.options.duration).toBe(TRANSFORM_FLASH_FRAMES * FX_FRAME_MS);
+            expect(art.querySelector('[data-transform-glow]')).toBeNull();
+            expect(art.innerHTML).not.toMatch(/gi-transform/);
+            expect([...art.querySelectorAll('*')].some(el => el.style.filter)).toBe(false);
+        } finally {
+            if (had) proto.animate = original; else delete proto.animate;
+            setSpriteFxManifest(null);
+        }
     });
 
-    it('a Token that did not just change does not glow', () => {
-        const t = placeAt('fixture_q4_tree', 500, 500);
-        const { container } = mount(h(MatBoard, {}));
-        const art = container.querySelector(`[data-token-art][data-token-id="${t.id}"]`);
-        expect(art.querySelector('[data-transform-glow]')).toBeNull();
+    it('a Token that did not just change does not flash', () => {
+        setSpriteFxManifest({ sprites: { [SPRITE_KEY]: { w: 64, h: 64, outlined: true, hash: 'x' } } });
+        try {
+            const t = placeAt('fixture_q4_tree', 500, 500);
+            const { container } = mount(h(MatBoard, {}));
+            const art = container.querySelector(`[data-token-art][data-token-id="${t.id}"]`);
+            expect(art.querySelector('[data-fx-ring]')).toBeNull();
+        } finally {
+            setSpriteFxManifest(null);
+        }
     });
 });
 
@@ -512,12 +556,13 @@ describe('spawn in place glows like a transform (FB-51)', () => {
 describe('hit reactions never scale the pixel art', () => {
     it('no animation names a scale, and no keyframe carries one', () => {
         for (const [name, anim] of Object.entries(HIT_ANIMATIONS)) {
-            for (const f of anim.frames) {
+            for (const f of anim.poses) {
                 expect(f, name).not.toHaveProperty('sx');
                 expect(f, name).not.toHaveProperty('sy');
+                expect(f, name).not.toHaveProperty('rotate');
             }
             for (const k of buildHitKeyframes(anim, { periodMs: HIT_PERIOD_MS })) {
-                expect(k.transform, name).not.toMatch(/scale/);
+                expect(k.transform, name).not.toMatch(/scale|rotate/);
             }
         }
     });

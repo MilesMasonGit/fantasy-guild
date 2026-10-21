@@ -41,6 +41,7 @@ import { getTokenType, tokenName } from '../../../config/registries/tokenRegistr
 import { usePerfRenderCount } from '../../dev/perf/PerfProfiler.jsx';
 import { useDrawn } from '../../dev/perf/drawSwitches.js';
 import { watchSpawns } from './spawnMotion.js';
+import { MatFxLayer } from './fx/MatFxLayer.jsx';
 import { ENGINE_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 
@@ -496,6 +497,9 @@ export const MatBoard = React.memo(function MatBoard({
 
             {/* `MAT_Z.LOOT`: loot on the floor. */}
             <SpriteLayerView />
+
+            {/* `MAT_Z.FX`: effects standing on the mat (rising numbers, sparks, a knockout). */}
+            <MatFxLayer />
 
             {/* Flags, sorted in among the Tokens, and their rings (`MAT_Z.RINGS`). */}
             <FlagLayer

@@ -439,50 +439,8 @@
   cursor: not-allowed;
 }
 
-/* A Token that has just become another one (feedback Q4, FB-11): a white-gold
- * flash of the art and a soft glow that swells out and fades, ~1 s
- * (`TokenGlows.GLOW_MS`). The glow is its own layer over the art box; the
- * flash is on the art's hit wrapper (`TokenHitArt`), not the sprite, which
- * keeps its contact shadow and landing bounce to itself. */
-@keyframes gi-transform-flash {
-  0%   { filter: brightness(2.4) saturate(0.4) drop-shadow(0 0 6px rgba(255, 236, 170, 0.95)); }
-  35%  { filter: brightness(1.6) saturate(0.8) drop-shadow(0 0 5px rgba(255, 215, 90, 0.8)); }
-  100% { filter: brightness(1) saturate(1) drop-shadow(0 0 0 rgba(255, 215, 90, 0)); }
-}
-
-.gi-transform-flash {
-  animation: gi-transform-flash 1000ms ease-out both;
-}
-
-@keyframes gi-transform-glow {
-  0%   { opacity: 0;    transform: scale(0.55); }
-  15%  { opacity: 1;    transform: scale(0.9); }
-  100% { opacity: 0;    transform: scale(1.45); }
-}
-
-.gi-transform-glow {
-  border-radius: 50%;
-  background: radial-gradient(circle,
-    rgba(255, 255, 255, 0.95) 0%,
-    rgba(255, 236, 160, 0.75) 22%,
-    rgba(255, 200, 70, 0.35) 45%,
-    rgba(255, 200, 70, 0) 70%);
-  mix-blend-mode: screen;
-  animation: gi-transform-glow 1000ms ease-out both;
-}
-
-/* Reduced motion: no swelling, just a fade of the light. */
-@keyframes gi-transform-glow-fade {
-  0%   { opacity: 0.9; }
-  100% { opacity: 0; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .gi-transform-glow { animation-name: gi-transform-glow-fade; }
-}
-
-/* A quest Token that is done, waiting to be claimed (B6.2, TL-18): the
- * transform glow's gold (FB-11), held as a halo behind the art that breathes
+/* A quest Token that is done, waiting to be claimed (B6.2, TL-18): a gold
+ * halo behind the art that breathes
  * gently for as long as the quest waits. Hollow in the middle so the board's
  * art is never washed out; the layer spills past the art box (MatToken). */
 @keyframes gi-quest-ready {
@@ -723,12 +681,30 @@
 .gi-token-land,
 .gi-lvl-float,
 .gi-lvl-roll,
-.gi-transform-flash,
-.gi-transform-glow,
 .gi-quest-ready,
 .gi-gear-alert {
   will-change: contents;
 }
+
+/* A number rising off a Token on the mat (`fx/matFx.js`): a hit's damage, a rule's +1. The pixel
+   font with a hard one-pixel black edge, four unblurred copies a screen pixel out (`--fx-px`, set
+   by the effects layer from the mat's fit), never a soft shadow. Centred over its point by the
+   separate `translate` property, so the rise's `transform` leaves it alone. */
+.gi-fx-number {
+  font-weight: 700;
+  font-size: var(--font-size-sm);
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+  translate: -50% -100%;
+  text-shadow:
+    var(--fx-px, 1px) 0 0 #000,
+    calc(var(--fx-px, 1px) * -1) 0 0 #000,
+    0 var(--fx-px, 1px) 0 #000,
+    0 calc(var(--fx-px, 1px) * -1) 0 #000;
+}
+.gi-fx-number-damage { color: #ff5a5a; }
+.gi-fx-number-gain { color: #6ee7b7; }
 
 /* The work bar along a worked Token's foot (`workBar.js`): a dark track, and its
    fill as the track's own `::after`, scaled to `--work-bar-fill` (whole art pixels,

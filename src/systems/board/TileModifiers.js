@@ -476,12 +476,13 @@ export function rebuildToken(instanceId) {
  */
 export function collectStatusApplications(instanceId) {
     const out = [];
-    for (const { statement } of applicableStatements(instanceId)) {
-        // The title rides along so the caller can announce which named effect landed. Copied rather
-        // than pushed by reference, because the payload belongs to the statement and callers should
-        // not be able to reach back into the library through it.
+    for (const { statement, neighbour } of applicableStatements(instanceId)) {
+        // The title rides along so the caller can announce which named effect landed, and the Token
+        // it came from so the mat can draw it arriving. Copied rather than pushed by reference,
+        // because the payload belongs to the statement and callers should not be able to reach
+        // back into the library through it.
         if (statement.keyword === KEYWORD.APPLIES) {
-            out.push({ ...statement.payload, effectTitle: statement.effectTitle });
+            out.push({ ...statement.payload, effectTitle: statement.effectTitle, fromTokenId: neighbour });
         }
     }
     out.push(...loadoutPayloads(instanceId, KEYWORD.APPLIES));
@@ -522,11 +523,11 @@ function loadoutPayloads(instanceId, keyword) {
 /** Item-granting statements reaching this tile, as raw payloads. */
 export function collectItemGrants(instanceId, effectType) {
     const grants = [];
-    for (const { statement } of applicableStatements(instanceId)) {
+    for (const { statement, neighbour } of applicableStatements(instanceId)) {
         const payload = statement.payload;
-        // Carries `effectTitle` for the same reason as the statuses above.
+        // Carries `effectTitle` and `fromTokenId` for the same reasons as the statuses above.
         if (payload?.type === effectType && payload.itemId) {
-            grants.push({ ...payload, effectTitle: statement.effectTitle });
+            grants.push({ ...payload, effectTitle: statement.effectTitle, fromTokenId: neighbour });
         }
     }
     // The hero's own items grant at this tile too.
