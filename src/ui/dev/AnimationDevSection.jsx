@@ -3,6 +3,7 @@
 
 import { useState } from 'react';
 import { enemies, worked, everyToken, some, playOn, neighbours, dropLootFrom, dropRareFrom } from './animationDev.js';
+import { beginSettle } from '../components/board/fx/regionSettle.js';
 import { floatNumber, spark, knockoutGhost, heroFlash, KNOCKOUT_MS } from '../components/board/fx/matFx.js';
 import * as BoardState from '../../systems/board/BoardState.js';
 
@@ -29,6 +30,7 @@ const EFFECTS = [
     },
     { id: 'loot', label: 'Loot hop, ground shadow, afterimages (adds 3 loot)', run: () => dropLootFrom(some(everyToken(), 3)).length },
     { id: 'rare', label: 'Rare find: gold flash and star (adds 2 loot)', run: () => dropRareFrom(some(everyToken(), 2)).length },
+    { id: 'settle', label: 'Region settle: the Hall lands, the rest ripple in (this mat)', run: () => { beginSettle(); return everyToken().length + 1; } },
     { id: 'cycle', label: 'Cycle finished: outline blinks white (worked Tokens)', run: () => playOn(some(worked(), 4), { fx: 'cycle' }) },
     { id: 'transform', label: 'Transform: white outline, 3 frames (3 Tokens)', run: () => playOn(some(everyToken(), 3), { fx: 'transform' }) },
     { id: 'echo', label: 'Rule fired: echo ring (3 Tokens)', run: () => playOn(some(everyToken(), 3), { fx: 'echo' }) },

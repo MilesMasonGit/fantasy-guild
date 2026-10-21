@@ -10,6 +10,7 @@ import { BOARD_EVENTS } from '../../systems/board/boardEvents.js';
 import * as BoardState from '../../systems/board/BoardState.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import * as MatFx from '../components/board/fx/matFx.js';
+import { beginSettle } from '../components/board/fx/regionSettle.js';
 import * as SpriteLayer from '../../systems/board/SpriteLayer.js';
 import { getAllItems } from '../../config/registries/itemRegistry.js';
 
@@ -91,4 +92,4 @@ export function flashStorm({ everyMs = 240, forMs = 10000, frames = 2 } = {}) {
 
 // The measuring scripts reach the page's own copies of these through here (a module imported
 // again from the console can be a second copy with none of the page's state).
-globalThis.__fxDev = { enemies, worked, everyToken, neighbours, some, playOn, flashStorm, dropLootFrom, dropRareFrom, MatFx };
+globalThis.__fxDev = { enemies, worked, everyToken, neighbours, some, playOn, flashStorm, dropLootFrom, dropRareFrom, beginSettle, MatFx };

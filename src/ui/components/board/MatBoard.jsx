@@ -41,6 +41,7 @@ import { getTokenType, tokenName } from '../../../config/registries/tokenRegistr
 import { usePerfRenderCount } from '../../dev/perf/PerfProfiler.jsx';
 import { useDrawn } from '../../dev/perf/drawSwitches.js';
 import { watchSpawns } from './spawnMotion.js';
+import { watchRegionSettle } from './fx/regionSettle.js';
 import { MatFxLayer } from './fx/MatFxLayer.jsx';
 import { ENGINE_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
@@ -319,6 +320,7 @@ export const MatBoard = React.memo(function MatBoard({
 
     // Remembers where each new Token came from, for its pop-out (`MatToken`).
     useEffect(() => watchSpawns(), []);
+    useEffect(() => watchRegionSettle(), []);
 
     const handleRecallHero = useCallback((heroId) => {
         // Said where the hero stood, should a recall ever be refused.

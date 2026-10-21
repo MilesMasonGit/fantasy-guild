@@ -42,6 +42,7 @@ import { useDrawn, isDrawn } from '../../dev/perf/drawSwitches.js';
 import { QuestPosterItem } from './QuestPoster.jsx';
 import { takeSpawn, playSpawn } from './spawnMotion.js';
 import { FX_FRAME_MS, playPoses } from './fx/pixelSteps.js';
+import { takeSettle, playSettle } from './fx/regionSettle.js';
 
 /**
  * A walking enemy's boxes follow the engine without React. While `on`, each `ENEMIES_WALKED`
@@ -350,6 +351,15 @@ export const MatToken = React.memo(function MatToken({
         stack?.attach(id, 'badges', el);
     }, [stack, id]);
     useWalkerFollow(walker && walking && x == null, id, boxHalf, artRef, overlayRef);
+
+    // Arriving in a Region: out of sight until its turn, then it drops in (`fx/regionSettle.js`). A
+    // Token drawn before the arrival (the Hall, a quest) is told; one drawn after asks as it mounts.
+    const settle = () => {
+        const wait = takeSettle(id);
+        if (wait != null && isDrawn('tokenFx')) playSettle([artRef.current, overlayRef.current], wait);
+    };
+    useTokenEvent(UI_EVENTS.UI_TOKEN_FX, id, (p) => { if (p?.fx === 'settle') settle(); });
+    React.useLayoutEffect(settle, []);   // eslint-disable-line react-hooks/exhaustive-deps
 
     // Just spawned: pops out of its spawner and slides to its spot, on both boxes alike. Read once,
     // at mount, so a Token already on the mat never replays it.

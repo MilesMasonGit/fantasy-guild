@@ -26,6 +26,7 @@ import { startStrikeChips, CHIP_COUNT } from '../ui/components/board/fx/strikeCh
 import { setDrawingPaused } from '../ui/components/board/frameClock.js';
 import { lootHopPoses, HOP_POSES, playLootArc, playAbsorptionSlide } from '../ui/utils/lootArc.js';
 import * as RareDrops from '../systems/board/RareDrops.js';
+import { settlePlan, beginSettle, takeSettle, playSettle, HALL_SETTLE_MS, SETTLE_SPREAD_MS, LAND_MS } from '../ui/components/board/fx/regionSettle.js';
 import { recordRareDrop, takeRareDrop, playRareTwinkle } from '../ui/components/board/fx/rareTwinkle.js';
 
 /**
@@ -527,6 +528,53 @@ describe('colour flash on a hero: green when food heals them in a fight', () => 
         } finally {
             unwatch();
             MatFx.attachFxHost(null);
+            rec.restore();
+        }
+    });
+});
+
+describe('Region settle (effect 18)', () => {
+    it('the Hall first, then the rest by their distance from it, the whole ripple capped', () => {
+        const tokens = [
+            { id: 'far', typeId: 'fixture_producer', x: 1500, y: 900 },
+            { id: 'hall', typeId: 'token_guild_hall', x: 800, y: 500 },
+            { id: 'near', typeId: 'fixture_producer', x: 900, y: 500 },
+            { id: 'mid', typeId: 'fixture_producer', x: 500, y: 300 }
+        ];
+        const waits = settlePlan(tokens);
+        expect(waits.get('hall')).toBe(HALL_SETTLE_MS);
+        expect(waits.get('near')).toBeGreaterThan(waits.get('hall'));
+        expect(waits.get('mid')).toBeGreaterThan(waits.get('near'));
+        expect(waits.get('far')).toBeGreaterThan(waits.get('mid'));
+        expect(Math.max(...waits.values())).toBeLessThanOrEqual(HALL_SETTLE_MS + 150 + SETTLE_SPREAD_MS);
+    });
+
+    it('each Token is told once, drawn before or after the arrival; out of sight until its turn, then the landing hop', () => {
+        GameState.initNew();
+        clearMat();
+        const t = placeAt('fixture_producer', 500, 500);
+        const heard = [];
+        const off = EventBus.subscribe(UI_EVENTS.UI_TOKEN_FX, (p) => heard.push(p));
+        beginSettle(1000);
+        off();
+        expect(heard).toEqual([{ instanceId: t.id, fx: 'settle' }]);
+        const wait = takeSettle(t.id, 1100);
+        expect(wait).toBeGreaterThanOrEqual(0);
+        expect(takeSettle(t.id, 1100)).toBeNull();
+
+        const rec = recordAnimate();
+        try {
+            const box = document.createElement('div');
+            playSettle([box], 400);
+            const k = rec.calls[0].keyframes;
+            expect(k[0]).toMatchObject({ visibility: 'hidden', transform: 'translate(0px, 0px)' });
+            expect(k[1]).toMatchObject({ visibility: 'visible', transform: 'translate(0px, -20px)' });
+            expect(k.at(-1)).toMatchObject({ visibility: 'visible', transform: 'translate(0px, 0px)' });
+            expect(rec.calls[0].options.duration).toBe(400 + LAND_MS);
+            expect(box.style.willChange).toBe('contents');
+            rec.calls[0].onfinish();
+            expect(box.style.willChange).toBe('');
+        } finally {
             rec.restore();
         }
     });
