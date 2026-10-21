@@ -79,10 +79,9 @@ export const TestDashboard = React.memo(() => {
 
     if (!engine) return null;
 
-    // Raise every skill a hero HOLDS — which is 6 of 27, not the whole
-    // registry. Raising a skill means raising its XP to exactly the level
-    // boundary `n` steps up, so each one moves by precisely `n` regardless of
-    // where it currently sits mid-level. Hero level is the average of the held
+    // Raise every skill a hero HOLDS, not the whole registry. Raising a skill
+    // means raising its XP to exactly the level boundary `n` steps up, so each
+    // one moves by precisely `n` regardless of where it currently sits mid-level. Hero level is the average of the held
     // skills (see calculateHeroLevel in HeroGenerator.js), so it moves by `n`
     // too.
     const levelAllHeroes = (n) => {
