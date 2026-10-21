@@ -1536,3 +1536,7 @@ Recommendation in the report to the director.
   4 fights and 40 piles at once was not measured.
 - Each envelope scene's frame work was measured on the bench's fixture Tokens (`bench_*`,
   `fixture_*`); shipped Tokens with their own art, statuses or rules were not.
+
+The branch changes only bench code and the dev/perf harness (the stress boards' names, three more
+modules in `__perf.game`): `npm run bench -- --compare` on it, 15:58, **same work as the baseline**
+in every scenario, no timing regression (exit 0).
