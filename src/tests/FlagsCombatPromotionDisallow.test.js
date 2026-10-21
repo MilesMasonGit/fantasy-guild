@@ -496,10 +496,8 @@ describe('⭐ disallow (FP-35)', () => {
         expect(forest.cycleElapsedMs).toBeGreaterThan(0);
 
         const changed = [];
-        let stateChanges = 0;
         const offs = [
-            EventBus.subscribe(BOARD_EVENTS.TILE_CHANGED, p => changed.push(p)),
-            EventBus.subscribe('state_changed', () => { stateChanges++; })
+            EventBus.subscribe(BOARD_EVENTS.TILE_CHANGED, p => changed.push(p))
         ];
         let result;
         try {
@@ -513,7 +511,6 @@ describe('⭐ disallow (FP-35)', () => {
         expect(workTileOf('h1')).toBeNull();
         expect(forest.cycleElapsedMs).toBe(0);
         expect(changed).toContainEqual({ instanceId: idAt(14), typeId: 'fixture_producer' });
-        expect(stateChanges).toBeGreaterThan(0);
 
         run(100);
         expect(workTileOf('h1')).toBe(16);

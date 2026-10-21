@@ -31,8 +31,8 @@ import { shareEqual } from './structuralShare.js';
  * * ⚠️ **`events` and `options` are read once, at mount.** A caller that passes a different
  * `events` list later is silently still subscribed to the first one. (The selector and the
  * filter function are re-read every render.)
- * * **Name the specific events.** The default, `state_changed`, is a catch-all, being
- * retired; a surface that reads state no specific event names listens to `GAME_RESET` as well.
+ * * **Name the specific events**, and `GAME_RESET` beside them for a new game, a load or a
+ * travel. With none named it hears only `GAME_RESET`.
  * * Several events in one task run the selector once (a microtask), and the result is compared
  * with the last value BEFORE React is asked to render, so an event that changed nothing costs
  * one selector call and no render.
@@ -42,13 +42,13 @@ import { shareEqual } from './structuralShare.js';
  * * A slice for ONE mat Token belongs in `useTokenState` (`tokenEvents.js`), which wakes only
  * that Token.
  * @param {Function} selector - Extracts a slice of state, per the contract above
- * @param {Array<string>} [events=['state_changed']] - EventBus events that trigger
+ * @param {Array<string>} [events=['game_reset']] - EventBus events that trigger
  * re-evaluation
  * @param {Function|null} [eventFilter=null] - Optional payload filter; return false to skip
  * @param {Object} [options] - { shallow, deepClone, bypassClone, deps }
  * @returns {any} The selected slice
  */
-export const useGameState = (selector = (state) => state, events = [ENGINE_EVENTS.STATE_CHANGED], eventFilter = null, options = {}) => {
+export const useGameState = (selector = (state) => state, events = [ENGINE_EVENTS.GAME_RESET], eventFilter = null, options = {}) => {
     const { GameState, EventBus } = useEngine();
 
     const selectorRef = useRef(selector);

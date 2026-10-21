@@ -178,7 +178,6 @@ export function placeTokenAt(instance, point, options = {}) {
     EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: instance.id, typeId: instance.typeId });
     EventBus.publish(BOARD_EVENTS.TOKEN_PLACED, { instanceId: instance.id, typeId: instance.typeId });
     markAdjacencyDirty([from, { x: decision.x, y: decision.y }]);
-    EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
 
     return {
         success: true,
@@ -257,7 +256,6 @@ function restock(instance, decision) {
         currentCharges: target.usesRemaining
     });
     EventBus.publish(ENGINE_EVENTS.AUDIO_PLAY, { clip: 'quest_claim' });
-    EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
 
     if (decision.absorbed) {
         return { success: true, restocked: true, absorbed: true, addedCharges: decision.transferred };
@@ -271,7 +269,6 @@ function restock(instance, decision) {
         EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: instance.id, typeId: instance.typeId });
         EventBus.publish(BOARD_EVENTS.TOKEN_PLACED, { instanceId: instance.id, typeId: instance.typeId });
         markAdjacencyDirty([from, { x: decision.x, y: decision.y }]);
-        EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
         return {
             success: true, restocked: true, nudgedLeftover: true,
             x: decision.x, y: decision.y, addedCharges: decision.transferred
@@ -383,7 +380,6 @@ export function removePlacedToken(id) {
     EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: id, ...(at || {}), typeId: null });
     if (heroId && at) EventBus.publish(BOARD_EVENTS.HERO_MOVED, { heroId, ...at });
     markAdjacencyDirty([at]);
-    EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
 
     return { success: true, idledHeroId: heroId };
 }
@@ -416,7 +412,6 @@ export function plantFlagAt(heroId, point, { pin = false } = {}) {
     if (planted.unchanged) return { success: true, point: at, workedToken: BoardState.workTokenOf(heroId), ...pinInfo };
 
     EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'board_placement' });
-    EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
 
     return { success: true, point: at, workedToken: BoardState.workTokenOf(heroId), ...pinInfo };
 }
@@ -442,7 +437,6 @@ export function recallHeroById(heroId) {
     }
 
     EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'board_recall' });
-    EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
 
     return { success: true, heroId };
 }

@@ -346,7 +346,6 @@ export async function run({
     if (reset) {
         // What a load announces once it has booted: the UI heard nothing while this played.
         EventBus.publish(ENGINE_EVENTS.GAME_RESET, { reason: 'catch_up' });
-        EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
         EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED);
         EventBus.publish(ENGINE_EVENTS.INVENTORY_UPDATED);
     }

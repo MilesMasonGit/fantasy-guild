@@ -127,7 +127,7 @@ describe('a quest Token on the mat (B6.2)', () => {
         expect(o.querySelectorAll('[data-ring]').length).toBe(1);
     });
 
-    it('the ring follows progress (state_changed, no subscription of its own); it shows on hover, not by itself', async () => {
+    it('the ring follows progress (quests_updated, no subscription of its own); it shows on hover, not by itself', async () => {
         const q = spawn(hunt());
         const { container, rerender } = mount(tokenEl(q));
         await act(async () => { QuestTokens.reportProgress('enemy_hunted', 1, { enemyId: 'token_goblin' }); });

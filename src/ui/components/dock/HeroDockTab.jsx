@@ -142,7 +142,7 @@ function useTabHero(heroId) {
                 hp: { current: h.hp?.current ?? 0, max: h.hp?.max ?? 100 }
             };
         },
-        [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, ORPHAN_EVENTS.HERO_STATUS_CHANGED, ENGINE_EVENTS.STATE_CHANGED],
+        [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, ORPHAN_EVENTS.HERO_STATUS_CHANGED, ENGINE_EVENTS.GAME_RESET],
         null,
         { deps: [heroId] }
     );
@@ -183,7 +183,7 @@ const HeroDockTabBody = memo(function HeroDockTabBody({
             return { state: s.state, instanceId: s.instanceId, typeId: s.typeId, limping: !!s.limping };
         },
         // HEROES_WALKED: a hero walking home arrives without any other event.
-        [BOARD_EVENTS.HERO_MOVED, BOARD_EVENTS.HEROES_WALKED, ENGINE_EVENTS.STATE_CHANGED],
+        [BOARD_EVENTS.HERO_MOVED, BOARD_EVENTS.HEROES_WALKED, ENGINE_EVENTS.GAME_RESET],
         null,
         { deps: [heroId] }
     );

@@ -93,7 +93,7 @@ describe('TokenBubbles subscription churn ', () => {
 
     it('does not resubscribe when the token object is rebuilt with the same content', () => {
         // The mat rebuilds a fresh projection object per Token on every
-        // `state_changed`, so the `token` prop changes identity every tick.
+        // redraw, so the `token` prop changes identity every tick.
         // That used to invalidate `missingReqs` and with it the subscriptions.
         const { rerender } = render(tree({
             instanceId: 'tok_a',

@@ -23,14 +23,15 @@ import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
  * `TILE_CHANGED`: a placement, a spawn (`EffectActions.spawn`), a Token that ran dry
  * (`Charges`), an enemy killed (`BoardCombat`), a lift back to the Bank (`Placement`). The
  * rest are belt and braces: `TOKEN_PLACED` and `TOKEN_DEPLETED` for the player's own actions,
- * `state_changed` and `game_loaded` for a load or a new game. The cap itself is a Mat Tuner
- * number, heard through `onMatTuningChanged`.
+ * `game_reset` and `game_loaded` for a load or a new game. The cap is the Token Cap upgrade's
+ * (`GUILD_UPGRADES_UPDATED`), or a Mat Tuner override heard through `onMatTuningChanged`.
  */
 export const CAP_EVENTS = Object.freeze([
     BOARD_EVENTS.TILE_CHANGED,
     BOARD_EVENTS.TOKEN_PLACED,
     BOARD_EVENTS.TOKEN_DEPLETED,
-    ENGINE_EVENTS.STATE_CHANGED,
+    ENGINE_EVENTS.GUILD_UPGRADES_UPDATED,
+    ENGINE_EVENTS.GAME_RESET,
     ENGINE_EVENTS.GAME_LOADED
 ]);
 
@@ -48,8 +49,8 @@ const PANEL_REFRESH_MS = 1000;
 
 /**
  * Re-render whenever any of `events` fires (and the Mat Tuner changes), while `on`. With
- * `signatureOf`, only when that signature of what is drawn has changed: a bare `state_changed`
- * would re-render the badge every time whether or not anything it shows had moved.
+ * `signatureOf`, only when that signature of what is drawn has changed: a bare event would
+ * re-render the badge every time whether or not anything it shows had moved.
  */
 export function useRefreshOn(events, on = true, signatureOf = null) {
     const [, bump] = useState(0);

@@ -158,7 +158,7 @@ describe('what it keeps quiet', () => {
         const engine = [];
         const offs = [
             ...[BOARD_EVENTS.CYCLE_COMPLETE, BOARD_EVENTS.PROGRESS, BOARD_EVENTS.SPRITES_CHANGED,
-                ENGINE_EVENTS.INVENTORY_UPDATED, ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.STATE_CHANGED,
+                ENGINE_EVENTS.INVENTORY_UPDATED, ENGINE_EVENTS.HEROES_UPDATED,
                 ENGINE_EVENTS.GAME_RESET, ENGINE_EVENTS.CATCH_UP_FINISHED]
                 .map(name => EventBus.subscribe(name, () => ui.push(name), UI_LISTENER)),
             EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, () => engine.push('cycle'))
@@ -170,7 +170,7 @@ describe('what it keeps quiet', () => {
         }
         expect(engine.length).toBeGreaterThan(20);             // the board really worked
         expect(ui).toEqual([ENGINE_EVENTS.CATCH_UP_FINISHED, ENGINE_EVENTS.GAME_RESET,
-            ENGINE_EVENTS.STATE_CHANGED, ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.INVENTORY_UPDATED]);
+            ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.INVENTORY_UPDATED]);
         expect(EventBus.isQuiet()).toBe(false);
     }, 30_000);
 

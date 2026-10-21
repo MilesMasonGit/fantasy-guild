@@ -15,6 +15,7 @@ vi.mock('../ui/components/drawer/HeroInspectionSheet.jsx', () => ({
 
 import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
+import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
 import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
 import { EngineContext } from '../ui/context/EngineContext';
@@ -209,14 +210,14 @@ describe('B10 horizontal hero dock', () => {
         const view = mount();
         expect(figure(view, 'h1').getAttribute('data-dock-deployed')).toBe('false');
         STATUS.set('h1', 'working');
-        // useGameState batches its update onto a microtask.
-        await act(async () => { EventBus.publish('state_changed', {}); await Promise.resolve(); });
+        // A plant or a recall says HERO_MOVED; useGameState batches its update onto a microtask.
+        await act(async () => { EventBus.publish(BOARD_EVENTS.HERO_MOVED, { heroId: 'h1' }); await Promise.resolve(); });
         expect(figure(view, 'h1').getAttribute('data-dock-deployed')).toBe('true');
         STATUS.delete('h1');
-        await act(async () => { EventBus.publish('state_changed', {}); await Promise.resolve(); });
+        await act(async () => { EventBus.publish(BOARD_EVENTS.HERO_MOVED, { heroId: 'h1' }); await Promise.resolve(); });
         expect(figure(view, 'h1').getAttribute('data-dock-deployed')).toBe('false');
         STATUS.set('h1', 'working');
-        await act(async () => { EventBus.publish('state_changed', {}); await Promise.resolve(); });
+        await act(async () => { EventBus.publish(BOARD_EVENTS.HERO_MOVED, { heroId: 'h1' }); await Promise.resolve(); });
         expect(figure(view, 'h1').getAttribute('data-dock-deployed')).toBe('true');
     });
 

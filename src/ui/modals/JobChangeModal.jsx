@@ -41,7 +41,7 @@ export const JobChangeModal = ({ heroId, isOpen, onClose }) => {
             const skills = Object.entries(h.skills || {}).map(([k, v]) => `${k}:${v.level}`).join(',');
             return `${h.jobId}|${skills}`;
         },
-        [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.HERO_PROMOTED, ENGINE_EVENTS.STATE_CHANGED],
+        [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.HERO_PROMOTED, ENGINE_EVENTS.GAME_RESET],
         null,
         { deps: [heroId] }
     );

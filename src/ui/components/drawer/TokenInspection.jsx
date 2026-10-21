@@ -1,5 +1,5 @@
 import { cn } from '../../utils/cn.js';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useSyncExternalStore } from 'react';
 import { useGameState } from '../../hooks/useGameState.js';
 import {
     getTokenType, getAllTokenTypes, tokenName, productionRoutes, getProvidedTagsWithTiers,
@@ -218,18 +218,19 @@ const ACTION_CLS = 'w-full px-3 py-2 rounded-lg border text-xs font-bold transit
  * removed. Disallowing and demolishing are the top bar's map modes, not the card's.
  */
 export const LeaveMatControl = ({ instanceId }) => {
+    const layoutEditing = useSyncExternalStore(Landmarks.onLayoutEditingChange, Landmarks.isLayoutEditing);
     const view = useGameState(
         () => {
             const instance = BoardState.getTokenById(instanceId);
             if (!instance) return null;
             if (QuestTokens.isQuestToken(instance)) return { id: instance.id, bounty: QuestTokens.canDismiss(instance) };
-            const devRemove = Landmarks.isLayoutEditing() && Demolition.canDemolish(instance)
+            const devRemove = layoutEditing && Demolition.canDemolish(instance)
                 && BoardState.originOf(instance) === BoardState.ORIGIN.PLACED;
             return devRemove ? { id: instance.id, devRemove } : null;
         },
-        [BOARD_EVENTS.TILE_CHANGED, ENGINE_EVENTS.STATE_CHANGED],
+        [BOARD_EVENTS.TILE_CHANGED, ENGINE_EVENTS.GAME_RESET],
         null,
-        { deps: [instanceId] }
+        { deps: [instanceId, layoutEditing] }
     );
     if (!view) return null;
 

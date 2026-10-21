@@ -13,7 +13,7 @@ import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
-import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
+import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { EngineContext } from '../ui/context/EngineContext';
 import { resetMatTuning } from '../config/matTuning.js';
 import { matW, matH } from '../config/matGeometry.js';
@@ -140,8 +140,8 @@ describe('⭐ resting on a Token', () => {
         // Something else redraws the mat during the wait (a Token arrives): still no name.
         const before = container.querySelectorAll('[data-token-art]').length;
         await act(async () => {
-            placeAt('fixture_producer', 1200, 500);
-            EventBus.publish(ENGINE_EVENTS.STATE_CHANGED, { source: 'test' });
+            const arrived = placeAt('fixture_producer', 1200, 500);
+            EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: arrived.id, typeId: arrived.typeId });
             await Promise.resolve();
         });
         expect(container.querySelectorAll('[data-token-art]').length).toBe(before + 1);

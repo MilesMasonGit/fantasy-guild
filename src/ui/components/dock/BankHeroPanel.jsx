@@ -48,7 +48,7 @@ export const BankHeroPanel = ({
 
     const heroIds = useGameState(
         state => (state.heroes || []).map(h => h.id),
-        [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.STATE_CHANGED]
+        [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.GAME_RESET]
     ) || [];
 
     useEffect(() => {

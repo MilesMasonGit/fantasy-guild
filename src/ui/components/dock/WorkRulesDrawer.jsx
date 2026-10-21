@@ -92,7 +92,7 @@ function useHeroesRefresh() {
     const [, bump] = useState(0);
     useEffect(() => {
         const tick = () => bump(n => n + 1);
-        const events = [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.STATE_CHANGED, ENGINE_EVENTS.HERO_LEVELED, ENGINE_EVENTS.HERO_PROMOTED];
+        const events = [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.GAME_RESET, ENGINE_EVENTS.HERO_LEVELED, ENGINE_EVENTS.HERO_PROMOTED];
         const unsubs = events.filter(Boolean).map(e => EventBus.subscribe(e, tick, UI_LISTENER));
         return () => unsubs.forEach(u => u());
     }, []);

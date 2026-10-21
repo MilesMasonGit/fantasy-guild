@@ -1012,7 +1012,6 @@ export function setDisallowed(instanceId, on = true) {
 
     markDirty();
     EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: instance.id, typeId: instance.typeId });
-    EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
     return { success: true };
 }
 

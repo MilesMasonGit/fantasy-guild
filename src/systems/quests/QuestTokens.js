@@ -162,7 +162,6 @@ function guildHall() {
 
 function publishChanged(instanceId = null) {
     EventBus.publish(ENGINE_EVENTS.QUESTS_UPDATED, instanceId ? { instanceId } : {});
-    EventBus.publish(ENGINE_EVENTS.STATE_CHANGED, {});
 }
 
 // ---------------------------------------------------------------------------
@@ -300,8 +299,7 @@ export function refreshTutorialTokens() {
         instance.quest = tutorialQuest(template, instance.quest);
         refreshed.push(instance.id);
     }
-    // Each refreshed copy says so by id: a quest Token hears its own
-    // QUESTS_UPDATED, not the catch-all state_changed.
+    // Each refreshed copy says so by id: a quest Token hears its own QUESTS_UPDATED.
     for (const instanceId of refreshed) EventBus.publish(ENGINE_EVENTS.QUESTS_UPDATED, { instanceId });
     if (changed) publishChanged();
 }
@@ -432,7 +430,6 @@ export function reportMatches(quest, metadata) {
  * stops counting.
  */
 export function reportProgress(targetType, amount = 1, metadata = {}) {
-    let changed = null;
     for (const instance of questTokens()) {
         const quest = instance.quest;
         if (quest.done || quest.targetType !== targetType) continue;
@@ -442,10 +439,8 @@ export function reportProgress(targetType, amount = 1, metadata = {}) {
         if (next === quest.currentCount) continue;
         quest.currentCount = next;
         quest.done = next >= quest.requiredCount;
-        changed = changed === null ? instance.id : changed;
         EventBus.publish(ENGINE_EVENTS.QUESTS_UPDATED, { instanceId: instance.id });
     }
-    if (changed !== null) EventBus.publish(ENGINE_EVENTS.STATE_CHANGED, {});
 }
 
 /** A collection bounty's count is what the Bank holds, capped. */
@@ -462,14 +457,9 @@ function syncCollection(quest) {
 
 /** Bring every collection bounty on the mat in line with the Bank. */
 export function syncCollections() {
-    let changed = false;
     for (const instance of questTokens()) {
-        if (syncCollection(instance.quest)) {
-            changed = true;
-            EventBus.publish(ENGINE_EVENTS.QUESTS_UPDATED, { instanceId: instance.id });
-        }
+        if (syncCollection(instance.quest)) EventBus.publish(ENGINE_EVENTS.QUESTS_UPDATED, { instanceId: instance.id });
     }
-    if (changed) EventBus.publish(ENGINE_EVENTS.STATE_CHANGED, {});
 }
 
 // ---------------------------------------------------------------------------

@@ -96,7 +96,6 @@ export const InventoryManager = {
 
         RegistryManager.recordItemGain(itemId, addedCount, sourceId);
         EventBus.publish(ENGINE_EVENTS.INVENTORY_UPDATED, { itemId, amount: entry.quantity, added: addedCount });
-        EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
 
         logger.debug('InventoryManager', `Added ${addedCount}x ${itemId} (Total: ${entry.quantity})`);
         return addedCount;
@@ -120,7 +119,6 @@ export const InventoryManager = {
 
         InventoryFormatter.invalidate();
         EventBus.publish(ENGINE_EVENTS.INVENTORY_UPDATED, { itemId, amount: entry.quantity, removed: amount });
-        EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
 
         logger.debug('InventoryManager', `Removed ${amount}x ${itemId} (Remaining: ${entry.quantity})`);
         return true;

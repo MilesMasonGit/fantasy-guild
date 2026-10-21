@@ -128,17 +128,17 @@ describe('removePlacedToken (slice 5.2)', () => {
         expect([east.id, west.id]).toContain(BoardState.workTokenOf('h1'));
     });
 
-    it('publishes TILE_CHANGED and state_changed, and no depletion', () => {
+    it('publishes TILE_CHANGED and ADJACENCY_DIRTY, and no depletion', () => {
         const { forest } = forestScene();
         const seen = [];
-        const offs = [BOARD_EVENTS.TILE_CHANGED, 'state_changed', BOARD_EVENTS.TOKEN_DEPLETED]
+        const offs = [BOARD_EVENTS.TILE_CHANGED, BOARD_EVENTS.ADJACENCY_DIRTY, BOARD_EVENTS.TOKEN_DEPLETED]
             .map((e) => EventBus.subscribe(e, (payload) => seen.push([e, payload])));
         Placement.removePlacedToken(forest.id);
         offs.forEach((off) => off?.());
 
         const tile = seen.find(([e]) => e === BOARD_EVENTS.TILE_CHANGED);
         expect(tile?.[1]).toMatchObject({ instanceId: forest.id, x: FOREST.x, y: FOREST.y, typeId: null });
-        expect(seen.some(([e]) => e === 'state_changed')).toBe(true);
+        expect(seen.some(([e]) => e === BOARD_EVENTS.ADJACENCY_DIRTY)).toBe(true);
         expect(seen.some(([e]) => e === BOARD_EVENTS.TOKEN_DEPLETED)).toBe(false);
     });
 

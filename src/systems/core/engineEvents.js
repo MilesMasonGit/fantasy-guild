@@ -35,20 +35,21 @@
  */
 export const ENGINE_EVENTS = Object.freeze({
     /**
-     * "Something changed, everyone re-check." Payload: none. Being retired in
-     * stages: every engine publisher now sends a specific event
-     * first, so a new subscriber should listen to that instead.
+     * ⚠️ **Retired.** The old "something changed, everyone re-check". Nothing listens to it: every
+     * change has its own event, and `GAME_RESET` covers "everything may have changed". Its one
+     * remaining publisher is the guild's travel in `atlas/Atlas.js`, which already publishes
+     * `GAME_RESET` too. Never subscribe to it; delete it once that publish goes.
      */
     STATE_CHANGED: 'state_changed',
 
     /**
      * ⭐ **The one "everything may have changed" event**:
      * a new game or a load has finished booting, a stress scenario was built,
-     * or the dev time-skip ran. Payload: `{ reason }` — `'new_game'`,
-     * `'load'`, `'dev_time_skip'` or `'dev_stress'`. A surface that reads
-     * state no specific event names listens to this instead of
-     * `state_changed`. Also `'catch_up'`: time the loop could not deliver was
-     * caught up with the UI's listeners quiet.
+     * or a dev tool rewrote the board. Payload: `{ reason }` — `'new_game'`,
+     * `'load'`, `'travel'`, `'dev_time_skip'`, `'dev_stress'` or `'dev_clear'`. Every
+     * surface listens to this beside the events that name what it draws. Also
+     * `'catch_up'`: time the loop could not deliver was caught up with the UI's
+     * listeners quiet.
      */
     GAME_RESET: 'game_reset',
 
@@ -254,6 +255,7 @@ export const ORPHAN_EVENTS = Object.freeze({
  * (`Game.EventBus.setLogging(true)`) can hook without touching the engine.
  */
 export const NO_LISTENER = Object.freeze({
+    [ENGINE_EVENTS.STATE_CHANGED]: 'retired: every surface listens to a specific event and GAME_RESET; one Atlas publish remains',
     [ENGINE_EVENTS.REGISTRY_UPDATED]: 'console affordance; the discovery events below are the specific ones',
     [ENGINE_EVENTS.ENEMY_DISCOVERED]: 'first-seen moment, for a future bestiary notice',
     [ENGINE_EVENTS.QUEST_SPAWNED]: 'quest moment; quest Tokens announce on the board',

@@ -92,7 +92,6 @@ describe('A sprite sweep announces once, not once per sprite (CR2-056)', () => {
         const counts = countEvents(() => SpriteLayer.collectSprite(sprite.id));
 
         expect(counts[BOARD_EVENTS.SPRITES_CHANGED]).toBe(1);
-        expect(counts.state_changed).toBeGreaterThanOrEqual(1);
     });
 
     it('a partial fit announces, because the sprite really did shrink', () => {
@@ -138,7 +137,7 @@ describe('A sprite sweep announces once, not once per sprite (CR2-056)', () => {
         const counts = countEvents(() => SpriteLayer.collectAll());
 
         expect(counts.total).toBeLessThan(280);      // was 322
-        expect(counts.state_changed).toBeLessThan(100);  // was 120
+        expect(counts.state_changed).toBeUndefined();  // was 120; the event is retired
     });
 });
 

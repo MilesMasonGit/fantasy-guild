@@ -83,7 +83,6 @@ describe('the hero bar level-up bubbles', () => {
             await act(async () => {
                 vi.advanceTimersByTime(MOMENT_TTL_MS * 10);
                 EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, {});
-                EventBus.publish(ENGINE_EVENTS.STATE_CHANGED, {});
                 await Promise.resolve();
             });
         }

@@ -40,7 +40,7 @@ export const GuildUpgradeInspection = ({ upgradeDef, onClose }) => {
             const price = GuildUpgradeManager.getNextCost(upgradeDef.id) || [];
             return price.map(p => `${p.itemId}:${InventoryManager.getItemCount(p.itemId)}`).join(',');
         },
-        [ENGINE_EVENTS.INVENTORY_UPDATED, ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, ENGINE_EVENTS.STATE_CHANGED]
+        [ENGINE_EVENTS.INVENTORY_UPDATED, ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, ENGINE_EVENTS.GAME_RESET]
     );
     const haveCounts = Object.fromEntries(
         (haveSignature || '').split(',').filter(Boolean).map(pair => {
@@ -50,7 +50,7 @@ export const GuildUpgradeInspection = ({ upgradeDef, onClose }) => {
     );
     const ranks = useGameState(
         state => state.progress?.guildUpgrades || {},
-        [ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, ENGINE_EVENTS.STATE_CHANGED]
+        [ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, ENGINE_EVENTS.GAME_RESET]
     );
 
     if (!upgradeDef) return null;

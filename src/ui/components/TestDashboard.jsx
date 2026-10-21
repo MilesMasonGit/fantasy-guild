@@ -262,7 +262,7 @@ export const TestDashboard = React.memo(() => {
                 const state = engine.GameState.state;
                 state.board.tokens = {};
                 state.board.sprites = [];
-                engine.EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
+                engine.EventBus.publish(ENGINE_EVENTS.GAME_RESET, { reason: 'dev_clear' });
                 console.log('[Dev] Board cleared');
             }
         },

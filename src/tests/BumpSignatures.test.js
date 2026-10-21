@@ -10,6 +10,7 @@ import * as Flags from '../systems/board/Flags.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
+import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { EngineContext } from '../ui/context/EngineContext';
 import { MatCapBadge } from '../ui/components/board/MatCapBadge.jsx';
@@ -25,7 +26,8 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 /**
  * the "bump" subscribers re-render only when what they draw has changed. R5
  * measured `MatCapBadge` and `AllowAllButton` re-rendering on all 10 of 10
- * bare `state_changed` publishes, with nothing changed.
+ * bare `state_changed` publishes, with nothing changed; that event is retired, and the same holds
+ * for the broad one that replaced it, `GAME_RESET`.
  */
 
 const h = React.createElement;
@@ -48,10 +50,10 @@ afterEach(() => cleanup());
 describe('bump subscribers bail out when nothing they draw changed (CR3-309)', () => {
     const NamedRegion = () => h(MatRegionName, { readName: () => ({ name: 'Elderfield', practical: 'Starter Camp' }) });
     for (const [name, Comp] of [['MatCapBadge', MatCapBadge], ['AllowAllButton', AllowAllButton], ['MatRegionName', NamedRegion]]) {
-        it(`${name}: ten bare state_changed, no re-render`, () => {
+        it(`${name}: ten bare GAME_RESET, no re-render`, () => {
             const { counts } = mountCounting(h(Comp));
             const before = counts.n;
-            act(() => { for (let i = 0; i < 10; i++) EventBus.publish(ENGINE_EVENTS.STATE_CHANGED); });
+            act(() => { for (let i = 0; i < 10; i++) EventBus.publish(ENGINE_EVENTS.GAME_RESET, { reason: 'load' }); });
             expect(counts.n).toBe(before);
         });
     }
@@ -60,7 +62,10 @@ describe('bump subscribers bail out when nothing they draw changed (CR3-309)', (
         const { container } = mountCounting(h(MatCapBadge));
         const text = () => container.querySelector('[data-mat-cap-count]').textContent;
         const before = text();
-        act(() => { placeAt('fixture_producer', 600, 600); EventBus.publish(ENGINE_EVENTS.STATE_CHANGED); });
+        act(() => {
+            const t = placeAt('fixture_producer', 600, 600);
+            EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: t.id, typeId: t.typeId });
+        });
         expect(text()).not.toBe(before);
     });
 

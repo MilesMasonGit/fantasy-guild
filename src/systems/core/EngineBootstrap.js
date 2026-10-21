@@ -322,7 +322,6 @@ export const EngineBootstrap = {
         // 5. Trigger Initial UI Sync. GAME_RESET is the one "everything may
         // have changed" event.
         EventBus.publish(ENGINE_EVENTS.GAME_RESET, { reason: isNewGame ? 'new_game' : 'load' });
-        EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
         EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED);
         EventBus.publish(ENGINE_EVENTS.INVENTORY_UPDATED);
     }

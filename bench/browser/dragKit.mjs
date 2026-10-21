@@ -259,7 +259,6 @@ export function installDragKit() {
         for (const t of typeIds) for (const { itemId, quantity } of G.Shop.priceOf(t)) {
             if (G.InventoryManager.getItemCount(itemId) < quantity * 60) G.InventoryManager.addItem(itemId, quantity * 60);
         }
-        G.EventBus.publish('state_changed');
         return typeIds.length;
     };
     kit.equippables = () => {
@@ -270,7 +269,6 @@ export function installDragKit() {
         const ids = kit.equippables().slice(0, 12);
         for (const id of ids) if (G.InventoryManager.getItemCount(id) < 5) G.InventoryManager.addItem(id, 50);
         G.EventBus.publish('inventory_updated');
-        G.EventBus.publish('state_changed');
         return ids;
     };
     kit.clearHeroGear = (heroId) => {
