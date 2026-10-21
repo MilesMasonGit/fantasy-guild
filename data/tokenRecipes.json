@@ -47,7 +47,7 @@
     ],
     "outputs": [
       {
-        "tokenId": "token_copper_pickaxe",
+        "itemId": "item_copper_pickaxe",
         "chance": 100,
         "minQty": 1,
         "maxQty": 1,
@@ -59,9 +59,9 @@
         "variable": false
       }
     ],
-    "xp": 0,
+    "xp": 1,
     "id": "recipe_copper_pickaxe",
-    "durationMs": 6000,
+    "durationMs": 8000,
     "levelRequirement": 2,
     "stationChargeCost": 1,
     "sim": {
@@ -88,7 +88,7 @@
     ],
     "outputs": [
       {
-        "tokenId": "token_copper_woodaxe",
+        "itemId": "item_copper_woodaxe",
         "chance": 100,
         "minQty": 1,
         "maxQty": 1,
@@ -99,9 +99,9 @@
         "variable": false
       }
     ],
-    "durationMs": 12000,
+    "durationMs": 16000,
     "stationChargeCost": 1,
-    "xp": 0,
+    "xp": 2,
     "sim": {
       "tempo": "medium",
       "purpose": "iph"
