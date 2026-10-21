@@ -60,6 +60,7 @@ arrives. A red problem beats a yellow one when a Token has both.
 | What it makes has nowhere to go (6) | red | No room for what it makes / Token cap full / No room to build here (a Foundation) |
 | The hero's level is too low (7) | red | Needs {Skill} {level}/99 |
 | The hero lacks the skill (8) | red | Needs the {Skill} skill |
+| The hero on it holds no tool for it (a pickaxe put down mid-work; the hero then lets go) | red | Needs {Pickaxe} / Needs {Iron Pickaxe or better} |
 | A spawner with nowhere to put a spawn | red | No room to spawn |
 | A spawner at the mat's Token cap | red | Token cap full |
 
@@ -76,7 +77,7 @@ once; the oldest moment gives way.
 | 11 | Working at {token}. | The hero arrives at a Token to work it. | **Dropped (FB-21)** — everyday; this is the "I'm working on Oak Tree" line from your feedback. |
 | 12 | No work in range. | The hero was busy (walking to a job or working) and is now standing at their flag with nothing to do. | **Unsure — owner to decide.** Kept for now: an idle hero is worth knowing about. But it also fires each time the last Token in a flag's range runs out, which on a busy mat can be often. |
 | 13 | *(none on the mat)* {level} {skill}! | One of the hero's skills levels up. **No longer a speech line**: on the mat the skill's icon and number float over the hero for about 30 seconds (the old number flashes gold and rolls up to the new one; several skills sit side by side; after time away they roll from old to new). The hero bar keeps a lasting alert until you clear it, worded `{level} {skill}!`, e.g. "50 Stealth!", the number drawn in its own colour; one alert per skill, a later level rewriting it; the wheel or the arrows page through them. The notification column still carries its own level-up line. | **Moved off the mat** (level-up moment) |
-| 14 | *(line 7 or 8, word for word)* | **B5 (FB-45):** you dropped the hero's flag on a Token they can't work — skill not held (line 8) or level too low (line 7). The flag stands there as a normal area flag instead of being pinned, and the hero says why once. A Token you disallowed, or one whose skill is switched off in the hero's rules, is refused silently (no wording yet); a spawner is never pinned and nothing is said. | Kept |
+| 14 | *(line 7 or 8, word for word)*, or I need {a Pickaxe} to work {token}. | **B5 (FB-45):** you dropped the hero's flag on a Token they can't work — skill not held (line 8), level too low (line 7), or no tool in hand for it ("I need a Pickaxe to work Copper Ore Vein.", "I need an Iron Pickaxe or better to work Gold Ore Vein."). The flag stands there as a normal area flag instead of being pinned, and the hero says why once. A Token you disallowed, or one whose skill is switched off in the hero's rules, is refused silently (no wording yet); a spawner is never pinned and nothing is said. | Kept |
 | 15 | {token} Depleted | The hero whose work spent a Token's last charge says it (a tree they felled, a vein they emptied, a fight that used up an enemy or a tool beside it). Shows for **3 seconds**, one line per kind of Token so a hero chopping tree after tree keeps one bubble. Nobody says it when no hero spent the charge. | Kept |
 
 ## 3. Callouts (not speech bubbles)
@@ -90,6 +91,7 @@ switched off together with the `alerts` draw switch.
 | C1 | ! Spawned {token} | A spawner makes a Token, shown over the **spawner**. The Guild Hall says it for a new quest ("! Spawned quest" / "! Spawned tutorial quest"). Not shown during a catch-up. |
 | C2 | {effect name} | A named effect fires on a Token (a bonus drop, a status landing), shown over that Token. The wording is the effect's own title. |
 | C3 | {reason} | A drop the mat refused: the rule's reason (or "Drop Rejected: {token}") at the spot you aimed at. The Guild Hall dragged off the mat says "Guild Hall cannot be removed from the playmat." over the Hall. |
+| C4 | Needs {Pickaxe} | A hero's flag passed this Token over because the hero holds no tool of the kind it needs (or not a good enough one: "Needs Iron Pickaxe or better"), shown over the **Token**. Said when the flag looks, then at most once every 8 seconds while a flag keeps passing it over (an idle hero's flag looks every second). |
 
 The "-1" / "+50" charge number is not a callout: it is a small number rising from the Token's
 charges corner.

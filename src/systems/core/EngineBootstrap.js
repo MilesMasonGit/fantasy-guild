@@ -52,8 +52,7 @@ import * as RegionRules from '../atlas/RegionRules.js';
 import * as StarterCamp from '../atlas/StarterCamp.js';
 import { reportContentIntegrity, reportSaveContent } from './ContentAudit.js';
 import { ENGINE_EVENTS } from './engineEvents.js';
-import { getAllItems } from '../../config/registries/itemRegistry.js';
-import { starterToolIds } from '../../config/registries/toolKinds.js';
+import { grantStarterTools } from '../equipment/StarterTools.js';
 
 /**
  * The Tokens a new game opens with, at their points on the mat as it is now: the Starter Camp's
@@ -245,11 +244,8 @@ export const EngineBootstrap = {
         for (const { itemId, quantity } of StarterCamp.openingBank(camp)) {
             InventoryManager.addItem(itemId, quantity, 'opening');
         }
-        // One of each starter tool (an item's Tool marked Starter), unless the camp's Bank already
-        // holds it: new heroes arrive empty-handed and take their first tools from here.
-        for (const itemId of starterToolIds(getAllItems())) {
-            if (!InventoryManager.hasItem(itemId, 1)) InventoryManager.addItem(itemId, 1, 'opening');
-        }
+        // One of each starter tool: new heroes arrive empty-handed and take their first tools here.
+        grantStarterTools();
 
         // Start with no Heroes (first hero recruited via Guild Hall upgrade)
         if (state.heroes) {
@@ -289,6 +285,8 @@ export const EngineBootstrap = {
             SaveManager.save(false);
         } else {
             await this.catchUpOnLoad();
+            // A save from before tools were gear has none: without them no hero could gather.
+            grantStarterTools();
         }
 
         // 3. State Sync

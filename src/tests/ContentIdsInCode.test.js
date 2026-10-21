@@ -12,7 +12,8 @@ import { asLoaded } from './fixtures/shippedAsLoaded.js';
 // Whole files whose ids are not content references.
 const SKIPPED_FILES = {
     'config/registries/sprite-manifest.js': 'generated art manifest: keys are image file names, many for art with no data entry yet',
-    'config/registries/legacySpriteNames.js': 'generated table of old image file names, not content ids'
+    'config/registries/legacySpriteNames.js': 'generated table of old image file names, not content ids',
+    'ui/dev/toolsPackContent.js': 'dev-only preview of a pending change pack: names the items it creates and the Tokens it retires, so some ids are missing before the owner Syncs it and others after'
 };
 
 // Literals that look like content ids but are not. Keep this short; each needs a reason.

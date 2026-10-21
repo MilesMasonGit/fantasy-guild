@@ -116,9 +116,12 @@ Token.
 - **Origin**: *placed* (bought or built: fixed, refundable) or *spawned*
   (free, pushable, no refund). Both count toward the Token cap.
 - **Size**: 1 (art radius 64 u) or 2 (144 u); growing stages are half-size.
-- **Context Tokens** are tools (pickaxes, axes, fishing net, anvil) that stand
-  near a worker; some recipes spend their charges. **Tools are not hero
-  equipment.**
+- **Context Tokens** are support Tokens (an anvil) that stand near a worker;
+  some recipes spend their charges. **Gathering tools are hero gear**, not
+  Tokens (T-126): pickaxes, woodaxes, fishing rods and sickles are items held in
+  one hand (`tool: { kind, tier }`); a gathering Token names the kind and lowest
+  tier it needs (`needsTool`), and only a hero holding one may work it. No tool:
+  the hero does other work and the Token says "Needs Pickaxe". Tools only gate.
 
 ### Reach — Built
 Rules reach `nearby` (default), `self`, `self_and_nearby` or `board`.
@@ -294,7 +297,8 @@ has none yet), melee, magic and commerce have content today.
   numbers).
 
 ### Equipment — Partial
-A 3×3 loadout grid with category caps (hand 2, hat 1, chest 1, trinket 2,
+A 3×3 loadout grid with category caps (hand 2 — two hands: a tool takes one,
+a two-handed weapon both — hat 1, chest 1, trinket 2,
 food 1, drink 1, consumable unlimited). **No gear ships yet**: 64 items are
 materials, food, drink and one potion. Weapons, armour and gear loss are
 **Latent**. **Gear is coming** (owner 2026-10-06): keep the system; weapons

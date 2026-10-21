@@ -4,6 +4,8 @@ import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import * as QuestTokens from '../../../systems/quests/QuestTokens.js';
 import { getTokenType } from '../../../config/registries/tokenRegistry.js';
+import { getItem } from '../../../config/registries/itemRegistry.js';
+import { toolOf } from '../../../config/registries/toolKinds.js';
 import { ENGINE_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import { onFrame, onStep } from '../board/frameClock.js';
 
@@ -52,6 +54,14 @@ function tokenWhere(test) {
     return null;
 }
 
+/** The first tool's tile in the open Bank, or null. */
+function bankTool() {
+    for (const el of document.querySelectorAll('[data-bank-item]')) {
+        if (shown(el) && toolOf(getItem(el.getAttribute('data-bank-item')))) return el;
+    }
+    return null;
+}
+
 /** Something a hero can gather: a resource with work in it that is not an endgame site. */
 const gatherable = (def) => def.tokenType === 'resource' && !def.landmark && !!def.config?.skill;
 /** A station that crafts: not a Foundation. */
@@ -75,6 +85,9 @@ export function resolveTutorialTargetElement(questId) {
     switch (questId) {
         case 'cart_recruit':
             return q('[data-guild-roster-upgrade="true"]') || q('#guild-bubble-target');
+
+        case 'cart_tool': // A tool in the Bank, to drag onto a hero
+            return bankTool() || q('#bank-bubble-target');
 
         case 'cart_flag': // Drag a hero from the hero bar onto the mat
             return q('[data-dock-hero][data-dock-deployed="false"]') || q('[data-dock-hero]') || q('#guild-bubble-target');
