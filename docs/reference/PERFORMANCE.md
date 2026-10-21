@@ -1232,7 +1232,7 @@ chips, copies and the knockout among the resting Tokens).
 
 Brief 90 E1: the game's limits, measured one thing at a time on the realistic board at the base
 cap, for the design rules in the GDD §14 (E2). Branch `crunch/envelope` from `main` `f19a2e30`,
-13:58–16:00 Vancouver time, the owner away, no other agent or bench running (an idle Vite dev
+13:58–16:03 Vancouver time, the owner away, no other agent or bench running (an idle Vite dev
 server stood in the main checkout throughout).
 
 **How.** `npm run bench:draw` on the perf build, 1600 × 1000, the standard 20 s settle and 20 s
