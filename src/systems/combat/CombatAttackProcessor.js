@@ -53,8 +53,7 @@ export function handleHeroAttack(fight, hero, enemy, combatStyle, attackSpeed) {
         return;
     }
 
-    const stats = fight.combat?.stats || {};
-    const damageBonus = (stats.damageBonus || 0) + (hero?.aggregator?.query('DAMAGE') || 0);
+    const damageBonus = hero?.aggregator?.query('DAMAGE') || 0;
     const heroSkill = CombatFormulas.getHeroCombatSkill(hero, combatStyle);
 
     const didHit = CombatFormulas.rollHit(
@@ -92,7 +91,6 @@ export function processEnemyAttack(fight, enemy, assignedHeroIds, deltaTime) {
     if (!fight.combat) return;
     fight.combat.enemyTickProgress += deltaTime;
     const enemyAttackSpeed = enemy.attackSpeed || CombatFormulas.ENEMY_ATTACK_INTERVAL_MS;
-    fight.combat.enemyAttackSpeed = enemyAttackSpeed; // persisted for UI attack-loop bars
 
     if (fight.combat.enemyTickProgress >= enemyAttackSpeed) {
         const targetHeroId = assignedHeroIds[Math.floor(Math.random() * assignedHeroIds.length)];
