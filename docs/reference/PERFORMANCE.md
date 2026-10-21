@@ -4,9 +4,9 @@
 rework. This is the "before" every UI change is measured against
 ("measure, don't fix"). Re-record it only on a quiet machine, and say why.
 
-Still to write (T-069): the mat-era guide to *keeping* it fast (draft in
-`docs/archive/review_v3/R6.md` §8 and `R7.md` §4). The Performance Envelope
-(design limits) goes in the GDD §14 at the end of the crunch.
+How to keep it fast while building: "Keeping it fast", below the measuring
+table. The Performance Envelope (design limits) goes in the GDD §14 at the
+end of the crunch.
 
 ## The machine and conditions
 
@@ -40,6 +40,133 @@ Still to write (T-069): the mat-era guide to *keeping* it fast (draft in
 Details, options and exit codes: [`bench/README.md`](../../bench/README.md).
 In the game (dev or perf build): `?stress=realistic` + the Perf HUD, and
 `?off=rings,speech` to switch systems' drawing off.
+
+## Keeping it fast: rules for new mat and UI code
+
+What the game does today, and what new code must keep doing. Each rule names
+where the code already does it; copy that, don't invent a second way.
+(Drafted in `docs/archive/review_v3/R6.md` §8 and `R7.md` §4; rewritten from
+the code after brief 60.)
+
+### The budget
+
+- **The rules run 10 ticks a second** (`GameLoop`, a timer); **drawing runs at
+  the screen's rate**, 6.06 ms a frame on the owner's 165 Hz screen. A slow
+  laptop (the bench's 4× throttle) has a 60 Hz screen, so there the line is
+  16.7 ms ("Smooth", defined, below).
+- That frame time is shared by script, style, layout, paint and compositing.
+  On the mat, **paint and compositing are the first to run out**, not script.
+- The engine is far inside its budget (a tick is ~0.3 ms on S2). Almost every
+  cost worth finding is in drawing.
+
+### Clocks
+
+1. **Nothing runs every frame unless something on screen moves.** A loop,
+   interval or infinite animation stops when it has nothing to show.
+2. **One set of clocks, `frameClock.js`** (`src/ui/components/board/`). Never
+   start a `requestAnimationFrame` loop or `setInterval` of your own:
+   - `onFrame(fn)`: every frame (only for something that truly moves every
+     frame, like a beacon following a moving target);
+   - `onStep(fn)`: ten steps a second, every subscriber in the same frame (the
+     cycle rings, the tutorial beacon's look-up);
+   - `onDue(fn, dueAt)`: each subscriber at its own times, all due ones in one
+     frame (hero and enemy sprite frames).
+   Each clock stops when its last subscriber leaves, and **all of them pause
+   while the window is hidden or the desktop app is minimised**
+   (`setDrawingPaused`, from `src/ui/drawingPause.js`). The game's tick does
+   not pause.
+3. **Clocks don't go through React.** A sprite frame, a ring's sweep or a
+   countdown is written straight to its element (a ref and `element.style`, as
+   `AnimatedHeroSprite.jsx` does), never through React state. React state is
+   for what the player's choices change.
+4. **Write to the page only when pixels change.** A painter remembers what it
+   last wrote and skips a write that moves nothing (the stack writer,
+   `stackWriter.js`; the rings step ten times a second, not every frame).
+
+### Moving things and layers
+
+5. **Walkers move by `transform`, standing things by `left`/`top`.** Heroes and
+   enemies are placed with `transform: translate(...)` and glide with a
+   `transform` transition (`MatHero.jsx`, `MatToken.jsx` for enemies). Other
+   Tokens stay on `left`/`top`: a transform on every Token of a busy mat cost
+   more in compositing than it saved. Decided by kind, once, at mount.
+6. **Never add `will-change: transform`** (or any `will-change` that promotes)
+   to a sprite or a mat box: each becomes its own composited layer, and it
+   measured 3× slower. The one deliberate use is **`will-change: contents`**,
+   which keeps an animation *on the main thread* so it does not promote what is
+   drawn over it: on a live hit loop, a walker's boxes, the spawn pop and the
+   classes listed at `.gi-token-land` in `tailwind.css`.
+7. **Filters are the graphics card's work.** Sprite shadows and outlines are
+   pictures generated from the sprites (`src/config/spriteFx.js`), not
+   `drop-shadow` filters; don't add filters on the mat. Animate a glow's
+   `opacity`, never a filter's values; no `transition: filter` "just in case".
+8. **Hidden panels draw nothing.** A shut panel or modal renders nothing
+   (`if (!isOpen) return null`, as `SettingsModal.jsx` does), so no list, blur
+   or animation runs while nobody can see it.
+9. **Canvases stay in the mat's own layer.** The ground (`TerrainCanvas.jsx`)
+   and the ambient life are CPU-backed 2D canvases with no `will-change`,
+   filter, transform or opacity: an accelerated canvas would push every Token
+   drawn after it onto layers of its own (`MatPixelLayers.test.js` guards it).
+   Big pictures are built **once per Region** (on arrival, a load or a tuning
+   change), never in a tick or a frame.
+10. **The mat's stacking order is sparse.** Every Token and flag holds its own
+    place (`stackPlaces.js`, `createMatStack` in `matLayers.js`); a hover or a
+    move rewrites only the boxes that moved. New mat layers go above the Token
+    range, in `matLayers.js`, never as ad-hoc z-index numbers.
+
+### React
+
+11. **Events carry what changed; listen narrowly.** Per-Token listeners go
+    through `tokenEvents.js` (one bus subscription for every drawn Token,
+    routed by `instanceId`). Mutations go through the managers, which publish
+    the right events.
+12. **Only what changed re-renders.** Mat components are `memo`ised
+    (`MatToken`, `MatHero`, `Flag`); handler props are stable (`useCallback`);
+    the stores (`useGameState`, `useTokenState`) hand React the last value's
+    unchanged parts (`structuralShare.js`), so one changed flag is one redraw.
+    A walk step or a sprite frame must not re-render the mat.
+13. **Never pass big data as a React prop.** React's development build lists
+    every entry of a changed prop; the ground's typed arrays as a prop froze the
+    dev game for 2–6 s (`GroundPictureDevCost.test.js`). Hand such data on
+    outside props.
+
+### Layout reads and drags
+
+14. **No layout reads in hot paths**: no `getBoundingClientRect`, `offsetWidth`
+    or query-then-measure per frame, per pointer move or per tick. Measure once
+    and cache: a drag snapshots the drop regions at its start
+    (`snapshotDndRegions` in `DndKit.jsx`), since nothing can move them
+    mid-drag.
+15. **Drags use the shared source.** A new drag source calls `useEntityDrag`
+    (it presses the one draggable the provider holds, `ENTITY_DRAG_ID`) and
+    holds no dnd-kit hook of its own; dnd-kit re-renders every hook holder on
+    every drag change. Anything that follows the cursor reads
+    `useDragPointer()` in a small leaf component. Art that changes look while
+    any drag is live reads the `gi-dnd-active` class on `<body>` in CSS, not
+    React state.
+16. **A drop target's `accepts` only screens the kind of thing carried.**
+    Whether the drop is legal is the engine's call; `onDrop` returns `false`
+    when the engine refuses, and the ghost flies back.
+
+### Proving it
+
+17. **Every change that could cost drawing carries a before and after number**
+    from the same scene, build and window size, run back to back (an
+    interleaved A/B: `bench:draw -- --ab=<url>`, the build before served from
+    its own worktree and port), and says what the
+    owner should look at by eye. A run beside other agents' work is noise until
+    a control run of `main` agrees ([`bench/README.md`](../../bench/README.md),
+    "Reading a timing run on a busy machine").
+18. **Anything drawn once per Token is measured at the cap boards**
+    (`cap128`, `cap256`) and on S3 (~310 Tokens) before it merges; its cost must
+    grow no faster than the Token count.
+19. **A new drawn system gets a draw switch** (`src/ui/dev/perf/drawSwitches.js`)
+    so `bench:draw -- --switches` and `?off=<name>` can price it.
+20. **Dev-only code stays out of the shipped build** (`import.meta.env.DEV`, or
+    the `perf` mode for the measuring harness); `npm run check:perf-build`
+    proves it.
+21. **No `console.log` in hot paths**; use the `logger`, whose debug, info and
+    warning lines are silent in the shipped build.
 
 ## Engine baseline (`bench/baseline.json`)
 
