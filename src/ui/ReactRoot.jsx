@@ -12,6 +12,7 @@ import { setMatBankLocked } from './hooks/useMatBankLock.js';
 
 import { useUIModals } from './hooks/useUIModals.js';
 import { useInspectTokenHandlers } from './hooks/useInspectTokenHandlers.js';
+import { useHeroSheetRequests } from './hooks/useHeroSheetRequests.js';
 
 import Board from './components/board/Board.jsx';
 import BankDrawer from './components/drawer/BankDrawer.jsx';
@@ -155,22 +156,7 @@ export const ReactRoot = ({ engine }) => {
     const toggleInspectHero = React.useCallback((id) => setInspectHeroId(prev => (prev === id ? null : id)), []);
     const closeInspectHero = React.useCallback(() => setInspectHeroId(null), []);
 
-    React.useEffect(() => {
-        const unsub1 = EventBus.subscribe(ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, (data) => {
-            if (data?.action === 'equip' && data?.heroId) {
-                setInspectHeroId(data.heroId);
-            }
-        }, UI_LISTENER);
-        const unsub2 = EventBus.subscribe(UI_EVENTS.INSPECT_HERO, (data) => {
-            if (data?.heroId) {
-                setInspectHeroId(data.heroId);
-            }
-        }, UI_LISTENER);
-        return () => {
-            unsub1();
-            unsub2();
-        };
-    }, []);
+    useHeroSheetRequests(setInspectHeroId);
 
     const guildPaneSelection = ui.inspect.getByPane ? ui.inspect.getByPane('guild') : null;
     const guildInspectSelection = selectGuildInspectSelection({

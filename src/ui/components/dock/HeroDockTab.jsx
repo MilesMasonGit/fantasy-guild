@@ -72,7 +72,7 @@ export const HeroDockTab = ({
                 if (!equipOrAnnounce(engine, heroId, p.itemId)) return false;
                 justDroppedRef.current = true;
                 setTimeout(() => { justDroppedRef.current = false; }, 250);
-                EventBus.publish(UI_EVENTS.INSPECT_HERO, { heroId });
+                EventBus.publish(UI_EVENTS.INSPECT_HERO, { heroId, afterDrop: true });
             } else if (p.kind === DRAG_KIND.HERO && p.heroId && p.heroId !== heroId) {
                 onReorder?.(p.heroId, heroId);
             }
