@@ -362,7 +362,7 @@ const ItemTileBody = memo(function ItemTileBody({ entry, selected, onSelect, che
                 </span>
             )}
             <ItemIcon item={template} size={64} className="shrink-0" title={null} />
-            <span className="text-xs md:text-sm font-bold text-gi-text mt-1.5 tabular-nums">
+            <span className="text-xs md:leading-[calc(1.25/0.875)] font-bold text-gi-text mt-1.5 tabular-nums">
                 {formatCompact(count, 1)}
             </span>
         </button>
@@ -459,7 +459,7 @@ export const ItemInspection = ({ entry, showSell = true, showViewInBank = false 
                 <div className="flex items-center justify-center w-32 h-32 mb-1">
                     <ItemIcon item={template} size={128} className="shrink-0" />
                 </div>
-                <h3 className="text-base md:text-lg font-bold text-gi-text mt-1 leading-tight select-text">
+                <h3 className="text-base md:leading-[calc(1.75/1.125)] font-bold text-gi-text mt-1 leading-tight select-text">
                     {template.name}
                 </h3>
                 <span className="text-xs text-gi-muted uppercase tracking-wider mt-1 select-text">
@@ -545,7 +545,7 @@ export const ItemInspection = ({ entry, showSell = true, showViewInBank = false 
                 <div className="pt-2 border-t border-gi-border/40">
                     <button
                         onClick={() => EventBus.publish(UI_EVENTS.UI_OPEN_DRAWER, { tab: 'bank' })}
-                        className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded border font-bold text-xs md:text-sm uppercase tracking-wide transition-colors border-gi-primary/60 bg-gi-primary/15 text-gi-text hover:bg-gi-primary/25 cursor-pointer active:scale-[0.99]"
+                        className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded border font-bold text-xs md:leading-[calc(1.25/0.875)] uppercase tracking-wide transition-colors border-gi-primary/60 bg-gi-primary/15 text-gi-text hover:bg-gi-primary/25 cursor-pointer active:scale-[0.99]"
                     >
                         <Landmark size={14} className="text-gi-primary" /> View in Item Bank
                     </button>

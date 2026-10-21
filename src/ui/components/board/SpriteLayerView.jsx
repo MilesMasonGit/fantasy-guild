@@ -196,7 +196,7 @@ const LootSprite = React.memo(function LootSprite({
                 <PixelArt src={art} alt={label} size={spriteSize} hovering />
             </div>
             {quantity > 1 && (
-                <span className="absolute -bottom-1 -right-1 px-1 rounded-full bg-black/85 text-[9px] font-bold text-white tabular-nums">
+                <span className="absolute -bottom-1 -right-1 px-1 rounded-full bg-black/85 ui-text-body font-bold text-white tabular-nums">
                     {quantity}
                 </span>
             )}

@@ -141,7 +141,7 @@ export const EntityRibbon = ({
         md: {
             box: 'w-8 h-8',
             iconSize: 32,
-            text: 'text-xs md:text-sm',
+            text: 'text-xs md:leading-[calc(1.25/0.875)]',
             sub: 'text-(length:--font-size-xs)',
             pad: 'p-2 gap-2.5'
         },
@@ -155,7 +155,7 @@ export const EntityRibbon = ({
     }[size] || {
         box: 'w-8 h-8',
         iconSize: 32,
-        text: 'text-xs md:text-sm',
+        text: 'text-xs md:leading-[calc(1.25/0.875)]',
         sub: 'text-(length:--font-size-xs)',
         pad: 'p-2 gap-2.5'
     };

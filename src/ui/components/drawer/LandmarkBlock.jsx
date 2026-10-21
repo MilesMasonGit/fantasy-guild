@@ -14,7 +14,7 @@ export const LandmarkBlock = ({ def }) => {
     if (!block) return null;
     return (
         <div data-landmark className="flex flex-col gap-1 px-3 py-2 rounded-lg bg-[#181412] border border-gi-gold/40 text-xs">
-            <span className="text-[10px] font-bold gi-caps tracking-wider text-gi-gold">{block.title}</span>
+            <span className="ui-text-body font-bold gi-caps tracking-wider text-gi-gold">{block.title}</span>
             {block.lines.map((line, i) => (
                 <div key={i} className="flex items-start justify-between gap-2">
                     <span className="text-gi-muted">{line.label}</span>
@@ -23,7 +23,7 @@ export const LandmarkBlock = ({ def }) => {
                     </span>
                 </div>
             ))}
-            <p className="text-[10px] text-gi-muted leading-relaxed">{block.note}</p>
+            <p className="ui-text-body text-gi-muted leading-relaxed">{block.note}</p>
         </div>
     );
 };

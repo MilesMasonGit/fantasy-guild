@@ -39,7 +39,7 @@ export const MatTopBar = ({ left = null, middle = null, right = null }) => (
         data-mat-top-bar
         style={{ height: MAT_TOP_BAR_PX }}
         className="shrink-0 w-full select-none pointer-events-auto z-20"
-        frameClassName="w-full flex items-center gap-3 px-1 font-pixel ui-text-body text-amber-100"
+        frameClassName="w-full flex items-center gap-3 px-1 ui-text-body text-amber-100"
     >
         <div data-mat-top-bar-left className="flex items-center gap-2 shrink-0 h-full">{left}</div>
         <div data-mat-top-bar-middle className="flex-1 min-w-0 h-full">{middle}</div>

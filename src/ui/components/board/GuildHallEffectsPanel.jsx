@@ -54,13 +54,13 @@ export const GuildHallEffectsPanel = () => {
                         boxShadow: 'inset 0 0 20px rgba(0,0,0,0.85), 0 8px 24px rgba(0,0,0,0.6)'
                     }}
                 >
-                    <div className="shrink-0 py-2.5 px-3.5 text-center text-xs md:text-sm font-bold text-gi-text tracking-wider uppercase select-none border-b border-gi-border/40 bg-gi-base/80">
+                    <div className="shrink-0 py-2.5 px-3.5 text-center text-xs md:leading-[calc(1.25/0.875)] font-bold text-gi-text tracking-wider uppercase select-none border-b border-gi-border/40 bg-gi-base/80">
                         Guild Hall Effects
                     </div>
 
                     <div className="flex-1 min-h-0 overflow-y-auto p-4 flex flex-col gap-4 text-xs text-gi-text">
                         <div className="flex flex-col gap-2">
-                            <span className="text-[10px] font-bold gi-caps tracking-wider text-gi-muted">
+                            <span className="ui-text-body font-bold gi-caps tracking-wider text-gi-muted">
                                 Outputs
                             </span>
 
@@ -85,7 +85,7 @@ export const GuildHallEffectsPanel = () => {
                         </div>
 
                         <div className="flex flex-col gap-2">
-                            <span className="text-[10px] font-bold gi-caps tracking-wider text-gi-muted">
+                            <span className="ui-text-body font-bold gi-caps tracking-wider text-gi-muted">
                                 Boosts & Modifiers
                             </span>
 

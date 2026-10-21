@@ -31,7 +31,7 @@ const devButtonClass = 'shrink-0 px-2 py-1 rounded bg-gi-primary/10 hover:bg-gi-
  */
 export const QA_PANEL_FIT_CLASS = 'max-h-[calc(100dvh-2rem)]';
 export const QA_PANEL_BODY_CLASS = 'flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-1';
-const devLabelClass = 'text-[11px] font-bold uppercase tracking-wider text-gi-muted mb-1';
+const devLabelClass = 'ui-text-title font-bold uppercase tracking-wider text-gi-muted mb-1';
 
 /**
  * TestDashboard: A temporary developer QA tool for spawning test data
@@ -305,7 +305,7 @@ export const TestDashboard = React.memo(() => {
             {!isOpen ? (
                 <button
                     onClick={() => setIsOpen(true)}
-                    className="fixed bottom-4 right-4 z-(--z-dev-tools) p-3 rounded-full bg-gi-primary text-black shadow-lg hover:scale-110 transition-transform flex items-center gap-2 font-bold font-display"
+                    className="fixed bottom-4 right-4 z-(--z-dev-tools) p-3 rounded-full bg-gi-primary text-black shadow-lg hover:scale-110 transition-transform flex items-center gap-2 font-bold"
                     title="Open QA Dashboard"
                 >
                     <Bug className="w-5 h-5" /> QA
@@ -316,7 +316,7 @@ export const TestDashboard = React.memo(() => {
                     className={`fixed bottom-4 right-4 z-(--z-dev-tools) w-64 ${QA_PANEL_FIT_CLASS} bg-gi-surface/95 border border-gi-primary rounded-xl p-4 flex flex-col pointer-events-auto`}
                 >
                     <div className="shrink-0 flex items-center justify-between mb-4 border-b border-gi-border pb-2">
-                        <div className="flex items-center gap-2 text-gi-primary font-bold font-display">
+                        <div className="flex items-center gap-2 text-gi-primary font-bold">
                             <Bug className="w-4 h-4" /> QA TESTER
                         </div>
                         <CloseX onClick={() => setIsOpen(false)} />
@@ -398,7 +398,7 @@ export const TestDashboard = React.memo(() => {
                             </div>
 
                             {devStatus && (
-                                <div className="text-[10px] text-gi-muted break-words" role="status">{devStatus}</div>
+                                <div className="ui-text-body text-gi-muted break-words" role="status">{devStatus}</div>
                             )}
                         </div>
 
@@ -414,7 +414,7 @@ export const TestDashboard = React.memo(() => {
                                 </button>
                             ))}
                         </div>
-                        <div className="text-[10px] text-center text-gi-muted mt-3 uppercase tracking-widest font-bold">
+                        <div className="ui-text-body text-center text-gi-muted mt-3 uppercase tracking-widest font-bold">
                             Playmat Dev Tools
                         </div>
                     </div>

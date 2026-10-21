@@ -20,7 +20,7 @@ const SCENARIOS = [
     ['cap256', 'S2 at cap 256']
 ];
 
-const labelClass = 'text-[11px] font-bold uppercase tracking-wider text-gi-muted mb-1';
+const labelClass = 'ui-text-title font-bold uppercase tracking-wider text-gi-muted mb-1';
 const buttonClass = 'px-2 py-1 rounded bg-gi-primary/10 hover:bg-gi-primary/20 border border-gi-primary/40 text-xs font-bold transition-colors';
 
 const loadHarness = () => import('./perfHarness.js');
@@ -65,7 +65,7 @@ export function PerfDevSection() {
                     <button key={name} onClick={() => runScenario(name)} className={buttonClass}>{label}</button>
                 ))}
             </div>
-            {status && <div className="text-[10px] text-gi-muted break-words" role="status">{status}</div>}
+            {status && <div className="ui-text-body text-gi-muted break-words" role="status">{status}</div>}
         </div>
     );
 }

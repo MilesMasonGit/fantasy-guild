@@ -74,7 +74,7 @@ export const HeroEditModal = ({ heroId, isOpen, onClose, onChangeJob }) => {
                     onClick={onChangeJob}
                     className={cn(
                         'flex items-center justify-center gap-1.5 px-2 py-2 rounded border',
-                        'text-[10px] font-bold gi-caps tracking-wide transition-colors',
+                        'ui-text-body font-bold gi-caps tracking-wide transition-colors',
                         'border-gi-primary/50 bg-gi-primary/10 text-gi-text hover:bg-gi-primary/20'
                     )}
                 >
@@ -84,7 +84,7 @@ export const HeroEditModal = ({ heroId, isOpen, onClose, onChangeJob }) => {
                 <div className="border-t border-gi-border/40" />
 
                 <label className="flex flex-col gap-1.5">
-                    <span className="text-[10px] font-bold gi-caps tracking-widest text-gi-muted">Name</span>
+                    <span className="ui-text-body font-bold gi-caps tracking-widest text-gi-muted">Name</span>
                     <input
                         type="text"
                         value={name}
@@ -96,13 +96,13 @@ export const HeroEditModal = ({ heroId, isOpen, onClose, onChangeJob }) => {
                             'border-gi-border focus:border-gi-primary focus:outline-none transition-colors'
                         )}
                     />
-                    <span className="text-[9px] text-gi-muted/70 tabular-nums self-end">
+                    <span className="ui-text-body text-gi-muted/70 tabular-nums self-end">
                         {trimmed.length}/{HERO_NAME_MAX}
                     </span>
                 </label>
 
                 <div className="flex flex-col gap-1.5">
-                    <span className="text-[10px] font-bold gi-caps tracking-widest text-gi-muted">Portrait</span>
+                    <span className="ui-text-body font-bold gi-caps tracking-widest text-gi-muted">Portrait</span>
                     <div className="grid grid-cols-8 gap-1.5 max-h-56 overflow-y-auto custom-scrollbar p-1">
                         {HERO_PORTRAITS.map(id => (
                             <button
@@ -129,7 +129,7 @@ export const HeroEditModal = ({ heroId, isOpen, onClose, onChangeJob }) => {
                  * Full hero recolouring is later.
                  */}
                 <div className="flex flex-col gap-1.5">
-                    <span className="text-[10px] font-bold gi-caps tracking-widest text-gi-muted">Flag colour</span>
+                    <span className="ui-text-body font-bold gi-caps tracking-widest text-gi-muted">Flag colour</span>
                     <div className="grid grid-cols-8 gap-1.5 p-1">
                         {FLAG_COLOURS.map(colour => (
                             <button
@@ -155,7 +155,7 @@ export const HeroEditModal = ({ heroId, isOpen, onClose, onChangeJob }) => {
                 <div className="flex justify-end gap-2">
                     <button
                         onClick={onClose}
-                        className="px-3 py-1.5 rounded border border-gi-border text-[10px] font-bold gi-caps tracking-wide text-gi-muted hover:text-gi-text transition-colors"
+                        className="px-3 py-1.5 rounded border border-gi-border ui-text-body font-bold gi-caps tracking-wide text-gi-muted hover:text-gi-text transition-colors"
                     >
                         Cancel
                     </button>
@@ -163,7 +163,7 @@ export const HeroEditModal = ({ heroId, isOpen, onClose, onChangeJob }) => {
                         onClick={handleSave}
                         disabled={!canSave}
                         className={cn(
-                            'flex items-center gap-1.5 px-3 py-1.5 rounded border text-[10px] font-bold gi-caps tracking-wide transition-colors',
+                            'flex items-center gap-1.5 px-3 py-1.5 rounded border ui-text-body font-bold gi-caps tracking-wide transition-colors',
                             canSave
                                 ? 'border-gi-primary bg-gi-primary/15 text-gi-text hover:bg-gi-primary/25'
                                 : 'border-gi-border/40 text-gi-muted/50 cursor-not-allowed'

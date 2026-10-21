@@ -85,9 +85,9 @@ export const TypographyScaleModal = ({ isOpen, onClose }) => {
                             const currentVal = sizes[f.key] ?? f.defaultVal;
                             return (
                                 <div key={f.key} className="space-y-2 p-3 rounded-lg bg-black/25 border border-white/5 shadow-sm">
-                                    <div className="flex justify-between items-baseline text-xs font-bold font-display text-gi-primary">
+                                    <div className="flex justify-between items-baseline text-xs font-bold text-gi-primary">
                                         <span>{f.label}</span>
-                                        <span className="text-xs text-gi-gold tabular-nums font-mono font-bold">
+                                        <span className="text-xs text-gi-gold tabular-nums font-bold">
                                             {currentVal}px
                                         </span>
                                     </div>
@@ -102,7 +102,7 @@ export const TypographyScaleModal = ({ isOpen, onClose }) => {
                                     <div className="border border-dashed border-white/10 p-2.5 rounded bg-black/40 text-center mt-1">
                                         <div
                                             style={{ fontSize: `${currentVal}px` }}
-                                            className="font-base uppercase leading-tight tracking-wider truncate"
+                                            className="uppercase leading-tight tracking-wider truncate"
                                         >
                                             12 Nature: Harvesting 99 Oak.
                                         </div>
@@ -122,7 +122,7 @@ export const TypographyScaleModal = ({ isOpen, onClose }) => {
                     </button>
                     <button
                         onClick={handleSaveAndClose}
-                        className="flex items-center gap-1.5 px-6 py-2 rounded bg-gi-primary text-black text-xs font-bold uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all shadow-md font-pixel"
+                        className="flex items-center gap-1.5 px-6 py-2 rounded bg-gi-primary text-black text-xs font-bold uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all shadow-md"
                     >
                         <Check className="w-4 h-4" /> Save & Close
                     </button>

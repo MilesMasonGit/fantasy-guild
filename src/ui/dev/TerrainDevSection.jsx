@@ -9,7 +9,7 @@ import { lastGroundBuilds, onGroundBuilt } from '../components/board/groundBuild
 import { cueAmbient } from '../components/board/ambientCues.js';
 import { TERRAIN_DEV_REGIONS, TERRAIN_DEV_WATER, TERRAIN_DEV_PLACEMENT, goToDevRegion, rerollDevRegion, backToStarterCamp, viewOf, placeGroundTestTokens } from './terrainDev.js';
 
-const labelClass = 'text-[11px] font-bold uppercase tracking-wider text-gi-muted mb-1';
+const labelClass = 'ui-text-title font-bold uppercase tracking-wider text-gi-muted mb-1';
 const buttonClass = 'px-2 py-1 rounded bg-gi-primary/10 hover:bg-gi-primary/20 border border-gi-primary/40 text-xs font-bold transition-colors';
 
 /** Where the guild is, in words. */
@@ -54,7 +54,7 @@ export function TerrainDevSection() {
     return (
         <div className="mb-3 pb-3 border-b border-gi-border space-y-2" data-testid="qa-terrain">
             <div className={labelClass}>Terrain (dev only)</div>
-            <div className="text-[10px] text-gi-muted leading-tight">
+            <div className="ui-text-body text-gi-muted leading-tight">
                 Each button makes a dev Region for free and takes the guild there. The dev Region you leave is removed.
             </div>
             <div className="grid grid-cols-2 gap-1">
@@ -130,12 +130,12 @@ export function TerrainDevSection() {
                     A bird now
                 </button>
             </div>
-            <div className="text-[10px] text-gi-text" data-terrain-where>{where}</div>
-            <div className="text-[10px] text-gi-muted tabular-nums" data-terrain-builds>
+            <div className="ui-text-body text-gi-text" data-terrain-where>{where}</div>
+            <div className="ui-text-body text-gi-muted tabular-nums" data-terrain-builds>
                 Last ground build: plan {ms(builds.plan)}, picture {ms(builds.screen)}
                 {builds.cols ? ` (${builds.cols} × ${builds.rows} ground pixels)` : ''}
             </div>
-            {status && <div className="text-[10px] text-gi-danger break-words" role="status">{status}</div>}
+            {status && <div className="ui-text-body text-gi-danger break-words" role="status">{status}</div>}
         </div>
     );
 }

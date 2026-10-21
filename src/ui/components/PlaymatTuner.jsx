@@ -53,7 +53,7 @@ export const PlaymatTuner = React.memo(() => {
         return (
             <button
                 onClick={() => setIsOpen(true)}
-                className="fixed bottom-4 right-24 z-(--z-dev-tools) p-3 rounded-full bg-gi-primary text-black shadow-lg hover:scale-110 transition-transform flex items-center gap-2 font-bold font-display"
+                className="fixed bottom-4 right-24 z-(--z-dev-tools) p-3 rounded-full bg-gi-primary text-black shadow-lg hover:scale-110 transition-transform flex items-center gap-2 font-bold"
                 title="Open the ground's look (Playmat Tuner)"
             >
                 <SlidersHorizontal className="w-5 h-5" /> GROUND
@@ -67,7 +67,7 @@ export const PlaymatTuner = React.memo(() => {
             className="fixed bottom-4 right-[19rem] z-(--z-dev-tools) w-72 max-h-[calc(100dvh-2rem)] bg-gi-surface/95 border border-gi-primary rounded-xl p-4 flex flex-col pointer-events-auto"
         >
             <div className="shrink-0 flex items-center justify-between mb-3 border-b border-gi-border pb-2">
-                <div className="flex items-center gap-2 text-gi-primary font-bold font-display">
+                <div className="flex items-center gap-2 text-gi-primary font-bold">
                     <SlidersHorizontal className="w-4 h-4" /> GROUND LOOK
                 </div>
                 <div className="flex items-center gap-1">
@@ -90,21 +90,21 @@ export const PlaymatTuner = React.memo(() => {
             >
                 <Copy className="w-3 h-3" /> Copy values
             </button>
-            {copied && <div className="shrink-0 text-[10px] text-gi-muted mb-2" role="status">{copied}</div>}
+            {copied && <div className="shrink-0 ui-text-body text-gi-muted mb-2" role="status">{copied}</div>}
             {manual && (
                 <textarea
                     readOnly
                     value={manual}
                     onFocus={(e) => e.target.select()}
                     aria-label="Tuning values"
-                    className="shrink-0 mb-2 h-24 w-full text-[10px] font-mono bg-gi-base border border-gi-border rounded p-1 text-gi-text"
+                    className="shrink-0 mb-2 h-24 w-full ui-text-body bg-gi-base border border-gi-border rounded p-1 text-gi-text"
                 />
             )}
 
             <div className="min-h-0 overflow-y-auto custom-scrollbar pr-1 space-y-4">
                 {groups.map(group => (
                     <div key={group}>
-                        <div className="text-[10px] font-bold uppercase tracking-wider text-gi-muted mb-2">
+                        <div className="ui-text-body font-bold uppercase tracking-wider text-gi-muted mb-2">
                             {group}
                         </div>
                         <div className="space-y-3">
@@ -114,7 +114,7 @@ export const PlaymatTuner = React.memo(() => {
                                 if (t.toggle) {
                                     return (
                                         <div key={t.key}>
-                                            <label className="flex items-center justify-between text-[11px] mb-0.5 cursor-pointer">
+                                            <label className="flex items-center justify-between ui-text-title mb-0.5 cursor-pointer">
                                                 <span className={changed ? 'text-gi-primary font-bold' : 'text-gi-muted'}>
                                                     {t.label}
                                                 </span>
@@ -126,7 +126,7 @@ export const PlaymatTuner = React.memo(() => {
                                                     className="accent-gi-primary cursor-pointer"
                                                 />
                                             </label>
-                                            <div className="text-[9px] leading-tight text-gi-muted/80 mt-0.5">
+                                            <div className="ui-text-body leading-tight text-gi-muted/80 mt-0.5">
                                                 {t.hint}
                                             </div>
                                         </div>
@@ -134,11 +134,11 @@ export const PlaymatTuner = React.memo(() => {
                                 }
                                 return (
                                     <div key={t.key}>
-                                        <div className="flex items-baseline justify-between text-[11px] mb-0.5">
+                                        <div className="flex items-baseline justify-between ui-text-title mb-0.5">
                                             <span className={changed ? 'text-gi-primary font-bold' : 'text-gi-muted'}>
                                                 {t.label}
                                             </span>
-                                            <span className="text-gi-primary tabular-nums text-[10px]">
+                                            <span className="text-gi-primary tabular-nums ui-text-body">
                                                 {value.toFixed(3).replace(/0+$/, '').replace(/\.$/, '')}
                                             </span>
                                         </div>
@@ -149,7 +149,7 @@ export const PlaymatTuner = React.memo(() => {
                                             onChange={(e) => setTuning(t.key, Number(e.target.value))}
                                             className="w-full accent-gi-primary cursor-pointer"
                                         />
-                                        <div className="text-[9px] leading-tight text-gi-muted/80 mt-0.5">
+                                        <div className="ui-text-body leading-tight text-gi-muted/80 mt-0.5">
                                             {t.hint}
                                         </div>
                                     </div>
@@ -160,7 +160,7 @@ export const PlaymatTuner = React.memo(() => {
                 ))}
             </div>
 
-            <div className="shrink-0 text-[10px] text-center text-gi-muted mt-3 uppercase tracking-widest font-bold">
+            <div className="shrink-0 ui-text-body text-center text-gi-muted mt-3 uppercase tracking-widest font-bold">
                 Appearance only — never saved
             </div>
         </div>

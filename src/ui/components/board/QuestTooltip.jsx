@@ -59,7 +59,7 @@ export const QuestTooltip = ({ instanceId, quest, anchorOf = artOf }) => {
             <div className="flex items-center gap-1.5">
                 <span data-quest-title className="font-bold text-gi-gold">{quest.title}</span>
                 {quest.tutorial && (
-                    <span data-quest-tutorial className="px-1 rounded bg-sky-900/70 border border-sky-400/40 text-[9px] font-bold uppercase text-sky-200">
+                    <span data-quest-tutorial className="px-1 rounded bg-sky-900/70 border border-sky-400/40 ui-text-body font-bold uppercase text-sky-200">
                         {TUTORIAL_TEXT.tag}
                     </span>
                 )}

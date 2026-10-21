@@ -262,7 +262,7 @@ const MapModesDemo = () => {
                 </div>
             )}
             {[MAP_MODE.DISALLOW, MAP_MODE.DEMOLISH].map(mode => (
-                <PixelFrame key={mode} kind="studs" style={{ height: MAT_TOP_BAR_PX }} frameClassName="px-2 font-pixel ui-text-body text-amber-100">
+                <PixelFrame key={mode} kind="studs" style={{ height: MAT_TOP_BAR_PX }} frameClassName="px-2 ui-text-body text-amber-100">
                     <ModeBannerView mode={mode} />
                 </PixelFrame>
             ))}
@@ -531,7 +531,7 @@ export const KIT_SECTIONS = [
     },
     {
         id: 'text-sizes', title: 'Text sizes', status: 'unapproved',
-        source: 'ui-text-title, ui-text-body, ui-text-small, ui-text-display (src/tailwind.css); no panel uses them yet',
+        source: 'ui-text-title, ui-text-body, ui-text-small, ui-text-display (src/tailwind.css); what the old bracketed pixel sizes are now written as',
         rule: 'Three sizes in panels (title, body, small), plus one display size for mat celebrations. The Text size setting scales all four.',
         Demo: TextSizesDemo
     },

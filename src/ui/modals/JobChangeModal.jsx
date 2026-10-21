@@ -74,7 +74,7 @@ export const JobChangeModal = ({ heroId, isOpen, onClose }) => {
                  * because the combat skill and the advanced skill change too. The per-job
                  * panel states the real trade; this line only has to be true every time.
                  */}
-                <p className="text-[10px] text-gi-muted italic">
+                <p className="ui-text-body text-gi-muted italic">
                     Changing job rewrites which skills this hero can use. Nothing is lost —
                     what comes off the sheet is set aside at its level, and comes back if a
                     later job uses it.
@@ -85,7 +85,7 @@ export const JobChangeModal = ({ heroId, isOpen, onClose }) => {
                     <div className="flex flex-col gap-3 max-h-[22rem] overflow-y-auto custom-scrollbar pr-1">
                         {tiers.map(({ tier, label }) => (
                             <div key={tier} className="flex flex-col gap-1">
-                                <span className="text-[9px] gi-caps tracking-wider text-gi-muted/60">{label}</span>
+                                <span className="ui-text-body gi-caps tracking-wider text-gi-muted/60">{label}</span>
                                 <div className="grid grid-cols-2 gap-1">
                                     {getJobsByTier(tier).map(jobId => (
                                         <JobRow
@@ -105,7 +105,7 @@ export const JobChangeModal = ({ heroId, isOpen, onClose }) => {
                     {/* The trade */}
                     <div className="w-56 shrink-0 flex flex-col gap-2">
                         {!preview ? (
-                            <span className="text-[10px] text-gi-muted italic self-center mt-8 text-center">
+                            <span className="ui-text-body text-gi-muted italic self-center mt-8 text-center">
                                 Pick a job to see what it would cost {hero.name}.
                             </span>
                         ) : (
@@ -122,7 +122,7 @@ export const JobChangeModal = ({ heroId, isOpen, onClose }) => {
                                  */}
                                 <div
                                     data-promotion-hint
-                                    className="mt-auto flex items-start gap-1.5 px-2 py-2 rounded border border-gi-border/40 text-[10px] text-gi-muted"
+                                    className="mt-auto flex items-start gap-1.5 px-2 py-2 rounded border border-gi-border/40 ui-text-body text-gi-muted"
                                 >
                                     <GraduationCap size={11} className="shrink-0 mt-0.5" />
                                     <span>
@@ -160,18 +160,18 @@ const JobRow = ({ jobId, verdict, isCurrent, isSelected, onSelect }) => {
                 locked && !isSelected && 'opacity-60'
             )}
         >
-            <span className="flex items-center gap-1 text-[10px] font-bold text-gi-text">
+            <span className="flex items-center gap-1 ui-text-body font-bold text-gi-text">
                 {job.icon} {job.name}
-                {isCurrent && <span className="text-[8px] text-gi-gold gi-caps">· current</span>}
+                {isCurrent && <span className="ui-text-small text-gi-gold gi-caps">· current</span>}
                 {locked && <Lock size={9} className="text-gi-muted ml-auto shrink-0" />}
             </span>
             {parent && parent.id !== STARTING_JOB_ID && (
-                <span className="text-[8px] text-gi-muted/60 flex items-center gap-0.5">
+                <span className="ui-text-small text-gi-muted/60 flex items-center gap-0.5">
                     {parent.name} <ArrowRight size={7} /> {job.name}
                 </span>
             )}
             {locked && verdict.detail && (
-                <span className="text-[8px] text-gi-danger/80 truncate">{verdict.detail}</span>
+                <span className="ui-text-small text-gi-danger/80 truncate">{verdict.detail}</span>
             )}
         </button>
     );

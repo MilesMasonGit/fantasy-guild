@@ -49,7 +49,7 @@ export const DevSpawnItemModal = ({ engine, onClose }) => {
         <div className="fixed inset-0 z-(--z-dev-modal) flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 pointer-events-auto">
             <div className="w-[480px] max-w-full bg-gi-surface border-2 border-gi-primary/50 rounded-2xl shadow-2xl flex flex-col max-h-[85vh]">
                 <div className="flex items-center justify-between px-5 py-4 border-b border-gi-border bg-gi-base/60">
-                    <span className="font-display font-bold text-base text-gi-primary uppercase tracking-widest">
+                    <span className="font-bold text-base text-gi-primary uppercase tracking-widest">
                         Spawn Items
                     </span>
                     <CloseX onClick={onClose} />
@@ -72,7 +72,7 @@ export const DevSpawnItemModal = ({ engine, onClose }) => {
                                 key={t}
                                 onClick={() => setTypeFilter(t)}
                                 className={cn(
-                                    'px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border transition-colors',
+                                    'px-2 py-0.5 rounded-full ui-text-body font-bold uppercase tracking-wider border transition-colors',
                                     typeFilter === t
                                         ? 'bg-gi-primary/20 border-gi-primary text-gi-primary'
                                         : 'border-gi-border text-gi-muted hover:border-gi-primary/40'
@@ -98,7 +98,7 @@ export const DevSpawnItemModal = ({ engine, onClose }) => {
                             </div>
                             <div className="min-w-0 flex-1">
                                 <div className="text-xs font-bold truncate">{item.name}</div>
-                                <div className="text-[9px] text-gi-muted uppercase tracking-wider">
+                                <div className="ui-text-body text-gi-muted uppercase tracking-wider">
                                     {TYPE_LABEL[item.type] || item.type}
                                 </div>
                             </div>

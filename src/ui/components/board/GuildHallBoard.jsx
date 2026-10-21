@@ -20,7 +20,6 @@ export const WEB_UNIT_PX = 400;
 const NODE_PX = 112;
 const HALL_PX = 168;
 
-const PIXEL_FONT = "'Silkscreen', cursive, monospace";
 const OUTLINE = '0 1px 0 #000, 1px 0 0 #000, 0 -1px 0 #000, -1px 0 0 #000, 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 0 2px 3px rgba(0,0,0,0.95)';
 
 /** A node's centre in the web's natural pixels. The Hall is the middle. */
@@ -244,12 +243,12 @@ export const GuildHallBoard = ({
                                                 owned ? 'bg-[#3d2a1f] border-gi-gold/70' : 'bg-[#1c140e]/95 border-[#3a271d]',
                                                 state === 'locked' && 'opacity-60'
                                             )}
-                                            style={{ fontFamily: PIXEL_FONT, textShadow: OUTLINE }}
+                                            style={{ textShadow: OUTLINE }}
                                         >
-                                            <div className="text-[11px] leading-tight text-white">{def.name}</div>
+                                            <div className="ui-text-title leading-tight text-white">{def.name}</div>
                                             <div
                                                 data-node-rank
-                                                className={cn('text-[11px] leading-tight', state === 'maxed' ? 'text-yellow-300' : owned ? 'text-gi-gold' : 'text-stone-400')}
+                                                className={cn('ui-text-title leading-tight', state === 'maxed' ? 'text-yellow-300' : owned ? 'text-gi-gold' : 'text-stone-400')}
                                             >
                                                 {`${toRoman(rank)}/${toRoman(def.maxRank)}`}
                                             </div>

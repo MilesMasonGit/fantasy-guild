@@ -76,7 +76,7 @@ export const TokenChargeDeltaFloater = memo(function TokenChargeDeltaFloater({ i
                     className={cn(
                         "gi-charge-float",
                         anchor === 'ring' ? "absolute left-0 bottom-0 -translate-x-1/2" : "absolute right-0 bottom-0",
-                        "font-mono font-bold text-[12px] tabular-nums leading-none tracking-tight pointer-events-none select-none drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.95)] whitespace-nowrap",
+                        "font-bold ui-text-title tabular-nums leading-none tracking-tight pointer-events-none select-none drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.95)] whitespace-nowrap",
                         d.delta > 0 ? "text-emerald-300" : "text-amber-200"
                     )}
                     style={atRest ? FLOATER_AT_REST_STYLE : FLOATER_STYLE}
@@ -203,7 +203,7 @@ export const StationGearBadge = ({ isDragging, recipe, pulsing = false, isFounda
             <div
                 className={cn(
                     'absolute left-0 top-8 w-44 p-1.5 rounded z-40',
-                    'bg-black/95 border border-gi-gold/40 text-[10px] leading-tight text-white',
+                    'bg-black/95 border border-gi-gold/40 ui-text-body leading-tight text-white',
                     'pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150'
                 )}
             >
