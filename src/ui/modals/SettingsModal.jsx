@@ -174,7 +174,7 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                                 <SettingToggle label="Menu on Right Side" value={getVal('ui.bubbleMenuRight')} onChange={(v) => handleSettingChange('ui.bubbleMenuRight', v)} description="Dock the bubble menu on the right edge of the screen" />
                                 <SettingToggle settingKey="ui.tooltipsEnabled" disabled label="Master Tooltips" value={getVal('ui.tooltipsEnabled')} onChange={(v) => handleSettingChange('ui.tooltipsEnabled', v)} />
                                 <SettingToggle settingKey="ui.tooltipsItems" disabled label="Item Tooltips" value={getVal('ui.tooltipsItems')} onChange={(v) => handleSettingChange('ui.tooltipsItems', v)} />
-                                <SettingToggle label="Item Fly Particles" value={getVal('ui.itemParticles')} onChange={(v) => handleSettingChange('ui.itemParticles', v)} description="Show items flying between cards and inventory" />
+                                <SettingToggle settingKey="ui.itemParticles" label="Flying Items" value={getVal('ui.itemParticles')} onChange={(v) => handleSettingChange('ui.itemParticles', v)} description="Show collected items flying from the mat to the item stubs or the Guild Hall" />
                             </div>
                         </div>
                     )}
