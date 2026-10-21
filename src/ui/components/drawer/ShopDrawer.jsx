@@ -77,8 +77,10 @@ export const shopRowPayload = (typeId) => ({ typeId, from: { shop: typeId } });
 
 /** What re-reads the catalogue: the Bank and the cap. */
 const SHOP_EVENTS = Object.freeze([
-    ENGINE_EVENTS.TOKEN_PURCHASED, ENGINE_EVENTS.INVENTORY_UPDATED, ENGINE_EVENTS.STATE_CHANGED, ENGINE_EVENTS.GAME_LOADED,
-    BOARD_EVENTS.TOKEN_PLACED, BOARD_EVENTS.TOKEN_DEPLETED
+    ENGINE_EVENTS.TOKEN_PURCHASED, ENGINE_EVENTS.INVENTORY_UPDATED, ENGINE_EVENTS.GAME_RESET, ENGINE_EVENTS.GAME_LOADED,
+    BOARD_EVENTS.TOKEN_PLACED, BOARD_EVENTS.TOKEN_DEPLETED,
+    // A price is paid from the floor too (`InputAllocator.availableOf`); an upgrade raises the cap.
+    BOARD_EVENTS.SPRITES_CHANGED, ENGINE_EVENTS.GUILD_UPGRADES_UPDATED
 ]);
 
 function useShopRefresh(active) {

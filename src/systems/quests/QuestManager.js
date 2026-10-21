@@ -100,14 +100,17 @@ export const QuestManager = {
         QuestTokens.ensure();
     },
 
+    /**
+     * A slot was opened (`EngineBootstrap.startSlot`): the mat is checked on the next tick too,
+     * because a new game's Guild Hall lands after this runs.
+     */
+    onSlotOpened() {
+        QuestTokens.requestCheck();
+        this.ensureQuests();
+    },
+
     setupListeners() {
         unsubs.push(
-            // A new game or a load: the mat is checked on the next tick too
-            // (a new game's Guild Hall lands after this subscriber runs).
-            EventBus.subscribe(UI_EVENTS.REACT_SLOT_SELECTED, () => {
-                QuestTokens.requestCheck();
-                this.ensureQuests();
-            }),
             EventBus.subscribe(ENGINE_EVENTS.GAME_LOADED, () => {
                 QuestTokens.requestCheck();
                 this.ensureQuests();

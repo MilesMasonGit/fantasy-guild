@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useDndContext } from '@dnd-kit/core';
 import { getItem } from '../../config/registries/itemRegistry.js';
-import { getTokenType } from '../../config/registries/tokenRegistry.js';
+import * as Placement from '../../systems/board/Placement.js';
 import { ItemIcon } from '../components/base/ItemIcon.jsx';
 import { DRAG_KIND } from './dragConstants.js';
 import { TokenSprite, TOKEN_SURFACE, tokenSizeFor, PixelArt, boardArtSteps } from '../components/base/TokenSprite.jsx';
@@ -26,13 +26,7 @@ function liveBoardFit() {
     return el ? parseFloat(el.getAttribute('data-board-scale')) || 1 : 1;
 }
 
-const isGuildHallPayload = (payload) => payload?.kind === DRAG_KIND.TOKEN && !!(
-    payload.typeId === 'token_guild_hall' ||
-    payload.cannotLeaveBoard ||
-    payload.isGuildHall ||
-    getTokenType(payload.typeId)?.cannotLeaveBoard ||
-    getTokenType(payload.typeId)?.isGuildHall
-);
+const isGuildHallPayload = (payload) => payload?.kind === DRAG_KIND.TOKEN && Placement.isPermanentToken(payload.typeId);
 
 const NOT_DIMMED = {};
 const DIMMED = { opacity: 0.5 };

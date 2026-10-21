@@ -15,6 +15,7 @@ import * as Placement from './Placement.js';
 import { logger } from '../../utils/Logger.js';
 import { matW, matH } from '../../config/matGeometry.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
+import { BOARD_EVENTS } from './boardEvents.js';
 
 /**
  * Sells every Token type that carries a `shop` block: `shop: { price: [{ itemId, quantity }],
@@ -148,12 +149,11 @@ function purchase(typeId, place) {
         // Unreachable in practice (checked above); undo the placement so a
         // Token is never handed out for free.
         BoardState.removeToken(instance.id);
-        EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
+        EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: instance.id, x: placed.x, y: placed.y, typeId: null });
         return refuse('Not enough items');
     }
 
     EventBus.publish(ENGINE_EVENTS.TOKEN_PURCHASED, { typeId, instanceId: instance.id, price });
-    EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
     logger.info('Shop', `Bought ${tokenName(typeId)}`);
     return { success: true, instance, x: placed.x, y: placed.y, nudged: !!placed.nudged };
 }

@@ -1,30 +1,21 @@
 import React, { useState, useCallback } from 'react';
 import { Ruler, X, RotateCcw } from 'lucide-react';
-import { useEngine } from '../hooks/useEngine.js';
 import {
     MAT_TUNABLES, matTuning, setMatTuning, resetMatTuning, isMatTuned, matTuningDefault
 } from '../../config/matTuning.js';
-import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 
 /**
  * MatTuner: developer panel for the free playmat's rules, separate from the terrain
  * `PlaymatTuner`. Built entirely from `MAT_TUNABLES` in `config/matTuning.js`: adding a
  * setting is adding a row there, with no UI to write.
  * Moving a slider changes gameplay live: `TileModifiers` listens for the change and rebuilds
- * every tile. The panel only publishes `state_changed` so open inspection panels re-read their
- * numbers.
+ * every tile; whatever draws a tuned number hears `onMatTuningChanged` itself.
  */
 export const MatTuner = React.memo(() => {
-    const engine = useEngine();
     const [isOpen, setIsOpen] = useState(false);
     const [, bump] = useState(0);
 
-    const refresh = useCallback(() => {
-        bump(n => n + 1);
-        engine?.EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
-    }, [engine]);
-
-    if (!engine) return null;
+    const refresh = useCallback(() => bump(n => n + 1), []);
 
     const groups = [...new Set(MAT_TUNABLES.map(t => t.group))];
 

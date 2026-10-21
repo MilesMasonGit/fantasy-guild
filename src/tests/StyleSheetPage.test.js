@@ -1,22 +1,14 @@
 // @vitest-environment jsdom
-import { describe, it, expect, afterEach, vi } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import React from 'react';
 import { render, fireEvent, cleanup } from '@testing-library/react';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
-vi.mock('../ui/hooks/useEngine.js', () => ({ useEngine: vi.fn() }));
-
-import { useEngine } from '../ui/hooks/useEngine.js';
+import { GameState } from '../state/GameState.js';
 import { TestDashboard } from '../ui/components/TestDashboard.jsx';
 import { KIT_SECTIONS, KIT_COLOURS } from '../ui/dev/StyleSheetPage.jsx';
 
-function stubEngine() {
-    return {
-        EventBus: { subscribe: () => () => {}, publish: () => {} },
-        GameState: { state: { board: { tokens: {}, sprites: [] }, heroes: [] } }
-    };
-}
 
 /** Every piece UI_STYLE's "The style sheet page" names. */
 const UI_STYLE_PIECES = [
@@ -32,7 +24,7 @@ describe('Style sheet page', () => {
     afterEach(() => cleanup());
 
     function openPage() {
-        useEngine.mockReturnValue(stubEngine());
+        GameState.initNew();
         const view = render(React.createElement(TestDashboard));
         fireEvent.click(view.getByTitle('Open QA Dashboard'));
         fireEvent.click(view.getByText(/Style Sheet/));

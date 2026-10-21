@@ -10,8 +10,6 @@ import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { EventBus } from '../systems/core/EventBus.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { resetMatTuning } from '../config/matTuning.js';
 import { matW, matH } from '../config/matGeometry.js';
 import { getItem } from '../config/registries/itemRegistry.js';
@@ -55,7 +53,7 @@ vi.mock('../ui/components/base/TokenSprite.jsx', async (orig) => {
 
 const h = React.createElement;
 const mount = (el) => render(
-    h(EngineContext.Provider, { value: { GameState, EventBus } }, h(DndContext, null, el))
+    h(DndContext, null, el)
 );
 
 describe('⭐ the mat components are memoised', () => {

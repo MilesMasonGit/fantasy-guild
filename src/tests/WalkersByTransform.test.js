@@ -11,7 +11,6 @@ import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { resetMatTuning } from '../config/matTuning.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { MatHero } from '../ui/components/board/MatHero.jsx';
@@ -39,7 +38,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 
 const h = React.createElement;
 const mount = (el) => render(
-    h(EngineContext.Provider, { value: { GameState, EventBus } }, h(DndContext, null, el))
+    h(DndContext, null, el)
 );
 const translated = (el) => /translate\(\s*-?[\d.]+px,\s*-?[\d.]+px\)/.test(el.style.transform || '');
 
@@ -60,7 +59,7 @@ describe('⭐ a hero walks by transform', () => {
         const { container, rerender } = mount(h(MatHero, { ...props, moving: true }));
         const el = container.querySelector('[data-board-hero="hw"]');
         expect(el.style.transition).toBe(`transform ${TICK_INTERVAL_MS}ms linear`);
-        rerender(h(EngineContext.Provider, { value: { GameState, EventBus } }, h(DndContext, null, h(MatHero, { ...props, moving: false }))));
+        rerender(h(DndContext, null, h(MatHero, { ...props, moving: false })));
         expect(el.style.transition).toBe('none');
         expect(translated(el)).toBe(true);    // the same style either way
     });

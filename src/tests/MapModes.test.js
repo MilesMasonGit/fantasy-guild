@@ -16,7 +16,6 @@ import * as NotificationSystem from '../systems/core/NotificationSystem.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { UI_EVENTS } from '../systems/core/engineEvents.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { MatToken } from '../ui/components/board/MatToken.jsx';
 import { CalloutLayer } from '../ui/components/board/CalloutLayer.jsx';
@@ -62,8 +61,7 @@ const WORKABLE = 'fixture_producer';
 const OTHER = 'fixture_station';
 
 const mountMat = (props = {}) => render(
-    h(EngineContext.Provider, { value: { GameState, EventBus } },
-        h(DndContext, null, h(MatBoard, props), h(CalloutLayer)))
+    h(DndContext, null, h(MatBoard, props), h(CalloutLayer))
 );
 /** The bar as the game draws it: banner in the middle, toggles on the right. */
 const mountBar = () => render(h(MatTopBar, { middle: h(MapModeBanner), right: h(MapModeToggles) }));
@@ -288,6 +286,25 @@ describe('⭐ Disallow mode on the mat', () => {
         expect(flipDisallowed(rock.id).success).toBe(false);
         expect(flipDisallowedType(rock.id).success).toBe(false);
         expect(disallowedCount()).toBe(0);
+    });
+
+    it('a click on a Token no hero works shows the engine’s reason over it, alone or by type', () => {
+        vi.useFakeTimers();
+        try {
+            const rock = placeAt('dm_scenery', 400, 200);
+            const other = placeAt('dm_scenery', 720, 200);
+            const { container } = mountMat();
+            act(() => setMapMode(MAP_MODE.DISALLOW));
+            act(() => { fireEvent.click(artOf(container, rock.id)); });
+            act(() => { fireEvent.click(artOf(container, other.id), { shiftKey: true }); });
+            expect(disallowedCount()).toBe(0);
+            // One callout layer's worth: the harness mounts a second layer beside the mat's own.
+            const layer = container.querySelector('[data-callouts]');
+            const said = [...layer.querySelectorAll('[data-callout]')].map(c => c.textContent);
+            expect(said).toEqual([Flags.NO_HERO_WORKS, Flags.NO_HERO_WORKS]);
+        } finally {
+            vi.useRealTimers();
+        }
     });
 
     it('the mat carries the mode, a dashed edge in its colour and its cursor only while on', () => {

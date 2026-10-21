@@ -3,9 +3,10 @@ import { AnimatePresence } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import { cn } from './utils/cn.js';
 import { SettingsManager } from '../systems/core/SettingsManager.js';
+import { EngineBootstrap } from '../systems/core/EngineBootstrap.js';
+import { SaveManager } from '../systems/core/SaveManager.js';
 import { EventBus, UI_LISTENER } from '../systems/core/EventBus.js';
 
-import { EngineProvider } from './context/EngineContext.jsx';
 import { DeckDndProvider } from './dnd/DndKit.jsx';
 import { ViewportProvider } from './context/ViewportContext.jsx';
 import { setMatBankLocked } from './hooks/useMatBankLock.js';
@@ -60,33 +61,28 @@ import { ENGINE_EVENTS, UI_EVENTS } from '../systems/core/engineEvents.js';
 
 /**
  * ReactRoot: the entry point for the React UI layer. Manages the top-level layout, provides
- * the Engine/DnD context, and orchestrates global modal overlays.
+ * the DnD context, and orchestrates global modal overlays.
+ *
+ * ⭐ The UI reaches the engine one way: a component imports the engine module it reads or
+ * commands (there is no engine context). An engine command announces its own change; the UI
+ * publishes only UI events (`engineEvents.js`).
  */
-export const ReactRoot = ({ engine }) => {
-    const ui = useUIModals(engine);
+export const ReactRoot = () => {
+    const ui = useUIModals();
     const { onInspectToken, onClearInspect } = useInspectTokenHandlers(ui.inspect);
 
-    const handleSlotSelect = async (index, { catchUp = true } = {}) => {
-        const isEmpty = !engine.SaveManager.hasSlot(index);
-        if (isEmpty) {
-            engine.SaveManager.newGame(index);
-        } else {
-            const loaded = await engine.SaveManager.loadSlot(index, { catchUp });
-            // Refused (incompatible version) or corrupted — stay on the slot
-            // screen; the notification explains why.
-            if (!loaded) return;
-        }
-        ui.slotSelection.close();
-        engine.EventBus.publish(UI_EVENTS.REACT_SLOT_SELECTED, { index, isNewGame: isEmpty });
-    };
+    // A refused save (incompatible or corrupted) leaves the slot screen up; the notification
+    // says why.
+    const handleSlotSelect = (index, { catchUp = true } = {}) =>
+        EngineBootstrap.startSlot(index, { catchUp, onOpened: ui.slotSelection.close });
 
     // "Load as I left it" reloads the page into the slot it put back: open it at once, as it was.
     const resumeRef = React.useRef(handleSlotSelect);
     resumeRef.current = handleSlotSelect;
     React.useEffect(() => {
-        const slot = engine.SaveManager.takeResumeSlot?.();
+        const slot = SaveManager.takeResumeSlot();
         if (slot != null) resumeRef.current(slot, { catchUp: false });
-    }, [engine]);
+    }, []);
 
     // Dev only: the FPS counter stands down while the Perf HUD is up.
     const perfHudShowing = usePerfHudShowing();
@@ -175,316 +171,315 @@ export const ReactRoot = ({ engine }) => {
     }, [ui.inspect]);
 
     return (
-        <EngineProvider engine={engine}>
-            <ViewportProvider>
-                <DeckDndProvider>
-                {particlesDrawn && <ParticleOverlay disabled={ui.isAnyModalOpen} />}
-                <TutorialAideOverlay />
-                <ScreenCalloutLayer />
-                <div className="react-overlay absolute inset-0 z-50 pointer-events-none flex flex-col">
+        <ViewportProvider>
+            <DeckDndProvider>
+            {particlesDrawn && <ParticleOverlay disabled={ui.isAnyModalOpen} />}
+            <TutorialAideOverlay />
+            <ScreenCalloutLayer />
+            <div className="react-overlay absolute inset-0 z-50 pointer-events-none flex flex-col">
+                <div
+                    className="flex-1 relative flex overflow-hidden bg-black"
+                    style={{
+                        backgroundImage: backgroundDrawn ? `url('/assets/ui/${backgroundTile}.png')` : 'none',
+                        backgroundRepeat: 'repeat',
+                        backgroundSize: '512px',
+                        imageRendering: 'pixelated',
+                        backgroundColor: '#0a0a0a'
+                    }}
+                >
                     <div
-                        className="flex-1 relative flex overflow-hidden bg-black"
-                        style={{
-                            backgroundImage: backgroundDrawn ? `url('/assets/ui/${backgroundTile}.png')` : 'none',
-                            backgroundRepeat: 'repeat',
-                            backgroundSize: '512px',
-                            imageRendering: 'pixelated',
-                            backgroundColor: '#0a0a0a'
-                        }}
-                    >
-                        <div
-                            className={cn(
-                                "absolute inset-0 bg-black/45 pointer-events-none transition-opacity duration-300 z-0",
-                                (isGuildView || isBankOpen) ? "opacity-100" : "opacity-0"
-                            )}
-                        />
-
-                        {!menuRight && <BubbleMenu ui={ui} side="left" />}
-                        {menuRight && (
-                            isGuildView ? (
-                                <aside
-                                    style={{ width: columnWidthCss(NOTIFICATION_COLUMN) }}
-                                    className="shrink-0 h-full flex flex-col items-center justify-center py-8 bg-transparent pointer-events-auto relative select-none pr-8 pl-0 z-10"
-                                >
-                                    <div
-                                        className="w-full relative shrink-0 flex flex-col gap-2.5"
-                                        style={{ height: SIDE_COLUMN_PX, maxHeight: '100%' }}
-                                    >
-                                        <button
-                                            onClick={() => {
-                                                EventBus.publish(ENGINE_EVENTS.AUDIO_PLAY, { clip: 'button_click' });
-                                                handleCloseGuildHall();
-                                            }}
-                                            className="w-full shrink-0 py-2.5 px-4 rounded-xl border-2 border-[#5c3e2e] hover:border-gi-gold/70 bg-[#2a1d15]/95 hover:bg-[#3d2a1f] text-amber-200 hover:text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition-all duration-150 cursor-pointer active:scale-[0.98] group"
-                                        >
-                                            <ArrowLeft size={16} className="text-gi-gold group-hover:-translate-x-1 transition-transform" />
-                                            <span>Return to Playmat</span>
-                                        </button>
-                                        <div className="w-full flex-1 min-h-0 relative flex flex-col rounded-2xl border-4 border-[#3a271d] shadow-2xl overflow-hidden">
-                                            <InspectionPanel
-                                                className="w-full h-full flex-1"
-                                                selection={guildInspectSelection}
-                                                onClear={handleClearGuildInspect}
-                                            />
-                                        </div>
-                                    </div>
-                                </aside>
-                            ) : (
-                                isBankOpen && (
-                                    // The Bank's hero column: the hero panel (below) draws over it.
-                                    <aside
-                                        style={{ width: columnWidthCss(NOTIFICATION_COLUMN) }}
-                                        className="shrink-0 h-full pointer-events-none"
-                                    />
-                                )
-                            )
+                        className={cn(
+                            "absolute inset-0 bg-black/45 pointer-events-none transition-opacity duration-300 z-0",
+                            (isGuildView || isBankOpen) ? "opacity-100" : "opacity-0"
                         )}
-                        {/* `min-w-0`: the column takes the room it is given, not its widest content's. */}
-                        <div className="flex-1 min-w-0 relative flex flex-col overflow-hidden z-10">
-                            <div className="flex-1 flex min-h-0 relative">
-                            {/**
-                             * The Guild Hall Effects list: always LEFT of the upgrade web,
-                             * whichever side the nav is on. With the nav flipped right it sits
-                             * between the inspection column and the web.
-                             */}
-                            {isGuildView && <GuildHallEffectsPanel />}
-                            <div
-                                data-dnd-surface="board"
-                                data-dnd-region="board"
-                                className="flex-1 min-w-0 overflow-hidden pointer-events-auto relative z-0 min-h-0 flex flex-col"
+                    />
+
+                    {!menuRight && <BubbleMenu ui={ui} side="left" />}
+                    {menuRight && (
+                        isGuildView ? (
+                            <aside
+                                style={{ width: columnWidthCss(NOTIFICATION_COLUMN) }}
+                                className="shrink-0 h-full flex flex-col items-center justify-center py-8 bg-transparent pointer-events-auto relative select-none pr-8 pl-0 z-10"
                             >
-                                {/**
-                                 * The mat's top bar: above the Board in this column, never
-                                 * over it, so the box Board measures for its fit is the bar's
-                                 * height shorter and the mat shrinks to match.
-                                 */}
-                                {showsMatTopBar(ui.fullscreen.view) && (
-                                    <PerfProfiler id="TopBar">
-                                        <MatTopBar
-                                            left={<><MatRegionName onOpenAtlas={openAtlasFromBar} /><MatCapBadge /><MatUpkeepBadge /></>}
-                                            middle={<MapModeBanner />}
-                                            right={<MapModeToggles />}
-                                        />
-                                    </PerfProfiler>
-                                )}
-                                <div className="flex-1 min-w-0 min-h-0 relative">
-                                {isGuildView ? (
-                                    <GuildHallBoard
-                                        selectedUpgradeId={guildInspectSelection?.id ?? selectedUpgradeId}
-                                        onSelectUpgrade={(def) => {
-                                            setSelectedUpgradeId(def.id);
-                                            ui.inspect.set('guild_upgrade', def.id, { upgradeDef: def }, 'guild');
+                                <div
+                                    className="w-full relative shrink-0 flex flex-col gap-2.5"
+                                    style={{ height: SIDE_COLUMN_PX, maxHeight: '100%' }}
+                                >
+                                    <button
+                                        onClick={() => {
+                                            EventBus.publish(ENGINE_EVENTS.AUDIO_PLAY, { clip: 'button_click' });
+                                            handleCloseGuildHall();
                                         }}
-                                        onClose={handleCloseGuildHall}
-                                    />
-                                ) : (
-                                    <Board
-                                        inspectedHeroId={inspectHeroId}
-                                        inspectedTokenId={ui.inspect.selection?.type === 'token' ? (ui.inspect.selection.source?.instanceId ?? null) : null}
-                                        onOpenGuildHall={handleOpenGuildHall}
-                                        onInspectToken={onInspectToken}
-                                        onClearInspect={onClearInspect}
-                                    />
-                                )}
-                                {/**
-                                 * Over the mat, under the top bar: the item stubs at the right,
-                                 * the banners at the centre. Neither takes any width from the mat.
-                                 */}
-                                <ErrorBoundary label="Notifications">
-                                    <ItemStubColumn />
-                                    <BannerStack />
-                                </ErrorBoundary>
-                                </div>
-                            </div>
-                            </div>
-
-                            {/**
-                             * Bottom Hero Dock: horizontal sliding tabs. Not on the Guild Hall
-                             * upgrade screen.
-                             */}
-                            {dockDrawn && showsBottomHeroDock(ui.fullscreen.view) && (
-                                // A crash in the bottom hero dock stays local to it.
-                                <ErrorBoundary label="HeroDock">
-                                    <PerfProfiler id="HeroDock">
-                                        <BottomHeroDock
-                                            selectedHeroId={inspectHeroId}
-                                            onSelectHero={toggleInspectHero}
-                                            onDoubleClickHero={toggleInspectHero}
-                                            rulesOpen={ui.flagRules.isOpen}
-                                            onToggleRules={ui.flagRules.toggle}
+                                        className="w-full shrink-0 py-2.5 px-4 rounded-xl border-2 border-[#5c3e2e] hover:border-gi-gold/70 bg-[#2a1d15]/95 hover:bg-[#3d2a1f] text-amber-200 hover:text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition-all duration-150 cursor-pointer active:scale-[0.98] group"
+                                    >
+                                        <ArrowLeft size={16} className="text-gi-gold group-hover:-translate-x-1 transition-transform" />
+                                        <span>Return to Playmat</span>
+                                    </button>
+                                    <div className="w-full flex-1 min-h-0 relative flex flex-col rounded-2xl border-4 border-[#3a271d] shadow-2xl overflow-hidden">
+                                        <InspectionPanel
+                                            className="w-full h-full flex-1"
+                                            selection={guildInspectSelection}
+                                            onClear={handleClearGuildInspect}
                                         />
-                                    </PerfProfiler>
-                                </ErrorBoundary>
-                            )}
-                            {/* The Work Permissions grid rises from behind the bar, the mat's full width. */}
-                            {dockDrawn && showsBottomHeroDock(ui.fullscreen.view) && (
-                                <ErrorBoundary label="WorkRulesDrawer">
-                                    <WorkRulesDrawer
-                                        open={ui.flagRules.isOpen}
-                                        heroPanelOpen={Boolean(inspectHeroId)}
-                                        litHeroId={ui.flagRules.heroId}
-                                        onClose={ui.flagRules.close}
-                                    />
-                                </ErrorBoundary>
-                            )}
-                            {/* The Atlas pops up over the mat column only: the nav beside it stays reachable to close it. */}
-                            <AnimatePresence>
-                                {isAtlasOpen && (
-                                    <ErrorBoundary key="atlas" label="AtlasScreen">
-                                        <AtlasScreen onClose={ui.fullscreen.close} closePromotion={ui.dock.closePromotion} />
-                                    </ErrorBoundary>
-                                )}
-                            </AnimatePresence>
-                            <ErrorBoundary label="ArrivalCard"><ArrivalCard /></ErrorBoundary>
-                        </div>
-                        {!menuRight && (
-                            isGuildView ? (
+                                    </div>
+                                </div>
+                            </aside>
+                        ) : (
+                            isBankOpen && (
+                                // The Bank's hero column: the hero panel (below) draws over it.
                                 <aside
                                     style={{ width: columnWidthCss(NOTIFICATION_COLUMN) }}
-                                    className="shrink-0 h-full flex flex-col items-center justify-center py-8 bg-transparent pointer-events-auto relative select-none pl-8 pr-0 z-10"
-                                >
-                                    <div
-                                        className="w-full relative shrink-0 flex flex-col gap-2.5"
-                                        style={{ height: SIDE_COLUMN_PX, maxHeight: '100%' }}
-                                    >
-                                        <button
-                                            onClick={() => {
-                                                EventBus.publish(ENGINE_EVENTS.AUDIO_PLAY, { clip: 'button_click' });
-                                                handleCloseGuildHall();
-                                            }}
-                                            className="w-full shrink-0 py-2.5 px-4 rounded-xl border-2 border-[#5c3e2e] hover:border-gi-gold/70 bg-[#2a1d15]/95 hover:bg-[#3d2a1f] text-amber-200 hover:text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition-all duration-150 cursor-pointer active:scale-[0.98] group"
-                                        >
-                                            <ArrowLeft size={16} className="text-gi-gold group-hover:-translate-x-1 transition-transform" />
-                                            <span>Return to Playmat</span>
-                                        </button>
-                                        <div className="w-full flex-1 min-h-0 relative flex flex-col rounded-2xl border-4 border-[#3a271d] shadow-2xl overflow-hidden">
-                                            <InspectionPanel
-                                                className="w-full h-full flex-1"
-                                                selection={guildInspectSelection}
-                                                onClear={handleClearGuildInspect}
-                                            />
-                                        </div>
-                                    </div>
-                                </aside>
-                            ) : (
-                                isBankOpen && (
-                                    // The Bank's hero column: the hero panel (below) draws over it.
-                                    <aside
-                                        style={{ width: columnWidthCss(NOTIFICATION_COLUMN) }}
-                                        className="shrink-0 h-full pointer-events-none"
-                                    />
-                                )
+                                    className="shrink-0 h-full pointer-events-none"
+                                />
                             )
-                        )}
-                        {menuRight && <BubbleMenu ui={ui} side="right" />}
+                        )
+                    )}
+                    {/* `min-w-0`: the column takes the room it is given, not its widest content's. */}
+                    <div className="flex-1 min-w-0 relative flex flex-col overflow-hidden z-10">
+                        <div className="flex-1 flex min-h-0 relative">
                         {/**
-                         * The hero panel: one full-height panel on the notification side,
-                         * opened from the hero bar or from the Bank. A crash in it stays local.
+                         * The Guild Hall Effects list: always LEFT of the upgrade web,
+                         * whichever side the nav is on. With the nav flipped right it sits
+                         * between the inspection column and the web.
                          */}
-                        {!isGuildView && (
-                            <ErrorBoundary label="BankHeroPanel">
-                                <BankHeroPanel
-                                    menuRight={menuRight}
-                                    showTabs={isBankOpen}
-                                    selectedHeroId={inspectHeroId}
-                                    onSelectHero={toggleInspectHero}
-                                    onDoubleClickHero={toggleInspectHero}
-                                    onCloseHero={closeInspectHero}
-                                    onEditHero={(id) => ui.dock.openEdit(id)}
+                        {isGuildView && <GuildHallEffectsPanel />}
+                        <div
+                            data-dnd-surface="board"
+                            data-dnd-region="board"
+                            className="flex-1 min-w-0 overflow-hidden pointer-events-auto relative z-0 min-h-0 flex flex-col"
+                        >
+                            {/**
+                             * The mat's top bar: above the Board in this column, never
+                             * over it, so the box Board measures for its fit is the bar's
+                             * height shorter and the mat shrinks to match.
+                             */}
+                            {showsMatTopBar(ui.fullscreen.view) && (
+                                <PerfProfiler id="TopBar">
+                                    <MatTopBar
+                                        left={<><MatRegionName onOpenAtlas={openAtlasFromBar} /><MatCapBadge /><MatUpkeepBadge /></>}
+                                        middle={<MapModeBanner />}
+                                        right={<MapModeToggles />}
+                                    />
+                                </PerfProfiler>
+                            )}
+                            <div className="flex-1 min-w-0 min-h-0 relative">
+                            {isGuildView ? (
+                                <GuildHallBoard
+                                    selectedUpgradeId={guildInspectSelection?.id ?? selectedUpgradeId}
+                                    onSelectUpgrade={(def) => {
+                                        setSelectedUpgradeId(def.id);
+                                        ui.inspect.set('guild_upgrade', def.id, { upgradeDef: def }, 'guild');
+                                    }}
+                                    onClose={handleCloseGuildHall}
+                                />
+                            ) : (
+                                <Board
+                                    inspectedHeroId={inspectHeroId}
+                                    inspectedTokenId={ui.inspect.selection?.type === 'token' ? (ui.inspect.selection.source?.instanceId ?? null) : null}
+                                    onOpenGuildHall={handleOpenGuildHall}
+                                    onInspectToken={onInspectToken}
+                                    onClearInspect={onClearInspect}
+                                />
+                            )}
+                            {/**
+                             * Over the mat, under the top bar: the item stubs at the right,
+                             * the banners at the centre. Neither takes any width from the mat.
+                             */}
+                            <ErrorBoundary label="Notifications">
+                                <ItemStubColumn />
+                                <BannerStack />
+                            </ErrorBoundary>
+                            </div>
+                        </div>
+                        </div>
+
+                        {/**
+                         * Bottom Hero Dock: horizontal sliding tabs. Not on the Guild Hall
+                         * upgrade screen.
+                         */}
+                        {dockDrawn && showsBottomHeroDock(ui.fullscreen.view) && (
+                            // A crash in the bottom hero dock stays local to it.
+                            <ErrorBoundary label="HeroDock">
+                                <PerfProfiler id="HeroDock">
+                                    <BottomHeroDock
+                                        selectedHeroId={inspectHeroId}
+                                        onSelectHero={toggleInspectHero}
+                                        onDoubleClickHero={toggleInspectHero}
+                                        rulesOpen={ui.flagRules.isOpen}
+                                        onToggleRules={ui.flagRules.toggle}
+                                    />
+                                </PerfProfiler>
+                            </ErrorBoundary>
+                        )}
+                        {/* The Work Permissions grid rises from behind the bar, the mat's full width. */}
+                        {dockDrawn && showsBottomHeroDock(ui.fullscreen.view) && (
+                            <ErrorBoundary label="WorkRulesDrawer">
+                                <WorkRulesDrawer
+                                    open={ui.flagRules.isOpen}
+                                    heroPanelOpen={Boolean(inspectHeroId)}
+                                    litHeroId={ui.flagRules.heroId}
+                                    onClose={ui.flagRules.close}
                                 />
                             </ErrorBoundary>
                         )}
-                        {/**
-                         * The bank drawer: a sibling of the nav rather than a child of the
-                         * board column, because it has to reach across the notifications
-                         * column, which the board column does not contain.
-                         */}
-                        {/**
-                         * Perf HUD commit counting, dev only. A crash in the Bank drawer stays
-                         * local to it.
-                         */}
-                        {drawersDrawn && <ErrorBoundary label="BankDrawer">
-                            <PerfProfiler id="Drawer">
-                                <BankDrawer drawer={ui.drawer} inspect={ui.inspect} menuRight={menuRight} />
-                            </PerfProfiler>
-                        </ErrorBoundary>}
-                        {/**
-                         * The Shop drawer, from the left edge. A crash here stays local to it
-                         * too.
-                         */}
-                        {drawersDrawn && <ErrorBoundary label="ShopDrawer">
-                            <ShopDrawer isOpen={ui.shop.isOpen} onClose={ui.shop.close} menuRight={menuRight} />
-                        </ErrorBoundary>}
+                        {/* The Atlas pops up over the mat column only: the nav beside it stays reachable to close it. */}
+                        <AnimatePresence>
+                            {isAtlasOpen && (
+                                <ErrorBoundary key="atlas" label="AtlasScreen">
+                                    <AtlasScreen onClose={ui.fullscreen.close} closePromotion={ui.dock.closePromotion} />
+                                </ErrorBoundary>
+                            )}
+                        </AnimatePresence>
+                        <ErrorBoundary label="ArrivalCard"><ArrivalCard /></ErrorBoundary>
                     </div>
+                    {!menuRight && (
+                        isGuildView ? (
+                            <aside
+                                style={{ width: columnWidthCss(NOTIFICATION_COLUMN) }}
+                                className="shrink-0 h-full flex flex-col items-center justify-center py-8 bg-transparent pointer-events-auto relative select-none pl-8 pr-0 z-10"
+                            >
+                                <div
+                                    className="w-full relative shrink-0 flex flex-col gap-2.5"
+                                    style={{ height: SIDE_COLUMN_PX, maxHeight: '100%' }}
+                                >
+                                    <button
+                                        onClick={() => {
+                                            EventBus.publish(ENGINE_EVENTS.AUDIO_PLAY, { clip: 'button_click' });
+                                            handleCloseGuildHall();
+                                        }}
+                                        className="w-full shrink-0 py-2.5 px-4 rounded-xl border-2 border-[#5c3e2e] hover:border-gi-gold/70 bg-[#2a1d15]/95 hover:bg-[#3d2a1f] text-amber-200 hover:text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition-all duration-150 cursor-pointer active:scale-[0.98] group"
+                                    >
+                                        <ArrowLeft size={16} className="text-gi-gold group-hover:-translate-x-1 transition-transform" />
+                                        <span>Return to Playmat</span>
+                                    </button>
+                                    <div className="w-full flex-1 min-h-0 relative flex flex-col rounded-2xl border-4 border-[#3a271d] shadow-2xl overflow-hidden">
+                                        <InspectionPanel
+                                            className="w-full h-full flex-1"
+                                            selection={guildInspectSelection}
+                                            onClear={handleClearGuildInspect}
+                                        />
+                                    </div>
+                                </div>
+                            </aside>
+                        ) : (
+                            isBankOpen && (
+                                // The Bank's hero column: the hero panel (below) draws over it.
+                                <aside
+                                    style={{ width: columnWidthCss(NOTIFICATION_COLUMN) }}
+                                    className="shrink-0 h-full pointer-events-none"
+                                />
+                            )
+                        )
+                    )}
+                    {menuRight && <BubbleMenu ui={ui} side="right" />}
+                    {/**
+                     * The hero panel: one full-height panel on the notification side,
+                     * opened from the hero bar or from the Bank. A crash in it stays local.
+                     */}
+                    {!isGuildView && (
+                        <ErrorBoundary label="BankHeroPanel">
+                            <BankHeroPanel
+                                menuRight={menuRight}
+                                showTabs={isBankOpen}
+                                selectedHeroId={inspectHeroId}
+                                onSelectHero={toggleInspectHero}
+                                onDoubleClickHero={toggleInspectHero}
+                                onCloseHero={closeInspectHero}
+                                onEditHero={(id) => ui.dock.openEdit(id)}
+                            />
+                        </ErrorBoundary>
+                    )}
+                    {/**
+                     * The bank drawer: a sibling of the nav rather than a child of the
+                     * board column, because it has to reach across the notifications
+                     * column, which the board column does not contain.
+                     */}
+                    {/**
+                     * Perf HUD commit counting, dev only. A crash in the Bank drawer stays
+                     * local to it.
+                     */}
+                    {drawersDrawn && <ErrorBoundary label="BankDrawer">
+                        <PerfProfiler id="Drawer">
+                            <BankDrawer drawer={ui.drawer} inspect={ui.inspect} menuRight={menuRight} />
+                        </PerfProfiler>
+                    </ErrorBoundary>}
+                    {/**
+                     * The Shop drawer, from the left edge. A crash here stays local to it
+                     * too.
+                     */}
+                    {drawersDrawn && <ErrorBoundary label="ShopDrawer">
+                        <ShopDrawer isOpen={ui.shop.isOpen} onClose={ui.shop.close} menuRight={menuRight} />
+                    </ErrorBoundary>}
                 </div>
+            </div>
 
-                {(import.meta.env.DEV || debugMode) && (
-                    <>
-                        <TestDashboard />
-                        {/* The ground's look, for the eye-check: dev builds only. */}
-                        {import.meta.env.DEV && <PlaymatTuner />}
-                        <MatTuner />
-                        {/**
-                         * Hidden while the Perf HUD is on: its own frame loop and per-second
-                         * commit would be measured by the HUD, and the HUD shows frames
-                         * already.
-                         */}
-                        {!perfHudShowing && <FPSCounter />}
-                    </>
-                )}
+            {/* Debug Mode exists in dev and perf builds only; a shipped build has no QA tools. */}
+            {(import.meta.env.DEV || (import.meta.env.MODE === 'perf' && debugMode)) && (
+                <>
+                    <TestDashboard />
+                    {/* The ground's look, for the eye-check: dev builds only. */}
+                    {import.meta.env.DEV && <PlaymatTuner />}
+                    <MatTuner />
+                    {/**
+                     * Hidden while the Perf HUD is on: its own frame loop and per-second
+                     * commit would be measured by the HUD, and the HUD shows frames
+                     * already.
+                     */}
+                    {!perfHudShowing && <FPSCounter />}
+                </>
+            )}
 
-                {tooltipsDrawn && ui.inspect.selection?.type === 'token' && (ui.inspect.selection.source?.rect || ui.inspect.selection.source?.instanceId != null) && (
-                    <TokenInspectPopup
-                        typeId={ui.inspect.selection.id}
-                        instanceId={ui.inspect.selection.source?.instanceId}
-                        anchorRect={ui.inspect.selection.source?.rect}
-                        onClose={() => ui.inspect.clear()}
-                    />
-                )}
-                <SettingsModal isOpen={ui.settings.isOpen} onClose={ui.settings.close} />
-                <SlotSelectionModal isOpen={ui.slotSelection.isOpen} onSelect={handleSlotSelect} />
-                {ui.dock.editHeroId && (
-                    <HeroEditModal
-                        heroId={ui.dock.editHeroId}
-                        isOpen
-                        onClose={ui.dock.closeEdit}
-                        onChangeJob={() => { ui.dock.closeEdit(); ui.dock.openJob(ui.dock.editHeroId); }}
-                    />
-                )}
-                {ui.dock.jobHeroId && (
-                    <JobChangeModal
-                        heroId={ui.dock.jobHeroId}
-                        isOpen
-                        onClose={ui.dock.closeJob}
-                    />
-                )}
+            {tooltipsDrawn && ui.inspect.selection?.type === 'token' && (ui.inspect.selection.source?.rect || ui.inspect.selection.source?.instanceId != null) && (
+                <TokenInspectPopup
+                    typeId={ui.inspect.selection.id}
+                    instanceId={ui.inspect.selection.source?.instanceId}
+                    anchorRect={ui.inspect.selection.source?.rect}
+                    onClose={() => ui.inspect.clear()}
+                />
+            )}
+            <SettingsModal isOpen={ui.settings.isOpen} onClose={ui.settings.close} />
+            <SlotSelectionModal isOpen={ui.slotSelection.isOpen} onSelect={handleSlotSelect} />
+            {ui.dock.editHeroId && (
+                <HeroEditModal
+                    heroId={ui.dock.editHeroId}
+                    isOpen
+                    onClose={ui.dock.closeEdit}
+                    onChangeJob={() => { ui.dock.closeEdit(); ui.dock.openJob(ui.dock.editHeroId); }}
+                />
+            )}
+            {ui.dock.jobHeroId && (
+                <JobChangeModal
+                    heroId={ui.dock.jobHeroId}
+                    isOpen
+                    onClose={ui.dock.closeJob}
+                />
+            )}
 
-                {/**
-                 * The ceremony, at the end of a Promotes Token's training cycle. Opened by the
-                 * board, not by a menu: the player did not ask for this window, they finished
-                 * the work that earns it.
-                 */}
-                {ui.dock.promotionOffer && (
-                    <PromotionCeremonyModal
-                        // ⚠️ Keyed on the offer, so a NEW offer gets a NEW
-                        // component. The ceremony keeps local state (whether it
-                        // has been answered, and any refusal), and without this
-                        // key that state survived into the next offer — decline,
-                        // get asked again, and the window still showed the old
-                        // answer with only a "Done" button. Found by playing, on
-                        // the branch this was ported from.
-                        key={`${ui.dock.promotionOffer.instanceId}:${ui.dock.promotionOffer.heroId}:${ui.dock.promotionOffer.jobId}`}
-                        offer={ui.dock.promotionOffer}
-                        onClose={ui.dock.closePromotion}
-                    />
-                )}
+            {/**
+             * The ceremony, at the end of a Promotes Token's training cycle. Opened by the
+             * board, not by a menu: the player did not ask for this window, they finished
+             * the work that earns it.
+             */}
+            {ui.dock.promotionOffer && (
+                <PromotionCeremonyModal
+                    // ⚠️ Keyed on the offer, so a NEW offer gets a NEW
+                    // component. The ceremony keeps local state (whether it
+                    // has been answered, and any refusal), and without this
+                    // key that state survived into the next offer — decline,
+                    // get asked again, and the window still showed the old
+                    // answer with only a "Done" button. Found by playing, on
+                    // the branch this was ported from.
+                    key={`${ui.dock.promotionOffer.instanceId}:${ui.dock.promotionOffer.heroId}:${ui.dock.promotionOffer.jobId}`}
+                    offer={ui.dock.promotionOffer}
+                    onClose={ui.dock.closePromotion}
+                />
+            )}
 
-                {/* Over everything: the loading bar while time away is caught up, then the summary. */}
-                <CatchUpOverlay />
+            {/* Over everything: the loading bar while time away is caught up, then the summary. */}
+            <CatchUpOverlay />
 
-                </DeckDndProvider>
-            </ViewportProvider>
-        </EngineProvider>
+            </DeckDndProvider>
+        </ViewportProvider>
     );
 };
 

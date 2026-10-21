@@ -1,7 +1,7 @@
 import { memo, useMemo, useState, useEffect } from 'react';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
-import { useEngine } from '../../hooks/useEngine.js';
+import * as EquipmentManager from '../../../systems/equipment/EquipmentManager.js';
 import { useEntityDrag, useEntityDrop, mergeRefs } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { ItemIcon } from '../base/ItemIcon.jsx';
@@ -59,7 +59,7 @@ export const DockEquipmentGrid = ({ heroId }) => {
             const qty = grid.map(id => (id ? (state.inventory?.items?.[id]?.quantity ?? 0) : '')).join('|');
             return `${ids}::${qty}`;
         },
-        [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, ENGINE_EVENTS.INVENTORY_UPDATED, ENGINE_EVENTS.STATE_CHANGED],
+        [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, ENGINE_EVENTS.INVENTORY_UPDATED, ENGINE_EVENTS.GAME_RESET],
         null,
         { deps: [heroId] }
     );
@@ -87,7 +87,6 @@ export const DockEquipmentGrid = ({ heroId }) => {
 
 /** One slot: right-click to unequip, drag to hand the item to another hero or bank, drop to equip. */
 const EquipSlotCell = ({ heroId, slot, itemId, quantity, justEquipped = false }) => {
-    const engine = useEngine();
     const drag = useEntityDrag({
         id: `dock-equip-${heroId}-${slot}`,
         kind: DRAG_KIND.ITEM,
@@ -101,7 +100,7 @@ const EquipSlotCell = ({ heroId, slot, itemId, quantity, justEquipped = false })
         surface: DND_SURFACE.DRAWER,
         accepts: p => p.kind === DRAG_KIND.ITEM,
         onDrop: p => {
-            if (p.itemId) return equipOrAnnounce(engine, heroId, p.itemId, slot);
+            if (p.itemId) return equipOrAnnounce(EquipmentManager, heroId, p.itemId, slot);
         }
     });
     const nodeRef = useMemo(() => mergeRefs(drag.setNodeRef, drop.setNodeRef), [drag.setNodeRef, drop.setNodeRef]);
@@ -125,7 +124,6 @@ const EquipSlotCell = ({ heroId, slot, itemId, quantity, justEquipped = false })
 // ⚠️ Apart from its drag hooks on purpose: dnd-kit redraws their holder at every drag start, end
 // and change of target; the slot is memoised on what it draws.
 const EquipSlotBody = memo(function EquipSlotBody({ heroId, slot, itemId, quantity, justEquipped, cue, held, nodeRef, handleProps, droppableProps }) {
-    const engine = useEngine();
     const item = itemId ? getItem(itemId) : null;
     const category = itemId ? categoryOfItem(itemId) : null;
     const info = getCategoryInfo(category);
@@ -138,7 +136,7 @@ const EquipSlotBody = memo(function EquipSlotBody({ heroId, slot, itemId, quanti
                 e.preventDefault();
                 e.stopPropagation();
                 if (itemId) {
-                    engine.EquipmentManager.unequipItem(heroId, slot);
+                    EquipmentManager.unequipItem(heroId, slot);
                 }
             }}
             className={cn(

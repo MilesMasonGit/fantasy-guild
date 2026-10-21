@@ -6,7 +6,6 @@ import { DndContext } from '@dnd-kit/core';
 import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
 import { AnimatedHeroSprite } from '../ui/components/board/AnimatedHeroSprite.jsx';
 import { AnimatedEnemySprite } from '../ui/components/board/AnimatedEnemySprite.jsx';
@@ -285,7 +284,7 @@ describe('⭐ the strike frame meets the hit', () => {
         };
         return { calls, restore() { if (had) proto.animate = original; else delete proto.animate; } };
     }
-    const mount = (...els) => render(h(EngineContext.Provider, { value: { GameState, EventBus } }, h(DndContext, null, ...els)));
+    const mount = (...els) => render(h(DndContext, null, ...els));
     const mod = (a, n) => ((a % n) + n) % n;
 
     it('⭐ at work: the hero shows its strike frame in exactly the frames where the Token’s hit loop begins again', () => {
@@ -346,15 +345,13 @@ describe('⭐ the strike frame meets the hit', () => {
 
 describe('⭐ the hero bar: sprite frames redraw nothing around them', () => {
     const hero = (id, name) => ({ id, name, spriteId: 'hn_recruit_por', hp: { current: 100, max: 100 }, status: 'idle', equipment: {} });
-    const engine = { GameState, EventBus, BoardPlacement: { recallHeroById: vi.fn() }, EquipmentManager: { equipItem: vi.fn() } };
-
+    
     it('⭐ 8 bar heroes idling: no React commit, and the slots’ layout animation never measures', async () => {
         GameState.state.heroes = IDS.map(id => hero(id, id));
         setLiveMatFit(1);
         let commits = 0;
-        const { container } = render(h(EngineContext.Provider, { value: engine },
-            h(DeckDndProvider, null,
-                h(Profiler, { id: 'bar', onRender: () => { commits += 1; } }, h(BottomHeroDock, { selectedHeroId: null })))));
+        const { container } = render(h(DeckDndProvider, null,
+                h(Profiler, { id: 'bar', onRender: () => { commits += 1; } }, h(BottomHeroDock, { selectedHeroId: null }))));
         expect(container.querySelectorAll('[data-dock-hero] [data-hero-row]')).toHaveLength(8);
         for (let i = 0; i < 10; i++) frame();
 

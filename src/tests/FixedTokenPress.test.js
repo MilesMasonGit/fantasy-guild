@@ -13,8 +13,6 @@ import * as Flags from '../systems/board/Flags.js';
 import * as Landmarks from '../systems/board/Landmarks.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { EventBus } from '../systems/core/EventBus.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { matW, matH } from '../config/matGeometry.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { MAT_TOKEN_DRAG_ID } from '../ui/components/board/MatToken.jsx';
@@ -80,9 +78,8 @@ function mount(props = {}) {
         return null;
     };
     const view = render(
-        h(EngineContext.Provider, { value: { GameState, EventBus } },
-            h(DeckDndProvider, null,
-                h(MatFitProvider, { value: FIT }, h(MatBoard, props), h(Spy))))
+        h(DeckDndProvider, null,
+                h(MatFitProvider, { value: FIT }, h(MatBoard, props), h(Spy)))
     );
     const mat = view.container.querySelector('[data-mat-board]');
     mat.getBoundingClientRect = () => ({ left: 0, top: 0, x: 0, y: 0, width: matW(), height: matH(), right: matW(), bottom: matH() });

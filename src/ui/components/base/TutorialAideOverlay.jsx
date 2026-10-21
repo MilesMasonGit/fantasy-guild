@@ -253,7 +253,7 @@ export const TutorialAideOverlay = () => {
     // from the tutorial quest Token.
     const isRecruitHeroQuestActive = useGameState(
         () => activeTutorialQuest()?.targetType === 'hero_recruited',
-        [ENGINE_EVENTS.STATE_CHANGED, ENGINE_EVENTS.QUESTS_UPDATED, ENGINE_EVENTS.HERO_RECRUITED, ENGINE_EVENTS.GUILD_UPGRADES_UPDATED]
+        [ENGINE_EVENTS.GAME_RESET, ENGINE_EVENTS.QUESTS_UPDATED, ENGINE_EVENTS.HERO_RECRUITED, ENGINE_EVENTS.GUILD_UPGRADES_UPDATED]
     );
 
     useEffect(() => {

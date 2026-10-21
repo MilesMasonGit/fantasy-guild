@@ -9,8 +9,6 @@ import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { EventBus } from '../systems/core/EventBus.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { placeAt, clearMat } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -41,10 +39,9 @@ import { useInspectTokenHandlers } from '../ui/hooks/useInspectTokenHandlers.js'
 
 
 const h = React.createElement;
-const engine = { GameState, EventBus };
 
 function Harness({ inline, api }) {
-    const ui = useUIModals(engine);
+    const ui = useUIModals();
     const [inspectHeroId, setInspectHeroId] = React.useState(null);
     api.inspectHero = setInspectHeroId;
     const stable = useInspectTokenHandlers(ui.inspect);
@@ -58,7 +55,7 @@ function Harness({ inline, api }) {
 }
 
 const mount = (props) => render(
-    h(EngineContext.Provider, { value: engine }, h(DndContext, null, h(Harness, props)))
+    h(DndContext, null, h(Harness, props))
 );
 
 describe('inspecting a hero does not re-render the mat Tokens (CR3-302)', () => {

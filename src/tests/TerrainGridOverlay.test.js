@@ -5,7 +5,6 @@ import { render, cleanup } from '@testing-library/react';
 import { DndContext } from '@dnd-kit/core';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
-import { EventBus } from '../systems/core/EventBus.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import * as MatPlacement from '../systems/board/MatPlacement.js';
 import * as GroundRules from '../systems/board/GroundRules.js';
@@ -14,7 +13,6 @@ import { matW, matH, artRadiusOf } from '../config/matGeometry.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { TERRAIN, TERRAIN_CELL, terrainGrid, encodeTerrain } from '../systems/atlas/TerrainMap.js';
 import { createRegionRecord } from '../state/StateSchema.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { DeckDndContext } from '../ui/dnd/DndKit.jsx';
 import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
@@ -184,8 +182,7 @@ describe('⭐ the lit cells are exactly the ones placement allows', () => {
 });
 
 describe('MatBoard mounts the grid beside the rings', () => {
-    const engine = (drag, el) => h(EngineContext.Provider, { value: { GameState, EventBus } },
-        h(DndContext, null, h(DeckDndContext.Provider, { value: drag }, el)));
+    const engine = (drag, el) => h(DndContext, null, h(DeckDndContext.Provider, { value: drag }, el));
 
     it('a Token in the hand that needs water: the grid is on the mat, under every Token', () => {
         const { container } = render(engine(held('tg_water'), h(MatBoard)));

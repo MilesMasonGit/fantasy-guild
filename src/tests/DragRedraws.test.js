@@ -14,7 +14,6 @@ import * as TileModifiers from '../systems/board/TileModifiers.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { UI_EVENTS } from '../systems/core/engineEvents.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { resetMatTuning } from '../config/matTuning.js';
 import { matW, matH } from '../config/matGeometry.js';
 import { Board } from '../ui/components/board/Board.jsx';
@@ -131,11 +130,10 @@ describe('⭐ a Token drag on a full mat redraws the Token in the hand and nothi
         const c = placeAt('fixture_producer', 600, 900);
         placeMore();
         const view = render(
-            h(EngineContext.Provider, { value: { GameState, EventBus } },
-                h(DeckDndProvider, null,
+            h(DeckDndProvider, null,
                     h(Board, { onInspectToken: () => {}, onClearInspect: () => {} }),
                     // Another drop target, beside the mat.
-                    h(DropTarget, { id: 'beside', accepts: () => true, onDrop: () => false, 'data-testid': 'beside' })))
+                    h(DropTarget, { id: 'beside', accepts: () => true, onDrop: () => false, 'data-testid': 'beside' }))
         );
         // jsdom lays nothing out: the mat's drop target and its board both stand at the
         // viewport's corner at their natural size, so a client point IS a mat point.
@@ -288,9 +286,8 @@ describe('⭐ re-stacking redraws no Token: their z is written, not rendered, an
         const d = placeAt('fixture_producer', 900, 700);
         const c = placeAt('fixture_producer', 600, 900);
         const view = render(
-            h(EngineContext.Provider, { value: { GameState, EventBus } },
-                h(DeckDndProvider, null,
-                    h(Board, { onInspectToken: () => {}, onClearInspect: () => {} })))
+            h(DeckDndProvider, null,
+                    h(Board, { onInspectToken: () => {}, onClearInspect: () => {} }))
         );
         view.container.querySelector('[data-board-origin]').getBoundingClientRect = () => box(0, 0, matW(), matH());
         view.container.querySelector('[data-mat-board]').getBoundingClientRect = () => box(0, 0, matW(), matH());
@@ -362,8 +359,7 @@ describe('⭐ re-stacking redraws no Token: their z is written, not rendered, an
 });
 
 describe('⭐ the hero bar: a drag redraws only the heroes it is about', () => {
-    const engine = { GameState, EventBus, BoardPlacement: { recallHeroById: vi.fn() }, EquipmentManager: { equipItem: vi.fn() } };
-    const hero = (id) => ({ id, name: id, spriteId: 'hn_recruit_por', hp: { current: 100, max: 100 }, status: 'idle', equipment: {} });
+        const hero = (id) => ({ id, name: id, spriteId: 'hn_recruit_por', hp: { current: 100, max: 100 }, status: 'idle', equipment: {} });
 
     function Item() {
         const d = useEntityDrag({ id: 'item-src', kind: DRAG_KIND.ITEM, payload: { itemId: 'item_coal' } });
@@ -373,8 +369,7 @@ describe('⭐ the hero bar: a drag redraws only the heroes it is about', () => {
     function bar() {
         GameState.state.heroes = ['h1', 'h2', 'h3', 'h4'].map(hero);
         const view = render(
-            h(EngineContext.Provider, { value: engine },
-                h(DeckDndProvider, null, h(Item), h(BottomHeroDock, { selectedHeroId: null })))
+            h(DeckDndProvider, null, h(Item), h(BottomHeroDock, { selectedHeroId: null }))
         );
         const fig = (id) => view.container.querySelector(`[data-dock-hero="${id}"]`);
         view.getByTestId('item').getBoundingClientRect = () => box(0, 0, 50, 50);

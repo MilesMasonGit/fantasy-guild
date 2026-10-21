@@ -17,7 +17,6 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { UI_EVENTS } from '../systems/core/engineEvents.js';
 import * as StationRecipe from '../systems/board/StationRecipe.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { CalloutLayer } from '../ui/components/board/CalloutLayer.jsx';
 import './fixtures/testTokens.js';
 import { placeAt } from './fixtures/mat.js';

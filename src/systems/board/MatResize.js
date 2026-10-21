@@ -7,7 +7,6 @@ import { onMatTuningChanged } from '../../config/matTuning.js';
 import * as BoardState from './BoardState.js';
 import * as MatPlacement from './MatPlacement.js';
 import * as Flags from './Flags.js';
-import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
  * Shrinking the mat pulls what no longer fits back inside. Growing it is free: nothing moves.
@@ -105,7 +104,6 @@ export function fitToMat() {
     if (!dirty.length) return summary;
 
     EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { points: dirty });
-    EventBus.publish(ENGINE_EVENTS.STATE_CHANGED, {});
 
     // Each crowded Token says so over itself, a callout on the mat.
     for (const instanceId of crowdedIds) {

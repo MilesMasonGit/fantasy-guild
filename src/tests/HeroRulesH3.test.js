@@ -12,7 +12,6 @@ import * as Flags from '../systems/board/Flags.js';
 import * as FlagRules from '../systems/board/FlagRules.js';
 import { SKILL_LAYERS, getSkillIdsByLayer, SKILL_COUNT } from '../config/registries/skillRegistry.js';
 import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
-import { EngineContext } from '../ui/context/EngineContext';
 import { BottomHeroDock } from '../ui/components/dock/BottomHeroDock.jsx';
 import { WorkRulesDrawer } from '../ui/components/dock/WorkRulesDrawer.jsx';
 import { MAX_ROWS, tintLightness, cycleRule } from '../ui/components/dock/workRules.js';
@@ -37,14 +36,8 @@ const hero = (id, name, levels, extra = {}) => ({
     skills: skills(levels), flagRules: {}, ...extra
 });
 
-const engine = {
-    GameState,
-    EventBus,
-    BoardPlacement: { recallHeroById: vi.fn() },
-    EquipmentManager: { equipItem: vi.fn(), unequipItem: vi.fn() }
-};
 
-const wrap = (...children) => h(EngineContext.Provider, { value: engine }, h(DeckDndProvider, null, ...children));
+const wrap = (...children) => h(DeckDndProvider, null, ...children);
 
 /** ReactRoot's wiring in small: the bar with its button, and the drawer. */
 const Host = () => {

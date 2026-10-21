@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
-import { useEngine } from '../hooks/useEngine.js';
+import { GameState } from '../../state/GameState.js';
+import { GuildUpgradeManager } from '../../systems/progression/GuildUpgradeManager.js';
+import * as HeroManager from '../../systems/hero/HeroManager.js';
+import * as SkillSystem from '../../systems/hero/SkillSystem.js';
+import * as SpriteLayer from '../../systems/board/SpriteLayer.js';
 import { matW, matH } from '../../config/matGeometry.js';
 import { generateHero } from '../../systems/hero/HeroGenerator.js';
 import { Bug, Plus, X } from 'lucide-react';
@@ -19,7 +23,7 @@ import { TerrainDevSection } from '../dev/TerrainDevSection.jsx';
 import { AtlasDevSection } from '../dev/AtlasDevSection.jsx';
 import { StyleSheetPage } from '../dev/StyleSheetPage.jsx';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
-import { UI_LISTENER } from '../../systems/core/EventBus.js';
+import { EventBus, UI_LISTENER } from '../../systems/core/EventBus.js';
 
 const DEV_ADVANCE_MAX_MINUTES = (DEV_ADVANCE_STEP_MS * DEV_ADVANCE_MAX_STEPS) / 60_000;
 const devInputClass = 'min-w-0 px-2 py-1 rounded bg-gi-base border border-gi-border text-xs text-gi-text focus:outline-none focus:border-gi-primary/50';
@@ -37,7 +41,6 @@ const devLabelClass = 'text-[11px] font-bold uppercase tracking-wider text-gi-mu
  * and verifying React data-binding reactivity against the Vanilla Engine.
  */
 export const TestDashboard = React.memo(() => {
-    const engine = useEngine();
     const [isOpen, setIsOpen] = useState(false);
     const [showFontTest, setShowFontTest] = useState(false);
     const [showSpawnItem, setShowSpawnItem] = useState(false);
@@ -55,17 +58,16 @@ export const TestDashboard = React.memo(() => {
     // publishes one of these. Only while the panel is open.
     const [, setKindTick] = useState(0);
     React.useEffect(() => {
-        if (!engine || !isOpen) return;
+        if (!isOpen) return;
         const bump = () => setKindTick(n => n + 1);
         const offs = [
-            engine.EventBus.subscribe(BOARD_EVENTS.TILE_CHANGED, bump, UI_LISTENER),
-            engine.EventBus.subscribe(BOARD_EVENTS.TOKEN_DEPLETED, bump, UI_LISTENER)
+            EventBus.subscribe(BOARD_EVENTS.TILE_CHANGED, bump, UI_LISTENER),
+            EventBus.subscribe(BOARD_EVENTS.TOKEN_DEPLETED, bump, UI_LISTENER)
         ];
         return () => offs.forEach(off => off?.());
-    }, [engine, isOpen]);
+    }, [isOpen]);
 
     React.useEffect(() => {
-        if (!engine) return;
         const handleKeyDown = (e) => {
             if (e.shiftKey && (e.key === 'A' || e.key === 'a') && !['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
                 setShowAnimationStudio(prev => !prev);
@@ -75,9 +77,7 @@ export const TestDashboard = React.memo(() => {
         return () => {
             window.removeEventListener('keydown', handleKeyDown);
         };
-    }, [engine]);
-
-    if (!engine) return null;
+    }, []);
 
     // Raise every skill a hero HOLDS, not the whole registry. Raising a skill
     // means raising its XP to exactly the level boundary `n` steps up, so each
@@ -85,14 +85,14 @@ export const TestDashboard = React.memo(() => {
     // skills (see calculateHeroLevel in HeroGenerator.js), so it moves by `n`
     // too.
     const levelAllHeroes = (n) => {
-        const heroes = engine.HeroManager.getAllHeroes().filter(h => !h.isVillager);
+        const heroes = HeroManager.getAllHeroes().filter(h => !h.isVillager);
         heroes.forEach(hero => {
             Object.keys(hero.skills || {}).forEach(skillId => {
                 const skill = hero.skills[skillId];
                 if (!skill) return;
                 const targetLevel = Math.min(99, skill.level + n);
                 const xpNeeded = xpForLevel(targetLevel) - skill.xp;
-                if (xpNeeded > 0) engine.SkillSystem.addXP(hero.id, skillId, xpNeeded);
+                if (xpNeeded > 0) SkillSystem.addXP(hero.id, skillId, xpNeeded);
             });
         });
         console.log(`[Dev] Leveled ${heroes.length} hero(es) by +${n}`);
@@ -104,11 +104,11 @@ export const TestDashboard = React.memo(() => {
      * `GuildUpgradeManager.purchase`.
      */
     const ensureRosterRoom = (count) => {
-        const ranks = engine.GuildUpgradeManager.getRanks();
-        const neededRank = engine.GameState.state.heroes.length + count;
+        const ranks = GuildUpgradeManager.getRanks();
+        const neededRank = GameState.state.heroes.length + count;
         if ((ranks.roster_size || 0) < neededRank) {
             ranks.roster_size = neededRank;
-            engine.GuildUpgradeManager.recompute();
+            GuildUpgradeManager.recompute();
         }
     };
 
@@ -129,19 +129,19 @@ export const TestDashboard = React.memo(() => {
         let added = 0;
         jobIds.forEach(jobId => {
             const hero = generateHero({ jobId, spriteId: jobId });
-            if (!engine.HeroManager.addHero(hero)) return;
+            if (!HeroManager.addHero(hero)) return;
             added++;
             Object.keys(hero.skills || {}).forEach(skillId => {
                 const skill = hero.skills[skillId];
                 const xpNeeded = xpForLevel(50) - skill.xp;
-                if (xpNeeded > 0) engine.SkillSystem.addXP(hero.id, skillId, xpNeeded);
+                if (xpNeeded > 0) SkillSystem.addXP(hero.id, skillId, xpNeeded);
             });
             // Leveling the combat skill raises max HP (it's derived from it);
             // top current HP back up too, or a freshly "spawned" hero reads
             // as already wounded.
             if (hero.hp) hero.hp.current = hero.hp.max;
         });
-        engine.EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'dev_spawn_party' });
+        EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'dev_spawn_party' });
         console.log(`[Dev] Spawned a party of ${added} hero(es) at level 50`);
     };
 
@@ -150,13 +150,13 @@ export const TestDashboard = React.memo(() => {
      * promotion.
      */
     const grantCombatSkill = (skillId) => {
-        const heroes = engine.HeroManager.getAllHeroes().filter(h => !h.isVillager);
+        const heroes = HeroManager.getAllHeroes().filter(h => !h.isVillager);
         heroes.forEach(hero => {
             if (!hero.skills[skillId]) {
                 hero.skills[skillId] = { xp: xpForLevel(1), level: 1 };
             }
         });
-        engine.EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'dev_grant_combat' });
+        EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'dev_grant_combat' });
         console.log(`[Dev] Granted ${skillId} to ${heroes.length} hero(es)`);
     };
 
@@ -204,7 +204,7 @@ export const TestDashboard = React.memo(() => {
             onClick: () => {
                 ensureRosterRoom(1);
                 const hero = generateHero();
-                engine.HeroManager.addHero(hero);
+                HeroManager.addHero(hero);
             }
         },
         {
@@ -249,7 +249,7 @@ export const TestDashboard = React.memo(() => {
                             y: hh * (163 / 1126) + Math.random() * hh * (800 / 1126)
                         }
                     };
-                    engine.SpriteLayer.addSprite(
+                    SpriteLayer.addSprite(
                         'item', items[i % items.length], 1 + Math.floor(Math.random() * 5), from
                     );
                 }
@@ -259,23 +259,23 @@ export const TestDashboard = React.memo(() => {
         {
             label: "🧹 Clear the Board",
             onClick: () => {
-                const state = engine.GameState.state;
+                const state = GameState.state;
                 state.board.tokens = {};
                 state.board.sprites = [];
-                engine.EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
+                EventBus.publish(ENGINE_EVENTS.GAME_RESET, { reason: 'dev_clear' });
                 console.log('[Dev] Board cleared');
             }
         },
         {
             label: "🩸 Drain 9 HP (All)",
             onClick: () => {
-                const heroes = engine.GameState.state.heroes;
+                const heroes = GameState.state.heroes;
                 heroes.forEach(h => {
                     if (h.hp) {
                         h.hp.current = Math.max(0, h.hp.current - 9);
                     }
                 });
-                engine.EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED);
+                EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED);
                 console.log('[Dev] Drained 9 HP from all heroes');
             }
         },
@@ -409,7 +409,7 @@ export const TestDashboard = React.memo(() => {
 
             {showFontTest && <TypographyScaleModal isOpen={showFontTest} onClose={() => setShowFontTest(false)} />}
             {showStyleSheet && <StyleSheetPage onClose={() => setShowStyleSheet(false)} />}
-            {showSpawnItem && <DevSpawnItemModal engine={engine} onClose={() => setShowSpawnItem(false)} />}
+            {showSpawnItem && <DevSpawnItemModal onClose={() => setShowSpawnItem(false)} />}
             {showAnimationStudio && (
                 <AnimationStudioModal
                     isOpen={showAnimationStudio}

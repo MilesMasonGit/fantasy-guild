@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
-import { useEngine } from '../../hooks/useEngine.js';
+import * as Placement from '../../../systems/board/Placement.js';
 import { useEntityDrop } from '../../dnd/DndKit.jsx';
 import { DND_SURFACE } from '../../dnd/dragConstants.js';
 import { DockHeroFigure } from './DockHeroFigure.jsx';
@@ -45,7 +45,7 @@ export const BottomHeroDock = ({
 
     const heroIds = useGameState(
         state => (state.heroes || []).map(h => h.id),
-        [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.STATE_CHANGED]
+        [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.GAME_RESET]
     ) || [];
 
     const handleReorderHero = useCallback(
@@ -98,12 +98,11 @@ export const BottomHeroDock = ({
  * slots do not re-measure their layout for the reorder animation each time.
  */
 const DockRecallStrip = ({ artPx, children }) => {
-    const engine = useEngine();
     const recall = useEntityDrop({
         id: 'bottom-dock-recall',
         surface: DND_SURFACE.DRAWER,
         accepts: isRecallDrop,
-        onDrop: p => recallFromDrop(engine.BoardPlacement, p)
+        onDrop: p => recallFromDrop(Placement, p)
     });
     return (
         // Overflow stays VISIBLE upward: the heroes' heads, names and HP bars may stand over

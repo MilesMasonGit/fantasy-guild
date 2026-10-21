@@ -21,7 +21,6 @@ import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes, tokenStartingUses, getTokenType } from '../config/registries/tokenRegistry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { useTokenDetail } from '../ui/components/board/useTokenDetail.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -78,8 +77,7 @@ function Probe({ id, typeId }) {
 async function probe(...instances) {
     let container;
     await act(async () => {
-        ({ container } = render(h(EngineContext.Provider, { value: { GameState, EventBus } },
-            ...instances.map(i => h(Probe, { key: i.id, id: i.id, typeId: i.typeId })))));
+        ({ container } = render(h(React.Fragment, null, ...instances.map(i => h(Probe, { key: i.id, id: i.id, typeId: i.typeId })))));
     });
     return (inst) => JSON.parse(container.querySelector(`[data-probe="${inst.id}"]`).textContent);
 }

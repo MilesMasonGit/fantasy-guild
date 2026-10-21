@@ -18,7 +18,7 @@ import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
  * before the web does.
  */
 export const GuildHallEffectsPanel = () => {
-    // Re-evaluate whenever upgrades, board, or game state updates.
+    // An upgrade or a load rewrites the Hall's definition (`GuildUpgradeManager.recompute`).
     const guildHallData = useGameState(
         () => {
             const def = getTokenType('token_guild_hall');
@@ -26,7 +26,7 @@ export const GuildHallEffectsPanel = () => {
             const statements = def?.statements || [];
             return { outputs, statements };
         },
-        [ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, ENGINE_EVENTS.STATE_CHANGED, BOARD_EVENTS.TOKEN_PLACED]
+        [ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, ENGINE_EVENTS.GAME_RESET, BOARD_EVENTS.TOKEN_PLACED]
     );
 
     const outputs = guildHallData?.outputs || [];

@@ -14,7 +14,6 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { MatToken } from '../ui/components/board/MatToken.jsx';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { posterItemLayout, POSTER_CENTRE } from '../ui/components/board/QuestPoster.jsx';
@@ -41,7 +40,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 
 const h = React.createElement;
 const mount = (el) => render(
-    h(EngineContext.Provider, { value: { GameState, EventBus } }, h(DndContext, null, el))
+    h(DndContext, null, el)
 );
 
 function newGame() {

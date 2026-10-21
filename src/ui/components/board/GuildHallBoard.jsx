@@ -64,13 +64,13 @@ export const GuildHallBoard = ({
     const [hovered, setHovered] = useState(null);
     const ranks = useGameState(
         state => state.progress?.guildUpgrades || {},
-        [ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, ENGINE_EVENTS.STATE_CHANGED]
+        [ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, ENGINE_EVENTS.GAME_RESET]
     );
     // Which upgrades the Bank can pay for right now (Hall upgrades cost items). A flat id list
     // as a string, per the useGameState selector contract.
     const affordableSignature = useGameState(
         () => GUILD_UPGRADES.filter(u => GuildUpgradeManager.canAfford(u.id)).map(u => u.id).join(','),
-        [ENGINE_EVENTS.INVENTORY_UPDATED, ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, ENGINE_EVENTS.STATE_CHANGED]
+        [ENGINE_EVENTS.INVENTORY_UPDATED, ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, ENGINE_EVENTS.GAME_RESET]
     );
     const affordable = new Set((affordableSignature || '').split(',').filter(Boolean));
 

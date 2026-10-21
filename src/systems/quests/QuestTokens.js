@@ -9,7 +9,7 @@ import * as SpriteLayer from '../board/SpriteLayer.js';
 import { isGuildHall } from '../board/MatCap.js';
 import { PLACEMENT } from '../../config/registries/placementRegistry.js';
 import { QUEST_TOKEN_TYPE } from '../../config/registries/engineTokens.js';
-import { matTuning } from '../../config/matTuning.js';
+import { tunedOr } from '../../config/matTuning.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { InventoryStore } from '../inventory/InventoryStore.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
@@ -106,20 +106,26 @@ export function tutorialTokens() {
     return questTokens().filter(t => t.quest.tutorial);
 }
 
+/** ⭐ Game values: the bounties the Hall keeps before any Notice Board rank, and the most it can. */
+export const QUEST_CAP_BASE = 2;
+export const QUEST_CAP_MAX = 5;
+/** ⭐ Game value: game seconds between bounties while the mat holds fewer than the cap. */
+export const QUEST_EVERY_SEC = 180;
+
 /**
- * How many bounties the Hall keeps on the mat: the Mat Tuner's `questCap` plus
- * one per Notice Board rank, never above `questCapMax`.
+ * How many bounties the Hall keeps on the mat: {@link QUEST_CAP_BASE} plus one per Notice Board
+ * rank, never above {@link QUEST_CAP_MAX} (a dev build's Mat Tuner may stand in for either).
  */
 export function questCap() {
-    const base = Math.round(matTuning('questCap'));
-    const max = Math.round(matTuning('questCapMax'));
+    const base = Math.round(tunedOr('questCap', QUEST_CAP_BASE));
+    const max = Math.round(tunedOr('questCapMax', QUEST_CAP_MAX));
     const rank = GuildUpgradeManager.getRank('notice_board');
     return Math.max(0, Math.min(max, base + rank));
 }
 
-/** The bounty interval in game ms (Mat Tuner `questEverySec`). */
+/** The bounty interval in game ms: {@link QUEST_EVERY_SEC}, or a dev build's Mat Tuner. */
 export function questIntervalMs() {
-    return Math.max(1000, Math.round(matTuning('questEverySec') * 1000));
+    return Math.max(1000, Math.round(tunedOr('questEverySec', QUEST_EVERY_SEC) * 1000));
 }
 
 // ---------------------------------------------------------------------------
@@ -162,7 +168,6 @@ function guildHall() {
 
 function publishChanged(instanceId = null) {
     EventBus.publish(ENGINE_EVENTS.QUESTS_UPDATED, instanceId ? { instanceId } : {});
-    EventBus.publish(ENGINE_EVENTS.STATE_CHANGED, {});
 }
 
 // ---------------------------------------------------------------------------
@@ -300,8 +305,7 @@ export function refreshTutorialTokens() {
         instance.quest = tutorialQuest(template, instance.quest);
         refreshed.push(instance.id);
     }
-    // Each refreshed copy says so by id: a quest Token hears its own
-    // QUESTS_UPDATED, not the catch-all state_changed.
+    // Each refreshed copy says so by id: a quest Token hears its own QUESTS_UPDATED.
     for (const instanceId of refreshed) EventBus.publish(ENGINE_EVENTS.QUESTS_UPDATED, { instanceId });
     if (changed) publishChanged();
 }
@@ -432,7 +436,6 @@ export function reportMatches(quest, metadata) {
  * stops counting.
  */
 export function reportProgress(targetType, amount = 1, metadata = {}) {
-    let changed = null;
     for (const instance of questTokens()) {
         const quest = instance.quest;
         if (quest.done || quest.targetType !== targetType) continue;
@@ -442,10 +445,8 @@ export function reportProgress(targetType, amount = 1, metadata = {}) {
         if (next === quest.currentCount) continue;
         quest.currentCount = next;
         quest.done = next >= quest.requiredCount;
-        changed = changed === null ? instance.id : changed;
         EventBus.publish(ENGINE_EVENTS.QUESTS_UPDATED, { instanceId: instance.id });
     }
-    if (changed !== null) EventBus.publish(ENGINE_EVENTS.STATE_CHANGED, {});
 }
 
 /** A collection bounty's count is what the Bank holds, capped. */
@@ -462,14 +463,9 @@ function syncCollection(quest) {
 
 /** Bring every collection bounty on the mat in line with the Bank. */
 export function syncCollections() {
-    let changed = false;
     for (const instance of questTokens()) {
-        if (syncCollection(instance.quest)) {
-            changed = true;
-            EventBus.publish(ENGINE_EVENTS.QUESTS_UPDATED, { instanceId: instance.id });
-        }
+        if (syncCollection(instance.quest)) EventBus.publish(ENGINE_EVENTS.QUESTS_UPDATED, { instanceId: instance.id });
     }
-    if (changed) EventBus.publish(ENGINE_EVENTS.STATE_CHANGED, {});
 }
 
 // ---------------------------------------------------------------------------

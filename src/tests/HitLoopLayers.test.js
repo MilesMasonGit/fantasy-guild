@@ -14,7 +14,6 @@ import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as Flags from '../systems/board/Flags.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { TokenHitArt, COMBAT_ATTACK_EVENT } from '../ui/components/board/TokenHitArt.jsx';
 import {
@@ -40,7 +39,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
  */
 
 const h = React.createElement;
-const tree = (el) => h(EngineContext.Provider, { value: { GameState, EventBus } }, h(DndContext, null, el));
+const tree = (el) => h(DndContext, null, el);
 
 function stubAnimate() {
     const calls = [];

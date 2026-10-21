@@ -7,7 +7,6 @@ import { SaveManager } from '../systems/core/SaveManager.js';
 import { GameState } from '../state/GameState.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
-import { EventBus } from '../systems/core/EventBus.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import * as fixtures from '../../bench/fixtures.mjs';
 import S2 from '../../bench/scenarios/s2-realistic.mjs';
@@ -41,7 +40,6 @@ async function buildAndPlay(scenario, ticks) {
     InventoryManager.init();
     await scenario.build({ fixtures, setMatTuning, now: () => 0 });
     TileModifiers.rebuildAll();
-    EventBus.publish('state_changed');
     for (let i = 0; i < ticks; i++) GameLoop.runHandlers(100);
 }
 

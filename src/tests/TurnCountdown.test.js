@@ -10,11 +10,9 @@ import * as Placement from '../systems/board/Placement.js';
 import * as TimedChanges from '../systems/board/TimedChanges.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
-import { EventBus } from '../systems/core/EventBus.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { TimerBubble } from '../ui/components/board/TimerBubble.jsx';
 import { TURN_COUNTDOWN_REFRESH_MS, turnFraction } from '../ui/components/board/ringRow.js';
@@ -53,7 +51,7 @@ registerTokenTypes({
 const h = React.createElement;
 const AT = { x: 560, y: 520 };
 const mount = (el) => render(
-    h(EngineContext.Provider, { value: { GameState, EventBus } }, h(DndContext, null, el))
+    h(DndContext, null, el)
 );
 const overlay = (container, id) => container.querySelector(`[data-token-overlay="${id}"]`);
 const countdownOf = (container, id) => overlay(container, id)?.querySelector('[data-ring="turn"]') ?? null;

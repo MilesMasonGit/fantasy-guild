@@ -2,7 +2,8 @@ import { memo, useMemo, useRef, useState } from 'react';
 import { PixelTriangle } from '../base/ArrowScrollList.jsx';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
-import { useEngine } from '../../hooks/useEngine.js';
+import * as Placement from '../../../systems/board/Placement.js';
+import * as EquipmentManager from '../../../systems/equipment/EquipmentManager.js';
 import { useEntityDrag, useEntityDrop, useActiveDrag, mergeRefs } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { resolveSpritePath, resolveAnimationPath } from '../../../utils/AssetManager.js';
@@ -53,7 +54,6 @@ export function dockHeroDragPayload(heroId, hero) {
  */
 export const DockHeroFigure = memo(function DockHeroFigure(props) {
     const { heroId, index = null, heroIds = [], onReorder } = props;
-    const engine = useEngine();
     const { isDragging: globalDragging } = useActiveDrag();
     // No hover lift while a drop is settling (the reorder animation).
     const { isHovered, settling: isDragSettling, onHoverChange } = useDragSettleHover(globalDragging);
@@ -77,9 +77,9 @@ export const DockHeroFigure = memo(function DockHeroFigure(props) {
             || (p.kind === DRAG_KIND.HERO && p.heroId !== heroId),
         onDrop: p => {
             if (isRecallDrop(p)) {
-                recallFromDrop(engine.BoardPlacement, p);
+                recallFromDrop(Placement, p);
             } else if (p.kind === DRAG_KIND.ITEM && p.itemId) {
-                if (!equipOrAnnounce(engine, heroId, p.itemId)) return false;
+                if (!equipOrAnnounce(EquipmentManager, heroId, p.itemId)) return false;
                 justDroppedRef.current = true;
                 setTimeout(() => { justDroppedRef.current = false; }, 250);
                 EventBus.publish(UI_EVENTS.INSPECT_HERO, { heroId, afterDrop: true });
@@ -140,7 +140,7 @@ function useDockHero(heroId) {
                 hp: { current: h.hp?.current ?? 0, max: h.hp?.max ?? 100 }
             } : null;
         },
-        [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, ORPHAN_EVENTS.HERO_STATUS_CHANGED, ENGINE_EVENTS.STATE_CHANGED],
+        [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, ORPHAN_EVENTS.HERO_STATUS_CHANGED, ENGINE_EVENTS.GAME_RESET],
         null,
         { deps: [heroId] }
     );
@@ -168,7 +168,7 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
     // `HEROES_WALKED` a hero arriving home.
     const statusState = useGameState(
         () => Flags.statusOf(heroId).state,
-        [BOARD_EVENTS.HERO_MOVED, BOARD_EVENTS.HEROES_WALKED, ENGINE_EVENTS.STATE_CHANGED],
+        [BOARD_EVENTS.HERO_MOVED, BOARD_EVENTS.HEROES_WALKED, ENGINE_EVENTS.GAME_RESET],
         null,
         { deps: [heroId] }
     );

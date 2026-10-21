@@ -22,9 +22,7 @@ vi.mock('../ui/components/drawer/HeroInspectionSheet.jsx', () => ({
 }));
 
 import { GameState } from '../state/GameState.js';
-import { EventBus } from '../systems/core/EventBus.js';
 import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
-import { EngineContext } from '../ui/context/EngineContext';
 import { BottomHeroDock } from '../ui/components/dock/BottomHeroDock.jsx';
 import { BankHeroPanel } from '../ui/components/dock/BankHeroPanel.jsx';
 import { setLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
@@ -37,12 +35,6 @@ const hero = (id, name) => (
     { id, name, spriteId: 'hn_recruit_por', hp: { current: 100, max: 100 }, status: 'idle', equipment: {} }
 );
 
-const engine = {
-    GameState,
-    EventBus,
-    BoardPlacement: { recallHeroById: vi.fn() },
-    EquipmentManager: { equipItem: vi.fn() }
-};
 
 beforeEach(() => {
     STATUS.clear();
@@ -72,10 +64,9 @@ describe('Escape mid-drag only cancels the drag (CR3-409)', () => {
     it('does NOT close the hero sheet while a drag is live', () => {
         const onCloseHero = vi.fn();
         const { container } = render(
-            h(EngineContext.Provider, { value: engine },
-                h(DeckDndProvider, null,
+            h(DeckDndProvider, null,
                     h(BottomHeroDock, { selectedHeroId: 'h1' }),
-                    h(BankHeroPanel, { selectedHeroId: 'h1', showTabs: false, onCloseHero })))
+                    h(BankHeroPanel, { selectedHeroId: 'h1', showTabs: false, onCloseHero }))
         );
 
         act(() => startRealDrag(container));
@@ -92,10 +83,9 @@ describe('Escape mid-drag only cancels the drag (CR3-409)', () => {
     it('closes the sheet on Escape when no drag is live (control)', () => {
         const onCloseHero = vi.fn();
         render(
-            h(EngineContext.Provider, { value: engine },
-                h(DeckDndProvider, null,
+            h(DeckDndProvider, null,
                     h(BottomHeroDock, { selectedHeroId: 'h1' }),
-                    h(BankHeroPanel, { selectedHeroId: 'h1', showTabs: false, onCloseHero })))
+                    h(BankHeroPanel, { selectedHeroId: 'h1', showTabs: false, onCloseHero }))
         );
 
         act(() => fireEvent.keyDown(document, { key: 'Escape', code: 'Escape' }));
@@ -106,10 +96,9 @@ describe('Escape mid-drag only cancels the drag (CR3-409)', () => {
 describe('Escape mid-drag does not also end disallow mode (CR3-409)', () => {
     it('leaves disallow mode on while a drag is live, then a second Escape ends it', () => {
         const { container } = render(
-            h(EngineContext.Provider, { value: engine },
-                h(DeckDndProvider, null,
+            h(DeckDndProvider, null,
                     h(BottomHeroDock, { selectedHeroId: null }),
-                    h(MapModeToggles)))
+                    h(MapModeToggles))
         );
 
         act(() => toggleMapMode(MAP_MODE.DISALLOW));

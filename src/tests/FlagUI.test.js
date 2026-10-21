@@ -188,6 +188,30 @@ describe('Flags.isHeroWorkable — where the disallow toggle is offered', () => 
     });
 });
 
+describe('Flags.setDisallowed — the engine holds the rule', () => {
+    it('refuses to disallow a Token no hero works, and says why', () => {
+        const passive = put(3, 'fixture_passive');
+        const result = Flags.setDisallowed(passive.id, true);
+        expect(result).toEqual({ success: false, reason: Flags.NO_HERO_WORKS });
+        expect(Flags.isDisallowed(passive)).toBe(false);
+        expect(Flags.disallowRefusalOf(passive)).toBe(Flags.NO_HERO_WORKS);
+    });
+
+    it('disallows a Token a hero works', () => {
+        const producer = put(1, 'fixture_producer');
+        expect(Flags.disallowRefusalOf(producer)).toBeNull();
+        expect(Flags.setDisallowed(producer.id, true)).toEqual({ success: true });
+        expect(Flags.isDisallowed(producer)).toBe(true);
+    });
+
+    it('always lets a disallowed Token be allowed again, workable or not', () => {
+        const passive = put(3, 'fixture_passive');
+        passive.disallowed = true;
+        expect(Flags.setDisallowed(passive.id, false)).toEqual({ success: true });
+        expect(Flags.isDisallowed(passive)).toBe(false);
+    });
+});
+
 describe('every skip reason the engine can record has hover text', () => {
     /**
      * Derived from the engine, not listed by hand: `Flags.SKIP` holds the

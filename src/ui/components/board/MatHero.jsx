@@ -40,7 +40,7 @@ function HeroHealthBar({ heroId, artPx }) {
             const h = (state.heroes || []).find(x => x.id === heroId);
             return h ? { cur: h.hp?.current ?? 0, max: h.hp?.max ?? 100 } : null;
         },
-        [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.STATE_CHANGED],
+        [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.GAME_RESET],
         null,
         { deps: [heroId] }
     );

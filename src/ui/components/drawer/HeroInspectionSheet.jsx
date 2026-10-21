@@ -57,7 +57,7 @@ export const HeroInspectionSheet = memo(function HeroInspectionSheet({ heroId, o
                 bankedSkills: Object.fromEntries(Object.entries(h.bankedSkills || {}).map(([id, s]) => [id, { level: s?.level, xp: s?.xp }]))
             });
         },
-        [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.HERO_LEVELED, ENGINE_EVENTS.HERO_PROMOTED, ORPHAN_EVENTS.HERO_STATUS_CHANGED, ENGINE_EVENTS.STATE_CHANGED],
+        [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.HERO_LEVELED, ENGINE_EVENTS.HERO_PROMOTED, ORPHAN_EVENTS.HERO_STATUS_CHANGED, ENGINE_EVENTS.GAME_RESET],
         null,
         { deps: [heroId] }
     );

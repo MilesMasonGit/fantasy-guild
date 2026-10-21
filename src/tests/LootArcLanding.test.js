@@ -6,8 +6,6 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { EventBus } from '../systems/core/EventBus.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { SpriteLayerView } from '../ui/components/board/SpriteLayerView.jsx';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -49,7 +47,7 @@ afterEach(() => {
     delete HTMLElement.prototype.animate;
 });
 
-const mount = () => render(h(EngineContext.Provider, { value: { GameState, EventBus } }, h(SpriteLayerView)));
+const mount = () => render(h(SpriteLayerView));
 
 /** The share of the element's own size (in %) and the pixels that a translate-like value moves it by, per axis. */
 function translateOf(value) {

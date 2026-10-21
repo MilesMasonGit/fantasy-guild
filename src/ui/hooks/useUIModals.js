@@ -1,16 +1,15 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { BOARD_EVENTS } from '../../systems/board/boardEvents.js';
 import { EventBus, UI_LISTENER } from '../../systems/core/EventBus.js';
+import * as BoardState from '../../systems/board/BoardState.js';
+import * as BoardPromotion from '../../systems/board/BoardPromotion.js';
 import { ENGINE_EVENTS, UI_EVENTS } from '../../systems/core/engineEvents.js';
 
 /**
  * The first promotion offer standing on the board, or null. Read from the Token instances (the
  * saved truth) through `BoardPromotion.getOffer`, which excludes declined offers.
  */
-export function standingPromotionOffer(engine) {
-    const BoardState = engine?.BoardState;
-    const BoardPromotion = engine?.BoardPromotion;
-    if (!BoardState?.tokens || !BoardPromotion?.getOffer) return null;
+export function standingPromotionOffer() {
     try {
         for (const instance of BoardState.tokens()) {
             const offer = BoardPromotion.getOffer(instance.id);
@@ -68,7 +67,7 @@ const SHOP_TARGET = 'shop';
 /** Nav targets that open as a full-screen view (`ui.fullscreen.view`). The Atlas is an overlay over the mat. */
 const FULLSCREEN_TARGETS = new Set(['guild', 'atlas']);
 
-export const useUIModals = (engine) => {
+export const useUIModals = () => {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isSlotSelectionOpen, setIsSlotSelectionOpen] = useState(true);
 
@@ -276,39 +275,37 @@ export const useUIModals = (engine) => {
     };
 
     useEffect(() => {
-        if (!engine) return;
-
         // ⚠️ Every subscription below must have a publisher somewhere.
         const subs = [
             // Nothing has happened to the hero yet: the tile holds the offer open and this
             // only decides to draw it.
-            engine.EventBus.subscribe(BOARD_EVENTS.PROMOTION_READY, (data) => {
+            EventBus.subscribe(BOARD_EVENTS.PROMOTION_READY, (data) => {
                 if (data?.instanceId == null) return;
                 setPromotionOffer(data);
             }, UI_LISTENER),
             // ⚠️ A loaded save can carry an offer nobody answered. Without this the hero would
             // stand on the Token forever with nothing asking. A declined offer is not
             // standing, so this never re-asks.
-            engine.EventBus.subscribe(ENGINE_EVENTS.GAME_LOADED, () => {
-                setPromotionOffer(standingPromotionOffer(engine));
+            EventBus.subscribe(ENGINE_EVENTS.GAME_LOADED, () => {
+                setPromotionOffer(standingPromotionOffer());
             }, UI_LISTENER),
             // Likewise an offer made while a catch-up played with this listener quiet.
-            engine.EventBus.subscribe(ENGINE_EVENTS.GAME_RESET, () => {
-                setPromotionOffer((current) => current || standingPromotionOffer(engine));
+            EventBus.subscribe(ENGINE_EVENTS.GAME_RESET, () => {
+                setPromotionOffer((current) => current || standingPromotionOffer());
             }, UI_LISTENER)
         ];
 
         // Same, for a board already loaded when the UI mounted. Deferred a tick so it reads
         // after the engine has finished starting.
         const initial = setTimeout(() => {
-            setPromotionOffer((current) => current || standingPromotionOffer(engine));
+            setPromotionOffer((current) => current || standingPromotionOffer());
         }, 0);
 
         return () => {
             clearTimeout(initial);
             subs.forEach(unsub => unsub());
         };
-    }, [engine]);
+    }, []);
 
     const isAnyModalOpen = isSettingsOpen ||
                            fullscreenView !== null;

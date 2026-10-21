@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Check, Swords } from 'lucide-react';
 import { cn } from '../../utils/cn.js';
-import { useEngine } from '../../hooks/useEngine.js';
+import * as Placement from '../../../systems/board/Placement.js';
 import { useEntityDrop } from '../../dnd/DndKit.jsx';
 import { DND_SURFACE } from '../../dnd/dragConstants.js';
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
@@ -92,7 +92,7 @@ function useHeroesRefresh() {
     const [, bump] = useState(0);
     useEffect(() => {
         const tick = () => bump(n => n + 1);
-        const events = [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.STATE_CHANGED, ENGINE_EVENTS.HERO_LEVELED, ENGINE_EVENTS.HERO_PROMOTED];
+        const events = [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.GAME_RESET, ENGINE_EVENTS.HERO_LEVELED, ENGINE_EVENTS.HERO_PROMOTED];
         const unsubs = events.filter(Boolean).map(e => EventBus.subscribe(e, tick, UI_LISTENER));
         return () => unsubs.forEach(u => u());
     }, []);
@@ -105,7 +105,6 @@ function useHeroesRefresh() {
  * nothing new.
  */
 export const WorkRulesDrawer = ({ open = false, heroPanelOpen = false, litHeroId = null, onClose }) => {
-    const engine = useEngine();
     const drawerRef = useRef(null);
     const [insets, setInsets] = useState({ left: 0, right: 0 });
     const [mounted, setMounted] = useState(open);
@@ -140,7 +139,7 @@ export const WorkRulesDrawer = ({ open = false, heroPanelOpen = false, litHeroId
         id: 'work-rules-drop',
         surface: DND_SURFACE.DRAWER,
         accepts: isRecallDrop,
-        onDrop: p => recallFromDrop(engine?.BoardPlacement, p),
+        onDrop: p => recallFromDrop(Placement, p),
         disabled: !mounted
     });
 

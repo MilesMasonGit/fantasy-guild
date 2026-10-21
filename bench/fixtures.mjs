@@ -107,7 +107,7 @@ export const BENCH_TOKENS = {
         config: {
             skill: 'alchemy', skillRequired: 1, cycleTimeMs: 15000, xp: 6,
             inputs: [{ itemId: 'fixture_oak_wood', quantity: 2 }],
-            outputs: [{ itemId: 'item_glowcap', quantity: 1, chance: 100 }]
+            outputs: [{ itemId: 'fixture_glowcap', quantity: 1, chance: 100 }]
         }
     },
     /**
@@ -121,7 +121,7 @@ export const BENCH_TOKENS = {
         config: {
             skill: 'smithing', skillRequired: 1, cycleTimeMs: 12000, xp: 6,
             inputs: [{ itemId: 'item_coal', quantity: 2 }],
-            outputs: [{ itemId: 'item_spider_silk', quantity: 1, chance: 100 }]
+            outputs: [{ itemId: 'fixture_spider_silk', quantity: 1, chance: 100 }]
         }
     },
 

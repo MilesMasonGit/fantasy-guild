@@ -12,7 +12,7 @@ import {
     CheckCircle, Lock, Zap, Check, X
 } from 'lucide-react';
 import { ArrowScrollList } from '../base/ArrowScrollList.jsx';
-import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
+import { ENGINE_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
 
 const itemName = (itemId) => getItem(itemId)?.name || itemId;
 
@@ -40,7 +40,7 @@ export const GuildUpgradeInspection = ({ upgradeDef, onClose }) => {
             const price = GuildUpgradeManager.getNextCost(upgradeDef.id) || [];
             return price.map(p => `${p.itemId}:${InventoryManager.getItemCount(p.itemId)}`).join(',');
         },
-        [ENGINE_EVENTS.INVENTORY_UPDATED, ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, ENGINE_EVENTS.STATE_CHANGED]
+        [ENGINE_EVENTS.INVENTORY_UPDATED, ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, ENGINE_EVENTS.GAME_RESET]
     );
     const haveCounts = Object.fromEntries(
         (haveSignature || '').split(',').filter(Boolean).map(pair => {
@@ -50,7 +50,7 @@ export const GuildUpgradeInspection = ({ upgradeDef, onClose }) => {
     );
     const ranks = useGameState(
         state => state.progress?.guildUpgrades || {},
-        [ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, ENGINE_EVENTS.STATE_CHANGED]
+        [ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, ENGINE_EVENTS.GAME_RESET]
     );
 
     if (!upgradeDef) return null;
@@ -66,13 +66,15 @@ export const GuildUpgradeInspection = ({ upgradeDef, onClose }) => {
     // (`LOCK_KIND.SKILL`, set through an upgrade's `gate`).
     const lockReason = lock && lock.kind !== LOCK_KIND.LINK ? lock.text : null;
     const price = !isMax ? getUpgradePrice(upgradeDef, rank) : null;
-    const canAfford = price != null
-        && price.every(p => (haveCounts[p.itemId] || 0) >= p.quantity);
+    const canAfford = price != null && GuildUpgradeManager.canAfford(upgradeDef.id);
 
     const handleUpgrade = () => {
         if (!accessible || isMax || !canAfford) return;
         EventBus.publish(ENGINE_EVENTS.AUDIO_PLAY, { clip: 'button_click' });
-        GuildUpgradeManager.purchase(upgradeDef.id);
+        const result = GuildUpgradeManager.purchase(upgradeDef.id);
+        if (!result?.success) {
+            EventBus.publish(UI_EVENTS.UI_SCREEN_CALLOUT, { text: result?.error || 'Could not buy that upgrade' });
+        }
     };
 
     const allRanks = Array.from({ length: upgradeDef.maxRank }, (_, i) => {

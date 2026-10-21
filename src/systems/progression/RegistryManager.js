@@ -54,7 +54,6 @@ export const RegistryManager = {
         }
         
         EventBus.publish(ENGINE_EVENTS.REGISTRY_UPDATED, { type: 'item', id: itemId });
-        EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
     },
 
     /**
@@ -101,7 +100,6 @@ export const RegistryManager = {
         }
 
         EventBus.publish(ENGINE_EVENTS.REGISTRY_UPDATED, { type: 'enemy', id: enemyId });
-        EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
     },
 
     /**

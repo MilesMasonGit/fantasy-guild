@@ -29,7 +29,6 @@ import { pinRefusedLineFor } from '../ui/components/board/heroBubbles.js';
 import { flagTooltip } from '../ui/components/board/flagText.js';
 import { FlagLayer } from '../ui/components/board/FlagLayer.jsx';
 import { pinnedFlagPoint, POLE_BASE } from '../ui/components/board/flagGeometry.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { drawnPoint } from './fixtures/drawnPoint.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -355,7 +354,7 @@ describe('save and load', () => {
 describe('a pinned flag on the screen', () => {
     const h = React.createElement;
     const mount = (el) => render(
-        h(EngineContext.Provider, { value: { GameState, EventBus } }, h(DndContext, null, el))
+        h(DndContext, null, el)
     );
 
     it('is drawn on its Token, marked data-flag-pinned, with no reach ring, and says "Working only"', () => {

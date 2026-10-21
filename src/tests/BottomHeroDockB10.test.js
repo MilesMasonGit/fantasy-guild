@@ -15,9 +15,9 @@ vi.mock('../ui/components/drawer/HeroInspectionSheet.jsx', () => ({
 
 import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
+import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
 import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { BottomHeroDock, showsBottomHeroDock } from '../ui/components/dock/BottomHeroDock.jsx';
 import { BankHeroPanel } from '../ui/components/dock/BankHeroPanel.jsx';
 import { dockHeroDragPayload } from '../ui/components/dock/DockHeroFigure.jsx';
@@ -33,18 +33,11 @@ const hero = (id, name, hp = 100, extra = {}) => ({
     id, name, spriteId: 'hn_recruit_por', hp: { current: hp, max: 100 }, status: 'idle', equipment: {}, ...extra
 });
 
-const engine = {
-    GameState,
-    EventBus,
-    BoardPlacement: { recallHeroById: vi.fn() },
-    EquipmentManager: { equipItem: vi.fn() }
-};
 
 function mount(props = {}) {
     return render(
-        h(EngineContext.Provider, { value: engine },
-            h(DeckDndProvider, null,
-                h(BottomHeroDock, { selectedHeroId: null, ...props })))
+        h(DeckDndProvider, null,
+                h(BottomHeroDock, { selectedHeroId: null, ...props }))
     );
 }
 
@@ -209,14 +202,14 @@ describe('B10 horizontal hero dock', () => {
         const view = mount();
         expect(figure(view, 'h1').getAttribute('data-dock-deployed')).toBe('false');
         STATUS.set('h1', 'working');
-        // useGameState batches its update onto a microtask.
-        await act(async () => { EventBus.publish('state_changed', {}); await Promise.resolve(); });
+        // A plant or a recall says HERO_MOVED; useGameState batches its update onto a microtask.
+        await act(async () => { EventBus.publish(BOARD_EVENTS.HERO_MOVED, { heroId: 'h1' }); await Promise.resolve(); });
         expect(figure(view, 'h1').getAttribute('data-dock-deployed')).toBe('true');
         STATUS.delete('h1');
-        await act(async () => { EventBus.publish('state_changed', {}); await Promise.resolve(); });
+        await act(async () => { EventBus.publish(BOARD_EVENTS.HERO_MOVED, { heroId: 'h1' }); await Promise.resolve(); });
         expect(figure(view, 'h1').getAttribute('data-dock-deployed')).toBe('false');
         STATUS.set('h1', 'working');
-        await act(async () => { EventBus.publish('state_changed', {}); await Promise.resolve(); });
+        await act(async () => { EventBus.publish(BOARD_EVENTS.HERO_MOVED, { heroId: 'h1' }); await Promise.resolve(); });
         expect(figure(view, 'h1').getAttribute('data-dock-deployed')).toBe('true');
     });
 
@@ -237,8 +230,7 @@ describe('B10 horizontal hero dock', () => {
 
     it('leaves the vertical hero panel beside the Bank as it was', () => {
         const view = render(
-            h(EngineContext.Provider, { value: engine },
-                h(DeckDndProvider, null, h(BankHeroPanel, { menuRight: false })))
+            h(DeckDndProvider, null, h(BankHeroPanel, { menuRight: false }))
         );
         expect(view.container.querySelectorAll('[data-hero-dock-tab]').length).toBe(3);
         expect(view.container.querySelector('[data-dock-hero]')).toBeNull();
@@ -246,8 +238,7 @@ describe('B10 horizontal hero dock', () => {
 
     it('the Bank hero panel\'s HP bar also updates on an in-place mutation (CR3-300)', async () => {
         const view = render(
-            h(EngineContext.Provider, { value: engine },
-                h(DeckDndProvider, null, h(BankHeroPanel, { menuRight: false })))
+            h(DeckDndProvider, null, h(BankHeroPanel, { menuRight: false }))
         );
         const tab = view.container.querySelector('[data-dock-hero-id="h1"]');
         const fill = () => tab.querySelector('[data-hero-tab-hp]');

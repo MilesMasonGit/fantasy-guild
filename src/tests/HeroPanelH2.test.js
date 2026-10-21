@@ -9,9 +9,7 @@ vi.mock('../systems/board/Flags.js', () => ({
 }));
 
 import { GameState } from '../state/GameState.js';
-import { EventBus } from '../systems/core/EventBus.js';
 import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
-import { EngineContext } from '../ui/context/EngineContext';
 import { BottomHeroDock } from '../ui/components/dock/BottomHeroDock.jsx';
 import { BankHeroPanel } from '../ui/components/dock/BankHeroPanel.jsx';
 import { setLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
@@ -43,15 +41,9 @@ const master = (id, name) => ({
     bankedSkills: { ranged: lvl(30) }
 });
 
-const engine = {
-    GameState,
-    EventBus,
-    BoardPlacement: { recallHeroById: vi.fn() },
-    EquipmentManager: { equipItem: vi.fn(), unequipItem: vi.fn() }
-};
 
 const wrap = (...children) =>
-    h(EngineContext.Provider, { value: engine }, h(DeckDndProvider, null, ...children));
+    h(DeckDndProvider, null, ...children);
 
 const panel = (props) => wrap(h(BankHeroPanel, { menuRight: false, ...props }));
 

@@ -16,7 +16,6 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { SettingsManager } from '../systems/core/SettingsManager.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
-import { EngineContext } from '../ui/context/EngineContext';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { TokenInspection } from '../ui/components/drawer/TokenInspection.jsx';
 import { TokenInspectPopup } from '../ui/components/board/TokenInspectPopup.jsx';
@@ -44,7 +43,7 @@ function put(point, typeId) {
 }
 
 const mount = (...els) => render(
-    h(EngineContext.Provider, { value: { GameState, EventBus } }, h(DndContext, null, ...els))
+    h(DndContext, null, ...els)
 );
 
 const ring = (c, name) => c.querySelector(`[data-inspect-bubble="${name}"] [data-ring]`);
@@ -214,7 +213,7 @@ describe('⭐ Disallow and Demolish left the inspect pop-up for the map modes', 
 describe('the Origin line', () => {
     const origin = (c) => c.querySelector('[data-lifecycle-lines]')?.textContent || '';
 
-    it('shows in a dev build and is gone from a shipped build without Debug Mode', () => {
+    it('shows in a dev build, and in a perf build with Debug Mode; never in a shipped build', () => {
         const forest = put(TOKEN, 'fixture_producer');
         forest.origin = 'spawned';
         const props = { typeId: 'fixture_producer', instanceId: forest.id };
@@ -224,13 +223,19 @@ describe('the Origin line', () => {
         cleanup();
 
         vi.stubEnv('DEV', false);
+        vi.stubEnv('MODE', 'production');
         const spy = vi.spyOn(SettingsManager, 'get').mockImplementation((k) => (k === 'debugMode' ? false : undefined));
         try {
             const shipped = mount(h(TokenInspection, props));
             expect(origin(shipped.container)).not.toContain('Origin');
             cleanup();
 
+            // A shipped build has no Debug Mode: one left on from before changes nothing.
             spy.mockImplementation((k) => (k === 'debugMode' ? true : undefined));
+            expect(origin(mount(h(TokenInspection, props)).container)).not.toContain('Origin');
+            cleanup();
+
+            vi.stubEnv('MODE', 'perf');
             expect(origin(mount(h(TokenInspection, props)).container)).toContain('Origin (dev)');
         } finally {
             spy.mockRestore();
