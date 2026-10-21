@@ -40,7 +40,7 @@ export const MAT_TUNABLES = Object.freeze([
         key: 'nearRadius',
         group: 'Reach',
         label: 'Near radius',
-        hint: 'How far an "nearby" rule reaches, centre to centre. 164 reaches the four side neighbours (160 u) but not the diagonals (226 u) — FP-75; a 2×2 Token reaches nothing below 253 u. 272 was the old 8-tile ring.',
+        hint: 'How far an "nearby" rule reaches, centre to centre. 164 reaches the four side neighbours (160 u) but not the diagonals (226 u); a 2×2 Token reaches nothing below 253 u. 272 was the old 8-tile ring.',
         min: 100, max: 600, step: 1, def: 164,
         format: (v) => `${Math.round(v)} u · ${(v / STEP_U).toFixed(2)} steps`
     },
@@ -48,7 +48,7 @@ export const MAT_TUNABLES = Object.freeze([
         key: 'flagRadius',
         group: 'Flags',
         label: 'Flag radius',
-        hint: 'How far from its flag a hero looks for work, centre to centre (FP-65, FP-75). 164 reaches the Token under the flag and its four side neighbours, not the diagonals (226 u). 400 was the old default.',
+        hint: 'How far from its flag a hero looks for work, centre to centre. 164 reaches the Token under the flag and its four side neighbours, not the diagonals (226 u). 400 was the old default.',
         min: 100, max: 1000, step: 1, def: 164,
         format: (v) => `${Math.round(v)} u · ${(v / STEP_U).toFixed(2)} steps`
     },
@@ -56,7 +56,7 @@ export const MAT_TUNABLES = Object.freeze([
         key: 'walkSpeed',
         group: 'Heroes',
         label: 'Walk speed',
-        hint: 'How fast heroes walk, in mat units a second (Hero Movement HMP-4). The mat is 1760 u wide at 11 steps, so 120 crosses it in about 15 s. Walking costs work time (FP-26): a job starts when the hero arrives.',
+        hint: 'How fast heroes walk, in mat units a second. The mat is 1760 u wide at 11 steps, so 120 crosses it in about 15 s. Walking costs work time: a job starts when the hero arrives.',
         min: 20, max: 600, step: 1, def: 120,
         format: (v) => `${Math.round(v)} u/s · ${(1760 / v).toFixed(1)} s across`
     },
@@ -88,7 +88,7 @@ export const MAT_TUNABLES = Object.freeze([
         key: 'hitboxPct',
         group: 'Crowding',
         label: 'Token hitbox',
-        hint: 'How much of a Token’s art actually collides, as a percentage of its radius (FP-63, FP-64). Never drawn — a Token at rest is just its art. 80% makes a small Token’s hitbox 51 u of its 64 u art.',
+        hint: 'How much of a Token’s art actually collides, as a percentage of its radius. Never drawn — a Token at rest is just its art. 80% makes a small Token’s hitbox 51 u of its 64 u art.',
         min: 40, max: 100, step: 1, def: 80,
         format: (v) => `${Math.round(v)}% · small ${Math.round(SMALL_ART_R * v / 100)} u`
     },
@@ -96,7 +96,7 @@ export const MAT_TUNABLES = Object.freeze([
         key: 'overlapPct',
         group: 'Crowding',
         label: 'Overlap allowed',
-        hint: 'How far two hitboxes may overlap before a drop is refused (FP-63). At 80% hitbox, 40% overlap lets two small Tokens sit 61 u apart centre to centre — well under a 160 u tile step.',
+        hint: 'How far two hitboxes may overlap before a drop is refused. At 80% hitbox, 40% overlap lets two small Tokens sit 61 u apart centre to centre — well under a 160 u tile step.',
         min: 0, max: 80, step: 1, def: 40,
         format: (v) => `${Math.round(v)}% · two small ${Math.round(2 * Math.round(SMALL_ART_R * matTuning('hitboxPct') / 100) * (1 - v / 100))} u apart`
     },
@@ -104,7 +104,7 @@ export const MAT_TUNABLES = Object.freeze([
         key: 'nudgeReach',
         group: 'Crowding',
         label: 'Nudge reach',
-        hint: 'How far a drop with no room may be shifted to find a legal spot before it flies back instead (FP-46, FP-88). 0 makes every crowded drop fly back; 160 is one old tile step.',
+        hint: 'How far a drop with no room may be shifted to find a legal spot before it flies back instead. 0 makes every crowded drop fly back; 160 is one old tile step.',
         min: 0, max: 400, step: 1, def: 160,
         format: (v) => `${Math.round(v)} u · ${(v / STEP_U).toFixed(2)} steps`
     },
@@ -112,7 +112,7 @@ export const MAT_TUNABLES = Object.freeze([
         key: 'matSteps',
         group: 'The mat',
         label: 'Mat size',
-        hint: 'How big the playmat itself is, in 160 u steps, at a fixed 0.64 aspect (FP-92). ⚠️ Shrinking it pulls Tokens that no longer fit back inside and spaces them apart (FP-98); flags are only pulled in. Growing it moves nothing.',
+        hint: 'How big the playmat itself is, in 160 u steps, at a fixed 0.64 aspect. ⚠️ Shrinking it pulls Tokens that no longer fit back inside and spaces them apart; flags are only pulled in. Growing it moves nothing.',
         min: 6, max: 20, step: 1, def: 11,
         format: (v) => `${Math.round(v)} steps · ${Math.round(v) * STEP_U} × ${Math.round(Math.round(v) * STEP_U * ASPECT)} u`
     },
