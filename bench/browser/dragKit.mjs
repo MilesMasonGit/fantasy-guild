@@ -388,11 +388,11 @@ export function installDragKit() {
                 grid.push({ x: Math.round(c.x + gx * rad), y: Math.round(c.y + gy * rad) });
             }
         }
-        // First choice, a clear point: away from every hero figure's box (its own hero's too) and
+        // First choice, a clear point: away from every hero figure's box and bar (its own hero's too) and
         // from every Token's body by a margin, and on no Token the game has there. The scene moves
         // on between the pick and the press (the bench's own reads, the rest before the press): a
         // hero walking in, or a Token sliding or arriving, would take a press the pick saw free.
-        const heroBoxes = [...document.querySelectorAll('[data-board-hero]')].map(e => e.getBoundingClientRect());
+        const heroBoxes = [...document.querySelectorAll('[data-board-hero], [data-board-hero] [data-health-bar]')].map(e => e.getBoundingClientRect());
         for (const p of grid) {
             if (!onScreen(p) || circles.some(t => Math.hypot(t.x - p.x, t.y - p.y) <= t.r + CLEAR_PX)) continue;
             if (heroBoxes.some(b => inRect(p, b, CLEAR_PX)) || G.Flags.tokenAtPoint(kit.screenToMat(p))) continue;
@@ -427,10 +427,13 @@ export function installDragKit() {
     };
     /**
      * A hero figure's art alpha at a client point, read as the game's hit test reads it (the frame
-     * showing, mirrored when the hero faces left; solid from 25, `alphaHitTest.js`): null off its
-     * box, -1 when the picture cannot be read.
+     * showing, mirrored when the hero faces left; solid from 25, `alphaHitTest.js`), 255 on its
+     * health bar, null off both, -1 when the picture cannot be read.
      */
     const heroAlphaAt = (heroEl, p) => {
+        // A hero's health bar is the hero's wherever it is pressed (`alphaHitTest.onFigurePart`).
+        const bar = heroEl.querySelector('[data-health-bar]')?.getBoundingClientRect();
+        if (bar && inRect(p, bar)) return 255;
         const box = heroEl.getBoundingClientRect();
         if (p.x < box.left || p.x > box.right || p.y < box.top || p.y > box.bottom) return null;
         const img = heroEl.querySelector('img');
