@@ -188,8 +188,3 @@ export const REGEN_CONFIG = {
     hp:     { amount: 1, interval: 5.0 },   // 1 HP every 5 seconds
     energy: { amount: 1, interval: 5.0 },   // 1 Energy every 5 seconds
 };
-
-// XP FORMULAS
-
-/** Unread: nothing multiplies combat XP by this. */
-export const GLOBAL_COMBAT_XP_MULTIPLIER = 1.0;
