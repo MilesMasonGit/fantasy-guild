@@ -4,7 +4,7 @@ import { isFlagColour } from '../../board/FlagColours.js';
 import { ENGINE_EVENTS } from '../../core/engineEvents.js';
 
 /**
- * Hero State: Status and Resource (HP/Energy) mutations.
+ * Hero State: Status and HP mutations.
  */
 
 export function setHeroStatus(heroId, status) {
@@ -60,9 +60,9 @@ export function updateHeroProfile(heroId, updates = {}) {
 }
 
 /**
- * ⚠️ Both mutators check the vital exists before writing to it.
+ * ⚠️ The mutator checks the vital exists before writing to it.
  *
- * `HeroGenerator` always supplies `hp` and `energy`, so a hero missing one is
+ * `HeroGenerator` always supplies `hp`, so a hero missing it is
  * legacy or test-shaped save data — but these are called from a **GameLoop tick
  * handler** (`RegenSystem`), where an exception repeats every frame rather than
  * failing once. A missing vital is reported the same way a missing hero is,
@@ -77,11 +77,3 @@ export function modifyHeroHp(heroId, amount) {
     return { success: true, newHp: hero.hp.current };
 }
 
-export function modifyHeroEnergy(heroId, amount) {
-    const hero = getHero(heroId);
-    if (!hero) return { success: false, error: 'HERO_NOT_FOUND' };
-    if (!hero.energy) return { success: false, error: 'NO_ENERGY' };
-
-    hero.energy.current = Math.max(0, Math.min(hero.energy.max, hero.energy.current + amount));
-    return { success: true, newEnergy: hero.energy.current };
-}

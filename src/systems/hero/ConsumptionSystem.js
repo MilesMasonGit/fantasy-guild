@@ -10,15 +10,15 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
 /**
  * ConsumptionSystem — heroes feed themselves from their own loadout grid.
  *
- * Food fires whenever HP drops below the threshold, in or out of combat
- * (`tryEat`). `tryDrink` and `consumeLoopConsumables` are dormant: nothing
- * outside tests calls them.
+ * Food and drink both heal, each from its own slot: whenever HP drops below the
+ * threshold, in or out of combat, the hero eats and, if still low, drinks
+ * (`tryEat`). `consumeLoopConsumables` is dormant: nothing outside tests calls it.
  *
  * Consuming draws one unit from the Guild Bank; an equipped item with no stock
  * is skipped and the hero goes without. Eating has no cooldown or per-fight limit.
  */
 
-/** Fraction of max HP/Energy below which a hero reaches for supplies. */
+/** Fraction of max HP below which a hero reaches for food and drink. */
 export { CONSUME_THRESHOLD };
 
 /** True when a vital has dropped below the threshold. */
@@ -37,7 +37,7 @@ function equippedOfCategory(hero, categoryId) {
  * Returns null when the item isn't equipped or the bank is out of stock — in
  * which case the hero simply goes without.
  */
-function consumeEquipped(hero, categoryId, vitalKey) {
+function consumeEquipped(hero, categoryId) {
     const entry = equippedOfCategory(hero, categoryId);
     if (!entry) return null;
 
@@ -47,10 +47,7 @@ function consumeEquipped(hero, categoryId, vitalKey) {
     const amount = item?.restoreAmount || 0;
     InventoryManager.removeItem(entry.itemId, 1);
 
-    if (amount > 0) {
-        if (vitalKey === 'energy') HeroManager.modifyHeroEnergy(hero.id, amount);
-        else HeroManager.modifyHeroHp(hero.id, amount);
-    }
+    if (amount > 0) HeroManager.modifyHeroHp(hero.id, amount);
 
     EventBus.publish(ENGINE_EVENTS.HERO_CONSUMED, {
         heroId: hero.id, itemId: entry.itemId, category: categoryId, amount
@@ -64,46 +61,22 @@ export function needsFood(heroId) {
     return !!hero && isLow(hero.hp);
 }
 
-/** Does this hero want a drink right now? */
-export function needsDrink(heroId) {
-    const hero = HeroManager.getHero(heroId);
-    return !!hero && isLow(hero.energy);
-}
-
 /**
- * Drink if energy is low. Called before energy is charged.
- *
- * Two rules:
- *   **Ambient**: below `CONSUME_THRESHOLD` of max, top up.
- *   **On demand** (`need`): the caller is about to charge exactly this much
- *   and the hero cannot pay. Threshold is irrelevant here, or a craft costing
- *   more than a quarter of max energy would stall forever with a full
- *   waterskin in the grid.
- *
- * One drink may not cover a large `need`; callers tick again and this converges.
- *
- * @param {string} heroId
- * @param {{need?: number}} [opts] energy the caller is about to spend.
- * @returns {{itemId: string, amount: number}|null} what was drunk, if anything.
- */
-export function tryDrink(heroId, { need = null } = {}) {
-    const hero = HeroManager.getHero(heroId);
-    if (!hero) return null;
-
-    const short = need !== null && (hero.energy?.current ?? 0) < need;
-    if (!isLow(hero.energy) && !short) return null;
-
-    return consumeEquipped(hero, 'drink', 'energy');
-}
-
-/**
- * Eat if HP is low. Works anywhere; the combat cost is charged by the caller.
- * @returns {{itemId: string, amount: number}|null} what was eaten, if anything.
+ * Eat and drink if HP is low: one unit from the food slot, then, only if HP is
+ * still below the threshold, one from the drink slot. Works anywhere; the
+ * combat cost is charged by the caller.
+ * @returns {Array<{itemId: string, amount: number}>} what was consumed, in order; empty if nothing.
  */
 export function tryEat(heroId) {
     const hero = HeroManager.getHero(heroId);
-    if (!hero || !isLow(hero.hp)) return null;
-    return consumeEquipped(hero, 'food', 'hp');
+    if (!hero || !isLow(hero.hp)) return [];
+    const consumed = [];
+    for (const categoryId of ['food', 'drink']) {
+        if (!isLow(hero.hp)) break;
+        const meal = consumeEquipped(hero, categoryId);
+        if (meal) consumed.push(meal);
+    }
+    return consumed;
 }
 
 /**

@@ -30,6 +30,14 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 registerTokenTypes({
+    fixture_kill_yield_double: {
+        id: 'fixture_kill_yield_double', name: 'Kill Yield Double', tokenType: 'buff',
+        rarity: 'rare', theme: 'fixture', uses: null, sprite: 's_occult',
+        statements: [
+            { id: 'stm_kill_yield', keyword: 'provides', to: { mode: 'all' },
+              payload: { type: 'YIELD', bucket: 'percentage', value: 1.0 } }
+        ]
+    },
     fixture_enemy_two_lines: {
         id: 'fixture_enemy_two_lines', name: 'Two-Line Enemy', tokenType: 'enemy',
         rarity: 'common', theme: 'fixture', uses: 20, sprite: 's_occult',
@@ -146,5 +154,60 @@ describe('Every drop line rolls on its own (TL-10)', () => {
         });
         expect(InventoryManager.getItemCount('item_blackberry')).toBe(1);
         expect(InventoryManager.getItemCount('fixture_oak_wood')).toBe(2);
+    });
+});
+
+/**
+ * A kill is a cycle, so its loot follows the station output rules exactly: YIELD widens each rolled
+ * line, LOOT_MULT doubles everything the kill made, and BONUS_DROP grants land beside it.
+ */
+describe('Kill loot follows the yield, double-loot and bonus-drop rules', () => {
+    const at = { x: 400, y: 300 };
+
+    function enemyBeside(buffTypeId) {
+        const enemy = BoardState.createTokenInstance(
+            'fixture_enemy_two_lines', tokenStartingUses('fixture_enemy_two_lines'));
+        Placement.placeTokenAt(enemy, at);
+        const buff = BoardState.createTokenInstance(buffTypeId, null);
+        Placement.placeTokenAt(buff, { x: at.x + 70, y: at.y });
+        TileModifiers.rebuildAround([enemy, buff]);
+        return enemy;
+    }
+
+    function kill(enemy) {
+        const seen = [];
+        const unsub = EventBus.subscribe('loot_generated', p => seen.push(p));
+        LootSystem.handleCombatVictory({
+            enemyId: 'fixture_enemy_two_lines', instanceId: enemy.id, areaId: 'area',
+            drops: [
+                { itemId: 'item_blackberry', chance: 100, minQty: 1, maxQty: 1 },
+                { itemId: 'fixture_oak_wood', chance: 100, minQty: 2, maxQty: 2 }
+            ]
+        });
+        unsub();
+        return seen[0];
+    }
+
+    it('YIELD widens every line a kill drops', () => {
+        const loot = kill(enemyBeside('fixture_kill_yield_double'));
+        expect(loot.drops.map(d => [d.itemId, d.quantity])).toEqual([
+            ['item_blackberry', 2],
+            ['fixture_oak_wood', 4]
+        ]);
+        expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(4);
+    });
+
+    it('LOOT_MULT doubles everything the kill made', () => {
+        const loot = kill(enemyBeside('fixture_buff_always_doubles'));
+        expect(loot.drops.map(d => [d.itemId, d.quantity])).toEqual([
+            ['item_blackberry', 2],
+            ['fixture_oak_wood', 4]
+        ]);
+    });
+
+    it('BONUS_DROP grants land beside the kill', () => {
+        kill(enemyBeside('fixture_bonus_drop'));
+        expect(SpriteLayer.countOnBoard('fixture_charcoal')).toBe(1);
+        expect(SpriteLayer.countOnBoard('item_blackberry')).toBe(1);
     });
 });

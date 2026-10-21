@@ -51,7 +51,7 @@ export default function PaceDials() {
           pins={gphPins}
           fallback={GPH_PINS}
           onChange={(level, value) => setPin('gphPins', gphPins, level, value)}
-          hint="A floor, not an average: it balances the just-qualified worker, and a hero levelled past the gate out-earns it through the speed bonus."
+          hint="What a worker earns on content at its required level."
         />
         <PinColumn
           title="Experience per hour (§13.2)"

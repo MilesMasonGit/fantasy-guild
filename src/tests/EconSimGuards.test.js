@@ -123,9 +123,9 @@ describe('Hours-first charge display (CMS-135)', () => {
 
     it('turns charges into hours through the settled cycle, not the authored one', () => {
         const entity = adaptCorpus({ tokens: { t: token({ id: 't', uses: 100 }) } })[0];
-        // 100 charges at a 36s cycle, before the level-1 speed ramp, is ~1h.
+        // 100 charges at a 36s cycle is 1h.
         const life = lifetimeOf(entity, { cycleTimeMs: 36000, dials: DEFAULT_DIALS });
-        expect(life.hours).toBeCloseTo(100 / ((3600 / 36) * 1.005), 5);
+        expect(life.hours).toBeCloseTo(1, 5);
         expect(life.charges).toBe(100);
         expect(life.unlimited).toBe(false);
     });

@@ -285,19 +285,6 @@ export const TestDashboard = React.memo(() => {
                 console.log('[Dev] Drained 9 HP from all heroes');
             }
         },
-        {
-            label: "🧪 Drain 9 NRJ (All)",
-            onClick: () => {
-                const heroes = engine.GameState.state.heroes;
-                heroes.forEach(h => {
-                    if (h.energy) {
-                        h.energy.current = Math.max(0, h.energy.current - 9);
-                    }
-                });
-                engine.EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED);
-                console.log('[Dev] Drained 9 Energy from all heroes');
-            }
-        },
     ];
 
     return (

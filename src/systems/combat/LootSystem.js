@@ -7,6 +7,9 @@ import { warnMissingContent } from '../../utils/missingContent.js';
 import { randomInt } from '../../utils/RNG.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import * as SpriteLayer from '../board/SpriteLayer.js';
+import * as OutputRules from '../board/OutputRules.js';
+import * as BoardState from '../board/BoardState.js';
+import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
@@ -35,24 +38,33 @@ const LootSystem = {
             return;
         }
 
+        // A kill is a cycle of the enemy Token, so on the board its loot follows the station output
+        // rules in the same order: double loot rolled once, each line's quantity widened by YIELD,
+        // then the nearby bonus drops.
+        const onBoard = instanceId != null;
+        const skill = onBoard ? (getTokenType(BoardState.getTokenById(instanceId)?.typeId)?.config?.skill || '') : '';
+        const doubled = onBoard && OutputRules.rollDoubleLoot(instanceId, skill);
+
         // Every drop line rolls on its own `chance`, as a station's outputs do in
         // `BoardRunner`: a Goblin with Bones 100% and Copper Ore 30% drops Bones
         // every kill AND Ore 30% of the time.
-        const generatedDrops = this.rollEachLine(sourceData.drops, areaId);
+        const widen = onBoard
+            ? (quantity) => OutputRules.widenYield(instanceId, skill, quantity) * (doubled ? 2 : 1)
+            : null;
+        const generatedDrops = this.rollEachLine(sourceData.drops, areaId, widen);
 
-        if (generatedDrops.length > 0) {
-            if (instanceId != null) {
-                // On the board, loot drops as floating sprites where the kill
-                // happened and is not banked until collected; banking it directly
-                // would skip the sprite layer.
-                for (const drop of generatedDrops) {
-                    SpriteLayer.addSprite('item', drop.itemId, drop.quantity, instanceId);
-                }
-            } else {
-                // No Token to anchor sprites to: bank directly.
-                for (const d of generatedDrops) {
-                    InventoryManager.addItem(d.itemId, d.quantity || 1, enemyId);
-                }
+        if (onBoard) {
+            // On the board, loot drops as floating sprites where the kill
+            // happened and is not banked until collected; banking it directly
+            // would skip the sprite layer.
+            for (const drop of generatedDrops) {
+                SpriteLayer.addSprite('item', drop.itemId, drop.quantity, instanceId);
+            }
+            OutputRules.dropBonusGrants(instanceId);
+        } else {
+            // No Token to anchor sprites to: bank directly.
+            for (const d of generatedDrops) {
+                InventoryManager.addItem(d.itemId, d.quantity || 1, enemyId);
             }
         }
 
@@ -64,15 +76,17 @@ const LootSystem = {
      * (default 100) hits, with its quantity rolled over its authored min–max.
      *
      * @param {Array} entries - `{ itemId, chance, minQty, maxQty }` lines
+     * @param {Function} [widen] - turns a rolled quantity into the one that lands (the kill's output rules)
      * @returns {Array} the drops that landed, possibly empty
      */
-    rollEachLine(entries, areaId) {
+    rollEachLine(entries, areaId, widen = null) {
         const results = [];
         for (const entry of (Array.isArray(entries) ? entries : [])) {
             if (!entry) continue;
             const chance = entry.chance ?? 100;
             if (chance < 100 && Math.random() * 100 > chance) continue;
             const drop = this._rollEntryDetails(entry, areaId);
+            if (drop && widen && drop.type !== 'combat_trigger') drop.quantity = widen(drop.quantity);
             if (drop && (drop.type === 'combat_trigger' || drop.quantity > 0)) results.push(drop);
         }
         return results;

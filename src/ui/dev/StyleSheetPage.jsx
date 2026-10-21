@@ -536,7 +536,6 @@ export const KIT_SECTIONS = [
         Demo: () => (
             <div className="w-48 flex flex-col gap-1">
                 <VitalBar label="HP" value={62} max={100} barClass="bg-gi-hp" />
-                <VitalBar label="NRJ" value={30} max={100} barClass="bg-[var(--color-energy)]" />
             </div>
         )
     },

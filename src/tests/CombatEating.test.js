@@ -4,11 +4,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // pauses the attack cycle while the fight carries on, so the enemy gets a
 // free swing. That price is the whole reason HP management stays tense.
 
-const { state } = vi.hoisted(() => ({ state: { meal: null } }));
+const { state } = vi.hoisted(() => ({ state: { meal: null, drink: null } }));
 
 vi.mock('../systems/hero/ConsumptionSystem.js', () => ({
-    tryEat: vi.fn(() => state.meal),
-    tryDrink: vi.fn(() => null)
+    tryEat: vi.fn(() => [state.meal, state.drink].filter(Boolean))
 }));
 
 vi.mock('../systems/hero/HeroManager.js', () => ({
@@ -64,6 +63,7 @@ const enemy = { id: 'e1', defenceSkill: 5, combatType: 'melee' };
 
 beforeEach(() => {
     state.meal = null;
+    state.drink = null;
     vi.clearAllMocks();
 });
 
@@ -119,6 +119,22 @@ describe('eating mid-combat (D-27)', () => {
 
         expect(seen).toHaveLength(1);
         expect(seen[0]).toMatchObject({ heroId: 'h1', itemId: 'bread', healed: 20 });
+        unsub();
+    });
+
+    it('eats and drinks in one stop: one attack skipped, each announced', async () => {
+        const { EventBus } = await import('../systems/core/EventBus.js');
+        const seen = [];
+        const unsub = EventBus.subscribe('combat_hero_ate', e => seen.push(e));
+
+        state.meal = { itemId: 'bread', amount: 20 };
+        state.drink = { itemId: 'ale', amount: 15 };
+        const card = makeCard();
+        handleHeroAttack(card, hero, enemy, 'melee', ATTACK_SPEED);
+
+        expect(card.combat.enemyHp.current).toBe(100);
+        expect(card.combat.heroTickProcesses.h1).toBe(0);
+        expect(seen.map(e => e.itemId)).toEqual(['bread', 'ale']);
         unsub();
     });
 });
