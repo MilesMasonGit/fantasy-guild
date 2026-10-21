@@ -13,6 +13,13 @@
  * the save. Unlike that panel, **these change gameplay** on this device, so the
  * panel marks a changed value and offers a reset to the shipped default.
  *
+ * ## ⚠️ Dev and perf builds only
+ * A shipped build has no Mat Tuner: every number reads its default there, never what a device
+ * once stored, and nothing can set one. The mat's size and the bounty numbers are game values
+ * owned by the game (`MAT_STEPS` in `matGeometry.js`, `QUEST_CAP_BASE`, `QUEST_CAP_MAX` and
+ * `QUEST_EVERY_SEC` in `QuestTokens.js`); their rows here start at those values
+ * (`ShippedBuild.test.js` holds them in step) and are read through {@link tunedOr}.
+ *
  * Read with `matTuning('key')` at the point of use, every time — capturing a
  * value into a module constant would freeze it at import.
  */
@@ -112,7 +119,7 @@ export const MAT_TUNABLES = Object.freeze([
         key: 'matSteps',
         group: 'The mat',
         label: 'Mat size',
-        hint: 'How big the playmat itself is, in 160 u steps, at a fixed 0.64 aspect. ⚠️ Shrinking it pulls Tokens that no longer fit back inside and spaces them apart; flags are only pulled in. Growing it moves nothing.',
+        hint: 'How big the playmat itself is, in 160 u steps, at a fixed 0.64 aspect (the game value, MAT_STEPS, is 11; dev builds only). ⚠️ Shrinking it pulls Tokens that no longer fit back inside and spaces them apart; flags are only pulled in. Growing it moves nothing.',
         min: 6, max: 20, step: 1, def: 11,
         format: (v) => `${Math.round(v)} steps · ${Math.round(v) * STEP_U} × ${Math.round(Math.round(v) * STEP_U * ASPECT)} u`
     },
@@ -130,7 +137,7 @@ export const MAT_TUNABLES = Object.freeze([
         key: 'questCap',
         group: 'Quests',
         label: 'Quest cap',
-        hint: 'How many bounty quests the Guild Hall keeps on the mat before the Notice Board is upgraded (TL-18). Each Notice Board rank adds one, up to the max below. Tutorial quests do not count.',
+        hint: 'How many bounty quests the Guild Hall keeps on the mat before the Notice Board is upgraded (TL-18; the game value is 2; dev builds only). Each Notice Board rank adds one, up to the max below. Tutorial quests do not count.',
         min: 0, max: 10, step: 1, def: 2,
         format: (v) => `${Math.round(v)} quests`
     },
@@ -138,7 +145,7 @@ export const MAT_TUNABLES = Object.freeze([
         key: 'questCapMax',
         group: 'Quests',
         label: 'Quest cap max',
-        hint: 'The most bounty quests the Notice Board can raise the cap to (TL-18: 2 plus one per rank, to 5).',
+        hint: 'The most bounty quests the Notice Board can raise the cap to (TL-18: 2 plus one per rank, to 5; the game value is 5; dev builds only).',
         min: 1, max: 20, step: 1, def: 5,
         format: (v) => `${Math.round(v)} quests`
     },
@@ -146,7 +153,7 @@ export const MAT_TUNABLES = Object.freeze([
         key: 'questEverySec',
         group: 'Quests',
         label: 'Quest every',
-        hint: 'Game time between bounty quests while the mat has fewer than the cap (TL-18: 3 min). The clock only runs below the cap.',
+        hint: 'Game time between bounty quests while the mat has fewer than the cap (TL-18: 3 min, the game value; dev builds only). The clock only runs below the cap.',
         min: 10, max: 1800, step: 10, def: 180,
         format: (v) => `${Math.floor(v / 60)} min ${Math.round(v % 60)} s`
     }
@@ -158,23 +165,29 @@ const DEFAULTS = Object.freeze(
 
 const STORAGE_KEY = 'fantasy_guild_mat_tuning';
 
+/** Whether this build has a Mat Tuner: a dev or a perf build, never a shipped one. */
+const TUNABLE = !!(import.meta.env?.DEV || import.meta.env?.MODE === 'perf');
+
 /** @type {Record<string, number>} */
 let values = { ...DEFAULTS };
 
-try {
-    const stored = JSON.parse(globalThis.localStorage?.getItem(STORAGE_KEY) || 'null');
-    if (stored && typeof stored === 'object') {
-        for (const t of MAT_TUNABLES) {
-            const v = stored[t.key];
-            // Clamped rather than trusted, as in playmatTuning.
-            if (typeof v === 'number' && Number.isFinite(v)) {
-                values[t.key] = Math.max(t.min, Math.min(t.max, v));
+function loadStored() {
+    try {
+        const stored = JSON.parse(globalThis.localStorage?.getItem(STORAGE_KEY) || 'null');
+        if (stored && typeof stored === 'object') {
+            for (const t of MAT_TUNABLES) {
+                const v = stored[t.key];
+                // Clamped rather than trusted, as in playmatTuning.
+                if (typeof v === 'number' && Number.isFinite(v)) {
+                    values[t.key] = Math.max(t.min, Math.min(t.max, v));
+                }
             }
         }
+    } catch {
+        // No storage, or corrupt. Defaults are correct.
     }
-} catch {
-    // No storage, or corrupt. Defaults are correct.
 }
+if (TUNABLE) loadStored();
 
 const listeners = new Set();
 
@@ -191,10 +204,20 @@ export function matTuning(key) {
     return values[key] ?? DEFAULTS[key];
 }
 
-/** Set one, clamped to its declared range. Returns true if it changed. */
+/** Whether this build has a Mat Tuner at all (dev and perf builds). */
+export function isTunable() {
+    return TUNABLE;
+}
+
+/** A game value, or in a build with a Mat Tuner the tuner's row `key` (which starts at it). */
+export function tunedOr(key, gameValue) {
+    return TUNABLE ? matTuning(key) : gameValue;
+}
+
+/** Set one, clamped to its declared range. Returns true if it changed; a shipped build never does. */
 export function setMatTuning(key, value) {
     const def = MAT_TUNABLES.find(t => t.key === key);
-    if (!def || !Number.isFinite(value)) return false;
+    if (!TUNABLE || !def || !Number.isFinite(value)) return false;
     const next = Math.max(def.min, Math.min(def.max, value));
     if (next === values[key]) return false;
     values[key] = next;

@@ -285,7 +285,7 @@ function liveLifecycleSources() {
         originOf: BoardState.originOf,
         demolishMs: Demolition.DEMOLISH_MS,
         workerOf: BoardState.workerOf,
-        dev: !!(import.meta.env?.DEV || SettingsManager.get('debugMode'))
+        dev: !!(import.meta.env?.DEV || (import.meta.env?.MODE === 'perf' && SettingsManager.get('debugMode')))
     };
 }
 

@@ -424,7 +424,8 @@ export const ReactRoot = ({ engine }) => {
                     </div>
                 </div>
 
-                {(import.meta.env.DEV || debugMode) && (
+                {/* Debug Mode exists in dev and perf builds only; a shipped build has no QA tools. */}
+                {(import.meta.env.DEV || (import.meta.env.MODE === 'perf' && debugMode)) && (
                     <>
                         <TestDashboard />
                         {/* The ground's look, for the eye-check: dev builds only. */}

@@ -1,7 +1,7 @@
 // Fantasy Guild — Token geometry on the free playmat
 
 import { getTokenType } from './registries/tokenRegistry.js';
-import { matTuning } from './matTuning.js';
+import { tunedOr } from './matTuning.js';
 
 /**
  * A Token on the free playmat is a **circle at a point**. This
@@ -18,9 +18,9 @@ import { matTuning } from './matTuning.js';
  * ## The mat's own size — live
  *
  * The mat is `matSteps()` of today's 160 u steps wide, at a fixed 0.64 aspect.
- * At the shipped 11 steps that is **1760 × 1126 u**; its top-left is always
- * (0, 0). The Mat Tuner's **Mat size** row moves it between 6 and 20 steps while
- * the game runs.
+ * The game value, {@link MAT_STEPS}, is 11 steps: **1760 × 1126 u**; its top-left is always
+ * (0, 0). In a dev build the Mat Tuner's **Mat size** row moves it between 6 and 20 steps
+ * while the game runs.
  *
  * ## ⚠️ Functions, not constants — and nothing may cache them
  * A constant would be captured at import and go on measuring a mat that no longer exists once the Mat Tuner slider moves.
@@ -37,9 +37,12 @@ import { matTuning } from './matTuning.js';
 export const MAT_STEP_U = 160;
 export const MAT_ASPECT = 0.64;
 
-/** How many 160 u steps wide the mat currently is (Mat Tuner, 6–20). */
+/** ⭐ The mat's size in 160 u steps: a game value (a Guild Hall upgrade may raise it one day). */
+export const MAT_STEPS = 11;
+
+/** How many 160 u steps wide the mat currently is: {@link MAT_STEPS}, or a dev build's Mat Tuner (6–20). */
 export function matSteps() {
-    return matTuning('matSteps');
+    return tunedOr('matSteps', MAT_STEPS);
 }
 
 /** The mat's width in mat units, right now. */
