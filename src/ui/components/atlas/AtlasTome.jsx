@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { cn } from '../../utils/cn.js';
 import { TOME_ART, TOME_SCALE, COVER_ART, spreadSize, pageRects } from './tomeArt.js';
 
-/** One art pixel of the ribbons, in screen pixels: UI sprites draw at 2×. */
+/** One art pixel of the tabs, in screen pixels: UI sprites draw at 2×. */
 const ART_PX = 2;
 
 /** The page turn: each half of the leaf moves in this many held frames over this long. */
@@ -45,15 +45,21 @@ const PageArt = ({ side, scale, style }) => {
     );
 };
 
-/** How far a ribbon stands above the book, and how far it tucks in under the cover. */
-const RIBBON_UP_PX = 34;
-const RIBBON_TUCK_PX = 16;
-/** The open section's ribbon stands this much taller. */
-const RIBBON_LIFT_PX = 10;
-const RIBBON_ROOM_PX = RIBBON_UP_PX + RIBBON_LIFT_PX;
+/** How far a tab stands out left of the book, and how far it tucks in under the cover. */
+const TAB_OUT_PX = 136;
+const TAB_TUCK_PX = 16;
+/** The open section's tab stands this much further out. */
+const TAB_LIFT_PX = 12;
+const TAB_ROOM_PX = TAB_OUT_PX + TAB_LIFT_PX;
+const TAB_H_PX = 20 * ART_PX;
+/** Where the first tab sits below the cover's top edge, in art pixels of the book. */
+const TABS_DOWN_ART = 24;
 
-/** A bookmark ribbon on the book's top edge: the screen's own variant of the kit's tabs. */
-export const BookmarkRibbon = ({ id, label, colour, selected, onSelect }) => (
+/**
+ * A page tab on the book's left edge, as if it came out from between the pages: the screen's own
+ * variant of the kit's tabs. The open one stands further out with a gold edge.
+ */
+export const BookTab = ({ id, label, colour, selected, onSelect }) => (
     <button
         type="button"
         role="tab"
@@ -61,17 +67,18 @@ export const BookmarkRibbon = ({ id, label, colour, selected, onSelect }) => (
         data-atlas-tab={id}
         onClick={() => onSelect(id)}
         className={cn(
-            'relative font-pixel ui-text-body font-bold px-4 cursor-pointer select-none flex items-start justify-center',
+            'relative shrink-0 font-pixel ui-text-body font-bold cursor-pointer select-none flex items-center justify-start whitespace-nowrap',
             selected ? 'text-white' : 'text-white/60 hover:text-white'
         )}
         style={{
             background: colour,
-            height: (selected ? RIBBON_UP_PX + RIBBON_LIFT_PX : RIBBON_UP_PX) + RIBBON_TUCK_PX,
-            paddingTop: 6 * ART_PX,
-            clipPath: `polygon(0 0, 50% ${4 * ART_PX}px, 100% 0, 100% 100%, 0 100%)`,
+            width: (selected ? TAB_ROOM_PX : TAB_OUT_PX) + TAB_TUCK_PX,
+            height: TAB_H_PX,
+            paddingLeft: 7 * ART_PX,
+            clipPath: `polygon(0 0, 100% 0, 100% 100%, 0 100%, ${4 * ART_PX}px 50%)`,
             boxShadow: selected
-                ? `inset ${ART_PX}px 0 0 0 var(--color-ui-gold), inset -${ART_PX}px 0 0 0 var(--color-ui-gold)`
-                : `inset 0 -${RIBBON_TUCK_PX}px 0 0 rgba(0,0,0,0.25)`
+                ? `inset 0 ${ART_PX}px 0 0 var(--color-ui-gold), inset 0 -${ART_PX}px 0 0 var(--color-ui-gold)`
+                : `inset -${TAB_TUCK_PX}px 0 0 0 rgba(0,0,0,0.25)`
         }}
     >
         {label}
@@ -116,15 +123,15 @@ const PageTurn = ({ turn, scale, onDone }) => {
 };
 
 /**
- * Where the book lies in its room (`roomW` × `roomH`, the mat column): centred with its ribbons
+ * Where the book lies in its room (`roomW` × `roomH`, the mat column): centred with its tabs
  * when it fits, else the book alone centred and cropped. `visible` is the part of the spread on
  * screen (null before the room is measured).
  */
 export function placeBook(scale, roomW, roomH) {
     const { w, h } = spreadSize(scale);
-    if (!(roomW > 0) || !(roomH > 0)) return { left: 0, top: RIBBON_ROOM_PX, w, h, visible: null };
-    const left = Math.round((roomW - w) / 2);
-    const top = Math.round(roomH >= h + RIBBON_ROOM_PX ? (roomH - h + RIBBON_ROOM_PX) / 2 : (roomH - h) / 2);
+    if (!(roomW > 0) || !(roomH > 0)) return { left: TAB_ROOM_PX, top: 0, w, h, visible: null };
+    const left = Math.round(roomW >= w + TAB_ROOM_PX ? (roomW - w + TAB_ROOM_PX) / 2 : (roomW - w) / 2);
+    const top = Math.round((roomH - h) / 2);
     const x0 = Math.max(0, -left);
     const y0 = Math.max(0, -top);
     const x1 = Math.min(w, roomW - left);
@@ -132,9 +139,9 @@ export function placeBook(scale, roomW, roomH) {
     return { left, top, w, h, visible: { left: x0, top: y0, width: Math.max(0, x1 - x0), height: Math.max(0, y1 - y0) } };
 }
 
-/** Whether the ribbons stand on screen above the cover's top edge (else they lie on the book's visible top). */
-export function ribbonsTucked(book, scale) {
-    return !book.visible || book.top + COVER_ART.y0 * scale - RIBBON_ROOM_PX >= 0;
+/** Whether the tabs stand on screen left of the cover's edge (else they lie on the book's visible left). */
+export function tabsTucked(book, scale) {
+    return !book.visible || book.left + COVER_ART.x0 * scale - TAB_ROOM_PX >= 0;
 }
 
 const PageRectsContext = createContext(null);
@@ -144,7 +151,7 @@ const PageRectsContext = createContext(null);
  * screen's bottom edge and settles (straight in under reduced motion), and back down on close
  * (`AnimatePresence` around the screen). Drawn at a whole 2×, 3× or 4× (QA → Atlas), never in
  * between; a book bigger than the mat column is centred and cropped, and the panels keep to the
- * part of the parchment on screen. Bookmark ribbons on its top edge switch the section, with a
+ * part of the parchment on screen. Page tabs down its left edge switch the section, with a
  * quick page turn; the section's own panels lie inside the pages (`TomeSpread`).
  *
  * @param {object} props
@@ -197,14 +204,15 @@ export const AtlasTome = ({ tabs, tab, onTab, closeButton, label, children }) =>
     const book = placeBook(scale, room.w, room.h);
     const { visible } = book;
     const coverTop = COVER_ART.y0 * scale;
+    const coverLeft = COVER_ART.x0 * scale;
     const coverRight = COVER_ART.x1 * scale;
-    // The ribbons tuck in under the cover's top edge; with that edge off screen they lie on the
-    // book's top as far as can be seen, and the panels start below them.
-    const tucked = ribbonsTucked(book, scale);
-    const ribbonsDrop = RIBBON_ROOM_PX + RIBBON_TUCK_PX + 8;
-    const pageRoom = tucked ? visible : { ...visible, top: visible.top + ribbonsDrop, height: visible.height - ribbonsDrop };
+    // The tabs tuck in under the cover's left edge; with that edge off screen they lie on the
+    // book's left as far as can be seen, and the panels start right of them.
+    const tucked = tabsTucked(book, scale);
+    const tabsShift = TAB_ROOM_PX + TAB_TUCK_PX + 8;
+    const pageRoom = tucked ? visible : { ...visible, left: visible.left + tabsShift, width: visible.width - tabsShift };
     const rects = pageRects(scale, pageRoom);
-    const ribbonsLeft = Math.max((COVER_ART.x0 + 24) * scale, visible ? visible.left + 16 : 0);
+    const tabsTop = Math.max((COVER_ART.y0 + TABS_DOWN_ART) * scale, visible ? visible.top + 16 : 0);
     const closeLeft = visible ? Math.min(coverRight - 20, visible.left + visible.width - 44) : coverRight - 20;
     const closeTop = visible ? Math.max(coverTop - 12, visible.top + 8) : coverTop - 12;
     const still = prefersReducedMotion();
@@ -226,13 +234,14 @@ export const AtlasTome = ({ tabs, tab, onTab, closeButton, label, children }) =>
             >
                 <div
                     role="tablist"
-                    className={cn('absolute flex items-end gap-2', !tucked && 'z-30')}
+                    aria-orientation="vertical"
+                    className={cn('absolute flex flex-col gap-2', tucked ? 'items-end' : 'items-start z-30')}
                     style={tucked
-                        ? { left: ribbonsLeft, bottom: book.h - coverTop - RIBBON_TUCK_PX }
-                        : { left: ribbonsLeft, top: visible.top + 4 }}
+                        ? { right: book.w - coverLeft - TAB_TUCK_PX, top: tabsTop }
+                        : { left: visible.left, top: tabsTop }}
                 >
                     {tabs.map(t => (
-                        <BookmarkRibbon key={t.id} {...t} selected={t.id === tab} onSelect={select} />
+                        <BookTab key={t.id} {...t} selected={t.id === tab} onSelect={select} />
                     ))}
                 </div>
                 <div aria-hidden="true" data-tome-art className="absolute inset-0 pointer-events-none">
@@ -249,12 +258,15 @@ export const AtlasTome = ({ tabs, tab, onTab, closeButton, label, children }) =>
     );
 };
 
+/** Where each page's panels go (`pageRects`), in screen pixels of the spread: what `TomeSpread` lays out. */
+export const usePageRects = () => useContext(PageRectsContext) || pageRects(TOME_SCALE);
+
 /**
  * The two pages as places to lay panels: `left` and `right` each fill the part of their page's
  * parchment on screen, and nothing spills past its border.
  */
 export const TomeSpread = ({ left, right }) => {
-    const rects = useContext(PageRectsContext) || pageRects(2);
+    const rects = usePageRects();
     return (
         <div data-tome-spread className="absolute inset-0">
             <div data-tome-left className="absolute flex flex-col min-h-0 min-w-0" style={rects.left}>{left}</div>

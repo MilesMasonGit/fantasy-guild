@@ -23,7 +23,7 @@ import * as Atlas from '../systems/atlas/Atlas.js';
 import * as Cartography from '../systems/atlas/Cartography.js';
 import { bannerForRegion, bannerForPlan, pickedBanner } from '../ui/components/atlas/regionBanner.js';
 import { coverScale, BannerArt } from '../ui/components/base/BannerArt.jsx';
-import { RegionList, regionOrder, mainNodes } from '../ui/components/atlas/RegionList.jsx';
+import { RegionList, regionOrder } from '../ui/components/atlas/RegionList.jsx';
 import { ArrivalCard } from '../ui/components/atlas/ArrivalCard.jsx';
 import { CartographyTable } from '../ui/components/atlas/CartographyTable.jsx';
 import { MatRegionName } from '../ui/components/board/MatRegionName.jsx';
@@ -171,7 +171,7 @@ describe('which banner a Region shows', () => {
 });
 
 describe('where the banner shows', () => {
-    it('each Region row lies on its banner, with its main Tokens; the Starter Camp first, then by the day settled', () => {
+    it('each Region row lies on its banner with only its names, Travel and the menu; the Starter Camp first, then by the day settled', () => {
         const { region: later } = Atlas.createRegion({ ingredients: [FOREST], ground: { main: 'forest' } });
         const { region: earlier } = Atlas.createRegion({ ingredients: [PLAIN], ground: { main: 'forest' } });
         Atlas.getRegion(later.id).settledAt = 5000;
@@ -184,17 +184,22 @@ describe('where the banner shows', () => {
         expect(q(rows[0], '[data-banner-art]').getAttribute('data-banner-art')).toBe('b_golden_plains');
         expect(q(rows[1], '[data-banner-art]').getAttribute('data-banner-art')).toBe('b_lush_forest');
         expect(q(rows[2], '[data-banner-art]').getAttribute('data-banner-art')).toBe('b_swamp');
-        expect(q(rows[1], `[data-region-node="${OAK}"]`).textContent).toContain('2');
+        expect(q(rows[1], `[data-region-node="${OAK}"]`)).toBeNull();
+        expect(q(rows[1], '[data-region-heroes]')).toBeNull();
+        expect(rows[1].textContent).not.toMatch(/Settled day|Token/);
         expect(q(rows[1], '[data-region-travel]')).toBeTruthy();
-        expect(q(rows[0], '[data-region-here]')).toBeTruthy();
+        expect(q(rows[1], '[data-region-menu]')).toBeTruthy();
+        // The Region the guild is in shows the plain hero flag at 1x in place of Travel.
+        const flag = q(q(rows[0], '[data-region-here]'), 'img');
+        expect(flag.getAttribute('src')).toBe('/assets/ui/u_flag_base.png');
+        expect(flag.style.width).toBe('64px');
+        expect(q(rows[0], '[data-region-travel]')).toBeNull();
     });
 
-    it('orders by kind, then day, then as written; and counts a board\'s Tokens but the Hall\'s', () => {
+    it('orders by kind, then day, then as written; ', () => {
         const settled = { s: 0, a: 9, b: 9, c: 1 };
         const list = [{ id: 'a' }, { id: 's', kind: Atlas.REGION_KIND.STARTER }, { id: 'b' }, { id: 'c' }];
         expect(regionOrder(list, id => settled[id]).map(r => r.id)).toEqual(['s', 'c', 'a', 'b']);
-        expect(mainNodes({ tokens: { 1: { typeId: 'x' }, 2: { typeId: 'y' }, 3: { typeId: 'y' }, 4: { typeId: 'token_guild_hall' } } }))
-            .toEqual([{ typeId: 'y', count: 2 }, { typeId: 'x', count: 1 }]);
     });
 
     it('the arrival card shows the destination\'s banner and name on travel; a click skips it, else it goes by itself', () => {
@@ -232,12 +237,15 @@ describe('where the banner shows', () => {
         expect(q(slice, '[data-mat-region-name]').textContent).toContain('Elderfield');
     });
 
-    it('it lies behind the Cartography layout preview, tinting through the map', () => {
+    it('it lies behind the Cartography preview, round the map, which is drawn as the mat draws it', () => {
         InventoryManager.addItem(FOREST, 1);
         const { container } = render(React.createElement(CartographyTable, { version: 0 }));
         expect(q(container, '[data-cartography-preview] [data-banner-art]')).toBeNull();
         fireEvent.click(q(container, `[data-map-item="${FOREST}"]`));
-        expect(q(container, '[data-cartography-preview] [data-banner-art]').getAttribute('data-banner-art')).toBe('b_swamp');
-        expect(Number(q(container, '[data-layout-preview] rect').getAttribute('fill-opacity'))).toBeLessThan(1);
+        const preview = q(container, '[data-cartography-preview]');
+        expect(q(preview, '[data-banner-art]').getAttribute('data-banner-art')).toBe('b_swamp');
+        // Behind the map, not over it.
+        const map = q(preview, 'canvas[data-map-preview]');
+        expect(q(preview, '[data-banner-art]').compareDocumentPosition(map) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     });
 });

@@ -1,26 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as Atlas from '../../../systems/atlas/Atlas.js';
-import * as Flags from '../../../systems/board/Flags.js';
-import { isGuildHall } from '../../../systems/board/MatCap.js';
-import { isQuestToken } from '../../../systems/quests/QuestTokens.js';
 import { TEXT, FLAVOUR_NAME_MAX } from '../../../systems/atlas/regionNames.js';
-import { GameState } from '../../../state/GameState.js';
-import { tokenName } from '../../../config/registries/tokenRegistry.js';
-import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { cn } from '../../utils/cn.js';
 import { PixelFrame } from '../base/PixelFrame.jsx';
 import { ArrowScrollList } from '../base/ArrowScrollList.jsx';
 import { BannerArt } from '../base/BannerArt.jsx';
-import { TokenSprite, TOKEN_SURFACE, PixelArt } from '../base/TokenSprite.jsx';
+import { FlagMark } from '../board/FlagMark.jsx';
 import { AtlasButton } from './AtlasButton.jsx';
 import { TomeSpread } from './AtlasTome.jsx';
 import { bannerForRegion } from './regionBanner.js';
-import { SCREEN_TEXT, dayOf } from './atlasScreenText.js';
+import { SCREEN_TEXT } from './atlasScreenText.js';
 
-/** How many of a Region's most common Tokens its row shows. */
-const NODE_PILLS = 3;
-/** A row's height in screen px: room for the name, the facts and a slice of the banner. */
-const ROW_PX = 104;
+/** The hero flag marking the Region the guild is in: the 64 px flag art at 1×. */
+const HERE_FLAG_PX = 64;
+/** A row's height in screen px: the flag and a slice of the banner. */
+const ROW_PX = 84;
 
 /** Why Region `region` cannot be abandoned, or null when it can. The engine refuses the same. */
 export function abandonRefusal(region) {
@@ -36,26 +30,6 @@ export function regionOrder(regions, settledAtOf = (id) => Atlas.getRegion(id)?.
         .map((r, i) => ({ r, i, at: settledAtOf(r.id) }))
         .sort((a, b) => starter(a.r) - starter(b.r) || a.at - b.at || a.i - b.i)
         .map(x => x.r);
-}
-
-/** A Region's most common Tokens, `[{ typeId, count }]`, most first. The Hall and quests are the guild's, not the Region's. */
-export function mainNodes(board, n = NODE_PILLS) {
-    const counts = new Map();
-    for (const t of Object.values(board?.tokens || {})) {
-        if (!t?.typeId || isGuildHall(t) || isQuestToken(t)) continue;
-        counts.set(t.typeId, (counts.get(t.typeId) || 0) + 1);
-    }
-    return [...counts].map(([typeId, count]) => ({ typeId, count }))
-        .sort((a, b) => b.count - a.count || a.typeId.localeCompare(b.typeId))
-        .slice(0, n);
-}
-
-/** The heroes out on the mat of the Region the guild is in (heroes travel with the guild). */
-function heroesOut() {
-    return (GameState.heroes || []).filter(h => {
-        const state = Flags.statusOf(h.id)?.state;
-        return !!state && state !== 'docked';
-    });
 }
 
 const boxCls = 'bg-black/65 px-2 py-0.5';
@@ -107,20 +81,11 @@ const MoreDots = () => (
 
 const menuItemCls = 'block w-full text-left px-2 py-0.5 whitespace-nowrap font-pixel ui-text-body hover:bg-white/10 disabled:text-white/40 disabled:cursor-not-allowed disabled:hover:bg-transparent';
 
-/** A small sprite and a count: one of the Region's main Tokens. */
-const NodePill = ({ typeId, count }) => (
-    <span data-region-node={typeId} title={tokenName(typeId) || typeId} className="inline-flex items-center gap-0.5 tabular-nums">
-        <TokenSprite typeId={typeId} surface={TOKEN_SURFACE.CATALOGUE} />
-        <span>{count}</span>
-    </span>
-);
-
-const RegionRow = ({ region, banner, nodes, heroes, onTravel, onMessage }) => {
+const RegionRow = ({ region, banner, onTravel, onMessage }) => {
     const [menu, setMenu] = useState(false);
     const [confirming, setConfirming] = useState(false);
     const [draft, setDraft] = useState(null);
     const refusal = abandonRefusal(region);
-    const settledAt = Atlas.getRegion(region.id)?.settledAt;
     const act = (fn) => {
         setMenu(false);
         const result = fn(region.id);
@@ -130,49 +95,36 @@ const RegionRow = ({ region, banner, nodes, heroes, onTravel, onMessage }) => {
         <div role="listitem" data-region-row={region.id} data-region-active={region.active} className="relative shrink-0 flex flex-col" style={{ minHeight: ROW_PX }}>
             <PixelFrame kind="studs" className="flex-1 flex flex-col" frameClassName="relative flex-1 flex flex-col overflow-hidden">
                 <BannerArt banner={banner} />
-                <div className="relative flex-1 flex flex-col justify-between p-2 gap-1">
-                    <div className="flex items-start gap-2">
-                        <div className={cn(boxCls, 'min-w-0')}>
-                            <FlavourName region={region} draft={draft} setDraft={setDraft} onMessage={onMessage} />
-                            <div className="font-pixel ui-text-small text-white/70">{region.practicalName}</div>
-                        </div>
-                        <div className="flex-1" />
-                        {region.active ? (
-                            <span data-region-here className={cn(boxCls, 'font-pixel ui-text-body font-bold')} style={{ color: 'var(--color-ui-gold)' }}>{SCREEN_TEXT.HERE}</span>
-                        ) : region.archived ? (
-                            <AtlasButton data-region-restore={region.id} onClick={() => act(Atlas.restore)}>{SCREEN_TEXT.RESTORE}</AtlasButton>
-                        ) : (
-                            <AtlasButton main data-region-travel={region.id} onClick={() => onTravel(region.id)}>{SCREEN_TEXT.TRAVEL}</AtlasButton>
-                        )}
-                        <button
-                            type="button"
-                            data-region-menu={region.id}
-                            aria-label={SCREEN_TEXT.MORE}
-                            title={SCREEN_TEXT.MORE}
-                            aria-expanded={menu}
-                            onClick={() => setMenu(m => !m)}
-                            className={cn(boxCls, 'self-stretch flex items-center text-white hover:[filter:drop-shadow(1px_0_0_#fff)_drop-shadow(-1px_0_0_#fff)]')}
-                        >
-                            <MoreDots />
-                        </button>
+                <div className="relative flex-1 flex items-center gap-2 px-2 py-1">
+                    <div className={cn(boxCls, 'min-w-0')}>
+                        <FlavourName region={region} draft={draft} setDraft={setDraft} onMessage={onMessage} />
+                        <div className="font-pixel ui-text-small text-white/70">{region.practicalName}</div>
                     </div>
-                    <div className={cn(boxCls, 'self-start flex flex-wrap items-center gap-x-3 gap-y-0.5 font-pixel ui-text-small text-white/85')}>
-                        {nodes.map(n => <NodePill key={n.typeId} {...n} />)}
-                        <span>{SCREEN_TEXT.settledDay(dayOf(settledAt))} · {SCREEN_TEXT.tokens(region.tokens)}</span>
-                        {heroes.length > 0 && (
-                            <span data-region-heroes className="inline-flex items-center gap-0.5">
-                                {heroes.map(h => (
-                                    <span key={h.id} title={h.name}>
-                                        <PixelArt src={resolveSpritePath(h.spriteId || h.icon || h.classId || h)} alt={h.name || ''} size={32} />
-                                    </span>
-                                ))}
-                            </span>
-                        )}
-                    </div>
+                    <div className="flex-1" />
+                    {region.active ? (
+                        <span data-region-here title={SCREEN_TEXT.HERE} className="shrink-0 block leading-none">
+                            <FlagMark size={HERE_FLAG_PX} alt={SCREEN_TEXT.HERE} />
+                        </span>
+                    ) : region.archived ? (
+                        <AtlasButton data-region-restore={region.id} onClick={() => act(Atlas.restore)}>{SCREEN_TEXT.RESTORE}</AtlasButton>
+                    ) : (
+                        <AtlasButton main data-region-travel={region.id} onClick={() => onTravel(region.id)}>{SCREEN_TEXT.TRAVEL}</AtlasButton>
+                    )}
+                    <button
+                        type="button"
+                        data-region-menu={region.id}
+                        aria-label={SCREEN_TEXT.MORE}
+                        title={SCREEN_TEXT.MORE}
+                        aria-expanded={menu}
+                        onClick={() => setMenu(m => !m)}
+                        className={cn(boxCls, 'self-center py-2 flex items-center text-white hover:[filter:drop-shadow(1px_0_0_#fff)_drop-shadow(-1px_0_0_#fff)]')}
+                    >
+                        <MoreDots />
+                    </button>
                 </div>
             </PixelFrame>
             {menu && (
-                <PixelFrame kind="chamfer" className="absolute right-2 top-10 z-20" frameClassName="py-1 min-w-[8rem]">
+                <PixelFrame kind="chamfer" className="absolute right-12 top-1 z-20" frameClassName="py-1 min-w-[8rem]">
                     <div role="menu" data-region-menu-list={region.id}>
                         <button type="button" role="menuitem" data-region-rename={region.id} className={menuItemCls}
                             onClick={() => { setMenu(false); setDraft(region.flavourName); }}>
@@ -208,26 +160,17 @@ const RegionRow = ({ region, banner, nodes, heroes, onTravel, onMessage }) => {
     );
 };
 
-/** What a row shows besides the summary: its banner, its main Tokens and the heroes there. */
-function rowFacts(region, out) {
-    const record = Atlas.getRegion(region.id);
-    const board = region.active ? GameState.state?.board : record?.board;
-    return { banner: bannerForRegion(record || region), nodes: mainNodes(board), heroes: region.active ? out : [] };
-}
-
 /**
- * Every Region the guild has settled, down the left page and on down the right, one row per Region on its area
- * banner: its names, its main Tokens, the day it was settled, its Token count and the heroes there;
- * Travel, and a "…" menu for Rename, Archive and Abandon (asked first). The Region the guild is in
- * reads "Here". The Starter Camp comes first, then by the day settled; the archive sits behind a
- * toggle at the foot.
+ * Every Region the guild has settled, down the left page and on down the right, one row per Region
+ * on its area banner: its two names, Travel, and a "…" menu for Rename, Archive and Abandon (asked
+ * first). The Region the guild is in shows the hero flag instead of Travel. The Starter Camp comes
+ * first, then by the day settled; the archive sits behind a toggle at the foot.
  */
 export const RegionList = ({ version, onTravel, message, onMessage }) => {
     const regions = useMemo(() => regionOrder(Atlas.list()), [version]); // eslint-disable-line react-hooks/exhaustive-deps
     const archived = useMemo(() => regionOrder(Atlas.list({ archived: true })), [version]); // eslint-disable-line react-hooks/exhaustive-deps
-    const out = useMemo(() => heroesOut(), [version]); // eslint-disable-line react-hooks/exhaustive-deps
     const [showArchive, setShowArchive] = useState(false);
-    const row = (r) => <RegionRow key={r.id} region={r} {...rowFacts(r, out)} onTravel={onTravel} onMessage={onMessage} />;
+    const row = (r) => <RegionRow key={r.id} region={r} banner={bannerForRegion(r)} onTravel={onTravel} onMessage={onMessage} />;
     // Read like a book: the first half down the left page, the rest down the right.
     const half = Math.ceil(regions.length / 2);
     const page = (children) => (

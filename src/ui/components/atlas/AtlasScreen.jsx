@@ -10,7 +10,7 @@ import { AtlasTome } from './AtlasTome.jsx';
 
 export const ATLAS_TAB = Object.freeze({ REGIONS: 'regions', CARTOGRAPHY: 'cartography' });
 
-/** The bookmark ribbons, in page order. */
+/** The page tabs, in page order, top to bottom. */
 const TABS = [
     { id: ATLAS_TAB.CARTOGRAPHY, label: SCREEN_TEXT.TAB_CARTOGRAPHY, colour: '#7a1f1f' },
     { id: ATLAS_TAB.REGIONS, label: SCREEN_TEXT.TAB_REGIONS, colour: '#1f3f6e' }
@@ -20,7 +20,7 @@ const CLOSE_SPRITE = '/assets/ui/u_cancel_red.png';
 
 /**
  * The Atlas: the owner's open book popping up over the mat (the mat stays as it is behind it),
- * opened from its bubble, with two sections behind bookmark ribbons. **Regions** lists every
+ * opened from its bubble, with two sections behind page tabs. **Regions** lists every
  * Region the guild has settled (travel, rename, archive, abandon); **Cartography** writes a new
  * one from maps. Escape, the close button or a press outside the book closes it, and closing
  * takes nothing: the Cartography slots are only remembered while it is open.

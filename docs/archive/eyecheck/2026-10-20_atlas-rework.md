@@ -48,3 +48,10 @@ Write `ok` or what to change after each `Verdict:`.
 9. The placeholder sprite each test map shows: ok for now (your real map
    items pick theirs in the CMS)?
    Verdict:
+
+## Owner (2026-10-20)
+
+"Atlas system is in a good place for now, we'll refine it on later passes."
+Merged to `main` 98bd5d8a. Open look questions (flag contrast, the … menu,
+tab width, the per-change preview build, the empty parchment) stay for the
+refinement pass.
