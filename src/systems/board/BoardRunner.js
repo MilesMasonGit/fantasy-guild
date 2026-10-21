@@ -31,6 +31,7 @@ import * as Placement from './Placement.js';
 import * as MatPlacement from './MatPlacement.js';
 import * as StatusApplication from './StatusApplication.js';
 import * as EffectFeedback from './EffectFeedback.js';
+import * as OutputRules from './OutputRules.js';
 import * as LoadoutMoments from './LoadoutMoments.js';
 import * as HeroEffects from '../hero/HeroEffects.js';
 import * as HeroManager from '../hero/HeroManager.js';
@@ -243,17 +244,9 @@ function completeCycle(instance, def, io, heroId, config = def.config) {
 
     // Item output lands on the BOARD, not in the Bank: it is not banked until collected, and if the
     // Bank is full it simply waits there. A Token output stands on the mat beside the station.
-    // YIELD is widened the same way: a Sawmill beside a Forest nudges what it produces. Fractional
-    // results round probabilistically, so a x1.5 yield is 1, plus a 50% chance of a 2nd, rather
-    // than silently truncating every small buff to nothing.
-    // LOOT_MULT: chance for double loot. Another probability axis: resolved to a percentage, then
-    // rolled ONCE per cycle rather than per output entry, so a lucky cycle doubles everything it
-    // made rather than a random subset of it.
+    // YIELD and LOOT_MULT are the output rules a kill's loot follows too (`OutputRules`).
     const isGuildHall = instance.typeId === 'token_guild_hall';
-    const doubleChance = (failed || isGuildHall) ? 0 : TileModifiers.resolveAxis(
-        id, EFFECT_TYPES.LOOT_MULT, 0, config.skill
-    );
-    const doubled = doubleChance > 0 && Math.random() * 100 < doubleChance;
+    const doubled = (failed || isGuildHall) ? false : OutputRules.rollDoubleLoot(id, config.skill);
 
     // What this cycle actually made, for the `a neighbour produces X` trigger.
     // ⚠️ Only what genuinely landed: an output whose chance roll missed, or
@@ -271,16 +264,11 @@ function completeCycle(instance, def, io, heroId, config = def.config) {
             continue;
         }
 
-        // Roll the authored range FIRST, then widen it. Order matters: a Sawmill should scale
-        // whatever this cycle actually rolled, not the range's midpoint, otherwise a 1-5 output
-        // would buff identically on a lucky cycle and an unlucky one.
-        const scaled = isGuildHall
-            ? rollOutputQuantity(output)
-            : Math.max(0, TileModifiers.resolveAxis(
-                id, EFFECT_TYPES.YIELD, rollOutputQuantity(output), config.skill
-            ));
-        const whole = Math.floor(scaled);
-        const rolled = whole + (Math.random() < (scaled - whole) ? 1 : 0);
+        // Roll the authored range FIRST, then widen it, so a 1-5 output buffs a lucky cycle more
+        // than an unlucky one.
+        const rolled = isGuildHall
+            ? OutputRules.roundUp(rollOutputQuantity(output))
+            : OutputRules.widenYield(id, config.skill, rollOutputQuantity(output));
         const quantity = doubled ? rolled * 2 : rolled;
         if (quantity <= 0) continue;
 
@@ -292,26 +280,8 @@ function completeCycle(instance, def, io, heroId, config = def.config) {
         }
     }
 
-    // BONUS_DROP: a nearby block granting something the Token does not make itself. Rolled per
-    // entry, after the Token's own outputs, and skipped entirely on a failed cycle: nothing
-    // happened, so nothing drops. Lands on the board like any other output rather than straight
-    // into the Bank, so it reads as part of the same completion.
-    if (!failed && !isGuildHall) {
-        for (const grant of TileModifiers.collectItemGrants(id, EFFECT_TYPES.BONUS_DROP)) {
-            const chance = grant.chance ?? 100;
-            if (chance < 100 && Math.random() * 100 > chance) continue;
-            // An item-borne grant spends units of the item that granted it. Paid AFTER the roll, so
-            // a miss costs nothing: the same charge-burns-on-service-not-on-luck rule Tokens
-            // follow. A Token's grant carries no `sourceItemIds` and pays nothing here.
-            if (!HeroEffects.payLoadoutCost(grant)) continue;
-            const quantity = Math.max(1, grant.quantity || 1);
-            SpriteLayer.addSprite('item', grant.itemId, quantity, id);
-            produced.push(grant.itemId);
-            // Announced only once the roll has actually landed: a 5% grant that missed did nothing,
-            // and saying its name would teach the player the opposite of how often it works.
-            EffectFeedback.announce(id, grant);
-        }
-    }
+    // BONUS_DROP, skipped entirely on a failed cycle: nothing happened, so nothing drops.
+    if (!failed && !isGuildHall) produced.push(...OutputRules.dropBonusGrants(id));
 
     // `Applies`: a neighbour putting a status on the hero who just worked here. The same moment and
     // the same rules as BONUS_DROP directly above: skipped on a failed cycle, and it needs a

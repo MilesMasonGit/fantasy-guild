@@ -392,8 +392,8 @@ Enemies are Tokens with `enemy: { level, style, budgetScale?, hostile? }`.
   shipped enemy is melee, so only melee against ranged or stealth heroes
   triggers it yet.
 - Kills give XP to the hero's combat skill and count as a work cycle for
-  neighbour rules. Loot drops on the mat. **Kill loot ignores yield/double-loot
-  bonuses** (ticket T-017).
+  neighbour rules. Loot drops on the mat, through the same yield, double-loot
+  and bonus-drop rules as a station's output (T-017).
 - Crit is stubbed at 0. *(`FormulaRegistry.js`, `src/systems/combat/`)*
 
 ### Status effects — Latent
