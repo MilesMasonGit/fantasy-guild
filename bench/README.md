@@ -22,7 +22,7 @@ layout/paint cost are Tier B (the in-game Perf HUD). `npm run bench:draw` and
 | `npm run bench -- --long` | S6 for the full 8 game-hours (288,000 ticks) | ~8 min more |
 | `npm run bench -- --repeats=5` | more timing runs per scenario (the median is reported) | |
 | `npm run bench -- --no-profile` | skip the profile passes | faster |
-| `npm run bench -- --cpu-prof` | also write V8 `.cpuprofile` files to `bench/results/prof/` (open in Chrome DevTools → Performance). ⚠️ On Node 24 the file written is the module-loader thread's idle profile, not the engine's (both threads get the same fixed name; checked 2026-10-08). Until fixed, profile with `node --cpu-prof --cpu-prof-dir=<dir>` and no name, and read the `.0.` file (see Catch-up timing below) | |
+| `npm run bench -- --cpu-prof` | also write one V8 `.cpuprofile` per run to `bench/results/prof/`, named `<scenario>-<mode>-<run>-<time>.cpuprofile` (open in Chrome DevTools → Performance). Each run profiles into its own folder and only the main thread's file (the engine's) is kept; on Node 24 the module loader's thread writes a second, idle profile, which is dropped (`bench/lib/cpuprof.mjs`) | |
 | `npm run bench -- --inject-slow=0.5` | add a tick handler that busy-waits 0.5 ms — for proving `--compare` catches a slowdown | |
 | `npm run bench:micro` | micro-benchmarks at 40 / 150 / 300 Tokens (Vitest `bench`, node environment) | ~15 s |
 
