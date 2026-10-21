@@ -123,8 +123,7 @@ function createFight(instanceId, heroId, enemy, drops) {
             enemyHp: { current: enemy.hp, max: enemy.hp },
             enemyTickProgress: 0,
             heroTickProcesses: {},
-            state: { intermissionTimer: 0 },
-            stats: {}
+            state: { intermissionTimer: 0 }
         }
     };
 }

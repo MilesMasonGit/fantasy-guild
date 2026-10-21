@@ -1,4 +1,4 @@
-import { memo, useMemo, useState, useEffect } from 'react';
+import { memo, useMemo, useState } from 'react';
 import { useGameState } from '../../hooks/useGameState.js';
 import { cn } from '../../utils/cn.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
@@ -11,10 +11,8 @@ import { Tooltip } from '../base/Tooltip.jsx';
 import { formatCompact } from '../../../utils/Formatters.js';
 import { matCap } from '../../../systems/board/MatCap.js';
 import { isMapItem, whatItWrites, MAP_TEXT } from '../../../systems/atlas/mapItems.js';
-import { Landmark, X, Lock, Check, AlertTriangle, BoxSelect } from 'lucide-react';
-
-import { EventBus } from '../../../systems/core/EventBus.js';
-import { ENGINE_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
+import { Landmark, Lock, Check, BoxSelect } from 'lucide-react';
+import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /** Hard cap on bank tabs: 1 free + 15 via Guild Hall (max total 16). */
 const BANK_TAB_CAP = 16;
@@ -28,19 +26,11 @@ const BANK_TAB_CAP = 16;
  * to file it there, onto a hero to equip (payload kind 'item'). Search matches ALL tabs. Item
  * details live in the shared InspectionPanel.
  */
-export const BankTab = ({ filter, selectedItemId, onInspect, searchQuery = '' }) => {
+export const BankTab = ({ selectedItemId, onInspect, searchQuery = '' }) => {
     const [activeTabId, setActiveTabId] = useState(null);
-    const [typeFilter, setTypeFilter] = useState(null); // transient, from auto-open
-    const [searchTerm, setSearchTerm] = useState('');
     // Select mode: multi-select stacks to drag-move between tabs.
     const [selectMode, setSelectMode] = useState(false);
     const [selectedIds, setSelectedIds] = useState(() => new Set());
-
-    useEffect(() => {
-        if (!filter) return;
-        setTypeFilter(filter.itemType || null);
-        setSearchTerm('');
-    }, [filter]);
 
     const bank = useGameState(
         state => {
@@ -102,7 +92,7 @@ export const BankTab = ({ filter, selectedItemId, onInspect, searchQuery = '' })
     const tabs = bank.groupOrder.map(id => ({ id, title: bank.titles[id] || 'Tab' }));
     const currentTabId = bank.groupOrder.includes(activeTabId) ? activeTabId : bank.groupOrder[0];
 
-    const activeSearch = (searchQuery || searchTerm).trim();
+    const activeSearch = (searchQuery || '').trim();
     const searching = activeSearch.length > 0;
     const visible = useMemo(() => {
         let list = searching
@@ -112,12 +102,11 @@ export const BankTab = ({ filter, selectedItemId, onInspect, searchQuery = '' })
                     || e.template.tags?.some(tag => tag.toLowerCase().includes(term));
             })
             : (tabItems[currentTabId] || []);
-        if (typeFilter) list = list.filter(e => e.template.type === typeFilter);
         return list;
-    }, [searching, activeSearch, stocked, tabItems, currentTabId, typeFilter]);
+    }, [searching, activeSearch, stocked, tabItems, currentTabId]);
 
     // Manual sorting is only meaningful on the plain tab view.
-    const canReorder = !searching && !typeFilter;
+    const canReorder = !searching;
 
     /** Drop on a tile: reorder within this tab, unequip hero item, or file + position from another tab. */
     const handleTileDrop = (payload, targetId) => {
@@ -215,16 +204,6 @@ export const BankTab = ({ filter, selectedItemId, onInspect, searchQuery = '' })
                  */}
                 {selectMode && (
                     <span className="text-(length:--font-size-xs) text-gi-muted tabular-nums">{selectedEntries.length} selected</span>
-                )}
-                {typeFilter && (
-                    <Tooltip lines={['Clear the slot filter']}>
-                    <button
-                        onClick={() => setTypeFilter(null)}
-                        className="flex items-center gap-1 px-2 py-1 rounded border border-gi-gold/50 bg-gi-gold/10 text-(length:--font-size-xs) font-bold uppercase text-gi-text"
-                    >
-                        {typeFilter} <X size={10} />
-                    </button>
-                    </Tooltip>
                 )}
                 <Tooltip lines={['Item stacks in the bank / slot capacity']}>
                 <span
@@ -446,11 +425,10 @@ const BankTabButtonBody = memo(function BankTabButtonBody({ tab, index, first, a
 });
 
 /**
- * Item details, rendered by the shared InspectionPanel. `showSell` is still accepted but
- * ignored: nothing sells.
+ * Item details, rendered by the shared InspectionPanel. Nothing sells, so there are no sell
+ * controls.
  */
-// eslint-disable-next-line no-unused-vars
-export const ItemInspection = ({ entry, showSell = true, showViewInBank = false }) => {
+export const ItemInspection = ({ entry }) => {
     const { template, count } = entry;
     const writes = isMapItem(template) ? whatItWrites(template, { cap: matCap() }) : null;
     return (
@@ -526,7 +504,7 @@ export const ItemInspection = ({ entry, showSell = true, showViewInBank = false 
                         <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-[#181412] border border-white/10 text-xs">
                             <span className="text-gi-muted">Restores</span>
                             <span className="font-bold text-gi-text">
-                                +{template.restoreAmount} {template.tags?.includes('drink') ? 'Energy' : 'HP'}
+                                +{template.restoreAmount} HP
                             </span>
                         </div>
                     )}
@@ -540,17 +518,6 @@ export const ItemInspection = ({ entry, showSell = true, showViewInBank = false 
                     <span className="font-bold text-gi-text tabular-nums">{count.toLocaleString()}</span>
                 </div>
             </div>
-
-            {showViewInBank && count > 0 && (
-                <div className="pt-2 border-t border-gi-border/40">
-                    <button
-                        onClick={() => EventBus.publish(UI_EVENTS.UI_OPEN_DRAWER, { tab: 'bank' })}
-                        className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded border font-bold text-xs md:leading-[calc(1.25/0.875)] uppercase tracking-wide transition-colors border-gi-primary/60 bg-gi-primary/15 text-gi-text hover:bg-gi-primary/25 cursor-pointer active:scale-[0.99]"
-                    >
-                        <Landmark size={14} className="text-gi-primary" /> View in Item Bank
-                    </button>
-                </div>
-            )}
 
         </div>
     );

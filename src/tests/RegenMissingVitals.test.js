@@ -13,17 +13,11 @@ vi.mock('../systems/hero/HeroManager.js', () => ({
         if (!h?.hp) return { success: false, error: 'NO_HP' };
         h.hp.current = Math.min(h.hp.max, h.hp.current + amount);
         return { success: true };
-    }),
-    modifyHeroEnergy: vi.fn((id, amount) => {
-        const h = heroes.find(x => x.id === id);
-        if (!h?.energy) return { success: false, error: 'NO_ENERGY' };
-        h.energy.current = Math.min(h.energy.max, h.energy.current + amount);
-        return { success: true };
     })
 }));
 
 vi.mock('../systems/hero/ConsumptionSystem.js', () => ({
-    tryEat: vi.fn(() => false)
+    tryEat: vi.fn(() => [])
 }));
 
 vi.mock('../systems/core/EventBus.js', () => ({
@@ -43,7 +37,7 @@ vi.mock('../systems/hero/logic/HeroLookup.js', () => ({
 import * as RegenSystem from '../systems/hero/RegenSystem.js';
 import * as HeroState from '../systems/hero/logic/HeroState.js';
 
-/** Long enough that both the HP and Energy intervals fire. */
+/** Long enough that the HP interval fires. */
 const A_GOOD_LONG_TICK = 60_000;
 
 beforeEach(() => {
@@ -53,19 +47,7 @@ beforeEach(() => {
 });
 
 describe('RegenSystem tolerates heroes with missing vitals', () => {
-    it('does not throw for a hero with no energy — the crash that spammed every frame', () => {
-        heroes.push({ id: 'h1', status: 'idle', hp: { current: 10, max: 100 } });
-
-        expect(() => RegenSystem.tick(A_GOOD_LONG_TICK)).not.toThrow();
-    });
-
-    it('does not throw for a hero with no hp either', () => {
-        heroes.push({ id: 'h2', status: 'idle', energy: { current: 10, max: 100 } });
-
-        expect(() => RegenSystem.tick(A_GOOD_LONG_TICK)).not.toThrow();
-    });
-
-    it('does not throw for a hero with neither', () => {
+    it('does not throw for a hero with no hp — the crash that spammed every frame', () => {
         heroes.push({ id: 'h3', status: 'idle' });
 
         expect(() => RegenSystem.tick(A_GOOD_LONG_TICK)).not.toThrow();
@@ -76,16 +58,12 @@ describe('RegenSystem tolerates heroes with missing vitals', () => {
      * One malformed hero in a roster of eight should cost nothing.
      */
     it('still regenerates the healthy heroes standing next to the broken one', () => {
-        heroes.push({ id: 'broken', status: 'idle', hp: { current: 10, max: 100 } });
-        heroes.push({ id: 'fine', status: 'idle', hp: { current: 10, max: 100 }, energy: { current: 10, max: 100 } });
+        heroes.push({ id: 'broken', status: 'idle' });
+        heroes.push({ id: 'fine', status: 'idle', hp: { current: 10, max: 100 } });
 
         RegenSystem.tick(A_GOOD_LONG_TICK);
 
-        const fine = heroes.find(h => h.id === 'fine');
-        expect(fine.hp.current).toBeGreaterThan(10);
-        expect(fine.energy.current).toBeGreaterThan(10);
-        // and the broken one still got the vital it DOES have
-        expect(heroes.find(h => h.id === 'broken').hp.current).toBeGreaterThan(10);
+        expect(heroes.find(h => h.id === 'fine').hp.current).toBeGreaterThan(10);
     });
 });
 
@@ -95,17 +73,8 @@ describe('RegenSystem tolerates heroes with missing vitals', () => {
  * data.
  */
 describe('HeroState mutators report a missing vital rather than throwing', () => {
-    it('modifyHeroEnergy returns NO_ENERGY for a hero that has none', () => {
-        lookupHeroes.push({ id: 'noEnergy', hp: { current: 5, max: 10 } });
-
-        const result = HeroState.modifyHeroEnergy('noEnergy', 5);
-
-        expect(result.success).toBe(false);
-        expect(result.error).toBe('NO_ENERGY');
-    });
-
     it('modifyHeroHp returns NO_HP for a hero that has none', () => {
-        lookupHeroes.push({ id: 'noHp', energy: { current: 5, max: 10 } });
+        lookupHeroes.push({ id: 'noHp' });
 
         const result = HeroState.modifyHeroHp('noHp', 5);
 
@@ -114,9 +83,8 @@ describe('HeroState mutators report a missing vital rather than throwing', () =>
     });
 
     it('still writes normally to a well-formed hero', () => {
-        lookupHeroes.push({ id: 'ok', hp: { current: 5, max: 10 }, energy: { current: 5, max: 10 } });
+        lookupHeroes.push({ id: 'ok', hp: { current: 5, max: 10 } });
 
         expect(HeroState.modifyHeroHp('ok', 3)).toMatchObject({ success: true, newHp: 8 });
-        expect(HeroState.modifyHeroEnergy('ok', 3)).toMatchObject({ success: true, newEnergy: 8 });
     });
 });

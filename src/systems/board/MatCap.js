@@ -21,7 +21,7 @@ import * as BoardState from './BoardState.js';
 /** The cap every guild starts with. The Guild Hall's Token Cap upgrade raises it. */
 export const BASE_TOKEN_CAP = TOKEN_CAP_BASE;
 
-/** Whether an instance is the Guild Hall — the same test `Cartographer` uses. */
+/** Whether an instance is the Guild Hall. */
 export function isGuildHall(instance) {
     return instance?.typeId === 'token_guild_hall' || !!getTokenType(instance?.typeId)?.isGuildHall;
 }

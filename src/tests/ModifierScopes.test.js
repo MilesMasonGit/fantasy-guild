@@ -39,10 +39,10 @@ import { EFFECT_TYPES } from '../systems/effects/constants.js';
  * @see playmat_gap_analysis.md §1.3
  */
 
-/** A percentage-bucket SPEED modifier, the shape auras are authored in. */
+/** A percentage-bucket YIELD modifier, the shape auras are authored in. */
 const pct = (source, value, category = 'mining') => ({
     source,
-    type: EFFECT_TYPES.SPEED,
+    type: EFFECT_TYPES.YIELD,
     target: { category },
     bucket: 'percentage',
     value
@@ -50,7 +50,7 @@ const pct = (source, value, category = 'mining') => ({
 
 /** The resolved percentage factor one aggregator contributes for a skill. */
 const factor = (agg, category = 'mining') =>
-    combinePercentages(agg.collectPercentages(EFFECT_TYPES.SPEED, category));
+    combinePercentages(agg.collectPercentages(EFFECT_TYPES.YIELD, category));
 
 describe('normalizeAuras — one or many (free-form authoring)', () => {
     it('reads a single modifier, a list, and nothing at all', () => {
@@ -81,7 +81,7 @@ describe('Rule 1 — duplicates stack additively (D-23)', () => {
         const agg = new ModifierAggregator('guild');
         agg.addModifier({ ...pct('a', 2), bucket: 'multiplier' });
         agg.addModifier({ ...pct('b', 3), bucket: 'multiplier' });
-        expect(agg.getMultiplierBucket(EFFECT_TYPES.SPEED, 'mining')).toBe(5);
+        expect(agg.getMultiplierBucket(EFFECT_TYPES.YIELD, 'mining')).toBe(5);
     });
 
     it('a neutral source contributes NOTHING, not a 1.0', () => {
@@ -204,9 +204,6 @@ describe('Scope composition — the rule Phase 5 must not get wrong', () => {
      * aggregator, its 8 neighbours', and the guild's. Those contributions must
      * be merged into ONE set of buckets and resolved once — not resolved per
      * scope and multiplied together.
-     *
-     * `StatProcessor.calculateWorkcycleStats` already does this correctly for
-     * SPEED today; the test below is what stops the new scopes doing it wrong.
      */
     it('merging scopes into one bucket stacks additively', () => {
         const self = new ModifierAggregator('token');
@@ -218,9 +215,9 @@ describe('Scope composition — the rule Phase 5 must not get wrong', () => {
         guild.addModifier(pct('guild:aura_1', 0.25));
 
         const percentages = [
-            ...self.collectPercentages(EFFECT_TYPES.SPEED, 'mining'),
-            ...neighbour.collectPercentages(EFFECT_TYPES.SPEED, 'mining'),
-            ...guild.collectPercentages(EFFECT_TYPES.SPEED, 'mining')
+            ...self.collectPercentages(EFFECT_TYPES.YIELD, 'mining'),
+            ...neighbour.collectPercentages(EFFECT_TYPES.YIELD, 'mining'),
+            ...guild.collectPercentages(EFFECT_TYPES.YIELD, 'mining')
         ];
 
         // +25% three times = +75%.
@@ -253,8 +250,8 @@ describe('Scope composition — the rule Phase 5 must not get wrong', () => {
         self.addModifier(pct('token:self', 0.25));
 
         const percentages = [
-            ...self.collectPercentages(EFFECT_TYPES.SPEED, 'mining'),
-            ...empty.collectPercentages(EFFECT_TYPES.SPEED, 'mining')
+            ...self.collectPercentages(EFFECT_TYPES.YIELD, 'mining'),
+            ...empty.collectPercentages(EFFECT_TYPES.YIELD, 'mining')
         ];
         expect(applyThreeBucket(1, { percentages })).toBeCloseTo(1.25);
     });

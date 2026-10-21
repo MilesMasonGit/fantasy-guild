@@ -1,4 +1,3 @@
-import { bumpFightRev } from './FightRevision.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import { ModifierAggregator } from '../effects/ModifierAggregator.js';
 import * as CombatFormulas from '../../utils/CombatFormulas.js';
@@ -20,31 +19,14 @@ export function processCombat(fight, trait, deltaTime) {
     if (!combat.enemyHp) combat.enemyHp = { current: enemy.hp, max: enemy.hp };
     if (!combat.state) combat.state = { intermissionTimer: 0 };
     if (!combat.heroTickProcesses) combat.heroTickProcesses = {};
-    if (!combat.stats) combat.stats = {};
 
     const heroId = fight.assignedHeroId;
     if (!heroId) {
-        let changed = false;
-        if (fight.status !== 'idle') {
-            // Ephemeral fight objects aren't in any registry, so write directly.
-            fight.status = 'idle';
-            changed = true;
-        }
-        if (combat.enemyHp && combat.enemyHp.current !== combat.enemyHp.max) {
-            combat.enemyHp.current = combat.enemyHp.max;
-            changed = true;
-        }
-        if (combat.enemyTickProgress !== 0) {
-            combat.enemyTickProgress = 0;
-            changed = true;
-        }
-        if (Object.keys(combat.heroTickProcesses || {}).length > 0) {
-            combat.heroTickProcesses = {};
-            changed = true;
-        }
-        if (changed) {
-            bumpFightRev(fight);
-        }
+        // Ephemeral fight objects aren't in any registry, so write directly.
+        fight.status = 'idle';
+        if (combat.enemyHp) combat.enemyHp.current = combat.enemyHp.max;
+        combat.enemyTickProgress = 0;
+        if (Object.keys(combat.heroTickProcesses || {}).length > 0) combat.heroTickProcesses = {};
         return;
     }
 
@@ -56,19 +38,13 @@ export function processCombat(fight, trait, deltaTime) {
             combat.state.intermissionTimer = 0;
             combat.enemyHp = { current: enemy.hp, max: enemy.hp };
             fight.status = 'active';
-            bumpFightRev(fight);
         }
         return;
     }
 
-    if (fight.status === 'idle') {
-        fight.status = 'active';
-        bumpFightRev(fight);
-    }
+    if (fight.status === 'idle') fight.status = 'active';
 
     // 1. Hero Attacks
-    const heroStatsForUi = [];
-
     for (const heroId of assignedHeroIds) {
         const hero = HeroManager.getHero(heroId);
         if (!hero || hero.status === 'wounded') continue;
@@ -77,22 +53,10 @@ export function processCombat(fight, trait, deltaTime) {
         if (!hero.aggregator) hero.aggregator = new ModifierAggregator(hero.id);
 
         combat.heroTickProcesses[heroId] = (combat.heroTickProcesses[heroId] || 0) + deltaTime;
-        combat.heroTickProgress = combat.heroTickProcesses[heroId];
 
         // Style comes from the equipped weapon; unarmed falls back to the hero's combat skill.
         const combatStyle = CombatFormulas.getHeroCombatStyle(hero);
-        const stats = combat.stats || {};
-        const attackSpeed = stats.attackSpeed || CombatFormulas.HERO_ATTACK_INTERVAL_MS;
-        combat.heroAttackSpeed = attackSpeed;
-
-        heroStatsForUi.push({
-            id: hero.id,
-            hp: hero.hp,
-            energy: hero.energy,
-            progress: combat.heroTickProcesses[heroId],
-            attackSpeed: attackSpeed,
-            isFleeing: fight.isFleeing
-        });
+        const attackSpeed = CombatFormulas.HERO_ATTACK_INTERVAL_MS;
 
         if (!fight.isFleeing && combat.heroTickProcesses[heroId] >= attackSpeed) {
             handleHeroAttack(fight, hero, enemy, combatStyle, attackSpeed);

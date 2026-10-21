@@ -40,6 +40,24 @@ sketches only. Builds on [concept_progression.md](concept_progression.md)
   are carried **in the hands, alongside weapons** (hands: 2), and set what a
   hero can gather. Tool Tokens on the mat go away. Stations (anvils, furnaces,
   sawmills) stay Tokens on the mat. Tools never wear out (gear never breaks).
+- **Tools in detail** (owner interview, 2026-10-20; T-126):
+  - **A tool takes one hand**: a tool and a one-handed weapon fit together;
+    a two-handed weapon leaves no hand for a tool; two tools (no weapon)
+    let a hero do both jobs.
+  - **Needed by kind; the tool's tier gates node tiers**: no pickaxe, no
+    mining; a Copper Pickaxe mines copper and stone, iron ore needs an Iron
+    Pickaxe or better. **Gating only for now** (no speed or yield from the
+    tool; numbers later).
+  - **No tool**: the hero does other allowed work; the Token they'd work
+    shows a **"Needs Pickaxe" speech bubble** (the kind of tool it needs).
+  - **Swapping is by hand only**, like weapons, from the Bank.
+  - **First tools**: a new game starts with a basic pickaxe, woodaxe,
+    fishing rod and sickle **in the Bank**; the tutorial has a hero equip
+    one. Better tools are smithed. New heroes arrive empty-handed.
+  - **Content**: tools become **items** (a hand slot and a tier); tool
+    Tokens on the mat and recipes that need or spend tool charges go. The
+    owner has made a Copper Pickaxe item already; the rest come as a CMS
+    change pack for review.
 
 ## Loops
 

@@ -110,7 +110,7 @@ function pointerWithinBoxes({ droppableContainers, droppableRects, pointerCoordi
 
 /**
  * Collision: the pointer's containing targets, smallest-area first, so a nested child target
- * (e.g. a card tile) wins over its parent while the parent still resolves over its own empty
+ * (e.g. a Bank tile) wins over its parent while the parent still resolves over its own empty
  * space.
  */
 export function smallestWithin(args) {
@@ -388,8 +388,8 @@ export const DeckDndProvider = ({ children }) => {
 
     const sensors = useSensors(useSensor(AlphaPointerSensor, SENSOR_OPTIONS));
 
-    // While a drag is live, track which surface the cursor is over so the ghost can bloom bold
-    // over the board and stay compact over a drawer.
+    // While a drag is live, track which surface the cursor is over: the ghost is told `bold`
+    // over the board (`DragGhost` says which ghosts read it).
     useEffect(() => {
         if (!activePayload) return;
         regionsRef.current = snapshotDndRegions();
@@ -420,7 +420,7 @@ export const DeckDndProvider = ({ children }) => {
         sfx(DRAG_SFX.pickup);
 
         // Starting a hero drag from the dock tab or inspection panel while the hero is already
-        // on the playmat shoots a flying sprite from the playmat tile straight to the cursor.
+        // on the playmat shoots a flying sprite from where the hero stands straight to the cursor.
         if (payload?.kind === DRAG_KIND.HERO && payload.heroId && payload.from?.dock) {
             const at = displayPointOf(payload.heroId);
             if (at) {
@@ -462,12 +462,10 @@ export const DeckDndProvider = ({ children }) => {
         const payload = startPayloadRef.current || active?.data?.current;
         let success = false;
 
-        // A live target under the release point wins over dnd-kit's `over`, which can be stale.
-        const live = payload ? liveDropTargetAt(payload, pointerRef.current) : null;
-        if (payload && (live || over)) {
-            const data = live || over.data?.current;
+        if (payload && over) {
+            const data = over.data?.current;
             if (data?.accepts?.(payload)) {
-                const node = live ? live.node?.() : document.querySelector(`[data-dnd-droppable-id="${over.id}"]`);
+                const node = document.querySelector(`[data-dnd-droppable-id="${over.id}"]`);
                 if (node) {
                     const r = node.getBoundingClientRect();
                     glideTargetRef.current = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
@@ -522,7 +520,7 @@ export const DeckDndProvider = ({ children }) => {
                 ];
             }
             // ⚠️ On a SUCCESSFUL drop the ghost must vanish at once, not glide. State updates
-            // synchronously in `handleDragEnd`, so the real Token is already on the tile, and
+            // synchronously in `handleDragEnd`, so the real Token is already in place, and
             // a glide would draw the same sprite twice in the same place. The destination's
             // landing animation starts raised and drops where the ghost was, so the instant
             // handover is invisible. A MISS still animates: the branch above springs the ghost
@@ -634,38 +632,6 @@ export function useEntityDrag({
         };
     }, [drags, disabled, keyboardAccessible, isDragging, describedBy]);
     return { setNodeRef, isDragging, handleProps };
-}
-
-/**
- * Drop targets that answer for themselves at the moment of release, ahead of dnd-kit's `over`.
- * ⚠️ dnd-kit learns that a target was switched on only from React's passive effects, about
- * 25 ms after the pointer move that opened it, and its `over` lags further behind. A pop-out
- * target (the bin sidebar) is drawn open within ~5 ms of that move, so a release in between
- * landed on whatever `over` still named (the mat). A live target is asked directly, with the
- * live pointer, so what the player sees open is what takes the drop.
- * Each entry: `{ accepts(payload), contains(pointer), onDrop(payload, ctx), node() }`.
- */
-const liveDropTargets = new Set();
-
-/** Register a live drop target while the calling component is mounted (see above). */
-export function useLiveDropTarget(target) {
-    const ref = useRef(target);
-    ref.current = target;
-    useEffect(() => {
-        const entry = { get: () => ref.current };
-        liveDropTargets.add(entry);
-        return () => { liveDropTargets.delete(entry); };
-    }, []);
-}
-
-/** The live drop target that takes `payload` released at `pointer`, or null. */
-export function liveDropTargetAt(payload, pointer) {
-    if (!payload || !pointer) return null;
-    for (const entry of liveDropTargets) {
-        const target = entry.get();
-        if (target?.accepts?.(payload) && target.contains?.(pointer)) return target;
-    }
-    return null;
 }
 
 /**

@@ -74,7 +74,6 @@ export function generateHero(options = {}) {
         aggregator: new ModifierAggregator(null),
 
         hp: { current: maxHp, max: maxHp },
-        energy: { current: 100, max: 100 },
         status: 'idle',
         woundedUntil: null,
 

@@ -71,12 +71,10 @@ import { migrateRecipeList } from '../../systems/effects/skillIdMigration.js';
 function loadJsonRecipes() {
     const all = [];
 
-    for (const source of [DatabaseManager.recipePoolFilesSingle, DatabaseManager.recipePoolFilesGlob]) {
+    for (const source of [DatabaseManager.recipePoolFilesSingle]) {
         for (const [path, module] of Object.entries(source || {})) {
             try {
                 const data = module.default || module;
-                // Concatenate rather than replace, so recipes can be split
-                // across files by topic without one file shadowing another.
                 // ⚠️ `registerRecipePools` must not rename (see `skillIdMigration.js`).
                 if (Array.isArray(data)) all.push(...migrateRecipeList(data));
             } catch (error) {

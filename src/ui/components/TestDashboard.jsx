@@ -18,7 +18,7 @@ import { NotificationsDevSection } from '../dev/NotificationsDevSection.jsx';
 import { TerrainDevSection } from '../dev/TerrainDevSection.jsx';
 import { AtlasDevSection } from '../dev/AtlasDevSection.jsx';
 import { StyleSheetPage } from '../dev/StyleSheetPage.jsx';
-import { ENGINE_EVENTS, ORPHAN_EVENTS } from '../../systems/core/engineEvents.js';
+import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 import { UI_LISTENER } from '../../systems/core/EventBus.js';
 import { CloseX } from './base/CloseX.jsx';
 
@@ -67,9 +67,6 @@ export const TestDashboard = React.memo(() => {
 
     React.useEffect(() => {
         if (!engine) return;
-        const unsub = engine.EventBus.subscribe(ORPHAN_EVENTS.DEV_OPEN_ANIMATION_STUDIO, () => {
-            setShowAnimationStudio(true);
-        }, UI_LISTENER);
         const handleKeyDown = (e) => {
             if (e.shiftKey && (e.key === 'A' || e.key === 'a') && !['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
                 setShowAnimationStudio(prev => !prev);
@@ -77,17 +74,15 @@ export const TestDashboard = React.memo(() => {
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => {
-            unsub?.();
             window.removeEventListener('keydown', handleKeyDown);
         };
     }, [engine]);
 
     if (!engine) return null;
 
-    // Raise every skill a hero HOLDS — which is 6 of 27, not the whole
-    // registry. Raising a skill means raising its XP to exactly the level
-    // boundary `n` steps up, so each one moves by precisely `n` regardless of
-    // where it currently sits mid-level. Hero level is the average of the held
+    // Raise every skill a hero HOLDS, not the whole registry. Raising a skill
+    // means raising its XP to exactly the level boundary `n` steps up, so each
+    // one moves by precisely `n` regardless of where it currently sits mid-level. Hero level is the average of the held
     // skills (see calculateHeroLevel in HeroGenerator.js), so it moves by `n`
     // too.
     const levelAllHeroes = (n) => {
@@ -283,19 +278,6 @@ export const TestDashboard = React.memo(() => {
                 });
                 engine.EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED);
                 console.log('[Dev] Drained 9 HP from all heroes');
-            }
-        },
-        {
-            label: "🧪 Drain 9 NRJ (All)",
-            onClick: () => {
-                const heroes = engine.GameState.state.heroes;
-                heroes.forEach(h => {
-                    if (h.energy) {
-                        h.energy.current = Math.max(0, h.energy.current - 9);
-                    }
-                });
-                engine.EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED);
-                console.log('[Dev] Drained 9 Energy from all heroes');
             }
         },
     ];

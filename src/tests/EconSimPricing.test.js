@@ -55,16 +55,16 @@ describe('EconSim — PRICE pass', () => {
         it('lands on a neighbouring integer', () => {
             // Level 1, fast (band middle 8s, 4–12s), GPH (factor
             // 1.0), one unit a cycle.
-            //   units/hour = 1 ÷ 8s × 3600 × 1.005 = 452.25
+            //   units/hour = 1 ÷ 8s × 3600 = 450
             //   target = GPH(1) × 1.0 = 1,200/h
-            //   ideal = 1200 ÷ 452.25 = 2.65g
+            //   ideal = 1200 ÷ 450 = 2.67g
             // Band at level 1 is ±25%, so both 2 and 3 land; 3 is closer.
             const result = runSim({ tokens: { a: token('token_grove') }, items: itemsFor('item_a') });
 
             expect(result.cycleTimes.get('token_grove')).toBe(8000);
-            expect(result.details.get('item_a').unitsPerHour).toBeCloseTo(452.25, 1);
+            expect(result.details.get('item_a').unitsPerHour).toBeCloseTo(450, 1);
             expect(result.details.get('item_a').targetPerHour).toBe(1200);
-            expect(result.details.get('item_a').ideal).toBeCloseTo(2.6534, 3);
+            expect(result.details.get('item_a').ideal).toBeCloseTo(2.6667, 3);
             expect(result.values.get('item_a')).toBe(3);
             expect(result.rows.filter(r => r.severity !== 'info')).toHaveLength(0);
         });

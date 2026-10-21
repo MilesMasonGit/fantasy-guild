@@ -34,13 +34,6 @@ const COINS_HAND_SFX = [
     '/assets/audio/sfx/zapsplat_pack_handling_coins_mp3/zapsplat_foley_money_several_coins_loose_change_place_into_another_persons_hand_004_85381.mp3'
 ];
 
-const HERO_ASSIGN_SFX = [
-    '/assets/audio/sfx/zapsplat_pack_playing_cards_mp3/zapsplat_leisure_playing_card_single_place_down_on_table_001_20464.mp3',
-    '/assets/audio/sfx/zapsplat_pack_playing_cards_mp3/zapsplat_leisure_playing_card_single_place_down_on_table_002_20465.mp3',
-    '/assets/audio/sfx/zapsplat_pack_playing_cards_mp3/zapsplat_leisure_playing_card_single_place_down_on_table_003_20466.mp3',
-    '/assets/audio/sfx/zapsplat_pack_playing_cards_mp3/zapsplat_leisure_playing_card_single_place_down_on_table_004_20467.mp3'
-];
-
 const TOKEN_DRAG_SFX = [
     '/assets/audio/sfx/kenney_rpg-audio/Audio/cloth1.ogg',
     '/assets/audio/sfx/kenney_rpg-audio/Audio/cloth2.ogg',

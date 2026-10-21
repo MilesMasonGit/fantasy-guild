@@ -1,23 +1,13 @@
-import { logger } from '../../utils/Logger.js';
 import { MAX_TICK_DELTA_MS } from '../../config/loopConstants.js';
 
 /**
- * TimeManager - Tracks game time and delta between ticks
- * 
- * Responsibilities:
- * - Track real time elapsed
- * - Calculate delta time between updates
- * - Handle pause/resume
- * - Track total game time
+ * TimeManager: measures the delta between ticks. The game's own clock is `time.gameTimeMs` in the
+ * save (`EngineBootstrap`'s time_tracking handler), not anything here.
  */
 
 class TimeManagerClass {
     constructor() {
         this.lastTickTime = 0;
-        this.deltaTime = 0;
-        this.gameTime = 0;        // Total game time in milliseconds
-        this.isPaused = false;
-        this.pausedAt = null;
         /**
          * Game-time this tick could not deliver because it exceeded
          * MAX_TICK_DELTA_MS. Read and zeroed by `GameLoop` via
@@ -26,17 +16,11 @@ class TimeManagerClass {
         this.overflowMs = 0;
     }
 
-    /**
-     * Initialize the time manager
-     * @param {number} savedGameTime - Game time from save data (optional)
-     */
-    init(savedGameTime = 0) {
+    /** Start measuring from now. */
+    init() {
         // `performance.now()`, not `Date.now()` — see `update()`.
         this.lastTickTime = performance.now();
-        this.gameTime = savedGameTime;
-        this.deltaTime = 0;
         this.overflowMs = 0;
-        this.isPaused = false;
     }
 
     /**
@@ -59,20 +43,14 @@ class TimeManagerClass {
     update() {
         const now = performance.now();
 
-        if (this.isPaused) {
-            this.deltaTime = 0;
-            return 0;
-        }
-
         // Floor at 0 first so a backward step can neither produce a negative delta
         // nor subtract from `overflowMs` below.
         const elapsed = Math.max(0, now - this.lastTickTime);
-        this.deltaTime = Math.min(elapsed, MAX_TICK_DELTA_MS);
-        this.overflowMs += elapsed - this.deltaTime;
+        const delta = Math.min(elapsed, MAX_TICK_DELTA_MS);
+        this.overflowMs += elapsed - delta;
         this.lastTickTime = now;
-        this.gameTime += this.deltaTime;
 
-        return this.deltaTime;
+        return delta;
     }
 
     /**
@@ -84,90 +62,6 @@ class TimeManagerClass {
         const overflow = this.overflowMs;
         this.overflowMs = 0;
         return overflow;
-    }
-
-    /**
-     * Get the delta time from the last update
-     * @returns {number} Delta time in milliseconds
-     */
-    getDelta() {
-        return this.deltaTime;
-    }
-
-    /**
-     * Get delta time in seconds (convenience method)
-     * @returns {number} Delta time in seconds
-     */
-    getDeltaSeconds() {
-        return this.deltaTime / 1000;
-    }
-
-    /**
-     * Get total game time
-     * @returns {number} Total game time in milliseconds
-     */
-    getGameTime() {
-        return this.gameTime;
-    }
-
-    /**
-     * Pause the game
-     */
-    pause() {
-        if (!this.isPaused) {
-            this.isPaused = true;
-            this.pausedAt = Date.now();
-            logger.info('TimeManager', 'Game paused');
-        }
-    }
-
-    /**
-     * Resume the game
-     */
-    resume() {
-        if (this.isPaused) {
-            this.isPaused = false;
-            // Adjust lastTickTime to prevent time jump. Must match update()'s
-            // clock — Date.now() here would hand the next update() a
-            // huge or negative gap between two different clocks.
-            if (this.pausedAt) {
-                this.lastTickTime = performance.now();
-            }
-            this.pausedAt = null;
-            logger.info('TimeManager', 'Game resumed');
-        }
-    }
-
-    /**
-     * Toggle pause state
-     * @returns {boolean} New pause state
-     */
-    togglePause() {
-        if (this.isPaused) {
-            this.resume();
-        } else {
-            this.pause();
-        }
-        return this.isPaused;
-    }
-
-    /**
-     * Check if game is paused
-     * @returns {boolean}
-     */
-    getIsPaused() {
-        return this.isPaused;
-    }
-
-    /**
-     * Get serializable state for saving
-     * @returns {Object}
-     */
-    serialize() {
-        return {
-            gameTimeMs: this.gameTime,
-            isPaused: this.isPaused
-        };
     }
 }
 

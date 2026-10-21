@@ -1,30 +1,5 @@
 // Fantasy Guild - Formula Registry
 
-// SKILL & TASK FORMULAS
-
-/**
- * Skill speed factor: how much each skill level contributes to work speed.
- * Written by `HeroRehydration.updateHeroSkillModifiers` (one SPEED modifier per
- * held skill); read by `BoardRunner.heroSpeedFactor`, which divides the tile's
- * WORK_TIME by it. Attack speed is not on this axis.
- * Example: Level 10 → 10 * 0.005 = 0.05 = +5% speed
- */
-export const SKILL_SPEED_FACTOR = 0.005;
-
-/**
- * Calculate the effective speed multiplier from a skill level.
- * This is the value registered as an aggregator modifier.
- *
- * **A flat per-level ramp, and that is all it is.** Every level is worth the
- * same 0.5%; there are no steps, thresholds or breakpoints anywhere in it.
- *
- * @param {number} level - Skill level
- * @returns {number} Additive speed bonus (e.g. 0.05 for level 10)
- */
-export function skillSpeedBonus(level) {
-    return level * SKILL_SPEED_FACTOR;
-}
-
 // COMBAT FORMULAS — 7-Stat Engine. ⚠ marks first-calibration values.
 
 /**
@@ -186,10 +161,4 @@ export const MIN_ATTACK_SPEED_MS = 500;
 /** Regen configuration: amount healed per interval */
 export const REGEN_CONFIG = {
     hp:     { amount: 1, interval: 5.0 },   // 1 HP every 5 seconds
-    energy: { amount: 1, interval: 5.0 },   // 1 Energy every 5 seconds
 };
-
-// XP FORMULAS
-
-/** Unread: nothing multiplies combat XP by this. */
-export const GLOBAL_COMBAT_XP_MULTIPLIER = 1.0;

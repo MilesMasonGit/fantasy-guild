@@ -1,5 +1,4 @@
 export const EFFECT_TYPES = {
-    SPEED: 'SPEED',           // Task tick speed, combat attack speed
     DAMAGE: 'DAMAGE',         // Melee, Ranged, Magic damage
     DEFENSE: 'DEFENSE',       // Damage reduction
 
@@ -21,11 +20,10 @@ export const EFFECT_TYPES = {
     STAT_BONUS: 'STAT_BONUS',
     LOGIC_OVERRIDE: 'LOGIC_OVERRIDE', // Complex logic triggers (e.g., ignore_defense)
 
-    // WORK_TIME is deliberately separate from SPEED. SPEED is a work *rate*, so a Token
-    // adding Work Time expressed as SPEED would be read with its sign inverted.
-    YIELD: 'YIELD',           // units of output a Card produces
-    WORK_TIME: 'WORK_TIME',   // milliseconds of Work Time a Card takes
-    INPUT_COST: 'INPUT_COST', // units of input a Card consumes
+    // WORK_TIME is an amount of time, not a rate: more is slower.
+    YIELD: 'YIELD',           // units of output a Token produces
+    WORK_TIME: 'WORK_TIME',   // milliseconds of Work Time a Token takes
+    INPUT_COST: 'INPUT_COST', // units of input a Token consumes
 
     /**
      * A chance to yield an extra, **different** item on top of a Token's normal output.
@@ -92,11 +90,3 @@ export const SCOPES = {
     GLOBAL: 'GLOBAL'
 };
 
-export const MODIFIER_SOURCE_TYPES = {
-    TRAIT: 'TRAIT',
-    CLASS: 'CLASS',
-    EQUIPMENT: 'EQUIPMENT',
-    TILE: 'TILE',
-    AURA: 'AURA',
-    CONSUMABLE: 'CONSUMABLE'
-};

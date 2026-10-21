@@ -37,7 +37,7 @@ function admit(entry) {
 function loadJsonEffects() {
     const effects = {};
 
-    for (const source of [DatabaseManager.effectFilesSingle, DatabaseManager.effectFilesGlob]) {
+    for (const source of [DatabaseManager.effectFilesSingle]) {
         for (const [path, module] of Object.entries(source || {})) {
             try {
                 const data = module.default || module;

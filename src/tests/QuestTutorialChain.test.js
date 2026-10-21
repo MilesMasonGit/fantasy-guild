@@ -19,6 +19,7 @@ import * as StationRecipe from '../systems/board/StationRecipe.js';
 import * as Flags from '../systems/board/Flags.js';
 import * as Shop from '../systems/board/Shop.js';
 import * as Atlas from '../systems/atlas/Atlas.js';
+import { isMapItem } from '../systems/atlas/mapItems.js';
 import * as QuestTokens from '../systems/quests/QuestTokens.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { registerItems, getAllItems } from '../config/registries/itemRegistry.js';
@@ -67,8 +68,14 @@ const MAPS = {
         cartography: { effects: [{ kind: 'density', typeId: 'token_oak_tree', points: 4 }] }
     }
 };
-const withMaps = () => registerItems(MAPS);
-const withoutMaps = () => { for (const id of Object.keys(MAPS)) delete getAllItems()[id]; };
+// ⚠️ The shipped maps are hidden while a case runs, so what a case expects does not move when the owner authors a map.
+const SHIPPED_MAPS = Object.fromEntries(Object.entries(getAllItems()).filter(([, def]) => isMapItem(def)));
+const withoutMaps = () => {
+    const items = getAllItems();
+    for (const id of Object.keys(items)) if (isMapItem(items[id])) delete items[id];
+};
+const withMaps = () => { withoutMaps(); registerItems(MAPS); };
+const restoreShippedMaps = () => { withoutMaps(); registerItems(SHIPPED_MAPS); };
 
 /** Spots on the mat, far enough apart that one flag reaches one Token. */
 const SPOT = {
@@ -120,7 +127,7 @@ function buyAt(typeId, point) {
 const inspect = (instance) => EventBus.publish(UI_EVENTS.TOKEN_INSPECTED, { instanceId: instance.id, typeId: instance.typeId });
 
 beforeAll(() => Flags.init());
-afterAll(() => { Flags.teardown(); resetMatTuning(); withoutMaps(); });
+afterAll(() => { Flags.teardown(); resetMatTuning(); restoreShippedMaps(); });
 
 beforeEach(() => {
     vi.clearAllMocks();

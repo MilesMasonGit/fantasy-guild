@@ -232,7 +232,7 @@ has none yet), melee, magic and commerce have content today.
 - XP comes from work cycles (the recipe's or Token's `xp`) and kills (into the
   hero's one combat skill). Level cap 99; XP to level 99 ≈ 13 million
   (RuneScape-style curve, `XPCurve.js`).
-- Each level gives +0.5 % speed to that skill's work.
+- A skill level gives no work speed: a cycle takes its authored time whoever works it (owner 2026-10-09, T-125).
 - **Hero level** = the average of held skills (display only).
 - **Content that still says `logging`** (data/ and the CMS workspace, until the
   owner's next Sync) is read as `forestry` as it loads
@@ -285,14 +285,13 @@ has none yet), melee, magic and commerce have content today.
 ### Health, food, defeat — Built
 - Max HP from the combat skill: 50 at level 1, 144 at 25, ~3,700 at 99.
   Regen 1 HP / 5 s while idle, working or fighting.
-- Below 25 % HP a hero eats equipped food from the Bank.
+- Below 25 % HP a hero eats equipped food from the Bank and, if still below,
+  drinks the equipped drink: drinks heal like food, from their own slot. Heroes
+  have no energy (removed, T-098).
 - **Defeat** (0 HP): the hero's flag is furled, they limp home, lose 25 % of
   each carried food/drink stack (and 10 % chance per gear piece), and are
   **wounded for 5 minutes** of game time, returning at 50 % HP (*placeholder*
   numbers).
-- **Energy** exists on heroes but nothing spends it — **Dormant**, to be
-  removed. **Drinks will heal like food** from their own slot (owner
-  2026-10-06, T-098); today they can't be drunk.
 
 ### Equipment — Partial
 A 3×3 loadout grid with category caps (hand 2, hat 1, chest 1, trinket 2,
@@ -393,8 +392,8 @@ Enemies are Tokens with `enemy: { level, style, budgetScale?, hostile? }`.
   shipped enemy is melee, so only melee against ranged or stealth heroes
   triggers it yet.
 - Kills give XP to the hero's combat skill and count as a work cycle for
-  neighbour rules. Loot drops on the mat. **Kill loot ignores yield/double-loot
-  bonuses** (ticket T-017).
+  neighbour rules. Loot drops on the mat, through the same yield, double-loot
+  and bonus-drop rules as a station's output (T-017).
 - Crit is stubbed at 0. *(`FormulaRegistry.js`, `src/systems/combat/`)*
 
 ### Status effects — Latent
@@ -580,7 +579,7 @@ Content is half-authored on purpose; an unfinished Token is not a bug.
 - **Real offline progress — Built (brief 40)**; see section 10.
 - **Terrain — Built** (brief 80): the ground is drawn (T2); "Stands on" placement
   and its grid while placing follow (T3, T4).
-- **Dormant**: energy and drinking, Villager heroes,
+- **Dormant**: Villager heroes,
   Map bursts and most Map Tokens, `data/stations.json` (nothing loads it).
 - **Latent** (code ready, no content): gear, statuses, ranged/magic enemies,
   rule upkeep, most statement verbs and moments.

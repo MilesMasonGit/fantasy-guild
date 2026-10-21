@@ -1,19 +1,9 @@
 /** Economic simulator, pass 1 of 5: TIME. Picks every cycle time from its Tempo band (the middle of the band at the required level, snapped to whole seconds) and the units per hour of each output. Value-independent: it never reads an item value, which is half of why the design has no feedback loop. It writes nothing: a caller gets a Map, and `sim/writeBack.js` lands each cycle time on `config.cycleTimeMs` (Tokens) or `durationMs` (recipes). */
 
 import { bandFor } from '../../../../src/config/registries/tempoBands.js';
-import { SKILL_SPEED_FACTOR } from '../../../../src/config/FormulaRegistry.js';
 import { isInert, isUntagged } from './fieldAdapter.js';
 import { makeRow, SEVERITY } from './rows.js';
 import { isSimPurpose } from '../../utils/simVocabulary.js';
-
-/**
- * The worker-at-required-level assumption, `speed(L) = 1 + 0.005 × L`.
- * ⚠️ `SKILL_SPEED_FACTOR` is imported from the game, never retyped: the board divides a tile's work time by the same ramp, and a duplicated 0.005 here is how the simulator and the board would drift apart unnoticed.
- */
-export function speedAt(level) {
-    const L = Number.isFinite(level) && level >= 1 ? level : 1;
-    return 1 + SKILL_SPEED_FACTOR * L;
-}
 
 /** The middle of `tempo`'s band at `level`, in milliseconds, snapped to whole seconds. `bandFor` is imported rather than reimplemented: the bands and their level scaling live in one place game-side. */
 export function bandMiddleMs(tempo, level) {
@@ -23,11 +13,11 @@ export function bandMiddleMs(tempo, level) {
     return Math.round(middle / 1000) * 1000;
 }
 
-/** Units of one output per hour: `avg quantity × chance ÷ cycle time × 3600 × speed(required level)`. `output.abundance` is `avg quantity × chance` and comes from the adapter, whose `expectedQuantity` mirrors the runtime's `expectedOutputQuantity`; if the two disagree every band computed from it is quietly wrong, so `EconSimTime.test.js` pins them together. */
-export function unitsPerHour(output, cycleTimeMs, level) {
+/** Units of one output per hour: `avg quantity × chance ÷ cycle time × 3600`. A skill level adds no work speed, so the cycle time is the time the board runs. `output.abundance` is `avg quantity × chance` and comes from the adapter, whose `expectedQuantity` mirrors the runtime's `expectedOutputQuantity`; if the two disagree every band computed from it is quietly wrong, so `EconSimTime.test.js` pins them together. */
+export function unitsPerHour(output, cycleTimeMs) {
     if (!Number.isFinite(cycleTimeMs) || cycleTimeMs <= 0) return 0;
     const cycleSeconds = cycleTimeMs / 1000;
-    return (output.abundance / cycleSeconds) * 3600 * speedAt(level);
+    return (output.abundance / cycleSeconds) * 3600;
 }
 
 /**
@@ -97,18 +87,15 @@ export function runTempoPass(entities) {
         const outputs = entity.outputs.map(output => ({
             itemId: output.itemId,
             abundance: output.abundance,
-            unitsPerHour: unitsPerHour(output, cycleTimeMs, entity.level),
+            unitsPerHour: unitsPerHour(output, cycleTimeMs),
         }));
 
         cycleTimes.set(entity.id, cycleTimeMs);
         timing.set(entity.id, {
             entityId: entity.id,
             cycleTimeMs,
-            // Cycles completed per hour by a worker at exactly the required
-            // level. Pricing divides an hourly target by this to get a
-            // per-cycle one.
-            cyclesPerHour: (3600 / (cycleTimeMs / 1000)) * speedAt(entity.level),
-            speed: speedAt(entity.level),
+            // Pricing divides an hourly target by this to get a per-cycle one.
+            cyclesPerHour: 3600 / (cycleTimeMs / 1000),
             outputs,
         });
     }

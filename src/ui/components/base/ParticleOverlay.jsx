@@ -293,7 +293,7 @@ class ParticleSystem {
      * still collected, it just stops drawing after a point, because forty simultaneous arcs is
      * noise rather than spectacle.
      */
-    spawnCollected({ kind, refId, heroId, quantity, x, y, fromScreenX, fromScreenY, toScreenX, toScreenY, destination, trayX, trayY, instanceId }) {
+    spawnCollected({ kind, refId, heroId, quantity, x, y, fromScreenX, fromScreenY, toScreenX, toScreenY, destination, instanceId }) {
         if (!SettingsManager.get('ui.itemParticles')) return;
         if (typeof window !== 'undefined' &&
             window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) return;
@@ -394,8 +394,6 @@ class ParticleSystem {
             booking: null,
             // An item keeps its floor size in flight; a hero keeps 32.
             size: isHero ? 32 : this._floorItemPx(),
-            trayX,
-            trayY,
             instanceId,
             startTime: performance.now() + slot * STAGGER_MS,
             duration: destination === 'cursor' ? 320 : flightDurationMs(dist),
@@ -499,10 +497,7 @@ class ParticleSystem {
         return this._slot++;
     }
 
-    /**
-     * `source` is either 'bank-bubble-target' (the Bank nav bubble, a fixed landing spot), or
-     * an element carrying `data-card-id` or `data-quest-id`.
-     */
+    /** `source` is a board point (`{ boardX, boardY }`) or a hero in the dock (`{ target: 'dock', heroId }`). */
     _getRect(source) {
         // A point on the board, in board coordinates.
         if (source && typeof source === 'object' && source.boardX != null) {
@@ -511,11 +506,8 @@ class ParticleSystem {
             const { x, y } = boardPointToScreen(board, source.boardX, source.boardY);
             return { left: x, top: y, width: 0, height: 0, right: x, bottom: y };
         }
-        if (typeof source === 'string' && source.endsWith('-bubble-target')) {
-            return document.getElementById(source)?.getBoundingClientRect();
-        }
-        if (source === 'dock' || (typeof source === 'string' && source.includes('dock')) || (typeof source === 'object' && source.target === 'dock')) {
-            const heroId = typeof source === 'object' ? source.heroId : null;
+        if (source?.target === 'dock') {
+            const heroId = source.heroId;
             if (heroId) {
                 const heroCard = document.querySelector(`[data-dock-hero-id="${heroId}"]`);
                 if (heroCard) return heroCard.getBoundingClientRect();
@@ -523,11 +515,7 @@ class ParticleSystem {
             const dockEl = document.querySelector('[data-vertical-dock]') || document.getElementById('vertical-dock-recall');
             if (dockEl) return dockEl.getBoundingClientRect();
         }
-        if (typeof source === 'string') {
-            const byQuest = document.querySelector(`[data-quest-id="${source}"]`);
-            if (byQuest) return byQuest.getBoundingClientRect();
-        }
-        return document.querySelector(`[data-card-id="${source}"]`)?.getBoundingClientRect();
+        return null;
     }
 
     /** An item's on-screen floor size, from the mat's live fit (`data-board-scale`). */
@@ -609,8 +597,6 @@ class ParticleSystem {
                     x: p.path.endX,
                     y: p.path.endY,
                     size: p.size,
-                    trayX: p.trayX,
-                    trayY: p.trayY,
                     instanceId: p.instanceId
                 });
 

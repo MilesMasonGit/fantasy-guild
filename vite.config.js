@@ -29,6 +29,9 @@ const packageVersion = JSON.parse(
 
 const IMAGE_RE = /\.(png|webp|jpe?g|gif|svg)$/i;
 
+// The owner's scrap folders under public/assets: kept on disk, never preloaded or shipped.
+const SCRAP_DIRS = new Set(['archive', 'maybe', 'waste']);
+
 // Walk public/assets and list every image as a web path ("assets/heroes/hm_fighter_por.png").
 // The AssetPreloader fetches this list at boot to warm the browser cache before first render.
 function scanAssetImages() {
@@ -38,8 +41,9 @@ function scanAssetImages() {
     const walk = (dir) => {
         for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
             const full = path.join(dir, entry.name);
-            if (entry.isDirectory()) walk(full);
-            else if (IMAGE_RE.test(entry.name)) {
+            if (entry.isDirectory()) {
+                if (!SCRAP_DIRS.has(entry.name)) walk(full);
+            } else if (IMAGE_RE.test(entry.name)) {
                 results.push(path.relative(publicRoot, full).split(path.sep).join('/'));
             }
         }
@@ -48,9 +52,30 @@ function scanAssetImages() {
     return results;
 }
 
+/** Delete every scrap folder Vite copied from public/assets into `dir/assets`. */
+function removeScrapDirs(dir) {
+    const walk = (d) => {
+        if (!fs.existsSync(d)) return;
+        for (const entry of fs.readdirSync(d, { withFileTypes: true })) {
+            if (!entry.isDirectory()) continue;
+            const full = path.join(d, entry.name);
+            if (SCRAP_DIRS.has(entry.name)) fs.rmSync(full, { recursive: true, force: true });
+            else walk(full);
+        }
+    };
+    walk(path.join(dir, 'assets'));
+}
+
 function assetManifestPlugin() {
+    let outDir = null;
     return {
         name: 'asset-image-manifest',
+        configResolved(config) {
+            outDir = path.resolve(config.root, config.build.outDir);
+        },
+        closeBundle() {
+            if (outDir) removeScrapDirs(outDir);
+        },
         configureServer(server) {
             server.middlewares.use((req, res, next) => {
                 if (req.url && req.url.split('?')[0] === '/asset-manifest.json') {

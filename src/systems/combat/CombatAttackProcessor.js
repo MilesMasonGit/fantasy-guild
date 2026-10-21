@@ -24,7 +24,7 @@ function rollStatusOnHit(source, applyFn) {
 }
 
 /**
- * No energy cost in combat: HP/food is the attrition currency.
+ * HP, food and drink are combat's attrition currency.
  *
  * `combat_hero_attack` names the enemy Token (`instanceId`) so the mat can
  * route a landed hit's knockback to it.
@@ -34,11 +34,13 @@ export function handleHeroAttack(fight, hero, enemy, combatStyle, attackSpeed) {
     // Eating mid-fight: the hero skips this attack while the enemy's timer keeps
     // running, so the enemy gets a free swing. That price keeps HP management
     // tense. Uncapped on purpose: a hero who can't out-heal the damage should lose.
-    const meal = ConsumptionSystem.tryEat(hero.id);
-    if (meal) {
-        EventBus.publish(ENGINE_EVENTS.COMBAT_HERO_ATE, {
-            cardId: fight.id, heroId: hero.id, itemId: meal.itemId, healed: meal.amount
-        });
+    const meals = ConsumptionSystem.tryEat(hero.id);
+    if (meals.length) {
+        for (const meal of meals) {
+            EventBus.publish(ENGINE_EVENTS.COMBAT_HERO_ATE, {
+                cardId: fight.id, heroId: hero.id, itemId: meal.itemId, healed: meal.amount
+            });
+        }
         fight.combat.heroTickProcesses[hero.id] -= attackSpeed;
         return;
     }
@@ -53,8 +55,7 @@ export function handleHeroAttack(fight, hero, enemy, combatStyle, attackSpeed) {
         return;
     }
 
-    const stats = fight.combat?.stats || {};
-    const damageBonus = (stats.damageBonus || 0) + (hero?.aggregator?.query('DAMAGE') || 0);
+    const damageBonus = hero?.aggregator?.query('DAMAGE') || 0;
     const heroSkill = CombatFormulas.getHeroCombatSkill(hero, combatStyle);
 
     const didHit = CombatFormulas.rollHit(
@@ -92,7 +93,6 @@ export function processEnemyAttack(fight, enemy, assignedHeroIds, deltaTime) {
     if (!fight.combat) return;
     fight.combat.enemyTickProgress += deltaTime;
     const enemyAttackSpeed = enemy.attackSpeed || CombatFormulas.ENEMY_ATTACK_INTERVAL_MS;
-    fight.combat.enemyAttackSpeed = enemyAttackSpeed; // persisted for UI attack-loop bars
 
     if (fight.combat.enemyTickProgress >= enemyAttackSpeed) {
         const targetHeroId = assignedHeroIds[Math.floor(Math.random() * assignedHeroIds.length)];

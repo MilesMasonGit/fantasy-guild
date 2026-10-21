@@ -55,8 +55,8 @@ const RING_ARC = 6;
  * The invisible collision radius of a Token type: a percentage of its art radius, rounded to whole
  * mat units.
  *
- * ⚠️ The rounding is deliberate and load-bearing. Centres are whole numbers, and gaps are stated as
- * whole gaps (61 u between two small Tokens). Unrounded, `64 × 80% = 51.2` makes that gap `61.44`,
+ * ⚠️ The rounding is deliberate and load-bearing. Gaps are stated as whole gaps (61 u between two
+ * small Tokens), though centres need not be whole (a nudge lands wherever its ring puts it). Unrounded, `64 × 80% = 51.2` makes that gap `61.44`,
  * so two Tokens placed 61.4 u apart would be refused by four hundredths of a pixel nobody can see.
  * Rounded, the small hitbox is 51 u.
  */
@@ -95,8 +95,8 @@ export function insideMat(typeId, point) {
  * inside every edge. Says nothing about neighbours.
  *
  * This is the first half of what a shrinking mat does to a stranded Token (`MatResize`): pull it
- * back inside the edge, then ask {@link findSpot} from there where it can actually stand. Whole mat
- * units, because Token centres are whole numbers everywhere else.
+ * back inside the edge, then ask {@link findSpot} from there where it can actually stand. Rounded to
+ * whole mat units.
  */
 export function clampInside(typeId, point) {
     const at = clampOnto(typeId, point);
