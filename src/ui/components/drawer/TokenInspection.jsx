@@ -38,9 +38,6 @@ import { EventBus } from '../../../systems/core/EventBus.js';
 export const TokenInspection = ({
     typeId,
     hideSprite = false,
-    // Still accepted, now ignored: nothing sells.
-    // eslint-disable-next-line no-unused-vars
-    showSell = true,
     // The board Token this panel was opened from, by instance id. Only a Token on the board
     // can be marked 'heroes may not work this'.
     instanceId = null

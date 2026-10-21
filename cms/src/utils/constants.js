@@ -250,14 +250,6 @@ export const ITEM_TYPES = Object.values(GAME_ITEM_TYPES).filter((type) => !MAP_I
  */
 export const STARTING_TOKEN_CAP = 128;
 
-export const RESTORE_TYPES = ['HP', 'Energy'];
-
-export const PERSONALITY_TAGS = [
-  'Food', 'Drink', 'Tool', 'Weapon', 'Armor', 'Consumable', 'Ingredient',
-  'Material', 'Treasure', 'Quest', 'Legendary', 'Intermediate', 'Root',
-  'Heavy', 'Volatile', 'Liquid', 'Resource Sink', 'Gathering', 'Passive', 'Fast', 'Slow',
-];
-
 export const ENEMY_TIERS = [1, 2, 3, 4, 5, 6];
 
 // Balance defaults, consumed by `useGlobalStore`. These are the old card-economy's dials, kept only so the dial UI has something to render against.

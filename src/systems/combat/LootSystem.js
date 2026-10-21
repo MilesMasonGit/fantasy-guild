@@ -93,34 +93,6 @@ const LootSystem = {
     },
 
     /**
-     * Normalised drop lines for UI display; does not roll.
-     */
-    previewDrops(source) {
-        const results = [];
-        const table = source;
-        if (!table) return [];
-
-        const extract = (entries) => entries.map(drop => {
-            const item = getItem(drop.itemId || drop.id);
-            return {
-                itemId: drop.itemId || drop.id,
-                itemName: item?.name || drop.itemId || drop.id,
-                itemIcon: item?.icon || '?',
-                chance: drop.chance ?? 100,
-                // Same min/max/amount/quantity fallbacks as `_rollEntryDetails`.
-                minQty: drop.minQty ?? drop.min ?? drop.amount ?? drop.quantity ?? 1,
-                maxQty: drop.maxQty ?? drop.max ?? drop.amount ?? drop.quantity ?? 1
-            };
-        });
-
-        if (table.clusters) table.clusters.forEach(c => results.push(...extract(c)));
-        else if (table.drops) results.push(...extract(table.drops));
-        else if (Array.isArray(table)) results.push(...extract(table));
-
-        return results;
-    },
-
-    /**
      * Rolls one entry's item and quantity
      * @private
      */

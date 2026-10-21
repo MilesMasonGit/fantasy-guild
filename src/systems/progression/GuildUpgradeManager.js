@@ -6,8 +6,7 @@ import {
     GUILD_UPGRADES, getUpgradeDef, getUpgradePrice, totalPrice, isUpgradeAccessible, getLockReason,
     rosterLimitForRank
 } from '../../config/guildUpgrades.js';
-import { generateHero } from '../hero/HeroGenerator.js';
-import { rehydrateHero } from '../hero/logic/HeroRehydration.js';
+import { createHero } from '../hero/logic/HeroLifecycle.js';
 import { logger } from '../../utils/Logger.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
@@ -123,15 +122,7 @@ export const GuildUpgradeManager = {
         this.recompute();
 
         // Roster size upgrade immediately recruits a new hero
-        if (upgradeId === 'roster_size') {
-            const hero = generateHero();
-            rehydrateHero(hero);
-            GameState.heroes.push(hero);
-            EventBus.publish(ENGINE_EVENTS.HERO_RECRUITED, {
-                heroId: hero.id,
-                name: hero.name
-            });
-        }
+        if (upgradeId === 'roster_size') createHero();
 
         EventBus.publish(ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, { upgradeId, rank: newRank });
         EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);

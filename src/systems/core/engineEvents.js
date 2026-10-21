@@ -220,8 +220,6 @@ export const UI_EVENTS = Object.freeze({
      * let go. Payload: `{ text }`.
      */
     UI_SCREEN_CALLOUT: 'ui:screen_callout',
-    /** Payload: `{ tab }`. */
-    UI_OPEN_DRAWER: 'ui:open_drawer',
     /** Payload: `{ questId }`. */
     TUTORIAL_AIDE_HOVER: 'tutorial_aide:hover',
     /** Payload: none. */
@@ -238,16 +236,6 @@ export const UI_EVENTS = Object.freeze({
  * live code is tempted to publish them.
  */
 export const ORPHAN_EVENTS = Object.freeze({
-    /** ⚠ No publisher: `ReactRoot` listens. */
-    UI_OPEN_GUILD_HALL: 'ui:open_guild_hall',
-    /** ⚠ No publisher: `ReactRoot` listens. */
-    UI_CLOSE_GUILD_HALL: 'ui:close_guild_hall',
-    /** ⚠ No publisher: `ReactRoot` listens. */
-    UI_TOGGLE_GUILD_HALL: 'ui:toggle_guild_hall',
-    /** ⚠ No publisher: `TestDashboard` listens. */
-    DEV_OPEN_ANIMATION_STUDIO: 'dev:open-animation-studio',
-    /** ⚠ No publisher: `ReactRoot`, `DockEquipmentGrid`. The live event is `hero_equipment_changed`. */
-    HERO_EQUIPPED: 'hero_equipped',
     /** ⚠ No publisher: the dock and inspection sheet list it. Statuses announce through `heroes_updated`. */
     HERO_STATUS_CHANGED: 'hero:status_changed',
     /** ⚠ No publisher: `AudioSystem` listens. */

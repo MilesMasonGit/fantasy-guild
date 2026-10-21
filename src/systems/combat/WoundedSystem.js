@@ -94,42 +94,6 @@ const WoundedSystem = {
      */
     getWoundedHeroes() {
         return HeroManager.getHeroesByStatus('wounded');
-    },
-
-    /**
-     * Get recovery progress for a wounded hero
-     * @param {string} heroId 
-     * @returns {{ remaining: number, total: number, percent: number }|null}
-     */
-    getRecoveryProgress(heroId) {
-        const hero = HeroManager.getHero(heroId);
-        if (!hero || hero.status !== 'wounded' || typeof hero.woundedRemainingMs !== 'number') {
-            return null;
-        }
-
-        const remaining = Math.max(0, hero.woundedRemainingMs);
-        const total = BASE_RECOVERY_TIME_MS;
-        const percent = 1 - (remaining / total);
-
-        return { remaining, total, percent };
-    },
-
-    /**
-     * Check if a hero is wounded
-     * @param {string} heroId 
-     * @returns {boolean}
-     */
-    isWounded(heroId) {
-        const hero = HeroManager.getHero(heroId);
-        return hero?.status === 'wounded';
-    },
-
-    /**
-     * Get base recovery time in milliseconds
-     * @returns {number}
-     */
-    getBaseRecoveryTime() {
-        return BASE_RECOVERY_TIME_MS;
     }
 };
 

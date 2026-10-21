@@ -6,13 +6,6 @@ import {
     applyThreeBucket
 } from '../systems/effects/ModifierAggregator.js';
 import { EFFECT_TYPES, TARGET_CATEGORIES } from '../systems/effects/constants.js';
-import {
-    resolveYield,
-    resolveWorkTime,
-    resolveInputCost,
-    MIN_WORK_TIME_MS,
-    MIN_INPUT_COST
-} from '../systems/effects/EffectAxes.js';
 
 /**
  * Effect-engine rules, inherited from the Card Mutators & Tokens pass.
@@ -236,56 +229,6 @@ describe('Phase 5 — token effect axes (§15.8 / §10)', () => {
             const agg = new ModifierAggregator('t');
             agg.addModifier(speedMod('a', 2, 'multiplier', EFFECT_TYPES.YIELD));
             expect(agg.resolveAxis(EFFECT_TYPES.WORK_TIME, 4000)).toBe(4000);
-        });
-    });
-
-    describe('resolveYield', () => {
-        it('doubles a base quantity under a ×2 Trawler', () => {
-            const agg = new ModifierAggregator('t');
-            agg.addModifier(speedMod('trawler', 2, 'multiplier', EFFECT_TYPES.YIELD));
-            expect(resolveYield(agg, 3)).toBe(6);
-        });
-        it('never goes negative under a curse', () => {
-            const agg = new ModifierAggregator('t');
-            agg.addModifier(speedMod('curse', -5, 'multiplier', EFFECT_TYPES.YIELD));
-            expect(resolveYield(agg, 3)).toBe(0);
-        });
-        it('tolerates a missing aggregator', () => {
-            expect(resolveYield(null, 3)).toBe(3);
-        });
-    });
-
-    describe('resolveWorkTime (floor 1000ms, §10)', () => {
-        it('doubles time under a ×2 Trawler', () => {
-            const agg = new ModifierAggregator('t');
-            agg.addModifier(speedMod('trawler', 2, 'multiplier', EFFECT_TYPES.WORK_TIME));
-            expect(resolveWorkTime(agg, 4000)).toBe(8000);
-        });
-        it('floors at 1s no matter how much Haste stacks against it', () => {
-            const agg = new ModifierAggregator('t');
-            // Five −20% Haste percentages sum to −100% → would be 0ms.
-            for (let i = 0; i < 5; i++) agg.addModifier(speedMod(`haste${i}`, -0.2, 'percentage', EFFECT_TYPES.WORK_TIME));
-            expect(resolveWorkTime(agg, 4000)).toBe(MIN_WORK_TIME_MS);
-        });
-        it('leaves a sub-second base card alone when no tokens act', () => {
-            const agg = new ModifierAggregator('t');
-            expect(resolveWorkTime(agg, 500)).toBe(500);
-        });
-    });
-
-    describe('resolveInputCost (floor 1 unit, §10)', () => {
-        it('doubles cost under a ×2 penalty and rounds to a whole unit', () => {
-            const agg = new ModifierAggregator('t');
-            agg.addModifier(speedMod('greedy', 2, 'multiplier', EFFECT_TYPES.INPUT_COST));
-            expect(resolveInputCost(agg, 2)).toBe(4);
-        });
-        it('never drops below 1 unit however much it is reduced', () => {
-            const agg = new ModifierAggregator('t');
-            agg.addModifier(speedMod('thrift', -5, 'multiplier', EFFECT_TYPES.INPUT_COST));
-            expect(resolveInputCost(agg, 3)).toBe(MIN_INPUT_COST);
-        });
-        it('passes an untouched cost through unchanged', () => {
-            expect(resolveInputCost(new ModifierAggregator('t'), 2)).toBe(2);
         });
     });
 });

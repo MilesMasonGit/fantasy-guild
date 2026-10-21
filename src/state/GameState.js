@@ -80,7 +80,7 @@ class GameStateClass {
     get inventory() { return this.state?.inventory || { items: {} }; }
     get progress() { return this.state?.progress || {}; }
     get time() { return this.state?.time || { gameTimeMs: 0 }; }
-    get collection() { return this.state?.collection || { playsets: {} }; }
+    get collection() { return this.state?.collection || {}; }
     get discoveredItems() { return this.state?.collection?.discoveredItems || {}; }
     get discoveredEnemies() { return this.state?.collection?.discoveredEnemies || {}; }
     get itemLifetimeCounts() { return this.state?.collection?.itemLifetimeCounts || {}; }
@@ -89,25 +89,9 @@ class GameStateClass {
     get recruitment() { return this.state?.recruitment || { candidates: [] }; }
     get quests() { return this.state?.quests || { active: [], tutorialStep: 0, nextQuestAt: null }; }
     get ui() { return this.state?.ui || {}; }
-    // The board (7×7 playmat). Selectors receive this object, not `state`, so a
-    // top-level slice needs a getter here to be reachable from the UI.
-    get board() { return this.state?.board || { tiles: {} }; }
-
-    // ========================================
-    // === Board Accessors ===
-    // ========================================
-
-    /** The Token instance on a tile, or null. Tile 0 is valid — `== null` checks only. */
-    getTile(index) {
-        return this.state?.board?.tiles?.[index] || null;
-    }
-
-    /** The hero working a tile, or null. */
-    getHeroOnTile(index) {
-        const heroId = this.state?.board?.tiles?.[index]?.heroId;
-        if (!heroId) return null;
-        return (this.state?.heroes || []).find(h => h.id === heroId) || null;
-    }
+    // The playmat. Selectors receive this object, not `state`, so a top-level
+    // slice needs a getter here to be reachable from the UI.
+    get board() { return this.state?.board || {}; }
 
     // ========================================
     // === Write Mutators ===
@@ -115,7 +99,6 @@ class GameStateClass {
 
     updateTime(updates) {
         Object.assign(this.state.time, updates);
-        this.state.time._rev = (this.state.time._rev || 0) + 1;
     }
 
 

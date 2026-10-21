@@ -52,8 +52,7 @@ function makeCard() {
         combat: {
             enemyHp: { current: 100, max: 100 },
             enemyStatuses: [],
-            heroTickProcesses: { h1: ATTACK_SPEED },
-            stats: {}
+            heroTickProcesses: { h1: ATTACK_SPEED }
         }
     };
 }

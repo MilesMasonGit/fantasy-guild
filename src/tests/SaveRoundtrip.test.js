@@ -87,7 +87,7 @@ describe('Save serialize/migrate roundtrip (CR-053)', () => {
         delete data.state.collection;
         const migrated = migrateState(data.state, GAME_VERSION);
         expect(migrated.collection).toBeDefined();
-        expect(migrated.collection.playsets).toEqual({});
+        expect(migrated.collection.discoveredItems).toEqual({});
     });
 
     it('tolerates retired Projects fields left in older saves (CR-038)', () => {

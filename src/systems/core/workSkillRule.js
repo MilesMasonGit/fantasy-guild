@@ -46,5 +46,4 @@ export function isWorkedWithoutSkill(def) {
 
 /** The explanation shown with a finding, shared so the game console and the CMS say the same thing. */
 export const WORK_SKILL_WHY =
-    'Today any hero can work it, but on the free playmat a Token with no skill will not be ' +
-    'workable at all (FP-47). Pick its skill in the CMS, under Work Cycle → Skill.';
+    'No hero will work it until it names one. Pick its skill in the CMS, under Work Cycle → Skill.';

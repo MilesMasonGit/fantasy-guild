@@ -98,33 +98,19 @@ here.
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
-| T-139 | P3 | open | `sprite-manifest.js` has ~61 entries pointing at files missing since before the 2026-10-09 art reorganisation (old `assets/sprites/implemented/...`, `pm_test_*`, `bg_table_*` and similar), and `AssetManager.js` still maps `pm_table_*` / `pm_board_*` ids to the gone `assets/playmat/tables` and `tiles` folders. Remove entries nothing in data/ or src uses (check with the AssetManager on-disk guard). Runner. | art/asset-reorg report |
-| T-045 | P3 | open | Dead combat, wound and loot code. | CR3-036 |
-| T-046 | P3 | open | A second hero-creation route. | CR3-037 |
-| T-047 | P3 | open | 8 retired `collection` fields in the save schema (keep `TOKEN_TYPES`). | CR3-038 |
-| T-048 | P3 | open | Small UI leftovers incl. the `ui:open_drawer` chain; events subscribed with no publisher. | CR3-043, 461 |
-| T-049 | P3 | open | Computed-and-never-read values; unused reset functions. | CR3-205 |
 | T-140 | P3 | open | **The Map check's dials and refusals are read by nothing** since Atlas A5 retired `mapPass.js`: in `cms/src/engine/sim/dials.js` `mapScrapRatio`, `mapProductiveReturn`, `rarityPremium`, `rarityWeights`/`RARITY_WEIGHTS`, `scrapRatioAt`, `productiveReturnAt`, `pinnedAt`; `dayInReach` in `xpPass.js` (and `hoursPerDay` if the Pace dials no longer need it); the seven `map-*` codes in `refusals.js`; their fields in the CMS Settings modal. Delete with their tests (`EconSimXP`'s `dayInReach` cases; `EconSimLevers`' Map-card test flips back to absent). Also `checkPass.js` skips unlimited Tokens because the Map check used to name them: nothing names them now. | Atlas A5 |
 | T-141 | P3 | blocked | **Content audit: a respawning node still sold at the Shop** (roadmap A5 lists it): warn when a Token with A2's Respawns block also has a `shop` block. Blocked on A2 merging (its block shape). One rule in `lifecycleAudit.js`, so the boot check and the CMS Economy Audit share it. | Atlas A5 |
-| T-050 | P3 | open | Stale comments in board-state files; `hitRadiusOf` doc claims whole-number centres. | CR3-154, FMR |
-| T-051 | P3 | open | Four copies of "is this the Guild Hall?"; a second `clampToMat`. | CR3-155 |
-| T-052 | P3 | open | Dead drag CSS; retired vocabulary in drag code. | CR3-406, 408 |
-| T-053 | P3 | open | Nav "rise above my own modal" can't work; `useUIModals` controls nobody uses. | CR3-459, 462 |
-| T-054 | P3 | open | Stylesheets loaded but unused / used but never loaded. Check `modals.css` for global selectors before deleting. | CR3-465 |
-| T-055 | P3 | open | Equip-flash timer cleanup never runs. | CR3-466 |
-| T-056 | P3 | open | Dead tile/Tray-era code (Tray-named constants renamed in hygiene W4); remaining: Tray-as-current comments; card/deck-era names; Tray dormant storage in `BoardState`/save. | CR3-502, 503, 504, FMR |
+| T-053 | P3 | open | Nav "rise above my own modal" can't work: `BubbleMenu`'s `aboveOwnModal` (now `--z-nav-over-modal`) cannot lift the nav over a portalled, inert-making dialog. The unused `useUIModals` controls went in a5bdc124; this half waited for the UI-consistency branch, which edits those lines. | CR3-459 |
+| T-054 | P3 | open | Class names that match no stylesheet: `animate-in`/`fade-in`/`zoom-in-95` (no `tailwindcss-animate`), `custom-scrollbar`, `gi-scrollbar`. The unused z-index tokens went in 87a461a2; the unloaded stylesheets were already gone. | CR3-465 |
+| T-056 | P3 | open | Rename `DeckDndProvider`/`DeckDndContext` (about forty test files import them). The tile accessors, unused constants, tray particle fields and dead particle lookups went in 70590720. | CR3-504, 408 |
 | T-057 | P3 | open | Rename tile-named engine vocabulary — code names and event strings together, one slice. | CR3-501 |
 | T-058 | P3 | open | Lint residue (~74 old errors), per area: engine, combat (keep `MERGE_GRACE_MS` at 1100), UI↔engine (don't add hook deps blindly), renderer, UI. | CR3-110, 265, 312, 359, 467 |
 | T-059 | P3 | open | The CMS imports `itemRegistry` for one constant. | CR3-511 |
 | T-060 | P3 | blocked (soak) | Toasts may leave page elements behind. A 60-minute soak decides: certification Part G (`docs/archive/certification_checklist.md`), or automate it with the drawing bench's Chrome driver. | CR3-039 |
-| T-061 | P3 | open | `cardSizeStore` is half dead (the drag ghost still reads it); unreachable Shop branches in `InspectionPanel.jsx`. | FB §5 |
-| T-062 | P3 | open | `statementText.js` contains a literal NUL byte, so git treats it as binary (no diffs). | FMR (still true 2026-10-06) |
 | T-063 | P3 | open | `resolveAnimationPath` hard-codes an id map and uses a relative `assets/` path. *Unverified since 2026-09-21.* | FMR |
-| T-064 | P3 | open | Dead clock surfaces and write-only fields (R1-Q4 ruling A). | CR3-105 |
-| T-093 | P3 | open | Stale comments found by the GDD survey (2026-10-06): skill/job headers say 27 skills and 6 held (29; 9/11/13 held); `RegenSystem` says only idle heroes regen (also working and fighting); `BoardCombat.tickToken` says enemies never aggro (hostiles do); `reachRegistry` says Near = 8 tiles on a 6×6 board (164 u, 4 sides); `MatCap.js` says nothing enforces the cap (Shop and recipes do); `Restrictions.js` mentions the Vault; `constants.js` says yield/work-time/input-cost axes are unread; `recipePoolRegistry` says 3 recipes; `tempoBands`/`dials` say nothing reads them; `BubbleMenu` says 5 bubbles; `ConsumptionSystem` describes the deck loop; `loopConstants` mentions 100×. | GDD survey |
-| T-094 | P3 | open | Dead-code leftovers after hygiene W3 (2026-10-07): functions now used only by tests (`resolveYield`, `getYieldMultiplier`, the other two `EffectAxes` helpers); Villager remnants (`isVillager` branches in `EquipmentValidator`, `HeroRehydration`, `PromotionSystem`, `SkillSystem`); `HeroDockTab`'s unused `onClick` prop; inert `effectFilesGlob`/`recipePoolFilesGlob` in `DatabaseManager.js`. `Placement.removePlacedToken` is kept (benches and tests use it). | GDD survey, W3 |
+| T-094 | P3 | open | Villager remnants: `isVillager` branches in `EquipmentValidator`, `HeroRehydration`, `PromotionSystem`, `SkillSystem`, and the QA panel's filters. Held back while the rules and UI branches edited those files. The test-only effect helpers and inert globs went in 40123429. | GDD survey, W3 |
 | T-108 | P3 | open | `cardUseCounts` (counts completed cycles per Token type; `GameState.js`, `BoardRunner.js`) is a deck-era name; rename it after the parked `atlas-wip` branch is merged or dropped (its `StateSchema.js` edit declares the field). | hygiene W4 |
-| T-103 | P3 | open | Comment-slimming leftovers: `src/state/StateSchema.js` (held back, owner's Atlas edit uncommitted), 2 comments in `cms/src/components/editors/RulesLine.jsx`, `cms/src/engine/sim/dryRun.mjs` header, `filterTargetTiles` named in `reachRegistry.js:26,136` (now `filterTargets`), ~15 test comments clipped by the ID stripper (e.g. `AdjacencyEffects.test.js:82`), and trailing string text carrying IDs (`workSkillRule.js` WORK_SKILL_WHY, `lifecycleAudit.js`, `matTuning.js` hints). Also dead exports found: `PERSONALITY_TAGS`, the three tutorial selectors in T-095. | Slimming pass |
+| T-103 | P3 | open | Comment-slimming leftovers: `src/state/StateSchema.js` (review ids and history; `atlas-wip` still parks an edit there), `cms/src/engine/sim/dryRun.mjs` header, ~15 test comments clipped by the ID stripper (none found by pattern). Tuner hints, WORK_SKILL_WHY, the reachRegistry names and `PERSONALITY_TAGS` done in 2c116882. | Slimming pass |
 
 ### Build, tests, docs
 
@@ -132,16 +118,14 @@ here.
 |---|---|---|---|---|
 | T-065 | P2 | open | 3 of 7 test fixtures still borrow real `item_` ids — their rename changes the bench fingerprint, so land it as its own accepted commit. | CR3-551 |
 | T-067 | P3 | open | Skipped tests: the Map-burst rule skips still need a ruling or deletion. | CR3-554 |
-| T-068 | P3 | open | Build ships and preloads scrap art (`archive`/`maybe`/`waste`); keep it out of the build and the preload list. | CR3-508 |
 | T-069 | P2 | open | Write the mat-era guide to keeping it fast in `docs/reference/PERFORMANCE.md` (the baseline and how-to-measure parts exist since 2026-10-07; draft in `docs/archive/review_v3/R6.md` §8 + `R7.md` §4). | CR3-021 |
 | T-070 | P3 | open | Document `window.Game` — agents rely on ~30 entries the game never reads. | CR3-040 |
 | T-111 | P3 | open | Engine bench timings are load-sensitive: on unchanged `main` (`933d12db`, 2026-10-08) a run beside a busy agent read 1.2–2.3× slower on every line; the next run alone matched the baseline on every p50 (0.94–1.05×) with only two p99 tails over 20 %. Treat REGRESSED as noise until reproduced on a quiet machine; the work check is reliable. | T-109 merge gate |
-| T-116 | P3 | open | The CMS content generator still writes the retired task/area effect vocabulary (`targetCategory` enum ALL/COMBAT/MELEE/MINING/INDUSTRY/NATURE/CRAFTING in `contentGenerator.js`); only its skill list follows the registry. Revisit if the generator is revived. | brief 20 R3 |
+| T-116 | P3 | open | The CMS content generator still writes the retired task/area effect vocabulary (`targetCategory` enum ALL/COMBAT/MELEE/MINING/INDUSTRY/NATURE/CRAFTING in `contentGenerator.js`); only its skill list follows the registry. Its prompt also still teaches energy costs and the per-level skill multiplier (`contentGenerator.js`, `useGlobalStore.js` defaults), both retired. It is still reachable from the CMS's Generate button, so rewriting the prompt is a design call, not dead code. | brief 20 R3 |
 | T-118 | P3 | open | `npm run bench -- --cpu-prof` writes the module-loader thread's idle profile on Node 24 (`bench/run.mjs` `runWorker` uses a fixed `--cpu-prof-name`); drop the name or add the thread id. Workaround: plain `node --cpu-prof` (bench/README.md). | brief 40 O1 |
 | T-121 | P3 | open | Slot card playtime reads hours for seconds: `formatPlaytime(seconds)` in `SlotSelectionModal.jsx` is handed milliseconds (76 s shows as 21h 6m). | brief 40 O4 |
 | T-122 | P3 | open | `HeroEditModal` still embeds `HeroSkillSheet` with its own skill list, duplicating the H2 hero panel; `VitalBar.jsx` may have no consumers left. | brief 30 H2 |
 | T-143 | P3 | open | `bench/browser/dragKit.mjs` picks drag targets skipping only the Hall and permanent types; on a board with planted Saplings (fixed since Atlas A10) it would count their refused drags as failures. Teach the picker `FixedTokens.isFixed`. | brief 70 A10 |
-| T-163 | P3 | open | `DndKit.jsx`'s `useLiveDropTarget` (and the comment about a pop-out bin above it) has no caller since the discard bin went (Atlas A3b): delete it. Left in place because A10 also edits `DndKit.jsx`; do it after A10 merges. | brief 70 A3b |
 | T-114 | P3 | open | Remove `migrateSkillIds` (the `logging` → `forestry` content migration in the game loaders and the CMS store) once the owner has synced `data/` with `forestry`. | brief 20 R0 |
 
 ## 3. Parked — don't work on these without a reason

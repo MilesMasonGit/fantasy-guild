@@ -23,7 +23,7 @@
  * The same discipline as `TRIGGER_EVENTS` and `CHARGE_MOMENTS`, for the same
  * reason: an authorable option nothing reads is the "authored but inert" failure
  * this whole line of work exists to remove. All four rows below have readers in
- * `TileModifiers` (inbound) and `TileModifiers.filterTargetTiles` (outbound).
+ * `TileModifiers` (inbound) and `TileModifiers.filterTargets` (outbound).
  *
  * ## ⚠️ No shapes and no direction
  * Four named rows, not a geometry language. Directional adjacency is ruled out
@@ -133,7 +133,7 @@ export const RELATION = Object.freeze({
  *
  * The single place the vocabulary turns into a yes or no. Both readers — the
  * inbound one in `applicableStatements` and the outbound one in
- * `filterTargetTiles` — go through here, so they cannot drift.
+ * `filterTargets` — go through here, so they cannot drift.
  */
 export function reachCovers(reachId, relation) {
     switch (reachId) {

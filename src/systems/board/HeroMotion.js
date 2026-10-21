@@ -2,10 +2,10 @@
 
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
-import { artRadiusOf, matW, matH } from '../../config/matGeometry.js';
+import { artRadiusOf, matW, clampToMat } from '../../config/matGeometry.js';
 import { matTuning } from '../../config/matTuning.js';
 import * as BoardState from './BoardState.js';
-import { getTokenType } from '../../config/registries/tokenRegistry.js';
+import { isGuildHall } from './MatCap.js';
 import { ARRIVE_EPS, stepToward, randomOffset, randomPauseMs } from './walking.js';
 
 /**
@@ -96,7 +96,7 @@ export function setRandomForTests(fn = Math.random) {
 
 /** The Guild Hall's point, where heroes come from and go home to, or null. */
 export function guildHallPoint() {
-    const hall = BoardState.tokens().find(t => t.typeId === 'token_guild_hall' || !!getTokenType(t.typeId)?.isGuildHall);
+    const hall = BoardState.tokens().find(isGuildHall);
     return hall ? { x: hall.x, y: hall.y } : null;
 }
 
@@ -155,14 +155,6 @@ function pauseMs() {
     return randomPauseMs(POTTER_PAUSE_MS, random);
 }
 
-/** Keep a point on the mat. */
-function onMat(point) {
-    return {
-        x: Math.max(0, Math.min(matW(), point.x)),
-        y: Math.max(0, Math.min(matH(), point.y))
-    };
-}
-
 /**
  * The point beside a Token (or spot) at `centre` where a hero stands to work it,
  * on `side` (−1 left, 1 right). If that side would put the hero off the mat,
@@ -212,7 +204,7 @@ function destinationOf(heroId, body) {
     if (!flag) return null;
     const home = idleSpot(flag);
     if (!body.potter) return home;
-    return onMat({ x: home.x + body.potter.dx, y: home.y + body.potter.dy });
+    return clampToMat({ x: home.x + body.potter.dx, y: home.y + body.potter.dy });
 }
 
 /**

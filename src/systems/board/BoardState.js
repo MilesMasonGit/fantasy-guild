@@ -6,8 +6,8 @@ import { createEmptyBoard } from '../../state/StateSchema.js';
 /**
  * BoardState: read/write primitives over `state.board`.
  *
- * This layer knows the SHAPE of board state and nothing about the rules. Displacement, forfeited
- * cycles and what may go where all live in `Placement.js`; keeping them apart stops
+ * This layer knows the SHAPE of board state and nothing about the rules. Forfeited cycles and what
+ * may go where live in `Placement.js`; keeping them apart stops
  * put-a-Token-here quietly growing a policy.
  *
  * A Token is a definition plus board state. The registry holds the type, and a light instance holds

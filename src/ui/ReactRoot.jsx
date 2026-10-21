@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import { cn } from './utils/cn.js';
@@ -55,7 +55,7 @@ import SlotSelectionModal from './modals/SlotSelectionModal.jsx';
 import HeroEditModal from './modals/HeroEditModal.jsx';
 import JobChangeModal from './modals/JobChangeModal.jsx';
 import PromotionCeremonyModal from './modals/PromotionCeremonyModal.jsx';
-import { ENGINE_EVENTS, ORPHAN_EVENTS, UI_EVENTS } from '../systems/core/engineEvents.js';
+import { ENGINE_EVENTS, UI_EVENTS } from '../systems/core/engineEvents.js';
 
 /**
  * ReactRoot: the entry point for the React UI layer. Manages the top-level layout, provides
@@ -151,20 +151,6 @@ export const ReactRoot = ({ engine }) => {
         ui.inspect.clear('guild');
     }, [ui.fullscreen, ui.inspect]);
 
-    useEffect(() => {
-        const unsub1 = EventBus.subscribe(ORPHAN_EVENTS.UI_OPEN_GUILD_HALL, () => handleOpenGuildHall(), UI_LISTENER);
-        const unsub2 = EventBus.subscribe(ORPHAN_EVENTS.UI_CLOSE_GUILD_HALL, () => handleCloseGuildHall(), UI_LISTENER);
-        const unsub3 = EventBus.subscribe(ORPHAN_EVENTS.UI_TOGGLE_GUILD_HALL, () => {
-            if (ui.fullscreen.view === 'guild') handleCloseGuildHall();
-            else handleOpenGuildHall();
-        }, UI_LISTENER);
-        return () => {
-            unsub1();
-            unsub2();
-            unsub3();
-        };
-    }, [handleOpenGuildHall, handleCloseGuildHall, ui.fullscreen.view]);
-
     const [inspectHeroId, setInspectHeroId] = React.useState(null);
     const toggleInspectHero = React.useCallback((id) => setInspectHeroId(prev => (prev === id ? null : id)), []);
     const closeInspectHero = React.useCallback(() => setInspectHeroId(null), []);
@@ -175,12 +161,7 @@ export const ReactRoot = ({ engine }) => {
                 setInspectHeroId(data.heroId);
             }
         }, UI_LISTENER);
-        const unsub2 = EventBus.subscribe(ORPHAN_EVENTS.HERO_EQUIPPED, (data) => {
-            if (data?.heroId) {
-                setInspectHeroId(data.heroId);
-            }
-        }, UI_LISTENER);
-        const unsub3 = EventBus.subscribe(UI_EVENTS.INSPECT_HERO, (data) => {
+        const unsub2 = EventBus.subscribe(UI_EVENTS.INSPECT_HERO, (data) => {
             if (data?.heroId) {
                 setInspectHeroId(data.heroId);
             }
@@ -188,7 +169,6 @@ export const ReactRoot = ({ engine }) => {
         return () => {
             unsub1();
             unsub2();
-            unsub3();
         };
     }, []);
 

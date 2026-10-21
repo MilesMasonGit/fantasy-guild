@@ -263,17 +263,6 @@
       0px 2px 0 #000,
       0px 2px 4px rgba(0, 0, 0, 0.8) !important;
   }
-
-  /* PERFORMANCE: CSS-driven drag-over highlighting.
-   * The [data-drag-over] attribute is set/removed by DndProvider via direct DOM
-   * manipulation (one setAttribute call per droppable boundary crossing).
-   * This replaces the React-based isOver → re-render → GICard active prop chain,
-   * eliminating expensive component re-renders during drag. */
-  [data-drag-over="true"] > :first-child {
-    border-color: rgba(255, 255, 255, 0.6) !important;
-    box-shadow: 0 0 15px rgba(255, 255, 255, 0.25), 0 0 30px rgba(255, 255, 255, 0.1);
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
-  }
 }
 
 /* Loot flying out (D-40, D-235, UI §5 "loot has mass").

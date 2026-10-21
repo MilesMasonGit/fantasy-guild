@@ -60,8 +60,6 @@ class GameLoopClass {
         // Update time tracking. `delta` is clamped to MAX_TICK_DELTA_MS.
         const delta = TimeManager.update();
 
-        if (TimeManager.getIsPaused()) return;
-
         // Time the clamp refused to deliver is caught up (`CatchUp`) rather than
         // discarded. Published, not called, so the clock keeps no dependency on the
         // catch-up. Fires only after a real gap (a sleep, a suspend, a throttled timer).
@@ -117,19 +115,6 @@ class GameLoopClass {
     }
 
     /**
-     * Set the tick interval
-     * @param {number} ms - Milliseconds between ticks
-     */
-    setTickInterval(ms) {
-        this.tickInterval = Math.max(16, Math.min(1000, ms));
-
-        if (this.isRunning) {
-            this.stop();
-            this.start();
-        }
-    }
-
-    /**
      * Get current tick count
      * @returns {number}
      */
@@ -143,13 +128,6 @@ class GameLoopClass {
      */
     getIsRunning() {
         return this.isRunning;
-    }
-
-    /**
-     * Force a single tick (for testing)
-     */
-    forceTick() {
-        this.tick();
     }
 }
 

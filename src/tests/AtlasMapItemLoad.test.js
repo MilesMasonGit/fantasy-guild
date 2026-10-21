@@ -30,9 +30,7 @@ vi.mock('../config/DatabaseManager.js', () => ({
         itemFilesGlob: {},
         tokenFilesSingle: {},
         recipePoolFilesSingle: {},
-        recipePoolFilesGlob: {},
-        effectFilesSingle: {},
-        effectFilesGlob: {}
+        effectFilesSingle: {}
     },
     default: {}
 }));

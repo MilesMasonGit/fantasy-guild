@@ -1,35 +1,4 @@
 /* ========================================
-   DRAG & DROP STATES (Zero-Move Refactor)
-   ======================================== */
-
-[data-draggable] {
-    cursor: grab;
-}
-
-[data-draggable]:active {
-    cursor: grabbing;
-}
-
-/* Prevent internal interactions during drag to avoid "flicker" */
-body[data-dragging-type] * {
-    pointer-events: none !important;
-}
-
-/* ========================================
-   CARD REJECTION ANIMATION
-   ======================================== */
-
-/* ========================================
-   HERO CARD EQUIPMENT FLASH
-   ======================================== */
-
-/* Flash animation using outline instead of border to avoid conflicts with drop-zone borders */
-
-/* Red warning glow for cards waiting on resources - repeats every 1.5s */
-
-/* Gold flash for newly spawned cards */
-
-/* ========================================
    ACTION BUTTON CLUSTER
    ======================================== */
 

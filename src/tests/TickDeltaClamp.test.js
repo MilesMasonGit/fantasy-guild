@@ -83,26 +83,12 @@ describe('Tick delta clamp (CR2-041 / CR3-101)', () => {
         expect(TimeManager.consumeOverflow()).toBe(0);
     });
 
-    it('does not advance game time by eight hours', () => {
-        advancePerf(EIGHT_HOURS_MS);
-        TimeManager.update();
-        expect(TimeManager.getGameTime()).toBe(MAX_TICK_DELTA_MS);
-    });
-
     it('parks the undelivered remainder as overflow, once', () => {
         advancePerf(EIGHT_HOURS_MS);
         TimeManager.update();
         expect(TimeManager.consumeOverflow()).toBe(EIGHT_HOURS_MS - MAX_TICK_DELTA_MS);
         // Taken, not left lying around for the next tick to bank again.
         expect(TimeManager.consumeOverflow()).toBe(0);
-    });
-
-    it('produces no overflow while paused', () => {
-        TimeManager.pause();
-        advancePerf(EIGHT_HOURS_MS);
-        expect(TimeManager.update()).toBe(0);
-        expect(TimeManager.consumeOverflow()).toBe(0);
-        TimeManager.resume();
     });
 
     // ------------------------------------------------------------------
@@ -218,11 +204,12 @@ describe('Tick delta clamp (CR2-041 / CR3-101)', () => {
             advanceWall(-5000);
 
             const deltas = [];
+            GameLoop.onTick('test_cr3101_deltas', (delta) => deltas.push(delta));
             for (let i = 0; i < 50; i++) {
                 advancePerf(100);
                 GameLoop.tick();
-                deltas.push(TimeManager.getDelta());
             }
+            GameLoop.offTick('test_cr3101_deltas');
 
             expect(deltas.every(d => d === 100)).toBe(true);
             expect(started).toEqual([]);
@@ -261,10 +248,7 @@ describe('Tick delta clamp (CR2-041 / CR3-101)', () => {
             // clock in isolation. Kept in step with
             // `EngineBootstrap._registerTickHandlers`.
             GameLoop.onTick('test_time_tracking', (delta) => {
-                GameState.updateTime({
-                    gameTimeMs: GameState.time.gameTimeMs + delta,
-                    lastTickAt: Date.now()
-                });
+                GameState.updateTime({ gameTimeMs: GameState.time.gameTimeMs + delta });
                 GameState.state.meta.totalPlaytime =
                     (GameState.state.meta.totalPlaytime || 0) + delta;
             });

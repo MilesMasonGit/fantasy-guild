@@ -163,10 +163,7 @@ export const EngineBootstrap = {
         // 10: the game clock. Nothing else reads a tick-fresher gameTimeMs.
         GameLoop.onTick('time_tracking', (delta) => {
             if (GameState.getIsInitialized()) {
-                GameState.updateTime({
-                    gameTimeMs: GameState.time.gameTimeMs + delta,
-                    lastTickAt: Date.now()
-                });
+                GameState.updateTime({ gameTimeMs: GameState.time.gameTimeMs + delta });
                 // Lifetime playtime for the save-slot screen.
                 GameState.state.meta.totalPlaytime = (GameState.state.meta.totalPlaytime || 0) + delta;
             }
@@ -257,11 +254,6 @@ export const EngineBootstrap = {
         // What a loaded save gets on `game_loaded`: the tile caches built for
         // the Tokens already standing on the mat.
         TileModifiers.rebuildAll();
-
-        // Initialize exploration tracking
-        if (!GameState.exploration) {
-            GameState.exploration = { count: 0 };
-        }
 
         logger.info('Engine', `New game: 0 heroes, the ${StarterCamp.isBuiltIn() ? 'built-in' : 'synced'} Starter Camp on the mat, its items in the Bank.`);
     },
