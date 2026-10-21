@@ -169,13 +169,25 @@ function startFresh() {
 /** The sound a banner makes as it comes on screen: a chime, or a warning tone for a problem. */
 export const BANNER_SOUND = Object.freeze({ [TONE.MILESTONE]: 'quest_claim', [TONE.PROBLEM]: 'invasion' });
 
+/**
+ * Banner sounds so far: each plays the next file of its clip's pool.
+ *
+ * ⚠️ Never a random pick. The routes are UI listeners, which a catch-up's quiet bus skips, so a
+ * draw from `Math.random` here would leave live play and a catch-up of the same hour with different
+ * random numbers, and any change to the banners would change the engine bench's work.
+ */
+let soundsPlayed = 0;
+
 let unsubs = [];
 
 /** Hear every route. Idempotent. */
 export function wireNotifications() {
     unwireNotifications();
     unsubs = ROUTES.map(r => EventBus.subscribe(r.event, (p) => r.handle(p || {}), UI_LISTENER));
-    Banners.setOnShow((b) => EventBus.publish(ENGINE_EVENTS.AUDIO_PLAY, { clip: BANNER_SOUND[b.tone] }));
+    Banners.setOnShow((b) => EventBus.publish(ENGINE_EVENTS.AUDIO_PLAY, {
+        clip: BANNER_SOUND[b.tone],
+        options: { variant: soundsPlayed++ }
+    }));
 }
 
 export function unwireNotifications() {

@@ -17,6 +17,7 @@ import { GameState } from '../state/GameState.js';
 import * as ItemStubs from '../systems/notifications/itemStubs.js';
 import * as Banners from '../systems/notifications/banners.js';
 import * as NotificationSystem from '../systems/core/NotificationSystem.js';
+import { AudioSystem } from '../systems/core/AudioSystem.js';
 import { ROUTES, wireNotifications, unwireNotifications, pins } from '../systems/notifications/routing.js';
 import { recipesUnlockedBy } from '../systems/notifications/recipeUnlocks.js';
 import { announce } from '../ui/components/board/dropOnMat.js';
@@ -204,6 +205,31 @@ describe('milestones and problems are banners', () => {
         EventBus.publish(BOARD_EVENTS.HERO_DEFEATED, { heroId: 'h9', heroName: 'Cara', lost: [] });
         off();
         expect(clips).toEqual(['quest_claim', 'invasion']);
+    });
+
+    it('a banner sound takes no number from the game\'s random draws, and the chimes still vary', () => {
+        // A catch-up raises no banner: a sound that drew a number would leave live play and a
+        // catch-up of the same hour with different random numbers.
+        vi.stubGlobal('Audio', class { play() { return Promise.resolve(); } pause() {} });
+        const files = [];
+        const off = EventBus.subscribe(ENGINE_EVENTS.AUDIO_PLAY, (d) => {
+            AudioSystem.playSfx(d.clip, d.options);                 // as AudioSystem.init hears it
+            files.push(AudioSystem._getSfxPath(d.clip, d.options?.variant));
+        });
+        const random = vi.spyOn(Math, 'random');
+        try {
+            for (const [heroId, name] of [['h1', 'Aela'], ['h2', 'Bram'], ['h3', 'Cara']]) {
+                EventBus.publish(ENGINE_EVENTS.HERO_RECRUITED, { heroId, name });
+            }
+            EventBus.publish(BOARD_EVENTS.HERO_DEFEATED, { heroId: 'h1', heroName: 'Aela', lost: [] });
+            expect(Banners.getAll()).toHaveLength(4);
+            expect(random).not.toHaveBeenCalled();
+            expect(new Set(files.slice(0, 3)).size).toBe(3);
+        } finally {
+            random.mockRestore();
+            off();
+            vi.unstubAllGlobals();
+        }
     });
 });
 
