@@ -5,9 +5,17 @@ five-line summary at each batch's edges (proposed, looked at); anything older
 than two days is trimmed. States: queued · building · ready (tests, cycles,
 build green) · bench-queued · eye-check · merged.*
 
+## Features director, the Envelope (brief 90) (owner 2026-10-21: cleared for 13:00; any issue found becomes a ticket for the next pass)
+
+| Phase | Tier | Branch (worktree) | State | Planned | Done |
+|---|---|---|---|---|---|
+| Timing baselines retaken on a quiet machine (engine and draw) | director | `main` | queued 13:00 (timer running) | Wed | |
+| E1: measure the limits at perf build, 4× slowdown, smooth (Tokens on a Region, heroes, enemies, loot piles, fights, notifications per minute, 24 h catch-up) | engineer | `crunch/envelope` | queued after the baselines, inside 13:00–17:00 | Wed | |
+| E2: the limits as design rules in GDD §14; T-071 decided against them; issues as tickets | director | `main` | queued after E1 | Wed | |
+
 ## Features director, wrap-up round 1
 
-**Rounds 1 and 2 merged to `main` 2026-10-21 (fa214742), owner eye-check "ok for now, refine later" (T-196 afterimages). Owner to-do: Recalculate + Sync on main (25 Token descriptions gain "Needs a … in hand.").** (owner 2026-10-20: wrap up the outstanding list faster, more agents; two rounds of four, then the Envelope; rule changes accepted under the old rulings)
+**Rounds 1 and 2 merged to `main` 2026-10-21 (fa214742), owner eye-check "ok for now, refine later" (T-196 afterimages). Owner Recalculate + Sync done 11512fbc: 25 descriptions only, checked; round-trip tests pass on real data.** (owner 2026-10-20: wrap up the outstanding list faster, more agents; two rounds of four, then the Envelope; rule changes accepted under the old rulings)
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
