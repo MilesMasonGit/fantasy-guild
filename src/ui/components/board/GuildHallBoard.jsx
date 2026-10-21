@@ -1,26 +1,41 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import {
-    GUILD_UPGRADES, HALL_NODE, getUpgradeDef, getUpgradeWebLinks, isUpgradeAccessible, toRoman
+    GUILD_UPGRADES, HALL_NODE, CONSTELLATIONS, getUpgradeDef, getUpgradeWebLinks, isUpgradeAccessible
 } from '../../../config/guildUpgrades.js';
 import { GuildUpgradeManager } from '../../../systems/progression/GuildUpgradeManager.js';
 import { useBoardScale } from '../../hooks/useBoardScale.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
- * The web's natural drawing space, in pixels, before it is scaled to fit the
- * window (`useBoardScale`, as the mat does). Upgrade node positions are unit
- * coordinates centred on the Hall (`guildUpgrades.js`); one unit is
- * `WEB_UNIT_PX`, so the first ring (0.5 out) sits 200px from the Hall.
+ * The web's natural space, in pixels. Upgrade node positions are unit coordinates centred on
+ * the Hall (`guildUpgrades.js`); one unit is `WEB_UNIT_PX`, so the first ring (0.5 out) sits
+ * 200px from the Hall. The space is fitted to the window (`useBoardScale`), but only the
+ * positions scale: stars, lines and tags are drawn at fixed whole-pixel sizes, so the art stays
+ * crisp at any fit.
  */
 export const WEB_W = 1000;
 export const WEB_H = 760;
 export const WEB_UNIT_PX = 400;
-const NODE_PX = 112;
-const HALL_PX = 168;
 
-const OUTLINE = '0 1px 0 #000, 1px 0 0 #000, 0 -1px 0 #000, -1px 0 0 #000, 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 0 2px 3px rgba(0,0,0,0.95)';
+/** The owner's star sprites, 32 art pixels square, one per lit state. */
+export const STAR_ART_PX = 32;
+export const STAR_SPRITES = {
+    locked: '/assets/playmat/screens/ui_star_grey.png',
+    buyable: '/assets/playmat/screens/ui_star_blue.png',
+    bought: '/assets/playmat/screens/ui_star_blue.png',
+    maxed: '/assets/playmat/screens/ui_star_gold.png'
+};
+/** Each state's whole-pixel scale: the brighter the star, the bigger. */
+export const STAR_SCALE = { locked: 1, buyable: 1, bought: 2, maxed: 2 };
+export const HALL_STAR_SCALE = 3;
+/** The smallest click target around a star, so a 32 px star is not fiddly to hit. */
+const HIT_PX = 56;
+/** One art pixel of the 2× sky: the width of a line. */
+const LINE_PX = 2;
+
+const OUTLINE = '0 1px 0 #000, 1px 0 0 #000, 0 -1px 0 #000, -1px 0 0 #000, 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000';
 
 /** A node's centre in the web's natural pixels. The Hall is the middle. */
 export function webPoint(nodeId) {
@@ -46,21 +61,60 @@ export function nodeState(nodeId, ranks) {
 
 const isOwned = (state) => state === 'bought' || state === 'maxed';
 
+/** The constellations whose every star is lit, as a sorted id list. */
+export function finishedConstellations(ranks) {
+    return CONSTELLATIONS
+        .filter(c => {
+            const stars = GUILD_UPGRADES.filter(u => u.constellation === c.id);
+            return stars.length > 0 && stars.every(u => isOwned(nodeState(u.id, ranks)));
+        })
+        .map(c => c.id);
+}
+
 /**
- * GuildHallBoard — the Guild Hall upgrade web.
+ * The constellation a line belongs to: a line from a star to the Hall, or between two stars of
+ * one constellation, is part of its picture; a line joining two constellations is part of
+ * neither.
+ */
+export function linkConstellation(from, to) {
+    const a = getUpgradeDef(from)?.constellation;
+    if (to === HALL_NODE) return a || null;
+    const b = getUpgradeDef(to)?.constellation;
+    return a && a === b ? a : null;
+}
+
+/**
+ * Where a star's tag sits in the star's box (`box` square, the star `starPx` in its middle): a
+ * zero-size anchor just off the star's edge, with the text centred on it or running away from
+ * it, so the tag never covers its own star whatever its length.
+ */
+function tagPlacement(side, box, starPx) {
+    const mid = box / 2;
+    const gap = starPx / 2 + 2;
+    switch (side) {
+        case 'above': return { left: mid, bottom: mid + gap, width: 0, justifyContent: 'center' };
+        case 'left': return { right: mid + gap + 2, top: mid, height: 0, alignItems: 'center' };
+        case 'right': return { left: mid + gap + 2, top: mid, height: 0, alignItems: 'center' };
+        default: return { left: mid, top: mid + gap, width: 0, justifyContent: 'center' };
+    }
+}
+
+/**
+ * GuildHallBoard: the Guild Hall upgrades as a night sky.
  *
- * The Hall in the centre, every upgrade a node placed freely around it, lines
- * between linked nodes. A line glows gold once both its ends are bought (the
- * Hall always is), so the bought paths read at a glance; a line to a locked
- * node is dimmed. There are no tiles here: nodes are picked by upgrade id.
- * The Effects list sits to the left of this, in `ReactRoot`.
+ * Every upgrade is a pixel star whose sprite and size say its state, tagged with its name and
+ * rank; the Hall is the pole star in the middle that every constellation starts from. Lines are
+ * faint until both ends are lit. The sky behind is `HallSky`, the Effects list sits to the left
+ * and the details panel to the right, both in `ReactRoot`.
+ * Hovering a star reports it (`onHoverUpgrade`) so the details panel can show it; a click pins
+ * it (`onSelectUpgrade`).
  */
 export const GuildHallBoard = ({
     selectedUpgradeId,
     onSelectUpgrade,
+    onHoverUpgrade,
     onClose
 }) => {
-    const [hovered, setHovered] = useState(null);
     const ranks = useGameState(
         state => state.progress?.guildUpgrades || {},
         [ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, ENGINE_EVENTS.STATE_CHANGED]
@@ -73,191 +127,198 @@ export const GuildHallBoard = ({
     );
     const affordable = new Set((affordableSignature || '').split(',').filter(Boolean));
 
+    // A constellation finished while the screen is open flashes once; one already finished when
+    // the screen opens does not.
+    const finishedKey = finishedConstellations(ranks).join(',');
+    const finished = new Set(finishedKey.split(',').filter(Boolean));
+    const seenFinished = useRef(null);
+    const [glowing, setGlowing] = useState([]);
+    useEffect(() => {
+        const now = finishedKey.split(',').filter(Boolean);
+        const before = seenFinished.current;
+        seenFinished.current = new Set(now);
+        if (!before) return;
+        const fresh = now.filter(id => !before.has(id));
+        if (fresh.length) setGlowing(g => [...g.filter(id => !fresh.includes(id)), ...fresh]);
+    }, [finishedKey]);
+
     const fit = useBoardScale(WEB_W, WEB_H);
+    const at = (nodeId) => {
+        const p = webPoint(nodeId);
+        return { x: Math.round(p.x * fit.scale), y: Math.round(p.y * fit.scale) };
+    };
     const links = getUpgradeWebLinks();
-    const hall = webPoint(HALL_NODE);
+    const hall = at(HALL_NODE);
+    const hallPx = STAR_ART_PX * HALL_STAR_SCALE;
+    const hover = (id) => onHoverUpgrade?.(id);
 
     return (
-        <div className="w-full h-full min-w-0 min-h-0 flex items-center justify-center py-8 px-4 overflow-hidden select-none">
-            {/* The wooden frame (the Effects panel's), floored in a darkened
-                shade of its own wood. */}
-            <div
-                className="w-full h-full min-w-0 min-h-0 relative rounded-2xl border-4 border-[#3a271d] overflow-hidden flex"
-                style={{
-                    backgroundColor: '#3a271d',
-                    backgroundImage: 'linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45))',
-                    boxShadow: 'inset 0 0 28px rgba(0,0,0,0.9), 0 8px 24px rgba(0,0,0,0.6)'
-                }}
-            >
-                <div ref={fit.ref} className="flex-1 min-w-0 min-h-0 flex items-center justify-center p-4 overflow-hidden">
-                    <div className="relative shrink-0" style={{ width: fit.size, height: fit.height }}>
-                        <div
-                            data-board-origin
-                            data-guild-hall-board="true"
-                            data-natural-width={WEB_W}
-                            data-natural-height={WEB_H}
-                            className="relative shrink-0"
-                            style={{
-                                width: WEB_W,
-                                height: WEB_H,
-                                transform: `scale(${fit.scale})`,
-                                transformOrigin: 'top left'
-                            }}
-                        >
-                            {/* Lines first, so the nodes sit on top of them. */}
-                            <svg
-                                className="absolute inset-0 pointer-events-none"
-                                width={WEB_W}
-                                height={WEB_H}
-                                viewBox={`0 0 ${WEB_W} ${WEB_H}`}
+        // ⚠️ `overflow-clip`, not `overflow-hidden`: a hidden box is still a scroll container,
+        // and focus moving to a star near the edge could scroll the whole web out of place.
+        <div className="w-full h-full min-w-0 min-h-0 flex py-8 px-8 overflow-clip select-none">
+            <div ref={fit.ref} className="flex-1 min-w-0 min-h-0 flex items-center justify-center">
+                <div
+                    data-board-origin
+                    data-guild-hall-board="true"
+                    data-natural-width={WEB_W}
+                    data-natural-height={WEB_H}
+                    className="relative shrink-0"
+                    style={{ width: fit.size, height: fit.height }}
+                >
+                    {/* Lines first, so the stars sit on top of them. */}
+                    <svg
+                        className="absolute inset-0 pointer-events-none overflow-visible"
+                        width={fit.size}
+                        height={fit.height}
+                        shapeRendering="crispEdges"
+                    >
+                        {links.map(({ from, to }) => {
+                            const a = at(from);
+                            const b = at(to);
+                            const lit = isOwned(nodeState(from, ranks)) && isOwned(nodeState(to, ranks));
+                            const c = linkConstellation(from, to);
+                            return (
+                                <g key={`${from}:${to}`} data-hall-link={`${from}:${to}`} data-link-lit={lit ? 'true' : 'false'}>
+                                    <line
+                                        x1={a.x} y1={a.y} x2={b.x} y2={b.y}
+                                        stroke={lit ? '#fff1c4' : '#aab4ff'}
+                                        strokeOpacity={lit ? (c && finished.has(c) ? 1 : 0.85) : 0.28}
+                                        strokeWidth={LINE_PX}
+                                    />
+                                </g>
+                            );
+                        })}
+                        {glowing.map(cid => (
+                            <g
+                                key={`glow-${cid}`}
+                                data-constellation-glow={cid}
+                                className="gi-constellation-glow"
+                                onAnimationEnd={() => setGlowing(g => g.filter(id => id !== cid))}
                             >
-                                {links.map(({ from, to }) => {
-                                    const a = webPoint(from);
-                                    const b = webPoint(to);
-                                    const sa = nodeState(from, ranks);
-                                    const sb = nodeState(to, ranks);
-                                    const lit = isOwned(sa) && isOwned(sb);
-                                    const dim = sa === 'locked' || sb === 'locked';
-                                    return (
-                                        <g key={`${from}:${to}`} data-hall-link={`${from}:${to}`} data-link-lit={lit ? 'true' : 'false'}>
-                                            {/* A dark casing under every line keeps it legible on the floor. */}
-                                            <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="#140d08" strokeWidth={12} strokeLinecap="round" opacity={dim ? 0.5 : 0.9} />
-                                            <line
-                                                x1={a.x} y1={a.y} x2={b.x} y2={b.y}
-                                                stroke={lit ? '#f5c542' : dim ? '#4a3526' : '#9a7650'}
-                                                strokeWidth={lit ? 6 : 5}
-                                                strokeLinecap="round"
-                                                strokeDasharray={dim ? '10 10' : undefined}
-                                                opacity={dim ? 0.6 : 1}
-                                                style={lit ? { filter: 'drop-shadow(0 0 6px rgba(245,197,66,0.85))' } : undefined}
-                                            />
-                                        </g>
-                                    );
+                                {links.filter(({ from, to }) => linkConstellation(from, to) === cid).map(({ from, to }) => {
+                                    const a = at(from);
+                                    const b = at(to);
+                                    return <line key={`${from}:${to}`} x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="#fffbe8" strokeWidth={LINE_PX * 3} />;
                                 })}
-                            </svg>
+                            </g>
+                        ))}
+                    </svg>
 
-                            {/* The Hall. Clicking it returns to the playmat. */}
-                            <button
-                                type="button"
-                                data-hall-node={HALL_NODE}
-                                data-node-state="bought"
-                                title="Return to Playmat"
-                                onMouseEnter={() => setHovered(HALL_NODE)}
-                                onMouseLeave={() => setHovered(null)}
-                                onClick={() => onClose?.()}
-                                className="absolute flex items-center justify-center rounded-full border-4 border-gi-gold bg-[#2a1d15] cursor-pointer"
-                                style={{
-                                    left: hall.x - HALL_PX / 2,
-                                    top: hall.y - HALL_PX / 2,
-                                    width: HALL_PX,
-                                    height: HALL_PX,
-                                    boxShadow: '0 0 22px rgba(245,197,66,0.55), inset 0 0 18px rgba(0,0,0,0.8)'
-                                }}
+                    {/* Constellation names: faint, bright once the constellation is finished. */}
+                    {CONSTELLATIONS.map(c => {
+                        const x = Math.round((WEB_W / 2 + c.label.x * WEB_UNIT_PX) * fit.scale);
+                        const y = Math.round((WEB_H / 2 + c.label.y * WEB_UNIT_PX) * fit.scale);
+                        const done = finished.has(c.id);
+                        return (
+                            <div
+                                key={c.id}
+                                data-constellation={c.id}
+                                data-constellation-finished={done ? 'true' : 'false'}
+                                className="absolute flex justify-center pointer-events-none"
+                                style={{ left: x, top: y - 8, width: 0 }}
                             >
-                                <img
-                                    src="/assets/tokens/upgrade/t_guildhall.png"
-                                    alt="Guild Hall"
-                                    className={cn('w-32 h-32 object-contain drop-shadow-md transition-[filter] duration-150', hovered === HALL_NODE && 'gi-token-hover-pulse')}
-                                    style={{ imageRendering: 'pixelated' }}
-                                />
-                            </button>
+                                <span
+                                    className={cn('whitespace-nowrap ui-text-title tracking-[0.2em] uppercase', done ? 'text-[#fff1c4]' : 'text-[#aab4ff] opacity-40')}
+                                    style={{ textShadow: OUTLINE }}
+                                >
+                                    {c.name}
+                                </span>
+                            </div>
+                        );
+                    })}
 
-                            {GUILD_UPGRADES.map(def => {
-                                const p = webPoint(def.id);
-                                const state = nodeState(def.id, ranks);
-                                const rank = ranks[def.id] || 0;
-                                const isSelected = selectedUpgradeId === def.id;
-                                const canAfford = (state === 'buyable' || state === 'bought') && affordable.has(def.id);
-                                const owned = isOwned(state);
-                                return (
-                                    <div
-                                        key={def.id}
-                                        className="absolute flex flex-col items-center"
-                                        style={{ left: p.x - NODE_PX / 2, top: p.y - NODE_PX / 2, width: NODE_PX }}
-                                    >
-                                        <button
-                                            type="button"
-                                            data-hall-node={def.id}
-                                            data-node-state={state}
-                                            data-selected={isSelected ? 'true' : undefined}
-                                            id={def.id === 'roster_size' ? 'guild-roster-upgrade-node' : def.id === 'wishing_well' ? 'guild-wishing-well-upgrade-node' : undefined}
-                                            data-guild-roster-upgrade={def.id === 'roster_size' ? 'true' : undefined}
-                                            data-guild-wishing-well-upgrade={def.id === 'wishing_well' ? 'true' : undefined}
-                                            title={def.name}
-                                            onMouseEnter={() => setHovered(def.id)}
-                                            onMouseLeave={() => setHovered(null)}
-                                            onClick={() => onSelectUpgrade?.(def)}
-                                            className={cn(
-                                                'relative flex items-center justify-center rounded-xl border-4 cursor-pointer transition-[box-shadow,border-color] duration-150',
-                                                state === 'maxed' && 'border-yellow-300',
-                                                state === 'bought' && 'border-gi-gold',
-                                                state === 'buyable' && 'border-[#9a7650]',
-                                                state === 'locked' && 'border-[#3a271d]',
-                                                isSelected && 'outline outline-4 outline-offset-2 outline-white/85'
-                                            )}
-                                            style={{
-                                                width: NODE_PX,
-                                                height: NODE_PX,
-                                                backgroundColor: state === 'locked' ? '#15100b' : '#2a1d15',
-                                                boxShadow: state === 'maxed'
-                                                    ? '0 0 24px rgba(253,224,71,0.8), inset 0 0 14px rgba(0,0,0,0.8)'
-                                                    : state === 'bought'
-                                                        ? '0 0 14px rgba(245,197,66,0.55), inset 0 0 14px rgba(0,0,0,0.8)'
-                                                        : 'inset 0 0 14px rgba(0,0,0,0.8), 0 4px 10px rgba(0,0,0,0.6)'
-                                            }}
-                                        >
-                                            <img
-                                                src={def.sprite}
-                                                alt={def.name}
-                                                className={cn(
-                                                    'w-24 h-24 object-contain transition-[filter] duration-150',
-                                                    state === 'locked' && 'grayscale opacity-30',
-                                                    hovered === def.id && state !== 'locked' && 'gi-token-hover-pulse'
-                                                )}
-                                                style={{ imageRendering: 'pixelated' }}
-                                            />
-                                            {state === 'locked' && (
-                                                <img
-                                                    src="/assets/ui/u_lock.png"
-                                                    alt="Locked"
-                                                    className="absolute w-12 h-12 object-contain opacity-80 drop-shadow-md pointer-events-none"
-                                                    style={{ imageRendering: 'pixelated' }}
-                                                />
-                                            )}
-                                            {/* Affordable: the Token Alert badge. */}
-                                            {canAfford && (
-                                                <div data-upgrade-available="true" className="absolute -top-3 -left-3 z-10 pointer-events-none">
-                                                    <img
-                                                        src="/assets/ui/u_upgrade.png"
-                                                        alt="Upgrade Available"
-                                                        className="select-none animate-bounce drop-shadow-[0_0_8px_rgba(234,179,8,0.9)]"
-                                                        style={{ width: 32, height: 32, imageRendering: 'pixelated', animationDuration: '2s' }}
-                                                    />
-                                                </div>
-                                            )}
-                                        </button>
-                                        {/* The plaque: name and rank. */}
-                                        <div
-                                            className={cn(
-                                                'mt-1.5 px-2 py-0.5 rounded-md border-2 text-center whitespace-nowrap pointer-events-none',
-                                                owned ? 'bg-[#3d2a1f] border-gi-gold/70' : 'bg-[#1c140e]/95 border-[#3a271d]',
-                                                state === 'locked' && 'opacity-60'
-                                            )}
-                                            style={{ textShadow: OUTLINE }}
-                                        >
-                                            <div className="ui-text-title leading-tight text-white">{def.name}</div>
-                                            <div
-                                                data-node-rank
-                                                className={cn('ui-text-title leading-tight', state === 'maxed' ? 'text-yellow-300' : owned ? 'text-gi-gold' : 'text-stone-400')}
-                                            >
-                                                {`${toRoman(rank)}/${toRoman(def.maxRank)}`}
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
+                    {/* The Hall, the pole star. Clicking it returns to the playmat. */}
+                    <div className="absolute flex flex-col items-center" style={{ left: hall.x - hallPx / 2, top: hall.y - hallPx / 2, width: hallPx }}>
+                        <button
+                            type="button"
+                            data-hall-node={HALL_NODE}
+                            data-node-state="bought"
+                            title="Return to Playmat"
+                            onClick={() => onClose?.()}
+                            className="gi-star-btn flex items-center justify-center cursor-pointer"
+                            style={{ width: hallPx, height: hallPx, '--star-px': `${HALL_STAR_SCALE}px` }}
+                        >
+                            <img
+                                src={STAR_SPRITES.maxed}
+                                alt="Guild Hall"
+                                className="gi-star-img"
+                                style={{ width: hallPx, height: hallPx, imageRendering: 'pixelated' }}
+                            />
+                        </button>
+                        <div
+                            className="mt-1 whitespace-nowrap ui-text-title leading-tight text-[#fff1c4] pointer-events-none"
+                            style={{ textShadow: OUTLINE }}
+                        >
+                            Guild Hall
                         </div>
                     </div>
+
+                    {GUILD_UPGRADES.map((def, i) => {
+                        const p = at(def.id);
+                        const state = nodeState(def.id, ranks);
+                        const rank = ranks[def.id] || 0;
+                        const isSelected = selectedUpgradeId === def.id;
+                        const canAfford = (state === 'buyable' || state === 'bought') && affordable.has(def.id);
+                        const scale = STAR_SCALE[state];
+                        const starPx = STAR_ART_PX * scale;
+                        const box = Math.max(starPx, HIT_PX);
+                        return (
+                            <div
+                                key={def.id}
+                                className="absolute"
+                                style={{ left: p.x - box / 2, top: p.y - box / 2, width: box, height: box }}
+                            >
+                                <button
+                                    type="button"
+                                    data-hall-node={def.id}
+                                    data-node-state={state}
+                                    data-selected={isSelected ? 'true' : undefined}
+                                    data-upgrade-available={canAfford ? 'true' : undefined}
+                                    id={def.id === 'roster_size' ? 'guild-roster-upgrade-node' : def.id === 'wishing_well' ? 'guild-wishing-well-upgrade-node' : undefined}
+                                    data-guild-roster-upgrade={def.id === 'roster_size' ? 'true' : undefined}
+                                    data-guild-wishing-well-upgrade={def.id === 'wishing_well' ? 'true' : undefined}
+                                    title={def.name}
+                                    onMouseEnter={() => hover(def.id)}
+                                    onMouseLeave={() => hover(null)}
+                                    onFocus={() => hover(def.id)}
+                                    onBlur={() => hover(null)}
+                                    onClick={() => onSelectUpgrade?.(def)}
+                                    className="gi-star-btn flex items-center justify-center cursor-pointer"
+                                    style={{ width: box, height: box, '--star-px': `${scale}px` }}
+                                >
+                                    <img
+                                        src={STAR_SPRITES[state]}
+                                        alt={def.name}
+                                        className={cn('gi-star-img', state === 'buyable' && 'gi-star-twinkle', state === 'locked' && 'opacity-60')}
+                                        style={{
+                                            width: starPx,
+                                            height: starPx,
+                                            imageRendering: 'pixelated',
+                                            // Twinkles out of step with each other.
+                                            animationDelay: state === 'buyable' ? `-${(i * 0.53) % 1.6}s` : undefined
+                                        }}
+                                    />
+                                </button>
+                                {/* The tag: name and rank, on the side the upgrade names. */}
+                                <div
+                                    data-star-tag={def.tag || 'below'}
+                                    className="absolute flex pointer-events-none"
+                                    style={tagPlacement(def.tag, box, starPx)}
+                                >
+                                    <span
+                                        className={cn(
+                                            'whitespace-nowrap ui-text-title leading-tight',
+                                            state === 'locked' ? 'text-stone-400' : state === 'maxed' ? 'text-[#ffd84a]' : 'text-white'
+                                        )}
+                                        style={{ textShadow: OUTLINE }}
+                                    >
+                                        {def.name}{' '}
+                                        <span data-node-rank>{`${rank}/${def.maxRank}`}</span>
+                                    </span>
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
         </div>

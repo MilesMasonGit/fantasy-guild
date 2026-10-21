@@ -17,6 +17,7 @@ import { StarterCampDevSection } from '../dev/StarterCampDevSection.jsx';
 import { NotificationsDevSection } from '../dev/NotificationsDevSection.jsx';
 import { TerrainDevSection } from '../dev/TerrainDevSection.jsx';
 import { AtlasDevSection } from '../dev/AtlasDevSection.jsx';
+import { GuildHallDevSection } from '../dev/GuildHallDevSection.jsx';
 import { StyleSheetPage } from '../dev/StyleSheetPage.jsx';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 import { UI_LISTENER } from '../../systems/core/EventBus.js';
@@ -317,6 +318,7 @@ export const TestDashboard = React.memo(() => {
                         {import.meta.env.DEV && <TerrainDevSection />}
                         {import.meta.env.DEV && <StarterCampDevSection />}
                         {import.meta.env.DEV && <AtlasDevSection />}
+                        {import.meta.env.DEV && <GuildHallDevSection />}
                         {import.meta.env.DEV && <NotificationsDevSection />}
                         <div className="mb-3 pb-3 border-b border-gi-border space-y-2">
                             <div>
