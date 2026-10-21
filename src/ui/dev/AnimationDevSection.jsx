@@ -2,7 +2,7 @@
 // ⚠️ DEV BUILDS ONLY: TestDashboard renders this behind `import.meta.env.DEV && …`.
 
 import { useState } from 'react';
-import { enemies, worked, everyToken, some, playOn, neighbours, dropLootFrom, dropRareFrom } from './animationDev.js';
+import { enemies, worked, everyToken, some, playOn, neighbours, dropLootFrom, dropRareFrom, setUpAnimationScene } from './animationDev.js';
 import { beginSettle } from '../components/board/fx/regionSettle.js';
 import { floatNumber, spark, knockoutGhost, heroFlash, KNOCKOUT_MS } from '../components/board/fx/matFx.js';
 import * as BoardState from '../../systems/board/BoardState.js';
@@ -12,6 +12,7 @@ const buttonClass = 'px-2 py-1 rounded bg-gi-primary/10 hover:bg-gi-primary/20 b
 
 /** Each button: what it plays, and on which Tokens. */
 const EFFECTS = [
+    { id: 'scene', label: 'Set up: trees, ore, goblins, four heroes at work (changes the game)', run: setUpAnimationScene },
     { id: 'hit', label: 'Hit: white flash, knockback, afterimages (enemies)', run: () => playOn(some(enemies(), 3), { fx: 'hit', dir: 1 }) },
     {
         id: 'damage', label: 'Damage number (enemies)',
