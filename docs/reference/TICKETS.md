@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-195**
+**Next free number: T-196**
 
 ---
 
@@ -49,15 +49,9 @@ here.
 |---|---|---|---|---|
 | T-176 | P2 | open | **The quest board** ([concept_quests_tutorial.md](../active/concept_quests_tutorial.md), "The quest board", owner 2026-10-20): one fixture board at the bottom-left of every Region's mat; click opens its card on the quest list; up to 3 collect/hunt bounties from reachable content, Bank have/need, Claim takes items and bursts materials as floating loot; tutorial step pinned first; gold outline and ready count at rest. Replaces the loose quest Tokens. Brief 170. | owner interview |
 | T-175 | P2 | owner | (Concept still a draft, owner 2026-10-14: not for the director yet.) **Collectors: the Guild Hall and warehouses** ([concept_collectors.md](../active/concept_collectors.md)): the Hall collects all loot in a small radius from the start, widened by a ranked Hall star; warehouses built on Foundations collect items with one tag (CMS Collects block: tag, radius, interval ~60 s), bigger radius on higher tiers, no upkeep; shared sweep clock, nearest collector wins, items fly in; Bank-full leaves loot and shows the yellow mark; reach ring on hover, drag, placing. Remove the auto-collect setting. Engineer. WORK CHANGED expected. Cost-log line. Eye-check. | concept_collectors.md |
-| T-015 | P2 | open | Retire `state_changed`, stages 2–3 (stage 1 = `GAME_RESET`, merged). | CR3-305 |
 | T-126 | P2 | open | **Gathering tools become hero gear and last forever** (owner 2026-10-09, D2 + D4): pickaxes, woodaxes, fishing rods, sickles are carried in a hero's hands alongside weapons (hands: 2) and set what they can gather; tool Tokens on the mat go away; stations (anvils, furnaces) stay Tokens. Nothing wears out. Today tools are context Tokens and some recipes spend their charges (`Charges.js`, `requiresContext`); GDD says "Tools are not hero equipment". **Designed 2026-10-20** (concept_skill_loops.md "Tools in detail": one hand, needed by kind, tier gates node tiers, no-tool speech bubble, starter set in the Bank, swap by hand, content as items via a change pack). Changes play: eye-check. | concept_skill_loops.md |
-| T-016 | P2 | open | A loot sweep publishes one event per sprite; batch it. | CR3-255 |
-| T-019 | P2 | open | The engine starts a game only when React says so → add `Engine.startSlot`; reuse CR3-100's test as the headless boot test. | CR3-307 |
-| T-020 | P3 | open | Three small rules copied into UI components; move them to the engine, show refusals on screen. | CR3-308 |
-| T-021 | P3 | open | Two ways into the engine; settle on one (R5-Q2 ruling A). | CR3-512 |
 | T-026 | P3 | ride-along | Small per-tick allocations in combat and statuses. | CR3-032 |
 | T-027 | P3 | ride-along | Motion ticks allocate small objects per walker. | CR3-153 |
-| T-097 | P2 | open | *(Token cap done in T-102: `MatCap.BASE_TOKEN_CAP`.)* Move the mat size and quest cap/interval out of the dev Mat Tuner into fixed game values (Hall upgrades may raise them later); hide Debug Mode and the QA tools in shipped builds. Owner 2026-10-06. | GDD §16.1 |
 
 ### UI
 
@@ -81,7 +75,6 @@ here.
 | T-031 | P2 | open | z-index: one table for the mat, ~20 literal values elsewhere; unify. | CR3-456 |
 | T-032 | P2 | open | Typography window is boxed inside Settings; Escape leaves its preview applied. *Suspected.* | CR3-453 |
 | T-033 | P1 | open | **Picking up and dropping still hitch now and then; on a very full mat, at most drops.** Owner 2026-10-07 (dev build, S2): ~90 ms pause at every pickup, ~60 ms at every drop. The drag deep-dive's D3 (2026-10-09) stopped a drag redrawing every draggable: `bench:drag` (perf build, S2, plain pass) now finds a frame over 16.7 ms in 0–9 of 50 pickups (was 47–50) and 0–11 of 50 drops (was 44–50), the median drag's longest frame 6–12 ms (was 18–30); with bubbles showing, pickups 0–10, drops 5–13. Left: Bank pickups (9–10 of 50) and drops, Shop drops (11–13 of 50), and S3 (~320 Tokens), where 41–49 of 50 drops and 11–50 of 50 pickups still have one, typically 18–24 ms, and carrying 6–20 of 50 drags (0.3–0.8 % of frames; the board alone 0.29 %). Causes and numbers: `docs/reference/PERFORMANCE.md`, D3 findings. | CR3-400 |
-| T-035 | P2 | open | A push shoves overlapping Tokens anywhere on the mat. Ruling: move only what the newcomer crowds (and what that pushes into). ⚠ The bench will report WORK CHANGED for S4 — expected, accept it here. | CR3-151 |
 | T-036 | P3 | open | One panel header everywhere (UI_STYLE "Panel headers", owner 2026-10-13): title left, the red pixel close X (`ui_cancel_red.png`, 16 px, at 2×) top right; ~12 files still use a vector X. | R8-Q3 |
 | T-038 | P3 | open | (Shared layer done 2026-10-18; ~45 files still use bracketed pixel sizes the global rule remaps, 8 have dead `md:text-*`, 15 use fonts that never render.) Text sizes / fonts written in code aren't what renders; rewrite them to match (no visible change). | CR3-460 |
 | T-039 | P3 | open | Sci-fi words on screen ("Protocol Settings", "SYSTEM BOOT", "neural sync") and other retired vocabulary → plain words. | CR3-464 |
@@ -115,7 +108,6 @@ here.
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
-| T-065 | P2 | open | 3 of 7 test fixtures still borrow real `item_` ids — their rename changes the bench fingerprint, so land it as its own accepted commit. | CR3-551 |
 | T-067 | P3 | open | Skipped tests: the Map-burst rule skips still need a ruling or deletion. | CR3-554 |
 | T-116 | P3 | open | The CMS content generator still writes the retired task/area effect vocabulary (`targetCategory` enum ALL/COMBAT/MELEE/MINING/INDUSTRY/NATURE/CRAFTING in `contentGenerator.js`); only its skill list follows the registry. Its prompt also still teaches energy costs and the per-level skill multiplier (`contentGenerator.js`, `useGlobalStore.js` defaults), both retired. It is still reachable from the CMS's Generate button, so rewriting the prompt is a design call, not dead code. | brief 20 R3 |
 | T-121 | P3 | open | Slot card playtime reads hours for seconds: `formatPlaytime(seconds)` in `SlotSelectionModal.jsx` is handed milliseconds (76 s shows as 21h 6m). | brief 40 O4 |
@@ -151,6 +143,7 @@ first, when content that uses it is authored.*
 | T-091 | Stage 3 | Tokens teleport; mat size is dev tuning. | CR3-565 |
 | T-092 | design | The free-playmat plan's "Map stays unopened" overflow rule (FP-46) is unbuilt; overflow drops as loot. | FMR |
 | T-100 | before release | Master volume defaults to 0 so the owner can work in silence; set an audible default before shipping. | GDD §16.10 |
+| T-195 | P3 | open | **Two one-line leftovers in the terrain director's files** (engine plumbing, 2026-10-21): `src/systems/atlas/Atlas.js:516` still publishes `STATE_CHANGED` after its own `GAME_RESET` (delete it, then `STATE_CHANGED` from `engineEvents.js` and its `NO_LISTENER` entry, and tighten `StateChangedRetired.test.js`); `src/systems/atlas/layoutInputs.js:25` reads `matTuningDefault('matSteps')` and should read `MAT_STEPS` from `matGeometry.js`. Terrain director. | T-015, T-097 |
 | T-194 | P3 | open | **Reuse the camera glide for the Guild Hall upgrade screen** (owner 2026-10-20): the glide from the mat up a shared wood table to the Atlas book was built (brief 160 T4a: `AtlasCamera.jsx`, one transform on one wrapper, skippable, reduced motion swaps; the mat never re-renders) and set aside when the Atlas became a pop-up. Kept at git tag `atlas-camera-move` (7a678567). Bring it back when the upgrade screen is built. | brief 160 T4a |
 | T-193 | P3 | open | **A notification log** (owner 2026-10-19: low priority, build only if it proves needed; [concept_notifications.md](../active/concept_notifications.md) "Later: the log"): opens as a modal; plain-text rows like the item stubs, no sprite; a new-items dot, no count. Builder. Eye-check. | brief 150 |
 | T-186 | P3 | open | **Equipping by drop opens the hero sheet one frame after the drop** (owner 2026-10-15): today the sheet opens inside the drop's own frame, the heaviest drop in the game (~240 renders, found in P2-9). Open it in a transition one frame later, as brief 60 D3 did for the Shop list and the toasts; no visible difference. builder-lite. | P2-9 |

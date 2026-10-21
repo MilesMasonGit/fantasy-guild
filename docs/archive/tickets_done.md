@@ -109,3 +109,11 @@ T-070 — window.Game documented (WINDOW_GAME.md) with a guard test against the 
 T-124 — CREDITS.md: every third-party pack, licence and use (background music provenance is an open owner question) — 9a103fbb — 2026-10-20
 T-118 — bench --cpu-prof keeps the engine thread profile — 9a103fbb — 2026-10-20
 T-111 — bench/README: reading timing under load — 9a103fbb — 2026-10-20
+T-065 — Fixture items renamed fixture_* (bench fingerprint change accepted) — 48fd719c — 2026-10-21
+T-020 — Three UI-copied rules moved to the engine; refusals on screen (Disallow: "No hero works this") — 48fd719c — 2026-10-21
+T-019 — EngineBootstrap.startSlot starts a game; CR3-100 test is the headless boot test — 48fd719c — 2026-10-21
+T-015 — state_changed retired (one Atlas publish left, T-195) — 48fd719c — 2026-10-21
+T-016 — A loot sweep sends one Bank update per item — 48fd719c — 2026-10-21
+T-035 — A push moves only the newcomer's chain (work changed on S3, accepted) — 48fd719c — 2026-10-21
+T-097 — Mat size and bounty numbers are game values; shipped builds have no Mat Tuner, Debug Mode or QA tools — 48fd719c — 2026-10-21
+T-021 — One way into the engine: EngineProvider and useEngine deleted — 48fd719c — 2026-10-21
