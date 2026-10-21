@@ -20,26 +20,29 @@ const tool = (id, name, sprite, kind, tier, { starter = false, description = '' 
 });
 
 /**
- * Every tool item, by id. `item_copper_pickaxe` is the owner's, given its Tool.
+ * Every tool item, by id. `item_copper_pickaxe` is the owner's, given its Tool. The four starters
+ * are the copper tools and the Fishing Rod.
  * ⚠️ Built on call, not at load: a module-level call keeps this file in the production bundle.
  */
 export const toolItems = () => ({
-    item_rusty_pickaxe: tool('item_rusty_pickaxe', 'Rusty Pickaxe', 'i_pick_copper', 'pickaxe', 1, { starter: true }),
-    item_copper_pickaxe: tool('item_copper_pickaxe', 'Copper Pickaxe', 'i_pick_copper', 'pickaxe', 1),
+    item_copper_pickaxe: tool('item_copper_pickaxe', 'Copper Pickaxe', 'i_pick_copper', 'pickaxe', 1, { starter: true }),
     item_iron_pickaxe: tool('item_iron_pickaxe', 'Iron Pickaxe', 'i_pick_iron', 'pickaxe', 2),
     item_mythril_pickaxe: tool('item_mythril_pickaxe', 'Mythril Pickaxe', 'i_pick_myth', 'pickaxe', 3),
     item_adamantium_pickaxe: tool('item_adamantium_pickaxe', 'Adamantium Pickaxe', 'i_pick_addy', 'pickaxe', 4),
     item_darkmetal_pickaxe: tool('item_darkmetal_pickaxe', 'Darkmetal Pickaxe', 'i_pick_dark', 'pickaxe', 5),
-    item_rusty_woodaxe: tool('item_rusty_woodaxe', 'Rusty Woodaxe', 'i_woodaxe_copper', 'woodaxe', 1, { starter: true }),
-    item_copper_woodaxe: tool('item_copper_woodaxe', 'Copper Woodaxe', 'i_woodaxe_copper', 'woodaxe', 1),
+    item_copper_woodaxe: tool('item_copper_woodaxe', 'Copper Woodaxe', 'i_woodaxe_copper', 'woodaxe', 1, { starter: true }),
     item_fishing_rod: tool('item_fishing_rod', 'Fishing Rod', 'i_rod_wood', 'fishing_rod', 1, { starter: true }),
-    item_rusty_sickle: tool('item_rusty_sickle', 'Rusty Sickle', 'i_chisel_copper', 'sickle', 1, { starter: true })
+    item_copper_sickle: tool('item_copper_sickle', 'Copper Sickle', 'i_chisel_copper', 'sickle', 1, { starter: true })
 });
 
-/** The tool each gathering Token needs, by Token id: `[kind, minTier]`. */
+/**
+ * The tool each gathering Token needs, by Token id: `[kind, minTier]`. An ore needs the pick of the
+ * tier below its own metal: copper picks mine iron, iron picks mythril, mythril picks adamantine,
+ * adamantium picks darkmetal. Silver and gold sit with mythril, behind the Iron Pickaxe.
+ */
 export const TOKEN_NEEDS = {
     token_copper_ore_vein: ['pickaxe', 1],
-    token_iron_ore_vein: ['pickaxe', 2],
+    token_iron_ore_vein: ['pickaxe', 1],
     token_silver_ore_vein: ['pickaxe', 2],
     token_gold_ore_vein: ['pickaxe', 2],
     token_mythril_ore_vein: ['pickaxe', 2],
