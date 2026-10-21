@@ -242,7 +242,7 @@ async function arrange(page, needs) {
         await sleep(300);
     }
     if (needs === 'bank') {
-        await page.waitFor(`!!document.querySelector('button[title*=" — drag to sort"]')`, { timeoutMs: 8000, what: 'the Bank to show items' });
+        await page.waitFor(`!!document.querySelector('button[data-bank-item]')`, { timeoutMs: 8000, what: 'the Bank to show items' });
     }
     await page.key('Escape', 'Escape', 27);
     await sleep(600);

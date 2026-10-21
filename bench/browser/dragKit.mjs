@@ -114,8 +114,8 @@ export function installDragKit() {
         if (d) return `dock hero ${d.getAttribute('data-dock-hero')}`;
         const r = document.querySelector('[data-shop-row].opacity-30');
         if (r) return `Shop row ${r.getAttribute('data-shop-row')}`;
-        const i = document.querySelector('button.opacity-40[title*=" — drag to sort"]');
-        if (i) return `Bank item ${i.getAttribute('title').split(' ×')[0]}`;
+        const i = document.querySelector('button.opacity-40[data-bank-item]');
+        if (i) return `Bank item ${i.getAttribute('data-bank-item')}`;
         return 'something unidentified';
     };
 
@@ -494,12 +494,10 @@ export function installDragKit() {
             return { source: { ...at, what: `Shop row ${typeId}`, hand: `Shop row ${typeId}` }, target: to.screen, expect: { kind: 'shop', typeId, beforeIds: ids, mat: to.mat } };
         },
         equip() {
-            const byName = new Map(Object.values(G.getAllItems()).filter(i => i?.name && G.EquipmentValidator.canEquipToSlot(i.id)).map(i => [i.name, i.id]));
             const heroes = (G.GameState.state.heroes || []).map(h => h.id);
-            const tiles = [...document.querySelectorAll('button[title*=" — drag to sort"]')].map(el => {
-                const name = el.getAttribute('title').split(' ×')[0];
-                return { el, itemId: byName.get(name) };
-            }).filter(t => t.itemId && visibleCentre(t.el));
+            const tiles = [...document.querySelectorAll('button[data-bank-item]')]
+                .map(el => ({ el, itemId: el.getAttribute('data-bank-item') }))
+                .filter(t => G.EquipmentValidator.canEquipToSlot(t.itemId) && visibleCentre(t.el));
             const pairs = [];
             for (const t of tiles) for (const h of heroes) {
                 if (G.EquipmentValidator.canHeroEquip(h, t.itemId).canEquip && document.querySelector(`[data-dock-hero="${h}"]`)) pairs.push({ ...t, heroId: h });
@@ -510,7 +508,7 @@ export function installDragKit() {
             const dock = document.querySelector(`[data-dock-hero="${p.heroId}"]`);
             p.el.scrollIntoView({ block: 'center' });
             return {
-                source: { ...visibleCentre(p.el), what: `Bank item ${p.itemId}`, hand: `Bank item ${p.el.getAttribute('title').split(' ×')[0]}` },
+                source: { ...visibleCentre(p.el), what: `Bank item ${p.itemId}`, hand: `Bank item ${p.itemId}` },
                 target: visibleCentre(dock),
                 expect: { kind: 'equip', heroId: p.heroId, itemId: p.itemId }
             };
