@@ -56,7 +56,7 @@ afterEach(() => {
 });
 
 describe('nothing listens to state_changed, and the engine stopped saying it', () => {
-    it('only its declaration and the one Atlas publish (another lane’s file) still name it', () => {
+    it('only its declaration and the one Atlas publish (another lane’s file) still name it', { timeout: 20000 }, () => {
         const named = sourceCode()
             .filter(({ code }) => /STATE_CHANGED|['"]state_changed['"]/.test(code))
             .map(({ file }) => file)

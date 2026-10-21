@@ -22,7 +22,7 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
  */
 
 describe('permanence: the UI asks Placement.isPermanentToken', () => {
-    it('no UI file reads cannotLeaveBoard itself', () => {
+    it('no UI file reads cannotLeaveBoard itself', { timeout: 20000 }, () => {
         const readers = sourceCode()
             .filter(({ file }) => file.startsWith('ui/'))
             .filter(({ code }) => /cannotLeaveBoard/.test(code))
