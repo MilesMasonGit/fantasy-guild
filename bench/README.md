@@ -303,6 +303,7 @@ Two scripts in `bench/catchup/` time a long run of game time, for offline progre
 | `node bench/catchup/page.mjs` | the same in the **real page**: perf build, headless Chrome, S2 with the whole UI listening, 1 game-hour at 1000 ms, alternating `ui` and `muted` × 3 | ~4 min |
 | `… page.mjs --hours=24 --modes=muted,ui --no-build` | a full 24 h in the page | ~2 min |
 | `… page.mjs --hours=24 --modes=catchup,catchup` | **the 30 s target**: the game's own catch-up (`CatchUp.run`, slices and yields included) for 24 h, twice | ~2 min |
+| `… page.mjs --hours=24 --modes=catchup --scene=cap128 --cpu=3.2` | another plain board (any `bench:draw` board, `cap<N>` included) and a CPU slowdown; the slowdown Chrome delivered before and after is printed | |
 
 - ⚠️ The headless numbers are about **twice** the page's for the same board (Vite's SSR
   loader turns every imported call into a property lookup; the shipped build is bundled).
@@ -355,6 +356,24 @@ For each scene: a fresh tab at **1600 × 1000, DPR 1**, the CPU slowdown set
 | `hall` | S2 with the Guild Hall open in place of the mat (a real click on the Guild Hall bubble), its roster upgrade picked: the stress boards are still at the tutorial's recruit-hero step, so its two standing beacons show (on the roster node and the inspection's upgrade button). On every other scene they are mounted but their targets are missing. Only with `--only` |
 | `atlas` | S2 with the Atlas opened and closed every 1.5 s (a click at the Atlas bubble's centre, from a page timer): the book sliding up over the mat and back down. For the pop-up's cost line, `--only=S2,atlas` with `--ab` against `main`. Only with `--only` |
 
+**The Performance Envelope's scenes** (brief 90; `sceneFor` in `bench/browser/scenes.mjs`, the boards
+in `bench/scenarios/envelope.mjs`). Named with a number, any number, so one limit can be swept while
+everything else stays at the 128 board (`--only=cap96,cap128,cap160`). Only with `--only`.
+
+| Scene | What |
+|---|---|
+| `cap<N>` | S2's mix filled to a Token cap of N, as `cap128` (`cap128` itself is the same board). In game: `?stress=cap160` |
+| `heroes<N>` | `cap128` with N heroes instead of 8 (planted as S2's: one pinned to a smelter, two by the goblin camps, the rest on producers). The roster's top is 8 (`ROSTER_MAX`); more is headroom |
+| `enemies<N>` | `cap128` with producers (then Forests and Quarries) swapped for war camps until N goblins have room; the board still ends at the cap, so the round-robin fill can stop short of N: read the sampled count. No hero is by the new camps, so they wander and do not fight |
+| `fights<N>` | `cap128` with N producers swapped for a camp of one tough hostile brute that never runs out (`env_brute`, registered in the scenario only), and N of the 8 heroes planted beside them: N fights going on at once. A hero can be knocked out late in a window (50 HP): read the sampled count |
+| `floor<N>` | `cap128` with N loot piles resting on the floor: auto-collect off, the game's pile cap (`gameplay.maxItemStacks`, 40 shipped) set to N and the floor filled to it; the board's own drops then keep it at N, the oldest pile flying to the Bank |
+| `notify<N>` | `cap128` with N notifications a minute on top of the board's own, from a page timer: every tenth a banner (`Banners.push`; the oldest on screen dismissed when three show, as a player clicking), the rest item flows into the Bank (`InventoryManager.addItem`, over 24 items in turn), which the item stubs show |
+
+Each envelope scene samples the page every 500 ms (Tokens, enemies, fights going on, heroes, loot
+piles, stub rows, banners on screen) and counts the item flows and banners of the window; the line
+printed after each window shows the means (and the range when it moved), and the results JSON keeps
+them as `envelope` per window.
+
 The cap boards (`bench/scenarios/cap.mjs`) keep S2's share of placed Tokens (39 of the 105
 that count) and its order, set the Token cap to the number, and let the spawners fill the mat
 until the cap stops them; a used-up tree or a killed goblin frees a place and a spawner takes it,
@@ -386,6 +405,7 @@ and dock subtrees), **Tokens** on the mat, **DOM** nodes and JS **heap**.
 | `npm run bench:draw -- --ab=http://localhost:5391` | interleaved A/B per scene: A (this checkout's build) and B (a server someone else started), in the order A, B, B, A | |
 | `npm run bench:draw -- --no-build` | reuse `dist-perf/` as it is | saves ~20 s |
 | `--settle=20 --window=20` | seconds | |
+| `npm run bench:draw -- --cpu=3.2 --slowdown-target=4` | ask Chrome for one slowdown, judge the delivered one against another: a window is kept when Chrome delivered within 25 % of the target. On the owner's PC on 2026-10-21, 4× asked delivered 4.1–5.2× and 3.2× asked 3.0–4.9×, so the Envelope asked 3.2× and kept windows delivered at 3–5× | |
 
 Results go to `bench/results/draw/` (git-ignored) as JSON, tagged with the
 commit, which of `src/` `data/` `bench/` `public/` had uncommitted changes, the
