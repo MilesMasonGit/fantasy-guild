@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Check, Swords } from 'lucide-react';
+import { useEscapeLayer } from '../../utils/escapeLayers.js';
 import { cn } from '../../utils/cn.js';
 import { useEngine } from '../../hooks/useEngine.js';
 import { useEntityDrop } from '../../dnd/DndKit.jsx';
@@ -124,15 +125,7 @@ export const WorkRulesDrawer = ({ open = false, heroPanelOpen = false, litHeroId
         return () => clearTimeout(t);
     }, [open]);
 
-    useEffect(() => {
-        if (!open) return undefined;
-        const onKeyDown = (e) => {
-            // One Escape, one layer: while a drag is live, Escape only cancels it.
-            if (e.key === 'Escape' && !document.body.classList.contains('gi-dnd-active')) onClose?.();
-        };
-        document.addEventListener('keydown', onKeyDown);
-        return () => document.removeEventListener('keydown', onKeyDown);
-    }, [open, onClose]);
+    useEscapeLayer(!!open, () => onClose?.());
 
     // A hero or flag dropped on the open drawer goes home, anything else is a miss rather than
     // landing on the mat hidden under it.

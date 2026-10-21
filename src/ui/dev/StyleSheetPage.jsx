@@ -6,6 +6,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { cn } from '../utils/cn.js';
+import { useEscapeLayer } from '../utils/escapeLayers.js';
 import { EntityRibbon } from '../components/base/EntityRibbon.jsx';
 import { ItemIcon } from '../components/base/ItemIcon.jsx';
 import { VitalBar, vitalTone } from '../components/base/VitalBar.jsx';
@@ -690,11 +691,7 @@ const SectionCard = ({ section }) => {
 
 /** The style sheet page itself: a full-screen dev overlay. Escape or the X closes it. */
 export const StyleSheetPage = ({ onClose }) => {
-    useEffect(() => {
-        const onKey = (e) => { if (e.key === 'Escape') onClose?.(); };
-        document.addEventListener('keydown', onKey);
-        return () => document.removeEventListener('keydown', onKey);
-    }, [onClose]);
+    useEscapeLayer(true, () => onClose?.());
 
     const shared = KIT_SECTIONS.filter(s => s.status === 'shared');
     const unapproved = KIT_SECTIONS.filter(s => s.status === 'unapproved');

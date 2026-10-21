@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { pushEscapeLayer } from '../ui/utils/escapeLayers.js';
 import { describe, it, expect, beforeAll, afterAll, afterEach, beforeEach, vi } from 'vitest';
 import React from 'react';
 import { render, cleanup, act, fireEvent } from '@testing-library/react';
@@ -341,13 +342,13 @@ describe('one card at a time', () => {
         expect(onClose).not.toHaveBeenCalled();
         token.remove();
 
-        // A window open over the card (its recipe list) takes the Escape instead.
-        const dialog = document.createElement('div');
-        dialog.setAttribute('role', 'dialog');
-        document.body.appendChild(dialog);
+        // A window opened over the card is the top layer and takes the Escape instead.
+        const windowOver = vi.fn();
+        const closeWindow = pushEscapeLayer(windowOver);
         fireEvent.keyDown(window, { key: 'Escape' });
+        expect(windowOver).toHaveBeenCalledTimes(1);
         expect(onClose).not.toHaveBeenCalled();
-        dialog.remove();
+        closeWindow();
 
         fireEvent.keyDown(window, { key: 'Escape' });
         expect(onClose).toHaveBeenCalledTimes(1);

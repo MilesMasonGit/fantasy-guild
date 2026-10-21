@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useEscapeLayer } from '../../utils/escapeLayers.js';
 import { Play, Pause, ChevronLeft, ChevronRight, X, RotateCcw, Grid, Move, Sparkles } from 'lucide-react';
 import { cn } from '../../utils/cn.js';
 
@@ -88,15 +89,13 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
                 e.preventDefault();
                 setIsPlaying(false);
                 setFrame(f => (f + 1) % 8);
-            } else if (e.code === 'Escape') {
-                e.preventDefault();
-                onClose();
             }
         };
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isOpen, onClose]);
+    useEscapeLayer(!!isOpen, () => onClose?.());
 
     if (!isOpen) return null;
 

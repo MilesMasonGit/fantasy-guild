@@ -2,10 +2,14 @@ import { Fragment } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { X } from 'lucide-react';
 import { cn } from '../../utils/cn.js';
+import { useEscapeLayer } from '../../utils/escapeLayers.js';
 
 /**
  * GIModal: A standardized, accessible overlay component built on Headless UI Dialog.
- * Handles focus trapping, escape-to-close, and smooth enter/exit animations.
+ * Handles focus trapping and smooth enter/exit animations.
+ * ⚠️ A window closes on its X, its own buttons and Escape, never on a click outside it (only
+ * light pop-ups do that). So Headless UI's own close is switched off and Escape comes from the
+ * shared layers (`escapeLayers.js`), one layer per press.
  */
 const NOOP = () => { };
 
@@ -22,10 +26,11 @@ export const GIModal = ({
     // explicitly: a caller that supplies no `onClose`, or passes `hideClose`, gets no dismiss
     // control (so the un-dismissable boot screen shows no X).
     const canClose = !hideClose && typeof onClose === 'function';
-    const handleClose = canClose ? onClose : NOOP;
+    // A window with no X still holds its layer, so Escape closes nothing under it.
+    useEscapeLayer(!!isOpen, canClose ? onClose : null);
     return (
         <Transition appear show={isOpen} as={Fragment}>
-            <Dialog as="div" className="relative z-(--z-modal)" onClose={handleClose}>
+            <Dialog as="div" className="relative z-(--z-modal)" onClose={NOOP}>
                 <Transition.Child
                     as={Fragment}
                     enter="ease-out duration-300"

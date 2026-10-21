@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { HeartCrack } from 'lucide-react';
+import { useEscapeLayer } from '../../utils/escapeLayers.js';
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { ENGINE_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import * as CatchUp from '../../../systems/core/CatchUp.js';
@@ -54,25 +55,17 @@ export function CatchUpOverlay() {
         EventBus.publish(UI_EVENTS.CATCH_UP_SUMMARY_CLOSED);
     };
 
-    useEffect(() => {
-        if (!result || run) return undefined;
-        // Capturing, and stopped there: Esc closes this and nothing underneath it. While the
-        // undo is being asked about, Esc only cancels the question.
-        const onKey = (e) => {
-            if (e.key !== 'Escape') return;
-            e.stopImmediatePropagation();
-            e.preventDefault();
-            if (asking) {
-                setAsking(false);
-                return;
-            }
-            CatchUp.forgetUndo();
-            setResult(null);
-            EventBus.publish(UI_EVENTS.CATCH_UP_SUMMARY_CLOSED);
-        };
-        window.addEventListener('keydown', onKey, true);
-        return () => window.removeEventListener('keydown', onKey, true);
-    }, [result, run, asking]);
+    // Esc closes this and nothing underneath it. While the undo is being asked about, Esc only
+    // cancels the question.
+    useEscapeLayer(!!result && !run, () => {
+        if (asking) {
+            setAsking(false);
+            return;
+        }
+        CatchUp.forgetUndo();
+        setResult(null);
+        EventBus.publish(UI_EVENTS.CATCH_UP_SUMMARY_CLOSED);
+    });
 
     if (!run && !result) return null;
 

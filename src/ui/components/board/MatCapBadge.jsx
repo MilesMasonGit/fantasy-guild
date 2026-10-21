@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useEscapeLayer } from '../../utils/escapeLayers.js';
 import { createPortal } from 'react-dom';
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from '../../../systems/board/boardEvents.js';
@@ -215,20 +216,18 @@ export const MatCapBadge = ({ readSummary = liveMatSummary }) => {
 
     useEffect(() => {
         if (!open) return undefined;
-        const onKey = (e) => { if (e.key === 'Escape') setOpen(false); };
         const onDown = (e) => {
             if (panelRef.current?.contains(e.target) || ref.current?.contains(e.target)) return;
             setOpen(false);
         };
         const timer = setInterval(() => tickRefresh(n => n + 1), PANEL_REFRESH_MS);
-        document.addEventListener('keydown', onKey);
         document.addEventListener('pointerdown', onDown, true);
         return () => {
             clearInterval(timer);
-            document.removeEventListener('keydown', onKey);
             document.removeEventListener('pointerdown', onDown, true);
         };
     }, [open]);
+    useEscapeLayer(open, () => setOpen(false));
 
     const count = MatCap.tokenCount();
     const cap = MatCap.matCap();

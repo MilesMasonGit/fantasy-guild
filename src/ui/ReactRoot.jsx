@@ -11,6 +11,7 @@ import { ViewportProvider } from './context/ViewportContext.jsx';
 import { setMatBankLocked } from './hooks/useMatBankLock.js';
 
 import { useUIModals } from './hooks/useUIModals.js';
+import { useEscapeLayer } from './utils/escapeLayers.js';
 import { useInspectTokenHandlers } from './hooks/useInspectTokenHandlers.js';
 
 import Board from './components/board/Board.jsx';
@@ -56,6 +57,9 @@ import HeroEditModal from './modals/HeroEditModal.jsx';
 import JobChangeModal from './modals/JobChangeModal.jsx';
 import PromotionCeremonyModal from './modals/PromotionCeremonyModal.jsx';
 import { ENGINE_EVENTS, ORPHAN_EVENTS, UI_EVENTS } from '../systems/core/engineEvents.js';
+
+/** The nav's views that Escape closes; Settings is a window and closes itself. */
+const NAV_VIEWS = ['guild', 'bank', 'shop', 'atlas'];
 
 /**
  * ReactRoot: the entry point for the React UI layer. Manages the top-level layout, provides
@@ -150,6 +154,14 @@ export const ReactRoot = ({ engine }) => {
         ui.fullscreen.close();
         ui.inspect.clear('guild');
     }, [ui.fullscreen, ui.inspect]);
+
+    // Escape closes the open view (the Guild Hall, the Bank, the Shop, the Atlas) as one layer;
+    // a stray click never does.
+    const openView = NAV_VIEWS.find(view => isNavActive(view)) || null;
+    useEscapeLayer(!!openView, () => {
+        if (openView === 'guild') handleCloseGuildHall();
+        else if (openView) navToggle(openView);
+    }, openView);
 
     useEffect(() => {
         const unsub1 = EventBus.subscribe(ORPHAN_EVENTS.UI_OPEN_GUILD_HALL, () => handleOpenGuildHall(), UI_LISTENER);
