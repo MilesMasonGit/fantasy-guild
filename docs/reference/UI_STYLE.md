@@ -60,6 +60,9 @@ clunky labels like "LVL 03" where "3/99" says it better.
   text, panels only as big as their content. Nothing stretched to fill space.
 - Remember the owner's **All caps** setting: write labels so they still read
   well in capitals.
+- **New UI keeps its words in the strings file**, `src/i18n/en.json`, read with
+  `t('screen.key')`, never typed into the component, so the game can be
+  translated: [`TEXT.md`](TEXT.md).
 
 ## Text sizes
 

@@ -39,6 +39,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { median } from './lib/stats.mjs';
+import { cpuProfFlags, keepMainThreadProfile } from './lib/cpuprof.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '..');
@@ -118,15 +119,21 @@ function runWorker(scenario, mode, args, index) {
     fs.mkdirSync(resultsDir, { recursive: true });
     const out = path.join(resultsDir, `.tmp-${scenario.id}-${mode}-${index}.json`);
     const nodeFlags = ['--expose-gc'];
+    let prof = null;
     if (args.cpuProf) {
         const dir = path.join(resultsDir, 'prof');
-        fs.mkdirSync(dir, { recursive: true });
-        nodeFlags.push('--cpu-prof', `--cpu-prof-dir=${dir}`, `--cpu-prof-name=${scenario.id}-${mode}-${index}-${Date.now()}.cpuprofile`);
+        const name = `${scenario.id}-${mode}-${index}-${Date.now()}`;
+        prof = { tmp: path.join(dir, `.tmp-${name}`), target: path.join(dir, `${name}.cpuprofile`) };
+        fs.mkdirSync(prof.tmp, { recursive: true });
+        nodeFlags.push(...cpuProfFlags(prof.tmp));
     }
     const opts = { file: scenario.file, mode, seed: args.seed, long: args.long, injectSlowMs: args.injectSlowMs };
     const res = spawnSync(process.execPath, [...nodeFlags, path.join(here, 'worker.mjs'), JSON.stringify(opts), out], {
         cwd: root, stdio: ['ignore', 'inherit', 'inherit'], windowsHide: true
     });
+    if (prof && !keepMainThreadProfile(prof.tmp, prof.target)) {
+        console.warn(`  (no main-thread CPU profile written for ${scenario.id} ${mode} run ${index})`);
+    }
     if (res.status !== 0 || !fs.existsSync(out)) {
         throw new Error(`${scenario.id} ${mode} run ${index} failed (exit ${res.status})`);
     }

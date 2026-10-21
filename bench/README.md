@@ -22,7 +22,7 @@ layout/paint cost are Tier B (the in-game Perf HUD). `npm run bench:draw` and
 | `npm run bench -- --long` | S6 for the full 8 game-hours (288,000 ticks) | ~8 min more |
 | `npm run bench -- --repeats=5` | more timing runs per scenario (the median is reported) | |
 | `npm run bench -- --no-profile` | skip the profile passes | faster |
-| `npm run bench -- --cpu-prof` | also write V8 `.cpuprofile` files to `bench/results/prof/` (open in Chrome DevTools → Performance). ⚠️ On Node 24 the file written is the module-loader thread's idle profile, not the engine's (both threads get the same fixed name; checked 2026-10-08). Until fixed, profile with `node --cpu-prof --cpu-prof-dir=<dir>` and no name, and read the `.0.` file (see Catch-up timing below) | |
+| `npm run bench -- --cpu-prof` | also write one V8 `.cpuprofile` per run to `bench/results/prof/`, named `<scenario>-<mode>-<run>-<time>.cpuprofile` (open in Chrome DevTools → Performance). Each run profiles into its own folder and only the main thread's file (the engine's) is kept; on Node 24 the module loader's thread writes a second, idle profile, which is dropped (`bench/lib/cpuprof.mjs`) | |
 | `npm run bench -- --inject-slow=0.5` | add a tick handler that busy-waits 0.5 ms — for proving `--compare` catches a slowdown | |
 | `npm run bench:micro` | micro-benchmarks at 40 / 150 / 300 Tokens (Vitest `bench`, node environment) | ~15 s |
 
@@ -125,6 +125,30 @@ baseline on a quiet machine, and when a compare fails, run it again before
 believing it. Even quiet, a p99 or a worst-of-50 can land just over ×1.2 on
 one run in three or so; a real regression fails every run. The work check is
 not affected by load at all.
+
+#### Reading a timing run on a busy machine
+
+How much load moves the timings, measured on unchanged `main` (`933d12db`,
+2026-10-08): a run beside a busy agent read **1.2–2.3× slower on every line**;
+the next run, alone, matched the baseline on every p50 (0.94–1.05×), with only
+two p99 tails over 20 %. So a REGRESSED verdict taken while anything else was
+running is noise until shown otherwise. To read one:
+
+1. **The work check decides.** WORK CHANGED (exit 2) is real whatever the load;
+   the timings never are on their own. A run that says same work and only
+   REGRESSED does not block anything by itself.
+2. **Look at the shape.** Load makes *every* scenario slower by a similar
+   factor. A real regression shows up in the scenarios that exercise the
+   changed code and leaves the others near ×1.0.
+3. **Tie-breaker: a control run of `main`.** Straight after the branch's run,
+   with the machine in the same state, run the same `npm run bench -- --compare`
+   on `main` (the main checkout stays on `main`). If `main` reads slower by
+   about the same ratios, the slowdown is the machine: compare the branch with
+   that control, line by line, not with the baseline. If `main` reads clean and
+   the branch does not, it is the branch.
+4. **Quiet confirms.** A suspected real regression is confirmed by a rerun on a
+   quiet machine (no other agents, no dev servers, no builds), where a real
+   regression fails every run and a noisy tail does not.
 
 `bench/baseline.json` records the machine it was taken on; a baseline's
 timings from one machine mean nothing on another.
