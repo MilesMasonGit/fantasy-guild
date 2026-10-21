@@ -96,17 +96,13 @@ export function isPermanentToken(typeId, instance) {
     return !!(def?.cannotLeaveBoard || def?.isGuildHall);
 }
 
-function isGuildHall(t) {
-    return t.typeId === 'token_guild_hall' || !!getTokenType(t.typeId)?.isGuildHall;
-}
-
 /**
  * Where a bought or withdrawn Token is aimed: the Guild Hall's point, the one Token guaranteed to
  * be on the mat. With no Hall (a hand-built test board) it is the mat's centre, read live since the
  * mat can be resized.
  */
 export function centreOfBoard() {
-    const hall = BoardState.tokens().find(isGuildHall);
+    const hall = BoardState.tokens().find(MatCap.isGuildHall);
     if (hall && Number.isFinite(hall.x) && Number.isFinite(hall.y)) return { x: hall.x, y: hall.y };
     return { x: matW() / 2, y: matH() / 2 };
 }
