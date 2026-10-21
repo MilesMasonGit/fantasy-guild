@@ -35,22 +35,33 @@ export function flightDurationMs(distPx) {
     return Math.round(Math.min(FLIGHT_MAX_MS, Math.max(FLIGHT_MIN_MS, ms)));
 }
 
-/** The radius of the glow drawn around a flying item. */
-const GLOW_R = 25;
+/**
+ * The trail: hard 2×2 pixels on the path behind the item, this far back in its flight each. Read
+ * from the path itself, so it is the same at any frame rate.
+ */
+const TRAIL_BACK_MS = Object.freeze([35, 70, 105]);
+const TRAIL_PX = 2;
+
+/**
+ * The plink on arrival: four pixels jumping out from where the item landed, up, down, left and
+ * right, this far (px) on each step, a step this long; then gone.
+ */
+const PLINK_STEPS_PX = Object.freeze([3, 6, 9]);
+const PLINK_STEP_MS = 50;
+
+/** The trail's colour where an item names none. */
+const TRAIL_COLOUR = '#ffe27a';
 
 /**
  * How far past its path a flight can draw, in px, not counting the item itself (half its size,
- * added per flight): the glow, the trail, and the sparkles' drift. A trail sparkle starts up to
- * 5 px off the path and drifts at most 1 px a frame sideways and 2 down for 49 frames; a
- * landing sparkle at most 2 px a frame for 19 frames; each is a 2 px square.
- * ⚠️ Follows the sparkle numbers in `update()`. Change those and this with them:
- * `ParticleCanvasBounds.test.js` fails when something is drawn outside the canvas.
+ * added per flight): the plink's reach and its pixel. The trail lies on the path.
+ * ⚠️ Follows the plink numbers above: `ParticleCanvasBounds.test.js` fails when something is
+ * drawn outside the canvas.
  */
-const FLIGHT_REACH = { side: 56, up: 38, down: 105 };
-/** Antialiasing past a shape's edge. */
-const EDGE_PX = 2;
-/** The highest a flight to a stub may arc: its glow stays on screen under the top edge. */
-const STUB_ARC_TOP_PX = GLOW_R;
+const FLIGHT_REACH = { side: 12, up: 12, down: 12 };
+const EDGE_PX = 0;
+/** The highest a flight to a stub may arc: the item stays on screen under the top edge. */
+const STUB_ARC_TOP_PX = 25;
 
 const CANVAS_STYLE = { imageRendering: 'pixelated', display: 'none' };
 
@@ -71,7 +82,9 @@ export function boardPointToScreen(boardEl, x, y) {
 
 /**
  * ParticleOverlay: a Canvas layer for UI-space effects. Visualizes collected loot flying to
- * where it went, with sparkles: its own item stub, or the Guild Hall when the stubs are not drawn.
+ * where it went (effect 5, crisp): a short trail of hard 2×2 pixels behind it and a four-pixel
+ * plink where it lands, its own item stub, or the Guild Hall when the stubs are not drawn.
+ * Nothing random: every flight with the same path draws the same pixels.
  * The canvas is only as big as the flights in the air (`ParticleSystem._fit`) and is hidden
  * while nothing flies: a window-sized one was cleared and redrawn whole on every frame of every
  * flight, and stayed a full-window layer in between.
@@ -231,9 +244,9 @@ class ParticleSystem {
     /** Widen the canvas's reach over a flight's whole path. */
     _include(path, size) {
         const half = size / 2;
-        const side = Math.max(GLOW_R, half, FLIGHT_REACH.side) + EDGE_PX;
-        const up = Math.max(GLOW_R, half, FLIGHT_REACH.up) + EDGE_PX;
-        const down = Math.max(GLOW_R, half, FLIGHT_REACH.down) + EDGE_PX;
+        const side = Math.max(half, FLIGHT_REACH.side) + EDGE_PX;
+        const up = Math.max(half, FLIGHT_REACH.up) + EDGE_PX;
+        const down = Math.max(half, FLIGHT_REACH.down) + EDGE_PX;
         // A quadratic curve stays inside the box of its three points.
         const box = {
             l: Math.min(path.startX, path.cpX, path.endX) - side,
@@ -398,9 +411,7 @@ class ParticleSystem {
             startTime: performance.now() + slot * STAGGER_MS,
             duration: destination === 'cursor' ? 320 : flightDurationMs(dist),
             path: { startX, startY, endX, endY, cpX, cpY },
-            trail: [],
-            maxTrail: 15,
-            color: template.color || '#4ade80'
+            color: template.color || TRAIL_COLOUR
         };
         this.particles.push(particle);
         this._include(particle.path, particle.size);
@@ -474,9 +485,7 @@ class ParticleSystem {
                 startTime: b.startTime,
                 duration: flightDurationMs(dist),
                 path: { startX: b.startX, startY: b.startY, endX: end.x, endY: end.y, cpX, cpY },
-                trail: [],
-                maxTrail: 15,
-                color: b.template.color || '#4ade80'
+                color: b.template.color || TRAIL_COLOUR
             };
             this.particles.push(particle);
             this._include(particle.path, particle.size);
@@ -553,41 +562,31 @@ class ParticleSystem {
         };
     }
 
+    /** Where a flight is at `t` (0 to 1) along its arc. */
+    static pointAt(path, t) {
+        const k = Math.max(0, Math.min(1, t));
+        const inv = 1 - k;
+        return {
+            x: inv * inv * path.startX + 2 * inv * k * path.cpX + k * k * path.endX,
+            y: inv * inv * path.startY + 2 * inv * k * path.cpY + k * k * path.endY
+        };
+    }
+
     update(currentTime) {
+        this._now = currentTime;
         for (let i = this.particles.length - 1; i >= 0; i--) {
             const p = this.particles[i];
             if (currentTime < p.startTime) continue;
 
-            const elapsed = currentTime - p.startTime;
-            const t = Math.min(1, elapsed / p.duration);
-
-            const invT = 1 - t;
-            const lastX = p.x;
-            const lastY = p.y;
-
-            p.x = invT * invT * p.path.startX + 2 * invT * t * p.path.cpX + t * t * p.path.endX;
-            p.y = invT * invT * p.path.startY + 2 * invT * t * p.path.cpY + t * t * p.path.endY;
-
-            if (lastX !== undefined && Math.random() > 0.4) {
-                this.sparkles.push({
-                    x: p.x + (Math.random() - 0.5) * 10,
-                    y: p.y + (Math.random() - 0.5) * 10,
-                    vx: (Math.random() - 0.5) * 2,
-                    vy: Math.random() * 2, // Drift down
-                    life: 1.0,
-                    decay: 0.02 + Math.random() * 0.03,
-                    color: p.color
-                });
-            }
-
-            p.trail.unshift({ x: p.x, y: p.y });
-            if (p.trail.length > p.maxTrail) p.trail.pop();
+            const t = Math.min(1, (currentTime - p.startTime) / p.duration);
+            const at = ParticleSystem.pointAt(p.path, t);
+            p.x = at.x;
+            p.y = at.y;
 
             if (t >= 1) {
                 // A stub's count ticks as its item lands.
                 landFlight(p.booking);
-                // Notify that the particle has landed for visual feedback (e.g. a Guild Hall
-                // flash).
+                // Notify that the particle has landed for visual feedback (the Guild Hall's dip).
                 EventBus.publish(UI_EVENTS.PARTICLE_LANDED, {
                     itemId: p.itemId,
                     mode: p.mode,
@@ -599,103 +598,73 @@ class ParticleSystem {
                     size: p.size,
                     instanceId: p.instanceId
                 });
-
-                for(let k=0; k<8; k++) {
-                    this.sparkles.push({
-                        x: p.x, y: p.y,
-                        vx: (Math.random() - 0.5) * 4,
-                        vy: (Math.random() - 0.5) * 4,
-                        life: 1.0,
-                        decay: 0.05,
-                        color: p.color
-                    });
-                }
+                this.sparkles.push({ x: p.path.endX, y: p.path.endY, born: currentTime, color: p.color });
                 this.particles.splice(i, 1);
             }
         }
 
+        // The plinks: gone once their last step has shown.
+        const plinkMs = PLINK_STEPS_PX.length * PLINK_STEP_MS;
         for (let i = this.sparkles.length - 1; i >= 0; i--) {
-            const s = this.sparkles[i];
-            s.x += s.vx;
-            s.y += s.vy;
-            s.life -= s.decay;
-            if (s.life <= 0) this.sparkles.splice(i, 1);
+            if (currentTime - this.sparkles[i].born >= plinkMs) this.sparkles.splice(i, 1);
         }
     }
 
+    /**
+     * Hard pixels only: no glow, no blending, no soft trail. Every square and the item land on
+     * whole pixels, and the item is drawn with no smoothing.
+     */
     draw() {
         if (!this._fit()) return;
         const ctx = this.ctx;
         const { left, top, w, h } = this._rect;
+        const now = this._now ?? performance.now();
         ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.clearRect(0, 0, w, h);
         // Everything below is in screen pixels; the canvas stands at (left, top).
         ctx.setTransform(1, 0, 0, 1, -left, -top);
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.globalAlpha = 1;
+        const half = TRAIL_PX / 2;
 
-        // Use Additive Blending for that "Glow" look
-        ctx.globalCompositeOperation = 'lighter';
-
-        this.sparkles.forEach(s => {
-            ctx.globalAlpha = s.life;
+        for (const s of this.sparkles) {
+            const step = Math.min(PLINK_STEPS_PX.length - 1, Math.floor((now - s.born) / PLINK_STEP_MS));
+            const d = PLINK_STEPS_PX[Math.max(0, step)];
+            const x = Math.round(s.x);
+            const y = Math.round(s.y);
             ctx.fillStyle = s.color;
-            ctx.fillRect(s.x, s.y, 2, 2);
-        });
+            for (const [dx, dy] of [[0, -d], [d, 0], [0, d], [-d, 0]]) {
+                ctx.fillRect(x + dx - half, y + dy - half, TRAIL_PX, TRAIL_PX);
+            }
+        }
 
-        this.particles.forEach(p => {
-            if (performance.now() < p.startTime) return;
-            if (!isFinite(p.x) || !isFinite(p.y)) return;
-
-            if (p.trail.length > 1) {
-                for (let j = 0; j < p.trail.length - 1; j++) {
-                    const ratio = 1 - (j / p.trail.length);
-                    ctx.beginPath();
-                    ctx.strokeStyle = p.color;
-                    ctx.lineWidth = 20 * ratio; // Thicker Tapering
-                    ctx.lineCap = 'round';
-                    ctx.globalAlpha = 0.3 * ratio;
-                    ctx.moveTo(p.trail[j].x, p.trail[j].y);
-                    ctx.lineTo(p.trail[j+1].x, p.trail[j+1].y);
-                    ctx.stroke();
-
-                    ctx.beginPath();
-                    ctx.strokeStyle = '#fff';
-                    ctx.lineWidth = 6 * ratio; // Thicker Core
-                    ctx.globalAlpha = 0.5 * ratio;
-                    ctx.moveTo(p.trail[j].x, p.trail[j].y);
-                    ctx.lineTo(p.trail[j+1].x, p.trail[j+1].y);
-                    ctx.stroke();
-                }
+        for (const p of this.particles) {
+            if (now < p.startTime) continue;
+            if (!isFinite(p.x) || !isFinite(p.y)) continue;
+            const t = (now - p.startTime) / p.duration;
+            ctx.fillStyle = p.color;
+            for (const back of TRAIL_BACK_MS) {
+                const k = t - back / p.duration;
+                if (k <= 0) continue;
+                const at = ParticleSystem.pointAt(p.path, k);
+                ctx.fillRect(Math.round(at.x) - half, Math.round(at.y) - half, TRAIL_PX, TRAIL_PX);
             }
 
-            const grad = ctx.createRadialGradient(p.x, p.y, 2, p.x, p.y, GLOW_R);
-            grad.addColorStop(0, p.color);
-            grad.addColorStop(1, 'transparent');
-            ctx.fillStyle = grad;
-            ctx.globalAlpha = 0.4;
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, GLOW_R, 0, Math.PI * 2);
-            ctx.fill();
-
-            // 2.3 Draw Sprite (Normal blending for the sprite itself)
-            ctx.globalCompositeOperation = 'source-over';
-            ctx.globalAlpha = 1.0;
             const sprite = this.spriteCache.get(p.spriteKey);
             const size = p.size || 32;
+            const x = Math.round(p.x - size / 2);
+            const y = Math.round(p.y - size / 2);
             if (sprite && sprite.loaded) {
-                // Whole-multiple pixel art: no smoothing, or 2x art blurs.
+                // Whole-multiple pixel art at whole pixels: no smoothing, or 2x art blurs.
                 ctx.imageSmoothingEnabled = false;
-                ctx.drawImage(sprite.img, p.x - size / 2, p.y - size / 2, size, size);
+                ctx.drawImage(sprite.img, x, y, size, size);
             } else {
                 ctx.font = `${Math.round(size * 0.75)}px sans-serif`;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.fillText(p.icon, p.x, p.y);
+                ctx.fillText(p.icon, Math.round(p.x), Math.round(p.y));
             }
-            ctx.globalCompositeOperation = 'lighter';
-        });
-        
-        ctx.globalAlpha = 1.0;
-        ctx.globalCompositeOperation = 'source-over';
+        }
     }
 }
 

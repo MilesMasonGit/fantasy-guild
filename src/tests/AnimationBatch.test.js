@@ -1,10 +1,15 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import React from 'react';
+import { render, act, cleanup } from '@testing-library/react';
+import { DndContext } from '@dnd-kit/core';
 import './fixtures/testTokens.js';
+import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
+import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
-import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
+import { ENGINE_EVENTS, UI_EVENTS } from '../systems/core/engineEvents.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
@@ -459,6 +464,39 @@ describe('rare drop twinkle (effect 10)', () => {
             expect(flicker.keyframes.map(k => k.visibility)).toEqual(['visible', 'visible', 'hidden', 'visible', 'visible', 'hidden', 'hidden']);
         } finally {
             rec.restore();
+        }
+    });
+});
+
+describe('the Guild Hall dips a pixel as loot lands on it (effect 5)', () => {
+    it('one art pixel down for two frames, a transform on its art; no filter, no redraw', async () => {
+        registerTokenTypes({
+            fixture_fx_hall: {
+                id: 'fixture_fx_hall', name: 'Fixture Hall', tokenType: 'building', isGuildHall: true,
+                rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature'
+            }
+        });
+        GameState.initNew();
+        clearMat();
+        const hall = placeAt('fixture_fx_hall', 600, 500);
+        const rec = recordAnimate();
+        try {
+            const { container } = render(React.createElement(DndContext, null, React.createElement(MatBoard, {})));
+            const art = container.querySelector(`[data-token-art][data-token-id="${hall.id}"]`);
+            const before = art.innerHTML;
+            act(() => { EventBus.publish(UI_EVENTS.PARTICLE_LANDED, { landsOn: 'stub' }); });
+            expect(rec.calls).toHaveLength(0);
+            act(() => { EventBus.publish(UI_EVENTS.PARTICLE_LANDED, { landsOn: 'hall' }); });
+            expect(rec.calls).toHaveLength(1);
+            const dip = rec.calls[0];
+            expect(art.contains(dip.el)).toBe(true);
+            expect(dip.options.duration).toBe(2 * FX_FRAME_MS);
+            expect(dip.keyframes[0].transform).toMatch(/^translate\(0px, [\d.]+px\)$/);
+            expect(art.innerHTML).toBe(before);
+            expect(art.innerHTML).not.toMatch(/brightness|saturate/);
+        } finally {
+            rec.restore();
+            cleanup();
         }
     });
 });

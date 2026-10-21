@@ -41,6 +41,7 @@ import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import { useDrawn, isDrawn } from '../../dev/perf/drawSwitches.js';
 import { QuestPosterItem } from './QuestPoster.jsx';
 import { takeSpawn, playSpawn } from './spawnMotion.js';
+import { FX_FRAME_MS, playPoses } from './fx/pixelSteps.js';
 
 /**
  * A walking enemy's boxes follow the engine without React. While `on`, each `ENEMIES_WALKED`
@@ -76,7 +77,8 @@ export function tokenBoxPx(typeId, artPx) {
     return Math.max(artRadiusOf(typeId) * 2, artPx);
 }
 
-const RECEIVED_MS = 350;
+/** The Guild Hall taking in a flying item: it dips one art pixel for this many effect frames. */
+const HALL_DIP_FRAMES = 2;
 const AT_REST_STYLE = Object.freeze({ willChange: 'contents' });
 
 
@@ -381,18 +383,18 @@ export const MatToken = React.memo(function MatToken({
     // was raised under this (new) id before it was drawn (`TokenGlows`); read once, at mount.
     const [flashOnMount] = React.useState(() => !!TokenGlows.glowOf(id));
 
-    const [received, setReceived] = React.useState(false);
-    const receivedTimer = React.useRef(null);
+    // The Hall dips a pixel as each flying item lands on it (effect 5): a transform written to its
+    // art, no filter and no React render.
+    const innerRef = React.useRef(null);
     const isHall = isGuildHallToken || !!def?.isGuildHall;
+    const artScaleRef = React.useRef(artScale);
+    artScaleRef.current = artScale;
     React.useEffect(() => {
         if (!isHall) return undefined;
-        const unsub = EventBus.subscribe(UI_EVENTS.PARTICLE_LANDED, (p) => {
-            if (p?.landsOn !== 'hall') return;
-            setReceived(true);
-            clearTimeout(receivedTimer.current);
-            receivedTimer.current = setTimeout(() => setReceived(false), RECEIVED_MS);
+        return EventBus.subscribe(UI_EVENTS.PARTICLE_LANDED, (p) => {
+            if (p?.landsOn !== 'hall' || !isDrawn('tokenFx')) return;
+            playPoses(innerRef.current, [{ ms: HALL_DIP_FRAMES * FX_FRAME_MS, y: 1 }], { unit: artScaleRef.current });
         }, UI_LISTENER);
-        return () => { unsub?.(); clearTimeout(receivedTimer.current); };
     }, [isHall]);
 
     // A sharp coloured outline: white hovered or selected, red in alert, green worked
@@ -466,7 +468,6 @@ export const MatToken = React.memo(function MatToken({
                 data-token-type={typeId}
                 data-token-small={small ? 'true' : undefined}
                 data-guild-hall={isHall ? 'true' : undefined}
-                data-hall-received={received ? 'true' : undefined}
                 data-quest-claimable={questDone ? 'true' : undefined}
                 title={hoverTitle}
                 data-tile-alert={alert || undefined}
@@ -540,13 +541,13 @@ export const MatToken = React.memo(function MatToken({
                         style={{ inset: '-22%' }}
                     />
                 )}
-                {/* At rest its flash (the Hall taking in loot, resting on and off) and landing hop play
+                {/* At rest its dip (the Hall taking in loot), its resting greying and landing hop play
                     among the resting Tokens: on the main thread, as tailwind.css explains at
                     `.gi-token-land`. A worked Token is drawn in front of them all. */}
                 <div
+                    ref={innerRef}
                     className={cn(
                         'w-full h-full flex items-center justify-center transition-[filter] duration-150',
-                        received && 'brightness-125 saturate-125',
                         resting && 'gi-token-resting',
                         demolishProtected && 'gi-token-protected'
                     )}

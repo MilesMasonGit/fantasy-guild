@@ -273,6 +273,30 @@ describe('⭐ everything a flight draws lands inside the canvas', () => {
     });
 });
 
+describe('⭐ crisp flight (effect 5): hard pixels, no glow, nothing random', () => {
+    it('draws only whole-pixel squares and the item: no glow, no smear, no additive blending, no Math.random', () => {
+        const random = vi.spyOn(Math, 'random');
+        const ops = [];
+        const fill = ctx.fillRect;
+        ctx.fillRect = function (x, y, w, h) { ops.push({ x, y, w, h, blend: this.globalCompositeOperation, alpha: this.globalAlpha }); return fill.call(this, x, y, w, h); };
+        ctx.arc = () => { throw new Error('a glow was drawn'); };
+        ctx.stroke = () => { throw new Error('a smear was drawn'); };
+        const { container } = render(React.createElement(ParticleOverlay, { disabled: false }));
+        const canvas = canvasOf(container);
+        act(() => { fly([300, 700], [1210, 230]); fly([500, 500], [520, 480]); });
+        runUntilAsleep(canvas);
+        expect(landed).toHaveLength(2);
+        expect(random).not.toHaveBeenCalled();
+        expect(ops.length).toBeGreaterThan(20);
+        for (const o of ops) {
+            expect([o.w, o.h]).toEqual([2, 2]);
+            expect(Number.isInteger(o.x) && Number.isInteger(o.y)).toBe(true);
+            expect(o.blend).toBe('source-over');
+            expect(o.alpha).toBe(1);
+        }
+    });
+});
+
 describe('⭐ the item still lands exactly where it went', () => {
     it('the landing burst is drawn on the target, on screen', () => {
         const { container } = render(React.createElement(ParticleOverlay, { disabled: false }));
@@ -284,12 +308,12 @@ describe('⭐ the item still lands exactly where it went', () => {
         expect(landed).toHaveLength(1);
         expect(landed[0]).toMatchObject({ x: target[0], y: target[1] });
 
-        // The frame it landed in: the eight landing sparkles have moved once (under 2 px a
-        // step) from the very point it landed on, drawn 2 px square.
+        // The frame it landed in: the plink's four 2 px pixels, 3 px out from the very point it
+        // landed on, up, right, down and left (effect 5).
         const f = frames.find(fr => fr.landedBy === 1);
-        const onScreen = f.drawn.filter(d => d.op === 'fillRect').map(d => [d.box[0] + f.rect.left, d.box[1] + f.rect.top]);
-        const atTarget = onScreen.filter(([x, y]) => Math.abs(x - target[0]) <= 2 && Math.abs(y - target[1]) <= 2);
-        expect(atTarget.length).toBeGreaterThanOrEqual(8);
+        const onScreen = f.drawn.filter(d => d.op === 'fillRect').map(d => [d.box[0] + f.rect.left + 1, d.box[1] + f.rect.top + 1]);
+        const plink = onScreen.filter(([x, y]) => Math.hypot(x - target[0], y - target[1]) === 3);
+        expect(plink.map(([x, y]) => [x - target[0], y - target[1]])).toEqual([[0, -3], [3, 0], [0, 3], [-3, 0]]);
 
         // And the item itself, on its last frame in the air, was drawn on its way into the target.
         const lastInAir = frames.filter(fr => fr.landedBy === 0).at(-1);
