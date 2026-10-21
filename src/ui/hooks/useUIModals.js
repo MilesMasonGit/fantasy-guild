@@ -45,7 +45,7 @@ export function standingPromotionOffer(engine) {
  * open) and `navToggle` (nav bubble click).
  * - **Never rename these `modalId` strings** without changing `QuestManager.subscribeToEvents`
  * in the same commit.
- * - Publishing for other targets (`guild`, `areas`, `settings`) is harmless; `QuestManager`
+ * - Publishing for other targets (`guild`, `atlas`, `settings`) is harmless; `QuestManager`
  * ignores anything not in the table.
  *
  * `QuestManager` carries the matching note at its subscription.
@@ -66,13 +66,13 @@ const DRAWER_TARGETS = new Set(['bank']);
 const SHOP_TARGET = 'shop';
 
 /** Nav targets that open as a full-screen view (`ui.fullscreen.view`). The Atlas is an overlay over the mat. */
-const FULLSCREEN_TARGETS = new Set(['guild', 'areas', 'atlas']);
+const FULLSCREEN_TARGETS = new Set(['guild', 'atlas']);
 
 export const useUIModals = (engine) => {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isSlotSelectionOpen, setIsSlotSelectionOpen] = useState(true);
 
-    const [drawerState, setDrawerState] = useState({ panes: [], maximized: null });
+    const [drawerState, setDrawerState] = useState({ panes: [] });
 
     const [isShopOpen, setIsShopOpen] = useState(false);
 
@@ -100,7 +100,7 @@ export const useUIModals = (engine) => {
     const [flagRules, setFlagRules] = useState({ isOpen: false, heroId: null });
 
     // The Bank, Shop and Work Permissions drawers are one at a time: opening one closes the others.
-    const closeBankPane = useCallback(() => setDrawerState({ panes: [], maximized: null }), []);
+    const closeBankPane = useCallback(() => setDrawerState({ panes: [] }), []);
     const closeRules = useCallback(() => setFlagRules({ isOpen: false, heroId: null }), []);
     const openRules = useCallback((heroId) => {
         closeBankPane();
@@ -128,10 +128,7 @@ export const useUIModals = (engine) => {
         setIsShopOpen(false);
         setDrawerState(s => ({
             ...s,
-            panes: [tab],
-            // A lone pane already fills the drawer, so maximise has nothing
-            // left to do.
-            maximized: null
+            panes: [tab]
         }));
         EventBus.publish(UI_EVENTS.UI_MODAL_OPENED, { modalId: tab });
     }, [openShop, closeRules]);
@@ -142,7 +139,6 @@ export const useUIModals = (engine) => {
     const isNavActive = useCallback((target) => {
         switch (target) {
             case 'guild':
-            case 'areas':
             case 'atlas': return fullscreenView === target;
             case 'bank': return drawerState.panes.includes('bank');
             case SHOP_TARGET: return isShopOpen;
@@ -154,7 +150,7 @@ export const useUIModals = (engine) => {
     const navToggle = useCallback((target) => {
         if (isNavActive(target)) {
             if (FULLSCREEN_TARGETS.has(target)) setFullscreenView(null);
-            else if (DRAWER_TARGETS.has(target)) setDrawerState({ panes: [], maximized: null });
+            else if (DRAWER_TARGETS.has(target)) setDrawerState({ panes: [] });
             else if (target === SHOP_TARGET) setIsShopOpen(false);
             else if (target === 'settings') setIsSettingsOpen(false);
             return;
@@ -163,7 +159,7 @@ export const useUIModals = (engine) => {
         // Dialog whose click-outside handling races a same-click switch, and the dialog never
         // shows.
         setFullscreenView(null);
-        setDrawerState({ panes: [], maximized: null });
+        setDrawerState({ panes: [] });
         setIsSettingsOpen(false);
         setIsShopOpen(false);
         if (DRAWER_TARGETS.has(target) || target === SHOP_TARGET) closeRules();
@@ -171,8 +167,8 @@ export const useUIModals = (engine) => {
             setFullscreenView(FULLSCREEN_TARGETS.has(target) ? target : null);
             setDrawerState(
                 DRAWER_TARGETS.has(target)
-                    ? { panes: [target], maximized: null }
-                    : { panes: [], maximized: null }
+                    ? { panes: [target] }
+                    : { panes: [] }
             );
             setIsSettingsOpen(target === 'settings');
             setIsShopOpen(target === SHOP_TARGET);
@@ -181,15 +177,12 @@ export const useUIModals = (engine) => {
     }, [isNavActive, closeRules]);
 
     const fullscreenOpen = useCallback((view) => setFullscreenView(view), []);
-    const fullscreenToggle = useCallback((view) => setFullscreenView(v => (v === view ? null : view)), []);
     const fullscreenClose = useCallback(() => setFullscreenView(null), []);
     const fullscreen = useMemo(() => ({
         view: fullscreenView,
-        isOpen: fullscreenView !== null,
         open: fullscreenOpen,
-        toggle: fullscreenToggle,
         close: fullscreenClose
-    }), [fullscreenView, fullscreenOpen, fullscreenToggle, fullscreenClose]);
+    }), [fullscreenView, fullscreenOpen, fullscreenClose]);
 
     const inspectGetByPane = useCallback((pane) => inspectByPane[pane] || null, [inspectByPane]);
     const inspectSet = useCallback((type, id, source = null, pane = null) => {
@@ -224,11 +217,10 @@ export const useUIModals = (engine) => {
     }, []);
     const inspect = useMemo(() => ({
         selection: inspectSelection,
-        byPane: inspectByPane,
         getByPane: inspectGetByPane,
         set: inspectSet,
         clear: inspectClear
-    }), [inspectSelection, inspectByPane, inspectGetByPane, inspectSet, inspectClear]);
+    }), [inspectSelection, inspectGetByPane, inspectSet, inspectClear]);
 
     const controls = {
         settings: {
@@ -245,16 +237,8 @@ export const useUIModals = (engine) => {
             ...drawerState,
             isOpen: drawerState.panes.length > 0,
             open: openDrawerTab,
-            close: useCallback(() => setDrawerState({ panes: [], maximized: null }), []),
             closePane: useCallback(tab => {
-                setDrawerState(s => ({
-                    ...s,
-                    panes: s.panes.filter(p => p !== tab),
-                    maximized: s.maximized === tab ? null : s.maximized
-                }));
-            }, []),
-            toggleMaximize: useCallback(tab => {
-                setDrawerState(s => ({ ...s, maximized: s.maximized === tab ? null : tab }));
+                setDrawerState(s => ({ ...s, panes: s.panes.filter(p => p !== tab) }));
             }, [])
         },
         shop: {
