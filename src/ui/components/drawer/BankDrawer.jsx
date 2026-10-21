@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn.js';
 import { Landmark } from 'lucide-react';
-import { useGameState } from '../../hooks/useGameState.js';
 import BankTab from './BankTab.jsx';
 import InspectionPanel from './InspectionPanel.jsx';
 import { columnWidthCss, NOTIFICATION_COLUMN } from '../board/boardConstants.js';
@@ -10,9 +9,8 @@ import { columnWidthCss, NOTIFICATION_COLUMN } from '../board/boardConstants.js'
 /**
  * BankDrawer: slides in from the side and holds the item Bank.
  * One pane: the item Bank (the Shop has its own drawer from the left edge, `ShopDrawer`).
- * Per-pane header: title + Close. Opening/closing is driven by the BubbleMenu (via `ui.nav`)
- * or `ui:open_drawer` auto-open events; state lives in useUIModals (`ui.drawer`: `panes` /
- * `filters`).
+ * Per-pane header: title + Close. Opening/closing is driven by the BubbleMenu (via `ui.nav`);
+ * state lives in useUIModals (`ui.drawer.panes`).
  * Clicking a tile still sets the shared selection, which renders in the inspection panel
  * rather than inside this drawer.
  */
@@ -23,7 +21,7 @@ import { columnWidthCss, NOTIFICATION_COLUMN } from '../board/boardConstants.js'
 const PANES = [
     {
         key: 'bank', label: 'Item Bank', icon: Landmark, Component: BankTab, inspects: true,
-        paneProps: ({ filter, searchQuery, onInspect, selId }) => ({ filter, searchQuery, onInspect, selectedItemId: selId })
+        paneProps: ({ searchQuery, onInspect, selId }) => ({ searchQuery, onInspect, selectedItemId: selId })
     }
 ];
 
@@ -115,7 +113,6 @@ export const BankDrawer = ({ drawer, inspect, menuRight = false }) => {
                                 <div className="flex-1 min-h-0">
                                     <Component
                                         {...paneProps({
-                                            filter: drawer.filters?.[key] || null,
                                             searchQuery,
                                             onInspect: handleInspect,
                                             selId

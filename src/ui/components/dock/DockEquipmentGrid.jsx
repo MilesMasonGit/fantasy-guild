@@ -10,7 +10,7 @@ import { SLOT_ORDER, categoryOfItem, getCategoryInfo, CATEGORY_KINDS } from '../
 import { formatCompact } from '../../../utils/Formatters.js';
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { equipOrAnnounce } from './dockEquip.js';
-import { ENGINE_EVENTS, ORPHAN_EVENTS } from '../../../systems/core/engineEvents.js';
+import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
  * DockEquipmentGrid: the pinned card's loadout grid: NINE flexible slots in 3 rows of 3, as
@@ -32,13 +32,7 @@ export const DockEquipmentGrid = ({ heroId }) => {
             }
         };
 
-        const unsub1 = EventBus.subscribe(ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, handleEquipped, UI_LISTENER);
-        const unsub2 = EventBus.subscribe(ORPHAN_EVENTS.HERO_EQUIPPED, handleEquipped, UI_LISTENER);
-
-        return () => {
-            unsub1();
-            unsub2();
-        };
+        return EventBus.subscribe(ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, handleEquipped, UI_LISTENER);
     }, [heroId]);
 
     // Flat projection of the grid (see the useGameState selector contract): returning

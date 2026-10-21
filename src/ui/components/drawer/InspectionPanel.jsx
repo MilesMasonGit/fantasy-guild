@@ -63,7 +63,6 @@ export const InspectionPanel = ({
                 <ItemInspection
                     entry={{ id: selection.id, count: itemCount, template }}
                     showSell={!isShop}
-                    showViewInBank={isShop}
                 />
             );
         }

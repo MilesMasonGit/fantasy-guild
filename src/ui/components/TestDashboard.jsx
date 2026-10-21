@@ -18,7 +18,7 @@ import { NotificationsDevSection } from '../dev/NotificationsDevSection.jsx';
 import { TerrainDevSection } from '../dev/TerrainDevSection.jsx';
 import { AtlasDevSection } from '../dev/AtlasDevSection.jsx';
 import { StyleSheetPage } from '../dev/StyleSheetPage.jsx';
-import { ENGINE_EVENTS, ORPHAN_EVENTS } from '../../systems/core/engineEvents.js';
+import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 import { UI_LISTENER } from '../../systems/core/EventBus.js';
 
 const DEV_ADVANCE_MAX_MINUTES = (DEV_ADVANCE_STEP_MS * DEV_ADVANCE_MAX_STEPS) / 60_000;
@@ -66,9 +66,6 @@ export const TestDashboard = React.memo(() => {
 
     React.useEffect(() => {
         if (!engine) return;
-        const unsub = engine.EventBus.subscribe(ORPHAN_EVENTS.DEV_OPEN_ANIMATION_STUDIO, () => {
-            setShowAnimationStudio(true);
-        }, UI_LISTENER);
         const handleKeyDown = (e) => {
             if (e.shiftKey && (e.key === 'A' || e.key === 'a') && !['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
                 setShowAnimationStudio(prev => !prev);
@@ -76,7 +73,6 @@ export const TestDashboard = React.memo(() => {
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => {
-            unsub?.();
             window.removeEventListener('keydown', handleKeyDown);
         };
     }, [engine]);

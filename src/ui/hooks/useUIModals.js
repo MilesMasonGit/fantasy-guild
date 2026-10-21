@@ -41,8 +41,8 @@ export function standingPromotionOffer(engine) {
  * is two string literals in two files that know nothing about each other, so:
  *
  * - **Any new route that opens the Bank or the Shop must publish this event**, or the quest
- * silently never completes. There are two publish sites below: `openDrawerTab` (contextual
- * auto-open) and `navToggle` (nav bubble click).
+ * silently never completes. There are two publish sites below: `openDrawerTab` (a direct
+ * open) and `navToggle` (nav bubble click).
  * - **Never rename these `modalId` strings** without changing `QuestManager.subscribeToEvents`
  * in the same commit.
  * - Publishing for other targets (`guild`, `areas`, `settings`) is harmless; `QuestManager`
@@ -72,8 +72,7 @@ export const useUIModals = (engine) => {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isSlotSelectionOpen, setIsSlotSelectionOpen] = useState(true);
 
-    // `filters` is a fresh object per open so panes can re-apply the same filter twice.
-    const [drawerState, setDrawerState] = useState({ panes: [], filters: {}, maximized: null });
+    const [drawerState, setDrawerState] = useState({ panes: [], maximized: null });
 
     const [isShopOpen, setIsShopOpen] = useState(false);
 
@@ -101,7 +100,7 @@ export const useUIModals = (engine) => {
     const [flagRules, setFlagRules] = useState({ isOpen: false, heroId: null });
 
     // The Bank, Shop and Work Permissions drawers are one at a time: opening one closes the others.
-    const closeBankPane = useCallback(() => setDrawerState({ panes: [], filters: {}, maximized: null }), []);
+    const closeBankPane = useCallback(() => setDrawerState({ panes: [], maximized: null }), []);
     const closeRules = useCallback(() => setFlagRules({ isOpen: false, heroId: null }), []);
     const openRules = useCallback((heroId) => {
         closeBankPane();
@@ -114,12 +113,12 @@ export const useUIModals = (engine) => {
         setIsShopOpen(true);
     }, [closeBankPane, closeRules]);
 
-    // Contextual auto-open (e.g. a banner's open-the-drawer prompt). Independent of the nav
-    // bar's exclusivity rule: it only adds a pane, never closes anything else.
+    // A direct open, outside the nav bar's toggle: it only adds a pane, never closes the nav's
+    // other views.
     // ⚠️ One pane at a time: the drawer has a fixed width, and splitting it leaves each pane
     // too narrow. `panes` stays an array so existing readers keep working but never holds more
     // than one.
-    const openDrawerTab = useCallback((tab, filter = null) => {
+    const openDrawerTab = useCallback((tab) => {
         if (tab === SHOP_TARGET) {
             openShop();
             EventBus.publish(UI_EVENTS.UI_MODAL_OPENED, { modalId: tab });
@@ -130,7 +129,6 @@ export const useUIModals = (engine) => {
         setDrawerState(s => ({
             ...s,
             panes: [tab],
-            filters: { ...s.filters, [tab]: filter ? { ...filter } : null },
             // A lone pane already fills the drawer, so maximise has nothing
             // left to do.
             maximized: null
@@ -139,8 +137,8 @@ export const useUIModals = (engine) => {
     }, [openShop, closeRules]);
 
     // The nav bubbles share an only-one-open rule: clicking a bubble closes whatever any other
-    // has open, and clicking the active one closes it. Contextual auto-opens (`openDrawerTab`)
-    // neither close other views nor are closed by them.
+    // has open, and clicking the active one closes it. Direct opens (`openDrawerTab`) neither
+    // close other views nor are closed by them.
     const isNavActive = useCallback((target) => {
         switch (target) {
             case 'guild':
@@ -156,7 +154,7 @@ export const useUIModals = (engine) => {
     const navToggle = useCallback((target) => {
         if (isNavActive(target)) {
             if (FULLSCREEN_TARGETS.has(target)) setFullscreenView(null);
-            else if (DRAWER_TARGETS.has(target)) setDrawerState({ panes: [], filters: {}, maximized: null });
+            else if (DRAWER_TARGETS.has(target)) setDrawerState({ panes: [], maximized: null });
             else if (target === SHOP_TARGET) setIsShopOpen(false);
             else if (target === 'settings') setIsSettingsOpen(false);
             return;
@@ -165,7 +163,7 @@ export const useUIModals = (engine) => {
         // Dialog whose click-outside handling races a same-click switch, and the dialog never
         // shows.
         setFullscreenView(null);
-        setDrawerState({ panes: [], filters: {}, maximized: null });
+        setDrawerState({ panes: [], maximized: null });
         setIsSettingsOpen(false);
         setIsShopOpen(false);
         if (DRAWER_TARGETS.has(target) || target === SHOP_TARGET) closeRules();
@@ -173,8 +171,8 @@ export const useUIModals = (engine) => {
             setFullscreenView(FULLSCREEN_TARGETS.has(target) ? target : null);
             setDrawerState(
                 DRAWER_TARGETS.has(target)
-                    ? { panes: [target], filters: {}, maximized: null }
-                    : { panes: [], filters: {}, maximized: null }
+                    ? { panes: [target], maximized: null }
+                    : { panes: [], maximized: null }
             );
             setIsSettingsOpen(target === 'settings');
             setIsShopOpen(target === SHOP_TARGET);
@@ -247,7 +245,7 @@ export const useUIModals = (engine) => {
             ...drawerState,
             isOpen: drawerState.panes.length > 0,
             open: openDrawerTab,
-            close: useCallback(() => setDrawerState({ panes: [], filters: {}, maximized: null }), []),
+            close: useCallback(() => setDrawerState({ panes: [], maximized: null }), []),
             closePane: useCallback(tab => {
                 setDrawerState(s => ({
                     ...s,
@@ -298,11 +296,6 @@ export const useUIModals = (engine) => {
 
         // ⚠️ Every subscription below must have a publisher somewhere.
         const subs = [
-            engine.EventBus.subscribe(UI_EVENTS.UI_OPEN_DRAWER, (data) => {
-                const tab = data?.tab;
-                if (!tab || tab === 'heroes') return;
-                openDrawerTab(tab, data?.filter);
-            }, UI_LISTENER),
             // Nothing has happened to the hero yet: the tile holds the offer open and this
             // only decides to draw it.
             engine.EventBus.subscribe(BOARD_EVENTS.PROMOTION_READY, (data) => {
@@ -331,7 +324,7 @@ export const useUIModals = (engine) => {
             clearTimeout(initial);
             subs.forEach(unsub => unsub());
         };
-    }, [engine, openDrawerTab]);
+    }, [engine]);
 
     const isAnyModalOpen = isSettingsOpen ||
                            fullscreenView !== null;
