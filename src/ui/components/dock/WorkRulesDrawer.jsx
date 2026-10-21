@@ -191,7 +191,7 @@ export const WorkRulesDrawer = ({ open = false, heroPanelOpen = false, litHeroId
                 right: insets.right,
                 maxWidth: `calc(100% - ${insets.left + insets.right}px)`
             }}
-            className="absolute mx-auto w-max z-[45] overflow-hidden pointer-events-auto select-none"
+            className="absolute mx-auto w-max z-45 overflow-hidden pointer-events-auto select-none"
         >
             <div
                 className={cn(

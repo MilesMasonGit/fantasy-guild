@@ -89,7 +89,7 @@ export const Tooltip = ({ title, lines, content, disabled = false, maxWidth = 28
                     ref={tipRef}
                     role="tooltip"
                     data-tooltip
-                    className="fixed left-0 top-0 z-[100000] w-max p-2 rounded-lg pointer-events-none bg-black/90 border border-gi-gold/40 shadow-[0_10px_30px_rgba(0,0,0,0.8)] leading-snug text-white"
+                    className="fixed left-0 top-0 z-(--z-tooltip) w-max p-2 rounded-lg pointer-events-none bg-black/90 border border-gi-gold/40 shadow-[0_10px_30px_rgba(0,0,0,0.8)] leading-snug text-white"
                     style={{ maxWidth, transform: 'translate3d(-9999px, -9999px, 0)' }}
                 >
                     {title && <div className="ui-text-title font-bold text-gi-gold">{title}</div>}

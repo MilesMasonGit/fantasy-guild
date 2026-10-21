@@ -52,7 +52,7 @@ export const PlaymatTuner = React.memo(() => {
         return (
             <button
                 onClick={() => setIsOpen(true)}
-                className="fixed bottom-4 right-24 z-[9999] p-3 rounded-full bg-gi-primary text-black shadow-lg hover:scale-110 transition-transform flex items-center gap-2 font-bold font-display"
+                className="fixed bottom-4 right-24 z-(--z-dev-tools) p-3 rounded-full bg-gi-primary text-black shadow-lg hover:scale-110 transition-transform flex items-center gap-2 font-bold font-display"
                 title="Open the ground's look (Playmat Tuner)"
             >
                 <SlidersHorizontal className="w-5 h-5" /> GROUND
@@ -63,7 +63,7 @@ export const PlaymatTuner = React.memo(() => {
     return (
         <div
             data-testid="playmat-tuner"
-            className="fixed bottom-4 right-[19rem] z-[9999] w-72 max-h-[calc(100dvh-2rem)] bg-gi-surface/95 border border-gi-primary rounded-xl p-4 flex flex-col pointer-events-auto"
+            className="fixed bottom-4 right-[19rem] z-(--z-dev-tools) w-72 max-h-[calc(100dvh-2rem)] bg-gi-surface/95 border border-gi-primary rounded-xl p-4 flex flex-col pointer-events-auto"
         >
             <div className="shrink-0 flex items-center justify-between mb-3 border-b border-gi-border pb-2">
                 <div className="flex items-center gap-2 text-gi-primary font-bold font-display">

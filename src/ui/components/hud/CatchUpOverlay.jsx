@@ -79,7 +79,7 @@ export function CatchUpOverlay() {
     return (
         <div
             data-catch-up-overlay
-            className="fixed inset-0 z-[350] flex items-center justify-center p-4 bg-black/75 font-sans"
+            className="fixed inset-0 z-(--z-catch-up) flex items-center justify-center p-4 bg-black/75 font-sans"
         >
             {run
                 ? <LoadingBar run={run} />

@@ -14,7 +14,7 @@ export const BubbleTip = ({ anchor, text }) => {
         <div
             role="tooltip"
             data-bubble-tip="true"
-            className="fixed z-[90] w-max max-w-[220px] px-2 py-1 rounded pointer-events-none bg-black/90 border border-gi-gold/40 text-[11px] leading-snug text-white"
+            className="fixed z-(--z-mat-tip) w-max max-w-[220px] px-2 py-1 rounded pointer-events-none bg-black/90 border border-gi-gold/40 text-[11px] leading-snug text-white"
             style={placeUnder(anchor, TIP_WIDTH, 44)}
         >
             {text}

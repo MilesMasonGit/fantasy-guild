@@ -703,10 +703,10 @@ export const StyleSheetPage = ({ onClose }) => {
             data-style-sheet-page
             role="dialog"
             aria-label="Style sheet"
-            className="fixed inset-0 z-[10000] bg-gi-base text-gi-text overflow-y-auto pointer-events-auto"
+            className="fixed inset-0 z-(--z-style-sheet) bg-gi-base text-gi-text overflow-y-auto pointer-events-auto"
         >
             <div className="max-w-4xl mx-auto px-6 py-4">
-                <div className="sticky top-0 z-[60] bg-gi-base flex items-center gap-3 py-2 border-b border-white/10">
+                <div className="sticky top-0 z-60 bg-gi-base flex items-center gap-3 py-2 border-b border-white/10">
                     <h2 className="font-bold">Style sheet</h2>
                     <span className="text-xs text-gi-muted">Every standard piece from UI_STYLE, live.</span>
                     <span className="flex-1" />

@@ -61,10 +61,10 @@ export const BankDrawer = ({ drawer, inspect, menuRight = false }) => {
                     animate={{ x: 0, opacity: 1 }}
                     exit={{ x: slideOffset, opacity: 0 }}
                     transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                    // ⚠️ z-[90] sits under the nav (BubbleMenu is z-[110]) and over everything else.
+                    // ⚠️ The drawer layer sits under the nav and over everything else (tailwind.css, the layers table).
                     className={cn(
                         'pointer-events-auto flex bg-gi-surface overflow-hidden',
-                        'absolute inset-y-0 z-[90] shadow-[0_0_40px_rgba(0,0,0,0.6)]',
+                        'absolute inset-y-0 z-(--z-drawer) shadow-[0_0_40px_rgba(0,0,0,0.6)]',
                         // Nav side → drawer starts at edge 0 underneath the nav bar with padding to sit flush beside the 152px Nav Bar.
                         // Notification side → stops right before the notifications column, leaving it fully exposed.
                         menuRight

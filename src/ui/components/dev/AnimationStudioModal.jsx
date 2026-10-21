@@ -186,7 +186,7 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 pointer-events-auto select-none">
+        <div className="fixed inset-0 z-(--z-dev-modal) flex items-center justify-center bg-black/85 backdrop-blur-md p-4 pointer-events-auto select-none">
             <div className="w-[1100px] max-w-full max-h-[92vh] bg-gi-surface border-2 border-gi-primary/50 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-gi-text">
                 
                 <div className="flex items-center justify-between px-6 py-3.5 border-b border-gi-border bg-gi-base/80">

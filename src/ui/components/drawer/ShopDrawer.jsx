@@ -113,7 +113,7 @@ export const ShopDrawer = ({ isOpen, onClose, menuRight = false }) => {
             data-shop-drawer-state={state}
             aria-hidden={state === 'closed'}
             className={cn(
-                'absolute inset-y-0 z-[90] flex flex-col bg-gi-surface border-r border-gi-primary/30 shadow-[0_0_40px_rgba(0,0,0,0.6)]',
+                'absolute inset-y-0 z-(--z-drawer) flex flex-col bg-gi-surface border-r border-gi-primary/30 shadow-[0_0_40px_rgba(0,0,0,0.6)]',
                 'w-[33.333vw] min-w-[300px]',
                 // Beside the nav when it is on the left (84 / 152 px, as the
                 // Bank drawer pads for it); at the screen's edge otherwise.

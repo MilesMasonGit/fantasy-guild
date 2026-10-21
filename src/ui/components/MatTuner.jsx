@@ -32,7 +32,7 @@ export const MatTuner = React.memo(() => {
         return (
             <button
                 onClick={() => setIsOpen(true)}
-                className="fixed bottom-4 right-48 z-[9999] p-3 rounded-full bg-gi-primary text-black shadow-lg hover:scale-110 transition-transform flex items-center gap-2 font-bold font-display"
+                className="fixed bottom-4 right-48 z-(--z-dev-tools) p-3 rounded-full bg-gi-primary text-black shadow-lg hover:scale-110 transition-transform flex items-center gap-2 font-bold font-display"
                 title="Open Mat Tuner"
             >
                 <Ruler className="w-5 h-5" /> TUNER
@@ -41,7 +41,7 @@ export const MatTuner = React.memo(() => {
     }
 
     return (
-        <div className="fixed bottom-4 right-[18rem] z-[9999] w-72 bg-gi-surface/95 border border-gi-primary rounded-xl p-4 flex flex-col pointer-events-auto">
+        <div className="fixed bottom-4 right-[18rem] z-(--z-dev-tools) w-72 bg-gi-surface/95 border border-gi-primary rounded-xl p-4 flex flex-col pointer-events-auto">
             <div className="flex items-center justify-between mb-3 border-b border-gi-border pb-2">
                 <div className="flex items-center gap-2 text-gi-primary font-bold font-display">
                     <Ruler className="w-4 h-4" /> MAT TUNER

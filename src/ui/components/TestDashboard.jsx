@@ -304,7 +304,7 @@ export const TestDashboard = React.memo(() => {
             {!isOpen ? (
                 <button
                     onClick={() => setIsOpen(true)}
-                    className="fixed bottom-4 right-4 z-[9999] p-3 rounded-full bg-gi-primary text-black shadow-lg hover:scale-110 transition-transform flex items-center gap-2 font-bold font-display"
+                    className="fixed bottom-4 right-4 z-(--z-dev-tools) p-3 rounded-full bg-gi-primary text-black shadow-lg hover:scale-110 transition-transform flex items-center gap-2 font-bold font-display"
                     title="Open QA Dashboard"
                 >
                     <Bug className="w-5 h-5" /> QA
@@ -312,7 +312,7 @@ export const TestDashboard = React.memo(() => {
             ) : (
                 <div
                     data-testid="qa-panel"
-                    className={`fixed bottom-4 right-4 z-[9999] w-64 ${QA_PANEL_FIT_CLASS} bg-gi-surface/95 border border-gi-primary rounded-xl p-4 flex flex-col pointer-events-auto`}
+                    className={`fixed bottom-4 right-4 z-(--z-dev-tools) w-64 ${QA_PANEL_FIT_CLASS} bg-gi-surface/95 border border-gi-primary rounded-xl p-4 flex flex-col pointer-events-auto`}
                 >
                     <div className="shrink-0 flex items-center justify-between mb-4 border-b border-gi-border pb-2">
                         <div className="flex items-center gap-2 text-gi-primary font-bold font-display">

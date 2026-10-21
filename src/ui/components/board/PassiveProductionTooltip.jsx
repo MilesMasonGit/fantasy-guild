@@ -69,7 +69,7 @@ export const PassiveProductionTooltip = ({ instanceId, readLines = livePassiveLi
             ref={boxRef}
             role="tooltip"
             data-passive-tooltip={instanceId}
-            className="fixed z-[90] w-max max-w-[calc(100vw-16px)] p-2 rounded-lg pointer-events-none bg-black/90 border border-gi-gold/40 shadow-[0_10px_30px_rgba(0,0,0,0.8)] text-[11px] leading-snug text-white whitespace-nowrap"
+            className="fixed z-(--z-mat-tip) w-max max-w-[calc(100vw-16px)] p-2 rounded-lg pointer-events-none bg-black/90 border border-gi-gold/40 shadow-[0_10px_30px_rgba(0,0,0,0.8)] text-[11px] leading-snug text-white whitespace-nowrap"
             style={placeUnder(anchorOf(instanceId), width, 48 + pays.length * 16)}
         >
             {title && <div className="font-bold text-gi-gold">{title}</div>}

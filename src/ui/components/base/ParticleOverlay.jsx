@@ -178,7 +178,7 @@ export const ParticleOverlay = ({ disabled }) => {
     return (
         <canvas
             ref={canvasRef}
-            className="fixed left-0 top-0 z-[10000] pointer-events-none"
+            className="fixed left-0 top-0 z-(--z-particles) pointer-events-none"
             style={CANVAS_STYLE}
         />
     );

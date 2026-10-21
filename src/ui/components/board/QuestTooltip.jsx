@@ -71,7 +71,7 @@ export const QuestTooltip = ({ instanceId, quest, anchorOf = artOf }) => {
             ref={boxRef}
             role="tooltip"
             data-quest-tooltip={instanceId}
-            className="fixed z-[90] w-max max-w-[min(280px,calc(100vw-16px))] p-2 rounded-lg pointer-events-none bg-black/90 border border-gi-gold/40 shadow-[0_10px_30px_rgba(0,0,0,0.8)] text-[11px] leading-snug text-white"
+            className="fixed z-(--z-mat-tip) w-max max-w-[min(280px,calc(100vw-16px))] p-2 rounded-lg pointer-events-none bg-black/90 border border-gi-gold/40 shadow-[0_10px_30px_rgba(0,0,0,0.8)] text-[11px] leading-snug text-white"
             style={placeUnder(anchorOf(instanceId), width, 110)}
         >
             <div className="flex items-center gap-1.5">

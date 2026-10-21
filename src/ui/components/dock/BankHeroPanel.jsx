@@ -113,7 +113,7 @@ export const BankHeroPanel = ({
             data-hero-panel="true"
             style={{ width: columnWidthCss(NOTIFICATION_COLUMN) }}
             className={cn(
-                'absolute inset-y-0 z-[100] pointer-events-none',
+                'absolute inset-y-0 z-(--z-hero-panel) pointer-events-none',
                 isLeft ? 'left-0' : 'right-0'
             )}
         >
@@ -141,7 +141,7 @@ export const BankHeroPanel = ({
             )}
 
             {showTabs && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 py-4 z-[110]">
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 py-4 z-10">
                     {heroIds.map((heroId, index) => (
                         <div key={heroId} className="w-full h-[72px] relative">
                             <HeroDockTab

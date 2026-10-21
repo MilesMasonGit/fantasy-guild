@@ -31,7 +31,7 @@ export const FPSCounter = React.memo(() => {
 
     return (
         <div className={cn(
-            "fixed bottom-2 left-2 z-[9999] pointer-events-none bg-black/60 text-xs font-bold px-2 py-1 rounded shadow-md border border-white/10",
+            "fixed bottom-2 left-2 z-(--z-dev-tools) pointer-events-none bg-black/60 text-xs font-bold px-2 py-1 rounded shadow-md border border-white/10",
             colorClass
         )}>
             {fps} FPS

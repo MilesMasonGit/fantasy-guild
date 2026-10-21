@@ -58,7 +58,7 @@ export const TypographyScaleModal = ({ isOpen, onClose }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 pointer-events-auto">
+        <div className="fixed inset-0 z-(--z-dev-modal) flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 pointer-events-auto">
             <div className="w-[540px] max-w-full bg-gi-surface border-2 border-gi-primary/50 rounded-2xl shadow-2xl flex flex-col max-h-[90vh] text-gi-text animate-in fade-in zoom-in-95 duration-200">
                 <div className="flex items-center justify-between px-5 py-4 border-b border-gi-border bg-gi-base/60">
                     <span className="font-display font-bold text-base text-gi-primary uppercase tracking-widest">

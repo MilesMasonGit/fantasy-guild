@@ -372,7 +372,7 @@ export const FlagTooltip = ({ anchor, heroId }) => {
         <div
             role="tooltip"
             data-flag-tooltip={heroId}
-            className="fixed z-[90] w-64 p-2 rounded-lg pointer-events-none bg-black/90 border border-gi-gold/40 shadow-[0_10px_30px_rgba(0,0,0,0.8)] text-[11px] leading-snug text-white"
+            className="fixed z-(--z-mat-tip) w-64 p-2 rounded-lg pointer-events-none bg-black/90 border border-gi-gold/40 shadow-[0_10px_30px_rgba(0,0,0,0.8)] text-[11px] leading-snug text-white"
             style={placeUnder(anchor, 256, 64 + (tip.pin ? 16 : 0) + tip.skips.length * 16)}
         >
             <div className="font-bold text-gi-gold">{tip.title}</div>

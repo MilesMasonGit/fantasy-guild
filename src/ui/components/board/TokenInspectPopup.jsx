@@ -180,7 +180,7 @@ export const TokenInspectPopup = ({ typeId, instanceId = null, anchorRect, onClo
             ref={popupRef}
             data-token-card-popup={coords.dir}
             className={cn(
-                "fixed z-[80] transition-opacity duration-200 ease-out",
+                "fixed z-(--z-token-popup) transition-opacity duration-200 ease-out",
                 isVisible ? "opacity-100" : "opacity-0 pointer-events-none"
             )}
             style={{ top: coords.top, left: coords.left, minWidth: POPUP_W }}

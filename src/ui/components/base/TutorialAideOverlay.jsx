@@ -210,7 +210,7 @@ export const TutorialBeacon = ({ target, keyId }) => {
                 top: targetRect.y - targetRect.radius,
                 width: targetRect.radius * 2,
                 height: targetRect.radius * 2,
-                zIndex: 9999,
+                zIndex: 'var(--z-tutorial-ring)',
                 pointerEvents: 'none'
             }}
             className="flex items-center justify-center select-none"
@@ -271,7 +271,7 @@ export const TutorialAideOverlay = () => {
     }, []);
 
     return (
-        <div className="fixed inset-0 z-[9990] pointer-events-none overflow-hidden select-none">
+        <div className="fixed inset-0 z-(--z-tutorial) pointer-events-none overflow-hidden select-none">
             <AnimatePresence>
                 {activeQuestId && (
                     <TutorialBeacon

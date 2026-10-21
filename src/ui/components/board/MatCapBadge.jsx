@@ -175,7 +175,7 @@ export const TokenSummaryPanel = ({ anchor, summary, cap, panelRef }) => {
             role="dialog"
             aria-label="Token Summary"
             data-token-summary
-            className="fixed z-[90] flex flex-col overflow-y-auto custom-scrollbar p-2 rounded-lg bg-black/90 border border-gi-gold/40 shadow-[0_10px_30px_rgba(0,0,0,0.8)] text-[11px] leading-snug text-white"
+            className="fixed z-(--z-mat-tip) flex flex-col overflow-y-auto custom-scrollbar p-2 rounded-lg bg-black/90 border border-gi-gold/40 shadow-[0_10px_30px_rgba(0,0,0,0.8)] text-[11px] leading-snug text-white"
             style={{ width: PANEL_WIDTH, maxHeight: 'min(480px, 70vh)', ...placeUnder(anchor, PANEL_WIDTH, 360) }}
         >
             <div className="font-bold text-gi-gold">Tokens {summary.total}/{cap}</div>
