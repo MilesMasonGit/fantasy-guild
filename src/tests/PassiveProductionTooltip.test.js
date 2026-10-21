@@ -15,6 +15,7 @@ import {
 } from '../ui/components/board/PassiveProductionTooltip.jsx';
 import * as PassiveProduction from '../systems/board/PassiveProduction.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
+import { tipPosition } from '../ui/components/base/Tooltip.jsx';
 
 /**
  * **The Guild Hall's live Passive Production tooltip** (T-099): hover text,
@@ -127,27 +128,30 @@ describe('⭐ the Hall tooltip (FB-52, T-099)', () => {
         expect(PassiveProduction.hasPassiveProduction(null)).toBe(false);
     });
 
-    it('hangs under the anchor it is given', () => {
-        const anchor = { getBoundingClientRect: () => ({ left: 100, top: 100, right: 200, bottom: 200 }) };
+    it('is the shared tooltip: it starts under the anchor, then follows the pointer', () => {
+        const anchor = { getBoundingClientRect: () => ({ left: 100, top: 100, right: 200, bottom: 200, width: 100, height: 100 }) };
         render(React.createElement(PassiveProductionTooltip, {
             instanceId: 'x',
             readLines: () => ['Passive Production · next in 5:00', 'a line'],
             anchorOf: () => anchor
         }));
-        expect(tooltip().style.left).toBe('100px');
-        expect(tooltip().style.top).toBe('208px');
+        const corner = () => tooltip().style.transform;
+        expect(tooltip().hasAttribute('data-tooltip')).toBe(true);
+        const { left, top } = tipPosition(150, 200, 0, 0, window.innerWidth, window.innerHeight);
+        expect(corner()).toBe(`translate3d(${left}px, ${top}px, 0)`);
+        act(() => { window.dispatchEvent(new MouseEvent('pointermove', { clientX: 300, clientY: 250 })); });
+        const moved = tipPosition(300, 250, 0, 0, window.innerWidth, window.innerHeight);
+        expect(corner()).toBe(`translate3d(${moved.left}px, ${moved.top}px, 0)`);
     });
 
-    it('is as wide as its longest line, one row each, capped to the window (the flag tooltip keeps a fixed 256 px)', () => {
+    it('is as wide as its longest line, one row each, capped to the window', () => {
         render(React.createElement(PassiveProductionTooltip, {
             instanceId: 'x',
             readLines: () => ['Passive Production · next in 5:00', 'a line'],
             anchorOf: () => null
         }));
-        const cls = tooltip().className;
-        expect(cls).toContain('w-max');
-        expect(cls).toContain('whitespace-nowrap');
-        expect(cls).toContain('max-w-[calc(100vw-16px)]');
-        expect(cls).not.toContain('w-64');
+        expect(tooltip().className).toContain('w-max');
+        expect(tooltip().querySelector('.whitespace-nowrap')).not.toBeNull();
+        expect(tooltip().style.maxWidth).toBe('calc(100vw - 16px)');
     });
 });

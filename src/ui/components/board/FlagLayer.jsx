@@ -1,5 +1,4 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { useEntityDrag, useActiveDrag, useDragPointer } from '../../dnd/DndKit.jsx';
@@ -18,7 +17,7 @@ import { tokenSizeFor, TOKEN_SURFACE, boardScaleAt } from '../base/TokenSprite.j
 import { FlagMark } from './FlagMark.jsx';
 import { flagOutline } from './spriteOutline.js';
 import { flagTooltip } from './flagText.js';
-import { placeUnder } from './tooltipPlacement.js';
+import { FloatingTip } from '../base/Tooltip.jsx';
 import { pointerToMat, matRectForDrag } from './matPoint.js';
 import { useMatFit } from './MatFitContext.jsx';
 import { useTokenDragLanding } from './MatRings.jsx';
@@ -365,27 +364,24 @@ export const FlagTooltip = ({ anchor, heroId }) => {
         const timer = setInterval(() => refresh(n => n + 1), 500);
         return () => clearInterval(timer);
     }, []);
-    if (typeof document === 'undefined') return null;
-
     const tip = flagTooltip(heroId);
-    return createPortal(
-        <div
-            role="tooltip"
-            data-flag-tooltip={heroId}
-            className="fixed z-(--z-mat-tip) w-64 p-2 rounded-lg pointer-events-none bg-black/90 border border-gi-gold/40 shadow-[0_10px_30px_rgba(0,0,0,0.8)] text-[11px] leading-snug text-white"
-            style={placeUnder(anchor, 256, 64 + (tip.pin ? 16 : 0) + tip.skips.length * 16)}
-        >
-            <div className="font-bold text-gi-gold">{tip.title}</div>
-            {tip.pin && <div data-flag-tooltip-pin className="text-gi-gold/90">{tip.pin}</div>}
-            <div className={STATE_TONE[tip.state] || 'text-white/80'}>{tip.status}</div>
-            {tip.skips.length > 0 && (
-                <ul className="mt-1 pt-1 border-t border-white/10 flex flex-col gap-0.5 text-white/75">
-                    {tip.skips.map((line, i) => <li key={i}>{line}</li>)}
-                    {tip.more > 0 && <li className="text-white/50">+{tip.more} more</li>}
-                </ul>
-            )}
-        </div>,
-        document.body
+    return (
+        <FloatingTip
+            anchor={anchor}
+            title={tip.title}
+            maxWidth={256}
+            tipProps={{ 'data-flag-tooltip': heroId }}
+            content={<>
+                {tip.pin && <div data-flag-tooltip-pin className="text-gi-gold/90">{tip.pin}</div>}
+                <div className={STATE_TONE[tip.state] || 'text-white/80'}>{tip.status}</div>
+                {tip.skips.length > 0 && (
+                    <ul className="mt-1 pt-1 border-t border-white/10 flex flex-col gap-0.5 text-white/75">
+                        {tip.skips.map((line, i) => <li key={i}>{line}</li>)}
+                        {tip.more > 0 && <li className="text-white/50">+{tip.more} more</li>}
+                    </ul>
+                )}
+            </>}
+        />
     );
 };
 

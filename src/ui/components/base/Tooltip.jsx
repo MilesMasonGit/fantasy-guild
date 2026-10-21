@@ -1,4 +1,4 @@
-import { Children, cloneElement, useCallback, useLayoutEffect, useRef, useState } from 'react';
+import { Children, cloneElement, forwardRef, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 /** Gap between the pointer and the tooltip, so the tip never covers what is under the cursor. */
@@ -21,6 +21,21 @@ export function tipPosition(x, y, width, height, viewW, viewH) {
     top = Math.max(TIP_EDGE, Math.min(top, viewH - TIP_EDGE - height));
     return { left, top };
 }
+
+/**
+ * Where the pointer last was, so a tip that opens without a pointer event of its own (a Token's,
+ * a flag's) starts beside the cursor.
+ */
+let lastPointer = null;
+if (typeof window !== 'undefined') {
+    window.addEventListener('pointermove', (e) => { lastPointer = { x: e.clientX, y: e.clientY }; }, { passive: true, capture: true });
+}
+
+/** Under the middle of an element, for a tip shown before the pointer has moved at all. */
+const pointUnder = (anchor) => {
+    const r = anchor?.getBoundingClientRect?.();
+    return r ? { x: r.left + r.width / 2, y: r.bottom } : null;
+};
 
 const place = (el, pointer) => {
     if (!el || !pointer) return;
@@ -85,20 +100,54 @@ export const Tooltip = ({ title, lines, content, disabled = false, maxWidth = 28
         <>
             {wrapped}
             {shown && typeof document !== 'undefined' && createPortal(
-                <div
-                    ref={tipRef}
-                    role="tooltip"
-                    data-tooltip
-                    className="fixed left-0 top-0 z-(--z-tooltip) w-max p-2 rounded-lg pointer-events-none bg-black/90 border border-gi-gold/40 shadow-[0_10px_30px_rgba(0,0,0,0.8)] leading-snug text-white"
-                    style={{ maxWidth, transform: 'translate3d(-9999px, -9999px, 0)' }}
-                >
-                    {title && <div className="ui-text-title font-bold text-gi-gold">{title}</div>}
-                    {shownLines.map((line, i) => <div key={i} className="ui-text-body text-white/70">{line}</div>)}
-                    {content && <div className="ui-text-body">{content}</div>}
-                </div>,
+                <TipBox ref={tipRef} title={title} lines={shownLines} content={content} maxWidth={maxWidth} />,
                 document.body
             )}
         </>
+    );
+};
+
+/** The tooltip's box: gold title, muted lines, then any content. */
+const TipBox = forwardRef(function TipBox({ title, lines = [], content, maxWidth, tipProps }, ref) {
+    return (
+        <div
+            ref={ref}
+            role="tooltip"
+            data-tooltip
+            className="fixed left-0 top-0 z-(--z-tooltip) w-max p-2 rounded-lg pointer-events-none bg-black/90 border border-gi-gold/40 shadow-[0_10px_30px_rgba(0,0,0,0.8)] leading-snug text-white"
+            style={{ maxWidth, transform: 'translate3d(-9999px, -9999px, 0)' }}
+            {...tipProps}
+        >
+            {title && <div className="ui-text-title font-bold text-gi-gold">{title}</div>}
+            {lines.map((line, i) => <div key={i} className="ui-text-body text-white/70">{line}</div>)}
+            {content && <div className="ui-text-body">{content}</div>}
+        </div>
+    );
+});
+
+/**
+ * The same tooltip for a caller that decides itself when it shows (a Token resting under the
+ * pointer, a flag, a hero tab after a pause): mounted while shown, it follows the pointer from
+ * wherever it is, or starts under `anchor` until the pointer moves.
+ * `tipProps` lands on the box (the callers' `data-*` hooks).
+ * @param {{ title?: string, lines?: string[], content?: React.ReactNode, maxWidth?: number|string,
+ *   anchor?: Element|null, tipProps?: object }} props
+ */
+export const FloatingTip = ({ title, lines, content, maxWidth = 280, anchor = null, tipProps }) => {
+    const tipRef = useRef(null);
+    const shownLines = lines ? lines.filter(Boolean) : [];
+    useLayoutEffect(() => {
+        place(tipRef.current, lastPointer || pointUnder(anchor));
+    });
+    useEffect(() => {
+        const onMove = (e) => place(tipRef.current, { x: e.clientX, y: e.clientY });
+        window.addEventListener('pointermove', onMove, { passive: true });
+        return () => window.removeEventListener('pointermove', onMove);
+    }, []);
+    if (typeof document === 'undefined') return null;
+    return createPortal(
+        <TipBox ref={tipRef} title={title} lines={shownLines} content={content} maxWidth={maxWidth} tipProps={tipProps} />,
+        document.body
     );
 };
 
