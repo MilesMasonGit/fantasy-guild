@@ -96,9 +96,10 @@ the code after brief 60.)
    which keeps an animation *on the main thread* so it does not promote what is
    drawn over it: on a live hit loop, a walker's boxes, the spawn pop and the
    classes listed at `.gi-token-land` in `tailwind.css`.
-7. **Filters are the graphics card's work.** Sprite shadows and outlines are
-   pictures generated from the sprites (`src/config/spriteFx.js`), not
-   `drop-shadow` filters; don't add filters on the mat. Animate a glow's
+7. **Filters are the graphics card's work.** Sprite shadows, outlines and the
+   effects' tinted and dithered copies are pictures generated from the sprites
+   (`src/config/spriteFx.js`), not `drop-shadow` filters or CSS masks (a mask
+   measured slower: "Animation batch result"); don't add filters on the mat. Animate a glow's
    `opacity`, never a filter's values; no `transition: filter` "just in case".
 8. **Hidden panels draw nothing.** A shut panel or modal renders nothing
    (`if (!isOpen) return null`, as `SettingsModal.jsx` does), so no list, blur
@@ -263,6 +264,10 @@ before and after, S2 at 4× (perf build). Measure, don't fix.
 | Brief 180 G5 Water in every Region | 2026-10-18 | level | level | Engine work check same (timings matched a control run of `main`). Ground build per Region 30–55 → 40–70 ms (lake with river the most), once per Region; layout 1–2 → 2–9 ms. |
 | Brief 180 G7 Placement + G6 Blended borders (combined, not yet merged) | 2026-10-18 | S2 4×: 99.8 → 101.5 | 11.30 → 11.55 | Interleaved A/B against `main` (with G5), all scenes within ±1.3 % fps at 1× either way; level. The compare against the 16 Oct baseline read 5–10 % slower on every scene including Bank and Shop (machine state, confirmed by the A/B). Blend adds about 5–12 ms to a two-biome ground build, once per Region. |
 | Brief 190 P1 ground look + P3 ambient life (combined, not yet merged) | 2026-10-18 | S2 1×: 164.4 → 162.1; 4×: 113.5 → 111.0 | 1×: 1.85 → 2.06; 4×: 10.26 → 10.45 | Interleaved A/B against `main` (`e4731f11`, which lacks G6 and G7), A,B,B,A, every 4× window at a delivered 4.1–5.0×; within tolerance at both. Per effect, perf build at 1920×1080 on the QA dev Regions (1×, traced, all on against each off): the water shimmer costs ~11 ms/s of GPU raster; clouds, birds and particles 5–10 ms/s of main thread each, inside the noise; gusts and the lava pulse nothing measurable; every frame within 6 ms, as on `main`. Headed Firefox level with `main` too. ⚠️ **The owner's lag was the dev build only**: React 19.2's development build lists every entry of a changed prop in its performance timeline, and the ambient life was handed the ground picture (the plan's arrays, ~4 million entries) as a prop, so every new plan (a QA biome click, a load, a Ground tuner slider) froze the dev game 2.4–3.1 s in Chrome, 5.6–5.9 s in Firefox; with the picture handed on outside props, 77–188 ms, as `main` (`GroundPictureDevCost.test.js`). Never pass large typed-array objects as React props. `bench:crisp`: the ambient life adds no layer; clouds and birds change the Tokens under them (by design); its spawn, turn and quest cases fail on `main` as well (Chrome 155). |
+| T-137 tinted copies: the method (2026-10-21) | 2026-10-21 | cap128 1×, all 130 Tokens flashing white every 240 ms: generated pictures 154.0 / 153.5, CSS mask 125.7 / 111.2 | pictures 1.6 / 1.8, mask 1.7 / 1.7 (p99 21–24 against 38–64) | Built both ways first (scratch harness, dev build, A,B,B,A, traced): the mask took 313–400 ms/s of GPU work against 214–221 and 159–249 ms/s of style against 128, with 2 and 24 long frames against none; at 4× both drown (9–12 against 4–6 fps). **Pictures chosen**; the mask path is gone. Cost: 1.76 MB more in the shipped build (white, gold and green tints of every mat sprite; full-colour and white dithered copies of enemies and items: 4,770 small PNGs), drawn once by the generator. See "Animation batch result". |
+| T-137 effect 5 crisp flight | 2026-10-21 | 24 flights in the air on S2, 4×: 77.0 → 103.0 | 14.61 → 9.30 | Scratch A/B of perf builds just before and after the change, A,B,B,A, delivered 4.6–5.2×; within 16.7 ms 60.4 → 79.6 %. At 1× 1.90 → 1.41 ms. On the `loot` scene (30 drops every 3 s, collected, flying to their stubs) no change: 4× 46.7 → 47.7 fps, 19.75 → 19.91 ms; 1× 2.56 → 2.30 ms: the flights are a small part of that scene. |
+| T-137 + T-154 + T-155, the whole batch | 2026-10-21 | S2 4×: 115.5 → 111.0; cap128 4×: 102.0 → 98.2 | S2 9.21 → 7.80; cap128 10.26 → 9.36 | Scratch A/B against the batch's base (`d4440d63`), perf builds, A,B,B,A, delivered 4.4–5.1×. Median work down, the slow end up: p95 S2 21.1 → 24.6, cap128 25.2 → 29.5 ms; within 16.7 ms S2 87.6 → 84.4 %, cap128 79.3 → 78.5 %. At 1× p50 S2 1.41 → 1.06, cap128 1.66 → 1.30 ms, at the screen's ceiling. The effects' own switches on cap128 (`?off=tokenFx`): 4× 96.7 → 107.5 fps, 9.71 → 7.86 ms with them off, but the throttle delivered 4.6–5.0× against 4.9–5.0×; strike chips alone (a build without them) 9.51 → 8.61 ms, which per delivered slowdown is level (1.81 against 1.79 ms per ×). At 1× either is 0.1 ms or less. Confirm with `bench:draw --compare`. |
+| T-154 pickup flight | 2026-10-21 | n/a | n/a | Pickups only (scratch harness, real mouse input, cap128, 24 Token pickups a side, perf builds without and with the flight, A,B,B,A): 1× longest frame from the move that starts the drag to 250 ms after, median 6.3 → 6.3 ms, worst 66.7 → 12.2 (cold first drags of a run), pickups with a frame over 16.7 ms 3 → 0; 4× 54.6 → 60.7 ms (one 165 Hz frame), long animation frame median 54.6 → 54.5 ms. No hitch back. Confirm with `bench:drag -- --board=cap128` both ways. |
 
 ## Drag baseline (`npm run bench:drag`, perf build, S2, 50 drags per kind and pass)
 
@@ -1120,6 +1125,56 @@ ghost should simply vanish).
 **Confirm in a bench window**: `npm run bench:drag -- --board=cap128 --no-overlays` on this branch
 and on `main` back to back (pickup and drop columns), and the same at `--cpu=4`; and
 `npm run bench -- --compare` (the same work: nothing here touches the engine).
+
+### Animation batch result: T-137, T-154, T-155 (2026-10-21)
+
+**What it is.** The owner's animation picks, built on four shared pieces (`src/ui/components/board/fx/`):
+held poses in whole art pixels with `steps(1, end)` timing (`pixelSteps.js`), a random source for the eye
+that never draws `Math.random` (`fxRandom.js`), copies of a sprite made from generated pictures
+(`spriteCopy.js`; tints and dithers from `scripts/spriteFx.mjs`), and two hosts: effects on a Token's own art
+inside its hit wrapper (`tokenFx.js`), effects standing on the mat in one layer over the Tokens (`matFx.js`,
+`MatFxLayer`). Every effect makes its elements when it starts and removes them when it ends; nothing is drawn
+or ticking at rest, and no effect renders React (the elements are written to the page, as the sprite clocks
+are). Every one that plays among the Tokens carries `will-change: contents` while it plays (T-145). Two
+switches price them: `tokenFx` and `matFx`.
+
+**What each adds while it plays** (counted from the code and the tests; frame costs measured only as the groups
+in the cost log):
+
+| Effect | Trigger | Elements, time |
+|---|---|---|
+| 1 crisp hits | a worked Token, every strike | none new: the hit loop's keyframes are whole pixels, stepped |
+| 2 strike chips | every strike of a worked Token | 3 one-pixel chips per worked Token while worked, one 240 ms animation each per strike, started on the shared `onDue` clock |
+| 3 cycle blink | `CYCLE_COMPLETE` with a hero | 1 outline copy, 60 ms |
+| 4 loot hop | a drop | the drop's box (14 held poses, 560 ms), its shadow, 2 trail copies |
+| 5 crisp flight | a collection | canvas: 3 two-pixel squares and the item per flight, 4 pixels on landing for 150 ms; the Hall dip is one 120 ms transform, no React render |
+| 6, 7 rule number, spark | `EFFECT_FIRED` with an amount, a neighbour | 1 number (900 ms), 1 pixel (360 ms) |
+| 10 rare twinkle | `RARE_DROP` | 1 gold copy (120 ms), 1 star of 2 bars (360 ms) |
+| 13 white hit, afterimages | a landed hit | 1 white copy (120 ms), 2 trail copies (300 ms) |
+| 14 damage number | every landed hit | 1 number (420 ms) |
+| 15 knockout | `COMBAT_RESOLVED` victory | 3 copies in a box (600 ms), 4 puff pixels (180 ms) |
+| 17 transform flash | a Token becoming another | 1 outline copy, 180 ms |
+| echo ring | `EFFECT_FIRED` | 4 outline copies, 180 ms |
+| green heal | `COMBAT_HERO_ATE` | 1 copy of the hero's art holder, 120 ms |
+| 18 Region settle | `BOARD_SWAPPED` | one animation on each Token's two boxes, at most ~1.6 s, once per travel |
+| T-155 spawn hop | `TOKEN_SPAWNED` | as before (two boxes), 14 held poses (420 ms) instead of a 300 ms eased scale |
+| T-154 pickup | a drag's start | one 80 ms transform on the ghost's picture holder |
+
+**Measured** (scratch harnesses on the bench's own kit, not the bench; the cost log has the numbers): the tinted
+copies' method; effect 5 before and after (a third more frames at 4× with flights in the air); the whole batch against its base on
+S2 and cap128; the effects' switches; the pickups. **Reasoned**: each effect's split inside its group; the Region
+settle (no scene travels); the T-155 hop (the same element count as before, no scene spawns much).
+
+**The engine's work**: no effect draws `Math.random` (the flight's sparkles did; they are gone, and
+`AnimationBatch.test.js` spies on it across the effects). The engine files the batch touches only add fields to
+event payloads (`EFFECT_FIRED` carries `fromTokenId` and `amount`; the grant and status copies carry
+`fromTokenId`) and publish one new event for the eye (`RARE_DROP`, `RareDrops.js`); no state, no roll and no
+order of work changes. Confirm with `npm run bench -- --compare` (same work).
+
+**Confirm in a bench window**: `npm run bench -- --compare`; `npm run bench:draw -- --compare`;
+`npm run bench:draw -- --switches --cpu=4 --only=cap128` (the `tokenFx` and `matFx` rows); `npm run bench:drag
+-- --board=cap128` on this branch and on its base, plain and `--cpu=4` (T-154); `npm run bench:crisp` (the
+chips, copies and the knockout among the resting Tokens).
 
 ### Owner questions
 
