@@ -22,17 +22,26 @@ export const DockEquipmentGrid = ({ heroId }) => {
     const [justEquippedSlot, setJustEquippedSlot] = useState(null);
 
     useEffect(() => {
+        // EventBus ignores a handler's return value, so the flash timers are cleared here.
+        const timers = new Set();
         const handleEquipped = (data) => {
             if (data?.action === 'equip' && data?.heroId === heroId && data?.slot != null) {
                 setJustEquippedSlot(data.slot);
                 const timer = setTimeout(() => {
+                    timers.delete(timer);
                     setJustEquippedSlot(prev => (prev === data.slot ? null : prev));
                 }, 800);
-                return () => clearTimeout(timer);
+                timers.add(timer);
             }
         };
 
-        return EventBus.subscribe(ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, handleEquipped, UI_LISTENER);
+        const unsubscribe = EventBus.subscribe(ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, handleEquipped, UI_LISTENER);
+        // A flash cut short ends now, so a switch to another hero does not inherit it.
+        return () => {
+            unsubscribe();
+            timers.forEach(clearTimeout);
+            if (timers.size > 0) setJustEquippedSlot(null);
+        };
     }, [heroId]);
 
     // Flat projection of the grid (see the useGameState selector contract): returning
