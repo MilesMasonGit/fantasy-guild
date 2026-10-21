@@ -185,7 +185,7 @@ const STRESS_IDS = { quiet: 'S1', realistic: 'S2', torture: 'S3', cap128: 'C128'
 //   notify<N>   cap128 with N notifications a minute on top of the board's own: every tenth a
 //               banner (the oldest on screen dismissed when three show, as a player clicking), the
 //               rest item flows into the Bank (`InventoryManager.addItem`), which the item stubs
-//               show, over 24 items in turn
+//               show, over 24 items in turn (`notify<N>i<K>`: over K items, so K stub rows)
 // Each also samples what is on the mat every 500 ms (Tokens, enemies, fights going on, loot piles,
 // stub rows, banners) and counts the item flows and banners the window saw: the scene's `probe`,
 // kept in the results JSON as `envelope` and printed.
@@ -275,11 +275,11 @@ async function stillPiles(page) {
 }
 
 /** notify<N>: N notifications a minute, every tenth a banner. */
-async function notifyRate(page, n) {
+async function notifyRate(page, n, itemCount = 24) {
     await startSampler(page);
     await page.evaluate(`(() => {
         const G = window.__perf.game;
-        const items = Object.values(G.getAllItems()).filter(i => i && i.id && !i.equipSlot).slice(0, 24).map(i => i.id);
+        const items = Object.values(G.getAllItems()).filter(i => i && i.id && !i.equipSlot).slice(0, ${itemCount}).map(i => i.id);
         let k = 0;
         const one = () => {
             k++;
@@ -298,7 +298,7 @@ async function notifyRate(page, n) {
         window.__benchTimer = setInterval(() => { for (let i = 0; i < per; i++) one(); }, every);
         return true;
     })()`);
-    return `${n} notifications a minute from a page timer (every tenth a banner, the rest item flows over 24 items)`;
+    return `${n} notifications a minute from a page timer (every tenth a banner, the rest item flows over ${itemCount} items)`;
 }
 
 /** The scene an id names: one of `SCENES`, or an envelope scene with a number. Null if none. */
@@ -326,10 +326,12 @@ export function sceneFor(id) {
         }
         return { id: `floor${n}`, name: `cap128, ${n} loot piles on the floor`, stress: 'cap128', ui: (page) => floorPiles(page, n), probe: ENVELOPE_PROBE };
     }
-    m = /^notify(\d+)$/.exec(key);
+    m = /^notify(\d+)(?:i(\d+))?$/.exec(key);
     if (m) {
         const n = Number(m[1]);
-        return { id: `notify${n}`, name: `cap128, ${n} notifications a minute`, stress: 'cap128', ui: (page) => notifyRate(page, n), probe: ENVELOPE_PROBE };
+        const items = m[2] ? Math.max(1, Number(m[2])) : 24;
+        const id = `notify${n}${m[2] ? `i${items}` : ''}`;
+        return { id, name: `cap128, ${n} notifications a minute over ${items} items`, stress: 'cap128', ui: (page) => notifyRate(page, n, items), probe: ENVELOPE_PROBE };
     }
     return null;
 }

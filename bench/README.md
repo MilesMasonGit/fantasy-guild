@@ -368,7 +368,7 @@ everything else stays at the 128 board (`--only=cap96,cap128,cap160`). Only with
 | `fights<N>` | `cap128` with N producers swapped for a camp of one tough hostile brute that never runs out (`env_brute`, registered in the scenario only), and N of the 8 heroes planted beside them: N fights going on at once. A hero can be knocked out late in a window (50 HP): read the sampled count |
 | `floor<N>` | `cap128` with N loot piles resting on the floor: auto-collect off, the game's pile cap (`gameplay.maxItemStacks`, 40 shipped) set to N and the floor filled to it; the board's own drops then keep it at N, the oldest pile flying to the Bank |
 | `floorstill<N>` | `floor<N>` with the piles' hover animation (`gi-sprite-hover`, a stepped transform on each pile's picture) stopped by a page style: what the hover costs |
-| `notify<N>` | `cap128` with N notifications a minute on top of the board's own, from a page timer: every tenth a banner (`Banners.push`; the oldest on screen dismissed when three show, as a player clicking), the rest item flows into the Bank (`InventoryManager.addItem`, over 24 items in turn), which the item stubs show |
+| `notify<N>` | `cap128` with N notifications a minute on top of the board's own, from a page timer: every tenth a banner (`Banners.push`; the oldest on screen dismissed when three show, as a player clicking), the rest item flows into the Bank (`InventoryManager.addItem`, over 24 items in turn), which the item stubs show. `notify<N>i<K>`: over K items, so the column holds about K rows |
 
 Each envelope scene samples the page every 500 ms (Tokens, enemies, fights going on, heroes, loot
 piles, stub rows, banners on screen) and counts the item flows and banners of the window; the line
