@@ -13,6 +13,7 @@ import * as BoardState from '../systems/board/BoardState.js';
 import * as Flags from '../systems/board/Flags.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
+import { EventBus } from '../systems/core/EventBus.js';
 import { matW, matH, artRadiusOf } from '../config/matGeometry.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { MAT_TOKEN_DRAG_ID } from '../ui/components/board/MatToken.jsx';
@@ -303,6 +304,35 @@ describe('⭐ a press through a hero\'s see-through pixel reaches what is beneat
         figure(container, 'h2', true);
         pressAndPull(flag);
         expect(started).toEqual(['hero-h2']);
+    });
+
+    it('a press on a hero\'s health bar, drawn over its flag, picks the hero up, as an enemy\'s bar does the enemy', () => {
+        heroAt('h1', { x: 500, y: 900 });
+        GameState.state.heroes[0].hp = { current: 40, max: 100 };
+        const { container, started } = mountWithDrag();
+        // The figure is see-through everywhere: only the bar can make the press the hero's.
+        const hero = figure(container, 'h1', false);
+        const bar = hero.querySelector('[data-health-bar="hero"]');
+        expect(bar).not.toBeNull();
+        const flag = container.querySelector('button[data-flag="h1"]');
+        // Over the head, outside the figure's box: the bar, then the flag beneath it.
+        stackAtP(bar.querySelector('[data-health-label]'), flag);
+        pressAndPull(bar.querySelector('[data-health-label]'));
+        expect(started).toEqual(['hero-h1']);
+    });
+
+    it('a click on a hero\'s health bar opens the hero, as a click on its figure does', () => {
+        heroAt('h1', { x: 500, y: 900 });
+        GameState.state.heroes[0].hp = { current: 40, max: 100 };
+        const { container } = mountWithDrag();
+        const hero = figure(container, 'h1', false);
+        const inspected = [];
+        const off = EventBus.subscribe('inspect_hero', (p) => inspected.push(p.heroId));
+        fireEvent.click(hero, { clientX: P.x, clientY: P.y });
+        expect(inspected).toEqual([]);
+        fireEvent.click(hero.querySelector('[data-health-label]'), { clientX: P.x, clientY: P.y });
+        off();
+        expect(inspected).toEqual(['h1']);
     });
 
     it('a hero drawn facing left says so, so its pixels are tested where they are drawn', () => {

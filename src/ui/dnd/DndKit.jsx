@@ -243,7 +243,7 @@ export const useDragPointer = () => React.useContext(DragPointerContext);
  */
 export const DragSurfaceContext = React.createContext(undefined);
 export const useDragSurface = () => React.useContext(DragSurfaceContext);
-import { isElementOpaqueAtPoint } from '../utils/alphaHitTest.js';
+import { isElementOpaqueAtPoint, onFigurePart } from '../utils/alphaHitTest.js';
 import { isMapModeOn } from '../hooks/useMapMode.js';
 import { isMatBankLocked } from '../hooks/useMatBankLock.js';
 import { ENGINE_EVENTS, UI_EVENTS } from '../../systems/core/engineEvents.js';
@@ -306,11 +306,7 @@ export class AlphaPointerSensor extends PointerSensor {
                 if ((isMapModeOn() || isMatBankLocked()) && event.target?.closest?.('[data-board-origin]')) return false;
                 const target = event.target;
                 const alphaEl = target?.closest?.('[data-alpha-test]');
-                if (alphaEl) {
-                    if (!isElementOpaqueAtPoint(alphaEl, event.clientX, event.clientY)) {
-                        return false;
-                    }
-                }
+                if (alphaEl && !onFigurePart(alphaEl, target) && !isElementOpaqueAtPoint(alphaEl, event.clientX, event.clientY)) return false;
                 return true;
             }
         }
