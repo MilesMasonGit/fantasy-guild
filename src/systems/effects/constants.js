@@ -92,11 +92,3 @@ export const SCOPES = {
     GLOBAL: 'GLOBAL'
 };
 
-export const MODIFIER_SOURCE_TYPES = {
-    TRAIT: 'TRAIT',
-    CLASS: 'CLASS',
-    EQUIPMENT: 'EQUIPMENT',
-    TILE: 'TILE',
-    AURA: 'AURA',
-    CONSUMABLE: 'CONSUMABLE'
-};
