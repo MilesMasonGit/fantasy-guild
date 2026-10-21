@@ -56,7 +56,7 @@ function gitInfo() {
 async function realDrag(page, from, to, via = null) {
     await page.mouse('mouseMoved', from.x, from.y);
     await sleep(HOVER_MS);
-    const under = await page.evaluate(`window.__dragKit.describeAt(${from.x}, ${from.y})`);
+    const under = await page.evaluate(`window.__dragKit.describeAt(${from.x}, ${from.y}, ${JSON.stringify(from.heroId ?? null)})`);
     await page.evaluate('window.__dragKit.resetProbe()');
     await page.mouse('mousePressed', from.x, from.y, { button: 'left', buttons: 1, clickCount: 1 });
     await sleep(STEP_MS);

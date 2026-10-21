@@ -76,6 +76,31 @@ describe('summarising attempts', () => {
             .toMatch(/^dropped, no target took it/);
         expect(failureCause({ pickedUp: true, detail: 'the flag did not move' })).toMatch(/state not as intended: the flag did not move/);
     });
+
+    it('a missed flag press says what was at the press point, and whether it was there at the pick', () => {
+        const scene = (over) => ({ flagZ: 100, flagYields: false, flagOnTop: true, own: null, others: [], engineToken: null, drawnTokens: [], ...over });
+        const miss = (press, atPick = scene(), extra = {}) => ({
+            pickedUp: false, under: { identity: '[data-board-hero=h1]', press }, source: { scene: { atPick } }, ...extra
+        });
+        expect(failureCause(miss(scene({ others: [{ id: 'h2', alpha: 255, z: 130 }] }))))
+            .toBe('never picked up · under the pointer: [data-board-hero=h1] · hero h2 drawn solid over the flag there, not at the pick');
+        expect(failureCause(miss(scene({ others: [{ id: 'h2', alpha: 255, z: 130 }] }), scene({ others: [{ id: 'h2', alpha: 200, z: 130 }] }))))
+            .toMatch(/hero h2 drawn solid over the flag there$/);
+        // A see-through hero, or one drawn behind the flag, takes nothing.
+        expect(failureCause(miss(scene({ others: [{ id: 'h2', alpha: 0, z: 130 }, { id: 'h3', alpha: 255, z: 50 }] }))))
+            .toMatch(/the flag on top, nothing over it: a game fault$/);
+        expect(failureCause(miss(scene({ engineToken: 't9', flagYields: true }))))
+            .toMatch(/the game has Token t9 there, drawn elsewhere \(sliding, walking or arriving\)$/);
+        expect(failureCause(miss(scene({ engineToken: 't9', drawnTokens: ['t9'] }), scene({ engineToken: 't9', drawnTokens: ['t9'] }))))
+            .toMatch(/on Token t9's body$/);
+        expect(failureCause(miss(scene({ own: { id: 'h1', alpha: 0, z: 101 } }))))
+            .toMatch(/the flag on top, its own hero see-through there: a game fault$/);
+        expect(failureCause(miss(scene({ flagOnTop: false })))).toMatch(/something else on top of the flag there$/);
+        // A wrong pickup gets the same reading; a drag that pressed no flag gets none.
+        expect(failureCause(miss(scene({ engineToken: 't9', drawnTokens: ['t9'] }), scene(), { pickedUp: true, wrongThing: true, inHand: 'Token t9' })))
+            .toMatch(/^picked up the wrong thing \(Token\) · under the pointer: .* · on Token t9's body, not there at the pick$/);
+        expect(failureCause({ pickedUp: false, under: { identity: '[data-callout]' } })).toBe('never picked up · under the pointer: [data-callout]');
+    });
 });
 
 describe('frame stalls per drag phase', () => {
