@@ -80,19 +80,20 @@ describe('Status Effect System (status_effects_concept.md)', () => {
     });
 
     it('layered buffs sum magnitude with independent lifetimes (§4B Cookout walkthrough)', () => {
+        const yieldMultiplier = () => 1 + sumStatusEffect(hero.statuses, 'yield_pct');
         StatusEffectSystem.applyToHero(hero.id, 'cookout', 1); // A: 3 slots
-        expect(StatusEffectSystem.getYieldMultiplier(hero.id)).toBeCloseTo(1.10, 5);
+        expect(yieldMultiplier()).toBeCloseTo(1.10, 5);
 
         StatusEffectSystem.notifySlotResolved(hero.id);        // A: 2 left
         StatusEffectSystem.applyToHero(hero.id, 'cookout', 1); // B: 3 slots
-        expect(StatusEffectSystem.getYieldMultiplier(hero.id)).toBeCloseTo(1.20, 5);
+        expect(yieldMultiplier()).toBeCloseTo(1.20, 5);
 
         StatusEffectSystem.notifySlotResolved(hero.id); // A:1 B:2
-        expect(StatusEffectSystem.getYieldMultiplier(hero.id)).toBeCloseTo(1.20, 5);
+        expect(yieldMultiplier()).toBeCloseTo(1.20, 5);
         StatusEffectSystem.notifySlotResolved(hero.id); // A expires, B:1
-        expect(StatusEffectSystem.getYieldMultiplier(hero.id)).toBeCloseTo(1.10, 5);
+        expect(yieldMultiplier()).toBeCloseTo(1.10, 5);
         StatusEffectSystem.notifySlotResolved(hero.id); // B expires
-        expect(StatusEffectSystem.getYieldMultiplier(hero.id)).toBeCloseTo(1.0, 5);
+        expect(yieldMultiplier()).toBeCloseTo(1.0, 5);
     });
 
     it('Well Fed boosts damage and decays per resolved combat (§3A clears combat-only too)', () => {

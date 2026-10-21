@@ -243,12 +243,6 @@ export function purge(heroId, statusId = null) {
     return removed;
 }
 
-/** Task-output multiplier from yield buffs (Cookout): 1.0 = no bonus. */
-export function getYieldMultiplier(heroId) {
-    const hero = HeroManager.getHero(heroId);
-    return 1 + sumStatusEffect(hero?.statuses, 'yield_pct');
-}
-
 /**
  * Subscribe to board cycle events. Called once from EngineBootstrap.
  */
