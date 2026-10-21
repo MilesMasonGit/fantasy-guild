@@ -3,7 +3,6 @@ import {
     DndContext, DragOverlay, PointerSensor, useSensor, useSensors,
     useDraggable, useDroppable, getClientRect
 } from '@dnd-kit/core';
-import { snapCenterToCursor } from '@dnd-kit/modifiers';
 import { CSS } from '@dnd-kit/utilities';
 import { motion } from 'framer-motion';
 import { cn } from '../utils/cn.js';
@@ -11,6 +10,7 @@ import { EventBus } from '../../systems/core/EventBus.js';
 import { DragGhost } from './DragGhost.jsx';
 import { DND_SURFACE, DRAG_SFX, DRAG_KIND } from './dragConstants.js';
 import { displayPointOf } from '../../systems/board/BoardState.js';
+import { createPickupFlight } from './pickupFlight.js';
 
 /**
  * DndKit: drag-and-drop on dnd-kit.
@@ -381,6 +381,9 @@ export const DeckDndProvider = ({ children }) => {
     const regionsRef = useRef([]);
     const startPayloadRef = useRef(null);
     const [drags] = useState(createEntityDrags);
+    // The ghost on the cursor from its first frame, its picture flying there from its source (T-154).
+    const [pickup] = useState(createPickupFlight);
+    const overlayModifiers = React.useMemo(() => [pickup.modifier], [pickup]);
 
     const sensors = useSensors(useSensor(AlphaPointerSensor, SENSOR_OPTIONS));
 
@@ -552,7 +555,7 @@ export const DeckDndProvider = ({ children }) => {
                 <SharedEntityDrag drags={drags} />
                 {children}
 
-                <DragOverlay dropAnimation={dropAnimation} modifiers={[snapCenterToCursor]} zIndex={2000} className="pointer-events-none">
+                <DragOverlay dropAnimation={dropAnimation} modifiers={overlayModifiers} zIndex={2000} className="pointer-events-none">
                     {activePayload ? (
                         <motion.div
                             initial={{ opacity: 0.6 }}
@@ -560,7 +563,9 @@ export const DeckDndProvider = ({ children }) => {
                             transition={{ duration: 0.15, ease: 'easeOut' }}
                             className="w-full h-full flex items-center justify-center origin-center will-change-transform"
                         >
-                            <DragGhost payload={activePayload} bold={bold} />
+                            <div ref={pickup.holder} data-pickup-flight className="w-full h-full flex items-center justify-center">
+                                <DragGhost payload={activePayload} bold={bold} />
+                            </div>
                         </motion.div>
                     ) : null}
                 </DragOverlay>

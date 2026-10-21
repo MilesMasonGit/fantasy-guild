@@ -26,6 +26,7 @@ import { startStrikeChips, CHIP_COUNT } from '../ui/components/board/fx/strikeCh
 import { setDrawingPaused } from '../ui/components/board/frameClock.js';
 import { lootHopPoses, HOP_POSES, playLootArc, playAbsorptionSlide } from '../ui/utils/lootArc.js';
 import * as RareDrops from '../systems/board/RareDrops.js';
+import { createPickupFlight, playPickupFlight, PICKUP_MS } from '../ui/dnd/pickupFlight.js';
 import { settlePlan, beginSettle, takeSettle, playSettle, HALL_SETTLE_MS, SETTLE_SPREAD_MS, LAND_MS } from '../ui/components/board/fx/regionSettle.js';
 import { recordRareDrop, takeRareDrop, playRareTwinkle } from '../ui/components/board/fx/rareTwinkle.js';
 
@@ -574,6 +575,45 @@ describe('Region settle (effect 18)', () => {
             expect(box.style.willChange).toBe('contents');
             rec.calls[0].onfinish();
             expect(box.style.willChange).toBe('');
+        } finally {
+            rec.restore();
+        }
+    });
+});
+
+describe('picking up flies the picture to the cursor (T-154)', () => {
+    const rect = { left: 100, top: 200, width: 128, height: 128 };
+    const press = { clientX: 120, clientY: 300 };
+
+    it('snaps the ghost onto the cursor from its first frame, from the box the drag started on', () => {
+        const { modifier, state } = createPickupFlight();
+        const t = modifier({ activatorEvent: press, activeNodeRect: rect, draggingNodeRect: null, transform: { x: 8, y: 0, scaleX: 1, scaleY: 1 } });
+        // The press was 44 px left of the box's centre and 36 px below it.
+        expect([t.x, t.y]).toEqual([8 - 44, 36]);
+        expect(state.offset).toEqual({ x: -44, y: 36 });
+        // Later moves keep the same snap even once the ghost is measured somewhere else.
+        const t2 = modifier({ activatorEvent: press, activeNodeRect: rect, draggingNodeRect: { left: 0, top: 0, width: 128, height: 128 }, transform: { x: 50, y: 10 } });
+        expect([t2.x, t2.y]).toEqual([50 - 44, 10 + 36]);
+        // A new drag measures afresh.
+        modifier({ activatorEvent: { clientX: 164, clientY: 264 }, activeNodeRect: rect, transform: { x: 0, y: 0 } });
+        expect(state.offset).toEqual({ x: 0, y: 0 });
+    });
+
+    it('the picture starts where its source stood and steps to the cursor in 80 ms, whole pixels; reads no layout', () => {
+        const rec = recordAnimate();
+        try {
+            const el = document.createElement('div');
+            el.getBoundingClientRect = vi.fn();
+            playPickupFlight(el, { x: -44, y: 36 });
+            const { keyframes, options } = rec.calls[0];
+            expect(options.duration).toBe(PICKUP_MS);
+            expect(keyframes.map(k => k.transform)).toEqual([
+                'translate(44px, -36px)', 'translate(22px, -18px)', 'translate(9px, -7px)', 'translate(2px, -2px)', 'translate(0px, 0px)'
+            ]);
+            expect(keyframes.slice(0, -1).every(k => k.easing === 'steps(1, end)')).toBe(true);
+            expect(el.getBoundingClientRect).not.toHaveBeenCalled();
+            // Pressed on its middle: nothing to fly.
+            expect(playPickupFlight(el, { x: 1, y: 0 })).toBeNull();
         } finally {
             rec.restore();
         }
