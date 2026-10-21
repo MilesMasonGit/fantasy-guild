@@ -56,7 +56,7 @@ function gitInfo() {
 async function realDrag(page, from, to, via = null) {
     await page.mouse('mouseMoved', from.x, from.y);
     await sleep(HOVER_MS);
-    const under = await page.evaluate(`window.__dragKit.describeAt(${from.x}, ${from.y})`);
+    const under = await page.evaluate(`window.__dragKit.describeAt(${from.x}, ${from.y}, ${JSON.stringify(from.heroId ?? null)})`);
     await page.evaluate('window.__dragKit.resetProbe()');
     await page.mouse('mousePressed', from.x, from.y, { button: 'left', buttons: 1, clickCount: 1 });
     await sleep(STEP_MS);
@@ -95,7 +95,7 @@ async function arrange(page, needs) {
         await sleep(300);
     }
     if (needs === 'bank') {
-        await page.waitFor(`!!document.querySelector('button[title*=" — drag to sort"]')`, { timeoutMs: 8000, what: 'the Bank to show items' });
+        await page.waitFor(`!!document.querySelector('button[data-bank-item]')`, { timeoutMs: 8000, what: 'the Bank to show items' });
     }
     // Close any hero sheet a previous kind opened (an equip drop opens the hero's sheet).
     await page.key('Escape', 'Escape', 27);

@@ -587,7 +587,9 @@ page with the bench's own copy of them:
   solid there takes the press, by design, and which pixels are solid changes frame
   by frame). Anything else on the mat drawn on top there, a ring, a callout, a
   bubble, is kept: that is what the bench is looking for. An enemy in a fight is
-  not picked: it can be killed while carried, and then nothing lands.
+  not picked: it can be killed while carried, and then nothing lands. Nor is a
+  fixed Token (`FixedTokens.isFixed`: a fixture, a landmark, a planted Sapling and
+  what it grows into), which refuses every drag by design.
 - **A flag** is pressed at its highest point clear of every Token's round body
   (by design a flag over a Token lets the pointer through to the Token,
   `FlagLayer.jsx`, `yieldToTokens`), where the flag, or its own hero, is what is
@@ -596,6 +598,12 @@ page with the bench's own copy of them:
   neither lies wholly under Tokens, flags or heroes drawn in front of it: nobody
   can press it on the mat (the player moves it by its hero or from the hero bar),
   so the bench passes it over and names it in the attempt's `scene.hiddenFlags`.
+  First choice is a **clear** point: 8 px or more from every hero figure's box and
+  health bar (its own hero's too) and from every Token's body, and on no Token the
+  game has there.
+  The scene moves on between the pick and the press (the bench's own reads, the
+  rest before the press), and a hero walking in or a Token sliding or arriving
+  there takes a press the pick saw free (T-132, T-187).
 
 Per kind and pass it reports attempts, successes, success %, **pickup delay**
 p50/p95, **frame stalls** per drag phase and the grouped **failure causes**:
@@ -620,7 +628,15 @@ p50/p95, **frame stalls** per drag phase and the grouped **failure causes**:
   *picked up the wrong thing* (what was in the hand, read from what each source
   draws while carried), *dropped, refused by the game* (the warning it raised),
   *dropped, no target took it* (the drop made the drag system's "invalid" sound;
-  with what was under the drop point), or *state not as intended*. In the
+  with what was under the drop point), or *state not as intended*. A missed
+  flag press also says why, from what was at the press point and at the pick
+  (`dragKit.pressScene`: every hero figure's box there with its art's alpha and
+  z (a hero's health bar counts as solid: a press there is the hero's), the
+  flags' give-way to Tokens, the Token the game has there and the Tokens
+  drawn there; `flagPressWhy` in `dragLib.mjs`): a hero drawn solid over the flag
+  (and whether it was there at the pick), a Token the game has there but draws
+  elsewhere (sliding, walking or arriving), a Token's body, something else on top,
+  or, when none of these explain it, *a game fault*. In the
   overlays pass each attempt also records how long before the release the last
   burst of level-ups went out (`msSinceOverlayBurst` in the JSON).
 

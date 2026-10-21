@@ -61,8 +61,10 @@ export function parseArgs(argv) {
 export function failureCause(a) {
     if (a.skipped) return `skipped: ${a.skipped}`;
     if (a.error) return `bench error: ${a.error}`;
-    if (!a.pickedUp) return `never picked up · under the pointer: ${a.under?.identity ?? '?'}`;
-    if (a.wrongThing) return `picked up the wrong thing (${String(a.inHand).split(' ')[0]}) · under the pointer: ${a.under?.identity ?? '?'}`;
+    const why = flagPressWhy(a);
+    const tail = why ? ` · ${why}` : '';
+    if (!a.pickedUp) return `never picked up · under the pointer: ${a.under?.identity ?? '?'}${tail}`;
+    if (a.wrongThing) return `picked up the wrong thing (${String(a.inHand).split(' ')[0]}) · under the pointer: ${a.under?.identity ?? '?'}${tail}`;
     if (a.stuck) return 'picked up, but the drag never ended';
     const refusal = (a.notes || []).find(n => /^(warning|error)/.test(n));
     if (refusal) return `dropped, refused by the game: ${refusal.replace(/^\w+: /, '')}`;
@@ -71,6 +73,36 @@ export function failureCause(a) {
         return `dropped, no target took it · under the drop point: ${a.underTarget?.identity ?? '?'}${other}`;
     }
     return `dropped, state not as intended: ${a.detail ?? '?'}${a.dropSound ? ` (drop sound ${a.dropSound})` : ''}`;
+}
+
+/** A hero figure takes a press where its art's alpha is at least this (`alphaHitTest.js`). */
+export const SOLID_ALPHA = 25;
+
+/**
+ * Why a press on a flag did not pick that flag up, from what was there at the press
+ * (`a.under.press`) and at the pick (`a.source.scene.atPick`), both `dragKit.pressScene`: what
+ * changed between the two (a hero walked over it, a Token arrived or is still sliding in), the
+ * flags letting the pointer through to a Token, or, when nothing explains it, a game fault.
+ * Null for a drag that pressed no flag.
+ */
+export function flagPressWhy(a) {
+    const at = a.under?.press;
+    if (!at) return null;
+    const pick = a.source?.scene?.atPick;
+    const solid = (h) => h.alpha >= SOLID_ALPHA;
+    const over = (at.others || []).filter(h => solid(h) && (at.flagZ == null || h.z > at.flagZ));
+    if (over.length) {
+        const h = over[0];
+        const before = pick?.others?.some(o => o.id === h.id && solid(o));
+        return `hero ${h.id} drawn solid over the flag there${before ? '' : ', not at the pick'}`;
+    }
+    const tok = at.engineToken;
+    if (tok && !(at.drawnTokens || []).includes(tok)) return `the game has Token ${tok} there, drawn elsewhere (sliding, walking or arriving)`;
+    if (tok) return `on Token ${tok}'s body${at.flagYields ? ', the flags letting the pointer through' : ''}${pick?.engineToken === tok ? '' : ', not there at the pick'}`;
+    if (at.flagYields) return 'the flags letting the pointer through, no Token there: a game fault';
+    if (!at.flagOnTop) return 'something else on top of the flag there';
+    if (at.own) return `the flag on top, its own hero ${solid(at.own) ? 'solid' : 'see-through'} there: a game fault`;
+    return 'the flag on top, nothing over it: a game fault';
 }
 
 /** The three phases of a drag whose frames are timed (`dragKit.mjs`, `dragFrames`). */

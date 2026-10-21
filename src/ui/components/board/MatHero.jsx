@@ -14,7 +14,7 @@ const NO_POINTER = Object.freeze({ pointerEvents: 'none' });
 const LIMP_FILTER = 'grayscale(0.7) brightness(0.8) sepia(0.25)';
 const LIMP_FRAME_MS = 250;
 import { resolveSpritePath, resolveAnimationPath } from '../../../utils/AssetManager.js';
-import { isElementOpaqueAtPoint } from '../../utils/alphaHitTest.js';
+import { isElementOpaqueAtPoint, onFigurePart } from '../../utils/alphaHitTest.js';
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { useMatFit } from './MatFitContext.jsx';
 import { isRealAttack } from './hitAnimations.js';
@@ -154,7 +154,8 @@ const MatHeroBody = memo(function MatHeroBody({
 
     const animArt = sprite ? resolveAnimationPath(sprite) : null;
     const staticArt = sprite ? resolveSpritePath(sprite) : null;
-    const opaque = (e) => !e.currentTarget || isElementOpaqueAtPoint(e.currentTarget, e.clientX, e.clientY);
+    const opaque = (e) => !e.currentTarget || onFigurePart(e.currentTarget, e.target)
+        || isElementOpaqueAtPoint(e.currentTarget, e.clientX, e.clientY);
     
     const fit = useMatFit();
     const artScale = boardScaleAt(fit);

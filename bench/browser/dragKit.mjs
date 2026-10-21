@@ -114,8 +114,8 @@ export function installDragKit() {
         if (d) return `dock hero ${d.getAttribute('data-dock-hero')}`;
         const r = document.querySelector('[data-shop-row].opacity-30');
         if (r) return `Shop row ${r.getAttribute('data-shop-row')}`;
-        const i = document.querySelector('button.opacity-40[title*=" — drag to sort"]');
-        if (i) return `Bank item ${i.getAttribute('title').split(' ×')[0]}`;
+        const i = document.querySelector('button.opacity-40[data-bank-item]');
+        if (i) return `Bank item ${i.getAttribute('data-bank-item')}`;
         return 'something unidentified';
     };
 
@@ -141,9 +141,11 @@ export function installDragKit() {
             .filter(a => a.name.startsWith('data-') || a.name === 'aria-label' || a.name === 'role')
             .slice(0, 8).map(a => `${a.name}=${String(a.value).slice(0, 40)}`);
     }
-    kit.describeAt = (x, y) => {
+    /** `heroId`: a flag is pressed there; its press scene is read too (`pressScene`). */
+    kit.describeAt = (x, y, heroId = null) => {
         const el = document.elementFromPoint(x, y);
-        if (!el) return { tag: null, identity: '(nothing: off the page)' };
+        const press = heroId ? kit.pressScene(x, y, heroId) : undefined;
+        if (!el) return { tag: null, identity: '(nothing: off the page)', press };
         let owner = el;
         let identity = null;
         while (owner && owner !== document.body) {
@@ -159,7 +161,8 @@ export function installDragKit() {
             ownerAttrs: owner && owner !== el ? attrs(owner) : [],
             react: reactNames(el),
             // Everything at the point that takes the pointer, top first, by identity.
-            stack: stackAt(x, y)
+            stack: stackAt(x, y),
+            press
         };
     };
     function identityOf(el) {
@@ -277,12 +280,16 @@ export function installDragKit() {
     };
 
     // ---- Pickers: a source to press, a target to drop on, and what should be true after ----
+    // A fixed Token (a fixture, a landmark, a planted Sapling and what it grows into) refuses every
+    // drag by design. A build from before `__perf.game` carried `FixedTokens` (an A/B against an
+    // older branch) is read from what its Token draws.
+    const isFixed = (t, el) => (G.FixedTokens ? G.FixedTokens.isFixed(t) : el.hasAttribute('data-token-fixed'));
     const draggableTokens = () => G.BoardState.tokens().filter(t => {
         const el = document.querySelector(`[data-token-art][data-token-id="${t.id}"]`);
         // An enemy in a fight can be killed before the drop, and then nothing lands: not a press
         // fault, so it is passed over (an owner question: should a Token in the hand be safe?).
         return el && !el.hasAttribute('data-guild-hall') && !t.quest?.tutorial && !G.BoardPlacement.isPermanentToken(t.typeId, t)
-            && !G.BoardCombat?.getFight?.(t.id);
+            && !isFixed(t, el) && !G.BoardCombat?.getFight?.(t.id);
     });
     // ---- Where the game gives a press: the bench's own copy of the rules, read from the page ----
     // A flag's cloth inside its drawn box, as shares of its size (the flag art, `flagGeometry.js`).
@@ -296,6 +303,8 @@ export function installDragKit() {
     /** A flag whose cloth is drawn in front of a Token at `p` (over a Token, only a cloth keeps a press). */
     const clothInFront = (p, tokenZ) => [...document.querySelectorAll('button[data-flag]')]
         .some(f => zOf(f) > tokenZ && onCloth(f, p));
+    /** How far a clear flag press keeps from hero figures and Token bodies, in screen px. */
+    const CLEAR_PX = 8;
     /** Token hit circles on screen: each Token's own round body, the only part that takes a press. */
     const tokenCircles = () => [...document.querySelectorAll('[data-token-hit]')].map(e => {
         const r = e.getBoundingClientRect();
@@ -379,6 +388,16 @@ export function installDragKit() {
                 grid.push({ x: Math.round(c.x + gx * rad), y: Math.round(c.y + gy * rad) });
             }
         }
+        // First choice, a clear point: away from every hero figure's box and bar (its own hero's too) and
+        // from every Token's body by a margin, and on no Token the game has there. The scene moves
+        // on between the pick and the press (the bench's own reads, the rest before the press): a
+        // hero walking in, or a Token sliding or arriving, would take a press the pick saw free.
+        const heroBoxes = [...document.querySelectorAll('[data-board-hero], [data-board-hero] [data-health-bar]')].map(e => e.getBoundingClientRect());
+        for (const p of grid) {
+            if (!onScreen(p) || circles.some(t => Math.hypot(t.x - p.x, t.y - p.y) <= t.r + CLEAR_PX)) continue;
+            if (heroBoxes.some(b => inRect(p, b, CLEAR_PX)) || G.Flags.tokenAtPoint(kit.screenToMat(p))) continue;
+            if (flagOnTop(el, heroId, p)) return { ...p, bare: true, clear: true };
+        }
         for (const p of grid) {
             if (!onScreen(p) || circles.some(t => Math.hypot(t.x - p.x, t.y - p.y) <= t.r)) continue;
             if (flagOnTop(el, heroId, p)) return { ...p, bare: true };
@@ -388,6 +407,75 @@ export function installDragKit() {
         }
         return { x: Math.round(c.x), y: Math.round(c.y), bare: false };
     };
+    // ---- What decides a press on a flag, read at a point: for telling a game fault from a scene ----
+    // that changed between the pick and the press (a hero walking in, a Token arriving).
+    const sheetAlpha = new Map();
+    const alphaOf = (img) => {
+        const src = img.currentSrc || img.src;
+        if (!sheetAlpha.has(src)) {
+            let m;
+            try {
+                const c = document.createElement('canvas');
+                c.width = img.naturalWidth; c.height = img.naturalHeight;
+                const ctx = c.getContext('2d', { willReadFrequently: true });
+                ctx.drawImage(img, 0, 0);
+                m = { w: c.width, h: c.height, data: ctx.getImageData(0, 0, c.width, c.height).data };
+            } catch { m = null; }
+            sheetAlpha.set(src, m);
+        }
+        return sheetAlpha.get(src);
+    };
+    /**
+     * A hero figure's art alpha at a client point, read as the game's hit test reads it (the frame
+     * showing, mirrored when the hero faces left; solid from 25, `alphaHitTest.js`), 255 on its
+     * health bar, null off both, -1 when the picture cannot be read.
+     */
+    const heroAlphaAt = (heroEl, p) => {
+        // A hero's health bar is the hero's wherever it is pressed (`alphaHitTest.onFigurePart`).
+        const bar = heroEl.querySelector('[data-health-bar]')?.getBoundingClientRect();
+        if (bar && inRect(p, bar)) return 255;
+        const box = heroEl.getBoundingClientRect();
+        if (p.x < box.left || p.x > box.right || p.y < box.top || p.y > box.bottom) return null;
+        const img = heroEl.querySelector('img');
+        if (!img?.complete || !img.naturalWidth) return -1;
+        const r = img.getBoundingClientRect();
+        if (!r.width || p.x < r.left || p.x > r.right || p.y < r.top || p.y > r.bottom) return 0;
+        const across = (p.x - r.left) / r.width;
+        const u = heroEl.getAttribute('data-alpha-flip') === 'x' ? 1 - across : across;
+        const v = (p.y - r.top) / r.height;
+        const m = alphaOf(img);
+        if (!m) return -1;
+        const px = Math.min(m.w - 1, Math.max(0, Math.floor(u * m.w)));
+        const py = Math.min(m.h - 1, Math.max(0, Math.floor(v * m.h)));
+        return m.data[(py * m.w + px) * 4 + 3];
+    };
+    /**
+     * At a press point on a flag: every hero figure whose box holds it (its alpha there and its z),
+     * the flag's z, whether the flags are letting the pointer through to a Token (`yieldToTokens`),
+     * whether the flag is what the browser finds first past its own hero, the Token the game says
+     * is there and the Tokens whose drawn hit circle holds the point.
+     */
+    kit.pressScene = (x, y, heroId) => {
+        const p = { x, y };
+        const flag = document.querySelector(`button[data-flag="${heroId}"]`);
+        const heroes = [...document.querySelectorAll('[data-board-hero]')]
+            .map(el => ({ id: el.getAttribute('data-board-hero'), alpha: heroAlphaAt(el, p), z: zOf(el) }))
+            .filter(hh => hh.alpha !== null);
+        const drawnTokens = [...document.querySelectorAll('[data-token-art] > [data-token-hit]')].filter(e => {
+            const r = e.getBoundingClientRect();
+            return Math.hypot(r.left + r.width / 2 - x, r.top + r.height / 2 - y) <= Math.min(r.width, r.height) / 2;
+        }).map(e => e.getAttribute('data-token-hit'));
+        return {
+            flagZ: flag ? zOf(flag) : null,
+            flagYields: !!flag && getComputedStyle(flag).pointerEvents === 'none',
+            flagOnTop: !!flag && flagOnTop(flag, heroId, p),
+            own: heroes.find(hh => hh.id === heroId) || null,
+            others: heroes.filter(hh => hh.id !== heroId),
+            engineToken: G.Flags.tokenAtPoint(kit.screenToMat(p))?.id ?? null,
+            drawnTokens
+        };
+    };
+
     const flagAt = (heroId) => {
         const f = G.BoardState.flagOf(heroId);
         return f ? { x: f.x, y: f.y, pinnedTo: f.pinnedTo ?? null, plantedAt: f.plantedAt ?? null } : null;
@@ -450,9 +538,14 @@ export function installDragKit() {
             const heroId = el.getAttribute('data-flag');
             const to = kit.freeSpot();
             if (!to) return { skip: 'no free spot' };
-            const scene = { ...flagScene(el, heroId), hiddenFlags: hidden.map(h => ({ heroId: h.el.getAttribute('data-flag'), coveredBy: coverOf(h.el) })) };
+            const scene = {
+                ...flagScene(el, heroId),
+                hiddenFlags: hidden.map(h => ({ heroId: h.el.getAttribute('data-flag'), coveredBy: coverOf(h.el) })),
+                // As at the pick; the bench reads it again just before the press (`describeAt`).
+                atPick: kit.pressScene(at.x, at.y, heroId)
+            };
             return {
-                source: { x: at.x, y: at.y, what: `flag ${heroId}${at.bare ? '' : ' (by its cloth, over a Token)'}`, hand: `flag ${heroId}`, scene },
+                source: { x: at.x, y: at.y, heroId, what: `flag ${heroId}${at.bare ? '' : ' (by its cloth, over a Token)'}`, hand: `flag ${heroId}`, scene },
                 target: to.screen, expect: { kind: 'flag', heroId, before: flagAt(heroId), mat: to.mat }
             };
         },
@@ -488,12 +581,10 @@ export function installDragKit() {
             return { source: { ...at, what: `Shop row ${typeId}`, hand: `Shop row ${typeId}` }, target: to.screen, expect: { kind: 'shop', typeId, beforeIds: ids, mat: to.mat } };
         },
         equip() {
-            const byName = new Map(Object.values(G.getAllItems()).filter(i => i?.name && G.EquipmentValidator.canEquipToSlot(i.id)).map(i => [i.name, i.id]));
             const heroes = (G.GameState.state.heroes || []).map(h => h.id);
-            const tiles = [...document.querySelectorAll('button[title*=" — drag to sort"]')].map(el => {
-                const name = el.getAttribute('title').split(' ×')[0];
-                return { el, itemId: byName.get(name) };
-            }).filter(t => t.itemId && visibleCentre(t.el));
+            const tiles = [...document.querySelectorAll('button[data-bank-item]')]
+                .map(el => ({ el, itemId: el.getAttribute('data-bank-item') }))
+                .filter(t => G.EquipmentValidator.canEquipToSlot(t.itemId) && visibleCentre(t.el));
             const pairs = [];
             for (const t of tiles) for (const h of heroes) {
                 if (G.EquipmentValidator.canHeroEquip(h, t.itemId).canEquip && document.querySelector(`[data-dock-hero="${h}"]`)) pairs.push({ ...t, heroId: h });
@@ -504,7 +595,7 @@ export function installDragKit() {
             const dock = document.querySelector(`[data-dock-hero="${p.heroId}"]`);
             p.el.scrollIntoView({ block: 'center' });
             return {
-                source: { ...visibleCentre(p.el), what: `Bank item ${p.itemId}`, hand: `Bank item ${p.el.getAttribute('title').split(' ×')[0]}` },
+                source: { ...visibleCentre(p.el), what: `Bank item ${p.itemId}`, hand: `Bank item ${p.itemId}` },
                 target: visibleCentre(dock),
                 expect: { kind: 'equip', heroId: p.heroId, itemId: p.itemId }
             };

@@ -116,9 +116,13 @@ export const MatBoard = React.memo(function MatBoard({
     // there. `FlagLayer` already rings exactly the flags the Token WOULD land in
     // (`useTokenDragLanding`); that is the only ring that should show mid-drag, so hero hover
     // is cleared here and ignored below for the drag's duration.
-    React.useEffect(() => {
+    // Cleared in the render that sees the drag start, not in an effect after it: an effect cost
+    // every pickup a second commit of the whole mat.
+    const [dragSeen, setDragSeen] = useState(false);
+    if (dragSeen !== isDragging) {
+        setDragSeen(isDragging);
         if (isDragging) { setHoveredId(null); setFlagsYield(false); setHoverHeroId(null); }
-    }, [isDragging]);
+    }
 
     // A no-op while dragging, so a hero/flag crossing mid-drag does not reinstate a stray
     // hover ring (and the commit it would cost). Read from the page rather than `isDragging`, so

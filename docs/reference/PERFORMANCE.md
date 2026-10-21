@@ -1061,6 +1061,66 @@ few tens of microseconds of that render. **Not measured yet**: the perf-build fr
 (`bench:draw --ab=<main> --only=cap128,cap256` and `bench:drag --board=cap128`) waits for a bench
 window.
 
+### T-033 result: pickup and drop hitches (2026-10-20)
+
+**Measured first** (perf build, cap128, 1×, headless Chrome 1600 × 1000 with real input and a
+Chrome trace per drag; a scratch harness on the drag bench's own kit, not the bench; the PC shared
+with other agents, so milliseconds are indicative and element counts are what does not move). On
+`main` (`450d838b`) every pickup and every drop had one style pass of **~2,240 elements** (2,600
+with the Bank open): the whole page. The cause was a rule added with the item stubs (2026-10-19):
+`body.gi-dnd-active [data-item-stubs] *`, which lets the pointer through the stubs and banners while
+something is carried. Its own element is matched by `*` alone, so when `<body>`'s drag class
+changes the browser has nothing to look for and restyles every element: ~20 ms a toggle in the perf
+build (`classList.toggle` + a forced layout in the desktop app's browser pane, median of 9: 21–22
+ms with the rule, 0.0 without it, 0.1–1.6 ms for rules that name their elements), twice a drag. A
+Long Animation Frame read of the drops (headless) showed it as 33–43 ms of forced style and layout
+inside dnd-kit's `pointerup` handler.
+
+**What changed**:
+1. The rule names what it styles: the two boxes, and their parts that take the pointer back
+   (`pointer-events-auto`); everything inside those inherits (`af534dd5`). The same pointer
+   behaviour: in the perf build, of the stub column's 13 elements 10 take the pointer at rest and
+   none mid-drag, as before. Guard: `DragClassRestyle.test.js` (no rule keyed on the drag class may
+   end in `*`, `*:not(…)` or a pseudo-element on `*`).
+2. `MatBoard` clears the hover in the render that sees the drag start, not in an effect after it:
+   a pickup from the mat is one commit of the mat, not two (P2-9's cause 3; `4715e400`). Guard:
+   `MatPickupOneCommit.test.js`.
+3. An equip by drop opens the hero sheet in a transition, after the drop's frame (T-186,
+   `aa98326f`). Guard: `EquipDropSheetAfterDrop.test.js`.
+
+**Measured** (the same harness, A,B,B,A, 10 drags of each kind a run, 20 a side; medians of each
+drag's value; before → after):
+
+| Drag | Phase | Longest main-thread task, ms | Largest style pass, elements | Longest frame, ms | Drags with a frame over 16.7 ms |
+|---|---|---|---|---|---|
+| Token → mat | pickup | 21.3 → 12.4 | 2,233 → 295 | 18.2 → 18.2 | 20/20 → 13/19 |
+| | drop | 31.6 → 24.3 | 2,245 → 314 | 30.3 → 30.2 | 20/20 → 13/19 |
+| flag → mat | pickup | 27.6 → 13.2 | 2,244 → 322 | 36.4 → 12.2 | 20/20 → 7/20 |
+| | drop | 29.7 → 19.1 | 2,238 → 305 | 48.5 → 24.1 | 20/20 → 13/20 |
+| hero bar → mat | pickup | 21.5 → 7.6 | 2,260 → 305 | 18.2 → 6.3 | 20/20 → 4/20 |
+| | drop | 25.8 → 12.9 | 2,268 → 307 | 24.3 → 12.2 | 20/20 → 4/20 |
+| Bank item → hero | pickup | 36.1 → 11.1 | 2,614 → 345 | 36.3 → 12.2 | 20/20 → 3/20 |
+| | drop | 45.1 → 10.8 | 2,619 → 347 | 48.4 → 18.2 | 20/20 → 10/20 |
+
+The second B run read slower than the first throughout (its Token frames 30 ms against 12 ms in the
+first B run, with the same element counts): load from other agents; the task and element columns
+agree between the two B runs. The equip drop's sheet now appears a median 28 ms after the release,
+three 165 Hz frames after the drop's own frame; before, 43 ms, in the drop's frame or the next (8
+drops a side, every one equipped and its sheet open).
+
+**What remains**, from CPU-profiled traces of the after-build: a pickup's longest task is React's
+pickup render and commit (~9 ms at 1× in this harness: dnd-kit's context changes walking the tree,
+the drop targets measured at the start); a drop's is dnd-kit's `pointerup` (~10–20 ms: the drop's
+React commit, then dnd-kit's drop animation reading the ghost's computed style and both boxes,
+which forces the ~300-element style pass of the drop into the handler). Neither has a cause on the
+scale of the one fixed; the next steps would be a dnd-kit fork (fewer context changes per drag) or
+skipping the drop animation's measuring on a drop that lands (it measures before it is told the
+ghost should simply vanish).
+
+**Confirm in a bench window**: `npm run bench:drag -- --board=cap128 --no-overlays` on this branch
+and on `main` back to back (pickup and drop columns), and the same at `--cpu=4`; and
+`npm run bench -- --compare` (the same work: nothing here touches the engine).
+
 ### Owner questions
 
 1. **Which board must be smooth?**

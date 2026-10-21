@@ -180,6 +180,20 @@ export function isElementOpaqueAtPoint(element, clientX, clientY, threshold = 25
     return isPointOpaque(src, u, v, threshold);
 }
 
+/**
+ * Whether a press landed on a part of an alpha-tested figure (`data-alpha-test`) that takes the
+ * pointer of its own (a hero's health bar, drawn over the head) rather than on the figure's box.
+ * Such a part is the figure's wherever it is pressed, as an enemy's bar is the enemy's; only a
+ * press on the box is tested against the art (`isElementOpaqueAtPoint`).
+ * ⚠️ Tested against the art, a press on the bar was refused by the figure and kept from everything
+ * beneath it: a hero's bar over its own flag made the flag impossible to pick up there.
+ * @param {HTMLElement} figureEl the `data-alpha-test` element
+ * @param {EventTarget|null} target what the press landed on
+ */
+export function onFigurePart(figureEl, target) {
+    return !!target && target !== figureEl && !!figureEl?.contains?.(target);
+}
+
 /** Put a mask in the cache, as a loaded image would. Tests only: jsdom loads no images. */
 export function setAlphaMaskForTests(src, mask) {
     alphaMaskCache.set(normalizeSrc(src), mask);
