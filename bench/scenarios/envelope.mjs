@@ -1,7 +1,9 @@
 // The Performance Envelope's boards (brief 90): the realistic mat at the base cap (`cap128`), with
 // one thing turned up at a time, so each design limit is measured on its own.
 //
-//   cap<N>      S2's mix filled to a Token cap of N (as `cap.mjs`, any N: cap96, cap160, cap192…)
+//   cap<N>      S2's mix filled to a Token cap of N (as `cap.mjs`, any N: cap64, cap160, cap192…;
+//               below ~96 S2's list holds fewer than two goblin camps, so the heroes S2 puts by
+//               them go to producers instead)
 //   heroes<N>   cap128 with N heroes instead of 8 (the roster's top is 8; more is headroom)
 //   enemies<N>  cap128 with producers swapped for war camps until N goblins can stand (they wander
 //               their camps; no hero is near the new camps, so they do not fight)
@@ -16,7 +18,6 @@
 // so the engine bench's boards and their recorded work cannot move.
 
 import { capPlaced } from './cap.mjs';
-import { buildBoard } from './realistic.mjs';
 import { registerTokenTypes } from '../../src/config/registries/tokenRegistry.js';
 
 const BASE_CAP = 128;
@@ -112,8 +113,9 @@ function buildEnvelope({ fixtures, setMatTuning }, { placed, cap = BASE_CAP, her
     if (queue.length && smelter) plant(queue.shift().id, { x: smelter.x, y: smelter.y }, { pin: true });
     for (let i = 0; i < 2 && queue.length && camps[i]; i++) plant(queue.shift().id, { x: camps[i].x + (i ? -STEP : STEP), y: camps[i].y });
     const rest = queue.length;
+    const spots = producers.length ? producers : tokens;
     queue.forEach((hero, i) => {
-        const target = producers[Math.floor((i + 0.5) * producers.length / rest)];
+        const target = spots[Math.floor((i + 0.5) * spots.length / rest)];
         plant(hero.id, { x: target.x, y: target.y });
     });
     return { tokens, heroes, hall };
@@ -134,7 +136,7 @@ export function envelopeScenario(name) {
     switch (kind) {
         case 'cap':
             if (n < 1) return null;
-            return { id, name: `Realistic at cap ${n}`, cap: n, ticks, build(ctx) { buildBoard(ctx, { placed: capPlaced(n), cap: n }); } };
+            return { id, name: `Realistic at cap ${n}`, cap: n, ticks, build(ctx) { buildEnvelope(ctx, { placed: capPlaced(n), cap: n }); } };
         case 'heroes':
             return { id, name: `cap128 with ${n} heroes`, ticks, build(ctx) { buildEnvelope(ctx, { placed: capPlaced(BASE_CAP), heroes: n }); } };
         case 'enemies':
