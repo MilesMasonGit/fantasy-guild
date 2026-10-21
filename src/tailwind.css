@@ -190,7 +190,6 @@
   --z-atlas: 100;             /* the Atlas over the mat (AtlasScreen; its arrival card is 105) */
   --z-nav: 110;               /* the bubble menu: over the drawers */
   --z-modal: 300;             /* GIModal dialogs: Settings, the slot screen, Edit Hero */
-  --z-nav-over-modal: 310;    /* the bubble menu while Settings is open, so its bubble still closes it */
   --z-modal-inner: 320;       /* a window opened from inside a modal (Typography, from Settings) */
   --z-catch-up: 350;          /* the while-you-were-away summary */
   --z-tutorial: 9990;         /* the tutorial aide */

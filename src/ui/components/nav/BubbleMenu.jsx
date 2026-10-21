@@ -72,14 +72,6 @@ const Bubble = React.forwardRef(({ icon: Icon, label, color, onClick, active = f
 export const BubbleMenu = ({ ui, side = 'left' }) => {
     const nav = ui.nav;
 
-    // Settings is a GIModal dialog whose backdrop sits above the bar's normal layer, so once it
-    // is open its own bubble is physically unreachable to close it again.
-    // Rise above the backdrop only while Settings is the active view, so a second click (or
-    // switching to another bubble) can still reach the bar. Stays at the normal layer the rest
-    // of the time, so it doesn't leak above unrelated overlays (Slot Selection, Hero Edit,
-    // ...).
-    const aboveOwnModal = nav.isActive('settings');
-
     return (
         <nav
             className={cn(
@@ -88,7 +80,7 @@ export const BubbleMenu = ({ ui, side = 'left' }) => {
                 'pointer-events-auto relative shrink-0 flex flex-col items-center gap-4 py-6 px-3 min-w-[80px] md:min-w-[150px]',
                 // The 32 px strip at a whole scale, never stretched to the menu's width: 2×, 4× from md.
                 'bg-[length:64px_64px] md:bg-[length:128px_128px]',
-                aboveOwnModal ? 'z-(--z-nav-over-modal)' : 'z-(--z-nav)'
+                'z-(--z-nav)'
             )}
             data-bubble-menu-side={side}
             style={{

@@ -58,8 +58,7 @@ describe('the screen layers table', () => {
         expect(table.nav).toBeGreaterThan(table.drawer);
         expect(table.nav).toBeGreaterThan(table['hero-panel']);
         expect(table.modal).toBeGreaterThan(table.nav);
-        expect(table['nav-over-modal']).toBeGreaterThan(table.modal);
-        expect(table['modal-inner']).toBeGreaterThan(table['nav-over-modal']);
+        expect(table['modal-inner']).toBeGreaterThan(table.modal);
         expect(table.tooltip).toBe(Math.max(...Object.values(table)));
     });
 });
