@@ -1,97 +1,95 @@
-# HANDOFF — the features director (main queue)
+# HANDOFF — the features director
 
-*Two directors run at once since 2026-10-17: the terrain director keeps
-[HANDOFF.md](HANDOFF.md) (terrain, world generation, the art pass, now the
-playmat style); this file is the features director's, replaced whole each
-time it ends. Written 2026-10-18 evening by the first features director. Read
-`CLAUDE.md`, this file and `STATUS.md` (the "Features director" sections).*
+*The terrain director keeps [HANDOFF.md](HANDOFF.md); this file is the
+features director's, replaced whole each time it ends. Written 2026-10-21
+evening, at the end of the session of 19–21 October. Read `CLAUDE.md`, this
+file and `STATUS.md`, then verify with `git worktree list` and
+`git log --oneline -5` before trusting anything here.*
 
-## On `main` (b68cd020, pushed)
+## On `main` (d4021ec7 plus this handoff, pushed)
 
-The whole first features run, merged after the owner's eye-check ("Eye check
-is good", 2026-10-18) and the gate on the merged result (5302 tests, cycles,
-build, the engine work check):
+The crunch's remaining queue and the owner's "wrap up the outstanding list",
+all merged after the owner's eye-checks ("ok for now, refine later"):
 
-- **Brief 100, the style kit:** QA → Style Sheet; the shared `ArrowScrollList`,
-  `Tooltip`, `PixelFrame` (studs, chamfer), `PixelGlyph`; `.ui-text-*` sizes;
-  `--color-ui-*` colours. New pieces go in the page's *new, unapproved* group.
-- **T-167, everyone fights:** a Recruit fights as level 1, no combat XP until
-  promotion; hostile enemies watch the hero's **flag**, the same on every side
-  (owner 2026-10-18). The engine work check changed on S2, S3, S5, S6, S8,
-  S8L, S8F and was accepted under T-167 in `bench/baseline.json`.
-- **Brief 140, the hero bar:** Work Permissions (square 32 px cells, centred on
-  the visible mat, one Combat column with priorities, purpose tooltips), the
-  level-up moment, the shine.
-- **Brief 110, map tools:** camp Tokens are fixtures (two lines in the terrain
-  director's `atlas/StarterCamp.js`), Demolish mode beside Disallow, the top
-  bar restyle.
-- **Brief 120, the mat, hover and the card:** a work bar and one problem mark
-  at rest, hover in two steps (one mat timer), the Token card with art by
-  activity and a CMS **Card art** field.
-
-Closed: T-159, T-160, T-161, T-164, T-156, T-177, T-149, T-178, T-165, T-166,
-T-170, T-167. Open with what's left noted: T-030 (tooltips), T-038 (text
-sizes). New: T-191 (the shine, more solid, a refinement), T-192 (a flaky
-loot-landing test).
+- **Brief 130, the recipe list** (inside the Token card) and **brief 150,
+  notifications** (item stubs with net flow, pins, banners; collected loot
+  flies to its stub; no log, T-193 later).
+- **Brief 160, the Atlas** as the owner's book at 4× (256 px pages), popping
+  up over the mat; Regions on area banners (CMS banner pick, default by
+  biome); Cartography as a crafting table with a real-ground mini preview;
+  the Guild Hall night sky (T3). The camera glide was built, then set aside
+  for the Guild Hall upgrade screen (tag `atlas-camera-move`, T-194).
+- **CMS change packs** (brief 200): agents propose content, the owner reviews
+  per entry in the CMS. Used for the starting maps and the tools content.
+- **Tools as hero gear** (T-126): one hand, tier gates (an ore needs the pick
+  of the tier below), "Needs Pickaxe" bubble, Copper starter set; content
+  synced by the owner.
+- **Wrap-up rounds:** rule cleanups (no skill speed, no hero energy, kill loot
+  rules), a hygiene sweep (−700 lines), UI consistency (one close rule, one
+  header, one tooltip, z-index table, plain words), engine plumbing (one start
+  path, one way into the engine, shipped builds without dev tools), docs and
+  tooling (strings file `src/i18n/`, CREDITS.md, WINDOW_GAME.md, the
+  keeping-it-fast rules), drag hitches (a page-wide restyle removed), the
+  animation batch, and the banner-chime fix (it was drawing from the game's
+  random stream).
+- **Brief 90, the Performance Envelope:** measured and written as rules in
+  GDD §14; T-071 (canvas mat) parked; issues filed as T-197 to T-210.
+- **Bench:** the engine baseline was retaken 2026-10-21 13:00 on a quiet
+  machine (f19a2e30); the earlier work changes were explained and accepted.
 
 ## Branches and worktrees
 
-None of this director's remain: `k1`, `t167`, `hb`, `mt`, `il`, `ec`, `mg`
-removed and their branches deleted. `ar`, `bl`, `p23b`, `pl`, `pp`, `sp`, `wg`
-belong to the terrain director or the planning agent; leave them. **`sp`
-(`crunch/style-p1`, the playmat style agent) was cut before this merge** and
-will meet heavy changes in `MatToken.jsx`, `MatBoard.jsx`, `TokenBubbles.jsx`,
-`MatTopBar.jsx`, `tailwind.css`: it should merge `main` in early.
+- No features branches or worktrees remain. `p23b` is the scratch worktree,
+  detached (it served the owner's previews on port 5198 through
+  `scratchpad/vite.ec.mjs`; the server is stopped).
+- `ar` (`art/asset-reorg`) and `pp` (`planning`) belong to others; leave them.
+- About 150 old local branches from earlier sessions (`chore/*`, `crunch/*`,
+  `fix/*`) are still listed; most are merged. Not touched; worth a cleanup
+  pass with the owner's leave.
 
 ## Owed
 
-- **Benches in a quiet window, on `main`** (STATUS queue): the engine timing
-  re-run (daytime load read S3/S4/S7 slower on `main` too, so not ours), one
-  `bench:draw --compare` and `bench:crisp` for the cost log. Brief 120 C1 must
-  draw cheaper than before; if it draws dearer, a ticket and tell the owner.
-- **The eye-check's 16 questions** stand at the recommendations (owner: detail
-  fixes wait for a refinement pass); they are listed in the archived file
-  [`archive/eyecheck/2026-10-17_style-kit.md`](../archive/eyecheck/2026-10-17_style-kit.md).
+- **The draw baseline retake** (`npm run bench:draw -- --save-baseline` on
+  `main`, quiet machine). A timer for 01:00 Thursday 22 Oct was running in
+  this session; if the session ended, rerun it in the next quiet window. It
+  was refused once at 13:00 for Chrome's throttle drift (T-205).
+- T-209: confirm the 1× smoothness dip with three windows.
 
-## Owner to-dos (on `main`, in the CMS)
+## Owner to-dos
 
-1. A weak, safe Starter Camp enemy a level 1 fighter beats (weaker than the
-   Cow: level 1, 32 HP, hits 8–10), placed in the camp, Sync.
-2. Card art overrides where the activity picture is wrong (Tokens → Identity →
-   Card art); draw the missing activity scenes (forestry, farming, crafting,
-   commerce, construction, a fight), `backgrounds/skills/b_<skill>.png`.
+- Before release: the background music's source and licence; ZapSplat needs an
+  in-game credit (`CREDITS.md`).
+- Card art overrides and the missing activity scenes (from the 18 Oct handoff),
+  the banner ribbon, the quest board Token art, a sickle sprite, the Atlas
+  "…" icon if wanted.
 
-## Next phases (queue in `briefs/README.md`)
+## Next (for the next batch, planned with the planning agent)
 
-Owner 2026-10-19 chose **batch 5: brief 130, the recipe list, and brief 150,
-notifications**, one eye-check (rows in STATUS, planned only). Then brief 170
-(quest boards), then 160 (the Atlas tome; UI side only). Fillers: T-186,
-T-187, T-189, T-191, T-192. Also ruled 2026-10-19: Token outlines red for
-problems, gold for attention (UI_STYLE); Fight stays on for Recruits.
-
-## Working with the terrain director
-
-They own `src/systems/atlas/**`, `src/systems/board/Terrain*.js`,
-`groundScreen.js`, `terrainRegistry.js`, `playmatTuning.js`,
-`src/ui/dev/terrainDev.js`, `docs/active/research/ground_gen/`. Two code agents
-on the PC in total; check their last commit time before running two of yours.
-See memory "Two Directors".
+1. **An optimisation pass from the Envelope:** T-197 (loot hover), T-198
+   (bubbles), T-199 (24 h catch-up at 256 must meet 30 s; the owner keeps the
+   256 cap), T-200 (wandering enemies), T-201 (drags at 4×).
+2. **A refinement pass:** T-196 (afterimages) and the look questions recorded
+   in `docs/archive/eyecheck/2026-10-*` files.
+3. **Parked designs:** the quest board (brief 170, postponed by the owner),
+   the notification log (T-193), the strings-file conversion (T-119), the
+   camera glide for the Guild Hall upgrade screen (T-194).
 
 ## Lessons
 
-- **A non-reproducible owner bug: ask how they did it first** (multiple
-  choice). The Goblin "doesn't start" was a near drop on the wrong side; an
-  engineer spent an hour before the answer came, then found a real one-sided
-  rule.
-- **Stack branches and serve one frozen preview** (a detached worktree on a
-  fixed port): the owner's saves carry over, builders keep working.
-- **A fresh worktree's first dev start redraws ~700 sprite outlines (5 s)**:
-  start it yourself and reload before the owner looks.
-- **Removing junctions in bash:** build the path in a variable
-  (`B='C:\...\worktrees\'; P="${B}${w}"; cmd //c "rmdir ${P}\node_modules"`);
-  `\${w}` inside the quoted path does not expand.
-- **The work check is load-proof; timing is not:** a control run of `main`
-  showed the same timing "regressions", so merging on the owner's word with the
-  work check alone was safe; the timing re-run waits for a quiet window.
-- An "I can't click it" from an agent with a hidden pane was wrong once; an
-  `elementFromPoint` sweep settles it.
+- **The engine work check is `npm run bench -- --compare`.** A plain run's
+  "same work" only compares repeats. This session reported "same work" from
+  plain runs for a day; `--compare` then showed a real change from the
+  notifications (a sound picked with the game's random numbers). Bisect with
+  `--only=S1` and the old baseline copied in (memory "Bench Compare, Not
+  Plain").
+- **Visuals and sounds must never draw from `Math.random`** on the game's
+  stream; use `fxRandom.js` or a counter.
+- **An owner Sync made with a CMS that lacks a branch's code** writes raw
+  values; merge the CMS code first, or expect a re-sync and a test bridge.
+- **Keep-both merges:** `scratchpad/keepboth.py` resolved most CHANGELOG
+  conflicts; screen files that two branches rewrote need a builder.
+- **Combined preview branch:** merging every waiting branch into one
+  `crunch/eyecheck-*` branch on `p23b` gave the owner one look and one merge.
+- **Sign-in expiry or a usage limit stops agents mid-task**; they had
+  committed as they went, and `SendMessage` resumed each one. Background
+  timers die with the session: re-queue them.

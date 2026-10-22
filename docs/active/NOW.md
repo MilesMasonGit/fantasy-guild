@@ -1,65 +1,42 @@
 # NOW — start here
 
-*Updated 2026-10-19. One screen: what is next and where the project stands.
-The state a fresh director resumes from is [HANDOFF.md](HANDOFF.md); the
-wave's living table and the morning/evening summaries are
-[STATUS.md](STATUS.md); finished work lives in git, the changelog and
-`docs/archive/`.*
-
-## Next
-
-0. **Features director** ([HANDOFF_features.md](HANDOFF_features.md)): briefs
-   100, 140, 110 and 120 and everyone-fights merged 2026-10-18; next 170 quest
-   boards, 130 recipe list; timing and draw benches owed in a quiet window.
-
-1. **Terrain and the mat's look** ([HANDOFF.md](HANDOFF.md)): generated ground,
-   water, placement, blended borders and the playmat style (Clean ground at 2x,
-   ambient life) all merged 2026-10-19. Next: each cell's biome stored, a river
-   along biome borders as real water, on-map scenery (design round first), the
-   bench baseline retake in a quiet 01:00 window.
-2. **Owner CMS to-do** (none urgent; `main` checked out, then Sync): the
-   seedling sprite registration, re-accept the Starter Camp (Oak Seedling),
-   map trade ratios, "Stands on" on real Tokens once a Dock or Sailboat
-   exists, Base Maps. Minimise the desktop app once to see the frame counter
-   stop.
-3. Filler tickets T-167, T-186, T-187, T-189; then wave 3 from the briefs
-   queue (100 style kit → 170 quest boards → 180 ground → 90 Envelope).
+*Updated 2026-10-21. One screen: what is next and where the project stands.
+The features director resumes from [HANDOFF_features.md](HANDOFF_features.md),
+the terrain director from [HANDOFF.md](HANDOFF.md); the living table and
+summaries are [STATUS.md](STATUS.md); finished work lives in git, the
+changelog and `docs/archive/`.*
 
 ## Where the project is
 
-- **Version** 0.8.x on `main`.
-- **Crunch order:** UI rework ✓ → class rework v2 ✓ (engine) → hero bar and
-  panel ✓ → offline progress ✓ → drag ✓ → deep optimization ✓ (cap128 at 4×
-  from 35 % to ~76 % of frames in budget) → Atlas ✓ → terrain ✓ (T0–T4) → art pass (brief 85: names ✓, Gentle bake ✓, generated
-  ground, water, placement and playmat style ✓, briefs 180 and 190) → wave 3 (briefs 100–170) →
-  Performance Envelope ([briefs](briefs/README.md)).
-- **Tests:** all green (~5010 on `main`; the file-scan tests time out only under load
-  and pass alone). Anything red is new.
-- **Process (owner, 2026-10-13):** four tiers in `.claude/agents/`, two code
-  agents at once, benches only in the owner's downtime, STATUS.md and
-  HANDOFF.md, eye-check files; the rules are in `CLAUDE.md`.
+- **The crunch is done.** Every brief in the queue is built or parked, and the
+  Performance Envelope is measured and written as rules in
+  [GDD §14](../reference/GDD.md). The outstanding list was wrapped up
+  2026-10-20/21 (two rounds of four agents).
+- **Version** 0.8.x on `main`. **Tests:** ~5,750, all green (a few file-scan
+  tests time out only when several suites run at once; T-208).
+- **Engine bench:** baseline retaken 2026-10-21 13:00 on a quiet machine; the
+  draw baseline retake is queued for the next quiet 01:00 window (it was
+  refused once for Chrome's throttle drift, T-205).
 
-## Ground rules during the crunch
+## Next
 
-- **Measure, don't fix** anything drawn outside brief 60: one line per phase
-  in PERFORMANCE.md's cost log.
-- **Don't add expensive effects** to the mat without logging their cost.
-- **Don't invest in what the Atlas replaces**: resource spawners in the Shop.
+1. **Planning the next batch** (owner with the planning agent): the backlog is
+   [TICKETS.md](../reference/TICKETS.md). Ready to brief: the optimisation pass
+   from the Envelope (T-197 loot hover, T-198 bubbles, T-199 catch-up at 256,
+   T-200 enemies, T-201 drags at 4×), the refinement-pass notes (T-196
+   afterimages, the Atlas and eye-check look questions in
+   `docs/archive/eyecheck/`), and the parked designs: the quest board (brief
+   170, postponed), the notification log (T-193), converting old screens to
+   the strings file (T-119), the camera glide for the Guild Hall upgrade
+   screen (T-194).
+2. **Terrain director** ([HANDOFF.md](HANDOFF.md)): its own queue, plus T-195
+   (three one-line leftovers in its files).
+3. **Owner, before release:** the background music's source and licence
+   (STATUS "Questions for the owner"); ZapSplat needs an in-game credit
+   (`CREDITS.md`).
 
-## Design docs in flight
+## Ground rules
 
-- [ui_rework_list.md](ui_rework_list.md): locked UI decisions.
-- [design_pass_notes.md](design_pass_notes.md): owner taste notes for later.
-- [concept_skill_and_class_rework_v2.md](concept_skill_and_class_rework_v2.md):
-  read its amendments first.
-- [concept_offline_progress.md](concept_offline_progress.md).
-- [concept_atlas.md](concept_atlas.md) and [atlas_roadmap.md](atlas_roadmap.md)
-  (owner answers at the top of §D). Unfinished old Atlas code is parked on
-  branch `atlas-wip`.
-- **Post-crunch plan** ([ideas.md](ideas.md)) and the nine design interviews
-  of 2026-10-09 (`concept_tone_and_world`, `concept_progression`,
-  `concept_combat`, `concept_skill_loops`, `concept_knowledge`,
-  `concept_guild_hall`, `concept_living_game`, `concept_quests_tutorial`,
-  `concept_release`). Not for the crunch, except that brief 70 reads
-  `concept_progression.md`, `concept_skill_loops.md` and
-  `concept_quests_tutorial.md` first.
+- Content must not make a Region cost more than the reference board (GDD §14).
+- The engine work check is `npm run bench -- --compare` after every merge.
+- Rules for agents, tiers, benches and eye-checks are in `CLAUDE.md`.

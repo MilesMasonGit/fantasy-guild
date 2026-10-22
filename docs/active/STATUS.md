@@ -10,8 +10,8 @@ build green) · bench-queued · eye-check · merged.*
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
 | Timing baselines retaken on a quiet machine (engine and draw) | director | `main` | engine: done 13:00, committed f19a2e30. Draw: run refused to save (Chrome delivered ~5× for the 4× scenes, the bench's guard); retry queued 01:00 Thu (timer running) | Wed | Wed |
-| E1: measure the limits at perf build, 4× slowdown, smooth (Tokens on a Region, heroes, enemies, loot piles, fights, notifications per minute, 24 h catch-up) | engineer | `crunch/envelope` | building (engineer may bench until 16:50 today; the PC otherwise idle) | Wed | |
-| E2: the limits as design rules in GDD §14; T-071 decided against them; issues as tickets | director | `main` | queued after E1 | Wed | |
+| E1: measure the limits at perf build, 4× slowdown, smooth (Tokens on a Region, heroes, enemies, loot piles, fights, notifications per minute, 24 h catch-up) | engineer | `crunch/envelope` | merged a131619c (envelope scenes, `--slowdown-target`, PERFORMANCE "Performance Envelope (2026-10-21)"; no game behaviour) | Wed | Wed |
+| E2: the limits as design rules in GDD §14; T-071 decided against them; issues as tickets | director | `main` | done d4021ec7: GDD §14 from the owner's rulings (the 128 board is the reference for now; keep 256, fix the catch-up; fix the loot hover; park T-071); T-197 to T-210 filed | Wed | Wed |
 
 ## Features director, wrap-up round 1
 
@@ -223,6 +223,14 @@ T-186; the badges' soft shadows are settled inside T-013.)
 8. Terrain director: **bench baseline retake** on `main` at the next 01:00 window (engine and draw; every run since 16 Oct reads 10-20 % slow on unchanged code).
 
 ## Summaries
+
+**Wed 2026-10-21, evening: features session closed.** Where we are: the
+crunch queue is finished. Recipe list, notifications, the Atlas, change packs,
+tools as hero gear, the wrap-up rounds and the Performance Envelope (GDD §14)
+are on `main` (d4021ec7). Next: the owner plans the next batch with the
+planning agent (the optimisation pass T-197 to T-201, the refinement pass,
+the parked designs). Owed: the draw baseline retake in a quiet window.
+Handoff: [HANDOFF_features.md](HANDOFF_features.md).
 
 **Tue 2026-10-20, 11:30: batch 6 at the eye-check.** Where we are: the
 Atlas tome is built (the owner's book at 4×, Cartography with drag to slot,
