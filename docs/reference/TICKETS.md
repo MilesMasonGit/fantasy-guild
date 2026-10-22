@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-197**
+**Next free number: T-211**
 
 ---
 
@@ -96,7 +96,7 @@ first, when content that uses it is authored.*
 
 | ID | Why parked | Summary | Origin |
 |---|---|---|---|
-| T-071 | Envelope | Canvas mat. Certification (2026-10-07): the realistic board passes, ~320 Tokens reaches 83 % of frames in budget. Unnecessary at realistic sizes; decide with the Performance Envelope whether boards that large must be smooth. | CR3-355 |
+| T-071 | Envelope decided: parked (owner 2026-10-21) | Canvas mat. Envelope (GDD §14): Tokens are the cheapest thing on the mat (about 1 ms at 128); fix the moving things first (T-197 to T-201). Reopen only if 256 must be smooth on a slow laptop. | CR3-355 |
 | T-072 | after the crunch | `@ts-check` trial on the contract layer. | CR3-560 |
 | T-073 | latent | Input-cost discount applied when paying, not when checking. | CR3-028 |
 | T-074 | latent | Item rules can be given moments that never fire. | CR3-202 |
@@ -117,6 +117,20 @@ first, when content that uses it is authored.*
 | T-091 | Stage 3 | Tokens teleport; mat size is dev tuning. | CR3-565 |
 | T-092 | design | The free-playmat plan's "Map stays unopened" overflow rule (FP-46) is unbuilt; overflow drops as loot. | FMR |
 | T-100 | before release | Master volume defaults to 0 so the owner can work in silence; set an audible default before shipping. | GDD §16.10 |
+| T-197 | P2 | open | **Loot piles' hover animation is almost all their cost** (Envelope): 38 piles read 72.2 % on the slow laptop vs 91.7 % with the hover stopped. `src/ui/components/base/TokenSprite.jsx:182` (`gi-sprite-hover`), `src/tailwind.css:330`. Options: hover only the newest few, step all piles on one shared clock, or stop once a pile has rested. Owner: keep the cap of 40. Engineer. Eye-check. | brief 90 |
+| T-198 | P2 | open | **Bubbles are the largest cost per hero and per fight** (Envelope): 16 heroes 3.4 of 12.0 ms; 7 fights 5.2 of 15.7 ms. Find which part (health bar, work ring, frame) with a finer switch and make it cheaper; secondary: hero animation (2.5 ms), hero bar (1.8 ms) at 16 heroes. Engineer. Eye-check if the look changes. | brief 90 |
+| T-199 | P2 | open | **24 h catch-up misses 30 s at 256 Tokens (38.3 s) and about 70 enemies (35.6 s)** (Envelope; the owner keeps the 256 cap, so this must be fixed). At ~4x it takes 6.4x its full-speed time; check the 50 ms slices' yields and the catch-up bar. `CatchUp.run`, the tick handlers; profile with `bench/catchup/time.mjs --scene`. Engineer. | brief 90 |
+| T-200 | P2 | open | **Wandering enemies are expensive in the engine and on the mat** (Envelope): the tick's slowest 1 % reaches 11-23 ms at ~4x with long frames of 85-137 ms; about 70 enemies bite even at 1x. `EnemyMotion`, enemy drawing. Engineer. | brief 90 |
+| T-201 | P2 | open | **Drags on the 128 board at ~4x fail smooth's drag test by about 2x** (Envelope: pickup 55-61 ms, drop 73-109 ms vs 33.4 ms). Continue T-033's next steps: dnd-kit context changes, the drop animation's measuring. Engineer. | brief 90 |
+| T-202 | P3 | open | **The stub column keeps every row mounted** (about 0.1 ms per row, Envelope): `ItemStubColumn.jsx`; render only the visible rows, or make rows cheaper. Builder. | brief 90 |
+| T-203 | P3 | open | **The `camp128` bench board's premise is stale** (it assumes 25 endgame sites outside the cap; `MatCap.countsTowardCap` and GDD §3/§16 count landmarks): fix `bench/scenarios/cap.mjs`, the `stressScenarios.js` label, `bench/README.md` and PERFORMANCE 'Smooth, defined'; rename it cap153 or retire it. Builder-lite. | brief 90 |
+| T-204 | P3 | open | **GDD §3 says the Token Cap upgrade is not built yet**, but `guildUpgrades.js` has the `token_cap` node (+16 a rank up to 256). Docs. Builder-lite. | brief 90 |
+| T-205 | P3 | open | **Chrome's CPU throttle drifts** (asking 4x delivered 4.1-5.2x on 2026-10-21; the draw baseline retake was refused for it): `--slowdown-target` exists only in `bench:draw`; `bench:drag`, `bench:profile`, `bench:crisp` and the catch-up bench need it (or automatic calibration), and drag/profile/crisp don't accept the envelope scenes (`sceneFor`). The drag bench also skipped the Bank kind on cap128 ('no equippable item tile visible'). Builder. | brief 90 |
+| T-206 | P3 | open | **Stale bench Chrome profiles and orphan processes**: 22 `fg-bench-chrome-*` profiles in the temp folder since 2026-10-10; killing the npm wrapper leaves `draw.mjs` and Chrome running. Clear stale profiles at bench start; document how to stop a bench. Builder-lite. | brief 90 |
+| T-207 | P3 | open | **Smooth's second line is effectively pass/fail** on the headless 165 Hz clock (the 1-in-1,000 frame within 33.4 ms: 30.3 ms passes, 36.4 ms fails). Restate it as 'at most 5 frames', or lean on the 16.7 ms share plus the long-frame count. Director, with the owner. | brief 90 |
+| T-208 | P3 | open | **Flaky tests under full-suite load**: `src/tests/CMSChangePackReview.test.js` (a `waitFor` timeout; passes alone 3/3) and `EngineEventNames.test.js` CR3-107 (its source scan has no timeout option while its neighbour has 20 000). Builder-lite. | brief 90 |
+| T-209 | P3 | open | **The 128 board at 1x read 97.2 % within 6.06 ms** in one window on 2026-10-21 vs 99.5 % on 2026-10-09: confirm with three windows in a quiet bench window; if real, find what moved it. Director. | brief 90 |
+| T-210 | P3 | open | **Remove the description bridge** in `src/tests/fixtures/shippedAsLoaded.js` (`describeNeededTools`): the owner's re-sync (11512fbc) put the 'Needs a ... in hand.' clause into `data/`, so the bridge now finds nothing. Builder-lite. | brief 90 |
 | T-196 | P3 | open | **Afterimages look wrong as white speckles** (owner 2026-10-21, eye-check of the animation batch): the hit and loot-hop afterimages are speckled white copies (`src/ui/components/board/fx/`, generated tinted pictures). Try the sprite's own colours speckled, or another look, on the style sheet page first; refinement pass. Eye-check. | T-137 |
 | T-195 | P3 | open | **Three one-line leftovers in the terrain director's files** (engine plumbing, 2026-10-21): `src/systems/atlas/Atlas.js:516` still publishes `STATE_CHANGED` after its own `GAME_RESET` (delete it, then `STATE_CHANGED` from `engineEvents.js` and its `NO_LISTENER` entry, and tighten `StateChangedRetired.test.js`); `src/systems/atlas/layoutInputs.js:25` reads `matTuningDefault('matSteps')` and should read `MAT_STEPS` from `matGeometry.js`. Also (2026-10-21): `src/ui/dev/terrainDev.js` (`DEV_GROUND_TOKENS`) has the Test Boat borrow `token_fishing_net`'s look, and the tools content sync deleted that Token; repoint it to a live Token and remove its `KNOWN_DEAD` entry in `ContentIdsInCode.test.js`. Terrain director. | T-015, T-097 |
 | T-194 | P3 | open | **Reuse the camera glide for the Guild Hall upgrade screen** (owner 2026-10-20): the glide from the mat up a shared wood table to the Atlas book was built (brief 160 T4a: `AtlasCamera.jsx`, one transform on one wrapper, skippable, reduced motion swaps; the mat never re-renders) and set aside when the Atlas became a pop-up. Kept at git tag `atlas-camera-move` (7a678567). Bring it back when the upgrade screen is built. | brief 160 T4a |
