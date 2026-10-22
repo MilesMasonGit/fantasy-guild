@@ -14,9 +14,8 @@ changelog and `docs/archive/`.*
   2026-10-20/21 (two rounds of four agents).
 - **Version** 0.8.x on `main`. **Tests:** ~5,750, all green (a few file-scan
   tests time out only when several suites run at once; T-208).
-- **Engine bench:** baseline retaken 2026-10-21 13:00 on a quiet machine; the
-  draw baseline retake is queued for the next quiet 01:00 window (it was
-  refused once for Chrome's throttle drift, T-205).
+- **Bench baselines:** engine retaken 2026-10-21 13:00, draw 2026-10-22 01:00,
+  both on a quiet machine.
 
 ## Next
 

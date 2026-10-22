@@ -49,10 +49,7 @@ all merged after the owner's eye-checks ("ok for now, refine later"):
 
 ## Owed
 
-- **The draw baseline retake** (`npm run bench:draw -- --save-baseline` on
-  `main`, quiet machine). A timer for 01:00 Thursday 22 Oct was running in
-  this session; if the session ended, rerun it in the next quiet window. It
-  was refused once at 13:00 for Chrome's throttle drift (T-205).
+- ~~The draw baseline retake~~ **done 2026-10-22 01:00** (both baselines are now fresh).
 - T-209: confirm the 1× smoothness dip with three windows.
 
 ## Owner to-dos
