@@ -137,3 +137,62 @@ Differs from GDD §6 in places; the code wins:
   always does at least 1.
 - **The weapon sets attack speed**, in three steps: fast 2 s (daggers,
   wands), normal 3 s (swords, bows), slow 4 s (two-handers, hitting harder).
+- **Fixed hits, rare misses and crits**: a weapon always hits for its number;
+  about 1 swing in 10 misses, about 1 in 20 crits for double, each shown
+  ("Miss", "Crit!"). No damage spread.
+- **An even fight is a duel: 10+ swings, 30 s or more** (a hero against an
+  enemy of its tier). Supplies matter. ⚠️ Longer fights mean more steps in
+  offline catch-up; check against the envelope (GDD §14) when briefing.
+- **Recruits punch for 1** every 3 s, barehanded: no weapons, no style, no
+  combat XP. Promotion is how a hero really fights.
+- **Weapons belong to styles; a hero uses only their own style's weapons.**
+  Some weapons carry more than one style (a Dagger is Melee and Stealth, so
+  a Fighter or a Rogue can use it).
+- **No regen in fights**: mid-fight, only food and potions heal. Outside
+  fights about 1 HP every 10 s.
+- **Enemy numbers: the level fills them, the CMS overrides.** The author
+  picks a level, the CMS fills HP, hit, armour and speed for that tier, and
+  any of them can be changed per enemy. Enemies gain an armour field.
+- **Level gap matters a little, through misses**: base miss 10 %, moving
+  between about 5 % and 25 % with the gap, plus the small damage step.
+- **Defeat keeps today's cost** (amends D2's "gear never breaks"): 25 % of
+  each carried food and drink stack lost, a 10 % chance per gear piece to be
+  lost, wounded 5 minutes, back at half HP. Gear still never wears out; it
+  can only be lost on a knockout.
+
+### The four styles
+
+- **Styles are told apart by the matchup cycle and their weapons, with no
+  traits of their own** (amends "each combat style has one clear trait"
+  above). Special abilities come later from master classes (a Paladin
+  heals) through the Rules system.
+- **The cycle stays**: melee > ranged > magic > stealth > melee; melee/magic
+  and ranged/stealth are even.
+- **A good matchup is worth about +25 % damage** (the bad one −25 %). With
+  small early numbers it barely shows, which is intended: the cycle starts
+  to matter past the early game.
+- **The player sees only the enemy's style icon** and learns the cycle; no
+  "weak to" line or matchup arrow.
+
+### Food and potions in fights
+
+- **Eating stays as today**: below 25 % HP the hero eats equipped food;
+  eating takes that swing. Food is the only heal in a fight.
+- **Drinks stop healing and become small buffs** (amends T-098's "drinks
+  heal from their own slot"). ⚠️ Overlap: drinks are Cooking's; their buffs
+  are for the skill-loops planning agent to shape.
+- **An elixir is drunk at the start of every fight**; each equipped elixir
+  type is drunk once, and their effects stack. Some elixirs are for skills
+  instead and fire when the hero starts working a Token (the Birdwatcher in
+  `concept_skill_loops.md`; overlap with the skill-loops agent).
+- **Elixirs need a wide effect library**: +damage, +armour, faster swings,
+  fewer misses or more crits to start, and later many more (better loot,
+  slowing the enemy…). So an elixir is a Rules-system effect ("When a fight
+  starts, provides … to the hero for the fight"), not a fixed stat list.
+- **Combat potions are elixirs only**: drunk automatically when a fight
+  starts, lasting that fight. Cooking's food heals, Alchemy buffs. No healing
+  potions (amends "Potions are Alchemy's combat supplies: healing and short
+  buffs" above).
+- **A "used" bubble for every item**: when a hero eats, drinks or drinks an
+  elixir, a small bubble over them shows the item's icon and what it did
+  ("+5 ♥", "Valor") for about 1.5 s.

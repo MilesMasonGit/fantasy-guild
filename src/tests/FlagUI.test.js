@@ -30,7 +30,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
  * stands on. The React pieces are pinned in `FlagUIRender.test.js`.
  *
  * Geometry: 6×6, one tile step 160 u. ⚠️ Laid out on the old flag radius
- * (400 u), set in `beforeEach`; it has shipped at 164 u.
+ * (400 u), set in `beforeEach`; it ships at 240 u.
  */
 
 registerTokenTypes({

@@ -14,10 +14,10 @@ time, never beside a build); design questions answered any time.
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| A1: mat a little wider and shorter (T-211); 2–3 sizes shown as captures before baking; old saves checked for Tokens off the mat; WORK CHANGED expected | engineer | `backlog/mat-size` (`bm`) | queued | | |
-| A3: more room between Tokens, flag reach 164 → 240, a crisp gold pixel reach ring (T-215, T-216); WORK CHANGED expected | builder | `backlog/flag-reach` (`bf`) | queued | | |
-| A2: top bar on the Region's banner, larger text, as wide as the mat (T-212 to T-214); after A1 | builder | `backlog/top-bar` (`bt`) | queued, needs A1 | | |
-| Tidy-up (owner 2026-10-22: yes): remove the finished `ar` worktree; delete local branches fully merged into `main` (`git branch -d` only) | director | — | queued | | |
+| A1: mat a little wider and shorter (T-211); 2–3 sizes shown as captures before baking; old saves checked for Tokens off the mat; WORK CHANGED expected | engineer | `backlog/mat-size` (`bm`) | stage 1 done (captures, a dev-only Mat shape row); **owner picked (b) 12 × 6.5 = 1920 × 1040** from the phone captures; stage 2 building: bench scenarios pin their own mat first, bake (b), old saves and travel pull Tokens inside the mat | Thu | |
+| A3: more room between Tokens, flag reach 164 → 240, a crisp gold pixel reach ring (T-215, T-216); WORK CHANGED expected | builder | `backlog/flag-reach` (`bf`) | **merged** 70e04760 (main 1a61d85e). Gate: 5758 tests, cycles, build; **owner ok by phone** (one-pixel ring as it is, hitbox 90 % right, enemies at 240 fine for now). Work check: WORK CHANGED on every scenario; a control run with 164 and 80 put back was same work, so accepted under T-215+T-216 in `bench/baseline.json`. Timings read S4 refusedWorst ×1.5, S6 p99 ×1.24 beside a running agent: different work, noise | Thu | Fri |
+| A2: top bar on the Region's banner, larger text, as wide as the mat (T-212 to T-214); after A1 | builder | `backlog/top-bar` (`bt`) | building from `main` alongside A1 (the bar follows the mat's live width; merges after A1) | Fri | |
+| Tidy-up (owner 2026-10-22: yes): remove the finished `ar` worktree; delete local branches fully merged into `main` (`git branch -d` only) | director | — | done: `ar` removed (junctions unlinked first, real packages intact); 134 merged branches deleted with `-d`; kept the two unmerged ones, `atlas-wip` and `crunch/style-p2` (the dropped shadows, a record) | Thu | Thu |
 
 ## Features director, the Envelope (brief 90) (owner 2026-10-21: cleared for 13:00; any issue found becomes a ticket for the next pass)
 
@@ -217,6 +217,7 @@ branch), so it uses the kit and everyone fights; it merges after both.*
 ## Questions for the owner
 
 - ~~Background music provenance~~ **Answered 2026-10-22:** the tracks are AI-generated placeholders, likely removed in the later music and sound pass; audio is not a concern now.
+- **For combat planning (not a question):** hostile enemies notice a flag within `Flags.flagRadius()` of their spawner, so the hero reach going 164 → 240 (A3) widened what enemies notice too. Owner 2026-10-23: fine for now; combat planning decides what enemies should notice.
 
 *Design questions the director cannot answer, as multiple choice, recommendation
 first; asked with the next batch proposal and recorded where they belong.*

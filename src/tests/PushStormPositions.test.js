@@ -80,20 +80,20 @@ describe('⭐ the S4 push storm lands every Token on the same point (CR3-003, CR
         expect(id.arrivalsLanded).toBe(50);
         expect(id.refusedDropsLanded).toBe(0);
         expect([id.landingPlaced, id.landingNudged, id.landingRefused, id.landingRestocked]).toEqual([0, 50, 0, 0]);
-        expect(id.rimRadius).toBe(310.8058415243332);
+        expect(id.rimRadius).toBe(351.4721326524662);
     });
 
     // Literals taken on from main (cbaa58f) plus this branch's test-only
-    // commits,.
+    // commits, and taken again when the shipped Token hitbox grew from 80% to 90%.
     it('after the 50 arrivals (the push solver, CR3-003)', () => {
-        expect(seen.identity.positionsAfterArrivals).toBe('3d42fba4');
+        expect(seen.identity.positionsAfterArrivals).toBe('4be9c611');
     });
 
     it('after the 50 landing drops (the nudge search, CR3-150)', () => {
-        expect(seen.identity.positionsAfterDrops).toBe('97ff6156');
+        expect(seen.identity.positionsAfterDrops).toBe('6968d21b');
     });
 
     it('after the shrink from 20 steps to 6', () => {
-        expect(seen.identity.positionsAfterShrink).toBe('4eff6cb1');
+        expect(seen.identity.positionsAfterShrink).toBe('4d3eb8e8');
     });
 });

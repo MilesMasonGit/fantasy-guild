@@ -218,16 +218,16 @@ describe('⭐ spawns land by point (slices 1.6b and 1.8)', () => {
 
         expect(result.replacedBearer).toBe(false);
         const away = Math.hypot(result.x - bearer.x, result.y - bearer.y);
-        expect(away).toBeGreaterThanOrEqual(61.2 - 1e-6);   // clear of the bearer
+        expect(away).toBeGreaterThanOrEqual(69.6 - 1e-6);   // clear of the bearer
         expect(away).toBeLessThan(160);                     // but nearer than a whole step
         expect(BoardState.getTokenById(bearer.id)).not.toBeNull();
     });
 
     it('a crowded spawn pushes its neighbours aside, never its bearer (FP-17, slice 1.8)', () => {
         // ⚠️ Packed at exactly the minimum gap, which leaves NO legal point
-        // inside the block: the hole between any four is only 43 u across. So
+        // inside the block: the hole between any four is only 49 u across. So
         // `findSpot` finds nothing and the spawn has to push.
-        const P = (c, r) => ({ x: 600 + c * 61.2, y: 380 + r * 61.2 });
+        const P = (c, r) => ({ x: 600 + c * 69.6, y: 380 + r * 69.6 });
         for (let r = 0; r < 9; r++) {
             for (let c = 0; c < 9; c++) {
                 if (c === 4 && r === 4) continue;
@@ -263,7 +263,7 @@ describe('⭐ spawns land by point (slices 1.6b and 1.8)', () => {
             const r = 64;
             const line = (max) => {
                 const out = [];
-                for (let v = r; v <= max - r + 1e-6; v += 61.2) out.push(v);
+                for (let v = r; v <= max - r + 1e-6; v += 69.6) out.push(v);
                 if (max - r - out[out.length - 1] > 1e-6) out.push(max - r);
                 return out;
             };

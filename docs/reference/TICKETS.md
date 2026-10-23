@@ -62,8 +62,6 @@ Detail, order and tiers in [brief 210](../active/briefs/210_backlog_intake.md); 
 | T-212 | P3 | open | **Top bar: the Region banner art as the bar background**, fading out to the right, no badge (TOPBAR-01). Eye-check. | brief 210 A2 |
 | T-213 | P3 | open | **Top bar: larger text and icons** (TOPBAR-02). Eye-check. | brief 210 A2 |
 | T-214 | P3 | open | **Top bar as wide as the mat**; Tokens/Upkeep centred; Disallow/Demolish at the mat edge (TOPBAR-03). Eye-check. | brief 210 A2 |
-| T-215 | P3 | open | **Bigger Token hitboxes**, more room between Tokens (TOKEN-01). Eye-check. | brief 210 A3 |
-| T-216 | P2 | open | **Flag radius 164 → 240** (owner 2026-10-22) **and a crisp pixel reach ring** (FLAG-01). Eye-check. | brief 210 A3 |
 | T-217 | P3 | open | **Drag: paint only forbidden cells**, allowed cells stay clear (DRAG-01). Eye-check. | brief 210 B2 |
 | T-218 | P3 | open | **Token name badge below the Token** (TOKEN-02). Eye-check. | brief 210 B1 |
 | T-219 | P3 | open | **Remove the ring under movable Tokens** (TOKEN-03). Eye-check. | brief 210 B1 |

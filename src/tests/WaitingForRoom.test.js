@@ -39,14 +39,20 @@ registerTokenTypes({
 
 const FOREST_AT = { x: 200, y: 200 };
 
-/** A 6-step mat packed with placed blockers at the minimum gap, clear only round `FOREST_AT`. */
+/**
+ * A 6-step mat packed with placed blockers at the minimum gap, clear only round `FOREST_AT`. The
+ * lattice is centred, so what is left over at the edges is split between both sides and no strip
+ * wide enough to hold a Token is left at either.
+ */
 function packedMat() {
     setMatTuning('matSteps', 6);
     setMatTuning('tokenCap', 2000);   // crowding is the point, not the Token cap
     const gap = Math.ceil(MatPlacement.minGap('fixture_kitchen', 'fixture_kitchen'));
+    const x0 = 64 + ((matW() - 128) % gap) / 2;
+    const y0 = 64 + ((matH() - 128) % gap) / 2;
     const blockers = [];
-    for (let x = 64; x <= matW() - 64; x += gap) {
-        for (let y = 64; y <= matH() - 64; y += gap) {
+    for (let x = x0; x <= matW() - 64; x += gap) {
+        for (let y = y0; y <= matH() - 64; y += gap) {
             if (Math.hypot(x - FOREST_AT.x, y - FOREST_AT.y) < gap) continue;
             blockers.push(placeAt('fixture_kitchen', x, y));
         }

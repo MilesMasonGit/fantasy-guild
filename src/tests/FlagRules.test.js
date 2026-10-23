@@ -38,9 +38,10 @@ vi.mock('../systems/combat/DefeatPenalties.js', () => ({
  * ⭐ Free Playmat slice 1.5b-i — **a hero works anything they can in range, by
  * their own rules** (…).
  *
- * ⚠️ Everything here runs at the **shipped reaches**: flag radius and Near both
- * 164 u. A flag at tile 14 reaches the Token under it (0 u) and its four side
- * neighbours 8, 13, 15, 20 (160 u) — never a diagonal (226 u).
+ * ⚠️ Everything here runs at the **shipped reaches**: flag radius 240 u, Near
+ * 164 u. A flag at tile 14 reaches the Token under it (0 u) and all eight
+ * neighbours: the sides 8, 13, 15, 20 (160 u) and the diagonals 7, 9, 19, 21
+ * (226 u), never a spot two steps away (320 u).
  */
 
 registerTokenTypes({
@@ -58,8 +59,8 @@ registerTokenTypes({
 /**
  * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles.
  * This is a lattice of mat points 160 u apart — the step the old board had — so
- * a side neighbour is 160 u and a diagonal 226 u, which is exactly what the
- * shipped 164 u reach above turns on. The numbers are shorthand for spots.
+ * a side neighbour is 160 u, a diagonal 226 u and two steps 320 u, which is
+ * exactly what the shipped 240 u reach above turns on. The numbers are shorthand for spots.
  */
 const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
 
@@ -124,18 +125,18 @@ beforeEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('the shipped reach (FP-75)', () => {
-    it('both reaches are 164 u, and a hero between a tree and a rock works the side one, not the diagonal', () => {
-        expect(matTuning('flagRadius')).toBe(164);
+    it('the flag reaches 240 u and Near 164 u: a hero works the diagonal rock, not the tree two steps away', () => {
+        expect(matTuning('flagRadius')).toBe(240);
         expect(matTuning('nearRadius')).toBe(164);
 
-        const rock = put(21, MINE);                   // diagonal, 226 u
-        put(15, FOREST);                              // side, 160 u
+        put(21, MINE);                                // diagonal, 226 u
+        const tree = put(16, FOREST);                 // two steps, 320 u
         FlagRules.heroRecord('h1').flagRules = { mining: { allowed: true, priority: 1 } };
 
         plant('h1', 14);
 
-        expect(workTileOf('h1')).toBe(15);
-        expect(reasons(rock)).toEqual([]);            // out of reach: not even looked at
+        expect(workTileOf('h1')).toBe(21);
+        expect(reasons(tree)).toEqual([]);            // out of reach: not even looked at
     });
 
     it('a new hero starts with empty rules', () => {

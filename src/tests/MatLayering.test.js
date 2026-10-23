@@ -10,7 +10,7 @@ import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { resetMatTuning } from '../config/matTuning.js';
+import { resetMatTuning, setMatTuning } from '../config/matTuning.js';
 import { matW, matH } from '../config/matGeometry.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { MAT_Z, STACK_PLACES, placeZ, matStackOrder, createMatStack, heroZ } from '../ui/components/board/matLayers.js';
@@ -189,6 +189,8 @@ describe('on the mat', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         resetMatTuning();
+        // A flag drawn over a Token 170 u away, its hero idle: outside a 164 u reach.
+        setMatTuning('flagRadius', 164);
         GameState.initNew();
         InventoryManager.init();
         SpriteLayer.init();
@@ -200,7 +202,7 @@ describe('on the mat', () => {
 
     it('FB-1: a flag higher on the mat than a Token draws behind it; one lower draws in front', () => {
         const tok = placeAt('fixture_producer', 600, 600);
-        // 170 u away: past the 164 u flag radius, so both heroes stay idle.
+        // 170 u away: past the flag radius set above, so both heroes stay idle.
         Flags.plant('h1', { x: 600, y: 430 });
         Flags.plant('h2', { x: 600, y: 770 });
         expect(Flags.statusOf('h1').state).toBe('idle');

@@ -190,11 +190,11 @@ function dryRegion() {
 }
 
 /**
- * Recorded on `main` at fe151c8e, before the ground rule existed, with this script unchanged.
- * Only a deliberate change to how a meadow places Tokens may change it, and then the engine bench
- * reports WORK CHANGED too.
+ * Recorded on `main` at fe151c8e, before the ground rule existed, with this script unchanged, and
+ * again when the shipped Token hitbox grew from 80% to 90%. Only a deliberate change to how a
+ * meadow places Tokens may change it, and then the engine bench reports WORK CHANGED too.
  */
-const MEADOW_FINGERPRINT = 'e03cfd41';
+const MEADOW_FINGERPRINT = 'ac138814';
 
 describe('⭐ a meadow Region places exactly as before (decision 15)', () => {
     beforeEach(freshGame);
@@ -231,9 +231,10 @@ describe('⭐ a meadow Region places exactly as before (decision 15)', () => {
  * became shapes and every biome brought its own (and again when the rivers calmed and the minor
  * biomes gained their small waters): new Regions get water, stored ones keep theirs. Recorded
  * again when the placement rounds grew natural groves, camps in a grove and treasures on islands:
- * new Regions place that way, stored ones keep their layout.
+ * new Regions place that way, stored ones keep their layout. Recorded again when the shipped Token
+ * hitbox grew from 80% to 90%: a layout keeps the placement rule's own gaps.
  */
-const LAYOUT_FINGERPRINT = '472c01cc';
+const LAYOUT_FINGERPRINT = 'a7909caf';
 
 registerTokenTypes({
     gm_oak: { id: 'gm_oak', name: 'GM Oak', tokenType: 'resource', size: 1, uses: 5, requiresHero: true, config: { skill: 'logging', skillRequired: 1, cycleTimeMs: 3000, inputs: [], outputs: [] } },

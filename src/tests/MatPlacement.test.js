@@ -86,28 +86,28 @@ const gap = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 // ---------------------------------------------------------------------------
 
 describe('how close two Tokens may sit (FP-63)', () => {
-    it('two small Tokens may sit 61.4 u apart, but not 61.0', () => {
-        expect(MatPlacement.minGap('mp_small', 'mp_small')).toBeCloseTo(61.2, 6);
+    it('two small Tokens may sit 69.8 u apart, but not 69.4', () => {
+        expect(MatPlacement.minGap('mp_small', 'mp_small')).toBeCloseTo(69.6, 6);
 
         placeAt('mp_small', 800, 600);
-        expect(MatPlacement.isLegal('mp_small', { x: 800 + 61.4, y: 600 })).toBe(true);
-        expect(MatPlacement.isLegal('mp_small', { x: 800 + 61.0, y: 600 })).toBe(false);
+        expect(MatPlacement.isLegal('mp_small', { x: 800 + 69.8, y: 600 })).toBe(true);
+        expect(MatPlacement.isLegal('mp_small', { x: 800 + 69.4, y: 600 })).toBe(false);
     });
 
-    it('a small beside a large needs 99.8, not 99.4', () => {
-        expect(MatPlacement.minGap('mp_small', 'mp_large')).toBeCloseTo(99.6, 6);
+    it('a small beside a large needs 113, not 112.6', () => {
+        expect(MatPlacement.minGap('mp_small', 'mp_large')).toBeCloseTo(112.8, 6);
 
         placeAt('mp_large', 800, 600);
-        expect(MatPlacement.isLegal('mp_small', { x: 800 + 99.8, y: 600 })).toBe(true);
-        expect(MatPlacement.isLegal('mp_small', { x: 800 + 99.4, y: 600 })).toBe(false);
+        expect(MatPlacement.isLegal('mp_small', { x: 800 + 113, y: 600 })).toBe(true);
+        expect(MatPlacement.isLegal('mp_small', { x: 800 + 112.6, y: 600 })).toBe(false);
     });
 
-    it('two large Tokens need 138', () => {
-        expect(MatPlacement.minGap('mp_large', 'mp_large')).toBeCloseTo(138, 6);
+    it('two large Tokens need 156', () => {
+        expect(MatPlacement.minGap('mp_large', 'mp_large')).toBeCloseTo(156, 6);
 
         placeAt('mp_large', 800, 600);
-        expect(MatPlacement.isLegal('mp_large', { x: 800 + 138, y: 600 })).toBe(true);
-        expect(MatPlacement.isLegal('mp_large', { x: 800 + 137.5, y: 600 })).toBe(false);
+        expect(MatPlacement.isLegal('mp_large', { x: 800 + 156, y: 600 })).toBe(true);
+        expect(MatPlacement.isLegal('mp_large', { x: 800 + 155.5, y: 600 })).toBe(false);
     });
 
     it('⭐ the Mat Tuner changes the rule for the very next drop, with no reload', () => {
@@ -116,7 +116,7 @@ describe('how close two Tokens may sit (FP-63)', () => {
 
         // More overlap allowed: the same spot becomes legal.
         setMatTuning('overlapPct', 70);
-        expect(MatPlacement.minGap('mp_small', 'mp_small')).toBeCloseTo(30.6, 6);
+        expect(MatPlacement.minGap('mp_small', 'mp_small')).toBeCloseTo(34.8, 6);
         expect(MatPlacement.isLegal('mp_small', { x: 800 + 61.0, y: 600 })).toBe(true);
 
         // A smaller hitbox shrinks it again: 40% of a 64 u art radius is 26 u
@@ -171,29 +171,29 @@ describe('where a dropped Token actually lands', () => {
         const sitting = placeAt('mp_small', 800, 600);
 
         // 40 u away: too close, and the nearest legal point is straight on out
-        // along the same line, at the 61.2 u limit.
+        // along the same line, at the 69.6 u limit.
         const res = Placement.placeTokenAt(instance('mp_small'), { x: 840, y: 600 });
 
         expect(res.success).toBe(true);
         expect(res.nudged).toBe(true);
         const landed = { x: res.x, y: res.y };
-        expect(gap(landed, sitting)).toBeGreaterThanOrEqual(61.2 - 1e-6);
+        expect(gap(landed, sitting)).toBeGreaterThanOrEqual(69.6 - 1e-6);
         // Nearest means nearest: it should not have wandered past the limit.
-        expect(gap(landed, sitting)).toBeLessThan(61.2 + 6);
+        expect(gap(landed, sitting)).toBeLessThan(69.6 + 6);
         // And it went the way it was pushed, not backwards over the other Token.
         expect(landed.x).toBeGreaterThan(sitting.x);
     });
 
     it('⭐ a boxed-in drop flies back, and the Token is still where it started', () => {
         // A lattice at exactly the minimum gap has no legal point inside it: the
-        // middle of any four is only 43 u from each.
+        // middle of any four is only 49 u from each.
         for (let r = 0; r < 7; r++) {
-            for (let c = 0; c < 7; c++) placeAt('mp_small', 700 + c * 61.2, 500 + r * 61.2);
+            for (let c = 0; c < 7; c++) placeAt('mp_small', 700 + c * 69.6, 500 + r * 69.6);
         }
         const before = BoardState.tokens().length;
 
         const homeless = instance('mp_small');
-        const res = Placement.placeTokenAt(homeless, { x: 700 + 3 * 61.2, y: 500 + 3 * 61.2 });
+        const res = Placement.placeTokenAt(homeless, { x: 700 + 3 * 69.6, y: 500 + 3 * 69.6 });
 
         expect(res.success).toBe(false);
         expect(res.full).toBe(true);
@@ -282,7 +282,7 @@ describe('dropping on a matching copy restocks it (FP-50, FP-87)', () => {
         // Nothing lost: the remaining 30 charges are standing right next to it.
         const leftover = BoardState.getTokenById(incoming.id);
         expect(leftover.usesRemaining).toBe(30);
-        expect(gap(leftover, copy)).toBeGreaterThanOrEqual(61.2 - 1e-6);
+        expect(gap(leftover, copy)).toBeGreaterThanOrEqual(69.6 - 1e-6);
         expect(gap(leftover, copy)).toBeLessThan(120);
     });
 
@@ -311,7 +311,7 @@ describe('dropping on a matching copy restocks it (FP-50, FP-87)', () => {
         // ⭐ The Token already down did NOT move: nothing displaces anything now.
         expect({ x: BoardState.getTokenById(copy.id).x, y: BoardState.getTokenById(copy.id).y })
             .toEqual({ x: 800, y: 600 });
-        expect(gap(BoardState.getTokenById(incoming.id), copy)).toBeGreaterThanOrEqual(61.2 - 1e-6);
+        expect(gap(BoardState.getTokenById(incoming.id), copy)).toBeGreaterThanOrEqual(69.6 - 1e-6);
     });
 });
 
@@ -339,13 +339,13 @@ describe('an arrival pushes instead of falling back (FP-17)', () => {
         // nearest-free fallback would also give a legal, overlap-free answer.
         expect(where).toMatchObject({ x: 1420, y: 300 });
         expect(where.pushed).toEqual([{ id: lone.id, x: expect.any(Number), y: 300 }]);
-        expect(1420 - where.pushed[0].x).toBeGreaterThanOrEqual(61.2);
+        expect(1420 - where.pushed[0].x).toBeGreaterThanOrEqual(69.6);
     });
 
     it('settles a packed block at fractional points (rounding each pass never settled)', () => {
         const ids = [];
         for (let r = -1; r <= 1; r++) {
-            for (let c = -3; c <= 3; c++) ids.push(placeAt('mp_small', 500 + c * 61.2, 800 + r * 61.2).id);
+            for (let c = -3; c <= 3; c++) ids.push(placeAt('mp_small', 500 + c * 69.6, 800 + r * 69.6).id);
         }
 
         const where = MatPlacement.forceSpot('mp_small', { x: 505, y: 790 });
@@ -363,7 +363,7 @@ describe('an arrival pushes instead of falling back (FP-17)', () => {
         const where = MatPlacement.forceSpot('mp_small', { x: 810, y: 600 }, { fixedIds: [hall.id] });
 
         expect(where.pushed).toEqual([]);
-        expect(gap(where, hall)).toBeGreaterThanOrEqual(61.2 - 1e-6);
+        expect(gap(where, hall)).toBeGreaterThanOrEqual(69.6 - 1e-6);
         expect(BoardState.getTokenById(hall.id)).toMatchObject({ x: 800, y: 600 });
     });
 

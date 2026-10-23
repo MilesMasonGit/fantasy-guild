@@ -221,3 +221,57 @@ locked rules above (one signature mechanic per skill; gathering differs by
 node behaviour, stations by what they produce) and confirm each loop with the
 owner. Deliverable: per skill, its states and their art, tool needs, timings,
 and how heroes treat each state (skip a depleted vein, wait for a sapling).
+
+⚠️ The mat is free placement: "nearby" is the 164 u reach, not tile
+neighbours (owner, 2026-10-22). Read older wording about "side neighbours"
+above in that light.
+
+### Today, as authored (2026-10-22)
+
+An Oak Forest spawns Oak Saplings (allowance 5, every 20 s, one Oak Seedling
+each); a Sapling grows into an Oak Tree in 30 s; the Tree has 5 charges and
+leaves the mat. A Copper Mine spawns up to 3 Copper Ore Veins, which leave
+when spent. A Wheat Field spawns Wheat Sprouts (a seed each) that ripen in
+30 s into Ripe Wheat (3 charges). The Coast turns into a Shrimp Coast and
+back. The engine already has a **refill** respawn (rest at 0 charges, refill
+in place) and a **regrow** respawn (become another Token that grows back);
+no content uses either yet.
+
+### Rulings this pass (owner interview, 2026-10-22)
+
+**All gathering skills**
+- **Nothing ready in reach: the hero waits silently** and works the first
+  Token that becomes ready. No countdown bubble. (Revisit per skill if one
+  needs otherwise.)
+
+**Forestry**
+- **Felled tree → Stump → Sapling → Tree, in place.** The last log turns the
+  Tree into a Stump; the Stump grows into a Sapling, the Sapling into a Tree.
+- **Logs per tree: several, per species** in the CMS (Oak about 5 as today).
+- **Art: Sapling, Tree and Stump per species** (a Stump per species, not
+  shared).
+- **A full Oak cycle takes about 5 minutes** (felled to harvestable); each
+  species has its own times in the CMS.
+- **Forests speed up nearby regrowth**: a Forest Token reduces the grow time
+  of Stumps and Saplings within reach. The player plants Forests to help the
+  trees around them come back faster.
+- **Forests replace groves.** ⚠️ Overturns the 2026-10-09 grove rule: trees no
+  longer speed each other up; only Forest Tokens do.
+- **A Forest helps its own species only** (an Oak Forest, Oaks): one Forest
+  Token per species.
+- **A Forest both plants and regrows.** It plants new saplings within reach
+  (up to its allowance) and makes felled trees within reach regrow. The
+  player either plants Forests for lots of trees to work, or demolishes one
+  to make room.
+- **Felled with no Forest in reach** (never had one, or it was demolished):
+  the Tree becomes a **Stump that does not regrow** until a Forest of its
+  species is in reach again. Clearing the stump is a demolish.
+- **Map trees**: a wooded Region's map places **wild Forests** among its
+  trees, which work exactly like planted ones (and can be demolished).
+- **Seeds**: **building a Forest costs seeds**. The Forest has **no upkeep**:
+  the **tree pays**. **A Stump spends one seedling from the Bank when it
+  regrows into a Sapling**; with none in the Bank the Stump is **stopped**
+  and waits. (Easier to understand than a Forest upkeep, owner.)
+- **Forests stack fully**, down to a **floor**: a tree never regrows faster
+  than a set fraction of its normal time (about a quarter; the number in the
+  CMS).

@@ -342,11 +342,11 @@ describe('the game\'s side of the layout (layoutInputs)', () => {
 
     it('lays out on the shipped mat, whatever this device\'s Mat Tuner says', () => {
         expect(shippedMat()).toEqual({ w: 1760, h: 1126 });
-        expect(shippedCrowding()).toEqual({ hitboxPct: 80, overlapPct: 40 });
+        expect(shippedCrowding()).toEqual({ hitboxPct: 90, overlapPct: 40 });
         setMatTuning('matSteps', 7);
         setMatTuning('hitboxPct', 60);
         expect(shippedMat()).toEqual({ w: 1760, h: 1126 });
-        expect(shippedCrowding()).toEqual({ hitboxPct: 80, overlapPct: 40 });
+        expect(shippedCrowding()).toEqual({ hitboxPct: 90, overlapPct: 40 });
     });
 
     it('asks about Cannot rules only when a Token in the budget has one', () => {
