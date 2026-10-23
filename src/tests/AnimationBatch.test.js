@@ -414,7 +414,7 @@ describe('loot hop (effect 4), ground shadow and the slide into a pile', () => {
         expect(poses.slice(-2).map(p => [p.x, p.y])).toEqual([[0, 0], [0, -1]]);
     });
 
-    it('steps the box, keeps the shadow on the ground, trails two copies, and scales nothing', () => {
+    it('steps the box, keeps the shadow on the ground, trails no copies (switched off), and scales nothing', () => {
         const box = lootBox();
         playLootArc(box, -120, 60, { unit: 2 });
         const hop = rec.calls.find(a => a.el === box);
@@ -424,11 +424,12 @@ describe('loot hop (effect 4), ground shadow and the slide into a pile', () => {
         const i = HOP_POSES / 2;
         const lift = lootHopPoses(-120, 60, 2)[i].lift;
         expect(ground.keyframes[i].transform).toBe(`translate(0px, ${lift * 2}px)`);
-        expect(box.querySelectorAll('[data-fx-copy^="white-dither"]')).toHaveLength(2);
+        // The afterimages ship switched off (`ui/utils/lootEffects.js`; on, in `LootEffectsOff.test.js`).
+        expect(box.querySelectorAll('[data-fx-copy]')).toHaveLength(0);
         expect(rec.calls.every(a => a.keyframes.every(k => !/scale/.test(k.transform || '') && k.opacity === undefined))).toBe(true);
     });
 
-    it('slides into its pile in three steps, then dissolves: half its pixels, a quarter, gone', () => {
+    it('slides into its pile in three steps and is hidden there (the dissolve is switched off)', () => {
         const box = lootBox();
         playAbsorptionSlide(box, 30, 0, { unit: 2 });
         const slide = rec.calls.find(a => a.el === box);
@@ -436,7 +437,8 @@ describe('loot hop (effect 4), ground shadow and the slide into a pile', () => {
             'translate(10px, 0px)', 'translate(20px, 0px)', 'translate(30px, 0px)', 'translate(30px, 0px)', 'translate(30px, 0px)', 'translate(30px, 0px)'
         ]);
         expect(slide.keyframes[5].visibility).toBe('hidden');
-        expect([...box.querySelectorAll('[data-fx-copy]')].map(c => c.getAttribute('data-fx-copy'))).toEqual(['dither-50', 'dither-25']);
+        // The dissolve ships switched off (`ui/utils/lootEffects.js`; on, in `LootEffectsOff.test.js`).
+        expect(box.querySelectorAll('[data-fx-copy]')).toHaveLength(0);
         expect(rec.calls.every(a => a.keyframes.every(k => !/scale/.test(k.transform || '') && k.opacity === undefined))).toBe(true);
     });
 });

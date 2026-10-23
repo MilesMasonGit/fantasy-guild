@@ -16,7 +16,7 @@ import { createRegionRecord } from '../state/StateSchema.js';
 import { DeckDndContext } from '../ui/dnd/DndKit.jsx';
 import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
-import { TerrainGridOverlay, GRID_LIT, GRID_DIM } from '../ui/components/board/TerrainGridOverlay.jsx';
+import { TerrainGridOverlay, GRID_FORBIDDEN } from '../ui/components/board/TerrainGridOverlay.jsx';
 import { MAT_Z } from '../ui/components/board/matLayers.js';
 import { clearMat } from './fixtures/mat.js';
 
@@ -30,7 +30,8 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 
 /**
  * ⭐ **The grid while placing** (terrain roadmap T4, TD-5 A): with a Token in the hand, the cells
- * it may stand on light up and the rest dim, drawn once at pickup under the Tokens and gone at the
+ * it may not stand on take a soft red tint and the rest stay clear (owner: no wash over the
+ * allowed mat), drawn once at pickup under the Tokens and gone at the
  * drop; only when that Token cannot stand everywhere here (it has a "Stands on", or the Region has
  * water). The cells are placement's own (`GroundRules`), never a second reading of the ground.
  *
@@ -86,8 +87,9 @@ function overlay(drag) {
     return render(h(DeckDndContext.Provider, { value: drag }, h(TerrainGridOverlay, { mat: MAT })));
 }
 const gridCanvas = (container) => container.querySelector('canvas[data-terrain-grid]');
-const pixelIsLit = (data, i) => data[i * 4] === GRID_LIT[0] && data[i * 4 + 3] > 0 && data[i * 4 + 1] === GRID_LIT[1];
-const pixelIsDim = (data, i) => data[i * 4] === GRID_DIM[0] && data[i * 4 + 1] === GRID_DIM[1];
+/** An allowed cell: nothing painted at all. */
+const pixelIsClear = (data, i) => data[i * 4 + 3] === 0;
+const pixelIsForbidden = (data, i) => data[i * 4] === GRID_FORBIDDEN[0] && data[i * 4 + 1] === GRID_FORBIDDEN[1] && data[i * 4 + 3] > 0;
 
 describe('⭐ the grid shows only while a Token is in the hand, and only per TD-5', () => {
     it('nothing in the hand: no grid', () => {
@@ -119,7 +121,7 @@ describe('⭐ the grid shows only while a Token is in the hand, and only per TD-
         expect(drawn.length).toBe(0);
     });
 
-    it('a Token that needs rock, on the meadow: the grid, every cell dim, covering the whole mat', () => {
+    it('a Token that needs rock, on the meadow: the grid, every cell tinted, covering the whole mat', () => {
         standOn(null);
         const { container } = overlay(held('tg_rock'));
         const canvas = gridCanvas(container);
@@ -127,7 +129,15 @@ describe('⭐ the grid shows only while a Token is in the hand, and only per TD-
         expect(parseFloat(canvas.style.width)).toBe(MAT.w);
         expect(parseFloat(canvas.style.height)).toBe(MAT.h);
         const { data } = drawn[0].image;
-        for (let i = 0; i < data.length / 4; i++) expect(pixelIsDim(data, i)).toBe(true);
+        for (let i = 0; i < data.length / 4; i++) expect(pixelIsForbidden(data, i)).toBe(true);
+    });
+
+    it('a ground rule that forbids no cell here: no grid, nothing drawn', () => {
+        const real = GroundRules.rulesFor('tg_water');
+        vi.spyOn(GroundRules, 'rulesFor').mockReturnValue({ ...real, mask: new Uint8Array(real.mask.length).fill(1) });
+        const { container } = overlay(held('tg_water'));
+        expect(gridCanvas(container)).toBeNull();
+        expect(drawn.length).toBe(0);
     });
 
     it('the drop clears it', () => {
@@ -138,7 +148,7 @@ describe('⭐ the grid shows only while a Token is in the hand, and only per TD-
     });
 });
 
-describe('⭐ the lit cells are exactly the ones placement allows', () => {
+describe('⭐ the clear cells are exactly the ones placement allows, the tinted ones the rest', () => {
     /** Every cell centre a Token fits at, away from the mat's edge. */
     function* fittingCells() {
         const r = artRadiusOf('tg_plain');
@@ -153,24 +163,24 @@ describe('⭐ the lit cells are exactly the ones placement allows', () => {
     }
 
     for (const typeId of ['tg_water', 'tg_shore', 'tg_rock', 'tg_plain']) {
-        it(`${typeId}: one pixel per cell, lit where a drop lands as aimed and dim where it does not`, () => {
+        it(`${typeId}: one pixel per cell, clear where a drop lands as aimed and tinted where it does not`, () => {
             const { container } = overlay(held(typeId));
             const canvas = gridCanvas(container);
             expect(canvas.width).toBe(GRID.cols);
             expect(canvas.height).toBe(GRID.rows);
             const { data } = drawn.find(d => d.canvas === canvas).image;
-            let lit = 0;
-            let dim = 0;
+            let clear = 0;
+            let tinted = 0;
             for (const cell of fittingCells()) {
                 // Placement itself, on an empty mat: a spot exactly where it was aimed.
                 const spot = MatPlacement.findSpot(typeId, { x: cell.x, y: cell.y });
                 const allowed = !!spot && spot.nudge === 0;
-                expect(pixelIsLit(data, cell.index), `cell ${cell.index}`).toBe(allowed);
-                expect(pixelIsDim(data, cell.index), `cell ${cell.index}`).toBe(!allowed);
-                if (allowed) lit++; else dim++;
+                expect(pixelIsClear(data, cell.index), `cell ${cell.index}`).toBe(allowed);
+                expect(pixelIsForbidden(data, cell.index), `cell ${cell.index}`).toBe(!allowed);
+                if (allowed) clear++; else tinted++;
             }
-            expect(lit).toBeGreaterThan(0);
-            expect(dim).toBeGreaterThan(0);
+            expect(clear).toBeGreaterThan(0);
+            expect(tinted).toBeGreaterThan(0);
         });
     }
 

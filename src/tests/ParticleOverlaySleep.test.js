@@ -74,8 +74,8 @@ describe('ParticleOverlay sleeps when empty (CR3-010)', () => {
         expect(queue.length).toBe(1);
 
         const frames = runUntilAsleep();
-        // It ran the flight (~0.65–0.8 s) and the sparkles' fade, then stopped.
-        expect(frames).toBeGreaterThan(30);
+        // It ran the flight (~0.45–0.8 s here; the plink after it ships switched off), then stopped.
+        expect(frames).toBeGreaterThan(20);
         expect(frames).toBeLessThan(2000);
         expect(queue.length).toBe(0);
 

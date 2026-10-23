@@ -17,6 +17,7 @@ import { useMatFit } from './MatFitContext.jsx';
 import { boardScaleAt } from '../base/TokenSprite.jsx';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 import { isDrawn } from '../../dev/perf/drawSwitches.js';
+import { LOOT_RARE_TWINKLE, LOOT_PILE_PULSE } from '../../utils/lootEffects.js';
 
 /**
  * SpriteLayerView: item loot floating **above** the mat. An absolutely-positioned overlay over
@@ -38,7 +39,7 @@ export const SpriteLayerView = () => {
     );
 
     const collect = useCallback((id) => { SpriteLayer.collectSprite(id); }, []);
-    React.useEffect(() => watchRareDrops(), []);
+    React.useEffect(() => (LOOT_RARE_TWINKLE ? watchRareDrops() : undefined), []);
 
     if (!sprites?.length) return null;
 
@@ -115,7 +116,7 @@ const LootSprite = React.memo(function LootSprite({
 
     // Before the first paint, so the item is never seen at its landing spot before it hops there.
     React.useLayoutEffect(() => {
-        const rare = takeRareDrop(id);
+        const rare = LOOT_RARE_TWINKLE && takeRareDrop(id);
         if (!justThrown(bornAt)) return;
         const fx = Math.round((fromX ?? x) - x);
         const fy = Math.round((fromY ?? y) - y);
@@ -145,6 +146,7 @@ const LootSprite = React.memo(function LootSprite({
     }, [targetStackId, bornAt, x, y, parentX, parentY]);
 
     React.useEffect(() => {
+        if (!LOOT_PILE_PULSE) return undefined;
         const unsub = EventBus.subscribe(BOARD_EVENTS.SPRITE_ABSORBED, (payload) => {
             if (payload?.parentId === id) {
                 setIsAbsorbingPulse(true);
