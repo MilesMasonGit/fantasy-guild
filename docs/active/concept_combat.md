@@ -137,3 +137,25 @@ Differs from GDD §6 in places; the code wins:
   always does at least 1.
 - **The weapon sets attack speed**, in three steps: fast 2 s (daggers,
   wands), normal 3 s (swords, bows), slow 4 s (two-handers, hitting harder).
+- **Fixed hits, rare misses and crits**: a weapon always hits for its number;
+  about 1 swing in 10 misses, about 1 in 20 crits for double, each shown
+  ("Miss", "Crit!"). No damage spread.
+- **An even fight is a duel: 10+ swings, 30 s or more** (a hero against an
+  enemy of its tier). Supplies matter. ⚠️ Longer fights mean more steps in
+  offline catch-up; check against the envelope (GDD §14) when briefing.
+- **Recruits punch for 1** every 3 s, barehanded: no weapons, no style, no
+  combat XP. Promotion is how a hero really fights.
+- **Weapons belong to styles; a hero uses only their own style's weapons.**
+  Some weapons carry more than one style (a Dagger is Melee and Stealth, so
+  a Fighter or a Rogue can use it).
+- **No regen in fights**: mid-fight, only food and potions heal. Outside
+  fights about 1 HP every 10 s.
+- **Enemy numbers: the level fills them, the CMS overrides.** The author
+  picks a level, the CMS fills HP, hit, armour and speed for that tier, and
+  any of them can be changed per enemy. Enemies gain an armour field.
+- **Level gap matters a little, through misses**: base miss 10 %, moving
+  between about 5 % and 25 % with the gap, plus the small damage step.
+- **Defeat keeps today's cost** (amends D2's "gear never breaks"): 25 % of
+  each carried food and drink stack lost, a 10 % chance per gear piece to be
+  lost, wounded 5 minutes, back at half HP. Gear still never wears out; it
+  can only be lost on a knockout.
