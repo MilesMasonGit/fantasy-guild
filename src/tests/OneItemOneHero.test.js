@@ -21,6 +21,7 @@ import { starterToolIds } from '../config/registries/toolKinds.js';
 import { makeStatement, KEYWORD } from '../systems/effects/statements.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { equipOrAnnounce, unequipOrAnnounce } from '../ui/components/dock/dockEquip.js';
+import { devFillBank, shareOneToolOldStyle } from '../ui/dev/gearDev.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -510,5 +511,39 @@ describe('saves', () => {
         expect(loaded.heroes[0].equipment[0]).toBe('oo_pick');
         expect(bank('oo_pick')).toBe(2);
         expect(Banners.getAll()).toEqual([]);
+    });
+});
+
+describe('the QA panel\'s gear checks (dev only)', () => {
+    beforeEach(() => wireNotifications());
+    afterEach(() => unwireNotifications());
+
+    it('Fill the Bank takes every free slot, so a held copy meets a full Bank', () => {
+        const aela = addHero('Aela');
+        give('oo_pick', 1);
+        equipOk(aela.id, 'oo_pick');
+        expect(devFillBank()).toBeGreaterThan(0);
+        expect(InventoryManager.lacksSlotFor('oo_pick')).toBe(true);
+        expect(EquipmentManager.unequipItem(aela.id, slotOf(aela, 'oo_pick')).success).toBe(false);
+    });
+
+    it('the shared-tool save loads as an older save: the first hero keeps it, the rest lose it, one notice', async () => {
+        const [aela] = ['Aela', 'Bram', 'Cara'].map(n => addHero(n));
+        give('oo_pick', 1);
+        equipOk(aela.id, 'oo_pick');
+        const data = JSON.parse(GameState.serializeJson());
+        expect(shareOneToolOldStyle(data, 'oo_pick')).toBe(3);
+        localStorage.setItem(SaveManager.getSlotKey(0), JSON.stringify(data));
+
+        expect(await SaveManager.loadSlot(0, { catchUp: false })).toBe(true);
+        const [la, lb, lc] = GameState.state.heroes;
+        expect([la.name, lb.name, lc.name]).toEqual(['Aela', 'Bram', 'Cara']);
+        expect(la.equipment).toContain('oo_pick');
+        expect(lb.equipment).not.toContain('oo_pick');
+        expect(lc.equipment).not.toContain('oo_pick');
+        expect(bank('oo_pick')).toBe(0);
+        const banners = Banners.getAll();
+        expect(banners).toHaveLength(1);
+        expect(banners[0].line).toContain('Bram lost Test Pickaxe, Cara lost Test Pickaxe');
     });
 });
