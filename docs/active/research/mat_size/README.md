@@ -1,4 +1,17 @@
-# Mat size: today and the candidates (T-211, stage 1)
+# Mat size: the candidates and the pick (T-211)
+
+**The owner picked b: 12 × 6.5 steps, 1920 × 1040 u**, and it is now the game's mat. Pictures from
+the running game after the change, taken 2026-10-23:
+
+- `after_b_1920.png`, `after_b_1366.png`: a fresh New Game on the new mat (zoom 0.92 and 0.63,
+  Token art 128 and 64 px, exactly as `b_1920.png` and `b_1366.png` below predicted).
+- `oldsave_before_1920.png`: a save made on the old 1760 × 1126 mat with three Oak Forests along
+  its bottom edge (y 1050, 1050 and 1000).
+- `oldsave_after_b_1920.png`: the same save opened with the slot screen's Load button on the new
+  mat: the three Forests are pulled up to y 976, just inside the new edge; every Token is on the mat.
+
+The rest of this page is the comparison the owner picked from.
+
 
 Pictures of the whole game window on a fresh New Game, one per mat size and window size, taken
 2026-10-22 from the dev build. **Nothing is baked yet**: the owner picks, then stage 2 makes it the
