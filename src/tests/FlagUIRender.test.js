@@ -175,8 +175,8 @@ describe('the reach ring (FP-64, A-4)', () => {
     it('is drawn at the flag with the live radius while its hero is hovered', () => {
         setMatTuning('flagRadius', 450);
         const { container } = mount(h(FlagLayer, { hoverHeroId: 'h1' }));
-        expect(ring(container).getAttribute('r')).toBe('450');
-        expect(ring(container).getAttribute('cx')).toBe(String(BESIDE.x));
+        expect(ring(container).getAttribute('data-r')).toBe('450');
+        expect(ring(container).getAttribute('data-cx')).toBe(String(BESIDE.x));
     });
 
     it('is drawn while the hero is inspected', () => {
@@ -186,7 +186,7 @@ describe('the reach ring (FP-64, A-4)', () => {
 
     it('follows a drag to where the flag would land', () => {
         const { container } = mount(h(FlagLayer, { dragRing: { heroId: 'h1', ...ELSEWHERE } }));
-        expect(ring(container).getAttribute('cy')).toBe(String(ELSEWHERE.y));
+        expect(ring(container).getAttribute('data-cy')).toBe(String(ELSEWHERE.y));
     });
 
     it('hovering the flag itself draws it', () => {

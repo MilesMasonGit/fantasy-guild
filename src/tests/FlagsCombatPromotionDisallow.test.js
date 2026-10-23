@@ -42,7 +42,7 @@ vi.mock('../systems/combat/DefeatPenalties.js', () => ({
  * ⭐ Free Playmat slice 1.4c — combat flags, promotion offers, disallow.
  *
  * ⚠️ Laid out on the old reaches — flag radius 400 u, Near 272 u (a Token on a
- * diagonal) — so `beforeEach` sets both. Both ship at 164 u.
+ * diagonal) — so `beforeEach` sets both. The flag radius ships at 240 u, Near at 164 u.
  */
 
 /**
