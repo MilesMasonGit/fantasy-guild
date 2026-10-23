@@ -9,8 +9,8 @@ build green) · bench-queued · eye-check · merged.*
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| B1: quieter Tokens: name badge below the Token, no ring under movable Tokens, no quest-ready glow, no tutorial beacons (T-218 to T-220) | builder | `backlog/quiet-tokens` (`bq`) | building | Fri | |
-| B2: drag and loot without the wash: only forbidden cells tinted while dragging; loot lands without afterimages, twinkles or bursts (turned off, kept) (T-217, T-221) | builder | `backlog/drag-loot` (`bd`) | building | Fri | |
+| B1: quieter Tokens: name badge below the Token, no ring under movable Tokens, no quest-ready glow, no tutorial beacons (T-218 to T-220) | builder | `backlog/quiet-tokens` (`bq`) | round 1 ready (5e2b3084): names below Tokens, movable ring, quest glow and the tutorial overlay removed (step 1 played through without beacons). Director's gate 5751 tests (fewer: the overlay's tests went with it), cycles, build, **same work** (S4/S5 timings after the suite: noise). **Owner by phone:** heroes' names below too; tips over the name: leave; done quests unmarked until the tutorial redesign: ok. Builder flipping heroes | Fri | |
+| B2: drag and loot without the wash: only forbidden cells tinted while dragging; loot lands without afterimages, twinkles or bursts (turned off, kept) (T-217, T-221) | builder | `backlog/drag-loot` (`bd`) | round 1 ready (60745a5b): forbidden cells only, soft red; three loot switches off in `lootEffects.js`. Director's gate 5777 tests, cycles, build, **same work** (S2/S6 p99 ×1.25–1.34 beside a running agent; the engine bench runs no drawing code: noise). **Owner by phone:** tint ok, loot shadow keep, **both pile effects off too** (dissolve, brightness pulse): builder adding two switches | Fri | |
 | B3: an enemy or flag picked up flies in from the screen's corner (T-222); after B1 (shares `MatToken.jsx`); drag bench | builder | `backlog/pickup-flight` | queued, after B1 | | |
 
 ## Backlog director, batch A: the mat and its top bar (brief 210; owner chose and said go 2026-10-22 evening) — **done, merged cd9d2f2c**
