@@ -58,10 +58,6 @@ Detail, order and tiers in [brief 210](../active/briefs/210_backlog_intake.md); 
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
-| T-211 | P2 | open | **Mat a little wider and shorter** (MAT-01). Bench sizes first; WORK CHANGED and old-save edges. Engineer. Eye-check. | brief 210 A1 |
-| T-212 | P3 | open | **Top bar: the Region banner art as the bar background**, fading out to the right, no badge (TOPBAR-01). Eye-check. | brief 210 A2 |
-| T-213 | P3 | open | **Top bar: larger text and icons** (TOPBAR-02). Eye-check. | brief 210 A2 |
-| T-214 | P3 | open | **Top bar as wide as the mat**; Tokens/Upkeep centred; Disallow/Demolish at the mat edge (TOPBAR-03). Eye-check. | brief 210 A2 |
 | T-217 | P3 | open | **Drag: paint only forbidden cells**, allowed cells stay clear (DRAG-01). Eye-check. | brief 210 B2 |
 | T-218 | P3 | open | **Token name badge below the Token** (TOKEN-02). Eye-check. | brief 210 B1 |
 | T-219 | P3 | open | **Remove the ring under movable Tokens** (TOKEN-03). Eye-check. | brief 210 B1 |

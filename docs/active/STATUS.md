@@ -5,7 +5,15 @@ five-line summary at each batch's edges (proposed, looked at); anything older
 than two days is trimmed. States: queued · building · ready (tests, cycles,
 build green) · bench-queued · eye-check · merged.*
 
-## Backlog director, batch A: the mat and its top bar (brief 210; owner chose and said go 2026-10-22 evening)
+## Backlog director, batch B: clean-ups on the mat (brief 210; owner said go 2026-10-23)
+
+| Phase | Tier | Branch (worktree) | State | Planned | Done |
+|---|---|---|---|---|---|
+| B1: quieter Tokens: name badge below the Token, no ring under movable Tokens, no quest-ready glow, no tutorial beacons (T-218 to T-220) | builder | `backlog/quiet-tokens` (`bq`) | building | Fri | |
+| B2: drag and loot without the wash: only forbidden cells tinted while dragging; loot lands without afterimages, twinkles or bursts (turned off, kept) (T-217, T-221) | builder | `backlog/drag-loot` (`bd`) | building | Fri | |
+| B3: an enemy or flag picked up flies in from the screen's corner (T-222); after B1 (shares `MatToken.jsx`); drag bench | builder | `backlog/pickup-flight` | queued, after B1 | | |
+
+## Backlog director, batch A: the mat and its top bar (brief 210; owner chose and said go 2026-10-22 evening) — **done, merged cd9d2f2c**
 
 Owner away from the PC 2026-10-23 to 2026-10-25, rulings 2026-10-22: **looks
 by phone screenshots, the owner's ok merges** (hands-on feel listed for their
@@ -14,9 +22,9 @@ time, never beside a build); design questions answered any time.
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| A1: mat a little wider and shorter (T-211); 2–3 sizes shown as captures before baking; old saves checked for Tokens off the mat; WORK CHANGED expected | engineer | `backlog/mat-size` (`bm`) | stage 1 done (captures, a dev-only Mat shape row); **owner picked (b) 12 × 6.5 = 1920 × 1040** from the phone captures; stage 2 ready (0a36e93c): bench boards pin their own 11 × 0.64 mat, (b) baked, load and travel pull Tokens inside before the catch-up, a stored dev-tuner 11 retired (director's catch). Director's gate: 5767 tests, cycles, build; work check **same work** (S2 p99 ×1.20 beside a running agent: noise). Combined with A2 on `p23b` (926f6e85) for one phone look | Thu | |
+| A1: mat a little wider and shorter (T-211) | engineer | `backlog/mat-size` | **merged** 484ba572 (main cd9d2f2c). Owner picked (b) 12 × 6.5 = 1920 × 1040 from phone captures; bench boards pin their own 11 × 0.64 mat; load and travel pull Tokens inside before the catch-up; a stored dev-tuner 11 retired (director's catch). Gate 5770 tests, cycles, build; work check **same work** (first-run timings S4–S6 ×1.2–1.3 straight after a suite, re-runs ×1.04–1.17, `main` control ×1.09: noise) | Thu | Fri |
 | A3: more room between Tokens, flag reach 164 → 240, a crisp gold pixel reach ring (T-215, T-216); WORK CHANGED expected | builder | `backlog/flag-reach` (`bf`) | **merged** 70e04760 (main 1a61d85e). Gate: 5758 tests, cycles, build; **owner ok by phone** (one-pixel ring as it is, hitbox 90 % right, enemies at 240 fine for now). Work check: WORK CHANGED on every scenario; a control run with 164 and 80 put back was same work, so accepted under T-215+T-216 in `bench/baseline.json`. Timings read S4 refusedWorst ×1.5, S6 p99 ×1.24 beside a running agent: different work, noise | Thu | Fri |
-| A2: top bar on the Region's banner, larger text, as wide as the mat (T-212 to T-214); after A1 | builder | `backlog/top-bar` (`bt`) | ready (8cbce348): bar 76 px (was 44) as wide as the mat, Region banner behind the name at 1×, title-size text, 32 px icons; a mode's banner takes the centre while on (builder's call). Combined with A1 on `p23b` (926f6e85): gate 5770 tests, cycles, build, **same work** (S4–S6 timings ×1.24 once, then ×1.04–1.17 twice and `main` ×1.09 as control: noise). **Owner's phone look:** keep the mode banner in the centre; make the Region name bigger to fill the bar and the banner art larger, stretching further across. Builder making both on `backlog/top-bar` (with the mat branch merged in); both merge together after the next look | Fri | |
+| A2: top bar on the Region's banner, larger, as wide as the mat (T-212 to T-214) | builder | `backlog/top-bar` | **merged** cd9d2f2c. Bar 76 px as wide as the mat; Region name at display size (`ui-text-bar-name`, UI_STYLE line); banner at 2× across the left column; a mode's warning takes the centre (owner: keep). Owner ok by phone after one round. Eye-check record: `docs/archive/eyecheck/2026-10-23_backlog-A.md` | Fri | Fri |
 | Tidy-up (owner 2026-10-22: yes): remove the finished `ar` worktree; delete local branches fully merged into `main` (`git branch -d` only) | director | — | done: `ar` removed (junctions unlinked first, real packages intact); 134 merged branches deleted with `-d`; kept the two unmerged ones, `atlas-wip` and `crunch/style-p2` (the dropped shadows, a record) | Thu | Thu |
 
 ## Features director, the Envelope (brief 90) (owner 2026-10-21: cleared for 13:00; any issue found becomes a ticket for the next pass)
@@ -238,6 +246,13 @@ T-186; the badges' soft shadows are settled inside T-013.)
 8. ~~Terrain director: bench baseline retake~~ **Done:** engine 2026-10-21 13:00 (f19a2e30), draw 2026-10-22 01:00 (db3959c4).
 
 ## Summaries
+
+**Fri 2026-10-23: batch A looked at and merged, batch B proposed and started.**
+Where we are: the wider, shorter mat (12 × 6.5), the top bar on the Region
+banner, flag reach 240 with a gold ring and roomier Tokens are on `main`
+cd9d2f2c, all okayed by phone. Next: batch B (quieter Tokens, drag and loot
+clean-up, then the corner-flight bug). Owner: hands-on list for their return
+in the A eye-check record. Blockers: none.
 
 **Thu 2026-10-22, evening: Backlog director read in, batch A proposed.**
 Where we are: `main` 31d5c780 passes the suite (5751), every worktree is

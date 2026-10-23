@@ -147,3 +147,7 @@ T-154 — A picked-up Token flies to the cursor — fa214742 — 2026-10-21
 T-155 — World spawns hop out of their parent — fa214742 — 2026-10-21
 T-215 — Bigger Token hitboxes: hitboxPct 80 → 90, overlap 40 (owner ok by phone) — 70e04760 — 2026-10-23
 T-216 — Flag reach 164 → 240 with a crisp one-pixel gold ring over a hard shadow (owner ok by phone); enemies notice flags at the same reach, for combat planning — 70e04760 — 2026-10-23
+T-211 — Mat 12 by 6.5 steps (1920 x 1040), the owner's pick from four sizes; load and travel pull Tokens inside; bench boards pin their own mat — 484ba572 — 2026-10-23
+T-212 — Top bar: the Region banner at 2x behind the name, fading right, no badge (owner ok by phone after one round) — cd9d2f2c — 2026-10-23
+T-213 — Top bar: 76 px tall, Region name at display size, title-size text, 32 px icons — cd9d2f2c — 2026-10-23
+T-214 — Top bar as wide as the mat; Tokens and Upkeep centred, a mode's warning takes the centre while on; Disallow and Demolish at the mat edge — cd9d2f2c — 2026-10-23
