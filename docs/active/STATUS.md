@@ -5,7 +5,18 @@ five-line summary at each batch's edges (proposed, looked at); anything older
 than two days is trimmed. States: queued · building · ready (tests, cycles,
 build green) · bench-queued · eye-check · merged.*
 
-## Backlog director, batch B: clean-ups on the mat (brief 210; owner said go 2026-10-23)
+## Backlog director, batch C: Bank, items and the hero bar (brief 210; owner said go 2026-10-23)
+
+Owner rulings 2026-10-23: a full Bank **refuses** an unequip (or dismissal) with a message, nothing lost or over the limit; old saves' shared copies go to heroes in roster order, slots the Bank can't cover emptied, one notice.
+
+| Phase | Tier | Branch (worktree) | State | Planned | Done |
+|---|---|---|---|---|---|
+| C1: item tiles that say what they are: Bank inspect pane out, search in the header, full tooltip, category tints, slot icons (T-223 to T-225) | builder | `backlog/item-tiles` (`ci`) | building | Fri | |
+| C3: one item, one hero: equipping moves the copy out of the Bank (T-230); tests first; WORK CHANGED possible | engineer | `backlog/one-item-one-hero` (`ce`) | building | Fri | |
+| C2: hero bar portrait + name, shine on equip, Work Permissions button and drawer (T-226 to T-228); after C1 | builder | — | queued | | |
+| C4: "New!" on an item stub clears on hover or pin (T-229); no eye-check | builder-lite | — | queued | | |
+
+## Backlog director, batch B: clean-ups on the mat (brief 210; owner said go 2026-10-23) — **done, merged b0528da0**
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
@@ -248,6 +259,12 @@ T-186; the badges' soft shadows are settled inside T-013.)
 8. ~~Terrain director: bench baseline retake~~ **Done:** engine 2026-10-21 13:00 (f19a2e30), draw 2026-10-22 01:00 (db3959c4).
 
 ## Summaries
+
+**Fri 2026-10-23, evening: batch B merged, batch C started.** Where we
+are: quieter Tokens, drag and loot clean-up and the corner-flight fix are on
+`main` b0528da0, okayed by phone; draw cost compare running. Next: C1 item
+tiles and C3 one item, one hero in parallel, then C2 and C4. Owner: nothing
+until the screenshots. Blockers: none.
 
 **Fri 2026-10-23: batch A looked at and merged, batch B proposed and started.**
 Where we are: the wider, shorter mat (12 × 6.5), the top bar on the Region
