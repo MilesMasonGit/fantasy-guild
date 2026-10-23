@@ -151,3 +151,8 @@ T-211 — Mat 12 by 6.5 steps (1920 x 1040), the owner's pick from four sizes; l
 T-212 — Top bar: the Region banner at 2x behind the name, fading right, no badge (owner ok by phone after one round) — cd9d2f2c — 2026-10-23
 T-213 — Top bar: 76 px tall, Region name at display size, title-size text, 32 px icons — cd9d2f2c — 2026-10-23
 T-214 — Top bar as wide as the mat; Tokens and Upkeep centred, a mode's warning takes the centre while on; Disallow and Demolish at the mat edge — cd9d2f2c — 2026-10-23
+T-217 — While dragging, only cells a Token can't stand on are tinted (soft red); allowed cells clear; no canvas when nothing is forbidden (owner ok by phone) — af6b21c7 — 2026-10-23
+T-218 — Names under Tokens and heroes, centred under the box (owner picked heroes below too) — 6c28d269 — 2026-10-23
+T-219 — No ring under movable Tokens; the grab cursor alone tells movable from fixed — 6c28d269 — 2026-10-23
+T-220 — No quest-ready glow; the tutorial beacon overlay removed (in git history for the redesign) — 6c28d269 — 2026-10-23
+T-221 — Loot lands plainly: afterimages, rare twinkle, flight sparkles, pile dissolve and pile pulse switched off in lootEffects.js (owner: shadow kept) — af6b21c7 — 2026-10-23

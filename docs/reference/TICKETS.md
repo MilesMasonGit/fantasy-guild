@@ -58,11 +58,6 @@ Detail, order and tiers in [brief 210](../active/briefs/210_backlog_intake.md); 
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
-| T-217 | P3 | open | **Drag: paint only forbidden cells**, allowed cells stay clear (DRAG-01). Eye-check. | brief 210 B2 |
-| T-218 | P3 | open | **Token name badge below the Token** (TOKEN-02). Eye-check. | brief 210 B1 |
-| T-219 | P3 | open | **Remove the ring under movable Tokens** (TOKEN-03). Eye-check. | brief 210 B1 |
-| T-220 | P3 | open | **Remove the quest-ready glow and the tutorial beacon rings** (QUEST-01). Eye-check. | brief 210 B1 |
-| T-221 | P2 | open | **Turn off loot afterimages, twinkles and particle bursts** on task loot (LOOT-01; better effect later, T-196). Eye-check. | brief 210 B2 |
 | T-222 | P1 | open | **Bug: an enemy or flag pickup flies its ghost in from the screen top-left** (DRAG-02). Drag bench. | brief 210 B3 |
 | T-223 | P2 | open | **Bank: retire the inspect pane, search in the tab header, full item tooltips** with Equippable badge (BANK-01). Eye-check. | brief 210 C1 |
 | T-224 | P3 | open | **Item tiles tinted by category, lighter on hover** (ITEM-01). Eye-check. | brief 210 C1 |
