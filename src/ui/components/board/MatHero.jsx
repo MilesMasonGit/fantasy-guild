@@ -272,8 +272,8 @@ const MatHeroBody = memo(function MatHeroBody({
                 </div>
             )}
             {barShown && barsDrawn && <HeroHealthBar heroId={heroId} artPx={artPx} />}
-            {/* Over the bar's spot whether or not the bar is up, so the name never jumps. */}
-            <TokenNameBadge name={name} shown={rested && !heroCarried} lift={-heroBarPlace(artPx).top} />
+            {/* Under the feet: the art reaches past the hero's box by half their difference. */}
+            <TokenNameBadge name={name} shown={rested && !heroCarried} below offset={(artPx - FLAG_PX) / 2} />
         </button>
     );
 });

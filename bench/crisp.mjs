@@ -131,12 +131,6 @@ const CASES = [
         stop: `(() => { document.getElementById('crisp-case')?.remove(); const el = document.querySelector('[data-crisp-case]'); el.classList.remove('gi-transform-flash'); el.style.animationDuration = ''; delete el.dataset.crispCase; return true; })()`
     },
     {
-        id: 'quest',
-        what: 'a done quest breathing (gi-quest-ready) behind its art',
-        start: `(() => { const { art } = ${BACK}; const g = document.createElement('div'); g.id = 'crisp-case'; g.className = 'gi-quest-ready absolute pointer-events-none'; g.style.inset = '-22%'; art.insertBefore(g, art.firstChild); return true; })()`,
-        stop: `(document.getElementById('crisp-case')?.remove(), true)`
-    },
-    {
         id: 'gear',
         what: 'a recipe gear pulsing (gi-gear-pulse) in its badges',
         start: `(() => { const { badges } = ${BACK}; const g = document.createElement('div'); g.id = 'crisp-case'; g.className = 'gi-gear-pulse absolute left-0 top-0'; g.style.cssText += 'width:28px;height:28px;background:#888'; badges.appendChild(g); return true; })()`,

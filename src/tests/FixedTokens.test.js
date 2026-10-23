@@ -30,10 +30,9 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 
 /**
  * ⭐ **Fixed and movable Tokens** (Atlas D-6 B): map nodes, planted trees and the endgame sites
- * stay where they are. Nothing drags, bins or pushes them. Everything bought or built moves and
- * carries the faint marker; enemies and quests move as they always have.
- * The Guild Hall is the exception to D-6 (T-148): the player drags it like a bought Token, with
- * the marker, but nothing else ever pushes it, and it never leaves the mat or is demolished.
+ * stay where they are. Nothing drags, bins or pushes them. Everything bought or built moves;
+ * enemies and quests move as they always have.
+ * The Guild Hall is the exception to D-6 (T-148): the player drags it like a bought Token, but nothing else ever pushes it, and it never leaves the mat or is demolished.
  */
 
 const base = { tokenType: 'resource', rarity: 'common', theme: 'fixture', sprite: 's_nature', uses: null };
@@ -100,18 +99,6 @@ describe('⭐ what is fixed (D-6 B)', () => {
         expect(FixedTokens.isFixed(spawnedAt('fixture_producer', 300, 300))).toBe(false);
         expect(FixedTokens.isFixed(spawnedAt('fx_enemy', 600, 300))).toBe(false);
         expect(FixedTokens.isFixed(spawnedAt(QUEST_TOKEN_TYPE, 900, 300))).toBe(false);
-    });
-});
-
-describe('⭐ only movable Tokens carry the marker', () => {
-    it('a bought Token and the Guild Hall do; a fixed one, an enemy and a quest do not', () => {
-        expect(FixedTokens.showsMoveMarker(placeAt('fixture_producer', 300, 300))).toBe(true);
-        expect(FixedTokens.showsMoveMarker(spawnedAt('fixture_producer', 500, 300))).toBe(true);
-        expect(FixedTokens.showsMoveMarker(fixtureAt('fixture_producer', 700, 300))).toBe(false);
-        expect(FixedTokens.showsMoveMarker(placeAt('token_guild_hall', 900, 600))).toBe(true);
-        expect(FixedTokens.showsMoveMarker(spawnedAt('fx_sapling', 1100, 300))).toBe(false);
-        expect(FixedTokens.showsMoveMarker(spawnedAt('fx_enemy', 1300, 300))).toBe(false);
-        expect(FixedTokens.showsMoveMarker(spawnedAt(QUEST_TOKEN_TYPE, 300, 700))).toBe(false);
     });
 });
 

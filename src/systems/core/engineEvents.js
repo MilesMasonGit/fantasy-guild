@@ -225,10 +225,6 @@ export const UI_EVENTS = Object.freeze({
      * (`tokenFx.js`).
      */
     UI_TOKEN_FX: 'ui:token_fx',
-    /** Payload: `{ questId }`. */
-    TUTORIAL_AIDE_HOVER: 'tutorial_aide:hover',
-    /** Payload: none. */
-    TUTORIAL_AIDE_UNHOVER: 'tutorial_aide:unhover',
 
     /** Dev stress harness. Payload: `{ name, id }`. */
     DEV_STRESS_STARTED: 'dev:stress_started',

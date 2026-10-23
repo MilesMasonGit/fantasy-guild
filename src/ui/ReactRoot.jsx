@@ -37,7 +37,6 @@ import { TokenInspectPopup } from './components/board/TokenInspectPopup.jsx';
 
 import { FPSCounter } from './components/base/FPSCounter.jsx';
 import { ParticleOverlay } from './components/base/ParticleOverlay.jsx';
-import { TutorialAideOverlay } from './components/base/TutorialAideOverlay.jsx';
 import { ErrorBoundary } from './components/base/ErrorBoundary.jsx';
 import { ItemStubColumn } from './components/notifications/ItemStubColumn.jsx';
 import { BannerStack } from './components/notifications/BannerStack.jsx';
@@ -194,7 +193,6 @@ export const ReactRoot = () => {
         <ViewportProvider>
             <DeckDndProvider>
             {particlesDrawn && <ParticleOverlay disabled={ui.isAnyModalOpen} />}
-            <TutorialAideOverlay />
             <ScreenCalloutLayer />
             <div className="react-overlay absolute inset-0 z-50 pointer-events-none flex flex-col">
                 <div

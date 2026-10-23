@@ -536,7 +536,7 @@ layer they land crisp; but an animation Chrome runs on the compositor gets a lay
 every sprite drawn after it must then be a layer too (`Overlap`), and Chrome draws them resampled:
 soft, and a pixel off, until the animation ends. Two guards keep the resting Tokens in one piece:
 - every animation that plays among the resting Tokens carries `will-change: contents`, so it runs
-  on the main thread: the landing hop, the transform glow and flash, the quest halo and the gear
+  on the main thread: the landing hop, the transform glow and flash and the gear
   pulse (one rule in `src/tailwind.css`), a resting Token's art (its filter flash and hop) and an
   enemy's boxes (`MatToken.jsx`), the spawn pop while it plays (`spawnMotion.js`), and a -1 on a
   Token no hero works (`TokenBadges.jsx`). What is drawn in front of every resting Token stays on
@@ -550,10 +550,10 @@ running animations left to finish). Screenshots for 2 s pick the **still** Token
 in every one). Then each case starts one of the game's own animations where the game plays it,
 by the game's own event or classes where it can: on the back-most Token, which every other Token is
 drawn after (a -1 from a real charges event, the landing hop, the art's filter flash, the spawn pop,
-a Token turning into another, a done quest's halo, a pulsing gear), an enemy walking, and in front
+a Token turning into another, a pulsing gear), an enemy walking, and in front
 of the resting Tokens (a -1 on a worked Token, a walking hero, real loot thrown on the floor);
 screenshots, and stops it. Two checks: how many still Tokens **changed** a pixel of their art (where their picture
-is opaque: the faint ring at a Token's foot and the mat show through the rest), and how many of the still Tokens
+is opaque: the mat shows through the rest), and how many of the still Tokens
 nothing else covers are **drawn exactly** to their art (98 % of the opaque pixels in the middle of
 the art where nearest-neighbour sampling of the picture puts them). A case fails when it changes
 more than 5 % of the still Tokens or leaves fewer exact than at rest; the rest fails when any is not

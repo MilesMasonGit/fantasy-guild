@@ -113,13 +113,11 @@ describe('⭐ a new game lays the Starter Camp down as fixtures', () => {
             expect(BoardState.isFixture(t), t.typeId).toBe(true);
             expect(BoardState.isCampFixture(t), t.typeId).toBe(true);
             expect(FixedTokens.isFixed(t), t.typeId).toBe(true);
-            expect(FixedTokens.showsMoveMarker(t), t.typeId).toBe(false);
             // Still the player's side of a spawn: placed, as a map's nodes are.
             expect(BoardState.originOf(t), t.typeId).toBe(BoardState.ORIGIN.PLACED);
         }
         expect(hall().fixture).toBeUndefined();
         expect(FixedTokens.isFixed(hall())).toBe(false);
-        expect(FixedTokens.showsMoveMarker(hall())).toBe(true);
     });
 
     it('the built-in camp too: its Oak Forest and Copper Mine', () => {
@@ -218,11 +216,10 @@ describe('⭐ a camp Token cannot be demolished, and says why', () => {
 });
 
 describe('⭐ what the player buys, crafts or builds in the camp is theirs', () => {
-    /** Movable, demolishable, carrying the marker, and no fixture. */
+    /** Movable, demolishable, and no fixture. */
     function expectTheirs(t) {
         expect(t.fixture, t.typeId).toBeUndefined();
         expect(FixedTokens.isFixed(t), t.typeId).toBe(false);
-        expect(FixedTokens.showsMoveMarker(t), t.typeId).toBe(true);
         expect(Demolition.canMark(t.id), t.typeId).toMatchObject({ success: true });
         expect(Placement.moveTokenTo(t.id, { x: 1500, y: 950 }), t.typeId).toMatchObject({ success: true });
     }

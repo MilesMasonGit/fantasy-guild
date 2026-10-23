@@ -662,7 +662,9 @@ describe('on the mat (MatToken)', () => {
         const box = parseFloat(o.style.width);
         const row = o.querySelector('[data-bubble-row]');
         expect(parseFloat(row.style.top)).toBe(box / 2);
-        expect(o.querySelector('[data-token-name]').style.bottom).toContain('100%');
+        // The name sits under the box, clear of the bubbles inside it.
+        expect(o.querySelector('[data-token-name]').style.top).toContain('100%');
+        expect(o.querySelector('[data-token-name]').style.bottom).toBe('');
     });
 
     it('⭐ a Sapling-like grower shows its growth timer top-left only when hovered', () => {

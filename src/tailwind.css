@@ -192,8 +192,6 @@
   --z-modal: 300;             /* GIModal dialogs: Settings, the slot screen, Edit Hero */
   --z-modal-inner: 320;       /* a window opened from inside a modal (Typography, from Settings) */
   --z-catch-up: 350;          /* the while-you-were-away summary */
-  --z-tutorial: 9990;         /* the tutorial aide */
-  --z-tutorial-ring: 9999;    /* the aide's pointer ring */
   --z-screen-callouts: 9999;  /* callouts pinned to the screen */
   --z-dev-tools: 9999;        /* the QA panel, tuners, FPS counter */
   --z-particles: 10000;       /* flying items */
@@ -439,32 +437,6 @@
   cursor: not-allowed;
 }
 
-/* A quest Token that is done, waiting to be claimed (B6.2, TL-18): a gold
- * halo behind the art that breathes
- * gently for as long as the quest waits. Hollow in the middle so the board's
- * art is never washed out; the layer spills past the art box (MatToken). */
-@keyframes gi-quest-ready {
-  0%, 100% { opacity: 0.6; transform: scale(0.94); }
-  50%      { opacity: 1;   transform: scale(1.06); }
-}
-
-.gi-quest-ready {
-  border-radius: 50%;
-  background: radial-gradient(circle,
-    rgba(255, 236, 160, 0) 28%,
-    rgba(255, 215, 90, 0.55) 48%,
-    rgba(255, 200, 70, 0.25) 62%,
-    rgba(255, 200, 70, 0) 72%);
-  mix-blend-mode: screen;
-  animation: gi-quest-ready 1800ms ease-in-out infinite;
-}
-
-/* Reduced motion keeps the halo, only its breathing goes: the glow IS the
-   "done" state. */
-@media (prefers-reduced-motion: reduce) {
-  .gi-quest-ready { animation: none; opacity: 0.9; }
-}
-
 /* Working, said in colour (D-267) — ⭐ now a sharp green OUTLINE, not a glow
  * (Wave 5, owner rulings Z §11, CR3-350). The breathing `gi-glow-active`
  * drop-shadow filter that lived here was the busy mat's biggest graphics cost;
@@ -502,24 +474,6 @@
 .gi-token-hover-pulse {
   filter: brightness(1.06) saturate(1.08);
   animation: gi-hover-bob 380ms cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-/* A movable Token's faint marker at rest: a flat ring at the foot of its circle,
-   the game piece's base, drawn under the art (the art paints after the hit
-   circle). Hard-edged, no shadow or blur: one pseudo-element per movable Token,
-   nothing animated. Fixed Tokens (map nodes, planted trees, sites) carry none;
-   the Hall, movable, carries it. */
-[data-token-movable]::after {
-  content: '';
-  position: absolute;
-  left: 18%;
-  width: 64%;
-  top: 80%;
-  height: 20%;
-  border-radius: 50%;
-  border: 2px solid rgba(255, 246, 220, 0.42);
-  background: rgba(255, 246, 220, 0.10);
-  pointer-events: none;
 }
 
 /* The recipe gear on a station or Foundation with nothing chosen: a one-art-pixel gold outline
@@ -681,7 +635,6 @@
 .gi-token-land,
 .gi-lvl-float,
 .gi-lvl-roll,
-.gi-quest-ready,
 .gi-gear-alert {
   will-change: contents;
 }

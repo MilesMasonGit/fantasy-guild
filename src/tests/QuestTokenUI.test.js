@@ -19,9 +19,6 @@ import { questNeedLine, questRewardsShown } from '../ui/components/board/QuestTo
 import { TUTORIAL_TEXT } from '../systems/quests/tutorialText.js';
 import { registerItems, getAllItems } from '../config/registries/itemRegistry.js';
 import { isMapItem } from '../systems/atlas/mapItems.js';
-import {
-    activeTutorialQuest, TUTORIAL_AIDE_EVENTS
-} from '../ui/components/base/TutorialAideOverlay.jsx';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -146,13 +143,14 @@ describe('a quest Token on the mat (B6.2)', () => {
         expect(o.querySelector('[data-ring="quest"]')).toBeNull();
     });
 
-    it('glows only when done', () => {
+    it('a done quest is marked done and claimable, with no glow behind its art', () => {
         const open = spawn(hunt());
         const done = spawn(hunt({ id: 'q_done', currentCount: 3 }));
         const { container } = mount([tokenEl(open, { key: 'a' }), tokenEl(done, { key: 'b' })]);
-        expect(art(container, open).querySelector('[data-quest-glow]')).toBeNull();
-        expect(art(container, done).querySelector('[data-quest-glow]')).not.toBeNull();
+        expect(overlay(container, open).getAttribute('data-quest-done')).toBe('false');
         expect(overlay(container, done).getAttribute('data-quest-done')).toBe('true');
+        expect(art(container, done).getAttribute('data-quest-claimable')).toBe('true');
+        for (const t of [open, done]) expect(art(container, t).querySelector('[data-quest-glow], .gi-quest-ready')).toBeNull();
     });
 });
 
@@ -279,25 +277,3 @@ describe('MatToken stays cheap (B6.2)', () => {
     });
 });
 
-describe('the tutorial aide reads quest Tokens (B6.2)', () => {
-    it('finds the current step from the tutorial quest Token', () => {
-        const tut = QuestTokens.tutorialTokens()[0];
-        expect(activeTutorialQuest()?.id).toBe(tut.quest.id);
-        expect(GameState.state.quests.active).toEqual([]);
-        // Done steps are not "current".
-        tut.quest.currentCount = tut.quest.requiredCount;
-        tut.quest.done = true;
-        expect(activeTutorialQuest()).toBeNull();
-    });
-
-    it('hovering a tutorial quest Token lights its target; leaving puts it out', () => {
-        const tut = QuestTokens.tutorialTokens()[0];
-        const events = [];
-        const a = EventBus.subscribe(TUTORIAL_AIDE_EVENTS.HOVER, (e) => events.push(['hover', e.questId]));
-        const b = EventBus.subscribe(TUTORIAL_AIDE_EVENTS.UNHOVER, () => events.push(['unhover']));
-        const { rerender } = mount(tokenEl(tut, { isHovered: true, isRested: true }));
-        rerender(tree(tokenEl(tut, { isHovered: false, isRested: false })));
-        a(); b();
-        expect(events).toEqual([['hover', tut.quest.id], ['unhover']]);
-    });
-});
