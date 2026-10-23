@@ -66,11 +66,104 @@ export const GLYPHS = Object.freeze({
     ]
 });
 
+/**
+ * The hero loadout slots' kind marks, one per equip category (`equipmentCategories.js`), keyed
+ * `slot_<category>`; `slot_unknown` stands in for a category with no mark yet. Placeholders too.
+ */
+export const SLOT_GLYPHS = Object.freeze({
+    slot_hand: [
+        '...#.#..',
+        '.#.#.#..',
+        '.#.#.#.#',
+        '.#######',
+        '.######.',
+        '.######.',
+        '..####..',
+        '...###..'
+    ],
+    slot_hat: [
+        '........',
+        '..####..',
+        '..####..',
+        '..####..',
+        '..####..',
+        '########',
+        '########',
+        '........'
+    ],
+    slot_chest: [
+        '.##..##.',
+        '########',
+        '########',
+        '.######.',
+        '..####..',
+        '..####..',
+        '..####..',
+        '..####..'
+    ],
+    slot_trinket: [
+        '...##...',
+        '..#..#..',
+        '...##...',
+        '.##..##.',
+        '#......#',
+        '#......#',
+        '.#....#.',
+        '..####..'
+    ],
+    slot_food: [
+        '....###.',
+        '...#####',
+        '...#####',
+        '..#####.',
+        '.###....',
+        '.##.....',
+        '#.#.....',
+        '.#......'
+    ],
+    slot_drink: [
+        '.#####..',
+        '.#...###',
+        '.#...#.#',
+        '.#...#.#',
+        '.#...###',
+        '.#...#..',
+        '.#####..',
+        '........'
+    ],
+    slot_consumable: [
+        '...##...',
+        '...##...',
+        '..####..',
+        '.#....#.',
+        '#......#',
+        '#.####.#',
+        '#.####.#',
+        '.######.'
+    ],
+    slot_unknown: [
+        '..####..',
+        '.#....#.',
+        '......#.',
+        '....##..',
+        '...#....',
+        '...#....',
+        '........',
+        '...#....'
+    ]
+});
+
+/** The kind mark for an equip category: its own, or the stand-in when it has none. */
+export function slotGlyphName(category) {
+    const name = `slot_${category}`;
+    return SLOT_GLYPHS[name] ? name : 'slot_unknown';
+}
+
 export const GLYPH_ART_PX = 8;
 
 /** One glyph, `scale` screen pixels per art pixel (whole numbers only). */
 export const PixelGlyph = ({ name, scale = 2, className, style, ...rest }) => {
-    const rows = GLYPHS[name];
+    const rows = GLYPHS[name] || SLOT_GLYPHS[name];
     if (!rows) return null;
     const cells = [];
     rows.forEach((row, y) => {

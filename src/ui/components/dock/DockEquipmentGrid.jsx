@@ -11,6 +11,8 @@ import { formatCompact } from '../../../utils/Formatters.js';
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { equipOrAnnounce } from './dockEquip.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
+import { PixelGlyph, slotGlyphName } from '../base/PixelGlyph.jsx';
+import { itemTintStyle } from '../base/itemTint.js';
 
 /**
  * DockEquipmentGrid: the pinned card's loadout grid: NINE flexible slots in 3 rows of 3, as
@@ -139,11 +141,12 @@ const EquipSlotBody = memo(function EquipSlotBody({ heroId, slot, itemId, quanti
                     EquipmentManager.unequipItem(heroId, slot);
                 }
             }}
+            style={item && !justEquipped ? itemTintStyle(item) : undefined}
             className={cn(
                 'relative aspect-square rounded border flex items-center justify-center overflow-visible transition-all select-none',
                 justEquipped && 'gi-item-equipped-bob ring-2 ring-gi-gold/90 border-gi-gold bg-gi-gold/25 shadow-[0_0_16px_rgba(245,158,11,0.6)] z-20',
                 item
-                    ? (!justEquipped && 'border-gi-primary/50 bg-gi-primary/10 cursor-grab active:cursor-grabbing hover:border-gi-danger hover:bg-red-950/30')
+                    ? (!justEquipped && 'ui-item-tile border-gi-primary/50 cursor-grab active:cursor-grabbing hover:border-gi-danger')
                     : (!justEquipped && 'border-dashed border-gi-border/50 bg-black/40 hover:border-gi-gold/40'),
                 cue && 'ring-2 ring-emerald-400 border-emerald-400 bg-emerald-950/40',
                 held && 'opacity-40'
@@ -158,9 +161,17 @@ const EquipSlotBody = memo(function EquipSlotBody({ heroId, slot, itemId, quanti
             ) : (
                 <span className="text-sm opacity-20 text-gi-muted pointer-events-none">+</span>
             )}
+            {category && (
+                <PixelGlyph
+                    name={slotGlyphName(category)}
+                    data-slot-kind={category}
+                    className="absolute bottom-0.5 right-0.5 pointer-events-none text-white/75"
+                    style={{ filter: 'drop-shadow(2px 2px 0 #000)' }}
+                />
+            )}
             {showQuantity && (
                 <span className={cn(
-                    'absolute -bottom-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full pointer-events-none',
+                    'absolute -bottom-1 -left-1 min-w-[18px] h-[18px] px-1 rounded-full pointer-events-none',
                     'bg-gi-label-bg text-gi-label-text border border-black/60 shadow',
                     'ui-text-body font-bold leading-none tabular-nums flex items-center justify-center',
                     quantity === 0 && 'bg-gi-danger text-white'

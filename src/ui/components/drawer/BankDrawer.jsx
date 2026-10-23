@@ -1,9 +1,7 @@
-import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn.js';
 import { Landmark } from 'lucide-react';
 import BankTab from './BankTab.jsx';
-import InspectionPanel from './InspectionPanel.jsx';
 import { columnWidthCss, NOTIFICATION_COLUMN } from '../board/boardConstants.js';
 import { PanelHeader } from '../base/CloseX.jsx';
 
@@ -11,43 +9,20 @@ import { PanelHeader } from '../base/CloseX.jsx';
  * BankDrawer: slides in from the side and holds the item Bank.
  * One pane: the item Bank (the Shop has its own drawer from the left edge, `ShopDrawer`).
  * Per-pane header: title + Close. Opening/closing is driven by the BubbleMenu (via `ui.nav`);
- * state lives in useUIModals (`ui.drawer.panes`).
- * Clicking a tile still sets the shared selection, which renders in the inspection panel
- * rather than inside this drawer.
+ * state lives in useUIModals (`ui.drawer.panes`). An item's details are its tile's tooltip, so
+ * the drawer has no inspect column.
  */
 
-// Heroes live in the always-visible Hero Dock, not a drawer pane. `paneProps` names exactly
-// what each pane's own signature accepts, so the drawer does not hand every pane the same
-// props and hope. Keep each entry in step with its component's signature.
+// Heroes live in the always-visible Hero Dock, not a drawer pane.
 const PANES = [
-    {
-        key: 'bank', label: 'Item Bank', icon: Landmark, Component: BankTab, inspects: true,
-        paneProps: ({ searchQuery, onInspect, selId }) => ({ searchQuery, onInspect, selectedItemId: selId })
-    }
+    { key: 'bank', label: 'Item Bank', icon: Landmark, Component: BankTab }
 ];
 
-// Which selection type each pane's tiles produce, used to hand each pane only its own
-// selection for tile highlighting.
-const PANE_SELECTION_TYPE = { bank: 'item' };
-
-export const BankDrawer = ({ drawer, inspect, menuRight = false }) => {
-    const [searchQuery, setSearchQuery] = useState('');
+export const BankDrawer = ({ drawer, menuRight = false }) => {
     // Canonical order regardless of the order panes were opened in. `panes` never holds more
     // than one, so this is a lookup rather than a filter.
     const shownPanes = PANES.filter(p => drawer.panes.includes(p.key));
-    const activeKey = shownPanes[0]?.key || null;
-    const showsInspect = !!shownPanes[0]?.inspects;
     const slideOffset = menuRight ? '100%' : '-100%';
-
-    const handleInspect = (type, id, source = null) => inspect.set(type, id, source, activeKey);
-
-    const paneSelection = inspect.getByPane ? inspect.getByPane(activeKey) : null;
-    const activeSelection = paneSelection || (inspect.selection?.pane === activeKey || (!inspect.selection?.pane && inspect.selection?.type === PANE_SELECTION_TYPE[activeKey]) ? inspect.selection : null);
-    const sidebarSelection = activeSelection && !(activeSelection.type === 'token' && activeSelection.source?.rect != null) ? activeSelection : null;
-
-    React.useEffect(() => {
-        setSearchQuery('');
-    }, [activeKey, drawer.isOpen]);
 
     return (
         <AnimatePresence>
@@ -74,21 +49,7 @@ export const BankDrawer = ({ drawer, inspect, menuRight = false }) => {
                         ...(menuRight ? { left: columnWidthCss(NOTIFICATION_COLUMN) } : { right: columnWidthCss(NOTIFICATION_COLUMN) })
                     }}
                 >
-                    {showsInspect && (
-                        <InspectionPanel
-                            selection={sidebarSelection}
-                            onInspect={handleInspect}
-                            onClear={() => inspect.clear(activeKey)}
-                            searchQuery={searchQuery}
-                            onSearchChange={setSearchQuery}
-                            activePane={activeKey}
-                            className="border-r border-gi-border/50"
-                        />
-                    )}
-                    {shownPanes.map(({ key, label, icon: Icon, Component, paneProps }) => {
-                        // Only the pane whose tiles match the selection type highlights it
-                        // (each pane reads its own prop name).
-                        const selId = activeSelection?.type === PANE_SELECTION_TYPE[key] ? activeSelection.id : null;
+                    {shownPanes.map(({ key, label, icon: Icon, Component }) => {
                         return (
                             <section key={key} className="flex-1 min-w-0 flex flex-col border-r border-gi-border/50">
                                 <PanelHeader
@@ -100,13 +61,7 @@ export const BankDrawer = ({ drawer, inspect, menuRight = false }) => {
                                 />
 
                                 <div className="flex-1 min-h-0">
-                                    <Component
-                                        {...paneProps({
-                                            searchQuery,
-                                            onInspect: handleInspect,
-                                            selId
-                                        })}
-                                    />
+                                    <Component />
                                 </div>
                             </section>
                         );

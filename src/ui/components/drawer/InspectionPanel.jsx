@@ -1,39 +1,22 @@
-import { useGameState } from '../../hooks/useGameState.js';
-import { getItem } from '../../../config/registries/itemRegistry.js';
-import { ItemInspection } from './BankTab.jsx';
 import TokenInspection from './TokenInspection.jsx';
 import GuildUpgradeInspection from './GuildUpgradeInspection.jsx';
 import { getUpgradeDef } from '../../../config/guildUpgrades.js';
-import { SearchCheck, Search, X } from 'lucide-react';
+import { SearchCheck } from 'lucide-react';
 import { ArrowScrollList } from '../base/ArrowScrollList.jsx';
 import { cn } from '../../utils/cn.js';
-import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /** How far an arrow press scrolls the inspection sheet. */
 const INSPECT_SCROLL_STEP_PX = 180;
 
 /**
- * InspectionPanel: the shared inspection column, a fixed-width column shown while its drawer
- * is open.
+ * InspectionPanel: the Guild Hall's inspection column (an upgrade or a Token). Items have no
+ * inspect column: their details are the Bank tile's tooltip.
  */
 export const InspectionPanel = ({
     selection,
-    onInspect: _onInspect,
     onClear,
-    className,
-    searchQuery = '',
-    onSearchChange,
-    activePane = null
+    className
 }) => {
-    // An item is shown only while some is banked, with the live count.
-    const itemId = selection?.type === 'item' ? selection.id : null;
-    const itemCount = useGameState(
-        state => itemId ? (state.inventory?.items?.[itemId]?.quantity || 0) : 0,
-        [ENGINE_EVENTS.INVENTORY_UPDATED],
-        null,
-        { deps: [itemId] }
-    );
-
     let body = null;
     // The upgrade sheet keeps its header still and scrolls only its rank list, with its own
     // arrow bars; a second pair around it would be a list inside a list.
@@ -52,11 +35,6 @@ export const InspectionPanel = ({
         body = (
             <TokenInspection typeId={selection.id} />
         );
-    } else if (selection?.type === 'item') {
-        const template = getItem(selection.id);
-        if (template && itemCount > 0) {
-            body = <ItemInspection entry={{ id: selection.id, count: itemCount, template }} />;
-        }
     }
 
     return (
@@ -67,26 +45,6 @@ export const InspectionPanel = ({
                 </span>
             </div>
 
-            {activePane === 'bank' && (
-                <div className="shrink-0 flex items-center gap-2 px-3.5 py-2 border-b border-gi-border/40 bg-gi-base/50 focus-within:bg-gi-base/80 transition-colors">
-                    <Search size={14} className="text-gi-muted shrink-0" />
-                    <input
-                        value={searchQuery || ''}
-                        onChange={e => onSearchChange?.(e.target.value)}
-                        placeholder="Search items…"
-                        className="bg-transparent outline-none text-xs text-gi-text w-full placeholder:text-gi-muted/60"
-                    />
-                    {searchQuery ? (
-                        <button
-                            onClick={() => onSearchChange?.('')}
-                            className="text-gi-muted hover:text-gi-text p-0.5 rounded cursor-pointer shrink-0"
-                        >
-                            <X size={14} />
-                        </button>
-                    ) : null}
-                </div>
-            )}
-
             {scrollsItself ? (
                 <div className="flex-1 min-h-0 overflow-hidden">{body}</div>
             ) : (
@@ -96,7 +54,7 @@ export const InspectionPanel = ({
                             <SearchCheck size={36} />
                             <span className="text-xs gi-caps tracking-widest font-bold">Nothing selected</span>
                             <span className="ui-text-body normal-case tracking-normal">
-                                Click an item or Token in any pane to see its details here.
+                                Click an upgrade or Token to see its details here.
                             </span>
                         </div>
                     )}

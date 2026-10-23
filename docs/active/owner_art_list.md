@@ -119,3 +119,15 @@ player for these is T-138 (built when the first strips exist).
 - **Area banners**: the 19 in `backgrounds/area/` are in use (Region rows,
   the top bar, travel, the Cartography preview); each Base Map names one in
   the CMS, so a new Base Map may want a new banner.
+- **Loadout slot kind marks** (NEW, 8 × 8, drawn at 2× in the bottom-right
+  corner of a hero's filled loadout slot; code-drawn placeholders in
+  `PixelGlyph` until drawn, shown on the style sheet page under "Loadout slot
+  kind marks"). One per equip kind, suggested name `ui/u_slot_<kind>.png`
+  (swapping them in for the placeholders is a small code change):
+  - Hand (a held tool or weapon)
+  - Hat
+  - Chest
+  - Trinket
+  - Food
+  - Drink
+  - Consumable (potions, scrolls)

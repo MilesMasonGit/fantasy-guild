@@ -101,6 +101,16 @@
   --color-ui-white: #ffffff;
   --color-ui-muted: var(--color-gi-muted);
 
+  /* Item tile surfaces, one per item type: dark, low-colour shades lighter than the panel, so a
+     sprite's dark outline reads against them. A surface, not one of the five meanings. */
+  --color-item-tint-default: #282a30;
+  --color-item-tint-material: #2c2a27;
+  --color-item-tint-tool: #252d39;
+  --color-item-tint-food: #33291f;
+  --color-item-tint-drink: #1e2f35;
+  --color-item-tint-potion: #2e2437;
+  --color-item-tint-map: #332e21;
+
   /* Legacy Colors (Mapped to new GI Typography truth) */
   --color-bg-primary: var(--color-gi-base);
   --color-bg-secondary: #141414;
@@ -235,6 +245,14 @@
 
 /* Glassmorphism Classes */
 @layer components {
+
+  /* An item tile: its type's surface (--item-tint, set by the tile), a little lighter on hover. */
+  .ui-item-tile {
+    background-color: var(--item-tint, var(--color-item-tint-default));
+  }
+  .ui-item-tile:hover {
+    background-color: color-mix(in srgb, var(--item-tint, var(--color-item-tint-default)), white 9%);
+  }
 
   .gi-shadow-deep {
     box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.7);
