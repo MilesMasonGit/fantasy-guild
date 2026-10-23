@@ -43,6 +43,21 @@ In plain words:
 - **d** (not in the brief, suggested) gets b's bigger drawing *and* c's free height, and keeps
   full-size Tokens on the 16:10 window (`d_1680.png`). Its cost: 7 % less room than today.
 
+## If the top bar grows (computed)
+
+Zoom with today's 44 px bar, then 20 px taller, then 40 px taller:
+
+| | 1920 × 1080 | 1366 × 768 |
+|---|---|---|
+| today | 0.86 → 0.84 → 0.82 | 0.58 → 0.56 → 0.55 |
+| a | 0.86 → 0.85 → 0.83 | 0.58 → 0.57 → 0.55 |
+| b | 0.92 → 0.91 → 0.89 | 0.63 → 0.61 → 0.59 |
+| c | 0.85 → 0.85 → 0.85 | 0.58 → 0.58 → 0.58 |
+| d | 0.92 → 0.92 → 0.92 | 0.63 → 0.63 → 0.63 |
+
+So with b the bar can grow by 40 px and the mat is still drawn at least as big as today's is now;
+with c and d the bar's growth costs nothing at these two windows.
+
 ## Other window sizes (computed from the game's own fit rule, which matched all 13 pictures)
 
 Token art in px at each window, today's bar; in brackets with a top bar 20 px taller:
