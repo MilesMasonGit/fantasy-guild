@@ -145,3 +145,5 @@ T-143 — Drag bench skips fixed Tokens — fa214742 — 2026-10-21
 T-137 — Code-only animation batch and tinted-copy effects — fa214742 — 2026-10-21
 T-154 — A picked-up Token flies to the cursor — fa214742 — 2026-10-21
 T-155 — World spawns hop out of their parent — fa214742 — 2026-10-21
+T-215 — Bigger Token hitboxes: hitboxPct 80 → 90, overlap 40 (owner ok by phone) — 70e04760 — 2026-10-23
+T-216 — Flag reach 164 → 240 with a crisp one-pixel gold ring over a hard shadow (owner ok by phone); enemies notice flags at the same reach, for combat planning — 70e04760 — 2026-10-23
