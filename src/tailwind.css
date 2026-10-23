@@ -956,6 +956,11 @@
   font-size: var(--font-size-xl) !important;
 }
 
+/* The Region name in the mat's top bar, and nothing else (UI_STYLE "Text sizes"). */
+.ui-text-bar-name {
+  font-size: var(--font-size-xl) !important;
+}
+
 /* Text over a picture (the Region name on its banner in the top bar): a 2 px black outline, hard
    edged, where the global retro outline is 1 px. */
 .ui-text-outline-2 {

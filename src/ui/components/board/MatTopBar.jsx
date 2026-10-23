@@ -58,7 +58,7 @@ export const MatTopBar = ({ left = null, middle = null, right = null, width }) =
             // ⚠️ Equal side columns keep the middle on the mat's centre line whatever the two ends hold.
             frameClassName="w-full grid grid-cols-[1fr_auto_1fr] items-center gap-3 pr-1 ui-text-title text-amber-100"
         >
-            <div data-mat-top-bar-left className="flex items-center gap-2 h-full justify-self-start">{left}</div>
+            <div data-mat-top-bar-left className="flex items-center gap-2 h-full">{left}</div>
             <div data-mat-top-bar-middle className="flex items-center justify-center gap-2 min-w-0 h-full">{middle}</div>
             <div data-mat-top-bar-right className="flex items-center gap-2 h-full justify-self-end">{right}</div>
         </PixelFrame>

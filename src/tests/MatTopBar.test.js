@@ -23,7 +23,7 @@ import { MatRegionName, liveRegionName } from '../ui/components/board/MatRegionN
 import { MatUpkeepBadge } from '../ui/components/board/MatUpkeepBadge.jsx';
 import { MapModeToggles, MapModeBanner } from '../ui/components/board/MatModeControls.jsx';
 import { MAP_MODE, setMapMode } from '../ui/hooks/useMapMode.js';
-import { REGION_BANNER_PX } from '../ui/components/board/MatRegionName.jsx';
+import { REGION_BANNER_PX, REGION_BANNER_SCALE } from '../ui/components/board/MatRegionName.jsx';
 import { setLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
 import { matW } from '../config/matGeometry.js';
 import { PixelFrame } from '../ui/components/base/PixelFrame.jsx';
@@ -362,13 +362,17 @@ describe('⭐ the restyled bar (T-170)', () => {
         }
     });
 
-    it('⭐ the Region banner: the Atlas banner at its own size, fading out to the right; no badge, no icon', () => {
+    it('⭐ the Region banner: the Atlas banner at 2x, at most one picture wide, fading out to the right; a big name; no badge, no icon', () => {
         const { container } = render(React.createElement(MatRegionName, {
             readName: () => ({ name: 'Elderfield', practical: 'Starter Camp' }), readBanner: () => 'b_village'
         }));
         const slice = container.querySelector('[data-mat-region-banner]');
         const art = slice.querySelector('[data-banner-art="b_village"]');
-        expect(art.style.width).toBe(`${REGION_BANNER_PX}px`);
+        expect(REGION_BANNER_SCALE).toBe(2);
+        expect(art.style.width).toBe('100%');
+        expect(art.style.maxWidth).toBe(`${REGION_BANNER_PX}px`);
+        expect(slice.querySelector('img').getAttribute('data-banner-scale')).toBe('2');
+        expect(slice.querySelector('[data-mat-region-name-text]').className).toContain('ui-text-bar-name');
         expect(art.style.maskImage || art.style.webkitMaskImage).toMatch(/linear-gradient\(to right/);
         expect(slice.querySelector('img').style.imageRendering).toBe('pixelated');
         expect(slice.querySelector('[data-item-bar]')).toBeNull();

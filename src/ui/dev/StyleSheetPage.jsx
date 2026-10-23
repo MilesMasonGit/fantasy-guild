@@ -706,7 +706,7 @@ export const KIT_SECTIONS = [
     {
         id: 'region-banner', title: 'Region name on its banner', status: 'unapproved',
         source: 'MatRegionName (the top bar’s left end)',
-        rule: 'The Region’s banner (the one the Atlas shows) lies behind its name at its own size, 1 art pixel to 1 screen pixel, crisp on the left and fading to the bar’s fill on the right. The name is title size with a 2 px black outline so it reads over any picture. Hover: a white outline round the whole banner; click opens the Atlas.',
+        rule: 'The Region’s banner (the one the Atlas shows) lies behind its name at 2×, up to one picture (512 px) across, showing the band just below its middle; crisp on the left and fading to the bar’s fill by the end of the bar’s left part. The name is the display size (ui-text-bar-name, the bar’s only one) with a 2 px black outline so it reads over any picture. Hover: a white outline round the whole banner; click opens the Atlas.',
         Demo: RegionBannerDemo
     }
 ];

@@ -70,6 +70,9 @@ clunky labels like "LVL 03" where "3/99" says it better.
   hints). No in-between sizes; the Text size setting scales all three.
 - Celebrations on the mat (a level-up number, a Region name reveal) may use
   one extra **display** size, and only there.
+- **The Region name in the mat's top bar** uses the display size too
+  (`ui-text-bar-name`, owner 2026-10-23), over its banner with a hard 2 px
+  black outline; nothing else in the bar does.
 
 ## Colours
 

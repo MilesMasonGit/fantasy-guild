@@ -22,8 +22,12 @@ export function liveRegionName() {
 
 const signatureOf = (r, banner) => (r ? `${r.name}|${r.practical}|${banner || ''}` : '');
 
-/** The banner's width in the bar, px: one 256 px picture at its own size, so its pixels stay whole. */
-export const REGION_BANNER_PX = 256;
+/** The banner's scale in the bar: a whole number, so its pixels stay whole. */
+export const REGION_BANNER_SCALE = 2;
+/** The banner's widest in the bar, px: one 256 px picture across, at {@link REGION_BANNER_SCALE}. */
+export const REGION_BANNER_PX = 256 * REGION_BANNER_SCALE;
+/** Which band of the picture shows (0 top … 1 bottom): a little below the middle, where most banners have their horizon rather than sky. */
+const BANNER_FOCUS_Y = 0.6;
 
 /** Crisp on the left, gone by the right end, so the picture melts into the bar's fill. */
 const BANNER_FADE = 'linear-gradient(to right, #000 0%, #000 40%, transparent 100%)';
@@ -50,17 +54,21 @@ export const MatRegionName = ({ onOpenAtlas, readName = liveRegionName, readBann
                 tabIndex={0}
                 onClick={() => onOpenAtlas?.()}
                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpenAtlas?.(); } }}
-                className="relative isolate h-full flex items-center pl-4 pr-10 cursor-pointer hover:outline-2 hover:outline-solid hover:-outline-offset-2 hover:outline-[var(--color-ui-white)] focus-visible:outline-2 focus-visible:outline-solid focus-visible:-outline-offset-2 focus-visible:outline-[var(--color-ui-white)]"
-                style={{ minWidth: REGION_BANNER_PX }}
+                className="relative isolate h-full w-full flex items-center pl-4 pr-10 cursor-pointer hover:outline-2 hover:outline-solid hover:-outline-offset-2 hover:outline-[var(--color-ui-white)] focus-visible:outline-2 focus-visible:outline-solid focus-visible:-outline-offset-2 focus-visible:outline-[var(--color-ui-white)]"
+                // ⚠️ The banner fills the bar's left column and fades out by its end, so it never runs on
+                // under the centre (a mode's words there would sit on the picture in a small window).
+                style={{ minWidth: REGION_BANNER_PX / 2 }}
             >
                 {banner && (
                     <BannerArt
                         banner={banner}
                         className="-z-10"
-                        style={{ width: REGION_BANNER_PX, right: 'auto', maskImage: BANNER_FADE, WebkitMaskImage: BANNER_FADE }}
+                        focusY={BANNER_FOCUS_Y}
+                        scale={REGION_BANNER_SCALE}
+                        style={{ width: '100%', maxWidth: REGION_BANNER_PX, right: 'auto', maskImage: BANNER_FADE, WebkitMaskImage: BANNER_FADE }}
                     />
                 )}
-                <span data-mat-region-name-text className="ui-text-title ui-text-outline-2 font-bold whitespace-nowrap text-white">{region.name}</span>
+                <span data-mat-region-name-text className="ui-text-bar-name ui-text-outline-2 font-bold whitespace-nowrap text-white">{region.name}</span>
             </span>
         </Tooltip>
     );
