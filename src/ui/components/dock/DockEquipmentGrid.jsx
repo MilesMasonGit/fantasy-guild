@@ -9,7 +9,7 @@ import { getItem } from '../../../config/registries/itemRegistry.js';
 import { SLOT_ORDER, categoryOfItem, getCategoryInfo, CATEGORY_KINDS } from '../../../config/registries/equipmentConstants.js';
 import { formatCompact } from '../../../utils/Formatters.js';
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
-import { equipOrAnnounce } from './dockEquip.js';
+import { equipOrAnnounce, unequipOrAnnounce } from './dockEquip.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
@@ -100,7 +100,7 @@ const EquipSlotCell = ({ heroId, slot, itemId, quantity, justEquipped = false })
         surface: DND_SURFACE.DRAWER,
         accepts: p => p.kind === DRAG_KIND.ITEM,
         onDrop: p => {
-            if (p.itemId) return equipOrAnnounce(EquipmentManager, heroId, p.itemId, slot);
+            if (p.itemId) return equipOrAnnounce(EquipmentManager, heroId, p.itemId, slot, p);
         }
     });
     const nodeRef = useMemo(() => mergeRefs(drag.setNodeRef, drop.setNodeRef), [drag.setNodeRef, drop.setNodeRef]);
@@ -136,7 +136,7 @@ const EquipSlotBody = memo(function EquipSlotBody({ heroId, slot, itemId, quanti
                 e.preventDefault();
                 e.stopPropagation();
                 if (itemId) {
-                    EquipmentManager.unequipItem(heroId, slot);
+                    unequipOrAnnounce(EquipmentManager, heroId, slot);
                 }
             }}
             className={cn(

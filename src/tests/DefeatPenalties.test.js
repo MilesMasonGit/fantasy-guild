@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GameState } from '../state/GameState.js';
 import { applyDefeatPenalties } from '../systems/combat/DefeatPenalties.js';
+import * as EquipmentManager from '../systems/equipment/EquipmentManager.js';
 import { DEFEAT_PENALTY } from '../config/loopConstants.js';
 
 // Locks what losing a fight costs.
@@ -51,8 +52,10 @@ vi.mock('../systems/inventory/InventoryManager.js', () => ({
     }
 }));
 
+// What a broken piece costs (the hero's own copy, or an older link's Bank unit) is the
+// EquipmentManager's to say: `OneItemOneHero.test.js` covers it.
 vi.mock('../systems/equipment/EquipmentManager.js', () => ({
-    unequipItem: vi.fn((_h, index) => { hero._equipped = hero._equipped.filter(e => e.index !== index); })
+    destroyEquipped: vi.fn((_h, index) => { hero._equipped = hero._equipped.filter(e => e.index !== index); })
 }));
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -139,11 +142,12 @@ describe('⭐ reports what was lost instead of announcing it (Free Playmat FP-42
 });
 
 describe('Gear loss (D-19)', () => {
-    it('can permanently destroy an equipped gear piece', () => {
+    it('can permanently destroy an equipped gear piece: the hero\'s own copy, not the Bank\'s spare', () => {
         vi.spyOn(Math, 'random').mockReturnValue(0);      // always breaks
         applyDefeatPenalties('hero_1');
 
-        expect(bank.g_sword).toBe(0);
+        expect(EquipmentManager.destroyEquipped).toHaveBeenCalledWith('hero_1', 0);
+        expect(bank.g_sword).toBe(1);
         expect(hero._equipped.find(e => e.itemId === 'g_sword')).toBeUndefined();
         Math.random.mockRestore();
     });

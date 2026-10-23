@@ -142,6 +142,68 @@ export const InventoryManager = {
     },
 
     /**
+     * Take one copy out of the Bank into a hero's hands. A move, not a spend: it is announced with
+     * neither `added` nor `removed`, so it is no item flow, no rate and no catch-up spending.
+     * `quiet`: not announced at all (a load, which announces everything once it is done).
+     * @returns {boolean} false when the Bank holds none
+     */
+    takeOut(itemId, { quiet = false } = {}) {
+        const entry = InventoryStore.getEntry(itemId);
+        if (!entry || entry.quantity < 1) return false;
+        entry.quantity -= 1;
+        if (entry.quantity <= 0) InventoryStore.deleteEntry(itemId);
+        else InventoryStore.setEntry(itemId, entry);
+        InventoryFormatter.invalidate();
+        if (!quiet) announce(itemId, entry.quantity, {});
+        return true;
+    },
+
+    /**
+     * Whether the Bank can take back one copy of each of `itemIds` without going over a limit (its
+     * slots, a stack's ceiling, a single-copy item). `freed`: an item one copy of which leaves the
+     * Bank first, freeing its slot when it is the last.
+     */
+    hasRoomFor(itemIds, { freed = null } = {}) {
+        const counts = new Map(Object.entries(InventoryStore.getItems()).map(([id, e]) => [id, e?.quantity || 0]));
+        if (freed && counts.has(freed)) counts.set(freed, counts.get(freed) - 1);
+        let used = 0;
+        for (const n of counts.values()) if (n > 0) used++;
+        const maxSlots = GameState.inventory.maxSlots ?? 20;
+        for (const itemId of itemIds) {
+            const template = getItem(itemId);
+            if (!template) return false;
+            const n = (counts.get(itemId) || 0) + 1;
+            if (n === 1) {
+                if (used >= maxSlots) return false;
+                used++;
+            }
+            if (template.stackable === false && n > 1) return false;
+            const maxStack = (template.maxStack || DEFAULT_MAX_STACK) + (GameState.inventory.maxStackBonus || 0);
+            if (n > maxStack) return false;
+            counts.set(itemId, n);
+        }
+        return true;
+    },
+
+    /**
+     * Put a hero's copy back in the Bank: a move, announced like {@link takeOut}, and never a gain
+     * (no discovery, no lifetime count).
+     *
+     * ⚠️ Refuses rather than overflow: a copy with no room stays in the hero's hands, so nothing is
+     * lost and nothing goes over the Bank's limit.
+     * @returns {boolean} whether it went back
+     */
+    putBack(itemId, { quiet = false } = {}) {
+        if (!this.hasRoomFor([itemId])) return false;
+        const entry = InventoryStore.getEntry(itemId) || { itemId, quantity: 0, dur: null };
+        entry.quantity += 1;
+        InventoryStore.setEntry(itemId, entry);
+        InventoryFormatter.invalidate();
+        if (!quiet) announce(itemId, entry.quantity, {});
+        return true;
+    },
+
+    /**
      * Run `fn` with the Bank's news held back: every item it changed is announced once when it ends
      * (`INVENTORY_UPDATED { itemId, amount, added?, removed? }`, the sums and the final count), in
      * the order the items were first changed. A loot sweep runs in one, so forty piles are not forty

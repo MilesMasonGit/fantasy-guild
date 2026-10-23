@@ -99,7 +99,8 @@ describe('⭐ the hero sheet an equip drop opens', () => {
         const view = render(h(DeckDndProvider, null, h(Item), h(BottomHeroDock, { selectedHeroId: null }), h(SheetHost)));
         await dropOn(view, view.container.querySelector('[data-dock-hero="h1"]'));
 
-        expect(equipItem).toHaveBeenCalledWith('h1', 'item_copper_sword', null);
+        // The last argument: no other hero's copy to hand over, so it comes from the Bank.
+        expect(equipItem).toHaveBeenCalledWith('h1', 'item_copper_sword', null, null);
         expect(view.getByTestId('sheet').getAttribute('data-hero')).toBe('h1');
         const { drop, sheet } = order();
         expect(drop).toBeGreaterThanOrEqual(0);
@@ -112,7 +113,7 @@ describe('⭐ the hero sheet an equip drop opens', () => {
         expect(tab).not.toBeNull();
         await dropOn(view, tab);
 
-        expect(equipItem).toHaveBeenCalledWith('h2', 'item_copper_sword', null);
+        expect(equipItem).toHaveBeenCalledWith('h2', 'item_copper_sword', null, null);
         expect(view.getByTestId('sheet').getAttribute('data-hero')).toBe('h2');
         const { drop, sheet } = order();
         expect(drop).toBeGreaterThanOrEqual(0);

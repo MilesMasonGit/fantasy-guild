@@ -11,6 +11,9 @@ import { ENGINE_EVENTS } from './engineEvents.js';
 import { ItemRateTracker } from '../inventory/ItemRateTracker.js';
 import { XpRateTracker } from '../hero/XpRateTracker.js';
 import * as MatResize from '../board/MatResize.js';
+import { reconcileHeldCopies } from '../equipment/EquipmentManager.js';
+import { InventoryManager } from '../inventory/InventoryManager.js';
+import { t } from '../../i18n/index.js';
 
 const LAST_SLOT_KEY = 'fantasy_guild_last_slot';
 /** sessionStorage: the slot the next page load opens by itself, without a catch-up. */
@@ -25,6 +28,17 @@ function clearRateTrackers() {
     ItemRateTracker.clearAll();
     XpRateTracker.clearAll();
 }
+
+/** One banner for every slot an older save's load emptied for want of a copy. */
+function announceGearLost(lost) {
+    const losses = lost.map(l => t('equipment.sharedGearLoss', { hero: l.heroName, item: l.itemName })).join(', ');
+    Banners.push({
+        kind: 'save',
+        groupKey: 'shared_gear',
+        parts: { title: t('equipment.sharedGearTitle'), message: t('equipment.sharedGearLine', { losses }) }
+    });
+}
+
 // A placeholder until `syncSettings()` reads `gameplay.autoSaveIntervalMinutes`
 // at init. The real default is 10 minutes (SettingsManager's defaults).
 let AUTO_SAVE_INTERVAL = 60000;
@@ -275,6 +289,11 @@ export const SaveManager = {
             }
 
             await GameState.initFromSave(state);
+            // Before anything plays, the catch-up included: an older save's heroes sharing one copy
+            // of a tool get one each from the Bank, in roster order. The Bank's entries are put in
+            // their one shape first, as the slot's start does again later.
+            InventoryManager.init();
+            const gearLost = reconcileHeldCopies();
             clearRateTrackers();
             this.currentSlot = slotIndex;
             this.loadedSavedAt = catchUp ? (Number(data.savedAt) || null) : null;
@@ -288,6 +307,8 @@ export const SaveManager = {
 
             // savedAt is when this save was written: the catch-up on load plays from it.
             EventBus.publish(ENGINE_EVENTS.GAME_LOADED, { slot: slotIndex, savedAt: data.savedAt });
+            // After GAME_LOADED, which clears the banners of the game before.
+            if (gearLost.length) announceGearLost(gearLost);
             return true;
         } catch (err) {
             if (err instanceof IncompatibleSaveError) {

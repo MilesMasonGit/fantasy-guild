@@ -69,7 +69,7 @@ export const HeroDockTab = ({
             if (isRecallDrop(p)) {
                 recallFromDrop(Placement, p);
             } else if (p.kind === DRAG_KIND.ITEM && p.itemId) {
-                if (!equipOrAnnounce(EquipmentManager, heroId, p.itemId)) return false;
+                if (!equipOrAnnounce(EquipmentManager, heroId, p.itemId, null, p)) return false;
                 justDroppedRef.current = true;
                 setTimeout(() => { justDroppedRef.current = false; }, 250);
                 EventBus.publish(UI_EVENTS.INSPECT_HERO, { heroId, afterDrop: true });
