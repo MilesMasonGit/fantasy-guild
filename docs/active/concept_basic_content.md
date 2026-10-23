@@ -81,6 +81,59 @@ in the inbox until the owner is back.
   numbers are the combat planner's); better buildings (stations that need fir
   or iron); and Guild Hall upgrades priced in them.
 
+### Round 3 (2026-10-22): where things live
+
+- **The new plane-2 Base Map is the Bog**: murky water, reeds, mist; home of
+  the herb, a bog fish (eel) and the wet crop (cranberry). Needs a new ground
+  and water look (the terrain code has no bog yet).
+- **Every Base Map writes one camp of its own creature.** Every Region has
+  something to farm for drops and maps, within GDD §14's ~6 enemies alive.
+- **Map supply: enemy drops plus bounties.** Plane-1 enemies drop plane-1
+  maps and modifiers steadily and plane-2 maps rarely; bounties keep their
+  25 % map payout but draw only plane-1 maps (plane-2 maps get bounty weight
+  0).
+- **The Starter Camp's goblins drop plane-1 maps** now and then (Forest,
+  Mountain, Coast, Meadow), so a player who stays in the camp still gets
+  more maps. They don't drop plane-2 maps.
+
+### Round 4 (2026-10-22): the maps' contents
+
+Each map writes at most 64 Tokens at the base cap (`Budget.nodeLimit`: half
+the cap is kept for building). Plain names (concept_tone_and_world).
+
+**Plane 1** (copper and oak)
+
+| Base Map | Nodes | Camp | Rarity |
+|---|---|---|---|
+| Forest | many oak, a few berry bushes | Wolves (new) | tutorial, common |
+| Mountain | copper, coal, stone | Goblins and a Goblin Chief (exist) | tutorial, common |
+| Coast | fishing spots (shrimp) | Crabs (new) | tutorial, common |
+| Meadow | apple trees, wild wheat, berry bushes | Cows (exist, peaceful) | common |
+| Flower Meadow | strawberry, blueberry, apple, a beehive | Thorn Elementals (exist, peaceful) | rare |
+| Cherry Grove | cherry, peach | Boars (new) | rare |
+
+**Plane 2** (iron and fir)
+
+| Base Map | Nodes | Camp |
+|---|---|---|
+| Volcano | iron, coal, stone | Rock Elementals (new; also ambush miners on iron veins) |
+| Yellowstone | fir, stone, hot springs | Bears (new, hostile): drop the **hide** for leather armour |
+| Bog | the herb, eel fishing, cranberry | Bog Toads (new) |
+
+- **Every Base Map writes one small one-time cache** (a ruin or cache that
+  bursts loot once, then is gone for good): a handful of that map's
+  materials and sometimes a map or modifier. ⚠️ No treasure Token exists;
+  the brief must check whether a Token can vanish for good on today's
+  Respawns block (concept_atlas §3.3 says ruins deplete permanently).
+- **Modifiers in this set**:
+  - **More of each basic** (density): Overgrown (trees), Rich Veins (ore),
+    Teeming Waters (fish), Bountiful (fruit and crops).
+  - **An extra camp per creature** (threat): Wolf Den, Goblin Camp (exists),
+    and so on. Watch the ~6 enemies alive.
+  - **A treasure modifier**: adds a cache to any Region.
+  - **Fir Grove is dropped for now**: turning Forest oak into fir would let
+    plane 1 skip plane 2's wood.
+
 ## Overlaps with the other planners
 
 - **Combat** ([concept_combat.md](concept_combat.md)): the enemies on each
@@ -88,6 +141,13 @@ in the inbox until the owner is back.
   plane-2 maps; iron weapons and armour (slots, numbers). This doc names
   which plane's enemies drop which materials and maps; the combat planner
   sets the numbers.
+- **Naming**: the combat planner's round 1 speaks of a "bronze sword";
+  the first metal in the game is **copper** (copper ingots, copper tools).
+  Combat gear should follow the item tiers (copper, iron).
+- **New creatures for the combat planner to design** (stats, style, drops'
+  numbers): Wolves, Crabs, Boars (plane 1); Rock Elementals, Bears, Bog
+  Toads (plane 2). Each drops its map's materials, its plane's maps steadily
+  and (plane 1 only) plane-2 maps rarely.
 - **Skill loops** ([concept_skill_loops.md](concept_skill_loops.md)): how each
   node and station behaves (respawn, groves, veins). This doc says which nodes
   stand on which map; the skill planner says how they work.
