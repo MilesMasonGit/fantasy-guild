@@ -1,6 +1,7 @@
 import { FX_FRAME_MS, arcPoses, heldPoses, prefersReducedMotion } from '../components/board/fx/pixelSteps.js';
 import { afterimages, playIn } from '../components/board/fx/tokenFx.js';
 import { spriteOf, makeCopy } from '../components/board/fx/spriteCopy.js';
+import { LOOT_HOP_AFTERIMAGES } from './lootEffects.js';
 
 /**
  * Loot leaving its Token and joining a pile, in whole art pixels and stepped time, like the
@@ -32,8 +33,8 @@ export function lootHopPoses(fx, fy, unit = 1) {
 
 /**
  * A dropped item hops out of its Token in an arc and lands with a one-pixel bounce (effect 4). Its
- * hard shadow stays on the ground under it, never rising with it, and two white afterimages trail
- * it through the air.
+ * hard shadow stays on the ground under it, never rising with it. Two white afterimages trail it
+ * through the air only with `LOOT_HOP_AFTERIMAGES` on.
  * @param {HTMLElement} element the loot sprite's own element (its box)
  * @param {number} fx mat units from the landing spot back to where it came from, across
  * @param {number} fy the same, down
@@ -58,7 +59,7 @@ export function playLootArc(element, fx, fy, { unit = 1 } = {}) {
         shadow.animate(ground.keyframes, { duration: ground.duration, fill: 'none' });
     }
     const art = element.querySelector('img')?.parentElement;
-    if (art) afterimages(art, poses.slice(0, HOP_POSES).map(({ ms, x, y }) => ({ ms, x, y })), { unit });
+    if (art && LOOT_HOP_AFTERIMAGES) afterimages(art, poses.slice(0, HOP_POSES).map(({ ms, x, y }) => ({ ms, x, y })), { unit });
     return anim;
 }
 

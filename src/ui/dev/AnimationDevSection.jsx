@@ -29,8 +29,8 @@ const EFFECTS = [
         id: 'heal', label: 'Heal: green flash (heroes on the mat)',
         run: () => BoardState.heroBodies().filter(([heroId]) => heroFlash(heroId, 'green')).length
     },
-    { id: 'loot', label: 'Loot hop, ground shadow, afterimages (adds 3 loot)', run: () => dropLootFrom(some(everyToken(), 3)).length },
-    { id: 'rare', label: 'Rare find: gold flash and star (adds 2 loot)', run: () => dropRareFrom(some(everyToken(), 2)).length },
+    { id: 'loot', label: 'Loot hop and ground shadow; afterimages switched off (adds 3 loot)', run: () => dropLootFrom(some(everyToken(), 3)).length },
+    { id: 'rare', label: 'Rare find: gold flash and star, switched off (adds 2 loot)', run: () => dropRareFrom(some(everyToken(), 2)).length },
     { id: 'settle', label: 'Region settle: the Hall lands, the rest ripple in (this mat)', run: () => { beginSettle(); return everyToken().length + 1; } },
     { id: 'cycle', label: 'Cycle finished: outline blinks white (worked Tokens)', run: () => playOn(some(worked(), 4), { fx: 'cycle' }) },
     { id: 'transform', label: 'Transform: white outline, 3 frames (3 Tokens)', run: () => playOn(some(everyToken(), 3), { fx: 'transform' }) },

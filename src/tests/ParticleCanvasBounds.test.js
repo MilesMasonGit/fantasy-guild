@@ -8,7 +8,15 @@ import { render, cleanup, act } from '@testing-library/react';
  * and be cleared and redrawn whole on every frame of every flight (brief 60, cause #3). It is now
  * sized and placed over the flights in the air, hidden while nothing flies, and everything a
  * flight draws (its trail, glow, item and sparkles) still lands inside it, where the item went.
+ * The trail and the plink ship switched off for loot (`ui/utils/lootEffects.js`); these tests turn
+ * them on, so the kept effect stays right for when it comes back.
  */
+
+const switches = vi.hoisted(() => ({ sparkles: true }));
+vi.mock('../ui/utils/lootEffects.js', async (importOriginal) => {
+    const real = await importOriginal();
+    return { ...real, get LOOT_FLIGHT_SPARKLES() { return switches.sparkles ?? real.LOOT_FLIGHT_SPARKLES; } };
+});
 
 vi.mock('../systems/core/SettingsManager.js', () => ({
     SettingsManager: { get: () => true }
@@ -114,6 +122,7 @@ const cycling = (cycle) => { let i = 0; return () => cycle[i++ % cycle.length]; 
 const NEAR_ONE = 1 - 1e-9;
 
 beforeEach(() => {
+    switches.sparkles = true;
     queue = [];
     clock = 0;
     landed = [];
@@ -321,5 +330,21 @@ describe('⭐ the item still lands exactly where it went', () => {
         const cx = (item.box[0] + item.box[2]) / 2 + lastInAir.rect.left;
         const cy = (item.box[1] + item.box[3]) / 2 + lastInAir.rect.top;
         expect(Math.hypot(cx - target[0], cy - target[1])).toBeLessThan(25);
+    });
+});
+
+describe('⭐ as shipped, loot flies with no trail and no plink', () => {
+    it('the switch is off: only the item is drawn, and it still lands where it went', () => {
+        switches.sparkles = null;
+        const { container } = render(React.createElement(ParticleOverlay, { disabled: false }));
+        const canvas = canvasOf(container);
+        const target = [1210, 230];
+        act(() => { fly([300, 700], target); });
+        runUntilAsleep(canvas);
+        expect(landed).toHaveLength(1);
+        expect(landed[0]).toMatchObject({ x: target[0], y: target[1] });
+        const drawn = frames.flatMap(f => f.drawn).map(d => d.op);
+        expect(drawn).toContain('text');
+        expect(drawn).not.toContain('fillRect');
     });
 });

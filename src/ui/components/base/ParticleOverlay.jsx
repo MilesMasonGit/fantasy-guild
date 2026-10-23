@@ -9,6 +9,7 @@ import { lootFlightTarget, lootSpriteScreenPx } from '../../utils/lootFlight.js'
 import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import { isDrawn } from '../../dev/perf/drawSwitches.js';
 import { bookFlight, fliesToStub, landFlight, placeFlights } from '../notifications/stubLanding.js';
+import { LOOT_FLIGHT_SPARKLES } from '../../utils/lootEffects.js';
 
 /** Gap between staggered particles from one collection burst. */
 const STAGGER_MS = 60;
@@ -82,8 +83,9 @@ export function boardPointToScreen(boardEl, x, y) {
 
 /**
  * ParticleOverlay: a Canvas layer for UI-space effects. Visualizes collected loot flying to
- * where it went (effect 5, crisp): a short trail of hard 2×2 pixels behind it and a four-pixel
- * plink where it lands, its own item stub, or the Guild Hall when the stubs are not drawn.
+ * where it went (effect 5, crisp): its own item stub, or the Guild Hall when the stubs are not
+ * drawn. A short trail of hard 2×2 pixels behind it and a four-pixel plink where it lands draw
+ * for loot only with `LOOT_FLIGHT_SPARKLES` on; a hero lifted from the dock keeps its trail.
  * Nothing random: every flight with the same path draws the same pixels.
  * The canvas is only as big as the flights in the air (`ParticleSystem._fit`) and is hidden
  * while nothing flies: a window-sized one was cleared and redrawn whole on every frame of every
@@ -411,7 +413,8 @@ class ParticleSystem {
             startTime: performance.now() + slot * STAGGER_MS,
             duration: destination === 'cursor' ? 320 : flightDurationMs(dist),
             path: { startX, startY, endX, endY, cpX, cpY },
-            color: template.color || TRAIL_COLOUR
+            color: template.color || TRAIL_COLOUR,
+            trail: isHero || LOOT_FLIGHT_SPARKLES
         };
         this.particles.push(particle);
         this._include(particle.path, particle.size);
@@ -485,7 +488,8 @@ class ParticleSystem {
                 startTime: b.startTime,
                 duration: flightDurationMs(dist),
                 path: { startX: b.startX, startY: b.startY, endX: end.x, endY: end.y, cpX, cpY },
-                color: b.template.color || TRAIL_COLOUR
+                color: b.template.color || TRAIL_COLOUR,
+                trail: LOOT_FLIGHT_SPARKLES
             };
             this.particles.push(particle);
             this._include(particle.path, particle.size);
@@ -598,7 +602,7 @@ class ParticleSystem {
                     size: p.size,
                     instanceId: p.instanceId
                 });
-                this.sparkles.push({ x: p.path.endX, y: p.path.endY, born: currentTime, color: p.color });
+                if (p.trail) this.sparkles.push({ x: p.path.endX, y: p.path.endY, born: currentTime, color: p.color });
                 this.particles.splice(i, 1);
             }
         }
@@ -643,11 +647,13 @@ class ParticleSystem {
             if (!isFinite(p.x) || !isFinite(p.y)) continue;
             const t = (now - p.startTime) / p.duration;
             ctx.fillStyle = p.color;
-            for (const back of TRAIL_BACK_MS) {
-                const k = t - back / p.duration;
-                if (k <= 0) continue;
-                const at = ParticleSystem.pointAt(p.path, k);
-                ctx.fillRect(Math.round(at.x) - half, Math.round(at.y) - half, TRAIL_PX, TRAIL_PX);
+            if (p.trail) {
+                for (const back of TRAIL_BACK_MS) {
+                    const k = t - back / p.duration;
+                    if (k <= 0) continue;
+                    const at = ParticleSystem.pointAt(p.path, k);
+                    ctx.fillRect(Math.round(at.x) - half, Math.round(at.y) - half, TRAIL_PX, TRAIL_PX);
+                }
             }
 
             const sprite = this.spriteCache.get(p.spriteKey);
