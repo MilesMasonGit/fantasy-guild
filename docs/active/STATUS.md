@@ -1,9 +1,23 @@
-# STATUS — the art pass (brief 85), batch 1
+# STATUS — the directors' living table
 
 *The director keeps this file; nobody else edits it. One row per phase; a
 five-line summary at each batch's edges (proposed, looked at); anything older
 than two days is trimmed. States: queued · building · ready (tests, cycles,
 build green) · bench-queued · eye-check · merged.*
+
+## Backlog director, batch A: the mat and its top bar (brief 210; owner chose and said go 2026-10-22 evening)
+
+Owner away from the PC 2026-10-23 to 2026-10-25, rulings 2026-10-22: **looks
+by phone screenshots, the owner's ok merges** (hands-on feel listed for their
+return); **benches may run any time while they are away** (still one at a
+time, never beside a build); design questions answered any time.
+
+| Phase | Tier | Branch (worktree) | State | Planned | Done |
+|---|---|---|---|---|---|
+| A1: mat a little wider and shorter (T-211); 2–3 sizes shown as captures before baking; old saves checked for Tokens off the mat; WORK CHANGED expected | engineer | `backlog/mat-size` (`bm`) | queued | | |
+| A3: more room between Tokens, flag reach 164 → 240, a crisp gold pixel reach ring (T-215, T-216); WORK CHANGED expected | builder | `backlog/flag-reach` (`bf`) | queued | | |
+| A2: top bar on the Region's banner, larger text, as wide as the mat (T-212 to T-214); after A1 | builder | `backlog/top-bar` (`bt`) | queued, needs A1 | | |
+| Tidy-up (owner 2026-10-22: yes): remove the finished `ar` worktree; delete local branches fully merged into `main` (`git branch -d` only) | director | — | queued | | |
 
 ## Features director, the Envelope (brief 90) (owner 2026-10-21: cleared for 13:00; any issue found becomes a ticket for the next pass)
 
@@ -202,7 +216,7 @@ branch), so it uses the kit and everyone fights; it merges after both.*
 
 ## Questions for the owner
 
-- **Background music provenance** (found by the credits work, T-124): the 8 playlist tracks and 2 in `bgm/maybe/` have no recorded source or licence. Where are they from, and what does the licence require? Needed before release; asked with the next proposal.
+- ~~Background music provenance~~ **Answered 2026-10-22:** the tracks are AI-generated placeholders, likely removed in the later music and sound pass; audio is not a concern now.
 
 *Design questions the director cannot answer, as multiple choice, recommendation
 first; asked with the next batch proposal and recorded where they belong.*
@@ -220,9 +234,15 @@ T-186; the badges' soft shadows are settled inside T-013.)
 
 1. **Features stack, merged 2026-10-18 (b68cd020) on the owner's word**: the engine work check ran on the merge (S2, S3, S5, S6, S8, S8L, S8F WORK CHANGED from the hostile flag watch, accepted under T-167; a control run of `main` bcf1324d was the same work; S1, S4, S7 same). Still owed in a quiet window on `main`: the engine timing re-run (daytime load read S3/S4/S7 slower on `main` too), and one `bench:draw --compare` plus `bench:crisp` for the cost log (brief 120 C1 must draw cheaper than before the stack; brief 110's top bar frame and mode outlines; the level-up floats). If C1 draws dearer, a ticket and a report to the owner.
 
-8. Terrain director: **bench baseline retake** on `main` at the next 01:00 window (engine and draw; every run since 16 Oct reads 10-20 % slow on unchanged code).
+8. ~~Terrain director: bench baseline retake~~ **Done:** engine 2026-10-21 13:00 (f19a2e30), draw 2026-10-22 01:00 (db3959c4).
 
 ## Summaries
+
+**Thu 2026-10-22, evening: Backlog director read in, batch A proposed.**
+Where we are: `main` 31d5c780 passes the suite (5751), every worktree is
+clean, both bench baselines are fresh. Next: on the owner's go, A1 and A3
+in parallel, then A2. Owner: away from the PC for three days; looks by
+screenshot. Blockers: none.
 
 **Wed 2026-10-21, evening: features session closed.** Where we are: the
 crunch queue is finished. Recipe list, notifications, the Atlas, change packs,
