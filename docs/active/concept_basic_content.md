@@ -37,6 +37,57 @@ set where the whole loop plays: Starter Camp → find a map → settle a Region
   packs** (brief 200) and the owner reviews each entry. Never hand-edit
   `data/`.
 
+## Owner availability
+
+2026-10-22: the owner is away from the PC for three days (phone only):
+design questions yes, screenshots maybe, no CMS review. The change pack waits
+in the inbox until the owner is back.
+
 ## Decisions
 
-(none yet)
+### Round 1 (2026-10-22): the shape
+
+- **Reach: through iron (~level 15).** Two material steps only; mythril,
+  silver and gold come in a later content pass. Chosen over gold so the set
+  is quick to author and tune while combat is redesigned.
+- **Each material step is a plane** (concept_tone_and_world: map tiers are
+  planes). Every plane has its own Base Maps; modifiers tune a map (more of a
+  node, a camp, a treasure) rather than carry the tier.
+  - **Plane 1**: copper and oak, levels 1-14.
+  - **Plane 2**: iron and fir, from level 15.
+- **Starter Camp: one of each basic** besides the Hall and the 25 endgame
+  ruins: a few oak trees, copper and coal veins, a stone outcrop, a berry
+  bush, a fishing spot, a wheat patch, a goblin camp. Every Starting skill is
+  touched in the first hour; the maps open the bigger versions.
+- **First maps: the tutorial gives 3** (Forest, Mountain, Coast). Everything
+  after is earned. ⚠️ Today the tutorial's `firstMaps` pays every Base Map
+  that no other map upcycles into (all 8); the brief must narrow that.
+
+### Round 2 (2026-10-22): the planes
+
+- **Reuse the 8 existing Base Maps, split by plane**:
+  - Plane 1: **Forest, Mountain, Coast, Meadow**; **Flower Meadow and Cherry
+    Grove** as rarer plane-1 extras.
+  - Plane 2: **Yellowstone** (fir woods), **Volcano** (iron), plus **one new
+    plane-2 Base Map** (biome to be decided).
+- **Plane-2 maps come only as rare drops from plane-1 enemies** (the tougher
+  the enemy, the better the chance). Not chosen: upcycling plane-1 maps,
+  guardians, bounties and quests as plane-2 sources. Which enemy drops what,
+  and how often, is agreed with the combat planner (see Overlaps).
+- **Plane 2 brings iron ore, fir wood, a herb, a creature drop, a fish and a
+  crop**: every Starting skill moves up a step, Alchemy gets its first
+  content.
+- **Plane-2 materials unlock**: iron tools; iron weapons and armour (slots and
+  numbers are the combat planner's); better buildings (stations that need fir
+  or iron); and Guild Hall upgrades priced in them.
+
+## Overlaps with the other planners
+
+- **Combat** ([concept_combat.md](concept_combat.md)): the enemies on each
+  plane, their drop tables and the rates at which plane-1 enemies drop
+  plane-2 maps; iron weapons and armour (slots, numbers). This doc names
+  which plane's enemies drop which materials and maps; the combat planner
+  sets the numbers.
+- **Skill loops** ([concept_skill_loops.md](concept_skill_loops.md)): how each
+  node and station behaves (respawn, groves, veins). This doc says which nodes
+  stand on which map; the skill planner says how they work.
