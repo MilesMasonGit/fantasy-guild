@@ -14,10 +14,10 @@ time, never beside a build); design questions answered any time.
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| A1: mat a little wider and shorter (T-211); 2–3 sizes shown as captures before baking; old saves checked for Tokens off the mat; WORK CHANGED expected | engineer | `backlog/mat-size` (`bm`) | queued | | |
-| A3: more room between Tokens, flag reach 164 → 240, a crisp gold pixel reach ring (T-215, T-216); WORK CHANGED expected | builder | `backlog/flag-reach` (`bf`) | queued | | |
+| A1: mat a little wider and shorter (T-211); 2–3 sizes shown as captures before baking; old saves checked for Tokens off the mat; WORK CHANGED expected | engineer | `backlog/mat-size` (`bm`) | building stage 1: captures of today's size and three candidates, then stops for the owner's pick | Thu | |
+| A3: more room between Tokens, flag reach 164 → 240, a crisp gold pixel reach ring (T-215, T-216); WORK CHANGED expected | builder | `backlog/flag-reach` (`bf`) | building | Thu | |
 | A2: top bar on the Region's banner, larger text, as wide as the mat (T-212 to T-214); after A1 | builder | `backlog/top-bar` (`bt`) | queued, needs A1 | | |
-| Tidy-up (owner 2026-10-22: yes): remove the finished `ar` worktree; delete local branches fully merged into `main` (`git branch -d` only) | director | — | queued | | |
+| Tidy-up (owner 2026-10-22: yes): remove the finished `ar` worktree; delete local branches fully merged into `main` (`git branch -d` only) | director | — | done: `ar` removed (junctions unlinked first, real packages intact); 134 merged branches deleted with `-d`; kept the two unmerged ones, `atlas-wip` and `crunch/style-p2` (the dropped shadows, a record) | Thu | Thu |
 
 ## Features director, the Envelope (brief 90) (owner 2026-10-21: cleared for 13:00; any issue found becomes a ticket for the next pass)
 
