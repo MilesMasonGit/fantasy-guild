@@ -34,7 +34,7 @@ const OVERGROWN = {
 
 afterEach(cleanup);
 
-describe('a map item's tooltip', () => {
+describe('the tooltip of a map item', () => {
     it('a Base Map says what it writes, and what kind of map it is', () => {
         const { container } = render(tip(FOREST));
         const writes = container.querySelector('[data-map-writes]');
