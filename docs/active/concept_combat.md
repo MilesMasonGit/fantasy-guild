@@ -159,3 +159,40 @@ Differs from GDD §6 in places; the code wins:
   each carried food and drink stack lost, a 10 % chance per gear piece to be
   lost, wounded 5 minutes, back at half HP. Gear still never wears out; it
   can only be lost on a knockout.
+
+### The four styles
+
+- **Styles are told apart by the matchup cycle and their weapons, with no
+  traits of their own** (amends "each combat style has one clear trait"
+  above). Special abilities come later from master classes (a Paladin
+  heals) through the Rules system.
+- **The cycle stays**: melee > ranged > magic > stealth > melee; melee/magic
+  and ranged/stealth are even.
+- **A good matchup is worth about +25 % damage** (the bad one −25 %). With
+  small early numbers it barely shows, which is intended: the cycle starts
+  to matter past the early game.
+- **The player sees only the enemy's style icon** and learns the cycle; no
+  "weak to" line or matchup arrow.
+
+### Food and potions in fights
+
+- **Eating stays as today**: below 25 % HP the hero eats equipped food;
+  eating takes that swing. Food is the only heal in a fight.
+- **Drinks stop healing and become small buffs** (amends T-098's "drinks
+  heal from their own slot"). ⚠️ Overlap: drinks are Cooking's; their buffs
+  are for the skill-loops planning agent to shape.
+- **An elixir is drunk at the start of every fight**; each equipped elixir
+  type is drunk once, and their effects stack. Some elixirs are for skills
+  instead and fire when the hero starts working a Token (the Birdwatcher in
+  `concept_skill_loops.md`; overlap with the skill-loops agent).
+- **Elixirs need a wide effect library**: +damage, +armour, faster swings,
+  fewer misses or more crits to start, and later many more (better loot,
+  slowing the enemy…). So an elixir is a Rules-system effect ("When a fight
+  starts, provides … to the hero for the fight"), not a fixed stat list.
+- **Combat potions are elixirs only**: drunk automatically when a fight
+  starts, lasting that fight. Cooking's food heals, Alchemy buffs. No healing
+  potions (amends "Potions are Alchemy's combat supplies: healing and short
+  buffs" above).
+- **A "used" bubble for every item**: when a hero eats, drinks or drinks an
+  elixir, a small bubble over them shows the item's icon and what it did
+  ("+5 ♥", "Valor") for about 1.5 s.
