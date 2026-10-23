@@ -7,21 +7,25 @@ import { InventoryManager } from '../../systems/inventory/InventoryManager.js';
 import { getAllItems } from '../../config/registries/itemRegistry.js';
 import { starterToolIds, toolOf } from '../../config/registries/toolKinds.js';
 import { getGrid } from '../../config/registries/equipmentConstants.js';
+import { takesCopy } from '../../systems/equipment/heldCopies.js';
 
 /**
  * Fill every free Bank slot with one of an item it does not hold, so taking gear off meets a full
- * Bank. Only items no hero can equip, so none of them is one a hero would want to put back.
- * @returns {number} the slots filled
+ * Bank. Never gear, weapons or tools: one of those in the Bank would be the slot a hero's copy goes
+ * back to.
+ * @returns {{filled: number, free: number}} the slots filled, and those still free when the content
+ *          has too few kinds of item to fill them
  */
 export function devFillBank() {
     let filled = 0;
     for (const item of Object.values(getAllItems())) {
-        if (!item?.id || item.equipSlot) continue;
+        if (!item?.id || takesCopy(item.id)) continue;
         if (InventoryManager.getItemCount(item.id) > 0) continue;
         if (InventoryManager.lacksSlotFor(item.id)) break;
         if (InventoryManager.addItem(item.id, 1, 'dev') > 0) filled++;
     }
-    return filled;
+    const used = Object.keys(GameState.inventory.items).length;
+    return { filled, free: Math.max(0, (GameState.inventory.maxSlots ?? 20) - used) };
 }
 
 /** The tool the shared-tool check hands round: the first starter tool, else the first tool. */

@@ -522,8 +522,11 @@ describe('the QA panel\'s gear checks (dev only)', () => {
         const aela = addHero('Aela');
         give('oo_pick', 1);
         equipOk(aela.id, 'oo_pick');
-        expect(devFillBank()).toBeGreaterThan(0);
+        const { filled, free } = devFillBank();
+        expect(filled).toBeGreaterThan(0);
+        expect(free).toBe(0);
         expect(InventoryManager.lacksSlotFor('oo_pick')).toBe(true);
+        expect(InventoryManager.getItemCount('oo_axe')).toBe(0);
         expect(EquipmentManager.unequipItem(aela.id, slotOf(aela, 'oo_pick')).success).toBe(false);
     });
 

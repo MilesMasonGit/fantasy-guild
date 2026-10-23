@@ -17,7 +17,12 @@ export function GearDevSection() {
                     type="button"
                     data-qa-fill-bank
                     className={buttonClass}
-                    onClick={() => setStatus(`Filled ${devFillBank()} Bank slots`)}
+                    onClick={() => {
+                        const { filled, free } = devFillBank();
+                        setStatus(free
+                            ? `Filled ${filled} Bank slots; ${free} still free (too few kinds of item)`
+                            : `Filled ${filled} Bank slots: the Bank is full`);
+                    }}
                 >
                     Fill the Bank
                 </button>
