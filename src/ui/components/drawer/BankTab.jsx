@@ -4,6 +4,7 @@ import { cn } from '../../utils/cn.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { InventoryManager } from '../../../systems/inventory/InventoryManager.js';
 import * as EquipmentManager from '../../../systems/equipment/EquipmentManager.js';
+import { unequipOrAnnounce } from '../dock/dockEquip.js';
 import { useEntityDrag, useEntityDrop, DropTarget, mergeRefs } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { ItemIcon } from '../base/ItemIcon.jsx';
@@ -112,8 +113,7 @@ export const BankTab = ({ selectedItemId, onInspect, searchQuery = '' }) => {
     const handleTileDrop = (payload, targetId) => {
         if (payload?.kind !== 'item') return;
         if (payload.fromHeroId != null && payload.fromSlot != null) {
-            EquipmentManager.unequipItem(payload.fromHeroId, payload.fromSlot);
-            return;
+            return unequipOrAnnounce(EquipmentManager, payload.fromHeroId, payload.fromSlot);
         }
         if (payload.itemId === targetId || !canReorder) return;
         const ids = (tabItems[currentTabId] || []).map(x => x.id);
@@ -131,8 +131,7 @@ export const BankTab = ({ selectedItemId, onInspect, searchQuery = '' }) => {
     const handleListDrop = (payload) => {
         if (payload?.kind !== 'item') return;
         if (payload.fromHeroId != null && payload.fromSlot != null) {
-            EquipmentManager.unequipItem(payload.fromHeroId, payload.fromSlot);
-            return;
+            return unequipOrAnnounce(EquipmentManager, payload.fromHeroId, payload.fromSlot);
         }
         if (!canReorder) return;
         const ids = (tabItems[currentTabId] || []).map(x => x.id).filter(id => id !== payload.itemId);
@@ -147,8 +146,7 @@ export const BankTab = ({ selectedItemId, onInspect, searchQuery = '' }) => {
     const handleTabDrop = (tabId, payload) => {
         if (payload?.kind !== 'item') return;
         if (payload.fromHeroId != null && payload.fromSlot != null) {
-            EquipmentManager.unequipItem(payload.fromHeroId, payload.fromSlot);
-            return;
+            return unequipOrAnnounce(EquipmentManager, payload.fromHeroId, payload.fromSlot);
         }
         const ids = payload.selection?.length ? payload.selection : [payload.itemId];
         ids.forEach(id => InventoryManager.moveItemToGroup(id, tabId));

@@ -4,5 +4,12 @@
         "cancel": "Cancel",
         "confirm": "Confirm",
         "back": "Back"
+    },
+    "equipment": {
+        "allInUse": "Every {item} you own is already in use",
+        "bankFull": "The Bank is full: {hero} keeps the {item}",
+        "sharedGearTitle": "One copy per hero",
+        "sharedGearLine": "Each hero now needs their own copy of gear, weapons and tools, and the Bank was short: {losses}",
+        "sharedGearLoss": "{hero} lost {item}"
     }
 }

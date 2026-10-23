@@ -248,17 +248,27 @@ describe('the gate: only a hero holding the tool may work the Token', () => {
         expect(WorkCheck.heroReason(hero.id, config, deep)).toBeNull();
     });
 
-    it('a tool counts only while the Bank still holds one, and only in the hands', () => {
+    it('a tool in hand is the hero\'s own copy: it counts with none left in the Bank, and only in the hands', () => {
         const hero = addHero();
         const vein = put('fx_vein', VEIN);
         const config = getTokenType('fx_vein').config;
         equip(hero.id, 'fx_pick');
-        InventoryManager.removeItem('fx_pick', InventoryManager.getItemCount('fx_pick'));
-        expect(WorkCheck.heroReason(hero.id, config, vein)).toBe(ALERT.NO_TOOL);
+        expect(InventoryManager.getItemCount('fx_pick')).toBe(0);
+        expect(WorkCheck.heroReason(hero.id, config, vein)).toBeNull();
 
         const other = addHero();
         equip(other.id, 'fx_charm_pick');
         expect(WorkCheck.heroReason(other.id, config, vein)).toBe(ALERT.NO_TOOL);
+    });
+
+    it('an older save\'s link to the Bank (no copy of its own) counts only while the Bank holds one', () => {
+        const hero = addHero();
+        const vein = put('fx_vein', VEIN);
+        const config = getTokenType('fx_vein').config;
+        hero.equipment[0] = 'fx_pick';
+        expect(WorkCheck.heroReason(hero.id, config, vein)).toBe(ALERT.NO_TOOL);
+        give('fx_pick');
+        expect(WorkCheck.heroReason(hero.id, config, vein)).toBeNull();
     });
 
     it('a Token that needs no tool needs none, and demolishing needs none either', () => {

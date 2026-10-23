@@ -2,6 +2,7 @@ import { getItem } from '../../config/registries/itemRegistry.js';
 import { EFFECTS } from '../../config/registries/effectRegistry.js';
 import { getGrid } from '../../config/registries/equipmentConstants.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
+import { slotBacked } from '../equipment/heldCopies.js';
 import {
     effectRefsOf, statementsFromEntry, normaliseScale, MAX_SCALE
 } from '../effects/effectLibrary.js';
@@ -19,19 +20,11 @@ import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
  * two rules meant to be separate. A Token naming one entry twice is refused for this
  * reason (`duplicateRefsOf`); a loadout can't refuse, so it merges.
  *
- * ⚠️ The inventory stack is the charge pool. A hero's slot holds only an item id and
- * items live in one fungible stack, so a statement's charge cost is spent as units of
- * the item itself (cost 0 means never consumed). An item whose stack is empty
- * contributes nothing but stays in its slot, greyed.
+ * ⚠️ The inventory stack is the charge pool. A statement's charge cost is spent as units
+ * of the item from the Bank (cost 0 means never consumed). A shared item (food, drink,
+ * potions) whose stack is empty contributes nothing but stays in its slot, greyed; a
+ * copy the hero holds always contributes (`heldCopies.slotBacked`).
  */
-
-/**
- * Whether an equipped item can currently do anything: one that is not in the
- * Bank is not really in the hero's hands.
- */
-function inStock(itemId) {
-    return InventoryManager.hasItem(itemId, 1);
-}
 
 /**
  * Every effect reference a hero is carrying, merged by effect.
@@ -42,8 +35,10 @@ export function loadoutRefs(hero) {
     const merged = new Map();
     if (!hero) return merged;
 
-    for (const itemId of getGrid(hero)) {
-        if (!itemId || !inStock(itemId)) continue;
+    const grid = getGrid(hero);
+    for (let slot = 0; slot < grid.length; slot++) {
+        const itemId = grid[slot];
+        if (!itemId || !slotBacked(hero, slot)) continue;
         const def = getItem(itemId);
         if (!def) continue;
 
@@ -95,7 +90,7 @@ export function loadoutStatementsWith(hero, keyword) {
  * charging both would make carrying a spare worse than carrying none.
  *
  * ⚠️ Nothing is unequipped when the stack empties: the last unit fires normally
- * and `inStock` silences the item from the next firing, so it stays in its slot, greyed.
+ * and `slotBacked` silences a shared item from the next firing, so it stays in its slot, greyed.
  *
  * ⚠️ Pay only once the rule has actually done something. `canPayLoadoutCost`
  * answers the same question without spending, so a caller whose roll happens

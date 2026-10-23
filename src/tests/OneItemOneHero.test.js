@@ -368,6 +368,15 @@ describe('a held copy works with none in the Bank', () => {
         expect(spares).toBe(1);
     });
 
+    it('an older save\'s link that breaks costs the Bank one, as it always did', () => {
+        const aela = addHero('Aela');
+        give('oo_pick', 2);
+        aela.equipment[0] = 'oo_pick';
+        expect(EquipmentManager.destroyEquipped(aela.id, 0).success).toBe(true);
+        expect(aela.equipment[0]).toBeNull();
+        expect(bank('oo_pick')).toBe(1);
+    });
+
     it('the starter tools are not given twice when a hero holds one', () => {
         const shipped = Object.fromEntries(starterToolIds(getAllItems()).filter(id => id !== 'oo_starter_pick').map(id => [id, getAllItems()[id]]));
         for (const id of Object.keys(shipped)) delete getAllItems()[id];
@@ -477,6 +486,19 @@ describe('saves', () => {
         expect(again.heroes.map(h => [...h.equipment])).toEqual(after.heroes);
         expect(again.inventory.items).toEqual(after.bank);
         expect(Banners.getAll()).toEqual([]);
+    });
+
+    it('an old save whose Bank still writes a bare number per item settles the same way', async () => {
+        const aela = addHero('Aela');
+        shareOldStyle(aela, 0, 'oo_pick');
+        SaveManager.currentSlot = 0;
+        const data = JSON.parse(GameState.serializeJson());
+        data.state.inventory.items = { oo_pick: 2 };
+        localStorage.setItem(SaveManager.getSlotKey(0), JSON.stringify(data));
+
+        expect(await SaveManager.loadSlot(0, { catchUp: false })).toBe(true);
+        expect(GameState.state.heroes[0].equipment[0]).toBe('oo_pick');
+        expect(bank('oo_pick')).toBe(1);
     });
 
     it('an old save the Bank fully covers moves the copies and needs no notice', async () => {

@@ -41,14 +41,13 @@ export function applyDefeatPenalties(heroId) {
         }
     }
 
-    // 2. Permanent gear loss: each equipped GEAR piece can break (unequipped and
-    //    removed from the bank). Gear only, so no loss is charged twice.
+    // 2. Permanent gear loss: each equipped GEAR piece can break, and the hero's own
+    //    copy goes with it. Gear only, so no loss is charged twice.
     for (const entry of equipped) {
         if (!isGearCategory(entry.category)) continue;
         if (Math.random() < DEFEAT_PENALTY.GEAR_LOSS_CHANCE) {
             const item = getItem(entry.itemId);
-            EquipmentManager.unequipItem(heroId, entry.index);
-            InventoryManager.removeItem(entry.itemId, 1);
+            EquipmentManager.destroyEquipped(heroId, entry.index);
             lost.push(item?.name || entry.itemId);
         }
     }

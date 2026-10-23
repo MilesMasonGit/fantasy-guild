@@ -3,6 +3,7 @@ import { calculateHeroLevel } from '../HeroGenerator.js';
 import { heroMaxHpFromSkills } from '../../../utils/CombatFormulas.js';
 import { GameState } from '../../../state/GameState.js';
 import { createEmptyEquipment } from '../../../config/registries/equipmentConstants.js';
+import { normaliseHeldCopies } from '../../equipment/heldCopies.js';
 import { STARTING_SKILL_IDS } from '../../../config/registries/skillRegistry.js';
 
 /**
@@ -68,8 +69,10 @@ export function rehydrateHero(hero) {
         Object.values(hero.equipment || {}).filter(Boolean)
             .slice(0, equipment.length)
             .forEach((itemId, i) => { equipment[i] = itemId; });
+        delete hero.heldCopies;
     }
     hero.equipment = equipment;
+    normaliseHeldCopies(hero);
     delete hero.lastEatenAt;
     delete hero.lastDrunkAt;
     // Heroes no longer have energy; older saves still carry the field.
