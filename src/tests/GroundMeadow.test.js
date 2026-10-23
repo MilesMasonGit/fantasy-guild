@@ -197,7 +197,13 @@ function dryRegion() {
 const MEADOW_FINGERPRINT = 'ac138814';
 
 describe('⭐ a meadow Region places exactly as before (decision 15)', () => {
-    beforeEach(freshGame);
+    // On the 11-step, 0.64 mat the script was recorded on: what it guards is how a meadow places
+    // Tokens, which the size of the mat the game ships does not change.
+    beforeEach(() => {
+        freshGame();
+        setMatTuning('matSteps', 11);
+        setMatTuning('matAspect', 0.64);
+    });
     afterEach(() => resetMatTuning());
 
     const grounds = {
@@ -232,9 +238,10 @@ describe('⭐ a meadow Region places exactly as before (decision 15)', () => {
  * biomes gained their small waters): new Regions get water, stored ones keep theirs. Recorded
  * again when the placement rounds grew natural groves, camps in a grove and treasures on islands:
  * new Regions place that way, stored ones keep their layout. Recorded again when the shipped Token
- * hitbox grew from 80% to 90%: a layout keeps the placement rule's own gaps.
+ * hitbox grew from 80% to 90%: a layout keeps the placement rule's own gaps. Recorded again when the
+ * shipped mat became 1920 × 1040 (12 by 6.5 steps): new Regions are laid out on it.
  */
-const LAYOUT_FINGERPRINT = 'a7909caf';
+const LAYOUT_FINGERPRINT = '12ce93ff';
 
 registerTokenTypes({
     gm_oak: { id: 'gm_oak', name: 'GM Oak', tokenType: 'resource', size: 1, uses: 5, requiresHero: true, config: { skill: 'logging', skillRequired: 1, cycleTimeMs: 3000, inputs: [], outputs: [] } },

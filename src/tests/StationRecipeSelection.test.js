@@ -17,7 +17,7 @@ import { QuestManager } from '../systems/quests/QuestManager.js';
  * `A` and `NEIGHBOUR` are 160 u apart, so the context Token beside the station
  * is a neighbour at the shipped 164 u Near.
  */
-const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 120 + Math.floor(i / 6) * 160 });
 
 /** The Token standing exactly on spot `i`, and its instance id. */
 const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;

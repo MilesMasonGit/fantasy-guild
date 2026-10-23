@@ -341,11 +341,11 @@ describe('the game\'s side of the layout (layoutInputs)', () => {
     afterEach(() => { clearMat(); resetMatTuning(); });
 
     it('lays out on the shipped mat, whatever this device\'s Mat Tuner says', () => {
-        expect(shippedMat()).toEqual({ w: 1760, h: 1126 });
+        expect(shippedMat()).toEqual({ w: 1920, h: 1040 });
         expect(shippedCrowding()).toEqual({ hitboxPct: 90, overlapPct: 40 });
         setMatTuning('matSteps', 7);
         setMatTuning('hitboxPct', 60);
-        expect(shippedMat()).toEqual({ w: 1760, h: 1126 });
+        expect(shippedMat()).toEqual({ w: 1920, h: 1040 });
         expect(shippedCrowding()).toEqual({ hitboxPct: 90, overlapPct: 40 });
     });
 

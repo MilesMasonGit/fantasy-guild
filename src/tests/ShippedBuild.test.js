@@ -41,7 +41,8 @@ afterEach(() => {
 describe('the game values', () => {
     it('are today’s shipped numbers, and the Mat Tuner starts at them', async () => {
         const { tuning, geometry, quests } = await loadAs('development');
-        expect(geometry.MAT_STEPS).toBe(11);
+        expect(geometry.MAT_STEPS).toBe(12);
+        expect(geometry.MAT_ASPECT).toBe(13 / 24);
         expect(quests.QUEST_CAP_BASE).toBe(2);
         expect(quests.QUEST_CAP_MAX).toBe(5);
         expect(quests.QUEST_EVERY_SEC).toBe(180);
@@ -56,14 +57,14 @@ describe('the game values', () => {
 describe('a shipped build uses the game values whatever the tuner once stored', () => {
     it('the mat is MAT_STEPS, the bounties the quest game values, every other tuner number its default', async () => {
         const { tuning, geometry, quests } = await loadAs('production');
-        expect(geometry.matSteps()).toBe(11);
-        expect(geometry.matW()).toBe(1760);
-        expect(geometry.matH()).toBe(1126);
+        expect(geometry.matSteps()).toBe(12);
+        expect(geometry.matW()).toBe(1920);
+        expect(geometry.matH()).toBe(1040);
         expect(quests.questCap()).toBe(2);
         expect(quests.questIntervalMs()).toBe(180_000);
         expect(tuning.matTuning('flagRadius')).toBe(tuning.matTuningDefault('flagRadius'));
         expect(tuning.setMatTuning('matSteps', 8)).toBe(false);
-        expect(geometry.matSteps()).toBe(11);
+        expect(geometry.matSteps()).toBe(12);
     });
 
     it('a dev build still takes the tuner’s numbers', async () => {

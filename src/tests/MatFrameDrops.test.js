@@ -32,28 +32,28 @@ const big = (i) => ({ x: C(i).x + 80, y: C(i).y + 80 });
 describe('the mat frame (FP-92)', () => {
     afterEach(() => resetMatTuning());
 
-    it('is 11 steps of 160 u at a 0.64 aspect: 1760 × 1126 u', () => {
-        expect(matSteps()).toBe(11);
-        expect(matW()).toBe(1760);
-        expect(matH()).toBe(1126);
+    it('is 12 steps of 160 u wide and 6.5 tall: 1920 × 1040 u', () => {
+        expect(matSteps()).toBe(12);
+        expect(matW()).toBe(1920);
+        expect(matH()).toBe(1040);
     });
 
     /**
      * ⭐ Slice 1.6d-3 — the mat's size is the Mat Tuner's **Mat size** row, read
      * live. Nothing may hold it in a constant.
      */
-    it('follows the Mat size row at the 0.64 aspect, in both directions', () => {
+    it('follows the Mat size row at the game’s aspect, in both directions', () => {
         setMatTuning('matSteps', 6);
         expect(matSteps()).toBe(6);
         expect(matW()).toBe(960);
-        expect(matH()).toBe(Math.round(960 * 0.64));   // 614
+        expect(matH()).toBe(520);
 
         setMatTuning('matSteps', 20);
         expect(matW()).toBe(3200);
-        expect(matH()).toBe(2048);
+        expect(matH()).toBe(Math.round(3200 * 13 / 24));   // 1733
 
         resetMatTuning();
-        expect(matW()).toBe(1760);
+        expect(matW()).toBe(1920);
     });
 
     it('⭐ a new game stands the Guild Hall in the MIDDLE of the mat, at any size', () => {
@@ -64,10 +64,10 @@ describe('the mat frame (FP-92)', () => {
             return { x: hall.x, y: hall.y };
         };
 
-        expect(hallAt()).toEqual({ x: 880, y: 563 });
+        expect(hallAt()).toEqual({ x: 960, y: 520 });
 
         setMatTuning('matSteps', 6);
-        expect(hallAt()).toEqual({ x: 480, y: 307 });
+        expect(hallAt()).toEqual({ x: 480, y: 260 });
     });
 });
 
@@ -284,9 +284,9 @@ describe('dropOnMat — one drop function for the playmat', () => {
     // Maps used to lie loose on the mat in a box of their own until the Map
     // bursts retired (Token Lifecycle 9.1). A Map is an ordinary Token.
     it('a Map Token stands on the mat like any other Token (9.1)', () => {
-        expect(dropOnMat({ typeId: 'fixture_map', usesRemaining: 1 }, { x: 1500, y: 1000 }).success).toBe(true);
+        expect(dropOnMat({ typeId: 'fixture_map', usesRemaining: 1 }, { x: 1500, y: 900 }).success).toBe(true);
         expect(BoardState.tokens().map(t => t.typeId)).toEqual(['fixture_map']);
-        expect(only()).toMatchObject({ x: 1500, y: 1000 });
+        expect(only()).toMatchObject({ x: 1500, y: 900 });
         expect(GameState.state.board.maps).toBeUndefined();
     });
 

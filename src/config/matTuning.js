@@ -63,9 +63,9 @@ export const MAT_TUNABLES = Object.freeze([
         key: 'walkSpeed',
         group: 'Heroes',
         label: 'Walk speed',
-        hint: 'How fast heroes walk, in mat units a second. The mat is 1760 u wide at 11 steps, so 120 crosses it in about 15 s. Walking costs work time: a job starts when the hero arrives.',
+        hint: 'How fast heroes walk, in mat units a second. The mat is 1920 u wide at 12 steps, so 120 crosses it in 16 s. Walking costs work time: a job starts when the hero arrives.',
         min: 20, max: 600, step: 1, def: 120,
-        format: (v) => `${Math.round(v)} u/s · ${(1760 / v).toFixed(1)} s across`
+        format: (v) => `${Math.round(v)} u/s · ${(Math.round(matTuning('matSteps')) * STEP_U / v).toFixed(1)} s across`
     },
     {
         key: 'potterRadius',
@@ -81,7 +81,7 @@ export const MAT_TUNABLES = Object.freeze([
         label: 'Enemy walk speed',
         hint: 'How fast enemies walk, in mat units a second (B7.1, TL-16): back to their spawner when carried away, or after it when it is moved. They potter near it at half this. A bit slower than heroes (120) by default.',
         min: 10, max: 600, step: 1, def: 90,
-        format: (v) => `${Math.round(v)} u/s · ${(1760 / v).toFixed(1)} s across`
+        format: (v) => `${Math.round(v)} u/s · ${(Math.round(matTuning('matSteps')) * STEP_U / v).toFixed(1)} s across`
     },
     {
         key: 'enemyPotterRadius',

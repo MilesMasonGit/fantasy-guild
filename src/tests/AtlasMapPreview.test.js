@@ -138,9 +138,9 @@ afterAll(() => {
 
 describe('the preview\'s size', () => {
     it('is the finest whole number of Token pixels a preview pixel that fits, drawn at the UI\'s 2×', () => {
-        const fit = previewFit(SHIPPED, 440, 400);
-        expect(fit).toEqual({ step: 4, unit: 8, cols: 220, rows: 141, zoom: PREVIEW_ZOOM, width: 440, height: 282 });
-        expect(previewFit(SHIPPED, 439, 400).step).toBe(5);
+        const fit = previewFit(SHIPPED, 480, 400);
+        expect(fit).toEqual({ step: 4, unit: 8, cols: 240, rows: 130, zoom: PREVIEW_ZOOM, width: 480, height: 260 });
+        expect(previewFit(SHIPPED, 479, 400).step).toBe(5);
         expect(previewFit(SHIPPED, 1000, 250).step).toBe(5);
         // Nothing fits: the coarsest.
         expect(previewFit(SHIPPED, 50, 50).step).toBe(8);
@@ -158,7 +158,7 @@ describe('the Tokens on it', () => {
         const tokens = previewTokens(layout, SHIPPED, 8);
         expect(tokens.map(t => t.typeId)).toEqual([OAK, HALL_TYPE_ID, OAK]);
         expect(tokens[0]).toMatchObject({ x: 12, y: 12, px: 16 });
-        expect(tokens[1]).toMatchObject({ x: 110, y: Math.round(1126 / 2) / 8 });
+        expect(tokens[1]).toMatchObject({ x: 120, y: 65 });
         expect(tokens[2]).toMatchObject({ x: 100, y: 75, px: 16 });
         // A grown mat lands the Hall at its own middle.
         expect(previewTokens(layout, { w: 3200, h: 2048 }, 16).find(t => t.typeId === HALL_TYPE_ID)).toMatchObject({ x: 100, y: 64 });
@@ -234,7 +234,7 @@ describe('⭐ the picture is the mat\'s own', () => {
     it('each Token is its own sprite, shrunk to the size the mat draws it', () => {
         const plan = Atlas.preview(recipes, { seed: 9 });
         const mat = { w: matW(), h: matH() };
-        const fit = previewFit(mat, 440, 400);
+        const fit = previewFit(mat, 480, 400);
         const hall = tokenSpritePath(HALL_TYPE_ID);
         primePreviewArt(hall, solidArt(64, 64, [250, 0, 250]));
         const picture = previewPicture(plan, fit, mat);
