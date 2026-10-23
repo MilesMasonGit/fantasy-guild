@@ -106,3 +106,34 @@ interview, not rulings):
 
 Already decided elsewhere: gear and tools are one copy per hero (owner
 2026-10-22, T-230); tools are hand gear (`concept_skill_loops.md`).
+
+### What the code does today (checked 2026-10-22)
+
+Differs from GDD §6 in places; the code wins:
+
+- Max HP 50 at level 1 on an exponential curve; it is set only when a hero is
+  made or loaded, never recomputed on level-up.
+- Damage 4 × 1.045^(level−1) + weapon, ±15 % spread; hit 75 % ± skill gap,
+  clamped 5–95; block is folded into the miss roll; no crits.
+- Fixed swing timers: hero 2.5 s, enemy 3 s. Weapons don't change speed.
+- One hero per enemy: a second hero arriving restarts the fight.
+- **Recruits already fight** at level 1 (they can be ambushed) but earn no
+  combat XP; GDD §4 says they can't.
+- No weapons or armour exist in `items.json`; potions are never drunk
+  (`consumeLoopConsumables` has no caller); no content applies a status.
+- Enemies have no armour field; 4 ship, all melee.
+- Fight state lives in memory only and is never saved.
+
+## Detail pass rulings (owner, 2026-10-22)
+
+### Numbers and scaling
+
+- **HP: 10 + combat level** (RuneScape-like): a Recruit has about 10 HP, a
+  level-99 hero about 110. Max HP follows the level as it rises.
+- **Damage comes mostly from the weapon**: a bronze sword hits about 2, late
+  weapons about 8. Level adds a little (about +1 per 20 levels) plus
+  accuracy. Getting stronger means crafting the next weapon.
+- **Armour blocks flat damage**: each point takes 1 off every hit; a hit
+  always does at least 1.
+- **The weapon sets attack speed**, in three steps: fast 2 s (daggers,
+  wands), normal 3 s (swords, bows), slow 4 s (two-handers, hitting harder).
