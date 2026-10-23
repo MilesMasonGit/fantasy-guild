@@ -213,8 +213,20 @@ const AUTO_SCROLL = {
     canScroll: (el) => typeof document === 'undefined' || el !== document.scrollingElement
 };
 
+/**
+ * A drag source's box where it is drawn, its own transform included: the carried ghost is laid
+ * on this box and flies from it to the cursor.
+ * ⚠️ Not dnd-kit's default, which takes the source's own transform off (it expects a source
+ * to be moved by the drag itself; here only the overlay moves). Enemies and heroes on the mat are
+ * placed by a transform from the mat's corner, so that box was the mat's corner, and their ghosts
+ * flew in from there.
+ */
+export function measureDragSource(node) {
+    return getClientRect(node);
+}
+
 // Static, so passing it to <DndContext> never counts as a changed prop.
-const MEASURING = { droppable: { measure: measureDropTarget } };
+const MEASURING = { draggable: { measure: measureDragSource }, droppable: { measure: measureDropTarget } };
 
 /**
  * ⚠️ Static too: a fresh options object on each provider render gives dnd-kit a new sensor, so
