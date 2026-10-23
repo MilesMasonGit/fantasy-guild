@@ -164,8 +164,7 @@ export const InventoryManager = {
      * Bank first, freeing its slot when it is the last.
      */
     hasRoomFor(itemIds, { freed = null } = {}) {
-        const held = InventoryStore.getItems();
-        const counts = new Map(Object.entries(held).map(([id, e]) => [id, e?.quantity || 0]));
+        const counts = new Map(Object.entries(InventoryStore.getItems()).map(([id, e]) => [id, e?.quantity || 0]));
         if (freed && counts.has(freed)) counts.set(freed, counts.get(freed) - 1);
         let used = 0;
         for (const n of counts.values()) if (n > 0) used++;

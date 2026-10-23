@@ -28,6 +28,7 @@ function clearRateTrackers() {
     ItemRateTracker.clearAll();
     XpRateTracker.clearAll();
 }
+
 /** One banner for every slot an older save's load emptied for want of a copy. */
 function announceGearLost(lost) {
     const losses = lost.map(l => t('equipment.sharedGearLoss', { hero: l.heroName, item: l.itemName })).join(', ');
