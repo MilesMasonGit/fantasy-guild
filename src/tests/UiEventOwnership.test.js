@@ -53,7 +53,7 @@ describe('the UI never publishes an engine event (CR3-306)', () => {
     });
 
     it('every UI publish names a UI event or asks for a sound', () => {
-        // Local aliases of a UI event (`TUTORIAL_AIDE_EVENTS.HOVER`) resolve here.
+        // Local aliases of a UI event (`const X = { HOVER: UI_EVENTS.Y }`) resolve here.
         const aliases = new Set();
         for (const { code } of UI_FILES) {
             for (const m of code.matchAll(/(\w+)\s*[:=]\s*UI_EVENTS\.\w+/g)) aliases.add(m[1]);

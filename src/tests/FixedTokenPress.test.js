@@ -28,8 +28,8 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * ⭐ **A fixed Token answers a click but not a drag** (Atlas D-6 B), and only movable Tokens carry
- * the faint marker at rest and show the grab cursor. The Guild Hall is movable (T-148).
+ * ⭐ **A fixed Token answers a click but not a drag** (Atlas D-6 B), and only movable Tokens show
+ * the grab cursor. The Guild Hall is movable (T-148).
  * Hovering any Token shows the white outline and moves nothing (T-147).
  */
 
@@ -154,8 +154,8 @@ describe('⭐ a fixed Token refuses a drag; the press still inspects', () => {
     });
 });
 
-describe('⭐ only movable Tokens carry the marker and show the grab cursor', () => {
-    it('the marker is on a bought Token and the Hall, never a fixed one, an enemy or a quest', () => {
+describe('⭐ only movable Tokens show the grab cursor, and no Token carries a marker under it', () => {
+    it('no Token, movable or fixed, draws a marker under it', () => {
         const bought = placeAt('fixture_producer', 300, 300);
         const node = fixtureAt(600, 300);
         const hall = placeAt('token_guild_hall', 900, 600);
@@ -163,9 +163,8 @@ describe('⭐ only movable Tokens carry the marker and show the grab cursor', ()
         const enemy = spawnedAt('fxp_enemy', 300, 800);
         const quest = spawnedAt(QUEST_TOKEN_TYPE, 600, 800);
         const { container } = mount();
-        const marked = [...container.querySelectorAll('[data-token-movable]')].map(el => el.getAttribute('data-token-hit'));
-        expect(marked.sort()).toEqual([bought.id, hall.id].sort());
-        for (const t of [node, sapling, enemy, quest]) expect(hitOf(container, t.id)).toBeTruthy();
+        for (const t of [bought, node, hall, sapling, enemy, quest]) expect(hitOf(container, t.id)).toBeTruthy();
+        expect(container.querySelectorAll('[data-token-movable]')).toHaveLength(0);
     });
 
     it('hovered, any Token shows the white outline and nothing moves; at rest it has none', () => {

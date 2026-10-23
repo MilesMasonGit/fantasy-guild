@@ -13,6 +13,8 @@ const NO_POINTER = Object.freeze({ pointerEvents: 'none' });
 /** A limping hero: drained of colour, a touch darker, and a slower walk cycle. */
 const LIMP_FILTER = 'grayscale(0.7) brightness(0.8) sepia(0.25)';
 const LIMP_FRAME_MS = 250;
+/** Whether a hero's name sits under its feet, as a Token's does, or over its health bar's spot. */
+export const HERO_NAME_BELOW = false;
 import { resolveSpritePath, resolveAnimationPath } from '../../../utils/AssetManager.js';
 import { isElementOpaqueAtPoint, onFigurePart } from '../../utils/alphaHitTest.js';
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
@@ -272,8 +274,13 @@ const MatHeroBody = memo(function MatHeroBody({
                 </div>
             )}
             {barShown && barsDrawn && <HeroHealthBar heroId={heroId} artPx={artPx} />}
-            {/* Over the bar's spot whether or not the bar is up, so the name never jumps. */}
-            <TokenNameBadge name={name} shown={rested && !heroCarried} lift={-heroBarPlace(artPx).top} />
+            {/* Under the feet, or over the bar's spot whether or not the bar is up, so the name never jumps. */}
+            <TokenNameBadge
+                name={name}
+                shown={rested && !heroCarried}
+                below={HERO_NAME_BELOW}
+                offset={HERO_NAME_BELOW ? (artPx - FLAG_PX) / 2 : -heroBarPlace(artPx).top}
+            />
         </button>
     );
 });

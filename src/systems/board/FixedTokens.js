@@ -1,7 +1,6 @@
 // which Tokens stay where they are
 
 import { getTokenType, getAllTokenTypes, registryVersion } from '../../config/registries/tokenRegistry.js';
-import { QUEST_TOKEN_TYPE } from '../../config/registries/engineTokens.js';
 import * as BoardState from './BoardState.js';
 import * as MatCap from './MatCap.js';
 import * as Landmarks from './Landmarks.js';
@@ -16,9 +15,6 @@ import * as Landmarks from './Landmarks.js';
  * ⚠️ The Guild Hall is movable but never pushed ({@link holdsItsGround}): the player drags it,
  * nothing else moves it, and it never leaves the mat (`Placement.isPermanentToken`,
  * `Demolition.canDemolish`).
- *
- * A movable Token bought or built, and the Hall, carry the faint marker at rest
- * ({@link showsMoveMarker}); enemies and quests move as they always have, without it.
  *
  * ⚠️ Kept a leaf (the registries, `BoardState` and `MatCap` only) so the pushers (`EffectActions`,
  * `Foundations`) can ask it without importing `Placement` and everything above it.
@@ -87,16 +83,6 @@ export function fixCampTokens(instances) {
 /** Whether nothing but the player may move a Token: a fixed one, and the Guild Hall. */
 export function holdsItsGround(instance) {
     return isFixed(instance) || MatCap.isGuildHall(instance);
-}
-
-/**
- * Whether a Token shows the faint "you can move me" marker at rest (the grab cursor goes with
- * it): a movable Token that is neither an enemy nor a quest.
- */
-export function showsMoveMarker(instance) {
-    if (!instance || isFixed(instance)) return false;
-    if (instance.typeId === QUEST_TOKEN_TYPE) return false;
-    return !getTokenType(instance.typeId)?.enemy;
 }
 
 /**

@@ -23,7 +23,6 @@ import { MAP_MODE, isProtectedFromDemolition } from '../../hooks/useMapMode.js';
 import { useTokenEvent } from './tokenEvents.js';
 import { useTokenDetail } from './useTokenDetail.js';
 import { TokenBubbles } from './TokenBubbles.jsx';
-import { HEALTH_BAR_LIFT_U } from './healthBar.js';
 import { SMALL_OVERHANG_U, spawnerRing, questRing } from './ringRow.js';
 import { TokenNameBadge } from './TokenBadges.jsx';
 import { gearStateOf } from './centreAlert.js';
@@ -35,7 +34,6 @@ import { PassiveProductionTooltip } from './PassiveProductionTooltip.jsx';
 import * as PassiveProduction from '../../../systems/board/PassiveProduction.js';
 import { QuestTooltip } from './QuestTooltip.jsx';
 import * as QuestTokens from '../../../systems/quests/QuestTokens.js';
-import { setTutorialAideTarget } from '../base/TutorialAideOverlay.jsx';
 import { TICK_INTERVAL_MS } from '../../../config/loopConstants.js';
 import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import { useDrawn, isDrawn } from '../../dev/perf/drawSwitches.js';
@@ -158,14 +156,13 @@ export const MatToken = React.memo(function MatToken({
     const isPermanent = Placement.isPermanentToken(typeId);
     // Read once per instance: nothing that decides it (the fixture mark, origin, type) changes
     // while the instance lives, except the dev layout tool, which lifts landmarks and the camp's
-    // fixtures while it is on. A fixed Token is never picked up; a movable one bought or built
-    // carries the faint marker at rest (`FixedTokens.showsMoveMarker`).
+    // fixtures while it is on. A fixed Token is never picked up.
     // ⚠️ Hovered, a Token only shows its white outline (`tokenOutline`): nothing on it moves.
     const layoutEditing = React.useSyncExternalStore(Landmarks.onLayoutEditingChange, Landmarks.isLayoutEditing);
-    const { fixed, marked } = React.useMemo(() => {
-        const instance = BoardState.getTokenById(id);
-        return { fixed: FixedTokens.isFixed(instance), marked: FixedTokens.showsMoveMarker(instance) };
-    }, [id, layoutEditing]);   // eslint-disable-line react-hooks/exhaustive-deps
+    const fixed = React.useMemo(
+        () => FixedTokens.isFixed(BoardState.getTokenById(id)),
+        [id, layoutEditing]   // eslint-disable-line react-hooks/exhaustive-deps
+    );
     // Demolish mode dims a Token the engine will not let go, read once per mode change.
     const demolishProtected = React.useMemo(
         () => mapMode === MAP_MODE.DEMOLISH && isProtectedFromDemolition(BoardState.getTokenById(id)),
@@ -273,15 +270,8 @@ export const MatToken = React.memo(function MatToken({
     // tooltip with a live next-in, not the native title. Read only once the pointer rests.
     const showPassive = isRested && PassiveProduction.hasPassiveProduction(BoardState.getTokenById(id));
 
-    // Resting on a quest Token reads it (`QuestTooltip`), and a tutorial step still to do lights
-    // its target (`TutorialAideOverlay`).
+    // Resting on a quest Token reads it (`QuestTooltip`).
     const showQuestTip = isRested && !!quest;
-    const aideStep = isRested && quest?.tutorial && !questDone ? quest.id : null;
-    React.useEffect(() => {
-        if (!aideStep) return undefined;
-        setTutorialAideTarget(aideStep);
-        return () => setTutorialAideTarget(null);
-    }, [aideStep]);
 
     const hoverTitle = [
         detail?.disallowed ? 'Heroes may not work this' : null,
@@ -530,7 +520,6 @@ export const MatToken = React.memo(function MatToken({
             >
                 <div
                     data-token-hit={id}
-                    data-token-movable={marked ? 'true' : undefined}
                     className="absolute"
                     style={{
                         left: boxHalf - r,
@@ -541,18 +530,6 @@ export const MatToken = React.memo(function MatToken({
                         pointerEvents: 'auto'
                     }}
                 />
-                {/**
-                 * A done quest glows until claimed: a gold halo behind the art that breathes
-                 * (`gi-quest-ready`), spilling past it.
-                 */}
-                {questDone && (
-                    <div
-                        aria-hidden="true"
-                        data-quest-glow="true"
-                        className="gi-quest-ready absolute pointer-events-none"
-                        style={{ inset: '-22%' }}
-                    />
-                )}
                 {/* At rest its dip (the Hall taking in loot), its resting greying and landing hop play
                     among the resting Tokens: on the main thread, as tailwind.css explains at
                     `.gi-token-land`. A worked Token is drawn in front of them all. */}
@@ -584,7 +561,7 @@ export const MatToken = React.memo(function MatToken({
                 className="absolute pointer-events-none"
                 style={{ ...boxStyle, visibility: hidden ? 'hidden' : 'visible' }}
             >
-                <TokenNameBadge name={label} isDragging={hidden} shown={isRested} lift={Math.max(small ? SMALL_OVERHANG_U : 0, def?.enemy ? HEALTH_BAR_LIFT_U : 0)} />
+                <TokenNameBadge name={label} isDragging={hidden} shown={isRested} below offset={small ? SMALL_OVERHANG_U : 0} />
 
                 {/**
                  * The work bar, the problem mark, the player's marks and the -1 floater, and

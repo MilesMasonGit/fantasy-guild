@@ -75,6 +75,14 @@ describe('TokenNameBadge', () => {
         expect(container.firstChild.style.bottom).toBe('calc(100% + 4px)');
     });
 
+    it('below, it sits under the box, pushed further by the offset', () => {
+        const { container } = render(
+            React.createElement(TokenNameBadge, { name: 'Ancient Forge', shown: true, below: true, offset: 30 })
+        );
+        expect(container.firstChild.style.top).toBe('calc(100% + 34px)');
+        expect(container.firstChild.style.bottom).toBe('');
+    });
+
     it('does not render while dragging', () => {
         const { container } = render(
             React.createElement(TokenNameBadge, { name: 'Ancient Forge', isDragging: true, shown: true })

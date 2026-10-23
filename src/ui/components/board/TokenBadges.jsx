@@ -100,11 +100,12 @@ export const TokenChargeDeltaFloater = memo(function TokenChargeDeltaFloater({ i
 
 /**
  * TokenNameBadge: a Token's or hero's name once the pointer rests on it (`shown`), centred just
- * above the box so it never covers a bubble. `lift` raises it further (mat units) when something
- * hangs off the box's top (a small Token's timer, a health bar). Memoised: its Token redraws far
- * more often than any of these change.
+ * below the box (`below`) or just above it, so it never covers a bubble. `offset` moves it further
+ * from the box (mat units) past whatever hangs off that edge: a small Token's corner rings, a
+ * health bar, a hero's art reaching past its box. Memoised: its Token redraws far more often than
+ * any of these change.
  */
-export const TokenNameBadge = memo(function TokenNameBadge({ name, isDragging, shown = false, lift = 0 }) {
+export const TokenNameBadge = memo(function TokenNameBadge({ name, isDragging, shown = false, below = false, offset = 0 }) {
     // ⚠️ Not drawn at all until shown, never drawn hidden: the label's drop shadow is a filter
     // Chrome draws on a layer of its own, and every Token drawn after a hidden label then needed
     // a layer too, drawn soft and a pixel off.
@@ -117,9 +118,10 @@ export const TokenNameBadge = memo(function TokenNameBadge({ name, isDragging, s
             data-token-name="true"
             className={cn(
                 "absolute left-0 right-0 z-30 pointer-events-none",
-                "flex items-end justify-center text-center select-none"
+                "flex justify-center text-center select-none",
+                below ? "items-start" : "items-end"
             )}
-            style={{ bottom: `calc(100% + ${4 + lift}px)` }}
+            style={below ? { top: `calc(100% + ${4 + offset}px)` } : { bottom: `calc(100% + ${4 + offset}px)` }}
         >
             <span
                 className="ui-text-small w-max max-w-[240px] shrink-0 font-bold text-white leading-tight tracking-tight px-1 drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.95)]"
