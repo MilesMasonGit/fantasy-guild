@@ -32,7 +32,7 @@ const STEP_U = 160;
  * Kept in step with `MAT_ASPECT` in `matGeometry.js` — which imports THIS file,
  * so the dependency may not run the other way.
  */
-const ASPECT = 0.64;
+const ASPECT = 13 / 24;
 
 /**
  * A small Token's art radius, repeated here for the same reason — this file
@@ -119,15 +119,15 @@ export const MAT_TUNABLES = Object.freeze([
         key: 'matSteps',
         group: 'The mat',
         label: 'Mat size',
-        hint: 'How wide the playmat itself is, in 160 u steps; its height is the width at the Mat shape below (the game value, MAT_STEPS, is 11; dev builds only). ⚠️ Shrinking it pulls Tokens that no longer fit back inside and spaces them apart; flags are only pulled in. Growing it moves nothing.',
-        min: 6, max: 20, step: 1, def: 11,
+        hint: 'How wide the playmat itself is, in 160 u steps; its height is the width at the Mat shape below (the game value, MAT_STEPS, is 12; dev builds only). ⚠️ Shrinking it pulls Tokens that no longer fit back inside and spaces them apart; flags are only pulled in. Growing it moves nothing.',
+        min: 6, max: 20, step: 1, def: 12,
         format: (v) => `${Math.round(v)} steps · ${Math.round(v) * STEP_U} × ${Math.round(Math.round(v) * STEP_U * matTuning('matAspect'))} u`
     },
     {
         key: 'matAspect',
         group: 'The mat',
         label: 'Mat shape',
-        hint: 'How tall the playmat is for its width (the game value, MAT_ASPECT, is 0.64; dev builds only). Lower is wider and shorter: at 12 steps, 0.583 is 1120 u tall (7 steps) and 0.542 is 1040 u (6.5 steps). ⚠️ Shortening it pulls Tokens below the new edge back inside, as Mat size does.',
+        hint: 'How tall the playmat is for its width (the game value, MAT_ASPECT, is 13/24, 0.542: 1040 u, 6.5 steps, at 12 steps wide; dev builds only). Lower is wider and shorter. ⚠️ Shortening it pulls Tokens below the new edge back inside, as Mat size does.',
         min: 0.4, max: 0.8, step: 0.001, def: ASPECT,
         format: (v) => `${v.toFixed(3)} · ${Math.round(Math.round(matTuning('matSteps')) * STEP_U * v)} u tall · ${(Math.round(matTuning('matSteps')) * v).toFixed(2)} steps`
     },

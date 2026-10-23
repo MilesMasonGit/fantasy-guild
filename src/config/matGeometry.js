@@ -18,8 +18,8 @@ import { tunedOr } from './matTuning.js';
  * ## The mat's own size — live
  *
  * The mat is `matSteps()` of today's 160 u steps wide, and `matAspect()` of that tall.
- * The game values, {@link MAT_STEPS} and {@link MAT_ASPECT}, make 11 steps at 0.64:
- * **1760 × 1126 u**; its top-left is always (0, 0). In a dev build the Mat Tuner's **Mat size**
+ * The game values, {@link MAT_STEPS} and {@link MAT_ASPECT}, make 12 steps wide and 6.5 tall:
+ * **1920 × 1040 u**; its top-left is always (0, 0). In a dev build the Mat Tuner's **Mat size**
  * row moves the width between 6 and 20 steps, and its **Mat shape** row the aspect between 0.4
  * and 0.8, while the game runs.
  *
@@ -37,11 +37,11 @@ import { tunedOr } from './matTuning.js';
  */
 export const MAT_STEP_U = 160;
 
-/** ⭐ The mat's height over its width: a game value, like {@link MAT_STEPS}. */
-export const MAT_ASPECT = 0.64;
+/** ⭐ The mat's height over its width: a game value, like {@link MAT_STEPS}. 13/24 is 6.5 steps tall at 12 wide. */
+export const MAT_ASPECT = 13 / 24;
 
 /** ⭐ The mat's size in 160 u steps: a game value (a Guild Hall upgrade may raise it one day). */
-export const MAT_STEPS = 11;
+export const MAT_STEPS = 12;
 
 /** How many 160 u steps wide the mat currently is: {@link MAT_STEPS}, or a dev build's Mat Tuner (6–20). */
 export function matSteps() {

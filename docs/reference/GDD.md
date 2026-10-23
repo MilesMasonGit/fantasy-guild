@@ -74,8 +74,9 @@ Today the pull is skill levels, Guild Hall upgrades and promotions.
 ## 3. The playmat and Tokens
 
 ### The mat — Built
-- One continuous surface, **no grid**. Default 11 steps of 160 u =
-  **1760 × 1126 u** (fixed aspect 0.64). *(`matGeometry.js`, `matTuning.js`)*
+- One continuous surface, **no grid**. 12 steps of 160 u wide and 6.5 tall =
+  **1920 × 1040 u** (aspect 13/24). A save or Region left on a bigger mat is pulled
+  inside its edge on load and on travel. *(`matGeometry.js`, `matTuning.js`, `MatResize.js`)*
 - A dropped Token lands **exactly where it is let go** if the spot is legal;
   otherwise it nudges to the nearest legal spot within 160 u, otherwise it flies
   back. A legal spot: art circle inside the mat; not crowding a neighbour
@@ -640,7 +641,7 @@ stub rows), not the Token count.
 
 | Term | Meaning today |
 |---|---|
-| **Mat / playmat** | The free surface Tokens stand on (1760 × 1126 u by default). |
+| **Mat / playmat** | The free surface Tokens stand on (1920 × 1040 u). |
 | **u, step** | Mat unit; a step is 160 u. |
 | **Token** | Anything on the mat. A *type* is authored; an *instance* is one on the mat. |
 | **Placed / spawned** | Bought or built by the player (fixed, refundable) vs made by the mat (free, pushable). |

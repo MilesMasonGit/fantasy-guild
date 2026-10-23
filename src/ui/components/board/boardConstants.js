@@ -10,7 +10,7 @@
 /**
  * The height of the columns flanking the playmat.
  * ⚠️ A layout number, not a board measurement: it is stated plainly rather than derived from
- * the mat, which is 1126 u tall and would silently change every column's height. Each of these
+ * the mat, which is 1040 u tall and would silently change every column's height. Each of these
  * columns is also capped to `maxHeight: 100%`, so on a short window they shrink with the mat
  * rather than hanging off the bottom.
  */
