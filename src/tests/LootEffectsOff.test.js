@@ -6,7 +6,8 @@ import './fixtures/testTokens.js';
 
 /**
  * ⭐ **Loot lands without its extra effects** (owner: they looked wrong and cost frames): no
- * afterimages on the hop, no rare twinkle, no trail or plink on the flight to the Bank. Each is
+ * afterimages on the hop, no rare twinkle, no dissolve as it joins a pile and no pulse on that
+ * pile, no trail or plink on the flight to the Bank. Each is
  * turned off by one switch in `ui/utils/lootEffects.js`, not deleted; flipped on, it plays again.
  */
 
@@ -18,6 +19,8 @@ vi.mock('../ui/utils/lootEffects.js', async (importOriginal) => {
         get LOOT_HOP_AFTERIMAGES() { return pick('LOOT_HOP_AFTERIMAGES'); },
         get LOOT_RARE_TWINKLE() { return pick('LOOT_RARE_TWINKLE'); },
         get LOOT_FLIGHT_SPARKLES() { return pick('LOOT_FLIGHT_SPARKLES'); },
+        get LOOT_PILE_DISSOLVE() { return pick('LOOT_PILE_DISSOLVE'); },
+        get LOOT_PILE_PULSE() { return pick('LOOT_PILE_PULSE'); },
         real
     };
 });
@@ -40,7 +43,7 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { SpriteLayerView } from '../ui/components/board/SpriteLayerView.jsx';
-import { playLootArc } from '../ui/utils/lootArc.js';
+import { playLootArc, playAbsorptionSlide } from '../ui/utils/lootArc.js';
 import { watchRareDrops, playRareTwinkle } from '../ui/components/board/fx/rareTwinkle.js';
 import { setSpriteFxManifest } from '../ui/utils/spriteFx.js';
 
@@ -82,12 +85,11 @@ function lootBox(size = 64) {
 
 describe('⭐ the switches, all off', () => {
     it('every loot effect switch ships off', () => {
-        const { LOOT_HOP_AFTERIMAGES, LOOT_RARE_TWINKLE, LOOT_FLIGHT_SPARKLES } = LootEffects.real;
-        expect({ LOOT_HOP_AFTERIMAGES, LOOT_RARE_TWINKLE, LOOT_FLIGHT_SPARKLES }).toEqual({
-            LOOT_HOP_AFTERIMAGES: false,
-            LOOT_RARE_TWINKLE: false,
-            LOOT_FLIGHT_SPARKLES: false
-        });
+        const { real } = LootEffects;
+        expect(Object.keys(real).sort()).toEqual([
+            'LOOT_FLIGHT_SPARKLES', 'LOOT_HOP_AFTERIMAGES', 'LOOT_PILE_DISSOLVE', 'LOOT_PILE_PULSE', 'LOOT_RARE_TWINKLE'
+        ]);
+        for (const [name, on] of Object.entries(real)) expect(on, name).toBe(false);
     });
 });
 
@@ -128,5 +130,42 @@ describe('⭐ a rare find: no twinkle', () => {
         switches.on = true;
         await act(async () => { render(h(SpriteLayerView)); });
         expect(watchRareDrops).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe('⭐ joining a pile: no dissolve, no pulse', () => {
+    it('off: the loot steps onto the pile and is hidden there; no dissolve copies', () => {
+        const box = lootBox();
+        playAbsorptionSlide(box, 30, 0, { unit: 2 });
+        expect(box.querySelectorAll('[data-fx-copy]')).toHaveLength(0);
+        expect(animations.map(a => a.el)).toEqual([box]);
+        expect(animations[0].keyframes.at(-1).visibility).toBe('hidden');
+    });
+
+    it('switched on, it dissolves again: half its pixels, a quarter, gone', () => {
+        switches.on = true;
+        const box = lootBox();
+        playAbsorptionSlide(box, 30, 0, { unit: 2 });
+        expect([...box.querySelectorAll('[data-fx-copy]')].map(c => c.getAttribute('data-fx-copy'))).toEqual(['dither-50', 'dither-25']);
+    });
+
+    async function pileJoined() {
+        let view;
+        let pile;
+        await act(async () => {
+            pile = SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, { centre: { x: 500, y: 400 } });
+            view = render(h(SpriteLayerView));
+        });
+        await act(async () => { EventBus.publish(BOARD_EVENTS.SPRITE_ABSORBED, { parentId: pile.id }); });
+        return view.container.querySelector('.brightness-125');
+    }
+
+    it('off: the pile it joins does not brighten', async () => {
+        expect(await pileJoined()).toBeNull();
+    });
+
+    it('switched on, the pile brightens again', async () => {
+        switches.on = true;
+        expect(await pileJoined()).not.toBeNull();
     });
 });

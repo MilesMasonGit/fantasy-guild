@@ -1,5 +1,7 @@
 // Captures the drag grid and the loot landing from a running dev server, for the owner's phone review:
-//   node docs/active/research/drag_loot/capture_drag_loot.mjs <url> <outDir> <label>
+//   node docs/active/research/drag_loot/capture_drag_loot.mjs <url> <outDir> <label> [pile]
+// With `pile`, only <label>_pile_strip.png: loot dropped, then a second of the same item dropped
+// from the same Token, which steps onto the first one's pile (thirty-two stills from the second drop).
 // At 1920 x 1080, on a New Game:
 // - <label>_loot_strip.png: a loot drop from a Starter Camp Token, twenty-four stills as fast as the
 //   browser takes them, at 2x in rows of four, each with its time since the drop (the hop, any
@@ -11,7 +13,7 @@ import { writeFileSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { launchChrome, sleep } from '../../../../bench/browser/cdp.mjs';
 
-const [url = 'http://localhost:5206', out = '.', label = 'shot'] = process.argv.slice(2);
+const [url = 'http://localhost:5206', out = '.', label = 'shot', only = ''] = process.argv.slice(2);
 mkdirSync(out, { recursive: true });
 const W = 1920;
 const H = 1080;
@@ -42,7 +44,7 @@ function stitch(page, frames, times) {
 /** Screen box of a mat point. */
 const TO_SCREEN = `(p) => { const b = document.querySelector('[data-board-origin]'); const r = b.getBoundingClientRect(); const s = r.width / b.offsetWidth; return { x: r.left + p.x * s, y: r.top + p.y * s, s }; }`;
 
-async function lootStrip(page, fn, name) {
+async function lootStrip(page, fn, name, { count = 24, before = null } = {}) {
     const where = await page.evaluate(`(() => {
         const dev = globalThis.__fxDev; const toks = dev.everyToken().slice(0, 1);
         const t = toks[0]; const at = (${TO_SCREEN})(t);
@@ -50,11 +52,15 @@ async function lootStrip(page, fn, name) {
         return at;
     })()`);
     const clip = { x: Math.max(0, Math.round(where.x - 110)), y: Math.max(0, Math.round(where.y - 110)), width: 220, height: 200, scale: 1 };
+    if (before) {
+        await page.evaluate(`globalThis.__fxDev.${before}(window.__lootFrom).length`);
+        await sleep(1500);
+    }
     await page.evaluate(`globalThis.__fxDev.${fn}(window.__lootFrom).length`);
     const t0 = Date.now();
     const frames = [];
     const times = [];
-    for (let i = 0; i < 24; i++) {
+    for (let i = 0; i < count; i++) {
         const shot = await page.send('Page.captureScreenshot', { format: 'png', clip });
         frames.push(shot.data);
         times.push(Date.now() - t0);
@@ -75,6 +81,11 @@ try {
     await sleep(6000);
     await page.evaluate(`import('/src/ui/dev/animationDev.js').then(() => !!globalThis.__fxDev)`);
 
+    if (only === 'pile') {
+        await lootStrip(page, 'dropLootFrom', `${label}_pile_strip.png`, { count: 32, before: 'dropLootFrom' });
+        await chrome.close();
+        process.exit(0);
+    }
     await lootStrip(page, 'dropLootFrom', `${label}_loot_strip.png`);
     await sleep(1500);
     await lootStrip(page, 'dropRareFrom', `${label}_rare_strip.png`);

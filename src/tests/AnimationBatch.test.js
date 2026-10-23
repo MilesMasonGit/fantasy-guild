@@ -429,7 +429,7 @@ describe('loot hop (effect 4), ground shadow and the slide into a pile', () => {
         expect(rec.calls.every(a => a.keyframes.every(k => !/scale/.test(k.transform || '') && k.opacity === undefined))).toBe(true);
     });
 
-    it('slides into its pile in three steps, then dissolves: half its pixels, a quarter, gone', () => {
+    it('slides into its pile in three steps and is hidden there (the dissolve is switched off)', () => {
         const box = lootBox();
         playAbsorptionSlide(box, 30, 0, { unit: 2 });
         const slide = rec.calls.find(a => a.el === box);
@@ -437,7 +437,8 @@ describe('loot hop (effect 4), ground shadow and the slide into a pile', () => {
             'translate(10px, 0px)', 'translate(20px, 0px)', 'translate(30px, 0px)', 'translate(30px, 0px)', 'translate(30px, 0px)', 'translate(30px, 0px)'
         ]);
         expect(slide.keyframes[5].visibility).toBe('hidden');
-        expect([...box.querySelectorAll('[data-fx-copy]')].map(c => c.getAttribute('data-fx-copy'))).toEqual(['dither-50', 'dither-25']);
+        // The dissolve ships switched off (`ui/utils/lootEffects.js`; on, in `LootEffectsOff.test.js`).
+        expect(box.querySelectorAll('[data-fx-copy]')).toHaveLength(0);
         expect(rec.calls.every(a => a.keyframes.every(k => !/scale/.test(k.transform || '') && k.opacity === undefined))).toBe(true);
     });
 });

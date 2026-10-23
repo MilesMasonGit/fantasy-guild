@@ -17,7 +17,7 @@ import { useMatFit } from './MatFitContext.jsx';
 import { boardScaleAt } from '../base/TokenSprite.jsx';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 import { isDrawn } from '../../dev/perf/drawSwitches.js';
-import { LOOT_RARE_TWINKLE } from '../../utils/lootEffects.js';
+import { LOOT_RARE_TWINKLE, LOOT_PILE_PULSE } from '../../utils/lootEffects.js';
 
 /**
  * SpriteLayerView: item loot floating **above** the mat. An absolutely-positioned overlay over
@@ -146,6 +146,7 @@ const LootSprite = React.memo(function LootSprite({
     }, [targetStackId, bornAt, x, y, parentX, parentY]);
 
     React.useEffect(() => {
+        if (!LOOT_PILE_PULSE) return undefined;
         const unsub = EventBus.subscribe(BOARD_EVENTS.SPRITE_ABSORBED, (payload) => {
             if (payload?.parentId === id) {
                 setIsAbsorbingPulse(true);
