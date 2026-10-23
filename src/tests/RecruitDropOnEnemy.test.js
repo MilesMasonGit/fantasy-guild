@@ -161,7 +161,7 @@ describe('a Recruit dropped NEAR a hostile Goblin: it watches the flag, the same
         });
 
         it(`${WHERE[side]}, the flag outside its watch: the Goblin leaves the Recruit alone`, () => {
-            const goblin = nearDrop(side, 200);
+            const goblin = nearDrop(side, 280);
             const { fought, gone } = play('r1', goblin, 30000);
             expect(fought).toBe(false);
             expect(gone).toBe(false);

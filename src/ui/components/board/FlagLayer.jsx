@@ -23,6 +23,7 @@ import { useMatFit } from './MatFitContext.jsx';
 import { useTokenDragLanding } from './MatRings.jsx';
 import { POLE_BASE, pinnedFlagPoint } from './flagGeometry.js';
 import { workableInReach } from './flagWorkable.js';
+import { pixelRingPath } from './pixelRing.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
@@ -38,9 +39,10 @@ import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
  * in every state, is drawn by `MatBoard`, so a hero walking back to their flag is never handed
  * from one layer to another.
  * - **The player never moves a hero**: dragging any hero drags their FLAG.
- * - **Reach ring**: a dashed gold circle of the live flag radius, only while that flag or its
- * hero is hovered, dragged or inspected, or while a dragged Token would land inside it. While a
- * flag is dragged, every Token inside it the hero could work shows a green dot at its centre.
+ * - **Reach ring**: a gold circle of the live flag radius drawn in whole art pixels over a hard
+ * black shadow (`pixelRing.js`), only while that flag or its hero is hovered, dragged or
+ * inspected, or while a dragged Token would land inside it. While a flag is dragged, every Token
+ * inside it the hero could work shows a green dot at its centre.
  * - **No hitbox over Tokens, but the cloth**: wherever the pointer is on a Token's art circle,
  * every flag lets it through (`yieldToTokens`, set by `MatBoard`), so a flag never eats a
  * Token's hover, click or grab with its pole or empty corners. A flag is grabbed by the part
@@ -52,6 +54,10 @@ import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
  */
 
 const NO_DOTS = Object.freeze([]);
+
+/** The reach ring: one art pixel of gold over a solid black copy one art pixel down-right. */
+const RING_GOLD = 'var(--color-gi-gold)';
+const RING_SHADOW = '#000';
 
 /** A workable Token's green dot, as a share of the art size. */
 const WORKABLE_DOT_SCALE = 0.05;
@@ -157,6 +163,8 @@ export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverH
         [ring?.heroId, ring?.x, ring?.y]
     );
     const dotR = Math.max(4, Math.round(artPx * WORKABLE_DOT_SCALE));
+    const ringPixels = Math.round(radius / artScale);
+    const ringPath = useMemo(() => pixelRingPath(ringPixels), [ringPixels]);
 
     // While a Token is dragged, every flag it would land inside shows its reach, whatever the
     // Token is.
@@ -192,21 +200,32 @@ export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverH
                     width={mat.w}
                     height={mat.h}
                 >
-                    {[...rings].map(([heroId, p]) => (
-                        <circle
-                            key={heroId}
-                            data-flag-ring={heroId}
-                            cx={p.x}
-                            cy={p.y}
-                            r={radius}
-                            fill="none"
-                            stroke="rgb(251, 191, 36)"
-                            strokeOpacity={0.4}
-                            strokeWidth={1}
-                            strokeDasharray="6 5"
-                            vectorEffect="non-scaling-stroke"
-                        />
-                    ))}
+                    {[...rings].map(([heroId, p]) => {
+                        // Snapped to the art-pixel grid, so every cell lands on whole screen pixels.
+                        const ox = Math.round(p.x / artScale - 0.5) * artScale;
+                        const oy = Math.round(p.y / artScale - 0.5) * artScale;
+                        return (
+                            <g
+                                key={heroId}
+                                data-flag-ring={heroId}
+                                data-r={radius}
+                                data-cx={p.x}
+                                data-cy={p.y}
+                                shapeRendering="crispEdges"
+                            >
+                                <path
+                                    d={ringPath}
+                                    transform={`translate(${ox + artScale} ${oy + artScale}) scale(${artScale})`}
+                                    fill={RING_SHADOW}
+                                />
+                                <path
+                                    d={ringPath}
+                                    transform={`translate(${ox} ${oy}) scale(${artScale})`}
+                                    fill={RING_GOLD}
+                                />
+                            </g>
+                        );
+                    })}
                     {workable.map(t => (
                         <circle
                             key={t.id}

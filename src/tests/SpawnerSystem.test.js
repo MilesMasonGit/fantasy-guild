@@ -466,9 +466,10 @@ describe('⭐ spawns push spawned Tokens but never placed ones (SP-46, SP-68)', 
         give(SEED, 10);
         const forest = placeAt('fixture_sp_forest', 200, 200);
         const gap = Math.ceil(MatPlacement.minGap('fixture_kitchen', 'fixture_kitchen'));
+        // Centred, so no strip wide enough for a Token is left at the far edges.
         const blockers = [];
-        for (let x = 64; x <= matW() - 64; x += gap) {
-            for (let y = 64; y <= matH() - 64; y += gap) {
+        for (let x = 64 + ((matW() - 128) % gap) / 2; x <= matW() - 64; x += gap) {
+            for (let y = 64 + ((matH() - 128) % gap) / 2; y <= matH() - 64; y += gap) {
                 if (Math.hypot(x - 200, y - 200) < gap) continue;
                 blockers.push(placeAt('fixture_kitchen', x, y));
             }
@@ -606,9 +607,10 @@ describe('⭐ a waiting spawner raises an on-mat alert, and drops it when fixed 
         give(SEED, 10);
         const forest = placeAt('fixture_sp_forest', 200, 200);
         const gap = Math.ceil(MatPlacement.minGap('fixture_kitchen', 'fixture_kitchen'));
+        // Centred, so no strip wide enough for a Token is left at the far edges.
         const blockers = [];
-        for (let x = 64; x <= matW() - 64; x += gap) {
-            for (let y = 64; y <= matH() - 64; y += gap) {
+        for (let x = 64 + ((matW() - 128) % gap) / 2; x <= matW() - 64; x += gap) {
+            for (let y = 64 + ((matH() - 128) % gap) / 2; y <= matH() - 64; y += gap) {
                 if (Math.hypot(x - 200, y - 200) < gap) continue;
                 blockers.push(placeAt('fixture_kitchen', x, y));
             }

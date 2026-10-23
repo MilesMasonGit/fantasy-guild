@@ -55,8 +55,8 @@ export const MAT_TUNABLES = Object.freeze([
         key: 'flagRadius',
         group: 'Flags',
         label: 'Flag radius',
-        hint: 'How far from its flag a hero looks for work, centre to centre. 164 reaches the Token under the flag and its four side neighbours, not the diagonals (226 u). 400 was the old default.',
-        min: 100, max: 1000, step: 1, def: 164,
+        hint: 'How far from its flag a hero looks for work, centre to centre. 240 reaches the Token under the flag and all eight neighbours: the four sides (160 u) and the diagonals (226 u). The Scouting Flags upgrade adds 40 a rank on top. 164 (sides only) and 400 were older defaults.',
+        min: 100, max: 1000, step: 1, def: 240,
         format: (v) => `${Math.round(v)} u · ${(v / STEP_U).toFixed(2)} steps`
     },
     {
@@ -95,15 +95,15 @@ export const MAT_TUNABLES = Object.freeze([
         key: 'hitboxPct',
         group: 'Crowding',
         label: 'Token hitbox',
-        hint: 'How much of a Token’s art actually collides, as a percentage of its radius. Never drawn — a Token at rest is just its art. 80% makes a small Token’s hitbox 51 u of its 64 u art.',
-        min: 40, max: 100, step: 1, def: 80,
+        hint: 'How much of a Token’s art actually collides, as a percentage of its radius. Never drawn — a Token at rest is just its art. 90% makes a small Token’s hitbox 58 u of its 64 u art (80%, 51 u, was the old default).',
+        min: 40, max: 100, step: 1, def: 90,
         format: (v) => `${Math.round(v)}% · small ${Math.round(SMALL_ART_R * v / 100)} u`
     },
     {
         key: 'overlapPct',
         group: 'Crowding',
         label: 'Overlap allowed',
-        hint: 'How far two hitboxes may overlap before a drop is refused. At 80% hitbox, 40% overlap lets two small Tokens sit 61 u apart centre to centre — well under a 160 u tile step.',
+        hint: 'How far two hitboxes may overlap before a drop is refused. At 90% hitbox, 40% overlap lets two small Tokens sit 70 u apart centre to centre — well under a 160 u tile step.',
         min: 0, max: 80, step: 1, def: 40,
         format: (v) => `${Math.round(v)}% · two small ${Math.round(2 * Math.round(SMALL_ART_R * matTuning('hitboxPct') / 100) * (1 - v / 100))} u apart`
     },
@@ -165,6 +165,17 @@ const DEFAULTS = Object.freeze(
 
 const STORAGE_KEY = 'fantasy_guild_mat_tuning';
 
+/**
+ * ⚠️ The panel stores every value, touched or not, so a device that ever opened it holds the old
+ * default of each row and would keep it after the default moves. A stored value equal to a
+ * default listed here is read as that untouched old default, not a choice, and the new one wins.
+ * Add a row's old default here whenever its `def` changes.
+ */
+const RETIRED_DEFAULTS = Object.freeze({
+    flagRadius: [164],
+    hitboxPct: [80]
+});
+
 /** Whether this build has a Mat Tuner: a dev or a perf build, never a shipped one. */
 const TUNABLE = !!(import.meta.env?.DEV || import.meta.env?.MODE === 'perf');
 
@@ -177,6 +188,7 @@ function loadStored() {
         if (stored && typeof stored === 'object') {
             for (const t of MAT_TUNABLES) {
                 const v = stored[t.key];
+                if (RETIRED_DEFAULTS[t.key]?.includes(v)) continue;
                 // Clamped rather than trusted, as in playmatTuning.
                 if (typeof v === 'number' && Number.isFinite(v)) {
                     values[t.key] = Math.max(t.min, Math.min(t.max, v));

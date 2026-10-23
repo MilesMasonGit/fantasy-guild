@@ -79,7 +79,7 @@ Today the pull is skill levels, Guild Hall upgrades and promotions.
 - A dropped Token lands **exactly where it is let go** if the spot is legal;
   otherwise it nudges to the nearest legal spot within 160 u, otherwise it flies
   back. A legal spot: art circle inside the mat; not crowding a neighbour
-  (hitbox 80 % of the art radius, up to 40 % overlap); breaks no `Cannot` rule.
+  (hitbox 90 % of the art radius, up to 40 % overlap); breaks no `Cannot` rule.
   *(`MatPlacement.js`)*
 - **A player drop never pushes anything.** Arrivals (spawns, growth, builds)
   may push **spawned** Tokens aside; **placed Tokens are never pushed**.
@@ -306,7 +306,7 @@ and armour will be authored as content.
 
 ### How heroes choose work — Built (the heart of the game)
 - A **flag** has no skill: the hero works every skill they hold within the
-  **flag radius (164 u, +40 u per Scouting Flags rank)**, shaped by per-skill
+  **flag radius (240 u: all eight neighbours; +40 u per Scouting Flags rank)**, shaped by per-skill
   **rules** (allowed on/off, priority 1–5, default 3; one combined Fight rule).
 - Choice order: a Promotion Token or the Hall directly under the flag first;
   then by priority, distance, and placement order. One hero per Token.

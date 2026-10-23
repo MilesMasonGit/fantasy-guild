@@ -78,7 +78,7 @@ vi.mock('../ui/utils/alphaHitTest.js', async (importOriginal) => {
 /**
  * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;
  * a lattice of mat points 160 u apart, so spot 22 stays a side neighbour of 21
- * at the shipped 164 u reach while spot 13 stays well outside it (358 u).
+ * at the shipped 240 u reach while spot 13 stays well outside it (358 u).
  */
 const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
 
@@ -162,7 +162,7 @@ describe('FP-76 — the player never moves a hero: dragging one drags their flag
     });
 
     it('a board hero dropped elsewhere moves the flag — one hero_deployed — and the hero goes to their job', () => {
-        // 13 is out of spot 21's reach (358 u at the shipped 164 u); 22 is its
+        // 13 is out of spot 21's reach (358 u at the shipped 240 u); 22 is its
         // side neighbour, 160 u away.
         put(13, FOREST);
         put(22, FOREST);

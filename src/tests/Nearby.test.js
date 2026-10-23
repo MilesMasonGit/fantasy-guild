@@ -136,10 +136,10 @@ describe('the Near radius', () => {
 describe('⭐ at the shipped 164 u Near is the four side neighbours (FP-75)', () => {
     beforeEach(() => resetMatTuning());
 
-    it('flag radius and Near both ship at 164 u', () => {
-        expect(matTuningDefault('flagRadius')).toBe(164);
+    it('Near ships at 164 u; the flag radius is its own rule, at 240 u', () => {
         expect(matTuningDefault('nearRadius')).toBe(164);
-        expect(matTuning('flagRadius')).toBe(164);
+        expect(matTuningDefault('flagRadius')).toBe(240);
+        expect(matTuning('flagRadius')).toBe(240);
     });
 
     it('on a mat full of 1×1 Tokens — corners 2, edges 3, centre 4, never a diagonal', () => {
