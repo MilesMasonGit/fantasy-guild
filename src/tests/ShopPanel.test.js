@@ -102,10 +102,11 @@ describe('the Bank drawer keeps the Bank only (B4)', () => {
         expect(view.queryByTestId('bank-pane')).toBeNull();
     });
 
-    it('keeps the Bank with its inspect column', () => {
+    // The inspect column is gone: an item's details are its tile's tooltip.
+    it('keeps the Bank, with no inspect column', () => {
         const view = render(h(BankDrawer, { drawer: drawerFor('bank'), inspect }));
         expect(view.getByTestId('bank-pane')).toBeTruthy();
-        expect(view.getByTestId('inspect-column')).toBeTruthy();
+        expect(view.queryByTestId('inspect-column')).toBeNull();
     });
 
     it('the nav Shop bubble opens and closes the Shop drawer, not a Bank pane', async () => {

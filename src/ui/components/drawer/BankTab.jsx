@@ -10,10 +10,11 @@ import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { ItemIcon } from '../base/ItemIcon.jsx';
 import { Tooltip } from '../base/Tooltip.jsx';
 import { formatCompact } from '../../../utils/Formatters.js';
-import { matCap } from '../../../systems/board/MatCap.js';
-import { isMapItem, whatItWrites, MAP_TEXT } from '../../../systems/atlas/mapItems.js';
-import { Landmark, Lock, Check, BoxSelect } from 'lucide-react';
+import { Landmark, Lock, Check, BoxSelect, X } from 'lucide-react';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
+import { t } from '../../../i18n/index.js';
+import { ItemTipContent } from './ItemTip.jsx';
+import { itemTintName, itemTintStyle } from '../base/itemTint.js';
 
 /** Hard cap on bank tabs: 1 free + 15 via Guild Hall (max total 16). */
 const BANK_TAB_CAP = 16;
@@ -24,11 +25,12 @@ const BANK_TAB_CAP = 16;
  * total slots and tab count are three separate upgrade stats.
  * Tabs reuse the inventory group system (groupOrder/groupDefs/itemOverrides, persisted). An
  * item with no override lives in the FIRST tab. Drag a tile onto a tile to reorder, onto a tab
- * to file it there, onto a hero to equip (payload kind 'item'). Search matches ALL tabs. Item
- * details live in the shared InspectionPanel.
+ * to file it there, onto a hero to equip (payload kind 'item'). Search matches ALL tabs. An
+ * item's details are its tile's hover tooltip.
  */
-export const BankTab = ({ selectedItemId, onInspect, searchQuery = '' }) => {
+export const BankTab = () => {
     const [activeTabId, setActiveTabId] = useState(null);
+    const [searchQuery, setSearchQuery] = useState('');
     // Select mode: multi-select stacks to drag-move between tabs.
     const [selectMode, setSelectMode] = useState(false);
     const [selectedIds, setSelectedIds] = useState(() => new Set());
@@ -203,6 +205,7 @@ export const BankTab = ({ selectedItemId, onInspect, searchQuery = '' }) => {
                 {selectMode && (
                     <span className="text-(length:--font-size-xs) text-gi-muted tabular-nums">{selectedEntries.length} selected</span>
                 )}
+                <BankSearch value={searchQuery} onChange={setSearchQuery} />
                 <Tooltip lines={['Item stacks in the bank / slot capacity']}>
                 <span
                     className={cn(
@@ -244,8 +247,7 @@ export const BankTab = ({ selectedItemId, onInspect, searchQuery = '' }) => {
                             <ItemTile
                                 key={entry.id}
                                 entry={entry}
-                                selected={selectedItemId === entry.id}
-                                onSelect={() => (selectMode ? toggleSelected(entry.id) : onInspect('item', entry.id))}
+                                onSelect={selectMode ? () => toggleSelected(entry.id) : undefined}
                                 checked={selectMode && selectedIds.has(entry.id)}
                                 selectMode={selectMode}
                                 selectionIds={selectedIds}
@@ -274,7 +276,7 @@ export const BankTab = ({ selectedItemId, onInspect, searchQuery = '' }) => {
 
 /** One banked item — a native drag source (kind 'item') and a reorder drop target.
  *  In select mode a checked tile drags the WHOLE selection (payload.selection). */
-const ItemTile = ({ entry, selected, onSelect, checked = false, selectMode = false, selectionIds = null, canReorder = false, onReorderDrop }) => {
+const ItemTile = ({ entry, onSelect, checked = false, selectMode = false, selectionIds = null, canReorder = false, onReorderDrop }) => {
     const drag = useEntityDrag({
         id: `item-src-${entry.id}`,
         kind: DRAG_KIND.ITEM,
@@ -294,7 +296,6 @@ const ItemTile = ({ entry, selected, onSelect, checked = false, selectMode = fal
     return (
         <ItemTileBody
             entry={entry}
-            selected={selected}
             onSelect={onSelect}
             checked={checked}
             selectMode={selectMode}
@@ -309,15 +310,14 @@ const ItemTile = ({ entry, selected, onSelect, checked = false, selectMode = fal
 
 // ⚠️ Apart from its drag hooks on purpose: dnd-kit redraws their holder at every drag start, end
 // and change of target; the tile is memoised on what it draws.
-const ItemTileBody = memo(function ItemTileBody({ entry, selected, onSelect, checked, selectMode, cue, held, nodeRef, handleProps, droppableProps }) {
+const ItemTileBody = memo(function ItemTileBody({ entry, onSelect, checked, selectMode, cue, held, nodeRef, handleProps, droppableProps }) {
     const { template, count } = entry;
+    const hint = selectMode ? t(checked ? 'itemTip.clickToDeselect' : 'itemTip.clickToSelect') : null;
     return (
         <Tooltip
             title={template.name}
-            lines={[
-                `×${count.toLocaleString('en-US')}`,
-                selectMode ? `Click to ${checked ? 'deselect' : 'select'}` : 'Drag to sort, or onto a hero to equip'
-            ]}
+            maxWidth={300}
+            content={<ItemTipContent item={template} count={count} hint={hint} />}
         >
         <button
             ref={nodeRef}
@@ -325,9 +325,11 @@ const ItemTileBody = memo(function ItemTileBody({ entry, selected, onSelect, che
             onClick={onSelect}
             {...handleProps}
             {...droppableProps}
+            data-item-tint={itemTintName(template)}
+            style={itemTintStyle(template)}
             className={cn(
-                'relative flex flex-col items-center justify-center p-3 rounded-lg border transition-all duration-200 cursor-grab active:cursor-grabbing text-center min-w-0 min-h-0 aspect-square',
-                selected && !selectMode ? 'border-gi-primary bg-gi-primary/10' : 'border-gi-border bg-gi-base/60 hover:border-gi-muted',
+                'ui-item-tile relative flex flex-col items-center justify-center p-3 rounded-lg border transition-all duration-200 cursor-grab active:cursor-grabbing text-center min-w-0 min-h-0 aspect-square',
+                'border-gi-border hover:border-gi-muted',
                 checked && 'border-gi-primary bg-gi-primary/15 ring-1 ring-gi-primary/60',
                 cue && 'ring-2 ring-gi-primary border-gi-primary',
                 held && 'opacity-40'
@@ -422,103 +424,31 @@ const BankTabButtonBody = memo(function BankTabButtonBody({ tab, index, first, a
     );
 });
 
-/**
- * Item details, rendered by the shared InspectionPanel. Nothing sells, so there are no sell
- * controls.
- */
-export const ItemInspection = ({ entry }) => {
-    const { template, count } = entry;
-    const writes = isMapItem(template) ? whatItWrites(template, { cap: matCap() }) : null;
-    return (
-        <div className="p-4 flex flex-col gap-4 text-xs text-gi-text">
-            <div className="flex flex-col items-center text-center">
-                <div className="flex items-center justify-center w-32 h-32 mb-1">
-                    <ItemIcon item={template} size={128} className="shrink-0" />
-                </div>
-                <h3 className="text-base md:leading-[calc(1.75/1.125)] font-bold text-gi-text mt-1 leading-tight select-text">
-                    {template.name}
-                </h3>
-                <span className="text-xs text-gi-muted uppercase tracking-wider mt-1 select-text">
-                    {MAP_TEXT.typeLabel[template.type] || template.type || 'item'}
-                </span>
+// ⚠️ Inline, because the unlayered input reset in `styles/main.css` outranks Tailwind classes.
+const SEARCH_INPUT_STYLE = { padding: 0, border: 'none', background: 'transparent', fontSize: 'var(--font-size-xs)' };
 
-                {template.tags?.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 justify-center mt-2">
-                        {template.tags.map(tag => (
-                            <span 
-                                key={tag} 
-                                className="px-2 py-0.5 rounded border border-gi-border/50 text-(length:--font-size-xs) font-medium text-gi-muted uppercase tracking-wider"
-                            >
-                                {tag}
-                            </span>
-                        ))}
-                    </div>
-                )}
-            </div>
-
-            {template.description && (
-                <div className="text-left py-1">
-                    <p className="text-xs text-gi-text/85 leading-relaxed select-text font-medium">
-                        {template.description.replace(/^["']|["']$/g, '')}
-                    </p>
-                </div>
-            )}
-
-            {writes && (
-                <div data-map-writes className="flex flex-col gap-2 pt-1 border-t border-gi-border/30">
-                    <div className="flex items-baseline justify-between gap-2">
-                        <span className="text-(length:--font-size-xs) font-bold uppercase tracking-wider text-gi-muted">{MAP_TEXT.whatItWrites}</span>
-                        <span className="text-xs font-bold text-gi-text text-right">{writes.headline}</span>
-                    </div>
-                    <ul className="flex flex-col gap-1">
-                        {writes.lines.map((line, i) => (
-                            <li
-                                key={`${line.role}-${line.typeId}-${i}`}
-                                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#181412] border border-white/10 text-xs"
-                            >
-                                <ItemIcon item={line.typeId} size={16} className="shrink-0" />
-                                <span className="font-medium text-gi-text tabular-nums">{line.text}</span>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            )}
-
-            {(template.equipSlot || template.toolType || template.restoreAmount > 0) && (
-                <div className="flex flex-col gap-2 pt-1 border-t border-gi-border/30">
-                    {template.equipSlot && (
-                        <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-[#181412] border border-white/10 text-xs">
-                            <span className="text-gi-muted">Equips as</span>
-                            <span className="font-bold text-gi-text capitalize">{template.equipSlot}</span>
-                        </div>
-                    )}
-                    {template.toolType && (
-                        <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-[#181412] border border-white/10 text-xs">
-                            <span className="text-gi-muted">Tool type</span>
-                            <span className="font-bold text-gi-text capitalize">{template.toolType}</span>
-                        </div>
-                    )}
-                    {template.restoreAmount > 0 && (
-                        <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-[#181412] border border-white/10 text-xs">
-                            <span className="text-gi-muted">Restores</span>
-                            <span className="font-bold text-gi-text">
-                                +{template.restoreAmount} HP
-                            </span>
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {/* Bank count only: nothing sells, so an item has no Value to show. */}
-            <div className="flex items-center gap-2 text-xs pt-1">
-                <div className="flex-1 flex items-center justify-between gap-1.5 px-3 py-2 rounded-lg bg-[#181412] border border-white/10">
-                    <span className="text-gi-muted">Bank</span>
-                    <span className="font-bold text-gi-text tabular-nums">{count.toLocaleString()}</span>
-                </div>
-            </div>
-
-        </div>
-    );
-};
+/** The Bank's search box, in its header: it searches every tab. */
+const BankSearch = ({ value, onChange }) => (
+    <div className="flex items-center gap-1 px-2 py-1 rounded border border-gi-border focus-within:border-gi-muted w-44">
+        <input
+            data-bank-search
+            value={value}
+            onChange={e => onChange(e.target.value)}
+            placeholder={t('bank.searchPlaceholder')}
+            style={SEARCH_INPUT_STYLE}
+            className="outline-none text-gi-text w-full min-w-0 leading-normal placeholder:text-gi-muted/60"
+        />
+        {value ? (
+            <button
+                onClick={() => onChange('')}
+                title={t('bank.clearSearch')}
+                aria-label={t('bank.clearSearch')}
+                className="text-gi-muted hover:text-gi-text p-0.5 rounded cursor-pointer shrink-0"
+            >
+                <X size={12} />
+            </button>
+        ) : null}
+    </div>
+);
 
 export default BankTab;

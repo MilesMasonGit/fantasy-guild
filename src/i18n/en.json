@@ -11,5 +11,31 @@
         "sharedGearTitle": "One copy per hero",
         "sharedGearLine": "Each hero now needs their own copy of gear, weapons and tools, and the Bank was short: {losses}",
         "sharedGearLoss": "{hero} lost {item}"
+    },
+    "bank": {
+        "searchPlaceholder": "Search items…",
+        "clearSearch": "Clear search"
+    },
+    "itemTip": {
+        "count": "×{count}",
+        "equippable": "Equippable: {slot}",
+        "tool": "{kind}, tier {tier}",
+        "twoHanded": "Takes both hands",
+        "restores": "Restores {amount} HP",
+        "clickToSelect": "Click to select",
+        "clickToDeselect": "Click to deselect",
+        "type": {
+            "item": "Item",
+            "material": "Material",
+            "ingredient": "Ingredient",
+            "tool": "Tool",
+            "weapon": "Weapon",
+            "armor": "Armour",
+            "food": "Food",
+            "drink": "Drink",
+            "potion": "Potion",
+            "currency": "Currency",
+            "drop": "Loot"
+        }
     }
 }

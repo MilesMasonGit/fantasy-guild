@@ -390,7 +390,7 @@ export const ReactRoot = () => {
                      */}
                     {drawersDrawn && <ErrorBoundary label="BankDrawer">
                         <PerfProfiler id="Drawer">
-                            <BankDrawer drawer={ui.drawer} inspect={ui.inspect} menuRight={menuRight} />
+                            <BankDrawer drawer={ui.drawer} menuRight={menuRight} />
                         </PerfProfiler>
                     </ErrorBoundary>}
                     {/**

@@ -28,7 +28,9 @@ import { ProblemMark } from '../components/board/ProblemMark.jsx';
 import { SEVERITY } from '../components/board/problemMark.js';
 import { workBarPlace, filledSteps } from '../components/board/workBar.js';
 import { ALERT } from '../../systems/board/boardEvents.js';
-import { PixelGlyph, GLYPHS } from '../components/base/PixelGlyph.jsx';
+import { PixelGlyph, GLYPHS, SLOT_GLYPHS } from '../components/base/PixelGlyph.jsx';
+import { itemTintStyle } from '../components/base/itemTint.js';
+import { ItemTipContent } from '../components/drawer/ItemTip.jsx';
 import { TokenCard } from '../components/board/TokenCard.jsx';
 import { RecipeList } from '../components/board/RecipeList.jsx';
 import { listSkillOf } from '../../systems/board/RecipeList.js';
@@ -431,6 +433,52 @@ const CardIconsDemo = () => (
     </div>
 );
 
+/** One sample item per tile surface (a stand-in object, so the page needs no particular content). */
+const TINT_SAMPLES = [
+    { type: 'material', id: 'item_oak_wood' },
+    { type: 'tool', id: 'item_copper_pickaxe' },
+    { type: 'food', id: 'item_shrimp' },
+    { type: 'drink', id: 'item_water' },
+    { type: 'potion', id: 'item_shrimp_trawler_potion' },
+    { type: 'map', id: 'map_forest' },
+    { type: 'other', id: null }
+];
+
+/** Bank tiles on their type's surface; hover one for the lighter surface and its tooltip. */
+const ItemTilesDemo = () => (
+    <div className="flex items-end gap-3 flex-wrap">
+        {TINT_SAMPLES.map(({ type, id }) => {
+            const item = (id && getItem(id)) || { id: id || 'sample', name: type, type };
+            return (
+                <figure key={type} className="flex flex-col items-center gap-1">
+                    <Tooltip title={item.name} maxWidth={300} content={<ItemTipContent item={item} count={12} />}>
+                        <div
+                            data-kit-item-tile={type}
+                            style={itemTintStyle(item)}
+                            className="ui-item-tile w-24 h-24 rounded-lg border border-gi-border hover:border-gi-muted flex items-center justify-center"
+                        >
+                            {id && getItem(id) ? <ItemIcon item={item} size={64} title={null} /> : null}
+                        </div>
+                    </Tooltip>
+                    <figcaption className="text-xs text-gi-muted">{type}</figcaption>
+                </figure>
+            );
+        })}
+    </div>
+);
+
+/** The loadout slots' kind marks, code-drawn placeholders at 2×. */
+const SlotMarksDemo = () => (
+    <div className="flex items-end gap-4 text-gi-text">
+        {Object.keys(SLOT_GLYPHS).map(name => (
+            <figure key={name} className="flex flex-col items-center gap-1">
+                <PixelGlyph name={name} />
+                <figcaption className="text-xs text-gi-muted">{name.replace('slot_', '')}</figcaption>
+            </figure>
+        ))}
+    </div>
+);
+
 /** Two Token cards from the Shop's view (no Token on the mat): one with its activity's art, one plain. */
 const TokenCardDemo = () => (
     <div className="flex items-start gap-6 flex-wrap">
@@ -676,6 +724,17 @@ export const KIT_SECTIONS = [
         id: 'card-icons', title: 'Card icons', status: 'unapproved', source: 'PixelGlyph (the Token card’s lines)',
         rule: 'Placeholders drawn in code until the owner’s sprites: clock, charges, regrow, spawn, grow, turn. 8×8 at 2×, in the text colour.',
         Demo: CardIconsDemo
+    },
+    {
+        id: 'item-tiles', title: 'Item tiles and their tooltip', status: 'unapproved',
+        source: 'ui-item-tile + itemTint.js (the Bank’s tiles, a hero’s loadout slots); ItemTip (the Bank’s tooltip)',
+        rule: 'Each tile sits on a dark, low-colour surface chosen by the item’s type (material, tool, food, drink, potion, map; anything else plain), a little lighter on hover, so a sprite’s dark outline reads. A surface, not a colour meaning. Hover shows everything about the item: name, type and count, Equippable: <slot>, its tool or what it restores, tags, description, and for a map what it writes.',
+        Demo: ItemTilesDemo
+    },
+    {
+        id: 'slot-marks', title: 'Loadout slot kind marks', status: 'unapproved', source: 'PixelGlyph slot_* (a hero’s loadout slots, bottom-right corner)',
+        rule: 'Placeholders drawn in code until the owner’s sprites: hand, hat, chest, trinket, food, drink, consumable, and a ? for a kind with no mark. 8×8 at 2× with a hard shadow, in the bottom-right corner of a filled slot.',
+        Demo: SlotMarksDemo
     },
     {
         id: 'item-stubs', title: 'Item stubs', status: 'unapproved', source: 'ItemStubColumn (top right of the mat)',

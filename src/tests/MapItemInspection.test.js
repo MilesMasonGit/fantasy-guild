@@ -3,12 +3,12 @@ import { describe, it, expect, afterEach } from 'vitest';
 import React from 'react';
 import { render, cleanup } from '@testing-library/react';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
-import { ItemInspection } from '../ui/components/drawer/BankTab.jsx';
+import { ItemTipContent } from '../ui/components/drawer/ItemTip.jsx';
 import { MAP_TEXT } from '../systems/atlas/mapItems.js';
 
 /**
- * A map item in the Bank says what it writes: a Base Map its node summary under the Token cap, a
- * Modifier its effects. Any other item says nothing of the kind.
+ * A map item's Bank tooltip says what it writes: a Base Map its node summary under the Token cap,
+ * a Modifier its effects. Any other item says nothing of the kind.
  */
 
 registerTokenTypes({
@@ -17,7 +17,7 @@ registerTokenTypes({
     fixture_inspect_camp: { id: 'fixture_inspect_camp', name: 'Inspect Camp', tokenType: 'spawner', rarity: 'common', size: 1, uses: null }
 });
 
-const entry = (template, count = 2) => ({ id: template.id, count, template });
+const tip = (item) => React.createElement(ItemTipContent, { item, count: 2 });
 
 const FOREST = {
     id: 'fixture_inspect_map', name: 'Inspect Forest', type: 'map', sprite: 't_map_forest', stackable: true,
@@ -34,9 +34,9 @@ const OVERGROWN = {
 
 afterEach(cleanup);
 
-describe('inspecting a map item', () => {
+describe('the tooltip of a map item', () => {
     it('a Base Map says what it writes, and what kind of map it is', () => {
-        const { container } = render(React.createElement(ItemInspection, { entry: entry(FOREST) }));
+        const { container } = render(tip(FOREST));
         const writes = container.querySelector('[data-map-writes]');
         expect(writes).toBeTruthy();
         expect(writes.textContent).toContain('What it writes');
@@ -48,7 +48,7 @@ describe('inspecting a map item', () => {
     });
 
     it('a Modifier says its effects', () => {
-        const { container } = render(React.createElement(ItemInspection, { entry: entry(OVERGROWN) }));
+        const { container } = render(tip(OVERGROWN));
         const writes = container.querySelector('[data-map-writes]');
         expect(writes.textContent).toContain(MAP_TEXT.modifierHeadline);
         expect(writes.textContent).toContain('+16 × Inspect Tree');
@@ -57,7 +57,7 @@ describe('inspecting a map item', () => {
 
     it('an ordinary item says nothing of the kind', () => {
         const wood = { id: 'fixture_inspect_wood', name: 'Wood', type: 'material', stackable: true };
-        const { container } = render(React.createElement(ItemInspection, { entry: entry(wood) }));
+        const { container } = render(tip(wood));
         expect(container.querySelector('[data-map-writes]')).toBeNull();
         expect(container.textContent).not.toContain('What it writes');
     });

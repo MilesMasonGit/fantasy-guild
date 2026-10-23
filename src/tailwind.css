@@ -178,6 +178,20 @@
   --shadow-progress-glow: 0 0 12px rgba(233, 69, 96, 0.4);
 }
 
+:root {
+  /* Item tile surfaces, one per item type: dark, low-colour shades lighter than the panel, so a
+     sprite's dark outline reads against them. A surface, not one of the five meanings.
+     ⚠️ Outside @theme on purpose: Tailwind drops theme variables no class names, and these are
+     named only through `itemTint.js`. */
+  --color-item-tint-default: #282a30;
+  --color-item-tint-material: #2e2b25;
+  --color-item-tint-tool: #22304a;
+  --color-item-tint-food: #3c2a1a;
+  --color-item-tint-drink: #173439;
+  --color-item-tint-potion: #352242;
+  --color-item-tint-map: #3a311c;
+}
+
 /* The screen's layers, back to front: every z-index above the mat is one of these, written as
    `z-(--z-name)` (or `var(--z-name)` in a style). The mat's own order is `MAT_Z` in
    `board/matLayers.js`; the board is a stacking context, so its numbers stay inside it.
@@ -235,6 +249,14 @@
 
 /* Glassmorphism Classes */
 @layer components {
+
+  /* An item tile: its type's surface (--item-tint, set by the tile), a little lighter on hover. */
+  .ui-item-tile {
+    background-color: var(--item-tint, var(--color-item-tint-default));
+  }
+  .ui-item-tile:hover {
+    background-color: color-mix(in srgb, var(--item-tint, var(--color-item-tint-default)), white 9%);
+  }
 
   .gi-shadow-deep {
     box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.7);
