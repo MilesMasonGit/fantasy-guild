@@ -221,6 +221,9 @@ describe('⭐ resting on a hero or an enemy adds the HP bar', () => {
         later(HOVER_REST_MS);
         expect(bar()).not.toBeNull();
         expect(name().textContent).toBe('Aela');
+        // Under the feet, as a Token's name is under its box.
+        expect(name().style.top).toContain('100%');
+        expect(name().style.bottom).toBe('');
 
         fireEvent.mouseLeave(figure);
         expect(bar()).toBeNull();

@@ -81,7 +81,8 @@ dev build or with Debug Mode on; T-097 hides Debug Mode in shipped builds.
   health bars don't collide (owner, 2026-10-08; T-112).
 - **Health bars** show the HP number on the bar; the hero's bar stays ~3 s after
   a fight (owner, 2026-10-08).
-- **Name label**: on hover, **above** the Token's box, never over a bubble.
+- **Name label**: on hover, **below**, centred under the box, for Tokens and heroes alike, never
+  over a bubble (owner, 2026-10-23).
 - Bubbles are drawn **inside** the Token's box, so nothing is cut off at the
   mat's edges and hovering them never leaves the Token.
 
