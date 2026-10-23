@@ -11,7 +11,7 @@ import { useEscapeLayer } from '../../utils/escapeLayers.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /** The bar's button look, shared with the Token cap and Upkeep badges. */
-const BUTTON_CLS = 'flex items-center gap-1 px-2 py-0.5 rounded border whitespace-nowrap cursor-pointer transition-colors';
+const BUTTON_CLS = 'flex items-center gap-1.5 px-3 py-1.5 rounded border whitespace-nowrap cursor-pointer transition-colors';
 const OFF_CLS = 'bg-black/30 border-[#2a1d15] text-amber-100 hover:border-gi-gold/60 hover:text-white';
 /** A mode's toggle while it is on, in the mode's colour: muted grey, red. */
 const ON_CLS = {
@@ -120,26 +120,28 @@ export const CancelAllMarksButton = () => {
 
 /**
  * The bar's centre while a mode is on: what a click does, in plain words, and the mode's batch
- * control. Demolish's in red. Nothing at all while no mode is on.
+ * control. Demolish's in red. While no mode is on, `fallback` (the Token cap and Upkeep), so the
+ * mode's words get the whole centre.
+ * @param {{ fallback?: React.ReactNode }} props
  */
-export const MapModeBanner = () => {
+export const MapModeBanner = ({ fallback = null }) => {
     const mode = useMapMode();
-    if (!mode) return null;
+    if (!mode) return fallback;
     return <ModeBannerView mode={mode} />;
 };
 
 /**
  * The banner for `mode`, drawn without reading the live mode (the style sheet page shows it too).
- * ⚠️ The words take a second line rather than being cut: Demolish's last sentence is the warning,
- * and at 1600 px the bar's centre is narrower than one line of it at body size. Narrower still
- * (1280 px), two lines cannot hold it and the rest is on hover.
+ * ⚠️ The words wrap, up to three lines, rather than being cut: Demolish's last sentence is the
+ * warning, and the bar is only as wide as the mat, so its centre is narrower than one line of it.
+ * In a small window (1366 px) even three lines cannot hold it and the rest is on hover.
  */
 export const ModeBannerView = ({ mode }) => (
     <div data-map-mode-banner={mode} className="flex items-center justify-center gap-2 min-w-0 h-full">
         <Tooltip title={MODE_BANNER_TEXT[mode]} maxWidth={360}>
             <span
                 data-map-mode-banner-text
-                className="ui-text-body min-w-0 leading-4 line-clamp-2 text-center"
+                className="ui-text-title min-w-0 leading-5 line-clamp-3 text-center"
                 style={{ color: mode === MAP_MODE.DEMOLISH ? 'var(--color-ui-red)' : undefined }}
             >
                 {MODE_BANNER_TEXT[mode]}

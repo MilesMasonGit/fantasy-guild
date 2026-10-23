@@ -21,8 +21,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { MatRegionName, liveRegionName } from '../ui/components/board/MatRegionName.jsx';
 import { MatUpkeepBadge } from '../ui/components/board/MatUpkeepBadge.jsx';
-import { ModeBannerView, MapModeToggles } from '../ui/components/board/MatModeControls.jsx';
-import { MAP_MODE } from '../ui/hooks/useMapMode.js';
+import { MapModeToggles, MapModeBanner } from '../ui/components/board/MatModeControls.jsx';
+import { MAP_MODE, setMapMode } from '../ui/hooks/useMapMode.js';
+import { REGION_BANNER_PX, REGION_BANNER_SCALE } from '../ui/components/board/MatRegionName.jsx';
+import { setLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
+import { matW } from '../config/matGeometry.js';
 import { PixelFrame } from '../ui/components/base/PixelFrame.jsx';
 import * as Atlas from '../systems/atlas/Atlas.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
@@ -306,34 +309,83 @@ describe('⭐ the restyled bar (T-170)', () => {
         expect(bar.querySelector('[data-pixel-frame-shadow]').className).toContain('ui-frame-shadow-studs');
     });
 
-    it('left: the Region name, Tokens and Upkeep in that order, each an item bar; centre: the banner; right: the toggles', () => {
-        const { container } = render(React.createElement(MatTopBar, {
-            left: React.createElement(React.Fragment, null,
-                React.createElement(MatRegionName, { readName: () => ({ name: 'Elderfield', practical: 'Starter Camp' }) }),
+    const mountWholeBar = () => render(React.createElement(MatTopBar, {
+        left: React.createElement(MatRegionName, { readName: () => ({ name: 'Elderfield', practical: 'Starter Camp' }), readBanner: () => 'b_village' }),
+        middle: React.createElement(MapModeBanner, {
+            fallback: React.createElement(React.Fragment, null,
                 React.createElement(MatCapBadge),
-                React.createElement(MatUpkeepBadge, { readTotal: () => 0 })),
-            middle: React.createElement(ModeBannerView, { mode: MAP_MODE.DEMOLISH }),
-            right: React.createElement(MapModeToggles)
-        }));
+                React.createElement(MatUpkeepBadge, { readTotal: () => 0 }))
+        }),
+        right: React.createElement(MapModeToggles)
+    }));
+
+    it('⭐ left: the Region name on its banner; centre: Tokens and Upkeep, each an item bar; right: the toggles', () => {
+        const { container } = mountWholeBar();
         const left = container.querySelector('[data-mat-top-bar-left]');
-        // The Region name sits inside its banner slice.
-        const bars = [...left.children].map(e => (e.hasAttribute('data-mat-region-banner') ? e.querySelector('[data-mat-region-name]') : e));
-        expect(bars.map(e => e.getAttribute('data-mat-region-name') !== null ? 'region'
-            : e.getAttribute('data-mat-cap-badge') !== null ? 'tokens'
-                : e.getAttribute('data-mat-upkeep-badge') !== null ? 'upkeep' : '?')).toEqual(['region', 'tokens', 'upkeep']);
-        expect(bars.every(e => e.hasAttribute('data-item-bar'))).toBe(true);
+        expect([...left.children].map(e => e.getAttribute('data-mat-region-banner'))).toEqual(['b_village']);
         const middle = container.querySelector('[data-mat-top-bar-middle]');
-        expect(middle.querySelector('[data-map-mode-banner="demolish"] [data-cancel-all-marks]')).not.toBeNull();
+        const bars = [...middle.children];
+        expect(bars.map(e => e.getAttribute('data-mat-cap-badge') !== null ? 'tokens'
+            : e.getAttribute('data-mat-upkeep-badge') !== null ? 'upkeep' : '?')).toEqual(['tokens', 'upkeep']);
+        expect(bars.every(e => e.hasAttribute('data-item-bar'))).toBe(true);
         expect(container.querySelectorAll('[data-mat-top-bar-right] [data-map-mode-toggle]').length).toBe(2);
+        // The side columns are equal, so the centre sits on the mat's centre line.
+        expect(container.querySelector('.ui-frame-studs').className).toContain('grid-cols-[1fr_auto_1fr]');
+    });
+
+    it('⭐ while a mode is on its banner takes the centre in place of Tokens and Upkeep, and they come back after', () => {
+        const { container } = mountWholeBar();
+        const middle = container.querySelector('[data-mat-top-bar-middle]');
+        act(() => setMapMode(MAP_MODE.DEMOLISH));
+        expect(middle.querySelector('[data-map-mode-banner="demolish"] [data-cancel-all-marks]')).not.toBeNull();
+        expect(middle.querySelector('[data-mat-cap-badge]')).toBeNull();
+        act(() => setMapMode(null));
+        expect(middle.querySelector('[data-map-mode-banner]')).toBeNull();
+        expect(middle.querySelector('[data-mat-cap-badge]')).not.toBeNull();
+    });
+
+    it('⭐ the bar is exactly as wide as the mat on screen, following the fit and the Mat Tuner', () => {
+        try {
+            act(() => setLiveMatFit(0.5));
+            const { container } = render(React.createElement(MatTopBar));
+            const bar = container.querySelector('[data-mat-top-bar]');
+            expect(bar.style.width).toBe(`${Math.round(matW() * 0.5)}px`);
+            act(() => setLiveMatFit(0.86));
+            expect(bar.style.width).toBe(`${Math.round(matW() * 0.86)}px`);
+            act(() => { setMatTuning('matSteps', 12); });
+            expect(matW()).toBe(1920);
+            expect(bar.style.width).toBe(`${Math.round(1920 * 0.86)}px`);
+            // Never wider than the column it sits in (before Board has reported a fit).
+            expect(bar.style.maxWidth).toBe('100%');
+        } finally {
+            setLiveMatFit(1);
+        }
+    });
+
+    it('⭐ the Region banner: the Atlas banner at 2x, at most one picture wide, fading out to the right; a big name; no badge, no icon', () => {
+        const { container } = render(React.createElement(MatRegionName, {
+            readName: () => ({ name: 'Elderfield', practical: 'Starter Camp' }), readBanner: () => 'b_village'
+        }));
+        const slice = container.querySelector('[data-mat-region-banner]');
+        const art = slice.querySelector('[data-banner-art="b_village"]');
+        expect(REGION_BANNER_SCALE).toBe(2);
+        expect(art.style.width).toBe('100%');
+        expect(art.style.maxWidth).toBe(`${REGION_BANNER_PX}px`);
+        expect(slice.querySelector('img').getAttribute('data-banner-scale')).toBe('2');
+        expect(slice.querySelector('[data-mat-region-name-text]').className).toContain('ui-text-bar-name');
+        expect(art.style.maskImage || art.style.webkitMaskImage).toMatch(/linear-gradient\(to right/);
+        expect(slice.querySelector('img').style.imageRendering).toBe('pixelated');
+        expect(slice.querySelector('[data-item-bar]')).toBeNull();
+        expect(slice.querySelectorAll('img').length).toBe(1);
     });
 
     it('the Region name reads the Region the guild is in, and follows a rename', () => {
         let name = { name: 'Elderfield', practical: 'Starter Camp' };
         const { container } = render(React.createElement(MatRegionName, { readName: () => name }));
-        expect(regionBar(container).querySelector('[data-item-bar-name]').textContent).toBe('Elderfield');
+        expect(regionBar(container).querySelector('[data-mat-region-name-text]').textContent).toBe('Elderfield');
         name = { name: 'Rockblight Valley', practical: 'Starter Camp' };
         act(() => { EventBus.publish(ENGINE_EVENTS.ATLAS_CHANGED, { reason: 'renamed' }); });
-        expect(regionBar(container).querySelector('[data-item-bar-name]').textContent).toBe('Rockblight Valley');
+        expect(regionBar(container).querySelector('[data-mat-region-name-text]').textContent).toBe('Rockblight Valley');
     });
 
     it('the live reader names the Starter Camp by its flavour name', () => {

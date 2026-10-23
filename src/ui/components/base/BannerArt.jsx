@@ -18,8 +18,9 @@ export function coverScale(boxW, boxH, artW = ASSUMED_ART_PX, artH = ASSUMED_ART
  * An area banner filling its box as a backdrop: the picture at a whole multiple of its size,
  * centred and cropped to the box. Place and size it with `className` (it is `absolute inset-0`
  * unless told otherwise); `focusY` (0 top … 1 bottom) picks which band of a tall crop shows.
+ * `scale` fixes the whole-number scale instead of the smallest that covers the box.
  */
-export const BannerArt = ({ banner, className, focusY = 0.5, ...rest }) => {
+export const BannerArt = ({ banner, className, focusY = 0.5, scale: fixedScale = null, ...rest }) => {
     const box = useRef(null);
     const [size, setSize] = useState({ w: 0, h: 0 });
     const [art, setArt] = useState({ w: ASSUMED_ART_PX, h: ASSUMED_ART_PX });
@@ -42,7 +43,7 @@ export const BannerArt = ({ banner, className, focusY = 0.5, ...rest }) => {
     }, [measure]);
 
     const src = areaBannerSrc(banner);
-    const scale = coverScale(size.w, size.h, art.w, art.h);
+    const scale = fixedScale ?? coverScale(size.w, size.h, art.w, art.h);
     const w = art.w * scale;
     const h = art.h * scale;
     const top = (size.h - h) * Math.min(1, Math.max(0, focusY));

@@ -123,13 +123,13 @@ export const EntityRibbon = ({
 
     // Size configs: 32px sprites in a 32px box, but for xs.
     const sizeConfig = {
-        // The mat's top bar: a 16 px sprite and body text, low enough for the slim bar.
+        // The mat's top bar: a 32 px sprite and title text.
         xs: {
-            box: 'w-4 h-4',
-            iconSize: 16,
-            text: 'ui-text-body',
-            sub: 'ui-text-small',
-            pad: 'px-1.5 py-0.5 gap-1.5'
+            box: 'w-8 h-8',
+            iconSize: 32,
+            text: 'ui-text-title',
+            sub: 'ui-text-body',
+            pad: 'px-2 py-1 gap-2'
         },
         sm: {
             box: 'w-8 h-8',
