@@ -156,3 +156,4 @@ T-218 — Names under Tokens and heroes, centred under the box (owner picked her
 T-219 — No ring under movable Tokens; the grab cursor alone tells movable from fixed — 6c28d269 — 2026-10-23
 T-220 — No quest-ready glow; the tutorial beacon overlay removed (in git history for the redesign) — 6c28d269 — 2026-10-23
 T-221 — Loot lands plainly: afterimages, rare twinkle, flight sparkles, pile dissolve and pile pulse switched off in lootEffects.js (owner: shadow kept) — af6b21c7 — 2026-10-23
+T-222 — An enemy, or a hero picked up on the mat (its flag), no longer flies in from the mat corner: drag sources are measured with their own transform (DndKit measureDragSource); drag bench 400/400 on flag and hero — b0528da0 — 2026-10-23
