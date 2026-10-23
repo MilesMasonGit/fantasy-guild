@@ -10,8 +10,9 @@ import * as NotificationSystem from '../systems/core/NotificationSystem.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
-import { matW, matH, matSteps, clampToMat } from '../config/matGeometry.js';
-import { matTuning, setMatTuning, resetMatTuning } from '../config/matTuning.js';
+import { matW, matH, matSteps, matAspect, clampToMat, MAT_ASPECT } from '../config/matGeometry.js';
+import { matTuning, setMatTuning, resetMatTuning, matTuningDefault } from '../config/matTuning.js';
+import { shippedMat } from '../systems/atlas/layoutInputs.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -295,5 +296,51 @@ describe('the Mat size row pulls Tokens in on its own', () => {
 
         expect(moves.map(m => m.heroId)).toContain('h1');
         expect(Flags.statusOf('h1')).toBeTruthy();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// 5. The mat's shape is tunable too (a wider, shorter mat to try before one is chosen)
+// ---------------------------------------------------------------------------
+
+describe('the Mat shape row: the height follows the aspect, live', () => {
+    it('ships at the game’s 0.64, and is a real row clamped to its range', () => {
+        expect(matTuningDefault('matAspect')).toBe(MAT_ASPECT);
+        expect(matAspect()).toBe(0.64);
+        setMatTuning('matAspect', 0.1);
+        expect(matAspect()).toBe(0.4);
+        setMatTuning('matAspect', 2);
+        expect(matAspect()).toBe(0.8);
+    });
+
+    it('moves the height and never the width: the three sizes the owner is shown', () => {
+        setMatTuning('matSteps', 12);
+        setMatTuning('matAspect', 7 / 12);
+        expect([matW(), matH()]).toEqual([1920, 1120]);
+        setMatTuning('matAspect', 13 / 24);
+        expect([matW(), matH()]).toEqual([1920, 1040]);
+        setMatTuning('matSteps', 13);
+        setMatTuning('matAspect', 0.5);
+        expect([matW(), matH()]).toEqual([2080, 1040]);
+    });
+
+    it('shortening the mat pulls a Token below the new edge back inside, on its own', () => {
+        MatResize.init();
+        const low = placeAt('rs_small', 800, 1050);
+        const high = placeAt('rs_small', 800, 300);
+
+        setMatTuning('matAspect', 0.5);                 // 1760 × 880
+
+        const moved = BoardState.getTokenById(low.id);
+        expect(MatPlacement.insideMat('rs_small', moved)).toBe(true);
+        expect(moved.y).toBeLessThanOrEqual(880 - 64);
+        expect({ x: BoardState.getTokenById(high.id).x, y: BoardState.getTokenById(high.id).y })
+            .toEqual({ x: 800, y: 300 });
+    });
+
+    it('a settled Region is still laid out on the shipped mat, whatever this device tuned', () => {
+        setMatTuning('matSteps', 13);
+        setMatTuning('matAspect', 0.5);
+        expect(shippedMat()).toEqual({ w: 1760, h: 1126 });
     });
 });

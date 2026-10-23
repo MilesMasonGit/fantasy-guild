@@ -17,7 +17,7 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
  */
 
 const TUNING_KEY = 'fantasy_guild_mat_tuning';
-const TUNED = { matSteps: 6, questCap: 9, questCapMax: 9, questEverySec: 30, flagRadius: 900 };
+const TUNED = { matSteps: 6, matAspect: 0.5, questCap: 9, questCapMax: 9, questEverySec: 30, flagRadius: 900 };
 
 /** The tuning, geometry and quest modules as a build of `mode` loads them, with `TUNED` stored. */
 async function loadAs(mode) {
@@ -46,6 +46,7 @@ describe('the game values', () => {
         expect(quests.QUEST_CAP_MAX).toBe(5);
         expect(quests.QUEST_EVERY_SEC).toBe(180);
         expect(tuning.matTuningDefault('matSteps')).toBe(geometry.MAT_STEPS);
+        expect(tuning.matTuningDefault('matAspect')).toBe(geometry.MAT_ASPECT);
         expect(tuning.matTuningDefault('questCap')).toBe(quests.QUEST_CAP_BASE);
         expect(tuning.matTuningDefault('questCapMax')).toBe(quests.QUEST_CAP_MAX);
         expect(tuning.matTuningDefault('questEverySec')).toBe(quests.QUEST_EVERY_SEC);
@@ -57,6 +58,7 @@ describe('a shipped build uses the game values whatever the tuner once stored', 
         const { tuning, geometry, quests } = await loadAs('production');
         expect(geometry.matSteps()).toBe(11);
         expect(geometry.matW()).toBe(1760);
+        expect(geometry.matH()).toBe(1126);
         expect(quests.questCap()).toBe(2);
         expect(quests.questIntervalMs()).toBe(180_000);
         expect(tuning.matTuning('flagRadius')).toBe(tuning.matTuningDefault('flagRadius'));
@@ -67,6 +69,7 @@ describe('a shipped build uses the game values whatever the tuner once stored', 
     it('a dev build still takes the tuner’s numbers', async () => {
         const { tuning, geometry, quests } = await loadAs('development');
         expect(geometry.matSteps()).toBe(6);
+        expect(geometry.matH()).toBe(480);
         expect(quests.questCap()).toBe(9);
         expect(quests.questIntervalMs()).toBe(30_000);
         expect(tuning.matTuning('flagRadius')).toBe(900);

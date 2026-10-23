@@ -1,0 +1,740 @@
+{
+  "today": {
+    "1366": {
+      "mat": {
+        "w": 1760,
+        "h": 1126,
+        "steps": 11,
+        "aspect": 0.64
+      },
+      "scale": 0.58,
+      "artSteps": 1,
+      "onScreen": {
+        "x": 249,
+        "y": 48,
+        "w": 1021,
+        "h": 653
+      },
+      "box": {
+        "w": 1214,
+        "h": 660
+      },
+      "bar": {
+        "y": 0,
+        "w": 1214,
+        "h": 44
+      },
+      "stepOnScreen": 92.8,
+      "tokenArtPx": [
+        64
+      ],
+      "tokens": [
+        {
+          "typeId": "token_guild_hall",
+          "x": 880,
+          "y": 563,
+          "inside": true
+        },
+        {
+          "typeId": "token_oak_forest",
+          "x": 379,
+          "y": 253,
+          "inside": true
+        },
+        {
+          "typeId": "token_copper_mine",
+          "x": 1364,
+          "y": 740,
+          "inside": true
+        },
+        {
+          "typeId": "token_quest",
+          "x": 944,
+          "y": 563,
+          "inside": true
+        }
+      ],
+      "allInside": true
+    },
+    "1680": {
+      "mat": {
+        "w": 1760,
+        "h": 1126,
+        "steps": 11,
+        "aspect": 0.64
+      },
+      "scale": 0.83,
+      "artSteps": 2,
+      "onScreen": {
+        "x": 186,
+        "y": 48,
+        "w": 1461,
+        "h": 935
+      },
+      "box": {
+        "w": 1528,
+        "h": 942
+      },
+      "bar": {
+        "y": 0,
+        "w": 1528,
+        "h": 44
+      },
+      "stepOnScreen": 132.8,
+      "tokenArtPx": [
+        128
+      ],
+      "tokens": [
+        {
+          "typeId": "token_guild_hall",
+          "x": 880,
+          "y": 563,
+          "inside": true
+        },
+        {
+          "typeId": "token_oak_forest",
+          "x": 379,
+          "y": 253,
+          "inside": true
+        },
+        {
+          "typeId": "token_copper_mine",
+          "x": 1364,
+          "y": 740,
+          "inside": true
+        },
+        {
+          "typeId": "token_quest",
+          "x": 944,
+          "y": 563,
+          "inside": true
+        }
+      ],
+      "allInside": true
+    },
+    "1920": {
+      "mat": {
+        "w": 1760,
+        "h": 1126,
+        "steps": 11,
+        "aspect": 0.64
+      },
+      "scale": 0.86,
+      "artSteps": 2,
+      "onScreen": {
+        "x": 279,
+        "y": 46,
+        "w": 1514,
+        "h": 968
+      },
+      "box": {
+        "w": 1768,
+        "h": 972
+      },
+      "bar": {
+        "y": 0,
+        "w": 1768,
+        "h": 44
+      },
+      "stepOnScreen": 137.6,
+      "tokenArtPx": [
+        128
+      ],
+      "tokens": [
+        {
+          "typeId": "token_guild_hall",
+          "x": 880,
+          "y": 563,
+          "inside": true
+        },
+        {
+          "typeId": "token_oak_forest",
+          "x": 379,
+          "y": 253,
+          "inside": true
+        },
+        {
+          "typeId": "token_copper_mine",
+          "x": 1364,
+          "y": 740,
+          "inside": true
+        },
+        {
+          "typeId": "token_quest",
+          "x": 944,
+          "y": 563,
+          "inside": true
+        }
+      ],
+      "allInside": true
+    }
+  },
+  "a": {
+    "1366": {
+      "mat": {
+        "w": 1920,
+        "h": 1120,
+        "steps": 12,
+        "aspect": 0.5833333333333334
+      },
+      "scale": 0.58,
+      "artSteps": 1,
+      "onScreen": {
+        "x": 202,
+        "y": 49,
+        "w": 1114,
+        "h": 650
+      },
+      "box": {
+        "w": 1214,
+        "h": 660
+      },
+      "bar": {
+        "y": 0,
+        "w": 1214,
+        "h": 44
+      },
+      "stepOnScreen": 92.8,
+      "tokenArtPx": [
+        64
+      ],
+      "tokens": [
+        {
+          "typeId": "token_guild_hall",
+          "x": 960,
+          "y": 560,
+          "inside": true
+        },
+        {
+          "typeId": "token_oak_forest",
+          "x": 459,
+          "y": 250,
+          "inside": true
+        },
+        {
+          "typeId": "token_copper_mine",
+          "x": 1444,
+          "y": 737,
+          "inside": true
+        },
+        {
+          "typeId": "token_quest",
+          "x": 1024,
+          "y": 560,
+          "inside": true
+        }
+      ],
+      "allInside": true
+    },
+    "1920": {
+      "mat": {
+        "w": 1920,
+        "h": 1120,
+        "steps": 12,
+        "aspect": 0.5833333333333334
+      },
+      "scale": 0.86,
+      "artSteps": 2,
+      "onScreen": {
+        "x": 211,
+        "y": 49,
+        "w": 1651,
+        "h": 963
+      },
+      "box": {
+        "w": 1768,
+        "h": 972
+      },
+      "bar": {
+        "y": 0,
+        "w": 1768,
+        "h": 44
+      },
+      "stepOnScreen": 137.6,
+      "tokenArtPx": [
+        128
+      ],
+      "tokens": [
+        {
+          "typeId": "token_guild_hall",
+          "x": 960,
+          "y": 560,
+          "inside": true
+        },
+        {
+          "typeId": "token_oak_forest",
+          "x": 459,
+          "y": 250,
+          "inside": true
+        },
+        {
+          "typeId": "token_copper_mine",
+          "x": 1444,
+          "y": 737,
+          "inside": true
+        },
+        {
+          "typeId": "token_quest",
+          "x": 1024,
+          "y": 560,
+          "inside": true
+        }
+      ],
+      "allInside": true
+    }
+  },
+  "b": {
+    "1366": {
+      "mat": {
+        "w": 1920,
+        "h": 1040,
+        "steps": 12,
+        "aspect": 0.5416666666666666
+      },
+      "scale": 0.63,
+      "artSteps": 1,
+      "onScreen": {
+        "x": 154,
+        "y": 47,
+        "w": 1210,
+        "h": 655
+      },
+      "box": {
+        "w": 1214,
+        "h": 660
+      },
+      "bar": {
+        "y": 0,
+        "w": 1214,
+        "h": 44
+      },
+      "stepOnScreen": 100.8,
+      "tokenArtPx": [
+        64
+      ],
+      "tokens": [
+        {
+          "typeId": "token_guild_hall",
+          "x": 960,
+          "y": 520,
+          "inside": true
+        },
+        {
+          "typeId": "token_oak_forest",
+          "x": 459,
+          "y": 210,
+          "inside": true
+        },
+        {
+          "typeId": "token_copper_mine",
+          "x": 1444,
+          "y": 697,
+          "inside": true
+        },
+        {
+          "typeId": "token_quest",
+          "x": 1024,
+          "y": 520,
+          "inside": true
+        }
+      ],
+      "allInside": true
+    },
+    "1920": {
+      "mat": {
+        "w": 1920,
+        "h": 1040,
+        "steps": 12,
+        "aspect": 0.5416666666666666
+      },
+      "scale": 0.92,
+      "artSteps": 2,
+      "onScreen": {
+        "x": 153,
+        "y": 52,
+        "w": 1766,
+        "h": 957
+      },
+      "box": {
+        "w": 1768,
+        "h": 972
+      },
+      "bar": {
+        "y": 0,
+        "w": 1768,
+        "h": 44
+      },
+      "stepOnScreen": 147.2,
+      "tokenArtPx": [
+        128
+      ],
+      "tokens": [
+        {
+          "typeId": "token_guild_hall",
+          "x": 960,
+          "y": 520,
+          "inside": true
+        },
+        {
+          "typeId": "token_oak_forest",
+          "x": 459,
+          "y": 210,
+          "inside": true
+        },
+        {
+          "typeId": "token_copper_mine",
+          "x": 1444,
+          "y": 697,
+          "inside": true
+        },
+        {
+          "typeId": "token_quest",
+          "x": 1024,
+          "y": 520,
+          "inside": true
+        }
+      ],
+      "allInside": true
+    }
+  },
+  "c": {
+    "1366": {
+      "mat": {
+        "w": 2080,
+        "h": 1040,
+        "steps": 13,
+        "aspect": 0.5
+      },
+      "scale": 0.58,
+      "artSteps": 1,
+      "onScreen": {
+        "x": 156,
+        "y": 73,
+        "w": 1206,
+        "h": 603
+      },
+      "box": {
+        "w": 1214,
+        "h": 660
+      },
+      "bar": {
+        "y": 0,
+        "w": 1214,
+        "h": 44
+      },
+      "stepOnScreen": 92.8,
+      "tokenArtPx": [
+        64
+      ],
+      "tokens": [
+        {
+          "typeId": "token_guild_hall",
+          "x": 1040,
+          "y": 520,
+          "inside": true
+        },
+        {
+          "typeId": "token_oak_forest",
+          "x": 539,
+          "y": 210,
+          "inside": true
+        },
+        {
+          "typeId": "token_copper_mine",
+          "x": 1524,
+          "y": 697,
+          "inside": true
+        },
+        {
+          "typeId": "token_quest",
+          "x": 1104,
+          "y": 520,
+          "inside": true
+        }
+      ],
+      "allInside": true
+    },
+    "1680": {
+      "mat": {
+        "w": 2080,
+        "h": 1040,
+        "steps": 13,
+        "aspect": 0.5
+      },
+      "scale": 0.73,
+      "artSteps": 1,
+      "onScreen": {
+        "x": 157,
+        "y": 136,
+        "w": 1518,
+        "h": 759
+      },
+      "box": {
+        "w": 1528,
+        "h": 942
+      },
+      "bar": {
+        "y": 0,
+        "w": 1528,
+        "h": 44
+      },
+      "stepOnScreen": 116.8,
+      "tokenArtPx": [
+        64
+      ],
+      "tokens": [
+        {
+          "typeId": "token_guild_hall",
+          "x": 1040,
+          "y": 520,
+          "inside": true
+        },
+        {
+          "typeId": "token_oak_forest",
+          "x": 539,
+          "y": 210,
+          "inside": true
+        },
+        {
+          "typeId": "token_copper_mine",
+          "x": 1524,
+          "y": 697,
+          "inside": true
+        },
+        {
+          "typeId": "token_quest",
+          "x": 1104,
+          "y": 520,
+          "inside": true
+        }
+      ],
+      "allInside": true
+    },
+    "1920": {
+      "mat": {
+        "w": 2080,
+        "h": 1040,
+        "steps": 13,
+        "aspect": 0.5
+      },
+      "scale": 0.85,
+      "artSteps": 2,
+      "onScreen": {
+        "x": 152,
+        "y": 88,
+        "w": 1768,
+        "h": 884
+      },
+      "box": {
+        "w": 1768,
+        "h": 972
+      },
+      "bar": {
+        "y": 0,
+        "w": 1768,
+        "h": 44
+      },
+      "stepOnScreen": 136,
+      "tokenArtPx": [
+        128
+      ],
+      "tokens": [
+        {
+          "typeId": "token_guild_hall",
+          "x": 1040,
+          "y": 520,
+          "inside": true
+        },
+        {
+          "typeId": "token_oak_forest",
+          "x": 539,
+          "y": 210,
+          "inside": true
+        },
+        {
+          "typeId": "token_copper_mine",
+          "x": 1524,
+          "y": 697,
+          "inside": true
+        },
+        {
+          "typeId": "token_quest",
+          "x": 1104,
+          "y": 520,
+          "inside": true
+        }
+      ],
+      "allInside": true
+    }
+  },
+  "d": {
+    "1366": {
+      "mat": {
+        "w": 1920,
+        "h": 960,
+        "steps": 12,
+        "aspect": 0.5
+      },
+      "scale": 0.63,
+      "artSteps": 1,
+      "onScreen": {
+        "x": 154,
+        "y": 72,
+        "w": 1210,
+        "h": 605
+      },
+      "box": {
+        "w": 1214,
+        "h": 660
+      },
+      "bar": {
+        "y": 0,
+        "w": 1214,
+        "h": 44
+      },
+      "stepOnScreen": 100.8,
+      "tokenArtPx": [
+        64
+      ],
+      "tokens": [
+        {
+          "typeId": "token_guild_hall",
+          "x": 960,
+          "y": 480,
+          "inside": true
+        },
+        {
+          "typeId": "token_oak_forest",
+          "x": 459,
+          "y": 170,
+          "inside": true
+        },
+        {
+          "typeId": "token_copper_mine",
+          "x": 1444,
+          "y": 657,
+          "inside": true
+        },
+        {
+          "typeId": "token_quest",
+          "x": 1024,
+          "y": 480,
+          "inside": true
+        }
+      ],
+      "allInside": true
+    },
+    "1680": {
+      "mat": {
+        "w": 1920,
+        "h": 960,
+        "steps": 12,
+        "aspect": 0.5
+      },
+      "scale": 0.79,
+      "artSteps": 2,
+      "onScreen": {
+        "x": 158,
+        "y": 136,
+        "w": 1517,
+        "h": 758
+      },
+      "box": {
+        "w": 1528,
+        "h": 942
+      },
+      "bar": {
+        "y": 0,
+        "w": 1528,
+        "h": 44
+      },
+      "stepOnScreen": 126.4,
+      "tokenArtPx": [
+        128
+      ],
+      "tokens": [
+        {
+          "typeId": "token_guild_hall",
+          "x": 960,
+          "y": 480,
+          "inside": true
+        },
+        {
+          "typeId": "token_oak_forest",
+          "x": 459,
+          "y": 170,
+          "inside": true
+        },
+        {
+          "typeId": "token_copper_mine",
+          "x": 1444,
+          "y": 657,
+          "inside": true
+        },
+        {
+          "typeId": "token_quest",
+          "x": 1024,
+          "y": 480,
+          "inside": true
+        }
+      ],
+      "allInside": true
+    },
+    "1920": {
+      "mat": {
+        "w": 1920,
+        "h": 960,
+        "steps": 12,
+        "aspect": 0.5
+      },
+      "scale": 0.92,
+      "artSteps": 2,
+      "onScreen": {
+        "x": 153,
+        "y": 89,
+        "w": 1766,
+        "h": 883
+      },
+      "box": {
+        "w": 1768,
+        "h": 972
+      },
+      "bar": {
+        "y": 0,
+        "w": 1768,
+        "h": 44
+      },
+      "stepOnScreen": 147.2,
+      "tokenArtPx": [
+        128
+      ],
+      "tokens": [
+        {
+          "typeId": "token_guild_hall",
+          "x": 960,
+          "y": 480,
+          "inside": true
+        },
+        {
+          "typeId": "token_oak_forest",
+          "x": 459,
+          "y": 170,
+          "inside": true
+        },
+        {
+          "typeId": "token_copper_mine",
+          "x": 1444,
+          "y": 657,
+          "inside": true
+        },
+        {
+          "typeId": "token_quest",
+          "x": 1024,
+          "y": 480,
+          "inside": true
+        }
+      ],
+      "allInside": true
+    }
+  }
+}
