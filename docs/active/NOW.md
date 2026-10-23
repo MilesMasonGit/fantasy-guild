@@ -1,6 +1,6 @@
 # NOW — start here
 
-*Updated 2026-10-21. One screen: what is next and where the project stands.
+*Updated 2026-10-22. One screen: what is next and where the project stands.
 The features director resumes from [HANDOFF_features.md](HANDOFF_features.md),
 the terrain director from [HANDOFF.md](HANDOFF.md); the living table and
 summaries are [STATUS.md](STATUS.md); finished work lives in git, the
@@ -17,20 +17,26 @@ changelog and `docs/archive/`.*
 - **Bench baselines:** engine retaken 2026-10-21 13:00, draw 2026-10-22 01:00,
   both on a quiet machine.
 
-## Next
+## Next (owner, 2026-10-22)
 
-1. **Planning the next batch** (owner with the planning agent): the backlog is
-   [TICKETS.md](../reference/TICKETS.md). Ready to brief: the optimisation pass
-   from the Envelope (T-197 loot hover, T-198 bubbles, T-199 catch-up at 256,
-   T-200 enemies, T-201 drags at 4×), the refinement-pass notes (T-196
-   afterimages, the Atlas and eye-check look questions in
-   `docs/archive/eyecheck/`), and the parked designs: the quest board (brief
-   170, postponed), the notification log (T-193), converting old screens to
-   the strings file (T-119), the camera glide for the Guild Hall upgrade
-   screen (T-194).
-2. **Terrain director** ([HANDOFF.md](HANDOFF.md)): its own queue, plus T-195
-   (three one-line leftovers in its files).
-3. **Owner, before release:** the background music's source and licence
+The owner's Backlog Intake was triaged into brief 210 and five new sessions:
+
+1. **Backlog director** (new; takes over from the features and terrain
+   directors): builds [brief 210](briefs/210_backlog_intake.md), T-211 to
+   T-239 plus T-136 and T-194, in six batches. **Waits for the owner's go.**
+   First run reads [HANDOFF_features.md](HANDOFF_features.md) and
+   [HANDOFF.md](HANDOFF.md) for the state; writes `HANDOFF_backlog.md`.
+2. **Three planning agents**, interviewing the owner over several rounds,
+   each in its own worktree and branch:
+   combat ([concept_combat.md](concept_combat.md), "The detail pass"),
+   skill loops ([concept_skill_loops.md](concept_skill_loops.md), "The next
+   pass"), basic content ([concept_basic_content.md](concept_basic_content.md)).
+3. **Systems director** (new): builds what those three plan, once briefed.
+   **Waits for the owner's go.** Writes `HANDOFF_systems.md`.
+4. Still in the backlog ([TICKETS.md](../reference/TICKETS.md)): the
+   Envelope's optimisation tickets (T-197 to T-201), the quest board (brief
+   170, postponed), T-193, T-119, T-195.
+5. **Owner, before release:** the background music's source and licence
    (STATUS "Questions for the owner"); ZapSplat needs an in-game credit
    (`CREDITS.md`).
 

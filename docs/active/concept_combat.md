@@ -80,3 +80,29 @@ the details are deferred to a later design pass. Today's rules are in GDD §6.*
 HP range, where damage comes from (weapon, level), what armour does, attack
 speeds, the four-style cycle's numbers, each style's trait, which statuses,
 the enemy roster, gear slots and crafting.
+
+## The detail pass (owner intake 2026-10-22, for the combat planning agent)
+
+The owner reopened combat for its detail pass and wants it planned over
+several interview rounds before the Systems director builds it. Scope, from
+[the owner's intake](research/backlog_intake_2026-10-22.md) (COMBAT-01, -02, -03; the intake's ideas are prompts for the
+interview, not rulings):
+
+1. Formulas and scaling: weapon damage, armour, attack speed, level scaling
+   (the "Deferred to the later pass" list above).
+2. The four styles (melee, ranged, magic, stealth): one clear trait each.
+3. Consumables in fights: food and potions used automatically, when, how
+   often; **combat potions and elixirs** (drunk at fight start, emergency
+   heals) and a **"potion used" bubble** over the hero (owner 2026-10-22:
+   COMBAT-02 moved here from the backlog).
+4. Encounters: camps, ambushes at nodes, guardians, party boss fights.
+5. Status effects through the Rules system (Poison, Burn, Bleed, Stun,
+   Shield…).
+6. Loot and XP: combat XP, drop tables, maps from enemies.
+7. **The combat UI** (COMBAT-03, built after 1–6): health bars for both
+   sides, buff and status icons, crisp floating combat text, a visible link
+   between a hero and its target. Coordinate with the bubble row of brief 210
+   F2 (T-239).
+
+Already decided elsewhere: gear and tools are one copy per hero (owner
+2026-10-22, T-230); tools are hand gear (`concept_skill_loops.md`).

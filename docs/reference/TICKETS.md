@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-211**
+**Next free number: T-240**
 
 ---
 
@@ -52,6 +52,42 @@ here.
 | T-026 | P3 | ride-along | Small per-tick allocations in combat and statuses. | CR3-032 |
 | T-027 | P3 | ride-along | Motion ticks allocate small objects per walker. | CR3-153 |
 
+### Brief 210 — the backlog intake (owner 2026-10-22, Backlog director)
+
+Detail, order and tiers in [brief 210](../active/briefs/210_backlog_intake.md); the owner's words in `docs/active/research/backlog_intake_2026-10-22.md` (intake codes in brackets).
+
+| ID | Pri | Status | Summary | Origin |
+|---|---|---|---|---|
+| T-211 | P2 | open | **Mat a little wider and shorter** (MAT-01). Bench sizes first; WORK CHANGED and old-save edges. Engineer. Eye-check. | brief 210 A1 |
+| T-212 | P3 | open | **Top bar: the Region banner art as the bar background**, fading out to the right, no badge (TOPBAR-01). Eye-check. | brief 210 A2 |
+| T-213 | P3 | open | **Top bar: larger text and icons** (TOPBAR-02). Eye-check. | brief 210 A2 |
+| T-214 | P3 | open | **Top bar as wide as the mat**; Tokens/Upkeep centred; Disallow/Demolish at the mat edge (TOPBAR-03). Eye-check. | brief 210 A2 |
+| T-215 | P3 | open | **Bigger Token hitboxes**, more room between Tokens (TOKEN-01). Eye-check. | brief 210 A3 |
+| T-216 | P2 | open | **Flag radius 164 → 240** (owner 2026-10-22) **and a crisp pixel reach ring** (FLAG-01). Eye-check. | brief 210 A3 |
+| T-217 | P3 | open | **Drag: paint only forbidden cells**, allowed cells stay clear (DRAG-01). Eye-check. | brief 210 B2 |
+| T-218 | P3 | open | **Token name badge below the Token** (TOKEN-02). Eye-check. | brief 210 B1 |
+| T-219 | P3 | open | **Remove the ring under movable Tokens** (TOKEN-03). Eye-check. | brief 210 B1 |
+| T-220 | P3 | open | **Remove the quest-ready glow and the tutorial beacon rings** (QUEST-01). Eye-check. | brief 210 B1 |
+| T-221 | P2 | open | **Turn off loot afterimages, twinkles and particle bursts** on task loot (LOOT-01; better effect later, T-196). Eye-check. | brief 210 B2 |
+| T-222 | P1 | open | **Bug: an enemy or flag pickup flies its ghost in from the screen top-left** (DRAG-02). Drag bench. | brief 210 B3 |
+| T-223 | P2 | open | **Bank: retire the inspect pane, search in the tab header, full item tooltips** with Equippable badge (BANK-01). Eye-check. | brief 210 C1 |
+| T-224 | P3 | open | **Item tiles tinted by category, lighter on hover** (ITEM-01). Eye-check. | brief 210 C1 |
+| T-225 | P3 | open | **Slot-kind pixel icon in each equipment slot corner** (HERO-02). Eye-check. | brief 210 C1 |
+| T-226 | P3 | open | **Equip plays the pixel shine**, no bounce or glow (HERO-01). Eye-check. | brief 210 C2 |
+| T-227 | P2 | open | **Hero bar: portrait + name**, portraits cropped from each class sheet, facing left (DOCK-02). Eye-check. | brief 210 C2 |
+| T-228 | P2 | open | **Work Permissions: solid button under the mat, slide-up drawer, Combat first, chamfer frame** (DOCK-01). Eye-check. | brief 210 C2 |
+| T-229 | P3 | open | **"New!" on an item stub clears on hover or pin** (NOTIF-01). | brief 210 C4 |
+| T-230 | P1 | open | **One item, one hero**: equipping gear/tools moves the copy from the Bank to the hero, unequip returns it (owner 2026-10-22); consumables stay shared; old-save handling (EQUIP-01). Engineer. Eye-check. | brief 210 C3 |
+| T-231 | P3 | open | **No toasts or stubs over the Guild Hall upgrade screen** (GUILD-01). Eye-check. | brief 210 D1 |
+| T-232 | P3 | open | **Smooth star drift in the Hall sky** (GUILD-02). Eye-check. | brief 210 D1 |
+| T-233 | P3 | open | **Hall stars steady, grey / blue / gold by state** (GUILD-03). Eye-check. | brief 210 D1 |
+| T-234 | P2 | open | **Guild Hall Effects as a popover; Inspect panel in the pixel style** (GUILD-04). Eye-check. | brief 210 D2 |
+| T-235 | P3 | open | **Bank and Shop drawers reach the left edge as one panel** (DRAWER-01). Eye-check. | brief 210 E1 |
+| T-236 | P2 | open | **Opening the Bank moves the top bar, stubs and mat smoothly** (DRAWER-02). Eye-check. | brief 210 E1 |
+| T-237 | P2 | open | **Atlas Regions as a two-page spread**: list left, selected Region preview right (ATLAS-01). Eye-check. | brief 210 E2 |
+| T-238 | P3 | open | **Retire the Playmat Tuner and terrain dev section**; mat dials stay in the QA panel (DEV-01). After T-215/T-216. | brief 210 E3 |
+| T-239 | P2 | open | **One bubble row between a hero and the Token it works**, with tooltips (BUBBLE-01). Mock-ups first; measure (T-198). Engineer. Eye-check. | brief 210 F2 |
+
 ### UI
 
 | ID | Pri | Status | Summary | Origin |
@@ -61,7 +97,7 @@ here.
 | T-151 | P3 | owner | **Colour-blind-safe hero flags**: safe colours plus a second cue (pattern or initial). Needs an owner choice and maybe art. | ideas.md |
 | T-157 | P3 | open | **Quick Settings landing tab** in Settings: Master, Music and SFX volume, Animations, font and text size, Item Fly Particles, Auto-save interval (owner 2026-10-13). The same controls stay in their own tabs. Eye-check. | refinement_pass_todo.md §2 |
 | T-138 | P3 | owner | **Sprite-strip player for owner-drawn effects**: play a horizontal strip once at a mat point on the strike frame / event (like `AnimatedHeroSprite.jsx:57-76`); a new `assets/fx/` folder added to the spriteFx generator's skip list (`spriteFx.js:77-80`). Waits for the owner's first effect art (owner_art_list.md). | research/animation_menu.md |
-| T-136 | P2 | open | **Pixel frames on every panel** (owner 2026-10-09, UI_STYLE "Pixel frames"): one shared frame class with `border-image` nine-slice, **studs** for big docked panels, **chamfer** for small floating ones, one colour, hard 2-art-pixel shadow; the two 7×7 pictures are the ones in `docs/active/research/pixel_borders_demo.html` (extract the data URIs to PNGs in `public/assets/ui/`; new files, not the owner's uncommitted art). Replace rounded corners, translucent hairlines and blurred shadows; unbox the rows UI_STYLE forbids (`TokenInspection.jsx:132,147,221`, `ShopDrawer.jsx:299`, `HeroSkillSheet.jsx:93`); tooltips first (`Bubble.jsx`, `TopBarTip.jsx`, `QuestTooltip.jsx`, `MatCapBadge.jsx` share classes), then sidebars, Token inspect, drawers, modals, toasts. Builder. Run when no crunch brief is editing those components; cost-log line (`bench:draw --compare`); changes the look: owner eye-check. | research/pixel_borders.md |
+| T-136 | P2 | open | **Pixel frames on every panel** (owner 2026-10-09, UI_STYLE "Pixel frames"): one shared frame class with `border-image` nine-slice, **studs** for big docked panels, **chamfer** for small floating ones, one colour, hard 2-art-pixel shadow; the two 7×7 pictures are the ones in `docs/active/research/pixel_borders_demo.html` (extract the data URIs to PNGs in `public/assets/ui/`; new files, not the owner's uncommitted art). Replace rounded corners, translucent hairlines and blurred shadows; unbox the rows UI_STYLE forbids (`TokenInspection.jsx:132,147,221`, `ShopDrawer.jsx:299`, `HeroSkillSheet.jsx:93`); tooltips first (`Bubble.jsx`, `TopBarTip.jsx`, `QuestTooltip.jsx`, `MatCapBadge.jsx` share classes), then sidebars, Token inspect, drawers, modals, toasts. Builder. Run when no crunch brief is editing those components; cost-log line (`bench:draw --compare`); changes the look: owner eye-check. | research/pixel_borders.md; owner intake 2026-10-22 (UI-01: audit every window), brief 210 F1 |
 | T-119 | P3 | open | **Convert existing screens to the strings file** (format, lookup and TEXT.md built 2026-10-20, 9a103fbb: `src/i18n/en.json`, `t()`, `docs/reference/TEXT.md`; new UI uses it). The old screens convert in a later pass. | ideas.md |
 
 ### Cleanup — dead code, vestiges, lint *(safe, invisible; delete tests only with the code they test)*
@@ -133,6 +169,6 @@ first, when content that uses it is authored.*
 | T-210 | P3 | open | **Remove the description bridge** in `src/tests/fixtures/shippedAsLoaded.js` (`describeNeededTools`): the owner's re-sync (11512fbc) put the 'Needs a ... in hand.' clause into `data/`, so the bridge now finds nothing. Builder-lite. | brief 90 |
 | T-196 | P3 | open | **Afterimages look wrong as white speckles** (owner 2026-10-21, eye-check of the animation batch): the hit and loot-hop afterimages are speckled white copies (`src/ui/components/board/fx/`, generated tinted pictures). Try the sprite's own colours speckled, or another look, on the style sheet page first; refinement pass. Eye-check. | T-137 |
 | T-195 | P3 | open | **Three one-line leftovers in the terrain director's files** (engine plumbing, 2026-10-21): `src/systems/atlas/Atlas.js:516` still publishes `STATE_CHANGED` after its own `GAME_RESET` (delete it, then `STATE_CHANGED` from `engineEvents.js` and its `NO_LISTENER` entry, and tighten `StateChangedRetired.test.js`); `src/systems/atlas/layoutInputs.js:25` reads `matTuningDefault('matSteps')` and should read `MAT_STEPS` from `matGeometry.js`. Also (2026-10-21): `src/ui/dev/terrainDev.js` (`DEV_GROUND_TOKENS`) has the Test Boat borrow `token_fishing_net`'s look, and the tools content sync deleted that Token; repoint it to a live Token and remove its `KNOWN_DEAD` entry in `ContentIdsInCode.test.js`. Terrain director. | T-015, T-097 |
-| T-194 | P3 | open | **Reuse the camera glide for the Guild Hall upgrade screen** (owner 2026-10-20): the glide from the mat up a shared wood table to the Atlas book was built (brief 160 T4a: `AtlasCamera.jsx`, one transform on one wrapper, skippable, reduced motion swaps; the mat never re-renders) and set aside when the Atlas became a pop-up. Kept at git tag `atlas-camera-move` (7a678567). Bring it back when the upgrade screen is built. | brief 160 T4a |
+| T-194 | P3 | open | **Reuse the camera glide for the Guild Hall upgrade screen** (owner 2026-10-20): the glide from the mat up a shared wood table to the Atlas book was built (brief 160 T4a: `AtlasCamera.jsx`, one transform on one wrapper, skippable, reduced motion swaps; the mat never re-renders) and set aside when the Atlas became a pop-up. Kept at git tag `atlas-camera-move` (7a678567). Bring it back for the upgrade screen: owner intake 2026-10-22 (GUILD-05), brief 210 D2. | brief 160 T4a |
 | T-193 | P3 | open | **A notification log** (owner 2026-10-19: low priority, build only if it proves needed; [concept_notifications.md](../active/concept_notifications.md) "Later: the log"): opens as a modal; plain-text rows like the item stubs, no sprite; a new-items dot, no count. Builder. Eye-check. | brief 150 |
 | T-189 | P3 | open | **Retire `data/palettes/materials_library.json`** (found 2026-10-16): 12 lower-case ramps the Studio only reads (a GET in `RecolorEditor.jsx`), looked up only when a swap target matches a lower-case key exactly, which the dropdown never offers. Confirm nothing needs it, then remove the read and have the owner delete the file through the Studio/CMS. builder-lite. | T-180 palette bake |

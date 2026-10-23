@@ -205,3 +205,19 @@ Full loops come with the skill list review; sketches are kept here.
   Atlas map feature or modifier.
 - **Fletching**: bows and arrows from Forestry's wood and Crafting's string
   (from the Forestry and Crafting answers).
+
+## The next pass (owner intake 2026-10-22, for the skill loops planning agent)
+
+The owner wants each starting skill to have its own gameplay loop, states and
+look, planned over several interview rounds before the Systems director
+builds it. Today most skills still play as the same progress timer. The
+intake ([the owner's intake](research/backlog_intake_2026-10-22.md), SKILLS-01) sketches a loop per skill: forestry (sapling →
+tree → stump → regrowth), mining (vein → exhausted → refill), fishing
+(schools that move or go quiet, bait, rare catches), farming (till, sow,
+tend, ripen, harvest, fallow), smithing (furnace then anvil), crafting,
+cooking, alchemy and construction (foundation → deliveries → building).
+⚠️ Those sketches were written by a recording agent: start from this doc's
+locked rules above (one signature mechanic per skill; gathering differs by
+node behaviour, stations by what they produce) and confirm each loop with the
+owner. Deliverable: per skill, its states and their art, tool needs, timings,
+and how heroes treat each state (skip a depleted vein, wait for a sapling).

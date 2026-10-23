@@ -37,6 +37,7 @@ multiple choice at wave start.
 | 19b | [190 Playmat style](190_playmat_style.md): Clean ground at 2×, quieter decorations, darker rim, shadows, ambient life | 19, 12, 13 (P2) | yes, per phase |
 | 19c | [200 CMS change packs](200_cms_change_packs.md): agents author content for the owner to review (T-133); first pack: the starting maps | — | yes (CMS) |
 | 20 | [90 Performance Envelope](90_performance_envelope.md), **done 2026-10-21** (GDD §14; T-071 parked; T-197 to T-210 filed) | 10–19 | — |
+| 21 | [210 Backlog intake](210_backlog_intake.md): the owner's UI tweaks and small systems, six batches (mat and top bar, mat clean-ups, Bank/items/hero bar, Guild Hall, drawers/Atlas/dev tools, frames and bubbles); **Backlog director, waits for the owner's go** | — | yes, per batch |
 
 Order ruled by the owner 2026-10-07: UI phases that don't touch skills first,
 then class rework v2, then the hero bar/panel on the new skill list, then
