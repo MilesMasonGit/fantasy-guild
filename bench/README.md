@@ -172,6 +172,10 @@ Every spawner is filled to its cap before the heroes arrive (`prefillSpawners`,
 through the real `SpawnerSystem.attemptSpawn`), so the warm-up warms the JIT
 rather than waiting for the board to fill.
 
+Every board sets its own mat before placing anything (`scenarios/referenceMat.mjs`:
+the 11-step, 0.64 mat the baselines were taken on, or the scenario's own width at that
+aspect), so a change to the size the game ships changes no scenario's work.
+
 ### The catch-up gates (S8, S8L, S8F)
 
 Two checks between this run's own S8 rows, printed as "Catch-up gates", independent of the

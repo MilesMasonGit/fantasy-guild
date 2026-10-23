@@ -19,12 +19,12 @@
 // so the engine bench's boards and their recorded work cannot move.
 
 import { capPlaced } from './cap.mjs';
+import { pinMat, REFERENCE_STEPS } from './referenceMat.mjs';
 import { registerTokenTypes } from '../../src/config/registries/tokenRegistry.js';
 
 const BASE_CAP = 128;
 const STEP = 160;
 const MARGIN = 80;
-const ASPECT = 0.64;
 
 // Registered here, not in `fixtures.mjs`, so no other scenario's work changes.
 registerTokenTypes({
@@ -93,9 +93,8 @@ export function fightPlaced(n) {
 function buildEnvelope({ fixtures, setMatTuning }, { placed, cap = BASE_CAP, heroes: heroCount = 8, fighters = 0 }) {
     const { placeAt, makeHeroes, plant, lattice } = fixtures;
     setMatTuning('tokenCap', cap);
-    const matSteps = 11;
-    const w = matSteps * STEP;
-    const h = Math.round(w * ASPECT);
+    const matSteps = REFERENCE_STEPS;
+    const { w, h } = pinMat(setMatTuning, matSteps);
     const hall = { x: MARGIN + STEP * Math.floor((matSteps - 1) / 2), y: MARGIN + STEP * Math.floor((Math.floor((h - 2 * MARGIN) / STEP)) / 2) };
     fixtures.settings.set('gameplay.autoCollectLoot', true);
     placeAt('bench_hall', hall.x, hall.y);
