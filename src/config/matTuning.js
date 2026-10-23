@@ -181,7 +181,8 @@ const STORAGE_KEY = 'fantasy_guild_mat_tuning';
  */
 const RETIRED_DEFAULTS = Object.freeze({
     flagRadius: [164],
-    hitboxPct: [80]
+    hitboxPct: [80],
+    matSteps: [11]
 });
 
 /** Whether this build has a Mat Tuner: a dev or a perf build, never a shipped one. */
