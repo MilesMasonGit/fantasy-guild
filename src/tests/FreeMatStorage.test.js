@@ -106,8 +106,8 @@ describe('⭐ a new game opens with the Guild Hall on the mat (FP-44)', () => {
         expect(onMat.map(t => t.typeId)).toEqual(['token_guild_hall', 'token_oak_forest', 'token_copper_mine']);
         // ⭐ The middle of the mat (slice 1.6d-3). It used to be (960, 643) —
         // half a step off centre, inherited from the deleted grid's Hall tile.
-        expect({ x: onMat[0].x, y: onMat[0].y }).toEqual({ x: 880, y: 563 });
-        expect(onMat.slice(1).map(t => ({ x: t.x, y: t.y }))).toEqual([{ x: 560, y: 563 }, { x: 1200, y: 563 }]);
+        expect({ x: onMat[0].x, y: onMat[0].y }).toEqual({ x: 960, y: 520 });
+        expect(onMat.slice(1).map(t => ({ x: t.x, y: t.y }))).toEqual([{ x: 640, y: 520 }, { x: 1280, y: 520 }]);
         expect(onMat.every(t => t.origin === 'placed')).toBe(true);
         expect(Object.keys(GameState.state.board.tokens)).toEqual(onMat.map(t => t.id));
     });

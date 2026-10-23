@@ -21,6 +21,7 @@ import * as TileModifiers from '../../src/systems/board/TileModifiers.js';
 import * as Flags from '../../src/systems/board/Flags.js';
 import { tokensWithin } from '../../src/systems/board/nearby.js';
 import { setMatTuning } from '../../src/config/matTuning.js';
+import { pinMat } from '../scenarios/referenceMat.mjs';
 
 const SIZES = [40, 150, 300];
 const CENTRE = { x: 1600, y: 1024 };
@@ -33,7 +34,7 @@ const TYPES = ['fixture_producer', 'fixture_producer_alt', 'bench_mill', 'fixtur
  */
 function buildBoard(n, { aura = false } = {}) {
     boot(1);
-    setMatTuning('matSteps', 20);
+    pinMat(setMatTuning, 20);
     const gap = MatPlacement.minGap('bench_tree', 'bench_tree') + 1;
     let placed = 0;
     const hex = [];

@@ -3,14 +3,17 @@
 // What an early game looks like: nothing crowded, one hero walking between a
 // few producers beside the Hall. Any cost here is cost every player pays.
 
+import { pinMat } from './referenceMat.mjs';
+
 export default {
     id: 'S1',
     name: 'Quiet Hall',
     ticks: () => ({ warmup: 2000, measure: 5000 }),
 
-    build({ fixtures }) {
+    build({ fixtures, setMatTuning }) {
         const { placeAt, makeHeroes, plant } = fixtures;
-        // The shipped 11-step mat is 1760 × 1126; the Hall stands in the middle.
+        // The reference 11-step mat is 1760 × 1126; the Hall stands in the middle.
+        pinMat(setMatTuning);
         placeAt('bench_hall', 880, 563);
         placeAt('fixture_producer', 560, 563);
         placeAt('fixture_producer', 560, 403);

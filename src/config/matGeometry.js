@@ -17,10 +17,11 @@ import { tunedOr } from './matTuning.js';
 /**
  * ## The mat's own size — live
  *
- * The mat is `matSteps()` of today's 160 u steps wide, at a fixed 0.64 aspect.
- * The game value, {@link MAT_STEPS}, is 11 steps: **1760 × 1126 u**; its top-left is always
- * (0, 0). In a dev build the Mat Tuner's **Mat size** row moves it between 6 and 20 steps
- * while the game runs.
+ * The mat is `matSteps()` of today's 160 u steps wide, and `matAspect()` of that tall.
+ * The game values, {@link MAT_STEPS} and {@link MAT_ASPECT}, make 12 steps wide and 6.5 tall:
+ * **1920 × 1040 u**; its top-left is always (0, 0). In a dev build the Mat Tuner's **Mat size**
+ * row moves the width between 6 and 20 steps, and its **Mat shape** row the aspect between 0.4
+ * and 0.8, while the game runs.
  *
  * ## ⚠️ Functions, not constants — and nothing may cache them
  * A constant would be captured at import and go on measuring a mat that no longer exists once the Mat Tuner slider moves.
@@ -35,10 +36,12 @@ import { tunedOr } from './matTuning.js';
  * then shrunk to fit the window is `useBoardScale`'s, a separate question.
  */
 export const MAT_STEP_U = 160;
-export const MAT_ASPECT = 0.64;
+
+/** ⭐ The mat's height over its width: a game value, like {@link MAT_STEPS}. 13/24 is 6.5 steps tall at 12 wide. */
+export const MAT_ASPECT = 13 / 24;
 
 /** ⭐ The mat's size in 160 u steps: a game value (a Guild Hall upgrade may raise it one day). */
-export const MAT_STEPS = 11;
+export const MAT_STEPS = 12;
 
 /** How many 160 u steps wide the mat currently is: {@link MAT_STEPS}, or a dev build's Mat Tuner (6–20). */
 export function matSteps() {
@@ -50,9 +53,14 @@ export function matW() {
     return matSteps() * MAT_STEP_U;
 }
 
-/** The mat's height in mat units, right now — the width at the 0.64 aspect. */
+/** The mat's height over its width right now: {@link MAT_ASPECT}, or a dev build's Mat Tuner (0.4–0.8). */
+export function matAspect() {
+    return tunedOr('matAspect', MAT_ASPECT);
+}
+
+/** The mat's height in mat units, right now: the width at the aspect. */
 export function matH() {
-    return Math.round(matW() * MAT_ASPECT);
+    return Math.round(matW() * matAspect());
 }
 
 /** A point clamped onto the mat as it is now. */

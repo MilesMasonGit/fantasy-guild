@@ -57,11 +57,11 @@ registerTokenTypes({
 const CAMP = Object.freeze({
     version: 1,
     savedAt: '2026-10-17T10:00:00.000Z',
-    mat: { w: 1760, h: 1126 },
-    hall: { x: 880, y: 563 },
+    mat: { w: 1920, h: 1040 },
+    hall: { x: 960, y: 520 },
     tokens: [
-        { typeId: 'fixture_producer', x: 500, y: 563 },
-        { typeId: 'fixture_passive', x: 1260, y: 563 },
+        { typeId: 'fixture_producer', x: 580, y: 520 },
+        { typeId: 'fixture_passive', x: 1340, y: 520 },
         { typeId: 'scf_site', x: 300, y: 250 }
     ],
     bank: { [WOOD]: 10 }

@@ -202,8 +202,8 @@ function BankRows({ camp, itemName, items, setBankCount }) {
 
 /** A small drawing of the layout: the mat, the Hall, every Token as a dot (landmarks in gold). */
 function MiniMap({ camp, tokens }) {
-  const w = camp.mat?.w || 1760;
-  const h = camp.mat?.h || 1126;
+  const w = camp.mat?.w || 1920;
+  const h = camp.mat?.h || 1040;
   const hall = camp.hall || { x: w / 2, y: h / 2 };
   return (
     <svg viewBox={`0 0 ${w} ${h}`} className="w-full rounded-lg border border-white/10" style={{ background: '#14161f' }} role="img" aria-label="Starter Camp layout">

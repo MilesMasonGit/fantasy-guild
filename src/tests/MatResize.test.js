@@ -10,8 +10,9 @@ import * as NotificationSystem from '../systems/core/NotificationSystem.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
-import { matW, matH, matSteps, clampToMat } from '../config/matGeometry.js';
-import { matTuning, setMatTuning, resetMatTuning } from '../config/matTuning.js';
+import { matW, matH, matSteps, matAspect, clampToMat, MAT_ASPECT } from '../config/matGeometry.js';
+import { matTuning, setMatTuning, resetMatTuning, matTuningDefault } from '../config/matTuning.js';
+import { shippedMat } from '../systems/atlas/layoutInputs.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -58,22 +59,22 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('⭐ the mat size is the Mat Tuner’s, read live (slice 1.6d-3)', () => {
-    it('matW/matH follow matSteps at the fixed 0.64 aspect', () => {
-        expect(matSteps()).toBe(11);
-        expect(matW()).toBe(1760);
-        expect(matH()).toBe(1126);
+    it('matW/matH follow matSteps at the game’s 13/24 aspect', () => {
+        expect(matSteps()).toBe(12);
+        expect(matW()).toBe(1920);
+        expect(matH()).toBe(1040);
 
         setMatTuning('matSteps', 6);
         expect(matW()).toBe(960);
-        expect(matH()).toBe(Math.round(960 * 0.64));
+        expect(matH()).toBe(520);
 
         setMatTuning('matSteps', 20);
         expect(matW()).toBe(3200);
-        expect(matH()).toBe(2048);
+        expect(matH()).toBe(Math.round(3200 * 13 / 24));
     });
 
-    it('the row is a real Mat Tuner row, 6–20, shipping at 11', () => {
-        expect(matTuning('matSteps')).toBe(11);
+    it('the row is a real Mat Tuner row, 6–20, shipping at 12', () => {
+        expect(matTuning('matSteps')).toBe(12);
         setMatTuning('matSteps', 99);
         expect(matSteps()).toBe(20);     // clamped to the row's max
         setMatTuning('matSteps', 1);
@@ -82,7 +83,7 @@ describe('⭐ the mat size is the Mat Tuner’s, read live (slice 1.6d-3)', () =
 
     /**
      * ⚠️ The whole point of the functions. A module that had captured the width
-     * at import would still answer 1760 here, and its edge would be in the wrong
+     * at import would still answer 1920 here, and its edge would be in the wrong
      * place for the rest of the session with nothing on screen to say so.
      */
     it('⭐ nothing caches the size: every edge rule sees the new mat at once', () => {
@@ -92,11 +93,11 @@ describe('⭐ the mat size is the Mat Tuner’s, read live (slice 1.6d-3)', () =
         expect(MatPlacement.isLegal('rs_small', nearOldEdge)).toBe(true);
         expect(clampToMat({ x: 1700, y: 1000 })).toEqual({ x: 1700, y: 1000 });
 
-        setMatTuning('matSteps', 6);     // 960 × 614
+        setMatTuning('matSteps', 6);     // 960 × 520
 
         expect(MatPlacement.insideMat('rs_small', nearOldEdge)).toBe(false);
         expect(MatPlacement.isLegal('rs_small', nearOldEdge)).toBe(false);
-        expect(clampToMat({ x: 1700, y: 1000 })).toEqual({ x: 960, y: 614 });
+        expect(clampToMat({ x: 1700, y: 1000 })).toEqual({ x: 960, y: 520 });
 
         // And a real drop out there is refused rather than landing off the mat.
         const inst = BoardState.createTokenInstance('rs_small', 10);
@@ -107,8 +108,8 @@ describe('⭐ the mat size is the Mat Tuner’s, read live (slice 1.6d-3)', () =
 
     it('clampInside puts the ART circle inside the edge, in whole units', () => {
         setMatTuning('matSteps', 6);
-        expect(MatPlacement.clampInside('rs_small', { x: 5000, y: 5000 })).toEqual({ x: 896, y: 550 });
-        expect(MatPlacement.clampInside('rs_large', { x: 5000, y: 5000 })).toEqual({ x: 816, y: 470 });
+        expect(MatPlacement.clampInside('rs_small', { x: 5000, y: 5000 })).toEqual({ x: 896, y: 456 });
+        expect(MatPlacement.clampInside('rs_large', { x: 5000, y: 5000 })).toEqual({ x: 816, y: 376 });
         // Already inside: untouched.
         expect(MatPlacement.clampInside('rs_small', { x: 400, y: 300 })).toEqual({ x: 400, y: 300 });
     });
@@ -126,7 +127,7 @@ describe('⭐ shrinking the mat pulls what no longer fits back inside (FP-98)', 
         const stranded = placeAt('rs_small', 1600, 400);
         const sitting = placeAt('rs_small', 890, 400);
 
-        setMatTuning('matSteps', 6);           // 960 × 614
+        setMatTuning('matSteps', 6);           // 960 × 520
         MatResize.fitToMat();
 
         const moved = BoardState.getTokenById(stranded.id);
@@ -156,8 +157,8 @@ describe('⭐ shrinking the mat pulls what no longer fits back inside (FP-98)', 
         // ⚠️ The wall is laid strictly INSIDE the legal box (a small Token's art
         // circle needs 64 u of clearance), so the only Token this resize has to
         // pull in is the stranded one below.
-        setMatTuning('matSteps', 6);                       // 960 × 614
-        for (let y = 64; y <= 550; y += 55) {
+        setMatTuning('matSteps', 6);                       // 960 × 520
+        for (let y = 64; y <= 456; y += 55) {
             for (let x = 64; x <= 896; x += 55) placeAt('rs_small', x, y);
         }
         // ...and one Token stranded off the edge, with nowhere to be pulled to.
@@ -191,7 +192,7 @@ describe('⭐ shrinking the mat pulls what no longer fits back inside (FP-98)', 
         const a = BoardState.flagOf('h1');
         const b = BoardState.flagOf('h2');
         // Clamped onto the mat's own edge — flags use the whole mat, not an art circle.
-        expect({ x: a.x, y: a.y }).toEqual({ x: 960, y: 614 });
+        expect({ x: a.x, y: a.y }).toEqual({ x: 960, y: 520 });
         // ⭐ two flags at one point both stand there. Neither was spaced.
         expect({ x: b.x, y: b.y }).toEqual({ x: a.x, y: a.y });
     });
@@ -295,5 +296,51 @@ describe('the Mat size row pulls Tokens in on its own', () => {
 
         expect(moves.map(m => m.heroId)).toContain('h1');
         expect(Flags.statusOf('h1')).toBeTruthy();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// 5. The mat's shape is tunable too (a wider, shorter mat to try before one is chosen)
+// ---------------------------------------------------------------------------
+
+describe('the Mat shape row: the height follows the aspect, live', () => {
+    it('ships at the game’s 13/24, and is a real row clamped to its range', () => {
+        expect(matTuningDefault('matAspect')).toBe(MAT_ASPECT);
+        expect(matAspect()).toBe(13 / 24);
+        setMatTuning('matAspect', 0.1);
+        expect(matAspect()).toBe(0.4);
+        setMatTuning('matAspect', 2);
+        expect(matAspect()).toBe(0.8);
+    });
+
+    it('moves the height and never the width: the three sizes the owner is shown', () => {
+        setMatTuning('matSteps', 12);
+        setMatTuning('matAspect', 7 / 12);
+        expect([matW(), matH()]).toEqual([1920, 1120]);
+        setMatTuning('matAspect', 13 / 24);
+        expect([matW(), matH()]).toEqual([1920, 1040]);
+        setMatTuning('matSteps', 13);
+        setMatTuning('matAspect', 0.5);
+        expect([matW(), matH()]).toEqual([2080, 1040]);
+    });
+
+    it('shortening the mat pulls a Token below the new edge back inside, on its own', () => {
+        MatResize.init();
+        const low = placeAt('rs_small', 800, 950);
+        const high = placeAt('rs_small', 800, 300);
+
+        setMatTuning('matAspect', 0.45);                // 1920 × 864
+
+        const moved = BoardState.getTokenById(low.id);
+        expect(MatPlacement.insideMat('rs_small', moved)).toBe(true);
+        expect(moved.y).toBeLessThanOrEqual(864 - 64);
+        expect({ x: BoardState.getTokenById(high.id).x, y: BoardState.getTokenById(high.id).y })
+            .toEqual({ x: 800, y: 300 });
+    });
+
+    it('a settled Region is still laid out on the shipped mat, whatever this device tuned', () => {
+        setMatTuning('matSteps', 13);
+        setMatTuning('matAspect', 0.5);
+        expect(shippedMat()).toEqual({ w: 1920, h: 1040 });
     });
 });

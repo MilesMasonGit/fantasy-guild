@@ -49,12 +49,12 @@ vi.mock('../systems/board/GroundRules.js', async (importOriginal) => {
  * Every placement path goes through the rule: drops, nudges, pushes, spawns, Shop arrivals, a
  * recipe's Token, travel, the mat shrinking.
  *
- * The test Region's ground, on the shipped 1760 × 1126 mat (55 × 36 cells of 32 u):
+ * The test Region's ground, on the shipped 1920 × 1040 mat (60 × 33 cells of 32 u):
  *
  *     cols  0–9   water (the sea along the left edge)
  *     cols 10–24  sand (col 10 is the shore)
  *     cols 25–39  grass, with a one-cell pond at col 32, row 10
- *     cols 40–54  rock
+ *     cols 40–59  rock
  */
 
 const base = { tokenType: 'resource', size: 1, uses: 100, requiresHero: false, config: { cycleTimeMs: 5000, inputs: [], outputs: [] } };
@@ -69,7 +69,7 @@ registerTokenTypes({
     gp_station: { ...base, id: 'gp_station', name: 'GP Station' }
 });
 
-const GRID = terrainGrid({ w: 1760, h: 1126 });
+const GRID = terrainGrid({ w: 1920, h: 1040 });
 const POND = { col: 32, row: 10 };
 
 function terrainOfCell(col, row) {
@@ -214,8 +214,8 @@ describe('⭐ the fourth rule: the cell under the Token\'s centre', () => {
             if (want) shore++;
             expect(MatPlacement.isLegal('gp_shore', { x, y }), `cell ${col},${row}`).toBe(want);
         }
-        // The sea's edge (the 31 rows a Token fits in), and the eight cells round the pond.
-        expect(shore).toBe(31 + 8);
+        // The sea's edge (the 29 rows a Token fits in), and the eight cells round the pond.
+        expect(shore).toBe(29 + 8);
         expect(MatPlacement.isLegal('gp_shore', { x: (POND.col - 0.5) * TERRAIN_CELL, y: (POND.row - 0.5) * TERRAIN_CELL })).toBe(true);
     });
 

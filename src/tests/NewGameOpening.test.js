@@ -51,7 +51,7 @@ registerTokenTypes({
     }
 });
 
-/** A Starter Camp as the CMS writes it, laid out on the shipped 1760 × 1126 mat. */
+/** A Starter Camp as the CMS writes it, laid out on a 1760 × 1126 mat (the game's is 1920 × 1040). */
 const CAMP = Object.freeze({
     version: 1,
     savedAt: '2026-10-09T14:02:00.000Z',
@@ -96,7 +96,7 @@ describe('with no Starter Camp file, a new game opens on the built-in camp', () 
     it('the Guild Hall in the middle, an Oak Forest and a Copper Mine beside it, all placed', () => {
         const onMat = BoardState.tokens();
         expect(onMat.map(t => t.typeId)).toEqual(['token_guild_hall', 'token_oak_forest', 'token_copper_mine']);
-        expect(at(onMat[0])).toEqual({ typeId: 'token_guild_hall', x: 880, y: 563 });
+        expect(at(onMat[0])).toEqual({ typeId: 'token_guild_hall', x: 960, y: 520 });
         expect(onMat.every(t => t.origin === 'placed')).toBe(true);
         // The Hall is exempt from the mat cap; the other two count.
         expect(MatCap.tokenCount()).toBe(2);
@@ -136,9 +136,11 @@ describe('a new game opens in the Starter Camp the owner laid out', () => {
     });
 
     it('every Token stands where the camp says, the Guild Hall first, in the middle of the mat', () => {
+        // Saved on a mat of another size: the whole camp moves so the two middles meet.
+        const shift = { x: 960 - 880, y: 520 - 563 };
         expect(BoardState.tokens().map(at)).toEqual([
-            { typeId: 'token_guild_hall', x: 880, y: 563 },
-            ...CAMP.tokens
+            { typeId: 'token_guild_hall', x: 960, y: 520 },
+            ...CAMP.tokens.map(t => ({ ...t, x: t.x + shift.x, y: t.y + shift.y }))
         ]);
         expect(openingMat()).toEqual(BoardState.tokens().map(at));
         expect(BoardState.tokens().every(t => t.origin === 'placed')).toBe(true);

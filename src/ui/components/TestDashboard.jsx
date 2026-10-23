@@ -243,7 +243,7 @@ export const TestDashboard = React.memo(() => {
                 for (let i = 0; i < count; i++) {
                     // A random point on the mat, as a fraction of it, so the scatter follows
                     // the mat's live size. The fractions are the old fixed numbers over the
-                    // shipped 1760 × 1126.
+                    // 11-step mat they were written for (1760 × 1126).
                     const w = matW();
                     const hh = matH();
                     const from = {

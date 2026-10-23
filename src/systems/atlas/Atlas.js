@@ -9,6 +9,7 @@ import * as CatchUp from '../core/CatchUp.js';
 import * as BoardState from '../board/BoardState.js';
 import * as SpriteLayer from '../board/SpriteLayer.js';
 import * as MatPlacement from '../board/MatPlacement.js';
+import * as MatResize from '../board/MatResize.js';
 import { isGuildHall } from '../board/MatCap.js';
 import { isQuestToken } from '../quests/QuestTokens.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
@@ -509,6 +510,8 @@ export function travel(id) {
     atlas.activeRegionId = to.id;
     landTravellers(travellers, isPlainObject(to.travellers) ? to.travellers : {});
     to.travellers = {};
+    // A Region left on a bigger mat than this game's: what stands past the edge comes back inside.
+    MatResize.fitToMat();
 
     EventBus.publish(ENGINE_EVENTS.BOARD_SWAPPED, { fromRegionId: from.id, toRegionId: to.id });
     announce('travelled', to.id);

@@ -1,6 +1,6 @@
 // The board builder shared by S2, S3, S5 and S6 (and the S2 list itself).
 //
-// S2's board, on the shipped 11-step mat (1760 × 1126 u):
+// S2's board, on the reference 11-step mat (1760 × 1126 u, pinned: `referenceMat.mjs`):
 //   * the Guild Hall in the middle;
 //   * 39 more PLACED Tokens: 20 producers,
 //     3 fed mills, 3 unfeedable smelters, 3 passives, 2 nearby buffs,
@@ -17,6 +17,8 @@
 // 2.5 s sweep on to stand in for them; without it the Bank barely changes and
 // every Bank-driven path (CR3-002, CR3-029) would be idle.
 
+import { pinMat, REFERENCE_STEPS } from './referenceMat.mjs';
+
 /** S2's placed Tokens besides the Hall, in placement order. */
 export const REALISTIC_PLACED = [
     'bench_forest', 'fixture_producer', 'bench_quarry', 'fixture_producer_alt', 'bench_camp',
@@ -31,7 +33,6 @@ export const REALISTIC_PLACED = [
 
 const STEP = 160;
 const MARGIN = 80;
-const ASPECT = 0.64;
 
 /**
  * Lay a board out and put 8 heroes on it.
@@ -40,7 +41,7 @@ const ASPECT = 0.64;
  * @param {object} [options]
  * @param {string[]} [options.placed] placed Tokens besides the Hall, in order
  * @param {string[]} [options.extra]  more placed Tokens, after `placed`
- * @param {number}   [options.matSteps] mat size (Mat Tuner, 6–20); 11 is shipped
+ * @param {number}   [options.matSteps] mat size (Mat Tuner, 6–20) at the reference aspect; 11 is the reference
  * @param {string[]} [options.late] placed AFTER the spawners are filled, on the
  *        next free cells — the board-reach aura goes here, so the prefill is not
  *        itself a few thousand whole-mat rebuilds (it would take seconds; that
@@ -49,16 +50,14 @@ const ASPECT = 0.64;
  *        override); the spawners then fill the mat up to it and wait, as they do
  *        for a player at the cap. Unset: lifted out of the way (2000).
  */
-export function buildBoard({ fixtures, setMatTuning }, { placed = REALISTIC_PLACED, extra = [], late = [], matSteps = 11, cap = null } = {}) {
+export function buildBoard({ fixtures, setMatTuning }, { placed = REALISTIC_PLACED, extra = [], late = [], matSteps = REFERENCE_STEPS, cap = null } = {}) {
     const { placeAt, makeHeroes, plant, lattice } = fixtures;
 
-    if (matSteps !== 11) setMatTuning('matSteps', matSteps);
+    const { w, h } = pinMat(setMatTuning, matSteps);
     // ⚠️ These boards hold more than the game's Token cap (80, spawned Tokens included), so the
     // cap is lifted: with it, the spawners stall at 80 and every scenario measures a lighter
     // board than its baseline timings (S3 would lose a third of its Tokens).
     setMatTuning('tokenCap', cap ?? 2000);
-    const w = matSteps * STEP;
-    const h = Math.round(w * ASPECT);
     const hall = { x: MARGIN + STEP * Math.floor((matSteps - 1) / 2), y: MARGIN + STEP * Math.floor((Math.floor((h - 2 * MARGIN) / STEP)) / 2) };
 
     // Loot sweeps into the Bank every 2.5 s, as an attentive player would.

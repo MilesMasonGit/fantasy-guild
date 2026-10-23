@@ -23,6 +23,7 @@ import { migrateState } from '../../src/systems/core/SaveMigration.js';
 import { validateSaveData } from '../../src/state/StateSchema.js';
 import { ENGINE_EVENTS } from '../../src/systems/core/engineEvents.js';
 import { BOARD_EVENTS } from '../../src/systems/board/boardEvents.js';
+import * as MatResize from '../../src/systems/board/MatResize.js';
 import { buildRealistic } from './realistic.mjs';
 
 export const HOUR_MS = 3_600_000;
@@ -58,6 +59,7 @@ export async function hourAfterLoad(ctx, play) {
     const check = validateSaveData({ version: data.version, state });
     if (!check.valid) throw new Error(`the S2 save does not load: ${check.errors.join('; ')}`);
     await GameState.initFromSave(state);
+    MatResize.fitToMat();
     EventBus.publish(ENGINE_EVENTS.GAME_LOADED, { slot: 0, savedAt: data.savedAt });
     DiscoveryManager.init();
     AudioSystem.init();

@@ -10,6 +10,7 @@ import { validateSaveData } from '../../state/StateSchema.js';
 import { ENGINE_EVENTS } from './engineEvents.js';
 import { ItemRateTracker } from '../inventory/ItemRateTracker.js';
 import { XpRateTracker } from '../hero/XpRateTracker.js';
+import * as MatResize from '../board/MatResize.js';
 
 const LAST_SLOT_KEY = 'fantasy_guild_last_slot';
 /** sessionStorage: the slot the next page load opens by itself, without a catch-up. */
@@ -280,6 +281,10 @@ export const SaveManager = {
             this.loadedJson = catchUp ? json : null;
             localStorage.setItem(LAST_SLOT_KEY, slotIndex);
             this.startAutoSave();
+
+            // A save laid on a bigger mat than this game's: what stands past the edge comes back
+            // inside before anything hears of the board, the catch-up on load included.
+            MatResize.fitToMat();
 
             // savedAt is when this save was written: the catch-up on load plays from it.
             EventBus.publish(ENGINE_EVENTS.GAME_LOADED, { slot: slotIndex, savedAt: data.savedAt });

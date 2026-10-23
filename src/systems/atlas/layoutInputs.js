@@ -1,6 +1,6 @@
 // the game's side of a layout: the shipped mat, Token bodies and Cannot rules
 
-import { MAT_STEP_U, MAT_ASPECT, artRadiusOf } from '../../config/matGeometry.js';
+import { MAT_STEP_U, MAT_STEPS, MAT_ASPECT, artRadiusOf } from '../../config/matGeometry.js';
 import { matTuningDefault } from '../../config/matTuning.js';
 import { getTokenType, standsOnOf } from '../../config/registries/tokenRegistry.js';
 import { KEYWORD, statementsWith } from '../effects/statements.js';
@@ -14,15 +14,14 @@ import { allowsTerrain } from './TerrainMap.js';
  * settle and reroll (and A6's preview) hand every layout the same inputs.
  *
  * ⚠️ The mat size and crowding numbers are the **shipped defaults**, never this device's Mat Tuner
- * values: a settled Region's coordinates must mean the same on every machine. Until T-097 makes
- * the mat size a fixed game value, a device whose Mat Tuner shrank the mat shows a generated
- * Region's outer Tokens past the mat's edge (`MatResize` acts only when the tuner moves, not on
- * load or travel).
+ * values: a settled Region's coordinates must mean the same on every machine. On a device whose
+ * Mat Tuner shrank the mat, a generated Region's outer Tokens are pulled inside when the guild
+ * travels there (`MatResize.fitToMat`).
  */
 
-/** The mat as the game ships it, in mat units (1760 × 1126 at 11 steps). */
+/** The mat as the game ships it, in mat units (1920 × 1040: 12 steps by 6.5). */
 export function shippedMat() {
-    const w = matTuningDefault('matSteps') * MAT_STEP_U;
+    const w = MAT_STEPS * MAT_STEP_U;
     return { w, h: Math.round(w * MAT_ASPECT) };
 }
 

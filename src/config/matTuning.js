@@ -28,11 +28,11 @@
 const STEP_U = 160;
 
 /**
- * The mat's fixed width-to-height ratio, repeated here for the same reason.
+ * The mat's shipped height over its width (the Mat shape row's default), repeated here for the same reason.
  * Kept in step with `MAT_ASPECT` in `matGeometry.js` — which imports THIS file,
  * so the dependency may not run the other way.
  */
-const ASPECT = 0.64;
+const ASPECT = 13 / 24;
 
 /**
  * A small Token's art radius, repeated here for the same reason — this file
@@ -63,9 +63,9 @@ export const MAT_TUNABLES = Object.freeze([
         key: 'walkSpeed',
         group: 'Heroes',
         label: 'Walk speed',
-        hint: 'How fast heroes walk, in mat units a second. The mat is 1760 u wide at 11 steps, so 120 crosses it in about 15 s. Walking costs work time: a job starts when the hero arrives.',
+        hint: 'How fast heroes walk, in mat units a second. The mat is 1920 u wide at 12 steps, so 120 crosses it in 16 s. Walking costs work time: a job starts when the hero arrives.',
         min: 20, max: 600, step: 1, def: 120,
-        format: (v) => `${Math.round(v)} u/s · ${(1760 / v).toFixed(1)} s across`
+        format: (v) => `${Math.round(v)} u/s · ${(Math.round(matTuning('matSteps')) * STEP_U / v).toFixed(1)} s across`
     },
     {
         key: 'potterRadius',
@@ -81,7 +81,7 @@ export const MAT_TUNABLES = Object.freeze([
         label: 'Enemy walk speed',
         hint: 'How fast enemies walk, in mat units a second (B7.1, TL-16): back to their spawner when carried away, or after it when it is moved. They potter near it at half this. A bit slower than heroes (120) by default.',
         min: 10, max: 600, step: 1, def: 90,
-        format: (v) => `${Math.round(v)} u/s · ${(1760 / v).toFixed(1)} s across`
+        format: (v) => `${Math.round(v)} u/s · ${(Math.round(matTuning('matSteps')) * STEP_U / v).toFixed(1)} s across`
     },
     {
         key: 'enemyPotterRadius',
@@ -119,9 +119,17 @@ export const MAT_TUNABLES = Object.freeze([
         key: 'matSteps',
         group: 'The mat',
         label: 'Mat size',
-        hint: 'How big the playmat itself is, in 160 u steps, at a fixed 0.64 aspect (the game value, MAT_STEPS, is 11; dev builds only). ⚠️ Shrinking it pulls Tokens that no longer fit back inside and spaces them apart; flags are only pulled in. Growing it moves nothing.',
-        min: 6, max: 20, step: 1, def: 11,
-        format: (v) => `${Math.round(v)} steps · ${Math.round(v) * STEP_U} × ${Math.round(Math.round(v) * STEP_U * ASPECT)} u`
+        hint: 'How wide the playmat itself is, in 160 u steps; its height is the width at the Mat shape below (the game value, MAT_STEPS, is 12; dev builds only). ⚠️ Shrinking it pulls Tokens that no longer fit back inside and spaces them apart; flags are only pulled in. Growing it moves nothing.',
+        min: 6, max: 20, step: 1, def: 12,
+        format: (v) => `${Math.round(v)} steps · ${Math.round(v) * STEP_U} × ${Math.round(Math.round(v) * STEP_U * matTuning('matAspect'))} u`
+    },
+    {
+        key: 'matAspect',
+        group: 'The mat',
+        label: 'Mat shape',
+        hint: 'How tall the playmat is for its width (the game value, MAT_ASPECT, is 13/24, 0.542: 1040 u, 6.5 steps, at 12 steps wide; dev builds only). Lower is wider and shorter. ⚠️ Shortening it pulls Tokens below the new edge back inside, as Mat size does.',
+        min: 0.4, max: 0.8, step: 0.001, def: ASPECT,
+        format: (v) => `${v.toFixed(3)} · ${Math.round(Math.round(matTuning('matSteps')) * STEP_U * v)} u tall · ${(Math.round(matTuning('matSteps')) * v).toFixed(2)} steps`
     },
     {
         // ⚠️ A new key on purpose: the old `matCap` row's value (40) is still stored on devices
@@ -173,7 +181,8 @@ const STORAGE_KEY = 'fantasy_guild_mat_tuning';
  */
 const RETIRED_DEFAULTS = Object.freeze({
     flagRadius: [164],
-    hitboxPct: [80]
+    hitboxPct: [80],
+    matSteps: [11]
 });
 
 /** Whether this build has a Mat Tuner: a dev or a perf build, never a shipped one. */
