@@ -23,7 +23,7 @@ import { getAllSkillIds } from '../config/registries/skillRegistry.js';
  * a lattice of mat points 160 u apart, so each domino below is a side neighbour
  * of the next and the chain really is a chain.
  */
-const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 120 + Math.floor(i / 6) * 160 });
 
 /** The Token standing exactly on spot `i`. */
 const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;

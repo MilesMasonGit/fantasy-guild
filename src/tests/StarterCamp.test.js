@@ -129,7 +129,7 @@ describe('the dev button saves the live mat in the shape the loader reads', () =
         expect(camp).toEqual({
             version: 1,
             savedAt: '2026-10-09T14:02:00.000Z',
-            mat: { w: 1760, h: 1126 },
+            mat: { w: 1920, h: 1040 },
             hall: { x: 900, y: 500 },
             tokens: [
                 { typeId: 'fixture_sc_site', x: 200, y: 200 },

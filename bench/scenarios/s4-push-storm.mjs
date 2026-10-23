@@ -38,6 +38,7 @@ import * as BoardState from '../../src/systems/board/BoardState.js';
 import { PLACEMENT } from '../../src/config/registries/placementRegistry.js';
 import { summarise } from '../lib/stats.mjs';
 import { tokensHash } from '../lib/fingerprint.mjs';
+import { pinMat } from './referenceMat.mjs';
 
 const CENTRE = { x: 1600, y: 1024 };
 
@@ -69,7 +70,7 @@ export default {
 
     build({ fixtures, setMatTuning }) {
         const { placeAt, lattice } = fixtures;
-        setMatTuning('matSteps', 20);
+        pinMat(setMatTuning, 20);
         const types = ['fixture_producer', 'fixture_producer_alt', 'bench_mill', 'fixture_passive', 'fixture_buff_yield'];
         const cells = lattice(3200, 2048).filter(p => Math.hypot(p.x - CENTRE.x, p.y - CENTRE.y) > 420);
         // 60 placed Tokens, spread over the lattice.

@@ -26,6 +26,7 @@ import * as StationRecipe from '../../src/systems/board/StationRecipe.js';
 import { registerTokenTypes } from '../../src/config/registries/tokenRegistry.js';
 import { registerRecipePools } from '../../src/config/registries/recipePoolRegistry.js';
 import { KEYWORD } from '../../src/systems/effects/statements.js';
+import { pinMat } from './referenceMat.mjs';
 
 const MAT_STEPS = 8;
 const STEP = 120;
@@ -62,12 +63,10 @@ export default {
     ticks: () => ({ warmup: 300, measure: 1500 }),
     build({ fixtures, setMatTuning }) {
         const { placeAt, lattice, makeHeroes, plant } = fixtures;
-        setMatTuning('matSteps', MAT_STEPS);
+        const { w, h } = pinMat(setMatTuning, MAT_STEPS);
         // ⚠️ The packed mat is over the game's Token cap (80); lifted, or the spawner would wait on
         // the cap and never run the no-room search this scenario measures.
         setMatTuning('tokenCap', 2000);
-        const w = MAT_STEPS * 160;
-        const h = Math.round(w * 0.64);
 
         placeAt('bench_hall', 80 + 160 * 3, 80 + 160 * 2);
 

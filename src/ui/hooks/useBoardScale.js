@@ -33,7 +33,7 @@ export const MIN_BOARD_SCALE = 0.1;
  */
 /**
  * How much a `natW × natH` board must shrink (or grow) to fit `w × h` of space.
- * Two-axis: the free playmat is 1760 × 1126, so the height is as likely to be the binding
+ * Two-axis: the free playmat is 1920 × 1040, so the height is as likely to be the binding
  * constraint as the width. Rounded to whole percent so a one-pixel resize does not re-render
  * the whole board.
  * It grows as well as shrinks: sprites are drawn at a whole multiple of `ART_PX` chosen from
@@ -97,7 +97,7 @@ export function useBoardScale(naturalPx, naturalH = naturalPx) {
     }, [measure]);
 
     // `size` is the width (a square board's only side); `height` is for a board that is not
-    // square, like the free playmat (1760 × 1126 u).
+    // square, like the free playmat (1920 × 1040 u).
     return { ref, scale, size: Math.round(naturalPx * scale), height: Math.round(naturalH * scale) };
 }
 

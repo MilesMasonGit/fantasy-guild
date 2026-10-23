@@ -47,7 +47,7 @@ export function init() {
     teardown();
     unsubscribe = onMatTuningChanged((key) => {
         // `null` is the tuner's Reset, which can change the mat size too.
-        if (key == null || key === 'matSteps') fitToMat();
+        if (key == null || key === 'matSteps' || key === 'matAspect') fitToMat();
     });
 }
 
