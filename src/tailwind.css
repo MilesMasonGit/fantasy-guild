@@ -101,16 +101,6 @@
   --color-ui-white: #ffffff;
   --color-ui-muted: var(--color-gi-muted);
 
-  /* Item tile surfaces, one per item type: dark, low-colour shades lighter than the panel, so a
-     sprite's dark outline reads against them. A surface, not one of the five meanings. */
-  --color-item-tint-default: #282a30;
-  --color-item-tint-material: #2c2a27;
-  --color-item-tint-tool: #252d39;
-  --color-item-tint-food: #33291f;
-  --color-item-tint-drink: #1e2f35;
-  --color-item-tint-potion: #2e2437;
-  --color-item-tint-map: #332e21;
-
   /* Legacy Colors (Mapped to new GI Typography truth) */
   --color-bg-primary: var(--color-gi-base);
   --color-bg-secondary: #141414;
@@ -186,6 +176,20 @@
   --shadow-bevel: inset 0 0 0 1px rgba(255, 255, 255, 0.1), 0 4px 15px rgba(0, 0, 0, 0.6);
   --shadow-progress-rim: 0 0 8px rgba(255, 255, 255, 0.3);
   --shadow-progress-glow: 0 0 12px rgba(233, 69, 96, 0.4);
+}
+
+:root {
+  /* Item tile surfaces, one per item type: dark, low-colour shades lighter than the panel, so a
+     sprite's dark outline reads against them. A surface, not one of the five meanings.
+     ⚠️ Outside @theme on purpose: Tailwind drops theme variables no class names, and these are
+     named only through `itemTint.js`. */
+  --color-item-tint-default: #282a30;
+  --color-item-tint-material: #2e2b25;
+  --color-item-tint-tool: #22304a;
+  --color-item-tint-food: #3c2a1a;
+  --color-item-tint-drink: #173439;
+  --color-item-tint-potion: #352242;
+  --color-item-tint-map: #3a311c;
 }
 
 /* The screen's layers, back to front: every z-index above the mat is one of these, written as

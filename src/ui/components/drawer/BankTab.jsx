@@ -426,6 +426,9 @@ const BankTabButtonBody = memo(function BankTabButtonBody({ tab, index, first, a
     );
 });
 
+// ⚠️ Inline, because the unlayered input reset in `styles/main.css` outranks Tailwind classes.
+const SEARCH_INPUT_STYLE = { padding: 0, border: 'none', background: 'transparent', fontSize: 'var(--font-size-xs)' };
+
 /** The Bank's search box, in its header: it searches every tab. */
 const BankSearch = ({ value, onChange }) => (
     <div className="flex items-center gap-1 px-2 py-1 rounded border border-gi-border focus-within:border-gi-muted w-44">
@@ -434,7 +437,8 @@ const BankSearch = ({ value, onChange }) => (
             value={value}
             onChange={e => onChange(e.target.value)}
             placeholder={t('bank.searchPlaceholder')}
-            className="bg-transparent outline-none text-(length:--font-size-xs) text-gi-text w-full min-w-0 placeholder:text-gi-muted/60"
+            style={SEARCH_INPUT_STYLE}
+            className="outline-none text-gi-text w-full min-w-0 leading-normal placeholder:text-gi-muted/60"
         />
         {value ? (
             <button
