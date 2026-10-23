@@ -254,5 +254,24 @@ no content uses either yet.
   species has its own times in the CMS.
 - **Forests speed up nearby regrowth**: a Forest Token reduces the grow time
   of Stumps and Saplings within reach. The player plants Forests to help the
-  trees around them come back faster. (Replaces the Forest as a sapling
-  spawner; how it relates to same-species groves is the next question.)
+  trees around them come back faster.
+- **Forests replace groves.** ⚠️ Overturns the 2026-10-09 grove rule: trees no
+  longer speed each other up; only Forest Tokens do.
+- **A Forest helps its own species only** (an Oak Forest, Oaks): one Forest
+  Token per species.
+- **A Forest both plants and regrows.** It plants new saplings within reach
+  (up to its allowance) and makes felled trees within reach regrow. The
+  player either plants Forests for lots of trees to work, or demolishes one
+  to make room.
+- **Felled with no Forest in reach** (never had one, or it was demolished):
+  the Tree becomes a **Stump that does not regrow** until a Forest of its
+  species is in reach again. Clearing the stump is a demolish.
+- **Map trees**: a wooded Region's map places **wild Forests** among its
+  trees, which work exactly like planted ones (and can be demolished).
+- **Seeds**: **building a Forest costs seeds**. The Forest has **no upkeep**:
+  the **tree pays**. **A Stump spends one seedling from the Bank when it
+  regrows into a Sapling**; with none in the Bank the Stump is **stopped**
+  and waits. (Easier to understand than a Forest upkeep, owner.)
+- **Forests stack fully**, down to a **floor**: a tree never regrows faster
+  than a set fraction of its normal time (about a quarter; the number in the
+  CMS).
