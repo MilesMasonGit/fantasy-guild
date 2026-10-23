@@ -1,10 +1,8 @@
 import React from 'react';
 import * as Atlas from '../../../systems/atlas/Atlas.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
-import { EntityRibbon } from '../base/EntityRibbon.jsx';
 import { Tooltip } from '../base/Tooltip.jsx';
 import { useRefreshOn } from './MatCapBadge.jsx';
-import { TOP_BAR_ICON, TopBarIcon } from './MatTopBar.jsx';
 import { BannerArt } from '../base/BannerArt.jsx';
 import { liveRegionBanner } from '../atlas/regionBanner.js';
 
@@ -24,10 +22,16 @@ export function liveRegionName() {
 
 const signatureOf = (r, banner) => (r ? `${r.name}|${r.practical}|${banner || ''}` : '');
 
+/** The banner's width in the bar, px: one 256 px picture at its own size, so its pixels stay whole. */
+export const REGION_BANNER_PX = 256;
+
+/** Crisp on the left, gone by the right end, so the picture melts into the bar's fill. */
+const BANNER_FADE = 'linear-gradient(to right, #000 0%, #000 40%, transparent 100%)';
+
 /**
- * The top bar's first item bar: the name of the Region the guild is in. A click opens the Atlas
- * (a second way in besides its bubble). A thin slice of the Region's area banner lies behind the
- * name. Nothing while there is no Region (before a game starts).
+ * The top bar's left end: the name of the Region the guild is in, over that Region's banner (the
+ * one the Atlas shows). A click opens the Atlas (a second way in besides its bubble). Nothing
+ * while there is no Region (before a game starts).
  * @param {{ onOpenAtlas?: () => void, readName?: () => ({ name: string, practical: string }|null),
  *   readBanner?: () => (string|null) }} props  `readName` and `readBanner` for tests
  */
@@ -39,22 +43,24 @@ export const MatRegionName = ({ onOpenAtlas, readName = liveRegionName, readBann
     const lines = [region.practical && region.practical !== region.name ? region.practical : null, 'Click to open the Atlas.'];
     return (
         <Tooltip title={region.name} lines={lines}>
-            <span data-mat-region-banner={banner || ''} className="relative isolate inline-flex items-center overflow-hidden rounded-lg">
-                {banner && <BannerArt banner={banner} className="-z-10" />}
-                {/* A dark wash so the name reads over any picture. */}
-                {banner && <span aria-hidden="true" className="absolute inset-0 -z-10 bg-gradient-to-r from-black/65 via-black/35 to-black/10 pointer-events-none" />}
-                <EntityRibbon
-                    data-mat-region-name
-                    role="button"
-                    tabIndex={0}
-                    size="xs"
-                    name={region.name}
-                    title={null}
-                    icon={<TopBarIcon src={TOP_BAR_ICON.REGION} />}
-                    onClick={() => onOpenAtlas?.()}
-                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpenAtlas?.(); } }}
-                    className={banner ? 'whitespace-nowrap bg-transparent hover:bg-white/10' : 'whitespace-nowrap'}
-                />
+            <span
+                data-mat-region-banner={banner || ''}
+                data-mat-region-name
+                role="button"
+                tabIndex={0}
+                onClick={() => onOpenAtlas?.()}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpenAtlas?.(); } }}
+                className="relative isolate h-full flex items-center pl-4 pr-10 cursor-pointer hover:outline-2 hover:outline-solid hover:-outline-offset-2 hover:outline-[var(--color-ui-white)] focus-visible:outline-2 focus-visible:outline-solid focus-visible:-outline-offset-2 focus-visible:outline-[var(--color-ui-white)]"
+                style={{ minWidth: REGION_BANNER_PX }}
+            >
+                {banner && (
+                    <BannerArt
+                        banner={banner}
+                        className="-z-10"
+                        style={{ width: REGION_BANNER_PX, right: 'auto', maskImage: BANNER_FADE, WebkitMaskImage: BANNER_FADE }}
+                    />
+                )}
+                <span data-mat-region-name-text className="ui-text-title ui-text-outline-2 font-bold whitespace-nowrap text-white">{region.name}</span>
             </span>
         </Tooltip>
     );

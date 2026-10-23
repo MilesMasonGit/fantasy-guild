@@ -227,14 +227,15 @@ describe('where the banner shows', () => {
         expect(q(container, '[data-arrival-card]')).toBeNull();
     });
 
-    it('a slice of it lies behind the Region name on the top bar', () => {
+    it('it lies behind the Region name on the top bar', () => {
         const { container } = render(React.createElement(MatRegionName, {
             readName: () => ({ name: 'Elderfield', practical: 'Starter Camp' }), readBanner: () => 'b_village'
         }));
         const slice = q(container, '[data-mat-region-banner]');
         expect(slice.getAttribute('data-mat-region-banner')).toBe('b_village');
         expect(q(slice, '[data-banner-art="b_village"]')).toBeTruthy();
-        expect(q(slice, '[data-mat-region-name]').textContent).toContain('Elderfield');
+        expect(slice.hasAttribute('data-mat-region-name')).toBe(true);
+        expect(slice.textContent).toContain('Elderfield');
     });
 
     it('it lies behind the Cartography preview, round the map, which is drawn as the mat draws it', () => {

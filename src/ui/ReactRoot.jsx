@@ -245,8 +245,8 @@ export const ReactRoot = () => {
                             {showsMatTopBar(ui.fullscreen.view) && (
                                 <PerfProfiler id="TopBar">
                                     <MatTopBar
-                                        left={<><MatRegionName onOpenAtlas={openAtlasFromBar} /><MatCapBadge /><MatUpkeepBadge /></>}
-                                        middle={<MapModeBanner />}
+                                        left={<MatRegionName onOpenAtlas={openAtlasFromBar} />}
+                                        middle={<MapModeBanner fallback={<><MatCapBadge /><MatUpkeepBadge /></>} />}
                                         right={<MapModeToggles />}
                                     />
                                 </PerfProfiler>

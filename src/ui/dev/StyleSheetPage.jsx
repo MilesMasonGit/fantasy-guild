@@ -20,6 +20,7 @@ import { ArrowScrollList } from '../components/base/ArrowScrollList.jsx';
 import { LevelUpFloats } from '../components/board/LevelUpFloat.jsx';
 import { ModeBannerView } from '../components/board/MatModeControls.jsx';
 import { MAT_TOP_BAR_PX } from '../components/board/MatTopBar.jsx';
+import { MatRegionName } from '../components/board/MatRegionName.jsx';
 import { MAP_MODE } from '../hooks/useMapMode.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
@@ -278,13 +279,24 @@ const MapModesDemo = () => {
                 </div>
             )}
             {[MAP_MODE.DISALLOW, MAP_MODE.DEMOLISH].map(mode => (
-                <PixelFrame key={mode} kind="studs" style={{ height: MAT_TOP_BAR_PX }} frameClassName="px-2 ui-text-body text-amber-100">
+                <PixelFrame key={mode} kind="studs" style={{ height: MAT_TOP_BAR_PX }} frameClassName="px-2 ui-text-title text-amber-100">
                     <ModeBannerView mode={mode} />
                 </PixelFrame>
             ))}
         </div>
     );
 };
+
+/** The top bar's left end: a Region name over its banner, two banners to compare. */
+const RegionBannerDemo = () => (
+    <div className="flex flex-col gap-3">
+        {[['Elderfield', 'b_golden_plains'], ['Rockblight Valley', 'b_lush_forest']].map(([name, banner]) => (
+            <PixelFrame key={banner} kind="studs" style={{ height: MAT_TOP_BAR_PX, width: 520 }} frameClassName="flex items-center">
+                <MatRegionName readName={() => ({ name, practical: 'Starter Camp' })} readBanner={() => banner} />
+            </PixelFrame>
+        ))}
+    </div>
+);
 
 const HoverOutlineDemo = () => {
     const [hover, setHover] = useState(false);
@@ -690,6 +702,12 @@ export const KIT_SECTIONS = [
         source: 'MatModeControls (the top bar), outline="muted" / "danger"',
         rule: 'While a map mode is on, the hovered Token’s outline takes the mode’s colour: muted grey for Disallow, red for Demolish (muted grey on a Token the mode cannot act on). The bar’s centre says what a click does; Demolish’s in red.',
         Demo: MapModesDemo
+    },
+    {
+        id: 'region-banner', title: 'Region name on its banner', status: 'unapproved',
+        source: 'MatRegionName (the top bar’s left end)',
+        rule: 'The Region’s banner (the one the Atlas shows) lies behind its name at its own size, 1 art pixel to 1 screen pixel, crisp on the left and fading to the bar’s fill on the right. The name is title size with a 2 px black outline so it reads over any picture. Hover: a white outline round the whole banner; click opens the Atlas.',
+        Demo: RegionBannerDemo
     }
 ];
 
