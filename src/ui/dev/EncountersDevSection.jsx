@@ -1,4 +1,4 @@
-// The QA panel's encounters section: one click sets up a guarded vein, an ambush node and a boss lair.
+// The QA panel's encounters section: one click sets up a guardian's camp, an ambush node, a boss's den and a Summoning Circle.
 // ⚠️ DEV BUILDS ONLY: TestDashboard renders this behind `import.meta.env.DEV && …`.
 
 import { useState } from 'react';
@@ -20,11 +20,11 @@ export function EncountersDevSection() {
                     onClick={() => {
                         const r = setUpEncountersScene();
                         setStatus(r.ok
-                            ? 'Below the Hall: a guarded vein (left), a goblin-haunted vein (middle), a boss den (right), four Fighters flagged; 2 Summoning Horns in the Bank (Shop → Summons)'
+                            ? 'Below the Hall: a guardian camp by a rich vein (left), a goblin-haunted vein (middle), a boss den (right); above right: a Summoning Circle with 2 Horns in the Bank; six Fighters flagged'
                             : r.error);
                     }}
                 >
-                    Guardian, ambush, boss lair and summon (test content, gone on reload)
+                    Guardian camp, ambush, boss den and Summoning Circle (test content, gone on reload)
                 </button>
             </div>
             {status && <div className="ui-text-body text-gi-muted">{status}</div>}

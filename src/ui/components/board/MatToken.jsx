@@ -16,7 +16,6 @@ import * as Flags from '../../../systems/board/Flags.js';
 import * as Placement from '../../../systems/board/Placement.js';
 import * as TimedChanges from '../../../systems/board/TimedChanges.js';
 import * as Respawn from '../../../systems/board/Respawn.js';
-import * as Guardians from '../../../systems/board/Guardians.js';
 import * as Hand from '../../../systems/board/Hand.js';
 import * as FixedTokens from '../../../systems/board/FixedTokens.js';
 import * as Landmarks from '../../../systems/board/Landmarks.js';
@@ -189,9 +188,6 @@ export const MatToken = React.memo(function MatToken({
         const instance = BoardState.getTokenById(id);
         const rest = Respawn.nextRespawn(instance);
         if (rest) return rest.mode === 'refill' ? { kind: 'respawn', ...rest, everyMs: rest.totalMs } : null;
-        // A beaten guardian, or a lair's boss, on its way back.
-        const keeps = Guardians.guardianState(instance);
-        if (keeps?.beaten) return { kind: 'guardian', inMs: keeps.inMs, everyMs: keeps.returnMs, typeId: keeps.typeId };
         const grow = TimedChanges.nextGrowth(instance);
         if (grow) return { kind: 'grow', ...grow, everyMs: Number(getTokenType(instance.typeId)?.grows?.afterMs) || 0 };
         const roll = TimedChanges.nextTurnRoll(instance);
@@ -591,7 +587,7 @@ export const MatToken = React.memo(function MatToken({
                     small={small}
                     spawner={spawnerBubble}
                     quest={questBubble}
-                    readTimer={detail?.turns || detail?.grows || resting || detail?.guardianAway ? readTimer : null}
+                    readTimer={detail?.turns || detail?.grows || resting ? readTimer : null}
                     gear={gear}
                     disallowed={!!detail?.disallowed}
                     marked={!!detail?.marked}

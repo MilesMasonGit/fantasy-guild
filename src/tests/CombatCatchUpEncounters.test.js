@@ -9,7 +9,7 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
-import * as Guardians from '../systems/board/Guardians.js';
+import * as SpawnerSystem from '../systems/board/SpawnerSystem.js';
 import * as HeroMotion from '../systems/board/HeroMotion.js';
 import * as EnemyMotion from '../systems/board/EnemyMotion.js';
 import { AudioSystem } from '../systems/core/AudioSystem.js';
@@ -17,18 +17,19 @@ import { EventBus } from '../systems/core/EventBus.js';
 import * as CatchUp from '../systems/core/CatchUp.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
-import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
+import { registerTokenTypes, getTokenType } from '../config/registries/tokenRegistry.js';
+import { registerItems } from '../config/registries/itemRegistry.js';
 import { makeStatement, KEYWORD } from '../systems/effects/statements.js';
 import { PLACEMENT } from '../config/registries/placementRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import * as fixtures from '../../bench/fixtures.mjs';
 
 /**
- * The encounters (brief 220, C5) during a catch-up: a guardian's return clock, a node's ambush roll,
- * a lair's boss and a hero waiting for it all run on the tick's `delta` and draw from `Math.random`
- * in a fixed order, so time away ends exactly where the same time played live ends. And a
- * guardian's return clock survives a save and a load. The same harness as `CombatCatchUp.test.js`,
- * in a file of its own.
+ * The encounters (brief 220, C5) during a catch-up: a guardian's camp of one beside a rich vein, a
+ * node's ambush roll, a boss's den with a hero fighting it and another waiting, and a Summoning
+ * Circle calling a boss all run on the tick's `delta` and draw from `Math.random` in a fixed order,
+ * so time away ends exactly where the same time played live ends. The same harness as
+ * `CombatCatchUp.test.js`, in a file of its own.
  */
 
 const NOW = 1_800_000_000_000;
@@ -48,14 +49,23 @@ const mining = {
 };
 const enemyConfig = { skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0, inputs: [], outputs: [{ itemId: 'item_bones', chance: 100, minQty: 1, maxQty: 2 }] };
 
+registerItems({
+    cu_enc_horn: { id: 'cu_enc_horn', name: 'Catch-up Horn', type: 'material', stackable: true, sprite: 'i_bones' }
+});
+
 registerTokenTypes({
     cu_enc_guardian: {
         id: 'cu_enc_guardian', name: 'Catch-up Guardian', tokenType: 'enemy', rarity: 'common', theme: 'fixture',
-        uses: 1, sprite: 's_occult', enemy: { level: 2, style: 'melee' }, config: enemyConfig
+        uses: 1, sprite: 's_occult', enemy: { level: 2, style: 'melee', hostile: true }, config: enemyConfig
+    },
+    cu_enc_guardian_camp: {
+        id: 'cu_enc_guardian_camp', name: 'Catch-up Guardian Camp', tokenType: 'spawner', rarity: 'common', theme: 'fixture',
+        uses: null, sprite: 's_crime',
+        spawner: { spawns: [{ typeId: 'cu_enc_guardian', weight: 1 }], allowance: 1, intervalMs: 40000, upkeep: [] }
     },
     cu_enc_vein: {
-        id: 'cu_enc_vein', name: 'Catch-up Guarded Vein', tokenType: 'resource', rarity: 'common', theme: 'fixture',
-        uses: null, sprite: 's_industry', config: mining, guardian: { typeId: 'cu_enc_guardian', returnMs: 40000 }
+        id: 'cu_enc_vein', name: 'Catch-up Rich Vein', tokenType: 'resource', rarity: 'common', theme: 'fixture',
+        uses: null, sprite: 's_industry', config: mining
     },
     cu_enc_ambusher: {
         id: 'cu_enc_ambusher', name: 'Catch-up Ambusher', tokenType: 'enemy', rarity: 'common', theme: 'fixture',
@@ -76,9 +86,19 @@ registerTokenTypes({
         id: 'cu_enc_boss', name: 'Catch-up Boss', tokenType: 'enemy', rarity: 'rare', theme: 'fixture',
         uses: 1, sprite: 's_occult', enemy: { level: 3, style: 'melee', boss: true }, config: enemyConfig
     },
-    cu_enc_lair: {
-        id: 'cu_enc_lair', name: 'Catch-up Lair', tokenType: 'resource', rarity: 'rare', theme: 'fixture',
-        uses: null, sprite: 's_industry', guardian: { typeId: 'cu_enc_boss', returnMs: 30000 }
+    cu_enc_den: {
+        id: 'cu_enc_den', name: 'Catch-up Den', tokenType: 'spawner', rarity: 'rare', theme: 'fixture',
+        uses: null, sprite: 's_crime',
+        spawner: { spawns: [{ typeId: 'cu_enc_boss', weight: 1 }], allowance: 1, intervalMs: 30000, upkeep: [] }
+    },
+    cu_enc_circle: {
+        id: 'cu_enc_circle', name: 'Catch-up Circle', tokenType: 'resource', rarity: 'rare', theme: 'fixture',
+        uses: null, sprite: 's_occult',
+        config: {
+            skill: 'alchemy', skillRequired: 1, cycleTimeMs: 5000, xp: 0,
+            inputs: [{ itemId: 'cu_enc_horn', quantity: 1 }],
+            outputs: [{ tokenId: 'cu_enc_boss', chance: 100, minQty: 1, maxQty: 1 }]
+        }
     }
 });
 
@@ -95,8 +115,9 @@ function seeded() {
 const realRandom = Math.random;
 
 /**
- * A guarded vein with a fighter on an area flag beside it; a haunted vein with a miner pinned to it;
- * a lair whose boss a fighter fights while a second waits pinned beside it.
+ * A guardian's camp beside a rich vein with a fighter flagged there; a haunted vein with a miner
+ * pinned to it; a den whose boss a fighter fights while a second waits pinned beside it; a
+ * Summoning Circle with a hero on it and two Horns in the Bank, and a fighter beside it.
  */
 function buildBoard() {
     stream.state = 23;
@@ -104,20 +125,26 @@ function buildBoard() {
     resetMatTuning();
     GameState.initNew();
     InventoryManager.init();
-    const heroes = fixtures.makeHeroes(4, { forestry: 30, mining: 30, melee: 30 });
+    const heroes = fixtures.makeHeroes(6, { forestry: 30, mining: 30, alchemy: 30, melee: 30 });
     for (const h of heroes) h.hp.current = h.hp.max;
-    const vein = fixtures.placeAt('cu_enc_vein', 300, 300);
+    const camp = fixtures.placeAt('cu_enc_guardian_camp', 300, 300);
+    const vein = fixtures.placeAt('cu_enc_vein', 460, 300);
     const haunted = fixtures.placeAt('cu_enc_haunted', 1000, 300);
-    const lair = fixtures.placeAt('cu_enc_lair', 1000, 800);
-    // The first tick brings the guardian and the boss; the flags go down after it.
-    GameLoop.runHandlers(1000);
-    const boss = Guardians.standingGuardianOf(lair);
-    fixtures.plant(heroes[0].id, { x: vein.x - 40, y: vein.y + 40 });
+    const den = fixtures.placeAt('cu_enc_den', 1000, 800);
+    const circle = fixtures.placeAt('cu_enc_circle', 300, 800);
+    InventoryManager.addItem('cu_enc_horn', 2);
+    // The camps' first members stand at once (they would arrive after an interval); the flags go down after.
+    SpawnerSystem.attemptSpawn(camp, getTokenType(camp.typeId));
+    SpawnerSystem.attemptSpawn(den, getTokenType(den.typeId));
+    const boss = BoardState.tokens().find(t => t.typeId === 'cu_enc_boss');
+    fixtures.plant(heroes[0].id, { x: vein.x, y: vein.y + 40 });
     fixtures.plant(heroes[1].id, { x: haunted.x, y: haunted.y }, { pin: true });
     fixtures.plant(heroes[2].id, { x: boss.x, y: boss.y }, { pin: true });
     fixtures.plant(heroes[3].id, { x: boss.x, y: boss.y }, { pin: true });
+    fixtures.plant(heroes[4].id, { x: circle.x, y: circle.y }, { pin: true });
+    fixtures.plant(heroes[5].id, { x: circle.x + 160, y: circle.y });
     TileModifiers.rebuildAll();
-    return { heroes, vein, haunted, lair };
+    return { heroes, camp, vein, haunted, den, circle };
 }
 
 function listen() {
@@ -137,12 +164,8 @@ function end(board, seen) {
             const hero = GameState.state.heroes.find(x => x.id === h.id);
             return { hp: hero.hp.current, xp: hero.skills.melee?.xp ?? null, mining: hero.skills.mining?.xp ?? null, status: hero.status };
         }),
-        tokens: BoardState.tokens().map(t => ({ typeId: t.typeId, uses: t.usesRemaining, clocks: t.clocks ?? null })),
-        // Less the enemy's instance id, whose first half is the wall clock at its making.
-        guardians: [board.vein, board.lair].map(t => {
-            const { guardianId: _id, ...state } = Guardians.guardianState(BoardState.getTokenById(t.id));
-            return state;
-        }),
+        tokens: BoardState.tokens().map(t => ({ typeId: t.typeId, uses: t.usesRemaining, clocks: t.clocks ?? null, x: t.x, y: t.y })),
+        horns: InventoryManager.getItemCount('cu_enc_horn'),
         draws: stream.draws,
         seen
     };
@@ -178,7 +201,7 @@ afterAll(() => {
 });
 
 describe('encounters during a catch-up', () => {
-    it('a guardian, an ambush node and a boss lair end exactly where the same 1000 ms steps through the plain loop end', async () => {
+    it('a guardian camp, an ambush node, a boss den and a Summoning Circle end exactly where the same 1000 ms steps through the plain loop end', async () => {
         let board = buildBoard();
         let seen = listen();
         for (let i = 0; i < AWAY_MS / 1000; i++) GameLoop.runHandlers(1000);
@@ -191,42 +214,13 @@ describe('encounters during a catch-up', () => {
 
         expect(caughtUp).toEqual(plain);
 
-        // It all really happened: the guardian and the boss beaten and back more than once, ambushes
-        // sprung and beaten, and never two heroes on one enemy.
+        // It all really happened: the guardian and the den's boss beaten and back more than once,
+        // ambushes sprung and beaten, both Horns used, and never two heroes on one enemy.
         expect(plain.seen.kills.filter(k => k === 'cu_enc_guardian').length).toBeGreaterThanOrEqual(2);
-        expect(plain.seen.kills.filter(k => k === 'cu_enc_boss').length).toBeGreaterThanOrEqual(2);
+        expect(plain.seen.kills.filter(k => k === 'cu_enc_boss').length).toBeGreaterThanOrEqual(3);
         expect(plain.seen.ambushes).toBeGreaterThan(0);
         expect(plain.seen.kills.filter(k => k === 'cu_enc_ambusher').length).toBeGreaterThan(0);
-        expect(plain.seen.spawned.filter(t => t === 'cu_enc_boss').length).toBeGreaterThanOrEqual(2);
-    }, 60_000);
-
-    it('a beaten guardian\'s return clock survives a save and a load, and it comes back on time', async () => {
-        const board = buildBoard();
-        const veinId = board.vein.id;
-        // Play until the guardian has fallen and its clock has run a while.
-        let beatenAt = null;
-        for (let i = 0; i < 300 && beatenAt === null; i++) {
-            GameLoop.runHandlers(1000);
-            if (Guardians.guardianState(BoardState.getTokenById(veinId))?.beaten) beatenAt = i;
-        }
-        expect(beatenAt).not.toBeNull();
-        for (let i = 0; i < 10; i++) GameLoop.runHandlers(1000);
-        const before = Guardians.guardianState(BoardState.getTokenById(veinId));
-        expect(before.beaten).toBe(true);
-        expect(before.inMs).toBeGreaterThan(0);
-        const savedClock = BoardState.getTokenById(veinId).clocks.guardianMs;
-
-        localStorage.setItem(SaveManager.getSlotKey(0), GameState.serializeJson());
-        expect(await SaveManager.loadSlot(0, { catchUp: false })).toBe(true);
-
-        const vein = BoardState.getTokenById(veinId);
-        expect(vein.clocks.guardianMs).toBe(savedClock);
-        expect(Guardians.guardianState(vein)).toEqual(before);
-        const steps = Math.ceil(before.inMs / 1000);
-        for (let i = 0; i < steps - 1; i++) GameLoop.runHandlers(1000);
-        expect(Guardians.isGuarded(BoardState.getTokenById(veinId))).toBe(false);
-        GameLoop.runHandlers(1000);
-        expect(Guardians.isGuarded(BoardState.getTokenById(veinId))).toBe(true);
+        expect(plain.horns).toBe(0);
     }, 60_000);
 
     it('an old save with two heroes working one enemy loads into one fight; the second waits', async () => {

@@ -6,8 +6,8 @@ import {
 import { stationSkillOf, getProvidedTagsWithTiers } from '../effects/statements.js';
 
 /**
- * The one checker for the eight Token Lifecycle blocks (`spawner`, `grows`,
- * `turns`, `foundation`, `shop`, `trickle` (Passive Production), `respawn`, `guardian`) and the recipe fields
+ * The one checker for the seven Token Lifecycle blocks (`spawner`, `grows`,
+ * `turns`, `foundation`, `shop`, `trickle` (Passive Production), `respawn`) and the recipe fields
  * `foundationKinds` and `foundationMinTier`, shared by the game's boot audit (`ContentAudit`) and the
  * CMS's Economy Audit (`connectivityAuditor`), so the two can never disagree.
  *
@@ -347,22 +347,6 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
             }
             if (def.uses === null || def.uses === undefined) {
                 warn('respawn', 'respawns but has unlimited charges, so it never runs out and never rests (allowed).');
-            }
-        }
-
-        // ── guardian: the enemy it keeps beside it (a guarded Token, or a lair) ──
-        if (def.guardian !== undefined && def.guardian !== null) {
-            const g = def.guardian;
-            const target = hasValue(g?.typeId) ? tokens[g.typeId] : null;
-            if (def.enemy) {
-                err('guardian', 'is an enemy and keeps a guardian; an enemy cannot, so the block does nothing.');
-            } else if (!hasValue(g?.typeId) || !target) {
-                checkTokenRef(err, 'guardian.typeId', 'guardian', g?.typeId);
-            } else if (target.enemy?.level == null) {
-                err('guardian.typeId', `keeps ${tokenLabel(g.typeId)} as its guardian, which is not an enemy; nothing will stand there.`);
-            }
-            if (g?.returnMs !== undefined && g?.returnMs !== null && g?.returnMs !== '') {
-                checkTime(err, 'guardian.returnMs', 'guardian return time', g.returnMs);
             }
         }
 

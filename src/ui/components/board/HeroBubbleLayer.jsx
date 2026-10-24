@@ -12,6 +12,7 @@ import * as BoardState from '../../../systems/board/BoardState.js';
 import * as HeroMotion from '../../../systems/board/HeroMotion.js';
 import * as Flags from '../../../systems/board/Flags.js';
 import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
+import { isEnemyDef } from '../../../config/registries/enemyProfile.js';
 import { layoutStacks, bubbleAnchorY } from './bubbleLayout.js';
 import { useMatSize } from '../../hooks/useMatSize.js';
 import { TICK_INTERVAL_MS } from '../../../config/loopConstants.js';
@@ -88,10 +89,13 @@ export const HeroBubbleLayer = ({ heroes }) => {
     useEffect(() => {
         const unsubs = [
             // The hero whose work spent a Token's last charge says so.
+            // An enemy is beaten, not depleted.
             EventBus.subscribe(BOARD_EVENTS.TOKEN_DEPLETED, (p) => {
                 if (!p?.exhaustedBy || !p.typeId) return;
-                const name = getTokenType(p.typeId)?.name || tokenName(p.typeId) || p.typeId;
-                sayRef.current(p.exhaustedBy, 'depleted', { key: `depleted:${p.typeId}`, text: momentText.depleted(name) }, DEPLETED_TTL_MS);
+                const def = getTokenType(p.typeId);
+                const name = def?.name || tokenName(p.typeId) || p.typeId;
+                const kind = isEnemyDef(def) ? 'beaten' : 'depleted';
+                sayRef.current(p.exhaustedBy, kind, { key: `depleted:${p.typeId}`, text: momentText[kind](name) }, DEPLETED_TTL_MS);
             }, UI_LISTENER),
             EventBus.subscribe(BOARD_EVENTS.HERO_MOVED, (p) => {
                 if (p?.reason !== 'arrived' || !p.heroId || !p.instanceId) return;

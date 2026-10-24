@@ -53,6 +53,8 @@ export const momentText = {
     waiting: (enemy) => `Waiting for ${enemy}.`,
     // Said by the hero whose work spent the Token's last charge.
     depleted: (token) => `${token} Depleted`,
+    // The same moment for an enemy: the hero who beat it says so.
+    beaten: (enemy) => `${enemy} Beaten`,
     // No wording of its own: the blocked sentence for its reason, already built by
     // `heroBubbles.pinRefusedLineFor`, word for word.
     pinRefused: (line) => line
@@ -71,6 +73,7 @@ export const momentText = {
  * * `waiting`: kept: said instead of `idle` when the hero goes idle because the enemy they would
  * fight is another hero's fight (every fight is one-on-one); they take it the moment it is free.
  * * `depleted`: kept: the hero who used a Token up says so.
+ * * `beaten`: kept: `depleted` said of an enemy, by the hero who beat it.
  * * `pinRefused`: kept: a flag dropped on a Token its hero can't work plants as an area flag,
  * and the hero says why, once.
  */
@@ -79,6 +82,7 @@ export const MOMENT_SPOKEN = Object.freeze({
     idle: true,
     waiting: true,
     depleted: true,
+    beaten: true,
     pinRefused: true
 });
 

@@ -63,8 +63,8 @@ export function isHostileEnemy(def) {
 /**
  * Whether an enemy Token type is a **boss**: `enemy.boss: true` (only a literal `true`). A boss
  * fights only when the player sends a hero: it is never hostile, whatever `hostile` says, and no
- * `Spawns` rule makes one, so it never ambushes. It lives in a lair (a Token whose `guardian`
- * block names it) or is summoned. Boss moves hang on this mark.
+ * `Spawns` rule makes one, so it never ambushes. It comes from a camp of its own (a spawner that
+ * keeps one) or a Summoning Circle (a Token whose work makes it). Boss moves hang on this mark.
  */
 export function isBossEnemy(def) {
     return isEnemyDef(def) && def.enemy.boss === true;

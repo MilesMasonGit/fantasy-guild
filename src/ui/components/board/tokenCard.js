@@ -12,7 +12,6 @@ import * as BoardCombat from '../../../systems/board/BoardCombat.js';
 import * as SpawnerSystem from '../../../systems/board/SpawnerSystem.js';
 import * as PassiveProduction from '../../../systems/board/PassiveProduction.js';
 import * as Respawn from '../../../systems/board/Respawn.js';
-import * as Guardians from '../../../systems/board/Guardians.js';
 import * as StationRecipe from '../../../systems/board/StationRecipe.js';
 import * as TimedChanges from '../../../systems/board/TimedChanges.js';
 import * as Demolition from '../../../systems/board/Demolition.js';
@@ -104,7 +103,6 @@ export function liveCardSources() {
         poolFor: StationRecipe.poolFor,
         spawnerStatus: SpawnerSystem.spawnerStatus,
         respawn: Respawn.respawnState,
-        guardian: Guardians.guardianState,
         nextGrowth: TimedChanges.nextGrowth,
         nextTurn: TimedChanges.nextTurnRoll,
         passive: (instance) => ({ lines: PassiveProduction.linesOf(instance), nextInMs: PassiveProduction.nextInMs(instance) }),
@@ -197,21 +195,6 @@ function spoken(ms) {
 const percent = (chance) => `${Math.round(Number(chance) * 10) / 10}%`;
 
 /**
- * A Token's guardian (or a lair's boss) as one card line: who stands there, or when it is back.
- * `g` is `Guardians.guardianState`.
- */
-function guardianCardLine(g, src) {
-    const name = src.tokenName(g.typeId);
-    if (g.standing) {
-        return g.lair
-            ? { icon: 'spawn', text: name, tip: `Lair of ${name}${g.boss ? ', a boss' : ''}: back ${spoken(g.returnMs)} after it is beaten` }
-            : { icon: 'spawn', text: 'Guarded', tip: `Guarded by ${name}: beat it to work this. It comes back ${spoken(g.returnMs)} after it is beaten`, tone: 'warning' };
-    }
-    if (!g.beaten) return { icon: 'spawn', text: name, tip: `${name} arrives here` };
-    return { icon: 'spawn', text: formatClock(g.inMs), tip: `${name} was beaten: back in ${spoken(g.inMs)}` };
-}
-
-/**
  * The lifecycle lines as icon + short text, each with the sentence its hover gives.
  * @returns {{ icon: string, text: string, tip: string, tone?: 'warning'|'danger' }[]}
  */
@@ -265,9 +248,6 @@ export function cardLifecycle(instance, def, src) {
             out.push({ icon: 'regrow', text: into, tip: r.resting ? `Becomes ${into}, which grows back` : `Becomes ${into} when it's used up, which grows back` });
         }
     }
-
-    const keeps = src.guardian?.(instance);
-    if (keeps) out.push(guardianCardLine(keeps, src));
 
     const passive = src.passive?.(instance);
     const pays = (passive?.lines || []).filter(l => l?.itemId && Number(l.quantity) > 0);

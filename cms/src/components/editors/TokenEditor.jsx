@@ -630,7 +630,7 @@ export default function TokenEditor() {
               </span>
             </label>
 
-            {/* A boss fights only the heroes the player sends: never hostile, never spawned by a rule (no ambush). It lives in a lair (a Token whose Guardian block names it) or is summoned (sold in the Shop's Summons section for its summon item). Boss moves hang on this mark. Written ONLY when ticked; ticking it clears Hostile. */}
+            {/* A boss fights only the heroes the player sends: never hostile, never spawned by a rule (no ambush). It comes from a camp of its own (a spawner that keeps one) or a Summoning Circle (a Token whose work uses up a summon item and makes it). Boss moves hang on this mark. Written ONLY when ticked; ticking it clears Hostile. */}
             <label className="flex items-center gap-2.5 cursor-pointer select-none mt-2">
               <input
                 type="checkbox"
@@ -648,7 +648,7 @@ export default function TokenEditor() {
               />
               <span className="text-[11px] text-gray-300">Boss</span>
               <span className="text-[10px] text-gray-600">
-                fights only heroes you send; lives in a lair (a Guardian block on another Token) or is summoned from the Shop; never ambushes
+                fights only heroes you send; comes from a camp of its own or a Summoning Circle; never ambushes
               </span>
             </label>
 

@@ -7,9 +7,8 @@ import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as EnemyMotion from '../systems/board/EnemyMotion.js';
 import * as Flags from '../systems/board/Flags.js';
 import * as FlagRules from '../systems/board/FlagRules.js';
-import * as Guardians from '../systems/board/Guardians.js';
+import * as SpawnerSystem from '../systems/board/SpawnerSystem.js';
 import * as Hostiles from '../systems/board/Hostiles.js';
-import * as Shop from '../systems/board/Shop.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as TriggerSystem from '../systems/board/TriggerSystem.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
@@ -19,12 +18,10 @@ import { auditContent } from '../systems/core/ContentAudit.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
-import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
-import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
+import { registerTokenTypes, getTokenType } from '../config/registries/tokenRegistry.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
 import { isHostileEnemy, isBossEnemy } from '../config/registries/enemyProfile.js';
-import { GUARDIAN_DEFAULTS, SUMMON_SHOP_SECTION } from '../config/registries/tokenConstants.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
 import { PLACEMENT } from '../config/registries/placementRegistry.js';
@@ -42,9 +39,10 @@ vi.mock('../systems/combat/DefeatPenalties.js', () => ({
 }));
 
 /**
- * Encounters (brief 220, C5): every fight one-on-one; guardians that block their Token until beaten
- * and come back; node ambushes that attack the worker; bosses that never attack first, live in lairs
- * or are summoned, and meet each hero whole.
+ * Encounters (brief 220, C5, as the owner simplified it on 2026-10-24): every fight one-on-one;
+ * bosses and guardians from camps of one, ordinary spawners; node ambushes that attack the worker;
+ * bosses that never attack first and meet each hero whole; a Summoning Circle whose work uses up a
+ * summon item and puts its boss on the mat.
  */
 
 const drops = [{ itemId: 'item_blackberry', chance: 100, minQty: 1, maxQty: 1 }];
@@ -69,20 +67,37 @@ registerTokenTypes({
     enc_boss: {
         id: 'enc_boss', name: 'Encounter Boss', tokenType: 'enemy', rarity: 'rare', theme: 'fixture',
         uses: 1, sprite: 's_occult', enemy: { level: 1, style: 'melee', budgetScale: 0.3, boss: true, hostile: true },
-        config: enemyConfig,
-        shop: { price: [{ itemId: 'enc_summon_horn', quantity: 1 }], section: SUMMON_SHOP_SECTION }
+        config: enemyConfig
     },
-    /** A rich node guarded by an Imp that comes back 5 s after it is beaten. */
-    enc_guarded_vein: {
-        id: 'enc_guarded_vein', name: 'Guarded Vein', tokenType: 'resource', rarity: 'common', theme: 'fixture',
-        uses: null, sprite: 's_nature',
-        guardian: { typeId: 'enc_imp', returnMs: 5000 },
-        config: { skill: 'forestry', skillRequired: 1, cycleTimeMs: 1000, xp: 1, inputs: [], outputs: [{ itemId: 'fixture_oak_wood', quantity: 1, chance: 100 }] }
+    /** A hostile guardian: a tough enemy whose camp stands by a rich node. */
+    enc_guardian: {
+        id: 'enc_guardian', name: 'Encounter Guardian', tokenType: 'enemy', rarity: 'common', theme: 'fixture',
+        uses: 1, sprite: 's_occult', enemy: { level: 2, style: 'melee', hostile: true }, config: enemyConfig
     },
-    /** A lair: no work of its own, home of the boss (its default return). */
-    enc_lair: {
-        id: 'enc_lair', name: 'Encounter Lair', tokenType: 'resource', rarity: 'common', theme: 'fixture',
-        uses: null, sprite: 's_nature', guardian: { typeId: 'enc_boss' }
+    /** A boss's den: an ordinary camp that keeps one, every 60 s. */
+    enc_den: {
+        id: 'enc_den', name: 'Encounter Den', tokenType: 'spawner', rarity: 'rare', theme: 'fixture',
+        uses: null, sprite: 's_crime',
+        spawner: { spawns: [{ typeId: 'enc_boss', weight: 1 }], allowance: 1, intervalMs: 60000, upkeep: [] }
+    },
+    /** A guardian's camp: the same, for the guardian. */
+    enc_guardian_camp: {
+        id: 'enc_guardian_camp', name: 'Encounter Guardian Camp', tokenType: 'spawner', rarity: 'common', theme: 'fixture',
+        uses: null, sprite: 's_crime',
+        spawner: { spawns: [{ typeId: 'enc_guardian', weight: 1 }], allowance: 1, intervalMs: 30000, upkeep: [] }
+    },
+    /**
+     * A Summoning Circle: its work uses up a Summoning Horn and puts the boss beside it. Alchemy is
+     * a Starting skill, which every hero holds, so any hero may work it.
+     */
+    enc_circle: {
+        id: 'enc_circle', name: 'Encounter Circle', tokenType: 'resource', rarity: 'rare', theme: 'fixture',
+        uses: null, sprite: 's_occult',
+        config: {
+            skill: 'alchemy', skillRequired: 1, cycleTimeMs: 3000, xp: 0,
+            inputs: [{ itemId: 'enc_summon_horn', quantity: 1 }],
+            outputs: [{ tokenId: 'enc_boss', chance: 100, minQty: 1, maxQty: 1 }]
+        }
     },
     /** A plain node, nothing guarding it. */
     enc_node: {
@@ -144,7 +159,6 @@ function until(predicate, ms = 120000) {
 beforeAll(() => {
     Flags.init();
     BoardCombat.init();
-    Guardians.init();
 });
 afterAll(() => { Flags.teardown(); resetMatTuning(); });
 
@@ -264,129 +278,64 @@ describe('⭐ every fight is one-on-one', () => {
     });
 });
 
-describe('⭐ guardians block their Token until beaten, and come back', () => {
-    it('appears beside its Token on the first tick: tethered to it, one use, said from the Token', () => {
-        const spawned = [];
-        const off = EventBus.subscribe(BOARD_EVENTS.TOKEN_SPAWNED, (p) => spawned.push(p));
-        const vein = placeAt('enc_guarded_vein', A.x, A.y);
-        run(100);
-        off();
-        const [imp] = enemiesOf('enc_imp');
-        expect(imp).toBeTruthy();
-        expect(imp.tether).toBe(vein.id);
-        expect(imp.guards).toBe(vein.id);
-        expect(imp.usesRemaining).toBe(1);
-        expect(vein.guardianId).toBe(imp.id);
-        expect(Guardians.isGuarded(vein)).toBe(true);
-        expect(spawned).toEqual([expect.objectContaining({ spawnerId: vein.id, instanceId: imp.id, typeId: 'enc_imp' })]);
-        // One guardian, however long it stands.
-        run(3000);
-        expect(enemiesOf('enc_imp')).toHaveLength(1);
+describe('⭐ camps of one: bosses and guardians from ordinary spawners', () => {
+    it('a den keeps its one boss: the first after its interval, never a second while it stands', () => {
+        const den = placeAt('enc_den', A.x, A.y);
+        run(59000, 1000);
+        expect(enemiesOf('enc_boss')).toHaveLength(0);
+        run(1000, 1000);
+        const [boss] = enemiesOf('enc_boss');
+        expect(boss).toBeTruthy();
+        expect(boss.tether).toBe(den.id);
+        expect(EnemyMotion.spawnerOf(boss.id)).toBe(den);
+        run(180000, 1000);
+        expect(enemiesOf('enc_boss')).toHaveLength(1);
+        expect(SpawnerSystem.spawnerStatus(den.id)).toEqual(expect.objectContaining({ state: 'at_cap', count: 1, cap: 1 }));
     });
 
-    it('while it stands nobody works the Token: a gatherer skips it as guarded, a pinned one waits', () => {
-        const vein = placeAt('enc_guarded_vein', A.x, A.y);
-        run(100);
-        expect(WorkCheck.fixableReason(vein.id, vein).reason).toBe(ALERT.GUARDED);
+    it('⚠️ as every camp today: a den full for its interval replaces a beaten boss on the next tick', () => {
+        placeAt('enc_den', A.x, A.y);
+        run(61000, 1000);
+        // The den has been full long enough for its clock to fill and wait.
+        run(70000, 1000);
+        const [first] = enemiesOf('enc_boss');
+        Flags.plant('h1', { x: first.x, y: first.y }, { pin: true });
+        expect(until(() => !BoardState.getTokenById(first.id))).toBe(true);
+        run(1000, 1000);
+        const [next] = enemiesOf('enc_boss');
+        expect(next).toBeTruthy();
+        expect(next.id).not.toBe(first.id);
+    });
+
+    it('a guardian is a hostile enemy whose camp stands by a rich node: it attacks whoever works there, and blocks nothing', () => {
+        const camp = placeAt('enc_guardian_camp', A.x, A.y);
+        const node = placeAt('enc_node', A.x + 160, A.y);
+        SpawnerSystem.attemptSpawn(camp, getTokenType(camp.typeId));
+        const [guardian] = enemiesOf('enc_guardian');
+        expect(guardian).toBeTruthy();
+        // Nothing blocks the node: the work check has no word for a guardian.
+        expect(WorkCheck.fixableReason(node.id, node).reason).toBeNull();
         FlagRules.heroRecord('h1').flagRules = { [FlagRules.FIGHT]: { allowed: false, priority: 3 } };
-        Flags.plant('h1', A, { pin: true });
-        run(2000);
-        expect(BoardState.workTokenOf('h1')).toBeNull();
-        expect(Flags.skipsOf(vein.id)).toEqual([{ heroId: 'h1', reason: ALERT.GUARDED }]);
-        expect(vein.alert ?? null).toBeNull();
-    });
-
-    it('a hero with Fight on beats the guardian first, then works the Token', () => {
-        const vein = placeAt('enc_guarded_vein', A.x, A.y);
-        run(100);
-        const [imp] = enemiesOf('enc_imp');
-        Flags.plant('h1', A);
-        run(100);
-        expect(BoardCombat.fightOfHero('h1')?.instanceId).toBe(imp.id);
-        expect(until(() => BoardState.workTokenOf('h1') === vein.id)).toBe(true);
-        expect(BoardState.getTokenById(imp.id)).toBeNull();
-        expect(Guardians.isGuarded(vein)).toBe(false);
-    });
-
-    it('comes back after its return time, not before; the worker lets go and it drops again when beaten', () => {
-        const vein = placeAt('enc_guarded_vein', A.x, A.y);
-        run(100);
-        const kills = [];
-        const off = EventBus.subscribe(ENGINE_EVENTS.COMBAT_VICTORY, (p) => kills.push(p));
-        Flags.plant('h1', A);
-        expect(until(() => BoardState.workTokenOf('h1') === vein.id)).toBe(true);
-        expect(kills).toHaveLength(1);
-        const firstId = vein.guardianId;
-
-        // The clock starts at the kill: 5 s (authored), not before.
-        const state = Guardians.guardianState(vein);
-        expect(state).toEqual(expect.objectContaining({ standing: false, beaten: true, returnMs: 5000 }));
-        expect(state.inMs).toBeGreaterThan(4000);
-        run(Math.max(0, state.inMs - 200));
-        expect(Guardians.isGuarded(vein)).toBe(false);
-        run(300);
-        expect(Guardians.isGuarded(vein)).toBe(true);
-        expect(vein.guardianId).not.toBe(firstId);
-
-        // Back again, and beaten again: two kills, two drops.
-        expect(until(() => kills.length >= 2)).toBe(true);
-        off();
-        expect(kills.every(k => k.enemyId === 'enc_imp')).toBe(true);
-    });
-
-    it('a guardian with no return written waits 10 minutes; a boss 2', () => {
-        expect(Guardians.guardianOf({ guardian: { typeId: 'enc_imp' } })).toEqual({ typeId: 'enc_imp', returnMs: GUARDIAN_DEFAULTS.returnMs, boss: false });
-        expect(Guardians.guardianOf({ guardian: { typeId: 'enc_boss' } })).toEqual({ typeId: 'enc_boss', returnMs: GUARDIAN_DEFAULTS.bossReturnMs, boss: true });
-        expect(GUARDIAN_DEFAULTS).toEqual({ returnMs: 600000, bossReturnMs: 120000 });
-        // A block naming something that is not an enemy, or on an enemy, keeps nothing.
-        expect(Guardians.guardianOf({ guardian: { typeId: 'enc_node' } })).toBeNull();
-        expect(Guardians.guardianOf({ enemy: { level: 1 }, guardian: { typeId: 'enc_imp' } })).toBeNull();
-    });
-
-    it('waits while the mat is at its Token cap, and comes as soon as there is room', () => {
-        setMatTuning('tokenCap', 1);
-        const vein = placeAt('enc_guarded_vein', A.x, A.y);
-        run(1000);
-        expect(Guardians.isGuarded(vein)).toBe(false);
-        expect(enemiesOf('enc_imp')).toHaveLength(0);
-        setMatTuning('tokenCap', 10);
-        run(100);
-        expect(Guardians.isGuarded(vein)).toBe(true);
+        Flags.plant('h1', node, { pin: true });
+        run(500);
+        // Its rule against fighting does not save the gatherer: a hostile guardian attacks.
+        expect(Flags.ambusherOf('h1')).toBe(guardian.id);
+        expect(until(() => !BoardState.getTokenById(guardian.id))).toBe(true);
+        expect(until(() => BoardState.workTokenOf('h1') === node.id, 5000)).toBe(true);
     });
 });
 
-describe('⭐ bosses: lairs, never first to attack, whole for every hero, summoned at the Shop', () => {
+describe('⭐ bosses: never first to attack, whole for every hero, called by a Summoning Circle', () => {
     it('a boss is never hostile, whatever it says, and no flag watch sets it on anyone', () => {
         expect(isBossEnemy({ enemy: { level: 1, boss: true } })).toBe(true);
         expect(isHostileEnemy({ enemy: { level: 1, boss: true, hostile: true } })).toBe(false);
-        placeAt('enc_lair', A.x, A.y);
-        run(100);
-        const [boss] = enemiesOf('enc_boss');
-        expect(boss).toBeTruthy();
+        const boss = placeAt('enc_boss', A.x, A.y);
         FlagRules.heroRecord('h1').flagRules = { [FlagRules.FIGHT]: { allowed: false, priority: 3 } };
         Flags.plant('h1', { x: boss.x + 20, y: boss.y });
         expect(Hostiles.scan()).toEqual([]);
         expect(Flags.ambush('h1', boss.id)).toBe(false);
         run(2000);
         expect(BoardCombat.fightOfHero('h1')).toBeNull();
-    });
-
-    it('lives in its lair, potters by it, and comes back on the boss timer after it is beaten', () => {
-        setMatTuning('enemyPotterRadius', 60);
-        const lair = placeAt('enc_lair', A.x, A.y);
-        run(100);
-        const [boss] = enemiesOf('enc_boss');
-        expect(EnemyMotion.spawnerOf(boss.id)).toBe(lair);
-        expect(Flags.isHeroWorkable(lair)).toBe(false);
-
-        Flags.plant('h1', A);
-        expect(until(() => !BoardState.getTokenById(boss.id))).toBe(true);
-        const state = Guardians.guardianState(lair);
-        expect(state).toEqual(expect.objectContaining({ standing: false, beaten: true, boss: true, lair: true, returnMs: 120000 }));
-        run(119000, 1000);
-        expect(enemiesOf('enc_boss')).toHaveLength(0);
-        run(2000, 1000);
-        expect(enemiesOf('enc_boss')).toHaveLength(1);
     });
 
     it('meets each hero whole: a knocked-out hero leaves it at full HP for the next', () => {
@@ -413,22 +362,29 @@ describe('⭐ bosses: lairs, never first to attack, whole for every hero, summon
         expect(fight.combat.enemyHp.current).toBe(fight.combat.enemyHp.max);
     });
 
-    it('is summoned at the Shop for its summon item, where it is dropped, and gone once beaten', () => {
-        const section = Shop.catalogue().find(s => s.section === SUMMON_SHOP_SECTION);
-        expect(section?.name).toBe('Summons');
-        expect(section.items.map(i => i.typeId)).toContain('enc_boss');
-
-        expect(Shop.buyAt('enc_boss', A).success).toBe(false);
-        InventoryManager.addItem('enc_summon_horn', 2);
-        const res = Shop.buyAt('enc_boss', A);
-        expect(res.success).toBe(true);
-        expect(InventoryManager.getItemCount('enc_summon_horn')).toBe(1);
-        const boss = BoardState.getTokenById(res.instance.id);
+    it('a Summoning Circle: any hero works it, a Horn is used up, the boss stands beside it, and without a Horn it waits', () => {
+        // A Recruit: no combat skill, nothing but the Starting skills every hero holds.
+        const recruit = generateHero({ name: 'r1' });
+        recruit.id = 'r1';
+        recruit.status = 'idle';
+        GameState.state.heroes = [recruit, fighter('h2')];
+        InventoryManager.addItem('enc_summon_horn', 1);
+        const circle = placeAt('enc_circle', A.x, A.y);
+        Flags.plant('r1', circle, { pin: true });
+        expect(BoardState.workTokenOf('r1')).toBe(circle.id);
+        run(3100);
+        expect(InventoryManager.getItemCount('enc_summon_horn')).toBe(0);
+        const [boss] = enemiesOf('enc_boss');
         expect(boss).toBeTruthy();
-
-        Flags.plant('h1', A);
+        expect(Math.hypot(boss.x - circle.x, boss.y - circle.y)).toBeLessThan(400);
+        // No Horn left: the circle waits, saying it needs one, and calls nothing more.
+        run(6000);
+        expect(enemiesOf('enc_boss')).toHaveLength(1);
+        expect(circle.alert).toBe(ALERT.INPUTS);
+        // The boss it called is fought like any other, and is gone once beaten.
+        Flags.plant('h2', { x: boss.x, y: boss.y }, { pin: true });
         expect(until(() => !BoardState.getTokenById(boss.id))).toBe(true);
-        run(200000, 1000);
+        run(10000, 1000);
         expect(enemiesOf('enc_boss')).toHaveLength(0);
     });
 });
@@ -503,11 +459,11 @@ describe('⭐ node ambushes: the enemy attacks the worker', () => {
         expect(EnemyMotion.spawnerOf(imp.id)).toBeNull();
     });
 
-    it('the ambusher an unguarded node keeps is not a guardian: the node stays workable', () => {
+    it('an ambusher standing by its node blocks nothing: the node stays workable', () => {
         const nodeType = ambushNode('enc_imp', 100);
         const node = placeAt(nodeType, A.x, A.y);
         EventBus.publish(BOARD_EVENTS.CYCLE_COMPLETE, { instanceId: node.id, typeId: node.typeId, heroId: null, failed: false, produced: [] });
-        expect(Guardians.isGuarded(node)).toBe(false);
+        expect(enemiesOf('enc_imp')).toHaveLength(1);
         expect(WorkCheck.fixableReason(node.id, node).reason).toBeNull();
     });
 });

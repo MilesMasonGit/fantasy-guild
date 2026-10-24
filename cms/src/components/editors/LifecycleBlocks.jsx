@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Plus, X, Sprout } from 'lucide-react';
 import { useEntityStore, makeLifecycleBlock, makeWeightedTokenEntry, makeTrickleEntry, TOKEN_LIFECYCLE_BLOCKS } from '../../stores/useEntityStore';
-import { FOUNDATION_KINDS, TURN_DEFAULTS, RESPAWN_MODES, RESPAWN_DEFAULTS, RESPAWN_MIN_MS, GUARDIAN_MIN_MS, defaultGuardianReturnMs, SUMMON_SHOP_SECTION, skillsByLayer } from '../../utils/constants';
+import { FOUNDATION_KINDS, TURN_DEFAULTS, RESPAWN_MODES, RESPAWN_DEFAULTS, RESPAWN_MIN_MS, skillsByLayer } from '../../utils/constants';
 import { Section, Field } from '../shared/EditorLayout';
 import { ItemPicker, ItemList } from './Statements';
 
@@ -18,7 +18,6 @@ const BLOCK_INFO = {
   shop: { title: 'Shop', what: 'Sold at the Shop, priced in items.' },
   trickle: { title: 'Passive Production', what: 'Drops these items beside the Token every 5 minutes, all on one timer, no hero needed (Guild Hall only, for now). The Wishing Well adds its Water to the Hall’s.' },
   respawn: { title: 'Respawns', what: 'Comes back after it runs out instead of leaving the mat: refills where it stands after a rest, or regrows from another Token (Tree → Sapling → Tree).' },
-  guardian: { title: 'Guardian / lair', what: 'Keeps one enemy beside it, back a while after it is beaten. On a worked Token it guards it (no work until beaten); on a Token with no work, it is a lair.' },
 };
 
 export default function LifecycleBlocks({ token, onChange }) {
@@ -88,9 +87,6 @@ export default function LifecycleBlocks({ token, onChange }) {
                   )}
                   {key === 'respawn' && (
                     <RespawnBlock block={token.respawn} selfId={token.id} tokens={tokens} tokenOptions={tokenOptions} onChange={(v) => set('respawn', v)} />
-                  )}
-                  {key === 'guardian' && (
-                    <GuardianBlock block={token.guardian} token={token} tokens={tokens} onChange={(v) => set('guardian', v)} />
                   )}
                 </div>
               )}
@@ -310,53 +306,6 @@ function RespawnBlock({ block, selfId, tokens, tokenOptions, onChange }) {
   );
 }
 
-/**
- * The enemy a Token keeps beside it, and how long it takes to come back once beaten. The return time
- * left blank is the game's default for what it keeps (a boss sooner), shown greyed until typed.
- */
-function GuardianBlock({ block, token, tokens, onChange }) {
-  const enemyOptions = Object.values(tokens)
-    .filter((t) => t?.enemy?.level != null && t.id !== token.id)
-    .map((t) => ({ id: t.id, name: `${t.name || t.id}${t.enemy?.boss === true ? ' (boss)' : ''}` }))
-    .sort((a, b) => a.name.localeCompare(b.name));
-  const enemy = block.typeId ? tokens[block.typeId] : null;
-  const isBoss = enemy?.enemy?.boss === true;
-  const own = Number(block.returnMs) > 0;
-  const fallback = defaultGuardianReturnMs(isBoss);
-  const worked = !!token.config || !!token.foundation;
-  let note;
-  if (!block.typeId) note = 'Pick the enemy it keeps.';
-  else if (!enemy) note = `${block.typeId} does not exist.`;
-  else if (enemy.enemy?.level == null) note = `${enemy.name || block.typeId} is not an enemy.`;
-  else if (worked) note = `${enemy.name || block.typeId} guards this Token: nobody works it until the guardian is beaten. Beaten, it drops its loot and is back ${seconds(own ? block.returnMs : fallback)} later.`;
-  else note = `This Token is the lair of ${enemy.name || block.typeId}: it potters here, is fought by heroes you send, and is back ${seconds(own ? block.returnMs : fallback)} after it is beaten.`;
-  return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Keeps">
-          <TokenSelect ariaLabel="Guardian enemy" value={block.typeId} tokenOptions={enemyOptions} onChange={(typeId) => onChange({ ...block, typeId })} />
-        </Field>
-        <Field label="Back after (ms)">
-          <input
-            type="number" min={GUARDIAN_MIN_MS} step={1000}
-            aria-label="Back after (ms)" data-field="guardian-return"
-            value={own ? block.returnMs : ''}
-            placeholder={`${fallback} (default${isBoss ? ', boss' : ''})`}
-            onChange={(e) => {
-              const v = Math.round(Number(e.target.value));
-              const rest = { ...block };
-              delete rest.returnMs;
-              onChange(v > 0 ? { ...rest, returnMs: Math.max(GUARDIAN_MIN_MS, v) } : rest);
-            }}
-            className="w-full" style={{ fontSize: 11 }}
-          />
-        </Field>
-      </div>
-      <p className="text-[10px] text-gray-600">{note}</p>
-    </div>
-  );
-}
-
 function WeightedTokenList({ label, entries, tokenOptions, onChange }) {
   const patchRow = (i, p) => onChange(entries.map((e, idx) => (idx === i ? { ...e, ...p } : e)));
   return (
@@ -402,13 +351,12 @@ function TokenSelect({ value, tokenOptions, onChange, ariaLabel }) {
 /** Picks a skill id; `general` adds the Shop's catch-all section. */
 function SkillSelect({ value, onChange, general = false }) {
   const groups = skillsByLayer();
-  const known = (general && (value === 'general' || value === SUMMON_SHOP_SECTION)) || groups.some(([, g]) => g.some((s) => s.id === value));
+  const known = (general && value === 'general') || groups.some(([, g]) => g.some((s) => s.id === value));
   return (
     <select value={value || ''} onChange={(e) => onChange(e.target.value)} className="w-full">
       {!value && <option value="">— pick a skill —</option>}
       {value && !known && <option value={value}>{value} (not a skill)</option>}
       {general && <option value="general">General</option>}
-      {general && <option value={SUMMON_SHOP_SECTION}>Summons (a boss, priced in its summon item)</option>}
       {groups.map(([label, group]) => (
         <optgroup key={label} label={label}>
           {group.map((s) => (

@@ -203,49 +203,6 @@ export function respawnOf(def) {
 }
 
 /**
- * ⭐ **A Token that keeps one enemy beside it.** `guardian: { typeId, returnMs? }` on the Token
- * type: `typeId` is an enemy Token, which stands beside it and, once beaten, comes back
- * `returnMs` later to be beaten again. On a Token heroes work, the enemy guards it: nobody works
- * it while the enemy stands. On a Token with no work of its own the enemy simply lives there: a
- * boss's lair.
- *
- * `returnMs` left out reads as the default for what it keeps: a boss returns on a short timer,
- * anything else after a while. The engine reads the block only through {@link guardianBlockOf};
- * the CMS's block and the content audit read these numbers (the CMS across the boundary, see the
- * header note).
- */
-export const GUARDIAN_DEFAULTS = Object.freeze({ returnMs: 10 * 60 * 1000, bossReturnMs: 2 * 60 * 1000 });
-
-/** The shortest return the engine honours. */
-export const GUARDIAN_MIN_MS = 1000;
-
-/**
- * A Token type's guardian as `{ typeId, returnMs }`, or null when it has none (no block, or one
- * naming nothing). `returnMs` is the authored time floored at {@link GUARDIAN_MIN_MS}, or null
- * when none is written: the default then depends on whether the enemy is a boss, which only the
- * registry knows (`Guardians.returnMsOf`).
- */
-export function guardianBlockOf(def) {
-    const block = def?.guardian;
-    if (!block || typeof block !== 'object') return null;
-    const typeId = typeof block.typeId === 'string' ? block.typeId.trim() : '';
-    if (!typeId) return null;
-    const ms = Number(block.returnMs);
-    return { typeId, returnMs: Number.isFinite(ms) && ms > 0 ? Math.max(GUARDIAN_MIN_MS, ms) : null };
-}
-
-/**
- * The Shop section a summoned boss is sold in: its price is the summon item, and dragging it onto the
- * mat calls it there. Beaten, it is gone; another summon item calls it again.
- */
-export const SUMMON_SHOP_SECTION = 'summons';
-
-/** The return time a guardian block with none written uses: shorter for a boss. */
-export function defaultGuardianReturnMs(isBoss) {
-    return isBoss ? GUARDIAN_DEFAULTS.bossReturnMs : GUARDIAN_DEFAULTS.returnMs;
-}
-
-/**
  * Passive Production's one timer: every line of a Token's `trickle` block (and the Wishing Well's
  * water on the Guild Hall) pays its quantity once per lap. A line's own `everyMs`, from before the
  * shared timer, is ignored.

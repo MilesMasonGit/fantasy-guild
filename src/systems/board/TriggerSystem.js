@@ -161,7 +161,7 @@ function isReady(instance, statementId) {
 /**
  * Whether a rule-fired spawn may happen now; true for every other statement. A held spawn waits for
  * the next moment, as a spawner waits for its next attempt. Held:
- * - **a boss**, always: bosses live in lairs or are summoned, and never ambush;
+ * - **a boss**, always: a boss comes from its own camp or a Summoning Circle, and never ambushes;
  * - **a second ambusher**: while an enemy this Token's rules spawned is still on the mat, its rules
  *   spawn no other, so a node holds one ambusher at a time however long it is worked;
  * - **a full mat**: no room under the Token cap. A spawn that takes its bearer's place (`here`)

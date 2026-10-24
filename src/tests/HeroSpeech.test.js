@@ -37,6 +37,8 @@ describe('A hero’s stack of speech bubbles', () => {
         expect(momentText.arrived('Campfire')).toBe('Working at Campfire.');
         expect(momentText.idle()).toBe('No work in range.');
         expect(momentText.depleted('Oak Tree')).toBe('Oak Tree Depleted');
+        expect(momentText.beaten('Goblin')).toBe('Goblin Beaten');
+        expect(momentText.waiting('Goblin')).toBe('Waiting for Goblin.');
     });
 
     it('says only unusual moments: arriving at a job is routine and silent (FB-21)', () => {

@@ -395,12 +395,12 @@ function auditStatements(out, where, def) {
         checkRef(out, where, 'item', statement?.when?.watchItemId, 'The item one of its rules watches for');
         checkRef(out, where, 'status', payload.statusId, 'The status one of its rules applies');
 
-        // Bosses live in lairs or are summoned, and never ambush: a Spawns rule never makes one.
+        // A boss comes from its own camp or a Summoning Circle, and never ambushes: a Spawns rule never makes one.
         if (statement?.keyword === KEYWORD.SPAWNS && isBossEnemy(getTokenType(payload.typeId))) {
             out.push(finding(where,
                 `one of its rules spawns ${tokenName(payload.typeId) || payload.typeId}, a boss — and a rule never spawns a boss ` +
-                `(bosses live in lairs or are summoned, and never ambush), so the rule does nothing. Put the boss in a lair ` +
-                `(a Guardian block on a Token) or sell it in the Shop's Summons section.`));
+                `(a boss never ambushes), so the rule does nothing. Give the boss a camp of its own (a spawner that keeps ` +
+                `one) or a Summoning Circle whose work makes it.`));
         }
 
         // A trigger that watches for a *specific* item and was never told which

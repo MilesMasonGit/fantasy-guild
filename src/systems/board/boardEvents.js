@@ -344,11 +344,5 @@ export const ALERT = {
      * resting is not a problem the player fixes, so it draws no badge and stays out of
      * `WorkCheck.FIXABLE`.
      */
-    RESTING: 'resting',
-    /**
-     * A guardian enemy stands beside the Token (`Guardians.js`): nobody works it until the
-     * guardian is beaten. Like `RESTING`, a flag skips it and its hero lets go, and it is never a
-     * Token's alert: the guardian standing there is the mark.
-     */
-    GUARDED: 'guarded'
+    RESTING: 'resting'
 };

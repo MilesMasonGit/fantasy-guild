@@ -109,7 +109,6 @@ export { TURN_DEFAULTS } from '../../../src/config/registries/tokenConstants.js'
 
 // A Token that comes back after it runs out: refill in place or regrow from another Token. The modes, the default rest and its floor are the game's.
 export { RESPAWN_MODES, RESPAWN_DEFAULTS, RESPAWN_MIN_MS } from '../../../src/config/registries/tokenConstants.js';
-export { GUARDIAN_DEFAULTS, GUARDIAN_MIN_MS, defaultGuardianReturnMs, SUMMON_SHOP_SECTION } from '../../../src/config/registries/tokenConstants.js';
 
 // An enemy is a Token: it carries `enemy: { level, style }`. `ENEMY_STYLES` fills the Style dropdown and `enemyProfileOf` powers the editor's read-only stat preview, imported from the game so the numbers shown are the numbers the fight uses.
 export { ENEMY_STYLES, enemyProfileOf, enemyFilledStats, ENEMY_OVERRIDE_FIELDS } from '../../../src/config/registries/enemyProfile.js';

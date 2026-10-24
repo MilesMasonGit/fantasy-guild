@@ -10,15 +10,6 @@ import { formatDuration } from '../drawer/lifecycleLines.js';
 function viewOf(roll) {
     const text = roll ? turnCountdownText(roll.inMs) : null;
     if (!text) return null;
-    // A beaten guardian (or a lair's boss) on its way back: the ring fills as it returns.
-    if (roll.kind === 'guardian') {
-        return {
-            kind: 'respawn',
-            text,
-            fraction: Number((1 - turnFraction(roll.inMs, roll.everyMs)).toFixed(3)),
-            title: `${tokenName(roll.typeId) || 'Its guardian'} returns in ${formatDuration(roll.inMs).replace(/ /g, ' ')}`
-        };
-    }
     // A resting Token's ring fills as it refills.
     if (roll.kind === 'respawn') {
         return {

@@ -13,7 +13,6 @@ import * as HeroMotion from './HeroMotion.js';
 import { centreOf, distanceSq } from './nearby.js';
 import * as WorkCheck from './WorkCheck.js';
 import * as Respawn from './Respawn.js';
-import * as Guardians from './Guardians.js';
 import * as Demolition from './Demolition.js';
 import { workConfigOf } from './StationRecipe.js';
 import * as BoardCombat from './BoardCombat.js';
@@ -563,12 +562,10 @@ function keepOrRelease(r, heroId, dirty) {
             || (kind === 'promotion' && !promotionRefusal(heroId, instance))
             || (kind === 'enemy' && ruleAllows(heroId, FlagRules.FIGHT))
             || (kind === 'work' && hasWorkSkill(def, instance) && ruleAllows(heroId, workConfigOf(def, instance).skill)
-                // A Token that ran out and rests until it respawns, or whose guardian stands beside
-                // it again, is let go at once, with no badge: the hero works the next thing, or a
-                // pinned hero waits by it. Unless it is marked for demolition, which a resting or
-                // guarded Token can still be.
-                && (Demolition.isMarked(instance)
-                    || (!Respawn.isResting(instance, def) && !Guardians.isGuarded(instance))))
+                // A Token that ran out and rests until it respawns is let go at once, with no
+                // badge: the hero works the next thing, or a pinned hero waits by it. Unless it is
+                // marked for demolition, which a resting Token can still be.
+                && (Demolition.isMarked(instance) || !Respawn.isResting(instance, def)))
         );
 
         if (!eligible) {
