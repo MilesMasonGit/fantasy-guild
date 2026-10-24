@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
@@ -151,7 +151,7 @@ describe('a fight against each kind', () => {
         const seen = { enemySwings: [], heroHits: [], statuses: [] };
         let t = 0;
         const offs = [
-            EventBus.subscribe(ENGINE_EVENTS.COMBAT_ENEMY_ATTACK, (p) => seen.enemySwings.push(t)),
+            EventBus.subscribe(ENGINE_EVENTS.COMBAT_ENEMY_ATTACK, () => seen.enemySwings.push(t)),
             EventBus.subscribe(ENGINE_EVENTS.COMBAT_HERO_ATTACK, (p) => { if (p.hit) seen.heroHits.push({ damage: p.damage, crit: p.crit }); }),
             EventBus.subscribe(ENGINE_EVENTS.STATUS_APPLIED, (p) => seen.statuses.push(p.statusId))
         ];
