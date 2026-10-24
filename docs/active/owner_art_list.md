@@ -131,3 +131,24 @@ player for these is T-138 (built when the first strips exist).
   - Food
   - Drink
   - Consumable (potions, scrolls)
+
+## 4. Skill loops (brief 230)
+
+From the skill loops interview (owner, 2026-10-22 to 2026-10-24,
+[concept_skill_loops.md](concept_skill_loops.md)). Token size, like today's
+Tokens. Stand-ins from existing sprites until drawn.
+
+| Piece | Status | Notes |
+|---|---|---|
+| Stump, one per tree species (Oak first, Fir next) | **NEW** | A felled tree waiting to regrow |
+| Forest Token, one per species (Oak first) | **NEW** (or ADAPT today's Oak Forest) | Plants and regrows its own species nearby |
+| Fruit tree: Sapling, Fruiting, Bare per fruit (Apple first) | **NEW** / ADAPT | Picked, not felled |
+| Empty vein rock, one shared | **NEW** | Every ore vein while it rests |
+| Mine, Minecart | ADAPT | Today's Copper Mine and Minecart sprites may do |
+| Field: empty, growing (shared); ripe per crop (Wheat first) | **NEW** / ADAPT | Herb Garden likewise (ripe per herb) |
+| Well, Composter, Beehive, Windmill, Dock | **NEW** | Support Tokens built on Foundations |
+| Water types: sea, river, lake | ADAPT | One fishing-spot sprite each; the Shrimp Coast goes |
+| Smithy | **NEW** | Hero-worked; replaces the Copper Anvil |
+| Brewery, Kitchen, Alchemy Table | **NEW** / ADAPT | Stations; upgrades only faster |
+| Bait, worms, a work potion, two drinks (items) | **NEW** | Item icons |
+

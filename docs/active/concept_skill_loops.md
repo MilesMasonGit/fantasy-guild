@@ -1,4 +1,4 @@
-Status: briefed (brief 70)
+Status: briefed 2026-10-24 (brief 230; the first pass was brief 70)
 
 # Skill loops and the board as a puzzle
 
@@ -237,7 +237,11 @@ back. The engine already has a **refill** respawn (rest at 0 charges, refill
 in place) and a **regrow** respawn (become another Token that grows back);
 no content uses either yet.
 
-### Rulings this pass (owner interview, 2026-10-22)
+### Rulings this pass (owner interview, 2026-10-22 to 2026-10-24)
+
+**These rulings win over the 2026-10-09 sections above wherever they
+differ.** The owner closed the pass 2026-10-24; built by
+[brief 230](briefs/230_skill_loops.md).
 
 **All gathering skills**
 - **Nothing ready in reach: the hero waits silently** and works the first
@@ -293,6 +297,9 @@ no content uses either yet.
 - **No smelter rule in Mining** (the Smelter is Smithing's). Gems and the
   occasional map fragment stay rare finds; the pickaxe of the tier below
   gates each ore.
+- **Danger is per map** (owner, 2026-10-24): starter and plane-1 veins are
+  safe, but a dangerous Region may put an ambush on its veins (the Volcano's
+  Fire Elementals, brief 220 C5). ⚠️ Amends "no danger in the mines".
 - **Mining closed** (owner, 2026-10-24).
 
 **Standard floor for speed-ups (all skills)**: stacked support Tokens can
@@ -386,7 +393,11 @@ minute). One number for every speed-up, in the CMS tuning. ⚠️ Replaces the
   a Kitchen; drinks: Brewery). **Upgraded versions are faster or give other
   bonuses**, like the Smithy, not new recipe lists.
 - **No fuel** at the Campfire.
-- What food and drinks do in a fight belongs to the combat planning agent.
+- **Drinks are work buffs** (owner, 2026-10-24): a drink in the drink slot
+  gives a bonus while the hero works (e.g. Coffee faster cycles, Beer more
+  XP); food is for fights. How long one lasts is a placeholder (10 work
+  cycles, like an elixir's 10 fights) until the owner says otherwise.
+- What food does in a fight belongs to the combat planning agent.
 - **Cooking closed** (owner, 2026-10-24).
 
 **Crafting**
@@ -427,3 +438,24 @@ seedling**, a Forest's planting as well as a Stump's regrow.
 - **Forests stack fully**, down to a **floor**: a tree never regrows faster
   than a set fraction of its normal time (about a quarter; the number in the
   CMS).
+
+### Overlaps with the other planning agents
+
+- **Combat** ([concept_combat.md](concept_combat.md),
+  [brief 220](briefs/220_combat.md)): food in fights, elixirs, fight potions
+  and the "used" bubble are combat's (220 C3, which also wires
+  `consumeLoopConsumables`; this brief's work potions, bait and drinks use
+  the same machinery and are built after C3). Node ambushes are 220 C5;
+  danger is per map (Mining above). Temporary Tokens such as the Guard Tower
+  are designed by combat, built by Construction.
+- **Basic content** ([concept_basic_content.md](concept_basic_content.md),
+  [brief 240](briefs/240_basic_content.md)): its packs place trees, veins,
+  fishing spots and fields on the Starter Camp and maps; under these rulings
+  trees need a wild Forest of their species, the Coast stops turning into a
+  Shrimp Coast, the Iron Anvil becomes an Iron Smithy (faster, same
+  recipes), and fields are self-growing Tokens. Whichever lands first, the
+  other follows (240 says so too).
+- **Not decided here**: the **XP curve** (how fast skills level) gets its own
+  short interview once loops and content are playable (owner, 2026-10-24);
+  brief 240 uses today's curve. Pastures and animals wait for the specialist
+  skills.
