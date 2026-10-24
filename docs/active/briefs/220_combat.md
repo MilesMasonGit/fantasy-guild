@@ -5,8 +5,8 @@
 [`concept_combat.md`](../concept_combat.md), section "Detail pass rulings":
 **read it whole before any phase; it is the spec, and this brief only splits
 it into phases.** Where the older "Direction" lines disagree, the detail-pass
-rulings win (amendments are marked there). Built by the **Systems director**,
-who waits for the owner's go.*
+rulings win (amendments are marked there). Built by the **Systems director**;
+the owner gave the go on 2026-10-24.*
 
 Background, not spec: [`research/combat_review.md`](../research/combat_review.md)
 (an executive summary of the finished system, plus gaps; the owner's
@@ -44,6 +44,26 @@ again, comments in `src/systems/combat/` are hypotheses).
   end of the concept doc; don't build their parts (drink buffs, work
   elixirs' content, the map chain, the enemy roster).
 
+## C0: the director accepts the test batch (owner 2026-10-24)
+
+The owner is away from their PC and allowed the director to put in the
+test batch itself. This is a **one-off exception for this pack only** to
+"the owner Syncs" (ruling 2026-10-13); `data/` is still never hand-edited.
+
+1. In the main checkout, on `main` (`git branch --show-current`), with
+   nothing uncommitted under `data/`.
+2. **Guard the owner's unsynced work first**: compare the CMS workspace
+   (its autosave on disk) with `data/`. If the workspace differs from
+   `data/` in anything, the owner has unsynced edits: **stop**, don't
+   Sync, and park it as a question in STATUS.
+3. Run the CMS in the browser pane, open the pack in "Changes to review",
+   accept it, then **Sync to Game**.
+4. **Id-diff every data file** against the commit before the Sync: only
+   the pack's new or changed ids may differ. Anything else changed or lost:
+   revert that Sync commit and stop.
+5. Push `main`, one STATUS line, and tell the owner what went in; they can
+   undo the pack from the CMS archive when they're back.
+
 ## Phases
 
 Two code subagents at most at once. C1 goes first; C2 and C3 may run in
@@ -52,7 +72,7 @@ suggestions; the director picks.
 
 | Phase | What | Needs | Tier | Eye-check |
 |---|---|---|---|---|
-| C0 | **First combat content as a CMS change pack** (brief 200's way, for the owner to review in the CMS): bronze and copper weapon families (sword, dagger [melee + stealth], cleaver, bow, wand, a two-hander), leather armour (hat, chest), two elixirs (Valor +1 damage, Ironskin +1 armour), and kinds on the goblins (the Goblin Chief as the Iron Ore map's skill gate, numbers for a well-equipped combat-20 hero). Draft after C2 has the fields; the owner accepts it at their PC. | C2 | builder | CMS review |
+| C0 | **First combat content as a CMS change pack** (brief 200's way): bronze and copper weapon families (sword, dagger [melee + stealth], cleaver, bow, wand, a two-hander), leather armour (hat, chest), two elixirs (Valor +1 damage, Ironskin +1 armour), and kinds on the goblins (the Goblin Chief as the Iron Ore map's skill gate, numbers for a well-equipped combat-20 hero). Draft after C2 has the fields. **The director accepts it itself** (owner 2026-10-24, see below). | C2 | builder writes, director accepts | no (test batch) |
 | C1 | **The numbers.** HP 10 + combat level, recomputed on level-up and on load; damage = weapon + about 1 per 20 levels; fixed hits; miss = 10 % ± level gap + enemy Dodge − hero Accuracy, clamped 5–40 %; crit 5 % (gear can raise it), doubled **before** armour; flat armour, minimum 1; Pierce ignores that many armour points; weapon speed fast 2 s / normal 3 s / slow 4 s; style cycle kept, ±25 % damage; Recruits punch for 1 every 3 s with no weapon, style or XP; no regen in fights, about 1 HP / 10 s outside. **Propose the enemy level table and weapon tiers** (level → HP, hit, armour, speed, XP; tier → damage), tuned so an even fight lasts 10+ swings, as one table in the concept doc for the owner. Retire the old exponential curve (`FormulaRegistry.js`, `CombatFormulas.js`). | — | engineer | no (numbers; the owner plays it at C6) |
 | C2 | **Gear and enemies.** A weapon names its style(s); a hero equips only weapons of their own style (a Dagger is melee and stealth). Weapon and armour **families carry an ability** as a Rules effect (Spear: Pierce 1; Cleaver: a chance to double Meat drops; a Hide Vest: poison stacks at most 1 lower); an ability may touch anything, work included. Enemies gain armour, Dodge and speed; the CMS fills HP, hit, armour, speed and XP from the level table and lets the author override any; the five **enemy kinds** (Armoured, Nimble, Swift, Brute, Venomous) are CMS presets, none to two per enemy. Slots stay as built. | C1 | engineer | no |
 | C3 | **Supplies.** Food heals below 25 % HP, taking the swing, as today. Drinks stop healing (their buffs are the skill-loops planner's; leave a drink equipped as a no-op until then). **Elixirs**: drunk at fight start, each lasts **10 fights** (one number for every elixir), every equipped elixir type active at once, effects stack; wire `consumeLoopConsumables` or replace it. **The "used" bubble** over the hero for food, drink and elixirs (icon + effect, about 1.5 s). Defeat keeps today's cost (25 % of each carried food's Bank stack, a 10 % gear loss roll): deliberate, don't soften. | C1 | builder | yes (bubble) |
@@ -71,7 +91,8 @@ new rules as each phase merges; changelog entries.
 
 ## Owner CMS to-do
 
-- Review and accept the C0 change pack in the CMS (at the PC).
+- Nothing needed for C0: the director accepts the test batch (owner
+  2026-10-24); the owner may look it over or undo it in the CMS later.
 - After C1: look over the proposed level table in the concept doc; tune
   freely.
 - Later, with the basic-content planner: the real enemy roster, weapon and
