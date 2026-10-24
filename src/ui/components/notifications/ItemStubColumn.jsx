@@ -255,6 +255,7 @@ export const ItemStubColumn = memo(function ItemStubColumn() {
     const closeNow = useCallback(() => { clearTimeout(closeTimer.current); setHover(null); }, []);
     const openFor = useCallback((itemId, el) => {
         clearTimeout(closeTimer.current);
+        ItemStubs.clearNew(itemId);
         const box = boxRef.current?.getBoundingClientRect();
         const row = el.getBoundingClientRect();
         setHover({ itemId, top: box ? row.top - box.top - glideShift(el) : 0, startPx: row.width });

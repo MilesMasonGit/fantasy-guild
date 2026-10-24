@@ -154,6 +154,14 @@ export function markNew(itemId) {
     pendingNew.add(itemId);
 }
 
+/** The player has seen the stub (hovered or pinned it): its "New!" and gold frame go, and stay gone. */
+export function clearNew(itemId) {
+    const s = stubs.get(itemId);
+    if (!s || !s.isNew) return;
+    stubs.set(itemId, { ...s, isNew: false });
+    emitNow();
+}
+
 /** The stub's net flow: gained minus spent. */
 export const netOf = (stub) => (stub ? stub.added - stub.removed : 0);
 
@@ -265,7 +273,7 @@ export function pin(itemId) {
     const s = stubs.get(itemId);
     if (!s || s.pinned || s.leaving) return;
     const now = clock();
-    stubs.set(itemId, { ...s, pinned: true, pinnedAt: now, pinSlot: ++lastPinSlot, fading: false, lastChangedAt: now });
+    stubs.set(itemId, { ...s, pinned: true, pinnedAt: now, pinSlot: ++lastPinSlot, fading: false, lastChangedAt: now, isNew: false });
     emitNow();
 }
 
