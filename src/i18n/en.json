@@ -16,6 +16,16 @@
         "searchPlaceholder": "Search items…",
         "clearSearch": "Clear search"
     },
+    "workPlate": {
+        "skill": "{hero}: {skill} {level}",
+        "skillXp": "{hero}: {skill} {level}, {xp} XP a cycle",
+        "makes": "Makes {qty} {item} every {time}",
+        "makesFrom": "Makes {qty} {item} every {time}, from {inputs}",
+        "needs": "Needs {need} {item}, you have {have}",
+        "charges": { "one": "{amount} charge left", "other": "{amount} charges left" },
+        "next": "Next {item} in {time}",
+        "nextCycle": "Next cycle in {time}"
+    },
     "itemTip": {
         "count": "×{count}",
         "equippable": "Equippable: {slot}",

@@ -28,6 +28,7 @@ import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 import { HealthBar } from './HealthBar.jsx';
 import { heroBarPlace } from './healthBar.js';
 import { TokenNameBadge } from './TokenBadges.jsx';
+import { plateNameDrop } from './workPlate.js';
 
 /**
  * A hero's health bar, just over their figure's head. Reads the hero's HP as a flat
@@ -147,6 +148,7 @@ const MatHeroBody = memo(function MatHeroBody({
     fighting = false,
     hurt = false,
     rested = false,
+    plated = false,
     heroCarried = false,
     dragRef,
     dragProps
@@ -273,7 +275,7 @@ const MatHeroBody = memo(function MatHeroBody({
             )}
             {barShown && barsDrawn && <HeroHealthBar heroId={heroId} artPx={artPx} />}
             {/* Under the feet: the art reaches past the hero's box by half their difference. */}
-            <TokenNameBadge name={name} shown={rested && !heroCarried} below offset={(artPx - FLAG_PX) / 2} />
+            <TokenNameBadge name={name} shown={rested && !heroCarried} below offset={(artPx - FLAG_PX) / 2 + (plated ? plateNameDrop(fit) : 0)} />
         </button>
     );
 });

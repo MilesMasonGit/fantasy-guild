@@ -4,7 +4,7 @@
 // or new pieces only the screen their entry names uses so far. Once a piece has one shared version, its entry points at that version and moves to the
 // shared group.
 
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { cn } from '../utils/cn.js';
 import { useEscapeLayer } from '../utils/escapeLayers.js';
 import { EntityRibbon } from '../components/base/EntityRibbon.jsx';
@@ -26,7 +26,6 @@ import { getItem } from '../../config/registries/itemRegistry.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { ProblemMark } from '../components/board/ProblemMark.jsx';
 import { SEVERITY } from '../components/board/problemMark.js';
-import { workBarPlace, filledSteps } from '../components/board/workBar.js';
 import { ALERT } from '../../systems/board/boardEvents.js';
 import { PixelGlyph, GLYPHS, SLOT_GLYPHS } from '../components/base/PixelGlyph.jsx';
 import { itemTintStyle } from '../components/base/itemTint.js';
@@ -39,7 +38,7 @@ import { Banner } from '../components/notifications/BannerStack.jsx';
 import { bannerText } from '../../systems/notifications/bannerKinds.js';
 import { BookTab } from '../components/atlas/AtlasTome.jsx';
 import { MapSprite, MapOutline, MAP_PX, SLOT_PX } from '../components/atlas/MapPieces.jsx';
-import { BubbleRowMockups } from './BubbleRowMockups.jsx';
+import { WorkPlateDemo } from './WorkPlateDemo.jsx';
 
 /** One art pixel of the UI, in screen pixels: UI sprites draw at 2×. */
 const ART_PX = 2;
@@ -393,35 +392,6 @@ const ProblemMarkDemo = () => (
     </div>
 );
 
-/** A work bar filling over 3 s in whole art pixels, as on a worked Token, and one held grey. */
-const WorkBarDemo = () => {
-    const place = workBarPlace(128, ART_PX);
-    const [fill, setFill] = useState(0);
-    useEffect(() => {
-        const started = performance.now();
-        const timer = setInterval(() => {
-            setFill(filledSteps(((performance.now() - started) % 3000) / 3000, place.steps) / place.steps);
-        }, 100);
-        return () => clearInterval(timer);
-    }, [place.steps]);
-    const bar = (blocked, f) => (
-        <div className="relative" style={{ width: 128, height: 128, background: '#4a6b34' }}>
-            <div
-                data-work-bar-demo
-                data-work-bar-blocked={blocked ? 'true' : undefined}
-                className="gi-work-bar absolute"
-                style={{ left: place.left, top: place.top, width: place.width, height: place.height, '--work-bar-fill': f }}
-            />
-        </div>
-    );
-    return (
-        <div className="flex items-end gap-6">
-            <figure className="flex flex-col items-center gap-1">{bar(false, fill)}<figcaption className="text-xs text-gi-muted">worked</figcaption></figure>
-            <figure className="flex flex-col items-center gap-1">{bar(true, 0.45)}<figcaption className="text-xs text-gi-muted">blocked: held, grey</figcaption></figure>
-        </div>
-    );
-};
-
 /** The card's small icons, code-drawn placeholders at 2×. */
 const CardIconsDemo = () => (
     <div className="flex items-end gap-4 text-gi-text">
@@ -702,14 +672,9 @@ export const KIT_SECTIONS = [
         Demo: () => <KitXpBar cur={1154} max={1500} />
     },
     {
-        id: 'problem-mark', title: 'Problem mark', status: 'unapproved', source: 'ProblemMark (the mat, one per Token)',
-        rule: 'One mark per Token at its centre, yellow while it waits (items, a Token beside it, a choice), red when it can’t (no room, the cap, the hero’s skill). Drawn at the Token’s art-pixel size with a hard shadow. Its hover says exactly what, in the mark’s colour. Placeholder: the alert “!” sprites.',
+        id: 'problem-mark', title: 'Problem mark', status: 'unapproved', source: 'ProblemMark (the mat, one per Token nobody works)',
+        rule: 'One mark at the centre of a Token nobody works (a worked Token’s problem is on its work plate), yellow while it waits (items, a Token beside it, a choice), red when it can’t (no room, the cap, the hero’s skill). Drawn at the Token’s art-pixel size with a hard shadow. Its hover says exactly what, in the mark’s colour. Placeholder: the alert “!” sprites.',
         Demo: ProblemMarkDemo
-    },
-    {
-        id: 'work-bar', title: 'Work bar', status: 'unapproved', source: 'TokenBubbles + workBar.js (a worked Token’s foot)',
-        rule: 'A thin bar, 2 art pixels tall and 40 long, along a worked Token’s foot, filling in whole art pixels each work cycle; no number. Held and grey while the Token is blocked.',
-        Demo: WorkBarDemo
     },
     {
         id: 'token-card', title: 'Token card', status: 'unapproved', source: 'TokenCard (the card a click on a Token opens)',
@@ -770,10 +735,10 @@ export const KIT_SECTIONS = [
         Demo: RegionBannerDemo
     },
     {
-        id: 'bubble-row', title: 'Bubble row: who is working what (mock-ups, pick one)', status: 'unapproved',
-        source: 'BubbleRowMockups (static mock-ups; nothing on the mat uses them yet)',
-        rule: 'When a hero works a Token, one row between them says what is being made, how far the cycle is, the charges and any problem, each part explaining itself on hover; it replaces the work bar, the problem mark and the hover rings for that work. Drawn at the mat’s 1920 × 1080 size. Hover any part for its tooltip.',
-        Demo: BubbleRowMockups
+        id: 'work-plate', title: 'Work plate (who is working what)', status: 'shared',
+        source: 'WorkPlateView, drawn on the mat by WorkPlateLayer (one per hero at work)',
+        rule: 'While a hero works a Token, one chamfer-framed plate on the seam between them, just below their feet, over any loot lying there. At rest: what is being made, with the cycle filling along the plate’s foot in whole art pixels, and the charges left; while the Token waits, exactly what it waits for as a red have/need pill, the frame gold (red when it can’t go on) and the cycle held grey. Resting the pointer on the hero, the Token or the plate opens the full line: skill, output, charges, time to the next one, each with its tooltip; the names drop below it. Pressing it grabs the Token. A Token nobody works keeps its own “!” and hover rings. A fight has no plate yet: its place is kept for the fight’s link. Drawn here at the mat’s 1920 × 1080 size; hover any part.',
+        Demo: WorkPlateDemo
     }
 ];
 
