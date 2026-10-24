@@ -310,8 +310,8 @@ minute). One number for every speed-up, in the CMS tuning. ⚠️ Replaces the
 - **No bait: the water's basic fish** (a plain catch with just the tool).
 - **Bait is optional and carried like a work potion** (the Alchemy rule):
   **one bait per catch**; when it runs out the hero fishes plain.
-- **Tool kinds, not tiers**: a rod for fish, a net for shrimp, a cage for
-  crabs, and so on; each catch names the kind it needs.
+- **Tool kinds decide the pool**: a rod for fish, a net for shrimp, a cage
+  for crabs, and so on (tiers: see below).
 - **A Dock in reach makes fishing faster** (stacks to the standard floor).
   ⚠️ Replaces "a dock adds a fishing spot".
 - **Catch pools**: each combination of water, tool kind and bait has its own
@@ -325,6 +325,39 @@ minute). One number for every speed-up, in the CMS tuning. ⚠️ Replaces the
   reliably (e.g. more weight on the rare share). ⚠️ The one gathering tool
   that does not gate by tier.
 - **Fishing closed** (owner, 2026-10-24).
+
+**Farming**
+- **A Field is one Token that grows itself**: empty → growing → ripe →
+  harvested and replanted (not a home Token planting crops around it). ⚠️
+  Today's Wheat Field spawner of sprouts goes.
+- **The seed is picked on the field** (a list like the recipe picker) and
+  **sticks**: every replant uses it until the player changes it.
+- **No seeds in the Bank: the field waits, stopped**, like a Stump.
+- **Art: one shared empty field and one shared growing field; a ripe sprite
+  per crop.**
+- **A ripe field holds a load** (e.g. 10 wheat, per crop in the CMS),
+  harvested over **several work cycles**; the last cycle replants.
+- **Grow time stays 1–2 hours per crop** (wheat about 1 hour): fields are the
+  slow, plan-ahead skill.
+- **Field supports, within reach**: **Well or water** grows faster (to the
+  floor); **Composter** adds to the load; **Beehive** a chance of bonus crops
+  or seeds (like the Mine's double drop); **Windmill** mills grain nearby
+  (really a processing station).
+- **Fields and Forests are built by Construction on a Foundation**: buy a
+  Foundation, choose Field or Forest, a builder builds it (a Forest's seed
+  cost is part of the build).
+- **Orchards mirror Forests** (plant fruit trees within reach for a seedling
+  each, speed up nearby fruiting, trees can't be dragged, no Orchard in reach
+  means no refruiting) **except that fruit trees are picked, not felled**:
+  picked empty, they rest and fruit again in place. Art: **Sapling,
+  Fruiting, Bare** per fruit species.
+- **Herb Gardens work like Fields** (pick a herb, a long grow, a load to
+  harvest).
+- **Beehives** also **fill slowly with honey and wax** (more with fields or
+  flowers in reach); a Farming hero collects it.
+- **Pastures and animals wait** for the animal skills (Taming, Trapping) in
+  the specialist review.
+- **Farming closed** (owner, 2026-10-24).
 
 **Forestry, added 2026-10-24**: **trees can't be dragged** (like veins: a
 wood is shaped by where Forests stand), and **every new Sapling costs one
