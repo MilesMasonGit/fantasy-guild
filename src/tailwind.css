@@ -696,25 +696,38 @@
 .gi-fx-number-damage { color: #ff5a5a; }
 .gi-fx-number-gain { color: #6ee7b7; }
 
-/* The "used" bubble over a hero who ate, drank or drank an elixir (`matFx.usedBubble`): the
-   item's icon and what it did in one square pixel box on the item's Bank tint (--item-tint),
-   a one-art-pixel black edge. Measured in art pixels (--used-u), text too, so it scales with
+/* The "used" bubbles over a hero who ate, drank or drank an elixir (`matFx.usedBubble`), in a
+   column over the head: oldest on top, the newest nearest the head, like the speech stack. Each
+   is the chamfer pixel frame (its picture set per item tint by matFx, the tint as its fill) with
+   its hard shadow, sized by its contents, everything in art pixels (--used-u) so it scales with
    the mat. */
+.gi-used-column {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--used-u, 1px) * 2);
+  pointer-events: none;
+  translate: -50% -100%;
+}
 .gi-used-bubble {
   display: flex;
   align-items: center;
+  width: max-content;
   gap: calc(var(--used-u, 1px) * 2);
-  padding: var(--used-u, 1px) calc(var(--used-u, 1px) * 3) var(--used-u, 1px) var(--used-u, 1px);
-  border: var(--used-u, 1px) solid #000;
-  border-radius: 0;
-  background-color: var(--item-tint, var(--color-item-tint-default));
+  padding: var(--used-u, 1px);
+  border-style: solid;
+  border-width: calc(var(--used-u, 1px) * 3);
+  border-image-slice: 3 fill;
+  border-image-width: calc(var(--used-u, 1px) * 3);
+  border-image-repeat: stretch;
+  image-rendering: pixelated;
+  filter: drop-shadow(calc(var(--used-u, 1px) * 2) calc(var(--used-u, 1px) * 2) 0 #000);
   color: #fef3c7;
   font-weight: 700;
   font-size: calc(var(--used-u, 1px) * 9);
   line-height: 1;
   white-space: nowrap;
-  pointer-events: none;
-  translate: -50% -100%;
 }
 
 /* The work bar along a worked Token's foot (`workBar.js`): a dark track, and its

@@ -581,8 +581,10 @@ describe('the "used" bubble over a hero who eats, drinks or drinks an elixir', (
         expect(bubble.textContent).toBe('+5 ♥');
         expect(bubble.className).toBe('gi-used-bubble');
         expect(bubble.querySelector('img').getAttribute('src')).toBe(`/${ITEM}`);
-        expect(bubble.style.left).toBe('300px');
-        expect(parseFloat(bubble.style.top)).toBeLessThan(400);
+        const column = bubble.parentElement;
+        expect(column.getAttribute('data-fx-used-column')).toBe('h1');
+        expect(column.style.left).toBe('300px');
+        expect(parseFloat(column.style.top)).toBeLessThan(400);
         const anim = rec.calls.find(a => a.el === bubble);
         expect(anim.options.duration).toBe(MatFx.USED_BUBBLE_MS);
         anim.finish();
@@ -594,24 +596,39 @@ describe('the "used" bubble over a hero who eats, drinks or drinks an elixir', (
         expect(host.querySelector('[data-fx-used="h1"]').textContent).toBe('Valor');
     });
 
-    it('wears the Bank tile tint of its item type, and is measured in art pixels', () => {
-        const tintOf = (itemId, extra = {}) => {
+    it('is the chamfer frame filled with the Bank tile tint of its item type, in art pixels', () => {
+        document.documentElement.style.setProperty('--color-item-tint-food', '#3c2a1a');
+        document.documentElement.style.setProperty('--color-item-tint-drink', '#173439');
+        document.documentElement.style.setProperty('--color-item-tint-potion', '#352242');
+        const look = (itemId, extra = {}) => {
             EventBus.publish(ENGINE_EVENTS.HERO_CONSUMED, { heroId: 'h1', itemId, amount: 3, ...extra });
-            const b = host.querySelector('[data-fx-used="h1"]');
-            const out = [b.getAttribute('data-fx-used-tint'), b.style.getPropertyValue('--item-tint'), b.style.getPropertyValue('--used-u')];
-            b.remove();
-            return out;
+            const b = [...host.querySelectorAll('[data-fx-used="h1"]')].pop();
+            const frame = decodeURIComponent(b.style.borderImageSource);
+            return [b.getAttribute('data-fx-used-tint'), frame.includes("fill='#977316'"), (frame.match(/fill='(#[0-9a-f]{6})'/g) || [])[1]];
         };
-        expect(tintOf('fx_bread')).toEqual(['food', 'var(--color-item-tint-food)', '2px']);
-        expect(tintOf('fx_ale')).toEqual(['drink', 'var(--color-item-tint-drink)', '2px']);
-        expect(tintOf('fx_valor', { elixir: true })).toEqual(['potion', 'var(--color-item-tint-potion)', '2px']);
+        expect(look('fx_bread')).toEqual(['food', true, "fill='#3c2a1a'"]);
+        expect(look('fx_ale')).toEqual(['drink', true, "fill='#173439'"]);
+        expect(look('fx_valor', { elixir: true })).toEqual(['potion', true, "fill='#352242'"]);
+        expect(host.querySelector('[data-fx-used-column="h1"]').style.getPropertyValue('--used-u')).toBe('2px');
     });
 
-    it('one at a time per hero: a newer bubble replaces the older one', () => {
-        EventBus.publish(ENGINE_EVENTS.HERO_CONSUMED, { heroId: 'h1', itemId: 'fx_valor', amount: 0, elixir: true });
-        const first = rec.calls[rec.calls.length - 1];
-        EventBus.publish(ENGINE_EVENTS.HERO_CONSUMED, { heroId: 'h1', itemId: 'fx_bread', amount: 3 });
-        expect(first.cancel).toHaveBeenCalled();
+    it('stacks several at once, oldest on top and the newest nearest the head, at most three', () => {
+        const items = ['fx_valor', 'fx_bread', 'fx_ale', 'fx_valor'];
+        const anims = [];
+        for (const itemId of items) {
+            EventBus.publish(ENGINE_EVENTS.HERO_CONSUMED, { heroId: 'h1', itemId, amount: 2, elixir: itemId === 'fx_valor' });
+            anims.push(rec.calls[rec.calls.length - 1]);
+        }
+        const column = host.querySelector('[data-fx-used-column="h1"]');
+        expect(host.querySelectorAll('[data-fx-used-column]')).toHaveLength(1);
+        // The first gave way to the fourth; the rest keep their order, newest last (at the bottom).
+        expect([...column.children].map(b => b.getAttribute('data-fx-used-tint'))).toEqual(['food', 'drink', 'potion']);
+        expect(anims[0].cancel).toHaveBeenCalled();
+        anims[1].finish();
+        anims[2].finish();
+        expect(column.children).toHaveLength(1);
+        anims[3].finish();
+        expect(host.children).toHaveLength(0);
     });
 
     it('draws nothing for a meal that healed nothing, or a hero off the mat', () => {
