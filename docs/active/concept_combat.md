@@ -158,7 +158,9 @@ Differs from GDD §6 in places; the code wins:
 - **Defeat keeps today's cost** (amends D2's "gear never breaks"): 25 % of
   each carried food and drink stack lost, a 10 % chance per gear piece to be
   lost, wounded 5 minutes, back at half HP. Gear still never wears out; it
-  can only be lost on a knockout.
+  can only be lost on a knockout. Confirmed after review (2026-10-24): the
+  25 % is of the **whole Bank stack** of each carried food, as the code does,
+  and gear is destroyed, a gatherer's only pickaxe included. Deliberate.
 
 ### The four styles
 
@@ -177,12 +179,16 @@ Differs from GDD §6 in places; the code wins:
 ### Food and potions in fights
 
 - **Eating stays as today**: below 25 % HP the hero eats equipped food;
-  eating takes that swing. Food is the only heal in a fight.
+  eating takes that swing. Food is the only heal in a fight. Deliberate
+  (confirmed after review): a hero can be knocked out with food left, so an
+  under-levelled hero can't win an out-levelled fight on food alone.
 - **Drinks stop healing and become small buffs** (amends T-098's "drinks
   heal from their own slot"). ⚠️ Overlap: drinks are Cooking's; their buffs
   are for the skill-loops planning agent to shape.
-- **An elixir is drunk at the start of every fight**; each equipped elixir
-  type is drunk once, and their effects stack. Some elixirs are for skills
+- **An elixir is drunk at the start of a fight and lasts 10 fights**
+  (owner after review; the same 10 for every elixir, never per item). Each
+  equipped elixir type is drunk when the last one runs out; their effects
+  stack. Some elixirs are for skills
   instead and fire when the hero starts working a Token (the Birdwatcher in
   `concept_skill_loops.md`; overlap with the skill-loops agent).
 - **Elixirs need a wide effect library**: +damage, +armour, faster swings,
@@ -215,7 +221,8 @@ Differs from GDD §6 in places; the code wins:
 - **Bosses have a style plus special abilities and attacks** of their own,
   **made as Rules-system moves in the CMS**, per boss. First moves: a
   **heavy strike** every few swings, a **status attack** (poison or burn),
-  **heal or shield** (once, or at low HP), and **enrage** below a share
+  **heal or shield** (once, or at low HP; a boss "shield" is simply
+  "gains +2 armour", no Shield status needed), and **enrage** below a share
   of HP (faster or harder hits). This needs new moments such as "every Nth
   swing" and "when HP falls below X".
 
@@ -227,8 +234,8 @@ Differs from GDD §6 in places; the code wins:
 - **Damage over time is 1 per tick, about every 3 s** (a normal swing's
   pace); stacks or duration make it stronger.
 - **Statuses end with the fight.** No hero falls to poison on the way home.
-- **Poison stacks**: each poisoning adds a stack, 1 damage per stack per
-  tick, until the fight ends. **Burn** doesn't stack: 1 per tick for a few
+- **Poison stacks, up to 3**: each poisoning adds a stack, 1 damage per
+  stack per tick, until the fight ends. **Burn** doesn't stack: 1 per tick for a few
   ticks, and food heals half while burning.
 - The old status engine (`StatusEffectSystem.js`, `statusRegistry.js`) is
   retired once nothing borrows from it.
@@ -237,11 +244,16 @@ Differs from GDD §6 in places; the code wins:
 
 - **Kill XP: the level fills it, the CMS overrides**, like enemy stats. XP
   goes to the hero's one combat skill; Recruits earn none.
-- **Maps drop only from bosses and guardians** (amends D2's "maps drop
-  steadily from enemies the player can farm safely"); bosses and guardians
-  return on timers, so maps can still be farmed. Ordinary enemies and camps
-  drop materials. ⚠️ Overlap: which boss or guardian drops which map is the
-  basic-content agent's (`concept_basic_content.md`, map acquisition).
+- **Maps sit behind skill gates** (owner, review round 1; replaces an
+  earlier "maps only from bosses and guardians"). "Boss" and "guardian" are
+  not the point: the next tier of maps drops from an enemy the guild must
+  be ready for. Combat gates are the most common; other skills may gate
+  content too. Example: a well-equipped combat-20 hero is needed to beat the
+  Goblin Chief, which drops the Iron Ore maps; to get there the player
+  crafts copper weapons, levels the hero on weaker goblins, and makes food
+  and elixirs. Which enemy drops which map stays the basic-content agent's
+  (`concept_basic_content.md`), whose plan (goblins drop plane-1 maps now
+  and then) stands.
 
 ### Depth (options in [research/combat_depth_options.md](research/combat_depth_options.md))
 
@@ -264,11 +276,17 @@ Differs from GDD §6 in places; the code wins:
   (Spear: Pierce 1, Bow: +Accuracy, Rapier: +Crit; Vitality, Guard) or
   something special (Cleaver: more meat). One idea, "what this piece is good
   at", authored in the Rules editor.
-- **Armour families get abilities the same way** (a Hide Vest: poison wears
-  off faster). Armour sets are a later idea.
+- **Armour families get abilities the same way** (a Hide Vest: poison stacks
+  at most 1 lower). Armour sets are a later idea.
 - **An ability can touch anything**, work and gathering included (a combat
   weapon could also help a work skill). ⚠️ Overlap: tools are the
   skill-loops agent's; gear that boosts work must fit their loops.
+- **An enemy card with numbers**: hovering an enemy (and the combat panel)
+  shows its level, style icon, HP, hit, armour and speed; its kinds
+  (Armoured, Nimble…) appear once the guild has fought one. No forecast:
+  the player does the sums.
+- **No resting before fights**: heroes fight at whatever HP they have; in an
+  emergency the player moves the hero out by hand.
 - **No fight preview.** The player learns which fights are winnable by
   playing and from the combat panel (amends "a player can tell whether one
   is winnable" in the direction: readability comes from small fixed numbers,
@@ -312,3 +330,26 @@ Differs from GDD §6 in places; the code wins:
 - **A "used" bubble for every item**: when a hero eats, drinks or drinks an
   elixir, a small bubble over them shows the item's icon and what it did
   ("+5 ♥", "Valor") for about 1.5 s.
+
+### Planner's calls (routine, not owner rulings)
+
+- **Rounding**: every percentage (matchup ±25 %, Burn's half heal) rounds to
+  the nearest whole number, halves up; a hit always does at least 1.
+- **The enemy level table and weapon tiers** are proposed by the builder in
+  the first phase as one table (level → HP, hit, armour, speed, XP; tier →
+  weapon damage), tuned so an even fight lasts 10+ swings; the owner tunes
+  it in play.
+- **Performance**: the cost of long duels is how many fights run at once,
+  measured against GDD §14, not the swings per fight.
+
+### Overlaps with the other planning agents
+
+- **Skill loops** (`concept_skill_loops.md`): drinks become small buffs
+  (their shape is theirs); Well Fed and Cookout; elixirs that fire when work
+  starts (the Birdwatcher); gear abilities that boost work; tools stay hand
+  gear. ⚠️ Their Cooking and Alchemy lines still say drinks and potions heal
+  in fights ("heal from their own slot", "healing and buff potions for
+  fights"); combat now says only food heals in fights.
+- **Basic content** (`concept_basic_content.md`): which enemy drops which map
+  (skill gates, above), the enemy roster per plane, and the gear and elixir
+  items themselves.
