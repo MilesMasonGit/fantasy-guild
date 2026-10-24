@@ -134,6 +134,57 @@ the cap is kept for building). Plain names (concept_tone_and_world).
   - **Fir Grove is dropped for now**: turning Forest oak into fir would let
     plane 1 skip plane 2's wood.
 
+### Round 5 (2026-10-22): the crafting chain
+
+- **Every plane-2 node and recipe opens at level 15**: iron ore (Mining),
+  fir (Forestry), eel (Fishing), cranberry (Farming), iron ingot (Smithing,
+  as today); the Marsh Herb at Alchemy 1 (Alchemy starts there). One clear
+  number to chase in plane 1.
+- **Copper tools work plane 2**: copper pick for iron (the standing rule: an
+  ore needs the pick of the step below), copper axe for fir, the fishing rod
+  for eel, the copper sickle for cranberry and the herb. Iron tools are made
+  in plane 2, ready for the next plane.
+- **Plane-2 buildings**: **Iron Anvil** (iron ingots; smiths iron tools,
+  weapons, armour), **Tannery** (fir; Bear Hide → leather, Crafting),
+  **Alchemy Table** (fir and stone; Marsh Herb → healing potion; what a
+  potion does in a fight is the combat planner's), and **better plane-1
+  stations** (a Fir Workbench, a better Furnace) built from fir and iron, so
+  the move is also a rebuild.
+- **Plain names**: **Marsh Herb, Eel, Cranberry, Bear Hide** (a later herb
+  would be e.g. Mountain Herb).
+
+### Round 6 (2026-10-22): gear, upgrades, pace
+
+- **Plane 1 makes copper weapons and armour** at the anvil; wolf, boar and
+  crab drops feed Cooking (meat). Leather starts with plane 2's Bear Hide.
+- **Guild Hall upgrade prices follow the planes**: the first 2 ranks of each
+  upgrade (Token cap, Cartography slots) in oak, stone and copper; ranks 3-4
+  in fir and iron; later ranks wait for later planes.
+- **Content past iron stays as it is**: silver to darkmetal, birch to ebony,
+  the tropical fruit trees and the rest stay in the CMS untouched; no map in
+  this set writes them, so players never meet them. Nothing is deleted.
+
+### Round 7 (2026-10-22): plane 1 is the tutorial
+
+- **The Starter Camp and plane 1 together take about 2 hours from a new
+  game** (owner: "Plane 1 is the tutorial"): the camp about 30 minutes, plane
+  1 about 1.5 hours, then the first plane-2 Region.
+- **Fast early levels**: levels 1-15 come quickly (a level every few minutes
+  in the skills being worked), and the curve slows from plane 2 on. Target:
+  about 15 in the main skills after ~2 hours. The curve itself is the skill
+  planner's (see Overlaps).
+- **The first plane-2 map is guaranteed from a plane-1 milestone enemy**:
+  each plane-1 camp has a tougher leader (like the Goblin Chief) whose first
+  kill always drops a plane-2 map; later kills drop one sometimes. Ordinary
+  plane-1 enemies drop plane-2 maps rarely (round 2). This amends round 2's
+  "only as rare drops".
+- **Plane 2 lasts about a day.** Each plane gets longer step by step (about
+  2 hours, about a day, then longer); the next plane is a later content pass.
+- ⚠️ **Amends [concept_progression.md](concept_progression.md)**: its
+  "Starter Camp lasts about 30-60 minutes" becomes about 30 minutes, and its
+  "moves every few days" rhythm starts after plane 2, not from the first
+  map. The first ritual's 1-3 months is unchanged.
+
 ## Overlaps with the other planners
 
 - **Combat** ([concept_combat.md](concept_combat.md)): the enemies on each
@@ -148,6 +199,12 @@ the cap is kept for building). Plain names (concept_tone_and_world).
   numbers): Wolves, Crabs, Boars (plane 1); Rock Elementals, Bears, Bog
   Toads (plane 2). Each drops its map's materials, its plane's maps steadily
   and (plane 1 only) plane-2 maps rarely.
+- **Leaders (combat)**: every plane-1 camp needs a tougher leader whose
+  first kill always drops a plane-2 map (the Goblin Chief exists; wolves,
+  crabs and boars need one; the peaceful cows and thorn elementals need a
+  decision, e.g. a Bull). Their stats are the combat planner's.
+- **The XP curve (skill loops)**: levels 1-15 in about 2 hours of play, then
+  slower. Today's speed and XP numbers are the skill planner's to set.
 - **Skill loops** ([concept_skill_loops.md](concept_skill_loops.md)): how each
   node and station behaves (respawn, groves, veins). This doc says which nodes
   stand on which map; the skill planner says how they work.
