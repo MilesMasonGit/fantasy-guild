@@ -37,7 +37,7 @@ const skillName = (id) => getSkill(id)?.name || (id ? id.charAt(0).toUpperCase()
 
 /** A slightly see-through box, so text reads over the art. */
 const Box = ({ children, className, ...rest }) => (
-    <div className={cn('rounded-sm bg-black/65 px-2 py-1.5 flex flex-col gap-1', className)} {...rest}>
+    <div className={cn('bg-black/65 px-2 py-1.5 flex flex-col gap-1', className)} {...rest}>
         {children}
     </div>
 );

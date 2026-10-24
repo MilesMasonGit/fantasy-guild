@@ -6,11 +6,9 @@ import { ENGINE_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js'
 import * as CatchUp from '../../../systems/core/CatchUp.js';
 import { cn } from '../../utils/cn.js';
 import { EntityRibbon } from '../base/EntityRibbon.jsx';
+import { PixelFrame, FRAME_KIND } from '../base/PixelFrame.jsx';
 import SkillIcon from '../base/SkillIcon.jsx';
 import { summaryView, catchUpTitle } from './catchUpSummary.js';
-
-/** The top bar's panel look (the Token Summary, Upkeep): one thin gold edge on black. */
-const PANEL = 'rounded-lg border border-gi-gold/40 bg-black/90 text-white shadow-[0_10px_30px_rgba(0,0,0,0.8)]';
 
 /**
  * While a catch-up plays (`CatchUp.run`, a closed game's time away or a sleeping PC), a loading
@@ -92,7 +90,7 @@ export function CatchUpOverlay() {
 
 function LoadingBar({ run }) {
     return (
-        <div data-catch-up-bar role="status" className={`${PANEL} w-80 max-w-full px-4 py-3 flex flex-col gap-2`}>
+        <PixelFrame kind={FRAME_KIND.CHAMFER} data-catch-up-bar role="status" className="w-80 max-w-full" frameClassName="px-3 py-2 flex flex-col gap-2 text-white">
             <div data-catch-up-title className="ui-text-title font-bold text-gi-gold">{catchUpTitle(run.awayMs)}</div>
             <div className="relative h-2.5 overflow-hidden rounded-full bg-white/10">
                 <div
@@ -103,7 +101,7 @@ function LoadingBar({ run }) {
                 <div className="catch-up-sheen absolute inset-y-0 w-1/3 bg-white/25" />
             </div>
             <div className="ui-text-title text-white/60">Your heroes kept working while you were gone.</div>
-        </div>
+        </PixelFrame>
     );
 }
 
@@ -179,11 +177,13 @@ function Summary({ result, asking, onClose, onAsk, onCancel, onUndo }) {
     const enter = useRowEntrance();
     const undoable = CatchUp.canUndo();
     return (
-        <div
+        <PixelFrame
+            kind={FRAME_KIND.CHAMFER}
             data-catch-up-summary
             role="dialog"
             aria-label="While you were away"
-            className={`${PANEL} w-[28rem] max-w-full max-h-[85vh] flex flex-col ui-text-title leading-snug`}
+            className="w-[28rem] max-w-full"
+            frameClassName="max-h-[85vh] flex flex-col ui-text-title leading-snug text-white"
         >
             <div className="px-3 pt-2.5 pb-1 shrink-0">
                 <div role="heading" aria-level={2} className="ui-text-title font-bold text-gi-gold">While you were away</div>
@@ -302,7 +302,7 @@ function Summary({ result, asking, onClose, onAsk, onCancel, onUndo }) {
                     </div>
                 )}
             </div>
-        </div>
+        </PixelFrame>
     );
 }
 

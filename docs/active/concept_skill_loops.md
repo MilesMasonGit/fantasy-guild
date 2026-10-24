@@ -272,6 +272,37 @@ no content uses either yet.
   the **tree pays**. **A Stump spends one seedling from the Bank when it
   regrows into a Sapling**; with none in the Bank the Stump is **stopped**
   and waits. (Easier to understand than a Forest upkeep, owner.)
+- Still standing from 2026-10-09: the Lumber Camp, rare finds as loud pops,
+  the woodaxe tier gating. **Forestry closed** (owner, 2026-10-22).
+
+**Mining**
+- **A Mine gives matching veins within reach a chance to double their
+  drops** (a Copper Mine, copper veins). It no longer spawns veins.
+- **An empty vein rests, then refills all at once** (the engine's refill).
+- **One shared empty-rock sprite** for every depleted vein; inspect names
+  the ore.
+- **Copper feel: about 5 ore, about 1 minute's rest**; each ore its own
+  numbers in the CMS.
+- **Veins come from the map only** and are **fixed** (the player can't move
+  them): Mines, Minecarts and smelters are placed around them, so each
+  Region's layout is its own puzzle.
+- **Double-drop chance: about 25 % per Mine in reach, stacking** (a sure
+  double at four; the number in the CMS).
+- **Minecarts shorten the work time of veins within reach** (a new effect;
+  no longer a restock). They **stack**, down to the standard floor.
+- **No smelter rule in Mining** (the Smelter is Smithing's). Gems and the
+  occasional map fragment stay rare finds; the pickaxe of the tier below
+  gates each ore.
+- **Mining closed** (owner, 2026-10-24).
+
+**Standard floor for speed-ups (all skills)**: stacked support Tokens can
+cut **at most 80 %** of a time (a 5 minute regrow never goes below 1
+minute). One number for every speed-up, in the CMS tuning. ⚠️ Replaces the
+"about a quarter" Forest floor above.
+
+**Forestry, added 2026-10-24**: **trees can't be dragged** (like veins: a
+wood is shaped by where Forests stand), and **every new Sapling costs one
+seedling**, a Forest's planting as well as a Stump's regrow.
 - **Forests stack fully**, down to a **floor**: a tree never regrows faster
   than a set fraction of its normal time (about a quarter; the number in the
   CMS).
