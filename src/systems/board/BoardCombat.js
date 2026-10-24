@@ -251,6 +251,7 @@ export function opponentBearerOf(statement, roles) {
 export function endFight(instanceId) {
     if (!instanceId) return;
     clearEnemyCombatModifiers(instanceId);
+    LiveEffects.endHeroFightEffects(fights.get(instanceId)?.assignedHeroId);
     fights.delete(instanceId);
 }
 
@@ -280,7 +281,10 @@ export function getFight(instanceId) {
 export function clearAll() {
     // Hand every fight's borrowed numbers back before dropping them, or a teardown would leave an
     // enemy's debuff on a hero with no fight to explain it.
-    for (const instanceId of fights.keys()) clearEnemyCombatModifiers(instanceId);
+    for (const [instanceId, fight] of fights) {
+        clearEnemyCombatModifiers(instanceId);
+        LiveEffects.endHeroFightEffects(fight.assignedHeroId);
+    }
     fights.clear();
 }
 
@@ -411,6 +415,10 @@ const pointOf = (instance) => ({ x: instance.x, y: instance.y });
  */
 function resolveVictory(instance, fight, enemy, heroId) {
     const id = instance.id;
+
+    // What either side had "for the fight" ends with the kill; the next enemy is a new fight.
+    LiveEffects.endHeroFightEffects(heroId);
+    LiveEffects.endFightEffects(enemyBearer(id, fight));
 
     // Enemy Tokens deplete like any other: a Bear is not an infinite resource; spawners replace
     // them.
@@ -555,7 +563,11 @@ export function init() {
     // Ending a fight is handled by `tickToken` seeing no hero, and by `Flags` calling
     // `endFightOfHero` when a hero lets go, NOT by an event: `HERO_MOVED` on a recall names where
     // the hero WENT (the Dock), not the Token they left.
-    EventBus.subscribe(ENGINE_EVENTS.GAME_LOADED, () => clearAll());
+    // Fights are not saved, so neither is anything a hero had for one.
+    EventBus.subscribe(ENGINE_EVENTS.GAME_LOADED, () => {
+        clearAll();
+        for (const hero of HeroManager.getAllHeroes() || []) LiveEffects.endFightEffects(LiveEffects.heroBearer(hero));
+    });
     EventBus.subscribe(ENGINE_EVENTS.BOARD_SWAPPED, () => clearAll());
 
     // The status clock cannot call us directly: `StatusEffectSystem` is imported by this file, so

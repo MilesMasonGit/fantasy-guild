@@ -22,7 +22,7 @@ function rollStatusOnHit(source, applyFn) {
 }
 
 /**
- * HP, food and drink are combat's attrition currency.
+ * HP and food are combat's attrition currency.
  *
  * `combat_hero_attack` names the enemy Token (`instanceId`) so the mat can
  * route a landed hit's knockback to it. Every swing publishes `hit` and `crit`, so a miss and a
@@ -32,8 +32,9 @@ function rollStatusOnHit(source, applyFn) {
 export function handleHeroAttack(fight, hero, enemy, attackSpeed) {
     // Eating mid-fight: the hero skips this attack while the enemy's timer keeps
     // running, so the enemy gets a free swing. That price keeps HP management
-    // tense. Uncapped on purpose: a hero who can't out-heal the damage should lose.
-    const meals = ConsumptionSystem.tryEat(hero.id);
+    // tense. Uncapped on purpose: a hero who can't out-heal the damage should lose. Only food
+    // heals in a fight; an equipped drink is left alone.
+    const meals = ConsumptionSystem.tryEat(hero.id, { inFight: true });
     if (meals.length) {
         for (const meal of meals) {
             EventBus.publish(ENGINE_EVENTS.COMBAT_HERO_ATE, {

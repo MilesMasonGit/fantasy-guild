@@ -17,6 +17,8 @@ import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
+import { registerEffects } from '../config/registries/effectRegistry.js';
+import { makeStatement, KEYWORD } from '../systems/effects/statements.js';
 import * as HeroManager from '../systems/hero/HeroManager.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { xpForLevel } from '../utils/XPCurve.js';
@@ -25,8 +27,8 @@ import * as fixtures from '../../bench/fixtures.mjs';
 /**
  * Fights during time away end exactly where the same time played live ends: every swing's miss
  * and crit come from `Math.random` in a fixed order, so a catch-up that replays the same steps
- * replays the same fights. A promoted hero wins a run of duels; a Recruit loses one and is
- * carried home, wounded.
+ * replays the same fights. A promoted hero wins a run of duels with two elixirs working; a
+ * Recruit eats, loses one and is carried home, wounded.
  */
 
 const NOW = 1_800_000_000_000;
@@ -40,9 +42,29 @@ class SilentAudio {
     removeEventListener() {}
 }
 
-registerItems({
-    catchup_sword: { id: 'catchup_sword', name: 'Catch-up Sword', type: 'weapon', equipSlot: 'hand', skillRequired: 'melee', damage: 6 }
+const forTheFight = (effectId) => ({
+    ...makeStatement(KEYWORD.APPLIES),
+    when: { event: 'COMBAT_ENGAGED', scope: 'self' },
+    payload: { effectId, scale: 1, durationMs: 0, forFight: true, chance: 100 }
 });
+const provides = (type, value) => ({ ...makeStatement(KEYWORD.PROVIDES), payload: { type, bucket: 'flat', value }, to: null });
+
+registerEffects({
+    catchup_fx_valor: { id: 'catchup_fx_valor', name: 'Valor', statements: [provides('DAMAGE', 1)] },
+    catchup_fx_ironskin: { id: 'catchup_fx_ironskin', name: 'Ironskin', statements: [provides('ARMOR', 1)] },
+    catchup_fx_elixir_valor: { id: 'catchup_fx_elixir_valor', name: 'Elixir of Valor', statements: [forTheFight('catchup_fx_valor')] },
+    catchup_fx_elixir_ironskin: { id: 'catchup_fx_elixir_ironskin', name: 'Elixir of Ironskin', statements: [forTheFight('catchup_fx_ironskin')] }
+});
+
+registerItems({
+    catchup_sword: { id: 'catchup_sword', name: 'Catch-up Sword', type: 'weapon', equipSlot: 'hand', skillRequired: 'melee', damage: 6 },
+    catchup_valor: { id: 'catchup_valor', name: 'Valor', equipSlot: 'consumable', stackable: true, effects: [{ effectId: 'catchup_fx_elixir_valor' }] },
+    catchup_ironskin: { id: 'catchup_ironskin', name: 'Ironskin', equipSlot: 'consumable', stackable: true, effects: [{ effectId: 'catchup_fx_elixir_ironskin' }] },
+    catchup_bread: { id: 'catchup_bread', name: 'Bread', equipSlot: 'food', stackable: true, restoreAmount: 2 },
+    catchup_ale: { id: 'catchup_ale', name: 'Ale', equipSlot: 'drink', stackable: true, restoreAmount: 2 }
+});
+
+const SUPPLIES = ['catchup_valor', 'catchup_ironskin', 'catchup_bread', 'catchup_ale'];
 
 registerTokenTypes({
     catchup_duel_enemy: {
@@ -68,7 +90,10 @@ function seeded() {
 }
 const realRandom = Math.random;
 
-/** A Melee 30 hero with a sword and a Recruit, each pinned to a level 5 enemy of their own (six of it), far apart. */
+/**
+ * A Melee 30 hero with a sword and both elixirs, and a Recruit with bread, ale and a Valor, each
+ * pinned to a level 5 enemy of their own (six of it), far apart.
+ */
 function buildBoard() {
     stream.state = 7;
     stream.draws = 0;
@@ -78,6 +103,15 @@ function buildBoard() {
     const [fighter, recruit] = fixtures.makeHeroes(2, {});
     fighter.skills.melee = { level: 30, xp: xpForLevel(30) };
     fighter.equipment[0] = 'catchup_sword';
+    fighter.equipment[1] = 'catchup_valor';
+    fighter.equipment[2] = 'catchup_ironskin';
+    recruit.equipment[0] = 'catchup_bread';
+    recruit.equipment[1] = 'catchup_ale';
+    recruit.equipment[2] = 'catchup_valor';
+    InventoryManager.addItem('catchup_valor', 2);
+    InventoryManager.addItem('catchup_ironskin', 1);
+    InventoryManager.addItem('catchup_bread', 2);
+    InventoryManager.addItem('catchup_ale', 3);
     HeroManager.updateHeroFromSkills(fighter);
     fighter.hp.current = fighter.hp.max;
     const a = fixtures.placeAt('catchup_duel_enemy', 400, 400);
@@ -89,8 +123,9 @@ function buildBoard() {
 }
 
 function listen() {
-    const seen = { kills: 0, defeats: 0, heroSwings: 0, enemySwings: 0, crits: 0, misses: 0 };
+    const seen = { kills: 0, defeats: 0, heroSwings: 0, enemySwings: 0, crits: 0, misses: 0, meals: [], elixirs: 0 };
     const offs = [
+        EventBus.subscribe(ENGINE_EVENTS.HERO_CONSUMED, (p) => { if (p.elixir) seen.elixirs++; else seen.meals.push(p.itemId); }),
         EventBus.subscribe(ENGINE_EVENTS.COMBAT_VICTORY, () => { seen.kills++; }),
         EventBus.subscribe(BOARD_EVENTS.HERO_DEFEATED, () => { seen.defeats++; }),
         EventBus.subscribe(ENGINE_EVENTS.COMBAT_HERO_ATTACK, (p) => { seen.heroSwings++; if (p.crit) seen.crits++; if (!p.hit) seen.misses++; }),
@@ -101,12 +136,16 @@ function listen() {
 
 const heroState = ({ fighterId, recruitId }) => Object.fromEntries([fighterId, recruitId].map(id => {
     const h = GameState.state.heroes.find(x => x.id === id);
-    return [id, { hp: { ...h.hp }, status: h.status, xp: h.skills.melee?.xp ?? null, woundedRemainingMs: h.woundedRemainingMs ?? null }];
+    return [id, {
+        hp: { ...h.hp }, status: h.status, xp: h.skills.melee?.xp ?? null, woundedRemainingMs: h.woundedRemainingMs ?? null,
+        elixirFights: { ...(h.elixirFights || {}) }, effects: (h.effects || []).map(e => e.effectId)
+    }];
 }));
 
 const end = (ids, seen) => ({
     heroes: heroState(ids),
     uses: BoardState.tokens().filter(t => t.typeId === 'catchup_duel_enemy').map(t => t.usesRemaining),
+    bank: Object.fromEntries(SUPPLIES.map(id => [id, InventoryManager.getItemCount(id)])),
     draws: stream.draws,
     seen
 });
@@ -161,5 +200,13 @@ describe('fights during a catch-up', () => {
         expect(plain.seen.defeats).toBeGreaterThanOrEqual(1);
         expect(plain.seen.misses).toBeGreaterThan(0);
         expect(plain.heroes[ids.fighterId].xp).toBeGreaterThan(xpForLevel(30));
+
+        // And the supplies were used: both of the fighter's elixirs and the Recruit's Valor were
+        // drunk, and the Recruit ate but never drank (drinks do not heal in a fight).
+        expect(plain.seen.elixirs).toBeGreaterThanOrEqual(3);
+        expect(plain.heroes[ids.fighterId].elixirFights.catchup_valor).toBeLessThan(10);
+        expect(plain.heroes[ids.fighterId].elixirFights.catchup_ironskin).toBeLessThan(10);
+        expect(plain.seen.meals.length).toBeGreaterThanOrEqual(1);
+        expect(plain.seen.meals).not.toContain('catchup_ale');
     }, 60_000);
 });

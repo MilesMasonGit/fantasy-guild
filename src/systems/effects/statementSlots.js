@@ -292,6 +292,17 @@ function payloadSlots(statement, ctx) {
                     patch: v => ({ payload: { ...payload, scale: Math.max(1, Number(v) || 1) } })
                 },
                 {
+                    // An elixir's case: it lasts until the fight it was applied in ends.
+                    id: 'forFight', kind: SLOT_KIND.FLAG, label: 'for the fight',
+                    value: !!payload.forFight,
+                    hint: 'Lasts until this fight ends, whatever the time. For a rule on the fight-start moment.',
+                    patch: v => {
+                        const { forFight, ...rest } = payload;
+                        void forFight;
+                        return { payload: v ? { ...rest, forFight: true } : rest };
+                    }
+                },
+                {
                     // Zero means fire it once, now (how chaining works).
                     id: 'durationMs', kind: SLOT_KIND.NUMBER, label: 'for (ms)', min: 0, optional: true,
                     value: payload.durationMs ?? 0,

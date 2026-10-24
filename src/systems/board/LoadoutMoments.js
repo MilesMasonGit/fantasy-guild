@@ -8,6 +8,8 @@ import * as EffectActions from './EffectActions.js';
 import * as SpriteLayer from './SpriteLayer.js';
 import * as EffectFeedback from './EffectFeedback.js';
 import * as RareDrops from './RareDrops.js';
+import * as ConsumptionSystem from '../hero/ConsumptionSystem.js';
+import { categoryOfItem, isConsumableCategory } from '../../config/registries/equipmentConstants.js';
 import { KEYWORD } from '../effects/statements.js';
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
@@ -50,9 +52,21 @@ export function fire(instanceId, heroId, eventId) {
 
     let fired = 0;
 
-    for (const statement of HeroEffects.loadoutStatements(hero)) {
+    // A fight starting counts a fight on every elixir and drinks those that ran out. An elixir's
+    // rules work from its dose, not from the Bank: they are fired below without a cost, and kept
+    // out of the ordinary pass, which would charge one per fight.
+    const fightStart = eventId === ConsumptionSystem.FIGHT_START;
+    const elixirs = fightStart ? ConsumptionSystem.startFightElixirs(heroId) : [];
+    const fromElixirsOnly = (statement) => fightStart
+        && (statement.sourceItemIds || []).every(id => isConsumableCategory(categoryOfItem(id)));
+    const statements = [
+        ...HeroEffects.loadoutStatements(hero).filter(s => !fromElixirsOnly(s)),
+        ...elixirs.flatMap(id => HeroEffects.itemStatements(id).map(s => ({ ...s, dosed: true })))
+    ];
+
+    for (const statement of statements) {
         if (statement?.when?.event !== eventId) continue;
-        if (!HeroEffects.canPayLoadoutCost(statement)) continue;
+        if (!statement.dosed && !HeroEffects.canPayLoadoutCost(statement)) continue;
 
         const payload = statement.payload || {};
         let acted = false;
@@ -77,7 +91,7 @@ export function fire(instanceId, heroId, eventId) {
         }
 
         if (!acted) continue;
-        HeroEffects.payLoadoutCost(statement);
+        if (!statement.dosed) HeroEffects.payLoadoutCost(statement);
         EffectFeedback.announce(instanceId, statement);
         fired += 1;
     }
