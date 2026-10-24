@@ -55,8 +55,8 @@ export default function TokenEditor() {
   const isEnemy = derived.type === 'enemy';
   const enemy = token?.enemy || null;
   const enemyStats = useMemo(
-    () => (enemy?.level != null ? enemyProfileOf({ id: token?.id, name: token?.name, enemy }) : null),
-    [enemy, token?.id, token?.name]
+    () => (enemy?.level != null ? enemyProfileOf({ enemy }) : null),
+    [enemy]
   );
 
   if (!token) return <Empty text="Select a Token from the sidebar to edit" />;
