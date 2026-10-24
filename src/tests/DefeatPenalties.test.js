@@ -97,11 +97,9 @@ describe('Consumable loss walks the HERO GRID (D-19 + C-7/C-8)', () => {
         expect(bank.c_ale).toBe(40);        // not carried, so untouched
     });
 
-    // Owner decision. The Consumable class is dormant: nothing calls
-    // `consumeLoopConsumables` and nothing reads `loopEffect`, so an equipped
-    // potion is never spent. Until the Prep Phase is wired, the slot must not
-    // cost the player anything.
-    it('exempts the dormant Consumable class from stack loss', () => {
+    // Defeat keeps today's cost (owner, brief 220): food and drink stacks are taxed; the
+    // Consumable class (elixirs) was exempt and stays so.
+    it('exempts the Consumable class (elixirs) from stack loss', () => {
         applyDefeatPenalties('hero_1');
 
         expect(bank.c_potion).toBe(80);

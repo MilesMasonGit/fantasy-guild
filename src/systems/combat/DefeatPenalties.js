@@ -26,13 +26,11 @@ export function applyDefeatPenalties(heroId) {
     // 1. Consumable stack loss: a share of each CARRIED food/drink item's banked
     //    stack is destroyed. Walks the hero's grid, not any container.
     //
-    //    ⚠️ The Consumable class (potions/scrolls/runes) is exempt because it is
-    //    dormant: `consumeLoopConsumables` has no caller outside tests, so an
-    //    equipped potion is never spent. Not an oversight to fix; wire the Prep
-    //    Phase first.
+    //    The Consumable class (elixirs) is exempt: defeat keeps the cost it had before elixirs
+    //    were drunk, and softening or widening it is the owner's call.
     for (const entry of equipped) {
         if (isGearCategory(entry.category)) continue;        // gear is rolled below
-        if (isConsumableCategory(entry.category)) continue;  // exempt: dormant, see above
+        if (isConsumableCategory(entry.category)) continue;  // exempt, see above
         const banked = InventoryManager.getItemCount(entry.itemId);
         const loss = Math.ceil(banked * DEFEAT_PENALTY.CONSUMABLE_LOSS_RATIO);
         if (loss > 0) {

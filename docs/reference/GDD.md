@@ -295,11 +295,26 @@ has none yet), melee, magic and commerce have content today.
   *(`FormulaRegistry.js`, `CombatFormulas.js`)*
 - **Regen 1 HP / 10 s while idle or working; none in a fight**, where only
   food heals.
-- Below 25 % HP a hero eats equipped food from the Bank and, if still below,
-  drinks the equipped drink: drinks heal like food, from their own slot. Heroes
-  have no energy (removed, T-098).
+- Below 25 % HP a hero eats equipped food from the Bank (in a fight eating
+  takes that swing). Out of a fight, if still below, they also drink the
+  equipped drink, which heals like food. **In a fight drinks do not heal**: an
+  equipped drink is left alone, unspent (drink buffs are the skill-loops
+  design's, not built). Heroes have no energy (removed, T-098).
+- **Elixirs** (the unlimited consumable slot): an elixir whose rules wait on
+  the fight-start moment is drunk as a fight starts and **lasts 10 fights**
+  (one number for every elixir, `ELIXIR_FIGHTS`; each enemy engaged is one
+  fight). Every equipped elixir type works at once and their effects stack; a
+  type is drunk again from the Bank when its last dose runs out, and keeps
+  working for the rest of its 10 fights after the Bank runs dry. The count
+  left is saved on the hero (`elixirFights`). A consumable with no fight rule
+  is never drunk by a fight. *(`ConsumptionSystem.js`, `LoadoutMoments.js`)*
+- **The "used" bubble**: when a hero eats, drinks or drinks an elixir on the
+  mat, a small bubble over their head shows the item's icon and what it did
+  ("+5 ♥", or the elixir's name) for 1.5 s, one at a time per hero. Not drawn
+  during a catch-up. *(`matFx.js`)*
 - **Defeat** (0 HP): the hero's flag is furled, they limp home, lose 25 % of
-  each carried food/drink stack (and 10 % chance per gear piece), and are
+  the whole Bank stack of each carried food and drink (elixirs exempt), a
+  10 % chance per gear piece to lose that piece (the hero's own copy), and are
   **wounded for 5 minutes** of game time, returning at 50 % HP (*placeholder*
   numbers).
 
@@ -504,7 +519,9 @@ duels: `concept_combat.md`, "The level table and weapon tiers").
   their own combat skill's side (a Dagger is melee for a Fighter, stealth for a
   Rogue). An enemy's Style is one of the four combat skills (the CMS dropdown
   follows the skill registry). Every shipped enemy is melee.
-- **No regen in a fight**: below 25 % HP the hero eats instead of swinging.
+- **No regen in a fight**: below 25 % HP the hero eats food instead of
+  swinging; drinks do not heal in a fight. Elixirs are drunk as a fight starts
+  (section 4).
 - Each swing draws one random number for the miss and, on a hit, one for the
   crit, from the game's random stream in a fixed order, so a catch-up replays
   the same fights as live play.
@@ -556,6 +573,13 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   (≤ 2 Coasts nearby), bonus drops, Minecart restocking, the two promotions,
   and **Thorns** (1 damage to the hero on finishing a Redberry Bush or Thorn
   Elemental). **Everything else in the grammar is Latent.**
+- **Items carry rules too** (a hero's loadout): a carried rule on On
+  Neighbour's Fight fires as its hero's fight starts. An `Applies` of a
+  library effect may last **for the fight** (until that fight ends, at the kill
+  or when the hero leaves), which is how an elixir works: "When a fight starts,
+  applies Valor to the hero for the fight", Valor being an effect that
+  provides +1 Damage. An elixir's rules fire from its 10-fight dose, not per
+  firing from the Bank.
 - Authored only in the CMS (the Rules Line editor). Editing a library effect
   changes every Token that carries it.
 
@@ -818,7 +842,7 @@ crunch plan):
 | Promotion content | 4 Academies (Fighter, Wizard, Rogue, Ranger) on Wood or Stone Foundations, with skill & class rework v2 (crunch track). |
 | Promotion cost | Free. |
 | Kill loot | Neighbour bonuses apply to kills like work (T-017). |
-| Energy and drinks | Remove energy; drinks heal like food, separate slots (T-098). |
+| Energy and drinks | Remove energy; drinks heal like food out of fights, separate slots (T-098); in fights only food heals (brief 220). |
 | Dormant Maps | Retire (T-002). |
 | Wishing Well | Passive, part of Passive Production (T-099). |
 | Silent by default | Development convenience; audible default before shipping (T-100). |

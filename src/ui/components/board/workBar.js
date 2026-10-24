@@ -1,8 +1,10 @@
 import { onStep } from './frameClock.js';
 
 /**
- * The work bar: a thin bar along a worked Token's foot that fills once each work cycle, in whole
- * art pixels.
+ * The work bar: a thin bar that fills once each work cycle, in whole art pixels. It is drawn in
+ * the work plate under the Token and its hero (`WorkPlateLayer`); the model behind it is the
+ * Token's own: `TokenBubbles` keeps it and feeds it the engine's events, and shares it by id
+ * ({@link shareWorkBar}) for the plate to draw.
  * ⚠️ A running bar is written on the shared step clock (`frameClock.onStep`: ten steps a second,
  * every bar in the same frame) and only when its filled length changes by an art pixel; an engine
  * event only moves the model. Bars written on frames of their own (a CSS animation per bar runs
@@ -11,33 +13,8 @@ import { onStep } from './frameClock.js';
  * (`.gi-work-bar`, tailwind.css), scaled by `--work-bar-fill`: one element, no layout.
  */
 
-/** The bar's size in art pixels on a full-size Token; a small Token's is half as wide. */
+/** How many steps a model fills in until an element is attached with its own length. */
 export const WORK_BAR_ART_W = 40;
-export const WORK_BAR_ART_H = 2;
-/** How far the bar sits up from the bottom of the Token's box, in art pixels. */
-export const WORK_BAR_ART_LIFT = 2;
-
-/**
- * Where the bar sits in a Token's box, in mat units, and how many art pixels long it is
- * (`steps`): centred, along the foot of the art. `artUnit` is one art pixel in mat units
- * (`boardScaleAt(fit)`); `artPx` is how big the art is drawn, centred in the box (smaller than
- * the box when the mat is drawn small, so the box's own bottom would leave the bar floating
- * below the art).
- * @returns {{left: number, top: number, width: number, height: number, steps: number}}
- */
-export function workBarPlace(boxPx, artUnit, small = false, artPx = boxPx) {
-    const steps = small ? WORK_BAR_ART_W / 2 : WORK_BAR_ART_W;
-    const width = steps * artUnit;
-    const height = WORK_BAR_ART_H * artUnit;
-    const foot = (boxPx + Math.min(artPx, boxPx)) / 2;
-    return {
-        left: (boxPx - width) / 2,
-        top: foot - height - WORK_BAR_ART_LIFT * artUnit,
-        width,
-        height,
-        steps
-    };
-}
 
 /** How many of `steps` art pixels a fraction fills. */
 export const filledSteps = (fraction, steps) => Math.floor(Math.max(0, Math.min(1, Number(fraction) || 0)) * steps + 1e-9);
@@ -73,15 +50,24 @@ export function createWorkBar(now = () => performance.now()) {
         el.setAttribute('data-work-bar-fill', String(n));
     };
 
+    // On the step clock only while it runs AND something shows it: a model with no element costs
+    // nothing between engine events.
+    const listen = () => {
+        if (running && el) {
+            if (!offStep) offStep = onStep(paint);
+        } else if (offStep) {
+            offStep();
+            offStep = null;
+        }
+    };
     const run = () => {
         running = true;
-        if (!offStep) offStep = onStep(paint);
+        listen();
     };
     const stop = () => {
         elapsed = elapsedAt(now());
         running = false;
-        offStep?.();
-        offStep = null;
+        listen();
     };
 
     return {
@@ -91,6 +77,7 @@ export function createWorkBar(now = () => performance.now()) {
             steps = length;
             drawn = null;
             paint(now());
+            listen();
         },
         /**
          * The engine's progress on a plain cycle: `{ elapsedMs, cycleTimeMs, percent }`. With no
@@ -129,13 +116,53 @@ export function createWorkBar(now = () => performance.now()) {
         },
         /** Stop for good (the Token has left). */
         dispose() {
-            stop();
             el = null;
+            stop();
         },
         /** Where the cycle stands at time `t`, or null with no cycle length known. */
         read(t) {
             return cycleMs ? { elapsedMs: elapsedAt(t), cycleMs } : null;
         },
         get running() { return running; }
+    };
+}
+
+/** instanceId → the Token's bar model, while its `TokenBubbles` is mounted. */
+const owned = new Map();
+/** instanceId → who wants to hear when that Token's model comes or goes. */
+const watchers = new Map();
+
+const tell = (instanceId, bar) => watchers.get(instanceId)?.forEach(fn => fn(bar));
+
+/**
+ * Share Token `instanceId`'s bar model (its owner, `TokenBubbles`, while mounted).
+ * @returns {() => void} stop sharing
+ */
+export function shareWorkBar(instanceId, bar) {
+    owned.set(instanceId, bar);
+    tell(instanceId, bar);
+    return () => {
+        if (owned.get(instanceId) !== bar) return;
+        owned.delete(instanceId);
+        tell(instanceId, null);
+    };
+}
+
+/**
+ * Hear Token `instanceId`'s bar model now and whenever it comes or goes (`fn(bar | null)`): the
+ * plate attaches its element to whichever model is there.
+ * @returns {() => void} stop hearing
+ */
+export function watchWorkBar(instanceId, fn) {
+    let set = watchers.get(instanceId);
+    if (!set) {
+        set = new Set();
+        watchers.set(instanceId, set);
+    }
+    set.add(fn);
+    fn(owned.get(instanceId) || null);
+    return () => {
+        set.delete(fn);
+        if (!set.size && watchers.get(instanceId) === set) watchers.delete(instanceId);
     };
 }

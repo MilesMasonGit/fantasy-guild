@@ -22,6 +22,15 @@ const FLOATER_STYLE = Object.freeze({ textShadow: '0 1px 2px #000, 0 0 3px #000,
 const FLOATER_AT_REST_STYLE = Object.freeze({ ...FLOATER_STYLE, willChange: 'contents' });
 
 /**
+ * ⚠️ The -1 / +50 floaters are switched off: a worked Token's charges count down on its work plate
+ * instead. Kept, not deleted, because they also told of charges changing with no hero at work: a
+ * Token restocked by dropping a copy on it (its "Restocked" callout still says so), a Tool Rack or
+ * anvil worn by the station beside it, a Token refilled after resting, an enemy's charge on a kill.
+ * Those now change without a number.
+ */
+export const CHARGE_FLOATERS = false;
+
+/**
  * TokenChargeDeltaFloater: floating numbers (-1, +50) when this Token's charges change.
  * `anchor="ring"`: just above the charges ring's spot, `slot` (`{left, top}` in the Token's box,
  * the spot a ring `RING_D_U` across takes); `"corner"`: the Token's bottom-right, for a Token with

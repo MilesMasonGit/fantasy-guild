@@ -22,6 +22,7 @@ import { setLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
 import { DndContext } from '@dnd-kit/core';
 import * as Charges from '../systems/board/Charges.js';
 import { TokenBubbles } from '../ui/components/board/TokenBubbles.jsx';
+import { chargesText } from '../ui/components/board/workPlate.js';
 import { HeroBubbleLayer } from '../ui/components/board/HeroBubbleLayer.jsx';
 import { ALERT, BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { DEPLETED_TTL_MS } from '../ui/components/board/heroSpeech.js';
@@ -235,7 +236,7 @@ describe('⭐ on the mat: a change to one hero\'s flag redraws that flag alone',
     });
 });
 
-describe('⭐ a charge spent: the Token redraws, its art does not, and its -1 comes up in the same commit', () => {
+describe('⭐ a charge spent: the Token and its plate redraw, its art does not, all in one commit', () => {
     beforeAll(() => Flags.init());
     afterAll(() => { Flags.teardown(); resetMatTuning(); });
     beforeEach(() => {
@@ -255,9 +256,12 @@ describe('⭐ a charge spent: the Token redraws, its art does not, and its -1 co
         cleanup();
     });
 
-    it('on the mat: one charge spent draws the Token and its floater, never its art, sprite or name, and no ring', async () => {
+    it('on the mat: one charge spent draws the Token and its plate\'s number, never its art, sprite or name, and no ring or floater', async () => {
+        GameState.state.heroes = [{ id: 'h1', name: 'h1', status: 'idle', level: 50, skills: { forestry: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 } }];
         const t = placeAt('fixture_producer', 600, 400);
         placeAt('fixture_producer', 1000, 400);
+        Flags.plant('h1', { x: 620, y: 400 });
+        expect(BoardState.workerOf(t.id)).toBe('h1');
         const view = render(
             h(DeckDndProvider, null,
                     h(Board, { onInspectToken: () => {}, onClearInspect: () => {} }))
@@ -268,32 +272,32 @@ describe('⭐ a charge spent: the Token redraws, its art does not, and its -1 co
         await act(async () => { Charges.applyDelta(t, -1); });
         await flush();
         renders.stop();
-        // The ring no longer comes up by itself (brief 120); the -1 does.
+        // No ring comes up by itself (brief 120) and no -1 floats: the plate counts down.
         expect(view.container.querySelector(`[data-bubble="charges"][data-bubble-of="${t.id}"]`)).toBeNull();
-        expect(view.container.querySelector(`[data-token-overlay="${t.id}"] [data-charge-floater]`).textContent).toBe('-1');
+        expect(view.container.querySelector('[data-charge-floater]')).toBeNull();
+        expect(view.container.querySelector(`[data-work-plate="${t.id}"] [data-plate-cell="charges"]`).textContent).toBe(chargesText(t.usesRemaining));
         const all = JSON.stringify(renders.all());
         expect(renders.of('MatToken'), all).toBe(1);
         expect(renders.of('TokenBubbles'), all).toBe(1);
+        expect(renders.of('WorkPlate'), all).toBe(1);
         expect(renders.of('TokenHitArt'), all).toBe(0);
         expect(renders.of('TokenSprite'), all).toBe(0);
         expect(renders.of('PixelArt'), all).toBe(0);
         expect(renders.of('TokenNameBadge'), all).toBe(0);
-        // One commit: the floater came up with the charge, not a commit later.
+        // One commit: the plate's number came with the charge, not a commit later.
         expect(renders.commits().length, all).toBe(1);
     });
 
-    it('a worked Token: a charge spent mounts nothing at rest, and the work bar does not draw again', async () => {
+    it('a worked Token: a charge spent mounts nothing at rest in its own box', async () => {
         const tokenOf = (n) => ({ typeId: 'fixture_producer', instanceId: 'tok_tr', heroId: 'hero_1', alert: null, usesRemaining: n });
         const tree = (n) => h(DndContext, null, h(TokenBubbles, { instanceId: 'tok_tr', token: tokenOf(n) }));
         const view = render(tree(10));
         await flush();
-        const bar = view.container.querySelector('[data-work-bar]');
-        expect(bar).not.toBeNull();
         renders.start();
         await act(async () => { view.rerender(tree(9)); });
         renders.stop();
         expect(view.container.querySelector('[data-bubble="charges"]')).toBeNull();
-        expect(view.container.querySelector('[data-work-bar]')).toBe(bar);
+        expect(view.container.querySelector('[data-charge-floater]')).toBeNull();
         const all = JSON.stringify(renders.all());
         expect(renders.commits().length, all).toBe(1);
         expect(renders.of('Bubble'), all).toBe(0);

@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// heroes feed themselves from their own loadout grid. Food and drink both heal
-// and are NEED-driven (the 25% rule); Consumables are not need driven at all and
-// fire at the head of every loop.
+// heroes feed themselves from their own loadout grid. Food heals, in a fight and out; drink
+// heals only out of one. Both are NEED-driven (the 25% rule). Elixirs (Consumables) are drunk
+// as a fight starts: Elixirs.test.js.
 
 const { bank, ITEMS, hero } = vi.hoisted(() => ({
     bank: new Map(),
@@ -131,39 +131,25 @@ describe('eating is uncapped (D-31)', () => {
     });
 });
 
-describe('the Consumable class (D-20/D-56)', () => {
-    it('spends one of EACH equipped consumable, uncapped', () => {
-        bank.set('elixir', 3);
-        bank.set('scroll', 3);
-        const spent = ConsumptionSystem.consumeLoopConsumables('h1');
-        expect(spent.map(s => s.itemId)).toEqual(['elixir', 'scroll']);
-        expect(bank.get('elixir')).toBe(2);
-        expect(bank.get('scroll')).toBe(2);
+describe('drinks in a fight', () => {
+    // Design change (brief 220 C3): only food heals in a fight. An equipped drink is left alone,
+    // unspent, until the skill-loops design gives drinks their buffs; out of a fight it still heals.
+    it('eats food and leaves the drink alone while HP is still low', () => {
+        bank.set('bread', 5);
+        bank.set('ale', 5);
+        hero.hp.current = 2;                        // bread brings it to 22: still low
+        const meals = ConsumptionSystem.tryEat('h1', { inFight: true });
+        expect(meals.map(m => m.itemId)).toEqual(['bread']);
+        expect(hero.hp.current).toBe(22);
+        expect(bank.get('ale')).toBe(5);
     });
 
-    it('is not need-driven — it fires at full health', () => {
-        bank.set('elixir', 1);
-        hero.hp.current = hero.hp.max;
-        expect(ConsumptionSystem.consumeLoopConsumables('h1')).toHaveLength(1);
-    });
-
-    it('skips any that are out of stock and runs unbuffed for those', () => {
-        bank.set('elixir', 1);                       // scroll unstocked
-        const spent = ConsumptionSystem.consumeLoopConsumables('h1');
-        expect(spent.map(s => s.itemId)).toEqual(['elixir']);
-    });
-
-    it('leaves food and drink alone — different rhythms entirely', () => {
-        bank.set('elixir', 1); bank.set('bread', 1); bank.set('ale', 1);
-        ConsumptionSystem.consumeLoopConsumables('h1');
-        expect(bank.get('bread')).toBe(1);
-        expect(bank.get('ale')).toBe(1);
-    });
-
-    it('returns the item so the Prep Phase can apply its loop effect', () => {
-        bank.set('elixir', 1);
-        const [spent] = ConsumptionSystem.consumeLoopConsumables('h1');
-        expect(spent.item.loopEffect).toEqual({ type: 'SPEED', value: 0.3 });
+    it('does not drink when there is no food to eat', () => {
+        bank.set('ale', 5);
+        hero.hp.current = 10;
+        expect(ConsumptionSystem.tryEat('h1', { inFight: true })).toEqual([]);
+        expect(hero.hp.current).toBe(10);
+        expect(bank.get('ale')).toBe(5);
     });
 });
 

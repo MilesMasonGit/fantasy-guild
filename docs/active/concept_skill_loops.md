@@ -1,4 +1,4 @@
-Status: briefed (brief 70)
+Status: briefed 2026-10-24 (brief 230; the first pass was brief 70)
 
 # Skill loops and the board as a puzzle
 
@@ -237,7 +237,11 @@ back. The engine already has a **refill** respawn (rest at 0 charges, refill
 in place) and a **regrow** respawn (become another Token that grows back);
 no content uses either yet.
 
-### Rulings this pass (owner interview, 2026-10-22)
+### Rulings this pass (owner interview, 2026-10-22 to 2026-10-24)
+
+**These rulings win over the 2026-10-09 sections above wherever they
+differ.** The owner closed the pass 2026-10-24; built by
+[brief 230](briefs/230_skill_loops.md).
 
 **All gathering skills**
 - **Nothing ready in reach: the hero waits silently** and works the first
@@ -293,6 +297,9 @@ no content uses either yet.
 - **No smelter rule in Mining** (the Smelter is Smithing's). Gems and the
   occasional map fragment stay rare finds; the pickaxe of the tier below
   gates each ore.
+- **Danger is per map** (owner, 2026-10-24): starter and plane-1 veins are
+  safe, but a dangerous Region may put an ambush on its veins (the Volcano's
+  Fire Elementals, brief 220 C5). ⚠️ Amends "no danger in the mines".
 - **Mining closed** (owner, 2026-10-24).
 
 **Standard floor for speed-ups (all skills)**: stacked support Tokens can
@@ -359,9 +366,96 @@ minute). One number for every speed-up, in the CMS tuning. ⚠️ Replaces the
   the specialist review.
 - **Farming closed** (owner, 2026-10-24).
 
+**All station skills**
+- **Stations never wear out** (like gear). ⚠️ Today's 20-use Copper Anvil
+  changes.
+- **No working sprite**: the progress dial is the look while a hero works.
+
+**Smithing**
+- **For now, two stations: the Furnace and the Smithy.** The **Furnace**
+  smelts ore into ingots; the **Smithy** makes tools (and later the rest of
+  Smithing's output) from ingots. Both are worked by a hero. ⚠️ The anvil as
+  a context Token goes; the "furnace and anvil together work better" bonus
+  and the specialised stations (Smelter, Weapon Forge) are set aside for
+  now, not dropped.
+- **Fuel: coal (or charcoal) in the recipe**, as today.
+- **Better stations are faster, with the same recipes**: an Iron Smithy
+  makes what a Copper one makes, quicker; recipes are gated by Smithing
+  level. ⚠️ So station tiers don't gate, unlike tool tiers.
+- **A missing input stops the station**: the hero waits there and the Token
+  says what's missing ("Needs Coal", like "Needs Pickaxe") until it arrives
+  or the player moves the hero. Applies to every station skill.
+- **Smithing closed** (owner, 2026-10-24).
+
+**Cooking**
+- **Plain recipes**, no twist of its own: it feeds the fighters.
+- **Food and drinks have different stations** (food: Campfire, upgraded to
+  a Kitchen; drinks: Brewery). **Upgraded versions are faster or give other
+  bonuses**, like the Smithy, not new recipe lists.
+- **No fuel** at the Campfire.
+- **Drinks are work buffs** (owner, 2026-10-24): a drink in the drink slot
+  gives a bonus while the hero works (e.g. Coffee faster cycles, Beer more
+  XP); food is for fights. How long one lasts is a placeholder (10 work
+  cycles, like an elixir's 10 fights) until the owner says otherwise.
+- What food does in a fight belongs to the combat planning agent.
+- **Cooking closed** (owner, 2026-10-24).
+
+**Crafting**
+- **Workbench only, for now**; Kiln and Loom later.
+- **Plain recipes**: the hub skill stands apart by feeding the others.
+- **Crafting makes items, not Tokens**: **Construction builds every support
+  Token** (Forest, Field, Mine, Minecart, Dock, Well, Composter, Beehive,
+  Windmill) and every station on a Foundation. ⚠️ Overturns "it may make some
+  Tokens as well".
+- **Crafting closed** (owner, 2026-10-24).
+
+**Alchemy**
+- **One Alchemy Table for now**; upgrades are faster or give bonuses.
+- **Work potions and bait sit in the loadout grid's consumable category**
+  (unlimited, like elixirs): no extra cap; the 3×3 grid's 9 cells make
+  carrying more consumables versus more gear the player's choice.
+- **A work potion is spent only when a cycle of its own skill starts** (a
+  Birdwatcher only on Forestry); the hero keeps it while doing other work.
+- **Transmutation later**, once the economy shows what's in surplus.
+- Fight potions and elixirs belong to the combat planning agent.
+- **Alchemy closed** (owner, 2026-10-24).
+
+**Construction**
+- **Materials are paid when the build starts**, as today; short of
+  materials, the Foundation says what's missing.
+- **A better station is built on a new Foundation** (no upgrade in place):
+  the old one stays until the player demolishes it.
+- **Build times scale with the building**: small supports about 30 s,
+  stations 1–2 minutes, big buildings several minutes (per build, in the
+  CMS).
+- **Temporary Tokens stay** (the Guard Tower); which ones and what they do
+  come from the combat planning agent.
+- **Construction closed** (owner, 2026-10-24).
+
 **Forestry, added 2026-10-24**: **trees can't be dragged** (like veins: a
 wood is shaped by where Forests stand), and **every new Sapling costs one
 seedling**, a Forest's planting as well as a Stump's regrow.
 - **Forests stack fully**, down to a **floor**: a tree never regrows faster
   than a set fraction of its normal time (about a quarter; the number in the
   CMS).
+
+### Overlaps with the other planning agents
+
+- **Combat** ([concept_combat.md](concept_combat.md),
+  [brief 220](briefs/220_combat.md)): food in fights, elixirs, fight potions
+  and the "used" bubble are combat's (220 C3, which also wires
+  `consumeLoopConsumables`; this brief's work potions, bait and drinks use
+  the same machinery and are built after C3). Node ambushes are 220 C5;
+  danger is per map (Mining above). Temporary Tokens such as the Guard Tower
+  are designed by combat, built by Construction.
+- **Basic content** ([concept_basic_content.md](concept_basic_content.md),
+  [brief 240](briefs/240_basic_content.md)): its packs place trees, veins,
+  fishing spots and fields on the Starter Camp and maps; under these rulings
+  trees need a wild Forest of their species, the Coast stops turning into a
+  Shrimp Coast, the Iron Anvil becomes an Iron Smithy (faster, same
+  recipes), and fields are self-growing Tokens. Whichever lands first, the
+  other follows (240 says so too).
+- **Not decided here**: the **XP curve** (how fast skills level) gets its own
+  short interview once loops and content are playable (owner, 2026-10-24);
+  brief 240 uses today's curve. Pastures and animals wait for the specialist
+  skills.

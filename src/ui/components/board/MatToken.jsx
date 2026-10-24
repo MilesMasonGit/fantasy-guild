@@ -25,6 +25,7 @@ import { useTokenEvent } from './tokenEvents.js';
 import { useTokenDetail } from './useTokenDetail.js';
 import { TokenBubbles } from './TokenBubbles.jsx';
 import { SMALL_OVERHANG_U, spawnerRing, questRing } from './ringRow.js';
+import { plateNameDrop } from './workPlate.js';
 import { TokenNameBadge } from './TokenBadges.jsx';
 import { gearStateOf } from './centreAlert.js';
 import { TokenHitArt } from './TokenHitArt.jsx';
@@ -124,6 +125,7 @@ export const MatToken = React.memo(function MatToken({
     mapMode = null,
     onModeClick,
     dragging = false,
+    plated = false,
     onPress
 }) {
     // Perf draw switches: each only stops DRAWING (see drawSwitches.js).
@@ -565,12 +567,19 @@ export const MatToken = React.memo(function MatToken({
                 className="absolute pointer-events-none"
                 style={{ ...boxStyle, visibility: hidden ? 'hidden' : 'visible' }}
             >
-                <TokenNameBadge name={label} isDragging={hidden} shown={isRested} below offset={small ? SMALL_OVERHANG_U : 0} />
+                <TokenNameBadge
+                    name={label}
+                    isDragging={hidden}
+                    shown={isRested}
+                    below
+                    offset={(small ? SMALL_OVERHANG_U : 0) + (plated ? plateNameDrop(fit) : 0)}
+                />
 
                 {/**
-                 * The work bar, the problem mark, the player's marks and the -1 floater, and
-                 * once the pointer rests on it the rings and the gear, each in its own spot inside the Token's
-                 * box. A small Token keeps FULL-size rings and they hang off its box.
+                 * The problem mark of a Token nobody works and the player's marks, and once the
+                 * pointer rests on it the rings and the gear, each in its own spot inside the Token's
+                 * box. A small Token keeps FULL-size rings and they hang off its box. A worked
+                 * Token's cycle, charges and problem are on its work plate (`WorkPlateLayer`).
                  */}
                 {bubblesDrawn && <TokenBubbles
                     instanceId={id}
@@ -578,7 +587,6 @@ export const MatToken = React.memo(function MatToken({
                     isHovered={isRested}
                     isDragging={hidden}
                     boxPx={boxPx}
-                    artPx={artPx}
                     artUnit={artScale}
                     small={small}
                     spawner={spawnerBubble}

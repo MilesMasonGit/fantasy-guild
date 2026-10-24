@@ -54,6 +54,12 @@ export const CATCH_UP = Object.freeze({
 export const CONSUME_THRESHOLD = 0.25;
 
 /**
+ * How many fights one elixir lasts. One number for every elixir, never per item: an elixir is
+ * drunk as a fight starts and works for this many fights (each enemy engaged is one).
+ */
+export const ELIXIR_FIGHTS = 10;
+
+/**
  * Defeat penalties. Placeholder numbers, to be tuned.
  */
 export const DEFEAT_PENALTY = {

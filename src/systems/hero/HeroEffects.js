@@ -83,6 +83,25 @@ export function loadoutStatements(hero) {
     return out;
 }
 
+/**
+ * One item's own statements, stamped like `loadoutStatements`' (`sourceItemIds` is just this
+ * item), whether or not any of it is in the Bank: an elixir drunk earlier still works after its
+ * stack runs out.
+ */
+export function itemStatements(itemId) {
+    const def = getItem(itemId);
+    if (!def) return [];
+    const out = [];
+    for (const ref of effectRefsOf(def)) {
+        const entry = EFFECTS[ref.effectId];
+        if (!entry) continue;
+        for (const statement of statementsFromEntry(entry, ref)) {
+            out.push({ ...statement, sourceItemIds: [itemId] });
+        }
+    }
+    return out;
+}
+
 /** A hero's loadout statements of one keyword. */
 export function loadoutStatementsWith(hero, keyword) {
     return loadoutStatements(hero).filter(statement => statement?.keyword === keyword);

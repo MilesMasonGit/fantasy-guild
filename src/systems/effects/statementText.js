@@ -724,13 +724,15 @@ function bodySegments(statement, names) {
             const who = () => (byRole ? roleSegments(statement) : occupantSegments(statement, names));
 
             /**
-             * A library effect rather than a status. With a duration it lingers; without one it fires
-             * immediately (chaining).
+             * A library effect rather than a status. With a duration it lingers, "for the fight" it
+             * lasts until its fight ends; without either it fires immediately (chaining).
              */
             if (payload.effectId) {
                 const title = names.effect ? names.effect(payload.effectId) : payload.effectId;
                 const secs = Math.round((payload.durationMs || 0) / 100) / 10;
-                const lasting = secs > 0 ? segs(' for ', d(String(secs), 'durationMs'), ' seconds') : [];
+                const lasting = payload.forFight
+                    ? segs(' ', d('for the fight', 'forFight'))
+                    : secs > 0 ? segs(' for ', d(String(secs), 'durationMs'), ' seconds') : [];
                 return segs(d('Applies', K), ' ', d(title || '…', 'effectId'), ' to ', who(), lasting, odds);
             }
 

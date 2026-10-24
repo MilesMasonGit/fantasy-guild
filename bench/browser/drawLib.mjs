@@ -9,7 +9,8 @@ export const DRAW_SWITCHES = [
     'heroAnim', 'enemyAnim', 'walkDraw', 'itemFlight',
     'notifications', 'dock', 'drawers',
     'spriteFx', 'background', 'terrain', 'particles', 'spawnMotion', 'tokenFx', 'matFx',
-    'ambientWater', 'ambientGust', 'ambientLava', 'ambientParticles', 'ambientBirds', 'ambientClouds'
+    'ambientWater', 'ambientGust', 'ambientLava', 'ambientParticles', 'ambientBirds', 'ambientClouds',
+    'workPlate'
 ];
 
 /** Scene ids, in run order. The UI scenes are all on the S2 board. */

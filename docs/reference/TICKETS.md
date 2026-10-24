@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-240**
+**Next free number: T-247**
 
 ---
 
@@ -49,6 +49,8 @@ here.
 |---|---|---|---|---|
 | T-176 | P2 | open | **The quest board** ([concept_quests_tutorial.md](../active/concept_quests_tutorial.md), "The quest board", owner 2026-10-20): one fixture board at the bottom-left of every Region's mat; click opens its card on the quest list; up to 3 collect/hunt bounties from reachable content, Bank have/need, Claim takes items and bursts materials as floating loot; tutorial step pinned first; gold outline and ready count at rest. Replaces the loose quest Tokens. Brief 170. | owner interview |
 | T-175 | P2 | owner | (Concept still a draft, owner 2026-10-14: not for the director yet.) **Collectors: the Guild Hall and warehouses** ([concept_collectors.md](../active/concept_collectors.md)): the Hall collects all loot in a small radius from the start, widened by a ranked Hall star; warehouses built on Foundations collect items with one tag (CMS Collects block: tag, radius, interval ~60 s), bigger radius on higher tiers, no upkeep; shared sweep clock, nearest collector wins, items fly in; Bank-full leaves loot and shows the yellow mark; reach ring on hover, drag, placing. Remove the auto-collect setting. Engineer. WORK CHANGED expected. Cost-log line. Eye-check. | concept_collectors.md |
+| T-245 | P3 | open | **Carried rules read as Token rules in the Rules editor** (found by brief 220 C3, 2026-10-24): an item's rule on the fight-start moment shows as "On Neighbour's Fight" targeting "heroes on nearby Tokens"; give carried rules their own wording ("When this hero's fight starts", "to the hero") in `statementText.js` / the trigger picker. Builder-lite. No eye-check (CMS wording). | brief 220 C3 |
+| T-246 | P3 | open | **The item tooltip shows a weapon's styles, damage and speed** (found by brief 220 C2, 2026-10-24): the Bank tooltip lists name, type and effects but not `styles`, `damage`, `speed` (fast/normal/slow) or two-handed. Builder-lite; wait for C6's enemy card so both read the same. | brief 220 C2 |
 | T-026 | P3 | ride-along | Small per-tick allocations in combat and statuses. | CR3-032 |
 | T-027 | P3 | ride-along | Motion ticks allocate small objects per walker. | CR3-153 |
 
@@ -58,12 +60,12 @@ Detail, order and tiers in [brief 210](../active/briefs/210_backlog_intake.md); 
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
-| T-239 | P2 | open | **One bubble row between a hero and the Token it works**, with tooltips (BUBBLE-01). Mock-ups first; measure (T-198). Engineer. Eye-check. | brief 210 F2 |
 | T-240 | P3 | open | **The drag bench skips its Shop and Bank kinds** (found 2026-10-23, same on `main` af6b21c7): every Shop row → mat attempt says "no affordable Shop row" and every Bank item → dock hero attempt "no equippable item tile visible (0 tiles)", so `npm run bench:drag` has not tested those two drags. Likely the harness set-up predates the item stubs, the Bank changes or the tools-as-gear content. Fix the set-up so both kinds run 50/50; also `bench/drag.mjs` rests the pointer on the old sidebar strip spot (STATUS bench note). Builder. No eye-check. | Backlog director, drag bench on T-222 |
 | T-241 | P3 | open | **Loot particles and flights draw over an open Bank drawer** (seen 2026-10-24 in the drawer captures; older than the drawer change): the particle canvas sits above the drawer, so loot sparkle/flight pixels show on top of the Bank. Put the particle layer under the drawers (z-index table in UI_STYLE), or pause loot flights while a drawer covers the mat. Builder. No eye-check beyond one capture. | Backlog director, brief 210 E1 |
 | T-242 | P2 | open | **Pixel frames, round two (F1b)** (owner 2026-10-24: "do another audit to identify other places we can use our new styling"; e.g. the Bank's item tiles still have soft rounded borders): a second audit of every surface smaller than a window (tiles, slots, cards, rows, buttons, toggles, tags, pills, badges), then: unbox the insides of windows (Settings rows, save-slot cards, Typography and Promotion boxes), square the remaining rounded buttons and toggles, main actions on the kit's chamfer button, item tiles and loadout slots without soft borders. The first audit is `docs/active/research/pixel_frames/audit.md`. Builder. Eye-check. After the bubble row (T-239). | Backlog director, brief 210 F1 |
 | T-243 | P3 | open | **Mat callouts and hero speech bubbles in the pixel family**: reframe the speech-style popups (hero speech bubbles, mat callouts, the off-mat refusal callout) to match the bubble row once T-239 is built. Builder. Eye-check. | brief 210 F1 audit |
 | T-244 | P3 | open | **Nav orbs: no hover glow or scale** (UI_STYLE: hover is a 1-art-pixel white outline; no glows, no scaling). Builder-lite. Eye-check (one capture). | brief 210 F1 audit |
+| T-247 | P3 | open | **A station's gear tooltip sits under the work plate**: resting on a worked station's centre opens its recipe gear's own hover box (old in-mat markup), and the plate (T-239) draws over its lower half. Move the gear tip above the plate's layer, or fold it into the plate's open line. Builder. One capture. | Backlog director, brief 210 F2 |
 
 ### UI
 

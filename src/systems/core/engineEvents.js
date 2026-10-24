@@ -83,7 +83,7 @@ export const ENGINE_EVENTS = Object.freeze({
     HERO_DOWNED: 'hero_downed',
     /** Payload: `{ heroId, heroName, recoveredHp }`. */
     HERO_RECOVERED: 'hero_recovered',
-    /** A hero ate or drank from the Bank. Payload: `{ heroId, itemId, category, amount }`. */
+    /** A hero ate, drank or drank an elixir from the Bank (the mat's "used" bubble). Payload: `{ heroId, itemId, category, amount, elixir? }`. */
     HERO_CONSUMED: 'hero_consumed',
     /** Payload: `{ heroId, slot, itemId, action: 'equip' }` or `{ heroId, slot, itemId: null, previousItemId, action: 'unequip' }`. */
     HERO_EQUIPMENT_CHANGED: 'hero_equipment_changed',
@@ -264,7 +264,6 @@ export const NO_LISTENER = Object.freeze({
     [ENGINE_EVENTS.TOKEN_RESTOCKED]: 'player action moment; the board events carry the redraw',
     [ENGINE_EVENTS.LOOT_GENERATED]: 'combat moment; loot lands as sprites',
     [ENGINE_EVENTS.HERO_RECOVERED]: 'combat moment; HEROES_UPDATED carries the redraw',
-    [ENGINE_EVENTS.HERO_CONSUMED]: 'combat moment; INVENTORY_UPDATED carries the redraw',
     [ENGINE_EVENTS.COMBAT_ENEMY_TRAIT_TRIGGER]: 'combat moment, for a future floating-text cue',
     [ENGINE_EVENTS.STATUS_APPLIED]: 'status moment (Effects Grammar v2 will listen)',
     [ENGINE_EVENTS.STATUS_BLOCKED]: 'status moment (Effects Grammar v2 will listen)',

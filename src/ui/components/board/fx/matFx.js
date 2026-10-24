@@ -8,6 +8,12 @@ import { STRIKE_DELAY_MS } from '../hitAnimations.js';
 import { FX_FRAME_MS, heldPoses } from './pixelSteps.js';
 import { spriteOf, makeCopy } from './spriteCopy.js';
 import { tintUrl } from '../../../utils/spriteFx.js';
+import * as HeroMotion from '../../../../systems/board/HeroMotion.js';
+import { bubbleAnchorY } from '../bubbleLayout.js';
+import { ART_PX } from '../../../../config/matGeometry.js';
+import { getItem } from '../../../../config/registries/itemRegistry.js';
+import { resolveSpritePath } from '../../../../utils/AssetManager.js';
+import { itemTintName } from '../../base/itemTint.js';
 
 /**
  * The mat's effects that stand on the mat rather than on one Token's art: numbers rising off a
@@ -207,10 +213,162 @@ export function heroFlash(heroId, tint = 'green', { frames = 2 } = {}) {
     return true;
 }
 
+/** How long a "used" bubble stays over a hero. */
+export const USED_BUBBLE_MS = 1500;
+
+/** Most "used" bubbles over one hero at once, as the speech stack (`heroSpeech.MAX_BUBBLES`). */
+export const USED_BUBBLE_MAX = 3;
+
+/** Icons in a used bubble are 16 art pixels, like the level-up float's. */
+const USED_ICON_ART_PX = 16;
+
+/** The chamfer frame's line colour (`u_frame_chamfer.png`). */
+const CHAMFER_LINE = '#977316';
+
+/** Each hero's column of bubbles: `{ el, items: [{ el, anim }] }`, oldest first. */
+const usedColumns = new Map();
+
+/** Chamfer pictures by fill colour, made once each. */
+const chamferByFill = new Map();
+
+/**
+ * The game's chamfer frame (`u_frame_chamfer.png`, 7×7, 3-pixel corners) with `fill` as its
+ * centre, so the item's tint fills the whole box. Drawn in code like the gold edition in
+ * `tailwind.css`, because the picture's own centre is the panel colour.
+ */
+function chamferPicture(fill) {
+    if (chamferByFill.has(fill)) return chamferByFill.get(fill);
+    const rows = ['  LLL  ', ' LFFFL ', 'LFFFFFL', 'LFFFFFL', 'LFFFFFL', ' LFFFL ', '  LLL  '];
+    let line = '';
+    let body = '';
+    rows.forEach((row, y) => [...row].forEach((c, x) => {
+        if (c === 'L') line += `M${x} ${y}h1v1h-1z`;
+        if (c === 'F') body += `M${x} ${y}h1v1h-1z`;
+    }));
+    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='7' height='7' shape-rendering='crispEdges'>` +
+        `<path fill='${CHAMFER_LINE}' d='${line}'/><path fill='${fill}' d='${body}'/></svg>`;
+    const url = `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+    chamferByFill.set(fill, url);
+    return url;
+}
+
+/** The colour of an item-tint shade, read from the page's own `--color-item-tint-*`. */
+function tintColour(tint) {
+    const value = typeof getComputedStyle === 'function'
+        ? getComputedStyle(document.documentElement).getPropertyValue(`--color-item-tint-${tint}`).trim()
+        : '';
+    return value || '#282a30';
+}
+
+/**
+ * What a "used" bubble says for one `HERO_CONSUMED`: the health a meal gave back ("+5 ♥"), or an
+ * elixir's name. Null when there is nothing to say (a meal at full health).
+ */
+export function usedBubbleText(p) {
+    if (!p?.itemId) return null;
+    if (p.elixir) return getItem(p.itemId)?.name || p.itemId;
+    const healed = Math.round(Number(p.amount) || 0);
+    return healed > 0 ? `+${healed} ♥` : null;
+}
+
+/** The column of bubbles over a hero's head, made when first needed and kept over the head. */
+function usedColumn(heroId, x, y) {
+    let column = usedColumns.get(heroId);
+    if (!column || !column.el.isConnected) {
+        const el = document.createElement('div');
+        el.setAttribute('aria-hidden', 'true');
+        el.setAttribute('data-fx-used-column', heroId);
+        el.className = 'gi-used-column';
+        // ⚠️ On the main thread, like every effect among the Tokens (see `playAt`).
+        el.style.willChange = 'contents';
+        host.appendChild(el);
+        column = { el, items: [] };
+        usedColumns.set(heroId, column);
+    }
+    column.el.style.setProperty('--used-u', `${unit}px`);
+    column.el.style.left = `${x}px`;
+    column.el.style.top = `${y}px`;
+    return column;
+}
+
+/** Take one bubble out of its column, and the column with its last bubble. */
+function dropUsed(heroId, column, entry) {
+    entry.el.remove();
+    column.items = column.items.filter(i => i !== entry);
+    if (!column.items.length) {
+        column.el.remove();
+        if (usedColumns.get(heroId) === column) usedColumns.delete(heroId);
+    }
+}
+
+/**
+ * The "used" bubble: the item's icon and what it did in the game's chamfer pixel frame, filled with
+ * the tint the item's Bank tile wears (`itemTint.js`), so food, drink and elixirs read by colour,
+ * over the hero's head for {@link USED_BUBBLE_MS}. Measured in art pixels, text included, so it
+ * scales with the mat like the icon, and sized by its contents. Several at once stack as the
+ * speech bubbles do: oldest on top, the newest nearest the head, at most {@link USED_BUBBLE_MAX}
+ * (the oldest gives way). Nothing is drawn for a hero who is not on the mat.
+ * @returns {Animation|null}
+ */
+export function usedBubble(heroId, itemId, text) {
+    if (!host || !heroId || !text) return null;
+    const body = HeroMotion.bodyView(heroId);
+    if (!body || !Number.isFinite(body.x) || !Number.isFinite(body.y)) return null;
+
+    const column = usedColumn(heroId, body.x, bubbleAnchorY(body.y, ART_PX * unit));
+    while (column.items.length >= USED_BUBBLE_MAX) {
+        const oldest = column.items[0];
+        dropUsed(heroId, column, oldest);
+        oldest.anim?.cancel?.();
+    }
+
+    const el = document.createElement('div');
+    el.setAttribute('data-fx-used', heroId);
+    el.className = 'gi-used-bubble';
+    const item = getItem(itemId);
+    const tint = itemTintName(item);
+    el.setAttribute('data-fx-used-tint', tint);
+    el.style.borderImageSource = chamferPicture(tintColour(tint));
+    el.style.visibility = 'hidden';
+    const src = resolveSpritePath(item || itemId);
+    if (src) {
+        const icon = document.createElement('img');
+        icon.src = src.startsWith('/') || src.startsWith('http') || src.startsWith('data:') ? src : `/${src}`;
+        icon.alt = '';
+        icon.draggable = false;
+        const px = USED_ICON_ART_PX * unit;
+        Object.assign(icon.style, { width: `${px}px`, height: `${px}px`, imageRendering: 'pixelated' });
+        el.appendChild(icon);
+    }
+    const label = document.createElement('span');
+    label.textContent = text;
+    el.appendChild(label);
+    column.el.appendChild(el);
+
+    const rise = [
+        { ms: 2 * FX_FRAME_MS, y: 0 },
+        { ms: 2 * FX_FRAME_MS, y: -1 },
+        { ms: USED_BUBBLE_MS - 4 * FX_FRAME_MS, y: -2 }
+    ];
+    const { keyframes, duration } = heldPoses(shown(rise), { unit, rest: { visibility: 'hidden' } });
+    const anim = typeof el.animate === 'function' ? el.animate(keyframes, { duration, fill: 'none' }) : null;
+    const entry = { el, anim };
+    column.items.push(entry);
+    if (!anim) {
+        dropUsed(heroId, column, entry);
+        return null;
+    }
+    const done = () => { if (column.items.includes(entry)) dropUsed(heroId, column, entry); };
+    anim.onfinish = done;
+    anim.oncancel = done;
+    return anim;
+}
+
 /**
  * The layer's listeners: a damage number on every landed hit (on the strike frame), a rule's
  * number and its neighbour's spark when a rule fires, a hero's green flash when food heals them in
- * a fight, the knockout when a fight is won.
+ * a fight, the "used" bubble when a hero eats, drinks or drinks an elixir, the knockout when a
+ * fight is won.
  * @returns {() => void} unsubscribe
  */
 export function watchMatFx() {
@@ -229,6 +387,12 @@ export function watchMatFx() {
         }, UI_LISTENER),
         EventBus.subscribe(ENGINE_EVENTS.COMBAT_HERO_ATE, (p) => {
             if (p?.heroId && Number(p.healed) > 0 && isDrawn('matFx')) heroFlash(p.heroId, 'green');
+        }, UI_LISTENER),
+        // ⚠️ A UI listener, so a catch-up's meals and elixirs (a quiet bus) draw nothing.
+        EventBus.subscribe(ENGINE_EVENTS.HERO_CONSUMED, (p) => {
+            if (!p?.heroId || !isDrawn('matFx')) return;
+            const text = usedBubbleText(p);
+            if (text) usedBubble(p.heroId, p.itemId, text);
         }, UI_LISTENER),
         EventBus.subscribe(BOARD_EVENTS.COMBAT_RESOLVED, (p) => {
             if (p?.outcome !== 'victory' || !p.instanceId || !isDrawn('matFx')) return;

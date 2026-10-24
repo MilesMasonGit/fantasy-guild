@@ -15,6 +15,7 @@ import { strikesLive, heroAnimationState, hitSkillOf, hitsOnAttack } from './hit
 import { FlagLayer } from './FlagLayer.jsx';
 import { heroOutline } from './spriteOutline.js';
 import { SpriteLayerView } from './SpriteLayerView.jsx';
+import { WorkPlateLayer } from './WorkPlateLayer.jsx';
 import { TerrainCanvas } from './TerrainCanvas.jsx';
 import { AmbientLife, createGroundPictures } from './AmbientLife.jsx';
 import { TerrainGridOverlay } from './TerrainGridOverlay.jsx';
@@ -76,6 +77,7 @@ export const MatBoard = React.memo(function MatBoard({
     const alertsDrawn = useDrawn('alerts');
     const speechDrawn = useDrawn('speech');
     const terrainDrawn = useDrawn('terrain');
+    const platesDrawn = useDrawn('workPlate');
     const rootRef = useRef(null);
 
     // Read through the hook so the whole board redraws when the Mat Tuner resizes it.
@@ -286,6 +288,13 @@ export const MatBoard = React.memo(function MatBoard({
          * circle. Only the cloth of a flag drawn in front of that Token keeps the pointer, so a
          * flag standing among Tokens can always be picked up by its banner.
          */
+        // A work plate is its Token's, wherever it stands over another Token's circle.
+        const plateId = e.target?.closest?.('[data-work-plate]')?.getAttribute('data-work-plate') || null;
+        if (plateId) {
+            setFlagsYield(prev => (prev === false ? prev : false));
+            setHoveredId(prev => (prev === plateId ? prev : plateId));
+            return;
+        }
         const point = pointerToMat({ x: e.clientX, y: e.clientY }, el.getBoundingClientRect());
         let id = point ? (Flags.tokenAtPoint(point)?.id ?? null) : null;
         if (id && flagClothOver(el, e.clientX, e.clientY, id)) {
@@ -359,6 +368,22 @@ export const MatBoard = React.memo(function MatBoard({
         const at = t.x == null ? BoardState.getTokenById(t.id) : t;
         return at ? { x: at.x, y: at.y } : null;
     }, [rest.tokenId, tokens]);
+
+    /** A work plate for each hero at work, not in a fight, its Token not in the hand. */
+    const plates = useMemo(() => {
+        const byId = new Map(tokens.map(t => [t.id, t]));
+        const out = [];
+        for (const h of heroes) {
+            if (!h.tokenId || h.combat || h.tokenId === carriedId) continue;
+            const t = byId.get(h.tokenId);
+            if (!t || t.x == null) continue;
+            out.push({ tokenId: h.tokenId, heroId: h.heroId, typeId: t.typeId, x: t.x, y: t.y });
+        }
+        return out;
+    }, [heroes, tokens, carriedId]);
+    // Keyed by value, so a walking step redraws no Token or hero for it.
+    const platedKey = platesDrawn ? plates.map(p => p.tokenId).sort().join('|') : '';
+    const plated = useMemo(() => new Set(platedKey ? platedKey.split('|') : []), [platedKey]);
 
     const workedBy = useMemo(() => {
         const out = new Map();
@@ -451,6 +476,7 @@ export const MatBoard = React.memo(function MatBoard({
                     mapMode={mapMode}
                     onModeClick={handleModeClick}
                     dragging={carriedId === t.id}
+                    plated={plated.has(t.id)}
                     onPress={handleTokenPress}
                 />
             ))}
@@ -487,6 +513,7 @@ export const MatBoard = React.memo(function MatBoard({
                         fighting={h.combat}
                         hurt={h.hurt}
                         rested={rest.heroId === h.heroId}
+                        plated={h.tokenId != null && plated.has(h.tokenId)}
                     />
                 );
             })}
@@ -499,6 +526,11 @@ export const MatBoard = React.memo(function MatBoard({
 
             {/* `MAT_Z.LOOT`: loot on the floor. */}
             <SpriteLayerView />
+
+            {/* `MAT_Z.WORK_PLATE`: the plate under each hero at work and their Token, over the loot. */}
+            {platesDrawn && (
+                <WorkPlateLayer plates={plates} restTokenId={rest.tokenId} restHeroId={rest.heroId} onPress={handleTokenPress} />
+            )}
 
             {/* `MAT_Z.FX`: effects standing on the mat (rising numbers, sparks, a knockout). */}
             <MatFxLayer />

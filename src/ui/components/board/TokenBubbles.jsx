@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { BOARD_EVENTS, ALERT } from '../../../systems/board/boardEvents.js';
 import * as SpawnerSystem from '../../../systems/board/SpawnerSystem.js';
 import { getTokenType, tokenStartingUses } from '../../../config/registries/tokenRegistry.js';
@@ -10,10 +10,10 @@ import { HealthBar } from './HealthBar.jsx';
 import { enemyBarPlace } from './healthBar.js';
 import { TimerBubble } from './TimerBubble.jsx';
 import { bubbleSlot, chargesFraction, ringCount } from './ringRow.js';
-import { TokenChargeDeltaFloater, StationGearBadge, DisallowBadge, MarkedBadge } from './TokenBadges.jsx';
+import { TokenChargeDeltaFloater, CHARGE_FLOATERS, StationGearBadge, DisallowBadge, MarkedBadge } from './TokenBadges.jsx';
 import { ProblemMark } from './ProblemMark.jsx';
 import { problemOf, problemText, PROBLEM_MARK_ART_PX } from './problemMark.js';
-import { createWorkBar, workBarPlace } from './workBar.js';
+import { createWorkBar, shareWorkBar } from './workBar.js';
 import { shareCycle } from './cycleShare.js';
 
 /** What each hover ring's and player mark's tooltip says. */
@@ -34,17 +34,20 @@ const ROW_GAP_U = 4;
 /**
  * TokenBubbles: what is drawn on a Token's box besides its art. The mat shows that something is
  * happening and what is wrong, and no numbers (docs/active/concept_info_layers.md):
- * - **Work bar** (`workBar.js`), along the foot: the whole time a hero works the Token and it is
- * not a fight. Fills each cycle on the shared step clock; empty again on `CYCLE_COMPLETE`. Any
- * engine alert on the worked Token stops the cycle, so the bar holds there, grey.
- * - **Problem mark** (`ProblemMark`, the middle row): one, yellow while it waits (items, a Token
+ * - **The work bar's model** (`workBar.js`): fed here from the Token's engine events and drawn by the
+ * work plate under the Token and its hero (`WorkPlateLayer`), which also says what is made, the
+ * charges and any problem while a hero works it. Fills each cycle on the shared step clock; empty
+ * again on `CYCLE_COMPLETE`. Any engine alert on the worked Token stops the cycle, so the bar holds
+ * there, grey.
+ * - **Problem mark** (`ProblemMark`, the middle row), on a Token nobody works (a worked Token's
+ * problem is on its plate): one, yellow while it waits (items, a Token
  * beside it, charges, a choice) or red when it can't (no room, the cap, a hero who can't do the
  * work); its hover says exactly what (`problemMark.js`). From the engine's alert, a spawner's
  * stuck alert (`SPAWNER_ALERT_CHANGED`, read once on mount), or nothing chosen on a station.
  * - **Disallow and demolition marks** (the middle row): the whole time they apply.
- * - **The -1 / +50 floater**: whenever the charges change.
+ * - **The -1 / +50 floater**: switched off (`CHARGE_FLOATERS`); a worked Token's plate counts down.
  * - **Enemy health bar** (above the box): in a fight, and while an enemy is hovered.
- * - **Hovered only**: the charges, quest and spawner rings, the timer ring (growing, turning,
+ * - **Hovered only**: the charges ring (not while a hero works it: the plate has them), the quest and spawner rings, the timer ring (growing, turning,
  * resting) and the recipe gear; the gear and the spawner ring in a row of their own.
  * `isHovered` is the mat's rest (`useHoverRest`), not the bare hover: the pointer has stayed on
  * the Token for a moment, so a sweep across the mat mounts none of these.
@@ -61,7 +64,6 @@ export const TokenBubbles = ({
     isHovered = false,
     isDragging = false,
     boxPx = 128,
-    artPx = boxPx,
     artUnit = 2,
     small = false,
     spawner = null,
@@ -91,8 +93,8 @@ export const TokenBubbles = ({
     liveRef.current = { hasHero, blocked };
 
     const [bar] = useState(() => createWorkBar());
-    const barPlace = useMemo(() => workBarPlace(boxPx, artUnit, small, artPx), [boxPx, artUnit, small, artPx]);
-    const setBarRoot = useCallback((el) => bar.attach(el, barPlace.steps), [bar, barPlace.steps]);
+    // The plate draws it: shared from the commit on, before the plate attaches its fill.
+    useLayoutEffect(() => (instanceId ? shareWorkBar(instanceId, bar) : undefined), [instanceId, bar]);
 
     useEffect(() => {
         if (!instanceId) return undefined;
@@ -171,32 +173,21 @@ export const TokenBubbles = ({
 
     const chargesSlot = useMemo(() => bubbleSlot('charges', { boxPx, small }), [boxPx, small]);
 
-    // The bar, kept as the same element while nothing it draws from changes: its fill is
-    // written on the step clock, never by a render.
-    const workBar = useMemo(() => (
-        <div
-            ref={setBarRoot}
-            data-work-bar={instanceId || undefined}
-            data-work-bar-blocked={blocked ? 'true' : undefined}
-            aria-hidden="true"
-            className="gi-work-bar absolute z-20 pointer-events-none"
-            style={{ left: barPlace.left, top: barPlace.top, width: barPlace.width, height: barPlace.height }}
-        />
-    ), [setBarRoot, instanceId, blocked, barPlace]);
-
     if (isDragging) return null;
 
     const fight = hasHero && combat;
-    const showWork = hasHero && !fight;
+    // A hero at work and not fighting: the plate under them says the charges and any problem.
+    const plated = hasHero && !fight;
     const hasCharges = usesRemaining != null;
-    const showCharges = hasCharges && isHovered;
+    const showCharges = hasCharges && isHovered && !plated;
+    const showProblem = !!problem && !plated;
     const showQuest = !!quest && isHovered;
     const showSpawner = !!spawner && isHovered;
     // The bar's numbers: the fight's, else a full enemy (an enemy nobody fights is whole).
     const barHp = hp ?? (enemyHp ? { cur: enemyHp, max: enemyHp } : null);
     const showHp = (fight || (isHovered && !!enemyHp)) && !!barHp && barHp.max > 0;
     const showGear = !!gear?.show && !marked && isHovered;
-    const showRest = !!problem || disallowed || marked;
+    const showRest = showProblem || disallowed || marked;
     const showHoverRow = showGear || showSpawner;
     const startingUses = hasCharges && typeId ? tokenStartingUses(typeId) : null;
     // ⚠️ The hover row never shares the marks' row: inserted beside them it would slide the mark
@@ -253,7 +244,7 @@ export const TokenBubbles = ({
                     className="absolute z-20 flex items-center justify-center pointer-events-none"
                     style={{ left: 0, width: boxPx, top: boxPx / 2, transform: 'translateY(-50%)', gap: ROW_GAP_U }}
                 >
-                    {problem && (
+                    {showProblem && (
                         <ProblemMark problem={problem} tip={problemTip} artUnit={artUnit} dragProps={dragProps} onClick={problemClick} />
                     )}
                     {marked && (
@@ -269,7 +260,6 @@ export const TokenBubbles = ({
                 </div>
             )}
 
-            {showWork && workBar}
             {showQuest && (
                 <Bubble of={instanceId} kind="quest" style={bubbleSlot('quest', { boxPx, small })} tip={BUBBLE_TIPS.quest(quest.text)} dragProps={dragProps}>
                     <RingBadge kind="quest" fraction={quest.fraction} text={quest.text} title={BUBBLE_TIPS.quest(quest.text)} />
@@ -286,12 +276,14 @@ export const TokenBubbles = ({
                 </Bubble>
             )}
             {/* Last, so showing a ring never moves it: a number in flight is not lost. */}
-            <TokenChargeDeltaFloater
-                instanceId={instanceId}
-                anchor={hasCharges ? 'ring' : 'corner'}
-                slot={hasCharges ? chargesSlot : null}
-                atRest={!hasHero}
-            />
+            {CHARGE_FLOATERS && (
+                <TokenChargeDeltaFloater
+                    instanceId={instanceId}
+                    anchor={hasCharges ? 'ring' : 'corner'}
+                    slot={hasCharges ? chargesSlot : null}
+                    atRest={!hasHero}
+                />
+            )}
         </>
     );
 };
