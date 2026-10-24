@@ -19,15 +19,24 @@ export const WEB_W = 1000;
 export const WEB_H = 760;
 export const WEB_UNIT_PX = 400;
 
-/** The owner's star sprites, 32 art pixels square, one per lit state. */
+/** The owner's star sprites, 32 art pixels square, one per look ({@link starLook}). */
 export const STAR_ART_PX = 32;
 export const STAR_SPRITES = {
-    locked: '/assets/playmat/screens/ui_star_grey.png',
-    buyable: '/assets/playmat/screens/ui_star_blue.png',
-    bought: '/assets/playmat/screens/ui_star_blue.png',
-    maxed: '/assets/playmat/screens/ui_star_gold.png'
+    grey: '/assets/playmat/screens/ui_star_grey.png',
+    blue: '/assets/playmat/screens/ui_star_blue.png',
+    gold: '/assets/playmat/screens/ui_star_gold.png'
 };
-/** Each state's whole-pixel scale: the brighter the star, the bigger. */
+
+/**
+ * A star's look, steady: gold at its top rank, blue while the Bank can pay for its next rank
+ * now, grey otherwise. Its size still says whether it has a rank ({@link STAR_SCALE}).
+ */
+export function starLook(state, canAfford) {
+    if (state === 'maxed') return 'gold';
+    return canAfford ? 'blue' : 'grey';
+}
+
+/** Each state's whole-pixel scale: a star with a rank is bigger. */
 export const STAR_SCALE = { locked: 1, buyable: 1, bought: 2, maxed: 2 };
 export const HALL_STAR_SCALE = 3;
 /** The smallest click target around a star, so a 32 px star is not fiddly to hit. */
@@ -239,7 +248,7 @@ export const GuildHallBoard = ({
                             style={{ width: hallPx, height: hallPx, '--star-px': `${HALL_STAR_SCALE}px` }}
                         >
                             <img
-                                src={STAR_SPRITES.maxed}
+                                src={STAR_SPRITES.gold}
                                 alt="Guild Hall"
                                 className="gi-star-img"
                                 style={{ width: hallPx, height: hallPx, imageRendering: 'pixelated' }}
@@ -253,12 +262,13 @@ export const GuildHallBoard = ({
                         </div>
                     </div>
 
-                    {GUILD_UPGRADES.map((def, i) => {
+                    {GUILD_UPGRADES.map((def) => {
                         const p = at(def.id);
                         const state = nodeState(def.id, ranks);
                         const rank = ranks[def.id] || 0;
                         const isSelected = selectedUpgradeId === def.id;
                         const canAfford = (state === 'buyable' || state === 'bought') && affordable.has(def.id);
+                        const look = starLook(state, canAfford);
                         const scale = STAR_SCALE[state];
                         const starPx = STAR_ART_PX * scale;
                         const box = Math.max(starPx, HIT_PX);
@@ -272,6 +282,7 @@ export const GuildHallBoard = ({
                                     type="button"
                                     data-hall-node={def.id}
                                     data-node-state={state}
+                                    data-star-look={look}
                                     data-selected={isSelected ? 'true' : undefined}
                                     data-upgrade-available={canAfford ? 'true' : undefined}
                                     id={def.id === 'roster_size' ? 'guild-roster-upgrade-node' : def.id === 'wishing_well' ? 'guild-wishing-well-upgrade-node' : undefined}
@@ -287,16 +298,10 @@ export const GuildHallBoard = ({
                                     style={{ width: box, height: box, '--star-px': `${scale}px` }}
                                 >
                                     <img
-                                        src={STAR_SPRITES[state]}
+                                        src={STAR_SPRITES[look]}
                                         alt={def.name}
-                                        className={cn('gi-star-img', state === 'buyable' && 'gi-star-twinkle', state === 'locked' && 'opacity-60')}
-                                        style={{
-                                            width: starPx,
-                                            height: starPx,
-                                            imageRendering: 'pixelated',
-                                            // Twinkles out of step with each other.
-                                            animationDelay: state === 'buyable' ? `-${(i * 0.53) % 1.6}s` : undefined
-                                        }}
+                                        className={cn('gi-star-img', state === 'locked' && 'opacity-60')}
+                                        style={{ width: starPx, height: starPx, imageRendering: 'pixelated' }}
                                     />
                                 </button>
                                 {/* The tag: name and rank, on the side the upgrade names. */}

@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { render, fireEvent, act } from '@testing-library/react';
 import {
-    GuildHallBoard, STAR_SPRITES, STAR_SCALE, STAR_ART_PX, finishedConstellations, linkConstellation
+    GuildHallBoard, STAR_SPRITES, STAR_SCALE, STAR_ART_PX, finishedConstellations, linkConstellation, starLook
 } from '../ui/components/board/GuildHallBoard.jsx';
 import { HallSky, SKY_TILE_PX, SKY_STARS_SRC, SKY_CLOUDS_SRC } from '../ui/components/board/HallSky.jsx';
 import { selectGuildInspectSelection } from '../ui/guildInspectSelection.js';
@@ -16,7 +16,7 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { GUILD_UPGRADES, CONSTELLATIONS, HALL_NODE, getUpgradeDef } from '../config/guildUpgrades.js';
-import { SKY_SAMPLE_RANKS } from '../ui/dev/GuildHallDevSection.jsx';
+import { SKY_SAMPLE_RANKS, SKY_SAMPLE_PAID, devGiveNextPrice } from '../ui/dev/GuildHallDevSection.jsx';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     success: vi.fn(), warning: vi.fn(), error: vi.fn(), info: vi.fn(), notify: vi.fn()
@@ -34,34 +34,70 @@ beforeEach(() => {
 });
 
 describe('the Hall sky: stars by state', () => {
-    it('draws each state with its own sprite at a whole-pixel size, brighter states bigger', () => {
+    it('draws each look with its own sprite, sized by state at a whole-pixel scale', () => {
         GameState.state.progress.guildUpgrades = { ...SKY_SAMPLE_RANKS };
+        devGiveNextPrice(SKY_SAMPLE_PAID);
         const { container } = renderWeb();
-        const seen = new Set();
+        const states = new Set();
+        const looks = new Set();
         for (const def of GUILD_UPGRADES) {
             const button = container.querySelector(`[data-hall-node="${def.id}"]`);
             const state = button.getAttribute('data-node-state');
-            seen.add(state);
+            const look = button.getAttribute('data-star-look');
+            states.add(state);
+            looks.add(look);
             const img = star(container, def.id);
-            expect(img.getAttribute('src'), def.id).toBe(STAR_SPRITES[state]);
+            expect(img.getAttribute('src'), def.id).toBe(STAR_SPRITES[look]);
             expect(img.style.width, def.id).toBe(`${STAR_ART_PX * STAR_SCALE[state]}px`);
             expect(Number.isInteger(STAR_SCALE[state])).toBe(true);
             // The upgrade's own sprite is only in the details panel now.
             expect(container.querySelector(`img[src="${def.sprite}"]`)).toBeNull();
         }
-        // The QA button's sample shows all four states.
-        expect([...seen].sort()).toEqual(['bought', 'buyable', 'locked', 'maxed']);
+        // The QA button's sample shows all four states and all three looks.
+        expect([...states].sort()).toEqual(['bought', 'buyable', 'locked', 'maxed']);
+        expect([...looks].sort()).toEqual(['blue', 'gold', 'grey']);
+        for (const id of SKY_SAMPLE_PAID) {
+            expect(container.querySelector(`[data-hall-node="${id}"]`).getAttribute('data-star-look'), id).toBe('blue');
+        }
         expect(STAR_SCALE.locked).toBeLessThanOrEqual(STAR_SCALE.buyable);
         expect(STAR_SCALE.buyable).toBeLessThan(STAR_SCALE.bought);
     });
 
-    it('twinkles only the buyable stars', () => {
-        GameState.state.progress.guildUpgrades = { ...SKY_SAMPLE_RANKS };
+    it('is gold at its top rank, blue while the Bank can pay for the next rank, grey otherwise', async () => {
+        expect(starLook('maxed', false)).toBe('gold');
+        expect(starLook('bought', true)).toBe('blue');
+        expect(starLook('buyable', true)).toBe('blue');
+        expect(starLook('bought', false)).toBe('grey');
+        expect(starLook('buyable', false)).toBe('grey');
+        expect(starLook('locked', false)).toBe('grey');
+
+        // In the web: open but unaffordable is grey; its price in the Bank turns it blue, live.
+        GameState.state.progress.guildUpgrades = { bank_slots: 1 };
+        const look = (c, id) => c.querySelector(`[data-hall-node="${id}"]`).getAttribute('data-star-look');
         const { container } = renderWeb();
-        for (const def of GUILD_UPGRADES) {
-            const state = container.querySelector(`[data-hall-node="${def.id}"]`).getAttribute('data-node-state');
-            expect(star(container, def.id).classList.contains('gi-star-twinkle'), def.id).toBe(state === 'buyable');
+        expect(look(container, 'bank_tabs')).toBe('grey');
+        await act(async () => devGiveNextPrice(['bank_tabs']));
+        expect(look(container, 'bank_tabs')).toBe('blue');
+    });
+
+    it('keeps a locked star grey however rich the Bank', () => {
+        GameState.state.progress.guildUpgrades = {};
+        devGiveNextPrice(['bank_tabs']);
+        const { container } = renderWeb();
+        const node = container.querySelector('[data-hall-node="bank_tabs"]');
+        expect(node.getAttribute('data-node-state')).toBe('locked');
+        expect(node.getAttribute('data-star-look')).toBe('grey');
+    });
+
+    it('holds every star steady: no star animates', () => {
+        GameState.state.progress.guildUpgrades = { ...SKY_SAMPLE_RANKS };
+        devGiveNextPrice(SKY_SAMPLE_PAID);
+        const { container } = renderWeb();
+        for (const img of container.querySelectorAll('[data-hall-node] img')) {
+            expect(img.className).not.toMatch(/twinkle|animate-/);
+            expect(img.style.animationDelay).toBe('');
         }
+        expect(src('../tailwind.css')).not.toContain('gi-star-twinkle');
     });
 
     it('tags every star with its name and rank, locked ones included', () => {
@@ -86,7 +122,7 @@ describe('the Hall sky: stars by state', () => {
     it('makes the Hall a labelled pole star with no Hall sprite', () => {
         const { container } = renderWeb();
         const hall = container.querySelector(`[data-hall-node="${HALL_NODE}"]`);
-        expect(hall.querySelector('img').getAttribute('src')).toBe(STAR_SPRITES.maxed);
+        expect(hall.querySelector('img').getAttribute('src')).toBe(STAR_SPRITES.gold);
         expect(hall.parentElement.textContent).toContain('Guild Hall');
         expect(container.querySelector('img[src*="t_guildhall"]')).toBeNull();
     });
@@ -193,15 +229,14 @@ describe('the Hall sky: the drifting backdrop', () => {
         expect(clouds.className).toContain('gi-sky-drift-clouds');
     });
 
-    it('drifts in whole art pixels, the clouds twice as fast on another heading, by transform only', () => {
+    it('glides linearly, the clouds twice as fast on another heading, by transform only', () => {
         const css = src('../tailwind.css');
-        const rule = (name) => css.match(new RegExp(`\\.${name}\\s*\\{[^}]*animation:\\s*${name}\\s+(\\d+)s\\s+steps\\((\\d+),`));
+        const rule = (name) => css.match(new RegExp(`\\.${name}\\s*\\{[^}]*animation:\\s*${name}\\s+(\\d+)s\\s+var\\(--gi-sky-ease\\)\\s+infinite`));
         const frames = (name) => css.match(new RegExp(`@keyframes ${name}\\s*\\{([\\s\\S]*?)\\n\\}`))[1];
         const s = rule('gi-sky-drift-stars');
         const c = rule('gi-sky-drift-clouds');
-        // One tile (512 art pixels at 2×) in 512 steps: every step is one whole art pixel.
-        expect(Number(s[2])).toBe(512);
-        expect(Number(c[2])).toBe(512);
+        // Both layers take their glide from one switch, set to linear.
+        expect(css).toMatch(/\[data-hall-sky\]\s*\{\s*--gi-sky-ease:\s*linear;\s*\}/);
         expect(Number(s[1])).toBe(600);   // a tile in ten minutes
         expect(Number(c[1])).toBe(300);   // and in five
         expect(frames('gi-sky-drift-stars')).toContain('translate3d(-1024px, 0, 0)');
@@ -210,7 +245,14 @@ describe('the Hall sky: the drifting backdrop', () => {
             expect(frames(name)).not.toMatch(/background|left|top|width|height/);
         }
         // And stops under reduce motion.
-        expect(css).toMatch(/prefers-reduced-motion: reduce\)\s*\{\s*\.gi-sky-drift-stars,\s*\.gi-sky-drift-clouds,/);
+        expect(css).toMatch(/prefers-reduced-motion: reduce\)\s*\{\s*\.gi-sky-drift-stars,\s*\.gi-sky-drift-clouds\s*\{\s*animation: none;/);
+    });
+
+    it('shows no item stubs or banners over it', () => {
+        const root = src('../ui/ReactRoot.jsx');
+        expect([...root.matchAll(/<ItemStubColumn\b/g)]).toHaveLength(1);
+        expect([...root.matchAll(/<BannerStack\b/g)]).toHaveLength(1);
+        expect(root).toMatch(/\{!isGuildView && \(\s*<ErrorBoundary label="Notifications">\s*<ItemStubColumn \/>\s*<BannerStack \/>\s*<\/ErrorBoundary>\s*\)\}/);
     });
 
     it('exists only while the Hall screen is open', () => {

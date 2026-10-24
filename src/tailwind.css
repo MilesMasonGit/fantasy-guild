@@ -1060,9 +1060,15 @@ body *:not(input):not(textarea):not(code) {
   text-shadow: var(--text-outline-dark) !important;
 }
 /* The Guild Hall's night sky (`HallSky.jsx`, `GuildHallBoard.jsx`). The layers slide one
-   1024 px tile (512 art pixels at 2×) in 512 steps, so each step is one whole art pixel: the
-   stars about every 1.2 s (a tile in ten minutes), the nearer clouds about every 0.6 s and on a
-   different heading. Transforms only, so the browser moves painted layers and repaints nothing. */
+   1024 px tile (512 art pixels at 2×), the stars in ten minutes, the nearer clouds in five and on
+   a different heading. Transforms only, so the browser moves painted layers and repaints nothing.
+   The glide is `--gi-sky-ease`: `linear` moves a little every frame, softening each star a touch
+   between pixels; `steps(1024, end)` moves one screen pixel at a time and `steps(512, end)` one
+   art pixel (the stars about every 1.2 s), both always crisp. */
+[data-hall-sky] {
+  --gi-sky-ease: linear;
+}
+
 @keyframes gi-sky-drift-stars {
   from { transform: translate3d(0, 0, 0); }
   to   { transform: translate3d(-1024px, 0, 0); }
@@ -1075,12 +1081,12 @@ body *:not(input):not(textarea):not(code) {
 
 .gi-sky-drift-stars {
   will-change: transform;
-  animation: gi-sky-drift-stars 600s steps(512, end) infinite;
+  animation: gi-sky-drift-stars 600s var(--gi-sky-ease) infinite;
 }
 
 .gi-sky-drift-clouds {
   will-change: transform;
-  animation: gi-sky-drift-clouds 300s steps(512, end) infinite;
+  animation: gi-sky-drift-clouds 300s var(--gi-sky-ease) infinite;
 }
 
 /* A star's outline, one of its own art pixels (`--star-px`) wide: gold when the Bank can pay for
@@ -1101,16 +1107,6 @@ body *:not(input):not(textarea):not(code) {
   outline: none;
 }
 
-/* A buyable star twinkles: two stepped frames, no blur. */
-@keyframes gi-star-twinkle {
-  0%   { opacity: 1; }
-  50%  { opacity: 0.5; }
-}
-
-.gi-star-twinkle {
-  animation: gi-star-twinkle 1.6s steps(1, end) infinite;
-}
-
 /* A constellation just finished: its picture flashes bright in two steps, then settles. */
 @keyframes gi-constellation-glow {
   0%   { opacity: 1; }
@@ -1124,8 +1120,7 @@ body *:not(input):not(textarea):not(code) {
 
 @media (prefers-reduced-motion: reduce) {
   .gi-sky-drift-stars,
-  .gi-sky-drift-clouds,
-  .gi-star-twinkle {
+  .gi-sky-drift-clouds {
     animation: none;
   }
   .gi-constellation-glow {
