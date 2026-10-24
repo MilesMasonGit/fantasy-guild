@@ -92,6 +92,11 @@ normal text colour; a new meaning needs the owner's OK.
   may pulse its colour between two golds but never move or resize; **a
   problem (stuck, no input) is a red one** (owner, 2026-10-19). No glows,
   no bobbing, no scaling (T-147, T-153).
+- **Item tiles are tinted by the item's kind** (owner, 2026-10-23): Bank
+  tiles and filled loadout slots sit on a dark surface tinted by the item's
+  `type` (material, tool, food, drink, potion, map; `itemTint.js`), and hover
+  mixes in a little white. The tint names a kind, not a state, so it never
+  stands in for the five meanings above.
 
 ## Sprites and icons
 
