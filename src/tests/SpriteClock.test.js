@@ -343,26 +343,23 @@ describe('⭐ the strike frame meets the hit', () => {
     });
 });
 
-describe('⭐ the hero bar: sprite frames redraw nothing around them', () => {
+describe('⭐ the hero bar: frames redraw nothing in it', () => {
     const hero = (id, name) => ({ id, name, spriteId: 'hn_recruit_por', hp: { current: 100, max: 100 }, status: 'idle', equipment: {} });
     
-    it('⭐ 8 bar heroes idling: no React commit, and the slots’ layout animation never measures', async () => {
+    it('⭐ 8 bar heroes: still portraits, no React commit, and the slots’ layout animation never measures', async () => {
         GameState.state.heroes = IDS.map(id => hero(id, id));
         setLiveMatFit(1);
         let commits = 0;
         const { container } = render(h(DeckDndProvider, null,
                 h(Profiler, { id: 'bar', onRender: () => { commits += 1; } }, h(BottomHeroDock, { selectedHeroId: null }))));
-        expect(container.querySelectorAll('[data-dock-hero] [data-hero-row]')).toHaveLength(8);
+        expect(container.querySelectorAll('[data-dock-hero]')).toHaveLength(8);
+        // The bar's portraits are still pictures: nothing in it is on the sprite clock.
+        expect(container.querySelectorAll('[data-dock-hero] [data-hero-row]')).toHaveLength(0);
         for (let i = 0; i < 10; i++) frame();
 
         const rects = vi.spyOn(Element.prototype, 'getBoundingClientRect');
         commits = 0;
-        const frames = new Set();
-        for (let i = 0; i < 330; i++) {          // 2 s
-            frame();
-            frames.add(container.querySelector(`[data-dock-hero="${IDS[2]}"] [data-hero-row]`).getAttribute('data-hero-frame'));
-        }
-        expect(frames.size).toBe(8);            // the bar's heroes did idle
+        for (let i = 0; i < 330; i++) frame();  // 2 s
         expect(commits).toBe(0);
         expect(rects).not.toHaveBeenCalled();
 

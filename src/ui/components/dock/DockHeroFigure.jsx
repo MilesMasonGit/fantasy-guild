@@ -10,16 +10,13 @@ import { resolveSpritePath, resolveAnimationPath } from '../../../utils/AssetMan
 import { EventBus } from '../../../systems/core/EventBus.js';
 import * as Flags from '../../../systems/board/Flags.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
-import { AnimatedHeroSprite } from '../board/AnimatedHeroSprite.jsx';
 import { isRecallDrop, recallFromDrop } from './dockRecall.js';
 import { useDragSettleHover } from './useDragSettleHover.js';
 import { equipOrAnnounce } from './dockEquip.js';
 import { useHeroBarBubbles, clearHeroBubbles, clearHeroBubble, BAR_BUBBLES_SHOWN, BAR_BUBBLE_FADE_MS } from './heroBarBubbles.js';
 import { BubbleText } from '../board/BubbleText.jsx';
-import {
-    DOCK_STRIP_PX, DOCK_LABEL_GAP_PX,
-    isDeployedStatus, dockArtOffset, dockArtFilter, hpPercent, hpTone, HP_TONE_CLASS
-} from './dockHeroView.js';
+import { DOCK_STRIP_PX, isDeployedStatus, dockArtFilter } from './dockHeroView.js';
+import { useHeroPortrait, PORTRAIT_PX } from './heroPortrait.js';
 import { ENGINE_EVENTS, ORPHAN_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
@@ -37,14 +34,10 @@ export function dockHeroDragPayload(heroId, hero) {
 }
 
 /**
- * One hero standing in the horizontal dock.
- * The idle sprite the mat uses (`AnimatedHeroSprite`), at the mat's art size, cut off at the
- * waist by the strip's bottom edge. The name and HP bar sit above the head at the same height
- * for every hero; only the ART sinks and darkens when the hero is out on the mat, and lifts on
- * hover.
- * The sprite writes its frames straight to the element (the shared sprite clock), so an idle
- * frame re-renders nothing: not this figure, and not the slot, whose reorder animation would
- * measure its layout again.
+ * One hero in the horizontal hero bar: a portrait and the name, nothing else (HP, wounds and the
+ * rest are in the hero panel a click away). The portrait is cut once per class sheet
+ * (`heroPortrait.js`) and never animates, so the bar draws nothing per frame. A hero out on the
+ * mat is darkened; hover outlines the portrait in white.
  * Click, double-click, drag onto the mat, drop an item to equip, drop a flag to recall and
  * drop another dock hero to reorder all behave as the old tab did.
  * ⚠️ Two components on purpose. dnd-kit re-renders every component holding a drag hook at each
@@ -55,7 +48,7 @@ export function dockHeroDragPayload(heroId, hero) {
 export const DockHeroFigure = memo(function DockHeroFigure(props) {
     const { heroId, index = null, heroIds = [], onReorder } = props;
     const { isDragging: globalDragging } = useActiveDrag();
-    // No hover lift while a drop is settling (the reorder animation).
+    // No hover outline while a drop is settling (the reorder animation).
     const { isHovered, settling: isDragSettling, onHoverChange } = useDragSettleHover(globalDragging);
 
     const hero = useDockHero(heroId);
@@ -102,7 +95,6 @@ export const DockHeroFigure = memo(function DockHeroFigure(props) {
     return (
         <DockHeroFigureBody
             heroId={heroId}
-            artPx={props.artPx}
             isSelected={props.isSelected}
             onSelect={props.onSelect}
             onDoubleClick={props.onDoubleClick}
@@ -149,7 +141,6 @@ function useDockHero(heroId) {
 const DockHeroFigureBody = memo(function DockHeroFigureBody({
     heroId,
     hero,
-    artPx = 128,
     isSelected = false,
     onSelect,
     onDoubleClick,
@@ -177,21 +168,12 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
 
     const deployed = isDeployedStatus(statusState);
     const isWounded = hero.status === 'wounded';
-    const hp = Math.max(0, Math.round(hero.hp?.current ?? 0));
-    const hpMax = Math.max(1, hero.hp?.max ?? 100);
-    const pct = hpPercent(hero.hp);
-    const tone = hpTone(pct);
-
-    const offset = dockArtOffset(artPx, { deployed, hovered: lifted });
     const filter = dockArtFilter({ deployed, hovered: lifted });
 
     const sprite = hero.spriteId || hero.classId || null;
-    const animArt = sprite ? resolveAnimationPath(sprite) : null;
-    const staticArt = animArt ? null : resolveSpritePath(sprite || hero.icon || 'hn_recruit_por');
-
-    // The sprite frame's top edge sits half the art above the strip's bottom; the labels sit
-    // just above that, whatever the art is doing.
-    const labelBottom = artPx / 2 + DOCK_LABEL_GAP_PX;
+    const sheet = sprite ? resolveAnimationPath(sprite) : null;
+    const cut = useHeroPortrait(sheet);
+    const still = sheet ? null : resolveSpritePath(sprite || hero.icon || 'hn_recruit_por');
 
     return (
         <div
@@ -203,7 +185,6 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
             data-dock-hover={lifted ? 'true' : 'false'}
             data-dock-selected={isSelected ? 'true' : undefined}
             data-dock-wounded={isWounded ? 'true' : undefined}
-            data-dock-art-offset={offset}
             onClick={() => {
                 if (justDroppedRef.current) return;
                 clearHeroBubbles(heroId);
@@ -220,7 +201,7 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
                 width: '100%'
             }}
             className={cn(
-                'relative select-none cursor-pointer active:cursor-grabbing',
+                'relative flex items-end gap-1.5 select-none cursor-pointer active:cursor-grabbing',
                 lifted ? 'z-50' : 'z-40',
                 held && 'opacity-30'
             )}
@@ -240,91 +221,54 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
                 <div className="absolute inset-x-1 inset-y-0 rounded-t-lg bg-gi-primary/20 ring-2 ring-gi-primary/70 pointer-events-none" />
             )}
 
-            {/**
-             * The art window: bottom-anchored on the strip's edge and one art tall, clipping
-             * everything below the edge (the lower body). Its empty top half is room to lift
-             * into; it never takes the pointer, so the mat above stays clickable.
-             */}
+            {/* The portrait stands on the strip's bottom edge, cut at the chest. */}
             <div
-                className="absolute bottom-0 left-1/2 -translate-x-1/2 overflow-hidden pointer-events-none"
-                style={{ width: artPx, height: artPx }}
+                data-dock-portrait={sheet || still || undefined}
+                data-dock-portrait-ready={cut || still ? 'true' : 'false'}
+                className="relative shrink-0 pointer-events-none"
+                style={{ width: PORTRAIT_PX, height: PORTRAIT_PX, filter }}
             >
-                <div
-                    data-dock-art
-                    className="absolute left-0 transition-[transform,filter] duration-200 ease-out"
-                    style={{
-                        top: artPx / 2,
-                        width: artPx,
-                        height: artPx,
-                        transform: `translateY(${offset}px)`,
-                        filter
-                    }}
-                >
-                    {animArt ? (
-                        <AnimatedHeroSprite
-                            src={animArt}
-                            heroId={heroId}
-                            alt={hero.name || 'Hero'}
-                            size={artPx}
-                            animationState="idle"
-                        />
-                    ) : staticArt ? (
-                        <img
-                            src={staticArt.startsWith('/') ? staticArt : `/${staticArt}`}
-                            alt={hero.name || 'Hero'}
-                            draggable={false}
-                            style={{ width: artPx, height: artPx, maxWidth: 'none', imageRendering: 'pixelated' }}
-                        />
-                    ) : null}
-                </div>
+                {(cut || still) && (
+                    <img
+                        src={cut || (still.startsWith('/') ? still : `/${still}`)}
+                        alt=""
+                        draggable={false}
+                        style={{
+                            width: PORTRAIT_PX,
+                            height: PORTRAIT_PX,
+                            maxWidth: 'none',
+                            imageRendering: 'pixelated',
+                            // A still portrait is not cut here, so it is turned to face left.
+                            transform: cut ? undefined : 'scaleX(-1)'
+                        }}
+                    />
+                )}
             </div>
 
-            {/* Name and HP bar: one height for every hero, deployed or not. */}
-            <div
-                data-dock-label
-                className="absolute inset-x-0 flex flex-col items-center gap-0.5 pointer-events-none"
-                style={{ bottom: labelBottom }}
+            <span
+                data-dock-name={heroId}
+                className={cn(
+                    'self-center min-w-0 break-words ui-text-body font-bold leading-tight tracking-wide pointer-events-none',
+                    isSelected ? 'text-gi-gold' : isWounded ? 'text-red-300' : 'text-white'
+                )}
+                style={{ textShadow: '0 1px 3px #000, 0 0 4px #000' }}
             >
-                <span
-                    data-dock-name={heroId}
-                    className={cn(
-                        'max-w-full truncate px-1 ui-text-body font-bold leading-none tracking-wide',
-                        isSelected ? 'text-gi-gold' : isWounded ? 'text-red-300' : 'text-white'
-                    )}
-                    style={{ textShadow: '0 1px 3px #000, 0 0 4px #000' }}
-                >
-                    {isWounded && <span aria-label="Wounded" className="text-red-400">✚ </span>}
-                    {hero.name}
-                </span>
-                <div
-                    data-dock-hp={pct}
-                    data-dock-hp-tone={tone}
-                    title={`${hp.toLocaleString()} / ${hpMax.toLocaleString()} HP${isWounded ? ' (wounded)' : ''}`}
-                    className={cn(
-                        'w-14 h-1 rounded-full bg-black/70 overflow-hidden',
-                        isWounded && 'ring-1 ring-red-500/80'
-                    )}
-                >
-                    <div
-                        className={cn('h-full transition-[width] duration-300', HP_TONE_CLASS[tone])}
-                        style={{ width: `${pct}%` }}
-                    />
-                </div>
-            </div>
+                {hero.name}
+            </span>
 
             {bubbles.length > 0 && (
                 <BarBubbles
                     heroId={heroId}
                     bubbles={bubbles}
-                    bottom={labelBottom + LABEL_PX}
+                    bottom={DOCK_STRIP_PX + BUBBLE_GAP_PX}
                 />
             )}
         </div>
     );
 });
 
-/** The name and HP bar's height plus a small gap, so a bubble's tail stops clear of the name. */
-const LABEL_PX = 24;
+/** The gap between the bar's top edge and the lowest bubble's tail. */
+const BUBBLE_GAP_PX = 6;
 
 /** A wheel turn this soon after the last one is the same flick: one page per flick. */
 const WHEEL_GAP_MS = 200;

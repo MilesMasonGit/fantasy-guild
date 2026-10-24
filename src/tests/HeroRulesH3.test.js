@@ -184,21 +184,21 @@ describe('H3 v2: the grid', () => {
         expect(q(big, '[data-rules-body]').getAttribute('data-rows-shown')).toBe('8');
     });
 
-    it('columns: every work skill, Starting then specialist, then one Combat column, under group headers', () => {
+    it('columns: one Combat column first, then every work skill, Starting then specialist, under group headers', () => {
         const view = openDrawer();
         const cols = qa(view, '[data-rules-col]').map(el => el.getAttribute('data-rules-col'));
         expect(cols).toEqual([
+            FlagRules.FIGHT,
             ...getSkillIdsByLayer(SKILL_LAYERS.STARTING),
             ...getSkillIdsByLayer(SKILL_LAYERS.ADVANCED),
-            ...getSkillIdsByLayer(SKILL_LAYERS.MASTER),
-            FlagRules.FIGHT
+            ...getSkillIdsByLayer(SKILL_LAYERS.MASTER)
         ]);
         expect(cols.length).toBe(SKILL_COUNT - getSkillIdsByLayer(SKILL_LAYERS.COMBAT).length + 1);
-        expect(qa(view, '[data-rules-group]').map(el => el.getAttribute('data-rules-group'))).toEqual(['starting', 'specialist', 'combat']);
+        expect(qa(view, '[data-rules-group]').map(el => el.getAttribute('data-rules-group'))).toEqual(['combat', 'starting', 'specialist']);
         expect(q(view, '[data-rules-group="specialist"]').textContent).toBe('Specialist');
         // A hairline opens each group after the first.
         const starts = qa(view, '[data-rules-col][data-group-start]').map(el => el.getAttribute('data-rules-col'));
-        expect(starts).toEqual([getSkillIdsByLayer(SKILL_LAYERS.ADVANCED)[0], FlagRules.FIGHT]);
+        expect(starts).toEqual([getSkillIdsByLayer(SKILL_LAYERS.STARTING)[0], getSkillIdsByLayer(SKILL_LAYERS.ADVANCED)[0]]);
     });
 
     it('a skill the hero does not hold is a blank, dimmed cell that ignores clicks', () => {

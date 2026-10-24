@@ -72,9 +72,14 @@ vi.mock('../ui/components/board/HeroBubbleLayer.jsx', async (orig) => {
 });
 vi.mock('../ui/components/board/AnimatedHeroSprite.jsx', async (orig) => {
     const real = await orig();
-    // The mat's figure passes a class; the bar's does not.
-    const AnimatedHeroSprite = (props) => { bump(props.className ? drawn.matHero : drawn.dockHero, props.heroId); return real.AnimatedHeroSprite(props); };
+    // The mat's figure passes a class; the bar draws portraits, not sprites.
+    const AnimatedHeroSprite = (props) => { if (props.className) bump(drawn.matHero, props.heroId); return real.AnimatedHeroSprite(props); };
     return { ...real, AnimatedHeroSprite, default: AnimatedHeroSprite };
+});
+// Read once per render of a hero in the bar (its level-up bubbles), and nowhere else.
+vi.mock('../ui/components/dock/heroBarBubbles.js', async (orig) => {
+    const real = await orig();
+    return { ...real, useHeroBarBubbles: (heroId) => { bump(drawn.dockHero, heroId); return real.useHeroBarBubbles(heroId); } };
 });
 
 /**

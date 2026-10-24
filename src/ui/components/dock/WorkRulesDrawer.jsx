@@ -12,15 +12,16 @@ import { GameState } from '../../../state/GameState.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { SkillIcon } from '../base/SkillIcon.jsx';
 import { Tooltip } from '../base/Tooltip.jsx';
+import { PixelFrame, FRAME_KIND } from '../base/PixelFrame.jsx';
 import { isRecallDrop, recallFromDrop } from './dockRecall.js';
 import { skillLevelText } from './heroPanelSkills.js';
 import { DOCK_STRIP_PX } from './dockHeroView.js';
 import {
-    MAX_ROWS, ruleGroups, isRuleColumn, columnName, columnPurpose, cellOf, clickCell, toggleRow, toggleColumn,
+    MAX_ROWS, ruleGroups, columnName, columnPurpose, cellOf, clickCell, toggleRow, toggleColumn,
     tintLightness, levelTint, highlightHero
 } from './workRules.js';
 
-/** The drawer's slide-down (`duration-200`), plus a little slack, before it unmounts. */
+/** The drawer's slide away (`duration-200`), plus a little slack, before it unmounts. */
 const DRAWER_CLOSE_MS = 250;
 /** Every skill cell, header cells included, is this square; 32 px fits the skill icon. */
 export const CELL_PX = 32;
@@ -31,47 +32,47 @@ const GEAR_SRC = '/assets/ui/u_gear.png';
 /** The gear sprite's own size: it draws at 1×. */
 const GEAR_PX = 32;
 
-/** The launcher's slot width at the hero bar's left end; the heroes start after it. */
-export const LAUNCHER_PX = 136;
+/** The launcher's slot width at the hero bar's left end, inside the mat's edges; the heroes start after it. */
+export const LAUNCHER_PX = 160;
 
 /** The name a player reads for the rules grid, everywhere. */
 export const WORK_PERMISSIONS = 'Work Permissions';
 
 /**
- * The hero bar's Work Permissions launcher: its own framed slot at the bar's left end, the gear
- * and the label, with a divider before the heroes. The only way to the grid. Toggles the drawer.
+ * The hero bar's Work Permissions launcher: a solid chamfer-framed button at the bar's left end,
+ * under the mat's left edge, with the gear and the label. The only way to the grid. Toggles the
+ * drawer; it reads gold while the drawer is open and sinks into its shadow while pressed.
  */
 export const WorkRulesButton = ({ open = false, onToggle }) => (
     <div
         data-work-rules-slot
-        className="absolute left-0 top-0 bottom-0 z-50 flex items-stretch p-1 border-r border-white/15"
+        className="absolute left-0 top-0 bottom-0 z-50 flex items-center pl-1 pr-2"
         style={{ width: LAUNCHER_PX }}
+        // ⚠️ Stops the press reaching the bar's drop zone and any hero under it.
+        onPointerDown={e => e.stopPropagation()}
     >
         <Tooltip title={WORK_PERMISSIONS} lines={['Which skills each hero works, and in what order.']}>
-            <button
-                type="button"
-                data-work-rules-button
-                aria-pressed={open ? 'true' : 'false'}
-                aria-label={WORK_PERMISSIONS}
-                // ⚠️ Stops the press reaching the bar's drop zone and any hero under it.
-                onPointerDown={e => e.stopPropagation()}
-                onClick={(e) => { e.stopPropagation(); onToggle?.(); }}
-                className={cn(
-                    'flex-1 min-w-0 flex items-center gap-1.5 px-1.5 rounded-md border cursor-pointer transition-colors',
-                    open ? 'border-ui-gold/70 bg-white/10' : 'border-white/15 bg-black/30 hover:border-ui-white/60'
-                )}
-            >
-                <img
-                    src={GEAR_SRC}
-                    alt=""
-                    draggable={false}
-                    className="shrink-0 pointer-events-none"
-                    style={{ width: GEAR_PX, height: GEAR_PX, imageRendering: 'pixelated' }}
-                />
-                <span className={cn('ui-text-small font-bold leading-tight text-left', open ? 'text-ui-gold' : 'text-white')}>
-                    Work<br />Permissions
-                </span>
-            </button>
+            <PixelFrame kind={FRAME_KIND.CHAMFER} className="group flex-1 min-w-0" frameClassName="group-active:translate-x-[4px] group-active:translate-y-[4px]">
+                <button
+                    type="button"
+                    data-work-rules-button
+                    aria-pressed={open ? 'true' : 'false'}
+                    aria-label={WORK_PERMISSIONS}
+                    onClick={(e) => { e.stopPropagation(); onToggle?.(); }}
+                    className="ui-shine w-full flex items-center gap-1.5 pr-1 cursor-pointer"
+                >
+                    <img
+                        src={GEAR_SRC}
+                        alt=""
+                        draggable={false}
+                        className="shrink-0 pointer-events-none"
+                        style={{ width: GEAR_PX, height: GEAR_PX, imageRendering: 'pixelated' }}
+                    />
+                    <span className={cn('ui-text-small font-bold leading-tight text-left', open ? 'text-ui-gold' : 'text-ui-white')}>
+                        Work<br />Permissions
+                    </span>
+                </button>
+            </PixelFrame>
         </Tooltip>
     </div>
 );
@@ -100,8 +101,9 @@ function useHeroesRefresh() {
 }
 
 /**
- * The Work Permissions grid, in a drawer that slides up from behind the hero bar, as wide as its
- * content and no wider than the mat: one row per hero, one column per work skill, then Combat. Open until the launcher or
+ * The Work Permissions grid, in a chamfer-framed drawer that slides up from below the hero bar
+ * and rests on it, as wide as its content and no wider than the mat: one row per hero, Combat
+ * first, then one column per work skill. Open until the launcher or
  * Escape closes it; the mat stays usable. Rules go through `Flags.setRule`, so the engine sees
  * nothing new.
  */
@@ -111,7 +113,7 @@ export const WorkRulesDrawer = ({ open = false, heroPanelOpen = false, litHeroId
     const [mounted, setMounted] = useState(open);
     const [entered, setEntered] = useState(false);
 
-    // ⚠️ Unmounted after its slide-down: dnd-kit ignores opacity and pointer-events, so a closed
+    // ⚠️ Unmounted after it slides away: dnd-kit ignores opacity and pointer-events, so a closed
     // drawer left mounted would still catch drops inside its box.
     useEffect(() => {
         if (open) {
@@ -183,17 +185,19 @@ export const WorkRulesDrawer = ({ open = false, heroPanelOpen = false, litHeroId
                 right: insets.right,
                 maxWidth: `calc(100% - ${insets.left + insets.right}px)`
             }}
-            className="absolute mx-auto w-max z-45 overflow-hidden pointer-events-auto select-none"
+            className="absolute mx-auto w-max z-45 pointer-events-auto select-none"
         >
-            <div
-                className={cn(
-                    'rounded-t-lg border border-b-0 bg-[#140e0b]/95 shadow-[0_0_24px_rgba(0,0,0,0.6)] transition-[transform,opacity] duration-200 ease-out',
-                    recall.valid ? 'border-gi-success/70' : 'border-white/10',
-                    open && entered ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'
-                )}
+            {/* Closed, it waits below the bottom of the screen (the column clips it there) and
+                rises past the hero bar into place. */}
+            <PixelFrame
+                kind={FRAME_KIND.CHAMFER}
+                data-work-rules-panel
+                className="transition-transform duration-200 ease-out motion-reduce:transition-none"
+                frameClassName={cn(recall.valid && 'outline-2 outline-gi-success/70')}
+                style={{ transform: open && entered ? 'translateY(0)' : `translateY(calc(100% + ${DOCK_STRIP_PX + 8}px))` }}
             >
                 <RulesGrid litHeroId={litHeroId} />
-            </div>
+            </PixelFrame>
         </div>
     );
 };

@@ -6,26 +6,26 @@ import { HIGHLIGHT_ATTR } from '../board/tokenHighlight.js';
 
 /**
  * The Work Permissions grid's model: plain functions over the hero records and `Flags.setRule`, so
- * the tests can pin them without rendering. Rows are heroes; columns are every work skill, then
- * one Combat column (the hero's fighting, whichever combat skill they hold).
+ * the tests can pin them without rendering. Rows are heroes; columns are one Combat column (the
+ * hero's fighting, whichever combat skill they hold), then every work skill.
  */
 
 /** The most hero rows the drawer shows before it scrolls. */
 export const MAX_ROWS = 8;
 
 /**
- * The column groups, left to right: Starting, specialist (Advanced then Master), then the one
- * Combat column. Every column is shown for every hero; a skill the hero lacks is a blank cell.
+ * The column groups, left to right: the one Combat column, Starting, then specialist (Advanced
+ * then Master). Every column is shown for every hero; a skill the hero lacks is a blank cell.
  */
 export function ruleGroups() {
     return [
+        { id: 'combat', name: '', columns: [FlagRules.FIGHT] },
         { id: 'starting', name: 'Starting', columns: getSkillIdsByLayer(SKILL_LAYERS.STARTING) },
         {
             id: 'specialist',
             name: 'Specialist',
             columns: [...getSkillIdsByLayer(SKILL_LAYERS.ADVANCED), ...getSkillIdsByLayer(SKILL_LAYERS.MASTER)]
-        },
-        { id: 'combat', name: '', columns: [FlagRules.FIGHT] }
+        }
     ];
 }
 
