@@ -168,3 +168,5 @@ T-228 — Work Permissions as a chamfered button under the mat, drawer rising fr
 T-231 — No toasts or item stubs over the Guild Hall upgrade screen; they wait on the mat — 02cb806b — 2026-10-23
 T-232 — The Hall sky drifts in a smooth linear glide (owner's pick; draws level with steps) — 02cb806b — 2026-10-23
 T-233 — Stars stop blinking: grey nothing affordable or locked, blue affordable now, gold maxed; outlines on hover only (owner) — 02cb806b — 2026-10-23
+T-234 — Guild Hall Effects as a popover on the Hall star (hover shows, click pins, Esc or outside closes); the web about a third bigger; Inspect panel in the pixel kit — e6abf4e2 — 2026-10-24
+T-194 — Opening the Guild Hall glides from the mat up to the sky and back (HallCamera, from tag atlas-camera-move); skippable, reduced motion swaps; mat unmounted at rest on the sky (owner: keep the 0.2 s start back; other views land at once) — e6abf4e2 — 2026-10-24

@@ -5,12 +5,12 @@ five-line summary at each batch's edges (proposed, looked at); anything older
 than two days is trimmed. States: queued · building · ready (tests, cycles,
 build green) · bench-queued · eye-check · merged.*
 
-## Backlog director, batch D: the Guild Hall upgrade screen (brief 210; owner said go 2026-10-23)
+## Backlog director, batch D: the Guild Hall upgrade screen (brief 210; owner said go 2026-10-23) — **done, merged e6abf4e2**
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
 | D1: calmer sky: no toasts or stubs over the screen, smooth drift, stars grey/blue/gold (T-231 to T-233) | builder | `backlog/hall-sky` | **merged** 02cb806b: no toasts or stubs over the screen, linear glide (owner; draws level), grey/blue/gold stars (blue = affordable now), outlines on hover only (owner; the pinned star's always-on outline went too). Merged result: 5825 tests, cycles, build | Fri | Fri |
-| D2: Hall Effects popover from the central star, Inspect panel in pixel style, the camera glide back (T-234, T-194); after D1 | builder (panels) `backlog/hall-panels` (`dp`), engineer (glide) `backlog/hall-glide` (`dc`) | both | building | Fri | |
+| D2: Hall Effects popover from the central star, Inspect panel in pixel style, the camera glide back (T-234, T-194); after D1 | builder (panels), engineer (glide) | `backlog/hall-panels` + `backlog/hall-glide` | **merged** e6abf4e2: Effects popover on the Hall star, Inspect in the pixel kit, the glide up and down (owner: keep the 0.2 s start back; other views land at once). Glide merged into panels by the panels builder (ReactRoot conflicts). Gate 5850 tests, cycles, build, same work, no timing regression; draw A/B in PERFORMANCE | Fri | Sat |
 
 ## Backlog director, batch C: Bank, items and the hero bar (brief 210; owner said go 2026-10-23) — **done, merged 957cb9ba**
 

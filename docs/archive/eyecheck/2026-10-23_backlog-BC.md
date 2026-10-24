@@ -35,3 +35,18 @@ owner's ok by phone merges). Captures under `docs/active/research/`
 - Hover an item stub marked "New!": the mark goes.
 - Open Work Permissions from the button under the mat; check the drawer.
 - Drag an enemy and a hero on the mat: the ghost starts under the pointer.
+
+## Batch D (main e6abf4e2), looked at 2026-10-23/24
+
+11. **Calmer Hall sky**: no toasts or stubs over it; drift: smooth glide
+    (picked over pixel steps); stars grey/blue/gold. Verdict: ok; outlines
+    on hover only, never at rest.
+12. **Hall Effects popover, pixel Inspect panel.** Verdict: ok. The Hall star
+    no longer closes the screen (Return, Esc and the orb do).
+13. **The camera glide.** Verdict: ok; keep the 0.2 s start on the way back
+    (the mat is off while you're in the Hall); other views from the Hall land
+    on the mat at once.
+
+When back at the PC: open the Guild Hall (glide up), hover and click the
+central star (popover), Return to Playmat (glide down), open the Bank from the
+sky (lands at once).
