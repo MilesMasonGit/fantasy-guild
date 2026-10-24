@@ -1,57 +1,37 @@
-import React, { useState, useCallback } from 'react';
-import { Ruler, RotateCcw } from 'lucide-react';
+// The QA panel's Mat dials: the free playmat's rules, collapsed until opened.
+// ⚠️ DEV BUILDS ONLY: TestDashboard renders this behind `import.meta.env.DEV && …`.
+
+import { useState, useCallback } from 'react';
+import { RotateCcw } from 'lucide-react';
 import {
     MAT_TUNABLES, matTuning, setMatTuning, resetMatTuning, isMatTuned, matTuningDefault
 } from '../../config/matTuning.js';
-import { CloseX } from './base/CloseX.jsx';
 
 /**
- * MatTuner: developer panel for the free playmat's rules, separate from the terrain
- * `PlaymatTuner`. Built entirely from `MAT_TUNABLES` in `config/matTuning.js`: adding a
- * setting is adding a row there, with no UI to write.
- * Moving a slider changes gameplay live: `TileModifiers` listens for the change and rebuilds
- * every tile; whatever draws a tuned number hears `onMatTuningChanged` itself.
+ * Built entirely from `MAT_TUNABLES` in `config/matTuning.js`: adding a setting is adding a row
+ * there, with no UI to write. Moving a slider changes gameplay live: `TileModifiers` listens for
+ * the change and rebuilds every tile; whatever draws a tuned number hears `onMatTuningChanged`
+ * itself.
  */
-export const MatTuner = React.memo(() => {
-    const [isOpen, setIsOpen] = useState(false);
+export function MatTunerDevSection() {
     const [, bump] = useState(0);
-
     const refresh = useCallback(() => bump(n => n + 1), []);
-
     const groups = [...new Set(MAT_TUNABLES.map(t => t.group))];
 
-    if (!isOpen) {
-        return (
-            <button
-                onClick={() => setIsOpen(true)}
-                className="fixed bottom-4 right-48 z-(--z-dev-tools) p-3 rounded-full bg-gi-primary text-black shadow-lg hover:scale-110 transition-transform flex items-center gap-2 font-bold"
-                title="Open Mat Tuner"
-            >
-                <Ruler className="w-5 h-5" /> TUNER
-            </button>
-        );
-    }
-
     return (
-        <div className="fixed bottom-4 right-[18rem] z-(--z-dev-tools) w-72 bg-gi-surface/95 border border-gi-primary rounded-xl p-4 flex flex-col pointer-events-auto">
-            <div className="flex items-center justify-between mb-3 border-b border-gi-border pb-2">
-                <div className="flex items-center gap-2 text-gi-primary font-bold">
-                    <Ruler className="w-4 h-4" /> MAT TUNER
-                </div>
-                <div className="flex items-center gap-1">
-                    <button
-                        onClick={() => { resetMatTuning(); refresh(); }}
-                        disabled={!isMatTuned()}
-                        title="Back to shipped defaults"
-                        className="p-1 rounded text-gi-muted hover:bg-gi-primary/20 hover:text-gi-primary transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
-                    >
-                        <RotateCcw className="w-4 h-4" />
-                    </button>
-                    <CloseX onClick={() => setIsOpen(false)} />
-                </div>
-            </div>
-
-            <div className="overflow-y-auto max-h-[60vh] custom-scrollbar pr-1 space-y-4">
+        <details className="mb-3 pb-3 border-b border-gi-border" data-testid="qa-mat-tuner">
+            <summary className="ui-text-title font-bold uppercase tracking-wider text-gi-muted cursor-pointer">
+                Mat dials (dev only)
+            </summary>
+            <div className="mt-2 space-y-4">
+                <button
+                    onClick={() => { resetMatTuning(); refresh(); }}
+                    disabled={!isMatTuned()}
+                    title="Back to shipped defaults"
+                    className="flex items-center gap-1 px-2 py-1 rounded bg-gi-primary/10 hover:bg-gi-primary/20 border border-gi-primary/40 text-xs font-bold transition-colors disabled:opacity-30"
+                >
+                    <RotateCcw className="w-3 h-3" /> Back to defaults
+                </button>
                 {groups.map(group => (
                     <div key={group}>
                         <div className="ui-text-body font-bold uppercase tracking-wider text-gi-muted mb-2">
@@ -91,12 +71,6 @@ export const MatTuner = React.memo(() => {
                     </div>
                 ))}
             </div>
-
-            <div className="ui-text-body text-center text-gi-muted mt-3 uppercase tracking-widest font-bold">
-                Dev only — changes play on this device
-            </div>
-        </div>
+        </details>
     );
-});
-
-export default MatTuner;
+}

@@ -30,8 +30,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const SRC = path.resolve(here, '..');
 
 const DEV_PANELS = new Set([
-    'ui/components/TestDashboard.jsx',
-    'ui/components/MatTuner.jsx'
+    'ui/components/TestDashboard.jsx'
 ]);
 
 function sourceFiles(dir) {
