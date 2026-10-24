@@ -221,7 +221,7 @@ export const RecipeList = ({ def, instanceId = null, selectedRecipeId = null, wo
                     </button>
                 )}
             </div>
-            <div className="rounded-sm bg-black/65 py-1 flex flex-col">
+            <div className="bg-black/65 py-1 flex flex-col">
                 {!hasRecipes && !query && (
                     <div data-recipe-empty className="px-2 py-3 ui-text-body text-gi-muted">
                         No {skillLabel(skill)} recipes yet.

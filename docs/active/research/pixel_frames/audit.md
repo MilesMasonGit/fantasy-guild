@@ -69,3 +69,93 @@ Inspect column and Effects popover, Guild Hall details, Work Permissions button 
 the remaining rounded buttons and toggles in the six modals and the catch-up, and give the main
 actions the kit's chamfer button. Plus two small tickets: the mat callouts with the bubble family
 (after F2), and the nav orbs' hover glow.
+
+## Round two: every surface smaller than a window (T-242)
+
+Branch `backlog/pixel-frames-2`, from `main` at 231e1fc8. The owner (2026-10-24): "still using the
+soft borders on the items in the bank; do another audit to identify other places we can use our
+new styling". Same words as above, plus **pixel line** for the new hard 2 px (1 art pixel) edge
+in the frames' own colour (`--color-ui-frame`, #977316, the drawn pixels of `u_frame_chamfer.png`).
+
+Before/after sheets with 2x close-ups: `round2/sheet_1_bank.png` (Bank tiles, hover, Select mode,
+loadout), `round2/sheet_2_settings.png` (Settings, Typography), `round2/sheet_3_windows.png` (save
+slots, Promotion, Edit hero, Change job), `round2/sheet_4_small.png` (catch-up buttons, the
+Priorities switch, the top bar's buttons). Made with `round2/capture_round2.mjs` (every surface
+opened by clicking, at 1920 x 1080) and `round2/sheet_round2.mjs`.
+
+### The new kit pieces
+
+| Piece | Where it lives | Look |
+|---|---|---|
+| Item tile (`ui-item-tile`, reworked) | `src/tailwind.css` | square, pixel line; hover: the tint a little lighter **and** the line white |
+| Empty well (`ui-slot-empty`) | `src/tailwind.css` | square, dark well, the pixel line dimmed; hover white |
+| Pixel edge (`ui-pixel-edge`) | `src/tailwind.css` (plus an unlayered copy for `<input>` and `<select>`, which the input reset in `styles/main.css` would otherwise round) | square, pixel line; hover or focus white |
+| Slider (`ui-range`) | `src/tailwind.css` | a 6 px bar in the frame colour, a square white thumb with a hard black line |
+| `KitButton` | `src/ui/components/base/KitButton.jsx` | the chamfer frame with its hard shadow (as the Hall's Upgrade button); gold words and the shine for the main action, muted words for a second choice, red for one that loses something; greys out when disabled |
+| `PixelSwitch`, `PixelToggle` | same file | a square track with the pixel line and a square white knob; the fill is the caller's meaning colour (green in Settings, gold for Priorities) |
+
+All of them are on the style sheet page (QA, Style Sheet) under "Buttons, switch, slider, boxes,
+slots", marked unapproved. Nothing is drawn per frame: they are borders and static pictures.
+
+### Reframed in round two
+
+| Surface | File | Before | After |
+|---|---|---|---|
+| **Bank item tiles** | `drawer/BankTab.jsx` (`ItemTileBody`) | rounded 8 px, hairline, grey hover edge; Select mode a translucent ring | item tile: square, pixel line, white on hover; chosen in Select mode: white line |
+| Bank tabs (the 16 squares) and the locked ones | `BankTab.jsx` | rounded, hairline; open tab white | wells; open tab a gold line (UI_STYLE: gold is the selected tab) |
+| Bank Select button, search box | `BankTab.jsx` | rounded, hairline | pixel edge |
+| Bank's slot counter (`18/64`) | `BankTab.jsx` | a rounded pill with a hairline (red-tinted when full) | plain number (red when full) |
+| **Loadout slots**, filled | `dock/DockEquipmentGrid.jsx` | rounded, white/50 hairline, red edge on hover | item tile: square, pixel line, white on hover |
+| Loadout slots, empty | same | rounded, dashed hairline, gold hover | wells |
+| Loadout count badge | same | round pill, soft shadow | square, hard black line |
+| Settings: the setting rows (switches, selects, sliders, the Typography row) | `modals/SettingsModal.jsx` | each a rounded box with a hairline (a soft shadow on Typography's) | unboxed rows |
+| Settings: switches | same | round pill switch | `PixelToggle` (green) |
+| Settings: selects, sliders | same | rounded, hairline | pixel edge; `ui-range` |
+| Settings: tabs on the left | same | rounded, filled, 4 px white bar | no fill; a 1-art-pixel gold line beside the open tab |
+| Settings: Adjust Scale, Save Game Now, Done | same | rounded, filled, soft shadow | `KitButton` (Adjust Scale plain, the other two main) |
+| Save-slot cards | `modals/SlotSelectionModal.jsx` | rounded boxes, dashed when empty, a soft glow on Last Played, a red glow while asking to delete | unboxed rows with faint lines between; white outline on hover; a red outline while asking to delete |
+| Save slots: New Game, Load, Confirm, Cancel, the bin | same | rounded, filled | `KitButton` (main, main, red, plain); the bin a bare icon button |
+| Typography scale: the seven size boxes, their sample boxes, sliders | `modals/TypographyScaleModal.jsx` | rounded boxes inside rounded boxes, soft shadow, dashed sample frame | unboxed rows; `ui-range` |
+| Typography scale: Reset Defaults, Save & Close | same | rounded, filled, soft shadow, shrinks when pressed | `KitButton` (plain, main) |
+| Promotion: the trade box | `modals/PromotionCeremonyModal.jsx` | a rounded box with a hairline | faint dividers above and below |
+| Promotion: Not yet, Become, Done | same | rounded, filled | `KitButton` (plain, main, main) |
+| Edit hero: Change job, Cancel, Save | `modals/HeroEditModal.jsx` | rounded, filled | `KitButton` (plain, plain, main) |
+| Edit hero: name box | same | rounded, hairline | pixel edge |
+| Edit hero: portrait and flag swatches | same | rounded, hairline | wells; the chosen one a white line |
+| Change job: the job cards, the hint box | `modals/JobChangeModal.jsx` | rounded, hairline; current job a gold hairline | wells (current a gold line, chosen white); the hint a plain line under a divider |
+| While you were away: its buttons; the loading bar | `hud/CatchUpOverlay.jsx` | rounded, filled; a round-ended bar | `KitButton` (Return main, Load as I left it plain, Confirm red, Cancel plain); square bar |
+| Work Permissions: the Priorities switch | `dock/WorkRulesDrawer.jsx` | round pill switch | `PixelSwitch`, small, gold |
+| The playmat top bar's Disallow, Demolish, Allow all, Cancel all marks | `board/MatModeControls.jsx` | rounded, 1 px edge, gold hover | square, 2 px edge, white hover |
+| Token Summary rows | `board/MatCapBadge.jsx` | rounded hover fill | the kit's white hover outline |
+| Hero panel: the edit (quill) button, skill rows, XP bars, HP bar | `drawer/HeroInspectionSheet.jsx`, `base/VitalBar.jsx` | rounded hover fill; round-ended bars | bare icon button (white on hover); square rows and bars |
+| Hero bar: the level-up page arrows, the XP bars, the drop highlight, the drop line's glow | `dock/DockHeroFigure.jsx` | rounded; a soft gold glow on the drop line; a translucent ring | square; no glow; a white outline |
+| Hero tabs beside the Bank, their drop line's glow | `dock/HeroDockTab.jsx` | rounded on the open side; soft gold glow | square; no glow |
+| Shop's variant select | `drawer/ShopDrawer.jsx` | rounded, hairline | pixel edge |
+| The Token card's recipe list plate | `board/RecipeList.jsx` | 2 px rounded | square |
+| Drag ghost's count badge | `dnd/DragGhost.jsx` | round pill | square, hard black line |
+| A missing sprite's placeholder box | `base/ItemIcon.jsx` | rounded, hairline | plain dark square |
+| Full Token inspection (not reachable today, see above) | `drawer/TokenInspection.jsx` | rounded portrait, tags, action buttons | square |
+
+The guard is `src/tests/PixelFrameSmallPieces.test.js` (no rounded corners, soft shadows or
+translucent rings in the reframed files; the tile and well rules in the CSS; the kit button and
+switch; Settings rendered tab by tab).
+
+### Left alone in round two, and why
+
+| What | File | Why left |
+|---|---|---|
+| The work plate | `WorkPlateLayer.jsx` | Just built in the kit (T-239) |
+| Hero speech bubbles, mat callouts, the off-mat refusal callout | `HeroBubbleLayer.jsx`, `DockHeroFigure.jsx` (bar bubbles), `CalloutLayer.jsx`, `ScreenCalloutLayer.jsx` | T-243 |
+| Nav orbs (hover glow and scale, the round drop ring and its glow, the red dot) | `BubbleMenu.jsx` | T-244 |
+| The station gear badge and its hover box | `TokenBadges.jsx` | T-247 moves it; it is in-mat markup |
+| Health bars over heroes and enemies on the mat; the loot count badge on the mat | `HealthBar.jsx`, `SpriteLayerView.jsx` | The mat itself, and combat (the Systems director's agents are building it) |
+| The drag ghost's red "can't" icon (soft red glow, bouncing) | `DragGhost.jsx` | A glow and a bob break UI_STYLE's hover rule, but it is a drag cue, not a surface; candidate ticket beside the orbs (T-244) |
+| Item ribbons (`EntityRibbon`): rounded, hairline, a soft inner shadow, the sprite scaling 2x on hover | `EntityRibbon.jsx` | An approved kit piece used everywhere (recipes, drops, the Shop, the catch-up, Token cards); squaring it changes every list at once and its 2x hover zoom is a behaviour. Proposed as its own ticket |
+| Quest tooltip's tutorial tag and reward pills | `QuestTooltip.jsx` | Approved kit pieces (round one) |
+| Hero faces in the recipe list (round) | `RecipeList.jsx` | A portrait crop, not a box |
+| Dev panels (QA dashboard, FPS counter, dev sections), the crash fallback box, the CMS | `TestDashboard.jsx`, `FPSCounter.jsx`, `dev/*`, `ErrorBoundary.jsx`, `cms/` | Not player surfaces (the style sheet page's item tile demo and its new kit section were updated: it is the kit's reference) |
+| The mat, its terrain grid's rounded clip, the Atlas sprite hover | `MatBoard.jsx`, `TerrainGridOverlay.jsx`, `AtlasScreen.jsx` | The mat itself; the Atlas hover is already a hard white outline |
+| Faint dividers (`border-t border-white/10` and the like) | many | UI_STYLE allows a faint divider |
+| The Settings sidebar's vector icons, the save slots' emoji | `SettingsModal.jsx`, `SlotSelectionModal.jsx` | Content, not frames: vector icons go with T-162 |
+| Settings tabs as the full tab kit (a row, sprite and word, the line under) | `SettingsModal.jsx` | The vertical tabs keep their layout, with a gold line beside the open one; a tab row is a layout change |
+| The Shop's variant select in the captures | `ShopDrawer.jsx` | Reframed, but it shows only for a Token with variants, which a new game's Shop does not have, so it is not on the sheets |

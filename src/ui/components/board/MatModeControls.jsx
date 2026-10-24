@@ -10,9 +10,9 @@ import { cn } from '../../utils/cn.js';
 import { useEscapeLayer } from '../../utils/escapeLayers.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
-/** The bar's button look, shared with the Token cap and Upkeep badges. */
-const BUTTON_CLS = 'flex items-center gap-1.5 px-3 py-1.5 rounded border whitespace-nowrap cursor-pointer transition-colors';
-const OFF_CLS = 'bg-black/30 border-[#2a1d15] text-amber-100 hover:border-gi-gold/60 hover:text-white';
+/** The bar's buttons: square, a 1-art-pixel line, white on hover. */
+const BUTTON_CLS = 'flex items-center gap-1.5 px-3 py-1.5 border-2 whitespace-nowrap cursor-pointer transition-colors';
+const OFF_CLS = 'bg-black/30 border-[#2a1d15] text-amber-100 hover:border-[var(--color-ui-white)] hover:text-white';
 /** A mode's toggle while it is on, in the mode's colour: muted grey, red. */
 const ON_CLS = {
     [MAP_MODE.DISALLOW]: 'bg-black/50 border-[var(--color-ui-muted)] text-white',

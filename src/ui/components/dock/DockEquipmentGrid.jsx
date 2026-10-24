@@ -141,6 +141,7 @@ const EquipSlotBody = memo(function EquipSlotBody({ heroId, slot, itemId, quanti
     return (
         <div
             ref={nodeRef}
+            data-equip-slot={slot}
             onContextMenu={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -150,10 +151,10 @@ const EquipSlotBody = memo(function EquipSlotBody({ heroId, slot, itemId, quanti
             }}
             style={item ? itemTintStyle(item) : undefined}
             className={cn(
-                'relative aspect-square rounded border flex items-center justify-center overflow-visible transition-all select-none',
+                'relative aspect-square flex items-center justify-center overflow-visible transition-colors select-none',
                 item
-                    ? 'ui-item-tile border-gi-primary/50 cursor-grab active:cursor-grabbing hover:border-gi-danger'
-                    : 'border-dashed border-gi-border/50 bg-black/40 hover:border-gi-gold/40',
+                    ? 'ui-item-tile cursor-grab active:cursor-grabbing'
+                    : 'ui-slot-empty',
                 cue && 'ring-2 ring-emerald-400 border-emerald-400 bg-emerald-950/40',
                 held && 'opacity-40'
             )}
@@ -168,7 +169,7 @@ const EquipSlotBody = memo(function EquipSlotBody({ heroId, slot, itemId, quanti
                 <span className="text-sm opacity-20 text-gi-muted pointer-events-none">+</span>
             )}
             {/* An item just landed: the button shine passes over the slot once. */}
-            {shineKey != null && <span key={shineKey} data-equip-shine className="ui-shine ui-shine-once rounded" />}
+            {shineKey != null && <span key={shineKey} data-equip-shine className="ui-shine ui-shine-once" />}
             {category && (
                 <PixelGlyph
                     name={slotGlyphName(category)}
@@ -179,8 +180,8 @@ const EquipSlotBody = memo(function EquipSlotBody({ heroId, slot, itemId, quanti
             )}
             {showQuantity && (
                 <span className={cn(
-                    'absolute -bottom-1 -left-1 min-w-[18px] h-[18px] px-1 rounded-full pointer-events-none',
-                    'bg-gi-label-bg text-gi-label-text border border-black/60 shadow',
+                    'absolute -bottom-1 -left-1 min-w-[18px] h-[18px] px-1 pointer-events-none',
+                    'bg-gi-label-bg text-gi-label-text border-2 border-black',
                     'ui-text-body font-bold leading-none tabular-nums flex items-center justify-center',
                     quantity === 0 && 'bg-gi-danger text-white'
                 )}>

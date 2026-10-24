@@ -148,7 +148,7 @@ const SummaryRow = ({ row }) => (
         data-token-summary-row={row.typeId}
         onMouseEnter={() => highlightType(row.typeId)}
         onMouseLeave={() => highlightType(null)}
-        className="flex items-baseline justify-between gap-3 px-1 py-0.5 rounded-sm hover:bg-white/10 cursor-default"
+        className="flex items-baseline justify-between gap-3 px-1 py-0.5 hover:outline-2 hover:outline-solid hover:-outline-offset-2 hover:outline-[var(--color-ui-white)] cursor-default"
     >
         <span className="truncate">{rowLabel(row)}</span>
         <span className="shrink-0 flex gap-2 tabular-nums">

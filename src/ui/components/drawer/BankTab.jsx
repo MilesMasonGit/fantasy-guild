@@ -189,10 +189,10 @@ export const BankTab = () => {
                 <button
                     onClick={() => (selectMode ? exitSelectMode() : setSelectMode(true))}
                     className={cn(
-                        'flex items-center gap-1.5 px-2 py-1 rounded border text-(length:--font-size-xs) font-bold uppercase tracking-wide transition-colors',
+                        'ui-pixel-edge flex items-center gap-1.5 px-2 py-1 text-(length:--font-size-xs) font-bold uppercase tracking-wide transition-colors cursor-pointer',
                         selectMode
-                            ? 'border-gi-primary bg-gi-primary/15 text-gi-text'
-                            : 'border-gi-border text-gi-muted hover:text-gi-text hover:border-gi-muted'
+                            ? 'border-[var(--color-ui-white)] bg-white/15 text-gi-text'
+                            : 'text-gi-muted hover:text-gi-text'
                     )}
                 >
                     <BoxSelect size={11} /> {selectMode ? 'Done' : 'Select'}
@@ -209,8 +209,8 @@ export const BankTab = () => {
                 <Tooltip lines={['Item stacks in the bank / slot capacity']}>
                 <span
                     className={cn(
-                        'text-(length:--font-size-xs) font-bold px-1.5 py-0.5 rounded border tabular-nums ml-auto',
-                        stocked.length >= bank.maxSlots ? 'text-gi-danger border-gi-danger/40 bg-gi-danger/10' : 'text-gi-muted border-gi-border'
+                        'text-(length:--font-size-xs) font-bold px-1.5 py-0.5 tabular-nums ml-auto',
+                        stocked.length >= bank.maxSlots ? 'text-gi-danger' : 'text-gi-muted'
                     )}
                 >
                     {stocked.length}/{bank.maxSlots}
@@ -328,15 +328,14 @@ const ItemTileBody = memo(function ItemTileBody({ entry, onSelect, checked, sele
             data-item-tint={itemTintName(template)}
             style={itemTintStyle(template)}
             className={cn(
-                'ui-item-tile relative flex flex-col items-center justify-center p-3 rounded-lg border transition-all duration-200 cursor-grab active:cursor-grabbing text-center min-w-0 min-h-0 aspect-square',
-                'border-gi-border hover:border-gi-muted',
-                checked && 'border-gi-primary bg-gi-primary/15 ring-1 ring-gi-primary/60',
+                'ui-item-tile relative flex flex-col items-center justify-center p-3 transition-colors cursor-grab active:cursor-grabbing text-center min-w-0 min-h-0 aspect-square',
+                checked && 'border-[var(--color-ui-white)] bg-gi-primary/15',
                 cue && 'ring-2 ring-gi-primary border-gi-primary',
                 held && 'opacity-40'
             )}
         >
             {checked && (
-                <span className="absolute top-1 right-1 w-4 h-4 rounded bg-gi-primary text-black flex items-center justify-center">
+                <span className="absolute top-1 right-1 w-4 h-4 bg-gi-primary text-black flex items-center justify-center">
                     <Check size={11} strokeWidth={3} />
                 </span>
             )}
@@ -371,7 +370,7 @@ const BankTabStrip = ({ tabs, activeId, onSelect, firstItemByTab, onDropToTab })
             ))}
             {Array.from({ length: Math.max(0, BANK_TAB_CAP - tabs.length) }, (_, i) => (
                 <Tooltip key={`locked-${i}`} lines={['Locked — unlock more tabs via Guild Hall upgrades']}>
-                    <div className="w-10 h-10 rounded border border-gi-border/30 bg-black/20 flex items-center justify-center text-gi-muted/30 shrink-0">
+                    <div className="ui-slot-empty w-10 h-10 flex items-center justify-center text-gi-muted/30 shrink-0">
                         <Lock size={12} />
                     </div>
                 </Tooltip>
@@ -412,8 +411,8 @@ const BankTabButtonBody = memo(function BankTabButtonBody({ tab, index, first, a
             {...droppableProps}
             title={first ? `Tab ${index + 1} — ${first.name}` : `Tab ${index + 1} (empty)`}
             className={cn(
-                'w-10 h-10 rounded border flex items-center justify-center transition-colors shrink-0',
-                active ? 'border-gi-primary bg-gi-primary/15' : 'border-gi-border bg-black/40 hover:border-gi-muted',
+                'ui-slot-empty w-10 h-10 flex items-center justify-center transition-colors shrink-0 cursor-pointer',
+                active && 'border-[var(--color-ui-gold)]',
                 cue && 'ring-2 ring-gi-primary border-gi-primary'
             )}
         >
@@ -429,7 +428,7 @@ const SEARCH_INPUT_STYLE = { padding: 0, border: 'none', background: 'transparen
 
 /** The Bank's search box, in its header: it searches every tab. */
 const BankSearch = ({ value, onChange }) => (
-    <div className="flex items-center gap-1 px-2 py-1 rounded border border-gi-border focus-within:border-gi-muted w-44">
+    <div className="ui-pixel-edge flex items-center gap-1 px-2 py-1 w-44">
         <input
             data-bank-search
             value={value}
@@ -443,7 +442,7 @@ const BankSearch = ({ value, onChange }) => (
                 onClick={() => onChange('')}
                 title={t('bank.clearSearch')}
                 aria-label={t('bank.clearSearch')}
-                className="text-gi-muted hover:text-gi-text p-0.5 rounded cursor-pointer shrink-0"
+                className="text-gi-muted hover:text-gi-text p-0.5 cursor-pointer shrink-0"
             >
                 <X size={12} />
             </button>

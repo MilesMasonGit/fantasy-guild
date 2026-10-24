@@ -261,7 +261,7 @@ const ShopRowBody = memo(function ShopRowBody({ item, chosen, ok, onPick, held, 
                             onPointerDown={e => e.stopPropagation()}
                             onKeyDown={e => e.stopPropagation()}
                             aria-label={`${item.name}: pick one`}
-                            className="min-w-0 max-w-full text-sm font-bold text-gi-text bg-gi-base border border-gi-border/50 rounded px-1 cursor-pointer"
+                            className="ui-pixel-edge min-w-0 max-w-full text-sm font-bold text-gi-text bg-gi-base px-1 cursor-pointer"
                         >
                             {options.map(o => <option key={o.typeId} value={o.typeId}>{o.name}</option>)}
                         </select>

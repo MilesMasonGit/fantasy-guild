@@ -7,6 +7,10 @@ import * as NotificationSystem from '../../systems/core/NotificationSystem.js';
 import { formatTimeAgo } from '../../utils/Formatters.js';
 import { cn } from '../utils/cn.js';
 import { Play, Plus, Trash2, AlertTriangle } from 'lucide-react';
+import { KitButton, KIT_BUTTON_TONE } from '../components/base/KitButton.jsx';
+
+/** A save slot's row: no box (UI_STYLE "rows are never boxed"); the list draws faint lines between. */
+const ROW = 'relative flex justify-between items-center px-2 py-3 w-full';
 
 /** Lifetime playtime, saved in milliseconds (the game clock's tick deltas), as `2h 5m`. */
 export function formatPlaytime(ms) {
@@ -71,17 +75,18 @@ export const SlotSelectionModal = ({ isOpen, onSelect }) => {
 
         if (isEmpty) {
             return (
-                <div key={index} className="flex justify-between items-center p-4 bg-black/40 rounded-lg border border-dashed border-white/20 hover:border-gi-primary/50 transition-colors w-full">
+                <div key={index} data-save-slot={slotNumber} className={`${ROW} hover:outline-2 hover:outline-solid hover:-outline-offset-2 hover:outline-[var(--color-ui-white)]`}>
                     <div className="flex flex-col">
                         <span className="text-gray-500 font-bold uppercase tracking-widest text-sm">Slot {slotNumber} — Empty</span>
                         <span className="ui-text-body text-gray-600 uppercase tracking-widest">No save data</span>
                     </div>
-                    <button
+                    <KitButton
                         onClick={() => handleSelect(index)}
-                        className="bg-gi-primary/20 hover:bg-gi-primary text-gi-primary hover:text-black font-bold py-2 px-6 rounded transition-colors flex items-center gap-2 tracking-widest uppercase text-xs border border-gi-primary/50"
+                        className="mr-1"
+                        buttonClassName="gap-2 py-1.5 px-4 tracking-widest uppercase text-xs"
                     >
                         <Plus size={16} /> New Game
-                    </button>
+                    </KitButton>
                 </div>
             );
         }
@@ -92,13 +97,13 @@ export const SlotSelectionModal = ({ isOpen, onSelect }) => {
         const isPendingDelete = deleteAttemptIndex === index;
 
         return (
-            <div key={index} className={cn(
-                "relative flex flex-col md:flex-row justify-between md:items-center p-4 rounded-lg border-2 transition-all w-full gap-4 overflow-hidden group",
-                isPendingDelete 
-                    ? "bg-red-900/20 border-red-500 shadow-glow" 
-                    : (isLastActive 
-                        ? "bg-gi-primary/5 border-gi-primary shadow-[0_0_15px_rgba(46,204,113,0.1)]" 
-                        : "bg-black/60 border-white/10 hover:border-white/30")
+            <div key={index} data-save-slot={slotNumber} className={cn(
+                ROW, 'md:flex-row flex-col md:items-center gap-4 group',
+                // Room for the Last Played tag above the buttons.
+                isLastActive && !isPendingDelete && 'pt-7',
+                isPendingDelete
+                    ? 'outline-2 outline-solid -outline-offset-2 outline-[var(--color-ui-red)]'
+                    : 'hover:outline-2 hover:outline-solid hover:-outline-offset-2 hover:outline-[var(--color-ui-white)]'
             )}>
                 {isLastActive && !isPendingDelete && (
                     <div className="absolute top-0 right-0 bg-gi-primary text-black px-2 py-0.5 ui-text-small font-bold uppercase tracking-widest z-10">
@@ -130,30 +135,33 @@ export const SlotSelectionModal = ({ isOpen, onSelect }) => {
                             <div className="text-red-400 text-xs font-bold uppercase tracking-widest flex items-center gap-1 mr-2 px-2">
                                 <AlertTriangle size={14} /> Delete Forever?
                             </div>
-                            <button
+                            <KitButton
+                                tone={KIT_BUTTON_TONE.DANGER}
                                 onClick={() => handleDelete(index)}
-                                className="bg-red-600 hover:bg-red-500 text-white font-bold py-1.5 px-3 rounded transition-colors text-xs"
+                                buttonClassName="py-1 px-3 text-xs"
                             >
                                 Confirm
-                            </button>
-                            <button
+                            </KitButton>
+                            <KitButton
+                                tone={KIT_BUTTON_TONE.PLAIN}
                                 onClick={() => setDeleteAttemptIndex(null)}
-                                className="bg-black/80 hover:bg-gray-800 border border-white/20 text-gray-300 py-1.5 px-3 rounded transition-colors text-xs"
+                                className="mr-1"
+                                buttonClassName="py-1 px-3 text-xs"
                             >
                                 Cancel
-                            </button>
+                            </KitButton>
                         </>
                     ) : (
                         <>
-                            <button
+                            <KitButton
                                 onClick={() => handleSelect(index)}
-                                className="bg-white/10 hover:bg-white text-white hover:text-black font-bold py-2 px-6 rounded transition-colors flex items-center gap-2 tracking-widest uppercase text-xs border border-white/10"
+                                buttonClassName="gap-2 py-1.5 px-6 tracking-widest uppercase text-xs"
                             >
                                 <Play size={14} /> Load
-                            </button>
+                            </KitButton>
                             <button
                                 onClick={() => setDeleteAttemptIndex(index)}
-                                className="bg-black/40 border border-white/10 hover:border-red-500 text-gray-500 hover:text-red-500 p-2 rounded transition-colors"
+                                className="text-gray-500 hover:text-red-500 p-2 transition-colors cursor-pointer"
                                 title="Delete Save File"
                             >
                                 <Trash2 size={16} />
@@ -174,7 +182,7 @@ export const SlotSelectionModal = ({ isOpen, onSelect }) => {
         >
             <div className="flex flex-col gap-4 py-2">
                 <p className="text-sm text-gray-400 mb-2 uppercase tracking-widest">Pick a save slot to play:</p>
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-col divide-y divide-white/10">
                     {[0, 1, 2].map(renderSlotCard)}
                 </div>
                 {/* The slot screen's messages: a plain line, red for a problem. */}

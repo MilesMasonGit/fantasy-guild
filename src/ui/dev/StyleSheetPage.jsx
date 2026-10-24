@@ -39,6 +39,7 @@ import { bannerText } from '../../systems/notifications/bannerKinds.js';
 import { BookTab } from '../components/atlas/AtlasTome.jsx';
 import { MapSprite, MapOutline, MAP_PX, SLOT_PX } from '../components/atlas/MapPieces.jsx';
 import { WorkPlateDemo } from './WorkPlateDemo.jsx';
+import { KitButton, KIT_BUTTON_TONE, PixelToggle } from '../components/base/KitButton.jsx';
 
 /** One art pixel of the UI, in screen pixels: UI sprites draw at 2×. */
 const ART_PX = 2;
@@ -415,6 +416,27 @@ const TINT_SAMPLES = [
     { type: 'other', id: null }
 ];
 
+/** The kit's small controls, live. */
+const KitControlsDemo = () => {
+    const [on, setOn] = useState(true);
+    const [level, setLevel] = useState(60);
+    return (
+        <div className="flex flex-wrap items-center gap-5">
+            <KitButton buttonClassName="px-3 py-1">Save</KitButton>
+            <KitButton tone={KIT_BUTTON_TONE.PLAIN} buttonClassName="px-3 py-1">Cancel</KitButton>
+            <KitButton tone={KIT_BUTTON_TONE.DANGER} buttonClassName="px-3 py-1">Delete</KitButton>
+            <KitButton disabled buttonClassName="px-3 py-1">Can’t</KitButton>
+            <PixelToggle on={on} onClick={() => setOn(v => !v)} />
+            <input type="range" min="0" max="100" value={level} onChange={e => setLevel(Number(e.target.value))} className="ui-range w-32" />
+            <input placeholder="Type here" className="ui-pixel-edge bg-black/40 px-2 py-1 text-sm w-32" />
+            <div className="flex gap-1.5">
+                <div className="ui-slot-empty w-10 h-10" />
+                <div className="ui-slot-empty w-10 h-10 border-[var(--color-ui-white)] bg-white/15" />
+            </div>
+        </div>
+    );
+};
+
 /** Bank tiles on their type's surface; hover one for the lighter surface and its tooltip. */
 const ItemTilesDemo = () => (
     <div className="flex items-end gap-3 flex-wrap">
@@ -426,7 +448,7 @@ const ItemTilesDemo = () => (
                         <div
                             data-kit-item-tile={type}
                             style={itemTintStyle(item)}
-                            className="ui-item-tile w-24 h-24 rounded-lg border border-gi-border hover:border-gi-muted flex items-center justify-center"
+                            className="ui-item-tile w-24 h-24 flex items-center justify-center"
                         >
                             {id && getItem(id) ? <ItemIcon item={item} size={64} title={null} /> : null}
                         </div>
@@ -604,7 +626,7 @@ export const KIT_SECTIONS = [
         )
     },
     {
-        id: 'main-button', title: 'Main action button', status: 'unapproved', source: 'none yet',
+        id: 'main-button', title: 'Main action button', status: 'unapproved', source: 'KitButton (base/KitButton.jsx); the Hall’s Upgrade button wears the same frame',
         rule: 'Chamfer pixel frame, gold text. When it can’t be used it greys out and the reason shows underneath.',
         Demo: () => (
             <div className="flex flex-wrap items-start gap-6">
@@ -694,8 +716,14 @@ export const KIT_SECTIONS = [
     {
         id: 'item-tiles', title: 'Item tiles and their tooltip', status: 'unapproved',
         source: 'ui-item-tile + itemTint.js (the Bank’s tiles, a hero’s loadout slots); ItemTip (the Bank’s tooltip)',
-        rule: 'Each tile sits on a dark, low-colour surface chosen by the item’s type (material, tool, food, drink, potion, map; anything else plain), a little lighter on hover, so a sprite’s dark outline reads. A surface, not a colour meaning. Hover shows everything about the item: name, type and count, Equippable: <slot>, its tool or what it restores, tags, description, and for a map what it writes.',
+        rule: 'Each tile is square, with the frames’ 1-art-pixel line, and sits on a dark, low-colour surface chosen by the item’s type (material, tool, food, drink, potion, map; anything else plain); on hover the surface is a little lighter and the line white, so a sprite’s dark outline reads. A surface, not a colour meaning. Hover shows everything about the item: name, type and count, Equippable: <slot>, its tool or what it restores, tags, description, and for a map what it writes.',
         Demo: ItemTilesDemo
+    },
+    {
+        id: 'kit-controls', title: 'Buttons, switch, slider, boxes, slots', status: 'unapproved',
+        source: 'KitButton, PixelToggle (base/KitButton.jsx); ui-pixel-edge, ui-range, ui-slot-empty (src/tailwind.css)',
+        rule: 'Every boxed button is the chamfer button: gold words for the main action, muted for a second choice, red for one that loses something. The switch, the slider, a box to type in and a select are square with the frames’ 1-art-pixel line, white on hover. An empty slot or a choice tile is a dark well with a dimmed line; the chosen one has a white line.',
+        Demo: KitControlsDemo
     },
     {
         id: 'slot-marks', title: 'Loadout slot kind marks', status: 'unapproved', source: 'PixelGlyph slot_* (a hero’s loadout slots, bottom-right corner)',
