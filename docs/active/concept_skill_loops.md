@@ -380,6 +380,47 @@ minute). One number for every speed-up, in the CMS tuning. ⚠️ Replaces the
   or the player moves the hero. Applies to every station skill.
 - **Smithing closed** (owner, 2026-10-24).
 
+**Cooking**
+- **Plain recipes**, no twist of its own: it feeds the fighters.
+- **Food and drinks have different stations** (food: Campfire, upgraded to
+  a Kitchen; drinks: Brewery). **Upgraded versions are faster or give other
+  bonuses**, like the Smithy, not new recipe lists.
+- **No fuel** at the Campfire.
+- What food and drinks do in a fight belongs to the combat planning agent.
+- **Cooking closed** (owner, 2026-10-24).
+
+**Crafting**
+- **Workbench only, for now**; Kiln and Loom later.
+- **Plain recipes**: the hub skill stands apart by feeding the others.
+- **Crafting makes items, not Tokens**: **Construction builds every support
+  Token** (Forest, Field, Mine, Minecart, Dock, Well, Composter, Beehive,
+  Windmill) and every station on a Foundation. ⚠️ Overturns "it may make some
+  Tokens as well".
+- **Crafting closed** (owner, 2026-10-24).
+
+**Alchemy**
+- **One Alchemy Table for now**; upgrades are faster or give bonuses.
+- **Work potions and bait sit in the loadout grid's consumable category**
+  (unlimited, like elixirs): no extra cap; the 3×3 grid's 9 cells make
+  carrying more consumables versus more gear the player's choice.
+- **A work potion is spent only when a cycle of its own skill starts** (a
+  Birdwatcher only on Forestry); the hero keeps it while doing other work.
+- **Transmutation later**, once the economy shows what's in surplus.
+- Fight potions and elixirs belong to the combat planning agent.
+- **Alchemy closed** (owner, 2026-10-24).
+
+**Construction**
+- **Materials are paid when the build starts**, as today; short of
+  materials, the Foundation says what's missing.
+- **A better station is built on a new Foundation** (no upgrade in place):
+  the old one stays until the player demolishes it.
+- **Build times scale with the building**: small supports about 30 s,
+  stations 1–2 minutes, big buildings several minutes (per build, in the
+  CMS).
+- **Temporary Tokens stay** (the Guard Tower); which ones and what they do
+  come from the combat planning agent.
+- **Construction closed** (owner, 2026-10-24).
+
 **Forestry, added 2026-10-24**: **trees can't be dragged** (like veins: a
 wood is shaped by where Forests stand), and **every new Sapling costs one
 seedling**, a Forest's planting as well as a Stump's regrow.
