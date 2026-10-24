@@ -99,6 +99,29 @@ async function atlasToggle(page) {
     return 'the Atlas bubble clicked every 1.5 s from a page timer (open, close, open…)';
 }
 
+/**
+ * The Guild Hall opened and closed over the busy mat every 1.5 s from a page timer: a click at the
+ * centre of the Guild Hall bubble (it takes a click only inside its circle). Where the build has
+ * the camera glide, each open and close glides between the mat and the night sky; before it, a
+ * swap.
+ */
+async function hallToggle(page) {
+    const ok = await page.evaluate(`(() => {
+        const button = document.querySelector('#guild-bubble-target button');
+        if (!button) return false;
+        const press = () => {
+            const r = button.getBoundingClientRect();
+            button.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 }));
+        };
+        press();
+        window.__benchTimer = setInterval(press, 1500);
+        return true;
+    })()`);
+    if (!ok) throw new Error('no Guild Hall bubble to click');
+    await page.waitFor(`!!document.querySelector('[data-guild-hall-board]')`, { timeoutMs: 4000, what: 'the Guild Hall' });
+    return 'the Guild Hall bubble clicked every 1.5 s from a page timer (open, close, open…)';
+}
+
 /** 20 notifications every 4 s (each lives 5 s, so the column stays full and keeps changing). */
 async function notifyBurst(page) {
     const n = await page.evaluate(`(() => {
@@ -167,9 +190,10 @@ export const SCENES = {
     cap128: { id: 'cap128', name: 'S2 mix at cap 128', stress: 'cap128' },
     camp128: { id: 'camp128', name: 'Starter Camp at 128', stress: 'camp128' },
     cap256: { id: 'cap256', name: 'S2 mix at cap 256', stress: 'cap256' },
-    // Not in the default run either (`--only=hall`, `--only=atlas`).
+    // Not in the default run either (`--only=hall`, `--only=atlas`, `--only=hallglide`).
     hall: { id: 'hall', name: 'S2 + Guild Hall (beacons)', stress: 'realistic', ui: openHall },
-    atlas: { id: 'atlas', name: 'S2 + Atlas open/close every 1.5 s', stress: 'realistic', ui: atlasToggle }
+    atlas: { id: 'atlas', name: 'S2 + Atlas open/close every 1.5 s', stress: 'realistic', ui: atlasToggle },
+    hallglide: { id: 'hallglide', name: 'S2 + Guild Hall open/close every 1.5 s', stress: 'realistic', ui: hallToggle }
 };
 
 const STRESS_IDS = { quiet: 'S1', realistic: 'S2', torture: 'S3', cap128: 'C128', camp128: 'K128', cap256: 'C256' };

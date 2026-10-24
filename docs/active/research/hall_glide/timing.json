@@ -1,0 +1,142 @@
+{
+  "geometry": {
+    "camera": 1080,
+    "column": 1080,
+    "row": 1080,
+    "phase": "mat"
+  },
+  "timing": [
+    {
+      "round": 0,
+      "mode": "glide",
+      "dir": "open",
+      "movingFrom": 60,
+      "restFrom": 627,
+      "longestGapMs": 25,
+      "longestGapInMotionMs": 15,
+      "gapsOver34InMotion": 0,
+      "framesInMotion": 57
+    },
+    {
+      "round": 0,
+      "mode": "glide",
+      "dir": "close",
+      "movingFrom": 294,
+      "restFrom": 858,
+      "longestGapMs": 52,
+      "longestGapInMotionMs": 15,
+      "gapsOver34InMotion": 0,
+      "framesInMotion": 56
+    },
+    {
+      "round": 0,
+      "mode": "swap",
+      "dir": "open",
+      "movingFrom": null,
+      "restFrom": null,
+      "longestGapMs": 22,
+      "longestGapInMotionMs": null,
+      "gapsOver34InMotion": 0,
+      "framesInMotion": 0
+    },
+    {
+      "round": 0,
+      "mode": "swap",
+      "dir": "close",
+      "movingFrom": null,
+      "restFrom": null,
+      "longestGapMs": 45,
+      "longestGapInMotionMs": null,
+      "gapsOver34InMotion": 0,
+      "framesInMotion": 0
+    },
+    {
+      "round": 1,
+      "mode": "glide",
+      "dir": "open",
+      "movingFrom": 45,
+      "restFrom": 621,
+      "longestGapMs": 21,
+      "longestGapInMotionMs": 15,
+      "gapsOver34InMotion": 0,
+      "framesInMotion": 57
+    },
+    {
+      "round": 1,
+      "mode": "glide",
+      "dir": "close",
+      "movingFrom": 207,
+      "restFrom": 775,
+      "longestGapMs": 83,
+      "longestGapInMotionMs": 15,
+      "gapsOver34InMotion": 0,
+      "framesInMotion": 56
+    },
+    {
+      "round": 1,
+      "mode": "swap",
+      "dir": "open",
+      "movingFrom": null,
+      "restFrom": null,
+      "longestGapMs": 32,
+      "longestGapInMotionMs": null,
+      "gapsOver34InMotion": 0,
+      "framesInMotion": 0
+    },
+    {
+      "round": 1,
+      "mode": "swap",
+      "dir": "close",
+      "movingFrom": null,
+      "restFrom": null,
+      "longestGapMs": 52,
+      "longestGapInMotionMs": null,
+      "gapsOver34InMotion": 0,
+      "framesInMotion": 0
+    },
+    {
+      "round": 2,
+      "mode": "glide",
+      "dir": "open",
+      "movingFrom": 58,
+      "restFrom": 627,
+      "longestGapMs": 35,
+      "longestGapInMotionMs": 16,
+      "gapsOver34InMotion": 0,
+      "framesInMotion": 57
+    },
+    {
+      "round": 2,
+      "mode": "glide",
+      "dir": "close",
+      "movingFrom": 203,
+      "restFrom": 768,
+      "longestGapMs": 27,
+      "longestGapInMotionMs": 15,
+      "gapsOver34InMotion": 0,
+      "framesInMotion": 57
+    },
+    {
+      "round": 2,
+      "mode": "swap",
+      "dir": "open",
+      "movingFrom": null,
+      "restFrom": null,
+      "longestGapMs": 18,
+      "longestGapInMotionMs": null,
+      "gapsOver34InMotion": 0,
+      "framesInMotion": 0
+    },
+    {
+      "round": 2,
+      "mode": "swap",
+      "dir": "close",
+      "movingFrom": null,
+      "restFrom": null,
+      "longestGapMs": 39,
+      "longestGapInMotionMs": null,
+      "gapsOver34InMotion": 0,
+      "framesInMotion": 0
+    }
+  ]
+}

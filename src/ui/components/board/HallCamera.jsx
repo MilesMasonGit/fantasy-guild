@@ -228,8 +228,10 @@ export const HallCamera = ({ open, away = false, sky, hall, table, tableAnchor, 
                     </div>
                 )}
             </div>
+            {/* Over the moving camera, which is a stacking context of its own while it moves: a
+                local layer of the column's, not a screen-level one. */}
             {gliding && (
-                <div aria-hidden="true" data-hall-skip className="absolute inset-0 z-[104] pointer-events-auto" onPointerDown={finish} />
+                <div aria-hidden="true" data-hall-skip className="absolute inset-0 z-20 pointer-events-auto" onPointerDown={finish} />
             )}
         </>
     );
