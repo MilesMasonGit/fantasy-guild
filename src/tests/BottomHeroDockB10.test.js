@@ -18,7 +18,8 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
 import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
-import { BottomHeroDock, showsBottomHeroDock } from '../ui/components/dock/BottomHeroDock.jsx';
+import { BottomHeroDock } from '../ui/components/dock/BottomHeroDock.jsx';
+import { hallCameraSides } from './fixtures/hallCameraSides.js';
 import { BankHeroPanel } from '../ui/components/dock/BankHeroPanel.jsx';
 import { dockHeroDragPayload } from '../ui/components/dock/DockHeroFigure.jsx';
 import {
@@ -223,9 +224,9 @@ describe('B10 horizontal hero dock', () => {
         expect(figure(view, 'h1').querySelector('[data-dock-hp]').getAttribute('data-dock-hp')).toBe('43');
     });
 
+    // On the table side of the Hall camera, which is gone while the camera rests on the sky.
     it('is not shown on the Guild Hall screen (FB-47)', () => {
-        expect(showsBottomHeroDock('guild')).toBe(false);
-        expect(showsBottomHeroDock(null)).toBe(true);
+        expect(hallCameraSides().mat).toContain('<BottomHeroDock');
     });
 
     it('leaves the vertical hero panel beside the Bank as it was', () => {

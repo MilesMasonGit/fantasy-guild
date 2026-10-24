@@ -43,7 +43,8 @@ export function useMatScreenWidth() {
  * * **middle**, centred on the mat: the Token cap and Upkeep, or the map mode's banner while a
  *   mode is on,
  * * **right**, at the mat's right edge: controls (the Disallow and Demolish toggles).
- * Only drawn on the playmat, never on the Guild Hall upgrade screen ({@link showsMatTopBar}).
+ * Only drawn on the playmat, never on the Guild Hall upgrade screen (ReactRoot lays it on the
+ * table side of the Hall camera, with the mat).
  * @param {{ left?: React.ReactNode, middle?: React.ReactNode, right?: React.ReactNode, width?: number }} props
  *   `width` for tests; the mat's on-screen width otherwise
  */
@@ -64,10 +65,5 @@ export const MatTopBar = ({ left = null, middle = null, right = null, width }) =
         </PixelFrame>
     );
 };
-
-/** Whether the bar is drawn for a fullscreen view: the playmat only, not the Guild Hall upgrade screen. */
-export function showsMatTopBar(view) {
-    return view !== 'guild';
-}
 
 export default MatTopBar;

@@ -1,0 +1,53 @@
+{
+  "geometry": {
+    "camera": 1080,
+    "column": 1080,
+    "row": 1080,
+    "phase": "mat"
+  },
+  "counts": {
+    "restPer1500ms": {
+      "own": 0,
+      "commits": 3
+    },
+    "upStart": {
+      "own": 43,
+      "commits": 143,
+      "mounts": 0
+    },
+    "upEnd": {
+      "own": 43,
+      "commits": 144,
+      "mounts": 0
+    },
+    "up": {
+      "own": 0,
+      "commits": 1
+    },
+    "downStart": {
+      "own": 45,
+      "commits": 146,
+      "mounts": 1
+    },
+    "downStartAt": 27850.60000014305,
+    "downEnd": {
+      "own": 45,
+      "commits": 148,
+      "mounts": 1
+    },
+    "downEndAt": 28441.900000095367,
+    "downDuring": {
+      "own": 0,
+      "commits": 2
+    },
+    "downMount": {
+      "own": 2,
+      "commits": 2,
+      "mounts": 1
+    },
+    "swapAfterMount600ms": {
+      "own": 0,
+      "commits": 2
+    }
+  }
+}

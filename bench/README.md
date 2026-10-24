@@ -359,6 +359,7 @@ For each scene: a fresh tab at **1600 × 1000, DPR 1**, the CPU slowdown set
 | `cap256` | S2's mix at the top cap, 256, on the shipped mat: every free cell built, and more Forests and Quarries so the spawners can fill the rest. Only with `--only` |
 | `hall` | S2 with the Guild Hall open in place of the mat (a real click on the Guild Hall bubble), its roster upgrade picked: the stress boards are still at the tutorial's recruit-hero step, so its two standing beacons show (on the roster node and the inspection's upgrade button). On every other scene they are mounted but their targets are missing. Only with `--only` |
 | `atlas` | S2 with the Atlas opened and closed every 1.5 s (a click at the Atlas bubble's centre, from a page timer): the book sliding up over the mat and back down. For the pop-up's cost line, `--only=S2,atlas` with `--ab` against `main`. Only with `--only` |
+| `hallglide` | S2 with the Guild Hall opened and closed every 1.5 s (a click at the Guild Hall bubble's centre, from a page timer): each open and close the camera glides between the mat and the night sky, against a build that swaps. For the glide's cost line, `--only=S2,hall,hallglide` with `--ab` against `main` (`hall` shows the Hall at rest costs what it did). Only with `--only` |
 
 **The Performance Envelope's scenes** (brief 90; `sceneFor` in `bench/browser/scenes.mjs`, the boards
 in `bench/scenarios/envelope.mjs`). Named with a number, any number, so one limit can be swept while

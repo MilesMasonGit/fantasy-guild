@@ -17,6 +17,7 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { GUILD_UPGRADES, CONSTELLATIONS, HALL_NODE, getUpgradeDef } from '../config/guildUpgrades.js';
 import { SKY_SAMPLE_RANKS, SKY_SAMPLE_PAID, devGiveNextPrice } from '../ui/dev/GuildHallDevSection.jsx';
+import { hallCameraSides } from './fixtures/hallCameraSides.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     success: vi.fn(), warning: vi.fn(), error: vi.fn(), info: vi.fn(), notify: vi.fn()
@@ -266,17 +267,20 @@ describe('the Hall sky: the drifting backdrop', () => {
         expect(css).toMatch(/prefers-reduced-motion: reduce\)\s*\{\s*\.gi-sky-drift-stars,\s*\.gi-sky-drift-clouds\s*\{\s*animation: none;/);
     });
 
+    // On the table side of the camera, which is gone while the camera rests on the sky
+    // (HallCamera.test.js); mid-glide they go down with the mat.
     it('shows no item stubs or banners over it', () => {
-        const root = src('../ui/ReactRoot.jsx');
-        expect([...root.matchAll(/<ItemStubColumn\b/g)]).toHaveLength(1);
-        expect([...root.matchAll(/<BannerStack\b/g)]).toHaveLength(1);
-        expect(root).toMatch(/\{!isGuildView && \(\s*<ErrorBoundary label="Notifications">\s*<ItemStubColumn \/>\s*<BannerStack \/>\s*<\/ErrorBoundary>\s*\)\}/);
+        const { code, mat } = hallCameraSides();
+        expect([...code.matchAll(/<ItemStubColumn\b/g)]).toHaveLength(1);
+        expect([...code.matchAll(/<BannerStack\b/g)]).toHaveLength(1);
+        expect(mat).toMatch(/<ErrorBoundary label="Notifications">\s*<ItemStubColumn \/>\s*<BannerStack \/>\s*<\/ErrorBoundary>/);
     });
 
+    // The camera lays the sky only while it is off the mat (HallCamera.test.js).
     it('exists only while the Hall screen is open', () => {
-        const root = src('../ui/ReactRoot.jsx');
-        expect([...root.matchAll(/<HallSky\b/g)]).toHaveLength(1);
-        expect(root).toContain('{isGuildView && <HallSky />}');
+        const { code } = hallCameraSides();
+        expect([...code.matchAll(/<HallSky\b/g)]).toHaveLength(1);
+        expect(code).toContain('sky={<HallSky />}');
     });
 });
 

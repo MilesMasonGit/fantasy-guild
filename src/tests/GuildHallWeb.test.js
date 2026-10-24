@@ -4,6 +4,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import React from 'react';
 import { readFileSync } from 'node:fs';
+import { hallCameraSides } from './fixtures/hallCameraSides.js';
 import { resolve } from 'node:path';
 import { render, fireEvent, act } from '@testing-library/react';
 import { GuildHallBoard } from '../ui/components/board/GuildHallBoard.jsx';
@@ -176,5 +177,11 @@ describe('the Hall star shows the Effects as a popover', () => {
     it('takes no column of its own: the screen mounts no Effects list beside the web', () => {
         const src = readFileSync(resolve(__dirname, '../ui/ReactRoot.jsx'), 'utf8');
         expect(src).not.toMatch(/GuildHallEffects/);
+        // The Hall's screen, which the camera lays only while it is off the mat, holds the web and
+        // its details column, and nothing else beside the web.
+        const hall = hallCameraSides().hall;
+        expect(hall).toContain('<GuildHallBoard');
+        expect(hall).toContain('<GuildHallDetails');
+        expect(hall.indexOf('<GuildHallBoard')).toBeLessThan(hall.indexOf('<GuildHallDetails'));
     });
 });
