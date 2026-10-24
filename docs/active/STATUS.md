@@ -10,7 +10,7 @@ build green) · bench-queued · eye-check · merged.*
 Owner 2026-10-22: **each director may run two code agents at once**; still one
 heavy run (suite, build, bench) at a time across both. Owner away from the PC
 until about 2026-10-25: looks by phone screenshots, design questions any time.
-Parked for the owner: enemy kinds always fight harder than their level (author balances with level or typed numbers; built that way); two elixirs drunk at once show one bubble (recommend one bubble listing both).
+Owner by phone 2026-10-24: enemy kinds stay harder than their level (the author balances); two elixirs show two stacked bubbles.
 Order from the brief: C1 alone; then C2 and C3 (or C5) in parallel; C4 after
 C2; C0 (the test content pack, accepted by the director) after C2; C6 last.
 
@@ -18,9 +18,9 @@ C2; C0 (the test content pack, accepted by the director) after C2; C6 last.
 |---|---|---|---|---|---|
 | C1: the numbers (HP 10 + level, weapon damage, misses 5–40 %, crits, flat armour, Pierce, weapon speeds, Recruits punch 1; proposed level table) | engineer | `systems/combat-numbers` (`sc`) | **merged** 68901a22 (director's gate on the merged result: 5887 tests, cycles, build; work change accepted under brief220-C1 on every hero scenario, S4 same, catch-up identity and fidelity hold; `main` control run same work, no regression; C1 p50 within ~5 %, p99 up 5–23 % from longer, overlapping fights). Owner by phone: Goblin Chief stays tough (craft gear to beat it), level-1 coin toss kept, unarmed promoted heroes punch with style and XP, Block removed | Sat | Sat |
 | C2: gear and enemies (weapon styles, family abilities, enemy armour/Dodge/speed from the level table, enemy kinds) | engineer | `systems/combat-gear` (`sg`) | **merged** b050cdb3 (gate on main merged in: 5956 tests, cycles, build; same work everywhere, catch-up identity and fidelity hold). Director's calls: Recruits refused weapons (tools still fine), a re-trained hero's old-style weapon stays in hand unused, no Venomous in C0 until C4; T-246 weapon line in the tooltip | Sat | Sat |
-| C3: supplies (food as today, drinks stop healing, elixirs for 10 fights, the "used" bubble) | builder | `systems/combat-supplies` (`su`) | eye-check by phone (gate: 5900 + 8 file-scan timeouts, 7 files green alone; cycles; build; same work). Owner's first look 2026-10-24: one box around icon and text tinted by item type, no rule callouts for elixirs, text scaled with the art: done b077318c, fresh shots sent. T-245 carried-rule wording | Sat | |
+| C3: supplies (food as today, drinks stop healing, elixirs for 10 fights, the "used" bubble) | builder | `systems/combat-supplies` (`su`) | **merged** 55affd53 after three phone looks (chamfer frame sized to its contents, item-type tint, stacking, no elixir callouts; [record](../archive/eyecheck/2026-10-24_combat-c3.md)). Gate on the merged result: 5975 tests, cycles, build; same work. T-245 | Sat | Sat |
 | C5: encounters (one-on-one, guardians, node ambushes, boss lairs) | engineer | `systems/combat-encounters` (`se`) | building | Sat | |
-| C4: Poison, Burn and boss moves in the Rules system; old status engine retired | engineer | — | queued, after C2 | | |
+| C4: Poison, Burn and boss moves in the Rules system; old status engine retired | engineer | `systems/combat-statuses` (`st`) | building | Sat | |
 | C0: first combat content pack, accepted by the director (guarded) | builder + director | — | queued, after C2 | | |
 | C6: the combat screen (mock-ups first, the owner picks by phone) | engineer | — | queued, last | | |
 
