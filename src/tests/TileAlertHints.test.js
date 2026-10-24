@@ -18,8 +18,8 @@ import { PROBLEM_SEVERITY } from '../ui/components/board/problemMark.js';
 /** Every alert value that can reach a Token (one enum). */
 const ALERT_VALUES = Object.values(ALERT);
 
-/** Every alert the engine writes on a Token: all but resting, which is never written as one. */
-const TOKEN_ALERTS = ALERT_VALUES.filter(a => a !== ALERT.RESTING);
+/** Every alert the engine writes on a Token: all but resting and guarded, which are never written as one. */
+const TOKEN_ALERTS = ALERT_VALUES.filter(a => a !== ALERT.RESTING && a !== ALERT.GUARDED);
 
 const tree = (el) => React.createElement(DndContext, null, el);
 

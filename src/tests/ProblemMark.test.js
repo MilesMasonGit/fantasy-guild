@@ -72,9 +72,9 @@ describe('which problems are yellow and which red', () => {
         }
     });
 
-    it('every alert the engine can raise has a mark, except resting, which is not a problem', () => {
+    it('every alert the engine can raise has a mark, except resting and guarded, which are not problems', () => {
         for (const kind of Object.values(ALERT)) {
-            if (kind === ALERT.RESTING) expect(PROBLEM_SEVERITY[kind]).toBeUndefined();
+            if (kind === ALERT.RESTING || kind === ALERT.GUARDED) expect(PROBLEM_SEVERITY[kind]).toBeUndefined();
             else expect(PROBLEM_SEVERITY[kind], kind).toBeDefined();
         }
     });
@@ -91,6 +91,7 @@ describe('problemOf: one mark, the worst first', () => {
     it('none without a problem', () => {
         expect(problemOf({})).toBeNull();
         expect(problemOf({ alert: ALERT.RESTING })).toBeNull();
+        expect(problemOf({ alert: ALERT.GUARDED })).toBeNull();
     });
 
     it('from the engine’s alert, a spawner’s alert, or nothing chosen', () => {

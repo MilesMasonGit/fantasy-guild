@@ -547,3 +547,53 @@ balances with the level or a typed number.
   off; it is not taken off automatically.
 - **Venomous uses the old status engine's Poison** today (2 per stack every
   5 s, up to 99 stacks, outlasting the fight) until C4 builds the real one.
+
+## Encounters (built in C5, 2026-10-24; for the C0 and brief 240 authors)
+
+*What the CMS writes and the game reads for one-on-one fights, guardians, lairs, bosses, summons
+and ambushes. Nothing in `data/` uses them yet.*
+
+**An enemy** gains one field:
+
+| Field | Type | Meaning | Default when absent |
+|---|---|---|---|
+| `boss` | `true` | fights only heroes sent at it: never hostile (the CMS greys Hostile), never made by a rule, so never an ambusher; boss moves (C4) hang on it | not a boss |
+
+**Any Token** may carry a Guardian / lair block (CMS: Spawning and Building → Guardian / lair):
+
+| Field | Type | Meaning | Default when absent |
+|---|---|---|---|
+| `guardian.typeId` | an enemy Token | the enemy it keeps beside it, there from the first tick the Token stands on the mat | (required) |
+| `guardian.returnMs` | ms, at least 1000 | how long after it is beaten it comes back | 600000 (10 min); 120000 (2 min) for a boss |
+
+On a Token heroes work, the enemy is its **guardian**: nobody works the Token while it stands
+(flags skip it as "a guardian stands on it"; no problem mark). On a Token with no work of its own,
+it is a **lair**. A guardian is beaten in one kill, drops its loot every time, potters around its
+Token and attacks only if its own type is hostile. A Base Map brings a lair by listing the lair
+Token under its **Enemy camps**.
+
+**A summoned boss** is a boss Token with a `shop` block whose `section` is `summons` (the CMS
+offers "Summons" in the Shop section list) and whose price is its summon item: dragged from the
+Shop onto the mat, it appears there. Beaten, it is gone; another summon item calls it again.
+
+**An ambush** is a `Spawns` rule on the node, on its own finished cycle, with a chance (the usual
+shape: "When this Token finishes a cycle, a 5% chance to spawn Fire Elemental on the nearest free
+spot"). The enemy it spawns attacks the worker at once (hostile or not), is beaten in one kill, and
+the node springs no other while it stands. The Spawns Token list never offers a boss.
+
+**Choices made in C5 the rulings did not spell out** (each small to change):
+
+- **Waiting vs another enemy**: an area flag takes the next thing in its reach (its priorities
+  decide, nearest first); with nothing else it waits at its flag. A pinned flag waits beside the
+  enemy. Either takes it within a second of it coming free. No random roll is involved.
+- **Guardians are a block on the guarded Token**, not a field on the enemy: one enemy type can guard
+  many kinds of Token, the Token owns the return clock, and a lair is the same block on a Token with
+  no work.
+- **Default return**: 10 minutes for a guardian, 2 minutes for a boss.
+- **A guardian waits while the mat is at its Token cap**, like a spawner; it comes back as soon as
+  there is room.
+- **A guardian whose Token is gone** (demolished, transformed) stays until beaten and never returns.
+- **An ambusher is one fight** (1 use, whatever its type says), and **a node holds one at a time**:
+  that bounds enemies alive by the number of worked ambush nodes.
+- **Summons go through the Shop** (a Summons section), not a new "use item" action: the Bank covers
+  the mat, so an item cannot be dragged from it onto the mat.

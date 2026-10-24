@@ -426,8 +426,55 @@ duels: `concept_combat.md`, "The level table and weapon tiers").
 - **Hostile** enemies ambush a hero inside the flag radius around their
   spawner; the hero fights back even if their Fight rule is off. Recruits are
   ambushed too and fight back barehanded.
+- **Boss** (`enemy.boss: true`, a CMS tick): fights only the heroes sent at
+  it. Never hostile (the Hostile box greys out), never made by a rule, so it
+  never ambushes. Lives in a lair or is summoned (Encounters, below). Boss
+  moves will hang on this mark.
 - Each kill uses one of the enemy's uses; at 0 it's gone. Otherwise it
   respawns at full HP after a 2 s pause.
+
+### Encounters — Built (brief 220 C5)
+- **Every fight is one-on-one**, bosses and guardians included: a Token holds
+  one hero's claim. A second hero whose area flag reaches a busy enemy takes
+  the next thing in reach (another enemy, or work, by their priorities); with
+  nothing else, they wait at their flag. A flag pinned to the busy enemy waits
+  beside it. Either takes the enemy within a second of it coming free, and
+  meets it at full HP. No random roll. The waiting hero says "Waiting for
+  {enemy}.", their flag reads "Waiting for {enemy}" and its hover "{enemy} —
+  {hero} is fighting it"; the Dock line says the same. A save holding two
+  heroes on one enemy loads into one fight (the second chooses again).
+- **Guardians**: a Token's `guardian: { typeId, returnMs? }` block (the CMS's
+  Guardian / lair block) keeps one enemy beside it, there from the first tick
+  the Token stands on the mat (so a map's guarded node arrives guarded). On a
+  Token heroes work, nobody works it while the guardian stands: a flag skips
+  it ("a guardian stands on it"), a hero on it lets go, and it carries no
+  problem mark (the guardian is the mark). Beaten (one kill, whatever its
+  uses), it drops its loot and comes back **10 minutes** later unless the
+  author types a time (at least 1 s); the clock is saved on the Token and
+  runs on game time, so a catch-up and a reload keep it. It waits while the
+  mat is at its Token cap or has no room beside the Token. It potters around
+  its Token and attacks only if its own type is hostile. The Token's card,
+  inspection ("Guarded by …", "beaten, back in …") and hover countdown say
+  where it stands. A guardian whose Token is gone stays until beaten and never
+  returns. *(`Guardians.js`, the `guardian` row of `TimedChanges`)*
+- **Lairs**: the same block on a Token with no work of its own: its enemy
+  (usually a boss) lives there and potters by it, and comes back after it
+  falls: **2 minutes** for a boss unless authored. A Base Map brings a lair by
+  listing the lair Token under its camps. Farm it with a flag whose Fight rule
+  reaches the boss.
+- **Summons**: a boss sold in the Shop's **Summons** section, priced in its
+  summon item, appears where it is dragged onto the mat (the Shop's usual
+  checks: the cap, the price, room). Beaten, it is gone; another summon item
+  calls it again.
+- **Node ambushes**: a Token's `Spawns` rule that puts an enemy beside it is an
+  ambush (a chance on a finished cycle, about 5 %, is the usual shape; set per
+  Token in the Rules line). The enemy attacks the hero the moment names (the
+  one who finished the cycle) on the next tick, hostile or not; that hero
+  fights back whatever their rules or pin say, then goes back to work. An
+  ambusher is beaten in one kill, and while it stands its node springs no
+  other (its rules roll nothing). With no hero named it waits by its node
+  (hostile ones watch around it). Never a boss.
+- **Camps are unchanged**; lure buildings are parked.
 
 ### The fight — Built
 - **Swings.** A hero swings at their weapon's speed: fast 2 s, normal 3 s,
@@ -504,6 +551,11 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   (≤ 2 Coasts nearby), bonus drops, Minecart restocking, the two promotions,
   and **Thorns** (1 damage to the hero on finishing a Redberry Bush or Thorn
   Elemental). **Everything else in the grammar is Latent.**
+- **Spawns and enemies**: an enemy a `Spawns` rule puts beside its bearer is an
+  ambusher (§6, Encounters): it attacks the hero the moment names, is beaten in
+  one kill, and holds the bearer's enemy spawns until it falls. A `Spawns` rule
+  never makes a boss (the editor does not offer one; the content audit names
+  one that does).
 - Authored only in the CMS (the Rules Line editor). Editing a library effect
   changes every Token that carries it.
 

@@ -6,8 +6,8 @@ import {
 import { stationSkillOf, getProvidedTagsWithTiers } from '../effects/statements.js';
 
 /**
- * The one checker for the seven Token Lifecycle blocks (`spawner`, `grows`,
- * `turns`, `foundation`, `shop`, `trickle` (Passive Production), `respawn`) and the recipe fields
+ * The one checker for the eight Token Lifecycle blocks (`spawner`, `grows`,
+ * `turns`, `foundation`, `shop`, `trickle` (Passive Production), `respawn`, `guardian`) and the recipe fields
  * `foundationKinds` and `foundationMinTier`, shared by the game's boot audit (`ContentAudit`) and the
  * CMS's Economy Audit (`connectivityAuditor`), so the two can never disagree.
  *
