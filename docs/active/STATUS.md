@@ -5,6 +5,14 @@ five-line summary at each batch's edges (proposed, looked at); anything older
 than two days is trimmed. States: queued · building · ready (tests, cycles,
 build green) · bench-queued · eye-check · merged.*
 
+## Backlog director, batch E: drawers, the Atlas and dev tools (brief 210; owner said keep going 2026-10-24)
+
+| Phase | Tier | Branch (worktree) | State | Planned | Done |
+|---|---|---|---|---|---|
+| E1: drawers to the screen's left edge; opening the Bank moves the rest smoothly (T-235, T-236); drag bench if drag measuring is touched | builder | `backlog/drawers` (`ed`) | building | Sat | |
+| E2: the Atlas's Regions as a two-page spread (T-237) | builder | `backlog/atlas-spread` (`ea`) | building | Sat | |
+| E3: retire the Playmat Tuner and the terrain dev section, mat dials in the QA panel (T-238); no eye-check | builder-lite | — | queued, after E1/E2 | | |
+
 ## Backlog director, batch D: the Guild Hall upgrade screen (brief 210; owner said go 2026-10-23) — **done, merged e6abf4e2**
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
@@ -266,6 +274,12 @@ T-186; the badges' soft shadows are settled inside T-013.)
 8. ~~Terrain director: bench baseline retake~~ **Done:** engine 2026-10-21 13:00 (f19a2e30), draw 2026-10-22 01:00 (db3959c4).
 
 ## Summaries
+
+**Sat 2026-10-24: batch D merged, batch E started.** Where we are: batches
+A to D of brief 210 are on `main` e6abf4e2, all okayed by phone (the Hall's
+calmer sky, Effects popover, pixel Inspect panel and the camera glide last).
+Next: E1 drawers and E2 the Atlas spread in parallel, then E3 dev tools; then
+F (pixel frames everywhere, the bubble row). Owner: phone looks. Blockers: none.
 
 **Fri 2026-10-23, evening: batch B merged, batch C started.** Where we
 are: quieter Tokens, drag and loot clean-up and the corner-flight fix are on
