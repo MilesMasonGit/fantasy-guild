@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-247**
+**Next free number: T-248**
 
 ---
 
@@ -51,6 +51,7 @@ here.
 | T-175 | P2 | owner | (Concept still a draft, owner 2026-10-14: not for the director yet.) **Collectors: the Guild Hall and warehouses** ([concept_collectors.md](../active/concept_collectors.md)): the Hall collects all loot in a small radius from the start, widened by a ranked Hall star; warehouses built on Foundations collect items with one tag (CMS Collects block: tag, radius, interval ~60 s), bigger radius on higher tiers, no upkeep; shared sweep clock, nearest collector wins, items fly in; Bank-full leaves loot and shows the yellow mark; reach ring on hover, drag, placing. Remove the auto-collect setting. Engineer. WORK CHANGED expected. Cost-log line. Eye-check. | concept_collectors.md |
 | T-245 | P3 | open | **Carried rules read as Token rules in the Rules editor** (found by brief 220 C3, 2026-10-24): an item's rule on the fight-start moment shows as "On Neighbour's Fight" targeting "heroes on nearby Tokens"; give carried rules their own wording ("When this hero's fight starts", "to the hero") in `statementText.js` / the trigger picker. Builder-lite. No eye-check (CMS wording). | brief 220 C3 |
 | T-246 | P3 | open | **The item tooltip shows a weapon's styles, damage and speed** (found by brief 220 C2, 2026-10-24): the Bank tooltip lists name, type and effects but not `styles`, `damage`, `speed` (fast/normal/slow) or two-handed. Builder-lite; wait for C6's enemy card so both read the same. | brief 220 C2 |
+| T-247 | P3 | open | **Rules sentences that misread in combat** (found by brief 220 C4, 2026-10-24): a combat Provides on an enemy ends "on an enemy, to the hero fighting it", wrong for a buff the enemy gives itself (Stone Skin); an Applies with no moment does not say "when they finish work"; gear passes only flat amounts, so it cannot carry Swing Time or a Damage percentage. Do with T-245. Builder. No eye-check (CMS wording) except the gear limit, which needs a ruling. | brief 220 C4 |
 | T-026 | P3 | ride-along | Small per-tick allocations in combat and statuses. | CR3-032 |
 | T-027 | P3 | ride-along | Motion ticks allocate small objects per walker. | CR3-153 |
 
