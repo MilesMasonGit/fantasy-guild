@@ -22,7 +22,9 @@ import {
     cycleSecondsText, chargesFraction, ringCount, RING_D_U, RING_STROKE_U, spawnerRing, questRing,
     RING_COLOUR, bubbleSlot, SMALL_OVERHANG_U, GLIDING_RINGS
 } from '../ui/components/board/ringRow.js';
-import { workBarPlace, WORK_BAR_ART_W, WORK_BAR_ART_H } from '../ui/components/board/workBar.js';
+import { WorkBarFill } from '../ui/components/board/WorkPlateLayer.jsx';
+import { PLATE } from '../ui/components/board/workPlate.js';
+import { CHARGE_FLOATERS } from '../ui/components/board/TokenBadges.jsx';
 import { PROBLEM_SPRITE, SEVERITY } from '../ui/components/board/problemMark.js';
 import * as TimedChanges from '../systems/board/TimedChanges.js';
 import { STEP_MS } from '../ui/components/board/frameClock.js';
@@ -38,10 +40,12 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * ⭐ The mat layer (brief 120, C1): at rest a Token shows that it is worked (a thin bar along its
- * foot) and what is wrong (one problem mark), and nothing else; the rings and the timer come up
- * only on hover. Where each piece sits, when it shows, that the hover rings still glide, the
- * tooltips, and that pressing any of them grabs the Token.
+ * ⭐ The mat layer (brief 120, C1): at rest a Token nobody works shows what is wrong (one problem
+ * mark) and nothing else; the rings and the timer come up only on hover. A worked Token's cycle,
+ * charges and problem are on its work plate (`WorkPlate.test.js`): its own box draws none of them,
+ * but it still keeps the bar's model, which the plate's fill draws (here: `WorkBarFill` beside it).
+ * Where each piece sits, when it shows, that the hover rings still glide, the tooltips, and that
+ * pressing any of them grabs the Token.
  */
 
 registerTokenTypes({
@@ -62,11 +66,16 @@ registerTokenTypes({
 });
 
 const h = React.createElement;
-const tree = (el) => h(DndContext, null, h('div', { 'data-under-test': '' }, el));
+const tree = (...els) => h(DndContext, null, h('div', { 'data-under-test': '' }, ...els));
 const mount = (el) => render(tree(el));
 
 const worked = (extra = {}) => ({ typeId: 'fixture_producer', instanceId: 'tok_r', heroId: 'hero_1', alert: null, usesRemaining: null, ...extra });
 const bub = (props) => h(TokenBubbles, { instanceId: 'tok_r', boxPx: 128, ...props });
+/** The Token's bubbles with its plate's fill beside them, as on the mat. */
+const withFill = (props, blocked = false) => [
+    h(TokenBubbles, { key: 'b', instanceId: 'tok_r', boxPx: 128, ...props }),
+    h(WorkBarFill, { key: 'f', instanceId: 'tok_r', blocked })
+];
 const ring = (c, kind) => c.querySelector(`[data-ring="${kind}"]`);
 const bubble = (c, kind) => c.querySelector(`[data-bubble="${kind}"]`);
 const bar = (c) => c.querySelector('[data-work-bar]');
@@ -104,34 +113,6 @@ describe('the rules, pure', () => {
 
     it('the stroke is 3/28 of the diameter', () => {
         expect(RING_STROKE_U / RING_D_U).toBeCloseTo(3 / 28);
-    });
-
-    it('⭐ the work bar: centred along the foot of the box, in whole art pixels, thin', () => {
-        const p = workBarPlace(128, 2);
-        expect(p.steps).toBe(WORK_BAR_ART_W);
-        expect(p.width).toBe(WORK_BAR_ART_W * 2);
-        expect(p.height).toBe(WORK_BAR_ART_H * 2);
-        expect(WORK_BAR_ART_H).toBeLessThanOrEqual(2);
-        expect(p.left + p.width / 2).toBe(64);
-        expect(p.top + p.height).toBeLessThanOrEqual(128);
-        expect(p.top).toBeGreaterThan(128 * 0.85);
-        // At another mat fit the art pixel is another size; the bar is the same art pixels.
-        const q = workBarPlace(128 * 1.5, 3);
-        expect(q.width).toBe(WORK_BAR_ART_W * 3);
-        // A small Token's bar is half as long.
-        expect(workBarPlace(64, 2, true).steps).toBe(WORK_BAR_ART_W / 2);
-    });
-
-    it('⭐ the bar sits at the foot of the ART, not the box, when the art is drawn smaller than its box', () => {
-        // The mat drawn at 0.7: art 64 px at 1.43 mat units a pixel (91.4 u) centred in a 128 u box.
-        const artUnit = 1 / 0.7;
-        const artPx = 64 * artUnit;
-        const p = workBarPlace(128, artUnit, false, artPx);
-        const artBottom = (128 + artPx) / 2;
-        expect(p.top + p.height).toBeLessThanOrEqual(artBottom);
-        expect(p.top + p.height).toBeGreaterThan(artBottom - 4 * artUnit);
-        // Art as big as the box: the box's foot.
-        expect(workBarPlace(128, 2, false, 128)).toEqual(workBarPlace(128, 2));
     });
 
     it('ring spots: timer top-left, quest bottom-centre, charges bottom-right, inside a full-size box', () => {
@@ -176,14 +157,9 @@ describe('⭐ at rest: the bar and the marks, nothing else', () => {
         expect(drawn(container)).toEqual([]);
     });
 
-    it('⭐ a worked Token shows the work bar and nothing else', () => {
+    it('⭐ a worked Token draws nothing in its own box: its bar and charges are on its plate', () => {
         const { container } = mount(bub({ token: worked({ usesRemaining: 5 }), ...everything, readTimer: clock }));
-        const all = drawn(container);
-        expect(all).toHaveLength(1);
-        expect(all[0]).toBe(bar(container));
-        expect(bar(container).getAttribute('data-work-bar')).toBe('tok_r');
-        expect(bar(container).className).toContain('gi-work-bar');
-        expect(bar(container).getAttribute('data-work-bar-blocked')).toBeNull();
+        expect(drawn(container)).toEqual([]);
     });
 
     it('⭐ a count change does not bring a ring up by itself: charges, spawner, quest', () => {
@@ -201,9 +177,13 @@ describe('⭐ at rest: the bar and the marks, nothing else', () => {
         expect(vi.getTimerCount()).toBe(0);
     });
 
-    it('a worked Token with a problem: the bar, held grey, and one mark', () => {
+    it('a worked Token with a problem draws no mark of its own: the plate says it', () => {
         const { container } = mount(bub({ token: worked({ alert: ALERT.INPUTS }), ...everything }));
-        expect(bar(container).getAttribute('data-work-bar-blocked')).toBe('true');
+        expect(drawn(container)).toEqual([]);
+    });
+
+    it('⭐ a Token nobody works, with a problem: one mark, and no ring', () => {
+        const { container } = mount(bub({ token: worked({ heroId: null, alert: ALERT.INPUTS }), ...everything }));
         expect(container.querySelectorAll('[data-problem-mark]')).toHaveLength(1);
         expect(container.querySelector('[data-ring]')).toBeNull();
     });
@@ -221,31 +201,33 @@ describe('⭐ at rest: the bar and the marks, nothing else', () => {
 describe('the work bar', () => {
     const fillOf = (c) => Number(bar(c).getAttribute('data-work-bar-fill'));
 
+    const W = PLATE.FILL_STEPS;
+
     it('⭐ fills in whole art pixels on the shared step clock, and is empty again on CYCLE_COMPLETE', () => {
         vi.useFakeTimers();
-        const { container } = mount(bub({ token: worked() }));
+        const { container } = render(tree(...withFill({ token: worked() })));
         progress({ percent: 20, elapsedMs: 600, cycleTimeMs: 3000 });
         step();
         const early = fillOf(container);
         expect(Number.isInteger(early)).toBe(true);
-        expect(early).toBeGreaterThanOrEqual(Math.floor(0.2 * WORK_BAR_ART_W));
-        expect(early).toBeLessThan(0.3 * WORK_BAR_ART_W);
-        expect(bar(container).style.getPropertyValue('--work-bar-fill')).toBe(String(early / WORK_BAR_ART_W));
+        expect(early).toBeGreaterThanOrEqual(Math.floor(0.2 * W));
+        expect(early).toBeLessThan(0.3 * W);
+        expect(bar(container).style.getPropertyValue('--work-bar-fill')).toBe(String(early / W));
 
         progress({ percent: 90, elapsedMs: 2700, cycleTimeMs: 3000 });
         step();
-        expect(fillOf(container)).toBeGreaterThanOrEqual(Math.floor(0.9 * WORK_BAR_ART_W));
+        expect(fillOf(container)).toBeGreaterThanOrEqual(Math.floor(0.9 * W));
 
         act(() => { EventBus.publish(BOARD_EVENTS.CYCLE_COMPLETE, { instanceId: 'tok_r' }); });
         step();
-        expect(fillOf(container)).toBeLessThan(0.1 * WORK_BAR_ART_W);
+        expect(fillOf(container)).toBeLessThan(0.1 * W);
     });
 
     it('runs between engine ticks only while the cycle is live, and schedules nothing when idle', () => {
         vi.useFakeTimers();
-        const { container, rerender } = mount(bub({ token: worked({ heroId: null }) }));
+        const { container, rerender } = render(tree(...withFill({ token: worked({ heroId: null }) })));
         expect(vi.getTimerCount()).toBe(0);
-        rerender(tree(bub({ token: worked() })));
+        rerender(tree(...withFill({ token: worked() })));
         expect(vi.getTimerCount()).toBe(0);           // nothing live until the engine says so
         progress({ percent: 10, elapsedMs: 300, cycleTimeMs: 3000 });
         expect(vi.getTimerCount()).toBe(1);           // the next step
@@ -253,30 +235,37 @@ describe('the work bar', () => {
         advance(600);
         expect(fillOf(container)).toBeGreaterThan(before);
 
-        rerender(tree(bub({ token: worked({ heroId: null }) })));
+        rerender(tree(...withFill({ token: worked({ heroId: null }) })));
         expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it('⭐ with nothing drawing it, a live cycle schedules nothing: the model keeps time by itself', () => {
+        vi.useFakeTimers();
+        const { container } = mount(bub({ token: worked() }));
+        progress({ percent: 10, elapsedMs: 300, cycleTimeMs: 3000 });
         expect(bar(container)).toBeNull();
+        expect(vi.getTimerCount()).toBe(0);
     });
 
     it('⭐ blocked: grey, held where it stood, ignoring progress until the alert clears', () => {
         vi.useFakeTimers();
-        const { container, rerender } = mount(bub({ token: worked() }));
+        const { container, rerender } = render(tree(...withFill({ token: worked() })));
         progress({ percent: 50, elapsedMs: 1500, cycleTimeMs: 3000 });
         step();
-        rerender(tree(bub({ token: worked({ alert: ALERT.INPUTS }) })));
+        rerender(tree(...withFill({ token: worked({ alert: ALERT.INPUTS }) }, true)));
         expect(bar(container).getAttribute('data-work-bar-blocked')).toBe('true');
         const held = fillOf(container);
-        expect(held).toBeCloseTo(0.55 * WORK_BAR_ART_W, -1);
+        expect(held).toBeCloseTo(0.55 * W, -1);
         progress({ percent: 90, elapsedMs: 2700, cycleTimeMs: 3000 });
         advance(1000);
         expect(fillOf(container)).toBe(held);
         expect(vi.getTimerCount()).toBe(0);
 
-        rerender(tree(bub({ token: worked() })));
+        rerender(tree(...withFill({ token: worked() })));
         expect(bar(container).getAttribute('data-work-bar-blocked')).toBeNull();
         progress({ percent: 90, elapsedMs: 2700, cycleTimeMs: 3000 });
         step();
-        expect(fillOf(container)).toBeGreaterThanOrEqual(Math.floor(0.9 * WORK_BAR_ART_W));
+        expect(fillOf(container)).toBeGreaterThanOrEqual(Math.floor(0.9 * W));
     });
 
     it('a blocked bar is drawn grey by its own rule (tailwind.css)', async () => {
@@ -297,30 +286,33 @@ describe('the work bar', () => {
         expect(container.querySelector('[data-health-bar="enemy"]').getAttribute('data-health-text')).toBe('10/40');
     });
 
-    it('the bar takes no pointer: a press goes through to the Token', () => {
-        const { container } = mount(bub({ token: worked() }));
+    it('the fill takes no pointer: a press goes through to the plate, which grabs the Token', () => {
+        const { container } = render(tree(...withFill({ token: worked() })));
         expect(bar(container).className).toContain('pointer-events-none');
     });
 });
 
 describe('hover: the rings, the timer and the gear', () => {
-    it('⭐ charges: on hover only, with its number; unlimited has none', () => {
+    it('⭐ charges: on hover only, with its number; unlimited has none; a worked Token has them on its plate', () => {
         const start = tokenStartingUses('fixture_producer');
-        const { container, rerender } = mount(bub({ token: worked({ usesRemaining: start }) }));
+        const idle = (extra) => worked({ heroId: null, ...extra });
+        const { container, rerender } = mount(bub({ token: idle({ usesRemaining: start }) }));
+        expect(ring(container, 'charges')).toBeNull();
+        rerender(tree(bub({ token: idle({ usesRemaining: start }), isHovered: true })));
+        expect(ring(container, 'charges').getAttribute('data-ring-text')).toBe(ringCount(start));
+        rerender(tree(bub({ token: idle({ usesRemaining: start }), isHovered: false })));
+        expect(ring(container, 'charges')).toBeNull();
+        rerender(tree(bub({ token: idle({ usesRemaining: null }), isHovered: true })));
         expect(ring(container, 'charges')).toBeNull();
         rerender(tree(bub({ token: worked({ usesRemaining: start }), isHovered: true })));
-        expect(ring(container, 'charges').getAttribute('data-ring-text')).toBe(ringCount(start));
-        rerender(tree(bub({ token: worked({ usesRemaining: start }), isHovered: false })));
-        expect(ring(container, 'charges')).toBeNull();
-        rerender(tree(bub({ token: worked({ usesRemaining: null }), isHovered: true })));
         expect(ring(container, 'charges')).toBeNull();
     });
 
     it('a change while hovered moves the same ring, which glides', () => {
-        const { container, rerender } = mount(bub({ token: worked({ usesRemaining: 4 }), isHovered: true }));
+        const { container, rerender } = mount(bub({ token: worked({ heroId: null, usesRemaining: 4 }), isHovered: true }));
         const r = ring(container, 'charges');
         expect(r.getAttribute('data-ring-glide')).toBe('true');
-        rerender(tree(bub({ token: worked({ usesRemaining: 3 }), isHovered: true })));
+        rerender(tree(bub({ token: worked({ heroId: null, usesRemaining: 3 }), isHovered: true })));
         expect(ring(container, 'charges')).toBe(r);
         expect(r.getAttribute('data-ring-text')).toBe('3');
     });
@@ -516,7 +508,7 @@ describe('⭐ the problem mark on a Token', () => {
         const grab = vi.fn();
         const onClick = vi.fn();
         const { container } = mount(bub({
-            token: worked({ alert: ALERT.NO_ROOM }), dragProps: { onPointerDown: grab },
+            token: worked({ heroId: null, alert: ALERT.NO_ROOM }), dragProps: { onPointerDown: grab },
             gear: { show: true, pulsing: false, recipe: { name: 'R' }, onClick }
         }));
         fireEvent.click(mark(container));
@@ -533,7 +525,7 @@ describe('⭐ the problem mark on a Token', () => {
     });
 
     it('pressing hides an open tooltip', () => {
-        const { container } = mount(bub({ token: worked({ alert: ALERT.NO_ROOM }), dragProps: { onPointerDown: vi.fn() } }));
+        const { container } = mount(bub({ token: worked({ heroId: null, alert: ALERT.NO_ROOM }), dragProps: { onPointerDown: vi.fn() } }));
         fireEvent.pointerEnter(mark(container));
         expect(document.body.querySelector('[data-tooltip]')).not.toBeNull();
         fireEvent.pointerDown(mark(container));
@@ -542,6 +534,21 @@ describe('⭐ the problem mark on a Token', () => {
 });
 
 describe('the floater', () => {
+    it('⭐ switched off: a charge spent or restocked draws nothing, worked or not', () => {
+        expect(CHARGE_FLOATERS).toBe(false);
+        for (const token of [worked({ usesRemaining: 4 }), worked({ heroId: null, usesRemaining: 4 })]) {
+            const { container, unmount } = mount(bub({ token }));
+            act(() => { EventBus.publish(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, { instanceId: 'tok_r', delta: -1, remaining: 3 }); });
+            act(() => { EventBus.publish(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, { instanceId: 'tok_r', delta: 50, remaining: 53 }); });
+            expect(container.querySelector('[data-charge-floater]')).toBeNull();
+            expect(drawn(container)).toEqual([]);
+            unmount();
+        }
+    });
+});
+
+/** Were the floaters switched back on (`CHARGE_FLOATERS`), where they ride. */
+describe.skipIf(!CHARGE_FLOATERS)('the floater, switched on', () => {
     it('⭐ nothing is drawn for it at rest; a -1 rides above the charges spot', () => {
         const { container } = mount(bub({ token: worked({ heroId: null, usesRemaining: 4 }) }));
         expect(drawn(container)).toEqual([]);
@@ -572,7 +579,7 @@ describe('the floater', () => {
 
 describe('tooltips and grabbing', () => {
     const everything = () => bub({
-        token: worked({ usesRemaining: 4 }), isHovered: true, disallowed: true,
+        token: worked({ heroId: null, usesRemaining: 4 }), isHovered: true, disallowed: true,
         spawner: spawnerRing({ count: 3, cap: 5 }),
         quest: questRing({ currentCount: 1, requiredCount: 4 }),
         readTimer: () => ({ kind: 'grow', inMs: 30000, everyMs: 60000, into: 'fixture_b13_sapling' })
@@ -601,7 +608,7 @@ describe('tooltips and grabbing', () => {
     it('⭐ pressing a ring or a mark reaches the Token’s drag handle', () => {
         const onPointerDown = vi.fn();
         const { container } = mount(bub({
-            token: worked({ usesRemaining: 4, alert: ALERT.INPUTS }), isHovered: true, disallowed: true,
+            token: worked({ heroId: null, usesRemaining: 4, alert: ALERT.INPUTS }), isHovered: true, disallowed: true,
             spawner: spawnerRing({ count: 3, cap: 5 }),
             quest: questRing({ currentCount: 1, requiredCount: 4 }),
             dragProps: { onPointerDown }

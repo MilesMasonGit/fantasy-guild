@@ -17,7 +17,9 @@ import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
 import { getTokenType, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { TokenBubbles } from '../ui/components/board/TokenBubbles.jsx';
 import { InspectBubbles } from '../ui/components/drawer/InspectBubbles.jsx';
-import { WORK_BAR_ART_W, filledSteps } from '../ui/components/board/workBar.js';
+import { filledSteps } from '../ui/components/board/workBar.js';
+import { WorkBarFill } from '../ui/components/board/WorkPlateLayer.jsx';
+import { PLATE } from '../ui/components/board/workPlate.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -27,10 +29,14 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
     RegistryManager: { recordItemGain: vi.fn() }
 }));
 
+/** The plate's fill: its steps (one art pixel each). */
+const FILL = PLATE.FILL_STEPS;
+
 /**
- * ⭐ **The work bar is cheap.** A worked Token's bar is written only on the shared step clock (ten
- * steps a second, every bar in the same frame), and only when its fill moves by an art pixel; the
- * frames between write nothing, and an engine event never writes it. (The cycle ring it replaced
+ * ⭐ **The work bar is cheap.** A worked Token's bar (drawn as its work plate's fill, the model fed
+ * by the Token's `TokenBubbles`) is written only on the shared step clock (ten steps a second,
+ * every bar in the same frame), and only when its fill moves by an art pixel; the frames between
+ * write nothing, and an engine event never writes it. (The cycle ring it replaced
  * was moved onto this clock in brief 60 because rings written on frames of their own put a
  * repaint in nearly every frame of play.) Each frame here records what was written inside the
  * bars: a MutationObserver's records, so every kind of write counts.
@@ -39,7 +45,11 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 const h = React.createElement;
 const tree = (...els) => h(DndContext, null, ...els);
 const token = (id, extra = {}) => ({ typeId: 'fixture_producer', instanceId: id, heroId: 'hero_1', alert: null, usesRemaining: null, ...extra });
-const rows = (ids, extra = {}) => tree(...ids.map(id => h(TokenBubbles, { key: id, instanceId: id, token: token(id, extra[id]) })));
+/** Each Token's bubbles and its plate's fill, held grey while it has an alert (as the plate does). */
+const rows = (ids, extra = {}) => tree(...ids.flatMap(id => [
+    h(TokenBubbles, { key: id, instanceId: id, token: token(id, extra[id]) }),
+    h(WorkBarFill, { key: `${id}-fill`, instanceId: id, blocked: !!extra[id]?.alert })
+]));
 
 const progressPayload = (id, elapsedMs, cycleTimeMs) => ({
     instanceId: id, percent: (elapsedMs / cycleTimeMs) * 100, elapsedMs, cycleTimeMs
@@ -115,10 +125,10 @@ afterEach(() => {
 
 describe('⭐ the work bar steps on one shared clock', () => {
     const ids = ['ra', 'rb', 'rc', 'rd', 're'];
-    function fiveRunning() {
+    function fiveRunning(cycleMs = 2000, gapMs = 130) {
         const r = render(rows(ids));
-        // 2 s cycles (an art pixel each 50 ms), each at its own place: every step moves every bar.
-        ids.forEach((id, i) => progress(id, 130 * i, 2000));
+        // Each at its own place in its cycle.
+        ids.forEach((id, i) => progress(id, gapMs * i, cycleMs));
         watch(r.container);
         return r;
     }
@@ -131,12 +141,13 @@ describe('⭐ the work bar steps on one shared clock', () => {
         expect(writing.length).toBeGreaterThanOrEqual(12); // and it still moves, ~10 times a second
         expect(log.filter(s => s.size === 0).length).toBeGreaterThanOrEqual(234);
         ids.forEach((id, i) => {
-            expect(fillOf(container, id) / WORK_BAR_ART_W).toBeCloseTo(Math.min(1, (130 * i + 1500) / 2000), 1);
+            expect(fillOf(container, id) / FILL).toBeCloseTo(Math.min(1, (130 * i + 1500) / 2000), 1);
         });
     });
 
     it('⭐ every running bar steps in the same frame', () => {
-        fiveRunning();
+        // 1.2 s cycles: an art pixel each 75 ms, so every step moves every bar, none yet full.
+        fiveRunning(1200, 30);
         const writing = frames(150).filter(s => s.size > 0);
         expect(writing.length).toBeGreaterThan(0);
         for (const s of writing) expect([...s].sort()).toEqual([...ids].sort());
@@ -144,7 +155,7 @@ describe('⭐ the work bar steps on one shared clock', () => {
 
     it('a slow cycle writes only when it moves a whole art pixel', () => {
         const { container } = render(rows(['ra']));
-        progress('ra', 0, 40000);                       // one art pixel a second
+        progress('ra', 0, FILL * 1000);                 // one art pixel a second
         watch(container);
         const writing = frames(500).filter(s => s.size > 0);   // 3 s
         expect(writing.length).toBeLessThanOrEqual(4);
@@ -158,22 +169,22 @@ describe('⭐ the work bar steps on one shared clock', () => {
         watch(container);
 
         let at = untilWrite();
-        expect(fillOf(container, 'ra')).toBe(filledSteps((at - t0) / 4000, WORK_BAR_ART_W));
+        expect(fillOf(container, 'ra')).toBe(filledSteps((at - t0) / 4000, FILL));
 
         while (clock < t0 + 2000) frame();
         at = untilWrite();
-        expect(fillOf(container, 'ra')).toBe(filledSteps((at - t0) / 4000, WORK_BAR_ART_W));
-        expect(Math.abs(fillOf(container, 'ra') - WORK_BAR_ART_W / 2)).toBeLessThanOrEqual(2);
+        expect(fillOf(container, 'ra')).toBe(filledSteps((at - t0) / 4000, FILL));
+        expect(Math.abs(fillOf(container, 'ra') - FILL / 2)).toBeLessThanOrEqual(2);
 
         while (clock < t0 + 3600) frame();
         progress('ra', clock - t0, 4000);                      // the engine's tick, as it comes
         while (clock < t0 + 4300) frame();
-        expect(fillOf(container, 'ra')).toBe(WORK_BAR_ART_W);  // full, held until the engine says
+        expect(fillOf(container, 'ra')).toBe(FILL);  // full, held until the engine says
 
         const tc = clock;
         complete('ra');
         at = untilWrite();
-        expect(fillOf(container, 'ra')).toBe(filledSteps((at - tc) / 4000, WORK_BAR_ART_W));
+        expect(fillOf(container, 'ra')).toBe(filledSteps((at - tc) / 4000, FILL));
         expect(fillOf(container, 'ra')).toBeLessThan(2);
     });
 
@@ -199,7 +210,7 @@ describe('⭐ the work bar steps on one shared clock', () => {
         });
         expect(written().size).toBe(0);
         const at = untilWrite();
-        expect(fillOf(container, 'ra')).toBe(filledSteps((6000 + at - tSkip) / 12000, WORK_BAR_ART_W));
+        expect(fillOf(container, 'ra')).toBe(filledSteps((6000 + at - tSkip) / 12000, FILL));
     });
 
     it('⭐ a blocked bar holds: grey, nothing written or scheduled after, late ticks ignored', () => {
@@ -209,7 +220,7 @@ describe('⭐ the work bar steps on one shared clock', () => {
         rerender(rows(['ra'], { ra: { alert: ALERT.INPUTS } }));
         expect(barOf(container, 'ra').getAttribute('data-work-bar-blocked')).toBe('true');
         const held = fillOf(container, 'ra');
-        expect(held / WORK_BAR_ART_W).toBeCloseTo(0.6, 1);
+        expect(held / FILL).toBeCloseTo(0.6, 1);
 
         watch(container);
         const log = frames(500);
@@ -238,11 +249,12 @@ describe('⭐ the work bar steps on one shared clock', () => {
         const { container, rerender } = render(rows(['ra']));
         progress('ra', 6000, 12000);
         frames(20);
+        // In the hand the plate, and its fill, are gone; the model keeps the cycle.
         rerender(tree(h(TokenBubbles, { key: 'ra', instanceId: 'ra', token: token('ra'), isDragging: true })));
         expect(barOf(container, 'ra')).toBeNull();
         frames(5);
         rerender(rows(['ra']));
-        expect(fillOf(container, 'ra') / WORK_BAR_ART_W).toBeCloseTo((6000 + 150) / 12000, 1);
+        expect(fillOf(container, 'ra') / FILL).toBeCloseTo((6000 + 150) / 12000, 1);
     });
 });
 
@@ -272,13 +284,14 @@ describe('⭐ the inspection’s time and XP rings draw the bar’s cycle', () =
         const matToken = (extra = {}) => ({ typeId: 'fixture_producer', instanceId: forest.id, heroId: 'h1', alert: null, usesRemaining: 5000, ...extra });
         const both = (extra) => tree(
             h(TokenBubbles, { key: 'mat', instanceId: forest.id, token: matToken(extra) }),
+            h(WorkBarFill, { key: 'fill', instanceId: forest.id, blocked: !!extra?.alert }),
             h(InspectBubbles, { key: 'inspect', def: getTokenType('fixture_producer'), instanceId: forest.id })
         );
         const { container, rerender } = render(both());
         const agree = () => {
             const bar = fillOf(container, forest.id);
             const ring = Number(inspectRing(container, 'time').getAttribute('data-ring-fraction'));
-            expect(filledSteps(ring, WORK_BAR_ART_W)).toBe(bar);
+            expect(filledSteps(ring, FILL)).toBe(bar);
             expect(inspectRing(container, 'xp').getAttribute('data-ring-fraction')).toBe(inspectRing(container, 'time').getAttribute('data-ring-fraction'));
             return bar;
         };
@@ -287,7 +300,7 @@ describe('⭐ the inspection’s time and XP rings draw the bar’s cycle', () =
         watch(container);
         untilWrite();
         for (let i = 0; i < 200; i++) { frame(); agree(); }
-        expect(agree() / WORK_BAR_ART_W).toBeGreaterThan(0.3);
+        expect(agree() / FILL).toBeGreaterThan(0.3);
         expect(inspectRing(container, 'xp').getAttribute('data-ring-text')).toBe('+4');
 
         // Blocked: the bar holds, and so do the inspection's rings.
@@ -301,6 +314,6 @@ describe('⭐ the inspection’s time and XP rings draw the bar’s cycle', () =
         complete(forest.id);
         progress(forest.id, 300, 12000);
         frames(40);
-        expect(agree() / WORK_BAR_ART_W).toBeLessThan(0.1);
+        expect(agree() / FILL).toBeLessThan(0.1);
     });
 });

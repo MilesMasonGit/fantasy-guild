@@ -50,6 +50,8 @@ export const MAT_Z = Object.freeze({
     RINGS: TOKEN_TOP + 80,
     /** Loot on the floor. */
     LOOT: TOKEN_TOP + 120,
+    /** The work plates under each hero at work and their Token (`WorkPlateLayer`): over the loot at their feet. */
+    WORK_PLATE: TOKEN_TOP + 130,
     /** The mat's effects that stand on the mat: rising numbers, sparks, puffs, a knockout (`MatFxLayer`). */
     FX: TOKEN_TOP + 150,
     /**

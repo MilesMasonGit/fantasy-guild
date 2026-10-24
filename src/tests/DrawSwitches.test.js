@@ -64,8 +64,8 @@ afterEach(() => {
 });
 
 describe('the registry', () => {
-    it('lists the twenty-three switches, all on by default', () => {
-        expect(DRAW_SWITCHES).toHaveLength(25);
+    it('lists the twenty-six switches, all on by default', () => {
+        expect(DRAW_SWITCHES).toHaveLength(26);
         expect(Object.values(drawnSwitches()).every(Boolean)).toBe(true);
         expect(DRAW_SWITCHES.every(isDrawn)).toBe(true);
     });
