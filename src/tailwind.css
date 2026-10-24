@@ -1089,16 +1089,10 @@ body *:not(input):not(textarea):not(code) {
   animation: gi-sky-drift-clouds 300s var(--gi-sky-ease) infinite;
 }
 
-/* A star's outline, one of its own art pixels (`--star-px`) wide: gold when the Bank can pay for
-   its next rank, white on hover, focus and while it is pinned in the details panel. */
-.gi-star-btn[data-upgrade-available] .gi-star-img {
-  filter: drop-shadow(var(--star-px) 0 0 #f5c542) drop-shadow(calc(-1 * var(--star-px)) 0 0 #f5c542)
-          drop-shadow(0 var(--star-px) 0 #f5c542) drop-shadow(0 calc(-1 * var(--star-px)) 0 #f5c542);
-}
-
+/* A star's outline, one of its own art pixels (`--star-px`) wide and white, shows only under the
+   pointer or keyboard focus: never at rest, whatever the star's look or whether it is pinned. */
 .gi-star-btn:hover .gi-star-img,
-.gi-star-btn:focus-visible .gi-star-img,
-.gi-star-btn[data-selected] .gi-star-img {
+.gi-star-btn:focus-visible .gi-star-img {
   filter: drop-shadow(var(--star-px) 0 0 #fff) drop-shadow(calc(-1 * var(--star-px)) 0 0 #fff)
           drop-shadow(0 var(--star-px) 0 #fff) drop-shadow(0 calc(-1 * var(--star-px)) 0 #fff);
 }

@@ -127,11 +127,29 @@ describe('the Hall sky: stars by state', () => {
         expect(container.querySelector('img[src*="t_guildhall"]')).toBeNull();
     });
 
-    it('marks an affordable star for the gold outline instead of a bouncing badge', () => {
+    it('outlines a star only under the pointer or keyboard focus, never at rest', () => {
         InventoryManager.addItem('item_oak_wood', 10);
-        const { container } = renderWeb();
-        expect(container.querySelector('[data-hall-node="bank_slots"]').getAttribute('data-upgrade-available')).toBe('true');
+        const { container } = renderWeb({ selectedUpgradeId: 'bank_slots' });
+        // An affordable, pinned star at rest: blue, with no outline class or bouncing badge.
+        const node = container.querySelector('[data-hall-node="bank_slots"]');
+        expect(node.getAttribute('data-star-look')).toBe('blue');
+        expect(node.querySelector('img').style.filter).toBe('');
         expect(container.querySelector('.animate-bounce')).toBeNull();
+
+        // jsdom cannot apply :hover, so the stylesheet is the proof: every rule that outlines a
+        // star's sprite names :hover or :focus-visible in every one of its selectors.
+        const css = src('../tailwind.css').replace(/\/\*[\s\S]*?\*\//g, '');
+        const rules = [...css.matchAll(/([^{}]+)\{([^}]*)\}/g)]
+            .filter(([, sel, body]) => sel.includes('.gi-star-img') && /filter\s*:/.test(body));
+        expect(rules.length).toBeGreaterThan(0);
+        for (const [, sel] of rules) {
+            for (const one of sel.split(',').map(x => x.trim()).filter(Boolean)) {
+                expect(one, 'a star outline at rest').toMatch(/:hover|:focus-visible/);
+            }
+        }
+        // The hover outline is the kit's: white, one of the star's art pixels wide.
+        const hover = rules.find(([, sel]) => sel.includes('.gi-star-btn:hover .gi-star-img'));
+        expect(hover[2]).toContain('drop-shadow(var(--star-px) 0 0 #fff)');
     });
 });
 
