@@ -4,6 +4,7 @@ import { EventBus } from '../core/EventBus.js';
 import { GameState } from '../../state/GameState.js';
 import { BOARD_EVENTS, ALERT } from './boardEvents.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
+import { isBossEnemy } from '../../config/registries/enemyProfile.js';
 import { neededToolOf } from '../../config/registries/toolKinds.js';
 import { matTuning, onMatTuningChanged } from '../../config/matTuning.js';
 import { artRadiusOf } from '../../config/matGeometry.js';
@@ -12,6 +13,7 @@ import * as HeroMotion from './HeroMotion.js';
 import { centreOf, distanceSq } from './nearby.js';
 import * as WorkCheck from './WorkCheck.js';
 import * as Respawn from './Respawn.js';
+import * as Guardians from './Guardians.js';
 import * as Demolition from './Demolition.js';
 import { workConfigOf } from './StationRecipe.js';
 import * as BoardCombat from './BoardCombat.js';
@@ -561,10 +563,12 @@ function keepOrRelease(r, heroId, dirty) {
             || (kind === 'promotion' && !promotionRefusal(heroId, instance))
             || (kind === 'enemy' && ruleAllows(heroId, FlagRules.FIGHT))
             || (kind === 'work' && hasWorkSkill(def, instance) && ruleAllows(heroId, workConfigOf(def, instance).skill)
-                // A Token that ran out and rests until it respawns is let go at once, with no
-                // badge: the hero works the next thing, or a pinned hero waits by it. Unless it is
-                // marked for demolition, which a resting Token can still be.
-                && (Demolition.isMarked(instance) || !Respawn.isResting(instance, def)))
+                // A Token that ran out and rests until it respawns, or whose guardian stands beside
+                // it again, is let go at once, with no badge: the hero works the next thing, or a
+                // pinned hero waits by it. Unless it is marked for demolition, which a resting or
+                // guarded Token can still be.
+                && (Demolition.isMarked(instance)
+                    || (!Respawn.isResting(instance, def) && !Guardians.isGuarded(instance))))
         );
 
         if (!eligible) {
@@ -675,9 +679,13 @@ export function assign(delta = 0) {
     r.dirty = false;
 
     const order = plantingOrder();
-    if (!order.length) return;
+    if (!order.length) {
+        pendingAmbushes.length = 0;
+        return;
+    }
 
     lapsePins(r, order);
+    springAmbushes();
 
     for (const heroId of order) {
         if (BoardState.claimOfHero(heroId)) keepOrRelease(r, heroId, dirty);
@@ -960,6 +968,8 @@ export function ambush(heroId, instanceId) {
     const r = rt();
     const enemy = BoardState.getTokenById(instanceId);
     if (!r || !BoardState.flagOf(heroId) || !enemy || !BoardCombat.isEnemyToken(enemy)) return false;
+    // A boss fights only when the player sends a hero: it never attacks first.
+    if (isBossEnemy(getTokenType(enemy.typeId))) return false;
     if (!FlagRules.canFight(heroId)) return false;
     const holder = BoardState.heroOfInstance(instanceId);
     if (holder && holder !== heroId) return false;
@@ -980,6 +990,40 @@ export function ambush(heroId, instanceId) {
 /** The enemy that attacked `heroId` and that they are fighting back, or null. */
 export function ambusherOf(heroId) {
     return rt()?.ambushes.get(heroId) ?? null;
+}
+
+/**
+ * Ambushes a rule sprang this tick (`BOARD_EVENTS.AMBUSHED`, from `TriggerSystem`): the enemy a
+ * node's work just spawned, and the hero who did the work, in the order they were sprung.
+ *
+ * ⚠️ Queued, not acted on: the rule fires inside the runner's cycle completion, which carries on
+ * after publishing, so taking the hero off the Token there would pull it out from under that code
+ * (the same reason as {@link cycleCompleted}). The next `assign` springs them first, before any
+ * claim is kept or changed, so the worker meets the ambusher before looking for other work.
+ * Runtime only: a load or a journey drops it, and the enemy, if hostile, still watches its node.
+ */
+const pendingAmbushes = [];
+
+function springAmbushes() {
+    if (!pendingAmbushes.length) return;
+    const sprung = pendingAmbushes.splice(0);
+    for (const { heroId, instanceId } of sprung) ambush(heroId, instanceId);
+}
+
+/**
+ * The busy enemy `heroId` is waiting for, or null: a hero with nothing claimed whose flag passed
+ * over an enemy because another hero is fighting it (`claimed`). Every fight is one-on-one, so a
+ * flag pinned to that enemy waits beside it, and an area flag with nothing else in reach waits at
+ * its flag; either takes the enemy the moment it is free. The first such enemy in the flag's own
+ * order. For the flag's words and the hero's speech.
+ */
+export function waitingFor(heroId) {
+    if (!heroId || BoardState.claimOfHero(heroId)) return null;
+    for (const s of skipsOfHero(heroId)) {
+        if (s.reason !== SKIP.CLAIMED) continue;
+        if (BoardCombat.isEnemyToken(BoardState.getTokenById(s.instanceId))) return s.instanceId;
+    }
+    return null;
 }
 
 /** Why a Token cannot be disallowed: no hero could ever work it. */
@@ -1121,6 +1165,7 @@ export function reset() {
     r.ambushes.clear();
     r.bodies.clear();
     r.dirty = true;
+    pendingAmbushes.length = 0;
 }
 
 /**
@@ -1181,6 +1226,9 @@ export function init() {
         unsubscribers.push(EventBus.subscribe(event, dirty));
     }
     unsubscribers.push(EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, (payload = {}) => cycleCompleted(payload.heroId)));
+    unsubscribers.push(EventBus.subscribe(BOARD_EVENTS.AMBUSHED, ({ heroId, instanceId } = {}) => {
+        if (heroId && instanceId) pendingAmbushes.push({ heroId, instanceId });
+    }));
     unsubscribers.push(onMatTuningChanged((key) => {
         if (key == null || key === 'flagRadius') markDirty();
     }));

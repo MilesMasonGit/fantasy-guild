@@ -5,7 +5,7 @@ import {
     getTokenType, getAllTokenTypes, tokenName, tokenStartingUses
 } from '../../config/registries/tokenRegistry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
-import { foundationTierOf } from '../../config/registries/tokenConstants.js';
+import { foundationTierOf, SUMMON_SHOP_SECTION } from '../../config/registries/tokenConstants.js';
 import { getSkill } from '../../config/registries/skillRegistry.js';
 import { totalPrice } from '../../config/guildUpgrades.js';
 import * as BoardState from './BoardState.js';
@@ -46,9 +46,13 @@ export function priceOf(typeId) {
     return totalPrice(shopBlockOf(typeId)?.price || []);
 }
 
-/** The heading a section is shown under: the skill's name, or "General". */
+/**
+ * The heading a section is shown under: the skill's name, "General", or "Summons" (a boss sold for
+ * the summon item that calls it: dragged onto the mat, it appears there).
+ */
 export function sectionName(section) {
     if (!section || section === GENERAL_SECTION) return 'General';
+    if (section === SUMMON_SHOP_SECTION) return 'Summons';
     return getSkill(section)?.name || section;
 }
 

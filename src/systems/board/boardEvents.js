@@ -168,6 +168,13 @@ export const BOARD_EVENTS = {
     TOKEN_SPAWNED: 'board:token_spawned',
 
     /**
+     * A rule put an enemy beside the Token whose work fired it, and that enemy attacks the hero who
+     * did the work: an ambush. Payload: `{ instanceId, heroId, nodeId }`, the enemy, the worker and
+     * the Token. Published by `TriggerSystem`; `Flags` sets the hero fighting on its next pass.
+     */
+    AMBUSHED: 'board:ambushed',
+
+    /**
      * Loot just dropped from a line rolled at a low chance (`RareDrops.RARE_DROP_CHANCE`). Payload:
      * `{ spriteId, itemId, chance }`. For the eye only: the mat makes the item twinkle.
      */
@@ -337,5 +344,11 @@ export const ALERT = {
      * resting is not a problem the player fixes, so it draws no badge and stays out of
      * `WorkCheck.FIXABLE`.
      */
-    RESTING: 'resting'
+    RESTING: 'resting',
+    /**
+     * A guardian enemy stands beside the Token (`Guardians.js`): nobody works it until the
+     * guardian is beaten. Like `RESTING`, a flag skips it and its hero lets go, and it is never a
+     * Token's alert: the guardian standing there is the mark.
+     */
+    GUARDED: 'guarded'
 };

@@ -8,6 +8,7 @@ import * as SpawnerSystem from './SpawnerSystem.js';
 import * as PassiveProduction from './PassiveProduction.js';
 import * as Hand from './Hand.js';
 import * as Respawn from './Respawn.js';
+import * as Guardians from './Guardians.js';
 import * as Demolition from './Demolition.js';
 import { pickWeighted } from './weightedPick.js';
 import { logger } from '../../utils/Logger.js';
@@ -233,6 +234,17 @@ export const HANDLERS = [
             if (next) Respawn.regrown(instance, next);
             return next;
         }
+    },
+    {
+        // A Token's guardian, or a lair's boss, coming back after it was beaten (at once the first
+        // time). Acts without replacing the Token; one-shot, so the clock starts afresh at the next
+        // kill. Held full while it cannot land (`Guardians.bringBack`).
+        id: 'guardian',
+        clock: Guardians.CLOCK,
+        once: true,
+        applies: (instance, def) => !instance.turnedFrom && Guardians.isAway(instance, def),
+        dueMs: (instance, def) => Guardians.dueMs(instance, def),
+        fire: (instance, def, random) => Guardians.bringBack(instance, def, random)
     }
 ];
 

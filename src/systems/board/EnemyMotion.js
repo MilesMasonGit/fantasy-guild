@@ -104,10 +104,15 @@ export function tetherOf(instanceId) {
     return typeof t === 'string' ? t : null;
 }
 
-/** The live spawner enemy `instanceId` is tethered to, or null (none, or it is gone). */
+/**
+ * The home enemy `instanceId` potters around, or null (none, or it is gone): the live spawner it is
+ * tethered to, or the Token that keeps it as its guardian (a guarded node, a boss's lair:
+ * `Guardians.js`). An ambusher tethered to the node it sprang from has no home and stands still.
+ */
 export function spawnerOf(instanceId) {
-    const spawner = BoardState.getTokenById(tetherOf(instanceId));
-    return isLiveSpawner(spawner) ? spawner : null;
+    const home = BoardState.getTokenById(tetherOf(instanceId));
+    if (isLiveSpawner(home)) return home;
+    return home && home.guardianId === instanceId ? home : null;
 }
 
 /**

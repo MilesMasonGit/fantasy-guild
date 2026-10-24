@@ -547,8 +547,9 @@ export function tick(delta) {
         const check = WorkCheck.fixableReason(id, instance);
         const io = check.io;
 
-        // Resting until it respawns: no cycle and no mark. Its hero lets go on the next flag pass.
-        if (check.reason === ALERT.RESTING) {
+        // Resting until it respawns, or a guardian standing beside it: no cycle and no mark. Its
+        // hero lets go on the next flag pass.
+        if (check.reason === ALERT.RESTING || check.reason === ALERT.GUARDED) {
             setAlert(instance, null);
             continue;
         }

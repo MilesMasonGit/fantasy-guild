@@ -314,8 +314,10 @@ export function tickToken(instance, delta, heroId) {
     // nothing carried across.
     let fight = fights.get(id);
 
-    // A different hero arrived — start fresh rather than inheriting the last
-    // one's attack timers.
+    // ⚠️ Every fight is one-on-one, bosses and guardians included. A Token holds one claim, so a
+    // second hero flagged at a busy enemy waits or works elsewhere (`Flags`) and never joins this
+    // fight. A different hero here means the last one has let go, which ended their fight already;
+    // should one still be found, it ends and the newcomer starts a clean duel at full HP.
     if (fight && fight.assignedHeroId !== heroId) {
         endFight(id);
         fight = null;
