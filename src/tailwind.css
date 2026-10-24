@@ -697,18 +697,20 @@
 .gi-fx-number-gain { color: #6ee7b7; }
 
 /* The "used" bubble over a hero who ate, drank or drank an elixir (`matFx.usedBubble`): the
-   item's icon and what it did, on a small dark plate with a hard edge, tail-less. */
+   item's icon and what it did in one square pixel box on the item's Bank tint (--item-tint),
+   a one-art-pixel black edge. Measured in art pixels (--used-u), text too, so it scales with
+   the mat. */
 .gi-used-bubble {
   display: flex;
   align-items: center;
-  gap: 2px;
-  padding: 1px 4px 1px 2px;
-  border: var(--fx-px, 1px) solid #000;
-  border-radius: 3px;
-  background: rgba(20, 16, 12, 0.92);
+  gap: calc(var(--used-u, 1px) * 2);
+  padding: var(--used-u, 1px) calc(var(--used-u, 1px) * 3) var(--used-u, 1px) var(--used-u, 1px);
+  border: var(--used-u, 1px) solid #000;
+  border-radius: 0;
+  background-color: var(--item-tint, var(--color-item-tint-default));
   color: #fef3c7;
   font-weight: 700;
-  font-size: var(--font-size-sm);
+  font-size: calc(var(--used-u, 1px) * 9);
   line-height: 1;
   white-space: nowrap;
   pointer-events: none;

@@ -13,6 +13,7 @@ import { bubbleAnchorY } from '../bubbleLayout.js';
 import { ART_PX } from '../../../../config/matGeometry.js';
 import { getItem } from '../../../../config/registries/itemRegistry.js';
 import { resolveSpritePath } from '../../../../utils/AssetManager.js';
+import { itemTintName } from '../../base/itemTint.js';
 
 /**
  * The mat's effects that stand on the mat rather than on one Token's art: numbers rising off a
@@ -233,8 +234,10 @@ export function usedBubbleText(p) {
 }
 
 /**
- * The "used" bubble: a small bubble over a hero's head with the item's icon and what it did, for
- * {@link USED_BUBBLE_MS}. It pops up one art pixel, holds, and is gone. One per hero: a newer one
+ * The "used" bubble: a small dark pixel box over a hero's head holding the item's icon and what it
+ * did, for {@link USED_BUBBLE_MS}, on the same tint the item's Bank tile wears (`itemTint.js`), so
+ * food, drink and elixirs read by colour. Sized in art pixels, text included, so it scales with
+ * the mat like the icon. It pops up one art pixel, holds, and is gone. One per hero: a newer one
  * takes the older one's place. Nothing is drawn for a hero who is not on the mat.
  * @returns {Animation|null}
  */
@@ -249,8 +252,13 @@ export function usedBubble(heroId, itemId, text) {
     el.setAttribute('aria-hidden', 'true');
     el.setAttribute('data-fx-used', heroId);
     el.className = 'gi-used-bubble';
+    const item = getItem(itemId);
+    const tint = itemTintName(item);
+    el.setAttribute('data-fx-used-tint', tint);
+    el.style.setProperty('--item-tint', `var(--color-item-tint-${tint})`);
+    el.style.setProperty('--used-u', `${unit}px`);
     el.style.visibility = 'hidden';
-    const src = resolveSpritePath(getItem(itemId) || itemId);
+    const src = resolveSpritePath(item || itemId);
     if (src) {
         const icon = document.createElement('img');
         icon.src = src.startsWith('/') || src.startsWith('http') || src.startsWith('data:') ? src : `/${src}`;

@@ -61,7 +61,9 @@ function fighterAt(level) {
  * - a level 40 Fighter with Valor and Ironskin (30 of each in the Bank): a bubble names each
  *   elixir as the first fight starts, the Bank drops by one of each, and again after ten Cows;
  * - a level 5 Fighter with Shrimp and Water (20 Shrimp, 5 Water): below 25 % HP they eat, a
- *   "+5 ♥" bubble over them; the Water stays in the Bank (drinks do not heal in a fight).
+ *   "+5 ♥" bubble over them; the Water stays in the Bank (drinks do not heal in a fight);
+ * - a level 5 Fighter with only Water, hurt to 2 HP and standing beside the Hall, out of any
+ *   fight: they drink, a "+1 ♥" bubble on the drink tint.
  * ⚠️ Changes the game, like Spawn Party.
  * @returns {{ok: boolean, error?: string}}
  */
@@ -78,13 +80,13 @@ export function setUpSuppliesScene() {
     if (!cows[0] || !cows[1]) return { ok: false, error: 'No room beside the Guild Hall for two Cows' };
 
     const ranks = GuildUpgradeManager.getRanks();
-    ranks.roster_size = Math.max(ranks.roster_size || 0, (HeroManager.getAllHeroes() || []).length + 2);
+    ranks.roster_size = Math.max(ranks.roster_size || 0, (HeroManager.getAllHeroes() || []).length + 3);
     GuildUpgradeManager.recompute();
 
     InventoryManager.addItem('qa_elixir_valor', 30);
     InventoryManager.addItem('qa_elixir_ironskin', 30);
     if (getItem('item_shrimp')) InventoryManager.addItem('item_shrimp', 20);
-    if (getItem('item_water')) InventoryManager.addItem('item_water', 5);
+    if (getItem('item_water')) InventoryManager.addItem('item_water', 10);
 
     const loadouts = [
         { level: 40, items: QA_ELIXIRS },
@@ -96,6 +98,12 @@ export function setUpSuppliesScene() {
         for (const itemId of items) if (getItem(itemId)) EquipmentManager.equipItem(hero.id, itemId);
         Placement.plantFlagAt(hero.id, { x: cows[i].x + 40, y: cows[i].y + 40 });
     });
+    const thirsty = fighterAt(5);
+    if (HeroManager.addHero(thirsty)) {
+        if (getItem('item_water')) EquipmentManager.equipItem(thirsty.id, 'item_water');
+        thirsty.hp.current = 2;
+        Placement.plantFlagAt(thirsty.id, { x: c.x, y: c.y + 200 });
+    }
     EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'dev_supplies_scene' });
     return { ok: true };
 }

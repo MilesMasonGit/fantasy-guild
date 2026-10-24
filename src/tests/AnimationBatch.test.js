@@ -558,8 +558,9 @@ describe('the "used" bubble over a hero who eats, drinks or drinks an elixir', (
         GameState.initNew();
         clearMat();
         registerItems({
-            fx_bread: { id: 'fx_bread', name: 'Bread', equipSlot: 'food', sprite: ITEM },
-            fx_valor: { id: 'fx_valor', name: 'Valor', equipSlot: 'consumable', sprite: ITEM }
+            fx_bread: { id: 'fx_bread', name: 'Bread', type: 'food', equipSlot: 'food', sprite: ITEM },
+            fx_ale: { id: 'fx_ale', name: 'Ale', type: 'drink', equipSlot: 'drink', sprite: ITEM },
+            fx_valor: { id: 'fx_valor', name: 'Valor', type: 'potion', equipSlot: 'consumable', sprite: ITEM }
         });
         host = document.createElement('div');
         document.body.appendChild(host);
@@ -591,6 +592,19 @@ describe('the "used" bubble over a hero who eats, drinks or drinks an elixir', (
     it('names an elixir', () => {
         EventBus.publish(ENGINE_EVENTS.HERO_CONSUMED, { heroId: 'h1', itemId: 'fx_valor', category: 'consumable', amount: 0, elixir: true });
         expect(host.querySelector('[data-fx-used="h1"]').textContent).toBe('Valor');
+    });
+
+    it('wears the Bank tile tint of its item type, and is measured in art pixels', () => {
+        const tintOf = (itemId, extra = {}) => {
+            EventBus.publish(ENGINE_EVENTS.HERO_CONSUMED, { heroId: 'h1', itemId, amount: 3, ...extra });
+            const b = host.querySelector('[data-fx-used="h1"]');
+            const out = [b.getAttribute('data-fx-used-tint'), b.style.getPropertyValue('--item-tint'), b.style.getPropertyValue('--used-u')];
+            b.remove();
+            return out;
+        };
+        expect(tintOf('fx_bread')).toEqual(['food', 'var(--color-item-tint-food)', '2px']);
+        expect(tintOf('fx_ale')).toEqual(['drink', 'var(--color-item-tint-drink)', '2px']);
+        expect(tintOf('fx_valor', { elixir: true })).toEqual(['potion', 'var(--color-item-tint-potion)', '2px']);
     });
 
     it('one at a time per hero: a newer bubble replaces the older one', () => {

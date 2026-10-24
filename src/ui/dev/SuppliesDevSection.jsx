@@ -20,7 +20,7 @@ export function SuppliesDevSection() {
                     onClick={() => {
                         const r = setUpSuppliesScene();
                         setStatus(r.ok
-                            ? 'Two Fighters on two Cows: the left one has Valor and Ironskin, the right one Shrimp and Water'
+                            ? 'Two Fighters on two Cows (left: Valor and Ironskin; right: Shrimp and Water), and a hurt one below the Hall with Water'
                             : r.error);
                     }}
                 >

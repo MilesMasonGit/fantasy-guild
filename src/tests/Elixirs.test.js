@@ -202,6 +202,18 @@ describe('an elixir is drunk as a fight starts and lasts ten fights', () => {
         expect(consumed).toEqual([]);
     });
 
+    it('raises no rule callout: an elixir says itself only in the used bubble', () => {
+        hero.equipment[0] = 'elixir_valor';
+        InventoryManager.addItem('elixir_valor', 1);
+        const fired = [];
+        const off = EventBus.subscribe(BOARD_EVENTS.EFFECT_FIRED, (p) => fired.push(p));
+        placeEnemy();
+        untilEngagements(2);
+        off();
+        expect(hero.effects.map(e => e.effectId)).toEqual(['fx_valor']);
+        expect(fired).toEqual([]);
+    });
+
     it('never drinks a consumable that has no fight rule', () => {
         hero.equipment[0] = 'potion_work';
         InventoryManager.addItem('potion_work', 2);

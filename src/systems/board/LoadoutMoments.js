@@ -92,7 +92,8 @@ export function fire(instanceId, heroId, eventId) {
 
         if (!acted) continue;
         if (!statement.dosed) HeroEffects.payLoadoutCost(statement);
-        EffectFeedback.announce(instanceId, statement);
+        // An elixir says itself once, in the hero's "used" bubble as it is drunk, not on every fight.
+        if (!statement.dosed) EffectFeedback.announce(instanceId, statement);
         fired += 1;
     }
 
