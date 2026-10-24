@@ -453,3 +453,16 @@ change):
 - **Older content's `budgetScale`** (the Goblin ×0.3, the Goblin Chief ×0.6)
   still scales the table's HP, hit and XP, so today's goblins stay tutorial
   pushovers until C0 and C2 give them their own numbers.
+
+**Owner rulings on the C1 choices (2026-10-24, by phone):**
+
+- **The Goblin Chief stays as it now is**: it beats a Recruit about 98 times
+  in 100. Its purpose is to make the player craft basic equipment to beat
+  it.
+- **The level-1 even fight stays near a coin toss unfed** (59 %); food fixes
+  it. No slower or weaker low-level enemies.
+- **A promoted hero with no weapon punches** for 1 + the level step, on their
+  own style, and earns combat XP (as built).
+- **Block is removed** (as built).
+- Director's calls, not asked: a Recruit is combat level 0; the miss slope is
+  1 point per level; enemies crit at 5 % unless authored.
