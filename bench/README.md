@@ -586,7 +586,7 @@ away from open drawers.
 | flag → mat | a planted flag → an open spot | the same |
 | Token → mat | a Token on the mat → an open spot | the Token stands within 150 u of the aim |
 | Shop row → mat | an affordable Shop row → an open spot | a new Token of that type stands there (it is then removed, so the mat cap never fills) |
-| Bank item → dock hero | an equippable Bank item → a hero who can wear it | the hero wears it (their gear is cleared first) |
+| Bank item → dock hero | an equippable Bank item → a hero who can wear it, on their figure in the hero bar or their portrait tab beside the Bank | the hero wears it (their gear is cleared first), and one item, one hero holds: a gear copy left the Bank (one fewer there), a shared item (food, drink, potions) took no copy (its count is not checked: working heroes eat and drink from it meanwhile) |
 
 Every kind runs twice: a **plain** pass, and an **overlays** pass with speech
 bubbles over every hero (a level-up event for each hero every 2.5 s, which also
@@ -594,7 +594,11 @@ fills the notification column) on top of any callouts S2 is showing. In both, ev
 must also pick up the right thing. The Perf HUD is hidden first (it is the
 harness's own overlay and would cover the Shop's lower rows). Set-up is done
 through the game's functions, never as a drag: Bank stock for the Shop's prices
-and equippable items, unequipping before an equip, removing a bought Token. Both passes run on one page, kinds in the order
+and equippable items (six gear and six shared, each sort read from one trial
+equip), unequipping before an equip, removing a bought Token. A hero sheet left
+open by an equip drop is closed with Escape before the next kind, and only
+while one is open: Escape closes the top-most layer, which is otherwise the
+open drawer. Both passes run on one page, kinds in the order
 of the table, so the overlays pass starts with whatever the plain pass left
 behind (for example a hero sheet opened and closed by the equip drops). That is
 deliberate: leftovers like that are how a player meets a drag bug. The "other

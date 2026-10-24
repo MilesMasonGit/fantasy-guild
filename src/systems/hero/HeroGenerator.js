@@ -83,6 +83,7 @@ export function generateHero(options = {}) {
         // is the default.
         flagRules: {},
 
+        // Always empty: statuses ride on `effects` (see `HeroRehydration`).
         statuses: [],
 
         perks: {},

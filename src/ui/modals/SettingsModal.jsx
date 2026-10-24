@@ -7,6 +7,7 @@ import { SaveManager } from '../../systems/core/SaveManager.js';
 import { cn } from '../utils/cn.js';
 import { Bell, MonitorPlay, Volume2, Wrench, Save, Eye, Type, Sliders } from 'lucide-react';
 import { TypographyScaleModal } from './TypographyScaleModal.jsx';
+import { KitButton, KIT_BUTTON_TONE, PixelToggle } from '../components/base/KitButton.jsx';
 
 /** SettingsModal: a tabbed interface for global game settings. */
 export const SettingsModal = ({ isOpen, onClose }) => {
@@ -48,8 +49,8 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={cn(
-                                "flex items-center gap-3 w-full px-4 py-3 rounded text-sm font-bold uppercase tracking-wider transition-all duration-300",
-                                activeTab === tab.id ? "bg-gi-primary/20 text-white border-l-4 border-gi-primary" : "text-gray-500 hover:text-gray-300 hover:bg-white/5 border-l-4 border-transparent"
+                                "flex items-center gap-3 w-full px-4 py-3 text-sm font-bold uppercase tracking-wider transition-colors cursor-pointer",
+                                activeTab === tab.id ? "text-white border-l-2 border-[var(--color-ui-gold)]" : "text-gray-500 hover:text-white border-l-2 border-transparent"
                             )}
                         >
                             {tab.icon} {tab.label}
@@ -65,7 +66,7 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                 <div className="flex-1 flex flex-col pt-2 h-[450px] overflow-y-auto custom-scrollbar px-2 pb-2">
                     {activeTab === 'accessibility' && (
                         <div className="flex flex-col gap-3 animate-in fade-in duration-300">
-                            <div className="p-3.5 bg-black/40 rounded-lg border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+                            <div className="py-1.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                 <div className="flex flex-col">
                                     <span className="text-sm font-bold text-white tracking-wide flex items-center gap-2">
                                         <Type className="w-4 h-4 text-gi-primary" /> Typography Scale
@@ -74,12 +75,14 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                                         Customize font sizes from XXS (14px) to 2XL (48px) with real-time UI preview
                                     </span>
                                 </div>
-                                <button
+                                <KitButton
+                                    tone={KIT_BUTTON_TONE.PLAIN}
                                     onClick={() => setIsTypographyOpen(true)}
-                                    className="flex items-center justify-center gap-2 px-4 py-2 bg-gi-primary/20 hover:bg-gi-primary/30 border border-gi-primary/50 text-gi-primary hover:text-white rounded text-xs font-bold uppercase tracking-wider transition-all"
+                                    className="shrink-0"
+                                    buttonClassName="gap-2 px-3 py-1 text-xs uppercase tracking-wider"
                                 >
                                     <Sliders className="w-3.5 h-3.5" /> Adjust Scale
-                                </button>
+                                </KitButton>
                             </div>
 
                             <SettingSelect 
@@ -151,12 +154,13 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                                 ]} 
                             />
                             <div className="pt-4 border-t border-white/10">
-                                <button
+                                <KitButton
                                     onClick={() => SaveManager.save(true)}
-                                    className="w-full flex items-center justify-center gap-2 py-3 bg-gi-primary text-black font-bold uppercase tracking-widest rounded hover:brightness-110 transition-all shadow-lg"
+                                    className="w-full"
+                                    buttonClassName="gap-2 py-2 uppercase tracking-widest"
                                 >
                                     <Save className="w-4 h-4" /> Save Game Now
-                                </button>
+                                </KitButton>
                             </div>
                             <SettingSelect 
                                 label="Background Tile" 
@@ -197,12 +201,12 @@ export const SettingsModal = ({ isOpen, onClose }) => {
             </div>
 
             <div className="flex justify-between w-full border-t border-white/10 pt-4 mt-2">
-                <button onClick={() => { SettingsManager.resetOptions(); setSettings(SettingsManager.getAll()); }} className="text-gray-500 hover:text-red-400 font-bold transition-colors text-sm px-4">
+                <button onClick={() => { SettingsManager.resetOptions(); setSettings(SettingsManager.getAll()); }} className="text-gray-500 hover:text-red-400 font-bold transition-colors text-sm px-4 cursor-pointer">
                     Reset Defaults
                 </button>
-                <button onClick={onClose} className="bg-gi-primary text-black font-bold uppercase tracking-widest px-8 py-2 rounded hover:brightness-110 transition-all shadow-lg">
+                <KitButton onClick={onClose} className="mr-1 mb-1" buttonClassName="uppercase tracking-widest px-8 py-1.5">
                     Done
-                </button>
+                </KitButton>
             </div>
 
             {isTypographyOpen && (
@@ -224,7 +228,7 @@ export const SettingsModal = ({ isOpen, onClose }) => {
 // the row, blocks the control, and adds the '(Coming soon)' tag; it never changes `value` or
 // `onChange`, so re-wiring it later is just dropping the prop.
 const SettingToggle = ({ label, value, onChange, description, disabled = false, settingKey }) => (
-    <div data-setting={settingKey} data-setting-disabled={disabled || undefined} className={cn("flex items-center justify-between p-3 bg-black/40 rounded border border-white/5", disabled && "opacity-50")}>
+    <div data-setting={settingKey} data-setting-disabled={disabled || undefined} className={cn("flex items-center justify-between gap-3 py-1.5", disabled && "opacity-50")}>
         <div className="flex flex-col">
             <span className="text-sm font-bold text-white tracking-wide">
                 {label}
@@ -232,32 +236,26 @@ const SettingToggle = ({ label, value, onChange, description, disabled = false, 
             </span>
             {description && <span className="ui-text-body text-gray-500">{description}</span>}
         </div>
-        <button
+        <PixelToggle
+            on={!!value}
             onClick={() => { if (!disabled) onChange(!value); }}
             disabled={disabled}
-            className={cn(
-                "w-12 h-6 rounded-full relative transition-colors duration-300",
-                value ? "bg-gi-success" : "bg-gray-700",
-                disabled && "cursor-not-allowed"
-            )}
-        >
-            <div className={cn("w-5 h-5 bg-white rounded-full absolute top-[2px] transition-transform duration-300", value ? "translate-x-[26px]" : "translate-x-[2px]")} />
-        </button>
+        />
     </div>
 );
 
 const SettingSlider = ({ label, value = 100, onChange }) => (
-    <div className="flex flex-col gap-2 p-3 bg-black/40 rounded border border-white/5">
+    <div className="flex flex-col gap-2 py-1.5">
         <div className="flex items-center justify-between">
             <span className="text-sm font-bold text-white tracking-wide">{label}</span>
             <span className="text-gi-primary text-sm">{value}%</span>
         </div>
-        <input type="range" min="0" max="100" value={value} onChange={(e) => onChange(parseInt(e.target.value))} className="w-full accent-gi-primary h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
+        <input type="range" min="0" max="100" value={value} onChange={(e) => onChange(parseInt(e.target.value))} className="ui-range w-full" />
     </div>
 );
 
 const SettingSelect = ({ label, value, options, onChange, disabled = false, settingKey }) => (
-    <div data-setting={settingKey} data-setting-disabled={disabled || undefined} className={cn("flex items-center justify-between p-3 bg-black/40 rounded border border-white/5", disabled && "opacity-50")}>
+    <div data-setting={settingKey} data-setting-disabled={disabled || undefined} className={cn("flex items-center justify-between gap-3 py-1.5", disabled && "opacity-50")}>
         <span className="text-sm font-bold text-white tracking-wide">
             {label}
             {disabled && <span className="ml-2 ui-text-body font-normal normal-case text-gi-muted">(Coming soon)</span>}
@@ -273,7 +271,7 @@ const SettingSelect = ({ label, value, options, onChange, disabled = false, sett
                 onChange(val);
             }}
             className={cn(
-                "bg-gray-900 border border-white/20 text-white rounded px-3 py-1.5 focus:border-gi-primary outline-none font-bold",
+                "ui-pixel-edge bg-black/60 text-white px-3 py-1 outline-none font-bold cursor-pointer",
                 disabled && "cursor-not-allowed"
             )}
         >

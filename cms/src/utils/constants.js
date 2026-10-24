@@ -80,6 +80,8 @@ export {
   expandAll,
   duplicateRefsOf,
   usedBy,
+  statusBlockOf,
+  MAX_STATUS_STACKS,
 } from '../../../src/systems/effects/effectLibrary.js';
 
 // ⚠️ The migration is imported, never reimplemented: it runs over `data/` and over the workspace in the browser (`useEntityStore`), and a second implementation would let the two produce different libraries.
@@ -114,7 +116,7 @@ export { RESPAWN_MODES, RESPAWN_DEFAULTS, RESPAWN_MIN_MS } from '../../../src/co
 export { ENEMY_STYLES, enemyProfileOf, enemyFilledStats, ENEMY_OVERRIDE_FIELDS } from '../../../src/config/registries/enemyProfile.js';
 
 // Enemy kinds (Armoured, Nimble, Swift, Brute, Venomous): the presets the Token editor offers, none to two per enemy, and which pairs clash.
-export { ENEMY_KINDS, MAX_ENEMY_KINDS, kindsClash, enemyKindsOf } from '../../../src/config/registries/enemyKinds.js';
+export { ENEMY_KINDS, MAX_ENEMY_KINDS, kindsClash, enemyKindsOf, VENOM_EFFECT_ID } from '../../../src/config/registries/enemyKinds.js';
 
 // Weapons: which combat styles a weapon belongs to (a Dagger is Melee and Stealth), for the item editor's Weapon block.
 export { isWeapon, weaponStylesOf } from '../../../src/config/registries/weaponStyles.js';
@@ -207,14 +209,9 @@ export {
   blankRestriction,
 } from '../../../src/config/registries/restrictionPalette.js';
 
-// What an `Applies` may put on someone. Read from the status engine's own
-// registry, so the CMS can never offer a status the engine has not got.
-import { authorableStatuses } from '../../../src/config/registries/statusRegistry.js';
 // The simulator's dial defaults. They live beside the passes that read them, so
 // there is one definition of "the §14 dials" rather than a copy here.
 import { DEFAULT_DIALS } from '../engine/sim/dials.js';
-
-export const AUTHORABLE_STATUSES = authorableStatuses();
 
 // The game defines SKILLS as an object keyed by id; every CMS consumer expects an array of `{ id, name }`, so it is transformed here. `combat` is deliberately absent: it is a game category, not a skill, so it can never be picked in a skill dropdown.
 export const SKILLS = Object.values(GAME_SKILLS).map(({ id, name, layer }) => ({ id, name, layer }));

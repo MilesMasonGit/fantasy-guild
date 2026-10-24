@@ -102,7 +102,7 @@ export const TokenInspection = ({
         <div className="p-4 flex flex-col gap-4 text-xs text-gi-text">
             <div className="flex flex-col items-center text-center">
                 {!hideSprite && (
-                    <div className="relative group flex items-center justify-center w-32 h-32 mb-1 rounded-lg overflow-hidden">
+                    <div className="relative group flex items-center justify-center w-32 h-32 mb-1 overflow-hidden">
                         <TokenSprite typeId={typeId} surface={TOKEN_SURFACE.INSPECT} size={128} alt={def.name} />
                     </div>
                 )}
@@ -123,7 +123,7 @@ export const TokenInspection = ({
                         {allTags.map(tag => (
                             <span
                                 key={tag}
-                                className="px-2 py-0.5 rounded border border-gi-border/50 ui-text-body font-medium text-gi-muted uppercase tracking-wider"
+                                className="px-2 py-0.5 ui-text-body font-medium text-gi-muted uppercase tracking-wider"
                             >
                                 {tag}
                             </span>
@@ -210,7 +210,7 @@ export const TokenInspection = ({
     );
 };
 
-const ACTION_CLS = 'w-full px-3 py-2 rounded-lg border text-xs font-bold transition-colors cursor-pointer';
+const ACTION_CLS = 'w-full px-3 py-2 border-2 text-xs font-bold transition-colors cursor-pointer';
 
 /**
  * How a board Token leaves the mat at once. A bounty: Dismiss (no reward; a tutorial step never

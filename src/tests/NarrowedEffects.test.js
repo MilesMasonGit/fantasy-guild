@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
@@ -6,7 +6,8 @@ import * as Placement from '../systems/board/Placement.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
-import * as StatusEffectSystem from '../systems/effects/StatusEffectSystem.js';
+import * as LiveEffects from '../systems/effects/LiveEffects.js';
+import { registerStatusFixtures, POISON, BURN } from './fixtures/statusEffects.js';
 import * as HeroManager from '../systems/hero/HeroManager.js';
 import * as HeroEffects from '../systems/hero/HeroEffects.js';
 import { ModifierAggregator } from '../systems/effects/ModifierAggregator.js';
@@ -155,39 +156,46 @@ describe('⭐ a rule can be narrowed to one skill', () => {
 });
 
 describe('⭐ status immunity can finally be written', () => {
+    // Statuses (library effects with a status block) land only on a fighter; these heroes count as fighting.
+    beforeEach(() => {
+        registerStatusFixtures();
+        LiveEffects.setFightCheck(() => true);
+    });
+    afterEach(() => LiveEffects.setFightCheck(null));
+    const land = (heroId, effectId) => LiveEffects.applyToHero(heroId, { effectId });
+
     it('blocks the status it names', () => {
         const hero = makeHero('hero_immune');
         hero.aggregator.addModifier({
             type: EFFECT_TYPES.STATUS_IMMUNITY, value: 1, bucket: 'flat',
-            source: 'test', target: { category: 'poison' }
+            source: 'test', target: { category: POISON }
         });
         GameState.state.heroes = [hero];
 
-        const result = StatusEffectSystem.applyToHero('hero_immune', 'poison', 3);
-
-        expect(result).toEqual({ success: true, blocked: true });
-        expect(HeroManager.getHero('hero_immune').statuses).toEqual([]);
+        expect(land('hero_immune', POISON)).toBe(false);
+        expect(LiveEffects.statusesOf(HeroManager.getHero('hero_immune'))).toEqual([]);
     });
 
     it('does not block a DIFFERENT status — immunity is per status, not a blanket', () => {
         const hero = makeHero('hero_partly');
         hero.aggregator.addModifier({
             type: EFFECT_TYPES.STATUS_IMMUNITY, value: 1, bucket: 'flat',
-            source: 'test', target: { category: 'poison' }
+            source: 'test', target: { category: POISON }
         });
         GameState.state.heroes = [hero];
 
-        StatusEffectSystem.applyToHero('hero_partly', 'burning', 2);
+        land('hero_partly', BURN);
 
-        expect(HeroManager.getHero('hero_partly').statuses)
-            .toEqual([{ id: 'burning', stacks: 2 }]);
+        expect(LiveEffects.statusesOf(HeroManager.getHero('hero_partly')))
+            .toEqual([{ effectId: BURN, stacks: 1, ticksLeft: 3 }]);
     });
 
     it('lets the status through when nothing grants immunity', () => {
         GameState.state.heroes = [makeHero('hero_plain')];
-        StatusEffectSystem.applyToHero('hero_plain', 'poison', 2);
-        expect(HeroManager.getHero('hero_plain').statuses)
-            .toEqual([{ id: 'poison', stacks: 2 }]);
+        land('hero_plain', POISON);
+        land('hero_plain', POISON);
+        expect(LiveEffects.statusesOf(HeroManager.getHero('hero_plain')))
+            .toEqual([{ effectId: POISON, stacks: 2, ticksLeft: null }]);
     });
 
     it('reaches the aggregator from a carried item, category and all', () => {
@@ -200,7 +208,7 @@ describe('⭐ status immunity can finally be written', () => {
                     ...makeStatement(KEYWORD.PROVIDES),
                     payload: {
                         type: EFFECT_TYPES.STATUS_IMMUNITY, bucket: 'flat',
-                        value: 1, category: 'poison'
+                        value: 1, category: POISON
                     }
                 }]
             }
@@ -217,7 +225,7 @@ describe('⭐ status immunity can finally be written', () => {
         const contributions = HeroEffects.loadoutCombatContributions(hero);
 
         expect(contributions).toEqual([
-            { type: EFFECT_TYPES.STATUS_IMMUNITY, value: 1, category: 'poison' }
+            { type: EFFECT_TYPES.STATUS_IMMUNITY, value: 1, category: POISON }
         ]);
     });
 });
@@ -266,10 +274,10 @@ describe('the sentence says what was narrowed', () => {
             ...makeStatement(KEYWORD.PROVIDES),
             payload: {
                 type: EFFECT_TYPES.STATUS_IMMUNITY, bucket: 'flat',
-                value: 1, category: 'poison'
+                value: 1, category: POISON
             }
         };
-        const line = renderStatement(statement);
+        const line = renderStatement(statement, { effect: (id) => (id === POISON ? 'Poison' : id) });
         expect(line).toContain('immunity to Poison');
         // ⚠️ Never a number: the reader asks `> 0`, so "1 more status immunity"
         // would imply a magnitude that does not exist.

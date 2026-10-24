@@ -229,7 +229,7 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
             {heroCue && (
                 <div
                     className={cn(
-                        'absolute top-0 bottom-0 w-0.5 z-50 pointer-events-none bg-gi-gold shadow-[0_0_10px_#f59e0b]',
+                        'absolute top-0 bottom-0 w-0.5 z-50 pointer-events-none bg-gi-gold',
                         insertAfter ? '-right-px' : '-left-px'
                     )}
                 />
@@ -237,7 +237,7 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
 
             {/* Item drop cue: a soft glow in the strip under the hero. */}
             {itemCue && (
-                <div className="absolute inset-x-1 inset-y-0 rounded-t-lg bg-gi-primary/20 ring-2 ring-gi-primary/70 pointer-events-none" />
+                <div data-dock-drop-cue className="absolute inset-x-1 inset-y-0 bg-gi-primary/20 outline-2 outline-solid -outline-offset-2 outline-[var(--color-ui-white)] pointer-events-none" />
             )}
 
             {/**
@@ -301,7 +301,7 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
                     data-dock-hp-tone={tone}
                     title={`${hp.toLocaleString()} / ${hpMax.toLocaleString()} HP${isWounded ? ' (wounded)' : ''}`}
                     className={cn(
-                        'w-14 h-1 rounded-full bg-black/70 overflow-hidden',
+                        'w-14 h-1 bg-black/70 overflow-hidden',
                         isWounded && 'ring-1 ring-red-500/80'
                     )}
                 >
@@ -406,7 +406,7 @@ const BarBubbles = ({ heroId, bubbles, bottom }) => {
                         aria-label="Older level-ups"
                         disabled={shownPage >= pages - 1}
                         onClick={turn(1)}
-                        className="p-0.5 rounded-sm bg-black/60 enabled:hover:text-gi-gold enabled:cursor-pointer disabled:opacity-30"
+                        className="p-0.5 bg-black/60 enabled:hover:text-gi-gold enabled:cursor-pointer disabled:opacity-30"
                     >
                         <PixelTriangle dir="up" />
                     </button>
@@ -417,7 +417,7 @@ const BarBubbles = ({ heroId, bubbles, bottom }) => {
                         aria-label="Newer level-ups"
                         disabled={shownPage === 0}
                         onClick={turn(-1)}
-                        className="p-0.5 rounded-sm bg-black/60 enabled:hover:text-gi-gold enabled:cursor-pointer disabled:opacity-30"
+                        className="p-0.5 bg-black/60 enabled:hover:text-gi-gold enabled:cursor-pointer disabled:opacity-30"
                     >
                         <PixelTriangle dir="down" />
                     </button>

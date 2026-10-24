@@ -163,13 +163,19 @@ export const WEAPON_TIERS = Object.freeze([
     { tier: 'darkmetal',  level: 90, fast: 5, normal: 8, slow: 11 }
 ]);
 
-// --- Status clock ---------------------------------------------------------------------------
+// --- The Rules tick -------------------------------------------------------------------------
 
 /**
- * The global status-effect clock (status_effects_concept.md §1B): every
- * periodic status ticks once per interval, in combat and out of it.
+ * The one clock every lingering effect ticks on ("On Tick"), statuses included: a normal
+ * swing's pace, so a Poison stack's 1 a tick reads like a third of a swing per second.
  */
-export const STATUS_TICK_INTERVAL_MS = 5000;
+export const STATUS_TICK_INTERVAL_MS = 3000;
+
+/**
+ * How far a Swing Time effect may move a swing: never under a quarter of its time, never over
+ * four times it.
+ */
+export const SWING_TIME_FACTOR_RANGE = Object.freeze({ min: 0.25, max: 4 });
 
 // --- Regen ----------------------------------------------------------------------------------
 

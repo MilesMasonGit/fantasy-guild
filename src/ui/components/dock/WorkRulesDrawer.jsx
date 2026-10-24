@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Check, Swords } from 'lucide-react';
 import { useEscapeLayer } from '../../utils/escapeLayers.js';
+import { PixelSwitch } from '../base/KitButton.jsx';
 import { cn } from '../../utils/cn.js';
 import * as Placement from '../../../systems/board/Placement.js';
 import { useEntityDrop } from '../../dnd/DndKit.jsx';
@@ -232,9 +233,7 @@ const RulesGrid = ({ litHeroId }) => {
                     onClick={() => setPriorityMode(m => !m)}
                     className="flex items-center gap-1.5 ui-text-small font-bold text-ui-muted hover:text-ui-white transition-colors cursor-pointer"
                 >
-                    <span className={cn('relative w-6 h-3 rounded-full transition-colors', priorityMode ? 'bg-gi-gold/80' : 'bg-white/15')}>
-                        <span className={cn('absolute top-0.5 w-2 h-2 rounded-full bg-white transition-[left]', priorityMode ? 'left-3.5' : 'left-0.5')} />
-                    </span>
+                    <PixelSwitch on={priorityMode} onClass="bg-gi-gold/80" small />
                     Priorities
                 </button>
                 <span className="ml-auto ui-text-small text-ui-muted">Click: up · Right-click: down</span>

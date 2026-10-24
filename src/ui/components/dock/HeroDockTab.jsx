@@ -221,7 +221,7 @@ const HeroDockTabBody = memo(function HeroDockTabBody({
             {heroCue && (
                 <div
                     className={cn(
-                        'absolute h-0.5 w-20 z-50 pointer-events-none bg-gi-gold shadow-[0_0_10px_#f59e0b]',
+                        'absolute h-0.5 w-20 z-50 pointer-events-none bg-gi-gold',
                         isDockLeft ? 'left-0' : 'right-0',
                         isInsertionBelow ? '-bottom-1.5' : '-top-1.5'
                     )}
@@ -246,7 +246,7 @@ const HeroDockTabBody = memo(function HeroDockTabBody({
                 className={cn(
                     'absolute top-0 w-20 h-[72px] pointer-events-auto cursor-grab active:cursor-grabbing',
                     'flex flex-col items-center justify-center gap-1 px-1.5 bg-[#140e0b] border',
-                    isDockLeft ? 'left-0 border-l-0 rounded-r' : 'right-0 border-r-0 rounded-l',
+                    isDockLeft ? 'left-0 border-l-0' : 'right-0 border-r-0',
                     isSelected ? 'border-gi-gold'
                         : itemCue ? 'border-gi-primary'
                         : 'border-white/10 hover:border-gi-gold/50',

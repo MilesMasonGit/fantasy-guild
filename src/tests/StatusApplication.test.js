@@ -8,12 +8,15 @@ import * as InputAllocator from '../systems/board/InputAllocator.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as TriggerSystem from '../systems/board/TriggerSystem.js';
+import * as LiveEffects from '../systems/effects/LiveEffects.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { getStatusStacks } from '../config/registries/statusRegistry.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
+import { registerEffects } from '../config/registries/effectRegistry.js';
 import { KEYWORD } from '../systems/effects/statements.js';
+import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { renderStatement } from '../systems/effects/statementText.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
+import { providesPct } from './fixtures/statusEffects.js';
 
 /**
  * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;
@@ -27,9 +30,10 @@ const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
 const idAt = (i) => tokenAt(i)?.id ?? null;
 
 /**
- * `Applies` — content putting a status on somebody.
+ * `Applies` — content putting a lingering effect on somebody. (The old status engine's ids are
+ * gone: what it called Cookout and Well Fed are library effects here.)
  *
- * ⚠️ **The filter selects Tokens; the status lands on a person.** The owner
+ * ⚠️ **The filter selects Tokens; the effect lands on a person.** The owner
  * ruled that `Applies` uses the same filter as every other keyword, so a filter
  * naming Tokens has to resolve to *the heroes working those Tokens* — and the
  * generated sentence has to say so in those words, or the card lies. Both
@@ -46,10 +50,15 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
     RegistryManager: { recordItemGain: vi.fn() }
 }));
 
+registerEffects({
+    fx_cookout: { id: 'fx_cookout', name: 'Cookout', statements: [providesPct('stm_fx_cookout', EFFECT_TYPES.YIELD, 0.1)] },
+    fx_well_fed: { id: 'fx_well_fed', name: 'Well Fed', statements: [providesPct('stm_fx_well_fed', EFFECT_TYPES.DAMAGE, 0.1)] }
+});
+
 const AMBIENT = {
     id: 'stm_cookout',
     keyword: KEYWORD.APPLIES,
-    payload: { statusId: 'cookout', stacks: 1, chance: 100 },
+    payload: { effectId: 'fx_cookout', durationMs: 30000, chance: 100 },
     to: { mode: 'tag', value: 'Coast' },
     when: null,
     upkeep: null
@@ -71,7 +80,7 @@ registerTokenTypes({
         statements: [{
             id: 'stm_bell',
             keyword: KEYWORD.APPLIES,
-            payload: { statusId: 'well_fed', stacks: 2, chance: 100 },
+            payload: { effectId: 'fx_well_fed', durationMs: 30000, chance: 100 },
             to: { mode: 'tag', value: 'Coast' },
             when: { event: 'CYCLE_COMPLETE', scope: 'nearby', cooldownMs: 0 },
             upkeep: null
@@ -101,7 +110,7 @@ registerTokenTypes({
 function makeHero(id) {
     const skills = {};
     for (const s of getAllSkillIds()) skills[s] = { level: 50, xp: 0 };
-    return { id, name: id, status: 'idle', level: 50, skills, hp: { current: 100, max: 100 }, statuses: [] };
+    return { id, name: id, status: 'idle', level: 50, skills, hp: { current: 100, max: 100 }, statuses: [], effects: [] };
 }
 
 function place(tile, typeId, heroId = null) {
@@ -112,7 +121,7 @@ function place(tile, typeId, heroId = null) {
 }
 
 const run = (ms) => { for (let t = 0; t < ms; t += 100) BoardRunner.tick(100); };
-const statusesOf = (heroId) => GameState.state.heroes.find(h => h.id === heroId)?.statuses || [];
+const carried = (heroId) => (GameState.state.heroes.find(h => h.id === heroId)?.effects || []).map(e => e.effectId);
 
 beforeEach(() => {
     GameState.initNew();
@@ -125,13 +134,13 @@ beforeEach(() => {
 });
 
 describe('A Token filter resolves to the heroes working those Tokens', () => {
-    it('lands the status on the hero when the Token they are working finishes a cycle', () => {
+    it('lands the effect on the hero when the Token they are working finishes a cycle', () => {
         place(8, 'fixture_cook_fire');
         place(9, 'fixture_shrimp_bed', 'hero_1');
 
         run(13000);
 
-        expect(getStatusStacks(statusesOf('hero_1'), 'cookout')).toBeGreaterThan(0);
+        expect(carried('hero_1')).toEqual(['fx_cookout']);
     });
 
     it('reaches nobody at all when the Token is unstaffed', () => {
@@ -142,8 +151,8 @@ describe('A Token filter resolves to the heroes working those Tokens', () => {
 
         run(13000);
 
-        expect(statusesOf('hero_1')).toEqual([]);
-        expect(statusesOf('hero_2')).toEqual([]);
+        expect(carried('hero_1')).toEqual([]);
+        expect(carried('hero_2')).toEqual([]);
     });
 
     it('respects the filter — an untagged neighbour is not reached', () => {
@@ -152,7 +161,7 @@ describe('A Token filter resolves to the heroes working those Tokens', () => {
 
         run(13000);
 
-        expect(statusesOf('hero_1')).toEqual([]);
+        expect(carried('hero_1')).toEqual([]);
     });
 
     it('reaches every matching neighbour independently', () => {
@@ -162,8 +171,8 @@ describe('A Token filter resolves to the heroes working those Tokens', () => {
 
         run(13000);
 
-        expect(getStatusStacks(statusesOf('hero_1'), 'cookout')).toBeGreaterThan(0);
-        expect(getStatusStacks(statusesOf('hero_2'), 'cookout')).toBeGreaterThan(0);
+        expect(carried('hero_1')).toEqual(['fx_cookout']);
+        expect(carried('hero_2')).toEqual(['fx_cookout']);
     });
 
     it('needs a completed cycle — a Token nobody is working applies nothing', () => {
@@ -177,7 +186,7 @@ describe('A Token filter resolves to the heroes working those Tokens', () => {
         run(13000);
 
         expect(token).toBeTruthy();
-        expect(statusesOf('hero_1')).toEqual([]);
+        expect(carried('hero_1')).toEqual([]);
     });
 });
 
@@ -186,14 +195,15 @@ describe('The same keyword on a trigger', () => {
 
     it('applies when its trigger fires rather than on its own clock', () => {
         // The Bell has no work cycle of its own. It reacts to the Shrimp Bed
-        // beside it completing, and puts the status on the hero working the
+        // beside it completing, and puts the effect on the hero working the
         // Coast the filter names — which here is that same Bed.
         place(8, 'fixture_cook_bell');
         place(9, 'fixture_shrimp_bed', 'hero_1');
 
         run(13000);
 
-        expect(getStatusStacks(statusesOf('hero_1'), 'well_fed')).toBe(2);
+        expect(carried('hero_1')).toEqual(['fx_well_fed']);
+        expect(LiveEffects.carries(GameState.state.heroes[0], 'fx_well_fed')).toBe(true);
     });
 });
 
@@ -202,41 +212,45 @@ describe('The chance roll', () => {
         const StatusApplication = await import('../systems/board/StatusApplication.js');
         place(9, 'fixture_shrimp_bed', 'hero_1');
 
-        expect(StatusApplication.applyAt(idAt(9), { statusId: 'cookout', chance: 100 })).toBe(true);
-        expect(StatusApplication.applyAt(idAt(9), { statusId: 'cookout', chance: 0 })).toBe(false);
+        expect(StatusApplication.applyAt(idAt(9), { effectId: 'fx_cookout', durationMs: 30000, chance: 100 })).toBe(true);
+        expect(StatusApplication.applyAt(idAt(9), { effectId: 'fx_well_fed', durationMs: 30000, chance: 0 })).toBe(false);
+        expect(carried('hero_1')).toEqual(['fx_cookout']);
     });
 
-    it('refuses a status the engine has never heard of', async () => {
+    it('refuses an effect the library has never heard of, and a retired status id', async () => {
         const StatusApplication = await import('../systems/board/StatusApplication.js');
         place(9, 'fixture_shrimp_bed', 'hero_1');
 
-        expect(StatusApplication.applyAt(idAt(9), { statusId: 'blessed_by_the_moon' })).toBe(false);
-        expect(statusesOf('hero_1')).toEqual([]);
+        expect(StatusApplication.applyAt(idAt(9), { effectId: 'blessed_by_the_moon', durationMs: 30000 })).toBe(false);
+        expect(StatusApplication.applyAt(idAt(9), { statusId: 'cookout', stacks: 1 })).toBe(false);
+        expect(carried('hero_1')).toEqual([]);
     });
 });
 
 describe('The sentence is literally true', () => {
-    it('names the heroes, not the Tokens, because that is where the status lands', () => {
-        expect(renderStatement(AMBIENT))
-            .toBe('Applies Cookout to heroes on nearby Coast Tokens when they finish work.');
+    const names = { effect: (id) => ({ fx_cookout: 'Cookout', fx_well_fed: 'Well Fed', effect_poison: 'Poison' })[id] || id };
+
+    it('names the heroes, not the Tokens, because that is where the effect lands', () => {
+        expect(renderStatement(AMBIENT, names))
+            .toBe('Applies Cookout to heroes on nearby Coast Tokens for 30 seconds.');
     });
 
-    it('counts stacks in the sentence', () => {
+    it('a retired status id reads as an effect still to pick', () => {
         expect(renderStatement({
             keyword: KEYWORD.APPLIES,
             payload: { statusId: 'well_fed', stacks: 2, chance: 100 },
             to: { mode: 'all', value: '' }
-        })).toBe('Applies 2 stacks of Well Fed to heroes on nearby Tokens when they finish work.');
+        })).toBe('Applies … to heroes on nearby Tokens.');
     });
 
-    it('drops "when they finish work" once it has a trigger of its own', () => {
+    it('says its odds and its trigger', () => {
         expect(renderStatement({
             keyword: KEYWORD.APPLIES,
-            payload: { statusId: 'poison', stacks: 1, chance: 50 },
+            payload: { effectId: 'effect_poison', chance: 50 },
             to: { mode: 'tag', value: 'Coast' },
             when: { event: 'CYCLE_COMPLETE', scope: 'nearby' }
-        })).toBe(
-            'On Neighbour\'s Cycle: applies Poison to heroes on nearby Coast Tokens, 50% of the time.'
+        }, names)).toBe(
+            "On Neighbour's Cycle: applies Poison to heroes on nearby Coast Tokens, 50% of the time."
         );
     });
 

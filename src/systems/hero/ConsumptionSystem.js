@@ -7,6 +7,8 @@ import { CONSUME_THRESHOLD, ELIXIR_FIGHTS } from '../../config/loopConstants.js'
 import * as HeroEffects from './HeroEffects.js';
 import { logger } from '../../utils/Logger.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
+import { EFFECT_TYPES } from '../effects/constants.js';
+import { roundHalfUp } from '../../config/FormulaRegistry.js';
 
 /**
  * ConsumptionSystem — heroes feed themselves from their own loadout grid.
@@ -34,18 +36,30 @@ function equippedOfCategory(hero, categoryId) {
 }
 
 /**
+ * What a meal heals in a fight: its restore moved by any Food Healing the hero carries (Burn's
+ * -50 %), rounded halves up, never below 0.
+ */
+function fightMealHealing(hero, amount) {
+    const factor = hero?.aggregator?.getPercentageBucket
+        ? hero.aggregator.getPercentageBucket(EFFECT_TYPES.FOOD_HEALING)
+        : 1;
+    return factor === 1 ? amount : Math.max(0, roundHalfUp(amount * factor));
+}
+
+/**
  * Spend one unit of an equipped item from the bank and apply its restore.
  * Returns null when the item isn't equipped or the bank is out of stock — in
  * which case the hero simply goes without.
  */
-function consumeEquipped(hero, categoryId) {
+function consumeEquipped(hero, categoryId, { inFight = false } = {}) {
     const entry = equippedOfCategory(hero, categoryId);
     if (!entry) return null;
 
     if (!InventoryManager.hasItem(entry.itemId, 1)) return null;
 
     const item = getItem(entry.itemId);
-    const amount = item?.restoreAmount || 0;
+    const restore = item?.restoreAmount || 0;
+    const amount = inFight ? fightMealHealing(hero, restore) : restore;
     InventoryManager.removeItem(entry.itemId, 1);
 
     if (amount > 0) HeroManager.modifyHeroHp(hero.id, amount);
@@ -75,7 +89,7 @@ export function tryEat(heroId, { inFight = false } = {}) {
     const consumed = [];
     for (const categoryId of inFight ? ['food'] : ['food', 'drink']) {
         if (!isLow(hero.hp)) break;
-        const meal = consumeEquipped(hero, categoryId);
+        const meal = consumeEquipped(hero, categoryId, { inFight });
         if (meal) consumed.push(meal);
     }
     return consumed;

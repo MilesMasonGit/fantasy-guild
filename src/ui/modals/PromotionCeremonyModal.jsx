@@ -1,12 +1,15 @@
 import { useState } from 'react';
-import { cn } from '../utils/cn.js';
 import { HeroManager } from '../../systems/hero/HeroManager.js';
 import * as PromotionSystem from '../../systems/hero/PromotionSystem.js';
 import * as BoardPromotion from '../../systems/board/BoardPromotion.js';
 import { GIModal } from '../components/base/GIModal.jsx';
+import { KitButton, KIT_BUTTON_TONE } from '../components/base/KitButton.jsx';
 import { PromotionTrade } from '../components/hero/PromotionTrade.jsx';
 import { getJob } from '../../config/registries/jobRegistry.js';
 import { Check, X, ArrowRight, Sparkles } from 'lucide-react';
+
+/** The ceremony's buttons' words. */
+const BUTTON_TEXT = 'px-3 py-2 ui-text-title gi-caps tracking-wide';
 
 /**
  * Why an acceptance was refused, in words a player can act on. `BoardPromotion.accept`
@@ -115,7 +118,7 @@ export const PromotionCeremonyModal = ({ offer, onClose }) => {
 
                 {/* The trade — the same component the Change Job screen uses, so
                     the two can never disagree about what this costs. */}
-                <div className="rounded-lg border border-gi-border/30 bg-black/20 p-3">
+                <div data-promotion-trade className="border-y border-white/10 py-3">
                     <PromotionTrade preview={preview} size="lg" />
                 </div>
 
@@ -132,16 +135,9 @@ export const PromotionCeremonyModal = ({ offer, onClose }) => {
 
                 <div className="flex gap-2">
                     {done ? (
-                        <button
-                            onClick={onClose}
-                            className={cn(
-                                'flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded border',
-                                'ui-text-title font-bold gi-caps tracking-wide transition-colors',
-                                'border-gi-primary bg-gi-primary/15 text-gi-text hover:bg-gi-primary/25'
-                            )}
-                        >
+                        <KitButton onClick={onClose} className="flex-1 mr-1 mb-1" buttonClassName={BUTTON_TEXT}>
                             Done
-                        </button>
+                        </KitButton>
                     ) : (
                         <>
                             {/* Decline is a real answer, not a dismissal, so it
@@ -152,33 +148,25 @@ export const PromotionCeremonyModal = ({ offer, onClose }) => {
                              * announced by its tooltip ('Nothing is spent…') rather than by
                              * what it says.
                              */}
-                            <button
+                            <KitButton
+                                tone={KIT_BUTTON_TONE.PLAIN}
                                 onClick={decline}
                                 aria-label="Not yet"
                                 title="Nothing is spent. Your hero stays where they are, and the Token waits."
-                                className={cn(
-                                    'flex items-center justify-center gap-1.5 px-3 py-2.5 rounded border',
-                                    'ui-text-title font-bold gi-caps tracking-wide transition-colors',
-                                    'border-gi-border/50 text-gi-muted hover:border-gi-muted hover:text-gi-text'
-                                )}
+                                buttonClassName={BUTTON_TEXT}
                             >
                                 <X size={12} /> Not yet
-                            </button>
-                            <button
+                            </KitButton>
+                            <KitButton
                                 onClick={accept}
                                 disabled={!preview?.ok}
                                 title={preview?.ok ? undefined : preview?.detail}
-                                className={cn(
-                                    'flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded border',
-                                    'ui-text-title font-bold gi-caps tracking-wide transition-colors',
-                                    preview?.ok
-                                        ? 'border-gi-gold bg-gi-gold/20 text-gi-text hover:bg-gi-gold/30'
-                                        : 'border-gi-border/40 text-gi-muted/50 cursor-not-allowed'
-                                )}
+                                className="flex-1 mr-1 mb-1"
+                                buttonClassName={BUTTON_TEXT}
                             >
                                 {preview?.ok ? <Sparkles size={12} /> : <Check size={12} />}
                                 Become {job.name}
-                            </button>
+                            </KitButton>
                         </>
                     )}
                 </div>

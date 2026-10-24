@@ -52,8 +52,10 @@ export function rehydrateHero(hero) {
     hero.level = calculateHeroLevel(hero.skills);
     updateHeroMaxHp(hero);
 
-    // Older saves lack the key.
-    if (!Array.isArray(hero.statuses)) hero.statuses = [];
+    // The old status engine's list. Statuses now ride on `effects` and end with their fight, so
+    // whatever an older save holds here (a Poison that outlasted its fight) is dropped. The empty
+    // list stays so a hero record reads as it always has (the bench fingerprints it).
+    hero.statuses = [];
 
     // Normalise the loadout grid to exactly GRID_SLOT_COUNT slots.
     //

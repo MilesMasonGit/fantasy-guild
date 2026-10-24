@@ -75,6 +75,9 @@ export const TRIGGER_SCOPES = {
  * both, and typing narrows on both, so the old prose is still how an author
  * finds a moment they cannot yet name.
  */
+/** The verbs a fight moment runs (`FightMoments`); the editor offers its moments to no other. */
+const FIGHT_MOMENT_KEYWORDS = Object.freeze(['applies', 'deals', 'heals', 'removes']);
+
 export const TRIGGER_EVENTS = [
     {
         id: 'CYCLE_COMPLETE',
@@ -259,7 +262,52 @@ export const TRIGGER_EVENTS = [
          */
         label: 'On Tick',
         scopes: [TRIGGER_SCOPES.SELF],
-        hint: 'Fires every 5 seconds on whoever is carrying this effect, until it wears off. This is how a poison or a regeneration works.'
+        hint: 'Fires every 3 seconds on whoever is carrying this effect, until it wears off. This is how a poison or a regeneration works.'
+    },
+    /**
+     * ⭐ **The fight moments**: a fighter's own swing, landed hit and falling health. A boss's moves
+     * are rules on these; so are a weapon's on-hit status and an enemy kind's.
+     *
+     * ⚠️ **No bus event** (`event: null`): the combat engine fires them itself, through
+     * `FightMoments`, at the exact point of the swing they belong to. `TriggerSystem` skips them.
+     * They never spend a Token's charges and have no cooldown: their own count is their rhythm.
+     *
+     * The bearer is one side of a fight: an enemy (its own rules, and any lingering effect on it)
+     * or a hero (their items and lingering effects). `self` is that fighter, `the hero` the hero in
+     * the fight and `the enemy` the creature, whichever side carries the rule.
+     */
+    {
+        id: 'FIGHT_SWING',
+        roles: [ROLE.SELF, ROLE.ACTOR, ROLE.OPPONENT],
+        event: null,
+        label: 'On Swing',
+        countNoun: 'Swing',
+        scopes: [TRIGGER_SCOPES.SELF],
+        fightMoment: true,
+        keywords: FIGHT_MOMENT_KEYWORDS,
+        hint: 'Fires as this fighter swings, before the swing is rolled: an enemy\'s own swings, or a hero\'s for their items. Every 4th fires on swings 4, 8, 12… of each fight. A rule here can shape that swing: applies … for the swing.'
+    },
+    {
+        id: 'FIGHT_HIT',
+        roles: [ROLE.SELF, ROLE.ACTOR, ROLE.OPPONENT],
+        event: null,
+        label: 'On Hit',
+        countNoun: 'Hit',
+        scopes: [TRIGGER_SCOPES.SELF],
+        fightMoment: true,
+        keywords: FIGHT_MOMENT_KEYWORDS,
+        hint: 'Fires when this fighter lands a hit, after its damage, if the other side still stands. Misses do not count. Every 3rd fires on hits 3, 6, 9… of each fight. How a poison or burn lands on a hit.'
+    },
+    {
+        id: 'FIGHT_HP_BELOW',
+        roles: [ROLE.SELF, ROLE.ACTOR, ROLE.OPPONENT],
+        event: null,
+        label: 'On Health Below',
+        scopes: [TRIGGER_SCOPES.SELF],
+        fightMoment: true,
+        keywords: FIGHT_MOMENT_KEYWORDS,
+        needsPercent: true,
+        hint: 'Fires once in a fight, the first time this fighter\'s health is below the share you set: an enemy\'s own health, or a hero\'s for their items. A boss\'s heal or enrage at low health.'
     },
     {
         /**
@@ -283,6 +331,30 @@ export const TRIGGER_EVENTS = [
 /** A trigger definition by id, or null. */
 export function getTriggerEvent(id) {
     return TRIGGER_EVENTS.find(t => t.id === id) || null;
+}
+
+/** The fight moments' ids, for the combat engine that fires them. */
+export const FIGHT_MOMENT = Object.freeze({
+    SWING: 'FIGHT_SWING',
+    HIT: 'FIGHT_HIT',
+    HP_BELOW: 'FIGHT_HP_BELOW'
+});
+
+/** Whether a moment is one the combat engine fires (`FIGHT_MOMENT`). */
+export function isFightMoment(triggerId) {
+    return !!getTriggerEvent(triggerId)?.fightMoment;
+}
+
+/** The health share an "On Health Below" rule waits for, in whole percent (1–99, default 50). */
+export function healthBelowOf(when) {
+    const n = Math.round(Number(when?.belowPct));
+    return Number.isFinite(n) ? Math.min(99, Math.max(1, n)) : 50;
+}
+
+/** Every how many swings or hits a counted fight moment fires (1 = every one). */
+export function everyOf(when) {
+    const n = Math.floor(Number(when?.every));
+    return Number.isFinite(n) && n > 1 ? n : 1;
 }
 
 /**

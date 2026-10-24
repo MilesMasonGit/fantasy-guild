@@ -23,7 +23,7 @@ see [`TESTING.md`](TESTING.md), "Running the game for verification".)
   can't reach; prefer the dev panel or a QA fixture save for anything the
   owner will look at.
 
-## The entries (32)
+## The entries (31)
 
 | Entry | What it is | Reached for most |
 |---|---|---|
@@ -36,7 +36,6 @@ see [`TESTING.md`](TESTING.md), "Running the game for verification".)
 | `PromotionSystem` | promoting a mastered hero | `canPromote`, `promote`, `previewPromotion` |
 | `WoundedSystem` | wounded heroes and recovery | `getWoundedHeroes()`, `recoverHero(...)`, `isWounded(...)` |
 | `LootSystem` | kill loot rolls | `previewDrops(...)` |
-| `StatusEffectSystem` | buffs and debuffs | `applyToHero`, `applyToEnemy`, `clearAll` |
 | `EquipmentManager` | hero gear | `equipItem`, `unequipItem`, `getAllEquipment` |
 | `BoardState` | what is on the mat | `tokens()`, `getTokenById(id)`, `tokensAtPoint(x, y)`, `heroesOnBoard()`, `createTokenInstance(typeId)` |
 | `BoardPlacement` | putting things on the mat | `placeTokenAt(instance, point)`, `moveTokenTo(id, point)`, `removePlacedToken(id)`, `plantFlagAt(heroId, point)`, `recallHeroById(heroId)` |

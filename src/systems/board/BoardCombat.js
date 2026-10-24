@@ -11,7 +11,6 @@ import { applyDefeatPenalties } from '../combat/DefeatPenalties.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as HeroEffects from '../hero/HeroEffects.js';
 import { statementsOf } from '../effects/statements.js';
-import * as StatusEffectSystem from '../effects/StatusEffectSystem.js';
 import * as RecipeResolver from './RecipeResolver.js';
 import * as TileModifiers from './TileModifiers.js';
 import * as BoardState from './BoardState.js';
@@ -363,6 +362,11 @@ export function tickToken(instance, delta, heroId) {
 
     processCombat(fight, { enemy }, delta);
 
+    // A rule inside the fight (a boss's move, a status) may have knocked the hero out, and the
+    // defeat has already been resolved and this fight ended: resolving it again here would roll
+    // the gear loss twice.
+    if (fights.get(id) !== fight) return;
+
     const engaged = (fight.status === 'active' && !wasActive) || (wasResting && !resting());
 
     if (engaged) {
@@ -517,8 +521,9 @@ function resolveDefeat(instance, heroId) {
     const hero = HeroManager.getHero(heroId);
     if (hero && hero.status !== 'wounded') HeroManager.setHeroStatus(heroId, 'wounded');
 
-    // A forced retreat cleanses every status, good or bad.
-    StatusEffectSystem.clearAll(heroId);
+    // Whatever the hero had for the fight (statuses, an elixir's effect) ends with it, even when the
+    // Token they worked was not the enemy they fought.
+    LiveEffects.endHeroFightEffects(heroId);
     const lost = applyDefeatPenalties(heroId) || [];
 
     // Off the board. Recovery is tracked on the HERO (`woundedRemainingMs`), never on the tile, so
@@ -572,9 +577,9 @@ export function init() {
     });
     EventBus.subscribe(ENGINE_EVENTS.BOARD_SWAPPED, () => clearAll());
 
-    // The status clock cannot call us directly: `StatusEffectSystem` is imported by this file, so
-    // importing it back would be a static cycle. It announces the death instead and this is the
-    // single subscriber that acts on it.
+    // A rule's damage (a poison tick, a Deals) cannot call us directly: the verbs and the effect
+    // clock import this file's neighbours, so importing back would be a static cycle. They announce
+    // the death instead and this is the single subscriber that acts on it.
     EventBus.subscribe(ENGINE_EVENTS.HERO_DOWNED, ({ heroId }) => resolveStatusDefeat(heroId));
 
     logger.info('BoardCombat', 'Board combat ready');

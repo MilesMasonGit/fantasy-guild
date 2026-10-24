@@ -6,7 +6,6 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import * as BoardPromotion from '../systems/board/BoardPromotion.js';
 import { FLAG_COLOURS } from '../systems/board/FlagColours.js';
 import { COMBAT_SKILL_IDS } from '../config/registries/skillRegistry.js';
-import { getStatusStacks } from '../config/registries/statusRegistry.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
 import { registerEffects } from '../config/registries/effectRegistry.js';
 import { makeStatement, KEYWORD } from '../systems/effects/statements.js';
@@ -213,7 +212,7 @@ describe('a hero round-trips through a save (CR3-266)', () => {
         GameState.initNew();
     });
 
-    it('keeps statuses, banked skills, the wound timer and the flag colour', async () => {
+    it('keeps banked skills, the wound timer and the flag colour; drops the old status engine statuses', async () => {
         const banked = COMBAT_SKILL_IDS[0];
         const a = hero('hero_rt_a');
         a.statuses = [{ id: 'poison', stacks: 2, remaining: 3 }, { id: 'well_fed', stacks: 1 }];
@@ -227,8 +226,8 @@ describe('a hero round-trips through a save (CR3-266)', () => {
         const loaded = await saveAndLoad();
         const [la, lb] = loaded.heroes;
 
-        expect(la.statuses).toEqual([{ id: 'poison', stacks: 2, remaining: 3 }, { id: 'well_fed', stacks: 1 }]);
-        expect(getStatusStacks(la.statuses, 'poison')).toBe(2);
+        // Statuses ride on `effects` now and end with their fight; an older save's outlasted it.
+        expect(la.statuses).toEqual([]);
         // A non-foundation skill stays banked: only banked foundation skills go
         // back on the sheet at load.
         expect(la.bankedSkills).toEqual({ [banked]: { level: 7, xp: 123 } });

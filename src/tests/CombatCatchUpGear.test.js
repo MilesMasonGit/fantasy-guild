@@ -24,6 +24,8 @@ import * as EquipmentManager from '../systems/equipment/EquipmentManager.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { xpForLevel } from '../utils/XPCurve.js';
 import * as fixtures from '../../bench/fixtures.mjs';
+import * as LiveEffects from '../systems/effects/LiveEffects.js';
+import { registerStatusFixtures, POISON } from './fixtures/statusEffects.js';
 
 /**
  * The gear pass's random numbers in a catch-up (brief 220, C2): a Cleaver's chance to double Raw
@@ -42,6 +44,9 @@ class SilentAudio {
     addEventListener() {}
     removeEventListener() {}
 }
+
+// The Venomous kind lands the library's Poison status.
+registerStatusFixtures();
 
 registerEffects({
     gearcatchup_cleaver_family: {
@@ -113,7 +118,7 @@ function listen() {
         EventBus.subscribe(ENGINE_EVENTS.LOOT_GENERATED, (p) => {
             for (const d of p.drops || []) if (d.itemId === 'item_raw_beef') seen.beef.push(d.quantity);
         }),
-        EventBus.subscribe(ENGINE_EVENTS.STATUS_APPLIED, (p) => { if (p.statusId === 'poison') seen.poisoned++; })
+        EventBus.subscribe(ENGINE_EVENTS.STATUS_APPLIED, (p) => { if (p.statusId === POISON) seen.poisoned++; })
     ];
     return { stop: () => { offs.forEach(off => off()); return seen; } };
 }
@@ -121,7 +126,7 @@ function listen() {
 function end(fighterId, seen) {
     const h = GameState.state.heroes.find(x => x.id === fighterId);
     return {
-        hero: { hp: { ...h.hp }, status: h.status, xp: h.skills.melee?.xp ?? null, poison: h.statuses?.find(s => s.id === 'poison')?.stacks ?? 0 },
+        hero: { hp: { ...h.hp }, status: h.status, xp: h.skills.melee?.xp ?? null, poison: LiveEffects.statusesOf(h).find(s => s.effectId === POISON)?.stacks ?? 0 },
         uses: BoardState.tokens().filter(t => t.typeId === 'gearcatchup_enemy').map(t => t.usesRemaining),
         draws: stream.draws,
         seen

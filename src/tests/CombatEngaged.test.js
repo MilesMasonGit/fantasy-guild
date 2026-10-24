@@ -19,6 +19,9 @@ import { makeStatement, KEYWORD } from '../systems/effects/statements.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
+import * as LiveEffects from '../systems/effects/LiveEffects.js';
+import { registerStatusFixtures, POISON, providesFlat } from './fixtures/statusEffects.js';
+import { EFFECT_TYPES } from '../systems/effects/constants.js';
 
 /**
  * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;
@@ -132,6 +135,7 @@ describe('the trigger vocabulary', () => {
 
 describe('⭐ a carried rule can put a status on the enemy — the path that had never run', () => {
     beforeEach(() => {
+        registerStatusFixtures();
         registerEffects({
             fixture_effect_venom: {
                 id: 'fixture_effect_venom',
@@ -142,7 +146,7 @@ describe('⭐ a carried rule can put a status on the enemy — the path that had
                     chargeDelta: -1,
                     // V10b: the enemy is named by its role, not the retired flag.
                     target: { role: 'opponent' },
-                    payload: { statusId: 'poison', stacks: 3, chance: 100 },
+                    payload: { effectId: POISON, chance: 100 },
                 }],
             },
         });
@@ -166,13 +170,12 @@ describe('⭐ a carried rule can put a status on the enemy — the path that had
         const fight = BoardCombat.getFight(idAt(TILE));
         expect(fight).toBeTruthy();
 
-        const enemyPoison = (fight.combat.enemyStatuses || []).find((s) => s.id === 'poison');
+        const enemyPoison = LiveEffects.statusesOf(fight).find((s) => s.effectId === POISON);
         expect(enemyPoison, 'the enemy should be poisoned').toBeTruthy();
-        expect(enemyPoison.stacks).toBe(3);
+        expect(enemyPoison.stacks).toBe(1);
 
         // And emphatically NOT on the hero: the rule named the enemy.
-        const heroPoison = (hero.statuses || []).find((s) => s.id === 'poison');
-        expect(heroPoison, 'the hero must not poison themselves').toBeFalsy();
+        expect(LiveEffects.statusesOf(hero), 'the hero must not poison themselves').toEqual([]);
     });
 
     it('spends a flask for it', () => {
@@ -188,6 +191,10 @@ describe('⭐ a carried rule can put a status on the enemy — the path that had
 
     it('lands on the hero instead when the rule names the hero', () => {
         registerEffects({
+            fixture_effect_brace_shield: {
+                id: 'fixture_effect_brace_shield', name: 'Brace Shield',
+                statements: [providesFlat('stm_brace_shield', EFFECT_TYPES.ARMOR, 2)]
+            },
             fixture_effect_brace: {
                 id: 'fixture_effect_brace',
                 name: 'Brace',
@@ -195,7 +202,8 @@ describe('⭐ a carried rule can put a status on the enemy — the path that had
                     ...makeStatement(KEYWORD.APPLIES),
                     when: { event: 'COMBAT_ENGAGED', scope: 'self' },
                     chargeDelta: 0,
-                    payload: { statusId: 'armor_shield', stacks: 2, chance: 100, target: 'hero' },
+                    target: { role: 'actor' },
+                    payload: { effectId: 'fixture_effect_brace_shield', forFight: true, chance: 100 },
                 }],
             },
         });
@@ -214,7 +222,6 @@ describe('⭐ a carried rule can put a status on the enemy — the path that had
         place(TILE, 'fixture_enemy', 'hero_1');
         run(600);
 
-        const shield = (hero.statuses || []).find((s) => s.id === 'armor_shield');
-        expect(shield, 'the hero should be shielded').toBeTruthy();
+        expect(LiveEffects.carries(hero, 'fixture_effect_brace_shield'), 'the hero should be shielded').toBe(true);
     });
 });

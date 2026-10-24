@@ -4,7 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { asLoaded } from './fixtures/shippedAsLoaded.js';
 import React from 'react';
-import { render, cleanup, fireEvent, within } from '@testing-library/react';
+import { render, cleanup, fireEvent, within, act } from '@testing-library/react';
 
 import { useEntityStore } from '../../cms/src/stores/useEntityStore';
 import { useSimulationStore } from '../../cms/src/stores/useSimulationStore';
@@ -256,10 +256,16 @@ describe('⭐ the kinds: none, one or two presets', () => {
         }
     });
 
-    it('the preview shows what the fight uses, kinds included', () => {
+    it('the preview shows what the fight uses, kinds included: Venomous lands the Poison status effect', () => {
         const { container } = tokenEditor(cow);
         fireEvent.click(field(container, 'enemy-kind-venomous'));
-        const box = within(container).getByText('What the fight uses').parentElement.parentElement;
-        expect(box.textContent).toContain('On hitpoison');
+        const box = () => within(container).getByText('What the fight uses').parentElement.parentElement;
+        // No Poison in the library yet: the preview says so.
+        expect(box().textContent).toContain('On hiteffect_poison (missing)');
+        // Once the library has it, its name.
+        act(() => useEntityStore.setState((s) => ({
+            effects: { ...s.effects, effect_poison: { id: 'effect_poison', name: 'Poison', status: { stacks: 3, ticks: 0 }, statements: [] } }
+        })));
+        expect(box().textContent).toContain('On hitPoison');
     });
 });

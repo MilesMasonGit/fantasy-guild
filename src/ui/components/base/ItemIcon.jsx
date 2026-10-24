@@ -69,7 +69,7 @@ export const ItemIcon = ({ item, size = 32, isDiscovered = true, className, titl
     if (!spritePath || hasError) {
         return (
             <div
-                className={cn("flex items-center justify-center select-none border border-white/5 rounded bg-black/20 text-gray-500", sizeClass, className)}
+                className={cn("flex items-center justify-center select-none bg-black/20 text-gray-500", sizeClass, className)}
                 title={title === null ? undefined : (title || name)}
             >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '50%', height: '50%', opacity: 0.4 }}>

@@ -151,13 +151,14 @@ export const KEYWORDS = Object.freeze([
          * declares its own scaled field here.
          */
         scales: 'stacks',
-        blurb: 'Puts a status on the heroes working nearby Tokens — Well Fed, Poison, and the rest.',
+        blurb: 'Puts a lingering effect or a status on somebody — the heroes working nearby Tokens, the hero, or the enemy: Well Fed, Poison, and the rest.',
         /**
-         * An OPTIONAL role target: set, the role replaces the filter and reach. Only the enemy is
-         * on offer, the one participant a filter of Tokens cannot name.
+         * An OPTIONAL role target: set, the role replaces the filter and reach. The two fighters
+         * are on offer: the enemy, whom a filter of Tokens cannot name, and the hero (a boss's
+         * status attack, a rule on a hero's own moment).
          */
         optionalRole: true,
-        roles: [ROLE.OPPONENT],
+        roles: [ROLE.ACTOR, ROLE.OPPONENT],
         filter: true,
         when: WHEN.OPTIONAL,
         upkeep: true

@@ -1,8 +1,8 @@
 import { KEYWORD, WHEN, getKeyword, statementsOf, effectEntryOf, firingChanceOf } from './statements.js';
+import { statusBlockOf } from './effectLibrary.js';
 import { MODIFIER_SHAPES } from '../../config/registries/modifierPalette.js';
-import { getTriggerEvent } from '../../config/registries/triggerRegistry.js';
+import { getTriggerEvent, isFightMoment, everyOf, healthBelowOf } from '../../config/registries/triggerRegistry.js';
 import { getRestrictionKind, limitOf } from '../../config/registries/restrictionPalette.js';
-import { getStatusEffect } from '../../config/registries/statusRegistry.js';
 import { getSkill } from '../../config/registries/skillRegistry.js';
 import { getJob } from '../../config/registries/jobRegistry.js';
 import { REACH, reachOf } from '../../config/registries/reachRegistry.js';
@@ -464,13 +464,33 @@ function whenSegments(statement, names) {
         return segs(d(label, momentSlot), ' ',
             d(when.watchItemId ? names.item(when.watchItemId) : '…', detail && 'watchItem'));
     }
+    // "On Every 4th Swing": a counted fight moment says its count; every one is the plain tag.
+    if (definition?.countNoun) {
+        const every = everyOf(when);
+        if (every <= 1) return segs(d(label, momentSlot));
+        return segs(d('On Every', momentSlot), ' ', d(ordinal(every), detail && 'every'), ' ',
+            d(definition.countNoun, momentSlot));
+    }
+    // "On Health Below 50%".
+    if (definition?.needsPercent) {
+        return segs(d(label, momentSlot), ' ', d(`${healthBelowOf(when)}%`, detail && 'belowPct'));
+    }
     return segs(d(label, momentSlot));
+}
+
+/** 1st, 2nd, 3rd, 4th … 11th, 12th, 13th … 21st. */
+function ordinal(n) {
+    const teen = n % 100 >= 11 && n % 100 <= 13;
+    const suffix = teen ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] || 'th');
+    return `${n}${suffix}`;
 }
 
 /** ", at most once every 5 seconds" — the cooldown, when there is one. */
 function cooldownSegments(statement) {
     const ms = statement?.when?.cooldownMs;
     if (!ms) return [];
+    // A fight moment has no cooldown (its own count is its rhythm), so a stray one is not said.
+    if (isFightMoment(statement?.when?.event)) return [];
     const known = getKeyword(statement?.keyword) && getTriggerEvent(statement?.when?.event);
     return segs(', at most once every ', d(String(Math.round(ms / 100) / 10), known && 'cooldown'), ' seconds');
 }
@@ -488,6 +508,9 @@ export function upkeepLine(statement, names = {}) {
     const every = Math.round((upkeep.cadenceMs || 0) / 100) / 10;
     return `Consumes ${itemList(upkeep.items, resolve)} every ${every} seconds.`;
 }
+
+/** A status a rule names by its effect id, in the author's words: its effect's name. */
+const statusName = (effectId, names) => (effectId ? names.effect(effectId) : '…');
 
 /** " — to the hero carrying this item, or on an enemy, to the hero fighting it" */
 const COMBAT_REACH = ' — to the hero carrying this item, or on an enemy, to the hero fighting it';
@@ -520,17 +543,15 @@ function bodySegments(statement, names) {
              * "3 more status immunity" would be meaningless. The words name the status instead.
              */
             if (payload.type === EFFECT_TYPES.STATUS_IMMUNITY) {
-                const status = getStatusEffect(payload.category);
                 return segs(d('Provides', K), ' ', d('immunity to', 'type'), ' ',
-                    d(status ? status.name : '…', categorySlot(statement)), COMBAT_REACH);
+                    d(statusName(payload.category, names), categorySlot(statement)), COMBAT_REACH);
             }
 
             // "Provides Poison stacks at most 1 lower": a cap is about one status, so it names it.
             if (payload.type === EFFECT_TYPES.STATUS_MAX_STACKS) {
-                const status = getStatusEffect(payload.category);
                 const shift = Number(payload.value) || 0;
                 const change = shift < 0 ? `at most ${-shift} lower` : shift > 0 ? `up to ${shift} higher` : 'no different';
-                return segs(d('Provides', K), ' ', d(status ? status.name : '…', categorySlot(statement)), ' ',
+                return segs(d('Provides', K), ' ', d(statusName(payload.category, names), categorySlot(statement)), ' ',
                     d('stacks', 'type'), ' ', d(change, 'value'), COMBAT_REACH);
             }
 
@@ -724,48 +745,27 @@ function bodySegments(statement, names) {
             const who = () => (byRole ? roleSegments(statement) : occupantSegments(statement, names));
 
             /**
-             * A library effect rather than a status. With a duration it lingers, "for the fight" it
-             * lasts until its fight ends; without either it fires immediately (chaining).
+             * A library effect (a status included). With a duration it lingers, "for the fight" it
+             * lasts until its fight ends, "for the swing" until the swing being made is over;
+             * without any it fires immediately (chaining). A status's own lifetime is its effect's,
+             * and the editor offers none of the three for one.
              */
             if (payload.effectId) {
                 const title = names.effect ? names.effect(payload.effectId) : payload.effectId;
                 const secs = Math.round((payload.durationMs || 0) / 100) / 10;
-                const lasting = payload.forFight
-                    ? segs(' ', d('for the fight', 'forFight'))
-                    : secs > 0 ? segs(' for ', d(String(secs), 'durationMs'), ' seconds') : [];
+                const lasting = payload.forSwing
+                    ? segs(' ', d('for the swing', 'forSwing'))
+                    : payload.forFight
+                        ? segs(' ', d('for the fight', 'forFight'))
+                        : secs > 0 ? segs(' for ', d(String(secs), 'durationMs'), ' seconds') : [];
                 return segs(d('Applies', K), ' ', d(title || '…', 'effectId'), ' to ', who(), lasting, odds);
             }
 
-            // ⚠️ **This sentence must be literally true.** A filter selects
-            // Tokens; a status lands on a person. The only honest reading of
-            // "nearby Coast Tokens" for a status is *the heroes working
-            // them*, so the sentence says exactly that.
-            const status = getStatusEffect(payload.statusId);
             /**
-             * ⚠️ Library effects only: the editor offers no status slot. A rule that still names a status
-             * reads as before, but its status clicks through to the EFFECT picker; the stack count has no
-             * slot, so it stays plain text.
+             * ⚠️ No effect named: half-authored, or a retired `statusId` from the old status engine,
+             * which reaches nobody. It clicks through to the effect picker.
              */
-            if (!status) {
-                return segs(d('Applies', K), ' ', d('…', 'effectId'), ' to ', who());
-            }
-            const stacks = Math.max(1, payload.stacks || 1);
-            const amount = stacks > 1
-                ? segs(`${stacks} stacks of `, d(status.name, 'effectId'))
-                : segs(d(status.name, 'effectId'));
-            // Untriggered, this is the same moment `Grants` uses: the neighbour
-            // finishing a cycle is the only ambient instant a status could land
-            // on the person who was working it.
-            const moment = statement.when ? '' : ' when they finish work';
-
-            /**
-             * ⚠️ The enemy is named by its role and only by its role. A stray `payload.target` flag is
-             * converted on load, so it is not read here.
-             */
-            if (byRole) {
-                return segs(d('Applies', K), ' ', amount, ' to ', roleSegments(statement), odds);
-            }
-            return segs(d('Applies', K), ' ', amount, ' to ', occupantSegments(statement, names), moment, odds);
+            return segs(d('Applies', K), ' ', d('…', 'effectId'), ' to ', who());
         }
 
         default:
@@ -817,6 +817,9 @@ export function renderStatement(statement, names = {}) {
  */
 export function rulesLinesOf(def, names = {}) {
     const lines = [];
+    // A status effect says first how it lasts and stacks: its rules below count once per stack.
+    const status = statusLineOf(def);
+    if (status) lines.push(status);
     for (const requirement of def?.acceptedTokens || []) {
         lines.push(renderStatement(
             { keyword: KEYWORD.REQUIRES, payload: requirement }, names
@@ -829,6 +832,22 @@ export function rulesLinesOf(def, names = {}) {
         if (upkeep) lines.push(upkeep);
     }
     return lines;
+}
+
+/**
+ * A status effect's own line ("A status: stacks up to 3, its rules once per stack; lasts until the
+ * fight ends."), or '' for an ordinary effect.
+ */
+export function statusLineOf(entry) {
+    const block = statusBlockOf(entry);
+    if (!block) return '';
+    const stacking = block.stacks > 1
+        ? `stacks up to ${block.stacks}, its rules once per stack`
+        : 'does not stack (landing again renews it)';
+    const lasting = block.ticks
+        ? `lasts ${block.ticks} ${block.ticks === 1 ? 'tick' : 'ticks'}, never past the fight`
+        : 'lasts until the fight ends';
+    return `A status: ${stacking}; ${lasting}.`;
 }
 
 /** The rules text as one string — what gets written into `description`. */

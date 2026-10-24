@@ -99,7 +99,7 @@ function targetOf(role, roles, statement) {
  * because a thorn is not a fight.
  */
 function mitigateEnemyDamage(fight, rawDamage) {
-    const armor = enemyFlatArmor(fight?.enemy, fight?.combat?.enemyStatuses);
+    const armor = enemyFlatArmor(fight?.enemy);
     return Math.max(0, Math.round(rawDamage - armor));
 }
 

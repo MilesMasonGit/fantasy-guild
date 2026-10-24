@@ -2,13 +2,11 @@ import { EventBus } from '../core/EventBus.js';
 import * as CombatFormulas from '../../utils/CombatFormulas.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
-import * as StatusEffectSystem from '../effects/StatusEffectSystem.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 export function handleHeroWounded(fight, heroId) {
     HeroManager.setHeroStatus(heroId, 'wounded');
-    // Forced Retreat cleanses every status, buff or debuff
-    StatusEffectSystem.clearAll(heroId);
+    // Statuses end with the fight: `BoardCombat.resolveDefeat` ends it.
     // ⚠️ Does not unassign the hero: that is a no-op on ephemeral fight objects.
     // `BoardCombat.resolveDefeat` sees the wounded status set here, furls the
     // hero's flag and sends the one defeat notification.
@@ -28,7 +26,6 @@ export function handleVictory(fight, hero, enemy, heroId, assignedHeroIds) {
                 SkillSystem.addXP(id, combatSkillId, CombatFormulas.getCombatXpAward(enemy));
             }
         }
-        StatusEffectSystem.notifyCombatResolved(id);
     });
 
     // A kill's loot is the enemy Token's outputs, carried as `fight.drops` and

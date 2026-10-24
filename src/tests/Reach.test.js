@@ -345,18 +345,20 @@ describe('the sentence says how far', () => {
             .toBe('Provides 10% more yield to this Token and nearby Coast Tokens.');
     });
 
-    it('says who a status lands on, in the person the reach implies', () => {
+    it('says who an applied effect lands on, in the person the reach implies', () => {
+        // Statuses are library effects now, so this reads the effect's own sentence.
         const applies = (reach) => ({
             ...makeStatement(KEYWORD.APPLIES), reach, to: { mode: 'tag', value: 'Coast' },
-            payload: { statusId: 'well_fed', stacks: 1, chance: 100 }
+            payload: { effectId: 'effect_well_fed', chance: 100 }
         });
+        const names = { effect: () => 'Well Fed' };
 
-        expect(renderStatement(applies(REACH.NEARBY)))
-            .toBe('Applies Well Fed to heroes on nearby Coast Tokens when they finish work.');
+        expect(renderStatement(applies(REACH.NEARBY), names))
+            .toBe('Applies Well Fed to heroes on nearby Coast Tokens.');
         // Singular: one Token holds at most one hero.
-        expect(renderStatement(applies(REACH.SELF)))
-            .toBe('Applies Well Fed to the hero working this Token when they finish work.');
-        expect(renderStatement(applies(REACH.BOARD)))
-            .toBe('Applies Well Fed to heroes on every Coast Token on the board when they finish work.');
+        expect(renderStatement(applies(REACH.SELF), names))
+            .toBe('Applies Well Fed to the hero working this Token.');
+        expect(renderStatement(applies(REACH.BOARD), names))
+            .toBe('Applies Well Fed to heroes on every Coast Token on the board.');
     });
 });

@@ -172,11 +172,11 @@ describe('Applies — library effects only (owner ruling 2026-09-12)', () => {
     });
 
     it('⚠️ switches an old status rule to an effect cleanly', () => {
-        // A rule still naming a status shows the effect picker in its place.
-        // Picking an effect must REPLACE the status, not sit beside it — a rule
-        // carrying both would apply whichever the engine happened to read first.
+        // A rule still naming a retired status (the old status engine's) reads as a blank effect,
+        // the effect picker in its place. Picking an effect must REPLACE the status, not sit beside
+        // it — a rule carrying both would apply whichever the engine happened to read first.
         const status = { ...makeStatement(KEYWORD.APPLIES), payload: { statusId: 'poison', stacks: 3, chance: 50 } };
-        expect(wordFor(status, 'effectId')).toEqual(['Poison']);
+        expect(wordFor(status, 'effectId')).toEqual(['…']);
         const switched = after(status, 'effectId', 'fx_thorns');
         expect(switched.payload.effectId).toBe('fx_thorns');
         expect('statusId' in switched.payload).toBe(false);
@@ -185,7 +185,7 @@ describe('Applies — library effects only (owner ruling 2026-09-12)', () => {
     });
 
     it('makes the odds clickable, and the enemy is the role word — not a target slot (V10b)', () => {
-        const st = { ...makeStatement(KEYWORD.APPLIES), payload: { statusId: 'poison', stacks: 1, chance: 25 } };
+        const st = { ...makeStatement(KEYWORD.APPLIES), payload: { effectId: 'fx_thorns', chance: 25 } };
         expect(wordFor(st, 'chance')).toEqual(['25%']);
         expect(wordFor(st, 'target')).toEqual([]);
 

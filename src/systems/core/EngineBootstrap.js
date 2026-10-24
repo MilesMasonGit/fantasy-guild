@@ -19,7 +19,6 @@ import * as RegenSystem from '../hero/RegenSystem.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
 import * as PromotionSystem from '../hero/PromotionSystem.js';
 import { WoundedSystem } from '../combat/WoundedSystem.js';
-import * as StatusEffectSystem from '../effects/StatusEffectSystem.js';
 import * as EquipmentManager from '../equipment/EquipmentManager.js';
 import * as BoardState from '../board/BoardState.js';
 import * as BoardPlacement from '../board/Placement.js';
@@ -80,7 +79,6 @@ export const EngineBootstrap = {
             PromotionSystem,
             WoundedSystem,
             LootSystem,
-            StatusEffectSystem,
             EquipmentManager,
             BoardState,
             BoardPlacement,
@@ -116,9 +114,6 @@ export const EngineBootstrap = {
         LootSystem.init();
         CatchUp.init();             // gaps the live loop could not deliver
         GuildUpgradeManager.init(); // Guild Hall upgrade tree
-
-        // Unified status effect engine (buffs/debuffs on the 5s global clock)
-        StatusEffectSystem.init();
 
         // Loot sprites. ⚠️ Must init BEFORE anything can produce: it carries the
         // guarantee that nothing is lost to a full Bank, and that guarantee is
@@ -170,8 +165,8 @@ export const EngineBootstrap = {
             }
         }, 10);
 
-        // 20: live effect instances — poisons, regenerations, anything with a
-        // clock on it. Fires on the 5s status interval.
+        // 20: live effect instances — statuses, regenerations, anything with a
+        // clock on it. Fires on the 3 s Rules tick.
         GameLoop.onTick('live_effects', (delta) => {
             if (GameState.getIsInitialized()) {
                 LiveEffects.tick(delta, TriggerSystem.fireLiveStatement);
@@ -205,11 +200,6 @@ export const EngineBootstrap = {
         GameLoop.onTick('wounded_system', (delta) => {
             if (GameState.getIsInitialized()) WoundedSystem.tick(delta);
         }, 70);
-
-        // 80: status effects.
-        GameLoop.onTick('status_effects', (delta) => {
-            if (GameState.getIsInitialized()) StatusEffectSystem.tick(delta);
-        }, 80);
     },
 
     /**

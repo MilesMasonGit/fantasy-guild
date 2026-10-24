@@ -266,8 +266,8 @@ export const BOARD_EVENTS = {
      * Published by `BoardCombat.resolveDefeat` instead of a direct call into `Flags`, which would
      * make a `BoardCombat ↔ Flags` import cycle. `Flags.init` subscribes and furls the hero's flag;
      * `EventBus.publish` is synchronous, so the furl happens before
-     * `TILE_CHANGED`/`COMBAT_RESOLVED`. `hero_downed` decouples `StatusEffectSystem` from
-     * `BoardCombat` the same way.
+     * `TILE_CHANGED`/`COMBAT_RESOLVED`. `hero_downed` decouples the rules' damage (a poison
+     * tick, a Deals) from `BoardCombat` the same way.
      */
     HERO_DEFEATED: 'board:hero_defeated'
 };

@@ -118,7 +118,7 @@ describe('CR3-033: a disabled control cannot be flipped, and live ones still wor
         mount();
         const label = Array.from(document.querySelectorAll('span')).find(s => s.textContent === 'All Caps Text');
         expect(label).toBeTruthy();
-        const row = label.closest('.rounded');
+        const row = label.closest('.justify-between');
         const toggle = row.querySelector('button');
         expect(toggle.disabled).toBe(false);
         const before = SettingsManager.get('ui.allCaps');

@@ -11,8 +11,8 @@ import { FILTER_KINDS } from '../../config/registries/filterRegistry.js';
 import { MAGNITUDE_STATS } from '../../config/registries/magnitudeRegistry.js';
 import { PLACEMENTS } from '../../config/registries/placementRegistry.js';
 import { RESTRICTION_KINDS } from '../../config/registries/restrictionPalette.js';
-import { getAllStatusEffects } from '../../config/registries/statusRegistry.js';
 import { getAllTokenTypes } from '../../config/registries/tokenRegistry.js';
+import { registerStatusFixtures, POISON, BURN } from './statusEffects.js';
 import { registerEffects } from '../../config/registries/effectRegistry.js';
 import { expandBearer } from '../../systems/effects/effectLibrary.js';
 import { toolNamer } from '../../systems/effects/toolNames.js';
@@ -72,10 +72,12 @@ export function buildCorpus() {
         cases.push({ key, statement, names, render: () => renderStatement(statement, names) });
     const S = (kw, extra = {}) => ({ ...makeStatement(kw), ...extra });
 
-    // A library effect the Applies/Removes cases can name.
+    // A library effect the Applies/Removes cases can name, and the two statuses.
     registerEffects({
         [FIX.effect]: { id: FIX.effect, name: 'Thorns', statements: [{ ...makeStatement(KEYWORD.DEALS), id: 'stm_golden_thorns', payload: { amount: 1 } }] }
     });
+    registerStatusFixtures();
+    const statusNames = { effect: (id) => ({ [POISON]: 'Poison', [BURN]: 'Burn', [FIX.effect]: 'Thorns' })[id] || id };
 
     // ---- 1. Everything that ships ----------------------------------------
     for (const [id, entry] of Object.entries(shippedEffects)) {
@@ -112,8 +114,12 @@ export function buildCorpus() {
     }
     addS('axis:unknown-type', S(KEYWORD.PROVIDES, { payload: { type: 'NOT_AN_AXIS', value: 3 } }));
     addS('axis:no-payload', S(KEYWORD.PROVIDES, { payload: undefined }));
-    for (const status of Object.keys(getAllStatusEffects() || {})) {
-        addS(`axis:STATUS_IMMUNITY:${status}`, S(KEYWORD.PROVIDES, { payload: { type: 'STATUS_IMMUNITY', bucket: 'flat', value: 1, category: status } }));
+    // A status is a library effect with a status block, named by its effect id.
+    for (const status of [POISON, BURN, 'not_a_status']) {
+        addS(`axis:STATUS_IMMUNITY:${status}`, S(KEYWORD.PROVIDES, { payload: { type: 'STATUS_IMMUNITY', bucket: 'flat', value: 1, category: status } }), statusNames);
+        for (const value of [-1, -3, 2]) {
+            addS(`axis:STATUS_MAX_STACKS:${status}:${value}`, S(KEYWORD.PROVIDES, { payload: { type: 'STATUS_MAX_STACKS', bucket: 'flat', value, category: status } }), statusNames);
+        }
     }
 
     // ---- 4. Every reach against every target mode, for every filtered keyword
@@ -203,7 +209,8 @@ export function buildCorpus() {
     addS('transforms:blank', S(KEYWORD.TRANSFORMS, { payload: {} }));
 
     // ---- 7. Applies, in every shape it has ---------------------------------
-    for (const statusId of [...Object.keys(getAllStatusEffects() || {}), 'not_a_status']) {
+    // A retired status id (the old status engine's) and an unknown one: both read as an effect to pick.
+    for (const statusId of ['poison', 'not_a_status']) {
         for (const stacks of [1, 3]) {
             // V10b: the retired `target: 'enemy' | 'hero'` flag has no sentence of
             // its own any more (the enemy is the role, covered in section 6), so
@@ -223,6 +230,38 @@ export function buildCorpus() {
         }
     }
     addS('applies:effect:no-names', S(KEYWORD.APPLIES, { payload: { effectId: FIX.effect } }));
+    // "For the swing" outranks "for the fight", which outranks a duration.
+    for (const [life, extra] of [['swing', { forSwing: true }], ['swing+fight', { forSwing: true, forFight: true }],
+        ['fight+duration', { forFight: true, durationMs: 3000 }], ['status', {}]]) {
+        const effectId = life === 'status' ? POISON : FIX.effect;
+        addS(`applies:lifetime:${life}`, S(KEYWORD.APPLIES, { payload: { effectId, chance: 100, ...extra },
+            when: { event: 'FIGHT_SWING', scope: 'self' }, target: { role: 'opponent' } }), statusNames);
+    }
+    addS('applies:role:actor', S(KEYWORD.APPLIES, { payload: { effectId: BURN, chance: 30 },
+        when: { event: 'FIGHT_HIT', scope: 'self' }, target: { role: 'actor' } }), statusNames);
+
+    // ---- 7b. The fight moments, with their counts and shares ----------------
+    for (const event of ['FIGHT_SWING', 'FIGHT_HIT']) {
+        for (const every of [undefined, 1, 2, 3, 4, 11, 12, 13, 21, 22, 23, 101, 0, -3, 'x']) {
+            addS(`fight:${event}:every:${every}`, S(KEYWORD.APPLIES, { payload: { effectId: BURN, chance: 100 },
+                when: { event, scope: 'self', every }, target: { role: 'actor' } }), statusNames);
+        }
+        addS(`fight:${event}:cooldown-not-said`, S(KEYWORD.DEALS, { payload: { amount: 2 },
+            when: { event, scope: 'self', every: 4, cooldownMs: 5000 }, target: { role: 'actor' } }));
+    }
+    for (const belowPct of [undefined, 50, 30, 1, 99, 0, 150, 'x', 33.4]) {
+        addS(`fight:FIGHT_HP_BELOW:${belowPct}`, S(KEYWORD.HEALS, { payload: { amount: 10 },
+            when: { event: 'FIGHT_HP_BELOW', scope: 'self', belowPct }, target: { role: 'self' } }));
+    }
+    addS('fight:boss:heavy', S(KEYWORD.APPLIES, { payload: { effectId: FIX.effect, forSwing: true, chance: 100 },
+        when: { event: 'FIGHT_SWING', scope: 'self', every: 4 }, target: { role: 'opponent' } }), statusNames);
+    addS('fight:boss:enrage', S(KEYWORD.APPLIES, { payload: { effectId: FIX.effect, forFight: true, chance: 100 },
+        when: { event: 'FIGHT_HP_BELOW', scope: 'self', belowPct: 30 }, target: { role: 'opponent' } }), statusNames);
+
+    // ---- 7c. A status effect's own line ------------------------------------
+    for (const status of [{ stacks: 3, ticks: 0 }, { stacks: 1, ticks: 3 }, { stacks: 1, ticks: 1 }, { stacks: 9 }, {}, null]) {
+        add(`status-line:${JSON.stringify(status)}`, () => JSON.stringify(rulesLinesOf({ status, statements: [] })));
+    }
 
     // ---- 8. The station-shaped keywords, filled and blank ------------------
     addS('station', S(KEYWORD.STATION, { payload: { skill: 'cooking' } }));

@@ -19,17 +19,25 @@ C2; C0 (the test content pack, accepted by the director) after C2; C6 last.
 | C1: the numbers (HP 10 + level, weapon damage, misses 5–40 %, crits, flat armour, Pierce, weapon speeds, Recruits punch 1; proposed level table) | engineer | `systems/combat-numbers` (`sc`) | **merged** 68901a22 (director's gate on the merged result: 5887 tests, cycles, build; work change accepted under brief220-C1 on every hero scenario, S4 same, catch-up identity and fidelity hold; `main` control run same work, no regression; C1 p50 within ~5 %, p99 up 5–23 % from longer, overlapping fights). Owner by phone: Goblin Chief stays tough (craft gear to beat it), level-1 coin toss kept, unarmed promoted heroes punch with style and XP, Block removed | Sat | Sat |
 | C2: gear and enemies (weapon styles, family abilities, enemy armour/Dodge/speed from the level table, enemy kinds) | engineer | `systems/combat-gear` (`sg`) | **merged** b050cdb3 (gate on main merged in: 5956 tests, cycles, build; same work everywhere, catch-up identity and fidelity hold). Director's calls: Recruits refused weapons (tools still fine), a re-trained hero's old-style weapon stays in hand unused, no Venomous in C0 until C4; T-246 weapon line in the tooltip | Sat | Sat |
 | C3: supplies (food as today, drinks stop healing, elixirs for 10 fights, the "used" bubble) | builder | `systems/combat-supplies` (`su`) | **merged** 55affd53 after three phone looks (chamfer frame sized to its contents, item-type tint, stacking, no elixir callouts; [record](../archive/eyecheck/2026-10-24_combat-c3.md)). Gate on the merged result: 5975 tests, cycles, build; same work. T-245 | Sat | Sat |
-| C5: encounters (one-on-one, guardians, node ambushes, boss lairs) | engineer | `systems/combat-encounters` (`se`) | building | Sat | |
-| C4: Poison, Burn and boss moves in the Rules system; old status engine retired | engineer | `systems/combat-statuses` (`st`) | building | Sat | |
-| C0: first combat content pack, accepted by the director (guarded) | builder + director | — | queued, after C2 | | |
+| C5: encounters (one-on-one, guardians, node ambushes, boss lairs) | engineer | `systems/combat-encounters` (`se`) | rework after the phone look. Round 1 gated (6032 tests, cycles, build, same work). Owner 2026-10-24: too complicated; bosses and guardians come from a **camp for one** (camp machinery, no lair or guardian blocks), **no node blocking**, ambushes at a **lower chance (~2 %)**, a **Summoning Circle** Token any hero works instead of the Shop's Summons section; one-on-one waiting and the boss marker stay | Sat | |
+| C4: Poison, Burn and boss moves in the Rules system; old status engine retired | engineer | `systems/combat-statuses` (`st`) | **merged** f415b5d3 (gate on the merged result: 6019 tests, cycles, build; bench harness now expects 7 tick handlers, the status tick retired; same work everywhere). Director's calls: Poison and Burn ship as content in C0; Burn 3 ticks; the extra On Hit moment kept; the empty `hero.statuses` goes at the next accepted work change. T-247 | Sat | Sat |
+| C0: first combat content pack, accepted by the director (guarded) | builder + director | pack in `cms/incoming/` (git-ignored) | building (copper weapon families, leather hat and chest, Valor and Ironskin elixirs, Poison and Burn, goblins on the level table; the Goblin Chief a combat-20 gate). Brief 240 K1 builds on it | Sat | |
 | C6: the combat screen (mock-ups first, the owner picks by phone) | engineer | — | queued, last | | |
 
 ## Backlog director, after brief 210: follow-ups (owner 2026-10-24: frames round two after the bubble row)
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| T-242: pixel frames round two: second audit of tiles, slots, buttons, toggles, rows; Bank tiles without soft borders | builder | `backlog/pixel-frames-2` (`gf`) | building | Sat | |
-| T-240: the drag bench's Shop and Bank kinds run again (harness only) | builder | `backlog/drag-bench-kinds` (`gb`) | building | Sat | |
+| T-242: pixel frames round two: second audit of tiles, slots, buttons, toggles, rows; Bank tiles without soft borders | builder | `backlog/pixel-frames-2` (`gf`) | **merged** 8c7096b5 (owner ok by phone; kit pieces into UI_STYLE fba5e2f2). Merged gate on top of combat C4: 6039 tests, cycles, build, same work | Sat | Sat |
+| Work plate picks the wrong Token (regression from T-239): bench token kind 100/100 on dbfc370b, 97–98/100 with the plate ('picked up the wrong thing' on presses beside overlapping Tokens) | engineer | `backlog/plate-pick` (`fx`) | diagnosing | Sat | |
+| T-240: the drag bench's Shop and Bank kinds run again (harness only) | builder | `backlog/drag-bench-kinds` | **merged** 23c85a21 on the gate (bench only): Shop and Bank kinds 50/50 both passes. Token → mat showed 3 'wrong thing' misses (47/49, 49/50) where earlier runs were 50/50: bisecting (before the work plate vs `main`) | Sat | Sat |
+
+## Systems director, skill loops (brief 230; owner 2026-10-24: next, beside the rest of combat)
+
+| Phase | Tier | Branch (worktree) | State | Planned | Done |
+|---|---|---|---|---|---|
+| S0: gap map (read-only): what the engine does for each ruling, order, parallel pairs, tiers | engineer | — (read-only) | building | Sat | |
+| S1–S9 | — | — | queued after S0's proposal | | |
 
 ## Backlog director, batch F: look-wide passes (brief 210; owner said go 2026-10-24: both, mock-ups first) — **done, merged eb969849; brief 210 complete**
 
@@ -280,6 +288,10 @@ branch), so it uses the kit and everyone fights; it merges after both.*
 | Handoff; T-181 baseline retake queued for Sat 01:00 | director / runner | `main` | queued; moves to Sunday night if the art weekend runs | Sat–Sun | |
 | Planning agent briefs this week's concept docs into the queue table | owner + planning | `planning` (`pp`) | in progress alongside (owner's choice) | Wed–Sat | |
 
+
+## Notes between directors
+
+- **For the Systems director (from the Backlog director, 2026-10-24):** `AtlasTravel.test.js` "there and back equals save and load" failed once under full-suite load in the T-242 builder's run (one goblin's y 61 vs 64) and passed alone twice. A determinism test should not depend on load; worth a look if it recurs (wall-clock or timer in an enemy's movement?). Not caused by UI changes.
 
 ## Questions for the owner
 
