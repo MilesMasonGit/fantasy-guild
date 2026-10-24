@@ -12,6 +12,7 @@ import { useEntityDrag, useActiveDrag, useDragSurface } from '../../dnd/DndKit.j
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 import { PanelHeader } from '../base/CloseX.jsx';
+import { PixelFrame, FRAME_KIND } from '../base/PixelFrame.jsx';
 
 /**
  * The Shop drawer.
@@ -117,7 +118,7 @@ export const ShopDrawer = ({ isOpen, onClose, menuRight = false }) => {
             data-shop-drawer-state={state}
             aria-hidden={state === 'closed'}
             className={cn(
-                'absolute inset-y-0 z-(--z-drawer) flex flex-col bg-gi-surface border-r border-gi-primary/30 shadow-[0_0_40px_rgba(0,0,0,0.6)]',
+                'absolute inset-y-0 z-(--z-drawer)',
                 // From the screen's edge, under the nav when it is on the left, as one panel: its
                 // rows pad for the nav (`.gi-drawer-pad-x`, 84 / 152 px as the Bank drawer), and
                 // what is left beside the nav is a third of the screen.
@@ -134,7 +135,9 @@ export const ShopDrawer = ({ isOpen, onClose, menuRight = false }) => {
                     : 'transform 250ms cubic-bezier(0.16,1,0.3,1), opacity 200ms'
             }}
         >
-            <ShopContents isOpen={isOpen} onClose={onClose} />
+            <PixelFrame kind={FRAME_KIND.STUDS} className="h-full" frameClassName="flex flex-col">
+                <ShopContents isOpen={isOpen} onClose={onClose} />
+            </PixelFrame>
 
             {/* The lip: the strip left showing while a Shop Token is carried. */}
             <div
@@ -243,8 +246,8 @@ const ShopRowBody = memo(function ShopRowBody({ item, chosen, ok, onPick, held, 
             data-shop-affordable={ok ? 'true' : 'false'}
             style={{ height: SHOP_ROW_PX }}
             className={cn(
-                'shrink-0 overflow-hidden rounded-lg border border-gi-border/50 bg-gi-base/50 p-2 flex items-stretch gap-2 select-none transition-opacity',
-                ok ? 'cursor-grab touch-none hover:border-gi-gold/60' : 'opacity-50 cursor-not-allowed',
+                'shrink-0 overflow-hidden p-2 flex items-stretch gap-2 select-none transition-opacity',
+                ok ? 'cursor-grab touch-none hover:outline-2 hover:outline-solid hover:-outline-offset-2 hover:outline-[var(--color-ui-white)]' : 'opacity-50 cursor-not-allowed',
                 held && 'opacity-30'
             )}
         >

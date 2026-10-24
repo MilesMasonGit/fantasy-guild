@@ -39,6 +39,7 @@ multiple choice at wave start.
 | 20 | [90 Performance Envelope](90_performance_envelope.md), **done 2026-10-21** (GDD §14; T-071 parked; T-197 to T-210 filed) | 10–19 | — |
 | 21 | [210 Backlog intake](210_backlog_intake.md): the owner's UI tweaks and small systems, six batches (mat and top bar, mat clean-ups, Bank/items/hero bar, Guild Hall, drawers/Atlas/dev tools, frames and bubbles); **Backlog director, waits for the owner's go** | — | yes, per batch |
 | 22 | [220 Combat](220_combat.md): the detail pass: small numbers, weapon families with abilities, enemy kinds, elixirs, Poison and Burn, boss moves, one-on-one encounters, the combat panel; **Systems director, owner's go 2026-10-24** | — (C6 part after 210 F2) | yes (C3, C5, C6) |
+| 23 | [240 Basic content](240_basic_content.md): Starter Camp to plane 2 (copper and oak, then iron and fir): engine gaps (packs carry the Starter Camp, tutorial maps, first-kill drops, the Bog biome, Hall prices), then three CMS change packs the owner reviews, then a play-through; **Systems director** | K0: —; packs: 220 C2, C5 | yes (Bog look, play-through) |
 
 Order ruled by the owner 2026-10-07: UI phases that don't touch skills first,
 then class rework v2, then the hero bar/panel on the new skill list, then

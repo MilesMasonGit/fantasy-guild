@@ -40,7 +40,7 @@ export const SettingsModal = ({ isOpen, onClose }) => {
     const getVal = (path) => path.split('.').reduce((acc, k) => (acc && acc[k] !== undefined) ? acc[k] : undefined, settings);
 
     return (
-        <GIModal isOpen={isOpen} onClose={onClose} title="Settings" className="w-full max-w-3xl bg-gray-900 border-gi-primary/50 text-white">
+        <GIModal isOpen={isOpen} onClose={onClose} title="Settings" className="w-full max-w-3xl text-white">
             <div className="flex flex-col md:flex-row gap-4 h-full min-h-[400px]">
                 <div className="w-full md:w-48 flex flex-col gap-2 border-r border-white/10 pr-4">
                     {tabs.map(tab => (

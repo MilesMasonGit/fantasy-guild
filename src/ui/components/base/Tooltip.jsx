@@ -1,5 +1,6 @@
 import { Children, cloneElement, forwardRef, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { PixelFrame, FRAME_KIND } from './PixelFrame.jsx';
 
 /** Gap between the pointer and the tooltip, so the tip never covers what is under the cursor. */
 export const TIP_OFFSET_X = 16;
@@ -44,7 +45,7 @@ const place = (el, pointer) => {
 };
 
 /**
- * The game's one tooltip: a gold-edged dark box that follows the pointer. Wraps a single child
+ * The game's one tooltip: a dark box in the chamfer pixel frame that follows the pointer. Wraps a single child
  * element and adds pointer handlers to it (the child's own handlers still run).
  *
  * Plain browser `title` tips are for icon buttons only; everything else uses this.
@@ -107,20 +108,22 @@ export const Tooltip = ({ title, lines, content, disabled = false, maxWidth = 28
     );
 };
 
-/** The tooltip's box: gold title, muted lines, then any content. */
+/** The tooltip's box, in the chamfer pixel frame: gold title, muted lines, then any content. */
 const TipBox = forwardRef(function TipBox({ title, lines = [], content, maxWidth, tipProps }, ref) {
     return (
         <div
             ref={ref}
             role="tooltip"
             data-tooltip
-            className="fixed left-0 top-0 z-(--z-tooltip) w-max p-2 rounded-lg pointer-events-none bg-black/90 border border-gi-gold/40 shadow-[0_10px_30px_rgba(0,0,0,0.8)] leading-snug text-white"
+            className="fixed left-0 top-0 z-(--z-tooltip) w-max pointer-events-none"
             style={{ maxWidth, transform: 'translate3d(-9999px, -9999px, 0)' }}
             {...tipProps}
         >
-            {title && <div className="ui-text-title font-bold text-gi-gold">{title}</div>}
-            {lines.map((line, i) => <div key={i} className="ui-text-body text-white/70">{line}</div>)}
-            {content && <div className="ui-text-body">{content}</div>}
+            <PixelFrame kind={FRAME_KIND.CHAMFER} frameClassName="p-0.5 leading-snug text-white">
+                {title && <div className="ui-text-title font-bold text-gi-gold">{title}</div>}
+                {lines.map((line, i) => <div key={i} className="ui-text-body text-white/70">{line}</div>)}
+                {content && <div className="ui-text-body">{content}</div>}
+            </PixelFrame>
         </div>
     );
 });

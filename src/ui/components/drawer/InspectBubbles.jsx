@@ -137,7 +137,7 @@ export const InspectBubbles = ({ def, instanceId = null }) => {
     const { timeRef, xpRef } = useLiveCycleRings(instanceId, live, fallbackRef);
 
     return (
-        <div data-inspect-bubbles className="flex items-start justify-center gap-4 px-3 py-2 rounded-lg bg-[#181412] border border-white/10">
+        <div data-inspect-bubbles className="flex items-start justify-center gap-4 py-2">
             <InspectBubble name="charges" label="Charges" bubble={bubbles.charges} />
             {bubbles.time && <InspectBubble name="time" label="Time" bubble={bubbles.time} rootRef={live ? timeRef : null} />}
             {bubbles.xp && <InspectBubble name="xp" label="XP" bubble={bubbles.xp} rootRef={live ? xpRef : null} />}

@@ -3,6 +3,7 @@ import { Dialog, Transition } from '@headlessui/react';
 import { cn } from '../../utils/cn.js';
 import { useEscapeLayer } from '../../utils/escapeLayers.js';
 import { CloseX } from './CloseX.jsx';
+import { PixelFrame, FRAME_KIND } from './PixelFrame.jsx';
 
 /**
  * GIModal: A standardized, accessible overlay component built on Headless UI Dialog.
@@ -57,27 +58,28 @@ export const GIModal = ({
                         >
                             <Dialog.Panel
                                 className={cn(
-                                    "w-full transform overflow-hidden rounded-lg bg-gi-base border border-gi-border",
-                                    "text-left align-middle gi-shadow-deep transition-all relative flex flex-col",
+                                    "w-full transform text-left align-middle transition-all relative",
                                     maxWidth,
                                     className
                                 )}
                             >
-                                {(title || canClose) && (
-                                    <div className="flex items-center justify-between p-6 border-b border-gi-border/50 bg-gi-surface/30 shrink-0">
-                                        {title && (
-                                            <Dialog.Title as="h3" className="text-xl font-bold text-gi-primary tracking-wide uppercase">
-                                                {title}
-                                            </Dialog.Title>
-                                        )}
+                                <PixelFrame kind={FRAME_KIND.CHAMFER} frameClassName="flex flex-col overflow-hidden">
+                                    {(title || canClose) && (
+                                        <div className="flex items-center justify-between p-6 border-b border-gi-border/50 bg-gi-surface/30 shrink-0">
+                                            {title && (
+                                                <Dialog.Title as="h3" className="text-xl font-bold text-gi-primary tracking-wide uppercase">
+                                                    {title}
+                                                </Dialog.Title>
+                                            )}
 
-                                        {canClose && <CloseX onClick={onClose} className="ml-auto" />}
+                                            {canClose && <CloseX onClick={onClose} className="ml-auto" />}
+                                        </div>
+                                    )}
+
+                                    <div className="p-6 flex-1 min-h-0 overflow-hidden">
+                                        {children}
                                     </div>
-                                )}
-
-                                <div className="p-6 flex-1 min-h-0 overflow-hidden">
-                                    {children}
-                                </div>
+                                </PixelFrame>
                             </Dialog.Panel>
                         </Transition.Child>
                     </div>
