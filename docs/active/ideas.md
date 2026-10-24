@@ -154,7 +154,7 @@ what can move; "something else that improves with level" is deferred there.
 
 ### D3 — Combat and gear ✅ (general)
 
-General direction done 2026-10-09 → [concept_combat.md](concept_combat.md);
+General direction done 2026-10-09 → [concept_combat.md](concept_combat.md); detail pass done 2026-10-24 → [brief 220](briefs/220_combat.md);
 the details (numbers, style traits, statuses, roster, gear slots) are
 deferred to a later design pass. Covered: combat system, gear, enemy
 variety, status effects.

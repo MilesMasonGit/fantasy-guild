@@ -1,4 +1,4 @@
-Status: approved 2026-10-09 (direction only; brief after the crunch)
+Status: briefed 2026-10-24 (detail pass approved 2026-10-24; brief [220](briefs/220_combat.md))
 
 # Combat and gear
 
@@ -316,7 +316,8 @@ Differs from GDD §6 in places; the code wins:
 - **A combat panel shows everything happening in a fight**: a small combat
   icon appears above each fight; clicking it opens the panel (both
   fighters' HP, statuses with stacks, elixirs and buffs, styles, what just
-  happened). Statuses are not drawn on the board.
+  happened). Statuses are not drawn on the board. **The panel opens over
+  the playmat, like the Token inspection popup** (owner 2026-10-24).
 - **On the board, without the panel**: HP bars, floating damage and miss
   numbers, and **floating effect bubbles** that pop up briefly when an
   ability or item activates (the "used" bubble above).
