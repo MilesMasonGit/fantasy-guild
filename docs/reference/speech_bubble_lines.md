@@ -80,6 +80,7 @@ once; the oldest moment gives way.
 | 14 | *(line 7 or 8, word for word)*, or I need {a Pickaxe} to work {token}. | **B5 (FB-45):** you dropped the hero's flag on a Token they can't work — skill not held (line 8), level too low (line 7), or no tool in hand for it ("I need a Pickaxe to work Copper Ore Vein.", "I need an Iron Pickaxe or better to work Gold Ore Vein."). The flag stands there as a normal area flag instead of being pinned, and the hero says why once. A Token you disallowed, or one whose skill is switched off in the hero's rules, is refused silently (no wording yet); a spawner is never pinned and nothing is said. | Kept |
 | 15 | {token} Depleted | The hero whose work spent a Token's last charge says it (a tree they felled, a vein they emptied, a fight that used up an enemy or a tool beside it). Shows for **3 seconds**, one line per kind of Token so a hero chopping tree after tree keeps one bubble. Nobody says it when no hero spent the charge. | Kept |
 | 16 | Waiting for {enemy}. | Said instead of line 12 when the hero goes idle because the one fight in reach is another hero's: every fight is one-on-one (brief 220 C5), so they wait at their flag (or beside the enemy, when their flag is pinned to it) and take it the moment it is free. | Kept |
+| 17 | {enemy} Beaten | Line 15 said of an enemy: the hero who beat it says it (brief 220 C5). Shows for **3 seconds**, one line per kind. | Kept |
 
 ## 3. Callouts (not speech bubbles)
 

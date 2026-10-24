@@ -443,8 +443,8 @@ duels: `concept_combat.md`, "The level table and weapon tiers").
   ambushed too and fight back barehanded.
 - **Boss** (`enemy.boss: true`, a CMS tick): fights only the heroes sent at
   it. Never hostile (the Hostile box greys out), never made by a rule, so it
-  never ambushes. Lives in a lair or is summoned (Encounters, below). Boss
-  moves will hang on this mark.
+  never ambushes. Comes from a camp of its own or a Summoning Circle
+  (Encounters, below). Boss moves will hang on this mark.
 - Each kill uses one of the enemy's uses; at 0 it's gone. Otherwise it
   respawns at full HP after a 2 s pause.
 
@@ -458,38 +458,35 @@ duels: `concept_combat.md`, "The level table and weapon tiers").
   {enemy}.", their flag reads "Waiting for {enemy}" and its hover "{enemy} —
   {hero} is fighting it"; the Dock line says the same. A save holding two
   heroes on one enemy loads into one fight (the second chooses again).
-- **Guardians**: a Token's `guardian: { typeId, returnMs? }` block (the CMS's
-  Guardian / lair block) keeps one enemy beside it, there from the first tick
-  the Token stands on the mat (so a map's guarded node arrives guarded). On a
-  Token heroes work, nobody works it while the guardian stands: a flag skips
-  it ("a guardian stands on it"), a hero on it lets go, and it carries no
-  problem mark (the guardian is the mark). Beaten (one kill, whatever its
-  uses), it drops its loot and comes back **10 minutes** later unless the
-  author types a time (at least 1 s); the clock is saved on the Token and
-  runs on game time, so a catch-up and a reload keep it. It waits while the
-  mat is at its Token cap or has no room beside the Token. It potters around
-  its Token and attacks only if its own type is hostile. The Token's card,
-  inspection ("Guarded by …", "beaten, back in …") and hover countdown say
-  where it stands. A guardian whose Token is gone stays until beaten and never
-  returns. *(`Guardians.js`, the `guardian` row of `TimedChanges`)*
-- **Lairs**: the same block on a Token with no work of its own: its enemy
-  (usually a boss) lives there and potters by it, and comes back after it
-  falls: **2 minutes** for a boss unless authored. A Base Map brings a lair by
-  listing the lair Token under its camps. Farm it with a flag whose Fight rule
-  reaches the boss.
-- **Summons**: a boss sold in the Shop's **Summons** section, priced in its
-  summon item, appears where it is dragged onto the mat (the Shop's usual
-  checks: the cap, the price, room). Beaten, it is gone; another summon item
-  calls it again.
+- **Bosses and guardians come from camps of one**: an ordinary spawner (a
+  "Warlord's Den", a "Guardian's Hollow") whose spawn list names the one enemy,
+  allowance 1, on its own interval: the same machinery and CMS fields as any
+  camp. The boss or guardian potters by its camp; a Base Map brings one by
+  listing the camp Token under its camps. ⚠️ As for every camp today, the
+  camp's clock fills while the camp is full and waits there, so a boss beaten
+  after its camp has been full a whole interval is back on the next tick; a
+  camp whose member falls sooner sends the next when its clock fills.
+- **A guardian** is simply a tough enemy whose camp stands by a rich node. It
+  blocks nothing; if its type is hostile it attacks whoever works nearby (the
+  flag watch around its camp, as any hostile enemy).
+- **A Summoning Circle** is an ordinary Token whose work cycle uses up a
+  summon item (its input) and makes its boss beside it (a Token output). Its
+  work names a Starting skill, so any hero may work it (it becomes the
+  Summoning skill's station when the specialist skills are designed). Without
+  the item it waits ("needs" the item, the usual yellow mark); with several
+  in the Bank it calls one per cycle while a hero works it. A boss it called
+  is gone once beaten.
 - **Node ambushes**: a Token's `Spawns` rule that puts an enemy beside it is an
-  ambush (a chance on a finished cycle, about 5 %, is the usual shape; set per
-  Token in the Rules line). The enemy attacks the hero the moment names (the
+  ambush (a chance on a finished cycle, about **2 %**, is the usual shape; set
+  per Token in the Rules line). The enemy attacks the hero the moment names (the
   one who finished the cycle) on the next tick, hostile or not; that hero
   fights back whatever their rules or pin say, then goes back to work. An
   ambusher is beaten in one kill, and while it stands its node springs no
   other (its rules roll nothing). With no hero named it waits by its node
   (hostile ones watch around it). Never a boss.
 - **Camps are unchanged**; lure buildings are parked.
+- **A beaten enemy**: the hero who beat it says "{enemy} Beaten" (a Token used
+  up says "{token} Depleted").
 
 ### The fight — Built
 - **Swings.** A hero swings at their weapon's speed: fast 2 s, normal 3 s,
