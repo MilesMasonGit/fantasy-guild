@@ -25,6 +25,7 @@ import { GuildHallDevSection } from '../dev/GuildHallDevSection.jsx';
 import { AnimationDevSection } from '../dev/AnimationDevSection.jsx';
 import { GearDevSection } from '../dev/GearDevSection.jsx';
 import { SuppliesDevSection } from '../dev/SuppliesDevSection.jsx';
+import { StatusesDevSection } from '../dev/StatusesDevSection.jsx';
 import { StyleSheetPage } from '../dev/StyleSheetPage.jsx';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 import { EventBus, UI_LISTENER } from '../../systems/core/EventBus.js';
@@ -324,6 +325,7 @@ export const TestDashboard = React.memo(() => {
                         {import.meta.env.DEV && <GuildHallDevSection />}
                         {import.meta.env.DEV && <GearDevSection />}
                         {import.meta.env.DEV && <SuppliesDevSection />}
+                        {import.meta.env.DEV && <StatusesDevSection />}
                         {import.meta.env.DEV && <AnimationDevSection />}
                         {import.meta.env.DEV && <NotificationsDevSection />}
                         <div className="mb-3 pb-3 border-b border-gi-border space-y-2">

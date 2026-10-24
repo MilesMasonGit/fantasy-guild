@@ -4,6 +4,7 @@ import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { FIGHT_MOMENT, everyOf, healthBelowOf } from '../../config/registries/triggerRegistry.js';
 import { ROLE } from '../../config/registries/roleRegistry.js';
 import { getEnemyKind } from '../../config/registries/enemyKinds.js';
+import { effectName } from '../../config/registries/effectRegistry.js';
 import { KEYWORD, statementsOf } from '../effects/statements.js';
 import * as LiveEffects from '../effects/LiveEffects.js';
 import * as HeroManager from '../hero/HeroManager.js';
@@ -42,7 +43,9 @@ function kindStatements(fight) {
             keyword: KEYWORD.APPLIES,
             when: { event: FIGHT_MOMENT.HIT, scope: 'self' },
             target: { role: ROLE.ACTOR },
-            payload: { effectId: onHit.effectId, chance: 100 }
+            payload: { effectId: onHit.effectId, chance: 100 },
+            // Said over the enemy as it lands, like any named rule.
+            effectTitle: effectName(onHit.effectId)
         });
     }
     return out;
