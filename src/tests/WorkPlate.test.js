@@ -13,6 +13,7 @@ import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as Flags from '../systems/board/Flags.js';
 import * as Charges from '../systems/board/Charges.js';
+import * as Demolition from '../systems/board/Demolition.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
@@ -258,6 +259,18 @@ describe('⭐ on the mat', () => {
         fireEvent.mouseLeave(figure);
         await act(async () => { await vi.advanceTimersByTimeAsync(0); });
         expect(plateOf(container, t.id).getAttribute('data-work-plate-open')).toBeNull();
+    });
+
+    it('a Token being taken down shows the work, not what it would have made, and no charges', () => {
+        GameState.state.heroes = [hero('h1', { forestry: 50, construction: 50 })];
+        const t = put('fixture_producer', AT, 12);
+        Flags.plant('h1', P(700, 500));
+        run(200);
+        expect(workPlateOf(t.id)).toMatchObject({ output: 'fixture_oak_wood', charges: 12 });
+        expect(Demolition.mark(t).success).toBe(true);
+        run(200);
+        expect(BoardState.workerOf(t.id)).toBe('h1');
+        expect(workPlateOf(t.id)).toMatchObject({ output: null, skill: 'construction', charges: null });
     });
 
     it('its draw switch stops drawing it, and nothing else', async () => {

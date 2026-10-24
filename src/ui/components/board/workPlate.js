@@ -3,6 +3,7 @@ import * as BoardState from '../../../systems/board/BoardState.js';
 import { effectiveIO } from '../../../systems/board/RecipeResolver.js';
 import { checkInputs } from '../../../systems/board/InputAllocator.js';
 import { workConfigOf } from '../../../systems/board/StationRecipe.js';
+import * as Demolition from '../../../systems/board/Demolition.js';
 import { STAND_GAP } from '../../../systems/board/HeroMotion.js';
 import { MASTERY_LEVEL } from '../../../systems/hero/PromotionSystem.js';
 import * as HeroManager from '../../../systems/hero/HeroManager.js';
@@ -88,8 +89,10 @@ export function workPlateOf(id) {
     const heroId = instance ? BoardState.workerOf(id) : null;
     if (!heroId) return null;
     const def = getTokenType(instance.typeId);
+    // Being taken down, it makes nothing and spends no charges: the work is the demolition.
+    const marked = Demolition.isMarked(instance);
     const io = effectiveIO(id, instance);
-    const out = mainOutput(io.outputs);
+    const out = marked ? null : mainOutput(io.outputs);
     const alert = instance.alert || null;
     const problem = problemOf({ alert });
     const missing = alert === ALERT.INPUTS && io.inputs?.length
@@ -101,7 +104,7 @@ export function workPlateOf(id) {
         side: BoardState.heroBodyOf(heroId)?.side === -1 ? -1 : 1,
         output: out ? (out.itemId || out.tokenId || null) : null,
         skill: workConfigOf(def, instance)?.skill || null,
-        charges: def?.isGuildHall ? null : (instance.usesRemaining ?? null),
+        charges: def?.isGuildHall || marked ? null : (instance.usesRemaining ?? null),
         problem: problem?.kind ?? null,
         severity: problem?.severity ?? null,
         missing
@@ -195,7 +198,7 @@ export function plateTip(cell, instanceId, cycle = null) {
             return t('workPlate.charges', { count: cell.count, amount: Number(cell.count).toLocaleString() });
         case CELL.TIMER: {
             const left = timeLeftText(cycle);
-            const out = mainOutput(effectiveIO(instanceId, instance).outputs);
+            const out = Demolition.isMarked(instance) ? null : mainOutput(effectiveIO(instanceId, instance).outputs);
             const id = out ? (out.itemId || out.tokenId) : null;
             if (!left) return '';
             return id ? t('workPlate.next', { item: itemName(id), time: left }) : t('workPlate.nextCycle', { time: left });
