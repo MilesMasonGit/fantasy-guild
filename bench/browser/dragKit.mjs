@@ -268,11 +268,29 @@ export function installDragKit() {
         const heroes = (G.GameState.state.heroes || []).map(h => h.id);
         return Object.values(G.getAllItems()).filter(i => i?.id && G.EquipmentValidator.canEquipToSlot(i.id) && heroes.some(h => G.EquipmentValidator.canHeroEquip(h, i.id).canEquip)).map(i => i.id);
     };
+    // Up to six items of each sort: gear (one copy per hero, taken out of the Bank by equipping and
+    // put back by unequipping) and shared food, drink and potions (the Bank's stack stays). Which
+    // sort an item is, is read from the game: one trial equip each, then unequipped.
+    kit.copyItems = new Set();
     kit.ensureEquipStock = () => {
-        const ids = kit.equippables().slice(0, 12);
-        for (const id of ids) if (G.InventoryManager.getItemCount(id) < 5) G.InventoryManager.addItem(id, 50);
+        const heroes = (G.GameState.state.heroes || []).map(h => h.id);
+        const gear = [], shared = [];
+        for (const id of kit.equippables()) {
+            if (gear.length >= 6 && shared.length >= 6) break;
+            const heroId = heroes.find(h => G.EquipmentValidator.canHeroEquip(h, id).canEquip);
+            if (G.InventoryManager.getItemCount(id) < 5) G.InventoryManager.addItem(id, 50);
+            kit.clearHeroGear(heroId);
+            if (!G.EquipmentManager.equipItem(heroId, id).success) continue;
+            const hero = G.HeroManager.getHero(heroId);
+            const copy = hero.heldCopies?.[hero.equipment.indexOf(id)] === true;
+            kit.clearHeroGear(heroId);
+            const list = copy ? gear : shared;
+            if (list.length < 6) list.push(id);
+            if (copy) kit.copyItems.add(id);
+        }
         G.EventBus.publish('inventory_updated');
-        return ids;
+        kit.equipStock = new Set([...gear, ...shared]);
+        return { gear, shared };
     };
     kit.clearHeroGear = (heroId) => {
         const hero = G.HeroManager.getHero(heroId);
@@ -584,20 +602,26 @@ export function installDragKit() {
             const heroes = (G.GameState.state.heroes || []).map(h => h.id);
             const tiles = [...document.querySelectorAll('button[data-bank-item]')]
                 .map(el => ({ el, itemId: el.getAttribute('data-bank-item') }))
-                .filter(t => G.EquipmentValidator.canEquipToSlot(t.itemId) && visibleCentre(t.el));
+                .filter(t => kit.equipStock?.has(t.itemId) && visibleCentre(t.el));
+            // A hero takes an item on their figure in the hero bar or on their portrait tab beside the Bank.
+            const targetsOf = (h) => [
+                { on: 'dock figure', el: document.querySelector(`[data-dock-hero="${h}"]`) },
+                { on: 'Bank hero tab', el: document.querySelector(`[data-dock-hero-id="${h}"] [data-hero-tab-face]`) }
+            ].filter(t => visibleCentre(t.el));
             const pairs = [];
             for (const t of tiles) for (const h of heroes) {
-                if (G.EquipmentValidator.canHeroEquip(h, t.itemId).canEquip && document.querySelector(`[data-dock-hero="${h}"]`)) pairs.push({ ...t, heroId: h });
+                if (!G.EquipmentValidator.canHeroEquip(h, t.itemId).canEquip) continue;
+                for (const on of targetsOf(h)) pairs.push({ ...t, heroId: h, on });
             }
-            if (!pairs.length) return { skip: `no equippable item tile visible (${tiles.length} tiles)` };
+            if (!pairs.length) return { skip: `no stocked equippable item tile visible (${tiles.length} tiles)` };
             const p = pickRandom(pairs);
             kit.clearHeroGear(p.heroId);
-            const dock = document.querySelector(`[data-dock-hero="${p.heroId}"]`);
             p.el.scrollIntoView({ block: 'center' });
             return {
                 source: { ...visibleCentre(p.el), what: `Bank item ${p.itemId}`, hand: `Bank item ${p.itemId}` },
-                target: visibleCentre(dock),
-                expect: { kind: 'equip', heroId: p.heroId, itemId: p.itemId }
+                target: { ...visibleCentre(p.on.el), what: `${p.on.on} ${p.heroId}` },
+                // One item, one hero: the equipped copy leaves the Bank.
+                expect: { kind: 'equip', heroId: p.heroId, itemId: p.itemId, on: p.on.on, copy: kit.copyItems.has(p.itemId), bankBefore: G.InventoryManager.getItemCount(p.itemId) }
             };
         }
     };
@@ -632,8 +656,14 @@ export function installDragKit() {
             }
             case 'equip': {
                 const hero = G.HeroManager.getHero(e.heroId);
-                const ok = (hero?.equipment || []).includes(e.itemId);
-                return { ok, detail: ok ? 'equipped' : 'not equipped' };
+                const slot = (hero?.equipment || []).indexOf(e.itemId);
+                if (slot < 0) return { ok: false, detail: `not equipped on the ${e.on}` };
+                // One item, one hero: a gear copy leaves the Bank with the hero; a shared stack stays.
+                // ⚠️ A shared stack's count is not checked: working heroes eat and drink from it meanwhile.
+                const held = hero.heldCopies?.[slot] === true;
+                const bank = G.InventoryManager.getItemCount(e.itemId);
+                const ok = held === e.copy && (!e.copy || bank === e.bankBefore - 1);
+                return { ok, detail: `equipped on the ${e.on}, ${held ? 'a copy held' : 'shared'} (${e.copy ? 'gear' : 'shared'} expected), Bank ${e.bankBefore} → ${bank}` };
             }
             default: return { ok: false, detail: `unknown check ${e.kind}` };
         }

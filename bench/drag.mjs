@@ -36,6 +36,8 @@ const STEP_MS = 16;          // one pointer move per frame, roughly
 const HOVER_MS = 80;         // the pointer rests on the source before the press, as a hand does
 const QUIET_MS = 50;         // still, between the bench's reads and the release, so the drop's frames are the game's
 const SETTLE_MS = 450;       // after the release: the drop handler, the state, the re-render
+// The hero sheet beside the Bank (`BankHeroPanel.jsx`): its box takes presses only while a hero is shown.
+const HERO_SHEET_OPEN = `[...document.querySelectorAll('[data-hero-panel] [data-dnd-region]')].some(e => getComputedStyle(e).pointerEvents !== 'none')`;
 
 function gitInfo() {
     const run = (cmd) => execSync(cmd, { cwd: root, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
@@ -86,6 +88,12 @@ async function realDrag(page, from, to, via = null) {
 async function arrange(page, needs) {
     const isOpen = async (expr) => !!(await page.evaluate(expr));
     const closed = (expr) => `!(${expr})`;
+    // Close any hero sheet a previous kind opened (an equip drop opens the hero's sheet) first.
+    // ⚠️ Only while one is open: Escape closes the top-most layer, which is otherwise the drawer.
+    for (let i = 0; i < 3 && await isOpen(HERO_SHEET_OPEN); i++) {
+        await page.key('Escape', 'Escape', 27);
+        await sleep(400);
+    }
     if (needs !== 'shop' && await isOpen(SHOP_OPEN)) await clickUntil(page, 'button[aria-label="Shop"]', closed(SHOP_OPEN), 'the Shop to close');
     if (needs !== 'bank' && await isOpen(BANK_OPEN)) await clickUntil(page, 'button[aria-label="Item Bank"]', closed(BANK_OPEN), 'the Bank to close');
     if (needs === 'shop' && !await isOpen(SHOP_OPEN)) await clickUntil(page, 'button[aria-label="Shop"]', SHOP_OPEN, 'the Shop to open');
@@ -97,13 +105,12 @@ async function arrange(page, needs) {
     if (needs === 'bank') {
         await page.waitFor(`!!document.querySelector('button[data-bank-item]')`, { timeoutMs: 8000, what: 'the Bank to show items' });
     }
-    // Close any hero sheet a previous kind opened (an equip drop opens the hero's sheet).
-    await page.key('Escape', 'Escape', 27);
-    await sleep(600);
+    await sleep(300);
 }
 
 async function attempt(page, kind) {
-    // The pointer rests on the empty top of the sidebar strip between drags, clear of the mat and of every pop-out.
+    // The pointer rests between drags on the screen's top right corner: right of the mat's top bar,
+    // clear of the mat, the drawers and the Bank's hero tabs.
     await page.mouse('mouseMoved', 1586, 12);
     await sleep(250);
     const pick = await page.evaluate(`window.__dragKit.pick.${kind.id}()`);
@@ -162,6 +169,8 @@ async function main() {
             await page.evaluate('window.__perf.hideHud(), true');
             await page.evaluate(`(${installDragKit.toString()})()`);
             meta.equipStock = await page.evaluate('window.__dragKit.ensureEquipStock()');
+            // Its trial equips open a hero sheet a moment later; the first `arrange` closes it.
+            await sleep(600);
             for (const pass of passes) {
                 results[pass] = {};
                 if (pass === 'overlays') {
