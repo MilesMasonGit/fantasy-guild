@@ -24,7 +24,7 @@ import * as CombatFormulas from '../../utils/CombatFormulas.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
- * Combat on the board: an adapter, not an engine. The 7-stat engine, status effects, damage
+ * Combat on the board: an adapter, not an engine. The combat numbers, status effects, damage
  * resolution, the Wounded state and passive regen carry over unchanged; only the trigger differs: a
  * hero is dropped onto an enemy Token.
  *
@@ -336,7 +336,7 @@ export function tickToken(instance, delta, heroId) {
     fight.assignedHeroId = heroId;
 
     // ⚠️ The stat block is re-derived every tick and the aggregator is not, so they have to be
-    // joined back up here. Without this line `computeHeroDamage` reads a profile with no aggregator
+    // joined back up here. Without this line `heroHitDamage` reads a profile with no aggregator
     // and an enemy's carried armour is silently zero, which looks exactly like the feature working.
     enemy.aggregator = fight.aggregator;
     enemy.effects = fight.effects;
