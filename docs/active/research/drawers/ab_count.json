@@ -1,0 +1,194 @@
+{
+  "note": "Interleaved before (main) / after (this branch), dev server, S2 board (?stress=realistic), 1920x1080, game loop stopped; each toggle watched for 1 s. own/commits: the mat (MatBoard) renders and its subtree commits. longestGapMs/over34: frame gaps (rAF) in that second.",
+  "rounds": [
+    {
+      "round": 1,
+      "before": {
+        "restPer1000ms": {
+          "own": 0,
+          "commits": 2
+        },
+        "open": {
+          "own": 1,
+          "commits": 4,
+          "longestGapMs": 121,
+          "over34": 3
+        },
+        "close": {
+          "own": 1,
+          "commits": 3,
+          "longestGapMs": 109,
+          "over34": 4
+        },
+        "open2": {
+          "own": 1,
+          "commits": 3,
+          "longestGapMs": 109,
+          "over34": 2
+        },
+        "close2": {
+          "own": 1,
+          "commits": 3,
+          "longestGapMs": 91,
+          "over34": 2
+        }
+      },
+      "after": {
+        "restPer1000ms": {
+          "own": 0,
+          "commits": 4
+        },
+        "open": {
+          "own": 0,
+          "commits": 1,
+          "longestGapMs": 91,
+          "over34": 3
+        },
+        "close": {
+          "own": 0,
+          "commits": 1,
+          "longestGapMs": 61,
+          "over34": 2
+        },
+        "open2": {
+          "own": 0,
+          "commits": 0,
+          "longestGapMs": 18,
+          "over34": 0
+        },
+        "close2": {
+          "own": 0,
+          "commits": 0,
+          "longestGapMs": 6,
+          "over34": 0
+        }
+      }
+    },
+    {
+      "round": 2,
+      "before": {
+        "restPer1000ms": {
+          "own": 0,
+          "commits": 2
+        },
+        "open": {
+          "own": 1,
+          "commits": 4,
+          "longestGapMs": 109,
+          "over34": 3
+        },
+        "close": {
+          "own": 1,
+          "commits": 3,
+          "longestGapMs": 97,
+          "over34": 4
+        },
+        "open2": {
+          "own": 1,
+          "commits": 3,
+          "longestGapMs": 85,
+          "over34": 2
+        },
+        "close2": {
+          "own": 1,
+          "commits": 3,
+          "longestGapMs": 91,
+          "over34": 2
+        }
+      },
+      "after": {
+        "restPer1000ms": {
+          "own": 0,
+          "commits": 2
+        },
+        "open": {
+          "own": 0,
+          "commits": 4,
+          "longestGapMs": 127,
+          "over34": 3
+        },
+        "close": {
+          "own": 0,
+          "commits": 2,
+          "longestGapMs": 55,
+          "over34": 2
+        },
+        "open2": {
+          "own": 0,
+          "commits": 0,
+          "longestGapMs": 12,
+          "over34": 0
+        },
+        "close2": {
+          "own": 0,
+          "commits": 0,
+          "longestGapMs": 12,
+          "over34": 0
+        }
+      }
+    },
+    {
+      "round": 3,
+      "before": {
+        "restPer1000ms": {
+          "own": 0,
+          "commits": 0
+        },
+        "open": {
+          "own": 1,
+          "commits": 4,
+          "longestGapMs": 121,
+          "over34": 3
+        },
+        "close": {
+          "own": 1,
+          "commits": 3,
+          "longestGapMs": 91,
+          "over34": 4
+        },
+        "open2": {
+          "own": 1,
+          "commits": 3,
+          "longestGapMs": 103,
+          "over34": 2
+        },
+        "close2": {
+          "own": 1,
+          "commits": 3,
+          "longestGapMs": 97,
+          "over34": 2
+        }
+      },
+      "after": {
+        "restPer1000ms": {
+          "own": 0,
+          "commits": 2
+        },
+        "open": {
+          "own": 0,
+          "commits": 4,
+          "longestGapMs": 121,
+          "over34": 3
+        },
+        "close": {
+          "own": 0,
+          "commits": 2,
+          "longestGapMs": 55,
+          "over34": 2
+        },
+        "open2": {
+          "own": 0,
+          "commits": 0,
+          "longestGapMs": 12,
+          "over34": 0
+        },
+        "close2": {
+          "own": 0,
+          "commits": 0,
+          "longestGapMs": 6,
+          "over34": 0
+        }
+      }
+    }
+  ]
+}

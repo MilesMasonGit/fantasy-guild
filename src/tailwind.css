@@ -1027,6 +1027,36 @@ body.gi-dnd-active :is([data-item-stubs], [data-banners]) .pointer-events-auto {
   .gi-stub[data-stub-arriving="true"] { animation: none; }
 }
 
+/* Opening the Bank moves the mat's side out of the drawer's way, in step with the drawer's slide
+   (BankDrawer.jsx): everything on the mat's side glides aside by the hero column's width
+   (`--hero-col`), the top bar slides up off the screen and the item stubs off its edge. Only
+   transforms, so the mat is neither laid out, measured nor redrawn: its fit stays the closed
+   one. At rest with the Bank shut there is no transform at all.
+   ⚠️ The two inner moves cancel the outer one sideways; all three must keep one duration and
+   easing, or the bar and the stubs wobble. */
+.gi-bank-shift,
+.gi-bank-shift [data-mat-top-bar],
+.gi-bank-shift [data-item-stubs] { transition: transform 250ms cubic-bezier(0.16, 1, 0.3, 1); }
+.gi-bank-shift[data-bank-shift="left"] { transform: translateX(calc(-1 * var(--hero-col))); }
+.gi-bank-shift[data-bank-shift="right"] { transform: translateX(var(--hero-col)); }
+.gi-bank-shift[data-bank-shift="left"] [data-mat-top-bar] { transform: translate(var(--hero-col), calc(-100% - 12px)); }
+.gi-bank-shift[data-bank-shift="right"] [data-mat-top-bar] { transform: translate(calc(-1 * var(--hero-col)), calc(-100% - 12px)); }
+.gi-bank-shift[data-bank-shift="left"] [data-item-stubs] { transform: translateX(calc(var(--hero-col) + 100% + 8px)); }
+.gi-bank-shift[data-bank-shift="right"] [data-item-stubs] { transform: translateX(calc(100% + 8px)); }
+@media (prefers-reduced-motion: reduce) {
+  .gi-bank-shift,
+  .gi-bank-shift [data-mat-top-bar],
+  .gi-bank-shift [data-item-stubs] { transition: none; }
+}
+
+/* A drawer reaches the screen's edge under the nav, as one panel: its rows' backgrounds run under
+   the orbs and their contents start beside them. The drawer sets how far the nav reaches into it
+   on each side (`--nav-inset-l`, `--nav-inset-r`). */
+.gi-drawer-pad-x {
+  padding-left: calc(var(--nav-inset-l, 0px) + 0.75rem);
+  padding-right: calc(var(--nav-inset-r, 0px) + 0.75rem);
+}
+
 /* Hovering a banner about a hero or a Token outlines it: gold, red for a problem. Set only while
    the banner is hovered (bannerHighlight.js), so it costs nothing otherwise. */
 [data-banner-outline="gold"] {

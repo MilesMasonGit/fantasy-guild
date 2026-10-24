@@ -177,7 +177,7 @@ export const BankTab = () => {
     return (
         <div className="h-full min-h-0 flex flex-row">
             <div className="flex-1 flex flex-col min-w-0">
-            <div className="shrink-0 flex items-center gap-2 px-3 py-2 border-b border-gi-border/40 bg-gi-base/30 flex-wrap">
+            <div className="shrink-0 flex items-center gap-2 gi-drawer-pad-x py-2 border-b border-gi-border/40 bg-gi-base/30 flex-wrap">
                 <BankTabStrip
                     tabs={tabs}
                     activeId={currentTabId}
@@ -231,7 +231,7 @@ export const BankTab = () => {
                 onDrop={handleListDrop}
                 acceptClassName=""
                 rejectClassName=""
-                className="flex-1 overflow-y-auto custom-scrollbar p-3"
+                className="flex-1 overflow-y-auto custom-scrollbar gi-drawer-pad-x py-3"
             >
                 {searching && (
                     <div className="mb-2 text-(length:--font-size-xs) text-gi-muted italic">Searching all tabs — sorting is paused.</div>
