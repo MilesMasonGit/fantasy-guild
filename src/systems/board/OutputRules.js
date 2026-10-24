@@ -23,6 +23,23 @@ export function rollDoubleLoot(instanceId, skill) {
 }
 
 /**
+ * DOUBLE_DROP: a chance that one item, once it has landed, comes out doubled (a Cleaver and Raw
+ * Beef). The item is the rule's narrowing, so the axis is resolved per item with the item id as the
+ * category; rolled once per item that landed, after its quantity is settled.
+ *
+ * ⚠️ Draws from `Math.random` only when something offers the chance: content without the rule
+ * makes no draw, so the stream (and the bench's work check) is unchanged by it.
+ *
+ * @returns {number} the quantity that lands
+ */
+export function doubleItemDrop(instanceId, itemId, quantity) {
+    if (!itemId || !(quantity > 0)) return quantity;
+    const chance = TileModifiers.resolveAxis(instanceId, EFFECT_TYPES.DOUBLE_DROP, 0, itemId);
+    if (!(chance > 0)) return quantity;
+    return Math.random() * 100 < chance ? quantity * 2 : quantity;
+}
+
+/**
  * A fractional quantity rounded probabilistically, so a x1.5 yield is 1 plus a 50% chance of a
  * 2nd, rather than silently truncating every small buff to nothing.
  */

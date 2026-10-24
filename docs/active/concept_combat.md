@@ -466,3 +466,84 @@ change):
 - **Block is removed** (as built).
 - Director's calls, not asked: a Recruit is combat level 0; the miss slope is
   1 point per level; enemies crit at 5 % unless authored.
+
+## Gear and enemy fields (built in C2, 2026-10-24; for the C0 author)
+
+*What the CMS writes and the game reads. Nothing in `data/` uses them yet.*
+
+**A weapon** (an item in the Hand category with no Tool kind):
+
+| Field | Type | Meaning | Default when absent |
+|---|---|---|---|
+| `styles` | list of `melee`, `ranged`, `magic`, `stealth` | who may hold it; a Dagger is `["melee", "stealth"]` | any promoted hero |
+| `damage` | whole number ≥ 1 | every hit before the level step, matchup and armour | 1 (a fist) |
+| `speed` | `fast` / `normal` / `slow` | a swing every 2 / 3 / 4 s | `normal` |
+| `hands` | `2` | a two-hander, leaving no hand for a tool | one hand |
+| `type` | `weapon` | the Bank's label and tint (the editor writes it) | `tool` |
+
+An older item's `skillRequired` naming a combat skill reads as one style; the
+editor folds it into `styles` on the first change.
+
+**A family's ability** is one library effect (`effects.json`, made in the
+Rules editor) that every tier of the family references with its own `scale`
+(1–5): `effects: [{ "effectId": "effect_spear", "scale": 2 }]` on an iron
+spear. The scale multiplies the effect's number. Armour's own stat is the same
+kind of effect (Provides Armor, flat). The rows the abilities use:
+
+| Rules row (Provides) | Bucket | Narrowing | Example |
+|---|---|---|---|
+| Pierce | flat | none | Spear: 1 |
+| Accuracy | flat | none | Bow: 5 (points off the miss chance) |
+| Crit Chance | flat | none | Rapier: 5 (points on the 5 % base) |
+| Dodge | flat | none | a cloak: 5 (points on the enemy's miss) |
+| Armor | flat | none | leather: 1 |
+| Damage | flat or percentage | none | an elixir: +1 |
+| Double Item Chance | flat (a %) | the item (or any item) | Cleaver: 10 on Raw Beef; one statement per meat |
+| Status Stack Limit | flat (± stacks) | the status | Hide Vest: −1 on Poison |
+
+**An enemy** (`enemy` on a Token):
+
+| Field | Type | Meaning | Default when absent |
+|---|---|---|---|
+| `level` | whole number ≥ 1 | fills the numbers below from the level table | (required) |
+| `style` | a combat skill | its side of the cycle | `melee` |
+| `kinds` | up to two of `armoured`, `nimble`, `swift`, `brute`, `venomous` | presets over the level (below) | none |
+| `hp`, `hit`, `armor`, `xp` | whole numbers | replace what the level and kinds fill | filled |
+| `speed` | `fast` / `normal` / `slow` | replaces the filled swing | filled |
+| `dodge`, `accuracy`, `pierce` | whole numbers | replace the filled 0 | 0 (Nimble: 15 dodge) |
+| `critChance` | whole number (%) | replaces the filled 5 | 5 |
+| `hostile` | `true` | ambushes heroes near it | peaceful |
+| `budgetScale` | number | older content only: scales the level's HP, hit and XP | 1 |
+
+**How a kind combines with the level** (the order the game applies): the
+level table (and an older `budgetScale`), then each kind in the order ticked,
+then any number typed on the enemy, which wins outright. Armoured: armour +2,
+slow, same hit. Nimble: Dodge +15. Swift: fast, hit × 2/3 (rounded halves up,
+at least 1). Brute: slow, hit × 4/3 (rounded) and at least 1 more than the
+level's. Venomous: every landed hit adds a stack of Poison. Kinds never touch
+HP or XP. Swift cannot go with Armoured or Brute (the CMS refuses it; content
+that has it anyway lets the later kind's speed win).
+
+| Level 1 (hero level 1: 11 HP) | HP | Hit | Armour | Swing | Damage per second |
+|---|---|---|---|---|---|
+| no kind | 21 | 1 | 0 | 3 s | 0.33 |
+| Armoured | 21 | 1 | 2 | 4 s | 0.25 |
+| Swift | 21 | 1 | 0 | 2 s | 0.5 |
+| Brute | 21 | 2 | 0 | 4 s | 0.5 |
+| Level 40, Swift / none / Brute | 60 | 2 / 3 / 4 | 1 | 2 / 3 / 4 s | 1 / 1 / 1 |
+
+Every kind makes an enemy harder than its level (a kind is a twist, not a
+trade): at level 1 the rounding gives Swift and Brute half again the
+damage per second, and Armoured and Nimble lengthen the fight. The author
+balances with the level or a typed number.
+
+**Choices made in C2 the rulings did not spell out** (each small to change):
+
+- **A Recruit is refused every weapon** (the equip says why), rather than
+  holding one that does nothing; tools are unchanged.
+- **A weapon naming no style suits any promoted hero.**
+- **A weapon of another style still in a hero's hands** (from before a
+  re-training, or an older save) is not swung, and its family's ability is
+  off; it is not taken off automatically.
+- **Venomous uses the old status engine's Poison** today (2 per stack every
+  5 s, up to 99 stacks, outlasting the fight) until C4 builds the real one.

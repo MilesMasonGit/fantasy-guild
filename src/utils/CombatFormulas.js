@@ -13,9 +13,10 @@ import {
     roundHalfUp,
     rpsOutcome,
 } from '../config/FormulaRegistry.js';
-import { COMBAT_SKILL_IDS, isCombatSkill } from '../config/registries/skillRegistry.js';
+import { COMBAT_SKILL_IDS } from '../config/registries/skillRegistry.js';
 import { getItem } from '../config/registries/itemRegistry.js';
-import { getPrimaryWeapon } from '../config/registries/equipmentConstants.js';
+import { getEquippedEntries, isWeaponCategory } from '../config/registries/equipmentConstants.js';
+import { isWeapon, weaponUsableBy } from '../config/registries/weaponStyles.js';
 import { sumStatusEffect } from '../config/registries/statusRegistry.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 
@@ -72,25 +73,29 @@ export function heroMaxHpFromSkills(skills) {
 }
 
 /**
- * The weapon a hero swings, or null: the first weapon in the hands (`getPrimaryWeapon`).
- * ⚠️ A Recruit swings nothing even with a weapon equipped.
+ * The weapon a hero swings, or null: the first weapon in the hands, in grid order, that belongs to
+ * the hero's own style (`weaponStyles.js`).
+ * ⚠️ A Recruit swings nothing even with a weapon equipped, and a weapon of another style (one held
+ * from before a re-training, or from an older save) is not swung: the equip paths refuse both.
  */
 export function getHeroWeapon(hero) {
-    if (fightsAsRecruit(hero)) return null;
-    const weaponId = getPrimaryWeapon(hero);
-    return weaponId ? getItem(weaponId) || null : null;
+    const style = getHeroCombatSkillEntry(hero).id;
+    if (!style) return null;
+    for (const { itemId, category } of getEquippedEntries(hero)) {
+        if (!isWeaponCategory(category)) continue;
+        const item = getItem(itemId);
+        if (item && isWeapon(item) && weaponUsableBy(item, style)) return item;
+    }
+    return null;
 }
 
 /**
- * The side of the matchup cycle a hero fights on: the weapon's style when it names a combat
- * skill, otherwise the hero's own combat skill (an unarmed Ranger fights ranged). A Recruit has
- * none and is even with everyone.
+ * The side of the matchup cycle a hero fights on: always their own combat skill, since a hero
+ * swings only weapons of that style (a Dagger is Melee and Stealth: a Fighter fights melee with
+ * it, a Rogue stealth). A Recruit has none and is even with everyone.
  * @returns {string|null} a combat skill id, or null
  */
 export function getHeroCombatStyle(hero) {
-    if (fightsAsRecruit(hero)) return null;
-    const style = getHeroWeapon(hero)?.skillRequired;
-    if (isCombatSkill(style)) return style;
     return getHeroCombatSkillEntry(hero).id;
 }
 
@@ -141,6 +146,19 @@ export function heroPierce(hero) {
 /** Crit chance in percent: 5 plus whatever gear adds. */
 export function heroCritChance(hero) {
     return BASE_CRIT_CHANCE + axis(hero, EFFECT_TYPES.CRIT_CHANCE);
+}
+
+/**
+ * The most stacks of status `statusId` that can build up on this hero: the status's own cap moved
+ * by what the hero carries for it (a Hide Vest: poison stacks at most 1 lower). Never below 0; at 0
+ * the status cannot land.
+ *
+ * Every status engine that stacks asks this, so a gear ability means one thing whichever engine
+ * runs the status.
+ */
+export function heroStatusStackCap(hero, statusId, baseMax) {
+    const shift = hero?.aggregator?.query(EFFECT_TYPES.STATUS_MAX_STACKS, statusId) || 0;
+    return Math.max(0, Math.floor((baseMax ?? 0) + shift));
 }
 
 // --- What an enemy carries: its profile (the level table and the author's numbers), plus what

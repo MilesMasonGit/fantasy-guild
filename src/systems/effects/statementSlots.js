@@ -91,9 +91,11 @@ const skillOptions = () => Object.values(getAllSkills() || {}).map(s => option(s
  * axis wants `flat`, anything else `percentage`.
  */
 function payloadForAxis(type) {
-    return getPaletteEntry(type)?.shape === 'proc'
-        ? { type, bucket: 'flat', value: 0 }
-        : { type, bucket: 'percentage', value: 0 };
+    const entry = getPaletteEntry(type);
+    if (entry?.shape === 'proc') return { type, bucket: 'flat', value: 0 };
+    // ⚠️ An axis that allows only some buckets starts in the first of them: a combat axis is read as
+    // a flat sum, and a rule born in the percentage bucket there would do nothing.
+    return { type, bucket: entry?.buckets?.[0] || 'percentage', value: 0 };
 }
 
 /** A 1-100 chance. Unreadable input keeps "always". */
@@ -213,7 +215,10 @@ function payloadSlots(statement, ctx) {
                     /** The only way to scope a rule to a skill. "Any skill" clears the scope. */
                     options: entry.categories === 'status'
                         ? authorableStatuses().map(s => option(s.id, s.name, s.description))
-                        : [option('', 'Any skill', 'No narrowing — the usual case.'), ...skillOptions()],
+                        : entry.categories === 'item'
+                            ? [option('', 'Any item', 'Every item that drops rolls on its own.'),
+                                ...Object.values(ctx?.items || {}).map(i => option(i.id, i.name || i.id))]
+                            : [option('', 'Any skill', 'No narrowing — the usual case.'), ...skillOptions()],
                     patch: v => {
                         const next = { ...payload };
                         if (v) next.category = v; else delete next.category;

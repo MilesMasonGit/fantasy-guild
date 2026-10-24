@@ -7,12 +7,15 @@ export const EFFECT_TYPES = {
     ARMOR: 'ARMOR',           // flat damage subtracted from every hit taken — CombatFormulas
     ACCURACY: 'ACCURACY',     // points off the bearer's miss chance — CombatFormulas
     RESIST_FLAT: 'RESIST_FLAT', // flat damage subtracted after armour — CombatFormulas.enemyHitDamage
-    // Read by CombatFormulas but not yet offered by the palette (no content carries them yet).
     DODGE: 'DODGE',           // points on the miss chance of whoever attacks the bearer
     PIERCE: 'PIERCE',         // armour points the bearer's hits ignore
     CRIT_CHANCE: 'CRIT_CHANCE', // points on the bearer's crit chance
     XP_BONUS: 'XP_BONUS',     // Bonus XP gain
     LOOT_MULT: 'LOOT_MULT',   // Chance for double loot
+    // A chance to double ONE item a cycle or kill drops; the item is the rule's category (`OutputRules`).
+    DOUBLE_DROP: 'DOUBLE_DROP',
+    // Moves how many stacks of one status (the category) can build up on the bearer — StatusEffectSystem.
+    STATUS_MAX_STACKS: 'STATUS_MAX_STACKS',
     FAIL_CHANCE: 'FAIL_CHANCE', // Chance for failure/debuff
     HP_REGEN: 'HP_REGEN',
     THORNS_REFLECT: 'THORNS_REFLECT',

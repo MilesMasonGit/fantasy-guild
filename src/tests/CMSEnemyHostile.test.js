@@ -177,7 +177,7 @@ describe('the Token editor’s level preview', () => {
         for (const id of enemyIds) {
             const p = enemyProfileOf(useEntityStore.getState().tokens[id]);
             const { container, unmount } = editor(id);
-            const box = within(container).getByText('Derived from level').parentElement.parentElement;
+            const box = within(container).getByText('What the fight uses').parentElement.parentElement;
             expect(box.textContent, id).toContain(
                 `HP${p.hp}Hit${p.hit}Armour${p.armor}Attacks every${(p.attackSpeed / 1000).toFixed(1)}sXP${p.xpAwarded}`);
             unmount();
@@ -186,7 +186,7 @@ describe('the Token editor’s level preview', () => {
 
     it('the Goblin, scaled by its budget, reads 6 HP, a hit of 1 and 3 XP', () => {
         const { container } = editor('token_goblin');
-        const box = within(container).getByText('Derived from level').parentElement.parentElement;
+        const box = within(container).getByText('What the fight uses').parentElement.parentElement;
         expect(box.textContent).toContain('HP6Hit1Armour0Attacks every3.0sXP3');
     });
 });
