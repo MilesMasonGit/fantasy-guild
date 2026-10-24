@@ -29,7 +29,7 @@ C2; C0 (the test content pack, accepted by the director) after C2; C6 last.
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
 | T-242: pixel frames round two: second audit of tiles, slots, buttons, toggles, rows; Bank tiles without soft borders | builder | `backlog/pixel-frames-2` (`gf`) | building | Sat | |
-| T-240: the drag bench's Shop and Bank kinds run again (harness only) | builder | `backlog/drag-bench-kinds` (`gb`) | building | Sat | |
+| T-240: the drag bench's Shop and Bank kinds run again (harness only) | builder | `backlog/drag-bench-kinds` | **merged** 23c85a21 on the gate (bench only): Shop and Bank kinds 50/50 both passes. Token → mat showed 3 'wrong thing' misses (47/49, 49/50) where earlier runs were 50/50: bisecting (before the work plate vs `main`) | Sat | Sat |
 
 ## Systems director, skill loops (brief 230; owner 2026-10-24: next, beside the rest of combat)
 
