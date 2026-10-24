@@ -8,11 +8,11 @@ import { getReach, DEFAULT_REACH } from '../../config/registries/reachRegistry.j
 import { filtersOf, getFilterKind, FILTER_NEEDS } from '../../config/registries/filterRegistry.js';
 import { deriveTokenType } from '../../config/registries/tokenTypeDerivation.js';
 import { isOutputCurrency } from '../../config/registries/tokenConstants.js';
-import { getStatusEffect } from '../../config/registries/statusRegistry.js';
 import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
 import { isEnemyDef } from '../../config/registries/enemyProfile.js';
 import { EFFECTS, getEffect } from '../../config/registries/effectRegistry.js';
-import { effectRefsOf, duplicateRefsOf, hasWorkingStatements, usedBy } from '../effects/effectLibrary.js';
+import { effectRefsOf, duplicateRefsOf, hasWorkingStatements, usedBy, statusBlockOf } from '../effects/effectLibrary.js';
+import { VENOM_EFFECT_ID } from '../../config/registries/enemyKinds.js';
 import { ITEMS, getItem } from '../../config/registries/itemRegistry.js';
 import { isMapItem, isBaseMap, mapItemFindings, recipeOf } from '../atlas/mapItems.js';
 import { groundOf } from '../atlas/Budget.js';
@@ -51,7 +51,8 @@ const RESOLVERS = {
     // `enemy` resolves through the Token registry: an enemy IS a Token, so its id is a Token id.
     enemy: id => !!getTokenType(id),
     sprite: id => !!SPRITE_MANIFEST[currentSpriteName(id)],
-    status: id => !!getStatusEffect(id),
+    // A status is a library effect carrying a `status` block.
+    status: id => !!statusBlockOf(getEffect(id)),
     'recipe pool': id => listPooledSkillIds().includes(id)
 };
 
@@ -150,6 +151,7 @@ function auditTokens(out) {
         auditRetiredEffectShape(out, where, def);
         auditEffectRefs(out, where, def);
         auditCombatAxes(out, where, def);
+        auditVenom(out, where, def);
         auditStatements(out, where, def);
         auditDerivedType(out, where, def);
         auditStandsOn(out, where, def);
@@ -261,6 +263,15 @@ function auditEffectRefs(out, where, def) {
  * read by nothing — the "authored but inert" failure this project keeps paying
  * for, so it is named out loud instead.
  */
+/** A Venomous enemy lands the library's Poison by id; without that status it poisons nobody. */
+function auditVenom(out, where, def) {
+    if (!isEnemyDef(def) || !(def.enemy.kinds || []).includes('venomous')) return;
+    if (statusBlockOf(getEffect(VENOM_EFFECT_ID))) return;
+    out.push(finding(where,
+        `is Venomous, which lands the status effect "${VENOM_EFFECT_ID}" on every hit, and the effect ` +
+        `library has no such status, so it poisons nobody. Make a status effect named Poison.`));
+}
+
 function auditCombatAxes(out, where, def) {
     if (isEnemyDef(def)) return;
 
@@ -393,7 +404,15 @@ function auditStatements(out, where, def) {
             checkRef(out, where, 'item', entry?.itemId, 'An item one of its rules costs to run');
         }
         checkRef(out, where, 'item', statement?.when?.watchItemId, 'The item one of its rules watches for');
-        checkRef(out, where, 'status', payload.statusId, 'The status one of its rules applies');
+        // The old status engine's ids are gone: statuses are library effects now.
+        if (payload.statusId && !payload.effectId) {
+            out.push(finding(where,
+                `one of its rules applies the retired status "${payload.statusId}", so it does nothing. ` +
+                `Statuses are effects now: pick one in its Applies rule.`));
+        }
+        if (statement?.keyword === KEYWORD.PROVIDES && getPaletteEntry(payload.type)?.categories === 'status') {
+            checkRef(out, where, 'status', payload.category, 'The status one of its rules names');
+        }
 
         // A trigger that watches for a *specific* item and was never told which
         // one fires on nothing — and reads in the picker as if it were the

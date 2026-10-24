@@ -99,8 +99,9 @@ export const MODIFIER_BUCKETS = ['flat', 'multiplier', 'percentage'];
  *
  * * `'skill'`  — `BoardRunner` passes the Token's `config.skill` on **every**
  *   `resolveAxis` call, so a rule can read *"+10% yield to Mining only"*.
- * * `'status'` — `StatusEffectSystem` passes a status id, which is how
- *   `STATUS_IMMUNITY` names the one status it blocks.
+ * * `'status'` — `LiveEffects` passes a status effect's id (a library entry
+ *   carrying a `status` block), which is how `STATUS_IMMUNITY` names the one
+ *   status it blocks.
  * * `'item'`   — `OutputRules.doubleItemDrop` passes the id of each item a
  *   cycle or kill dropped, which is how `DOUBLE_DROP` names its item.
  *
@@ -276,7 +277,7 @@ export const MODIFIER_PALETTE = [
         heroOnly: true,
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',
-        hint: 'Flat damage added to every hit the hero lands.'
+        hint: 'Damage added to every hit the hero lands, flat or as a percentage. An enemy given it by a rule hits harder too (+100% hits double).'
     },
     {
         type: EFFECT_TYPES.DODGE,
@@ -311,6 +312,35 @@ export const MODIFIER_PALETTE = [
         group: 'Combat',
         hint: 'Percentage points added to the hero\'s 5% chance to crit (a crit doubles the hit before armour).'
     },
+    {
+        /**
+         * Read as a percentage off whoever carries it (`CombatFormulas` swing speeds), so it lives
+         * on a lingering effect: an elixir's faster swings, a boss's enrage. Gear's flat-only
+         * contributions do not carry it.
+         */
+        type: EFFECT_TYPES.SWING_TIME,
+        label: 'Swing Time',
+        when: 'never',
+        scales: 'value',
+        buckets: ['percentage'],
+        heroOnly: true,
+        inverted: true,
+        shape: MODIFIER_SHAPES.DETERMINISTIC,
+        group: 'Combat',
+        hint: 'How long each swing takes. -25% swings a quarter sooner (a 3 s swing every 2.25 s). On a lingering effect: an elixir on a hero, or a rule putting it on an enemy.'
+    },
+    {
+        // Read by `ConsumptionSystem` when a hero eats in a fight: Burn's half heal.
+        type: EFFECT_TYPES.FOOD_HEALING,
+        label: 'Food Healing',
+        when: 'never',
+        scales: 'value',
+        buckets: ['percentage'],
+        heroOnly: true,
+        shape: MODIFIER_SHAPES.DETERMINISTIC,
+        group: 'Combat',
+        hint: 'How much a meal heals in a fight. -50% heals half, rounded halves up (Burn). On a lingering effect.'
+    },
 
     // --- Protection ---------------------------------------------------------
     // `query('STATUS_IMMUNITY', statusId)` passes the status id as the aggregator's **category**.
@@ -329,7 +359,7 @@ export const MODIFIER_PALETTE = [
         hint: 'Blocks a status from landing. Pick which one. Any value above 0 blocks it; this never strips stacks already carried.'
     },
     {
-        // Read by `StatusEffectSystem.applyToHero` through `CombatFormulas.heroStatusStackCap`.
+        // Read by `LiveEffects` as a status lands, through `CombatFormulas.heroStatusStackCap`.
         type: EFFECT_TYPES.STATUS_MAX_STACKS,
         label: 'Status Stack Limit',
         when: 'never',

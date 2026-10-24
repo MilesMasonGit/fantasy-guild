@@ -12,12 +12,12 @@ import {
     matchupMultiplier,
     roundHalfUp,
     rpsOutcome,
+    SWING_TIME_FACTOR_RANGE,
 } from '../config/FormulaRegistry.js';
 import { COMBAT_SKILL_IDS } from '../config/registries/skillRegistry.js';
 import { getItem } from '../config/registries/itemRegistry.js';
 import { getEquippedEntries, isWeaponCategory } from '../config/registries/equipmentConstants.js';
 import { isWeapon, weaponUsableBy } from '../config/registries/weaponStyles.js';
-import { sumStatusEffect } from '../config/registries/statusRegistry.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 
 export { rpsOutcome };
@@ -99,9 +99,21 @@ export function getHeroCombatStyle(hero) {
     return getHeroCombatSkillEntry(hero).id;
 }
 
+/**
+ * How much longer or shorter a swing is for whoever carries Swing Time (an elixir, an enraged
+ * enemy): a factor on the swing's time, kept within `SWING_TIME_FACTOR_RANGE`. 1 when nothing
+ * provides it.
+ */
+export function swingTimeFactor(entity) {
+    const aggregator = entity?.aggregator;
+    if (!aggregator?.getPercentageBucket) return 1;
+    const factor = aggregator.getPercentageBucket(EFFECT_TYPES.SWING_TIME);
+    return Math.min(SWING_TIME_FACTOR_RANGE.max, Math.max(SWING_TIME_FACTOR_RANGE.min, factor));
+}
+
 /** How long a hero's swing takes: the weapon's speed, normal (3 s) unarmed or as a Recruit. */
 export function heroAttackSpeedMs(hero) {
-    return attackSpeedMs(getHeroWeapon(hero)?.speed);
+    return Math.round(attackSpeedMs(getHeroWeapon(hero)?.speed) * swingTimeFactor(hero));
 }
 
 // --- What a hero carries (all default to 0 when nothing provides them) ------------------------
@@ -109,18 +121,15 @@ export function heroAttackSpeedMs(hero) {
 const axis = (entity, type) => entity?.aggregator?.query(type) || 0;
 
 /**
- * The flat damage reduction a hero carries: Armor, legacy DEFENSE, and any
- * armour a status is lending them. One function so armour means one thing
- * regardless of what hit you.
+ * The flat damage reduction a hero carries: Armor and legacy DEFENSE, from gear and from whatever
+ * lingering effects lend them. One function so armour means one thing regardless of what hit you.
  *
  * ⚠️ `DEFENSE` is summed in alongside `ARMOR` deliberately: existing armour
  * items register their `defense` stat on that axis, and it is treated as flat
  * Armor.
  */
 export function heroFlatArmor(hero) {
-    return axis(hero, EFFECT_TYPES.ARMOR)
-        + axis(hero, EFFECT_TYPES.DEFENSE)
-        + sumStatusEffect(hero?.statuses, 'flat_armor');
+    return axis(hero, EFFECT_TYPES.ARMOR) + axis(hero, EFFECT_TYPES.DEFENSE);
 }
 
 /** The flat damage reduction applied after armour. */
@@ -149,12 +158,9 @@ export function heroCritChance(hero) {
 }
 
 /**
- * The most stacks of status `statusId` that can build up on this hero: the status's own cap moved
- * by what the hero carries for it (a Hide Vest: poison stacks at most 1 lower). Never below 0; at 0
- * the status cannot land.
- *
- * Every status engine that stacks asks this, so a gear ability means one thing whichever engine
- * runs the status.
+ * The most stacks of status `statusId` (a status effect's id) that can build up on this fighter:
+ * the status's own cap moved by what they carry for it (a Hide Vest: poison stacks at most 1
+ * lower). Never below 0; at 0 the status cannot land.
  */
 export function heroStatusStackCap(hero, statusId, baseMax) {
     const shift = hero?.aggregator?.query(EFFECT_TYPES.STATUS_MAX_STACKS, statusId) || 0;
@@ -165,17 +171,13 @@ export function heroStatusStackCap(hero, statusId, baseMax) {
 // --- effects lend it through the fight's aggregator.
 
 /**
- * The flat damage reduction an **enemy** carries.
- *
- * One function so armour means the same thing on both sides of a fight.
- * `enemyStatuses` is the old status engine's list, summed in as `heroFlatArmor`
- * sums the hero's.
+ * The flat damage reduction an **enemy** carries: its own armour plus what lingering effects on it
+ * lend (a boss's "gains 2 armour"). One function so armour means the same thing on both sides.
  */
-export function enemyFlatArmor(enemy, enemyStatuses = null) {
+export function enemyFlatArmor(enemy) {
     return (enemy?.armor || 0)
         + axis(enemy, EFFECT_TYPES.ARMOR)
-        + axis(enemy, EFFECT_TYPES.DEFENSE)
-        + sumStatusEffect(enemyStatuses, 'flat_armor');
+        + axis(enemy, EFFECT_TYPES.DEFENSE);
 }
 
 export function enemyDodge(enemy) {
@@ -194,9 +196,9 @@ export function enemyCritChance(enemy) {
     return (enemy?.critChance ?? BASE_CRIT_CHANCE) + axis(enemy, EFFECT_TYPES.CRIT_CHANCE);
 }
 
-/** How long an enemy's swing takes. */
+/** How long an enemy's swing takes: its speed, moved by any Swing Time on it (an enrage). */
 export function enemyAttackSpeedMs(enemy) {
-    return enemy?.attackSpeed || attackSpeedMs(enemy?.speed);
+    return Math.round((enemy?.attackSpeed || attackSpeedMs(enemy?.speed)) * swingTimeFactor(enemy));
 }
 
 // --- The swing -------------------------------------------------------------------------------
@@ -228,18 +230,14 @@ export function enemyMissChance(enemy, hero) {
 }
 
 /**
- * The outgoing-damage multiplier a hero carries.
- *
- * ⚠️ Reads BOTH sources: `damage_pct` from the old status engine, and the
- * `DAMAGE` percentage bucket that a carried library effect registers. One
- * function so the two cannot drift.
+ * The outgoing-damage multiplier a fighter carries: the `DAMAGE` percentage bucket that a lingering
+ * library effect registers (Well Fed on a hero, a boss's heavy strike). Either side.
  */
-export function damageMultiplierOf(hero) {
-    const fromStatuses = sumStatusEffect(hero?.statuses, 'damage_pct');
-    const fromEffects = hero?.aggregator?.getPercentageBucket
-        ? hero.aggregator.getPercentageBucket(EFFECT_TYPES.DAMAGE) - 1
+export function damageMultiplierOf(entity) {
+    const fromEffects = entity?.aggregator?.getPercentageBucket
+        ? entity.aggregator.getPercentageBucket(EFFECT_TYPES.DAMAGE) - 1
         : 0;
-    return 1 + fromStatuses + fromEffects;
+    return 1 + fromEffects;
 }
 
 /**
@@ -265,21 +263,23 @@ function landedDamage(base, multiplier, crit, armour, pierce, resist = 0) {
 
 /**
  * A hero's landed hit on an enemy.
- * @param {{ crit?: boolean, enemyStatuses?: Array }} [options]
+ * @param {{ crit?: boolean }} [options]
  */
-export function heroHitDamage(hero, enemy, { crit = false, enemyStatuses = null } = {}) {
+export function heroHitDamage(hero, enemy, { crit = false } = {}) {
     const multiplier = damageMultiplierOf(hero) * matchupMultiplier(getHeroCombatStyle(hero), enemy?.combatType);
-    return landedDamage(heroBaseDamage(hero), multiplier, crit, enemyFlatArmor(enemy, enemyStatuses), heroPierce(hero));
+    return landedDamage(heroBaseDamage(hero), multiplier, crit, enemyFlatArmor(enemy), heroPierce(hero));
 }
 
 /**
- * An enemy's landed hit on a hero: its hit, the matchup, crit, then the hero's armour (less the
- * enemy's pierce) and resistance.
+ * An enemy's landed hit on a hero: its hit plus any flat Damage lent to it, the matchup and any
+ * Damage percentage (a heavy strike, an enrage), crit, then the hero's armour (less the enemy's
+ * pierce) and resistance.
  * @param {{ crit?: boolean }} [options]
  */
 export function enemyHitDamage(enemy, hero, { crit = false } = {}) {
-    const multiplier = matchupMultiplier(enemy?.combatType, getHeroCombatStyle(hero));
-    return landedDamage(enemy?.hit ?? 1, multiplier, crit, heroFlatArmor(hero), enemyPierce(enemy), heroFlatResist(hero));
+    const multiplier = damageMultiplierOf(enemy) * matchupMultiplier(enemy?.combatType, getHeroCombatStyle(hero));
+    const base = (enemy?.hit ?? 1) + axis(enemy, EFFECT_TYPES.DAMAGE);
+    return landedDamage(base, multiplier, crit, heroFlatArmor(hero), enemyPierce(enemy), heroFlatResist(hero));
 }
 
 /**

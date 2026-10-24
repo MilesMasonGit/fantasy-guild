@@ -34,6 +34,29 @@ export function normaliseScale(value) {
     return Math.min(MAX_SCALE, n);
 }
 
+/** The most stacks a status may be authored to build. */
+export const MAX_STATUS_STACKS = 5;
+
+/**
+ * A status's own rules, or null for an ordinary effect.
+ *
+ * A library entry becomes a status by carrying `status: { stacks, ticks }`: each landing adds a
+ * stack up to `stacks` (1 = it does not stack, a landing only renews it), its rules count once per
+ * stack, and it lasts `ticks` ticks, or the whole fight at 0. Every status ends with its fight.
+ *
+ * @returns {{stacks: number, ticks: number}|null}
+ */
+export function statusBlockOf(entry) {
+    const block = entry?.status;
+    if (!block || typeof block !== 'object') return null;
+    const stacks = Math.round(Number(block.stacks));
+    const ticks = Math.round(Number(block.ticks));
+    return {
+        stacks: Number.isFinite(stacks) ? Math.min(MAX_STATUS_STACKS, Math.max(1, stacks)) : 1,
+        ticks: Number.isFinite(ticks) && ticks > 0 ? ticks : 0
+    };
+}
+
 /**
  * The title the player is shown: name plus numeral (`Shrimp Trawler III` at scale 3).
  *

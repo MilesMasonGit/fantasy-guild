@@ -5,13 +5,13 @@ import {
 import {
     CHARGE_MOMENT, chargeMomentsFor, chargeMomentOf, chargeDeltaOf
 } from '../../config/registries/chargeMomentRegistry.js';
-import { TRIGGER_EVENTS, getTriggerEvent, rolesOf } from '../../config/registries/triggerRegistry.js';
+import { TRIGGER_EVENTS, getTriggerEvent, rolesOf, isFightMoment, everyOf, healthBelowOf } from '../../config/registries/triggerRegistry.js';
 import { ROLES, getRole } from '../../config/registries/roleRegistry.js';
 import { REACHES, reachOf, getReach } from '../../config/registries/reachRegistry.js';
 import {
     TARGET_MODES, getPaletteEntry, bucketsFor, describeModifierDirection, clampModifierValue
 } from '../../config/registries/modifierPalette.js';
-import { getStatusEffect, authorableStatuses } from '../../config/registries/statusRegistry.js';
+import { statusBlockOf } from './effectLibrary.js';
 import { RESTRICTION_KINDS, getRestrictionKind } from '../../config/registries/restrictionPalette.js';
 import { FILTER_KINDS, filtersOf } from '../../config/registries/filterRegistry.js';
 import { MAGNITUDE_KIND, statsForRoles } from '../../config/registries/magnitudeRegistry.js';
@@ -98,6 +98,14 @@ function payloadForAxis(type) {
     return { type, bucket: entry?.buckets?.[0] || 'percentage', value: 0 };
 }
 
+/**
+ * The statuses in the effect library (entries carrying a `status` block), as options: what an
+ * immunity or a stack limit may name. From `ctx.effects`, the CMS's draft or the game's library.
+ */
+const statusOptions = (ctx) => Object.values(ctx?.effects || {})
+    .filter(e => statusBlockOf(e))
+    .map(e => option(e.id, e.name || e.id, 'A status effect.'));
+
 /** A 1-100 chance. Unreadable input keeps "always". */
 const clampChance = (v) => {
     const n = Number(v);
@@ -114,6 +122,87 @@ function appliesExtras(payload) {
             id: 'chance', kind: SLOT_KIND.NUMBER, label: 'chance (%)', min: 1, max: 100, optional: true,
             value: payload.chance ?? 100,
             patch: v => ({ payload: { ...payload, chance: clampChance(v) } })
+        }
+    ];
+}
+
+/**
+ * `Applies`' slots: the effect, its tier, how long it lasts, and the chance.
+ */
+function appliesSlots(statement, ctx) {
+    const payload = statement?.payload || {};
+    /**
+     * Library effects only: picking one replaces a retired status (its `statusId` and
+     * `stacks` go). A status effect carries its own lifetime (its fight, or its ticks), so
+     * none of the three lifetimes is offered for one, and picking one clears them.
+     */
+    const isStatus = (id) => !!statusBlockOf(ctx?.effects?.[id]);
+    const status = isStatus(payload.effectId);
+    const onFightMoment = isFightMoment(statement?.when?.event);
+    return [
+        {
+            id: 'effectId', kind: SLOT_KIND.VOCABULARY, label: 'effect',
+            value: payload.effectId || '',
+            options: Object.values(ctx?.effects || {}).map(e => option(e.id, e.name || e.id, statusBlockOf(e) ? 'A status.' : '')),
+            note: status ? 'A status: it lasts its fight (or its ticks), whatever this rule says.' : null,
+            patch: v => {
+                const { statusId, stacks, ...rest } = payload;
+                void statusId; void stacks;
+                if (isStatus(v)) {
+                    const { forFight, forSwing, durationMs, ...lifeless } = rest;
+                    void forFight; void forSwing; void durationMs;
+                    return { payload: { ...lifeless, effectId: v } };
+                }
+                return { payload: { ...rest, effectId: v } };
+            }
+        },
+        {
+            id: 'scale', kind: SLOT_KIND.NUMBER, label: 'tier', min: 1,
+            value: payload.scale ?? 1,
+            patch: v => ({ payload: { ...payload, scale: Math.max(1, Number(v) || 1) } })
+        },
+        ...(status ? [] : lifetimeSlots(payload, onFightMoment)),
+        ...appliesExtras(payload)
+    ];
+}
+
+/**
+ * How long an applied effect lasts: for the swing (on a fight moment), for the fight, or a number
+ * of seconds; none of them fires it once, now (chaining).
+ */
+function lifetimeSlots(payload, onFightMoment) {
+    return [
+        // A boss's heavy strike: on until the swing being made is over. Offered on a fight
+        // moment, or where it is already set so it can be cleared.
+        ...(onFightMoment || payload.forSwing ? [{
+            id: 'forSwing', kind: SLOT_KIND.FLAG, label: 'for the swing',
+            value: !!payload.forSwing,
+            hint: 'Lasts until the swing being made is over: "every 4th swing hits double". For a rule on a fight moment.',
+            patch: v => {
+                const { forSwing, ...rest } = payload;
+                void forSwing;
+                return { payload: v ? { ...rest, forSwing: true } : rest };
+            }
+        }] : []),
+        {
+            // An elixir's case: it lasts until the fight it was applied in ends.
+            id: 'forFight', kind: SLOT_KIND.FLAG, label: 'for the fight',
+            value: !!payload.forFight,
+            hint: 'Lasts until this fight ends, whatever the time. For a rule on the fight-start moment.',
+            patch: v => {
+                const { forFight, ...rest } = payload;
+                void forFight;
+                return { payload: v ? { ...rest, forFight: true } : rest };
+            }
+        },
+        {
+            // Zero means fire it once, now (how chaining works).
+            id: 'durationMs', kind: SLOT_KIND.NUMBER, label: 'for (ms)', min: 0, optional: true,
+            value: payload.durationMs ?? 0,
+            note: !payload.durationMs
+                ? 'Zero means it fires once, immediately — that is how one effect sets off another.'
+                : null,
+            patch: v => ({ payload: { ...payload, durationMs: Math.max(0, Number(v) || 0) } })
         }
     ];
 }
@@ -214,7 +303,7 @@ function payloadSlots(statement, ctx) {
                     value: payload.category || '',
                     /** The only way to scope a rule to a skill. "Any skill" clears the scope. */
                     options: entry.categories === 'status'
-                        ? authorableStatuses().map(s => option(s.id, s.name, s.description))
+                        ? statusOptions(ctx)
                         : entry.categories === 'item'
                             ? [option('', 'Any item', 'Every item that drops rolls on its own.'),
                                 ...Object.values(ctx?.items || {}).map(i => option(i.id, i.name || i.id))]
@@ -277,47 +366,7 @@ function payloadSlots(statement, ctx) {
             }];
 
         case KEYWORD.APPLIES:
-            // A rule naming a `statusId` still edits as before, but only library effects are offered:
-            // picking an effect replaces the status (its `statusId` and `stacks` go). The engine still
-            // RUNS status rules.
-            return [
-                {
-                    id: 'effectId', kind: SLOT_KIND.VOCABULARY, label: 'effect',
-                    value: payload.effectId || '',
-                    options: Object.values(ctx?.effects || {}).map(e => option(e.id, e.name || e.id)),
-                    patch: v => {
-                        const { statusId, stacks, ...rest } = payload;
-                        void statusId; void stacks;
-                        return { payload: { ...rest, effectId: v } };
-                    }
-                },
-                {
-                    id: 'scale', kind: SLOT_KIND.NUMBER, label: 'tier', min: 1,
-                    value: payload.scale ?? 1,
-                    patch: v => ({ payload: { ...payload, scale: Math.max(1, Number(v) || 1) } })
-                },
-                {
-                    // An elixir's case: it lasts until the fight it was applied in ends.
-                    id: 'forFight', kind: SLOT_KIND.FLAG, label: 'for the fight',
-                    value: !!payload.forFight,
-                    hint: 'Lasts until this fight ends, whatever the time. For a rule on the fight-start moment.',
-                    patch: v => {
-                        const { forFight, ...rest } = payload;
-                        void forFight;
-                        return { payload: v ? { ...rest, forFight: true } : rest };
-                    }
-                },
-                {
-                    // Zero means fire it once, now (how chaining works).
-                    id: 'durationMs', kind: SLOT_KIND.NUMBER, label: 'for (ms)', min: 0, optional: true,
-                    value: payload.durationMs ?? 0,
-                    note: !payload.durationMs
-                        ? 'Zero means it fires once, immediately — that is how one effect sets off another.'
-                        : null,
-                    patch: v => ({ payload: { ...payload, durationMs: Math.max(0, Number(v) || 0) } })
-                },
-                ...appliesExtras(payload)
-            ];
+            return appliesSlots(statement, ctx);
 
         case KEYWORD.CANNOT:
             return [
@@ -497,16 +546,36 @@ export function slotsOf(statement, ctx = {}) {
                 patch: v => ({ when: { ...statement.when, threshold: Math.max(1, Number(v) || 1) } })
             });
         }
+        // A counted fight moment: every Nth swing or hit.
+        if (moment.countNoun) {
+            const noun = moment.countNoun.toLowerCase();
+            slots.push({
+                id: 'every', kind: SLOT_KIND.NUMBER, label: `every Nth ${noun}`, min: 1,
+                value: everyOf(statement?.when),
+                hint: `1 fires on every ${noun}; 4 on the 4th, 8th, 12th… of each fight.`,
+                patch: v => ({ when: { ...statement.when, every: Math.max(1, Math.floor(Number(v) || 1)) } })
+            });
+        }
+        if (moment.needsPercent) {
+            slots.push({
+                id: 'belowPct', kind: SLOT_KIND.NUMBER, label: 'health below (%)', min: 1, max: 99,
+                value: healthBelowOf(statement?.when),
+                hint: 'Fires once a fight, the first time health is below this share of its most.',
+                patch: v => ({ when: { ...statement.when, belowPct: healthBelowOf({ belowPct: v }) } })
+            });
+        }
         /**
          * ⚠️ In seconds, because the sentence says seconds. The data stays in milliseconds; only
-         * the word converts.
+         * the word converts. A fight moment has none: its own count is its rhythm.
          */
-        slots.push({
-            id: 'cooldown', kind: SLOT_KIND.NUMBER, label: 'cooldown (seconds)', min: 0,
-            value: Math.round((statement?.when?.cooldownMs ?? 0) / 100) / 10,
-            hint: 'The shortest gap between two firings. 0 lets it fire every time its moment happens.',
-            patch: v => ({ when: { ...statement.when, cooldownMs: Math.max(0, Math.round((Number(v) || 0) * 1000)) } })
-        });
+        if (!moment.fightMoment) {
+            slots.push({
+                id: 'cooldown', kind: SLOT_KIND.NUMBER, label: 'cooldown (seconds)', min: 0,
+                value: Math.round((statement?.when?.cooldownMs ?? 0) / 100) / 10,
+                hint: 'The shortest gap between two firings. 0 lets it fire every time its moment happens.',
+                patch: v => ({ when: { ...statement.when, cooldownMs: Math.max(0, Math.round((Number(v) || 0) * 1000)) } })
+            });
+        }
     }
 
     slots.push({
@@ -820,6 +889,8 @@ export function costSlots(statement) {
     // ⚠️ `Requires` is a view of a Token's `acceptedTokens`, not a rule: nothing spends on it,
     // and a charge written here would land in the Token's requirement list.
     if (!keyword || keyword.id === KEYWORD.REQUIRES) return [];
+    // A fight moment never spends a charge or an item: a boss's move is not a use of it.
+    if (isFightMoment(statement?.when?.event)) return [];
 
     const moment = chargeMomentOf(statement);
     // The same reading the board spends by (`Charges.statementChargeDelta`).
@@ -860,5 +931,5 @@ export function costSlots(statement) {
 
 /** Named exports the CMS leans on, re-checked here so a rename breaks loudly. */
 export const SLOT_VOCABULARIES = Object.freeze({
-    getRole, getReach, getStatusEffect, getTriggerEvent
+    getRole, getReach, getTriggerEvent
 });

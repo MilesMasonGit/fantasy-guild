@@ -1,7 +1,9 @@
 import { EventBus } from '../core/EventBus.js';
 import { EFFECTS } from '../../config/registries/effectRegistry.js';
-import { statementsFromEntry, normaliseScale } from './effectLibrary.js';
+import { statementsFromEntry, normaliseScale, scaleStatement, statusBlockOf } from './effectLibrary.js';
 import { KEYWORD } from './statements.js';
+import { EFFECT_TYPES } from './constants.js';
+import { heroStatusStackCap } from '../../utils/CombatFormulas.js';
 import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
 import * as HeroEffects from '../hero/HeroEffects.js';
 import { STATUS_TICK_INTERVAL_MS } from '../../config/FormulaRegistry.js';
@@ -17,6 +19,10 @@ import * as GameClock from '../core/GameClock.js';
  * ⚠️ Re-application REFRESHES; it never stacks. One effect per entity: reapplying resets its
  * clock and keeps its strength, except that a stronger scale replaces a weaker one (otherwise
  * a better item would silently do nothing).
+ *
+ * ⚠️ Except a **status**: a library entry carrying a `status` block (`statusBlockOf`). Each landing
+ * adds a stack up to its cap, its rules count once per stack, and it ends with its fight or after
+ * its `ticks`, whichever comes first. A status lands only on someone in a fight.
  *
  * ⚠️ This module never resolves a death. Dying is implemented once, in
  * `BoardCombat.resolveDefeat`, and importing it here would be a static cycle. There must
@@ -49,6 +55,30 @@ const bearerSources = new Set();
 /** Announce a source of live bearers. Idempotent — registering twice is once. */
 export function registerBearerSource(fn) {
     if (typeof fn === 'function') bearerSources.add(fn);
+}
+
+/**
+ * Whether a hero is in a fight, asked as a status lands. Registered by the board for the same
+ * reason bearer sources are; until then no hero counts as fighting, so no status lands on one.
+ */
+let fightCheck = null;
+
+/** Register the board's "is this hero fighting?" (`heroId => boolean`). */
+export function setFightCheck(fn) {
+    fightCheck = typeof fn === 'function' ? fn : null;
+}
+
+/** Whether a bearer is in a fight: a fight's enemy always is; a hero when the board says so. */
+function inFight(bearer) {
+    if (bearer?.roles?.selfFightId != null) return true;
+    const heroId = bearer?.roles?.selfHeroId;
+    return !!heroId && !!fightCheck?.(heroId);
+}
+
+/** Who a bearer is, in the words the status events use. */
+function whoIs(bearer) {
+    if (bearer?.roles?.selfHeroId) return { targetType: 'hero', targetId: bearer.roles.selfHeroId };
+    return { targetType: 'enemy', targetId: bearer?.roles?.selfFightId ?? null };
 }
 
 /**
@@ -86,10 +116,11 @@ function allBearers() {
 const UNTIL_FIGHT_ENDS = Number.MAX_SAFE_INTEGER;
 
 /**
- * Put a library effect on a bearer, for a while, or for the fight (`spec.forFight`).
+ * Put a library effect on a bearer, for a while, for the fight (`spec.forFight`) or for the swing
+ * being made (`spec.forSwing`). A status ignores all three: it has its own lifetime.
  *
  * @param {object} bearer  a descriptor from `heroBearer` or a registered source
- * @param {{effectId: string, scale?: number, durationMs?: number, forFight?: boolean}} spec
+ * @param {{effectId: string, scale?: number, durationMs?: number, forFight?: boolean, forSwing?: boolean}} spec
  * @param {string|null} sourceId  what applied it, for the readout
  * @returns {boolean} whether anything is now carried
  */
@@ -97,8 +128,12 @@ export function applyTo(bearer, spec, sourceId = null, fire = null) {
     const target = bearer?.target;
     if (!target || !spec?.effectId || !EFFECTS[spec.effectId]) return false;
 
+    const status = statusBlockOf(EFFECTS[spec.effectId]);
+    if (status) return applyStatus(bearer, spec, status, sourceId);
+
     const scale = normaliseScale(spec.scale);
-    const forFight = !!spec.forFight;
+    const forSwing = !!spec.forSwing;
+    const forFight = !!spec.forFight || forSwing;
 
     // No duration means fire it once, NOW (chaining), not on the next tick.
     if (!forFight && !Number(spec.durationMs)) {
@@ -117,17 +152,90 @@ export function applyTo(bearer, spec, sourceId = null, fire = null) {
 
     if (existing) {
         // Refresh the clock, and let a stronger application win.
-        existing.expiresAt = Math.max(existing.expiresAt, expiresAt);
         existing.scale = Math.max(existing.scale, scale);
         existing.sourceId = sourceId ?? existing.sourceId;
-        if (forFight) existing.forFight = true;
+        // A landing for one swing never changes the lifetime of one already carried.
+        if (!forSwing) {
+            existing.expiresAt = Math.max(existing.expiresAt, expiresAt);
+            if (forFight) existing.forFight = true;
+            delete existing.forSwing;
+        }
     } else {
-        list.push({ effectId: spec.effectId, scale, expiresAt, sourceId, ...(forFight ? { forFight: true } : {}) });
+        list.push({
+            effectId: spec.effectId, scale, expiresAt, sourceId,
+            ...(forFight ? { forFight: true } : {}),
+            ...(forSwing ? { forSwing: true } : {})
+        });
     }
 
     syncAggregator(target);
     bearer.notify?.('live_effect_applied');
     return true;
+}
+
+/**
+ * Land one stack of a status (`statusBlockOf`) on a bearer.
+ *
+ * ⚠️ Only in a fight: a status lasts until its fight ends, so one landing on a gatherer would
+ * never end at all. Immunity, and a stack cap moved to 0 (a Hide Vest's −1 on a 1-stack status),
+ * block it, said as `STATUS_BLOCKED`.
+ */
+function applyStatus(bearer, spec, block, sourceId) {
+    const target = bearer.target;
+    const effectId = spec.effectId;
+    if (!inFight(bearer)) return false;
+
+    const who = whoIs(bearer);
+    const blocked = () => {
+        EventBus.publish(ENGINE_EVENTS.STATUS_BLOCKED, { ...who, statusId: effectId });
+        return false;
+    };
+    if ((target.aggregator?.query(EFFECT_TYPES.STATUS_IMMUNITY, effectId) || 0) > 0) return blocked();
+    const cap = heroStatusStackCap(target, effectId, block.stacks);
+    if (cap === 0) return blocked();
+
+    const list = listOf(target);
+    let instance = list.find(e => e.effectId === effectId);
+    if (instance) {
+        // ⚠️ Never below what is already carried: a cap lowered mid-fight stops new stacks, it
+        // does not strip old ones.
+        const stacks = instance.stacks || 1;
+        instance.stacks = Math.max(stacks, Math.min(stacks + 1, cap));
+        instance.scale = Math.max(instance.scale, normaliseScale(spec.scale));
+        if (block.ticks) instance.ticksLeft = block.ticks;
+    } else {
+        instance = {
+            effectId, scale: normaliseScale(spec.scale), stacks: 1,
+            ...(block.ticks ? { ticksLeft: block.ticks } : {}),
+            expiresAt: UNTIL_FIGHT_ENDS, forFight: true, sourceId
+        };
+        list.push(instance);
+    }
+
+    syncAggregator(target);
+    bearer.notify?.('status_applied');
+    EventBus.publish(ENGINE_EVENTS.STATUS_APPLIED, { ...who, statusId: effectId, stacks: instance.stacks });
+    return true;
+}
+
+/** The statuses a fighter carries, for the readout: `{ effectId, stacks, ticksLeft }`. */
+export function statusesOf(target) {
+    return (target?.effects || [])
+        .filter(e => e.stacks != null)
+        .map(e => ({ effectId: e.effectId, stacks: e.stacks, ticksLeft: e.ticksLeft ?? null }));
+}
+
+/**
+ * A swing has been made: take off everything carried "for the swing" (a boss's heavy strike).
+ * @returns {number} how many instances ended
+ */
+export function endSwingEffects(target) {
+    if (!target?.effects?.length) return 0;
+    const before = target.effects.length;
+    target.effects = target.effects.filter(e => !e.forSwing);
+    const ended = before - target.effects.length;
+    if (ended) syncAggregator(target);
+    return ended;
 }
 
 /**
@@ -179,13 +287,28 @@ export function tickBearer(bearer, fire, now = GameClock.now()) {
     // A wounded hero is off the board and already cleansed.
     if (bearer.suspended?.()) return 0;
 
-    for (const statement of liveStatements(target)) {
-        if (statement?.when?.event !== EFFECT_TICK) continue;
-        fire(statement, { ...bearer.roles });
+    ticking: for (const instance of [...target.effects]) {
+        const entry = EFFECTS[instance.effectId];
+        if (!entry) continue;
+        const statements = instanceStatements(instance, entry).filter(s => s?.when?.event === EFFECT_TICK);
+        if (!statements.length) continue;
+        if (instance.stacks != null) {
+            EventBus.publish(ENGINE_EVENTS.STATUS_DOT_TICK, { ...whoIs(bearer), statusId: instance.effectId, stacks: instance.stacks });
+        }
+        for (const statement of statements) {
+            // A tick that downed its bearer ended the fight, and every status still to tick with it.
+            if (bearer.suspended?.()) break ticking;
+            fire(statement, { ...bearer.roles });
+        }
+    }
+
+    // A status with a tick count spends one; the rest wait for their fight to end.
+    for (const instance of target.effects) {
+        if (instance.ticksLeft != null) instance.ticksLeft -= 1;
     }
 
     const before = target.effects.length;
-    target.effects = target.effects.filter(e => e.expiresAt > now);
+    target.effects = target.effects.filter(e => e.expiresAt > now && !(e.ticksLeft != null && e.ticksLeft <= 0));
     const expired = before - target.effects.length;
     if (expired) {
         logger.debug('LiveEffects', `${bearer.name} lost ${expired} effect(s)`);
@@ -231,9 +354,16 @@ export function liveStatements(hero) {
     for (const instance of hero?.effects || []) {
         const entry = EFFECTS[instance.effectId];
         if (!entry) continue;                       // ContentAudit names it
-        out.push(...statementsFromEntry(entry, instance));
+        out.push(...instanceStatements(instance, entry));
     }
     return out;
+}
+
+/** One instance's statements: scaled by its tier, and a status's once more by its stacks. */
+function instanceStatements(instance, entry) {
+    const statements = statementsFromEntry(entry, instance);
+    const stacks = instance.stacks > 1 ? instance.stacks : 1;
+    return stacks > 1 ? statements.map(s => scaleStatement(s, stacks)) : statements;
 }
 
 /**
@@ -281,10 +411,8 @@ export function syncAggregator(hero) {
 }
 
 /**
- * The global clock: fire what recurs, drop what has expired.
- *
- * ⚠️ Runs on the same 5-second interval the status engine used (`STATUS_TICK_INTERVAL_MS`),
- * so damage-over-time rates are unchanged.
+ * The global clock: fire what recurs, drop what has expired. Every `STATUS_TICK_INTERVAL_MS`
+ * (3 s), for every bearer at once: heroes in roster order, then each live fight's enemy.
  *
  * @param {number} delta ms since the last frame
  * @param {(statement: object, roles: object) => void} fire  how to run one

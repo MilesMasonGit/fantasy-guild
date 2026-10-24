@@ -13,6 +13,7 @@ import { matchesTokenTarget, filterTargets } from './TileModifiers.js';
 import { KEYWORD } from '../effects/statements.js';
 import * as MatCap from './MatCap.js';
 import * as StatusApplication from './StatusApplication.js';
+import * as FightMoments from './FightMoments.js';
 import * as DealDamage from './DealDamage.js';
 import * as EffectActions from './EffectActions.js';
 import * as LiveEffects from '../effects/LiveEffects.js';
@@ -544,12 +545,16 @@ export function init() {
     // The board owns "run a statement"; `StatusApplication` only knows who to
     // run it on. Injected rather than imported, because it imports us.
     StatusApplication.setStatementRunner(fireLiveStatement);
+    // The combat engine's swings, hits and falling health run their rules here too.
+    FightMoments.init();
     teardown();
 
     resetCascadeGuard();
 
     for (const definition of TRIGGER_EVENTS) {
         const { id, event, scopes, settled } = definition;
+        // A fight moment has no bus event: the combat engine fires it through `FightMoments`.
+        if (!event) continue;
 
         if (scopes.includes(TRIGGER_SCOPES.GLOBAL)) {
             unsubscribers.push(EventBus.subscribe(event, () => handleGlobalItemThreshold()));

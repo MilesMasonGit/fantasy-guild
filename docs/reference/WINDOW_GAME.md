@@ -36,7 +36,6 @@ see [`TESTING.md`](TESTING.md), "Running the game for verification".)
 | `PromotionSystem` | promoting a mastered hero | `canPromote`, `promote`, `previewPromotion` |
 | `WoundedSystem` | wounded heroes and recovery | `getWoundedHeroes()`, `recoverHero(...)`, `isWounded(...)` |
 | `LootSystem` | kill loot rolls | `previewDrops(...)` |
-| `StatusEffectSystem` | buffs and debuffs | `applyToHero`, `applyToEnemy`, `clearAll` |
 | `EquipmentManager` | hero gear | `equipItem`, `unequipItem`, `getAllEquipment` |
 | `BoardState` | what is on the mat | `tokens()`, `getTokenById(id)`, `tokensAtPoint(x, y)`, `heroesOnBoard()`, `createTokenInstance(typeId)` |
 | `BoardPlacement` | putting things on the mat | `placeTokenAt(instance, point)`, `moveTokenTo(id, point)`, `removePlacedToken(id)`, `plantFlagAt(heroId, point)`, `recallHeroById(heroId)` |

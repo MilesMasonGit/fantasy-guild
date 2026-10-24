@@ -76,7 +76,7 @@ export const ENEMY_OVERRIDE_FIELDS = Object.freeze(['hp', 'hit', 'armor', 'speed
  * until their numbers are authored directly. Armour and speed are not scaled.
  *
  * @param {Object} enemy a Token's `enemy` block
- * @returns {{hp: number, hit: number, armor: number, speed: string, xp: number, dodge: number, accuracy: number, pierce: number, critChance: number, statusOnHit: Array}}
+ * @returns {{hp: number, hit: number, armor: number, speed: string, xp: number, dodge: number, accuracy: number, pierce: number, critChance: number, onHit: Array<{effectId: string}>}}
  */
 export function enemyFilledStats(enemy) {
     const table = enemyLevelStats(enemy?.level);
@@ -94,7 +94,7 @@ export function enemyFilledStats(enemy) {
         accuracy: 0,
         pierce: 0,
         critChance: BASE_CRIT_CHANCE,
-        statusOnHit: []
+        onHit: []
     };
 
     for (const kind of enemyKindsOf(enemy)) {
@@ -103,7 +103,7 @@ export function enemyFilledStats(enemy) {
         if (kind.speed) filled.speed = kind.speed;
         if (kind.hitScale) filled.hit = Math.max(1, roundHalfUp(filled.hit * kind.hitScale));
         if (kind.hitAtLeastMore) filled.hit = Math.max(filled.hit, levelHit + kind.hitAtLeastMore);
-        if (kind.statusOnHit) filled.statusOnHit.push({ ...kind.statusOnHit });
+        if (kind.onHit) filled.onHit.push({ ...kind.onHit });
     }
 
     return filled;
@@ -153,8 +153,8 @@ export function enemyProfileOf(def) {
         xpAwarded: Math.max(0, numberOr(authored.xp, filled.xp)),
         // The kinds it carries, for the enemy card once the guild has fought one.
         kinds,
-        // What a landed hit puts on the hero (Venomous); read by the attack processor.
-        ...(filled.statusOnHit.length ? { statusOnHit: filled.statusOnHit } : {}),
+        // What a landed hit puts on the hero (Venomous), by library effect; `FightMoments` lands it.
+        ...(filled.onHit.length ? { onHit: filled.onHit } : {}),
         // `traits` is read by the attack processor's thorns branch and must be
         // present. Enemy traits are not authorable yet; an empty array is the
         // right value.

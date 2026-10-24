@@ -1,8 +1,8 @@
-import { Sparkles, ScrollText, Library, Boxes } from 'lucide-react';
+import { Sparkles, ScrollText, Library, Boxes, Flame } from 'lucide-react';
 import { useEntityStore } from '../../stores/useEntityStore';
 import { Header, Section, Field, Empty } from '../shared/EditorLayout';
 import { StatementList } from './Statements';
-import { rulesLinesOf, effectRefsOf, hasWorkingStatements } from '../../utils/constants';
+import { rulesLinesOf, effectRefsOf, hasWorkingStatements, statusBlockOf, MAX_STATUS_STACKS, VENOM_EFFECT_ID } from '../../utils/constants';
 
 /**
  * The Effect editor: one named entry in the effect library.
@@ -32,6 +32,8 @@ export default function EffectEditor() {
 
   const lines = rulesLinesOf(effect, names);
   const backed = hasWorkingStatements(effect);
+  const status = statusBlockOf(effect);
+  const setStatus = (patch) => updateEffect(effect.id, { status: { ...(status || { stacks: 1, ticks: 0 }), ...patch } });
 
   return (
     <div className="space-y-5">
@@ -87,6 +89,52 @@ export default function EffectEditor() {
               ))}
             </div>
           </>
+        )}
+      </Section>
+
+      {/* A status is an ordinary effect with a lifetime of its own: it lands only in a fight, stacks
+          up to a cap, and ends with the fight or after its ticks. */}
+      <Section title="Status" icon={<Flame size={14} />}>
+        <label className="flex items-center gap-2 text-[11px] text-gray-300 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={!!status}
+            onChange={(e) => updateEffect(effect.id, { status: e.target.checked ? { stacks: 1, ticks: 0 } : undefined })}
+          />
+          This effect is a status, like Poison or Burn
+        </label>
+        <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
+          A status lands only on a fighter in a fight and always ends with the fight. Each landing
+          adds a stack, and its rules count once per stack. Put what it does each tick in an
+          &ldquo;On Tick&rdquo; rule (a tick is 3 seconds), and anything it changes while carried
+          (Burn&rsquo;s half healing from food) in a Provides rule.
+        </p>
+        {status && (
+          <div className="grid grid-cols-2 gap-3 mt-3">
+            <Field label="Stacks up to">
+              <input
+                type="number" min={1} max={MAX_STATUS_STACKS}
+                value={status.stacks}
+                onChange={(e) => setStatus({ stacks: Number(e.target.value) || 1 })}
+                className="input w-full"
+              />
+              <p className="text-[10px] text-gray-600 mt-1">1 does not stack: landing again renews it.</p>
+            </Field>
+            <Field label="Lasts (ticks)">
+              <input
+                type="number" min={0}
+                value={status.ticks}
+                onChange={(e) => setStatus({ ticks: Math.max(0, Number(e.target.value) || 0) })}
+                className="input w-full"
+              />
+              <p className="text-[10px] text-gray-600 mt-1">0 lasts the whole fight.</p>
+            </Field>
+          </div>
+        )}
+        {effect.id === VENOM_EFFECT_ID && (
+          <p className="text-[10px] mt-2 leading-relaxed" style={{ color: 'var(--color-warning)' }}>
+            Venomous enemies land this effect by its id ({VENOM_EFFECT_ID}). Keep the id as it is.
+          </p>
         )}
       </Section>
 

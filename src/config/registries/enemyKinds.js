@@ -21,7 +21,10 @@
  * (slow, same hit) for its armour.
  */
 
-/** @type {ReadonlyArray<{id: string, label: string, blurb: string, armor?: number, dodge?: number, speed?: string, hitScale?: number, hitAtLeastMore?: number, statusOnHit?: object}>} */
+/** The library effect a Venomous enemy lands on a hit. */
+export const VENOM_EFFECT_ID = 'effect_poison';
+
+/** @type {ReadonlyArray<{id: string, label: string, blurb: string, armor?: number, dodge?: number, speed?: string, hitScale?: number, hitAtLeastMore?: number, onHit?: {effectId: string}}>} */
 export const ENEMY_KINDS = Object.freeze([
     Object.freeze({
         id: 'armoured', label: 'Armoured',
@@ -45,15 +48,20 @@ export const ENEMY_KINDS = Object.freeze([
     }),
     Object.freeze({
         /**
-         * ⚠️ Wired to the old status engine's Poison through the attack processor's `statusOnHit`,
-         * the hook that exists today; the real Poison (3 stacks, 1 a tick, ends with the fight) is
-         * built in the Rules system later and replaces what this lands.
+         * Lands the Poison status (`VENOM_EFFECT_ID`, a library effect) on the hero with every hit
+         * that leaves them standing: an "On Hit: applies Poison to the hero" rule the kind carries
+         * (`board/FightMoments.js`).
+         *
+         * ⚠️ Names the library effect by id: the content's Poison must be `effect_poison`, the id
+         * the CMS gives an effect named Poison. Without it the kind poisons nobody, and
+         * `ContentAudit` says so.
          */
         id: 'venomous', label: 'Venomous',
-        blurb: 'Poisons the hero with every hit it lands.',
-        statusOnHit: Object.freeze({ statusId: 'poison', chance: 1, stacks: 1 })
+        blurb: 'Poisons the hero with every hit it lands (one Poison stack a hit).',
+        onHit: Object.freeze({ effectId: VENOM_EFFECT_ID })
     })
 ]);
+
 
 /** How many kinds one enemy may carry. */
 export const MAX_ENEMY_KINDS = 2;

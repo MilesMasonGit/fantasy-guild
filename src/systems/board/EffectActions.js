@@ -85,6 +85,17 @@ export function tokenFor(role, roles) {
 }
 
 /**
+ * The fight `itself` names when the rule's bearer is a fighting enemy (`roles.selfFightId`: a
+ * lingering effect on it, or a rule on one of its fight moments), or null.
+ *
+ * ⚠️ Without this, `itself` would fall through to whoever works the enemy Token: the hero.
+ */
+function ownFight(role, roles) {
+    if (role !== ROLE.SELF || roles?.selfHeroId || roles?.selfFightId == null) return null;
+    return BoardCombat.getFight(roles.selfFightId);
+}
+
+/**
  * `Heals`: put health back on somebody.
  *
  * ⚠️ Never overheals: `modifyHeroHp` clamps to max, so a heal that would go past full simply tops
@@ -97,9 +108,10 @@ export function heal(statement, roles) {
     const role = statement?.target?.role || ROLE.ACTOR;
 
     // Healing `the enemy`: its fight's HP, capped at its max, the same no-overheal rule the hero
-    // side has. Found by hero.
-    if (role === ROLE.OPPONENT) {
-        const hp = BoardCombat.opponentFightOf(statement, roles)?.combat?.enemyHp;
+    // side has. Found by hero. `itself` on a fighting enemy's own rule is that creature too.
+    if (role === ROLE.OPPONENT || ownFight(role, roles)) {
+        const fight = role === ROLE.OPPONENT ? BoardCombat.opponentFightOf(statement, roles) : ownFight(role, roles);
+        const hp = fight?.combat?.enemyHp;
         if (!hp) return 0;
         const before = hp.current;
         hp.current = Math.min(hp.max, hp.current + amount);
@@ -387,9 +399,14 @@ export function remove(statement, roles) {
     const role = statement?.target?.role || ROLE.ACTOR;
     const effectId = statement?.payload?.effectId || null;
 
-    // Cleansing `the enemy`: off the fight's own effect list.
+    // Cleansing `the enemy`: off the fight's own effect list. `itself` on a fighting enemy's own
+    // rule is that creature too.
     if (role === ROLE.OPPONENT) {
         const bearer = BoardCombat.opponentBearerOf(statement, roles);
+        return bearer ? LiveEffects.removeFrom(bearer, effectId) : 0;
+    }
+    if (ownFight(role, roles)) {
+        const bearer = BoardCombat.enemyBearerOfToken(roles.selfFightId);
         return bearer ? LiveEffects.removeFrom(bearer, effectId) : 0;
     }
 
