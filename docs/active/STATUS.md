@@ -5,6 +5,24 @@ five-line summary at each batch's edges (proposed, looked at); anything older
 than two days is trimmed. States: queued · building · ready (tests, cycles,
 build green) · bench-queued · eye-check · merged.*
 
+## Systems director, combat (brief 220; owner's go 2026-10-24)
+
+Owner 2026-10-22: **each director may run two code agents at once**; still one
+heavy run (suite, build, bench) at a time across both. Owner away from the PC
+until about 2026-10-25: looks by phone screenshots, design questions any time.
+Order from the brief: C1 alone; then C2 and C3 (or C5) in parallel; C4 after
+C2; C0 (the test content pack, accepted by the director) after C2; C6 last.
+
+| Phase | Tier | Branch (worktree) | State | Planned | Done |
+|---|---|---|---|---|---|
+| C1: the numbers (HP 10 + level, weapon damage, misses 5–40 %, crits, flat armour, Pierce, weapon speeds, Recruits punch 1; proposed level table); WORK CHANGED expected | engineer | `systems/combat-numbers` (`sc`) | building | Sat | |
+| C2: gear and enemies (weapon styles, family abilities, enemy armour/Dodge/speed from the level table, enemy kinds) | engineer | — | queued, after C1 | | |
+| C3: supplies (food as today, drinks stop healing, elixirs for 10 fights, the "used" bubble) | builder | — | queued, after C1 | | |
+| C5: encounters (one-on-one, guardians, node ambushes, boss lairs) | engineer | — | queued, after C1 | | |
+| C4: Poison, Burn and boss moves in the Rules system; old status engine retired | engineer | — | queued, after C2 | | |
+| C0: first combat content pack, accepted by the director (guarded) | builder + director | — | queued, after C2 | | |
+| C6: the combat screen (mock-ups first, the owner picks by phone) | engineer | — | queued, last | | |
+
 ## Backlog director, batch E: drawers, the Atlas and dev tools (brief 210; owner said keep going 2026-10-24)
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
