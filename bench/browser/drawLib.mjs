@@ -17,10 +17,11 @@ export const SCENE_IDS = ['S1', 'S2', 'S3', 'bank', 'shop', 'notify', 'loot', 'i
 
 /**
  * Scenes run only when `--only` names them: S2's mix filled to a Token cap (brief 60), S2 with
- * the Guild Hall open, where the tutorial's beacons show, and S2 with the Atlas opened and closed
- * over and over (the Atlas pop-up's cost).
+ * the Guild Hall open, where the tutorial's beacons show, S2 with the Atlas opened and closed
+ * over and over (the Atlas pop-up's cost), and S2 with the Guild Hall opened and closed over and
+ * over (the camera glide's cost).
  */
-export const EXTRA_SCENE_IDS = ['cap128', 'camp128', 'cap256', 'hall', 'atlas'];
+export const EXTRA_SCENE_IDS = ['cap128', 'camp128', 'cap256', 'hall', 'atlas', 'hallglide'];
 /** The Performance Envelope's scenes, any number (`bench/browser/scenes.mjs`, `sceneFor`). */
 export const ENVELOPE_SCENE = /^((cap|heroes|enemies|fights|floor|floorstill)\d+|notify\d+(i\d+)?)$/;
 

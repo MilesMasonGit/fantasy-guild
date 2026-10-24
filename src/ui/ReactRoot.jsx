@@ -1,6 +1,5 @@
 import React, { useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { ArrowLeft } from 'lucide-react';
 import { cn } from './utils/cn.js';
 import { SettingsManager } from '../systems/core/SettingsManager.js';
 import { EngineBootstrap } from '../systems/core/EngineBootstrap.js';
@@ -23,14 +22,14 @@ import AtlasScreen from './components/atlas/AtlasScreen.jsx';
 import ArrivalCard from './components/atlas/ArrivalCard.jsx';
 
 import BubbleMenu from './components/nav/BubbleMenu.jsx';
-import BottomHeroDock, { showsBottomHeroDock } from './components/dock/BottomHeroDock.jsx';
+import BottomHeroDock from './components/dock/BottomHeroDock.jsx';
 import BankHeroPanel from './components/dock/BankHeroPanel.jsx';
 import WorkRulesDrawer from './components/dock/WorkRulesDrawer.jsx';
 import GuildHallBoard from './components/board/GuildHallBoard.jsx';
-import GuildHallEffectsPanel from './components/board/GuildHallEffectsPanel.jsx';
 import HallSky from './components/board/HallSky.jsx';
-import { InspectionPanel } from './components/drawer/InspectionPanel.jsx';
-import { SIDE_COLUMN_PX, NOTIFICATION_COLUMN, columnWidthCss } from './components/board/boardConstants.js';
+import HallCamera from './components/board/HallCamera.jsx';
+import { GuildHallDetails } from './components/board/GuildHallDetails.jsx';
+import { NOTIFICATION_COLUMN, columnWidthCss } from './components/board/boardConstants.js';
 import { getUpgradeDef } from '../config/guildUpgrades.js';
 import { selectGuildInspectSelection } from './guildInspectSelection.js';
 import { TokenInspectPopup } from './components/board/TokenInspectPopup.jsx';
@@ -45,7 +44,7 @@ import TestDashboard from './components/TestDashboard.jsx';
 import PlaymatTuner from './components/PlaymatTuner.jsx';
 import MatTuner from './components/MatTuner.jsx';
 import CatchUpOverlay from './components/hud/CatchUpOverlay.jsx';
-import MatTopBar, { showsMatTopBar } from './components/board/MatTopBar.jsx';
+import MatTopBar from './components/board/MatTopBar.jsx';
 import MatRegionName from './components/board/MatRegionName.jsx';
 import MatCapBadge from './components/board/MatCapBadge.jsx';
 import MatUpkeepBadge from './components/board/MatUpkeepBadge.jsx';
@@ -101,6 +100,15 @@ export const ReactRoot = () => {
     // Bubble menu side: left by default, right via the Settings toggle.
     const [menuRight, setMenuRight] = React.useState(() => SettingsManager.get('ui.bubbleMenuRight') ?? false);
     const [backgroundTile, setBackgroundTile] = React.useState(() => SettingsManager.get('ui.backgroundTile') ?? 'u_table_wood_spruce');
+    // The wood table: drawn around the mat, and carried down with it as the camera looks up to the Hall's sky.
+    const tableBackground = {
+        backgroundImage: backgroundDrawn ? `url('/assets/ui/${backgroundTile}.png')` : 'none',
+        backgroundRepeat: 'repeat',
+        backgroundSize: '512px',
+        imageRendering: 'pixelated',
+        backgroundColor: '#0a0a0a'
+    };
+    const tableRef = React.useRef(null);
 
     React.useEffect(() => {
         const unsubscribe = EventBus.subscribe(ENGINE_EVENTS.SETTINGS_UPDATED, (s) => {
@@ -196,14 +204,9 @@ export const ReactRoot = () => {
             <ScreenCalloutLayer />
             <div className="react-overlay absolute inset-0 z-50 pointer-events-none flex flex-col">
                 <div
+                    ref={tableRef}
                     className="flex-1 relative flex overflow-hidden bg-black"
-                    style={{
-                        backgroundImage: backgroundDrawn ? `url('/assets/ui/${backgroundTile}.png')` : 'none',
-                        backgroundRepeat: 'repeat',
-                        backgroundSize: '512px',
-                        imageRendering: 'pixelated',
-                        backgroundColor: '#0a0a0a'
-                    }}
+                    style={tableBackground}
                 >
                     <div
                         className={cn(
@@ -211,7 +214,6 @@ export const ReactRoot = () => {
                             (isGuildView || isBankOpen) ? "opacity-100" : "opacity-0"
                         )}
                     />
-                    {isGuildView && <HallSky />}
 
                     {!menuRight && <BubbleMenu ui={ui} side="left" />}
                     {menuRight && isBankOpen && !isGuildView && (
@@ -221,15 +223,51 @@ export const ReactRoot = () => {
                             className="shrink-0 h-full pointer-events-none"
                         />
                     )}
-                    {/* `min-w-0`: the column takes the room it is given, not its widest content's. */}
-                    <div className="flex-1 min-w-0 relative flex flex-col overflow-hidden z-10">
+                    {/**
+                     * The mat's column, under the camera that looks up from the mat to the Hall's
+                     * sky (`HallCamera`). `min-w-0`: the column takes the room it is given, not its
+                     * widest content's. ⚠️ `overflow-clip`, not `overflow-hidden`: mid-glide the
+                     * mat or the Hall sits outside the column's box, and focus landing there would
+                     * scroll a hidden box to it; a clipped box is no scroll container.
+                     */}
+                    <div className="flex-1 min-w-0 relative flex flex-col overflow-clip z-10">
+                        <HallCamera
+                            open={isGuildView}
+                            away={!isGuildView && (ui.fullscreen.view !== null || isBankOpen || ui.shop.isOpen || ui.settings.isOpen)}
+                            sky={<HallSky />}
+                            table={tableBackground}
+                            tableAnchor={tableRef}
+                            hall={
+                                <>
+                                    <div className="flex-1 min-w-0 min-h-0 relative pointer-events-auto">
+                                        <GuildHallBoard
+                                            selectedUpgradeId={guildInspectSelection?.id ?? selectedUpgradeId}
+                                            onSelectUpgrade={(def) => {
+                                                setSelectedUpgradeId(def.id);
+                                                ui.inspect.set('guild_upgrade', def.id, { upgradeDef: def }, 'guild');
+                                            }}
+                                            onHoverUpgrade={setHoveredUpgradeId}
+                                        />
+                                    </div>
+                                    {/**
+                                     * The Hall's details panel: always RIGHT of the upgrade web, whichever
+                                     * side the nav is on.
+                                     */}
+                                    <aside
+                                        data-hall-details
+                                        style={{ width: columnWidthCss(NOTIFICATION_COLUMN) }}
+                                        className="shrink-0 h-full flex flex-col items-center justify-center py-8 bg-transparent pointer-events-auto relative select-none pl-8 pr-0 z-10"
+                                    >
+                                        <GuildHallDetails
+                                            selection={guildShownSelection}
+                                            onClear={handleClearGuildInspect}
+                                            onReturn={handleCloseGuildHall}
+                                        />
+                                    </aside>
+                                </>
+                            }
+                        >
                         <div className="flex-1 flex min-h-0 relative">
-                        {/**
-                         * The Guild Hall Effects list: always LEFT of the upgrade web,
-                         * whichever side the nav is on. With the nav flipped right it sits
-                         * between the inspection column and the web.
-                         */}
-                        {isGuildView && <GuildHallEffectsPanel />}
                         <div
                             data-dnd-surface="board"
                             data-dnd-region="board"
@@ -240,56 +278,41 @@ export const ReactRoot = () => {
                              * over it, so the box Board measures for its fit is the bar's
                              * height shorter and the mat shrinks to match.
                              */}
-                            {showsMatTopBar(ui.fullscreen.view) && (
-                                <PerfProfiler id="TopBar">
-                                    <MatTopBar
-                                        left={<MatRegionName onOpenAtlas={openAtlasFromBar} />}
-                                        middle={<MapModeBanner fallback={<><MatCapBadge /><MatUpkeepBadge /></>} />}
-                                        right={<MapModeToggles />}
-                                    />
-                                </PerfProfiler>
-                            )}
+                            <PerfProfiler id="TopBar">
+                                <MatTopBar
+                                    left={<MatRegionName onOpenAtlas={openAtlasFromBar} />}
+                                    middle={<MapModeBanner fallback={<><MatCapBadge /><MatUpkeepBadge /></>} />}
+                                    right={<MapModeToggles />}
+                                />
+                            </PerfProfiler>
                             <div className="flex-1 min-w-0 min-h-0 relative">
-                            {isGuildView ? (
-                                <GuildHallBoard
-                                    selectedUpgradeId={guildInspectSelection?.id ?? selectedUpgradeId}
-                                    onSelectUpgrade={(def) => {
-                                        setSelectedUpgradeId(def.id);
-                                        ui.inspect.set('guild_upgrade', def.id, { upgradeDef: def }, 'guild');
-                                    }}
-                                    onHoverUpgrade={setHoveredUpgradeId}
-                                onClose={handleCloseGuildHall}
-                                />
-                            ) : (
-                                <Board
-                                    inspectedHeroId={inspectHeroId}
-                                    inspectedTokenId={ui.inspect.selection?.type === 'token' ? (ui.inspect.selection.source?.instanceId ?? null) : null}
-                                    onOpenGuildHall={handleOpenGuildHall}
-                                    onInspectToken={onInspectToken}
-                                    onClearInspect={onClearInspect}
-                                />
-                            )}
+                            <Board
+                                inspectedHeroId={inspectHeroId}
+                                inspectedTokenId={ui.inspect.selection?.type === 'token' ? (ui.inspect.selection.source?.instanceId ?? null) : null}
+                                onOpenGuildHall={handleOpenGuildHall}
+                                onInspectToken={onInspectToken}
+                                onClearInspect={onClearInspect}
+                            />
                             {/**
                              * Over the mat, under the top bar: the item stubs at the right,
                              * the banners at the centre. Neither takes any width from the mat.
-                             * Not over the Hall screen: both live in their own stores, so what
-                             * arrives meanwhile is there on the way back (loot flies to no stub).
+                             * On the mat's side of the camera, so never over the Hall screen:
+                             * both live in their own stores, so what arrives meanwhile is there
+                             * on the way back (loot flies to no stub).
                              */}
-                            {!isGuildView && (
-                                <ErrorBoundary label="Notifications">
-                                    <ItemStubColumn />
-                                    <BannerStack />
-                                </ErrorBoundary>
-                            )}
+                            <ErrorBoundary label="Notifications">
+                                <ItemStubColumn />
+                                <BannerStack />
+                            </ErrorBoundary>
                             </div>
                         </div>
                         </div>
 
                         {/**
-                         * Bottom Hero Dock: horizontal sliding tabs. Not on the Guild Hall
-                         * upgrade screen.
+                         * Bottom Hero Dock: horizontal sliding tabs. On the mat's side of the
+                         * camera, so never on the Guild Hall upgrade screen.
                          */}
-                        {dockDrawn && showsBottomHeroDock(ui.fullscreen.view) && (
+                        {dockDrawn && (
                             // A crash in the bottom hero dock stays local to it.
                             <ErrorBoundary label="HeroDock">
                                 <PerfProfiler id="HeroDock">
@@ -304,7 +327,7 @@ export const ReactRoot = () => {
                             </ErrorBoundary>
                         )}
                         {/* The Work Permissions grid rises from behind the bar, the mat's full width. */}
-                        {dockDrawn && showsBottomHeroDock(ui.fullscreen.view) && (
+                        {dockDrawn && (
                             <ErrorBoundary label="WorkRulesDrawer">
                                 <WorkRulesDrawer
                                     open={ui.flagRules.isOpen}
@@ -314,6 +337,7 @@ export const ReactRoot = () => {
                                 />
                             </ErrorBoundary>
                         )}
+                        </HallCamera>
                         {/* The Atlas pops up over the mat column only: the nav beside it stays reachable to close it. */}
                         <AnimatePresence>
                             {isAtlasOpen && (
@@ -324,40 +348,6 @@ export const ReactRoot = () => {
                         </AnimatePresence>
                         <ErrorBoundary label="ArrivalCard"><ArrivalCard /></ErrorBoundary>
                     </div>
-                    {/**
-                     * The Hall's details panel: always RIGHT of the upgrade web, whichever
-                     * side the nav is on, as the Effects list is always left of it.
-                     */}
-                    {isGuildView && (
-                        <aside
-                            data-hall-details
-                            style={{ width: columnWidthCss(NOTIFICATION_COLUMN) }}
-                            className="shrink-0 h-full flex flex-col items-center justify-center py-8 bg-transparent pointer-events-auto relative select-none pl-8 pr-0 z-10"
-                        >
-                            <div
-                                className="w-full relative shrink-0 flex flex-col gap-2.5"
-                                style={{ height: SIDE_COLUMN_PX, maxHeight: '100%' }}
-                            >
-                                <button
-                                    onClick={() => {
-                                        EventBus.publish(ENGINE_EVENTS.AUDIO_PLAY, { clip: 'button_click' });
-                                        handleCloseGuildHall();
-                                    }}
-                                    className="w-full shrink-0 py-2.5 px-4 rounded-xl border-2 border-[#5c3e2e] hover:border-gi-gold/70 bg-[#2a1d15]/95 hover:bg-[#3d2a1f] text-amber-200 hover:text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition-all duration-150 cursor-pointer active:scale-[0.98] group"
-                                >
-                                    <ArrowLeft size={16} className="text-gi-gold group-hover:-translate-x-1 transition-transform" />
-                                    <span>Return to Playmat</span>
-                                </button>
-                                <div className="w-full flex-1 min-h-0 relative flex flex-col rounded-2xl border-4 border-[#3a271d] shadow-2xl overflow-hidden">
-                                    <InspectionPanel
-                                        className="w-full h-full flex-1"
-                                        selection={guildShownSelection}
-                                        onClear={handleClearGuildInspect}
-                                    />
-                                </div>
-                            </div>
-                        </aside>
-                    )}
                     {!menuRight && isBankOpen && !isGuildView && (
                         // The Bank's hero column: the hero panel (below) draws over it.
                         <aside

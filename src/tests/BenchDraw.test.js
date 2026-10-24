@@ -66,10 +66,12 @@ describe('drawing bench options', () => {
         expect(() => parseArgs(['--save-baseline', '--switches'])).toThrow();
     });
 
-    it('the cap boards, the Guild Hall and the Atlas open/close run only when --only names them', () => {
+    it('the cap boards, the Guild Hall and the Atlas and Hall open/close run only when --only names them', () => {
         expect(SCENE_IDS).not.toContain('cap128');
         expect(SCENE_IDS).not.toContain('atlas');
-        expect(EXTRA_SCENE_IDS).toEqual(['cap128', 'camp128', 'cap256', 'hall', 'atlas']);
+        expect(SCENE_IDS).not.toContain('hallglide');
+        expect(EXTRA_SCENE_IDS).toEqual(['cap128', 'camp128', 'cap256', 'hall', 'atlas', 'hallglide']);
+        expect(parseArgs(['--only=S2,hallglide']).only).toEqual(['S2', 'hallglide']);
         expect(parseArgs(['--only=S2,CAP128,cap256']).only).toEqual(['S2', 'cap128', 'cap256']);
         expect(parseArgs(['--only=S2,atlas']).only).toEqual(['S2', 'atlas']);
     });

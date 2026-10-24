@@ -8,6 +8,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { GIModal } from '../ui/components/base/GIModal.jsx';
 import { GuildUpgradeInspection } from '../ui/components/drawer/GuildUpgradeInspection.jsx';
+import { InspectionPanel } from '../ui/components/drawer/InspectionPanel.jsx';
 import {
     getUpgradeDef, getLockDetail, getLockReason, isUpgradeAccessible, LOCK_KIND, GUILD_UPGRADES
 } from '../config/guildUpgrades.js';
@@ -65,14 +66,11 @@ describe('GuildUpgradeInspection', () => {
     const lockedId = GUILD_UPGRADES.find(d => !isUpgradeAccessible(d.id, {}))?.id;
 
     it('offers a way out of the panel', () => {
-        // This only proves the X calls whatever `onClose` it was given — it
-        // passed while was live, because the bug was never in this leaf
-        // component. It is ReactRoot's fallback chain that resurrected the
-        // same upgrade after `onClose` ran. See block below for the test
-        // that actually covers the bug.
+        // The X sits in the Inspect panel's header. This only proves it calls whatever `onClear`
+        // it was given; ReactRoot's fallback chain is the block below.
         const onClose = vi.fn();
         const { container } = render(
-            (React.createElement(GuildUpgradeInspection, { upgradeDef: def, onClose }))
+            (React.createElement(InspectionPanel, { selection: { type: 'guild_upgrade', id: def.id, upgradeDef: def }, onClear: onClose }))
         );
         const btn = closeButton(container);
         expect(btn).toBeTruthy();
@@ -150,7 +148,7 @@ describe('The Guild Hall panel actually closes on Close (CR3-451)', () => {
         };
 
         return selection
-            ? React.createElement(GuildUpgradeInspection, { upgradeDef: selection.upgradeDef, onClose: handleClose })
+            ? React.createElement(InspectionPanel, { selection, onClear: handleClose })
             : React.createElement('div', { 'data-testid': 'guild-panel-empty' }, 'nothing inspected');
     }
 

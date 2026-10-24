@@ -37,5 +37,14 @@
             "currency": "Currency",
             "drop": "Loot"
         }
+    },
+    "guildHall": {
+        "effectsTitle": "Guild Hall Effects",
+        "outputs": "Outputs",
+        "boosts": "Boosts & Modifiers",
+        "noOutputs": "No active outputs",
+        "noBoosts": "No active boosts",
+        "returnToPlaymat": "Return to Playmat",
+        "inspect": "Inspect"
     }
 }

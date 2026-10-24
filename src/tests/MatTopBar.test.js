@@ -12,7 +12,8 @@ import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { summariseMat, rowLabel } from '../systems/board/MatSummary.js';
-import { MatTopBar, showsMatTopBar, MAT_TOP_BAR_PX } from '../ui/components/board/MatTopBar.jsx';
+import { MatTopBar, MAT_TOP_BAR_PX } from '../ui/components/board/MatTopBar.jsx';
+import { hallCameraSides } from './fixtures/hallCameraSides.js';
 import { MatCapBadge, liveMatSummary } from '../ui/components/board/MatCapBadge.jsx';
 import * as SpawnerSystem from '../systems/board/SpawnerSystem.js';
 import * as MatCap from '../systems/board/MatCap.js';
@@ -145,10 +146,12 @@ describe('MatTopBar (FB-28)', () => {
         expect(bar.querySelector('[data-mat-top-bar-middle]')).not.toBeNull();
     });
 
+    // On the table side of the Hall camera, which is gone while the camera rests on the sky
+    // (HallCamera.test.js).
     it('is drawn on the playmat and not on the Guild Hall upgrade screen', () => {
-        expect(showsMatTopBar(null)).toBe(true);
-        expect(showsMatTopBar(undefined)).toBe(true);
-        expect(showsMatTopBar('guild')).toBe(false);
+        const { code, mat } = hallCameraSides();
+        expect([...code.matchAll(/<MatTopBar\b/g)]).toHaveLength(1);
+        expect(mat).toContain('<MatTopBar');
     });
 });
 

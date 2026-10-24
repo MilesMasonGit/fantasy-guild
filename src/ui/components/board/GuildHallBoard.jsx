@@ -7,6 +7,8 @@ import {
 import { GuildUpgradeManager } from '../../../systems/progression/GuildUpgradeManager.js';
 import { useBoardScale } from '../../hooks/useBoardScale.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
+import { useEscapeLayer } from '../../utils/escapeLayers.js';
+import { GuildHallEffectsPopover } from './GuildHallEffectsPopover.jsx';
 
 /**
  * The web's natural space, in pixels. Upgrade node positions are unit coordinates centred on
@@ -113,16 +115,18 @@ function tagPlacement(side, box, starPx) {
  *
  * Every upgrade is a pixel star whose sprite and size say its state, tagged with its name and
  * rank; the Hall is the pole star in the middle that every constellation starts from. Lines are
- * faint until both ends are lit. The sky behind is `HallSky`, the Effects list sits to the left
- * and the details panel to the right, both in `ReactRoot`.
+ * faint until both ends are lit. The sky behind is `HallSky` and the details panel sits to the
+ * right, both in `ReactRoot`.
  * Hovering a star reports it (`onHoverUpgrade`) so the details panel can show it; a click pins
  * it (`onSelectUpgrade`).
+ * The Hall star shows the Hall's Effects ({@link GuildHallEffectsPopover}): while hovered, or
+ * pinned open by a click. A second click on the star, Escape, or a click anywhere else closes a
+ * pinned one.
  */
 export const GuildHallBoard = ({
     selectedUpgradeId,
     onSelectUpgrade,
-    onHoverUpgrade,
-    onClose
+    onHoverUpgrade
 }) => {
     const ranks = useGameState(
         state => state.progress?.guildUpgrades || {},
@@ -160,6 +164,28 @@ export const GuildHallBoard = ({
     const hall = at(HALL_NODE);
     const hallPx = STAR_ART_PX * HALL_STAR_SCALE;
     const hover = (id) => onHoverUpgrade?.(id);
+
+    const hallRef = useRef(null);
+    const effectsRef = useRef(null);
+    const [effectsHovered, setEffectsHovered] = useState(false);
+    const [effectsPinned, setEffectsPinned] = useState(false);
+    const toggleEffects = () => {
+        // Unpinning hides it at once, though the pointer is still on the star.
+        if (effectsPinned) setEffectsHovered(false);
+        setEffectsPinned(p => !p);
+    };
+    useEscapeLayer(effectsPinned, () => { setEffectsPinned(false); setEffectsHovered(false); });
+    useEffect(() => {
+        if (!effectsPinned) return undefined;
+        const onDown = (e) => {
+            const path = typeof e.composedPath === 'function' ? e.composedPath() : [];
+            const within = (el) => el && (path.includes(el) || el.contains(e.target));
+            if (within(effectsRef.current) || within(hallRef.current)) return;
+            setEffectsPinned(false);
+        };
+        window.addEventListener('pointerdown', onDown, true);
+        return () => window.removeEventListener('pointerdown', onDown, true);
+    }, [effectsPinned]);
 
     return (
         // ⚠️ `overflow-clip`, not `overflow-hidden`: a hidden box is still a scroll container,
@@ -236,14 +262,20 @@ export const GuildHallBoard = ({
                         );
                     })}
 
-                    {/* The Hall, the pole star. Clicking it returns to the playmat. */}
+                    {/* The Hall, the pole star: its Effects show beside it. */}
                     <div className="absolute flex flex-col items-center" style={{ left: hall.x - hallPx / 2, top: hall.y - hallPx / 2, width: hallPx }}>
                         <button
+                            ref={hallRef}
                             type="button"
                             data-hall-node={HALL_NODE}
                             data-node-state="bought"
-                            title="Return to Playmat"
-                            onClick={() => onClose?.()}
+                            aria-expanded={effectsHovered || effectsPinned}
+                            aria-pressed={effectsPinned}
+                            onMouseEnter={() => setEffectsHovered(true)}
+                            onMouseLeave={() => setEffectsHovered(false)}
+                            onFocus={() => setEffectsHovered(true)}
+                            onBlur={() => setEffectsHovered(false)}
+                            onClick={toggleEffects}
                             className="gi-star-btn flex items-center justify-center cursor-pointer"
                             style={{ width: hallPx, height: hallPx, '--star-px': `${HALL_STAR_SCALE}px` }}
                         >
@@ -261,6 +293,9 @@ export const GuildHallBoard = ({
                             Guild Hall
                         </div>
                     </div>
+                    {(effectsHovered || effectsPinned) && (
+                        <GuildHallEffectsPopover anchorRef={hallRef} popoverRef={effectsRef} pinned={effectsPinned} />
+                    )}
 
                     {GUILD_UPGRADES.map((def) => {
                         const p = at(def.id);

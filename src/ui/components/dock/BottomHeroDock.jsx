@@ -15,14 +15,6 @@ import { isRecallDrop, recallFromDrop } from './dockRecall.js';
 import { reorderHeroInDock } from './dockReorder.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
-/**
- * Whether the horizontal hero dock shows under the main surface. It shows on the playmat and
- * is left out of the Guild Hall upgrade screen. `fullscreenView` is `ui.fullscreen.view`.
- */
-export function showsBottomHeroDock(fullscreenView) {
-    return fullscreenView !== 'guild';
-}
-
 /** Where the heroes' row starts, from the strip's left end, while the launcher is shown. */
 export const HEROES_LEFT_PX = 136;
 

@@ -1,13 +1,15 @@
 // @vitest-environment jsdom
-// B9: the Guild Hall screen draws its upgrades as a web around the Hall —
-// nodes joined by lines — with the Effects list on the left.
+// The Guild Hall screen draws its upgrades as a web around the Hall (nodes joined by lines);
+// the Hall star shows the Hall's Effects as a popover.
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import React from 'react';
 import { readFileSync } from 'node:fs';
+import { hallCameraSides } from './fixtures/hallCameraSides.js';
 import { resolve } from 'node:path';
 import { render, fireEvent, act } from '@testing-library/react';
 import { GuildHallBoard } from '../ui/components/board/GuildHallBoard.jsx';
-import { GuildHallEffectsPanel } from '../ui/components/board/GuildHallEffectsPanel.jsx';
+import { effectsPopoverPlace, EFFECTS_POPOVER_W } from '../ui/components/board/GuildHallEffectsPopover.jsx';
+import { escapeLayerCount } from '../ui/utils/escapeLayers.js';
 import { InspectionPanel } from '../ui/components/drawer/InspectionPanel.jsx';
 import { GameState } from '../state/GameState.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
@@ -78,17 +80,13 @@ describe('the Guild Hall upgrade web', () => {
         expect(tag.textContent).toContain('Bank Slots 2/10');
     });
 
-    it('selects a node by upgrade id, and the Hall closes the screen', () => {
+    it('selects a node by upgrade id', () => {
         const onSelectUpgrade = vi.fn();
-        const onClose = vi.fn();
-        const { container } = renderWeb({ onSelectUpgrade, onClose, selectedUpgradeId: 'roster_size' });
+        const { container } = renderWeb({ onSelectUpgrade, selectedUpgradeId: 'roster_size' });
         expect(container.querySelector('[data-hall-node="roster_size"]').getAttribute('data-selected')).toBe('true');
 
         fireEvent.click(container.querySelector('[data-hall-node="bank_tabs"]'));
         expect(onSelectUpgrade).toHaveBeenCalledWith(getUpgradeDef('bank_tabs'));
-
-        fireEvent.click(container.querySelector(`[data-hall-node="${HALL_NODE}"]`));
-        expect(onClose).toHaveBeenCalled();
     });
 
     it('keeps the tutorial hooks on the Bunk Beds node', () => {
@@ -119,19 +117,71 @@ describe('the Guild Hall upgrade web', () => {
     });
 });
 
-describe('the Effects list sits left of the web (FB-38)', () => {
-    it('carries its probe hook', () => {
-        const { container } = render((React.createElement(GuildHallEffectsPanel)));
-        expect(container.querySelector('[data-hall-effects]')).toBeTruthy();
+describe('the Hall star shows the Effects as a popover', () => {
+    const effects = () => document.body.querySelector('[data-hall-effects]');
+    const hallOf = (container) => container.querySelector(`[data-hall-node="${HALL_NODE}"]`);
+
+    it('shows while the Hall star is hovered and hides when the pointer leaves', () => {
+        const { container } = renderWeb();
+        expect(effects()).toBeNull();
+        fireEvent.mouseEnter(hallOf(container));
+        expect(effects()).toBeTruthy();
+        expect(effects().getAttribute('data-hall-effects-pinned')).toBe('false');
+        expect(effects().textContent).toContain('Guild Hall Effects');
+        fireEvent.mouseLeave(hallOf(container));
+        expect(effects()).toBeNull();
     });
 
-    it('is placed before the web in the layout, whichever side the nav is on', () => {
+    it('a click pins it open past the pointer leaving, and a second click closes it', () => {
+        const onClose = vi.fn();
+        const { container } = renderWeb({ onClose });
+        fireEvent.mouseEnter(hallOf(container));
+        fireEvent.click(hallOf(container));
+        fireEvent.mouseLeave(hallOf(container));
+        expect(effects()?.getAttribute('data-hall-effects-pinned')).toBe('true');
+        fireEvent.mouseEnter(hallOf(container));
+        fireEvent.click(hallOf(container));
+        expect(effects()).toBeNull();
+        // The Hall star no longer leaves the screen.
+        expect(onClose).not.toHaveBeenCalled();
+    });
+
+    it('Escape closes a pinned popover as its own layer', () => {
+        const { container } = renderWeb();
+        const before = escapeLayerCount();
+        fireEvent.click(hallOf(container));
+        expect(escapeLayerCount()).toBe(before + 1);
+        fireEvent.keyDown(window, { key: 'Escape' });
+        expect(effects()).toBeNull();
+        expect(escapeLayerCount()).toBe(before);
+    });
+
+    it('a press anywhere else closes a pinned popover; a press inside it does not', () => {
+        const { container } = renderWeb();
+        fireEvent.click(hallOf(container));
+        fireEvent.pointerDown(effects());
+        expect(effects()).toBeTruthy();
+        fireEvent.pointerDown(container.querySelector('[data-hall-node="bank_tabs"]'));
+        expect(effects()).toBeNull();
+    });
+
+    it('sits right of the star, flips left at the window edge, and stays on the window', () => {
+        const star = { left: 900, right: 996, top: 492, height: 96 };
+        expect(effectsPopoverPlace(star, EFFECTS_POPOVER_W, 200, 1920, 1080)).toEqual({ left: 1008, top: 440 });
+        const nearRight = { left: 1700, right: 1796, top: 492, height: 96 };
+        expect(effectsPopoverPlace(nearRight, EFFECTS_POPOVER_W, 200, 1920, 1080).left).toBe(1700 - 12 - EFFECTS_POPOVER_W);
+        const nearTop = { left: 900, right: 996, top: 0, height: 96 };
+        expect(effectsPopoverPlace(nearTop, EFFECTS_POPOVER_W, 400, 1920, 1080).top).toBe(8);
+    });
+
+    it('takes no column of its own: the screen mounts no Effects list beside the web', () => {
         const src = readFileSync(resolve(__dirname, '../ui/ReactRoot.jsx'), 'utf8');
-        const effects = [...src.matchAll(/<GuildHallEffectsPanel\b[^>]*>/g)];
-        expect(effects).toHaveLength(1);
-        expect(effects[0][0]).not.toContain('menuRight');
-        expect(effects[0].index).toBeLessThan(src.indexOf('<GuildHallBoard'));
-        // Rendered on the Guild view alone, not gated on the nav side.
-        expect(src).toContain('{isGuildView && <GuildHallEffectsPanel />}');
+        expect(src).not.toMatch(/GuildHallEffects/);
+        // The Hall's screen, which the camera lays only while it is off the mat, holds the web and
+        // its details column, and nothing else beside the web.
+        const hall = hallCameraSides().hall;
+        expect(hall).toContain('<GuildHallBoard');
+        expect(hall).toContain('<GuildHallDetails');
+        expect(hall.indexOf('<GuildHallBoard')).toBeLessThan(hall.indexOf('<GuildHallDetails'));
     });
 });

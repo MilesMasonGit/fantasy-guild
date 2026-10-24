@@ -25,7 +25,6 @@ export const SIDE_COLUMN_PX = 928;
  * - **The hero column** (`NOTIFICATION_COLUMN`, named for the notifications it once held): the
  * hero panel and the Guild Hall's inspection take it while the Bank or the Hall is open; the
  * playmat itself has no notification column. 256 keeps their contents from overflowing.
- * - **Effects panel** (`EFFECTS_COLUMN`): 244 keeps a comfortable margin around its contents.
  * - **The hero dock** is already only `w-20` (80px) and its inspection sheet is absolutely
  * positioned, so it is left alone.
  * ⚠️ This never lets the mat reach under a column: the mat is fitted to its own cell's
@@ -35,8 +34,6 @@ export const SIDE_COLUMN_PX = 928;
  * board.
  */
 export const NOTIFICATION_COLUMN = Object.freeze({ min: 256, vw: 20, max: 356 });
-
-export const EFFECTS_COLUMN = Object.freeze({ min: 244, vw: 19, max: 340 });
 
 /**
  * What a column spec is worth at a given viewport width, in pixels. The pure form of the
