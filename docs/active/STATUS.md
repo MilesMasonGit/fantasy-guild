@@ -24,12 +24,12 @@ C2; C0 (the test content pack, accepted by the director) after C2; C6 last.
 | C0: first combat content pack, accepted by the director (guarded) | builder + director | — | queued, after C2 | | |
 | C6: the combat screen (mock-ups first, the owner picks by phone) | engineer | — | queued, last | | |
 
-## Backlog director, batch F: look-wide passes (brief 210; owner said go 2026-10-24: both, mock-ups first)
+## Backlog director, batch F: look-wide passes (brief 210; owner said go 2026-10-24: both, mock-ups first) — **done, merged eb969849; brief 210 complete**
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
 | F1: pixel frames on every window, audit first (T-136) | builder | `backlog/pixel-frames` | **merged** 4fee0e7c (on top of the Systems director's combat C1): audit committed; tooltips, modal shell, Token Summary, catch-up chamfer; Bank, Shop, hero panel studs (warm near-black). Owner ok by phone; asked for **a second audit** (soft borders on Bank item tiles etc.): T-242 (F1b, after the bubble row), plus T-243 callouts, T-244 nav orbs. Merged gate: 5891 tests, cycles, build, same work | Sat | Sat |
-| F2: one bubble row between a hero and the Token it works (T-239): 2–3 mock-ups on the style sheet page first, owner picks; measure before and after | engineer | `backlog/bubble-row` (`fb`) | mock-ups done (today's mat already quiet: a work bar, a '!' when stuck). **Owner picked C, the quiet plate at the feet**; the row's charges replace the floating -1; idle Tokens keep '!' and rings; dark Smithing icon left. Building C, measuring with its own draw switch; combat link slot left for brief 220 | Sat | |
+| F2: one bubble row between a hero and the Token it works (T-239): 2–3 mock-ups on the style sheet page first, owner picks; measure before and after | engineer | `backlog/bubble-row` | **merged** eb969849: the quiet plate (C), floaters off; draws cheaper than `main` (cap128 16 heroes 3.2×: 68.5 → 75.7 fps). Gate 6000 tests, cycles, build, same work. Owner ok by phone; charges with no hero at work now change silently (owner: fine). Gear tip under the plate: T-247 | Sat | Sat |
 
 ## Backlog director, batch E: drawers, the Atlas and dev tools (brief 210; owner said keep going 2026-10-24) — **done, merged 56136a65**
 
@@ -300,6 +300,12 @@ T-186; the badges' soft shadows are settled inside T-013.)
 8. ~~Terrain director: bench baseline retake~~ **Done:** engine 2026-10-21 13:00 (f19a2e30), draw 2026-10-22 01:00 (db3959c4).
 
 ## Summaries
+
+**Sat 2026-10-24, evening: brief 210 complete.** Where we are: all six
+batches of the owner's backlog intake are on `main` eb969849, every phase
+okayed by phone. Next: T-242, pixel frames round two (the owner's second
+audit), then the small tickets T-240, T-241, T-243, T-244, T-247. Owner: the
+hands-on lists in the eye-check records when back at the PC. Blockers: none.
 
 **Sat 2026-10-24: batch D merged, batch E started.** Where we are: batches
 A to D of brief 210 are on `main` e6abf4e2, all okayed by phone (the Hall's
