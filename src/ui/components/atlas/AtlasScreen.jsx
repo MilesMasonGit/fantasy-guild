@@ -21,8 +21,9 @@ const CLOSE_SPRITE = '/assets/ui/u_cancel_red.png';
 /**
  * The Atlas: the owner's open book popping up over the mat (the mat stays as it is behind it),
  * opened from its bubble, with two sections behind page tabs. **Regions** lists every
- * Region the guild has settled (travel, rename, archive, abandon); **Cartography** writes a new
- * one from maps. Escape, the close button or a press outside the book closes it, and closing
+ * Region the guild has settled down the left page and shows the one clicked on the right (its
+ * ground, what it holds; travel, rename, archive, abandon); **Cartography** writes a new one from
+ * maps. Escape, the close button or a press outside the book closes it, and closing
  * takes nothing: the Cartography slots are only remembered while it is open.
  *
  * @param {object} props
@@ -83,7 +84,7 @@ export const AtlasScreen = ({ onClose, closePromotion, initialTab = ATLAS_TAB.RE
             <AtlasTome tabs={TABS} tab={tab} onTab={setTab} closeButton={closeButton} label={SCREEN_TEXT.TITLE}>
                 {/* Both stay mounted, so moving between the tabs keeps what is slotted. */}
                 <div className={cn('absolute inset-0', tab !== ATLAS_TAB.REGIONS && 'hidden')}>
-                    <RegionList version={version} onTravel={travel} message={message} onMessage={setMessage} />
+                    <RegionList version={version} open={tab === ATLAS_TAB.REGIONS} onTravel={travel} message={message} onMessage={setMessage} />
                 </div>
                 <div className={cn('absolute inset-0', tab !== ATLAS_TAB.CARTOGRAPHY && 'hidden')}>
                     <CartographyTable version={version} onTravel={travel} />

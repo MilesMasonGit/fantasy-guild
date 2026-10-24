@@ -170,3 +170,7 @@ T-232 — The Hall sky drifts in a smooth linear glide (owner's pick; draws leve
 T-233 — Stars stop blinking: grey nothing affordable or locked, blue affordable now, gold maxed; outlines on hover only (owner) — 02cb806b — 2026-10-23
 T-234 — Guild Hall Effects as a popover on the Hall star (hover shows, click pins, Esc or outside closes); the web about a third bigger; Inspect panel in the pixel kit — e6abf4e2 — 2026-10-24
 T-194 — Opening the Guild Hall glides from the mat up to the sky and back (HallCamera, from tag atlas-camera-move); skippable, reduced motion swaps; mat unmounted at rest on the sky (owner: keep the 0.2 s start back; other views land at once) — e6abf4e2 — 2026-10-24
+T-235 — Bank and Shop drawers reach the screen's left edge under the nav orbs; rows padded past the orbs — 7b7244ef — 2026-10-24
+T-236 — Opening the Bank slides the top bar up, the stubs off right and the mat aside in 250 ms, reversed on close; no mat refit (spacer asides removed) — 7b7244ef — 2026-10-24
+T-237 — The Atlas's Regions as a two-page spread: banners on the left, the selected Region's ground preview, facts, landmarks and actions on the right — 3398be7d — 2026-10-24
+T-238 — The floating Ground tuner and the QA Terrain section retired (defaults kept); the Mat dials as one collapsed QA section; the TUNER button gone — 56136a65 — 2026-10-24

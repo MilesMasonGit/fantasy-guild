@@ -26,6 +26,7 @@ import {
     previewArtPaths, PREVIEW_ZOOM
 } from '../ui/components/atlas/mapPreview.js';
 import { PREVIEW_SETTLE_MS } from '../ui/components/atlas/MapPreview.jsx';
+import { regionPlan } from '../ui/components/atlas/regionPreview.js';
 import { mapSpritePath, mapHoverLines, DEV_MAP_SPRITES, FALLBACK_MAP_SPRITE } from '../ui/components/atlas/mapArt.js';
 import { AtlasScreen, ATLAS_TAB } from '../ui/components/atlas/AtlasScreen.jsx';
 import { DeckDndContext } from '../ui/dnd/DndKit.jsx';
@@ -248,6 +249,23 @@ describe('⭐ the picture is the mat\'s own', () => {
         expect(previewArtPaths(plan)).toContain(hall);
     });
 
+    it('a settled Region on the Regions page is the picture its plan was: its stored ground, and the Hall where it stands', () => {
+        const { plan, region } = settled(4242);
+        const mat = { w: matW(), h: matH() };
+        const fit = previewFit(mat, 440, 400);
+        primePreviewArt(tokenSpritePath(HALL_TYPE_ID), solidArt(64, 64, [250, 0, 250]));
+        const drawn = previewPicture(regionPlan(region), fit, mat);
+        expect(Buffer.from(drawn.data).equals(Buffer.from(previewPicture(plan, fit, mat).data))).toBe(true);
+
+        // The Region the guild is in: the Hall where it stands now, not the middle.
+        expect(Atlas.travel(region.id).success).toBe(true);
+        const hall = Object.values(GameState.state.board.tokens).find(t => t.typeId === HALL_TYPE_ID);
+        hall.x += 40 * fit.unit;
+        const here = previewPicture(regionPlan(Atlas.activeRegion()), fit, mat);
+        expect(pixelAt(here, Math.round(hall.x / fit.unit), Math.round(hall.y / fit.unit))).toEqual([250, 0, 250, 255]);
+        expect(pixelAt(here, Math.round(Math.round(mat.w / 2) / fit.unit) - 20, Math.round(Math.round(mat.h / 2) / fit.unit))).not.toEqual([250, 0, 250, 255]);
+    });
+
     it('on a grown mat the Hall stands in the middle of that mat, where a travel lands it', () => {
         setMatTuning('matSteps', 14);
         const plan = Atlas.preview(recipes, { seed: 9 });
@@ -284,9 +302,11 @@ describe('⭐ the preview is drawn once per plan', () => {
             React.createElement(AtlasScreen, { onClose: vi.fn(), initialTab: ATLAS_TAB.CARTOGRAPHY })
         ));
         const { container } = view;
-        const canvas = () => q(container, 'canvas[data-map-preview]');
+        const canvas = () => q(container, '[data-cartography] canvas[data-map-preview]');
         const puts = () => contexts.get(canvas())?.puts.length || 0;
 
+        // Opened on Cartography: the Regions page draws nothing until it is first seen.
+        expect(q(container, '[data-region-preview] canvas')).toBeNull();
         fireEvent.click(q(container, '[data-map-item="dev_map_forest"]'));
         expect(plans).toHaveBeenCalledTimes(0);
         await settle();
@@ -301,23 +321,60 @@ describe('⭐ the preview is drawn once per plan', () => {
         await settle();
         expect(plans).toHaveBeenCalledTimes(2);
 
-        // The Bank changing, a tab switch and back: no picture.
+        // The Bank changing, a tab switch and back: no picture of the plan. The Regions page
+        // draws its own picture once, the first time it is seen, and not again.
         act(() => { InventoryManager.addItem('item_oak_wood', 3); });
         fireEvent.click(q(container, `[data-atlas-tab="${ATLAS_TAB.REGIONS}"]`));
         fireEvent.click(q(container, `[data-atlas-tab="${ATLAS_TAB.CARTOGRAPHY}"]`));
         await settle(1000);
-        expect(plans).toHaveBeenCalledTimes(2);
+        expect(plans).toHaveBeenCalledTimes(3);
+        expect(puts()).toBe(2);
+        fireEvent.click(q(container, `[data-atlas-tab="${ATLAS_TAB.REGIONS}"]`));
+        fireEvent.click(q(container, `[data-atlas-tab="${ATLAS_TAB.CARTOGRAPHY}"]`));
+        await settle(1000);
+        expect(plans).toHaveBeenCalledTimes(3);
 
         fireEvent.click(q(container, '[data-cartography-reroll]'));
         await settle();
-        expect(plans).toHaveBeenCalledTimes(3);
+        expect(plans).toHaveBeenCalledTimes(4);
         expect(puts()).toBe(3);
 
         // Closed before the settle: nothing more is built.
         fireEvent.click(q(container, '[data-cartography-slot="0"]'));
         view.unmount();
         await settle(1000);
+        expect(plans).toHaveBeenCalledTimes(4);
+    });
+
+    it('the Regions page draws its Region once per Region chosen: not on a rename, the Bank or the live board changing', async () => {
+        const one = Atlas.devSettle(['forest'], 5).region;
+        const two = Atlas.devSettle(['coast'], 6).region;
+        const view = render(React.createElement(
+            DeckDndContext.Provider, { value: { activePayload: null, isDragging: false } },
+            React.createElement(AtlasScreen, { onClose: vi.fn(), initialTab: ATLAS_TAB.REGIONS })
+        ));
+        const { container } = view;
+        const canvas = () => q(container, '[data-region-preview] canvas[data-map-preview]');
+        await settle();
+        expect(plans).toHaveBeenCalledTimes(1);
+        expect(canvas().getAttribute('data-preview-seed')).toBe(String(Atlas.activeRegion().seed));
+
+        fireEvent.click(q(container, `[data-region-select="${one.id}"]`));
+        await settle();
+        expect(plans).toHaveBeenCalledTimes(2);
+        expect(canvas().getAttribute('data-preview-drawn')).toBe('5');
+
+        act(() => { Atlas.rename(one.id, 'Elsewhere'); });
+        act(() => { InventoryManager.addItem('item_oak_wood', 3); });
+        act(() => { placeAt(OAK, 200, 200); });
+        await settle(1000);
+        expect(plans).toHaveBeenCalledTimes(2);
+
+        fireEvent.click(q(container, `[data-region-select="${two.id}"]`));
+        await settle();
         expect(plans).toHaveBeenCalledTimes(3);
+        expect(canvas().getAttribute('data-preview-drawn')).toBe('6');
+        view.unmount();
     });
 });
 

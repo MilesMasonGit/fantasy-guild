@@ -41,8 +41,6 @@ import { ItemStubColumn } from './components/notifications/ItemStubColumn.jsx';
 import { BannerStack } from './components/notifications/BannerStack.jsx';
 import { ScreenCalloutLayer } from './components/notifications/ScreenCalloutLayer.jsx';
 import TestDashboard from './components/TestDashboard.jsx';
-import PlaymatTuner from './components/PlaymatTuner.jsx';
-import MatTuner from './components/MatTuner.jsx';
 import CatchUpOverlay from './components/hud/CatchUpOverlay.jsx';
 import MatTopBar from './components/board/MatTopBar.jsx';
 import MatRegionName from './components/board/MatRegionName.jsx';
@@ -61,6 +59,9 @@ import { ENGINE_EVENTS, UI_EVENTS } from '../systems/core/engineEvents.js';
 
 /** The nav's views that Escape closes; Settings is a window and closes itself. */
 const NAV_VIEWS = ['guild', 'bank', 'shop', 'atlas'];
+
+/** How far the mat's side moves aside for the Bank: the hero column's width. */
+const BANK_SHIFT_STYLE = Object.freeze({ '--hero-col': columnWidthCss(NOTIFICATION_COLUMN) });
 
 /**
  * ReactRoot: the entry point for the React UI layer. Manages the top-level layout, provides
@@ -135,6 +136,8 @@ export const ReactRoot = () => {
     const isGuildView = ui.fullscreen.view === 'guild';
     const isAtlasOpen = ui.fullscreen.view === 'atlas';
     const isBankOpen = ui.drawer.panes.includes('bank');
+    // Toward the nav: the Bank's hero column opens on the far side.
+    const bankShift = isBankOpen && !isGuildView ? (menuRight ? 'right' : 'left') : undefined;
 
     // While the Bank is open the mat is not interactive at all. `useMatBankLock` is the one
     // place that reaches outside React (the drag sensor) to enforce it, so this is its only
@@ -216,13 +219,6 @@ export const ReactRoot = () => {
                     />
 
                     {!menuRight && <BubbleMenu ui={ui} side="left" />}
-                    {menuRight && isBankOpen && !isGuildView && (
-                        // The Bank's hero column: the hero panel (below) draws over it.
-                        <aside
-                            style={{ width: columnWidthCss(NOTIFICATION_COLUMN) }}
-                            className="shrink-0 h-full pointer-events-none"
-                        />
-                    )}
                     {/**
                      * The mat's column, under the camera that looks up from the mat to the Hall's
                      * sky (`HallCamera`). `min-w-0`: the column takes the room it is given, not its
@@ -266,6 +262,17 @@ export const ReactRoot = () => {
                                     </aside>
                                 </>
                             }
+                        >
+                        {/**
+                         * The mat's side moves aside for the Bank, by transforms only
+                         * (`.gi-bank-shift` in tailwind.css): the Bank's hero column takes no
+                         * width from the mat, so the mat keeps its fit and is never measured or
+                         * redrawn for the Bank; while open it is wholly under the drawer.
+                         */}
+                        <div
+                            data-bank-shift={bankShift}
+                            className="gi-bank-shift flex-1 min-h-0 flex flex-col relative"
+                            style={BANK_SHIFT_STYLE}
                         >
                         <div className="flex-1 flex min-h-0 relative">
                         <div
@@ -337,6 +344,7 @@ export const ReactRoot = () => {
                                 />
                             </ErrorBoundary>
                         )}
+                        </div>
                         </HallCamera>
                         {/* The Atlas pops up over the mat column only: the nav beside it stays reachable to close it. */}
                         <AnimatePresence>
@@ -348,13 +356,6 @@ export const ReactRoot = () => {
                         </AnimatePresence>
                         <ErrorBoundary label="ArrivalCard"><ArrivalCard /></ErrorBoundary>
                     </div>
-                    {!menuRight && isBankOpen && !isGuildView && (
-                        // The Bank's hero column: the hero panel (below) draws over it.
-                        <aside
-                            style={{ width: columnWidthCss(NOTIFICATION_COLUMN) }}
-                            className="shrink-0 h-full pointer-events-none"
-                        />
-                    )}
                     {menuRight && <BubbleMenu ui={ui} side="right" />}
                     {/**
                      * The hero panel: one full-height panel on the notification side,
@@ -401,9 +402,6 @@ export const ReactRoot = () => {
             {(import.meta.env.DEV || (import.meta.env.MODE === 'perf' && debugMode)) && (
                 <>
                     <TestDashboard />
-                    {/* The ground's look, for the eye-check: dev builds only. */}
-                    {import.meta.env.DEV && <PlaymatTuner />}
-                    <MatTuner />
                     {/**
                      * Hidden while the Perf HUD is on: its own frame loop and per-second
                      * commit would be measured by the HUD, and the HUD shows frames

@@ -50,9 +50,10 @@ export function previewFit(mat, maxW, maxH) {
 }
 
 /**
- * Every Token the plan stands on the mat, and the Hall that lands in the middle of `mat`, back to
- * front as the mat stacks them (by height, the Hall arriving last): each one's centre in preview
- * pixels and its drawn size on the mat in preview pixels.
+ * Every Token the plan stands on the mat, and the Hall (at `layout.hallAt` when the plan says where
+ * it stands, else in the middle of `mat`, where it lands), back to front as the mat stacks them
+ * (by height, the Hall arriving last): each one's centre in preview pixels and its drawn size on
+ * the mat in preview pixels.
  */
 export function previewTokens(layout, mat, unit) {
     const out = [];
@@ -63,7 +64,7 @@ export function previewTokens(layout, mat, unit) {
         px: tokenSizeFor(TOKEN_SURFACE.BOARD, typeId, MAT_U_PER_ART_PX) / unit
     });
     for (const n of layout?.nodes || []) add(n.typeId, n.x, n.y);
-    const hall = hallSpot(mat);
+    const hall = layout?.hallAt || hallSpot(mat);
     add(HALL_TYPE_ID, hall.x, hall.y);
     return out
         .map((t, i) => ({ t, i }))

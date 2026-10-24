@@ -5,13 +5,38 @@ five-line summary at each batch's edges (proposed, looked at); anything older
 than two days is trimmed. States: queued · building · ready (tests, cycles,
 build green) · bench-queued · eye-check · merged.*
 
-## Backlog director, batch E: drawers, the Atlas and dev tools (brief 210; owner said keep going 2026-10-24)
+## Systems director, combat (brief 220; owner's go 2026-10-24)
+
+Owner 2026-10-22: **each director may run two code agents at once**; still one
+heavy run (suite, build, bench) at a time across both. Owner away from the PC
+until about 2026-10-25: looks by phone screenshots, design questions any time.
+Order from the brief: C1 alone; then C2 and C3 (or C5) in parallel; C4 after
+C2; C0 (the test content pack, accepted by the director) after C2; C6 last.
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| E1: drawers to the screen's left edge; opening the Bank moves the rest smoothly (T-235, T-236); drag bench if drag measuring is touched | builder | `backlog/drawers` (`ed`) | building | Sat | |
-| E2: the Atlas's Regions as a two-page spread (T-237) | builder | `backlog/atlas-spread` (`ea`) | building | Sat | |
-| E3: retire the Playmat Tuner and the terrain dev section, mat dials in the QA panel (T-238); no eye-check | builder-lite | — | queued, after E1/E2 | | |
+| C1: the numbers (HP 10 + level, weapon damage, misses 5–40 %, crits, flat armour, Pierce, weapon speeds, Recruits punch 1; proposed level table); WORK CHANGED expected | engineer | `systems/combat-numbers` (`sc`) | building | Sat | |
+| C2: gear and enemies (weapon styles, family abilities, enemy armour/Dodge/speed from the level table, enemy kinds) | engineer | — | queued, after C1 | | |
+| C3: supplies (food as today, drinks stop healing, elixirs for 10 fights, the "used" bubble) | builder | — | queued, after C1 | | |
+| C5: encounters (one-on-one, guardians, node ambushes, boss lairs) | engineer | — | queued, after C1 | | |
+| C4: Poison, Burn and boss moves in the Rules system; old status engine retired | engineer | — | queued, after C2 | | |
+| C0: first combat content pack, accepted by the director (guarded) | builder + director | — | queued, after C2 | | |
+| C6: the combat screen (mock-ups first, the owner picks by phone) | engineer | — | queued, last | | |
+
+## Backlog director, batch F: look-wide passes (brief 210; owner said go 2026-10-24: both, mock-ups first)
+
+| Phase | Tier | Branch (worktree) | State | Planned | Done |
+|---|---|---|---|---|---|
+| F1: pixel frames on every window, audit first (T-136) | builder | `backlog/pixel-frames` (`ff`) | building | Sat | |
+| F2: one bubble row between a hero and the Token it works (T-239): 2–3 mock-ups on the style sheet page first, owner picks; measure before and after | engineer | `backlog/bubble-row` (`fb`) | mock-ups | Sat | |
+
+## Backlog director, batch E: drawers, the Atlas and dev tools (brief 210; owner said keep going 2026-10-24) — **done, merged 56136a65**
+
+| Phase | Tier | Branch (worktree) | State | Planned | Done |
+|---|---|---|---|---|---|
+| E1: drawers to the screen's left edge; opening the Bank moves the rest smoothly (T-235, T-236); drag bench if drag measuring is touched | builder | `backlog/drawers` | **merged** 7b7244ef: drawers to the left edge, Bank opening slides the rest (0 mat redraws, no refit). Gate 5864 tests, cycles, build, same work; drag bench 300/300 on the kinds it runs (Shop and Bank kinds skipped, T-240; hand-checked by the builder). Particles over the open drawer: T-241 | Sat | Sat |
+| E2: the Atlas's Regions as a two-page spread (T-237) | builder | `backlog/atlas-spread` | **merged** 3398be7d: Regions as a two-page spread (ground preview once per selection, facts, landmarks, actions moved from the rows; the active flag now visible). Gate 5854 tests, cycles, build, same work | Sat | Sat |
+| E3: retire the Playmat Tuner and the terrain dev section, mat dials in the QA panel (T-238); no eye-check | builder-lite | `backlog/dev-tidy` | **merged** 56136a65 on the gate (owner-only tools): 5858 tests, cycles, build, same work. Stale research capture scripts that clicked the Terrain section: `top_bar/capture_top_bar.mjs`, `ground_gen/capture_biomes.mjs`, `place_today.mjs` | Sat | Sat |
 
 ## Backlog director, batch D: the Guild Hall upgrade screen (brief 210; owner said go 2026-10-23) — **done, merged e6abf4e2**
 

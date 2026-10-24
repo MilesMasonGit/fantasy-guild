@@ -13,6 +13,7 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
 import * as MatCap from '../systems/board/MatCap.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
+import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { matW, matH } from '../config/matGeometry.js';
 import {
@@ -50,6 +51,10 @@ vi.mock('../systems/core/CatchUp.js', async (importOriginal) => ({
  */
 
 const OAK = 'fixture_producer';
+const SITE = 'fixture_screen_site';
+registerTokenTypes({
+    [SITE]: { id: SITE, name: 'Screen Site', tokenType: 'resource', landmark: true, rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature' }
+});
 const WOOD_ITEM = 'map_test_screen_wood';
 const THICKET_ITEM = 'mod_test_screen_thicket';
 registerItems({
@@ -66,8 +71,9 @@ registerItems({
 const bank = (id) => InventoryManager.getItemCount(id);
 const regionCount = () => Object.keys(GameState.state.atlas.regions).length;
 const q = (container, sel) => container.querySelector(sel);
-/** Open Region `id`'s "…" menu (Rename, Archive, Abandon). */
-const openMenu = (container, id) => fireEvent.click(container.querySelector(`[data-region-menu="${id}"]`));
+/** Show Region `id` on the right page (outside `act`, so the page is drawn before its Travel is pressed). */
+const pick = (container, id) => fireEvent.click(container.querySelector(`[data-region-select="${id}"]`));
+const pressTravel = (container, id) => fireEvent.click(container.querySelector(`[data-region-travel="${id}"]`));
 const slotItems = (container) => [...container.querySelectorAll('[data-cartography-slot]')].map(b => b.getAttribute('data-slot-item'));
 
 function newGame() {
@@ -294,37 +300,77 @@ describe('the Region list', () => {
         }));
         return { ...view, onTravel };
     };
+    const page = (container) => q(container, '[data-region-detail]');
 
-    it('lists each Region with its names; the active one shows the hero flag, not Travel', () => {
+    it('lists each Region on the left page with its names; the active one shows the hero flag and is shown first', () => {
         const { region } = Atlas.createRegion({ ingredients: [WOOD_ITEM] });
         const starter = Atlas.activeRegionId();
         const { container } = renderList();
-        const here = q(container, `[data-region-row="${starter}"]`);
+        const left = q(container, '[data-tome-left]');
+        const here = q(left, `[data-region-row="${starter}"]`);
         expect(here.getAttribute('data-region-active')).toBe('true');
         expect(q(here, '[data-region-here]')).toBeTruthy();
-        expect(q(here, '[data-region-travel]')).toBeNull();
         expect(here.textContent).toContain(TEXT.STARTER_CAMP);
         expect(here.textContent).not.toContain('Settled day');
         expect(here.textContent).not.toContain('Token');
-        const other = q(container, `[data-region-row="${region.id}"]`);
+        const other = q(left, `[data-region-row="${region.id}"]`);
         expect(other.textContent).toContain(region.flavourName);
         expect(other.textContent).toContain('Wood');
-        expect(q(other, `[data-region-travel="${region.id}"]`)).toBeTruthy();
+        // The rows hold no actions: those are on the right page, and no row is.
+        expect(q(left, '[data-region-travel], [data-region-rename], [data-region-archive], [data-region-abandon]')).toBeNull();
+        expect(q(container, '[data-tome-right] [data-region-row]')).toBeNull();
+        expect(page(container).getAttribute('data-region-detail')).toBe(starter);
+        expect(q(here, '[data-region-select]').getAttribute('aria-pressed')).toBe('true');
+        expect(q(page(container), '[data-region-travel]')).toBeNull();
+    });
+
+    it('a click on a row shows that Region on the right page, with Travel', () => {
+        const { region } = Atlas.createRegion({ ingredients: [WOOD_ITEM] });
+        const { container, onTravel } = renderList();
+        fireEvent.click(q(container, `[data-region-select="${region.id}"]`));
+        expect(page(container).getAttribute('data-region-detail')).toBe(region.id);
+        expect(q(container, `[data-region-select="${region.id}"]`).getAttribute('aria-pressed')).toBe('true');
+        expect(q(container, `[data-region-row="${region.id}"] [data-region-selected]`)).toBeTruthy();
+        expect(q(container, `[data-region-row="${Atlas.activeRegionId()}"] [data-region-selected]`)).toBeNull();
+        expect(page(container).textContent).toContain(region.flavourName);
+        fireEvent.click(q(page(container), `[data-region-travel="${region.id}"]`));
+        expect(onTravel).toHaveBeenCalledWith(region.id);
+    });
+
+    it('the right page says what the Region holds: its ground, its Tokens, heroes with a flag there, its landmarks, its Tokens by type', () => {
+        const { region } = Atlas.createRegion({ ingredients: [WOOD_ITEM], biome: { forest: 1, mountain: 1 }, ground: { main: 'mountain' } });
+        Atlas.getRegion(region.id).board.tokens = {
+            a: { typeId: OAK }, b: { typeId: OAK }, s: { typeId: SITE }, h: { typeId: 'token_guild_hall' }
+        };
+        Atlas.getRegion(region.id).board.flags = { hero_a: { x: 1, y: 1, plantedAt: 0 } };
+        const { container } = renderList();
+        fireEvent.click(q(container, `[data-region-select="${region.id}"]`));
+        const stat = (id) => q(page(container), `[data-region-stat="${id}"] dd`).textContent;
+        expect(stat('ground')).toBe('Mountain, Forest');
+        expect(stat('tokens')).toBe('3');
+        expect(stat('heroes')).toBe('1');
+        expect(q(page(container), `[data-region-landmark="${SITE}"]`).textContent).toContain('Screen Site');
+        expect(q(page(container), `[data-region-landmark="${OAK}"]`)).toBeNull();
+        // Its other Tokens as sprites with counts; the Hall travels with the guild and is not listed.
+        const held = [...page(container).querySelectorAll('[data-region-token]')].map(e => [e.getAttribute('data-region-token'), e.getAttribute('data-count')]);
+        expect(held).toEqual([[OAK, '2']]);
+        // The Starter Camp, with no map behind it, is meadow.
+        fireEvent.click(q(container, `[data-region-select="${Atlas.activeRegionId()}"]`));
+        expect(stat('ground')).toBe('Meadow');
+        expect(q(page(container), '[data-region-landmarks]')).toBeNull();
     });
 
     it('Abandon asks first, and refuses the Region the guild is in and the Starter Camp', () => {
         const { region } = Atlas.createRegion({ ingredients: [WOOD_ITEM] });
-        const starter = Atlas.activeRegionId();
         const { container } = renderList();
 
-        openMenu(container, starter);
-        const activeAbandon = q(container, `[data-region-abandon="${starter}"]`);
+        const activeAbandon = q(page(container), '[data-region-abandon]');
         expect(activeAbandon.disabled).toBe(true);
         expect(activeAbandon.getAttribute('title')).toBe(TEXT.REFUSE_ACTIVE);
         fireEvent.click(activeAbandon);
         expect(q(container, '[data-region-abandon-confirm]')).toBeNull();
 
-        openMenu(container, region.id);
+        fireEvent.click(q(container, `[data-region-select="${region.id}"]`));
         fireEvent.click(q(container, `[data-region-abandon="${region.id}"]`));
         expect(q(container, `[data-region-abandon-confirm="${region.id}"]`)).toBeTruthy();
         expect(Atlas.getRegion(region.id)).toBeTruthy();
@@ -332,11 +378,12 @@ describe('the Region list', () => {
         expect(q(container, '[data-region-abandon-confirm]')).toBeNull();
         expect(Atlas.getRegion(region.id)).toBeTruthy();
 
-        openMenu(container, region.id);
         fireEvent.click(q(container, `[data-region-abandon="${region.id}"]`));
         fireEvent.click(q(container, `[data-region-abandon-yes="${region.id}"]`));
         expect(Atlas.getRegion(region.id)).toBeNull();
         expect(q(container, `[data-region-row="${region.id}"]`)).toBeNull();
+        // The page goes back to the Region the guild is in.
+        expect(page(container).getAttribute('data-region-detail')).toBe(Atlas.activeRegionId());
     });
 
     it('the Starter Camp cannot be abandoned from elsewhere either', () => {
@@ -344,7 +391,8 @@ describe('the Region list', () => {
         const starter = Atlas.activeRegionId();
         expect(Atlas.travel(region.id).success).toBe(true);
         const { container } = renderList();
-        openMenu(container, starter);
+        expect(page(container).getAttribute('data-region-detail')).toBe(region.id);
+        fireEvent.click(q(container, `[data-region-select="${starter}"]`));
         const button = q(container, `[data-region-abandon="${starter}"]`);
         expect(button.disabled).toBe(true);
         expect(button.getAttribute('title')).toBe(TEXT.REFUSE_STARTER);
@@ -353,15 +401,15 @@ describe('the Region list', () => {
     it('renames the flavour name inline: Enter keeps it, Escape does not', () => {
         const { region } = Atlas.createRegion({ ingredients: [WOOD_ITEM] });
         const { container } = renderList();
-        openMenu(container, region.id);
+        fireEvent.click(q(container, `[data-region-select="${region.id}"]`));
         fireEvent.click(q(container, `[data-region-rename="${region.id}"]`));
-        let input = q(container, `[data-region-rename-input="${region.id}"]`);
+        let input = q(page(container), `[data-region-rename-input="${region.id}"]`);
         fireEvent.change(input, { target: { value: '  Copper Hollow  ' } });
         fireEvent.keyDown(input, { key: 'Enter' });
         expect(Atlas.getRegion(region.id).flavourName).toBe('Copper Hollow');
         expect(q(container, `[data-region-row="${region.id}"]`).textContent).toContain('Copper Hollow');
+        expect(page(container).textContent).toContain('Copper Hollow');
 
-        openMenu(container, region.id);
         fireEvent.click(q(container, `[data-region-rename="${region.id}"]`));
         input = q(container, `[data-region-rename-input="${region.id}"]`);
         fireEvent.change(input, { target: { value: 'Never Mind' } });
@@ -369,7 +417,6 @@ describe('the Region list', () => {
         fireEvent.blur(input);
         expect(Atlas.getRegion(region.id).flavourName).toBe('Copper Hollow');
 
-        openMenu(container, region.id);
         fireEvent.click(q(container, `[data-region-rename="${region.id}"]`));
         input = q(container, `[data-region-rename-input="${region.id}"]`);
         fireEvent.change(input, { target: { value: '   ' } });
@@ -381,18 +428,25 @@ describe('the Region list', () => {
     it('archives a Region into the archive list and restores it', () => {
         const { region } = Atlas.createRegion({ ingredients: [WOOD_ITEM] });
         const { container } = renderList();
-        openMenu(container, region.id);
+        // The Region the guild is in cannot be archived: no button.
+        expect(q(page(container), '[data-region-archive]')).toBeNull();
+        fireEvent.click(q(container, `[data-region-select="${region.id}"]`));
         fireEvent.click(q(container, `[data-region-archive="${region.id}"]`));
+        expect(Atlas.getRegion(region.id).archived).toBe(true);
         // The archive sits behind a toggle at the foot of the list.
         expect(q(container, '[data-region-archive-list]')).toBeNull();
+        expect(page(container).getAttribute('data-region-detail')).toBe(Atlas.activeRegionId());
         fireEvent.click(q(container, '[data-region-archive-toggle]'));
         const archive = q(container, '[data-region-archive-list]');
         expect(q(archive, `[data-region-row="${region.id}"]`)).toBeTruthy();
-        expect(q(archive, `[data-region-travel="${region.id}"]`)).toBeNull();
-        fireEvent.click(q(archive, `[data-region-restore="${region.id}"]`));
+        fireEvent.click(q(archive, `[data-region-select="${region.id}"]`));
+        expect(q(page(container), `[data-region-travel="${region.id}"]`)).toBeNull();
+        expect(q(page(container), `[data-region-archive="${region.id}"]`)).toBeNull();
+        fireEvent.click(q(page(container), `[data-region-restore="${region.id}"]`));
         expect(q(container, '[data-region-archive-list]')).toBeNull();
         expect(q(container, '[data-region-archive-toggle]')).toBeNull();
         expect(Atlas.getRegion(region.id).archived).toBe(false);
+        expect(page(container).getAttribute('data-region-detail')).toBe(region.id);
     });
 });
 
@@ -406,7 +460,8 @@ describe('the Atlas screen', () => {
         const { region } = Atlas.createRegion({ ingredients: [WOOD_ITEM] });
         const onClose = vi.fn();
         const { container } = screen({ onClose });
-        await act(async () => { fireEvent.click(q(container, `[data-region-travel="${region.id}"]`)); });
+        pick(container, region.id);
+        await act(async () => { pressTravel(container, region.id); });
         expect(Atlas.activeRegionId()).toBe(region.id);
         expect(onClose).toHaveBeenCalledTimes(1);
     });
@@ -418,7 +473,8 @@ describe('the Atlas screen', () => {
         const onClose = vi.fn();
         const closePromotion = vi.fn();
         const { container } = screen({ onClose, closePromotion });
-        await act(async () => { fireEvent.click(q(container, `[data-region-travel="${region.id}"]`)); });
+        pick(container, region.id);
+        await act(async () => { pressTravel(container, region.id); });
         expect(Atlas.activeRegionId()).toBe(starter);
         expect(q(container, '[data-region-message]').textContent).toBe(TEXT.REFUSE_CATCHING_UP);
         expect(onClose).not.toHaveBeenCalled();
@@ -437,8 +493,9 @@ describe('the Atlas screen', () => {
                 onClose: () => order.push('closed'),
                 closePromotion: () => order.push('promotion closed')
             });
+            pick(container, region.id);
             await act(async () => {
-                fireEvent.click(q(container, `[data-region-travel="${region.id}"]`));
+                pressTravel(container, region.id);
                 await new Promise(r => setTimeout(r, 120));
             });
             expect(order).toEqual(['drag ended', 'promotion closed', 'travelled', 'closed']);
@@ -455,7 +512,8 @@ describe('the Atlas screen', () => {
         document.addEventListener('keydown', onKey);
         try {
             const { container } = screen();
-            await act(async () => { fireEvent.click(q(container, `[data-region-travel="${region.id}"]`)); });
+            pick(container, region.id);
+            await act(async () => { pressTravel(container, region.id); });
             expect(keys).toEqual([]);
             expect(Atlas.activeRegionId()).toBe(region.id);
         } finally {

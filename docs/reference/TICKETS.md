@@ -58,12 +58,9 @@ Detail, order and tiers in [brief 210](../active/briefs/210_backlog_intake.md); 
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
-| T-235 | P3 | open | **Bank and Shop drawers reach the left edge as one panel** (DRAWER-01). Eye-check. | brief 210 E1 |
-| T-236 | P2 | open | **Opening the Bank moves the top bar, stubs and mat smoothly** (DRAWER-02). Eye-check. | brief 210 E1 |
-| T-237 | P2 | open | **Atlas Regions as a two-page spread**: list left, selected Region preview right (ATLAS-01). Eye-check. | brief 210 E2 |
-| T-238 | P3 | open | **Retire the Playmat Tuner and terrain dev section**; mat dials stay in the QA panel (DEV-01). After T-215/T-216. | brief 210 E3 |
 | T-239 | P2 | open | **One bubble row between a hero and the Token it works**, with tooltips (BUBBLE-01). Mock-ups first; measure (T-198). Engineer. Eye-check. | brief 210 F2 |
 | T-240 | P3 | open | **The drag bench skips its Shop and Bank kinds** (found 2026-10-23, same on `main` af6b21c7): every Shop row → mat attempt says "no affordable Shop row" and every Bank item → dock hero attempt "no equippable item tile visible (0 tiles)", so `npm run bench:drag` has not tested those two drags. Likely the harness set-up predates the item stubs, the Bank changes or the tools-as-gear content. Fix the set-up so both kinds run 50/50; also `bench/drag.mjs` rests the pointer on the old sidebar strip spot (STATUS bench note). Builder. No eye-check. | Backlog director, drag bench on T-222 |
+| T-241 | P3 | open | **Loot particles and flights draw over an open Bank drawer** (seen 2026-10-24 in the drawer captures; older than the drawer change): the particle canvas sits above the drawer, so loot sparkle/flight pixels show on top of the Bank. Put the particle layer under the drawers (z-index table in UI_STYLE), or pause loot flights while a drawer covers the mat. Builder. No eye-check beyond one capture. | Backlog director, brief 210 E1 |
 
 ### UI
 

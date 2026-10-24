@@ -171,7 +171,7 @@ describe('which banner a Region shows', () => {
 });
 
 describe('where the banner shows', () => {
-    it('each Region row lies on its banner with only its names, Travel and the menu; the Starter Camp first, then by the day settled', () => {
+    it('each Region row lies on its banner with only its names (its actions are on the right page); the Starter Camp first, then by the day settled', () => {
         const { region: later } = Atlas.createRegion({ ingredients: [FOREST], ground: { main: 'forest' } });
         const { region: earlier } = Atlas.createRegion({ ingredients: [PLAIN], ground: { main: 'forest' } });
         Atlas.getRegion(later.id).settledAt = 5000;
@@ -187,13 +187,14 @@ describe('where the banner shows', () => {
         expect(q(rows[1], `[data-region-node="${OAK}"]`)).toBeNull();
         expect(q(rows[1], '[data-region-heroes]')).toBeNull();
         expect(rows[1].textContent).not.toMatch(/Settled day|Token/);
-        expect(q(rows[1], '[data-region-travel]')).toBeTruthy();
-        expect(q(rows[1], '[data-region-menu]')).toBeTruthy();
-        // The Region the guild is in shows the plain hero flag at 1x in place of Travel.
+        expect(q(rows[1], '[data-region-travel]')).toBeNull();
+        expect(q(rows[1], '[data-region-select]')).toBeTruthy();
+        // The Region the guild is in shows the plain hero flag at 1x.
         const flag = q(q(rows[0], '[data-region-here]'), 'img');
         expect(flag.getAttribute('src')).toBe('/assets/ui/u_flag_base.png');
         expect(flag.style.width).toBe('64px');
-        expect(q(rows[0], '[data-region-travel]')).toBeNull();
+        // The right page shows the selected Region on its banner too.
+        expect(q(container, '[data-region-detail] [data-banner-art]').getAttribute('data-banner-art')).toBe('b_golden_plains');
     });
 
     it('orders by kind, then day, then as written; ', () => {
