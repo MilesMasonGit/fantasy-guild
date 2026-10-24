@@ -418,6 +418,11 @@ function auditStatements(out, where, def) {
         // one fires on nothing — and reads in the picker as if it were the
         // coarse "a neighbour completes a cycle" trigger sitting above it.
         const trigger = getTriggerEvent(statement?.when?.event);
+        if (trigger?.keywords && !trigger.keywords.includes(statement?.keyword)) {
+            out.push(finding(where,
+                `one of its rules waits on "${trigger.label}" but does something that moment never runs ` +
+                `(${getKeyword(statement.keyword)?.label || statement.keyword}), so it does nothing`));
+        }
         if (trigger?.needsItem && !statement.when.watchItemId) {
             out.push(finding(where,
                 `one of its rules waits for a neighbour to produce a specific item but never says which, so it never fires`));

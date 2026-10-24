@@ -26,7 +26,8 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 describe('tick handlers have explicit priorities that reproduce today\'s order (CR3-031)', () => {
     const NAMES = [
         'time_tracking', 'live_effects', 'regen_system', 'board_runner',
-        'quest_manager', 'sprite_layer', 'wounded_system', 'status_effects'
+        // The old status engine's `status_effects` handler is gone: statuses tick on `live_effects`.
+        'quest_manager', 'sprite_layer', 'wounded_system'
     ];
 
     beforeAll(() => {
@@ -39,7 +40,7 @@ describe('tick handlers have explicit priorities that reproduce today\'s order (
         for (const name of NAMES) GameLoop.offTick(name);
     });
 
-    it('registers all nine handlers, each with its own non-default priority', () => {
+    it('registers every handler, each with its own non-default priority', () => {
         const byName = new Map(GameLoop.tickHandlers.map(h => [h.name, h]));
         for (const name of NAMES) expect(byName.has(name), `${name} is registered`).toBe(true);
 

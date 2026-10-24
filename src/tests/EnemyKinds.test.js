@@ -17,6 +17,9 @@ import { enemyProfileOf, enemyFilledStats } from '../config/registries/enemyProf
 import { ENEMY_KINDS, MAX_ENEMY_KINDS, enemyKindsOf, kindsClash } from '../config/registries/enemyKinds.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { findUnknownRefs } from '../systems/core/unknownRefRule.js';
+import * as FightMoments from '../systems/board/FightMoments.js';
+import * as LiveEffects from '../systems/effects/LiveEffects.js';
+import { registerStatusFixtures, POISON } from './fixtures/statusEffects.js';
 
 /**
  * The five enemy kinds (brief 220, C2): presets an author ticks on an enemy, none to two, that twist
@@ -46,7 +49,7 @@ describe('how a kind combines with the level table', () => {
     it('no kind: exactly the level table (level 1: 21 HP, hit 1, armour 0, 3 s, 10 XP)', () => {
         expect(pick(stats(1, undefined))).toEqual({ hp: 21, hit: 1, armor: 0, speed: 'normal', xp: 10, dodge: 0 });
         expect(stats(1, []).kinds).toEqual([]);
-        expect(stats(1, []).statusOnHit).toBeUndefined();
+        expect(stats(1, []).onHit).toBeUndefined();
     });
 
     it('Armoured: +2 armour and a slow swing, its hit unchanged; HP and XP untouched', () => {
@@ -73,8 +76,8 @@ describe('how a kind combines with the level table', () => {
         expect(stats(1, ['brute']).attackSpeed).toBe(4000);
     });
 
-    it('Venomous: every landed hit poisons (the old status engine\'s Poison until statuses move to the Rules)', () => {
-        expect(stats(1, ['venomous']).statusOnHit).toEqual([{ statusId: 'poison', chance: 1, stacks: 1 }]);
+    it('Venomous: every landed hit lands the Poison status effect (effect_poison)', () => {
+        expect(stats(1, ['venomous']).onHit).toEqual([{ effectId: 'effect_poison' }]);
         expect(pick(stats(1, ['venomous']))).toEqual(pick(stats(1, [])));
     });
 
@@ -137,6 +140,8 @@ describe('a fight against each kind', () => {
         BoardCombat.init();
         BoardCombat.clearAll();
         TileModifiers.clearAll();
+        registerStatusFixtures();
+        FightMoments.init();
     }
 
     /** On a fresh board, plant a level-99 hero on one enemy for `ms` and record every swing. */
@@ -178,10 +183,10 @@ describe('a fight against each kind', () => {
         expect(new Set(plated)).toEqual(new Set([3]));
     });
 
-    it('Venomous poisons the hero on the hits it lands; the others never do', () => {
+    it('Venomous poisons the hero on the hits it lands, up to 3 stacks; the others never do', () => {
         const venom = duel('kind_venomous');
-        expect(venom.statuses.filter(s => s === 'poison').length).toBeGreaterThan(0);
-        expect(venom.hero.statuses.find(s => s.id === 'poison')?.stacks).toBeGreaterThan(0);
+        expect(venom.statuses.filter(s => s === POISON).length).toBeGreaterThan(3);
+        expect(LiveEffects.statusesOf(venom.hero)).toEqual([{ effectId: POISON, stacks: 3, ticksLeft: null }]);
         expect(duel('kind_none').statuses).toEqual([]);
     });
 });

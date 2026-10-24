@@ -59,11 +59,14 @@ export const SLOT_KIND = Object.freeze({
 const option = (id, label, hint = '') => ({ id, label, hint });
 
 /**
- * Which moments a statement may legally name. ⚠️ This returns every moment; callers must not
- * offer it to a keyword that cannot carry a trigger (`slotsOf` checks `KEYWORDS`).
+ * Which moments a statement may legally name: every moment, less those that run only some verbs
+ * (a fight moment runs Applies, Deals, Heals and Removes). ⚠️ Callers must not offer it to a
+ * keyword that cannot carry a trigger (`slotsOf` checks `KEYWORDS`).
  */
-function momentOptions() {
-    return TRIGGER_EVENTS.map(t => option(t.id, t.label, t.hint));
+function momentOptions(keywordId) {
+    return TRIGGER_EVENTS
+        .filter(t => !t.keywords || t.keywords.includes(keywordId))
+        .map(t => option(t.id, t.label, t.hint));
 }
 
 /**
@@ -513,7 +516,7 @@ export function slotsOf(statement, ctx = {}) {
             id: 'moment', kind: SLOT_KIND.VOCABULARY, label: 'when',
             value: statement?.when?.event || null,
             required: keyword.when === WHEN.REQUIRED,
-            options: momentOptions(),
+            options: momentOptions(statement.keyword),
             patch: v => {
                 const definition = getTriggerEvent(v);
                 return {

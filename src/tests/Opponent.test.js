@@ -376,10 +376,15 @@ describe('7. G-42: Restores and Transforms cannot aim at the enemy', () => {
         }
     });
 
-    it('Applies: the role slot appears only on a combat moment, and hides filter and reach once chosen', () => {
+    it('Applies: the enemy is offered only on a combat moment, and a chosen role hides filter and reach', () => {
         const ids = (st) => slotsOf(st).map(s => s.id);
+        // A moment with no fighter in it offers no role at all.
+        const bank = { ...makeStatement(KEYWORD.APPLIES), when: { event: 'ITEM_THRESHOLD', scope: 'global', watchItemId: '', threshold: 1 } };
+        expect(ids(bank)).not.toContain('role');
+        expect(ids(bank)).toEqual(expect.arrayContaining(['reach', 'filterMode', 'filters']));
+        // A cycle has a hero but no enemy: "the hero" is offered, never "the enemy".
         const plain = { ...makeStatement(KEYWORD.APPLIES), when: { event: 'CYCLE_START', scope: 'nearby' } };
-        expect(ids(plain)).not.toContain('role');
+        expect(slotsOf(plain).find(s => s.id === 'role').options.map(o => o.id)).toEqual(['', 'actor']);
         expect(ids(plain)).toEqual(expect.arrayContaining(['reach', 'filterMode', 'filters']));
 
         const offeredOnly = { ...makeStatement(KEYWORD.APPLIES), when: onEngaged };

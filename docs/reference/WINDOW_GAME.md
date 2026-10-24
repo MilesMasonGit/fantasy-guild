@@ -23,7 +23,7 @@ see [`TESTING.md`](TESTING.md), "Running the game for verification".)
   can't reach; prefer the dev panel or a QA fixture save for anything the
   owner will look at.
 
-## The entries (32)
+## The entries (31)
 
 | Entry | What it is | Reached for most |
 |---|---|---|

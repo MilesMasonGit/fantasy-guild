@@ -82,13 +82,14 @@ function healthShare(fight, side) {
 
 /**
  * Whether a rule waiting on this moment fires now: every Nth swing or hit, or the first time this
- * fight that its side's health is below its share. ⚠️ A health rule is marked as fired the moment
- * its share is crossed, whatever it then does: once per fight is once.
+ * fight that its side's health (`share`, read once for the whole moment) is below its share.
+ * ⚠️ A health rule is marked as fired the moment its share is crossed, whatever it then does: once
+ * per fight is once.
  */
-function fires(statement, fight, side, momentId, count) {
+function fires(statement, fight, side, momentId, count, share) {
     const when = statement.when;
     if (momentId === FIGHT_MOMENT.HP_BELOW) {
-        if (!(healthShare(fight, side) < healthBelowOf(when))) return false;
+        if (!(share < healthBelowOf(when))) return false;
         const fired = talliesOf(fight).healthFired;
         const key = `${side}:${statement.sourceEffectId || ''}:${statement.id}`;
         if (fired[key]) return false;
@@ -125,10 +126,13 @@ function act(statement, roles, fight) {
 export function run(fight, side, momentId, count = 0) {
     if (!fight?.combat) return 0;
     const roles = rolesOf(fight, side);
+    // ⚠️ Read once: every rule on this moment sees the health that set it off, so a heal earlier in
+    // the list cannot lift the boss back over the share before its armour rule is read.
+    const share = momentId === FIGHT_MOMENT.HP_BELOW ? healthShare(fight, side) : 100;
     let acted = 0;
     for (const statement of rulesOf(fight, side)) {
         if (statement?.when?.event !== momentId) continue;
-        if (!fires(statement, fight, side, momentId, count)) continue;
+        if (!fires(statement, fight, side, momentId, count, share)) continue;
         if (!act(statement, roles, fight)) continue;
         // The creature's name for its move, or the item's, over the enemy Token.
         EffectFeedback.announce(fight.instanceId, statement);

@@ -4,6 +4,7 @@ import { registerItems } from '../config/registries/itemRegistry.js';
 import { registerTokenTypes, getTokenType } from '../config/registries/tokenRegistry.js';
 import { registerRecipePools } from '../config/registries/recipePoolRegistry.js';
 import { auditConnectivity } from '../../cms/src/engine/connectivityAuditor.js';
+import { registerStatusFixtures } from './fixtures/statusEffects.js';
 
 /**
  * The content-integrity audit.
@@ -147,6 +148,7 @@ describe('The audit names content pointing at a skill or job that does not exist
     const rule = (id, keyword, payload) => ({ id, keyword, payload });
 
     beforeAll(() => {
+        registerStatusFixtures();
         registerTokenTypes({
             fixture_unknown_work_skill: {
                 id: 'fixture_unknown_work_skill', name: 'Unknown Work Skill', requiresHero: true,
@@ -178,7 +180,8 @@ describe('The audit names content pointing at a skill or job that does not exist
                     rule('stm_fx_blank_job', 'promotes', { jobId: '' }),
                     rule('stm_fx_combat_scope', 'provides', { type: 'YIELD', bucket: 'percentage', value: 0.1, category: 'combat' }),
                     rule('stm_fx_skill_scope', 'provides', { type: 'YIELD', bucket: 'percentage', value: 0.1, category: 'stealth' }),
-                    rule('stm_fx_status_scope', 'provides', { type: 'STATUS_IMMUNITY', bucket: 'flat', value: 1, category: 'poisoned' })
+                    // A status is a library effect with a status block: this one exists (`registerStatusFixtures`).
+                    rule('stm_fx_status_scope', 'provides', { type: 'STATUS_IMMUNITY', bucket: 'flat', value: 1, category: 'effect_poison' })
                 ]
             }
         });

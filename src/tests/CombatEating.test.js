@@ -16,13 +16,6 @@ vi.mock('../systems/hero/HeroManager.js', () => ({
     setHeroStatus: vi.fn()
 }));
 
-vi.mock('../systems/effects/StatusEffectSystem.js', () => ({
-    rollAttackFailure: vi.fn(() => false),
-    applyToEnemy: vi.fn(),
-    applyToHero: vi.fn(),
-    notifyHitTaken: vi.fn()
-}));
-
 vi.mock('../utils/CombatFormulas.js', () => ({
     rollSwing: vi.fn(() => ({ hit: true, crit: false })),
     heroMissChance: vi.fn(() => 10),

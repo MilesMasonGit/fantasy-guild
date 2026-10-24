@@ -75,6 +75,9 @@ export const TRIGGER_SCOPES = {
  * both, and typing narrows on both, so the old prose is still how an author
  * finds a moment they cannot yet name.
  */
+/** The verbs a fight moment runs (`FightMoments`); the editor offers its moments to no other. */
+const FIGHT_MOMENT_KEYWORDS = Object.freeze(['applies', 'deals', 'heals', 'removes']);
+
 export const TRIGGER_EVENTS = [
     {
         id: 'CYCLE_COMPLETE',
@@ -281,6 +284,7 @@ export const TRIGGER_EVENTS = [
         countNoun: 'Swing',
         scopes: [TRIGGER_SCOPES.SELF],
         fightMoment: true,
+        keywords: FIGHT_MOMENT_KEYWORDS,
         hint: 'Fires as this fighter swings, before the swing is rolled: an enemy\'s own swings, or a hero\'s for their items. Every 4th fires on swings 4, 8, 12… of each fight. A rule here can shape that swing: applies … for the swing.'
     },
     {
@@ -291,6 +295,7 @@ export const TRIGGER_EVENTS = [
         countNoun: 'Hit',
         scopes: [TRIGGER_SCOPES.SELF],
         fightMoment: true,
+        keywords: FIGHT_MOMENT_KEYWORDS,
         hint: 'Fires when this fighter lands a hit, after its damage, if the other side still stands. Misses do not count. Every 3rd fires on hits 3, 6, 9… of each fight. How a poison or burn lands on a hit.'
     },
     {
@@ -300,6 +305,7 @@ export const TRIGGER_EVENTS = [
         label: 'On Health Below',
         scopes: [TRIGGER_SCOPES.SELF],
         fightMoment: true,
+        keywords: FIGHT_MOMENT_KEYWORDS,
         needsPercent: true,
         hint: 'Fires once in a fight, the first time this fighter\'s health is below the share you set: an enemy\'s own health, or a hero\'s for their items. A boss\'s heal or enrage at low health.'
     },

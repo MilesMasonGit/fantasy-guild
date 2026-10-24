@@ -5,7 +5,8 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import * as EquipmentManager from '../systems/equipment/EquipmentManager.js';
 import * as HeroEffects from '../systems/hero/HeroEffects.js';
-import * as StatusEffectSystem from '../systems/effects/StatusEffectSystem.js';
+import * as LiveEffects from '../systems/effects/LiveEffects.js';
+import { registerStatusFixtures, POISON, BURN } from './fixtures/statusEffects.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
@@ -50,13 +51,15 @@ const provides = (type, value, extra = {}) => ({
     payload: { type, bucket: 'flat', value, ...extra }
 });
 
+registerStatusFixtures();
+
 // The families: one library effect each, every tier pointing at it with its own scale.
 registerEffects({
     gear_spear: { id: 'gear_spear', name: 'Spear', statements: [provides(EFFECT_TYPES.PIERCE, 1)] },
     gear_bow: { id: 'gear_bow', name: 'Bow', statements: [provides(EFFECT_TYPES.ACCURACY, 5)] },
     gear_rapier: { id: 'gear_rapier', name: 'Rapier', statements: [provides(EFFECT_TYPES.CRIT_CHANCE, 5)] },
     gear_cleaver: { id: 'gear_cleaver', name: 'Cleaver', statements: [provides(EFFECT_TYPES.DOUBLE_DROP, 50, { category: 'item_raw_beef' })] },
-    gear_hide: { id: 'gear_hide', name: 'Hide Vest', statements: [provides(EFFECT_TYPES.STATUS_MAX_STACKS, -1, { category: 'burning' })] },
+    gear_hide: { id: 'gear_hide', name: 'Hide Vest', statements: [provides(EFFECT_TYPES.STATUS_MAX_STACKS, -1, { category: POISON })] },
     gear_cloak: { id: 'gear_cloak', name: 'Cloak', statements: [provides(EFFECT_TYPES.DODGE, 10)] }
 });
 
@@ -313,32 +316,37 @@ describe('a family\'s ability is a Rules effect on the item; the tier raises the
     });
 });
 
-describe('Hide Vest: a status stacks at most 1 lower (the hook statuses will use)', () => {
-    it('Burning (3 stacks) builds to 2 on a hero in a Hide Vest, 3 without', () => {
+describe('Hide Vest: poison stacks at most 1 lower', () => {
+    // Statuses land only on a fighter; these heroes count as fighting.
+    beforeEach(() => LiveEffects.setFightCheck(() => true));
+    afterEach(() => LiveEffects.setFightCheck(null));
+    const stacksOf = (hero, id) => LiveEffects.statusesOf(hero).find(s => s.effectId === id)?.stacks ?? 0;
+
+    it('Poison (3 stacks) builds to 2 on a hero in a Hide Vest, 3 without', () => {
         const plain = addHero('A', 'melee');
         const vested = addHero('B', 'melee');
         equipOk(vested, 'gear_hide_vest');
-        expect(CF.heroStatusStackCap(vested, 'burning', 3)).toBe(2);
+        expect(CF.heroStatusStackCap(vested, POISON, 3)).toBe(2);
         for (let i = 0; i < 5; i++) {
-            StatusEffectSystem.applyToHero(plain.id, 'burning', 1);
-            StatusEffectSystem.applyToHero(vested.id, 'burning', 1);
+            LiveEffects.applyToHero(plain.id, { effectId: POISON });
+            LiveEffects.applyToHero(vested.id, { effectId: POISON });
         }
-        expect(plain.statuses.find(s => s.id === 'burning').stacks).toBe(3);
-        expect(vested.statuses.find(s => s.id === 'burning').stacks).toBe(2);
-        // Only the status it names: Poison is untouched.
-        expect(CF.heroStatusStackCap(vested, 'poison', 3)).toBe(3);
+        expect(stacksOf(plain, POISON)).toBe(3);
+        expect(stacksOf(vested, POISON)).toBe(2);
+        // Only the status it names: Burn is untouched.
+        expect(CF.heroStatusStackCap(vested, BURN, 1)).toBe(1);
     });
 
     it('a cap moved to 0 stops the status landing (said as a block); stacks already carried are never stripped', () => {
         const hero = addHero('A', 'melee');
-        StatusEffectSystem.applyToHero(hero.id, 'burning', 3);
+        for (let i = 0; i < 3; i++) LiveEffects.applyToHero(hero.id, { effectId: POISON });
         const blocked = [];
         const off = EventBus.subscribe(ENGINE_EVENTS.STATUS_BLOCKED, (p) => blocked.push(p.statusId));
         equipOk(hero, 'gear_thick_hide');               // scale 3: at most 3 lower
-        expect(StatusEffectSystem.applyToHero(hero.id, 'burning', 1)).toEqual({ success: true, blocked: true });
+        expect(LiveEffects.applyToHero(hero.id, { effectId: POISON })).toBe(false);
         off();
-        expect(blocked).toEqual(['burning']);
-        expect(hero.statuses.find(s => s.id === 'burning').stacks).toBe(3);
+        expect(blocked).toEqual([POISON]);
+        expect(stacksOf(hero, POISON)).toBe(3);
     });
 });
 
@@ -442,9 +450,18 @@ describe('the Rules editor offers the new modifiers', () => {
             .toContain('a 10% chance of double Raw Beef');
     });
 
-    it('the Hide Vest reads as a sentence about poison', () => {
-        const statement = { ...makeStatement(KEYWORD.PROVIDES), payload: { type: 'STATUS_MAX_STACKS', bucket: 'flat', value: -1, category: 'poison' } };
-        expect(renderStatement(statement)).toContain('Provides Poison stacks at most 1 lower');
+    it('the Hide Vest reads as a sentence about poison, naming the status effect', () => {
+        const statement = { ...makeStatement(KEYWORD.PROVIDES), payload: { type: 'STATUS_MAX_STACKS', bucket: 'flat', value: -1, category: POISON } };
+        expect(renderStatement(statement, { effect: (id) => (id === POISON ? 'Poison' : id) })).toContain('Provides Poison stacks at most 1 lower');
+    });
+
+    it('the status narrowing offers the library status effects, and only those', () => {
+        const statement = { ...makeStatement(KEYWORD.PROVIDES), payload: { type: 'STATUS_MAX_STACKS', bucket: 'flat', value: -1 } };
+        const effects = {
+            [POISON]: { id: POISON, name: 'Poison', status: { stacks: 3 } },
+            gear_spear: { id: 'gear_spear', name: 'Spear' }
+        };
+        expect(slotsOf(statement, { effects }).find(s => s.id === 'category').options.map(o => o.id)).toEqual([POISON]);
     });
 });
 
