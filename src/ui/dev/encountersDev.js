@@ -139,9 +139,9 @@ export function setUpEncountersScene() {
         return Placement.placeTokenAt(inst, { x: c.x + dx, y: c.y + dy })?.success ? inst : null;
     };
     const hollow = put(T.guardianCamp, -560, 260);
-    const vein = put(T.vein, -400, 260);
+    const vein = put(T.vein, -380, 260);
     const haunted = put(T.ambushNode, 0, 300);
-    const den = put(T.den, 420, 260);
+    const den = put(T.den, 360, 300);
     const circle = put(T.circle, 420, -260);
     if (!hollow || !vein || !haunted || !den || !circle) return { ok: false, error: 'No room around the Guild Hall for five Tokens' };
 
@@ -158,7 +158,7 @@ export function setUpEncountersScene() {
     InventoryManager.addItem(QA_SUMMON_ITEM, 2);
 
     const flagged = [
-        { name: 'Guard-breaker', at: { x: vein.x + 20, y: vein.y + 60 } },
+        { name: 'Guard-breaker', at: { x: vein.x, y: vein.y + 60 } },
         { name: 'Miner', at: { x: haunted.x, y: haunted.y }, pin: true },
         { name: 'Boss-hunter', at: { x: boss.x, y: boss.y }, pin: true },
         { name: 'Second in line', at: { x: boss.x, y: boss.y }, pin: true },
