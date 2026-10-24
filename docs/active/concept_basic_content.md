@@ -1,4 +1,4 @@
-Status: draft
+Status: briefed (brief 240; approved 2026-10-24)
 
 # Basic content: a playable world from camp to midgame
 
@@ -261,6 +261,18 @@ the cap is kept for building). Plain names (concept_tone_and_world).
   modifiers) and plane-3 maps once that plane exists: a tinted Fire Elemental
   chief, a Big Lizard, a Toxic Frog.
 
+### Round 10 (2026-10-24): authoring, and closed
+
+- **The Starter Camp's new basics: an agent proposes, the owner
+  rearranges.** Change packs learn to carry the Starter Camp (small CMS
+  change); the owner can move anything and re-save it.
+- **Numbers: the agent drafts, the owner tunes by playing.** Each first-pass
+  number is noted in the pack.
+- **Bosses stay near their spot** (a lair of one, pottering like other
+  enemies); roaming the whole map can come later.
+- **Closed** (owner: "Yes, write the brief"): briefed as
+  [brief 240](briefs/240_basic_content.md).
+
 ## Overlaps with the other planners
 
 - **Combat** ([concept_combat.md](concept_combat.md)): the enemies on each
@@ -277,8 +289,8 @@ the cap is kept for building). Plain names (concept_tone_and_world).
   and (plane 1 only) plane-2 maps rarely.
 - **Leaders (combat)**: every plane-1 camp needs a tougher leader whose
   first kill always drops a plane-2 map (the Goblin Chief exists; wolves,
-  crabs and boars need one; the peaceful cows and thorn elementals need a
-  decision, e.g. a Bull). Their stats are the combat planner's.
+  crabs and bees need one; round 9 named them all, as bosses in lairs per
+  brief 220 C5). Their stats are the combat planner's.
 - **The XP curve (skill loops)**: levels 1-15 in about 2 hours of play, then
   slower. Today's speed and XP numbers are the skill planner's to set.
 - **Skill loops** ([concept_skill_loops.md](concept_skill_loops.md)): how each
