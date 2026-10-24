@@ -4,6 +4,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import React from 'react';
 import { readFileSync } from 'node:fs';
+import { hallCameraSides } from './fixtures/hallCameraSides.js';
 import { resolve } from 'node:path';
 import { render, fireEvent, act } from '@testing-library/react';
 import { GuildHallBoard } from '../ui/components/board/GuildHallBoard.jsx';
@@ -131,7 +132,8 @@ describe('the Effects list sits left of the web (FB-38)', () => {
         expect(effects).toHaveLength(1);
         expect(effects[0][0]).not.toContain('menuRight');
         expect(effects[0].index).toBeLessThan(src.indexOf('<GuildHallBoard'));
-        // Rendered on the Guild view alone, not gated on the nav side.
-        expect(src).toContain('{isGuildView && <GuildHallEffectsPanel />}');
+        // In the Hall's screen, which the camera lays only while it is off the mat; not gated on
+        // the nav side.
+        expect(hallCameraSides().hall).toContain('<GuildHallEffectsPanel />');
     });
 });
