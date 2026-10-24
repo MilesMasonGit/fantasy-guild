@@ -359,6 +359,27 @@ minute). One number for every speed-up, in the CMS tuning. ⚠️ Replaces the
   the specialist review.
 - **Farming closed** (owner, 2026-10-24).
 
+**All station skills**
+- **Stations never wear out** (like gear). ⚠️ Today's 20-use Copper Anvil
+  changes.
+- **No working sprite**: the progress dial is the look while a hero works.
+
+**Smithing**
+- **For now, two stations: the Furnace and the Smithy.** The **Furnace**
+  smelts ore into ingots; the **Smithy** makes tools (and later the rest of
+  Smithing's output) from ingots. Both are worked by a hero. ⚠️ The anvil as
+  a context Token goes; the "furnace and anvil together work better" bonus
+  and the specialised stations (Smelter, Weapon Forge) are set aside for
+  now, not dropped.
+- **Fuel: coal (or charcoal) in the recipe**, as today.
+- **Better stations are faster, with the same recipes**: an Iron Smithy
+  makes what a Copper one makes, quicker; recipes are gated by Smithing
+  level. ⚠️ So station tiers don't gate, unlike tool tiers.
+- **A missing input stops the station**: the hero waits there and the Token
+  says what's missing ("Needs Coal", like "Needs Pickaxe") until it arrives
+  or the player moves the hero. Applies to every station skill.
+- **Smithing closed** (owner, 2026-10-24).
+
 **Forestry, added 2026-10-24**: **trees can't be dragged** (like veins: a
 wood is shaped by where Forests stand), and **every new Sapling costs one
 seedling**, a Forest's planting as well as a Stump's regrow.
