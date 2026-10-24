@@ -546,16 +546,16 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
 - **Gear families**: a weapon or armour family's ability is one library
   effect every tier references with its own scale (1–5), so the tier raises
   the number.
-- **What ships**: tool tiers (`acts_as`), station skills, two neighbour buffs
-  (Coast −5 % work time; Windmill +5 double loot on Fields), a placement limit
-  (≤ 2 Coasts nearby), bonus drops, Minecart restocking, the two promotions,
-  and **Thorns** (1 damage to the hero on finishing a Redberry Bush or Thorn
-  Elemental). **Everything else in the grammar is Latent.**
 - **Spawns and enemies**: an enemy a `Spawns` rule puts beside its bearer is an
   ambusher (§6, Encounters): it attacks the hero the moment names, is beaten in
   one kill, and holds the bearer's enemy spawns until it falls. A `Spawns` rule
   never makes a boss (the editor does not offer one; the content audit names
   one that does).
+- **What ships**: tool tiers (`acts_as`), station skills, two neighbour buffs
+  (Coast −5 % work time; Windmill +5 double loot on Fields), a placement limit
+  (≤ 2 Coasts nearby), bonus drops, Minecart restocking, the two promotions,
+  and **Thorns** (1 damage to the hero on finishing a Redberry Bush or Thorn
+  Elemental). **Everything else in the grammar is Latent.**
 - Authored only in the CMS (the Rules Line editor). Editing a library effect
   changes every Token that carries it.
 
