@@ -27,9 +27,9 @@ C2; C0 (the test content pack, accepted by the director) after C2; C6 last.
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| E1: drawers to the screen's left edge; opening the Bank moves the rest smoothly (T-235, T-236); drag bench if drag measuring is touched | builder | `backlog/drawers` (`ed`) | building | Sat | |
-| E2: the Atlas's Regions as a two-page spread (T-237) | builder | `backlog/atlas-spread` (`ea`) | building | Sat | |
-| E3: retire the Playmat Tuner and the terrain dev section, mat dials in the QA panel (T-238); no eye-check | builder-lite | — | queued, after E1/E2 | | |
+| E1: drawers to the screen's left edge; opening the Bank moves the rest smoothly (T-235, T-236); drag bench if drag measuring is touched | builder | `backlog/drawers` | **merged** 7b7244ef: drawers to the left edge, Bank opening slides the rest (0 mat redraws, no refit). Gate 5864 tests, cycles, build, same work; drag bench 300/300 on the kinds it runs (Shop and Bank kinds skipped, T-240; hand-checked by the builder). Particles over the open drawer: T-241 | Sat | Sat |
+| E2: the Atlas's Regions as a two-page spread (T-237) | builder | `backlog/atlas-spread` | **merged** 3398be7d: Regions as a two-page spread (ground preview once per selection, facts, landmarks, actions moved from the rows; the active flag now visible). Gate 5854 tests, cycles, build, same work | Sat | Sat |
+| E3: retire the Playmat Tuner and the terrain dev section, mat dials in the QA panel (T-238); no eye-check | builder-lite | `backlog/dev-tidy` (`et`) | building | Sat | |
 
 ## Backlog director, batch D: the Guild Hall upgrade screen (brief 210; owner said go 2026-10-23) — **done, merged e6abf4e2**
 
