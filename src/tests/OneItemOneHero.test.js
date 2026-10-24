@@ -65,6 +65,13 @@ function addHero(name, id = null) {
     return hero;
 }
 
+/** A promoted hero: a Recruit holds no weapon, so a test about weapons in the hands needs one. */
+function addFighter(name) {
+    const hero = addHero(name);
+    hero.skills.melee = { level: 1, xp: 0 };
+    return hero;
+}
+
 function equipOk(heroId, itemId, slot = null, from = null) {
     const res = EquipmentManager.equipItem(heroId, itemId, slot, from);
     expect(res.success, res.error).toBe(true);
@@ -166,7 +173,7 @@ describe('equipping gear moves the copy out of the Bank; taking it off puts it b
     });
 
     it('a two-handed weapon taken up puts both tools back in the Bank', () => {
-        const aela = addHero('Aela');
+        const aela = addFighter('Aela');
         give('oo_pick'); give('oo_axe'); give('oo_great');
         equipOk(aela.id, 'oo_pick');
         equipOk(aela.id, 'oo_axe');
@@ -289,7 +296,7 @@ describe('a full Bank: the copy stays with the hero, nothing is lost or over the
     });
 
     it('a two-hander that would send back two tools to one free slot is refused', () => {
-        const aela = addHero('Aela');
+        const aela = addFighter('Aela');
         give('oo_pick'); give('oo_axe');
         equipOk(aela.id, 'oo_pick');
         equipOk(aela.id, 'oo_axe');
@@ -298,6 +305,7 @@ describe('a full Bank: the copy stays with the hero, nothing is lost or over the
 
         const res = EquipmentManager.equipItem(aela.id, 'oo_great');
         expect(res.success).toBe(false);
+        expect(res.error).toMatch(/Bank is full/);
         expect(aela.equipment.filter(Boolean).sort()).toEqual(['oo_axe', 'oo_pick']);
         expect(bank('oo_great')).toBe(1);
     });

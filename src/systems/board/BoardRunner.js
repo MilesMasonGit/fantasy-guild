@@ -270,7 +270,9 @@ function completeCycle(instance, def, io, heroId, config = def.config) {
         const rolled = isGuildHall
             ? OutputRules.roundUp(rollOutputQuantity(output))
             : OutputRules.widenYield(id, config.skill, rollOutputQuantity(output));
-        const quantity = doubled ? rolled * 2 : rolled;
+        const widened = doubled ? rolled * 2 : rolled;
+        // A chance that this one item comes out doubled, after everything else (not at the Hall).
+        const quantity = (isGuildHall || !output.itemId) ? widened : OutputRules.doubleItemDrop(id, output.itemId, widened);
         if (quantity <= 0) continue;
 
         // An output names a Token or an item. One that names neither pays nothing: the cycle still

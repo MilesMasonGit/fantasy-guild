@@ -217,15 +217,30 @@ describe('One combat skill supplies both halves (Phase 2)', () => {
         expect(CombatFormulas.canHeroFight(rogue)).toBe(true);
     });
 
-    it('a stealth weapon makes its wielder fight stealth, whatever their own style', () => {
+    // Rewritten for the gear pass: a hero swings only weapons of their own style, so a weapon no
+    // longer changes the side of the cycle its wielder fights on.
+    it('a hero fights their own style: a Dagger (melee and stealth) is melee for a Fighter and stealth for a Rogue', () => {
         registerItems({
             fixture_shiv: {
                 id: 'fixture_shiv', name: 'Shiv', type: 'weapon', equipSlot: 'hand',
                 skillRequired: 'stealth', levelRequired: 1
+            },
+            fixture_dagger: {
+                id: 'fixture_dagger', name: 'Dagger', type: 'weapon', equipSlot: 'hand',
+                styles: ['melee', 'stealth'], damage: 1, speed: 'fast'
             }
         });
-        const fighter = { skills: { melee: { level: 12 } }, equipment: ['fixture_shiv'] };
-        expect(CombatFormulas.getHeroCombatStyle(fighter)).toBe('stealth');
+        const fighter = { skills: { melee: { level: 12 } }, equipment: ['fixture_dagger'] };
+        const rogue = { skills: { stealth: { level: 12 } }, equipment: ['fixture_dagger'] };
+        expect(CombatFormulas.getHeroCombatStyle(fighter)).toBe('melee');
+        expect(CombatFormulas.getHeroCombatStyle(rogue)).toBe('stealth');
+        expect(CombatFormulas.getHeroWeapon(fighter)?.id).toBe('fixture_dagger');
+        expect(CombatFormulas.getHeroWeapon(rogue)?.id).toBe('fixture_dagger');
+
+        // An older stealth-only weapon in a Fighter's hands is not swung: they punch, as melee.
+        const holdingShiv = { skills: { melee: { level: 12 } }, equipment: ['fixture_shiv'] };
+        expect(CombatFormulas.getHeroWeapon(holdingShiv)).toBeNull();
+        expect(CombatFormulas.getHeroCombatStyle(holdingShiv)).toBe('melee');
     });
 });
 

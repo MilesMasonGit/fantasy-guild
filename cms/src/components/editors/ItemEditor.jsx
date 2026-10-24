@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Settings2, Shield, HelpCircle, Lock, Sparkles } from 'lucide-react';
 import { useEntityStore } from '../../stores/useEntityStore';
-import { EQUIP_CATEGORIES, TOOL_KINDS, HAND_CATEGORY, tierValue } from '../../utils/constants';
+import { EQUIP_CATEGORIES, TOOL_KINDS, HAND_CATEGORY, tierValue, SKILLS, ENEMY_STYLES, weaponStylesOf, ATTACK_SPEED_MS, DEFAULT_ATTACK_SPEED, WEAPON_TIERS } from '../../utils/constants';
 import { Header, Section, Field, Empty, DerivedMark } from '../shared/EditorLayout';
 import SpritePickerModal from './SpritePickerModal';
 import Statements from './Statements';
@@ -11,6 +11,97 @@ import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 /** The Item editor: simplified field set. Value is derived by the balance engine and cannot be typed; inputs and recipes match on exact item IDs, so there are no tags. */
 
 const RESTORING_CATEGORIES = new Set(['food', 'drink', 'consumable']);
+
+/** A weapon's own fields, cleared when the item stops being one (out of the hands, or made a tool). */
+const WEAPON_CLEARED = { styles: undefined, damage: undefined, speed: undefined };
+
+const styleName = (id) => SKILLS.find((s) => s.id === id)?.name || id;
+const SPEED_WORDS = { fast: 'Fast', normal: 'Normal', slow: 'Slow' };
+
+/**
+ * A weapon: which combat styles may hold it (a Dagger is Melee and Stealth), how hard it hits and how
+ * often. `styles` is written in the game's style order and only when one is ticked (none means any
+ * promoted hero); an older item's single `skillRequired` style shows ticked and is folded into
+ * `styles` on the first change. `speed` is written only when it is not Normal.
+ */
+function WeaponFields({ item, onChange }) {
+  const styles = weaponStylesOf(item);
+  const toggleStyle = (id) => {
+    const next = styles.includes(id) ? styles.filter((s) => s !== id) : [...styles, id];
+    const ordered = ENEMY_STYLES.filter((s) => next.includes(s));
+    onChange({
+      type: 'weapon',
+      styles: ordered.length ? ordered : undefined,
+      // The style lives in `styles` now; an older item's one-style field would only shadow it.
+      ...(ENEMY_STYLES.includes(item.skillRequired) ? { skillRequired: undefined } : {}),
+    });
+  };
+  const speed = ATTACK_SPEED_MS[item.speed] ? item.speed : DEFAULT_ATTACK_SPEED;
+  const tierLine = WEAPON_TIERS.map((t) => `${t.tier} ${t.fast}/${t.normal}/${t.slow}`).join(', ');
+
+  return (
+    <div className="col-span-2 grid grid-cols-2 gap-4">
+      <Field label="Weapon styles" className="col-span-2">
+        <div className="flex flex-wrap gap-4">
+          {ENEMY_STYLES.map((id) => (
+            <label key={id} className="flex items-center gap-1.5 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                aria-label={`${styleName(id)} weapon`}
+                data-field={`weapon-style-${id}`}
+                checked={styles.includes(id)}
+                onChange={() => toggleStyle(id)}
+                className="rounded border-white/10 text-emerald-500 cursor-pointer"
+              />
+              <span className="text-xs text-gray-300">{styleName(id)}</span>
+            </label>
+          ))}
+        </div>
+        <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
+          Only a hero of a ticked style may hold it (a Dagger is Melee and Stealth); a Recruit holds no weapon.
+          {styles.length === 0 && ' None ticked: any promoted hero may hold it.'}
+        </p>
+      </Field>
+
+      <Field label="Damage" className="col-span-1">
+        <input
+          type="number"
+          min={1}
+          aria-label="Damage"
+          data-field="weapon-damage"
+          value={item.damage ?? ''}
+          placeholder="1"
+          onChange={(e) => {
+            const n = Math.floor(Number(e.target.value));
+            onChange({ type: 'weapon', damage: n >= 1 ? n : undefined });
+          }}
+          className="w-full"
+        />
+        <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
+          What every hit does before the level step, the matchup and armour. Blank hits like a fist (1).
+          Proposed tiers, fast/normal/slow: {tierLine}.
+        </p>
+      </Field>
+
+      <Field label="Speed" className="col-span-1">
+        <select
+          aria-label="Speed"
+          data-field="weapon-speed"
+          value={speed}
+          onChange={(e) => onChange({ type: 'weapon', speed: e.target.value === DEFAULT_ATTACK_SPEED ? undefined : e.target.value })}
+          className="w-full"
+        >
+          {Object.entries(ATTACK_SPEED_MS).map(([id, ms]) => (
+            <option key={id} value={id}>{SPEED_WORDS[id] || id} (a swing every {ms / 1000} s)</option>
+          ))}
+        </select>
+        <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
+          A fast weapon hits about 2/3 as hard as a normal one, a slow one about 4/3.
+        </p>
+      </Field>
+    </div>
+  );
+}
 
 /** Maps equipSlot to standard item type for game registry compatibility */
 function slotToType(slot) {
@@ -40,8 +131,8 @@ export default function ItemEditor() {
       equipSlot: slot,
       type: slotToType(slot),
       restoreAmount: RESTORING_CATEGORIES.has(slot) ? (item.restoreAmount || 5) : 0,
-      // Tools and two-handed weapons are held in the hands; out of them, neither means anything.
-      ...(slot === HAND_CATEGORY ? {} : { tool: undefined, hands: undefined }),
+      // Tools and weapons are held in the hands; out of them, none of these means anything.
+      ...(slot === HAND_CATEGORY ? {} : { tool: undefined, hands: undefined, ...WEAPON_CLEARED }),
     });
   };
 
@@ -50,7 +141,7 @@ export default function ItemEditor() {
     if (patch === null) return updateItem(activeId, { tool: undefined });
     const next = { kind: item.tool?.kind, tier: tierValue(item.tool?.tier), ...(item.tool?.starter ? { starter: true } : {}), ...patch };
     if (!next.starter) delete next.starter;
-    updateItem(activeId, { tool: next, hands: undefined });
+    updateItem(activeId, { tool: next, hands: undefined, ...WEAPON_CLEARED });
   };
   const isHand = item.equipSlot === HAND_CATEGORY;
   const isTool = isHand && !!item.tool?.kind;
@@ -191,6 +282,10 @@ export default function ItemEditor() {
                 A hero has two hands. A two-handed weapon leaves no hand for a tool.
               </p>
             </Field>
+          )}
+
+          {isHand && !isTool && (
+            <WeaponFields item={item} onChange={(patch) => updateItem(activeId, patch)} />
           )}
 
           {isTool && (

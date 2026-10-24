@@ -3,6 +3,7 @@
 import { getTokenType } from './tokenRegistry.js';
 import { enemyLevelStats, attackSpeedMs, ATTACK_SPEED_MS, BASE_CRIT_CHANCE, roundHalfUp } from '../FormulaRegistry.js';
 import { COMBAT_SKILL_IDS } from './skillRegistry.js';
+import { enemyKindsOf } from './enemyKinds.js';
 
 /**
  * The combat stat block for an enemy Token.
@@ -20,7 +21,8 @@ import { COMBAT_SKILL_IDS } from './skillRegistry.js';
  *
  * `level` is the difficulty dial: HP, hit, armour, speed and XP come from the level table
  * (`FormulaRegistry.enemyLevelStats`), and the level is also what the miss chance compares with
- * the hero's combat level. Any one number can be written beside it to replace the table's.
+ * the hero's combat level. `kinds` (none, one or two of `enemyKinds.js`) twist those numbers, and
+ * any one number can be written beside the level to replace the result.
  *
  * ## Drops
  * Not here. A kill is a cycle, so a kill's loot is the cycle's output:
@@ -58,17 +60,60 @@ export function isHostileEnemy(def) {
     return isEnemyDef(def) && def.enemy.hostile === true;
 }
 
+/** The numbers an author may type on an enemy to replace what the level and kinds fill. */
+export const ENEMY_OVERRIDE_FIELDS = Object.freeze(['hp', 'hit', 'armor', 'speed', 'xp', 'dodge', 'accuracy', 'pierce', 'critChance']);
+
 /**
- * Build the enemy stat block for a Token definition.
+ * What the level and the kinds give an enemy before the author changes anything: the CMS shows
+ * these as the defaults, and `enemyProfileOf` starts from them.
  *
- * The level fills every number from the level table (`enemyLevelStats`); a number written beside
- * the level on the Token's `enemy` (`hp`, `hit`, `armor`, `speed`, `xp`, `dodge`, `accuracy`,
- * `pierce`, `critChance`) replaces that one. Without them an enemy has no Dodge, Accuracy or
- * Pierce and the base 5 % crit.
+ * The level fills HP, hit, armour, speed and XP from the level table (`enemyLevelStats`), with no
+ * Dodge, Accuracy or Pierce and the base 5 % crit. Each kind then adjusts the result, in the order
+ * ticked (`enemyKinds.js` says how).
  *
  * ⚠️ `budgetScale`, from content authored before the level table, still multiplies the table's
  * HP, hit and XP (rounded halves up, at least 1), so the shipped tutorial goblins stay pushovers
  * until their numbers are authored directly. Armour and speed are not scaled.
+ *
+ * @param {Object} enemy a Token's `enemy` block
+ * @returns {{hp: number, hit: number, armor: number, speed: string, xp: number, dodge: number, accuracy: number, pierce: number, critChance: number, statusOnHit: Array}}
+ */
+export function enemyFilledStats(enemy) {
+    const table = enemyLevelStats(enemy?.level);
+    const scale = Number(enemy?.budgetScale) > 0 ? Number(enemy.budgetScale) : 1;
+    const scaled = (n) => Math.max(1, roundHalfUp(n * scale));
+
+    const levelHit = scaled(table.hit);
+    const filled = {
+        hp: scaled(table.hp),
+        hit: levelHit,
+        armor: table.armor,
+        speed: table.speed,
+        xp: scaled(table.xp),
+        dodge: 0,
+        accuracy: 0,
+        pierce: 0,
+        critChance: BASE_CRIT_CHANCE,
+        statusOnHit: []
+    };
+
+    for (const kind of enemyKindsOf(enemy)) {
+        if (kind.armor) filled.armor += kind.armor;
+        if (kind.dodge) filled.dodge += kind.dodge;
+        if (kind.speed) filled.speed = kind.speed;
+        if (kind.hitScale) filled.hit = Math.max(1, roundHalfUp(filled.hit * kind.hitScale));
+        if (kind.hitAtLeastMore) filled.hit = Math.max(filled.hit, levelHit + kind.hitAtLeastMore);
+        if (kind.statusOnHit) filled.statusOnHit.push({ ...kind.statusOnHit });
+    }
+
+    return filled;
+}
+
+/**
+ * Build the enemy stat block for a Token definition: what the level and kinds fill
+ * (`enemyFilledStats`), with any number the author wrote beside the level on the Token's `enemy`
+ * (`hp`, `hit`, `armor`, `speed`, `xp`, `dodge`, `accuracy`, `pierce`, `critChance`) replacing that
+ * one outright.
  *
  * `id` is the **Token's** id: the Bestiary, kill counts and discovery
  * notifications key on an id and look up a name.
@@ -81,32 +126,35 @@ export function enemyProfileOf(def) {
 
     const authored = def.enemy;
     const level = authored.level;
-    const table = enemyLevelStats(level);
-    const scale = Number(authored.budgetScale) > 0 ? Number(authored.budgetScale) : 1;
-    const scaled = (n) => Math.max(1, roundHalfUp(n * scale));
+    const filled = enemyFilledStats(authored);
     const style = ENEMY_STYLES.includes(authored.style) ? authored.style : 'melee';
-    const speed = ATTACK_SPEED_MS[authored.speed] ? authored.speed : table.speed;
+    const speed = ATTACK_SPEED_MS[authored.speed] ? authored.speed : filled.speed;
+    const kinds = enemyKindsOf(authored).map(k => k.id);
 
     return {
         id: def.id,
         name: def.name || def.id,
         level,
         combatType: style,
-        hp: Math.max(1, numberOr(authored.hp, scaled(table.hp))),
-        hit: Math.max(1, numberOr(authored.hit, scaled(table.hit))),
-        armor: numberOr(authored.armor, table.armor),
+        hp: Math.max(1, numberOr(authored.hp, filled.hp)),
+        hit: Math.max(1, numberOr(authored.hit, filled.hit)),
+        armor: numberOr(authored.armor, filled.armor),
         speed,
         attackSpeed: attackSpeedMs(speed),
-        dodge: numberOr(authored.dodge, 0),
-        accuracy: numberOr(authored.accuracy, 0),
-        pierce: numberOr(authored.pierce, 0),
-        critChance: numberOr(authored.critChance, BASE_CRIT_CHANCE),
+        dodge: numberOr(authored.dodge, filled.dodge),
+        accuracy: numberOr(authored.accuracy, filled.accuracy),
+        pierce: numberOr(authored.pierce, filled.pierce),
+        critChance: numberOr(authored.critChance, filled.critChance),
         // ⚠️ Load-bearing, and easy to miss: `getCombatXpAward` reads
         // `enemy.xpAwarded` and falls back to a flat **1** when it is absent.
         // Leaving it out does not throw — it silently pays 1 XP for every kill
         // at every level, which is exactly the kind of quiet wrongness a
         // missing field is supposed to make loud.
-        xpAwarded: Math.max(0, numberOr(authored.xp, scaled(table.xp))),
+        xpAwarded: Math.max(0, numberOr(authored.xp, filled.xp)),
+        // The kinds it carries, for the enemy card once the guild has fought one.
+        kinds,
+        // What a landed hit puts on the hero (Venomous); read by the attack processor.
+        ...(filled.statusOnHit.length ? { statusOnHit: filled.statusOnHit } : {}),
         // `traits` is read by the attack processor's thorns branch and must be
         // present. Enemy traits are not authorable yet; an empty array is the
         // right value.

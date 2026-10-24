@@ -8,6 +8,8 @@ import {
 } from '../effects/effectLibrary.js';
 import { KEYWORD } from '../effects/statements.js';
 import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
+import { weaponUsableBy } from '../../config/registries/weaponStyles.js';
+import { getHeroCombatSkillEntry } from '../../utils/CombatFormulas.js';
 
 /**
  * A hero's equipped items are bearers, like a Token: the same grammar and effect
@@ -36,11 +38,15 @@ export function loadoutRefs(hero) {
     if (!hero) return merged;
 
     const grid = getGrid(hero);
+    const style = getHeroCombatSkillEntry(hero).id;
     for (let slot = 0; slot < grid.length; slot++) {
         const itemId = grid[slot];
         if (!itemId || !slotBacked(hero, slot)) continue;
         const def = getItem(itemId);
         if (!def) continue;
+        // A weapon of another style (held from before a re-training) is not swung, and its family's
+        // ability does not reach the hero either.
+        if (!weaponUsableBy(def, style)) continue;
 
         for (const { effectId, scale } of effectRefsOf(def)) {
             const current = merged.get(effectId);

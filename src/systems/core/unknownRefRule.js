@@ -1,6 +1,7 @@
 // Content that names a skill or a job the game does not have.
 
-import { isSkillId } from '../../config/registries/skillRegistry.js';
+import { isSkillId, COMBAT_SKILL_IDS } from '../../config/registries/skillRegistry.js';
+import { getEnemyKind, kindsClash, MAX_ENEMY_KINDS } from '../../config/registries/enemyKinds.js';
 import { getJob } from '../../config/registries/jobRegistry.js';
 import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
 import { statementsOf, stationSkillOf } from '../effects/statements.js';
@@ -56,6 +57,22 @@ function statementFindings(def, push) {
     }
 }
 
+/** Findings for an enemy's kinds: one the game does not have, more than two, or two that clash. */
+function enemyKindFindings(def, push) {
+    const kinds = Array.isArray(def?.enemy?.kinds) ? def.enemy.kinds : [];
+    for (const id of kinds) {
+        if (!getEnemyKind(id)) push('enemy.kinds', `has the enemy kind "${id}", which does not exist — it changes nothing. Tick its kinds again in the CMS.`);
+    }
+    const known = kinds.filter(getEnemyKind);
+    if (known.length > MAX_ENEMY_KINDS) {
+        push('enemy.kinds', `has ${known.length} enemy kinds; an enemy carries at most ${MAX_ENEMY_KINDS}, so only the first ${MAX_ENEMY_KINDS} count.`);
+    }
+    const used = known.slice(0, MAX_ENEMY_KINDS);
+    if (used.length === 2 && kindsClash(used[0], used[1])) {
+        push('enemy.kinds', `is both ${used[0]} and ${used[1]}, which set different swing speeds — the second wins. Untick one in the CMS.`);
+    }
+}
+
 /**
  * Every skill and job reference in the content that does not resolve.
  *
@@ -83,6 +100,7 @@ export function findUnknownRefs({ tokens, items, recipes } = {}) {
         if (hasValue(section) && section !== GENERAL_SHOP_SECTION && !isSkillId(section)) {
             push('shop.section', `is sold in the Shop section "${section}", which is neither a skill nor General — the Shop heads it with that raw id. Pick its section again in the CMS.`);
         }
+        enemyKindFindings(def, push);
         statementFindings(def, push);
     }
 
@@ -98,6 +116,11 @@ export function findUnknownRefs({ tokens, items, recipes } = {}) {
         for (const skill of needs) {
             if (hasValue(skill) && !isSkillId(skill)) {
                 push('requirements', `needs the skill "${skill}", which does not exist — no hero can equip it.`);
+            }
+        }
+        for (const style of Array.isArray(def.styles) ? def.styles : []) {
+            if (!COMBAT_SKILL_IDS.includes(style)) {
+                push('styles', `names the weapon style "${style}", which is not a combat style — it is ignored. Tick its styles again in the CMS.`);
             }
         }
         statementFindings(def, push);

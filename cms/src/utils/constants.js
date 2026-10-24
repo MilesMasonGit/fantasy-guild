@@ -111,7 +111,15 @@ export { TURN_DEFAULTS } from '../../../src/config/registries/tokenConstants.js'
 export { RESPAWN_MODES, RESPAWN_DEFAULTS, RESPAWN_MIN_MS } from '../../../src/config/registries/tokenConstants.js';
 
 // An enemy is a Token: it carries `enemy: { level, style }`. `ENEMY_STYLES` fills the Style dropdown and `enemyProfileOf` powers the editor's read-only stat preview, imported from the game so the numbers shown are the numbers the fight uses.
-export { ENEMY_STYLES, enemyProfileOf } from '../../../src/config/registries/enemyProfile.js';
+export { ENEMY_STYLES, enemyProfileOf, enemyFilledStats, ENEMY_OVERRIDE_FIELDS } from '../../../src/config/registries/enemyProfile.js';
+
+// Enemy kinds (Armoured, Nimble, Swift, Brute, Venomous): the presets the Token editor offers, none to two per enemy, and which pairs clash.
+export { ENEMY_KINDS, MAX_ENEMY_KINDS, kindsClash, enemyKindsOf } from '../../../src/config/registries/enemyKinds.js';
+
+// Weapons: which combat styles a weapon belongs to (a Dagger is Melee and Stealth), for the item editor's Weapon block.
+export { isWeapon, weaponStylesOf } from '../../../src/config/registries/weaponStyles.js';
+// The three swing speeds and the proposed weapon tiers' damage, so the Weapon block offers what the fight reads.
+export { ATTACK_SPEED_MS, DEFAULT_ATTACK_SPEED, WEAPON_TIERS } from '../../../src/config/FormulaRegistry.js';
 
 // A hero-worked Token must name a skill. The game's own rule and wording, so the CMS and the boot audit name the same Tokens.
 export { isWorkedWithoutSkill, WORK_SKILL_WHY } from '../../../src/systems/core/workSkillRule.js';
