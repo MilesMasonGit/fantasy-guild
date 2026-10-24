@@ -15,10 +15,10 @@ C2; C0 (the test content pack, accepted by the director) after C2; C6 last.
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| C1: the numbers (HP 10 + level, weapon damage, misses 5–40 %, crits, flat armour, Pierce, weapon speeds, Recruits punch 1; proposed level table); WORK CHANGED expected | engineer | `systems/combat-numbers` (`sc`) | building | Sat | |
-| C2: gear and enemies (weapon styles, family abilities, enemy armour/Dodge/speed from the level table, enemy kinds) | engineer | — | queued, after C1 | | |
-| C3: supplies (food as today, drinks stop healing, elixirs for 10 fights, the "used" bubble) | builder | — | queued, after C1 | | |
-| C5: encounters (one-on-one, guardians, node ambushes, boss lairs) | engineer | — | queued, after C1 | | |
+| C1: the numbers (HP 10 + level, weapon damage, misses 5–40 %, crits, flat armour, Pierce, weapon speeds, Recruits punch 1; proposed level table) | engineer | `systems/combat-numbers` (`sc`) | **merged** 68901a22 (director's gate on the merged result: 5887 tests, cycles, build; work change accepted under brief220-C1 on every hero scenario, S4 same, catch-up identity and fidelity hold; `main` control run same work, no regression; C1 p50 within ~5 %, p99 up 5–23 % from longer, overlapping fights). Owner by phone: Goblin Chief stays tough (craft gear to beat it), level-1 coin toss kept, unarmed promoted heroes punch with style and XP, Block removed | Sat | Sat |
+| C2: gear and enemies (weapon styles, family abilities, enemy armour/Dodge/speed from the level table, enemy kinds) | engineer | `systems/combat-gear` (`sg`) | building | Sat | |
+| C3: supplies (food as today, drinks stop healing, elixirs for 10 fights, the "used" bubble) | builder | `systems/combat-supplies` (`su`) | building | Sat | |
+| C5: encounters (one-on-one, guardians, node ambushes, boss lairs) | engineer | — | queued, after C2/C3 (two-agent limit) | | |
 | C4: Poison, Burn and boss moves in the Rules system; old status engine retired | engineer | — | queued, after C2 | | |
 | C0: first combat content pack, accepted by the director (guarded) | builder + director | — | queued, after C2 | | |
 | C6: the combat screen (mock-ups first, the owner picks by phone) | engineer | — | queued, last | | |
