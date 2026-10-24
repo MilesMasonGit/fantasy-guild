@@ -8,6 +8,7 @@ import * as StationRecipe from '../../../systems/board/StationRecipe.js';
 import * as SpawnerSystem from '../../../systems/board/SpawnerSystem.js';
 import * as TimedChanges from '../../../systems/board/TimedChanges.js';
 import * as Respawn from '../../../systems/board/Respawn.js';
+import * as Guardians from '../../../systems/board/Guardians.js';
 import * as Demolition from '../../../systems/board/Demolition.js';
 import * as QuestTokens from '../../../systems/quests/QuestTokens.js';
 import { stationSkillOf } from '../../../systems/effects/statements.js';
@@ -80,6 +81,8 @@ export function tokenDetailOf(id, def) {
         grows: !marked && !!TimedChanges.nextGrowth(instance),
         // Out of charges and waiting to respawn: drawn resting, a refill counting down.
         resting: !marked && Respawn.isResting(instance, def),
+        // Its guardian (or its lair's boss) was beaten and is on its way back: a countdown.
+        guardianAway: !marked && !!Guardians.guardianState(instance)?.beaten,
         // Marked for demolition: the marked badge.
         marked,
         // A quest Token's quest: ring, glow, tooltip, click to claim.

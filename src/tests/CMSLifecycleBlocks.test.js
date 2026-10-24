@@ -93,6 +93,8 @@ function everyBlock() {
         },
         trickle: [{ itemId: i1, quantity: 1, everyMs: 300000 }],
         respawn: { mode: 'refill', afterMs: 15000 },
+        // A shipped enemy as its guardian (brief 220, C5).
+        guardian: { typeId: 'token_goblin', returnMs: 45000 },
     };
 }
 

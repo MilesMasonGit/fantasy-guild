@@ -10,7 +10,7 @@ import { deriveTokenType } from '../../config/registries/tokenTypeDerivation.js'
 import { isOutputCurrency } from '../../config/registries/tokenConstants.js';
 import { getStatusEffect } from '../../config/registries/statusRegistry.js';
 import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
-import { isEnemyDef } from '../../config/registries/enemyProfile.js';
+import { isEnemyDef, isBossEnemy } from '../../config/registries/enemyProfile.js';
 import { EFFECTS, getEffect } from '../../config/registries/effectRegistry.js';
 import { effectRefsOf, duplicateRefsOf, hasWorkingStatements, usedBy } from '../effects/effectLibrary.js';
 import { ITEMS, getItem } from '../../config/registries/itemRegistry.js';
@@ -394,6 +394,14 @@ function auditStatements(out, where, def) {
         }
         checkRef(out, where, 'item', statement?.when?.watchItemId, 'The item one of its rules watches for');
         checkRef(out, where, 'status', payload.statusId, 'The status one of its rules applies');
+
+        // Bosses live in lairs or are summoned, and never ambush: a Spawns rule never makes one.
+        if (statement?.keyword === KEYWORD.SPAWNS && isBossEnemy(getTokenType(payload.typeId))) {
+            out.push(finding(where,
+                `one of its rules spawns ${tokenName(payload.typeId) || payload.typeId}, a boss — and a rule never spawns a boss ` +
+                `(bosses live in lairs or are summoned, and never ambush), so the rule does nothing. Put the boss in a lair ` +
+                `(a Guardian block on a Token) or sell it in the Shop's Summons section.`));
+        }
 
         // A trigger that watches for a *specific* item and was never told which
         // one fires on nothing — and reads in the picker as if it were the

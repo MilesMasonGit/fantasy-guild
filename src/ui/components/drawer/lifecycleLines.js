@@ -142,6 +142,37 @@ function respawnLines(instance, src) {
         : { label: 'Respawns', value: `Becomes ${into} when it runs out, which grows back`, tone: TONE.MUTED }];
 }
 
+/**
+ * A Token that keeps an enemy beside it (`Guardians.guardianState`): on a worked Token its guardian,
+ * which must be beaten before anyone works it; on a Token with no work, the lair of a boss or
+ * creature. Then whether it stands, or when it is back.
+ */
+function guardianLines(instance, src) {
+    const g = src.guardian?.(instance);
+    if (!g) return [];
+    const name = src.tokenName(g.typeId);
+    const label = g.lair ? 'Lair of' : 'Guarded by';
+    if (g.standing) {
+        return [
+            g.lair
+                ? { label, value: g.boss ? `${name} (boss)` : name }
+                : { label, value: `${name}: beat it to work this`, tone: TONE.WARNING },
+            { label: 'Comes back', value: `${formatDuration(g.returnMs)} after it is beaten`, tone: TONE.MUTED }
+        ];
+    }
+    if (!g.beaten) return [{ label, value: `${name}, arriving`, tone: TONE.MUTED }];
+    return [{ label, value: `${name}: beaten, back in ${formatDuration(g.inMs)}`, tone: TONE.GOOD }];
+}
+
+/** An enemy that guards a Token, or a boss: what it is there for. */
+function enemyRoleLines(instance, def, src) {
+    const out = [];
+    const guarded = src.guardedBy?.(instance);
+    if (guarded) out.push({ label: 'Guards', value: src.tokenName(guarded.typeId) });
+    if (def?.enemy?.boss === true) out.push({ label: 'Boss', value: 'Fights only the heroes you send', tone: TONE.MUTED });
+    return out;
+}
+
 /** A countdown as the UI writes it: `4:57`, rounded up to the second. */
 export function formatClock(ms) {
     const total = Math.max(0, Math.ceil((Number(ms) || 0) / 1000));
@@ -212,6 +243,8 @@ function demolitionLine(instance, src) {
  *   originOf: (instance: object) => string,
  *   passive?: (instance: object) => { lines: object[], nextInMs: number }|null,
  *   respawn?: (instance: object) => { mode: string, into: string|null, afterMs: number, resting: boolean, inMs: number|null }|null,
+ *   guardian?: (instance: object) => { typeId: string, boss: boolean, standing: boolean, beaten: boolean, lair: boolean, returnMs: number, inMs: number|null }|null,
+ *   guardedBy?: (instance: object) => object|null,
  *   demolishMs?: number,
  *   workerOf?: (instanceId: string) => string|null,
  *   dev?: boolean
@@ -263,6 +296,8 @@ export function lifecycleLines(instance, src) {
     }
 
     out.push(...respawnLines(instance, src));
+    out.push(...guardianLines(instance, src));
+    out.push(...enemyRoleLines(instance, def, src));
     if (def.foundation) out.push(...foundationLines(instance, def, src));
     // A station waits for the player to pick a recipe, as a Foundation waits for 'what to
     // build'. Only said while nothing is picked.

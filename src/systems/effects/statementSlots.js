@@ -233,7 +233,10 @@ function payloadSlots(statement, ctx) {
                 {
                     id: 'typeId', kind: SLOT_KIND.VOCABULARY, label: 'which Token',
                     value: payload.typeId || '',
-                    options: Object.values(ctx?.tokens || {}).map(t => option(t.id, t.name || t.id)),
+                    // Never a boss: bosses live in lairs or are summoned, and never ambush.
+                    options: Object.values(ctx?.tokens || {})
+                        .filter(t => t?.enemy?.boss !== true)
+                        .map(t => option(t.id, t.name || t.id)),
                     patch: v => ({ payload: { ...payload, typeId: v } })
                 },
                 {

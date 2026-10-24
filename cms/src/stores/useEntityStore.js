@@ -185,7 +185,7 @@ function renameInEffects(effects, oldId, newId, entityType) {
     return touched ? next : effects;
 }
 
-/** Repoint the Token ids inside one Token's lifecycle blocks: a spawner's `spawns[].typeId`, `grows.into`, `turns.into[].typeId` and a regrow's `respawn.into`. Those field names are not shared with an item slot, so they are named explicitly rather than walked. */
+/** Repoint the Token ids inside one Token's lifecycle blocks: a spawner's `spawns[].typeId`, `grows.into`, `turns.into[].typeId`, a regrow's `respawn.into` and `guardian.typeId`. Those field names are not shared with an item slot, so they are named explicitly rather than walked. */
 function renameTokenInLifecycleBlocks(token, oldId, newId) {
     let touched = false;
     const next = { ...token };
@@ -209,6 +209,10 @@ function renameTokenInLifecycleBlocks(token, oldId, newId) {
     }
     if (next.respawn && next.respawn.into === oldId) {
         next.respawn = { ...next.respawn, into: newId };
+        touched = true;
+    }
+    if (next.guardian && next.guardian.typeId === oldId) {
+        next.guardian = { ...next.guardian, typeId: newId };
         touched = true;
     }
 
@@ -487,10 +491,10 @@ export function makeTokenOutputEntry(tokenId) {
     return { tokenId, chance: 100, minQty: 1, maxQty: 1 };
 }
 
-// Token Lifecycle blocks: `spawner`, `grows`, `turns`, `foundation`, `shop`, `trickle`, `respawn`. These factories only give the editor a starting value when an author ADDS a block.
+// Token Lifecycle blocks: `spawner`, `grows`, `turns`, `foundation`, `shop`, `trickle`, `respawn`, `guardian`. These factories only give the editor a starting value when an author ADDS a block.
 // ⚠️ Absent means absent: `makeToken` creates none of them and nothing on the load or sync path fills them in, so a Token without a block round-trips without one, byte for byte.
 
-export const TOKEN_LIFECYCLE_BLOCKS = Object.freeze(['spawner', 'grows', 'turns', 'foundation', 'shop', 'trickle', 'respawn']);
+export const TOKEN_LIFECYCLE_BLOCKS = Object.freeze(['spawner', 'grows', 'turns', 'foundation', 'shop', 'trickle', 'respawn', 'guardian']);
 
 export function makeWeightedTokenEntry(typeId = '') {
     return { typeId, weight: 1 };
@@ -520,6 +524,9 @@ export function makeLifecycleBlock(key) {
         case 'respawn':
             // A refill on the game's default rest; a regrow is picked in the editor.
             return { mode: RESPAWN_DEFAULTS.mode, afterMs: RESPAWN_DEFAULTS.afterMs };
+        case 'guardian':
+            // No return time written: the game's default for what it keeps (shorter for a boss).
+            return { typeId: '' };
         default:
             return undefined;
     }

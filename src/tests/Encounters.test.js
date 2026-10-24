@@ -15,6 +15,7 @@ import * as TriggerSystem from '../systems/board/TriggerSystem.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as WorkCheck from '../systems/board/WorkCheck.js';
 import { LootSystem } from '../systems/combat/LootSystem.js';
+import { auditContent } from '../systems/core/ContentAudit.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
@@ -114,7 +115,6 @@ function ambushNode(typeId, chance = 100) {
 }
 
 const A = { x: 600, y: 500 };
-const B = { x: 900, y: 500 };
 const FAR = { x: 1600, y: 900 };
 
 /** A hero who fights and gathers at level 50, with plenty of HP. */
@@ -131,7 +131,6 @@ function fighter(id, { level = 50, hp = 100 } = {}) {
 
 const run = (ms, step = 100) => { for (let t = 0; t < ms; t += step) BoardRunner.tick(step); };
 const enemiesOf = (typeId) => BoardState.tokens().filter(t => t.typeId === typeId);
-const heroOf = (id) => GameState.state.heroes.find(h => h.id === id);
 
 /** Tick until `predicate()` holds, in 100 ms steps, at most `ms`. */
 function until(predicate, ms = 120000) {
@@ -314,7 +313,6 @@ describe('⭐ guardians block their Token until beaten, and come back', () => {
         run(100);
         const kills = [];
         const off = EventBus.subscribe(ENGINE_EVENTS.COMBAT_VICTORY, (p) => kills.push(p));
-        const sprites = () => SpriteLayer.getSprites ? SpriteLayer.getSprites().length : null;
         Flags.plant('h1', A);
         expect(until(() => BoardState.workTokenOf('h1') === vein.id)).toBe(true);
         expect(kills).toHaveLength(1);
@@ -334,7 +332,6 @@ describe('⭐ guardians block their Token until beaten, and come back', () => {
         expect(until(() => kills.length >= 2)).toBe(true);
         off();
         expect(kills.every(k => k.enemyId === 'enc_imp')).toBe(true);
-        void sprites;
     });
 
     it('a guardian with no return written waits 10 minutes; a boss 2', () => {
@@ -482,13 +479,16 @@ describe('⭐ node ambushes: the enemy attacks the worker', () => {
         expect(enemiesOf('enc_imp')).toHaveLength(1);
     });
 
-    it('bosses never ambush: a rule naming one rolls nothing and spawns nothing', () => {
+    it('bosses never ambush: a rule naming one rolls nothing and spawns nothing, and the audit says so', () => {
         const nodeType = ambushNode('enc_boss', 50);
         const node = placeAt(nodeType, A.x, A.y);
         const random = vi.spyOn(Math, 'random').mockReturnValue(0);
         EventBus.publish(BOARD_EVENTS.CYCLE_COMPLETE, { instanceId: node.id, typeId: node.typeId, heroId: 'h1', failed: false, produced: [] });
         expect(enemiesOf('enc_boss')).toHaveLength(0);
         expect(random).not.toHaveBeenCalled();
+        random.mockRestore();
+        const said = auditContent().filter(f => f.where === `Token "${nodeType}"`).map(f => f.what);
+        expect(said.some(w => w.includes('a boss'))).toBe(true);
     });
 
     it('with no worker named it stays by its node, as before: hostile ones watch it, peaceful ones wait', () => {
@@ -509,6 +509,5 @@ describe('⭐ node ambushes: the enemy attacks the worker', () => {
         EventBus.publish(BOARD_EVENTS.CYCLE_COMPLETE, { instanceId: node.id, typeId: node.typeId, heroId: null, failed: false, produced: [] });
         expect(Guardians.isGuarded(node)).toBe(false);
         expect(WorkCheck.fixableReason(node.id, node).reason).toBeNull();
-        void B;
     });
 });

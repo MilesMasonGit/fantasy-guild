@@ -10,6 +10,7 @@ import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as HeroMotion from '../../../systems/board/HeroMotion.js';
+import * as Flags from '../../../systems/board/Flags.js';
 import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
 import { layoutStacks, bubbleAnchorY } from './bubbleLayout.js';
 import { useMatSize } from '../../hooks/useMatSize.js';
@@ -121,7 +122,14 @@ export const HeroBubbleLayer = ({ heroes }) => {
             const idle = h.state === 'idle';
             next.set(h.heroId, idle);
             if (prev && prev.get(h.heroId) === false && idle) {
-                sayRef.current(h.heroId, 'idle', { key: 'idle', text: momentText.idle() });
+                // Idle because the one fight in reach is another hero's: they wait for it.
+                const busy = BoardState.getTokenById(Flags.waitingFor(h.heroId));
+                if (busy) {
+                    const name = getTokenType(busy.typeId)?.name || tokenName(busy.typeId) || busy.typeId;
+                    sayRef.current(h.heroId, 'waiting', { key: 'idle', text: momentText.waiting(name) });
+                } else {
+                    sayRef.current(h.heroId, 'idle', { key: 'idle', text: momentText.idle() });
+                }
             }
         }
         wasIdleRef.current = next;

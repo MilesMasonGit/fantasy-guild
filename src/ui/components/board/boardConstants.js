@@ -80,9 +80,12 @@ export const SKIP_HINT = {
     [ALERT.SPAWN_NO_ROOM]: 'no room to spawn',
     [ALERT.SPAWN_MAT_FULL]: 'Token cap full',
     [ALERT.RESTING]: 'resting, it comes back soon',
+    [ALERT.GUARDED]: 'a guardian stands on it',
     no_skill: 'names no skill',
     disallowed: 'heroes not allowed',
     claimed: 'being worked by {holder}',
+    // `claimed` said of an enemy: every fight is one-on-one, so the flag waits for it.
+    claimed_fight: '{holder} is fighting it',
     same_job: 'already holds this job',
     rule_off: 'off in {hero}’s Work Permissions'
 };

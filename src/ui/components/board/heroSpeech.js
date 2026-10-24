@@ -49,6 +49,8 @@ export function stackOf(moments, now) {
 export const momentText = {
     arrived: (token) => `Working at ${token}.`,
     idle: () => 'No work in range.',
+    // Going idle because the one fight in reach is taken: every fight is one-on-one.
+    waiting: (enemy) => `Waiting for ${enemy}.`,
     // Said by the hero whose work spent the Token's last charge.
     depleted: (token) => `${token} Depleted`,
     // No wording of its own: the blocked sentence for its reason, already built by
@@ -66,6 +68,8 @@ export const momentText = {
  * last Token in range runs out.
  * A level-up is not a line: it floats over the hero as the skill's icon and number
  * (`levelUpFloats.js`), and the hero bar keeps the lasting alert.
+ * * `waiting`: kept: said instead of `idle` when the hero goes idle because the enemy they would
+ * fight is another hero's fight (every fight is one-on-one); they take it the moment it is free.
  * * `depleted`: kept: the hero who used a Token up says so.
  * * `pinRefused`: kept: a flag dropped on a Token its hero can't work plants as an area flag,
  * and the hero says why, once.
@@ -73,6 +77,7 @@ export const momentText = {
 export const MOMENT_SPOKEN = Object.freeze({
     arrived: false,
     idle: true,
+    waiting: true,
     depleted: true,
     pinRefused: true
 });

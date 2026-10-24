@@ -349,6 +349,27 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
                 warn('respawn', 'respawns but has unlimited charges, so it never runs out and never rests (allowed).');
             }
         }
+
+        // ── guardian: the enemy it keeps beside it (a guarded Token, or a lair) ──
+        if (def.guardian !== undefined && def.guardian !== null) {
+            const g = def.guardian;
+            const target = hasValue(g?.typeId) ? tokens[g.typeId] : null;
+            if (def.enemy) {
+                err('guardian', 'is an enemy and keeps a guardian; an enemy cannot, so the block does nothing.');
+            } else if (!hasValue(g?.typeId) || !target) {
+                checkTokenRef(err, 'guardian.typeId', 'guardian', g?.typeId);
+            } else if (target.enemy?.level == null) {
+                err('guardian.typeId', `keeps ${tokenLabel(g.typeId)} as its guardian, which is not an enemy; nothing will stand there.`);
+            }
+            if (g?.returnMs !== undefined && g?.returnMs !== null && g?.returnMs !== '') {
+                checkTime(err, 'guardian.returnMs', 'guardian return time', g.returnMs);
+            }
+        }
+
+        // ── a boss: never hostile ──
+        if (def.enemy?.boss === true && def.enemy?.hostile === true) {
+            warn('enemy.hostile', 'is a boss marked hostile; a boss never attacks first, so the mark does nothing.');
+        }
     }
 
     // ── grows loops, once per loop ──
