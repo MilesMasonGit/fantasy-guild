@@ -47,6 +47,6 @@ describe('QA panel', () => {
     it('has no banner card width slider (FB-37)', () => {
         const view = openPanel();
         expect(view.queryByText(/banner card width/i)).toBeNull();
-        expect(view.container.ownerDocument.querySelector('input[type="range"]')).toBeNull();
+        expect(view.container.ownerDocument.querySelector('input[type="range"]:not([data-testid="qa-mat-tuner"] input)')).toBeNull();
     });
 });

@@ -41,8 +41,6 @@ import { ItemStubColumn } from './components/notifications/ItemStubColumn.jsx';
 import { BannerStack } from './components/notifications/BannerStack.jsx';
 import { ScreenCalloutLayer } from './components/notifications/ScreenCalloutLayer.jsx';
 import TestDashboard from './components/TestDashboard.jsx';
-import PlaymatTuner from './components/PlaymatTuner.jsx';
-import MatTuner from './components/MatTuner.jsx';
 import CatchUpOverlay from './components/hud/CatchUpOverlay.jsx';
 import MatTopBar from './components/board/MatTopBar.jsx';
 import MatRegionName from './components/board/MatRegionName.jsx';
@@ -404,9 +402,6 @@ export const ReactRoot = () => {
             {(import.meta.env.DEV || (import.meta.env.MODE === 'perf' && debugMode)) && (
                 <>
                     <TestDashboard />
-                    {/* The ground's look, for the eye-check: dev builds only. */}
-                    {import.meta.env.DEV && <PlaymatTuner />}
-                    <MatTuner />
                     {/**
                      * Hidden while the Perf HUD is on: its own frame loop and per-second
                      * commit would be measured by the HUD, and the HUD shows frames

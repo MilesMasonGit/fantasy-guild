@@ -19,7 +19,7 @@ import { BOARD_EVENTS } from '../../systems/board/boardEvents.js';
 import { PerfDevSection } from '../dev/perf/PerfDevSection.jsx';
 import { StarterCampDevSection } from '../dev/StarterCampDevSection.jsx';
 import { NotificationsDevSection } from '../dev/NotificationsDevSection.jsx';
-import { TerrainDevSection } from '../dev/TerrainDevSection.jsx';
+import { MatTunerDevSection } from '../dev/MatTunerDevSection.jsx';
 import { AtlasDevSection } from '../dev/AtlasDevSection.jsx';
 import { GuildHallDevSection } from '../dev/GuildHallDevSection.jsx';
 import { AnimationDevSection } from '../dev/AnimationDevSection.jsx';
@@ -317,7 +317,7 @@ export const TestDashboard = React.memo(() => {
                          * normal production build with Debug Mode on still has no harness.
                          */}
                         {(import.meta.env.DEV || import.meta.env.MODE === 'perf') && <PerfDevSection />}
-                        {import.meta.env.DEV && <TerrainDevSection />}
+                        {import.meta.env.DEV && <MatTunerDevSection />}
                         {import.meta.env.DEV && <StarterCampDevSection />}
                         {import.meta.env.DEV && <AtlasDevSection />}
                         {import.meta.env.DEV && <GuildHallDevSection />}
