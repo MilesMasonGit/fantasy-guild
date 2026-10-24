@@ -8,6 +8,11 @@ import { STRIKE_DELAY_MS } from '../hitAnimations.js';
 import { FX_FRAME_MS, heldPoses } from './pixelSteps.js';
 import { spriteOf, makeCopy } from './spriteCopy.js';
 import { tintUrl } from '../../../utils/spriteFx.js';
+import * as HeroMotion from '../../../../systems/board/HeroMotion.js';
+import { bubbleAnchorY } from '../bubbleLayout.js';
+import { ART_PX } from '../../../../config/matGeometry.js';
+import { getItem } from '../../../../config/registries/itemRegistry.js';
+import { resolveSpritePath } from '../../../../utils/AssetManager.js';
 
 /**
  * The mat's effects that stand on the mat rather than on one Token's art: numbers rising off a
@@ -207,10 +212,78 @@ export function heroFlash(heroId, tint = 'green', { frames = 2 } = {}) {
     return true;
 }
 
+/** How long a "used" bubble stays over a hero. */
+export const USED_BUBBLE_MS = 1500;
+
+/** Icons in a used bubble are 16 art pixels, like the level-up float's. */
+const USED_ICON_ART_PX = 16;
+
+/** The bubble up on each hero: one at a time, a newer one replaces it. */
+const usedBubbles = new Map();
+
+/**
+ * What a "used" bubble says for one `HERO_CONSUMED`: the health a meal gave back ("+5 ♥"), or an
+ * elixir's name. Null when there is nothing to say (a meal at full health).
+ */
+export function usedBubbleText(p) {
+    if (!p?.itemId) return null;
+    if (p.elixir) return getItem(p.itemId)?.name || p.itemId;
+    const healed = Math.round(Number(p.amount) || 0);
+    return healed > 0 ? `+${healed} ♥` : null;
+}
+
+/**
+ * The "used" bubble: a small bubble over a hero's head with the item's icon and what it did, for
+ * {@link USED_BUBBLE_MS}. It pops up one art pixel, holds, and is gone. One per hero: a newer one
+ * takes the older one's place. Nothing is drawn for a hero who is not on the mat.
+ * @returns {Animation|null}
+ */
+export function usedBubble(heroId, itemId, text) {
+    if (!host || !heroId || !text) return null;
+    const body = HeroMotion.bodyView(heroId);
+    if (!body || !Number.isFinite(body.x) || !Number.isFinite(body.y)) return null;
+
+    usedBubbles.get(heroId)?.cancel();
+
+    const el = document.createElement('div');
+    el.setAttribute('aria-hidden', 'true');
+    el.setAttribute('data-fx-used', heroId);
+    el.className = 'gi-used-bubble';
+    el.style.visibility = 'hidden';
+    const src = resolveSpritePath(getItem(itemId) || itemId);
+    if (src) {
+        const icon = document.createElement('img');
+        icon.src = src.startsWith('/') || src.startsWith('http') || src.startsWith('data:') ? src : `/${src}`;
+        icon.alt = '';
+        icon.draggable = false;
+        const px = USED_ICON_ART_PX * unit;
+        Object.assign(icon.style, { width: `${px}px`, height: `${px}px`, imageRendering: 'pixelated' });
+        el.appendChild(icon);
+    }
+    const label = document.createElement('span');
+    label.textContent = text;
+    el.appendChild(label);
+
+    const rise = [
+        { ms: 2 * FX_FRAME_MS, y: 0 },
+        { ms: 2 * FX_FRAME_MS, y: -1 },
+        { ms: USED_BUBBLE_MS - 4 * FX_FRAME_MS, y: -2 }
+    ];
+    const { keyframes, duration } = heldPoses(shown(rise), { unit, rest: { visibility: 'hidden' } });
+    const anim = playAt(el, body.x, bubbleAnchorY(body.y, ART_PX * unit), keyframes, duration);
+    if (!anim) return null;
+    usedBubbles.set(heroId, anim);
+    const forget = () => { if (usedBubbles.get(heroId) === anim) usedBubbles.delete(heroId); };
+    anim.addEventListener?.('finish', forget);
+    anim.addEventListener?.('cancel', forget);
+    return anim;
+}
+
 /**
  * The layer's listeners: a damage number on every landed hit (on the strike frame), a rule's
  * number and its neighbour's spark when a rule fires, a hero's green flash when food heals them in
- * a fight, the knockout when a fight is won.
+ * a fight, the "used" bubble when a hero eats, drinks or drinks an elixir, the knockout when a
+ * fight is won.
  * @returns {() => void} unsubscribe
  */
 export function watchMatFx() {
@@ -229,6 +302,12 @@ export function watchMatFx() {
         }, UI_LISTENER),
         EventBus.subscribe(ENGINE_EVENTS.COMBAT_HERO_ATE, (p) => {
             if (p?.heroId && Number(p.healed) > 0 && isDrawn('matFx')) heroFlash(p.heroId, 'green');
+        }, UI_LISTENER),
+        // ⚠️ A UI listener, so a catch-up's meals and elixirs (a quiet bus) draw nothing.
+        EventBus.subscribe(ENGINE_EVENTS.HERO_CONSUMED, (p) => {
+            if (!p?.heroId || !isDrawn('matFx')) return;
+            const text = usedBubbleText(p);
+            if (text) usedBubble(p.heroId, p.itemId, text);
         }, UI_LISTENER),
         EventBus.subscribe(BOARD_EVENTS.COMBAT_RESOLVED, (p) => {
             if (p?.outcome !== 'victory' || !p.instanceId || !isDrawn('matFx')) return;

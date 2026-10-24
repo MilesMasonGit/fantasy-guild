@@ -5,6 +5,7 @@ import { render, act, cleanup } from '@testing-library/react';
 import { DndContext } from '@dnd-kit/core';
 import './fixtures/testTokens.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
+import { registerItems } from '../config/registries/itemRegistry.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
@@ -545,6 +546,74 @@ describe('colour flash on a hero: green when food heals them in a fight', () => 
             MatFx.attachFxHost(null);
             rec.restore();
         }
+    });
+});
+
+describe('the "used" bubble over a hero who eats, drinks or drinks an elixir', () => {
+    let rec;
+    let host;
+    let unwatch;
+    beforeEach(() => {
+        rec = recordAnimate();
+        GameState.initNew();
+        clearMat();
+        registerItems({
+            fx_bread: { id: 'fx_bread', name: 'Bread', equipSlot: 'food', sprite: ITEM },
+            fx_valor: { id: 'fx_valor', name: 'Valor', equipSlot: 'consumable', sprite: ITEM }
+        });
+        host = document.createElement('div');
+        document.body.appendChild(host);
+        MatFx.attachFxHost(host, 2);
+        unwatch = MatFx.watchMatFx();
+        BoardState.setHeroBody('h1', { x: 300, y: 400 });
+    });
+    afterEach(() => {
+        BoardState.setHeroBody('h1', null);
+        unwatch();
+        MatFx.attachFxHost(null);
+        rec.restore();
+    });
+
+    it('says what a meal gave back, with the item icon, over the hero, for about 1.5 s', () => {
+        EventBus.publish(ENGINE_EVENTS.HERO_CONSUMED, { heroId: 'h1', itemId: 'fx_bread', category: 'food', amount: 5 });
+        const bubble = host.querySelector('[data-fx-used="h1"]');
+        expect(bubble.textContent).toBe('+5 ♥');
+        expect(bubble.className).toBe('gi-used-bubble');
+        expect(bubble.querySelector('img').getAttribute('src')).toBe(`/${ITEM}`);
+        expect(bubble.style.left).toBe('300px');
+        expect(parseFloat(bubble.style.top)).toBeLessThan(400);
+        const anim = rec.calls.find(a => a.el === bubble);
+        expect(anim.options.duration).toBe(MatFx.USED_BUBBLE_MS);
+        anim.finish();
+        expect(host.children).toHaveLength(0);
+    });
+
+    it('names an elixir', () => {
+        EventBus.publish(ENGINE_EVENTS.HERO_CONSUMED, { heroId: 'h1', itemId: 'fx_valor', category: 'consumable', amount: 0, elixir: true });
+        expect(host.querySelector('[data-fx-used="h1"]').textContent).toBe('Valor');
+    });
+
+    it('one at a time per hero: a newer bubble replaces the older one', () => {
+        EventBus.publish(ENGINE_EVENTS.HERO_CONSUMED, { heroId: 'h1', itemId: 'fx_valor', amount: 0, elixir: true });
+        const first = rec.calls[rec.calls.length - 1];
+        EventBus.publish(ENGINE_EVENTS.HERO_CONSUMED, { heroId: 'h1', itemId: 'fx_bread', amount: 3 });
+        expect(first.cancel).toHaveBeenCalled();
+    });
+
+    it('draws nothing for a meal that healed nothing, or a hero off the mat', () => {
+        EventBus.publish(ENGINE_EVENTS.HERO_CONSUMED, { heroId: 'h1', itemId: 'fx_bread', amount: 0 });
+        EventBus.publish(ENGINE_EVENTS.HERO_CONSUMED, { heroId: 'h2', itemId: 'fx_bread', amount: 5 });
+        expect(host.children).toHaveLength(0);
+    });
+
+    it('draws nothing while the bus is quiet (a catch-up)', () => {
+        EventBus.setQuiet(true);
+        try {
+            EventBus.publish(ENGINE_EVENTS.HERO_CONSUMED, { heroId: 'h1', itemId: 'fx_bread', amount: 5 });
+        } finally {
+            EventBus.setQuiet(false);
+        }
+        expect(host.children).toHaveLength(0);
     });
 });
 
