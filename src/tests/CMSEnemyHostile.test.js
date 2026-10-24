@@ -10,7 +10,7 @@ import { useEntityStore } from '../../cms/src/stores/useEntityStore';
 import { useSimulationStore } from '../../cms/src/stores/useSimulationStore';
 import { syncFiles } from '../../cms/src/engine/recipeSync';
 import TokenEditor from '../../cms/src/components/editors/TokenEditor.jsx';
-import { isHostileEnemy } from '../config/registries/enemyProfile.js';
+import { isHostileEnemy, enemyProfileOf } from '../config/registries/enemyProfile.js';
 import { COMBAT_SKILL_IDS } from '../config/registries/skillRegistry.js';
 
 /**
@@ -169,5 +169,24 @@ describe('the Token editor’s Hostile checkbox', () => {
         const id = useEntityStore.getState().addToken({ name: 'Plain Fixture' });
         const { container } = editor(id);
         expect(within(container).queryByLabelText('Hostile')).toBeNull();
+    });
+});
+
+describe('the Token editor’s level preview', () => {
+    it('shows the fight’s own numbers for every shipped enemy: HP, hit, armour, swing time, XP', () => {
+        for (const id of enemyIds) {
+            const p = enemyProfileOf(useEntityStore.getState().tokens[id]);
+            const { container, unmount } = editor(id);
+            const box = within(container).getByText('Derived from level').parentElement.parentElement;
+            expect(box.textContent, id).toContain(
+                `HP${p.hp}Hit${p.hit}Armour${p.armor}Attacks every${(p.attackSpeed / 1000).toFixed(1)}sXP${p.xpAwarded}`);
+            unmount();
+        }
+    });
+
+    it('the Goblin, scaled by its budget, reads 6 HP, a hit of 1 and 3 XP', () => {
+        const { container } = editor('token_goblin');
+        const box = within(container).getByText('Derived from level').parentElement.parentElement;
+        expect(box.textContent).toContain('HP6Hit1Armour0Attacks every3.0sXP3');
     });
 });
