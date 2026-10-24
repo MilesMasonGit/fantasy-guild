@@ -132,12 +132,13 @@ function PlateCell({ cell, u, tip }) {
 export function WorkPlateView({ cells, tone = null, u = 1, tip = null, fill = null, plateProps = null }) {
     const band = PLATE.BAND * u;
     const frame = { borderWidth: band, borderImageWidth: `${band}px` };
+    const { style: plateStyle, ...rest } = plateProps || {};
     return (
         <div
             data-work-plate-tone={tone || undefined}
-            {...plateProps}
+            {...rest}
             className="relative flex items-center select-none pointer-events-auto cursor-grab active:cursor-grabbing"
-            style={{ height: PLATE.H * u, padding: `0 ${PLATE.SIDE * u}px`, gap: PLATE.GAP * u }}
+            style={{ height: PLATE.H * u, padding: `0 ${PLATE.SIDE * u}px`, gap: PLATE.GAP * u, ...plateStyle }}
         >
             <span
                 aria-hidden="true"
@@ -176,6 +177,9 @@ const PLATE_ROUTES = Object.freeze([
     BOARD_EVENTS.HERO_MOVED,                // the hero arrived, or came round the other side
     BOARD_EVENTS.TOKEN_CHARGES_CHANGED      // a charge spent
 ]);
+
+/** A plate takes the pointer unless its layer lets it through (`--plate-pointer`, set by the layer). */
+const PLATE_POINTER = Object.freeze({ pointerEvents: 'var(--plate-pointer, auto)' });
 
 /** How often the opened line's time to the next one is read again. */
 const TIMER_MS = 1000;
@@ -227,7 +231,12 @@ const WorkPlate = memo(function WorkPlate({ tokenId, heroId, x, y, typeId, open,
                 u={u}
                 tip={tip}
                 fill={<WorkBarFill instanceId={tokenId} blocked={!!plate.problem} style={fillStyle(u, leadOf(cells))} />}
-                plateProps={{ 'data-work-plate': tokenId, 'data-work-plate-open': open ? 'true' : undefined, onPointerDown: press }}
+                plateProps={{
+                    'data-work-plate': tokenId,
+                    'data-work-plate-open': open ? 'true' : undefined,
+                    onPointerDown: press,
+                    style: PLATE_POINTER
+                }}
             />
         </div>
     );
@@ -237,16 +246,23 @@ const WorkPlate = memo(function WorkPlate({ tokenId, heroId, x, y, typeId, open,
  * The work plates, one per hero at work, in one layer over the floor loot (`MAT_Z.WORK_PLATE`): in
  * a Token's own box the loot lying at its feet covered it. `plates` are `{ tokenId, heroId, typeId,
  * x, y }`; the one whose Token or hero the pointer rests on is open.
+ * ⚠️ A plate never takes a Token from under the pointer. It stands below its hero's feet, so on a
+ * crowded mat it lies across the top of the Token in the row below, and a point on a Token's circle
+ * is that Token's: while the pointer is on one (`yieldToTokens`, the mat's own test) every plate
+ * lets it through, and a press that lands on a plate there is sent to that Token
+ * (`pressRouting.js`). Off every circle a plate keeps the pointer: its tooltips, and a press picks
+ * up its own Token.
  * A fight has no plate yet: its place is kept for the fight's own link (both styles, the elixirs).
  */
-export const WorkPlateLayer = memo(function WorkPlateLayer({ plates, restTokenId = null, restHeroId = null, onPress }) {
+export const WorkPlateLayer = memo(function WorkPlateLayer({ plates, restTokenId = null, restHeroId = null, onPress, yieldToTokens = false }) {
     const fit = useMatFit() || 1;
     const mat = useMatSize();
     return (
         <div
             data-work-plates
             className="absolute left-0 top-0 w-0 h-0 pointer-events-none"
-            style={{ zIndex: MAT_Z.WORK_PLATE }}
+            // One variable for every plate, so the pointer moving on and off a circle redraws none.
+            style={{ zIndex: MAT_Z.WORK_PLATE, '--plate-pointer': yieldToTokens ? 'none' : 'auto' }}
         >
             {plates.map(p => (
                 <WorkPlate

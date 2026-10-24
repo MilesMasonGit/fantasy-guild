@@ -288,13 +288,6 @@ export const MatBoard = React.memo(function MatBoard({
          * circle. Only the cloth of a flag drawn in front of that Token keeps the pointer, so a
          * flag standing among Tokens can always be picked up by its banner.
          */
-        // A work plate is its Token's, wherever it stands over another Token's circle.
-        const plateId = e.target?.closest?.('[data-work-plate]')?.getAttribute('data-work-plate') || null;
-        if (plateId) {
-            setFlagsYield(prev => (prev === false ? prev : false));
-            setHoveredId(prev => (prev === plateId ? prev : plateId));
-            return;
-        }
         const point = pointerToMat({ x: e.clientX, y: e.clientY }, el.getBoundingClientRect());
         let id = point ? (Flags.tokenAtPoint(point)?.id ?? null) : null;
         if (id && flagClothOver(el, e.clientX, e.clientY, id)) {
@@ -305,7 +298,14 @@ export const MatBoard = React.memo(function MatBoard({
         const onToken = !!id;
         setFlagsYield(prev => (prev === onToken ? prev : onToken));
         if (!id) {
-            // Not over a Token: a flag in front keeps the pointer (it is grabbable).
+            // Not over a Token: a work plate is its own Token's (over a circle it lets the pointer
+            // through, as flags do).
+            const plateId = e.target?.closest?.('[data-work-plate]')?.getAttribute('data-work-plate') || null;
+            if (plateId) {
+                setHoveredId(prev => (prev === plateId ? prev : plateId));
+                return;
+            }
+            // A flag in front keeps the pointer (it is grabbable).
             if (e.target?.closest?.('[data-flag]')) {
                 setHoveredId(prev => (prev === null ? prev : null));
                 return;
@@ -529,7 +529,13 @@ export const MatBoard = React.memo(function MatBoard({
 
             {/* `MAT_Z.WORK_PLATE`: the plate under each hero at work and their Token, over the loot. */}
             {platesDrawn && (
-                <WorkPlateLayer plates={plates} restTokenId={rest.tokenId} restHeroId={rest.heroId} onPress={handleTokenPress} />
+                <WorkPlateLayer
+                    plates={plates}
+                    restTokenId={rest.tokenId}
+                    restHeroId={rest.heroId}
+                    onPress={handleTokenPress}
+                    yieldToTokens={flagsYield}
+                />
             )}
 
             {/* `MAT_Z.FX`: effects standing on the mat (rising numbers, sparks, a knockout). */}
