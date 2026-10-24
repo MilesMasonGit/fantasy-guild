@@ -9,8 +9,8 @@ build green) · bench-queued · eye-check · merged.*
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| D1: calmer sky: no toasts or stubs over the screen, smooth drift, stars grey/blue/gold (T-231 to T-233) | builder | `backlog/hall-sky` (`dg`) | round 1 (e1a60399) gated: 5813 tests, cycles, build, same work; Hall scene draw main vs branch level (work p50 0.60 vs 0.60 ms 1×, 2.01 vs 1.91 ms 4×; DOM 342 → 284). **Owner by phone:** smooth glide, three looks ok, outline on hover only (no always-on gold outline): builder fixing; then merge | Fri | |
-| D2: Hall Effects popover from the central star, Inspect panel in pixel style, the camera glide back (T-234, T-194); after D1 | engineer (glide), builder (panels) | — | queued | | |
+| D1: calmer sky: no toasts or stubs over the screen, smooth drift, stars grey/blue/gold (T-231 to T-233) | builder | `backlog/hall-sky` | **merged** 02cb806b: no toasts or stubs over the screen, linear glide (owner; draws level), grey/blue/gold stars (blue = affordable now), outlines on hover only (owner; the pinned star's always-on outline went too). Merged result: 5825 tests, cycles, build | Fri | Fri |
+| D2: Hall Effects popover from the central star, Inspect panel in pixel style, the camera glide back (T-234, T-194); after D1 | builder (panels) `backlog/hall-panels` (`dp`), engineer (glide) `backlog/hall-glide` (`dc`) | both | building | Fri | |
 
 ## Backlog director, batch C: Bank, items and the hero bar (brief 210; owner said go 2026-10-23) — **done, merged 957cb9ba**
 

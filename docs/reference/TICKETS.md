@@ -58,9 +58,6 @@ Detail, order and tiers in [brief 210](../active/briefs/210_backlog_intake.md); 
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
-| T-231 | P3 | open | **No toasts or stubs over the Guild Hall upgrade screen** (GUILD-01). Eye-check. | brief 210 D1 |
-| T-232 | P3 | open | **Smooth star drift in the Hall sky** (GUILD-02). Eye-check. | brief 210 D1 |
-| T-233 | P3 | open | **Hall stars steady, grey / blue / gold by state** (GUILD-03). Eye-check. | brief 210 D1 |
 | T-234 | P2 | open | **Guild Hall Effects as a popover; Inspect panel in the pixel style** (GUILD-04). Eye-check. | brief 210 D2 |
 | T-235 | P3 | open | **Bank and Shop drawers reach the left edge as one panel** (DRAWER-01). Eye-check. | brief 210 E1 |
 | T-236 | P2 | open | **Opening the Bank moves the top bar, stubs and mat smoothly** (DRAWER-02). Eye-check. | brief 210 E1 |

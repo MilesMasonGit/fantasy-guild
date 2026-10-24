@@ -165,3 +165,6 @@ T-229 — New! on an item stub clears on hover or pin and stays gone until a new
 T-226 — Equipping plays the pixel shine on the slot; bounce and glow removed — 957cb9ba — 2026-10-23
 T-227 — The Bank's vertical hero tabs show portrait (cut from each class sheet, facing left) and name; the horizontal bar unchanged (owner: the vertical bar was meant) — 957cb9ba — 2026-10-23
 T-228 — Work Permissions as a chamfered button under the mat, drawer rising from below, Combat first — 957cb9ba — 2026-10-23
+T-231 — No toasts or item stubs over the Guild Hall upgrade screen; they wait on the mat — 02cb806b — 2026-10-23
+T-232 — The Hall sky drifts in a smooth linear glide (owner's pick; draws level with steps) — 02cb806b — 2026-10-23
+T-233 — Stars stop blinking: grey nothing affordable or locked, blue affordable now, gold maxed; outlines on hover only (owner) — 02cb806b — 2026-10-23
