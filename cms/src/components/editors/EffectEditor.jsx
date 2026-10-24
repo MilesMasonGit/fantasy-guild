@@ -98,6 +98,7 @@ export default function EffectEditor() {
         <label className="flex items-center gap-2 text-[11px] text-gray-300 cursor-pointer">
           <input
             type="checkbox"
+            data-field="status-on"
             checked={!!status}
             onChange={(e) => updateEffect(effect.id, { status: e.target.checked ? { stacks: 1, ticks: 0 } : undefined })}
           />
@@ -114,6 +115,7 @@ export default function EffectEditor() {
             <Field label="Stacks up to">
               <input
                 type="number" min={1} max={MAX_STATUS_STACKS}
+                data-field="status-stacks"
                 value={status.stacks}
                 onChange={(e) => setStatus({ stacks: Number(e.target.value) || 1 })}
                 className="input w-full"
@@ -123,6 +125,7 @@ export default function EffectEditor() {
             <Field label="Lasts (ticks)">
               <input
                 type="number" min={0}
+                data-field="status-ticks"
                 value={status.ticks}
                 onChange={(e) => setStatus({ ticks: Math.max(0, Number(e.target.value) || 0) })}
                 className="input w-full"

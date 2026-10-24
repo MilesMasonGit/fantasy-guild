@@ -519,7 +519,9 @@ function resolveDefeat(instance, heroId) {
     const hero = HeroManager.getHero(heroId);
     if (hero && hero.status !== 'wounded') HeroManager.setHeroStatus(heroId, 'wounded');
 
-    // Statuses ended with the fight above.
+    // Whatever the hero had for the fight (statuses, an elixir's effect) ends with it, even when the
+    // Token they worked was not the enemy they fought.
+    LiveEffects.endHeroFightEffects(heroId);
     const lost = applyDefeatPenalties(heroId) || [];
 
     // Off the board. Recovery is tracked on the HERO (`woundedRemainingMs`), never on the tile, so
