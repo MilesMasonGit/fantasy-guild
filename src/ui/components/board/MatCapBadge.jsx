@@ -16,6 +16,7 @@ import { placeUnder } from './tooltipPlacement.js';
 import { highlightType } from './tokenHighlight.js';
 import { TopBarTip } from './TopBarTip.jsx';
 import { EntityRibbon } from '../base/EntityRibbon.jsx';
+import { PixelFrame, FRAME_KIND } from '../base/PixelFrame.jsx';
 import { TOP_BAR_ICON, TopBarIcon } from './MatTopBar.jsx';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
@@ -177,23 +178,29 @@ export const TokenSummaryPanel = ({ anchor, summary, cap, panelRef }) => {
             role="dialog"
             aria-label="Token Summary"
             data-token-summary
-            className="fixed z-(--z-mat-tip) flex flex-col overflow-y-auto custom-scrollbar p-2 rounded-lg bg-black/90 border border-gi-gold/40 shadow-[0_10px_30px_rgba(0,0,0,0.8)] ui-text-title leading-snug text-white"
-            style={{ width: PANEL_WIDTH, maxHeight: 'min(480px, 70vh)', ...placeUnder(anchor, PANEL_WIDTH, 360) }}
+            className="fixed z-(--z-mat-tip)"
+            style={{ width: PANEL_WIDTH, ...placeUnder(anchor, PANEL_WIDTH, 360) }}
         >
-            <div className="font-bold text-gi-gold">Tokens {summary.total}/{cap}</div>
-            {empty && <div className="mt-1 text-white/60">Nothing placed yet.</div>}
-            {summary.pinned.length > 0 && (
-                <div data-token-summary-pinned>
-                    <SummaryHeading>Missing items</SummaryHeading>
-                    <ul className="flex flex-col">{summary.pinned.map(r => <SummaryRow key={r.typeId} row={r} />)}</ul>
-                </div>
-            )}
-            {summary.sections.map(s => (
-                <div key={s.section} data-token-summary-section={s.section}>
-                    <SummaryHeading>{s.name}</SummaryHeading>
-                    <ul className="flex flex-col">{s.rows.map(r => <SummaryRow key={r.typeId} row={r} />)}</ul>
-                </div>
-            ))}
+            <PixelFrame
+                kind={FRAME_KIND.CHAMFER}
+                frameClassName="flex flex-col overflow-y-auto custom-scrollbar p-0.5 ui-text-title leading-snug text-white"
+                frameStyle={{ maxHeight: 'min(480px, 70vh)' }}
+            >
+                <div className="font-bold text-gi-gold">Tokens {summary.total}/{cap}</div>
+                {empty && <div className="mt-1 text-white/60">Nothing placed yet.</div>}
+                {summary.pinned.length > 0 && (
+                    <div data-token-summary-pinned>
+                        <SummaryHeading>Missing items</SummaryHeading>
+                        <ul className="flex flex-col">{summary.pinned.map(r => <SummaryRow key={r.typeId} row={r} />)}</ul>
+                    </div>
+                )}
+                {summary.sections.map(s => (
+                    <div key={s.section} data-token-summary-section={s.section}>
+                        <SummaryHeading>{s.name}</SummaryHeading>
+                        <ul className="flex flex-col">{s.rows.map(r => <SummaryRow key={r.typeId} row={r} />)}</ul>
+                    </div>
+                ))}
+            </PixelFrame>
         </div>,
         document.body
     );

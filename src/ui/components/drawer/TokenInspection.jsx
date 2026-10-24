@@ -145,7 +145,7 @@ export const TokenInspection = ({
             <div className="flex flex-col gap-2 pt-1 border-t border-gi-border/30">
                 <LandmarkBlock def={def} />
                 {skillName && (
-                    <div data-skill-req={skillId} className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-[#181412] border border-white/10 text-xs">
+                    <div data-skill-req={skillId} className="flex items-center justify-between gap-2 py-1 text-xs">
                         <div className="flex items-center gap-1.5 text-gi-muted">
                             <span>Skill Req</span>
                         </div>
@@ -160,7 +160,7 @@ export const TokenInspection = ({
                 <InspectBubbles def={def} instanceId={instanceId} />
 
                 {enemy && (
-                    <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-[#181412] border border-white/10 text-xs">
+                    <div className="flex items-center justify-between gap-2 py-1 text-xs">
                         <div className="flex items-center gap-1.5 text-gi-muted">
                             <span>Enemy</span>
                         </div>
@@ -185,7 +185,7 @@ export const TokenInspection = ({
             )}
 
             {def.buff && (
-                <div className="rounded border border-gi-border/40 bg-gi-base/40 p-2.5">
+                <div className="py-1">
                     <Label>Buffs {def.buff.target === 'hero' ? 'the hero on it' : 'nearby Tokens'}</Label>
                     <ul className="mt-1 flex flex-col gap-0.5">
                         {def.buff.modifiers.map((m, i) => (
@@ -306,7 +306,7 @@ const LifecycleLines = ({ instanceId }) => {
     if (!lines.length) return null;
 
     return (
-        <div data-lifecycle-lines className="flex flex-col gap-1 px-3 py-2 rounded-lg bg-[#181412] border border-white/10 text-xs">
+        <div data-lifecycle-lines className="flex flex-col gap-1 py-1 text-xs">
             {lines.map((line, i) => (
                 <div key={i} className="flex items-start justify-between gap-2">
                     <span className="text-gi-muted">{line.label}</span>
@@ -398,7 +398,7 @@ const DrivesBlock = ({ def }) => {
     );
 
     return (
-        <div className="rounded border border-gi-border/40 bg-gi-base/40 p-2">
+        <div className="py-1">
             <Label>{def.isTool ? 'Tool — unlocks' : 'Drives'}</Label>
             <p className="mt-1 ui-text-body text-gi-text">
                 {driven.length ? driven.map(id => tokenName(id)).join(', ') : 'Nothing yet'}

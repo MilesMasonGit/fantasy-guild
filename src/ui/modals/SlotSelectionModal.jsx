@@ -170,7 +170,7 @@ export const SlotSelectionModal = ({ isOpen, onSelect }) => {
             isOpen={isOpen}
             hideClose={true}
             title="Choose a Save"
-            className="w-full max-w-2xl bg-gray-900 border-gi-primary/50 text-white mt-[-10vh]"
+            className="w-full max-w-2xl text-white mt-[-10vh]"
         >
             <div className="flex flex-col gap-4 py-2">
                 <p className="text-sm text-gray-400 mb-2 uppercase tracking-widest">Pick a save slot to play:</p>
