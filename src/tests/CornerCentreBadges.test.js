@@ -265,15 +265,19 @@ describe('on the mat', () => {
         expect(onOpenRecipes).toHaveBeenCalledTimes(2);
     });
 
-    it('a blocked Token holds its work bar grey and draws one red mark, no words', () => {
+    it('a blocked Token draws one red mark and no words; worked, the mark is on its plate instead', () => {
         const bench = put('fixture_q2_bench');
-        const token = (alert) => ({ typeId: bench.typeId, instanceId: bench.id, heroId: 'h1', alert });
-        const row = mount(h(TokenBubbles, { instanceId: bench.id, token: token(ALERT.NO_ROOM) })).container;
-        expect(row.textContent).not.toContain('No room');
-        expect(row.querySelector('[data-alert-kind]')).toBeNull();
-        expect(row.querySelector('[data-work-bar]').getAttribute('data-work-bar-blocked')).toBe('true');
-        expect(row.querySelectorAll('[data-problem-mark]')).toHaveLength(1);
-        expect(row.querySelector('[data-problem-mark]').getAttribute('data-problem-severity')).toBe('cant');
+        const token = (alert, heroId) => ({ typeId: bench.typeId, instanceId: bench.id, heroId, alert });
+        const idle = mount(h(TokenBubbles, { instanceId: bench.id, token: token(ALERT.NO_ROOM, null) })).container;
+        expect(idle.textContent).not.toContain('No room');
+        expect(idle.querySelector('[data-alert-kind]')).toBeNull();
+        expect(idle.querySelectorAll('[data-problem-mark]')).toHaveLength(1);
+        expect(idle.querySelector('[data-problem-mark]').getAttribute('data-problem-severity')).toBe('cant');
+        cleanup();
+        const worked = mount(h(TokenBubbles, { instanceId: bench.id, token: token(ALERT.NO_ROOM, 'h1') })).container;
+        expect(worked.textContent).not.toContain('No room');
+        expect(worked.querySelector('[data-problem-mark]')).toBeNull();
+        expect(worked.querySelector('[data-work-bar]')).toBeNull();
     });
 
     it('FB-7: a chosen recipe keeps the gear, still, shown on hover', () => {

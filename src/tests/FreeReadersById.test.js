@@ -31,7 +31,8 @@ import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import * as MatPlacement from '../systems/board/MatPlacement.js';
 import { TokenBubbles } from '../ui/components/board/TokenBubbles.jsx';
 import { STEP_MS } from '../ui/components/board/frameClock.js';
-import { WORK_BAR_ART_W } from '../ui/components/board/workBar.js';
+import { WorkBarFill } from '../ui/components/board/WorkPlateLayer.jsx';
+import { PLATE } from '../ui/components/board/workPlate.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -354,7 +355,10 @@ describe('⭐ the mat draws each Token by its instance id (slice 1.6c-2)', () =>
             clearMat();
             const tok = placeAt('fixture_producer', C(14).x, C(14).y);
             const other = placeAt('fixture_producer', C(15).x, C(15).y);
-            const { container } = render(React.createElement(TokenBubbles, { instanceId: tok.id, token: { typeId: tok.typeId, heroId: 'hero_1', instanceId: tok.id } }));
+            // The Token's bubbles feed the bar; its plate's fill draws it.
+            const { container } = render(React.createElement(React.Fragment, null,
+                React.createElement(TokenBubbles, { instanceId: tok.id, token: { typeId: tok.typeId, heroId: 'hero_1', instanceId: tok.id } }),
+                React.createElement(WorkBarFill, { instanceId: tok.id })));
             const bar = container.querySelector('[data-work-bar]');
             // The bar draws on the shared step clock's next step, in art pixels.
             const step = () => act(() => { vi.advanceTimersByTime(STEP_MS + 20); });
@@ -365,7 +369,7 @@ describe('⭐ the mat draws each Token by its instance id (slice 1.6c-2)', () =>
 
             act(() => { EventBus.publish(BOARD_EVENTS.PROGRESS, { instanceId: tok.id, percent: 50, elapsedMs: 5000, cycleTimeMs: 10000 }); });
             step();
-            expect(Number(bar.getAttribute('data-work-bar-fill')) / WORK_BAR_ART_W).toBeCloseTo(0.5, 1);
+            expect(Number(bar.getAttribute('data-work-bar-fill')) / PLATE.FILL_STEPS).toBeCloseTo(0.5, 1);
         } finally {
             cleanup();
             vi.useRealTimers();
