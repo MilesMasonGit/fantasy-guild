@@ -243,6 +243,50 @@ Differs from GDD §6 in places; the code wins:
   drop materials. ⚠️ Overlap: which boss or guardian drops which map is the
   basic-content agent's (`concept_basic_content.md`, map acquisition).
 
+### Depth (options in [research/combat_depth_options.md](research/combat_depth_options.md))
+
+- **Miss chance = 10 % ± level gap + the enemy's Dodge − the hero's
+  Accuracy**, kept between 5 % and 40 % (extends the level-gap ruling).
+- **Pierce**: a weapon stat that ignores that many armour points (armour
+  stays flat, minimum 1 per hit).
+- **Crits double before armour** (iron sword 4 against armour 2: a normal hit
+  does 2, a crit 8 − 2 = 6), and gear can raise crit chance.
+- **Damage stays fixed per weapon.** Weapon traits ("every 4th swing +1")
+  are a later idea, built on the bosses' "every Nth swing" moment.
+- **Gear carries a main stat plus a special ability**, more than a plain
+  number: e.g. a **Cleaver** is a melee weapon hitting a little less than a
+  sword but with a chance to double Meat drops. Abilities are Rules-system
+  effects on the item.
+- **The ability comes from the weapon family**: every Cleaver doubles meat
+  sometimes, every Spear pierces; each tier (bronze, iron) keeps the ability
+  and raises its number.
+- **Stat bonuses are abilities too**: a family's ability may be a stat
+  (Spear: Pierce 1, Bow: +Accuracy, Rapier: +Crit; Vitality, Guard) or
+  something special (Cleaver: more meat). One idea, "what this piece is good
+  at", authored in the Rules editor.
+- **Armour families get abilities the same way** (a Hide Vest: poison wears
+  off faster). Armour sets are a later idea.
+- **An ability can touch anything**, work and gathering included (a combat
+  weapon could also help a work skill). ⚠️ Overlap: tools are the
+  skill-loops agent's; gear that boosts work must fit their loops.
+- **No fight preview.** The player learns which fights are winnable by
+  playing and from the combat panel (amends "a player can tell whether one
+  is winnable" in the direction: readability comes from small fixed numbers,
+  not a forecast).
+- **No hero tactics settings.** The player's choices are equipment,
+  consumables, and which enemy to fight by placing the hero's flag.
+- **An overnight combat recap**: one combat block in the offline catch-up
+  summary (fights won and lost, food and elixirs used, drops, knockouts).
+- **Gear slots stay as built**: two hands (a tool takes one, a two-handed
+  weapon both), hat, chest, two trinkets, food, drink, unlimited
+  consumables (elixirs).
+- **Boss gear is fixed**, authored per piece; no random rolls anywhere.
+- **Enemy kinds exist, without icons**: CMS presets the player discovers in
+  the combat panel or by losing. All five from the start: **Armoured** (+2
+  armour, slow), **Nimble** (Dodge 15), **Swift** (small hits every 2 s),
+  **Brute** (big hits every 4 s), **Venomous** (poisons on hit). An enemy has
+  none, one or two.
+
 ### The combat UI (built after the rest)
 
 - **Floating text for every hit, both ways**: crisp pixel numbers for damage
