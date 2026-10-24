@@ -306,10 +306,29 @@ has none yet), melee, magic and commerce have content today.
 ### Equipment — Partial
 A 3×3 loadout grid with category caps (hand 2 — two hands: a tool takes one,
 a two-handed weapon both — hat 1, chest 1, trinket 2,
-food 1, drink 1, consumable unlimited). **No gear ships yet**: 64 items are
-materials, food, drink and one potion. Weapons, armour and gear loss are
-**Latent**. **Gear is coming** (owner 2026-10-06): keep the system; weapons
-and armour will be authored as content.
+food 1, drink 1, consumable unlimited). Gear, weapons and tools are one copy
+per hero: equipping takes the copy out of the Bank.
+- **A weapon** is anything held in the hands that is not a gathering tool. It
+  names its **style(s)** (`styles`: a Dagger is Melee and Stealth), its
+  **damage** and its **speed** (fast 2 s, normal 3 s, slow 4 s). **A hero
+  equips only weapons of their own style**; a weapon naming no style suits any
+  promoted hero. **A Recruit holds no weapon** ("Recruits fight barehanded:
+  promote Bjorn to use the Copper Sword"); a hero of another style is told
+  whose weapon it is ("Mira fights with Magic: the Copper Sword is a Melee
+  weapon"). A weapon of another style still in a hero's hands (from before a
+  re-training) is not swung and its ability is off. Older content's single
+  `skillRequired` style is read as a one-style list. *(`weaponStyles.js`,
+  `EquipmentValidator.js`)*
+- **A family's ability is a Rules effect on the item.** Every tier of a family
+  points at the same library effect (a "Spear" effect: Provides 1 more Pierce),
+  each with its own **scale** (copper 1, iron 2…), so the tier raises the
+  number. Armour carries its stats and abilities the same way (Provides Armor;
+  a Hide Vest: Poison stacks at most 1 lower). An ability may touch anything
+  the grammar reaches, work included (a Cleaver's chance to double Raw Beef
+  works on a kill and on a work cycle alike).
+- **No weapon or armour ships yet** (`items.json` has tools, food, drink,
+  materials, maps and one potion); the first come as a CMS change pack (brief
+  220 C0).
 
 ### How heroes choose work — Built (the heart of the game)
 - A **flag** has no skill: the hero works every skill they hold within the
@@ -371,15 +390,29 @@ and armour will be authored as content.
 ## 6. Combat and enemies
 
 ### Enemies — Built
-Enemies are Tokens with `enemy: { level, style, hostile? }`. **The level fills
-every number from the level table**: HP 20 + level, a hit of 1 + 1 per 20
-levels, 1 armour per 30 levels, a swing every 3 s, XP 10 × 1.065^(level − 1)
-(the table and its worked duels: `concept_combat.md`, "The level table and
-weapon tiers"). A number written beside the level (`hp`, `hit`, `armor`,
-`speed` fast/normal/slow, `xp`, `dodge`, `accuracy`, `pierce`, `critChance`)
-replaces the table's; the CMS fields for them are not built yet. Older content's
-`budgetScale` still multiplies the table's HP, hit and XP (rounded halves up,
-at least 1). 4 ship, **all melee**:
+Enemies are Tokens with `enemy: { level, style, kinds?, hostile? }`. **The
+level fills every number from the level table**: HP 20 + level, a hit of 1 + 1
+per 20 levels, 1 armour per 30 levels, a swing every 3 s, XP 10 × 1.065^(level
+− 1), no Dodge, Accuracy or Pierce, a 5 % crit (the table and its worked
+duels: `concept_combat.md`, "The level table and weapon tiers").
+- **Kinds** (none, one or two, CMS presets the player discovers by fighting):
+  **Armoured** +2 armour and slow (4 s, same hit); **Nimble** +15 Dodge;
+  **Swift** a swing every 2 s at 2/3 of the level's hit; **Brute** a swing
+  every 4 s at 4/3 of the level's hit and at least 1 more; **Venomous**
+  poisons the hero with every hit it lands (today the old status engine's
+  Poison; the real one comes with the Rules-system statuses). Swift clashes
+  with Armoured and Brute (both set the swing); the CMS refuses the pair.
+  Kinds never change HP or XP. *(`enemyKinds.js`)*
+- **Order**: the level table (older content's `budgetScale` multiplies its HP,
+  hit and XP, rounded halves up, at least 1), then each kind in the order
+  ticked (hits rounded halves up, at least 1), then **any number written beside
+  the level** (`hp`, `hit`, `armor`, `speed` fast/normal/slow, `xp`, `dodge`,
+  `accuracy`, `pierce`, `critChance`) **replaces the result outright**. The
+  CMS shows every number filled from the level and kinds, greyed "from level",
+  until the author types one ("yours", with a button back).
+  *(`enemyProfile.js`)*
+
+4 ship, **all melee**, none with a kind:
 
 | Enemy | Level | HP · hit · armour | Hostile | Uses | Drops |
 |---|---|---|---|---|---|
@@ -398,8 +431,9 @@ at least 1). 4 ship, **all melee**:
 
 ### The fight — Built
 - **Swings.** A hero swings at their weapon's speed: fast 2 s, normal 3 s,
-  slow 4 s (barehanded: 3 s). An enemy swings at its own speed (3 s unless
-  authored).
+  slow 4 s (barehanded: 3 s). The weapon swung is the first in the hands of
+  the hero's own style; one of another style is ignored. An enemy swings at
+  its own speed (3 s unless a kind or the author says otherwise).
 - **Damage is fixed**: the weapon's damage (a fist is 1) + 1 per 20 combat
   levels + flat Damage from gear, times any damage buffs and the matchup,
   rounded halves up. No spread.
@@ -419,16 +453,19 @@ at least 1). 4 ship, **all melee**:
 - **A four-way cycle: melee > ranged > magic > stealth > melee**: +25 %
   damage for the favoured side, −25 % for the other (a 2 becomes 3, or stays 2).
   Opposite pairs (melee and magic, ranged and stealth) are even, so each style
-  has one good matchup, one bad one, and two even. An enemy's Style is one of
-  the four combat skills (the CMS dropdown follows the skill registry). Every
-  shipped enemy is melee.
+  has one good matchup, one bad one, and two even. A hero always fights on
+  their own combat skill's side (a Dagger is melee for a Fighter, stealth for a
+  Rogue). An enemy's Style is one of the four combat skills (the CMS dropdown
+  follows the skill registry). Every shipped enemy is melee.
 - **No regen in a fight**: below 25 % HP the hero eats instead of swinging.
 - Each swing draws one random number for the miss and, on a hit, one for the
   crit, from the game's random stream in a fixed order, so a catch-up replays
   the same fights as live play.
 - Kills give XP to the hero's combat skill and count as a work cycle for
-  neighbour rules. Loot drops on the mat, through the same yield, double-loot
-  and bonus-drop rules as a station's output (T-017).
+  neighbour rules. Loot drops on the mat, through the same yield, double-loot,
+  double-item (a Cleaver's) and bonus-drop rules as a station's output (T-017).
+  A double-item chance draws one random number per item it names that landed,
+  and none when nothing offers it.
   *(`FormulaRegistry.js`, `CombatFormulas.js`, `src/systems/combat/`)*
 
 ### Status effects — Latent
@@ -450,10 +487,18 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
 - **12 moments** (On Cycle, On Neighbour's Cycle, On Depleted, On Neighbour's
   Kill, On Engaged, On Tick, On Bank Holds…), **4 roles** (itself, the hero,
   that Token, the enemy), **5 filters**, **4 reaches**.
-- **Modifiers** that neighbours provide: yield, work time, input cost, XP
-  bonus, double loot, fail chance (Tokens); armour, resist, accuracy,
-  damage, status immunity (heroes). Block is gone (a miss is the only failed
-  hit); Dodge, Pierce and Crit Chance are read by combat but not offered yet.
+- **Modifiers** that neighbours (or a hero's items) provide: yield, work
+  time, input cost, XP bonus, double loot, **double item chance** (a chance
+  that one named item, when a cycle or a kill drops it, comes out doubled: the
+  Cleaver's Raw Beef), fail chance (Tokens); armour, resist, accuracy,
+  damage, **dodge, pierce, crit chance**, status immunity and **status stack
+  limit** (one status stacks at most N lower or higher: the Hide Vest's
+  Poison −1; at 0 it cannot land) (heroes). Combat rows are flat amounts, and
+  a new rule on one starts flat. Block is gone (a miss is the only failed
+  hit).
+- **Gear families**: a weapon or armour family's ability is one library
+  effect every tier references with its own scale (1–5), so the tier raises
+  the number.
 - **What ships**: tool tiers (`acts_as`), station skills, two neighbour buffs
   (Coast −5 % work time; Windmill +5 double loot on Fields), a placement limit
   (≤ 2 Coasts nearby), bonus drops, Minecart restocking, the two promotions,
