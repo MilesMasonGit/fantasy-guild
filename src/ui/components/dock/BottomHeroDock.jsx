@@ -6,9 +6,10 @@ import * as Placement from '../../../systems/board/Placement.js';
 import { useEntityDrop } from '../../dnd/DndKit.jsx';
 import { DND_SURFACE } from '../../dnd/dragConstants.js';
 import { DockHeroFigure } from './DockHeroFigure.jsx';
-import { WorkRulesButton, LAUNCHER_PX } from './WorkRulesDrawer.jsx';
+import { WorkRulesButton } from './WorkRulesDrawer.jsx';
 import { DOCK_STRIP_PX, DOCK_SLOT_PX, DOCK_SLOT_MIN_PX, dockArtPx } from './dockHeroView.js';
 import { useLiveMatFit } from '../board/MatFitContext.jsx';
+import { useMatSize } from '../../hooks/useMatSize.js';
 import { HeroManager } from '../../../systems/hero/HeroManager.js';
 import { isRecallDrop, recallFromDrop } from './dockRecall.js';
 import { reorderHeroInDock } from './dockReorder.js';
@@ -22,6 +23,9 @@ export function showsBottomHeroDock(fullscreenView) {
     return fullscreenView !== 'guild';
 }
 
+/** Where the heroes' row starts, from the strip's left end, while the launcher is shown. */
+export const HEROES_LEFT_PX = 136;
+
 /**
  * The horizontal hero dock: the mat's bottom edge, one thin line and no fill, with the heroes
  * standing on it. No ledge, no tabs:
@@ -30,8 +34,8 @@ export function showsBottomHeroDock(fullscreenView) {
  * and sunk.
  * The strip stays a drop target for recalls (a flag, or a hero dragged off the mat). Clicking a
  * hero opens the side hero panel (`BankHeroPanel`); `selectedHeroId` only marks it here.
- * The Work Permissions launcher, in its own slot at the left end, toggles the drawer
- * (`WorkRulesDrawer`); the heroes stand to its right.
+ * The Work Permissions launcher, at the left end under the mat's left corner (inside the mat's
+ * edges), toggles the drawer (`WorkRulesDrawer`); the heroes stand to its right.
  */
 export const BottomHeroDock = ({
     selectedHeroId,
@@ -41,7 +45,10 @@ export const BottomHeroDock = ({
     onToggleRules
 }) => {
     // The same art size the mat draws its heroes at (whole steps).
-    const artPx = dockArtPx(useLiveMatFit());
+    const fit = useLiveMatFit();
+    const artPx = dockArtPx(fit);
+    // The mat's width on screen: the Board centres it in the same column as this strip.
+    const matPx = Math.round(useMatSize().w * fit);
 
     const heroIds = useGameState(
         state => (state.heroes || []).map(h => h.id),
@@ -55,14 +62,24 @@ export const BottomHeroDock = ({
 
     return (
         <DockRecallStrip artPx={artPx}>
-            {onToggleRules && <WorkRulesButton open={rulesOpen} onToggle={onToggleRules} />}
+            {onToggleRules && (
+                <div
+                    data-dock-mat-span
+                    className="absolute inset-y-0 left-0 right-0 mx-auto max-w-full pointer-events-none"
+                    style={{ width: matPx }}
+                >
+                    <div className="pointer-events-auto">
+                        <WorkRulesButton open={rulesOpen} onToggle={onToggleRules} />
+                    </div>
+                </div>
+            )}
             {/**
              * The heroes, one row. On a narrow window each slot shrinks (`DOCK_SLOT_PX` down to `DOCK_SLOT_MIN_PX`)
              * before the row runs out of room.
              */}
             <div
                 className="absolute inset-y-0 right-0 flex flex-row items-end justify-center px-2 z-40"
-                style={{ left: onToggleRules ? LAUNCHER_PX : 0 }}
+                style={{ left: onToggleRules ? HEROES_LEFT_PX : 0 }}
             >
                 {heroIds.map((heroId, index) => (
                     <motion.div

@@ -356,11 +356,14 @@ describe('H2: the hero tabs beside the Bank', () => {
         expect(document.body.querySelector('[data-top-bar-tip]')).toBeNull();
     });
 
-    it('reads each tab as portrait, name and a thin HP bar, with no level text', () => {
+    it('reads each tab as a portrait and the name, nothing else', () => {
         const r = render(panel({ selectedHeroId: null, showTabs: true }));
         const tab = r.container.querySelector('[data-dock-hero-id="h1"]');
-        expect(tab.textContent).toContain('Aldric');
-        expect(tab.textContent).not.toMatch(/Lv|LVL|Level/);
-        expect(tab.querySelector('[data-hero-tab-hp]').style.width).toBe('80%');
+        expect(tab.textContent).toBe('Aldric');
+        expect(tab.querySelector('[data-hero-tab-portrait]')).not.toBeNull();
+        expect(tab.querySelector('[data-hero-tab-name]').textContent).toBe('Aldric');
+        // No HP bar and no status dot: those are in the tooltip and the hero panel.
+        expect(tab.querySelector('[data-hero-tab-hp]')).toBeNull();
+        expect(tab.querySelector('.rounded-full')).toBeNull();
     });
 });

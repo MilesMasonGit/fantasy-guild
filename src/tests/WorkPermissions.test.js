@@ -10,12 +10,13 @@ import {
     SKILL_LAYERS, getSkillIdsByLayer, getSkill, COMBAT_PURPOSE, skillPurpose
 } from '../config/registries/skillRegistry.js';
 import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
-import { BottomHeroDock } from '../ui/components/dock/BottomHeroDock.jsx';
+import { BottomHeroDock, HEROES_LEFT_PX } from '../ui/components/dock/BottomHeroDock.jsx';
 import { BankHeroPanel } from '../ui/components/dock/BankHeroPanel.jsx';
 import { WorkRulesDrawer, LAUNCHER_PX, CELL_PX, drawerInsets } from '../ui/components/dock/WorkRulesDrawer.jsx';
 import { requiresText } from '../ui/components/dock/heroPanelSkills.js';
 import { setLockedListOpen } from '../ui/components/dock/heroPanelSkills.js';
 import { setLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
+import { matW } from '../config/matGeometry.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -96,20 +97,29 @@ afterEach(() => {
 });
 
 describe('the launcher', () => {
-    it('sits in its own slot at the hero bar’s left end, labelled Work Permissions, with the heroes after it', () => {
+    it('sits in its own slot at the hero bar’s left end, inside the mat’s edges, labelled Work Permissions, with the heroes after it', () => {
         const view = render(h(Host));
         const slot = q(view, '[data-work-rules-slot]');
         expect(slot.closest('[data-bottom-hero-dock]')).not.toBeNull();
         expect(slot.style.width).toBe(`${LAUNCHER_PX}px`);
         expect(slot.className).toContain('left-0');
-        expect(slot.className).toContain('border-r');
+        // Under the mat: the bar's contents span the mat's width on screen, centred as the Board centres it.
+        const span = slot.closest('[data-dock-mat-span]');
+        expect(span).not.toBeNull();
+        expect(span.style.width).toBe(`${Math.round(matW() * 1)}px`);
+        expect(span.className).toContain('mx-auto');
+        // A solid button: the chamfer frame with its hard shadow, and the shine.
+        expect(slot.querySelector('[data-pixel-frame="chamfer"]')).not.toBeNull();
+        expect(slot.querySelector('[data-pixel-frame-shadow]')).not.toBeNull();
         const button = slot.querySelector('[data-work-rules-button]');
+        expect(button.closest('[data-pixel-frame="chamfer"]')).not.toBeNull();
+        expect(button.className).toContain('ui-shine');
         expect(button.textContent).toBe('WorkPermissions');
         expect(button.getAttribute('aria-label')).toBe('Work Permissions');
         expect(button.querySelector('img').getAttribute('src')).toBe('/assets/ui/u_gear.png');
         // The heroes stand to the right of the slot, never under it.
         const heroes = q(view, '[data-dock-slot]').parentElement;
-        expect(heroes.style.left).toBe(`${LAUNCHER_PX}px`);
+        expect(heroes.style.left).toBe(`${HEROES_LEFT_PX}px`);
     });
 
     it('opens and closes the drawer', () => {
@@ -129,6 +139,34 @@ describe('the launcher', () => {
         const view = render(h(Host));
         fireEvent.pointerEnter(q(view, '[data-work-rules-button]'));
         expect(tipText()).toContain('Work Permissions');
+    });
+});
+
+describe('the drawer’s frame and slide', () => {
+    it('wears the chamfer frame and rises from below the hero bar into place', () => {
+        const view = render(h(Host));
+        click(q(view, '[data-work-rules-button]'));
+        const panel = () => q(view, '[data-work-rules-panel]');
+        expect(panel().getAttribute('data-pixel-frame')).toBe('chamfer');
+        // Mounted below the bottom of the screen: its own height plus the bar's, and a little more.
+        expect(panel().style.transform).toBe('translateY(calc(100% + 72px))');
+        act(() => { vi.advanceTimersByTime(20); });
+        expect(panel().style.transform).toBe('translateY(0)');
+        // It rests on the bar's top edge, and nothing clips it on the way up.
+        expect(drawer(view).style.bottom).toBe('64px');
+        expect(drawer(view).className).not.toContain('overflow-hidden');
+        // Reduced motion: it is simply there.
+        expect(panel().className).toContain('motion-reduce:transition-none');
+        click(q(view, '[data-work-rules-button]'));
+        expect(panel().style.transform).toBe('translateY(calc(100% + 72px))');
+        settle();
+        expect(drawer(view)).toBeNull();
+    });
+
+    it('puts Combat in its first column', () => {
+        const view = openDrawer();
+        expect(q(view, '[data-rules-col]').getAttribute('data-rules-col')).toBe(FlagRules.FIGHT);
+        expect(q(view, '[data-rules-row="h1"] [data-rules-cell]').getAttribute('data-rules-cell')).toBe(`h1:${FlagRules.FIGHT}`);
     });
 });
 

@@ -6,7 +6,7 @@ import * as EquipmentManager from '../../../systems/equipment/EquipmentManager.j
 import { useEntityDrag, useEntityDrop, useActiveDrag, mergeRefs } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { getJob } from '../../../config/registries/jobRegistry.js';
-import { resolveSpritePath } from '../../../utils/AssetManager.js';
+import { resolveSpritePath, resolveAnimationPath } from '../../../utils/AssetManager.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import * as Flags from '../../../systems/board/Flags.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
@@ -15,13 +15,13 @@ import { useDragSettleHover } from './useDragSettleHover.js';
 import { equipOrAnnounce } from './dockEquip.js';
 import { dockStatusLine } from '../board/flagText.js';
 import { TopBarTip } from '../board/TopBarTip.jsx';
-import { hpPercent, hpTone, HP_TONE_CLASS } from './dockHeroView.js';
+import { useHeroPortrait, PORTRAIT_PX } from './heroPortrait.js';
 import { ENGINE_EVENTS, ORPHAN_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
- * HeroDockTab: a hero's tab in the hero column beside the Bank (`BankHeroPanel`), read like a hero
- * in the bar: portrait, name and a thin HP bar, in one thin frame. A dot on the portrait marks a
- * hero working (green) or wounded (red). Hover lights the frame and shows the game's tooltip
+ * HeroDockTab: a hero's tab in the hero column beside the Bank (`BankHeroPanel`): a portrait (the
+ * head and shoulders of the hero's own class sheet, facing left, cut once per sheet) and the
+ * name, nothing else, in one thin frame. Hover lights the frame and shows the game's tooltip
  * (job, what they are doing, HP, items); nothing slides out. Click opens the hero panel; drag
  * sends the hero out, drops equip, recall and reorder as before.
  */
@@ -191,11 +191,12 @@ const HeroDockTabBody = memo(function HeroDockTabBody({
     const isWounded = hero.status === 'wounded';
     const job = hero.jobId ? getJob(hero.jobId) : null;
     const jobTitle = job ? job.name : (hero.className || 'Recruit');
-    const headshotPath = resolveSpritePath(hero.icon || 'hn_recruit_icon_por') || resolveSpritePath(hero.spriteId || 'hn_recruit_por');
+    const sprite = hero.spriteId || hero.classId || null;
+    const sheet = sprite ? resolveAnimationPath(sprite) : null;
+    const cut = useHeroPortrait(sheet);
+    const still = sheet ? null : resolveSpritePath(sprite || hero.icon || 'hn_recruit_por');
     const hp = Math.max(0, Math.round(hero.hp?.current ?? 0));
     const hpMax = Math.max(1, hero.hp?.max ?? 100);
-    const pct = hpPercent(hero.hp);
-    const tone = hpTone(pct);
 
     const statusLine = isWounded ? 'Wounded' : dockStatusLine(status);
     const tipLines = [
@@ -249,42 +250,36 @@ const HeroDockTabBody = memo(function HeroDockTabBody({
                     held && 'opacity-30'
                 )}
             >
-                <div className="relative w-10 h-10 shrink-0">
-                    {headshotPath ? (
+                <div
+                    data-hero-tab-portrait={sheet || still || undefined}
+                    className="shrink-0 pointer-events-none"
+                    style={{ width: PORTRAIT_PX, height: PORTRAIT_PX }}
+                >
+                    {(cut || still) && (
                         <img
-                            src={headshotPath.startsWith('/') ? headshotPath : `/${headshotPath}`}
+                            src={cut || (still.startsWith('/') ? still : `/${still}`)}
                             alt={hero.name}
                             draggable={false}
-                            className="w-10 h-10 object-contain pointer-events-none"
-                            style={{ imageRendering: 'pixelated' }}
-                        />
-                    ) : (
-                        <span className="text-xl">{hero.icon || '🧑'}</span>
-                    )}
-                    {(isWounded || status?.state === 'working') && (
-                        <span
-                            className={cn(
-                                'absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full border border-black',
-                                isWounded ? 'bg-red-500' : 'bg-emerald-400'
-                            )}
+                            style={{
+                                width: PORTRAIT_PX,
+                                height: PORTRAIT_PX,
+                                maxWidth: 'none',
+                                imageRendering: 'pixelated',
+                                // A still portrait is not cut here, so it is turned to face left.
+                                transform: cut ? undefined : 'scaleX(-1)'
+                            }}
                         />
                     )}
                 </div>
                 <span
+                    data-hero-tab-name
                     className={cn(
-                        'max-w-full truncate ui-text-body font-bold leading-none',
+                        'max-w-full break-words text-center ui-text-body font-bold leading-none',
                         isSelected ? 'text-gi-gold' : isWounded ? 'text-red-300' : 'text-white'
                     )}
                 >
                     {hero.name}
                 </span>
-                <div className="w-full h-1 rounded-full bg-black/70 overflow-hidden">
-                    <div
-                        data-hero-tab-hp
-                        className={cn('h-full transition-[width] duration-300', HP_TONE_CLASS[tone])}
-                        style={{ width: `${pct}%` }}
-                    />
-                </div>
             </div>
             {hovering && <TopBarTip anchor={faceRef.current} title={hero.name} lines={tipLines} width={200} />}
         </div>

@@ -236,16 +236,16 @@ describe('B10 horizontal hero dock', () => {
         expect(view.container.querySelector('[data-dock-hero]')).toBeNull();
     });
 
-    it('the Bank hero panel\'s HP bar also updates on an in-place mutation (CR3-300)', async () => {
+    it('the Bank hero tab\'s tooltip HP also updates on an in-place mutation (CR3-300)', async () => {
         const view = render(
             h(DeckDndProvider, null, h(BankHeroPanel, { menuRight: false }))
         );
-        const tab = view.container.querySelector('[data-dock-hero-id="h1"]');
-        const fill = () => tab.querySelector('[data-hero-tab-hp]');
-        expect(fill().style.width).toBe('100%');
+        const face = view.container.querySelector('[data-dock-hero-id="h1"] [data-hero-tab-face]');
         const h1 = GameState.state.heroes.find(h => h.id === 'h1');
         h1.hp.current = 43;
         await act(async () => { EventBus.publish('heroes_updated', {}); await Promise.resolve(); });
-        expect(fill().style.width).toBe('43%');
+        fireEvent.mouseEnter(face);
+        expect(document.body.querySelector('[data-top-bar-tip]').textContent).toContain('43 / 100 HP');
+        fireEvent.mouseLeave(face);
     });
 });

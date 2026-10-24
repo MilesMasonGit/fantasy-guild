@@ -14,6 +14,9 @@ import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 import { PixelGlyph, slotGlyphName } from '../base/PixelGlyph.jsx';
 import { itemTintStyle } from '../base/itemTint.js';
 
+/** How long a slot keeps its shine layer after an item lands: the sweep plus a little slack. */
+export const EQUIP_SHINE_MS = 400;
+
 /**
  * DockEquipmentGrid: the pinned card's loadout grid: NINE flexible slots in 3 rows of 3, as
  * 64px item sprites. Gear and consumables share the grid, and any item may sit in any slot.
@@ -21,28 +24,32 @@ import { itemTintStyle } from '../base/itemTint.js';
  * to transfer / bank.
  */
 export const DockEquipmentGrid = ({ heroId }) => {
-    const [justEquippedSlot, setJustEquippedSlot] = useState(null);
+    // The slot an item just landed in, and a count so a second landing in the same slot plays again.
+    const [shine, setShine] = useState(null);
 
     useEffect(() => {
-        // EventBus ignores a handler's return value, so the flash timers are cleared here.
+        // EventBus ignores a handler's return value, so the shine timers are cleared here.
         const timers = new Set();
+        let count = 0;
         const handleEquipped = (data) => {
             if (data?.action === 'equip' && data?.heroId === heroId && data?.slot != null) {
-                setJustEquippedSlot(data.slot);
+                count += 1;
+                const mine = count;
+                setShine({ slot: data.slot, n: mine });
                 const timer = setTimeout(() => {
                     timers.delete(timer);
-                    setJustEquippedSlot(prev => (prev === data.slot ? null : prev));
-                }, 800);
+                    setShine(prev => (prev?.n === mine ? null : prev));
+                }, EQUIP_SHINE_MS);
                 timers.add(timer);
             }
         };
 
         const unsubscribe = EventBus.subscribe(ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, handleEquipped, UI_LISTENER);
-        // A flash cut short ends now, so a switch to another hero does not inherit it.
+        // A shine cut short ends now, so a switch to another hero does not inherit it.
         return () => {
             unsubscribe();
             timers.forEach(clearTimeout);
-            if (timers.size > 0) setJustEquippedSlot(null);
+            if (timers.size > 0) setShine(null);
         };
     }, [heroId]);
 
@@ -80,7 +87,7 @@ export const DockEquipmentGrid = ({ heroId }) => {
                     slot={slot}
                     itemId={itemIds[i]}
                     quantity={quantities[i]}
-                    justEquipped={justEquippedSlot === slot}
+                    shineKey={shine?.slot === slot ? shine.n : null}
                 />
             ))}
         </div>
@@ -88,7 +95,7 @@ export const DockEquipmentGrid = ({ heroId }) => {
 };
 
 /** One slot: right-click to unequip, drag to hand the item to another hero or bank, drop to equip. */
-const EquipSlotCell = ({ heroId, slot, itemId, quantity, justEquipped = false }) => {
+const EquipSlotCell = ({ heroId, slot, itemId, quantity, shineKey = null }) => {
     const drag = useEntityDrag({
         id: `dock-equip-${heroId}-${slot}`,
         kind: DRAG_KIND.ITEM,
@@ -113,7 +120,7 @@ const EquipSlotCell = ({ heroId, slot, itemId, quantity, justEquipped = false })
             slot={slot}
             itemId={itemId}
             quantity={quantity}
-            justEquipped={justEquipped}
+            shineKey={shineKey}
             cue={drop.valid}
             held={drag.isDragging}
             nodeRef={nodeRef}
@@ -125,7 +132,7 @@ const EquipSlotCell = ({ heroId, slot, itemId, quantity, justEquipped = false })
 
 // ⚠️ Apart from its drag hooks on purpose: dnd-kit redraws their holder at every drag start, end
 // and change of target; the slot is memoised on what it draws.
-const EquipSlotBody = memo(function EquipSlotBody({ heroId, slot, itemId, quantity, justEquipped, cue, held, nodeRef, handleProps, droppableProps }) {
+const EquipSlotBody = memo(function EquipSlotBody({ heroId, slot, itemId, quantity, shineKey, cue, held, nodeRef, handleProps, droppableProps }) {
     const item = itemId ? getItem(itemId) : null;
     const category = itemId ? categoryOfItem(itemId) : null;
     const info = getCategoryInfo(category);
@@ -141,13 +148,12 @@ const EquipSlotBody = memo(function EquipSlotBody({ heroId, slot, itemId, quanti
                     unequipOrAnnounce(EquipmentManager, heroId, slot);
                 }
             }}
-            style={item && !justEquipped ? itemTintStyle(item) : undefined}
+            style={item ? itemTintStyle(item) : undefined}
             className={cn(
                 'relative aspect-square rounded border flex items-center justify-center overflow-visible transition-all select-none',
-                justEquipped && 'gi-item-equipped-bob ring-2 ring-gi-gold/90 border-gi-gold bg-gi-gold/25 shadow-[0_0_16px_rgba(245,158,11,0.6)] z-20',
                 item
-                    ? (!justEquipped && 'ui-item-tile border-gi-primary/50 cursor-grab active:cursor-grabbing hover:border-gi-danger')
-                    : (!justEquipped && 'border-dashed border-gi-border/50 bg-black/40 hover:border-gi-gold/40'),
+                    ? 'ui-item-tile border-gi-primary/50 cursor-grab active:cursor-grabbing hover:border-gi-danger'
+                    : 'border-dashed border-gi-border/50 bg-black/40 hover:border-gi-gold/40',
                 cue && 'ring-2 ring-emerald-400 border-emerald-400 bg-emerald-950/40',
                 held && 'opacity-40'
             )}
@@ -161,6 +167,8 @@ const EquipSlotBody = memo(function EquipSlotBody({ heroId, slot, itemId, quanti
             ) : (
                 <span className="text-sm opacity-20 text-gi-muted pointer-events-none">+</span>
             )}
+            {/* An item just landed: the button shine passes over the slot once. */}
+            {shineKey != null && <span key={shineKey} data-equip-shine className="ui-shine ui-shine-once rounded" />}
             {category && (
                 <PixelGlyph
                     name={slotGlyphName(category)}
