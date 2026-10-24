@@ -12,7 +12,8 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import * as SpawnerSystem from '../systems/board/SpawnerSystem.js';
 import { GEAR_ONLY_ALERTS } from '../ui/components/board/centreAlert.js';
 import { STEP_MS } from '../ui/components/board/frameClock.js';
-import { WORK_BAR_ART_W } from '../ui/components/board/workBar.js';
+import { WorkBarFill } from '../ui/components/board/WorkPlateLayer.jsx';
+import { PLATE } from '../ui/components/board/workPlate.js';
 import { PROBLEM_SEVERITY } from '../ui/components/board/problemMark.js';
 
 /** Every alert value that can reach a Token (one enum). */
@@ -32,23 +33,31 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.useRealTimers(); });
 
-describe('a worked Token with an alert: no words, its bar held grey, one mark', () => {
-    const row = (alert) => React.createElement(TokenBubbles, { instanceId: 'tok_1', token: worked(alert) });
+describe('a Token with an alert: no words; one mark while nobody works it; worked, its plate says it', () => {
+    const row = (alert, extra = {}) => React.createElement(TokenBubbles, { instanceId: 'tok_1', token: worked(alert, extra) });
+    /** A worked Token's bubbles and its plate's fill, held grey while it has an alert (as the plate does). */
+    const withFill = (alert) => React.createElement(React.Fragment, null,
+        row(alert),
+        React.createElement(WorkBarFill, { instanceId: 'tok_1', blocked: !!alert }));
     const bar = (container) => container.querySelector('[data-work-bar]');
 
-    it.each(TOKEN_ALERTS)('prints no label, holds the bar grey and shows one %s mark', (alert) => {
-        const { container } = render(tree(row(alert)));
+    it.each(TOKEN_ALERTS)('nobody working it: no label, one %s mark', (alert) => {
+        const { container } = render(tree(row(alert, { heroId: null })));
         expect(container.querySelector('[data-tile-alert-hint]')).toBeNull();
-        expect(bar(container).getAttribute('data-work-bar-blocked')).toBe('true');
         const marks = container.querySelectorAll('[data-problem-mark]');
         expect(marks).toHaveLength(1);
         expect(marks[0].getAttribute('data-problem-severity')).toBe(PROBLEM_SEVERITY[alert]);
     });
 
-    it('nothing chosen holds the bar too: the cycle cannot run (a yellow mark, not a fault)', () => {
+    it.each(TOKEN_ALERTS)('worked: no label and no %s mark of its own; the plate says it', (alert) => {
+        const { container } = render(tree(row(alert)));
+        expect(container.querySelector('[data-tile-alert-hint]')).toBeNull();
+        expect(container.querySelector('[data-problem-mark]')).toBeNull();
+    });
+
+    it('nothing chosen, nobody working it: a yellow mark, not a fault', () => {
         for (const alert of GEAR_ONLY_ALERTS) {
-            const { container, unmount } = render(tree(row(alert)));
-            expect(bar(container).getAttribute('data-work-bar-blocked')).toBe('true');
+            const { container, unmount } = render(tree(row(alert, { heroId: null })));
             expect(container.querySelector('[data-problem-mark]').getAttribute('data-problem-severity')).toBe('waiting');
             unmount();
         }
@@ -58,16 +67,16 @@ describe('a worked Token with an alert: no words, its bar held grey, one mark', 
         vi.useFakeTimers();
         // The bar draws on the shared step clock's next step.
         const step = () => act(() => { vi.advanceTimersByTime(STEP_MS + 20); });
-        const { container, rerender } = render(tree(row(ALERT.INPUTS)));
+        const { container, rerender } = render(tree(withFill(ALERT.INPUTS)));
         act(() => { EventBus.publish(BOARD_EVENTS.PROGRESS, { instanceId: 'tok_1', percent: 50, elapsedMs: 5000, cycleTimeMs: 10000 }); });
         step();
         expect(bar(container).getAttribute('data-work-bar-fill')).toBe('0');
 
-        rerender(tree(row(null)));
+        rerender(tree(withFill(null)));
         expect(bar(container).getAttribute('data-work-bar-blocked')).toBeNull();
         expect(container.querySelector('[data-problem-mark]')).toBeNull();
         act(() => { EventBus.publish(BOARD_EVENTS.PROGRESS, { instanceId: 'tok_1', percent: 50, elapsedMs: 5000, cycleTimeMs: 10000 }); });
         step();
-        expect(Number(bar(container).getAttribute('data-work-bar-fill'))).toBe(WORK_BAR_ART_W / 2);
+        expect(Number(bar(container).getAttribute('data-work-bar-fill'))).toBe(PLATE.FILL_STEPS / 2);
     });
 });
