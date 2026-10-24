@@ -18,26 +18,45 @@ mkdirSync(out, { recursive: true });
 const save = (name, b64) => writeFileSync(path.join(out, `${name}.png`), Buffer.from(b64, 'base64'));
 
 async function shot(page, name, clip = null) {
-    const s = await page.send('Page.captureScreenshot', clip ? { format: 'png', clip: { ...clip, scale: 1 } } : { format: 'png' });
+    const s = await page.send('Page.captureScreenshot', clip ? { format: 'png', clip: { ...clip, scale: 1 }, captureBeyondViewport: true } : { format: 'png' });
     save(name, s.data);
     return s.data;
 }
 
-/** A clip saved at 1x, and upscaled `k` times nearest-neighbour in the page's own canvas. */
+/** A picture upscaled `k` times nearest-neighbour in the page's own canvas. */
+const upscale = (page, data, k = 2) => page.evaluate(`(async () => {
+    const img = new Image(); img.src = 'data:image/png;base64,${data}'; await img.decode();
+    const c = document.createElement('canvas'); c.width = img.width * ${k}; c.height = img.height * ${k};
+    const g = c.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(img, 0, 0, c.width, c.height);
+    return c.toDataURL('image/png').split(',')[1];
+})()`);
+
+/** A clip saved at 1x and at 2x; with `one: false` only the 2x is kept. Returns the 1x picture. */
 async function clipBoth(page, name, clip, { k = 2, one = true } = {}) {
     const data = await shot(page, `${name}_1x`, clip);
-    const b64 = await page.evaluate(`(async () => {
-        const img = new Image(); img.src = 'data:image/png;base64,${data}'; await img.decode();
-        const c = document.createElement('canvas'); c.width = img.width * ${k}; c.height = img.height * ${k};
-        const g = c.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(img, 0, 0, c.width, c.height);
-        return c.toDataURL('image/png').split(',')[1];
-    })()`);
-    save(`${name}_2x`, b64);
+    save(`${name}_2x`, await upscale(page, data, k));
     if (!one) {
         const fs = await import('node:fs');
         fs.unlinkSync(path.join(out, `${name}_1x.png`));
     }
+    return data;
 }
+
+/** Tiles side by side, each with its label above, on the page's dark background. */
+const compose = (page, tiles) => page.evaluate(`(async () => {
+    const tiles = ${JSON.stringify(tiles)};
+    const imgs = await Promise.all(tiles.map(async t => { const i = new Image(); i.src = 'data:image/png;base64,' + t.data; await i.decode(); return i; }));
+    const gap = 8, label = 22;
+    const c = document.createElement('canvas');
+    c.width = imgs.reduce((w, i) => w + i.width, 0) + gap * (imgs.length - 1);
+    c.height = Math.max(...imgs.map(i => i.height)) + label;
+    const g = c.getContext('2d');
+    g.fillStyle = '#0d0a08'; g.fillRect(0, 0, c.width, c.height);
+    g.fillStyle = '#ffffff'; g.font = 'bold 14px monospace'; g.textBaseline = 'top';
+    let x = 0;
+    imgs.forEach((img, i) => { g.fillText(tiles[i].label, x + 4, 4); g.drawImage(img, x, label); x += img.width + gap; });
+    return c.toDataURL('image/png').split(',')[1];
+})()`);
 
 const away = async (page) => { await page.mouse('mouseMoved', 1910, 600); await sleep(500); };
 const restOn = async (page, x, y) => { await page.mouse('mouseMoved', x - 3, y - 3); await sleep(80); await page.mouse('mouseMoved', x, y); await sleep(1400); };
@@ -135,7 +154,8 @@ try {
             const cy = a.y + a.height / 2;
             const count = (el) => el ? el.querySelectorAll('*').length + 1 : 0;
             out[k] = {
-                clip: { x: Math.round(cx - 150), y: Math.round(cy - 160), width: 300, height: 300 },
+                // Lined up with the mock-ups' patches: the seam 143 px in, the Token's centre 180 px down.
+                clip: { x: Math.round(cx - 143), y: Math.round(cy - 180), width: 300, height: 320 },
                 token: { x: a.x + a.width / 2, y: a.y + a.height / 2 },
                 elements: { tokenOverlay: count(o), heroFigure: count(h) },
                 problem: (() => { const p = o.querySelector('[data-problem-mark]'); if (!p) return null; const r = p.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; })()
@@ -144,9 +164,10 @@ try {
         return out;
     })()`);
     log.today = places;
+    const tiles = {};
     for (const [k, p] of Object.entries(places)) {
         if (!p) continue;
-        await clipBoth(page, `today_${k}`, p.clip);
+        tiles[k] = [{ label: 'Today', data: await clipBoth(page, `today_${k}`, p.clip) }];
     }
     for (const [k, p] of Object.entries(places)) {
         if (!p) continue;
@@ -158,7 +179,7 @@ try {
     if (places.waiting?.problem) {
         const p = places.waiting.problem;
         await restOn(page, p.x, p.y);
-        await clipBoth(page, 'today_waiting_tip', { x: places.waiting.clip.x, y: places.waiting.clip.y, width: 560, height: 300 }, { one: false });
+        await clipBoth(page, 'today_waiting_tip', { x: places.waiting.clip.x, y: places.waiting.clip.y, width: 560, height: 320 }, { one: false });
         await away(page);
     }
 
@@ -190,9 +211,20 @@ try {
             const box = document.querySelector('[data-mockup="${id}"]');
             const r = box.getBoundingClientRect();
             const right = Math.max(...[...box.querySelectorAll('[data-mock-scene]')].map(f => f.getBoundingClientRect().right));
-            return { x: Math.round(r.x), y: Math.round(r.y), width: Math.round(right - r.x), height: Math.round(r.height) };
+            return { x: Math.round(r.x), y: Math.round(r.y), width: Math.round(right - r.x), height: Math.round(r.height) + 28 };
         })()`);
         await clipBoth(page, `mockup_${id}`, r);
+        const patches = await page.evaluate(`[...document.querySelectorAll('[data-mockup="${id}"] [data-mock-scene]')].map(f => {
+            const r = f.firstElementChild.getBoundingClientRect();
+            return { scene: f.getAttribute('data-mock-scene'), clip: { x: Math.round(r.x), y: Math.round(r.y), width: Math.round(r.width), height: Math.round(r.height) } };
+        })`);
+        const seen = new Set();
+        for (const p of patches) {
+            const open = seen.has(p.scene);
+            seen.add(p.scene);
+            const s = await page.send('Page.captureScreenshot', { format: 'png', clip: { ...p.clip, scale: 1 } });
+            tiles[p.scene]?.push({ label: open ? `${id} on hover` : id, data: s.data });
+        }
         log.mockups[id] = await page.evaluate(`(() => {
             const out = {};
             for (const fig of document.querySelectorAll('[data-mockup="${id}"] [data-mock-scene]')) {
@@ -210,6 +242,12 @@ try {
             await clipBoth(page, `mockup_${id}_tip`, fig, { one: false });
             await away(page);
         }
+    }
+    // Each moment, today beside the three mock-ups.
+    for (const [k, list] of Object.entries(tiles)) {
+        const data = await compose(page, list);
+        save(`compare_${k}_1x`, data);
+        save(`compare_${k}_2x`, await upscale(page, data));
     }
     if (page.consoleErrors?.length) log.pageErrors = page.consoleErrors.slice(0, 5);
 } finally {

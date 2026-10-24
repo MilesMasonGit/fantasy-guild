@@ -427,7 +427,7 @@ export const BubbleRowMockup = ({ mockup }) => {
 
 /** All three, with what each is; the style sheet page's "Bubble row" entry. */
 export const BubbleRowMockups = () => (
-    <div data-bubble-row-mockups className="flex flex-col gap-6">
+    <div data-bubble-row-mockups className="flex flex-col gap-6 pb-8">
         {BUBBLE_ROW_MOCKUPS.map(m => (
             <section key={m.id} data-mockup-section={m.id} className="flex flex-col gap-2">
                 <h4 className="text-sm font-bold" style={{ color: 'var(--color-ui-gold)' }}>{m.title}</h4>
