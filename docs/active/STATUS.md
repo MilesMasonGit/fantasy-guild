@@ -27,7 +27,7 @@ C2; C0 (the test content pack, accepted by the director) after C2; C6 last.
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| F1: pixel frames on every window, audit first (T-136) | builder | `backlog/pixel-frames` (`ff`) | building | Sat | |
+| F1: pixel frames on every window, audit first (T-136) | builder | `backlog/pixel-frames` | **merged** 4fee0e7c (on top of the Systems director's combat C1): audit committed; tooltips, modal shell, Token Summary, catch-up chamfer; Bank, Shop, hero panel studs (warm near-black). Owner ok by phone; asked for **a second audit** (soft borders on Bank item tiles etc.): T-242 (F1b, after the bubble row), plus T-243 callouts, T-244 nav orbs. Merged gate: 5891 tests, cycles, build, same work | Sat | Sat |
 | F2: one bubble row between a hero and the Token it works (T-239): 2–3 mock-ups on the style sheet page first, owner picks; measure before and after | engineer | `backlog/bubble-row` (`fb`) | mock-ups | Sat | |
 
 ## Backlog director, batch E: drawers, the Atlas and dev tools (brief 210; owner said keep going 2026-10-24) — **done, merged 56136a65**
