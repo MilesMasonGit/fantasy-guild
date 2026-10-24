@@ -4,6 +4,7 @@ import { Landmark } from 'lucide-react';
 import BankTab from './BankTab.jsx';
 import { columnWidthCss, NOTIFICATION_COLUMN } from '../board/boardConstants.js';
 import { PanelHeader } from '../base/CloseX.jsx';
+import { prefersReducedMotion } from '../board/fx/pixelSteps.js';
 
 /**
  * BankDrawer: slides in from the side and holds the item Bank.
@@ -34,16 +35,17 @@ export const BankDrawer = ({ drawer, menuRight = false }) => {
                     initial={{ x: slideOffset, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
                     exit={{ x: slideOffset, opacity: 0 }}
-                    transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                    // ⚠️ In step with the mat's side moving aside (`.gi-bank-shift` in tailwind.css): same duration and easing.
+                    transition={prefersReducedMotion() ? { duration: 0 } : { duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
                     // ⚠️ The drawer layer sits under the nav and over everything else (tailwind.css, the layers table).
                     className={cn(
                         'pointer-events-auto flex bg-gi-surface overflow-hidden',
                         'absolute inset-y-0 z-(--z-drawer) shadow-[0_0_40px_rgba(0,0,0,0.6)]',
-                        // Nav side → drawer starts at edge 0 underneath the nav bar with padding to sit flush beside the 152px Nav Bar.
-                        // Notification side → stops right before the notifications column, leaving it fully exposed.
+                        // From the screen's edge under the nav, as one panel: its rows pad for the
+                        // nav (`.gi-drawer-pad-x`). It stops at the hero column, which stays in view.
                         menuRight
-                            ? 'right-0 pr-[84px] md:pr-[152px] border-l border-gi-primary/30'
-                            : 'left-0 pl-[84px] md:pl-[152px] border-r border-gi-primary/30'
+                            ? 'right-0 [--nav-inset-r:84px] md:[--nav-inset-r:152px] border-l border-gi-primary/30'
+                            : 'left-0 [--nav-inset-l:84px] md:[--nav-inset-l:152px] border-r border-gi-primary/30'
                     )}
                     style={{
                         ...(menuRight ? { left: columnWidthCss(NOTIFICATION_COLUMN) } : { right: columnWidthCss(NOTIFICATION_COLUMN) })
@@ -57,7 +59,7 @@ export const BankDrawer = ({ drawer, menuRight = false }) => {
                                     sprite={<Icon size={18} className="text-gi-primary" />}
                                     onClose={() => drawer.closePane(key)}
                                     closeLabel={`Close ${label}`}
-                                    className="px-3.5 py-1.5 border-b border-gi-border/40 bg-gi-base/80 min-h-[44px]"
+                                    className="gi-drawer-pad-x py-1.5 border-b border-gi-border/40 bg-gi-base/80 min-h-[44px]"
                                 />
 
                                 <div className="flex-1 min-h-0">

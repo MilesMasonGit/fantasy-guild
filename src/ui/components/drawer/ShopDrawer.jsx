@@ -68,9 +68,10 @@ export function shopDrawerState(isOpen, activePayload, surface = DND_SURFACE.BOA
     return surface === DND_SURFACE.DRAWER ? 'open' : 'lip';
 }
 
+/** The lip stays beside the nav, not under it: `--nav-inset-l` is how far the nav reaches into the drawer. */
 export function shopDrawerTransform(state) {
     if (state === 'open') return 'translateX(0)';
-    if (state === 'lip') return `translateX(calc(-100% + ${SHOP_LIP_PX}px))`;
+    if (state === 'lip') return `translateX(calc(-100% + var(--nav-inset-l, 0px) + ${SHOP_LIP_PX}px))`;
     return 'translateX(-100%)';
 }
 
@@ -117,10 +118,11 @@ export const ShopDrawer = ({ isOpen, onClose, menuRight = false }) => {
             aria-hidden={state === 'closed'}
             className={cn(
                 'absolute inset-y-0 z-(--z-drawer) flex flex-col bg-gi-surface border-r border-gi-primary/30 shadow-[0_0_40px_rgba(0,0,0,0.6)]',
-                'w-[33.333vw] min-w-[300px]',
-                // Beside the nav when it is on the left (84 / 152 px, as the
-                // Bank drawer pads for it); at the screen's edge otherwise.
-                menuRight ? 'left-0' : 'left-[84px] md:left-[152px]',
+                // From the screen's edge, under the nav when it is on the left, as one panel: its
+                // rows pad for the nav (`.gi-drawer-pad-x`, 84 / 152 px as the Bank drawer), and
+                // what is left beside the nav is a third of the screen.
+                'left-0 w-[calc(33.333vw+var(--nav-inset-l,0px))] min-w-[calc(300px+var(--nav-inset-l,0px))]',
+                !menuRight && '[--nav-inset-l:84px] md:[--nav-inset-l:152px]',
                 state === 'closed' ? 'pointer-events-none' : 'pointer-events-auto'
             )}
             style={{
@@ -164,14 +166,14 @@ const ShopContents = memo(function ShopContents({ isOpen, onClose }) {
                 title="Shop"
                 onClose={onClose}
                 closeLabel="Close Shop"
-                className="px-3.5 py-1.5 border-b border-gi-border/40 bg-gi-base/80 min-h-[44px]"
+                className="gi-drawer-pad-x py-1.5 border-b border-gi-border/40 bg-gi-base/80 min-h-[44px]"
             >
                 <span data-shop-cap className="text-xs font-semibold text-gi-muted tabular-nums">
                     Tokens {cap.count} / {cap.cap}
                 </span>
             </PanelHeader>
 
-            <ArrowScrollList step={SHOP_SCROLL_STEP_PX} className="flex-1 min-h-0 p-3 flex flex-col gap-3">
+            <ArrowScrollList step={SHOP_SCROLL_STEP_PX} barClassName="gi-drawer-pad-x" className="flex-1 min-h-0 gi-drawer-pad-x py-3 flex flex-col gap-3">
                 <p className="text-(length:--font-size-sm) text-gi-muted">Drag a Token onto the mat to buy it.</p>
                 {shop.length === 0 && (
                     <p className="text-xs text-gi-muted">Nothing is for sale yet.</p>

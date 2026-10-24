@@ -136,7 +136,8 @@ describe('the Shop drawer (B4)', () => {
         expect(shopDrawerState(true, matDrag)).toBe('open');
         expect(shopDrawerState(true, shopDrag)).toBe('lip');
         expect(shopDrawerTransform('open')).toBe('translateX(0)');
-        expect(shopDrawerTransform('lip')).toBe(`translateX(calc(-100% + ${SHOP_LIP_PX}px))`);
+        // The lip stays beside the nav, which reaches into the drawer by `--nav-inset-l`.
+        expect(shopDrawerTransform('lip')).toBe(`translateX(calc(-100% + var(--nav-inset-l, 0px) + ${SHOP_LIP_PX}px))`);
         expect(shopDrawerTransform('closed')).toBe('translateX(-100%)');
     });
 
@@ -168,12 +169,12 @@ describe('the Shop drawer (B4)', () => {
         });
     });
 
-    it('draws open, a third of the screen, anchored left', () => {
+    it('draws open, a third of the screen beside the nav, anchored at the left edge', () => {
         const view = mountDrawer();
         const el = view.container.querySelector('[data-shop-drawer]');
         expect(el.getAttribute('data-shop-drawer-state')).toBe('open');
-        expect(el.className).toContain('w-[33.333vw]');
-        expect(el.className).toMatch(/left-/);
+        expect(el.className).toContain('w-[calc(33.333vw+var(--nav-inset-l,0px))]');
+        expect(el.className).toMatch(/(^| )left-0( |$)/);
         expect(el.style.transform).toBe('translateX(0)');
     });
 
