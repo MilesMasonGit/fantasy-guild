@@ -415,6 +415,11 @@ export function getFlags() {
     return board()?.flags || {};
 }
 
+/** How many heroes have a flag on `someBoard`: any Region's board, the live one or a frozen copy. */
+export function flagCountOn(someBoard) {
+    return Object.keys(someBoard?.flags || {}).length;
+}
+
 /** The flag `heroId` has planted, or null. */
 export function flagOf(heroId) {
     if (!heroId) return null;
