@@ -161,3 +161,4 @@ T-223 — Bank inspect pane retired, search in the Bank header, the hover toolti
 T-224 — Item tiles tinted by the item's type, lighter on hover; rule in UI_STYLE (owner ok) — 515d7154 — 2026-10-23
 T-225 — Slot-kind marks in each filled loadout slot (code placeholders; seven art lines on owner_art_list) — 515d7154 — 2026-10-23
 T-230 — One item, one hero: equipping gear moves the copy out of the Bank, full-Bank and in-use refusals, hero-to-hero hand-over, old saves settled in roster order with one banner (owner rulings 2026-10-22/23; no 'in use' count, owner) — d66c1ee8 — 2026-10-23
+T-229 — New! on an item stub clears on hover or pin and stays gone until a new first find — eb6c459b — 2026-10-23
