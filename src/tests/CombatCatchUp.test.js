@@ -17,7 +17,10 @@ import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
+import { registerEffects } from '../config/registries/effectRegistry.js';
+import { makeStatement, KEYWORD } from '../systems/effects/statements.js';
 import * as HeroManager from '../systems/hero/HeroManager.js';
+import * as EquipmentManager from '../systems/equipment/EquipmentManager.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { xpForLevel } from '../utils/XPCurve.js';
 import * as fixtures from '../../bench/fixtures.mjs';
@@ -41,7 +44,19 @@ class SilentAudio {
 }
 
 registerItems({
-    catchup_sword: { id: 'catchup_sword', name: 'Catch-up Sword', type: 'weapon', equipSlot: 'hand', skillRequired: 'melee', damage: 6 }
+    catchup_sword: { id: 'catchup_sword', name: 'Catch-up Sword', type: 'weapon', equipSlot: 'hand', skillRequired: 'melee', damage: 6 },
+    // A Cleaver: its family's ability (a 50 % chance to double Raw Beef) draws a random number per beef.
+    catchup_cleaver: {
+        id: 'catchup_cleaver', name: 'Catch-up Cleaver', type: 'weapon', equipSlot: 'hand', styles: ['melee'], damage: 6,
+        effects: [{ effectId: 'catchup_cleaver_family', scale: 1 }]
+    }
+});
+
+registerEffects({
+    catchup_cleaver_family: {
+        id: 'catchup_cleaver_family', name: 'Cleaver',
+        statements: [{ ...makeStatement(KEYWORD.PROVIDES), payload: { type: 'DOUBLE_DROP', bucket: 'flat', value: 50, category: 'item_raw_beef' } }]
+    }
 });
 
 registerTokenTypes({
@@ -52,6 +67,19 @@ registerTokenTypes({
         config: {
             skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0, inputs: [],
             outputs: [{ itemId: 'item_bones', chance: 100, minQty: 1, maxQty: 1 }]
+        }
+    },
+    // Venomous (a random number per landed hit) and Brute, dropping beef for the Cleaver.
+    catchup_kind_enemy: {
+        id: 'catchup_kind_enemy', name: 'Catch-up Venomous Brute', tokenType: 'enemy', rarity: 'common',
+        theme: 'fixture', uses: 20, sprite: 's_crime', requiresHero: true,
+        enemy: { level: 5, style: 'melee', kinds: ['venomous', 'brute'] },
+        config: {
+            skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0, inputs: [],
+            outputs: [
+                { itemId: 'item_bones', chance: 100, minQty: 1, maxQty: 1 },
+                { itemId: 'item_raw_beef', chance: 100, minQty: 1, maxQty: 1 }
+            ]
         }
     }
 });
@@ -161,5 +189,68 @@ describe('fights during a catch-up', () => {
         expect(plain.seen.defeats).toBeGreaterThanOrEqual(1);
         expect(plain.seen.misses).toBeGreaterThan(0);
         expect(plain.heroes[ids.fighterId].xp).toBeGreaterThan(xpForLevel(30));
+    }, 60_000);
+
+    /** A Melee 60 hero with a Cleaver, pinned to a Venomous Brute that drops Bones and Raw Beef. */
+    function buildGearBoard() {
+        stream.state = 11;
+        stream.draws = 0;
+        resetMatTuning();
+        GameState.initNew();
+        InventoryManager.init();
+        const [fighter] = fixtures.makeHeroes(1, {});
+        fighter.skills.melee = { level: 60, xp: xpForLevel(60) };
+        // Through the equip path, so the hero holds the copy and its family's ability is carried.
+        InventoryManager.addItem('catchup_cleaver', 1);
+        expect(EquipmentManager.equipItem(fighter.id, 'catchup_cleaver').success).toBe(true);
+        HeroManager.updateHeroFromSkills(fighter);
+        fighter.hp.current = fighter.hp.max;
+        const a = fixtures.placeAt('catchup_kind_enemy', 400, 400);
+        fixtures.plant(fighter.id, { x: a.x, y: a.y }, { pin: true });
+        TileModifiers.rebuildAll();
+        return fighter.id;
+    }
+
+    function gearListen() {
+        const seen = { kills: 0, defeats: 0, beef: [], poisoned: 0 };
+        const offs = [
+            EventBus.subscribe(ENGINE_EVENTS.COMBAT_VICTORY, () => { seen.kills++; }),
+            EventBus.subscribe(BOARD_EVENTS.HERO_DEFEATED, () => { seen.defeats++; }),
+            EventBus.subscribe(ENGINE_EVENTS.LOOT_GENERATED, (p) => {
+                for (const d of p.drops || []) if (d.itemId === 'item_raw_beef') seen.beef.push(d.quantity);
+            }),
+            EventBus.subscribe(ENGINE_EVENTS.STATUS_APPLIED, (p) => { if (p.statusId === 'poison') seen.poisoned++; })
+        ];
+        return { stop: () => { offs.forEach(off => off()); return seen; } };
+    }
+
+    function gearEnd(fighterId, seen) {
+        const h = GameState.state.heroes.find(x => x.id === fighterId);
+        return {
+            hero: { hp: { ...h.hp }, status: h.status, xp: h.skills.melee?.xp ?? null, poison: h.statuses?.find(s => s.id === 'poison')?.stacks ?? 0 },
+            uses: BoardState.tokens().filter(t => t.typeId === 'catchup_kind_enemy').map(t => t.usesRemaining),
+            draws: stream.draws,
+            seen
+        };
+    }
+
+    it('with gear abilities and enemy kinds that draw random numbers (a Cleaver, a Venomous Brute), end exactly where live play ends', async () => {
+        let fighterId = buildGearBoard();
+        let seen = gearListen();
+        for (let i = 0; i < AWAY_MS / 1000; i++) GameLoop.runHandlers(1000);
+        const plain = gearEnd(fighterId, seen.stop());
+
+        fighterId = buildGearBoard();
+        seen = gearListen();
+        await CatchUp.run({ savedAt: NOW - AWAY_MS, now: NOW, save: false, yieldFn: () => Promise.resolve() });
+        const caughtUp = gearEnd(fighterId, seen.stop());
+
+        expect(caughtUp).toEqual(plain);
+
+        // The abilities really ran: beef doubled on some kills and not others, and the Brute's hits poisoned.
+        expect(plain.seen.kills).toBeGreaterThanOrEqual(3);
+        expect(plain.seen.beef).toContain(2);
+        expect(plain.seen.beef).toContain(1);
+        expect(plain.seen.poisoned).toBeGreaterThan(0);
     }, 60_000);
 });
