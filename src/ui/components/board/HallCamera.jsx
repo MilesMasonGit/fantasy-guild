@@ -8,7 +8,17 @@ export const CAMERA = Object.freeze({ MAT: 'mat', TO_SKY: 'to-sky', SKY: 'sky', 
 /** One whole glide, mat to sky or back; turning back mid-glide takes the share of it left. */
 export const GLIDE_MS = 560;
 const GLIDE_EASING = 'cubic-bezier(0.65, 0, 0.35, 1)';
-/** ⚠️ A hidden window draws no frames, so its glide never reports done: a timer ends it this much later. */
+/**
+ * A fresh glide waits for frames to flow after the side just laid down: at least this many
+ * frames, then one that follows the one before within the gap; at most this long.
+ */
+export const SETTLE = Object.freeze({ frames: 4, gapMs: 50, maxMs: 1000 });
+/**
+ * ⚠️ A hidden window draws no frames, so its glide never starts or reports done: a timer lands it
+ * this long after a glide that has not started was asked for, or this much after the end of one
+ * that has.
+ */
+export const FIRST_FRAME_WAIT_MS = 2000;
 const GLIDE_SPARE_MS = 250;
 
 const isGliding = (phase) => phase === CAMERA.TO_SKY || phase === CAMERA.TO_MAT;
@@ -72,6 +82,7 @@ export const HallCamera = ({ open, away = false, sky, hall, table, tableAnchor, 
         if (!glide) return;
         glideRef.current = null;
         clearTimeout(glide.timer);
+        cancelAnimationFrame(glide.frame);
         for (const anim of glide.anims) {
             anim.onfinish = null;
             anim.cancel();
@@ -96,7 +107,13 @@ export const HallCamera = ({ open, away = false, sky, hall, table, tableAnchor, 
             return;
         }
         const height = el.offsetHeight;
-        const from = glideRef.current ? translateYOf(getComputedStyle(el).transform) : (phase === CAMERA.TO_SKY ? 0 : height);
+        // Turning back: from where the camera is. A glide still waiting for its first frame has
+        // not moved it, so it turns back where it started, which is where the new glide ends.
+        const prior = glideRef.current;
+        const moving = !!prior?.anims.length;
+        const from = prior
+            ? (moving ? translateYOf(getComputedStyle(el).transform) : prior.from)
+            : (phase === CAMERA.TO_SKY ? 0 : height);
         stopGlide();
         const to = phase === CAMERA.TO_SKY ? height : 0;
         const ms = height > 0 ? Math.round(GLIDE_MS * Math.min(1, Math.abs(to - from) / height)) : 0;
@@ -104,14 +121,43 @@ export const HallCamera = ({ open, away = false, sky, hall, table, tableAnchor, 
             arrive(null);
             return;
         }
-        // Started in the same frame, the two run from the same start time.
-        const keyframes = [{ transform: `translateY(${from}px)` }, { transform: `translateY(${to}px)` }];
-        const timing = { duration: ms, easing: GLIDE_EASING, fill: 'forwards' };
-        const anims = [el, tableRef.current].filter(Boolean).map(node => node.animate(keyframes, timing));
-        const glide = { anims, timer: null };
-        glide.timer = setTimeout(() => arrive(glide), ms + GLIDE_SPARE_MS);
-        anims[0].onfinish = () => arrive(glide);
+        const glide = { from, anims: [], timer: null, frame: 0 };
         glideRef.current = glide;
+        const landBy = (wait) => {
+            clearTimeout(glide.timer);
+            glide.timer = setTimeout(() => arrive(glide), wait);
+        };
+        const start = () => {
+            if (glideRef.current !== glide) return;
+            // Started in the same frame, the two run from the same start time.
+            const keyframes = [{ transform: `translateY(${from}px)` }, { transform: `translateY(${to}px)` }];
+            const timing = { duration: ms, easing: GLIDE_EASING, fill: 'forwards' };
+            glide.anims = [el, tableRef.current].filter(Boolean).map(node => node.animate(keyframes, timing));
+            glide.anims[0].onfinish = () => arrive(glide);
+            landBy(ms + GLIDE_SPARE_MS);
+        };
+        if (moving) {
+            start();
+            return;
+        }
+        // ⚠️ A fresh glide starts once the side just laid down has been drawn and frames flow
+        // again. The frames after a mount can stall (on a session's first open of the Hall the
+        // browser readies the sky's new layers, ~0.3 s), and a glide started before that stall had
+        // run most of its course when the first frame after it showed. Until it starts, the camera
+        // holds where the glide starts.
+        landBy(FIRST_FRAME_WAIT_MS);
+        const asked = performance.now();
+        let seen = 0;
+        let last = null;
+        const settle = (t) => {
+            if (glideRef.current !== glide) return;
+            seen++;
+            const steady = last != null && t - last <= SETTLE.gapMs;
+            last = t;
+            if ((seen >= SETTLE.frames && steady) || t - asked >= SETTLE.maxMs) start();
+            else glide.frame = requestAnimationFrame(settle);
+        };
+        glide.frame = requestAnimationFrame(settle);
     }, [phase, stopGlide, arrive]);
 
     useEffect(() => stopGlide, [stopGlide]);
@@ -169,6 +215,9 @@ export const HallCamera = ({ open, away = false, sky, hall, table, tableAnchor, 
                 className="flex-1 min-h-0 flex flex-col relative"
                 style={gliding ? { transform: up ? 'translateY(100%)' : 'translateY(0px)', willChange: 'transform' } : undefined}
             >
+                {/* The mat first: mid-glide both sides are laid, and code that looks up the board
+                    by its marker (`data-board-origin`, which the upgrade web carries too) finds the mat. */}
+                {matSide && children}
                 {skySide && (
                     <div
                         data-hall-stage
@@ -178,7 +227,6 @@ export const HallCamera = ({ open, away = false, sky, hall, table, tableAnchor, 
                         {hall}
                     </div>
                 )}
-                {matSide && children}
             </div>
             {gliding && (
                 <div aria-hidden="true" data-hall-skip className="absolute inset-0 z-[104] pointer-events-auto" onPointerDown={finish} />

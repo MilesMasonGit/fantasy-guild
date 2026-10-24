@@ -2,16 +2,17 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import React from 'react';
 import { render, fireEvent, act, cleanup } from '@testing-library/react';
-import { HallCamera, CAMERA, GLIDE_MS, cameraAfter, translateYOf } from '../ui/components/board/HallCamera.jsx';
+import { HallCamera, CAMERA, GLIDE_MS, SETTLE, FIRST_FRAME_WAIT_MS, cameraAfter, translateYOf } from '../ui/components/board/HallCamera.jsx';
 import { hallCameraSides } from './fixtures/hallCameraSides.js';
 
 /**
  * The camera move between the playmat and the Guild Hall's night sky: the sky lies above the
  * wood table, and opening the Hall glides the view up from the mat to it; closing glides back
  * down. The mat, the Hall's screen and the whole backdrop (sky over wood) move together by one
- * compositor transform each. A click or a key finishes a glide, reduced motion swaps at once,
- * and at rest each side is drawn exactly as it is without the camera: on the mat nothing of the
- * Hall is mounted, styled or listening, and on the sky the mat is gone and nothing is moved.
+ * compositor transform each, starting once the side just laid down has been drawn. A click or a
+ * key finishes a glide, reduced motion swaps at once, and at rest each side is drawn exactly as
+ * it is without the camera: on the mat nothing of the Hall is mounted, styled or listening, and
+ * on the sky the mat is gone and nothing is moved.
  */
 
 const COLUMN_H = 800;
@@ -19,6 +20,9 @@ const h = React.createElement;
 const q = (c, sel) => c.querySelector(sel);
 
 let anims;
+let rafs;
+let rafId;
+let saved;
 let reduced;
 let computedY;
 let anchor;
@@ -34,8 +38,29 @@ function fakeAnimate(keyframes, options) {
     return anim;
 }
 
+/**
+ * The browser draws `n` frames `gapMs` apart: the animation-frame callbacks due run with the
+ * frame's time, then the next ones. By default, the frames a fresh glide waits for.
+ */
+let clock;
+function frames(n = SETTLE.frames, gapMs = 16) {
+    for (let i = 0; i < n; i++) {
+        clock += gapMs;
+        const due = [...rafs.values()];
+        rafs.clear();
+        act(() => { for (const cb of due) cb(clock); });
+    }
+}
+
 beforeEach(() => {
     anims = [];
+    rafs = new Map();
+    rafId = 0;
+    clock = 1000;
+    vi.spyOn(performance, 'now').mockImplementation(() => clock);
+    saved = { raf: window.requestAnimationFrame, caf: window.cancelAnimationFrame };
+    window.requestAnimationFrame = (cb) => { rafs.set(++rafId, cb); return rafId; };
+    window.cancelAnimationFrame = (id) => { rafs.delete(id); };
     reduced = false;
     computedY = null;
     HTMLElement.prototype.animate = fakeAnimate;
@@ -58,6 +83,8 @@ afterEach(() => {
     vi.useRealTimers();
     delete HTMLElement.prototype.animate;
     delete window.matchMedia;
+    window.requestAnimationFrame = saved.raf;
+    window.cancelAnimationFrame = saved.caf;
 });
 
 /**
@@ -103,7 +130,9 @@ function setup({ open = false, away = false } = {}) {
         table: () => q(anchor, '[data-hall-table]'),
         wood: () => q(anchor, '[data-hall-wood]'),
         has: (name) => !!(q(view.container, `[data-test-${name}]`) || q(anchor, `[data-test-${name}]`)),
-        set: (props) => view.rerender(element(props))
+        set: (props) => view.rerender(element(props)),
+        /** A change of props, then the two frames a fresh glide waits for. */
+        go: (props) => { view.rerender(element(props)); frames(); }
     };
 }
 
@@ -129,12 +158,14 @@ describe('the camera between the mat and the Hall sky', () => {
 
     it('opening glides the mat, the Hall and the whole backdrop up together, the sky above the table', () => {
         const s = setup();
-        s.set({ open: true });
+        s.go({ open: true });
         expect(s.phase()).toBe(CAMERA.TO_SKY);
         // The Hall's screen lies one column height above the mat; the mat stays as it was.
         expect([s.stage().style.top, s.stage().style.height]).toEqual(['-100%', '100%']);
         expect(q(s.stage(), '[data-test-hall]')).toBeTruthy();
         expect(s.has('mat')).toBe(true);
+        // The mat first, so a lookup of the board's marker (the web carries it too) finds the mat.
+        expect(s.camera().firstElementChild.hasAttribute('data-test-mat')).toBe(true);
         // The backdrop is laid in the element the wood is drawn on, under the nav too, in a
         // clipped box: moved, it must not make that element scrollable.
         const clip = s.backdrop();
@@ -160,7 +191,7 @@ describe('the camera between the mat and the Hall sky', () => {
 
     it('arrives on the sky with the Hall drawn as it is without the camera: nothing moved, the mat gone', () => {
         const s = setup();
-        s.set({ open: true });
+        s.go({ open: true });
         act(() => camAnim().finish());
         expect(s.phase()).toBe(CAMERA.SKY);
         expect(unmoved(s.camera())).toBe(true);
@@ -178,9 +209,9 @@ describe('the camera between the mat and the Hall sky', () => {
 
     it('closing glides back down, the mat laid back first, and the Hall stays until the camera is on the mat', () => {
         const s = setup();
-        s.set({ open: true });
+        s.go({ open: true });
         act(() => camAnim().finish());
-        s.set({ open: false });
+        s.go({ open: false });
         expect(s.phase()).toBe(CAMERA.TO_MAT);
         expect(s.has('mat')).toBe(true);
         expect([s.stage().style.top, s.stage().style.height]).toEqual(['-100%', '100%']);
@@ -203,18 +234,18 @@ describe('the camera between the mat and the Hall sky', () => {
         expect([renders.mat, matCommits]).toEqual([1, ['mount']]);
         // Up: the parent's render that opens the Hall, the glide and the arrival commit nothing
         // in the mat's subtree; on the sky the mat is gone.
-        s.set({ open: true });
+        s.go({ open: true });
         act(() => camAnim().finish());
         expect([renders.mat, matCommits]).toEqual([1, ['mount']]);
-        // Down: the mat is laid back once, in the render that starts the glide, before its first
-        // frame, and nothing in it commits again on the way or on arrival.
-        s.set({ open: false });
+        // Down: the mat is laid back once, in the render that asks for the glide, before its
+        // first frame, and nothing in it commits again on the way or on arrival.
+        s.go({ open: false });
         expect([renders.mat, matCommits]).toEqual([2, ['mount', 'mount']]);
         fireEvent.keyDown(document, { key: 'a' });
         expect(s.phase()).toBe(CAMERA.MAT);
         expect([renders.mat, matCommits]).toEqual([2, ['mount', 'mount']]);
         // Nor does a turn back mid-glide, either way.
-        s.set({ open: true });
+        s.go({ open: true });
         computedY = 300;
         s.set({ open: false });
         computedY = 200;
@@ -225,22 +256,86 @@ describe('the camera between the mat and the Hall sky', () => {
         expect([renders.hall, mounts.hall]).toEqual([2, 2]);
     });
 
-    it('a click or a key finishes the glide at once', () => {
+    it('a click or a key finishes the glide at once, moving or still waiting for its first frame', () => {
         const s = setup();
-        s.set({ open: true });
+        s.go({ open: true });
         fireEvent.pointerDown(q(s.container, '[data-hall-skip]'));
         expect(s.phase()).toBe(CAMERA.SKY);
         expect(s.has('mat')).toBe(false);
 
-        s.set({ open: false });
+        s.go({ open: false });
         fireEvent.keyDown(document, { key: 'a' });
         expect(s.phase()).toBe(CAMERA.MAT);
         expect(s.has('hall')).toBe(false);
+
+        // Before it has moved at all.
+        s.set({ open: true });
+        expect(anims.filter(a => !a.cancelled)).toHaveLength(0);
+        fireEvent.pointerDown(q(s.container, '[data-hall-skip]'));
+        expect(s.phase()).toBe(CAMERA.SKY);
+        frames();
+        expect(anims.filter(a => !a.cancelled)).toHaveLength(0);
+    });
+
+    it('holds where it starts until the side just laid down has been drawn, then glides', () => {
+        const s = setup();
+        s.set({ open: true });
+        expect(s.phase()).toBe(CAMERA.TO_SKY);
+        expect(s.has('hall')).toBe(true);
+        expect([s.camera().style.transform, s.table().style.transform]).toEqual(['translateY(0px)', 'translateY(0px)']);
+        expect(anims).toHaveLength(0);
+        frames(SETTLE.frames - 1);
+        expect(anims).toHaveLength(0);
+        frames(1);
+        expect(anims).toHaveLength(2);
+        expect(fromTo(camAnim())).toEqual(['translateY(0px)', `translateY(${COLUMN_H}px)`]);
+        act(() => camAnim().finish());
+
+        // Down likewise: held on the sky while the mat is laid back and first drawn.
+        s.set({ open: false });
+        expect(s.has('mat')).toBe(true);
+        expect([s.camera().style.transform, s.table().style.transform]).toEqual(['translateY(100%)', 'translateY(50%)']);
+        expect(anims.filter(a => !a.cancelled)).toHaveLength(0);
+        frames();
+        expect(fromTo(camAnim())).toEqual([`translateY(${COLUMN_H}px)`, 'translateY(0px)']);
+    });
+
+    it('waits out frames that stall after the side is laid down, so the glide is seen whole', () => {
+        const s = setup();
+        s.set({ open: true });
+        // The browser readies the new layers: two frames come 300 ms late.
+        frames(2);
+        frames(2, 300);
+        expect(anims).toHaveLength(0);
+        // The first frame on time after that starts it, from the start.
+        frames(1);
+        expect(anims).toHaveLength(2);
+        expect(fromTo(camAnim())).toEqual(['translateY(0px)', `translateY(${COLUMN_H}px)`]);
+    });
+
+    it('starts anyway when frames never steady, at most a second after it was asked for', () => {
+        const s = setup();
+        s.set({ open: true });
+        frames(Math.floor(SETTLE.maxMs / 300), 300);
+        expect(anims).toHaveLength(0);
+        frames(1, 300);
+        expect(anims).toHaveLength(2);
+        expect(SETTLE.maxMs).toBeLessThan(FIRST_FRAME_WAIT_MS);
+    });
+
+    it('turned back before it has moved, it lands back where it was at once', () => {
+        const s = setup();
+        s.set({ open: true });
+        s.set({ open: false });
+        expect(s.phase()).toBe(CAMERA.MAT);
+        expect(s.has('hall')).toBe(false);
+        frames();
+        expect(anims).toHaveLength(0);
     });
 
     it('Escape on the way up is left to the screen, which closes it; on the way down it lands', () => {
         const s = setup();
-        s.set({ open: true });
+        s.go({ open: true });
         fireEvent.keyDown(document, { key: 'Escape' });
         expect(s.phase()).toBe(CAMERA.TO_SKY);
         s.set({ open: false });
@@ -248,14 +343,17 @@ describe('the camera between the mat and the Hall sky', () => {
         expect(s.phase()).toBe(CAMERA.MAT);
     });
 
-    it('turning back mid-glide glides from where the camera is, in the time left', () => {
+    it('turning back mid-glide glides from where the camera is, in the time left, at once', () => {
         const s = setup();
-        s.set({ open: true });
+        s.go({ open: true });
         const up = [camAnim(), tableAnim()];
         computedY = 300;
         s.set({ open: false });
         expect(up.every(a => a.cancelled)).toBe(true);
         expect(s.phase()).toBe(CAMERA.TO_MAT);
+        // Both sides are drawn already: no frame to wait for, or the camera would jump to its
+        // rest style meanwhile.
+        expect(anims.filter(a => !a.cancelled)).toHaveLength(2);
         for (const anim of [camAnim(), tableAnim()]) {
             expect(fromTo(anim)).toEqual(['translateY(300px)', 'translateY(0px)']);
             expect(anim.options.duration).toBe(Math.round(GLIDE_MS * 300 / COLUMN_H));
@@ -284,21 +382,29 @@ describe('the camera between the mat and the Hall sky', () => {
 
     it('another view opening as the Hall closes lands on the mat at once', () => {
         const s = setup();
-        s.set({ open: true });
+        s.go({ open: true });
         act(() => camAnim().finish());
-        s.set({ open: false });
+        s.go({ open: false });
         expect(s.phase()).toBe(CAMERA.TO_MAT);
         s.set({ open: false, away: true });
         expect(s.phase()).toBe(CAMERA.MAT);
         expect(s.has('hall')).toBe(false);
     });
 
-    it('a glide that never reports its end (a hidden window draws no frames) still ends', () => {
-        vi.useFakeTimers();
+    it('a glide in a window that draws no frames (hidden) still lands', () => {
+        // Timers only: the window's frames stay this file's own, and none are drawn.
+        vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
         const s = setup();
         s.set({ open: true });
-        act(() => { vi.advanceTimersByTime(GLIDE_MS + 300); });
+        act(() => { vi.advanceTimersByTime(FIRST_FRAME_WAIT_MS - 50); });
+        expect(s.phase()).toBe(CAMERA.TO_SKY);
+        act(() => { vi.advanceTimersByTime(100); });
         expect(s.phase()).toBe(CAMERA.SKY);
+        // And one that started but never reports its end.
+        s.go({ open: false });
+        expect(s.phase()).toBe(CAMERA.TO_MAT);
+        act(() => { vi.advanceTimersByTime(GLIDE_MS + 300); });
+        expect(s.phase()).toBe(CAMERA.MAT);
     });
 });
 
