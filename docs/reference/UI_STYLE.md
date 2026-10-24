@@ -97,6 +97,14 @@ normal text colour; a new meaning needs the owner's OK.
   `type` (material, tool, food, drink, potion, map; `itemTint.js`), and hover
   mixes in a little white. The tint names a kind, not a state, so it never
   stands in for the five meanings above.
+- **Small pieces in the kit** (owner, 2026-10-24, pixel frames round two):
+  item tiles and filled slots are square with a 2 px line in the frames'
+  bronze (`--color-ui-frame`), white on hover; empty slots are dark wells;
+  buttons are `KitButton` (the chamfer frame with its hard shadow) in three
+  tones: main (gold words, the shine), plain (muted words, white on hover) and
+  danger (red words); switches are `PixelSwitch`/`PixelToggle` (square track
+  and knob, a meaning colour when on); sliders are `ui-range` (flat, square
+  thumb). No rounded corners, soft shadows or glows on any of them.
 
 ## The work plate (owner, 2026-10-24)
 
