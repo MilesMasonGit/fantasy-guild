@@ -9,7 +9,8 @@ import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 import * as FlagRules from '../../../systems/board/FlagRules.js';
 import { GameState } from '../../../state/GameState.js';
-import { resolveSpritePath } from '../../../utils/AssetManager.js';
+import { resolveSpritePath, resolveAnimationPath } from '../../../utils/AssetManager.js';
+import { useHeroPortrait } from './heroPortrait.js';
 import { SkillIcon } from '../base/SkillIcon.jsx';
 import { Tooltip } from '../base/Tooltip.jsx';
 import { PixelFrame, FRAME_KIND } from '../base/PixelFrame.jsx';
@@ -281,7 +282,6 @@ const RulesGrid = ({ litHeroId }) => {
             >
                 {heroes.map(hero => {
                     const lit = hero.id === litHeroId;
-                    const portrait = resolveSpritePath(hero.spriteId || 'hn_recruit_por');
                     return (
                         <div
                             key={hero.id}
@@ -299,15 +299,7 @@ const RulesGrid = ({ litHeroId }) => {
                                     onClick={() => toggleRow(hero.id)}
                                     className="flex items-center gap-1.5 px-1.5 min-w-0 text-left cursor-pointer hover:bg-white/10"
                                 >
-                                    {portrait && (
-                                        <img
-                                            src={portrait.startsWith('/') ? portrait : `/${portrait}`}
-                                            alt=""
-                                            draggable={false}
-                                            className="w-6 h-6 shrink-0 object-contain"
-                                            style={{ imageRendering: 'pixelated' }}
-                                        />
-                                    )}
+                                    <RowPortrait hero={hero} />
                                     <span className={cn('truncate ui-text-body font-bold', lit ? 'text-ui-gold' : 'text-white')}>{hero.name}</span>
                                 </button>
                             </Tooltip>
@@ -325,6 +317,28 @@ const RulesGrid = ({ litHeroId }) => {
                 })}
             </div>
         </div>
+    );
+};
+
+/** A row header's portrait: the hero bar's cut at 1x (its art size), or the still portrait turned left. */
+const RowPortrait = ({ hero }) => {
+    const sprite = hero.spriteId || hero.classId || null;
+    const sheet = sprite ? resolveAnimationPath(sprite) : null;
+    const cut = useHeroPortrait(sheet);
+    const still = sheet ? null : resolveSpritePath(sprite || 'hn_recruit_por');
+    const src = cut || (still ? (still.startsWith('/') ? still : `/${still}`) : null);
+    return (
+        <span data-rules-row-portrait={sheet || still || undefined} className="w-6 h-6 shrink-0">
+            {src && (
+                <img
+                    src={src}
+                    alt=""
+                    draggable={false}
+                    className="w-6 h-6 object-contain"
+                    style={{ imageRendering: 'pixelated', transform: cut ? undefined : 'scaleX(-1)' }}
+                />
+            )}
+        </span>
     );
 };
 

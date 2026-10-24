@@ -164,7 +164,8 @@ describe('H3 v2: the grid', () => {
         const rows = () => qa(view, '[data-rules-row]').map(el => el.getAttribute('data-rules-row'));
         expect(rows()).toEqual(['h1', 'h2', 'h3', 'h4']);
         expect(q(view, '[data-rules-row="h1"] [data-rules-row-header]').textContent).toContain('Aldric');
-        expect(q(view, '[data-rules-row="h1"] [data-rules-row-header] img')).not.toBeNull();
+        // The portrait's box; its picture arrives once the class sheet is cut (HeroTabPortrait.test.js).
+        expect(q(view, '[data-rules-row="h1"] [data-rules-row-header] [data-rules-row-portrait]')).not.toBeNull();
 
         act(() => {
             GameState.state.heroes.push(hero('h5', 'Edda', { forestry: 3 }));

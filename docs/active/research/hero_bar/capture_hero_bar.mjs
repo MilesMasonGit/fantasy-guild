@@ -175,6 +175,22 @@ try {
             save('4_equip_strip_2x', await compose(page, shots, 2));
         }
     }
+    // 5: the Bank open, with its hero tabs beside it (the first hero's panel is open from step 4).
+    const bankBubble = await rectOf(page, '#bank-bubble-target');
+    await page.click(bankBubble.x + bankBubble.width / 2, bankBubble.y + bankBubble.height / 2);
+    await page.waitFor(`!!document.querySelector('[data-hero-dock-tab]')`, { timeoutMs: 15000 });
+    await sleep(1500);
+    await awayMouse(page);
+    save('5_bank_tabs_screen', (await page.send('Page.captureScreenshot', { format: 'png' })).data);
+    const tabs = await page.evaluate(`(() => {
+        const rs = [...document.querySelectorAll('[data-hero-tab-face]')].map(e => e.getBoundingClientRect());
+        if (!rs.length) return null;
+        const x = Math.min(...rs.map(r => r.left)), y = Math.min(...rs.map(r => r.top));
+        const r = Math.max(...rs.map(r => r.right)), b = Math.max(...rs.map(r => r.bottom));
+        return { x: x - 8, y: y - 8, width: r - x + 16, height: b - y + 16 };
+    })()`);
+    log.tabs = tabs;
+    if (tabs) save('5_bank_tabs_2x', await compose(page, [await shotOf(page, tabs)], 2));
     if (page.consoleErrors?.length) log.pageErrors = page.consoleErrors.slice(0, 5);
 } finally {
     console.log(label, JSON.stringify(log, null, 1));

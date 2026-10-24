@@ -1,10 +1,16 @@
 
+import { ART_PX } from '../../../config/matGeometry.js';
+import { boardArtSteps } from '../base/TokenSprite.jsx';
+
 /**
- * The horizontal hero bar is a strip under the mat: each hero a portrait and a name. Everything
- * here is plain numbers and predicates so the tests can pin them without rendering anything.
+ * The horizontal hero dock is a strip under the mat with the heroes standing in it. Each hero is drawn
+ * at the mat's own art size, idling, with the strip's bottom edge cutting them off at the
+ * waist: only the top half of the sprite frame shows. Name and health bar float above the
+ * head. Everything here is plain numbers and predicates so the tests can pin them without
+ * rendering anything.
  */
 
-/** The strip's height in screen px. Fixed: a height that followed anything else would change the mat's fit and could oscillate. */
+/** The strip's height in screen px. Fixed: a height that followed the art size would change the mat's fit and could oscillate. */
 export const DOCK_STRIP_PX = 64;
 
 /**
@@ -15,6 +21,21 @@ export const DOCK_STRIP_PX = 64;
 export const DOCK_SLOT_PX = 144;
 export const DOCK_SLOT_MIN_PX = 56;
 
+/** Gap between the top of the sprite frame and the bottom of the name/HP block. */
+export const DOCK_LABEL_GAP_PX = 2;
+
+/**
+ * The hero's art size in screen px: the same whole multiple of `ART_PX` the mat lands its
+ * heroes on at this fit (`boardArtSteps`), so a hero in the dock is exactly as big as the same
+ * hero standing on the mat.
+ */
+export function dockArtPx(fit = 1) {
+    // Never below two whole steps (128 px): at a small mat fit the heroes shrank to 64 px and
+    // only a 32 px sliver of each head showed above the strip's edge. Heroes are shown full
+    // size.
+    return ART_PX * Math.max(2, boardArtSteps(fit));
+}
+
 /**
  * Whether a hero counts as **out on the mat**: anything but `docked` in `Flags.statusOf`, i.e.
  * a flag planted (working, walking, idle at it) or the figure still walking home
@@ -24,13 +45,23 @@ export function isDeployedStatus(state) {
     return !!state && state !== 'docked';
 }
 
-/** The hover outline (UI_STYLE "Colours"): one art pixel of white around the portrait, at its 2x. */
-const HOVER_OUTLINE = 'drop-shadow(2px 0 0 #fff) drop-shadow(-2px 0 0 #fff) drop-shadow(0 2px 0 #fff) drop-shadow(0 -2px 0 #fff)';
+/**
+ * How far the art sits below its resting place, in screen px (positive = down). The name and
+ * HP bar never use this: they stay at one height for every hero.
+ * - in the dock: 0; hovered: lifted by `lift`.
+ * - deployed: sunk by `sink`; hovered: rises partway, to half the sink.
+ */
+export function dockArtOffset(artPx, { deployed = false, hovered = false } = {}) {
+    const sink = Math.round(artPx * 0.2);
+    const lift = Math.round(artPx * 0.08);
+    if (deployed) return hovered ? Math.round(sink / 2) : sink;
+    return hovered ? -lift : 0;
+}
 
-/** The CSS filter on the portrait: deployed heroes are darkened, less so while hovered; hover outlines it. */
+/** The CSS filter on the art: deployed heroes are darkened, less so while hovered. */
 export function dockArtFilter({ deployed = false, hovered = false } = {}) {
-    if (hovered) return deployed ? `brightness(0.7) ${HOVER_OUTLINE}` : HOVER_OUTLINE;
-    return deployed ? 'brightness(0.4)' : undefined;
+    if (!deployed) return undefined;
+    return hovered ? 'brightness(0.7)' : 'brightness(0.4)';
 }
 
 /** HP as a whole percent, 0–100. */

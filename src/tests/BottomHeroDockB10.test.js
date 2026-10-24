@@ -21,9 +21,11 @@ import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
 import { BottomHeroDock, showsBottomHeroDock } from '../ui/components/dock/BottomHeroDock.jsx';
 import { BankHeroPanel } from '../ui/components/dock/BankHeroPanel.jsx';
 import { dockHeroDragPayload } from '../ui/components/dock/DockHeroFigure.jsx';
-import { DOCK_STRIP_PX, dockArtFilter, hpPercent, hpTone, isDeployedStatus } from '../ui/components/dock/dockHeroView.js';
-import { setPortraitCutter, PORTRAIT_PX } from '../ui/components/dock/heroPortrait.js';
+import {
+    DOCK_STRIP_PX, dockArtPx, dockArtOffset, dockArtFilter, hpPercent, hpTone, isDeployedStatus
+} from '../ui/components/dock/dockHeroView.js';
 import { setLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
+import { drawnPoint } from './fixtures/drawnPoint.js';
 
 const h = React.createElement;
 
@@ -40,10 +42,7 @@ function mount(props = {}) {
 }
 
 const figure = (view, id) => view.container.querySelector(`[data-dock-hero="${id}"]`);
-const portraitOf = (el) => el.querySelector('[data-dock-portrait]');
-
-/** Every sheet the stand-in cutter was asked to cut. jsdom has no canvas, so the cut is stood in for. */
-const cuts = [];
+const labelOf = (el) => el.querySelector('[data-dock-label]');
 
 beforeEach(() => {
     STATUS.clear();
@@ -54,68 +53,68 @@ beforeEach(() => {
         hero('h3', 'Corin', 10, { status: 'wounded' })
     ];
     setLiveMatFit(1);
-    cuts.length = 0;
-    setPortraitCutter((src) => { cuts.push(src); return `data:image/png;cut=${src}`; });
 });
-afterEach(() => { cleanup(); vi.clearAllMocks(); setPortraitCutter(null); });
+afterEach(() => { cleanup(); vi.clearAllMocks(); });
 
 /**
- * ⭐ **The horizontal hero bar: each hero a portrait and a name, nothing else.** The portrait is
- * the head and shoulders of the hero's own class sheet, cut once and facing left; deployed heroes
- * are darkened. HP, wounds and the rest live in the hero panel.
+ * ⭐ **B10: the horizontal hero dock is a dark strip with the heroes standing
+ * in it**. Full-size idle art cut at the waist, a name and HP bar over each
+ * head, deployed heroes darkened and sunk while their labels stay put.
  */
 describe('B10 horizontal hero dock', () => {
-    it('draws one figure per hero, each a portrait and a name and nothing else', () => {
+    it('draws one figure per hero, each with a name and an HP bar', () => {
         const view = mount();
         const figs = view.container.querySelectorAll('[data-dock-hero]');
         expect([...figs].map(f => f.getAttribute('data-dock-hero'))).toEqual(['h1', 'h2', 'h3']);
         for (const f of figs) {
             expect(f.querySelector('[data-dock-name]')).not.toBeNull();
-            expect(portraitOf(f)).not.toBeNull();
-            expect(f.querySelector('[data-dock-hp]')).toBeNull();
-            // No animated sprite in the bar.
-            expect(f.querySelector('[data-hero-row]')).toBeNull();
+            expect(f.querySelector('[data-dock-hp]')).not.toBeNull();
         }
-        expect(figure(view, 'h1').querySelector('[data-dock-name]').textContent).toBe('Aldric');
-        // The wounded hero's name carries no extra mark.
-        expect(figure(view, 'h3').querySelector('[data-dock-name]').textContent).toBe('Corin');
+        expect(figure(view, 'h1').querySelector('[data-dock-name]').textContent).toContain('Aldric');
+        expect(figure(view, 'h2').querySelector('[data-dock-hp]').getAttribute('data-dock-hp')).toBe('40');
+    });
+
+    it('reuses the mat\'s idle hero sprite at the mat\'s art size, cut at the strip edge', () => {
+        setLiveMatFit(1);
+        const view = mount();
+        const art = figure(view, 'h1').querySelector('[data-dock-art]');
+        const sprite = art.querySelector('[data-hero-row]');
+        expect(sprite).not.toBeNull();
+        expect(sprite.getAttribute('data-hero-row')).toBe('idle');
+        // At a fit of 1 the mat draws heroes at 2 × 64 px.
+        expect(sprite.style.width).toBe('128px');
+        // The frame's top half shows: it starts half an art above the edge.
+        expect(drawnPoint(art).y).toBe(64);
         expect(view.container.querySelector('[data-bottom-hero-dock]').style.height).toBe(`${DOCK_STRIP_PX}px`);
     });
 
-    it('cuts each portrait from the class sheet of the hero, once per sheet, at a whole 2x', async () => {
-        GameState.state.heroes = [
-            hero('h1', 'Aldric', 100, { spriteId: 'fighter' }),
-            hero('h2', 'Brenna', 100, { spriteId: 'wizard' }),
-            hero('h3', 'Corin', 100, { spriteId: 'fighter' })
-        ];
-        setLiveMatFit(1.5);
+    it('follows the mat\'s art steps (FP-99)', () => {
+        expect(dockArtPx(0.5)).toBe(128);   // floor of two steps (B10: 'full size')
+        expect(dockArtPx(1)).toBe(128);
+        expect(dockArtPx(1.5)).toBe(192);
+        setLiveMatFit(0.5);
         const view = mount();
-        await act(async () => { await Promise.resolve(); await Promise.resolve(); });
-        const img = (id) => portraitOf(figure(view, id)).querySelector('img');
-        expect(portraitOf(figure(view, 'h1')).getAttribute('data-dock-portrait')).toBe('assets/heroes/hn_fighter_sheet.png');
-        expect(img('h1').getAttribute('src')).toBe('data:image/png;cut=/assets/heroes/hn_fighter_sheet.png');
-        expect(img('h2').getAttribute('src')).toBe('data:image/png;cut=/assets/heroes/hn_wizard_sheet.png');
-        expect(img('h3').getAttribute('src')).toBe(img('h1').getAttribute('src'));
-        // Two fighters, one cut.
-        expect(cuts).toEqual(['/assets/heroes/hn_fighter_sheet.png', '/assets/heroes/hn_wizard_sheet.png']);
-        // Whatever the mat's fit: 24 art pixels at 2x, crisp, and the cut already faces left.
-        expect(PORTRAIT_PX).toBe(48);
-        expect(img('h1').style.width).toBe('48px');
-        expect(img('h1').style.height).toBe('48px');
-        expect(img('h1').style.imageRendering).toBe('pixelated');
-        expect(img('h1').style.transform).toBe('');
+        expect(view.container.querySelector('[data-bottom-hero-dock]').getAttribute('data-dock-art-px')).toBe('128');
     });
 
-    it('darkens a deployed hero portrait, but not its name', () => {
+    it('darkens and lowers a deployed hero\'s art, but not its name and HP bar', () => {
         STATUS.set('h2', 'working');
         const view = mount();
         const home = figure(view, 'h1');
         const out = figure(view, 'h2');
         expect(home.getAttribute('data-dock-deployed')).toBe('false');
         expect(out.getAttribute('data-dock-deployed')).toBe('true');
-        expect(portraitOf(home).style.filter).toBe('');
-        expect(portraitOf(out).style.filter).toBe('brightness(0.4)');
-        expect(out.querySelector('[data-dock-name]').className).toBe(home.querySelector('[data-dock-name]').className);
+
+        const homeArt = home.querySelector('[data-dock-art]');
+        const outArt = out.querySelector('[data-dock-art]');
+        expect(homeArt.style.transform).toBe('translateY(0px)');
+        expect(homeArt.style.filter).toBe('');
+        expect(outArt.style.transform).toBe(`translateY(${dockArtOffset(128, { deployed: true })}px)`);
+        expect(dockArtOffset(128, { deployed: true })).toBeGreaterThanOrEqual(20);
+        expect(outArt.style.filter).toBe('brightness(0.4)');
+
+        // Labels at one height for everybody.
+        expect(labelOf(out).style.bottom).toBe(labelOf(home).style.bottom);
     });
 
     it('counts walking home as deployed, the Dock as home', () => {
@@ -126,22 +125,28 @@ describe('B10 horizontal hero dock', () => {
         expect(isDeployedStatus('docked')).toBe(false);
     });
 
-    it('outlines the portrait in white on hover; a deployed hero brightens partway', () => {
+    it('lifts on hover; a deployed hero rises partway out of the dark', () => {
         STATUS.set('h2', 'idle');
         const view = mount();
         const home = figure(view, 'h1');
         fireEvent.mouseEnter(home);
         expect(home.getAttribute('data-dock-hover')).toBe('true');
-        expect(portraitOf(home).style.filter).toContain('drop-shadow(2px 0 0 #fff)');
-        expect(portraitOf(home).style.filter).not.toContain('brightness');
+        expect(Number(home.getAttribute('data-dock-art-offset'))).toBeLessThan(0);
         fireEvent.mouseLeave(home);
         expect(home.getAttribute('data-dock-hover')).toBe('false');
-        expect(portraitOf(home).style.filter).toBe('');
+        expect(Number(home.getAttribute('data-dock-art-offset'))).toBe(0);
 
         const out = figure(view, 'h2');
+        const sunk = Number(out.getAttribute('data-dock-art-offset'));
         fireEvent.mouseEnter(out);
-        expect(portraitOf(out).style.filter.startsWith('brightness(0.7) drop-shadow(')).toBe(true);
-        expect(dockArtFilter({ deployed: true })).toBe('brightness(0.4)');
+        const risen = Number(out.getAttribute('data-dock-art-offset'));
+        expect(risen).toBeGreaterThan(0);
+        expect(risen).toBeLessThan(sunk);
+        expect(dockArtFilter({ deployed: true, hovered: true })).toBe('brightness(0.7)');
+        // The labels never move.
+        const labelBefore = labelOf(home).style.bottom;
+        fireEvent.mouseEnter(home);
+        expect(labelOf(home).style.bottom).toBe(labelBefore);
     });
 
     it('click and double-click call the existing handlers', () => {
@@ -174,7 +179,7 @@ describe('B10 horizontal hero dock', () => {
         expect(figure(view, 'h2').getAttribute('data-dock-selected')).toBeNull();
     });
 
-    it('keeps the HP tones for the Bank hero tabs; the bar marks a wounded hero only in its data', () => {
+    it('colours the HP bar green, amber, red; wounded heroes are marked', () => {
         expect(hpTone(100)).toBe('green');
         expect(hpTone(51)).toBe('green');
         expect(hpTone(50)).toBe('amber');
@@ -185,6 +190,10 @@ describe('B10 horizontal hero dock', () => {
         expect(hpPercent({ current: -5, max: 60 })).toBe(0);
 
         const view = mount();
+        const tone = id => figure(view, id).querySelector('[data-dock-hp]').getAttribute('data-dock-hp-tone');
+        expect(tone('h1')).toBe('green');
+        expect(tone('h2')).toBe('amber');
+        expect(tone('h3')).toBe('red');
         expect(figure(view, 'h3').getAttribute('data-dock-wounded')).toBe('true');
         expect(figure(view, 'h1').getAttribute('data-dock-wounded')).toBeNull();
     });
@@ -204,6 +213,16 @@ describe('B10 horizontal hero dock', () => {
         expect(figure(view, 'h1').getAttribute('data-dock-deployed')).toBe('true');
     });
 
+    it('updates the HP bar when hp is mutated in place and heroes_updated fires (CR3-300)', async () => {
+        const view = mount();
+        expect(figure(view, 'h1').querySelector('[data-dock-hp]').getAttribute('data-dock-hp')).toBe('100');
+        // The engine mutates state IN PLACE: same hp object, new current value.
+        const h1 = GameState.state.heroes.find(h => h.id === 'h1');
+        h1.hp.current = 43;
+        await act(async () => { EventBus.publish('heroes_updated', {}); await Promise.resolve(); });
+        expect(figure(view, 'h1').querySelector('[data-dock-hp]').getAttribute('data-dock-hp')).toBe('43');
+    });
+
     it('is not shown on the Guild Hall screen (FB-47)', () => {
         expect(showsBottomHeroDock('guild')).toBe(false);
         expect(showsBottomHeroDock(null)).toBe(true);
@@ -217,16 +236,16 @@ describe('B10 horizontal hero dock', () => {
         expect(view.container.querySelector('[data-dock-hero]')).toBeNull();
     });
 
-    it('the Bank hero panel\'s HP bar also updates on an in-place mutation (CR3-300)', async () => {
+    it('the Bank hero tab\'s tooltip HP also updates on an in-place mutation (CR3-300)', async () => {
         const view = render(
             h(DeckDndProvider, null, h(BankHeroPanel, { menuRight: false }))
         );
-        const tab = view.container.querySelector('[data-dock-hero-id="h1"]');
-        const fill = () => tab.querySelector('[data-hero-tab-hp]');
-        expect(fill().style.width).toBe('100%');
+        const face = view.container.querySelector('[data-dock-hero-id="h1"] [data-hero-tab-face]');
         const h1 = GameState.state.heroes.find(h => h.id === 'h1');
         h1.hp.current = 43;
         await act(async () => { EventBus.publish('heroes_updated', {}); await Promise.resolve(); });
-        expect(fill().style.width).toBe('43%');
+        fireEvent.mouseEnter(face);
+        expect(document.body.querySelector('[data-top-bar-tip]').textContent).toContain('43 / 100 HP');
+        fireEvent.mouseLeave(face);
     });
 });

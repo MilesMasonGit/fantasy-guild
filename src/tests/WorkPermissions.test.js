@@ -10,7 +10,7 @@ import {
     SKILL_LAYERS, getSkillIdsByLayer, getSkill, COMBAT_PURPOSE, skillPurpose
 } from '../config/registries/skillRegistry.js';
 import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
-import { BottomHeroDock } from '../ui/components/dock/BottomHeroDock.jsx';
+import { BottomHeroDock, HEROES_LEFT_PX } from '../ui/components/dock/BottomHeroDock.jsx';
 import { BankHeroPanel } from '../ui/components/dock/BankHeroPanel.jsx';
 import { WorkRulesDrawer, LAUNCHER_PX, CELL_PX, drawerInsets } from '../ui/components/dock/WorkRulesDrawer.jsx';
 import { requiresText } from '../ui/components/dock/heroPanelSkills.js';
@@ -119,7 +119,7 @@ describe('the launcher', () => {
         expect(button.querySelector('img').getAttribute('src')).toBe('/assets/ui/u_gear.png');
         // The heroes stand to the right of the slot, never under it.
         const heroes = q(view, '[data-dock-slot]').parentElement;
-        expect(heroes.style.left).toBe(`${LAUNCHER_PX}px`);
+        expect(heroes.style.left).toBe(`${HEROES_LEFT_PX}px`);
     });
 
     it('opens and closes the drawer', () => {
