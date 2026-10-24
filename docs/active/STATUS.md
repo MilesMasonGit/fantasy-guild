@@ -24,6 +24,13 @@ C2; C0 (the test content pack, accepted by the director) after C2; C6 last.
 | C0: first combat content pack, accepted by the director (guarded) | builder + director | — | queued, after C2 | | |
 | C6: the combat screen (mock-ups first, the owner picks by phone) | engineer | — | queued, last | | |
 
+## Backlog director, after brief 210: follow-ups (owner 2026-10-24: frames round two after the bubble row)
+
+| Phase | Tier | Branch (worktree) | State | Planned | Done |
+|---|---|---|---|---|---|
+| T-242: pixel frames round two: second audit of tiles, slots, buttons, toggles, rows; Bank tiles without soft borders | builder | `backlog/pixel-frames-2` (`gf`) | building | Sat | |
+| T-240: the drag bench's Shop and Bank kinds run again (harness only) | builder | `backlog/drag-bench-kinds` (`gb`) | building | Sat | |
+
 ## Backlog director, batch F: look-wide passes (brief 210; owner said go 2026-10-24: both, mock-ups first) — **done, merged eb969849; brief 210 complete**
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
