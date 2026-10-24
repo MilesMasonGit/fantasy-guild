@@ -31,6 +31,13 @@ C2; C0 (the test content pack, accepted by the director) after C2; C6 last.
 | T-242: pixel frames round two: second audit of tiles, slots, buttons, toggles, rows; Bank tiles without soft borders | builder | `backlog/pixel-frames-2` (`gf`) | building | Sat | |
 | T-240: the drag bench's Shop and Bank kinds run again (harness only) | builder | `backlog/drag-bench-kinds` (`gb`) | building | Sat | |
 
+## Systems director, skill loops (brief 230; owner 2026-10-24: next, beside the rest of combat)
+
+| Phase | Tier | Branch (worktree) | State | Planned | Done |
+|---|---|---|---|---|---|
+| S0: gap map (read-only): what the engine does for each ruling, order, parallel pairs, tiers | engineer | — (read-only) | building | Sat | |
+| S1–S9 | — | — | queued after S0's proposal | | |
+
 ## Backlog director, batch F: look-wide passes (brief 210; owner said go 2026-10-24: both, mock-ups first) — **done, merged eb969849; brief 210 complete**
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
