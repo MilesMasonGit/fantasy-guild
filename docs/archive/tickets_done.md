@@ -157,3 +157,7 @@ T-219 — No ring under movable Tokens; the grab cursor alone tells movable from
 T-220 — No quest-ready glow; the tutorial beacon overlay removed (in git history for the redesign) — 6c28d269 — 2026-10-23
 T-221 — Loot lands plainly: afterimages, rare twinkle, flight sparkles, pile dissolve and pile pulse switched off in lootEffects.js (owner: shadow kept) — af6b21c7 — 2026-10-23
 T-222 — An enemy, or a hero picked up on the mat (its flag), no longer flies in from the mat corner: drag sources are measured with their own transform (DndKit measureDragSource); drag bench 400/400 on flag and hero — b0528da0 — 2026-10-23
+T-223 — Bank inspect pane retired, search in the Bank header, the hover tooltip carries everything (owner ok by phone) — 515d7154 — 2026-10-23
+T-224 — Item tiles tinted by the item's type, lighter on hover; rule in UI_STYLE (owner ok) — 515d7154 — 2026-10-23
+T-225 — Slot-kind marks in each filled loadout slot (code placeholders; seven art lines on owner_art_list) — 515d7154 — 2026-10-23
+T-230 — One item, one hero: equipping gear moves the copy out of the Bank, full-Bank and in-use refusals, hero-to-hero hand-over, old saves settled in roster order with one banner (owner rulings 2026-10-22/23; no 'in use' count, owner) — d66c1ee8 — 2026-10-23

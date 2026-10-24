@@ -58,14 +58,10 @@ Detail, order and tiers in [brief 210](../active/briefs/210_backlog_intake.md); 
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
-| T-223 | P2 | open | **Bank: retire the inspect pane, search in the tab header, full item tooltips** with Equippable badge (BANK-01). Eye-check. | brief 210 C1 |
-| T-224 | P3 | open | **Item tiles tinted by category, lighter on hover** (ITEM-01). Eye-check. | brief 210 C1 |
-| T-225 | P3 | open | **Slot-kind pixel icon in each equipment slot corner** (HERO-02). Eye-check. | brief 210 C1 |
 | T-226 | P3 | open | **Equip plays the pixel shine**, no bounce or glow (HERO-01). Eye-check. | brief 210 C2 |
 | T-227 | P2 | open | **Hero bar: portrait + name**, portraits cropped from each class sheet, facing left (DOCK-02). Eye-check. | brief 210 C2 |
 | T-228 | P2 | open | **Work Permissions: solid button under the mat, slide-up drawer, Combat first, chamfer frame** (DOCK-01). Eye-check. | brief 210 C2 |
 | T-229 | P3 | open | **"New!" on an item stub clears on hover or pin** (NOTIF-01). | brief 210 C4 |
-| T-230 | P1 | open | **One item, one hero**: equipping gear/tools moves the copy from the Bank to the hero, unequip returns it (owner 2026-10-22); consumables stay shared; old-save handling (EQUIP-01). Engineer. Eye-check. | brief 210 C3 |
 | T-231 | P3 | open | **No toasts or stubs over the Guild Hall upgrade screen** (GUILD-01). Eye-check. | brief 210 D1 |
 | T-232 | P3 | open | **Smooth star drift in the Hall sky** (GUILD-02). Eye-check. | brief 210 D1 |
 | T-233 | P3 | open | **Hall stars steady, grey / blue / gold by state** (GUILD-03). Eye-check. | brief 210 D1 |
