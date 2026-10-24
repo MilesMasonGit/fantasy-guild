@@ -1,4 +1,4 @@
-Status: draft
+Status: briefed (brief 240; approved 2026-10-24)
 
 # Basic content: a playable world from camp to midgame
 
@@ -42,6 +42,51 @@ set where the whole loop plays: Starter Camp → find a map → settle a Region
 2026-10-22: the owner is away from the PC for three days (phone only):
 design questions yes, screenshots maybe, no CMS review. The change pack waits
 in the inbox until the owner is back.
+
+## The world at a glance (current, after round 9)
+
+*The rounds below record how each decision was reached; where they differ,
+this table wins.* Plain names; every entry has existing art unless marked.
+
+**Starter Camp** (~30 min): the Hall, the 25 endgame ruins, a few oak trees,
+copper and coal veins, a stone outcrop, a berry bush, a fishing spot, a wheat
+patch, a Goblin Camp. Ends when the player has made a first copper tool and
+beaten a goblin: the cartographer hands over Forest, Mountain and Coast.
+
+**Plane 1** (copper and oak; ~1.5 h; levels 1-15)
+
+| Base Map | Nodes | Camp | Boss (first kill: a plane-2 map) | Rarity |
+|---|---|---|---|---|
+| Forest | many oak, a few berry bushes | Wolves | Wolf Alpha (bigger wolf) | tutorial |
+| Mountain | copper, coal, stone | Goblins | Goblin Chief | tutorial |
+| Coast | fishing spots (shrimp) | Crabs | Water Elemental | tutorial |
+| Meadow | apple trees, wild wheat, berry bushes | Cows (peaceful) | Greater Slime | common |
+| Flower Meadow | strawberry, blueberry, apple | Thorn Elementals (peaceful) | Wind Elemental | rare |
+| Cherry Grove | cherry, peach | Bees (drop honey) | Queen Bee (bigger bee) | rare |
+
+Makes: copper tools, copper weapons and armour, cooking from meat, fish and
+fruit. Caches: copper chests.
+
+**Plane 2** (iron and fir; ~1 day; everything new at level 15)
+
+| Base Map | Nodes | Camp | Boss (good loot; plane-3 maps later) |
+|---|---|---|---|
+| Volcano | iron, coal, stone | Fire Elementals (also ambush miners on iron) | Fire Elemental chief (tinted) |
+| Yellowstone | fir, stone, grapevines, hot springs | Sulphur Lizards (drop Lizard Scale) | Big Lizard |
+| Bog | Lavender (the herb), trout fishing | Frogs | Toxic Frog |
+
+Makes: iron tools, weapons and armour (Iron Anvil); leather boots, gloves and
+tunic from Lizard Scale (Tannery); a healing potion from Lavender (Alchemy
+Table); better Furnace (smelter) and Workbench from fir and iron. Caches:
+iron chests. Bog banner: the existing swamp map; the Bog's ground and water
+look is new (code).
+
+**Map flow**: the tutorial gives 3; every enemy drops its plane's maps and
+modifiers steadily; plane-1 enemies drop plane-2 maps rarely; each plane-1
+boss's first kill always drops one; bounties pay plane-1 maps only.
+**Modifiers**: Overgrown, Rich Veins, Teeming Waters, Bountiful (more of a
+basic); a Wolf Den, Goblin Camp etc. per creature (an extra camp); a
+Treasure modifier (a cache). Fir Grove is dropped.
 
 ## Decisions
 
@@ -185,6 +230,49 @@ the cap is kept for building). Plain names (concept_tone_and_world).
   "moves every few days" rhythm starts after plane 2, not from the first
   map. The first ritual's 1-3 months is unchanged.
 
+### Round 8 (2026-10-24): bosses, art, the camp's end, packs
+
+- **Every Base Map may have a "boss" unrelated to its camp** (owner: "a
+  flower golem that roams the meadow, for example"), so peaceful maps lead on
+  to plane 2 too. The boss's first kill is the guaranteed plane-2 map.
+- **Art: use placeholders, or re-theme to match existing art** (owner: e.g.
+  redberry instead of cranberry). Re-theming wins wherever a sprite exists
+  (round 9); anything left takes the nearest sprite, flagged placeholder art
+  in the pack.
+- **The Starter Camp ends at the first copper tool plus a goblin beaten**;
+  then the cartographer hands over the 3 maps. The exact tutorial steps are
+  [concept_quests_tutorial.md](concept_quests_tutorial.md)'s (D8).
+- **Three change packs**: (1) Starter Camp and plane 1, (2) plane 2,
+  (3) modifiers, caches and Hall prices. Plane 1 can be played before plane
+  2 is accepted.
+
+### Round 9 (2026-10-24): re-themed to existing art
+
+- **Plane-1 bosses**: Wolf Alpha (Forest), Goblin Chief (Mountain), Water
+  Elemental (Coast), Greater Slime (Meadow), Wind Elemental (Flower Meadow),
+  Queen Bee (Cherry Grove). Cherry Grove's boars become **Bees** (drop
+  honey); Flower Meadow's beehive node is dropped.
+- **Plane 2 re-themed**: Marsh Herb → **Lavender**, Eel → **Trout**,
+  Cranberry → **Grapes** (grapevines on Yellowstone), Rock Elementals →
+  **Fire Elementals**, Bog Toads → **Frogs**.
+- **Yellowstone: Sulphur Lizards drop Lizard Scale**; the Tannery turns
+  scales into leather for boots, gloves and a tunic (replaces Bear Hide).
+- **Plane-2 maps get bosses too**, with good loot now (extra materials,
+  modifiers) and plane-3 maps once that plane exists: a tinted Fire Elemental
+  chief, a Big Lizard, a Toxic Frog.
+
+### Round 10 (2026-10-24): authoring, and closed
+
+- **The Starter Camp's new basics: an agent proposes, the owner
+  rearranges.** Change packs learn to carry the Starter Camp (small CMS
+  change); the owner can move anything and re-save it.
+- **Numbers: the agent drafts, the owner tunes by playing.** Each first-pass
+  number is noted in the pack.
+- **Bosses stay near their spot** (a lair of one, pottering like other
+  enemies); roaming the whole map can come later.
+- **Closed** (owner: "Yes, write the brief"): briefed as
+  [brief 240](briefs/240_basic_content.md).
+
 ## Overlaps with the other planners
 
 - **Combat** ([concept_combat.md](concept_combat.md)): the enemies on each
@@ -196,13 +284,13 @@ the cap is kept for building). Plain names (concept_tone_and_world).
   the first metal in the game is **copper** (copper ingots, copper tools).
   Combat gear should follow the item tiers (copper, iron).
 - **New creatures for the combat planner to design** (stats, style, drops'
-  numbers): Wolves, Crabs, Boars (plane 1); Rock Elementals, Bears, Bog
-  Toads (plane 2). Each drops its map's materials, its plane's maps steadily
+  numbers): Wolves, Crabs, Bees (plane 1); Fire Elementals, Sulphur
+  Lizards, Frogs (plane 2); and the nine bosses in the table above. Each drops its map's materials, its plane's maps steadily
   and (plane 1 only) plane-2 maps rarely.
 - **Leaders (combat)**: every plane-1 camp needs a tougher leader whose
   first kill always drops a plane-2 map (the Goblin Chief exists; wolves,
-  crabs and boars need one; the peaceful cows and thorn elementals need a
-  decision, e.g. a Bull). Their stats are the combat planner's.
+  crabs and bees need one; round 9 named them all, as bosses in lairs per
+  brief 220 C5). Their stats are the combat planner's.
 - **The XP curve (skill loops)**: levels 1-15 in about 2 hours of play, then
   slower. Today's speed and XP numbers are the skill planner's to set.
 - **Skill loops** ([concept_skill_loops.md](concept_skill_loops.md)): how each

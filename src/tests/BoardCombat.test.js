@@ -412,18 +412,19 @@ describe('Defeat costs equipment (D-74)', () => {
     });
 });
 
-describe('Regen is unchanged (G-2)', () => {
-    it('combat does not suppress it — that was a documentation error, not a bug', () => {
-        // §8.1 said RegenSystem heals "idle" heroes. It heals idle, working
-        // AND fighting alike. The conclusion survives on different grounds:
-        // regen is constant, so withdrawing removes the damage source and
-        // flips a hero from net-losing HP to net-gaining it.
+describe('Regen stops in a fight', () => {
+    it('a fighting hero heals only by eating; withdrawn, they regenerate again', () => {
+        // Mid-fight only food heals (the combat detail pass), so withdrawing is what
+        // turns a losing hero's HP back upward.
         const hero = GameState.state.heroes[0];
         hero.status = 'combat';
         hero.hp.current = 50;
 
         RegenSystem.tick(60000);
+        expect(hero.hp.current).toBe(50);
 
+        hero.status = 'idle';
+        RegenSystem.tick(60000);
         expect(hero.hp.current).toBeGreaterThan(50);
     });
 });

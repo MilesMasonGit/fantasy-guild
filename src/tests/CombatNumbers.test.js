@@ -99,7 +99,7 @@ beforeEach(() => {
 
 describe('the palette only offers axes combat actually reads', () => {
     it('declares each combat axis in EFFECT_TYPES rather than as a bare string', () => {
-        for (const axis of ['ARMOR', 'ACCURACY', 'BLOCK', 'RESIST_FLAT', 'DAMAGE']) {
+        for (const axis of ['ARMOR', 'ACCURACY', 'RESIST_FLAT', 'DAMAGE']) {
             expect(EFFECT_TYPES[axis], axis).toBe(axis);
         }
     });
@@ -108,14 +108,14 @@ describe('the palette only offers axes combat actually reads', () => {
         // `ModifierAggregator.query` — what these readers call — sums flats and
         // silently skips percentage and multiplier entries, so offering another
         // bucket would offer something discarded.
-        for (const axis of ['ARMOR', 'ACCURACY', 'BLOCK', 'RESIST_FLAT']) {
+        for (const axis of ['ARMOR', 'ACCURACY', 'RESIST_FLAT']) {
             expect(bucketsFor(getPaletteEntry(axis)), axis).toEqual(['flat']);
         }
     });
 
     it('⚠️ makes DAMAGE the exception, because it has a real percentage reader', () => {
         /**
-         * `computeHeroDamage` genuinely multiplies by a percentage bucket, and
+         * `heroHitDamage` genuinely multiplies by a percentage bucket, and
          * that is what makes a Well Fed style buff — *"+10% damage for a
          * while"* — expressible as an ordinary library effect rather than as a
          * hardcoded status type (V7).
@@ -132,6 +132,10 @@ describe('the palette only offers axes combat actually reads', () => {
 
     it('does not offer DEFENSE — combat sums it into ARMOR and nothing writes it', () => {
         expect(getPaletteEntry('DEFENSE')).toBeNull();
+    });
+
+    it('no longer offers Block: a miss is the only way a hit fails, and nothing reads BLOCK', () => {
+        expect(getPaletteEntry('BLOCK')).toBeNull();
     });
 });
 

@@ -272,6 +272,63 @@ no content uses either yet.
   the **tree pays**. **A Stump spends one seedling from the Bank when it
   regrows into a Sapling**; with none in the Bank the Stump is **stopped**
   and waits. (Easier to understand than a Forest upkeep, owner.)
+- Still standing from 2026-10-09: the Lumber Camp, rare finds as loud pops,
+  the woodaxe tier gating. **Forestry closed** (owner, 2026-10-22).
+
+**Mining**
+- **A Mine gives matching veins within reach a chance to double their
+  drops** (a Copper Mine, copper veins). It no longer spawns veins.
+- **An empty vein rests, then refills all at once** (the engine's refill).
+- **One shared empty-rock sprite** for every depleted vein; inspect names
+  the ore.
+- **Copper feel: about 5 ore, about 1 minute's rest**; each ore its own
+  numbers in the CMS.
+- **Veins come from the map only** and are **fixed** (the player can't move
+  them): Mines, Minecarts and smelters are placed around them, so each
+  Region's layout is its own puzzle.
+- **Double-drop chance: about 25 % per Mine in reach, stacking** (a sure
+  double at four; the number in the CMS).
+- **Minecarts shorten the work time of veins within reach** (a new effect;
+  no longer a restock). They **stack**, down to the standard floor.
+- **No smelter rule in Mining** (the Smelter is Smithing's). Gems and the
+  occasional map fragment stay rare finds; the pickaxe of the tier below
+  gates each ore.
+- **Mining closed** (owner, 2026-10-24).
+
+**Standard floor for speed-ups (all skills)**: stacked support Tokens can
+cut **at most 80 %** of a time (a 5 minute regrow never goes below 1
+minute). One number for every speed-up, in the CMS tuning. ⚠️ Replaces the
+"about a quarter" Forest floor above.
+
+**Fishing**
+- **Water never runs out.** ⚠️ Overturns the 2026-10-09 "shifting fish
+  spots": spots **don't shift** on their own (the Shrimp Coast goes);
+  **standard fishing spots, one sprite per water type** (sea, river, lake).
+- **The catch is chosen**: the **water type**, the **bait** the hero carries
+  and the **tool kind** in their hand decide what bites. Fishing's twist is
+  choosing your catch.
+- **No bait: the water's basic fish** (a plain catch with just the tool).
+- **Bait is optional and carried like a work potion** (the Alchemy rule):
+  **one bait per catch**; when it runs out the hero fishes plain.
+- **Tool kinds, not tiers**: a rod for fish, a net for shrimp, a cage for
+  crabs, and so on; each catch names the kind it needs.
+- **A Dock in reach makes fishing faster** (stacks to the standard floor).
+  ⚠️ Replaces "a dock adds a fishing spot".
+- **Catch pools**: each combination of water, tool kind and bait has its own
+  weighted pool, authored in the CMS. Owner's example: Rod and Bait, 50 %
+  Trout, 40 % Salmon, 10 % Dolphin. **Rare fish** are either **a small share
+  of a pool** or **only in a special bait's pool**; a rare catch pops loudly.
+- **Bait is crafted**, mainly from cheap materials: Raw Shrimp, and waste
+  drops from other skills (worms from Farming).
+- **Tools have tiers but don't gate**: any rod catches any rod fish; **a
+  better rod has its own bonuses** and may be needed to catch a rare fish
+  reliably (e.g. more weight on the rare share). ⚠️ The one gathering tool
+  that does not gate by tier.
+- **Fishing closed** (owner, 2026-10-24).
+
+**Forestry, added 2026-10-24**: **trees can't be dragged** (like veins: a
+wood is shaped by where Forests stand), and **every new Sapling costs one
+seedling**, a Forest's planting as well as a Stump's regrow.
 - **Forests stack fully**, down to a **floor**: a tree never regrows faster
   than a set fraction of its normal time (about a quarter; the number in the
   CMS).

@@ -54,12 +54,11 @@ export function processCombat(fight, trait, deltaTime) {
 
         combat.heroTickProcesses[heroId] = (combat.heroTickProcesses[heroId] || 0) + deltaTime;
 
-        // Style comes from the equipped weapon; unarmed falls back to the hero's combat skill.
-        const combatStyle = CombatFormulas.getHeroCombatStyle(hero);
-        const attackSpeed = CombatFormulas.HERO_ATTACK_INTERVAL_MS;
+        // The weapon sets the pace: fast 2 s, normal 3 s, slow 4 s (barehanded: normal).
+        const attackSpeed = CombatFormulas.heroAttackSpeedMs(hero);
 
         if (!fight.isFleeing && combat.heroTickProcesses[heroId] >= attackSpeed) {
-            handleHeroAttack(fight, hero, enemy, combatStyle, attackSpeed);
+            handleHeroAttack(fight, hero, enemy, attackSpeed);
             if (combat.enemyHp.current <= 0) {
                 handleVictory(fight, hero, enemy, heroId, assignedHeroIds);
                 return;

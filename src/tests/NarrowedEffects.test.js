@@ -245,7 +245,7 @@ describe('the palette declares both, rather than inferring them', () => {
     it('offers NO category on the combat axes, whose reader passes none', () => {
         // `query('ARMOR')` with no category would never match a scoped modifier,
         // so offering the field would offer something silently discarded.
-        for (const type of [EFFECT_TYPES.ARMOR, EFFECT_TYPES.ACCURACY, EFFECT_TYPES.BLOCK,
+        for (const type of [EFFECT_TYPES.ARMOR, EFFECT_TYPES.ACCURACY,
             EFFECT_TYPES.DAMAGE, EFFECT_TYPES.RESIST_FLAT]) {
             expect(getPaletteEntry(type).categories).toBeUndefined();
         }

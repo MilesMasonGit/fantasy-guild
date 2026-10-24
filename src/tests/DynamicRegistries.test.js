@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { getItem } from '../config/registries/itemRegistry.js';
-import { enemyCombatBudget } from '../config/FormulaRegistry.js';
+import { enemyLevelStats, roundHalfUp } from '../config/FormulaRegistry.js';
 import { getTokenType } from '../config/registries/tokenRegistry.js';
 import { enemyProfileOf } from '../config/registries/enemyProfile.js';
 
@@ -40,15 +40,13 @@ describe('Dynamic Registry Loading', () => {
         expect(enemy).not.toBeNull();
         expect(enemy.level).toBeGreaterThan(0);
 
-        // Every stat comes off that level, not from a number typed into the
-        // content file.
-        const budget = enemyCombatBudget(enemy.level, def.enemy.budgetScale ?? 1);
-        expect(enemy.hp).toBe(budget.hp);
-        expect(enemy.xpAwarded).toBe(budget.xp);
-        // Attack and defence are both the level — the hero side is one number
-        // now, and so is this.
-        expect(enemy.attackSkill).toBe(enemy.level);
-        expect(enemy.defenceSkill).toBe(enemy.level);
+        // Every stat comes off that level (scaled by an older budgetScale), not
+        // from a number typed into the content file.
+        const table = enemyLevelStats(enemy.level);
+        const scale = def.enemy.budgetScale ?? 1;
+        if (def.enemy.hp == null) expect(enemy.hp).toBe(Math.max(1, roundHalfUp(table.hp * scale)));
+        if (def.enemy.xp == null) expect(enemy.xpAwarded).toBe(Math.max(1, roundHalfUp(table.xp * scale)));
+        if (def.enemy.armor == null) expect(enemy.armor).toBe(table.armor);
     });
 
     // The quest-loading case is gone with the authored quest pipeline:

@@ -2,8 +2,6 @@ import * as HeroManager from '../hero/HeroManager.js';
 import { EventBus } from '../core/EventBus.js';
 import * as CombatFormulas from '../../utils/CombatFormulas.js';
 import * as StatusEffectSystem from '../effects/StatusEffectSystem.js';
-import { getItem } from '../../config/registries/itemRegistry.js';
-import { getPrimaryWeapon } from '../../config/registries/equipmentConstants.js';
 import { handleHeroWounded } from './CombatResolutionProcessor.js';
 import * as ConsumptionSystem from '../hero/ConsumptionSystem.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
@@ -27,10 +25,11 @@ function rollStatusOnHit(source, applyFn) {
  * HP, food and drink are combat's attrition currency.
  *
  * `combat_hero_attack` names the enemy Token (`instanceId`) so the mat can
- * route a landed hit's knockback to it.
+ * route a landed hit's knockback to it. Every swing publishes `hit` and `crit`, so a miss and a
+ * crit can be shown.
  */
 
-export function handleHeroAttack(fight, hero, enemy, combatStyle, attackSpeed) {
+export function handleHeroAttack(fight, hero, enemy, attackSpeed) {
     // Eating mid-fight: the hero skips this attack while the enemy's timer keeps
     // running, so the enemy gets a free swing. That price keeps HP management
     // tense. Uncapped on purpose: a hero who can't out-heal the damage should lose.
@@ -45,30 +44,23 @@ export function handleHeroAttack(fight, hero, enemy, combatStyle, attackSpeed) {
         return;
     }
 
-    const weaponId = getPrimaryWeapon(hero);
-    const weapon = weaponId ? getItem(weaponId) : null;
-
     // Stun check: the attempt itself spends a stack, success or failure.
     if (StatusEffectSystem.rollAttackFailure(hero.statuses)) {
-        EventBus.publish(ENGINE_EVENTS.COMBAT_HERO_ATTACK, { cardId: fight.id, instanceId: fight.instanceId, heroId: hero.id, enemyId: enemy.id, damage: 0, hit: false, stunned: true, enemyHpRemaining: fight.combat.enemyHp.current });
+        EventBus.publish(ENGINE_EVENTS.COMBAT_HERO_ATTACK, { cardId: fight.id, instanceId: fight.instanceId, heroId: hero.id, enemyId: enemy.id, damage: 0, hit: false, crit: false, stunned: true, enemyHpRemaining: fight.combat.enemyHp.current });
         fight.combat.heroTickProcesses[hero.id] -= attackSpeed;
         return;
     }
 
-    const damageBonus = hero?.aggregator?.query('DAMAGE') || 0;
-    const heroSkill = CombatFormulas.getHeroCombatSkill(hero, combatStyle);
-
-    const didHit = CombatFormulas.rollHit(
-        heroSkill, enemy.defenceSkill,
-        combatStyle, enemy.combatType || 'melee',
-        hero, enemy
+    const swing = CombatFormulas.rollSwing(
+        CombatFormulas.heroMissChance(hero, enemy),
+        CombatFormulas.heroCritChance(hero)
     );
 
-    if (didHit) {
-        const damage = CombatFormulas.computeHeroDamage(hero, enemy, weapon, damageBonus, combatStyle, fight.combat.enemyStatuses);
+    if (swing.hit) {
+        const damage = CombatFormulas.heroHitDamage(hero, enemy, { crit: swing.crit, enemyStatuses: fight.combat.enemyStatuses });
         fight.combat.enemyHp.current = Math.max(0, fight.combat.enemyHp.current - damage);
 
-        rollStatusOnHit(weapon, (statusId, stacks) => StatusEffectSystem.applyToEnemy(fight, statusId, stacks));
+        rollStatusOnHit(CombatFormulas.getHeroWeapon(hero), (statusId, stacks) => StatusEffectSystem.applyToEnemy(fight, statusId, stacks));
         StatusEffectSystem.notifyHitTaken(fight.combat.enemyStatuses);
 
         if (enemy.traits) {
@@ -79,9 +71,9 @@ export function handleHeroAttack(fight, hero, enemy, combatStyle, attackSpeed) {
                 EventBus.publish(ENGINE_EVENTS.COMBAT_ENEMY_TRAIT_TRIGGER, { cardId: fight.id, heroId: hero.id, traitId: 'thorns', damage: reflex });
             }
         }
-        EventBus.publish(ENGINE_EVENTS.COMBAT_HERO_ATTACK, { cardId: fight.id, instanceId: fight.instanceId, heroId: hero.id, enemyId: enemy.id, damage, hit: true, enemyHpRemaining: fight.combat.enemyHp.current });
+        EventBus.publish(ENGINE_EVENTS.COMBAT_HERO_ATTACK, { cardId: fight.id, instanceId: fight.instanceId, heroId: hero.id, enemyId: enemy.id, damage, hit: true, crit: swing.crit, enemyHpRemaining: fight.combat.enemyHp.current });
     } else {
-        EventBus.publish(ENGINE_EVENTS.COMBAT_HERO_ATTACK, { cardId: fight.id, instanceId: fight.instanceId, heroId: hero.id, enemyId: enemy.id, damage: 0, hit: false, enemyHpRemaining: fight.combat.enemyHp.current });
+        EventBus.publish(ENGINE_EVENTS.COMBAT_HERO_ATTACK, { cardId: fight.id, instanceId: fight.instanceId, heroId: hero.id, enemyId: enemy.id, damage: 0, hit: false, crit: false, enemyHpRemaining: fight.combat.enemyHp.current });
     }
 
     // Carry the overshoot instead of resetting; a reset would quantize every
@@ -92,7 +84,7 @@ export function handleHeroAttack(fight, hero, enemy, combatStyle, attackSpeed) {
 export function processEnemyAttack(fight, enemy, assignedHeroIds, deltaTime) {
     if (!fight.combat) return;
     fight.combat.enemyTickProgress += deltaTime;
-    const enemyAttackSpeed = enemy.attackSpeed || CombatFormulas.ENEMY_ATTACK_INTERVAL_MS;
+    const enemyAttackSpeed = CombatFormulas.enemyAttackSpeedMs(enemy);
 
     if (fight.combat.enemyTickProgress >= enemyAttackSpeed) {
         const targetHeroId = assignedHeroIds[Math.floor(Math.random() * assignedHeroIds.length)];
@@ -101,34 +93,30 @@ export function processEnemyAttack(fight, enemy, assignedHeroIds, deltaTime) {
         if (targetHero && targetHero.status !== 'wounded') {
             // Stun check for the enemy: the attempt spends a stack either way.
             if (StatusEffectSystem.rollAttackFailure(fight.combat.enemyStatuses)) {
-                EventBus.publish(ENGINE_EVENTS.COMBAT_ENEMY_ATTACK, { cardId: fight.id, heroId: targetHeroId, enemyId: enemy.id, damage: 0, hit: false, stunned: true, heroHpRemaining: targetHero.hp.current });
+                EventBus.publish(ENGINE_EVENTS.COMBAT_ENEMY_ATTACK, { cardId: fight.id, heroId: targetHeroId, enemyId: enemy.id, damage: 0, hit: false, crit: false, stunned: true, heroHpRemaining: targetHero.hp.current });
                 fight.combat.enemyTickProgress -= enemyAttackSpeed;
                 return;
             }
 
-            const heroStyle = CombatFormulas.getHeroCombatStyle(targetHero);
-            const heroDefense = CombatFormulas.getHeroDefenseSkill(targetHero);
-
-            const didHit = CombatFormulas.rollHit(
-                enemy.attackSkill, heroDefense,
-                enemy.combatType || 'melee', heroStyle,
-                enemy, targetHero
+            const swing = CombatFormulas.rollSwing(
+                CombatFormulas.enemyMissChance(enemy, targetHero),
+                CombatFormulas.enemyCritChance(enemy)
             );
 
-            if (didHit) {
-                const dmg = CombatFormulas.computeEnemyDamage(enemy, targetHero, heroStyle);
+            if (swing.hit) {
+                const dmg = CombatFormulas.enemyHitDamage(enemy, targetHero, { crit: swing.crit });
                 HeroManager.modifyHeroHp(targetHeroId, -dmg);
 
                 rollStatusOnHit(enemy, (statusId, stacks) => StatusEffectSystem.applyToHero(targetHeroId, statusId, stacks));
                 StatusEffectSystem.notifyHitTaken(targetHero.statuses);
 
-                EventBus.publish(ENGINE_EVENTS.COMBAT_ENEMY_ATTACK, { cardId: fight.id, heroId: targetHeroId, enemyId: enemy.id, damage: dmg, hit: true, heroHpRemaining: targetHero.hp.current });
+                EventBus.publish(ENGINE_EVENTS.COMBAT_ENEMY_ATTACK, { cardId: fight.id, heroId: targetHeroId, enemyId: enemy.id, damage: dmg, hit: true, crit: swing.crit, heroHpRemaining: targetHero.hp.current });
 
                 if (targetHero.hp.current <= 0) {
                     handleHeroWounded(fight, targetHeroId);
                 }
             } else {
-                EventBus.publish(ENGINE_EVENTS.COMBAT_ENEMY_ATTACK, { cardId: fight.id, heroId: targetHeroId, enemyId: enemy.id, damage: 0, hit: false, heroHpRemaining: targetHero.hp.current });
+                EventBus.publish(ENGINE_EVENTS.COMBAT_ENEMY_ATTACK, { cardId: fight.id, heroId: targetHeroId, enemyId: enemy.id, damage: 0, hit: false, crit: false, heroHpRemaining: targetHero.hp.current });
             }
 
         }

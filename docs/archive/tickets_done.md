@@ -174,3 +174,4 @@ T-235 — Bank and Shop drawers reach the screen's left edge under the nav orbs;
 T-236 — Opening the Bank slides the top bar up, the stubs off right and the mat aside in 250 ms, reversed on close; no mat refit (spacer asides removed) — 7b7244ef — 2026-10-24
 T-237 — The Atlas's Regions as a two-page spread: banners on the left, the selected Region's ground preview, facts, landmarks and actions on the right — 3398be7d — 2026-10-24
 T-238 — The floating Ground tuner and the QA Terrain section retired (defaults kept); the Mat dials as one collapsed QA section; the TUNER button gone — 56136a65 — 2026-10-24
+T-136 — Pixel frames on every window: tooltips (TipBox), the modal shell, Token Summary, catch-up screens chamfer; Bank, Shop and hero panel studs, warm near-black; boxed rows unboxed; audit in docs/active/research/pixel_frames/audit.md; round two is T-242 — 4fee0e7c — 2026-10-24

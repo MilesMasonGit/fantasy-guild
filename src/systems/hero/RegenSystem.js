@@ -5,8 +5,8 @@ import * as ConsumptionSystem from './ConsumptionSystem.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
- * RegenSystem - HP regeneration for heroes that are idle, working or
- * in combat (not wounded). Rates come from FormulaRegistry.REGEN_CONFIG and are
+ * RegenSystem - HP regeneration for heroes that are idle or working: never in a
+ * fight, where only food heals, and never wounded. Rates come from FormulaRegistry.REGEN_CONFIG and are
  * applied in interval-sized chunks accumulated across ticks. Publishes
  * HEROES_UPDATED when anything changed.
  */
@@ -38,8 +38,8 @@ export function tick(delta) {
     regenOccurred = false;
 
     for (const hero of heroes) {
-        // Wounded heroes do not regenerate via this system.
-        if (hero.status !== 'idle' && hero.status !== 'working' && hero.status !== 'combat') continue;
+        // Wounded heroes recover through WoundedSystem; a hero in a fight eats or goes without.
+        if (hero.status !== 'idle' && hero.status !== 'working') continue;
 
         // ⚠️ A vital may be missing, and this must not throw: it runs inside a
         // GameLoop tick handler, so one bad hero would raise the same error every
@@ -50,10 +50,10 @@ export function tick(delta) {
             regenOccurred = true;
         }
 
-        // Eat when hurt, anywhere. Combat has its own eating path, but a hero on a
+        // Eat when hurt, out of fights too. Combat has its own eating path, but a hero on a
         // fight-free gathering loop must not be stranded below the threshold by
         // hazard chip damage with food in their grid.
-        if (hero.status !== 'combat' && ConsumptionSystem.tryEat(hero.id).length) {
+        if (ConsumptionSystem.tryEat(hero.id).length) {
             regenOccurred = true;
         }
     }

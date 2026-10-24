@@ -3,7 +3,7 @@ import { generateHero } from '../systems/hero/HeroGenerator.js';
 import * as HeroManager from '../systems/hero/HeroManager.js';
 import * as StatusEffectSystem from '../systems/effects/StatusEffectSystem.js';
 import { STATUS_EFFECTS, sumStatusEffect, getStatusStacks } from '../config/registries/statusRegistry.js';
-import { computeHeroDamage, computeEnemyDamage } from '../utils/CombatFormulas.js';
+import { heroHitDamage, enemyHitDamage } from '../utils/CombatFormulas.js';
 import { STATUS_TICK_INTERVAL_MS } from '../config/FormulaRegistry.js';
 
 describe('Status Effect System (status_effects_concept.md)', () => {
@@ -72,8 +72,8 @@ describe('Status Effect System (status_effects_concept.md)', () => {
         expect(sumStatusEffect(hero.statuses, 'flat_armor')).toBe(5);
 
         // A 10-damage enemy hit lands for 10 − 5 = 5, then the shield decays to 4
-        const enemy = { minDamage: 10, maxDamage: 10, combatType: 'melee' };
-        const dmg = computeEnemyDamage(enemy, hero, 'melee');
+        const enemy = { hit: 10, combatType: 'melee' };
+        const dmg = enemyHitDamage(enemy, hero);
         expect(dmg).toBe(5);
         StatusEffectSystem.notifyHitTaken(hero.statuses);
         expect(sumStatusEffect(hero.statuses, 'flat_armor')).toBe(4);
@@ -100,11 +100,10 @@ describe('Status Effect System (status_effects_concept.md)', () => {
         StatusEffectSystem.applyToHero(hero.id, 'well_fed', 1);
         StatusEffectSystem.applyToHero(hero.id, 'stun', 2); // combat-only
 
-        // Damage with +10%: base 4 × 1.1 × spread(0.85–1.15) → always > unbuffed min
-        const enemy = { combatType: 'melee', defenceSkill: 1 };
-        let buffedTotal = 0;
-        for (let i = 0; i < 30; i++) buffedTotal += computeHeroDamage(hero, enemy, null, 0, 'melee');
-        expect(buffedTotal / 30).toBeGreaterThan(3.4); // unbuffed mean = 4
+        // A fixed hit of 10 (a fist plus 9 flat Damage) with +10%: 11, every time.
+        hero.aggregator.addModifier({ type: 'DAMAGE', value: 9, bucket: 'flat', source: 'test_fist' });
+        const enemy = { combatType: 'melee', level: 1 };
+        expect(heroHitDamage(hero, enemy)).toBe(11);
 
         StatusEffectSystem.notifyCombatResolved(hero.id);
         expect(getStatusStacks(hero.statuses, 'stun')).toBe(0);      // combat-only cleared
@@ -112,6 +111,7 @@ describe('Status Effect System (status_effects_concept.md)', () => {
         StatusEffectSystem.notifyCombatResolved(hero.id);
         StatusEffectSystem.notifyCombatResolved(hero.id);
         expect(getStatusStacks(hero.statuses, 'well_fed')).toBe(0);  // expired
+        expect(heroHitDamage(hero, enemy)).toBe(10);
     });
 
     it('purge removes debuffs but not buffs; clearAll removes everything (§4C/§6)', () => {

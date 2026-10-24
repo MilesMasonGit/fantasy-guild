@@ -7,6 +7,7 @@ import { useEntityDrop } from '../../dnd/DndKit.jsx';
 import { DND_SURFACE } from '../../dnd/dragConstants.js';
 import { HeroDockTab } from './HeroDockTab.jsx';
 import { HeroInspectionSheet } from '../drawer/HeroInspectionSheet.jsx';
+import { PixelFrame, FRAME_KIND } from '../base/PixelFrame.jsx';
 import { HeroManager } from '../../../systems/hero/HeroManager.js';
 import { reorderHeroInDock } from './dockReorder.js';
 import { isRecallDrop, recallFromDrop } from './dockRecall.js';
@@ -112,20 +113,26 @@ export const BankHeroPanel = ({
                     {...recall.droppableProps}
                     data-dnd-region={DND_SURFACE.DRAWER}
                     className={cn(
-                        'absolute inset-0 bg-[#140e0b] shadow-[0_0_30px_rgba(0,0,0,0.7)] transition-all duration-200 ease-out',
-                        isLeft ? 'border-r' : 'border-l',
-                        recall.valid ? 'border-gi-success/70' : 'border-white/10',
-                        showTabs && (isLeft ? 'pl-20' : 'pr-20'),
+                        'absolute inset-0 transition-all duration-200 ease-out',
                         isOpen
                             ? 'opacity-100 translate-x-0 pointer-events-auto'
                             : cn('opacity-0 pointer-events-none', isLeft ? '-translate-x-full' : 'translate-x-full')
                     )}
                 >
-                    <HeroInspectionSheet
-                        heroId={shownHeroId}
-                        onClose={onCloseHero}
-                        onEdit={onEditHero}
-                    />
+                    <PixelFrame
+                        kind={FRAME_KIND.STUDS}
+                        className="h-full"
+                        frameClassName={cn(
+                            showTabs && (isLeft ? 'pl-20' : 'pr-20'),
+                            recall.valid && 'outline-2 outline-gi-success/70'
+                        )}
+                    >
+                        <HeroInspectionSheet
+                            heroId={shownHeroId}
+                            onClose={onCloseHero}
+                            onEdit={onEditHero}
+                        />
+                    </PixelFrame>
                 </div>
             )}
 

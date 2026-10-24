@@ -110,9 +110,8 @@ export { TURN_DEFAULTS } from '../../../src/config/registries/tokenConstants.js'
 // A Token that comes back after it runs out: refill in place or regrow from another Token. The modes, the default rest and its floor are the game's.
 export { RESPAWN_MODES, RESPAWN_DEFAULTS, RESPAWN_MIN_MS } from '../../../src/config/registries/tokenConstants.js';
 
-// An enemy is a Token: it carries `enemy: { level, style }`. `ENEMY_STYLES` fills the Style dropdown and `enemyCombatBudget` powers the editor's read-only stat preview, imported from the game so the numbers shown are the numbers the fight uses.
-export { ENEMY_STYLES } from '../../../src/config/registries/enemyProfile.js';
-export { enemyCombatBudget } from '../../../src/config/FormulaRegistry.js';
+// An enemy is a Token: it carries `enemy: { level, style }`. `ENEMY_STYLES` fills the Style dropdown and `enemyProfileOf` powers the editor's read-only stat preview, imported from the game so the numbers shown are the numbers the fight uses.
+export { ENEMY_STYLES, enemyProfileOf } from '../../../src/config/registries/enemyProfile.js';
 
 // A hero-worked Token must name a skill. The game's own rule and wording, so the CMS and the boot audit name the same Tokens.
 export { isWorkedWithoutSkill, WORK_SKILL_WHY } from '../../../src/systems/core/workSkillRule.js';

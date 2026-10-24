@@ -209,7 +209,7 @@ nothing and is the owner's to delete in the CMS.
 - Heroes come from the **Bunk Beds** Hall upgrade: each rank adds one hero,
   **max 8** (`ROSTER_MAX`). Rank 1 is free. *(`guildUpgrades.js`)*
 - Every recruit is identical: a **Recruit** with the 9 Starting skills at
-  level 1, 50 HP, a random name. Differences are earned. No retirement.
+  level 1, 10 HP, a random name. Differences are earned. No retirement.
 - One flag colour per hero (8 colours).
 
 ### Skills — Built
@@ -257,7 +257,8 @@ has none yet), melee, magic and commerce have content today.
 
 - A hero holds the 9 Starting skills plus their class's skills: Recruit 9,
   basic class 11 (+1 combat, +1 advanced), master class 13 (+1 more advanced,
-  +1 master). A Recruit **cannot fight**.
+  +1 master). A Recruit fights barehanded: a punch of 1 every 3 s, with no
+  style and no combat XP (see The fight).
 - **Promotion is a Token rule**: "Promotes the hero to Fighter." A qualified
   hero trains on the Token for one cycle (30 s default), then a ceremony asks
   Accept / Not yet. *(`BoardPromotion.js`, `PromotionSystem.js`)*
@@ -287,8 +288,13 @@ has none yet), melee, magic and commerce have content today.
 - Skill and job icons for the new skills and classes are emoji placeholders.
 
 ### Health, food, defeat — Built
-- Max HP from the combat skill: 50 at level 1, 144 at 25, ~3,700 at 99.
-  Regen 1 HP / 5 s while idle, working or fighting.
+- **Max HP = 10 + combat level** (the held combat skill; a Recruit, holding
+  none, is level 0): 10 for a Recruit, 11 at level 1, 109 at 99. Recomputed on
+  every level-up (a level adds headroom, not a heal) and on load (an older
+  save's stored max is replaced and current HP clamped to it).
+  *(`FormulaRegistry.js`, `CombatFormulas.js`)*
+- **Regen 1 HP / 10 s while idle or working; none in a fight**, where only
+  food heals.
 - Below 25 % HP a hero eats equipped food from the Bank and, if still below,
   drinks the equipped drink: drinks heal like food, from their own slot. Heroes
   have no energy (removed, T-098).
@@ -365,41 +371,65 @@ and armour will be authored as content.
 ## 6. Combat and enemies
 
 ### Enemies — Built
-Enemies are Tokens with `enemy: { level, style, budgetScale?, hostile? }`.
-4 ship, **all melee**:
+Enemies are Tokens with `enemy: { level, style, hostile? }`. **The level fills
+every number from the level table**: HP 20 + level, a hit of 1 + 1 per 20
+levels, 1 armour per 30 levels, a swing every 3 s, XP 10 × 1.065^(level − 1)
+(the table and its worked duels: `concept_combat.md`, "The level table and
+weapon tiers"). A number written beside the level (`hp`, `hit`, `armor`,
+`speed` fast/normal/slow, `xp`, `dodge`, `accuracy`, `pierce`, `critChance`)
+replaces the table's; the CMS fields for them are not built yet. Older content's
+`budgetScale` still multiplies the table's HP, hit and XP (rounded halves up,
+at least 1). 4 ship, **all melee**:
 
-| Enemy | Level | Hostile | Uses | Drops |
-|---|---|---|---|---|
-| Goblin | 1 (×0.3) | yes | 1 | Bones, 30 % Copper Ore |
-| Goblin Chief | 3 (×0.6) | yes | 2 | 1–2 Copper Ingot, Bones, 25 % Beeswax Comb |
-| Cow | 1 | no | 100 | Bones, 50 % Raw Beef |
-| Thorn Elemental | 1 | no | 100 | 1–2 Blackberry |
+| Enemy | Level | HP · hit · armour | Hostile | Uses | Drops |
+|---|---|---|---|---|---|
+| Goblin | 1 (×0.3) | 6 · 1 · 0 | yes | 1 | Bones, 30 % Copper Ore |
+| Goblin Chief | 3 (×0.6) | 14 · 1 · 0 | yes | 2 | 1–2 Copper Ingot, Bones, 25 % Beeswax Comb |
+| Cow | 1 | 21 · 1 · 0 | no | 100 | Bones, 50 % Raw Beef |
+| Thorn Elemental | 1 | 21 · 1 · 0 | no | 100 | 1–2 Blackberry |
 
 - Goblins come from the Goblin Camp; enemies potter within 128 u of their
   spawner at half of 90 u/s and walk back if moved.
 - **Hostile** enemies ambush a hero inside the flag radius around their
   spawner; the hero fights back even if their Fight rule is off. Recruits are
-  never ambushed (they can't fight).
+  ambushed too and fight back barehanded.
 - Each kill uses one of the enemy's uses; at 0 it's gone. Otherwise it
   respawns at full HP after a 2 s pause.
 
 ### The fight — Built
-- Hero attacks every 2.5 s, enemy every 3 s. Roll to hit (base 75 %, ±skill
-  difference, clamped 5–95 %), then damage with ±15 % spread. Armour subtracts,
-  minimum 1.
-- Hero damage today = 4 × growth(skill), with growth = 1.045^(level−1). Enemy
-  HP 32 × growth, damage 9 × growth, scaled by `budgetScale`.
-- **A four-way cycle: melee > ranged > magic > stealth > melee**: +10 %
-  damage and +7 hit for the favoured side, the reverse for the other.
+- **Swings.** A hero swings at their weapon's speed: fast 2 s, normal 3 s,
+  slow 4 s (barehanded: 3 s). An enemy swings at its own speed (3 s unless
+  authored).
+- **Damage is fixed**: the weapon's damage (a fist is 1) + 1 per 20 combat
+  levels + flat Damage from gear, times any damage buffs and the matchup,
+  rounded halves up. No spread.
+- **Misses**: 10 % at an even level, 1 point less per level the attacker is
+  above the defender (more when below), that part kept between 5 % and 25 %;
+  then + the defender's Dodge − the attacker's Accuracy, kept between 5 % and
+  40 %. Both sides roll the same way.
+- **Crits**: 5 % (gear adds Crit Chance), doubling the hit **before** armour.
+  Enemies crit at 5 % unless authored.
+- **Armour is flat**: each point takes 1 off every hit, which always does at
+  least 1. **Pierce** ignores that many armour points. Flat Resistance comes
+  off after armour.
+- Every percentage rounds to the nearest whole, halves up.
+- **Recruits punch for 1 every 3 s**, whatever is in their hands, with no
+  style (even with every enemy) and no combat XP. A promoted hero with no
+  weapon punches too: 1 + the level step, on their own style.
+- **A four-way cycle: melee > ranged > magic > stealth > melee**: +25 %
+  damage for the favoured side, −25 % for the other (a 2 becomes 3, or stays 2).
   Opposite pairs (melee and magic, ranged and stealth) are even, so each style
   has one good matchup, one bad one, and two even. An enemy's Style is one of
   the four combat skills (the CMS dropdown follows the skill registry). Every
-  shipped enemy is melee, so only melee against ranged or stealth heroes
-  triggers it yet.
+  shipped enemy is melee.
+- **No regen in a fight**: below 25 % HP the hero eats instead of swinging.
+- Each swing draws one random number for the miss and, on a hit, one for the
+  crit, from the game's random stream in a fixed order, so a catch-up replays
+  the same fights as live play.
 - Kills give XP to the hero's combat skill and count as a work cycle for
   neighbour rules. Loot drops on the mat, through the same yield, double-loot
   and bonus-drop rules as a station's output (T-017).
-- Crit is stubbed at 0. *(`FormulaRegistry.js`, `src/systems/combat/`)*
+  *(`FormulaRegistry.js`, `CombatFormulas.js`, `src/systems/combat/`)*
 
 ### Status effects — Latent
 7 statuses (Poison, Burning, Bleed, Stun, Armor Shield, Well Fed, Cookout)
@@ -421,8 +451,9 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   Kill, On Engaged, On Tick, On Bank Holds…), **4 roles** (itself, the hero,
   that Token, the enemy), **5 filters**, **4 reaches**.
 - **Modifiers** that neighbours provide: yield, work time, input cost, XP
-  bonus, double loot, fail chance (Tokens); armour, resist, accuracy, block,
-  damage, status immunity (heroes).
+  bonus, double loot, fail chance (Tokens); armour, resist, accuracy,
+  damage, status immunity (heroes). Block is gone (a miss is the only failed
+  hit); Dodge, Pierce and Crit Chance are read by combat but not offered yet.
 - **What ships**: tool tiers (`acts_as`), station skills, two neighbour buffs
   (Coast −5 % work time; Windmill +5 double loot on Fields), a placement limit
   (≤ 2 Coasts nearby), bonus drops, Minecart restocking, the two promotions,

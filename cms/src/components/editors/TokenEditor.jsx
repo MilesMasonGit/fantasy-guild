@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Settings2, Tag as TagIcon, Timer, HelpCircle, Swords, Lock, BookOpen, Sparkles, X, Plus, Gauge } from 'lucide-react';
 import { useEntityStore, makeTokenConfig } from '../../stores/useEntityStore';
 import { useSimulationStore } from '../../stores/useSimulationStore';
-import { TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, stationSkillOf, ENEMY_STYLES, enemyCombatBudget, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, STANDS_ON_CHOICES, TOOL_KINDS, tierValue } from '../../utils/constants';
+import { TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, stationSkillOf, ENEMY_STYLES, enemyProfileOf, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, STANDS_ON_CHOICES, TOOL_KINDS, tierValue } from '../../utils/constants';
 import { Header, Section, Field, Empty } from '../shared/EditorLayout';
 import SimIntentControls from '../shared/SimIntentControls';
 import SimAnswer from '../shared/SimAnswer';
@@ -54,8 +54,8 @@ export default function TokenEditor() {
   // ⚠️ Read the DERIVED type, not the stored `tokenType`: the stored one is only rewritten by Recalculate, so ticking a hero can fight this would change nothing until a recalculation, and the section that sets the field would be hidden behind it.
   const isEnemy = derived.type === 'enemy';
   const enemy = token?.enemy || null;
-  const enemyBudget = useMemo(
-    () => (enemy?.level != null ? enemyCombatBudget(enemy.level, enemy.budgetScale ?? 1) : null),
+  const enemyStats = useMemo(
+    () => (enemy?.level != null ? enemyProfileOf({ enemy }) : null),
     [enemy]
   );
 
@@ -616,24 +616,24 @@ export default function TokenEditor() {
               </span>
             </label>
 
-            {/* Read-only, and derived by the GAME's own curve rather than a copy
+            {/* Read-only, and derived by the GAME's own level table rather than a copy
                 of it here — so what the author is shown is what the fight uses. */}
-            {enemyBudget && (
+            {enemyStats && (
               <div className="mt-3 p-3 rounded-lg" style={{ background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.12)' }}>
                 <div className="flex items-center gap-1.5 mb-2 text-gray-500">
                   <Lock size={11} />
                   <span className="text-[10px] gi-caps tracking-wider">Derived from level</span>
                 </div>
-                <div className="grid grid-cols-4 gap-3 text-[11px]">
-                  <div><div className="text-gray-600 text-[10px]">HP</div><div className="text-gray-200 font-semibold">{enemyBudget.hp}</div></div>
-                  <div><div className="text-gray-600 text-[10px]">Damage</div><div className="text-gray-200 font-semibold">{enemyBudget.minDamage}–{enemyBudget.maxDamage}</div></div>
-                  <div><div className="text-gray-600 text-[10px]">Attacks every</div><div className="text-gray-200 font-semibold">{(enemyBudget.attackIntervalMs / 1000).toFixed(1)}s</div></div>
-                  <div><div className="text-gray-600 text-[10px]">XP</div><div className="text-gray-200 font-semibold">{enemyBudget.xp}</div></div>
+                <div className="grid grid-cols-5 gap-3 text-[11px]">
+                  <div><div className="text-gray-600 text-[10px]">HP</div><div className="text-gray-200 font-semibold">{enemyStats.hp}</div></div>
+                  <div><div className="text-gray-600 text-[10px]">Hit</div><div className="text-gray-200 font-semibold">{enemyStats.hit}</div></div>
+                  <div><div className="text-gray-600 text-[10px]">Armour</div><div className="text-gray-200 font-semibold">{enemyStats.armor}</div></div>
+                  <div><div className="text-gray-600 text-[10px]">Attacks every</div><div className="text-gray-200 font-semibold">{(enemyStats.attackSpeed / 1000).toFixed(1)}s</div></div>
+                  <div><div className="text-gray-600 text-[10px]">XP</div><div className="text-gray-200 font-semibold">{enemyStats.xpAwarded}</div></div>
                 </div>
                 <p className="text-[10px] text-gray-600 mt-2.5 leading-relaxed">
-                  Attack and defence both equal the level, the same way a hero's one combat
-                  skill supplies both halves — so a level {enemy?.level ?? 1} enemy is an even
-                  match for a Melee {enemy?.level ?? 1} hero before gear.
+                  A level {enemy?.level ?? 1} enemy is an even fight for a level {enemy?.level ?? 1} hero
+                  holding their tier's weapon: a duel of ten or more swings.
                   What it <strong>drops</strong> is authored as its outputs, in the Drops column.
                 </p>
               </div>

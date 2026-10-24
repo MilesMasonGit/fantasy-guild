@@ -174,21 +174,19 @@ describe('The gate is possession first, then level', () => {
 });
 
 describe('One combat skill supplies both halves (Phase 2)', () => {
-    it('attack and defence read the same number', () => {
+    it('attack and defence read the same number: one combat level', () => {
         const hero = { skills: { [COMBAT_SKILL_IDS[0]]: { level: 30 } } };
 
-        expect(CombatFormulas.getHeroCombatSkill(hero)).toBe(30);
-        expect(CombatFormulas.getHeroDefenseSkill(hero)).toBe(30);
+        expect(CombatFormulas.getHeroCombatLevel(hero)).toBe(30);
     });
 
-    it('a Recruit holds no combat skill, yet fights at level 1, whatever their work skills', () => {
+    it('a Recruit holds no combat skill, yet fights (at combat level 0), whatever their work skills', () => {
         const recruit = {
             skills: Object.fromEntries(STARTING_SKILL_IDS.map(id => [id, { level: 40 }]))
         };
 
         expect(CombatFormulas.getHeroCombatSkillEntry(recruit)).toEqual({ id: null, level: 0 });
-        expect(CombatFormulas.getHeroCombatSkill(recruit)).toBe(1);
-        expect(CombatFormulas.getHeroDefenseSkill(recruit)).toBe(1);
+        expect(CombatFormulas.getHeroCombatLevel(recruit)).toBe(0);
         expect(CombatFormulas.canHeroFight(recruit)).toBe(true);
     });
 
@@ -200,8 +198,8 @@ describe('One combat skill supplies both halves (Phase 2)', () => {
         const minerHp = CombatFormulas.heroMaxHpFromSkills(miner);
 
         expect(fighterHp).toBeGreaterThan(minerHp);
-        // A Recruit still has a body: HP floors at the level-1 value rather
-        // than collapsing to zero, because they stand on the board and heal.
+        // A Recruit still has a body: 10 HP rather than zero, because they stand
+        // on the board, fight and heal.
         expect(minerHp).toBe(CombatFormulas.heroMaxHpFromSkills({}));
         expect(minerHp).toBeGreaterThan(0);
     });

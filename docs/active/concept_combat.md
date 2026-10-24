@@ -124,6 +124,10 @@ Differs from GDD §6 in places; the code wins:
 - Enemies have no armour field; 4 ship, all melee.
 - Fight state lives in memory only and is never saved.
 
+*C1 (2026-10-24) replaced the numbers above; see "The level table and weapon
+tiers" at the end. Checked then: max HP was already recomputed on level-up
+(`SkillSystem.addXP` calls `updateHeroFromSkills`) and on load.*
+
 ## Detail pass rulings (owner, 2026-10-22)
 
 ### Numbers and scaling
@@ -354,3 +358,111 @@ Differs from GDD §6 in places; the code wins:
 - **Basic content** (`concept_basic_content.md`): which enemy drops which map
   (skill gates, above), the enemy roster per plane, and the gear and elixir
   items themselves.
+
+## The level table and weapon tiers (built in C1, 2026-10-24; for the owner to tune)
+
+*Proposed by the C1 engineer, as the planner's call above asked; the numbers
+live in `src/config/FormulaRegistry.js` and the game uses them now. Tune freely:
+each row comes from one rule, so a change is one number.*
+
+**Enemies by level** (what the level fills; the CMS will let any one be
+overridden, C2):
+
+- **HP = 20 + level** (10 more than a hero of the same level)
+- **Hit = 1, +1 per 20 levels**
+- **Armour = 1 per 30 levels**
+- **Speed = normal** (a swing every 3 s; Swift and Brute change it in C2)
+- **XP = 10 × 1.065^(level − 1)**, rounded: a kill pays a little more per
+  minute than gathering at that level, since a fight costs food
+
+| Level | HP | Hit | Armour | Speed | XP | A hero of that level has |
+|---|---|---|---|---|---|---|
+| 1 | 21 | 1 | 0 | 3 s | 10 | 11 HP |
+| 5 | 25 | 1 | 0 | 3 s | 13 | 15 HP |
+| 10 | 30 | 1 | 0 | 3 s | 18 | 20 HP |
+| 15 | 35 | 1 | 0 | 3 s | 24 | 25 HP |
+| 20 | 40 | 2 | 0 | 3 s | 33 | 30 HP |
+| 25 | 45 | 2 | 0 | 3 s | 45 | 35 HP |
+| 30 | 50 | 2 | 1 | 3 s | 62 | 40 HP |
+| 40 | 60 | 3 | 1 | 3 s | 117 | 50 HP |
+| 45 | 65 | 3 | 1 | 3 s | 160 | 55 HP |
+| 50 | 70 | 3 | 1 | 3 s | 219 | 60 HP |
+| 60 | 80 | 4 | 2 | 3 s | 411 | 70 HP |
+| 70 | 90 | 4 | 2 | 3 s | 771 | 80 HP |
+| 75 | 95 | 4 | 2 | 3 s | 1057 | 85 HP |
+| 80 | 100 | 5 | 2 | 3 s | 1448 | 90 HP |
+| 90 | 110 | 5 | 3 | 3 s | 2717 | 100 HP |
+| 99 | 119 | 5 | 3 | 3 s | 4789 | 109 HP |
+
+**Weapon tiers**, following the smithing ingots (copper is the first metal,
+`concept_basic_content.md`; "bronze" in the rulings reads as copper). A normal
+weapon's damage, a fast one about 2/3 of it and a slow one about 4/3, so the
+three deal about the same per second before armour: slow weapons shrug off
+armour better, fast ones crit and eat sooner (eating costs one swing).
+
+| Tier | From level | Fast (2 s) | Normal (3 s) | Slow (4 s) |
+|---|---|---|---|---|
+| Copper | 1 | 1 | 2 | 3 |
+| Iron | 15 | 2 | 3 | 4 |
+| Silver | 30 | 3 | 4 | 5 |
+| Gold | 45 | 3 | 5 | 7 |
+| Mythril | 60 | 4 | 6 | 8 |
+| Adamantine | 75 | 5 | 7 | 9 |
+| Darkmetal | 90 | 5 | 8 | 11 |
+
+⚠️ A copper fast weapon (1) is the weakest weapon in the game: at tier 1 the
+2/3 rounds down to a punch. A dagger family ability (C2) can make up for it.
+
+**Even fights** (a hero with their tier's weapon against an enemy of their own
+level, no armour, no food unless said), played by the real engine, 300 duels
+each:
+
+| Duel | Sums | Swings | Seconds | Hero wins | HP left (wins) |
+|---|---|---|---|---|---|
+| Level 1, copper sword (2) vs level 1 | 21 HP ÷ 2 = 11 hits; 10 % misses both ways; the enemy lands about 10 × 1 of the hero's 11 HP | 10.9 | 33 | 59 % | 18 % |
+| the same with 2 Shrimp (+5) | eats once below 25 % (losing that swing) | 11.7 | 38 | 100 % | 41 % |
+| Level 20, iron sword (3 + 1 level step = 4) vs level 20 | 40 ÷ 4 = 10 hits; the enemy lands about 9.5 × 2 of 30 HP | 10.7 | 32 | 100 % | 39 % |
+| Level 20, iron dagger (2 + 1 = 3, fast) | 14 hits at 2 s | 14.8 | 30 | 100 % | 41 % |
+| Level 20, iron maul (4 + 1 = 5, slow) | 8 hits at 4 s | 8.4 | 34 | 99 % | 35 % |
+| Level 50, gold sword (5 + 2 = 7) vs level 50 (armour 1) | 70 ÷ (7 − 1) = 12 hits; the enemy lands about 12 × 3 of 60 HP | 12.8 | 38 | 100 % | 44 % |
+
+Every level from 1 to 99 needs 10 or more swings on average with a normal
+weapon (a test checks the sums at every level); the longest even fights are
+at the top of a tier (level 14 with copper: by the same sums about 18 swings, 54 s), which is
+the push to craft the next tier. Crits double before armour: an iron sword 4
+against armour 2 does 2, a crit 8 − 2 = 6.
+
+⚠️ **Level 1 is the hard case**: an 11 HP hero against a 1-damage enemy for
+30 s takes about 10 damage, so an unfed level 1 hero wins an even fight only
+about 60 % of the time. That follows from three owner numbers together (HP
+10 + level, a hit of at least 1, 30 s+ duels); the levers are a shorter fight
+or a slower enemy at the lowest levels. Food fixes it today.
+
+**Choices made in C1 the rulings did not spell out** (each a one-number
+change):
+
+- **A Recruit is combat level 0** (10 HP); the miss gap reads them at 0 too.
+- **A promoted hero with no weapon punches** for 1 + the level step, on their
+  own style, every 3 s, and earns XP.
+- **The miss slope is 1 point per level** of gap: 5 levels above an enemy
+  reaches the 5 % floor, 15 below reaches 25 %.
+- **Enemies crit too**, at 5 % unless authored, the same way as heroes.
+- **Block is gone** (it was folded into the miss roll and offered in the Rules
+  editor; nothing authored used it). Dodge, Pierce and Crit Chance are read
+  from gear's Rules effects but not offered in the editor until C2.
+- **Older content's `budgetScale`** (the Goblin ×0.3, the Goblin Chief ×0.6)
+  still scales the table's HP, hit and XP, so today's goblins stay tutorial
+  pushovers until C0 and C2 give them their own numbers.
+
+**Owner rulings on the C1 choices (2026-10-24, by phone):**
+
+- **The Goblin Chief stays as it now is**: it beats a Recruit about 98 times
+  in 100. Its purpose is to make the player craft basic equipment to beat
+  it.
+- **The level-1 even fight stays near a coin toss unfed** (59 %); food fixes
+  it. No slower or weaker low-level enemies.
+- **A promoted hero with no weapon punches** for 1 + the level step, on their
+  own style, and earns combat XP (as built).
+- **Block is removed** (as built).
+- Director's calls, not asked: a Recruit is combat level 0; the miss slope is
+  1 point per level; enemies crit at 5 % unless authored.

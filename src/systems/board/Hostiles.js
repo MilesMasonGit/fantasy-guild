@@ -31,7 +31,7 @@ import * as Hand from './Hand.js';
  * enemy and one enemy per hero, so enemies never gang up.
  *
  * Not attacked: heroes with no flag, wounded heroes, heroes who cannot fight and heroes already
- * on an enemy. Recruits are attacked like anyone: everyone fights, as a level 1 fighter at least. An enemy does not
+ * on an enemy. Recruits are attacked like anyone: everyone fights, a Recruit barehanded. An enemy does not
  * attack while a hero holds it, while it is in the player's hand, or while the player has marked it
  * as not for heroes to work: a forced fight there would be let go on the next pass.
  *

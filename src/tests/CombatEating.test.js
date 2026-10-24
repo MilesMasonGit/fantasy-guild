@@ -24,13 +24,15 @@ vi.mock('../systems/effects/StatusEffectSystem.js', () => ({
 }));
 
 vi.mock('../utils/CombatFormulas.js', () => ({
-    rollHit: vi.fn(() => true),
-    computeHeroDamage: vi.fn(() => 25),
-    computeEnemyDamage: vi.fn(() => 5),
-    getHeroCombatSkill: vi.fn(() => 10),
-    getHeroCombatStyle: vi.fn(() => 'melee'),
-    getHeroDefenseSkill: vi.fn(() => 10),
-    ENEMY_ATTACK_INTERVAL_MS: 2000
+    rollSwing: vi.fn(() => ({ hit: true, crit: false })),
+    heroMissChance: vi.fn(() => 10),
+    heroCritChance: vi.fn(() => 5),
+    heroHitDamage: vi.fn(() => 25),
+    getHeroWeapon: vi.fn(() => null),
+    enemyMissChance: vi.fn(() => 10),
+    enemyCritChance: vi.fn(() => 5),
+    enemyHitDamage: vi.fn(() => 5),
+    enemyAttackSpeedMs: vi.fn(() => 2000)
 }));
 
 vi.mock('../config/registries/itemRegistry.js', () => ({ getItem: vi.fn(() => null) }));
@@ -69,14 +71,14 @@ beforeEach(() => {
 describe('eating mid-combat (D-27)', () => {
     it('attacks normally when the hero does not need food', () => {
         const card = makeCard();
-        handleHeroAttack(card, hero, enemy, 'melee', ATTACK_SPEED);
+        handleHeroAttack(card, hero, enemy, ATTACK_SPEED);
         expect(card.combat.enemyHp.current).toBe(75);      // the blow landed
     });
 
     it('skips the attack entirely when the hero stops to eat', () => {
         state.meal = { itemId: 'bread', amount: 20 };
         const card = makeCard();
-        handleHeroAttack(card, hero, enemy, 'melee', ATTACK_SPEED);
+        handleHeroAttack(card, hero, enemy, ATTACK_SPEED);
 
         // The enemy is untouched — this attack simply never happened, which is
         // what "the enemy gets a free hit" means in practice.
@@ -86,7 +88,7 @@ describe('eating mid-combat (D-27)', () => {
     it('still spends the attack window, so the meal costs real time', () => {
         state.meal = { itemId: 'bread', amount: 20 };
         const card = makeCard();
-        handleHeroAttack(card, hero, enemy, 'melee', ATTACK_SPEED);
+        handleHeroAttack(card, hero, enemy, ATTACK_SPEED);
 
         // Progress toward the next swing is consumed exactly as a real attack
         // would consume it — the hero doesn't get the time back.
@@ -96,11 +98,11 @@ describe('eating mid-combat (D-27)', () => {
     it('costs the same window as an ordinary attack', () => {
         const eating = makeCard();
         state.meal = { itemId: 'bread', amount: 20 };
-        handleHeroAttack(eating, hero, enemy, 'melee', ATTACK_SPEED);
+        handleHeroAttack(eating, hero, enemy, ATTACK_SPEED);
 
         const fighting = makeCard();
         state.meal = null;
-        handleHeroAttack(fighting, hero, enemy, 'melee', ATTACK_SPEED);
+        handleHeroAttack(fighting, hero, enemy, ATTACK_SPEED);
 
         expect(eating.combat.heroTickProcesses.h1).toBe(fighting.combat.heroTickProcesses.h1);
     });
@@ -114,7 +116,7 @@ describe('eating mid-combat (D-27)', () => {
         const unsub = EventBus.subscribe('combat_hero_ate', e => seen.push(e));
 
         state.meal = { itemId: 'bread', amount: 20 };
-        handleHeroAttack(makeCard(), hero, enemy, 'melee', ATTACK_SPEED);
+        handleHeroAttack(makeCard(), hero, enemy, ATTACK_SPEED);
 
         expect(seen).toHaveLength(1);
         expect(seen[0]).toMatchObject({ heroId: 'h1', itemId: 'bread', healed: 20 });
@@ -129,7 +131,7 @@ describe('eating mid-combat (D-27)', () => {
         state.meal = { itemId: 'bread', amount: 20 };
         state.drink = { itemId: 'ale', amount: 15 };
         const card = makeCard();
-        handleHeroAttack(card, hero, enemy, 'melee', ATTACK_SPEED);
+        handleHeroAttack(card, hero, enemy, ATTACK_SPEED);
 
         expect(card.combat.enemyHp.current).toBe(100);
         expect(card.combat.heroTickProcesses.h1).toBe(0);
