@@ -92,7 +92,7 @@ function WeaponFields({ item, onChange }) {
           className="w-full"
         >
           {Object.entries(ATTACK_SPEED_MS).map(([id, ms]) => (
-            <option key={id} value={id}>{SPEED_WORDS[id] || id} (a swing every {ms / 1000} s)</option>
+            <option key={id} value={id}>{SPEED_WORDS[id] || id} ({ms / 1000} s)</option>
           ))}
         </select>
         <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">

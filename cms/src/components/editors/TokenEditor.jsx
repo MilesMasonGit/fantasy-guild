@@ -727,8 +727,8 @@ const ENEMY_NUMBER_FIELDS = [
   { field: 'hp', label: 'HP', min: 1 },
   { field: 'hit', label: 'Hit', min: 1 },
   { field: 'armor', label: 'Armour', min: 0 },
-  { field: 'speed', label: 'Speed' },
   { field: 'xp', label: 'XP', min: 0 },
+  { field: 'speed', label: 'Speed', wide: true },
   { field: 'dodge', label: 'Dodge', min: 0 },
   { field: 'accuracy', label: 'Accuracy', min: 0 },
   { field: 'pierce', label: 'Pierce', min: 0 },
@@ -755,12 +755,12 @@ function EnemyNumbers({ enemy, onChange }) {
   return (
     <div className="mt-3">
       <span className="text-[10px] font-bold uppercase tracking-wider block mb-1.5 text-gray-500">Numbers (filled from the level and kinds; type to change)</span>
-      <div className="grid grid-cols-5 gap-3">
-        {ENEMY_NUMBER_FIELDS.map(({ field, label, min }) => {
+      <div className="grid grid-cols-4 gap-3">
+        {ENEMY_NUMBER_FIELDS.map(({ field, label, min, wide }) => {
           const own = authored(field);
           const shown = own ? enemy[field] : filled[field];
           return (
-            <div key={field}>
+            <div key={field} className={wide ? 'col-span-2' : undefined}>
               <span className="text-[10px] text-gray-500 block mb-1">{label}</span>
               {field === 'speed' ? (
                 <select
