@@ -103,3 +103,41 @@ switch.
   in every mock-up). A lighter plate fill or a redrawn icon; the owner's call.
 - **Combat** (brief 220, C6): the fight variant (styles and elixirs) is shown here so the place is
   kept; its build follows the combat batch.
+
+## Built (2026-10-24): mock-up C, the work plate
+
+The owner picked C by phone, with three rulings: the plate's charges number replaces the floating
+"-1"/"+50" (the floaters are switched off, `CHARGE_FLOATERS` in `TokenBadges.jsx`); a Token
+nobody works keeps its own "!" and hover rings; the dark Smithing icon stays.
+
+Where it lives: `workPlate.js` (what it shows, its tooltips, where it stands),
+`WorkPlateLayer.jsx` (the layer, `MAT_Z.WORK_PLATE`, over the floor loot; one plate per hero at
+work, not in a fight), the work bar's model still fed by `TokenBubbles` and drawn as the plate's
+fill (`workBar.js`: `shareWorkBar` / `watchWorkBar`), the `workPlate` draw switch, and the
+style sheet page's "Work plate" entry (`WorkPlateDemo.jsx`), which replaced the three mock-ups.
+
+Differences from the mock-up: the cycle's fill runs under what is being made, not the whole
+plate's foot (it keeps whole art pixels: 16 steps); the fight's place is kept but empty (no plate
+in a fight until the combat work builds its link).
+
+| File | What |
+|---|---|
+| `before_after_<moment>_1x.png` / `_2x.png` | **Start here**: today, built, and built with the pointer resting on the Token |
+| `after_<moment>_1x.png` / `_2x.png`, `after_<moment>_hover_2x.png` | the same patches as `today_*` |
+| `after_charges_open_hero_2x.png` | the pointer resting on the hero: the full line, the names below it |
+| `after_waiting_tip_2x.png` | the pointer on what the Token waits for: "Needs 6 Iron Ore, you have 0" |
+| `after_1x.png` | the whole screen |
+| `sheet_work_plate_1x.png` / `_2x.png` | the style sheet page's entry |
+
+Measured in the running game (the capture script prints them; 1920 × 1080, a New Game):
+
+| Moment | Plate at rest (elements, with its slot) | The Token's own badge box | Opened line |
+|---|---|---|---|
+| Working (Furnace, Copper Ingot) | 7: output, fill | 1 (was 2: the work bar left it) | skill, output, timer `0:04` |
+| Waiting (no Iron Ore) | 10: output, `0/6` in red, gold frame, fill held | 1 (was 4: the bar and the "!" left it) | skill, output, `0/6` |
+| Charges (Fir Forest) | 10: output, `248`, fill | 1 (was 2) | skill, output, `248`, timer `0:07` |
+| Fight (Goblin) | none: the place is kept | 5 (HP bar, as before) | none |
+
+No `-1` floats anywhere on the mat (0 floaters counted). The captures' scenes are built with the
+game loop stopped and then run on for 2.5 s, so each plate's fill stands where its cycle is; the
+mock-up phase's `today_*` captures were taken before that run, so today's bars there read empty.

@@ -8,6 +8,8 @@
 // resting on the Token) and `today_waiting_tip_2x.png` (resting on the problem mark).
 // Part 2, the mock-ups on the style sheet page (QA panel, Style Sheet): `mockup_<A|B|C>_1x.png`
 // and `_2x.png`, and `mockup_<A|B|C>_tip_2x.png` (resting on the waiting moment's problem).
+// ⚠️ The mock-ups left the page once the owner picked C (built as the work plate), so Part 2 now
+// finds nothing; the built plate's captures are `capture_work_plate.mjs`'s.
 // Prints how many page elements each moment draws, today and in each mock-up.
 import { writeFileSync, mkdirSync } from 'node:fs';
 import path from 'node:path';

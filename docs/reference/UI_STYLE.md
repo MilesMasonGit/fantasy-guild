@@ -98,6 +98,20 @@ normal text colour; a new meaning needs the owner's OK.
   mixes in a little white. The tint names a kind, not a state, so it never
   stands in for the five meanings above.
 
+## The work plate (owner, 2026-10-24)
+
+- **While a hero works a Token, one plate on the seam between them**, just below their feet:
+  chamfer frame, hard shadow, over any loot at their feet. At rest it shows **what is being made**
+  with the **cycle filling along its foot** in whole art pixels, and the **charges** left; while
+  the Token waits, **exactly what is missing** as a red have/need pill, the frame gold (red when
+  it can't go on) and the cycle held grey.
+- **Resting the pointer** on the hero, the Token or the plate opens the full line: skill, output,
+  charges, time to the next one, each with its tooltip. Names drop below it. Pressing it grabs
+  the Token.
+- It **replaces** the worked Token's work bar, "!" and charges ring; a Token nobody works keeps
+  its own "!" and hover rings. No floating "-1": the plate counts down.
+- A fight's link (both styles, the elixirs) will sit in the same place; HP bars stay above.
+
 ## Sprites and icons
 
 - **Every sprite draws at a whole multiple of its art size** (1×, 2×, 3×),
