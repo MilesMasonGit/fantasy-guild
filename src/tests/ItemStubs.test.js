@@ -216,6 +216,25 @@ describe('first find', () => {
         ItemStubs.recordFlow('oak', { added: 1 });
         expect(ItemStubs.getStub('oak').isNew).toBe(false);
     });
+
+    it('seeing a new stub (hover) clears its New and leaves others alone', () => {
+        ItemStubs.recordFlow('copper', { added: 1 });
+        ItemStubs.markNew('copper');
+        ItemStubs.recordFlow('tin', { added: 1 });
+        ItemStubs.markNew('tin');
+        ItemStubs.clearNew('copper');
+        expect(ItemStubs.getStub('copper').isNew).toBe(false);
+        expect(ItemStubs.getStub('tin').isNew).toBe(true);
+        ItemStubs.recordFlow('copper', { added: 1 });
+        expect(ItemStubs.getStub('copper').isNew).toBe(false);
+    });
+
+    it('pinning a new stub clears its New', () => {
+        ItemStubs.recordFlow('copper', { added: 1 });
+        ItemStubs.markNew('copper');
+        ItemStubs.pin('copper');
+        expect(ItemStubs.getStub('copper').isNew).toBe(false);
+    });
 });
 
 describe('pins', () => {
