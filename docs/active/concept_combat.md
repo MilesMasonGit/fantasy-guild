@@ -214,10 +214,53 @@ Differs from GDD §6 in places; the code wins:
 - **Bosses are fought offline** like everything else, if flags are set.
 - **Bosses have a style plus special abilities and attacks** of their own,
   **made as Rules-system moves in the CMS**, per boss. First moves: a
-  **heavy strike** every few swings, a **status attack** (poison, burn,
-  stun), **heal or shield** (once, or at low HP), and **enrage** below a share
+  **heavy strike** every few swings, a **status attack** (poison or burn),
+  **heal or shield** (once, or at low HP), and **enrage** below a share
   of HP (faster or harder hits). This needs new moments such as "every Nth
   swing" and "when HP falls below X".
+
+### Status effects
+
+- **Built in the Rules system; first two: Poison and Burn.** Bleed, Stun
+  and Shield wait for a later pass. Well Fed and Cookout were food buffs;
+  with drinks becoming buffs they go to the skill-loops agent (overlap).
+- **Damage over time is 1 per tick, about every 3 s** (a normal swing's
+  pace); stacks or duration make it stronger.
+- **Statuses end with the fight.** No hero falls to poison on the way home.
+- **Poison stacks**: each poisoning adds a stack, 1 damage per stack per
+  tick, until the fight ends. **Burn** doesn't stack: 1 per tick for a few
+  ticks, and food heals half while burning.
+- The old status engine (`StatusEffectSystem.js`, `statusRegistry.js`) is
+  retired once nothing borrows from it.
+
+### Loot and XP
+
+- **Kill XP: the level fills it, the CMS overrides**, like enemy stats. XP
+  goes to the hero's one combat skill; Recruits earn none.
+- **Maps drop only from bosses and guardians** (amends D2's "maps drop
+  steadily from enemies the player can farm safely"); bosses and guardians
+  return on timers, so maps can still be farmed. Ordinary enemies and camps
+  drop materials. ⚠️ Overlap: which boss or guardian drops which map is the
+  basic-content agent's (`concept_basic_content.md`, map acquisition).
+
+### The combat UI (built after the rest)
+
+- **Floating text for every hit, both ways**: crisp pixel numbers for damage
+  dealt and taken (white on the enemy, red on the hero), "Miss", a bigger
+  "Crit!", green heals, tick numbers for poison and burn.
+- **The hero-to-enemy link is the bubble row** of brief 210 F2 (T-239):
+  while fighting, the row between them shows the two style icons and the
+  active elixirs. No tether line.
+- **A combat panel shows everything happening in a fight**: a small combat
+  icon appears above each fight; clicking it opens the panel (both
+  fighters' HP, statuses with stacks, elixirs and buffs, styles, what just
+  happened). Statuses are not drawn on the board.
+- **On the board, without the panel**: HP bars, floating damage and miss
+  numbers, and **floating effect bubbles** that pop up briefly when an
+  ability or item activates (the "used" bubble above).
+- **HP bars carry the number and the percentage** ("8 · 50%").
+- **Mock-ups first**: the builder lays out two or three options on the
+  style-sheet page, the owner picks from screenshots.
 - **Combat potions are elixirs only**: drunk automatically when a fight
   starts, lasting that fight. Cooking's food heals, Alchemy buffs. No healing
   potions (amends "Potions are Alchemy's combat supplies: healing and short
