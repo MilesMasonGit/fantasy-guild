@@ -189,6 +189,35 @@ Differs from GDD §6 in places; the code wins:
   fewer misses or more crits to start, and later many more (better loot,
   slowing the enemy…). So an elixir is a Rules-system effect ("When a fight
   starts, provides … to the hero for the fight"), not a fixed stat list.
+
+### Encounters
+
+- **Every fight is one-on-one**, bosses and guardians included (amends
+  "Party fights use flags on the same target" and the party-fight bosses of
+  D2 above). **Party fights are parked as a later idea**, not dropped. A
+  second hero flagged at a busy enemy waits or looks for another enemy; it
+  no longer restarts the fight.
+- **A boss heals to full between attempts**: if its hero is knocked out, the
+  next flagged hero starts a clean duel.
+- **A beaten guardian returns after a while** and must be beaten again
+  before the node can be worked; it drops again each time.
+- **Node ambushes are a chance per work cycle**: a Token can carry an ambush
+  rule (each finished cycle has a small chance, about 5 %, to spawn its local
+  enemy, which attacks the worker), set per Token in the CMS. The engine's
+  rule-spawned enemy with a firing chance is the starting point.
+- **Camps last forever**, as today: a safe, steady farm.
+- **Bosses come from lairs and summon items**: most wait in a lair Token
+  that comes with a map; some are summoned with an item. Bosses never ambush.
+- **Bosses return on a short timer** and can be fought over and over to farm
+  their rare drops; a summoned boss is fought again with another summon item.
+- **Lure buildings: later** (parked, not in this pass).
+- **Bosses are fought offline** like everything else, if flags are set.
+- **Bosses have a style plus special abilities and attacks** of their own,
+  **made as Rules-system moves in the CMS**, per boss. First moves: a
+  **heavy strike** every few swings, a **status attack** (poison, burn,
+  stun), **heal or shield** (once, or at low HP), and **enrage** below a share
+  of HP (faster or harder hits). This needs new moments such as "every Nth
+  swing" and "when HP falls below X".
 - **Combat potions are elixirs only**: drunk automatically when a fight
   starts, lasting that fight. Cooking's food heals, Alchemy buffs. No healing
   potions (amends "Potions are Alchemy's combat supplies: healing and short
