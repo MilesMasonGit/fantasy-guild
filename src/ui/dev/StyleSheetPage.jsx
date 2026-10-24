@@ -39,6 +39,7 @@ import { Banner } from '../components/notifications/BannerStack.jsx';
 import { bannerText } from '../../systems/notifications/bannerKinds.js';
 import { BookTab } from '../components/atlas/AtlasTome.jsx';
 import { MapSprite, MapOutline, MAP_PX, SLOT_PX } from '../components/atlas/MapPieces.jsx';
+import { BubbleRowMockups } from './BubbleRowMockups.jsx';
 
 /** One art pixel of the UI, in screen pixels: UI sprites draw at 2×. */
 const ART_PX = 2;
@@ -767,6 +768,12 @@ export const KIT_SECTIONS = [
         source: 'MatRegionName (the top bar’s left end)',
         rule: 'The Region’s banner (the one the Atlas shows) lies behind its name at 2×, up to one picture (512 px) across, showing the band just below its middle; crisp on the left and fading to the bar’s fill by the end of the bar’s left part. The name is the display size (ui-text-bar-name, the bar’s only one) with a 2 px black outline so it reads over any picture. Hover: a white outline round the whole banner; click opens the Atlas.',
         Demo: RegionBannerDemo
+    },
+    {
+        id: 'bubble-row', title: 'Bubble row: who is working what (mock-ups, pick one)', status: 'unapproved',
+        source: 'BubbleRowMockups (static mock-ups; nothing on the mat uses them yet)',
+        rule: 'When a hero works a Token, one row between them says what is being made, how far the cycle is, the charges and any problem, each part explaining itself on hover; it replaces the work bar, the problem mark and the hover rings for that work. Drawn at the mat’s 1920 × 1080 size. Hover any part for its tooltip.',
+        Demo: BubbleRowMockups
     }
 ];
 
