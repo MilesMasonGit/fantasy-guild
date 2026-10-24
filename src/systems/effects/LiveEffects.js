@@ -80,10 +80,16 @@ function allBearers() {
 }
 
 /**
- * Put a library effect on a bearer, for a while.
+ * The clock reading a "for the fight" instance carries: it never runs out by time, only when its
+ * fight ends (`endFightEffects`). A plain number, so a save written mid-fight holds it as such.
+ */
+const UNTIL_FIGHT_ENDS = Number.MAX_SAFE_INTEGER;
+
+/**
+ * Put a library effect on a bearer, for a while, or for the fight (`spec.forFight`).
  *
  * @param {object} bearer  a descriptor from `heroBearer` or a registered source
- * @param {{effectId: string, scale?: number, durationMs?: number}} spec
+ * @param {{effectId: string, scale?: number, durationMs?: number, forFight?: boolean}} spec
  * @param {string|null} sourceId  what applied it, for the readout
  * @returns {boolean} whether anything is now carried
  */
@@ -92,9 +98,10 @@ export function applyTo(bearer, spec, sourceId = null, fire = null) {
     if (!target || !spec?.effectId || !EFFECTS[spec.effectId]) return false;
 
     const scale = normaliseScale(spec.scale);
+    const forFight = !!spec.forFight;
 
     // No duration means fire it once, NOW (chaining), not on the next tick.
-    if (!Number(spec.durationMs)) {
+    if (!forFight && !Number(spec.durationMs)) {
         if (!fire) return false;
         for (const statement of statementsFromEntry(EFFECTS[spec.effectId], { effectId: spec.effectId, scale })) {
             fire(statement, { ...bearer.roles });
@@ -104,20 +111,46 @@ export function applyTo(bearer, spec, sourceId = null, fire = null) {
 
     const list = listOf(target);
     const existing = list.find(e => e.effectId === spec.effectId);
-    const expiresAt = GameClock.now() + Math.max(0, Number(spec.durationMs) || 0);
+    const expiresAt = forFight
+        ? UNTIL_FIGHT_ENDS
+        : GameClock.now() + Math.max(0, Number(spec.durationMs) || 0);
 
     if (existing) {
         // Refresh the clock, and let a stronger application win.
         existing.expiresAt = Math.max(existing.expiresAt, expiresAt);
         existing.scale = Math.max(existing.scale, scale);
         existing.sourceId = sourceId ?? existing.sourceId;
+        if (forFight) existing.forFight = true;
     } else {
-        list.push({ effectId: spec.effectId, scale, expiresAt, sourceId });
+        list.push({ effectId: spec.effectId, scale, expiresAt, sourceId, ...(forFight ? { forFight: true } : {}) });
     }
 
     syncAggregator(target);
     bearer.notify?.('live_effect_applied');
     return true;
+}
+
+/**
+ * The fight is over: take off everything a bearer was carrying "for the fight".
+ * @returns {number} how many instances ended
+ */
+export function endFightEffects(bearer) {
+    const target = bearer?.target;
+    if (!target?.effects?.length) return 0;
+    const before = target.effects.length;
+    target.effects = target.effects.filter(e => !e.forFight);
+    const ended = before - target.effects.length;
+    if (ended) {
+        syncAggregator(target);
+        bearer.notify?.('live_effect_expired');
+    }
+    return ended;
+}
+
+/** The same for a hero, by id. */
+export function endHeroFightEffects(heroId) {
+    const hero = heroId ? HeroManager.getHero(heroId) : null;
+    return hero ? endFightEffects(heroBearer(hero)) : 0;
 }
 
 /** Take one library effect off a bearer. `null` removes every one. */

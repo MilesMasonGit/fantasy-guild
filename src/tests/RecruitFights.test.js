@@ -81,10 +81,18 @@ describe('A Recruit punches for 1 every 3 s', () => {
         expect(numbers(armed)).toEqual(numbers(bare));
     });
 
-    it('a promoted fighter swings the same bow: its style, its speed, its damage', () => {
+    // Rewritten for the gear pass: a hero swings only weapons of their own style, so the bow is a
+    // Ranger's; a melee Fighter holding it punches, as melee.
+    it('a promoted Ranger swings the same bow: its speed, its damage; a Fighter holding it punches', () => {
         const { fighter } = pair(['fixture_recruit_bow']);
+        const ranger = generateHero({ name: 'g' });
+        ranger.id = 'ranger';
+        ranger.equipment = ['fixture_recruit_bow'];
+        ranger.skills.ranged = { level: 1, xp: 0 };
         // 3 against the melee fixture enemy, ranged's bad matchup: 3 × 0.75 = 2.25, rounded 2.
-        expect(numbers(fighter)).toMatchObject({ style: 'ranged', level: 1, maxHp: 11, swingMs: 2000, damage: 2 });
+        expect(numbers(ranger)).toMatchObject({ style: 'ranged', level: 1, maxHp: 11, swingMs: 2000, damage: 2 });
+        expect(CombatFormulas.getHeroWeapon(fighter)).toBeNull();
+        expect(numbers(fighter)).toMatchObject({ style: 'melee', level: 1, maxHp: 11, swingMs: 3000, damage: 1 });
     });
 
     it('a promoted hero is unchanged: the real level', () => {

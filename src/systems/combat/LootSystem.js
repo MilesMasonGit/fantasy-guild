@@ -49,8 +49,10 @@ const LootSystem = {
         // Every drop line rolls on its own `chance`, as a station's outputs do in
         // `BoardRunner`: a Goblin with Bones 100% and Copper Ore 30% drops Bones
         // every kill AND Ore 30% of the time.
+        // ...and last, a chance that this one item comes out doubled (a Cleaver and Raw Beef).
         const widen = onBoard
-            ? (quantity) => OutputRules.widenYield(instanceId, skill, quantity) * (doubled ? 2 : 1)
+            ? (quantity, itemId) => OutputRules.doubleItemDrop(instanceId, itemId,
+                OutputRules.widenYield(instanceId, skill, quantity) * (doubled ? 2 : 1))
             : null;
         const generatedDrops = this.rollEachLine(sourceData.drops, areaId, widen);
 
@@ -78,7 +80,7 @@ const LootSystem = {
      * (default 100) hits, with its quantity rolled over its authored min–max.
      *
      * @param {Array} entries - `{ itemId, chance, minQty, maxQty }` lines
-     * @param {Function} [widen] - turns a rolled quantity into the one that lands (the kill's output rules)
+     * @param {Function} [widen] - `(quantity, itemId)` → the quantity that lands (the kill's output rules)
      * @returns {Array} the drops that landed, possibly empty
      */
     rollEachLine(entries, areaId, widen = null) {
@@ -88,7 +90,7 @@ const LootSystem = {
             const chance = entry.chance ?? 100;
             if (chance < 100 && Math.random() * 100 > chance) continue;
             const drop = this._rollEntryDetails(entry, areaId);
-            if (drop && widen && drop.type !== 'combat_trigger') drop.quantity = widen(drop.quantity);
+            if (drop && widen && drop.type !== 'combat_trigger') drop.quantity = widen(drop.quantity, drop.itemId);
             if (drop && (drop.type === 'combat_trigger' || drop.quantity > 0)) results.push(drop);
         }
         return results;

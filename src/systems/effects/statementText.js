@@ -180,6 +180,12 @@ function effectSegments(statement, names) {
         return segs('a ', d(`${Math.abs(Number(payload.value) || 0)}%`, 'value'), ` chance to drop ${qty} ${item}`);
     }
 
+    // "a 10% chance of double Raw Beef": the item is the narrowing, so it reads inside the phrase.
+    if (payload.type === EFFECT_TYPES.DOUBLE_DROP) {
+        const item = payload.category ? names.item(payload.category) : 'any item';
+        return segs('a ', d(size, 'value'), ' chance of double ', d(item, categorySlot(statement)));
+    }
+
     const label = entry.label.toLowerCase();
     const value = Number(payload.value);
 
@@ -359,6 +365,8 @@ function occupantSegments(statement, names) {
 function skillScopeSegments(statement) {
     const category = statement?.payload?.category;
     if (!category) return [];
+    // An item narrowing is already named inside the effect phrase ("a 10% chance of double Raw Beef").
+    if (effectEntryOf(statement)?.categories === 'item') return [];
     const skill = getSkill(category);
     return segs(', but only for ', d(skill?.name || category, categorySlot(statement)), ' work');
 }
@@ -515,6 +523,15 @@ function bodySegments(statement, names) {
                 const status = getStatusEffect(payload.category);
                 return segs(d('Provides', K), ' ', d('immunity to', 'type'), ' ',
                     d(status ? status.name : '…', categorySlot(statement)), COMBAT_REACH);
+            }
+
+            // "Provides Poison stacks at most 1 lower": a cap is about one status, so it names it.
+            if (payload.type === EFFECT_TYPES.STATUS_MAX_STACKS) {
+                const status = getStatusEffect(payload.category);
+                const shift = Number(payload.value) || 0;
+                const change = shift < 0 ? `at most ${-shift} lower` : shift > 0 ? `up to ${shift} higher` : 'no different';
+                return segs(d('Provides', K), ' ', d(status ? status.name : '…', categorySlot(statement)), ' ',
+                    d('stacks', 'type'), ' ', d(change, 'value'), COMBAT_REACH);
             }
 
             if (entry?.heroOnly) {
@@ -707,13 +724,15 @@ function bodySegments(statement, names) {
             const who = () => (byRole ? roleSegments(statement) : occupantSegments(statement, names));
 
             /**
-             * A library effect rather than a status. With a duration it lingers; without one it fires
-             * immediately (chaining).
+             * A library effect rather than a status. With a duration it lingers, "for the fight" it
+             * lasts until its fight ends; without either it fires immediately (chaining).
              */
             if (payload.effectId) {
                 const title = names.effect ? names.effect(payload.effectId) : payload.effectId;
                 const secs = Math.round((payload.durationMs || 0) / 100) / 10;
-                const lasting = secs > 0 ? segs(' for ', d(String(secs), 'durationMs'), ' seconds') : [];
+                const lasting = payload.forFight
+                    ? segs(' ', d('for the fight', 'forFight'))
+                    : secs > 0 ? segs(' for ', d(String(secs), 'durationMs'), ' seconds') : [];
                 return segs(d('Applies', K), ' ', d(title || '…', 'effectId'), ' to ', who(), lasting, odds);
             }
 

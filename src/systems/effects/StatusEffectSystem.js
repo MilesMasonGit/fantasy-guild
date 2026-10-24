@@ -15,6 +15,7 @@ import {
 } from '../../config/registries/statusRegistry.js';
 import { EFFECT_TYPES } from './constants.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
+import { heroStatusStackCap } from '../../utils/CombatFormulas.js';
 
 let heroTickTimer = 0;
 
@@ -34,8 +35,16 @@ export function applyToHero(heroId, statusId, stacks = 1) {
         return { success: true, blocked: true };
     }
 
+    // What the hero carries may move the stack cap (a Hide Vest: poison stacks at most 1 lower).
+    // ⚠️ A cap of 0 is the status not landing at all, said as a block like immunity.
+    const cap = def.stackModel === 'layered' ? null : heroStatusStackCap(hero, statusId, def.maxStacks ?? 99);
+    if (cap === 0) {
+        EventBus.publish(ENGINE_EVENTS.STATUS_BLOCKED, { targetId: heroId, statusId });
+        return { success: true, blocked: true };
+    }
+
     if (!hero.statuses) hero.statuses = [];
-    _applyToList(hero.statuses, def, stacks);
+    _applyToList(hero.statuses, def, stacks, cap);
 
     logger.debug('StatusEffect', `${hero.name} gains [${def.name}] x${stacks}`);
     EventBus.publish(ENGINE_EVENTS.STATUS_APPLIED, { targetType: 'hero', targetId: heroId, statusId, stacks });
@@ -57,8 +66,11 @@ export function applyToEnemy(card, statusId, stacks = 1) {
     return { success: true };
 }
 
-/** Shared stacking rules: decrement merge, or independent layers. */
-function _applyToList(statuses, def, stacks) {
+/**
+ * Shared stacking rules: decrement merge, or independent layers. `cap` replaces the status's own
+ * `maxStacks` when given (the bearer's gear moved it).
+ */
+function _applyToList(statuses, def, stacks, cap = null) {
     if (def.stackModel === 'layered') {
         // Each application is its own layer with an independent lifetime.
         for (let i = 0; i < stacks; i++) {
@@ -67,11 +79,14 @@ function _applyToList(statuses, def, stacks) {
         return;
     }
     // Decrement model: one instance, re-application adds stacks (capped).
+    const max = cap ?? def.maxStacks ?? 99;
     const existing = statuses.find(s => s.id === def.id);
     if (existing) {
-        existing.stacks = Math.min(existing.stacks + stacks, def.maxStacks ?? 99);
+        // ⚠️ Never below what is already carried: a cap lowered mid-fight stops new stacks, it
+        // does not strip old ones.
+        existing.stacks = Math.max(existing.stacks, Math.min(existing.stacks + stacks, max));
     } else {
-        statuses.push({ id: def.id, stacks: Math.min(stacks, def.maxStacks ?? 99) });
+        statuses.push({ id: def.id, stacks: Math.min(stacks, max) });
     }
 }
 

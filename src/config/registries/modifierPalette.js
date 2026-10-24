@@ -101,6 +101,8 @@ export const MODIFIER_BUCKETS = ['flat', 'multiplier', 'percentage'];
  *   `resolveAxis` call, so a rule can read *"+10% yield to Mining only"*.
  * * `'status'` — `StatusEffectSystem` passes a status id, which is how
  *   `STATUS_IMMUNITY` names the one status it blocks.
+ * * `'item'`   — `OutputRules.doubleItemDrop` passes the id of each item a
+ *   cycle or kill dropped, which is how `DOUBLE_DROP` names its item.
  *
  * Declaring the vocabulary per row is what lets the CMS show a skill
  * picker on Yield and a status picker on Immunity without knowing either list.
@@ -195,6 +197,24 @@ export const MODIFIER_PALETTE = [
         group: 'Support',
         hint: 'Percent chance the cycle produces nothing. Inputs and charges are still spent.'
     },
+    {
+        /**
+         * A family ability such as the Cleaver's: a chance that one named item, when a cycle or a
+         * kill drops it, comes out doubled. The item is the narrowing (`categories: 'item'`):
+         * `OutputRules.doubleItemDrop` resolves the axis once per item that landed, with the item
+         * id as the category, so a rule naming Raw Beef never touches the Bones beside it.
+         */
+        type: EFFECT_TYPES.DOUBLE_DROP,
+        label: 'Double Item Chance',
+        when: 'never',
+        scales: 'value',
+        // A chance is a plain number of percent; resolved from a base of 0, so any other bucket is 0.
+        buckets: ['flat'],
+        categories: 'item',
+        shape: MODIFIER_SHAPES.PROC,
+        group: 'Support',
+        hint: 'Percent chance that one item, when a cycle or a kill drops it, comes out doubled. Pick the item; "any item" rolls for every item that drops, each on its own.'
+    },
 
     // --- Combat ---------------------------------------------------------
     //
@@ -258,6 +278,39 @@ export const MODIFIER_PALETTE = [
         group: 'Combat',
         hint: 'Flat damage added to every hit the hero lands.'
     },
+    {
+        type: EFFECT_TYPES.DODGE,
+        label: 'Dodge',
+        when: 'never',
+        scales: 'value',
+        buckets: ['flat'],
+        heroOnly: true,
+        shape: MODIFIER_SHAPES.DETERMINISTIC,
+        group: 'Combat',
+        hint: 'Percentage points added to the miss chance of whatever attacks the hero (misses stay between 5% and 40%).'
+    },
+    {
+        type: EFFECT_TYPES.PIERCE,
+        label: 'Pierce',
+        when: 'never',
+        scales: 'value',
+        buckets: ['flat'],
+        heroOnly: true,
+        shape: MODIFIER_SHAPES.DETERMINISTIC,
+        group: 'Combat',
+        hint: 'Armour points the hero\'s hits ignore. A hit still does at least 1.'
+    },
+    {
+        type: EFFECT_TYPES.CRIT_CHANCE,
+        label: 'Crit Chance',
+        when: 'never',
+        scales: 'value',
+        buckets: ['flat'],
+        heroOnly: true,
+        shape: MODIFIER_SHAPES.DETERMINISTIC,
+        group: 'Combat',
+        hint: 'Percentage points added to the hero\'s 5% chance to crit (a crit doubles the hit before armour).'
+    },
 
     // --- Protection ---------------------------------------------------------
     // `query('STATUS_IMMUNITY', statusId)` passes the status id as the aggregator's **category**.
@@ -274,6 +327,19 @@ export const MODIFIER_PALETTE = [
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Protection',
         hint: 'Blocks a status from landing. Pick which one. Any value above 0 blocks it; this never strips stacks already carried.'
+    },
+    {
+        // Read by `StatusEffectSystem.applyToHero` through `CombatFormulas.heroStatusStackCap`.
+        type: EFFECT_TYPES.STATUS_MAX_STACKS,
+        label: 'Status Stack Limit',
+        when: 'never',
+        scales: 'value',
+        buckets: ['flat'],
+        heroOnly: true,
+        categories: 'status',
+        shape: MODIFIER_SHAPES.DETERMINISTIC,
+        group: 'Protection',
+        hint: 'Moves how many stacks of one status can build up on the hero: -1 means at most 1 fewer (a Hide Vest against poison). Pick which status. At 0 stacks it cannot land; stacks already carried are never stripped.'
     },
 
     // --- Grants -------------------------------------------------------------

@@ -295,21 +295,55 @@ has none yet), melee, magic and commerce have content today.
   *(`FormulaRegistry.js`, `CombatFormulas.js`)*
 - **Regen 1 HP / 10 s while idle or working; none in a fight**, where only
   food heals.
-- Below 25 % HP a hero eats equipped food from the Bank and, if still below,
-  drinks the equipped drink: drinks heal like food, from their own slot. Heroes
-  have no energy (removed, T-098).
+- Below 25 % HP a hero eats equipped food from the Bank (in a fight eating
+  takes that swing). Out of a fight, if still below, they also drink the
+  equipped drink, which heals like food. **In a fight drinks do not heal**: an
+  equipped drink is left alone, unspent (drink buffs are the skill-loops
+  design's, not built). Heroes have no energy (removed, T-098).
+- **Elixirs** (the unlimited consumable slot): an elixir whose rules wait on
+  the fight-start moment is drunk as a fight starts and **lasts 10 fights**
+  (one number for every elixir, `ELIXIR_FIGHTS`; each enemy engaged is one
+  fight). Every equipped elixir type works at once and their effects stack; a
+  type is drunk again from the Bank when its last dose runs out, and keeps
+  working for the rest of its 10 fights after the Bank runs dry. The count
+  left is saved on the hero (`elixirFights`). A consumable with no fight rule
+  is never drunk by a fight. *(`ConsumptionSystem.js`, `LoadoutMoments.js`)*
+- **The "used" bubble**: when a hero eats, drinks or drinks an elixir on the
+  mat, a small bubble over their head shows the item's icon and what it did
+  ("+5 ♥", or the elixir's name) for 1.5 s, one at a time per hero. Not drawn
+  during a catch-up. *(`matFx.js`)*
 - **Defeat** (0 HP): the hero's flag is furled, they limp home, lose 25 % of
-  each carried food/drink stack (and 10 % chance per gear piece), and are
+  the whole Bank stack of each carried food and drink (elixirs exempt), a
+  10 % chance per gear piece to lose that piece (the hero's own copy), and are
   **wounded for 5 minutes** of game time, returning at 50 % HP (*placeholder*
   numbers).
 
 ### Equipment — Partial
 A 3×3 loadout grid with category caps (hand 2 — two hands: a tool takes one,
 a two-handed weapon both — hat 1, chest 1, trinket 2,
-food 1, drink 1, consumable unlimited). **No gear ships yet**: 64 items are
-materials, food, drink and one potion. Weapons, armour and gear loss are
-**Latent**. **Gear is coming** (owner 2026-10-06): keep the system; weapons
-and armour will be authored as content.
+food 1, drink 1, consumable unlimited). Gear, weapons and tools are one copy
+per hero: equipping takes the copy out of the Bank.
+- **A weapon** is anything held in the hands that is not a gathering tool. It
+  names its **style(s)** (`styles`: a Dagger is Melee and Stealth), its
+  **damage** and its **speed** (fast 2 s, normal 3 s, slow 4 s). **A hero
+  equips only weapons of their own style**; a weapon naming no style suits any
+  promoted hero. **A Recruit holds no weapon** ("Recruits fight barehanded:
+  promote Bjorn to use the Copper Sword"); a hero of another style is told
+  whose weapon it is ("Mira fights with Magic: the Copper Sword is a Melee
+  weapon"). A weapon of another style still in a hero's hands (from before a
+  re-training) is not swung and its ability is off. Older content's single
+  `skillRequired` style is read as a one-style list. *(`weaponStyles.js`,
+  `EquipmentValidator.js`)*
+- **A family's ability is a Rules effect on the item.** Every tier of a family
+  points at the same library effect (a "Spear" effect: Provides 1 more Pierce),
+  each with its own **scale** (copper 1, iron 2…), so the tier raises the
+  number. Armour carries its stats and abilities the same way (Provides Armor;
+  a Hide Vest: Poison stacks at most 1 lower). An ability may touch anything
+  the grammar reaches, work included (a Cleaver's chance to double Raw Beef
+  works on a kill and on a work cycle alike).
+- **No weapon or armour ships yet** (`items.json` has tools, food, drink,
+  materials, maps and one potion); the first come as a CMS change pack (brief
+  220 C0).
 
 ### How heroes choose work — Built (the heart of the game)
 - A **flag** has no skill: the hero works every skill they hold within the
@@ -371,15 +405,29 @@ and armour will be authored as content.
 ## 6. Combat and enemies
 
 ### Enemies — Built
-Enemies are Tokens with `enemy: { level, style, hostile? }`. **The level fills
-every number from the level table**: HP 20 + level, a hit of 1 + 1 per 20
-levels, 1 armour per 30 levels, a swing every 3 s, XP 10 × 1.065^(level − 1)
-(the table and its worked duels: `concept_combat.md`, "The level table and
-weapon tiers"). A number written beside the level (`hp`, `hit`, `armor`,
-`speed` fast/normal/slow, `xp`, `dodge`, `accuracy`, `pierce`, `critChance`)
-replaces the table's; the CMS fields for them are not built yet. Older content's
-`budgetScale` still multiplies the table's HP, hit and XP (rounded halves up,
-at least 1). 4 ship, **all melee**:
+Enemies are Tokens with `enemy: { level, style, kinds?, hostile? }`. **The
+level fills every number from the level table**: HP 20 + level, a hit of 1 + 1
+per 20 levels, 1 armour per 30 levels, a swing every 3 s, XP 10 × 1.065^(level
+− 1), no Dodge, Accuracy or Pierce, a 5 % crit (the table and its worked
+duels: `concept_combat.md`, "The level table and weapon tiers").
+- **Kinds** (none, one or two, CMS presets the player discovers by fighting):
+  **Armoured** +2 armour and slow (4 s, same hit); **Nimble** +15 Dodge;
+  **Swift** a swing every 2 s at 2/3 of the level's hit; **Brute** a swing
+  every 4 s at 4/3 of the level's hit and at least 1 more; **Venomous**
+  poisons the hero with every hit it lands (today the old status engine's
+  Poison; the real one comes with the Rules-system statuses). Swift clashes
+  with Armoured and Brute (both set the swing); the CMS refuses the pair.
+  Kinds never change HP or XP. *(`enemyKinds.js`)*
+- **Order**: the level table (older content's `budgetScale` multiplies its HP,
+  hit and XP, rounded halves up, at least 1), then each kind in the order
+  ticked (hits rounded halves up, at least 1), then **any number written beside
+  the level** (`hp`, `hit`, `armor`, `speed` fast/normal/slow, `xp`, `dodge`,
+  `accuracy`, `pierce`, `critChance`) **replaces the result outright**. The
+  CMS shows every number filled from the level and kinds, greyed "from level",
+  until the author types one ("yours", with a button back).
+  *(`enemyProfile.js`)*
+
+4 ship, **all melee**, none with a kind:
 
 | Enemy | Level | HP · hit · armour | Hostile | Uses | Drops |
 |---|---|---|---|---|---|
@@ -398,8 +446,9 @@ at least 1). 4 ship, **all melee**:
 
 ### The fight — Built
 - **Swings.** A hero swings at their weapon's speed: fast 2 s, normal 3 s,
-  slow 4 s (barehanded: 3 s). An enemy swings at its own speed (3 s unless
-  authored).
+  slow 4 s (barehanded: 3 s). The weapon swung is the first in the hands of
+  the hero's own style; one of another style is ignored. An enemy swings at
+  its own speed (3 s unless a kind or the author says otherwise).
 - **Damage is fixed**: the weapon's damage (a fist is 1) + 1 per 20 combat
   levels + flat Damage from gear, times any damage buffs and the matchup,
   rounded halves up. No spread.
@@ -419,16 +468,21 @@ at least 1). 4 ship, **all melee**:
 - **A four-way cycle: melee > ranged > magic > stealth > melee**: +25 %
   damage for the favoured side, −25 % for the other (a 2 becomes 3, or stays 2).
   Opposite pairs (melee and magic, ranged and stealth) are even, so each style
-  has one good matchup, one bad one, and two even. An enemy's Style is one of
-  the four combat skills (the CMS dropdown follows the skill registry). Every
-  shipped enemy is melee.
-- **No regen in a fight**: below 25 % HP the hero eats instead of swinging.
+  has one good matchup, one bad one, and two even. A hero always fights on
+  their own combat skill's side (a Dagger is melee for a Fighter, stealth for a
+  Rogue). An enemy's Style is one of the four combat skills (the CMS dropdown
+  follows the skill registry). Every shipped enemy is melee.
+- **No regen in a fight**: below 25 % HP the hero eats food instead of
+  swinging; drinks do not heal in a fight. Elixirs are drunk as a fight starts
+  (section 4).
 - Each swing draws one random number for the miss and, on a hit, one for the
   crit, from the game's random stream in a fixed order, so a catch-up replays
   the same fights as live play.
 - Kills give XP to the hero's combat skill and count as a work cycle for
-  neighbour rules. Loot drops on the mat, through the same yield, double-loot
-  and bonus-drop rules as a station's output (T-017).
+  neighbour rules. Loot drops on the mat, through the same yield, double-loot,
+  double-item (a Cleaver's) and bonus-drop rules as a station's output (T-017).
+  A double-item chance draws one random number per item it names that landed,
+  and none when nothing offers it.
   *(`FormulaRegistry.js`, `CombatFormulas.js`, `src/systems/combat/`)*
 
 ### Status effects — Latent
@@ -450,15 +504,30 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
 - **12 moments** (On Cycle, On Neighbour's Cycle, On Depleted, On Neighbour's
   Kill, On Engaged, On Tick, On Bank Holds…), **4 roles** (itself, the hero,
   that Token, the enemy), **5 filters**, **4 reaches**.
-- **Modifiers** that neighbours provide: yield, work time, input cost, XP
-  bonus, double loot, fail chance (Tokens); armour, resist, accuracy,
-  damage, status immunity (heroes). Block is gone (a miss is the only failed
-  hit); Dodge, Pierce and Crit Chance are read by combat but not offered yet.
+- **Modifiers** that neighbours (or a hero's items) provide: yield, work
+  time, input cost, XP bonus, double loot, **double item chance** (a chance
+  that one named item, when a cycle or a kill drops it, comes out doubled: the
+  Cleaver's Raw Beef), fail chance (Tokens); armour, resist, accuracy,
+  damage, **dodge, pierce, crit chance**, status immunity and **status stack
+  limit** (one status stacks at most N lower or higher: the Hide Vest's
+  Poison −1; at 0 it cannot land) (heroes). Combat rows are flat amounts, and
+  a new rule on one starts flat. Block is gone (a miss is the only failed
+  hit).
+- **Gear families**: a weapon or armour family's ability is one library
+  effect every tier references with its own scale (1–5), so the tier raises
+  the number.
 - **What ships**: tool tiers (`acts_as`), station skills, two neighbour buffs
   (Coast −5 % work time; Windmill +5 double loot on Fields), a placement limit
   (≤ 2 Coasts nearby), bonus drops, Minecart restocking, the two promotions,
   and **Thorns** (1 damage to the hero on finishing a Redberry Bush or Thorn
   Elemental). **Everything else in the grammar is Latent.**
+- **Items carry rules too** (a hero's loadout): a carried rule on On
+  Neighbour's Fight fires as its hero's fight starts. An `Applies` of a
+  library effect may last **for the fight** (until that fight ends, at the kill
+  or when the hero leaves), which is how an elixir works: "When a fight starts,
+  applies Valor to the hero for the fight", Valor being an effect that
+  provides +1 Damage. An elixir's rules fire from its 10-fight dose, not per
+  firing from the Bank.
 - Authored only in the CMS (the Rules Line editor). Editing a library effect
   changes every Token that carries it.
 
@@ -721,7 +790,7 @@ crunch plan):
 | Promotion content | 4 Academies (Fighter, Wizard, Rogue, Ranger) on Wood or Stone Foundations, with skill & class rework v2 (crunch track). |
 | Promotion cost | Free. |
 | Kill loot | Neighbour bonuses apply to kills like work (T-017). |
-| Energy and drinks | Remove energy; drinks heal like food, separate slots (T-098). |
+| Energy and drinks | Remove energy; drinks heal like food out of fights, separate slots (T-098); in fights only food heals (brief 220). |
 | Dormant Maps | Retire (T-002). |
 | Wishing Well | Passive, part of Passive Production (T-099). |
 | Silent by default | Development convenience; audible default before shipping (T-100). |

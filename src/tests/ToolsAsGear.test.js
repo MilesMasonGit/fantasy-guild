@@ -84,8 +84,10 @@ const VEIN = { x: 400, y: 400 };
 const TREE = { x: 560, y: 400 };
 const FLAG = { x: 480, y: 400 };
 
-function addHero() {
+/** A Recruit, or with `combat` a promoted hero of that style: a Recruit holds no weapon. */
+function addHero(combat = null) {
     const hero = generateHero();
+    if (combat) hero.skills[combat] = { level: 1, xp: 0 };
     GameState.state.heroes.push(hero);
     return hero;
 }
@@ -166,7 +168,7 @@ describe('the vocabulary: kinds, a tool, a need, hands', () => {
 
 describe('hands: a tool takes one hand', () => {
     it('a tool and a one-handed weapon fit together', () => {
-        const hero = addHero();
+        const hero = addHero('melee');
         equip(hero.id, 'fx_pick');
         equip(hero.id, 'fx_sword');
         expect(held(hero).sort()).toEqual(['fx_pick', 'fx_sword']);
@@ -182,7 +184,7 @@ describe('hands: a tool takes one hand', () => {
     });
 
     it('a two-handed weapon leaves no hand for a tool: taking it up puts the tools down', () => {
-        const hero = addHero();
+        const hero = addHero('melee');
         equip(hero.id, 'fx_pick');
         equip(hero.id, 'fx_axe');
         equip(hero.id, 'fx_greatsword');
@@ -190,14 +192,14 @@ describe('hands: a tool takes one hand', () => {
     });
 
     it('taking up a tool beside a two-handed weapon puts the weapon down', () => {
-        const hero = addHero();
+        const hero = addHero('melee');
         equip(hero.id, 'fx_greatsword');
         equip(hero.id, 'fx_pick');
         expect(held(hero)).toEqual(['fx_pick']);
     });
 
     it('a third one-hand item still takes the place of the first, as before', () => {
-        const hero = addHero();
+        const hero = addHero('melee');
         equip(hero.id, 'fx_pick');
         equip(hero.id, 'fx_axe');
         equip(hero.id, 'fx_sword');
@@ -205,7 +207,7 @@ describe('hands: a tool takes one hand', () => {
     });
 
     it('food and the rest of the grid are untouched by the hands', () => {
-        const hero = addHero();
+        const hero = addHero('melee');
         equip(hero.id, 'fx_greatsword');
         give('item_steak');
         expect(EquipmentManager.equipItem(hero.id, 'item_steak').success).toBe(true);
@@ -214,7 +216,7 @@ describe('hands: a tool takes one hand', () => {
     });
 
     it('a pickaxe in hand is not a weapon: combat names the weapon beside it, or none', () => {
-        const hero = addHero();
+        const hero = addHero('stealth');
         equip(hero.id, 'fx_pick');
         expect(getPrimaryWeapon(hero)).toBeNull();
         equip(hero.id, 'fx_dagger');
@@ -469,7 +471,7 @@ describe('the tutorial has a hero equip a tool', () => {
         const step = () => QuestManager.getActiveQuests().find(q => q.id === 'cart_tool');
         expect(step()).toBeTruthy();
 
-        const hero = addHero();
+        const hero = addHero('melee');
         equip(hero.id, 'fx_sword');
         expect(step().currentCount || 0).toBe(0);
         equip(hero.id, 'fx_axe');
