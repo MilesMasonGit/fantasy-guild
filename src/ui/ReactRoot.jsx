@@ -272,11 +272,15 @@ export const ReactRoot = () => {
                             {/**
                              * Over the mat, under the top bar: the item stubs at the right,
                              * the banners at the centre. Neither takes any width from the mat.
+                             * Not over the Hall screen: both live in their own stores, so what
+                             * arrives meanwhile is there on the way back (loot flies to no stub).
                              */}
-                            <ErrorBoundary label="Notifications">
-                                <ItemStubColumn />
-                                <BannerStack />
-                            </ErrorBoundary>
+                            {!isGuildView && (
+                                <ErrorBoundary label="Notifications">
+                                    <ItemStubColumn />
+                                    <BannerStack />
+                                </ErrorBoundary>
+                            )}
                             </div>
                         </div>
                         </div>

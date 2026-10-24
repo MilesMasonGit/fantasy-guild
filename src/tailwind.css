@@ -1050,9 +1050,15 @@ body *:not(input):not(textarea):not(code) {
   text-shadow: var(--text-outline-dark) !important;
 }
 /* The Guild Hall's night sky (`HallSky.jsx`, `GuildHallBoard.jsx`). The layers slide one
-   1024 px tile (512 art pixels at 2×) in 512 steps, so each step is one whole art pixel: the
-   stars about every 1.2 s (a tile in ten minutes), the nearer clouds about every 0.6 s and on a
-   different heading. Transforms only, so the browser moves painted layers and repaints nothing. */
+   1024 px tile (512 art pixels at 2×), the stars in ten minutes, the nearer clouds in five and on
+   a different heading. Transforms only, so the browser moves painted layers and repaints nothing.
+   The glide is `--gi-sky-ease`: `linear` moves a little every frame, softening each star a touch
+   between pixels; `steps(1024, end)` moves one screen pixel at a time and `steps(512, end)` one
+   art pixel (the stars about every 1.2 s), both always crisp. */
+[data-hall-sky] {
+  --gi-sky-ease: linear;
+}
+
 @keyframes gi-sky-drift-stars {
   from { transform: translate3d(0, 0, 0); }
   to   { transform: translate3d(-1024px, 0, 0); }
@@ -1065,40 +1071,24 @@ body *:not(input):not(textarea):not(code) {
 
 .gi-sky-drift-stars {
   will-change: transform;
-  animation: gi-sky-drift-stars 600s steps(512, end) infinite;
+  animation: gi-sky-drift-stars 600s var(--gi-sky-ease) infinite;
 }
 
 .gi-sky-drift-clouds {
   will-change: transform;
-  animation: gi-sky-drift-clouds 300s steps(512, end) infinite;
+  animation: gi-sky-drift-clouds 300s var(--gi-sky-ease) infinite;
 }
 
-/* A star's outline, one of its own art pixels (`--star-px`) wide: gold when the Bank can pay for
-   its next rank, white on hover, focus and while it is pinned in the details panel. */
-.gi-star-btn[data-upgrade-available] .gi-star-img {
-  filter: drop-shadow(var(--star-px) 0 0 #f5c542) drop-shadow(calc(-1 * var(--star-px)) 0 0 #f5c542)
-          drop-shadow(0 var(--star-px) 0 #f5c542) drop-shadow(0 calc(-1 * var(--star-px)) 0 #f5c542);
-}
-
+/* A star's outline, one of its own art pixels (`--star-px`) wide and white, shows only under the
+   pointer or keyboard focus: never at rest, whatever the star's look or whether it is pinned. */
 .gi-star-btn:hover .gi-star-img,
-.gi-star-btn:focus-visible .gi-star-img,
-.gi-star-btn[data-selected] .gi-star-img {
+.gi-star-btn:focus-visible .gi-star-img {
   filter: drop-shadow(var(--star-px) 0 0 #fff) drop-shadow(calc(-1 * var(--star-px)) 0 0 #fff)
           drop-shadow(0 var(--star-px) 0 #fff) drop-shadow(0 calc(-1 * var(--star-px)) 0 #fff);
 }
 
 .gi-star-btn:focus {
   outline: none;
-}
-
-/* A buyable star twinkles: two stepped frames, no blur. */
-@keyframes gi-star-twinkle {
-  0%   { opacity: 1; }
-  50%  { opacity: 0.5; }
-}
-
-.gi-star-twinkle {
-  animation: gi-star-twinkle 1.6s steps(1, end) infinite;
 }
 
 /* A constellation just finished: its picture flashes bright in two steps, then settles. */
@@ -1114,8 +1104,7 @@ body *:not(input):not(textarea):not(code) {
 
 @media (prefers-reduced-motion: reduce) {
   .gi-sky-drift-stars,
-  .gi-sky-drift-clouds,
-  .gi-star-twinkle {
+  .gi-sky-drift-clouds {
     animation: none;
   }
   .gi-constellation-glow {
