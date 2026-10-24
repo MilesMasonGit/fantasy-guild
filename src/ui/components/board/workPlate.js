@@ -220,7 +220,9 @@ export function platePlace({ x, y, typeId, side = 1, fit = 1, matH = Infinity })
     let top = y + art / 2 - PLATE.TUCK * unit;
     if (top + height > matH) top = y - art / 2 - height;
     const width = PLATE.SLOT * unit;
-    return { left: seam - width / 2, top, width, unit };
+    // On whole screen pixels, so the sprites and the pixel font inside stay sharp.
+    const snap = (v) => Math.round(v * fit) / fit;
+    return { left: snap(seam - width / 2), top: snap(top), width, unit };
 }
 
 /**

@@ -11,7 +11,7 @@ import { HERO_HIT_PX } from '../components/board/boardConstants.js';
 import { FLAG_PX, POLE_BASE, PIN_INSET } from '../components/board/flagGeometry.js';
 import { FlagMark } from '../components/board/FlagMark.jsx';
 import { SEVERITY } from '../components/board/problemMark.js';
-import { WorkPlateView, fillStyle } from '../components/board/WorkPlateLayer.jsx';
+import { WorkPlateView, fillStyle, leadOf } from '../components/board/WorkPlateLayer.jsx';
 import { PLATE, CELL, plateCells } from '../components/board/workPlate.js';
 import { ALERT } from '../../systems/board/boardEvents.js';
 import { artRadius } from '../../config/matGeometry.js';
@@ -111,12 +111,12 @@ const Patch = ({ moment, children }) => {
 };
 
 /** A still fill, where the live one is the Token's work bar. */
-const StillFill = ({ fraction, blocked }) => (
+const StillFill = ({ fraction, blocked, lead }) => (
     <div
         aria-hidden="true"
         data-work-bar-blocked={blocked ? 'true' : undefined}
         className="gi-work-bar absolute pointer-events-none"
-        style={{ ...fillStyle(1), '--work-bar-fill': Math.floor(fraction * PLATE.FILL_STEPS) / PLATE.FILL_STEPS }}
+        style={{ ...fillStyle(1, lead), '--work-bar-fill': Math.floor(fraction * PLATE.FILL_STEPS) / PLATE.FILL_STEPS }}
     />
 );
 
@@ -131,7 +131,7 @@ const MomentPlate = ({ moment }) => {
                 cells={cells}
                 tone={moment.plate.severity}
                 tip={(cell) => moment.tips?.[cell.kind] || null}
-                fill={<StillFill fraction={moment.fill} blocked={moment.blocked} />}
+                fill={<StillFill fraction={moment.fill} blocked={moment.blocked} lead={leadOf(cells)} />}
                 plateProps={{ 'data-work-plate-demo': moment.id }}
             />
             {moment.open && (

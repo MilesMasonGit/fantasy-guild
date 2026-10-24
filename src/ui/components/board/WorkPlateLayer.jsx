@@ -65,7 +65,8 @@ function PlateCell({ cell, u, tip }) {
     const [text, setText] = useState(null);
     const icon = { width: PLATE.ICON * u, height: PLATE.ICON * u, ...PIXELATED };
     const glyph = { width: 16 * u, height: 16 * u, ...PIXELATED };
-    const num = { textShadow: `${2 * u}px ${2 * u}px 0 #000` };
+    // The kit's small size, counter-scaled so the pixel font lands on whole screen pixels on the mat.
+    const num = { fontSize: `calc(var(--font-size-xxs, 14px) * ${u})`, textShadow: `${2 * u}px ${2 * u}px 0 #000` };
     let body;
     switch (cell.kind) {
         case CELL.SKILL:
@@ -78,7 +79,7 @@ function PlateCell({ cell, u, tip }) {
             body = (
                 <>
                     <img src={spriteOf(cell.itemId)} alt="" draggable={false} style={icon} />
-                    <span className="ui-text-small font-bold tabular-nums leading-none" style={{ ...num, color: 'var(--color-ui-red)' }}>
+                    <span className="font-bold tabular-nums leading-none" style={{ ...num, color: 'var(--color-ui-red)' }}>
                         {cell.have}/{cell.need}
                     </span>
                 </>
@@ -91,7 +92,7 @@ function PlateCell({ cell, u, tip }) {
             body = (
                 <>
                     <img src={glyphUri('charges')} alt="" draggable={false} style={glyph} />
-                    <span className="ui-text-small font-bold tabular-nums leading-none text-white" style={num}>{chargesText(cell.count)}</span>
+                    <span className="font-bold tabular-nums leading-none text-white" style={num}>{chargesText(cell.count)}</span>
                 </>
             );
             break;
@@ -99,7 +100,7 @@ function PlateCell({ cell, u, tip }) {
             body = (
                 <>
                     <img src={glyphUri('clock')} alt="" draggable={false} style={glyph} />
-                    <span className="ui-text-small font-bold tabular-nums leading-none text-white" style={num}>{cell.text}</span>
+                    <span className="font-bold tabular-nums leading-none text-white" style={num}>{cell.text}</span>
                 </>
             );
             break;
@@ -148,15 +149,22 @@ export function WorkPlateView({ cells, tone = null, u = 1, tip = null, fill = nu
                 className={`ui-frame-chamfer${tone === SEVERITY.WAITING ? ' ui-frame-chamfer-gold' : ''} absolute inset-0 pointer-events-none`}
                 style={tone === SEVERITY.CANT ? { ...frame, borderImageSource: RED_CHAMFER } : frame}
             />
-            {cells.map((cell, i) => <PlateCell key={`${cell.kind}${i}`} cell={cell} u={u} tip={tip} />)}
+            {/* Keyed by what each cell is, so a cell keeps its tooltip while the plate opens round it. */}
+            {cells.map(cell => <PlateCell key={`${cell.kind}:${cell.itemId || cell.id || ''}`} cell={cell} u={u} tip={tip} />)}
             {fill}
         </div>
     );
 }
 
-/** Where the fill stands in a plate, `u` units a plate pixel: along the foot, under the first cell. */
-export const fillStyle = (u) => ({
-    left: PLATE.SIDE * u,
+/** The icon cells before the output (the skill, in the opened line), for the fill to stand under it. */
+export const leadOf = (cells) => Math.max(0, cells.findIndex(c => c.kind === CELL.OUTPUT));
+
+/**
+ * Where the fill stands in a plate, `u` units a plate pixel: along the foot, under what is being
+ * made (`lead` icon cells before it: the skill, in the opened line).
+ */
+export const fillStyle = (u, lead = 0) => ({
+    left: (PLATE.SIDE + lead * (PLATE.ICON + PLATE.GAP)) * u,
     bottom: PLATE.FILL_BOTTOM * u,
     width: PLATE.FILL_W * u,
     height: PLATE.FILL_H * u
@@ -218,7 +226,7 @@ const WorkPlate = memo(function WorkPlate({ tokenId, heroId, x, y, typeId, open,
                 tone={plate.severity}
                 u={u}
                 tip={tip}
-                fill={<WorkBarFill instanceId={tokenId} blocked={!!plate.problem} style={fillStyle(u)} />}
+                fill={<WorkBarFill instanceId={tokenId} blocked={!!plate.problem} style={fillStyle(u, leadOf(cells))} />}
                 plateProps={{ 'data-work-plate': tokenId, 'data-work-plate-open': open ? 'true' : undefined, onPointerDown: press }}
             />
         </div>
