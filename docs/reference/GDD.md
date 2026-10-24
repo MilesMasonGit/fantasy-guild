@@ -300,6 +300,8 @@ has none yet), melee, magic and commerce have content today.
   equipped drink, which heals like food. **In a fight drinks do not heal**: an
   equipped drink is left alone, unspent (drink buffs are the skill-loops
   design's, not built). Heroes have no energy (removed, T-098).
+- **Food Healing** (a Rules row) moves what a meal heals in a fight: while
+  **Burning** (−50 %) a Shrimp's 5 heals 3, rounded halves up.
 - **Elixirs** (the unlimited consumable slot): an elixir whose rules wait on
   the fight-start moment is drunk as a fight starts and **lasts 10 fights**
   (one number for every elixir, `ELIXIR_FIGHTS`; each enemy engaged is one
@@ -414,9 +416,10 @@ duels: `concept_combat.md`, "The level table and weapon tiers").
   **Armoured** +2 armour and slow (4 s, same hit); **Nimble** +15 Dodge;
   **Swift** a swing every 2 s at 2/3 of the level's hit; **Brute** a swing
   every 4 s at 4/3 of the level's hit and at least 1 more; **Venomous**
-  poisons the hero with every hit it lands (today the old status engine's
-  Poison; the real one comes with the Rules-system statuses). Swift clashes
-  with Armoured and Brute (both set the swing); the CMS refuses the pair.
+  lands a stack of the **Poison** status on the hero with every hit that
+  leaves them standing (the library's `effect_poison`; without it the kind
+  poisons nobody and the content check says so). Swift clashes with Armoured
+  and Brute (both set the swing); the CMS refuses the pair.
   Kinds never change HP or XP. *(`enemyKinds.js`)*
 - **Order**: the level table (older content's `budgetScale` multiplies its HP,
   hit and XP, rounded halves up, at least 1), then each kind in the order
@@ -485,9 +488,56 @@ duels: `concept_combat.md`, "The level table and weapon tiers").
   and none when nothing offers it.
   *(`FormulaRegistry.js`, `CombatFormulas.js`, `src/systems/combat/`)*
 
-### Status effects — Latent
-7 statuses (Poison, Burning, Bleed, Stun, Armor Shield, Well Fed, Cookout)
-tick every 5 s; damage over time can kill. **No shipped content applies any.**
+### Status effects — Built, no content yet
+- **A status is a library effect with a status block** (`status: { stacks,
+  ticks }`, the Status section of the CMS Effect editor): each landing adds a
+  stack up to `stacks` (1 = it does not stack, landing again renews it), its
+  rules count once per stack, and it lasts `ticks` ticks, or the whole fight
+  at 0. What it does each tick is an ordinary On Tick rule ("deals 1 damage to
+  itself, ignoring armour"); what it changes while carried an ordinary
+  Provides (Burn's −50 % Food Healing). *(`LiveEffects.js`,
+  `effectLibrary.statusBlockOf`)*
+- **Statuses are fight things**: one lands only on a fighter (a hero in a
+  fight, or the enemy), and **every status ends with its fight**: the kill, a
+  knockout, the hero leaving, a load. No hero falls to poison on the way home.
+- **One Rules tick every 3 s** for every lingering effect, statuses included
+  (heroes in roster order, then each fight's enemy). A tick that knocks a hero
+  out is a defeat like any other (one banner, one gear roll); one that
+  finishes the enemy is a kill before it swings again.
+- **The first two** (the owner's numbers): **Poison** stacks to 3, 1 damage
+  per stack per tick until the fight ends; **Burn** does not stack, 1 a tick
+  for 3 ticks, and food heals half while it burns. Bleed, Stun and Shield wait
+  for a later pass; Well Fed and Cookout go with the drinks.
+- What a fighter carries moves them: **Status Stack Limit** (a Hide Vest:
+  Poison stacks at most 1 lower; at 0 it cannot land) and **Status Immunity**
+  name a status effect. A cap lowered mid-fight never strips stacks carried.
+- What lands them: the Venomous kind, and any rule's Applies on either side
+  (a weapon's "On Hit: applies Burn to the enemy", a boss's status attack).
+- **None ship**: the combat content pack authors Poison (as `effect_poison`,
+  the id Venomous names) and Burn. An older save's statuses (the old status
+  engine's, which outlasted their fights) are dropped on load.
+
+### Boss moves — Built, no content yet
+Any enemy can carry rules on the three **fight moments** (§7): **On Swing**
+(every Nth swing, before it is rolled), **On Hit** (every Nth landed hit,
+after its damage) and **On Health Below X %** (once a fight). The first moves
+are ordinary rules on them:
+- a **heavy strike**: "On Every 4th Swing: applies Heavy Strike to the enemy
+  for the swing" (Heavy Strike: +100 % Damage, so that swing hits double);
+- a **status attack**: "On Every 3rd Hit: applies Burn to the hero";
+- a **heal or +2 armour**: "On Health Below 50%: heals 10 health on itself",
+  "…: applies Stone Skin to the enemy for the fight" (+2 Armor; no Shield
+  status);
+- an **enrage**: "On Health Below 30%: applies Enrage to the enemy for the
+  fight" (−50 % Swing Time, or more Damage).
+
+On a monster's own rule "the enemy" is that monster and "the hero" the hero it
+fights; "itself" is the monster. Enemies read flat and percentage Damage and
+Swing Time from the effects on them, as heroes do. A fight moment spends no
+charge and has no cooldown; a move says its effect's name over the enemy.
+The QA panel's Statuses and boss moves section sets up a Venomous goblin, a
+burning imp and a four-move warlord, with a live readout of the statuses.
+*(`board/FightMoments.js`, `combat/FightHooks.js`)*
 
 ---
 
@@ -501,18 +551,25 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
 - **16 verbs**: provides, grants, acts_as, requires, restocks, converts,
   cannot, applies, deals, heals, restores, removes, spawns, transforms,
   station, promotes.
-- **12 moments** (On Cycle, On Neighbour's Cycle, On Depleted, On Neighbour's
-  Kill, On Engaged, On Tick, On Bank Holds…), **4 roles** (itself, the hero,
-  that Token, the enemy), **5 filters**, **4 reaches**.
+- **15 moments** (On Cycle, On Neighbour's Cycle, On Depleted, On Neighbour's
+  Kill, On Engaged, On Tick, On Bank Holds…, and the three fight moments: On
+  Swing and On Hit, each "every Nth", and On Health Below X % once a fight),
+  **4 roles** (itself, the hero, that Token, the enemy), **5 filters**,
+  **4 reaches**. On Tick fires every 3 s. A fight moment runs only Applies,
+  Deals, Heals and Removes (the editor offers it to no other verb), spends no
+  charge and has no cooldown.
 - **Modifiers** that neighbours (or a hero's items) provide: yield, work
   time, input cost, XP bonus, double loot, **double item chance** (a chance
   that one named item, when a cycle or a kill drops it, comes out doubled: the
   Cleaver's Raw Beef), fail chance (Tokens); armour, resist, accuracy,
   damage, **dodge, pierce, crit chance**, status immunity and **status stack
-  limit** (one status stacks at most N lower or higher: the Hide Vest's
-  Poison −1; at 0 it cannot land) (heroes). Combat rows are flat amounts, and
-  a new rule on one starts flat. Block is gone (a miss is the only failed
-  hit).
+  limit** (one status effect stacks at most N lower or higher: the Hide
+  Vest's Poison −1; at 0 it cannot land), **swing time** and **food healing**
+  (percentages, on a lingering effect: an enrage, Burn) (heroes, and enemies
+  through effects on them). Most combat rows are flat amounts, and a new rule
+  on one starts flat. Block is gone (a miss is the only failed hit).
+- **Statuses** are library effects with a status block (§6): stacks, ticks,
+  and an end with their fight.
 - **Gear families**: a weapon or armour family's ability is one library
   effect every tier references with its own scale (1–5), so the tier raises
   the number.
@@ -527,7 +584,9 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   or when the hero leaves), which is how an elixir works: "When a fight starts,
   applies Valor to the hero for the fight", Valor being an effect that
   provides +1 Damage. An elixir's rules fire from its 10-fight dose, not per
-  firing from the Bank.
+  firing from the Bank. **For the swing** lasts until the swing being made is
+  over (a boss's heavy strike); a status ignores all three lifetimes, having
+  its own. Applies may aim at **the hero** as well as the enemy.
 - Authored only in the CMS (the Rules Line editor). Editing a library effect
   changes every Token that carries it.
 

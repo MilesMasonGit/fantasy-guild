@@ -545,5 +545,70 @@ balances with the level or a typed number.
 - **A weapon of another style still in a hero's hands** (from before a
   re-training, or an older save) is not swung, and its family's ability is
   off; it is not taken off automatically.
-- **Venomous uses the old status engine's Poison** today (2 per stack every
-  5 s, up to 99 stacks, outlasting the fight) until C4 builds the real one.
+- **Venomous used the old status engine's Poison** until C4 built the real
+  one (see "Statuses and boss moves" below).
+
+## Statuses and boss moves (built in C4, 2026-10-24; for the content author)
+
+*What the CMS writes and the game reads. Nothing in `data/` uses them yet.*
+
+**A status is a library effect with a Status section** (Effect editor):
+"stacks up to" (1 = does not stack, landing again renews it) and "lasts
+(ticks)" (0 = the whole fight). Its rules count once per stack; every status
+ends with its fight and lands only on a fighter. A tick is 3 s. The two to
+author, with the owner's numbers:
+
+| Effect (name → id) | Status | Rules |
+|---|---|---|
+| Poison → `effect_poison` (**keep this id**: the Venomous kind names it) | stacks up to 3, lasts 0 (the fight) | On Tick: deals 1 damage to itself, ignoring armour. |
+| Burn → `effect_burn` | stacks up to 1, lasts 3 ticks | On Tick: deals 1 damage to itself, ignoring armour. Provides −50 % Food Healing. |
+
+**Fight moments** (the moment picker, offered with Applies, Deals, Heals and
+Removes only; no charge, no cooldown):
+
+| Moment | Its number | Fires | Example |
+|---|---|---|---|
+| On Swing | every Nth (1 = every swing) | as the carrier swings, before the roll | On Every 4th Swing: applies Heavy Strike to the enemy for the swing. |
+| On Hit | every Nth (1 = every hit) | after a landed hit that leaves the other side standing | On Every 3rd Hit: applies Burn to the hero. |
+| On Health Below | a share, 1–99 % (default 50) | once a fight, the first time the carrier's health is below it | On Health Below 50%: heals 10 health on itself. |
+
+On an enemy's own rules "itself" and "the enemy" are the monster and "the
+hero" the hero it fights; on a hero's item "itself" and "the hero" are the
+hero and "the enemy" the monster. **Applies** gains "for the swing" (until the
+swing being made is over) and "the hero" as a target. **New rows**: Swing Time
+(a percentage: −50 % swings twice as often) and Food Healing (a percentage of
+what a meal heals in a fight), both on lingering effects.
+
+**The four boss moves** as library effects (Heavy Strike: Provides +100 %
+Damage; Stone Skin: Provides 2 Armor; Enrage: Provides −50 % Swing Time),
+carried by the boss's own rules:
+
+- On Every 4th Swing: applies Heavy Strike to the enemy for the swing.
+- On Every 3rd Hit: applies Burn to the hero.
+- On Health Below 50%: heals 10 health on itself. / On Health Below 50%:
+  applies Stone Skin to the enemy for the fight.
+- On Health Below 30%: applies Enrage to the enemy for the fight.
+
+**Choices made in C4 the rulings did not spell out** (each small to change):
+
+- **Burn lasts 3 ticks** (9 s): 3 damage and halved meals; landing again
+  renews it, so a burn on every hit keeps it lit.
+- **Statuses are library effects the CMS authors**, not a fixed code list:
+  later statuses (Bleed…) need no code. Venomous names Poison by its id.
+- **A status lands only on someone in a fight**; on a gatherer it does
+  nothing (it would never end).
+- **Venomous poisons on a hit that leaves the hero standing**, one stack a
+  hit, through the same On Hit moment a boss uses.
+- **"Every Nth swing" counts swings**, misses included, per fight (a fresh
+  enemy starts at 1); a heavy strike that misses is spent. **On Hit** counts
+  landed hits and was added beside it, since a status attack and Venomous land
+  on a hit.
+- **On Health Below fires once a fight**, the first time the health is below
+  the share, and every rule on it sees the health that set it off (a heal
+  listed first cannot cancel the armour after it).
+- **One Rules tick (3 s) for everything that lingers**, not only statuses;
+  nothing authored ticked on the old 5 s clock.
+- **Food Healing applies to meals in a fight** (Burn exists only there).
+- **Enemies read Damage (flat and %) and Swing Time from effects on them**,
+  so a boss's own buffs work; gear's flat-only contributions do not carry
+  Swing Time.
