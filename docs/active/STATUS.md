@@ -12,7 +12,7 @@ build green) · bench-queued · eye-check · merged.*
 | D1: calmer sky: no toasts or stubs over the screen, smooth drift, stars grey/blue/gold (T-231 to T-233) | builder | `backlog/hall-sky` (`dg`) | building | Fri | |
 | D2: Hall Effects popover from the central star, Inspect panel in pixel style, the camera glide back (T-234, T-194); after D1 | engineer (glide), builder (panels) | — | queued | | |
 
-## Backlog director, batch C: Bank, items and the hero bar (brief 210; owner said go 2026-10-23)
+## Backlog director, batch C: Bank, items and the hero bar (brief 210; owner said go 2026-10-23) — **done, merged 957cb9ba**
 
 Owner rulings 2026-10-23: a full Bank **refuses** an unequip (or dismissal) with a message, nothing lost or over the limit; old saves' shared copies go to heroes in roster order, slots the Bank can't cover emptied, one notice.
 
@@ -20,7 +20,7 @@ Owner rulings 2026-10-23: a full Bank **refuses** an unequip (or dismissal) with
 |---|---|---|---|---|---|
 | C1: item tiles that say what they are: Bank inspect pane out, search in the header, full tooltip, category tints, slot icons (T-223 to T-225) | builder | `backlog/item-tiles` | **merged** 515d7154 (main 4440f8cc): inspect pane out, header search, full tooltip, tints by `type` (owner ok; UI_STYLE rule added), slot marks as placeholders (art list) | Fri | Fri |
 | C3: one item, one hero: equipping moves the copy out of the Bank (T-230); tests first; WORK CHANGED possible | engineer | `backlog/one-item-one-hero` | **merged** d66c1ee8: copies move out of the Bank on equip; refusals; hand-over between heroes; old saves settled at load before the catch-up; QA panel Gear section (Fill the Bank; old-save test, use a test slot). Combined gate with C1 on a quiet machine: 5808 tests, cycles, build, **same work, no timing regression**. No dismissal exists yet: whoever builds it must return held copies or refuse on a full Bank | Fri | Fri |
-| C2: hero bar portrait + name, shine on equip, Work Permissions button and drawer (T-226 to T-228); after C1 | builder | `backlog/hero-bar` (`ch`) | round 1 (4baf950b) gated (5816 tests, cycles, build, same work) but **built on the wrong bar**: the owner meant the vertical hero tabs beside the open Bank. Ruling 2026-10-23: undo the horizontal bar change, apply portrait + name to the Bank's hero tabs, keep the equip shine and the Work Permissions button and drawer. Builder redoing | Fri | |
+| C2: hero bar portrait + name, shine on equip, Work Permissions button and drawer (T-226 to T-228); after C1 | builder | `backlog/hero-bar` | **merged** 957cb9ba after a redo: round 1 changed the wrong bar (horizontal); the owner meant the Bank's vertical hero tabs. Round 2: horizontal bar byte-identical to before, Bank tabs show portrait + name, Work Permissions rows share the portraits, shine and Work Permissions kept. Gate 5820 tests, cycles, build, same work, no timing regression; merged result 5822 tests, build. Record: `docs/archive/eyecheck/2026-10-23_backlog-BC.md` | Fri | Fri |
 | C4: "New!" on an item stub clears on hover or pin (T-229); no eye-check | builder-lite | `backlog/new-badge` | **merged** eb6c459b on the gate (no eye-check): `ItemStubs.clearNew` on hover, `pin` clears it too; 5810 tests, cycles, build, same work | Fri | Fri |
 
 ## Backlog director, batch B: clean-ups on the mat (brief 210; owner said go 2026-10-23) — **done, merged b0528da0**

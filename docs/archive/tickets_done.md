@@ -162,3 +162,6 @@ T-224 — Item tiles tinted by the item's type, lighter on hover; rule in UI_STY
 T-225 — Slot-kind marks in each filled loadout slot (code placeholders; seven art lines on owner_art_list) — 515d7154 — 2026-10-23
 T-230 — One item, one hero: equipping gear moves the copy out of the Bank, full-Bank and in-use refusals, hero-to-hero hand-over, old saves settled in roster order with one banner (owner rulings 2026-10-22/23; no 'in use' count, owner) — d66c1ee8 — 2026-10-23
 T-229 — New! on an item stub clears on hover or pin and stays gone until a new first find — eb6c459b — 2026-10-23
+T-226 — Equipping plays the pixel shine on the slot; bounce and glow removed — 957cb9ba — 2026-10-23
+T-227 — The Bank's vertical hero tabs show portrait (cut from each class sheet, facing left) and name; the horizontal bar unchanged (owner: the vertical bar was meant) — 957cb9ba — 2026-10-23
+T-228 — Work Permissions as a chamfered button under the mat, drawer rising from below, Combat first — 957cb9ba — 2026-10-23
