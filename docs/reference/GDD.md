@@ -469,13 +469,13 @@ duels: `concept_combat.md`, "The level table and weapon tiers").
 - **A guardian** is simply a tough enemy whose camp stands by a rich node. It
   blocks nothing; if its type is hostile it attacks whoever works nearby (the
   flag watch around its camp, as any hostile enemy).
-- **A Summoning Circle** is an ordinary Token whose work cycle uses up a
-  summon item (its input) and makes its boss beside it (a Token output). Its
-  work names a Starting skill, so any hero may work it (it becomes the
-  Summoning skill's station when the specialist skills are designed). Without
-  the item it waits ("needs" the item, the usual yellow mark); with several
-  in the Bank it calls one per cycle while a hero works it. A boss it called
-  is gone once beaten.
+- **A Summoning Circle** is an ordinary station whose recipe uses up a
+  summon item (its input) and makes its boss beside it (a Token output). It
+  works as a Starting skill, so any hero may work it (it becomes the
+  Summoning skill's station when the specialist skills are designed). Its
+  recipe is picked once, as any station's. Without the item it waits ("needs"
+  the item, the usual yellow mark); with several in the Bank it calls one per
+  cycle while a hero works it. A boss it called is gone once beaten.
 - **Node ambushes**: a Token's `Spawns` rule that puts an enemy beside it is an
   ambush (a chance on a finished cycle, about **2 %**, is the usual shape; set
   per Token in the Rules line). The enemy attacks the hero the moment names (the

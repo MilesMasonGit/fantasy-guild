@@ -572,11 +572,15 @@ question for the owner below).
 **A guardian** is a tough enemy (tick Hostile if it should attack) whose camp of one stands by a
 rich node. It blocks nothing.
 
-**A Summoning Circle** is an ordinary Token with a work cycle: `config: { skill: <a Starting
-skill>, skillRequired: 1, cycleTimeMs, xp: 0, inputs: [{ itemId: <summon item>, quantity: 1 }],
-outputs: [{ tokenId: <the boss>, chance: 100, minQty: 1, maxQty: 1 }] }`. Every hero holds every
-Starting skill, so any hero may work it; later it becomes the Summoning skill's. Without the item it
-waits; it calls one boss per cycle while items last. The summon item is any item.
+**A Summoning Circle** is an ordinary station: a Token that **Works as** a Starting skill (CMS:
+its Station rule) plus a **recipe** in that skill's pool (CMS: Recipes) whose input is the summon
+item and whose output is the boss Token (`outputs: [{ tokenId: <the boss> }]`, the shape a
+Foundation's build already uses). Every hero holds every Starting skill, so any hero may work it;
+later it becomes the Summoning skill's station. The player picks its recipe once, as on any
+station. Without the item it waits; it calls one boss per cycle while items last. The summon item
+is any item. ⚠️ The recipe sits in that skill's whole pool, so every station of that skill offers
+it too (Alchemy ships no recipes today). A Token's own Work Cycle cannot output a Token in the CMS
+(only a recipe can), which is why the circle is a station.
 
 **An ambush** is a `Spawns` rule on the node, on its own finished cycle, with a chance of about
 **2%** ("When this Token finishes a cycle, a 2% chance to spawn Fire Elemental on the nearest free
@@ -590,6 +594,6 @@ the node springs no other while it stands. The Spawns Token list never offers a 
   enemy. Either takes it within a second of it coming free. No random roll is involved.
 - **An ambusher is one fight** (1 use, whatever its type says), and **a node holds one at a time**:
   that bounds enemies alive by the number of worked ambush nodes.
-- **The Summoning Circle's skill** is a Starting skill (the QA fixture uses Alchemy 1), so any hero
-  may work it with no new engine rule.
+- **The Summoning Circle is a station** working as a Starting skill (the QA fixture: Alchemy, level
+  1), so any hero may work it with no new engine rule.
 - **A beaten enemy** is said "Beaten", not "Depleted", by the hero who beat it (all enemies).

@@ -19,6 +19,8 @@ import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { registerTokenTypes, getTokenType } from '../config/registries/tokenRegistry.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
+import { registerRecipePools } from '../config/registries/recipePoolRegistry.js';
+import * as StationRecipe from '../systems/board/StationRecipe.js';
 import { makeStatement, KEYWORD } from '../systems/effects/statements.js';
 import { PLACEMENT } from '../config/registries/placementRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
@@ -92,14 +94,20 @@ registerTokenTypes({
         spawner: { spawns: [{ typeId: 'cu_enc_boss', weight: 1 }], allowance: 1, intervalMs: 30000, upkeep: [] }
     },
     cu_enc_circle: {
-        id: 'cu_enc_circle', name: 'Catch-up Circle', tokenType: 'resource', rarity: 'rare', theme: 'fixture',
+        id: 'cu_enc_circle', name: 'Catch-up Circle', tokenType: 'station', rarity: 'rare', theme: 'fixture',
         uses: null, sprite: 's_occult',
-        config: {
-            skill: 'alchemy', skillRequired: 1, cycleTimeMs: 5000, xp: 0,
-            inputs: [{ itemId: 'cu_enc_horn', quantity: 1 }],
-            outputs: [{ tokenId: 'cu_enc_boss', chance: 100, minQty: 1, maxQty: 1 }]
-        }
+        config: { skill: 'alchemy', skillRequired: 1, cycleTimeMs: 5000, xp: 0, inputs: [], outputs: [] },
+        statements: [{ id: 'stm_cu_enc_circle_station', keyword: 'station', payload: { skill: 'alchemy' } }]
     }
+});
+
+registerRecipePools({
+    alchemy: [{
+        id: 'recipe_cu_enc_summon', name: 'Catch-up Summon', levelRequirement: 1, requiresContext: [],
+        inputs: [{ itemId: 'cu_enc_horn', quantity: 1 }],
+        outputs: [{ tokenId: 'cu_enc_boss', chance: 100, minQty: 1, maxQty: 1 }],
+        durationMs: 5000, xp: 0
+    }]
 });
 
 /** A seeded `Math.random` (mulberry32) that counts its draws, as the bench's prelude does. */
@@ -133,6 +141,7 @@ function buildBoard() {
     const den = fixtures.placeAt('cu_enc_den', 1000, 800);
     const circle = fixtures.placeAt('cu_enc_circle', 300, 800);
     InventoryManager.addItem('cu_enc_horn', 2);
+    StationRecipe.setSelectedRecipe(circle, 'recipe_cu_enc_summon');
     // The camps' first members stand at once (they would arrive after an interval); the flags go down after.
     SpawnerSystem.attemptSpawn(camp, getTokenType(camp.typeId));
     SpawnerSystem.attemptSpawn(den, getTokenType(den.typeId));

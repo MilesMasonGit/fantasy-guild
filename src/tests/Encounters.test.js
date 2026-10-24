@@ -21,6 +21,8 @@ import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { registerTokenTypes, getTokenType } from '../config/registries/tokenRegistry.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
+import { registerRecipePools } from '../config/registries/recipePoolRegistry.js';
+import * as StationRecipe from '../systems/board/StationRecipe.js';
 import { isHostileEnemy, isBossEnemy } from '../config/registries/enemyProfile.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
@@ -87,17 +89,14 @@ registerTokenTypes({
         spawner: { spawns: [{ typeId: 'enc_guardian', weight: 1 }], allowance: 1, intervalMs: 30000, upkeep: [] }
     },
     /**
-     * A Summoning Circle: its work uses up a Summoning Horn and puts the boss beside it. Alchemy is
-     * a Starting skill, which every hero holds, so any hero may work it.
+     * A Summoning Circle: a station working as Alchemy, a Starting skill every hero holds, so any
+     * hero may work it. Its recipe uses up a Summoning Horn and puts the boss beside it.
      */
     enc_circle: {
-        id: 'enc_circle', name: 'Encounter Circle', tokenType: 'resource', rarity: 'rare', theme: 'fixture',
+        id: 'enc_circle', name: 'Encounter Circle', tokenType: 'station', rarity: 'rare', theme: 'fixture',
         uses: null, sprite: 's_occult',
-        config: {
-            skill: 'alchemy', skillRequired: 1, cycleTimeMs: 3000, xp: 0,
-            inputs: [{ itemId: 'enc_summon_horn', quantity: 1 }],
-            outputs: [{ tokenId: 'enc_boss', chance: 100, minQty: 1, maxQty: 1 }]
-        }
+        config: { skill: 'alchemy', skillRequired: 1, cycleTimeMs: 3000, xp: 0, inputs: [], outputs: [] },
+        statements: [{ id: 'stm_enc_circle_station', keyword: 'station', payload: { skill: 'alchemy' } }]
     },
     /** A plain node, nothing guarding it. */
     enc_node: {
@@ -105,6 +104,15 @@ registerTokenTypes({
         uses: null, sprite: 's_nature',
         config: { skill: 'forestry', skillRequired: 1, cycleTimeMs: 1000, xp: 1, inputs: [], outputs: [{ itemId: 'fixture_oak_wood', quantity: 1, chance: 100 }] }
     }
+});
+
+registerRecipePools({
+    alchemy: [{
+        id: 'recipe_enc_summon', name: 'Summon the Boss', levelRequirement: 1, requiresContext: [],
+        inputs: [{ itemId: 'enc_summon_horn', quantity: 1 }],
+        outputs: [{ tokenId: 'enc_boss', chance: 100, minQty: 1, maxQty: 1 }],
+        durationMs: 3000, xp: 0
+    }]
 });
 
 let nodeCount = 0;
@@ -370,6 +378,8 @@ describe('⭐ bosses: never first to attack, whole for every hero, called by a S
         GameState.state.heroes = [recruit, fighter('h2')];
         InventoryManager.addItem('enc_summon_horn', 1);
         const circle = placeAt('enc_circle', A.x, A.y);
+        // A station waits for its recipe to be picked; then anyone works it.
+        expect(StationRecipe.setSelectedRecipe(circle, 'recipe_enc_summon')).toBe(true);
         Flags.plant('r1', circle, { pin: true });
         expect(BoardState.workTokenOf('r1')).toBe(circle.id);
         run(3100);

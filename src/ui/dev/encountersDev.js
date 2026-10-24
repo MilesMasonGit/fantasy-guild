@@ -12,6 +12,8 @@ import { GuildUpgradeManager } from '../../systems/progression/GuildUpgradeManag
 import { generateHero } from '../../systems/hero/HeroGenerator.js';
 import { getTokenType, registerTokenTypes, tokenStartingUses } from '../../config/registries/tokenRegistry.js';
 import { registerItems } from '../../config/registries/itemRegistry.js';
+import { registerRecipePools } from '../../config/registries/recipePoolRegistry.js';
+import * as StationRecipe from '../../systems/board/StationRecipe.js';
 import { PLACEMENT } from '../../config/registries/placementRegistry.js';
 import { makeStatement, KEYWORD } from '../../systems/effects/statements.js';
 import { heroMaxHpFromSkills } from '../../utils/CombatFormulas.js';
@@ -35,6 +37,7 @@ export const QA_ENCOUNTER_TYPES = Object.freeze({
     circle: 'qa_enc_summoning_circle'
 });
 export const QA_SUMMON_ITEM = 'qa_enc_summon_horn';
+export const QA_SUMMON_RECIPE = 'recipe_qa_enc_summon_chief';
 
 const drops = (itemId) => [{ itemId, chance: 100, minQty: 1, maxQty: 2 }];
 const enemyConfig = (itemId) => ({ skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0, inputs: [], outputs: drops(itemId) });
@@ -89,17 +92,23 @@ function registerQaEncounters() {
             id: T.called, name: 'Horn-called Chief', tokenType: 'enemy', rarity: 'rare', theme: 'qa', uses: 1,
             sprite: 'e_goblin_chief', enemy: { level: 4, style: 'melee', boss: true }, config: enemyConfig('item_bones')
         },
-        // A Summoning Circle: its work uses up a Summoning Horn and calls the Chief beside it. Alchemy
-        // is a Starting skill, so any hero may work it.
+        // A Summoning Circle: a station that works as Alchemy (a Starting skill, so any hero may work
+        // it) whose recipe uses up a Summoning Horn and calls the Chief beside it.
         [T.circle]: {
-            id: T.circle, name: 'Summoning Circle', tokenType: 'resource', rarity: 'rare', theme: 'qa', uses: null,
+            id: T.circle, name: 'Summoning Circle', tokenType: 'station', rarity: 'rare', theme: 'qa', uses: null,
             sprite: 't_shrine_forest',
-            config: {
-                skill: 'alchemy', skillRequired: 1, cycleTimeMs: 8000, xp: 0,
-                inputs: [{ itemId: QA_SUMMON_ITEM, quantity: 1 }],
-                outputs: [{ tokenId: T.called, chance: 100, minQty: 1, maxQty: 1 }]
-            }
+            config: { skill: 'alchemy', skillRequired: 1, cycleTimeMs: 8000, xp: 0, inputs: [], outputs: [] },
+            statements: [{ id: 'stm_qa_enc_circle_station', keyword: 'station', payload: { skill: 'alchemy' } }]
         }
+    });
+    // ⚠️ A fixture pool takes over its skill (`registerRecipePools`): Alchemy ships no recipes today.
+    registerRecipePools({
+        alchemy: [{
+            id: QA_SUMMON_RECIPE, name: 'Summon the Horn-called Chief', levelRequirement: 1, requiresContext: [],
+            inputs: [{ itemId: QA_SUMMON_ITEM, quantity: 1 }],
+            outputs: [{ tokenId: T.called, chance: 100, minQty: 1, maxQty: 1 }],
+            durationMs: 8000, xp: 0
+        }]
     });
 }
 
@@ -151,6 +160,8 @@ export function setUpEncountersScene() {
         return { ok: false, error: 'No room beside the Hollow or the Den' };
     }
     const boss = BoardState.tokens().find(t => t.typeId === T.boss);
+    // The circle's one recipe, chosen (a station waits for the player to pick one).
+    StationRecipe.setSelectedRecipe(circle, QA_SUMMON_RECIPE);
 
     const ranks = GuildUpgradeManager.getRanks();
     ranks.roster_size = Math.max(ranks.roster_size || 0, (HeroManager.getAllHeroes() || []).length + 6);
