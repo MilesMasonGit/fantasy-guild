@@ -18,7 +18,7 @@ import {
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { MatFitProvider } from '../ui/components/board/MatFitContext.jsx';
 import {
-    NOTIFICATION_COLUMN, EFFECTS_COLUMN, columnWidthAt, columnWidthCss
+    NOTIFICATION_COLUMN, columnWidthAt, columnWidthCss
 } from '../ui/components/board/boardConstants.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 import { drawnPoint } from './fixtures/drawnPoint.js';
@@ -244,14 +244,12 @@ describe('⭐ the drawn Token, on the mat (FP-99)', () => {
 describe('⭐ the flanking columns give way before the mat does (FP-100)', () => {
     it('keeps its full width on a wide window', () => {
         expect(columnWidthAt(2560, NOTIFICATION_COLUMN)).toBe(NOTIFICATION_COLUMN.max);
-        expect(columnWidthAt(2560, EFFECTS_COLUMN)).toBe(EFFECTS_COLUMN.max);
     });
 
     it('⭐ gives the mat real width back at 1280, where the problem actually shows', () => {
-        // Was a fixed 356 + 320 = 676 px of column at this width.
-        const given = columnWidthAt(1280, NOTIFICATION_COLUMN) + columnWidthAt(1280, EFFECTS_COLUMN);
-        expect(given).toBeLessThan(676);
-        expect(676 - given).toBeGreaterThanOrEqual(100);
+        // Was a fixed 356 px column at this width.
+        const given = columnWidthAt(1280, NOTIFICATION_COLUMN);
+        expect(356 - given).toBeGreaterThanOrEqual(100);
     });
 
     it('shrinks as the window does, and never below what its contents need', () => {
@@ -263,15 +261,10 @@ describe('⭐ the flanking columns give way before the mat does (FP-100)', () =>
             // Toast's own min-width (220) plus the column's 32px inside gutter.
             expect(w).toBeGreaterThanOrEqual(252);
         }
-        for (const vw of [2560, 1280, 600, 320]) {
-            // The 128px Vault chest, its padding, the border and the gutter.
-            expect(columnWidthAt(vw, EFFECTS_COLUMN)).toBeGreaterThanOrEqual(184);
-        }
     });
 
     it('the CSS the column is actually given is built from the same spec', () => {
         expect(columnWidthCss(NOTIFICATION_COLUMN)).toBe('clamp(256px, 20vw, 356px)');
-        expect(columnWidthCss(EFFECTS_COLUMN)).toBe('clamp(244px, 19vw, 340px)');
     });
 
     /**
@@ -283,7 +276,7 @@ describe('⭐ the flanking columns give way before the mat does (FP-100)', () =>
         const CHROME = 150 + 64;   // the nav, and the mat cell's own p-8
         let previous = 0;
         for (const vw of [800, 1024, 1280, 1440, 1920, 2560]) {
-            const columns = columnWidthAt(vw, NOTIFICATION_COLUMN) + columnWidthAt(vw, EFFECTS_COLUMN) + 80;
+            const columns = columnWidthAt(vw, NOTIFICATION_COLUMN) + 80;
             const matCell = Math.max(1, vw - columns - CHROME);
             const scale = fitScale(matCell, 900, matW(), matH());
 

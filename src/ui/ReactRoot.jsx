@@ -1,6 +1,5 @@
 import React, { useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { ArrowLeft } from 'lucide-react';
 import { cn } from './utils/cn.js';
 import { SettingsManager } from '../systems/core/SettingsManager.js';
 import { EngineBootstrap } from '../systems/core/EngineBootstrap.js';
@@ -27,10 +26,9 @@ import BottomHeroDock, { showsBottomHeroDock } from './components/dock/BottomHer
 import BankHeroPanel from './components/dock/BankHeroPanel.jsx';
 import WorkRulesDrawer from './components/dock/WorkRulesDrawer.jsx';
 import GuildHallBoard from './components/board/GuildHallBoard.jsx';
-import GuildHallEffectsPanel from './components/board/GuildHallEffectsPanel.jsx';
 import HallSky from './components/board/HallSky.jsx';
-import { InspectionPanel } from './components/drawer/InspectionPanel.jsx';
-import { SIDE_COLUMN_PX, NOTIFICATION_COLUMN, columnWidthCss } from './components/board/boardConstants.js';
+import { GuildHallDetails } from './components/board/GuildHallDetails.jsx';
+import { NOTIFICATION_COLUMN, columnWidthCss } from './components/board/boardConstants.js';
 import { getUpgradeDef } from '../config/guildUpgrades.js';
 import { selectGuildInspectSelection } from './guildInspectSelection.js';
 import { TokenInspectPopup } from './components/board/TokenInspectPopup.jsx';
@@ -224,12 +222,6 @@ export const ReactRoot = () => {
                     {/* `min-w-0`: the column takes the room it is given, not its widest content's. */}
                     <div className="flex-1 min-w-0 relative flex flex-col overflow-hidden z-10">
                         <div className="flex-1 flex min-h-0 relative">
-                        {/**
-                         * The Guild Hall Effects list: always LEFT of the upgrade web,
-                         * whichever side the nav is on. With the nav flipped right it sits
-                         * between the inspection column and the web.
-                         */}
-                        {isGuildView && <GuildHallEffectsPanel />}
                         <div
                             data-dnd-surface="board"
                             data-dnd-region="board"
@@ -326,7 +318,7 @@ export const ReactRoot = () => {
                     </div>
                     {/**
                      * The Hall's details panel: always RIGHT of the upgrade web, whichever
-                     * side the nav is on, as the Effects list is always left of it.
+                     * side the nav is on.
                      */}
                     {isGuildView && (
                         <aside
@@ -334,28 +326,11 @@ export const ReactRoot = () => {
                             style={{ width: columnWidthCss(NOTIFICATION_COLUMN) }}
                             className="shrink-0 h-full flex flex-col items-center justify-center py-8 bg-transparent pointer-events-auto relative select-none pl-8 pr-0 z-10"
                         >
-                            <div
-                                className="w-full relative shrink-0 flex flex-col gap-2.5"
-                                style={{ height: SIDE_COLUMN_PX, maxHeight: '100%' }}
-                            >
-                                <button
-                                    onClick={() => {
-                                        EventBus.publish(ENGINE_EVENTS.AUDIO_PLAY, { clip: 'button_click' });
-                                        handleCloseGuildHall();
-                                    }}
-                                    className="w-full shrink-0 py-2.5 px-4 rounded-xl border-2 border-[#5c3e2e] hover:border-gi-gold/70 bg-[#2a1d15]/95 hover:bg-[#3d2a1f] text-amber-200 hover:text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition-all duration-150 cursor-pointer active:scale-[0.98] group"
-                                >
-                                    <ArrowLeft size={16} className="text-gi-gold group-hover:-translate-x-1 transition-transform" />
-                                    <span>Return to Playmat</span>
-                                </button>
-                                <div className="w-full flex-1 min-h-0 relative flex flex-col rounded-2xl border-4 border-[#3a271d] shadow-2xl overflow-hidden">
-                                    <InspectionPanel
-                                        className="w-full h-full flex-1"
-                                        selection={guildShownSelection}
-                                        onClear={handleClearGuildInspect}
-                                    />
-                                </div>
-                            </div>
+                            <GuildHallDetails
+                                selection={guildShownSelection}
+                                onClear={handleClearGuildInspect}
+                                onReturn={handleCloseGuildHall}
+                            />
                         </aside>
                     )}
                     {!menuRight && isBankOpen && !isGuildView && (
