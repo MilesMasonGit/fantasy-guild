@@ -341,13 +341,16 @@ describe('the buttons', () => {
         const undo = q('[data-summary-undo]');
         expect(close.textContent).toBe('Return to the Guild');
         expect(undo.textContent).toBe('Load as I left it');
-        const stack = close.parentElement;
-        expect(undo.parentElement).toBe(stack);
+        // Each is the kit's button: a chamfer frame around the <button>.
+        const closeFrame = close.closest('[data-kit-button]');
+        const undoFrame = undo.closest('[data-kit-button]');
+        const stack = closeFrame.parentElement;
+        expect(undoFrame.parentElement).toBe(stack);
         expect(stack.className).toMatch(/\bflex-col\b/);
-        expect([...stack.children]).toEqual([close, undo]);
-        // The primary choice wears the gold; the other does not.
-        expect(close.className).toContain('bg-gi-gold');
-        expect(undo.className).not.toContain('gi-gold');
+        expect([...stack.children]).toEqual([closeFrame, undoFrame]);
+        // The primary choice is the main action (gold words); the other is plain.
+        expect(closeFrame.getAttribute('data-kit-button')).toBe('main');
+        expect(undoFrame.getAttribute('data-kit-button')).toBe('plain');
         expect(document.activeElement).toBe(close);
     });
 

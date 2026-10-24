@@ -81,7 +81,7 @@ export const HeroInspectionSheet = memo(function HeroInspectionSheet({ heroId, o
                         onClick={(e) => { e.stopPropagation(); onEdit?.(heroId); }}
                         data-hero-panel-edit
                         aria-label="Edit hero"
-                        className="w-7 h-7 flex items-center justify-center rounded hover:bg-white/10 text-gi-muted hover:text-gi-gold transition-colors cursor-pointer"
+                        className="w-7 h-7 flex items-center justify-center text-gi-muted hover:text-[var(--color-ui-white)] transition-colors cursor-pointer"
                     >
                         {/* ⚠️ Placeholder quill until the owner draws one. */}
                         <Feather size={16} />
@@ -240,7 +240,7 @@ const SkillRow = ({ row, heroId, kind = 'held', expanded = false, onToggle }) =>
             aria-expanded={held ? expanded : undefined}
             onClick={held ? onToggle : undefined}
             className={cn(
-                'flex flex-col gap-1 px-1 py-0.5 rounded-sm',
+                'flex flex-col gap-1 px-1 py-0.5',
                 held && 'cursor-pointer hover:bg-white/5',
                 held && row.tier && TIER_BG[row.tier],
                 kind === 'banked' && 'opacity-60 grayscale',
@@ -257,7 +257,7 @@ const SkillRow = ({ row, heroId, kind = 'held', expanded = false, onToggle }) =>
                         )}
                     </div>
                     {held && (
-                        <div className="h-[3px] w-full bg-black/60 rounded-full overflow-hidden">
+                        <div className="h-[3px] w-full bg-black/60 overflow-hidden">
                             <div className="h-full bg-gi-primary" style={{ width: `${Math.round(xp.fill * 100)}%` }} />
                         </div>
                     )}

@@ -7,6 +7,7 @@ import * as CatchUp from '../../../systems/core/CatchUp.js';
 import { cn } from '../../utils/cn.js';
 import { EntityRibbon } from '../base/EntityRibbon.jsx';
 import { PixelFrame, FRAME_KIND } from '../base/PixelFrame.jsx';
+import { KitButton, KIT_BUTTON_TONE } from '../base/KitButton.jsx';
 import SkillIcon from '../base/SkillIcon.jsx';
 import { summaryView, catchUpTitle } from './catchUpSummary.js';
 
@@ -92,7 +93,7 @@ function LoadingBar({ run }) {
     return (
         <PixelFrame kind={FRAME_KIND.CHAMFER} data-catch-up-bar role="status" className="w-80 max-w-full" frameClassName="px-3 py-2 flex flex-col gap-2 text-white">
             <div data-catch-up-title className="ui-text-title font-bold text-gi-gold">{catchUpTitle(run.awayMs)}</div>
-            <div className="relative h-2.5 overflow-hidden rounded-full bg-white/10">
+            <div className="relative h-2.5 overflow-hidden bg-white/10">
                 <div
                     data-catch-up-fill
                     className="catch-up-fill absolute inset-0 bg-gi-gold"
@@ -169,8 +170,8 @@ function CountBars({ rows, idKey, idAttr, kind, sign, enter }) {
     });
 }
 
-const BUTTON = 'w-full px-2 py-1.5 rounded border ui-text-title font-bold transition-colors';
-const SECONDARY = `${BUTTON} border-white/20 bg-white/5 hover:bg-white/10 text-white/80`;
+/** The summary's buttons: the kit's, full width. */
+const BUTTON = { className: 'w-full', buttonClassName: 'py-1 ui-text-title' };
 
 function Summary({ result, asking, onClose, onAsk, onCancel, onUndo }) {
     const view = summaryView(result);
@@ -265,39 +266,28 @@ function Summary({ result, asking, onClose, onAsk, onCancel, onUndo }) {
                 {asking ? (
                     <div data-summary-confirm role="alertdialog" aria-label="Load as I left it?" className="flex flex-col gap-1.5">
                         <div className="text-white/80">Load the game as you left it? Everything from your time away is lost.</div>
-                        <button
-                            type="button"
-                            data-summary-confirm-yes
-                            onClick={onUndo}
-                            className={`${BUTTON} border-gi-danger/60 bg-gi-danger/20 hover:bg-gi-danger/35 text-white`}
-                        >
+                        <KitButton tone={KIT_BUTTON_TONE.DANGER} data-summary-confirm-yes onClick={onUndo} {...BUTTON}>
                             Confirm
-                        </button>
-                        <button type="button" data-summary-confirm-no onClick={onCancel} autoFocus className={SECONDARY}>
+                        </KitButton>
+                        <KitButton tone={KIT_BUTTON_TONE.PLAIN} data-summary-confirm-no onClick={onCancel} autoFocus {...BUTTON}>
                             Cancel
-                        </button>
+                        </KitButton>
                     </div>
                 ) : (
                     <div className="flex flex-col gap-1.5">
-                        <button
-                            type="button"
-                            data-summary-close
-                            onClick={onClose}
-                            autoFocus
-                            className={`${BUTTON} border-gi-gold/60 bg-gi-gold/15 hover:bg-gi-gold/25 text-white`}
-                        >
+                        <KitButton data-summary-close onClick={onClose} autoFocus {...BUTTON}>
                             Return to the Guild
-                        </button>
+                        </KitButton>
                         {undoable && (
-                            <button
-                                type="button"
+                            <KitButton
+                                tone={KIT_BUTTON_TONE.PLAIN}
                                 data-summary-undo
                                 onClick={onAsk}
                                 title="Throw away the time away and load the game exactly as you left it"
-                                className={SECONDARY}
+                                {...BUTTON}
                             >
                                 Load as I left it
-                            </button>
+                            </KitButton>
                         )}
                     </div>
                 )}

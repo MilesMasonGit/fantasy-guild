@@ -122,7 +122,7 @@ export const JobChangeModal = ({ heroId, isOpen, onClose }) => {
                                  */}
                                 <div
                                     data-promotion-hint
-                                    className="mt-auto flex items-start gap-1.5 px-2 py-2 rounded border border-gi-border/40 ui-text-body text-gi-muted"
+                                    className="mt-auto flex items-start gap-1.5 pt-2 border-t border-white/10 ui-text-body text-gi-muted"
                                 >
                                     <GraduationCap size={11} className="shrink-0 mt-0.5" />
                                     <span>
@@ -151,12 +151,10 @@ const JobRow = ({ jobId, verdict, isCurrent, isSelected, onSelect }) => {
             onClick={onSelect}
             title={isCurrent ? 'Current job' : (verdict.detail || `Become a ${job.name}`)}
             className={cn(
-                'flex flex-col gap-0.5 px-2 py-1.5 rounded border text-left transition-colors',
+                'ui-slot-empty flex flex-col gap-0.5 px-2 py-1.5 text-left transition-colors cursor-pointer',
                 isSelected
-                    ? 'border-gi-primary bg-gi-primary/15'
-                    : isCurrent
-                        ? 'border-gi-gold/50 bg-gi-gold/10'
-                        : 'border-gi-border/30 bg-black/20 hover:border-gi-muted',
+                    ? 'border-[var(--color-ui-white)] bg-white/15'
+                    : isCurrent && 'border-[var(--color-ui-gold)] bg-gi-gold/10',
                 locked && !isSelected && 'opacity-60'
             )}
         >

@@ -390,7 +390,7 @@ describe('⭐ the hero bar: a drag redraws only the heroes it is about', () => {
         expect(document.body.classList.contains('gi-dnd-active')).toBe(true);
         expect(Object.values(delta(drawn.dockHero, before.dockHero)).every(n => n === 0)).toBe(true);
         act(() => { fireEvent.pointerMove(document, ptr(650, 950)); });
-        expect(container.querySelector('[data-dock-hero="h2"] [class*="ring-gi-primary"]')).not.toBeNull();
+        expect(container.querySelector('[data-dock-hero="h2"] [data-dock-drop-cue]')).not.toBeNull();
         before = snap();
         act(() => { fireEvent.pointerMove(document, ptr(750, 950)); });
         const d = delta(drawn.dockHero, before.dockHero);
@@ -398,8 +398,8 @@ describe('⭐ the hero bar: a drag redraws only the heroes it is about', () => {
         expect(d.h3).toBeGreaterThan(0);
         expect(d.h1).toBe(0);
         expect(d.h4).toBe(0);
-        expect(container.querySelector('[data-dock-hero="h3"] [class*="ring-gi-primary"]')).not.toBeNull();
-        expect(container.querySelector('[data-dock-hero="h2"] [class*="ring-gi-primary"]')).toBeNull();
+        expect(container.querySelector('[data-dock-hero="h3"] [data-dock-drop-cue]')).not.toBeNull();
+        expect(container.querySelector('[data-dock-hero="h2"] [data-dock-drop-cue]')).toBeNull();
         // The bar's slots (which re-measure their layout for the reorder animation) never redrew.
         expect((drawn.slot.get('slot') || 0) - slotsBefore).toBe(0);
         act(() => { fireEvent.keyDown(document, { key: 'Escape', code: 'Escape' }); });

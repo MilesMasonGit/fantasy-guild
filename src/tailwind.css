@@ -100,6 +100,9 @@
   --color-ui-gold: var(--color-gi-gold);
   --color-ui-white: #ffffff;
   --color-ui-muted: var(--color-gi-muted);
+  /* The pixel frames' one line colour (the drawn pixels of u_frame_chamfer.png and u_frame_studs.png),
+     for the kit's small pieces drawn in CSS: tile edges, toggles, boxes for typing. */
+  --color-ui-frame: #977316;
 
   /* Legacy Colors (Mapped to new GI Typography truth) */
   --color-bg-primary: var(--color-gi-base);
@@ -250,13 +253,33 @@
 /* Glassmorphism Classes */
 @layer components {
 
-  /* An item tile: its type's surface (--item-tint, set by the tile), a little lighter on hover. */
+  /* An item tile: its type's surface (--item-tint, set by the tile), square, with the frames'
+     1-art-pixel line; hover mixes in a little white and the line turns white (UI_STYLE). */
   .ui-item-tile {
     background-color: var(--item-tint, var(--color-item-tint-default));
+    border: 2px solid var(--color-ui-frame);
+    border-radius: 0;
   }
   .ui-item-tile:hover {
     background-color: color-mix(in srgb, var(--item-tint, var(--color-item-tint-default)), white 9%);
+    border-color: var(--color-ui-white);
   }
+
+  /* An empty slot: the tile's square and line, on a dark well, the line dimmed. */
+  .ui-slot-empty {
+    background-color: rgb(0 0 0 / 0.4);
+    border: 2px solid color-mix(in srgb, var(--color-ui-frame), transparent 55%);
+    border-radius: 0;
+  }
+  .ui-slot-empty:hover { border-color: var(--color-ui-white); }
+
+  /* A small control drawn in CSS (a box to type in, a select, a counter): square, the frames'
+     1-art-pixel line, white on hover or focus. */
+  .ui-pixel-edge {
+    border: 2px solid var(--color-ui-frame);
+    border-radius: 0;
+  }
+  .ui-pixel-edge:is(:hover, :focus-within):not(:disabled, [aria-disabled="true"]) { border-color: var(--color-ui-white); }
 
   .gi-shadow-deep {
     box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.7);
@@ -1174,4 +1197,41 @@ body *:not(input):not(textarea):not(code) {
   .gi-constellation-glow {
     animation-duration: 1ms;
   }
+}
+
+/* The kit's boxes for typing and choosing, and its slider. ⚠️ Unlayered, as the input reset in
+   `styles/main.css` is: an unlayered rule beats every layered one, so `.ui-pixel-edge` alone would
+   lose its square corners and line on an <input> or <select>. */
+:is(input, select, textarea).ui-pixel-edge,
+:is(input, select, textarea).ui-pixel-edge:focus {
+  border: 2px solid var(--color-ui-frame);
+  border-radius: 0;
+}
+:is(input, select, textarea).ui-pixel-edge:is(:hover, :focus):not(:disabled) { border-color: var(--color-ui-white); }
+
+input[type="range"].ui-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background-color: var(--color-ui-frame);
+  cursor: pointer;
+}
+input[type="range"].ui-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 20px;
+  border: 2px solid #000;
+  border-radius: 0;
+  background-color: var(--color-ui-white);
+}
+input[type="range"].ui-range::-moz-range-thumb {
+  width: 8px;
+  height: 16px;
+  border: 2px solid #000;
+  border-radius: 0;
+  background-color: var(--color-ui-white);
 }

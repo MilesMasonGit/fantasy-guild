@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { RotateCcw, Check } from 'lucide-react';
 import { SettingsManager } from '../../systems/core/SettingsManager.js';
 import { GIModal } from '../components/base/GIModal.jsx';
+import { KitButton, KIT_BUTTON_TONE } from '../components/base/KitButton.jsx';
 
 export const DEFAULT_FONT_SIZES = [
     { key: '--font-size-xxs', label: 'XXS (Extra Extra Small)', defaultVal: 14 },
@@ -84,7 +85,7 @@ export const TypographyScaleModal = ({ isOpen, onClose }) => {
                         {DEFAULT_FONT_SIZES.map(f => {
                             const currentVal = sizes[f.key] ?? f.defaultVal;
                             return (
-                                <div key={f.key} className="space-y-2 p-3 rounded-lg bg-black/25 border border-white/5 shadow-sm">
+                                <div key={f.key} data-typography-row className="space-y-2 py-1">
                                     <div className="flex justify-between items-baseline text-xs font-bold text-gi-primary">
                                         <span>{f.label}</span>
                                         <span className="text-xs text-gi-gold tabular-nums font-bold">
@@ -97,9 +98,9 @@ export const TypographyScaleModal = ({ isOpen, onClose }) => {
                                         max="64"
                                         value={currentVal}
                                         onChange={(e) => handleSliderChange(f.key, Number(e.target.value))}
-                                        className="w-full accent-gi-gold cursor-pointer h-1.5 bg-gray-700 rounded-lg appearance-none"
+                                        className="ui-range w-full"
                                     />
-                                    <div className="border border-dashed border-white/10 p-2.5 rounded bg-black/40 text-center mt-1">
+                                    <div className="py-1.5 text-center mt-1">
                                         <div
                                             style={{ fontSize: `${currentVal}px` }}
                                             className="uppercase leading-tight tracking-wider truncate"
@@ -114,18 +115,20 @@ export const TypographyScaleModal = ({ isOpen, onClose }) => {
                 </div>
 
                 <div className="pt-3 mt-3 border-t border-gi-border flex items-center justify-between gap-3">
-                    <button
+                    <KitButton
+                        tone={KIT_BUTTON_TONE.PLAIN}
                         onClick={handleReset}
-                        className="flex items-center gap-1.5 px-4 py-2 rounded border border-gi-muted/50 text-xs font-bold text-gi-muted hover:text-white hover:border-white transition-colors uppercase tracking-wider"
+                        buttonClassName="px-3 py-1 text-xs uppercase tracking-wider"
                     >
                         <RotateCcw className="w-3.5 h-3.5" /> Reset Defaults
-                    </button>
-                    <button
+                    </KitButton>
+                    <KitButton
                         onClick={handleSaveAndClose}
-                        className="flex items-center gap-1.5 px-6 py-2 rounded bg-gi-primary text-black text-xs font-bold uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all shadow-md"
+                        className="mr-1 mb-1"
+                        buttonClassName="px-5 py-1 text-xs uppercase tracking-widest"
                     >
                         <Check className="w-4 h-4" /> Save & Close
-                    </button>
+                    </KitButton>
                 </div>
             </div>
         </GIModal>
