@@ -15,7 +15,7 @@ function frame(rows, at = { x: 0, y: 0 }) {
 afterEach(() => setPortraitCutter(null));
 
 /**
- * The hero bar's portrait is cut from the idle frame: a 32 px square just above the head's top,
+ * The hero bar's portrait is cut from the idle frame: a 24 px square just above the head's top,
  * centred on the head, inside the frame.
  */
 describe('the portrait crop', () => {
@@ -27,17 +27,17 @@ describe('the portrait crop', () => {
         for (let y = 3; y < 11; y++) draw(30, 35, y);
         for (let y = 11; y < 40; y++) draw(4, 50, y);
         const crop = portraitCrop(frame(rows), 64, 64);
-        expect(crop).toEqual({ x: 17, y: 1, size: PORTRAIT_ART_PX });
+        expect(crop).toEqual({ x: 21, y: 1, size: PORTRAIT_ART_PX });
     });
 
     it('never leaves the frame', () => {
         const rows = ['#'.repeat(4)];
-        expect(portraitCrop(frame(rows), 64, 64)).toEqual({ x: 0, y: 0, size: 32 });
-        expect(portraitCrop(frame(rows, { x: 60, y: 50 }), 64, 64)).toEqual({ x: 32, y: 32, size: 32 });
+        expect(portraitCrop(frame(rows), 64, 64)).toEqual({ x: 0, y: 0, size: 24 });
+        expect(portraitCrop(frame(rows, { x: 60, y: 50 }), 64, 64)).toEqual({ x: 40, y: 40, size: 24 });
     });
 
     it('takes the middle of an empty frame', () => {
-        expect(portraitCrop(() => 0, 64, 64)).toEqual({ x: 16, y: 0, size: 32 });
+        expect(portraitCrop(() => 0, 64, 64)).toEqual({ x: 20, y: 0, size: 24 });
     });
 });
 

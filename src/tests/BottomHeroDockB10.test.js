@@ -98,10 +98,10 @@ describe('B10 horizontal hero dock', () => {
         expect(img('h3').getAttribute('src')).toBe(img('h1').getAttribute('src'));
         // Two fighters, one cut.
         expect(cuts).toEqual(['/assets/heroes/hn_fighter_sheet.png', '/assets/heroes/hn_wizard_sheet.png']);
-        // Whatever the mat's fit: 32 art pixels at 2x, crisp, and the cut already faces left.
-        expect(PORTRAIT_PX).toBe(64);
-        expect(img('h1').style.width).toBe('64px');
-        expect(img('h1').style.height).toBe('64px');
+        // Whatever the mat's fit: 24 art pixels at 2x, crisp, and the cut already faces left.
+        expect(PORTRAIT_PX).toBe(48);
+        expect(img('h1').style.width).toBe('48px');
+        expect(img('h1').style.height).toBe('48px');
         expect(img('h1').style.imageRendering).toBe('pixelated');
         expect(img('h1').style.transform).toBe('');
     });
