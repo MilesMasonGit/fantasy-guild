@@ -82,11 +82,11 @@ registerTokenTypes({
         uses: null, sprite: 's_crime',
         spawner: { spawns: [{ typeId: 'enc_boss', weight: 1 }], allowance: 1, intervalMs: 60000, upkeep: [] }
     },
-    /** A guardian's camp: the same, for the guardian. */
+    /** A guardian's camp: the same, for the guardian, every 10 minutes (no second one while a test runs). */
     enc_guardian_camp: {
         id: 'enc_guardian_camp', name: 'Encounter Guardian Camp', tokenType: 'spawner', rarity: 'common', theme: 'fixture',
         uses: null, sprite: 's_crime',
-        spawner: { spawns: [{ typeId: 'enc_guardian', weight: 1 }], allowance: 1, intervalMs: 30000, upkeep: [] }
+        spawner: { spawns: [{ typeId: 'enc_guardian', weight: 1 }], allowance: 1, intervalMs: 600000, upkeep: [] }
     },
     /**
      * A Summoning Circle: a station working as Alchemy, a Starting skill every hero holds, so any
