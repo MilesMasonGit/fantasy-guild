@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { enemyProfileOf, enemyDropsOf, isEnemyDef, ENEMY_STYLES } from '../config/registries/enemyProfile.js';
-import { enemyCombatBudget } from '../config/FormulaRegistry.js';
+import { enemyLevelStats } from '../config/FormulaRegistry.js';
 import { getCombatXpAward } from '../utils/CombatFormulas.js';
 import { derivedTokenType } from '../config/registries/tokenTypeDerivation.js';
 
@@ -46,17 +46,15 @@ describe('What makes a Token an enemy', () => {
 describe('The stat block', () => {
     it('derives every combat number from the one authored level', () => {
         const p = enemyProfileOf(bear());
-        const budget = enemyCombatBudget(4);
-        expect(p.hp).toBe(budget.hp);
-        expect(p.minDamage).toBe(budget.minDamage);
-        expect(p.maxDamage).toBe(budget.maxDamage);
-        expect(p.attackSpeed).toBe(budget.attackIntervalMs);
+        const table = enemyLevelStats(4);
+        expect(p.hp).toBe(table.hp);
+        expect(p.hit).toBe(table.hit);
+        expect(p.armor).toBe(table.armor);
+        expect(p.attackSpeed).toBe(table.attackSpeedMs);
     });
 
-    it('uses the level for BOTH attack and defence, as the hero side does', () => {
-        const p = enemyProfileOf(bear());
-        expect(p.attackSkill).toBe(4);
-        expect(p.defenceSkill).toBe(4);
+    it('carries the level, which the miss chance compares with the hero level', () => {
+        expect(enemyProfileOf(bear()).level).toBe(4);
     });
 
     /**
@@ -69,19 +67,20 @@ describe('The stat block', () => {
      */
     it('pays the level\'s XP budget, not the silent fallback of 1', () => {
         const p = enemyProfileOf(bear());
-        expect(p.xpAwarded).toBe(enemyCombatBudget(4).xp);
-        expect(getCombatXpAward(p)).toBe(enemyCombatBudget(4).xp);
+        expect(p.xpAwarded).toBe(enemyLevelStats(4).xp);
+        expect(getCombatXpAward(p)).toBe(enemyLevelStats(4).xp);
         expect(getCombatXpAward(p)).toBeGreaterThan(1);
     });
 
-    it('scales the whole budget together when budgetScale is set', () => {
-        const full = enemyProfileOf(bear());
-        const pushover = enemyProfileOf({ ...bear(), enemy: { level: 4, style: 'ranged', budgetScale: 0.25 } });
+    it('scales HP, hit and XP together when an older budgetScale is set', () => {
+        // Level 40, where the table's hit (3) is big enough for a quarter of it to show.
+        const full = enemyProfileOf({ ...bear(), enemy: { level: 40, style: 'ranged' } });
+        const pushover = enemyProfileOf({ ...bear(), enemy: { level: 40, style: 'ranged', budgetScale: 0.25 } });
         expect(pushover.hp).toBeLessThan(full.hp);
-        expect(pushover.maxDamage).toBeLessThan(full.maxDamage);
+        expect(pushover.hit).toBeLessThan(full.hit);
         expect(pushover.xpAwarded).toBeLessThan(full.xpAwarded);
         // Difficulty scales; the level itself does not lie about its band.
-        expect(pushover.level).toBe(4);
+        expect(pushover.level).toBe(40);
     });
 
     it('keeps an authored style, and refuses one the engine has never heard of', () => {

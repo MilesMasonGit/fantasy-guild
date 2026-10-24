@@ -52,8 +52,8 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
 const fights = new Map();
 
 /**
- * Whether this hero is able to fight anything at all: everyone can; a Recruit fights as a
- * level 1 fighter (`CombatFormulas.getHeroCombatLevel`).
+ * Whether this hero is able to fight anything at all: everyone can; a Recruit barehanded
+ * (`CombatFormulas.fightsAsRecruit`).
  */
 export function canFight(heroId) {
     return CombatFormulas.canHeroFight(HeroManager.getHero(heroId));

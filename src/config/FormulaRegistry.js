@@ -1,92 +1,81 @@
 // Fantasy Guild - Formula Registry
+//
+// The combat numbers (`docs/active/concept_combat.md`, "Detail pass rulings"). Small
+// numbers everywhere: a hero has 10 HP plus their combat level, a copper sword hits for 2, and
+// one or two extra damage is a noticeable boost. Every number here is a first proposal for the
+// owner to tune in play.
 
-// COMBAT FORMULAS — 7-Stat Engine. ⚠ marks first-calibration values.
-
-/**
- * The growth curve — one dial for the whole game.
- * G(L) = 1.045^(L−1); G(1) = 1.0, G(99) ≈ 75×.
- */
-export const GROWTH_RATE = 1.045;
-export function growth(level) {
-    return Math.pow(GROWTH_RATE, Math.max(1, level) - 1);
-}
-
-// --- Hero stats from skills alone (spec §3, "naked hero") ---
-
-/** HP = 30·G(Combat Level) + 20·G(Defense) ⚠ */
-export const HERO_HP_CL_BUDGET = 30;
-export const HERO_HP_DEFENSE_BUDGET = 20;
-export function heroMaxHp(combatLevel, defenseLevel) {
-    return Math.round(
-        HERO_HP_CL_BUDGET * growth(combatLevel) +
-        HERO_HP_DEFENSE_BUDGET * growth(defenseLevel)
-    );
-}
-
-/** Per-hit damage = 4·G(active style skill) ⚠ */
-export const HERO_DAMAGE_BUDGET = 4;
-export function heroBaseDamage(styleSkillLevel) {
-    return HERO_DAMAGE_BUDGET * growth(styleSkillLevel);
-}
-
-/** Fixed attack intervals for this pass (weapon archetypes redefine hero speed later) ⚠ */
-export const HERO_ATTACK_INTERVAL_MS = 2500;
-export const ENEMY_ATTACK_INTERVAL_MS = 3000;
+// --- Rounding -------------------------------------------------------------------------------
 
 /**
- * Innate Block from Defense skill (the spec has Block gear-only).
- * 0.125%/level → ~12.4% at Defense 99.
- * Gear block will slot into the same term, amplified ×(1 + Defense/200).
+ * Round to the nearest whole number, halves up (2.5 → 3, 4.5 → 5): the one rounding every combat
+ * percentage uses. The small epsilon keeps a product such as 6 × 0.75 = 4.499999… from rounding
+ * down.
  */
-export const INNATE_BLOCK_PER_DEFENSE = 0.125;
-export function blockChance(defenseLevel, gearBlock = 0) {
-    return gearBlock * (1 + defenseLevel / 200) + defenseLevel * INNATE_BLOCK_PER_DEFENSE;
+export function roundHalfUp(x) {
+    return Math.floor(x + 0.5 + 1e-9);
 }
 
-// --- Hit roll (spec §7 step 2) ---
+// --- Heroes ---------------------------------------------------------------------------------
 
-/** Base hit chance percentage (owner-locked) */
-export const BASE_HIT_CHANCE = 75;
+/** Max HP = 10 + combat level: about 10 for a Recruit, 109 at level 99. */
+export const HERO_BASE_HP = 10;
+export function heroMaxHp(combatLevel) {
+    return HERO_BASE_HP + Math.max(0, Math.floor(combatLevel || 0));
+}
 
-/** Hit shift per level of (attacker style skill − defender Defense) ⚠ */
-export const HIT_CHANCE_SKILL_SCALE = 0.25;
+/** The level's share of damage: +1 per 20 combat levels (0 below 20, 4 at 80-99). */
+export const LEVELS_PER_DAMAGE_STEP = 20;
+export function levelDamageBonus(combatLevel) {
+    return Math.floor(Math.max(0, combatLevel || 0) / LEVELS_PER_DAMAGE_STEP);
+}
 
-/** Hit chance min/max bounds */
-export const HIT_CHANCE_MIN = 5;
-export const HIT_CHANCE_MAX = 95;
+/** A bare fist: what a Recruit always hits with, and a promoted hero holding no weapon. */
+export const UNARMED_DAMAGE = 1;
+
+// --- Swing speed ----------------------------------------------------------------------------
+
+/** The three weapon speeds. A weapon (and an enemy) names one; anything else is normal. */
+export const ATTACK_SPEED_MS = Object.freeze({ fast: 2000, normal: 3000, slow: 4000 });
+export const DEFAULT_ATTACK_SPEED = 'normal';
+export function attackSpeedMs(speed) {
+    return ATTACK_SPEED_MS[speed] ?? ATTACK_SPEED_MS[DEFAULT_ATTACK_SPEED];
+}
+
+// --- Misses ---------------------------------------------------------------------------------
 
 /**
- * Combat hit chance per the spec pipeline:
- * 75 + 0.25·(attacker skill − defender Defense) + accuracy − block ± RPS, clamped 5–95.
- * @param {number} attackerSkill - Attacker's active style skill level
- * @param {number} defenderDefense - Defender's Defense skill level
- * @param {number} rpsShift - ±RPS_HIT_SHIFT or 0 (from rpsOutcome)
- * @param {number} accuracy - Attacker's flat Accuracy (gear; 0 for now)
- * @param {number} defenderBlock - Defender's effective Block %
- * @returns {number} Hit chance (5-95)
+ * Miss chance, in whole percent:
+ *   level part = 10 − 1 × (attacker level − defender level), kept between 5 and 25;
+ *   miss       = level part + the defender's Dodge − the attacker's Accuracy, kept between 5 and 40.
+ * So five levels above an enemy reach the 5 % floor, fifteen below reach 25 %, and only Dodge
+ * and Accuracy move it further.
  */
-export function hitChance(attackerSkill, defenderDefense, rpsShift = 0, accuracy = 0, defenderBlock = 0) {
-    const raw = BASE_HIT_CHANCE
-        + (attackerSkill - defenderDefense) * HIT_CHANCE_SKILL_SCALE
-        + accuracy - defenderBlock + rpsShift;
-    return Math.max(HIT_CHANCE_MIN, Math.min(HIT_CHANCE_MAX, raw));
+export const MISS = Object.freeze({
+    BASE: 10,
+    PER_LEVEL: 1,
+    LEVEL_MIN: 5,
+    LEVEL_MAX: 25,
+    MIN: 5,
+    MAX: 40
+});
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+export function missChance(attackerLevel, defenderLevel, dodge = 0, accuracy = 0) {
+    const gap = (attackerLevel || 0) - (defenderLevel || 0);
+    const levelPart = clamp(MISS.BASE - MISS.PER_LEVEL * gap, MISS.LEVEL_MIN, MISS.LEVEL_MAX);
+    return clamp(roundHalfUp(levelPart + (dodge || 0) - (accuracy || 0)), MISS.MIN, MISS.MAX);
 }
 
-// --- Damage roll (spec §7 step 3) ---
+// --- Crits ----------------------------------------------------------------------------------
 
-/** Uniform per-hit damage spread ⚠ */
-export const DAMAGE_SPREAD_MIN = 0.85;
-export const DAMAGE_SPREAD_MAX = 1.15;
-export function rollDamageSpread(baseDamage) {
-    const spread = DAMAGE_SPREAD_MIN + Math.random() * (DAMAGE_SPREAD_MAX - DAMAGE_SPREAD_MIN);
-    return baseDamage * spread;
-}
+/** About 1 swing in 20 crits for double, the doubling applied BEFORE armour. Gear adds chance. */
+export const BASE_CRIT_CHANCE = 5;
+export const CRIT_MULTIPLIER = 2;
 
-// --- RPS (spec §9, owner-locked orientation) ---
+// --- The style cycle ------------------------------------------------------------------------
 
-/** Favorable matchup: +10% damage, +7 hit chance; unfavorable inverts. ⚠ exact split */
-export const RPS_HIT_SHIFT = 7;
-export const RPS_DAMAGE_SHIFT = 0.10;
+/** A good matchup deals 25 % more, a bad one 25 % less (rounded halves up, minimum 1 after armour). */
+export const MATCHUP_DAMAGE_SHIFT = 0.25;
 
 /**
  * Combat matchup table, a four-way cycle (owner-locked):
@@ -102,7 +91,8 @@ export const RPS_RULES = {
 };
 
 /**
- * RPS outcome for attacker vs defender styles.
+ * RPS outcome for attacker vs defender styles. A side with no style (a Recruit) is even with
+ * everyone.
  * @returns {number} +1 favorable, −1 unfavorable, 0 neutral
  */
 export function rpsOutcome(attackerType, defenderType) {
@@ -114,35 +104,66 @@ export function rpsOutcome(attackerType, defenderType) {
     return 0;
 }
 
-// --- Enemy budgets (spec §6, banded) ---
+/** 1.25, 1 or 0.75. */
+export function matchupMultiplier(attackerType, defenderType) {
+    return 1 + rpsOutcome(attackerType, defenderType) * MATCHUP_DAMAGE_SHIFT;
+}
 
-/** Enemy HP = 32·G(level), damage = 9·G(level) ⚠ */
-export const ENEMY_HP_BUDGET = 32;
-export const ENEMY_DAMAGE_BUDGET = 9;
-
-/** XP per kill = 12·G(level)^1.15 — super-linear so on-level is XP-optimal ⚠ */
-export const ENEMY_XP_BUDGET = 12;
-export const ENEMY_XP_EXPONENT = 1.15;
+// --- Enemies: the level table ---------------------------------------------------------------
 
 /**
- * Derive an enemy's combat stat block from its level (band).
- * `budgetScale` is an informal precursor of the spec's budget-trade rule:
- * it scales HP/damage/XP together (tutorial pushovers < 1.0 < beefy bosses).
- * @param {number} level - The enemy's band level (1-99)
- * @param {number} budgetScale - Budget multiplier (default 1.0)
- * @returns {{ hp: number, minDamage: number, maxDamage: number, attackIntervalMs: number, xp: number }}
+ * What an enemy of a level has before the author changes anything (the CMS will fill these and
+ * let any be overridden). Tuned so an even fight, a hero with their tier's
+ * normal-speed weapon against an enemy of their own level, lasts 10+ swings and 30 s or more:
+ *   HP      = 20 + level        (10 more than a hero of that level)
+ *   hit     = 1 + 1 per 20 levels
+ *   armour  = 1 per 30 levels
+ *   speed   = normal (3 s)
+ *   XP      = 10 × 1.065^(level − 1), rounded
+ * The worked duels are in `concept_combat.md` ("The level table and weapon tiers").
  */
-export function enemyCombatBudget(level, budgetScale = 1.0) {
-    const g = growth(level);
-    const damage = ENEMY_DAMAGE_BUDGET * g * budgetScale;
+export const ENEMY_LEVEL_TABLE = Object.freeze({
+    HP_BASE: 20,
+    HIT_LEVELS_PER_STEP: 20,
+    ARMOR_LEVELS_PER_POINT: 30,
+    XP_BASE: 10,
+    XP_GROWTH: 1.065
+});
+
+/**
+ * The stat block for an enemy of `level`.
+ * @returns {{ hp: number, hit: number, armor: number, speed: string, attackSpeedMs: number, xp: number }}
+ */
+export function enemyLevelStats(level) {
+    const L = Math.max(1, Math.floor(level || 1));
+    const t = ENEMY_LEVEL_TABLE;
     return {
-        hp: Math.max(1, Math.round(ENEMY_HP_BUDGET * g * budgetScale)),
-        minDamage: Math.max(1, Math.round(damage * DAMAGE_SPREAD_MIN)),
-        maxDamage: Math.max(1, Math.round(damage * DAMAGE_SPREAD_MAX)),
-        attackIntervalMs: ENEMY_ATTACK_INTERVAL_MS,
-        xp: Math.max(1, Math.round(ENEMY_XP_BUDGET * Math.pow(g, ENEMY_XP_EXPONENT) * budgetScale))
+        hp: t.HP_BASE + L,
+        hit: 1 + Math.floor(L / t.HIT_LEVELS_PER_STEP),
+        armor: Math.floor(L / t.ARMOR_LEVELS_PER_POINT),
+        speed: DEFAULT_ATTACK_SPEED,
+        attackSpeedMs: attackSpeedMs(DEFAULT_ATTACK_SPEED),
+        xp: Math.max(1, roundHalfUp(t.XP_BASE * Math.pow(t.XP_GROWTH, L - 1)))
     };
 }
+
+/**
+ * The proposed weapon tiers, by the smithing ingots' levels: a normal weapon's damage, a fast one
+ * about 2/3 of it, a slow one about 4/3, so the three deal about the same per second before
+ * armour. A proposal for authoring; every weapon carries its own `damage`, and the
+ * engine never reads this table.
+ */
+export const WEAPON_TIERS = Object.freeze([
+    { tier: 'copper',     level: 1,  fast: 1, normal: 2, slow: 3 },
+    { tier: 'iron',       level: 15, fast: 2, normal: 3, slow: 4 },
+    { tier: 'silver',     level: 30, fast: 3, normal: 4, slow: 5 },
+    { tier: 'gold',       level: 45, fast: 3, normal: 5, slow: 7 },
+    { tier: 'mythril',    level: 60, fast: 4, normal: 6, slow: 8 },
+    { tier: 'adamantine', level: 75, fast: 5, normal: 7, slow: 9 },
+    { tier: 'darkmetal',  level: 90, fast: 5, normal: 8, slow: 11 }
+]);
+
+// --- Status clock ---------------------------------------------------------------------------
 
 /**
  * The global status-effect clock (status_effects_concept.md §1B): every
@@ -150,15 +171,9 @@ export function enemyCombatBudget(level, budgetScale = 1.0) {
  */
 export const STATUS_TICK_INTERVAL_MS = 5000;
 
-// --- Legacy combat constants (read only by utils/CombatFormulas.js) ---
+// --- Regen ----------------------------------------------------------------------------------
 
-/** @deprecated legacy attack-speed model; live combat uses fixed intervals */
-export const BASE_ATTACK_SPEED_MS = 3000;
-export const MIN_ATTACK_SPEED_MS = 500;
-
-// REGEN
-
-/** Regen configuration: amount healed per interval */
+/** 1 HP every 10 s, outside fights only: mid-fight only food heals. */
 export const REGEN_CONFIG = {
-    hp:     { amount: 1, interval: 5.0 },   // 1 HP every 5 seconds
+    hp:     { amount: 1, interval: 10.0 },
 };

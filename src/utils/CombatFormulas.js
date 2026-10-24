@@ -1,23 +1,17 @@
 // Fantasy Guild - Combat Formulas
-// Tunable constants live in FormulaRegistry.js; this file provides
-// hero/enemy-aware wrappers.
+// The numbers live in FormulaRegistry.js; this file reads them off heroes, their gear and enemies.
 
 import {
-    growth,
-    heroMaxHp as _heroMaxHp,
-    heroBaseDamage,
-    blockChance,
-    hitChance as _hitChance,
-    rollDamageSpread,
+    heroMaxHp,
+    levelDamageBonus,
+    UNARMED_DAMAGE,
+    attackSpeedMs,
+    missChance,
+    BASE_CRIT_CHANCE,
+    CRIT_MULTIPLIER,
+    matchupMultiplier,
+    roundHalfUp,
     rpsOutcome,
-    RPS_HIT_SHIFT,
-    RPS_DAMAGE_SHIFT,
-    HERO_ATTACK_INTERVAL_MS,
-    ENEMY_ATTACK_INTERVAL_MS,
-    BASE_ATTACK_SPEED_MS,
-    MIN_ATTACK_SPEED_MS,
-    DAMAGE_SPREAD_MIN,
-    DAMAGE_SPREAD_MAX,
 } from '../config/FormulaRegistry.js';
 import { COMBAT_SKILL_IDS, isCombatSkill } from '../config/registries/skillRegistry.js';
 import { getItem } from '../config/registries/itemRegistry.js';
@@ -25,46 +19,13 @@ import { getPrimaryWeapon } from '../config/registries/equipmentConstants.js';
 import { sumStatusEffect } from '../config/registries/statusRegistry.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 
-export { BASE_ATTACK_SPEED_MS, MIN_ATTACK_SPEED_MS, HERO_ATTACK_INTERVAL_MS, ENEMY_ATTACK_INTERVAL_MS };
-
-/**
- * Clamp a value between min and max
- */
-export function clamp(value, min, max) {
-    return Math.max(min, Math.min(max, value));
-}
-
-/**
- * The combat style a hero uses is determined entirely by the equipped
- * weapon's type. Unarmed counts as Melee.
- *
- * With two hands the PRIMARY weapon decides (the first occupied hand), so a
- * sword in hand1 and a bow in hand2 fights melee.
- * @param {Object} hero
- * @returns {string} a combat skill id
- */
-export function getHeroCombatStyle(hero) {
-    const weaponId = getPrimaryWeapon(hero);
-    if (weaponId) {
-        const weapon = getItem(weaponId);
-        const style = weapon?.skillRequired;
-        if (isCombatSkill(style)) return style;
-    }
-    // Unarmed: fall back to the hero's own combat skill rather than assuming
-    // melee, so an unarmed Ranger fights ranged.
-    return getHeroCombatSkillEntry(hero).id || 'melee';
-}
+export { rpsOutcome };
 
 /**
  * The ONE combat skill a hero holds, and its level, exactly as saved.
  *
- * **A hero holds exactly one of Melee, Ranged, Magic or Stealth, or none at all.** That
- * single skill supplies attack *and* defence, max HP and block. A Melee 30 hero attacks at
- * 30 and defends at 30.
- *
- * ⚠️ **Not the number the combat maths uses.** A hero holding none (a Recruit) reads
- * `{ id: null, level: 0 }` here, which is what decides that their fights earn no combat XP.
- * The maths reads {@link getHeroCombatLevel}, which puts a Recruit at 1.
+ * **A hero holds exactly one of Melee, Ranged, Magic or Stealth, or none at all** (a Recruit,
+ * who reads `{ id: null, level: 0 }` and fights barehanded with no style and no combat XP).
  *
  * @param {Object} hero
  * @returns {{ id: string|null, level: number }}
@@ -77,12 +38,12 @@ export function getHeroCombatSkillEntry(hero) {
     return { id: null, level: 0 };
 }
 
-/** The level a hero who holds no combat skill fights at: a level 1 fighter with what they hold. */
-export const UNSKILLED_COMBAT_LEVEL = 1;
+/** The combat level of a hero holding no combat skill: 0, so a Recruit has 10 HP. */
+export const UNSKILLED_COMBAT_LEVEL = 0;
 
 /**
- * The combat level every combat formula uses: the held combat skill's level, or
- * {@link UNSKILLED_COMBAT_LEVEL} for a hero who holds none. Nothing is written to the hero.
+ * The combat level every combat formula uses (HP, the damage step, the miss gap): the held combat
+ * skill's level, or {@link UNSKILLED_COMBAT_LEVEL}. Nothing is written to the hero.
  */
 export function getHeroCombatLevel(hero) {
     const { id, level } = getHeroCombatSkillEntry(hero);
@@ -90,101 +51,162 @@ export function getHeroCombatLevel(hero) {
 }
 
 /**
- * Whether this hero can fight at all. Everyone fights: a hero holding no combat skill fights
- * as a level 1 fighter (see {@link getHeroCombatLevel}).
+ * Whether this hero fights as a Recruit: holding no combat skill, they punch for 1 every 3 s
+ * whatever is in their hands, with no style and no combat XP.
  */
+export function fightsAsRecruit(hero) {
+    return !getHeroCombatSkillEntry(hero).id;
+}
+
+/** Whether this hero can fight at all. Everyone fights; a Recruit barehanded. */
 export function canHeroFight(hero) {
     return !!hero;
 }
 
 /**
- * Get the hero's combat level (see {@link getHeroCombatLevel}).
- *
- * ⚠️ The `selectedStyle` argument is **ignored** and kept only so existing call
- * sites keep compiling. A hero has one style; the equipped weapon only decides
- * which side of the matchup cycle they fight on.
- */
-export function getHeroCombatSkill(hero, _selectedStyle = 'melee') {
-    return getHeroCombatLevel(hero);
-}
-
-/**
- * A hero's defensive number. The single combat skill supplies both halves, so
- * skills cannot build a tanky hero distinct from a damaging one; defensive
- * building is equipment.
- */
-export function getHeroDefenseSkill(hero) {
-    return getHeroCombatLevel(hero);
-}
-
-/**
- * Hero max HP from skills; both terms of the formula use the single combat
- * skill.
- *
- * A hero holding no combat skill gets the level 1 fighter's HP, matching
- * {@link getHeroCombatLevel}. ⚠️ A held skill at level 0 also floors at 1 here,
- * since a max HP of zero is unrepresentable.
- *
+ * Max HP from skills: 10 + the combat skill's level, 10 for a hero holding none.
  * @param {Object} skills - hero.skills map
- * @returns {number}
  */
 export function heroMaxHpFromSkills(skills) {
-    if (!skills) return _heroMaxHp(1, 1);
-    const { level } = getHeroCombatSkillEntry({ skills });
-    const effective = Math.max(1, level);
-    return _heroMaxHp(effective, effective);
+    return heroMaxHp(getHeroCombatLevel({ skills }));
 }
 
 /**
- * A hero's effective Block %: gear block amplified by their combat skill, plus
- * the innate block that skill grants.
+ * The weapon a hero swings, or null: the first weapon in the hands (`getPrimaryWeapon`).
+ * ⚠️ A Recruit swings nothing even with a weapon equipped.
  */
-export function getHeroBlockChance(hero) {
-    const gearBlock = hero?.aggregator?.query('BLOCK') || 0;
-    return blockChance(getHeroDefenseSkill(hero), gearBlock);
+export function getHeroWeapon(hero) {
+    if (fightsAsRecruit(hero)) return null;
+    const weaponId = getPrimaryWeapon(hero);
+    return weaponId ? getItem(weaponId) || null : null;
 }
 
 /**
- * Calculate hit chance (spec §7 step 2): skill difference, Accuracy, Block and
- * the RPS shift, clamped.
+ * The side of the matchup cycle a hero fights on: the weapon's style when it names a combat
+ * skill, otherwise the hero's own combat skill (an unarmed Ranger fights ranged). A Recruit has
+ * none and is even with everyone.
+ * @returns {string|null} a combat skill id, or null
+ */
+export function getHeroCombatStyle(hero) {
+    if (fightsAsRecruit(hero)) return null;
+    const style = getHeroWeapon(hero)?.skillRequired;
+    if (isCombatSkill(style)) return style;
+    return getHeroCombatSkillEntry(hero).id;
+}
+
+/** How long a hero's swing takes: the weapon's speed, normal (3 s) unarmed or as a Recruit. */
+export function heroAttackSpeedMs(hero) {
+    return attackSpeedMs(getHeroWeapon(hero)?.speed);
+}
+
+// --- What a hero carries (all default to 0 when nothing provides them) ------------------------
+
+const axis = (entity, type) => entity?.aggregator?.query(type) || 0;
+
+/**
+ * The flat damage reduction a hero carries: Armor, legacy DEFENSE, and any
+ * armour a status is lending them. One function so armour means one thing
+ * regardless of what hit you.
  *
- * @param {number} attackerSkill - Attacker's active style skill level
- * @param {number} defenderDefense - Defender's Defense skill level (enemies: their level)
- * @param {string} attackerStyle
- * @param {string} defenderStyle
- * @param {Object} attacker - entity (for gear Accuracy)
- * @param {Object} defender - entity (for Block: hero innate / enemy blockChance field)
- * @returns {number} Hit chance (5-95)
+ * ⚠️ `DEFENSE` is summed in alongside `ARMOR` deliberately: existing armour
+ * items register their `defense` stat on that axis, and it is treated as flat
+ * Armor.
  */
-export function calculateHitChance(attackerSkill, defenderDefense, attackerStyle = 'melee', defenderStyle = 'melee', attacker = null, defender = null) {
-    const rpsShift = rpsOutcome(attackerStyle, defenderStyle) * RPS_HIT_SHIFT;
-    const accuracy = attacker?.aggregator?.query('ACCURACY') || 0;
-
-    let defenderBlock = 0;
-    if (defender?.skills) {
-        defenderBlock = getHeroBlockChance(defender);
-    } else if (defender?.blockChance) {
-        defenderBlock = defender.blockChance; // enemy budget deviation, later
-    }
-
-    return _hitChance(attackerSkill, defenderDefense, rpsShift, accuracy, defenderBlock);
+export function heroFlatArmor(hero) {
+    return axis(hero, EFFECT_TYPES.ARMOR)
+        + axis(hero, EFFECT_TYPES.DEFENSE)
+        + sumStatusEffect(hero?.statuses, 'flat_armor');
 }
 
-/**
- * Roll for hit. One roll; a miss/block ends the attack (spec §7).
- */
-export function rollHit(attackerSkill, defenderSkill, attackerStyle = 'melee', defenderStyle = 'melee', attacker = null, defender = null) {
-    const hitChance = calculateHitChance(attackerSkill, defenderSkill, attackerStyle, defenderStyle, attacker, defender);
-    const roll = Math.random() * 100;
-    return roll < hitChance;
+/** The flat damage reduction applied after armour. */
+export function heroFlatResist(hero) {
+    return axis(hero, EFFECT_TYPES.RESIST_FLAT);
 }
 
+/** Percentage points taken off the hero's miss chance. */
+export function heroAccuracy(hero) {
+    return axis(hero, EFFECT_TYPES.ACCURACY);
+}
+
+/** Percentage points added to the miss chance of whoever attacks the hero. */
+export function heroDodge(hero) {
+    return axis(hero, EFFECT_TYPES.DODGE);
+}
+
+/** Armour points the hero's hits ignore. */
+export function heroPierce(hero) {
+    return axis(hero, EFFECT_TYPES.PIERCE);
+}
+
+/** Crit chance in percent: 5 plus whatever gear adds. */
+export function heroCritChance(hero) {
+    return BASE_CRIT_CHANCE + axis(hero, EFFECT_TYPES.CRIT_CHANCE);
+}
+
+// --- What an enemy carries: its profile (the level table and the author's numbers), plus what
+// --- effects lend it through the fight's aggregator.
+
 /**
- * Roll damage within a range (inclusive)
+ * The flat damage reduction an **enemy** carries.
+ *
+ * One function so armour means the same thing on both sides of a fight.
+ * `enemyStatuses` is the old status engine's list, summed in as `heroFlatArmor`
+ * sums the hero's.
  */
-export function rollDamage(minDamage, maxDamage) {
-    if (minDamage >= maxDamage) return minDamage;
-    return minDamage + Math.floor(Math.random() * (maxDamage - minDamage + 1));
+export function enemyFlatArmor(enemy, enemyStatuses = null) {
+    return (enemy?.armor || 0)
+        + axis(enemy, EFFECT_TYPES.ARMOR)
+        + axis(enemy, EFFECT_TYPES.DEFENSE)
+        + sumStatusEffect(enemyStatuses, 'flat_armor');
+}
+
+export function enemyDodge(enemy) {
+    return (enemy?.dodge || 0) + axis(enemy, EFFECT_TYPES.DODGE);
+}
+
+export function enemyAccuracy(enemy) {
+    return (enemy?.accuracy || 0) + axis(enemy, EFFECT_TYPES.ACCURACY);
+}
+
+export function enemyPierce(enemy) {
+    return (enemy?.pierce || 0) + axis(enemy, EFFECT_TYPES.PIERCE);
+}
+
+export function enemyCritChance(enemy) {
+    return (enemy?.critChance ?? BASE_CRIT_CHANCE) + axis(enemy, EFFECT_TYPES.CRIT_CHANCE);
+}
+
+/** How long an enemy's swing takes. */
+export function enemyAttackSpeedMs(enemy) {
+    return enemy?.attackSpeed || attackSpeedMs(enemy?.speed);
+}
+
+// --- The swing -------------------------------------------------------------------------------
+
+/**
+ * Roll one swing: miss, then (only on a hit) crit.
+ *
+ * ⚠️ The draw order is part of the game's work: one `Math.random()` for the miss and one more for
+ * the crit on a hit, nothing else. Catch-up replays the same stream, so a draw added here or
+ * skipped on one path shifts every outcome after it.
+ *
+ * @param {number} missPct
+ * @param {number} critPct
+ * @returns {{ hit: boolean, crit: boolean }}
+ */
+export function rollSwing(missPct, critPct) {
+    if (Math.random() * 100 < missPct) return { hit: false, crit: false };
+    return { hit: true, crit: Math.random() * 100 < critPct };
+}
+
+/** The hero's miss chance against this enemy. */
+export function heroMissChance(hero, enemy) {
+    return missChance(getHeroCombatLevel(hero), enemy?.level || 1, enemyDodge(enemy), heroAccuracy(hero));
+}
+
+/** The enemy's miss chance against this hero. */
+export function enemyMissChance(enemy, hero) {
+    return missChance(enemy?.level || 1, getHeroCombatLevel(hero), heroDodge(hero), enemyAccuracy(enemy));
 }
 
 /**
@@ -203,61 +225,43 @@ export function damageMultiplierOf(hero) {
 }
 
 /**
- * Compute damage dealt from hero to enemy (spec §7 steps 3-5): base from the
- * combat skill plus weapon damage and flat bonuses, spread, buffs, RPS shift,
- * minus enemy flat Armor; min 1.
+ * What a hero's hit deals before the matchup, buffs, crit and armour: the weapon's damage (a fist
+ * is 1) plus 1 per 20 combat levels plus flat Damage from gear.
  */
-export function computeHeroDamage(hero, enemy, weapon, damageBonus = 0, selectedStyle = 'melee', enemyStatuses = null) {
-    const skill = getHeroCombatSkill(hero, selectedStyle);
-    const base = heroBaseDamage(skill) + (weapon?.damage || 0) + damageBonus;
-
-    let damage = rollDamageSpread(base);
-
-    // Damage buffs sum additively; `damageMultiplierOf` reads both sources.
-    damage *= damageMultiplierOf(hero);
-
-    const enemyStyle = enemy?.combatType || 'melee';
-    damage *= 1 + rpsOutcome(selectedStyle, enemyStyle) * RPS_DAMAGE_SHIFT;
-
-    // Flat Armor subtracts after the spread and multipliers.
-    const armor = enemyFlatArmor(enemy, enemyStatuses);
-
-    return Math.max(1, Math.round(damage - armor));
-}
-
-
-/**
- * The flat damage reduction a hero carries: Armor, legacy DEFENSE, and any
- * armour a status is lending them. One function so armour means one thing
- * regardless of what hit you.
- *
- * ⚠️ `DEFENSE` is summed in alongside `ARMOR` deliberately: existing armour
- * items register their `defense` stat on that axis, and it is treated as flat
- * Armor.
- */
-export function heroFlatArmor(hero) {
-    return (hero?.aggregator?.query('ARMOR') || 0)
-        + (hero?.aggregator?.query('DEFENSE') || 0)
-        + sumStatusEffect(hero?.statuses, 'flat_armor');
+export function heroBaseDamage(hero) {
+    const weapon = getHeroWeapon(hero);
+    const weaponDamage = weapon && Number(weapon.damage) > 0 ? Number(weapon.damage) : UNARMED_DAMAGE;
+    return weaponDamage + levelDamageBonus(getHeroCombatLevel(hero)) + axis(hero, EFFECT_TYPES.DAMAGE);
 }
 
 /**
- * The flat damage reduction an **enemy** carries.
- *
- * One function so armour means the same thing on both sides of a fight.
- * `enemyStatuses` is the old status engine's list, summed in as `heroFlatArmor`
- * sums the hero's.
+ * One landed hit's damage, the order both sides use: multipliers (buffs, the matchup's ±25 %)
+ * rounded halves up, then doubled on a crit, then armour (less pierce) taken off, then flat
+ * resistance; never below 1.
  */
-export function enemyFlatArmor(enemy, enemyStatuses = null) {
-    return (enemy?.armor || 0)
-        + (enemy?.aggregator?.query('ARMOR') || 0)
-        + (enemy?.aggregator?.query('DEFENSE') || 0)
-        + sumStatusEffect(enemyStatuses, 'flat_armor');
+function landedDamage(base, multiplier, crit, armour, pierce, resist = 0) {
+    const scaled = roundHalfUp(base * multiplier);
+    const struck = crit ? scaled * CRIT_MULTIPLIER : scaled;
+    return Math.max(1, struck - Math.max(0, armour - pierce) - resist);
 }
 
-/** The flat damage reduction applied after armour. */
-export function heroFlatResist(hero) {
-    return hero?.aggregator?.query('RESIST_FLAT') || 0;
+/**
+ * A hero's landed hit on an enemy.
+ * @param {{ crit?: boolean, enemyStatuses?: Array }} [options]
+ */
+export function heroHitDamage(hero, enemy, { crit = false, enemyStatuses = null } = {}) {
+    const multiplier = damageMultiplierOf(hero) * matchupMultiplier(getHeroCombatStyle(hero), enemy?.combatType);
+    return landedDamage(heroBaseDamage(hero), multiplier, crit, enemyFlatArmor(enemy, enemyStatuses), heroPierce(hero));
+}
+
+/**
+ * An enemy's landed hit on a hero: its hit, the matchup, crit, then the hero's armour (less the
+ * enemy's pierce) and resistance.
+ * @param {{ crit?: boolean }} [options]
+ */
+export function enemyHitDamage(enemy, hero, { crit = false } = {}) {
+    const multiplier = matchupMultiplier(enemy?.combatType, getHeroCombatStyle(hero));
+    return landedDamage(enemy?.hit ?? 1, multiplier, crit, heroFlatArmor(hero), enemyPierce(enemy), heroFlatResist(hero));
 }
 
 /**
@@ -273,69 +277,8 @@ export function mitigateFlatDamage(hero, rawDamage) {
 }
 
 /**
- * Compute damage dealt from enemy to hero (spec §7 steps 3-5). Enemy min/max
- * already carry the damage spread (derived from the band budget); RPS shift;
- * minus hero flat Armor and Resist; min 1.
- */
-export function computeEnemyDamage(enemy, hero = null, heroStyle = 'melee') {
-    const base = rollDamage(enemy.minDamage ?? 1, enemy.maxDamage ?? 1);
-
-    const enemyStyle = enemy.combatType || 'melee';
-    let damage = base * (1 + rpsOutcome(enemyStyle, heroStyle) * RPS_DAMAGE_SHIFT);
-
-    // Existing armor items register `defense` as DEFENSE modifiers, which
-    // `heroFlatArmor` treats as flat Armor.
-    const armor = heroFlatArmor(hero);
-    const flatResist = heroFlatResist(hero);
-
-    return Math.max(1, Math.round(damage - armor - flatResist));
-}
-
-/**
- * Deterministic hero damage range for UI display — mirrors computeHeroDamage
- * exactly, with the spread bounds substituted for the random roll.
- */
-export function getHeroDamageRange(hero, enemy, weapon, damageBonus = 0, selectedStyle = 'melee', enemyStatuses = null) {
-    const skill = getHeroCombatSkill(hero, selectedStyle);
-    const base = heroBaseDamage(skill) + (weapon?.damage || 0) + damageBonus;
-    const buffMult = damageMultiplierOf(hero);
-    const enemyStyle = enemy?.combatType || 'melee';
-    const rpsMult = 1 + rpsOutcome(selectedStyle, enemyStyle) * RPS_DAMAGE_SHIFT;
-    const armor = enemyFlatArmor(enemy, enemyStatuses);
-    return {
-        min: Math.max(1, Math.round(base * DAMAGE_SPREAD_MIN * buffMult * rpsMult - armor)),
-        max: Math.max(1, Math.round(base * DAMAGE_SPREAD_MAX * buffMult * rpsMult - armor))
-    };
-}
-
-/**
- * Deterministic enemy damage range for UI display — mirrors computeEnemyDamage
- * (enemy min/max already carry the spread from the band budget).
- */
-export function getEnemyDamageRange(enemy, hero = null, heroStyle = 'melee') {
-    const enemyStyle = enemy?.combatType || 'melee';
-    const rpsMult = 1 + rpsOutcome(enemyStyle, heroStyle) * RPS_DAMAGE_SHIFT;
-    const armor = heroFlatArmor(hero);
-    const flatResist = heroFlatResist(hero);
-    return {
-        min: Math.max(1, Math.round((enemy?.minDamage ?? 1) * rpsMult - armor - flatResist)),
-        max: Math.max(1, Math.round((enemy?.maxDamage ?? 1) * rpsMult - armor - flatResist))
-    };
-}
-
-/**
- * Hero attack interval: a fixed value until weapon archetypes redefine it.
- */
-export function getHeroAttackSpeed() {
-    return HERO_ATTACK_INTERVAL_MS;
-}
-
-/**
- * XP for defeating an enemy, derived onto the enemy stat block from its
- * band budget.
+ * XP for defeating an enemy, carried on its profile from the level table.
  */
 export function getCombatXpAward(enemy) {
     return enemy?.xpAwarded ?? 1;
 }
-
-export { growth };

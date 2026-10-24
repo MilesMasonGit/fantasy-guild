@@ -4,10 +4,13 @@ export const EFFECT_TYPES = {
 
     // Combat axes read as flat sums by `ModifierAggregator.query` (percentage and
     // multiplier buckets are skipped), so the palette offers only the flat bucket.
-    ARMOR: 'ARMOR',           // flat damage subtracted — CombatFormulas.computeEnemyDamage
-    ACCURACY: 'ACCURACY',     // hit chance — CombatFormulas.calculateHitChance
-    BLOCK: 'BLOCK',           // block chance — CombatFormulas.getHeroBlockChance
-    RESIST_FLAT: 'RESIST_FLAT', // flat damage subtracted after armour — computeEnemyDamage
+    ARMOR: 'ARMOR',           // flat damage subtracted from every hit taken — CombatFormulas
+    ACCURACY: 'ACCURACY',     // points off the bearer's miss chance — CombatFormulas
+    RESIST_FLAT: 'RESIST_FLAT', // flat damage subtracted after armour — CombatFormulas.enemyHitDamage
+    // Read by CombatFormulas but not yet offered by the palette (no content carries them yet).
+    DODGE: 'DODGE',           // points on the miss chance of whoever attacks the bearer
+    PIERCE: 'PIERCE',         // armour points the bearer's hits ignore
+    CRIT_CHANCE: 'CRIT_CHANCE', // points on the bearer's crit chance
     XP_BONUS: 'XP_BONUS',     // Bonus XP gain
     LOOT_MULT: 'LOOT_MULT',   // Chance for double loot
     FAIL_CHANCE: 'FAIL_CHANCE', // Chance for failure/debuff

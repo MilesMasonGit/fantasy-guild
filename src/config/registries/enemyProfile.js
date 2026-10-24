@@ -1,7 +1,7 @@
 // Fantasy Guild — an enemy, read off the Token that is one
 
 import { getTokenType } from './tokenRegistry.js';
-import { enemyCombatBudget } from '../FormulaRegistry.js';
+import { enemyLevelStats, attackSpeedMs, ATTACK_SPEED_MS, BASE_CRIT_CHANCE, roundHalfUp } from '../FormulaRegistry.js';
 import { COMBAT_SKILL_IDS } from './skillRegistry.js';
 
 /**
@@ -15,19 +15,12 @@ import { COMBAT_SKILL_IDS } from './skillRegistry.js';
  * Fields, in the Token editor's Enemy section:
  *
  * ```json
- * "enemy": { "level": 2, "style": "melee", "budgetScale": 1.0 }
+ * "enemy": { "level": 2, "style": "melee" }
  * ```
  *
- * `level` is the single difficulty dial — HP, damage, attack speed, attack and
- * defence skill and XP all derive from it through `enemyCombatBudget`.
- * This mirrors the hero side, which is also one number
- * (a hero holds one combat skill supplying attack, defence, HP and block), so
- * a level-5 enemy and a Melee-5 hero are directly comparable.
- *
- * `budgetScale` is the optional thumb on the scale: it multiplies HP, damage
- * and XP together, so a tutorial pushover can sit below its band without
- * pretending to be a lower level. Per-stat deviation — tanky-but-weak, glass
- * cannon — is deliberately absent; it wants a budget-trade rule.
+ * `level` is the difficulty dial: HP, hit, armour, speed and XP come from the level table
+ * (`FormulaRegistry.enemyLevelStats`), and the level is also what the miss chance compares with
+ * the hero's combat level. Any one number can be written beside it to replace the table's.
  *
  * ## Drops
  * Not here. A kill is a cycle, so a kill's loot is the cycle's output:
@@ -68,13 +61,14 @@ export function isHostileEnemy(def) {
 /**
  * Build the enemy stat block for a Token definition.
  *
- * Returns exactly the twelve fields the ported combat engine reads off an
- * enemy — no more, so a missing field fails loudly here rather than resolving
- * to `undefined` three calls deep inside the attack processor.
+ * The level fills every number from the level table (`enemyLevelStats`); a number written beside
+ * the level on the Token's `enemy` (`hp`, `hit`, `armor`, `speed`, `xp`, `dodge`, `accuracy`,
+ * `pierce`, `critChance`) replaces that one. Without them an enemy has no Dodge, Accuracy or
+ * Pierce and the base 5 % crit.
  *
- * ⚠️ `armor` is deliberately absent. `CombatFormulas` reads `enemy?.armor`,
- * but it is a documented hook that resolves to 0, so adding it here would
- * invent a number.
+ * ⚠️ `budgetScale`, from content authored before the level table, still multiplies the table's
+ * HP, hit and XP (rounded halves up, at least 1), so the shipped tutorial goblins stay pushovers
+ * until their numbers are authored directly. Armour and speed are not scaled.
  *
  * `id` is the **Token's** id: the Bestiary, kill counts and discovery
  * notifications key on an id and look up a name.
@@ -85,33 +79,46 @@ export function isHostileEnemy(def) {
 export function enemyProfileOf(def) {
     if (!isEnemyDef(def)) return null;
 
-    const level = def.enemy.level;
-    const budgetScale = def.enemy.budgetScale ?? 1.0;
-    const budget = enemyCombatBudget(level, budgetScale);
-    const style = ENEMY_STYLES.includes(def.enemy.style) ? def.enemy.style : 'melee';
+    const authored = def.enemy;
+    const level = authored.level;
+    const table = enemyLevelStats(level);
+    const scale = Number(authored.budgetScale) > 0 ? Number(authored.budgetScale) : 1;
+    const scaled = (n) => Math.max(1, roundHalfUp(n * scale));
+    const style = ENEMY_STYLES.includes(authored.style) ? authored.style : 'melee';
+    const speed = ATTACK_SPEED_MS[authored.speed] ? authored.speed : table.speed;
 
     return {
         id: def.id,
         name: def.name || def.id,
         level,
         combatType: style,
-        hp: budget.hp,
-        minDamage: budget.minDamage,
-        maxDamage: budget.maxDamage,
-        attackSpeed: budget.attackIntervalMs,
-        attackSkill: level,
-        defenceSkill: level,
+        hp: Math.max(1, numberOr(authored.hp, scaled(table.hp))),
+        hit: Math.max(1, numberOr(authored.hit, scaled(table.hit))),
+        armor: numberOr(authored.armor, table.armor),
+        speed,
+        attackSpeed: attackSpeedMs(speed),
+        dodge: numberOr(authored.dodge, 0),
+        accuracy: numberOr(authored.accuracy, 0),
+        pierce: numberOr(authored.pierce, 0),
+        critChance: numberOr(authored.critChance, BASE_CRIT_CHANCE),
         // ⚠️ Load-bearing, and easy to miss: `getCombatXpAward` reads
         // `enemy.xpAwarded` and falls back to a flat **1** when it is absent.
         // Leaving it out does not throw — it silently pays 1 XP for every kill
         // at every level, which is exactly the kind of quiet wrongness a
         // missing field is supposed to make loud.
-        xpAwarded: budget.xp,
+        xpAwarded: Math.max(0, numberOr(authored.xp, scaled(table.xp))),
         // `traits` is read by the attack processor's thorns branch and must be
         // present. Enemy traits are not authorable yet; an empty array is the
         // right value.
         traits: []
     };
+}
+
+/** An authored number, or the fallback when the field is missing or not a number. */
+function numberOr(value, fallback) {
+    if (value === null || value === undefined || value === '') return fallback;
+    const n = Number(value);
+    return Number.isFinite(n) ? n : fallback;
 }
 
 /** The stat block for a Token id, or null. */

@@ -108,9 +108,9 @@ describe('The Combat chain in shipped data (7.7)', () => {
         const g = enemyProfileOf(goblin);
         const c = enemyProfileOf(chief);
         expect(c.hp).toBeGreaterThan(g.hp);
-        expect(c.maxDamage).toBeGreaterThan(g.maxDamage);
-        expect(c.attackSkill).toBeGreaterThan(g.attackSkill);
-        expect(c.defenceSkill).toBeGreaterThan(g.defenceSkill);
+        expect(c.level).toBeGreaterThan(g.level);
+        // Small numbers: below level 20 every enemy hits for 1, so the Chief's hit only ties.
+        expect(c.hit).toBeGreaterThanOrEqual(g.hit);
         expect(c.xpAwarded).toBeGreaterThan(g.xpAwarded);
     });
 

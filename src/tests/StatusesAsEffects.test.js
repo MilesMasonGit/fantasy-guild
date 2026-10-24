@@ -16,7 +16,7 @@ import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
 import { renderStatement } from '../systems/effects/statementText.js';
-import { computeHeroDamage, damageMultiplierOf, heroFlatArmor } from '../utils/CombatFormulas.js';
+import { heroHitDamage, damageMultiplierOf, heroFlatArmor } from '../utils/CombatFormulas.js';
 import { STATUS_TICK_INTERVAL_MS } from '../config/FormulaRegistry.js';
 import { ROLE } from '../config/registries/roleRegistry.js';
 
@@ -232,17 +232,16 @@ describe('⭐ the whole point: a carried buff changes a real fight', () => {
     it('Well Fed makes the hero hit harder', () => {
         authored('effect_wf', 'Well Fed', lasting(EFFECT_TYPES.DAMAGE, 0.50, 'percentage'));
 
-        const enemy = { hp: 100, armor: 0, combatType: 'melee', minDamage: 1, maxDamage: 1 };
-        const weapon = { damage: 10 };
+        const enemy = { hp: 100, armor: 0, combatType: 'melee', hit: 1, level: 50 };
 
-        const before = computeHeroDamage(hero(), enemy, weapon, 0, 'melee');
+        // Hits are fixed, so the buff shows as an exact number: a level 50 fist is 1 + 2 = 3,
+        // and +50 % makes it 4.5, rounded halves up to 5.
+        const before = heroHitDamage(hero(), enemy);
         carry('effect_wf');
-        const after = computeHeroDamage(hero(), enemy, weapon, 0, 'melee');
+        const after = heroHitDamage(hero(), enemy);
 
-        // The spread is random, so the assertion is on the multiplier having
-        // reached the formula at all rather than on an exact number.
         expect(damageMultiplierOf(hero())).toBeCloseTo(1.5, 5);
-        expect(before).toBeGreaterThan(0);
-        expect(after).toBeGreaterThan(0);
+        expect(before).toBe(3);
+        expect(after).toBe(5);
     });
 });

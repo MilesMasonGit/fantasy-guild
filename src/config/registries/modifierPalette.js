@@ -236,18 +236,7 @@ export const MODIFIER_PALETTE = [
         heroOnly: true,
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',
-        hint: 'Improves the chance an attack lands.'
-    },
-    {
-        type: EFFECT_TYPES.BLOCK,
-        label: 'Block Chance',
-        when: 'never',
-        scales: 'value',
-        buckets: ['flat'],
-        heroOnly: true,
-        shape: MODIFIER_SHAPES.DETERMINISTIC,
-        group: 'Combat',
-        hint: 'Percentage points of block chance. A blocked hit deals no damage.'
+        hint: 'Percentage points taken off the hero\'s miss chance.'
     },
     {
         type: EFFECT_TYPES.DAMAGE,
@@ -259,7 +248,7 @@ export const MODIFIER_PALETTE = [
          *
          * Every other combat row is `flat` only, because `query` sums flats and
          * silently skips the rest — offering a percentage there would offer
-         * something discarded. `computeHeroDamage` genuinely multiplies by a
+         * something discarded. `heroHitDamage` genuinely multiplies by a
          * percentage bucket, which is what makes a Well Fed style buff
          * (*"+10% damage for a while"*) expressible as an ordinary effect.
          */

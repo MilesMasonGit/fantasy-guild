@@ -19,7 +19,7 @@ export function handleVictory(fight, hero, enemy, heroId, assignedHeroIds) {
 
     // The full award goes into the hero's single combat skill (Defence is folded
     // into it, so there is no second bar). ⚠️ A hero holding no combat skill (a Recruit, who
-    // fights as a level 1 fighter) gets nothing: no combat XP until promotion.
+    // fights barehanded) gets nothing: no combat XP until promotion.
     assignedHeroIds.forEach(id => {
         const h = HeroManager.getHero(id);
         if (h) {
