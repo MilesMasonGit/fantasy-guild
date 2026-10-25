@@ -28,20 +28,32 @@ import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 import { HealthBar } from './HealthBar.jsx';
 import { heroBarPlace } from './healthBar.js';
 import { TokenNameBadge } from './TokenBadges.jsx';
-import { plateNameDrop } from './workPlate.js';
+import { plateNameDrop, plateUnit } from './workPlate.js';
 
 /**
- * A hero's health bar, just over their figure's head. Reads the hero's HP as a flat
- * projection of primitives (the engine mutates `hp` in place), so it redraws only when the
- * number moves.
+ * The events that move a hero's health in a fight: the engine changes `hp` in place and says so
+ * only through these (and `HEROES_UPDATED` for everything else).
  */
-function HeroHealthBar({ heroId, artPx }) {
+const HERO_HP_EVENTS = Object.freeze([
+    ENGINE_EVENTS.HEROES_UPDATED,
+    ENGINE_EVENTS.COMBAT_ENEMY_ATTACK,
+    ENGINE_EVENTS.COMBAT_HERO_ATE,
+    ENGINE_EVENTS.STATUS_DOT_TICK,
+    ENGINE_EVENTS.GAME_RESET
+]);
+
+/**
+ * A hero's health bar, just over their figure's head, the number above it. Reads the hero's HP
+ * as a flat projection of primitives (the engine mutates `hp` in place), so it redraws only when
+ * the number moves. In a fight its number grows away from the enemy (`outward`).
+ */
+function HeroHealthBar({ heroId, artPx, u, outward }) {
     const hp = useGameState(
         (state) => {
             const h = (state.heroes || []).find(x => x.id === heroId);
             return h ? { cur: h.hp?.current ?? 0, max: h.hp?.max ?? 100 } : null;
         },
-        [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.GAME_RESET],
+        HERO_HP_EVENTS,
         null,
         { deps: [heroId] }
     );
@@ -52,7 +64,9 @@ function HeroHealthBar({ heroId, artPx }) {
             of={heroId}
             cur={hp.cur}
             max={hp.max}
-            style={heroBarPlace(artPx)}
+            u={u}
+            outward={outward}
+            style={heroBarPlace(artPx, u)}
         />
     );
 }
@@ -273,7 +287,10 @@ const MatHeroBody = memo(function MatHeroBody({
                     )}
                 </div>
             )}
-            {barShown && barsDrawn && <HeroHealthBar heroId={heroId} artPx={artPx} />}
+            {barShown && barsDrawn && (
+                // Facing their enemy, so their number grows the other way.
+                <HeroHealthBar heroId={heroId} artPx={artPx} u={plateUnit(fit || 1)} outward={fighting ? (facingLeft ? 1 : -1) : 0} />
+            )}
             {/* Under the feet: the art reaches past the hero's box by half their difference. */}
             <TokenNameBadge name={name} shown={rested && !heroCarried} below offset={(artPx - FLAG_PX) / 2 + (plated ? plateNameDrop(fit) : 0)} />
         </button>

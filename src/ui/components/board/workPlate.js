@@ -57,9 +57,13 @@ export const PLATE = Object.freeze({
     MISSING_MAX: 2
 });
 
-/** The cells a plate can show, in the order they stand. */
+/**
+ * The cells a plate can show, in the order they stand. A fight's plate (`fightPlate.js`) uses the
+ * skill cell for each fighter's style, a divider between them and an elixir with its fights left.
+ */
 export const CELL = Object.freeze({
-    SKILL: 'skill', OUTPUT: 'output', MISSING: 'missing', PROBLEM: 'problem', CHARGES: 'charges', TIMER: 'timer'
+    SKILL: 'skill', OUTPUT: 'output', MISSING: 'missing', PROBLEM: 'problem', CHARGES: 'charges', TIMER: 'timer',
+    DIVIDER: 'divider', ELIXIR: 'elixir'
 });
 
 /**

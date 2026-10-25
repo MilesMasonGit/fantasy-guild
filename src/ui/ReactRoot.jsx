@@ -33,6 +33,7 @@ import { NOTIFICATION_COLUMN, columnWidthCss } from './components/board/boardCon
 import { getUpgradeDef } from '../config/guildUpgrades.js';
 import { selectGuildInspectSelection } from './guildInspectSelection.js';
 import { TokenInspectPopup } from './components/board/TokenInspectPopup.jsx';
+import { FightPanelPopup } from './components/combat/FightPanelPopup.jsx';
 
 import { FPSCounter } from './components/base/FPSCounter.jsx';
 import { ParticleOverlay } from './components/base/ParticleOverlay.jsx';
@@ -427,6 +428,8 @@ export const ReactRoot = () => {
                     onClose={() => ui.inspect.clear()}
                 />
             )}
+            {/* The fight panel over the playmat; always mounted, so every fight's log is kept from its start. */}
+            <FightPanelPopup onOpened={onClearInspect} />
             <SettingsModal isOpen={ui.settings.isOpen} onClose={ui.settings.close} />
             <SlotSelectionModal isOpen={ui.slotSelection.isOpen} onSelect={handleSlotSelect} />
             {ui.dock.editHeroId && (

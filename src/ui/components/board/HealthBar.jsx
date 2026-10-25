@@ -1,15 +1,23 @@
-import { HEALTH_BAR_H_U, HP_COLOUR, healthFraction, healthText } from './healthBar.js';
+import { HP_BAR, HP_COLOUR, HP_TRACK, HP_EDGE, healthFraction, healthFillPx, healthText } from './healthBar.js';
+
+/** A hard outline of `e` units around text: eight unblurred copies, no soft shadow. */
+const edge = (e) => [[e, 0], [-e, 0], [0, e], [0, -e], [e, e], [-e, e], [e, -e], [-e, -e]]
+    .map(([x, y]) => `${x}px ${y}px 0 #000`).join(', ');
 
 /**
- * HealthBar: a bar over a fighter, full when healthy and emptying toward the right, with the
- * exact number (`34/50`) drawn on it. `style` places it
- * (`left`/`top`/`width`) inside whatever it hangs from; `dragProps` (a Token's drag handle)
- * makes pressing it grab the Token like pressing its art.
+ * HealthBar: a thin bar over a fighter with the number and the percentage written above it,
+ * `17 · 57%` (owner, 2026-10-25). The fill empties toward the right in whole art pixels. `style`
+ * places the bar (`left`/`top`/`width`) inside whatever it hangs from; `u` is mat units a plate
+ * pixel (`workPlate.plateUnit`). `outward` is the side the number may grow to when it is wider
+ * than the bar (-1 left, 1 right, 0 both): away from the other fighter, so two fighters' numbers
+ * never meet. `dragProps` (a Token's drag handle) makes pressing it grab the Token like its art.
  * `who` is `enemy` or `hero`, `of` the Token's or hero's id.
  */
-export const HealthBar = ({ who, of = null, cur, max, style, dragProps = null }) => {
+export const HealthBar = ({ who, of = null, cur, max, style, u = 1, outward = 0, dragProps = null }) => {
     const text = healthText(cur, max);
     const fraction = healthFraction(cur, max);
+    // The bar's width in plate pixels: the fill steps in whole art pixels of it.
+    const wide = Number.isFinite(style?.width) && u > 0 ? Math.round(style.width / u) : HP_BAR.W;
     return (
         <div
             data-health-bar={who}
@@ -17,29 +25,33 @@ export const HealthBar = ({ who, of = null, cur, max, style, dragProps = null })
             data-health-fraction={fraction.toFixed(3)}
             data-health-text={text}
             {...dragProps}
-            className="absolute z-20 pointer-events-auto select-none flex items-center"
-            style={{ height: HEALTH_BAR_H_U, ...style }}
+            className="absolute z-20 pointer-events-auto select-none"
+            style={{ height: HP_BAR.H * u, ...style }}
         >
-            <div
-                className="w-full rounded-full overflow-hidden"
-                style={{ height: HEALTH_BAR_H_U, background: 'rgba(0,0,0,0.65)', boxShadow: '0 0 0 1px rgba(0,0,0,0.85)' }}
-            >
-                <div
-                    style={{
-                        width: `${fraction * 100}%`,
-                        height: '100%',
-                        background: HP_COLOUR,
-                        transition: 'width 0.3s ease-out'
-                    }}
-                />
-            </div>
             <span
                 data-health-label
-                className="absolute inset-0 flex items-center justify-center whitespace-nowrap font-bold leading-none"
-                style={{ fontSize: HEALTH_BAR_H_U - 2, color: '#fff', textShadow: '0 0 2px #000, 0 0 2px #000, 0 0 3px #000' }}
+                className="absolute left-0 right-0 flex whitespace-nowrap font-bold leading-none tabular-nums text-white"
+                style={{
+                    bottom: `calc(100% + ${(HP_BAR.LABEL_GAP + HP_BAR.EDGE) * u}px)`,
+                    // Centred while it fits; wider than the bar, it grows outward only.
+                    justifyContent: 'safe center',
+                    flexDirection: outward < 0 ? 'row-reverse' : 'row',
+                    fontSize: `calc(var(--font-size-xxs, 14px) * ${u})`,
+                    textShadow: edge(HP_BAR.EDGE * u)
+                }}
             >
                 {text}
             </span>
+            <div
+                className="absolute inset-0"
+                style={{ background: HP_TRACK, boxShadow: `0 0 0 ${HP_BAR.EDGE * u}px ${HP_EDGE}` }}
+            >
+                <div
+                    data-health-fill
+                    className="absolute left-0 top-0 bottom-0"
+                    style={{ width: healthFillPx(cur, max, wide) * u, background: HP_COLOUR }}
+                />
+            </div>
         </div>
     );
 };

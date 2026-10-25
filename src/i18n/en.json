@@ -58,5 +58,135 @@
         "noBoosts": "No active boosts",
         "returnToPlaymat": "Return to Playmat",
         "inspect": "Inspect"
+    },
+    "fight": {
+        "seconds": "{n} s",
+        "log": {
+            "heroHits": "{hero} hits {enemy}",
+            "heroCrits": "{hero} crits {enemy}",
+            "heroMisses": "{hero} misses",
+            "enemyHits": "{enemy} hits {hero}",
+            "enemyCrits": "{enemy} crits {hero}",
+            "enemyMisses": "{enemy} misses {hero}",
+            "eats": "{hero} eats {item}",
+            "drinks": "{hero} drinks {item}",
+            "statusLands": "{status} on {who}",
+            "statusBlocked": "{status} can't land on {who}",
+            "statusHurts": "{status} hurts {who}",
+            "statusHeals": "{status} heals {who}",
+            "heals": "{who} heals",
+            "move": "{move}",
+            "drops": "Drops {items}",
+            "won": "{hero} beats {enemy}",
+            "lost": "{hero} is knocked out",
+            "left": "{hero} leaves the fight"
+        },
+        "float": {
+            "crit": "Crit!",
+            "miss": "Miss"
+        },
+        "panel": {
+            "title": "{hero} vs {enemy}",
+            "versus": "vs",
+            "noStyle": "No style",
+            "showLog": "Show log",
+            "hideLog": "Hide log",
+            "thisFight": "This fight",
+            "lastFight": "Last fight",
+            "noFight": "No fight now: the next one starts here",
+            "noLastFight": "No fight before this one yet",
+            "joinedLate": "seen from partway through",
+            "trimmed": "Earlier lines dropped",
+            "won": "Beat {enemy} in {time}",
+            "lost": "Knocked out after {time}",
+            "left": "Left the fight after {time}",
+            "unknownKinds": "? fight one to learn",
+            "noKinds": "None",
+            "fightIcon": "Fight: {hero} vs {enemy}",
+            "openHint": "Click to open the fight panel"
+        },
+        "tip": {
+            "level": "{name}: {style} {level}",
+            "noStyle": "{name} fights barehanded, with no style",
+            "enemyStyle": "{name} fights {style}",
+            "hp": "{name}: {cur} of {max} health",
+            "heroHit": "Hits for {hit} before the enemy's armour",
+            "enemyHit": "Hits for {hit} before your armour",
+            "weapon": "{item}: {n}",
+            "fist": "Fist: 1",
+            "levelStep": "Combat level: +{n}",
+            "moreDamage": "Elixirs and gear: {n}",
+            "heroArmour": "Armour {armour}: takes {armour} off each enemy hit",
+            "enemyArmour": "Armour {armour}: takes {armour} off each of your hits",
+            "swing": "Swings every {time}",
+            "elixir": {
+                "one": "{item}: {count} fight left",
+                "other": "{item}: {count} fights left"
+            },
+            "stacksUpTo": {
+                "one": "Stacks up to {count}",
+                "other": "Stacks up to {count}"
+            },
+            "ticksLeft": {
+                "one": "{count} tick left",
+                "other": "{count} ticks left"
+            },
+            "untilFightEnds": "Until the fight ends"
+        },
+        "card": {
+            "level": "Level",
+            "style": "Style",
+            "health": "Health",
+            "hit": "Hit",
+            "armour": "Armour",
+            "swing": "Swing",
+            "kinds": "Kinds",
+            "every": "every {time}"
+        },
+        "kinds": {
+            "armoured": {
+                "name": "Armoured",
+                "tip": "+2 armour, slow swings"
+            },
+            "nimble": {
+                "name": "Nimble",
+                "tip": "Dodges: your hits miss it more often"
+            },
+            "swift": {
+                "name": "Swift",
+                "tip": "Small hits every 2 s"
+            },
+            "brute": {
+                "name": "Brute",
+                "tip": "Big hits every 4 s"
+            },
+            "venomous": {
+                "name": "Venomous",
+                "tip": "Each hit adds a stack of Poison"
+            }
+        }
+    },
+    "catchUp": {
+        "combat": {
+            "title": "Fights",
+            "tally": "{won} won · {lost} lost",
+            "beaten": "Beaten",
+            "knockedOut": "Knocked out",
+            "used": "Used",
+            "drops": "Drops",
+            "knockout": {
+                "one": "{hero}: knocked out once",
+                "other": "{hero}: knocked out {count} times"
+            },
+            "beatenTip": {
+                "one": "{enemy}: beaten once",
+                "other": "{enemy}: beaten {count} times"
+            },
+            "usedTip": {
+                "one": "{item}: 1 used",
+                "other": "{item}: {count} used"
+            },
+            "dropTip": "{item}: {count} dropped"
+        }
     }
 }

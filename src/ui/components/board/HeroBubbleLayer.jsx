@@ -17,7 +17,8 @@ import { layoutStacks, bubbleAnchorY } from './bubbleLayout.js';
 import { useMatSize } from '../../hooks/useMatSize.js';
 import { TICK_INTERVAL_MS } from '../../../config/loopConstants.js';
 import { publishHeroColumns } from './speechColumns.js';
-import { SpeechFrame, tailInset } from './SpeechFrame.jsx';
+import { SpeechFrame, tailInset, speechTailDrop } from './SpeechFrame.jsx';
+import { clearOfFight } from './healthBar.js';
 import { momentTone } from './speechTone.js';
 import { plateUnit } from './workPlate.js';
 
@@ -164,7 +165,10 @@ export const HeroBubbleLayer = ({ heroes }) => {
             // (`bubbleAnchorY`). A moving hero comes with no point: read it live.
             const at = h.x == null ? HeroMotion.bodyView(h.heroId) : h;
             if (!at) continue;
-            out.push({ h, stack, floats, x: at.x, y: bubbleAnchorY(at.y, artPx), live: h.x == null });
+            // Over a hero whose health bar shows (fighting, or hurt), above its number, never on it.
+            const head = bubbleAnchorY(at.y, artPx);
+            const y = h.combat || h.hurt ? clearOfFight(head, at.y - artPx / 2, u, speechTailDrop(u) + 2 * u) : head;
+            out.push({ h, stack, floats, x: at.x, y, live: h.x == null });
         }
         return out;
     };

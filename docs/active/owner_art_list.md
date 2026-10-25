@@ -160,3 +160,25 @@ Tokens. Stand-ins from existing sprites until drawn.
 | Fishing Net and Trap (tool icons) | **NEW** / ADAPT | Held in one hand like the rod (brief 230 S5); a new game starts with a Trap in the Bank. Stand-ins: the Trap uses `i_fish_trap`; no net picture yet |
 | Fish for the first catch pools | ADAPT / **NEW** | Trout, Salmon, Shark, Lobster, Tropical Fish icons exist (`items/fish/`); a Dolphin or Crab, if the pools want them, is new |
 
+
+## 5. Combat screen (brief 220 C6)
+
+Small icons for the fight on the mat, the fight panel and its log, 8 × 8 drawn
+at 2× (shown on the style sheet page under "Combat screen"). Placeholders are
+drawn in code (`src/ui/components/combat/combatGlyphs.js`) until drawn;
+swapping a picture in for one is a small code change.
+
+| Piece | Status | Notes |
+|---|---|---|
+| Fight icon (crossed swords) | **NEW** | On the chip beside each fight's enemy (opens the fight panel), the panel's header and the log's "beats" line. Placeholder: gold crossed lines |
+| Hit (a burst) | **NEW** | The versus card's hit row and the log's hits |
+| Armour (a shield) | **NEW** | The versus card's armour row |
+| Heart | **NEW** | The versus card's health row; the log's meals and heals |
+| Poison drop | **NEW** | A poison tick's float (red, outlined), a poisoned fighter's status, the log's poison lines |
+| Burn flame | **NEW** | A burn tick's float, a burning fighter's status, the log's burn lines |
+| Crit star | **NEW** | The log's crits and boss moves |
+| Miss dash | **NEW** | The log's misses |
+| Potion | **NEW** | The log's "drinks" line (an elixir) |
+| Loot bag | **NEW** | The log's "Drops" line |
+| Knocked out (a down arrow) | **NEW** | The log's knockout and the "While you were away" Knocked out line |
+| Enemy animation sheets | **NEW** (as wanted) | Only the Cow has one today (`e_cow_sheet`); every other enemy stands still in the fight panel's strip and loops nothing on the mat. A sheet is 4 × 4 frames of 64 px (rows 0–1 idle, 2–3 attack); registering one is a one-line code change |

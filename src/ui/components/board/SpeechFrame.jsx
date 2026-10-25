@@ -14,6 +14,9 @@ const TAIL_H = 4;
 /** Its hard shadow, like the frame's: 2 frame pixels down-right. */
 const TAIL_SHADOW = 2;
 
+/** How far the tail (and its shadow) hangs below the frame's foot, in the units `u` is in. */
+export const speechTailDrop = (u = 1) => ((TAIL_H + TAIL_SHADOW) * 2 - 2) * u;
+
 const px = (x, y, w = 1) => `M${x} ${y}h${w}v1h-${w}z`;
 
 /**

@@ -131,7 +131,7 @@ function enemySwing(fight, enemy, hero) {
             const dmg = CombatFormulas.enemyHitDamage(enemy, hero, { crit: swing.crit });
             HeroManager.modifyHeroHp(hero.id, -dmg);
 
-            EventBus.publish(ENGINE_EVENTS.COMBAT_ENEMY_ATTACK, { cardId: fight.id, heroId: hero.id, enemyId: enemy.id, damage: dmg, hit: true, crit: swing.crit, heroHpRemaining: hero.hp.current });
+            EventBus.publish(ENGINE_EVENTS.COMBAT_ENEMY_ATTACK, { cardId: fight.id, instanceId: fight.instanceId, heroId: hero.id, enemyId: enemy.id, damage: dmg, hit: true, crit: swing.crit, heroHpRemaining: hero.hp.current });
 
             if (hero.hp.current <= 0) {
                 handleHeroWounded(fight, hero.id);
@@ -141,7 +141,7 @@ function enemySwing(fight, enemy, hero) {
                 fightMoment(fight, SIDE.ENEMY, FIGHT_MOMENT.HIT, tallies.hits.enemy);
             }
         } else {
-            EventBus.publish(ENGINE_EVENTS.COMBAT_ENEMY_ATTACK, { cardId: fight.id, heroId: hero.id, enemyId: enemy.id, damage: 0, hit: false, crit: false, heroHpRemaining: hero.hp.current });
+            EventBus.publish(ENGINE_EVENTS.COMBAT_ENEMY_ATTACK, { cardId: fight.id, instanceId: fight.instanceId, heroId: hero.id, enemyId: enemy.id, damage: 0, hit: false, crit: false, heroHpRemaining: hero.hp.current });
         }
     }
 

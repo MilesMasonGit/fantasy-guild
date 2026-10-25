@@ -93,6 +93,17 @@ function PlateCell({ cell, u, tip }) {
                 </>
             );
             break;
+        case CELL.DIVIDER:
+            body = <span aria-hidden="true" style={{ width: 2 * u, height: 28 * u, background: 'var(--color-ui-frame)' }} />;
+            break;
+        case CELL.ELIXIR:
+            body = (
+                <>
+                    <img src={spriteOf(cell.itemId)} alt="" draggable={false} style={icon} />
+                    <span className="font-bold tabular-nums leading-none text-white" style={num}>{cell.count}</span>
+                </>
+            );
+            break;
         case CELL.TIMER:
             body = (
                 <>
@@ -148,7 +159,7 @@ export function WorkPlateView({ cells, tone = null, u = 1, tip = null, fill = nu
                 style={frame}
             />
             {/* Keyed by what each cell is, so a cell keeps its tooltip while the plate opens round it. */}
-            {cells.map(cell => <PlateCell key={`${cell.kind}:${cell.itemId || cell.id || ''}`} cell={cell} u={u} tip={tip} />)}
+            {cells.map(cell => <PlateCell key={`${cell.kind}:${cell.itemId || cell.id || ''}:${cell.who || ''}`} cell={cell} u={u} tip={tip} />)}
             {fill}
         </div>
     );

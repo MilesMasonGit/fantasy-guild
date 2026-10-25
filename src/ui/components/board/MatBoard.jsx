@@ -17,6 +17,8 @@ import { FlagLayer } from './FlagLayer.jsx';
 import { heroOutline } from './spriteOutline.js';
 import { SpriteLayerView } from './SpriteLayerView.jsx';
 import { WorkPlateLayer } from './WorkPlateLayer.jsx';
+import { FightLayer } from './FightLayer.jsx';
+import { EnemyCardTip } from '../combat/EnemyCard.jsx';
 import { TerrainCanvas } from './TerrainCanvas.jsx';
 import { AmbientLife, createGroundPictures } from './AmbientLife.jsx';
 import { TerrainGridOverlay } from './TerrainGridOverlay.jsx';
@@ -79,6 +81,7 @@ export const MatBoard = React.memo(function MatBoard({
     const speechDrawn = useDrawn('speech');
     const terrainDrawn = useDrawn('terrain');
     const platesDrawn = useDrawn('workPlate');
+    const tooltipsDrawn = useDrawn('tooltips');
     const rootRef = useRef(null);
 
     // Read through the hook so the whole board redraws when the Mat Tuner resizes it.
@@ -382,6 +385,22 @@ export const MatBoard = React.memo(function MatBoard({
         }
         return out;
     }, [heroes, tokens, carriedId]);
+    /** Each fight: the hero and the enemy Token they are fighting, its Token not in the hand. */
+    const fights = useMemo(() => {
+        const byId = new Map(tokens.map(t => [t.id, t]));
+        const out = [];
+        for (const h of heroes) {
+            if (!h.tokenId || !h.combat || h.tokenId === carriedId) continue;
+            const t = byId.get(h.tokenId);
+            if (!t || t.x == null) continue;
+            out.push({ tokenId: h.tokenId, heroId: h.heroId, typeId: t.typeId, x: t.x, y: t.y });
+        }
+        return out;
+    }, [heroes, tokens, carriedId]);
+    // The Token the pointer rests on, when it is an enemy: its card shows (not while one is carried).
+    const restType = rest.tokenId && !carriedId ? tokens.find(t => t.id === rest.tokenId)?.typeId : null;
+    const restEnemy = restType && getTokenType(restType)?.enemy ? restType : null;
+
     // Keyed by value, so a walking step redraws no Token or hero for it.
     const platedKey = platesDrawn ? plates.map(p => p.tokenId).sort().join('|') : '';
     const plated = useMemo(() => new Set(platedKey ? platedKey.split('|') : []), [platedKey]);
@@ -539,6 +558,14 @@ export const MatBoard = React.memo(function MatBoard({
                     yieldToTokens={flagsYield}
                 />
             )}
+
+            {/* `MAT_Z.FIGHT`: each fight's plate under the fighters' feet and its chip, which opens the fight panel. */}
+            {fights.length > 0 && (
+                <FightLayer fights={fights} onPress={handleTokenPress} platesDrawn={platesDrawn} yieldToTokens={flagsYield} />
+            )}
+
+            {/* The enemy card, by the pointer, while it rests on an enemy. */}
+            {tooltipsDrawn && restEnemy && <EnemyCardTip typeId={restEnemy} instanceId={rest.tokenId} />}
 
             {/* `MAT_Z.FX`: effects standing on the mat (rising numbers, sparks, a knockout). */}
             <MatFxLayer />

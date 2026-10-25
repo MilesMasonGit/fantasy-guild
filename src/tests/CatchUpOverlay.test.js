@@ -33,7 +33,9 @@ registerItems({
     fixture_cu_ore: item('fixture_cu_ore', 'Fixture Ore'),
     fixture_cu_log: item('fixture_cu_log', 'Fixture Log'),
     fixture_cu_seed: item('fixture_cu_seed', 'Fixture Seed'),
-    fixture_cu_pelt: item('fixture_cu_pelt', 'Fixture Pelt')
+    fixture_cu_pelt: item('fixture_cu_pelt', 'Fixture Pelt'),
+    fixture_cu_meal: item('fixture_cu_meal', 'Fixture Meal'),
+    fixture_cu_elixir: item('fixture_cu_elixir', 'Fixture Elixir')
 });
 const token = (id, name) => ({
     id, name, tokenType: 'resource', rarity: 'common', theme: 'fixture', uses: 5, sprite: 's_nature'
@@ -62,7 +64,12 @@ const fullResult = () => ({
         ],
         depleted: { total: 3, byType: { fixture_cu_rock: 3 } },
         wounded: [{ heroId: 'h2', heroName: 'Bram', times: 2 }],
-        fightsWon: { total: 9, byEnemy: { fixture_cu_wolf: 9 } }
+        fightsWon: { total: 9, byEnemy: { fixture_cu_wolf: 9 } },
+        combat: {
+            food: { fixture_cu_meal: 14 },
+            elixirs: { fixture_cu_elixir: 2 },
+            drops: { fixture_cu_pelt: 9 }
+        }
     }
 });
 
@@ -178,8 +185,27 @@ describe('"While you were away"', () => {
         expect(level('h2', 'melee')).toEqual({ name: 'Bram Melee', short: '3 → 4', exact: null });
 
         expect(bar('depleted', 'data-type-id', 'fixture_cu_rock')).toEqual({ name: 'Fixture Rock', short: '×3', exact: '×3' });
-        expect(bar('wounded', 'data-hero-id', 'h2')).toEqual({ name: 'Bram', short: '×2', exact: '×2' });
-        expect(bar('fights', 'data-type-id', 'fixture_cu_wolf')).toEqual({ name: 'Fixture Wolf', short: '×9', exact: '×9' });
+
+        // The fights: one compact block (owner, 2026-10-25): won and lost, then a line each.
+        expect(text('[data-summary-fight-tally]')).toBe('9 won · 2 lost');
+        const pill = (row, attr, id) => text(`[data-summary-fight-row="${row}"] [${attr}="${id}"]`);
+        expect(pill('beaten', 'data-type-id', 'fixture_cu_wolf')).toBe('×9');
+        expect(pill('knockedOut', 'data-hero-id', 'h2')).toBe('Bram×2');      // two spans: the name, then the count
+        expect(pill('used', 'data-item-id', 'fixture_cu_meal')).toBe('×14');
+        expect(pill('used', 'data-item-id', 'fixture_cu_elixir')).toBe('×2');
+        expect(pill('drops', 'data-item-id', 'fixture_cu_pelt')).toBe('×9');
+        // Meals before elixirs: what the fights cost.
+        const used = [...document.querySelectorAll('[data-summary-fight-row="used"] [data-summary-pill]')].map(p => p.getAttribute('data-item-id'));
+        expect(used).toEqual(['fixture_cu_meal', 'fixture_cu_elixir']);
+    });
+
+    it('the fights block leaves out a line with nothing, and shows for a knockout alone', () => {
+        start();
+        const r = emptyResult();
+        r.summary.wounded = [{ heroId: 'h1', heroName: 'Aela', times: 1 }];
+        finish(r);
+        expect(text('[data-summary-fight-tally]')).toBe('0 won · 1 lost');
+        expect([...document.querySelectorAll('[data-summary-fight-row]')].map(e => e.getAttribute('data-summary-fight-row'))).toEqual(['knockedOut']);
     });
 
     it('headings in plain words', () => {
@@ -193,8 +219,7 @@ describe('"While you were away"', () => {
             ['spent', 'Items spent'],
             ['levels', 'Level-ups'],
             ['depleted', 'Tokens used up'],
-            ['wounded', 'Heroes wounded'],
-            ['fights', 'Fights won']
+            ['fights', 'Fights']
         ]);
         expect(text('[data-catch-up-summary] [role="heading"]')).toBe('While you were away');
     });
@@ -251,10 +276,10 @@ describe('"While you were away"', () => {
 describe('the summary\'s Item Bars', () => {
     const bars = () => [...document.querySelectorAll('[data-catch-up-summary] [data-item-bar]')];
 
-    it('every item, Token, level-up, wound and fight is an Item Bar, one per line', () => {
+    it('every item, Token and level-up is an Item Bar, one per line; the fights are one compact block of pills', () => {
         start();
         finish(fullResult());
-        const sections = ['waiting', 'gained', 'spent', 'levels', 'depleted', 'wounded', 'fights'];
+        const sections = ['waiting', 'gained', 'spent', 'levels', 'depleted'];
         for (const id of sections) {
             const list = q(`[data-summary-section="${id}"] [data-summary-list]`);
             expect(list, id).not.toBeNull();
@@ -263,8 +288,13 @@ describe('the summary\'s Item Bars', () => {
             expect(list.children.length, id).toBeGreaterThan(0);
             for (const child of list.children) expect(child.hasAttribute('data-item-bar'), id).toBe(true);
         }
-        // 1 waiting, 2 gained, 1 spent, 3 level-ups, 1 depleted, 1 wounded, 1 fight.
-        expect(bars()).toHaveLength(10);
+        // 1 waiting, 2 gained, 1 spent, 3 level-ups, 1 depleted.
+        expect(bars()).toHaveLength(8);
+        // The fights block: a line per kind, each a row of pills (a sprite and a count), no Item Bars.
+        const block = q('[data-summary-section="fights"]');
+        expect(block.querySelectorAll('[data-item-bar]')).toHaveLength(0);
+        expect(block.querySelectorAll('[data-summary-fight-row]')).toHaveLength(4);
+        expect(block.querySelectorAll('[data-summary-pill]')).toHaveLength(5);
         // The old bespoke row is gone.
         expect(q('[data-catch-up-summary] [data-item-row]')).toBeNull();
     });
@@ -304,17 +334,17 @@ describe('the summary\'s Item Bars', () => {
         expect(body.className).toMatch(/\bpx-3\b/);
     });
 
-    it('Tokens used up and fights show the Token\'s sprite; level-ups the skill\'s icon', () => {
+    it('Tokens used up and the enemies beaten show the Token\'s sprite; level-ups the skill\'s icon', () => {
         start();
         finish(fullResult());
         const rock = q('[data-summary-section="depleted"] [data-type-id="fixture_cu_rock"]');
         expect(rock.querySelector('[data-item-bar-sprite] img')).not.toBeNull();
         const wolf = q('[data-summary-section="fights"] [data-type-id="fixture_cu_wolf"]');
-        expect(wolf.querySelector('[data-item-bar-sprite] img')).not.toBeNull();
+        expect(wolf.querySelector('img')).not.toBeNull();
         const mining = q('[data-summary-hero="h1"][data-skill-id="mining"]');
         expect(mining.hasAttribute('data-item-bar')).toBe(true);
         expect(mining.querySelector('[data-item-bar-sprite]')).not.toBeNull();
-        expect(q('[data-summary-section="wounded"] [data-hero-id="h2"] [data-item-bar-sprite]')).not.toBeNull();
+        expect(q('[data-summary-section="fights"] [data-hero-id="h2"] [data-glyph="down"]')).not.toBeNull();
     });
 
     it('slide in one after another, and the entrance classes come off once it has played', () => {
@@ -322,14 +352,15 @@ describe('the summary\'s Item Bars', () => {
         start();
         finish(fullResult());
         const animated = () => document.querySelectorAll('[data-catch-up-summary] .catch-up-row-in');
-        expect(animated().length).toBe(bars().length + 7);          // the bars and the 7 headings
+        // The bars, the 5 headings, and the fights block's heading line and its 4 lines.
+        expect(animated().length).toBe(bars().length + 5 + 1 + 4);
         const delays = bars().map(r => parseFloat(r.style.animationDelay));
         expect(delays[1]).toBeGreaterThan(delays[0]);
         expect(delays[2]).toBeGreaterThan(delays[1]);
         act(() => { vi.advanceTimersByTime(5000); });
         expect(animated().length).toBe(0);
         expect(bars().every(r => !r.style.animationDelay)).toBe(true);
-        expect(bars()).toHaveLength(10);
+        expect(bars()).toHaveLength(8);
     });
 });
 

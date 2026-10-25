@@ -75,6 +75,12 @@ function inFight(bearer) {
     return !!heroId && !!fightCheck?.(heroId);
 }
 
+/** A bearer's health now: a hero's, or a fight's enemy's; null for anything else. */
+function healthOf(target) {
+    const hp = target?.hp?.current ?? target?.combat?.enemyHp?.current;
+    return Number.isFinite(hp) ? hp : null;
+}
+
 /** Who a bearer is, in the words the status events use. */
 function whoIs(bearer) {
     if (bearer?.roles?.selfHeroId) return { targetType: 'hero', targetId: bearer.roles.selfHeroId };
@@ -346,14 +352,22 @@ export function tickBearer(bearer, fire, now = GameClock.now()) {
         if (!entry) continue;
         const statements = instanceStatements(instance, entry).filter(s => s?.when?.event === EFFECT_TICK);
         if (!statements.length) continue;
-        if (instance.stacks != null) {
-            EventBus.publish(ENGINE_EVENTS.STATUS_DOT_TICK, { ...whoIs(bearer), statusId: instance.effectId, stacks: instance.stacks });
-        }
+        const status = instance.stacks != null ? { stacks: instance.stacks, hp: healthOf(target) } : null;
+        let downed = false;
         for (const statement of statements) {
             // A tick that downed its bearer ended the fight, and every status still to tick with it.
-            if (bearer.suspended?.()) break ticking;
+            if (bearer.suspended?.()) { downed = true; break; }
             fire(statement, { ...bearer.roles });
         }
+        // Said after its rules ran, so the combat screen can show what the tick did.
+        if (status) {
+            const after = healthOf(target);
+            EventBus.publish(ENGINE_EVENTS.STATUS_DOT_TICK, {
+                ...whoIs(bearer), statusId: instance.effectId, stacks: status.stacks,
+                hpChange: status.hp != null && after != null ? after - status.hp : null
+            });
+        }
+        if (downed) break ticking;
     }
 
     // A status with a tick count spends one; the rest wait for their fight to end.

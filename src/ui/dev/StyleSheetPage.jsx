@@ -41,6 +41,7 @@ import { bannerText } from '../../systems/notifications/bannerKinds.js';
 import { BookTab } from '../components/atlas/AtlasTome.jsx';
 import { MapSprite, MapOutline, MAP_PX, SLOT_PX } from '../components/atlas/MapPieces.jsx';
 import { WorkPlateDemo } from './WorkPlateDemo.jsx';
+import { CombatKit } from './CombatKit.jsx';
 import { KitButton, KIT_BUTTON_TONE, PixelToggle } from '../components/base/KitButton.jsx';
 
 /** One art pixel of the UI, in screen pixels: UI sprites draw at 2×. */
@@ -781,6 +782,12 @@ export const KIT_SECTIONS = [
         source: 'WorkPlateView, drawn on the mat by WorkPlateLayer (one per hero at work)',
         rule: 'While a hero works a Token, one chamfer-framed plate on the seam between them, just below their feet, over any loot lying there. At rest: what is being made, with the cycle filling along the plate’s foot in whole art pixels, and the charges left; while the Token waits, exactly what it waits for as a red have/need pill, the frame gold (red when it can’t go on) and the cycle held grey. Resting the pointer on the hero, the Token or the plate opens the full line: skill, output, charges, time to the next one, each with its tooltip; the names drop below it. Pressing it grabs the Token. A Token nobody works keeps its own “!” and hover rings. A fight has no plate yet: its place is kept for the fight’s link. Drawn here at the mat’s 1920 × 1080 size; hover any part.',
         Demo: WorkPlateDemo
+    },
+    {
+        id: 'combat-screen', title: 'Combat screen', status: 'unapproved',
+        source: 'HealthBar, FightLayer (chip and plate), fightFloats, FightPanelView, EnemyCardRows: the real components, fed a fixture fight',
+        rule: 'On the mat (owner 2026-10-25, option B as settled): a thin bar over each fighter with “17 · 57%” above it, the number growing away from the other fighter when wide; the crossed-swords chip beside the enemy’s bar on its far side, which opens the fight panel; the fight plate in the work plate’s place (both styles with a divider, then the elixirs with the fights each has left); floats at each fighter’s outer side: white hits on the enemy, red on the hero, “Miss”, a big gold “Crit!”, green heals, poison and burn ticks red with a drop or a flame. The panel (Panel 3’s strip with Panel 2’s card): the battlefield strip with both fighters at 1×, the hero on the left; the versus card, one shared icon column; the log closed until asked for, with This fight and Last fight. The enemy card: level, style, health, hit, armour, swing, kinds once fought. Placeholder icons are drawn in code.',
+        Demo: CombatKit
     }
 ];
 

@@ -831,6 +831,54 @@ The QA panel's Statuses and boss moves section sets up a Venomous goblin, a
 burning imp and a four-move warlord, with a live readout of the statuses.
 *(`board/FightMoments.js`, `combat/FightHooks.js`)*
 
+### The combat screen — Built (brief 220 C6)
+What a player sees of a fight (owner's picks from the mock-ups, 2026-10-24/25).
+Statuses are not drawn on the board.
+- **On the mat**: a thin health bar over each fighter with the number and the
+  percentage above it ("17 · 57%", halves up; the same bar over a hurt or
+  hovered hero and a hovered enemy); a wide number grows away from the other
+  fighter. The **fight plate** stands in the work plate's place under the two
+  fighters' feet: both styles with a divider, then the hero's working elixirs
+  with the fights each has left, the one under way counted (a fresh dose shows
+  10, its last fight 1; between fights, the fights still to come). A Recruit
+  shows no style. Speech, callouts (a status landing, a boss move) and "used"
+  bubbles over a fighter stand above its number and the chip, never on them.
+  A small
+  **crossed-swords chip** beside the enemy's bar, on its far side from the
+  hero (the flag flies the other way), opens the fight panel.
+- **Floating numbers** rise at each fighter's outer side, beside the middle of
+  their art, and are gone in half a second: white on the enemy (on the strike
+  frame of the hero's swing), red on the hero, "Miss", a big number under a
+  gold "Crit!", green heals (a meal, or a rule's heal on either side), and
+  poison and burn ticks in red with a drop or a flame. Two at once on one side
+  stack upward.
+- **The fight panel** opens over the mat beside the chip, one at a time (the
+  X, Escape or a click off it closes it): the battlefield strip with both
+  fighters at 1×, the hero on the left facing right, moving as on the mat
+  (idle, one swing per real swing; an enemy without an animation sheet stands
+  still: today every enemy but the Cow); the **versus card**, one shared icon
+  column so each pair reads across: style and level, health, hit (before the
+  other side's armour and the matchup: the player does the sums), armour,
+  swing; the hero's elixirs and statuses (with stacks) beside the enemy's
+  kinds (once fought), statuses and lingering moves; and the **log**, closed
+  until asked for, holding the whole of this fight and the last one ("This
+  fight" / "Last fight", newest first, at most 400 lines a fight). A fight is
+  one enemy engaged: each kill starts the next. The log is kept in memory per
+  hero and never saved.
+- **The enemy card** shows by the pointer resting on an enemy: level, style,
+  health, hit, armour, swing, and its kinds once the guild has fought one
+  ("? fight one to learn" before).
+- **"While you were away"** says the fights in one block: won and lost, the
+  enemies beaten, the heroes knocked out, the food and elixirs used and what
+  the kills dropped.
+- A catch-up records and draws none of it (every listener is a UI listener);
+  a fight still running after one is picked up at its next event, or when its
+  panel opens. Placeholder icons are drawn in code (`owner_art_list.md`). The
+  QA panel's Combat screen section sets up two fights and an enemy nobody has
+  fought, and plays 20 minutes away.
+  *(`ui/components/combat/`, `board/FightLayer.jsx`, `board/fx/fightFloats.js`,
+  `board/HealthBar.jsx`, `hud/CatchUpOverlay.jsx`)*
+
 ---
 
 ## 7. Rules and effects (the statement grammar)

@@ -36,6 +36,8 @@ import { logger } from '../../utils/Logger.js';
  * - `depleted`: `{ total, byType: { typeId: count } }`: Tokens that ran out of charges.
  * - `wounded`: `[{ heroId, heroName, times }]`: heroes defeated and carried home.
  * - `fightsWon`: `{ total, byEnemy: { enemyId: count } }`.
+ * - `combat`: `{ food, elixirs, drops }`, each `{ itemId: count }`: meals eaten in fights, elixirs
+ *   drunk as fights started, and what kills dropped (fights lost are `wounded`).
  */
 
 let running = false;
@@ -169,6 +171,7 @@ function startSummary() {
     const depleted = { total: 0, byType: {} };
     const wounded = new Map();
     const fightsWon = { total: 0, byEnemy: {} };
+    const combat = { food: {}, elixirs: {}, drops: {} };
     const add = (map, key, n = 1) => { map[key] = (map[key] || 0) + n; };
 
     const offs = [
@@ -193,6 +196,18 @@ function startSummary() {
         EventBus.subscribe(ENGINE_EVENTS.COMBAT_VICTORY, ({ enemyId } = {}) => {
             fightsWon.total++;
             add(fightsWon.byEnemy, enemyId || 'unknown');
+        }),
+        EventBus.subscribe(ENGINE_EVENTS.COMBAT_HERO_ATE, ({ itemId } = {}) => {
+            if (itemId) add(combat.food, itemId);
+        }),
+        EventBus.subscribe(ENGINE_EVENTS.HERO_CONSUMED, ({ itemId, elixir } = {}) => {
+            if (elixir && itemId) add(combat.elixirs, itemId);
+        }),
+        EventBus.subscribe(ENGINE_EVENTS.LOOT_GENERATED, ({ drops } = {}) => {
+            for (const d of drops || []) {
+                const n = Number(d?.quantity) || 0;
+                if (d?.itemId && n > 0) add(combat.drops, d.itemId, n);
+            }
         })
     ];
 
@@ -208,7 +223,8 @@ function startSummary() {
                 levelUps: [...levels.values()],
                 depleted,
                 wounded: [...wounded.entries()].map(([heroId, times]) => ({ heroId, heroName: heroName(heroId), times })),
-                fightsWon
+                fightsWon,
+                combat
             };
         }
     };

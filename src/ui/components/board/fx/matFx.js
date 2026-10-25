@@ -4,7 +4,6 @@ import { ENGINE_EVENTS, UI_EVENTS } from '../../../../systems/core/engineEvents.
 import * as BoardState from '../../../../systems/board/BoardState.js';
 import { artRadiusOf } from '../../../../config/matGeometry.js';
 import { isDrawn } from '../../../dev/perf/drawSwitches.js';
-import { STRIKE_DELAY_MS } from '../hitAnimations.js';
 import { FX_FRAME_MS, heldPoses } from './pixelSteps.js';
 import { spriteOf, makeCopy } from './spriteCopy.js';
 import { tintUrl } from '../../../utils/spriteFx.js';
@@ -14,6 +13,9 @@ import { ART_PX } from '../../../../config/matGeometry.js';
 import { getItem } from '../../../../config/registries/itemRegistry.js';
 import { resolveSpritePath } from '../../../../utils/AssetManager.js';
 import { itemTintName } from '../../base/itemTint.js';
+import { clearOfFight } from '../healthBar.js';
+import * as BoardCombat from '../../../../systems/board/BoardCombat.js';
+import * as HeroManager from '../../../../systems/hero/HeroManager.js';
 
 /**
  * The mat's effects that stand on the mat rather than on one Token's art: numbers rising off a
@@ -26,15 +28,23 @@ import { itemTintName } from '../../base/itemTint.js';
 let host = null;
 /** Mat units per art pixel: the board's art step (`boardScaleAt`), so every move is whole screen pixels. */
 let unit = 1;
+/** Mat units per plate pixel (`workPlate.plateUnit`): the health bar's and the frames' unit. */
+let plateU = 1;
 
-/** The layer's element and the mat's art unit (`MatFxLayer` keeps them current). */
-export function attachFxHost(el, artUnit = 1) {
+/** The layer's element, the mat's art unit and its plate unit (`MatFxLayer` keeps them current). */
+export function attachFxHost(el, artUnit = 1, plateUnit = 1) {
     host = el || null;
     unit = artUnit > 0 ? artUnit : 1;
+    plateU = plateUnit > 0 ? plateUnit : 1;
+}
+
+/** Mat units per art pixel, as the layer last set it. */
+export function fxArtUnit() {
+    return unit;
 }
 
 /** Put `el` on the mat at (`x`, `y`), play it, take it away at the end. */
-function playAt(el, x, y, keyframes, duration, delay = 0) {
+export function playAt(el, x, y, keyframes, duration, delay = 0) {
     if (!host || !el || typeof el.animate !== 'function') return null;
     el.style.position = 'absolute';
     el.style.left = `${x}px`;
@@ -316,7 +326,12 @@ export function usedBubble(heroId, itemId, text) {
     const body = HeroMotion.bodyView(heroId);
     if (!body || !Number.isFinite(body.x) || !Number.isFinite(body.y)) return null;
 
-    const column = usedColumn(heroId, body.x, bubbleAnchorY(body.y, ART_PX * unit));
+    // A hero whose health bar shows (in a fight, or hurt): above its number, never on it.
+    const head = bubbleAnchorY(body.y, ART_PX * unit);
+    const hero = HeroManager.getHero(heroId);
+    const barShown = !!BoardCombat.fightOfHero(heroId) || (!!hero?.hp && hero.hp.current < hero.hp.max);
+    const foot = barShown ? clearOfFight(head, body.y - (ART_PX * unit) / 2, plateU, 2 * plateU) : head;
+    const column = usedColumn(heroId, body.x, foot);
     while (column.items.length >= USED_BUBBLE_MAX) {
         const oldest = column.items[0];
         dropUsed(heroId, column, oldest);
@@ -366,19 +381,14 @@ export function usedBubble(heroId, itemId, text) {
 }
 
 /**
- * The layer's listeners: a damage number on every landed hit (on the strike frame), a rule's
- * number and its neighbour's spark when a rule fires, a hero's green flash when food heals them in
+ * The layer's listeners: a rule's number and its neighbour's spark when a rule fires (a fight's
+ * numbers are `fightFloats.js`'), a hero's green flash when food heals them in
  * a fight, the "used" bubble when a hero eats, drinks or drinks an elixir, the knockout when a
  * fight is won.
  * @returns {() => void} unsubscribe
  */
 export function watchMatFx() {
     const offs = [
-        EventBus.subscribe(ENGINE_EVENTS.COMBAT_HERO_ATTACK, (p) => {
-            if (!p?.hit || !isDrawn('matFx')) return;
-            const dmg = Math.round(Number(p.damage));
-            if (dmg > 0) floatNumber(p.instanceId, dmg, 'damage', { delay: STRIKE_DELAY_MS });
-        }, UI_LISTENER),
         EventBus.subscribe(BOARD_EVENTS.EFFECT_FIRED, (p) => {
             if (!p?.instanceId || !isDrawn('matFx')) return;
             const from = p.fromTokenId && p.fromTokenId !== p.instanceId ? p.fromTokenId : null;
