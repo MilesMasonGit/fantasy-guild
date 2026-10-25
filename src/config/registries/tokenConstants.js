@@ -224,23 +224,49 @@ export const RESPAWN_DEFAULTS = Object.freeze({ mode: 'refill', afterMs: 12000 }
 /** The shortest rest the engine honours. */
 export const RESPAWN_MIN_MS = 1000;
 
+const NO_IDS = Object.freeze([]);
+
+/** Token type ids from an authored list, trimmed, blanks and repeats dropped. */
+function typeIdList(list) {
+    return Array.isArray(list)
+        ? [...new Set(list.filter(id => typeof id === 'string' && id.trim()).map(id => id.trim()))]
+        : [];
+}
+
+/** A refill block's authored `needsNearby` list → the cleaned list, kept so it is the same array each ask. */
+const refillNeedsMemo = new WeakMap();
+
+function refillNeedsOf(block) {
+    const src = block.needsNearby;
+    if (!Array.isArray(src) || !src.length) return NO_IDS;
+    const memo = refillNeedsMemo.get(block);
+    if (memo && memo.src === src) return memo.list;
+    const ids = typeIdList(src);
+    const list = ids.length ? Object.freeze(ids) : NO_IDS;
+    refillNeedsMemo.set(block, { src, list });
+    return list;
+}
+
 /**
- * A Token type's respawn as `{ mode, afterMs, into }`, or null when it has none: no block, a mode
- * the game does not know, or a regrow that names nothing to regrow from. `afterMs` is a refill's
- * rest (defaulted, floored at {@link RESPAWN_MIN_MS}) and null on a regrow; `into` is null on a
- * refill.
+ * A Token type's respawn as `{ mode, afterMs, into, needsNearby }`, or null when it has none: no
+ * block, a mode the game does not know, or a regrow that names nothing to regrow from. `afterMs` is
+ * a refill's rest (defaulted, floored at {@link RESPAWN_MIN_MS}) and null on a regrow; `into` is
+ * null on a refill. `needsNearby` is a refill's Token type ids, any one of which must stand within
+ * reach (Near) for its rest to run (a Bare apple tree fruits again only beside an Orchard); empty
+ * when it needs none, and always on a regrow. The same array each ask, so a resting Token's cached
+ * answer (`TileModifiers.nearbyGateMet`) holds.
  */
 export function respawnOf(def) {
     const block = def?.respawn;
     if (!block || typeof block !== 'object') return null;
     if (block.mode === 'regrow') {
         const into = typeof block.into === 'string' ? block.into.trim() : '';
-        return into ? { mode: 'regrow', afterMs: null, into } : null;
+        return into ? { mode: 'regrow', afterMs: null, into, needsNearby: NO_IDS } : null;
     }
     if (block.mode !== 'refill') return null;
     const ms = Number(block.afterMs);
     const afterMs = Number.isFinite(ms) && ms > 0 ? Math.max(RESPAWN_MIN_MS, ms) : RESPAWN_DEFAULTS.afterMs;
-    return { mode: 'refill', afterMs, into: null };
+    return { mode: 'refill', afterMs, into: null, needsNearby: refillNeedsOf(block) };
 }
 
 const NO_TERMS = Object.freeze({ needsNearby: Object.freeze([]), cost: Object.freeze([]) });

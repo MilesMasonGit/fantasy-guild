@@ -5,12 +5,14 @@ import { BOARD_EVENTS } from './boardEvents.js';
 import { getTokenType, tokenStartingUses } from '../../config/registries/tokenRegistry.js';
 import { respawnOf as respawnBlockOf, RESPAWN_MIN_MS } from '../../config/registries/tokenConstants.js';
 import * as BoardState from './BoardState.js';
-import { growTimeOf } from './TileModifiers.js';
+import { growTimeOf, nearbyGateMet } from './TileModifiers.js';
 
 /**
  * A Token type with a `respawn` block does not leave the mat when its charges run out: it rests.
  * - **refill**: it stays where it stands at 0 charges, nobody can work it, and after its rest
- *   ({@link restMsOf}) it refills to its starting charges all at once.
+ *   ({@link restMsOf}) it refills to its starting charges all at once. A refill may need a Token
+ *   in reach (`needsNearby`, {@link gateMet}): without one its rest stands still (a Bare apple
+ *   tree with no Orchard stays Bare).
  * - **regrow**: at 0 it becomes its `into` Token (an Oak Tree becomes an Oak Sapling), whose own
  *   `grows` block brings it back.
  *
@@ -53,6 +55,26 @@ export function restMsOf(instance, def = getTokenType(instance?.typeId)) {
     const afterMs = respawnOf(def)?.afterMs;
     if (afterMs == null) return 0;
     return Math.max(RESPAWN_MIN_MS, growTimeOf(instance, afterMs));
+}
+
+/**
+ * Whether a refill's rest may run: it needs none of `respawn.needsNearby` in reach, or one stands
+ * within Near (an apple tree's Orchard). Cached per Token (`TileModifiers.nearbyGateMet`). Always
+ * true for a regrow, and for a Token whose type does not respawn.
+ */
+export function gateMet(instance, def = getTokenType(instance?.typeId)) {
+    const needsNearby = respawnOf(def)?.needsNearby;
+    return !needsNearby?.length || nearbyGateMet(instance, needsNearby);
+}
+
+/**
+ * Whether a resting Token will come back by itself: a regrow always does; a refill does when its
+ * rest may run ({@link gateMet}). A Bare tree with no Orchard in reach is resting but not coming
+ * back, so a hero has nothing to wait for. False for a Token that is not resting.
+ */
+export function isComingBack(instance, def = getTokenType(instance?.typeId)) {
+    if (!isResting(instance, def)) return false;
+    return respawnOf(def).mode === 'regrow' || gateMet(instance, def);
 }
 
 /** Whether this Token is resting: out of charges, of a type that comes back. */
@@ -124,9 +146,10 @@ export function regrown(from, into) {
 
 /**
  * What the inspection says about a Token's respawn: `{ mode, into, afterMs, resting, inMs,
- * restingSprite }`, its type's way back and, while it rests, how long a refill has left (`inMs`,
- * null otherwise) and the picture it is drawn as ({@link restingSpriteOf}). Null for a Token
- * whose type never respawns.
+ * restingSprite, paused, needsNearby }`, its type's way back and, while it rests, how long a
+ * refill has left (`inMs`, null otherwise), the picture it is drawn as ({@link restingSpriteOf})
+ * and whether its rest stands still for want of a Token in reach. Null for a Token whose type
+ * never respawns.
  */
 export function respawnState(instance) {
     const def = getTokenType(instance?.typeId);
@@ -136,22 +159,28 @@ export function respawnState(instance) {
     return {
         mode: respawn.mode, into: respawn.into, afterMs: restMsOf(instance, def),
         resting: !!next, inMs: next ? next.inMs : null,
-        restingSprite: restingSpriteOf(instance, def)
+        restingSprite: restingSpriteOf(instance, def),
+        paused: !!next?.paused, needsNearby: respawn.needsNearby
     };
 }
 
 /**
  * A resting Token's way back, for the countdown bubble and the inspection lines: `{ mode, inMs,
- * totalMs, into }`. A refill counts down its rest; a regrow happens on the next tick (`inMs` 0),
- * or on the drop while it is in the player's hand. Null for a Token that is not resting.
+ * totalMs, into, paused, needsNearby }`. A refill counts down its rest; a regrow happens on the
+ * next tick (`inMs` 0), or on the drop while it is in the player's hand. `paused`: a refill that
+ * needs one of `needsNearby` in reach and has none, so its clock stands still. Null for a Token
+ * that is not resting.
  */
 export function nextRespawn(instance) {
     if (!instance) return null;
     const def = getTokenType(instance.typeId);
     if (!isResting(instance, def)) return null;
     const respawn = respawnOf(def);
-    if (respawn.mode === 'regrow') return { mode: 'regrow', inMs: 0, totalMs: 0, into: respawn.into };
+    if (respawn.mode === 'regrow') return { mode: 'regrow', inMs: 0, totalMs: 0, into: respawn.into, paused: false, needsNearby: respawn.needsNearby };
     const totalMs = restMsOf(instance, def);
     const clockMs = Number(instance.clocks?.[CLOCK]) || 0;
-    return { mode: 'refill', inMs: Math.max(0, totalMs - clockMs), totalMs, into: null };
+    return {
+        mode: 'refill', inMs: Math.max(0, totalMs - clockMs), totalMs, into: null,
+        paused: !gateMet(instance, def), needsNearby: respawn.needsNearby
+    };
 }

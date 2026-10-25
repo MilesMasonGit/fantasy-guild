@@ -1026,7 +1026,8 @@ function springAmbushes() {
  * - `'fight'`: an enemy another hero is fighting (`claimed`). Every fight is one-on-one, so a flag
  * pinned to that enemy waits beside it, and an area flag with nothing else in reach waits at its
  * flag; either takes the enemy the moment it is free.
- * - `'node'`: a Token resting until it respawns (`resting`) that the hero could work: the skip
+ * - `'node'`: a Token resting until it respawns (`resting`) that the hero could work and that is
+ * coming back by itself (`Respawn.isComingBack`: not a Bare tree with no Orchard in reach): the skip
  * reason is the Token's own, so the hero's skill, level, tool and rule have already passed. They
  * wait silently and work it the moment it is back (`TOKEN_RESPAWNED` marks flags dirty). Failing
  * those, a Stump or Sapling in the flag's reach growing back into work they could do
@@ -1037,7 +1038,10 @@ function springAmbushes() {
 export function waitingOf(heroId) {
     if (!heroId || BoardState.claimOfHero(heroId)) return null;
     for (const s of skipsOfHero(heroId)) {
-        if (s.reason === ALERT.RESTING) return { instanceId: s.instanceId, kind: 'node' };
+        if (s.reason === ALERT.RESTING) {
+            if (Respawn.isComingBack(BoardState.getTokenById(s.instanceId))) return { instanceId: s.instanceId, kind: 'node' };
+            continue;
+        }
         if (s.reason !== SKIP.CLAIMED) continue;
         if (BoardCombat.isEnemyToken(BoardState.getTokenById(s.instanceId))) return { instanceId: s.instanceId, kind: 'fight' };
     }
