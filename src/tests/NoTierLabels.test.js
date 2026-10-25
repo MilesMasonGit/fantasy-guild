@@ -1,7 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'node:url';
+import { SRC, listFiles, readSource, rel, setScanTimeout } from './fixtures/sourceScan.js';
 import './fixtures/testTokens.js';
 import { buildCorpus, playerNames } from './fixtures/renderCorpus.js';
 import { renderStatement } from '../systems/effects/statementText.js';
@@ -18,23 +16,16 @@ import { contextSummary, foundationTierSummary } from '../ui/components/board/re
  * Game and the Token inspection prints as is.
  */
 
-const HERE = path.dirname(fileURLToPath(import.meta.url));
-const SRC = path.resolve(HERE, '..');
 const TIER = /\btiers?\b/i;
 
 /** Folders whose text is for the author or the developer, not the player. */
-const ALLOWED = [path.join(SRC, 'ui', 'dev')];
+const ALLOWED = [`${SRC}/ui/dev`];
 
 function sourceFiles(dir) {
-    const out = [];
-    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-        const full = path.join(dir, entry.name);
-        if (ALLOWED.some(a => full.startsWith(a))) continue;
-        if (entry.isDirectory()) out.push(...sourceFiles(full));
-        else if (/\.(jsx?|tsx?)$/.test(entry.name)) out.push(full);
-    }
-    return out;
+    return listFiles(dir, { ext: /\.(jsx?|tsx?)$/ }).filter(file => !ALLOWED.some(a => file.startsWith(a)));
 }
+
+setScanTimeout();
 
 /**
  * The text a file can show: its string and template literals and its JSX text, with comments,
@@ -105,12 +96,11 @@ describe('⭐ no player-facing tier labels', () => {
         expect(hits).toEqual(['Tier 2', 'a   tier', 'Foundation tier']);
     });
 
-    // Reads every file under src/ui: slow on a loaded machine, so it gets a longer timeout.
-    it('⭐ no string or JSX text under src/ui says tier (dev tools excepted)', { timeout: 30000 }, () => {
+    it('⭐ no string or JSX text under src/ui says tier (dev tools excepted)', () => {
         const offenders = [];
-        for (const file of sourceFiles(path.join(SRC, 'ui'))) {
-            for (const text of displayedText(fs.readFileSync(file, 'utf8'))) {
-                if (TIER.test(text)) offenders.push(`${path.relative(SRC, file)}: ${text.trim()}`);
+        for (const file of sourceFiles(`${SRC}/ui`)) {
+            for (const text of displayedText(readSource(file))) {
+                if (TIER.test(text)) offenders.push(`${rel(file)}: ${text.trim()}`);
             }
         }
         expect(offenders).toEqual([]);

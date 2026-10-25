@@ -2,6 +2,10 @@ import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { setScanTimeout } from './fixtures/sourceScan.js';
+
+// Walks all of cms/src (outside the shared src/ walk), so only the scan time limit is shared.
+setScanTimeout();
 
 /**
  * The CMS→game import boundary, guarded.

@@ -8,7 +8,9 @@ import { UI_EVENTS } from '../systems/core/engineEvents.js';
 import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
 import { getUpgradeDef } from '../config/guildUpgrades.js';
 import { GuildUpgradeInspection } from '../ui/components/drawer/GuildUpgradeInspection.jsx';
-import { sourceCode } from './fixtures/sourceScan.js';
+import { sourceCode, setScanTimeout } from './fixtures/sourceScan.js';
+
+setScanTimeout();
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),

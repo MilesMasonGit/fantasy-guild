@@ -1,8 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { SRC, listFiles, readSource, rel, setScanTimeout } from './fixtures/sourceScan.js';
 import React from 'react';
 import { render, cleanup, act } from '@testing-library/react';
 import { DndContext } from '@dnd-kit/core';
@@ -26,24 +24,16 @@ import { placeAt } from './fixtures/mat.js';
  * purpose.
  */
 
-const here = path.dirname(fileURLToPath(import.meta.url));
-const SRC = path.resolve(here, '..');
+setScanTimeout();
 
 const DEV_PANELS = new Set([
     'ui/components/TestDashboard.jsx'
 ]);
 
-function sourceFiles(dir) {
-    return fs.readdirSync(dir, { withFileTypes: true }).flatMap(entry => {
-        const full = path.join(dir, entry.name);
-        if (entry.isDirectory()) return [full].flatMap(sourceFiles);
-        return /\.(js|jsx|mjs)$/.test(entry.name) ? [full] : [];
-    });
-}
 const codeOf = (text) => text.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/(^|[^:])\/\/[^\n]*/g, '$1 ');
 
-const UI_FILES = [...sourceFiles(path.join(SRC, 'ui')), path.join(SRC, 'main.jsx')]
-    .map(f => ({ rel: path.relative(SRC, f).split(path.sep).join('/'), code: codeOf(fs.readFileSync(f, 'utf8')) }))
+const UI_FILES = [...listFiles(`${SRC}/ui`, { ext: /\.(js|jsx|mjs)$/ }), `${SRC}/main.jsx`]
+    .map(f => ({ rel: rel(f), code: codeOf(readSource(f)) }))
     .filter(f => !f.rel.startsWith('ui/dev/') && !DEV_PANELS.has(f.rel));
 
 describe('the UI never publishes an engine event (CR3-306)', () => {
