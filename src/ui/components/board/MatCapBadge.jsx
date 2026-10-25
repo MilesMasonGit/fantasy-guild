@@ -7,6 +7,7 @@ import * as BoardState from '../../../systems/board/BoardState.js';
 import * as MatCap from '../../../systems/board/MatCap.js';
 import * as Flags from '../../../systems/board/Flags.js';
 import * as SpawnerSystem from '../../../systems/board/SpawnerSystem.js';
+import * as Growth from '../../../systems/board/Growth.js';
 import * as Shop from '../../../systems/board/Shop.js';
 import { summariseMat, rowLabel, TOKEN_STATUS } from '../../../systems/board/MatSummary.js';
 import { onMatTuningChanged } from '../../../config/matTuning.js';
@@ -41,7 +42,8 @@ export const CAP_EVENTS = Object.freeze([
 const POPOVER_EVENTS = Object.freeze([
     ...CAP_EVENTS,
     BOARD_EVENTS.ALERT_CHANGED,
-    BOARD_EVENTS.SPAWNER_ALERT_CHANGED
+    BOARD_EVENTS.SPAWNER_ALERT_CHANGED,
+    BOARD_EVENTS.GROWTH_ALERT_CHANGED
 ]);
 
 /** The summary opens under the badge at this width, kept on screen by `placeUnder`. */
@@ -87,6 +89,8 @@ export function liveStatusOf(instance) {
     if (Flags.isDisallowed(instance)) return { status: TOKEN_STATUS.OFF };
     const spawnerAlert = SpawnerSystem.spawnerAlertOf(instance.id);
     if (spawnerAlert) return { status: TOKEN_STATUS.BLOCKED, missing: spawnerAlert.alert === ALERT.SPAWN_NEEDS_ITEM };
+    const growthAlert = Growth.growthAlertOf(instance.id);
+    if (growthAlert) return { status: TOKEN_STATUS.BLOCKED, missing: growthAlert.alert === ALERT.GROW_NEEDS_ITEM };
     if (instance.alert && !isGearOnlyAlert(instance.alert)) {
         return { status: TOKEN_STATUS.BLOCKED, missing: instance.alert === ALERT.INPUTS };
     }

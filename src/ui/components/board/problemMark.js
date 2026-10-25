@@ -28,6 +28,8 @@ export const PROBLEM_SEVERITY = Object.freeze({
     [ALERT.CHOOSE_RECIPE]: SEVERITY.WAITING,
     [ALERT.CHOOSE_BUILD]: SEVERITY.WAITING,
     [ALERT.SPAWN_NEEDS_ITEM]: SEVERITY.WAITING,
+    [ALERT.GROW_NEEDS_NEARBY]: SEVERITY.WAITING,
+    [ALERT.GROW_NEEDS_ITEM]: SEVERITY.WAITING,
     [ALERT.NO_ROOM]: SEVERITY.CANT,
     [ALERT.ACCESS]: SEVERITY.CANT,
     [ALERT.UNSKILLED]: SEVERITY.CANT,
@@ -56,15 +58,20 @@ export const PROBLEM_COLOUR = Object.freeze({
  * - `alert`: the engine's `instance.alert` (a worked Token's block, or a fixable reason a flag
  * passed it over for);
  * - `spawner`: a spawner's `{ alert, needs }` (`SpawnerSystem.spawnerAlertOf`);
+ * - `growth`: a growing Token's `{ alert, needs }` (`Growth.growthAlertOf`: a Stump with no Forest
+ * in reach, or stopped for want of a seedling);
  * - `choose`: `'recipe'` or `'build'` while a station or Foundation has nothing chosen.
- * A can't beats a waiting; otherwise the work alert first, then the spawner's, then the choice.
+ * A can't beats a waiting; otherwise the work alert first, then the spawner's, the growth's, then
+ * the choice.
  * @returns {{kind: string, severity: string, needs?: string[]}|null}
  */
-export function problemOf({ alert = null, spawner = null, choose = null } = {}) {
+export function problemOf({ alert = null, spawner = null, growth = null, choose = null } = {}) {
     const found = [];
     if (alert && PROBLEM_SEVERITY[alert]) found.push({ kind: alert, severity: PROBLEM_SEVERITY[alert] });
-    if (spawner?.alert && PROBLEM_SEVERITY[spawner.alert]) {
-        found.push({ kind: spawner.alert, severity: PROBLEM_SEVERITY[spawner.alert], needs: spawner.needs || [] });
+    for (const stuck of [spawner, growth]) {
+        if (stuck?.alert && PROBLEM_SEVERITY[stuck.alert]) {
+            found.push({ kind: stuck.alert, severity: PROBLEM_SEVERITY[stuck.alert], needs: stuck.needs || [] });
+        }
     }
     if (choose) {
         const kind = choose === 'build' ? ALERT.CHOOSE_BUILD : ALERT.CHOOSE_RECIPE;
@@ -75,6 +82,9 @@ export function problemOf({ alert = null, spawner = null, choose = null } = {}) 
 
 /** "a Pickaxe", "an Anvil": Tokens are countable things, items are not. */
 const withArticle = (name) => `${/^[aeiou]/i.test(name) ? 'an' : 'a'} ${name}`;
+
+/** "an Oak Forest", "an Oak Forest or a Wild Oak Forest": any one of them will do. */
+const joinOr = (names) => (names.length < 2 ? names[0] || '' : `${names.slice(0, -1).join(', ')} or ${names[names.length - 1]}`);
 
 /** A context tag as a name: `fishing_rod` reads `Fishing Rod`. */
 const tagName = (tag) => String(tag || '').split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
@@ -141,6 +151,14 @@ export function problemText(problem, instanceId) {
         case ALERT.SPAWN_NEEDS_ITEM: {
             const names = (problem.needs || []).map(id => getItem(id)?.name || id);
             return names.length ? `Needs ${joinNames(names)} to spawn` : 'Needs items to spawn';
+        }
+        case ALERT.GROW_NEEDS_NEARBY: {
+            const names = (problem.needs || []).map(id => withArticle(getTokenType(id)?.name || id));
+            return names.length ? `Needs ${joinOr(names)} nearby to grow` : 'Needs a Token nearby to grow';
+        }
+        case ALERT.GROW_NEEDS_ITEM: {
+            const names = (problem.needs || []).map(id => getItem(id)?.name || id);
+            return names.length ? `Needs ${joinNames(names)} to grow` : 'Needs items to grow';
         }
         case ALERT.SPAWN_NO_ROOM:
             return 'No room to spawn';

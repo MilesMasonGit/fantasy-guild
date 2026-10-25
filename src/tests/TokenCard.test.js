@@ -19,7 +19,7 @@ import { resolveSpritePath } from '../utils/AssetManager.js';
 import { TokenCard, coverScale } from '../ui/components/board/TokenCard.jsx';
 import { requestRecipeList } from '../ui/components/board/recipeFlip.js';
 import { TokenInspectPopup } from '../ui/components/board/TokenInspectPopup.jsx';
-import { tokenCardModel, cardArtOf, activityOf, CARD_BLOCK } from '../ui/components/board/tokenCard.js';
+import { tokenCardModel, cardArtOf, activityOf, CARD_BLOCK, cardLifecycle } from '../ui/components/board/tokenCard.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -228,6 +228,20 @@ describe('the blocks, top to bottom, per kind', () => {
         expect(model.blocks[1].lines).toEqual([
             expect.objectContaining({ icon: 'grow', text: '2:05', tip: expect.stringContaining('Grows into Card Vein') })
         ]);
+    });
+
+    it('a Stump: counts down naming its cost; with no Forest in reach it waits; short of its seedling it is stopped (brief 230 S2a)', () => {
+        const names = { tree: 'Oak Sapling', forest: 'Oak Forest', seed: 'Oak Seedling' };
+        const growth = (extra) => ({
+            inMs: 65000, totalMs: 120000, into: 'tree', paused: false, stopped: false,
+            needsNearby: ['forest'], cost: [{ itemId: 'seed', quantity: 1 }], short: [], ...extra
+        });
+        const line = (g) => cardLifecycle({ id: 'st1', typeId: 'stump' }, { grows: { into: 'tree' } }, {
+            tokenName: (id) => names[id] || id, itemName: (id) => names[id] || id, nextGrowth: () => g
+        })[0];
+        expect(line(growth())).toEqual({ icon: 'grow', text: '1:05', tip: 'Grows into Oak Sapling in 1 min 5 s, for 1 Oak Seedling from the Bank' });
+        expect(line(growth({ paused: true }))).toEqual({ icon: 'grow', text: '–', tip: 'Grows into Oak Sapling only with Oak Forest nearby', tone: 'warning' });
+        expect(line(growth({ stopped: true, inMs: 0, short: ['seed'] }))).toEqual({ icon: 'grow', text: '–', tip: 'Stopped: needs 1 Oak Seedling to grow into Oak Sapling', tone: 'warning' });
     });
 
     it('a Shop card (no instance) shows the type: starting charges, no recipe picker', () => {

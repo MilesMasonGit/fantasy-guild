@@ -186,6 +186,37 @@ describe('Lifecycle audit — errors: shape rules', () => {
         }, { id: 'token_oak_sapling', field: 'grows.into', includes: 'token_oak_sapling → token_oak_tree → token_oak_sapling' });
     });
 
+    describe('a growth needing its Forest and a seedling (brief 230 S2a)', () => {
+        it('accepts a Token in reach and a cost', () => {
+            const w = clean();
+            w.tokens.token_oak_sapling.grows.needsNearby = ['token_oak_forest'];
+            w.tokens.token_oak_sapling.grows.cost = [{ itemId: 'item_oak_seed', quantity: 1 }];
+            expect(auditLifecycleBlocks(w)).toEqual([]);
+        });
+
+        it('a Token in reach that does not exist', () => {
+            expectOne((w) => { w.tokens.token_oak_sapling.grows.needsNearby = ['token_ghost_forest']; },
+                { id: 'token_oak_sapling', field: 'grows.needsNearby[0]', includes: ['needs nearby', 'token_ghost_forest', 'does not exist'] });
+        });
+
+        it('needing itself nearby', () => {
+            expectOne((w) => { w.tokens.token_oak_sapling.grows.needsNearby = ['token_oak_sapling']; },
+                { id: 'token_oak_sapling', field: 'grows.needsNearby[0]', includes: 'needs itself nearby' });
+        });
+
+        it('a cost naming no real item, or no quantity', () => {
+            expectOne((w) => { w.tokens.token_oak_sapling.grows.cost = [{ itemId: 'item_ghost_seed', quantity: 1 }]; },
+                { id: 'token_oak_sapling', field: 'grows.cost[0].itemId', includes: ['grow cost names', 'item_ghost_seed'] });
+            expectOne((w) => { w.tokens.token_oak_sapling.grows.cost = [{ itemId: 'item_oak_seed', quantity: 0 }]; },
+                { id: 'token_oak_sapling', field: 'grows.cost[0].quantity', includes: 'grow cost quantity' });
+        });
+
+        it('a spawner "plants within its reach" that is not a tick', () => {
+            expectOne((w) => { w.tokens.token_oak_forest.spawner.withinReach = 'yes'; },
+                { id: 'token_oak_forest', field: 'spawner.withinReach', includes: 'plants within its reach' });
+        });
+    });
+
     it('a Token that grows into itself', () => {
         expectOne((w) => { w.tokens.token_oak_sapling.grows.into = 'token_oak_sapling'; },
             { id: 'token_oak_sapling', field: 'grows.into', includes: 'loops' });

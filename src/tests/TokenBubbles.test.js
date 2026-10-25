@@ -370,7 +370,11 @@ describe('hover: the rings, the timer and the gear', () => {
 
     it('growth: nextGrowth reads the clock against afterMs; none for a Token that does not grow', () => {
         expect(TimedChanges.nextGrowth({ typeId: 'fixture_bub_grower', clocks: { growMs: 45000 } }))
-            .toEqual({ inMs: 15000, totalMs: 60000, into: 'fixture_b13_sapling' });
+            .toEqual({
+                inMs: 15000, totalMs: 60000, into: 'fixture_b13_sapling',
+                // Brief 230 S2a: a growth that needs no Token in reach and costs nothing.
+                paused: false, stopped: false, needsNearby: [], cost: [], short: []
+            });
         expect(TimedChanges.nextGrowth({ typeId: 'fixture_producer' })).toBeNull();
     });
 
@@ -483,6 +487,25 @@ describe('⭐ the problem mark on a Token', () => {
         say(null);
         expect(mark(container)).toBeNull();
         expect(container.querySelector('[data-bubble-row="middle"]')).toBeNull();
+    });
+
+    it('⭐ a Stump with no Forest in reach, or stopped for want of a seedling: a yellow mark saying which (brief 230 S2a)', () => {
+        const grow = (alert, needs = []) => act(() => {
+            EventBus.publish(BOARD_EVENTS.GROWTH_ALERT_CHANGED, { instanceId: 'tok_r', alert, needs });
+        });
+        const { container } = mount(bub({ token: worked({ heroId: null }) }));
+        grow(ALERT.GROW_NEEDS_NEARBY, ['fixture_b13_forest']);
+        expect(mark(container).getAttribute('data-problem-severity')).toBe(SEVERITY.WAITING);
+        expect(hoverText(container)).toEqual({ text: 'Needs a Fixture B1.3 Forest nearby to grow', colour: 'var(--color-ui-gold)' });
+        fireEvent.pointerLeave(mark(container));
+
+        grow(ALERT.GROW_NEEDS_ITEM, ['fixture_stuck_seed']);
+        expect(mark(container).getAttribute('data-problem-mark')).toBe(ALERT.GROW_NEEDS_ITEM);
+        expect(hoverText(container).text).toBe('Needs Fixture Seed to grow');
+        fireEvent.pointerLeave(mark(container));
+
+        grow(null);
+        expect(mark(container)).toBeNull();
     });
 
     it('⭐ an unset station or Foundation: the yellow mark says choose, and a click on it opens the list', () => {
