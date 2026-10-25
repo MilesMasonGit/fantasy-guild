@@ -145,8 +145,8 @@ Tokens. Stand-ins from existing sprites until drawn.
 | Sapling and Tree per species | **IN ASSETS** | `t_sapling_*` and `t_tree_*` for the same seven species |
 | A Stump waiting for its Forest or its seedling | — (no new art) | Wears the yellow problem mark (`u_alert_yellow`, the placeholder every waiting Token uses) and, when stopped, the "Needs Oak Seedling" callout in the speech frame (S2a) |
 | Fruit tree: Sapling, Fruiting, Bare per fruit (Apple first) | **NEW** / ADAPT | Picked, not felled |
-| Empty vein rock, one shared | **NEW** | Every ore vein while it rests |
-| Mine, Minecart | ADAPT | Today's Copper Mine and Minecart sprites may do |
+| Empty vein rock, one shared | **NEW** | Every ore vein while it rests (brief 230 S3: drawn in place of the vein, not greyed; its name says which ore). Stand-in: `t_vein_stone`, which the Stone Outcrop also wears, so a resting vein looks like an outcrop until this is drawn. Name the new file anything; it is picked per vein in the CMS (Respawns, Resting sprite) |
+| Mine, Minecart | ADAPT | Today's Copper Mine and Minecart sprites may do (`t_mineshaft_*`, `t_minecart_*` for seven ores; the S3 QA scene uses the copper ones) |
 | Field: empty, growing (shared); ripe per crop (Wheat first) | **NEW** / ADAPT | Herb Garden likewise (ripe per herb) |
 | Well, Composter, Beehive, Windmill, Dock | **NEW** | Support Tokens built on Foundations |
 | Water types: sea, river, lake | ADAPT | One fishing-spot sprite each; the Shrimp Coast goes. The S5 QA scene stands in `t_coast` (sea), `t_fish_spot` (river), `t_lake_small` (lake), and `t_foundation_wood` for the Dock |
