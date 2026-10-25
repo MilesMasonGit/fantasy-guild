@@ -60,6 +60,13 @@ export const CONSUME_THRESHOLD = 0.25;
 export const ELIXIR_FIGHTS = 10;
 
 /**
+ * How many work cycles one drink lasts. One number for every drink, never per item, like
+ * `ELIXIR_FIGHTS`: a drink is drunk as a work cycle starts and works for this many cycles.
+ * A placeholder until the owner says otherwise.
+ */
+export const DRINK_CYCLES = 10;
+
+/**
  * The most that stacked speed-ups may cut from a time: 0.8 means a time never falls below a fifth
  * of itself (a 5 minute regrow never goes below 1 minute, a 10 s vein never below 2 s). One number
  * for every speed-up, work time and grow time alike, read by `TileModifiers.floorSpeedUp`. A

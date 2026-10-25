@@ -110,17 +110,23 @@ function allBearers() {
 }
 
 /**
- * The clock reading a "for the fight" instance carries: it never runs out by time, only when its
- * fight ends (`endFightEffects`). A plain number, so a save written mid-fight holds it as such.
+ * The clock reading a "for the fight" or "for the cycle" instance carries: it never runs out by
+ * time, only when its fight ends (`endFightEffects`) or its cycle does (`endCycleEffects`). A plain
+ * number, so a save written mid-fight holds it as such.
  */
 const UNTIL_FIGHT_ENDS = Number.MAX_SAFE_INTEGER;
 
 /**
- * Put a library effect on a bearer, for a while, for the fight (`spec.forFight`) or for the swing
- * being made (`spec.forSwing`). A status ignores all three: it has its own lifetime.
+ * Put a library effect on a bearer, for a while, for the fight (`spec.forFight`), for the swing
+ * being made (`spec.forSwing`) or for the work cycle starting (`spec.forCycle`). A status ignores
+ * all of them: it has its own lifetime.
+ *
+ * `forCycle` names the Token whose cycle it lasts (its instance id, set by `LoadoutMoments`), or is
+ * `true` for whichever cycle its bearer finishes next. A bound one counts only while its hero works
+ * that Token ({@link liveStatements}' `at`), so a cycle left part-way never lends it to another.
  *
  * @param {object} bearer  a descriptor from `heroBearer` or a registered source
- * @param {{effectId: string, scale?: number, durationMs?: number, forFight?: boolean, forSwing?: boolean}} spec
+ * @param {{effectId: string, scale?: number, durationMs?: number, forFight?: boolean, forSwing?: boolean, forCycle?: string|boolean}} spec
  * @param {string|null} sourceId  what applied it, for the readout
  * @returns {boolean} whether anything is now carried
  */
@@ -134,9 +140,10 @@ export function applyTo(bearer, spec, sourceId = null, fire = null) {
     const scale = normaliseScale(spec.scale);
     const forSwing = !!spec.forSwing;
     const forFight = !!spec.forFight || forSwing;
+    const forCycle = spec.forCycle ? spec.forCycle : null;
 
     // No duration means fire it once, NOW (chaining), not on the next tick.
-    if (!forFight && !Number(spec.durationMs)) {
+    if (!forFight && !forCycle && !Number(spec.durationMs)) {
         if (!fire) return false;
         for (const statement of statementsFromEntry(EFFECTS[spec.effectId], { effectId: spec.effectId, scale })) {
             fire(statement, { ...bearer.roles });
@@ -146,7 +153,7 @@ export function applyTo(bearer, spec, sourceId = null, fire = null) {
 
     const list = listOf(target);
     const existing = list.find(e => e.effectId === spec.effectId);
-    const expiresAt = forFight
+    const expiresAt = (forFight || forCycle)
         ? UNTIL_FIGHT_ENDS
         : GameClock.now() + Math.max(0, Number(spec.durationMs) || 0);
 
@@ -158,13 +165,15 @@ export function applyTo(bearer, spec, sourceId = null, fire = null) {
         if (!forSwing) {
             existing.expiresAt = Math.max(existing.expiresAt, expiresAt);
             if (forFight) existing.forFight = true;
+            if (forCycle) existing.forCycle = forCycle;
             delete existing.forSwing;
         }
     } else {
         list.push({
             effectId: spec.effectId, scale, expiresAt, sourceId,
             ...(forFight ? { forFight: true } : {}),
-            ...(forSwing ? { forSwing: true } : {})
+            ...(forSwing ? { forSwing: true } : {}),
+            ...(forCycle ? { forCycle } : {})
         });
     }
 
@@ -261,6 +270,32 @@ export function endHeroFightEffects(heroId) {
     return hero ? endFightEffects(heroBearer(hero)) : 0;
 }
 
+/**
+ * A work cycle is over: take off what a bearer carried "for the cycle". With `at`, only what was
+ * bound to that Token's cycle (and any unbound one); without, every one (a new cycle is starting,
+ * so whatever the last one left is over).
+ * @param {string|null} [at] the Token whose cycle ended
+ * @returns {number} how many instances ended
+ */
+export function endCycleEffects(bearer, at = null) {
+    const target = bearer?.target;
+    if (!target?.effects?.length) return 0;
+    const ends = (e) => !!e.forCycle && (at == null || e.forCycle === true || e.forCycle === at);
+    if (!target.effects.some(ends)) return 0;
+    const before = target.effects.length;
+    target.effects = target.effects.filter(e => !ends(e));
+    const ended = before - target.effects.length;
+    syncAggregator(target);
+    bearer.notify?.('live_effect_expired');
+    return ended;
+}
+
+/** The same for a hero, by id. */
+export function endHeroCycleEffects(heroId, at = null) {
+    const hero = heroId ? HeroManager.getHero(heroId) : null;
+    return hero ? endCycleEffects(heroBearer(hero), at) : 0;
+}
+
 /** Take one library effect off a bearer. `null` removes every one. */
 export function removeFrom(bearer, effectId = null) {
     const target = bearer?.target;
@@ -348,10 +383,15 @@ export function clearHero(heroId) {
  *
  * Shaped exactly like `HeroEffects.loadoutStatements`, so a consumer that reads
  * one can read the other without learning a second thing.
+ *
+ * `at`, when given, is the Token the hero is working: an effect bound to another Token's cycle
+ * ("for the cycle", applied as that cycle started) is left out, so a cycle abandoned part-way never
+ * lends its potion to the next Token. Without it, every effect counts.
  */
-export function liveStatements(hero) {
+export function liveStatements(hero, at = undefined) {
     const out = [];
     for (const instance of hero?.effects || []) {
+        if (at !== undefined && instance.forCycle && instance.forCycle !== true && instance.forCycle !== at) continue;
         const entry = EFFECTS[instance.effectId];
         if (!entry) continue;                       // ContentAudit names it
         out.push(...instanceStatements(instance, entry));
@@ -371,10 +411,18 @@ function instanceStatements(instance, entry) {
  *
  * ⚠️ The combat axes go on the aggregator; the board axes are read live by `resolveAxis`.
  * Live effects follow whichever road their axis already travels, so no reader had to learn
- * about them.
+ * about them. `at`: see {@link liveStatements}.
  */
-export function modifierStatements(hero) {
-    return liveStatements(hero).filter(s => s?.keyword === KEYWORD.PROVIDES);
+export function modifierStatements(hero, at = undefined) {
+    return liveStatements(hero, at).filter(s => s?.keyword === KEYWORD.PROVIDES);
+}
+
+/**
+ * What a carried effect hands the cycle its hero finishes at Token `at`: its standing `Grants` (a
+ * Birdwatcher's chance of a Bird Nest). A moment's grant fires on its moment instead.
+ */
+export function grantStatements(hero, at = undefined) {
+    return liveStatements(hero, at).filter(s => s?.keyword === KEYWORD.GRANTS && !s.when?.event);
 }
 
 /**

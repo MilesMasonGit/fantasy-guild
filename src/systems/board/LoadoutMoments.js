@@ -8,8 +8,13 @@ import * as EffectActions from './EffectActions.js';
 import * as SpriteLayer from './SpriteLayer.js';
 import * as EffectFeedback from './EffectFeedback.js';
 import * as RareDrops from './RareDrops.js';
+import * as BoardState from './BoardState.js';
 import * as ConsumptionSystem from '../hero/ConsumptionSystem.js';
+import * as LiveEffects from '../effects/LiveEffects.js';
+import { workConfigOf } from './StationRecipe.js';
+import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { categoryOfItem, isConsumableCategory } from '../../config/registries/equipmentConstants.js';
+import { WORK_START, workSkillMatches } from '../core/consumableRule.js';
 import { KEYWORD } from '../effects/statements.js';
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
@@ -30,7 +35,25 @@ import { BOARD_EVENTS } from './boardEvents.js';
  *
  * ⚠️ Acted means it changed something: a hit fully stopped by armour, a heal on someone already
  * whole and a cleanse with nothing to remove do nothing, so none of them spends the item.
+ *
+ * ## A work cycle starting (`CYCLE_START`)
+ * Its hero's rules on On Work Start (`WORK_START`) and on `CYCLE_START` fire, those naming a skill
+ * only on a cycle of that skill. Before they do, whatever the hero's last cycle left "for the cycle"
+ * ends (a cycle left part-way included). Drinks and work potions are drunk from their dose
+ * (`ConsumptionSystem.startWorkDoses`) and their work rules fire from it, uncharged, as an
+ * elixir's do on a fight. An effect applied "for the cycle" is bound to this Token's cycle and ends
+ * with it (`init`'s `CYCLE_COMPLETE` subscription).
  */
+
+/** The moment `BoardRunner` names as a hero's work cycle starts. */
+const CYCLE_START = 'CYCLE_START';
+
+/** The skill of the work a Token's cycle is doing: its work config's, a Foundation's build skill. */
+function cycleSkillOf(instanceId) {
+    const instance = BoardState.getTokenById(instanceId);
+    if (!instance) return '';
+    return workConfigOf(getTokenType(instance.typeId), instance)?.skill || '';
+}
 
 /**
  * Fire every carried rule waiting on `eventId`.
@@ -54,20 +77,37 @@ export function fire(instanceId, heroId, eventId) {
 
     // A fight starting counts a fight on every elixir and drinks those that ran out. An elixir's
     // rules work from its dose, not from the Bank: they are fired below without a cost, and kept
-    // out of the ordinary pass, which would charge one per fight.
+    // out of the ordinary pass, which would charge one per fight. A work cycle starting does the
+    // same for drinks and work potions.
     const fightStart = eventId === ConsumptionSystem.FIGHT_START;
-    const elixirs = fightStart ? ConsumptionSystem.startFightElixirs(heroId) : [];
-    const fromElixirsOnly = (statement) => fightStart
-        && (statement.sourceItemIds || []).every(id => isConsumableCategory(categoryOfItem(id)));
+    const workStart = eventId === CYCLE_START;
+    const skill = workStart ? cycleSkillOf(instanceId) : '';
+    if (workStart) LiveEffects.endHeroCycleEffects(heroId);
+
+    const doses = fightStart ? ConsumptionSystem.startFightElixirs(heroId)
+        : workStart ? ConsumptionSystem.startWorkDoses(heroId, skill) : [];
+    const isDoseItem = fightStart ? (id) => isConsumableCategory(categoryOfItem(id))
+        : workStart ? ConsumptionSystem.isWorkDose : null;
+    const fromDosesOnly = (statement) => !!isDoseItem
+        && (statement.sourceItemIds || []).every(isDoseItem);
     const statements = [
-        ...HeroEffects.loadoutStatements(hero).filter(s => !fromElixirsOnly(s)),
-        ...elixirs.flatMap(id => HeroEffects.itemStatements(id).map(s => ({ ...s, dosed: true })))
+        ...HeroEffects.loadoutStatements(hero).filter(s => !fromDosesOnly(s)),
+        ...doses.flatMap(id => HeroEffects.itemStatements(id).map(s => ({ ...s, dosed: true })))
     ];
+    const waitsHere = (statement) => {
+        const event = statement?.when?.event;
+        if (!workStart) return event === eventId;
+        return (event === eventId || event === WORK_START) && workSkillMatches(statement.when, skill);
+    };
 
-    for (const statement of statements) {
-        if (statement?.when?.event !== eventId) continue;
-        if (!statement.dosed && !HeroEffects.canPayLoadoutCost(statement)) continue;
+    for (const original of statements) {
+        if (!waitsHere(original)) continue;
+        if (!original.dosed && !HeroEffects.canPayLoadoutCost(original)) continue;
 
+        // "For the cycle" means this Token's cycle, the one starting now.
+        const statement = workStart && original.payload?.forCycle
+            ? { ...original, payload: { ...original.payload, forCycle: instanceId } }
+            : original;
         const payload = statement.payload || {};
         let acted = false;
 
@@ -92,7 +132,7 @@ export function fire(instanceId, heroId, eventId) {
 
         if (!acted) continue;
         if (!statement.dosed) HeroEffects.payLoadoutCost(statement);
-        // An elixir says itself once, in the hero's "used" bubble as it is drunk, not on every fight.
+        // A dose says itself once, in the hero's "used" bubble as it is drunk, not on every firing.
         if (!statement.dosed) EffectFeedback.announce(instanceId, statement);
         fired += 1;
     }
@@ -108,16 +148,20 @@ export function teardown() {
 }
 
 /**
- * Fires carried rules on `COMBAT_ENGAGED`.
+ * Fires carried rules on `COMBAT_ENGAGED`, and ends what a hero carried "for the cycle" when that
+ * cycle completes.
  *
- * ⚠️ Must subscribe after everything else on that event (the trigger moments, via
+ * ⚠️ Must subscribe after everything else on those events (the trigger moments, via
  * `TriggerSystem.init()` inside `BoardRunner.init()`), so `EventBus`'s in-order loop reaches it
- * last. `EngineBootstrap` calls this after `BoardRunner.init()`/`BoardCombat.init()` for that
- * reason.
+ * last: every reader of a finished cycle has seen the effect before it ends. `EngineBootstrap`
+ * calls this after `BoardRunner.init()`/`BoardCombat.init()` for that reason.
  */
 export function init() {
     teardown();
     unsubscribers.push(EventBus.subscribe(BOARD_EVENTS.COMBAT_ENGAGED, ({ instanceId, heroId }) => {
         fire(instanceId, heroId, 'COMBAT_ENGAGED');
+    }));
+    unsubscribers.push(EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, ({ instanceId, heroId } = {}) => {
+        if (heroId) LiveEffects.endHeroCycleEffects(heroId, instanceId);
     }));
 }

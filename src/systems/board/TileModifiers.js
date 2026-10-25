@@ -512,6 +512,13 @@ export function collectStatusApplications(instanceId) {
  * `sourceItemIds` rides with the payload because paying an item rule's cost means consuming one of
  * the items that granted it, and by the time the caller acts, which items those were is no longer
  * derivable.
+ *
+ * Only standing rules, as for a Token (`applicableStatements`): a carried rule with a moment fires
+ * on its moment (`LoadoutMoments`), not again at every cycle's end.
+ *
+ * A grant also comes from what the hero carries for a while (a Birdwatcher's chance of a Bird Nest,
+ * applied for the cycle as it started): free here, its item was spent when it was applied, and
+ * only while the hero works the Token it was applied at.
  */
 function loadoutPayloads(instanceId, keyword) {
     const heroId = BoardState.workerOf(instanceId);
@@ -520,15 +527,20 @@ function loadoutPayloads(instanceId, keyword) {
     const hero = HeroManager.getHero(heroId);
     if (!hero) return [];
 
-    return HeroEffects.loadoutStatementsWith(hero, keyword)
+    const carried = HeroEffects.loadoutStatementsWith(hero, keyword)
         // A role-aimed rule reaches its role, never this tile's occupant.
-        .filter(statement => !statement?.target?.role)
+        .filter(statement => !statement?.target?.role && !statement?.when?.event)
         .map(statement => ({
         ...statement.payload,
         effectTitle: statement.effectTitle,
         chargeDelta: statement.chargeDelta,
         sourceItemIds: statement.sourceItemIds
     }));
+    if (keyword !== KEYWORD.GRANTS) return carried;
+    const lingering = LiveEffects.grantStatements(hero, instanceId)
+        .filter(statement => !statement?.target?.role)
+        .map(statement => ({ ...statement.payload, effectTitle: statement.effectTitle, chargeDelta: 0 }));
+    return lingering.length ? [...carried, ...lingering] : carried;
 }
 
 /** Item-granting statements reaching this tile, as raw payloads. */
@@ -921,9 +933,10 @@ function heroContributions(instanceId, effectType, category = TARGET_CATEGORIES.
     // effect expires on its own clock, with no board change and no player action, so a cached
     // contribution would outlive it. This is what makes Cookout (+10% gathering yield for a while)
     // expressible as an ordinary library effect.
+    // A carried effect bound to another Token's cycle ("for the cycle") does not reach this one.
     const contributing = [
         ...HeroEffects.loadoutStatements(hero),
-        ...LiveEffects.modifierStatements(hero)
+        ...LiveEffects.modifierStatements(hero, instanceId)
     ];
 
     for (const statement of contributing) {

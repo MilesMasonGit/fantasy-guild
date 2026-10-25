@@ -1,7 +1,7 @@
 import { KEYWORD, WHEN, getKeyword, statementsOf, effectEntryOf, firingChanceOf } from './statements.js';
 import { statusBlockOf } from './effectLibrary.js';
 import { MODIFIER_SHAPES } from '../../config/registries/modifierPalette.js';
-import { getTriggerEvent, isFightMoment, everyOf, healthBelowOf } from '../../config/registries/triggerRegistry.js';
+import { getTriggerEvent, isFightMoment, isCarriedMoment, everyOf, healthBelowOf } from '../../config/registries/triggerRegistry.js';
 import { getRestrictionKind, limitOf } from '../../config/registries/restrictionPalette.js';
 import { getSkill } from '../../config/registries/skillRegistry.js';
 import { getJob } from '../../config/registries/jobRegistry.js';
@@ -483,6 +483,12 @@ function whenSegments(statement, names) {
     if (definition?.needsPercent) {
         return segs(d(label, momentSlot), ' ', d(`${healthBelowOf(when)}%`, detail && 'belowPct'));
     }
+    // "On Forestry Work Start": a carried work moment says its skill inside the tag; none is any.
+    if (definition?.skillParam && when.skill) {
+        const [first, ...rest] = label.split(' ');
+        return segs(d(first, momentSlot), ' ', d(getSkill(when.skill)?.name || when.skill, detail && 'skill'), ' ',
+            d(rest.join(' '), momentSlot));
+    }
     return segs(d(label, momentSlot));
 }
 
@@ -497,8 +503,9 @@ function ordinal(n) {
 function cooldownSegments(statement) {
     const ms = statement?.when?.cooldownMs;
     if (!ms) return [];
-    // A fight moment has no cooldown (its own count is its rhythm), so a stray one is not said.
-    if (isFightMoment(statement?.when?.event)) return [];
+    // A fight moment has no cooldown (its own count is its rhythm), nor a carried moment (a hero's
+    // items have none), so a stray one is not said.
+    if (isFightMoment(statement?.when?.event) || isCarriedMoment(statement?.when?.event)) return [];
     const known = getKeyword(statement?.keyword) && getTriggerEvent(statement?.when?.event);
     return segs(', at most once every ', d(String(Math.round(ms / 100) / 10), known && 'cooldown'), ' seconds');
 }
@@ -755,9 +762,9 @@ function bodySegments(statement, names) {
 
             /**
              * A library effect (a status included). With a duration it lingers, "for the fight" it
-             * lasts until its fight ends, "for the swing" until the swing being made is over;
-             * without any it fires immediately (chaining). A status's own lifetime is its effect's,
-             * and the editor offers none of the three for one.
+             * lasts until its fight ends, "for the swing" until the swing being made is over, "for
+             * the cycle" until the work cycle starting is over; without any it fires immediately
+             * (chaining). A status's own lifetime is its effect's, and the editor offers none for one.
              */
             if (payload.effectId) {
                 const title = names.effect ? names.effect(payload.effectId) : payload.effectId;
@@ -766,7 +773,9 @@ function bodySegments(statement, names) {
                     ? segs(' ', d('for the swing', 'forSwing'))
                     : payload.forFight
                         ? segs(' ', d('for the fight', 'forFight'))
-                        : secs > 0 ? segs(' for ', d(String(secs), 'durationMs'), ' seconds') : [];
+                        : payload.forCycle
+                            ? segs(' ', d('for the cycle', 'forCycle'))
+                            : secs > 0 ? segs(' for ', d(String(secs), 'durationMs'), ' seconds') : [];
                 return segs(d('Applies', K), ' ', d(title || '…', 'effectId'), ' to ', who(), lasting, odds);
             }
 
