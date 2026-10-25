@@ -6,6 +6,7 @@ import { inputSummary, outputSummary, contextSummary } from './recipeText.js';
 import { SkillIcon } from '../base/SkillIcon.jsx';
 import { getSkill, DEMOLITION_SKILL_ID } from '../../../config/registries/skillRegistry.js';
 import { RING_D_U } from './ringRow.js';
+import { Tooltip } from '../base/Tooltip.jsx';
 
 /**
  * The small things drawn on a Token besides its ring bubbles: its name above the box, the -1
@@ -178,54 +179,52 @@ export const StationGearBadge = ({ isDragging, recipe, pulsing = false, isFounda
     const context = contextSummary(recipe);
     const label = isFoundation ? 'Choose what to build' : 'Choose recipe';
 
-    return (
-        <div
-            data-station-gear={pulsing ? 'unset' : 'set'}
-            className="relative shrink-0 group pointer-events-auto"
-        >
-            <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); onClick?.(e); }}
-                aria-label={label}
-                className={cn(
-                    'w-7 h-7 flex items-center justify-center p-0 cursor-pointer select-none',
-                    'filter drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)]',
-                    !pulsing && 'hover:scale-110 active:scale-95 transition-transform duration-150',
-                    pulsing && 'relative'
-                )}
-            >
-                {pulsing && GEAR_OUTLINE_OFFSETS.map(([dx, dy]) => (
-                    <span
-                        key={`${dx}${dy}`}
-                        data-gear-outline=""
-                        aria-hidden="true"
-                        className="gi-gear-alert absolute w-6 h-6 pointer-events-none"
-                        style={gearOutlineStyle(dx, dy)}
-                    />
-                ))}
-                <img
-                    src={GEAR_SRC}
-                    alt={label}
-                    className="relative w-6 h-6 object-contain pointer-events-none"
-                    style={{ imageRendering: 'pixelated' }}
-                />
-            </button>
+    const title = recipe?.name || (isFoundation ? 'Nothing chosen to build' : 'No recipe selected');
+    const preview = (outputs || inputs || context) ? (
+        <>
+            {outputs && <div>Makes {outputs}</div>}
+            {inputs && <div className="text-white/70">Needs {inputs}</div>}
+            {context && <div className="text-white/70">Beside {context}</div>}
+        </>
+    ) : null;
 
+    // ⚠️ The shared tooltip, portalled out of the mat: a box drawn inside the Token sat under the
+    // work plate's layer.
+    return (
+        <Tooltip title={title} content={preview}>
             <div
-                className={cn(
-                    'absolute left-0 top-8 w-44 p-1.5 rounded z-40',
-                    'bg-black/95 border border-gi-gold/40 ui-text-body leading-tight text-white',
-                    'pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150'
-                )}
+                data-station-gear={pulsing ? 'unset' : 'set'}
+                className="relative shrink-0 pointer-events-auto"
             >
-                <div className="font-bold text-gi-gold">
-                    {recipe?.name || (isFoundation ? 'Nothing chosen to build' : 'No recipe selected')}
-                </div>
-                {outputs && <div>Makes {outputs}</div>}
-                {inputs && <div className="text-white/70">Needs {inputs}</div>}
-                {context && <div className="text-white/70">Beside {context}</div>}
+                <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); onClick?.(e); }}
+                    aria-label={label}
+                    className={cn(
+                        'w-7 h-7 flex items-center justify-center p-0 cursor-pointer select-none',
+                        'filter drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)]',
+                        !pulsing && 'hover:scale-110 active:scale-95 transition-transform duration-150',
+                        pulsing && 'relative'
+                    )}
+                >
+                    {pulsing && GEAR_OUTLINE_OFFSETS.map(([dx, dy]) => (
+                        <span
+                            key={`${dx}${dy}`}
+                            data-gear-outline=""
+                            aria-hidden="true"
+                            className="gi-gear-alert absolute w-6 h-6 pointer-events-none"
+                            style={gearOutlineStyle(dx, dy)}
+                        />
+                    ))}
+                    <img
+                        src={GEAR_SRC}
+                        alt={label}
+                        className="relative w-6 h-6 object-contain pointer-events-none"
+                        style={{ imageRendering: 'pixelated' }}
+                    />
+                </button>
             </div>
-        </div>
+        </Tooltip>
     );
 };
 
