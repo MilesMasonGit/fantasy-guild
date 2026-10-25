@@ -14,7 +14,8 @@ import { SPAWN_MS } from './spawnMotion.js';
 import { useMatFit } from './MatFitContext.jsx';
 import { SpeechFrame } from './SpeechFrame.jsx';
 import { SPEECH_TONE } from './speechTone.js';
-import { plateUnit } from './workPlate.js';
+import { plateUnit, platePlace } from './workPlate.js';
+import { useMatSize } from '../../hooks/useMatSize.js';
 
 /** Clear air between the top of a Token's art and the bottom of its callout's tail, in mat units. */
 const GAP_PX = 6;
@@ -117,7 +118,9 @@ export const CalloutLayer = memo(function CalloutLayer() {
     }, []);
 
     useSyncExternalStore(callouts.length ? subscribeHeroColumns : NO_SUBSCRIPTION, heroColumnsVersion);
-    const u = plateUnit(useMatFit() || 1);
+    const fit = useMatFit() || 1;
+    const u = plateUnit(fit);
+    const mat = useMatSize();
 
     if (!callouts.length) return null;
 
@@ -135,8 +138,14 @@ export const CalloutLayer = memo(function CalloutLayer() {
         >
             {[...groups.entries()].map(([key, list]) => {
                 const { x: ownX, y, typeId, anchorId } = list[0];
+                let ownTop = y - (typeId ? artRadiusOf(typeId) : 0) - GAP_PX;
+                // A worked Token near the mat's foot wears its work plate over its head: say it above.
+                if (anchorId && BoardState.workerOf(anchorId)) {
+                    const plateTop = platePlace({ x: ownX, y, typeId, fit, matH: mat.h }).top;
+                    if (plateTop < y) ownTop = Math.min(ownTop, plateTop - GAP_PX);
+                }
                 const { x, top } = columnPlace(
-                    { x: ownX, top: y - (typeId ? artRadiusOf(typeId) : 0) - GAP_PX },
+                    { x: ownX, top: ownTop },
                     anchorId ? heroColumnAt(anchorId) : null
                 );
                 return (

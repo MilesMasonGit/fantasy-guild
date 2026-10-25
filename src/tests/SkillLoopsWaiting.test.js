@@ -22,6 +22,8 @@ import { idleMomentOf, momentText } from '../ui/components/board/heroSpeech.js';
 import { calloutText, INPUT_CALLOUT_GAP_MS } from '../ui/components/board/callouts.js';
 import { HeroBubbleLayer } from '../ui/components/board/HeroBubbleLayer.jsx';
 import { CalloutLayer } from '../ui/components/board/CalloutLayer.jsx';
+import { platePlace } from '../ui/components/board/workPlate.js';
+import { matH } from '../config/matGeometry.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -230,6 +232,24 @@ describe('the mat says it', () => {
         act(() => { vi.advanceTimersByTime(INPUT_CALLOUT_GAP_MS); });
         say();
         expect(container.querySelector('[data-callout]').textContent).toBe('Needs Coal');
+    });
+
+    it('near the foot of the mat, where the work plate rides over the station, "Needs Coal" goes above the plate', () => {
+        const y = matH() - 80;
+        const furnace = put('sw_furnace', 800, y);
+        InventoryManager.addItem('item_coal', 10);
+        Flags.plant('smith', { x: 800, y });
+        run(3000);
+        expect(BoardState.workerOf(furnace.id)).toBe('smith');
+        const plateTop = platePlace({ x: 800, y, typeId: 'sw_furnace', fit: 1, matH: matH() }).top;
+        expect(plateTop).toBeLessThan(y);
+        const { container } = render(h(CalloutLayer));
+        act(() => {
+            EventBus.publish(BOARD_EVENTS.INPUT_NEEDED, { instanceId: furnace.id, heroId: 'smith', itemId: 'item_coal' });
+        });
+        const column = container.querySelector('[data-callout]').parentElement;
+        const top = Number(/translate\([^,]+,\s*([-\d.]+)px\)/.exec(column.style.transform)[1]);
+        expect(top).toBeLessThan(plateTop);
     });
 
     it('a waiting miner going idle says nothing; a hero with nothing in reach still does', () => {

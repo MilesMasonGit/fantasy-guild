@@ -205,7 +205,7 @@ function qaHero(name, skillIds) {
 let waitScene = null;
 
 /** Where the waiting scene stands: the mat's lower left, clear of the Starter Camp and the scene above. */
-const WAIT_SPOTS = Object.freeze({ vein: { x: 220, y: 950 }, furnace: { x: 620, y: 950 }, coal: { x: 790, y: 900 } });
+const WAIT_SPOTS = Object.freeze({ vein: { x: 220, y: 760 }, furnace: { x: 620, y: 760 }, coal: { x: 790, y: 710 } });
 
 /**
  * The mat's lower left, two heroes alone with their work:
