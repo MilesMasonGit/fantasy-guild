@@ -42,7 +42,7 @@ C2; C0 (the test content pack, accepted by the director) after C2; C6 last.
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
 | S0: gap map (read-only) | engineer | — | **done**: [research/skill_loops_gap_map.md](research/skill_loops_gap_map.md). Order: S1a; S1b ∥ S6a; S2a ∥ S5; S3 ∥ S6b; S4 ∥ S2b; S7 ∥ S8; S9. Owner: a station out of input waits unless other work runs; a map's wheat patch is a ready-planted Field; no loud pop for rare catches; drinks only buff; supports never wear out. Director: S0 Q2, Q3 (80 % as a code constant), Q4, Q7, Q8, Q10, Q12, Q13 option A | Sat | Sat |
-| S1a: 80 % speed-up floor, Grow Time axis (cached per Token), "stays where it stands" mark, stations and supports never wear out | engineer | `systems/skills-s1a` (`sl`) | ready (6112 tests, cycles, build; trial merge with main 6154 green). Owner: a helper node's help is free (only its own harvest spends charges): being added, then gate and bench (WORK CHANGED expected: wear rule on the bench's buff and station fixtures). T-251 tuning page | Sat | |
+| S1a: 80 % speed-up floor, Grow Time axis (cached per Token), "stays where it stands" mark, stations and supports never wear out | engineer | `systems/skills-s1a` (`sl`) | ready (6112 tests, cycles, build; trial merge with main 6154 green). Owner: a helper node's help is free (only its own harvest spends charges): being added, then gate and bench (WORK CHANGED expected: wear rule on the bench's buff and station fixtures). T-253 tuning page | Sat | |
 
 ## Backlog director, batch F: look-wide passes (brief 210; owner said go 2026-10-24: both, mock-ups first) — **done, merged eb969849; brief 210 complete**
 
