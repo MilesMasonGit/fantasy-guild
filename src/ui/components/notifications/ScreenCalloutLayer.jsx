@@ -3,10 +3,12 @@ import { createPortal } from 'react-dom';
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import { CALLOUT_MS } from '../board/callouts.js';
+import { SpeechFrame } from '../board/SpeechFrame.jsx';
+import { SPEECH_TONE } from '../board/speechTone.js';
 
 /**
  * A refusal off the mat (an item a hero cannot equip, dropped on their tab or panel), said as a
- * callout where the pointer let go, in the mat's callout style. Gone by itself; nothing to click.
+ * callout where the pointer let go, in the mat's callout frame, red. Gone by itself; nothing to click.
  */
 
 /** Callouts on screen at once; the oldest give way. */
@@ -48,12 +50,9 @@ export function ScreenCalloutLayer() {
             {callouts.map(c => (
                 // The outer box places it; the bubble's own transform is its pop (`callout-pop`).
                 <div key={c.id} className="absolute" style={{ left: c.x, top: c.y - 12, transform: 'translate(-50%, -100%)' }}>
-                    <div
-                        data-callout={c.text}
-                        className="callout-bubble whitespace-nowrap px-2 py-1 rounded-md border border-emerald-400/70 bg-emerald-950/95 text-emerald-100 text-[11px] font-bold shadow-lg"
-                    >
+                    <SpeechFrame data-callout={c.text} tone={SPEECH_TONE.CANT} className="callout-bubble whitespace-nowrap ui-text-title font-bold">
                         {c.text}
-                    </div>
+                    </SpeechFrame>
                 </div>
             ))}
         </div>,

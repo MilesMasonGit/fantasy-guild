@@ -45,16 +45,17 @@ gi-slot-label {
    ⚠️ Starts at FULL opacity, deliberately: there is no fade-in, so where an
    animation does not run (a frozen compositor, animations disabled) the bubble
    is merely a still one for its life instead of invisible.
-   ⚠️ The 2200ms must match `CALLOUT_MS` in `callouts.js`, which removes it. */
+   ⚠️ The 2200ms must match `CALLOUT_MS` in `callouts.js`, which removes it.
+   It only moves, never scales: a pixel frame scaled draws its art pixels at odd sizes. */
 .callout-bubble {
     animation: callout-pop 2200ms ease-out forwards;
 }
 
 @keyframes callout-pop {
-    0% { opacity: 1; transform: translateY(6px) scale(1.12); }
-    10% { opacity: 1; transform: translateY(0) scale(1); }
-    70% { opacity: 1; transform: translateY(-6px) scale(1); }
-    100% { opacity: 0; transform: translateY(-14px) scale(1); }
+    0% { opacity: 1; transform: translateY(6px); }
+    10% { opacity: 1; transform: translateY(0); }
+    70% { opacity: 1; transform: translateY(-6px); }
+    100% { opacity: 0; transform: translateY(-14px); }
 }
 
 @media (prefers-reduced-motion: reduce) {
