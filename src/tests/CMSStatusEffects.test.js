@@ -56,6 +56,11 @@ function effectEditor(id) {
 
 describe('⭐ the Effect editor makes a status', () => {
     it('a new effect named Poison gets the id Venomous names, and is flagged to keep it', () => {
+        // A library without Poison, whatever ships.
+        useEntityStore.setState((s) => {
+            const { effect_poison: _gone, ...effects } = s.effects;
+            return { effects };
+        });
         const id = store().addEffect({ name: 'Poison' });
         expect(id).toBe('effect_poison');
         const { container } = effectEditor(id);

@@ -184,8 +184,11 @@ describe('the Token editor’s level preview', () => {
         }
     });
 
-    it('the Goblin, scaled by its budget, reads 6 HP, a hit of 1 and 3 XP', () => {
-        const { container } = editor('token_goblin');
+    // A fixture, not a shipped enemy: what an older budget scale does must not hang on content.
+    it('a level 1 enemy scaled by a budget of 0.3 reads 6 HP, a hit of 1 and 3 XP', () => {
+        const id = 'token_cow';
+        useEntityStore.getState().updateToken(id, { enemy: { level: 1, style: 'melee', budgetScale: 0.3 } });
+        const { container } = editor(id);
         const box = within(container).getByText('What the fight uses').parentElement.parentElement;
         expect(box.textContent).toContain('HP6Hit1Armour0Attacks every3.0sXP3');
     });

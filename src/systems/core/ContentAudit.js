@@ -9,7 +9,7 @@ import { filtersOf, getFilterKind, FILTER_NEEDS } from '../../config/registries/
 import { deriveTokenType } from '../../config/registries/tokenTypeDerivation.js';
 import { isOutputCurrency } from '../../config/registries/tokenConstants.js';
 import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
-import { isEnemyDef } from '../../config/registries/enemyProfile.js';
+import { isEnemyDef, isBossEnemy } from '../../config/registries/enemyProfile.js';
 import { EFFECTS, getEffect } from '../../config/registries/effectRegistry.js';
 import { effectRefsOf, duplicateRefsOf, hasWorkingStatements, usedBy, statusBlockOf } from '../effects/effectLibrary.js';
 import { VENOM_EFFECT_ID } from '../../config/registries/enemyKinds.js';
@@ -412,6 +412,14 @@ function auditStatements(out, where, def) {
         }
         if (statement?.keyword === KEYWORD.PROVIDES && getPaletteEntry(payload.type)?.categories === 'status') {
             checkRef(out, where, 'status', payload.category, 'The status one of its rules names');
+        }
+
+        // A boss comes from its own camp or a Summoning Circle, and never ambushes: a Spawns rule never makes one.
+        if (statement?.keyword === KEYWORD.SPAWNS && isBossEnemy(getTokenType(payload.typeId))) {
+            out.push(finding(where,
+                `one of its rules spawns ${tokenName(payload.typeId) || payload.typeId}, a boss — and a rule never spawns a boss ` +
+                `(a boss never ambushes), so the rule does nothing. Give the boss a camp of its own (a spawner that keeps ` +
+                `one) or a Summoning Circle whose work makes it.`));
         }
 
         // A trigger that watches for a *specific* item and was never told which

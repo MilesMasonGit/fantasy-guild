@@ -208,9 +208,12 @@ describe('⭐ the Token editor: an enemy\'s numbers, filled from the level and k
     });
 
     it('an older enemy shows its budget scale; one without does not', () => {
-        expect(within(tokenEditor('token_goblin').container).queryByLabelText('Budget scale')).not.toBeNull();
-        cleanup();
         expect(within(tokenEditor(cow).container).queryByLabelText('Budget scale')).toBeNull();
+        cleanup();
+        store().updateToken(cow, { enemy: { level: 1, style: 'melee', budgetScale: 0.3 } });
+        const scale = within(tokenEditor(cow).container).queryByLabelText('Budget scale');
+        expect(scale).not.toBeNull();
+        expect(scale.value).toBe('0.3');
     });
 });
 
@@ -257,6 +260,11 @@ describe('⭐ the kinds: none, one or two presets', () => {
     });
 
     it('the preview shows what the fight uses, kinds included: Venomous lands the Poison status effect', () => {
+        // A library without Poison, whatever ships.
+        act(() => useEntityStore.setState((s) => {
+            const { effect_poison: _gone, ...effects } = s.effects;
+            return { effects };
+        }));
         const { container } = tokenEditor(cow);
         fireEvent.click(field(container, 'enemy-kind-venomous'));
         const box = () => within(container).getByText('What the fight uses').parentElement.parentElement;

@@ -356,6 +356,11 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
                 warn('respawn', 'respawns but has unlimited charges, so it never runs out and never rests (allowed).');
             }
         }
+
+        // ── a boss: never hostile ──
+        if (def.enemy?.boss === true && def.enemy?.hostile === true) {
+            warn('enemy.hostile', 'is a boss marked hostile; a boss never attacks first, so the mark does nothing.');
+        }
     }
 
     // ── grows loops, once per loop ──

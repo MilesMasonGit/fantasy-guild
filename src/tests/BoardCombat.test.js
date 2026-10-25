@@ -82,6 +82,18 @@ function makeRecruit(id, { hp = 100 } = {}) {
     return hero;
 }
 
+/** The bench's mulberry32: a seeded stand-in for Math.random. */
+function mulberry32(seed) {
+    let state = seed | 0;
+    return () => {
+        state = (state + 0x6D2B79F5) | 0;
+        let t = state;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+}
+
 function place(tile, typeId, heroId = null, uses = undefined) {
     const instance = BoardState.createTokenInstance(
         typeId, uses === undefined ? tokenStartingUses(typeId) : uses
@@ -170,19 +182,24 @@ describe('Everyone fights: a Recruit fights as a level 1 fighter', () => {
         const victories = [];
         const unsub = EventBus.subscribe('combat_victory', p => victories.push(p));
 
-        const enemy = place(10, 'fixture_enemy_weak', 'recruit_new');
-        // Until the first kill: a fresh Recruit wins one with most of their HP left.
-        for (let t = 0; t < 60000 && !victories.length; t += 100) BoardRunner.tick(100);
-        run(3000);
-        unsub();
+        // Every swing is a Math.random roll: seeded, so the outcome is not a matter of luck.
+        const random = vi.spyOn(Math, 'random').mockImplementation(mulberry32(1));
+        try {
+            const enemy = place(10, 'fixture_enemy_weak', 'recruit_new');
+            // Until the first kill: a fresh Recruit wins one with most of their HP left.
+            for (let t = 0; t < 60000 && !victories.length; t += 100) BoardRunner.tick(100);
+            unsub();
 
-        expect(recruit.status).not.toBe('wounded');
-        expect(victories.length).toBeGreaterThan(0);
-        expect(enemy.usesRemaining).toBeLessThan(tokenStartingUses('fixture_enemy_weak'));
-        // The kill's loot lands on the board as for anyone.
-        expect(SpriteLayer.countOnBoard('item_blackberry')).toBeGreaterThan(0);
-        // No combat skill appeared and no skill gained XP from the fights.
-        expect(JSON.stringify(recruit.skills)).toBe(skillsBefore);
+            expect(recruit.status).not.toBe('wounded');
+            expect(victories.length).toBeGreaterThan(0);
+            expect(enemy.usesRemaining).toBeLessThan(tokenStartingUses('fixture_enemy_weak'));
+            // The kill's loot lands on the board as for anyone.
+            expect(SpriteLayer.countOnBoard('item_blackberry')).toBeGreaterThan(0);
+            // No combat skill appeared and no skill gained XP from the fights.
+            expect(JSON.stringify(recruit.skills)).toBe(skillsBefore);
+        } finally {
+            random.mockRestore();
+        }
     });
 
     it('promoting the Recruit keeps the same hero fighting, now on the real skill', () => {

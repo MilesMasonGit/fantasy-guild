@@ -160,6 +160,8 @@ export function nextGrowth(instance) {
  * * `clock` — the key in `instance.clocks` it counts on;
  * * `replaces` — true when firing puts a new instance in the Token's place, so
  *   it waits while the Token is in the player's hand ({@link setInHand});
+ * * `idleWhile(instance, def)` — optional: while true the clock is held at zero
+ *   (a full enemy camp);
  * * `once` — true when the clock is done once it acts (a refill), rather than
  *   starting another lap;
  * * `applies(instance, def)` — whether this Token runs it;
@@ -216,6 +218,8 @@ export const HANDLERS = [
         // itself; a blocked attempt returns null.
         id: 'spawner',
         clock: 'spawnMs',
+        // A full enemy camp's clock stands at zero: a beaten member comes back an interval later.
+        idleWhile: (instance, def) => SpawnerSystem.isFullEnemyCamp(instance, def),
         applies: (instance, def) => !instance.turnedFrom && SpawnerSystem.isSpawner(def),
         dueMs: (instance, def) => SpawnerSystem.intervalOf(def),
         fire: (instance, def, random, ctx) => SpawnerSystem.attemptSpawn(instance, def, random, ctx)
@@ -268,8 +272,14 @@ export function advance(instance, delta, random = Math.random) {
         const advanced = new Set();
         for (const h of active) {
             if (advanced.has(h.clock)) continue;
-            clocks[h.clock] = (Number(clocks[h.clock]) || 0) + remaining;
             advanced.add(h.clock);
+            // ⚠️ An idle clock (`idleWhile`) is held at zero rather than paused, so the wait never
+            // banks: not across a big catch-up step, and not from an older save that held it full.
+            if (h.idleWhile?.(current, def)) {
+                clocks[h.clock] = 0;
+                continue;
+            }
+            clocks[h.clock] = (Number(clocks[h.clock]) || 0) + remaining;
         }
         remaining = 0;
 

@@ -142,6 +142,11 @@ function respawnLines(instance, src) {
         : { label: 'Respawns', value: `Becomes ${into} when it runs out, which grows back`, tone: TONE.MUTED }];
 }
 
+/** A boss: it fights only the heroes the player sends, never first. */
+function bossLines(def) {
+    return def?.enemy?.boss === true ? [{ label: 'Boss', value: 'Fights only the heroes you send', tone: TONE.MUTED }] : [];
+}
+
 /** A countdown as the UI writes it: `4:57`, rounded up to the second. */
 export function formatClock(ms) {
     const total = Math.max(0, Math.ceil((Number(ms) || 0) / 1000));
@@ -266,6 +271,7 @@ export function lifecycleLines(instance, src) {
     }
 
     out.push(...respawnLines(instance, src));
+    out.push(...bossLines(def));
     if (def.foundation) out.push(...foundationLines(instance, def, src));
     // A station waits for the player to pick a recipe, as a Foundation waits for 'what to
     // build'. Only said while nothing is picked.

@@ -267,15 +267,23 @@ describe('StationGearBadge', () => {
         outputs: [{ itemId: 'fixture_carrot', minQty: 1, maxQty: 1, chance: 100 }]
     };
 
+    // The preview is the shared tooltip, opened by resting on the gear and drawn outside the Token.
+    const hoverTip = (container) => {
+        fireEvent.pointerEnter(container.querySelector('[data-station-gear]'), { clientX: 10, clientY: 10 });
+        const tips = document.body.querySelectorAll('[data-tooltip]');
+        return tips[tips.length - 1]?.textContent ?? '';
+    };
+
     it('previews the selected recipe on hover (concept §2.1)', () => {
         const { container } = render(React.createElement(StationGearBadge, {
             isHovered: true, isDragging: false, recipe, onClick: () => { }
         }));
-        expect(container.textContent).toContain('Roast');
-        expect(container.textContent).toContain('Makes 1× Carrot');
-        expect(container.textContent).toContain('Needs 2× Carrot');
+        const tip = hoverTip(container);
+        expect(tip).toContain('Roast');
+        expect(tip).toContain('Makes 1× Carrot');
+        expect(tip).toContain('Needs 2× Carrot');
         // Nothing in the fixtures offers a pie tin above the bottom rung, so there is no name to give.
-        expect(container.textContent).toContain('Beside a stronger ctx pie tin');
+        expect(tip).toContain('Beside a stronger ctx pie tin');
     });
 
     it('opens the picker when clicked', () => {
@@ -298,6 +306,6 @@ describe('StationGearBadge', () => {
         const { container } = render(React.createElement(StationGearBadge, {
             isHovered: true, isDragging: false, recipe: null, onClick: () => { }
         }));
-        expect(container.textContent).toContain('No recipe selected');
+        expect(hoverTip(container)).toContain('No recipe selected');
     });
 });

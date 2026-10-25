@@ -651,12 +651,13 @@ export default function TokenEditor() {
 
             <EnemyNumbers enemy={enemy} onChange={(next) => update('enemy', next)} />
 
-            {/* A hostile enemy attacks a hero whose flag stands inside the flag radius around its spawner (or itself); a peaceful one fights only when attacked. Written ONLY when ticked; missing means peaceful, which is what the game reads. */}
-            <label className="flex items-center gap-2.5 cursor-pointer select-none mt-3">
+            {/* A hostile enemy attacks a hero whose flag stands inside the flag radius around its spawner (or itself); a peaceful one fights only when attacked. Written ONLY when ticked; missing means peaceful, which is what the game reads. A boss never attacks first, so the box is off and greyed for one. */}
+            <label className={`flex items-center gap-2.5 select-none mt-3 ${enemy?.boss === true ? 'opacity-50' : 'cursor-pointer'}`}>
               <input
                 type="checkbox"
                 aria-label="Hostile"
-                checked={enemy?.hostile === true}
+                disabled={enemy?.boss === true}
+                checked={enemy?.hostile === true && enemy?.boss !== true}
                 onChange={(e) => {
                   const next = { ...enemy };
                   if (e.target.checked) next.hostile = true;
@@ -667,6 +668,28 @@ export default function TokenEditor() {
               <span className="text-[11px] text-gray-300">Hostile</span>
               <span className="text-[10px] text-gray-600">
                 attacks heroes whose flag is planted near it (or its spawner); otherwise it fights only when attacked
+              </span>
+            </label>
+
+            {/* A boss fights only the heroes the player sends: never hostile, never spawned by a rule (no ambush). It comes from a camp of its own (a spawner that keeps one) or a Summoning Circle (a Token whose work uses up a summon item and makes it). Boss moves hang on this mark. Written ONLY when ticked; ticking it clears Hostile. */}
+            <label className="flex items-center gap-2.5 cursor-pointer select-none mt-2">
+              <input
+                type="checkbox"
+                aria-label="Boss"
+                data-field="enemy-boss"
+                checked={enemy?.boss === true}
+                onChange={(e) => {
+                  const next = { ...enemy };
+                  if (e.target.checked) {
+                    next.boss = true;
+                    delete next.hostile;
+                  } else delete next.boss;
+                  update('enemy', next);
+                }}
+              />
+              <span className="text-[11px] text-gray-300">Boss</span>
+              <span className="text-[10px] text-gray-600">
+                fights only heroes you send; comes from a camp of its own or a Summoning Circle; never ambushes
               </span>
             </label>
 

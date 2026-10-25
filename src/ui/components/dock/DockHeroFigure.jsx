@@ -16,6 +16,8 @@ import { useDragSettleHover } from './useDragSettleHover.js';
 import { equipOrAnnounce } from './dockEquip.js';
 import { useHeroBarBubbles, clearHeroBubbles, clearHeroBubble, BAR_BUBBLES_SHOWN, BAR_BUBBLE_FADE_MS } from './heroBarBubbles.js';
 import { BubbleText } from '../board/BubbleText.jsx';
+import { SpeechFrame } from '../board/SpeechFrame.jsx';
+import { SPEECH_TONE } from '../board/speechTone.js';
 import {
     DOCK_STRIP_PX, DOCK_LABEL_GAP_PX,
     isDeployedStatus, dockArtOffset, dockArtFilter, hpPercent, hpTone, HP_TONE_CLASS
@@ -324,7 +326,7 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
 });
 
 /** The name and HP bar's height plus a small gap, so a bubble's tail stops clear of the name. */
-const LABEL_PX = 24;
+const LABEL_PX = 28;
 
 /** A wheel turn this soon after the last one is the same flick: one page per flick. */
 const WHEEL_GAP_MS = 200;
@@ -398,7 +400,7 @@ const BarBubbles = ({ heroId, bubbles, bottom }) => {
                 <div
                     data-bar-bubble-pager
                     className="flex items-center gap-0.5 ui-text-body font-bold leading-none text-yellow-100"
-                    style={{ textShadow: '0 1px 2px #000' }}
+                    style={{ textShadow: '2px 2px 0 #000' }}
                 >
                     <button
                         type="button"
@@ -431,7 +433,7 @@ const BarBubbles = ({ heroId, bubbles, bottom }) => {
                 {shown.map((b, i) => {
                     const isFading = fading.has(b.key);
                     return (
-                        <div
+                        <SpeechFrame
                             key={b.key}
                             data-bar-bubble={b.key}
                             data-bar-bubble-fading={isFading ? 'true' : undefined}
@@ -439,18 +441,16 @@ const BarBubbles = ({ heroId, bubbles, bottom }) => {
                                 e.stopPropagation();
                                 if (!isFading) fadeOut(b.key);
                             }}
+                            tone={SPEECH_TONE.ATTENTION}
+                            tail={i === shown.length - 1}
                             className={cn(
-                                'relative max-w-full px-1.5 py-0.5 rounded border border-yellow-500/70 bg-yellow-950/95 text-yellow-100',
-                                'ui-text-body font-bold leading-tight text-center shadow cursor-pointer transition-opacity ease-out',
+                                'max-w-full ui-text-body font-bold leading-tight text-center cursor-pointer transition-opacity ease-out',
                                 isFading ? 'opacity-0' : 'opacity-100'
                             )}
                             style={{ transitionDuration: `${BAR_BUBBLE_FADE_MS}ms` }}
                         >
                             <BubbleText text={b.text} />
-                            {i === shown.length - 1 && (
-                                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 rotate-45 border-r border-b border-yellow-500/70 bg-yellow-950/95" />
-                            )}
-                        </div>
+                        </SpeechFrame>
                     );
                 })}
             </div>

@@ -23,6 +23,7 @@ import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { matW, matH } from '../config/matGeometry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import * as Atlas from '../systems/atlas/Atlas.js';
+import * as MatResize from '../systems/board/MatResize.js';
 import * as fixtures from '../../bench/fixtures.mjs';
 import { canon } from '../../bench/lib/fingerprint.mjs';
 
@@ -201,6 +202,9 @@ describe('⭐ there and back equals save and load', () => {
         expect(forest.clocks.spawnMs).toBeGreaterThan(0);
         expect(BoardState.getTokenById(sapling.id).clocks.growMs).toBeGreaterThan(0);
 
+        // A load pulls a Token standing over the mat's edge back inside first (SaveManager.loadGame),
+        // and so does travel; an enemy may have pottered there.
+        MatResize.fitToMat();
         const saved = JSON.parse(GameState.serializeJson()).state.board;
         const a = Atlas.activeRegionId();
         const b = Atlas.devCreateEmptyRegion().id;
@@ -499,6 +503,7 @@ describe('⭐ there and back plays exactly like save and load (fresh engine per 
             TileModifiers: await import('../systems/board/TileModifiers.js'),
             SpriteLayer: await import('../systems/board/SpriteLayer.js'),
             Atlas: await import('../systems/atlas/Atlas.js'),
+            MatResize: await import('../systems/board/MatResize.js'),
             SaveMigration: await import('../systems/core/SaveMigration.js'),
             matTuning: await import('../config/matTuning.js'),
             fixtures: await import('../../bench/fixtures.mjs'),
@@ -556,6 +561,8 @@ describe('⭐ there and back plays exactly like save and load (fresh engine per 
             data.state.board.workClaims = {};
             const state = l.SaveMigration.migrateState(data.state, data.version);
             await l.GameState.initFromSave(state);
+            // As SaveManager.loadGame does, before anything hears of the board.
+            l.MatResize.fitToMat();
             l.EventBus.publish(ENGINE_EVENTS.GAME_LOADED, { slot: 0, savedAt: data.savedAt });
             l.DiscoveryManager.init();
             l.InventoryManager.init();

@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-248**
+**Next free number: T-252**
 
 ---
 
@@ -51,7 +51,10 @@ here.
 | T-175 | P2 | owner | (Concept still a draft, owner 2026-10-14: not for the director yet.) **Collectors: the Guild Hall and warehouses** ([concept_collectors.md](../active/concept_collectors.md)): the Hall collects all loot in a small radius from the start, widened by a ranked Hall star; warehouses built on Foundations collect items with one tag (CMS Collects block: tag, radius, interval ~60 s), bigger radius on higher tiers, no upkeep; shared sweep clock, nearest collector wins, items fly in; Bank-full leaves loot and shows the yellow mark; reach ring on hover, drag, placing. Remove the auto-collect setting. Engineer. WORK CHANGED expected. Cost-log line. Eye-check. | concept_collectors.md |
 | T-245 | P3 | open | **Carried rules read as Token rules in the Rules editor** (found by brief 220 C3, 2026-10-24): an item's rule on the fight-start moment shows as "On Neighbour's Fight" targeting "heroes on nearby Tokens"; give carried rules their own wording ("When this hero's fight starts", "to the hero") in `statementText.js` / the trigger picker. Builder-lite. No eye-check (CMS wording). | brief 220 C3 |
 | T-246 | P3 | open | **The item tooltip shows a weapon's styles, damage and speed** (found by brief 220 C2, 2026-10-24): the Bank tooltip lists name, type and effects but not `styles`, `damage`, `speed` (fast/normal/slow) or two-handed. Builder-lite; wait for C6's enemy card so both read the same. | brief 220 C2 |
-| T-247 | P3 | open | **Rules sentences that misread in combat** (found by brief 220 C4, 2026-10-24): a combat Provides on an enemy ends "on an enemy, to the hero fighting it", wrong for a buff the enemy gives itself (Stone Skin); an Applies with no moment does not say "when they finish work"; gear passes only flat amounts, so it cannot carry Swing Time or a Damage percentage. Do with T-245. Builder. No eye-check (CMS wording) except the gear limit, which needs a ruling. | brief 220 C4 |
+| T-248 | P3 | open | **Enemies stroll with their art over the mat edge** (found 2026-10-24 diagnosing the AtlasTravel flake): `EnemyMotion.js` ~236 clamps a stroll to the mat by its centre only (`clampToMat`), so up to 64 u of art hangs past the edge; a reload or travel then hops it inward (`MatResize.fitToMat`). Fix: clamp by the whole footprint (`MatPlacement.clampInside`; check for an import cycle). WORK CHANGED expected; small look change near edges. Engineer or builder. | flake diagnosis |
+| T-249 | P2 | owner | **After a kill, the next camp enemy swings first** (found 2026-10-24): the kill ends the tick before the enemy swing timer moves and the post-kill pause does not reset it, so the next enemy hits about 2.9 s before the hero (live; 3.0 s in catch-up steps vs 2.1 s live). Owner question (asked with the next batch): reset both swing timers when the pause ends, or keep. | flake diagnosis |
+| T-250 | P3 | open | **Seed Math.random for every test**: the game never seeds it; tests that run fights or strolls are luck-dependent unless they seed by hand (and `EnemyMotion`/`HeroMotion` keep their own copy, needing `setRandomForTests`). A vitest setup file that reseeds before each test would end this class of flake. Builder. | flake diagnosis |
+| T-251 | P3 | open | **A CMS page for engine tuning numbers** (brief 230 S1a, owner 2026-10-24: "a ticket later"): the speed-up floor (`MAX_SPEED_UP_CUT = 0.8`) and the elixir dose (`ELIXIR_FIGHTS = 10`) live as code constants in `loopConstants.js`; give the owner a synced tuning page (a `data/tuning.json`, a CMS page, a loader). Builder. | brief 230 S1a |
 | T-026 | P3 | ride-along | Small per-tick allocations in combat and statuses. | CR3-032 |
 | T-027 | P3 | ride-along | Motion ticks allocate small objects per walker. | CR3-153 |
 
@@ -61,10 +64,8 @@ Detail, order and tiers in [brief 210](../active/briefs/210_backlog_intake.md); 
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
-| T-241 | P3 | open | **Loot particles and flights draw over an open Bank drawer** (seen 2026-10-24 in the drawer captures; older than the drawer change): the particle canvas sits above the drawer, so loot sparkle/flight pixels show on top of the Bank. Put the particle layer under the drawers (z-index table in UI_STYLE), or pause loot flights while a drawer covers the mat. Builder. No eye-check beyond one capture. | Backlog director, brief 210 E1 |
-| T-243 | P3 | open | **Mat callouts and hero speech bubbles in the pixel family**: reframe the speech-style popups (hero speech bubbles, mat callouts, the off-mat refusal callout) to match the bubble row once T-239 is built. Builder. Eye-check. | brief 210 F1 audit |
-| T-244 | P3 | open | **Nav orbs: no hover glow or scale** (UI_STYLE: hover is a 1-art-pixel white outline; no glows, no scaling). Builder-lite. Eye-check (one capture). | brief 210 F1 audit |
-| T-247 | P3 | open | **A station's gear tooltip sits under the work plate**: resting on a worked station's centre opens its recipe gear's own hover box (old in-mat markup), and the plate (T-239) draws over its lower half. Move the gear tip above the plate's layer, or fold it into the plate's open line. Builder. One capture. | Backlog director, brief 210 F2 |
+| T-244 | P3 | open | **Nav orbs (and the station gear button): no hover glow or scale** (UI_STYLE: hover is a 1-art-pixel white outline; no glows, no scaling); the gear badge's `hover:scale-110` too (found by T-247). Builder-lite. Eye-check (one capture). | brief 210 F1 audit |
+| T-251 | P3 | open | **Slow file-scanning tests time out under load**: `EngineEventNames` (CR3-107 runs 4.6 s alone against vitest's 5 s limit) and the source-scanning tests (`UiLayers`, `OneTooltip`, `GoldRetired`, `ContentIdsInCode`, `TextInCodeMatchesScreen`, `TimeBankRetired`, `RulesUseGameClock`, ...) fail at random when the full suite runs beside a build or another director's agents, then pass alone (seen many times 2026-10-23/24). Give the scanning tests a longer timeout or a shared cached file walk. Builder-lite. | Backlog director |
 
 ### UI
 

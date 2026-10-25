@@ -22,6 +22,7 @@ import { NotificationsDevSection } from '../dev/NotificationsDevSection.jsx';
 import { MatTunerDevSection } from '../dev/MatTunerDevSection.jsx';
 import { AtlasDevSection } from '../dev/AtlasDevSection.jsx';
 import { GuildHallDevSection } from '../dev/GuildHallDevSection.jsx';
+import { EncountersDevSection } from '../dev/EncountersDevSection.jsx';
 import { AnimationDevSection } from '../dev/AnimationDevSection.jsx';
 import { GearDevSection } from '../dev/GearDevSection.jsx';
 import { SuppliesDevSection } from '../dev/SuppliesDevSection.jsx';
@@ -324,6 +325,7 @@ export const TestDashboard = React.memo(() => {
                         {import.meta.env.DEV && <StarterCampDevSection />}
                         {import.meta.env.DEV && <AtlasDevSection />}
                         {import.meta.env.DEV && <GuildHallDevSection />}
+                        {import.meta.env.DEV && <EncountersDevSection />}
                         {import.meta.env.DEV && <GearDevSection />}
                         {import.meta.env.DEV && <SuppliesDevSection />}
                         {import.meta.env.DEV && <StatusesDevSection />}

@@ -105,6 +105,11 @@ normal text colour; a new meaning needs the owner's OK.
   danger (red words); switches are `PixelSwitch`/`PixelToggle` (square track
   and knob, a meaning colour when on); sliders are `ui-range` (flat, square
   thumb). No rounded corners, soft shadows or glows on any of them.
+- **Speech on the mat** (owner, 2026-10-24): hero speech, the hero bar's
+  level-up alerts and every callout use one `SpeechFrame`: the chamfer frame
+  with its hard shadow and a stepped pixel tail, white words; the frame is
+  bronze for news, gold for attention, red for "can't". They rise and fade
+  but never scale.
 
 ## The work plate (owner, 2026-10-24)
 

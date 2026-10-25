@@ -66,6 +66,12 @@ const STUB_ARC_TOP_PX = 25;
 
 const CANVAS_STYLE = { imageRendering: 'pixelated', display: 'none' };
 
+/** Per layer: the flights it takes and its place in the screen's layers (tailwind.css). */
+const LAYERS = {
+    mat: { event: BOARD_EVENTS.SPRITE_COLLECTED, className: 'fixed left-0 top-0 z-(--z-mat-flights) pointer-events-none' },
+    pointer: { event: UI_EVENTS.UI_PARTICLE_FLY, className: 'fixed left-0 top-0 z-(--z-pointer-flight) pointer-events-none' }
+};
+
 /**
  * Where a board point (natural board pixels / mat units) is on screen.
  * ⚠️ The board is drawn at its natural size and then CSS-scaled to fit (`useBoardScale`), so
@@ -87,11 +93,14 @@ export function boardPointToScreen(boardEl, x, y) {
  * drawn. A short trail of hard 2×2 pixels behind it and a four-pixel plink where it lands draw
  * for loot only with `LOOT_FLIGHT_SPARKLES` on; a hero lifted from the dock keeps its trail.
  * Nothing random: every flight with the same path draws the same pixels.
+ * Two of these are mounted, one per layer (`layer`): `mat` takes the collections off the mat and
+ * draws over the mat but under the drawers, the hero panel and the nav; `pointer` takes a hero
+ * lifted from the dock, which flies to the pointer wherever it is, so it draws over everything.
  * The canvas is only as big as the flights in the air (`ParticleSystem._fit`) and is hidden
  * while nothing flies: a window-sized one was cleared and redrawn whole on every frame of every
  * flight, and stayed a full-window layer in between.
  */
-export const ParticleOverlay = ({ disabled }) => {
+export const ParticleOverlay = ({ disabled, layer = 'mat' }) => {
     const canvasRef = useRef(null);
     const systemRef = useRef(null);
     const frameIdRef = useRef(null);
@@ -124,25 +133,21 @@ export const ParticleOverlay = ({ disabled }) => {
         handleResize();
 
         /**
-         * Loot collected off the board flies to wherever it actually went. This is the only
-         * particle source left.
+         * Loot collected off the board flies to wherever it actually went.
          */
         const onCollected = (data) => {
             if (disabledRef.current || !isDrawn('itemFlight')) return;
             system.spawnCollected(data);
             if (system.particles.length) wakeRef.current?.();
         };
-        const subCollected = EventBus.subscribe(BOARD_EVENTS.SPRITE_COLLECTED, onCollected, UI_LISTENER);
-        // The same flight for the eye only (a hero lifted from the dock).
-        const subFly = EventBus.subscribe(UI_EVENTS.UI_PARTICLE_FLY, onCollected, UI_LISTENER);
+        const unsubscribe = EventBus.subscribe(LAYERS[layer].event, onCollected, UI_LISTENER);
 
         return () => {
             window.removeEventListener('resize', handleResize);
-            subCollected();
-            subFly();
+            unsubscribe();
             system.dropAll();
         };
-    }, []);
+    }, [layer]);
 
     /**
      * The frame loop.
@@ -193,7 +198,7 @@ export const ParticleOverlay = ({ disabled }) => {
     return (
         <canvas
             ref={canvasRef}
-            className="fixed left-0 top-0 z-(--z-particles) pointer-events-none"
+            className={LAYERS[layer].className}
             style={CANVAS_STYLE}
         />
     );

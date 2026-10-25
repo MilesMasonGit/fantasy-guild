@@ -152,7 +152,11 @@ diagonals. There is no Close/Far. *(`reachRegistry.js`, `matTuning.js:46-52`)*
 A spawner puts new Tokens beside itself on an interval, up to a **family cap**:
 the sum of `allowance` over all live spawners of that family (two Oak Forests
 → 10 trees). Order per attempt: cap, upkeep, pick, land, then pay, so a spawn
-with no room costs nothing. *(`SpawnerSystem.js`)*
+with no room costs nothing. **An enemy camp's clock stands at zero while the
+camp is full** (owner, 2026-10-24), so a goblin, guardian or boss beaten in a
+full camp comes back one whole interval later; every other spawner (forests,
+mines) keeps counting while full and replaces a loss on the next tick.
+*(`SpawnerSystem.js`, `TimedChanges.js`)*
 
 | Spawner | Spawns | Allowance | Every | Upkeep per spawn |
 |---|---|---|---|---|
@@ -471,8 +475,51 @@ duels: `concept_combat.md`, "The level table and weapon tiers").
 - **Hostile** enemies ambush a hero inside the flag radius around their
   spawner; the hero fights back even if their Fight rule is off. Recruits are
   ambushed too and fight back barehanded.
+- **Boss** (`enemy.boss: true`, a CMS tick): fights only the heroes sent at
+  it. Never hostile (the Hostile box greys out), never made by a rule, so it
+  never ambushes. Comes from a camp of its own or a Summoning Circle
+  (Encounters, below). Boss moves will hang on this mark.
 - Each kill uses one of the enemy's uses; at 0 it's gone. Otherwise it
   respawns at full HP after a 2 s pause.
+
+### Encounters — Built (brief 220 C5)
+- **Every fight is one-on-one**, bosses and guardians included: a Token holds
+  one hero's claim. A second hero whose area flag reaches a busy enemy takes
+  the next thing in reach (another enemy, or work, by their priorities); with
+  nothing else, they wait at their flag. A flag pinned to the busy enemy waits
+  beside it. Either takes the enemy within a second of it coming free, and
+  meets it at full HP. No random roll. The waiting hero says "Waiting for
+  {enemy}.", their flag reads "Waiting for {enemy}" and its hover "{enemy} —
+  {hero} is fighting it"; the Dock line says the same. A save holding two
+  heroes on one enemy loads into one fight (the second chooses again).
+- **Bosses and guardians come from camps of one**: an ordinary spawner (a
+  "Warlord's Den", a "Guardian's Hollow") whose spawn list names the one enemy,
+  allowance 1, on its own interval: the same machinery and CMS fields as any
+  camp. The boss or guardian potters by its camp; a Base Map brings one by
+  listing the camp Token under its camps. The camp's clock stands at zero
+  while the camp is full, so a beaten boss or guardian comes back one whole
+  interval after it falls (§3, Spawners).
+- **A guardian** is simply a tough enemy whose camp stands by a rich node. It
+  blocks nothing; if its type is hostile it attacks whoever works nearby (the
+  flag watch around its camp, as any hostile enemy).
+- **A Summoning Circle** is an ordinary station whose recipe uses up a
+  summon item (its input) and makes its boss beside it (a Token output). It
+  works as a Starting skill, so any hero may work it (it becomes the
+  Summoning skill's station when the specialist skills are designed). Its
+  recipe is picked once, as any station's. Without the item it waits ("needs"
+  the item, the usual yellow mark); with several in the Bank it calls one per
+  cycle while a hero works it. A boss it called is gone once beaten.
+- **Node ambushes**: a Token's `Spawns` rule that puts an enemy beside it is an
+  ambush (a chance on a finished cycle, about **2 %**, is the usual shape; set
+  per Token in the Rules line). The enemy attacks the hero the moment names (the
+  one who finished the cycle) on the next tick, hostile or not; that hero
+  fights back whatever their rules or pin say, then goes back to work. An
+  ambusher is beaten in one kill, and while it stands its node springs no
+  other (its rules roll nothing). With no hero named it waits by its node
+  (hostile ones watch around it). Never a boss.
+- **Camps are unchanged**; lure buildings are parked.
+- **A beaten enemy**: the hero who beat it says "{enemy} Beaten" (a Token used
+  up says "{token} Depleted").
 
 ### The fight — Built
 - **Swings.** A hero swings at their weapon's speed: fast 2 s, normal 3 s,
@@ -607,6 +654,11 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
 - **Gear families**: a weapon or armour family's ability is one library
   effect every tier references with its own scale (1–5), so the tier raises
   the number.
+- **Spawns and enemies**: an enemy a `Spawns` rule puts beside its bearer is an
+  ambusher (§6, Encounters): it attacks the hero the moment names, is beaten in
+  one kill, and holds the bearer's enemy spawns until it falls. A `Spawns` rule
+  never makes a boss (the editor does not offer one; the content audit names
+  one that does).
 - **What ships**: tool tiers (`acts_as`), station skills, two neighbour buffs
   (Coast −5 % work time; Windmill +5 double loot on Fields), a placement limit
   (≤ 2 Coasts nearby), bonus drops, Minecart restocking, the two promotions,

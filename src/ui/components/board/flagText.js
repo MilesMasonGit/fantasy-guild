@@ -2,6 +2,7 @@
 import * as Flags from '../../../systems/board/Flags.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import { tokenName, getTokenType } from '../../../config/registries/tokenRegistry.js';
+import { isEnemyDef } from '../../../config/registries/enemyProfile.js';
 import { getAllItems } from '../../../config/registries/itemRegistry.js';
 import { neededToolOf, toolNeedPhrase } from '../../../config/registries/toolKinds.js';
 import { withArticle } from '../../../systems/effects/toolNames.js';
@@ -30,13 +31,30 @@ function heroName(heroId) {
     return (GameState.state?.heroes || []).find(h => h?.id === heroId)?.name || 'A hero';
 }
 
-/** "Working: Oak Forest" · "Walking to: Oak Forest" · "Nothing to do". */
+/**
+ * The type of the busy enemy `heroId` is waiting for (`Flags.waitingFor`), or null. Every fight is
+ * one-on-one, so a hero whose only fight is taken waits for it.
+ */
+export function waitingTypeOf(heroId) {
+    const id = Flags.waitingFor(heroId);
+    return id ? BoardState.getTokenById(id)?.typeId ?? null : null;
+}
+
+/** The skip hint key for a skip: `claimed` reads as a fight when the Token is an enemy. */
+function hintKey(reason, typeId) {
+    return reason === Flags.SKIP.CLAIMED && isEnemyDef(getTokenType(typeId)) ? 'claimed_fight' : reason;
+}
+
+/** "Working: Oak Forest" · "Walking to: Oak Forest" · "Waiting for Goblin" · "Nothing to do". */
 export function flagStatusLine(heroId) {
     const s = Flags.statusOf(heroId);
     switch (s.state) {
         case 'working': return `Working: ${tokenName(s.typeId) || 'a Token'}`;
         case 'walking': return s.instanceId ? `Walking to: ${tokenName(s.typeId) || 'a Token'}` : 'Heading back to the flag';
-        case 'idle': return 'Nothing to do';
+        case 'idle': {
+            const waiting = waitingTypeOf(heroId);
+            return waiting ? `Waiting for ${tokenName(waiting) || 'an enemy'}` : 'Nothing to do';
+        }
         case 'returning': return s.limping ? 'Limping home' : 'Heading home';
         default: return 'In the Guild';
     }
@@ -45,7 +63,7 @@ export function flagStatusLine(heroId) {
 /** One skipped Token as "Iron Forge — needs materials" — by `heroId`'s flag, for "off in X's rules". */
 export function skipLine(skip, heroId = null) {
     const holder = skip.reason === Flags.SKIP.CLAIMED ? heroName(BoardState.heroOfInstance(skip.instanceId)) : null;
-    return `${tokenName(skip.typeId) || 'A Token'} — ${skipHint(skip.reason, { holder, hero: heroName(heroId), tool: toolOfType(skip.typeId) })}`;
+    return `${tokenName(skip.typeId) || 'A Token'} — ${skipHint(hintKey(skip.reason, skip.typeId), { holder, hero: heroName(heroId), tool: toolOfType(skip.typeId) })}`;
 }
 
 /**
@@ -80,19 +98,21 @@ export function tokenSkipLines(instanceId) {
     if (!instanceId) return [];
     return Flags.skipsOf(instanceId).map(s => {
         const holder = s.reason === Flags.SKIP.CLAIMED ? heroName(BoardState.heroOfInstance(instanceId)) : null;
-        const tool = toolOfType(BoardState.getTokenById(instanceId)?.typeId);
-        return `${heroName(s.heroId)}’s flag skipped this: ${skipHint(s.reason, { holder, hero: heroName(s.heroId), tool })}`;
+        const typeId = BoardState.getTokenById(instanceId)?.typeId;
+        const tool = toolOfType(typeId);
+        return `${heroName(s.heroId)}’s flag skipped this: ${skipHint(hintKey(s.reason, typeId), { holder, hero: heroName(s.heroId), tool })}`;
     });
 }
 
 /**
- * The Dock tab's status line: Working: X · Walking to: X · Idle at flag · Idle in Guild.
+ * The Dock tab's status line: Working: X · Walking to: X · Waiting for X · Idle at flag · Idle in
+ * Guild. `status.waitingFor` is the type of a busy enemy the hero waits for ({@link waitingTypeOf}).
  */
 export function dockStatusLine(status) {
     switch (status?.state) {
         case 'working': return `Working: ${tokenName(status.typeId) || 'a Token'}`;
         case 'walking': return status.instanceId ? `Walking to: ${tokenName(status.typeId) || 'a Token'}` : 'Heading back to the flag';
-        case 'idle': return 'Idle at flag';
+        case 'idle': return status.waitingFor ? `Waiting for ${tokenName(status.waitingFor) || 'an enemy'}` : 'Idle at flag';
         case 'returning': return status.limping ? 'Limping home' : 'Returning to the Guild';
         default: return 'Idle in Guild';
     }
