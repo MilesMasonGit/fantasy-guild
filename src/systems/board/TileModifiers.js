@@ -51,7 +51,7 @@ const aggregators = new Map();
  * Each Token's Grow Time, as the three buckets merged from its own aggregator and the guild-wide
  * one, keyed by instance id ({@link growTimeOf}).
  *
- * @type {Map<string, {agg: ModifierAggregator, aggVersion: number, guildVersion: number, regVersion: number, flat: number, multiplier: number, percentage: number, any: boolean}>}
+ * @type {Map<string, {agg: ModifierAggregator, aggVersion: number, guildVersion: number, regVersion: number, flat: number, multiplier: number, percentage: number, any: boolean, base: number|null, ms: number|null}>}
  */
 const growTimes = new Map();
 
@@ -854,14 +854,19 @@ function growSkillOf(typeId) {
 export function growTimeOf(instance, baseMs) {
     const base = Number(baseMs) || 0;
     const id = instance?.id;
-    if (id == null || !BoardState.getTokenById(id)) return base;
+    if (id == null) return base;
 
-    const agg = getTokenAggregator(id);
+    // The kept answer, while every version it was read at still stands: one Map read and a few
+    // number reads. ⚠️ A Token's aggregator object is only ever replaced together with this entry
+    // (`clearAll`, and `rebuildToken` for a Token gone from the mat), so its own version is enough.
     const guild = getGlobalAggregator();
     const regVersion = registryVersion();
     let entry = growTimes.get(id);
-    if (!entry || entry.agg !== agg || entry.aggVersion !== agg.version
+    if (!entry || entry.agg.version !== entry.aggVersion
         || entry.guildVersion !== guild.version || entry.regVersion !== regVersion) {
+        // Read afresh. Only a Token on the mat has neighbours (and an aggregator to make).
+        if (!BoardState.getTokenById(id)) return base;
+        const agg = getTokenAggregator(id);
         const category = growSkillOf(instance.typeId);
         const type = EFFECT_TYPES.GROW_TIME;
         const flat = agg.getFlat(type, category) + guild.getFlat(type, category);
@@ -872,13 +877,18 @@ export function growTimeOf(instance, baseMs) {
             flat,
             multiplier: combineMultipliers(multipliers),
             percentage: combinePercentages(percentages),
-            any: flat !== 0 || multipliers.length > 0 || percentages.length > 0
+            any: flat !== 0 || multipliers.length > 0 || percentages.length > 0,
+            base: null, ms: null
         };
         growTimes.set(id, entry);
     }
     if (!entry.any) return base;
-    // `applyThreeBucket` over the same buckets, its sums already taken.
-    return floorSpeedUp(base, (base + entry.flat) * entry.multiplier * entry.percentage);
+    if (entry.base !== base) {
+        // `applyThreeBucket` over the same buckets, its sums already taken; kept for this base.
+        entry.base = base;
+        entry.ms = floorSpeedUp(base, (base + entry.flat) * entry.multiplier * entry.percentage);
+    }
+    return entry.ms;
 }
 
 /**
