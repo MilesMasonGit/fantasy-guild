@@ -2,6 +2,7 @@ import { ALERT } from '../../../systems/board/boardEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as MatCap from '../../../systems/board/MatCap.js';
 import * as Charges from '../../../systems/board/Charges.js';
+import * as Respawn from '../../../systems/board/Respawn.js';
 import { getMissingRequirements, effectiveIO } from '../../../systems/board/RecipeResolver.js';
 import { workConfigOf } from '../../../systems/board/StationRecipe.js';
 import { MASTERY_LEVEL } from '../../../systems/hero/PromotionSystem.js';
@@ -154,7 +155,9 @@ export function problemText(problem, instanceId) {
         }
         case ALERT.GROW_NEEDS_NEARBY: {
             const names = (problem.needs || []).map(id => withArticle(getTokenType(id)?.name || id));
-            return names.length ? `Needs ${joinOr(names)} nearby to grow` : 'Needs a Token nearby to grow';
+            // The same wait on a resting refill (a Bare apple tree with no Orchard) is for its refill.
+            const what = Respawn.isResting(instance) ? 'refill' : 'grow';
+            return names.length ? `Needs ${joinOr(names)} nearby to ${what}` : `Needs a Token nearby to ${what}`;
         }
         case ALERT.GROW_NEEDS_ITEM: {
             const names = (problem.needs || []).map(id => getItem(id)?.name || id);

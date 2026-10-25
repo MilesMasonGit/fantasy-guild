@@ -199,14 +199,14 @@ afterEach(() => {
 
 describe('the respawn block, read through one function', () => {
     it('refill: its time, defaulted when absent and never below the floor', () => {
-        expect(respawnBlockOf({ respawn: { mode: 'refill', afterMs: 12000 } })).toEqual({ mode: 'refill', afterMs: 12000, into: null });
-        expect(respawnBlockOf({ respawn: { mode: 'refill' } })).toEqual({ mode: 'refill', afterMs: RESPAWN_DEFAULTS.afterMs, into: null });
+        expect(respawnBlockOf({ respawn: { mode: 'refill', afterMs: 12000 } })).toEqual({ mode: 'refill', afterMs: 12000, into: null, needsNearby: [] });
+        expect(respawnBlockOf({ respawn: { mode: 'refill' } })).toEqual({ mode: 'refill', afterMs: RESPAWN_DEFAULTS.afterMs, into: null, needsNearby: [] });
         expect(respawnBlockOf({ respawn: { mode: 'refill', afterMs: 'soon' } }).afterMs).toBe(RESPAWN_DEFAULTS.afterMs);
         expect(respawnBlockOf({ respawn: { mode: 'refill', afterMs: 200 } }).afterMs).toBe(RESPAWN_MIN_MS);
     });
 
     it('regrow: names its `into`; without one there is nothing to regrow from', () => {
-        expect(respawnBlockOf({ respawn: { mode: 'regrow', into: 'respawn_sapling' } })).toEqual({ mode: 'regrow', afterMs: null, into: 'respawn_sapling' });
+        expect(respawnBlockOf({ respawn: { mode: 'regrow', into: 'respawn_sapling' } })).toEqual({ mode: 'regrow', afterMs: null, into: 'respawn_sapling', needsNearby: [] });
         expect(respawnBlockOf({ respawn: { mode: 'regrow', into: '' } })).toBeNull();
         expect(respawnBlockOf({ respawn: { mode: 'regrow' } })).toBeNull();
     });

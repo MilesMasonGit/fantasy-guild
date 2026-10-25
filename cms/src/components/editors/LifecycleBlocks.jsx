@@ -353,8 +353,13 @@ function RespawnBlock({ block, selfId, tokens, tokenOptions, onChange }) {
   };
   const into = mode === 'regrow' && block.into ? tokens[block.into] : null;
   const back = into ? regrowTime(block.into, selfId, tokens) : null;
+  const nearby = mode === 'refill' && Array.isArray(block.needsNearby) ? block.needsNearby : [];
+  const refill = (p) => onChange(refillBlock({ afterMs: block.afterMs ?? RESPAWN_DEFAULTS.afterMs, restingSprite: block.restingSprite, needsNearby: nearby, ...p }));
   let note;
-  if (mode === 'refill') note = 'At 0 charges it stays where it stands, resting, then refills to its starting charges all at once. With a resting sprite it is drawn as that picture while it rests (every vein shares one empty rock; its name still says which ore); without one, as its own art, greyed.';
+  if (mode === 'refill') {
+    note = 'At 0 charges it stays where it stands, resting, then refills to its starting charges all at once. With a resting sprite it is drawn as that picture while it rests (every vein shares one empty rock; its name still says which ore); without one, as its own art, greyed.';
+    if (nearby.length) note += ' Its rest stands still while none of the Tokens below stands within reach (a Bare apple tree with no Orchard stays Bare).';
+  }
   else if (!block.into) note = 'Pick the Token it becomes at 0 charges; that Token’s Grows block brings it back.';
   else if (!into) note = `${block.into} does not exist.`;
   else if (back === null) note = `${into.name || block.into} never grows back into this Token: give it a Grows block that ends here.`;
@@ -372,7 +377,7 @@ function RespawnBlock({ block, selfId, tokens, tokenOptions, onChange }) {
           <IntField
             label="Rests for (ms)" min={RESPAWN_MIN_MS} step={1000}
             value={block.afterMs ?? RESPAWN_DEFAULTS.afterMs}
-            onChange={(afterMs) => onChange(refillBlock(afterMs, block.restingSprite))}
+            onChange={(afterMs) => refill({ afterMs })}
           />
         ) : (
           <Field label="Regrows from">
@@ -388,8 +393,31 @@ function RespawnBlock({ block, selfId, tokens, tokenOptions, onChange }) {
       {mode === 'refill' && (
         <RestingSpriteField
           value={block.restingSprite}
-          onChange={(restingSprite) => onChange(refillBlock(block.afterMs ?? RESPAWN_DEFAULTS.afterMs, restingSprite))}
+          onChange={(restingSprite) => refill({ restingSprite })}
         />
+      )}
+      {mode === 'refill' && (
+        <div data-field="refill-needs-nearby">
+          <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5 text-gray-500">Refills only with one of these in reach</label>
+          <div className="space-y-1.5">
+            {nearby.map((typeId, i) => (
+              <div key={i} className="flex items-center gap-1.5">
+                <div className="flex-1 min-w-0">
+                  <TokenSelect
+                    ariaLabel="Refills only with in reach"
+                    value={typeId}
+                    tokenOptions={tokenOptions.filter((t) => t.id !== selfId)}
+                    onChange={(next) => refill({ needsNearby: nearby.map((id, idx) => (idx === i ? next : id)) })}
+                  />
+                </div>
+                <RemoveButton onClick={() => refill({ needsNearby: nearby.filter((_, idx) => idx !== i) })} />
+              </div>
+            ))}
+          </div>
+          <button className="btn-ghost text-[10px] flex items-center gap-1 mt-1.5" style={{ padding: '2px 8px' }} onClick={() => refill({ needsNearby: [...nearby, ''] })}>
+            <Plus size={10} /> Add Token
+          </button>
+        </div>
       )}
       <p className="text-[10px] text-gray-600">{note}</p>
     </div>
@@ -463,10 +491,13 @@ function FieldBlock({ block, token, effects, recipePools, items, onChange }) {
   );
 }
 
-/** A refill block in the file's order; no resting sprite leaves no key. */
-function refillBlock(afterMs, restingSprite) {
+/** A refill block in the file's order; no resting sprite, or no Token it needs in reach, leaves no key. */
+function refillBlock({ afterMs, restingSprite, needsNearby }) {
   const sprite = typeof restingSprite === 'string' ? restingSprite.trim() : '';
-  return sprite ? { mode: 'refill', afterMs, restingSprite: sprite } : { mode: 'refill', afterMs };
+  const out = { mode: 'refill', afterMs };
+  if (sprite) out.restingSprite = sprite;
+  if (Array.isArray(needsNearby) && needsNearby.length) out.needsNearby = needsNearby;
+  return out;
 }
 
 /** The picture a resting Token is drawn as: typed, or picked from the sprite browser. */

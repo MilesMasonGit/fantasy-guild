@@ -379,6 +379,18 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
                         `regrows from ${tokenLabel(r.into)}, which never grows back into it; give that Token a Grows block that ends here.`);
                 }
             }
+            if (r?.needsNearby !== undefined && RESPAWN_MODES.includes(r?.mode)) {
+                if (r.mode === 'regrow') {
+                    warn('respawn.needsNearby', 'names Tokens it needs in reach but regrows; only a refill waits for one, so the list does nothing.');
+                } else if (!Array.isArray(r.needsNearby)) {
+                    err('respawn.needsNearby', `needs nearby is ${show(r.needsNearby)}; it must be a list of Tokens.`);
+                } else {
+                    r.needsNearby.forEach((typeId, i) => {
+                        if (typeId === id) err(`respawn.needsNearby[${i}]`, 'needs itself nearby to refill, which it always is; name the Token it needs (its Orchard).');
+                        else checkTokenRef(err, `respawn.needsNearby[${i}]`, 'needs nearby', typeId);
+                    });
+                }
+            }
             if (r?.mode === 'regrow' && hasValue(r.restingSprite)) {
                 warn('respawn.restingSprite', 'has a resting sprite but regrows; it becomes another Token with its own art, so the sprite is never drawn.');
             }

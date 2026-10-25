@@ -18,7 +18,9 @@ function viewOf(roll) {
             text,
             fraction: Number((1 - turnFraction(roll.inMs, roll.everyMs)).toFixed(3)),
             // Non-breaking, so the tip never wraps between the number and its unit.
-            title: `Resting. Refills in ${formatDuration(roll.inMs).replace(/ /g, ' ')}`
+            title: roll.paused
+                ? `Resting. Refills only with ${(roll.needsNearby || []).map(id => tokenName(id) || id).join(' or ')} nearby`
+                : `Resting. Refills in ${formatDuration(roll.inMs).replace(/ /g, ' ')}`
         };
     }
     const chance = `${roll.chance}% chance`;

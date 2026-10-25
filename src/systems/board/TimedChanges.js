@@ -192,8 +192,19 @@ function growInto(instance, def) {
  * is there. Raises the Token's "needs nearby" alert while so, and drops it once one is.
  */
 function growthPaused(instance, def) {
-    const { needsNearby } = Growth.growsTermsOf(def);
-    if (needsNearby.length === 0) return false;
+    return gatePaused(instance, Growth.growsTermsOf(def).needsNearby);
+}
+
+/**
+ * Whether a refill's rest stands still: it needs a Token in reach (a Bare apple tree, its Orchard)
+ * and none is there. The same alert as a growth's, so the Token says what it needs the same way.
+ */
+function refillPaused(instance, def) {
+    return gatePaused(instance, Respawn.respawnOf(def)?.needsNearby);
+}
+
+function gatePaused(instance, needsNearby) {
+    if (!needsNearby?.length) return false;
     const paused = !nearbyGateMet(instance, needsNearby);
     const prev = Growth.growthAlertOf(instance.id);
     if (paused) {
@@ -304,11 +315,13 @@ export const HANDLERS = [
     },
     {
         // A resting Token refills in place after its rest. One-shot: the clock is gone once it
-        // refills, and the next rest starts it afresh (`Respawn.restInstead`).
+        // refills, and the next rest starts it afresh (`Respawn.restInstead`). A refill that needs
+        // a Token in reach stands still without one.
         id: 'refill',
         clock: Respawn.CLOCK,
         once: true,
         resting: true,
+        pausedWhile: refillPaused,
         applies: (instance, def) => !!def?.respawn && Respawn.restingMode(instance, def) === 'refill',
         dueMs: (instance, def) => Respawn.restMsOf(instance, def),
         fire: (instance, def, random, ctx) => {

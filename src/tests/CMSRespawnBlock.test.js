@@ -190,4 +190,56 @@ describe('authored in the editor, it round-trips through Sync', () => {
         useEntityStore.getState().renameEntityId(sapling, 'token_fixture_seedling', 'token');
         expect(useEntityStore.getState().tokens[tree].respawn).toEqual({ mode: 'regrow', into: 'token_fixture_seedling' });
     });
+
+    it('refill: the Tokens it needs in reach (an apple tree, its Orchard) are picked, kept through a change of time, round-trip, and leave no key when removed', () => {
+        const store = useEntityStore.getState();
+        const orchard = store.addToken({ name: 'Orchard Fixture' });
+        const id = store.addToken({ name: 'Apple Fixture', uses: 3 });
+        const { block } = openEditor(id);
+        fireEvent.click(within(block()).getByText('Add'));
+        const needs = () => block().querySelector('[data-field="refill-needs-nearby"]');
+        fireEvent.click(within(needs()).getByText('Add Token'));
+        fireEvent.change(within(needs()).getByLabelText('Refills only with in reach'), { target: { value: orchard } });
+        expect(useEntityStore.getState().tokens[id].respawn).toEqual({ mode: 'refill', afterMs: 12000, needsNearby: [orchard] });
+
+        fireEvent.change(within(block()).getByLabelText('Resting sprite'), { target: { value: 't_tree_oak' } });
+        fireEvent.change(within(block()).getByLabelText('Rests for (ms)'), { target: { value: '30000' } });
+        expect(useEntityStore.getState().tokens[id].respawn).toEqual({ mode: 'refill', afterMs: 30000, restingSprite: 't_tree_oak', needsNearby: [orchard] });
+        expect(within(block()).getByText(/rest stands still/i)).toBeTruthy();
+
+        const first = syncPayload();
+        expect(first['tokens.json'][id].respawn).toEqual({ mode: 'refill', afterMs: 30000, restingSprite: 't_tree_oak', needsNearby: [orchard] });
+        const serialised = Object.fromEntries(FILES.map((f) => [f, JSON.stringify(first[f], null, 2)]));
+        useEntityStore.getState().hydrate(workspaceFromFiles(
+            Object.fromEntries(FILES.map((f) => [f, JSON.parse(serialised[f])]))
+        ));
+        const second = syncPayload();
+        for (const f of FILES) expect(JSON.stringify(second[f], null, 2)).toBe(serialised[f]);
+
+        cleanup();
+        const again = openEditor(id);
+        const needs2 = () => again.block().querySelector('[data-field="refill-needs-nearby"]');
+        fireEvent.click(within(needs2()).getAllByRole('button')[0]);
+        expect(useEntityStore.getState().tokens[id].respawn).toEqual({ mode: 'refill', afterMs: 30000, restingSprite: 't_tree_oak' });
+    });
+
+    it('renaming the Orchard a refill needs repoints it, and a growth needing it too', () => {
+        const store = useEntityStore.getState();
+        const orchard = store.addToken({ name: 'Orchard Fixture' });
+        const tree = store.addToken({ name: 'Apple Fixture', uses: 3, respawn: { mode: 'refill', afterMs: 12000, needsNearby: [orchard] } });
+        const stump = store.addToken({ name: 'Stump Fixture', grows: { into: tree, afterMs: 5000, needsNearby: [orchard] } });
+        useEntityStore.getState().renameEntityId(orchard, 'token_fixture_grove', 'token');
+        expect(useEntityStore.getState().tokens[tree].respawn.needsNearby).toEqual(['token_fixture_grove']);
+        expect(useEntityStore.getState().tokens[stump].grows.needsNearby).toEqual(['token_fixture_grove']);
+    });
+
+    it('switching a refill to a regrow drops what it needed in reach', () => {
+        const store = useEntityStore.getState();
+        const orchard = store.addToken({ name: 'Orchard Fixture' });
+        const id = store.addToken({ name: 'Apple Fixture', uses: 3, respawn: { mode: 'refill', afterMs: 12000, needsNearby: [orchard] } });
+        const { block } = openEditor(id);
+        fireEvent.change(within(block()).getByLabelText('Comes back by'), { target: { value: 'regrow' } });
+        expect(useEntityStore.getState().tokens[id].respawn).toEqual({ mode: 'regrow', into: '' });
+        expect(block().querySelector('[data-field="refill-needs-nearby"]')).toBeNull();
+    });
 });

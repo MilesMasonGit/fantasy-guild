@@ -445,6 +445,20 @@ describe('Lifecycle audit — respawn', () => {
             { severity: 'warning', id: 'token_birch_tree', field: 'respawn.restingSprite', includes: 'regrows' });
     });
 
+    it('a refill that needs a Token in reach (an apple tree, its Orchard): fine when it exists; a ghost, itself, a non-list, or on a regrow, flagged', () => {
+        const w = clean();
+        w.tokens.token_copper_vein.respawn.needsNearby = ['token_oak_forest'];
+        expect(auditLifecycleBlocks(w)).toEqual([]);
+        expectOne((w2) => { w2.tokens.token_copper_vein.respawn.needsNearby = ['token_ghost_orchard']; },
+            { id: 'token_copper_vein', field: 'respawn.needsNearby[0]', includes: ['needs nearby', 'token_ghost_orchard', 'does not exist'] });
+        expectOne((w2) => { w2.tokens.token_copper_vein.respawn.needsNearby = ['token_copper_vein']; },
+            { id: 'token_copper_vein', field: 'respawn.needsNearby[0]', includes: 'needs itself nearby to refill' });
+        expectOne((w2) => { w2.tokens.token_copper_vein.respawn.needsNearby = 'token_oak_forest'; },
+            { id: 'token_copper_vein', field: 'respawn.needsNearby', includes: 'must be a list' });
+        expectOne((w2) => { w2.tokens.token_birch_tree.respawn.needsNearby = ['token_oak_forest']; },
+            { severity: 'warning', id: 'token_birch_tree', field: 'respawn.needsNearby', includes: 'only a refill' });
+    });
+
     it('a Token that never runs out is warned that it never rests (allowed)', () => {
         expectOne((w) => { delete w.tokens.token_copper_vein.uses; },
             { severity: 'warning', id: 'token_copper_vein', field: 'respawn', includes: 'never runs out' });
