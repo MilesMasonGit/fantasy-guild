@@ -328,10 +328,12 @@ has none yet), melee, magic and commerce have content today.
 - **Regen 1 HP / 10 s while idle or working; none in a fight**, where only
   food heals.
 - Below 25 % HP a hero eats equipped food from the Bank (in a fight eating
-  takes that swing). Out of a fight, if still below, they also drink the
-  equipped drink, which heals like food. **In a fight drinks do not heal**: an
-  equipped drink is left alone, unspent (drink buffs are the skill-loops
-  design's, not built). Heroes have no energy (removed, T-098).
+  takes that swing). **Drinks never heal**, in a fight or out (owner
+  2026-10-24): an equipped drink is left alone, unspent, and a drink's restore
+  amount is ignored (the item tooltip and the CMS no longer offer it). Out of a
+  fight, healing is food and regen only. Drinks become work buffs (brief 230
+  S6b, not built: until then an equipped drink does nothing). Heroes have no
+  energy (removed, T-098).
 - **Food Healing** (a Rules row) moves what a meal heals in a fight: while
   **Burning** (−50 %) a Shrimp's 5 heals 3, rounded halves up.
 - **Elixirs** (the unlimited consumable slot): an elixir whose rules wait on
@@ -419,6 +421,18 @@ per hero: equipping takes the copy out of the Bank.
   Torch), farming 2, construction 4. Each costs the station 1 charge. A new
   station is idle until the player picks a recipe. Example: Copper Ingot =
   4 Copper Ore + 1 Coal, 8 s.
+- **A station offers the recipes of its skill that its kind makes** (brief
+  230 S6a): its `Works as` rule may name a **station kind** (Furnace, Smithy,
+  Kitchen, Brewery, Workbench, Alchemy Table, Summoning Circle; one game-defined
+  list), and a recipe may name the kinds that make it (`stationKinds`, the CMS's
+  "Made at"). A Furnace smelts and a Smithy makes tools, though both work as
+  Smithing; better versions of a station (Campfire then Kitchen) share a kind.
+  Both sides are opt-in: a recipe naming no kind is offered by every station of
+  its skill, and a station with no kind offers its whole skill, so shipped
+  content is unchanged until it is tagged. A saved station set to a recipe its
+  kind no longer offers says "Choose a recipe". A recipe's context tags (the
+  Copper Anvil) still work beside the kind. *(`recipePoolRegistry.recipesForStation`,
+  `stationKindOf`, `STATION_KINDS`)*
 - **Upkeep**: spawners pay per spawn (table above). The top bar shows total
   upkeep per minute; the panel shows stock and "runs out in". Unpaid = the
   spawner waits; nothing goes into debt. **Rule upkeep** (a rule that costs
@@ -551,7 +565,7 @@ duels: `concept_combat.md`, "The level table and weapon tiers").
   Rogue). An enemy's Style is one of the four combat skills (the CMS dropdown
   follows the skill registry). Every shipped enemy is melee.
 - **No regen in a fight**: below 25 % HP the hero eats food instead of
-  swinging; drinks do not heal in a fight. Elixirs are drunk as a fight starts
+  swinging; drinks never heal. Elixirs are drunk as a fight starts
   (section 4).
 - Each swing draws one random number for the miss and, on a hit, one for the
   crit, from the game's random stream in a fixed order, so a catch-up replays
@@ -936,7 +950,7 @@ crunch plan):
 | Promotion content | 4 Academies (Fighter, Wizard, Rogue, Ranger) on Wood or Stone Foundations, with skill & class rework v2 (crunch track). |
 | Promotion cost | Free. |
 | Kill loot | Neighbour bonuses apply to kills like work (T-017). |
-| Energy and drinks | Remove energy; drinks heal like food out of fights, separate slots (T-098); in fights only food heals (brief 220). |
+| Energy and drinks | Remove energy, separate slots (T-098); drinks never heal, in fights or out (owner 2026-10-24); they become work buffs (brief 230). |
 | Dormant Maps | Retire (T-002). |
 | Wishing Well | Passive, part of Passive Production (T-099). |
 | Silent by default | Development convenience; audible default before shipping (T-100). |
