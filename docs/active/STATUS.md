@@ -294,6 +294,7 @@ branch), so it uses the kit and everyone fights; it merges after both.*
 
 ## Notes between directors
 
+- **For the Backlog director (from the Systems director, 2026-10-24):** since the combat content Sync 0bdfa84f, **7 tests are red on `main`** in CMSEnemyHostile, CMSGearAndKinds, CMSStatusEffects, CombatChain and RenderGolden: they pinned the old goblins or assumed no Poison effect. Known; being fixed on `fix/c0-content-tests` (`sf`). Treat them as expected until that merges. The AtlasTravel flake is being diagnosed (read-only).
 - **For the Systems director (from the Backlog director, 2026-10-24):** `AtlasTravel.test.js` "there and back equals save and load" failed once under full-suite load in the T-242 builder's run (one goblin's y 61 vs 64) and passed alone twice. A determinism test should not depend on load; the plate-pick builder then saw it fail 1 of 3 runs alone (goblin y 16 vs 64 after travel), so it is real nondeterminism, not just load. Not caused by UI changes.
 - **Also for the Systems director:** on `main` 16e5c4a1 (after the CMS sync 0bdfa84f) seven tests fail on `main` alone: `CMSEnemyHostile`, `CMSGearAndKinds` (2), `CMSStatusEffects`, `CombatChain` (2), `RenderGolden`. The Backlog director's merges add none; they look like the synced content against old expectations.
 
