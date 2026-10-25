@@ -223,11 +223,18 @@ const FIXTURE_RECIPE_IDS = new Set();
  * Add recipes at runtime, keyed by skill. **Test fixtures only** — mirrors
  * `registerTokenTypes`. The skill-keyed argument is kept because that is how
  * fixtures read; each recipe gets the key stamped onto it as its `skill`.
+ *
+ * `takeOver: false` adds them beside the skill's shipped recipes instead (a dev
+ * QA scene, so the shipped ones stay usable until the reload drops its own).
  */
-export function registerRecipePools(pools) {
+export function registerRecipePools(pools, { takeOver = true } = {}) {
     for (const [skillId, recipes] of Object.entries(pools || {})) {
-        FIXTURE_SKILLS.add(skillId);
-        for (const r of recipes) FIXTURE_RECIPE_IDS.add(r.id);
-        RECIPES.push(...recipes.map(r => ({ skill: skillId, ...r })));
+        if (takeOver || FIXTURE_SKILLS.has(skillId)) {
+            FIXTURE_SKILLS.add(skillId);
+            for (const r of recipes) FIXTURE_RECIPE_IDS.add(r.id);
+        }
+        // A scene set up twice adds its recipes once.
+        const fresh = takeOver ? recipes : recipes.filter(r => !RECIPES.some(known => known.id === r.id));
+        RECIPES.push(...fresh.map(r => ({ skill: skillId, ...r })));
     }
 }
