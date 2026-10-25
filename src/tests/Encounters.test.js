@@ -301,18 +301,40 @@ describe('⭐ camps of one: bosses and guardians from ordinary spawners', () => 
         expect(SpawnerSystem.spawnerStatus(den.id)).toEqual(expect.objectContaining({ state: 'at_cap', count: 1, cap: 1 }));
     });
 
-    it('⚠️ as every camp today: a den full for its interval replaces a beaten boss on the next tick', () => {
-        placeAt('enc_den', A.x, A.y);
+    it('a full enemy camp’s clock stands still: a beaten boss comes back one whole interval after it falls, however long its den was full', () => {
+        const den = placeAt('enc_den', A.x, A.y);
         run(61000, 1000);
-        // The den has been full long enough for its clock to fill and wait.
-        run(70000, 1000);
+        // Full for two more intervals: none of it banks.
+        run(120000, 1000);
+        expect(den.clocks?.spawnMs ?? 0).toBe(0);
         const [first] = enemiesOf('enc_boss');
         Flags.plant('h1', { x: first.x, y: first.y }, { pin: true });
         expect(until(() => !BoardState.getTokenById(first.id))).toBe(true);
-        run(1000, 1000);
+        Flags.furl('h1');
+        run(58000, 1000);
+        expect(enemiesOf('enc_boss')).toHaveLength(0);
+        run(3000, 1000);
         const [next] = enemiesOf('enc_boss');
         expect(next).toBeTruthy();
         expect(next.id).not.toBe(first.id);
+    });
+
+    it('a spawner of anything but enemies keeps counting while full: a lost member is replaced on the next tick, as before', () => {
+        registerTokenTypes({
+            enc_grove: {
+                id: 'enc_grove', name: 'Encounter Grove', tokenType: 'spawner', rarity: 'common', theme: 'fixture',
+                uses: null, sprite: 's_nature',
+                spawner: { spawns: [{ typeId: 'enc_node', weight: 1 }], allowance: 1, intervalMs: 60000, upkeep: [] }
+            }
+        });
+        const grove = placeAt('enc_grove', A.x, A.y);
+        run(61000, 1000);
+        run(120000, 1000);
+        expect(grove.clocks.spawnMs).toBe(60000);
+        const [first] = enemiesOf('enc_node');
+        BoardState.removeToken(first.id);
+        run(1000, 1000);
+        expect(enemiesOf('enc_node')).toHaveLength(1);
     });
 
     it('a guardian is a hostile enemy whose camp stands by a rich node: it attacks whoever works there, and blocks nothing', () => {

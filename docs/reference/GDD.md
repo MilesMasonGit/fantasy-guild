@@ -133,7 +133,11 @@ diagonals. There is no Close/Far. *(`reachRegistry.js`, `matTuning.js:46-52`)*
 A spawner puts new Tokens beside itself on an interval, up to a **family cap**:
 the sum of `allowance` over all live spawners of that family (two Oak Forests
 → 10 trees). Order per attempt: cap, upkeep, pick, land, then pay, so a spawn
-with no room costs nothing. *(`SpawnerSystem.js`)*
+with no room costs nothing. **An enemy camp's clock stands at zero while the
+camp is full** (owner, 2026-10-24), so a goblin, guardian or boss beaten in a
+full camp comes back one whole interval later; every other spawner (forests,
+mines) keeps counting while full and replaces a loss on the next tick.
+*(`SpawnerSystem.js`, `TimedChanges.js`)*
 
 | Spawner | Spawns | Allowance | Every | Upkeep per spawn |
 |---|---|---|---|---|
@@ -465,10 +469,9 @@ duels: `concept_combat.md`, "The level table and weapon tiers").
   "Warlord's Den", a "Guardian's Hollow") whose spawn list names the one enemy,
   allowance 1, on its own interval: the same machinery and CMS fields as any
   camp. The boss or guardian potters by its camp; a Base Map brings one by
-  listing the camp Token under its camps. ⚠️ As for every camp today, the
-  camp's clock fills while the camp is full and waits there, so a boss beaten
-  after its camp has been full a whole interval is back on the next tick; a
-  camp whose member falls sooner sends the next when its clock fills.
+  listing the camp Token under its camps. The camp's clock stands at zero
+  while the camp is full, so a beaten boss or guardian comes back one whole
+  interval after it falls (§3, Spawners).
 - **A guardian** is simply a tough enemy whose camp stands by a rich node. It
   blocks nothing; if its type is hostile it attacks whoever works nearby (the
   flag watch around its camp, as any hostile enemy).

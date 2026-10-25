@@ -565,9 +565,9 @@ summon is a Token's work.*
 **A boss's or a guardian's camp of one** is an ordinary spawner, nothing new: `spawner: { spawns:
 [{ typeId: <the enemy>, weight: 1 }], allowance: 1, intervalMs: <how often>, upkeep: [] }` (CMS:
 Spawning and Building → Spawner). A Base Map brings it by listing the camp Token under its
-**Enemy camps**. ⚠️ Camps keep today's timing: the clock fills while the camp is full and waits, so
-a member beaten after the camp has been full a whole interval is replaced on the next tick (an open
-question for the owner below).
+**Enemy camps**. An enemy camp's clock stands at zero while the camp is full (owner, 2026-10-24:
+option A), so a beaten boss, guardian or goblin comes back one whole interval after it falls; other
+spawners (forests, mines) keep their old timing.
 
 **A guardian** is a tough enemy (tick Hostile if it should attack) whose camp of one stands by a
 rich node. It blocks nothing.

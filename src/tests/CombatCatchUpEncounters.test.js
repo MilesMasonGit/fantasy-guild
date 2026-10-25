@@ -232,6 +232,60 @@ describe('encounters during a catch-up', () => {
         expect(plain.horns).toBe(0);
     }, 60_000);
 
+    it('a full den banks no time: its boss comes back a whole interval after each kill, live and in a catch-up alike', async () => {
+        // One fighter pinned to a den's boss; each duel lasts longer than the den's 30 s interval,
+        // so under the old timing the den's clock would be full at every kill.
+        const buildDen = () => {
+            stream.state = 41;
+            stream.draws = 0;
+            resetMatTuning();
+            GameState.initNew();
+            InventoryManager.init();
+            const [hunter] = fixtures.makeHeroes(1, { melee: 30 });
+            hunter.hp.current = hunter.hp.max;
+            const den = fixtures.placeAt('cu_enc_den', 600, 500);
+            SpawnerSystem.attemptSpawn(den, getTokenType(den.typeId));
+            const boss = BoardState.tokens().find(t => t.typeId === 'cu_enc_boss');
+            fixtures.plant(hunter.id, { x: boss.x, y: boss.y }, { pin: true });
+            TileModifiers.rebuildAll();
+            return hunter;
+        };
+        const watch = (clock) => {
+            const events = [];
+            const offs = [
+                EventBus.subscribe(ENGINE_EVENTS.COMBAT_VICTORY, () => events.push(['kill', clock()])),
+                EventBus.subscribe(BOARD_EVENTS.TOKEN_SPAWNED, (p) => { if (p.typeId === 'cu_enc_boss') events.push(['back', clock()]); })
+            ];
+            return () => { offs.forEach(off => off()); return events; };
+        };
+
+        let step = 0;
+        let hunter = buildDen();
+        let stop = watch(() => step);
+        for (step = 0; step < AWAY_MS / 1000; step++) GameLoop.runHandlers(1000);
+        const plainEvents = stop();
+        const plain = { events: plainEvents.map(([e]) => e), hero: GameState.state.heroes[0].skills.melee.xp, draws: stream.draws,
+            tokens: BoardState.tokens().map(t => ({ typeId: t.typeId, uses: t.usesRemaining, clocks: t.clocks ?? null })) };
+
+        // Live: every return comes at least a whole interval (30 steps of 1 s) after its kill.
+        const kills = plainEvents.filter(([e]) => e === 'kill').map(([, t]) => t);
+        const backs = plainEvents.filter(([e]) => e === 'back').map(([, t]) => t);
+        expect(kills.length).toBeGreaterThanOrEqual(2);
+        for (const k of kills) {
+            const next = backs.find(t => t > k);
+            if (next !== undefined) expect(next - k).toBeGreaterThanOrEqual(29);
+        }
+
+        hunter = buildDen();
+        stop = watch(() => 0);
+        await CatchUp.run({ savedAt: NOW - AWAY_MS, now: NOW, save: false, yieldFn: () => Promise.resolve() });
+        const caughtEvents = stop();
+        const caught = { events: caughtEvents.map(([e]) => e), hero: GameState.state.heroes[0].skills.melee.xp, draws: stream.draws,
+            tokens: BoardState.tokens().map(t => ({ typeId: t.typeId, uses: t.usesRemaining, clocks: t.clocks ?? null })) };
+        expect(caught).toEqual(plain);
+        void hunter;
+    }, 60_000);
+
     it('an old save with two heroes working one enemy loads into one fight; the second waits', async () => {
         const board = buildBoard();
         const [, , hunter, waiter] = board.heroes;
