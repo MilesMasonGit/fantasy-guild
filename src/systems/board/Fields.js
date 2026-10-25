@@ -268,9 +268,7 @@ export function harvested(instance, def, { overMs = 0 } = {}) {
     if (state.load > 0) return;
     instance.field = {};
     if (instance.clocks && CLOCK in instance.clocks) instance.clocks[CLOCK] = 0;
-    // The cycle's own outputs (a seed among them) have just landed: what the Bank and the mat hold
-    // is read afresh.
-    Growth.supplyChanged();
+    // The cycle's own outputs have already landed, so a seed it dropped can pay for the sowing.
     if (!sow(instance, def, overMs)) announce(instance);
 }
 

@@ -52,12 +52,19 @@ const item = (id, name) => ({
 registerItems({ [SEED]: item(SEED, 'Test Wheat Seed'), [WHEAT_ITEM]: item(WHEAT_ITEM, 'Test Wheat') });
 
 const WHEAT = 'fh_recipe_wheat';
+const SEEDY = 'fh_recipe_seedy';
 registerRecipePools({
     farming: [{
         id: WHEAT, name: 'Test Wheat', levelRequirement: 1, durationMs: 1000, xp: 2, stationKinds: ['field'],
         inputs: [{ itemId: SEED, quantity: 1 }],
         outputs: [{ itemId: WHEAT_ITEM, chance: 100, minQty: 1, maxQty: 1 }],
         crop: { growMs: 20000, load: 3 }
+    }, {
+        // Every harvest drops a seed as well.
+        id: SEEDY, name: 'Test Seedy Wheat', levelRequirement: 1, durationMs: 1000, xp: 2, stationKinds: ['field'],
+        inputs: [{ itemId: SEED, quantity: 1 }],
+        outputs: [{ itemId: WHEAT_ITEM, chance: 100, minQty: 1, maxQty: 1 }, { itemId: SEED, chance: 100, minQty: 1, maxQty: 1 }],
+        crop: { growMs: 20000, load: 1 }
     }]
 });
 
@@ -169,6 +176,20 @@ describe('⭐ a farmer harvests the load, the last cycle sows again, and they wa
         run(1000);
         expect(Fields.stageOf(field)).toBe(Fields.STAGE.GROWING);
         expect(Flags.waitingOf('farmer')).toEqual({ instanceId: field.id, kind: 'node' });
+    });
+
+    it('the last harvest can pay with the seed it dropped itself', () => {
+        InventoryManager.addItem(SEED, 1);
+        const field = put('fh_field', FIELD.x, FIELD.y);
+        expect(StationRecipe.setSelectedRecipe(field, SEEDY)).toBe(true);
+        run(20200);
+        expect(InventoryManager.getItemCount(SEED)).toBe(0);
+        Flags.plant('farmer', { x: FIELD.x, y: FIELD.y });
+        run(1200);
+        expect(wheat()).toBe(1);
+        expect(Fields.stageOf(field)).toBe(Fields.STAGE.GROWING);
+        expect(InventoryManager.getItemCount(SEED) + SpriteLayer.countOnBoard(SEED)).toBe(0);
+        expect(Growth.growthAlertOf(field.id)).toBeNull();
     });
 
     it('an area flag works the ripe Field while the other grows', () => {
