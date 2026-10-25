@@ -4,6 +4,7 @@ import {
 import { contextRequirementsOf } from '../../../config/registries/recipePoolRegistry.js';
 import { getItem, getAllItems } from '../../../config/registries/itemRegistry.js';
 import { neededToolOf, toolNeedPhrase, toolItemFor } from '../../../config/registries/toolKinds.js';
+import { hasCatchPools, catchItemIds } from '../../../config/registries/catchPools.js';
 import { enemyProfileOf } from '../../../config/registries/enemyProfile.js';
 import { turnTiming } from '../../../config/registries/tokenConstants.js';
 import { stationSkillOf } from '../../../systems/effects/statements.js';
@@ -354,7 +355,10 @@ export function tokenCardModel(typeId, instanceId = null, src = liveCardSources(
 
     if (!marked) {
         const inputs = isStation ? (recipe?.inputs || []) : (def.config?.inputs || []);
-        const outputs = isStation ? (recipe?.outputs || []) : (def.config?.outputs || []);
+        // Water lists every fish its pools can land: what bites depends on the tool and bait.
+        const outputs = isStation ? (recipe?.outputs || [])
+            : hasCatchPools(def) ? catchItemIds(def).map(itemId => ({ itemId, minQty: 1, maxQty: 1 }))
+            : (def.config?.outputs || []);
         const needs = needsOf(inputs, src);
         const tools = toolsOf(def, recipe, src);
         const makes = makesOf(outputs);

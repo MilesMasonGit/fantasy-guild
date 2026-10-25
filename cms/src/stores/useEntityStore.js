@@ -33,7 +33,7 @@ import { pendingSpriteRenames, applySpriteRenamesTo } from '../engine/spriteRena
  * Fields anywhere in an entity that hold an item id.
  * ⚠️ A field-name list rather than a list of paths, on purpose: a path-based walker missed every place an item id was later added (pooled recipes, upkeep costs, trigger watch-items, CONVERT lists); matching the name covers a new site the day it is added.
  */
-const ITEM_ID_FIELDS = new Set(['itemId', 'watchItemId']);
+const ITEM_ID_FIELDS = new Set(['itemId', 'watchItemId', 'bait']);
 
 const SEVERITY_WORD = { critical: 'Critical', warning: 'Warning', info: 'Info' };
 
@@ -130,7 +130,8 @@ function renameInTokenConfig(token, oldId, newId) {
     if (next.effectBlocks) next.effectBlocks = remapItemIdsDeep(next.effectBlocks, oldId, newId, mark);
     if (next.buff) next.buff = remapItemIdsDeep(next.buff, oldId, newId, mark);
 
-    for (const key of ['spawner', 'shop', 'trickle']) {
+    // `catchPools`: a water's catches (`itemId`) and baits (`bait`).
+    for (const key of ['spawner', 'shop', 'trickle', 'catchPools']) {
         if (next[key]) next[key] = remapItemIdsDeep(next[key], oldId, newId, mark);
     }
 

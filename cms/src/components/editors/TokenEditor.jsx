@@ -2,13 +2,14 @@ import { useState, useMemo } from 'react';
 import { Settings2, Tag as TagIcon, Timer, HelpCircle, Swords, Lock, BookOpen, Sparkles, X, Plus, Gauge } from 'lucide-react';
 import { useEntityStore, makeTokenConfig } from '../../stores/useEntityStore';
 import { useSimulationStore } from '../../stores/useSimulationStore';
-import { TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, stationSkillOf, stationKindOf, STATION_KINDS, stationKindLabel, stationKindOffers, recipeStationKinds, ENEMY_STYLES, enemyProfileOf, enemyFilledStats, ENEMY_KINDS, MAX_ENEMY_KINDS, kindsClash, enemyKindsOf, ATTACK_SPEED_MS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, STANDS_ON_CHOICES, TOOL_KINDS, tierValue, neverWearsReason, NEVER_WEARS_WHY } from '../../utils/constants';
+import { TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, stationSkillOf, stationKindOf, STATION_KINDS, stationKindLabel, stationKindOffers, recipeStationKinds, ENEMY_STYLES, enemyProfileOf, enemyFilledStats, ENEMY_KINDS, MAX_ENEMY_KINDS, kindsClash, enemyKindsOf, ATTACK_SPEED_MS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, STANDS_ON_CHOICES, TOOL_KINDS, tierValue, neverWearsReason, NEVER_WEARS_WHY, neededToolOf, toolNeedPhrase, hasCatchPools } from '../../utils/constants';
 import { Header, Section, Field, Empty } from '../shared/EditorLayout';
 import SimIntentControls from '../shared/SimIntentControls';
 import SimAnswer from '../shared/SimAnswer';
 import SpritePickerModal from './SpritePickerModal';
 import Statements from './Statements';
 import LifecycleBlocks from './LifecycleBlocks';
+import CatchPoolsBlock from './CatchPoolsBlock';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 
 /** The Token editor. */
@@ -273,7 +274,26 @@ export default function TokenEditor() {
                 </Field>
               )}
             </div>
-            {/* `needsTool: { kind, minTier }`, written only when a kind is picked: a hero must hold a tool of that kind, at that tier or better, in hand to work this Token. */}
+            {/* `needsTool: { kind, minTier }`, written only when a kind is picked: a hero must hold a tool of that kind, at that tier or better, in hand to work this Token. Water's need is set by its catch pools instead. */}
+            {hasCatchPools(token) ? (
+              <div className="mt-4" data-field="needs-tool-pools">
+                <Field label="Needs tool">
+                  <div className="text-[11px] text-gray-400 leading-relaxed">
+                    Set by the catch pools: a {toolNeedPhrase(neededToolOf(token))}, at any tier.
+                  </div>
+                  {token.needsTool && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className="text-[10px] leading-relaxed" style={{ color: 'var(--color-warning)' }}>
+                        Its own Needs tool is ignored.
+                      </span>
+                      <button type="button" data-clear-needs-tool onClick={() => update('needsTool', undefined)} className="btn-ghost text-xs" style={{ padding: '2px 8px' }}>
+                        Clear
+                      </button>
+                    </div>
+                  )}
+                </Field>
+              </div>
+            ) : (
             <div className="grid grid-cols-2 gap-4 mt-4">
               <Field label="Needs tool">
                 <select
@@ -311,6 +331,7 @@ export default function TokenEditor() {
                 </Field>
               )}
             </div>
+            )}
             {!isPooled && (config.cycleTimeMs < 10000 || config.cycleTimeMs > 30000) && (
               <p className="text-[10px] leading-relaxed" style={{ color: 'var(--color-warning)' }}>
                 ⚠️ Outside the 10–30s band. That band keeps the board at roughly one
@@ -329,6 +350,8 @@ export default function TokenEditor() {
           </>
         )}
       </Section>
+
+      <CatchPoolsBlock token={token} onPatch={(patch) => updateToken(activeId, patch)} />
 
       <Section title="Lifecycle" icon={<Timer size={14} />}>
         <div className="grid grid-cols-2 gap-4">

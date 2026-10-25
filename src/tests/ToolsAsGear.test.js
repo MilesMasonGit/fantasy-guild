@@ -121,8 +121,8 @@ beforeEach(() => {
 });
 
 describe('the vocabulary: kinds, a tool, a need, hands', () => {
-    it('four kinds, and a hero has two hands', () => {
-        expect(TOOL_KINDS.map(k => k.id)).toEqual(['pickaxe', 'woodaxe', 'fishing_rod', 'sickle']);
+    it('six kinds (a net and a cage beside the rod, for fishing), and a hero has two hands', () => {
+        expect(TOOL_KINDS.map(k => k.id)).toEqual(['pickaxe', 'woodaxe', 'fishing_rod', 'sickle', 'fishing_net', 'fishing_cage']);
         expect(HANDS).toBe(2);
     });
 
@@ -507,7 +507,7 @@ describe('content: the rules the audit checks', () => {
         expect(found.find(f => f.entityId === 'reed').message).toMatch(/no item is a Sickle/);
     });
 
-    it('the shipped content answers every need it sets, the starter tools cover every kind, and the audit finds nothing', () => {
+    it('the shipped content answers every need it sets, the starter tools cover every kind it needs, and the audit finds nothing', () => {
         const read = (f) => JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../data', f), 'utf8'));
         const items = read('items.json');
         const tokens = read('tokens.json');
@@ -516,8 +516,13 @@ describe('content: the rules the audit checks', () => {
         for (const [tokenId, def] of needing) {
             expect(toolItemFor(neededToolOf(def), items), tokenId).toBeTruthy();
         }
+        // Every kind a shipped Token needs (any of a water's kinds) has a starter, one each, in kind order.
+        // The net and the cage (brief 230 S5) arrive with the content pack: whether a new game starts
+        // with one is that pack's call.
         const starters = starterToolIds(items).map(id => items[id].tool.kind);
-        expect(starters).toEqual(TOOL_KINDS.map(k => k.id));
+        const needed = new Set(needing.flatMap(([, def]) => neededToolOf(def).kinds || [neededToolOf(def).kind]));
+        for (const kind of needed) expect(starters, kind).toContain(kind);
+        expect(starters).toEqual(TOOL_KINDS.map(k => k.id).filter(k => starters.includes(k)));
         expect(toolFindings({ items, tokens, recipes: read('tokenRecipes.json') })).toEqual([]);
     });
 });

@@ -2,6 +2,7 @@
 
 import { KEYWORD, statementsOf, stationSkillOf, getProvidedTagsWithTiers } from '../effects/statements.js';
 import { REACH, reachOf } from '../../config/registries/reachRegistry.js';
+import { hasCatchPools } from '../../config/registries/catchPools.js';
 
 /**
  * The one rule behind "this Token never wears out", shared by the engine (`tokenStartingUses`,
@@ -27,6 +28,9 @@ import { REACH, reachOf } from '../../config/registries/reachRegistry.js';
  * * A Token whose rules reach only itself, or fire on a moment (a triggered rule's charge cost is
  *   an authored price, not wear), and everything else with no help rule.
  *
+ * ## Water never runs out (owner, 2026-10-24, brief 230 S5)
+ * A Token with catch pools (`catchPools.js`) is fished, not used up: unlimited like a station.
+ *
  * ⚠️ The definition must be **expanded** (its effect references resolved into statements): a
  * station's `Works as` and a support's rules live in the effect library. The game's registry stores
  * Tokens expanded; the CMS stores references, so CMS callers expand first.
@@ -36,7 +40,7 @@ import { REACH, reachOf } from '../../config/registries/reachRegistry.js';
  */
 
 /** Why a Token never wears out. */
-export const NEVER_WEARS = Object.freeze({ STATION: 'station', SUPPORT: 'support' });
+export const NEVER_WEARS = Object.freeze({ STATION: 'station', SUPPORT: 'support', WATER: 'water' });
 
 /** Whether a Token's own work cycle makes something from nothing: what it holds is gathered. */
 function isGatheringNode(def) {
@@ -66,6 +70,7 @@ export function neverWearsReason(def) {
     // Mirrors `enemyProfile.isEnemyDef`, read here directly (see the note above).
     if (def.enemy?.level != null) return null;
     if (stationSkillOf(def)) return NEVER_WEARS.STATION;
+    if (hasCatchPools(def)) return NEVER_WEARS.WATER;
     if (isGatheringNode(def)) return null;
     if (Object.keys(getProvidedTagsWithTiers(def)).length > 0) return NEVER_WEARS.SUPPORT;
     if (statementsOf(def).some(helpsByStanding)) return NEVER_WEARS.SUPPORT;
@@ -80,5 +85,6 @@ export function neverWearsOut(def) {
 /** What the CMS and the audit say about one, by reason. */
 export const NEVER_WEARS_WHY = Object.freeze({
     [NEVER_WEARS.STATION]: 'It works as a station, and stations never wear out.',
-    [NEVER_WEARS.SUPPORT]: 'It helps the Tokens near it, and supports never wear out.'
+    [NEVER_WEARS.SUPPORT]: 'It helps the Tokens near it, and supports never wear out.',
+    [NEVER_WEARS.WATER]: 'It is water with catch pools, and water never runs out.'
 });
