@@ -16,6 +16,7 @@ import * as Flags from '../../../systems/board/Flags.js';
 import * as Placement from '../../../systems/board/Placement.js';
 import * as TimedChanges from '../../../systems/board/TimedChanges.js';
 import * as Respawn from '../../../systems/board/Respawn.js';
+import * as Fields from '../../../systems/board/Fields.js';
 import * as Hand from '../../../systems/board/Hand.js';
 import * as FixedTokens from '../../../systems/board/FixedTokens.js';
 import * as Landmarks from '../../../systems/board/Landmarks.js';
@@ -190,6 +191,8 @@ export const MatToken = React.memo(function MatToken({
         if (rest) return rest.mode === 'refill' ? { kind: 'respawn', ...rest, everyMs: rest.totalMs } : null;
         const grow = TimedChanges.nextGrowth(instance);
         if (grow) return { kind: 'grow', ...grow, everyMs: grow.totalMs };
+        const ripe = Fields.nextRipening(instance);
+        if (ripe) return { kind: 'ripen', ...ripe, everyMs: ripe.totalMs };
         const roll = TimedChanges.nextTurnRoll(instance);
         return roll ? { kind: 'turn', ...roll, everyMs: TimedChanges.turnTimingOf(instance).everyMs } : null;
     }, [id]);
@@ -208,8 +211,9 @@ export const MatToken = React.memo(function MatToken({
 
     const usesRemaining = detail?.usesRemaining ?? null;
     const resting = !!detail?.resting;
-    // A resting vein is drawn as the shared empty rock, not greyed; its name still says which ore.
-    const restingSprite = detail?.restingSprite ?? null;
+    // Drawn by its state: a Field empty, growing or ripe; a resting vein as the shared empty rock,
+    // not greyed (its name still says which ore).
+    const stateSprite = detail?.stateSprite ?? null;
     const alert = detail?.alert ?? null;
     const heroId = detail?.heroId ?? null;
     const staffed = hasHero || !!heroId;
@@ -453,7 +457,7 @@ export const MatToken = React.memo(function MatToken({
                 ) : (
                     <TokenSprite
                         typeId={typeId}
-                        sprite={restingSprite}
+                        sprite={stateSprite}
                         surface={TOKEN_SURFACE.BOARD}
                         scale={artScale}
                         alt={label}
@@ -463,7 +467,7 @@ export const MatToken = React.memo(function MatToken({
                 )}
             </TokenHitArt>
         );
-    }, [id, hitSkill, heroId, strikes, x, flashOnMount, enemyAnimSrc, walkFacing, label, artPx, outline, landing, typeId, artScale, restingSprite]);
+    }, [id, hitSkill, heroId, strikes, x, flashOnMount, enemyAnimSrc, walkFacing, label, artPx, outline, landing, typeId, artScale, stateSprite]);
 
     return (
         <>
@@ -483,7 +487,7 @@ export const MatToken = React.memo(function MatToken({
                 data-tile-has-token="true"
                 data-tile-finite-token={isFiniteToken ? 'true' : undefined}
                 data-token-resting={resting ? 'true' : undefined}
-                data-token-resting-sprite={restingSprite || undefined}
+                data-token-state-sprite={stateSprite || undefined}
                 data-token-fixed={fixed ? 'true' : undefined}
                 data-token-protected={demolishProtected ? 'true' : undefined}
                 onContextMenu={handleContextMenu}
@@ -543,7 +547,7 @@ export const MatToken = React.memo(function MatToken({
                     ref={innerRef}
                     className={cn(
                         'w-full h-full flex items-center justify-center transition-[filter] duration-150',
-                        resting && !restingSprite && 'gi-token-resting',
+                        resting && !stateSprite && 'gi-token-resting',
                         demolishProtected && 'gi-token-protected'
                     )}
                     style={staffed ? undefined : AT_REST_STYLE}
@@ -591,7 +595,7 @@ export const MatToken = React.memo(function MatToken({
                     small={small}
                     spawner={spawnerBubble}
                     quest={questBubble}
-                    readTimer={detail?.turns || detail?.grows || resting ? readTimer : null}
+                    readTimer={detail?.turns || detail?.grows || detail?.ripens || resting ? readTimer : null}
                     gear={gear}
                     disallowed={!!detail?.disallowed}
                     marked={!!detail?.marked}

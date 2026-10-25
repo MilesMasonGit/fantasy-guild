@@ -8,6 +8,7 @@ import * as StationRecipe from '../../../systems/board/StationRecipe.js';
 import * as SpawnerSystem from '../../../systems/board/SpawnerSystem.js';
 import * as TimedChanges from '../../../systems/board/TimedChanges.js';
 import * as Respawn from '../../../systems/board/Respawn.js';
+import * as Fields from '../../../systems/board/Fields.js';
 import * as Demolition from '../../../systems/board/Demolition.js';
 import * as QuestTokens from '../../../systems/quests/QuestTokens.js';
 import { stationSkillOf } from '../../../systems/effects/statements.js';
@@ -66,7 +67,8 @@ export function tokenDetailOf(id, def) {
         // is null until they arrive.
         heroSide: sideOfWorker(id),
         stationSkill,
-        recipe: stationSkill ? StationRecipe.selectedRecipe(instance, def) : null,
+        // A Field's pick is its next sowing (a wild one's starting crop until the player picks).
+        recipe: stationSkill ? (Fields.isField(def) ? Fields.pickOf(instance, def) : StationRecipe.selectedRecipe(instance, def)) : null,
         // Something to choose from: a station with an empty pool is not waiting on the player,
         // so it gets no gear.
         hasPool: stationSkill ? StationRecipe.poolFor(def).length > 0 : false,
@@ -78,10 +80,13 @@ export function tokenDetailOf(id, def) {
         turns: !marked && !!TimedChanges.nextTurnRoll(instance),
         // A Token that grows (a Sapling) counts down to the change.
         grows: !marked && !!TimedChanges.nextGrowth(instance),
+        // A Field's growing crop counts down to its ripening.
+        ripens: !marked && !!Fields.nextRipening(instance),
         // Out of charges and waiting to respawn: drawn resting, a refill counting down.
         resting: !marked && Respawn.isResting(instance, def),
-        // While it rests, the picture it is drawn as instead of its own art (a vein's empty rock).
-        restingSprite: marked ? null : Respawn.restingSpriteOf(instance, def),
+        // The picture it is drawn as instead of its own art, by its state: a Field's empty, growing
+        // or ripe picture, a resting vein's empty rock.
+        stateSprite: marked ? null : (Fields.stateSpriteOf(instance, def) ?? Respawn.restingSpriteOf(instance, def)),
         // Marked for demolition: the marked badge.
         marked,
         // A quest Token's quest: ring, glow, tooltip, click to claim.

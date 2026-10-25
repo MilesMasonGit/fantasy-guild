@@ -1,5 +1,5 @@
 
-import { turnTiming, PASSIVE_PRODUCTION_MS } from '../../../config/registries/tokenConstants.js';
+import { turnTiming, PASSIVE_PRODUCTION_MS, fieldOf, cropTermsOf } from '../../../config/registries/tokenConstants.js';
 
 /**
  * What a board Token's lifecycle blocks are doing right now, as plain rows for the inspection
@@ -230,6 +230,34 @@ function growthLines(instance, def, src) {
     return out;
 }
 
+/**
+ * A Field's rows (`Fields.fieldState`): its crop growing, ripe with harvests left, stopped for a
+ * seed, about to be sown, or nothing picked; what it sows next after a change of pick; what a
+ * sowing costs.
+ */
+function fieldLines(field, src) {
+    const name = (id) => (id ? (src.recipeName?.(id) || id) : 'its crop');
+    const out = [];
+    if (field.stage === 'growing') {
+        out.push({ label: `Growing ${name(field.cropId)}`, value: `ripe in ${formatDuration(field.inMs)}` });
+    } else if (field.stage === 'ripe') {
+        out.push({ label: `Ripe ${name(field.cropId)}`, value: `${field.load} of ${field.full} harvests left`, tone: TONE.GOOD });
+    } else if (field.stopped) {
+        out.push({ label: 'Field', value: `stopped: needs ${field.short.map(src.itemName).join(', ')} to sow ${name(field.pickId)}`, tone: TONE.WARNING });
+    } else if (field.pickId) {
+        out.push({ label: 'Field', value: `sowing ${name(field.pickId)}` });
+    } else {
+        out.push({ label: 'Field', value: 'Choose a crop', tone: TONE.WARNING });
+    }
+    if (field.pickId && field.cropId && field.pickId !== field.cropId) {
+        out.push({ label: 'Sows next', value: name(field.pickId), tone: TONE.MUTED });
+    }
+    const pick = field.pickId ? src.recipeOf?.(field.pickId) : null;
+    const seeds = itemList(pick ? cropTermsOf(pick).seeds : [], src.itemName);
+    if (seeds) out.push({ label: 'Each sowing', value: `${seeds} from the Bank`, tone: TONE.MUTED });
+    return out;
+}
+
 /** A marked Token's countdown, once a hero is on it. */
 function demolitionLine(instance, src) {
     const worked = !!src.workerOf?.(instance.id);
@@ -256,6 +284,9 @@ function demolitionLine(instance, src) {
  *   passive?: (instance: object) => { lines: object[], nextInMs: number }|null,
  *   respawn?: (instance: object) => { mode: string, into: string|null, afterMs: number, resting: boolean, inMs: number|null, restingSprite?: string|null }|null,
  *   demolishMs?: number,
+ *   field?: (instance: object) => object|null,
+ *   recipeName?: (recipeId: string) => string,
+ *   recipeOf?: (recipeId: string) => object|null,
  *   workerOf?: (instanceId: string) => string|null,
  *   dev?: boolean
  * }} src
@@ -300,12 +331,14 @@ export function lifecycleLines(instance, src) {
         }
     }
 
+    const field = fieldOf(def) ? src.field?.(instance) : null;
+    if (field) out.push(...fieldLines(field, src));
     out.push(...respawnLines(instance, src));
     out.push(...bossLines(def));
     if (def.foundation) out.push(...foundationLines(instance, def, src));
     // A station waits for the player to pick a recipe, as a Foundation waits for 'what to
-    // build'. Only said while nothing is picked.
-    else if (src.poolFor && src.poolFor(def).length && !src.selectedRecipe(instance, def)) {
+    // build'. Only said while nothing is picked; a Field says it in its own rows.
+    else if (!field && src.poolFor && src.poolFor(def).length && !src.selectedRecipe(instance, def)) {
         out.push({ label: 'Recipe', value: 'Choose a recipe', tone: TONE.WARNING });
     }
     out.push(...passiveRows(instance, src));

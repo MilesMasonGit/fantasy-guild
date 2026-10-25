@@ -16,6 +16,7 @@ import * as SpawnerSystem from '../../../systems/board/SpawnerSystem.js';
 import * as PassiveProduction from '../../../systems/board/PassiveProduction.js';
 import * as Respawn from '../../../systems/board/Respawn.js';
 import * as TimedChanges from '../../../systems/board/TimedChanges.js';
+import * as Fields from '../../../systems/board/Fields.js';
 import * as StationRecipe from '../../../systems/board/StationRecipe.js';
 import * as Demolition from '../../../systems/board/Demolition.js';
 import * as Landmarks from '../../../systems/board/Landmarks.js';
@@ -23,6 +24,7 @@ import * as Placement from '../../../systems/board/Placement.js';
 import * as QuestTokens from '../../../systems/quests/QuestTokens.js';
 import { SettingsManager } from '../../../systems/core/SettingsManager.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
+import { getRecipe } from '../../../config/registries/recipePoolRegistry.js';
 import { lifecycleLines } from './lifecycleLines.js';
 import { LandmarkBlock } from './LandmarkBlock.jsx';
 import { InspectBubbles } from './InspectBubbles.jsx';
@@ -282,6 +284,9 @@ function liveLifecycleSources() {
         passive: (instance) => ({ lines: PassiveProduction.linesOf(instance), nextInMs: PassiveProduction.nextInMs(instance) }),
         respawn: Respawn.respawnState,
         growth: TimedChanges.nextGrowth,
+        field: Fields.fieldState,
+        recipeName: (id) => getRecipe(id)?.name || id,
+        recipeOf: getRecipe,
         selectedRecipe: StationRecipe.selectedRecipe,
         poolFor: StationRecipe.poolFor,
         originOf: BoardState.originOf,

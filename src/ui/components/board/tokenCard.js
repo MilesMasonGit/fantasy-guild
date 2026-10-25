@@ -1,12 +1,12 @@
 import {
     getTokenType, getAllTokenTypes, tokenName, getProvidedTagsWithTiers, outputRange
 } from '../../../config/registries/tokenRegistry.js';
-import { contextRequirementsOf } from '../../../config/registries/recipePoolRegistry.js';
+import { contextRequirementsOf, getRecipe } from '../../../config/registries/recipePoolRegistry.js';
 import { getItem, getAllItems } from '../../../config/registries/itemRegistry.js';
 import { neededToolOf, toolNeedPhrase, toolItemFor } from '../../../config/registries/toolKinds.js';
 import { hasCatchPools, catchItemIds } from '../../../config/registries/catchPools.js';
 import { enemyProfileOf } from '../../../config/registries/enemyProfile.js';
-import { turnTiming } from '../../../config/registries/tokenConstants.js';
+import { turnTiming, fieldOf, cropTermsOf } from '../../../config/registries/tokenConstants.js';
 import { stationSkillOf } from '../../../systems/effects/statements.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as BoardCombat from '../../../systems/board/BoardCombat.js';
@@ -15,6 +15,7 @@ import * as PassiveProduction from '../../../systems/board/PassiveProduction.js'
 import * as Respawn from '../../../systems/board/Respawn.js';
 import * as StationRecipe from '../../../systems/board/StationRecipe.js';
 import * as TimedChanges from '../../../systems/board/TimedChanges.js';
+import * as Fields from '../../../systems/board/Fields.js';
 import * as Demolition from '../../../systems/board/Demolition.js';
 import { effectiveIO } from '../../../systems/board/RecipeResolver.js';
 import { availableOf } from '../../../systems/board/InputAllocator.js';
@@ -105,6 +106,10 @@ export function liveCardSources() {
         spawnerStatus: SpawnerSystem.spawnerStatus,
         respawn: Respawn.respawnState,
         nextGrowth: TimedChanges.nextGrowth,
+        field: Fields.fieldState,
+        fieldCrop: Fields.cropOf,
+        recipeName: (id) => getRecipe(id)?.name || id,
+        recipeOf: getRecipe,
         nextTurn: TimedChanges.nextTurnRoll,
         passive: (instance) => ({ lines: PassiveProduction.linesOf(instance), nextInMs: PassiveProduction.nextInMs(instance) }),
         fightOf: BoardCombat.getFight,
@@ -210,6 +215,32 @@ function growthLine(growth, src) {
     };
 }
 
+/**
+ * A Field's card lines: its crop growing (a countdown), ripe (harvests left), stopped for a seed,
+ * or about to be sown; and, after a change of pick, what it sows next.
+ */
+function fieldCardLines(field, src) {
+    const name = (id) => (id ? src.recipeName(id) : 'its crop');
+    const out = [];
+    if (field.stage === 'growing') {
+        out.push({ icon: 'grow', text: formatClock(field.inMs), tip: `${name(field.cropId)} growing: ripe in ${spoken(field.inMs)}` });
+    } else if (field.stage === 'ripe') {
+        out.push({ icon: 'grow', text: `${field.load}/${field.full}`, tip: `${name(field.cropId)} ripe: ${field.load} of ${field.full} harvests left; the last sows it again` });
+    } else if (field.stopped) {
+        const seeds = field.short.map(id => src.itemName(id)).join(' and ');
+        out.push({ icon: 'grow', text: '–', tip: `Stopped: needs ${seeds} to sow ${name(field.pickId)}`, tone: 'warning' });
+    } else if (field.pickId) {
+        out.push({ icon: 'grow', text: '–', tip: `Sowing ${name(field.pickId)}` });
+    }
+    if (field.pickId && field.cropId && field.pickId !== field.cropId) {
+        out.push({ icon: 'grow', text: name(field.pickId), tip: `Sows ${name(field.pickId)} next` });
+    }
+    const pick = field.pickId ? src.recipeOf?.(field.pickId) : null;
+    const seeds = pick ? cropTermsOf(pick).seeds : [];
+    if (seeds.length) out.push({ icon: 'clock', text: itemsSpoken(seeds, src), tip: `Each sowing costs ${itemsSpoken(seeds, src)} from the Bank` });
+    return out;
+}
+
 /** A spoken duration for a tooltip: "12 s", "2 min", "1 min 5 s". */
 function spoken(ms) {
     const total = seconds(ms);
@@ -261,6 +292,9 @@ export function cardLifecycle(instance, def, src) {
             });
         }
     }
+
+    const field = src.field?.(instance);
+    if (field) out.push(...fieldCardLines(field, src));
 
     const r = src.respawn?.(instance);
     if (r) {
@@ -343,7 +377,11 @@ export function tokenCardModel(typeId, instanceId = null, src = liveCardSources(
     const io = instance ? src.effectiveIO(instance.id, instance) : null;
     const stationSkill = def.foundation?.skill || stationSkillOf(def);
     const isStation = !!stationSkill && !marked && src.poolFor(def).length > 0;
-    const recipe = instance && isStation ? src.selectedRecipe(instance, def) : null;
+    // A Field shows its crop: the one in the ground, else the one it sows next.
+    const isField = !!fieldOf(def);
+    const recipe = instance && isStation
+        ? (isField ? (src.fieldCrop?.(instance, def) ?? null) : src.selectedRecipe(instance, def))
+        : null;
 
     const work = marked ? src.demolitionConfig : def.config;
     const skillId = marked ? work?.skill : (def.config?.skill || def.foundation?.skill || null);
@@ -358,7 +396,8 @@ export function tokenCardModel(typeId, instanceId = null, src = liveCardSources(
     if (cycleMs > 0 || uses != null) blocks.push({ id: CARD_BLOCK.CYCLE, cycleMs, uses });
 
     if (!marked) {
-        const inputs = isStation ? (recipe?.inputs || []) : (def.config?.inputs || []);
+        // A crop's inputs are its seed, paid once per sowing (its lifecycle line says so), not per harvest.
+        const inputs = isField ? [] : isStation ? (recipe?.inputs || []) : (def.config?.inputs || []);
         // Water lists every fish its pools can land: what bites depends on the tool and bait.
         const outputs = isStation ? (recipe?.outputs || [])
             : hasCatchPools(def) ? catchItemIds(def).map(itemId => ({ itemId, minQty: 1, maxQty: 1 }))
@@ -367,7 +406,7 @@ export function tokenCardModel(typeId, instanceId = null, src = liveCardSources(
         const tools = toolsOf(def, recipe, src);
         const makes = makesOf(outputs);
         const change = isStation && instance
-            ? { label: def.foundation ? 'Choose what to build' : 'Change recipe', chosen: !!recipe }
+            ? { label: def.foundation ? 'Choose what to build' : isField ? 'Change crop' : 'Change recipe', chosen: !!recipe }
             : null;
         if (needs.length || tools.length || makes.length || change) {
             blocks.push({ id: CARD_BLOCK.RECIPE, recipeName: recipe?.name || null, needs, tools, makes, change });

@@ -85,13 +85,13 @@ describe('a resting vein on the mat', () => {
         const { container } = await mount();
         let art = artOf(container, vein.id);
         expect(imgSrcs(art)).toContain('/assets/tokens/ore/t_ore_vein_copper.png');
-        expect(art.hasAttribute('data-token-resting-sprite')).toBe(false);
+        expect(art.hasAttribute('data-token-state-sprite')).toBe(false);
 
         await setCharges(vein, 0);
         expect(Respawn.isResting(vein)).toBe(true);
         art = artOf(container, vein.id);
         expect(art.getAttribute('data-token-resting')).toBe('true');
-        expect(art.getAttribute('data-token-resting-sprite')).toBe('t_vein_stone');
+        expect(art.getAttribute('data-token-state-sprite')).toBe('t_vein_stone');
         expect(imgSrcs(art)).toContain('/assets/tokens/ore/t_vein_stone.png');
         expect(imgSrcs(art)).not.toContain('/assets/tokens/ore/t_ore_vein_copper.png');
         expect(art.querySelector('.gi-token-resting')).toBeNull();
@@ -101,7 +101,7 @@ describe('a resting vein on the mat', () => {
         await setCharges(vein, 5);
         art = artOf(container, vein.id);
         expect(imgSrcs(art)).toContain('/assets/tokens/ore/t_ore_vein_copper.png');
-        expect(art.hasAttribute('data-token-resting-sprite')).toBe(false);
+        expect(art.hasAttribute('data-token-state-sprite')).toBe(false);
     });
 
     it('a resting Token with no resting sprite keeps its own art, greyed', async () => {
