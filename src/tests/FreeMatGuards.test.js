@@ -1,26 +1,15 @@
 import { describe, it, expect } from 'vitest';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import { listFiles, readSource, rel, setScanTimeout } from './fixtures/sourceScan.js';
 
 /**
  * Free Playmat — the guards that keep the grid from growing back.
  */
 
-const here = path.dirname(fileURLToPath(import.meta.url));
-const SRC = path.resolve(here, '..');
+setScanTimeout();
 
-function sourceFiles(dir = SRC) {
-    return fs.readdirSync(dir, { withFileTypes: true }).flatMap(entry => {
-        const full = path.join(dir, entry.name);
-        if (entry.isDirectory()) return entry.name === 'tests' ? [] : sourceFiles(full);
-        return /\.(js|jsx|ts|tsx)$/.test(entry.name) ? [full] : [];
-    });
-}
-
-const FILES = sourceFiles().map(file => ({
-    path: path.relative(SRC, file).replace(/\\/g, '/'),
-    text: fs.readFileSync(file, 'utf8')
+const FILES = listFiles(undefined, { ext: /\.(js|jsx|ts|tsx)$/ }).map(file => ({
+    path: rel(file),
+    text: readSource(file)
 }));
 
 const importsOf = (pattern) => FILES

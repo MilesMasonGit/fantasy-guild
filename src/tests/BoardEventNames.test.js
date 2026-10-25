@@ -1,32 +1,21 @@
 import { describe, it, expect } from 'vitest';
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { listFiles, readSource, rel, setScanTimeout } from './fixtures/sourceScan.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 
 /**
  * board events are named by their constants, never by raw strings.
  */
 
-const here = path.dirname(fileURLToPath(import.meta.url));
-const SRC = path.resolve(here, '..');
-
-function sourceFiles(dir = SRC) {
-    return fs.readdirSync(dir, { withFileTypes: true }).flatMap(entry => {
-        const full = path.join(dir, entry.name);
-        if (entry.isDirectory()) return entry.name === 'tests' ? [] : sourceFiles(full);
-        return /\.(js|jsx|mjs)$/.test(entry.name) ? [full] : [];
-    });
-}
+setScanTimeout();
 
 /** Strip block and line comments, so only real code is scanned (as FreeMatGuards does). */
 function codeOf(text) {
     return text.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/(^|[^:])\/\/[^\n]*/g, '$1 ');
 }
 
-const FILES = sourceFiles()
-    .filter(f => !f.endsWith(path.join('board', 'boardEvents.js')))
-    .map(f => ({ rel: path.relative(SRC, f).split(path.sep).join('/'), code: codeOf(fs.readFileSync(f, 'utf8')) }));
+const FILES = listFiles(undefined, { ext: /\.(js|jsx|mjs)$/ })
+    .filter(f => !f.endsWith('board/boardEvents.js'))
+    .map(f => ({ rel: rel(f), code: codeOf(readSource(f)) }));
 
 const escape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 

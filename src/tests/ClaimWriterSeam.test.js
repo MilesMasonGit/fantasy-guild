@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { sourceCode, matchLines } from './fixtures/sourceScan.js';
+import { sourceCode, matchLines, setScanTimeout } from './fixtures/sourceScan.js';
+
+setScanTimeout();
 
 /**
  * ⭐ Flags is the one place heroes choose work (R10 section 5.1).

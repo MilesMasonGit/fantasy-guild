@@ -2,25 +2,18 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import React from 'react';
 import { render, cleanup, fireEvent } from '@testing-library/react';
-import { readFileSync, readdirSync, statSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { relative } from 'node:path';
+import { SRC, listFiles, readSource, SCAN_TIMEOUT } from './fixtures/sourceScan.js';
 import { CloseX, PanelHeader, CLOSE_X_PX } from '../ui/components/base/CloseX.jsx';
 import { GIModal } from '../ui/components/base/GIModal.jsx';
 
 // One panel header everywhere (UI_STYLE "Panel headers"): title left, the red pixel X
 // (`u_cancel_red.png`, 16 px) at 2× top right.
 const h = React.createElement;
-const SRC = join(process.cwd(), 'src');
 // ⚠️ The Atlas was on its own branch when this landed.
 const EXEMPT = [/[\\/]components[\\/]atlas[\\/]/];
 
-function jsxFiles(dir) {
-    return readdirSync(dir).flatMap(name => {
-        const path = join(dir, name);
-        if (statSync(path).isDirectory()) return jsxFiles(path);
-        return path.endsWith('.jsx') ? [path] : [];
-    });
-}
+const jsxFiles = (dir) => listFiles(dir, { ext: /\.jsx$/ });
 
 afterEach(cleanup);
 
@@ -49,13 +42,13 @@ describe('the close X', () => {
     });
 });
 
-describe('no panel draws a close X of its own', () => {
+describe('no panel draws a close X of its own', { timeout: SCAN_TIMEOUT }, () => {
     it('no UI file closes with a vector X or a hand-drawn copy of the red X', () => {
         const hits = [];
-        for (const path of jsxFiles(join(SRC, 'ui'))) {
+        for (const path of jsxFiles(`${SRC}/ui`)) {
             if (EXEMPT.some(re => re.test(path))) continue;
             const rel = relative(SRC, path);
-            const text = readFileSync(path, 'utf8');
+            const text = readSource(path);
             if (!rel.endsWith('CloseX.jsx') && /u_cancel_red\.png/.test(text) && !/StyleSheetPage/.test(rel)) hits.push(`${rel}: its own red X`);
             if (/<X\s+(?:size|className)/.test(text) && /onClose|setIsOpen\(false\)/.test(text)) {
                 // A vector X still drawn next to a close handler: allowed only as a field's clear button.

@@ -21,8 +21,10 @@ import { MatCapBadge } from '../ui/components/board/MatCapBadge.jsx';
 import { ShopDrawer } from '../ui/components/drawer/ShopDrawer.jsx';
 import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
 import { LeaveMatControl } from '../ui/components/drawer/TokenInspection.jsx';
-import { sourceCode } from './fixtures/sourceScan.js';
+import { sourceCode, setScanTimeout } from './fixtures/sourceScan.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
+
+setScanTimeout();
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),

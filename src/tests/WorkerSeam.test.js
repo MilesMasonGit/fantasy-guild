@@ -1,7 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { sourceFiles, readSource, rel, setScanTimeout } from './fixtures/sourceScan.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
@@ -126,20 +124,11 @@ describe('the worker seam answers from flags and claims', () => {
 // Source guards
 // ---------------------------------------------------------------------------
 
-const here = path.dirname(fileURLToPath(import.meta.url));
-const SRC = path.resolve(here, '..');
-
-function sourceFiles(dir = SRC) {
-    return fs.readdirSync(dir, { withFileTypes: true }).flatMap(entry => {
-        const full = path.join(dir, entry.name);
-        if (entry.isDirectory()) return entry.name === 'tests' ? [] : sourceFiles(full);
-        return /\.(js|jsx)$/.test(entry.name) ? [full] : [];
-    });
-}
+setScanTimeout();
 
 const FILES = sourceFiles().map(file => ({
-    path: path.relative(SRC, file).replace(/\\/g, '/'),
-    text: fs.readFileSync(file, 'utf8')
+    path: rel(file),
+    text: readSource(file)
 }));
 
 function stripComments(text) {

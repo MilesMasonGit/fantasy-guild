@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { readFileSync, readdirSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { sourceFiles, readSource, rel, SCAN_TIMEOUT } from './fixtures/sourceScan.js';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
@@ -509,14 +508,8 @@ describe('The offer survives a reload', () => {
     });
 });
 
-describe('⚠️ Tokens only (PR-3), and nothing else promotes (PR-9)', () => {
-    const SRC = join(process.cwd(), 'src');
-    const walk = (dir) => readdirSync(dir).flatMap((name) => {
-        const path = join(dir, name);
-        if (statSync(path).isDirectory()) return name === 'tests' ? [] : walk(path);
-        return /\.(js|jsx)$/.test(name) ? [path] : [];
-    });
-    const files = walk(SRC).map((path) => ({ path: path.slice(SRC.length + 1).replace(/\\/g, '/'), text: readFileSync(path, 'utf8') }));
+describe('⚠️ Tokens only (PR-3), and nothing else promotes (PR-9)', { timeout: SCAN_TIMEOUT }, () => {
+    const files = sourceFiles().map((path) => ({ path: rel(path), text: readSource(path) }));
 
     it('reads the Promotes rule in exactly one engine place, and that place reads Tokens', () => {
         const readers = files
