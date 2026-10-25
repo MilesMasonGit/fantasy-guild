@@ -80,6 +80,9 @@ export const SKIP_HINT = {
     [ALERT.SPAWN_NO_ROOM]: 'no room to spawn',
     [ALERT.SPAWN_MAT_FULL]: 'Token cap full',
     [ALERT.RESTING]: 'resting, it comes back soon',
+    // A growing Token's own waits (a Stump): no flag records them today, but every alert has words.
+    [ALERT.GROW_NEEDS_NEARBY]: 'waiting for what it needs nearby to grow',
+    [ALERT.GROW_NEEDS_ITEM]: 'stopped: can’t pay to grow',
     no_skill: 'names no skill',
     disallowed: 'heroes not allowed',
     claimed: 'being worked by {holder}',

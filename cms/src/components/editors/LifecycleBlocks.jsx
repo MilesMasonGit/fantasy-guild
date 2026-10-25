@@ -127,7 +127,8 @@ function SpawnerBlock({ block, tokenOptions, items, onChange }) {
           data-field="within-reach"
           checked={block.withinReach === true}
           onChange={(e) => {
-            const { withinReach: _drop, ...rest } = block;
+            const rest = { ...block };
+            delete rest.withinReach;
             onChange(e.target.checked ? { ...rest, withinReach: true } : rest);
           }}
           className="rounded border-white/10 text-emerald-500 cursor-pointer"
