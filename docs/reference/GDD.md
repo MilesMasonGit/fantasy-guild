@@ -132,6 +132,7 @@ Token.
   neighbour's cycle or kill (owner 2026-10-24); an enemy keeps the kills that
   clear it; a triggered rule's charge cost is an authored price and still applies.
   The CMS hides Charges on a station or support and the audit flags authored ones.
+  **Water** (a Token with catch pools, Fishing below) never runs out either.
   *(`wearRule.js`, `Charges.isUnlimited`)*
 - **Origin**: *placed* (bought or built: fixed, refundable) or *spawned*
   (free, pushable, no refund). Both count toward the Token cap.
@@ -139,10 +140,13 @@ Token.
 - **Context Tokens** are support Tokens (an anvil) that stand near a worker;
   a recipe's context charge cost is no longer spent (help is free), and the CMS
   field for it now does nothing. **Gathering tools are hero gear**, not
-  Tokens (T-126): pickaxes, woodaxes, fishing rods and sickles are items held in
-  one hand (`tool: { kind, tier }`); a gathering Token names the kind and lowest
-  tier it needs (`needsTool`), and only a hero holding one may work it. No tool:
-  the hero does other work and the Token says "Needs Pickaxe". Tools only gate.
+  Tokens (T-126): pickaxes, woodaxes, fishing rods, sickles, **fishing nets and
+  fishing cages** (brief 230 S5) are items held in one hand (`tool: { kind,
+  tier }`); a gathering Token names the kind and lowest tier it needs
+  (`needsTool`), and only a hero holding one may work it. No tool: the hero does
+  other work and the Token says "Needs Pickaxe". Tools only gate. ⚠️ Water is
+  the exception (Fishing, below): it takes any kind its catch pools name, at any
+  tier ("Needs Fishing Rod or Fishing Net").
 
 ### Reach — Built
 Rules reach `nearby` (default), `self`, `self_and_nearby` or `board`.
@@ -170,7 +174,11 @@ mines) keeps counting while full and replaces a loss on the next tick.
 ### Transforms — Built
 - **Growth**: Oak Sapling → Oak Tree (30 s), Wheat Sprout → Ripe Wheat (30 s),
   Apple Sapling → Apple Tree (45 s).
-- **Turns**: Coast ⇄ Shrimp Coast, 30 % chance every 60 s.
+- **Turns**: Coast ⇄ Shrimp Coast, 30 % chance every 60 s. ⚠️ Water no longer
+  shifts (owner 2026-10-24, brief 230 S5): new content will not use `turns`, and
+  the engine keeps it dormant. A Shrimp Coast in an old save still rolls to turn
+  back (30 % a minute) after the Coast loses its block, even if the content pack
+  deletes the Shrimp Coast type, and is a Coast from then on.
 - A transform keeps the Token's origin, starts fresh clocks and loses any cycle
   in progress. *(`TimedChanges.js`)*
 - **Grow Time** (brief 230 S1a): a support in reach speeds a growth and a
@@ -204,6 +212,35 @@ station in place (30 s, level 1). *(`Foundations.js`)*
 | Wood Foundation | 15 Oak Wood | Workbench, Cooking Pot (5 Oak Wood each) |
 | Stone Foundation | 10 Stone + 5 Oak Wood | Furnace (5 Stone), Fighter's Academy (10 Stone + 10 Oak Wood) |
 | Farmland | 10 Oak Wood | Wheat Field (1 Wheat Seed), Apple Orchard (1 Apple Seed) |
+
+### Fishing — Built (brief 230 S5); no content yet
+Owner rulings 2026-10-24. **Water** is a Token with **catch pools**
+(`catchPools: [{ tool, bait?, catches: [{ itemId, weight }] }]`, the CMS Token
+editor's Catch pools block), one weighted pool per **tool kind × bait**; the
+pool with no bait is the water's **basic** catch. One sprite per water type
+(sea, river, lake) is content.
+- **Each finished cycle lands one catch** picked from a pool, in place of the
+  Token's own Outputs, then widened like any output (Yield, Double Item Chance).
+  A **rare catch drops like any other item**: no pop, no twinkle (owner
+  2026-10-24).
+- **The tool picks the pool**: the first tool in the hero's hands (grid order)
+  that the water has a pool for; a rod in the first hand and a net in the second
+  fish with the rod. Water needs any kind its pools name; **a tool's tier never
+  gates**. **A better rod has its own bonus** through the **Catch Weight** rule
+  (§7): +900 % on a Dolphin weighted 10 beside 50 and 40 makes it 100 of 190.
+- **Bait** is carried in a Consumable cell: the first, in grid order, that a pool
+  for the hero's tool takes and the Bank holds is used, and **one is spent per
+  catch**. None left: the hero fishes the basic pool. A failed cycle catches
+  nothing and keeps its bait. A tool with only baited pools here catches nothing
+  without bait (the audit names such content).
+- **Water never runs out** (`wearRule`: unlimited whatever its charges say) and
+  **does not shift** (Transforms, above).
+- **A Dock in reach speeds fishing**: content, a `Provides Work Time −X %` to the
+  water, stacking to the standard floor (§7).
+- Every pick draws one number from the game's random stream in a fixed place of
+  the finished cycle (none for a one-fish pool), so a catch-up catches exactly
+  what live play does, bait running out on the same catch.
+  *(`catchPools.js`, `Fishing.js`, `BoardRunner.completeCycle`)*
 
 ### Demolition — Built (Atlas A3a, A3b); replaced the discard bin
 Mark a Token for demolition and a hero holding Construction (level 1) removes
@@ -362,7 +399,9 @@ has none yet), melee, magic and commerce have content today.
 A 3×3 loadout grid with category caps (hand 2 — two hands: a tool takes one,
 a two-handed weapon both — hat 1, chest 1, trinket 2,
 food 1, drink 1, consumable unlimited). Gear, weapons and tools are one copy
-per hero: equipping takes the copy out of the Bank.
+per hero: equipping takes the copy out of the Bank. **Bait** for fishing is
+carried in a consumable cell and spent from the Bank, one per catch (§3,
+Fishing).
 - **A weapon** is anything held in the hands that is not a gathering tool. It
   names its **style(s)** (`styles`: a Dagger is Melee and Stealth), its
   **damage** and its **speed** (fast 2 s, normal 3 s, slow 4 s). **A hero
@@ -666,7 +705,8 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   time, input cost, **grow time** (a growth or a refill's rest, from neighbours
   and Region rules only), XP bonus, double loot, **double item chance** (a chance
   that one named item, when a cycle or a kill drops it, comes out doubled: the
-  Cleaver's Raw Beef), fail chance (Tokens); armour, resist, accuracy,
+  Cleaver's Raw Beef), **catch weight** (a percentage on one fish's weight in a
+  water's catch pool: a better rod's bonus, §3 Fishing), fail chance (Tokens); armour, resist, accuracy,
   damage, **dodge, pierce, crit chance**, status immunity and **status stack
   limit** (one status effect stacks at most N lower or higher: the Hide
   Vest's Poison −1; at 0 it cannot land), **swing time** and **food healing**
