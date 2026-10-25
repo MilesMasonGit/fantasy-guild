@@ -73,7 +73,7 @@ registerItems({
     s5_rod: tool('s5_rod', 'Wooden Rod', 'fishing_rod', 1),
     s5_fine_rod: tool('s5_fine_rod', 'Fine Rod', 'fishing_rod', 3, { effects: [{ effectId: 's5_fx_dolphin_lure' }] }),
     s5_net: tool('s5_net', 'Fishing Net', 'fishing_net', 1),
-    s5_cage: tool('s5_cage', 'Crab Cage', 'fishing_cage', 1),
+    s5_trap: tool('s5_trap', 'Crab Trap', 'fishing_trap', 1),
     s5_pick: tool('s5_pick', 'Pickaxe', 'pickaxe', 1)
 });
 
@@ -106,8 +106,8 @@ registerTokenTypes({
         uses: null, config: { skill: 'fishing', skillRequired: 1, cycleTimeMs: 10000, xp: 1, inputs: [], outputs: [] }
     }),
     s5_pond: water('s5_pond', 'Pond', [{ tool: 'fishing_net', catches: [{ itemId: 's5_shrimp', weight: 1 }] }], { uses: null }),
-    // A cage catches only with bait here: an authoring slip the audit names.
-    s5_sea: water('s5_sea', 'Sea', [{ tool: 'fishing_cage', bait: 's5_squid', catches: [{ itemId: 's5_crab', weight: 1 }] }], { uses: null }),
+    // A trap catches only with bait here: an authoring slip the audit names.
+    s5_sea: water('s5_sea', 'Sea', [{ tool: 'fishing_trap', bait: 's5_squid', catches: [{ itemId: 's5_crab', weight: 1 }] }], { uses: null }),
     s5_dock: buff('s5_dock', { type: EFFECT_TYPES.WORK_TIME, bucket: 'percentage', value: -0.5 }, { mode: 'tag', value: 'water' }),
     s5_jinx: buff('s5_jinx', { type: EFFECT_TYPES.FAIL_CHANCE, bucket: 'flat', value: 100 }, { mode: 'tag', value: 'water' }),
     // An old save's Coast after the content pack: water, no turns. And the Shrimp Coast it once turned into.
@@ -217,15 +217,15 @@ describe('the catch pools, as content', () => {
 
 describe('the tool: any kind a pool names, at any tier', () => {
     it('six kinds; water needs any of its pools\' kinds, whatever its own Needs tool says', () => {
-        expect(TOOL_KINDS.map(k => k.id)).toEqual(['pickaxe', 'woodaxe', 'fishing_rod', 'sickle', 'fishing_net', 'fishing_cage']);
+        expect(TOOL_KINDS.map(k => k.id)).toEqual(['pickaxe', 'woodaxe', 'fishing_rod', 'sickle', 'fishing_net', 'fishing_trap']);
         const need = neededToolOf(getTokenType('s5_lake'));
         expect(need).toEqual({ kind: 'fishing_rod', kinds: ['fishing_rod', 'fishing_net'], minTier: 1 });
         expect(toolMeets({ kind: 'fishing_rod', tier: 1 }, need)).toBe(true);
         expect(toolMeets({ kind: 'fishing_net', tier: 1 }, need)).toBe(true);
         expect(toolMeets({ kind: 'pickaxe', tier: 9 }, need)).toBe(false);
         expect(toolNeedPhrase(need)).toBe('Fishing Rod or Fishing Net');
-        expect(toolNeedPhrase({ kind: 'fishing_rod', kinds: ['fishing_rod', 'fishing_net', 'fishing_cage'], minTier: 1 }))
-            .toBe('Fishing Rod, Fishing Net or Fishing Cage');
+        expect(toolNeedPhrase({ kind: 'fishing_rod', kinds: ['fishing_rod', 'fishing_net', 'fishing_trap'], minTier: 1 }))
+            .toBe('Fishing Rod, Fishing Net or Trap');
         expect(toolNeedPhrase(neededToolOf(getTokenType('s5_pond')))).toBe('Fishing Net');
         const all = getAllItems();
         expect(toolItemFor(need, { s5_net: all.s5_net, s5_fine_rod: all.s5_fine_rod, s5_rod: all.s5_rod })).toBe('s5_rod');
@@ -329,19 +329,19 @@ describe('a cycle at the water lands one catch from the pool', () => {
         expect(Fishing.fishingOf(lake, 'empty').bait).toBe('s5_worm');
     });
 
-    it('a net fishes the net pool; a cage with no bait where only a baited cage pool exists catches nothing and spends nothing', () => {
+    it('a net fishes the net pool; a trap with no bait where only a baited trap pool exists catches nothing and spends nothing', () => {
         const lake = put('s5_lake');
         const sea = put('s5_sea', { x: 1400, y: 500 });
-        setHeroes(hero('netter', ['s5_net']), hero('caged', ['s5_cage']));
+        setHeroes(hero('netter', ['s5_net']), hero('trapper', ['s5_trap']));
         Flags.plant('netter', LAKE);
-        Flags.plant('caged', { x: 1400, y: 500 });
+        Flags.plant('trapper', { x: 1400, y: 500 });
         let seaLanded;
         const lakeLanded = catchesOf(lake, () => { seaLanded = catchesOf(sea, () => run(10_000)); });
         expect(new Set(lakeLanded)).toEqual(new Set(['s5_shrimp']));
         expect(seaLanded.length).toBeGreaterThan(0);
         expect(new Set(seaLanded)).toEqual(new Set(['-']));
         InventoryManager.addItem('s5_squid', 2);
-        GameState.state.heroes.find(h => h.id === 'caged').equipment[1] = 's5_squid';
+        GameState.state.heroes.find(h => h.id === 'trapper').equipment[1] = 's5_squid';
         const baited = catchesOf(sea, () => run(5_000));
         expect(baited.slice(0, 2)).toEqual(['s5_crab', 's5_crab']);
         expect(InventoryManager.getItemCount('s5_squid')).toBe(0);

@@ -64,7 +64,7 @@ describe('⭐ the item editor: a hand item can be a tool, with a tier and a star
         store().updateItem(id, { equipSlot: 'hand' });
         rerender(React.createElement(ItemEditor));
         const options = [...field(container, 'tool-kind').querySelectorAll('option')].map(o => o.value);
-        expect(options).toEqual(['', 'pickaxe', 'woodaxe', 'fishing_rod', 'sickle', 'fishing_net', 'fishing_cage']);
+        expect(options).toEqual(['', 'pickaxe', 'woodaxe', 'fishing_rod', 'sickle', 'fishing_net', 'fishing_trap']);
         expect(field(container, 'hands')).not.toBeNull();
     });
 

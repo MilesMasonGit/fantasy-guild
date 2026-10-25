@@ -141,7 +141,7 @@ Token.
   a recipe's context charge cost is no longer spent (help is free), and the CMS
   field for it now does nothing. **Gathering tools are hero gear**, not
   Tokens (T-126): pickaxes, woodaxes, fishing rods, sickles, **fishing nets and
-  fishing cages** (brief 230 S5) are items held in one hand (`tool: { kind,
+  traps** (brief 230 S5) are items held in one hand (`tool: { kind,
   tier }`); a gathering Token names the kind and lowest tier it needs
   (`needsTool`), and only a hero holding one may work it. No tool: the hero does
   other work and the Token says "Needs Pickaxe". Tools only gate. ⚠️ Water is
@@ -271,6 +271,10 @@ pool with no bait is the water's **basic** catch. One sprite per water type
 - Every pick draws one number from the game's random stream in a fixed place of
   the finished cycle (none for a one-fish pool), so a catch-up catches exactly
   what live play does, bait running out on the same catch.
+- **The CMS prices water from its no-bait pools**: one catch a cycle, each fish
+  at its share (several no-bait pools share the cycles evenly); baited pools and
+  the water's own Outputs are not counted, and Recalculate never writes Outputs
+  onto water (`cms/src/engine/sim/fieldAdapter.js` `waterOutputs`).
   *(`catchPools.js`, `Fishing.js`, `BoardRunner.completeCycle`)*
 
 ### Demolition — Built (Atlas A3a, A3b); replaced the discard bin

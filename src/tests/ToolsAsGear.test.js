@@ -121,8 +121,8 @@ beforeEach(() => {
 });
 
 describe('the vocabulary: kinds, a tool, a need, hands', () => {
-    it('six kinds (a net and a cage beside the rod, for fishing), and a hero has two hands', () => {
-        expect(TOOL_KINDS.map(k => k.id)).toEqual(['pickaxe', 'woodaxe', 'fishing_rod', 'sickle', 'fishing_net', 'fishing_cage']);
+    it('six kinds (a net and a trap beside the rod, for fishing), and a hero has two hands', () => {
+        expect(TOOL_KINDS.map(k => k.id)).toEqual(['pickaxe', 'woodaxe', 'fishing_rod', 'sickle', 'fishing_net', 'fishing_trap']);
         expect(HANDS).toBe(2);
     });
 
@@ -517,7 +517,7 @@ describe('content: the rules the audit checks', () => {
             expect(toolItemFor(neededToolOf(def), items), tokenId).toBeTruthy();
         }
         // Every kind a shipped Token needs (any of a water's kinds) has a starter, one each, in kind order.
-        // The net and the cage (brief 230 S5) arrive with the content pack: whether a new game starts
+        // The net and the trap arrive with the content pack: whether a new game starts
         // with one is that pack's call.
         const starters = starterToolIds(items).map(id => items[id].tool.kind);
         const needed = new Set(needing.flatMap(([, def]) => neededToolOf(def).kinds || [neededToolOf(def).kind]));

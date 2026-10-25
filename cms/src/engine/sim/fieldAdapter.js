@@ -1,5 +1,7 @@
 /** Economic simulator: the field adapter. Tokens and Recipes describe the same idea (a work cycle that consumes items and produces others) in two vocabularies: skill is `config.skill` / `skill`, required level `config.skillRequired` / `levelRequirement`, cycle length `config.cycleTimeMs` / `durationMs`, and I/O is `config.outputs` + `config.inputs` / `outputs` + `inputs`. Every pass reads adapted entities only; no pass in `sim/` may contain `entity.config?.skillRequired ?? entity.levelRequirement`, because a field name is chosen here, once. Every pass in this directory is a pure function over data a caller hands in. */
 
+import { catchPoolsOf, hasCatchPools } from '../../../../src/config/registries/catchPools.js';
+
 /** The Token kinds this simulator does not model, plus passives. Such a Token can never anchor an item, but if it has a work cycle it is still seen, as a deferred-scope Info row, so a passive producer is not silently forgotten. */
 export const DEFERRED_TOKEN_TYPES = Object.freeze([
     'passive',
@@ -102,6 +104,24 @@ function adaptCommon({ id, name, kind, skill, level, cycleTimeMs, inputs, output
     });
 }
 
+/**
+ * A water Token's work as Outputs: one catch a cycle from its no-bait pools, each fish at its share.
+ * Several no-bait pools (a rod's and a net's) share the cycles evenly, so a fish in both counts once
+ * at its average share. A baited pool is left out: bait is a choice, the no-bait catch is the
+ * water's own.
+ * ⚠️ The catch replaces the Token's Outputs in the game, so its authored `config.outputs` are never
+ * read here, and `writeBack.applyTokenResults` never writes them.
+ */
+export function waterOutputs(def) {
+    const basic = catchPoolsOf(def).filter(p => !p.bait);
+    const shares = new Map();
+    for (const pool of basic) {
+        const total = pool.catches.reduce((s, c) => s + c.weight, 0);
+        for (const c of pool.catches) shares.set(c.itemId, (shares.get(c.itemId) || 0) + c.weight * 100 / total);
+    }
+    return [...shares].map(([itemId, percent]) => ({ itemId, chance: percent / basic.length, minQty: 1, maxQty: 1 }));
+}
+
 export function adaptToken(def, id = def?.id, exempt = NO_EXEMPT) {
     return adaptCommon({
         id,
@@ -111,7 +131,7 @@ export function adaptToken(def, id = def?.id, exempt = NO_EXEMPT) {
         level: def?.config?.skillRequired,
         cycleTimeMs: def?.config?.cycleTimeMs,
         inputs: def?.config?.inputs,
-        outputs: def?.config?.outputs,
+        outputs: hasCatchPools(def) ? waterOutputs(def) : def?.config?.outputs,
         sim: def?.sim,
         // Tokens have no downcycle concept today; the field is read anyway so
         // one shape serves both kinds.

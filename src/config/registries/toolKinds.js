@@ -23,7 +23,7 @@ export const TOOL_KINDS = Object.freeze([
     Object.freeze({ id: 'fishing_rod', label: 'Fishing Rod' }),
     Object.freeze({ id: 'sickle', label: 'Sickle' }),
     Object.freeze({ id: 'fishing_net', label: 'Fishing Net' }),
-    Object.freeze({ id: 'fishing_cage', label: 'Fishing Cage' })
+    Object.freeze({ id: 'fishing_trap', label: 'Trap' })
 ]);
 
 /** A hero has two hands. A tool takes one; a two-handed weapon takes both. */

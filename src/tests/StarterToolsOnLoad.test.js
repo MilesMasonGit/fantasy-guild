@@ -80,7 +80,7 @@ afterEach(() => {
     localStorage.clear();
     sessionStorage.clear();
     vi.mocked(Date.now).mockRestore();
-    for (const id of Object.keys(STARTERS)) delete getAllItems()[id];
+    for (const id of [...Object.keys(STARTERS), 'fx_load_trap']) delete getAllItems()[id];
     registerItems(SHIPPED_STARTERS);
 });
 
@@ -124,6 +124,15 @@ describe('a save from before tools were gear', () => {
         const held = Object.keys(GameState.state.inventory.items).filter(id => id in SHIPPED_STARTERS);
         expect(held.map(id => getAllItems()[id].tool.kind).sort()).toEqual(['fishing_rod', 'pickaxe', 'sickle', 'woodaxe']);
         expect(held.every(id => InventoryManager.getItemCount(id) === 1)).toBe(true);
+    });
+
+    it('a Trap marked Starter joins the others, last in kind order (the content pack brings the item)', () => {
+        const trap = { id: 'fx_load_trap', name: 'Fixture Load Trap', type: 'tool', equipSlot: 'hand', stackable: true, tool: { kind: 'fishing_trap', tier: 1, starter: true } };
+        registerItems({ fx_load_trap: trap, ...STARTERS });
+        GameState.initNew();
+        InventoryManager.init();
+        expect(starterToolIds(getAllItems())).toEqual(['fx_load_pick', 'fx_load_axe', 'fx_load_trap']);
+        expect(grantStarterTools()).toEqual(['fx_load_pick', 'fx_load_axe', 'fx_load_trap']);
     });
 
     it('a starter tool the Bank already holds is not doubled', () => {

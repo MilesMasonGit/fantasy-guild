@@ -115,7 +115,7 @@ describe('⭐ the Catch pools block', () => {
         ] });
         const container = openEditor('token_shrimp_coast');
         const kinds = [...q(container, '[data-catch-tool]').querySelectorAll('option')].map((o) => o.value);
-        expect(kinds).toEqual(['pickaxe', 'woodaxe', 'fishing_rod', 'sickle', 'fishing_net', 'fishing_cage']);
+        expect(kinds).toEqual(['pickaxe', 'woodaxe', 'fishing_rod', 'sickle', 'fishing_net', 'fishing_trap']);
         expect(q(container, '[data-field="needs-tool"]')).toBeNull();
         expect(q(container, '[data-field="needs-tool-pools"]').textContent).toContain('a Fishing Rod or Fishing Net, at any tier');
         expect(q(container, '[data-field="needs-tool-pools"]').textContent).toContain('Its own Needs tool is ignored.');

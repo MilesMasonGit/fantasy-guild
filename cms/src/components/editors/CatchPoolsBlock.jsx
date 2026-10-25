@@ -47,7 +47,7 @@ export default function CatchPoolsBlock({ token, onPatch }) {
 
   const addPool = () => {
     const used = new Set(pools.filter((p) => !p.bait).map((p) => p.tool));
-    const tool = ['fishing_rod', 'fishing_net', 'fishing_cage', ...TOOL_KINDS.map((k) => k.id)].find((k) => !used.has(k)) || 'fishing_rod';
+    const tool = ['fishing_rod', 'fishing_net', 'fishing_trap', ...TOOL_KINDS.map((k) => k.id)].find((k) => !used.has(k)) || 'fishing_rod';
     write([...pools, { tool, catches: [] }]);
   };
 
