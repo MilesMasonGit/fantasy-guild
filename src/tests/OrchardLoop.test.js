@@ -13,6 +13,7 @@ import * as Flags from '../systems/board/Flags.js';
 import * as Growth from '../systems/board/Growth.js';
 import * as Respawn from '../systems/board/Respawn.js';
 import * as FixedTokens from '../systems/board/FixedTokens.js';
+import * as Charges from '../systems/board/Charges.js';
 import { ALERT } from '../systems/board/boardEvents.js';
 import { LootSystem } from '../systems/combat/LootSystem.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
@@ -93,7 +94,7 @@ function put(typeId, x, y, uses = tokenStartingUses(typeId)) {
 const run = (ms) => { for (let t = 0; t < ms; t += 100) BoardRunner.tick(100); };
 const TREE = { x: 800, y: 500 };
 
-beforeAll(() => Flags.init());
+beforeAll(() => { Flags.init(); Growth.init(); });
 afterAll(() => { Flags.teardown(); resetMatTuning(); });
 
 beforeEach(() => {
@@ -187,6 +188,15 @@ describe('⭐ a Bare tree with no Orchard in reach stays Bare', () => {
         run(10000);
         expect(Respawn.isResting(tree)).toBe(false);
         expect(tree.usesRemaining).toBe(2);
+    });
+
+    it('given a charge back while it waits (a copy dropped on it), it is no longer Bare and its mark goes', () => {
+        const tree = pickedBare({ orchard: false });
+        run(200);
+        expect(Growth.growthAlertOf(tree.id)?.alert).toBe(ALERT.GROW_NEEDS_NEARBY);
+        Charges.applyDelta(tree, 1);
+        expect(Respawn.isResting(tree)).toBe(false);
+        expect(Growth.growthAlertOf(tree.id)).toBeNull();
     });
 
     it('an Orchard out of reach does not count', () => {
