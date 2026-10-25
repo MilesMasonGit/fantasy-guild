@@ -726,10 +726,18 @@ describe('Nothing wears for the cycles it serves (replaces D-126, D-157)', () =>
         place(P(2, 4), 'fixture_station', 'hero_2');
         place(P(1, 3), 'fixture_context_a');
         const node = place(P(2, 3), 'fixture_aura_node', null, 10);
+        const served = [];
+        const off = EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, (p) => {
+            if (p.typeId === 'fixture_station') served.push(p.instanceId);
+        });
 
         run(17000);
+        off();
 
-        expect(SpriteLayer.countOnBoard('fixture_spider_silk')).toBe(2);   // TWO cycles served
+        // Counted as cycles, not silk: the +5 % yield aura rolls a second silk 5 % of the time.
+        expect(new Set(served).size).toBe(2);   // TWO cycles served, one per station
+        expect(served).toHaveLength(2);
+        expect(SpriteLayer.countOnBoard('fixture_spider_silk')).toBeGreaterThanOrEqual(2);
         expect(node.usesRemaining).toBe(10);
     });
 
