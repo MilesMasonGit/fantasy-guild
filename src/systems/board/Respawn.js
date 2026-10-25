@@ -3,8 +3,9 @@
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 import { getTokenType, tokenStartingUses } from '../../config/registries/tokenRegistry.js';
-import { respawnOf as respawnBlockOf } from '../../config/registries/tokenConstants.js';
+import { respawnOf as respawnBlockOf, RESPAWN_MIN_MS } from '../../config/registries/tokenConstants.js';
 import * as BoardState from './BoardState.js';
+import { growTimeOf } from './TileModifiers.js';
 
 /**
  * A Token type with a `respawn` block does not leave the mat when its charges run out: it rests.
@@ -44,12 +45,14 @@ export function respawnOf(def) {
 }
 
 /**
- * How long a resting Token rests before it refills, in ms. The one reader of the time, so a
- * future time axis (a grove, a minecart) widens it here and nowhere else. A regrow's time is
- * its `into` Token's growth.
+ * How long a resting Token rests before it refills, in ms: the authored rest with the Grow Time
+ * its neighbours give it (`TileModifiers.growTimeOf`, floored), and never under the engine's
+ * shortest rest. The one reader of the time. A regrow's time is its `into` Token's growth.
  */
 export function restMsOf(instance, def = getTokenType(instance?.typeId)) {
-    return respawnOf(def)?.afterMs ?? 0;
+    const afterMs = respawnOf(def)?.afterMs;
+    if (afterMs == null) return 0;
+    return Math.max(RESPAWN_MIN_MS, growTimeOf(instance, afterMs));
 }
 
 /** Whether this Token is resting: out of charges, of a type that comes back. */
@@ -62,6 +65,18 @@ export function isResting(instance, def) {
 /** How a resting Token comes back (`'refill'` or `'regrow'`), or null when it is not resting. */
 export function restingMode(instance, def) {
     return isResting(instance, def) ? respawnOf(def ?? getTokenType(instance.typeId)).mode : null;
+}
+
+/**
+ * The picture a resting Token is drawn as, or null to draw its own art greyed: a refill's
+ * `respawn.restingSprite`, while it rests. Every vein names the same empty rock, so the rock says
+ * "resting" and the Token's name (its card, its hover) says which ore. A regrow has none: it
+ * becomes another Token with its own art.
+ */
+export function restingSpriteOf(instance, def = getTokenType(instance?.typeId)) {
+    if (!isResting(instance, def) || respawnOf(def)?.mode !== 'refill') return null;
+    const sprite = def.respawn.restingSprite;
+    return typeof sprite === 'string' && sprite.trim() ? sprite.trim() : null;
 }
 
 /**
@@ -108,9 +123,10 @@ export function regrown(from, into) {
 }
 
 /**
- * What the inspection says about a Token's respawn: `{ mode, into, afterMs, resting, inMs }`, its
- * type's way back and, while it rests, how long a refill has left (`inMs`, null otherwise). Null
- * for a Token whose type never respawns.
+ * What the inspection says about a Token's respawn: `{ mode, into, afterMs, resting, inMs,
+ * restingSprite }`, its type's way back and, while it rests, how long a refill has left (`inMs`,
+ * null otherwise) and the picture it is drawn as ({@link restingSpriteOf}). Null for a Token
+ * whose type never respawns.
  */
 export function respawnState(instance) {
     const def = getTokenType(instance?.typeId);
@@ -119,7 +135,8 @@ export function respawnState(instance) {
     const next = nextRespawn(instance);
     return {
         mode: respawn.mode, into: respawn.into, afterMs: restMsOf(instance, def),
-        resting: !!next, inMs: next ? next.inMs : null
+        resting: !!next, inMs: next ? next.inMs : null,
+        restingSprite: restingSpriteOf(instance, def)
     };
 }
 

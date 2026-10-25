@@ -13,6 +13,7 @@ import * as HeroMotion from './HeroMotion.js';
 import { centreOf, distanceSq } from './nearby.js';
 import * as WorkCheck from './WorkCheck.js';
 import * as Respawn from './Respawn.js';
+import * as Growth from './Growth.js';
 import * as Demolition from './Demolition.js';
 import { workConfigOf } from './StationRecipe.js';
 import * as BoardCombat from './BoardCombat.js';
@@ -354,6 +355,16 @@ function announceToolNeeded(instanceId, heroId) {
     if (need) EventBus.publish(BOARD_EVENTS.TOOL_NEEDED, { instanceId, heroId, ...need });
 }
 
+/**
+ * A Token its hero stands at is out of an input: the mat says which, over the Token ("Needs
+ * Coal"). Said each time the stuck hero's flag looks again (about once a second, and as they
+ * leave for other work); the callout spaces itself out (`CalloutLayer`).
+ */
+function announceInputNeeded(instance, heroId) {
+    const itemId = WorkCheck.fixableReason(instance.id, instance).inputCheck?.missing?.[0]?.itemId;
+    if (itemId) EventBus.publish(BOARD_EVENTS.INPUT_NEEDED, { instanceId: instance.id, heroId, itemId });
+}
+
 function recordSkips(r, heroId, skips) {
     clearSkips(r, heroId);
     if (!skips.length) return;
@@ -601,6 +612,7 @@ function keepOrRelease(r, heroId, dirty) {
 
         // Stuck for a fixable reason: stay until something else can run.
         if (FIXABLE.has(alert) && (dirty || r.clock >= (r.nextTryAt.get(heroId) ?? 0))) {
+            if (alert === ALERT.INPUTS) announceInputNeeded(instance, heroId);
             const { pick, skips } = evaluate(heroId, flag, instance.id);
             if (!pick) {
                 r.nextTryAt.set(heroId, r.clock + RETRY_MS);
@@ -1008,19 +1020,72 @@ function springAmbushes() {
 }
 
 /**
- * The busy enemy `heroId` is waiting for, or null: a hero with nothing claimed whose flag passed
- * over an enemy because another hero is fighting it (`claimed`). Every fight is one-on-one, so a
- * flag pinned to that enemy waits beside it, and an area flag with nothing else in reach waits at
- * its flag; either takes the enemy the moment it is free. The first such enemy in the flag's own
- * order. For the flag's words and the hero's speech.
+ * What `heroId` is waiting for, or null: `{ instanceId, kind }` for a hero with nothing claimed
+ * whose flag passed over something that will be theirs to work by itself, the first such in the
+ * flag's own order.
+ * - `'fight'`: an enemy another hero is fighting (`claimed`). Every fight is one-on-one, so a flag
+ * pinned to that enemy waits beside it, and an area flag with nothing else in reach waits at its
+ * flag; either takes the enemy the moment it is free.
+ * - `'node'`: a Token resting until it respawns (`resting`) that the hero could work: the skip
+ * reason is the Token's own, so the hero's skill, level, tool and rule have already passed. They
+ * wait silently and work it the moment it is back (`TOKEN_RESPAWNED` marks flags dirty). Failing
+ * those, a Stump or Sapling in the flag's reach growing back into work they could do
+ * ({@link growingFor}): its growth is a transform, whose `TILE_CHANGED` marks flags dirty, so they
+ * work it the moment it stands.
+ * For the flag's words, the hero's speech and the idle mark.
  */
-export function waitingFor(heroId) {
+export function waitingOf(heroId) {
     if (!heroId || BoardState.claimOfHero(heroId)) return null;
     for (const s of skipsOfHero(heroId)) {
+        if (s.reason === ALERT.RESTING) return { instanceId: s.instanceId, kind: 'node' };
         if (s.reason !== SKIP.CLAIMED) continue;
-        if (BoardCombat.isEnemyToken(BoardState.getTokenById(s.instanceId))) return s.instanceId;
+        if (BoardCombat.isEnemyToken(BoardState.getTokenById(s.instanceId))) return { instanceId: s.instanceId, kind: 'fight' };
     }
-    return null;
+    return growingFor(heroId);
+}
+
+/**
+ * The Token in `heroId`'s flag's reach growing back into work they could do, as
+ * `{ instanceId, kind: 'node' }`, or null: a Stump or Sapling (no work of its own) whose growth
+ * chain reaches a Token of a skill the hero holds and allows, at a level they have, with the tool
+ * in hand, and that is truly on its way (its Forest in reach, not stopped for want of its seedling:
+ * `Growth.isGrowingBack`). In the flag's own order: priority, then nearest, then the earlier-placed.
+ * A pinned flag waits only for its own Token.
+ *
+ * ⚠️ Worked out when asked (the flag's words, the speech, the idle mark), never on the flag's pass:
+ * a hero with nothing to claim looks again every second, and a catch-up is 86,400 seconds.
+ */
+function growingFor(heroId) {
+    const flag = BoardState.flagOf(heroId);
+    if (!flag || typeof flag.pinnedTo === 'string') return null;
+    const from = HeroMotion.heroPointOf(heroId) || { x: flag.x, y: flag.y };
+    const canWork = new Map();
+    let best = null;
+    for (const instance of BoardState.tokens()) {
+        const toward = Growth.growsTowardWork(instance.typeId);
+        if (!toward) continue;
+        const centre = centreOf(instance);
+        if (!centre || !flagReaches(flag, centre) || isDisallowed(instance)) continue;
+        let can = canWork.get(toward.id);
+        if (can === undefined) {
+            can = ruleAllows(heroId, toward.config.skill)
+                && !WorkCheck.heroReason(heroId, toward.config, { typeId: toward.id });
+            canWork.set(toward.id, can);
+        }
+        if (!can || !Growth.isGrowingBack(instance)) continue;
+        const rank = FlagRules.ruleOf(heroId, toward.config.skill).priority;
+        const d = distanceSq(from, centre);
+        const order = instance.placedAt ?? 0;
+        if (!best || rank < best.rank || (rank === best.rank && (d < best.d || (d === best.d && order < best.order)))) {
+            best = { instance, rank, d, order };
+        }
+    }
+    return best ? { instanceId: best.instance.id, kind: 'node' } : null;
+}
+
+/** The instance id {@link waitingOf} names, or null. */
+export function waitingFor(heroId) {
+    return waitingOf(heroId)?.instanceId ?? null;
 }
 
 /** Why a Token cannot be disallowed: no hero could ever work it. */

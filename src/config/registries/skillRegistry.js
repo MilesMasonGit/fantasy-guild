@@ -82,7 +82,7 @@ export const SKILLS = {
     cooking: {
         id: 'cooking', name: 'Cooking', layer: SKILL_LAYERS.STARTING,
         description: 'Preparing meals and curative broths that keep heroes working.',
-        purpose: 'Cooks food and drinks that heal heroes in fights.',
+        purpose: 'Cooks food that heals heroes in fights, and drinks that help them work.',
         icon: '🍳',
         sprite: 'assets/skills/s_cooking.png'
     },

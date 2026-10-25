@@ -157,6 +157,25 @@ export const MODIFIER_PALETTE = [
         inverted: true,
         hint: 'Units of every input consumed. A negative value is cheaper. Applies to all of them — it cannot yet name one item.'
     },
+    {
+        /**
+         * Read by `TileModifiers.growTimeOf` for a growing Token's time (a Sapling becoming a Tree)
+         * and a resting Token's refill, from its neighbours and the Region's rules, never from a hero
+         * (nobody works a Token while it grows or rests). The skill it narrows to is the growing
+         * Token's own work skill, or else the skill of what it grows into.
+         */
+        type: EFFECT_TYPES.GROW_TIME,
+        reads: { up: (n) => `grow and refill ${n} slower`, down: (n) => `grow and refill ${n} faster` },
+        label: 'Grow Time',
+        when: 'never',
+        scales: 'value',
+        buckets: ['percentage'],
+        categories: 'skill',
+        shape: MODIFIER_SHAPES.DETERMINISTIC,
+        group: 'Production',
+        inverted: true,
+        hint: 'How long a Token takes to grow (a Sapling into a Tree) or to refill after it rests (a vein). A negative value is faster. Speed-ups stack, but together cut at most 80% of the time.'
+    },
 
     // --- Support ------------------------------------------------------------
     {
@@ -215,6 +234,24 @@ export const MODIFIER_PALETTE = [
         shape: MODIFIER_SHAPES.PROC,
         group: 'Support',
         hint: 'Percent chance that one item, when a cycle or a kill drops it, comes out doubled. Pick the item; "any item" rolls for every item that drops, each on its own.'
+    },
+    {
+        /**
+         * A better rod's bonus: one fish bites more often from a water's catch pool. Its weight in
+         * the pool is widened by this percentage before the pick (`Fishing.catchOf` resolves the axis
+         * once per catch in the pool, with the item id as the category), so +100 % on a Dolphin
+         * weighted 10 beside 50 and 40 makes it 20 of 110. Usually carried on a rod; a Token in reach
+         * may give it too.
+         */
+        type: EFFECT_TYPES.CATCH_WEIGHT,
+        label: 'Catch Weight',
+        when: 'never',
+        scales: 'value',
+        buckets: ['percentage'],
+        categories: 'item',
+        shape: MODIFIER_SHAPES.DETERMINISTIC,
+        group: 'Support',
+        hint: 'How often one fish bites from a water\'s catch pool: a percentage on its weight there (+100% doubles it). Pick the fish; "any item" moves every catch alike, which changes nothing.'
     },
 
     // --- Combat ---------------------------------------------------------

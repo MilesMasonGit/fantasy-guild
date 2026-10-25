@@ -80,6 +80,7 @@ once; the oldest moment gives way.
 | 14 | *(line 7 or 8, word for word)*, or I need {a Pickaxe} to work {token}. | **B5 (FB-45):** you dropped the hero's flag on a Token they can't work — skill not held (line 8), level too low (line 7), or no tool in hand for it ("I need a Pickaxe to work Copper Ore Vein.", "I need an Iron Pickaxe or better to work Gold Ore Vein."). The flag stands there as a normal area flag instead of being pinned, and the hero says why once. A Token you disallowed, or one whose skill is switched off in the hero's rules, is refused silently (no wording yet); a spawner is never pinned and nothing is said. | Kept |
 | 15 | {token} Depleted | The hero whose work spent a Token's last charge says it (a tree they felled, a vein they emptied, a fight that used up an enemy or a tool beside it). Shows for **3 seconds**, one line per kind of Token so a hero chopping tree after tree keeps one bubble. Nobody says it when no hero spent the charge. | Kept |
 | 16 | Waiting for {enemy}. | Said instead of line 12 when the hero goes idle because the one fight in reach is another hero's: every fight is one-on-one (brief 220 C5), so they wait at their flag (or beside the enemy, when their flag is pinned to it) and take it the moment it is free. | Kept |
+| 16b | *(nothing)* | A gatherer whose node in reach is resting (a vein refilling) goes quiet instead of saying line 12: they wait silently and work it the moment it is back; the flag's hover and the Dock say "Waiting for Copper Vein" (brief 230 S1b, owner 2026-10-24). | **Silent by ruling** |
 | 17 | {enemy} Beaten | Line 15 said of an enemy: the hero who beat it says it (brief 220 C5). Shows for **3 seconds**, one line per kind. | Kept |
 
 ## 3. Callouts (not speech bubbles)
@@ -94,6 +95,7 @@ switched off together with the `alerts` draw switch.
 | C2 | {effect name} | A named effect fires on a Token (a bonus drop, a status landing), shown over that Token. The wording is the effect's own title. |
 | C3 | {reason} | A drop the mat refused: the rule's reason (or "Drop Rejected: {token}") at the spot you aimed at. The Guild Hall dragged off the mat says "Guild Hall cannot be removed from the playmat." over the Hall. |
 | C4 | Needs {Pickaxe} | A hero's flag passed this Token over because the hero holds no tool of the kind it needs (or not a good enough one: "Needs Iron Pickaxe or better"), shown over the **Token**: only the one the hero would have worked (the first passed over for want of a tool, nearest at the same priority), so a cluster of veins says it once. Said when the flag looks, then at most once every 8 seconds per Token while a flag keeps passing it over (an idle hero's flag looks every second). |
+| C5 | Needs {Coal} | A station its hero stands at is out of an input: the first item the Bank is short of, over the **station**, in C4's red look (brief 230 S1b). Said when the stuck hero's flag looks again, then at most once every 8 seconds per station; also as the hero leaves it for other work in reach. |
 
 The "-1" / "+50" charge number is not a callout: it is a small number rising from the Token's
 charges corner.

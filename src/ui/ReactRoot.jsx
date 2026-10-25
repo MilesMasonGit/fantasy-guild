@@ -203,7 +203,7 @@ export const ReactRoot = () => {
     return (
         <ViewportProvider>
             <DeckDndProvider>
-            {particlesDrawn && <ParticleOverlay disabled={ui.isAnyModalOpen} />}
+            {particlesDrawn && <ParticleOverlay layer="pointer" disabled={ui.isAnyModalOpen} />}
             <ScreenCalloutLayer />
             <div className="react-overlay absolute inset-0 z-50 pointer-events-none flex flex-col">
                 <div
@@ -357,6 +357,14 @@ export const ReactRoot = () => {
                         <ErrorBoundary label="ArrivalCard"><ArrivalCard /></ErrorBoundary>
                     </div>
                     {menuRight && <BubbleMenu ui={ui} side="right" />}
+                    {/**
+                     * Loot flying off the mat: over the mat, under the drawers, the hero panel and
+                     * the nav. ⚠️ Inside this overlay so its layer is compared with theirs; outside
+                     * it, it is compared with the overlay as a whole. Nothing flies while the Bank
+                     * is open: the mat is wholly under it and the stubs are off screen, so a flight
+                     * would only cross the hero column.
+                     */}
+                    {particlesDrawn && <ParticleOverlay layer="mat" disabled={ui.isAnyModalOpen || isBankOpen} />}
                     {/**
                      * The hero panel: one full-height panel on the notification side,
                      * opened from the hero bar or from the Bank. A crash in it stays local.

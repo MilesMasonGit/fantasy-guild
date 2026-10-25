@@ -186,6 +186,37 @@ describe('Lifecycle audit — errors: shape rules', () => {
         }, { id: 'token_oak_sapling', field: 'grows.into', includes: 'token_oak_sapling → token_oak_tree → token_oak_sapling' });
     });
 
+    describe('a growth needing its Forest and a seedling (brief 230 S2a)', () => {
+        it('accepts a Token in reach and a cost', () => {
+            const w = clean();
+            w.tokens.token_oak_sapling.grows.needsNearby = ['token_oak_forest'];
+            w.tokens.token_oak_sapling.grows.cost = [{ itemId: 'item_oak_seed', quantity: 1 }];
+            expect(auditLifecycleBlocks(w)).toEqual([]);
+        });
+
+        it('a Token in reach that does not exist', () => {
+            expectOne((w) => { w.tokens.token_oak_sapling.grows.needsNearby = ['token_ghost_forest']; },
+                { id: 'token_oak_sapling', field: 'grows.needsNearby[0]', includes: ['needs nearby', 'token_ghost_forest', 'does not exist'] });
+        });
+
+        it('needing itself nearby', () => {
+            expectOne((w) => { w.tokens.token_oak_sapling.grows.needsNearby = ['token_oak_sapling']; },
+                { id: 'token_oak_sapling', field: 'grows.needsNearby[0]', includes: 'needs itself nearby' });
+        });
+
+        it('a cost naming no real item, or no quantity', () => {
+            expectOne((w) => { w.tokens.token_oak_sapling.grows.cost = [{ itemId: 'item_ghost_seed', quantity: 1 }]; },
+                { id: 'token_oak_sapling', field: 'grows.cost[0].itemId', includes: ['grow cost names', 'item_ghost_seed'] });
+            expectOne((w) => { w.tokens.token_oak_sapling.grows.cost = [{ itemId: 'item_oak_seed', quantity: 0 }]; },
+                { id: 'token_oak_sapling', field: 'grows.cost[0].quantity', includes: 'grow cost quantity' });
+        });
+
+        it('a spawner "plants within its reach" that is not a tick', () => {
+            expectOne((w) => { w.tokens.token_oak_forest.spawner.withinReach = 'yes'; },
+                { id: 'token_oak_forest', field: 'spawner.withinReach', includes: 'plants within its reach' });
+        });
+    });
+
     it('a Token that grows into itself', () => {
         expectOne((w) => { w.tokens.token_oak_sapling.grows.into = 'token_oak_sapling'; },
             { id: 'token_oak_sapling', field: 'grows.into', includes: 'loops' });
@@ -406,6 +437,14 @@ describe('Lifecycle audit — respawn', () => {
             { id: 'token_stone_foundation', field: 'respawn', includes: 'a Foundation never respawns' });
     });
 
+    it('a refill with a resting sprite is fine; a resting sprite on a regrow is warned (it does nothing)', () => {
+        const w = clean();
+        w.tokens.token_copper_vein.respawn.restingSprite = 't_vein_stone';
+        expect(auditLifecycleBlocks(w)).toEqual([]);
+        expectOne((w2) => { w2.tokens.token_birch_tree.respawn.restingSprite = 't_vein_stone'; },
+            { severity: 'warning', id: 'token_birch_tree', field: 'respawn.restingSprite', includes: 'regrows' });
+    });
+
     it('a Token that never runs out is warned that it never rests (allowed)', () => {
         expectOne((w) => { delete w.tokens.token_copper_vein.uses; },
             { severity: 'warning', id: 'token_copper_vein', field: 'respawn', includes: 'never runs out' });
@@ -487,9 +526,13 @@ describe('Lifecycle audit — warnings (allowed)', () => {
 // Goblin Camp also spawns for free (director's call: no upkeep for camps in
 // this build). Any error, or any other warning, still fails.
 const summarise = (findings) => findings.map((f) => [f.severity, f.entityId, f.field]).sort();
+// Brief 230 S1a: stations and supports never wear out, so the Charges five shipped ones still
+// author are ignored and flagged (allowed) until the owner clears them in the CMS.
 const SHIPPED_ALLOWED = [
     ...['token_coal_mine', 'token_copper_mine', 'token_quarry', 'token_goblin_camp']
         .map((id) => ['warning', id, 'spawner.upkeep']),
+    ...['token_ceramics_kiln', 'token_coast', 'token_copper_anvil', 'token_grandma_s_kitchen', 'token_windmill']
+        .map((id) => ['warning', id, 'uses']),
 ].sort();
 
 describe('Lifecycle audit — reaches both audits', () => {

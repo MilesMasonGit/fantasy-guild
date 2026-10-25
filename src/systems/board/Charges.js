@@ -2,7 +2,7 @@
 
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
-import { getTokenType, tokenName, tokenStartingUses, getProvidedTagsWithTiers } from '../../config/registries/tokenRegistry.js';
+import { getTokenType, tokenName, tokenStartingUses, getProvidedTagsWithTiers, neverWearsOutType } from '../../config/registries/tokenRegistry.js';
 import { neighbourIds } from './nearby.js';
 import { contextRequirementsOf } from '../../config/registries/recipePoolRegistry.js';
 import { DEFAULT_STATEMENT_CHARGE_DELTA, statementsOf } from '../effects/statements.js';
@@ -14,8 +14,9 @@ import * as Hand from './Hand.js';
 import * as Respawn from './Respawn.js';
 
 /**
- * The one place a Token's charge pool is read, moved, or spent. Three axes spend against that pool:
- * a station's operational cost, a recipe's context-token cost, and an effect block's own delta.
+ * The one place a Token's charge pool is read, moved, or spent. Two axes spend against that pool:
+ * a Token's own operational cost per cycle and an effect block's own delta. Nothing near a Token
+ * pays for its work: help is free (`planContextCharges`).
  *
  * The live pool is `usesRemaining`, and its ceiling is `def.uses`. Everything goes through
  * `tokenStartingUses`; nothing here reads a `def.charges` field, which is not the pool (reading the
@@ -43,9 +44,33 @@ export const DEFAULT_STATION_CHARGE_COST = 1;
  */
 export { DEFAULT_STATEMENT_CHARGE_DELTA };
 
-/** Whether a Token instance's charges are unlimited. */
+/**
+ * Whether a Token instance's charges are unlimited: it holds none, or its type never wears out (a
+ * station or a support, `wearRule.js`), whatever number a copy saved before that rule still holds.
+ */
 export function isUnlimited(instance) {
-    return instance?.usesRemaining == null;
+    if (instance?.usesRemaining == null) return true;
+    return instance.typeId != null && neverWearsOutType(instance.typeId);
+}
+
+/**
+ * Clear the charges a saved copy of a never-wearing type still holds, so it reads as unlimited
+ * everywhere (its charge ring, its card). Called as a board comes in (`BoardRunner`); the engine
+ * already treats such a copy as unlimited ({@link isUnlimited}).
+ *
+ * @returns {string[]} the instance ids cleared
+ */
+export function clearNeverWearingCharges() {
+    const cleared = [];
+    for (const instance of BoardState.tokens()) {
+        if (instance.usesRemaining == null || !neverWearsOutType(instance.typeId)) continue;
+        instance.usesRemaining = null;
+        cleared.push(instance.id);
+        EventBus.publish(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, {
+            instanceId: instance.id, delta: 0, remaining: null, typeId: instance.typeId
+        });
+    }
+    return cleared;
 }
 
 /**
@@ -217,7 +242,7 @@ export function applyDelta(instance, delta, { heroId = null } = {}) {
 /**
  * Every distinct Token near a Token, with the context tags it offers, as `{ id, instance, tiers }`
  * in arrival order. Near is centre to centre, by instance id (the cached `neighbourIds`), so a 2×2
- * Token is one provider and pays one cost.
+ * Token is one provider.
  */
 export function contextProvidersAround(instanceId) {
     const providers = [];
@@ -237,64 +262,27 @@ export function contextProvidersAround(instanceId) {
 }
 
 /**
- * Which nearby Tokens would pay a recipe's context charge costs, and how much each would pay,
- * without touching anything.
+ * Whether the Tokens near a Token offer every context tag a recipe asks for, at its tier: the
+ * context half of a cycle's plan, as `{ ok, debits, missing }`.
  *
- * Lowest remaining first: when several nearby Tokens satisfy the same requirement, the one with the
- * fewest charges left pays first, so near-depleted tiles clear rather than every provider sitting
- * at a fraction forever. A cost larger than any single provider holds spreads across them in that
- * same order.
+ * ⚠️ No context Token ever pays for a recipe: help is free (owner, 2026-10-24). A support never
+ * wears out (`wearRule.js`), and a gathering node that also offers a tag spends its charges only on
+ * its own gathering. So `debits` is always empty and a requirement's authored `chargeCost` is not
+ * read; only an absent tag is `missing`.
  *
- * Unlimited providers pay nothing: an unlimited Token nearby satisfies the requirement for free,
- * and no finite neighbour is charged for it either.
- *
- * @returns {{ok: boolean, debits: Array<{id, instance, amount}>, missing: Array<{tag, reason, short?: number}>}}
+ * @returns {{ok: boolean, debits: [], missing: Array<{tag: string, reason: 'absent'}>}}
  */
 export function planContextCharges(instanceId, requirements) {
     const providers = contextProvidersAround(instanceId);
-    const planned = new Map();          // provider id → charges this plan already claims
-    const debits = [];
     const missing = [];
-
-    const claimed = id => planned.get(id) || 0;
-
     // Normalised through the one reader, so a bare-string entry (what the CMS
     // writes before a tier is picked) is a tier-1 tag rather than skipped.
     for (const req of contextRequirementsOf({ requiresContext: requirements })) {
-        const minTier = req.minTier;
-        const cost = req.chargeCost;
-
-        const eligible = providers.filter(p => (p.tiers[req.tag] || 0) >= minTier);
-        if (!eligible.length) {
+        if (!providers.some(p => (p.tiers[req.tag] || 0) >= req.minTier)) {
             missing.push({ tag: req.tag, reason: 'absent' });
-            continue;
         }
-        if (cost <= 0) continue;
-        if (eligible.some(p => isUnlimited(p.instance))) continue;
-
-        const byScarcity = [...eligible].sort(
-            (a, b) => (a.instance.usesRemaining - claimed(a.id)) - (b.instance.usesRemaining - claimed(b.id))
-        );
-
-        let owed = cost;
-        for (const provider of byScarcity) {
-            const free = provider.instance.usesRemaining - claimed(provider.id);
-            if (free <= 0) continue;
-            const take = Math.min(free, owed);
-            planned.set(provider.id, claimed(provider.id) + take);
-            owed -= take;
-            if (owed === 0) break;
-        }
-
-        if (owed > 0) missing.push({ tag: req.tag, reason: 'charges', short: owed });
     }
-
-    for (const [id, amount] of planned) {
-        const provider = providers.find(p => p.id === id);
-        debits.push({ id, instance: provider.instance, amount });
-    }
-
-    return { ok: missing.length === 0, debits, missing };
+    return { ok: missing.length === 0, debits: [], missing };
 }
 
 /**

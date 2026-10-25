@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-251**
+**Next free number: T-255**
 
 ---
 
@@ -52,8 +52,10 @@ here.
 | T-245 | P3 | open | **Carried rules read as Token rules in the Rules editor** (found by brief 220 C3, 2026-10-24): an item's rule on the fight-start moment shows as "On Neighbour's Fight" targeting "heroes on nearby Tokens"; give carried rules their own wording ("When this hero's fight starts", "to the hero") in `statementText.js` / the trigger picker. Builder-lite. No eye-check (CMS wording). | brief 220 C3 |
 | T-246 | P3 | open | **The item tooltip shows a weapon's styles, damage and speed** (found by brief 220 C2, 2026-10-24): the Bank tooltip lists name, type and effects but not `styles`, `damage`, `speed` (fast/normal/slow) or two-handed. Builder-lite; wait for C6's enemy card so both read the same. | brief 220 C2 |
 | T-248 | P3 | open | **Enemies stroll with their art over the mat edge** (found 2026-10-24 diagnosing the AtlasTravel flake): `EnemyMotion.js` ~236 clamps a stroll to the mat by its centre only (`clampToMat`), so up to 64 u of art hangs past the edge; a reload or travel then hops it inward (`MatResize.fitToMat`). Fix: clamp by the whole footprint (`MatPlacement.clampInside`; check for an import cycle). WORK CHANGED expected; small look change near edges. Engineer or builder. | flake diagnosis |
-| T-249 | P2 | owner | **After a kill, the next camp enemy swings first** (found 2026-10-24): the kill ends the tick before the enemy swing timer moves and the post-kill pause does not reset it, so the next enemy hits about 2.9 s before the hero (live; 3.0 s in catch-up steps vs 2.1 s live). Owner question (asked with the next batch): reset both swing timers when the pause ends, or keep. | flake diagnosis |
+| T-249 | P2 | open | **After a kill, the next camp enemy swings first** (found 2026-10-24): the kill ends the tick before the enemy swing timer moves and the post-kill pause does not reset it, so the next enemy hits about 2.9 s before the hero (live; 3.0 s in catch-up steps vs 2.1 s live). **Owner 2026-10-24: even start**: both swing timers reset when a new fight starts, so neither side gets a free hit. Do with combat C6b or as a small engine fix; catch-up identity test; WORK CHANGED expected on camp scenarios. | flake diagnosis |
 | T-250 | P3 | open | **Seed Math.random for every test**: the game never seeds it; tests that run fights or strolls are luck-dependent unless they seed by hand (and `EnemyMotion`/`HeroMotion` keep their own copy, needing `setRandomForTests`). A vitest setup file that reseeds before each test would end this class of flake. Builder. | flake diagnosis |
+| T-253 | P3 | open | **A CMS page for engine tuning numbers** (brief 230 S1a, owner 2026-10-24: "a ticket later"): the speed-up floor (`MAX_SPEED_UP_CUT = 0.8`) and the elixir dose (`ELIXIR_FIGHTS = 10`) live as code constants in `loopConstants.js`; give the owner a synced tuning page (a `data/tuning.json`, a CMS page, a loader). Builder. | brief 230 S1a |
+| T-254 | P3 | open | **Leftovers of "help is free"** (brief 230 S1a, 2026-10-24): the CMS recipe editor still shows a "Charge cost" box on each context requirement, which now does nothing (hide or reword; `RecipeAuthoring.test.js` covers it); `problemMark.js` keeps a "Too few charges on the X nearby" message that can no longer appear. Builder-lite. | brief 230 S1a |
 | T-026 | P3 | ride-along | Small per-tick allocations in combat and statuses. | CR3-032 |
 | T-027 | P3 | ride-along | Motion ticks allocate small objects per walker. | CR3-153 |
 
@@ -63,9 +65,7 @@ Detail, order and tiers in [brief 210](../active/briefs/210_backlog_intake.md); 
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
-| T-241 | P3 | open | **Loot particles and flights draw over an open Bank drawer** (seen 2026-10-24 in the drawer captures; older than the drawer change): the particle canvas sits above the drawer, so loot sparkle/flight pixels show on top of the Bank. Put the particle layer under the drawers (z-index table in UI_STYLE), or pause loot flights while a drawer covers the mat. Builder. No eye-check beyond one capture. | Backlog director, brief 210 E1 |
-| T-243 | P3 | open | **Mat callouts and hero speech bubbles in the pixel family**: reframe the speech-style popups (hero speech bubbles, mat callouts, the off-mat refusal callout) to match the bubble row once T-239 is built. Builder. Eye-check. | brief 210 F1 audit |
-| T-244 | P3 | open | **Nav orbs (and the station gear button): no hover glow or scale** (UI_STYLE: hover is a 1-art-pixel white outline; no glows, no scaling); the gear badge's `hover:scale-110` too (found by T-247). Builder-lite. Eye-check (one capture). | brief 210 F1 audit |
+| T-255 | P3 | open | **CMSStudio's render test times out under load**: "mounts Recolor and Animation as two tabs" took 5058 ms against the 5 s limit in a full suite run beside a build (2026-10-25, found while fixing T-251); it is a render test, not a source scan. Give it an explicit timeout or make the mount lighter. Builder-lite. | Backlog director, T-251 |
 
 ### UI
 

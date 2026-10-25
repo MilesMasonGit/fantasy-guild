@@ -20,7 +20,7 @@ export function SuppliesDevSection() {
                     onClick={() => {
                         const r = setUpSuppliesScene();
                         setStatus(r.ok
-                            ? 'Two Fighters on two Cows (left: Valor and Ironskin; right: Shrimp and Water), and a hurt one below the Hall with Water'
+                            ? 'Two Fighters on two Cows (left: Valor and Ironskin; right: Shrimp and Water), and a hurt one below the Hall with Water who never drinks it (drinks do not heal)'
                             : r.error);
                     }}
                 >

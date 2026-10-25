@@ -43,6 +43,22 @@ function writeOldSlot() {
     localStorage.setItem(SaveManager.getSlotKey(0), JSON.stringify(save));
 }
 
+const TRAP = { fx_load_trap: { id: 'fx_load_trap', name: 'Fixture Load Trap', type: 'tool', equipSlot: 'hand', stackable: true, tool: { kind: 'fishing_trap', tier: 1, starter: true } } };
+const OTHER_TRAP = { fx_load_crab_trap: { id: 'fx_load_crab_trap', name: 'Fixture Crab Trap', type: 'tool', equipSlot: 'hand', stackable: true, tool: { kind: 'fishing_trap', tier: 2 } } };
+
+/** Slot 0 holds a game given its starter tools before the record named them (`starterTools: true`). */
+function writeLegacySlot(setup = () => {}) {
+    resetMatTuning();
+    GameState.initNew();
+    InventoryManager.init();
+    for (const id of Object.keys(STARTERS)) InventoryManager.addItem(id, 1);
+    GameState.state.progress.starterTools = true;
+    setup();
+    const save = JSON.parse(GameState.serializeJson());
+    save.savedAt = NOW - 1000;
+    localStorage.setItem(SaveManager.getSlotKey(0), JSON.stringify(save));
+}
+
 async function load() {
     expect(await SaveManager.loadSlot(0)).toBe(true);
     await EngineBootstrap.onSlotSelected(0, false);
@@ -80,7 +96,7 @@ afterEach(() => {
     localStorage.clear();
     sessionStorage.clear();
     vi.mocked(Date.now).mockRestore();
-    for (const id of Object.keys(STARTERS)) delete getAllItems()[id];
+    for (const id of [...Object.keys(STARTERS), ...Object.keys(TRAP), ...Object.keys(OTHER_TRAP)]) delete getAllItems()[id];
     registerItems(SHIPPED_STARTERS);
 });
 
@@ -96,7 +112,8 @@ describe('a save from before tools were gear', () => {
         writeOldSlot();
         await load();
         expect(bank()).toEqual(['fx_load_axe', 'fx_load_pick']);
-        expect(GameState.state.progress.starterTools).toBe(true);
+        // The record names each starter given, so one marked Starter later is still given once.
+        expect(GameState.state.progress.starterTools).toEqual(['fx_load_pick', 'fx_load_axe']);
 
         // Lost or sold since: a later load does not hand them out again.
         InventoryManager.removeItem('fx_load_pick', 1);
@@ -126,6 +143,14 @@ describe('a save from before tools were gear', () => {
         expect(held.every(id => InventoryManager.getItemCount(id) === 1)).toBe(true);
     });
 
+    it('a Trap marked Starter joins the others, last in kind order (the content pack brings the item)', () => {
+        registerItems({ ...TRAP, ...STARTERS });
+        GameState.initNew();
+        InventoryManager.init();
+        expect(starterToolIds(getAllItems())).toEqual(['fx_load_pick', 'fx_load_axe', 'fx_load_trap']);
+        expect(grantStarterTools()).toEqual(['fx_load_pick', 'fx_load_axe', 'fx_load_trap']);
+    });
+
     it('a starter tool the Bank already holds is not doubled', () => {
         registerItems(STARTERS);
         GameState.initNew();
@@ -134,5 +159,43 @@ describe('a save from before tools were gear', () => {
         expect(grantStarterTools()).toEqual(['fx_load_axe']);
         expect(InventoryManager.getItemCount('fx_load_pick')).toBe(3);
         expect(grantStarterTools()).toEqual([]);
+    });
+});
+
+describe('a save given its starter tools before the record named them', () => {
+    it('with no trap, gets one Trap once, and never again on a later load; the record survives save and load', async () => {
+        registerItems(STARTERS);
+        writeLegacySlot();
+        registerItems(TRAP);
+        await load();
+        expect(bank()).toEqual(['fx_load_axe', 'fx_load_pick', 'fx_load_trap']);
+        expect(InventoryManager.getItemCount('fx_load_pick')).toBe(1);
+        expect(InventoryManager.getItemCount('fx_load_trap')).toBe(1);
+        expect(GameState.state.progress.starterTools).toEqual(['fx_load_pick', 'fx_load_axe', 'fx_load_trap']);
+
+        InventoryManager.removeItem('fx_load_trap', 1);
+        SaveManager.save(false);
+        await load();
+        expect(GameState.state.progress.starterTools).toEqual(['fx_load_pick', 'fx_load_axe', 'fx_load_trap']);
+        expect(InventoryManager.getItemCount('fx_load_trap')).toBe(0);
+    });
+
+    it('already holding a trap of another make, in the Bank, gets none', async () => {
+        registerItems({ ...STARTERS, ...OTHER_TRAP });
+        writeLegacySlot(() => InventoryManager.addItem('fx_load_crab_trap', 1));
+        registerItems(TRAP);
+        await load();
+        expect(InventoryManager.getItemCount('fx_load_trap')).toBe(0);
+        expect(GameState.state.progress.starterTools).toContain('fx_load_trap');
+    });
+
+    it("a trap held in a hero's hands counts too", () => {
+        registerItems({ ...STARTERS, ...OTHER_TRAP, ...TRAP });
+        GameState.initNew();
+        InventoryManager.init();
+        GameState.state.progress.starterTools = true;
+        GameState.state.heroes = [{ id: 'fx_hero', equipment: ['fx_load_crab_trap'], heldCopies: [true] }];
+        expect(grantStarterTools()).toEqual(['fx_load_pick', 'fx_load_axe']);
+        expect(InventoryManager.getItemCount('fx_load_trap')).toBe(0);
     });
 });

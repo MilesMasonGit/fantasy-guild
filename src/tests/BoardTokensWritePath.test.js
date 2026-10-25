@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { sourceCode, matchLines } from './fixtures/sourceScan.js';
+import { sourceCode, matchLines, setScanTimeout } from './fixtures/sourceScan.js';
+
+setScanTimeout();
 
 /**
  * ⭐ Only `BoardState.js` writes the mat's Token map (R2 section 3.5).

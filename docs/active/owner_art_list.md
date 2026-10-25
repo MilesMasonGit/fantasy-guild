@@ -140,15 +140,19 @@ Tokens. Stand-ins from existing sprites until drawn.
 
 | Piece | Status | Notes |
 |---|---|---|
-| Stump, one per tree species (Oak first, Fir next) | **NEW** | A felled tree waiting to regrow |
-| Forest Token, one per species (Oak first) | **NEW** (or ADAPT today's Oak Forest) | Plants and regrows its own species nearby |
+| Stump, one per tree species (Oak first, Fir next) | **IN ASSETS** (redraw if wanted) | A felled tree waiting to regrow. `t_stump_oak`, `_birch`, `_cedar`, `_ebony`, `_fir`, `_mahogany`, `_maple` are already in `public/assets/tokens/forest/` (S2a's QA scene uses the Oak and Birch ones); no Stump Token is authored yet (S8) |
+| Forest Token, one per species (Oak first) | **IN ASSETS** (ADAPT if wanted) | Plants and regrows its own species nearby. `t_forest_*` exist for the same seven species |
+| Sapling and Tree per species | **IN ASSETS** | `t_sapling_*` and `t_tree_*` for the same seven species |
+| A Stump waiting for its Forest or its seedling | — (no new art) | Wears the yellow problem mark (`u_alert_yellow`, the placeholder every waiting Token uses) and, when stopped, the "Needs Oak Seedling" callout in the speech frame (S2a) |
 | Fruit tree: Sapling, Fruiting, Bare per fruit (Apple first) | **NEW** / ADAPT | Picked, not felled |
-| Empty vein rock, one shared | **NEW** | Every ore vein while it rests |
-| Mine, Minecart | ADAPT | Today's Copper Mine and Minecart sprites may do |
+| Empty vein rock, one shared | **NEW** | Every ore vein while it rests (brief 230 S3: drawn in place of the vein, not greyed; its name says which ore). Stand-in: `t_vein_stone`, which the Stone Outcrop also wears, so a resting vein looks like an outcrop until this is drawn. Name the new file anything; it is picked per vein in the CMS (Respawns, Resting sprite) |
+| Mine, Minecart | ADAPT | Today's Copper Mine and Minecart sprites may do (`t_mineshaft_*`, `t_minecart_*` for seven ores; the S3 QA scene uses the copper ones) |
 | Field: empty, growing (shared); ripe per crop (Wheat first) | **NEW** / ADAPT | Herb Garden likewise (ripe per herb) |
 | Well, Composter, Beehive, Windmill, Dock | **NEW** | Support Tokens built on Foundations |
-| Water types: sea, river, lake | ADAPT | One fishing-spot sprite each; the Shrimp Coast goes |
+| Water types: sea, river, lake | ADAPT | One fishing-spot sprite each; the Shrimp Coast goes. The S5 QA scene stands in `t_coast` (sea), `t_fish_spot` (river), `t_lake_small` (lake), and `t_foundation_wood` for the Dock |
 | Smithy | **NEW** | Hero-worked; replaces the Copper Anvil |
 | Brewery, Kitchen, Alchemy Table | **NEW** / ADAPT | Stations; upgrades only faster |
-| Bait, worms, a work potion, two drinks (items) | **NEW** | Item icons |
+| Bait, worms, a work potion, two drinks (items) | **NEW** | Item icons. The S6b QA scene stands in `i_potion_donut_green` (Birdwatcher), `i_potion_donut_orange` (Coffee) and `i_nest_bird` (Bird Nest); Beer has `i_beer` |
+| Fishing Net and Trap (tool icons) | **NEW** / ADAPT | Held in one hand like the rod (brief 230 S5); a new game starts with a Trap in the Bank. Stand-ins: the Trap uses `i_fish_trap`; no net picture yet |
+| Fish for the first catch pools | ADAPT / **NEW** | Trout, Salmon, Shark, Lobster, Tropical Fish icons exist (`items/fish/`); a Dolphin or Crab, if the pools want them, is new |
 

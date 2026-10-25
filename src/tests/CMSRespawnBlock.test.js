@@ -129,6 +129,44 @@ describe('authored in the editor, it round-trips through Sync', () => {
         expect(useEntityStore.getState().tokens[tree].respawn).toEqual({ mode: 'refill', afterMs: 12000 });
     });
 
+    it('refill: a resting sprite is typed in, kept through a change of time, round-trips, and leaves no key when cleared', () => {
+        const id = useEntityStore.getState().addToken({ name: 'Rock Vein Fixture', uses: 5 });
+        const { block } = openEditor(id);
+        fireEvent.click(within(block()).getByText('Add'));
+        expect(useEntityStore.getState().tokens[id].respawn).toEqual({ mode: 'refill', afterMs: 12000 });
+
+        fireEvent.change(within(block()).getByLabelText('Resting sprite'), { target: { value: 't_vein_stone' } });
+        expect(useEntityStore.getState().tokens[id].respawn).toEqual({ mode: 'refill', afterMs: 12000, restingSprite: 't_vein_stone' });
+        // Changing the time keeps the sprite.
+        fireEvent.change(within(block()).getByLabelText('Rests for (ms)'), { target: { value: '60000' } });
+        expect(useEntityStore.getState().tokens[id].respawn).toEqual({ mode: 'refill', afterMs: 60000, restingSprite: 't_vein_stone' });
+
+        const first = syncPayload();
+        expect(first['tokens.json'][id].respawn).toEqual({ mode: 'refill', afterMs: 60000, restingSprite: 't_vein_stone' });
+        const serialised = Object.fromEntries(FILES.map((f) => [f, JSON.stringify(first[f], null, 2)]));
+        useEntityStore.getState().hydrate(workspaceFromFiles(
+            Object.fromEntries(FILES.map((f) => [f, JSON.parse(serialised[f])]))
+        ));
+        const second = syncPayload();
+        for (const f of FILES) expect(JSON.stringify(second[f], null, 2)).toBe(serialised[f]);
+
+        cleanup();
+        const again = openEditor(id);
+        expect(within(again.block()).getByLabelText('Resting sprite').value).toBe('t_vein_stone');
+        fireEvent.change(within(again.block()).getByLabelText('Resting sprite'), { target: { value: '' } });
+        expect(useEntityStore.getState().tokens[id].respawn).toEqual({ mode: 'refill', afterMs: 60000 });
+        expect(syncPayload()['tokens.json'][id].respawn).not.toHaveProperty('restingSprite');
+    });
+
+    it('regrow: offers no resting sprite (it becomes another Token, with its own art), and switching drops it', () => {
+        const store = useEntityStore.getState();
+        const id = store.addToken({ name: 'Rock Vein Fixture', uses: 5, respawn: { mode: 'refill', afterMs: 12000, restingSprite: 't_vein_stone' } });
+        const { block } = openEditor(id);
+        fireEvent.change(within(block()).getByLabelText('Comes back by'), { target: { value: 'regrow' } });
+        expect(useEntityStore.getState().tokens[id].respawn).toEqual({ mode: 'regrow', into: '' });
+        expect(within(block()).queryByLabelText('Resting sprite')).toBeNull();
+    });
+
     it('a regrow pick that never grows back into this Token says so', () => {
         const store = useEntityStore.getState();
         const stone = store.addToken({ name: 'Stone Fixture' });

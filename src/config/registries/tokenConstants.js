@@ -116,6 +116,47 @@ export function isTokenRarity(value) {
 export const FOUNDATION_KINDS = Object.freeze(['wood', 'stone', 'bench', 'farmland']);
 
 /**
+ * The kinds of station, which narrow a skill's recipes to the stations that make them: a
+ * `stationKind` on the Token's `Works as` rule, `stationKinds` on a recipe. A Furnace and a Smithy
+ * both work as Smithing; only the kind tells smelting from tools.
+ *
+ * ⚠️ Both sides are opt-in, so content without kinds keeps every recipe on every station of its
+ * skill: a station with no kind offers its whole skill, and a recipe with no kinds is offered by
+ * every station of its skill. Better versions of a station (Campfire then Kitchen, Copper then Iron
+ * Smithy) share one kind, since they run the same recipes faster.
+ */
+export const STATION_KINDS = Object.freeze([
+    'furnace', 'smithy', 'kitchen', 'brewery', 'workbench', 'alchemy_table', 'summoning_circle'
+]);
+
+const STATION_KIND_LABELS = Object.freeze({
+    furnace: 'Furnace',
+    smithy: 'Smithy',
+    kitchen: 'Kitchen',
+    brewery: 'Brewery',
+    workbench: 'Workbench',
+    alchemy_table: 'Alchemy Table',
+    summoning_circle: 'Summoning Circle'
+});
+
+/** A station kind in words; an unknown kind shows its id rather than vanishing. */
+export function stationKindLabel(kind) {
+    return STATION_KIND_LABELS[kind] || kind || '';
+}
+
+/** A recipe's station kinds; none (or a malformed field) is an empty list. */
+export function recipeStationKinds(recipe) {
+    return Array.isArray(recipe?.stationKinds) ? recipe.stationKinds.filter(k => typeof k === 'string' && k) : [];
+}
+
+/** Whether a station of this kind (null: no kind) offers this recipe of its own skill. */
+export function stationKindOffers(kind, recipe) {
+    if (!kind) return true;
+    const kinds = recipeStationKinds(recipe);
+    return kinds.length === 0 || kinds.includes(kind);
+}
+
+/**
  * Foundation tiers: `foundation.tier` on the Token and `foundationMinTier` on a building recipe,
  * both whole numbers from 1. A Foundation builds a recipe when its tier is at least the recipe's
  * minimum, the rule `requiresContext.minTier` applies to tools, so a higher tier builds everything a
@@ -200,6 +241,55 @@ export function respawnOf(def) {
     const ms = Number(block.afterMs);
     const afterMs = Number.isFinite(ms) && ms > 0 ? Math.max(RESPAWN_MIN_MS, ms) : RESPAWN_DEFAULTS.afterMs;
     return { mode: 'refill', afterMs, into: null };
+}
+
+const NO_TERMS = Object.freeze({ needsNearby: Object.freeze([]), cost: Object.freeze([]) });
+const growsTermsMemo = new WeakMap();
+let lastGrowsBlock = null;
+let lastGrowsTerms = NO_TERMS;
+
+/**
+ * What a `grows` block asks before its Token may grow, as `{ needsNearby, cost }`:
+ *
+ * * `needsNearby` — Token type ids, any one of which must stand within reach (Near) for the
+ *   growth's clock to run: a Stump regrows only beside a Forest of its species. Empty when it
+ *   needs none (every growth today).
+ * * `cost` — what the growth pays when it happens, from the Bank and then the loot on the mat,
+ *   summed by item as `[{ itemId, quantity }]`: a Stump spends one seedling to become a Sapling.
+ *   Empty when it is free.
+ *
+ * Kept per block object (frozen), so a growing Token asking every tick allocates nothing; a
+ * content reload hands out new block objects.
+ */
+export function growsTermsOf(def) {
+    const block = def?.grows;
+    if (!block || typeof block !== 'object') return NO_TERMS;
+    // The last block asked, first: a tick asks for the same type's block many times running.
+    if (block === lastGrowsBlock) return lastGrowsTerms;
+    let terms = growsTermsMemo.get(block);
+    if (terms) {
+        lastGrowsBlock = block;
+        lastGrowsTerms = terms;
+        return terms;
+    }
+
+    const nearby = Array.isArray(block.needsNearby)
+        ? [...new Set(block.needsNearby.filter(id => typeof id === 'string' && id.trim()).map(id => id.trim()))]
+        : [];
+    const total = new Map();
+    for (const line of Array.isArray(block.cost) ? block.cost : []) {
+        const q = Math.floor(Number(line?.quantity));
+        if (typeof line?.itemId !== 'string' || !line.itemId || !(q > 0)) continue;
+        total.set(line.itemId, (total.get(line.itemId) || 0) + q);
+    }
+    terms = (!nearby.length && !total.size) ? NO_TERMS : Object.freeze({
+        needsNearby: Object.freeze(nearby),
+        cost: Object.freeze([...total].map(([itemId, quantity]) => Object.freeze({ itemId, quantity })))
+    });
+    growsTermsMemo.set(block, terms);
+    lastGrowsBlock = block;
+    lastGrowsTerms = terms;
+    return terms;
 }
 
 /**

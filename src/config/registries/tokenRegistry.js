@@ -29,6 +29,7 @@ import { migrateAppliesTargets } from '../../systems/effects/effectMigration.js'
 import { migrateSkillIds } from '../../systems/effects/skillIdMigration.js';
 import { engineTokenType } from './engineTokens.js';
 import { STANDS_ON_CHOICES } from '../../systems/atlas/TerrainMap.js';
+import { neverWearsOut } from '../../systems/core/wearRule.js';
 
 /**
  * Merge every Token JSON source into one keyed object.
@@ -182,10 +183,32 @@ export function tokenName(typeId) {
  * ⚠️ **Never read a `charges` field here.** If the CMS ever grows one it will be a proposal,
  * not the pool — reading it would silently multiply some Tokens' lifetimes twentyfold.
  * `uses` is the field; anything else by that name is data about a Token, not its charges.
+ *
+ * A station or a support never wears out (`wearRule.js`): its type starts unlimited whatever
+ * `uses` it authors, so every copy made from here (bought, built, spawned, laid by a map) is.
  */
 export function tokenStartingUses(typeId) {
     const def = getTokenType(typeId);
-    return def ? (def.uses ?? null) : null;
+    if (!def) return null;
+    return neverWearsOutType(typeId) ? null : (def.uses ?? null);
+}
+
+/** {@link neverWearsOutType}'s answers, per type id, for one registry version. */
+let neverWears = { version: -1, byType: new Map() };
+
+/**
+ * Whether a Token type never wears out (`wearRule.neverWearsOut`): a station or a support.
+ * Memoised per type on the registry's version, because `Charges.isUnlimited` asks it on every
+ * charge check.
+ */
+export function neverWearsOutType(typeId) {
+    if (neverWears.version !== tokenRegistryVersion) neverWears = { version: tokenRegistryVersion, byType: new Map() };
+    let answer = neverWears.byType.get(typeId);
+    if (answer === undefined) {
+        answer = neverWearsOut(getTokenType(typeId));
+        neverWears.byType.set(typeId, answer);
+    }
+    return answer;
 }
 
 /** The sprite path for a Token's art. */

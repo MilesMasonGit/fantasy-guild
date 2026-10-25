@@ -1,9 +1,11 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Plus, X, Sprout } from 'lucide-react';
 import { useEntityStore, makeLifecycleBlock, makeWeightedTokenEntry, makeTrickleEntry, TOKEN_LIFECYCLE_BLOCKS } from '../../stores/useEntityStore';
 import { FOUNDATION_KINDS, TURN_DEFAULTS, RESPAWN_MODES, RESPAWN_DEFAULTS, RESPAWN_MIN_MS, skillsByLayer } from '../../utils/constants';
 import { Section, Field } from '../shared/EditorLayout';
 import { ItemPicker, ItemList } from './Statements';
+import SpritePickerModal from './SpritePickerModal';
+import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 
 /**
  * The Token Lifecycle blocks: spawner, grows, turns, foundation, shop, trickle and respawn, each added or removed as a whole.
@@ -12,7 +14,7 @@ import { ItemPicker, ItemList } from './Statements';
 
 const BLOCK_INFO = {
   spawner: { title: 'Spawner', what: 'Adds new Tokens to the mat on a clock, up to its family’s cap.' },
-  grows: { title: 'Grows', what: 'Becomes another Token after a time (Sapling → Tree).' },
+  grows: { title: 'Grows', what: 'Becomes another Token after a time (Sapling → Tree); it may need a Token in reach and cost an item (Stump → Sapling).' },
   turns: { title: 'Turns', what: 'Rolls a chance every cycle to turn into one of a list, and the same to turn back (Coast ↔ Shrimp Coast).' },
   foundation: { title: 'Foundation', what: 'Bought at the Shop and built on with a recipe.' },
   shop: { title: 'Shop', what: 'Sold at the Shop, priced in items.' },
@@ -71,7 +73,7 @@ export default function LifecycleBlocks({ token, onChange }) {
                     <SpawnerBlock block={token.spawner} tokenOptions={tokenOptions} items={items} onChange={(v) => set('spawner', v)} />
                   )}
                   {key === 'grows' && (
-                    <GrowsBlock block={token.grows} tokenOptions={tokenOptions} onChange={(v) => set('grows', v)} />
+                    <GrowsBlock block={token.grows} selfId={token.id} tokenOptions={tokenOptions} items={items} onChange={(v) => set('grows', v)} />
                   )}
                   {key === 'turns' && (
                     <TurnsBlock block={token.turns} tokenOptions={tokenOptions} onChange={(v) => set('turns', v)} />
@@ -119,18 +121,91 @@ function SpawnerBlock({ block, tokenOptions, items, onChange }) {
         canCreate={false}
         onChange={(upkeep) => patch({ upkeep })}
       />
+      {/* `withinReach: true`, written ONLY when ticked: the game's `SpawnerSystem.plantsWithinReach` reads it. */}
+      <label className="flex items-center gap-2 cursor-pointer select-none" title="A Forest: it plants only within its reach, and its allowance counts the trees standing in its reach (a map's included), not every one on the mat.">
+        <input
+          type="checkbox"
+          aria-label="Plants within its reach"
+          data-field="within-reach"
+          checked={block.withinReach === true}
+          onChange={(e) => {
+            const rest = { ...block };
+            delete rest.withinReach;
+            onChange(e.target.checked ? { ...rest, withinReach: true } : rest);
+          }}
+          className="rounded border-white/10 text-emerald-500 cursor-pointer"
+        />
+        <span className="text-xs text-gray-300">Plants within its reach</span>
+      </label>
+      <p className="text-[10px] text-gray-600">
+        {block.withinReach === true
+          ? 'Lands its Tokens only within its reach; its allowance counts its family standing there, map Tokens included.'
+          : 'Lands its Tokens at the nearest free spot; its allowance adds to every spawner of the same family across the mat.'}
+      </p>
     </div>
   );
 }
 
-function GrowsBlock({ block, tokenOptions, onChange }) {
-  const patch = (p) => onChange({ ...block, ...p });
+/**
+ * A growth: what it becomes and when. A Stump also names the Tokens one of which must stand in its reach for its clock to run
+ * (its Forest), and what it pays from the Bank when it grows (a seedling). Each list is written only while it has entries,
+ * so a plain growth's file stays as it was.
+ */
+function GrowsBlock({ block, selfId, tokenOptions, items, onChange }) {
+  const patch = (p) => {
+    const next = { ...block, ...p };
+    for (const key of ['needsNearby', 'cost']) {
+      if (Array.isArray(next[key]) && next[key].length === 0) delete next[key];
+    }
+    onChange(next);
+  };
+  const nearby = Array.isArray(block.needsNearby) ? block.needsNearby : [];
   return (
-    <div className="grid grid-cols-2 gap-3">
-      <Field label="Grows into">
-        <TokenSelect value={block.into} tokenOptions={tokenOptions} onChange={(into) => patch({ into })} />
-      </Field>
-      <IntField label="After (ms)" min={1000} step={1000} value={block.afterMs} onChange={(afterMs) => patch({ afterMs })} />
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Grows into">
+          <TokenSelect value={block.into} tokenOptions={tokenOptions} onChange={(into) => patch({ into })} />
+        </Field>
+        <IntField label="After (ms)" min={1000} step={1000} value={block.afterMs} onChange={(afterMs) => patch({ afterMs })} />
+      </div>
+      <div data-field="needs-nearby">
+        <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5 text-gray-500">Needs one of these in reach</label>
+        <div className="space-y-1.5">
+          {nearby.map((typeId, i) => (
+            <div key={i} className="flex items-center gap-1.5">
+              <div className="flex-1 min-w-0">
+                <TokenSelect
+                  ariaLabel="Needs in reach"
+                  value={typeId}
+                  tokenOptions={tokenOptions.filter((t) => t.id !== selfId)}
+                  onChange={(next) => patch({ needsNearby: nearby.map((id, idx) => (idx === i ? next : id)) })}
+                />
+              </div>
+              <RemoveButton onClick={() => patch({ needsNearby: nearby.filter((_, idx) => idx !== i) })} />
+            </div>
+          ))}
+        </div>
+        <button className="btn-ghost text-[10px] flex items-center gap-1 mt-1.5" style={{ padding: '2px 8px' }} onClick={() => patch({ needsNearby: [...nearby, ''] })}>
+          <Plus size={10} /> Add Token
+        </button>
+      </div>
+      <div data-field="grow-cost">
+        <ItemList
+          label="Costs when it grows (from the Bank)"
+          entries={Array.isArray(block.cost) ? block.cost : []}
+          items={items}
+          canCreate={false}
+          onChange={(cost) => patch({ cost })}
+        />
+      </div>
+      <p className="text-[10px] text-gray-600">
+        {nearby.length
+          ? 'Its clock stands still while none of these stands within reach (a Stump with no Forest stays a Stump).'
+          : 'Grows wherever it stands.'}
+        {Array.isArray(block.cost) && block.cost.length
+          ? ' When it grows it pays the cost; with none in the Bank it stops and says what it needs.'
+          : ''}
+      </p>
     </div>
   );
 }
@@ -270,7 +345,7 @@ function RespawnBlock({ block, selfId, tokens, tokenOptions, onChange }) {
   const into = mode === 'regrow' && block.into ? tokens[block.into] : null;
   const back = into ? regrowTime(block.into, selfId, tokens) : null;
   let note;
-  if (mode === 'refill') note = 'At 0 charges it stays where it stands, resting, then refills to its starting charges all at once.';
+  if (mode === 'refill') note = 'At 0 charges it stays where it stands, resting, then refills to its starting charges all at once. With a resting sprite it is drawn as that picture while it rests (every vein shares one empty rock; its name still says which ore); without one, as its own art, greyed.';
   else if (!block.into) note = 'Pick the Token it becomes at 0 charges; that Token’s Grows block brings it back.';
   else if (!into) note = `${block.into} does not exist.`;
   else if (back === null) note = `${into.name || block.into} never grows back into this Token: give it a Grows block that ends here.`;
@@ -288,7 +363,7 @@ function RespawnBlock({ block, selfId, tokens, tokenOptions, onChange }) {
           <IntField
             label="Rests for (ms)" min={RESPAWN_MIN_MS} step={1000}
             value={block.afterMs ?? RESPAWN_DEFAULTS.afterMs}
-            onChange={(afterMs) => onChange({ mode: 'refill', afterMs })}
+            onChange={(afterMs) => onChange(refillBlock(afterMs, block.restingSprite))}
           />
         ) : (
           <Field label="Regrows from">
@@ -301,8 +376,54 @@ function RespawnBlock({ block, selfId, tokens, tokenOptions, onChange }) {
           </Field>
         )}
       </div>
+      {mode === 'refill' && (
+        <RestingSpriteField
+          value={block.restingSprite}
+          onChange={(restingSprite) => onChange(refillBlock(block.afterMs ?? RESPAWN_DEFAULTS.afterMs, restingSprite))}
+        />
+      )}
       <p className="text-[10px] text-gray-600">{note}</p>
     </div>
+  );
+}
+
+/** A refill block in the file's order; no resting sprite leaves no key. */
+function refillBlock(afterMs, restingSprite) {
+  const sprite = typeof restingSprite === 'string' ? restingSprite.trim() : '';
+  return sprite ? { mode: 'refill', afterMs, restingSprite: sprite } : { mode: 'refill', afterMs };
+}
+
+/** The picture a resting Token is drawn as: typed, or picked from the sprite browser. */
+function RestingSpriteField({ value, onChange }) {
+  const [picking, setPicking] = useState(false);
+  const path = value ? resolveSpritePath(value) : null;
+  return (
+    <Field label="Resting sprite">
+      <div className="flex gap-2 items-center">
+        <div className="w-8 h-8 rounded border border-white/10 bg-black/40 flex items-center justify-center overflow-hidden flex-shrink-0">
+          {path && (
+            <img
+              src={path.startsWith('/') ? path : `/${path}`}
+              className="w-7 h-7 object-contain pixel-art"
+              alt=""
+              onError={(e) => { e.target.style.visibility = 'hidden'; }}
+            />
+          )}
+        </div>
+        <input
+          type="text"
+          aria-label="Resting sprite"
+          value={value || ''}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="none: its own art, greyed"
+          className="flex-1 min-w-0"
+        />
+        <button type="button" onClick={() => setPicking(true)} className="btn-ghost text-xs" style={{ padding: '6px 10px' }}>
+          Browse
+        </button>
+      </div>
+      <SpritePickerModal isOpen={picking} onClose={() => setPicking(false)} onSelect={(spriteId) => onChange(spriteId)} />
+    </Field>
   );
 }
 

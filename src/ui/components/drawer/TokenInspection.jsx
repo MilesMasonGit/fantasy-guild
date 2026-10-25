@@ -15,6 +15,7 @@ import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as SpawnerSystem from '../../../systems/board/SpawnerSystem.js';
 import * as PassiveProduction from '../../../systems/board/PassiveProduction.js';
 import * as Respawn from '../../../systems/board/Respawn.js';
+import * as TimedChanges from '../../../systems/board/TimedChanges.js';
 import * as StationRecipe from '../../../systems/board/StationRecipe.js';
 import * as Demolition from '../../../systems/board/Demolition.js';
 import * as Landmarks from '../../../systems/board/Landmarks.js';
@@ -280,6 +281,7 @@ function liveLifecycleSources() {
         spawnerStatus: SpawnerSystem.spawnerStatus,
         passive: (instance) => ({ lines: PassiveProduction.linesOf(instance), nextInMs: PassiveProduction.nextInMs(instance) }),
         respawn: Respawn.respawnState,
+        growth: TimedChanges.nextGrowth,
         selectedRecipe: StationRecipe.selectedRecipe,
         poolFor: StationRecipe.poolFor,
         originOf: BoardState.originOf,

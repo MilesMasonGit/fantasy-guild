@@ -237,6 +237,16 @@ export function buildCorpus() {
         addS(`applies:lifetime:${life}`, S(KEYWORD.APPLIES, { payload: { effectId, chance: 100, ...extra },
             when: { event: 'FIGHT_SWING', scope: 'self' }, target: { role: 'opponent' } }), statusNames);
     }
+    // "For the cycle" on the carried work moment, for any skill or one (brief 230 S6b); "for the fight"
+    // outranks it.
+    for (const skill of [undefined, 'forestry', 'not_a_skill']) {
+        addS(`applies:lifetime:cycle:${skill}`, S(KEYWORD.APPLIES, { payload: { effectId: FIX.effect, chance: 100, forCycle: true },
+            when: { event: 'WORK_START', scope: 'self', ...(skill ? { skill } : {}) }, target: { role: 'actor' } }), statusNames);
+    }
+    addS('applies:lifetime:fight+cycle', S(KEYWORD.APPLIES, { payload: { effectId: FIX.effect, chance: 100, forFight: true, forCycle: true },
+        when: { event: 'COMBAT_ENGAGED', scope: 'nearby' }, target: { role: 'actor' } }), statusNames);
+    addS('applies:lifetime:cycle:neighbour-start', S(KEYWORD.APPLIES, { payload: { effectId: FIX.effect, chance: 25, forCycle: true },
+        when: { event: 'CYCLE_START', scope: 'nearby' } }), statusNames);
     addS('applies:role:actor', S(KEYWORD.APPLIES, { payload: { effectId: BURN, chance: 30 },
         when: { event: 'FIGHT_HIT', scope: 'self' }, target: { role: 'actor' } }), statusNames);
 

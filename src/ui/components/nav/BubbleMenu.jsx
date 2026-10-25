@@ -22,6 +22,8 @@ import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
  */
 
 /** One circular menu button. `pip` reserves a notification-pip slot. */
+const ORB_OUTLINE_OFFSETS = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+
 const Bubble = React.forwardRef(({ icon: Icon, label, color, onClick, active = false, disabled = false, pip = false, id, children, droppableProps, isValidDrop }, ref) => {
     const handleClick = (e) => {
         const rect = e.currentTarget?.getBoundingClientRect();
@@ -36,8 +38,10 @@ const Bubble = React.forwardRef(({ icon: Icon, label, color, onClick, active = f
         onClick?.(e);
     };
 
+    const orbSrc = `/assets/ui/u_orb_${color === 'blue' ? 'lblu' : color}.png`;
+
     return (
-        <div id={id} ref={ref} {...droppableProps} className={cn("relative flex flex-col items-center rounded-full", isValidDrop && "ring-4 ring-gi-success shadow-[0_0_15px_rgba(34,197,94,0.6)]")}>
+        <div id={id} ref={ref} {...droppableProps} className={cn("relative isolate flex flex-col items-center rounded-full", isValidDrop && "ring-4 ring-gi-success shadow-[0_0_15px_rgba(34,197,94,0.6)]")}>
             <button
                 title={label}
                 aria-label={label}
@@ -47,12 +51,12 @@ const Bubble = React.forwardRef(({ icon: Icon, label, color, onClick, active = f
                 className={cn(
                     'w-16 h-16 md:w-32 md:h-32 rounded-full flex items-center justify-center bg-center bg-no-repeat bg-contain outline-none',
                     'transition-all duration-200',
-                    !disabled && 'hover:scale-110 hover:brightness-110 hover:contrast-125 hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.3)] cursor-pointer',
-                    active && 'scale-110 brightness-110 contrast-125 drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]',
+                    'peer',
+                    !disabled && 'cursor-pointer',
                     disabled && 'opacity-40 cursor-not-allowed'
                 )}
                 style={{
-                    backgroundImage: `url('/assets/ui/u_orb_${color === 'blue' ? 'lblu' : color}.png')`,
+                    backgroundImage: `url('${orbSrc}')`,
                     imageRendering: 'pixelated'
                 }}
             >
@@ -61,6 +65,24 @@ const Bubble = React.forwardRef(({ icon: Icon, label, color, onClick, active = f
                     style={{ filter: 'drop-shadow(0 2px 2px rgba(0,0,0,0.75))' }} 
                 />
             </button>
+            {!disabled && ORB_OUTLINE_OFFSETS.map(([dx, dy]) => (
+                <span
+                    key={`${dx}${dy}`}
+                    data-orb-outline=""
+                    aria-hidden="true"
+                    className={cn('absolute top-0 left-1/2 -z-10 w-16 h-16 md:w-32 md:h-32 pointer-events-none [--px:2px] md:[--px:4px]', active ? 'block bg-gi-gold' : 'hidden peer-hover:block bg-white')}
+                    style={{
+                        translate: `calc(-50% + ${dx} * var(--px)) calc(${dy} * var(--px))`,
+                        maskImage: `url("${orbSrc}")`,
+                        WebkitMaskImage: `url("${orbSrc}")`,
+                        maskSize: '100% 100%',
+                        WebkitMaskSize: '100% 100%',
+                        maskRepeat: 'no-repeat',
+                        WebkitMaskRepeat: 'no-repeat',
+                        imageRendering: 'pixelated'
+                    }}
+                />
+            ))}
             {pip && (
                 <span className="absolute top-1 right-2 w-2.5 h-2.5 rounded-full bg-gi-danger border border-black/50" />
             )}

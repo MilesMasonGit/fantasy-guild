@@ -84,6 +84,12 @@ Today the pull is skill levels, Guild Hall upgrades and promotions.
   *(`MatPlacement.js`)*
 - **A player drop never pushes anything.** Arrivals (spawns, growth, builds)
   may push **spawned** Tokens aside; **placed Tokens are never pushed**.
+- **Fixed Tokens** can't be dragged or pushed: a map's node, a Starter Camp
+  fixture, a landmark, a planted Token (spawned into a growth chain), and every
+  copy of a type marked **Stays where it stands** (`staysPut`, a box in the CMS
+  Token editor: trees, fruit trees and veins), wherever it came from, an old save
+  included. Demolition still takes any of them but a map's node (unless its type
+  can be cleared: Demolition below), the camp's and a landmark. *(`FixedTokens.js`)*
 - **Token cap: 128 Tokens** to start (owner, Atlas D-9: a Guild Hall upgrade
   will add 16 a rank, up to 256; not built yet). The cap is the guild's but
   counts only the Region the guild is in (§10): every Token there, placed or
@@ -114,15 +120,33 @@ Token.
 - **Charges** (`uses`): one is spent per cycle by default; at 0 the Token is
   removed, unless its type **respawns** (below). `null` = unlimited (Workbench,
   Furnace, Cooking Pot).
+- **Stations and supports never wear out** (owner 2026-10-24, brief 230 S1a): a
+  `Works as` station, and a support (a Token whose rules help its neighbours by
+  standing there: an `Acts as` capability, or a standing Provides or Grants that
+  reaches past itself), is unlimited whatever `uses` its type or a saved copy
+  holds. Grandma's Kitchen, the Ceramics Kiln, the Windmill, the Coast and the
+  Copper Anvil all became unlimited; a saved copy's old number is cleared as its
+  board loads. A **gathering node keeps its charges** even when it helps its
+  neighbours (they are what is gathered: the Blackberry Bush, the Shrimp Coast),
+  but only its own gathering spends them: **help is free**, nothing wears for a
+  neighbour's cycle or kill (owner 2026-10-24); an enemy keeps the kills that
+  clear it; a triggered rule's charge cost is an authored price and still applies.
+  The CMS hides Charges on a station or support and the audit flags authored ones.
+  **Water** (a Token with catch pools, Fishing below) never runs out either.
+  *(`wearRule.js`, `Charges.isUnlimited`)*
 - **Origin**: *placed* (bought or built: fixed, refundable) or *spawned*
   (free, pushable, no refund). Both count toward the Token cap.
 - **Size**: 1 (art radius 64 u) or 2 (144 u); growing stages are half-size.
 - **Context Tokens** are support Tokens (an anvil) that stand near a worker;
-  some recipes spend their charges. **Gathering tools are hero gear**, not
-  Tokens (T-126): pickaxes, woodaxes, fishing rods and sickles are items held in
-  one hand (`tool: { kind, tier }`); a gathering Token names the kind and lowest
-  tier it needs (`needsTool`), and only a hero holding one may work it. No tool:
-  the hero does other work and the Token says "Needs Pickaxe". Tools only gate.
+  a recipe's context charge cost is no longer spent (help is free), and the CMS
+  field for it now does nothing. **Gathering tools are hero gear**, not
+  Tokens (T-126): pickaxes, woodaxes, fishing rods, sickles, **fishing nets and
+  traps** (brief 230 S5) are items held in one hand (`tool: { kind,
+  tier }`); a gathering Token names the kind and lowest tier it needs
+  (`needsTool`), and only a hero holding one may work it. No tool: the hero does
+  other work and the Token says "Needs Pickaxe". Tools only gate. ⚠️ Water is
+  the exception (Fishing, below): it takes any kind its catch pools name, at any
+  tier ("Needs Fishing Rod or Fishing Net").
 
 ### Reach — Built
 Rules reach `nearby` (default), `self`, `self_and_nearby` or `board`.
@@ -137,6 +161,16 @@ with no room costs nothing. **An enemy camp's clock stands at zero while the
 camp is full** (owner, 2026-10-24), so a goblin, guardian or boss beaten in a
 full camp comes back one whole interval later; every other spawner (forests,
 mines) keeps counting while full and replaces a loss on the next tick.
+- **Planting within its reach** (brief 230 S2a; `spawner.withinReach`, a box in
+  the CMS Spawner block, for Forests): the spawner lands each Token only within
+  its reach (Near), at the free spot nearest it, never pushing (nowhere free
+  there: it waits, says no room, pays nothing), and its allowance counts its
+  family standing **in its reach** (Saplings, Trees and Stumps, a map's
+  included) against its own allowance, not the mat-wide cap; two such Forests
+  far apart each fill their own. Its allowance adds nothing to a mat-wide
+  family's cap. Every other spawner, enemy camps included, keeps the mat-wide
+  count. No shipped spawner uses it yet.
+
 *(`SpawnerSystem.js`, `TimedChanges.js`)*
 
 | Spawner | Spawns | Allowance | Every | Upkeep per spawn |
@@ -150,18 +184,73 @@ mines) keeps counting while full and replaces a loss on the next tick.
 ### Transforms — Built
 - **Growth**: Oak Sapling → Oak Tree (30 s), Wheat Sprout → Ripe Wheat (30 s),
   Apple Sapling → Apple Tree (45 s).
-- **Turns**: Coast ⇄ Shrimp Coast, 30 % chance every 60 s.
+- **Turns**: Coast ⇄ Shrimp Coast, 30 % chance every 60 s. ⚠️ Water no longer
+  shifts (owner 2026-10-24, brief 230 S5): new content will not use `turns`, and
+  the engine keeps it dormant. A Shrimp Coast in an old save still rolls to turn
+  back (30 % a minute) after the Coast loses its block, even if the content pack
+  deletes the Shrimp Coast type, and is a Coast from then on.
 - A transform keeps the Token's origin, starts fresh clocks and loses any cycle
   in progress. *(`TimedChanges.js`)*
+- **A growth may need a Token in reach and cost an item** (brief 230 S2a; the
+  CMS Grows block's **Needs one of these in reach** and **Costs when it
+  grows**): a Stump grows into a Sapling only while a Forest of its species
+  stands within its reach; without one its clock **stands still** where it is
+  (a Forest planted later carries on from there) and it says so with a yellow
+  mark ("Needs an Oak Forest nearby to grow"). When it falls due it pays its
+  cost (a seedling) from the Bank, then the loot on the mat, only once its new
+  Token has landed; short of it, it is **stopped** at its finish, says "Needs
+  Oak Seedling" over itself as it stops (the red callout look of "Needs Coal",
+  no more often than that) and wears the yellow mark, and grows the tick one
+  arrives. Only the Stump's growth asks: **a Sapling whose Forest goes finishes
+  growing** (director's call, owner-approved default). The Forest answer is
+  read once per Token when its neighbourhood changes, never per tick, like Grow
+  Time. Its card and inspection say what it waits for, needs and pays. No
+  shipped Token uses it yet. *(`Growth.js`, `TileModifiers.nearbyGateMet`)*
+- **Grow Time** (brief 230 S1a): a support in reach speeds a growth and a
+  refill's rest (`Provides Grow Time −X %`, aimed by tag or id, or narrowed to
+  the growing Token's skill: its own, or what it grows into). Speed-ups stack,
+  but together cut at most 80 % of the time (the standard floor, §7), and a rest
+  never goes under 1 s. A clock already counting keeps its time; only the finish
+  moves. Read once per Token when its neighbourhood, the Region's rules or the
+  content change, never per tick, so a day's catch-up does not pay it 86,400
+  times. No shipped Token provides it yet. *(`TileModifiers.growTimeOf`)*
 - **Respawn** (built; no shipped Token uses it yet): a Token type with a
   Respawns block in the CMS comes back after it runs out. *Refill*: it stays
   where it stands, **resting** (greyed, a countdown bubble), nobody can work it,
   and after its time (12 s by default, at least 1 s) it refills to full at once.
+  A refill may name a **resting sprite** (brief 230 S3): while it rests it is
+  drawn as that picture instead of greyed, and every vein names the same
+  **empty rock**; its card and inspection then name it ("Copper Ore Vein:
+  resting, refills in 0:42"), and so does its hover. A refill that falls due
+  part-way through a tick is worked only for the rest of that tick, so the
+  catch-up's 1 s steps mine exactly what live play does.
   *Regrow*: it becomes its `into` Token (Oak Tree → Oak Sapling), whose own
   growth brings it back. Its hero moves on with no red alert; it is never
   depleted (no On Depleted rules, not counted as used up); a regrowing tree
   still counts toward its Forest's family cap. Never on enemies, spawners or
-  Foundations. *(`Respawn.js`)*
+  Foundations. A hero with nothing else in reach **waits for it silently**
+  (brief 230 S1b): no bubble, not counted idle, the flag's hover and the Dock
+  say "Waiting for Copper Vein", and they work it the moment it refills. So
+  does a hero whose only work in reach is a Stump or Sapling growing back into
+  work they could do (brief 230 S2a: skill, level, tool and rule checked against
+  what it grows into): "Waiting for Oak Stump", then "Waiting for Oak Sapling",
+  and they fell the tree the moment it stands. A Stump that is not coming back
+  (no Forest in reach, or stopped for want of its seedling) is nothing to wait
+  for: idle as before. Worked out when the flag's words, the speech or the idle
+  mark ask, never on the flag's pass, so it costs a catch-up nothing.
+  *(`Respawn.js`, `Flags.waitingOf`)*
+- **Mining** (brief 230 S3; built as content shapes, the S8 pack ships them):
+  a **vein** refills all at once after its rest (Copper about 5 ore, about a
+  minute, set per ore in the CMS), shows the shared empty rock while it
+  rests, and stays where it stands. A **Mine** is a support:
+  `Provides Double Item Chance 25 (flat), narrowed to its ore, to [its veins],
+  nearby`, so each Mine in reach gives that ore a 25 % chance to come out
+  doubled, stacking to a sure double at four; gems and anything else the vein
+  drops are never doubled (owner, 2026-10-24). A **Minecart** is a support:
+  `Provides Work Time −X % to [its veins], nearby`, stacking down to the
+  standard floor (§7). A miner waiting on a resting vein waits silently (above).
+  Mines that stop spawning veins and veins placed by maps are content (S8,
+  brief 240). *(`OutputRules.doubleItemDrop`, `Respawn.restingSpriteOf`)*
 
 ### Foundations — Built
 Buy a Foundation, pick a build recipe on it, and a hero builds it into a
@@ -173,6 +262,39 @@ station in place (30 s, level 1). *(`Foundations.js`)*
 | Stone Foundation | 10 Stone + 5 Oak Wood | Furnace (5 Stone), Fighter's Academy (10 Stone + 10 Oak Wood) |
 | Farmland | 10 Oak Wood | Wheat Field (1 Wheat Seed), Apple Orchard (1 Apple Seed) |
 
+### Fishing — Built (brief 230 S5); no content yet
+Owner rulings 2026-10-24. **Water** is a Token with **catch pools**
+(`catchPools: [{ tool, bait?, catches: [{ itemId, weight }] }]`, the CMS Token
+editor's Catch pools block), one weighted pool per **tool kind × bait**; the
+pool with no bait is the water's **basic** catch. One sprite per water type
+(sea, river, lake) is content.
+- **Each finished cycle lands one catch** picked from a pool, in place of the
+  Token's own Outputs, then widened like any output (Yield, Double Item Chance).
+  A **rare catch drops like any other item**: no pop, no twinkle (owner
+  2026-10-24).
+- **The tool picks the pool**: the first tool in the hero's hands (grid order)
+  that the water has a pool for; a rod in the first hand and a net in the second
+  fish with the rod. Water needs any kind its pools name; **a tool's tier never
+  gates**. **A better rod has its own bonus** through the **Catch Weight** rule
+  (§7): +900 % on a Dolphin weighted 10 beside 50 and 40 makes it 100 of 190.
+- **Bait** is carried in a Consumable cell: the first, in grid order, that a pool
+  for the hero's tool takes and the Bank holds is used, and **one is spent per
+  catch**. None left: the hero fishes the basic pool. A failed cycle catches
+  nothing and keeps its bait. A tool with only baited pools here catches nothing
+  without bait (the audit names such content).
+- **Water never runs out** (`wearRule`: unlimited whatever its charges say) and
+  **does not shift** (Transforms, above).
+- **A Dock in reach speeds fishing**: content, a `Provides Work Time −X %` to the
+  water, stacking to the standard floor (§7).
+- Every pick draws one number from the game's random stream in a fixed place of
+  the finished cycle (none for a one-fish pool), so a catch-up catches exactly
+  what live play does, bait running out on the same catch.
+- **The CMS prices water from its no-bait pools**: one catch a cycle, each fish
+  at its share (several no-bait pools share the cycles evenly); baited pools and
+  the water's own Outputs are not counted, and Recalculate never writes Outputs
+  onto water (`cms/src/engine/sim/fieldAdapter.js` `waterOutputs`).
+  *(`catchPools.js`, `Fishing.js`, `BoardRunner.completeCycle`)*
+
 ### Demolition — Built (Atlas A3a, A3b); replaced the discard bin
 Mark a Token for demolition and a hero holding Construction (level 1) removes
 it in 10 s of work: no refund, no loot, no XP, never a depletion. While marked
@@ -181,7 +303,10 @@ Passive Production stop (what it gives its neighbours by standing there
 carries on until it is gone). Unmarking makes it itself again and loses the
 half-done demolition. Anything bought, built, spawned or planted can be marked,
 a resting Token included; the Guild Hall, landmarks, a map's nodes, quests and
-enemies can't. **Demolish** on the Token's inspection marks it (where it
+enemies can't, except a map's node whose type is marked **Can be cleared where a
+map placed it** (`clearable`, a box in the CMS Token editor: wild Forests and
+the Stumps of felled map trees, brief 230 S2a). The Starter Camp's own Tokens
+stay as laid whatever their type. **Demolish** on the Token's inspection marks it (where it
 can't be, the inspection says why), **Cancel demolition** takes the mark off.
 A marked Token wears the Construction badge, its inspection reads "Marked for
 demolition" with the time left once a hero is on it, and "Demolished …" pops
@@ -300,10 +425,28 @@ has none yet), melee, magic and commerce have content today.
 - **Regen 1 HP / 10 s while idle or working; none in a fight**, where only
   food heals.
 - Below 25 % HP a hero eats equipped food from the Bank (in a fight eating
-  takes that swing). Out of a fight, if still below, they also drink the
-  equipped drink, which heals like food. **In a fight drinks do not heal**: an
-  equipped drink is left alone, unspent (drink buffs are the skill-loops
-  design's, not built). Heroes have no energy (removed, T-098).
+  takes that swing). **Drinks never heal**, in a fight or out (owner
+  2026-10-24): an equipped drink is left alone, unspent, and a drink's restore
+  amount is ignored (the item tooltip and the CMS no longer offer it). Out of a
+  fight, healing is food and regen only. Drinks are work buffs (below). Heroes
+  have no energy (removed, T-098).
+- **Drinks** (brief 230 S6b): a drink whose rules wait on **On Work Start** is
+  drunk from the Bank as its hero starts a work cycle and **lasts 10 work
+  cycles** (one number for every drink, `DRINK_CYCLES`, a placeholder; a fight
+  is not a work cycle). Its rules fire from that dose ("On Work Start: applies
+  Coffee to the hero for the cycle", Coffee being work 50 % faster); a rule
+  naming a skill counts only that skill's cycles. A fresh one is drunk when the
+  dose runs out, and the dose keeps working after the Bank runs dry. The count
+  left is saved on the hero (`drinkCycles`); a drink with no work rule does
+  nothing. *(`ConsumptionSystem.startWorkDoses`, `LoadoutMoments.js`)*
+- **Work potions** (Alchemy, brief 230 S6b): a Consumable whose rules wait on
+  On Work Start is **spent only when a cycle of its own skill starts**, one
+  potion for that one cycle: the Birdwatcher ("On Forestry Work Start: applies
+  Birdwatcher to the hero for the cycle", Birdwatcher granting a Bird Nest a
+  quarter of the time as the cycle completes). The hero keeps it while doing
+  other work.
+- **Nothing acts by sitting in the Bank**: a food, drink or potion's always-on
+  rules do nothing (§7); it acts only through its moment and its dose.
 - **Food Healing** (a Rules row) moves what a meal heals in a fight: while
   **Burning** (−50 %) a Shrimp's 5 heals 3, rounded halves up.
 - **Elixirs** (the unlimited consumable slot): an elixir whose rules wait on
@@ -314,10 +457,11 @@ has none yet), melee, magic and commerce have content today.
   working for the rest of its 10 fights after the Bank runs dry. The count
   left is saved on the hero (`elixirFights`). A consumable with no fight rule
   is never drunk by a fight. *(`ConsumptionSystem.js`, `LoadoutMoments.js`)*
-- **The "used" bubble**: when a hero eats, drinks or drinks an elixir on the
-  mat, a small bubble over their head shows the item's icon and what it did
-  ("+5 ♥", or the elixir's name) for 1.5 s, one at a time per hero. Not drawn
-  during a catch-up. *(`matFx.js`)*
+- **The "used" bubble**: when a hero eats, or drinks an elixir, a drink or a
+  work potion on the mat, a small bubble over their head shows the item's icon
+  and what it did ("+5 ♥", or the item's name), tinted by the item's kind, for
+  1.5 s, one at a time per hero. A work potion shows it every cycle it is drunk
+  for. Not drawn during a catch-up. *(`matFx.js`)*
 - **Defeat** (0 HP): the hero's flag is furled, they limp home, lose 25 % of
   the whole Bank stack of each carried food and drink (elixirs exempt), a
   10 % chance per gear piece to lose that piece (the hero's own copy), and are
@@ -328,7 +472,9 @@ has none yet), melee, magic and commerce have content today.
 A 3×3 loadout grid with category caps (hand 2 — two hands: a tool takes one,
 a two-handed weapon both — hat 1, chest 1, trinket 2,
 food 1, drink 1, consumable unlimited). Gear, weapons and tools are one copy
-per hero: equipping takes the copy out of the Bank.
+per hero: equipping takes the copy out of the Bank. **Bait** for fishing is
+carried in a consumable cell and spent from the Bank, one per catch (§3,
+Fishing).
 - **A weapon** is anything held in the hands that is not a gathering tool. It
   names its **style(s)** (`styles`: a Dagger is Melee and Stealth), its
   **damage** and its **speed** (fast 2 s, normal 3 s, slow 4 s). **A hero
@@ -361,6 +507,17 @@ per hero: equipping takes the copy out of the Bank.
   at cycle end, only to a strictly better priority. Leaving resets progress.
 - **Pinned flags**: drop a flag on a Token to work only that Token; the flag
   follows it, and turns into an area flag when the Token is gone.
+- **Waiting** (brief 230 S1b): a hero with nothing to work waits for what will
+  come back by itself, the first in the flag's own order: a fight another hero
+  holds ("Waiting for Goblin.", said out loud) or a resting node they could
+  work ("Waiting for Copper Vein" on the flag and the Dock, said silently, not
+  counted idle). Only a hero with truly nothing says "No work in range."
+- **A station out of an input** stops with its progress kept and says what is
+  missing over itself, "Needs Coal", in the "Needs Pickaxe" callout's look
+  (about once every 8 s while its hero stands there). The hero waits there
+  unless other work in their flag's reach can run: then they do that and come
+  back when the station can run again (a hero who mines and smelts never
+  deadlocks). *(`Flags.keepOrRelease`, `CalloutLayer`)*
 - **Walking costs time**: heroes walk at 120 u/s (≈15 s across the mat) in
   straight lines; the cycle starts on arrival. Idle heroes potter within 80 u.
   *(`HeroMotion.js`)*
@@ -391,6 +548,18 @@ per hero: equipping takes the copy out of the Bank.
   Torch), farming 2, construction 4. Each costs the station 1 charge. A new
   station is idle until the player picks a recipe. Example: Copper Ingot =
   4 Copper Ore + 1 Coal, 8 s.
+- **A station offers the recipes of its skill that its kind makes** (brief
+  230 S6a): its `Works as` rule may name a **station kind** (Furnace, Smithy,
+  Kitchen, Brewery, Workbench, Alchemy Table, Summoning Circle; one game-defined
+  list), and a recipe may name the kinds that make it (`stationKinds`, the CMS's
+  "Made at"). A Furnace smelts and a Smithy makes tools, though both work as
+  Smithing; better versions of a station (Campfire then Kitchen) share a kind.
+  Both sides are opt-in: a recipe naming no kind is offered by every station of
+  its skill, and a station with no kind offers its whole skill, so shipped
+  content is unchanged until it is tagged. A saved station set to a recipe its
+  kind no longer offers says "Choose a recipe". A recipe's context tags (the
+  Copper Anvil) still work beside the kind. *(`recipePoolRegistry.recipesForStation`,
+  `stationKindOf`, `STATION_KINDS`)*
 - **Upkeep**: spawners pay per spawn (table above). The top bar shows total
   upkeep per minute; the panel shows stock and "runs out in". Unpaid = the
   spawner waits; nothing goes into debt. **Rule upkeep** (a rule that costs
@@ -523,7 +692,7 @@ duels: `concept_combat.md`, "The level table and weapon tiers").
   Rogue). An enemy's Style is one of the four combat skills (the CMS dropdown
   follows the skill registry). Every shipped enemy is melee.
 - **No regen in a fight**: below 25 % HP the hero eats food instead of
-  swinging; drinks do not heal in a fight. Elixirs are drunk as a fight starts
+  swinging; drinks never heal. Elixirs are drunk as a fight starts
   (section 4).
 - Each swing draws one random number for the miss and, on a hit, one for the
   crit, from the game's random stream in a fixed order, so a catch-up replays
@@ -598,23 +767,32 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
 - **16 verbs**: provides, grants, acts_as, requires, restocks, converts,
   cannot, applies, deals, heals, restores, removes, spawns, transforms,
   station, promotes.
-- **15 moments** (On Cycle, On Neighbour's Cycle, On Depleted, On Neighbour's
-  Kill, On Engaged, On Tick, On Bank Holds…, and the three fight moments: On
-  Swing and On Hit, each "every Nth", and On Health Below X % once a fight),
+- **16 moments** (On Cycle, On Neighbour's Cycle, On Depleted, On Neighbour's
+  Kill, On Engaged, On Tick, On Bank Holds…, the three fight moments: On
+  Swing and On Hit, each "every Nth", and On Health Below X % once a fight,
+  and **On Work Start**, a carried item's own: below),
   **4 roles** (itself, the hero, that Token, the enemy), **5 filters**,
   **4 reaches**. On Tick fires every 3 s. A fight moment runs only Applies,
   Deals, Heals and Removes (the editor offers it to no other verb), spends no
   charge and has no cooldown.
 - **Modifiers** that neighbours (or a hero's items) provide: yield, work
-  time, input cost, XP bonus, double loot, **double item chance** (a chance
+  time, input cost, **grow time** (a growth or a refill's rest, from neighbours
+  and Region rules only), XP bonus, double loot, **double item chance** (a chance
   that one named item, when a cycle or a kill drops it, comes out doubled: the
-  Cleaver's Raw Beef), fail chance (Tokens); armour, resist, accuracy,
+  Cleaver's Raw Beef), **catch weight** (a percentage on one fish's weight in a
+  water's catch pool: a better rod's bonus, §3 Fishing), fail chance (Tokens); armour, resist, accuracy,
   damage, **dodge, pierce, crit chance**, status immunity and **status stack
   limit** (one status effect stacks at most N lower or higher: the Hide
   Vest's Poison −1; at 0 it cannot land), **swing time** and **food healing**
   (percentages, on a lingering effect: an enrage, Burn) (heroes, and enemies
   through effects on them). Most combat rows are flat amounts, and a new rule
   on one starts flat. Block is gone (a miss is the only failed hit).
+- **The standard floor for speed-ups** (owner 2026-10-24, brief 230 S1a): every
+  speed-up of a time (work time, grow time) stacks, but together they cut at most
+  **80 %** of the authored time, one code constant (`loopConstants.MAX_SPEED_UP_CUT`;
+  a CMS page for it is for a later ticket): five Minecarts at −20 % on a 10 s vein give 2 s,
+  not nothing. A work cycle is still never under 1 s. A slow-down is never capped.
+  *(`TileModifiers.floorSpeedUp`)*
 - **Statuses** are library effects with a status block (§6): stacks, ticks,
   and an end with their fight.
 - **Gear families**: a weapon or armour family's ability is one library
@@ -637,8 +815,20 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   applies Valor to the hero for the fight", Valor being an effect that
   provides +1 Damage. An elixir's rules fire from its 10-fight dose, not per
   firing from the Bank. **For the swing** lasts until the swing being made is
-  over (a boss's heavy strike); a status ignores all three lifetimes, having
+  over (a boss's heavy strike); a status ignores every lifetime, having
   its own. Applies may aim at **the hero** as well as the enemy.
+- **On Work Start** (brief 230 S6b) fires as the hero carrying the item starts
+  a work cycle, on any Token or only one skill's ("On Forestry Work Start: …");
+  a Token never hears it, and it has no cooldown. **For the cycle** lasts until
+  that cycle (on that Token) completes; a cycle left part-way ends it at the
+  hero's next cycle start, and it never counts on another Token meanwhile. An
+  effect carried for a while also reaches the cycle's **bonus drops** with its
+  standing Grants (the Birdwatcher's Bird Nest), free. A carried rule with a
+  moment fires only on its moment, never again at a cycle's end.
+- **A food, drink or potion's always-on rules do nothing** (owner 2026-10-24):
+  only gear, weapons and tools act by being carried; a spent item acts only
+  through its moment and dose (§4). The CMS and the boot audit say so.
+  *(`consumableRule.js`)*
 - Authored only in the CMS (the Rules Line editor). Editing a library effect
   changes every Token that carries it.
 
@@ -858,7 +1048,7 @@ stub rows), not the Token count.
 | **Placed / spawned** | Bought or built by the player (fixed, refundable) vs made by the mat (free, pushable). |
 | **Cap** | The limit on Tokens on the mat, placed and spawned (128), counted in the active Region only. |
 | **Region** | One mat the guild has settled, kept in the Atlas; only the one the guild is in runs (§10). |
-| **Charges / uses** | A Token's wear; one per cycle; 0 removes it, unless it respawns; `null` is unlimited. |
+| **Charges / uses** | A Token's wear; one per cycle; 0 removes it, unless it respawns; `null` is unlimited; stations and supports never wear. |
 | **Resting / respawn** | A Token at 0 charges whose type respawns: unworkable until it refills, or becomes the Token it regrows from. |
 | **Cycle** | One unit of work on a Token (or one kill). |
 | **Near / reach** | 164 u centre to centre; how far a rule carries. |
@@ -901,7 +1091,7 @@ crunch plan):
 | Promotion content | 4 Academies (Fighter, Wizard, Rogue, Ranger) on Wood or Stone Foundations, with skill & class rework v2 (crunch track). |
 | Promotion cost | Free. |
 | Kill loot | Neighbour bonuses apply to kills like work (T-017). |
-| Energy and drinks | Remove energy; drinks heal like food out of fights, separate slots (T-098); in fights only food heals (brief 220). |
+| Energy and drinks | Remove energy, separate slots (T-098); drinks never heal, in fights or out (owner 2026-10-24); they are work buffs lasting 10 work cycles, a placeholder (brief 230 S6b). |
 | Dormant Maps | Retire (T-002). |
 | Wishing Well | Passive, part of Passive Production (T-099). |
 | Silent by default | Development convenience; audible default before shipping (T-100). |

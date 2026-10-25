@@ -1,6 +1,7 @@
 import { cn } from '../../utils/cn.js';
 import { ART_PX, tokenBodyScale } from '../../../config/matGeometry.js';
 import { tokenName, tokenSpritePath, getTokenType } from '../../../config/registries/tokenRegistry.js';
+import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { preloadAlphaMask } from '../../utils/alphaHitTest.js';
 import { useMatFit } from '../board/MatFitContext.jsx';
 import {
@@ -212,6 +213,13 @@ function LayeredPixelArt({ src, alt, size, lifted = false, hovering = false, out
     );
 }
 
+/** A sprite id as a path from the site root, or null when it resolves to nothing. */
+function spritePathOf(sprite) {
+    const resolved = resolveSpritePath(sprite);
+    if (!resolved) return null;
+    return resolved.startsWith('/') ? resolved : `/${resolved}`;
+}
+
 /**
  * A Token, drawn for a given surface.
  * @param {string}  typeId    Token type id; art resolves through the registry.
@@ -225,9 +233,11 @@ function LayeredPixelArt({ src, alt, size, lifted = false, hovering = false, out
  * label.
  * @param {number}  scale     Overrides the surface's own scale. The board passes
  * `boardScaleAt(fit)`; nothing else sets it.
+ * @param {string}  sprite    Draws this sprite id instead of the type's own art, at the type's
+ * size: a resting vein's empty rock (`Respawn.restingSpriteOf`).
  */
-export const TokenSprite = ({ typeId, surface = TOKEN_SURFACE.BOARD, size, scale, lifted = false, outline, alt, className, style }) => {
-    const src = tokenSpritePath(typeId);
+export const TokenSprite = ({ typeId, sprite = null, surface = TOKEN_SURFACE.BOARD, size, scale, lifted = false, outline, alt, className, style }) => {
+    const src = sprite ? spritePathOf(sprite) : tokenSpritePath(typeId);
     if (!src) return null;
 
     return (

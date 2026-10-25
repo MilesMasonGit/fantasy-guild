@@ -11,11 +11,7 @@ import { applyDefeatPenalties } from '../combat/DefeatPenalties.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as HeroEffects from '../hero/HeroEffects.js';
 import { statementsOf } from '../effects/statements.js';
-import * as RecipeResolver from './RecipeResolver.js';
-import * as TileModifiers from './TileModifiers.js';
 import * as BoardState from './BoardState.js';
-import * as Hand from './Hand.js';
-import * as Respawn from './Respawn.js';
 import { momentSupplies } from '../../config/registries/triggerRegistry.js';
 import { ROLE, opponentSeekerOf } from '../../config/registries/roleRegistry.js';
 import { logger } from '../../utils/Logger.js';
@@ -412,8 +408,8 @@ const pointOf = (instance) => ({ x: instance.x, y: instance.y });
  * A kill.
  *
  * One kill counts as one cycle for every board system outside the combat engine. That single unit
- * is what connects combat to the rest of the board: nearby Context and Buff Tokens wear per kill
- * exactly as they wear per craft, so a Weapon Rack burns down as it is used.
+ * is what connects combat to the rest of the board (quests, rules on a neighbour's cycle). Nothing
+ * beside it wears for it, as nothing beside a craft does: help is free.
  *
  * The post-kill rest is handled inside the ported engine: `handleVictory` sets a short intermission
  * and `processCombat` restores the enemy to full HP when it expires. Hero power shortens the fight
@@ -438,35 +434,8 @@ function resolveVictory(instance, fight, enemy, heroId) {
         });
     }
 
-    // Support Tokens beside the enemy wear per kill, by instance id.
-    RecipeResolver.wearNearbySupport(id, function exhaustSupport(supportId, supportInstance) {
-        // A support whose type respawns rests where it stands instead, in the player's hand too.
-        if (Respawn.restInstead(supportInstance || BoardState.getTokenById(supportId), { exhaustedBy: heroId })) return;
-        // In the player's hand it stays, empty, until it is put down, and goes from where it lands.
-        if (Hand.isInHand(supportId)) {
-            Hand.whenPutDown(supportId, () => {
-                const still = BoardState.getTokenById(supportId);
-                if (still && still.usesRemaining != null && still.usesRemaining <= 0) exhaustSupport(supportId, still);
-            });
-            return;
-        }
-        const support = supportInstance || BoardState.getTokenById(supportId);
-        const sTypeId = support?.typeId;
-        const sName = getTokenType(sTypeId)?.name || sTypeId || 'Support';
-        const spot = support ? pointOf(support) : null;
-        BoardState.removeToken(supportId);
-        EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
-            instanceId: supportId,
-            ...spot,
-            severity: 'red',
-            type: 'token_exhausted',
-            name: sName,
-            message: `Token Exhausted: ${sName}`
-        });
-        EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { instanceId: supportId, ...spot, typeId: sTypeId || null, exhaustedBy: heroId || null });
-        EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: supportId, ...spot, typeId: null });
-        TileModifiers.rebuildAround([spot]);
-    });
+    // ⚠️ Nothing beside the enemy pays for the kill: help is free (owner, 2026-10-24). Supports
+    // never wear out, and a gathering node that helps spends its charges only on its own gathering.
 
     EventBus.publish(BOARD_EVENTS.CYCLE_COMPLETE, {
         instanceId: id,

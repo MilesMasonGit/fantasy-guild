@@ -14,6 +14,9 @@ export const EFFECT_TYPES = {
     LOOT_MULT: 'LOOT_MULT',   // Chance for double loot
     // A chance to double ONE item a cycle or kill drops; the item is the rule's category (`OutputRules`).
     DOUBLE_DROP: 'DOUBLE_DROP',
+    // How often ONE fish bites from a water's catch pool, as a percentage on its weight; the item is
+    // the rule's category (`Fishing.catchOf`).
+    CATCH_WEIGHT: 'CATCH_WEIGHT',
     // Moves how many stacks of one status (the category, a status effect's id) can build up on the bearer — LiveEffects.
     STATUS_MAX_STACKS: 'STATUS_MAX_STACKS',
     // How long the bearer's swing takes, as a percentage: negative is faster — CombatFormulas.
@@ -34,6 +37,9 @@ export const EFFECT_TYPES = {
     YIELD: 'YIELD',           // units of output a Token produces
     WORK_TIME: 'WORK_TIME',   // milliseconds of Work Time a Token takes
     INPUT_COST: 'INPUT_COST', // units of input a Token consumes
+    // How long a Token takes to grow (`grows`) or to refill after a rest (`respawn` refill), as a
+    // percentage: negative is faster — TileModifiers.growTimeOf.
+    GROW_TIME: 'GROW_TIME',
 
     /**
      * A chance to yield an extra, **different** item on top of a Token's normal output.

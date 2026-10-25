@@ -2,13 +2,14 @@ import { useState, useMemo } from 'react';
 import { Settings2, Tag as TagIcon, Timer, HelpCircle, Swords, Lock, BookOpen, Sparkles, X, Plus, Gauge } from 'lucide-react';
 import { useEntityStore, makeTokenConfig } from '../../stores/useEntityStore';
 import { useSimulationStore } from '../../stores/useSimulationStore';
-import { TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, stationSkillOf, ENEMY_STYLES, enemyProfileOf, enemyFilledStats, ENEMY_KINDS, MAX_ENEMY_KINDS, kindsClash, enemyKindsOf, ATTACK_SPEED_MS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, STANDS_ON_CHOICES, TOOL_KINDS, tierValue } from '../../utils/constants';
+import { TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, stationSkillOf, stationKindOf, STATION_KINDS, stationKindLabel, stationKindOffers, recipeStationKinds, ENEMY_STYLES, enemyProfileOf, enemyFilledStats, ENEMY_KINDS, MAX_ENEMY_KINDS, kindsClash, enemyKindsOf, ATTACK_SPEED_MS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, STANDS_ON_CHOICES, TOOL_KINDS, tierValue, neverWearsReason, NEVER_WEARS_WHY, neededToolOf, toolNeedPhrase, hasCatchPools } from '../../utils/constants';
 import { Header, Section, Field, Empty } from '../shared/EditorLayout';
 import SimIntentControls from '../shared/SimIntentControls';
 import SimAnswer from '../shared/SimAnswer';
 import SpritePickerModal from './SpritePickerModal';
 import Statements from './Statements';
 import LifecycleBlocks from './LifecycleBlocks';
+import CatchPoolsBlock from './CatchPoolsBlock';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 
 /** The Token editor. */
@@ -41,7 +42,8 @@ export default function TokenEditor() {
   const config = token?.config;
   const stationSkill = stationSkillOf(expandBearer(token, effects));
   const isPooled = !!stationSkill;
-  const pooledRecipes = isPooled ? (recipePools[stationSkill] || []) : [];
+  const stationKind = stationKindOf(expandBearer(token, effects));
+  const pooledRecipes = isPooled ? (recipePools[stationSkill] || []).filter((r) => stationKindOffers(stationKind, r)) : [];
   const skillName = (id) => SKILLS.find((s) => s.id === id)?.name || id;
   const isUnlimited = token?.uses == null;
   const spritePath = token?.sprite ? resolveSpritePath(token.sprite) : null;
@@ -50,6 +52,8 @@ export default function TokenEditor() {
   // ⚠️ The type and the rules text are DERIVED, never typed: a picker can disagree with what it classifies. Both read the Token's statements, which are references to the effect library, so the Token is expanded first; an unexpanded Token would show every station as an untyped resource and every rules panel as empty.
   const expanded = useMemo(() => expandBearer(token, effects), [token, effects]);
   const derived = useMemo(() => deriveTokenType(expanded), [expanded]);
+  // The game's own rule: a station or a support is unlimited whatever its Charges say, so the field is not offered on one.
+  const neverWears = useMemo(() => neverWearsReason(expanded), [expanded]);
 
   // ⚠️ Read the DERIVED type, not the stored `tokenType`: the stored one is only rewritten by Recalculate, so ticking a hero can fight this would change nothing until a recalculation, and the section that sets the field would be hidden behind it.
   const isEnemy = derived.type === 'enemy';
@@ -270,7 +274,26 @@ export default function TokenEditor() {
                 </Field>
               )}
             </div>
-            {/* `needsTool: { kind, minTier }`, written only when a kind is picked: a hero must hold a tool of that kind, at that tier or better, in hand to work this Token. */}
+            {/* `needsTool: { kind, minTier }`, written only when a kind is picked: a hero must hold a tool of that kind, at that tier or better, in hand to work this Token. Water's need is set by its catch pools instead. */}
+            {hasCatchPools(token) ? (
+              <div className="mt-4" data-field="needs-tool-pools">
+                <Field label="Needs tool">
+                  <div className="text-[11px] text-gray-400 leading-relaxed">
+                    Set by the catch pools: a {toolNeedPhrase(neededToolOf(token))}, at any tier.
+                  </div>
+                  {token.needsTool && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className="text-[10px] leading-relaxed" style={{ color: 'var(--color-warning)' }}>
+                        Its own Needs tool is ignored.
+                      </span>
+                      <button type="button" data-clear-needs-tool onClick={() => update('needsTool', undefined)} className="btn-ghost text-xs" style={{ padding: '2px 8px' }}>
+                        Clear
+                      </button>
+                    </div>
+                  )}
+                </Field>
+              </div>
+            ) : (
             <div className="grid grid-cols-2 gap-4 mt-4">
               <Field label="Needs tool">
                 <select
@@ -308,6 +331,7 @@ export default function TokenEditor() {
                 </Field>
               )}
             </div>
+            )}
             {!isPooled && (config.cycleTimeMs < 10000 || config.cycleTimeMs > 30000) && (
               <p className="text-[10px] leading-relaxed" style={{ color: 'var(--color-warning)' }}>
                 ⚠️ Outside the 10–30s band. That band keeps the board at roughly one
@@ -327,9 +351,28 @@ export default function TokenEditor() {
         )}
       </Section>
 
+      <CatchPoolsBlock token={token} onPatch={(patch) => updateToken(activeId, patch)} />
+
       <Section title="Lifecycle" icon={<Timer size={14} />}>
         <div className="grid grid-cols-2 gap-4">
           {/* ⚠️ The label is Charges and the field is `uses`, deliberately: Charges is the game's own word (the TokenInspection badge, `Charges.js`). Not the retired top-level `charges` field, which is stripped on every Recalculate (`RETIRED_TOKEN_FIELDS`). */}
+          {neverWears ? (
+            <Field label="Charges">
+              <div data-field="never-wears" className="text-[11px] text-gray-400 leading-relaxed">
+                Never wears out. {NEVER_WEARS_WHY[neverWears]}
+              </div>
+              {!isUnlimited && (
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="text-[10px] leading-relaxed" style={{ color: 'var(--color-warning)' }}>
+                    Its {token.uses} Charges are ignored.
+                  </span>
+                  <button type="button" data-clear-charges onClick={() => update('uses', null)} className="btn-ghost text-xs" style={{ padding: '2px 8px' }}>
+                    Clear
+                  </button>
+                </div>
+              )}
+            </Field>
+          ) : (
           <Field label="Charges">
             <div className="flex items-center gap-2">
               <input
@@ -352,6 +395,7 @@ export default function TokenEditor() {
               <span className="text-[11px] text-gray-400">Never depletes</span>
             </label>
           </Field>
+          )}
 
           <div className="space-y-2">
             <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -381,6 +425,42 @@ export default function TokenEditor() {
                 the skill, level and items from the Work Cycle.
               </p>
             )}
+            {/* `staysPut: true`, written ONLY when ticked: the game's `FixedTokens.isFixed` reads it, so every copy of this Token is fixed wherever it came from (a map, the Shop, a spawner, an old save). */}
+            <label
+              className="flex items-center gap-2 cursor-pointer select-none"
+              title="Trees, fruit trees and veins: the player can't drag it, wherever it came from. It can still be demolished."
+            >
+              <input
+                type="checkbox"
+                aria-label="Stays where it stands"
+                data-field="stays-put"
+                checked={token.staysPut === true}
+                onChange={(e) => update('staysPut', e.target.checked ? true : undefined)}
+                className="rounded border-white/10 text-emerald-500 cursor-pointer"
+              />
+              <span className="text-xs text-gray-300">Stays where it stands</span>
+            </label>
+            {token.staysPut === true && (
+              <p className="text-[10px] leading-relaxed text-gray-500">
+                The player can&apos;t drag it, wherever it came from (a map, the Shop, a spawner); nothing
+                pushes it. It can still be demolished.
+              </p>
+            )}
+            {/* `clearable: true`, written ONLY when ticked: the game's `Demolition.isClearable` reads it. */}
+            <label
+              className="flex items-center gap-2 cursor-pointer select-none"
+              title="Wild Forests and Stumps: the player may demolish one even where a map placed it. The Starter Camp's own Tokens stay as laid."
+            >
+              <input
+                type="checkbox"
+                aria-label="Can be cleared where a map placed it"
+                data-field="clearable"
+                checked={token.clearable === true}
+                onChange={(e) => update('clearable', e.target.checked ? true : undefined)}
+                className="rounded border-white/10 text-emerald-500 cursor-pointer"
+              />
+              <span className="text-xs text-gray-300">Can be cleared where a map placed it</span>
+            </label>
             <div data-field="stands-on" title="The ground the cell under the Token's centre must be. Shore is dry land touching water. None ticked: anywhere dry.">
               <span className="text-xs text-gray-300">Stands on</span>
               <div className="flex flex-wrap gap-1 mt-1">
@@ -486,7 +566,7 @@ export default function TokenEditor() {
               type="checkbox"
               checked={isPooled}
               disabled={!config.skill}
-              onChange={(e) => setTokenPooling(activeId, e.target.checked ? config.skill : null)}
+              onChange={(e) => setTokenPooling(activeId, e.target.checked ? config.skill : null, stationKind)}
               className="rounded border-white/10 text-emerald-500 cursor-pointer mt-0.5"
             />
             <span className="text-xs text-gray-300">
@@ -501,9 +581,25 @@ export default function TokenEditor() {
 
           {isPooled ? (
             <div className="space-y-2">
+              {/* The kind narrows the pool to the recipes that name it (and those naming no station). It is written on the same Works as rule. */}
+              <label className="flex items-center gap-2 text-xs text-gray-300" data-testid="station-kind">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Station kind</span>
+                <select
+                  aria-label="Station kind"
+                  value={stationKind || ''}
+                  onChange={(e) => setTokenPooling(activeId, stationSkill, e.target.value || null)}
+                  style={{ fontSize: 12 }}
+                >
+                  <option value="">Any station (every {skillName(stationSkill)} recipe)</option>
+                  {stationKind && !STATION_KINDS.includes(stationKind) && <option value={stationKind}>{stationKind} (unknown)</option>}
+                  {STATION_KINDS.map((k) => <option key={k} value={k}>{stationKindLabel(k)}</option>)}
+                </select>
+              </label>
               <p className="text-[11px] text-gray-400 leading-relaxed">
-                This station can run anything in the {skillName(stationSkill)} pool. The
-                player picks which one; its neighbours decide whether the pick can run
+                {stationKind
+                  ? <>This station runs the {skillName(stationSkill)} recipes marked {stationKindLabel(stationKind)}, and those marked for no station.</>
+                  : <>This station can run anything in the {skillName(stationSkill)} pool.</>}{' '}
+                The player picks which one; its neighbours decide whether the pick can run
                 right now. A station has no recipes of its own.
               </p>
               {pooledRecipes.length === 0 ? (
@@ -519,6 +615,9 @@ export default function TokenEditor() {
                       style={{ background: 'rgba(255,255,255,0.03)' }}
                     >
                       <span className="flex-1 truncate text-gray-300">{r.name}</span>
+                      {recipeStationKinds(r).length > 0 && (
+                        <span className="text-[10px] text-gray-500">{recipeStationKinds(r).map(stationKindLabel).join(', ')}</span>
+                      )}
                       <span className="text-[10px] text-gray-600">
                         {(r.requiresContext || []).map((c) => c.tag).join(' + ') || 'no context'}
                       </span>

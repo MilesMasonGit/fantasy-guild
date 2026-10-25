@@ -102,14 +102,24 @@ function tokenOf(target) {
 }
 
 /**
+ * Whether a Token's type may be cleared even where a map placed it (`clearable: true`, a box in
+ * the CMS Token editor): wild Forests and the Stumps of felled map trees. The Starter Camp's own
+ * Tokens stay as they were laid whatever their type.
+ */
+export function isClearable(instance) {
+    return getTokenType(instance?.typeId)?.clearable === true;
+}
+
+/**
  * Why this Token may not be marked ({@link REFUSAL}), or null when it may. Everything bought,
- * built, spawned or planted may.
+ * built, spawned or planted may, and a map's node of a clearable type ({@link isClearable}).
  */
 export function refusalOf(instance) {
     if (!instance?.typeId) return REFUSAL.NO_TOKEN;
     if (isPermanent(instance)) return REFUSAL.GUILD_HALL;
     if (Landmarks.isLandmark(instance)) return REFUSAL.LANDMARK;
-    if (BoardState.isFixture(instance)) return BoardState.isCampFixture(instance) ? REFUSAL.CAMP : REFUSAL.MAP_NODE;
+    if (BoardState.isCampFixture(instance)) return REFUSAL.CAMP;
+    if (BoardState.isFixture(instance) && !isClearable(instance)) return REFUSAL.MAP_NODE;
     if (instance.typeId === QUEST_TOKEN_TYPE) return REFUSAL.QUEST;
     if (isEnemyDef(getTokenType(instance.typeId))) return REFUSAL.ENEMY;
     return null;

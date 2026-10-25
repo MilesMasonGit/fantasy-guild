@@ -221,7 +221,7 @@ describe('On-Board Tile Event Alerts', () => {
         });
     });
 
-    it('emits Red alert when an unworked nearby tool/context token depletes its charges', () => {
+    it('raises no Red alert for an unworked Token beside a working station: serving costs nothing', () => {
         const events = [];
         EventBus.subscribe(BOARD_EVENTS.TILE_EVENT_ALERT, e => events.push(e));
 
@@ -233,26 +233,21 @@ describe('On-Board Tile Event Alerts', () => {
         put(8, station);
         plant('hero_1', 8);
 
-        // Place tool/context token with 1 charge nearby at tile 9
+        // The context Token it needs on tile 9, and a gathering node with an aura on tile 14, both
+        // on their last charge: help is free (brief 230 S1a), so serving the station spends neither.
         const contextA = BoardState.createTokenInstance('fixture_context_a', 1);
         put(9, contextA);
+        const node = BoardState.createTokenInstance('fixture_aura_node', 1);
+        put(14, node);
 
         // Run cycle to completion (fixture_station cycleTime is 16s)
         for (let t = 0; t < 17000; t += 100) BoardRunner.tick(100);
 
-        // The unworked tool on tile 9 should have depleted and emitted Red alert
-        expect(tokenAt(9)).toBeNull();
-
-        const toolExhaustEvent = events.find(e => e.type === 'token_exhausted' && e.instanceId === contextA.id);
-        expect(toolExhaustEvent).toBeDefined();
-        expect(toolExhaustEvent).toMatchObject({
-            instanceId: contextA.id,
-            ...C(9),
-            severity: 'red',
-            type: 'token_exhausted'
-        });
-        expect(toolExhaustEvent.message).toContain('Token Exhausted:');
-        expect(toolExhaustEvent.message).toContain('Fixture Context A');
+        expect(InventoryManager.getItemCount('item_coal')).toBeLessThan(10);   // the station ran
+        expect(tokenAt(9)).toBe(contextA);
+        expect(tokenAt(14)).toBe(node);
+        expect(node.usesRemaining).toBe(1);
+        expect(events.filter(e => e.type === 'token_exhausted')).toEqual([]);
     });
 
     it('emits Disallow alert with exact rules text when a drop has nowhere legal to go', () => {

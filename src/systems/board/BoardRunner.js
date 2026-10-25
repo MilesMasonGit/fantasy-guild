@@ -33,6 +33,7 @@ import * as StatusApplication from './StatusApplication.js';
 import * as EffectFeedback from './EffectFeedback.js';
 import * as RareDrops from './RareDrops.js';
 import * as OutputRules from './OutputRules.js';
+import * as Fishing from './Fishing.js';
 import * as LoadoutMoments from './LoadoutMoments.js';
 import * as HeroEffects from '../hero/HeroEffects.js';
 import * as HeroManager from '../hero/HeroManager.js';
@@ -84,7 +85,8 @@ const PROGRESS_EVERY = 3;
  * cycle that starts on the very next tick, so a cycle ending part-way through a tick loses nothing:
  * without it a 1500 ms cycle at 1000 ms steps runs every 2 s instead of every 1.5 s. A station that
  * does not start again on the next tick (waiting for inputs, its hero gone) loses it, as it would
- * have lost the time anyway.
+ * have lost the time anyway. Negative for a Token that refilled during this tick: the part of the
+ * tick it was still resting (`TimedChanges.lateRefillsThisTick`).
  */
 let carryIn = new Map();
 let carryOut = new Map();
@@ -255,8 +257,19 @@ function completeCycle(instance, def, io, heroId, config = def.config) {
     // listener that says it did.
     const produced = [];
 
+    // Water: one catch from the pool the hero's tool and bait pick (one draw, unless the pool holds
+    // one fish), in place of the Token's own outputs. It then lands like any output.
+    // A failed cycle catches nothing and keeps its bait.
+    let outputs = io.outputs || [];
+    if (failed || buildTypeId) {
+        outputs = [];
+    } else if (Fishing.isWater(def)) {
+        const caught = Fishing.catchOf(id, def, heroId);
+        outputs = caught ? [{ itemId: caught.itemId, chance: 100, minQty: 1, maxQty: 1 }] : [];
+    }
+
     // A build makes its Token by becoming it (below), never as a sprite.
-    for (const output of (failed || buildTypeId) ? [] : (io.outputs || [])) {
+    for (const output of outputs) {
         const chance = output.chance ?? 100;
         if (chance < 100 && Math.random() * 100 > chance) continue;
 
@@ -318,26 +331,13 @@ function completeCycle(instance, def, io, heroId, config = def.config) {
         SkillSystem.addXP(heroId, config.skill, xpAwarded);
     }
 
-    // Pay the plan built at the top of this function: the station's own operational cost, and any
-    // charges the recipe draws off nearby context Tokens. Anything that hits 0 is destroyed by
-    // `commitPlan`, which is also where `null`-means-unlimited is honoured: `null` is the opposite
-    // of 0, not a large version of it.
-    const chargedIds = new Set(chargePlan.debits.map(d => d.id));
+    // Pay the plan built at the top of this function: the Token's own operational cost. Anything
+    // that hits 0 is destroyed by `commitPlan`, which is also where `null`-means-unlimited is
+    // honoured: `null` is the opposite of 0, not a large version of it.
+    // ⚠️ Nothing near the Token pays for this cycle: help is free (owner, 2026-10-24). A support or
+    // a context Token never wears out, and a gathering node that helps its neighbours spends its
+    // charges only on its own gathering (`Charges.planContextCharges`, `wearRule.js`).
     Charges.commitPlan(chargePlan, { heroId });
-
-    // Context and Buff Tokens wear per cycle they SERVE. One Tool Rack serving three Forges wears
-    // three times as fast, which is what makes shared context a rate trade rather than free value.
-    // Tokens the plan above already charged are excluded: a context Token whose charges the recipe
-    // names as an input has been billed once for this cycle already, and flat wear on top of it
-    // would bill it twice.
-    RecipeResolver.wearNearbySupport(id, (supportId, supportInstance) => {
-        const support = supportInstance || BoardState.getTokenById(supportId);
-        const spot = centreOf(support);
-        Charges.destroyToken(support, { exhaustedBy: heroId });
-        // The neighbourhood, not just this Token: an aura going dark has to stop
-        // applying to everything it reached, which means their aggregators too.
-        TileModifiers.rebuildAround([spot]);
-    }, chargedIds);
 
     // The board's universal unit of work. One kill counts as one cycle too, so combat feeds this
     // exactly as production does.
@@ -421,6 +421,12 @@ export function tick(delta) {
     // whose Token just changed under them lets go and chooses again this same tick, and before any
     // Token ticks, so a cycle on a Token that has gone is never advanced or completed.
     TimedChanges.tick(delta);
+    // A Token that refilled during this tick works only the part of it after the refill: its
+    // cycle starts owing the time it was still resting (a negative carry, read where a cycle
+    // begins), so a big catch-up step and many small live ones end in the same place.
+    for (const [id, sinceMs] of TimedChanges.lateRefillsThisTick()) {
+        if (sinceMs < delta) carryIn.set(id, sinceMs - delta);
+    }
 
     // Flags keep, change or find their work: after the timed changes above, so a hero sees any new
     // Token this tick, and before any Token ticks, so `workerOf` below is already settled.
@@ -651,15 +657,18 @@ export function tick(delta) {
         const before = instance.cycleElapsedMs > 0 ? instance.cycleElapsedMs : (carryIn.get(id) || 0);
         instance.cycleElapsedMs = before + delta;
 
-        // WORK_TIME, widened to the neighbours and floored at 1s so no stack of haste can drive a
-        // cycle to nothing. `io.cycleTimeMs` is the active recipe's own timing when it has one,
-        // falling back to the station's flat config.
+        // WORK_TIME, widened to the neighbours, then floored twice: stacked speed-ups cut at most
+        // `MAX_SPEED_UP_CUT` of the authored time (`floorSpeedUp`), and no cycle is ever shorter
+        // than 1 s, which the catch-up's 1 s steps rely on (`loopConstants.MAX_TICK_DELTA_MS`).
+        // `io.cycleTimeMs` is the active recipe's own timing when it has one, falling back to the
+        // station's flat config.
         const isGuildHall = instance.typeId === 'token_guild_hall';
+        const baseCycle = io.cycleTimeMs || config.cycleTimeMs || 10000;
         const cycleTime = isGuildHall
             ? (config.cycleTimeMs || 10000)
-            : Math.max(1000, TileModifiers.resolveAxis(
-                id, EFFECT_TYPES.WORK_TIME, io.cycleTimeMs || config.cycleTimeMs || 10000, config.skill
-            ));
+            : Math.max(1000, TileModifiers.floorSpeedUp(baseCycle, TileModifiers.resolveAxis(
+                id, EFFECT_TYPES.WORK_TIME, baseCycle, config.skill
+            )));
 
         if (instance.cycleElapsedMs >= cycleTime) {
             // Only a cycle that crossed its end during this tick has a leftover; one that held at
@@ -682,6 +691,9 @@ export function tick(delta) {
 
 /** A board just came in, from a save or from another Region: rebuild what is derived from it. */
 function boardInstalled() {
+    // A station or support saved with charges, from before they stopped wearing out, reads as
+    // unlimited from here on.
+    Charges.clearNeverWearingCharges();
     TileModifiers.rebuildAll();
 
     // The one path a `Cannot` has no last location to fly back to: a save authored before the
@@ -739,8 +751,10 @@ export function isHeroIdle(heroId) {
 
     // A hero is idle when their flag found nothing to work, or in the Dock.
     const status = Flags.statusOf(heroId);
-    if (status.state === 'docked' || status.state === 'returning' || status.state === 'idle') return true;
-    // Walking back to the flag with nothing to do is idle; walking to work is not.
-    if (status.state === 'walking') return !status.instanceId;
+    if (status.state === 'docked' || status.state === 'returning') return true;
+    // Waiting for a node in reach to come back is doing their job, not idling.
+    const unclaimed = status.state === 'idle' || (status.state === 'walking' && !status.instanceId);
+    if (unclaimed) return Flags.waitingOf(heroId)?.kind !== 'node';
+    if (status.state === 'walking') return false;
     return !!BoardState.getTokenById(status.instanceId)?.alert;   // working, but stuck
 }

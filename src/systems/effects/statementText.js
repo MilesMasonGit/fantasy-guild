@@ -1,7 +1,7 @@
 import { KEYWORD, WHEN, getKeyword, statementsOf, effectEntryOf, firingChanceOf } from './statements.js';
 import { statusBlockOf } from './effectLibrary.js';
 import { MODIFIER_SHAPES } from '../../config/registries/modifierPalette.js';
-import { getTriggerEvent, isFightMoment, everyOf, healthBelowOf } from '../../config/registries/triggerRegistry.js';
+import { getTriggerEvent, isFightMoment, isCarriedMoment, everyOf, healthBelowOf } from '../../config/registries/triggerRegistry.js';
 import { getRestrictionKind, limitOf } from '../../config/registries/restrictionPalette.js';
 import { getSkill } from '../../config/registries/skillRegistry.js';
 import { getJob } from '../../config/registries/jobRegistry.js';
@@ -12,6 +12,7 @@ import { magnitudeParts, MAGNITUDE_KIND } from '../../config/registries/magnitud
 import { getPlacement, placementOf } from '../../config/registries/placementRegistry.js';
 import { EFFECT_TYPES } from './constants.js';
 import { articleOf } from './toolNames.js';
+import { stationKindLabel } from '../../config/registries/tokenConstants.js';
 
 /**
  * The rules text: generated, read-only, and the only text a Token has. The sentence IS the
@@ -184,6 +185,13 @@ function effectSegments(statement, names) {
     if (payload.type === EFFECT_TYPES.DOUBLE_DROP) {
         const item = payload.category ? names.item(payload.category) : 'any item';
         return segs('a ', d(size, 'value'), ' chance of double ', d(item, categorySlot(statement)));
+    }
+
+    // "50% more bites of Dolphin": the fish is the narrowing, so it reads inside the phrase.
+    if (payload.type === EFFECT_TYPES.CATCH_WEIGHT) {
+        const fish = payload.category ? names.item(payload.category) : 'any fish';
+        const more = Number(payload.value) < 0 ? 'fewer' : 'more';
+        return segs(d(`${size} ${more}`, 'value'), ' ', d('bites', 'type'), ' of ', d(fish, categorySlot(statement)));
     }
 
     const label = entry.label.toLowerCase();
@@ -475,6 +483,12 @@ function whenSegments(statement, names) {
     if (definition?.needsPercent) {
         return segs(d(label, momentSlot), ' ', d(`${healthBelowOf(when)}%`, detail && 'belowPct'));
     }
+    // "On Forestry Work Start": a carried work moment says its skill inside the tag; none is any.
+    if (definition?.skillParam && when.skill) {
+        const [first, ...rest] = label.split(' ');
+        return segs(d(first, momentSlot), ' ', d(getSkill(when.skill)?.name || when.skill, detail && 'skill'), ' ',
+            d(rest.join(' '), momentSlot));
+    }
     return segs(d(label, momentSlot));
 }
 
@@ -489,8 +503,9 @@ function ordinal(n) {
 function cooldownSegments(statement) {
     const ms = statement?.when?.cooldownMs;
     if (!ms) return [];
-    // A fight moment has no cooldown (its own count is its rhythm), so a stray one is not said.
-    if (isFightMoment(statement?.when?.event)) return [];
+    // A fight moment has no cooldown (its own count is its rhythm), nor a carried moment (a hero's
+    // items have none), so a stray one is not said.
+    if (isFightMoment(statement?.when?.event) || isCarriedMoment(statement?.when?.event)) return [];
     const known = getKeyword(statement?.keyword) && getTriggerEvent(statement?.when?.event);
     return segs(', at most once every ', d(String(Math.round(ms / 100) / 10), known && 'cooldown'), ' seconds');
 }
@@ -574,7 +589,8 @@ function bodySegments(statement, names) {
 
         case KEYWORD.STATION: {
             const skill = getSkill(payload.skill);
-            return segs(d('Works as', K), ' a ', d(payload.skill ? (skill?.name || payload.skill) : '…', 'skill'), ' station');
+            const kind = payload.stationKind ? segs(': ', d(stationKindLabel(payload.stationKind), 'stationKind')) : [];
+            return segs(d('Works as', K), ' a ', d(payload.skill ? (skill?.name || payload.skill) : '…', 'skill'), ' station', kind);
         }
 
         // "Promotes the hero to Knight." A job the registry no longer has keeps its id on screen
@@ -746,9 +762,9 @@ function bodySegments(statement, names) {
 
             /**
              * A library effect (a status included). With a duration it lingers, "for the fight" it
-             * lasts until its fight ends, "for the swing" until the swing being made is over;
-             * without any it fires immediately (chaining). A status's own lifetime is its effect's,
-             * and the editor offers none of the three for one.
+             * lasts until its fight ends, "for the swing" until the swing being made is over, "for
+             * the cycle" until the work cycle starting is over; without any it fires immediately
+             * (chaining). A status's own lifetime is its effect's, and the editor offers none for one.
              */
             if (payload.effectId) {
                 const title = names.effect ? names.effect(payload.effectId) : payload.effectId;
@@ -757,7 +773,9 @@ function bodySegments(statement, names) {
                     ? segs(' ', d('for the swing', 'forSwing'))
                     : payload.forFight
                         ? segs(' ', d('for the fight', 'forFight'))
-                        : secs > 0 ? segs(' for ', d(String(secs), 'durationMs'), ' seconds') : [];
+                        : payload.forCycle
+                            ? segs(' ', d('for the cycle', 'forCycle'))
+                            : secs > 0 ? segs(' for ', d(String(secs), 'durationMs'), ' seconds') : [];
                 return segs(d('Applies', K), ' ', d(title || '…', 'effectId'), ' to ', who(), lasting, odds);
             }
 

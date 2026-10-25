@@ -33,7 +33,7 @@ import { pendingSpriteRenames, applySpriteRenamesTo } from '../engine/spriteRena
  * Fields anywhere in an entity that hold an item id.
  * ⚠️ A field-name list rather than a list of paths, on purpose: a path-based walker missed every place an item id was later added (pooled recipes, upkeep costs, trigger watch-items, CONVERT lists); matching the name covers a new site the day it is added.
  */
-const ITEM_ID_FIELDS = new Set(['itemId', 'watchItemId']);
+const ITEM_ID_FIELDS = new Set(['itemId', 'watchItemId', 'bait']);
 
 const SEVERITY_WORD = { critical: 'Critical', warning: 'Warning', info: 'Info' };
 
@@ -130,7 +130,8 @@ function renameInTokenConfig(token, oldId, newId) {
     if (next.effectBlocks) next.effectBlocks = remapItemIdsDeep(next.effectBlocks, oldId, newId, mark);
     if (next.buff) next.buff = remapItemIdsDeep(next.buff, oldId, newId, mark);
 
-    for (const key of ['spawner', 'shop', 'trickle']) {
+    // `catchPools`: a water's catches (`itemId`) and baits (`bait`).
+    for (const key of ['spawner', 'shop', 'trickle', 'catchPools']) {
         if (next[key]) next[key] = remapItemIdsDeep(next[key], oldId, newId, mark);
     }
 
@@ -916,10 +917,10 @@ export const useEntityStore = create(
             },
 
             /**
-             * Make a Token a station of a skill, or stop it being one.
+             * Make a Token a station of a skill (optionally of one station kind, narrowing the pool), or stop it being one.
              * ⚠️ This writes a `Works as` statement, not a field: the same sentence that makes the Token a station names its recipe pool, so type and pool cannot disagree, and the author can write it in the Rules list too. The retired `recipePool` and private `recipes[]` are stripped here if an old workspace carries them.
              */
-            setTokenPooling: (tokenId, skillId) => {
+            setTokenPooling: (tokenId, skillId, stationKind = null) => {
                 const state = get();
                 const token = state.tokens[tokenId];
                 if (!token) return;
@@ -944,18 +945,21 @@ export const useEntityStore = create(
 
                 if (!skillId) return;
 
-                // Reuse the entry that already says this, if one exists: two Cooking stations should share one Cooking Station, not own a twin each.
+                // Reuse the entry that already says this, if one exists: two Cooking stations should share one Cooking Station, not own a twin each. The kind must match too (none matches none).
                 const after = get();
+                const kind = stationKind || null;
                 const existing = Object.keys(after.effects).find((effectId) => {
                     const statements = statementsOf(after.effects[effectId]);
                     return statements.length === 1
                         && statements[0]?.keyword === KEYWORD.STATION
-                        && statements[0]?.payload?.skill === skillId;
+                        && statements[0]?.payload?.skill === skillId
+                        && (statements[0]?.payload?.stationKind || null) === kind;
                 });
 
+                const payload = kind ? { skill: skillId, stationKind: kind } : { skill: skillId };
                 const effectId = existing || get().addEffect({
-                    name: provisionalName(makeStatement(KEYWORD.STATION, { payload: { skill: skillId } })),
-                    statements: [makeStatement(KEYWORD.STATION, { payload: { skill: skillId } })],
+                    name: provisionalName(makeStatement(KEYWORD.STATION, { payload })),
+                    statements: [makeStatement(KEYWORD.STATION, { payload })],
                 });
                 get().addEffectRef('tokens', tokenId, effectId);
             },

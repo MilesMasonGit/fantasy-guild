@@ -21,11 +21,11 @@ changelog and `docs/archive/`.*
 
 The owner's Backlog Intake was triaged into brief 210 and five new sessions:
 
-1. **Backlog director** (new; takes over from the features and terrain
-   directors): builds [brief 210](briefs/210_backlog_intake.md), T-211 to
-   T-239 plus T-136 and T-194, in six batches. **Waits for the owner's go.**
-   First run reads [HANDOFF_features.md](HANDOFF_features.md) and
-   [HANDOFF.md](HANDOFF.md) for the state; writes `HANDOFF_backlog.md`.
+1. **Backlog director: brief 210 done 2026-10-24.** All six batches and the
+   follow-ups the owner approved are on `main` (the wider mat and top bar,
+   quieter Tokens, one item one hero, the Hall glide, the Atlas spread, pixel
+   frames everywhere, the work plate). Left: T-255 (one render test's timeout).
+   State: [HANDOFF_backlog.md](HANDOFF_backlog.md).
 2. **Three planning agents**, interviewing the owner over several rounds,
    each in its own worktree and branch:
    combat ([concept_combat.md](concept_combat.md), "The detail pass"),
@@ -36,9 +36,9 @@ The owner's Backlog Intake was triaged into brief 210 and five new sessions:
 4. Still in the backlog ([TICKETS.md](../reference/TICKETS.md)): the
    Envelope's optimisation tickets (T-197 to T-201), the quest board (brief
    170, postponed), T-193, T-119, T-195.
-5. **Owner, before release:** the background music's source and licence
-   (STATUS "Questions for the owner"); ZapSplat needs an in-game credit
-   (`CREDITS.md`).
+5. **Owner, before release:** ZapSplat needs an in-game credit
+   (`CREDITS.md`); the background music is AI-generated placeholder, replaced
+   in the music pass (owner 2026-10-22).
 
 ## Ground rules
 

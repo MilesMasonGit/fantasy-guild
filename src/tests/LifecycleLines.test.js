@@ -146,6 +146,34 @@ describe('lifecycleLines', () => {
         expect(lifecycleLines({ id: 's2', typeId: 'sapling' }, src())[0].value).toBe('in 30 s');
     });
 
+    describe('a Stump that needs its Forest and a seedling (brief 230 S2a)', () => {
+        const stump = { id: 'st1', typeId: 'sapling', clocks: { growMs: 18000 } };
+        const growth = (extra) => () => ({
+            inMs: 12000, totalMs: 30000, into: 'tree', paused: false, stopped: false,
+            needsNearby: ['forest'], cost: [{ itemId: 'item_oak_seed', quantity: 1 }], short: [], ...extra
+        });
+
+        it('growing: time left, what it needs nearby and what it pays', () => {
+            expect(lifecycleLines(stump, src({ growth: growth() }))).toEqual([
+                { label: 'Grows into Oak Tree', value: 'in 12 s' },
+                { label: 'Needs nearby', value: 'an Oak Forest', tone: TONE.MUTED },
+                { label: 'Costs when it grows', value: '1 Oak Seed from the Bank', tone: TONE.MUTED }
+            ]);
+        });
+
+        it('no Forest in reach: it waits for one', () => {
+            expect(lifecycleLines(stump, src({ growth: growth({ paused: true }) }))[0]).toEqual({
+                label: 'Grows into Oak Tree', value: 'waiting for an Oak Forest nearby', tone: TONE.WARNING
+            });
+        });
+
+        it('no seedling: stopped, naming it', () => {
+            expect(lifecycleLines(stump, src({ growth: growth({ stopped: true, inMs: 0, short: ['item_oak_seed'] }) }))[0]).toEqual({
+                label: 'Grows into Oak Tree', value: 'stopped: needs 1 Oak Seed', tone: TONE.WARNING
+            });
+        });
+    });
+
     it('a turning Token: its next chance to turn, into what, and the odds (TL-12, FB-14)', () => {
         const lines = lifecycleLines({ id: 'c1', typeId: 'coast', clocks: { turnMs: 26000 } }, src());
         expect(lines[0]).toEqual({ label: 'Next chance to turn into Shrimp Coast or Crab Coast', value: 'in 34 s (30%)' });

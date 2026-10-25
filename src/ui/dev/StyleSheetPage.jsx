@@ -18,6 +18,8 @@ import { CloseX, PanelHeader } from '../components/base/CloseX.jsx';
 import { TEXT_SIZES } from '../components/base/textSizes.js';
 import { ArrowScrollList } from '../components/base/ArrowScrollList.jsx';
 import { LevelUpFloats } from '../components/board/LevelUpFloat.jsx';
+import { SpeechFrame } from '../components/board/SpeechFrame.jsx';
+import { SPEECH_TONE } from '../components/board/speechTone.js';
 import { ModeBannerView } from '../components/board/MatModeControls.jsx';
 import { MAT_TOP_BAR_PX } from '../components/board/MatTopBar.jsx';
 import { MatRegionName } from '../components/board/MatRegionName.jsx';
@@ -688,6 +690,18 @@ export const KIT_SECTIONS = [
         id: 'level-up-float', title: 'Level-up float', status: 'unapproved', source: 'LevelUpFloat (over a hero on the mat)',
         rule: 'The skill icon at 2× and the level in the display size, no frame, hard shadow. The old number flashes a 1-art-pixel gold outline, rolls up in stepped jumps to the new one, stays about 30 s, then fades in steps.',
         Demo: LevelUpFloatDemo
+    },
+    {
+        id: 'speech', title: 'Speech bubbles and callouts', status: 'unapproved',
+        source: 'SpeechFrame: a hero’s speech on the mat, the hero bar’s level-up alerts, the mat’s callouts, the off-mat refusal',
+        rule: 'One line in the chamfer frame with its hard shadow, white words, and a stepped pixel tail under the bubble nearest what it is about. Bronze for news, gold when it asks to be looked at (a hero with no work, a level-up), red for a can’t (a refused flag, drop or equip). A callout rises and fades without scaling.',
+        Demo: () => (
+            <div className="flex items-end gap-6 pb-3">
+                <SpeechFrame tail className="whitespace-nowrap ui-text-title font-bold">Fir Forest Depleted</SpeechFrame>
+                <SpeechFrame tail tone={SPEECH_TONE.ATTENTION} className="whitespace-nowrap ui-text-title font-bold">No work in range.</SpeechFrame>
+                <SpeechFrame tail tone={SPEECH_TONE.CANT} className="whitespace-nowrap ui-text-title font-bold">Too close to another Token</SpeechFrame>
+            </div>
+        )
     },
     {
         id: 'xp-bar', title: 'XP bar', status: 'unapproved', source: 'none shared',

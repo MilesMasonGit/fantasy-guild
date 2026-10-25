@@ -19,7 +19,9 @@ export const calloutText = {
     demolished: (name) => `Demolished ${name}`,
     effect: (title) => title,
     // Over a Token a hero would work but holds no tool for: "Needs Pickaxe".
-    needsTool: (tool) => `Needs ${tool}`
+    needsTool: (tool) => `Needs ${tool}`,
+    // Over a station its hero stands at, out of an input: "Needs Coal".
+    needsInput: (item) => `Needs ${item}`
 };
 
 /**
@@ -28,6 +30,9 @@ export const calloutText = {
  * without a bubble that never goes away.
  */
 export const TOOL_CALLOUT_GAP_MS = 8000;
+
+/** How long a station waits before saying "Needs Coal" again: the same reminder as the tool's. */
+export const INPUT_CALLOUT_GAP_MS = TOOL_CALLOUT_GAP_MS;
 
 /** Whether a reminder last said at `lastAt` (or never: null) may be said again at `now`. */
 export function dueAgain(lastAt, now, gapMs = TOOL_CALLOUT_GAP_MS) {

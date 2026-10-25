@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { MAT_Z } from './matLayers.js';
 import { pinRefusedLineFor } from './heroBubbles.js';
-import { addMoment, liveMoments, stackOf, momentText, speaksMoment, DEPLETED_TTL_MS } from './heroSpeech.js';
+import { addMoment, liveMoments, stackOf, momentText, speaksMoment, idleMomentOf, DEPLETED_TTL_MS } from './heroSpeech.js';
 import { floatsOf, anyFloats, subscribeFloats } from './levelUpFloats.js';
 import { LevelUpFloats } from './LevelUpFloat.jsx';
 import { useMatFit } from './MatFitContext.jsx';
@@ -17,6 +17,9 @@ import { layoutStacks, bubbleAnchorY } from './bubbleLayout.js';
 import { useMatSize } from '../../hooks/useMatSize.js';
 import { TICK_INTERVAL_MS } from '../../../config/loopConstants.js';
 import { publishHeroColumns } from './speechColumns.js';
+import { SpeechFrame, tailInset } from './SpeechFrame.jsx';
+import { momentTone } from './speechTone.js';
+import { plateUnit } from './workPlate.js';
 
 /** How often lines are re-read and expired ones cleared. */
 const REFRESH_MS = 500;
@@ -67,6 +70,9 @@ export const HeroBubbleLayer = ({ heroes }) => {
     const fit = useMatFit();
     const artUnit = boardScaleAt(fit);
     const artPx = tokenSizeFor(TOKEN_SURFACE.BOARD, 1, artUnit);
+    // The frames' unit: one screen pixel in mat units, as the work plate's.
+    const u = plateUnit(fit || 1);
+    const inset = tailInset(u);
     const wasIdleRef = useRef(null);        // heroId → was idle last render (null until the first look)
 
     // `kind` is the moment's entry in `MOMENT_SPOKEN`: routine ones stay
@@ -126,14 +132,12 @@ export const HeroBubbleLayer = ({ heroes }) => {
             const idle = h.state === 'idle';
             next.set(h.heroId, idle);
             if (prev && prev.get(h.heroId) === false && idle) {
-                // Idle because the one fight in reach is another hero's: they wait for it.
-                const busy = BoardState.getTokenById(Flags.waitingFor(h.heroId));
-                if (busy) {
-                    const name = getTokenType(busy.typeId)?.name || tokenName(busy.typeId) || busy.typeId;
-                    sayRef.current(h.heroId, 'waiting', { key: 'idle', text: momentText.waiting(name) });
-                } else {
-                    sayRef.current(h.heroId, 'idle', { key: 'idle', text: momentText.idle() });
-                }
+                // Waiting for another hero's fight says so; waiting for a resting node says nothing.
+                const waiting = Flags.waitingOf(h.heroId);
+                const busy = BoardState.getTokenById(waiting?.instanceId);
+                const name = busy ? (getTokenType(busy.typeId)?.name || tokenName(busy.typeId) || busy.typeId) : null;
+                const moment = idleMomentOf(busy ? waiting : null, name);
+                if (moment) sayRef.current(h.heroId, moment.kind, { key: moment.key, text: moment.text });
             }
         }
         wasIdleRef.current = next;
@@ -265,22 +269,20 @@ export const HeroBubbleLayer = ({ heroes }) => {
                     >
                         {floats.length > 0 && <LevelUpFloats floats={floats} unit={artUnit} fit={fit} />}
                         {stack.map((b, i) => (
-                            <div
+                            // The tail is on the bubble nearest the head, and points at the hero
+                            // even when the stack has been nudged aside.
+                            <SpeechFrame
                                 key={b.id}
                                 data-hero-bubble={b.id}
                                 data-hero-bubble-kind={b.kind}
-                                className="relative whitespace-nowrap px-2 py-1 rounded-md border border-yellow-500/70 bg-yellow-950/95 text-yellow-100 ui-text-title font-bold shadow-lg"
+                                tone={momentTone(b.id)}
+                                u={u}
+                                tail={i === stack.length - 1}
+                                tailLeft={`clamp(${inset}px, calc(50% - ${dx}px), calc(100% - ${inset}px))`}
+                                className="whitespace-nowrap ui-text-title font-bold"
                             >
                                 {b.text}
-                                {/* The tail is on the bubble nearest the head, and points at the
-                                    hero even when the stack has been nudged aside. */}
-                                {i === stack.length - 1 && (
-                                    <div
-                                        className="absolute -bottom-1 -translate-x-1/2 w-2 h-2 rotate-45 border-r border-b border-yellow-500/70 bg-yellow-950/95"
-                                        style={{ left: `clamp(8px, calc(50% - ${dx}px), calc(100% - 8px))` }}
-                                    />
-                                )}
-                            </div>
+                            </SpeechFrame>
                         ))}
                     </div>
                 );

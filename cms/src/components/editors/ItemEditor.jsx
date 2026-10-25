@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import { Settings2, Shield, HelpCircle, Lock, Sparkles } from 'lucide-react';
 import { useEntityStore } from '../../stores/useEntityStore';
-import { EQUIP_CATEGORIES, TOOL_KINDS, HAND_CATEGORY, tierValue, SKILLS, ENEMY_STYLES, weaponStylesOf, ATTACK_SPEED_MS, DEFAULT_ATTACK_SPEED, WEAPON_TIERS } from '../../utils/constants';
+import {
+  EQUIP_CATEGORIES, TOOL_KINDS, HAND_CATEGORY, tierValue, SKILLS, ENEMY_STYLES, weaponStylesOf, ATTACK_SPEED_MS, DEFAULT_ATTACK_SPEED, WEAPON_TIERS,
+  expandBearer, statementsOf, doseKindsOf, DOSE_WHY, noDoseWhy, isSpentCategory,
+} from '../../utils/constants';
 import { Header, Section, Field, Empty, DerivedMark } from '../shared/EditorLayout';
 import SpritePickerModal from './SpritePickerModal';
 import Statements from './Statements';
@@ -10,7 +13,8 @@ import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 
 /** The Item editor: simplified field set. Value is derived by the balance engine and cannot be typed; inputs and recipes match on exact item IDs, so there are no tags. */
 
-const RESTORING_CATEGORIES = new Set(['food', 'drink', 'consumable']);
+// Drinks never heal (they are work buffs), so they offer no restore amount.
+const RESTORING_CATEGORIES = new Set(['food', 'consumable']);
 
 /** A weapon's own fields, cleared when the item stops being one (out of the hands, or made a tool). */
 const WEAPON_CLEARED = { styles: undefined, damage: undefined, speed: undefined };
@@ -103,6 +107,27 @@ function WeaponFields({ item, onChange }) {
   );
 }
 
+/**
+ * How a food, drink or potion is used, read from its rules by the game's own rule: an elixir lasts
+ * 10 fights, a drink 10 work cycles, a work potion one cycle of its skill. Shown for spent
+ * categories only; gear is worn, not drunk.
+ */
+function DoseLine({ item, effects }) {
+  if (!isSpentCategory(item.equipSlot)) return null;
+  const kinds = doseKindsOf(item.equipSlot, statementsOf(expandBearer(item, effects || {})));
+  return (
+    <div className="col-span-2 space-y-1" data-field="dose">
+      {kinds.length
+        ? kinds.map((kind) => (
+          <p key={kind} data-dose={kind} className="text-[11px] leading-relaxed" style={{ color: 'var(--color-accent-hover)' }}>
+            {DOSE_WHY[kind]}
+          </p>
+        ))
+        : <p data-dose="none" className="text-[10px] text-gray-500 leading-relaxed">{noDoseWhy(item.equipSlot)}</p>}
+    </div>
+  );
+}
+
 /** Maps equipSlot to standard item type for game registry compatibility */
 function slotToType(slot) {
   if (!slot) return 'material';
@@ -119,6 +144,7 @@ export default function ItemEditor() {
   const item = useEntityStore((s) => s.items[activeId]);
   const updateItem = useEntityStore((s) => s.updateItem);
   const deleteItem = useEntityStore((s) => s.deleteItem);
+  const effects = useEntityStore((s) => s.effects);
 
   const [isPickerOpen, setPickerOpen] = useState(false);
 
@@ -316,6 +342,8 @@ export default function ItemEditor() {
               </p>
             </Field>
           )}
+
+          <DoseLine item={item} effects={effects} />
         </div>
       </Section>
 

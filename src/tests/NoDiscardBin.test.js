@@ -2,7 +2,7 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { SRC, listFiles, readSource, rel, setScanTimeout } from './fixtures/sourceScan.js';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import { INITIAL_STATE, createEmptyBoard } from '../state/StateSchema.js';
@@ -14,21 +14,10 @@ import { fingerprint } from '../../bench/lib/fingerprint.mjs';
  * so the bench's work is unchanged.
  */
 
-const SRC = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+setScanTimeout();
 
 /** Every game source file, tests left out. */
-function sourceFiles(dir = SRC, out = []) {
-    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-        const full = path.join(dir, entry.name);
-        if (entry.isDirectory()) {
-            if (full === path.join(SRC, 'tests')) continue;
-            sourceFiles(full, out);
-        } else if (/\.(js|jsx|mjs)$/.test(entry.name)) {
-            out.push(full);
-        }
-    }
-    return out;
-}
+const sourceFiles = () => listFiles(SRC, { ext: /\.(js|jsx|mjs)$/ });
 
 const BIN_NAMES = /DiscardBin|binTokens|BIN_CHANGED|binnedId|data-discard-bin|data-bin-slot|unbinToken|discardAll/;
 
@@ -42,8 +31,8 @@ describe('no discard bin', () => {
 
     it('no game file names it', () => {
         const hits = sourceFiles()
-            .filter(f => BIN_NAMES.test(fs.readFileSync(f, 'utf8')))
-            .map(f => path.relative(SRC, f));
+            .filter(f => BIN_NAMES.test(readSource(f)))
+            .map(f => rel(f));
         expect(hits).toEqual([]);
     });
 

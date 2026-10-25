@@ -25,9 +25,6 @@ const PIXELATED = Object.freeze({ imageRendering: 'pixelated' });
 /** An item's or a Token's sprite, by id. */
 const spriteOf = (id) => resolveSpritePath(getItem(id) || getTokenType(id) || id);
 
-/** The red edition of the chamfer frame: the shared gold one's shape, for a "can't" problem. */
-const RED_CHAMFER = "url(\"data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='7' height='7' shape-rendering='crispEdges'><path fill='%23dc2626' d='M2 0h3v1h-3zM1 1h1v1h-1zM5 1h1v1h-1zM0 2h1v3h-1zM6 2h1v3h-1zM1 5h1v1h-1zM5 5h1v1h-1zM2 6h3v1h-3z'/><path fill='%230d0a08' d='M2 1h3v1h-3zM1 2h5v3h-5zM2 5h3v1h-3z'/></svg>\")";
-
 /**
  * The plate's fill: the Token's own work bar model (`TokenBubbles` keeps it and feeds it the
  * engine's events) painting this element on the shared step clock. Held grey while the Token
@@ -147,8 +144,8 @@ export function WorkPlateView({ cells, tone = null, u = 1, tip = null, fill = nu
             />
             <span
                 aria-hidden="true"
-                className={`ui-frame-chamfer${tone === SEVERITY.WAITING ? ' ui-frame-chamfer-gold' : ''} absolute inset-0 pointer-events-none`}
-                style={tone === SEVERITY.CANT ? { ...frame, borderImageSource: RED_CHAMFER } : frame}
+                className={`ui-frame-chamfer${tone === SEVERITY.WAITING ? ' ui-frame-chamfer-gold' : tone === SEVERITY.CANT ? ' ui-frame-chamfer-red' : ''} absolute inset-0 pointer-events-none`}
+                style={frame}
             />
             {/* Keyed by what each cell is, so a cell keeps its tooltip while the plate opens round it. */}
             {cells.map(cell => <PlateCell key={`${cell.kind}:${cell.itemId || cell.id || ''}`} cell={cell} u={u} tip={tip} />)}

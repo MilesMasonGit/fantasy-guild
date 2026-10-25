@@ -1,9 +1,10 @@
 // per-Token modifier scope
 
-import { ModifierAggregator, applyThreeBucket } from '../effects/ModifierAggregator.js';
+import { ModifierAggregator, applyThreeBucket, combineMultipliers, combinePercentages } from '../effects/ModifierAggregator.js';
 import { getGlobalAggregator } from '../effects/GuildModifiers.js';
-import { TARGET_CATEGORIES } from '../effects/constants.js';
-import { nearby, reachFrom, tokensAround, nearRadius, centreOf, distanceSq } from './nearby.js';
+import { TARGET_CATEGORIES, EFFECT_TYPES } from '../effects/constants.js';
+import { MAX_SPEED_UP_CUT } from '../../config/loopConstants.js';
+import { nearby, reachFrom, tokensAround, nearRadius, centreOf, distanceSq, neighbourIds } from './nearby.js';
 import { onMatTuningChanged } from '../../config/matTuning.js';
 import { getTokenType, registryVersion } from '../../config/registries/tokenRegistry.js';
 import { KEYWORD, statementsOf } from '../effects/statements.js';
@@ -46,6 +47,22 @@ const AMBIENT_KEYWORDS = new Set([KEYWORD.PROVIDES, KEYWORD.GRANTS, KEYWORD.APPL
  */
 const aggregators = new Map();
 
+/**
+ * Each Token's Grow Time, as the three buckets merged from its own aggregator and the guild-wide
+ * one, keyed by instance id ({@link growTimeOf}).
+ *
+ * @type {Map<string, {agg: ModifierAggregator, aggVersion: number, guildVersion: number, regVersion: number, flat: number, multiplier: number, percentage: number, any: boolean, base: number|null, ms: number|null}>}
+ */
+const growTimes = new Map();
+
+/**
+ * Each Token's answer to "does a Token of one of these types stand within reach?", keyed by
+ * instance id ({@link nearbyGateMet}).
+ *
+ * @type {Map<string, {agg: ModifierAggregator, aggVersion: number, regVersion: number, typeIds: readonly string[], met: boolean}>}
+ */
+const gates = new Map();
+
 /** The aggregator for Token `instanceId`, created on first use. */
 export function getTokenAggregator(instanceId) {
     let agg = aggregators.get(instanceId);
@@ -59,6 +76,8 @@ export function getTokenAggregator(instanceId) {
 /** Drop every Token aggregator (before a rehydrate, and in tests). */
 export function clearAll() {
     aggregators.clear();
+    growTimes.clear();
+    gates.clear();
     lastWorkOf.clear();
     // Every Token's buffs are gone, so the next board-reach rebuild is whole.
     lastRebuild = null;
@@ -442,6 +461,8 @@ function* applicableStatements(selfId) {
 export function rebuildToken(instanceId) {
     if (!BoardState.getTokenById(instanceId)) {
         aggregators.delete(instanceId);
+        growTimes.delete(instanceId);
+        gates.delete(instanceId);
         return;
     }
     const agg = getTokenAggregator(instanceId);
@@ -501,6 +522,13 @@ export function collectStatusApplications(instanceId) {
  * `sourceItemIds` rides with the payload because paying an item rule's cost means consuming one of
  * the items that granted it, and by the time the caller acts, which items those were is no longer
  * derivable.
+ *
+ * Only standing rules, as for a Token (`applicableStatements`): a carried rule with a moment fires
+ * on its moment (`LoadoutMoments`), not again at every cycle's end.
+ *
+ * A grant also comes from what the hero carries for a while (a Birdwatcher's chance of a Bird Nest,
+ * applied for the cycle as it started): free here, its item was spent when it was applied, and
+ * only while the hero works the Token it was applied at.
  */
 function loadoutPayloads(instanceId, keyword) {
     const heroId = BoardState.workerOf(instanceId);
@@ -509,15 +537,20 @@ function loadoutPayloads(instanceId, keyword) {
     const hero = HeroManager.getHero(heroId);
     if (!hero) return [];
 
-    return HeroEffects.loadoutStatementsWith(hero, keyword)
+    const carried = HeroEffects.loadoutStatementsWith(hero, keyword)
         // A role-aimed rule reaches its role, never this tile's occupant.
-        .filter(statement => !statement?.target?.role)
+        .filter(statement => !statement?.target?.role && !statement?.when?.event)
         .map(statement => ({
         ...statement.payload,
         effectTitle: statement.effectTitle,
         chargeDelta: statement.chargeDelta,
         sourceItemIds: statement.sourceItemIds
     }));
+    if (keyword !== KEYWORD.GRANTS) return carried;
+    const lingering = LiveEffects.grantStatements(hero, instanceId)
+        .filter(statement => !statement?.target?.role)
+        .map(statement => ({ ...statement.payload, effectTitle: statement.effectTitle, chargeDelta: 0 }));
+    return lingering.length ? [...carried, ...lingering] : carried;
 }
 
 /** Item-granting statements reaching this tile, as raw payloads. */
@@ -786,6 +819,141 @@ export function resolveAxis(instanceId, effectType, base, category = TARGET_CATE
 }
 
 /**
+ * The standard floor for speed-ups: a time sped up by any stack of rules never falls below
+ * `1 - MAX_SPEED_UP_CUT` of its authored length. A slow-down passes untouched. Every speed-up
+ * reader floors through this one function (work time in `BoardRunner.tick`, grow time in
+ * {@link growTimeOf}), so the number is one number.
+ *
+ * Written `base - base × cut` rather than `base × (1 - cut)`: `1 - 0.8` is 0.19999999999999996 in
+ * floating point, which would floor a 10 s vein at 1999.9999999999995 ms.
+ *
+ * @param {number} baseMs the authored time
+ * @param {number} resolvedMs the time after every rule
+ */
+export function floorSpeedUp(baseMs, resolvedMs) {
+    if (!Number.isFinite(baseMs)) return resolvedMs;
+    const floor = baseMs - baseMs * MAX_SPEED_UP_CUT;
+    return resolvedMs < floor ? floor : resolvedMs;
+}
+
+/**
+ * The skill a growing or resting Token's Grow Time narrows to: its own work skill (a resting vein's
+ * Mining), or else that of the first Token down its `grows` chain with one (a Sapling's Tree, so
+ * a Forestry-only rule reaches Oak Saplings), or else every skill.
+ */
+function growSkillOf(typeId) {
+    let def = getTokenType(typeId);
+    for (let step = 0; step < 8 && def; step++) {
+        const skill = def.config?.skill;
+        if (typeof skill === 'string' && skill.trim()) return skill;
+        def = typeof def.grows?.into === 'string' ? getTokenType(def.grows.into) : null;
+    }
+    return TARGET_CATEGORIES.ALL;
+}
+
+/**
+ * How long a Token's `grows` change or its refill after a rest takes, given the authored time:
+ * the Grow Time its neighbours and the Region's rules give it, floored by {@link floorSpeedUp}.
+ * `TimedChanges` (growth) and `Respawn.restMsOf` (a refill) are the two readers.
+ *
+ * No hero scope, unlike {@link resolveAxis}: nobody works a Token while it grows or rests, and a
+ * hero's items reach only the Token their hero works.
+ *
+ * ⚠️ Cached per Token, not resolved per call. Every growing and resting Token asks this on every
+ * tick, and a catch-up plays a day as 86,400 one-second steps of the same tick, so a live resolve
+ * (about 1-2 µs) on 60 such Tokens would add several seconds to a day's catch-up (GDD §14). The
+ * buckets are read once and kept while the Token's aggregator, the guild-wide aggregator and the
+ * Token registry all stand at the versions they were read at: a rebuild of the Token's
+ * neighbourhood, a Region rule coming or going or a content reload moves one of them, and the next
+ * call reads afresh. So it is exactly as fresh as reading the aggregators live.
+ *
+ * A Token not on the mat has no neighbours and gets its authored time.
+ *
+ * @param {object} instance the Token
+ * @param {number} baseMs the authored time (`grows.afterMs`, the respawn's rest)
+ * @returns {number} ms
+ */
+export function growTimeOf(instance, baseMs) {
+    const base = Number(baseMs) || 0;
+    const id = instance?.id;
+    if (id == null) return base;
+
+    // The kept answer, while every version it was read at still stands: one Map read and a few
+    // number reads. ⚠️ A Token's aggregator object is only ever replaced together with this entry
+    // (`clearAll`, and `rebuildToken` for a Token gone from the mat), so its own version is enough.
+    const guild = getGlobalAggregator();
+    const regVersion = registryVersion();
+    let entry = growTimes.get(id);
+    if (!entry || entry.agg.version !== entry.aggVersion
+        || entry.guildVersion !== guild.version || entry.regVersion !== regVersion) {
+        // Read afresh. Only a Token on the mat has neighbours (and an aggregator to make).
+        if (!BoardState.getTokenById(id)) return base;
+        const agg = getTokenAggregator(id);
+        const category = growSkillOf(instance.typeId);
+        const type = EFFECT_TYPES.GROW_TIME;
+        const flat = agg.getFlat(type, category) + guild.getFlat(type, category);
+        const multipliers = [...agg.collectMultipliers(type, category), ...guild.collectMultipliers(type, category)];
+        const percentages = [...agg.collectPercentages(type, category), ...guild.collectPercentages(type, category)];
+        entry = {
+            agg, aggVersion: agg.version, guildVersion: guild.version, regVersion,
+            flat,
+            multiplier: combineMultipliers(multipliers),
+            percentage: combinePercentages(percentages),
+            any: flat !== 0 || multipliers.length > 0 || percentages.length > 0,
+            base: null, ms: null
+        };
+        growTimes.set(id, entry);
+    }
+    if (!entry.any) return base;
+    if (entry.base !== base) {
+        // `applyThreeBucket` over the same buckets, its sums already taken; kept for this base.
+        entry.base = base;
+        entry.ms = floorSpeedUp(base, (base + entry.flat) * entry.multiplier * entry.percentage);
+    }
+    return entry.ms;
+}
+
+/**
+ * Whether a Token of one of `typeIds` stands within reach (Near, centre to centre) of this Token:
+ * the gate on a growth that needs a neighbour (`grows.needsNearby`: a Stump regrows only beside a
+ * Forest of its species). True when `typeIds` is empty; false for a Token not on the mat.
+ *
+ * ⚠️ Cached per Token like {@link growTimeOf}, for the same reason: every gated Token asks on every
+ * tick, a day's catch-up is 86,400 ticks, and a neighbour scan each time would cost seconds. The
+ * answer is kept while the Token's aggregator and the Token registry stand at the versions it was
+ * read at. Every arrival, departure or move within Near of a Token rebuilds that Token's
+ * aggregator (`rebuildAround`, both ends of a move), which moves its version, so the next ask
+ * scans afresh: exactly as fresh as scanning every time.
+ *
+ * @param {object} instance the Token on the mat
+ * @param {readonly string[]} typeIds the types any one of which will do; pass the same (frozen)
+ * list each time (`tokenConstants.growsTermsOf`), since a different list object re-scans
+ * @returns {boolean}
+ */
+export function nearbyGateMet(instance, typeIds) {
+    if (!typeIds?.length) return true;
+    const id = instance?.id;
+    if (id == null) return false;
+    const regVersion = registryVersion();
+    let entry = gates.get(id);
+    if (!entry || entry.agg.version !== entry.aggVersion || entry.regVersion !== regVersion || entry.typeIds !== typeIds) {
+        if (!BoardState.getTokenById(id)) return false;
+        const agg = getTokenAggregator(id);
+        let met = false;
+        for (const otherId of neighbourIds(id)) {
+            const other = BoardState.getTokenById(otherId);
+            if (other && typeIds.includes(other.typeId)) {
+                met = true;
+                break;
+            }
+        }
+        entry = { agg, aggVersion: agg.version, regVersion, typeIds, met };
+        gates.set(id, entry);
+    }
+    return entry.met;
+}
+
+/**
  * What the hero working this tile contributes, out of the items they carry.
  *
  * ⚠️ Read live, not cached into the tile's aggregator, and that is deliberate. A tile's aggregator
@@ -815,9 +983,10 @@ function heroContributions(instanceId, effectType, category = TARGET_CATEGORIES.
     // effect expires on its own clock, with no board change and no player action, so a cached
     // contribution would outlive it. This is what makes Cookout (+10% gathering yield for a while)
     // expressible as an ordinary library effect.
+    // A carried effect bound to another Token's cycle ("for the cycle") does not reach this one.
     const contributing = [
         ...HeroEffects.loadoutStatements(hero),
-        ...LiveEffects.modifierStatements(hero)
+        ...LiveEffects.modifierStatements(hero, instanceId)
     ];
 
     for (const statement of contributing) {

@@ -4,6 +4,7 @@ import {
 import { contextRequirementsOf } from '../../../config/registries/recipePoolRegistry.js';
 import { getItem, getAllItems } from '../../../config/registries/itemRegistry.js';
 import { neededToolOf, toolNeedPhrase, toolItemFor } from '../../../config/registries/toolKinds.js';
+import { hasCatchPools, catchItemIds } from '../../../config/registries/catchPools.js';
 import { enemyProfileOf } from '../../../config/registries/enemyProfile.js';
 import { turnTiming } from '../../../config/registries/tokenConstants.js';
 import { stationSkillOf } from '../../../systems/effects/statements.js';
@@ -183,6 +184,32 @@ function needsOf(inputs, src) {
 
 const seconds = (ms) => Math.max(0, Math.ceil((Number(ms) || 0) / 1000));
 
+/** "1 Oak Seedling", "1 Oak Seedling and 2 Resin". */
+function itemsSpoken(lines, src) {
+    return lines.map(l => `${l.quantity} ${src.itemName(l.itemId)}`).join(' and ');
+}
+
+/**
+ * A growing Token's card line: its countdown, or why it waits. A Stump with no Forest in reach
+ * waits for one; one short of its seedling is stopped; either way the clock shows no time.
+ */
+function growthLine(growth, src) {
+    const into = src.tokenName(growth.into);
+    const needs = (growth.needsNearby || []).map(src.tokenName).join(' or ');
+    const cost = growth.cost?.length ? itemsSpoken(growth.cost, src) : null;
+    if (growth.paused) {
+        return { icon: 'grow', text: '–', tip: `Grows into ${into} only with ${needs} nearby`, tone: 'warning' };
+    }
+    if (growth.stopped) {
+        const short = growth.cost.filter(c => (growth.short || []).includes(c.itemId));
+        return { icon: 'grow', text: '–', tip: `Stopped: needs ${itemsSpoken(short, src)} to grow into ${into}`, tone: 'warning' };
+    }
+    return {
+        icon: 'grow', text: formatClock(growth.inMs),
+        tip: `Grows into ${into} in ${spoken(growth.inMs)}${cost ? `, for ${cost} from the Bank` : ''}`
+    };
+}
+
 /** A spoken duration for a tooltip: "12 s", "2 min", "1 min 5 s". */
 function spoken(ms) {
     const total = seconds(ms);
@@ -224,9 +251,7 @@ export function cardLifecycle(instance, def, src) {
             if (status) out.push(spawnLine(def, status, src));
         }
         const growth = src.nextGrowth?.(instance);
-        if (growth) {
-            out.push({ icon: 'grow', text: formatClock(growth.inMs), tip: `Grows into ${src.tokenName(growth.into)} in ${spoken(growth.inMs)}` });
-        }
+        if (growth) out.push(growthLine(growth, src));
         if (turn) {
             const into = turn.into.map(src.tokenName).join(' or ');
             const { everyMs } = turnTiming(def.turns);
@@ -240,8 +265,12 @@ export function cardLifecycle(instance, def, src) {
     const r = src.respawn?.(instance);
     if (r) {
         if (r.mode === 'refill') {
+            // Drawn as the shared empty rock, a resting vein's line names its ore.
+            const restTip = r.restingSprite
+                ? `${src.tokenName(instance.typeId)}: resting, refills in ${formatClock(r.inMs)}`
+                : `Resting: refills in ${spoken(r.inMs)}`;
             out.push(r.resting
-                ? { icon: 'regrow', text: formatClock(r.inMs), tip: `Resting: refills in ${spoken(r.inMs)}` }
+                ? { icon: 'regrow', text: formatClock(r.inMs), tip: restTip }
                 : { icon: 'regrow', text: formatClock(r.afterMs), tip: `Respawns ${spoken(r.afterMs)} after it's used up` });
         } else {
             const into = src.tokenName(r.into);
@@ -330,7 +359,10 @@ export function tokenCardModel(typeId, instanceId = null, src = liveCardSources(
 
     if (!marked) {
         const inputs = isStation ? (recipe?.inputs || []) : (def.config?.inputs || []);
-        const outputs = isStation ? (recipe?.outputs || []) : (def.config?.outputs || []);
+        // Water lists every fish its pools can land: what bites depends on the tool and bait.
+        const outputs = isStation ? (recipe?.outputs || [])
+            : hasCatchPools(def) ? catchItemIds(def).map(itemId => ({ itemId, minQty: 1, maxQty: 1 }))
+            : (def.config?.outputs || []);
         const needs = needsOf(inputs, src);
         const tools = toolsOf(def, recipe, src);
         const makes = makesOf(outputs);

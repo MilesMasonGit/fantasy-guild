@@ -4,6 +4,7 @@ import { quantityRange } from './fieldAdapter.js';
 import { deriveTokenType } from '../../utils/constants';
 import { slugify } from '../../utils/idGenerator';
 import { isMapItem } from '../../../../src/systems/atlas/mapItems.js';
+import { hasCatchPools } from '../../../../src/config/registries/catchPools.js';
 
 /** Item fields the retired balance engine wrote. Deleted on every run. */
 export const RETIRED_ITEM_FIELDS = Object.freeze(['trueCost', 'sellPrice']);
@@ -259,9 +260,13 @@ export function applyTokenResults(tokens = {}, sim) {
         const tokenId = token?.id ?? id;
         if (!token?.config) { next[id] = token; continue; }
 
-        const outputs = deriveOutputs(token.config.outputs, sim.downcycles.get(tokenId), sim.tunings?.get(tokenId));
         const cycleTimeMs = sim.cycleTimes.get(tokenId);
-        const config = { ...token.config, outputs };
+        const config = { ...token.config };
+        // ⚠️ Water's work is its catch pools (`fieldAdapter.waterOutputs`): a tuning of it is index-parallel
+        // to those, not to `config.outputs`, so its Outputs are kept exactly as typed (or absent).
+        if (!hasCatchPools(token)) {
+            config.outputs = deriveOutputs(token.config.outputs, sim.downcycles.get(tokenId), sim.tunings?.get(tokenId));
+        }
         if (Number.isFinite(cycleTimeMs)) config.cycleTimeMs = cycleTimeMs;
 
         // Derived XP. A Token the XP pass had no answer for keeps its authored `config.xp` exactly as typed, the same rule as the cycle time.

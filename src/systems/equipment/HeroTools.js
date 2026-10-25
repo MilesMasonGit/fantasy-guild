@@ -41,6 +41,19 @@ export function toolsOfHero(hero) {
     return out;
 }
 
+/**
+ * The tool hero `heroId` fishes with at a water whose pools take `kinds`: the first backed tool in
+ * grid order (the first hand) of one of those kinds, as `{ itemId, kind, tier }`, or null. A rod in
+ * the first hand and a net in the second fish with the rod wherever the water has a rod pool.
+ */
+export function catchToolOf(heroId, kinds) {
+    if (!Array.isArray(kinds) || !kinds.length) return null;
+    const hero = heroRecord(heroId);
+    if (!hero) return null;
+    const tool = toolsOfHero(hero).find(t => t.backed && kinds.includes(t.kind));
+    return tool ? { itemId: tool.itemId, kind: tool.kind, tier: tool.tier } : null;
+}
+
 /** Whether hero `heroId` holds a backed tool that answers `need`. No need: true. */
 export function holdsToolFor(heroId, need) {
     if (!need) return true;

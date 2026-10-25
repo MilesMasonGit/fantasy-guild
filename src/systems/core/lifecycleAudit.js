@@ -1,9 +1,11 @@
 // Content audit for the Token Lifecycle blocks.
 
 import {
-    FOUNDATION_KINDS, TURN_DEFAULTS, RESPAWN_MODES, respawnOf, foundationTierOf, foundationMinTierOf, foundationTierMeets
+    FOUNDATION_KINDS, TURN_DEFAULTS, RESPAWN_MODES, respawnOf, foundationTierOf, foundationMinTierOf, foundationTierMeets,
+    STATION_KINDS
 } from '../../config/registries/tokenConstants.js';
-import { stationSkillOf, getProvidedTagsWithTiers } from '../effects/statements.js';
+import { stationSkillOf, stationKindOf, getProvidedTagsWithTiers } from '../effects/statements.js';
+import { neverWearsReason, NEVER_WEARS_WHY } from './wearRule.js';
 
 /**
  * The one checker for the seven Token Lifecycle blocks (`spawner`, `grows`,
@@ -194,6 +196,12 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
                 `has ${defining.join(' and ')} blocks; a Token may have at most one of spawner, turns and foundation (they would fight over what the Token is).`);
         }
 
+        // ── charges on a station or a support: never spent (`wearRule.js`) ──
+        const neverWears = neverWearsReason(def);
+        if (neverWears && def.uses !== undefined && def.uses !== null) {
+            warn('uses', `has ${show(def.uses)} Charges, which the game ignores. ${NEVER_WEARS_WHY[neverWears]} Clear them in the CMS, under Lifecycle → Charges (allowed).`);
+        }
+
         // ── spawner ──
         if (def.spawner) {
             const s = def.spawner;
@@ -214,6 +222,10 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
                 warn('spawner.upkeep', 'spawner has no upkeep, so it spawns for free (allowed; SP-70 is decided per Token).');
             }
 
+            if (s.withinReach !== undefined && typeof s.withinReach !== 'boolean') {
+                err('spawner.withinReach', `spawner "plants within its reach" is ${show(s.withinReach)}; it must be ticked or not.`);
+            }
+
             if (spawnerFamily(s, tokens).has(id)) {
                 err('spawner.spawns', 'spawner family contains the spawner itself (through its spawn list or what those grow into).');
             }
@@ -221,8 +233,30 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
 
         // ── grows ──
         if (def.grows) {
-            checkTokenRef(err, 'grows.into', 'grows into', def.grows.into);
-            checkTime(err, 'grows.afterMs', 'grow time', def.grows.afterMs);
+            const g = def.grows;
+            checkTokenRef(err, 'grows.into', 'grows into', g.into);
+            checkTime(err, 'grows.afterMs', 'grow time', g.afterMs);
+            // What it needs in reach before its clock runs (a Stump, its Forest), and what it pays.
+            if (g.needsNearby !== undefined) {
+                if (!Array.isArray(g.needsNearby)) {
+                    err('grows.needsNearby', `needs nearby is ${show(g.needsNearby)}; it must be a list of Tokens.`);
+                } else {
+                    g.needsNearby.forEach((typeId, i) => {
+                        if (typeId === id) err(`grows.needsNearby[${i}]`, 'needs itself nearby to grow, which it always is; name the Token it needs (its Forest).');
+                        else checkTokenRef(err, `grows.needsNearby[${i}]`, 'needs nearby', typeId);
+                    });
+                }
+            }
+            if (g.cost !== undefined) {
+                if (!Array.isArray(g.cost)) {
+                    err('grows.cost', `grow cost is ${show(g.cost)}; it must be a list of items.`);
+                } else {
+                    g.cost.forEach((entry, i) => {
+                        checkItemRef(err, `grows.cost[${i}].itemId`, 'grow cost names', entry?.itemId);
+                        checkPositive(err, `grows.cost[${i}].quantity`, `grow cost quantity of ${show(entry?.itemId ?? '?')}`, entry?.quantity);
+                    });
+                }
+            }
         }
 
         // ── turns ──
@@ -345,6 +379,9 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
                         `regrows from ${tokenLabel(r.into)}, which never grows back into it; give that Token a Grows block that ends here.`);
                 }
             }
+            if (r?.mode === 'regrow' && hasValue(r.restingSprite)) {
+                warn('respawn.restingSprite', 'has a resting sprite but regrows; it becomes another Token with its own art, so the sprite is never drawn.');
+            }
             if (def.uses === null || def.uses === undefined) {
                 warn('respawn', 'respawns but has unlimited charges, so it never runs out and never rests (allowed).');
             }
@@ -394,6 +431,26 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
             if (mismatched.length > 0) {
                 recipeError(recipe, 'skill',
                     `is a ${show(recipe.skill ?? 'blank')} recipe, but ${kind} Foundations are built with ${mismatched.join(', ')}.`);
+            }
+        }
+    }
+
+    // ── Station kinds: on a station's Works as rule and on a recipe ──
+    for (const [id, def] of Object.entries(tokens)) {
+        const kind = stationKindOf(def);
+        if (kind && !STATION_KINDS.includes(kind)) {
+            tokenError(id, 'stationKind', `works as the station kind ${show(kind)}; it must be one of ${STATION_KINDS.join(', ')}.`);
+        }
+    }
+    for (const recipe of recipes) {
+        if (!recipe || recipe.stationKinds === undefined) continue;
+        if (!Array.isArray(recipe.stationKinds)) {
+            recipeError(recipe, 'stationKinds', `station kinds are ${show(recipe.stationKinds)}; they must be a list.`);
+            continue;
+        }
+        for (const kind of recipe.stationKinds) {
+            if (!STATION_KINDS.includes(kind)) {
+                recipeError(recipe, 'stationKinds', `names the station kind ${show(kind)}; it must be one of ${STATION_KINDS.join(', ')}.`);
             }
         }
     }

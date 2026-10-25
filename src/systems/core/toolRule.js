@@ -4,6 +4,8 @@ import {
     isToolKind, toolOf, neededToolOf, toolKindLabel, RETIRED_TOOL_TAGS, HAND_CATEGORY
 } from '../../config/registries/toolKinds.js';
 import { getProvidedTagsWithTiers } from '../effects/statements.js';
+import { isConsumableCategory } from '../../config/registries/equipmentCategories.js';
+import { catchPoolsOf } from '../../config/registries/catchPools.js';
 
 /**
  * Tools are items a hero holds in one hand; a gathering Token names the kind and tier it needs.
@@ -53,6 +55,8 @@ export function toolFindings({ items = {}, tokens = {}, recipes = [] } = {}) {
             }
         }
 
+        catchFindings(token, tokenId, items, best, (message) => push('Token', tokenId, token, message));
+
         for (const tag of Object.keys(getProvidedTagsWithTiers(token))) {
             const kind = RETIRED_TOOL_TAGS[tag];
             if (!kind) continue;
@@ -75,4 +79,55 @@ export function toolFindings({ items = {}, tokens = {}, recipes = [] } = {}) {
     }
 
     return out;
+}
+
+/**
+ * A water Token's catch pools (`catchPools.js`), written in a way that cannot work: a tool kind the
+ * game lacks or no item is, a bait or catch that is not an item, a bait no hero can carry, a pool
+ * with nothing to catch or written twice, a tool that catches only with bait, and the fields the
+ * pools make pointless (Outputs, Needs tool) or need (a work cycle).
+ */
+function catchFindings(token, tokenId, items, best, say) {
+    const raw = Array.isArray(token?.catchPools) ? token.catchPools : [];
+    if (!raw.length) return;
+    const itemName = (id) => items?.[id]?.name || id;
+    const seen = new Set();
+    raw.forEach((pool, n) => {
+        const label = `catch pool ${n + 1}`;
+        const kind = typeof pool?.tool === 'string' ? pool.tool.trim() : '';
+        if (!isToolKind(kind)) {
+            say(`its ${label} names the tool kind "${kind}", which the game does not have, so no hero fishes it`);
+        } else if (!best.has(kind)) {
+            say(`its ${label} needs a ${toolKindLabel(kind)}, and no item is a ${toolKindLabel(kind)}, so no hero fishes it`);
+        }
+        const bait = typeof pool?.bait === 'string' && pool.bait.trim() ? pool.bait.trim() : null;
+        if (bait && !items?.[bait]) {
+            say(`its ${label} takes "${bait}" as bait, which is not an item`);
+        } else if (bait && !isConsumableCategory(items[bait]?.equipSlot)) {
+            say(`its ${label} takes ${itemName(bait)} as bait, but ${itemName(bait)} is not a Consumable, so no hero can carry it as bait`);
+        }
+        const key = `${kind}|${bait || ''}`;
+        if (seen.has(key)) {
+            say(`has two catch pools for a ${toolKindLabel(kind)} ${bait ? `with ${itemName(bait)}` : 'with no bait'}: only the first is used`);
+        }
+        seen.add(key);
+        const catches = Array.isArray(pool?.catches) ? pool.catches : [];
+        for (const c of catches) {
+            if (c?.itemId && !items?.[c.itemId]) say(`its ${label} lands "${c.itemId}", which is not an item`);
+        }
+        if (!catches.some(c => c?.itemId && Number(c.weight) > 0)) {
+            say(`its ${label} has no catch with a weight above 0, so it is ignored`);
+        }
+    });
+
+    const pools = catchPoolsOf(token);
+    for (const kind of new Set(pools.map(p => p.tool))) {
+        if (isToolKind(kind) && !pools.some(p => p.tool === kind && !p.bait)) {
+            say(`a hero with a ${toolKindLabel(kind)} catches nothing here without bait: give it a pool with no bait`);
+        }
+    }
+    if (!pools.length) return;
+    if (!token.config) say('has catch pools but no work cycle (skill and cycle time), so nobody fishes it');
+    if ((token.config?.outputs || []).length) say('has catch pools, so its Outputs are never made: the catch replaces them');
+    if (token.needsTool) say('has catch pools, so its Needs tool is ignored: any tool its pools name will do, at any tier');
 }

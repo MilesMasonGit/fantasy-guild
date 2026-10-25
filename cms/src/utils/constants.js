@@ -38,6 +38,7 @@ export {
   statementsOf,
   statementsWith,
   stationSkillOf,
+  stationKindOf,
   hasRetiredEffectData,
   effectEntryOf,
 } from '../../../src/systems/effects/statements.js';
@@ -106,6 +107,9 @@ export {
 // Token Lifecycle: the kinds of Foundation. Game-defined, so the dropdown, the engine and the content audit cannot disagree about what a kind is.
 export { FOUNDATION_KINDS, foundationTierOf, foundationMinTierOf } from '../../../src/config/registries/tokenConstants.js';
 
+// The kinds of station that narrow a skill's recipes (a Furnace smelts, a Smithy makes tools). Game-defined, like the Foundation kinds.
+export { STATION_KINDS, stationKindLabel, recipeStationKinds, stationKindOffers } from '../../../src/config/registries/tokenConstants.js';
+
 // A turning Token rolls a chance once per cycle, both ways. The defaults a new Turns block starts with are the game's.
 export { TURN_DEFAULTS } from '../../../src/config/registries/tokenConstants.js';
 
@@ -126,6 +130,9 @@ export { ATTACK_SPEED_MS, DEFAULT_ATTACK_SPEED, WEAPON_TIERS } from '../../../sr
 // A hero-worked Token must name a skill. The game's own rule and wording, so the CMS and the boot audit name the same Tokens.
 export { isWorkedWithoutSkill, WORK_SKILL_WHY } from '../../../src/systems/core/workSkillRule.js';
 
+// Stations and supports never wear out: the game's own rule and wording, so the Token editor hides Charges on exactly the Tokens the game treats as unlimited.
+export { neverWearsReason, NEVER_WEARS_WHY } from '../../../src/systems/core/wearRule.js';
+
 // The content checks for the six lifecycle blocks: the game's own rules and wording, so the Economy Audit and the boot audit report the same problems.
 export { auditLifecycleBlocks } from '../../../src/systems/core/lifecycleAudit.js';
 
@@ -143,6 +150,19 @@ export {
   tierValue,
 } from '../../../src/config/registries/toolKinds.js';
 export { toolFindings } from '../../../src/systems/core/toolRule.js';
+// A water Token's catch pools (tool kind × bait → a weighted catch): the game's own reader, so the Catch pools block and the game read the same pools.
+export { catchPoolsOf, hasCatchPools, catchItemIds, baitItemIds } from '../../../src/config/registries/catchPools.js';
+// Bait is carried in a Consumable cell: the Catch pools block offers only items of a consumable category.
+export { isConsumableCategory } from '../../../src/config/registries/equipmentCategories.js';
+// How a carried food, drink or potion is used (an elixir's fights, a drink's work cycles, a work potion's one cycle), and that its always-on rules do nothing: the game's own rule and wording.
+export {
+  doseKindsOf,
+  DOSE_WHY,
+  noDoseWhy,
+  isSpentCategory,
+  isAlwaysOn,
+  ALWAYS_ON_IDLE_WHY,
+} from '../../../src/systems/core/consumableRule.js';
 
 // `tokenType` is derived from what a Token has rather than picked. The CMS computes it and writes it into the file.
 export {
