@@ -9,6 +9,7 @@ import { DerivedGroupLabel } from './EditorLayout';
  * The Input / Output list: the rows, number cells and search-or-create picker used by the Token and Recipe editors. `SupplyChainColumn` supplies the column chrome.
  * Three kinds of entry, told apart by which id they carry: `itemId` (an item; inputs are always this), `currency` (a payout; outputs only), `tokenId` (a Token dropped on the floor; outputs only).
  * ⚠️ Inputs are always an exact item, never a tag; tools and context are a separate axis and are not authored here.
+ * `firstKillOption` (an enemy's Drops) adds "First kill always drops" to each item line (`firstKill: true`, read by `LootSystem`).
  */
 export default function IOEntryList({
   entries = [],
@@ -19,6 +20,7 @@ export default function IOEntryList({
   onUpdate,
   onRemove,
   emptyHint,
+  firstKillOption = false,
 }) {
   const setActiveEntity = useEntityStore((s) => s.setActiveEntity);
   const items = useEntityStore((s) => s.items);
@@ -158,6 +160,17 @@ export default function IOEntryList({
                   />
                 </div>
               </div>
+              {firstKillOption && entry.itemId && (
+                <label className="flex items-center gap-1.5 text-[11px] text-gray-300" title="The first time the save beats this enemy, this line drops for certain; afterwards at its chance.">
+                  <input
+                    type="checkbox"
+                    data-field="firstKill"
+                    checked={entry.firstKill === true}
+                    onChange={(e) => onUpdate(i, { firstKill: e.target.checked ? true : undefined })}
+                  />
+                  First kill always drops
+                </label>
+              )}
             </>
           )}
         </div>

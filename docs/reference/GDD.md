@@ -700,6 +700,12 @@ duels: `concept_combat.md`, "The level table and weapon tiers").
   (Encounters, below). Boss moves will hang on this mark.
 - Each kill uses one of the enemy's uses; at 0 it's gone. Otherwise it
   respawns at full HP after a 2 s pause.
+- **First kill always drops**: a drop line ticked so in the CMS (an enemy's
+  Drops) lands for certain the first time the save kills that enemy type, then
+  at its own chance. The save remembers each type paid
+  (`collection.firstKillDrops`); a save from before the record has been paid
+  nothing, whatever its kill counts. Time away pays it as live play does.
+  *(`combat/firstKill.js`)*
 
 ### Encounters — Built (brief 220 C5)
 - **Every fight is one-on-one**, bosses and guardians included: a Token holds

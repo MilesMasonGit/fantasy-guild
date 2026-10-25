@@ -35,6 +35,7 @@ export default function SupplyChainLayout({ children }) {
       rightEntries: config?.outputs || [],
       leftHint: isEnemy ? 'Enemies usually consume nothing.' : 'No inputs.',
       rightHint: isEnemy ? 'No drops yet.' : 'No outputs yet.',
+      isEnemy,
     };
   }, [token]);
 
@@ -86,6 +87,7 @@ export default function SupplyChainLayout({ children }) {
           editable
           entries={tokenSidebars.rightEntries}
           emptyHint={tokenSidebars.rightHint}
+          firstKillOption={tokenSidebars.isEnemy}
           onAdd={(itemId) => editList('outputs', (list) => [...list, makeOutputEntry(itemId)])}
           onAddCurrency={(currency) =>
             editList('outputs', (list) => [...list, makeCurrencyOutputEntry(currency)])

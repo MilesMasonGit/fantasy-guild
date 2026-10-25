@@ -12,6 +12,7 @@ import * as RareDrops from '../board/RareDrops.js';
 import * as BoardState from '../board/BoardState.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
+import * as FirstKill from './firstKill.js';
 
 /**
  * Loot rolls. Enemy kills roll each drop line independently.
@@ -54,7 +55,9 @@ const LootSystem = {
             ? (quantity, itemId) => OutputRules.doubleItemDrop(instanceId, itemId,
                 OutputRules.widenYield(instanceId, skill, quantity) * (doubled ? 2 : 1))
             : null;
-        const generatedDrops = this.rollEachLine(sourceData.drops, areaId, widen);
+        const firstKill = FirstKill.isOwed(enemyId, sourceData.drops);
+        const generatedDrops = this.rollEachLine(sourceData.drops, areaId, widen, firstKill);
+        if (firstKill) FirstKill.markPaid(enemyId);
 
         if (onBoard) {
             // On the board, loot drops as floating sprites where the kill
@@ -81,13 +84,14 @@ const LootSystem = {
      *
      * @param {Array} entries - `{ itemId, chance, minQty, maxQty }` lines
      * @param {Function} [widen] - `(quantity, itemId)` → the quantity that lands (the kill's output rules)
+     * @param {boolean} [firstKill] - the save's first kill of this enemy: lines marked `firstKill` land for certain (`firstKill.js`)
      * @returns {Array} the drops that landed, possibly empty
      */
-    rollEachLine(entries, areaId, widen = null) {
+    rollEachLine(entries, areaId, widen = null, firstKill = false) {
         const results = [];
         for (const entry of (Array.isArray(entries) ? entries : [])) {
             if (!entry) continue;
-            const chance = entry.chance ?? 100;
+            const chance = firstKill && entry.firstKill === true ? 100 : (entry.chance ?? 100);
             if (chance < 100 && Math.random() * 100 > chance) continue;
             const drop = this._rollEntryDetails(entry, areaId);
             if (drop && widen && drop.type !== 'combat_trigger') drop.quantity = widen(drop.quantity, drop.itemId);
