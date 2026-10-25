@@ -28,7 +28,7 @@ export function OrchardDevSection() {
                     onClick={() => {
                         const r = setUpOrchardScene();
                         setStatus(r.ok
-                            ? 'Upper left: a QA Apple Orchard with a fruiting and a Bare apple tree and a Picker (picked bare, a tree rests Bare 18 s, then fruits again in place; the Orchard plants a third tree). To the right, a lone Bare tree with no Orchard: it stays Bare (yellow mark: needs an Orchard nearby)'
+                            ? 'Top of the mat, above the Guild Hall: a QA Apple Orchard with a fruiting and a Bare apple tree and a Picker (picked bare, a tree rests Bare 18 s, then fruits again in place; the Orchard plants a third tree). To its left, a lone Bare tree with no Orchard: it stays Bare (yellow mark: needs an Orchard nearby)'
                             : r.error);
                     }}
                 >

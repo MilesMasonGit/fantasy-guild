@@ -77,17 +77,17 @@ function registerQaTypes() {
 }
 
 /**
- * Where the scene stands: the mat's upper left, clear of the Hall's scenes, the waiting scene
- * (lower left), Forestry (upper right) and Mining (lower right). Both trees stand 150 from the
- * Orchard (within its reach, 164); the lone tree stands well away from it and from the picker's
- * flag.
+ * Where the scene stands: the top of the mat, between the Starter Camp's Oak Forest and the
+ * Forestry scene (upper right), above the Guild Hall, clear of the waiting scene (lower left) and
+ * Mining (lower right). Both trees stand 150 from the Orchard (within its reach, 164); the lone
+ * tree stands out of the Orchard's reach and the picker's flag (240).
  */
 export const ORCHARD_SPOTS = Object.freeze({
-    orchard: { x: 330, y: 220 },
-    fruiting: { x: 480, y: 220 },
-    bare: { x: 330, y: 370 },
-    lone: { x: 800, y: 200 },
-    loneOrchard: { x: 950, y: 200 }
+    orchard: { x: 880, y: 150 },
+    fruiting: { x: 1030, y: 150 },
+    bare: { x: 880, y: 300 },
+    lone: { x: 620, y: 100 },
+    loneOrchard: { x: 620, y: 250 }
 });
 
 function put(typeId, point, uses = tokenStartingUses(typeId)) {
@@ -109,13 +109,13 @@ function qaHero(name, skillIds) {
 let scene = null;
 
 /**
- * The mat's upper left:
+ * The top of the mat:
  * - a QA Apple Orchard with a fruiting QA Apple Tree and a Bare one in its reach, and a QA Picker
  *   flagged on it: the Picker picks the fruiting tree bare (three picks), and it rests Bare for
  *   18 s (30 s, the Orchard −40 %) before fruiting again; the Bare one fruits again first; while
  *   both are Bare the Picker waits silently ("Waiting for QA Apple Tree" on the flag's hover); the
  *   Orchard plants a third tree within its reach (an Apple Seed paid);
- * - to the right, a lone Bare QA Apple Tree with no Orchard in reach: it stays Bare, its yellow
+ * - to the left, a lone Bare QA Apple Tree with no Orchard in reach: it stays Bare, its yellow
  *   mark saying it needs a QA Apple Orchard nearby to refill ("Put an Orchard beside the lone
  *   tree" starts it).
  * Every tree stays where it stands (dragging is refused).
@@ -130,7 +130,7 @@ export function setUpOrchardScene() {
     const fruiting = put(T.TREE, s.fruiting);
     const bare = put(T.TREE, s.bare, 0);
     const lone = put(T.TREE, s.lone, 0);
-    if (!orchard || !fruiting || !bare || !lone) return { ok: false, error: 'No room at the mat’s upper left for the scene' };
+    if (!orchard || !fruiting || !bare || !lone) return { ok: false, error: 'No room at the top of the mat for the scene' };
     // Both start Bare, as trees a picker emptied do.
     Respawn.restInstead(bare);
     Respawn.restInstead(lone);
