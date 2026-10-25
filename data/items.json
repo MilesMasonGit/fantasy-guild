@@ -1335,5 +1335,207 @@
       "tier": 1,
       "starter": true
     }
+  },
+  "item_copper_sword": {
+    "name": "Copper Sword",
+    "description": "",
+    "type": "weapon",
+    "sprite": "i_longsword_copper",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": 14,
+    "valueSource": "recipe_copper_sword",
+    "autoSyncId": true,
+    "styles": [
+      "melee"
+    ],
+    "damage": 2,
+    "id": "item_copper_sword"
+  },
+  "item_copper_dagger": {
+    "name": "Copper Dagger",
+    "description": "",
+    "type": "weapon",
+    "sprite": "i_longsword_copper",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": 7,
+    "valueSource": "recipe_copper_dagger",
+    "autoSyncId": true,
+    "styles": [
+      "melee",
+      "stealth"
+    ],
+    "damage": 1,
+    "speed": "fast",
+    "effects": [
+      {
+        "effectId": "effect_dagger",
+        "scale": 1
+      }
+    ],
+    "id": "item_copper_dagger"
+  },
+  "item_copper_cleaver": {
+    "name": "Copper Cleaver",
+    "description": "",
+    "type": "weapon",
+    "sprite": "i_battleaxe_copper",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": 15,
+    "valueSource": "recipe_copper_cleaver",
+    "autoSyncId": true,
+    "styles": [
+      "melee"
+    ],
+    "damage": 2,
+    "speed": "slow",
+    "effects": [
+      {
+        "effectId": "effect_cleaver",
+        "scale": 1
+      }
+    ],
+    "id": "item_copper_cleaver"
+  },
+  "item_copper_greatsword": {
+    "name": "Copper Greatsword",
+    "description": "",
+    "type": "weapon",
+    "sprite": "i_longsword_copper",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": 28,
+    "valueSource": "recipe_copper_greatsword",
+    "autoSyncId": true,
+    "styles": [
+      "melee"
+    ],
+    "damage": 3,
+    "speed": "slow",
+    "hands": 2,
+    "id": "item_copper_greatsword"
+  },
+  "item_copper_bow": {
+    "name": "Copper Bow",
+    "description": "",
+    "type": "weapon",
+    "sprite": "i_arrow",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": 11,
+    "valueSource": "recipe_copper_bow",
+    "autoSyncId": true,
+    "styles": [
+      "ranged"
+    ],
+    "damage": 2,
+    "effects": [
+      {
+        "effectId": "effect_bow",
+        "scale": 1
+      }
+    ],
+    "id": "item_copper_bow"
+  },
+  "item_copper_wand": {
+    "name": "Copper Wand",
+    "description": "",
+    "type": "weapon",
+    "sprite": "i_rod_wood",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": 10,
+    "valueSource": "recipe_copper_wand",
+    "autoSyncId": true,
+    "styles": [
+      "magic"
+    ],
+    "damage": 1,
+    "speed": "fast",
+    "id": "item_copper_wand"
+  },
+  "item_leather_hat": {
+    "name": "Leather Hat",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_hat_mage",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hat",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "effects": [
+      {
+        "effectId": "effect_leather_armour",
+        "scale": 1
+      }
+    ],
+    "id": "item_leather_hat"
+  },
+  "item_leather_chest": {
+    "name": "Leather Chest",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_body_tunic",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "chest",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "effects": [
+      {
+        "effectId": "effect_leather_armour",
+        "scale": 1
+      }
+    ],
+    "id": "item_leather_chest"
+  },
+  "item_elixir_of_valor": {
+    "name": "Elixir of Valor",
+    "description": "",
+    "type": "potion",
+    "sprite": "i_potion_sun_red",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "consumable",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "effects": [
+      {
+        "effectId": "effect_elixir_of_valor",
+        "scale": 1
+      }
+    ],
+    "id": "item_elixir_of_valor"
+  },
+  "item_elixir_of_ironskin": {
+    "name": "Elixir of Ironskin",
+    "description": "",
+    "type": "potion",
+    "sprite": "i_potion_hammer_grey",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "consumable",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "effects": [
+      {
+        "effectId": "effect_elixir_of_ironskin",
+        "scale": 1
+      }
+    ],
+    "id": "item_elixir_of_ironskin"
   }
 }

@@ -373,6 +373,248 @@
     }
   },
   {
+    "id": "recipe_copper_dagger",
+    "name": "Copper Dagger",
+    "skill": "smithing",
+    "levelRequirement": 2,
+    "requiresContext": [
+      {
+        "tag": "anvil",
+        "minTier": 1,
+        "chargeCost": 1
+      }
+    ],
+    "inputs": [
+      {
+        "itemId": "item_copper_ingot",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_copper_dagger",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 8000,
+    "stationChargeCost": 1,
+    "xp": 1,
+    "sim": {
+      "tempo": "fast",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_copper_sword",
+    "name": "Copper Sword",
+    "skill": "smithing",
+    "levelRequirement": 3,
+    "requiresContext": [
+      {
+        "tag": "anvil",
+        "minTier": 1,
+        "chargeCost": 1
+      }
+    ],
+    "inputs": [
+      {
+        "itemId": "item_copper_ingot",
+        "quantity": 2
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_copper_sword",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 16000,
+    "stationChargeCost": 1,
+    "xp": 2,
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_copper_cleaver",
+    "name": "Copper Cleaver",
+    "skill": "smithing",
+    "levelRequirement": 4,
+    "requiresContext": [
+      {
+        "tag": "anvil",
+        "minTier": 1,
+        "chargeCost": 1
+      }
+    ],
+    "inputs": [
+      {
+        "itemId": "item_copper_ingot",
+        "quantity": 2
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_copper_cleaver",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 17000,
+    "stationChargeCost": 1,
+    "xp": 2,
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_copper_bow",
+    "name": "Copper Bow",
+    "skill": "smithing",
+    "levelRequirement": 4,
+    "requiresContext": [
+      {
+        "tag": "anvil",
+        "minTier": 1,
+        "chargeCost": 1
+      }
+    ],
+    "inputs": [
+      {
+        "itemId": "item_copper_ingot",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 2
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_copper_bow",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 17000,
+    "stationChargeCost": 1,
+    "xp": 2,
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_copper_wand",
+    "name": "Copper Wand",
+    "skill": "smithing",
+    "levelRequirement": 4,
+    "requiresContext": [
+      {
+        "tag": "anvil",
+        "minTier": 1,
+        "chargeCost": 1
+      }
+    ],
+    "inputs": [
+      {
+        "itemId": "item_copper_ingot",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_copper_wand",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 17000,
+    "stationChargeCost": 1,
+    "xp": 2,
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_copper_greatsword",
+    "name": "Copper Greatsword",
+    "skill": "smithing",
+    "levelRequirement": 6,
+    "requiresContext": [
+      {
+        "tag": "anvil",
+        "minTier": 1,
+        "chargeCost": 1
+      }
+    ],
+    "inputs": [
+      {
+        "itemId": "item_copper_ingot",
+        "quantity": 4
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_copper_greatsword",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 17000,
+    "stationChargeCost": 1,
+    "xp": 2,
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
     "name": "Dough",
     "requiresContext": [],
     "inputs": [
