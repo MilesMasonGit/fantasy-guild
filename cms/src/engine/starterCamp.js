@@ -88,7 +88,7 @@ export function starterCampDiff(before, after) {
             usedNow.add(j);
             pairedMoves.push({ i, typeId, from: { x: was[i].x, y: was[i].y }, to: { x: now[j].x, y: now[j].y } });
         }
-        moved.push(...pairedMoves.sort((p, q) => p.i - q.i).map(({ i, ...m }) => m));
+        moved.push(...pairedMoves.sort((p, q) => p.i - q.i).map((m) => ({ typeId: m.typeId, from: m.from, to: m.to })));
         was.forEach((w, i) => { if (!usedWas.has(i)) removed.push({ ...w }); });
         now.forEach((n, j) => { if (!usedNow.has(j)) added.push({ ...n }); });
     }
