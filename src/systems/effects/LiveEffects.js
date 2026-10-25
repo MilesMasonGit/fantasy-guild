@@ -272,15 +272,28 @@ export function endHeroFightEffects(heroId) {
 
 /**
  * A work cycle is over: take off what a bearer carried "for the cycle". With `at`, only what was
- * bound to that Token's cycle (and any unbound one); without, every one (a new cycle is starting,
- * so whatever the last one left is over).
+ * bound to that Token's cycle (and any unbound one); without, every one.
  * @param {string|null} [at] the Token whose cycle ended
  * @returns {number} how many instances ended
  */
 export function endCycleEffects(bearer, at = null) {
+    return endWhere(bearer, (e) => !!e.forCycle && (at == null || e.forCycle === true || e.forCycle === at));
+}
+
+/**
+ * A work cycle is starting at Token `at`: take off what another Token's cycle left bound to the
+ * bearer (a cycle left part-way). An unbound one stays: a Token's rule may have put it there for
+ * this very cycle as it started.
+ * @returns {number} how many instances ended
+ */
+export function endOtherCycleEffects(bearer, at) {
+    return endWhere(bearer, (e) => !!e.forCycle && e.forCycle !== true && e.forCycle !== at);
+}
+
+/** Take off every instance `ends` says, and say so once. */
+function endWhere(bearer, ends) {
     const target = bearer?.target;
     if (!target?.effects?.length) return 0;
-    const ends = (e) => !!e.forCycle && (at == null || e.forCycle === true || e.forCycle === at);
     if (!target.effects.some(ends)) return 0;
     const before = target.effects.length;
     target.effects = target.effects.filter(e => !ends(e));
@@ -294,6 +307,12 @@ export function endCycleEffects(bearer, at = null) {
 export function endHeroCycleEffects(heroId, at = null) {
     const hero = heroId ? HeroManager.getHero(heroId) : null;
     return hero ? endCycleEffects(heroBearer(hero), at) : 0;
+}
+
+/** `endOtherCycleEffects` for a hero, by id. */
+export function endHeroOtherCycleEffects(heroId, at) {
+    const hero = heroId ? HeroManager.getHero(heroId) : null;
+    return hero ? endOtherCycleEffects(heroBearer(hero), at) : 0;
 }
 
 /** Take one library effect off a bearer. `null` removes every one. */

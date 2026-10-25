@@ -38,8 +38,8 @@ import { BOARD_EVENTS } from './boardEvents.js';
  *
  * ## A work cycle starting (`CYCLE_START`)
  * Its hero's rules on On Work Start (`WORK_START`) and on `CYCLE_START` fire, those naming a skill
- * only on a cycle of that skill. Before they do, whatever the hero's last cycle left "for the cycle"
- * ends (a cycle left part-way included). Drinks and work potions are drunk from their dose
+ * only on a cycle of that skill. Before they do, whatever another Token's cycle left bound to the
+ * hero "for the cycle" ends (a cycle left part-way). Drinks and work potions are drunk from their dose
  * (`ConsumptionSystem.startWorkDoses`) and their work rules fire from it, uncharged, as an
  * elixir's do on a fight. An effect applied "for the cycle" is bound to this Token's cycle and ends
  * with it (`init`'s `CYCLE_COMPLETE` subscription).
@@ -82,7 +82,7 @@ export function fire(instanceId, heroId, eventId) {
     const fightStart = eventId === ConsumptionSystem.FIGHT_START;
     const workStart = eventId === CYCLE_START;
     const skill = workStart ? cycleSkillOf(instanceId) : '';
-    if (workStart) LiveEffects.endHeroCycleEffects(heroId);
+    if (workStart) LiveEffects.endHeroOtherCycleEffects(heroId, instanceId);
 
     const doses = fightStart ? ConsumptionSystem.startFightElixirs(heroId)
         : workStart ? ConsumptionSystem.startWorkDoses(heroId, skill) : [];

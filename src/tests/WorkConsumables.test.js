@@ -379,12 +379,41 @@ describe('for the cycle', () => {
         expect(hero.effects).toEqual([]);
     });
 
-    it('never runs out by time, and a new cycle starting ends whatever the last one left', () => {
+    it('never runs out by time; a cycle starting elsewhere ends what another Token\'s cycle left', () => {
         const bearer = LiveEffects.heroBearer(hero);
         LiveEffects.applyTo(bearer, { effectId: 's6b_fx_coffee', forCycle: 'tok_a' });
         LiveEffects.tickBearer(bearer, () => {}, Number.MAX_SAFE_INTEGER - 1);
         expect(hero.effects).toHaveLength(1);
-        expect(LiveEffects.endCycleEffects(bearer)).toBe(1);
+        // Starting at the same Token keeps it; starting at another ends it.
+        expect(LiveEffects.endOtherCycleEffects(bearer, 'tok_a')).toBe(0);
+        expect(LiveEffects.endOtherCycleEffects(bearer, 'tok_b')).toBe(1);
+        // An unbound one (a Token's rule, for whichever cycle comes) waits for a cycle to end.
+        LiveEffects.applyTo(bearer, { effectId: 's6b_fx_coffee', forCycle: true });
+        expect(LiveEffects.endOtherCycleEffects(bearer, 'tok_b')).toBe(0);
+        expect(LiveEffects.endCycleEffects(bearer, 'tok_b')).toBe(1);
+    });
+
+    it('a Token\'s "On Neighbour\'s Start: applies Coffee … for the cycle" lasts the cycle its hero just started', () => {
+        registerTokenTypes({
+            s6b_coffee_stall: {
+                id: 's6b_coffee_stall', name: 'Coffee Stall', tokenType: 'buff', rarity: 'common', theme: 'fixture', uses: null,
+                sprite: 's_nature', requiresHero: false,
+                statements: [{
+                    ...makeStatement(KEYWORD.APPLIES), id: 'stm_s6b_stall', chargeDelta: 0, to: { mode: 'all', value: '' }, reach: 'nearby',
+                    when: { event: 'CYCLE_START', scope: 'nearby', cooldownMs: 0 },
+                    payload: { effectId: 's6b_fx_coffee', scale: 1, durationMs: 0, forCycle: true, chance: 100 }
+                }]
+            }
+        });
+        TriggerSystem.init();
+        LoadoutMoments.init();      // after TriggerSystem, as the game boots
+        const stall = BoardState.createTokenInstance('s6b_coffee_stall', null);
+        Placement.placeTokenAt(stall, { x: TREE_AT.x + 150, y: TREE_AT.y });
+        place('s6b_tree', TREE_AT);
+        untilCycles(3);
+        expect(completions.every(c => c.effects.includes('s6b_fx_coffee'))).toBe(true);
+        expect(lastGap()).toBe(20);
+        TriggerSystem.teardown();
     });
 
     it('a cycle left part-way lends nothing to the next Token', () => {
