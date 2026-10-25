@@ -7,6 +7,7 @@ import { getMissingRequirements, effectiveIO } from '../../../systems/board/Reci
 import { workConfigOf } from '../../../systems/board/StationRecipe.js';
 import { MASTERY_LEVEL } from '../../../systems/hero/PromotionSystem.js';
 import { getTokenType } from '../../../config/registries/tokenRegistry.js';
+import { fieldOf } from '../../../config/registries/tokenConstants.js';
 import { getSkill } from '../../../config/registries/skillRegistry.js';
 import { getItem, getAllItems } from '../../../config/registries/itemRegistry.js';
 import { neededToolOf, toolNeedPhrase } from '../../../config/registries/toolKinds.js';
@@ -161,7 +162,9 @@ export function problemText(problem, instanceId) {
         }
         case ALERT.GROW_NEEDS_ITEM: {
             const names = (problem.needs || []).map(id => getItem(id)?.name || id);
-            return names.length ? `Needs ${joinNames(names)} to grow` : 'Needs items to grow';
+            // The same stop on a Field is for want of its seed: it waits to sow.
+            const what = fieldOf(getTokenType(instance?.typeId)) ? 'sow' : 'grow';
+            return names.length ? `Needs ${joinNames(names)} to ${what}` : `Needs items to ${what}`;
         }
         case ALERT.SPAWN_NO_ROOM:
             return 'No room to spawn';

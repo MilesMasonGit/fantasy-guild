@@ -16,6 +16,7 @@ import { registerRecipePools } from '../config/registries/recipePoolRegistry.js'
 import { tokenDetailOf } from '../ui/components/board/useTokenDetail.js';
 import { tokenCardModel, liveCardSources, CARD_BLOCK } from '../ui/components/board/tokenCard.js';
 import { lifecycleLines } from '../ui/components/drawer/lifecycleLines.js';
+import { problemOf, problemText } from '../ui/components/board/problemMark.js';
 import { getRecipe } from '../config/registries/recipePoolRegistry.js';
 import { clearMat, placeAt } from './fixtures/mat.js';
 
@@ -147,6 +148,9 @@ describe('the card', () => {
         tick(200);
         const lines = block(card(field), CARD_BLOCK.LIFECYCLE).lines;
         expect(lines[0]).toMatchObject({ text: '–', tip: 'Stopped: needs View Wheat Seed to sow Wheat', tone: 'warning' });
+        // Its yellow mark says the same; a Stump's says it waits to grow.
+        const problem = problemOf({ growth: Growth.growthAlertOf(field.id) });
+        expect(problemText(problem, field.id)).toBe('Needs View Wheat Seed to sow');
     });
 
     it('the live sources carry the Field readers', () => {
