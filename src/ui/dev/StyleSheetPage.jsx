@@ -784,9 +784,9 @@ export const KIT_SECTIONS = [
         Demo: WorkPlateDemo
     },
     {
-        id: 'combat-screen', title: 'Combat screen (mock-ups A, B, C)', status: 'unapproved',
+        id: 'combat-screen', title: 'Combat screen (mock-ups, round two)', status: 'unapproved',
         source: 'CombatMockups (pictures only, nothing in the game uses them)',
-        rule: 'Three options for the fight on the mat and its panel, for the owner to pick from: HP bars with the number and the percentage, a floating number for every hit both ways, a fight icon above each fight that opens the panel over the playmat, the enemy card on hover, and the bubble row while fighting. The same fixture fight in each: Aela (Melee 20) with Valor and Ironskin, poisoned ×2, against a Goblin Warlord (a Brute, Venomous) at 0:12. Placeholder icons are drawn in code.',
+        rule: 'The fight on the mat as settled after round one (thin bars with the number above, the fight icon on its chip, floats at the fighters’ sides, the bubble row with fights left, the enemy card on hover), then three options for the fight panel: a battlefield scene with the two fighters facing each other, both sides’ numbers, elixirs, statuses and kinds, and the log behind a toggle. The same fixture fight throughout: Aela (Melee 20) with Valor and Ironskin, poisoned ×2, against a Goblin Warlord (a Brute, Venomous) at 0:12. Placeholder icons are drawn in code.',
         Demo: CombatMockups
     }
 ];

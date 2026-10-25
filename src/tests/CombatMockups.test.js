@@ -1,13 +1,13 @@
 // @vitest-environment jsdom
 import { describe, it, expect, afterEach } from 'vitest';
 import React from 'react';
-import { render, cleanup } from '@testing-library/react';
+import { render, cleanup, fireEvent } from '@testing-library/react';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 
 import { KIT_SECTIONS } from '../ui/dev/StyleSheetPage.jsx';
 import { CombatMockups } from '../ui/dev/CombatMockups.jsx';
-import { COMBAT_OPTIONS, ENEMY_CARDS, FLOAT_SAMPLES, FIGHT, hpLabel, hpPercent } from '../ui/dev/combatMockups.js';
+import { PANEL_OPTIONS, ENEMY_CARDS, FLOAT_SAMPLES, FIGHT, hpLabel, hpPercent } from '../ui/dev/combatMockups.js';
 import { getItem } from '../config/registries/itemRegistry.js';
 
 /** Every source file under `dir`, recursively. */
@@ -20,9 +20,9 @@ function sources(dir) {
 }
 
 /**
- * The combat screen's mock-ups are pictures for the owner to pick from: on the
- * style sheet page as an unapproved piece, each option showing the same things, and nowhere in
- * the game.
+ * The combat screen's mock-ups are pictures for the owner to pick from: on the style sheet page
+ * as an unapproved piece, the fight on the mat as settled and three fight panel options, and
+ * nowhere in the game.
  */
 describe('Combat screen mock-ups', () => {
     afterEach(() => cleanup());
@@ -40,40 +40,60 @@ describe('Combat screen mock-ups', () => {
         expect(hpLabel(-3, 30)).toBe('0 · 0%');
     });
 
-    it('draw each option with the fight on the mat, every float, both enemy cards and the panel', () => {
-        const view = render(React.createElement(CombatMockups));
-        const doc = view.container;
-        expect(COMBAT_OPTIONS.map(o => o.id)).toEqual(['A', 'B', 'C']);
-        for (const o of COMBAT_OPTIONS) {
-            const box = doc.querySelector(`[data-c6-option="${o.id}"]`);
-            expect(box, o.id).not.toBeNull();
-            const mat = box.querySelector('[data-c6-shot="mat"]');
-            expect(mat.querySelectorAll('[data-c6-cost="bars"]').length).toBeGreaterThan(0);
-            expect(mat.querySelector('[data-c6-cost="icon"]')).not.toBeNull();
-            expect(mat.querySelector('[data-c6-cost="plate"]')).not.toBeNull();
-            expect(mat.textContent).toContain(hpLabel(FIGHT.hero.hp, FIGHT.hero.maxHp));
-            expect(mat.textContent).toContain(hpLabel(FIGHT.enemy.hp, FIGHT.enemy.maxHp));
-            const floats = box.querySelectorAll('[data-c6-shot="floats"] [data-c6-float]');
-            expect([...floats].map(f => f.dataset.c6Float)).toEqual(FLOAT_SAMPLES.map(s => s.id));
-            // The ruling: the word "Crit!" and the word "Miss" both show.
-            expect(box.querySelector('[data-c6-float="enemy-crit"]').textContent).toMatch(/crit!/i);
-            expect(box.querySelector('[data-c6-float="hero-miss"]').textContent).toMatch(/miss/i);
-            for (const e of ENEMY_CARDS) {
-                const card = box.querySelector(`[data-c6-card="${e.id}"]`);
-                expect(card, `${o.id} ${e.id}`).not.toBeNull();
-                expect(card.textContent).toContain(`${e.level}/99`);
-                // Kinds show only once the guild has fought one.
-                expect(card.textContent.includes('Brute')).toBe(e.known);
-            }
-            const panel = box.querySelector(`[data-c6-panel="${o.id}"]`);
-            expect(panel).not.toBeNull();
-            expect(panel.querySelector('[data-c6-status="poison"]').textContent).toContain('×2');
-            const elixirIcons = panel.querySelectorAll('[data-c6-elixir]').length;
-            const elixirNames = ['Valor', 'Ironskin'].every(n => panel.textContent.includes(n));
-            expect(elixirIcons === 2 || elixirNames, `${o.id} elixirs`).toBe(true);
-            expect(panel.textContent).toContain('Brute');
-            expect(panel.querySelector('[data-c6-log]')).not.toBeNull();
+    it('draw the settled fight on the mat: both bars, the icon, the plate with fights left, every float', () => {
+        const doc = render(React.createElement(CombatMockups)).container;
+        const mat = doc.querySelector('[data-c6-shot="mat"]');
+        expect(mat.querySelectorAll('[data-c6-cost="bars"]').length).toBe(2);
+        expect(mat.textContent).toContain(hpLabel(FIGHT.hero.hp, FIGHT.hero.maxHp));
+        expect(mat.textContent).toContain(hpLabel(FIGHT.enemy.hp, FIGHT.enemy.maxHp));
+        expect(mat.querySelector('[data-c6-cost="icon"]')).not.toBeNull();
+        const plate = mat.querySelector('[data-c6-cost="plate"]');
+        for (const e of FIGHT.hero.elixirs) expect(plate.querySelector(`[data-c6-elixir="${e.name}"]`).textContent).toContain(String(e.fightsLeft));
+        const floats = doc.querySelectorAll('[data-c6-shot="floats"] [data-c6-float]');
+        expect([...floats].map(f => f.dataset.c6Float)).toEqual(FLOAT_SAMPLES.map(s => s.id));
+        expect(doc.querySelector('[data-c6-float="enemy-crit"]').textContent).toMatch(/crit!/i);
+        expect(doc.querySelector('[data-c6-float="hero-miss"]').textContent).toMatch(/miss/i);
+        // Poison and burn ticks carry their icon (red, no colour of their own).
+        expect(doc.querySelector('[data-c6-float="hero-poison"] [data-glyph="drop"]')).not.toBeNull();
+        expect(doc.querySelector('[data-c6-float="hero-burn"] [data-glyph="flame"]')).not.toBeNull();
+        for (const e of ENEMY_CARDS) {
+            const card = doc.querySelector(`[data-c6-card="${e.id}"]`);
+            expect(card.textContent).toContain(`${e.level}/99`);
+            expect(card.textContent.includes('Brute')).toBe(e.known);
         }
+    });
+
+    it('draw each panel with both fighters on the battlefield, both sides’ numbers, and the log closed until asked for', () => {
+        const doc = render(React.createElement(CombatMockups)).container;
+        expect(PANEL_OPTIONS.map(o => o.id)).toEqual(['1', '2', '3']);
+        for (const o of PANEL_OPTIONS) {
+            const box = doc.querySelector(`[data-c6-panel-option="${o.id}"]`);
+            const closed = box.querySelector('[data-c6-shot="closed"] [data-c6-panel]');
+            const open = box.querySelector('[data-c6-shot="open"] [data-c6-panel]');
+            for (const panel of [closed, open]) {
+                expect(panel.querySelector('[data-c6-scene] [data-c6-fighter="hero"]'), o.id).not.toBeNull();
+                expect(panel.querySelector('[data-c6-scene] [data-c6-fighter="enemy"]'), o.id).not.toBeNull();
+                const text = panel.textContent;
+                for (const v of [FIGHT.hero.swing, FIGHT.enemy.swing, hpLabel(FIGHT.hero.hp, FIGHT.hero.maxHp), hpLabel(FIGHT.enemy.hp, FIGHT.enemy.maxHp)]) {
+                    expect(text, `${o.id} ${v}`).toContain(v);
+                }
+                expect(panel.querySelector('[data-c6-status="poison"]').textContent).toContain('×2');
+                expect(panel.querySelectorAll('[data-c6-elixir]').length).toBe(2);
+                expect(panel.querySelector('[data-c6-kinds]').textContent).toMatch(/Brute[\s\S]*Venomous/);
+            }
+            expect(closed.querySelector('[data-c6-log]'), o.id).toBeNull();
+            expect(closed.querySelector('[data-c6-log-toggle="closed"]')).not.toBeNull();
+            expect(open.querySelector('[data-c6-log]')).not.toBeNull();
+        }
+    });
+
+    it('open and close the log with its button', () => {
+        const doc = render(React.createElement(CombatMockups)).container;
+        const closed = () => doc.querySelector('[data-c6-panel-option="1"] [data-c6-shot="closed"]');
+        fireEvent.click(closed().querySelector('[data-c6-log-toggle]'));
+        expect(closed().querySelector('[data-c6-log]')).not.toBeNull();
+        fireEvent.click(closed().querySelector('[data-c6-log-toggle]'));
+        expect(closed().querySelector('[data-c6-log]')).toBeNull();
     });
 
     it('use real elixirs for the fixture hero', () => {
@@ -84,7 +104,7 @@ describe('Combat screen mock-ups', () => {
         const root = path.resolve(__dirname, '..');
         const importers = sources(root)
             .filter(f => !f.includes(`${path.sep}tests${path.sep}`))
-            .filter(f => /from '\.\/(CombatMockups|combatMockups)(\.jsx?)?'|CombatMockups\.jsx|combatMockups\.js/.test(readFileSync(f, 'utf8')))
+            .filter(f => /CombatMockups\.jsx|combatMockups\.js/.test(readFileSync(f, 'utf8')))
             .map(f => path.relative(root, f).split(path.sep).join('/'));
         expect(importers.sort()).toEqual(['ui/dev/CombatMockups.jsx', 'ui/dev/StyleSheetPage.jsx']);
     });
