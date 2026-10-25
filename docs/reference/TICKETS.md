@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-252**
+**Next free number: T-255**
 
 ---
 
@@ -54,7 +54,8 @@ here.
 | T-248 | P3 | open | **Enemies stroll with their art over the mat edge** (found 2026-10-24 diagnosing the AtlasTravel flake): `EnemyMotion.js` ~236 clamps a stroll to the mat by its centre only (`clampToMat`), so up to 64 u of art hangs past the edge; a reload or travel then hops it inward (`MatResize.fitToMat`). Fix: clamp by the whole footprint (`MatPlacement.clampInside`; check for an import cycle). WORK CHANGED expected; small look change near edges. Engineer or builder. | flake diagnosis |
 | T-249 | P2 | open | **After a kill, the next camp enemy swings first** (found 2026-10-24): the kill ends the tick before the enemy swing timer moves and the post-kill pause does not reset it, so the next enemy hits about 2.9 s before the hero (live; 3.0 s in catch-up steps vs 2.1 s live). **Owner 2026-10-24: even start**: both swing timers reset when a new fight starts, so neither side gets a free hit. Do with combat C6b or as a small engine fix; catch-up identity test; WORK CHANGED expected on camp scenarios. | flake diagnosis |
 | T-250 | P3 | open | **Seed Math.random for every test**: the game never seeds it; tests that run fights or strolls are luck-dependent unless they seed by hand (and `EnemyMotion`/`HeroMotion` keep their own copy, needing `setRandomForTests`). A vitest setup file that reseeds before each test would end this class of flake. Builder. | flake diagnosis |
-| T-251 | P3 | open | **A CMS page for engine tuning numbers** (brief 230 S1a, owner 2026-10-24: "a ticket later"): the speed-up floor (`MAX_SPEED_UP_CUT = 0.8`) and the elixir dose (`ELIXIR_FIGHTS = 10`) live as code constants in `loopConstants.js`; give the owner a synced tuning page (a `data/tuning.json`, a CMS page, a loader). Builder. | brief 230 S1a |
+| T-253 | P3 | open | **A CMS page for engine tuning numbers** (brief 230 S1a, owner 2026-10-24: "a ticket later"): the speed-up floor (`MAX_SPEED_UP_CUT = 0.8`) and the elixir dose (`ELIXIR_FIGHTS = 10`) live as code constants in `loopConstants.js`; give the owner a synced tuning page (a `data/tuning.json`, a CMS page, a loader). Builder. | brief 230 S1a |
+| T-254 | P3 | open | **Leftovers of "help is free"** (brief 230 S1a, 2026-10-24): the CMS recipe editor still shows a "Charge cost" box on each context requirement, which now does nothing (hide or reword; `RecipeAuthoring.test.js` covers it); `problemMark.js` keeps a "Too few charges on the X nearby" message that can no longer appear. Builder-lite. | brief 230 S1a |
 | T-026 | P3 | ride-along | Small per-tick allocations in combat and statuses. | CR3-032 |
 | T-027 | P3 | ride-along | Motion ticks allocate small objects per walker. | CR3-153 |
 
@@ -64,7 +65,6 @@ Detail, order and tiers in [brief 210](../active/briefs/210_backlog_intake.md); 
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
-| T-252 | P3 | open | **A selected nav orb: a steady gold pixel outline** instead of growing and glowing (owner 2026-10-24, after T-244; gold is the selected tab in UI_STYLE). Builder-lite. One capture. | Backlog director, T-244 |
 | T-251 | P3 | open | **Slow file-scanning tests time out under load**: `EngineEventNames` (CR3-107 runs 4.6 s alone against vitest's 5 s limit) and the source-scanning tests (`UiLayers`, `OneTooltip`, `GoldRetired`, `ContentIdsInCode`, `TextInCodeMatchesScreen`, `TimeBankRetired`, `RulesUseGameClock`, ...) fail at random when the full suite runs beside a build or another director's agents, then pass alone (seen many times 2026-10-23/24). Give the scanning tests a longer timeout or a shared cached file walk. Builder-lite. | Backlog director |
 
 ### UI

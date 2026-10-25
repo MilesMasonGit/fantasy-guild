@@ -24,7 +24,7 @@ C2; C0 (the test content pack, accepted by the director) after C2; C6 last.
 | C0: first combat content pack, accepted by the director (guarded) | builder + director | pack `2026-10-24-combat-c0-first-content` | **synced** 0bdfa84f: copper sword, dagger, cleaver, greatsword, bow, wand; leather hat and chest (no recipe: no leather in plane 1); Valor and Ironskin elixirs (no recipe: no Alchemy station); Poison and Burn; Goblin level 5, Goblin Chief level 20 Brute (owner: Recruits need food to beat a goblin). Guard: no autosave newer than the last Sync. ⚠️ This browser's CMS workspace was **empty** at first (no stored workspace): Restore from Game first, then accept; id-diff after Sync showed only the pack's 28 ids. Owner: their own browser's workspace predates this; use Restore from Game before editing | Sat | Sat |
 | C6: the combat screen. C6a mock-ups (2–3 options on the style sheet page, the owner picks by phone), then C6b the build | engineer | `systems/combat-screen` (`sx`) | C6a done (A compact, B duel sheet, C scene card; shots `2026-10-24_c6_*`). Owner by phone: **B is closest, but needs a different design philosophy**; specific feedback to come. Settled: medium floats with a big crit, placed clear of the flag; the panel shows both sides' hit, armour, swing; poison and burn ticks red with an icon. Waiting on the owner's feedback before C6b | Sat | |
 
-## Backlog director, after brief 210: follow-ups (owner 2026-10-24: frames round two after the bubble row)
+## Backlog director, after brief 210: follow-ups (owner 2026-10-24: frames round two after the bubble row) — **all done, merged 7f6a1166**
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
@@ -34,7 +34,7 @@ C2; C0 (the test content pack, accepted by the director) after C2; C6 last.
 | T-241: loot particles under the open drawers | builder | `backlog/particles-under-drawer` | **merged** 7d9c6f9f (fix, one capture): the particle canvas was outside the screen overlay; now the mat's flights sit under the drawers and pause while the Bank is open, the dock-lift flight on its own top canvas. Merged gate on `main` after the Systems director's test fixes: 6074 pass, the one failure a slow scan that passes alone (T-251); dock drags 60/60 | Sat | Sat |
 | T-247: a station's gear tip above the work plate | builder | `backlog/gear-tip-over-plate` | **merged** 60e6671e (fix, one capture): the gear tip moved onto the shared tooltip; merged gate: only the 7 known failures from `main`, build ok, same work | Sat | Sat |
 | T-244: nav orbs and the gear button without hover glow or scale | builder-lite | `backlog/no-hover-glow` | **merged** afd4ec28 (owner ok by phone): white pixel outline on hover. Merged gate 6083 pass, 0 fail. ⚠️ A fast-forward raced the Systems director's commit in the main folder and left my files staged; restored them to HEAD by name and re-merged cleanly | Sat | Sat |
-| T-252: a selected orb gets a steady gold outline (owner) | builder-lite | `backlog/orb-selected` (`ho`) | building | Sat | |
+| T-252: a selected orb gets a steady gold outline (owner) | builder-lite | `backlog/orb-selected` | **merged** 7f6a1166: gate 6083 pass, 0 fail (main gained only docs since) | Sat | Sat |
 | T-243: callouts and speech in the pixel family | builder | `backlog/speech-pixel` | **merged** 48796bb2 (owner ok by phone; rule in UI_STYLE cbe81171): one SpeechFrame, tones bronze/gold/red. Merged gate on `main` after the test fixes: **6081 pass, 0 fail**, cycles, build, same work | Sat | Sat |
 
 ## Systems director, skill loops (brief 230; owner 2026-10-24: next, beside the rest of combat)
@@ -42,7 +42,7 @@ C2; C0 (the test content pack, accepted by the director) after C2; C6 last.
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
 | S0: gap map (read-only) | engineer | — | **done**: [research/skill_loops_gap_map.md](research/skill_loops_gap_map.md). Order: S1a; S1b ∥ S6a; S2a ∥ S5; S3 ∥ S6b; S4 ∥ S2b; S7 ∥ S8; S9. Owner: a station out of input waits unless other work runs; a map's wheat patch is a ready-planted Field; no loud pop for rare catches; drinks only buff; supports never wear out. Director: S0 Q2, Q3 (80 % as a code constant), Q4, Q7, Q8, Q10, Q12, Q13 option A | Sat | Sat |
-| S1a: 80 % speed-up floor, Grow Time axis (cached per Token), "stays where it stands" mark, stations and supports never wear out | engineer | `systems/skills-s1a` (`sl`) | ready (6112 tests, cycles, build; trial merge with main 6154 green). Owner: a helper node's help is free (only its own harvest spends charges): being added, then gate and bench (WORK CHANGED expected: wear rule on the bench's buff and station fixtures). T-251 tuning page | Sat | |
+| S1a: 80 % speed-up floor, Grow Time axis (cached per Token), "stays where it stands" mark, stations and supports never wear out | engineer | `systems/skills-s1a` (`sl`) | ready (6112 tests, cycles, build; trial merge with main 6154 green). Owner: a helper node's help is free (only its own harvest spends charges): being added, then gate and bench (WORK CHANGED expected: wear rule on the bench's buff and station fixtures). T-253 tuning page | Sat | |
 
 ## Backlog director, batch F: look-wide passes (brief 210; owner said go 2026-10-24: both, mock-ups first) — **done, merged eb969849; brief 210 complete**
 
@@ -326,6 +326,15 @@ T-186; the badges' soft shadows are settled inside T-013.)
 8. ~~Terrain director: bench baseline retake~~ **Done:** engine 2026-10-21 13:00 (f19a2e30), draw 2026-10-22 01:00 (db3959c4).
 
 ## Summaries
+
+**Sat 2026-10-24, night: Backlog director session closed.** Where we are:
+brief 210 and every follow-up the owner approved are on `main` 7f6a1166
+(pixel frames rounds one and two, the speech frame, the work plate and its
+pick-up fix, the drag bench's Shop and Bank kinds, loot under the drawers,
+the gear tip, orbs without glow). Next: T-251 (slow scanning tests) is the
+only Backlog ticket left; the rest of the ticket list belongs to the planning
+agents and the Systems director. Owner: the hands-on lists in the eye-check
+records. Handoff: [HANDOFF_backlog.md](HANDOFF_backlog.md).
 
 **Sat 2026-10-24, evening: brief 210 complete.** Where we are: all six
 batches of the owner's backlog intake are on `main` eb969849, every phase
