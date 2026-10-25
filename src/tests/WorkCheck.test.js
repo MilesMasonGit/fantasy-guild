@@ -73,12 +73,11 @@ const CASES = [
     { name: 'missing inputs', expected: ALERT.INPUTS, build: () => put(TILE, 'fixture_consumer') },
     { name: 'no recipe context', expected: ALERT.NO_RECIPE, build: () => { InventoryManager.addItem('item_coal', 5); return put(TILE, 'fixture_station'); } },
     {
-        // A station never runs short of its own charges (brief 230 S1a), so the shortfall is the
-        // context's: a gathering node offering the tag holds 1 of the 2 the recipe draws.
+        // A station never runs short of its own charges and nothing near pays (brief 230 S1a), so the
+        // shortfall is a Token's own: 3 a cycle (1 to run, 2 for its own rule) against 2 left.
         name: 'too few charges', expected: ALERT.CHARGES, build: () => {
             InventoryManager.addItem('item_coal', 5);
-            put(TILE + 1, 'fixture_charged_context_node', 1);
-            return put(TILE, 'fixture_charge_station');
+            return put(TILE, 'fixture_own_cost_kiln', 2);
         }
     },
     {

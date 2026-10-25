@@ -215,8 +215,8 @@ export const FIXTURE_TOKENS = {
     // --- Charges that still wear (brief 230 S1a) ----------------------------
     // Stations and supports never wear out (`wearRule.js`), so a context Token or a buff is
     // unlimited whatever it authors. A GATHERING node keeps its charges (they are what it holds)
-    // even when it also helps its neighbours: these two are the shapes the charge rules still
-    // reach. No hero can work either (level 999), so they only ever serve.
+    // even when it also helps its neighbours, and help is free: only its own gathering spends
+    // them. No hero can work the two nodes (level 999), so they only ever serve.
 
     /** A gathering node that also offers `fixture_charged_context`'s tag: 6 charges a recipe's context cost draws on. */
     fixture_charged_context_node: {
@@ -228,7 +228,25 @@ export const FIXTURE_TOKENS = {
         },
         provides: [{ tag: 'ctx_fixture_charged', minTier: 1 }]
     },
-    /** A gathering node with a +5 % yield aura (the Blackberry Bush's shape): its neighbours' cycles wear it. */
+    /**
+     * A Token that still pays its own way: not a station and helping no one, it spends 1 charge to
+     * run plus 2 for its own per-cycle rule (a yield to itself), so 3 a cycle against 10.
+     */
+    fixture_own_cost_kiln: {
+        id: 'fixture_own_cost_kiln', name: 'Fixture Own-Cost Kiln', tokenType: 'resource',
+        rarity: 'common', theme: 'fixture', uses: 10, sprite: 's_industry',
+        config: {
+            skill: 'smithing', skillRequired: 1, cycleTimeMs: 10000, xp: 1,
+            inputs: [{ itemId: 'item_coal', quantity: 1 }],
+            outputs: [{ itemId: 'fixture_charcoal', minQty: 1, maxQty: 1, chance: 100 }]
+        },
+        statements: [{
+            id: 'stm_own_cost_kiln', keyword: 'provides', reach: 'self', to: null,
+            chargeWhen: 'per_cycle', chargeDelta: -2,
+            payload: { type: 'YIELD', bucket: 'percentage', value: 0.05 }
+        }]
+    },
+    /** A gathering node with a +5 % yield aura (the Blackberry Bush's shape): only its own gathering spends it. */
     fixture_aura_node: {
         id: 'fixture_aura_node', name: 'Fixture Aura Node', tokenType: 'resource',
         rarity: 'common', theme: 'fixture', uses: 10, sprite: 's_nature',

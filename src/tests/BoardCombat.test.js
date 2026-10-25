@@ -263,17 +263,21 @@ describe('A kill', () => {
         expect(seen[0].instanceId).toBe(idAt(10));
     });
 
-    it('wears nearby support per kill, exactly as a craft would (D-126), where support still wears', () => {
-        // Combat is not exempt from the economy just because it runs on a different engine: a kill
-        // is one cycle served. Supports never wear out (brief 230 S1a), so a Weapon Rack keeps its
-        // charges; a gathering node with an aura keeps its charges as stock and still wears.
-        place(10, 'fixture_enemy', 'hero_1');
+    it('wears nothing beside it per kill, as a craft wears nothing (help is free, brief 230 S1a)', () => {
+        // A kill is one cycle, as a craft is (D-126); since the owner's 2026-10-24 rulings nothing
+        // beside either pays for it: a Weapon Rack keeps its charges, and so does a gathering node
+        // with an aura, whose charges only its own gathering spends.
+        const bear = place(10, 'fixture_enemy', 'hero_1');
         const rack = place(11, 'fixture_buff_yield', null, 10);
         const node = place(9, 'fixture_aura_node', null, 10);
+        let kills = 0;
+        const off = EventBus.subscribe(BOARD_EVENTS.COMBAT_RESOLVED, (p) => { if (p?.instanceId === bear.id && p.outcome === 'victory') kills++; });
 
         run(60000);
+        off();
 
-        expect(node.usesRemaining).toBeLessThan(10);
+        expect(kills).toBeGreaterThan(0);
+        expect(node.usesRemaining).toBe(10);
         expect(rack.usesRemaining).toBe(10);
     });
 

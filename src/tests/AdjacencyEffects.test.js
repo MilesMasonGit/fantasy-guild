@@ -703,12 +703,12 @@ describe('⚠️ Context COMBINATIONS gate a recipe (CMS-6, CMS-7)', () => {
 });
 
 /**
- * ⚠️ Supports never wear out (brief 230 S1a; owner, 2026-10-24: "build once, help forever"). This
- * replaces D-126/D-157's wear per cycle served for supports: a schematic, a rack or a buff keeps
- * its charges. A GATHERING node that also helps its neighbours keeps its charges as stock, and
- * that is where wear per cycle served, and its rate trade, still apply.
+ * ⚠️ Supports never wear out, and help is free (brief 230 S1a; owner, 2026-10-24: "build once,
+ * help forever"). This replaces D-126/D-157's wear per cycle served and its rate trade: a
+ * schematic, a rack or a buff keeps its charges, and a gathering node that also helps its
+ * neighbours spends its charges only on its own gathering.
  */
-describe('Support wears per cycle SERVED (D-126, D-157), only where it still wears', () => {
+describe('Nothing wears for the cycles it serves (replaces D-126, D-157)', () => {
     it('a schematic keeps its uses, cycle after cycle (supports never wear out)', () => {
         InventoryManager.addItem('item_coal', 20);
         place(A, 'fixture_station', 'hero_1');
@@ -720,11 +720,7 @@ describe('Support wears per cycle SERVED (D-126, D-157), only where it still wea
         expect(schematic.usesRemaining).toBe(10);
     });
 
-    it('⚠️ a gathering node with an aura serving TWO stations wears twice as fast — a rate trade, not free value', () => {
-        // This is whole point: one Token serving three stations gives the same
-        // TOTAL benefit as one serving a single station, three times faster and
-        // wearing out three times sooner. Clustering buys throughput now at the
-        // cost of restocking sooner. It is not strictly better.
+    it('a gathering node with an aura serving TWO stations keeps its charges: help is free', () => {
         InventoryManager.addItem('item_coal', 40);
         place(P(2, 2), 'fixture_station', 'hero_1');
         place(P(2, 4), 'fixture_station', 'hero_2');
@@ -733,7 +729,8 @@ describe('Support wears per cycle SERVED (D-126, D-157), only where it still wea
 
         run(17000);
 
-        expect(node.usesRemaining).toBe(8);      // TWO cycles served
+        expect(SpriteLayer.countOnBoard('fixture_spider_silk')).toBe(2);   // TWO cycles served
+        expect(node.usesRemaining).toBe(10);
     });
 
     it('an unlimited-use buff never wears (D-176)', () => {

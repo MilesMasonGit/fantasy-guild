@@ -7,9 +7,6 @@ import { getItem } from '../../config/registries/itemRegistry.js';
 import * as InputAllocator from './InputAllocator.js';
 import * as StationRecipe from './StationRecipe.js';
 import * as BoardState from './BoardState.js';
-import * as Charges from './Charges.js';
-import { EventBus } from '../core/EventBus.js';
-import { BOARD_EVENTS } from './boardEvents.js';
 
 /**
  * The player chooses what a station makes; adjacency decides whether it can.
@@ -22,11 +19,11 @@ import { BOARD_EVENTS } from './boardEvents.js';
  *
  * A context Token with nothing relevant nearby is inert: it costs a tile and does nothing until
  * something it can use arrives. A context Token serves EVERY nearby station: one rack between two
- * Forges serves both, and wears twice as fast for it. Numerical buffs remain a light layer on top,
- * deliberately small.
+ * Forges serves both, and it never wears for it: help is free (owner, 2026-10-24; `wearRule.js`).
+ * Numerical buffs remain a light layer on top, deliberately small.
  *
  * Beside means Near. Every nearby question here (the context around a station, the tools it
- * accepts, which stations a context Token serves, and whom it wears for) is
+ * accepts, and which stations a context Token serves) is
  * `nearby.neighbourIds()`: Tokens whose centres are within the Near radius, named by instance id.
  * Acts as and recipe context carry no reach field of their own; they are Near. The neighbour list
  * is cached per instance and dropped on any Token add, move or removal or a Near change, because
@@ -185,11 +182,9 @@ export function effectiveIO(instanceId, instance) {
 }
 
 /**
- * Every nearby Token (by instance id, arrival order) that is a station this context Token serves.
- *
- * Charges wear against this: a Context Token loses one use per cycle each nearby station completes,
- * so one Tool Rack serving three Forges wears three times as fast. Sharing is a rate trade, not
- * free value: the same total benefit, three times faster, wearing out three times sooner.
+ * Every nearby Token (by instance id, arrival order) that this context or buff Token serves: a
+ * station whose active recipe or accepted tools it supplies, or anything that runs beside a buff.
+ * Serving costs it nothing (help is free); the quest tracker asks who a Token serves.
  */
 export function servesFrom(contextId) {
     const instance = BoardState.getTokenById(contextId);
@@ -238,57 +233,6 @@ export function servesFrom(contextId) {
         }
     }
     return served;
-}
-
-/**
- * Charge every Context and Buff Token near a Token that just completed a cycle.
- *
- * Wear is per cycle served, which is what makes shared context a rate trade rather than free value.
- * Called from the cycle engine on completion; because one kill counts as one cycle, a Weapon Rack
- * beside an enemy Token burns down as it is used, like a Tool Rack beside a Forge.
- *
- * `exclude`: the Tokens this cycle has already billed. A recipe can name a nearby context Token's
- * charges as an explicit input and pay them through `Charges.planCycle`; their ids are passed in so
- * the flat per-cycle wear does not bill them a second time. A Token nobody's recipe named wears as
- * usual.
- *
- * @param {string} instanceId the Token that completed the cycle
- * @param {(supportId: string, support: object) => void} [onDeplete] removes a worn-out support Token
- * @param {Set<string>} [exclude] instance ids already charged for this cycle
- * @returns {string[]} instance ids of the support Tokens that wore out
- */
-export function wearNearbySupport(instanceId, onDeplete, exclude = null) {
-    const depleted = [];
-
-    // Still -1 per station per cycle. Iterates a copy: `onDeplete` takes Tokens off the mat, which
-    // drops the cache.
-    for (const supportId of [...neighbourIds(instanceId)]) {
-        const support = BoardState.getTokenById(supportId);
-        if (!support) continue;
-        if (exclude?.has(supportId)) continue;
-
-        if (!servesFrom(supportId).includes(instanceId)) continue;
-
-        // Unlimited-use support never wears: `null` is not a number, and a support's type never
-        // wears out whatever a saved copy holds (`wearRule.js`).
-        if (Charges.isUnlimited(support)) continue;
-        // Already spent and waiting in the player's hand to be removed on the drop.
-        if (support.usesRemaining <= 0) continue;
-
-        support.usesRemaining -= 1;
-        EventBus.publish(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, {
-            instanceId: supportId,
-            delta: -1,
-            remaining: support.usesRemaining,
-            typeId: support.typeId
-        });
-        if (support.usesRemaining <= 0) {
-            depleted.push(supportId);
-            onDeplete?.(supportId, support);
-        }
-    }
-
-    return depleted;
 }
 
 /**

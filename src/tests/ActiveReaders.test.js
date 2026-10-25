@@ -47,7 +47,6 @@ const S1 = P(0, 1);
 const S3 = P(0, 3);
 const S9 = P(1, 3);
 const S12 = P(2, 0);
-const S13 = P(2, 1);
 const S14 = P(2, 2);
 const S15 = P(2, 3);
 const S16 = P(2, 4);
@@ -62,25 +61,6 @@ registerTokenTypes({
         id: 'fixture_large_tool', name: 'Fixture Large Tool', tokenType: 'context',
         rarity: 'common', theme: 'fixture', uses: 80, sprite: 's_industry', size: 2,
         isTool: true, requiresHero: false,
-        provides: [{ tag: 'ctx_fixture_tool', minTier: 1, chargeCost: 0 }]
-    },
-    /**
-     * The fixture tool as a GATHERING node (1×1 and 2×2): stations and supports never wear out
-     * (brief 230 S1a), but a gathering node keeps its charges even when it offers a tag, so it is
-     * what the per-station wear is measured with.
-     */
-    fixture_tool_node: {
-        id: 'fixture_tool_node', name: 'Fixture Tool Node', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: 80, sprite: 's_industry',
-        config: { skill: 'mining', skillRequired: 999, cycleTimeMs: 10000, xp: 1, inputs: [],
-            outputs: [{ itemId: 'fixture_copper_ore', quantity: 1, chance: 100 }] },
-        provides: [{ tag: 'ctx_fixture_tool', minTier: 1, chargeCost: 0 }]
-    },
-    fixture_large_tool_node: {
-        id: 'fixture_large_tool_node', name: 'Fixture Large Tool Node', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: 80, sprite: 's_industry', size: 2,
-        config: { skill: 'mining', skillRequired: 999, cycleTimeMs: 10000, xp: 1, inputs: [],
-            outputs: [{ itemId: 'fixture_copper_ore', quantity: 1, chance: 100 }] },
         provides: [{ tag: 'ctx_fixture_tool', minTier: 1, chargeCost: 0 }]
     },
     /** The tool-gated resource, two spots square. */
@@ -240,49 +220,9 @@ describe('RecipeResolver: a tool near a station', () => {
 // Charges — wear per station served, and who pays a recipe's context cost
 // ---------------------------------------------------------------------------
 
-describe('Charges: a tool wears once per station it serves, per cycle (D-113/D-157)', () => {
-    // A tool Token is a support, and supports never wear out (brief 230 S1a): the wear is measured
-    // with the tool as a gathering node, which keeps its charges.
-    it('a tool Token that is a pure support never wears, however many it serves', () => {
-        const tool = put(S14, 'fixture_tool', 80);
-        put(S13, 'fixture_tool_gated');
-        put(S15, 'fixture_tool_gated');
-        RecipeResolver.wearNearbySupport(idAt(S13));
-        RecipeResolver.wearNearbySupport(idAt(S15));
-        expect(tool.usesRemaining).toBe(80);
-    });
-
-    it('1×1 at 272 u: −1 per station served; a station out of reach does not wear it', () => {
-        const tool = put(S14, 'fixture_tool_node');
-        put(S13, 'fixture_tool_gated');
-        put(S15, 'fixture_tool_gated');
-        put(S16, 'fixture_tool_gated');                 // 320 u from the tool
-
-        RecipeResolver.wearNearbySupport(idAt(S13));
-        RecipeResolver.wearNearbySupport(idAt(S15));
-        expect(tool.usesRemaining).toBe(78);            // two stations served, one cycle each
-
-        RecipeResolver.wearNearbySupport(idAt(S16));
-        expect(tool.usesRemaining).toBe(78);
-    });
-
-    it('a null-charge tool never wears', () => {
-        const tool = put(S14, 'fixture_tool', null);
-        put(S13, 'fixture_tool_gated');
-        RecipeResolver.wearNearbySupport(idAt(S13));
-        expect(tool.usesRemaining).toBeNull();
-    });
-
-    it('⭐ a 2×2 tool wears for a side-touching station and not for a corner-diagonal one (FP-41)', () => {
-        const tool = put(BIG, 'fixture_large_tool_node');
-        put(SIDE, 'fixture_tool_gated');
-        put(CORNER, 'fixture_tool_gated');
-
-        RecipeResolver.wearNearbySupport(idAt(SIDE));
-        RecipeResolver.wearNearbySupport(idAt(CORNER));
-        expect(tool.usesRemaining).toBe(79);
-    });
-
+describe('Charges: context providers are the Tokens within Near (D-113/D-157)', () => {
+    // A tool used to wear once per station it served; help is free now (brief 230 S1a), so what
+    // is left to measure is who counts as a provider.
     it('⭐ context providers are the Tokens within Near, a 2×2 named once (FP-41)', () => {
         put(BIG, 'fixture_large_tool');
         put(SIDE, 'fixture_tool_gated');
@@ -292,13 +232,11 @@ describe('Charges: a tool wears once per station it serves, per cycle (D-113/D-1
         expect(Charges.contextProvidersAround(idAt(CORNER))).toEqual([]);
     });
 
-    it('a larger radius widens it: at 400 u the far station wears the tool too', () => {
-        const tool = put(S14, 'fixture_tool_node');
+    it('a larger radius widens it: at 400 u the far station counts the tool', () => {
+        put(S14, 'fixture_tool');
         put(S16, 'fixture_tool_gated');
+        expect(Charges.contextProvidersAround(idAt(S16))).toEqual([]);
         setMatTuning('nearRadius', 400);
-
-        RecipeResolver.wearNearbySupport(idAt(S16));
-        expect(tool.usesRemaining).toBe(79);
         expect(Charges.contextProvidersAround(idAt(S16)).map(p => p.id)).toEqual([idAt(S14)]);
     });
 });

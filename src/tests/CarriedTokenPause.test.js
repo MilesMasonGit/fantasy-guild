@@ -153,8 +153,8 @@ describe('a carried Token does not work', () => {
 });
 
 describe('a carried Token holds its last charge until the drop', () => {
-    // Stations and supports never wear out (brief 230 S1a), so the Tokens worn here are gathering
-    // nodes: one offering a context tag, one with a yield aura. Their charges are their stock.
+    // Stations and supports never wear out and help is free (brief 230 S1a), so nothing beside a
+    // cycle or a kill wears a carried Token any more; a charge it spends itself is what is left.
 
     it('a charge spent on it in the hand removes it only when it is put down', () => {
         const tool = place(10, 'fixture_charged_context_node', null, 1);
@@ -169,37 +169,6 @@ describe('a carried Token holds its last charge until the drop', () => {
         putDown(tool);
         expect(BoardState.getTokenById(tool.id)).toBeNull();
         expect(depleted.filter(id => id === tool.id)).toHaveLength(1);
-    });
-
-    it('a support worn out by a neighbour\'s cycle while carried is removed on the drop', () => {
-        const forest = place(10, 'fixture_producer', 'hero_1');
-        const rack = place(11, 'fixture_aura_node', null, 1);
-        pickUp(rack);
-
-        expect(runUntil(() => completed.includes(forest.id), 20000)).toBe(true);
-        expect(BoardState.getTokenById(rack.id)).toBe(rack);
-
-        // Worn to nothing, it is not worn again while it waits.
-        expect(runUntil(() => completed.filter(id => id === forest.id).length >= 2, 20000)).toBe(true);
-        expect(rack.usesRemaining).toBe(0);
-        expect(BoardState.getTokenById(rack.id)).toBe(rack);
-
-        putDown(rack);
-        expect(BoardState.getTokenById(rack.id)).toBeNull();
-        expect(depleted.filter(id => id === rack.id)).toHaveLength(1);
-    });
-
-    it('a support worn out by a kill while carried is removed on the drop', () => {
-        const bear = place(10, 'fixture_enemy', 'hero_1');
-        const rack = place(11, 'fixture_aura_node', null, 1);
-        pickUp(rack);
-
-        expect(runUntil(() => completed.includes(bear.id), 60000)).toBe(true);
-        expect(BoardState.getTokenById(rack.id)).toBe(rack);
-
-        putDown(rack);
-        expect(BoardState.getTokenById(rack.id)).toBeNull();
-        expect(depleted.filter(id => id === rack.id)).toHaveLength(1);
     });
 
     it('a Token taken off the mat while in the hand is not removed again on the drop', () => {

@@ -47,15 +47,6 @@ const idAt = (i) => tokenAt(i)?.id ?? null;
 
 /** What ran dry on spot `i`, or null. */
 
-/** Which spot a Token stands on, by instance id. */
-function spotOf(id) {
-    const instance = BoardState.getTokenById(id);
-    if (!instance) return null;
-    const col = Math.round((instance.x - 400) / 160);
-    const row = Math.round((instance.y - 200) / 160);
-    return row * 6 + col;
-}
-
 function place(tile, typeId, heroId = null, uses = undefined) {
     const instance = BoardState.createTokenInstance(
         typeId, uses === undefined ? tokenStartingUses(typeId) : uses
@@ -71,7 +62,8 @@ function run(ms) {
     for (let t = 0; t < ms; t += 100) BoardRunner.tick(100);
 }
 
-/** `pooled_charged_bar`: 1 Coal, 3 station charges, 2 context charges, 10s. */
+/** `pooled_charged_bar`: 1 Coal, 3 station charges, 2 context charges, 10s (charges no longer spent). */
+
 const STATION = 15, CONTEXT = 16, CONTEXT_2 = 9, OTHER_STATION = 17;
 
 beforeEach(() => {
@@ -182,7 +174,8 @@ describe('Reaching zero destroys the Token', () => {
 describe('A cycle it cannot pay for in full deducts nothing', () => {
     /**
      * A station is never short of its own charges: it never wears out (brief 230 S1a). A copy
-     * saved holding 2, against a recipe that once cost 3 of them, runs and keeps its 2.
+     * saved holding 2, against a recipe that once cost 3 of them, runs and keeps its 2; the
+     * context beside it pays nothing either (help is free).
      */
     it('a station is never short of its own charges: an old copy holding 2 runs, and keeps them', () => {
         InventoryManager.addItem('item_coal', 5);
@@ -193,80 +186,53 @@ describe('A cycle it cannot pay for in full deducts nothing', () => {
 
         expect(InventoryManager.getItemCount('item_coal')).toBe(4);
         expect(tokenAt(STATION).usesRemaining).toBe(2);
-        expect(context.usesRemaining).toBe(4);
+        expect(context.usesRemaining).toBe(6);
         expect(SpriteLayer.countOnBoard('fixture_charcoal')).toBe(1);
         expect(tokenAt(STATION).alert ?? null).not.toBe(ALERT.CHARGES);
     });
 
-    /** Context short: 1 charge left, the recipe wants 2 off it. */
-    it('takes no item and no station charge when the context Token is short', () => {
+    /** A Token's own cost: 1 to run plus 2 for its own per-cycle rule, against 2 left. */
+    it('takes no item and no charge when the Token is short of its own charges', () => {
         InventoryManager.addItem('item_coal', 5);
-        place(STATION, 'fixture_charge_station', 'hero_1');
-        const context = place(CONTEXT, NODE, null, 1);
+        const kiln = place(STATION, 'fixture_own_cost_kiln', 'hero_1', 2);
 
         run(10000 + 2000);
 
         expect(InventoryManager.getItemCount('item_coal')).toBe(5);
-        expect(tokenAt(STATION).usesRemaining).toBeNull();   // a station starts unlimited
-        expect(tokenAt(CONTEXT)).toBe(context);
-        expect(context.usesRemaining).toBe(1);
+        expect(kiln.usesRemaining).toBe(2);
         expect(SpriteLayer.countOnBoard('fixture_charcoal')).toBe(0);
+        expect(kiln.alert).toBe(ALERT.CHARGES);
     });
 
-    /** Items short: no charge of either kind may move. */
-    it('takes no charge of either kind when the Bank is short of items', () => {
-        place(STATION, 'fixture_charge_station', 'hero_1');
-        const context = place(CONTEXT, NODE);
+    /** Items short: no charge may move. */
+    it('takes no charge when the Bank is short of items', () => {
+        const kiln = place(STATION, 'fixture_own_cost_kiln', 'hero_1');
 
         run(10000 + 2000);
 
-        expect(tokenAt(STATION).usesRemaining).toBeNull();
-        expect(context.usesRemaining).toBe(6);
-        expect(tokenAt(STATION).alert).toBe(ALERT.INPUTS);
+        expect(kiln.usesRemaining).toBe(10);
+        expect(kiln.alert).toBe(ALERT.INPUTS);
     });
 
     it('pays everything at once on a cycle it can afford', () => {
         InventoryManager.addItem('item_coal', 5);
-        place(STATION, 'fixture_charge_station', 'hero_1');
-        const context = place(CONTEXT, NODE);
+        const kiln = place(STATION, 'fixture_own_cost_kiln', 'hero_1');
 
         run(10000 + 300);
 
         expect(InventoryManager.getItemCount('item_coal')).toBe(4);
-        expect(tokenAt(STATION).usesRemaining).toBeNull();   // the station never wears
-        expect(context.usesRemaining).toBe(4);                        // 6 − 2
+        expect(kiln.usesRemaining).toBe(7);                 // 10 − (1 + 2)
         expect(SpriteLayer.countOnBoard('fixture_charcoal')).toBe(1);
     });
 });
 
 // ---------------------------------------------------------------------------
-// Sharing and prioritisation
+// Context Tokens: needed, never paid (help is free, owner 2026-10-24)
 // ---------------------------------------------------------------------------
 
-describe('Nearby context Tokens are chosen and shared', () => {
-    /**
-     * Concept §3.3: the near-depleted tile clears first, so the board tidies
-     * itself rather than leaving every provider at a fraction.
-     */
-    it('draws from the Token with the fewest charges left first', () => {
-        const scarce = place(CONTEXT, NODE, null, 2);
-        const full = place(CONTEXT_2, NODE);
-        // The reader measures from the station Token itself (slice 1.6b), so one stands there.
-        place(STATION, 'fixture_charge_station');
-
-        const plan = Charges.planContextCharges(
-            idAt(STATION), [{ tag: 'ctx_fixture_charged', minTier: 1, chargeCost: 2 }]
-        );
-
-        expect(plan.ok).toBe(true);
-        expect(plan.debits).toEqual([
-            { id: scarce.id, instance: scarce, amount: 2 }
-        ]);
-        expect(full.usesRemaining).toBe(6);
-    });
-
-    it('spreads one requirement across providers when the first cannot cover it', () => {
-        place(CONTEXT, NODE, null, 1);
+describe('Nearby context Tokens are needed, and never paid', () => {
+    it('no provider pays, whatever the recipe’s charge cost: a gathering node offering the tag included', () => {
+        const node = place(CONTEXT, NODE, null, 2);
         place(CONTEXT_2, NODE);
         // The reader measures from the station Token itself (slice 1.6b), so one stands there.
         place(STATION, 'fixture_charge_station');
@@ -275,9 +241,16 @@ describe('Nearby context Tokens are chosen and shared', () => {
             idAt(STATION), [{ tag: 'ctx_fixture_charged', minTier: 1, chargeCost: 3 }]
         );
 
-        expect(plan.ok).toBe(true);
-        expect(plan.debits.map(d => [spotOf(d.id), d.amount]).sort())
-            .toEqual([[CONTEXT, 1], [CONTEXT_2, 2]].sort());
+        expect(plan).toEqual({ ok: true, debits: [], missing: [] });
+        expect(node.usesRemaining).toBe(2);
+    });
+
+    it('a tag nobody near offers is still missing', () => {
+        place(STATION, 'fixture_charge_station');
+        const plan = Charges.planContextCharges(
+            idAt(STATION), [{ tag: 'ctx_fixture_charged', minTier: 1, chargeCost: 2 }]
+        );
+        expect(plan).toEqual({ ok: false, debits: [], missing: [{ tag: 'ctx_fixture_charged', reason: 'absent' }] });
     });
 
     it('a pure context Token is a support and pays nothing, whatever it holds (brief 230 S1a)', () => {
@@ -306,29 +279,16 @@ describe('Nearby context Tokens are chosen and shared', () => {
         expect(plan.debits).toEqual([]);
     });
 
-    /**
-     * First-come, first-served (concept §3.3). One context Token between two
-     * stations serves both, and the charges simply run out sooner — sharing is a
-     * rate trade, not free value.
-     */
-    it('serves several stations from one Token until it runs dry', () => {
+    it('one context Token serves several stations, for nothing', () => {
         InventoryManager.addItem('item_coal', 20);
         place(STATION, 'fixture_charge_station', 'hero_1');
         place(OTHER_STATION, 'fixture_charge_station', 'hero_2');
         const context = place(CONTEXT, NODE);   // 6 charges
 
-        run(10000 + 300);
+        run((10000 + 300) * 2);
 
-        // Both stations completed the same cycle and each took 2.
-        expect(context.usesRemaining).toBe(2);
-        expect(SpriteLayer.countOnBoard('fixture_charcoal')).toBe(2);
-
-        run(10000 + 300);
-
-        // The second round could only afford one of them; the Token is gone and
-        // the tile it stood on is empty.
-        expect(tokenAt(CONTEXT)).toBeNull();
-        expect(SpriteLayer.countOnBoard('fixture_charcoal')).toBe(3);
+        expect(SpriteLayer.countOnBoard('fixture_charcoal')).toBe(4);
+        expect(context.usesRemaining).toBe(6);
     });
 });
 

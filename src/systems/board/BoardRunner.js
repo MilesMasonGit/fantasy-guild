@@ -318,26 +318,13 @@ function completeCycle(instance, def, io, heroId, config = def.config) {
         SkillSystem.addXP(heroId, config.skill, xpAwarded);
     }
 
-    // Pay the plan built at the top of this function: the station's own operational cost, and any
-    // charges the recipe draws off nearby context Tokens. Anything that hits 0 is destroyed by
-    // `commitPlan`, which is also where `null`-means-unlimited is honoured: `null` is the opposite
-    // of 0, not a large version of it.
-    const chargedIds = new Set(chargePlan.debits.map(d => d.id));
+    // Pay the plan built at the top of this function: the Token's own operational cost. Anything
+    // that hits 0 is destroyed by `commitPlan`, which is also where `null`-means-unlimited is
+    // honoured: `null` is the opposite of 0, not a large version of it.
+    // ⚠️ Nothing near the Token pays for this cycle: help is free (owner, 2026-10-24). A support or
+    // a context Token never wears out, and a gathering node that helps its neighbours spends its
+    // charges only on its own gathering (`Charges.planContextCharges`, `wearRule.js`).
     Charges.commitPlan(chargePlan, { heroId });
-
-    // Context and Buff Tokens wear per cycle they SERVE. One Tool Rack serving three Forges wears
-    // three times as fast, which is what makes shared context a rate trade rather than free value.
-    // Tokens the plan above already charged are excluded: a context Token whose charges the recipe
-    // names as an input has been billed once for this cycle already, and flat wear on top of it
-    // would bill it twice.
-    RecipeResolver.wearNearbySupport(id, (supportId, supportInstance) => {
-        const support = supportInstance || BoardState.getTokenById(supportId);
-        const spot = centreOf(support);
-        Charges.destroyToken(support, { exhaustedBy: heroId });
-        // The neighbourhood, not just this Token: an aura going dark has to stop
-        // applying to everything it reached, which means their aggregators too.
-        TileModifiers.rebuildAround([spot]);
-    }, chargedIds);
 
     // The board's universal unit of work. One kill counts as one cycle too, so combat feeds this
     // exactly as production does.

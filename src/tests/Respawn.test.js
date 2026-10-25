@@ -14,6 +14,7 @@ import * as SpawnerSystem from '../systems/board/SpawnerSystem.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as TimedChanges from '../systems/board/TimedChanges.js';
+import * as TriggerSystem from '../systems/board/TriggerSystem.js';
 import * as WorkCheck from '../systems/board/WorkCheck.js';
 import { LootSystem } from '../systems/combat/LootSystem.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
@@ -60,10 +61,14 @@ registerTokenTypes({
         config: { ...mining, inputs: [{ itemId: 'fixture_oak_wood', quantity: 1 }] },
         respawn: { mode: 'refill', afterMs: 12000 }
     },
-    /** A worked vein that is also a yield buff, so a neighbour's cycle wears it. */
+    /**
+     * A worked vein whose own rule fires on a neighbour's cycle and costs it a charge (a triggered
+     * rule's default -1), so a neighbour's cycle spends it. Help by standing there is free
+     * (owner, 2026-10-24); a rule's own authored cost is not.
+     */
     respawn_buff_vein: {
-        ...FIXTURE_TOKENS.fixture_buff_yield,
-        id: 'respawn_buff_vein', name: 'Respawn Buff Vein', uses: 50, config: mining,
+        ...FIXTURE_TOKENS.fixture_trigger_any,
+        id: 'respawn_buff_vein', name: 'Respawn Buff Vein', tokenType: 'resource', uses: 50, config: mining,
         respawn: { mode: 'refill', afterMs: 12000 }
     },
     /** The same vein with no block: the guard. */
@@ -104,14 +109,14 @@ registerTokenTypes({
         spawner: { spawns: [{ typeId: 'stump_tree', weight: 1 }], allowance: 1, intervalMs: 5000, upkeep: [] }
     },
     /**
-     * A one-charge yield buff that rests and refills: worn by a neighbour's cycle or a kill. A
-     * gathering node nobody can work (level 999): supports never wear out (brief 230 S1a), but a
-     * gathering node with an aura keeps its charges as stock, and its neighbours still wear it.
+     * A one-charge Token that rests and refills, spent by its own rule: "when a nearby Token
+     * completes a cycle, grants Bones", at a triggered rule's default cost of one charge. A kill
+     * is a cycle too. (Supports never wear out and help is free, brief 230 S1a; a rule's own cost
+     * still spends.)
      */
     respawn_rack: {
-        ...FIXTURE_TOKENS.fixture_buff_yield,
+        ...FIXTURE_TOKENS.fixture_trigger_any,
         id: 'respawn_rack', name: 'Respawn Rack', uses: 1,
-        config: { ...mining, skillRequired: 999 },
         respawn: { mode: 'refill', afterMs: 5000 }
     },
     /** Blocks the engine never lets respawn, whatever is authored. */
@@ -163,8 +168,9 @@ const putDown = (t) => { held.delete(t.id); TimedChanges.setInHand(t.id, false);
 let events;
 const offs = [];
 
-beforeAll(() => Flags.init());
-afterAll(() => Flags.teardown());
+// Triggers listen, so a Token's own rule can spend its charges on a neighbour's cycle.
+beforeAll(() => { Flags.init(); TriggerSystem.init(); });
+afterAll(() => { Flags.teardown(); TriggerSystem.teardown(); });
 
 beforeEach(() => {
     GameState.initNew();
@@ -320,7 +326,7 @@ describe('a refill Token rests where it stands and refills', () => {
         const vein = place(11, 'respawn_buff_vein', 'hero_1');
         expect(runUntil(() => BoardState.workerOf(forest.id) === 'hero_2' && BoardState.workerOf(vein.id) === 'hero_1', 20000)).toBe(true);
 
-        // The forest's next cycle finishes this tick and wears the vein's last charge.
+        // The forest's next cycle finishes this tick, and the vein's own rule spends its last charge.
         vein.usesRemaining = 1;
         forest.cycleElapsedMs = 1e9;
         const elapsed = vein.cycleElapsedMs || 0;
@@ -511,8 +517,8 @@ describe('in the player\'s hand it rests and never leaves', () => {
     });
 });
 
-describe('a support Token worn out by service rests too', () => {
-    it('worn to 0 by a neighbour\'s cycle, it stays and refills', () => {
+describe('a Token spent by its own rule on a neighbour\'s cycle rests too', () => {
+    it('spent to 0 as a neighbour\'s cycle fires its rule, it stays and refills', () => {
         place(10, 'fixture_producer', 'hero_1');
         const rack = place(11, 'respawn_rack');
         expect(runUntil(() => rack.usesRemaining === 0, 30000)).toBe(true);
@@ -521,7 +527,7 @@ describe('a support Token worn out by service rests too', () => {
         expect(runUntil(() => rack.usesRemaining === 1, 6000)).toBe(true);
     });
 
-    it('worn to 0 by a kill, it stays', () => {
+    it('spent to 0 as a kill beside it fires its rule, it stays', () => {
         place(10, 'fixture_enemy', 'hero_1');
         const rack = place(11, 'respawn_rack');
         expect(runUntil(() => rack.usesRemaining === 0, 60000)).toBe(true);

@@ -5,8 +5,8 @@ import { REACH, reachOf } from '../../config/registries/reachRegistry.js';
 
 /**
  * The one rule behind "this Token never wears out", shared by the engine (`tokenStartingUses`,
- * `Charges.isUnlimited`, `RecipeResolver.wearNearbySupport`), the content audit
- * (`lifecycleAudit`) and the CMS Token editor, so all of them name the same Tokens.
+ * `Charges.isUnlimited`), the content audit (`lifecycleAudit`) and the CMS Token editor, so all of
+ * them name the same Tokens.
  *
  * Owner rulings (2026-10-24): stations never wear out, like gear; supports never wear out either:
  * build once, help forever. So a Token of either kind is unlimited whatever charges its type
@@ -21,7 +21,8 @@ import { REACH, reachOf } from '../../config/registries/reachRegistry.js';
  * ## Who still wears
  * * **A gathering node**, aura or not: a Token whose own work cycle makes something from nothing
  *   (a vein, a tree, a bush). Its charges are what is gathered, not wear (the Blackberry Bush's
- *   bonus drops to its neighbours do not make its berries endless).
+ *   bonus drops to its neighbours do not make its berries endless), and only its own gathering
+ *   spends them: help is free (owner, 2026-10-24), so nothing beside it wears it.
  * * **An enemy**: its charges are the kills that clear it.
  * * A Token whose rules reach only itself, or fire on a moment (a triggered rule's charge cost is
  *   an authored price, not wear), and everything else with no help rule.

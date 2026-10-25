@@ -128,7 +128,8 @@ Token.
   Copper Anvil all became unlimited; a saved copy's old number is cleared as its
   board loads. A **gathering node keeps its charges** even when it helps its
   neighbours (they are what is gathered: the Blackberry Bush, the Shrimp Coast),
-  and still wears per neighbour's cycle it serves; an enemy keeps the kills that
+  but only its own gathering spends them: **help is free**, nothing wears for a
+  neighbour's cycle or kill (owner 2026-10-24); an enemy keeps the kills that
   clear it; a triggered rule's charge cost is an authored price and still applies.
   The CMS hides Charges on a station or support and the audit flags authored ones.
   *(`wearRule.js`, `Charges.isUnlimited`)*
@@ -136,8 +137,8 @@ Token.
   (free, pushable, no refund). Both count toward the Token cap.
 - **Size**: 1 (art radius 64 u) or 2 (144 u); growing stages are half-size.
 - **Context Tokens** are support Tokens (an anvil) that stand near a worker;
-  a recipe may name a charge cost on them, but a context Token is a support and
-  never wears, so only a gathering node offering the tag pays it. **Gathering tools are hero gear**, not
+  a recipe's context charge cost is no longer spent (help is free), and the CMS
+  field for it now does nothing. **Gathering tools are hero gear**, not
   Tokens (T-126): pickaxes, woodaxes, fishing rods and sickles are items held in
   one hand (`tool: { kind, tier }`); a gathering Token names the kind and lowest
   tier it needs (`needsTool`), and only a hero holding one may work it. No tool:

@@ -775,6 +775,7 @@
   "fixture:token:fixture_manager:rules": "[]",
   "fixture:token:fixture_market:rules": "[]",
   "fixture:token:fixture_mythic:rules": "[]",
+  "fixture:token:fixture_own_cost_kiln:rules": "[\"Provides 5% more yield to this Token.\"]",
   "fixture:token:fixture_passive:rules": "[]",
   "fixture:token:fixture_pickaxe_t1:rules": "[]",
   "fixture:token:fixture_pickaxe_t2:rules": "[]",
