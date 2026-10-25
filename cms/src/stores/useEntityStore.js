@@ -186,7 +186,7 @@ function renameInEffects(effects, oldId, newId, entityType) {
     return touched ? next : effects;
 }
 
-/** Repoint the Token ids inside one Token's lifecycle blocks: a spawner's `spawns[].typeId`, `grows.into`, `turns.into[].typeId` and a regrow's `respawn.into`. Those field names are not shared with an item slot, so they are named explicitly rather than walked. */
+/** Repoint the Token ids inside one Token's lifecycle blocks: a spawner's `spawns[].typeId`, `grows.into`, the `needsNearby` lists of a growth and a refill, `turns.into[].typeId` and a regrow's `respawn.into`. Those field names are not shared with an item slot, so they are named explicitly rather than walked. */
 function renameTokenInLifecycleBlocks(token, oldId, newId) {
     let touched = false;
     const next = { ...token };
@@ -200,9 +200,19 @@ function renameTokenInLifecycleBlocks(token, oldId, newId) {
         const spawns = remapWeighted(next.spawner.spawns);
         if (spawns !== next.spawner.spawns) next.spawner = { ...next.spawner, spawns };
     }
+    const remapIds = (list) => {
+        if (!Array.isArray(list) || !list.includes(oldId)) return list;
+        touched = true;
+        return list.map((id) => (id === oldId ? newId : id));
+    };
+
     if (next.grows && next.grows.into === oldId) {
         next.grows = { ...next.grows, into: newId };
         touched = true;
+    }
+    if (next.grows && typeof next.grows === 'object') {
+        const needsNearby = remapIds(next.grows.needsNearby);
+        if (needsNearby !== next.grows.needsNearby) next.grows = { ...next.grows, needsNearby };
     }
     if (next.turns && typeof next.turns === 'object') {
         const into = remapWeighted(next.turns.into);
@@ -211,6 +221,10 @@ function renameTokenInLifecycleBlocks(token, oldId, newId) {
     if (next.respawn && next.respawn.into === oldId) {
         next.respawn = { ...next.respawn, into: newId };
         touched = true;
+    }
+    if (next.respawn && typeof next.respawn === 'object') {
+        const needsNearby = remapIds(next.respawn.needsNearby);
+        if (needsNearby !== next.respawn.needsNearby) next.respawn = { ...next.respawn, needsNearby };
     }
 
     return touched ? next : token;

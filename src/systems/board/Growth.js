@@ -219,4 +219,10 @@ export function init() {
     for (const event of [ENGINE_EVENTS.INVENTORY_UPDATED, BOARD_EVENTS.SPRITES_CHANGED, BOARD_EVENTS.SPRITE_COLLECTED, BOARD_EVENTS.SPRITE_ABSORBED]) {
         EventBus.subscribe(event, supplyChanged);
     }
+    // A resting refill waiting for its Orchard that is given charges back (a copy dropped on it) no
+    // longer rests, so its refill row stops asking and would leave the mark up. A growing Token has
+    // no charges, so only such a one can be here.
+    EventBus.subscribe(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, (p) => {
+        if (p?.instanceId && Number(p.remaining) > 0 && alerts.has(p.instanceId)) setGrowthAlert(p.instanceId, null);
+    });
 }

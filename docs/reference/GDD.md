@@ -223,7 +223,12 @@ mines) keeps counting while full and replaces a loss on the next tick.
   **empty rock**; its card and inspection then name it ("Copper Ore Vein:
   resting, refills in 0:42"), and so does its hover. A refill that falls due
   part-way through a tick is worked only for the rest of that tick, so the
-  catch-up's 1 s steps mine exactly what live play does.
+  catch-up's 1 s steps mine exactly what live play does. A refill may also
+  **need a Token in reach** (brief 230 S2b; the CMS Respawns block's **Refills
+  only with one of these in reach**): without one its rest **stands still**
+  where it is, as a Stump's growth does (above), it wears the yellow mark
+  ("Needs an Apple Orchard nearby to refill") and its card and inspection say
+  it waits for one; one placed later carries the rest on from there.
   *Regrow*: it becomes its `into` Token (Oak Tree → Oak Sapling), whose own
   growth brings it back. Its hero moves on with no red alert; it is never
   depleted (no On Depleted rules, not counted as used up); a regrowing tree
@@ -236,8 +241,10 @@ mines) keeps counting while full and replaces a loss on the next tick.
   what it grows into): "Waiting for Oak Stump", then "Waiting for Oak Sapling",
   and they fell the tree the moment it stands. A Stump that is not coming back
   (no Forest in reach, or stopped for want of its seedling) is nothing to wait
-  for: idle as before. Worked out when the flag's words, the speech or the idle
-  mark ask, never on the flag's pass, so it costs a catch-up nothing.
+  for: idle as before, and so is a resting Token whose refill needs a Token in
+  reach that is not there (a Bare apple tree with no Orchard). Worked out when
+  the flag's words, the speech or the idle mark ask, never on the flag's pass,
+  so it costs a catch-up nothing.
   *(`Respawn.js`, `Flags.waitingOf`)*
 - **Mining** (brief 230 S3; built as content shapes, the S8 pack ships them):
   a **vein** refills all at once after its rest (Copper about 5 ore, about a
@@ -251,6 +258,16 @@ mines) keeps counting while full and replaces a loss on the next tick.
   standard floor (§7). A miner waiting on a resting vein waits silently (above).
   Mines that stop spawning veins and veins placed by maps are content (S8,
   brief 240). *(`OutputRules.doubleItemDrop`, `Respawn.restingSpriteOf`)*
+- **Orchards** (brief 230 S2b; built as content shapes, the S8 pack ships
+  them): a fruit tree is **picked, not felled**. Fruiting, it is worked for its
+  fruit; picked empty it rests **Bare** (its resting sprite, per fruit) and
+  then fruits again all at once in place, a refill that **needs an Orchard of
+  its fruit in reach** (above): a Bare tree with none stays Bare. An **Orchard**
+  is a spawner that plants its Saplings within its reach (`withinReach`, up to
+  its allowance, a seed each; a Bare tree still counts toward it) and a support
+  that speeds its trees' fruiting (`Provides Grow Time −X % to [its tree]`,
+  floored). Fruit trees stay where they stand. Sapling, Fruiting and Bare art
+  per fruit. *(`Respawn.gateMet`, `TimedChanges` refill row)*
 
 ### Foundations — Built
 Buy a Foundation, pick a build recipe on it, and a hero builds it into a

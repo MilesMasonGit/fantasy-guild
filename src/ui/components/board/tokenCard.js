@@ -264,7 +264,11 @@ export function cardLifecycle(instance, def, src) {
 
     const r = src.respawn?.(instance);
     if (r) {
-        if (r.mode === 'refill') {
+        if (r.mode === 'refill' && r.resting && r.paused) {
+            // A Bare tree with no Orchard in reach: no time, it waits for one.
+            const needs = (r.needsNearby || []).map(src.tokenName).join(' or ');
+            out.push({ icon: 'regrow', text: '–', tip: `${src.tokenName(instance.typeId)}: resting, refills only with ${needs} nearby`, tone: 'warning' });
+        } else if (r.mode === 'refill') {
             // Drawn as the shared empty rock, a resting vein's line names its ore.
             const restTip = r.restingSprite
                 ? `${src.tokenName(instance.typeId)}: resting, refills in ${formatClock(r.inMs)}`
