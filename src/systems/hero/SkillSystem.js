@@ -65,6 +65,9 @@ export function getXpMultiplier(heroId, skillId) {
          * hero.aggregator.getPercentageBucket(EFFECT_TYPES.XP_BONUS, targetSkillId);
 }
 
+// Below this a bonus is float noise from summed percentages (+10% and -10%), not a real bonus.
+const XP_BONUS_EPSILON = 1e-9;
+
 /**
  * The XP floor: a positive XP bonus always adds at least 1 XP, so +10% on a 1 XP award is 2, not
  * a rounded-away 1. A negative or absent bonus is plain rounding.
@@ -73,7 +76,7 @@ export function getXpMultiplier(heroId, skillId) {
  * @returns {number} whole XP
  */
 export function applyXpBonus(base, bonused) {
-    if (bonused > base) return base + Math.max(1, Math.round(bonused - base));
+    if (bonused - base > XP_BONUS_EPSILON) return base + Math.max(1, Math.round(bonused - base));
     return Math.round(bonused);
 }
 

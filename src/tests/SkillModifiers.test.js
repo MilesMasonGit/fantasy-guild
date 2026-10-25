@@ -126,6 +126,18 @@ describe('The XP floor: a positive XP bonus adds at least 1 XP', () => {
         expect(grant(1, -0.1)).toBe(1);
     });
 
+    it('a bonus that cancels out (+10% and -10%) gives the base', () => {
+        const hero = heroWithSkill('mining', 10);
+        for (const value of [0.1, -0.1]) {
+            hero.aggregator.addModifier({
+                source: 'test:' + value, type: EFFECT_TYPES.XP_BONUS,
+                target: { category: 'mining' }, value, persistent: true
+            });
+        }
+        expect(SkillSystem.addXP('hero_1', 'mining', 1).granted).toBe(1);
+        expect(SkillSystem.applyXpBonus(5, 5.0000000001)).toBe(5);
+    });
+
     it('applyXpBonus is the one rule for the tile axis too', () => {
         expect(SkillSystem.applyXpBonus(1, 1.1)).toBe(2);
         expect(SkillSystem.applyXpBonus(5, 5.5)).toBe(6);
