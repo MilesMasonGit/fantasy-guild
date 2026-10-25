@@ -623,3 +623,56 @@ describe('The derived type knows the lifecycle blocks (slice 4.4)', () => {
         expect(lines.filter((f) => f.what.includes('reads as'))).toEqual([]);
     });
 });
+
+describe('Lifecycle audit — Fields and crops (brief 230 S4)', () => {
+    const works = (kind) => [{ id: 'stm_af_works', keyword: 'station', payload: { skill: 'farming', stationKind: kind } }];
+    /** The clean world plus a Field, its wheat crop and a seed. */
+    function withField(mutate) {
+        return (w) => {
+            w.items.item_wheat_seed = { id: 'item_wheat_seed', name: 'Wheat Seed' };
+            w.tokens.token_field = { id: 'token_field', name: 'Field', statements: works('field'), field: { emptySprite: 't_farmland' } };
+            w.recipes.recipe_wheat = {
+                id: 'recipe_wheat', name: 'Wheat', skill: 'farming', stationKinds: ['field'],
+                inputs: [{ itemId: 'item_wheat_seed', quantity: 1 }], outputs: [{ itemId: 'item_oak_wood' }],
+                crop: { growMs: 3600000, load: 10 }
+            };
+            mutate?.(w);
+        };
+    }
+    const audit = (mutate) => { const w = clean(); withField(mutate)(w); return auditLifecycleBlocks(w); };
+
+    it('a Field with its crop is clean, a wild one starting with that crop too', () => {
+        expect(audit()).toEqual([]);
+        expect(audit((w) => { w.tokens.token_field.field.startsWith = 'recipe_wheat'; })).toEqual([]);
+    });
+
+    it('a Field that works as no station', () => {
+        expectOne(withField((w) => { delete w.tokens.token_field.statements; }),
+            { id: 'token_field', field: 'field', includes: 'works as no station' });
+    });
+
+    it('a Field with no crop yet (allowed)', () => {
+        expectOne(withField((w) => { w.tokens.token_field.statements = works('herb_garden'); }),
+            { severity: 'warning', id: 'token_field', field: 'field', includes: 'no farming recipe made at a herb_garden' });
+    });
+
+    it('a wild Field starting with something not among its crops', () => {
+        expectOne(withField((w) => { w.tokens.token_field.field.startsWith = 'recipe_plain'; }),
+            { id: 'token_field', field: 'field.startsWith', includes: 'not one of its crops' });
+    });
+
+    it('a Field still carrying a spawner (allowed)', () => {
+        expectOne(withField((w) => {
+            w.tokens.token_field.spawner = { spawns: [{ typeId: 'token_shrimp_coast', weight: 1 }], allowance: 1, intervalMs: 20000, upkeep: [{ itemId: 'item_oak_seed', quantity: 1 }] };
+        }), { severity: 'warning', id: 'token_field', field: 'field', includes: 'spawner' });
+    });
+
+    it('a crop with a nonsense grow time or load; one with no seed (allowed)', () => {
+        expectOne(withField((w) => { w.recipes.recipe_wheat.crop.growMs = 10; }),
+            { id: 'recipe_wheat', field: 'crop.growMs', includes: 'crop grow time' });
+        expectOne(withField((w) => { w.recipes.recipe_wheat.crop.load = 0; }),
+            { id: 'recipe_wheat', field: 'crop.load', includes: 'crop load' });
+        expectOne(withField((w) => { w.recipes.recipe_wheat.inputs = []; }),
+            { severity: 'warning', id: 'recipe_wheat', field: 'inputs', includes: 'costs no seed' });
+    });
+});

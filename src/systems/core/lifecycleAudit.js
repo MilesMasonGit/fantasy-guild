@@ -2,15 +2,15 @@
 
 import {
     FOUNDATION_KINDS, TURN_DEFAULTS, RESPAWN_MODES, respawnOf, foundationTierOf, foundationMinTierOf, foundationTierMeets,
-    STATION_KINDS
+    STATION_KINDS, stationKindOffers
 } from '../../config/registries/tokenConstants.js';
 import { stationSkillOf, stationKindOf, getProvidedTagsWithTiers } from '../effects/statements.js';
 import { neverWearsReason, NEVER_WEARS_WHY } from './wearRule.js';
 
 /**
- * The one checker for the seven Token Lifecycle blocks (`spawner`, `grows`,
- * `turns`, `foundation`, `shop`, `trickle` (Passive Production), `respawn`) and the recipe fields
- * `foundationKinds` and `foundationMinTier`, shared by the game's boot audit (`ContentAudit`) and the
+ * The one checker for the eight Token Lifecycle blocks (`spawner`, `grows`,
+ * `turns`, `foundation`, `shop`, `trickle` (Passive Production), `respawn`, `field`) and the recipe
+ * fields `foundationKinds`, `foundationMinTier` and `crop`, shared by the game's boot audit (`ContentAudit`) and the
  * CMS's Economy Audit (`connectivityAuditor`), so the two can never disagree.
  *
  * The rules are the "Validation" list of `docs/archive/token_lifecycle_roadmap_v1.md`
@@ -387,6 +387,30 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
             }
         }
 
+        // ── field: a station that grows its own crop (`Fields.js`) ──
+        if (def.field !== undefined && def.field !== null) {
+            const f = def.field;
+            const skill = stationSkillOf(def);
+            if (typeof f !== 'object' || Array.isArray(f)) {
+                err('field', `field is ${show(f)}; it must be a block.`);
+            } else if (!skill) {
+                err('field', 'is a Field but works as no station; give it a Works as rule (Farming, kind Field or Herb Garden): its crops are that station’s recipes.');
+            } else {
+                const kind = stationKindOf(def);
+                const crops = recipes.filter((r) => r?.skill === skill
+                    && !(Array.isArray(r.foundationKinds) && r.foundationKinds.length > 0) && stationKindOffers(kind, r));
+                if (crops.length === 0) {
+                    warn('field', `is a Field but no ${show(skill)} recipe${kind ? ` made at a ${kind}` : ''} gives it a crop yet (allowed while it is being authored).`);
+                }
+                if (hasValue(f.startsWith) && !crops.some((r) => r.id === f.startsWith)) {
+                    err('field.startsWith', `starts ripe with ${show(f.startsWith)}, which is not one of its crops; a new copy would start empty.`);
+                }
+                if (def.spawner) {
+                    warn('field', 'is a Field and a spawner; it grows its own crop and also spawns Tokens beside it (allowed, but likely a left-over spawner block).');
+                }
+            }
+        }
+
         // ── a boss: never hostile ──
         if (def.enemy?.boss === true && def.enemy?.hostile === true) {
             warn('enemy.hostile', 'is a boss marked hostile; a boss never attacks first, so the mark does nothing.');
@@ -432,6 +456,21 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
                 recipeError(recipe, 'skill',
                     `is a ${show(recipe.skill ?? 'blank')} recipe, but ${kind} Foundations are built with ${mismatched.join(', ')}.`);
             }
+        }
+    }
+
+    // ── Crops: a recipe a Field grows ──
+    for (const recipe of recipes) {
+        if (!recipe || recipe.crop === undefined || recipe.crop === null) continue;
+        const c = recipe.crop;
+        if (typeof c !== 'object' || Array.isArray(c)) {
+            recipeError(recipe, 'crop', `crop is ${show(c)}; it must be a block.`);
+            continue;
+        }
+        if (c.growMs !== undefined) checkTime((field, text) => recipeError(recipe, field, text), 'crop.growMs', 'crop grow time', c.growMs);
+        if (c.load !== undefined) checkPositive((field, text) => recipeError(recipe, field, text), 'crop.load', 'crop load', c.load);
+        if (!Array.isArray(recipe.inputs) || recipe.inputs.length === 0) {
+            recipeWarning(recipe, 'inputs', 'is a crop with no inputs, so sowing it costs no seed (allowed).');
         }
     }
 

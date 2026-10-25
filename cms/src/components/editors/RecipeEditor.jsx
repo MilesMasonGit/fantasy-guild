@@ -7,7 +7,9 @@ import {
   SKILLS, skillsByLayer, KEYWORD, statementsOf, stationSkillOf, expandBearer,
   FOUNDATION_KINDS, foundationTierOf, foundationMinTierOf,
   STATION_KINDS, stationKindLabel, recipeStationKinds, stationKindOffers, stationKindOf,
+  cropTermsOf, CROP_MIN_GROW_MS,
 } from '../../utils/constants';
+import { SpriteField } from './LifecycleBlocks';
 import { NumberCell } from '../shared/IOEntryList';
 import SupplyChainColumn from '../layout/SupplyChainColumn';
 import { Field } from '../shared/EditorLayout';
@@ -497,6 +499,54 @@ function StationKindsRow({ recipe, stations, skillName, onChange }) {
   );
 }
 
+/**
+ * A crop: how long it grows on a Field, how many harvests a ripe Field holds, and its ripe picture. Shown for a recipe a
+ * Field offers (a station with a Field block whose kind offers it) or one that already has a crop block. Its inputs are
+ * its seed, paid once per sowing, not per harvest.
+ */
+function CropRow({ recipe, fields, onChange }) {
+  const terms = cropTermsOf(recipe);
+  const crop = recipe.crop && typeof recipe.crop === 'object' ? recipe.crop : null;
+  const write = (p) => {
+    const next = { growMs: terms.growMs, load: terms.load, ...(crop || {}), ...p };
+    if (!next.ripeSprite) delete next.ripeSprite;
+    onChange({ crop: next });
+  };
+  const seeds = terms.seeds.length ? 'its inputs above (the seed)' : 'nothing (no inputs: add the seed as an input)';
+  return (
+    <div data-testid="crop-row" className="rounded-lg border border-white/10 bg-black/20 p-3 space-y-2">
+      <label className="text-[10px] font-bold uppercase tracking-wider block text-gray-500">Crop (grown on a Field)</label>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Grows for (min)">
+          <input
+            type="number" aria-label="Grows for (min)" min={1} step={5}
+            value={Math.round(terms.growMs / 60000)}
+            onChange={(e) => write({ growMs: Math.max(CROP_MIN_GROW_MS, Math.round(Number(e.target.value) || 1) * 60000) })}
+            className="w-full"
+          />
+        </Field>
+        <Field label="Load (harvests)">
+          <input
+            type="number" aria-label="Load (harvests)" min={1} step={1}
+            value={terms.load}
+            onChange={(e) => write({ load: Math.max(1, Math.round(Number(e.target.value) || 1)) })}
+            className="w-full"
+          />
+        </Field>
+      </div>
+      <SpriteField
+        label="Ripe sprite" value={crop?.ripeSprite} placeholder="none: the Field's own art"
+        onChange={(v) => write({ ripeSprite: typeof v === 'string' ? v.trim() : '' })}
+      />
+      <p className="text-[10px] text-gray-600 leading-relaxed" data-testid="crop-note">
+        {fields.length ? `Grown on ${fields.map((t) => t.name || t.id).join(', ')}. ` : 'No Field offers this yet. '}
+        Sowing costs {seeds}, once. A ripe Field holds {terms.load} harvests, each a cycle making the outputs; the last sows it again.
+        {crop ? '' : ' (Not yet written: the game uses these defaults.)'}
+      </p>
+    </div>
+  );
+}
+
 function RecipeCard({ recipe, tokens, stations = [], skillName, availableContext, onChange, onDelete }) {
   const building = buildsOnFoundation(recipe);
   const [tagDraft, setTagDraft] = useState('');
@@ -545,6 +595,15 @@ function RecipeCard({ recipe, tokens, stations = [], skillName, availableContext
 
       {/* A building recipe is made on a Foundation, never at a station, so it has no station kinds. */}
       {!building && <StationKindsRow recipe={recipe} stations={stations} skillName={skillName} onChange={onChange} />}
+
+      {/* A crop: a Field offering it, or a crop block already written. */}
+      {!building && (stations.some((s) => s.token.field && stationKindOffers(s.kind, recipe)) || recipe.crop) && (
+        <CropRow
+          recipe={recipe}
+          fields={stations.filter((s) => s.token.field && stationKindOffers(s.kind, recipe)).map((s) => s.token)}
+          onChange={onChange}
+        />
+      )}
 
       {/* N context requirements, ALL of which must be present. A higher tier satisfies a lower requirement. The charge cost comes off the adjacent Token per cycle; it is separate from the station's own charge cost, and both apply. */}
       <div>
