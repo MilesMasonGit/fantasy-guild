@@ -132,13 +132,20 @@ function respawnLines(instance, src) {
     const r = src.respawn?.(instance);
     if (!r) return [];
     if (r.mode === 'refill') {
+        const needs = r.needsNearby?.length ? anyOf(r.needsNearby, src.tokenName) : null;
+        const needsRow = needs ? [{ label: 'Needs nearby to refill', value: needs, tone: TONE.MUTED }] : [];
+        // A Bare tree with no Orchard in reach: its rest stands still until one is.
+        if (r.resting && r.paused) {
+            return [{ label: 'Resting', value: `waiting for ${needs} nearby`, tone: TONE.WARNING }, ...needsRow];
+        }
         // Drawn as the shared empty rock, a resting vein's line names its ore.
         const rest = r.restingSprite
             ? `${src.tokenName(instance.typeId)}: resting, refills in ${formatDuration(r.inMs)}`
             : `Refills in ${formatDuration(r.inMs)}`;
         return [r.resting
             ? { label: 'Resting', value: rest }
-            : { label: 'Respawns', value: `Rests ${formatDuration(r.afterMs)} when it runs out, then refills`, tone: TONE.MUTED }];
+            : { label: 'Respawns', value: `Rests ${formatDuration(r.afterMs)} when it runs out, then refills`, tone: TONE.MUTED },
+        ...needsRow];
     }
     const into = src.tokenName(r.into);
     return [r.resting
@@ -254,7 +261,7 @@ function demolitionLine(instance, src) {
  *   poolFor?: (def: object) => object[],
  *   originOf: (instance: object) => string,
  *   passive?: (instance: object) => { lines: object[], nextInMs: number }|null,
- *   respawn?: (instance: object) => { mode: string, into: string|null, afterMs: number, resting: boolean, inMs: number|null, restingSprite?: string|null }|null,
+ *   respawn?: (instance: object) => { mode: string, into: string|null, afterMs: number, resting: boolean, inMs: number|null, restingSprite?: string|null, paused?: boolean, needsNearby?: string[] }|null,
  *   demolishMs?: number,
  *   workerOf?: (instanceId: string) => string|null,
  *   dev?: boolean
