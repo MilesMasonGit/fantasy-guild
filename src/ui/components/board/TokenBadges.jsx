@@ -203,7 +203,7 @@ export const StationGearBadge = ({ isDragging, recipe, pulsing = false, isFounda
                     className={cn(
                         'w-7 h-7 flex items-center justify-center p-0 cursor-pointer select-none',
                         'filter drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)]',
-                        !pulsing && 'hover:scale-110 active:scale-95 transition-transform duration-150',
+                        'group/gear',
                         pulsing && 'relative'
                     )}
                 >
@@ -213,6 +213,15 @@ export const StationGearBadge = ({ isDragging, recipe, pulsing = false, isFounda
                             data-gear-outline=""
                             aria-hidden="true"
                             className="gi-gear-alert absolute w-6 h-6 pointer-events-none"
+                            style={gearOutlineStyle(dx, dy)}
+                        />
+                    ))}
+                    {!pulsing && GEAR_OUTLINE_OFFSETS.map(([dx, dy]) => (
+                        <span
+                            key={`h${dx}${dy}`}
+                            data-gear-hover-outline=""
+                            aria-hidden="true"
+                            className="hidden group-hover/gear:block absolute w-6 h-6 bg-white pointer-events-none"
                             style={gearOutlineStyle(dx, dy)}
                         />
                     ))}
