@@ -292,7 +292,10 @@ export const HANDLERS = [
         resting: true,
         applies: (instance, def) => !!def?.respawn && Respawn.restingMode(instance, def) === 'refill',
         dueMs: (instance, def) => Respawn.restMsOf(instance, def),
-        fire: (instance) => Respawn.refill(instance)
+        fire: (instance, def, random, ctx) => {
+            lateRefills.set(instance.id, Math.max(0, Number(ctx?.overMs) || 0));
+            return Respawn.refill(instance);
+        }
     },
     {
         // A resting Token becomes the Token it regrows from, on the next tick, which grows back
@@ -434,6 +437,20 @@ export function advance(instance, delta, random = Math.random) {
 }
 
 /**
+ * The Tokens that refilled during this tick, by instance id: how long before the tick's end each
+ * came back (0 when it fell due at the very end). The clocks are advanced before any Token works,
+ * so the runner would otherwise work a refilled vein for the whole tick, rest included: a 1000 ms
+ * step would give it up to a second more than ten 100 ms steps. It works only the part after the
+ * refill instead. Filled by {@link tick}, read by `BoardRunner.tick` straight after.
+ */
+const lateRefills = new Map();
+
+/** This tick's late refills (see {@link lateRefills}); empty until the next {@link tick}. */
+export function lateRefillsThisTick() {
+    return lateRefills;
+}
+
+/**
  * Advance every Token on the mat. Called from `BoardRunner.tick` with the
  * tick's `delta`.
  *
@@ -441,6 +458,7 @@ export function advance(instance, delta, random = Math.random) {
  * @param {() => number} [random] for the weighted picks; tests pass a seeded one
  */
 export function tick(delta, random = Math.random) {
+    lateRefills.clear();
     if (!(delta > 0)) return;
     // A stopped growth reads what the Bank and the mat hold afresh each tick, once per item.
     Growth.supplyChanged();
