@@ -34,7 +34,7 @@ C2; C0 (the test content pack, accepted by the director) after C2; C6 last.
 | T-241: loot particles under the open drawers | builder | `backlog/particles-under-drawer` | **merged** 7d9c6f9f (fix, one capture): the particle canvas was outside the screen overlay; now the mat's flights sit under the drawers and pause while the Bank is open, the dock-lift flight on its own top canvas. Merged gate on `main` after the Systems director's test fixes: 6074 pass, the one failure a slow scan that passes alone (T-251); dock drags 60/60 | Sat | Sat |
 | T-247: a station's gear tip above the work plate | builder | `backlog/gear-tip-over-plate` | **merged** 60e6671e (fix, one capture): the gear tip moved onto the shared tooltip; merged gate: only the 7 known failures from `main`, build ok, same work | Sat | Sat |
 | T-244: nav orbs and the gear button without hover glow or scale | builder-lite | `backlog/no-hover-glow` (`hn`) | building | Sat | |
-| T-243: callouts and speech in the pixel family | builder | — | queued, after T-241 | | |
+| T-243: callouts and speech in the pixel family | builder | `backlog/speech-pixel` | **merged** 48796bb2 (owner ok by phone; rule in UI_STYLE cbe81171): one SpeechFrame, tones bronze/gold/red. Merged gate on `main` after the test fixes: **6081 pass, 0 fail**, cycles, build, same work | Sat | Sat |
 
 ## Systems director, skill loops (brief 230; owner 2026-10-24: next, beside the rest of combat)
 
