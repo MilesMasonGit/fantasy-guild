@@ -34,7 +34,8 @@ export const DEV_MAP_SPRITES = Object.freeze({
         flower_meadow: 't_map_flowers',
         cherry_grove: 't_map_village',
         yellowstone: 't_map_swamp',
-        volcano: 't_map_volcano'
+        volcano: 't_map_volcano',
+        bog: 't_map_swamp'
     })
 });
 

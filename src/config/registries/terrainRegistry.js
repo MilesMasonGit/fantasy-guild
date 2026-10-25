@@ -324,6 +324,25 @@ export const LOOKS = deepFreeze({
         propDensity: 0.04,
         ambient: { bird: '#e3ddd4', particles: 'embers' }
     },
+    bog: {
+        id: 'bog', name: 'Bog', terrain: TERRAIN.GRASS, sheets: ['grass_dark'],
+        // Mud, not footfall: more bare ground than the forest, in bigger clumps.
+        wear: { sheet: 'dirt', coverage: 0.14, rim: true },
+        // No settled spec: a first pass from the forest's and Yellowstone's rules, darker and
+        // more olive than the forest, tall reeds, low moss and mud. Retuned at the eye-check.
+        generated: {
+            grass: [0.22, 0.30, 0.42], earth: [0.07, 0.22, 0.30], earthShare: 0.26, tint: 0.12,
+            zones: { cell: 60, sliders: true },
+            kinds: [
+                { id: 'reeds', blades: 0.034, cluster: 6, heights: [3, 4, 5], tips: 0.2, shadow: 0.6, mounds: 12, strokes: [0.17, 0.36, 0.45], tone: 2, sway: true },
+                { id: 'moss', blades: 0.018, cluster: 4, heights: [1, 2, 2], tips: 0.1, shadow: 0.5, mounds: 16, strokes: null, tone: 3 },
+                { id: 'mud', blades: 0.06, cluster: 3, heights: [1, 1, 2], tips: 0.1, shadow: 0.5, mounds: 18, strokes: [0.08, 0.26, 0.32], tone: 2 }
+            ]
+        },
+        props: [{ sheet: 'p_bush_dark', weight: 2 }, { sheet: 'p_mushroom', weight: 2 }],
+        propDensity: 0.08,
+        ambient: { bird: '#e4e8d8' }
+    },
     lawn: {
         id: 'lawn', name: 'Lawn', terrain: TERRAIN.GRASS, sheets: ['grass'],
         // `world3.py` B: the meadow's lawn with no earth, the strip a transition blend lays between

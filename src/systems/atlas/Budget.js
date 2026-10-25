@@ -63,21 +63,23 @@ import { WATER_KIND, SMALL_WATER } from './WaterShapes.js';
  * `water`. ⚠️ The Coast's water share is a placeholder until the owner tunes maps in the CMS.
  */
 export const BIOME_GROUND = Object.freeze({
+    meadow: Object.freeze({ terrain: TERRAIN.GRASS, water: 0 }),
     forest: Object.freeze({ terrain: TERRAIN.GRASS, water: 0 }),
     mountain: Object.freeze({ terrain: TERRAIN.ROCK, water: 0 }),
     coast: Object.freeze({ terrain: TERRAIN.SAND, water: 0.3 }),
     flower_meadow: Object.freeze({ terrain: TERRAIN.GRASS, water: 0 }),
     cherry_grove: Object.freeze({ terrain: TERRAIN.GRASS, water: 0 }),
     yellowstone: Object.freeze({ terrain: TERRAIN.GRASS, water: 0 }),
-    volcano: Object.freeze({ terrain: TERRAIN.ROCK, water: 0 })
+    volcano: Object.freeze({ terrain: TERRAIN.ROCK, water: 0 }),
+    bog: Object.freeze({ terrain: TERRAIN.GRASS, water: 0 })
 });
 
 /**
  * The inland water each biome brings, by the settled world rounds (`world5.py` to `world7.py` in
  * `docs/active/research/ground_gen/`), beside the sea `BIOME_GROUND` gives the Coast: the layout picks one variety by its seed, a variety listed twice coming twice
  * as often. The meadows a lake, a river, or a lake with its river; the forest and the cherry grove
- * a pond; the mountain a tarn or a river; Yellowstone its sulphur springs; the volcano and the
- * Coast none inland. A biome not listed brings none.
+ * a pond; the mountain a tarn or a river; Yellowstone its sulphur springs; the Bog a marsh of many
+ * small ponds; the volcano and the Coast none inland. A biome not listed brings none.
  */
 export const BIOME_WATER = Object.freeze({
     meadow: Object.freeze([WATER_KIND.LAKE_RIVER, WATER_KIND.LAKE_RIVER, WATER_KIND.LAKE, WATER_KIND.RIVER, WATER_KIND.SPLIT, WATER_KIND.SPRING]),
@@ -87,7 +89,8 @@ export const BIOME_WATER = Object.freeze({
     mountain: Object.freeze([WATER_KIND.TARN, WATER_KIND.MOUNTAIN_RIVER]),
     yellowstone: Object.freeze([WATER_KIND.SULPHUR]),
     volcano: Object.freeze([]),
-    coast: Object.freeze([])
+    coast: Object.freeze([]),
+    bog: Object.freeze([WATER_KIND.MARSH])
 });
 
 /**
@@ -101,7 +104,8 @@ export const BIOME_SMALL_WATER = Object.freeze({
     forest: SMALL_WATER.POND,
     cherry_grove: SMALL_WATER.POND,
     mountain: SMALL_WATER.TARN,
-    yellowstone: SMALL_WATER.SPRING
+    yellowstone: SMALL_WATER.SPRING,
+    bog: SMALL_WATER.POND
 });
 
 /**

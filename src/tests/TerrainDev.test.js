@@ -83,7 +83,7 @@ describe('⭐ each view is one click', () => {
             if (view.maps.includes('mountain')) expect(terrains.has('rock'), view.label).toBe(true);
             if (view.maps.includes('forest')) expect(terrains.has('grass'), view.label).toBe(true);
             // A newer biome's ground takes its own look.
-            for (const biome of ['flower_meadow', 'cherry_grove', 'yellowstone', 'volcano']) {
+            for (const biome of ['flower_meadow', 'cherry_grove', 'yellowstone', 'volcano', 'bog']) {
                 if (!view.maps.includes(biome)) continue;
                 const terrain = BIOME_GROUND[biome].terrain;
                 expect(terrains.has(terrain), view.label).toBe(true);

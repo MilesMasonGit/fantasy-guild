@@ -396,7 +396,10 @@ A map is an item: a **Base Map** (type `map`) or a **Modifier** (type
 `modifier`), authored in the CMS's Map editor and written into `data/items.json`
 by Sync, so it banks, drops and pays out like any item. Its Cartography block
 says what it writes: a Base Map has a biome, points, weighted nodes, its own
-enemy camps and treasures, and its ground; a Modifier has effects (more of a
+enemy camps and treasures, and its ground (each biome its own look and water:
+meadow, forest, mountain, coast, flower meadow, cherry grove, Yellowstone,
+volcano, and the **Bog**, dark grass and mud with a marsh of many small ponds;
+`Budget.js`, `terrainRegistry.js`); a Modifier has effects (more of a
 node, a better node instead, an enemy camp, a treasure). The generation engine
 reads it (`systems/atlas/mapItems.js` → `Budget.js`); inspecting one in the Bank
 lists what it writes. Settling a Region takes the slotted maps from the Bank

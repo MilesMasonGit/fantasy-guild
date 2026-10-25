@@ -37,7 +37,8 @@ export const TERRAIN_DEV_REGIONS = Object.freeze([
     { id: 'flower_meadow', label: 'Flower meadow', maps: ['flower_meadow'] },
     { id: 'cherry_grove', label: 'Cherry grove', maps: ['cherry_grove'] },
     { id: 'yellowstone', label: 'Yellowstone', maps: ['yellowstone'] },
-    { id: 'volcano', label: 'Volcano', maps: ['volcano'] }
+    { id: 'volcano', label: 'Volcano', maps: ['volcano'] },
+    { id: 'bog', label: 'Bog', maps: ['bog'] }
 ].map(Object.freeze));
 
 /** The water views: a Region with each kind of water, its biome's own ground round it. */

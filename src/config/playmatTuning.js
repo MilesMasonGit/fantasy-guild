@@ -41,6 +41,7 @@ export const CLEAN_LOOKS = Object.freeze({
     mountain: Object.freeze([0.75, 0.010, 1.04]),
     coast: Object.freeze([0.85, 0, 1.03]),
     volcano: Object.freeze([0.85, 0, 1.00]),
+    bog: Object.freeze([0.80, 0.020, 1.00]),
     sea: Object.freeze([0.85, 0, 1.03]),
     lake: Object.freeze([0.75, 0, 1.04]),
     sulphur: Object.freeze([0.80, 0, 1.00]),
