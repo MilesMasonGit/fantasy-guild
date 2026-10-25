@@ -145,6 +145,28 @@ describe('the enemy bar', () => {
         expect(tip()).toBeNull();
     });
 
+    it("⭐ in a fight it draws in the fight layer, over the Token's box, and a press still grabs the Token", () => {
+        const host = document.createElement('div');
+        document.body.appendChild(host);
+        const onPointerDown = vi.fn();
+        try {
+            const { container } = mount(h(TokenBubbles, props({ dragProps: { onPointerDown }, fightBar: { host, left: 636, top: 336 } })));
+            fightProgress(34);
+            expect(bar(container, 'enemy')).toBeNull();
+            const away = host.querySelectorAll('[data-health-bar="enemy"]');
+            expect(away).toHaveLength(1);
+            expect(away[0].getAttribute('data-health-text')).toBe('34 · 68%');
+            const p = enemyBarPlace(128, 1);
+            expect(parseFloat(away[0].style.left)).toBeCloseTo(636 + p.left, 6);
+            expect(parseFloat(away[0].style.top)).toBeCloseTo(336 + p.top, 6);
+            fireEvent.pointerDown(away[0]);
+            expect(onPointerDown).toHaveBeenCalled();
+        } finally {
+            cleanup();
+            host.remove();
+        }
+    });
+
     it('pressing the bar passes the press to the Token drag handle', () => {
         const onPointerDown = vi.fn();
         const { container } = mount(h(TokenBubbles, props({ dragProps: { onPointerDown } })));
@@ -216,6 +238,46 @@ describe('the hero bar', () => {
         setDrawn('bubbles', false);
         const { container } = mount(hero({ fighting: true }));
         expect(bar(container, 'hero')).toBeNull();
+    });
+
+    it("⭐ in a fight it draws in the fight layer, over the hero's box; once the fight ends it lingers on the hero, never in both", () => {
+        const host = document.createElement('div');
+        document.body.appendChild(host);
+        vi.useFakeTimers();
+        try {
+            const { container, rerender } = mount(hero({ fighting: true, fightBarHost: host }));
+            const figure = container.querySelector('[data-board-hero="h1"]');
+            expect(figure.querySelector('[data-health-bar]')).toBeNull();
+            const away = host.querySelectorAll('[data-health-bar="hero"]');
+            expect(away).toHaveLength(1);
+            // Placed in mat units: the hero box's corner (100, 100) plus its place over the box.
+            const p = heroBarPlace(128, 1);
+            expect(parseFloat(away[0].style.left)).toBeCloseTo(100 + p.left, 6);
+            expect(parseFloat(away[0].style.top)).toBeCloseTo(100 + p.top, 6);
+            // The fight ends: the bar is back on the hero for its linger, gone from the fight layer.
+            rerender(tree(hero({ fighting: false, fightBarHost: null })));
+            expect(host.querySelector('[data-health-bar]')).toBeNull();
+            expect(figure.querySelectorAll('[data-health-bar="hero"]')).toHaveLength(1);
+            act(() => { vi.advanceTimersByTime(HERO_BAR_LINGER_MS + 100); });
+            expect(figure.querySelector('[data-health-bar]')).toBeNull();
+        } finally {
+            vi.useRealTimers();
+            cleanup();
+            host.remove();
+        }
+    });
+
+    it('a walking fighter keeps the bar on the figure (no point to place it by)', () => {
+        const host = document.createElement('div');
+        document.body.appendChild(host);
+        try {
+            const { container } = mount(hero({ fighting: true, fightBarHost: host, left: null, top: null }));
+            expect(host.querySelector('[data-health-bar]')).toBeNull();
+            expect(container.querySelector('[data-board-hero="h1"] [data-health-bar="hero"]')).not.toBeNull();
+        } finally {
+            cleanup();
+            host.remove();
+        }
     });
 });
 
