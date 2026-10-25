@@ -70,7 +70,8 @@ const DRAFTED = {
     farming: 'Plants and harvests crops, fruit, herbs and saplings, for Cooking, Alchemy and Forestry.',
     smithing: 'Smelts ingots and forges tools, weapons and metal armour for heroes.',
     crafting: 'Makes rope, cloth, glass, leather gear and the everyday parts other skills need.',
-    cooking: 'Cooks food and drinks that heal heroes in fights.',
+    // Rewritten (owner, 2026-10-24): drinks no longer heal; they are work buffs.
+    cooking: 'Cooks food that heals heroes in fights, and drinks that help them work.',
     alchemy: 'Brews potions heroes use in fights and at work.',
     construction: 'Builds stations and buildings on Foundations, and takes down marked Tokens.'
 };

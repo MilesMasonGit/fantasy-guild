@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// heroes feed themselves from their own loadout grid. Food heals, in a fight and out; drink
-// heals only out of one. Both are NEED-driven (the 25% rule). Elixirs (Consumables) are drunk
-// as a fight starts: Elixirs.test.js.
+// heroes feed themselves from their own loadout grid. Food heals, in a fight and out, NEED-driven
+// (the 25% rule). Drinks never heal (owner, 2026-10-24: drinks are work buffs only). Elixirs
+// (Consumables) are drunk as a fight starts: Elixirs.test.js.
 
 const { bank, ITEMS, hero } = vi.hoisted(() => ({
     bank: new Map(),
@@ -64,15 +64,17 @@ describe('the 25% rule (D-17)', () => {
         expect(ConsumptionSystem.tryEat('h1')).toEqual([]);
     });
 
-    it('drinks too, from its own slot, when food leaves HP still low', () => {
+    // Design change (owner, 2026-10-24): drinks no longer heal out of a fight either. These two
+    // pinned the old "then drink, if still low" rule; they now pin that the drink is left alone.
+    it('eats food and leaves the drink alone, out of a fight, while HP is still low', () => {
         bank.set('bread', 5);
         bank.set('ale', 5);
         hero.hp.current = 2;                        // bread brings it to 22: still low
         const meals = ConsumptionSystem.tryEat('h1');
-        expect(meals.map(m => m.itemId)).toEqual(['bread', 'ale']);
-        expect(hero.hp.current).toBe(37);
+        expect(meals.map(m => m.itemId)).toEqual(['bread']);
+        expect(hero.hp.current).toBe(22);
         expect(bank.get('bread')).toBe(4);
-        expect(bank.get('ale')).toBe(4);
+        expect(bank.get('ale')).toBe(5);
     });
 
     it('keeps the drink when the food is enough', () => {
@@ -83,11 +85,12 @@ describe('the 25% rule (D-17)', () => {
         expect(bank.get('ale')).toBe(5);
     });
 
-    it('drinks alone when there is no food to eat', () => {
+    it('does not drink when there is no food to eat, out of a fight', () => {
         bank.set('ale', 5);                         // bread equipped but unstocked
         hero.hp.current = 10;
-        expect(ConsumptionSystem.tryEat('h1').map(m => m.itemId)).toEqual(['ale']);
-        expect(hero.hp.current).toBe(25);
+        expect(ConsumptionSystem.tryEat('h1')).toEqual([]);
+        expect(hero.hp.current).toBe(10);
+        expect(bank.get('ale')).toBe(5);
     });
 
     it('reports need without consuming', () => {
@@ -133,7 +136,7 @@ describe('eating is uncapped (D-31)', () => {
 
 describe('drinks in a fight', () => {
     // Design change (brief 220 C3): only food heals in a fight. An equipped drink is left alone,
-    // unspent, until the skill-loops design gives drinks their buffs; out of a fight it still heals.
+    // unspent; since 2026-10-24 it does not heal out of a fight either (above).
     it('eats food and leaves the drink alone while HP is still low', () => {
         bank.set('bread', 5);
         bank.set('ale', 5);

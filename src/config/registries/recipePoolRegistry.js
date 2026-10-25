@@ -12,9 +12,11 @@
  * ## A recipe belongs to a skill
  * `skill` is a real skill id from `skillRegistry.js`. There are no subskills:
  * Smelting, Weaponsmithing, Toolsmithing and Jewelry are all `smithing`,
- * and Baking and Cooking are both `cooking`. A station draws every recipe of
- * its skill, so adding a Cooking recipe makes it available to every Cooking
- * station at once.
+ * and Baking and Cooking are both `cooking`. A station draws the recipes of
+ * its skill that its station kind offers (`STATION_KINDS`): a recipe's
+ * `stationKinds` names the stations that make it (the Furnace smelts, the
+ * Smithy makes tools). A recipe with no `stationKinds`, or a station with no
+ * kind, is unnarrowed.
  *
  * ## A station's pool comes from its `Works as` statement
  * The skill named in the Token's Station statement is
@@ -63,8 +65,8 @@
  */
 
 import { DatabaseManager } from '../DatabaseManager.js';
-import { stationSkillOf } from '../../systems/effects/statements.js';
-import { foundationTierMeets } from './tokenConstants.js';
+import { stationSkillOf, stationKindOf } from '../../systems/effects/statements.js';
+import { foundationTierMeets, stationKindOffers } from './tokenConstants.js';
 import { migrateRecipeList } from '../../systems/effects/skillIdMigration.js';
 
 /** Concatenate every recipe JSON source into one flat list. */
@@ -158,7 +160,16 @@ export function listPooledSkillIds() {
 export function recipesForToken(def) {
     if (def?.foundation) return recipesForFoundation(def);
     const skill = stationSkillOf(def);
-    return skill ? getSkillRecipePool(skill) : [];
+    return skill ? recipesForStation(skill, stationKindOf(def)) : [];
+}
+
+/**
+ * A station's pool: the ordinary recipes of its skill that its kind offers (`stationKindOffers`).
+ * A null kind is the whole skill pool.
+ */
+export function recipesForStation(skillId, kind = null) {
+    const pool = getSkillRecipePool(skillId);
+    return kind ? pool.filter(r => stationKindOffers(kind, r)) : pool;
 }
 
 /**

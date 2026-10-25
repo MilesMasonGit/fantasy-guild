@@ -6,6 +6,7 @@ import {
 import {
   SKILLS, skillsByLayer, KEYWORD, statementsOf, stationSkillOf, expandBearer,
   FOUNDATION_KINDS, foundationTierOf, foundationMinTierOf,
+  STATION_KINDS, stationKindLabel, recipeStationKinds, stationKindOffers, stationKindOf,
 } from '../../utils/constants';
 import { NumberCell } from '../shared/IOEntryList';
 import SupplyChainColumn from '../layout/SupplyChainColumn';
@@ -211,6 +212,8 @@ export default function RecipeEditor() {
                 key={activeRecipe?.id || idx}
                 recipe={activeRecipe}
                 tokens={tokens}
+                stations={(poolConsumers[activeSkill] || []).filter((t) => !t.foundation)
+                  .map((t) => ({ token: t, kind: stationKindOf(expandBearer(t, effects)) }))}
                 skillName={skillName}
                 availableContext={availableContext}
                 onChange={(patch) => updateRecipe(activeSkill, idx, patch)}
@@ -449,7 +452,52 @@ function FoundationKindsRow({ recipe, tokens, skillName, onChange }) {
   );
 }
 
-function RecipeCard({ recipe, tokens, skillName, availableContext, onChange, onDelete }) {
+/**
+ * Which kinds of station make this recipe. None ticked removes the field: every station of the skill offers it, as before kinds existed. A station with no kind offers it either way.
+ */
+function StationKindsRow({ recipe, stations, skillName, onChange }) {
+  const kinds = recipeStationKinds(recipe);
+  const offeredBy = stations.filter((s) => stationKindOffers(s.kind, recipe));
+  const withoutStation = kinds.filter((k) => !stations.some((s) => s.kind === k));
+  return (
+    <div data-testid="station-kinds">
+      <label className="text-[10px] font-bold uppercase tracking-wider block mb-1 text-gray-500">
+        Made at
+      </label>
+      <p className="text-[10px] text-gray-600 mb-1.5 leading-relaxed">
+        Tick the kinds of {skillName(recipe.skill)} station that make this (a Furnace smelts, a Smithy makes tools).
+        None ticked: every {skillName(recipe.skill)} station offers it.
+      </p>
+      <div className="flex flex-wrap gap-3">
+        {STATION_KINDS.map((kind) => (
+          <label key={kind} className="flex items-center gap-1.5 text-[11px] text-gray-300 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={kinds.includes(kind)}
+              onChange={(e) => {
+                const next = e.target.checked ? [...kinds, kind] : kinds.filter((k) => k !== kind);
+                onChange({ stationKinds: next.length > 0 ? next : undefined });
+              }}
+            />
+            {stationKindLabel(kind)}
+          </label>
+        ))}
+      </div>
+      <p className="text-[10px] mt-1.5 text-gray-500 leading-relaxed" data-testid="station-kinds-offered">
+        {offeredBy.length > 0
+          ? <>Offered by: {offeredBy.map((s) => s.token.name || s.token.id).join(', ')}</>
+          : <>No {skillName(recipe.skill)} station offers this yet.</>}
+      </p>
+      {withoutStation.length > 0 && (
+        <p className="text-[10px] mt-1 leading-relaxed" style={{ color: 'var(--color-warning)' }}>
+          ⚠️ No {skillName(recipe.skill)} station is a {withoutStation.map(stationKindLabel).join(' or ')} yet.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function RecipeCard({ recipe, tokens, stations = [], skillName, availableContext, onChange, onDelete }) {
   const building = buildsOnFoundation(recipe);
   const [tagDraft, setTagDraft] = useState('');
   // A context requirement is `{ tag, minTier, chargeCost }`, not a bare tag:
@@ -494,6 +542,9 @@ function RecipeCard({ recipe, tokens, skillName, availableContext, onChange, onD
       <SimAnswer entityId={recipe.id} record={recipe} />
 
       <FoundationKindsRow recipe={recipe} tokens={tokens} skillName={skillName} onChange={onChange} />
+
+      {/* A building recipe is made on a Foundation, never at a station, so it has no station kinds. */}
+      {!building && <StationKindsRow recipe={recipe} stations={stations} skillName={skillName} onChange={onChange} />}
 
       {/* N context requirements, ALL of which must be present. A higher tier satisfies a lower requirement. The charge cost comes off the adjacent Token per cycle; it is separate from the station's own charge cost, and both apply. */}
       <div>

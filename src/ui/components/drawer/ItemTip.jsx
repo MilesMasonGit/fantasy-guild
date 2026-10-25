@@ -26,7 +26,8 @@ export function itemTipFacts(item, { cap = undefined } = {}) {
         equippable: category ? getCategoryInfo(category).label : null,
         tool: tool ? t('itemTip.tool', { kind: toolKindLabel(tool.kind), tier: tool.tier }) : null,
         twoHanded: hands >= HANDS,
-        restores: item?.restoreAmount > 0 ? item.restoreAmount : null,
+        // A drink never heals, so its leftover restore amount is not offered as a promise.
+        restores: item?.restoreAmount > 0 && category !== 'drink' ? item.restoreAmount : null,
         tags: Array.isArray(item?.tags) ? item.tags.filter(Boolean) : [],
         description: typeof item?.description === 'string'
             ? item.description.replace(/^["']|["']$/g, '').trim()

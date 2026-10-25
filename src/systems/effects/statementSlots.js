@@ -18,6 +18,7 @@ import { MAGNITUDE_KIND, statsForRoles } from '../../config/registries/magnitude
 import { PLACEMENTS, placementOf } from '../../config/registries/placementRegistry.js';
 import { getAllSkills } from '../../config/registries/skillRegistry.js';
 import { JOBS } from '../../config/registries/jobRegistry.js';
+import { STATION_KINDS, stationKindLabel } from '../../config/registries/tokenConstants.js';
 
 /**
  * A statement, described as the ordered slots an author fills in: the model behind the
@@ -467,8 +468,9 @@ function payloadSlots(statement, ctx) {
             }];
 
         /**
-         * `Works as`: which skill's recipes a station runs. ⚠️ `stationSkillOf` is the sole input to
-         * `deriveTokenType`, so this slot is the only way to author a station.
+         * `Works as`: which skill's recipes a station runs, and optionally which kind of station
+         * (narrowing that skill to the recipes naming the kind). ⚠️ `stationSkillOf` is the sole
+         * input to `deriveTokenType`, so this slot is the only way to author a station.
          */
         case KEYWORD.STATION:
             return [{
@@ -476,6 +478,17 @@ function payloadSlots(statement, ctx) {
                 value: payload.skill || '',
                 options: skillOptions(),
                 patch: v => ({ payload: { ...payload, skill: v } })
+            }, {
+                // ⚠️ Optional: no kind means the whole skill, today's behaviour.
+                id: 'stationKind', kind: SLOT_KIND.VOCABULARY, label: 'which station', optional: true,
+                value: payload.stationKind || '',
+                options: [option('', 'Any station', 'Offers every recipe of the skill.'),
+                    ...STATION_KINDS.map(k => option(k, stationKindLabel(k), `Offers the recipes marked ${stationKindLabel(k)}, and those marked for no station.`))],
+                patch: v => {
+                    const next = { ...payload };
+                    if (v) next.stationKind = v; else delete next.stationKind;
+                    return { payload: next };
+                }
             }];
 
         /**

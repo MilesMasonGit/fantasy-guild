@@ -12,6 +12,7 @@ import { magnitudeParts, MAGNITUDE_KIND } from '../../config/registries/magnitud
 import { getPlacement, placementOf } from '../../config/registries/placementRegistry.js';
 import { EFFECT_TYPES } from './constants.js';
 import { articleOf } from './toolNames.js';
+import { stationKindLabel } from '../../config/registries/tokenConstants.js';
 
 /**
  * The rules text: generated, read-only, and the only text a Token has. The sentence IS the
@@ -574,7 +575,8 @@ function bodySegments(statement, names) {
 
         case KEYWORD.STATION: {
             const skill = getSkill(payload.skill);
-            return segs(d('Works as', K), ' a ', d(payload.skill ? (skill?.name || payload.skill) : '…', 'skill'), ' station');
+            const kind = payload.stationKind ? segs(': ', d(stationKindLabel(payload.stationKind), 'stationKind')) : [];
+            return segs(d('Works as', K), ' a ', d(payload.skill ? (skill?.name || payload.skill) : '…', 'skill'), ' station', kind);
         }
 
         // "Promotes the hero to Knight." A job the registry no longer has keeps its id on screen
