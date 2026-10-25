@@ -55,15 +55,22 @@ registerTokenTypes({
     }
 });
 
-/** Two first maps, one map they trade up into (not a first map), and a modifier (not one either). */
+/**
+ * Two maps given by the tutorial, a Base Map nothing trades up into that is not (not a first map
+ * once any map is ticked), one map they trade up into, and a modifier.
+ */
 const MAPS = {
     map_tut_woods: {
         id: 'map_tut_woods', name: 'Woods Map', type: 'map', stackable: true,
-        cartography: { biome: 'forest', points: 12, nodes: [{ typeId: 'token_oak_tree', weight: 1 }], camps: [], treasures: [], upcycle: { itemId: 'map_tut_deep_woods', ratio: 3 } }
+        cartography: { biome: 'forest', points: 12, nodes: [{ typeId: 'token_oak_tree', weight: 1 }], camps: [], treasures: [], upcycle: { itemId: 'map_tut_deep_woods', ratio: 3 }, tutorial: true }
     },
     map_tut_hills: {
         id: 'map_tut_hills', name: 'Hills Map', type: 'map', stackable: true,
-        cartography: { biome: 'mountain', points: 12, nodes: [{ typeId: 'token_copper_ore_vein', weight: 1 }], camps: [], treasures: [] }
+        cartography: { biome: 'mountain', points: 12, nodes: [{ typeId: 'token_copper_ore_vein', weight: 1 }], camps: [], treasures: [], tutorial: true }
+    },
+    map_tut_meadow: {
+        id: 'map_tut_meadow', name: 'Meadow Map', type: 'map', stackable: true,
+        cartography: { biome: 'meadow', points: 12, nodes: [{ typeId: 'token_oak_tree', weight: 1 }], camps: [], treasures: [] }
     },
     map_tut_deep_woods: {
         id: 'map_tut_deep_woods', name: 'Deep Woods Map', type: 'map', stackable: true,
@@ -88,6 +95,7 @@ const SPOT = {
     tree: { x: 300, y: 300 },
     build: { x: 1400, y: 300 },
     fight: { x: 1400, y: 900 },
+    forge: { x: 880, y: 1000 },
     site: { x: 300, y: 900 }
 };
 
@@ -221,36 +229,57 @@ describe('⭐ the cartographer\'s chain, step by step, through the real systems'
         claim('cart_craft');
         Flags.furl(heroId);
 
-        // 9. Win a first fight, against a Cow (it never attacks first).
-        // ⚠️ Fixture: a Recruit fights as a level 1 fighter, and a level-1 or level-10 hero is
-        // often knocked out by a Cow before the first kill, so the hero is lent a combat skill at
-        // level 40.
-        GameState.heroes[0].skills[COMBAT_SKILL_IDS[0]] = { xp: 0, level: 40 };
-        Placement.placeTokenAt(BoardState.createTokenInstance('token_cow', tokenStartingUses('token_cow')), SPOT.fight);
-        expect(Flags.plant(heroId, SPOT.fight).success).toBe(true);
-        expect(runUntil(() => complete('cart_fight'), 5 * 60_000)).toBe(true);
-        claim('cart_fight');
-        Flags.furl(heroId);
-
-        // 10. Inspect an endgame site. Inspecting anything else does not count.
+        // 9. Inspect an endgame site. Inspecting anything else does not count. No maps yet.
         inspect(onMat('token_workbench')[0]);
         expect(complete('cart_inspect')).toBe(false);
         inspect(placeSite());
-        // The reward is the first maps: one of each Base Map nothing trades up into.
-        const paid = claim('cart_inspect').rewardItems.map(r => r.itemId);
-        expect(paid).toEqual(expect.arrayContaining(['map_tut_hills', 'map_tut_woods']));
-        expect(paid).not.toContain('map_tut_deep_woods');
-        expect(paid).not.toContain('mod_tut_thicket');
+        expect(claim('cart_inspect').rewardItems.some(r => isMapItem(getAllItems()[r.itemId]))).toBe(false);
+
+        // 10. Make a first copper tool (a Copper Pickaxe at a Furnace). The Charcoal made above
+        // did not count: it is not a tool.
+        expect(complete('cart_copper_tool')).toBe(false);
+        GameState.heroes[0].skills.smithing = { xp: 0, level: 5 };
+        const furnace = BoardState.createTokenInstance('token_furnace', tokenStartingUses('token_furnace'));
+        expect(Placement.placeTokenAt(furnace, SPOT.forge).success).toBe(true);
+        expect(StationRecipe.setSelectedRecipe(BoardState.getTokenById(furnace.id), 'recipe_copper_pickaxe')).toBe(true);
+        give('item_copper_ingot', 4);
+        expect(Flags.plant(heroId, SPOT.forge).success).toBe(true);
+        expect(runUntil(() => complete('cart_copper_tool'), 2 * 60_000)).toBe(true);
+        claim('cart_copper_tool');
+        Flags.furl(heroId);
+
+        // 11. Beat a goblin. A Cow (it never attacks first) does not count; a Goblin does, and
+        // pays the maps given by the tutorial.
+        // ⚠️ Fixture: a Recruit fights as a level 1 fighter and is often knocked out before the
+        // first kill, so the hero is lent a combat skill at level 40.
+        GameState.heroes[0].skills[COMBAT_SKILL_IDS[0]] = { xp: 0, level: 40 };
+        const cow = BoardState.createTokenInstance('token_cow', tokenStartingUses('token_cow'));
+        Placement.placeTokenAt(cow, SPOT.fight);
+        expect(Flags.plant(heroId, SPOT.fight).success).toBe(true);
+        const kills = [];
+        const off = EventBus.subscribe('combat_victory', (d) => kills.push(d.enemyId));
+        expect(runUntil(() => kills.length > 0, 5 * 60_000)).toBe(true);
+        expect(complete('cart_goblin')).toBe(false);
+        Flags.furl(heroId);
+        Placement.removePlacedToken(cow.id);
+        Placement.placeTokenAt(BoardState.createTokenInstance('token_goblin', tokenStartingUses('token_goblin')), SPOT.fight);
+        expect(Flags.plant(heroId, SPOT.fight).success).toBe(true);
+        expect(runUntil(() => complete('cart_goblin'), 5 * 60_000)).toBe(true);
+        off();
+        const paid = claim('cart_goblin').rewardItems.map(r => r.itemId);
+        expect(paid.filter(id => isMapItem(getAllItems()[id])).sort()).toEqual(['map_tut_hills', 'map_tut_woods']);
         collectAll();
         expect(bank('map_tut_woods')).toBe(1);
         expect(bank('map_tut_hills')).toBe(1);
+        expect(bank('map_tut_meadow')).toBe(0);
+        Flags.furl(heroId);
 
-        // 11. Write the first world: settle a Region from a map.
+        // 12. Write the first world: settle a Region from a map.
         const settled = Atlas.settle({ ingredients: ['map_tut_woods'], seed: 7 });
         expect(settled.success, settled.reason).toBe(true);
         claim('cart_settle');
 
-        // 12. Move the guild there. The step travels beside the Hall and counts on arrival.
+        // 13. Move the guild there. The step travels beside the Hall and counts on arrival.
         const moved = Atlas.travel(settled.region.id);
         expect(moved.success, moved.reason).toBe(true);
         expect(Atlas.activeRegionId()).toBe(settled.region.id);
@@ -268,26 +297,40 @@ describe('the first maps are read from the registry when the step is claimed', (
     it('with no map items authored, the step pays nothing but its items', () => {
         withoutMaps();
         expect(firstMapsReward()).toEqual([]);
-        expect(TUTORIAL_QUESTS.find(t => t.id === 'cart_inspect').firstMaps).toBe(true);
-        walkTo('cart_inspect');
-        const paid = claim('cart_inspect').rewardItems;
+        expect(TUTORIAL_QUESTS.filter(t => t.firstMaps).map(t => t.id)).toEqual(['cart_goblin']);
+        walkTo('cart_goblin');
+        const paid = claim('cart_goblin').rewardItems;
         expect(paid.every(r => !String(r.itemId).startsWith('map_'))).toBe(true);
         expect(paid.length).toBeGreaterThan(0);
     });
 
     it('maps authored after the step was offered are still paid (read at claim, not at spawn)', () => {
         withoutMaps();
-        walkTo('cart_inspect');
+        walkTo('cart_goblin');
         withMaps();
-        const paid = claim('cart_inspect').rewardItems.map(r => r.itemId);
+        const paid = claim('cart_goblin').rewardItems.map(r => r.itemId);
         expect(paid).toEqual(expect.arrayContaining(['map_tut_woods', 'map_tut_hills']));
     });
 
-    it('one of each Base Map that no map trades up into, in id order', () => {
+    it('one of each Base Map given by the tutorial, in id order', () => {
         withMaps();
         expect(firstMapsReward().map(r => [r.itemId, r.quantity])).toEqual([
             ['map_tut_hills', 1], ['map_tut_woods', 1]
         ]);
+    });
+
+    it('a ticked Base Map is paid even when an upcycle makes it; a modifier never', () => {
+        const items = {
+            ...MAPS,
+            map_tut_deep_woods: { ...MAPS.map_tut_deep_woods, cartography: { ...MAPS.map_tut_deep_woods.cartography, tutorial: true } },
+            mod_tut_thicket: { ...MAPS.mod_tut_thicket, cartography: { ...MAPS.mod_tut_thicket.cartography, tutorial: true } }
+        };
+        expect(firstMapsReward(items).map(r => r.itemId)).toEqual(['map_tut_deep_woods', 'map_tut_hills', 'map_tut_woods']);
+    });
+
+    it('while no map is ticked yet, the old rule: each Base Map that no map trades up into', () => {
+        const unticked = Object.fromEntries(Object.entries(MAPS).map(([id, def]) => [id, { ...def, cartography: { ...def.cartography, tutorial: undefined } }]));
+        expect(firstMapsReward(unticked).map(r => r.itemId)).toEqual(['map_tut_hills', 'map_tut_meadow', 'map_tut_woods']);
     });
 });
 
@@ -300,7 +343,7 @@ function placeSite() {
 
 /**
  * Bring the chain to step `id` (the steps before it recorded as claimed; they are walked above),
- * then complete it with its own event.
+ * then complete it with a goblin's kill (the step that pays the maps).
  */
 function walkTo(id) {
     const q = GameState.state.quests;
@@ -311,7 +354,7 @@ function walkTo(id) {
     for (const t of QuestTokens.tutorialTokens()) BoardState.removeToken(t.id);
     QuestManager.ensureQuests();
     expect(quest(id), id).toBeTruthy();
-    inspect(placeSite());
+    QuestManager.reportProgress('enemy_hunted', 1, { enemyId: 'token_goblin' });
 }
 
 describe('the chain\'s words come from one text module', () => {
@@ -336,7 +379,7 @@ describe('the chain\'s words come from one text module', () => {
     it('the chain is the cartographer\'s, in order, with new ids', () => {
         expect(TUTORIAL_QUESTS.map(t => t.id)).toEqual([
             'cart_recruit', 'cart_tool', 'cart_flag', 'cart_gather', 'cart_loot', 'cart_foundation', 'cart_station',
-            'cart_craft', 'cart_fight', 'cart_inspect', 'cart_settle', 'cart_travel'
+            'cart_craft', 'cart_inspect', 'cart_copper_tool', 'cart_goblin', 'cart_settle', 'cart_travel'
         ]);
     });
 });

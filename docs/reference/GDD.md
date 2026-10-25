@@ -401,7 +401,8 @@ node, a better node instead, an enemy camp, a treasure). The generation engine
 reads it (`systems/atlas/mapItems.js` → `Budget.js`); inspecting one in the Bank
 lists what it writes. Settling a Region takes the slotted maps from the Bank
 (`Cartography.js`). A claimed bounty pays a map 25 % of the time, drawn at the
-claim, weighted by each map's bounty weight. The simulator prices no map. Map
+claim, weighted by each map's bounty weight. A Base Map ticked **Given by the
+tutorial** is one of the first maps the tutorial pays. The simulator prices no map. Map
 bursts, the Map shop, the Explore skill and the old Map catalogue
 (`data/maps.json`) are retired; the last Map Token, **Volcanic Island**, does
 nothing and is the owner's to delete in the CMS.
@@ -979,9 +980,13 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
 
 - **Quests are Tokens** beside the Hall; click a finished one to claim its
   reward as loot. *(`src/systems/quests/`)*
-  - **Tutorial**: 11 steps, one at a time: recruit, plant a flag, fell an Oak
-    Tree, collect loot, open the Bank, visit the Shop, buy a Foundation, build a
-    Workbench, craft Charcoal, plant Farmland, harvest Wheat.
+  - **Tutorial** (the cartographer's, `tutorialQuests.js`): 13 steps, one at
+    a time: recruit, equip a tool, plant a flag, gather, collect loot, buy a
+    Foundation, build a station, craft, inspect an endgame site; then the
+    Starter Camp's end, **make a first tool** (copper, the camp's metal) and
+    **beat a Goblin**, which pays the **first maps** (one of each Base Map
+    ticked "given by the tutorial"; while none is ticked, each Base Map nothing
+    trades up into); then settle a Region and travel to it.
   - **Bounties**: random "collect N items" or "defeat N Goblins", each paying
     10 Oak Wood (*placeholder*). Cap 2 (+1 per Notice Board rank, max 5); a
     new one every 3 min of game time.

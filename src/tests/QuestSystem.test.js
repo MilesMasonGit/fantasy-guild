@@ -75,7 +75,7 @@ describe('Quest System (quest Tokens since B6.1)', () => {
 
     it('the chain is short, ordered, and pays small items that exist', () => {
         expect(TUTORIAL_QUESTS.length).toBeGreaterThanOrEqual(8);
-        expect(TUTORIAL_QUESTS.length).toBeLessThanOrEqual(12);
+        expect(TUTORIAL_QUESTS.length).toBeLessThanOrEqual(13);
         TUTORIAL_QUESTS.forEach((t, i) => {
             expect(t.step, t.id).toBe(i);
             for (const r of t.rewardItems) {
@@ -84,7 +84,7 @@ describe('Quest System (quest Tokens since B6.1)', () => {
                 expect(r.quantity, t.id).toBeLessThanOrEqual(10);
             }
             // A step that names a Token names one that exists.
-            for (const key of ['typeId', 'fromTypeId']) {
+            for (const key of ['typeId', 'fromTypeId', 'enemyId']) {
                 if (t.match?.[key]) expect(getTokenType(t.match[key]), `${t.id} ${t.match[key]}`).toBeTruthy();
             }
             if (t.match?.itemId) expect(getItem(t.match.itemId), t.id).toBeTruthy();
