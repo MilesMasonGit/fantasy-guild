@@ -3,72 +3,74 @@
 *The Backlog director's own handoff, replaced whole each time it ends (the
 terrain director keeps [HANDOFF.md](HANDOFF.md), the features director
 [HANDOFF_features.md](HANDOFF_features.md); the Systems director, building
-combat (brief 220), shares STATUS.md and the PC). Written 2026-10-24 evening.
-Read `CLAUDE.md`, this file and `STATUS.md`, then verify with
-`git worktree list` and `git log --oneline -5` before trusting anything here.*
+combat and skill loops, shares STATUS.md, the main folder and the PC).
+Written 2026-10-24 night, at the end of the session of 22–24 October. Read
+`CLAUDE.md`, this file and `STATUS.md`, then verify with `git worktree list`
+and `git log --oneline -5` before trusting anything here.*
 
-## The owner this week
+## Done (main 7f6a1166, pushed)
 
-Away from the PC until about 25 October, on the phone. Rulings 2026-10-22:
-**looks by phone screenshots, the owner's ok merges** (hands-on checks for
-their return are in the eye-check records); **benches may run any time while
-they are away**, one heavy run at a time across both directors (the shared
-`.claude/worktrees/suite.lock` file); design questions any time.
+**Brief 210 is complete**, plus every follow-up the owner approved. Each phase
+was okayed by the owner by phone (away 23–25 October) and gated on the merged
+result: tests, cycles, build, the engine work check; draw and drag benches
+where they apply. Eye-check records with the owner's verdicts and a "when
+you're back at the PC" list: `docs/archive/eyecheck/2026-10-23_backlog-A.md`,
+`2026-10-23_backlog-BC.md`. Cost lines: PERFORMANCE "UI rework cost log".
 
-## Brief 210 is complete (main eb969849)
+- A: mat 12 × 6.5; top bar on the Region banner; flag reach 240; hitbox 90 %.
+- B: names below; quieter mat; forbidden-only drag tint; five loot effects off;
+  pickups fly from where they stand.
+- C: item tiles; one item, one hero; "New!" clears; the Bank's hero tabs as
+  portraits; equip shine; Work Permissions button and drawer.
+- D: calmer Hall sky; Effects popover; pixel Inspect panel; the camera glide.
+- E: drawers to the edge, smooth Bank opening; the Atlas spread; dev tools.
+- F: pixel frames round one (windows); the work plate (cheaper than what it
+  replaced).
+- Follow-ups: pixel frames round two (T-242, kit pieces in UI_STYLE); the
+  speech frame (T-243); the drag bench's Shop and Bank kinds (T-240); loot
+  under the drawers (T-241); the gear tip above the plate (T-247); orbs
+  without glow (T-244) and a gold selected orb (T-252); the plate's
+  wrong-Token pickups found by the drag bench and fixed.
 
-All six batches merged, each phase okayed by phone and gated (tests, cycles,
-build, engine work check; draw and drag benches where they apply). Records:
-`docs/archive/eyecheck/2026-10-23_backlog-A.md` and `2026-10-23_backlog-BC.md`
-(B, C, D). E and F were okayed by phone too (drawers, Atlas spread, dev tools;
-pixel frames round one, the work plate); their "when you're back" checks:
-open the Bank (smooth slide), the Atlas Regions spread (select, Travel), a
-worked Token's plate (hover opens the full line). Cost lines in PERFORMANCE
-("UI rework cost log"): A–F draw no dearer; loot and the work plate cheaper.
+## Branches and worktrees
 
-## In flight
+- Only `p23b` (the director's scratch worktree, detached at `main`) is this
+  director's. Everything else listed belongs to the Systems director (`sc`,
+  `se`, `sf`, `sg`, `sl`, `st`, `su`, `sx`) or the planning agents (`pp`,
+  `pcm`, `pco`, `psk`). Kept unmerged on purpose: `atlas-wip`,
+  `crunch/style-p2`.
 
-- `gf` (`backlog/pixel-frames-2`): **T-242**, builder: the owner's second
-  audit (tiles, slots, buttons, toggles, rows; the Bank's item tiles still
-  have soft borders), then reframe; stops and proposes a split if too big.
-- `gb` (`backlog/drag-bench-kinds`): **T-240**, builder: the drag bench's Shop
-  and Bank kinds skip on `main`; harness-only fix, full drag bench at the end.
-- `p23b`: the director's scratch worktree (combined merges are made here,
-  then `main` fast-forwards). The Systems director has its own worktrees
-  (`sc`, `sg`, `su`, ...); planning agents `pp`, `pcm`, `pco`, `psk`.
-  Kept unmerged on purpose: `atlas-wip`, `crunch/style-p2`.
+## Left
 
-## Next
-
-1. T-242's phone look and merge; T-240's gate and merge (no look).
-2. Small tickets left: T-241 (loot particles over an open Bank), T-243
-   (callouts and speech in the pixel family, after the plate), T-244 (nav
-   orbs' hover glow), T-247 (a station's gear tip under the work plate).
-3. Notes for others: enemies notice flags at the hero reach (240); no hero
-   dismissal exists (must return held copies or refuse on a full Bank);
-   research capture scripts that clicked the removed Terrain QA section are
-   stale; charge changes with no hero at work are silent now (owner: fine).
+- **T-251**: slow file-scanning tests time out under load (EngineEventNames
+  runs 4.6 s against a 5 s limit). Builder-lite.
+- Notes in STATUS ("Notes between directors") for the Systems director: the
+  travel determinism flake (fixed on their side, 9efa6db2) and the content
+  test failures after the CMS sync (fixed, 4ec24ad0).
+- For whoever builds it: no hero dismissal exists (must return held copies or
+  refuse on a full Bank); enemies notice flags at the hero reach (240).
 
 ## Lessons
 
-- **Timing flags under load are noise; the work check decides.** Gate the
-  combined merge with nothing else running; a quiet run is clean.
-- **Gate the merged result** whenever `main` gained code since the branch
-  started; if the merged tree differs from the gated branch only in docs, the
-  branch's gate holds.
-- **`main` moves under you** now that two directors merge: re-check
-  `git log` before every fast-forward and take ticket numbers after checking
-  every branch (T-245/T-246 were taken by others).
-- **Combine branches that share a screen in the scratch worktree** and let
-  the builder who knows the screen resolve conflicts.
-- **Ask which thing the owner means** when a wish names a UI piece that
-  exists twice (the hero bar: horizontal vs the Bank's vertical tabs).
-- **Agents read CLAUDE.md's bench windows literally**; tell them the owner's
-  current ruling in the dispatch, or run the bench yourself.
-- **Dev-server config inside the worktree, run from it** (Vite resolves from
-  the config's folder; Tailwind needs the project as working folder); own
-  port and `cacheDir` per agent. Don't grep Vite's coloured log for "Local:".
-- **The Mat Tuner stores every row**: change a tuned default → add the old
-  value to `RETIRED_DEFAULTS` in `matTuning.js`.
-- A shell sitting inside a worktree folder keeps it locked after
-  `git worktree remove`; remove the leftover folder later.
+- **Two directors share one main folder.** A fast-forward can race the other
+  director's commit and leave your files staged on their HEAD: check
+  `git status` after every fast-forward; if it happens, restore exactly your
+  own files by name to HEAD and redo the merge. `git fetch` and re-check
+  `main` right before each fast-forward; take ticket numbers after checking
+  every branch.
+- **Gate the merged result**; if the merged tree differs from the gated branch
+  only in docs, the branch's gate holds.
+- **Timing flags under load are noise; the work check decides.** Scanning
+  tests also time out under load; rerun them alone before believing them.
+- **The drag bench finds real bugs**: run the token kind before and after
+  anything that adds a layer over the mat (the work plate took presses).
+- **Agents read CLAUDE.md's weekday bench windows literally**; tell them the
+  owner's current ruling, or run the benches yourself.
+- **Tell agents to kill only their own processes**: one tried to kill every
+  Chrome on the PC (refused by the permission layer).
+- **Ask which thing the owner means** when a UI piece exists twice (the hero
+  bar: horizontal vs the Bank's vertical tabs).
+- **Dev-server config inside the worktree, run from it**; own port and
+  `cacheDir` per agent; don't grep Vite's coloured log for "Local:".
+- **The Mat Tuner stores every row**: a changed tuned default needs its old
+  value in `RETIRED_DEFAULTS`.

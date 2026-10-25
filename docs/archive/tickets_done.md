@@ -182,3 +182,4 @@ T-247 — A station's gear tooltip uses the shared pixel tooltip (TipBox), drawn
 T-241 — Loot flights draw under the open drawers (the mat's particle canvas now inside the screen overlay at --z-mat-flights) and pause while the Bank covers the mat; the dock-lift hero flight keeps its own canvas on top — 7d9c6f9f — 2026-10-24
 T-243 — Hero speech, the hero bar's level-up alerts and every callout in one SpeechFrame (chamfer, stepped pixel tail; bronze news, gold attention, red can't); the callout pop no longer scales; rule in UI_STYLE — 48796bb2 — 2026-10-24
 T-244 — The nav orbs and a station's gear button hover with a white pixel outline (four mask copies of the art), no glow or scale; the selected orb is T-252 — afd4ec28 — 2026-10-24
+T-252 — A selected nav orb shows a steady gold pixel outline; no grow or glow (owner) — 7f6a1166 — 2026-10-24

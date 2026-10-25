@@ -64,7 +64,6 @@ Detail, order and tiers in [brief 210](../active/briefs/210_backlog_intake.md); 
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
-| T-252 | P3 | open | **A selected nav orb: a steady gold pixel outline** instead of growing and glowing (owner 2026-10-24, after T-244; gold is the selected tab in UI_STYLE). Builder-lite. One capture. | Backlog director, T-244 |
 | T-251 | P3 | open | **Slow file-scanning tests time out under load**: `EngineEventNames` (CR3-107 runs 4.6 s alone against vitest's 5 s limit) and the source-scanning tests (`UiLayers`, `OneTooltip`, `GoldRetired`, `ContentIdsInCode`, `TextInCodeMatchesScreen`, `TimeBankRetired`, `RulesUseGameClock`, ...) fail at random when the full suite runs beside a build or another director's agents, then pass alone (seen many times 2026-10-23/24). Give the scanning tests a longer timeout or a shared cached file walk. Builder-lite. | Backlog director |
 
 ### UI
