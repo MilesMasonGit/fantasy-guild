@@ -370,7 +370,7 @@ describe('hover: the rings, the timer and the gear', () => {
 
     it('growth: nextGrowth reads the clock against afterMs; none for a Token that does not grow', () => {
         expect(TimedChanges.nextGrowth({ typeId: 'fixture_bub_grower', clocks: { growMs: 45000 } }))
-            .toEqual({ inMs: 15000, into: 'fixture_b13_sapling' });
+            .toEqual({ inMs: 15000, totalMs: 60000, into: 'fixture_b13_sapling' });
         expect(TimedChanges.nextGrowth({ typeId: 'fixture_producer' })).toBeNull();
     });
 

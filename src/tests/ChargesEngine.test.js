@@ -89,37 +89,45 @@ beforeEach(() => {
 // The arithmetic, unit by unit
 // ---------------------------------------------------------------------------
 
+/**
+ * ⚠️ Stations and supports never wear out (brief 230 S1a, `wearRule.js`): a `Works as` station and a
+ * context Token are unlimited whatever they author. The pool arithmetic and the atomic cycle are
+ * exercised on `fixture_charged_context_node`, a gathering node offering the same context tag,
+ * whose 6 charges are its stock and still move.
+ */
+const NODE = 'fixture_charged_context_node';
+
 describe('A charge delta moves the pool', () => {
     it('spends on a negative delta and leaves the Token alive above zero', () => {
-        const instance = place(STATION, 'fixture_charged_context');   // uses: 6
+        const instance = place(STATION, NODE);   // uses: 6
         Charges.applyDelta(instance, -2);
         expect(instance.usesRemaining).toBe(4);
         expect(tokenAt(STATION)).toBe(instance);
     });
 
     it('changes nothing at all on a zero delta', () => {
-        const instance = place(STATION, 'fixture_charged_context');
+        const instance = place(STATION, NODE);
         const result = Charges.applyDelta(instance, 0);
         expect(result.applied).toBe(0);
         expect(instance.usesRemaining).toBe(6);
     });
 
     it('restores on a positive delta', () => {
-        const instance = place(STATION, 'fixture_charged_context', null, 2);
+        const instance = place(STATION, NODE, null, 2);
         Charges.applyDelta(instance, 3);
         expect(instance.usesRemaining).toBe(5);
     });
 
     /** The ceiling. Overshooting it inflates a save permanently. */
     it('never restores past the Token type’s starting charges', () => {
-        const instance = place(STATION, 'fixture_charged_context', null, 5);
+        const instance = place(STATION, NODE, null, 5);
         const result = Charges.applyDelta(instance, 99);
         expect(instance.usesRemaining).toBe(6);       // uses: 6, not 104
         expect(result.applied).toBe(1);
     });
 
     it('is a no-op on a Token already at its ceiling', () => {
-        const instance = place(STATION, 'fixture_charged_context');   // already 6
+        const instance = place(STATION, NODE);   // already 6
         const result = Charges.applyDelta(instance, 4);
         expect(instance.usesRemaining).toBe(6);
         expect(result.applied).toBe(0);
@@ -159,7 +167,7 @@ describe('An unlimited Token ignores charge deltas in both directions (R-4)', ()
 
 describe('Reaching zero destroys the Token', () => {
     it('empties the spot, and nothing is owed it (Managers retired, 9.2)', () => {
-        const instance = place(STATION, 'fixture_charged_context', null, 2);
+        const instance = place(STATION, NODE, null, 2);
         const result = Charges.applyDelta(instance, -2);
         expect(result.depleted).toBe(true);
         expect(tokenAt(STATION)).toBeNull();
@@ -172,31 +180,34 @@ describe('Reaching zero destroys the Token', () => {
 // ---------------------------------------------------------------------------
 
 describe('A cycle it cannot pay for in full deducts nothing', () => {
-    /** Station short on its own charges: 2 left, the recipe wants 3. */
-    it('takes no item and no charge when the station is short of charges', () => {
+    /**
+     * A station is never short of its own charges: it never wears out (brief 230 S1a). A copy
+     * saved holding 2, against a recipe that once cost 3 of them, runs and keeps its 2.
+     */
+    it('a station is never short of its own charges: an old copy holding 2 runs, and keeps them', () => {
         InventoryManager.addItem('item_coal', 5);
         place(STATION, 'fixture_charge_station', 'hero_1', 2);
-        const context = place(CONTEXT, 'fixture_charged_context');
+        const context = place(CONTEXT, NODE);
 
-        run(10000 + 2000);
+        run(10000 + 300);
 
-        expect(InventoryManager.getItemCount('item_coal')).toBe(5);
+        expect(InventoryManager.getItemCount('item_coal')).toBe(4);
         expect(tokenAt(STATION).usesRemaining).toBe(2);
-        expect(context.usesRemaining).toBe(6);
-        expect(SpriteLayer.countOnBoard('fixture_charcoal')).toBe(0);
-        expect(tokenAt(STATION).alert).toBe(ALERT.CHARGES);
+        expect(context.usesRemaining).toBe(4);
+        expect(SpriteLayer.countOnBoard('fixture_charcoal')).toBe(1);
+        expect(tokenAt(STATION).alert ?? null).not.toBe(ALERT.CHARGES);
     });
 
     /** Context short: 1 charge left, the recipe wants 2 off it. */
     it('takes no item and no station charge when the context Token is short', () => {
         InventoryManager.addItem('item_coal', 5);
         place(STATION, 'fixture_charge_station', 'hero_1');
-        const context = place(CONTEXT, 'fixture_charged_context', null, 1);
+        const context = place(CONTEXT, NODE, null, 1);
 
         run(10000 + 2000);
 
         expect(InventoryManager.getItemCount('item_coal')).toBe(5);
-        expect(tokenAt(STATION).usesRemaining).toBe(10);
+        expect(tokenAt(STATION).usesRemaining).toBeNull();   // a station starts unlimited
         expect(tokenAt(CONTEXT)).toBe(context);
         expect(context.usesRemaining).toBe(1);
         expect(SpriteLayer.countOnBoard('fixture_charcoal')).toBe(0);
@@ -205,11 +216,11 @@ describe('A cycle it cannot pay for in full deducts nothing', () => {
     /** Items short: no charge of either kind may move. */
     it('takes no charge of either kind when the Bank is short of items', () => {
         place(STATION, 'fixture_charge_station', 'hero_1');
-        const context = place(CONTEXT, 'fixture_charged_context');
+        const context = place(CONTEXT, NODE);
 
         run(10000 + 2000);
 
-        expect(tokenAt(STATION).usesRemaining).toBe(10);
+        expect(tokenAt(STATION).usesRemaining).toBeNull();
         expect(context.usesRemaining).toBe(6);
         expect(tokenAt(STATION).alert).toBe(ALERT.INPUTS);
     });
@@ -217,12 +228,12 @@ describe('A cycle it cannot pay for in full deducts nothing', () => {
     it('pays everything at once on a cycle it can afford', () => {
         InventoryManager.addItem('item_coal', 5);
         place(STATION, 'fixture_charge_station', 'hero_1');
-        const context = place(CONTEXT, 'fixture_charged_context');
+        const context = place(CONTEXT, NODE);
 
         run(10000 + 300);
 
         expect(InventoryManager.getItemCount('item_coal')).toBe(4);
-        expect(tokenAt(STATION).usesRemaining).toBe(7);   // 10 − 3
+        expect(tokenAt(STATION).usesRemaining).toBeNull();   // the station never wears
         expect(context.usesRemaining).toBe(4);                        // 6 − 2
         expect(SpriteLayer.countOnBoard('fixture_charcoal')).toBe(1);
     });
@@ -238,8 +249,8 @@ describe('Nearby context Tokens are chosen and shared', () => {
      * itself rather than leaving every provider at a fraction.
      */
     it('draws from the Token with the fewest charges left first', () => {
-        const scarce = place(CONTEXT, 'fixture_charged_context', null, 2);
-        const full = place(CONTEXT_2, 'fixture_charged_context');
+        const scarce = place(CONTEXT, NODE, null, 2);
+        const full = place(CONTEXT_2, NODE);
         // The reader measures from the station Token itself (slice 1.6b), so one stands there.
         place(STATION, 'fixture_charge_station');
 
@@ -255,8 +266,8 @@ describe('Nearby context Tokens are chosen and shared', () => {
     });
 
     it('spreads one requirement across providers when the first cannot cover it', () => {
-        place(CONTEXT, 'fixture_charged_context', null, 1);
-        place(CONTEXT_2, 'fixture_charged_context');
+        place(CONTEXT, NODE, null, 1);
+        place(CONTEXT_2, NODE);
         // The reader measures from the station Token itself (slice 1.6b), so one stands there.
         place(STATION, 'fixture_charge_station');
 
@@ -269,8 +280,20 @@ describe('Nearby context Tokens are chosen and shared', () => {
             .toEqual([[CONTEXT, 1], [CONTEXT_2, 2]].sort());
     });
 
+    it('a pure context Token is a support and pays nothing, whatever it holds (brief 230 S1a)', () => {
+        place(CONTEXT, 'fixture_charged_context', null, 6);
+        place(STATION, 'fixture_charge_station');
+
+        const plan = Charges.planContextCharges(
+            idAt(STATION), [{ tag: 'ctx_fixture_charged', minTier: 1, chargeCost: 2 }]
+        );
+
+        expect(plan.ok).toBe(true);
+        expect(plan.debits).toEqual([]);
+    });
+
     it('charges nothing when an unlimited provider supplies the tag (R-4)', () => {
-        place(CONTEXT, 'fixture_charged_context');
+        place(CONTEXT, NODE);
         place(CONTEXT_2, 'fixture_charged_context_unlimited');
         // The reader measures from the station Token itself (slice 1.6b), so one stands there.
         place(STATION, 'fixture_charge_station');
@@ -292,7 +315,7 @@ describe('Nearby context Tokens are chosen and shared', () => {
         InventoryManager.addItem('item_coal', 20);
         place(STATION, 'fixture_charge_station', 'hero_1');
         place(OTHER_STATION, 'fixture_charge_station', 'hero_2');
-        const context = place(CONTEXT, 'fixture_charged_context');   // 6 charges
+        const context = place(CONTEXT, NODE);   // 6 charges
 
         run(10000 + 300);
 

@@ -229,7 +229,7 @@ describe('The Processing chain in shipped data (7.5)', () => {
             expect(verdict.missingContext.map((c) => c.tag)).toEqual(['anvil']);
         });
 
-        it('with an Anvil beside it the recipe runs, and a cycle takes one Anvil charge', () => {
+        it('with an Anvil beside it the recipe runs, and the Anvil never wears (brief 230 S1a)', () => {
             const furnace = place(FURNACE, 'token_furnace');
             const anvil = place(BESIDE, 'token_copper_anvil');
             StationRecipe.setSelectedRecipe(furnace, nailsId());
@@ -238,13 +238,15 @@ describe('The Processing chain in shipped data (7.5)', () => {
             expect(verdict.reason).toBeUndefined();
             expect(verdict.recipe.id).toBe(nailsId());
 
-            expect(anvil.usesRemaining).toBe(20);
+            // A context Token is a support, and supports never wear out: its authored 20 uses are
+            // ignored (it goes in S6), so it starts unlimited and the cycle debits nothing.
+            expect(tokens.token_copper_anvil.uses).toBe(20);
+            expect(anvil.usesRemaining).toBeNull();
             const plan = Charges.planCycle(furnace.id, furnace, { recipe: verdict.recipe });
             expect(plan.ok).toBe(true);
-            // The Furnace is unlimited, so the Anvil is the only debit.
-            expect(plan.debits.map((d) => [d.id, d.amount])).toEqual([[anvil.id, 1]]);
+            expect(plan.debits).toEqual([]);
             Charges.commitPlan(plan);
-            expect(anvil.usesRemaining).toBe(19);
+            expect(anvil.usesRemaining).toBeNull();
         });
 
         it('smelting Copper Ingots needs no Anvil (SP-31)', () => {
@@ -266,7 +268,7 @@ describe("Academies (6.2, SP-62)", () => {
 });
 
 describe('The lifecycle audit on the Processing chain', () => {
-    it('has no errors and no warnings, the Anvil included (slice 7.5a)', () => {
+    it('has no errors and no warnings but the Anvil’s ignored charges (slice 7.5a; brief 230 S1a)', () => {
         const ids = new Set([
             'token_wood_foundation', 'token_stone_foundation', 'token_workbench', 'token_cooking_pot',
             'token_furnace', 'token_fighter_s_academy', 'token_copper_anvil',
@@ -277,6 +279,8 @@ describe('The lifecycle audit on the Processing chain', () => {
         const expanded = Object.fromEntries(Object.keys(tokens).map((id) => [id, getTokenType(id) || tokens[id]]));
         const findings = auditLifecycleBlocks({ tokens: expanded, items, recipes, skills: SKILLS })
             .filter((f) => f.severity === 'error' || ids.has(f.entityId));
-        expect(findings.map((f) => [f.severity, f.entityId, f.field])).toEqual([]);
+        // The Anvil is a support, and supports never wear out: its 20 Charges are ignored, and
+        // flagged (allowed) until the owner clears them. Nothing else.
+        expect(findings.map((f) => [f.severity, f.entityId, f.field])).toEqual([['warning', 'token_copper_anvil', 'uses']]);
     });
 });

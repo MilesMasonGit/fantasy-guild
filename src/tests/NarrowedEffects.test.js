@@ -244,8 +244,9 @@ describe('the palette declares both, rather than inferring them', () => {
 
     it('offers a skill scope on exactly the axes whose reader passes one', () => {
         const skillScoped = MODIFIER_PALETTE.filter(e => e.categories === 'skill').map(e => e.type);
+        // Grow Time's reader (`TileModifiers.growTimeOf`) passes the growing Token's skill (brief 230 S1a).
         expect(new Set(skillScoped)).toEqual(new Set([
-            EFFECT_TYPES.YIELD, EFFECT_TYPES.WORK_TIME, EFFECT_TYPES.INPUT_COST,
+            EFFECT_TYPES.YIELD, EFFECT_TYPES.WORK_TIME, EFFECT_TYPES.INPUT_COST, EFFECT_TYPES.GROW_TIME,
             EFFECT_TYPES.XP_BONUS, EFFECT_TYPES.LOOT_MULT, EFFECT_TYPES.FAIL_CHANCE
         ]));
     });

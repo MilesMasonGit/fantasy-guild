@@ -64,6 +64,25 @@ registerTokenTypes({
         isTool: true, requiresHero: false,
         provides: [{ tag: 'ctx_fixture_tool', minTier: 1, chargeCost: 0 }]
     },
+    /**
+     * The fixture tool as a GATHERING node (1×1 and 2×2): stations and supports never wear out
+     * (brief 230 S1a), but a gathering node keeps its charges even when it offers a tag, so it is
+     * what the per-station wear is measured with.
+     */
+    fixture_tool_node: {
+        id: 'fixture_tool_node', name: 'Fixture Tool Node', tokenType: 'resource',
+        rarity: 'common', theme: 'fixture', uses: 80, sprite: 's_industry',
+        config: { skill: 'mining', skillRequired: 999, cycleTimeMs: 10000, xp: 1, inputs: [],
+            outputs: [{ itemId: 'fixture_copper_ore', quantity: 1, chance: 100 }] },
+        provides: [{ tag: 'ctx_fixture_tool', minTier: 1, chargeCost: 0 }]
+    },
+    fixture_large_tool_node: {
+        id: 'fixture_large_tool_node', name: 'Fixture Large Tool Node', tokenType: 'resource',
+        rarity: 'common', theme: 'fixture', uses: 80, sprite: 's_industry', size: 2,
+        config: { skill: 'mining', skillRequired: 999, cycleTimeMs: 10000, xp: 1, inputs: [],
+            outputs: [{ itemId: 'fixture_copper_ore', quantity: 1, chance: 100 }] },
+        provides: [{ tag: 'ctx_fixture_tool', minTier: 1, chargeCost: 0 }]
+    },
     /** The tool-gated resource, two spots square. */
     fixture_large_gated: {
         id: 'fixture_large_gated', name: 'Fixture Large Gated', tokenType: 'resource',
@@ -222,8 +241,19 @@ describe('RecipeResolver: a tool near a station', () => {
 // ---------------------------------------------------------------------------
 
 describe('Charges: a tool wears once per station it serves, per cycle (D-113/D-157)', () => {
+    // A tool Token is a support, and supports never wear out (brief 230 S1a): the wear is measured
+    // with the tool as a gathering node, which keeps its charges.
+    it('a tool Token that is a pure support never wears, however many it serves', () => {
+        const tool = put(S14, 'fixture_tool', 80);
+        put(S13, 'fixture_tool_gated');
+        put(S15, 'fixture_tool_gated');
+        RecipeResolver.wearNearbySupport(idAt(S13));
+        RecipeResolver.wearNearbySupport(idAt(S15));
+        expect(tool.usesRemaining).toBe(80);
+    });
+
     it('1×1 at 272 u: −1 per station served; a station out of reach does not wear it', () => {
-        const tool = put(S14, 'fixture_tool');
+        const tool = put(S14, 'fixture_tool_node');
         put(S13, 'fixture_tool_gated');
         put(S15, 'fixture_tool_gated');
         put(S16, 'fixture_tool_gated');                 // 320 u from the tool
@@ -244,7 +274,7 @@ describe('Charges: a tool wears once per station it serves, per cycle (D-113/D-1
     });
 
     it('⭐ a 2×2 tool wears for a side-touching station and not for a corner-diagonal one (FP-41)', () => {
-        const tool = put(BIG, 'fixture_large_tool');
+        const tool = put(BIG, 'fixture_large_tool_node');
         put(SIDE, 'fixture_tool_gated');
         put(CORNER, 'fixture_tool_gated');
 
@@ -263,7 +293,7 @@ describe('Charges: a tool wears once per station it serves, per cycle (D-113/D-1
     });
 
     it('a larger radius widens it: at 400 u the far station wears the tool too', () => {
-        const tool = put(S14, 'fixture_tool');
+        const tool = put(S14, 'fixture_tool_node');
         put(S16, 'fixture_tool_gated');
         setMatTuning('nearRadius', 400);
 

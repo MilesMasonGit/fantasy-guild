@@ -212,6 +212,36 @@ export const FIXTURE_TOKENS = {
         provides: [{ tag: 'ctx_fixture_charged', minTier: 1 }]
     },
 
+    // --- Charges that still wear (brief 230 S1a) ----------------------------
+    // Stations and supports never wear out (`wearRule.js`), so a context Token or a buff is
+    // unlimited whatever it authors. A GATHERING node keeps its charges (they are what it holds)
+    // even when it also helps its neighbours: these two are the shapes the charge rules still
+    // reach. No hero can work either (level 999), so they only ever serve.
+
+    /** A gathering node that also offers `fixture_charged_context`'s tag: 6 charges a recipe's context cost draws on. */
+    fixture_charged_context_node: {
+        id: 'fixture_charged_context_node', name: 'Fixture Charged Context Node', tokenType: 'resource',
+        rarity: 'common', theme: 'fixture', uses: 6, sprite: 's_industry',
+        config: {
+            skill: 'mining', skillRequired: 999, cycleTimeMs: 10000, xp: 1,
+            inputs: [], outputs: [{ itemId: 'fixture_copper_ore', quantity: 1, chance: 100 }]
+        },
+        provides: [{ tag: 'ctx_fixture_charged', minTier: 1 }]
+    },
+    /** A gathering node with a +5 % yield aura (the Blackberry Bush's shape): its neighbours' cycles wear it. */
+    fixture_aura_node: {
+        id: 'fixture_aura_node', name: 'Fixture Aura Node', tokenType: 'resource',
+        rarity: 'common', theme: 'fixture', uses: 10, sprite: 's_nature',
+        config: {
+            skill: 'forestry', skillRequired: 999, cycleTimeMs: 10000, xp: 1,
+            inputs: [], outputs: [{ itemId: 'fixture_oak_wood', quantity: 1, chance: 100 }]
+        },
+        statements: [
+            { id: 'stm_aura_node', keyword: 'provides', to: { mode: 'all' },
+              payload: { type: 'YIELD', bucket: 'percentage', value: 0.05 } }
+        ]
+    },
+
     /** Three statements, three charge deltas — the "planeswalker model" (§3.2). */
     fixture_trigger_free: {
         id: 'fixture_trigger_free', name: 'Fixture Free Trigger', tokenType: 'buff',

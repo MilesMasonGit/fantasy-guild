@@ -221,7 +221,7 @@ describe('On-Board Tile Event Alerts', () => {
         });
     });
 
-    it('emits Red alert when an unworked nearby tool/context token depletes its charges', () => {
+    it('emits Red alert when an unworked nearby Token is worn to nothing by serving', () => {
         const events = [];
         EventBus.subscribe(BOARD_EVENTS.TILE_EVENT_ALERT, e => events.push(e));
 
@@ -233,26 +233,35 @@ describe('On-Board Tile Event Alerts', () => {
         put(8, station);
         plant('hero_1', 8);
 
-        // Place tool/context token with 1 charge nearby at tile 9
+        // The context Token it needs on tile 9: a support, which never wears out (brief 230 S1a),
+        // even on its last charge.
         const contextA = BoardState.createTokenInstance('fixture_context_a', 1);
         put(9, contextA);
+
+        // A gathering node with an aura and 1 charge on tile 14: its charges are its stock, so
+        // serving the station's cycle wears it out.
+        const node = BoardState.createTokenInstance('fixture_aura_node', 1);
+        put(14, node);
 
         // Run cycle to completion (fixture_station cycleTime is 16s)
         for (let t = 0; t < 17000; t += 100) BoardRunner.tick(100);
 
-        // The unworked tool on tile 9 should have depleted and emitted Red alert
-        expect(tokenAt(9)).toBeNull();
+        expect(tokenAt(9)).toBe(contextA);
+        expect(events.find(e => e.type === 'token_exhausted' && e.instanceId === contextA.id)).toBeUndefined();
 
-        const toolExhaustEvent = events.find(e => e.type === 'token_exhausted' && e.instanceId === contextA.id);
+        // The unworked node on tile 14 should have depleted and emitted Red alert
+        expect(tokenAt(14)).toBeNull();
+
+        const toolExhaustEvent = events.find(e => e.type === 'token_exhausted' && e.instanceId === node.id);
         expect(toolExhaustEvent).toBeDefined();
         expect(toolExhaustEvent).toMatchObject({
-            instanceId: contextA.id,
-            ...C(9),
+            instanceId: node.id,
+            ...C(14),
             severity: 'red',
             type: 'token_exhausted'
         });
         expect(toolExhaustEvent.message).toContain('Token Exhausted:');
-        expect(toolExhaustEvent.message).toContain('Fixture Context A');
+        expect(toolExhaustEvent.message).toContain('Fixture Aura Node');
     });
 
     it('emits Disallow alert with exact rules text when a drop has nowhere legal to go', () => {

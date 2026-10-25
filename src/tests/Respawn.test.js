@@ -103,10 +103,15 @@ registerTokenTypes({
         theme: 'fixture', uses: null, sprite: 's_nature',
         spawner: { spawns: [{ typeId: 'stump_tree', weight: 1 }], allowance: 1, intervalMs: 5000, upkeep: [] }
     },
-    /** A one-charge yield buff that rests and refills: worn by a neighbour's cycle or a kill. */
+    /**
+     * A one-charge yield buff that rests and refills: worn by a neighbour's cycle or a kill. A
+     * gathering node nobody can work (level 999): supports never wear out (brief 230 S1a), but a
+     * gathering node with an aura keeps its charges as stock, and its neighbours still wear it.
+     */
     respawn_rack: {
         ...FIXTURE_TOKENS.fixture_buff_yield,
         id: 'respawn_rack', name: 'Respawn Rack', uses: 1,
+        config: { ...mining, skillRequired: 999 },
         respawn: { mode: 'refill', afterMs: 5000 }
     },
     /** Blocks the engine never lets respawn, whatever is authored. */

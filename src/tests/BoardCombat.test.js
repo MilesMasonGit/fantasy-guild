@@ -246,15 +246,18 @@ describe('A kill', () => {
         expect(seen[0].instanceId).toBe(idAt(10));
     });
 
-    it('wears nearby support per kill, exactly as a craft would (D-126)', () => {
-        // A Weapon Rack burns down as it is used. Combat is not exempt from the
-        // economy just because it runs on a different engine.
+    it('wears nearby support per kill, exactly as a craft would (D-126), where support still wears', () => {
+        // Combat is not exempt from the economy just because it runs on a different engine: a kill
+        // is one cycle served. Supports never wear out (brief 230 S1a), so a Weapon Rack keeps its
+        // charges; a gathering node with an aura keeps its charges as stock and still wears.
         place(10, 'fixture_enemy', 'hero_1');
         const rack = place(11, 'fixture_buff_yield', null, 10);
+        const node = place(9, 'fixture_aura_node', null, 10);
 
         run(60000);
 
-        expect(rack.usesRemaining).toBeLessThan(10);
+        expect(node.usesRemaining).toBeLessThan(10);
+        expect(rack.usesRemaining).toBe(10);
     });
 
     it('the killing tick names the enemy as depleted and changed, in a pinned order (CR3-250)', () => {

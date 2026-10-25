@@ -81,9 +81,10 @@ describe('Accepted Tokens & Tool Tiers System', () => {
         // Produced output
         expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(2);
 
-        // Tool spent 1 charge (10 -> 9)
+        // A tool Token beside the node is a support, and supports never wear out (brief 230 S1a;
+        // it spent 1 of its 10 charges before): it starts unlimited and stays so.
         const tool = tokenAt(TILE_TOOL);
-        expect(tool.usesRemaining).toBe(9);
+        expect(tool.usesRemaining).toBeNull();
     });
 
     it('a Tier 2 node refuses to run with a Tier 1 tool, but runs with a Tier 2 tool', () => {
@@ -92,9 +93,9 @@ describe('Accepted Tokens & Tool Tiers System', () => {
 
         run(15000);
 
-        // Under-tiered tool — nothing produced, tool charges untouched
+        // Under-tiered tool — nothing produced (a tool Token never wears: unlimited, brief 230 S1a)
         expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(0);
-        expect(tokenAt(TILE_TOOL).usesRemaining).toBe(10);
+        expect(tokenAt(TILE_TOOL).usesRemaining).toBeNull();
 
         // Replace with Tier 2 Pickaxe
         BoardState.removeToken(tokenAt(TILE_TOOL).id);
@@ -104,7 +105,7 @@ describe('Accepted Tokens & Tool Tiers System', () => {
 
         // Now it runs!
         expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(2);
-        expect(tokenAt(TILE_TOOL).usesRemaining).toBe(9);
+        expect(tokenAt(TILE_TOOL).usesRemaining).toBeNull();
     });
 
     it('a higher tier tool can satisfy lower tier requirements', () => {
@@ -115,6 +116,6 @@ describe('Accepted Tokens & Tool Tiers System', () => {
 
         // Tier 2 pickaxe works on Tier 1 copper vein
         expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(2);
-        expect(tokenAt(TILE_TOOL).usesRemaining).toBe(9);
+        expect(tokenAt(TILE_TOOL).usesRemaining).toBeNull();
     });
 });

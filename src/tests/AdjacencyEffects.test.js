@@ -702,18 +702,25 @@ describe('⚠️ Context COMBINATIONS gate a recipe (CMS-6, CMS-7)', () => {
     });
 });
 
-describe('Support wears per cycle SERVED (D-126, D-157)', () => {
-    it('a schematic loses one use per cycle the station completes', () => {
+/**
+ * ⚠️ Supports never wear out (brief 230 S1a; owner, 2026-10-24: "build once, help forever"). This
+ * replaces D-126/D-157's wear per cycle served for supports: a schematic, a rack or a buff keeps
+ * its charges. A GATHERING node that also helps its neighbours keeps its charges as stock, and
+ * that is where wear per cycle served, and its rate trade, still apply.
+ */
+describe('Support wears per cycle SERVED (D-126, D-157), only where it still wears', () => {
+    it('a schematic keeps its uses, cycle after cycle (supports never wear out)', () => {
         InventoryManager.addItem('item_coal', 20);
         place(A, 'fixture_station', 'hero_1');
         const schematic = place(NEIGHBOUR, 'fixture_context_a', null, 10);
 
         run(17000);
 
-        expect(schematic.usesRemaining).toBe(9);
+        expect(SpriteLayer.countOnBoard('fixture_spider_silk')).toBe(1);   // it served a cycle
+        expect(schematic.usesRemaining).toBe(10);
     });
 
-    it('⚠️ serving TWO stations wears it twice as fast — a rate trade, not free value', () => {
+    it('⚠️ a gathering node with an aura serving TWO stations wears twice as fast — a rate trade, not free value', () => {
         // This is whole point: one Token serving three stations gives the same
         // TOTAL benefit as one serving a single station, three times faster and
         // wearing out three times sooner. Clustering buys throughput now at the
@@ -721,11 +728,12 @@ describe('Support wears per cycle SERVED (D-126, D-157)', () => {
         InventoryManager.addItem('item_coal', 40);
         place(P(2, 2), 'fixture_station', 'hero_1');
         place(P(2, 4), 'fixture_station', 'hero_2');
-        const schematic = place(P(2, 3), 'fixture_context_a', null, 10);
+        place(P(1, 3), 'fixture_context_a');
+        const node = place(P(2, 3), 'fixture_aura_node', null, 10);
 
         run(17000);
 
-        expect(schematic.usesRemaining).toBe(8);      // TWO cycles served
+        expect(node.usesRemaining).toBe(8);      // TWO cycles served
     });
 
     it('an unlimited-use buff never wears (D-176)', () => {
@@ -735,18 +743,18 @@ describe('Support wears per cycle SERVED (D-126, D-157)', () => {
         expect(shrine.usesRemaining).toBeNull();
     });
 
-    it('a spent schematic disappears, and the station stops making that thing', () => {
+    it('a schematic on its last use never runs out, so the station keeps making that thing', () => {
         InventoryManager.addItem('item_coal', 20);
         const forge = place(A, 'fixture_station', 'hero_1');
-        place(NEIGHBOUR, 'fixture_context_a', null, 1);
+        const schematic = place(NEIGHBOUR, 'fixture_context_a', null, 1);
 
         run(17000);
-        expect(tokenAt(NEIGHBOUR)).toBeNull();
+        expect(tokenAt(NEIGHBOUR)).toBe(schematic);
 
         run(20000);
-        // With its context gone the Forge is back to making nothing at all.
-        expect(forge.alert).toBe(BoardRunner.ALERT.NO_RECIPE);
-        expect(SpriteLayer.countOnBoard('fixture_spider_silk')).toBe(1);
+        expect(forge.alert ?? null).not.toBe(BoardRunner.ALERT.NO_RECIPE);
+        expect(SpriteLayer.countOnBoard('fixture_spider_silk')).toBe(2);
+        expect(schematic.usesRemaining).toBe(1);
     });
 });
 

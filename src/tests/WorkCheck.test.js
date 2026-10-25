@@ -73,10 +73,12 @@ const CASES = [
     { name: 'missing inputs', expected: ALERT.INPUTS, build: () => put(TILE, 'fixture_consumer') },
     { name: 'no recipe context', expected: ALERT.NO_RECIPE, build: () => { InventoryManager.addItem('item_coal', 5); return put(TILE, 'fixture_station'); } },
     {
+        // A station never runs short of its own charges (brief 230 S1a), so the shortfall is the
+        // context's: a gathering node offering the tag holds 1 of the 2 the recipe draws.
         name: 'too few charges', expected: ALERT.CHARGES, build: () => {
             InventoryManager.addItem('item_coal', 5);
-            put(TILE + 1, 'fixture_charged_context');
-            return put(TILE, 'fixture_charge_station', 2);
+            put(TILE + 1, 'fixture_charged_context_node', 1);
+            return put(TILE, 'fixture_charge_station');
         }
     },
     {

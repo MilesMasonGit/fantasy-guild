@@ -153,8 +153,11 @@ describe('a carried Token does not work', () => {
 });
 
 describe('a carried Token holds its last charge until the drop', () => {
+    // Stations and supports never wear out (brief 230 S1a), so the Tokens worn here are gathering
+    // nodes: one offering a context tag, one with a yield aura. Their charges are their stock.
+
     it('a charge spent on it in the hand removes it only when it is put down', () => {
-        const tool = place(10, 'fixture_charged_context', null, 1);
+        const tool = place(10, 'fixture_charged_context_node', null, 1);
         pickUp(tool);
 
         Charges.applyDelta(tool, -1);
@@ -170,7 +173,7 @@ describe('a carried Token holds its last charge until the drop', () => {
 
     it('a support worn out by a neighbour\'s cycle while carried is removed on the drop', () => {
         const forest = place(10, 'fixture_producer', 'hero_1');
-        const rack = place(11, 'fixture_buff_yield', null, 1);
+        const rack = place(11, 'fixture_aura_node', null, 1);
         pickUp(rack);
 
         expect(runUntil(() => completed.includes(forest.id), 20000)).toBe(true);
@@ -188,7 +191,7 @@ describe('a carried Token holds its last charge until the drop', () => {
 
     it('a support worn out by a kill while carried is removed on the drop', () => {
         const bear = place(10, 'fixture_enemy', 'hero_1');
-        const rack = place(11, 'fixture_buff_yield', null, 1);
+        const rack = place(11, 'fixture_aura_node', null, 1);
         pickUp(rack);
 
         expect(runUntil(() => completed.includes(bear.id), 60000)).toBe(true);
@@ -200,7 +203,7 @@ describe('a carried Token holds its last charge until the drop', () => {
     });
 
     it('a Token taken off the mat while in the hand is not removed again on the drop', () => {
-        const tool = place(10, 'fixture_charged_context', null, 1);
+        const tool = place(10, 'fixture_charged_context_node', null, 1);
         pickUp(tool);
         Charges.applyDelta(tool, -1);
         BoardState.removeToken(tool.id);

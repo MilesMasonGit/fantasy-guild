@@ -487,9 +487,13 @@ describe('Lifecycle audit — warnings (allowed)', () => {
 // Goblin Camp also spawns for free (director's call: no upkeep for camps in
 // this build). Any error, or any other warning, still fails.
 const summarise = (findings) => findings.map((f) => [f.severity, f.entityId, f.field]).sort();
+// Brief 230 S1a: stations and supports never wear out, so the Charges five shipped ones still
+// author are ignored and flagged (allowed) until the owner clears them in the CMS.
 const SHIPPED_ALLOWED = [
     ...['token_coal_mine', 'token_copper_mine', 'token_quarry', 'token_goblin_camp']
         .map((id) => ['warning', id, 'spawner.upkeep']),
+    ...['token_ceramics_kiln', 'token_coast', 'token_copper_anvil', 'token_grandma_s_kitchen', 'token_windmill']
+        .map((id) => ['warning', id, 'uses']),
 ].sort();
 
 describe('Lifecycle audit — reaches both audits', () => {
