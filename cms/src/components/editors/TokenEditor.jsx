@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Settings2, Tag as TagIcon, Timer, HelpCircle, Swords, Lock, BookOpen, Sparkles, X, Plus, Gauge } from 'lucide-react';
 import { useEntityStore, makeTokenConfig } from '../../stores/useEntityStore';
 import { useSimulationStore } from '../../stores/useSimulationStore';
-import { TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, stationSkillOf, ENEMY_STYLES, enemyProfileOf, enemyFilledStats, ENEMY_KINDS, MAX_ENEMY_KINDS, kindsClash, enemyKindsOf, ATTACK_SPEED_MS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, STANDS_ON_CHOICES, TOOL_KINDS, tierValue } from '../../utils/constants';
+import { TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, stationSkillOf, ENEMY_STYLES, enemyProfileOf, enemyFilledStats, ENEMY_KINDS, MAX_ENEMY_KINDS, kindsClash, enemyKindsOf, ATTACK_SPEED_MS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, STANDS_ON_CHOICES, TOOL_KINDS, tierValue, neverWearsReason, NEVER_WEARS_WHY } from '../../utils/constants';
 import { Header, Section, Field, Empty } from '../shared/EditorLayout';
 import SimIntentControls from '../shared/SimIntentControls';
 import SimAnswer from '../shared/SimAnswer';
@@ -50,6 +50,8 @@ export default function TokenEditor() {
   // ⚠️ The type and the rules text are DERIVED, never typed: a picker can disagree with what it classifies. Both read the Token's statements, which are references to the effect library, so the Token is expanded first; an unexpanded Token would show every station as an untyped resource and every rules panel as empty.
   const expanded = useMemo(() => expandBearer(token, effects), [token, effects]);
   const derived = useMemo(() => deriveTokenType(expanded), [expanded]);
+  // The game's own rule: a station or a support is unlimited whatever its Charges say, so the field is not offered on one.
+  const neverWears = useMemo(() => neverWearsReason(expanded), [expanded]);
 
   // ⚠️ Read the DERIVED type, not the stored `tokenType`: the stored one is only rewritten by Recalculate, so ticking a hero can fight this would change nothing until a recalculation, and the section that sets the field would be hidden behind it.
   const isEnemy = derived.type === 'enemy';
@@ -330,6 +332,23 @@ export default function TokenEditor() {
       <Section title="Lifecycle" icon={<Timer size={14} />}>
         <div className="grid grid-cols-2 gap-4">
           {/* ⚠️ The label is Charges and the field is `uses`, deliberately: Charges is the game's own word (the TokenInspection badge, `Charges.js`). Not the retired top-level `charges` field, which is stripped on every Recalculate (`RETIRED_TOKEN_FIELDS`). */}
+          {neverWears ? (
+            <Field label="Charges">
+              <div data-field="never-wears" className="text-[11px] text-gray-400 leading-relaxed">
+                Never wears out. {NEVER_WEARS_WHY[neverWears]}
+              </div>
+              {!isUnlimited && (
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="text-[10px] leading-relaxed" style={{ color: 'var(--color-warning)' }}>
+                    Its {token.uses} Charges are ignored.
+                  </span>
+                  <button type="button" data-clear-charges onClick={() => update('uses', null)} className="btn-ghost text-xs" style={{ padding: '2px 8px' }}>
+                    Clear
+                  </button>
+                </div>
+              )}
+            </Field>
+          ) : (
           <Field label="Charges">
             <div className="flex items-center gap-2">
               <input
@@ -352,6 +371,7 @@ export default function TokenEditor() {
               <span className="text-[11px] text-gray-400">Never depletes</span>
             </label>
           </Field>
+          )}
 
           <div className="space-y-2">
             <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -379,6 +399,27 @@ export default function TokenEditor() {
               <p className="text-[10px] leading-relaxed text-gray-500">
                 Counts toward the Token cap; never moved, pushed or demolished. Its inspection shows
                 the skill, level and items from the Work Cycle.
+              </p>
+            )}
+            {/* `staysPut: true`, written ONLY when ticked: the game's `FixedTokens.isFixed` reads it, so every copy of this Token is fixed wherever it came from (a map, the Shop, a spawner, an old save). */}
+            <label
+              className="flex items-center gap-2 cursor-pointer select-none"
+              title="Trees, fruit trees and veins: the player can't drag it, wherever it came from. It can still be demolished."
+            >
+              <input
+                type="checkbox"
+                aria-label="Stays where it stands"
+                data-field="stays-put"
+                checked={token.staysPut === true}
+                onChange={(e) => update('staysPut', e.target.checked ? true : undefined)}
+                className="rounded border-white/10 text-emerald-500 cursor-pointer"
+              />
+              <span className="text-xs text-gray-300">Stays where it stands</span>
+            </label>
+            {token.staysPut === true && (
+              <p className="text-[10px] leading-relaxed text-gray-500">
+                The player can&apos;t drag it, wherever it came from (a map, the Shop, a spawner); nothing
+                pushes it. It can still be demolished.
               </p>
             )}
             <div data-field="stands-on" title="The ground the cell under the Token's centre must be. Shore is dry land touching water. None ticked: anywhere dry.">

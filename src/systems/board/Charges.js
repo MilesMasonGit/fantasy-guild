@@ -2,7 +2,7 @@
 
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
-import { getTokenType, tokenName, tokenStartingUses, getProvidedTagsWithTiers } from '../../config/registries/tokenRegistry.js';
+import { getTokenType, tokenName, tokenStartingUses, getProvidedTagsWithTiers, neverWearsOutType } from '../../config/registries/tokenRegistry.js';
 import { neighbourIds } from './nearby.js';
 import { contextRequirementsOf } from '../../config/registries/recipePoolRegistry.js';
 import { DEFAULT_STATEMENT_CHARGE_DELTA, statementsOf } from '../effects/statements.js';
@@ -43,9 +43,33 @@ export const DEFAULT_STATION_CHARGE_COST = 1;
  */
 export { DEFAULT_STATEMENT_CHARGE_DELTA };
 
-/** Whether a Token instance's charges are unlimited. */
+/**
+ * Whether a Token instance's charges are unlimited: it holds none, or its type never wears out (a
+ * station or a support, `wearRule.js`), whatever number a copy saved before that rule still holds.
+ */
 export function isUnlimited(instance) {
-    return instance?.usesRemaining == null;
+    if (instance?.usesRemaining == null) return true;
+    return instance.typeId != null && neverWearsOutType(instance.typeId);
+}
+
+/**
+ * Clear the charges a saved copy of a never-wearing type still holds, so it reads as unlimited
+ * everywhere (its charge ring, its card). Called as a board comes in (`BoardRunner`); the engine
+ * already treats such a copy as unlimited ({@link isUnlimited}).
+ *
+ * @returns {string[]} the instance ids cleared
+ */
+export function clearNeverWearingCharges() {
+    const cleared = [];
+    for (const instance of BoardState.tokens()) {
+        if (instance.usesRemaining == null || !neverWearsOutType(instance.typeId)) continue;
+        instance.usesRemaining = null;
+        cleared.push(instance.id);
+        EventBus.publish(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, {
+            instanceId: instance.id, delta: 0, remaining: null, typeId: instance.typeId
+        });
+    }
+    return cleared;
 }
 
 /**

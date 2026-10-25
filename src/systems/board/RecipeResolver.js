@@ -7,6 +7,7 @@ import { getItem } from '../../config/registries/itemRegistry.js';
 import * as InputAllocator from './InputAllocator.js';
 import * as StationRecipe from './StationRecipe.js';
 import * as BoardState from './BoardState.js';
+import * as Charges from './Charges.js';
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 
@@ -268,8 +269,9 @@ export function wearNearbySupport(instanceId, onDeplete, exclude = null) {
 
         if (!servesFrom(supportId).includes(instanceId)) continue;
 
-        // Unlimited-use support never wears: `null` is not a number.
-        if (support.usesRemaining == null) continue;
+        // Unlimited-use support never wears: `null` is not a number, and a support's type never
+        // wears out whatever a saved copy holds (`wearRule.js`).
+        if (Charges.isUnlimited(support)) continue;
         // Already spent and waiting in the player's hand to be removed on the drop.
         if (support.usesRemaining <= 0) continue;
 

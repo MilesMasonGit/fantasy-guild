@@ -9,8 +9,10 @@ import * as Landmarks from './Landmarks.js';
  * Fixed and movable Tokens on the post-Atlas mat.
  *
  * Fixed: a fixture (`BoardState.isFixture`: a map's node, or a Token the Starter Camp laid), a
- * landmark (`MatCap.isLandmark`) and a planted Token ({@link isPlanted}). A fixed Token is never
- * dragged, binned or pushed; it still answers a click. Everything else is movable.
+ * landmark (`MatCap.isLandmark`), a planted Token ({@link isPlanted}) and a Token whose type stays
+ * where it stands ({@link staysPut}). A fixed Token is never dragged, binned or pushed; it still
+ * answers a click, and may still be demolished unless it is a map's node or the camp's. Everything
+ * else is movable.
  *
  * ⚠️ The Guild Hall is movable but never pushed ({@link holdsItsGround}): the player drags it,
  * nothing else moves it, and it never leaves the mat (`Placement.isPermanentToken`,
@@ -51,17 +53,27 @@ export function isPlanted(instance) {
 }
 
 /**
+ * Whether a Token's type is marked "Stays where it stands" (`staysPut: true`, the CMS Token
+ * editor): trees, fruit trees and veins, fixed wherever the copy came from (a map, the Shop, a
+ * spawner, an old save). Read from the type, so a save needs nothing.
+ */
+export function staysPut(instance) {
+    return getTokenType(instance?.typeId)?.staysPut === true;
+}
+
+/**
  * Whether a Token stays where it is, refusing a drag: a fixture (a map's node or a Token the
- * Starter Camp laid), a landmark or planted.
+ * Starter Camp laid), a landmark, planted, or of a type that stays where it stands.
  *
- * ⚠️ The dev layout tool (`Landmarks.setLayoutEditing`) lifts the landmarks and the camp's
- * fixtures, so the owner can lay the camp out again from a new game.
+ * ⚠️ The dev layout tool (`Landmarks.setLayoutEditing`) lifts the landmarks, the camp's
+ * fixtures and the type mark, so the owner can lay the camp out again from a new game.
  */
 export function isFixed(instance) {
     if (!instance) return false;
     const editing = Landmarks.isLayoutEditing();
     return (BoardState.isFixture(instance) && !(editing && BoardState.isCampFixture(instance)))
         || (MatCap.isLandmark(instance) && !editing)
+        || (staysPut(instance) && !editing)
         || isPlanted(instance);
 }
 
@@ -99,13 +111,14 @@ export function fixedTokenIds(exceptId = null) {
 
 /**
  * The ids of every Token a spawn, a growth or a build may not push, except `exceptId`: every
- * `placed` Token, every planted one (`spawned` but fixed), and the Guild Hall.
+ * `placed` Token, every planted one (`spawned` but fixed), every one whose type stays where it
+ * stands (a spawned vein), and the Guild Hall.
  */
 export function unpushableIds(exceptId = null) {
     const ids = [];
     for (const t of BoardState.tokens()) {
         if (t.id === exceptId) continue;
-        if (BoardState.originOf(t) === BoardState.ORIGIN.PLACED || isPlanted(t) || MatCap.isGuildHall(t)) ids.push(t.id);
+        if (BoardState.originOf(t) === BoardState.ORIGIN.PLACED || isPlanted(t) || staysPut(t) || MatCap.isGuildHall(t)) ids.push(t.id);
     }
     return ids;
 }

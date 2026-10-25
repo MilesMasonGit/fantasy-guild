@@ -157,6 +157,25 @@ export const MODIFIER_PALETTE = [
         inverted: true,
         hint: 'Units of every input consumed. A negative value is cheaper. Applies to all of them — it cannot yet name one item.'
     },
+    {
+        /**
+         * Read by `TileModifiers.growTimeOf` for a growing Token's time (a Sapling becoming a Tree)
+         * and a resting Token's refill, from its neighbours and the Region's rules, never from a hero
+         * (nobody works a Token while it grows or rests). The skill it narrows to is the growing
+         * Token's own work skill, or else the skill of what it grows into.
+         */
+        type: EFFECT_TYPES.GROW_TIME,
+        reads: { up: (n) => `grow and refill ${n} slower`, down: (n) => `grow and refill ${n} faster` },
+        label: 'Grow Time',
+        when: 'never',
+        scales: 'value',
+        buckets: ['percentage'],
+        categories: 'skill',
+        shape: MODIFIER_SHAPES.DETERMINISTIC,
+        group: 'Production',
+        inverted: true,
+        hint: 'How long a Token takes to grow (a Sapling into a Tree) or to refill after it rests (a vein). A negative value is faster. Speed-ups stack, but together cut at most 80% of the time.'
+    },
 
     // --- Support ------------------------------------------------------------
     {

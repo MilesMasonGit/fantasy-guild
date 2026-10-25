@@ -9,6 +9,7 @@ import * as PassiveProduction from './PassiveProduction.js';
 import * as Hand from './Hand.js';
 import * as Respawn from './Respawn.js';
 import * as Demolition from './Demolition.js';
+import { growTimeOf } from './TileModifiers.js';
 import { pickWeighted } from './weightedPick.js';
 import { logger } from '../../utils/Logger.js';
 
@@ -131,17 +132,26 @@ export function nextTurnRoll(instance) {
 }
 
 /**
+ * How long a Token's growth takes: its authored `grows.afterMs` with the Grow Time its neighbours
+ * give it, floored (`TileModifiers.growTimeOf`). The one reader of a growth's time.
+ */
+export function growMsOf(instance, def = getTokenType(instance?.typeId)) {
+    return growTimeOf(instance, Number(def?.grows?.afterMs) || 0);
+}
+
+/**
  * When a growing Token (a Sapling) next changes, for the mat's growth bubble and the inspection
- * lines: `{ inMs, into }`. `inMs` is 0 while the change is held (in the hand, or nowhere to
- * stand). Null for a Token that does not grow, and for a turned one (it runs only its turn
- * back).
+ * lines: `{ inMs, totalMs, into }`, `totalMs` being the whole growth as sped up ({@link growMsOf}).
+ * `inMs` is 0 while the change is held (in the hand, or nowhere to stand). Null for a Token that
+ * does not grow, and for a turned one (it runs only its turn back).
  */
 export function nextGrowth(instance) {
     if (!instance || instance.turnedFrom) return null;
     const def = getTokenType(instance.typeId);
     if (!def?.grows?.into || !(Number(def.grows.afterMs) >= 0)) return null;
     const clockMs = Number(instance.clocks?.growMs) || 0;
-    return { inMs: Math.max(0, Number(def.grows.afterMs) - clockMs), into: def.grows.into };
+    const totalMs = growMsOf(instance, def);
+    return { inMs: Math.max(0, totalMs - clockMs), totalMs, into: def.grows.into };
 }
 
 /**
@@ -181,7 +191,7 @@ export const HANDLERS = [
         clock: 'growMs',
         replaces: true,
         applies: (instance, def) => !instance.turnedFrom && !!def?.grows?.into && Number(def.grows.afterMs) >= 0,
-        dueMs: (instance, def) => Number(def.grows.afterMs) || 0,
+        dueMs: (instance, def) => growMsOf(instance, def),
         fire: (instance, def) => EffectActions.transformInstance(instance, def.grows.into, { fixPlaced: true })
     },
     {

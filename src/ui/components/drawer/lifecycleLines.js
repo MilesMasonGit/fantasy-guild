@@ -241,9 +241,12 @@ export function lifecycleLines(instance, src) {
     } else {
         if (def.spawner) out.push(...spawnerLines(instance, def, src));
         if (def.grows?.into) {
+            // The growth as sped up by its neighbours, when the caller can say (`TimedChanges.nextGrowth`).
+            const growth = src.growth?.(instance);
+            const inMs = growth ? growth.inMs : (Number(def.grows.afterMs) || 0) - clock(instance, 'growMs');
             out.push({
                 label: `Grows into ${src.tokenName(def.grows.into)}`,
-                value: `in ${formatDuration(Math.max(0, (Number(def.grows.afterMs) || 0) - clock(instance, 'growMs')))}`
+                value: `in ${formatDuration(Math.max(0, inMs))}`
             });
         }
         const turnsInto = typeList(def.turns?.into, src.tokenName);

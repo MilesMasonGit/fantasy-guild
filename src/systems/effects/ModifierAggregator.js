@@ -78,6 +78,9 @@ export class ModifierAggregator {
         this.modifiers = new Map(); // sourceId -> [UMI_Object]
         this.cache = new Map();     // effectType:category -> float
         this.disabledSources = new Set(); // sourceIds that should be ignored
+        // Moves on every change to what this aggregator holds, so a reader may keep an answer
+        // derived from it until the number moves (`TileModifiers.growTimeOf`).
+        this.version = 0;
     }
 
     /**
@@ -158,6 +161,7 @@ export class ModifierAggregator {
      */
     clearCache() {
         this.cache.clear();
+        this.version++;
     }
 
     /**

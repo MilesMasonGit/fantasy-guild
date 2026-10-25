@@ -3,8 +3,9 @@
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 import { getTokenType, tokenStartingUses } from '../../config/registries/tokenRegistry.js';
-import { respawnOf as respawnBlockOf } from '../../config/registries/tokenConstants.js';
+import { respawnOf as respawnBlockOf, RESPAWN_MIN_MS } from '../../config/registries/tokenConstants.js';
 import * as BoardState from './BoardState.js';
+import { growTimeOf } from './TileModifiers.js';
 
 /**
  * A Token type with a `respawn` block does not leave the mat when its charges run out: it rests.
@@ -44,12 +45,14 @@ export function respawnOf(def) {
 }
 
 /**
- * How long a resting Token rests before it refills, in ms. The one reader of the time, so a
- * future time axis (a grove, a minecart) widens it here and nowhere else. A regrow's time is
- * its `into` Token's growth.
+ * How long a resting Token rests before it refills, in ms: the authored rest with the Grow Time
+ * its neighbours give it (`TileModifiers.growTimeOf`, floored), and never under the engine's
+ * shortest rest. The one reader of the time. A regrow's time is its `into` Token's growth.
  */
 export function restMsOf(instance, def = getTokenType(instance?.typeId)) {
-    return respawnOf(def)?.afterMs ?? 0;
+    const afterMs = respawnOf(def)?.afterMs;
+    if (afterMs == null) return 0;
+    return Math.max(RESPAWN_MIN_MS, growTimeOf(instance, afterMs));
 }
 
 /** Whether this Token is resting: out of charges, of a type that comes back. */

@@ -34,6 +34,9 @@ export const EFFECT_TYPES = {
     YIELD: 'YIELD',           // units of output a Token produces
     WORK_TIME: 'WORK_TIME',   // milliseconds of Work Time a Token takes
     INPUT_COST: 'INPUT_COST', // units of input a Token consumes
+    // How long a Token takes to grow (`grows`) or to refill after a rest (`respawn` refill), as a
+    // percentage: negative is faster — TileModifiers.growTimeOf.
+    GROW_TIME: 'GROW_TIME',
 
     /**
      * A chance to yield an extra, **different** item on top of a Token's normal output.

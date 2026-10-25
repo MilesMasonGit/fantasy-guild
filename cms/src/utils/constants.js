@@ -126,6 +126,9 @@ export { ATTACK_SPEED_MS, DEFAULT_ATTACK_SPEED, WEAPON_TIERS } from '../../../sr
 // A hero-worked Token must name a skill. The game's own rule and wording, so the CMS and the boot audit name the same Tokens.
 export { isWorkedWithoutSkill, WORK_SKILL_WHY } from '../../../src/systems/core/workSkillRule.js';
 
+// Stations and supports never wear out: the game's own rule and wording, so the Token editor hides Charges on exactly the Tokens the game treats as unlimited.
+export { neverWearsReason, NEVER_WEARS_WHY } from '../../../src/systems/core/wearRule.js';
+
 // The content checks for the six lifecycle blocks: the game's own rules and wording, so the Economy Audit and the boot audit report the same problems.
 export { auditLifecycleBlocks } from '../../../src/systems/core/lifecycleAudit.js';
 

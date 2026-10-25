@@ -1,8 +1,9 @@
 // per-Token modifier scope
 
-import { ModifierAggregator, applyThreeBucket } from '../effects/ModifierAggregator.js';
+import { ModifierAggregator, applyThreeBucket, combineMultipliers, combinePercentages } from '../effects/ModifierAggregator.js';
 import { getGlobalAggregator } from '../effects/GuildModifiers.js';
-import { TARGET_CATEGORIES } from '../effects/constants.js';
+import { TARGET_CATEGORIES, EFFECT_TYPES } from '../effects/constants.js';
+import { MAX_SPEED_UP_CUT } from '../../config/loopConstants.js';
 import { nearby, reachFrom, tokensAround, nearRadius, centreOf, distanceSq } from './nearby.js';
 import { onMatTuningChanged } from '../../config/matTuning.js';
 import { getTokenType, registryVersion } from '../../config/registries/tokenRegistry.js';
@@ -46,6 +47,14 @@ const AMBIENT_KEYWORDS = new Set([KEYWORD.PROVIDES, KEYWORD.GRANTS, KEYWORD.APPL
  */
 const aggregators = new Map();
 
+/**
+ * Each Token's Grow Time, as the three buckets merged from its own aggregator and the guild-wide
+ * one, keyed by instance id ({@link growTimeOf}).
+ *
+ * @type {Map<string, {agg: ModifierAggregator, aggVersion: number, guildVersion: number, regVersion: number, flat: number, multiplier: number, percentage: number, any: boolean}>}
+ */
+const growTimes = new Map();
+
 /** The aggregator for Token `instanceId`, created on first use. */
 export function getTokenAggregator(instanceId) {
     let agg = aggregators.get(instanceId);
@@ -59,6 +68,7 @@ export function getTokenAggregator(instanceId) {
 /** Drop every Token aggregator (before a rehydrate, and in tests). */
 export function clearAll() {
     aggregators.clear();
+    growTimes.clear();
     lastWorkOf.clear();
     // Every Token's buffs are gone, so the next board-reach rebuild is whole.
     lastRebuild = null;
@@ -442,6 +452,7 @@ function* applicableStatements(selfId) {
 export function rebuildToken(instanceId) {
     if (!BoardState.getTokenById(instanceId)) {
         aggregators.delete(instanceId);
+        growTimes.delete(instanceId);
         return;
     }
     const agg = getTokenAggregator(instanceId);
@@ -783,6 +794,91 @@ export function resolveAxis(instanceId, effectType, base, category = TARGET_CATE
     ];
 
     return applyThreeBucket(base, { flat, multipliers, percentages });
+}
+
+/**
+ * The standard floor for speed-ups: a time sped up by any stack of rules never falls below
+ * `1 - MAX_SPEED_UP_CUT` of its authored length. A slow-down passes untouched. Every speed-up
+ * reader floors through this one function (work time in `BoardRunner.tick`, grow time in
+ * {@link growTimeOf}), so the number is one number.
+ *
+ * Written `base - base × cut` rather than `base × (1 - cut)`: `1 - 0.8` is 0.19999999999999996 in
+ * floating point, which would floor a 10 s vein at 1999.9999999999995 ms.
+ *
+ * @param {number} baseMs the authored time
+ * @param {number} resolvedMs the time after every rule
+ */
+export function floorSpeedUp(baseMs, resolvedMs) {
+    if (!Number.isFinite(baseMs)) return resolvedMs;
+    const floor = baseMs - baseMs * MAX_SPEED_UP_CUT;
+    return resolvedMs < floor ? floor : resolvedMs;
+}
+
+/**
+ * The skill a growing or resting Token's Grow Time narrows to: its own work skill (a resting vein's
+ * Mining), or else that of the first Token down its `grows` chain with one (a Sapling's Tree, so
+ * a Forestry-only rule reaches Oak Saplings), or else every skill.
+ */
+function growSkillOf(typeId) {
+    let def = getTokenType(typeId);
+    for (let step = 0; step < 8 && def; step++) {
+        const skill = def.config?.skill;
+        if (typeof skill === 'string' && skill.trim()) return skill;
+        def = typeof def.grows?.into === 'string' ? getTokenType(def.grows.into) : null;
+    }
+    return TARGET_CATEGORIES.ALL;
+}
+
+/**
+ * How long a Token's `grows` change or its refill after a rest takes, given the authored time:
+ * the Grow Time its neighbours and the Region's rules give it, floored by {@link floorSpeedUp}.
+ * `TimedChanges` (growth) and `Respawn.restMsOf` (a refill) are the two readers.
+ *
+ * No hero scope, unlike {@link resolveAxis}: nobody works a Token while it grows or rests, and a
+ * hero's items reach only the Token their hero works.
+ *
+ * ⚠️ Cached per Token, not resolved per call. Every growing and resting Token asks this on every
+ * tick, and a catch-up plays a day as 86,400 one-second steps of the same tick, so a live resolve
+ * (about 1-2 µs) on 60 such Tokens would add several seconds to a day's catch-up (GDD §14). The
+ * buckets are read once and kept while the Token's aggregator, the guild-wide aggregator and the
+ * Token registry all stand at the versions they were read at: a rebuild of the Token's
+ * neighbourhood, a Region rule coming or going or a content reload moves one of them, and the next
+ * call reads afresh. So it is exactly as fresh as reading the aggregators live.
+ *
+ * A Token not on the mat has no neighbours and gets its authored time.
+ *
+ * @param {object} instance the Token
+ * @param {number} baseMs the authored time (`grows.afterMs`, the respawn's rest)
+ * @returns {number} ms
+ */
+export function growTimeOf(instance, baseMs) {
+    const base = Number(baseMs) || 0;
+    const id = instance?.id;
+    if (id == null || !BoardState.getTokenById(id)) return base;
+
+    const agg = getTokenAggregator(id);
+    const guild = getGlobalAggregator();
+    const regVersion = registryVersion();
+    let entry = growTimes.get(id);
+    if (!entry || entry.agg !== agg || entry.aggVersion !== agg.version
+        || entry.guildVersion !== guild.version || entry.regVersion !== regVersion) {
+        const category = growSkillOf(instance.typeId);
+        const type = EFFECT_TYPES.GROW_TIME;
+        const flat = agg.getFlat(type, category) + guild.getFlat(type, category);
+        const multipliers = [...agg.collectMultipliers(type, category), ...guild.collectMultipliers(type, category)];
+        const percentages = [...agg.collectPercentages(type, category), ...guild.collectPercentages(type, category)];
+        entry = {
+            agg, aggVersion: agg.version, guildVersion: guild.version, regVersion,
+            flat,
+            multiplier: combineMultipliers(multipliers),
+            percentage: combinePercentages(percentages),
+            any: flat !== 0 || multipliers.length > 0 || percentages.length > 0
+        };
+        growTimes.set(id, entry);
+    }
+    if (!entry.any) return base;
+    // `applyThreeBucket` over the same buckets, its sums already taken.
+    return floorSpeedUp(base, (base + entry.flat) * entry.multiplier * entry.percentage);
 }
 
 /**

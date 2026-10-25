@@ -4,6 +4,7 @@ import {
     FOUNDATION_KINDS, TURN_DEFAULTS, RESPAWN_MODES, respawnOf, foundationTierOf, foundationMinTierOf, foundationTierMeets
 } from '../../config/registries/tokenConstants.js';
 import { stationSkillOf, getProvidedTagsWithTiers } from '../effects/statements.js';
+import { neverWearsReason, NEVER_WEARS_WHY } from './wearRule.js';
 
 /**
  * The one checker for the seven Token Lifecycle blocks (`spawner`, `grows`,
@@ -192,6 +193,12 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
         if (defining.length > 1) {
             err(defining.join(', '),
                 `has ${defining.join(' and ')} blocks; a Token may have at most one of spawner, turns and foundation (they would fight over what the Token is).`);
+        }
+
+        // ── charges on a station or a support: never spent (`wearRule.js`) ──
+        const neverWears = neverWearsReason(def);
+        if (neverWears && def.uses !== undefined && def.uses !== null) {
+            warn('uses', `has ${show(def.uses)} Charges, which the game ignores. ${NEVER_WEARS_WHY[neverWears]} Clear them in the CMS, under Lifecycle → Charges (allowed).`);
         }
 
         // ── spawner ──

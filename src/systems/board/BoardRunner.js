@@ -651,15 +651,18 @@ export function tick(delta) {
         const before = instance.cycleElapsedMs > 0 ? instance.cycleElapsedMs : (carryIn.get(id) || 0);
         instance.cycleElapsedMs = before + delta;
 
-        // WORK_TIME, widened to the neighbours and floored at 1s so no stack of haste can drive a
-        // cycle to nothing. `io.cycleTimeMs` is the active recipe's own timing when it has one,
-        // falling back to the station's flat config.
+        // WORK_TIME, widened to the neighbours, then floored twice: stacked speed-ups cut at most
+        // `MAX_SPEED_UP_CUT` of the authored time (`floorSpeedUp`), and no cycle is ever shorter
+        // than 1 s, which the catch-up's 1 s steps rely on (`loopConstants.MAX_TICK_DELTA_MS`).
+        // `io.cycleTimeMs` is the active recipe's own timing when it has one, falling back to the
+        // station's flat config.
         const isGuildHall = instance.typeId === 'token_guild_hall';
+        const baseCycle = io.cycleTimeMs || config.cycleTimeMs || 10000;
         const cycleTime = isGuildHall
             ? (config.cycleTimeMs || 10000)
-            : Math.max(1000, TileModifiers.resolveAxis(
-                id, EFFECT_TYPES.WORK_TIME, io.cycleTimeMs || config.cycleTimeMs || 10000, config.skill
-            ));
+            : Math.max(1000, TileModifiers.floorSpeedUp(baseCycle, TileModifiers.resolveAxis(
+                id, EFFECT_TYPES.WORK_TIME, baseCycle, config.skill
+            )));
 
         if (instance.cycleElapsedMs >= cycleTime) {
             // Only a cycle that crossed its end during this tick has a leftover; one that held at
@@ -682,6 +685,9 @@ export function tick(delta) {
 
 /** A board just came in, from a save or from another Region: rebuild what is derived from it. */
 function boardInstalled() {
+    // A station or support saved with charges, from before they stopped wearing out, reads as
+    // unlimited from here on.
+    Charges.clearNeverWearingCharges();
     TileModifiers.rebuildAll();
 
     // The one path a `Cannot` has no last location to fly back to: a save authored before the

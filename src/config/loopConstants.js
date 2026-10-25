@@ -60,6 +60,14 @@ export const CONSUME_THRESHOLD = 0.25;
 export const ELIXIR_FIGHTS = 10;
 
 /**
+ * The most that stacked speed-ups may cut from a time: 0.8 means a time never falls below a fifth
+ * of itself (a 5 minute regrow never goes below 1 minute, a 10 s vein never below 2 s). One number
+ * for every speed-up, work time and grow time alike, read by `TileModifiers.floorSpeedUp`. A
+ * slow-down is never capped.
+ */
+export const MAX_SPEED_UP_CUT = 0.8;
+
+/**
  * Defeat penalties. Placeholder numbers, to be tuned.
  */
 export const DEFEAT_PENALTY = {

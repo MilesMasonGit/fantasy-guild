@@ -189,7 +189,7 @@ export const MatToken = React.memo(function MatToken({
         const rest = Respawn.nextRespawn(instance);
         if (rest) return rest.mode === 'refill' ? { kind: 'respawn', ...rest, everyMs: rest.totalMs } : null;
         const grow = TimedChanges.nextGrowth(instance);
-        if (grow) return { kind: 'grow', ...grow, everyMs: Number(getTokenType(instance.typeId)?.grows?.afterMs) || 0 };
+        if (grow) return { kind: 'grow', ...grow, everyMs: grow.totalMs };
         const roll = TimedChanges.nextTurnRoll(instance);
         return roll ? { kind: 'turn', ...roll, everyMs: TimedChanges.turnTimingOf(instance).everyMs } : null;
     }, [id]);
