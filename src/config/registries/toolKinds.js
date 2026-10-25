@@ -4,7 +4,7 @@
 // editor's Tool field, the Token editor's Needs tool field and the audit read the kinds from here.
 // Pure: its one import (`catchPools.js`) is pure too, so both sides can load it.
 
-import { catchToolKinds } from './catchPools.js';
+import { hasCatchPools, catchToolKinds } from './catchPools.js';
 
 /**
  * A gathering tool is an item a hero carries in one hand: `tool: { kind, tier, starter? }` on the
@@ -78,11 +78,26 @@ export function toolOf(item) {
  * `needsTool` says: `{ kind, kinds, minTier: 1 }`, `kind` being the first of `kinds`.
  */
 export function neededToolOf(def) {
-    const kinds = catchToolKinds(def).filter(isToolKind);
-    if (kinds.length) return { kind: kinds[0], kinds, minTier: 1 };
+    if (hasCatchPools(def)) {
+        const need = waterNeedOf(def);
+        if (need) return need;
+    }
     const block = def?.needsTool;
     if (!block || typeof block !== 'object' || !isToolKind(block.kind)) return null;
     return { kind: block.kind, minTier: tierValue(block.minTier) };
+}
+
+/**
+ * A water's need, kept per Token type (the flags and the runner ask it every tick): frozen, so a
+ * reader cannot change the kept one. Null when none of its pools names a kind the game has.
+ */
+const waterNeeds = new WeakMap();
+function waterNeedOf(def) {
+    if (waterNeeds.has(def)) return waterNeeds.get(def);
+    const kinds = catchToolKinds(def).filter(isToolKind);
+    const need = kinds.length ? Object.freeze({ kind: kinds[0], kinds: Object.freeze(kinds), minTier: 1 }) : null;
+    waterNeeds.set(def, need);
+    return need;
 }
 
 /** Whether a tool (from {@link toolOf}) answers a need (from {@link neededToolOf}). */
