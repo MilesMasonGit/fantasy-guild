@@ -553,6 +553,23 @@ function loadoutPayloads(instanceId, keyword) {
     return lingering.length ? [...carried, ...lingering] : carried;
 }
 
+/**
+ * The other Tokens whose standing rules reach this one now, each with the rule: what the card's
+ * "Boosted by" lists and where a bonus's spark starts. Read off the same walk the aggregator is
+ * built from, so reach, upkeep and the no-stack guard are exactly the engine's. Statuses
+ * (`Applies`) and the Token's own rules are left out. Read only, and only when asked (a card
+ * open, a bonus landing outside a catch-up).
+ * @returns {Array<{sourceId: string, statement: object}>}
+ */
+export function inboundSupports(instanceId) {
+    const out = [];
+    for (const { statement, neighbour } of applicableStatements(instanceId)) {
+        if (statement.keyword === KEYWORD.APPLIES || neighbour === instanceId) continue;
+        out.push({ sourceId: neighbour, statement });
+    }
+    return out;
+}
+
 /** Item-granting statements reaching this tile, as raw payloads. */
 export function collectItemGrants(instanceId, effectType) {
     const grants = [];

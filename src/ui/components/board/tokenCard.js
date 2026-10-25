@@ -22,6 +22,8 @@ import { availableOf } from '../../../systems/board/InputAllocator.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { formatClock } from '../drawer/lifecycleLines.js';
 import { landmarkLines } from '../drawer/landmarkLines.js';
+import * as SupportLinks from '../../../systems/board/supportLinks.js';
+import { supportTag, FLOOR_NOTE } from './supportTags.js';
 
 /**
  * The Token card's content as plain data: which blocks it shows, top to bottom, and what each
@@ -38,6 +40,7 @@ export const CARD_BLOCK = Object.freeze({
     CYCLE: 'cycle',
     RECIPE: 'recipe',
     LIFECYCLE: 'lifecycle',
+    SUPPORT: 'support',
     DROPS: 'drops',
     MORE: 'more'
 });
@@ -113,6 +116,11 @@ export function liveCardSources() {
         nextTurn: TimedChanges.nextTurnRoll,
         passive: (instance) => ({ lines: PassiveProduction.linesOf(instance), nextInMs: PassiveProduction.nextInMs(instance) }),
         fightOf: BoardCombat.getFight,
+        supports: (instanceId) => ({
+            boostedBy: SupportLinks.boostedBy(instanceId),
+            boosts: SupportLinks.boosts(instanceId),
+            floor: SupportLinks.floorHits(instanceId)
+        }),
         demolishMs: Demolition.DEMOLISH_MS,
         demolitionConfig: Demolition.DEMOLITION_CONFIG,
         allTypes: getAllTokenTypes,
@@ -420,6 +428,9 @@ export function tokenCardModel(typeId, instanceId = null, src = liveCardSources(
     const lifecycle = cardLifecycle(instance, def, src);
     if (lifecycle.length) blocks.push({ id: CARD_BLOCK.LIFECYCLE, lines: lifecycle });
 
+    const support = instance ? supportBlock(src.supports?.(instance.id), src) : null;
+    if (support) blocks.push(support);
+
     const more = {
         landmark: !!landmarkLines(def, { skillName: (id) => id, itemName: src.itemName }),
         buff: !!def.buff,
@@ -427,6 +438,22 @@ export function tokenCardModel(typeId, instanceId = null, src = liveCardSources(
     };
     if (more.landmark || more.buff || more.drives) blocks.push({ id: CARD_BLOCK.MORE, ...more });
     return { enemy: false, name, art, blocks };
+}
+
+/**
+ * What boosts this Token and what it boosts, one row per Token in reach with its effects as tags,
+ * and a note when its speed-ups are held at the floor. Null when it trades no support.
+ */
+function supportBlock(links, src) {
+    if (!links) return null;
+    const rows = (list) => (list || []).map(r => ({
+        id: r.id, typeId: r.typeId, name: src.tokenName(r.typeId), tags: r.payloads.map(p => supportTag(p, src.itemName))
+    }));
+    const boostedBy = rows(links.boostedBy);
+    const boosts = rows(links.boosts);
+    const floor = [links.floor?.work && FLOOR_NOTE.work, links.floor?.grow && FLOOR_NOTE.grow].filter(Boolean);
+    if (!boostedBy.length && !boosts.length && !floor.length) return null;
+    return { id: CARD_BLOCK.SUPPORT, boostedBy, boosts, floor };
 }
 
 /** Seconds as the cycle line writes them: `4s`, `2.5s`. */

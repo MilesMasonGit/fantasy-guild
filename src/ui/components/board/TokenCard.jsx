@@ -21,6 +21,7 @@ import { GameState } from '../../../state/GameState.js';
 import { RecipeList } from './RecipeList.jsx';
 import { takeRecipeListRequest, onRecipeListRequest } from './recipeFlip.js';
 import { CloseX } from '../base/CloseX.jsx';
+import { TokenSprite, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
 
 /** The card's width: the 256 px activity art at 1×, so it is never scaled off a whole pixel. */
 export const CARD_ART_PX = 256;
@@ -172,6 +173,50 @@ const LifecycleBlock = ({ lines }) => (
                 <Stat icon={<PixelGlyph name={line.icon} />} text={line.text} tip={line.tip} tone={line.tone} />
             </div>
         ))}
+    </Box>
+);
+
+/**
+ * One Token in reach and what passes between: its art, its name and the effects in green. Its own
+ * row rather than a ribbon, so a long name or tag wraps instead of being cut off.
+ */
+const SupportRow = ({ row, kind }) => (
+    <Tooltip title={kind === 'by' ? `${row.name} gives this ${row.tags.join(', ')}` : `This gives ${row.name} ${row.tags.join(', ')}`}>
+        <div
+            data-card-support={kind}
+            data-card-support-tags={row.tags.join('|')}
+            className="flex items-center gap-2 border border-white/40 p-1 cursor-help"
+        >
+            <span className="w-8 h-8 shrink-0 flex items-center justify-center bg-black border border-white/10">
+                <TokenSprite typeId={row.typeId} surface={TOKEN_SURFACE.CATALOGUE} alt={row.name} />
+            </span>
+            <span className="flex-1 min-w-0 flex flex-col leading-tight">
+                <span className="text-xs font-bold text-gi-text">{row.name}</span>
+                {row.tags.map(tag => (
+                    <span key={tag} className="text-(length:--font-size-xs)" style={{ color: 'var(--color-ui-green)' }}>{tag}</span>
+                ))}
+            </span>
+        </div>
+    </Tooltip>
+);
+
+const SupportBlock = ({ boostedBy, boosts, floor }) => (
+    <Box data-card-block="support">
+        {boostedBy.length > 0 && (
+            <div data-card-boosted-by className="flex flex-col gap-1">
+                <Heading>Boosted by</Heading>
+                {boostedBy.map(r => <SupportRow key={r.id} row={r} kind="by" />)}
+            </div>
+        )}
+        {floor.map(note => (
+            <span key={note} data-card-floor className="ui-text-small" style={{ color: 'var(--color-ui-gold)' }}>{note}</span>
+        ))}
+        {boosts.length > 0 && (
+            <div data-card-boosts className="flex flex-col gap-1">
+                <Heading>Boosts</Heading>
+                {boosts.map(r => <SupportRow key={r.id} row={r} kind="to" />)}
+            </div>
+        )}
     </Box>
 );
 
@@ -392,6 +437,7 @@ export const TokenCard = ({ typeId, instanceId = null, onClose = null, onViewCha
                             case CARD_BLOCK.CYCLE: return <CycleBlock key="cycle" {...block} />;
                             case CARD_BLOCK.RECIPE: return <RecipeBlock key="recipe" block={block} instanceId={instanceId} onChangeRecipe={() => setView('recipes')} />;
                             case CARD_BLOCK.LIFECYCLE: return <LifecycleBlock key="lifecycle" lines={block.lines} />;
+                            case CARD_BLOCK.SUPPORT: return <SupportBlock key="support" {...block} />;
                             case CARD_BLOCK.DROPS: return <DropsBlock key="drops" drops={block.drops} />;
                             case CARD_BLOCK.MORE: return <MoreBlock key="more" typeId={typeId} />;
                             default: return null;

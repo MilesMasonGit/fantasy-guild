@@ -2,6 +2,7 @@ import * as TileModifiers from './TileModifiers.js';
 import * as SpriteLayer from './SpriteLayer.js';
 import * as EffectFeedback from './EffectFeedback.js';
 import * as RareDrops from './RareDrops.js';
+import * as SupportLinks from './supportLinks.js';
 import * as HeroEffects from '../hero/HeroEffects.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 
@@ -36,7 +37,11 @@ export function doubleItemDrop(instanceId, itemId, quantity) {
     if (!itemId || !(quantity > 0)) return quantity;
     const chance = TileModifiers.resolveAxis(instanceId, EFFECT_TYPES.DOUBLE_DROP, 0, itemId);
     if (!(chance > 0)) return quantity;
-    return Math.random() * 100 < chance ? quantity * 2 : quantity;
+    if (!(Math.random() * 100 < chance)) return quantity;
+    // The doubled half pops over the Token, sparked from the first support giving the chance (none
+    // for a hero's own item).
+    EffectFeedback.popBonus(instanceId, quantity, () => SupportLinks.firstSupportOf(instanceId, EFFECT_TYPES.DOUBLE_DROP, itemId));
+    return quantity * 2;
 }
 
 /**

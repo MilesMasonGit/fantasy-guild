@@ -34,3 +34,23 @@ export function announce(instanceId, statement, { amount = null } = {}) {
     if (amount > 0) payload.amount = amount;
     EventBus.publish(BOARD_EVENTS.EFFECT_FIRED, payload);
 }
+
+/**
+ * A support's bonus just landed on Token `instanceId` (an item came out doubled, a Field ripened
+ * with extra harvests): the mat draws its quiet pop, a spark from the support and a rising `+N`
+ * (`matFx`), with no name said over it, since several supports merge into one number.
+ *
+ * ⚠️ Silent, and does no work, during a catch-up (a quiet bus): `sourceOf`, which looks the support
+ * up, is asked only when the pop will be drawn.
+ *
+ * @param {string} instanceId
+ * @param {number} amount what the bonus added
+ * @param {(() => string|null)|null} [sourceOf] the support the spark starts from
+ */
+export function popBonus(instanceId, amount, sourceOf = null) {
+    if (instanceId == null || !(amount > 0) || EventBus.isQuiet()) return;
+    const payload = { instanceId, amount, bonus: true };
+    const from = sourceOf?.() ?? null;
+    if (from != null) payload.fromTokenId = from;
+    EventBus.publish(BOARD_EVENTS.EFFECT_FIRED, payload);
+}

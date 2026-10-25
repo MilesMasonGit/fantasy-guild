@@ -8,6 +8,8 @@ import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from './boardEvents.js';
 import * as Growth from './Growth.js';
 import { growTimeOf, resolveAxis } from './TileModifiers.js';
+import * as EffectFeedback from './EffectFeedback.js';
+import * as SupportLinks from './supportLinks.js';
 
 /**
  * A Field is one Token that grows itself (brief 230 S4): a station (Works as Farming, kind `field`
@@ -224,6 +226,9 @@ function ripen(instance, def) {
     const load = loadAtRipening(instance, def, crop);
     instance.field = { cropId: crop.id, load, full: load };
     announce(instance);
+    // Harvests a Composter added pop over the Field as it ripens.
+    EffectFeedback.popBonus(instance.id, load - cropTermsOf(crop).load,
+        () => SupportLinks.firstSupportOf(instance.id, EFFECT_TYPES.CROP_LOAD));
     return instance;
 }
 

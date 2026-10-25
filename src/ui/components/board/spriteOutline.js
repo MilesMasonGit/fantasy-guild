@@ -3,7 +3,8 @@
  * Outlines: **white = hovered or selected, red = alert, green = working**, in that order when
  * more than one is true. The picture itself is generated from the art (`scripts/spriteFx.mjs`)
  * and drawn by `PixelArt` / the sheet animators.
- * - **A Token** is green while a hero works it; an alert says so in red instead. While a map mode
+ * - **A Token** is white too while a support in the hand would help it or be helped by it (`lit`,
+ * `SupportLinkLayer`). It is green while a hero works it; an alert says so in red instead. While a map mode
  * is on (`mode`, `useMapMode.js`) its hover outline takes the mode's colour ({@link MODE_OUTLINE}), or muted grey on a Token the
  * mode cannot act on (`unavailable`).
  * - **A hero** is green while working productively, not while their Token is stuck (that hero
@@ -12,9 +13,9 @@
  * working or alert state of its own.
  * @returns {'hover'|'alert'|'work'|'muted'|'danger'|null}
  */
-export function tokenOutline({ hovered = false, selected = false, alert = false, working = false, mode = null, unavailable = false } = {}) {
+export function tokenOutline({ hovered = false, selected = false, lit = false, alert = false, working = false, mode = null, unavailable = false } = {}) {
     if (hovered && mode) return unavailable ? 'muted' : (MODE_OUTLINE[mode] ?? 'hover');
-    if (hovered || selected) return 'hover';
+    if (hovered || selected || lit) return 'hover';
     if (alert) return 'alert';
     if (working) return 'work';
     return null;

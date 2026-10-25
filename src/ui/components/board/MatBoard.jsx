@@ -9,6 +9,7 @@ import { useHoverRest } from './hoverRest.js';
 import { MatToken, MatTokenGrab } from './MatToken.jsx';
 import { MatHero, heroBoxAt } from './MatHero.jsx';
 import { MatRings } from './MatRings.jsx';
+import { SupportLinkLayer } from './SupportLinkLayer.jsx';
 import { CalloutLayer } from './CalloutLayer.jsx';
 import { HeroBubbleLayer } from './HeroBubbleLayer.jsx';
 import { strikesLive, heroAnimationState, hitSkillOf, hitsOnAttack } from './hitAnimations.js';
@@ -520,6 +521,7 @@ export const MatBoard = React.memo(function MatBoard({
 
             {/* `MAT_Z.RINGS`: the Near ring. Flag radius rings are FlagLayer's. */}
             {ringsDrawn && <MatRings hoveredCentre={hoveredCentre} matRef={rootRef} />}
+            {ringsDrawn && <SupportLinkLayer matRef={rootRef} />}
 
             {/* `MAT_Z.GROUND_GRID`: with a Token in the hand, the cells it may stand on, under every Token. */}
             <TerrainGridOverlay mat={mat} />

@@ -353,6 +353,15 @@ ripe Field holds; 10 by default) and its **ripe picture**.
   once, S0 Q10), sped by Fields or flowers in reach (`Provides Grow Time` to the
   Beehive). A **Windmill** is a station of kind Windmill that mills grain.
   Supports never wear out; help is free.
+- **Seeing support effects** (brief 230 S7): holding a Token over the mat
+  lights the Tokens within reach of where it would land that it would help or
+  be helped by (their white outline) and tags each with what passes, gold over
+  a Token it helps ("−50 % grow"), plain over one that helps it ("gives ×2
+  Wheat 25 %"); mat-wide rules never light. A Token's card lists **Boosted by**
+  and **Boosts** (each Token in reach and its effects) and notes when its
+  speed-ups are held at the floor. A doubled item and a Composter's extra
+  harvests pop quietly over the Token (a spark from the support and a rising
+  +N, no name); a catch-up draws none.
 - **A map's wild wheat patch is a ready-planted Field** (owner 2026-10-24): a
   Field type whose Field block **starts ripe with** a crop, which is also its
   pick; it sows again from the Bank like any Field.

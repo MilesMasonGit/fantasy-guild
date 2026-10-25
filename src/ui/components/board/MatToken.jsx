@@ -43,6 +43,7 @@ import { QuestPosterItem } from './QuestPoster.jsx';
 import { takeSpawn, playSpawn } from './spawnMotion.js';
 import { FX_FRAME_MS, playPoses } from './fx/pixelSteps.js';
 import { takeSettle, playSettle } from './fx/regionSettle.js';
+import { useSupportLit } from './supportLit.js';
 
 /**
  * A walking enemy's boxes follow the engine without React. While `on`, each `ENEMIES_WALKED`
@@ -414,7 +415,8 @@ export const MatToken = React.memo(function MatToken({
     const modeUnavailable = isHovered && mapMode
         ? (mapMode === MAP_MODE.DEMOLISH ? demolishProtected : Flags.disallowRefusalOf(BoardState.getTokenById(id)) !== null)
         : false;
-    const outline = tokenOutline({ hovered: isHovered, selected, alert: !!alert, working: staffed, mode: mapMode, unavailable: modeUnavailable });
+    const lit = useSupportLit(id);
+    const outline = tokenOutline({ hovered: isHovered, selected, lit, alert: !!alert, working: staffed, mode: mapMode, unavailable: modeUnavailable });
     const gearState = gearStateOf(detail || {});
     const gear = React.useMemo(
         () => (gearState.show ? {
