@@ -25,4 +25,22 @@ describe('hover is a white outline, never a glow or a scale', () => {
         expect(btn.className).not.toMatch(BAD);
         expect(container.querySelectorAll('[data-gear-hover-outline]').length).toBe(4);
     });
+
+    it('a selected orb has no scale or glow and shows a steady gold outline', () => {
+        const activeUi = { nav: { isActive: (k) => k === 'bank', toggle: () => {} } };
+        const { container } = render(React.createElement(BubbleMenu, { ui: activeUi }));
+        const bank = container.querySelector('#bank-bubble-target');
+        const btn = bank.querySelector('button');
+        expect(btn.className).not.toMatch(/scale-|brightness-|contrast-|drop-shadow/);
+        const outlines = [...bank.querySelectorAll('[data-orb-outline]')];
+        expect(outlines.length).toBe(4);
+        for (const o of outlines) {
+            expect(o.className).toMatch(/(^| )block( |$)/);
+            expect(o.className).not.toMatch(/(^| )hidden( |$)/);
+            expect(o.className).toMatch(/bg-gi-gold/);
+            expect(o.className).not.toMatch(/bg-white/);
+        }
+        const guild = container.querySelector('#guild-bubble-target');
+        for (const o of guild.querySelectorAll('[data-orb-outline]')) expect(o.className).toMatch(/bg-white/);
+    });
 });

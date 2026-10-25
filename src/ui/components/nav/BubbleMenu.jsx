@@ -53,7 +53,6 @@ const Bubble = React.forwardRef(({ icon: Icon, label, color, onClick, active = f
                     'transition-all duration-200',
                     'peer',
                     !disabled && 'cursor-pointer',
-                    active && 'scale-110 brightness-110 contrast-125 drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]',
                     disabled && 'opacity-40 cursor-not-allowed'
                 )}
                 style={{
@@ -71,7 +70,7 @@ const Bubble = React.forwardRef(({ icon: Icon, label, color, onClick, active = f
                     key={`${dx}${dy}`}
                     data-orb-outline=""
                     aria-hidden="true"
-                    className="hidden peer-hover:block absolute top-0 left-1/2 -z-10 w-16 h-16 md:w-32 md:h-32 pointer-events-none bg-white [--px:2px] md:[--px:4px]"
+                    className={cn('absolute top-0 left-1/2 -z-10 w-16 h-16 md:w-32 md:h-32 pointer-events-none [--px:2px] md:[--px:4px]', active ? 'block bg-gi-gold' : 'hidden peer-hover:block bg-white')}
                     style={{
                         translate: `calc(-50% + ${dx} * var(--px)) calc(${dy} * var(--px))`,
                         maskImage: `url("${orbSrc}")`,
