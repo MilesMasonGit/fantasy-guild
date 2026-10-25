@@ -98,7 +98,7 @@ describe('⭐ drawn by its state, one hook with the resting rock', () => {
     it('empty, then growing with a countdown, then ripe as its crop; the gear shows the pick', () => {
         InventoryManager.addItem(SEED, 1);
         const field = arrive('fv_field');
-        expect(detail(field)).toMatchObject({ stateSprite: 't_farmland', ripens: false, recipe: null });
+        expect(detail(field)).toMatchObject({ stateSprite: 't_farmland', ripens: false, recipe: null, isField: true });
         StationRecipe.setSelectedRecipe(field, WHEAT);
         tick(100);
         expect(detail(field)).toMatchObject({ stateSprite: 't_garden', ripens: true });

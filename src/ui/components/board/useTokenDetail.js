@@ -73,6 +73,8 @@ export function tokenDetailOf(id, def) {
         // so it gets no gear.
         hasPool: stationSkill ? StationRecipe.poolFor(def).length > 0 : false,
         isFoundation: !!def?.foundation,
+        // A Field picks a crop with the same gear, sown for its seed.
+        isField: Fields.isField(def),
         isSpawner,
         // The family's live count against its cap, `{ count, cap }`: the spawner ring.
         spawnerCounts: isSpawner ? SpawnerSystem.spawnerCounts(id) : null,

@@ -422,10 +422,11 @@ export const MatToken = React.memo(function MatToken({
             pulsing: gearState.pulsing,
             recipe: detail?.recipe,
             isFoundation: !!detail?.isFoundation,
+            isField: !!detail?.isField,
             // The gear covers the middle of the Token, so in a map mode it is the Token's click.
             onClick: (e) => (mapMode ? onModeClick?.(id, !!e?.shiftKey) : onOpenRecipes?.(id))
         } : null),
-        [gearState.show, gearState.pulsing, detail?.recipe, detail?.isFoundation, mapMode, onModeClick, onOpenRecipes, id]
+        [gearState.show, gearState.pulsing, detail?.recipe, detail?.isFoundation, detail?.isField, mapMode, onModeClick, onOpenRecipes, id]
     );
 
     // The art, kept as the same element while nothing it draws from changes: a Token redraws
