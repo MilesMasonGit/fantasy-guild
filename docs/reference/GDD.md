@@ -189,7 +189,11 @@ mines) keeps counting while full and replaces a loss on the next tick.
   growth brings it back. Its hero moves on with no red alert; it is never
   depleted (no On Depleted rules, not counted as used up); a regrowing tree
   still counts toward its Forest's family cap. Never on enemies, spawners or
-  Foundations. *(`Respawn.js`)*
+  Foundations. A hero with nothing else in reach **waits for it silently**
+  (brief 230 S1b): no bubble, not counted idle, the flag's hover and the Dock
+  say "Waiting for Copper Vein", and they work it the moment it refills. ⚠️ A
+  regrow's Sapling has no work of its own, so a forester waiting on one still
+  reads idle until S2 builds Stumps. *(`Respawn.js`, `Flags.waitingOf`)*
 
 ### Foundations — Built
 Buy a Foundation, pick a build recipe on it, and a hero builds it into a
@@ -389,6 +393,17 @@ per hero: equipping takes the copy out of the Bank.
   at cycle end, only to a strictly better priority. Leaving resets progress.
 - **Pinned flags**: drop a flag on a Token to work only that Token; the flag
   follows it, and turns into an area flag when the Token is gone.
+- **Waiting** (brief 230 S1b): a hero with nothing to work waits for what will
+  come back by itself, the first in the flag's own order: a fight another hero
+  holds ("Waiting for Goblin.", said out loud) or a resting node they could
+  work ("Waiting for Copper Vein" on the flag and the Dock, said silently, not
+  counted idle). Only a hero with truly nothing says "No work in range."
+- **A station out of an input** stops with its progress kept and says what is
+  missing over itself, "Needs Coal", in the "Needs Pickaxe" callout's look
+  (about once every 8 s while its hero stands there). The hero waits there
+  unless other work in their flag's reach can run: then they do that and come
+  back when the station can run again (a hero who mines and smelts never
+  deadlocks). *(`Flags.keepOrRelease`, `CalloutLayer`)*
 - **Walking costs time**: heroes walk at 120 u/s (≈15 s across the mat) in
   straight lines; the cycle starts on arrival. Idle heroes potter within 80 u.
   *(`HeroMotion.js`)*
