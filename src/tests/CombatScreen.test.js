@@ -517,3 +517,73 @@ describe('nothing covers a fighter\'s health number (owner, 2026-10-25: everythi
         }
     });
 });
+
+describe('⭐ a fight\'s health bars draw over the loot (owner, 2026-10-25: drops never cover a number)', () => {
+    /** The mat with a fight on it, its loot layer and the fight layer's bar host. */
+    async function matInFight() {
+        const { heroId, enemyId } = buildFight();
+        runUntil(() => !!BoardCombat.getFight(enemyId), 10);
+        const { DndContext } = await import('@dnd-kit/core');
+        const { MatBoard } = await import('../ui/components/board/MatBoard.jsx');
+        const view = render(React.createElement(DndContext, null, React.createElement(MatBoard)));
+        await act(async () => {});
+        return { heroId, enemyId, container: view.container };
+    }
+    const bars = (root, who, of) => [...root.querySelectorAll(`[data-health-bar="${who}"][data-health-of="${of}"]`)];
+
+    it('both fighters\' bars sit in the fight layer, above the loot\'s z, once each', async () => {
+        const { MAT_Z } = await import('../ui/components/board/matLayers.js');
+        const SpriteLayer = await import('../systems/board/SpriteLayer.js');
+        const { container, heroId, enemyId } = await matInFight();
+        // A drop over the fight, as a kill scatters them.
+        await act(async () => { SpriteLayer.addSprite('item', 'item_bones', 1, enemyId); });
+        const host = container.querySelector('[data-fight-bars]');
+        expect(host).not.toBeNull();
+        expect(Number(host.style.zIndex)).toBe(MAT_Z.FIGHT);
+        expect(MAT_Z.FIGHT).toBeGreaterThan(MAT_Z.LOOT);
+        // The loot layer's own z, as drawn: under the bars.
+        const loot = [...container.querySelectorAll('div')].find(el => Number(el.style.zIndex) === MAT_Z.LOOT);
+        expect(loot).toBeTruthy();
+        expect(Number(host.style.zIndex)).toBeGreaterThan(Number(loot.style.zIndex));
+        // No double bars: each fighter's bar once on the whole mat, and that one in the host.
+        expect(bars(container, 'hero', heroId)).toHaveLength(1);
+        expect(bars(container, 'enemy', enemyId)).toHaveLength(1);
+        expect(host.contains(bars(container, 'hero', heroId)[0])).toBe(true);
+        expect(host.contains(bars(container, 'enemy', enemyId)[0])).toBe(true);
+        expect(container.querySelector(`[data-board-hero="${heroId}"] [data-health-bar]`)).toBeNull();
+        expect(container.querySelector(`[data-token-id="${enemyId}"] [data-health-bar]`)).toBeNull();
+    });
+
+    it('each bar stands where it stood on its fighter: the hero\'s over the hero\'s box, the enemy\'s over its box', async () => {
+        const { heroBarPlace, enemyBarPlace } = await import('../ui/components/board/healthBar.js');
+        const { heroBoxAt } = await import('../ui/components/board/MatHero.jsx');
+        const { tokenBoxPx } = await import('../ui/components/board/MatToken.jsx');
+        const { tokenSizeFor, TOKEN_SURFACE, boardScaleAt } = await import('../ui/components/base/TokenSprite.jsx');
+        const { plateUnit } = await import('../ui/components/board/workPlate.js');
+        const { container, heroId, enemyId } = await matInFight();
+        const u = plateUnit(1);
+        const artPx = tokenSizeFor(TOKEN_SURFACE.BOARD, 1, boardScaleAt(1));
+        const box = heroBoxAt(HeroMotion.bodyView(heroId));
+        const h = heroBarPlace(artPx, u);
+        const hero = bars(container, 'hero', heroId)[0];
+        expect(parseFloat(hero.style.left)).toBeCloseTo(box.left + h.left, 6);
+        expect(parseFloat(hero.style.top)).toBeCloseTo(box.top + h.top, 6);
+        expect(parseFloat(hero.style.width)).toBeCloseTo(h.width, 6);
+
+        const enemy = BoardState.getTokenById(enemyId);
+        const boxPx = tokenBoxPx('cs_venom', tokenSizeFor(TOKEN_SURFACE.BOARD, 'cs_venom', boardScaleAt(1)));
+        const e = enemyBarPlace(boxPx, u);
+        const bar = bars(container, 'enemy', enemyId)[0];
+        expect(parseFloat(bar.style.left)).toBeCloseTo(enemy.x - boxPx / 2 + e.left, 6);
+        expect(parseFloat(bar.style.top)).toBeCloseTo(enemy.y - boxPx / 2 + e.top, 6);
+    });
+
+    it('a click on the hero\'s bar still opens the hero', async () => {
+        const { container, heroId } = await matInFight();
+        const inspected = [];
+        const off = EventBus.subscribe('inspect_hero', (p) => inspected.push(p.heroId));
+        fireEvent.click(bars(container, 'hero', heroId)[0].querySelector('[data-health-label]'));
+        off();
+        expect(inspected).toEqual([heroId]);
+    });
+});

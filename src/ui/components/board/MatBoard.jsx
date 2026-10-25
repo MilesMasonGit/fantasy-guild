@@ -17,7 +17,7 @@ import { FlagLayer } from './FlagLayer.jsx';
 import { heroOutline } from './spriteOutline.js';
 import { SpriteLayerView } from './SpriteLayerView.jsx';
 import { WorkPlateLayer } from './WorkPlateLayer.jsx';
-import { FightLayer } from './FightLayer.jsx';
+import { FightLayer, FightBarHost } from './FightLayer.jsx';
 import { EnemyCardTip } from '../combat/EnemyCard.jsx';
 import { TerrainCanvas } from './TerrainCanvas.jsx';
 import { AmbientLife, createGroundPictures } from './AmbientLife.jsx';
@@ -94,6 +94,8 @@ export const MatBoard = React.memo(function MatBoard({
     const rest = useHoverRest(hoveredId, hoverHeroId);
     /** The pointer is on a Token's art circle, so every flag lets it through. */
     const [flagsYield, setFlagsYield] = useState(false);
+    /** The fight layer's node the fighters' health bars draw into (`FightBarHost`). */
+    const [fightBarHost, setFightBarHost] = useState(null);
     const { isDragging, activePayload } = useActiveDrag();
     // The mat Token in the hand, if one is: it stays where it is, hidden, while it is carried.
     const carriedId = isDragging && activePayload?.kind === DRAG_KIND.TOKEN ? (activePayload.from?.instanceId ?? null) : null;
@@ -397,6 +399,11 @@ export const MatBoard = React.memo(function MatBoard({
         }
         return out;
     }, [heroes, tokens, carriedId]);
+    /** Who is fighting: their health bars draw in the fight layer (`FightBarHost`). */
+    const fighters = useMemo(() => ({
+        tokens: new Set(fights.map(f => f.tokenId)),
+        heroes: new Set(fights.map(f => f.heroId))
+    }), [fights]);
     // The Token the pointer rests on, when it is an enemy: its card shows (not while one is carried).
     const restType = rest.tokenId && !carriedId ? tokens.find(t => t.id === rest.tokenId)?.typeId : null;
     const restEnemy = restType && getTokenType(restType)?.enemy ? restType : null;
@@ -497,6 +504,7 @@ export const MatBoard = React.memo(function MatBoard({
                     onModeClick={handleModeClick}
                     dragging={carriedId === t.id}
                     plated={plated.has(t.id)}
+                    fightBarHost={fighters.tokens.has(t.id) ? fightBarHost : null}
                     onPress={handleTokenPress}
                 />
             ))}
@@ -534,6 +542,7 @@ export const MatBoard = React.memo(function MatBoard({
                         hurt={h.hurt}
                         rested={rest.heroId === h.heroId}
                         plated={h.tokenId != null && plated.has(h.tokenId)}
+                        fightBarHost={fighters.heroes.has(h.heroId) ? fightBarHost : null}
                     />
                 );
             })}
@@ -563,6 +572,8 @@ export const MatBoard = React.memo(function MatBoard({
             {fights.length > 0 && (
                 <FightLayer fights={fights} onPress={handleTokenPress} platesDrawn={platesDrawn} yieldToTokens={flagsYield} />
             )}
+            {/* `MAT_Z.FIGHT`: the fighters' health bars while they fight, over the loot. */}
+            <FightBarHost hostRef={setFightBarHost} yieldToTokens={flagsYield} />
 
             {/* The enemy card, by the pointer, while it rests on an enemy. */}
             {tooltipsDrawn && restEnemy && <EnemyCardTip typeId={restEnemy} instanceId={rest.tokenId} />}

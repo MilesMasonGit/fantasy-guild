@@ -52,7 +52,11 @@ export const MAT_Z = Object.freeze({
     LOOT: TOKEN_TOP + 120,
     /** The work plates under each hero at work and their Token (`WorkPlateLayer`): over the loot at their feet. */
     WORK_PLATE: TOKEN_TOP + 130,
-    /** Each fight's plate and its chip, which opens the fight panel (`FightLayer`): over the loot, under the numbers. */
+    /**
+     * Each fight's plate, its chip, which opens the fight panel, and both fighters' health bars
+     * (`FightLayer`, `FightBarHost`): over the loot, so a kill's drops never cover a number; under
+     * the rising numbers.
+     */
     FIGHT: TOKEN_TOP + 140,
     /** The mat's effects that stand on the mat: rising numbers, sparks, puffs, a knockout (`MatFxLayer`). */
     FX: TOKEN_TOP + 150,
