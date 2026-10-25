@@ -41,7 +41,7 @@ import { bannerText } from '../../systems/notifications/bannerKinds.js';
 import { BookTab } from '../components/atlas/AtlasTome.jsx';
 import { MapSprite, MapOutline, MAP_PX, SLOT_PX } from '../components/atlas/MapPieces.jsx';
 import { WorkPlateDemo } from './WorkPlateDemo.jsx';
-import { CombatMockups } from './CombatMockups.jsx';
+import { CombatKit } from './CombatKit.jsx';
 import { KitButton, KIT_BUTTON_TONE, PixelToggle } from '../components/base/KitButton.jsx';
 
 /** One art pixel of the UI, in screen pixels: UI sprites draw at 2×. */
@@ -784,10 +784,10 @@ export const KIT_SECTIONS = [
         Demo: WorkPlateDemo
     },
     {
-        id: 'combat-screen', title: 'Combat screen (mock-ups, round two)', status: 'unapproved',
-        source: 'CombatMockups (pictures only, nothing in the game uses them)',
-        rule: 'The fight on the mat as settled after round one (thin bars with the number above, the fight icon on its chip, floats at the fighters’ sides, the bubble row with fights left, the enemy card on hover), then three options for the fight panel: a battlefield scene with the two fighters facing each other, both sides’ numbers, elixirs, statuses and kinds, and the log behind a toggle. The same fixture fight throughout: Aela (Melee 20) with Valor and Ironskin, poisoned ×2, against a Goblin Warlord (a Brute, Venomous) at 0:12. Placeholder icons are drawn in code.',
-        Demo: CombatMockups
+        id: 'combat-screen', title: 'Combat screen', status: 'unapproved',
+        source: 'HealthBar, FightLayer (chip and plate), fightFloats, FightPanelView, EnemyCardRows: the real components, fed a fixture fight',
+        rule: 'On the mat (owner 2026-10-25, option B as settled): a thin bar over each fighter with “17 · 57%” above it, the number growing away from the other fighter when wide; the crossed-swords chip beside the enemy’s bar on its far side, which opens the fight panel; the fight plate in the work plate’s place (both styles with a divider, then the elixirs with the fights each has left); floats at each fighter’s outer side: white hits on the enemy, red on the hero, “Miss”, a big gold “Crit!”, green heals, poison and burn ticks red with a drop or a flame. The panel (Panel 3’s strip with Panel 2’s card): the battlefield strip with both fighters at 1×, the hero on the left; the versus card, one shared icon column; the log closed until asked for, with This fight and Last fight. The enemy card: level, style, health, hit, armour, swing, kinds once fought. Placeholder icons are drawn in code.',
+        Demo: CombatKit
     }
 ];
 

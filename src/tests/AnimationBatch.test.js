@@ -303,19 +303,14 @@ describe('effects standing on the mat', () => {
         rec.restore();
     });
 
-    it('a damage number on every landed hit (effect 14), on the strike frame; none on a miss', () => {
+    it('a fight hit is not this layer’s number: the fight’s floats draw it (fightFloats.js)', () => {
+        // Effect 14 moved to the combat screen's floats (owner, 2026-10-25): white on the enemy at
+        // its outer side, on the strike frame, "Miss" on a miss (FightFloats.test.js).
         const goblin = placeAt('fixture_enemy', 500, 500);
-        EventBus.publish(ENGINE_EVENTS.COMBAT_HERO_ATTACK, { instanceId: goblin.id, heroId: 'h', hit: false, damage: 0 });
-        expect(host.children).toHaveLength(0);
         EventBus.publish(ENGINE_EVENTS.COMBAT_HERO_ATTACK, { instanceId: goblin.id, heroId: 'h', hit: true, damage: 7.6 });
-        const n = host.querySelector('[data-fx-number="damage"]');
-        expect(n.textContent).toBe('8');
-        expect(n.className).toContain('gi-fx-number');
-        // Kept off the compositor, like every animation among the Tokens (T-145).
-        expect(n.style.willChange).toBe('contents');
-        expect(rec.calls[0].options.delay).toBeGreaterThan(0);
-        rec.calls[0].finish();
-        expect(host.children).toHaveLength(0);
+        EventBus.publish(ENGINE_EVENTS.COMBAT_HERO_ATTACK, { instanceId: goblin.id, heroId: 'h', hit: false, damage: 0 });
+        expect(host.querySelector('[data-fx-number]')).toBeNull();
+        expect(rec.calls).toHaveLength(0);
     });
 
     it('a rule firing from a neighbour (effect 7): a spark hops between them, then its +N rises (effect 6)', () => {
