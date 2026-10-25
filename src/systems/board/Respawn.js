@@ -68,6 +68,18 @@ export function restingMode(instance, def) {
 }
 
 /**
+ * The picture a resting Token is drawn as, or null to draw its own art greyed: a refill's
+ * `respawn.restingSprite`, while it rests. Every vein names the same empty rock, so the rock says
+ * "resting" and the Token's name (its card, its hover) says which ore. A regrow has none: it
+ * becomes another Token with its own art.
+ */
+export function restingSpriteOf(instance, def = getTokenType(instance?.typeId)) {
+    if (!isResting(instance, def) || respawnOf(def)?.mode !== 'refill') return null;
+    const sprite = def.respawn.restingSprite;
+    return typeof sprite === 'string' && sprite.trim() ? sprite.trim() : null;
+}
+
+/**
  * Put a Token that has just run out to rest, instead of removing it. Called where it would be
  * removed; returns true when it rests (the caller must not remove it), false when its type does
  * not respawn or it is not on the mat (the caller goes on as before).
@@ -111,9 +123,10 @@ export function regrown(from, into) {
 }
 
 /**
- * What the inspection says about a Token's respawn: `{ mode, into, afterMs, resting, inMs }`, its
- * type's way back and, while it rests, how long a refill has left (`inMs`, null otherwise). Null
- * for a Token whose type never respawns.
+ * What the inspection says about a Token's respawn: `{ mode, into, afterMs, resting, inMs,
+ * restingSprite }`, its type's way back and, while it rests, how long a refill has left (`inMs`,
+ * null otherwise) and the picture it is drawn as ({@link restingSpriteOf}). Null for a Token
+ * whose type never respawns.
  */
 export function respawnState(instance) {
     const def = getTokenType(instance?.typeId);
@@ -122,7 +135,8 @@ export function respawnState(instance) {
     const next = nextRespawn(instance);
     return {
         mode: respawn.mode, into: respawn.into, afterMs: restMsOf(instance, def),
-        resting: !!next, inMs: next ? next.inMs : null
+        resting: !!next, inMs: next ? next.inMs : null,
+        restingSprite: restingSpriteOf(instance, def)
     };
 }
 

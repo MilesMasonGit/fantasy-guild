@@ -132,8 +132,12 @@ function respawnLines(instance, src) {
     const r = src.respawn?.(instance);
     if (!r) return [];
     if (r.mode === 'refill') {
+        // Drawn as the shared empty rock, a resting vein's line names its ore.
+        const rest = r.restingSprite
+            ? `${src.tokenName(instance.typeId)}: resting, refills in ${formatDuration(r.inMs)}`
+            : `Refills in ${formatDuration(r.inMs)}`;
         return [r.resting
-            ? { label: 'Resting', value: `Refills in ${formatDuration(r.inMs)}` }
+            ? { label: 'Resting', value: rest }
             : { label: 'Respawns', value: `Rests ${formatDuration(r.afterMs)} when it runs out, then refills`, tone: TONE.MUTED }];
     }
     const into = src.tokenName(r.into);
@@ -250,7 +254,7 @@ function demolitionLine(instance, src) {
  *   poolFor?: (def: object) => object[],
  *   originOf: (instance: object) => string,
  *   passive?: (instance: object) => { lines: object[], nextInMs: number }|null,
- *   respawn?: (instance: object) => { mode: string, into: string|null, afterMs: number, resting: boolean, inMs: number|null }|null,
+ *   respawn?: (instance: object) => { mode: string, into: string|null, afterMs: number, resting: boolean, inMs: number|null, restingSprite?: string|null }|null,
  *   demolishMs?: number,
  *   workerOf?: (instanceId: string) => string|null,
  *   dev?: boolean

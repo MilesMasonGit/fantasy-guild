@@ -80,6 +80,8 @@ export function tokenDetailOf(id, def) {
         grows: !marked && !!TimedChanges.nextGrowth(instance),
         // Out of charges and waiting to respawn: drawn resting, a refill counting down.
         resting: !marked && Respawn.isResting(instance, def),
+        // While it rests, the picture it is drawn as instead of its own art (a vein's empty rock).
+        restingSprite: marked ? null : Respawn.restingSpriteOf(instance, def),
         // Marked for demolition: the marked badge.
         marked,
         // A quest Token's quest: ring, glow, tooltip, click to claim.
