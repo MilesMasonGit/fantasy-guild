@@ -2,7 +2,7 @@
 
 import { EventBus } from '../core/EventBus.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
-import { isEnemyDef } from '../../config/registries/enemyProfile.js';
+import { isEnemyDef, isBossEnemy } from '../../config/registries/enemyProfile.js';
 import { PLACEMENT, placementOf } from '../../config/registries/placementRegistry.js';
 import { statementsOf, stationSkillOf, firingChanceOf } from '../effects/statements.js';
 import { TRIGGER_EVENTS, TRIGGER_SCOPES, getTriggerEvent } from '../../config/registries/triggerRegistry.js';
@@ -17,6 +17,7 @@ import * as FightMoments from './FightMoments.js';
 import * as DealDamage from './DealDamage.js';
 import * as EffectActions from './EffectActions.js';
 import * as LiveEffects from '../effects/LiveEffects.js';
+import { BOARD_EVENTS } from './boardEvents.js';
 import { resolveRoles } from '../../config/registries/roleRegistry.js';
 import * as Charges from './Charges.js';
 import * as BoardState from './BoardState.js';
@@ -159,19 +160,32 @@ function isReady(instance, statementId) {
 }
 
 /**
- * Whether a rule-fired spawn has room under the mat's Token cap; true for every other statement. A
- * held spawn waits for the next moment, as a spawner waits for its next attempt.
+ * Whether a rule-fired spawn may happen now; true for every other statement. A held spawn waits for
+ * the next moment, as a spawner waits for its next attempt. Held:
+ * - **a boss**, always: a boss comes from its own camp or a Summoning Circle, and never ambushes;
+ * - **a second ambusher**: while an enemy this Token's rules spawned is still on the mat, its rules
+ *   spawn no other, so a node holds one ambusher at a time however long it is worked;
+ * - **a full mat**: no room under the Token cap. A spawn that takes its bearer's place (`here`)
+ *   adds nothing to the count, so the cap never holds it.
  *
  * ⚠️ Asked here, never inside `EffectActions.spawn`: the Spawner System asks the cap itself before
  * calling it, and the bench's push storm (S4) drives it past the cap on purpose, so a check there
  * would change that scenario's work.
- *
- * A spawn that takes its bearer's place (`here`) adds nothing to the count, so it is never held.
  */
 function spawnHasRoom(instance, statement) {
     if (statement.keyword !== KEYWORD.SPAWNS) return true;
+    const def = getTokenType(statement.payload?.typeId);
+    if (isBossEnemy(def)) return false;
+    if (isEnemyDef(def) && hasAmbusherOut(instance)) return false;
     if (placementOf(statement.payload) === PLACEMENT.HERE && MatCap.countsTowardCap(instance)) return true;
     return MatCap.canPlaceMore(1);
+}
+
+/** Whether an enemy `bearer`'s rules spawned is still on the mat (`tetherToBearer`). */
+function hasAmbusherOut(bearer) {
+    if (!bearer?.id) return false;
+    for (const t of BoardState.tokens()) if (t.ambushedFrom === bearer.id) return true;
+    return false;
 }
 
 /**
@@ -185,16 +199,27 @@ function rolledToFire(statement) {
 }
 
 /**
- * An enemy a rule spawns belongs to the Token that made it, as a spawner's enemies belong to their
- * spawner: it watches for heroes around that Token (`Hostiles.watchCentreOf`), so an ambusher
- * attacks whoever is working its node. Saved with the enemy. A bearer that has already left the mat
- * holds nothing.
+ * An enemy a rule spawns beside its bearer is an **ambusher**: it belongs to the Token that made
+ * it, as a spawner's enemies belong to their spawner, and watches for heroes around that Token
+ * (`Hostiles.watchCentreOf`) if its type is hostile. Saved with the enemy (`tether`,
+ * `ambushedFrom`). A bearer that has already left the mat holds nothing.
+ *
+ * - It attacks the hero the moment names (`workerId`: the hero who finished the cycle that fired
+ *   it), hostile or not, through `BOARD_EVENTS.AMBUSHED`; `Flags` sets them fighting on its next
+ *   pass.
+ * - It is one fight: beaten once, it is gone, whatever its type's uses.
+ * - Until then its bearer's rules spawn no other enemy ({@link hasAmbusherOut}).
  */
-function tetherToBearer(spawnedId, bearer) {
+function tetherToBearer(spawnedId, bearer, workerId = null) {
     const spawned = BoardState.getTokenById(spawnedId);
     if (!spawned || !isEnemyDef(getTokenType(spawned.typeId))) return;
     if (!BoardState.getTokenById(bearer?.id)) return;
     spawned.tether = bearer.id;
+    spawned.ambushedFrom = bearer.id;
+    spawned.usesRemaining = 1;
+    if (workerId) {
+        EventBus.publish(BOARD_EVENTS.AMBUSHED, { instanceId: spawned.id, heroId: workerId, nodeId: bearer.id });
+    }
 }
 
 /**
@@ -294,9 +319,10 @@ function runStatementActions(instance, statement, payload = null, { settled = fa
         EffectActions.remove(statement, roles());
     }
     if (statement.keyword === KEYWORD.SPAWNS) {
-        const landed = EffectActions.spawn(statement, roles());
+        const spawnRoles = roles();
+        const landed = EffectActions.spawn(statement, spawnRoles);
         bearerReplaced = !!landed?.replacedBearer;
-        if (landed && !bearerReplaced) tetherToBearer(landed.instanceId, instance);
+        if (landed && !bearerReplaced) tetherToBearer(landed.instanceId, instance, spawnRoles.actor);
     }
     if (statement.keyword === KEYWORD.TRANSFORMS) {
         bearerReplaced = EffectActions.transform(statement, roles());

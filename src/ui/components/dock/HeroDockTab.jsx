@@ -13,7 +13,7 @@ import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { isRecallDrop, recallFromDrop } from './dockRecall.js';
 import { useDragSettleHover } from './useDragSettleHover.js';
 import { equipOrAnnounce } from './dockEquip.js';
-import { dockStatusLine } from '../board/flagText.js';
+import { dockStatusLine, waitingTypeOf } from '../board/flagText.js';
 import { TopBarTip } from '../board/TopBarTip.jsx';
 import { useHeroPortrait, PORTRAIT_PX } from './heroPortrait.js';
 import { ENGINE_EVENTS, ORPHAN_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
@@ -180,7 +180,10 @@ const HeroDockTabBody = memo(function HeroDockTabBody({
     const status = useGameState(
         () => {
             const s = Flags.statusOf(heroId);
-            return { state: s.state, instanceId: s.instanceId, typeId: s.typeId, limping: !!s.limping };
+            return {
+                state: s.state, instanceId: s.instanceId, typeId: s.typeId, limping: !!s.limping,
+                waitingFor: s.state === 'idle' ? waitingTypeOf(heroId) : null
+            };
         },
         // HEROES_WALKED: a hero walking home arrives without any other event.
         [BOARD_EVENTS.HERO_MOVED, BOARD_EVENTS.HEROES_WALKED, ENGINE_EVENTS.GAME_RESET],

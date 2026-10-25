@@ -548,6 +548,56 @@ balances with the level or a typed number.
 - **Venomous used the old status engine's Poison** until C4 built the real
   one (see "Statuses and boss moves" below).
 
+## Encounters (built in C5, 2026-10-24; simplified after the owner's look; for the C0 and brief 240 authors)
+
+*What the CMS writes and the game reads for one-on-one fights, bosses, guardians, summons and
+ambushes. Nothing in `data/` uses them yet. The owner's ruling after the first look (2026-10-24):
+"Too complicated, too different from normal spawns. I just want these types of enemies to have
+their own spawners." So bosses and guardians come from ordinary camps, nothing is blocked, and a
+summon is a Token's work.*
+
+**An enemy** gains one field:
+
+| Field | Type | Meaning | Default when absent |
+|---|---|---|---|
+| `boss` | `true` | fights only heroes sent at it: never hostile (the CMS greys Hostile), never made by a `Spawns` rule, so never an ambusher; boss moves (C4) hang on it | not a boss |
+
+**A boss's or a guardian's camp of one** is an ordinary spawner, nothing new: `spawner: { spawns:
+[{ typeId: <the enemy>, weight: 1 }], allowance: 1, intervalMs: <how often>, upkeep: [] }` (CMS:
+Spawning and Building → Spawner). A Base Map brings it by listing the camp Token under its
+**Enemy camps**. An enemy camp's clock stands at zero while the camp is full (owner, 2026-10-24:
+option A), so a beaten boss, guardian or goblin comes back one whole interval after it falls; other
+spawners (forests, mines) keep their old timing.
+
+**A guardian** is a tough enemy (tick Hostile if it should attack) whose camp of one stands by a
+rich node. It blocks nothing.
+
+**A Summoning Circle** is an ordinary station: a Token that **Works as** a Starting skill (CMS:
+its Station rule) plus a **recipe** in that skill's pool (CMS: Recipes) whose input is the summon
+item and whose output is the boss Token (`outputs: [{ tokenId: <the boss> }]`, the shape a
+Foundation's build already uses). Every hero holds every Starting skill, so any hero may work it;
+later it becomes the Summoning skill's station. The player picks its recipe once, as on any
+station. Without the item it waits; it calls one boss per cycle while items last. The summon item
+is any item. ⚠️ The recipe sits in that skill's whole pool, so every station of that skill offers
+it too (Alchemy ships no recipes today). A Token's own Work Cycle cannot output a Token in the CMS
+(only a recipe can), which is why the circle is a station.
+
+**An ambush** is a `Spawns` rule on the node, on its own finished cycle, with a chance of about
+**2%** ("When this Token finishes a cycle, a 2% chance to spawn Fire Elemental on the nearest free
+spot"). The enemy it spawns attacks the worker at once (hostile or not), is beaten in one kill, and
+the node springs no other while it stands. The Spawns Token list never offers a boss.
+
+**Choices made in C5 the rulings did not spell out** (each small to change):
+
+- **Waiting vs another enemy**: an area flag takes the next thing in its reach (its priorities
+  decide, nearest first); with nothing else it waits at its flag. A pinned flag waits beside the
+  enemy. Either takes it within a second of it coming free. No random roll is involved.
+- **An ambusher is one fight** (1 use, whatever its type says), and **a node holds one at a time**:
+  that bounds enemies alive by the number of worked ambush nodes.
+- **The Summoning Circle is a station** working as a Starting skill (the QA fixture: Alchemy, level
+  1), so any hero may work it with no new engine rule.
+- **A beaten enemy** is said "Beaten", not "Depleted", by the hero who beat it (all enemies).
+
 ## Statuses and boss moves (built in C4, 2026-10-24; for the content author)
 
 *What the CMS writes and the game reads. Nothing in `data/` uses them yet.*

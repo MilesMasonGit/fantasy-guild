@@ -307,6 +307,19 @@ export function spawnerStatus(instanceId) {
 }
 
 /**
+ * Whether `instance` is an **enemy camp at its cap**: a spawner whose list names an enemy, with its
+ * family full. Its clock then stands at zero (`TimedChanges`' spawner row), so an enemy beaten in a
+ * full camp comes back one whole interval later, never at once from time the camp spent full.
+ * Forests, mines and every other spawner keep counting while full, as they always have.
+ */
+export function isFullEnemyCamp(instance, def) {
+    const block = spawnerBlock(def);
+    if (!block || !block.spawns.some(e => isEnemyDef(getTokenType(e?.typeId)))) return false;
+    const family = familyOf(instance.typeId);
+    return countOf(family) >= capOf(family);
+}
+
+/**
  * A spawner's live family count against its cap, `{ count, cap }`, or null when it is not a working
  * spawner. The cheap half of {@link spawnerStatus} (no Bank check), for the count badge on the mat.
  */

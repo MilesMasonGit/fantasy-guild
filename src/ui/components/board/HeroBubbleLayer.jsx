@@ -10,7 +10,9 @@ import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as HeroMotion from '../../../systems/board/HeroMotion.js';
+import * as Flags from '../../../systems/board/Flags.js';
 import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
+import { isEnemyDef } from '../../../config/registries/enemyProfile.js';
 import { layoutStacks, bubbleAnchorY } from './bubbleLayout.js';
 import { useMatSize } from '../../hooks/useMatSize.js';
 import { TICK_INTERVAL_MS } from '../../../config/loopConstants.js';
@@ -87,10 +89,13 @@ export const HeroBubbleLayer = ({ heroes }) => {
     useEffect(() => {
         const unsubs = [
             // The hero whose work spent a Token's last charge says so.
+            // An enemy is beaten, not depleted.
             EventBus.subscribe(BOARD_EVENTS.TOKEN_DEPLETED, (p) => {
                 if (!p?.exhaustedBy || !p.typeId) return;
-                const name = getTokenType(p.typeId)?.name || tokenName(p.typeId) || p.typeId;
-                sayRef.current(p.exhaustedBy, 'depleted', { key: `depleted:${p.typeId}`, text: momentText.depleted(name) }, DEPLETED_TTL_MS);
+                const def = getTokenType(p.typeId);
+                const name = def?.name || tokenName(p.typeId) || p.typeId;
+                const kind = isEnemyDef(def) ? 'beaten' : 'depleted';
+                sayRef.current(p.exhaustedBy, kind, { key: `depleted:${p.typeId}`, text: momentText[kind](name) }, DEPLETED_TTL_MS);
             }, UI_LISTENER),
             EventBus.subscribe(BOARD_EVENTS.HERO_MOVED, (p) => {
                 if (p?.reason !== 'arrived' || !p.heroId || !p.instanceId) return;
@@ -121,7 +126,14 @@ export const HeroBubbleLayer = ({ heroes }) => {
             const idle = h.state === 'idle';
             next.set(h.heroId, idle);
             if (prev && prev.get(h.heroId) === false && idle) {
-                sayRef.current(h.heroId, 'idle', { key: 'idle', text: momentText.idle() });
+                // Idle because the one fight in reach is another hero's: they wait for it.
+                const busy = BoardState.getTokenById(Flags.waitingFor(h.heroId));
+                if (busy) {
+                    const name = getTokenType(busy.typeId)?.name || tokenName(busy.typeId) || busy.typeId;
+                    sayRef.current(h.heroId, 'waiting', { key: 'idle', text: momentText.waiting(name) });
+                } else {
+                    sayRef.current(h.heroId, 'idle', { key: 'idle', text: momentText.idle() });
+                }
             }
         }
         wasIdleRef.current = next;
