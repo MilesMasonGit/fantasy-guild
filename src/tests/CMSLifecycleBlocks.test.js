@@ -93,6 +93,7 @@ function everyBlock() {
         },
         trickle: [{ itemId: i1, quantity: 1, everyMs: 300000 }],
         respawn: { mode: 'refill', afterMs: 15000 },
+        field: { emptySprite: 't_farmland', growingSprite: 't_garden' },
     };
 }
 

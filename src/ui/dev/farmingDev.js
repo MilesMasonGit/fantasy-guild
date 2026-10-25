@@ -52,9 +52,9 @@ const WHEAT_ITEM = 'item_wheat';
 const SEED = 'item_wheat_seed';
 const WAX = 'item_beeswax_comb';
 export const QA_ITEMS = Object.freeze({
-    SAGE: 'item_qa_s4_sage',
-    SAGE_SEED: 'item_qa_s4_sage_seed',
-    HONEY: 'item_qa_s4_honey'
+    SAGE: 'qa_s4_sage',
+    SAGE_SEED: 'qa_s4_sage_seed',
+    HONEY: 'qa_s4_honey'
 });
 const FIELD_TAG = 'QaS4Field';
 
