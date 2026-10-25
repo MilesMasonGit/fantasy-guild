@@ -1,7 +1,7 @@
 // the QA panel's fishing check (brief 230 S5): a lake, a river and a sea, each fished its own way, and a Dock
 // ⚠️ DEV BUILDS ONLY: reached from `FishingDevSection`, which TestDashboard renders behind `import.meta.env.DEV`.
 
-import { EventBus } from '../../systems/core/EventBus.js';
+import { EventBus, UI_LISTENER } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 import { BOARD_EVENTS } from '../../systems/board/boardEvents.js';
 import * as BoardState from '../../systems/board/BoardState.js';
@@ -166,7 +166,7 @@ export function setUpFishingScene() {
         if (!list) return;
         list.push(p.produced?.[0] || null);
         if (list.length > 6) list.shift();
-    });
+    }, UI_LISTENER);
     EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'dev_fishing_scene' });
     return { ok: true };
 }

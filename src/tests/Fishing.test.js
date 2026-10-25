@@ -266,6 +266,18 @@ describe('a cycle at the water lands one catch from the pool', () => {
         for (const item of landed) expect(['s5_trout', 's5_salmon', 's5_dolphin']).toContain(item);
     });
 
+    it('a rare catch drops like any other item: no rare-drop signal, however small its share (owner, 2026-10-24)', () => {
+        const lake = put('s5_lake');
+        setHeroes(hero('fisher', ['s5_rod']));
+        Flags.plant('fisher', LAKE);
+        let rare = 0;
+        const off = EventBus.subscribe(BOARD_EVENTS.RARE_DROP, () => { rare++; });
+        let landed;
+        try { landed = catchesOf(lake, () => run(120_000)); } finally { off(); }
+        expect(landed).toContain('s5_dolphin');
+        expect(rare).toBe(0);
+    });
+
     it('the shares follow the weights (50 / 40 / 10), and a better rod\'s Catch Weight puts more on the Dolphin', () => {
         put('s5_lake');
         const lake = getTokenType('s5_lake');
