@@ -1,58 +1,64 @@
 # HANDOFF — Systems director
 
-*Written 2026-10-24 when the usage limit was reached. Verify each worktree with
-`git -C .claude/worktrees/<name> status --short` and `git log --oneline main..<branch>`.*
+*Replaced whole each time. Written 2026-10-25 (evening). Verify each worktree
+with `git -C .claude/worktrees/<name> status --short` and
+`git log --oneline main..<branch>`. STATUS.md holds the phase tables.*
 
 ## On `main` (pushed)
 
-Brief 220 combat: C1 numbers, C2 gear and enemies, C3 supplies and the "used"
-bubble (owner ok by phone), C4 Poison, Burn and boss moves. The bench baseline
-holds the C1 work change (brief220-C1); the timing baseline predates C1's
-longer fights, so **retake it on a quiet machine** (`--save-baseline`, engine
-and draw).
+- **Brief 220 combat: complete.** C1 numbers, C2 gear and enemies, C3 supplies
+  and the "used" bubble, C4 Poison/Burn/boss moves, C5 encounters (camps of one,
+  enemy camps idle while full, ~2 % ambushes, Summoning Circle), C0 first combat
+  content (synced 0bdfa84f), C6 the combat screen, C6c fight bars above loot.
+  Records in `docs/archive/eyecheck/2026-10-2x_combat-*.md`.
+- **Brief 230 skill loops: every engine phase merged** (S1a, S1b, S2a Forestry,
+  S2b Orchards, S3 Mining, S4 Farming, S5/S5b Fishing and the Trap, S6a station
+  pools, S6b work potions and drinks, S7 seeing support effects), plus the CMS
+  seed pricing and the 1-XP floor for a positive XP bonus.
+- **Brief 240 basic content: K0 engine gaps merged** (Starter Camp in packs,
+  tutorial maps after a copper tool and a goblin, first-kill drops, the Bog,
+  Hall prices by plane).
+- Bench baseline: work fingerprints accepted under brief220-C1, -C5,
+  brief230-S1a; the **timing baseline predates C1** (fights are longer): retake
+  `--save-baseline` (engine and draw) on a quiet machine.
+
+## Waiting on the owner
+
+- **The skill-loops content pack** `cms/incoming/2026-10-25-skill-loops-content.json`
+  (160 entries; Coffee out; Bird Nests open into seeds). Owner: CMS → Backups →
+  Restore from Game, then Changes to review, then Recalculate and Sync on
+  `main`. **Right after the Sync**: id-diff every data file; then one builder
+  pass on ~70 content-pinned tests (list in the S8 builder's report: FarmingChain,
+  ProcessingChain, ForestryChain, MiningChain, FishingChain, NeverWears,
+  CMSStaysPutAndWear, CMSForestry, NewGameOpening (reachability doesn't read
+  catch pools), CombatChain (audit doesn't expand effect refs), …).
+- Then **S9**: a play-through of every loop with screenshots for the owner.
+- Then **brief 240 K1–K3** content packs (after the skill-loops Sync, so ids and
+  fingerprints follow it; K1 ticks "Given by the tutorial" on Forest, Mountain,
+  Coast; Iron Anvil becomes an Iron Smithy; other tree species converted to the
+  Oak shape; Lavender found wild).
 
 ## In flight
 
-- **C5 encounters**, `systems/combat-encounters` (`se`): owner said "ok, merge
-  it" (2026-10-24) **with one addition**: an enemy camp's clock runs only below
-  its cap (a beaten boss or guardian returns one full interval later; forests
-  and mines unchanged; WORK CHANGED expected). The builder was told to merge
-  `main` in, build that, and commit WIP when the limit hit. Then: gate, bench
-  `--accept-work-change`, merge. Shots in its `docs/active/eyecheck/shots/2026-10-24_c5_*`.
-- **C0 content pack**: `cms/incoming/2026-10-24-combat-c0-first-content.json`
-  (28 entries, format-checked; duels in the builder's notes: Goblin level 5,
-  Chief level 20 Brute). **Not yet accepted.** Guard checked: newest autosave
-  2026-10-20 21:11 is older than the last Sync (2026-10-21 09:12), so no
-  unsynced owner work. To do: CMS in the pane, Changes to review, accept, Sync
-  on `main`, id-diff every data file, push, STATUS line. Tell the owner to use
-  "Restore from Game" if their browser workspace predates it (the T-188 warning).
-- **Brief 230 skill loops**: S0 gap map done (scratchpad `s0_gap_map.md`;
-  copy its plan into STATUS before the scratchpad goes). Next: S1a (engineer:
-  80 % floor, Grow Time effect, can't-drag mark, stations never wear out),
-  then the batches S0 proposed.
-- C6 combat screen: not started (mock-ups first, the owner picks by phone).
+- **T-250** (seed `Math.random` before each test) on `fix/t250-seed-tests`
+  (`ts`): builder running. Five luck-dependent tests seen flaking.
 
-## Owner rulings this session (record in the docs they govern)
+## Worktrees to clean (merged)
 
-- Combat: Goblin Chief stays tough; level-1 coin toss kept; unarmed promoted
-  heroes punch with style and XP; Block removed; enemy kinds stay harder than
-  their level; two elixirs stack as two bubbles; Recruits need food to beat a
-  goblin (keep the level-5 Goblin); C5 as above.
-- Skill loops: a station out of input waits unless other work in reach runs;
-  a map's wheat patch is a ready-planted Field; **no loud pop** for rare
-  catches (drop like any item); drinks only buff, no healing; supports never
-  wear out. Director's calls: S0 Q2, Q3, Q4, Q7, Q8, Q10, Q12, Q13 as option A.
-
-## Worktrees
-
-`sc`, `sg`, `su`, `st` are merged and can be removed (junctions first, see the
-director skill). `se` holds C5.
+`sc`, `sg`, `su`, `st`, `se`, `sf`, `sx`, `sl`, `sw`, `sr`, `sf2`, `sp`, `sb6`,
+`sm`, `s5b`, `sfa`, `sor`, `ssp`, `sxp`, `s7`, `ke`, `lb`: junctions first
+(`cmd //c rmdir` both), then `git worktree remove`. Never `rm -rf`.
 
 ## Lessons
 
-- The browser pane is hidden: take screenshots for the owner with headless
-  Chrome via `bench/browser/cdp.mjs` (scratchpad `cap_bubble.mjs`).
-- File-scan tests time out under parallel load: re-run them alone.
-- `AtlasTravel.test.js` and `BoardCombat.test.js` "a fresh Recruit beats a
-  weak enemy" each flaked once: look for unseeded `Math.random` or wall-clock
-  time in enemy movement or tests.
+- The CMS in the browser pane starts with an **empty workspace**: Restore from
+  Game before accepting a pack, or a Sync would wipe content. After a content
+  Sync, run the full suite at once (C0 left 7 red tests on `main`).
+- File-scan tests and luck-dependent combat tests fail under load: re-run alone
+  before believing; T-250 should end the second kind.
+- Screenshots for the phone: headless Chrome via `bench/browser/cdp.mjs`; the
+  pane is hidden.
+- `git merge --ff-only` fails when `main` moved by a STATUS commit: merge `main`
+  into the branch first; don't write "merged" in STATUS until the push is done.
+- Two directors share ticket numbers: re-read "Next free number" right before
+  filing.
