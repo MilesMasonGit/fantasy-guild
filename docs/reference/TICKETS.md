@@ -63,9 +63,9 @@ Detail, order and tiers in [brief 210](../active/briefs/210_backlog_intake.md); 
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
-| T-241 | P3 | open | **Loot particles and flights draw over an open Bank drawer** (seen 2026-10-24 in the drawer captures; older than the drawer change): the particle canvas sits above the drawer, so loot sparkle/flight pixels show on top of the Bank. Put the particle layer under the drawers (z-index table in UI_STYLE), or pause loot flights while a drawer covers the mat. Builder. No eye-check beyond one capture. | Backlog director, brief 210 E1 |
 | T-243 | P3 | open | **Mat callouts and hero speech bubbles in the pixel family**: reframe the speech-style popups (hero speech bubbles, mat callouts, the off-mat refusal callout) to match the bubble row once T-239 is built. Builder. Eye-check. | brief 210 F1 audit |
 | T-244 | P3 | open | **Nav orbs (and the station gear button): no hover glow or scale** (UI_STYLE: hover is a 1-art-pixel white outline; no glows, no scaling); the gear badge's `hover:scale-110` too (found by T-247). Builder-lite. Eye-check (one capture). | brief 210 F1 audit |
+| T-251 | P3 | open | **Slow file-scanning tests time out under load**: `EngineEventNames` (CR3-107 runs 4.6 s alone against vitest's 5 s limit) and the source-scanning tests (`UiLayers`, `OneTooltip`, `GoldRetired`, `ContentIdsInCode`, `TextInCodeMatchesScreen`, `TimeBankRetired`, `RulesUseGameClock`, ...) fail at random when the full suite runs beside a build or another director's agents, then pass alone (seen many times 2026-10-23/24). Give the scanning tests a longer timeout or a shared cached file walk. Builder-lite. | Backlog director |
 
 ### UI
 
