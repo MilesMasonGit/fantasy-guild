@@ -976,7 +976,10 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   and is excluded from the cap.
 - **Upgrade web** (separate full-screen view): nodes unlock when linked to the
   Hall or to a bought node. Price: rank *n* costs 10 × *n* Oak Wood
-  (*placeholder*). *(`guildUpgrades.js`)*
+  (*placeholder*), except the **Token Cap** and the **Cartography Table**,
+  priced by the planes: ranks 1–2 in Oak Wood, Stone and Copper Ingots, ranks
+  3–4 in Fir Wood and Iron Ingots (first-pass numbers), later ranks the
+  placeholder. *(`guildUpgrades.js`)*
 
 | Upgrade | Ranks | Effect |
 |---|---|---|
