@@ -35,6 +35,7 @@ C2; C0 (the test content pack, accepted by the director) after C2; C6 last.
 | T-247: a station's gear tip above the work plate | builder | `backlog/gear-tip-over-plate` | **merged** 60e6671e (fix, one capture): the gear tip moved onto the shared tooltip; merged gate: only the 7 known failures from `main`, build ok, same work | Sat | Sat |
 | T-244: nav orbs and the gear button without hover glow or scale | builder-lite | `backlog/no-hover-glow` | **merged** afd4ec28 (owner ok by phone): white pixel outline on hover. Merged gate 6083 pass, 0 fail. ⚠️ A fast-forward raced the Systems director's commit in the main folder and left my files staged; restored them to HEAD by name and re-merged cleanly | Sat | Sat |
 | T-252: a selected orb gets a steady gold outline (owner) | builder-lite | `backlog/orb-selected` | **merged** 7f6a1166: gate 6083 pass, 0 fail (main gained only docs since) | Sat | Sat |
+| T-251: slow scanning tests no longer time out under load | builder | `backlog/slow-scan-tests` | **merged** d35e661e (tests only): one cached read of src per test file, 30 s limit, EngineEventNames' alias search cached; under build load 0 timeouts. Merged gate on `main` ed622163: 6331 pass, 0 fail, build. CMSStudio's render test timeout: T-255 | Sun | Sun |
 | T-243: callouts and speech in the pixel family | builder | `backlog/speech-pixel` | **merged** 48796bb2 (owner ok by phone; rule in UI_STYLE cbe81171): one SpeechFrame, tones bronze/gold/red. Merged gate on `main` after the test fixes: **6081 pass, 0 fail**, cycles, build, same work | Sat | Sat |
 
 ## Systems director, skill loops (brief 230; owner 2026-10-24: next, beside the rest of combat)
@@ -335,10 +336,10 @@ T-186; the badges' soft shadows are settled inside T-013.)
 ## Summaries
 
 **Sat 2026-10-24, night: Backlog director session closed.** Where we are:
-brief 210 and every follow-up the owner approved are on `main` 7f6a1166
+brief 210 and every follow-up the owner approved are on `main` (last d35e661e)
 (pixel frames rounds one and two, the speech frame, the work plate and its
 pick-up fix, the drag bench's Shop and Bank kinds, loot under the drawers,
-the gear tip, orbs without glow). Next: T-251 (slow scanning tests) is the
+the gear tip, orbs without glow). Next: T-251 done too (2026-10-25); T-255 (one render test's timeout) is the
 only Backlog ticket left; the rest of the ticket list belongs to the planning
 agents and the Systems director. Owner: the hands-on lists in the eye-check
 records. Handoff: [HANDOFF_backlog.md](HANDOFF_backlog.md).
