@@ -771,7 +771,7 @@ export const KIT_SECTIONS = [
     },
     {
         id: 'combat-screen', title: 'Combat screen (mock-ups A, B, C)', status: 'unapproved',
-        source: 'CombatMockups (pictures only, nothing in the game uses them; brief 220, C6)',
+        source: 'CombatMockups (pictures only, nothing in the game uses them)',
         rule: 'Three options for the fight on the mat and its panel, for the owner to pick from: HP bars with the number and the percentage, a floating number for every hit both ways, a fight icon above each fight that opens the panel over the playmat, the enemy card on hover, and the bubble row while fighting. The same fixture fight in each: Aela (Melee 20) with Valor and Ironskin, poisoned ×2, against a Goblin Warlord (a Brute, Venomous) at 0:12. Placeholder icons are drawn in code.',
         Demo: CombatMockups
     }

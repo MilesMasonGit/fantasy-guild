@@ -20,7 +20,7 @@ function sources(dir) {
 }
 
 /**
- * The combat screen's mock-ups (brief 220, C6a) are pictures for the owner to pick from: on the
+ * The combat screen's mock-ups are pictures for the owner to pick from: on the
  * style sheet page as an unapproved piece, each option showing the same things, and nowhere in
  * the game.
  */

@@ -1,4 +1,4 @@
-// The combat screen mock-ups (brief 220, C6a) on the style sheet page: three options for the owner
+// The combat screen mock-ups on the style sheet page: three options for the owner
 // to pick from by screenshot. Static pictures built from the real sprites and the pixel kit, fed
 // the fixture fight in `combatMockups.js`; nothing in the game uses them.
 // Each option shows the same four things: a fight on the mat (HP bars with "number · %", floating

@@ -1,4 +1,4 @@
-// The combat screen mock-ups' fixture data (brief 220, C6a): one fight frozen at 0:12, two enemy
+// The combat screen mock-ups' fixture data: one fight frozen at 0:12, two enemy
 // cards, every kind of floating number, and the three options' words. Static pictures for the
 // owner to pick from on the style sheet page; nothing in the game reads this file.
 //
