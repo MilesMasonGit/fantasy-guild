@@ -10,7 +10,7 @@
  * - weapon: Equipment for combat
  * - armor: Equipment for defence
  * - food: Restores HP
- * - drink: Restores HP, from its own slot
+ * - drink: a work buff from its own slot; never heals (its `restoreAmount` is ignored)
  * - potion: Buff consumables
  * - currency: Special tracking items
  * - drop: Monster parts/loot

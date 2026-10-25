@@ -116,6 +116,47 @@ export function isTokenRarity(value) {
 export const FOUNDATION_KINDS = Object.freeze(['wood', 'stone', 'bench', 'farmland']);
 
 /**
+ * The kinds of station, which narrow a skill's recipes to the stations that make them: a
+ * `stationKind` on the Token's `Works as` rule, `stationKinds` on a recipe. A Furnace and a Smithy
+ * both work as Smithing; only the kind tells smelting from tools.
+ *
+ * ⚠️ Both sides are opt-in, so content without kinds keeps every recipe on every station of its
+ * skill: a station with no kind offers its whole skill, and a recipe with no kinds is offered by
+ * every station of its skill. Better versions of a station (Campfire then Kitchen, Copper then Iron
+ * Smithy) share one kind, since they run the same recipes faster.
+ */
+export const STATION_KINDS = Object.freeze([
+    'furnace', 'smithy', 'kitchen', 'brewery', 'workbench', 'alchemy_table', 'summoning_circle'
+]);
+
+const STATION_KIND_LABELS = Object.freeze({
+    furnace: 'Furnace',
+    smithy: 'Smithy',
+    kitchen: 'Kitchen',
+    brewery: 'Brewery',
+    workbench: 'Workbench',
+    alchemy_table: 'Alchemy Table',
+    summoning_circle: 'Summoning Circle'
+});
+
+/** A station kind in words; an unknown kind shows its id rather than vanishing. */
+export function stationKindLabel(kind) {
+    return STATION_KIND_LABELS[kind] || kind || '';
+}
+
+/** A recipe's station kinds; none (or a malformed field) is an empty list. */
+export function recipeStationKinds(recipe) {
+    return Array.isArray(recipe?.stationKinds) ? recipe.stationKinds.filter(k => typeof k === 'string' && k) : [];
+}
+
+/** Whether a station of this kind (null: no kind) offers this recipe of its own skill. */
+export function stationKindOffers(kind, recipe) {
+    if (!kind) return true;
+    const kinds = recipeStationKinds(recipe);
+    return kinds.length === 0 || kinds.includes(kind);
+}
+
+/**
  * Foundation tiers: `foundation.tier` on the Token and `foundationMinTier` on a building recipe,
  * both whole numbers from 1. A Foundation builds a recipe when its tier is at least the recipe's
  * minimum, the rule `requiresContext.minTier` applies to tools, so a higher tier builds everything a

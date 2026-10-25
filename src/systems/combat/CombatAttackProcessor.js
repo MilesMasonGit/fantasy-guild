@@ -61,7 +61,7 @@ export function handleHeroAttack(fight, hero, enemy, attackSpeed) {
     // Eating mid-fight: the hero skips this attack while the enemy's timer keeps
     // running, so the enemy gets a free swing. That price keeps HP management
     // tense. Uncapped on purpose: a hero who can't out-heal the damage should lose. Only food
-    // heals in a fight; an equipped drink is left alone.
+    // heals; an equipped drink is left alone.
     const meals = ConsumptionSystem.tryEat(hero.id, { inFight: true });
     if (meals.length) {
         for (const meal of meals) {

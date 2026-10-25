@@ -545,6 +545,17 @@ export function stationSkillOf(def) {
 }
 
 /**
+ * The station kind on the same `Works as` rule `stationSkillOf` reads, or null when it names none
+ * (the station then offers its whole skill). See `STATION_KINDS`.
+ */
+export function stationKindOf(def) {
+    for (const statement of statementsWith(def, KEYWORD.STATION)) {
+        if (statement?.payload?.skill) return statement.payload.stationKind || null;
+    }
+    return null;
+}
+
+/**
  * The capabilities a Token hands its neighbours, as `{ [tag]: highestTier }`.
  *
  * The authored channel is the `Acts as` statement; `def.provides` survives as a read-only

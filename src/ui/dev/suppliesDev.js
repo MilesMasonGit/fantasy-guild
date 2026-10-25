@@ -61,9 +61,10 @@ function fighterAt(level) {
  * - a level 40 Fighter with Valor and Ironskin (30 of each in the Bank): a bubble names each
  *   elixir as the first fight starts, the Bank drops by one of each, and again after ten Cows;
  * - a level 5 Fighter with Shrimp and Water (20 Shrimp, 5 Water): below 25 % HP they eat, a
- *   "+5 ♥" bubble over them; the Water stays in the Bank (drinks do not heal in a fight);
+ *   "+5 ♥" bubble over them; the Water stays in the Bank (drinks never heal);
  * - a level 5 Fighter with only Water, hurt to 2 HP and standing beside the Hall, out of any
- *   fight: they drink, a "+1 ♥" bubble on the drink tint.
+ *   fight: they do not drink (drinks never heal, out of a fight either); the Water stays in the
+ *   Bank and only regeneration brings their HP back.
  * ⚠️ Changes the game, like Spawn Party.
  * @returns {{ok: boolean, error?: string}}
  */

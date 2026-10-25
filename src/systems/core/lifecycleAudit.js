@@ -1,9 +1,10 @@
 // Content audit for the Token Lifecycle blocks.
 
 import {
-    FOUNDATION_KINDS, TURN_DEFAULTS, RESPAWN_MODES, respawnOf, foundationTierOf, foundationMinTierOf, foundationTierMeets
+    FOUNDATION_KINDS, TURN_DEFAULTS, RESPAWN_MODES, respawnOf, foundationTierOf, foundationMinTierOf, foundationTierMeets,
+    STATION_KINDS
 } from '../../config/registries/tokenConstants.js';
-import { stationSkillOf, getProvidedTagsWithTiers } from '../effects/statements.js';
+import { stationSkillOf, stationKindOf, getProvidedTagsWithTiers } from '../effects/statements.js';
 import { neverWearsReason, NEVER_WEARS_WHY } from './wearRule.js';
 
 /**
@@ -401,6 +402,26 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
             if (mismatched.length > 0) {
                 recipeError(recipe, 'skill',
                     `is a ${show(recipe.skill ?? 'blank')} recipe, but ${kind} Foundations are built with ${mismatched.join(', ')}.`);
+            }
+        }
+    }
+
+    // ── Station kinds: on a station's Works as rule and on a recipe ──
+    for (const [id, def] of Object.entries(tokens)) {
+        const kind = stationKindOf(def);
+        if (kind && !STATION_KINDS.includes(kind)) {
+            tokenError(id, 'stationKind', `works as the station kind ${show(kind)}; it must be one of ${STATION_KINDS.join(', ')}.`);
+        }
+    }
+    for (const recipe of recipes) {
+        if (!recipe || recipe.stationKinds === undefined) continue;
+        if (!Array.isArray(recipe.stationKinds)) {
+            recipeError(recipe, 'stationKinds', `station kinds are ${show(recipe.stationKinds)}; they must be a list.`);
+            continue;
+        }
+        for (const kind of recipe.stationKinds) {
+            if (!STATION_KINDS.includes(kind)) {
+                recipeError(recipe, 'stationKinds', `names the station kind ${show(kind)}; it must be one of ${STATION_KINDS.join(', ')}.`);
             }
         }
     }

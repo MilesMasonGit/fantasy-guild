@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Settings2, Tag as TagIcon, Timer, HelpCircle, Swords, Lock, BookOpen, Sparkles, X, Plus, Gauge } from 'lucide-react';
 import { useEntityStore, makeTokenConfig } from '../../stores/useEntityStore';
 import { useSimulationStore } from '../../stores/useSimulationStore';
-import { TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, stationSkillOf, ENEMY_STYLES, enemyProfileOf, enemyFilledStats, ENEMY_KINDS, MAX_ENEMY_KINDS, kindsClash, enemyKindsOf, ATTACK_SPEED_MS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, STANDS_ON_CHOICES, TOOL_KINDS, tierValue, neverWearsReason, NEVER_WEARS_WHY } from '../../utils/constants';
+import { TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, stationSkillOf, stationKindOf, STATION_KINDS, stationKindLabel, stationKindOffers, recipeStationKinds, ENEMY_STYLES, enemyProfileOf, enemyFilledStats, ENEMY_KINDS, MAX_ENEMY_KINDS, kindsClash, enemyKindsOf, ATTACK_SPEED_MS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, STANDS_ON_CHOICES, TOOL_KINDS, tierValue, neverWearsReason, NEVER_WEARS_WHY } from '../../utils/constants';
 import { Header, Section, Field, Empty } from '../shared/EditorLayout';
 import SimIntentControls from '../shared/SimIntentControls';
 import SimAnswer from '../shared/SimAnswer';
@@ -41,7 +41,8 @@ export default function TokenEditor() {
   const config = token?.config;
   const stationSkill = stationSkillOf(expandBearer(token, effects));
   const isPooled = !!stationSkill;
-  const pooledRecipes = isPooled ? (recipePools[stationSkill] || []) : [];
+  const stationKind = stationKindOf(expandBearer(token, effects));
+  const pooledRecipes = isPooled ? (recipePools[stationSkill] || []).filter((r) => stationKindOffers(stationKind, r)) : [];
   const skillName = (id) => SKILLS.find((s) => s.id === id)?.name || id;
   const isUnlimited = token?.uses == null;
   const spritePath = token?.sprite ? resolveSpritePath(token.sprite) : null;
@@ -527,7 +528,7 @@ export default function TokenEditor() {
               type="checkbox"
               checked={isPooled}
               disabled={!config.skill}
-              onChange={(e) => setTokenPooling(activeId, e.target.checked ? config.skill : null)}
+              onChange={(e) => setTokenPooling(activeId, e.target.checked ? config.skill : null, stationKind)}
               className="rounded border-white/10 text-emerald-500 cursor-pointer mt-0.5"
             />
             <span className="text-xs text-gray-300">
@@ -542,9 +543,25 @@ export default function TokenEditor() {
 
           {isPooled ? (
             <div className="space-y-2">
+              {/* The kind narrows the pool to the recipes that name it (and those naming no station). It is written on the same Works as rule. */}
+              <label className="flex items-center gap-2 text-xs text-gray-300" data-testid="station-kind">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Station kind</span>
+                <select
+                  aria-label="Station kind"
+                  value={stationKind || ''}
+                  onChange={(e) => setTokenPooling(activeId, stationSkill, e.target.value || null)}
+                  style={{ fontSize: 12 }}
+                >
+                  <option value="">Any station (every {skillName(stationSkill)} recipe)</option>
+                  {stationKind && !STATION_KINDS.includes(stationKind) && <option value={stationKind}>{stationKind} (unknown)</option>}
+                  {STATION_KINDS.map((k) => <option key={k} value={k}>{stationKindLabel(k)}</option>)}
+                </select>
+              </label>
               <p className="text-[11px] text-gray-400 leading-relaxed">
-                This station can run anything in the {skillName(stationSkill)} pool. The
-                player picks which one; its neighbours decide whether the pick can run
+                {stationKind
+                  ? <>This station runs the {skillName(stationSkill)} recipes marked {stationKindLabel(stationKind)}, and those marked for no station.</>
+                  : <>This station can run anything in the {skillName(stationSkill)} pool.</>}{' '}
+                The player picks which one; its neighbours decide whether the pick can run
                 right now. A station has no recipes of its own.
               </p>
               {pooledRecipes.length === 0 ? (
@@ -560,6 +577,9 @@ export default function TokenEditor() {
                       style={{ background: 'rgba(255,255,255,0.03)' }}
                     >
                       <span className="flex-1 truncate text-gray-300">{r.name}</span>
+                      {recipeStationKinds(r).length > 0 && (
+                        <span className="text-[10px] text-gray-500">{recipeStationKinds(r).map(stationKindLabel).join(', ')}</span>
+                      )}
                       <span className="text-[10px] text-gray-600">
                         {(r.requiresContext || []).map((c) => c.tag).join(' + ') || 'no context'}
                       </span>

@@ -2,6 +2,7 @@ import { KEYWORD, statementsOf, makeStatement } from './statements.js';
 import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
 import { EFFECT_ID_PREFIX } from './effectLibrary.js';
 import { ROLE } from '../../config/registries/roleRegistry.js';
+import { stationKindLabel } from '../../config/registries/tokenConstants.js';
 
 /**
  * Moves every inline statement into a named library entry. A shared module because it must run over two copies of the same content:
@@ -55,7 +56,9 @@ export function provisionalName(statement, nameOf = titleCase) {
         case KEYWORD.REQUIRES:
             return `Needs ${titleCase(payload.tag) || 'a Capability'}`;
         case KEYWORD.STATION:
-            return `${titleCase(payload.skill) || 'Station'} Station`;
+            return payload.stationKind
+                ? `${stationKindLabel(payload.stationKind)} Station`
+                : `${titleCase(payload.skill) || 'Station'} Station`;
         case KEYWORD.PROMOTES:
             return payload.jobId ? `${titleCase(payload.jobId)} Training` : 'Promotion';
         case KEYWORD.PROVIDES: {

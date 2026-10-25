@@ -13,15 +13,15 @@ import { roundHalfUp } from '../../config/FormulaRegistry.js';
 /**
  * ConsumptionSystem — heroes feed themselves from their own loadout grid.
  *
- * Below the HP threshold a hero eats from the food slot. Out of a fight they then drink too, if
- * still low; in a fight only food heals, and an equipped drink is left alone (`tryEat`).
+ * Below the HP threshold a hero eats from the food slot. Drinks never heal, in a fight or out:
+ * an equipped drink is left alone (`tryEat`); drinks are work buffs.
  * Elixirs are drunk as a fight starts and last `ELIXIR_FIGHTS` fights (`startFightElixirs`).
  *
  * Consuming draws one unit from the Guild Bank; an equipped item with no stock
  * is skipped and the hero goes without. Eating has no cooldown or per-fight limit.
  */
 
-/** Fraction of max HP below which a hero reaches for food and drink. */
+/** Fraction of max HP below which a hero reaches for food. */
 export { CONSUME_THRESHOLD };
 
 /** True when a vital has dropped below the threshold. */
@@ -77,22 +77,17 @@ export function needsFood(heroId) {
 }
 
 /**
- * Eat if HP is low: one unit from the food slot, then, out of a fight and only if HP is still
- * below the threshold, one from the drink slot. In a fight drinks do not heal: the drink stays
- * equipped and unspent. The combat cost (the swing) is charged by the caller.
+ * Eat if HP is low: one unit from the food slot. Drinks do not heal, in a fight or out: the drink
+ * stays equipped and unspent, and its restore amount is ignored. The combat cost (the swing) is
+ * charged by the caller; `inFight` applies Food Healing (Burn) to the meal.
  * @param {{inFight?: boolean}} [options]
- * @returns {Array<{itemId: string, amount: number}>} what was consumed, in order; empty if nothing.
+ * @returns {Array<{itemId: string, amount: number}>} what was eaten; empty if nothing.
  */
 export function tryEat(heroId, { inFight = false } = {}) {
     const hero = HeroManager.getHero(heroId);
     if (!hero || !isLow(hero.hp)) return [];
-    const consumed = [];
-    for (const categoryId of inFight ? ['food'] : ['food', 'drink']) {
-        if (!isLow(hero.hp)) break;
-        const meal = consumeEquipped(hero, categoryId, { inFight });
-        if (meal) consumed.push(meal);
-    }
-    return consumed;
+    const meal = consumeEquipped(hero, 'food', { inFight });
+    return meal ? [meal] : [];
 }
 
 /**
