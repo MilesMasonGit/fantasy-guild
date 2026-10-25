@@ -11,6 +11,7 @@ import {
   getPaletteEntry,
   effectRefsOf, expandBearer, rulesLinesOf,
   scaleStatement, effectTitle, MAX_SCALE,
+  isSpentCategory, isAlwaysOn, ALWAYS_ON_IDLE_WHY,
 } from '../../utils/constants';
 import { Field } from '../shared/EditorLayout';
 import RulesLine, { RulesPanel } from './RulesLine';
@@ -411,6 +412,12 @@ export default function Statements({ token, item }) {
                 </p>
               );
             })()}
+            {/* A food, drink or potion acts only through a moment and its dose: an always-on rule on one would be a free buff for as long as the Bank held one, so the game ignores it. Say so. */}
+            {!token && isSpentCategory(item?.equipSlot) && (entry.statements || []).some(isAlwaysOn) && (
+              <p data-always-on-warning className="px-3 pt-2 text-[10px] leading-relaxed" style={{ color: 'var(--color-warning)' }}>
+                {ALWAYS_ON_IDLE_WHY}
+              </p>
+            )}
             {editable ? (
               <div className="px-3 py-2 space-y-2" data-editable-effect={effectId}>
                 {scale > 1 && (

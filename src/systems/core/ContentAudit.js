@@ -26,6 +26,7 @@ import { isWorkedWithoutSkill, WORK_SKILL_WHY } from './workSkillRule.js';
 import { auditLifecycleBlocks } from './lifecycleAudit.js';
 import { findUnknownRefs } from './unknownRefRule.js';
 import { toolFindings } from './toolRule.js';
+import { isSpentCategory, isAlwaysOn, ALWAYS_ON_IDLE_WHY } from './consumableRule.js';
 import { SKILLS } from '../../config/registries/skillRegistry.js';
 import { listRecipes } from '../../config/registries/recipePoolRegistry.js';
 
@@ -109,6 +110,15 @@ function auditItemEffects(out) {
                 `names the effect "${effectId}" more than once. A hero's loadout merges duplicates ` +
                 `(their scales add, capped at 5), so the second reference adds nothing — remove it ` +
                 `and raise the scale instead.`));
+        }
+
+        if (isSpentCategory(def?.equipSlot)) {
+            const idle = effectRefsOf(def)
+                .filter(({ effectId }) => statementsOf(getEffect(effectId)).some(isAlwaysOn))
+                .map(({ effectId }) => effectId);
+            if (idle.length) {
+                out.push(finding(where, `carries an always-on rule (from ${idle.join(', ')}). ${ALWAYS_ON_IDLE_WHY}`));
+            }
         }
     }
 }

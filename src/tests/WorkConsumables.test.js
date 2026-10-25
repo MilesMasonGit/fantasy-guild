@@ -27,6 +27,7 @@ import * as ConsumptionSystem from '../systems/hero/ConsumptionSystem.js';
 import { DRINK_CYCLES, ELIXIR_FIGHTS } from '../config/loopConstants.js';
 import { renderStatement } from '../systems/effects/statementText.js';
 import { usedBubbleText } from '../ui/components/board/fx/matFx.js';
+import { auditContent } from '../systems/core/ContentAudit.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -341,6 +342,14 @@ describe('⭐ nothing acts by sitting in the Bank', () => {
         hero.equipment[0] = 's6b_might_charm';
         InventoryManager.addItem('s6b_might_charm', 1);
         expect(HeroEffects.loadoutCombatContributions(hero)).toEqual([{ type: 'DAMAGE', value: 1 }]);
+    });
+
+    it('the content check names a food, drink or potion carrying an always-on rule, and not gear', () => {
+        const findings = auditContent();
+        expect(findings.find(f => f.where === 'Item "s6b_haste_potion"')?.what).toMatch(/always-on rule .*does nothing/);
+        expect(findings.find(f => f.where === 'Item "s6b_haste_snack"')).toBeTruthy();
+        expect(findings.find(f => f.where === 'Item "s6b_haste_charm"')).toBeUndefined();
+        expect(findings.find(f => f.where === 'Item "s6b_coffee"')).toBeUndefined();
     });
 
     it('where gear and a potion share an effect, the always-on rule counts from the gear alone', () => {
