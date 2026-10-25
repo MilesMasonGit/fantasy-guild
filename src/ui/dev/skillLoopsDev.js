@@ -1,4 +1,4 @@
-// the QA panel's skill loops check (brief 230 S1a): Grow Time, the 80 % floor, a fixed vein, stations and supports that never wear
+// the QA panel's skill loops check (brief 230 S1a, S1b): Grow Time, the 80 % floor, a fixed vein, stations and supports that never wear; a miner waiting for a resting vein, a furnace out of coal
 // ⚠️ DEV BUILDS ONLY: reached from `SkillLoopsDevSection`, which TestDashboard renders behind `import.meta.env.DEV`.
 
 import { EventBus } from '../../systems/core/EventBus.js';
@@ -9,6 +9,10 @@ import * as TileModifiers from '../../systems/board/TileModifiers.js';
 import * as TimedChanges from '../../systems/board/TimedChanges.js';
 import * as FixedTokens from '../../systems/board/FixedTokens.js';
 import * as Charges from '../../systems/board/Charges.js';
+import * as Respawn from '../../systems/board/Respawn.js';
+import * as BoardRunner from '../../systems/board/BoardRunner.js';
+import { InventoryManager } from '../../systems/inventory/InventoryManager.js';
+import { flagStatusLine } from '../components/board/flagText.js';
 import * as HeroManager from '../../systems/hero/HeroManager.js';
 import { GuildUpgradeManager } from '../../systems/progression/GuildUpgradeManager.js';
 import { generateHero } from '../../systems/hero/HeroGenerator.js';
@@ -146,5 +150,128 @@ export function skillLoopsReadout() {
         const authored = getTokenType(t.typeId)?.uses;
         lines.push(`${tokenName(t.typeId)}: ${Charges.isUnlimited(t) ? 'unlimited' : `${t.usesRemaining} charges`} (${authored ?? 'no'} authored, ignored)`);
     }
+    return lines;
+}
+
+/**
+ * Waiting test Tokens (brief 230 S1b), made in memory like the ones above:
+ * - a QA Copper Vein: 2 charges, 2 s a cycle, then it rests 20 s and refills;
+ * - a QA Coal Vein: the same, resting 60 s;
+ * - a QA Furnace: one Coal in, one Copper Ingot out, 4 s a cycle.
+ * None needs a tool.
+ */
+export const QA_WAIT_TYPES = Object.freeze({
+    VEIN: 'qa_s1b_copper_vein',
+    COAL: 'qa_s1b_coal_vein',
+    FURNACE: 'qa_s1b_furnace'
+});
+const COAL = 'item_coal';
+
+function registerWaitTypes() {
+    const vein = (id, name, sprite, itemId, afterMs) => ({
+        id, name, tokenType: 'resource', rarity: 'common', theme: 'qa', uses: 2, sprite,
+        requiresHero: true, staysPut: true, respawn: { mode: 'refill', afterMs },
+        config: {
+            skill: 'mining', skillRequired: 1, cycleTimeMs: 2000, xp: 1, inputs: [],
+            outputs: [{ itemId, chance: 100, minQty: 1, maxQty: 1 }]
+        }
+    });
+    registerTokenTypes({
+        [QA_WAIT_TYPES.VEIN]: vein(QA_WAIT_TYPES.VEIN, 'QA Copper Vein', 't_ore_vein_copper', 'item_copper_ore', 20000),
+        [QA_WAIT_TYPES.COAL]: vein(QA_WAIT_TYPES.COAL, 'QA Coal Vein', 't_ore_vein_coal', COAL, 60000),
+        [QA_WAIT_TYPES.FURNACE]: {
+            id: QA_WAIT_TYPES.FURNACE, name: 'QA Furnace', tokenType: 'station', rarity: 'common', theme: 'qa',
+            uses: null, sprite: 't_smelter', requiresHero: true,
+            config: {
+                skill: 'smithing', skillRequired: 1, cycleTimeMs: 4000, xp: 1,
+                inputs: [{ itemId: COAL, quantity: 1 }],
+                outputs: [{ itemId: 'item_copper_ingot', chance: 100, minQty: 1, maxQty: 1 }]
+            }
+        }
+    });
+}
+
+/** A new hero holding only these skills at level 10, with room made in the roster. */
+function qaHero(name, skillIds) {
+    const ranks = GuildUpgradeManager.getRanks();
+    ranks.roster_size = Math.max(ranks.roster_size || 0, (HeroManager.getAllHeroes() || []).length + 1);
+    GuildUpgradeManager.recompute();
+    const hero = generateHero({ name });
+    hero.skills = Object.fromEntries(skillIds.map(id => [id, { ...(hero.skills?.[id] || {}), level: 10, xp: xpForLevel(10) }]));
+    return HeroManager.addHero(hero) ? hero : null;
+}
+
+/** Ids of what the waiting scene laid, for the readout. */
+let waitScene = null;
+
+/** Where the waiting scene stands: the mat's lower left, clear of the Starter Camp and the scene above. */
+const WAIT_SPOTS = Object.freeze({ vein: { x: 220, y: 950 }, furnace: { x: 620, y: 950 }, coal: { x: 790, y: 900 } });
+
+/**
+ * The mat's lower left, two heroes alone with their work:
+ * - a QA Miner whose only work is the QA Copper Vein: two cycles, then it rests 20 s. They wait by
+ *   their flag saying nothing, with no idle mark; the flag's hover and the Dock say "Waiting for
+ *   QA Copper Vein"; they go back to it the moment it refills;
+ * - a QA Smith at the QA Furnace with one Coal in the Bank (every other Coal is taken out): one
+ *   ingot, then the Furnace stops, says "Needs Coal" every few seconds, and the Smith stays.
+ * ⚠️ Changes the game, like Spawn Party: it empties the Bank's Coal.
+ * @returns {{ok: boolean, error?: string}}
+ */
+export function setUpWaitingScene() {
+    registerWaitTypes();
+    const vein = put(QA_WAIT_TYPES.VEIN, WAIT_SPOTS.vein);
+    const furnace = put(QA_WAIT_TYPES.FURNACE, WAIT_SPOTS.furnace);
+    if (!vein || !furnace) return { ok: false, error: 'No room at the mat’s lower left for the scene' };
+
+    const coal = InventoryManager.getItemCount(COAL);
+    if (coal > 0) InventoryManager.removeItem(COAL, coal);
+    InventoryManager.addItem(COAL, 1);
+
+    const miner = qaHero('QA Miner', ['mining']);
+    const smith = qaHero('QA Smith', ['mining', 'smithing']);
+    if (!miner || !smith) return { ok: false, error: 'The roster would not take two more heroes' };
+    Placement.plantFlagAt(miner.id, { x: vein.x, y: vein.y });
+    Placement.plantFlagAt(smith.id, { x: furnace.x, y: furnace.y });
+
+    waitScene = { vein: vein.id, furnace: furnace.id, miner: miner.id, smith: smith.id, coal: null };
+    EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'dev_skill_loops_waiting' });
+    return { ok: true };
+}
+
+/**
+ * A QA Coal Vein in the QA Smith's reach: they leave the stopped Furnace to mine it, and once it
+ * rests (two Coal) they go back and smelt.
+ * @returns {{ok: boolean, error?: string}}
+ */
+export function addCoalVein() {
+    if (!waitScene || !BoardState.getTokenById(waitScene.furnace)) return { ok: false, error: 'Lay out the waiting scene first' };
+    if (waitScene.coal && BoardState.getTokenById(waitScene.coal)) return { ok: false, error: 'The Coal Vein is already there' };
+    const vein = put(QA_WAIT_TYPES.COAL, WAIT_SPOTS.coal);
+    if (!vein) return { ok: false, error: 'No room beside the QA Furnace' };
+    waitScene.coal = vein.id;
+    return { ok: true };
+}
+
+/**
+ * What the waiting scene shows, read from the engine and the flag's own words.
+ * @returns {string[]}
+ */
+export function waitingReadout() {
+    if (!waitScene) return [];
+    const lines = [];
+    const heroLine = (heroId, label) => {
+        if (!HeroManager.getHero(heroId)) return;
+        lines.push(`${label}: ${flagStatusLine(heroId)}${BoardRunner.isHeroIdle(heroId) ? ' (counts as idle)' : ' (not idle)'}`);
+    };
+    const vein = BoardState.getTokenById(waitScene.vein);
+    if (vein) {
+        const resting = Respawn.isResting(vein);
+        const left = resting ? Respawn.restMsOf(vein) - (Number(vein.clocks?.[Respawn.CLOCK]) || 0) : 0;
+        lines.push(`QA Copper Vein: ${resting ? `resting, back in ${secs(Math.max(0, left))}` : `${vein.usesRemaining} charges`}`);
+    }
+    heroLine(waitScene.miner, 'QA Miner');
+    const furnace = BoardState.getTokenById(waitScene.furnace);
+    if (furnace) lines.push(`QA Furnace: ${furnace.alert === 'inputs' ? 'stopped, needs Coal' : 'running'}; Coal in the Bank: ${InventoryManager.getItemCount(COAL)}`);
+    heroLine(waitScene.smith, 'QA Smith');
     return lines;
 }

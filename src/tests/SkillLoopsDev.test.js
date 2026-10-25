@@ -6,7 +6,8 @@ import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { setUpSkillLoopsScene, skillLoopsReadout, QA_TYPES } from '../ui/dev/skillLoopsDev.js';
+import { setUpSkillLoopsScene, skillLoopsReadout, QA_TYPES, setUpWaitingScene, addCoalVein, waitingReadout, QA_WAIT_TYPES } from '../ui/dev/skillLoopsDev.js';
+import * as Flags from '../systems/board/Flags.js';
 import { clearMat } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -23,7 +24,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
  */
 
 // As the game boots: a placement rebuilds the buffs around it through the runner's subscription.
-beforeAll(() => BoardRunner.init());
+beforeAll(() => { BoardRunner.init(); Flags.init(); });
 
 beforeEach(() => {
     GameState.initNew();
@@ -51,5 +52,30 @@ describe('the skill loops scene', () => {
 
         const vein = BoardState.tokens().find(t => t.typeId === QA_TYPES.VEIN);
         expect(Placement.moveTokenTo(vein.id, { x: vein.x + 300, y: vein.y }).success).toBe(false);
+    });
+});
+
+describe('the waiting scene (brief 230 S1b)', () => {
+    const run = (ms) => { for (let t = 0; t < ms; t += 100) BoardRunner.tick(100); };
+
+    it('a miner waits silently for the resting vein; the furnace stops for Coal; a Coal Vein sends the smith mining', () => {
+        GameState.state.heroes = [];
+        expect(setUpWaitingScene()).toEqual({ ok: true });
+        const count = (typeId) => BoardState.tokens().filter(t => t.typeId === typeId).length;
+        expect(count(QA_WAIT_TYPES.VEIN)).toBe(1);
+        expect(count(QA_WAIT_TYPES.FURNACE)).toBe(1);
+        expect(InventoryManager.getItemCount('item_coal')).toBe(1);
+
+        run(12000);
+        const lines = waitingReadout();
+        expect(lines[0]).toMatch(/QA Copper Vein: resting, back in/);
+        expect(lines[1]).toBe('QA Miner: Waiting for QA Copper Vein (not idle)');
+        expect(lines[2]).toBe('QA Furnace: stopped, needs Coal; Coal in the Bank: 0');
+        expect(lines[3]).toBe('QA Smith: Working: QA Furnace (counts as idle)');
+
+        expect(addCoalVein()).toEqual({ ok: true });
+        run(1500);
+        const smith = GameState.state.heroes.find(h => h.name === 'QA Smith');
+        expect(BoardState.getTokenById(Flags.statusOf(smith.id).instanceId)?.typeId).toBe(QA_WAIT_TYPES.COAL);
     });
 });
