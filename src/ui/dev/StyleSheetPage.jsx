@@ -39,6 +39,7 @@ import { bannerText } from '../../systems/notifications/bannerKinds.js';
 import { BookTab } from '../components/atlas/AtlasTome.jsx';
 import { MapSprite, MapOutline, MAP_PX, SLOT_PX } from '../components/atlas/MapPieces.jsx';
 import { WorkPlateDemo } from './WorkPlateDemo.jsx';
+import { CombatMockups } from './CombatMockups.jsx';
 import { KitButton, KIT_BUTTON_TONE, PixelToggle } from '../components/base/KitButton.jsx';
 
 /** One art pixel of the UI, in screen pixels: UI sprites draw at 2×. */
@@ -767,6 +768,12 @@ export const KIT_SECTIONS = [
         source: 'WorkPlateView, drawn on the mat by WorkPlateLayer (one per hero at work)',
         rule: 'While a hero works a Token, one chamfer-framed plate on the seam between them, just below their feet, over any loot lying there. At rest: what is being made, with the cycle filling along the plate’s foot in whole art pixels, and the charges left; while the Token waits, exactly what it waits for as a red have/need pill, the frame gold (red when it can’t go on) and the cycle held grey. Resting the pointer on the hero, the Token or the plate opens the full line: skill, output, charges, time to the next one, each with its tooltip; the names drop below it. Pressing it grabs the Token. A Token nobody works keeps its own “!” and hover rings. A fight has no plate yet: its place is kept for the fight’s link. Drawn here at the mat’s 1920 × 1080 size; hover any part.',
         Demo: WorkPlateDemo
+    },
+    {
+        id: 'combat-screen', title: 'Combat screen (mock-ups A, B, C)', status: 'unapproved',
+        source: 'CombatMockups (pictures only, nothing in the game uses them; brief 220, C6)',
+        rule: 'Three options for the fight on the mat and its panel, for the owner to pick from: HP bars with the number and the percentage, a floating number for every hit both ways, a fight icon above each fight that opens the panel over the playmat, the enemy card on hover, and the bubble row while fighting. The same fixture fight in each: Aela (Melee 20) with Valor and Ironskin, poisoned ×2, against a Goblin Warlord (a Brute, Venomous) at 0:12. Placeholder icons are drawn in code.',
+        Demo: CombatMockups
     }
 ];
 
