@@ -201,6 +201,7 @@
    Small `z-10`-style values that only order siblings inside one component stay local. */
 :root {
   --z-token-popup: 80;        /* a Token's card (TokenInspectPopup) */
+  --z-mat-flights: 85;        /* loot flying off the mat: under the drawers (ParticleOverlay layer="mat") */
   --z-drawer: 90;             /* the Bank and Shop drawers */
   --z-mat-tip: 90;            /* the mat's hover pop-ups: flags, the cap and upkeep badges */
   --z-hero-panel: 100;        /* the hero panel and its tabs */
@@ -211,7 +212,7 @@
   --z-catch-up: 350;          /* the while-you-were-away summary */
   --z-screen-callouts: 9999;  /* callouts pinned to the screen */
   --z-dev-tools: 9999;        /* the QA panel, tuners, FPS counter */
-  --z-particles: 10000;       /* flying items */
+  --z-pointer-flight: 10000;  /* a hero lifted from the dock, flying to the pointer */
   --z-style-sheet: 10000;     /* the style sheet page */
   --z-dev-modal: 99999;       /* dev windows: Animation Studio, Spawn Item */
   --z-tooltip: 100000;        /* the shared Tooltip: over everything */
