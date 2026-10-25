@@ -117,7 +117,7 @@ function qaFisher(name, items) {
 }
 
 /**
- * Above the Guild Hall, three waters in a row, each with its fisher:
+ * Below the Guild Hall, three waters in a row, each with its fisher:
  * - left, the QA Lake with a QA Dock beside it (10 s becomes 7 s): QA Angler, a Fishing Rod and
  *   QA Worms (5 in the Bank). The worm pool (mostly Salmon) until the worms run out, then the
  *   lake's basic pool (mostly Trout);
@@ -135,11 +135,13 @@ export function setUpFishingScene() {
     const hall = BoardState.tokens().find(t => t.typeId === 'token_guild_hall' || getTokenType(t.typeId)?.isGuildHall);
     const c = hall ? { x: hall.x, y: hall.y } : { x: 880, y: 560 };
 
-    const lake = put(QA_FISHING.LAKE, { x: c.x - 360, y: c.y - 330 });
+    const lake = put(QA_FISHING.LAKE, { x: c.x - 480, y: c.y + 290 });
     const dock = lake ? put(QA_FISHING.DOCK, { x: lake.x - 150, y: lake.y }) : null;
-    const river = put(QA_FISHING.RIVER, { x: c.x, y: c.y - 330 });
-    const sea = put(QA_FISHING.SEA, { x: c.x + 360, y: c.y - 330 });
-    if (!lake || !dock || !river || !sea) return { ok: false, error: 'No room above the Guild Hall for the scene' };
+    const river = put(QA_FISHING.RIVER, { x: c.x - 120, y: c.y + 290 });
+    const sea = put(QA_FISHING.SEA, { x: c.x + 240, y: c.y + 290 });
+    if (!lake || !dock || !river || !sea) return { ok: false, error: 'No room below the Guild Hall for the scene' };
+    // The Dock must stand within reach of the lake (164 u): a nudge could carry it out.
+    if (Math.hypot(dock.x - lake.x, dock.y - lake.y) > 160) return { ok: false, error: 'The QA Dock landed out of the lake’s reach' };
     TileModifiers.rebuildAll();
 
     InventoryManager.addItem(QA_FISHING.WORM, 5);
@@ -194,7 +196,9 @@ export function fishingReadout() {
             : 'nothing it can fish with';
         const rules = TileModifiers.resolveAxis(id, EFFECT_TYPES.WORK_TIME, BASE_MS, 'fishing');
         const cycle = Math.max(1000, TileModifiers.floorSpeedUp(BASE_MS, rules));
-        const sped = cycle < BASE_MS ? ` (${secs(BASE_MS)} authored, the floor is ${Math.round(MAX_SPEED_UP_CUT * 100)} % off)` : '';
+        const sped = cycle < BASE_MS
+            ? ` (${secs(BASE_MS)} authored, sped by the Dock; never under ${secs(BASE_MS - BASE_MS * MAX_SPEED_UP_CUT)})`
+            : '';
         lines.push(`${name}: ${heroName}, ${how}; a catch every ${secs(cycle)}${sped}; never runs out`);
         const last = (scene.caught[id] || []).map(i => (i ? itemName(i) : 'nothing'));
         if (last.length) lines.push(`  last catches: ${last.join(', ')}`);

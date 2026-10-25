@@ -27,7 +27,7 @@ export function FishingDevSection() {
                 onClick={() => {
                     const r = setUpFishingScene();
                     setStatus(r.ok
-                        ? 'Above the Hall: a Lake with a Dock (rod and worms, then plain once the worms run out), a River (rod, no bait) and a Sea (a net). Click a water for its catches'
+                        ? 'Below the Hall: a Lake with a Dock (rod and worms, then plain once the worms run out), a River (rod, no bait) and a Sea (a net). Click a water for its catches'
                         : r.error);
                 }}
             >

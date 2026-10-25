@@ -45,7 +45,7 @@ describe('the fishing scene', () => {
             expect(BoardState.tokens().some(t => t.typeId === typeId), typeId).toBe(true);
         }
         const lines = fishingReadout();
-        expect(lines[0]).toMatch(/^QA Lake: QA Angler, Fishing Rod and QA Worm \(5 left\); a catch every 7\.0 s \(10\.0 s authored/);
+        expect(lines[0]).toMatch(/^QA Lake: QA Angler, Fishing Rod and QA Worm \(5 left\); a catch every 7\.0 s \(10\.0 s authored, sped by the Dock; never under 2\.0 s\)/);
         expect(lines[1]).toMatch(/^QA River: QA Plain Angler, Fishing Rod, no bait: the basic pool; a catch every 10\.0 s; never runs out/);
         expect(lines[2]).toMatch(/^QA Sea: QA Netter, Fishing Net, no bait: the basic pool; a catch every 10\.0 s/);
 
