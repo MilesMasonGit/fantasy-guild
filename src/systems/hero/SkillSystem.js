@@ -65,6 +65,21 @@ export function getXpMultiplier(heroId, skillId) {
          * hero.aggregator.getPercentageBucket(EFFECT_TYPES.XP_BONUS, targetSkillId);
 }
 
+// Below this a bonus is float noise from summed percentages (+10% and -10%), not a real bonus.
+const XP_BONUS_EPSILON = 1e-9;
+
+/**
+ * The XP floor: a positive XP bonus always adds at least 1 XP, so +10% on a 1 XP award is 2, not
+ * a rounded-away 1. A negative or absent bonus is plain rounding.
+ * @param {number} base XP before any bonus
+ * @param {number} bonused XP after the bonus, unrounded
+ * @returns {number} whole XP
+ */
+export function applyXpBonus(base, bonused) {
+    if (bonused - base > XP_BONUS_EPSILON) return base + Math.max(1, Math.round(bonused - base));
+    return Math.round(bonused);
+}
+
 /**
  * Get a hero's effective skill level (base + modifiers)
  * @param {string} heroId 
@@ -108,9 +123,8 @@ export function addXP(heroId, skillId, amount) {
     }
 
     // The hero's own XP bonuses land here, and ONLY here, so +10% Cooking XP is
-    // worth the same however the XP was earned. Never rounded to 0: a bonus must
-    // not turn a 1 XP award into 0.
-    const scaled = Math.round(amount * getXpMultiplier(heroId, targetSkillId));
+    // worth the same however the XP was earned.
+    const scaled = applyXpBonus(amount, amount * getXpMultiplier(heroId, targetSkillId));
     const granted = amount > 0 ? Math.max(1, scaled) : scaled;
 
     const oldLevel = skill.level;
