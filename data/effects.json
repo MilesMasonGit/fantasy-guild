@@ -466,5 +466,298 @@
     ],
     "autoSyncId": true,
     "id": "effect_capability"
+  },
+  "effect_poison": {
+    "name": "Poison",
+    "statements": [
+      {
+        "id": "stm_c0_poison_tick",
+        "keyword": "deals",
+        "payload": {
+          "amount": 1,
+          "ignoresArmor": true
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": null,
+        "target": {
+          "role": "self"
+        },
+        "when": {
+          "event": "EFFECT_TICK",
+          "scope": "self"
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "status": {
+      "stacks": 3,
+      "ticks": 0
+    },
+    "id": "effect_poison"
+  },
+  "effect_burn": {
+    "name": "Burn",
+    "statements": [
+      {
+        "id": "stm_c0_burn_tick",
+        "keyword": "deals",
+        "payload": {
+          "amount": 1,
+          "ignoresArmor": true
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": null,
+        "target": {
+          "role": "self"
+        },
+        "when": {
+          "event": "EFFECT_TICK",
+          "scope": "self"
+        },
+        "upkeep": null
+      },
+      {
+        "id": "stm_c0_burn_food",
+        "keyword": "provides",
+        "payload": {
+          "type": "FOOD_HEALING",
+          "bucket": "percentage",
+          "value": -0.5
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "status": {
+      "stacks": 1,
+      "ticks": 3
+    },
+    "id": "effect_burn"
+  },
+  "effect_dagger": {
+    "name": "Dagger",
+    "statements": [
+      {
+        "id": "stm_c0_dagger_crit",
+        "keyword": "provides",
+        "payload": {
+          "type": "CRIT_CHANCE",
+          "bucket": "flat",
+          "value": 5
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_dagger"
+  },
+  "effect_bow": {
+    "name": "Bow",
+    "statements": [
+      {
+        "id": "stm_c0_bow_accuracy",
+        "keyword": "provides",
+        "payload": {
+          "type": "ACCURACY",
+          "bucket": "flat",
+          "value": 5
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_bow"
+  },
+  "effect_cleaver": {
+    "name": "Cleaver",
+    "statements": [
+      {
+        "id": "stm_c0_cleaver_beef",
+        "keyword": "provides",
+        "payload": {
+          "type": "DOUBLE_DROP",
+          "bucket": "flat",
+          "value": 10,
+          "category": "item_raw_beef"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_cleaver"
+  },
+  "effect_leather_armour": {
+    "name": "Leather Armour",
+    "statements": [
+      {
+        "id": "stm_c0_leather_armor",
+        "keyword": "provides",
+        "payload": {
+          "type": "ARMOR",
+          "bucket": "flat",
+          "value": 1
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_leather_armour"
+  },
+  "effect_valor": {
+    "name": "Valor",
+    "statements": [
+      {
+        "id": "stm_c0_valor_damage",
+        "keyword": "provides",
+        "payload": {
+          "type": "DAMAGE",
+          "bucket": "flat",
+          "value": 1
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_valor"
+  },
+  "effect_ironskin": {
+    "name": "Ironskin",
+    "statements": [
+      {
+        "id": "stm_c0_ironskin_armor",
+        "keyword": "provides",
+        "payload": {
+          "type": "ARMOR",
+          "bucket": "flat",
+          "value": 1
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_ironskin"
+  },
+  "effect_elixir_of_valor": {
+    "name": "Elixir of Valor",
+    "statements": [
+      {
+        "id": "stm_c0_elixir_valor",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_valor",
+          "scale": 1,
+          "durationMs": 0,
+          "forFight": true,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": {
+          "role": "actor"
+        },
+        "when": {
+          "event": "COMBAT_ENGAGED",
+          "scope": "nearby"
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_elixir_of_valor"
+  },
+  "effect_elixir_of_ironskin": {
+    "name": "Elixir of Ironskin",
+    "statements": [
+      {
+        "id": "stm_c0_elixir_ironskin",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_ironskin",
+          "scale": 1,
+          "durationMs": 0,
+          "forFight": true,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": {
+          "role": "actor"
+        },
+        "when": {
+          "event": "COMBAT_ENGAGED",
+          "scope": "nearby"
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_elixir_of_ironskin"
   }
 }
