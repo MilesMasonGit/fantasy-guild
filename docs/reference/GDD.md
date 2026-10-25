@@ -372,9 +372,25 @@ has none yet), melee, magic and commerce have content today.
   takes that swing). **Drinks never heal**, in a fight or out (owner
   2026-10-24): an equipped drink is left alone, unspent, and a drink's restore
   amount is ignored (the item tooltip and the CMS no longer offer it). Out of a
-  fight, healing is food and regen only. Drinks become work buffs (brief 230
-  S6b, not built: until then an equipped drink does nothing). Heroes have no
-  energy (removed, T-098).
+  fight, healing is food and regen only. Drinks are work buffs (below). Heroes
+  have no energy (removed, T-098).
+- **Drinks** (brief 230 S6b): a drink whose rules wait on **On Work Start** is
+  drunk from the Bank as its hero starts a work cycle and **lasts 10 work
+  cycles** (one number for every drink, `DRINK_CYCLES`, a placeholder; a fight
+  is not a work cycle). Its rules fire from that dose ("On Work Start: applies
+  Coffee to the hero for the cycle", Coffee being work 50 % faster); a rule
+  naming a skill counts only that skill's cycles. A fresh one is drunk when the
+  dose runs out, and the dose keeps working after the Bank runs dry. The count
+  left is saved on the hero (`drinkCycles`); a drink with no work rule does
+  nothing. *(`ConsumptionSystem.startWorkDoses`, `LoadoutMoments.js`)*
+- **Work potions** (Alchemy, brief 230 S6b): a Consumable whose rules wait on
+  On Work Start is **spent only when a cycle of its own skill starts**, one
+  potion for that one cycle: the Birdwatcher ("On Forestry Work Start: applies
+  Birdwatcher to the hero for the cycle", Birdwatcher granting a Bird Nest a
+  quarter of the time as the cycle completes). The hero keeps it while doing
+  other work.
+- **Nothing acts by sitting in the Bank**: a food, drink or potion's always-on
+  rules do nothing (§7); it acts only through its moment and its dose.
 - **Food Healing** (a Rules row) moves what a meal heals in a fight: while
   **Burning** (−50 %) a Shrimp's 5 heals 3, rounded halves up.
 - **Elixirs** (the unlimited consumable slot): an elixir whose rules wait on
@@ -385,10 +401,11 @@ has none yet), melee, magic and commerce have content today.
   working for the rest of its 10 fights after the Bank runs dry. The count
   left is saved on the hero (`elixirFights`). A consumable with no fight rule
   is never drunk by a fight. *(`ConsumptionSystem.js`, `LoadoutMoments.js`)*
-- **The "used" bubble**: when a hero eats, drinks or drinks an elixir on the
-  mat, a small bubble over their head shows the item's icon and what it did
-  ("+5 ♥", or the elixir's name) for 1.5 s, one at a time per hero. Not drawn
-  during a catch-up. *(`matFx.js`)*
+- **The "used" bubble**: when a hero eats, or drinks an elixir, a drink or a
+  work potion on the mat, a small bubble over their head shows the item's icon
+  and what it did ("+5 ♥", or the item's name), tinted by the item's kind, for
+  1.5 s, one at a time per hero. A work potion shows it every cycle it is drunk
+  for. Not drawn during a catch-up. *(`matFx.js`)*
 - **Defeat** (0 HP): the hero's flag is furled, they limp home, lose 25 % of
   the whole Bank stack of each carried food and drink (elixirs exempt), a
   10 % chance per gear piece to lose that piece (the hero's own copy), and are
@@ -694,9 +711,10 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
 - **16 verbs**: provides, grants, acts_as, requires, restocks, converts,
   cannot, applies, deals, heals, restores, removes, spawns, transforms,
   station, promotes.
-- **15 moments** (On Cycle, On Neighbour's Cycle, On Depleted, On Neighbour's
-  Kill, On Engaged, On Tick, On Bank Holds…, and the three fight moments: On
-  Swing and On Hit, each "every Nth", and On Health Below X % once a fight),
+- **16 moments** (On Cycle, On Neighbour's Cycle, On Depleted, On Neighbour's
+  Kill, On Engaged, On Tick, On Bank Holds…, the three fight moments: On
+  Swing and On Hit, each "every Nth", and On Health Below X % once a fight,
+  and **On Work Start**, a carried item's own: below),
   **4 roles** (itself, the hero, that Token, the enemy), **5 filters**,
   **4 reaches**. On Tick fires every 3 s. A fight moment runs only Applies,
   Deals, Heals and Removes (the editor offers it to no other verb), spends no
@@ -741,8 +759,20 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   applies Valor to the hero for the fight", Valor being an effect that
   provides +1 Damage. An elixir's rules fire from its 10-fight dose, not per
   firing from the Bank. **For the swing** lasts until the swing being made is
-  over (a boss's heavy strike); a status ignores all three lifetimes, having
+  over (a boss's heavy strike); a status ignores every lifetime, having
   its own. Applies may aim at **the hero** as well as the enemy.
+- **On Work Start** (brief 230 S6b) fires as the hero carrying the item starts
+  a work cycle, on any Token or only one skill's ("On Forestry Work Start: …");
+  a Token never hears it, and it has no cooldown. **For the cycle** lasts until
+  that cycle (on that Token) completes; a cycle left part-way ends it at the
+  hero's next cycle start, and it never counts on another Token meanwhile. An
+  effect carried for a while also reaches the cycle's **bonus drops** with its
+  standing Grants (the Birdwatcher's Bird Nest), free. A carried rule with a
+  moment fires only on its moment, never again at a cycle's end.
+- **A food, drink or potion's always-on rules do nothing** (owner 2026-10-24):
+  only gear, weapons and tools act by being carried; a spent item acts only
+  through its moment and dose (§4). The CMS and the boot audit say so.
+  *(`consumableRule.js`)*
 - Authored only in the CMS (the Rules Line editor). Editing a library effect
   changes every Token that carries it.
 
@@ -1005,7 +1035,7 @@ crunch plan):
 | Promotion content | 4 Academies (Fighter, Wizard, Rogue, Ranger) on Wood or Stone Foundations, with skill & class rework v2 (crunch track). |
 | Promotion cost | Free. |
 | Kill loot | Neighbour bonuses apply to kills like work (T-017). |
-| Energy and drinks | Remove energy, separate slots (T-098); drinks never heal, in fights or out (owner 2026-10-24); they become work buffs (brief 230). |
+| Energy and drinks | Remove energy, separate slots (T-098); drinks never heal, in fights or out (owner 2026-10-24); they are work buffs lasting 10 work cycles, a placeholder (brief 230 S6b). |
 | Dormant Maps | Retire (T-002). |
 | Wishing Well | Passive, part of Passive Production (T-099). |
 | Silent by default | Development convenience; audible default before shipping (T-100). |
