@@ -38,6 +38,14 @@ C2; C0 (the test content pack, accepted by the director) after C2; C6 last.
 | T-251: slow scanning tests no longer time out under load | builder | `backlog/slow-scan-tests` | **merged** d35e661e (tests only): one cached read of src per test file, 30 s limit, EngineEventNames' alias search cached; under build load 0 timeouts. Merged gate on `main` ed622163: 6331 pass, 0 fail, build. CMSStudio's render test timeout: T-255 | Sun | Sun |
 | T-243: callouts and speech in the pixel family | builder | `backlog/speech-pixel` | **merged** 48796bb2 (owner ok by phone; rule in UI_STYLE cbe81171): one SpeechFrame, tones bronze/gold/red. Merged gate on `main` after the test fixes: **6081 pass, 0 fail**, cycles, build, same work | Sat | Sat |
 
+## Systems director, basic content (brief 240; owner 2026-10-25: start the engine gaps)
+
+| Phase | Tier | Branch (worktree) | State | Planned | Done |
+|---|---|---|---|---|---|
+| K0: engine gaps (packs carry the Starter Camp; the tutorial gives the flagged maps after a copper tool and a goblin; first-kill-guaranteed drops; the Bog biome; Hall prices by plane) | builder | `content/engine-gaps` (`ke`) | building | Sun | |
+| K1–K3: three content packs (owner reviews) | builder writes | — | queued after K0 and the owner's skill-loops Sync | | |
+| C6c: fight bars and numbers drawn above floor loot (owner 2026-10-25) | builder | `systems/fight-bars-over-loot` (`lb`) | building | Sun | |
+
 ## Systems director, skill loops (brief 230; owner 2026-10-24: next, beside the rest of combat)
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
