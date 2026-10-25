@@ -845,7 +845,8 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
 - **Modifiers** that neighbours (or a hero's items) provide: yield, work
   time, input cost, **grow time** (a growth or a refill's rest, from neighbours
   and Region rules only), **crop load** (the harvests a Field's crop ripens with:
-  a Composter, §3 Farming; read once as it ripens), XP bonus, double loot, **double item chance** (a chance
+  a Composter, §3 Farming; read once as it ripens), XP bonus (a positive bonus always adds at least 1 XP),
+  double loot, **double item chance** (a chance
   that one named item, when a cycle or a kill drops it, comes out doubled: the
   Cleaver's Raw Beef), **catch weight** (a percentage on one fish's weight in a
   water's catch pool: a better rod's bonus, §3 Fishing), fail chance (Tokens); armour, resist, accuracy,
