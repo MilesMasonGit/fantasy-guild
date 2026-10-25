@@ -84,6 +84,12 @@ Today the pull is skill levels, Guild Hall upgrades and promotions.
   *(`MatPlacement.js`)*
 - **A player drop never pushes anything.** Arrivals (spawns, growth, builds)
   may push **spawned** Tokens aside; **placed Tokens are never pushed**.
+- **Fixed Tokens** can't be dragged or pushed: a map's node, a Starter Camp
+  fixture, a landmark, a planted Token (spawned into a growth chain), and every
+  copy of a type marked **Stays where it stands** (`staysPut`, a box in the CMS
+  Token editor: trees, fruit trees and veins), wherever it came from, an old save
+  included. Demolition still takes any of them but a map's node, the camp's and
+  a landmark. *(`FixedTokens.js`)*
 - **Token cap: 128 Tokens** to start (owner, Atlas D-9: a Guild Hall upgrade
   will add 16 a rank, up to 256; not built yet). The cap is the guild's but
   counts only the Region the guild is in (§10): every Token there, placed or
@@ -114,11 +120,24 @@ Token.
 - **Charges** (`uses`): one is spent per cycle by default; at 0 the Token is
   removed, unless its type **respawns** (below). `null` = unlimited (Workbench,
   Furnace, Cooking Pot).
+- **Stations and supports never wear out** (owner 2026-10-24, brief 230 S1a): a
+  `Works as` station, and a support (a Token whose rules help its neighbours by
+  standing there: an `Acts as` capability, or a standing Provides or Grants that
+  reaches past itself), is unlimited whatever `uses` its type or a saved copy
+  holds. Grandma's Kitchen, the Ceramics Kiln, the Windmill, the Coast and the
+  Copper Anvil all became unlimited; a saved copy's old number is cleared as its
+  board loads. A **gathering node keeps its charges** even when it helps its
+  neighbours (they are what is gathered: the Blackberry Bush, the Shrimp Coast),
+  and still wears per neighbour's cycle it serves; an enemy keeps the kills that
+  clear it; a triggered rule's charge cost is an authored price and still applies.
+  The CMS hides Charges on a station or support and the audit flags authored ones.
+  *(`wearRule.js`, `Charges.isUnlimited`)*
 - **Origin**: *placed* (bought or built: fixed, refundable) or *spawned*
   (free, pushable, no refund). Both count toward the Token cap.
 - **Size**: 1 (art radius 64 u) or 2 (144 u); growing stages are half-size.
 - **Context Tokens** are support Tokens (an anvil) that stand near a worker;
-  some recipes spend their charges. **Gathering tools are hero gear**, not
+  a recipe may name a charge cost on them, but a context Token is a support and
+  never wears, so only a gathering node offering the tag pays it. **Gathering tools are hero gear**, not
   Tokens (T-126): pickaxes, woodaxes, fishing rods and sickles are items held in
   one hand (`tool: { kind, tier }`); a gathering Token names the kind and lowest
   tier it needs (`needsTool`), and only a hero holding one may work it. No tool:
@@ -149,6 +168,14 @@ with no room costs nothing. *(`SpawnerSystem.js`)*
 - **Turns**: Coast ⇄ Shrimp Coast, 30 % chance every 60 s.
 - A transform keeps the Token's origin, starts fresh clocks and loses any cycle
   in progress. *(`TimedChanges.js`)*
+- **Grow Time** (brief 230 S1a): a support in reach speeds a growth and a
+  refill's rest (`Provides Grow Time −X %`, aimed by tag or id, or narrowed to
+  the growing Token's skill: its own, or what it grows into). Speed-ups stack,
+  but together cut at most 80 % of the time (the standard floor, §7), and a rest
+  never goes under 1 s. A clock already counting keeps its time; only the finish
+  moves. Read once per Token when its neighbourhood, the Region's rules or the
+  content change, never per tick, so a day's catch-up does not pay it 86,400
+  times. No shipped Token provides it yet. *(`TileModifiers.growTimeOf`)*
 - **Respawn** (built; no shipped Token uses it yet): a Token type with a
   Respawns block in the CMS comes back after it runs out. *Refill*: it stays
   where it stands, **resting** (greyed, a countdown bubble), nobody can work it,
@@ -559,7 +586,8 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   Deals, Heals and Removes (the editor offers it to no other verb), spends no
   charge and has no cooldown.
 - **Modifiers** that neighbours (or a hero's items) provide: yield, work
-  time, input cost, XP bonus, double loot, **double item chance** (a chance
+  time, input cost, **grow time** (a growth or a refill's rest, from neighbours
+  and Region rules only), XP bonus, double loot, **double item chance** (a chance
   that one named item, when a cycle or a kill drops it, comes out doubled: the
   Cleaver's Raw Beef), fail chance (Tokens); armour, resist, accuracy,
   damage, **dodge, pierce, crit chance**, status immunity and **status stack
@@ -568,6 +596,12 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   (percentages, on a lingering effect: an enrage, Burn) (heroes, and enemies
   through effects on them). Most combat rows are flat amounts, and a new rule
   on one starts flat. Block is gone (a miss is the only failed hit).
+- **The standard floor for speed-ups** (owner 2026-10-24, brief 230 S1a): every
+  speed-up of a time (work time, grow time) stacks, but together they cut at most
+  **80 %** of the authored time, one code constant (`loopConstants.MAX_SPEED_UP_CUT`;
+  a CMS page for it is for a later ticket): five Minecarts at −20 % on a 10 s vein give 2 s,
+  not nothing. A work cycle is still never under 1 s. A slow-down is never capped.
+  *(`TileModifiers.floorSpeedUp`)*
 - **Statuses** are library effects with a status block (§6): stacks, ticks,
   and an end with their fight.
 - **Gear families**: a weapon or armour family's ability is one library
@@ -806,7 +840,7 @@ stub rows), not the Token count.
 | **Placed / spawned** | Bought or built by the player (fixed, refundable) vs made by the mat (free, pushable). |
 | **Cap** | The limit on Tokens on the mat, placed and spawned (128), counted in the active Region only. |
 | **Region** | One mat the guild has settled, kept in the Atlas; only the one the guild is in runs (§10). |
-| **Charges / uses** | A Token's wear; one per cycle; 0 removes it, unless it respawns; `null` is unlimited. |
+| **Charges / uses** | A Token's wear; one per cycle; 0 removes it, unless it respawns; `null` is unlimited; stations and supports never wear. |
 | **Resting / respawn** | A Token at 0 charges whose type respawns: unworkable until it refills, or becomes the Token it regrows from. |
 | **Cycle** | One unit of work on a Token (or one kill). |
 | **Near / reach** | 164 u centre to centre; how far a rule carries. |
