@@ -9,8 +9,10 @@ import * as PassiveProduction from './PassiveProduction.js';
 import * as Hand from './Hand.js';
 import * as Respawn from './Respawn.js';
 import * as Demolition from './Demolition.js';
+import * as Growth from './Growth.js';
 import { growTimeOf } from './TileModifiers.js';
 import { pickWeighted } from './weightedPick.js';
+import { ALERT } from './boardEvents.js';
 import { logger } from '../../utils/Logger.js';
 
 // Re-exported for existing callers and tests; it lives in a leaf module so SpawnerSystem can use it
@@ -20,7 +22,9 @@ export { pickWeighted };
 /**
  * Everything on the mat that happens on a clock rather than a hero's work.
  *
- * `grows: { into, afterMs }`: after `afterMs` the Token becomes `into` (a Sapling becomes a Tree).
+ * `grows: { into, afterMs, needsNearby?, cost? }`: after `afterMs` the Token becomes `into` (a
+ * Sapling becomes a Tree). A growth may need a Token in reach to run (its clock stands still
+ * without one) and pay a cost when it happens (stopped at its finish until it can): `Growth.js`.
  * `turns: { into: [{ typeId, weight }], everyMs, chance }`: a chance, not a timer. Once every
  * `everyMs` the Token rolls; with `chance` percent it becomes a weighted pick from `into`, which
  * carries `turnedFrom`. The turned Token rolls on the same cycle and chance, read from the
@@ -141,9 +145,12 @@ export function growMsOf(instance, def = getTokenType(instance?.typeId)) {
 
 /**
  * When a growing Token (a Sapling) next changes, for the mat's growth bubble and the inspection
- * lines: `{ inMs, totalMs, into }`, `totalMs` being the whole growth as sped up ({@link growMsOf}).
- * `inMs` is 0 while the change is held (in the hand, or nowhere to stand). Null for a Token that
- * does not grow, and for a turned one (it runs only its turn back).
+ * lines: `{ inMs, totalMs, into, paused, stopped, needsNearby, cost, short }`, `totalMs` being the
+ * whole growth as sped up ({@link growMsOf}). `inMs` is 0 while the change is held (in the hand,
+ * nowhere to stand, or stopped). `paused`: it needs one of `needsNearby` in reach and has none, so
+ * its clock stands still (`inMs` stays where it is). `stopped`: it fell due and the Bank cannot pay
+ * its `cost`; `short` names the items it lacks. Null for a Token that does not grow, and for a
+ * turned one (it runs only its turn back).
  */
 export function nextGrowth(instance) {
     if (!instance || instance.turnedFrom) return null;
@@ -151,7 +158,44 @@ export function nextGrowth(instance) {
     if (!def?.grows?.into || !(Number(def.grows.afterMs) >= 0)) return null;
     const clockMs = Number(instance.clocks?.growMs) || 0;
     const totalMs = growMsOf(instance, def);
-    return { inMs: Math.max(0, totalMs - clockMs), totalMs, into: def.grows.into };
+    const { needsNearby, cost } = Growth.growsTermsOf(def);
+    const paused = !Growth.gateMet(instance, def);
+    const alert = paused ? null : Growth.growthAlertOf(instance.id);
+    const stopped = alert?.alert === ALERT.GROW_NEEDS_ITEM;
+    return {
+        inMs: Math.max(0, totalMs - clockMs), totalMs, into: def.grows.into,
+        paused, stopped, needsNearby, cost, short: stopped ? alert.needs : []
+    };
+}
+
+/**
+ * A growth falls due: pay its cost and become the Token it grows into. Short of the cost it is
+ * stopped (null: held at its finish, tried again next tick) and says what it lacks; with nowhere to
+ * stand it is held the same way and pays nothing, the cost being taken only once the new Token has
+ * landed.
+ */
+function growInto(instance, def) {
+    const short = Growth.shortOf(def);
+    if (short.length) {
+        Growth.setGrowthAlert(instance.id, ALERT.GROW_NEEDS_ITEM, short);
+        return null;
+    }
+    const next = EffectActions.transformInstance(instance, def.grows.into, { fixPlaced: true });
+    if (Growth.anyGrowthAlert()) Growth.setGrowthAlert(instance.id, null);
+    if (next) Growth.payFor(def);
+    return next;
+}
+
+/**
+ * Whether a growth's clock stands still: it needs a Token in reach (a Stump, its Forest) and none
+ * is there. Raises the Token's "needs nearby" alert while so, and drops it once one is.
+ */
+function growthPaused(instance, def) {
+    if (Growth.growsTermsOf(def).needsNearby.length === 0) return false;
+    const paused = !Growth.gateMet(instance, def);
+    if (paused) Growth.setGrowthAlert(instance.id, ALERT.GROW_NEEDS_NEARBY, Growth.growsTermsOf(def).needsNearby);
+    else if (Growth.growthAlertOf(instance.id)?.alert === ALERT.GROW_NEEDS_NEARBY) Growth.setGrowthAlert(instance.id, null);
+    return paused;
 }
 
 /**
@@ -162,6 +206,8 @@ export function nextGrowth(instance) {
  *   it waits while the Token is in the player's hand ({@link setInHand});
  * * `idleWhile(instance, def)` — optional: while true the clock is held at zero
  *   (a full enemy camp);
+ * * `pausedWhile(instance, def)` — optional: while true the clock stands still
+ *   where it is and nothing falls due (a Stump with no Forest in reach);
  * * `once` — true when the clock is done once it acts (a refill), rather than
  *   starting another lap;
  * * `applies(instance, def)` — whether this Token runs it;
@@ -189,12 +235,14 @@ export const HANDLERS = [
             : instance)
     },
     {
+        // A growth (`Growth.js`): it may need a Token in reach to run and pay a cost to happen.
         id: 'grows',
         clock: 'growMs',
         replaces: true,
+        pausedWhile: growthPaused,
         applies: (instance, def) => !instance.turnedFrom && !!def?.grows?.into && Number(def.grows.afterMs) >= 0,
         dueMs: (instance, def) => growMsOf(instance, def),
-        fire: (instance, def) => EffectActions.transformInstance(instance, def.grows.into, { fixPlaced: true })
+        fire: growInto
     },
     {
         id: 'turns',
@@ -270,6 +318,9 @@ export function advance(instance, delta, random = Math.random) {
 
         const clocks = current.clocks && typeof current.clocks === 'object' ? current.clocks : (current.clocks = {});
         const advanced = new Set();
+        // The handler whose clock stands still this step (a Set in the unlikely case of two), kept
+        // without allocating in the usual case of none or one.
+        let paused = null;
         for (const h of active) {
             if (advanced.has(h.clock)) continue;
             advanced.add(h.clock);
@@ -279,6 +330,13 @@ export function advance(instance, delta, random = Math.random) {
                 clocks[h.clock] = 0;
                 continue;
             }
+            // A paused clock stands where it is, and nothing on it falls due.
+            if (h.pausedWhile?.(current, def)) {
+                if (paused === null) paused = h;
+                else if (paused instanceof Set) paused.add(h);
+                else paused = new Set([paused, h]);
+                continue;
+            }
             clocks[h.clock] = (Number(clocks[h.clock]) || 0) + remaining;
         }
         remaining = 0;
@@ -286,6 +344,7 @@ export function advance(instance, delta, random = Math.random) {
         // The change that fell due FIRST is the one with the most time past due.
         let due = null;
         for (const h of active) {
+            if (paused !== null && (paused === h || (paused instanceof Set && paused.has(h)))) continue;
             const at = h.dueMs(current, def);
             const over = clocks[h.clock] - at;
             if (over >= 0 && (!due || over > due.over)) due = { h, at, over };
@@ -335,13 +394,24 @@ export function tick(delta, random = Math.random) {
         if (!BoardState.getTokenById(instance.id)) continue;
         // ⚠️ A Token marked for demolition stands still, its clocks held where they are: a growth
         // or turn would put a new, unmarked instance in its place, and a spawner, refill or Passive
-        // Production would keep working a Token the player asked to be rid of.
-        if (Demolition.isMarked(instance)) continue;
+        // Production would keep working a Token the player asked to be rid of. What it was waiting
+        // for is no longer a problem, so its growth alert drops.
+        if (Demolition.isMarked(instance)) {
+            if (Growth.anyGrowthAlert()) Growth.setGrowthAlert(instance.id, null);
+            continue;
+        }
         // Passive Production first: it only grants items, and a Token that changes below starts its
         // new self with fresh clocks.
         PassiveProduction.advance(instance, delta);
         advance(instance, delta, random);
     }
-    // Spawners' on-mat alerts, once this tick's attempts are done.
+    // Spawners' on-mat alerts, once this tick's attempts are done; a growing Token's alert goes
+    // with it when it leaves the mat.
     SpawnerSystem.syncAlerts();
+    Growth.pruneGrowthAlerts();
+}
+
+/** The growth alerts belong to the board they were raised on. Idempotent. */
+export function init() {
+    Growth.init();
 }

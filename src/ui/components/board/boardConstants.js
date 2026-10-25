@@ -80,6 +80,8 @@ export const SKIP_HINT = {
     [ALERT.SPAWN_NO_ROOM]: 'no room to spawn',
     [ALERT.SPAWN_MAT_FULL]: 'Token cap full',
     [ALERT.RESTING]: 'resting, it comes back soon',
+    // A Stump or Sapling growing back into work the hero does (`Flags.SKIP.GROWING`).
+    growing: 'still growing',
     no_skill: 'names no skill',
     disallowed: 'heroes not allowed',
     claimed: 'being worked by {holder}',

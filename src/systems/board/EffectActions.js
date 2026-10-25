@@ -213,6 +213,15 @@ function spawnPoint(typeId, placement, from, random, bearerId) {
     return from ? { x: from.x, y: from.y, pushed: [] } : null;
 }
 
+/**
+ * The free legal spot nearest `from` no further than `within` from it, or null: a planting that
+ * stays inside its planter's reach. Nothing is pushed.
+ */
+function spotWithin(typeId, from, within) {
+    const spot = MatPlacement.findSpot(typeId, from, { reach: Math.max(0, within) });
+    return spot ? { x: spot.x, y: spot.y, pushed: [] } : null;
+}
+
 /** Outranks any squared distance on the mat, so a legal dart always wins. */
 const LEGAL_BONUS = 1e12;
 
@@ -274,9 +283,14 @@ function openness(point, ignoreId = null) {
  * the roomiest of up to `RANDOM_FREE_DARTS` random free spots, else a push. A push never breaks a
  * `Cannot` rule (`MatPlacement.forceSpot`).
  *
+ * `options.within`: land only within this distance of the bearer (centre to centre), at the free
+ * spot nearest it, never pushing; nowhere free that close and the spawn is skipped. A Forest that
+ * plants within its own reach (`SpawnerSystem`) passes its reach; the placement is then ignored.
+ *
+ * @param {{within?: number}} [options]
  * @returns {{instanceId: string, x: number, y: number, replacedBearer: boolean}|null}
  */
-export function spawn(statement, roles, random = Math.random) {
+export function spawn(statement, roles, random = Math.random, options = {}) {
     const typeId = statement?.payload?.typeId;
     if (!typeId || !getTokenType(typeId)) return null;
 
@@ -287,9 +301,12 @@ export function spawn(statement, roles, random = Math.random) {
     const from = centreOf(bearer) || roles?.selfPoint || null;
     if (!from) return null;
 
-    const placement = placementOf(statement.payload);
+    const within = Number(options?.within);
+    const placement = Number.isFinite(within) ? PLACEMENT.NEAREST_FREE : placementOf(statement.payload);
     const replacesBearer = placement === PLACEMENT.HERE;
-    const where = spawnPoint(typeId, placement, from, random, bearerId);
+    const where = Number.isFinite(within)
+        ? spotWithin(typeId, from, within)
+        : spawnPoint(typeId, placement, from, random, bearerId);
     if (!where) return null; // the mat is full, so the spawn is skipped
 
     if (replacesBearer) {

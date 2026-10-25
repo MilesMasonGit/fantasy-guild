@@ -13,6 +13,7 @@ import * as HeroMotion from './HeroMotion.js';
 import { centreOf, distanceSq } from './nearby.js';
 import * as WorkCheck from './WorkCheck.js';
 import * as Respawn from './Respawn.js';
+import * as Growth from './Growth.js';
 import * as Demolition from './Demolition.js';
 import { workConfigOf } from './StationRecipe.js';
 import * as BoardCombat from './BoardCombat.js';
@@ -112,7 +113,12 @@ export const SKIP = Object.freeze({
     /** A Promotion Token offering the job the hero already holds. */
     SAME_JOB: 'same_job',
     /** The hero's own rule for this skill (or Fight) is switched off. */
-    RULE_OFF: 'rule_off'
+    RULE_OFF: 'rule_off',
+    /**
+     * Growing back into work the hero could do (a Stump, a Sapling): nothing to claim yet, and
+     * waited for silently like a resting node.
+     */
+    GROWING: 'growing'
 });
 
 /**
@@ -451,7 +457,19 @@ function evaluate(heroId, flag, excludeInstanceId = null, belowRank = Infinity) 
         if (!instance?.typeId || instance.id === excludeInstanceId) continue;
         const def = getTokenType(instance.typeId);
         const kind = kindOf(instance, def);
-        if (!kind) continue;
+        if (!kind) {
+            // Nothing to work today, but growing into work (a Stump, a Sapling): a candidate the
+            // flag can only wait for. Its rule is the skill of what it grows into.
+            const toward = Growth.growsTowardWork(instance.typeId);
+            const centre = toward ? centreOf(instance) : null;
+            if (!centre || !flagReaches(flag, centre)) continue;
+            const ruleId = toward.config.skill;
+            inRange.push({
+                instance, def, kind: 'growing', toward, d: distanceSq(from, centre), ruleId,
+                rank: FlagRules.ruleOf(heroId, ruleId).priority
+            });
+            continue;
+        }
 
         if (UNDER_POINT.has(kind)) {
             if (instance === under) underPoint.push({ instance, def, kind, rank: 0 });
@@ -476,6 +494,17 @@ function evaluate(heroId, flag, excludeInstanceId = null, belowRank = Infinity) 
     for (const c of [...underPoint, ...inRange]) {
         if (c.rank >= belowRank) break;
         const instanceId = c.instance.id;
+        if (c.kind === 'growing') {
+            // Recorded only for a hero who could work what it becomes, and only while it is truly
+            // on its way (its Forest in reach, its seedling payable): then they wait for it.
+            // Anyone else passes it by unrecorded, as before it grew back.
+            if (!isDisallowed(c.instance) && ruleAllows(heroId, c.ruleId)
+                && !WorkCheck.heroReason(heroId, c.toward.config, { typeId: c.toward.id })
+                && Growth.isGrowingBack(c.instance, c.def)) {
+                skips.push({ instanceId, reason: SKIP.GROWING });
+            }
+            continue;
+        }
         if (isDisallowed(c.instance)) { skips.push({ instanceId, reason: SKIP.DISALLOWED }); continue; }
         if (c.kind === 'work' && !c.ruleId) { skips.push({ instanceId, reason: SKIP.NO_SKILL }); continue; }
         if (c.ruleId) {
@@ -1027,13 +1056,15 @@ function springAmbushes() {
  * flag; either takes the enemy the moment it is free.
  * - `'node'`: a Token resting until it respawns (`resting`) that the hero could work: the skip
  * reason is the Token's own, so the hero's skill, level, tool and rule have already passed. They
- * wait silently and work it the moment it is back (`TOKEN_RESPAWNED` marks flags dirty).
+ * wait silently and work it the moment it is back (`TOKEN_RESPAWNED` marks flags dirty). Likewise
+ * a Stump or Sapling growing back into work they could do (`growing`): its growth is a transform,
+ * whose `TILE_CHANGED` marks flags dirty.
  * For the flag's words, the hero's speech and the idle mark.
  */
 export function waitingOf(heroId) {
     if (!heroId || BoardState.claimOfHero(heroId)) return null;
     for (const s of skipsOfHero(heroId)) {
-        if (s.reason === ALERT.RESTING) return { instanceId: s.instanceId, kind: 'node' };
+        if (s.reason === ALERT.RESTING || s.reason === SKIP.GROWING) return { instanceId: s.instanceId, kind: 'node' };
         if (s.reason !== SKIP.CLAIMED) continue;
         if (BoardCombat.isEnemyToken(BoardState.getTokenById(s.instanceId))) return { instanceId: s.instanceId, kind: 'fight' };
     }
