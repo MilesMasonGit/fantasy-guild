@@ -28,6 +28,7 @@ import { GearDevSection } from '../dev/GearDevSection.jsx';
 import { SuppliesDevSection } from '../dev/SuppliesDevSection.jsx';
 import { StatusesDevSection } from '../dev/StatusesDevSection.jsx';
 import { SkillLoopsDevSection } from '../dev/SkillLoopsDevSection.jsx';
+import { FishingDevSection } from '../dev/FishingDevSection.jsx';
 import { StationsDevSection } from '../dev/StationsDevSection.jsx';
 import { StyleSheetPage } from '../dev/StyleSheetPage.jsx';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
@@ -334,6 +335,7 @@ export const TestDashboard = React.memo(() => {
                         {import.meta.env.DEV && <AnimationDevSection />}
                         {import.meta.env.DEV && <NotificationsDevSection />}
                         {import.meta.env.DEV && <StationsDevSection />}
+                        {import.meta.env.DEV && <FishingDevSection />}
                         <div className="mb-3 pb-3 border-b border-gi-border space-y-2">
                             <div>
                                 <div className={devLabelClass}>Give item</div>
