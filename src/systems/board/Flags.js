@@ -113,12 +113,7 @@ export const SKIP = Object.freeze({
     /** A Promotion Token offering the job the hero already holds. */
     SAME_JOB: 'same_job',
     /** The hero's own rule for this skill (or Fight) is switched off. */
-    RULE_OFF: 'rule_off',
-    /**
-     * Growing back into work the hero could do (a Stump, a Sapling): nothing to claim yet, and
-     * waited for silently like a resting node.
-     */
-    GROWING: 'growing'
+    RULE_OFF: 'rule_off'
 });
 
 /**
@@ -457,19 +452,7 @@ function evaluate(heroId, flag, excludeInstanceId = null, belowRank = Infinity) 
         if (!instance?.typeId || instance.id === excludeInstanceId) continue;
         const def = getTokenType(instance.typeId);
         const kind = kindOf(instance, def);
-        if (!kind) {
-            // Nothing to work today, but growing into work (a Stump, a Sapling): a candidate the
-            // flag can only wait for. Its rule is the skill of what it grows into.
-            const toward = Growth.growsTowardWork(instance.typeId);
-            const centre = toward ? centreOf(instance) : null;
-            if (!centre || !flagReaches(flag, centre)) continue;
-            const ruleId = toward.config.skill;
-            inRange.push({
-                instance, def, kind: 'growing', toward, d: distanceSq(from, centre), ruleId,
-                rank: FlagRules.ruleOf(heroId, ruleId).priority
-            });
-            continue;
-        }
+        if (!kind) continue;
 
         if (UNDER_POINT.has(kind)) {
             if (instance === under) underPoint.push({ instance, def, kind, rank: 0 });
@@ -494,17 +477,6 @@ function evaluate(heroId, flag, excludeInstanceId = null, belowRank = Infinity) 
     for (const c of [...underPoint, ...inRange]) {
         if (c.rank >= belowRank) break;
         const instanceId = c.instance.id;
-        if (c.kind === 'growing') {
-            // Recorded only for a hero who could work what it becomes, and only while it is truly
-            // on its way (its Forest in reach, its seedling payable): then they wait for it.
-            // Anyone else passes it by unrecorded, as before it grew back.
-            if (!isDisallowed(c.instance) && ruleAllows(heroId, c.ruleId)
-                && !WorkCheck.heroReason(heroId, c.toward.config, { typeId: c.toward.id })
-                && Growth.isGrowingBack(c.instance, c.def)) {
-                skips.push({ instanceId, reason: SKIP.GROWING });
-            }
-            continue;
-        }
         if (isDisallowed(c.instance)) { skips.push({ instanceId, reason: SKIP.DISALLOWED }); continue; }
         if (c.kind === 'work' && !c.ruleId) { skips.push({ instanceId, reason: SKIP.NO_SKILL }); continue; }
         if (c.ruleId) {
@@ -1056,19 +1028,59 @@ function springAmbushes() {
  * flag; either takes the enemy the moment it is free.
  * - `'node'`: a Token resting until it respawns (`resting`) that the hero could work: the skip
  * reason is the Token's own, so the hero's skill, level, tool and rule have already passed. They
- * wait silently and work it the moment it is back (`TOKEN_RESPAWNED` marks flags dirty). Likewise
- * a Stump or Sapling growing back into work they could do (`growing`): its growth is a transform,
- * whose `TILE_CHANGED` marks flags dirty.
+ * wait silently and work it the moment it is back (`TOKEN_RESPAWNED` marks flags dirty). Failing
+ * those, a Stump or Sapling in the flag's reach growing back into work they could do
+ * ({@link growingFor}): its growth is a transform, whose `TILE_CHANGED` marks flags dirty, so they
+ * work it the moment it stands.
  * For the flag's words, the hero's speech and the idle mark.
  */
 export function waitingOf(heroId) {
     if (!heroId || BoardState.claimOfHero(heroId)) return null;
     for (const s of skipsOfHero(heroId)) {
-        if (s.reason === ALERT.RESTING || s.reason === SKIP.GROWING) return { instanceId: s.instanceId, kind: 'node' };
+        if (s.reason === ALERT.RESTING) return { instanceId: s.instanceId, kind: 'node' };
         if (s.reason !== SKIP.CLAIMED) continue;
         if (BoardCombat.isEnemyToken(BoardState.getTokenById(s.instanceId))) return { instanceId: s.instanceId, kind: 'fight' };
     }
-    return null;
+    return growingFor(heroId);
+}
+
+/**
+ * The Token in `heroId`'s flag's reach growing back into work they could do, as
+ * `{ instanceId, kind: 'node' }`, or null: a Stump or Sapling (no work of its own) whose growth
+ * chain reaches a Token of a skill the hero holds and allows, at a level they have, with the tool
+ * in hand, and that is truly on its way (its Forest in reach, not stopped for want of its seedling:
+ * `Growth.isGrowingBack`). In the flag's own order: priority, then nearest, then the earlier-placed.
+ * A pinned flag waits only for its own Token.
+ *
+ * ⚠️ Worked out when asked (the flag's words, the speech, the idle mark), never on the flag's pass:
+ * a hero with nothing to claim looks again every second, and a catch-up is 86,400 seconds.
+ */
+function growingFor(heroId) {
+    const flag = BoardState.flagOf(heroId);
+    if (!flag || typeof flag.pinnedTo === 'string') return null;
+    const from = HeroMotion.heroPointOf(heroId) || { x: flag.x, y: flag.y };
+    const canWork = new Map();
+    let best = null;
+    for (const instance of BoardState.tokens()) {
+        const toward = Growth.growsTowardWork(instance.typeId);
+        if (!toward) continue;
+        const centre = centreOf(instance);
+        if (!centre || !flagReaches(flag, centre) || isDisallowed(instance)) continue;
+        let can = canWork.get(toward.id);
+        if (can === undefined) {
+            can = ruleAllows(heroId, toward.config.skill)
+                && !WorkCheck.heroReason(heroId, toward.config, { typeId: toward.id });
+            canWork.set(toward.id, can);
+        }
+        if (!can || !Growth.isGrowingBack(instance)) continue;
+        const rank = FlagRules.ruleOf(heroId, toward.config.skill).priority;
+        const d = distanceSq(from, centre);
+        const order = instance.placedAt ?? 0;
+        if (!best || rank < best.rank || (rank === best.rank && (d < best.d || (d === best.d && order < best.order)))) {
+            best = { instance, rank, d, order };
+        }
+    }
+    return best ? { instanceId: best.instance.id, kind: 'node' } : null;
 }
 
 /** The instance id {@link waitingOf} names, or null. */

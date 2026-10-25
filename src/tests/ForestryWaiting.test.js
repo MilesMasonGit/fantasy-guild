@@ -13,7 +13,7 @@ import { LootSystem } from '../systems/combat/LootSystem.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
-import { flagStatusLine, skipLine } from '../ui/components/board/flagText.js';
+import { flagStatusLine } from '../ui/components/board/flagText.js';
 import { idleMomentOf } from '../ui/components/board/heroSpeech.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -102,7 +102,8 @@ describe('⭐ a forester waits silently for the felled Oak to grow back', () => 
         expect(flagStatusLine('forester')).toBe('Waiting for Test Oak Stump');
         expect(BoardRunner.isHeroIdle('forester')).toBe(false);
         expect(idleMomentOf(Flags.waitingOf('forester'), 'Test Oak Stump')).toBeNull();
-        expect(skipLine(Flags.skipsOfHero('forester')[0], 'forester')).toBe('Test Oak Stump — still growing');
+        // Read when asked, not recorded on the flag's pass: the pennant lists no skip for it.
+        expect(Flags.skipsOfHero('forester').some(sk => sk.instanceId === stump.id)).toBe(false);
     });
 
     it('then for the Sapling, then fells the Oak again the moment it stands', () => {
@@ -136,20 +137,37 @@ describe('nothing on its way back is nothing to wait for', () => {
         expect(BoardRunner.isHeroIdle('forester')).toBe(true);
     });
 
-    it('a Stump with no seedling for it: idle, as before', () => {
-        felledInAForest({ seedlings: 0 });
+    it('a Stump stopped with no seedling for it: idle, as before (while it still counts down, one may come)', () => {
+        const stump = felledInAForest({ seedlings: 0 });
         run(1000);
+        expect(Flags.waitingOf('forester')).toEqual({ instanceId: stump.id, kind: 'node' });
+        run(20000);
+        expect(at(TREE.x, TREE.y)?.typeId).toBe('fw_stump');
+        expect(Growth.growthAlertOf(stump.id)?.alert).toBe('grow_needs_item');
         expect(Flags.waitingOf('forester')).toBeNull();
         expect(BoardRunner.isHeroIdle('forester')).toBe(true);
     });
 
-    it('a hero without Forestry does not wait on it, and it is not listed on their flag', () => {
+    it('a hero without Forestry does not wait on it', () => {
         felledInAForest();
         Flags.plant('miner', { x: TREE.x, y: TREE.y + 60 });
         run(1000);
         expect(Flags.waitingOf('miner')).toBeNull();
-        expect(Flags.skipsOfHero('miner')).toEqual([]);
         expect(BoardRunner.isHeroIdle('miner')).toBe(true);
+    });
+
+    it('nor one whose Forestry rule is off', () => {
+        felledInAForest();
+        Flags.setRule('forester', 'forestry', { allowed: false });
+        run(200);
+        expect(Flags.waitingOf('forester')).toBeNull();
+    });
+
+    it("nor one out of the flag's reach", () => {
+        felledInAForest();
+        Flags.plant('forester', { x: TREE.x + 700, y: TREE.y });
+        run(200);
+        expect(Flags.waitingOf('forester')).toBeNull();
     });
 
     it('a hero who could not fell what it grows into (no woodaxe in hand) does not wait on it', () => {

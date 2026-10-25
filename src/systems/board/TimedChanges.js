@@ -1,6 +1,6 @@
 // timed changes: the one clock system for Tokens
 
-import { getTokenType } from '../../config/registries/tokenRegistry.js';
+import { getTokenType, registryVersion } from '../../config/registries/tokenRegistry.js';
 import { turnTiming } from '../../config/registries/tokenConstants.js';
 import * as BoardState from './BoardState.js';
 import * as EffectActions from './EffectActions.js';
@@ -10,7 +10,7 @@ import * as Hand from './Hand.js';
 import * as Respawn from './Respawn.js';
 import * as Demolition from './Demolition.js';
 import * as Growth from './Growth.js';
-import { growTimeOf } from './TileModifiers.js';
+import { growTimeOf, nearbyGateMet } from './TileModifiers.js';
 import { pickWeighted } from './weightedPick.js';
 import { ALERT } from './boardEvents.js';
 import { logger } from '../../utils/Logger.js';
@@ -191,10 +191,17 @@ function growInto(instance, def) {
  * is there. Raises the Token's "needs nearby" alert while so, and drops it once one is.
  */
 function growthPaused(instance, def) {
-    if (Growth.growsTermsOf(def).needsNearby.length === 0) return false;
-    const paused = !Growth.gateMet(instance, def);
-    if (paused) Growth.setGrowthAlert(instance.id, ALERT.GROW_NEEDS_NEARBY, Growth.growsTermsOf(def).needsNearby);
-    else if (Growth.growthAlertOf(instance.id)?.alert === ALERT.GROW_NEEDS_NEARBY) Growth.setGrowthAlert(instance.id, null);
+    const { needsNearby } = Growth.growsTermsOf(def);
+    if (needsNearby.length === 0) return false;
+    const paused = !nearbyGateMet(instance, needsNearby);
+    const prev = Growth.growthAlertOf(instance.id);
+    if (paused) {
+        if (prev?.alert !== ALERT.GROW_NEEDS_NEARBY || prev.needs !== needsNearby) {
+            Growth.setGrowthAlert(instance.id, ALERT.GROW_NEEDS_NEARBY, needsNearby);
+        }
+    } else if (prev?.alert === ALERT.GROW_NEEDS_NEARBY) {
+        Growth.setGrowthAlert(instance.id, null);
+    }
     return paused;
 }
 
@@ -210,6 +217,10 @@ function growthPaused(instance, def) {
  *   where it is and nothing falls due (a Stump with no Forest in reach);
  * * `once` — true when the clock is done once it acts (a refill), rather than
  *   starting another lap;
+ * * `resting` — true for the rows whose `applies` moves with the Token's
+ *   charges (they come last in the table); every other row's `applies` reads
+ *   only the type and whether the Token is turned, so it is asked once per type
+ *   ({@link activeHandlers});
  * * `applies(instance, def)` — whether this Token runs it;
  * * `dueMs(instance, def)` — when it fires;
  * * `fire(instance, def, random, ctx)` — what happens. `ctx` is
@@ -278,6 +289,7 @@ export const HANDLERS = [
         id: 'refill',
         clock: Respawn.CLOCK,
         once: true,
+        resting: true,
         applies: (instance, def) => !!def?.respawn && Respawn.restingMode(instance, def) === 'refill',
         dueMs: (instance, def) => Respawn.restMsOf(instance, def),
         fire: (instance) => Respawn.refill(instance)
@@ -288,6 +300,7 @@ export const HANDLERS = [
         id: 'regrow',
         clock: Respawn.CLOCK,
         replaces: true,
+        resting: true,
         applies: (instance, def) => !!def?.respawn && Respawn.restingMode(instance, def) === 'regrow',
         dueMs: () => 0,
         fire: (instance, def) => {
@@ -298,10 +311,50 @@ export const HANDLERS = [
     }
 ];
 
-/** The handlers a Token runs right now. */
+/**
+ * Per Token type, the handlers it may run, kept for the Token registry's version: `fixed`, whose
+ * `applies` reads only the type (a growth, a turn, a spawner), and `resting`, whose answer moves with
+ * the Token's charges (a refill, a regrow) and is asked live. A turned Token, whose answer also
+ * reads what it turned from, is always asked in full.
+ *
+ * ⚠️ Every timed Token asks this on every tick, and a day's catch-up is 86,400 ticks: filtering the
+ * whole table each time (six `applies`, a new array) cost more than the work it chose.
+ */
+let plans = { version: -1, byType: new Map() };
+
+/** This (unturned) Token's type's plan, made on first ask after a content change. */
+function planOf(instance, def) {
+    const version = registryVersion();
+    if (plans.version !== version) plans = { version, byType: new Map() };
+    let plan = plans.byType.get(instance.typeId);
+    if (!plan || plan.def !== def) {
+        const fixed = [];
+        const resting = [];
+        for (const h of HANDLERS) {
+            if (h.resting) {
+                if (def?.respawn) resting.push(h);
+            } else if (h.applies(instance, def)) {
+                fixed.push(h);
+            }
+        }
+        plan = { def, fixed, resting };
+        plans.byType.set(instance.typeId, plan);
+    }
+    return plan;
+}
+
+/**
+ * The handlers a Token runs right now, in `HANDLERS` order (the resting rows are the table's last).
+ * The returned array may be shared: read it, never change it.
+ */
 function activeHandlers(instance) {
     const def = getTokenType(instance.typeId);
-    return { def, active: HANDLERS.filter(h => h.applies(instance, def)) };
+    if (instance.turnedFrom) return { def, active: HANDLERS.filter(h => h.applies(instance, def)) };
+    const plan = planOf(instance, def);
+    if (!plan.resting.length) return { def, active: plan.fixed };
+    const active = plan.fixed.slice();
+    for (const h of plan.resting) if (h.applies(instance, def)) active.push(h);
+    return { def, active };
 }
 
 /**
@@ -389,6 +442,8 @@ export function advance(instance, delta, random = Math.random) {
  */
 export function tick(delta, random = Math.random) {
     if (!(delta > 0)) return;
+    // A stopped growth reads what the Bank and the mat hold afresh each tick, once per item.
+    Growth.supplyChanged();
     for (const instance of BoardState.tokens()) {
         // A Token taken off the mat earlier in this same pass is skipped.
         if (!BoardState.getTokenById(instance.id)) continue;

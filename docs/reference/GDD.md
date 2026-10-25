@@ -88,8 +88,8 @@ Today the pull is skill levels, Guild Hall upgrades and promotions.
   fixture, a landmark, a planted Token (spawned into a growth chain), and every
   copy of a type marked **Stays where it stands** (`staysPut`, a box in the CMS
   Token editor: trees, fruit trees and veins), wherever it came from, an old save
-  included. Demolition still takes any of them but a map's node, the camp's and
-  a landmark. *(`FixedTokens.js`)*
+  included. Demolition still takes any of them but a map's node (unless its type
+  can be cleared: Demolition below), the camp's and a landmark. *(`FixedTokens.js`)*
 - **Token cap: 128 Tokens** to start (owner, Atlas D-9: a Guild Hall upgrade
   will add 16 a rank, up to 256; not built yet). The cap is the guild's but
   counts only the Region the guild is in (§10): every Token there, placed or
@@ -157,6 +157,16 @@ with no room costs nothing. **An enemy camp's clock stands at zero while the
 camp is full** (owner, 2026-10-24), so a goblin, guardian or boss beaten in a
 full camp comes back one whole interval later; every other spawner (forests,
 mines) keeps counting while full and replaces a loss on the next tick.
+- **Planting within its reach** (brief 230 S2a; `spawner.withinReach`, a box in
+  the CMS Spawner block, for Forests): the spawner lands each Token only within
+  its reach (Near), at the free spot nearest it, never pushing (nowhere free
+  there: it waits, says no room, pays nothing), and its allowance counts its
+  family standing **in its reach** (Saplings, Trees and Stumps, a map's
+  included) against its own allowance, not the mat-wide cap; two such Forests
+  far apart each fill their own. Its allowance adds nothing to a mat-wide
+  family's cap. Every other spawner, enemy camps included, keeps the mat-wide
+  count. No shipped spawner uses it yet.
+
 *(`SpawnerSystem.js`, `TimedChanges.js`)*
 
 | Spawner | Spawns | Allowance | Every | Upkeep per spawn |
@@ -173,6 +183,21 @@ mines) keeps counting while full and replaces a loss on the next tick.
 - **Turns**: Coast ⇄ Shrimp Coast, 30 % chance every 60 s.
 - A transform keeps the Token's origin, starts fresh clocks and loses any cycle
   in progress. *(`TimedChanges.js`)*
+- **A growth may need a Token in reach and cost an item** (brief 230 S2a; the
+  CMS Grows block's **Needs one of these in reach** and **Costs when it
+  grows**): a Stump grows into a Sapling only while a Forest of its species
+  stands within its reach; without one its clock **stands still** where it is
+  (a Forest planted later carries on from there) and it says so with a yellow
+  mark ("Needs an Oak Forest nearby to grow"). When it falls due it pays its
+  cost (a seedling) from the Bank, then the loot on the mat, only once its new
+  Token has landed; short of it, it is **stopped** at its finish, says "Needs
+  Oak Seedling" over itself as it stops (the red callout look of "Needs Coal",
+  no more often than that) and wears the yellow mark, and grows the tick one
+  arrives. Only the Stump's growth asks: **a Sapling whose Forest goes finishes
+  growing** (director's call, owner-approved default). The Forest answer is
+  read once per Token when its neighbourhood changes, never per tick, like Grow
+  Time. Its card and inspection say what it waits for, needs and pays. No
+  shipped Token uses it yet. *(`Growth.js`, `TileModifiers.nearbyGateMet`)*
 - **Grow Time** (brief 230 S1a): a support in reach speeds a growth and a
   refill's rest (`Provides Grow Time −X %`, aimed by tag or id, or narrowed to
   the growing Token's skill: its own, or what it grows into). Speed-ups stack,
@@ -191,9 +216,15 @@ mines) keeps counting while full and replaces a loss on the next tick.
   still counts toward its Forest's family cap. Never on enemies, spawners or
   Foundations. A hero with nothing else in reach **waits for it silently**
   (brief 230 S1b): no bubble, not counted idle, the flag's hover and the Dock
-  say "Waiting for Copper Vein", and they work it the moment it refills. ⚠️ A
-  regrow's Sapling has no work of its own, so a forester waiting on one still
-  reads idle until S2 builds Stumps. *(`Respawn.js`, `Flags.waitingOf`)*
+  say "Waiting for Copper Vein", and they work it the moment it refills. So
+  does a hero whose only work in reach is a Stump or Sapling growing back into
+  work they could do (brief 230 S2a: skill, level, tool and rule checked against
+  what it grows into): "Waiting for Oak Stump", then "Waiting for Oak Sapling",
+  and they fell the tree the moment it stands. A Stump that is not coming back
+  (no Forest in reach, or stopped for want of its seedling) is nothing to wait
+  for: idle as before. Worked out when the flag's words, the speech or the idle
+  mark ask, never on the flag's pass, so it costs a catch-up nothing.
+  *(`Respawn.js`, `Flags.waitingOf`)*
 
 ### Foundations — Built
 Buy a Foundation, pick a build recipe on it, and a hero builds it into a
@@ -213,7 +244,10 @@ Passive Production stop (what it gives its neighbours by standing there
 carries on until it is gone). Unmarking makes it itself again and loses the
 half-done demolition. Anything bought, built, spawned or planted can be marked,
 a resting Token included; the Guild Hall, landmarks, a map's nodes, quests and
-enemies can't. **Demolish** on the Token's inspection marks it (where it
+enemies can't, except a map's node whose type is marked **Can be cleared where a
+map placed it** (`clearable`, a box in the CMS Token editor: wild Forests and
+the Stumps of felled map trees, brief 230 S2a). The Starter Camp's own Tokens
+stay as laid whatever their type. **Demolish** on the Token's inspection marks it (where it
 can't be, the inspection says why), **Cancel demolition** takes the mark off.
 A marked Token wears the Construction badge, its inspection reads "Marked for
 demolition" with the time left once a hero is on it, and "Demolished …" pops

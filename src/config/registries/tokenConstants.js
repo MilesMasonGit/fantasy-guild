@@ -245,6 +245,8 @@ export function respawnOf(def) {
 
 const NO_TERMS = Object.freeze({ needsNearby: Object.freeze([]), cost: Object.freeze([]) });
 const growsTermsMemo = new WeakMap();
+let lastGrowsBlock = null;
+let lastGrowsTerms = NO_TERMS;
 
 /**
  * What a `grows` block asks before its Token may grow, as `{ needsNearby, cost }`:
@@ -262,8 +264,14 @@ const growsTermsMemo = new WeakMap();
 export function growsTermsOf(def) {
     const block = def?.grows;
     if (!block || typeof block !== 'object') return NO_TERMS;
+    // The last block asked, first: a tick asks for the same type's block many times running.
+    if (block === lastGrowsBlock) return lastGrowsTerms;
     let terms = growsTermsMemo.get(block);
-    if (terms) return terms;
+    if (terms) {
+        lastGrowsBlock = block;
+        lastGrowsTerms = terms;
+        return terms;
+    }
 
     const nearby = Array.isArray(block.needsNearby)
         ? [...new Set(block.needsNearby.filter(id => typeof id === 'string' && id.trim()).map(id => id.trim()))]
@@ -279,6 +287,8 @@ export function growsTermsOf(def) {
         cost: Object.freeze([...total].map(([itemId, quantity]) => Object.freeze({ itemId, quantity })))
     });
     growsTermsMemo.set(block, terms);
+    lastGrowsBlock = block;
+    lastGrowsTerms = terms;
     return terms;
 }
 
