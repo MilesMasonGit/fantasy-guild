@@ -10,6 +10,7 @@ import * as Hand from './Hand.js';
 import * as Respawn from './Respawn.js';
 import * as Demolition from './Demolition.js';
 import * as Growth from './Growth.js';
+import * as Fields from './Fields.js';
 import { growTimeOf, nearbyGateMet } from './TileModifiers.js';
 import { pickWeighted } from './weightedPick.js';
 import { ALERT } from './boardEvents.js';
@@ -33,7 +34,7 @@ export { pickWeighted };
  *
  * Spawner intervals are one more row of the {@link HANDLERS} table; the attempt itself lives in
  * `SpawnerSystem.js`. So is a resting Token's way back (`respawn`, refill or regrow), whose rules
- * live in `Respawn.js`. Passive Production pays several lines on its own clock, so {@link tick} runs
+ * live in `Respawn.js`, and a Field's crop sowing and ripening (`Fields.js`). Passive Production pays several lines on its own clock, so {@link tick} runs
  * it beside the table (`PassiveProduction.advance`).
  *
  * State (saved, on the instance): `instance.clocks = { growMs, turnMs, … }`, elapsed ms, created
@@ -282,6 +283,24 @@ export const HANDLERS = [
         applies: (instance, def) => !instance.turnedFrom && SpawnerSystem.isSpawner(def),
         dueMs: (instance, def) => SpawnerSystem.intervalOf(def),
         fire: (instance, def, random, ctx) => SpawnerSystem.attemptSpawn(instance, def, random, ctx)
+    },
+    {
+        // A Field's own crop (`Fields.js`): a growing crop ripens, an empty Field sows its pick
+        // (held and tried again each tick while it is short of the seed). Acts without replacing
+        // the Token. One-shot: the clock is gone once it acts, and stands at zero while ripe.
+        id: 'field',
+        clock: Fields.CLOCK,
+        once: true,
+        idleWhile: (instance, def) => Fields.clockIdle(instance, def),
+        applies: (instance, def) => !instance.turnedFrom && Fields.isField(def),
+        dueMs: (instance, def) => Fields.clockDueMs(instance, def),
+        fire: (instance, def, random, ctx) => {
+            const ripening = Fields.stageOf(instance, def) === Fields.STAGE.GROWING;
+            const next = Fields.clockFired(instance, def);
+            // A crop that ripened part-way through the tick is harvested only after it ripened.
+            if (ripening && next) lateRefills.set(instance.id, Math.max(0, Number(ctx?.overMs) || 0));
+            return next;
+        }
     },
     {
         // A resting Token refills in place after its rest. One-shot: the clock is gone once it

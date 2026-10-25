@@ -6,6 +6,7 @@ import { RECIPE } from './RecipeResolver.js';
 import * as InputAllocator from './InputAllocator.js';
 import * as Charges from './Charges.js';
 import * as Respawn from './Respawn.js';
+import * as Fields from './Fields.js';
 import * as Demolition from './Demolition.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
 import * as HeroTools from '../equipment/HeroTools.js';
@@ -27,6 +28,20 @@ export const FIXABLE = new Set([ALERT.INPUTS, ALERT.CHARGES, ALERT.NO_RECIPE, AL
 
 /** The hero's own gates: a hero stopped by one lets go of the Token at once. Never a badge. */
 export const HERO_GATES = new Set([ALERT.ACCESS, ALERT.UNSKILLED, ALERT.NO_TOOL]);
+
+/**
+ * The Token's own reasons that no hero fixes by standing there: it rests until it respawns, its
+ * crop grows, or its Field is stopped for want of a seed. Its hero lets go; it never draws a badge.
+ */
+export const AWAY = new Set([ALERT.RESTING, ALERT.GROWING, ALERT.GROW_NEEDS_ITEM]);
+
+/**
+ * Whether a Token is away in that sense ({@link AWAY}), read from its state alone (cheap: `Flags`
+ * asks it of every held Token on every pass).
+ */
+export function isAway(instance, def = getTokenType(instance?.typeId)) {
+    return Respawn.isResting(instance, def) || Fields.workReason(instance, def) != null;
+}
 
 /**
  * Why `heroId` cannot work a Token with this `config`, or null if they can.
@@ -61,8 +76,8 @@ export function heroReason(heroId, config, instance = null) {
 
 /**
  * Why the Token itself cannot run a cycle right now — whoever works it — as
- * `{ reason, io, inputCheck? }`. `reason` is null when it can. Every reason but `resting` is
- * fixable.
+ * `{ reason, io, inputCheck? }`. `reason` is null when it can. Every reason but the {@link AWAY}
+ * ones is fixable.
  *
  * In the runner's order: the Token must not be resting, the recipe must resolve, then the inputs
  * must be available, then the charges must be affordable. `io` is returned so the runner does
@@ -79,6 +94,10 @@ export function heroReason(heroId, config, instance = null) {
 export function fixableReason(instanceId, instance) {
     if (Demolition.isMarked(instance)) return { reason: null, io: null };
     if (Respawn.isResting(instance)) return { reason: ALERT.RESTING, io: null };
+    // A Field with nothing ripe: its crop grows (or is about to be sown), or it is stopped for
+    // want of a seed. Neither is fixed by a hero standing there.
+    const field = Fields.workReason(instance);
+    if (field) return { reason: field, io: null };
 
     const io = RecipeResolver.effectiveIO(instanceId, instance);
 
