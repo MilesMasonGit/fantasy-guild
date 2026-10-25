@@ -45,6 +45,7 @@ function loadWorkspace(from) {
             tokens: readJson(path.join(data, 'tokens.json')),
             effects: opt('effects.json', {}),
             tokenRecipes: opt('tokenRecipes.json', []),
+            starterCamp: opt('starterCamp.json', null),
         }),
     };
 }
