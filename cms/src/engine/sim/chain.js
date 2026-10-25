@@ -19,7 +19,8 @@ function arithmetic(detail, inputs, values) {
     const parts = [];
 
     if (inputs.length > 0) {
-        const terms = inputs.map((i) => `${i.quantity}×${gold(values.get(i.itemId))} ${i.itemId}`);
+        // A crop's seed is a fraction a harvest (seed ÷ load, `fieldAdapter.cropInputs`).
+        const terms = inputs.map((i) => `${Number(i.quantity.toFixed(3))}×${gold(values.get(i.itemId))} ${i.itemId}`);
         parts.push(`${terms.join(' + ')} in`);
     }
 

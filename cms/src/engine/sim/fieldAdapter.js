@@ -1,6 +1,8 @@
 /** Economic simulator: the field adapter. Tokens and Recipes describe the same idea (a work cycle that consumes items and produces others) in two vocabularies: skill is `config.skill` / `skill`, required level `config.skillRequired` / `levelRequirement`, cycle length `config.cycleTimeMs` / `durationMs`, and I/O is `config.outputs` + `config.inputs` / `outputs` + `inputs`. Every pass reads adapted entities only; no pass in `sim/` may contain `entity.config?.skillRequired ?? entity.levelRequirement`, because a field name is chosen here, once. Every pass in this directory is a pure function over data a caller hands in. */
 
 import { catchPoolsOf, hasCatchPools } from '../../../../src/config/registries/catchPools.js';
+import { cropTermsOf, fieldOf, stationKindOffers } from '../../../../src/config/registries/tokenConstants.js';
+import { stationSkillOf, stationKindOf } from '../../../../src/systems/effects/statements.js';
 
 /** The Token kinds this simulator does not model, plus passives. Such a Token can never anchor an item, but if it has a work cycle it is still seen, as a deferred-scope Info row, so a passive producer is not silently forgotten. */
 export const DEFERRED_TOKEN_TYPES = Object.freeze([
@@ -142,7 +144,20 @@ export function adaptToken(def, id = def?.id, exempt = NO_EXEMPT) {
     }, exempt);
 }
 
-export function adaptRecipe(def, id = def?.id, exempt = NO_EXEMPT) {
+/**
+ * A crop's inputs as one harvest cycle pays them: its seed (`cropTermsOf(...).seeds`, what one sowing
+ * costs) divided by its load, since a ripe Field is harvested `load` times per sowing.
+ * ⚠️ `crop.growMs` is not read: the harvest cycle is `durationMs`, and growing is waiting, which the
+ * simulator does not value (as with any other timed growth). A Crop Load bonus in reach (a Composter)
+ * is not counted either: the load is the crop's own.
+ */
+function cropInputs(def) {
+    const { seeds, load } = cropTermsOf(def);
+    return seeds.map(s => ({ itemId: s.itemId, quantity: s.quantity / load }));
+}
+
+/** `crop`: whether this recipe is grown on a Field (see `cropRecipeIds`). */
+export function adaptRecipe(def, id = def?.id, exempt = NO_EXEMPT, crop = false) {
     return adaptCommon({
         id,
         name: def?.name,
@@ -150,7 +165,7 @@ export function adaptRecipe(def, id = def?.id, exempt = NO_EXEMPT) {
         skill: def?.skill,
         level: def?.levelRequirement,
         cycleTimeMs: def?.durationMs,
-        inputs: def?.inputs,
+        inputs: crop ? cropInputs(def) : def?.inputs,
         outputs: def?.outputs,
         sim: def?.sim,
         downcycle: def?.downcycle,
@@ -169,11 +184,32 @@ function entries(collection) {
     return Object.entries(collection);
 }
 
+/**
+ * The recipes grown on a Field: each one a Field Token in the corpus offers (its `Works as` skill,
+ * its station kind, never a building recipe, as the game's `recipesForToken` reads them), and each
+ * one with a `crop` block of its own, whose author meant it as a crop.
+ * ⚠️ Tokens must be expanded (their rules resolved), as Recalculate hands them in: a Field's station
+ * skill is one of its rules.
+ */
+export function cropRecipeIds(tokens, recipes) {
+    const fields = entries(tokens).map(([, def]) => def).filter(def => fieldOf(def) && stationSkillOf(def));
+    const ids = new Set();
+    for (const [key, def] of entries(recipes)) {
+        if (!def) continue;
+        const id = def.id ?? key;
+        if (def.crop && typeof def.crop === 'object' && !Array.isArray(def.crop)) { ids.add(id); continue; }
+        if (Array.isArray(def.foundationKinds) && def.foundationKinds.length) continue;
+        if (fields.some(f => stationSkillOf(f) === def.skill && stationKindOffers(stationKindOf(f), def))) ids.add(id);
+    }
+    return ids;
+}
+
 /** Adapt a whole corpus. Returns entities sorted by id: every later pass iterates this array, and a stable order is what makes two runs byte-identical. `exempt` names the items no pass may see (the maps). */
 export function adaptCorpus({ tokens, recipes, exempt = NO_EXEMPT } = {}) {
+    const crops = cropRecipeIds(tokens, recipes);
     const adapted = [
         ...entries(tokens).map(([id, def]) => adaptToken(def, def?.id ?? id, exempt)),
-        ...entries(recipes).map(([id, def]) => adaptRecipe(def, def?.id ?? id, exempt)),
+        ...entries(recipes).map(([id, def]) => adaptRecipe(def, def?.id ?? id, exempt, crops.has(def?.id ?? id))),
     ];
     adapted.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
     return adapted;
