@@ -29,7 +29,7 @@ C2; C0 (the test content pack, accepted by the director) after C2; C6 last.
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
 | T-242: pixel frames round two: second audit of tiles, slots, buttons, toggles, rows; Bank tiles without soft borders | builder | `backlog/pixel-frames-2` (`gf`) | **merged** 8c7096b5 (owner ok by phone; kit pieces into UI_STYLE fba5e2f2). Merged gate on top of combat C4: 6039 tests, cycles, build, same work | Sat | Sat |
-| Work plate picks the wrong Token (regression from T-239): bench token kind 100/100 on dbfc370b, 97–98/100 with the plate ('picked up the wrong thing' on presses beside overlapping Tokens) | engineer | `backlog/plate-pick` (`fx`) | diagnosing | Sat | |
+| Work plate picks the wrong Token (regression from T-239): bench token kind 100/100 on dbfc370b, 97–98/100 with the plate ('picked up the wrong thing' on presses beside overlapping Tokens) | engineer | `backlog/plate-pick` | **merged** af7a9103 (bug fix, no eye-check): the plate stood over the Token in the row below and took its presses; now a plate lets hover and presses through over any Token's circle (as flags do). Drag bench: token kind 100 % twice, full run 50/50 on all five kinds; same work, no timing regression | Sat | Sat |
 | T-240: the drag bench's Shop and Bank kinds run again (harness only) | builder | `backlog/drag-bench-kinds` | **merged** 23c85a21 on the gate (bench only): Shop and Bank kinds 50/50 both passes. Token → mat showed 3 'wrong thing' misses (47/49, 49/50) where earlier runs were 50/50: bisecting (before the work plate vs `main`) | Sat | Sat |
 
 ## Systems director, skill loops (brief 230; owner 2026-10-24: next, beside the rest of combat)
@@ -291,7 +291,8 @@ branch), so it uses the kit and everyone fights; it merges after both.*
 
 ## Notes between directors
 
-- **For the Systems director (from the Backlog director, 2026-10-24):** `AtlasTravel.test.js` "there and back equals save and load" failed once under full-suite load in the T-242 builder's run (one goblin's y 61 vs 64) and passed alone twice. A determinism test should not depend on load; worth a look if it recurs (wall-clock or timer in an enemy's movement?). Not caused by UI changes.
+- **For the Systems director (from the Backlog director, 2026-10-24):** `AtlasTravel.test.js` "there and back equals save and load" failed once under full-suite load in the T-242 builder's run (one goblin's y 61 vs 64) and passed alone twice. A determinism test should not depend on load; the plate-pick builder then saw it fail 1 of 3 runs alone (goblin y 16 vs 64 after travel), so it is real nondeterminism, not just load. Not caused by UI changes.
+- **Also for the Systems director:** on `main` 16e5c4a1 (after the CMS sync 0bdfa84f) seven tests fail on `main` alone: `CMSEnemyHostile`, `CMSGearAndKinds` (2), `CMSStatusEffects`, `CombatChain` (2), `RenderGolden`. The Backlog director's merges add none; they look like the synced content against old expectations.
 
 ## Questions for the owner
 
