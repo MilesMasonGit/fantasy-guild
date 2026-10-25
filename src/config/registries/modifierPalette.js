@@ -235,6 +235,24 @@ export const MODIFIER_PALETTE = [
         group: 'Support',
         hint: 'Percent chance that one item, when a cycle or a kill drops it, comes out doubled. Pick the item; "any item" rolls for every item that drops, each on its own.'
     },
+    {
+        /**
+         * A better rod's bonus: one fish bites more often from a water's catch pool. Its weight in
+         * the pool is widened by this percentage before the pick (`Fishing.catchOf` resolves the axis
+         * once per catch in the pool, with the item id as the category), so +100 % on a Dolphin
+         * weighted 10 beside 50 and 40 makes it 20 of 110. Usually carried on a rod; a Token in reach
+         * may give it too.
+         */
+        type: EFFECT_TYPES.CATCH_WEIGHT,
+        label: 'Catch Weight',
+        when: 'never',
+        scales: 'value',
+        buckets: ['percentage'],
+        categories: 'item',
+        shape: MODIFIER_SHAPES.DETERMINISTIC,
+        group: 'Support',
+        hint: 'How often one fish bites from a water\'s catch pool: a percentage on its weight there (+100% doubles it). Pick the fish; "any item" moves every catch alike, which changes nothing.'
+    },
 
     // --- Combat ---------------------------------------------------------
     //

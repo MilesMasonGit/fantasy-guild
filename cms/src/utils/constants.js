@@ -150,6 +150,10 @@ export {
   tierValue,
 } from '../../../src/config/registries/toolKinds.js';
 export { toolFindings } from '../../../src/systems/core/toolRule.js';
+// A water Token's catch pools (tool kind × bait → a weighted catch): the game's own reader, so the Catch pools block and the game read the same pools.
+export { catchPoolsOf, hasCatchPools, catchItemIds, baitItemIds } from '../../../src/config/registries/catchPools.js';
+// Bait is carried in a Consumable cell: the Catch pools block offers only items of a consumable category.
+export { isConsumableCategory } from '../../../src/config/registries/equipmentCategories.js';
 
 // `tokenType` is derived from what a Token has rather than picked. The CMS computes it and writes it into the file.
 export {

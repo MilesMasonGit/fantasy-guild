@@ -1,4 +1,4 @@
-import { SKILLS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, auditLifecycleBlocks, findUnknownRefs, toolFindings } from '../utils/constants';
+import { SKILLS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, auditLifecycleBlocks, findUnknownRefs, toolFindings, catchItemIds, baitItemIds } from '../utils/constants';
 import { isMapItem, mapItemFindings } from '../../../src/systems/atlas/mapItems.js';
 
 /** Connectivity & Graph Auditor: audits the Token, Recipe and Item graph in three pillars: Data Integrity (missing references, invalid IDs, solver refusals), Economic Blockers (orphaned inputs, unreachable items, dead ends) and Pacing Gaps (level gaps in skills). */
@@ -36,6 +36,15 @@ export function auditConnectivity(entities, solverRefusals = []) {
         if (!consumedBy[iid]) consumedBy[iid] = [];
         consumedBy[iid].push({ id: token.id, type: 'token' });
       }
+    }
+    // Water: every fish its catch pools land is produced here, and every bait they take is used up here.
+    for (const oid of catchItemIds(token)) {
+      if (!producedBy[oid]) producedBy[oid] = [];
+      producedBy[oid].push({ id: token.id, type: 'token' });
+    }
+    for (const iid of baitItemIds(token)) {
+      if (!consumedBy[iid]) consumedBy[iid] = [];
+      consumedBy[iid].push({ id: token.id, type: 'token' });
     }
   }
 

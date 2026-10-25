@@ -33,6 +33,7 @@ import * as StatusApplication from './StatusApplication.js';
 import * as EffectFeedback from './EffectFeedback.js';
 import * as RareDrops from './RareDrops.js';
 import * as OutputRules from './OutputRules.js';
+import * as Fishing from './Fishing.js';
 import * as LoadoutMoments from './LoadoutMoments.js';
 import * as HeroEffects from '../hero/HeroEffects.js';
 import * as HeroManager from '../hero/HeroManager.js';
@@ -255,8 +256,19 @@ function completeCycle(instance, def, io, heroId, config = def.config) {
     // listener that says it did.
     const produced = [];
 
+    // Water: one catch from the pool the hero's tool and bait pick (one draw, unless the pool holds
+    // one fish), in place of the Token's own outputs. It then lands like any output.
+    // A failed cycle catches nothing and keeps its bait.
+    let outputs = io.outputs || [];
+    if (failed || buildTypeId) {
+        outputs = [];
+    } else if (Fishing.isWater(def)) {
+        const caught = Fishing.catchOf(id, def, heroId);
+        outputs = caught ? [{ itemId: caught.itemId, chance: 100, minQty: 1, maxQty: 1 }] : [];
+    }
+
     // A build makes its Token by becoming it (below), never as a sprite.
-    for (const output of (failed || buildTypeId) ? [] : (io.outputs || [])) {
+    for (const output of outputs) {
         const chance = output.chance ?? 100;
         if (chance < 100 && Math.random() * 100 > chance) continue;
 

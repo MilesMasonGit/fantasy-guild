@@ -2,6 +2,7 @@
 
 import { KEYWORD, statementsOf } from '../../systems/effects/statements.js';
 import { isEnemyDef } from './enemyProfile.js';
+import { hasCatchPools } from './catchPools.js';
 
 /**
  * `tokenType`, derived rather than picked.
@@ -103,6 +104,9 @@ export function deriveTokenType(def) {
             warn: true
         };
     }
+
+    // Water is fished: its catch pools, not its Outputs, say what a cycle gives.
+    if (config && hasCatchPools(def)) return { type: 'resource', why: 'it is water, fished for what its catch pools hold' };
 
     if (hasCycle && def.requiresHero === false) return { type: 'passive', why: 'it works with no hero' };
     if (hasCycle && outputs.length) return { type: 'resource', why: `it produces ${outputs.length === 1 ? 'something' : 'things'} from nothing` };

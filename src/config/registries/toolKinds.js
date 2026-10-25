@@ -2,7 +2,9 @@
 //
 // ⚠️ THE CMS IMPORTS THIS FILE ACROSS THE PROJECT BOUNDARY (`cms/src/utils/constants.js`): the item
 // editor's Tool field, the Token editor's Needs tool field and the audit read the kinds from here.
-// Pure: no imports, so both sides can load it.
+// Pure: its one import (`catchPools.js`) is pure too, so both sides can load it.
+
+import { catchToolKinds } from './catchPools.js';
 
 /**
  * A gathering tool is an item a hero carries in one hand: `tool: { kind, tier, starter? }` on the
@@ -10,13 +12,18 @@
  * `needsTool: { kind, minTier }`. Only a hero holding a tool of that kind, at that tier or above,
  * may work it. Tools gate only: they add no speed or yield.
  *
+ * ⚠️ Water is the exception (`catchPools.js`): it needs any kind its catch pools name, and a
+ * fishing tool's tier never gates. Its need carries the list as `kinds`.
+ *
  * Adding a kind is one row here: the editors offer it and the audit accepts it.
  */
 export const TOOL_KINDS = Object.freeze([
     Object.freeze({ id: 'pickaxe', label: 'Pickaxe' }),
     Object.freeze({ id: 'woodaxe', label: 'Woodaxe' }),
     Object.freeze({ id: 'fishing_rod', label: 'Fishing Rod' }),
-    Object.freeze({ id: 'sickle', label: 'Sickle' })
+    Object.freeze({ id: 'sickle', label: 'Sickle' }),
+    Object.freeze({ id: 'fishing_net', label: 'Fishing Net' }),
+    Object.freeze({ id: 'fishing_cage', label: 'Fishing Cage' })
 ]);
 
 /** A hero has two hands. A tool takes one; a two-handed weapon takes both. */
@@ -64,8 +71,15 @@ export function toolOf(item) {
     return { kind: block.kind, tier: tierValue(block.tier), starter: block.starter === true };
 }
 
-/** A Token type's tool need as `{ kind, minTier }`, or null when its work needs no tool. */
+/**
+ * A Token type's tool need as `{ kind, minTier }`, or null when its work needs no tool.
+ *
+ * Water (a Token with catch pools) needs any kind its pools name, at any tier, whatever its
+ * `needsTool` says: `{ kind, kinds, minTier: 1 }`, `kind` being the first of `kinds`.
+ */
 export function neededToolOf(def) {
+    const kinds = catchToolKinds(def).filter(isToolKind);
+    if (kinds.length) return { kind: kinds[0], kinds, minTier: 1 };
     const block = def?.needsTool;
     if (!block || typeof block !== 'object' || !isToolKind(block.kind)) return null;
     return { kind: block.kind, minTier: tierValue(block.minTier) };
@@ -74,7 +88,14 @@ export function neededToolOf(def) {
 /** Whether a tool (from {@link toolOf}) answers a need (from {@link neededToolOf}). */
 export function toolMeets(tool, need) {
     if (!need) return true;
-    return !!tool && tool.kind === need.kind && tool.tier >= need.minTier;
+    if (!tool) return false;
+    if (Array.isArray(need.kinds)) return need.kinds.includes(tool.kind);
+    return tool.kind === need.kind && tool.tier >= need.minTier;
+}
+
+/** The kinds a need accepts: its `kinds`, or its one `kind`. */
+function kindsOfNeed(need) {
+    return Array.isArray(need?.kinds) && need.kinds.length ? need.kinds : [need.kind];
 }
 
 /**
@@ -97,6 +118,11 @@ export function handsOf(item) {
  */
 export function toolNeedPhrase(need, items = {}) {
     if (!need) return '';
+    // Water: any of its kinds, by name ("Fishing Rod or Fishing Net").
+    if (Array.isArray(need.kinds) && need.kinds.length) {
+        const labels = need.kinds.map(toolKindLabel);
+        return labels.length < 2 ? labels[0] : `${labels.slice(0, -1).join(', ')} or ${labels[labels.length - 1]}`;
+    }
     const label = toolKindLabel(need.kind);
     if (!(need.minTier > 1)) return label;
     const best = items?.[toolItemFor(need, items)];
@@ -109,10 +135,12 @@ export function toolNeedPhrase(need, items = {}) {
  */
 export function toolItemFor(need, items = {}) {
     if (!need) return null;
+    const kinds = kindsOfNeed(need);
     const best = Object.entries(items || {})
         .map(([id, def]) => ({ id: def?.id || id, name: String(def?.name || ''), tool: toolOf(def) }))
-        .filter(c => c.tool && c.tool.kind === need.kind && c.tool.tier >= need.minTier)
-        .sort((a, b) => a.tool.tier - b.tool.tier || a.name.localeCompare(b.name))[0];
+        .filter(c => c.tool && kinds.includes(c.tool.kind) && toolMeets(c.tool, need))
+        .sort((a, b) => kinds.indexOf(a.tool.kind) - kinds.indexOf(b.tool.kind)
+            || a.tool.tier - b.tool.tier || a.name.localeCompare(b.name))[0];
     return best ? best.id : null;
 }
 

@@ -187,6 +187,13 @@ function effectSegments(statement, names) {
         return segs('a ', d(size, 'value'), ' chance of double ', d(item, categorySlot(statement)));
     }
 
+    // "50% more bites of Dolphin": the fish is the narrowing, so it reads inside the phrase.
+    if (payload.type === EFFECT_TYPES.CATCH_WEIGHT) {
+        const fish = payload.category ? names.item(payload.category) : 'any fish';
+        const more = Number(payload.value) < 0 ? 'fewer' : 'more';
+        return segs(d(`${size} ${more}`, 'value'), ' ', d('bites', 'type'), ' of ', d(fish, categorySlot(statement)));
+    }
+
     const label = entry.label.toLowerCase();
     const value = Number(payload.value);
 
