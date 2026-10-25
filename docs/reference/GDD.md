@@ -176,7 +176,7 @@ mines) keeps counting while full and replaces a loss on the next tick.
 | Spawner | Spawns | Allowance | Every | Upkeep per spawn |
 |---|---|---|---|---|
 | Oak Forest | Oak Sapling | 5 | 20 s | 1 Oak Seed |
-| Wheat Field | Wheat Sprout | 3 | 30 s | 1 Wheat Seed |
+| Wheat Field | Wheat Sprout | 3 | 30 s | 1 Wheat Seed (⚠️ goes with the S8 pack: a Field grows itself, §3 Farming) |
 | Apple Orchard | Apple Sapling | 2 | 45 s | 1 Apple Seed |
 | Copper Mine / Coal Mine / Quarry | ore vein / coal vein / stone outcrop | 3 | 30 s | — |
 | Goblin Camp | Goblin (95) / Goblin Chief (5) | 3 | 30 s | — |
@@ -311,6 +311,56 @@ pool with no bait is the water's **basic** catch. One sprite per water type
   the water's own Outputs are not counted, and Recalculate never writes Outputs
   onto water (`cms/src/engine/sim/fieldAdapter.js` `waterOutputs`).
   *(`catchPools.js`, `Fishing.js`, `BoardRunner.completeCycle`)*
+
+### Farming — Built (brief 230 S4); no content yet
+Owner rulings 2026-10-24. **A Field is one Token that grows itself**: a station
+(Works as Farming, kind **Field**; a **Herb Garden** is kind Herb Garden, its own
+crop list) with a **Field** block in the CMS (its shared empty and growing
+pictures). **Each crop is a Farming recipe** the Field offers (director's call,
+S0 Q4): the player picks it on the Field with the gear (**"Choose crop"**) and the
+same list as a station's recipes, crops unlock by Farming level, and the pick
+**sticks** for every sowing after. The recipe's **inputs are its seed**, paid
+once per sowing, never per harvest; its **Crop** row in the CMS sets how long it
+**grows** (about an hour for wheat; 1 h by default), its **load** (harvests a
+ripe Field holds; 10 by default) and its **ripe picture**.
+- **Empty → growing → ripe.** Picking a crop on an empty Field sows it on the
+  next tick for one seed from the Bank (then the loot on the mat). Growing, it
+  counts down (the timer bubble, the card, the inspection) and is drawn as the
+  shared growing picture; ripe, as its crop's ripe picture. Its state is saved
+  on the Token (`field: { cropId, load, full }`, `clocks.fieldMs`).
+- **A ripe Field holds a load of harvest cycles**: a Farming hero harvests it like
+  any work, each cycle making the crop's outputs (Yield, Double Item Chance and
+  bonus drops apply as anywhere). **The last cycle sows it again** with the
+  pick, its growth counting from the moment that cycle ended; a seed that cycle
+  dropped can pay. **No seed: the Field is stopped** (empty, the pick kept),
+  wears the yellow mark, says "Needs Wheat Seed" as it stops (the "Needs Coal"
+  look) and sows the tick one arrives.
+- **A change of pick** while a crop grows or stands ripe applies at the next
+  sowing: the crop in the ground is not dug up (the card says what it sows next).
+- **Farmers wait silently** for a growing Field in reach ("Waiting for Wheat
+  Field", not idle) and harvest it the moment it ripens; a stopped Field is
+  nothing to wait for (idle as before). A Field that ripens part-way through a
+  tick is harvested only after it ripened, so the catch-up's 1 s steps farm
+  exactly what live play does.
+- **Supports in reach** (content shapes; the S8 pack ships them): a **Well**
+  `Provides Grow Time −X %` to Fields (stacking to the standard floor, §7); a
+  **Composter** `Provides Crop Load +N` (or +X %) to Fields: the load a crop
+  ripens with, read once as it ripens (director's routine call: a load axis, so
+  the Field visibly holds more harvests; Yield would add crops per harvest and
+  leave the load as it was); a **Beehive** `Provides Double Item Chance` on the
+  crop (or Grants a seed) to Fields, and is itself a Farming node that **fills
+  slowly with honey and wax**: a refill (it rests empty, then refills all at
+  once, S0 Q10), sped by Fields or flowers in reach (`Provides Grow Time` to the
+  Beehive). A **Windmill** is a station of kind Windmill that mills grain.
+  Supports never wear out; help is free.
+- **A map's wild wheat patch is a ready-planted Field** (owner 2026-10-24): a
+  Field type whose Field block **starts ripe with** a crop, which is also its
+  pick; it sows again from the Bank like any Field.
+- **Old saves**: a Wheat Field saved as a spawner, once the pack makes it a
+  Field, loads as an empty Field with nothing picked; Wheat Sprouts and Ripe
+  Wheat finish and leave as before if their types are kept (S8 keeps them).
+- A Field never wears out (it is a station); its load is not its charges.
+  *(`Fields.js`, `TimedChanges.js` field row, `RecipeResolver`, `BoardRunner.completeCycle`)*
 
 ### Demolition — Built (Atlas A3a, A3b); replaced the discard bin
 Mark a Token for demolition and a hero holding Construction (level 1) removes
@@ -838,7 +888,8 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   charge and has no cooldown.
 - **Modifiers** that neighbours (or a hero's items) provide: yield, work
   time, input cost, **grow time** (a growth or a refill's rest, from neighbours
-  and Region rules only), XP bonus, double loot, **double item chance** (a chance
+  and Region rules only), **crop load** (the harvests a Field's crop ripens with:
+  a Composter, §3 Farming; read once as it ripens), XP bonus, double loot, **double item chance** (a chance
   that one named item, when a cycle or a kill drops it, comes out doubled: the
   Cleaver's Raw Beef), **catch weight** (a percentage on one fish's weight in a
   water's catch pool: a better rod's bonus, §3 Fishing), fail chance (Tokens); armour, resist, accuracy,

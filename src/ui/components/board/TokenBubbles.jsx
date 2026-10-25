@@ -244,6 +244,7 @@ export const TokenBubbles = ({
                                 recipe={gear.recipe}
                                 pulsing={gear.pulsing}
                                 isFoundation={gear.isFoundation}
+                                isField={!!gear.isField}
                                 onClick={gear.onClick}
                             />
                         </div>

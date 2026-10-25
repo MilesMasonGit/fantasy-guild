@@ -6,6 +6,7 @@ import { recipesForToken, contextTagsOf, contextRequirementsOf } from '../../con
 import { getItem } from '../../config/registries/itemRegistry.js';
 import * as InputAllocator from './InputAllocator.js';
 import * as StationRecipe from './StationRecipe.js';
+import * as Fields from './Fields.js';
 import * as BoardState from './BoardState.js';
 
 /**
@@ -138,8 +139,11 @@ export function resolveRecipe(instanceId, instance) {
     if (!recipes.length) return { status: RECIPE.OK, recipe: null };
 
     // Nothing is ever picked for the player: until they choose, a station has nothing to run. A
-    // selection no longer in the pool is dropped here and reads the same way.
-    const recipe = StationRecipe.validateSelection(instance, def);
+    // selection no longer in the pool is dropped here and reads the same way. A Field works the
+    // crop in its ground, which a change of pick does not dig up (`Fields.js`).
+    const recipe = Fields.isField(def)
+        ? (Fields.plantedCrop(instance, def) || StationRecipe.validateSelection(instance, def))
+        : StationRecipe.validateSelection(instance, def);
     if (!recipe) {
         return { status: RECIPE.NONE, recipe: null, reason: def?.foundation ? 'choose_build' : 'choose_recipe' };
     }
@@ -174,7 +178,8 @@ export function effectiveIO(instanceId, instance) {
         // per-cycle charge is zero, or a one-charge Foundation would be destroyed by the very cycle
         // that builds on it.
         recipe: def?.foundation && recipe ? { ...recipe, stationChargeCost: 0 } : recipe,
-        inputs: recipe?.inputs ?? def?.config?.inputs ?? [],
+        // A crop's inputs are its seed, paid once per sowing (`Fields.js`), never per harvest.
+        inputs: Fields.isField(def) ? [] : (recipe?.inputs ?? def?.config?.inputs ?? []),
         outputs: recipe?.outputs ?? def?.config?.outputs ?? [],
         cycleTimeMs: recipe?.durationMs ?? def?.config?.cycleTimeMs,
         xp: recipe?.xp ?? def?.config?.xp

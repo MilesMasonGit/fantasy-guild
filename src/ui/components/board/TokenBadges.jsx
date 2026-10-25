@@ -171,19 +171,20 @@ const gearOutlineStyle = (dx, dy) => ({
     imageRendering: 'pixelated'
 });
 
-export const StationGearBadge = ({ isDragging, recipe, pulsing = false, isFoundation = false, onClick }) => {
+export const StationGearBadge = ({ isDragging, recipe, pulsing = false, isFoundation = false, isField = false, onClick }) => {
     if (isDragging) return null;
 
     const outputs = outputSummary(recipe);
     const inputs = inputSummary(recipe);
     const context = contextSummary(recipe);
-    const label = isFoundation ? 'Choose what to build' : 'Choose recipe';
+    const label = isFoundation ? 'Choose what to build' : isField ? 'Choose crop' : 'Choose recipe';
 
-    const title = recipe?.name || (isFoundation ? 'Nothing chosen to build' : 'No recipe selected');
+    const title = recipe?.name || (isFoundation ? 'Nothing chosen to build' : isField ? 'No crop picked' : 'No recipe selected');
+    // A crop's inputs are its seed, paid once per sowing rather than per harvest.
     const preview = (outputs || inputs || context) ? (
         <>
             {outputs && <div>Makes {outputs}</div>}
-            {inputs && <div className="text-white/70">Needs {inputs}</div>}
+            {inputs && <div className="text-white/70">{isField ? 'Sown for' : 'Needs'} {inputs}</div>}
             {context && <div className="text-white/70">Beside {context}</div>}
         </>
     ) : null;

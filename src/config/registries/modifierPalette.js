@@ -176,6 +176,23 @@ export const MODIFIER_PALETTE = [
         inverted: true,
         hint: 'How long a Token takes to grow (a Sapling into a Tree) or to refill after it rests (a vein). A negative value is faster. Speed-ups stack, but together cut at most 80% of the time.'
     },
+    {
+        /**
+         * Read by `Fields.loadAtRipening` once, as a Field's crop ripens: the harvest cycles it
+         * then holds. From its neighbours and the Region's rules (a Composter in reach), narrowed
+         * to the Field's own work skill.
+         */
+        type: EFFECT_TYPES.CROP_LOAD,
+        reads: { up: (n) => `hold ${n} more harvests when ripe`, down: (n) => `hold ${n} fewer harvests when ripe` },
+        label: 'Crop Load',
+        when: 'never',
+        scales: 'value',
+        buckets: ['flat', 'percentage'],
+        categories: 'skill',
+        shape: MODIFIER_SHAPES.DETERMINISTIC,
+        group: 'Production',
+        hint: 'How many harvests a Field holds when its crop ripens (a Composter adds to the load). Read as the crop ripens; never fewer than one.'
+    },
 
     // --- Support ------------------------------------------------------------
     {

@@ -372,5 +372,11 @@ export const ALERT = {
      * resting is not a problem the player fixes, so it draws no badge and stays out of
      * `WorkCheck.FIXABLE`.
      */
-    RESTING: 'resting'
+    RESTING: 'resting',
+    /**
+     * A Field's crop is growing (or about to be sown), so there is nothing to harvest yet
+     * (`Fields.js`). Like `RESTING`: a flag skips it and its hero lets go and waits silently for it,
+     * and it is never a Token's alert.
+     */
+    GROWING: 'growing'
 };

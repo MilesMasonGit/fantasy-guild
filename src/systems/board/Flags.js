@@ -573,10 +573,10 @@ function keepOrRelease(r, heroId, dirty) {
             || (kind === 'promotion' && !promotionRefusal(heroId, instance))
             || (kind === 'enemy' && ruleAllows(heroId, FlagRules.FIGHT))
             || (kind === 'work' && hasWorkSkill(def, instance) && ruleAllows(heroId, workConfigOf(def, instance).skill)
-                // A Token that ran out and rests until it respawns is let go at once, with no
-                // badge: the hero works the next thing, or a pinned hero waits by it. Unless it is
-                // marked for demolition, which a resting Token can still be.
-                && (Demolition.isMarked(instance) || !Respawn.isResting(instance, def)))
+                // A Token that ran out and rests until it respawns (or a Field with nothing ripe) is
+                // let go at once, with no badge: the hero works the next thing, or a pinned hero
+                // waits by it. Unless it is marked for demolition, which a resting Token can still be.
+                && (Demolition.isMarked(instance) || !WorkCheck.isAway(instance, def)))
         );
 
         if (!eligible) {
@@ -1027,9 +1027,10 @@ function springAmbushes() {
  * pinned to that enemy waits beside it, and an area flag with nothing else in reach waits at its
  * flag; either takes the enemy the moment it is free.
  * - `'node'`: a Token resting until it respawns (`resting`) that the hero could work and that is
- * coming back by itself (`Respawn.isComingBack`: not a Bare tree with no Orchard in reach): the skip
- * reason is the Token's own, so the hero's skill, level, tool and rule have already passed. They
- * wait silently and work it the moment it is back (`TOKEN_RESPAWNED` marks flags dirty). Failing
+ * coming back by itself (`Respawn.isComingBack`: not a Bare tree with no Orchard in reach), or a
+ * Field whose crop grows (`growing`): the skip reason is the Token's own, so the hero's skill,
+ * level, tool and rule have already passed. They wait silently and work it the moment it is back
+ * (`TOKEN_RESPAWNED`, or the Field's `TILE_CHANGED` as it ripens, marks flags dirty). Failing
  * those, a Stump or Sapling in the flag's reach growing back into work they could do
  * ({@link growingFor}): its growth is a transform, whose `TILE_CHANGED` marks flags dirty, so they
  * work it the moment it stands.
@@ -1042,6 +1043,7 @@ export function waitingOf(heroId) {
             if (Respawn.isComingBack(BoardState.getTokenById(s.instanceId))) return { instanceId: s.instanceId, kind: 'node' };
             continue;
         }
+        if (s.reason === ALERT.GROWING) return { instanceId: s.instanceId, kind: 'node' };
         if (s.reason !== SKIP.CLAIMED) continue;
         if (BoardCombat.isEnemyToken(BoardState.getTokenById(s.instanceId))) return { instanceId: s.instanceId, kind: 'fight' };
     }

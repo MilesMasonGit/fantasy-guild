@@ -126,7 +126,10 @@ export const FOUNDATION_KINDS = Object.freeze(['wood', 'stone', 'bench', 'farmla
  * Smithy) share one kind, since they run the same recipes faster.
  */
 export const STATION_KINDS = Object.freeze([
-    'furnace', 'smithy', 'kitchen', 'brewery', 'workbench', 'alchemy_table', 'summoning_circle'
+    'furnace', 'smithy', 'kitchen', 'brewery', 'workbench', 'alchemy_table', 'summoning_circle',
+    // A Field and a Herb Garden are Farming stations whose recipes are crops (`cropTermsOf`), each
+    // kind its own crop list; a Windmill mills grain.
+    'field', 'herb_garden', 'windmill'
 ]);
 
 const STATION_KIND_LABELS = Object.freeze({
@@ -136,7 +139,10 @@ const STATION_KIND_LABELS = Object.freeze({
     brewery: 'Brewery',
     workbench: 'Workbench',
     alchemy_table: 'Alchemy Table',
-    summoning_circle: 'Summoning Circle'
+    summoning_circle: 'Summoning Circle',
+    field: 'Field',
+    herb_garden: 'Herb Garden',
+    windmill: 'Windmill'
 });
 
 /** A station kind in words; an unknown kind shows its id rather than vanishing. */
@@ -317,6 +323,81 @@ export function growsTermsOf(def) {
     lastGrowsTerms = terms;
     return terms;
 }
+
+/**
+ * ⭐ **A Field grows its own crop** (brief 230 S4). `field: { emptySprite?, growingSprite?,
+ * startsWith? }` on a Token that works as a station (Farming, kind `field` or `herb_garden`): its
+ * recipes are the crops it can sow (`cropTermsOf`), the player picks one on the Field, and the Field
+ * goes empty → growing → ripe by itself (`Fields.js`).
+ *
+ * * `emptySprite`, `growingSprite` — the shared pictures of an empty and a growing Field; absent,
+ *   the Token's own art. A ripe Field is drawn as its crop's `ripeSprite`.
+ * * `startsWith` — a crop recipe id: a new copy starts ripe with that crop, which is also its pick
+ *   (a map's wild wheat patch). Absent, a new copy starts empty with nothing picked.
+ *
+ * Returns the block's terms with the blanks dropped, or null for a Token without the block.
+ */
+export function fieldOf(def) {
+    const block = def?.field;
+    if (!block || typeof block !== 'object' || Array.isArray(block)) return null;
+    let terms = fieldTermsMemo.get(block);
+    if (!terms) {
+        const text = (v) => (typeof v === 'string' && v.trim() ? v.trim() : null);
+        terms = Object.freeze({
+            emptySprite: text(block.emptySprite),
+            growingSprite: text(block.growingSprite),
+            startsWith: text(block.startsWith)
+        });
+        fieldTermsMemo.set(block, terms);
+    }
+    return terms;
+}
+const fieldTermsMemo = new WeakMap();
+
+/** A crop's terms when its recipe names none: about an hour to grow, ten harvests. */
+export const CROP_DEFAULTS = Object.freeze({ growMs: 60 * 60 * 1000, load: 10 });
+
+/** The shortest growth the engine honours. */
+export const CROP_MIN_GROW_MS = 1000;
+
+/**
+ * What a crop recipe asks of the Field that grows it, as `{ growMs, load, ripeSprite, seeds }`:
+ *
+ * * `growMs` — how long it grows before it is ripe (`crop.growMs`, defaulted, floored at
+ *   {@link CROP_MIN_GROW_MS}); Grow Time from Tokens in reach (a Well) shortens it.
+ * * `load` — how many harvest cycles a ripe Field holds (`crop.load`, a whole number from 1); a
+ *   Crop Load rule in reach (a Composter) adds to it as it ripens.
+ * * `ripeSprite` — the picture of a ripe Field of this crop, or null (the Token's own art).
+ * * `seeds` — the recipe's `inputs`, summed by item: what one sowing costs, paid from the Bank once
+ *   per planting, never per harvest.
+ *
+ * Kept per recipe object (frozen), so a Field asking every tick allocates nothing.
+ */
+export function cropTermsOf(recipe) {
+    if (!recipe || typeof recipe !== 'object') return DEFAULT_CROP_TERMS;
+    let terms = cropTermsMemo.get(recipe);
+    if (terms) return terms;
+    const crop = recipe.crop && typeof recipe.crop === 'object' ? recipe.crop : {};
+    const grow = Number(crop.growMs);
+    const load = Math.floor(Number(crop.load));
+    const sprite = typeof crop.ripeSprite === 'string' && crop.ripeSprite.trim() ? crop.ripeSprite.trim() : null;
+    const total = new Map();
+    for (const line of Array.isArray(recipe.inputs) ? recipe.inputs : []) {
+        const q = Math.floor(Number(line?.quantity ?? 1));
+        if (typeof line?.itemId !== 'string' || !line.itemId || !(q > 0)) continue;
+        total.set(line.itemId, (total.get(line.itemId) || 0) + q);
+    }
+    terms = Object.freeze({
+        growMs: Number.isFinite(grow) && grow > 0 ? Math.max(CROP_MIN_GROW_MS, grow) : CROP_DEFAULTS.growMs,
+        load: load >= 1 ? load : CROP_DEFAULTS.load,
+        ripeSprite: sprite,
+        seeds: Object.freeze([...total].map(([itemId, quantity]) => Object.freeze({ itemId, quantity })))
+    });
+    cropTermsMemo.set(recipe, terms);
+    return terms;
+}
+const cropTermsMemo = new WeakMap();
+const DEFAULT_CROP_TERMS = Object.freeze({ ...CROP_DEFAULTS, ripeSprite: null, seeds: Object.freeze([]) });
 
 /**
  * Passive Production's one timer: every line of a Token's `trickle` block (and the Wishing Well's

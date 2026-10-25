@@ -34,6 +34,7 @@ import * as EffectFeedback from './EffectFeedback.js';
 import * as RareDrops from './RareDrops.js';
 import * as OutputRules from './OutputRules.js';
 import * as Fishing from './Fishing.js';
+import * as Fields from './Fields.js';
 import * as LoadoutMoments from './LoadoutMoments.js';
 import * as HeroEffects from '../hero/HeroEffects.js';
 import * as HeroManager from '../hero/HeroManager.js';
@@ -178,7 +179,7 @@ function relocateOffender(instance) {
  *
  * Every reader is asked by the Token's instance id, and every event names it by `instanceId`.
  */
-function completeCycle(instance, def, io, heroId, config = def.config) {
+function completeCycle(instance, def, io, heroId, config = def.config, overMs = 0) {
     const id = instance.id;
 
     // Building in place: a Foundation's cycle ends with it BECOMING the Token its recipe outputs.
@@ -338,6 +339,10 @@ function completeCycle(instance, def, io, heroId, config = def.config) {
     // a context Token never wears out, and a gathering node that helps its neighbours spends its
     // charges only on its own gathering (`Charges.planContextCharges`, `wearRule.js`).
     Charges.commitPlan(chargePlan, { heroId });
+
+    // A Field spends one harvest of its load; the last sows its crop again, growing from the moment
+    // this cycle ended (`overMs` into the tick), or stops it without a seed (`Fields.js`).
+    if (Fields.isField(def)) Fields.harvested(instance, def, { overMs });
 
     // The board's universal unit of work. One kill counts as one cycle too, so combat feeds this
     // exactly as production does.
@@ -553,8 +558,9 @@ export function tick(delta) {
         const check = WorkCheck.fixableReason(id, instance);
         const io = check.io;
 
-        // Resting until it respawns: no cycle and no mark. Its hero lets go on the next flag pass.
-        if (check.reason === ALERT.RESTING) {
+        // Resting until it respawns, or a Field with nothing ripe: no cycle and no mark. Its hero
+        // lets go on the next flag pass.
+        if (WorkCheck.AWAY.has(check.reason)) {
             setAlert(instance, null);
             continue;
         }
@@ -674,7 +680,7 @@ export function tick(delta) {
             // Only a cycle that crossed its end during this tick has a leftover; one that held at
             // full progress (no room, a raced input) and finishes on a retry does not.
             const overshoot = before < cycleTime ? instance.cycleElapsedMs - cycleTime : 0;
-            completeCycle(instance, def, io, heroId, config);
+            completeCycle(instance, def, io, heroId, config, overshoot);
             if (overshoot > 0 && instance.cycleElapsedMs === 0) carryOut.set(id, overshoot);
         } else if (publishProgress) {
             // Ref-based UI updates only: this bypasses React entirely, because re-rendering every

@@ -505,7 +505,7 @@ export function makeTokenOutputEntry(tokenId) {
 // Token Lifecycle blocks: `spawner`, `grows`, `turns`, `foundation`, `shop`, `trickle`, `respawn`. These factories only give the editor a starting value when an author ADDS a block.
 // ⚠️ Absent means absent: `makeToken` creates none of them and nothing on the load or sync path fills them in, so a Token without a block round-trips without one, byte for byte.
 
-export const TOKEN_LIFECYCLE_BLOCKS = Object.freeze(['spawner', 'grows', 'turns', 'foundation', 'shop', 'trickle', 'respawn']);
+export const TOKEN_LIFECYCLE_BLOCKS = Object.freeze(['spawner', 'grows', 'turns', 'foundation', 'shop', 'trickle', 'respawn', 'field']);
 
 export function makeWeightedTokenEntry(typeId = '') {
     return { typeId, weight: 1 };
@@ -535,6 +535,9 @@ export function makeLifecycleBlock(key) {
         case 'respawn':
             // A refill on the game's default rest; a regrow is picked in the editor.
             return { mode: RESPAWN_DEFAULTS.mode, afterMs: RESPAWN_DEFAULTS.afterMs };
+        case 'field':
+            // A Field with no pictures of its own (its own art) that starts empty.
+            return {};
         default:
             return undefined;
     }

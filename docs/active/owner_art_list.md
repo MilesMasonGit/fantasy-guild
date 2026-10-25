@@ -149,8 +149,10 @@ Tokens. Stand-ins from existing sprites until drawn.
 | A Bare tree waiting for its Orchard | — (no new art) | Wears the yellow problem mark, "Needs an Apple Orchard nearby to refill" on hover (S2b) |
 | Empty vein rock, one shared | **NEW** | Every ore vein while it rests (brief 230 S3: drawn in place of the vein, not greyed; its name says which ore). Stand-in: `t_vein_stone`, which the Stone Outcrop also wears, so a resting vein looks like an outcrop until this is drawn. Name the new file anything; it is picked per vein in the CMS (Respawns, Resting sprite) |
 | Mine, Minecart | ADAPT | Today's Copper Mine and Minecart sprites may do (`t_mineshaft_*`, `t_minecart_*` for seven ores; the S3 QA scene uses the copper ones) |
-| Field: empty, growing (shared); ripe per crop (Wheat first) | **NEW** / ADAPT | Herb Garden likewise (ripe per herb) |
-| Well, Composter, Beehive, Windmill, Dock | **NEW** | Support Tokens built on Foundations |
+| Field: empty, growing (shared); ripe per crop (Wheat first) | **NEW** / ADAPT | Herb Garden likewise (ripe per herb). Built in S4: the empty and growing pictures are picked on the Field Token (CMS, Field block), the ripe one per crop on its recipe (CMS, Crop row). The S4 QA scene stands in `t_farmland` (empty), `t_garden` (growing), `t_field_wheat` (ripe wheat) and `t_field_lavender` (ripe herb); a wild wheat patch on a map is a Field drawn the same way |
+| Herb Garden Token | **NEW** / ADAPT | Its own picture for the Shop and build list; on the mat it is drawn by its state like a Field. Stand-in `t_greenhouse` |
+| Well, Composter, Beehive, Windmill, Dock | **NEW** | Support Tokens built on Foundations. S4 QA stand-ins: `t_well_wishing` (Well), `t_lumberpile` (Composter), `t_meadow` (Beehive; greyed while it rests and refills, or a resting picture of its own if drawn: an empty hive), `t_windmill` exists |
+| Honey (item) | **NEW** | What a Beehive fills with beside Beeswax Comb (`i_honey`, which the comb wears today). The S4 QA scene registers a QA Honey on `i_honey` |
 | Water types: sea, river, lake | ADAPT | One fishing-spot sprite each; the Shrimp Coast goes. The S5 QA scene stands in `t_coast` (sea), `t_fish_spot` (river), `t_lake_small` (lake), and `t_foundation_wood` for the Dock |
 | Smithy | **NEW** | Hero-worked; replaces the Copper Anvil |
 | Brewery, Kitchen, Alchemy Table | **NEW** / ADAPT | Stations; upgrades only faster |

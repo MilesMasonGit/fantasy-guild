@@ -74,8 +74,15 @@ const lastShort = new WeakMap();
  * compared by identity, tick after tick.
  */
 export function shortOf(def) {
-    const { cost } = growsTermsOf(def);
-    if (!cost.length) return NONE;
+    return shortOfCost(growsTermsOf(def).cost);
+}
+
+/**
+ * {@link shortOf} for any frozen cost list, summed by item (a growth's, or a Field's seed: `Fields.js`),
+ * read through the same once-per-item-per-tick supply.
+ */
+export function shortOfCost(cost) {
+    if (!cost?.length) return NONE;
     let short = null;
     for (const { itemId, quantity } of cost) {
         if (available(itemId) < quantity) (short ||= []).push(itemId);
@@ -90,10 +97,15 @@ export function shortOf(def) {
 
 /** Pay a growth's cost (checked first, so it never half-pays). */
 export function payFor(def) {
-    const { cost } = growsTermsOf(def);
-    if (!cost.length) return;
-    InputAllocator.consumeInputs(cost);
+    payCost(growsTermsOf(def).cost);
+}
+
+/** Pay a cost list from the Bank, then the mat (checked first, so it never half-pays); false when short. */
+export function payCost(cost) {
+    if (!cost?.length) return true;
+    const paid = InputAllocator.consumeInputs(cost);
     supplyChanged();
+    return paid;
 }
 
 /** Growing Token instance id → `{ alert, needs }`, for the ones whose alert is up. */

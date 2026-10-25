@@ -1,7 +1,10 @@
 import { useMemo, useState } from 'react';
 import { Plus, X, Sprout } from 'lucide-react';
 import { useEntityStore, makeLifecycleBlock, makeWeightedTokenEntry, makeTrickleEntry, TOKEN_LIFECYCLE_BLOCKS } from '../../stores/useEntityStore';
-import { FOUNDATION_KINDS, TURN_DEFAULTS, RESPAWN_MODES, RESPAWN_DEFAULTS, RESPAWN_MIN_MS, skillsByLayer } from '../../utils/constants';
+import {
+  FOUNDATION_KINDS, TURN_DEFAULTS, RESPAWN_MODES, RESPAWN_DEFAULTS, RESPAWN_MIN_MS, skillsByLayer,
+  expandBearer, stationSkillOf, stationKindOf, stationKindOffers, stationKindLabel, cropTermsOf,
+} from '../../utils/constants';
 import { Section, Field } from '../shared/EditorLayout';
 import { ItemPicker, ItemList } from './Statements';
 import SpritePickerModal from './SpritePickerModal';
@@ -20,11 +23,14 @@ const BLOCK_INFO = {
   shop: { title: 'Shop', what: 'Sold at the Shop, priced in items.' },
   trickle: { title: 'Passive Production', what: 'Drops these items beside the Token every 5 minutes, all on one timer, no hero needed (Guild Hall only, for now). The Wishing Well adds its Water to the Hall’s.' },
   respawn: { title: 'Respawns', what: 'Comes back after it runs out instead of leaving the mat: refills where it stands after a rest, or regrows from another Token (Tree → Sapling → Tree).' },
+  field: { title: 'Field', what: 'Grows its own crop: empty, growing, ripe. Its crops are the recipes it works (a Field or Herb Garden station); the player picks one on it.' },
 };
 
 export default function LifecycleBlocks({ token, onChange }) {
   const tokens = useEntityStore((s) => s.tokens);
   const items = useEntityStore((s) => s.items);
+  const effects = useEntityStore((s) => s.effects);
+  const recipePools = useEntityStore((s) => s.recipePools);
 
   const tokenOptions = useMemo(
     () => Object.values(tokens)
@@ -89,6 +95,9 @@ export default function LifecycleBlocks({ token, onChange }) {
                   )}
                   {key === 'respawn' && (
                     <RespawnBlock block={token.respawn} selfId={token.id} tokens={tokens} tokenOptions={tokenOptions} onChange={(v) => set('respawn', v)} />
+                  )}
+                  {key === 'field' && (
+                    <FieldBlock block={token.field} token={token} effects={effects} recipePools={recipePools} items={items} onChange={(v) => set('field', v)} />
                   )}
                 </div>
               )}
@@ -415,6 +424,73 @@ function RespawnBlock({ block, selfId, tokens, tokenOptions, onChange }) {
   );
 }
 
+/**
+ * The crops a Field offers: the recipes of its `Works as` skill its station kind offers (a building recipe never), as the
+ * game's `recipesForToken` reads them. Empty when it works as nothing.
+ */
+function cropsOfToken(token, effects, recipePools) {
+  const expanded = expandBearer(token, effects);
+  const skill = stationSkillOf(expanded);
+  if (!skill) return { skill: null, kind: null, crops: [] };
+  const kind = stationKindOf(expanded);
+  const crops = (recipePools[skill] || []).filter((r) => r && !(Array.isArray(r.foundationKinds) && r.foundationKinds.length)
+    && stationKindOffers(kind, r));
+  return { skill, kind, crops };
+}
+
+/** Minutes as the note says them: `60 min`, `1 h 30 min`. */
+const minutes = (ms) => {
+  const total = Math.round((Number(ms) || 0) / 60000);
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  if (h === 0) return `${m} min`;
+  return m ? `${h} h ${m} min` : `${h} h`;
+};
+
+/**
+ * A Field: its shared pictures while empty and while growing (a ripe Field is drawn as its crop's ripe sprite, set on
+ * the crop recipe), and the crop a new copy starts ripe with (a map's wild patch). Each key is written only while set,
+ * so an empty block stays `{}`.
+ */
+function FieldBlock({ block, token, effects, recipePools, items, onChange }) {
+  const patch = (key, value) => {
+    const next = { ...block };
+    const text = typeof value === 'string' ? value.trim() : '';
+    if (text) next[key] = text;
+    else delete next[key];
+    onChange(next);
+  };
+  const { skill, kind, crops } = cropsOfToken(token, effects, recipePools);
+  const start = block.startsWith ? crops.find((r) => r.id === block.startsWith) : null;
+  const seedText = (r) => (cropTermsOf(r).seeds.map((s) => `${s.quantity} ${items?.[s.itemId]?.name || s.itemId}`).join(', ') || 'nothing');
+  const kindName = kind ? stationKindLabel(kind) : null;
+  let note;
+  if (!skill) note = 'A Field works as a station (a Works as rule, Farming, kind Field or Herb Garden): give it one, and its crops are those recipes.';
+  else if (!crops.length) note = `No ${kindName ? `${kindName} ` : ''}recipe of its skill yet: add crop recipes (Made at ${kindName || 'it'}).`;
+  else note = `Crops: ${crops.map((r) => `${r.name || r.id} (${minutes(cropTermsOf(r).growMs)}, ${cropTermsOf(r).load} harvests, sown for ${seedText(r)})`).join('; ')}.`;
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <SpriteField label="Empty sprite" value={block.emptySprite} placeholder="none: its own art" onChange={(v) => patch('emptySprite', v)} />
+        <SpriteField label="Growing sprite" value={block.growingSprite} placeholder="none: the empty sprite" onChange={(v) => patch('growingSprite', v)} />
+      </div>
+      <Field label="Starts ripe with">
+        <select aria-label="Starts ripe with" value={block.startsWith || ''} onChange={(e) => patch('startsWith', e.target.value)} className="w-full" style={{ fontSize: 11 }}>
+          <option value="">— nothing: starts empty —</option>
+          {block.startsWith && !start && <option value={block.startsWith}>{block.startsWith} (not one of its crops)</option>}
+          {crops.map((r) => <option key={r.id} value={r.id}>{r.name || r.id}</option>)}
+        </select>
+      </Field>
+      <p className="text-[10px] text-gray-600" data-field="field-note">
+        {note}
+        {block.startsWith
+          ? ' A new copy starts ripe with the crop chosen above, which is also its pick (a map’s wild patch); it sows again from the Bank like any Field.'
+          : ' A new copy starts empty: the player picks a crop on it, and it sows for one seed from the Bank.'}
+      </p>
+    </div>
+  );
+}
+
 /** A refill block in the file's order; no resting sprite, or no Token it needs in reach, leaves no key. */
 function refillBlock({ afterMs, restingSprite, needsNearby }) {
   const sprite = typeof restingSprite === 'string' ? restingSprite.trim() : '';
@@ -426,10 +502,15 @@ function refillBlock({ afterMs, restingSprite, needsNearby }) {
 
 /** The picture a resting Token is drawn as: typed, or picked from the sprite browser. */
 function RestingSpriteField({ value, onChange }) {
+  return <SpriteField label="Resting sprite" value={value} placeholder="none: its own art, greyed" onChange={onChange} />;
+}
+
+/** A sprite id: typed, or picked from the sprite browser, with a small preview. */
+export function SpriteField({ label, value, placeholder, onChange }) {
   const [picking, setPicking] = useState(false);
   const path = value ? resolveSpritePath(value) : null;
   return (
-    <Field label="Resting sprite">
+    <Field label={label}>
       <div className="flex gap-2 items-center">
         <div className="w-8 h-8 rounded border border-white/10 bg-black/40 flex items-center justify-center overflow-hidden flex-shrink-0">
           {path && (
@@ -443,10 +524,10 @@ function RestingSpriteField({ value, onChange }) {
         </div>
         <input
           type="text"
-          aria-label="Resting sprite"
+          aria-label={label}
           value={value || ''}
           onChange={(e) => onChange(e.target.value)}
-          placeholder="none: its own art, greyed"
+          placeholder={placeholder}
           className="flex-1 min-w-0"
         />
         <button type="button" onClick={() => setPicking(true)} className="btn-ghost text-xs" style={{ padding: '6px 10px' }}>
