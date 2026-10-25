@@ -21,6 +21,7 @@ import { DiscoveryManager } from '../systems/core/DiscoveryManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import * as CatchUp from '../systems/core/CatchUp.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
+import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { registerEffects } from '../config/registries/effectRegistry.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
@@ -32,7 +33,7 @@ import { xpForLevel } from '../utils/XPCurve.js';
 import * as fixtures from '../../bench/fixtures.mjs';
 import { registerStatusFixtures, providesFlat, POISON } from './fixtures/statusEffects.js';
 import {
-    startFightWatch, resetFightWatch, fightsOf, subscribeMoments, MOMENT, OUTCOME
+    startFightWatch, resetFightWatch, fightsOf, subscribeMoments, adopt, MOMENT, OUTCOME
 } from '../ui/components/combat/fightWatch.js';
 import { LiveFightPanel } from '../ui/components/combat/FightPanel.jsx';
 import { fightPanelView, activeElixirsOf } from '../ui/components/combat/fightView.js';
@@ -183,6 +184,32 @@ describe('the fight watch: this fight and the last one', () => {
         const next = fightsOf(heroId);
         expect(next.current.id).toBeGreaterThan(next.last.id);
         expect(next.last).toBe(last);
+        stop();
+    });
+
+    it('a fight already running when the watch starts is adopted as "seen from partway", but never a rest between kills', () => {
+        const { heroId, enemyId } = buildFight();
+        runUntil(() => false, 5);
+        const stop = startFightWatch();
+        expect(fightsOf(heroId).current).toBeNull();
+        expect(adopt(heroId)).toBe(true);
+        expect(fightsOf(heroId).current).toMatchObject({ instanceId: enemyId, joinedLate: true });
+        // Resting after a kill: nothing to adopt until the next enemy steps up.
+        runUntil(() => !!fightsOf(heroId).last, 180);
+        expect(fightsOf(heroId).current).toBeNull();
+        expect(adopt(heroId)).toBe(false);
+        expect(fightsOf(heroId).last.outcome).toBe(OUTCOME.WON);
+        stop();
+    });
+
+    it('a boss move’s name joins the log; a status’s callout does not (its landing has its own line)', () => {
+        const { heroId, enemyId } = buildFight();
+        const stop = startFightWatch();
+        runUntil(() => !!fightsOf(heroId).current, 10);
+        EventBus.publish(BOARD_EVENTS.EFFECT_FIRED, { instanceId: enemyId, title: 'Crushing Blow' });
+        EventBus.publish(BOARD_EVENTS.EFFECT_FIRED, { instanceId: enemyId, title: 'Poison' });
+        const moves = fightsOf(heroId).current.log.filter(l => l.key === 'move');
+        expect(moves.map(l => l.vars.move)).toEqual(['Crushing Blow']);
         stop();
     });
 

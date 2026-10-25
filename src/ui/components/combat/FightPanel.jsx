@@ -15,7 +15,7 @@ import { HP_BAR, HP_COLOUR, HP_TRACK, HP_EDGE, healthFillPx } from '../board/hea
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { CombatGlyph } from './CombatGlyph.jsx';
 import { GLYPH_COLOUR } from './combatGlyphs.js';
-import { fightsOf, subscribeFights, reconcile, startFightWatch, TONE, OUTCOME } from './fightWatch.js';
+import { fightsOf, subscribeFights, reconcile, adopt, startFightWatch, TONE, OUTCOME } from './fightWatch.js';
 import { fightPanelView, levelText, secondsText, styleName, clockText } from './fightView.js';
 import { t } from '../../../i18n/index.js';
 
@@ -365,8 +365,9 @@ export const LiveFightPanel = ({ heroId, onClose }) => {
     );
     const [now, setNow] = useState(() => Date.now());
     useEffect(() => {
+        adopt(heroId);
         const timer = setInterval(() => {
-            reconcile(heroId);
+            if (!reconcile(heroId)) adopt(heroId);
             setNow(Date.now());
         }, PANEL_CLOCK_MS);
         return () => clearInterval(timer);

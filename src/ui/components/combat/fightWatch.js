@@ -292,9 +292,14 @@ function onStatusTick(p) {
     changed(record.heroId);
 }
 
+/** Whether a callout's title names a status (its landing has a line of its own: "Poison on Aela"). */
+function namesStatus(title) {
+    return Object.values(EFFECTS).some(e => e?.status && e.name && (title === e.name || title.startsWith(`${e.name} `)));
+}
+
 function onEffectFired(p) {
     const record = p?.instanceId != null ? recordOfEnemy(p.instanceId) : null;
-    if (!record || !p.title) return;
+    if (!record || !p.title || namesStatus(p.title)) return;
     say(record, { icon: 'star', tone: TONE.NOTE, key: 'move', vars: { move: p.title } });
     changed(record.heroId);
 }
@@ -366,6 +371,21 @@ export function reconcile(heroId) {
     if (fight && fight.instanceId === record.instanceId) return false;
     say(record, { icon: 'miss', tone: TONE.MISS, key: 'left', vars: { hero: record.heroName } });
     endCurrent(heroId, OUTCOME.LEFT);
+    changed(heroId);
+    return true;
+}
+
+/**
+ * Start a record for a fight the watch has not heard from yet (one a catch-up or a load left
+ * running, before its next swing), so a panel opened on it has something to show at once.
+ * @returns {boolean} whether a record was made
+ */
+export function adopt(heroId) {
+    if (!heroId || byHero.get(heroId)?.current) return false;
+    const fight = BoardCombat.fightOfHero(heroId);
+    // Resting after a kill, the next enemy has not stepped up: that fight starts at its engagement.
+    if (!fight || (fight.combat?.state?.intermissionTimer ?? 0) > 0) return false;
+    if (!ensure(heroId, fight.instanceId)) return false;
     changed(heroId);
     return true;
 }

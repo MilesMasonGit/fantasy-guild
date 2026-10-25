@@ -16,7 +16,9 @@ clunky labels like "LVL 03" where "3/99" says it better.
   "Charges:", "HP:") where an icon or the position already says it.
 - **XP is a thin bar**; the exact number (`1,154 / 1,500 XP`) shows on hover.
 - **HP is a bar**; the exact number shows on hover, except in the hero panel,
-  where the bar shows its numbers beside it (owner, eye-check A, 2026-10-09).
+  where the bar shows its numbers beside it (owner, eye-check A, 2026-10-09),
+  and on the mat, where a thin bar over a fighter has its number and
+  percentage written above it, `17 · 57%` (owner, combat screen, 2026-10-25).
 - Times read `0:34` / `4:05`; thousands get separators (`1,154`).
 
 ## Frames
@@ -123,7 +125,8 @@ normal text colour; a new meaning needs the owner's OK.
   the Token.
 - It **replaces** the worked Token's work bar, "!" and charges ring; a Token nobody works keeps
   its own "!" and hover rings. No floating "-1": the plate counts down.
-- A fight's link (both styles, the elixirs) will sit in the same place; HP bars stay above.
+- A fight's link sits in the same place, the **fight plate**: both styles with a divider, then the
+  hero's elixirs with the fights each has left; HP bars stay above (combat screen, 2026-10-25).
 
 ## Sprites and icons
 

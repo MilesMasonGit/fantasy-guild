@@ -1,3 +1,5 @@
+// ⚠️ The mock-ups were removed when the combat screen was built (C6b); this script is the record of
+// how round two was captured and no longer runs. The built screen's capture is capture_c6b.mjs.
 // node capture_c6r2_mockups.mjs <url> <outDir> [date]
 // Round two of the combat screen mock-ups (brief 220, C6a) from the style sheet page (QA panel,
 // Style Sheet, "Combat screen"), at a 1920 × 1080 screen with headless Chrome:
