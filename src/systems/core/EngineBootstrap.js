@@ -45,6 +45,7 @@ import * as EnemyMotion from '../board/EnemyMotion.js';
 // Hostile enemies attacking heroes near their spawner (`Game.Hostiles`).
 import * as Hostiles from '../board/Hostiles.js';
 import * as SpawnerSystem from '../board/SpawnerSystem.js';
+import * as TimedChanges from '../board/TimedChanges.js';
 // The guild's Regions and travel (`Game.Atlas`).
 import * as Atlas from '../atlas/Atlas.js';
 import * as RegionRules from '../atlas/RegionRules.js';
@@ -133,6 +134,8 @@ export const EngineBootstrap = {
         Flags.init();
         QuestManager.init();
         SpawnerSystem.init();
+        // A growing Token's alerts (a Stump that needs its Forest or a seedling) belong to its board.
+        TimedChanges.init();
         // The active Region's own rules, put back in the guild-wide aggregator on every load,
         // travel and new game.
         RegionRules.init();

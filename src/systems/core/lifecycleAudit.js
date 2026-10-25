@@ -222,6 +222,10 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
                 warn('spawner.upkeep', 'spawner has no upkeep, so it spawns for free (allowed; SP-70 is decided per Token).');
             }
 
+            if (s.withinReach !== undefined && typeof s.withinReach !== 'boolean') {
+                err('spawner.withinReach', `spawner "plants within its reach" is ${show(s.withinReach)}; it must be ticked or not.`);
+            }
+
             if (spawnerFamily(s, tokens).has(id)) {
                 err('spawner.spawns', 'spawner family contains the spawner itself (through its spawn list or what those grow into).');
             }
@@ -229,8 +233,30 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
 
         // ── grows ──
         if (def.grows) {
-            checkTokenRef(err, 'grows.into', 'grows into', def.grows.into);
-            checkTime(err, 'grows.afterMs', 'grow time', def.grows.afterMs);
+            const g = def.grows;
+            checkTokenRef(err, 'grows.into', 'grows into', g.into);
+            checkTime(err, 'grows.afterMs', 'grow time', g.afterMs);
+            // What it needs in reach before its clock runs (a Stump, its Forest), and what it pays.
+            if (g.needsNearby !== undefined) {
+                if (!Array.isArray(g.needsNearby)) {
+                    err('grows.needsNearby', `needs nearby is ${show(g.needsNearby)}; it must be a list of Tokens.`);
+                } else {
+                    g.needsNearby.forEach((typeId, i) => {
+                        if (typeId === id) err(`grows.needsNearby[${i}]`, 'needs itself nearby to grow, which it always is; name the Token it needs (its Forest).');
+                        else checkTokenRef(err, `grows.needsNearby[${i}]`, 'needs nearby', typeId);
+                    });
+                }
+            }
+            if (g.cost !== undefined) {
+                if (!Array.isArray(g.cost)) {
+                    err('grows.cost', `grow cost is ${show(g.cost)}; it must be a list of items.`);
+                } else {
+                    g.cost.forEach((entry, i) => {
+                        checkItemRef(err, `grows.cost[${i}].itemId`, 'grow cost names', entry?.itemId);
+                        checkPositive(err, `grows.cost[${i}].quantity`, `grow cost quantity of ${show(entry?.itemId ?? '?')}`, entry?.quantity);
+                    });
+                }
+            }
         }
 
         // ── turns ──

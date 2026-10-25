@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { BOARD_EVENTS, ALERT } from '../../../systems/board/boardEvents.js';
 import * as SpawnerSystem from '../../../systems/board/SpawnerSystem.js';
+import * as Growth from '../../../systems/board/Growth.js';
 import { getTokenType, tokenStartingUses } from '../../../config/registries/tokenRegistry.js';
 import { enemyProfileOf } from '../../../config/registries/enemyProfile.js';
 import { subscribeToken } from './tokenEvents.js';
@@ -43,7 +44,8 @@ const ROW_GAP_U = 4;
  * problem is on its plate): one, yellow while it waits (items, a Token
  * beside it, charges, a choice) or red when it can't (no room, the cap, a hero who can't do the
  * work); its hover says exactly what (`problemMark.js`). From the engine's alert, a spawner's
- * stuck alert (`SPAWNER_ALERT_CHANGED`, read once on mount), or nothing chosen on a station.
+ * stuck alert (`SPAWNER_ALERT_CHANGED`, read once on mount), a growing Token's (a Stump that needs
+ * its Forest or a seedling: `GROWTH_ALERT_CHANGED`, likewise), or nothing chosen on a station.
  * - **Disallow and demolition marks** (the middle row): the whole time they apply.
  * - **The -1 / +50 floater**: switched off (`CHARGE_FLOATERS`); a worked Token's plate counts down.
  * - **Enemy health bar** (above the box): in a fight, and while an enemy is hovered.
@@ -165,9 +167,19 @@ export const TokenBubbles = ({
         });
     }, [instanceId]);
 
+    // A growing Token waits on its own channel: a Stump with no Forest in reach, or no seedling.
+    const [growth, setGrowth] = useState(() => (instanceId ? Growth.growthAlertOf(instanceId) : null));
+    useEffect(() => {
+        if (!instanceId) return undefined;
+        setGrowth(Growth.growthAlertOf(instanceId));
+        return subscribeToken(BOARD_EVENTS.GROWTH_ALERT_CHANGED, instanceId, (p) => {
+            setGrowth(p?.alert ? { alert: p.alert, needs: p.needs || [] } : null);
+        });
+    }, [instanceId]);
+
     // A marked Token runs no recipe, so there is nothing to choose.
     const choose = gear?.pulsing && !marked ? (gear.isFoundation ? 'build' : 'recipe') : null;
-    const problem = useMemo(() => problemOf({ alert, spawner: stuck, choose }), [alert, stuck, choose]);
+    const problem = useMemo(() => problemOf({ alert, spawner: stuck, growth, choose }), [alert, stuck, growth, choose]);
     const problemTip = useCallback(() => problemText(problem, instanceId), [problem, instanceId]);
     const problemClick = problem && CHOOSE_KINDS.has(problem.kind) ? gear?.onClick ?? null : null;
 

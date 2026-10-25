@@ -169,6 +169,15 @@ export const BOARD_EVENTS = {
     SPAWNER_ALERT_CHANGED: 'board:spawner_alert_changed',
 
     /**
+     * A growing Token's waiting alert changed: `{ instanceId, alert, needs }`, where `alert` is
+     * `ALERT.GROW_NEEDS_NEARBY` (`needs`: the Token type ids, one of which must stand in reach),
+     * `ALERT.GROW_NEEDS_ITEM` (`needs`: the item ids the Bank is short of) or null. Published by
+     * `Growth.setGrowthAlert` on a change only. Its own channel for the reasons
+     * `SPAWNER_ALERT_CHANGED` gives: no hero is involved.
+     */
+    GROWTH_ALERT_CHANGED: 'board:growth_alert_changed',
+
+    /**
      * A spawner (or the Guild Hall, for a quest) put a new Token on the mat. Payload: `{
      * spawnerId, instanceId, typeId, name }`: the callout "! Spawned {name}" is said from the
      * spawner.
@@ -346,6 +355,17 @@ export const ALERT = {
      * toward it. Same channel as `SPAWN_NEEDS_ITEM`.
      */
     SPAWN_MAT_FULL: 'spawn_mat_full',
+    /**
+     * A growth that needs a Token in reach (`grows.needsNearby`: a Stump needs a Forest of its
+     * species) has none, so its clock stands still. Carried by `GROWTH_ALERT_CHANGED`.
+     */
+    GROW_NEEDS_NEARBY: 'grow_needs_nearby',
+    /**
+     * A growth fell due but the Bank (and the loot on the mat) cannot pay its cost
+     * (`grows.cost`: a Stump's seedling), so it is stopped, held at its finish, until it can.
+     * Carried by `GROWTH_ALERT_CHANGED`.
+     */
+    GROW_NEEDS_ITEM: 'grow_needs_item',
     /**
      * The Token ran out and is resting until it respawns (`Respawn.js`). `WorkCheck`'s first
      * answer, so a flag skips it and its hero lets go, but ⚠️ never written as a Token's alert:

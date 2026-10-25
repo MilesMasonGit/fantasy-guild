@@ -13,6 +13,7 @@ import * as HeroMotion from './HeroMotion.js';
 import { centreOf, distanceSq } from './nearby.js';
 import * as WorkCheck from './WorkCheck.js';
 import * as Respawn from './Respawn.js';
+import * as Growth from './Growth.js';
 import * as Demolition from './Demolition.js';
 import { workConfigOf } from './StationRecipe.js';
 import * as BoardCombat from './BoardCombat.js';
@@ -1027,7 +1028,10 @@ function springAmbushes() {
  * flag; either takes the enemy the moment it is free.
  * - `'node'`: a Token resting until it respawns (`resting`) that the hero could work: the skip
  * reason is the Token's own, so the hero's skill, level, tool and rule have already passed. They
- * wait silently and work it the moment it is back (`TOKEN_RESPAWNED` marks flags dirty).
+ * wait silently and work it the moment it is back (`TOKEN_RESPAWNED` marks flags dirty). Failing
+ * those, a Stump or Sapling in the flag's reach growing back into work they could do
+ * ({@link growingFor}): its growth is a transform, whose `TILE_CHANGED` marks flags dirty, so they
+ * work it the moment it stands.
  * For the flag's words, the hero's speech and the idle mark.
  */
 export function waitingOf(heroId) {
@@ -1037,7 +1041,46 @@ export function waitingOf(heroId) {
         if (s.reason !== SKIP.CLAIMED) continue;
         if (BoardCombat.isEnemyToken(BoardState.getTokenById(s.instanceId))) return { instanceId: s.instanceId, kind: 'fight' };
     }
-    return null;
+    return growingFor(heroId);
+}
+
+/**
+ * The Token in `heroId`'s flag's reach growing back into work they could do, as
+ * `{ instanceId, kind: 'node' }`, or null: a Stump or Sapling (no work of its own) whose growth
+ * chain reaches a Token of a skill the hero holds and allows, at a level they have, with the tool
+ * in hand, and that is truly on its way (its Forest in reach, not stopped for want of its seedling:
+ * `Growth.isGrowingBack`). In the flag's own order: priority, then nearest, then the earlier-placed.
+ * A pinned flag waits only for its own Token.
+ *
+ * ⚠️ Worked out when asked (the flag's words, the speech, the idle mark), never on the flag's pass:
+ * a hero with nothing to claim looks again every second, and a catch-up is 86,400 seconds.
+ */
+function growingFor(heroId) {
+    const flag = BoardState.flagOf(heroId);
+    if (!flag || typeof flag.pinnedTo === 'string') return null;
+    const from = HeroMotion.heroPointOf(heroId) || { x: flag.x, y: flag.y };
+    const canWork = new Map();
+    let best = null;
+    for (const instance of BoardState.tokens()) {
+        const toward = Growth.growsTowardWork(instance.typeId);
+        if (!toward) continue;
+        const centre = centreOf(instance);
+        if (!centre || !flagReaches(flag, centre) || isDisallowed(instance)) continue;
+        let can = canWork.get(toward.id);
+        if (can === undefined) {
+            can = ruleAllows(heroId, toward.config.skill)
+                && !WorkCheck.heroReason(heroId, toward.config, { typeId: toward.id });
+            canWork.set(toward.id, can);
+        }
+        if (!can || !Growth.isGrowingBack(instance)) continue;
+        const rank = FlagRules.ruleOf(heroId, toward.config.skill).priority;
+        const d = distanceSq(from, centre);
+        const order = instance.placedAt ?? 0;
+        if (!best || rank < best.rank || (rank === best.rank && (d < best.d || (d === best.d && order < best.order)))) {
+            best = { instance, rank, d, order };
+        }
+    }
+    return best ? { instanceId: best.instance.id, kind: 'node' } : null;
 }
 
 /** The instance id {@link waitingOf} names, or null. */

@@ -140,8 +140,10 @@ Tokens. Stand-ins from existing sprites until drawn.
 
 | Piece | Status | Notes |
 |---|---|---|
-| Stump, one per tree species (Oak first, Fir next) | **NEW** | A felled tree waiting to regrow |
-| Forest Token, one per species (Oak first) | **NEW** (or ADAPT today's Oak Forest) | Plants and regrows its own species nearby |
+| Stump, one per tree species (Oak first, Fir next) | **IN ASSETS** (redraw if wanted) | A felled tree waiting to regrow. `t_stump_oak`, `_birch`, `_cedar`, `_ebony`, `_fir`, `_mahogany`, `_maple` are already in `public/assets/tokens/forest/` (S2a's QA scene uses the Oak and Birch ones); no Stump Token is authored yet (S8) |
+| Forest Token, one per species (Oak first) | **IN ASSETS** (ADAPT if wanted) | Plants and regrows its own species nearby. `t_forest_*` exist for the same seven species |
+| Sapling and Tree per species | **IN ASSETS** | `t_sapling_*` and `t_tree_*` for the same seven species |
+| A Stump waiting for its Forest or its seedling | — (no new art) | Wears the yellow problem mark (`u_alert_yellow`, the placeholder every waiting Token uses) and, when stopped, the "Needs Oak Seedling" callout in the speech frame (S2a) |
 | Fruit tree: Sapling, Fruiting, Bare per fruit (Apple first) | **NEW** / ADAPT | Picked, not felled |
 | Empty vein rock, one shared | **NEW** | Every ore vein while it rests |
 | Mine, Minecart | ADAPT | Today's Copper Mine and Minecart sprites may do |

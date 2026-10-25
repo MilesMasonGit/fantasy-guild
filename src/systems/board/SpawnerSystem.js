@@ -15,6 +15,7 @@ import * as InputAllocator from './InputAllocator.js';
 import * as MatCap from './MatCap.js';
 import * as Respawn from './Respawn.js';
 import * as Demolition from './Demolition.js';
+import { neighbourIds, nearRadius } from './nearby.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
@@ -28,13 +29,15 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
  * full and the attempt is retried next tick, never looped within one).
  *
  * One attempt, in order:
- * 1. Cap: the family's live count must be below its cap.
+ * 1. Cap: the family's live count must be below its cap (for a spawner that plants within its
+ * reach, the family standing in its reach against its own allowance: {@link plantsWithinReach}).
  * 2. Mat cap: the mat must have room under the Token cap (`MatCap.canPlaceMore`); spawned Tokens
  * count toward it.
  * 3. Upkeep: the Bank and the item loot lying on the mat must hold all of it between them (checked,
  * not yet taken).
  * 4. Pick: a weighted pick from `spawns`.
- * 5. Land: `EffectActions.spawn` with `nearest_free` around the spawner; placed Tokens are fixed.
+ * 5. Land: `EffectActions.spawn` with `nearest_free` around the spawner; placed Tokens are fixed. A
+ * spawner that plants within its reach lands only there, never pushing.
  * 6. Pay: only once the Token has landed, so a spawn with no room costs nothing and there is never
  * a refund to make. Bank first, then loot on the mat, through the same
  * `InputAllocator.consumeInputs` a Token's recipe inputs use.
@@ -79,6 +82,50 @@ export function intervalOf(def) {
 function allowanceOf(def) {
     const n = Math.floor(Number(def?.spawner?.allowance));
     return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+/**
+ * Whether a spawner plants within its own reach (`spawner.withinReach`, a box in the CMS): a
+ * Forest that lands its Saplings only within Near of itself and whose allowance counts its family
+ * standing in its reach (map trees included), not every one on the mat. Without it a spawner keeps
+ * the mat-wide family cap: enemy camps (bosses and guardians are camps of one) and today's Forests.
+ */
+export function plantsWithinReach(def) {
+    return def?.spawner?.withinReach === true;
+}
+
+/** A spawner type's family as a set, memoised with {@link familyOf}. */
+const familySets = new Map();
+
+function familySetOf(spawnerTypeId) {
+    const family = familyOf(spawnerTypeId);
+    let set = familySets.get(spawnerTypeId);
+    if (!set || set.family !== family) {
+        set = { family, ids: new Set(family) };
+        familySets.set(spawnerTypeId, set);
+    }
+    return set.ids;
+}
+
+/** How many of its family stand within reach of a within-reach spawner (`nearby.neighbourIds`, cached). */
+function countNear(instance) {
+    const ids = familySetOf(instance.typeId);
+    let n = 0;
+    for (const id of neighbourIds(instance.id)) {
+        const t = BoardState.getTokenById(id);
+        if (t && ids.has(t.typeId)) n++;
+    }
+    return n;
+}
+
+/**
+ * A spawner's live family count and its cap, `{ count, cap }`: within its reach against its own
+ * allowance for one that plants within reach, else the mat-wide count against the family cap.
+ */
+function countsOf(instance, def) {
+    if (plantsWithinReach(def)) return { count: countNear(instance), cap: allowanceOf(def) };
+    const family = familyOf(instance.typeId);
+    return { count: countOf(family), cap: capOf(family) };
 }
 
 /**
@@ -167,7 +214,8 @@ function countOf(family) {
 
 /**
  * A family's cap: the sum of `allowance` over every live spawner whose family shares a type with
- * it. Two Forests double it; removing one halves it and removes nothing. Memoised per family key
+ * it. Two Forests double it; removing one halves it and removes nothing. A spawner that plants
+ * within its own reach keeps its allowance to itself and adds nothing here. Memoised per family key
  * inside the census, so `spawnerStatus`'s own call and `syncAlerts`' rescan of the same spawner
  * share one answer.
  */
@@ -180,7 +228,9 @@ function capOf(family, spawners = liveSpawners()) {
     const set = new Set(family);
     let cap = 0;
     for (const s of spawners) {
-        if (familyOf(s.typeId).some(typeId => set.has(typeId))) cap += allowanceOf(getTokenType(s.typeId));
+        const def = getTokenType(s.typeId);
+        if (plantsWithinReach(def)) continue;
+        if (familyOf(s.typeId).some(typeId => set.has(typeId))) cap += allowanceOf(def);
     }
     capsByKey.set(key, cap);
     return cap;
@@ -230,18 +280,20 @@ export function attemptSpawn(instance, def, random = Math.random, ctx = {}) {
     const block = spawnerBlock(def);
     if (!block) return null;
 
-    const family = familyOf(instance.typeId);
-    if (countOf(family) >= capOf(family)) return null;          // at cap: waits
+    const { count, cap } = countsOf(instance, def);
+    if (count >= cap) return null;                               // at cap: waits
     if (!MatCap.canPlaceMore(1)) return null;                    // the mat's Token cap is full: waits
     if (missingUpkeep(def).length) return null;                  // needs an item: waits
 
     const typeId = pickWeighted(block.spawns, random);
     if (!typeId) return null;
 
+    // A Forest that plants within its reach lands its Sapling there or nowhere.
     const landed = EffectActions.spawn(
         { payload: { typeId, placement: PLACEMENT.NEAREST_FREE } },
         { self: instance.id },
-        random
+        random,
+        plantsWithinReach(def) ? { within: nearRadius() } : {}
     );
     if (!landed) {
         // Nowhere to go. Nothing was paid; the clock waits full.
@@ -294,7 +346,7 @@ export function spawnerStatus(instanceId) {
     if (!instance || instance.turnedFrom || !isSpawner(def)) return null;
 
     const family = familyOf(instance.typeId);
-    const base = { count: countOf(family), cap: capOf(family), familyLabel: familyLabel(family) };
+    const base = { ...countsOf(instance, def), familyLabel: familyLabel(family) };
     const interval = intervalOf(def);
     const clock = Number(instance.clocks?.spawnMs) || 0;
 
@@ -315,8 +367,8 @@ export function spawnerStatus(instanceId) {
 export function isFullEnemyCamp(instance, def) {
     const block = spawnerBlock(def);
     if (!block || !block.spawns.some(e => isEnemyDef(getTokenType(e?.typeId)))) return false;
-    const family = familyOf(instance.typeId);
-    return countOf(family) >= capOf(family);
+    const { count, cap } = countsOf(instance, def);
+    return count >= cap;
 }
 
 /**
@@ -327,19 +379,28 @@ export function spawnerCounts(instanceId) {
     const instance = BoardState.getTokenById(instanceId);
     const def = instance ? getTokenType(instance.typeId) : null;
     if (!instance || instance.turnedFrom || !isSpawner(def)) return null;
-    const family = familyOf(instance.typeId);
-    return { count: countOf(family), cap: capOf(family) };
+    return countsOf(instance, def);
 }
 
 /**
  * Every family with a live spawner, once each: `[{ kind, typeIds, count, cap }]`, where `kind` is
- * the family's readable name. Feeds the dev tools.
+ * the family's readable name; a spawner that plants within its reach is a row of its own, named
+ * for itself. Feeds the dev tools.
  */
 export function familyCounts() {
     const spawners = liveSpawners();
     const byKey = new Map();
     for (const s of spawners) {
         const family = familyOf(s.typeId);
+        const def = getTokenType(s.typeId);
+        if (plantsWithinReach(def)) {
+            if (family.length) {
+                byKey.set(`reach:${s.id}`, {
+                    kind: `${def?.name || s.typeId} (its reach)`, typeIds: family, ...countsOf(s, def)
+                });
+            }
+            continue;
+        }
         const key = [...family].sort().join('|');
         if (!family.length || byKey.has(key)) continue;
         byKey.set(key, {

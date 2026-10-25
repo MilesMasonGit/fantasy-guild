@@ -192,6 +192,40 @@ export function passiveHoverLines(instance, src) {
     ];
 }
 
+/** "an Oak Forest or a Wild Oak Forest": any one of these Tokens will do. */
+function anyOf(typeIds, tokenName) {
+    const names = typeIds.map(id => {
+        const name = tokenName(id);
+        return `${/^[aeiou]/i.test(name) ? 'an' : 'a'} ${name}`;
+    });
+    return names.length < 2 ? names[0] || '' : `${names.slice(0, -1).join(', ')} or ${names[names.length - 1]}`;
+}
+
+/**
+ * A growing Token's rows: when it grows (as sped up by its neighbours, when the caller can say:
+ * `TimedChanges.nextGrowth`), or why it waits: no Token it needs in reach (its clock stands still),
+ * or stopped for want of its cost; then what it needs and pays, when it does.
+ */
+function growthLines(instance, def, src) {
+    const growth = src.growth?.(instance);
+    const into = src.tokenName(def.grows.into);
+    const inMs = growth ? growth.inMs : (Number(def.grows.afterMs) || 0) - clock(instance, 'growMs');
+    const needsNearby = growth?.needsNearby || [];
+    const cost = growth?.cost || [];
+    const out = [];
+    if (growth?.paused) {
+        out.push({ label: `Grows into ${into}`, value: `waiting for ${anyOf(needsNearby, src.tokenName)} nearby`, tone: TONE.WARNING });
+    } else if (growth?.stopped) {
+        const short = cost.filter(c => (growth.short || []).includes(c.itemId));
+        out.push({ label: `Grows into ${into}`, value: `stopped: needs ${itemList(short, src.itemName) || 'items'}`, tone: TONE.WARNING });
+    } else {
+        out.push({ label: `Grows into ${into}`, value: `in ${formatDuration(Math.max(0, inMs))}` });
+    }
+    if (needsNearby.length) out.push({ label: 'Needs nearby', value: anyOf(needsNearby, src.tokenName), tone: TONE.MUTED });
+    if (cost.length) out.push({ label: 'Costs when it grows', value: `${itemList(cost, src.itemName)} from the Bank`, tone: TONE.MUTED });
+    return out;
+}
+
 /** A marked Token's countdown, once a hero is on it. */
 function demolitionLine(instance, src) {
     const worked = !!src.workerOf?.(instance.id);
@@ -245,15 +279,7 @@ export function lifecycleLines(instance, src) {
         });
     } else {
         if (def.spawner) out.push(...spawnerLines(instance, def, src));
-        if (def.grows?.into) {
-            // The growth as sped up by its neighbours, when the caller can say (`TimedChanges.nextGrowth`).
-            const growth = src.growth?.(instance);
-            const inMs = growth ? growth.inMs : (Number(def.grows.afterMs) || 0) - clock(instance, 'growMs');
-            out.push({
-                label: `Grows into ${src.tokenName(def.grows.into)}`,
-                value: `in ${formatDuration(Math.max(0, inMs))}`
-            });
-        }
+        if (def.grows?.into) out.push(...growthLines(instance, def, src));
         const turnsInto = typeList(def.turns?.into, src.tokenName);
         if (turnsInto) {
             // A chance once per cycle, not a fixed timer; the same numbers roll it back.

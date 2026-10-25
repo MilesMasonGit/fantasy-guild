@@ -243,6 +243,55 @@ export function respawnOf(def) {
     return { mode: 'refill', afterMs, into: null };
 }
 
+const NO_TERMS = Object.freeze({ needsNearby: Object.freeze([]), cost: Object.freeze([]) });
+const growsTermsMemo = new WeakMap();
+let lastGrowsBlock = null;
+let lastGrowsTerms = NO_TERMS;
+
+/**
+ * What a `grows` block asks before its Token may grow, as `{ needsNearby, cost }`:
+ *
+ * * `needsNearby` — Token type ids, any one of which must stand within reach (Near) for the
+ *   growth's clock to run: a Stump regrows only beside a Forest of its species. Empty when it
+ *   needs none (every growth today).
+ * * `cost` — what the growth pays when it happens, from the Bank and then the loot on the mat,
+ *   summed by item as `[{ itemId, quantity }]`: a Stump spends one seedling to become a Sapling.
+ *   Empty when it is free.
+ *
+ * Kept per block object (frozen), so a growing Token asking every tick allocates nothing; a
+ * content reload hands out new block objects.
+ */
+export function growsTermsOf(def) {
+    const block = def?.grows;
+    if (!block || typeof block !== 'object') return NO_TERMS;
+    // The last block asked, first: a tick asks for the same type's block many times running.
+    if (block === lastGrowsBlock) return lastGrowsTerms;
+    let terms = growsTermsMemo.get(block);
+    if (terms) {
+        lastGrowsBlock = block;
+        lastGrowsTerms = terms;
+        return terms;
+    }
+
+    const nearby = Array.isArray(block.needsNearby)
+        ? [...new Set(block.needsNearby.filter(id => typeof id === 'string' && id.trim()).map(id => id.trim()))]
+        : [];
+    const total = new Map();
+    for (const line of Array.isArray(block.cost) ? block.cost : []) {
+        const q = Math.floor(Number(line?.quantity));
+        if (typeof line?.itemId !== 'string' || !line.itemId || !(q > 0)) continue;
+        total.set(line.itemId, (total.get(line.itemId) || 0) + q);
+    }
+    terms = (!nearby.length && !total.size) ? NO_TERMS : Object.freeze({
+        needsNearby: Object.freeze(nearby),
+        cost: Object.freeze([...total].map(([itemId, quantity]) => Object.freeze({ itemId, quantity })))
+    });
+    growsTermsMemo.set(block, terms);
+    lastGrowsBlock = block;
+    lastGrowsTerms = terms;
+    return terms;
+}
+
 /**
  * Passive Production's one timer: every line of a Token's `trickle` block (and the Wishing Well's
  * water on the Guild Hall) pays its quantity once per lap. A line's own `everyMs`, from before the

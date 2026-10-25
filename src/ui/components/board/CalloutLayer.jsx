@@ -1,6 +1,6 @@
 import { memo, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
-import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
+import { BOARD_EVENTS, ALERT } from '../../../systems/board/boardEvents.js';
 import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import { artRadiusOf } from '../../../config/matGeometry.js';
@@ -27,7 +27,7 @@ const NO_SUBSCRIPTION = () => () => {};
 /**
  * Quick popups over the mat, in the speech family's frame (`SpeechFrame`), red for a refusal: "! Spawned Oak Tree" over the spawner, an effect's name
  * over the Token it fired on, "Needs Pickaxe" over a Token a hero passed over for want of the tool, "Needs Coal" over a station its hero stands at
- * out of an input,
+ * out of an input, "Needs Oak Seedling" over a Stump as it stops for want of one,
  * "Demolished Oak Tree" where a demolished Token stood, and the reason
  * for a refused action (a drop, a quest claim, a shrink that left a Token crowded) over the spot or
  * Token involved. Refusals are never notifications.
@@ -46,6 +46,7 @@ export const CalloutLayer = memo(function CalloutLayer() {
         const pending = timers.current;
         const toolSaidAt = new Map();   // instanceId → when "Needs Pickaxe" was last said over it
         const inputSaidAt = new Map();  // instanceId → when "Needs Coal" was last said over it
+        const growthSaidAt = new Map(); // instanceId → when "Needs Oak Seedling" was last said over it
         /** Whether a reminder over `instanceId` is due; if so, noted as said now. */
         const remind = (saidAt, instanceId, gapMs) => {
             const now = Date.now();
@@ -93,6 +94,12 @@ export const CalloutLayer = memo(function CalloutLayer() {
                 if (!p?.instanceId || !p.itemId) return;
                 if (!remind(inputSaidAt, p.instanceId, INPUT_CALLOUT_GAP_MS)) return;
                 say({ anchorId: p.instanceId, text: calloutText.needsInput(getItem(p.itemId)?.name || p.itemId), tone: SPEECH_TONE.CANT });
+            }, UI_LISTENER),
+            // A Stump stops for want of its seedling: it says which as it stops, in the same look.
+            EventBus.subscribe(BOARD_EVENTS.GROWTH_ALERT_CHANGED, (p) => {
+                if (!p?.instanceId || p.alert !== ALERT.GROW_NEEDS_ITEM || !p.needs?.length) return;
+                if (!remind(growthSaidAt, p.instanceId, INPUT_CALLOUT_GAP_MS)) return;
+                say({ anchorId: p.instanceId, text: calloutText.needsInput(p.needs.map(id => getItem(id)?.name || id).join(', ')), tone: SPEECH_TONE.CANT });
             }, UI_LISTENER),
             // The Token is gone by now: said where it stood, over where its art was.
             EventBus.subscribe(BOARD_EVENTS.TOKEN_DEMOLISHED, (p) => {

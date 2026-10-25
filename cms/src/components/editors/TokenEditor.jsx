@@ -446,6 +446,21 @@ export default function TokenEditor() {
                 pushes it. It can still be demolished.
               </p>
             )}
+            {/* `clearable: true`, written ONLY when ticked: the game's `Demolition.isClearable` reads it. */}
+            <label
+              className="flex items-center gap-2 cursor-pointer select-none"
+              title="Wild Forests and Stumps: the player may demolish one even where a map placed it. The Starter Camp's own Tokens stay as laid."
+            >
+              <input
+                type="checkbox"
+                aria-label="Can be cleared where a map placed it"
+                data-field="clearable"
+                checked={token.clearable === true}
+                onChange={(e) => update('clearable', e.target.checked ? true : undefined)}
+                className="rounded border-white/10 text-emerald-500 cursor-pointer"
+              />
+              <span className="text-xs text-gray-300">Can be cleared where a map placed it</span>
+            </label>
             <div data-field="stands-on" title="The ground the cell under the Token's centre must be. Shore is dry land touching water. None ticked: anywhere dry.">
               <span className="text-xs text-gray-300">Stands on</span>
               <div className="flex flex-wrap gap-1 mt-1">
