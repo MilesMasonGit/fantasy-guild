@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { HeartCrack } from 'lucide-react';
 import { useEscapeLayer } from '../../utils/escapeLayers.js';
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { ENGINE_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
@@ -9,6 +8,12 @@ import { EntityRibbon } from '../base/EntityRibbon.jsx';
 import { PixelFrame, FRAME_KIND } from '../base/PixelFrame.jsx';
 import { KitButton, KIT_BUTTON_TONE } from '../base/KitButton.jsx';
 import SkillIcon from '../base/SkillIcon.jsx';
+import { ItemIcon } from '../base/ItemIcon.jsx';
+import { Tooltip } from '../base/Tooltip.jsx';
+import { TokenSprite, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
+import { CombatGlyph } from '../combat/CombatGlyph.jsx';
+import { GLYPH_COLOUR } from '../combat/combatGlyphs.js';
+import { t } from '../../../i18n/index.js';
 import { summaryView, catchUpTitle } from './catchUpSummary.js';
 
 /**
@@ -170,6 +175,91 @@ function CountBars({ rows, idKey, idAttr, kind, sign, enter }) {
     });
 }
 
+/** One pill: a sprite and its count, its name on hover. */
+function Pill({ id, attr, tip, count, children }) {
+    return (
+        <Tooltip title={tip}>
+            <span data-summary-pill {...{ [attr]: id }} className="inline-flex items-center gap-0.5 cursor-help">
+                {children}
+                <span className="ui-text-body font-bold tabular-nums text-white">×{count.toLocaleString()}</span>
+            </span>
+        </Tooltip>
+    );
+}
+
+/** One line of the fights block: a muted word, then its pills wrapping. */
+function FightsRow({ id, label, enter, children }) {
+    const e = enter();
+    return (
+        <div data-summary-fight-row={id} style={e.style} className={cn('grid grid-cols-[6.5rem_1fr] items-center gap-2 px-1', e.className)}>
+            <span className="ui-text-body text-white/50">{label}</span>
+            <span className="flex flex-wrap items-center gap-x-3 gap-y-1">{children}</span>
+        </div>
+    );
+}
+
+/**
+ * The fights while away, one compact block (owner, 2026-10-25): fights won and lost, then a line
+ * each for the enemies beaten, the heroes knocked out, the food and elixirs used and what the
+ * kills dropped, as pills (a sprite and a count, the name on hover). A line with nothing is left out.
+ */
+function FightsBlock({ combat, enter }) {
+    const e = enter();
+    return (
+        <div data-summary-section="fights" className="mt-2 pt-1.5 border-t border-white/10 first:mt-0">
+            <div style={e.style} className={cn('px-1 mb-1 flex items-baseline gap-2', e.className)}>
+                <span data-summary-heading className="ui-text-body uppercase tracking-wide text-white/50">{t('catchUp.combat.title')}</span>
+                <span className="flex-1" />
+                <span data-summary-fight-tally className="ui-text-body font-bold text-white">
+                    {t('catchUp.combat.tally', { won: combat.won.toLocaleString(), lost: combat.lost.toLocaleString() })}
+                </span>
+            </div>
+            <div data-summary-list className="flex flex-col gap-1">
+                {combat.beaten.length > 0 && (
+                    <FightsRow id="beaten" label={t('catchUp.combat.beaten')} enter={enter}>
+                        {combat.beaten.map(r => (
+                            <Pill key={r.enemyId} id={r.enemyId} attr="data-type-id" count={r.count} tip={t('catchUp.combat.beatenTip', { enemy: r.name, count: r.count })}>
+                                <TokenSprite typeId={r.enemyId} size={32} surface={TOKEN_SURFACE.INSPECT} />
+                            </Pill>
+                        ))}
+                    </FightsRow>
+                )}
+                {combat.knockouts.length > 0 && (
+                    <FightsRow id="knockedOut" label={t('catchUp.combat.knockedOut')} enter={enter}>
+                        {combat.knockouts.map(w => (
+                            <Tooltip key={w.heroId} title={t('catchUp.combat.knockout', { hero: w.heroName, count: w.times })}>
+                                <span data-summary-pill data-hero-id={w.heroId} className="inline-flex items-center gap-1 cursor-help">
+                                    <CombatGlyph name="down" colour={GLYPH_COLOUR.red} />
+                                    <span className="ui-text-body font-bold text-white">{w.heroName}</span>
+                                    <span className="ui-text-body font-bold tabular-nums text-white">×{w.times}</span>
+                                </span>
+                            </Tooltip>
+                        ))}
+                    </FightsRow>
+                )}
+                {combat.used.length > 0 && (
+                    <FightsRow id="used" label={t('catchUp.combat.used')} enter={enter}>
+                        {combat.used.map(r => (
+                            <Pill key={r.itemId} id={r.itemId} attr="data-item-id" count={r.count} tip={t('catchUp.combat.usedTip', { item: r.name, count: r.count })}>
+                                <ItemIcon item={r.itemId} size={32} title={null} />
+                            </Pill>
+                        ))}
+                    </FightsRow>
+                )}
+                {combat.drops.length > 0 && (
+                    <FightsRow id="drops" label={t('catchUp.combat.drops')} enter={enter}>
+                        {combat.drops.map(r => (
+                            <Pill key={r.itemId} id={r.itemId} attr="data-item-id" count={r.count} tip={t('catchUp.combat.dropTip', { item: r.name, count: r.count.toLocaleString() })}>
+                                <ItemIcon item={r.itemId} size={32} title={null} />
+                            </Pill>
+                        ))}
+                    </FightsRow>
+                )}
+            </div>
+        </div>
+    );
+}
+
 /** The summary's buttons: the kit's, full width. */
 const BUTTON = { className: 'w-full', buttonClassName: 'py-1 ui-text-title' };
 
@@ -235,31 +325,7 @@ function Summary({ result, asking, onClose, onAsk, onCancel, onUndo }) {
                         <CountBars rows={view.depleted} idKey="typeId" idAttr="data-type-id" kind="token" sign="×" enter={enter} />
                     </Section>
                 )}
-                {view.wounded.length > 0 && (
-                    <Section id="wounded" title="Heroes wounded" enter={enter}>
-                        {view.wounded.map(w => {
-                            const e = enter();
-                            return (
-                                <EntityRibbon
-                                    key={w.heroId}
-                                    data-hero-id={w.heroId}
-                                    icon={<HeartCrack size={18} className="text-gi-danger" aria-hidden="true" />}
-                                    name={w.heroName}
-                                    amount={w.times}
-                                    sign="×"
-                                    size="sm"
-                                    className={e.className}
-                                    style={e.style}
-                                />
-                            );
-                        })}
-                    </Section>
-                )}
-                {view.fightsWon > 0 && (
-                    <Section id="fights" title="Fights won" enter={enter}>
-                        <CountBars rows={view.fights} idKey="enemyId" idAttr="data-type-id" kind="token" sign="×" enter={enter} />
-                    </Section>
-                )}
+                {view.combat.shown && <FightsBlock combat={view.combat} enter={enter} />}
             </div>
 
             <div className="px-3 pt-2 pb-2.5 shrink-0 border-t border-white/10">

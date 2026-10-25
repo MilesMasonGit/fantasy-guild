@@ -49,9 +49,13 @@ export const AnimatedEnemySprite = ({
     size = 64,
     frameMs = 125,
     outline = null,
+    // A facing kept whatever the mat says (the fight panel's enemy always faces left, at the hero).
+    facing: fixedFacing = null,
     className
 }) => {
-    const [facing, setFacing] = useState(FACING.LEFT);
+    const [ownFacing, setFacing] = useState(FACING.LEFT);
+    const fixed = fixedFacing === FACING.LEFT || fixedFacing === FACING.RIGHT;
+    const facing = fixed ? fixedFacing : ownFacing;
 
     // The frame is written to the element, not kept in React state: `background-position` is
     // set directly on each step, so an animating enemy costs no React commits. `frameRef`
@@ -102,6 +106,7 @@ export const AnimatedEnemySprite = ({
     // turn otherwise, due on the same clock. Switching between the two always cancels whatever
     // the other one was waiting for.
     useEffect(() => {
+        if (fixed) return undefined;
         if (heroId) {
             const side = BoardState.heroBodyOf(heroId)?.side;
             if (side === FACING.LEFT || side === FACING.RIGHT) setFacing(side);
@@ -113,14 +118,14 @@ export const AnimatedEnemySprite = ({
             setFacing(f => -f);
             return now + pause();
         }, performance.now() + pause());
-    }, [heroId]);
+    }, [heroId, fixed]);
 
     // Walking by its spawner, it faces the way it walks, and keeps that facing when it stops.
     // The sheets have no walk cycle, so the idle cycle plays while it glides.
     useEffect(() => {
-        if (heroId) return;
+        if (heroId || fixed) return;
         if (walkFacing === FACING.LEFT || walkFacing === FACING.RIGHT) setFacing(walkFacing);
-    }, [walkFacing, heroId]);
+    }, [walkFacing, heroId, fixed]);
 
     const flip = facing === FACING.RIGHT ? 'scaleX(-1)' : 'none';
     return (

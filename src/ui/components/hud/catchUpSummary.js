@@ -47,7 +47,9 @@ function bankSide(counted, net, sign) {
 
 /**
  * The "While you were away" panel's content, from a catch-up's result (`CatchUp.run`). Every
- * list is empty when there is nothing to say, so the panel can leave that section out.
+ * list is empty when there is nothing to say, so the panel can leave that section out. The fights
+ * are one block (`combat`, owner 2026-10-25): fights won and lost, the enemies beaten, the heroes
+ * knocked out, the food and elixirs used and what the kills dropped.
  */
 export function summaryView(result) {
     const summary = result?.summary || {};
@@ -59,6 +61,18 @@ export function summaryView(result) {
         levelUps.get(row.heroId).skills.push({ skillId: row.skillId, skillName: row.skillName, from: row.from, to: row.to });
     }
     const fights = summary.fightsWon || {};
+    const wounded = (summary.wounded || []).filter(w => w.times > 0);
+    const used = summary.combat || {};
+    const combat = {
+        won: Number(fights.total) || 0,
+        lost: wounded.reduce((n, w) => n + w.times, 0),
+        beaten: rows(fights.byEnemy, tokenName, 'enemyId'),
+        knockouts: wounded,
+        // Meals first, then elixirs: what the fights cost.
+        used: [...rows(used.food, itemName, 'itemId'), ...rows(used.elixirs, itemName, 'itemId')],
+        drops: rows(used.drops, itemName, 'itemId')
+    };
+    combat.shown = combat.won > 0 || combat.lost > 0 || combat.used.length > 0 || combat.drops.length > 0;
     return {
         awayText: formatAway(result?.awayMs),
         droppedText: result?.droppedMs >= MINUTE
@@ -69,9 +83,11 @@ export function summaryView(result) {
         spent: rows(bankSide(items.spent, items.net, -1), itemName, 'itemId'),
         levelUps: [...levelUps.values()],
         depleted: rows(summary.depleted?.byType, tokenName, 'typeId'),
-        wounded: (summary.wounded || []).filter(w => w.times > 0),
-        fightsWon: Number(fights.total) || 0,
-        fights: rows(fights.byEnemy, tokenName, 'enemyId')
+        wounded,
+        fightsWon: combat.won,
+        fights: combat.beaten,
+        /** The fights block: won and lost, who was beaten and knocked out, what was used and dropped. */
+        combat
     };
 }
 

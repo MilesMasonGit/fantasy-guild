@@ -150,7 +150,7 @@ export const ENGINE_EVENTS = Object.freeze({
 
     /** Payload: `{ cardId, instanceId, heroId, enemyId, damage, hit, … }`. */
     COMBAT_HERO_ATTACK: 'combat_hero_attack',
-    /** Payload: `{ cardId, heroId, enemyId, damage, hit, … }`. */
+    /** Payload: `{ cardId, instanceId, heroId, enemyId, damage, hit, crit, heroHpRemaining }` (`instanceId`: the enemy Token). */
     COMBAT_ENEMY_ATTACK: 'combat_enemy_attack',
     /** Payload: `{ cardId, heroId, traitId, damage }`. */
     COMBAT_ENEMY_TRAIT_TRIGGER: 'combat_enemy_trait_trigger',
@@ -169,7 +169,11 @@ export const ENGINE_EVENTS = Object.freeze({
     STATUS_APPLIED: 'status_applied',
     /** Immunity, or a stack cap of 0, kept a status off. Payload: `{ targetType, targetId, statusId }`. */
     STATUS_BLOCKED: 'status_blocked',
-    /** A status ticked on its bearer (before its On Tick rules run). Payload: `{ targetType, targetId, statusId, stacks }`. */
+    /**
+     * A status ticked on its bearer, said after its On Tick rules ran. Payload: `{ targetType, targetId,
+     * statusId, stacks, hpChange }` (`hpChange`: the bearer's health after the rules less before, null
+     * when it has none).
+     */
     STATUS_DOT_TICK: 'status_dot_tick',
 
     /** The player changed a setting. Payload: the whole settings object. */
@@ -264,11 +268,7 @@ export const NO_LISTENER = Object.freeze({
     [ENGINE_EVENTS.ENEMY_DISCOVERED]: 'first-seen moment, for a future bestiary notice',
     [ENGINE_EVENTS.QUEST_SPAWNED]: 'quest moment; quest Tokens announce on the board',
     [ENGINE_EVENTS.TOKEN_RESTOCKED]: 'player action moment; the board events carry the redraw',
-    [ENGINE_EVENTS.LOOT_GENERATED]: 'combat moment; loot lands as sprites',
     [ENGINE_EVENTS.HERO_RECOVERED]: 'combat moment; HEROES_UPDATED carries the redraw',
     [ENGINE_EVENTS.COMBAT_ENEMY_TRAIT_TRIGGER]: 'combat moment, for a future floating-text cue',
-    [ENGINE_EVENTS.STATUS_APPLIED]: 'status moment, for the combat panel and floating text to come',
-    [ENGINE_EVENTS.STATUS_BLOCKED]: 'status moment, for the combat panel and floating text to come',
-    [ENGINE_EVENTS.STATUS_DOT_TICK]: 'status moment, for the combat panel and floating text to come',
     [ENGINE_EVENTS.BGM_TRACK_CHANGED]: 'console affordance for the music system',
 });

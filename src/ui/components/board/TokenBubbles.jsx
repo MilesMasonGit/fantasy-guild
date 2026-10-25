@@ -16,6 +16,9 @@ import { ProblemMark } from './ProblemMark.jsx';
 import { problemOf, problemText, PROBLEM_MARK_ART_PX } from './problemMark.js';
 import { createWorkBar, shareWorkBar } from './workBar.js';
 import { shareCycle } from './cycleShare.js';
+import { plateUnit } from './workPlate.js';
+import { useMatFit } from './MatFitContext.jsx';
+import * as BoardState from '../../../systems/board/BoardState.js';
 
 /** What each hover ring's and player mark's tooltip says. */
 export const BUBBLE_TIPS = Object.freeze({
@@ -184,6 +187,7 @@ export const TokenBubbles = ({
     const problemClick = problem && CHOOSE_KINDS.has(problem.kind) ? gear?.onClick ?? null : null;
 
     const chargesSlot = useMemo(() => bubbleSlot('charges', { boxPx, small }), [boxPx, small]);
+    const barUnit = plateUnit(useMatFit() || 1);
 
     if (isDragging) return null;
 
@@ -221,7 +225,9 @@ export const TokenBubbles = ({
                     of={instanceId}
                     cur={barHp.cur}
                     max={barHp.max}
-                    style={enemyBarPlace(boxPx)}
+                    u={barUnit}
+                    outward={fight ? -(BoardState.heroBodyOf(token.heroId)?.side === -1 ? -1 : 1) : 0}
+                    style={enemyBarPlace(boxPx, barUnit)}
                     dragProps={dragProps}
                 />
             )}

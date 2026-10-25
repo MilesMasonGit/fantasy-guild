@@ -720,6 +720,42 @@
 .gi-fx-number-damage { color: #ff5a5a; }
 .gi-fx-number-gain { color: #6ee7b7; }
 
+/* A fight's floating numbers (`fx/fightFloats.js`): the kit's title size (a crit's number the
+   display size under a body-size gold "Crit!", a miss the body size), with a hard edge of two
+   screen pixels: eight unblurred copies, never a soft shadow. Sized in `--fx-scale` (one screen
+   pixel at the mat's 2× art, set by the effects layer), so they read the same at every fit.
+   Centred over the point by `translate`, so the rise's `transform` leaves it alone. */
+.gi-fight-float {
+  --ff-e: calc(var(--fx-scale, 1) * 2px);
+  --ff-n: calc(var(--ff-e) * -1);
+  display: flex;
+  align-items: center;
+  gap: calc(var(--fx-scale, 1) * 4px);
+  font-weight: 700;
+  font-size: calc(var(--font-size-sm) * var(--fx-scale, 1));
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+  font-variant-numeric: tabular-nums;
+  translate: -50% -100%;
+  text-shadow:
+    var(--ff-e) 0 0 #000, var(--ff-n) 0 0 #000, 0 var(--ff-e) 0 #000, 0 var(--ff-n) 0 #000,
+    var(--ff-e) var(--ff-e) 0 #000, var(--ff-n) var(--ff-e) 0 #000,
+    var(--ff-e) var(--ff-n) 0 #000, var(--ff-n) var(--ff-n) 0 #000;
+}
+.gi-fight-float-crit { flex-direction: column; gap: calc(var(--fx-scale, 1) * 2px); }
+.gi-fight-float .gi-ff-crit-word { color: var(--color-ui-gold); font-size: calc(var(--font-size-xs) * var(--fx-scale, 1)); }
+.gi-fight-float .gi-ff-crit-number { font-size: calc(var(--font-size-xl) * var(--fx-scale, 1)); }
+.gi-fight-float-miss { font-size: calc(var(--font-size-xs) * var(--fx-scale, 1)); }
+.gi-fight-float .gi-ff-icon {
+  width: calc(var(--fx-scale, 1) * 20px);
+  height: calc(var(--fx-scale, 1) * 20px);
+  image-rendering: pixelated;
+}
+.gi-ff-white { color: var(--color-ui-white); }
+.gi-ff-red { color: var(--color-ui-red); }
+.gi-ff-green { color: var(--color-ui-green); }
+
 /* The "used" bubbles over a hero who ate, drank or drank an elixir (`matFx.usedBubble`), in a
    column over the head: oldest on top, the newest nearest the head, like the speech stack. Each
    is the chamfer pixel frame (its picture set per item tint by matFx, the tint as its fill) with
