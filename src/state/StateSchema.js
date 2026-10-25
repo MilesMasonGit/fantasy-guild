@@ -251,7 +251,8 @@ export const INITIAL_STATE = {
     //               + origin 'placed'|'spawned' (absent reads as placed), clocks? { growMs, turnMs, turnWon?, ... },
     //                 turnedFrom? typeId  (Token Lifecycle 3.1 / 3.2, roadmap §3.1),
     //                 fixture? true and biome? string on a node a map wrote, fixture? 'camp' on a Token the Starter Camp laid (`BoardState.isFixture`),
-    //                 demolish? true on a Token marked for demolition (`Demolition.js`; its progress is cycleElapsedMs)
+    //                 demolish? true on a Token marked for demolition (`Demolition.js`; its progress is cycleElapsedMs),
+    //                 field? { cropId?, load?, full? } on a Field: the crop in its ground and the harvests left (`Fields.js`; its growth on clocks.fieldMs)
     //   nextTokenOrder number               the next Token's placedAt
     //   flags       { [heroId]: { x, y, plantedAt, pinnedTo? } }  each hero's flag (Free Playmat 1.4b; no skill since 1.5b — the hero's rules live on the hero;
     //                 pinnedTo = the Token instance id it is pinned to, absent on an area flag and in older saves — B5, FB-45)
