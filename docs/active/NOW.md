@@ -24,7 +24,7 @@ The owner's Backlog Intake was triaged into brief 210 and five new sessions:
 1. **Backlog director: brief 210 done 2026-10-24.** All six batches and the
    follow-ups the owner approved are on `main` (the wider mat and top bar,
    quieter Tokens, one item one hero, the Hall glide, the Atlas spread, pixel
-   frames everywhere, the work plate). Left: T-251 (slow scanning tests).
+   frames everywhere, the work plate). Left: T-255 (one render test's timeout).
    State: [HANDOFF_backlog.md](HANDOFF_backlog.md).
 2. **Three planning agents**, interviewing the owner over several rounds,
    each in its own worktree and branch:

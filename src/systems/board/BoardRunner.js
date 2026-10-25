@@ -85,7 +85,8 @@ const PROGRESS_EVERY = 3;
  * cycle that starts on the very next tick, so a cycle ending part-way through a tick loses nothing:
  * without it a 1500 ms cycle at 1000 ms steps runs every 2 s instead of every 1.5 s. A station that
  * does not start again on the next tick (waiting for inputs, its hero gone) loses it, as it would
- * have lost the time anyway.
+ * have lost the time anyway. Negative for a Token that refilled during this tick: the part of the
+ * tick it was still resting (`TimedChanges.lateRefillsThisTick`).
  */
 let carryIn = new Map();
 let carryOut = new Map();
@@ -420,6 +421,12 @@ export function tick(delta) {
     // whose Token just changed under them lets go and chooses again this same tick, and before any
     // Token ticks, so a cycle on a Token that has gone is never advanced or completed.
     TimedChanges.tick(delta);
+    // A Token that refilled during this tick works only the part of it after the refill: its
+    // cycle starts owing the time it was still resting (a negative carry, read where a cycle
+    // begins), so a big catch-up step and many small live ones end in the same place.
+    for (const [id, sinceMs] of TimedChanges.lateRefillsThisTick()) {
+        if (sinceMs < delta) carryIn.set(id, sinceMs - delta);
+    }
 
     // Flags keep, change or find their work: after the timed changes above, so a hero sees any new
     // Token this tick, and before any Token ticks, so `workerOf` below is already settled.

@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { sourceCode } from './fixtures/sourceScan.js';
+import { sourceCode, setScanTimeout } from './fixtures/sourceScan.js';
+
+setScanTimeout();
 
 /**
  * During a catch-up the bus skips listeners tagged `UI_LISTENER`; an untagged listener under

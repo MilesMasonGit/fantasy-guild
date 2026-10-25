@@ -1,26 +1,15 @@
 import { describe, it, expect } from 'vitest';
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { sourceFiles, readSource, rel, setScanTimeout } from './fixtures/sourceScan.js';
 
 /**
  * One-ended event wiring, guarded.
  */
 
-const here = path.dirname(fileURLToPath(import.meta.url));
-const SRC = path.resolve(here, '..');
-
-function sourceFiles(dir = SRC) {
-    return fs.readdirSync(dir, { withFileTypes: true }).flatMap(entry => {
-        const full = path.join(dir, entry.name);
-        if (entry.isDirectory()) return entry.name === 'tests' ? [] : sourceFiles(full);
-        return /\.(js|jsx)$/.test(entry.name) ? [full] : [];
-    });
-}
+setScanTimeout();
 
 const FILES = sourceFiles().map(file => ({
-    path: path.relative(SRC, file).replace(/\\/g, '/'),
-    text: fs.readFileSync(file, 'utf8')
+    path: rel(file),
+    text: readSource(file)
 }));
 
 /** Real code only — a mention inside a comment is a note about history, not a wire. */

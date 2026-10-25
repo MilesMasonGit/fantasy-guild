@@ -379,6 +379,9 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
                         `regrows from ${tokenLabel(r.into)}, which never grows back into it; give that Token a Grows block that ends here.`);
                 }
             }
+            if (r?.mode === 'regrow' && hasValue(r.restingSprite)) {
+                warn('respawn.restingSprite', 'has a resting sprite but regrows; it becomes another Token with its own art, so the sprite is never drawn.');
+            }
             if (def.uses === null || def.uses === undefined) {
                 warn('respawn', 'respawns but has unlimited charges, so it never runs out and never rests (allowed).');
             }

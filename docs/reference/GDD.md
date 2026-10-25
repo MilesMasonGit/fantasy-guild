@@ -218,6 +218,12 @@ mines) keeps counting while full and replaces a loss on the next tick.
   Respawns block in the CMS comes back after it runs out. *Refill*: it stays
   where it stands, **resting** (greyed, a countdown bubble), nobody can work it,
   and after its time (12 s by default, at least 1 s) it refills to full at once.
+  A refill may name a **resting sprite** (brief 230 S3): while it rests it is
+  drawn as that picture instead of greyed, and every vein names the same
+  **empty rock**; its card and inspection then name it ("Copper Ore Vein:
+  resting, refills in 0:42"), and so does its hover. A refill that falls due
+  part-way through a tick is worked only for the rest of that tick, so the
+  catch-up's 1 s steps mine exactly what live play does.
   *Regrow*: it becomes its `into` Token (Oak Tree → Oak Sapling), whose own
   growth brings it back. Its hero moves on with no red alert; it is never
   depleted (no On Depleted rules, not counted as used up); a regrowing tree
@@ -233,6 +239,18 @@ mines) keeps counting while full and replaces a loss on the next tick.
   for: idle as before. Worked out when the flag's words, the speech or the idle
   mark ask, never on the flag's pass, so it costs a catch-up nothing.
   *(`Respawn.js`, `Flags.waitingOf`)*
+- **Mining** (brief 230 S3; built as content shapes, the S8 pack ships them):
+  a **vein** refills all at once after its rest (Copper about 5 ore, about a
+  minute, set per ore in the CMS), shows the shared empty rock while it
+  rests, and stays where it stands. A **Mine** is a support:
+  `Provides Double Item Chance 25 (flat), narrowed to its ore, to [its veins],
+  nearby`, so each Mine in reach gives that ore a 25 % chance to come out
+  doubled, stacking to a sure double at four; gems and anything else the vein
+  drops are never doubled (owner, 2026-10-24). A **Minecart** is a support:
+  `Provides Work Time −X % to [its veins], nearby`, stacking down to the
+  standard floor (§7). A miner waiting on a resting vein waits silently (above).
+  Mines that stop spawning veins and veins placed by maps are content (S8,
+  brief 240). *(`OutputRules.doubleItemDrop`, `Respawn.restingSpriteOf`)*
 
 ### Foundations — Built
 Buy a Foundation, pick a build recipe on it, and a hero builds it into a

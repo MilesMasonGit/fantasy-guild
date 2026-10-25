@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { sourceCode } from './fixtures/sourceScan.js';
+import { sourceCode, setScanTimeout } from './fixtures/sourceScan.js';
+
+setScanTimeout();
 
 /**
  * A rule that compares two moments (an effect's expiry, loot's age, a rate window) reads the game

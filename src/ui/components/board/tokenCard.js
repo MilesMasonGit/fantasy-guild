@@ -265,8 +265,12 @@ export function cardLifecycle(instance, def, src) {
     const r = src.respawn?.(instance);
     if (r) {
         if (r.mode === 'refill') {
+            // Drawn as the shared empty rock, a resting vein's line names its ore.
+            const restTip = r.restingSprite
+                ? `${src.tokenName(instance.typeId)}: resting, refills in ${formatClock(r.inMs)}`
+                : `Resting: refills in ${spoken(r.inMs)}`;
             out.push(r.resting
-                ? { icon: 'regrow', text: formatClock(r.inMs), tip: `Resting: refills in ${spoken(r.inMs)}` }
+                ? { icon: 'regrow', text: formatClock(r.inMs), tip: restTip }
                 : { icon: 'regrow', text: formatClock(r.afterMs), tip: `Respawns ${spoken(r.afterMs)} after it's used up` });
         } else {
             const into = src.tokenName(r.into);

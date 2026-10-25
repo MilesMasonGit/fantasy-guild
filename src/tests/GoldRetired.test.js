@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { readFileSync, readdirSync, statSync } from 'fs';
+import { statSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { GameState } from '../state/GameState.js';
@@ -9,6 +9,7 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { getTokenType } from '../config/registries/tokenRegistry.js';
 import { QuestManager } from '../systems/quests/QuestManager.js';
 import { TUTORIAL_QUESTS } from '../systems/quests/tutorialQuests.js';
+import { SRC, listFiles, readSource, SCAN_TIMEOUT } from './fixtures/sourceScan.js';
 
 /**
  * Slice 2.2 — gold removed from play (gold is retired, items are the only
@@ -95,26 +96,17 @@ describe('The gold code is deleted (Token Lifecycle 9.4)', () => {
     });
 });
 
-describe('No screen renders gold (SP-65)', () => {
-    const here = dirname(fileURLToPath(import.meta.url));
-    const uiRoot = join(here, '..', 'ui');
-    const files = [];
-    (function walk(dir) {
-        for (const name of readdirSync(dir)) {
-            const p = join(dir, name);
-            if (statSync(p).isDirectory()) walk(p);
-            else if (/\.(jsx|js)$/.test(name)) files.push(p);
-        }
-    })(uiRoot);
+describe('No screen renders gold (SP-65)', { timeout: SCAN_TIMEOUT }, () => {
+    const files = listFiles(`${SRC}/ui`, { ext: /\.(jsx|js)$/ });
 
     it('no UI component reads the gold balance', () => {
-        const readers = files.filter(f => /currency\?*\.gold/.test(readFileSync(f, 'utf8')));
+        const readers = files.filter(f => /currency\?*\.gold/.test(readSource(f)));
         expect(readers).toEqual([]);
     });
 
     it('no UI component writes a gold amount or a sale price', () => {
         const offenders = files.filter(f => {
-            const text = readFileSync(f, 'utf8');
+            const text = readSource(f);
             return /\} GP\b|GP<\/span>|\} gold\b|for \$\{[^}]+\}g`|SellControls|sellItem|TokenBank\.sell\(/.test(text);
         });
         expect(offenders).toEqual([]);

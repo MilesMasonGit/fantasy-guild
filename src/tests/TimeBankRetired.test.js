@@ -1,6 +1,8 @@
 import fs from 'node:fs';
 import { describe, it, expect } from 'vitest';
-import { sourceFiles, rel, matchLines } from './fixtures/sourceScan.js';
+import { sourceFiles, rel, matchLines, setScanTimeout } from './fixtures/sourceScan.js';
+
+setScanTimeout();
 
 /**
  * The Time Bank is retired: time away is caught up (`CatchUp`), never banked and replayed by

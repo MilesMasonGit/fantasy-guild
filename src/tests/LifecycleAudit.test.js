@@ -437,6 +437,14 @@ describe('Lifecycle audit — respawn', () => {
             { id: 'token_stone_foundation', field: 'respawn', includes: 'a Foundation never respawns' });
     });
 
+    it('a refill with a resting sprite is fine; a resting sprite on a regrow is warned (it does nothing)', () => {
+        const w = clean();
+        w.tokens.token_copper_vein.respawn.restingSprite = 't_vein_stone';
+        expect(auditLifecycleBlocks(w)).toEqual([]);
+        expectOne((w2) => { w2.tokens.token_birch_tree.respawn.restingSprite = 't_vein_stone'; },
+            { severity: 'warning', id: 'token_birch_tree', field: 'respawn.restingSprite', includes: 'regrows' });
+    });
+
     it('a Token that never runs out is warned that it never rests (allowed)', () => {
         expectOne((w) => { delete w.tokens.token_copper_vein.uses; },
             { severity: 'warning', id: 'token_copper_vein', field: 'respawn', includes: 'never runs out' });

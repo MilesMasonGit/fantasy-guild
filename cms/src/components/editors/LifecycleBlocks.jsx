@@ -1,9 +1,11 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Plus, X, Sprout } from 'lucide-react';
 import { useEntityStore, makeLifecycleBlock, makeWeightedTokenEntry, makeTrickleEntry, TOKEN_LIFECYCLE_BLOCKS } from '../../stores/useEntityStore';
 import { FOUNDATION_KINDS, TURN_DEFAULTS, RESPAWN_MODES, RESPAWN_DEFAULTS, RESPAWN_MIN_MS, skillsByLayer } from '../../utils/constants';
 import { Section, Field } from '../shared/EditorLayout';
 import { ItemPicker, ItemList } from './Statements';
+import SpritePickerModal from './SpritePickerModal';
+import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 
 /**
  * The Token Lifecycle blocks: spawner, grows, turns, foundation, shop, trickle and respawn, each added or removed as a whole.
@@ -343,7 +345,7 @@ function RespawnBlock({ block, selfId, tokens, tokenOptions, onChange }) {
   const into = mode === 'regrow' && block.into ? tokens[block.into] : null;
   const back = into ? regrowTime(block.into, selfId, tokens) : null;
   let note;
-  if (mode === 'refill') note = 'At 0 charges it stays where it stands, resting, then refills to its starting charges all at once.';
+  if (mode === 'refill') note = 'At 0 charges it stays where it stands, resting, then refills to its starting charges all at once. With a resting sprite it is drawn as that picture while it rests (every vein shares one empty rock; its name still says which ore); without one, as its own art, greyed.';
   else if (!block.into) note = 'Pick the Token it becomes at 0 charges; that Token’s Grows block brings it back.';
   else if (!into) note = `${block.into} does not exist.`;
   else if (back === null) note = `${into.name || block.into} never grows back into this Token: give it a Grows block that ends here.`;
@@ -361,7 +363,7 @@ function RespawnBlock({ block, selfId, tokens, tokenOptions, onChange }) {
           <IntField
             label="Rests for (ms)" min={RESPAWN_MIN_MS} step={1000}
             value={block.afterMs ?? RESPAWN_DEFAULTS.afterMs}
-            onChange={(afterMs) => onChange({ mode: 'refill', afterMs })}
+            onChange={(afterMs) => onChange(refillBlock(afterMs, block.restingSprite))}
           />
         ) : (
           <Field label="Regrows from">
@@ -374,8 +376,54 @@ function RespawnBlock({ block, selfId, tokens, tokenOptions, onChange }) {
           </Field>
         )}
       </div>
+      {mode === 'refill' && (
+        <RestingSpriteField
+          value={block.restingSprite}
+          onChange={(restingSprite) => onChange(refillBlock(block.afterMs ?? RESPAWN_DEFAULTS.afterMs, restingSprite))}
+        />
+      )}
       <p className="text-[10px] text-gray-600">{note}</p>
     </div>
+  );
+}
+
+/** A refill block in the file's order; no resting sprite leaves no key. */
+function refillBlock(afterMs, restingSprite) {
+  const sprite = typeof restingSprite === 'string' ? restingSprite.trim() : '';
+  return sprite ? { mode: 'refill', afterMs, restingSprite: sprite } : { mode: 'refill', afterMs };
+}
+
+/** The picture a resting Token is drawn as: typed, or picked from the sprite browser. */
+function RestingSpriteField({ value, onChange }) {
+  const [picking, setPicking] = useState(false);
+  const path = value ? resolveSpritePath(value) : null;
+  return (
+    <Field label="Resting sprite">
+      <div className="flex gap-2 items-center">
+        <div className="w-8 h-8 rounded border border-white/10 bg-black/40 flex items-center justify-center overflow-hidden flex-shrink-0">
+          {path && (
+            <img
+              src={path.startsWith('/') ? path : `/${path}`}
+              className="w-7 h-7 object-contain pixel-art"
+              alt=""
+              onError={(e) => { e.target.style.visibility = 'hidden'; }}
+            />
+          )}
+        </div>
+        <input
+          type="text"
+          aria-label="Resting sprite"
+          value={value || ''}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="none: its own art, greyed"
+          className="flex-1 min-w-0"
+        />
+        <button type="button" onClick={() => setPicking(true)} className="btn-ghost text-xs" style={{ padding: '6px 10px' }}>
+          Browse
+        </button>
+      </div>
+      <SpritePickerModal isOpen={picking} onClose={() => setPicking(false)} onSelect={(spriteId) => onChange(spriteId)} />
+    </Field>
   );
 }
 

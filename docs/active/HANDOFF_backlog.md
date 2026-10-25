@@ -8,7 +8,7 @@ Written 2026-10-24 night, at the end of the session of 22–24 October. Read
 `CLAUDE.md`, this file and `STATUS.md`, then verify with `git worktree list`
 and `git log --oneline -5` before trusting anything here.*
 
-## Done (main 7f6a1166, pushed)
+## Done (main d35e661e, pushed)
 
 **Brief 210 is complete**, plus every follow-up the owner approved. Each phase
 was okayed by the owner by phone (away 23–25 October) and gated on the merged
@@ -42,8 +42,9 @@ you're back at the PC" list: `docs/archive/eyecheck/2026-10-23_backlog-A.md`,
 
 ## Left
 
-- **T-251**: slow file-scanning tests time out under load (EngineEventNames
-  runs 4.6 s against a 5 s limit). Builder-lite.
+- ~~T-251~~ done 2026-10-25 (d35e661e): scanning tests share one cached read
+  of `src` and a 30 s limit. **T-255**: CMSStudio's render test still times
+  out under load (5058 ms). Builder-lite.
 - Notes in STATUS ("Notes between directors") for the Systems director: the
   travel determinism flake (fixed on their side, 9efa6db2) and the content
   test failures after the CMS sync (fixed, 4ec24ad0).
