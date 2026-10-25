@@ -13,6 +13,9 @@ import { ART_PX } from '../../../../config/matGeometry.js';
 import { getItem } from '../../../../config/registries/itemRegistry.js';
 import { resolveSpritePath } from '../../../../utils/AssetManager.js';
 import { itemTintName } from '../../base/itemTint.js';
+import { clearOfFight } from '../healthBar.js';
+import * as BoardCombat from '../../../../systems/board/BoardCombat.js';
+import * as HeroManager from '../../../../systems/hero/HeroManager.js';
 
 /**
  * The mat's effects that stand on the mat rather than on one Token's art: numbers rising off a
@@ -25,11 +28,14 @@ import { itemTintName } from '../../base/itemTint.js';
 let host = null;
 /** Mat units per art pixel: the board's art step (`boardScaleAt`), so every move is whole screen pixels. */
 let unit = 1;
+/** Mat units per plate pixel (`workPlate.plateUnit`): the health bar's and the frames' unit. */
+let plateU = 1;
 
-/** The layer's element and the mat's art unit (`MatFxLayer` keeps them current). */
-export function attachFxHost(el, artUnit = 1) {
+/** The layer's element, the mat's art unit and its plate unit (`MatFxLayer` keeps them current). */
+export function attachFxHost(el, artUnit = 1, plateUnit = 1) {
     host = el || null;
     unit = artUnit > 0 ? artUnit : 1;
+    plateU = plateUnit > 0 ? plateUnit : 1;
 }
 
 /** Mat units per art pixel, as the layer last set it. */
@@ -320,7 +326,12 @@ export function usedBubble(heroId, itemId, text) {
     const body = HeroMotion.bodyView(heroId);
     if (!body || !Number.isFinite(body.x) || !Number.isFinite(body.y)) return null;
 
-    const column = usedColumn(heroId, body.x, bubbleAnchorY(body.y, ART_PX * unit));
+    // A hero whose health bar shows (in a fight, or hurt): above its number, never on it.
+    const head = bubbleAnchorY(body.y, ART_PX * unit);
+    const hero = HeroManager.getHero(heroId);
+    const barShown = !!BoardCombat.fightOfHero(heroId) || (!!hero?.hp && hero.hp.current < hero.hp.max);
+    const foot = barShown ? clearOfFight(head, body.y - (ART_PX * unit) / 2, plateU, 2 * plateU) : head;
+    const column = usedColumn(heroId, body.x, foot);
     while (column.items.length >= USED_BUBBLE_MAX) {
         const oldest = column.items[0];
         dropUsed(heroId, column, oldest);

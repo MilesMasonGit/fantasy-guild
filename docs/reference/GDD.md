@@ -830,7 +830,11 @@ Statuses are not drawn on the board.
   hovered hero and a hovered enemy); a wide number grows away from the other
   fighter. The **fight plate** stands in the work plate's place under the two
   fighters' feet: both styles with a divider, then the hero's working elixirs
-  with the fights each has left (a Recruit shows no style). A small
+  with the fights each has left, the one under way counted (a fresh dose shows
+  10, its last fight 1; between fights, the fights still to come). A Recruit
+  shows no style. Speech, callouts (a status landing, a boss move) and "used"
+  bubbles over a fighter stand above its number and the chip, never on them.
+  A small
   **crossed-swords chip** beside the enemy's bar, on its far side from the
   hero (the flag flies the other way), opens the fight panel.
 - **Floating numbers** rise at each fighter's outer side, beside the middle of

@@ -69,3 +69,37 @@ export function enemyBarPlace(boxPx, u = 1) {
     const width = HP_BAR.W * u;
     return { left: (boxPx - width) / 2, top: -(HP_BAR.H + HP_BAR.GAP) * u, width };
 }
+
+/** The fight chip's measures in plate pixels: the 8 × 8 fight glyph at 2× in the chamfer frame (`fightPlate.js`). */
+export const CHIP = Object.freeze({ GLYPH: 16, PAD: 2, BAND: 6, GAP: 8 });
+export const CHIP_PX = CHIP.GLYPH + 2 * (CHIP.PAD + CHIP.BAND);
+
+/** The kit's small text size in screen pixels at the player's Text size (the bar's number). */
+export function labelFontPx() {
+    try {
+        const v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--font-size-xxs'));
+        return v > 0 ? v : 14;
+    } catch {
+        return 14;
+    }
+}
+
+/**
+ * How far over the top of a fighter's art its fight reaches, in mat units (`u` a plate pixel): the
+ * bar, the number written above it with its hard edge, or the chip beside the enemy's bar,
+ * whichever stands higher. Speech, callouts and "used" bubbles over a fighter go above this
+ * (owner, 2026-10-25: nothing covers the number).
+ */
+export function fightReach(u = 1, labelPx = labelFontPx()) {
+    const number = (HP_BAR.GAP + HP_BAR.H + HP_BAR.LABEL_GAP + 2 * HP_BAR.EDGE + labelPx) * u;
+    const chip = (HP_BAR.GAP + CHIP_PX) * u;
+    return Math.max(number, chip);
+}
+
+/**
+ * The y something said over a fighter rests its foot on: `y` where that is already clear of the
+ * fight over `artTop` (the top of the fighter's art), else `gap` above the fight's reach.
+ */
+export function clearOfFight(y, artTop, u = 1, gap = 0) {
+    return Math.min(y, artTop - fightReach(u) - gap);
+}

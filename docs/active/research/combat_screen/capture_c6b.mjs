@@ -136,17 +136,22 @@ try {
 
     // 1. The mat with floats: wait for floats on both sides at once, then hold every effect still.
     await page.send('Animation.enable');
-    let floats = 0;
-    for (let i = 0; i < 400; i++) {
-        floats = await page.evaluate(`(() => { const fs = [...document.querySelectorAll('[data-fight-float]')].filter(f => getComputedStyle(f).visibility === 'visible');
-            return new Set(fs.map(f => f.getAttribute('data-fight-float-on'))).size; })()`);
-        if (floats >= 2) break;
+    // Floats on both sides at once, and, when one comes within the wait, a callout or a "used"
+    // bubble over a fighter too (they stand above the health numbers).
+    let ready = null;
+    for (let i = 0; i < 600; i++) {
+        ready = await page.evaluate(`(() => { const fs = [...document.querySelectorAll('[data-fight-float]')].filter(f => getComputedStyle(f).visibility === 'visible');
+            const sides = new Set(fs.map(f => f.getAttribute('data-fight-float-on'))).size;
+            const said = !!document.querySelector('[data-callout], [data-fx-used]');
+            return { sides, said }; })()`);
+        if (ready.sides >= 2 && (ready.said || i > 400)) break;
         await sleep(40);
     }
+    log.saidInShot = await page.evaluate(`[...document.querySelectorAll('[data-callout], [data-fx-used]')].map(e => e.textContent)`);
     await page.send('Animation.setPlaybackRate', { playbackRate: 0 });
     log.floatsInShot = await page.evaluate(`[...document.querySelectorAll('[data-fight-float]')].map(f => f.getAttribute('data-fight-float') + ' on ' + f.getAttribute('data-fight-float-on') + ': ' + f.textContent)`);
     save('mat', await shot(page));
-    const fights = await boxOf(page, ['[data-fight-plate-slot] [data-fight-plate]', '[data-fight-chip]', '[data-health-bar]', '[data-fight-float]', '[data-board-hero]'], 40);
+    const fights = await boxOf(page, ['[data-fight-plate-slot] [data-fight-plate]', '[data-fight-chip]', '[data-health-bar]', '[data-fight-float]', '[data-board-hero]', '[data-callout]', '[data-fx-used]'], 40);
     save('mat_zoom', await upscale(page, await shot(page, fights)));
     await page.send('Animation.setPlaybackRate', { playbackRate: 1 });
     log.perFight = await countFight(page);

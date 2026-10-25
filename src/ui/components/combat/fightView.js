@@ -50,15 +50,24 @@ export function hasFought(typeId) {
     return !!(typeId && GameState.state?.collection?.discoveredEnemies?.[typeId]);
 }
 
+/** Whether a hero is in a fight with an enemy that has stepped up (not resting between kills). */
+function engaged(hero) {
+    const fight = BoardCombat.fightOfHero(hero?.id);
+    return !!fight && !((fight.combat?.state?.intermissionTimer ?? 0) > 0);
+}
+
 /**
  * The fight elixirs a hero has working: equipped elixirs whose effect is on them for this fight,
- * or that have fights left. `left` is how many more fights each lasts after the one under way.
- * @returns {{itemId: string, name: string, left: number}[]}
+ * or that have fights left. `left` is how many more fights each lasts after the one under way;
+ * `count` is what the screen shows, the fight under way counted too (owner, 2026-10-25): a fresh
+ * dose shows 10, its last fight 1, and between fights the fights still to come.
+ * @returns {{itemId: string, name: string, left: number, count: number}[]}
  */
 export function activeElixirsOf(hero) {
     if (!hero) return [];
     const out = [];
     const seen = new Set();
+    const inFight = engaged(hero);
     const sources = new Set((hero.effects || []).filter(e => e?.forFight && e.sourceId).map(e => e.sourceId));
     for (const { itemId, category } of getEquippedEntries(hero)) {
         if (seen.has(itemId) || !isConsumableCategory(category) || !isFightElixir(itemId)) continue;
@@ -66,7 +75,7 @@ export function activeElixirsOf(hero) {
         const left = Math.max(0, Number(hero.elixirFights?.[itemId]) || 0);
         const item = getItem(itemId);
         const working = (item?.effects || []).some(ref => sources.has(ref?.effectId));
-        if (working || left > 0) out.push({ itemId, name: item?.name || itemId, left });
+        if (working || left > 0) out.push({ itemId, name: item?.name || itemId, left, count: inFight ? left + 1 : left });
     }
     return out;
 }

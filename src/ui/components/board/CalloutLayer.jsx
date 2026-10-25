@@ -4,7 +4,7 @@ import { BOARD_EVENTS, ALERT } from '../../../systems/board/boardEvents.js';
 import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import { artRadiusOf } from '../../../config/matGeometry.js';
-import { tokenName } from '../../../config/registries/tokenRegistry.js';
+import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
 import { MAT_Z } from './matLayers.js';
 import { CALLOUT_MS, INPUT_CALLOUT_GAP_MS, TOOL_CALLOUT_GAP_MS, addCallout, anchorKeyOf, calloutText, dueAgain } from './callouts.js';
 import { getAllItems, getItem } from '../../../config/registries/itemRegistry.js';
@@ -12,7 +12,9 @@ import { toolNeedPhrase } from '../../../config/registries/toolKinds.js';
 import { columnPlace, heroColumnAt, heroColumnsVersion, subscribeHeroColumns } from './speechColumns.js';
 import { SPAWN_MS } from './spawnMotion.js';
 import { useMatFit } from './MatFitContext.jsx';
-import { SpeechFrame } from './SpeechFrame.jsx';
+import { SpeechFrame, speechTailDrop } from './SpeechFrame.jsx';
+import { clearOfFight } from './healthBar.js';
+import { tokenSizeFor, TOKEN_SURFACE, boardScaleAt } from '../base/TokenSprite.jsx';
 import { SPEECH_TONE } from './speechTone.js';
 import { plateUnit, platePlace } from './workPlate.js';
 import { useMatSize } from '../../hooks/useMatSize.js';
@@ -150,6 +152,12 @@ export const CalloutLayer = memo(function CalloutLayer() {
                 if (anchorId && BoardState.workerOf(anchorId)) {
                     const plateTop = platePlace({ x: ownX, y, typeId, fit, matH: mat.h }).top;
                     if (plateTop < y) ownTop = Math.min(ownTop, plateTop - GAP_PX);
+                    // An enemy in a fight: above its health number and its fight chip, never on them.
+                    if (getTokenType(typeId)?.enemy) {
+                        const art = tokenSizeFor(TOKEN_SURFACE.BOARD, typeId, boardScaleAt(fit));
+                        const boxTop = y - Math.max(artRadiusOf(typeId) * 2, art) / 2;
+                        ownTop = clearOfFight(ownTop, boxTop, u, speechTailDrop(u) + 2 * u);
+                    }
                 }
                 const { x, top } = columnPlace(
                     { x: ownX, top: ownTop },

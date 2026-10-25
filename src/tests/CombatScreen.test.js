@@ -40,7 +40,8 @@ import { fightPanelView, activeElixirsOf } from '../ui/components/combat/fightVi
 import * as MatFx from '../ui/components/board/fx/matFx.js';
 import { watchFightFloats } from '../ui/components/board/fx/fightFloats.js';
 import { STRIKE_DELAY_MS } from '../ui/components/board/hitAnimations.js';
-import { fightPlateOf, fightPlateCells } from '../ui/components/board/fightPlate.js';
+import { fightPlateOf, fightPlateCells, fightReach } from '../ui/components/board/fightPlate.js';
+import * as BoardCombat from '../systems/board/BoardCombat.js';
 import { CELL } from '../ui/components/board/workPlate.js';
 import { setDrawn, resetDrawSwitches } from '../ui/dev/perf/drawSwitches.js';
 
@@ -303,7 +304,8 @@ describe('the panel, the plate and the floats read the real fight', () => {
         expect(view.title).toBe(`${HeroManager.getHero(heroId).name} vs Screen Venomous`);
         // Screen Sword 3 + level 20's step of 1; armour 1 from the elixir's buff; a normal swing.
         expect(view.hero).toMatchObject({ style: 'melee', level: 20, hit: 4, armour: 1, swingMs: 3000 });
-        expect(view.hero.elixirs).toEqual([{ itemId: 'cs_elixir', name: 'Elixir of Testing', left: 9 }]);
+        // Ten fights to a dose, this one counted (owner, 2026-10-25); nine more after it.
+        expect(view.hero.elixirs).toEqual([{ itemId: 'cs_elixir', name: 'Elixir of Testing', left: 9, count: 10 }]);
         // Level 10 from the table: 30 health, a hit of 1, no armour; Venomous shows once fought.
         expect(view.enemy).toMatchObject({ level: 10, hit: 1, armour: 0, swingMs: 3000 });
         expect(view.enemy.hp.max).toBe(30);
@@ -331,7 +333,7 @@ describe('the panel, the plate and the floats read the real fight', () => {
         const kinds = (cells) => cells.map(c => (c.kind === CELL.SKILL ? `${c.who}:${c.id}` : c.kind));
         expect(kinds(fightPlateCells({ ...plate, side: 1 }))).toEqual(['enemy:melee', CELL.DIVIDER, 'hero:melee', CELL.ELIXIR]);
         expect(kinds(fightPlateCells({ ...plate, side: -1 }))).toEqual([CELL.ELIXIR, 'hero:melee', CELL.DIVIDER, 'enemy:melee']);
-        expect(fightPlateCells({ ...plate, side: 1 }).at(-1).count).toBe(9);
+        expect(fightPlateCells({ ...plate, side: 1 }).at(-1).count).toBe(10);
         // A Recruit has no style: the enemy's alone, then the elixirs.
         expect(kinds(fightPlateCells({ ...plate, heroStyle: null, side: 1 }))).toEqual(['enemy:melee', CELL.DIVIDER, CELL.ELIXIR]);
         expect(kinds(fightPlateCells({ ...plate, heroStyle: null, elixirs: [], side: 1 }))).toEqual(['enemy:melee']);
@@ -407,5 +409,111 @@ describe('a fight\'s link on the mat', () => {
         act(() => { fireEvent.click(chip); });
         expect(fightPanelState()).toBeNull();
         closeFightPanel();
+    });
+});
+
+describe('an elixir counts the fight it is working in (owner, 2026-10-25: 10 down to 1)', () => {
+    it('a fresh one shows 10, one less as each fight ends, 1 in its last fight, then it is gone', () => {
+        const { heroId, enemyId } = buildFight();
+        const hero = () => HeroManager.getHero(heroId);
+        const shown = () => fightPlateOf(heroId, enemyId).elixirs.map(e => e.count);
+        const engaged = () => {
+            const fight = BoardCombat.fightOfHero(heroId);
+            return !!fight && !((fight.combat?.state?.intermissionTimer ?? 0) > 0);
+        };
+        runUntil(() => engaged() && activeElixirsOf(hero()).length > 0, 10);
+        expect(shown()).toEqual([10]);
+        expect(fightPanelView(heroId, { current: null, last: null }) ?? null).toBeNull();
+        // The first enemy falls: resting before the next, nine fights are left.
+        runUntil(() => !engaged(), 180);
+        expect(shown()).toEqual([9]);
+        // The next one steps up: it is one of those nine.
+        runUntil(() => engaged(), 10);
+        expect(shown()).toEqual([9]);
+        // Its last fight: one dose left to count, this one.
+        hero().elixirFights.cs_elixir = 1;
+        InventoryManager.removeItem('cs_elixir', InventoryManager.getItemCount('cs_elixir'));
+        runUntil(() => !engaged(), 180);
+        runUntil(() => engaged(), 10);
+        expect(shown()).toEqual([1]);
+        // That fight ends with none left in the Bank: the elixir is spent.
+        runUntil(() => !engaged(), 180);
+        expect(shown()).toEqual([]);
+    });
+});
+
+describe('nothing covers a fighter\'s health number (owner, 2026-10-25: everything above it)', () => {
+    /** The y of the first `translate(x, y)` of an element's transform. */
+    const yOf = (el) => Number(/translate\((-?[\d.]+)px, (-?[\d.]+)px\)/.exec(el.style.transform)[2]);
+    /** How far over its art's top a fighter's bar, number and chip reach at a 1:1 mat (one screen pixel a plate pixel). */
+    const reach = () => fightReach(1, 14);
+
+    it('the reach is the number over the bar, or the chip beside it, whichever is higher', () => {
+        expect(fightReach(1, 14)).toBe(Math.max(3 + 6 + 4 + 2 + 14 + 2, 3 + 32));
+        expect(fightReach(2, 14)).toBe(2 * fightReach(1, 14));
+        // A bigger Text size raises the number.
+        expect(fightReach(1, 24)).toBeGreaterThan(fightReach(1, 14));
+    });
+
+    it('⭐ a callout over an enemy in a fight (a status landing, a boss move) sits above its number and chip', async () => {
+        const { enemyId } = buildFight();
+        runUntil(() => !!BoardCombat.getFight(enemyId), 10);
+        const { CalloutLayer } = await import('../ui/components/board/CalloutLayer.jsx');
+        const { container } = render(React.createElement(CalloutLayer));
+        act(() => { EventBus.publish(BOARD_EVENTS.EFFECT_FIRED, { instanceId: enemyId, title: 'Poison' }); });
+        const group = container.querySelector('[data-callout]').parentElement;
+        const enemy = BoardState.getTokenById(enemyId);
+        // The art's top at a 1:1 mat: the Token's 128 box over its centre.
+        expect(yOf(group)).toBeLessThanOrEqual(enemy.y - 64 - reach());
+    });
+
+    it('⭐ a hero\'s speech over a fighter sits above the bar\'s number', async () => {
+        const { heroId, enemyId } = buildFight();
+        runUntil(() => !!BoardCombat.getFight(enemyId), 10);
+        const { HeroBubbleLayer } = await import('../ui/components/board/HeroBubbleLayer.jsx');
+        const body = HeroMotion.bodyView(heroId);
+        const heroes = [{ heroId, state: 'working', x: body.x, y: body.y, moving: false, tokenId: enemyId, combat: true, hurt: false }];
+        const { container } = render(React.createElement(HeroBubbleLayer, { heroes }));
+        await new Promise(r => setTimeout(r, 2));
+        act(() => { EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { instanceId: 'tok_gone', typeId: 'fixture_producer', exhaustedBy: heroId }); });
+        const stack = container.querySelector(`[data-hero-bubble-stack="${heroId}"]`);
+        // The stack's foot (its tail hangs below it) clears the hero's art top by the reach.
+        expect(yOf(stack)).toBeLessThanOrEqual(body.y - 64 - reach());
+        cleanup();
+        // Not fighting and whole: just over the head, as before.
+        const calm = [{ ...heroes[0], combat: false }];
+        const { container: c2 } = render(React.createElement(HeroBubbleLayer, { heroes: calm }));
+        // A millisecond passes first, as in play: the layer redraws on the clock it is told.
+        await new Promise(r => setTimeout(r, 2));
+        act(() => { EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { instanceId: 'tok_gone2', typeId: 'fixture_producer', exhaustedBy: heroId }); });
+        expect(yOf(c2.querySelector(`[data-hero-bubble-stack="${heroId}"]`))).toBeGreaterThan(body.y - 64 - reach());
+    });
+
+    it('⭐ a "used" bubble over a hero in a fight sits above the bar\'s number', () => {
+        const calls = [];
+        const proto = window.Element.prototype;
+        const had = Object.prototype.hasOwnProperty.call(proto, 'animate');
+        const original = proto.animate;
+        proto.animate = function animate(keyframes, options) {
+            const a = { el: this, keyframes, options, onfinish: null, oncancel: null, cancel() {}, finish() { this.onfinish?.(); } };
+            calls.push(a);
+            return a;
+        };
+        const host = document.createElement('div');
+        document.body.appendChild(host);
+        try {
+            const { heroId, enemyId } = buildFight();
+            runUntil(() => !!BoardCombat.getFight(enemyId), 10);
+            // A 1:1 mat: art drawn at 2, one screen pixel a plate pixel.
+            MatFx.attachFxHost(host, 2, 1);
+            MatFx.usedBubble(heroId, 'cs_elixir', 'Elixir of Testing');
+            const column = host.querySelector(`[data-fx-used-column="${heroId}"]`);
+            const body = HeroMotion.bodyView(heroId);
+            expect(parseFloat(column.style.top)).toBeLessThanOrEqual(body.y - 64 - reach());
+        } finally {
+            MatFx.attachFxHost(null);
+            host.remove();
+            if (had) proto.animate = original; else delete proto.animate;
+        }
     });
 });

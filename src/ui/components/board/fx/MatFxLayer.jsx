@@ -18,9 +18,9 @@ export const MatFxLayer = memo(function MatFxLayer() {
     const ref = useRef(null);
     const unit = boardScaleAt(fit);
     useLayoutEffect(() => {
-        attachFxHost(ref.current, unit);
+        attachFxHost(ref.current, unit, plateUnit(fit || 1));
         return () => attachFxHost(null);
-    }, [unit]);
+    }, [unit, fit]);
     useEffect(() => watchMatFx(), []);
     useEffect(() => watchFightFloats(), []);
     return (

@@ -51,8 +51,8 @@ export function kitPanelView() {
         hp: { cur: 17, max: 30 }, hit: 4, armour: 2, swingMs: 3000,
         hitLines: ['Copper Sword: 2', 'Combat level: +1', 'Elixirs and gear: +1'],
         elixirs: [
-            { itemId: 'item_elixir_of_valor', name: 'Elixir of Valor', left: 7 },
-            { itemId: 'item_elixir_of_ironskin', name: 'Elixir of Ironskin', left: 3 }
+            { itemId: 'item_elixir_of_valor', name: 'Elixir of Valor', left: 6, count: 7 },
+            { itemId: 'item_elixir_of_ironskin', name: 'Elixir of Ironskin', left: 2, count: 3 }
         ],
         statuses: [{ id: 'effect_poison', name: 'Poison', stacks: 2, maxStacks: 3, ticksLeft: null, icon: 'drop' }],
         art: { sheet: 'assets/heroes/hn_fighter_sheet.png', still: 'assets/heroes/hm_fighter_por.png' }

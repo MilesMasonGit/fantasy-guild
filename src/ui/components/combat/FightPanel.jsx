@@ -143,12 +143,12 @@ const VsRow = ({ id, glyph, hero, enemy, tips }) => (
     </div>
 );
 
-/** An elixir: its icon and how many more fights it lasts. */
+/** An elixir: its icon and how many fights it has left, the one under way counted. */
 const ElixirChip = ({ e }) => (
-    <Tooltip title={e.name} lines={[t('fight.tip.elixir', { item: e.name, count: e.left })]}>
+    <Tooltip title={e.name} lines={[t('fight.tip.elixir', { item: e.name, count: e.count })]}>
         <span className="inline-flex items-center gap-0.5 cursor-help" data-fight-elixir={e.itemId}>
             <ItemIcon item={e.itemId} size={32} title={null} />
-            <span className="ui-text-small font-bold tabular-nums text-white">{e.left}</span>
+            <span className="ui-text-small font-bold tabular-nums text-white">{e.count}</span>
         </span>
     </Tooltip>
 );

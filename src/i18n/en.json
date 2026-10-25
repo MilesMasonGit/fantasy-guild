@@ -120,8 +120,8 @@
             "enemyArmour": "Armour {armour}: takes {armour} off each of your hits",
             "swing": "Swings every {time}",
             "elixir": {
-                "one": "{item}: lasts {count} more fight",
-                "other": "{item}: lasts {count} more fights"
+                "one": "{item}: {count} fight left",
+                "other": "{item}: {count} fights left"
             },
             "stacksUpTo": {
                 "one": "Stacks up to {count}",

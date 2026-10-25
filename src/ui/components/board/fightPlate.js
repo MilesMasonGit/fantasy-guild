@@ -6,7 +6,7 @@ import { getEnemyProfile } from '../../../config/registries/enemyProfile.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { tokenSizeFor, TOKEN_SURFACE, boardScaleAt } from '../base/TokenSprite.jsx';
 import { CELL, plateUnit } from './workPlate.js';
-import { HP_BAR } from './healthBar.js';
+import { HP_BAR, CHIP, CHIP_PX, fightReach, clearOfFight, labelFontPx } from './healthBar.js';
 import { activeElixirsOf, styleName, levelText } from '../combat/fightView.js';
 import { t } from '../../../i18n/index.js';
 
@@ -20,7 +20,7 @@ import { t } from '../../../i18n/index.js';
 /**
  * What a fight's plate shows, as a flat projection, or null when there is no fight between them.
  * @returns {{typeId: string, side: number, enemyStyle: string, heroStyle: string|null,
- *   elixirs: {itemId: string, left: number}[]}|null}
+ *   elixirs: {itemId: string, count: number}[]}|null}
  */
 export function fightPlateOf(heroId, instanceId) {
     const instance = BoardState.getTokenById(instanceId);
@@ -33,7 +33,7 @@ export function fightPlateOf(heroId, instanceId) {
         side: BoardState.heroBodyOf(heroId)?.side === -1 ? -1 : 1,
         enemyStyle: enemy?.combatType || 'melee',
         heroStyle: getHeroCombatStyle(hero),
-        elixirs: activeElixirsOf(hero).map(e => ({ itemId: e.itemId, left: e.left }))
+        elixirs: activeElixirsOf(hero).map(e => ({ itemId: e.itemId, count: e.count }))
     };
 }
 
@@ -46,7 +46,7 @@ export function fightPlateCells(plate) {
     const enemy = [{ kind: CELL.SKILL, id: plate.enemyStyle, who: 'enemy' }];
     const hero = [
         ...(plate.heroStyle ? [{ kind: CELL.SKILL, id: plate.heroStyle, who: 'hero' }] : []),
-        ...plate.elixirs.map(e => ({ kind: CELL.ELIXIR, itemId: e.itemId, count: e.left }))
+        ...plate.elixirs.map(e => ({ kind: CELL.ELIXIR, itemId: e.itemId, count: e.count }))
     ];
     const cells = hero.length ? [...enemy, { kind: CELL.DIVIDER }, ...hero] : enemy;
     return plate.side === -1 ? cells.reverse() : cells;
@@ -71,9 +71,8 @@ export function fightPlateTip(cell, heroId, instanceId) {
     return '';
 }
 
-/** The chip's measures in plate pixels: the 8 × 8 fight glyph at 2× in the chamfer frame. */
-export const CHIP = Object.freeze({ GLYPH: 16, PAD: 2, BAND: 6, GAP: 8 });
-export const CHIP_PX = CHIP.GLYPH + 2 * (CHIP.PAD + CHIP.BAND);
+/** The chip's measures: `healthBar.js`'s, beside the bar it stands by. */
+export { CHIP, CHIP_PX, fightReach, clearOfFight, labelFontPx };
 
 /**
  * Where the fight chip stands, in mat units: beside the enemy's health bar on the side away from
