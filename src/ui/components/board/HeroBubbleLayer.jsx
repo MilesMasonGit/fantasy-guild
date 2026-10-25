@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { MAT_Z } from './matLayers.js';
 import { pinRefusedLineFor } from './heroBubbles.js';
-import { addMoment, liveMoments, stackOf, momentText, speaksMoment, DEPLETED_TTL_MS } from './heroSpeech.js';
+import { addMoment, liveMoments, stackOf, momentText, speaksMoment, idleMomentOf, DEPLETED_TTL_MS } from './heroSpeech.js';
 import { floatsOf, anyFloats, subscribeFloats } from './levelUpFloats.js';
 import { LevelUpFloats } from './LevelUpFloat.jsx';
 import { useMatFit } from './MatFitContext.jsx';
@@ -132,14 +132,12 @@ export const HeroBubbleLayer = ({ heroes }) => {
             const idle = h.state === 'idle';
             next.set(h.heroId, idle);
             if (prev && prev.get(h.heroId) === false && idle) {
-                // Idle because the one fight in reach is another hero's: they wait for it.
-                const busy = BoardState.getTokenById(Flags.waitingFor(h.heroId));
-                if (busy) {
-                    const name = getTokenType(busy.typeId)?.name || tokenName(busy.typeId) || busy.typeId;
-                    sayRef.current(h.heroId, 'waiting', { key: 'idle', text: momentText.waiting(name) });
-                } else {
-                    sayRef.current(h.heroId, 'idle', { key: 'idle', text: momentText.idle() });
-                }
+                // Waiting for another hero's fight says so; waiting for a resting node says nothing.
+                const waiting = Flags.waitingOf(h.heroId);
+                const busy = BoardState.getTokenById(waiting?.instanceId);
+                const name = busy ? (getTokenType(busy.typeId)?.name || tokenName(busy.typeId) || busy.typeId) : null;
+                const moment = idleMomentOf(busy ? waiting : null, name);
+                if (moment) sayRef.current(h.heroId, moment.kind, { key: moment.key, text: moment.text });
             }
         }
         wasIdleRef.current = next;

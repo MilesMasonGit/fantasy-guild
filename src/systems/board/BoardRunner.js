@@ -732,8 +732,10 @@ export function isHeroIdle(heroId) {
 
     // A hero is idle when their flag found nothing to work, or in the Dock.
     const status = Flags.statusOf(heroId);
-    if (status.state === 'docked' || status.state === 'returning' || status.state === 'idle') return true;
-    // Walking back to the flag with nothing to do is idle; walking to work is not.
-    if (status.state === 'walking') return !status.instanceId;
+    if (status.state === 'docked' || status.state === 'returning') return true;
+    // Waiting for a node in reach to come back is doing their job, not idling.
+    const unclaimed = status.state === 'idle' || (status.state === 'walking' && !status.instanceId);
+    if (unclaimed) return Flags.waitingOf(heroId)?.kind !== 'node';
+    if (status.state === 'walking') return false;
     return !!BoardState.getTokenById(status.instanceId)?.alert;   // working, but stuck
 }

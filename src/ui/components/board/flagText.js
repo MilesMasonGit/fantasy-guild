@@ -32,8 +32,8 @@ function heroName(heroId) {
 }
 
 /**
- * The type of the busy enemy `heroId` is waiting for (`Flags.waitingFor`), or null. Every fight is
- * one-on-one, so a hero whose only fight is taken waits for it.
+ * The type of what `heroId` is waiting for (`Flags.waitingFor`), or null: a busy enemy (every
+ * fight is one-on-one) or a resting node in reach that they work the moment it is back.
  */
 export function waitingTypeOf(heroId) {
     const id = Flags.waitingFor(heroId);
@@ -53,7 +53,7 @@ export function flagStatusLine(heroId) {
         case 'walking': return s.instanceId ? `Walking to: ${tokenName(s.typeId) || 'a Token'}` : 'Heading back to the flag';
         case 'idle': {
             const waiting = waitingTypeOf(heroId);
-            return waiting ? `Waiting for ${tokenName(waiting) || 'an enemy'}` : 'Nothing to do';
+            return waiting ? `Waiting for ${tokenName(waiting) || 'a Token'}` : 'Nothing to do';
         }
         case 'returning': return s.limping ? 'Limping home' : 'Heading home';
         default: return 'In the Guild';
@@ -106,13 +106,13 @@ export function tokenSkipLines(instanceId) {
 
 /**
  * The Dock tab's status line: Working: X · Walking to: X · Waiting for X · Idle at flag · Idle in
- * Guild. `status.waitingFor` is the type of a busy enemy the hero waits for ({@link waitingTypeOf}).
+ * Guild. `status.waitingFor` is the type of what the hero waits for ({@link waitingTypeOf}).
  */
 export function dockStatusLine(status) {
     switch (status?.state) {
         case 'working': return `Working: ${tokenName(status.typeId) || 'a Token'}`;
         case 'walking': return status.instanceId ? `Walking to: ${tokenName(status.typeId) || 'a Token'}` : 'Heading back to the flag';
-        case 'idle': return status.waitingFor ? `Waiting for ${tokenName(status.waitingFor) || 'an enemy'}` : 'Idle at flag';
+        case 'idle': return status.waitingFor ? `Waiting for ${tokenName(status.waitingFor) || 'a Token'}` : 'Idle at flag';
         case 'returning': return status.limping ? 'Limping home' : 'Returning to the Guild';
         default: return 'Idle in Guild';
     }

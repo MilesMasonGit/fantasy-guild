@@ -354,6 +354,16 @@ function announceToolNeeded(instanceId, heroId) {
     if (need) EventBus.publish(BOARD_EVENTS.TOOL_NEEDED, { instanceId, heroId, ...need });
 }
 
+/**
+ * A Token its hero stands at is out of an input: the mat says which, over the Token ("Needs
+ * Coal"). Said each time the stuck hero's flag looks again (about once a second, and as they
+ * leave for other work); the callout spaces itself out (`CalloutLayer`).
+ */
+function announceInputNeeded(instance, heroId) {
+    const itemId = WorkCheck.fixableReason(instance.id, instance).inputCheck?.missing?.[0]?.itemId;
+    if (itemId) EventBus.publish(BOARD_EVENTS.INPUT_NEEDED, { instanceId: instance.id, heroId, itemId });
+}
+
 function recordSkips(r, heroId, skips) {
     clearSkips(r, heroId);
     if (!skips.length) return;
@@ -601,6 +611,7 @@ function keepOrRelease(r, heroId, dirty) {
 
         // Stuck for a fixable reason: stay until something else can run.
         if (FIXABLE.has(alert) && (dirty || r.clock >= (r.nextTryAt.get(heroId) ?? 0))) {
+            if (alert === ALERT.INPUTS) announceInputNeeded(instance, heroId);
             const { pick, skips } = evaluate(heroId, flag, instance.id);
             if (!pick) {
                 r.nextTryAt.set(heroId, r.clock + RETRY_MS);
@@ -1008,19 +1019,30 @@ function springAmbushes() {
 }
 
 /**
- * The busy enemy `heroId` is waiting for, or null: a hero with nothing claimed whose flag passed
- * over an enemy because another hero is fighting it (`claimed`). Every fight is one-on-one, so a
- * flag pinned to that enemy waits beside it, and an area flag with nothing else in reach waits at
- * its flag; either takes the enemy the moment it is free. The first such enemy in the flag's own
- * order. For the flag's words and the hero's speech.
+ * What `heroId` is waiting for, or null: `{ instanceId, kind }` for a hero with nothing claimed
+ * whose flag passed over something that will be theirs to work by itself, the first such in the
+ * flag's own order.
+ * - `'fight'`: an enemy another hero is fighting (`claimed`). Every fight is one-on-one, so a flag
+ * pinned to that enemy waits beside it, and an area flag with nothing else in reach waits at its
+ * flag; either takes the enemy the moment it is free.
+ * - `'node'`: a Token resting until it respawns (`resting`) that the hero could work: the skip
+ * reason is the Token's own, so the hero's skill, level, tool and rule have already passed. They
+ * wait silently and work it the moment it is back (`TOKEN_RESPAWNED` marks flags dirty).
+ * For the flag's words, the hero's speech and the idle mark.
  */
-export function waitingFor(heroId) {
+export function waitingOf(heroId) {
     if (!heroId || BoardState.claimOfHero(heroId)) return null;
     for (const s of skipsOfHero(heroId)) {
+        if (s.reason === ALERT.RESTING) return { instanceId: s.instanceId, kind: 'node' };
         if (s.reason !== SKIP.CLAIMED) continue;
-        if (BoardCombat.isEnemyToken(BoardState.getTokenById(s.instanceId))) return s.instanceId;
+        if (BoardCombat.isEnemyToken(BoardState.getTokenById(s.instanceId))) return { instanceId: s.instanceId, kind: 'fight' };
     }
     return null;
+}
+
+/** The instance id {@link waitingOf} names, or null. */
+export function waitingFor(heroId) {
+    return waitingOf(heroId)?.instanceId ?? null;
 }
 
 /** Why a Token cannot be disallowed: no hero could ever work it. */

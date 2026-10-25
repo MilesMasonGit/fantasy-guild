@@ -6,8 +6,8 @@ import * as BoardState from '../../../systems/board/BoardState.js';
 import { artRadiusOf } from '../../../config/matGeometry.js';
 import { tokenName } from '../../../config/registries/tokenRegistry.js';
 import { MAT_Z } from './matLayers.js';
-import { CALLOUT_MS, addCallout, anchorKeyOf, calloutText, dueAgain } from './callouts.js';
-import { getAllItems } from '../../../config/registries/itemRegistry.js';
+import { CALLOUT_MS, INPUT_CALLOUT_GAP_MS, TOOL_CALLOUT_GAP_MS, addCallout, anchorKeyOf, calloutText, dueAgain } from './callouts.js';
+import { getAllItems, getItem } from '../../../config/registries/itemRegistry.js';
 import { toolNeedPhrase } from '../../../config/registries/toolKinds.js';
 import { columnPlace, heroColumnAt, heroColumnsVersion, subscribeHeroColumns } from './speechColumns.js';
 import { SPAWN_MS } from './spawnMotion.js';
@@ -25,7 +25,8 @@ const NO_SUBSCRIPTION = () => () => {};
 
 /**
  * Quick popups over the mat, in the speech family's frame (`SpeechFrame`), red for a refusal: "! Spawned Oak Tree" over the spawner, an effect's name
- * over the Token it fired on, "Needs Pickaxe" over a Token a hero passed over for want of the tool,
+ * over the Token it fired on, "Needs Pickaxe" over a Token a hero passed over for want of the tool, "Needs Coal" over a station its hero stands at
+ * out of an input,
  * "Demolished Oak Tree" where a demolished Token stood, and the reason
  * for a refused action (a drop, a quest claim, a shrink that left a Token crowded) over the spot or
  * Token involved. Refusals are never notifications.
@@ -43,6 +44,17 @@ export const CalloutLayer = memo(function CalloutLayer() {
     useEffect(() => {
         const pending = timers.current;
         const toolSaidAt = new Map();   // instanceId → when "Needs Pickaxe" was last said over it
+        const inputSaidAt = new Map();  // instanceId → when "Needs Coal" was last said over it
+        /** Whether a reminder over `instanceId` is due; if so, noted as said now. */
+        const remind = (saidAt, instanceId, gapMs) => {
+            const now = Date.now();
+            if (!dueAgain(saidAt.get(instanceId) ?? null, now, gapMs)) return false;
+            if (saidAt.size > 256) {
+                for (const [id, at] of saidAt) if (dueAgain(at, now, gapMs)) saidAt.delete(id);
+            }
+            saidAt.set(instanceId, now);
+            return true;
+        };
         const say = ({ anchorId = null, x = null, y = null, typeId = null, text, tone = SPEECH_TONE.PLAIN }) => {
             if (!text) return;
             const anchor = anchorId ? BoardState.getTokenById(anchorId) : null;
@@ -72,13 +84,14 @@ export const CalloutLayer = memo(function CalloutLayer() {
             // A flag passed this Token over for want of a tool: the Token says which, now and then.
             EventBus.subscribe(BOARD_EVENTS.TOOL_NEEDED, (p) => {
                 if (!p?.instanceId || !p.kind) return;
-                const now = Date.now();
-                if (!dueAgain(toolSaidAt.get(p.instanceId) ?? null, now)) return;
-                if (toolSaidAt.size > 256) {
-                    for (const [id, at] of toolSaidAt) if (dueAgain(at, now)) toolSaidAt.delete(id);
-                }
-                toolSaidAt.set(p.instanceId, now);
+                if (!remind(toolSaidAt, p.instanceId, TOOL_CALLOUT_GAP_MS)) return;
                 say({ anchorId: p.instanceId, text: calloutText.needsTool(toolNeedPhrase(p, getAllItems())), tone: SPEECH_TONE.CANT });
+            }, UI_LISTENER),
+            // A station its hero stands at is out of an input: it says which, in the same look.
+            EventBus.subscribe(BOARD_EVENTS.INPUT_NEEDED, (p) => {
+                if (!p?.instanceId || !p.itemId) return;
+                if (!remind(inputSaidAt, p.instanceId, INPUT_CALLOUT_GAP_MS)) return;
+                say({ anchorId: p.instanceId, text: calloutText.needsInput(getItem(p.itemId)?.name || p.itemId), tone: SPEECH_TONE.CANT });
             }, UI_LISTENER),
             // The Token is gone by now: said where it stood, over where its art was.
             EventBus.subscribe(BOARD_EVENTS.TOKEN_DEMOLISHED, (p) => {

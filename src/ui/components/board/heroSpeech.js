@@ -61,6 +61,20 @@ export const momentText = {
 };
 
 /**
+ * What a hero says on going idle, given what they wait for (`Flags.waitingOf`) and its name:
+ * `{ kind, key, text }`, or null to say nothing.
+ * * nothing to wait for: "No work in range.";
+ * * a fight another hero holds: "Waiting for Goblin.";
+ * * a node in reach that is resting: nothing. They wait silently and work it when it is back;
+ * the flag's hover and the Dock say "Waiting for Copper Vein".
+ */
+export function idleMomentOf(waiting, name = null) {
+    if (waiting?.kind === 'node') return null;
+    if (waiting?.kind === 'fight') return { kind: 'waiting', key: 'idle', text: momentText.waiting(name) };
+    return { kind: 'idle', key: 'idle', text: momentText.idle() };
+}
+
+/**
  * Which moments a hero actually says: bubbles are for unusual events, not the everyday.
  * Arriving at a job happens every few seconds on a busy mat, so it is silent; the wording
  * above stays so it can be turned back on here. The full list of every line, with its status,
@@ -72,6 +86,7 @@ export const momentText = {
  * (`levelUpFloats.js`), and the hero bar keeps the lasting alert.
  * * `waiting`: kept: said instead of `idle` when the hero goes idle because the enemy they would
  * fight is another hero's fight (every fight is one-on-one); they take it the moment it is free.
+ * A gatherer whose node in reach is resting says nothing at all ({@link idleMomentOf}).
  * * `depleted`: kept: the hero who used a Token up says so.
  * * `beaten`: kept: `depleted` said of an enemy, by the hero who beat it.
  * * `pinRefused`: kept: a flag dropped on a Token its hero can't work plants as an area flag,

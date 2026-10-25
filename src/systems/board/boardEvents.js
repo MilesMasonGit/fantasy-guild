@@ -100,6 +100,14 @@ export const BOARD_EVENTS = {
     TOOL_NEEDED: 'board:tool_needed',
 
     /**
+     * A Token a hero stands at cannot start a cycle for want of an input (`ALERT.INPUTS`). Payload:
+     * `{ instanceId, heroId, itemId }`, the first item the Bank is short of. Published by `Flags`
+     * each time the stuck hero's flag looks again (about once a second); the mat's "Needs Coal"
+     * callout over the Token spaces itself out (`CalloutLayer`).
+     */
+    INPUT_NEEDED: 'board:input_needed',
+
+    /**
      * A Foundation finished its build and became the Token it built, in place (Farmland planted by
      * Farming included). Payload: `{ instanceId, typeId, fromTypeId, heroId }`: the new Token, what
      * it was built as, the Foundation's type, and the hero who built it.
