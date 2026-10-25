@@ -268,7 +268,7 @@ describe('⭐ everything a flight draws lands inside the canvas', () => {
 
     it('a hero lifted from the dock, flying to the cursor', () => {
         vi.spyOn(Math, 'random').mockImplementation(cycling([0.99, 0, NEAR_ONE, 0, NEAR_ONE, 0]));
-        const { container } = render(React.createElement(ParticleOverlay, { disabled: false }));
+        const { container } = render(React.createElement(ParticleOverlay, { layer: 'pointer', disabled: false }));
         const canvas = canvasOf(container);
         act(() => {
             EventBus.publish(UI_EVENTS.UI_PARTICLE_FLY, {
