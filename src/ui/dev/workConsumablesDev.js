@@ -117,7 +117,7 @@ function qaWorker(name, skill, items) {
 }
 
 /**
- * Above the Guild Hall, two Tokens apart from each other, each with its worker:
+ * Below the Guild Hall, two Tokens apart from each other, each with its worker:
  * - left, the QA Oak: QA Forester, carrying a QA Birdwatcher and a QA Coffee. Each Forestry cycle
  *   starts with a Birdwatcher drunk (a "used" bubble, the Bank down one) and, a quarter of the time,
  *   ends with a QA Bird Nest beside the Oak; the first cycle also drinks a Coffee (a bubble), which
@@ -133,9 +133,9 @@ export function setUpWorkConsumablesScene() {
     const hall = BoardState.tokens().find(t => t.typeId === 'token_guild_hall' || getTokenType(t.typeId)?.isGuildHall);
     const c = hall ? { x: hall.x, y: hall.y } : { x: 880, y: 560 };
 
-    const tree = put(QA_WORK.TREE, { x: c.x - 360, y: c.y - 300 });
-    const vein = put(QA_WORK.VEIN, { x: c.x + 360, y: c.y - 300 });
-    if (!tree || !vein) return { ok: false, error: 'No room above the Guild Hall for the scene' };
+    const tree = put(QA_WORK.TREE, { x: c.x - 280, y: c.y + 220 });
+    const vein = put(QA_WORK.VEIN, { x: c.x + 280, y: c.y + 220 });
+    if (!tree || !vein) return { ok: false, error: 'No room below the Guild Hall for the scene' };
     TileModifiers.rebuildAll();
 
     InventoryManager.addItem(QA_WORK.BIRDWATCHER, 20);

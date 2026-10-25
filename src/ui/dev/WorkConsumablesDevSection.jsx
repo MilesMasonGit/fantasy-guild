@@ -27,7 +27,7 @@ export function WorkConsumablesDevSection() {
                 onClick={() => {
                     const r = setUpWorkConsumablesScene();
                     setStatus(r.ok
-                        ? 'Above the Hall: a QA Forester on a QA Oak with a Birdwatcher (one drunk each Forestry cycle, a Bird Nest a quarter of the time) and a Coffee (cycles at half time for 10 cycles); a QA Miner on a QA Copper Vein keeps their Birdwatcher'
+                        ? 'Below the Hall: a QA Forester on a QA Oak with a Birdwatcher (one drunk each Forestry cycle, a Bird Nest a quarter of the time) and a Coffee (cycles at half time for 10 cycles); a QA Miner on a QA Copper Vein keeps their Birdwatcher'
                         : r.error);
                 }}
             >
