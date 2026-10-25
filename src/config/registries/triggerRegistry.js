@@ -78,6 +78,9 @@ export const TRIGGER_SCOPES = {
 /** The verbs a fight moment runs (`FightMoments`); the editor offers its moments to no other. */
 const FIGHT_MOMENT_KEYWORDS = Object.freeze(['applies', 'deals', 'heals', 'removes']);
 
+/** The verbs a carried rule runs on its hero's moments (`LoadoutMoments`). */
+const CARRIED_KEYWORDS = Object.freeze(['applies', 'deals', 'heals', 'removes', 'grants']);
+
 export const TRIGGER_EVENTS = [
     {
         id: 'CYCLE_COMPLETE',
@@ -236,6 +239,26 @@ export const TRIGGER_EVENTS = [
     },
     {
         /**
+         * A carried item's own work moment: the hero carrying it starts a work cycle, on any Token,
+         * or only on one skill's (`when.skill`, "On Forestry Work Start"). How a work potion and a
+         * drink work (`consumableRule.js`).
+         *
+         * ⚠️ **No bus event** (`event: null`): `LoadoutMoments` fires it at the cycle start, for the
+         * items of the hero starting it, so `TriggerSystem` skips it and a Token never hears it.
+         * Carried rules have no cooldown, so none is offered.
+         */
+        id: 'WORK_START',
+        roles: [ROLE.SELF, ROLE.ACTOR],
+        event: null,
+        label: 'On Work Start',
+        scopes: [TRIGGER_SCOPES.SELF],
+        carried: true,
+        skillParam: true,
+        keywords: CARRIED_KEYWORDS,
+        hint: 'Fires as the hero carrying this item starts a work cycle, on any Token, or only on one skill\'s work if you name it. How a work potion or a drink works. A Token never hears it.'
+    },
+    {
+        /**
          * ⭐ **The moment a live effect recurs on.**
          *
          * The mechanism behind every damage-over-time effect: an effect sitting
@@ -343,6 +366,11 @@ export const FIGHT_MOMENT = Object.freeze({
 /** Whether a moment is one the combat engine fires (`FIGHT_MOMENT`). */
 export function isFightMoment(triggerId) {
     return !!getTriggerEvent(triggerId)?.fightMoment;
+}
+
+/** Whether a moment is heard only by a carried item (`WORK_START`), never by a Token. */
+export function isCarriedMoment(triggerId) {
+    return !!getTriggerEvent(triggerId)?.carried;
 }
 
 /** The health share an "On Health Below" rule waits for, in whole percent (1–99, default 50). */

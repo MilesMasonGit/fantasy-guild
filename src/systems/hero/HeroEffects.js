@@ -10,6 +10,7 @@ import { KEYWORD } from '../effects/statements.js';
 import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
 import { weaponUsableBy } from '../../config/registries/weaponStyles.js';
 import { getHeroCombatSkillEntry } from '../../utils/CombatFormulas.js';
+import { isSpentCategory, isAlwaysOn } from '../core/consumableRule.js';
 
 /**
  * A hero's equipped items are bearers, like a Token: the same grammar and effect
@@ -31,7 +32,10 @@ import { getHeroCombatSkillEntry } from '../../utils/CombatFormulas.js';
 /**
  * Every effect reference a hero is carrying, merged by effect.
  *
- * @returns {Map<string, {scale: number, itemIds: string[]}>}
+ * `worn` is the same merge over the items that are not spent from the Bank (gear, weapons, tools):
+ * the only ones whose always-on rules count (`consumableRule.isSpentCategory`).
+ *
+ * @returns {Map<string, {scale: number, itemIds: string[], worn: {scale: number, itemIds: string[]}}>}
  */
 export function loadoutRefs(hero) {
     const merged = new Map();
@@ -47,15 +51,21 @@ export function loadoutRefs(hero) {
         // A weapon of another style (held from before a re-training) is not swung, and its family's
         // ability does not reach the hero either.
         if (!weaponUsableBy(def, style)) continue;
+        const worn = !isSpentCategory(def.equipSlot);
 
         for (const { effectId, scale } of effectRefsOf(def)) {
-            const current = merged.get(effectId);
-            if (current) {
-                // Scales add; the cap stops a build maxing one effect by carrying six of a thing.
-                current.scale = Math.min(MAX_SCALE, current.scale + scale);
-                current.itemIds.push(itemId);
-            } else {
-                merged.set(effectId, { scale: normaliseScale(scale), itemIds: [itemId] });
+            let current = merged.get(effectId);
+            if (!current) {
+                current = { scale: 0, itemIds: [], worn: { scale: 0, itemIds: [] } };
+                merged.set(effectId, current);
+            }
+            // Scales add; the cap stops a build maxing one effect by carrying six of a thing.
+            current.scale = current.itemIds.length ? Math.min(MAX_SCALE, current.scale + scale) : normaliseScale(scale);
+            current.itemIds.push(itemId);
+            if (worn) {
+                current.worn.scale = current.worn.itemIds.length
+                    ? Math.min(MAX_SCALE, current.worn.scale + scale) : normaliseScale(scale);
+                current.worn.itemIds.push(itemId);
             }
         }
     }
@@ -68,16 +78,29 @@ export function loadoutRefs(hero) {
  *
  * Each carries `sourceItemIds` because paying its cost consumes one of those
  * items, and by the time a rule fires which items they were is no longer derivable.
+ *
+ * ⚠️ An always-on rule (no moment) counts only from worn items. A food, drink or potion acts only
+ * through its moment and its dose (`consumableRule.js`): its standing rules would otherwise be a
+ * free buff for as long as the Bank held one, never spent. Where gear and a potion share an
+ * effect, the always-on rule counts at the gear's own scale, from the gear.
  */
 export function loadoutStatements(hero) {
     const out = [];
 
-    for (const [effectId, { scale, itemIds }] of loadoutRefs(hero)) {
+    for (const [effectId, { scale, itemIds, worn }] of loadoutRefs(hero)) {
         const entry = EFFECTS[effectId];
         if (!entry) continue;                       // ContentAudit reports it by name
-        for (const statement of statementsFromEntry(entry, { effectId, scale })) {
-            out.push({ ...statement, sourceItemIds: itemIds });
-        }
+        const allWorn = worn.itemIds.length === itemIds.length;
+        // Only when some, not all, of the items are worn: the always-on rules at the worn scale.
+        const wornOnes = !allWorn && worn.itemIds.length
+            ? statementsFromEntry(entry, { effectId, scale: worn.scale }) : null;
+        statementsFromEntry(entry, { effectId, scale }).forEach((statement, i) => {
+            if (!isAlwaysOn(statement) || allWorn) {
+                out.push({ ...statement, sourceItemIds: itemIds });
+            } else if (wornOnes) {
+                out.push({ ...wornOnes[i], sourceItemIds: worn.itemIds });
+            }
+        });
     }
 
     return out;

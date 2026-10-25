@@ -6,6 +6,7 @@ import {
     CHARGE_MOMENT, chargeMomentsFor, chargeMomentOf, chargeDeltaOf
 } from '../../config/registries/chargeMomentRegistry.js';
 import { TRIGGER_EVENTS, getTriggerEvent, rolesOf, isFightMoment, everyOf, healthBelowOf } from '../../config/registries/triggerRegistry.js';
+import { isWorkMoment } from '../core/consumableRule.js';
 import { ROLES, getRole } from '../../config/registries/roleRegistry.js';
 import { REACHES, reachOf, getReach } from '../../config/registries/reachRegistry.js';
 import {
@@ -143,6 +144,7 @@ function appliesSlots(statement, ctx) {
     const isStatus = (id) => !!statusBlockOf(ctx?.effects?.[id]);
     const status = isStatus(payload.effectId);
     const onFightMoment = isFightMoment(statement?.when?.event);
+    const onWorkMoment = isWorkMoment(statement?.when?.event);
     return [
         {
             id: 'effectId', kind: SLOT_KIND.VOCABULARY, label: 'effect',
@@ -153,8 +155,8 @@ function appliesSlots(statement, ctx) {
                 const { statusId, stacks, ...rest } = payload;
                 void statusId; void stacks;
                 if (isStatus(v)) {
-                    const { forFight, forSwing, durationMs, ...lifeless } = rest;
-                    void forFight; void forSwing; void durationMs;
+                    const { forFight, forSwing, forCycle, durationMs, ...lifeless } = rest;
+                    void forFight; void forSwing; void forCycle; void durationMs;
                     return { payload: { ...lifeless, effectId: v } };
                 }
                 return { payload: { ...rest, effectId: v } };
@@ -165,16 +167,16 @@ function appliesSlots(statement, ctx) {
             value: payload.scale ?? 1,
             patch: v => ({ payload: { ...payload, scale: Math.max(1, Number(v) || 1) } })
         },
-        ...(status ? [] : lifetimeSlots(payload, onFightMoment)),
+        ...(status ? [] : lifetimeSlots(payload, onFightMoment, onWorkMoment)),
         ...appliesExtras(payload)
     ];
 }
 
 /**
- * How long an applied effect lasts: for the swing (on a fight moment), for the fight, or a number
- * of seconds; none of them fires it once, now (chaining).
+ * How long an applied effect lasts: for the swing (on a fight moment), for the fight, for the cycle
+ * (on a work moment), or a number of seconds; none of them fires it once, now (chaining).
  */
-function lifetimeSlots(payload, onFightMoment) {
+function lifetimeSlots(payload, onFightMoment, onWorkMoment = false) {
     return [
         // A boss's heavy strike: on until the swing being made is over. Offered on a fight
         // moment, or where it is already set so it can be cleared.
@@ -199,6 +201,18 @@ function lifetimeSlots(payload, onFightMoment) {
                 return { payload: v ? { ...rest, forFight: true } : rest };
             }
         },
+        // A work potion's or a drink's case: on until the work cycle it was applied at ends. Offered
+        // on a work moment, or where already set so it can be cleared.
+        ...(onWorkMoment || payload.forCycle ? [{
+            id: 'forCycle', kind: SLOT_KIND.FLAG, label: 'for the cycle',
+            value: !!payload.forCycle,
+            hint: 'Lasts until the work cycle starting now is over: a work potion\'s or a drink\'s effect. For a rule on the work-start moment.',
+            patch: v => {
+                const { forCycle, ...rest } = payload;
+                void forCycle;
+                return { payload: v ? { ...rest, forCycle: true } : rest };
+            }
+        }] : []),
         {
             // Zero means fire it once, now (how chaining works).
             id: 'durationMs', kind: SLOT_KIND.NUMBER, label: 'for (ms)', min: 0, optional: true,
@@ -535,9 +549,13 @@ export function slotsOf(statement, ctx = {}) {
             options: momentOptions(statement.keyword),
             patch: v => {
                 const definition = getTriggerEvent(v);
+                // A skill belongs to the moment that offers one: kept, it would narrow a moment
+                // whose editor has no control to show or clear it.
+                const { skill, ...when } = statement.when || {};
                 return {
                     when: {
-                        ...(statement.when || {}),
+                        ...when,
+                        ...(definition?.skillParam && skill ? { skill } : {}),
                         event: v,
                         scope: definition?.scopes?.[0] || 'nearby'
                     }
@@ -583,11 +601,26 @@ export function slotsOf(statement, ctx = {}) {
                 patch: v => ({ when: { ...statement.when, belowPct: healthBelowOf({ belowPct: v }) } })
             });
         }
+        // On Work Start may name one skill ("On Forestry Work Start"); none is any work cycle.
+        if (moment.skillParam) {
+            slots.push({
+                id: 'skill', kind: SLOT_KIND.VOCABULARY, label: 'which skill', optional: true,
+                value: statement?.when?.skill || '',
+                options: [option('', 'Any skill', 'Every work cycle the hero starts.'), ...skillOptions()],
+                hint: 'Named, the rule fires only as a cycle of that skill starts: a Birdwatcher on Forestry. A drink counts only those cycles too.',
+                patch: v => {
+                    const { skill, ...when } = statement.when || {};
+                    void skill;
+                    return { when: v ? { ...when, skill: v } : when };
+                }
+            });
+        }
         /**
          * ⚠️ In seconds, because the sentence says seconds. The data stays in milliseconds; only
-         * the word converts. A fight moment has none: its own count is its rhythm.
+         * the word converts. A fight moment has none: its own count is its rhythm. Nor does a
+         * carried moment: a hero's items have no cooldown.
          */
-        if (!moment.fightMoment) {
+        if (!moment.fightMoment && !moment.carried) {
             slots.push({
                 id: 'cooldown', kind: SLOT_KIND.NUMBER, label: 'cooldown (seconds)', min: 0,
                 value: Math.round((statement?.when?.cooldownMs ?? 0) / 100) / 10,

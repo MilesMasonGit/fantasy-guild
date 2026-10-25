@@ -1,7 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { listFiles, readSource, rel, setScanTimeout } from './fixtures/sourceScan.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { ENGINE_EVENTS, UI_EVENTS, ORPHAN_EVENTS, NO_LISTENER } from '../systems/core/engineEvents.js';
 
@@ -10,25 +8,17 @@ import { ENGINE_EVENTS, UI_EVENTS, ORPHAN_EVENTS, NO_LISTENER } from '../systems
  * constant — "sent to nobody" is a written decision, not drift.
  */
 
-const here = path.dirname(fileURLToPath(import.meta.url));
-const SRC = path.resolve(here, '..');
-
-function sourceFiles(dir = SRC) {
-    return fs.readdirSync(dir, { withFileTypes: true }).flatMap(entry => {
-        const full = path.join(dir, entry.name);
-        if (entry.isDirectory()) return entry.name === 'tests' ? [] : sourceFiles(full);
-        return /\.(js|jsx|mjs)$/.test(entry.name) ? [full] : [];
-    });
-}
+// The publisher and listener cases run dozens of regexes over all the code: seconds alone.
+setScanTimeout();
 
 function codeOf(text) {
     return text.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/(^|[^:])\/\/[^\n]*/g, '$1 ');
 }
 
-const REGISTRY = path.join('core', 'engineEvents.js');
-const FILES = sourceFiles()
+const REGISTRY = 'core/engineEvents.js';
+const FILES = listFiles(undefined, { ext: /\.(js|jsx|mjs)$/ })
     .filter(f => !f.endsWith(REGISTRY))
-    .map(f => ({ rel: path.relative(SRC, f).split(path.sep).join('/'), code: codeOf(fs.readFileSync(f, 'utf8')) }));
+    .map(f => ({ rel: rel(f), code: codeOf(readSource(f)) }));
 const ALL_CODE = FILES.map(f => f.code).join('\n');
 
 const escape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -37,11 +27,17 @@ const GROUPS = { ENGINE_EVENTS, UI_EVENTS, ORPHAN_EVENTS };
 const DECLARED = Object.entries(GROUPS).flatMap(([group, obj]) =>
     Object.entries(obj).map(([key, name]) => ({ group, key, name, ref: `${group}.${key}` })));
 
+const tokenCache = new Map();
+
 /** The constant plus any local alias (`const X = UI_EVENTS.Y` / `KEY: UI_EVENTS.Y`). */
 function tokensFor(ref) {
+    if (tokenCache.has(ref)) return tokenCache.get(ref);
     const out = [escape(ref)];
-    const re = new RegExp(`(\\w+)\\s*[:=]\\s*${escape(ref)}\\b`, 'g');
+    // `(?<!\w)` finds the same aliases (a match can only start where a word starts) without
+    // retrying from every letter of every word, which made this scan take seconds.
+    const re = new RegExp(`(?<!\\w)(\\w+)\\s*[:=]\\s*${escape(ref)}\\b`, 'g');
     for (const m of ALL_CODE.matchAll(re)) out.push(`\\b${m[1]}`);
+    tokenCache.set(ref, out);
     return out;
 }
 
@@ -93,7 +89,7 @@ describe('global events are declared and named by constant (CR3-559)', () => {
         expect(hits).toEqual([]);
     });
 
-    it('every engine and UI event has a publisher', { timeout: 20000 }, () => {
+    it('every engine and UI event has a publisher', () => {
         const missing = DECLARED.filter(d => d.group !== 'ORPHAN_EVENTS' && !isPublished(d.ref)).map(d => d.ref);
         expect(missing).toEqual([]);
     });

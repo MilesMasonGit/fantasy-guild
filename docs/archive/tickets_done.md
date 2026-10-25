@@ -183,3 +183,4 @@ T-241 — Loot flights draw under the open drawers (the mat's particle canvas no
 T-243 — Hero speech, the hero bar's level-up alerts and every callout in one SpeechFrame (chamfer, stepped pixel tail; bronze news, gold attention, red can't); the callout pop no longer scales; rule in UI_STYLE — 48796bb2 — 2026-10-24
 T-244 — The nav orbs and a station's gear button hover with a white pixel outline (four mask copies of the art), no glow or scale; the selected orb is T-252 — afd4ec28 — 2026-10-24
 T-252 — A selected nav orb shows a steady gold pixel outline; no grow or glow (owner) — 7f6a1166 — 2026-10-24
+T-251 — Scanning tests share one cached read of src (sourceScan.js listFiles/readSource) and a 30 s limit; EngineEventNames' alias search cached and anchored: under build load 0 timeouts (was 2–3), EngineEventNames 6.6 s → 3.6 s alone — d35e661e — 2026-10-25

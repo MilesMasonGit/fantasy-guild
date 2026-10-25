@@ -261,12 +261,13 @@ function tintColour(tint) {
 }
 
 /**
- * What a "used" bubble says for one `HERO_CONSUMED`: the health a meal gave back ("+5 ♥"), or an
- * elixir's name. Null when there is nothing to say (a meal at full health).
+ * What a "used" bubble says for one `HERO_CONSUMED`: the health a meal gave back ("+5 ♥"), or the
+ * name of an elixir, a drink or a work potion as it is drunk (`dose`). Null when there is nothing to
+ * say (a meal at full health).
  */
 export function usedBubbleText(p) {
     if (!p?.itemId) return null;
-    if (p.elixir) return getItem(p.itemId)?.name || p.itemId;
+    if (p.elixir || p.dose) return getItem(p.itemId)?.name || p.itemId;
     const healed = Math.round(Number(p.amount) || 0);
     return healed > 0 ? `+${healed} ♥` : null;
 }

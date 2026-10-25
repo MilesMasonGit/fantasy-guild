@@ -35,6 +35,7 @@ C2; C0 (the test content pack, accepted by the director) after C2; C6 last.
 | T-247: a station's gear tip above the work plate | builder | `backlog/gear-tip-over-plate` | **merged** 60e6671e (fix, one capture): the gear tip moved onto the shared tooltip; merged gate: only the 7 known failures from `main`, build ok, same work | Sat | Sat |
 | T-244: nav orbs and the gear button without hover glow or scale | builder-lite | `backlog/no-hover-glow` | **merged** afd4ec28 (owner ok by phone): white pixel outline on hover. Merged gate 6083 pass, 0 fail. ⚠️ A fast-forward raced the Systems director's commit in the main folder and left my files staged; restored them to HEAD by name and re-merged cleanly | Sat | Sat |
 | T-252: a selected orb gets a steady gold outline (owner) | builder-lite | `backlog/orb-selected` | **merged** 7f6a1166: gate 6083 pass, 0 fail (main gained only docs since) | Sat | Sat |
+| T-251: slow scanning tests no longer time out under load | builder | `backlog/slow-scan-tests` | **merged** d35e661e (tests only): one cached read of src per test file, 30 s limit, EngineEventNames' alias search cached; under build load 0 timeouts. Merged gate on `main` ed622163: 6331 pass, 0 fail, build. CMSStudio's render test timeout: T-255 | Sun | Sun |
 | T-243: callouts and speech in the pixel family | builder | `backlog/speech-pixel` | **merged** 48796bb2 (owner ok by phone; rule in UI_STYLE cbe81171): one SpeechFrame, tones bronze/gold/red. Merged gate on `main` after the test fixes: **6081 pass, 0 fail**, cycles, build, same work | Sat | Sat |
 
 ## Systems director, skill loops (brief 230; owner 2026-10-24: next, beside the rest of combat)
@@ -44,10 +45,11 @@ C2; C0 (the test content pack, accepted by the director) after C2; C6 last.
 | S0: gap map (read-only) | engineer | — | **done**: [research/skill_loops_gap_map.md](research/skill_loops_gap_map.md). Order: S1a; S1b ∥ S6a; S2a ∥ S5; S3 ∥ S6b; S4 ∥ S2b; S7 ∥ S8; S9. Owner: a station out of input waits unless other work runs; a map's wheat patch is a ready-planted Field; no loud pop for rare catches; drinks only buff; supports never wear out. Director: S0 Q2, Q3 (80 % as a code constant), Q4, Q7, Q8, Q10, Q12, Q13 option A | Sat | Sat |
 | S1a: 80 % speed-up floor, Grow Time axis (cached per Token), "stays where it stands" mark, stations and supports never wear out, help is free (owner) | engineer | `systems/skills-s1a` (`sl`) | **merged** da9d81cb (gate on the merged result: 6154 tests, cycles, build; work change accepted under brief230-S1a: the bench's buff and station fixtures never wear; S1, S7 same). T-253 tuning page, T-254 leftovers | Sat | Sat |
 | S1b: gathering heroes wait silently ("Waiting for Copper Vein"), a station out of input says "Needs Coal", hero waits unless other work runs | builder | `systems/skills-s1b` (`sw`) | **merged** 04c24105 (gate on the merged result: 6189 tests, cycles, build; same work). Shots sent to the owner as a heads-up (the brief's look is S9). Director: S1b Q1–Q4 option A | Sat | Sat |
-| S2a: Forestry: Tree → Stump → Sapling → Tree, a same-species Forest in reach, a seedling per Sapling, Forests plant and speed regrowth, wild Forests and Stumps clearable | engineer | `systems/skills-s2a` (`sf2`) | building | Sat | |
+| S2a: Forestry: Tree → Stump → Sapling → Tree, a same-species Forest in reach, a seedling per Sapling, Forests plant within reach, wild Forests and Stumps clearable | engineer | `systems/skills-s2a` (`sf2`) | **merged** 9a97a8e3 (gate with Fishing merged in: 6288 tests, cycles, build; same work; catch-up level on a living day, +2 s/day per 56 stopped Stumps). Director: Q1–Q4 as built, Q5 S8 ticks staysPut on Stumps | Sat | Sun |
+| S3: Mining: veins rest and refill all at once, a shared empty-rock sprite, Mines (25 % double ore each, stacking), Minecarts (work time, floor) | builder | `systems/skills-s3` (`sm`) | building | Sun | |
 | S5: Fishing: water never runs out, catch pools per water × tool × bait, bait spent per catch, Dock speeds, no loud pop for rare catches | engineer | `systems/skills-s5` (`sp`) | **merged** 13d41e6a (gate on the merged result: 6223 tests, cycles, build; same work). Owner 2026-10-24: **the cage is called Trap and is a starter tool**; probably no net item. Director: Q3 option A | Sat | Sat |
-| S5b: rename the cage tool kind to Trap (id, labels, CMS, tests) and add it to the new-game starter tools; CMS pricing of pool-only fish (a water priced from its no-bait pools; Recalculate never writes Outputs on water) | builder | — | queued (next free slot, before S8) | | |
-| S6b: work potions (spent when their own skill's cycle starts, for the cycle) and drinks as work buffs for 10 cycles; consumables act only through their moment | engineer | `systems/skills-s6b` (`sb6`) | building | Sat | |
+| S5b: the cage tool kind becomes the Trap and a starter tool; CMS pricing of pool-only fish | builder | `systems/skills-s5b` (`s5b`) | building | Sun | |
+| S6b: work potions (spent when their own skill's cycle starts, for the cycle) and drinks as work buffs for 10 cycles; consumables act only through their moment | engineer | `systems/skills-s6b` (`sb6`) | **merged** cc7e800c (gate with Forestry merged in: 6319 tests + 12 file-scan timeouts under another session's load, all green alone; cycles; build; same work). A new carried "On Work Start" moment (the old one reads wrongly on items); a carried rule no longer also fires at cycle end. Director: Q2 option A (the bubble every cycle) | Sun | Sun |
 | S6a: per-station recipe pools (Furnace, Smithy, Kitchen, Brewery, Workbench, Alchemy Table, Summoning Circle as kinds), drinks stop healing | builder | `systems/skills-s6a` (`sr`) | **merged** 51be448f (6176 tests, cycles, build; same work). Opt-in: S8 must tag every station and recipe (list in the builder's report: Furnace and Smithy recipes, anvil retired but kept as a type, Campfire a Kitchen with no fuel, Brewery, Alchemy Table) | Sat | Sat |
 
 ## Backlog director, batch F: look-wide passes (brief 210; owner said go 2026-10-24: both, mock-ups first) — **done, merged eb969849; brief 210 complete**
@@ -334,10 +336,10 @@ T-186; the badges' soft shadows are settled inside T-013.)
 ## Summaries
 
 **Sat 2026-10-24, night: Backlog director session closed.** Where we are:
-brief 210 and every follow-up the owner approved are on `main` 7f6a1166
+brief 210 and every follow-up the owner approved are on `main` (last d35e661e)
 (pixel frames rounds one and two, the speech frame, the work plate and its
 pick-up fix, the drag bench's Shop and Bank kinds, loot under the drawers,
-the gear tip, orbs without glow). Next: T-251 (slow scanning tests) is the
+the gear tip, orbs without glow). Next: T-251 done too (2026-10-25); T-255 (one render test's timeout) is the
 only Backlog ticket left; the rest of the ticket list belongs to the planning
 agents and the Systems director. Owner: the hands-on lists in the eye-check
 records. Handoff: [HANDOFF_backlog.md](HANDOFF_backlog.md).

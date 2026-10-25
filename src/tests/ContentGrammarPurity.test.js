@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { importClosure } from './fixtures/sourceScan.js';
+import { importClosure, setScanTimeout } from './fixtures/sourceScan.js';
+
+setScanTimeout();
 
 /**
  * ⭐ The content-grammar modules stay pure (R9 section 5.5).

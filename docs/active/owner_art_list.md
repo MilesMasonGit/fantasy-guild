@@ -152,7 +152,7 @@ Tokens. Stand-ins from existing sprites until drawn.
 | Water types: sea, river, lake | ADAPT | One fishing-spot sprite each; the Shrimp Coast goes. The S5 QA scene stands in `t_coast` (sea), `t_fish_spot` (river), `t_lake_small` (lake), and `t_foundation_wood` for the Dock |
 | Smithy | **NEW** | Hero-worked; replaces the Copper Anvil |
 | Brewery, Kitchen, Alchemy Table | **NEW** / ADAPT | Stations; upgrades only faster |
-| Bait, worms, a work potion, two drinks (items) | **NEW** | Item icons |
+| Bait, worms, a work potion, two drinks (items) | **NEW** | Item icons. The S6b QA scene stands in `i_potion_donut_green` (Birdwatcher), `i_potion_donut_orange` (Coffee) and `i_nest_bird` (Bird Nest); Beer has `i_beer` |
 | Fishing Net and Fishing Cage (tool icons) | **NEW** / ADAPT | Held in one hand like the rod (brief 230 S5). Stand-ins: the cage uses `i_fish_trap`; no net picture yet |
 | Fish for the first catch pools | ADAPT / **NEW** | Trout, Salmon, Shark, Lobster, Tropical Fish icons exist (`items/fish/`); a Dolphin or Crab, if the pools want them, is new |
 

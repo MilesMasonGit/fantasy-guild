@@ -65,7 +65,7 @@ Detail, order and tiers in [brief 210](../active/briefs/210_backlog_intake.md); 
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
-| T-251 | P3 | open | **Slow file-scanning tests time out under load**: `EngineEventNames` (CR3-107 runs 4.6 s alone against vitest's 5 s limit) and the source-scanning tests (`UiLayers`, `OneTooltip`, `GoldRetired`, `ContentIdsInCode`, `TextInCodeMatchesScreen`, `TimeBankRetired`, `RulesUseGameClock`, ...) fail at random when the full suite runs beside a build or another director's agents, then pass alone (seen many times 2026-10-23/24). Give the scanning tests a longer timeout or a shared cached file walk. Builder-lite. | Backlog director |
+| T-255 | P3 | open | **CMSStudio's render test times out under load**: "mounts Recolor and Animation as two tabs" took 5058 ms against the 5 s limit in a full suite run beside a build (2026-10-25, found while fixing T-251); it is a render test, not a source scan. Give it an explicit timeout or make the mount lighter. Builder-lite. | Backlog director, T-251 |
 
 ### UI
 

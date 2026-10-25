@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import { asLoaded } from './fixtures/shippedAsLoaded.js';
+import { listFiles, readSource, setScanTimeout } from './fixtures/sourceScan.js';
 
 /**
  * Content ids named in code (`item_*`, `token_*`, `map_*` string literals under src/,
@@ -88,22 +89,16 @@ export function findIdLiterals(source) {
     return hits;
 }
 
-function walk(dir, out = []) {
-    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-        const full = path.join(dir, entry.name);
-        if (entry.isDirectory()) {
-            if (full !== path.join(SRC, 'tests')) walk(full, out);
-        } else if (/\.(jsx?|mjs|css)$/.test(entry.name)) out.push(full);
-    }
-    return out;
-}
+setScanTimeout();
+
+const walk = (dir) => listFiles(dir, { ext: /\.(jsx?|mjs|css)$/ });
 
 export function deadIdReport(files, known) {
     const dead = [];
     for (const file of files) {
         const rel = path.relative(SRC, file).split(path.sep).join('/');
         if (rel in SKIPPED_FILES) continue;
-        for (const { id, line } of findIdLiterals(fs.readFileSync(file, 'utf8'))) {
+        for (const { id, line } of findIdLiterals(readSource(file))) {
             if (id in NOT_CONTENT_IDS || known.has(id) || id in (KNOWN_DEAD[rel] || {})) continue;
             dead.push(`${rel}:${line} names ${id}, which is not in data/items.json or data/tokens.json`);
         }
@@ -120,7 +115,7 @@ describe('Content ids named in code exist in data/ (T-182)', () => {
     });
 
     it('the scan sees the ids it should (guards against an empty scan)', () => {
-        const hits = walk(SRC).flatMap((f) => findIdLiterals(fs.readFileSync(f, 'utf8')));
+        const hits = walk(SRC).flatMap((f) => findIdLiterals(readSource(f)));
         expect(hits.length).toBeGreaterThan(50);
     });
 

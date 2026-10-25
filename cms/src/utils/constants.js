@@ -154,6 +154,15 @@ export { toolFindings } from '../../../src/systems/core/toolRule.js';
 export { catchPoolsOf, hasCatchPools, catchItemIds, baitItemIds } from '../../../src/config/registries/catchPools.js';
 // Bait is carried in a Consumable cell: the Catch pools block offers only items of a consumable category.
 export { isConsumableCategory } from '../../../src/config/registries/equipmentCategories.js';
+// How a carried food, drink or potion is used (an elixir's fights, a drink's work cycles, a work potion's one cycle), and that its always-on rules do nothing: the game's own rule and wording.
+export {
+  doseKindsOf,
+  DOSE_WHY,
+  noDoseWhy,
+  isSpentCategory,
+  isAlwaysOn,
+  ALWAYS_ON_IDLE_WHY,
+} from '../../../src/systems/core/consumableRule.js';
 
 // `tokenType` is derived from what a Token has rather than picked. The CMS computes it and writes it into the file.
 export {
