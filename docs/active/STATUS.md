@@ -31,6 +31,9 @@ C2; C0 (the test content pack, accepted by the director) after C2; C6 last.
 | T-242: pixel frames round two: second audit of tiles, slots, buttons, toggles, rows; Bank tiles without soft borders | builder | `backlog/pixel-frames-2` (`gf`) | **merged** 8c7096b5 (owner ok by phone; kit pieces into UI_STYLE fba5e2f2). Merged gate on top of combat C4: 6039 tests, cycles, build, same work | Sat | Sat |
 | Work plate picks the wrong Token (regression from T-239): bench token kind 100/100 on dbfc370b, 97–98/100 with the plate ('picked up the wrong thing' on presses beside overlapping Tokens) | engineer | `backlog/plate-pick` | **merged** af7a9103 (bug fix, no eye-check): the plate stood over the Token in the row below and took its presses; now a plate lets hover and presses through over any Token's circle (as flags do). Drag bench: token kind 100 % twice, full run 50/50 on all five kinds; same work, no timing regression | Sat | Sat |
 | T-240: the drag bench's Shop and Bank kinds run again (harness only) | builder | `backlog/drag-bench-kinds` | **merged** 23c85a21 on the gate (bench only): Shop and Bank kinds 50/50 both passes. Token → mat showed 3 'wrong thing' misses (47/49, 49/50) where earlier runs were 50/50: bisecting (before the work plate vs `main`) | Sat | Sat |
+| T-241: loot particles under the open drawers | builder | `backlog/particles-under-drawer` (`hp`) | building | Sat | |
+| T-247: a station's gear tip above the work plate | builder | `backlog/gear-tip-over-plate` (`hg`) | building | Sat | |
+| T-243 (callouts and speech in the pixel family) and T-244 (nav orbs without glow) | — | — | queued, after T-241/T-247 (owner: all four, two at a time) | | |
 
 ## Systems director, skill loops (brief 230; owner 2026-10-24: next, beside the rest of combat)
 
