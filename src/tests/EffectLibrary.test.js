@@ -499,11 +499,17 @@ describe('the shipped content is unchanged by P2', () => {
         expect(charged).toEqual([]);
     });
 
-    it('carries every shipped reference at scale 1 but the one the owner scaled, so no magnitude moved by itself', () => {
+    it('carries every shipped reference at scale 1 but the ones the owner scaled, so no magnitude moved by itself', () => {
         const scaled = Object.entries(TOKENS)
             .filter(([id]) => !id.startsWith('fixture_'))
             .flatMap(([id, def]) => effectRefsOf(def).filter((r) => r.scale !== 1).map((r) => `${id}:${r.effectId}:${r.scale}`));
-        // Grandma's Kitchen is a Faster Station twice over (the skill-loops content).
-        expect(scaled).toEqual(['token_grandma_s_kitchen:effect_faster_station:2']);
+        // Grandma's Kitchen (the skill-loops content) and the plane-2 better stations, the Iron
+        // Smithy, the Iron Furnace and the Fir Workbench, are each a Faster Station twice over.
+        expect(scaled.sort()).toEqual([
+            'token_fir_workbench:effect_faster_station:2',
+            'token_grandma_s_kitchen:effect_faster_station:2',
+            'token_iron_furnace:effect_faster_station:2',
+            'token_iron_smithy:effect_faster_station:2',
+        ]);
     });
 });

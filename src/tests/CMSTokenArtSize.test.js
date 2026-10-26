@@ -53,8 +53,12 @@ function syncPayload() {
 
 const shippedTokens = JSON.parse(raw['tokens.json']);
 const STANDARD = 'token_stone_outcrop';
-// The saplings and the sprout, and the small plane-1 creatures: the Wolf, the Crab and the Bee.
-const SHIPPED_SMALL = ['token_apple_sapling', 'token_bee', 'token_crab', 'token_oak_sapling', 'token_wheat_sprout', 'token_wolf'];
+// The saplings and the sprout, and the small creatures: the Wolf, the Crab and the Bee on plane 1,
+// the Fire Elemental, the Frog and the Sulphur Lizard on plane 2.
+const SHIPPED_SMALL = [
+    'token_apple_sapling', 'token_bee', 'token_crab', 'token_fir_sapling', 'token_fire_elemental', 'token_frog',
+    'token_oak_sapling', 'token_sulphur_lizard', 'token_wheat_sprout', 'token_wolf',
+];
 
 beforeEach(() => load(shipped()));
 afterEach(() => {

@@ -61,14 +61,15 @@ describe('The Processing chain in shipped data (7.5)', () => {
         it('a Wood Foundation offers the wooden buildings: the Workbench, the Cooking Pot and the rest', () => {
             expect(poolNames('token_wood_foundation')).toEqual([
                 'Build Alchemy Table', 'Build Beehive', 'Build Brewery', 'Build Coal Mine', 'Build Composter',
-                'Build Cooking Pot', 'Build Copper Mine', 'Build Dock', 'Build Minecart', 'Build Quarry',
-                'Build Windmill', 'Build Workbench',
+                'Build Cooking Pot', 'Build Copper Mine', 'Build Dock', 'Build Fir Workbench', 'Build Minecart',
+                'Build Quarry', 'Build Tannery', 'Build Windmill', 'Build Workbench',
             ]);
         });
 
-        it("a Stone Foundation offers the Furnace, the Copper Smithy, the Well and the Fighter's Academy (SP-62)", () => {
+        it("a Stone Foundation offers the Furnace, the Copper Smithy, the Well, the Fighter's Academy and the iron stations (SP-62)", () => {
             expect(poolNames('token_stone_foundation')).toEqual([
-                'Build Copper Smithy', "Build Fighter's Academy", 'Build Furnace', 'Build Well',
+                'Build Copper Smithy', "Build Fighter's Academy", 'Build Furnace', 'Build Iron Furnace',
+                'Build Iron Smithy', 'Build Well',
             ]);
         });
 
@@ -125,8 +126,11 @@ describe('The Processing chain in shipped data (7.5)', () => {
         });
 
         it('the Workbench offers exactly the Crafting recipes, and a new one starts on none (TL-15)', () => {
+            // The leather recipes are Crafting too, so every Workbench offers them while the
+            // game has no Tannery station kind of its own.
             expect(poolNames('token_workbench')).toEqual([
-                'Charcoal', 'Fine Fishing Rod', 'Search a Bird Nest', 'Shrimp Bait', 'Torch', 'Worm Bait',
+                'Charcoal', 'Fine Fishing Rod', 'Leather', 'Leather Chest', 'Leather Hat',
+                'Search a Bird Nest', 'Shrimp Bait', 'Torch', 'Worm Bait',
             ]);
             const bench = BoardState.createTokenInstance('token_workbench');
             expect(StationRecipe.validateSelection(bench, getTokenType('token_workbench'))).toBeNull();
