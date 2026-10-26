@@ -542,8 +542,14 @@ describe('Lifecycle audit — warnings (allowed)', () => {
 const summarise = (findings) => findings.map((f) => [f.severity, f.entityId, f.field]).sort();
 // Stations and supports never wear out; the owner has cleared the Charges they once authored, so
 // none is flagged any more.
+// The free spawners: the Quarry, each map's creature camp and each boss's camp
+// of one, on planes 1 and 2. The Copper and Coal Mines no longer spawn.
 const SHIPPED_ALLOWED = [
-    ...['token_coal_mine', 'token_copper_mine', 'token_quarry', 'token_goblin_camp']
+    ...['token_quarry', 'token_goblin_camp', 'token_wolf_den', 'token_crab_rocks', 'token_wild_hive',
+        'token_cow_pasture', 'token_thorn_thicket', 'token_alpha_den', 'token_chief_tent', 'token_tide_pool',
+        'token_slime_pit', 'token_wind_stones', 'token_queens_hive',
+        'token_ember_vents', 'token_sulphur_rocks', 'token_frog_pond', 'token_smoking_crater',
+        'token_basking_stone', 'token_toxic_pool']
         .map((id) => ['warning', id, 'spawner.upkeep']),
 ].sort();
 
@@ -560,7 +566,7 @@ describe('Lifecycle audit — reaches both audits', () => {
         expect(warn).toMatchObject({ severity: 'Warning' });
     });
 
-    it('the game registries (what the boot audit reads) give the checker nothing to report but the free mines and camp', () => {
+    it('the game registries (what the boot audit reads) give the checker nothing to report but the free spawners (the Quarry and the camps)', () => {
         expect(summarise(auditLifecycleBlocks({ tokens: TOKENS, items: ITEMS_LIVE, recipes: listRecipes(), skills: GAME_SKILLS })))
             .toEqual(SHIPPED_ALLOWED);
     });

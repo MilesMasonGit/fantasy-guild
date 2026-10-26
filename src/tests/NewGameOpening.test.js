@@ -16,6 +16,8 @@ import { getItem, getAllItems, registerItems } from '../config/registries/itemRe
 import { starterToolIds, neededToolOf, toolOf, toolMeets } from '../config/registries/toolKinds.js';
 import { matW, matH } from '../config/matGeometry.js';
 import { catchPoolsOf } from '../config/registries/catchPools.js';
+import { isMapItem, tokenRefsOf } from '../systems/atlas/mapItems.js';
+import { firstMapsReward } from '../systems/quests/tutorialQuests.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -214,12 +216,17 @@ describe('a new game opens in the Starter Camp the owner laid out', () => {
  * into, built) and items (the camp's Bank and the starter tools, trickle, worked from a Token whose
  * inputs are already reachable, caught from water's catch pools). A Token is bought once its whole
  * price is reachable; a recipe runs once its inputs are; a Token whose work needs a tool is worked
- * once a tool that will do is. The cartographer's maps join this once the tutorial gives them.
+ * once a tool that will do is. The cartographer's tutorial gives its first maps, and a map (or
+ * modifier) in hand writes the Tokens it names onto the region it settles.
  */
 function reachable() {
     const camp = StarterCamp.starterCamp();
     const tokens = new Set(StarterCamp.placementsOf(camp).map(t => t.typeId));
-    const items = new Set([...StarterCamp.openingBank(camp).map(i => i.itemId), ...starterToolIds(getAllItems())]);
+    const items = new Set([
+        ...StarterCamp.openingBank(camp).map(i => i.itemId),
+        ...starterToolIds(getAllItems()),
+        ...firstMapsReward(getAllItems()).map(m => m.itemId),
+    ]);
     const all = Object.values(getAllTokenTypes());
     const have = (list) => (list || []).every(x => items.has(x.itemId));
     const toolFor = (def) => {
@@ -261,6 +268,10 @@ function reachable() {
         for (const def of all) {
             if (def.shop && have(def.shop.price)) tokens.add(def.id);
         }
+        for (const id of [...items]) {
+            const def = getItem(id);
+            if (isMapItem(def)) for (const ref of tokenRefsOf(def)) tokens.add(ref.typeId);
+        }
         grew = tokens.size + items.size > before;
     }
     return { tokens, items };
@@ -278,7 +289,7 @@ describe('the §6 circularity check: every chain is reachable from the Starter C
         Crafting: ['token_workbench'],
         Smithing: ['token_furnace', 'token_copper_smithy'],
         Cooking: ['token_cooking_pot', 'token_brewery'],
-        Combat: ['token_goblin_camp', 'token_goblin', 'token_goblin_chief']
+        Combat: ['token_goblin_camp', 'token_goblin', 'token_chief_tent', 'token_goblin_chief']
     };
 
     for (const [chain, ids] of Object.entries(SIX)) {

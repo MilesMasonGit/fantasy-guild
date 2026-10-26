@@ -20,10 +20,13 @@ const recipes = read('tokenRecipes.json');
 const effects = read('effects.json');
 const expanded = Object.fromEntries(Object.entries(tokens).map(([id, t]) => [id, expandBearer(t, effects)]));
 
+// The Copper and Coal Mines stopped spawning veins once the Starter Camp and
+// the Mountain map placed veins of their own; they stay supports (a 25 % double
+// drop on the veins in reach). The Quarry still spawns its outcrops.
 const CHAIN = [
-    { mine: 'token_copper_mine', name: 'Copper Mine', worked: 'token_copper_ore_vein', item: 'item_copper_ore' },
-    { mine: 'token_coal_mine', name: 'Coal Mine', worked: 'token_coal_vein', item: 'item_coal' },
-    { mine: 'token_quarry', name: 'Quarry', worked: 'token_stone_outcrop', item: 'item_stone' },
+    { mine: 'token_copper_mine', name: 'Copper Mine', worked: 'token_copper_ore_vein', item: 'item_copper_ore', spawns: false },
+    { mine: 'token_coal_mine', name: 'Coal Mine', worked: 'token_coal_vein', item: 'item_coal', spawns: false },
+    { mine: 'token_quarry', name: 'Quarry', worked: 'token_stone_outcrop', item: 'item_stone', spawns: true },
 ];
 
 describe('The Mining chain in shipped data (7.2)', () => {
@@ -35,21 +38,36 @@ describe('The Mining chain in shipped data (7.2)', () => {
         expect(tokens.token_stone_outcrop).toMatchObject({ id: 'token_stone_outcrop', name: 'Stone Outcrop' });
     });
 
-    for (const { mine, name, worked, item } of CHAIN) {
+    for (const { mine, name, worked, item, spawns } of CHAIN) {
         describe(name, () => {
             const def = tokens[mine];
             const vein = tokens[worked];
 
-            it('is a spawner of one kind, allowance 3, every 30 s, with no upkeep', () => {
-                expect(def.name).toBe(name);
-                expect(def.spawner).toEqual({
-                    spawns: [{ typeId: worked, weight: 1 }],
-                    allowance: 3,
-                    intervalMs: 30000,
-                    upkeep: [],
+            if (spawns) {
+                it('is a spawner of one kind, allowance 3, every 30 s, with no upkeep', () => {
+                    expect(def.name).toBe(name);
+                    expect(def.spawner).toEqual({
+                        spawns: [{ typeId: worked, weight: 1 }],
+                        allowance: 3,
+                        intervalMs: 30000,
+                        upkeep: [],
+                    });
+                    expect(def.tokenType).toBe('spawner');
                 });
-                expect(def.tokenType).toBe('spawner');
-            });
+            } else {
+                it(`spawns nothing: it is a support, doubling ${item} 25 % of the time on the ${worked} in reach`, () => {
+                    expect(def.name).toBe(name);
+                    expect(def.spawner).toBeUndefined();
+                    expect(def.tokenType).toBe('buff');
+                    const statements = (def.effects || []).flatMap((ref) => effects[ref.effectId].statements);
+                    expect(statements).toEqual([expect.objectContaining({
+                        keyword: 'provides',
+                        payload: expect.objectContaining({ type: 'DOUBLE_DROP', value: 25, category: item }),
+                        to: { mode: 'id', value: worked },
+                        reach: 'nearby',
+                    })]);
+                });
+            }
 
             it('is not worked directly', () => {
                 expect(def.config).toBeNull();
@@ -63,8 +81,8 @@ describe('The Mining chain in shipped data (7.2)', () => {
                 expect(build.foundationKinds).toEqual(['wood']);
             });
 
-            it('its family is just the Token it spawns (no growth stage)', () => {
-                expect(familyOf(mine)).toEqual([worked]);
+            it(spawns ? 'its family is just the Token it spawns (no growth stage)' : 'has no family: it spawns nothing', () => {
+                expect(familyOf(mine)).toEqual(spawns ? [worked] : []);
             });
 
             it(`what it spawns is mined for ${item}, needs a pickaxe in hand (any tier), no nearby Token, and rests 60 s to refill`, () => {
@@ -89,9 +107,10 @@ describe('The Mining chain in shipped data (7.2)', () => {
         const ids = new Set(CHAIN.flatMap((c) => [c.mine, c.worked]));
         const findings = auditLifecycleBlocks({ tokens: expanded, items, recipes, skills: SKILLS })
             .filter((f) => f.severity === 'error' || ids.has(f.entityId));
-        // Only the allowed "spawns for free" warning ( is decided per Token).
+        // Only the allowed "spawns for free" warning (decided per Token), and
+        // only the Quarry still spawns.
         expect(findings.map((f) => [f.severity, f.entityId, f.field]).sort()).toEqual(
-            ['token_coal_mine', 'token_copper_mine', 'token_quarry']
+            ['token_quarry']
                 .map((id) => ['warning', id, 'spawner.upkeep']));
     });
 });

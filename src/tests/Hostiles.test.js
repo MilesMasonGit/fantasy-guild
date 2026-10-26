@@ -13,8 +13,8 @@ import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { LootSystem } from '../systems/combat/LootSystem.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
-import { registerTokenTypes, getTokenType } from '../config/registries/tokenRegistry.js';
-import { isHostileEnemy } from '../config/registries/enemyProfile.js';
+import { registerTokenTypes, getTokenType, getAllTokenTypes } from '../config/registries/tokenRegistry.js';
+import { isHostileEnemy, isBossEnemy } from '../config/registries/enemyProfile.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 
@@ -146,12 +146,17 @@ describe('the field (enemy.hostile)', () => {
         expect(isHostileEnemy(null)).toBe(false);
     });
 
-    it('B7.3: Goblin and Goblin Chief ship hostile; Cow and Thorn Elemental stay peaceful', () => {
-        for (const id of ['token_goblin', 'token_goblin_chief']) {
-            const def = getTokenType(id);
-            expect(def).toBeTruthy();
-            expect(isHostileEnemy(def)).toBe(true);
-        }
+    it('B7.3: the Goblin ships hostile; the Goblin Chief (a boss) and every boss never are; Cow and Thorn Elemental stay peaceful', () => {
+        const goblin = getTokenType('token_goblin');
+        expect(goblin).toBeTruthy();
+        expect(isHostileEnemy(goblin)).toBe(true);
+        const chief = getTokenType('token_goblin_chief');
+        expect(chief).toBeTruthy();
+        expect(isBossEnemy(chief)).toBe(true);
+        expect(isHostileEnemy(chief)).toBe(false);
+        const bosses = Object.values(getAllTokenTypes()).filter((def) => isBossEnemy(def));
+        expect(bosses.length).toBeGreaterThan(0);
+        for (const def of bosses) expect(isHostileEnemy(def), def.id).toBe(false);
         for (const id of ['token_cow', 'token_thorn_elemental']) {
             const def = getTokenType(id);
             if (def) expect(isHostileEnemy(def)).toBe(false);

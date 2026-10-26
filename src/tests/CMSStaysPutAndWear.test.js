@@ -59,6 +59,10 @@ afterEach(() => {
 
 describe('⭐ "Stays where it stands"', () => {
     it('is unticked on a Token without it; ticking writes staysPut: true, unticking drops the key', () => {
+        // Fixture: the shipped bush now stays put (it rests and refills), so the mark is taken off
+        // first, to start from a Token without it.
+        useEntityStore.getState().updateToken('token_blackberry_bush', { staysPut: undefined });
+        expect(useEntityStore.getState().tokens.token_blackberry_bush.staysPut).toBeUndefined();
         const container = openEditor('token_blackberry_bush');
         expect(box(container).checked).toBe(false);
 

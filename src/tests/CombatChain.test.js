@@ -12,7 +12,7 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { auditLifecycleBlocks } from '../systems/core/lifecycleAudit.js';
 import { SKILLS } from '../config/registries/skillRegistry.js';
 import { enemyProfileOf, enemyDropsOf } from '../config/registries/enemyProfile.js';
-import { getTokenType } from '../config/registries/tokenRegistry.js';
+import { getTokenType, registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { expandBearer } from '../systems/effects/effectLibrary.js';
 
 /**
@@ -40,26 +40,47 @@ const recipes = read('tokenRecipes.json');
 const CAMP = 'token_goblin_camp';
 const GOBLIN = 'token_goblin';
 const CHIEF = 'token_goblin_chief';
+const TENT = 'token_chief_tent';
+const MAP_DROPS = (chance) => ['map_forest', 'map_mountain', 'map_coast', 'map_meadow']
+    .map((itemId) => ({ itemId, chance, minQty: 1, maxQty: 1 }));
 
 describe('The Combat chain in shipped data (7.7)', () => {
     const camp = tokens[CAMP];
     const goblin = tokens[GOBLIN];
     const chief = tokens[CHIEF];
 
-    it('the three Tokens exist under their names', () => {
+    const tent = tokens[TENT];
+
+    it('the four Tokens exist under their names', () => {
         expect(camp).toMatchObject({ id: CAMP, name: 'Goblin Camp' });
         expect(goblin).toMatchObject({ id: GOBLIN, name: 'Goblin' });
         expect(chief).toMatchObject({ id: CHIEF, name: 'Goblin Chief' });
+        expect(tent).toMatchObject({ id: TENT, name: "Chief's Tent" });
     });
 
-    it('the camp spawns Goblins (95) and Chiefs (5), 3 at a time, every 30 s, with no upkeep', () => {
+    // The Chief became a boss with a tent of its own, so the camp (which the
+    // Starter Camp places) never brings a level-20 Chief to a new game.
+    it('the camp spawns only Goblins, 3 at a time, every 30 s, with no upkeep', () => {
         expect(camp.spawner).toEqual({
-            spawns: [{ typeId: GOBLIN, weight: 95 }, { typeId: CHIEF, weight: 5 }],
+            spawns: [{ typeId: GOBLIN, weight: 1 }],
             allowance: 3,
             intervalMs: 30000,
             upkeep: [],
         });
         expect(camp.tokenType).toBe('spawner');
+    });
+
+    it("the Chief's Tent is a camp of one: a single Chief, back 5 min after it falls, with no upkeep", () => {
+        expect(tent.spawner).toEqual({
+            spawns: [{ typeId: CHIEF, weight: 1 }],
+            allowance: 1,
+            intervalMs: 300000,
+            upkeep: [],
+        });
+        expect(tent.tokenType).toBe('spawner');
+        expect(tent.config).toBeNull();
+        expect(tent.requiresHero).toBe(false);
+        expect(SpawnerSystem.familyOf(TENT)).toEqual([CHIEF]);
     });
 
     it('the camp is not worked or fought directly', () => {
@@ -76,8 +97,8 @@ describe('The Combat chain in shipped data (7.7)', () => {
         expect(Shop.sectionName('melee')).toBe('Melee');
     });
 
-    it('its family is its whole weighted list: Goblins and Chiefs share one cap (DP-4)', () => {
-        expect(SpawnerSystem.familyOf(CAMP)).toEqual([GOBLIN, CHIEF]);
+    it('its family is its whole list: just the Goblins', () => {
+        expect(SpawnerSystem.familyOf(CAMP)).toEqual([GOBLIN]);
     });
 
     it('both enemies are melee enemy Tokens that are not sold and need no tool', () => {
@@ -96,17 +117,19 @@ describe('The Combat chain in shipped data (7.7)', () => {
         expect(goblin.uses).toBe(1);
     });
 
-    it('a Goblin drops Bones, and sometimes Copper Ore', () => {
+    it('a Goblin drops Bones, sometimes Copper Ore, and now and then a common plane-1 map', () => {
         expect(enemyDropsOf(goblin)).toEqual([
             { itemId: 'item_bones', chance: 100, minQty: 1, maxQty: 1 },
             { itemId: 'item_copper_ore', chance: 30, minQty: 1, maxQty: 1 },
+            ...MAP_DROPS(1.5),
         ]);
     });
 
-    // Two charges are two fights back to back, with no rest for the hero between.
-    it('a Chief is tougher: higher level, a Brute, and two charges (SP-38)', () => {
-        expect(chief.enemy).toEqual({ level: 20, style: 'melee', kinds: ['brute'], hostile: true });
-        expect(chief.uses).toBe(2);
+    // A boss is beaten in one kill and fights only heroes sent at it (never
+    // hostile); its typed hit sits one above what its level and kind fill.
+    it('a Chief is a tougher boss: higher level, a Brute, one kill, a typed hit of 4', () => {
+        expect(chief.enemy).toEqual({ level: 20, style: 'melee', kinds: ['brute'], boss: true, hit: 4 });
+        expect(chief.uses).toBe(1);
         const g = enemyProfileOf(goblin);
         const c = enemyProfileOf(chief);
         expect(c.hp).toBeGreaterThan(g.hp);
@@ -115,22 +138,47 @@ describe('The Combat chain in shipped data (7.7)', () => {
         expect(c.xpAwarded).toBeGreaterThan(g.xpAwarded);
     });
 
-    it('a Chief drops better loot: Copper Ingots, Bones and sometimes a Beeswax Comb', () => {
-        expect(enemyDropsOf(chief)).toEqual([
+    it('a Chief drops better loot: Copper Ingots, Bones, sometimes a Beeswax Comb, and the boss map drops', () => {
+        expect(enemyDropsOf(chief).slice(0, 3)).toEqual([
             { itemId: 'item_copper_ingot', chance: 100, minQty: 1, maxQty: 2 },
             { itemId: 'item_bones', chance: 100, minQty: 1, maxQty: 1 },
             { itemId: 'item_beeswax_comb', chance: 25, minQty: 1, maxQty: 1 },
         ]);
+        // Its first kill always pays a Volcano Map (plane 2).
+        expect(chief.config.outputs.find((o) => o.itemId === 'map_volcano'))
+            .toMatchObject({ chance: 10, firstKill: true });
+        const chiefMaps = enemyDropsOf(chief).map((d) => d.itemId).filter((id) => id.startsWith('map_'));
+        expect(chiefMaps).toEqual(['map_forest', 'map_mountain', 'map_coast', 'map_meadow',
+            'map_flower_meadow', 'map_cherry_grove', 'map_volcano', 'map_yellowstone']);
     });
 
-    it('the lifecycle audit says only that the camp spawns for free (allowed, SP-70)', () => {
-        const ids = new Set([CAMP, GOBLIN, CHIEF]);
+    it('the lifecycle audit says only that the camp and the tent spawn for free (allowed, SP-70)', () => {
+        const ids = new Set([CAMP, GOBLIN, CHIEF, TENT]);
         const findings = auditLifecycleBlocks({ tokens, items, recipes, skills: SKILLS })
             .filter((f) => f.severity === 'error' || ids.has(f.entityId));
-        expect(findings.map((f) => [f.severity, f.entityId, f.field])).toEqual([
+        expect(findings.map((f) => [f.severity, f.entityId, f.field]).sort()).toEqual([
+            ['warning', TENT, 'spawner.upkeep'],
             ['warning', CAMP, 'spawner.upkeep'],
-        ]);
+        ].sort());
     });
+});
+
+/**
+ * The weighted-family mechanism (two kinds from one camp, one shared cap, a
+ * spawned enemy keeping its charges) on a fixture: the shipped camp now spawns
+ * one kind only.
+ */
+const MIXED = 'fx_cc_mixed_camp';
+const BRUTE = 'fx_cc_brute';
+registerTokenTypes({
+    [BRUTE]: { ...read('tokens.json')[CHIEF], id: BRUTE, name: 'Fixture Brute', uses: 2 },
+    [MIXED]: {
+        ...read('tokens.json')[CAMP], id: MIXED, name: 'Fixture Mixed Camp', shop: undefined,
+        spawner: {
+            spawns: [{ typeId: GOBLIN, weight: 95 }, { typeId: BRUTE, weight: 5 }],
+            allowance: 3, intervalMs: 30000, upkeep: [],
+        },
+    },
 });
 
 describe('The Goblin Camp on the mat', () => {
@@ -159,6 +207,11 @@ describe('The Goblin Camp on the mat', () => {
         expect(result.success).toBe(true);
         return BoardState.tokens().find((t) => t.typeId === CAMP);
     };
+    const placeMixed = () => {
+        const inst = BoardState.createTokenInstance(MIXED);
+        BoardState.addToken(inst, 600, 400);
+        return BoardState.getTokenById(inst.id);
+    };
     const count = (typeId) => BoardState.tokens().filter((t) => t.typeId === typeId).length;
     const always = (value) => () => value;
 
@@ -168,24 +221,43 @@ describe('The Goblin Camp on the mat', () => {
         expect(InventoryManager.getItemCount('item_oak_wood')).toBe(0);
     });
 
-    it('a low roll spawns a Goblin and a high roll a Chief, both from the one camp', () => {
+    it('the shipped camp spawns a Goblin whatever the roll, never a Chief', () => {
         const camp = buyCamp();
         const def = getTokenType(CAMP);
         expect(SpawnerSystem.attemptSpawn(camp, def, always(0.1))).toBe(camp);
         expect(SpawnerSystem.attemptSpawn(camp, def, always(0.99))).toBe(camp);
-        expect(count(GOBLIN)).toBe(1);
-        expect(count(CHIEF)).toBe(1);
+        expect(count(GOBLIN)).toBe(2);
+        expect(count(CHIEF)).toBe(0);
     });
 
-    it('Goblins and Chiefs count against the same cap of 3', () => {
+    it('the shipped camp counts its Goblins against a cap of 3', () => {
         const camp = buyCamp();
         const def = getTokenType(CAMP);
-        SpawnerSystem.attemptSpawn(camp, def, always(0.99));   // a Chief
+        for (let i = 0; i < 3; i++) SpawnerSystem.attemptSpawn(camp, def, always(0.5));
+        expect(SpawnerSystem.spawnerStatus(camp.id)).toMatchObject({ state: 'at_cap', count: 3, cap: 3 });
+        expect(SpawnerSystem.attemptSpawn(camp, def, always(0.5))).toBeNull();
+        expect(count(GOBLIN)).toBe(3);
+    });
+
+    it('a weighted camp: a low roll spawns a Goblin and a high roll the rarer kind, both from the one camp', () => {
+        const camp = placeMixed();
+        const def = getTokenType(MIXED);
+        expect(SpawnerSystem.attemptSpawn(camp, def, always(0.1))).toBe(camp);
+        expect(SpawnerSystem.attemptSpawn(camp, def, always(0.99))).toBe(camp);
+        expect(count(GOBLIN)).toBe(1);
+        expect(count(BRUTE)).toBe(1);
+    });
+
+    it("a weighted camp's kinds share one family and count against the same cap of 3 (DP-4)", () => {
+        const camp = placeMixed();
+        const def = getTokenType(MIXED);
+        expect(SpawnerSystem.familyOf(MIXED)).toEqual([GOBLIN, BRUTE]);
+        SpawnerSystem.attemptSpawn(camp, def, always(0.99));   // the rarer kind
         SpawnerSystem.attemptSpawn(camp, def, always(0.1));    // a Goblin
         SpawnerSystem.attemptSpawn(camp, def, always(0.1));    // a Goblin
         expect(SpawnerSystem.spawnerStatus(camp.id)).toMatchObject({ state: 'at_cap', count: 3, cap: 3 });
         expect(SpawnerSystem.attemptSpawn(camp, def, always(0.1))).toBeNull();
-        expect(count(GOBLIN) + count(CHIEF)).toBe(3);
+        expect(count(GOBLIN) + count(BRUTE)).toBe(3);
     });
 
     it('spawns for free: nothing is taken from the Bank', () => {
@@ -196,10 +268,10 @@ describe('The Goblin Camp on the mat', () => {
     });
 
     it('a spawned enemy lands with its charges and is marked spawned', () => {
-        const camp = buyCamp();
-        SpawnerSystem.attemptSpawn(camp, getTokenType(CAMP), always(0.99));
-        const chiefToken = BoardState.tokens().find((t) => t.typeId === CHIEF);
-        expect(chiefToken.usesRemaining).toBe(2);
-        expect(BoardState.originOf(chiefToken)).toBe('spawned');
+        const camp = placeMixed();
+        SpawnerSystem.attemptSpawn(camp, getTokenType(MIXED), always(0.99));
+        const brute = BoardState.tokens().find((t) => t.typeId === BRUTE);
+        expect(brute.usesRemaining).toBe(2);
+        expect(BoardState.originOf(brute)).toBe('spawned');
     });
 });
