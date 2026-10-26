@@ -759,5 +759,849 @@
     ],
     "autoSyncId": true,
     "id": "effect_elixir_of_ironskin"
+  },
+  "effect_furnace_station": {
+    "name": "Furnace Station",
+    "statements": [
+      {
+        "id": "stm_s8_furnace_station",
+        "keyword": "station",
+        "payload": {
+          "skill": "smithing",
+          "stationKind": "furnace"
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": null,
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_furnace_station"
+  },
+  "effect_smithy_station": {
+    "name": "Smithy Station",
+    "statements": [
+      {
+        "id": "stm_s8_smithy_station",
+        "keyword": "station",
+        "payload": {
+          "skill": "smithing",
+          "stationKind": "smithy"
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": null,
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_smithy_station"
+  },
+  "effect_kitchen_station": {
+    "name": "Kitchen Station",
+    "statements": [
+      {
+        "id": "stm_s8_kitchen_station",
+        "keyword": "station",
+        "payload": {
+          "skill": "cooking",
+          "stationKind": "kitchen"
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": null,
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_kitchen_station"
+  },
+  "effect_brewery_station": {
+    "name": "Brewery Station",
+    "statements": [
+      {
+        "id": "stm_s8_brewery_station",
+        "keyword": "station",
+        "payload": {
+          "skill": "cooking",
+          "stationKind": "brewery"
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": null,
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_brewery_station"
+  },
+  "effect_alchemy_table_station": {
+    "name": "Alchemy Table Station",
+    "statements": [
+      {
+        "id": "stm_s8_alchemy_table_station",
+        "keyword": "station",
+        "payload": {
+          "skill": "alchemy",
+          "stationKind": "alchemy_table"
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": null,
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_alchemy_table_station"
+  },
+  "effect_field_station": {
+    "name": "Field Station",
+    "statements": [
+      {
+        "id": "stm_s8_field_station",
+        "keyword": "station",
+        "payload": {
+          "skill": "farming",
+          "stationKind": "field"
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": null,
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_field_station"
+  },
+  "effect_herb_garden_station": {
+    "name": "Herb Garden Station",
+    "statements": [
+      {
+        "id": "stm_s8_herb_garden_station",
+        "keyword": "station",
+        "payload": {
+          "skill": "farming",
+          "stationKind": "herb_garden"
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": null,
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_herb_garden_station"
+  },
+  "effect_windmill_station": {
+    "name": "Windmill Station",
+    "statements": [
+      {
+        "id": "stm_s8_windmill_station",
+        "keyword": "station",
+        "payload": {
+          "skill": "farming",
+          "stationKind": "windmill"
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": null,
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_windmill_station"
+  },
+  "effect_faster_station": {
+    "name": "Faster Station",
+    "statements": [
+      {
+        "id": "stm_s8_faster_station",
+        "keyword": "provides",
+        "payload": {
+          "type": "WORK_TIME",
+          "bucket": "percentage",
+          "value": -0.15
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "self",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_faster_station"
+  },
+  "effect_oak_forest_growth": {
+    "name": "Oak Forest Growth",
+    "statements": [
+      {
+        "id": "stm_s8_oak_forest_growth",
+        "keyword": "provides",
+        "payload": {
+          "type": "GROW_TIME",
+          "bucket": "percentage",
+          "value": -0.25
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "tag",
+          "value": "Oak"
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_oak_forest_growth"
+  },
+  "effect_apple_orchard_growth": {
+    "name": "Apple Orchard Growth",
+    "statements": [
+      {
+        "id": "stm_s8_apple_orchard_growth",
+        "keyword": "provides",
+        "payload": {
+          "type": "GROW_TIME",
+          "bucket": "percentage",
+          "value": -0.25
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "id",
+          "value": "token_apple_tree"
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_apple_orchard_growth"
+  },
+  "effect_copper_mine_doubling": {
+    "name": "Copper Mine Doubling",
+    "statements": [
+      {
+        "id": "stm_s8_copper_mine_doubling",
+        "keyword": "provides",
+        "payload": {
+          "type": "DOUBLE_DROP",
+          "bucket": "flat",
+          "value": 25,
+          "category": "item_copper_ore"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "id",
+          "value": "token_copper_ore_vein"
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_copper_mine_doubling"
+  },
+  "effect_coal_mine_doubling": {
+    "name": "Coal Mine Doubling",
+    "statements": [
+      {
+        "id": "stm_s8_coal_mine_doubling",
+        "keyword": "provides",
+        "payload": {
+          "type": "DOUBLE_DROP",
+          "bucket": "flat",
+          "value": 25,
+          "category": "item_coal"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "id",
+          "value": "token_coal_vein"
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_coal_mine_doubling"
+  },
+  "effect_quarry_doubling": {
+    "name": "Quarry Doubling",
+    "statements": [
+      {
+        "id": "stm_s8_quarry_doubling",
+        "keyword": "provides",
+        "payload": {
+          "type": "DOUBLE_DROP",
+          "bucket": "flat",
+          "value": 25,
+          "category": "item_stone"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "id",
+          "value": "token_stone_outcrop"
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_quarry_doubling"
+  },
+  "effect_minecart_speed": {
+    "name": "Minecart Speed",
+    "statements": [
+      {
+        "id": "stm_s8_minecart_speed",
+        "keyword": "provides",
+        "payload": {
+          "type": "WORK_TIME",
+          "bucket": "percentage",
+          "value": -0.2
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "id",
+          "value": "token_copper_ore_vein"
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_minecart_speed"
+  },
+  "effect_well_watering": {
+    "name": "Well Watering",
+    "statements": [
+      {
+        "id": "stm_s8_well_watering",
+        "keyword": "provides",
+        "payload": {
+          "type": "GROW_TIME",
+          "bucket": "percentage",
+          "value": -0.2
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "tag",
+          "value": "Field"
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_well_watering"
+  },
+  "effect_composter_load": {
+    "name": "Composter Load",
+    "statements": [
+      {
+        "id": "stm_s8_composter_load",
+        "keyword": "provides",
+        "payload": {
+          "type": "CROP_LOAD",
+          "bucket": "flat",
+          "value": 2
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "tag",
+          "value": "Field"
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_composter_load"
+  },
+  "effect_beehive_pollination": {
+    "name": "Beehive Pollination",
+    "statements": [
+      {
+        "id": "stm_s8_beehive_pollination",
+        "keyword": "provides",
+        "payload": {
+          "type": "DOUBLE_DROP",
+          "bucket": "flat",
+          "value": 20,
+          "category": "item_wheat"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "tag",
+          "value": "Field"
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_beehive_pollination"
+  },
+  "effect_field_blossom": {
+    "name": "Field Blossom",
+    "statements": [
+      {
+        "id": "stm_s8_field_blossom",
+        "keyword": "provides",
+        "payload": {
+          "type": "GROW_TIME",
+          "bucket": "percentage",
+          "value": -0.1
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "id",
+          "value": "token_beehive"
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_field_blossom"
+  },
+  "effect_dock_speed": {
+    "name": "Dock Speed",
+    "statements": [
+      {
+        "id": "stm_s8_dock_speed",
+        "keyword": "provides",
+        "payload": {
+          "type": "WORK_TIME",
+          "bucket": "percentage",
+          "value": -0.2
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "tag",
+          "value": "Water"
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_dock_speed"
+  },
+  "effect_keen_line": {
+    "name": "Keen Line",
+    "statements": [
+      {
+        "id": "stm_s8_keen_line",
+        "keyword": "provides",
+        "payload": {
+          "type": "CATCH_WEIGHT",
+          "bucket": "percentage",
+          "value": 1
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_keen_line"
+  },
+  "effect_birdwatcher": {
+    "name": "Birdwatcher",
+    "statements": [
+      {
+        "id": "stm_s8_birdwatcher",
+        "keyword": "grants",
+        "payload": {
+          "type": "BONUS_DROP",
+          "itemId": "item_bird_nest",
+          "quantity": 1,
+          "chance": 25
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_birdwatcher"
+  },
+  "effect_birdwatcher_potion": {
+    "name": "Birdwatcher Potion",
+    "statements": [
+      {
+        "id": "stm_s8_birdwatcher_potion",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_birdwatcher",
+          "scale": 1,
+          "durationMs": 0,
+          "forCycle": true,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": {
+          "role": "actor"
+        },
+        "when": {
+          "event": "WORK_START",
+          "scope": "self",
+          "skill": "forestry"
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_birdwatcher_potion"
+  },
+  "effect_refreshed": {
+    "name": "Refreshed",
+    "statements": [
+      {
+        "id": "stm_s8_refreshed",
+        "keyword": "provides",
+        "payload": {
+          "type": "LOOT_MULT",
+          "bucket": "flat",
+          "value": 5
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_refreshed"
+  },
+  "effect_water_drink": {
+    "name": "Water Drink",
+    "statements": [
+      {
+        "id": "stm_s8_water_drink",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_refreshed",
+          "scale": 1,
+          "durationMs": 0,
+          "forCycle": true,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": {
+          "role": "actor"
+        },
+        "when": {
+          "event": "WORK_START",
+          "scope": "self"
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_water_drink"
+  },
+  "effect_orchard_hands": {
+    "name": "Orchard Hands",
+    "statements": [
+      {
+        "id": "stm_s8_orchard_hands",
+        "keyword": "provides",
+        "payload": {
+          "type": "YIELD",
+          "bucket": "percentage",
+          "value": 0.1,
+          "category": "farming"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_orchard_hands"
+  },
+  "effect_apple_juice_drink": {
+    "name": "Apple Juice Drink",
+    "statements": [
+      {
+        "id": "stm_s8_apple_juice_drink",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_orchard_hands",
+          "scale": 1,
+          "durationMs": 0,
+          "forCycle": true,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": {
+          "role": "actor"
+        },
+        "when": {
+          "event": "WORK_START",
+          "scope": "self"
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_apple_juice_drink"
+  },
+  "effect_zest": {
+    "name": "Zest",
+    "statements": [
+      {
+        "id": "stm_s8_zest",
+        "keyword": "provides",
+        "payload": {
+          "type": "YIELD",
+          "bucket": "percentage",
+          "value": 0.1,
+          "category": "forestry"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_zest"
+  },
+  "effect_lemonade_drink": {
+    "name": "Lemonade Drink",
+    "statements": [
+      {
+        "id": "stm_s8_lemonade_drink",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_zest",
+          "scale": 1,
+          "durationMs": 0,
+          "forCycle": true,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": {
+          "role": "actor"
+        },
+        "when": {
+          "event": "WORK_START",
+          "scope": "self"
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_lemonade_drink"
+  },
+  "effect_sharp_eye": {
+    "name": "Sharp Eye",
+    "statements": [
+      {
+        "id": "stm_s8_sharp_eye",
+        "keyword": "provides",
+        "payload": {
+          "type": "YIELD",
+          "bucket": "percentage",
+          "value": 0.1,
+          "category": "mining"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_sharp_eye"
+  },
+  "effect_limeade_drink": {
+    "name": "Limeade Drink",
+    "statements": [
+      {
+        "id": "stm_s8_limeade_drink",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_sharp_eye",
+          "scale": 1,
+          "durationMs": 0,
+          "forCycle": true,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": {
+          "role": "actor"
+        },
+        "when": {
+          "event": "WORK_START",
+          "scope": "self"
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_limeade_drink"
+  },
+  "effect_merry": {
+    "name": "Merry",
+    "statements": [
+      {
+        "id": "stm_s8_merry",
+        "keyword": "provides",
+        "payload": {
+          "type": "XP_BONUS",
+          "bucket": "percentage",
+          "value": 0.1
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_merry"
+  },
+  "effect_beer_drink": {
+    "name": "Beer Drink",
+    "statements": [
+      {
+        "id": "stm_s8_beer_drink",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_merry",
+          "scale": 1,
+          "durationMs": 0,
+          "forCycle": true,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": {
+          "role": "actor"
+        },
+        "when": {
+          "event": "WORK_START",
+          "scope": "self"
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_beer_drink"
   }
 }

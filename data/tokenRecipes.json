@@ -34,7 +34,10 @@
       "tempo": "fast",
       "purpose": "iph"
     },
-    "skill": "smithing"
+    "skill": "smithing",
+    "stationKinds": [
+      "furnace"
+    ]
   },
   {
     "name": "Copper Pickaxe",
@@ -68,7 +71,10 @@
       "tempo": "fast",
       "purpose": "iph"
     },
-    "skill": "smithing"
+    "skill": "smithing",
+    "stationKinds": [
+      "smithy"
+    ]
   },
   {
     "id": "recipe_mtozw3la",
@@ -105,7 +111,10 @@
     "sim": {
       "tempo": "medium",
       "purpose": "iph"
-    }
+    },
+    "stationKinds": [
+      "smithy"
+    ]
   },
   {
     "id": "recipe_mtp8qjj0",
@@ -143,7 +152,10 @@
     "sim": {
       "tempo": "medium",
       "purpose": "iph"
-    }
+    },
+    "stationKinds": [
+      "furnace"
+    ]
   },
   {
     "id": "recipe_mtp8qjj1",
@@ -180,7 +192,10 @@
     "sim": {
       "tempo": "medium",
       "purpose": "iph"
-    }
+    },
+    "stationKinds": [
+      "furnace"
+    ]
   },
   {
     "id": "recipe_mtp8qjj2",
@@ -217,7 +232,10 @@
     "sim": {
       "tempo": "medium",
       "purpose": "iph"
-    }
+    },
+    "stationKinds": [
+      "furnace"
+    ]
   },
   {
     "id": "recipe_mtp8qjj3",
@@ -254,7 +272,10 @@
     "sim": {
       "tempo": "medium",
       "purpose": "iph"
-    }
+    },
+    "stationKinds": [
+      "furnace"
+    ]
   },
   {
     "id": "recipe_mtp8qjj4",
@@ -291,7 +312,10 @@
     "sim": {
       "tempo": "medium",
       "purpose": "iph"
-    }
+    },
+    "stationKinds": [
+      "furnace"
+    ]
   },
   {
     "id": "recipe_mtp8qjj5",
@@ -328,20 +352,17 @@
     "sim": {
       "tempo": "medium",
       "purpose": "iph"
-    }
+    },
+    "stationKinds": [
+      "furnace"
+    ]
   },
   {
     "id": "recipe_muily2ph",
     "name": "Copper Nails",
     "skill": "smithing",
     "levelRequirement": 1,
-    "requiresContext": [
-      {
-        "tag": "anvil",
-        "minTier": 1,
-        "chargeCost": 1
-      }
-    ],
+    "requiresContext": [],
     "inputs": [
       {
         "itemId": "item_copper_ingot",
@@ -370,20 +391,17 @@
     "xp": 2,
     "sim": {
       "tempo": "fast"
-    }
+    },
+    "stationKinds": [
+      "smithy"
+    ]
   },
   {
     "id": "recipe_copper_dagger",
     "name": "Copper Dagger",
     "skill": "smithing",
     "levelRequirement": 2,
-    "requiresContext": [
-      {
-        "tag": "anvil",
-        "minTier": 1,
-        "chargeCost": 1
-      }
-    ],
+    "requiresContext": [],
     "inputs": [
       {
         "itemId": "item_copper_ingot",
@@ -409,20 +427,17 @@
     "sim": {
       "tempo": "fast",
       "purpose": "iph"
-    }
+    },
+    "stationKinds": [
+      "smithy"
+    ]
   },
   {
     "id": "recipe_copper_sword",
     "name": "Copper Sword",
     "skill": "smithing",
     "levelRequirement": 3,
-    "requiresContext": [
-      {
-        "tag": "anvil",
-        "minTier": 1,
-        "chargeCost": 1
-      }
-    ],
+    "requiresContext": [],
     "inputs": [
       {
         "itemId": "item_copper_ingot",
@@ -448,20 +463,17 @@
     "sim": {
       "tempo": "medium",
       "purpose": "iph"
-    }
+    },
+    "stationKinds": [
+      "smithy"
+    ]
   },
   {
     "id": "recipe_copper_cleaver",
     "name": "Copper Cleaver",
     "skill": "smithing",
     "levelRequirement": 4,
-    "requiresContext": [
-      {
-        "tag": "anvil",
-        "minTier": 1,
-        "chargeCost": 1
-      }
-    ],
+    "requiresContext": [],
     "inputs": [
       {
         "itemId": "item_copper_ingot",
@@ -487,20 +499,17 @@
     "sim": {
       "tempo": "medium",
       "purpose": "iph"
-    }
+    },
+    "stationKinds": [
+      "smithy"
+    ]
   },
   {
     "id": "recipe_copper_bow",
     "name": "Copper Bow",
     "skill": "smithing",
     "levelRequirement": 4,
-    "requiresContext": [
-      {
-        "tag": "anvil",
-        "minTier": 1,
-        "chargeCost": 1
-      }
-    ],
+    "requiresContext": [],
     "inputs": [
       {
         "itemId": "item_copper_ingot",
@@ -530,20 +539,17 @@
     "sim": {
       "tempo": "medium",
       "purpose": "iph"
-    }
+    },
+    "stationKinds": [
+      "smithy"
+    ]
   },
   {
     "id": "recipe_copper_wand",
     "name": "Copper Wand",
     "skill": "smithing",
     "levelRequirement": 4,
-    "requiresContext": [
-      {
-        "tag": "anvil",
-        "minTier": 1,
-        "chargeCost": 1
-      }
-    ],
+    "requiresContext": [],
     "inputs": [
       {
         "itemId": "item_copper_ingot",
@@ -573,20 +579,17 @@
     "sim": {
       "tempo": "medium",
       "purpose": "iph"
-    }
+    },
+    "stationKinds": [
+      "smithy"
+    ]
   },
   {
     "id": "recipe_copper_greatsword",
     "name": "Copper Greatsword",
     "skill": "smithing",
     "levelRequirement": 6,
-    "requiresContext": [
-      {
-        "tag": "anvil",
-        "minTier": 1,
-        "chargeCost": 1
-      }
-    ],
+    "requiresContext": [],
     "inputs": [
       {
         "itemId": "item_copper_ingot",
@@ -612,7 +615,10 @@
     "sim": {
       "tempo": "medium",
       "purpose": "iph"
-    }
+    },
+    "stationKinds": [
+      "smithy"
+    ]
   },
   {
     "name": "Dough",
@@ -650,7 +656,10 @@
     "durationMs": 16000,
     "levelRequirement": 2,
     "stationChargeCost": 1,
-    "skill": "cooking"
+    "skill": "cooking",
+    "stationKinds": [
+      "kitchen"
+    ]
   },
   {
     "name": "Shrimp",
@@ -658,10 +667,6 @@
     "inputs": [
       {
         "itemId": "item_raw_shrimp",
-        "quantity": 1
-      },
-      {
-        "itemId": "item_charcoal",
         "quantity": 1
       }
     ],
@@ -688,7 +693,10 @@
       "tempo": "fast",
       "purpose": "iph"
     },
-    "skill": "cooking"
+    "skill": "cooking",
+    "stationKinds": [
+      "kitchen"
+    ]
   },
   {
     "id": "recipe_mtp8qjj6",
@@ -700,10 +708,6 @@
       {
         "itemId": "item_apple",
         "quantity": 4
-      },
-      {
-        "itemId": "item_charcoal",
-        "quantity": 1
       }
     ],
     "outputs": [
@@ -726,7 +730,10 @@
     "sim": {
       "tempo": "fast",
       "purpose": "iph"
-    }
+    },
+    "stationKinds": [
+      "brewery"
+    ]
   },
   {
     "id": "recipe_mtp8qjj7",
@@ -760,7 +767,10 @@
     "sim": {
       "tempo": "medium",
       "purpose": "iph"
-    }
+    },
+    "stationKinds": [
+      "brewery"
+    ]
   },
   {
     "id": "recipe_mtp8qjj8",
@@ -794,7 +804,10 @@
     "sim": {
       "tempo": "medium",
       "purpose": "iph"
-    }
+    },
+    "stationKinds": [
+      "brewery"
+    ]
   },
   {
     "id": "recipe_mtp8qjj9",
@@ -832,7 +845,10 @@
     "sim": {
       "tempo": "medium",
       "purpose": "iph"
-    }
+    },
+    "stationKinds": [
+      "brewery"
+    ]
   },
   {
     "id": "recipe_mtym8vxh",
@@ -865,7 +881,10 @@
     "sim": {
       "tempo": "medium",
       "purpose": "iph"
-    }
+    },
+    "stationKinds": [
+      "kitchen"
+    ]
   },
   {
     "id": "recipe_muily2pf",
@@ -936,8 +955,180 @@
     }
   },
   {
-    "id": "recipe_muil1w5z",
-    "name": "Plant Wheat Field",
+    "id": "recipe_search_bird_nest",
+    "name": "Search a Bird Nest",
+    "skill": "crafting",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_bird_nest",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_wheat_seed",
+        "chance": 100,
+        "minQty": 10,
+        "maxQty": 11,
+        "baseQty": {
+          "min": 1,
+          "max": 2
+        },
+        "variable": false
+      },
+      {
+        "itemId": "item_oak_seedling",
+        "chance": 40,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": true
+      },
+      {
+        "itemId": "item_apple_seed",
+        "chance": 30,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": true
+      },
+      {
+        "itemId": "item_lavender_seed",
+        "chance": 25,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": true
+      }
+    ],
+    "durationMs": 8000,
+    "stationChargeCost": 1,
+    "xp": 1,
+    "sim": {
+      "tempo": "fast",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_shrimp_bait",
+    "name": "Shrimp Bait",
+    "skill": "crafting",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_raw_shrimp",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_shrimp_bait",
+        "chance": 100,
+        "minQty": 2,
+        "maxQty": 2,
+        "baseQty": {
+          "min": 2,
+          "max": 2
+        },
+        "variable": false,
+        "anchor": true
+      }
+    ],
+    "durationMs": 8000,
+    "stationChargeCost": 1,
+    "xp": 1,
+    "sim": {
+      "tempo": "fast",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_worm_bait",
+    "name": "Worm Bait",
+    "skill": "crafting",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_worm",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_worm_bait",
+        "chance": 100,
+        "minQty": 2,
+        "maxQty": 2,
+        "baseQty": {
+          "min": 2,
+          "max": 2
+        },
+        "variable": false,
+        "anchor": true
+      }
+    ],
+    "durationMs": 8000,
+    "stationChargeCost": 1,
+    "xp": 1,
+    "sim": {
+      "tempo": "fast",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_fine_fishing_rod",
+    "name": "Fine Fishing Rod",
+    "skill": "crafting",
+    "levelRequirement": 10,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 3
+      },
+      {
+        "itemId": "item_copper_nails",
+        "quantity": 2
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_fine_fishing_rod",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false,
+        "anchor": true
+      }
+    ],
+    "durationMs": 18000,
+    "stationChargeCost": 1,
+    "xp": 3,
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_wheat",
+    "name": "Wheat",
     "skill": "farming",
     "levelRequirement": 1,
     "requiresContext": [],
@@ -949,42 +1140,134 @@
     ],
     "outputs": [
       {
-        "tokenId": "token_wheat_field",
+        "itemId": "item_wheat",
         "chance": 100,
+        "minQty": 1,
+        "maxQty": 2,
+        "baseQty": {
+          "min": 1,
+          "max": 2
+        },
+        "variable": false
+      },
+      {
+        "itemId": "item_wheat_seed",
+        "chance": 40,
         "minQty": 1,
         "maxQty": 1,
         "baseQty": {
           "min": 1,
           "max": 1
         },
-        "variable": false
+        "variable": true
+      },
+      {
+        "itemId": "item_worm",
+        "chance": 10,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": true
       }
     ],
-    "durationMs": 30000,
+    "durationMs": 3000,
     "stationChargeCost": 1,
-    "xp": 5,
-    "foundationKinds": [
-      "farmland"
+    "xp": 1,
+    "stationKinds": [
+      "field"
     ],
+    "crop": {
+      "growMs": 3600000,
+      "load": 10,
+      "ripeSprite": "t_field_wheat"
+    },
     "sim": {
-      "tempo": "heavy"
+      "tempo": "quick",
+      "purpose": "iph"
     }
   },
   {
-    "id": "recipe_muil1w60",
-    "name": "Plant Apple Orchard",
+    "id": "recipe_lavender",
+    "name": "Lavender",
     "skill": "farming",
     "levelRequirement": 1,
     "requiresContext": [],
     "inputs": [
       {
-        "itemId": "item_apple_seed",
+        "itemId": "item_lavender_seed",
         "quantity": 1
       }
     ],
     "outputs": [
       {
-        "tokenId": "token_apple_orchard",
+        "itemId": "item_lavender",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 2,
+        "baseQty": {
+          "min": 1,
+          "max": 2
+        },
+        "variable": false,
+        "anchor": true
+      },
+      {
+        "itemId": "item_lavender_seed",
+        "chance": 30,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": true
+      },
+      {
+        "itemId": "item_worm",
+        "chance": 10,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": true
+      }
+    ],
+    "durationMs": 3000,
+    "stationChargeCost": 1,
+    "xp": 1,
+    "stationKinds": [
+      "herb_garden"
+    ],
+    "crop": {
+      "growMs": 5400000,
+      "load": 8,
+      "ripeSprite": "t_field_lavender"
+    },
+    "sim": {
+      "tempo": "quick",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_flour",
+    "name": "Flour",
+    "skill": "farming",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_wheat",
+        "quantity": 3
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_flour",
         "chance": 100,
         "minQty": 1,
         "maxQty": 1,
@@ -995,14 +1278,15 @@
         "variable": false
       }
     ],
-    "durationMs": 30000,
+    "durationMs": 16000,
     "stationChargeCost": 1,
-    "xp": 5,
-    "foundationKinds": [
-      "farmland"
+    "xp": 2,
+    "stationKinds": [
+      "windmill"
     ],
     "sim": {
-      "tempo": "heavy"
+      "tempo": "medium",
+      "purpose": "iph"
     }
   },
   {
@@ -1030,7 +1314,7 @@
         "variable": false
       }
     ],
-    "durationMs": 30000,
+    "durationMs": 60000,
     "stationChargeCost": 1,
     "xp": 5,
     "foundationKinds": [
@@ -1065,7 +1349,7 @@
         "variable": false
       }
     ],
-    "durationMs": 30000,
+    "durationMs": 60000,
     "stationChargeCost": 1,
     "xp": 5,
     "foundationKinds": [
@@ -1100,7 +1384,7 @@
         "variable": false
       }
     ],
-    "durationMs": 30000,
+    "durationMs": 90000,
     "stationChargeCost": 1,
     "xp": 5,
     "foundationKinds": [
@@ -1139,6 +1423,341 @@
         "variable": false
       }
     ],
+    "durationMs": 240000,
+    "stationChargeCost": 1,
+    "xp": 5,
+    "foundationKinds": [
+      "stone"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_muil1w5z",
+    "name": "Build Field",
+    "skill": "construction",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 3
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_wheat_field",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "stationChargeCost": 1,
+    "xp": 5,
+    "foundationKinds": [
+      "farmland"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_muil1w60",
+    "name": "Build Apple Orchard",
+    "skill": "construction",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_apple_seed",
+        "quantity": 3
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_apple_orchard",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "stationChargeCost": 1,
+    "xp": 5,
+    "foundationKinds": [
+      "farmland"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_herb_garden",
+    "name": "Build Herb Garden",
+    "skill": "construction",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 5
+      },
+      {
+        "itemId": "item_stone",
+        "quantity": 2
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_herb_garden",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "stationChargeCost": 1,
+    "xp": 5,
+    "foundationKinds": [
+      "farmland"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_oak_forest",
+    "name": "Build Oak Forest",
+    "skill": "construction",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_oak_seedling",
+        "quantity": 3
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_oak_forest",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "stationChargeCost": 1,
+    "xp": 5,
+    "foundationKinds": [
+      "farmland"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_copper_smithy",
+    "name": "Build Copper Smithy",
+    "skill": "construction",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_copper_ingot",
+        "quantity": 5
+      },
+      {
+        "itemId": "item_stone",
+        "quantity": 5
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_copper_smithy",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 90000,
+    "stationChargeCost": 1,
+    "xp": 10,
+    "foundationKinds": [
+      "stone"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_brewery",
+    "name": "Build Brewery",
+    "skill": "construction",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 10
+      },
+      {
+        "itemId": "item_copper_ingot",
+        "quantity": 2
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_brewery",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 60000,
+    "stationChargeCost": 1,
+    "xp": 10,
+    "foundationKinds": [
+      "wood"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_alchemy_table",
+    "name": "Build Alchemy Table",
+    "skill": "construction",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 8
+      },
+      {
+        "itemId": "item_copper_ingot",
+        "quantity": 2
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_alchemy_table",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 60000,
+    "stationChargeCost": 1,
+    "xp": 10,
+    "foundationKinds": [
+      "wood"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_windmill",
+    "name": "Build Windmill",
+    "skill": "construction",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 12
+      },
+      {
+        "itemId": "item_stone",
+        "quantity": 4
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_windmill",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 90000,
+    "stationChargeCost": 1,
+    "xp": 10,
+    "foundationKinds": [
+      "wood"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_well",
+    "name": "Build Well",
+    "skill": "construction",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_stone",
+        "quantity": 8
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_well",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
     "durationMs": 30000,
     "stationChargeCost": 1,
     "xp": 5,
@@ -1147,6 +1766,304 @@
     ],
     "sim": {
       "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_composter",
+    "name": "Build Composter",
+    "skill": "construction",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 6
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_composter",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "stationChargeCost": 1,
+    "xp": 5,
+    "foundationKinds": [
+      "wood"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_beehive",
+    "name": "Build Beehive",
+    "skill": "construction",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 5
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_beehive",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "stationChargeCost": 1,
+    "xp": 5,
+    "foundationKinds": [
+      "wood"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_dock",
+    "name": "Build Dock",
+    "skill": "construction",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 8
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_dock",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "stationChargeCost": 1,
+    "xp": 5,
+    "foundationKinds": [
+      "wood"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_minecart",
+    "name": "Build Minecart",
+    "skill": "construction",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 4
+      },
+      {
+        "itemId": "item_copper_ingot",
+        "quantity": 2
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_copper_ore_minecart",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "stationChargeCost": 1,
+    "xp": 5,
+    "foundationKinds": [
+      "wood"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_copper_mine",
+    "name": "Build Copper Mine",
+    "skill": "construction",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 10
+      },
+      {
+        "itemId": "item_stone",
+        "quantity": 5
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_copper_mine",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "stationChargeCost": 1,
+    "xp": 5,
+    "foundationKinds": [
+      "wood"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_coal_mine",
+    "name": "Build Coal Mine",
+    "skill": "construction",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 10
+      },
+      {
+        "itemId": "item_stone",
+        "quantity": 5
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_coal_mine",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "stationChargeCost": 1,
+    "xp": 5,
+    "foundationKinds": [
+      "wood"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_quarry",
+    "name": "Build Quarry",
+    "skill": "construction",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 10
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_quarry",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "stationChargeCost": 1,
+    "xp": 5,
+    "foundationKinds": [
+      "wood"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_birdwatcher",
+    "name": "Birdwatcher",
+    "skill": "alchemy",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_water",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_wheat_seed",
+        "quantity": 2
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_birdwatcher",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false,
+        "anchor": true
+      }
+    ],
+    "durationMs": 16000,
+    "stationChargeCost": 1,
+    "xp": 2,
+    "stationKinds": [
+      "alchemy_table"
+    ],
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
     }
   }
 ]

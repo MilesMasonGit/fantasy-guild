@@ -13,7 +13,13 @@
     "value": 1,
     "autoSyncId": true,
     "id": "item_water",
-    "valueSource": "token_wishing_well"
+    "valueSource": "token_wishing_well",
+    "effects": [
+      {
+        "effectId": "effect_water_drink",
+        "scale": 1
+      }
+    ]
   },
   "item_copper_ore": {
     "name": "Copper Ore",
@@ -94,10 +100,10 @@
     "stackable": true,
     "restoreAmount": 5,
     "equipSlot": "food",
-    "value": null,
+    "value": 2,
     "autoSyncId": true,
     "id": "item_shrimp",
-    "valueSource": null
+    "valueSource": "recipe_shrimp"
   },
   "item_wheat": {
     "name": "Wheat",
@@ -120,10 +126,10 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 8,
+    "value": 5,
     "autoSyncId": true,
     "id": "item_flour",
-    "valueSource": "token_windmill"
+    "valueSource": "recipe_flour"
   },
   "item_blueberry": {
     "name": "Blueberry",
@@ -159,7 +165,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 21,
+    "value": 14,
     "autoSyncId": true,
     "id": "item_dough",
     "valueSource": "recipe_dough"
@@ -666,10 +672,16 @@
     "stackable": true,
     "restoreAmount": 20,
     "equipSlot": "drink",
-    "value": null,
-    "valueSource": null,
+    "value": 5,
+    "valueSource": "recipe_mtp8qjj6",
     "autoSyncId": true,
-    "id": "item_apple_juice"
+    "id": "item_apple_juice",
+    "effects": [
+      {
+        "effectId": "effect_apple_juice_drink",
+        "scale": 1
+      }
+    ]
   },
   "item_lemonade": {
     "name": "Lemonade",
@@ -682,7 +694,13 @@
     "value": null,
     "valueSource": null,
     "autoSyncId": true,
-    "id": "item_lemonade"
+    "id": "item_lemonade",
+    "effects": [
+      {
+        "effectId": "effect_lemonade_drink",
+        "scale": 1
+      }
+    ]
   },
   "item_limeade": {
     "name": "Limeade",
@@ -695,7 +713,13 @@
     "value": null,
     "valueSource": null,
     "autoSyncId": true,
-    "id": "item_limeade"
+    "id": "item_limeade",
+    "effects": [
+      {
+        "effectId": "effect_limeade_drink",
+        "scale": 1
+      }
+    ]
   },
   "item_beer": {
     "name": "Beer",
@@ -708,7 +732,13 @@
     "value": 11,
     "valueSource": "recipe_mtp8qjj9",
     "autoSyncId": true,
-    "id": "item_beer"
+    "id": "item_beer",
+    "effects": [
+      {
+        "effectId": "effect_beer_drink",
+        "scale": 1
+      }
+    ]
   },
   "item_raw_beef": {
     "name": "Raw Beef",
@@ -757,7 +787,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 2,
+    "value": 1,
     "valueSource": "token_oak_tree",
     "autoSyncId": true,
     "id": "item_oak_seedling"
@@ -835,8 +865,8 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": null,
-    "valueSource": null,
+    "value": 1,
+    "valueSource": "token_beehive",
     "autoSyncId": true,
     "id": "item_beeswax_comb"
   },
@@ -1537,5 +1567,222 @@
       }
     ],
     "id": "item_elixir_of_ironskin"
+  },
+  "item_birdwatcher": {
+    "name": "Birdwatcher",
+    "description": "",
+    "type": "potion",
+    "sprite": "i_potion_donut_green",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "consumable",
+    "value": 5,
+    "valueSource": "recipe_birdwatcher",
+    "autoSyncId": true,
+    "effects": [
+      {
+        "effectId": "effect_birdwatcher_potion",
+        "scale": 1
+      }
+    ],
+    "id": "item_birdwatcher"
+  },
+  "item_bird_nest": {
+    "name": "Bird Nest",
+    "description": "",
+    "type": "material",
+    "sprite": "i_nest_bird",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 10,
+    "valueSource": "token_apple_tree",
+    "autoSyncId": true,
+    "id": "item_bird_nest"
+  },
+  "item_honey": {
+    "name": "Honey",
+    "description": "",
+    "type": "material",
+    "sprite": "i_honey",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 1,
+    "valueSource": "token_beehive",
+    "autoSyncId": true,
+    "id": "item_honey"
+  },
+  "item_lavender": {
+    "name": "Lavender",
+    "description": "",
+    "type": "material",
+    "sprite": "i_lavender",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_lavender"
+  },
+  "item_lavender_seed": {
+    "name": "Lavender Seed",
+    "description": "",
+    "type": "material",
+    "sprite": "i_seed_pile",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_lavender_seed"
+  },
+  "item_trout": {
+    "name": "Trout",
+    "description": "",
+    "type": "material",
+    "sprite": "i_trout_raw",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 1,
+    "valueSource": "token_lake",
+    "autoSyncId": true,
+    "id": "item_trout"
+  },
+  "item_salmon": {
+    "name": "Salmon",
+    "description": "",
+    "type": "material",
+    "sprite": "i_salmon_raw",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 5,
+    "valueSource": "token_lake",
+    "autoSyncId": true,
+    "id": "item_salmon"
+  },
+  "item_tropical_fish": {
+    "name": "Tropical Fish",
+    "description": "",
+    "type": "material",
+    "sprite": "i_tropical_fish_raw",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 1,
+    "valueSource": "token_coast",
+    "autoSyncId": true,
+    "id": "item_tropical_fish"
+  },
+  "item_lobster": {
+    "name": "Lobster",
+    "description": "",
+    "type": "material",
+    "sprite": "i_lobster_raw",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_lobster"
+  },
+  "item_swordfish": {
+    "name": "Swordfish",
+    "description": "",
+    "type": "material",
+    "sprite": "i_swordfish",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 7,
+    "valueSource": "token_coast",
+    "autoSyncId": true,
+    "id": "item_swordfish"
+  },
+  "item_worm": {
+    "name": "Worm",
+    "description": "",
+    "type": "material",
+    "sprite": "i_fish_bait",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_worm"
+  },
+  "item_worm_bait": {
+    "name": "Worm Bait",
+    "description": "",
+    "type": "material",
+    "sprite": "i_fish_bait",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "consumable",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_worm_bait"
+  },
+  "item_shrimp_bait": {
+    "name": "Shrimp Bait",
+    "description": "",
+    "type": "material",
+    "sprite": "i_shrimp_raw",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "consumable",
+    "value": 1,
+    "valueSource": "recipe_shrimp_bait",
+    "autoSyncId": true,
+    "id": "item_shrimp_bait"
+  },
+  "item_trap": {
+    "name": "Trap",
+    "description": "",
+    "type": "tool",
+    "sprite": "i_fish_trap",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "tool": {
+      "kind": "fishing_trap",
+      "tier": 1,
+      "starter": true
+    },
+    "isRoot": true,
+    "id": "item_trap"
+  },
+  "item_fine_fishing_rod": {
+    "name": "Fine Fishing Rod",
+    "description": "",
+    "type": "tool",
+    "sprite": "i_rod_wood",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "tool": {
+      "kind": "fishing_rod",
+      "tier": 2
+    },
+    "effects": [
+      {
+        "effectId": "effect_keen_line",
+        "scale": 1
+      }
+    ],
+    "id": "item_fine_fishing_rod"
   }
 }
