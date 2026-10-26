@@ -78,7 +78,14 @@ afterEach(() => {
 
 describe('⭐ the Boss mark', () => {
     it('ticking Boss writes enemy.boss and clears Hostile; the Hostile box is then off and greyed', () => {
-        const id = 'token_goblin_chief';
+        // A hostile enemy of its own, so the test does not hang on which shipped enemy is hostile.
+        const id = 'fx_ce_raider';
+        const files = shipped();
+        files['tokens.json'][id] = {
+            ...files['tokens.json'].token_goblin, id, name: 'Fixture Raider',
+            enemy: { level: 5, style: 'melee', hostile: true },
+        };
+        load(files);
         const { container } = openEditor(id);
         expect(useEntityStore.getState().tokens[id].enemy.hostile).toBe(true);
         fireEvent.click(within(container).getByLabelText('Boss'));

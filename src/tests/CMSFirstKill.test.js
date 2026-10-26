@@ -26,8 +26,17 @@ const WORKSPACE_KEY = 'fantasy-guild-cms-v2';
 const noStorage = { getItem: () => null, setItem: () => {}, removeItem: () => {} };
 let storedBefore;
 
+// An enemy of its own whose drop lines carry no mark yet, so the test does not hang on which
+// shipped enemy already has a first-kill drop.
+const ENEMY = 'fx_fk_brute';
+
 function load() {
     const files = Object.fromEntries(FILES.map((f) => [f, JSON.parse(raw[f])]));
+    const chief = files['tokens.json'].token_goblin_chief;
+    files['tokens.json'][ENEMY] = {
+        ...chief, id: ENEMY, name: 'Fixture Brute',
+        config: { ...chief.config, outputs: chief.config.outputs.map(({ firstKill, ...line }) => line) },
+    };
     const recipePools = {};
     for (const recipe of files['tokenRecipes.json']) (recipePools[recipe.skill || 'general'] ||= []).push(recipe);
     useEntityStore.getState().hydrate({ items: files['items.json'], tokens: files['tokens.json'], effects: files['effects.json'], recipePools });
@@ -47,22 +56,22 @@ afterEach(() => {
 });
 
 describe('First kill always drops, in the CMS', () => {
-    it('ticks a Goblin Chief drop line, and the mark reaches the game through Recalculate and Sync', () => {
-        useEntityStore.getState().setActiveEntity('token_goblin_chief', 'token');
+    it('ticks an enemy drop line, and the mark reaches the game through Recalculate and Sync', () => {
+        useEntityStore.getState().setActiveEntity(ENEMY, 'token');
         const { container } = render(React.createElement(SupplyChainLayout, null, React.createElement('div')));
-        const lines = useEntityStore.getState().tokens.token_goblin_chief.config.outputs;
+        const lines = useEntityStore.getState().tokens[ENEMY].config.outputs;
         expect(boxes(container)).toHaveLength(lines.filter((o) => o.itemId).length);
         expect(boxes(container).every((b) => !b.checked)).toBe(true);
         fireEvent.click(boxes(container)[0]);
-        expect(useEntityStore.getState().tokens.token_goblin_chief.config.outputs[0].firstKill).toBe(true);
+        expect(useEntityStore.getState().tokens[ENEMY].config.outputs[0].firstKill).toBe(true);
 
-        const chief = JSON.parse(JSON.stringify(syncFiles(useEntityStore.getState().recalculateEconomy({}))['tokens.json'])).token_goblin_chief;
+        const chief = JSON.parse(JSON.stringify(syncFiles(useEntityStore.getState().recalculateEconomy({}))['tokens.json']))[ENEMY];
         expect(chief.config.outputs[0].firstKill).toBe(true);
         expect(enemyDropsOf(chief)[0].firstKill).toBe(true);
         expect(enemyDropsOf(chief).slice(1).some((d) => d.firstKill)).toBe(false);
 
         fireEvent.click(boxes(container)[0]);
-        expect(useEntityStore.getState().tokens.token_goblin_chief.config.outputs[0].firstKill).toBeUndefined();
+        expect(useEntityStore.getState().tokens[ENEMY].config.outputs[0].firstKill).toBeUndefined();
     });
 
     it('offers no box on a Token that is not an enemy', () => {

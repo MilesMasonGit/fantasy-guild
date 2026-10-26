@@ -53,7 +53,8 @@ function syncPayload() {
 
 const shippedTokens = JSON.parse(raw['tokens.json']);
 const STANDARD = 'token_stone_outcrop';
-const SHIPPED_SMALL = ['token_apple_sapling', 'token_oak_sapling', 'token_wheat_sprout'];
+// The saplings and the sprout, and the small plane-1 creatures: the Wolf, the Crab and the Bee.
+const SHIPPED_SMALL = ['token_apple_sapling', 'token_bee', 'token_crab', 'token_oak_sapling', 'token_wheat_sprout', 'token_wolf'];
 
 beforeEach(() => load(shipped()));
 afterEach(() => {
@@ -62,7 +63,7 @@ afterEach(() => {
 });
 
 describe('a control sync of today’s data changes nothing', () => {
-    it('exactly the saplings and the sprout ship small (B8.2, through the CMS)', () => {
+    it('exactly the saplings, the sprout and the small creatures ship small (B8.2, through the CMS)', () => {
         const marked = Object.keys(shippedTokens).filter((id) => 'artSize' in shippedTokens[id]).sort();
         expect(marked).toEqual(SHIPPED_SMALL);
         for (const id of SHIPPED_SMALL) {

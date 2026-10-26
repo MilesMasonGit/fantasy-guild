@@ -4,6 +4,7 @@ import {
     expectedOutputQuantity
 } from '../config/registries/tokenRegistry.js';
 import { enemyProfileOf, isEnemyDef } from '../config/registries/enemyProfile.js';
+import { RPS_RULES } from '../config/FormulaRegistry.js';
 import { getItem } from '../config/registries/itemRegistry.js';
 import { STARTING_SKILL_IDS, getAllSkillIds } from '../config/registries/skillRegistry.js';
 import { isTokenType, isTokenRarity } from '../config/registries/tokenConstants.js';
@@ -492,10 +493,17 @@ describe('Registry integrity', () => {
             expect(profile, `${tokenName(id)} has no combat profile`).toBeTruthy();
             expect(profile.level, `${tokenName(id)} has a level below 1`).toBeGreaterThan(0);
             expect(profile.hp, `${tokenName(id)} has no hit points`).toBeGreaterThan(0);
+            // The engine has heard of a style when the matchup cycle has a row for it
+            // (melee > ranged > magic > stealth > melee). An authored style it does not
+            // know would fall back to melee in the profile, so that is caught too.
             expect(
-                ['melee', 'ranged', 'magic'],
+                Object.keys(RPS_RULES),
                 `${tokenName(id)} fights in a style the engine has never heard of`
             ).toContain(profile.combatType);
+            if (TOKENS[id].enemy?.style != null) {
+                expect(profile.combatType, `${tokenName(id)}'s authored style was not kept`)
+                    .toBe(TOKENS[id].enemy.style);
+            }
 
             // A kill is a cycle, so a kill's loot is the cycle's output.
             for (const out of TOKENS[id].config?.outputs || []) {

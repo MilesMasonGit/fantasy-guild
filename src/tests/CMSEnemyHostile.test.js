@@ -62,10 +62,16 @@ afterEach(() => {
 });
 
 describe('a control sync of today’s data changes nothing', () => {
-    it('B7.3: exactly Goblin and Goblin Chief ship hostile; Cow and Thorn Elemental do not', () => {
+    it('B7.3: exactly the Goblin ships hostile; no boss (the Goblin Chief among them) is; Cow and Thorn Elemental are not', () => {
         expect(enemyIds.length).toBeGreaterThan(0);
         const hostile = enemyIds.filter((id) => shippedTokens[id].enemy.hostile === true).sort();
-        expect(hostile).toEqual(['token_goblin', 'token_goblin_chief']);
+        expect(hostile).toEqual(['token_goblin']);
+        const bosses = enemyIds.filter((id) => shippedTokens[id].enemy.boss === true);
+        expect(bosses).toContain('token_goblin_chief');
+        for (const id of bosses) {
+            expect(shippedTokens[id].enemy, id).not.toHaveProperty('hostile');
+            expect(isHostileEnemy(shippedTokens[id]), id).toBe(false);
+        }
         for (const id of ['token_cow', 'token_thorn_elemental']) {
             expect(shippedTokens[id].enemy).not.toHaveProperty('hostile');
             expect(isHostileEnemy(shippedTokens[id])).toBe(false);
