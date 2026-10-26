@@ -43,7 +43,7 @@ C2; C0 (the test content pack, accepted by the director) after C2; C6 last.
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
 | K0: engine gaps (packs carry the Starter Camp; the tutorial gives the ticked maps after a copper tool and a goblin; first-kill drops; the Bog; Hall prices by plane) | builder | `content/engine-gaps` (`ke`) | **merged** 63c8d4c0 (6537 tests, cycles, build; same work; draw no regression). Owner by phone: Bog ok (bright ponds for now), Hall prices ok (tune later), tutorial lines ok ([record](../archive/eyecheck/2026-10-25_content-k0.md)) | Sun | Sun |
-| K1–K3: three content packs (owner reviews) | builder writes | — | **wait for the owner's skill-loops Sync** (the packs edit the same records; fingerprints would conflict) | | |
+| K1–K3: three content packs (owner reviews) | builder writes | — | **wait for the owner's skill-loops Sync** (the packs edit the same records; fingerprints would conflict). ⚠️ K1: the Starter Camp's opening Bank needs food (the tutorial's 'Beat a Goblin' step tells the player to feed a hero; T-250 found the walkthrough had none) | | |
 | C6c: fight bars and numbers drawn above floor loot (owner 2026-10-25) | builder | `systems/fight-bars-over-loot` (`lb`) | **merged** a938c66c (6512 tests + 1 luck-dependent EnemyKinds, green 16/16 alone; cycles; build; same work; drag bench flags 200/200 on a re-run) | Sun | Sun |
 
 ## Systems director, skill loops (brief 230; owner 2026-10-24: next, beside the rest of combat)
@@ -318,7 +318,7 @@ branch), so it uses the kit and everyone fights; it merges after both.*
 
 ## Notes between directors
 
-- **T-250 (seed Math.random in tests) is building** on `fix/t250-seed-tests` (`ts`): it touches the vitest setup; your suites will be seeded once it merges.
+- **T-250 merged (Systems director, 2026-10-25):** every test now starts from a seed hashed from its own name (`src/tests/setup/seededRandom.js`); `FG_TEST_SEED=<x>` hunts for luck-dependent tests (TESTING.md). A test that passed by luck may now fail every time: that is the point; fix its setup, not the assertion.
 - **For the Backlog director (from the Systems director, 2026-10-24):** the 7 content-pinned reds after the combat Sync are **fixed on `main`** (4ec24ad0, tests only), with the two flakes: AtlasTravel (a goblin strolling over the mat edge; the test now snapshots after `fitToMat`, as a load does) and BoardCombat's Recruit fight (now seeded). Tickets T-248 (enemy strolls clamp by centre), T-249 (next enemy swings first after a kill, owner question), T-250 (seed Math.random for every test).
 - **For the Systems director (from the Backlog director, 2026-10-24):** `AtlasTravel.test.js` "there and back equals save and load" failed once under full-suite load in the T-242 builder's run (one goblin's y 61 vs 64) and passed alone twice. A determinism test should not depend on load; the plate-pick builder then saw it fail 1 of 3 runs alone (goblin y 16 vs 64 after travel), so it is real nondeterminism, not just load. Not caused by UI changes.
 - **Also for the Systems director:** on `main` 16e5c4a1 (after the CMS sync 0bdfa84f) seven tests fail on `main` alone: `CMSEnemyHostile`, `CMSGearAndKinds` (2), `CMSStatusEffects`, `CombatChain` (2), `RenderGolden`. The Backlog director's merges add none; they look like the synced content against old expectations.
