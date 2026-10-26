@@ -621,6 +621,78 @@
     ]
   },
   {
+    "id": "recipe_copper_helmet",
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "name": "Copper Helmet",
+    "skill": "smithing",
+    "levelRequirement": 5,
+    "inputs": [
+      {
+        "itemId": "item_copper_ingot",
+        "quantity": 3
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_copper_helmet",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 17000,
+    "xp": 2,
+    "stationKinds": [
+      "smithy"
+    ],
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_copper_chestplate",
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "name": "Copper Chestplate",
+    "skill": "smithing",
+    "levelRequirement": 7,
+    "inputs": [
+      {
+        "itemId": "item_copper_ingot",
+        "quantity": 5
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_copper_chestplate",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 17000,
+    "xp": 3,
+    "stationKinds": [
+      "smithy"
+    ],
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
     "name": "Dough",
     "requiresContext": [],
     "inputs": [
@@ -885,6 +957,118 @@
     "stationKinds": [
       "kitchen"
     ]
+  },
+  {
+    "id": "recipe_roast_meat",
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "name": "Roast Meat",
+    "skill": "cooking",
+    "levelRequirement": 3,
+    "inputs": [
+      {
+        "itemId": "item_game_meat",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_roast_meat",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 16000,
+    "xp": 2,
+    "stationKinds": [
+      "kitchen"
+    ],
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_cooked_crab",
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "name": "Cooked Crab",
+    "skill": "cooking",
+    "levelRequirement": 2,
+    "inputs": [
+      {
+        "itemId": "item_crab_meat",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_cooked_crab",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 16000,
+    "xp": 2,
+    "stationKinds": [
+      "kitchen"
+    ],
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_honey_bread",
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "name": "Honey Bread",
+    "skill": "cooking",
+    "levelRequirement": 6,
+    "inputs": [
+      {
+        "itemId": "item_dough",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_honey",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_honey_bread",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 17000,
+    "xp": 2,
+    "stationKinds": [
+      "kitchen"
+    ],
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
   },
   {
     "id": "recipe_muily2pf",

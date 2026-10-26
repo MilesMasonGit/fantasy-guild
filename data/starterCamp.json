@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "savedAt": "2026-10-14T03:54:26.986Z",
+  "savedAt": "2026-10-26T12:00:00.000Z",
   "mat": {
     "w": 1760,
     "h": 1126
@@ -19,12 +19,77 @@
       "typeId": "token_copper_mine",
       "x": 1364,
       "y": 740
+    },
+    {
+      "typeId": "token_oak_tree",
+      "x": 250,
+      "y": 190
+    },
+    {
+      "typeId": "token_oak_tree",
+      "x": 505,
+      "y": 195
+    },
+    {
+      "typeId": "token_oak_tree",
+      "x": 290,
+      "y": 375
+    },
+    {
+      "typeId": "token_oak_tree",
+      "x": 480,
+      "y": 360
+    },
+    {
+      "typeId": "token_copper_ore_vein",
+      "x": 1235,
+      "y": 670
+    },
+    {
+      "typeId": "token_copper_ore_vein",
+      "x": 1495,
+      "y": 670
+    },
+    {
+      "typeId": "token_coal_vein",
+      "x": 1250,
+      "y": 860
+    },
+    {
+      "typeId": "token_coal_vein",
+      "x": 1480,
+      "y": 860
+    },
+    {
+      "typeId": "token_stone_outcrop",
+      "x": 1365,
+      "y": 965
+    },
+    {
+      "typeId": "token_redberry_bush",
+      "x": 680,
+      "y": 230
+    },
+    {
+      "typeId": "token_wild_wheat_patch",
+      "x": 1120,
+      "y": 250
+    },
+    {
+      "typeId": "token_coast",
+      "x": 1460,
+      "y": 270
+    },
+    {
+      "typeId": "token_goblin_camp",
+      "x": 400,
+      "y": 890
     }
   ],
   "bank": {
-    "item_oak_wood": 20,
-    "item_wheat_seed": 132,
-    "item_apple_seed": 130,
-    "item_oak_seedling": 125
+    "item_oak_wood": 10,
+    "item_oak_seedling": 5,
+    "item_wheat_seed": 5,
+    "item_shrimp": 15
   }
 }

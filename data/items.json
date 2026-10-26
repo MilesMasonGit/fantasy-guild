@@ -969,7 +969,7 @@
   "map_forest": {
     "id": "map_forest",
     "name": "Forest Map",
-    "description": "A wooded country of oak, with berry bushes in the clearings.",
+    "description": "A wooded country of oak, with berry bushes in the clearings. Wolves den here, and their Alpha keeps close.",
     "type": "map",
     "tags": [],
     "sprite": "t_map_forest",
@@ -977,29 +977,49 @@
     "autoSyncId": false,
     "cartography": {
       "biome": "forest",
-      "points": 40,
+      "points": 61,
       "nodes": [
         {
           "typeId": "token_oak_tree",
-          "weight": 6
+          "weight": 16
+        },
+        {
+          "typeId": "token_oak_forest",
+          "weight": 1
         },
         {
           "typeId": "token_redberry_bush",
-          "weight": 1
+          "weight": 2
         },
         {
           "typeId": "token_blackberry_bush",
-          "weight": 1
+          "weight": 2
         }
       ],
-      "camps": [],
-      "treasures": []
+      "camps": [
+        {
+          "typeId": "token_wolf_den",
+          "count": 1
+        },
+        {
+          "typeId": "token_alpha_den",
+          "count": 1
+        }
+      ],
+      "treasures": [
+        {
+          "typeId": "token_copper_chest",
+          "count": 1
+        }
+      ],
+      "tutorial": true,
+      "bountyWeight": 1
     }
   },
   "map_mountain": {
     "id": "map_mountain",
     "name": "Mountain Map",
-    "description": "Rocky slopes seamed with copper and coal.",
+    "description": "Rocky slopes seamed with copper and coal. Goblins camp on them, and their Chief keeps a tent of his own.",
     "type": "map",
     "tags": [],
     "sprite": "t_map_mountain",
@@ -1007,7 +1027,7 @@
     "autoSyncId": false,
     "cartography": {
       "biome": "mountain",
-      "points": 36,
+      "points": 61,
       "nodes": [
         {
           "typeId": "token_copper_ore_vein",
@@ -1022,14 +1042,30 @@
           "weight": 2
         }
       ],
-      "camps": [],
-      "treasures": []
+      "camps": [
+        {
+          "typeId": "token_goblin_camp",
+          "count": 1
+        },
+        {
+          "typeId": "token_chief_tent",
+          "count": 1
+        }
+      ],
+      "treasures": [
+        {
+          "typeId": "token_copper_chest",
+          "count": 1
+        }
+      ],
+      "tutorial": true,
+      "bountyWeight": 1
     }
   },
   "map_coast": {
     "id": "map_coast",
     "name": "Coast Map",
-    "description": "A sandy shore where the land meets the sea.",
+    "description": "A sandy shore where the land meets the sea. Crabs scuttle on the rocks, and something stirs in a tide pool.",
     "type": "map",
     "tags": [],
     "sprite": "t_map_shore",
@@ -1037,21 +1073,37 @@
     "autoSyncId": false,
     "cartography": {
       "biome": "coast",
-      "points": 12,
+      "points": 24,
       "nodes": [
         {
           "typeId": "token_coast",
           "weight": 1
         }
       ],
-      "camps": [],
-      "treasures": []
+      "camps": [
+        {
+          "typeId": "token_crab_rocks",
+          "count": 1
+        },
+        {
+          "typeId": "token_tide_pool",
+          "count": 1
+        }
+      ],
+      "treasures": [
+        {
+          "typeId": "token_copper_chest",
+          "count": 1
+        }
+      ],
+      "tutorial": true,
+      "bountyWeight": 1
     }
   },
   "map_meadow": {
     "id": "map_meadow",
     "name": "Meadow Map",
-    "description": "Open grassland with apple trees and berry bushes, and a lake or river.",
+    "description": "Open grassland with apple trees, wild wheat and berry bushes, and a lake or river. Cows graze; a Greater Slime oozes about.",
     "type": "map",
     "tags": [],
     "sprite": "t_map_farmland",
@@ -1059,19 +1111,46 @@
     "autoSyncId": false,
     "cartography": {
       "biome": "meadow",
-      "points": 20,
+      "points": 61,
       "nodes": [
         {
           "typeId": "token_apple_tree",
-          "weight": 2
+          "weight": 6
+        },
+        {
+          "typeId": "token_apple_orchard",
+          "weight": 1
+        },
+        {
+          "typeId": "token_wild_wheat_patch",
+          "weight": 4
         },
         {
           "typeId": "token_redberry_bush",
           "weight": 1
+        },
+        {
+          "typeId": "token_blackberry_bush",
+          "weight": 1
         }
       ],
-      "camps": [],
-      "treasures": []
+      "camps": [
+        {
+          "typeId": "token_cow_pasture",
+          "count": 1
+        },
+        {
+          "typeId": "token_slime_pit",
+          "count": 1
+        }
+      ],
+      "treasures": [
+        {
+          "typeId": "token_copper_chest",
+          "count": 1
+        }
+      ],
+      "bountyWeight": 1
     }
   },
   "map_flower_meadow": {
@@ -1085,29 +1164,48 @@
     "autoSyncId": false,
     "cartography": {
       "biome": "flower_meadow",
-      "points": 16,
+      "points": 61,
       "nodes": [
         {
           "typeId": "token_strawberry_bush",
-          "weight": 2
+          "weight": 8
         },
         {
           "typeId": "token_blueberry_bush",
-          "weight": 1
+          "weight": 4
         },
         {
           "typeId": "token_apple_tree",
+          "weight": 4
+        },
+        {
+          "typeId": "token_apple_orchard",
           "weight": 1
         }
       ],
-      "camps": [],
-      "treasures": []
+      "camps": [
+        {
+          "typeId": "token_thorn_thicket",
+          "count": 1
+        },
+        {
+          "typeId": "token_wind_stones",
+          "count": 1
+        }
+      ],
+      "treasures": [
+        {
+          "typeId": "token_copper_chest",
+          "count": 1
+        }
+      ],
+      "bountyWeight": 0.25
     }
   },
   "map_cherry_grove": {
     "id": "map_cherry_grove",
     "name": "Cherry Grove Map",
-    "description": "Cherry trees in rows, with a few peaches among them.",
+    "description": "Cherry trees in rows, with a few peaches among them. Bees hum in a wild hive, and their Queen in a bigger one.",
     "type": "map",
     "tags": [],
     "sprite": "t_map_village",
@@ -1115,7 +1213,7 @@
     "autoSyncId": false,
     "cartography": {
       "biome": "cherry_grove",
-      "points": 20,
+      "points": 61,
       "nodes": [
         {
           "typeId": "token_cherry_tree",
@@ -1126,8 +1224,23 @@
           "weight": 1
         }
       ],
-      "camps": [],
-      "treasures": []
+      "camps": [
+        {
+          "typeId": "token_wild_hive",
+          "count": 1
+        },
+        {
+          "typeId": "token_queens_hive",
+          "count": 1
+        }
+      ],
+      "treasures": [
+        {
+          "typeId": "token_copper_chest",
+          "count": 1
+        }
+      ],
+      "bountyWeight": 0.25
     }
   },
   "map_yellowstone": {
@@ -1153,7 +1266,8 @@
         }
       ],
       "camps": [],
-      "treasures": []
+      "treasures": [],
+      "bountyWeight": 0
     }
   },
   "map_volcano": {
@@ -1183,7 +1297,8 @@
         }
       ],
       "camps": [],
-      "treasures": []
+      "treasures": [],
+      "bountyWeight": 0
     }
   },
   "mod_overgrown": {
@@ -1784,5 +1899,108 @@
       }
     ],
     "id": "item_fine_fishing_rod"
+  },
+  "item_game_meat": {
+    "name": "Game Meat",
+    "description": "",
+    "type": "material",
+    "sprite": "i_meat_game",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_game_meat"
+  },
+  "item_roast_meat": {
+    "name": "Roast Meat",
+    "description": "",
+    "type": "food",
+    "sprite": "i_steak",
+    "stackable": true,
+    "restoreAmount": 8,
+    "equipSlot": "food",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_roast_meat"
+  },
+  "item_crab_meat": {
+    "name": "Crab Meat",
+    "description": "",
+    "type": "material",
+    "sprite": "i_shrimp_raw",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_crab_meat"
+  },
+  "item_cooked_crab": {
+    "name": "Cooked Crab",
+    "description": "",
+    "type": "food",
+    "sprite": "i_shrimp",
+    "stackable": true,
+    "restoreAmount": 6,
+    "equipSlot": "food",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_cooked_crab"
+  },
+  "item_honey_bread": {
+    "name": "Honey Bread",
+    "description": "",
+    "type": "food",
+    "sprite": "i_bread",
+    "stackable": true,
+    "restoreAmount": 12,
+    "equipSlot": "food",
+    "value": 18,
+    "valueSource": "recipe_honey_bread",
+    "autoSyncId": true,
+    "id": "item_honey_bread"
+  },
+  "item_copper_helmet": {
+    "name": "Copper Helmet",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_armor_plate_copper",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hat",
+    "value": 21,
+    "valueSource": "recipe_copper_helmet",
+    "autoSyncId": true,
+    "effects": [
+      {
+        "effectId": "effect_copper_armour",
+        "scale": 1
+      }
+    ],
+    "id": "item_copper_helmet"
+  },
+  "item_copper_chestplate": {
+    "name": "Copper Chestplate",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_armor_plate_copper",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "chest",
+    "value": 34,
+    "valueSource": "recipe_copper_chestplate",
+    "autoSyncId": true,
+    "effects": [
+      {
+        "effectId": "effect_copper_armour",
+        "scale": 1
+      }
+    ],
+    "id": "item_copper_chestplate"
   }
 }

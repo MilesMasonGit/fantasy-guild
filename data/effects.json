@@ -1603,5 +1603,30 @@
     ],
     "autoSyncId": true,
     "id": "effect_beer_drink"
+  },
+  "effect_copper_armour": {
+    "name": "Copper Plate",
+    "statements": [
+      {
+        "id": "stm_k1_copper_armor",
+        "keyword": "provides",
+        "payload": {
+          "type": "ARMOR",
+          "bucket": "flat",
+          "value": 1
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_copper_armour"
   }
 }
