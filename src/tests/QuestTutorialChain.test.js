@@ -253,6 +253,10 @@ describe('⭐ the cartographer\'s chain, step by step, through the real systems'
         // ⚠️ Fixture: a Recruit fights as a level 1 fighter and is often knocked out before the
         // first kill, so the hero is lent a combat skill at level 40.
         GameState.heroes[0].skills[COMBAT_SKILL_IDS[0]] = { xp: 0, level: 40 };
+        // And fed, as the step tells the player ("Give a Hero food first"): the Steak equipped in
+        // step 2 is eaten from the Bank below a quarter HP and fills the bar, so the Goblin's hits
+        // (1, a crit 2) can never down the hero and the win does not depend on the rolls.
+        give('item_steak', 10);
         const cow = BoardState.createTokenInstance('token_cow', tokenStartingUses('token_cow'));
         Placement.placeTokenAt(cow, SPOT.fight);
         expect(Flags.plant(heroId, SPOT.fight).success).toBe(true);

@@ -11,6 +11,7 @@ import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { LootSystem } from '../systems/combat/LootSystem.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
+import * as EquipmentManager from '../systems/equipment/EquipmentManager.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
@@ -99,6 +100,11 @@ beforeEach(() => {
     clearMat();
     GameState.state.heroes = [recruit('r1')];
     GameState.state.inventory.maxSlots = 50;
+    // Fed, so every fight here is a sure win: what these tests check is the drop and the flag,
+    // not combat odds (unfed, a Recruit loses to this Goblin about one time in forty). A Steak is
+    // eaten from the Bank below a quarter HP and fills the bar; the Goblin hits for 1, a crit 2.
+    InventoryManager.addItem('item_steak', 10);
+    expect(EquipmentManager.equipItem('r1', 'item_steak').success).toBe(true);
     BoardState.setInstantArrival(false);
 });
 afterEach(() => BoardState.setInstantArrival(true));
