@@ -5,7 +5,7 @@ import path from 'path';
 import {
     SKILL_ID_RENAMES, migrateSkillIds, migrateSkillIdsIn, migrateRecipeList, migrateRecipePools
 } from '../systems/effects/skillIdMigration.js';
-import { getTokenType, registerTokenTypes } from '../config/registries/tokenRegistry.js';
+import { getTokenType, getAllTokenTypes, registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { listRecipes } from '../config/registries/recipePoolRegistry.js';
 import { isSkillId } from '../config/registries/skillRegistry.js';
 import { useEntityStore } from '../../cms/src/stores/useEntityStore.js';
@@ -126,8 +126,11 @@ describe('the game migrates content as it loads it', () => {
         expect(getTokenType('token_oak_tree').config.skill).toBe('forestry');
     });
 
-    it('and the Oak Forest in the Forestry section of the Shop', () => {
-        expect(getTokenType('token_oak_forest').shop.section).toBe('forestry');
+    it('and no Token is sold in a Logging section of the Shop', () => {
+        // The Oak Forest, once sold under Forestry, is now built; the fixtures below cover the rename.
+        const sections = Object.values(getAllTokenTypes()).filter(def => def.shop).map(def => def.shop.section);
+        expect(sections.length).toBeGreaterThan(0);
+        expect(sections).not.toContain('logging');
     });
 
     it('no loaded Token or recipe still names logging', () => {

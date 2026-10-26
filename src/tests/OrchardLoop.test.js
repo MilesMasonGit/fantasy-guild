@@ -265,15 +265,16 @@ describe('an Orchard plants its fruit trees within its reach, as a Forest does (
 });
 
 describe('an Apple Tree from an old save, once the content pack makes it a fruit tree', () => {
-    // The shipped Apple Tree as it is today (3 charges, picked by Farming, leaves when used up),
-    // given the S8 shape under its own id: so a saved instance (charges left, no clocks) loads as is.
+    // The shipped Apple Tree (3 charges, picked by Farming), given the fixture's S8 shape under its
+    // own id: so a saved instance (charges left, no clocks) loads as is.
     const shipped = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../data/tokens.json'), 'utf8'));
     const list = Array.isArray(shipped) ? shipped : Object.values(shipped.tokens || shipped);
     const today = list.find(t => t.id === 'token_apple_tree');
 
-    it('is today a Token that leaves when used up (no respawn yet)', () => {
+    it('the pack has landed: the shipped Apple Tree stays put and refills with an Orchard in reach', () => {
         expect(today).toBeTruthy();
-        expect(today.respawn).toBeUndefined();
+        expect(today.staysPut).toBe(true);
+        expect(today.respawn).toMatchObject({ mode: 'refill', needsNearby: ['token_apple_orchard'] });
     });
 
     it('a saved one with charges left is picked on, rests Bare, and waits for an Orchard; one put in reach brings it back', () => {

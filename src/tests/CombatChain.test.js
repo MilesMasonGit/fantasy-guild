@@ -13,6 +13,7 @@ import { auditLifecycleBlocks } from '../systems/core/lifecycleAudit.js';
 import { SKILLS } from '../config/registries/skillRegistry.js';
 import { enemyProfileOf, enemyDropsOf } from '../config/registries/enemyProfile.js';
 import { getTokenType } from '../config/registries/tokenRegistry.js';
+import { expandBearer } from '../systems/effects/effectLibrary.js';
 
 /**
  * Token Lifecycle slice 7.7 — Combat, pinned from the SHIPPED data (authored
@@ -29,7 +30,10 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 
 const DATA = path.resolve(__dirname, '../../data');
 const read = (f) => JSON.parse(fs.readFileSync(path.join(DATA, f), 'utf8'));
-const tokens = read('tokens.json');
+// Expanded, as the game and the CMS Economy Audit audit them: a Field's Works-as rule and a
+// station's Station rule live in the effect library.
+const effects = read('effects.json');
+const tokens = Object.fromEntries(Object.entries(read('tokens.json')).map(([id, t]) => [id, expandBearer(t, effects)]));
 const items = read('items.json');
 const recipes = read('tokenRecipes.json');
 

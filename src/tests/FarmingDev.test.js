@@ -52,8 +52,9 @@ describe('the Farming scene', () => {
         expect(at(s.beehive).typeId).toBe(T.BEEHIVE);
         // The shipped Farming recipes stay beside the QA crops.
         expect(listRecipes().filter(r => r.skill === 'farming').length).toBeGreaterThan(2);
-        expect(StationRecipe.poolFor(getTokenType(T.FIELD)).map(r => r.id)).toEqual([T.WHEAT]);
-        expect(StationRecipe.poolFor(getTokenType(T.HERB_GARDEN)).map(r => r.id)).toEqual([T.SAGE]);
+        // A QA Field is a Field, so it offers the shipped crop of its kind as well as its QA one.
+        expect(StationRecipe.poolFor(getTokenType(T.FIELD)).map(r => r.id)).toEqual(['recipe_wheat', T.WHEAT]);
+        expect(StationRecipe.poolFor(getTokenType(T.HERB_GARDEN)).map(r => r.id)).toEqual(['recipe_lavender', T.SAGE]);
 
         // The first tick: one Field sows, the Herb Garden stops; the wild patch and the other Field are ripe.
         run(100);

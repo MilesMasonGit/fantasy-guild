@@ -80,12 +80,12 @@ function put(typeId, point) {
 
 /**
  * Around the Guild Hall:
- * - left: an Oak Sapling between two QA Groves (Grow Time −30 % each: 30 s becomes 12 s; its
- *   countdown bubble starts at 0:12);
+ * - left: an Oak Sapling between two QA Groves (Grow Time −30 % each: its authored time is cut
+ *   to 40 %, 150 s to 60 s; its countdown bubble starts there);
  * - right: the QA Slow Vein (10 s, stays where it stands: dragging it is refused) ringed by five
  *   QA Minecarts (−20 % each), worked by a new Miner: the cycle runs at 2 s, the 80 % floor;
- * - below: Grandma's Kitchen and a Windmill, a station and a support that once had 5000 and 1000
- *   charges: no charge ring, unlimited.
+ * - below: Grandma's Kitchen and a Windmill, two stations that never wear out: no charge ring,
+ *   unlimited, whatever Charges they author.
  * ⚠️ Changes the game, like Spawn Party.
  * @returns {{ok: boolean, error?: string}}
  */
@@ -133,8 +133,9 @@ export function skillLoopsReadout() {
     const lines = [];
     const sapling = BoardState.getTokenById(scene.sapling);
     const growth = sapling ? TimedChanges.nextGrowth(sapling) : null;
+    const authoredGrow = getTokenType(SAPLING)?.grows?.afterMs ?? 0;
     lines.push(growth
-        ? `Oak Sapling grows in ${secs(growth.totalMs)} (30.0 s authored, two Groves at −30 %), ${secs(growth.inMs)} left`
+        ? `Oak Sapling grows in ${secs(growth.totalMs)} (${secs(authoredGrow)} authored, two Groves at −30 %), ${secs(growth.inMs)} left`
         : 'Oak Sapling has grown into a Tree');
 
     const vein = BoardState.getTokenById(scene.vein);
@@ -148,7 +149,8 @@ export function skillLoopsReadout() {
         const t = BoardState.getTokenById(id);
         if (!t) continue;
         const authored = getTokenType(t.typeId)?.uses;
-        lines.push(`${tokenName(t.typeId)}: ${Charges.isUnlimited(t) ? 'unlimited' : `${t.usesRemaining} charges`} (${authored ?? 'no'} authored, ignored)`);
+        const note = authored == null ? 'no Charges authored' : `${authored} authored, ignored`;
+        lines.push(`${tokenName(t.typeId)}: ${Charges.isUnlimited(t) ? 'unlimited' : `${t.usesRemaining} charges`} (${note})`);
     }
     return lines;
 }

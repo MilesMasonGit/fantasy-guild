@@ -15,6 +15,7 @@ import { recipesForToken } from '../config/registries/recipePoolRegistry.js';
 import { getItem, getAllItems, registerItems } from '../config/registries/itemRegistry.js';
 import { starterToolIds, neededToolOf, toolOf, toolMeets } from '../config/registries/toolKinds.js';
 import { matW, matH } from '../config/matGeometry.js';
+import { catchPoolsOf } from '../config/registries/catchPools.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -211,9 +212,9 @@ describe('a new game opens in the Starter Camp the owner laid out', () => {
 /**
  * Close over what the player can get: Tokens (in the Starter Camp, bought, spawned, grown, turned
  * into, built) and items (the camp's Bank and the starter tools, trickle, worked from a Token whose
- * inputs are already reachable). A Token is bought once its whole price is reachable; a recipe runs
- * once its inputs are; a Token whose work needs a tool is worked once a tool that will do is. The
- * cartographer's maps join this once the tutorial gives them (Atlas A8).
+ * inputs are already reachable, caught from water's catch pools). A Token is bought once its whole
+ * price is reachable; a recipe runs once its inputs are; a Token whose work needs a tool is worked
+ * once a tool that will do is. The cartographer's maps join this once the tutorial gives them.
  */
 function reachable() {
     const camp = StarterCamp.starterCamp();
@@ -242,6 +243,13 @@ function reachable() {
                     if (o.tokenId) tokens.add(o.tokenId);
                 }
             }
+            // Water lands its catch instead of its Outputs: a pool bites once a tool of its kind is
+            // in hand and its bait (if any) can be had.
+            for (const pool of catchPoolsOf(def)) {
+                const tool = [...items].some(id => toolOf(getItem(id))?.kind === pool.tool);
+                if (!tool || (pool.bait && !items.has(pool.bait))) continue;
+                for (const c of pool.catches) items.add(c.itemId);
+            }
             for (const r of recipesForToken(def) || []) {
                 if (!have(r.inputs)) continue;
                 for (const o of r.outputs || []) {
@@ -264,12 +272,12 @@ describe('the §6 circularity check: every chain is reachable from the Starter C
     const SIX = {
         Forestry: ['token_oak_forest', 'token_oak_sapling', 'token_oak_tree'],
         Mining: ['token_copper_mine', 'token_coal_mine', 'token_quarry', 'token_copper_ore_vein', 'token_coal_vein', 'token_stone_outcrop'],
-        Fishing: ['token_coast', 'token_shrimp_coast'],
-        Farming: ['token_farmland', 'token_wheat_field', 'token_wheat_sprout', 'token_ripe_wheat', 'token_apple_orchard', 'token_apple_sapling', 'token_apple_tree'],
+        Fishing: ['token_coast', 'token_dock'],
+        Farming: ['token_farmland', 'token_wheat_field', 'token_herb_garden', 'token_windmill', 'token_apple_orchard', 'token_apple_sapling', 'token_apple_tree'],
         Construction: ['token_wood_foundation', 'token_stone_foundation', 'token_fighter_s_academy'],
         Crafting: ['token_workbench'],
-        Smithing: ['token_furnace', 'token_copper_anvil'],
-        Cooking: ['token_cooking_pot'],
+        Smithing: ['token_furnace', 'token_copper_smithy'],
+        Cooking: ['token_cooking_pot', 'token_brewery'],
         Combat: ['token_goblin_camp', 'token_goblin', 'token_goblin_chief']
     };
 
@@ -283,7 +291,7 @@ describe('the §6 circularity check: every chain is reachable from the Starter C
         for (const id of [
             'item_oak_wood', 'item_oak_seedling', 'item_copper_ore', 'item_coal', 'item_stone',
             'item_raw_shrimp', 'item_wheat', 'item_wheat_seed', 'item_apple', 'item_apple_seed',
-            'item_charcoal', 'item_torch', 'item_copper_ingot', 'item_shrimp'
+            'item_charcoal', 'item_torch', 'item_copper_ingot', 'item_shrimp', 'item_flour', 'item_apple_juice'
         ]) {
             expect(items.has(id), id).toBe(true);
         }

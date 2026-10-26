@@ -59,7 +59,7 @@ afterEach(() => {
     expect(globalThis.localStorage?.getItem('fantasy-guild-cms-v2') ?? null).toBe(storedBefore);
 });
 
-/** The Coast (no work cycle today) authored as a sea: a rod's basic pool and a baited one. */
+/** The Coast authored as a sea: a rod's basic pool and a baited one. */
 const SEA_POOLS = [
     { tool: 'fishing_rod', catches: [{ itemId: 'item_raw_shrimp', weight: 50 }, { itemId: 'item_shrimp', weight: 40 }, { itemId: 'item_water', weight: 10 }] },
     { tool: 'fishing_rod', bait: 'item_shrimp_trawler_potion', catches: [{ itemId: 'item_shrimp', weight: 1 }] }
@@ -71,6 +71,8 @@ describe('⭐ the Catch pools block', () => {
     });
 
     it('adding the first pool writes catchPools and gives a Token with no work cycle a Fishing one', () => {
+        // Fixture: the shipped Coast is already water, so it is put back to no work cycle and no pools.
+        store().updateToken('token_coast', { config: null, catchPools: [] });
         expect(store().tokens.token_coast.config).toBeNull();
         const container = openEditor('token_coast');
         expect(q(container, '[data-field="catch-pools"]')).not.toBeNull();

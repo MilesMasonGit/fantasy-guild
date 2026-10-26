@@ -95,9 +95,15 @@ describe('a recipe\'s station kinds', () => {
         expect(second['tokenRecipes.json'].find((r) => r.id === recipe.id)).toEqual(written);
     });
 
-    it('a shipped recipe with no kinds is written with no stationKinds field', () => {
+    it('a shipped recipe with no kinds is written with no stationKinds field; one with kinds keeps them', () => {
+        const shipped = Object.fromEntries(JSON.parse(raw['tokenRecipes.json']).map((r) => [r.id, r]));
         const written = syncPayload()['tokenRecipes.json'];
-        expect(written.every((r) => !('stationKinds' in r))).toBe(true);
+        const kindless = written.filter((r) => !shipped[r.id].stationKinds);
+        expect(kindless.length).toBeGreaterThan(0);
+        for (const r of kindless) expect('stationKinds' in r, r.id).toBe(false);
+        for (const r of written.filter((w) => shipped[w.id].stationKinds)) {
+            expect(r.stationKinds, r.id).toEqual(shipped[r.id].stationKinds);
+        }
     });
 });
 

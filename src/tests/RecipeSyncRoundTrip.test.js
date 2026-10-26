@@ -10,6 +10,7 @@ import {
     RETIRED_RECIPE_FIELDS,
     RETIRED_OUTPUT_FIELDS,
 } from '../../cms/src/engine/sim/writeBack.js';
+import { expandAll } from '../systems/effects/effectLibrary.js';
 
 /**
  * The CMS → game recipe sync.
@@ -176,8 +177,22 @@ describe('⚠️ Retired fields cannot get back into the file (strip-on-write)',
 });
 
 describe('Derived recipe fields match a fresh solve (the drift alarm)', () => {
+    /**
+     * Solved against the shipped world, as Recalculate solves it: the tuning pass prices outputs
+     * from item values and moves a recipe's quantities to meet its purpose, so an empty world
+     * cannot reproduce a tuned recipe (Search a Bird Nest's Wheat Seed, authored 1–2, tuned to
+     * 10–11).
+     */
+    function shippedWorld() {
+        const read = (f) => JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../data', f), 'utf8'));
+        return {
+            items: read('items.json'),
+            tokens: expandAll(read('tokens.json'), read('effects.json')),
+        };
+    }
+
     it('reproduces the shipped file from the shipped intent', () => {
-        const written = recipesToFile(solve(poolsFromFile(shipped)));
+        const written = recipesToFile(solve(poolsFromFile(shipped), shippedWorld()));
         expect(JSON.stringify(written, null, 2)).toBe(raw);
     });
 });

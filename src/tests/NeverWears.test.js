@@ -87,13 +87,13 @@ describe('⭐ shipped content', () => {
     it.each([
         ['token_grandma_s_kitchen', NEVER_WEARS.STATION],
         ['token_ceramics_kiln', NEVER_WEARS.STATION],
-        ['token_windmill', NEVER_WEARS.SUPPORT],
-        ['token_coast', NEVER_WEARS.SUPPORT],
+        ['token_windmill', NEVER_WEARS.STATION],
+        ['token_coast', NEVER_WEARS.WATER],
         ['token_copper_anvil', NEVER_WEARS.SUPPORT]
     ])('%s never wears out and starts unlimited', (id, reason) => {
         const def = getTokenType(id);
         expect(def, `${id} is shipped`).toBeTruthy();
-        expect(def.uses).not.toBeNull();            // authored, and ignored
+        expect(def.uses).toBeNull();                // the owner cleared the Charges once authored
         expect(neverWearsReason(def)).toBe(reason);
         expect(tokenStartingUses(id)).toBeNull();
     });

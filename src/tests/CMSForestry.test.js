@@ -39,6 +39,14 @@ const loadShipped = () => useEntityStore.getState().hydrate(workspaceFromFiles(
 const syncPayload = () => syncFiles(useEntityStore.getState().recalculateEconomy({}));
 const asFile = (files) => Object.fromEntries(FILES.map((f) => [f, JSON.parse(JSON.stringify(files[f], null, 2))]));
 const token = (id) => useEntityStore.getState().tokens[id];
+/** Fixture: the shipped Token as it was before it used a field, so the editor can add it. */
+function withoutKey(id, key) {
+    useEntityStore.setState((s) => {
+        const next = { ...s.tokens[id] };
+        delete next[key];
+        return { tokens: { ...s.tokens, [id]: next } };
+    });
+}
 
 function openEditor(id) {
     useEntityStore.getState().setActiveEntity(id, 'token');
@@ -62,6 +70,8 @@ afterEach(() => {
 
 describe('⭐ the Grows block: the Forest it needs in reach, and its seedling', () => {
     it('Add Token, pick the Forest: written as needsNearby; removed, the key goes', () => {
+        const before = token('token_oak_sapling').grows;
+        expect(before).not.toHaveProperty('needsNearby');
         const { block } = openEditor('token_oak_sapling');
         const grows = () => block('grows');
         expect(within(grows()).queryByLabelText('Needs in reach')).toBeNull();
@@ -69,11 +79,11 @@ describe('⭐ the Grows block: the Forest it needs in reach, and its seedling', 
 
         fireEvent.click(within(grows().querySelector('[data-field="needs-nearby"]')).getByText('Add Token'));
         fireEvent.change(within(grows()).getByLabelText('Needs in reach'), { target: { value: 'token_oak_forest' } });
-        expect(token('token_oak_sapling').grows).toEqual({ into: 'token_oak_tree', afterMs: 30000, needsNearby: ['token_oak_forest'] });
+        expect(token('token_oak_sapling').grows).toEqual({ ...before, needsNearby: ['token_oak_forest'] });
         expect(grows().textContent).toContain('Its clock stands still while none of these stands within reach');
 
         fireEvent.click(grows().querySelector('[data-field="needs-nearby"] button.text-gray-600'));
-        expect(token('token_oak_sapling').grows).toEqual({ into: 'token_oak_tree', afterMs: 30000 });
+        expect(token('token_oak_sapling').grows).toEqual(before);
     });
 
     it('the Token it grows into is not offered as what it needs (it can never need itself)', () => {
@@ -101,6 +111,9 @@ describe('⭐ the Grows block: the Forest it needs in reach, and its seedling', 
 
 describe('⭐ the Spawner block: plants within its reach', () => {
     it('ticking writes withinReach: true; unticking drops the key', () => {
+        const spawner = { ...token('token_oak_forest').spawner };
+        delete spawner.withinReach;
+        useEntityStore.getState().updateToken('token_oak_forest', { spawner });
         const { container } = openEditor('token_oak_forest');
         const box = () => container.querySelector('[data-field="within-reach"]');
         expect(box().checked).toBe(false);
@@ -114,6 +127,7 @@ describe('⭐ the Spawner block: plants within its reach', () => {
 
 describe('⭐ the Token editor: can be cleared where a map placed it', () => {
     it('ticking writes clearable: true; unticking drops the key', () => {
+        withoutKey('token_oak_forest', 'clearable');
         const { container } = openEditor('token_oak_forest');
         const box = () => container.querySelector('[data-field="clearable"]');
         expect(box().checked).toBe(false);
@@ -150,7 +164,7 @@ describe('⭐ through Recalculate and Sync', () => {
         for (const f of FILES) expect(JSON.stringify(second[f], null, 2)).toBe(JSON.stringify(first[f], null, 2));
     });
 
-    it('today\'s data, which uses none of them, still round-trips byte-identical', () => {
+    it('today\'s data, which uses all of them, still round-trips byte-identical', () => {
         const files = syncPayload();
         for (const f of FILES) expect(JSON.stringify(files[f], null, 2)).toBe(raw[f].trimEnd());
     });

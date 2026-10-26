@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import { GameState } from '../state/GameState.js';
@@ -10,7 +10,7 @@ import * as StationRecipe from '../systems/board/StationRecipe.js';
 import { auditLifecycleBlocks } from '../systems/core/lifecycleAudit.js';
 import { SKILLS } from '../config/registries/skillRegistry.js';
 import { getTokenType, getProvidedTagsWithTiers, tokenStartingUses } from '../config/registries/tokenRegistry.js';
-import { recipesForToken } from '../config/registries/recipePoolRegistry.js';
+import { recipesForToken, registerRecipePools } from '../config/registries/recipePoolRegistry.js';
 import { stationSkillOf, promotedJobOf } from '../systems/effects/statements.js';
 
 /**
@@ -58,28 +58,34 @@ describe('The Processing chain in shipped data (7.5)', () => {
             expect(def.config).toBeNull();
         });
 
-        it('a Wood Foundation offers the Workbench and the Cooking Pot', () => {
-            expect(poolNames('token_wood_foundation')).toEqual(['Build Cooking Pot', 'Build Workbench']);
+        it('a Wood Foundation offers the wooden buildings: the Workbench, the Cooking Pot and the rest', () => {
+            expect(poolNames('token_wood_foundation')).toEqual([
+                'Build Alchemy Table', 'Build Beehive', 'Build Brewery', 'Build Coal Mine', 'Build Composter',
+                'Build Cooking Pot', 'Build Copper Mine', 'Build Dock', 'Build Minecart', 'Build Quarry',
+                'Build Windmill', 'Build Workbench',
+            ]);
         });
 
-        it("a Stone Foundation offers the Furnace and the Fighter's Academy (SP-62)", () => {
-            expect(poolNames('token_stone_foundation')).toEqual(["Build Fighter's Academy", 'Build Furnace']);
+        it("a Stone Foundation offers the Furnace, the Copper Smithy, the Well and the Fighter's Academy (SP-62)", () => {
+            expect(poolNames('token_stone_foundation')).toEqual([
+                'Build Copper Smithy', "Build Fighter's Academy", 'Build Furnace', 'Build Well',
+            ]);
         });
 
-        for (const [name, kind, inputs, builds] of [
-            ['Build Workbench', 'wood', [{ itemId: 'item_oak_wood', quantity: 5 }], 'token_workbench'],
-            ['Build Cooking Pot', 'wood', [{ itemId: 'item_oak_wood', quantity: 5 }], 'token_cooking_pot'],
-            ['Build Furnace', 'stone', [{ itemId: 'item_stone', quantity: 5 }], 'token_furnace'],
-            ["Build Fighter's Academy", 'stone',
+        for (const [name, kind, seconds, inputs, builds] of [
+            ['Build Workbench', 'wood', 60, [{ itemId: 'item_oak_wood', quantity: 5 }], 'token_workbench'],
+            ['Build Cooking Pot', 'wood', 60, [{ itemId: 'item_oak_wood', quantity: 5 }], 'token_cooking_pot'],
+            ['Build Furnace', 'stone', 90, [{ itemId: 'item_stone', quantity: 5 }], 'token_furnace'],
+            ["Build Fighter's Academy", 'stone', 240,
                 [{ itemId: 'item_stone', quantity: 10 }, { itemId: 'item_oak_wood', quantity: 10 }], 'token_fighter_s_academy'],
         ]) {
-            it(`${name}: Construction 1, 30 s, on ${kind}, builds ${builds}`, () => {
+            it(`${name}: Construction 1, ${seconds} s, on ${kind}, builds ${builds}`, () => {
                 const r = named(name);
                 expect(r).toBeTruthy();
                 expect(r.skill).toBe('construction');
                 expect(r.foundationKinds).toEqual([kind]);
                 expect(r.levelRequirement).toBe(1);
-                expect(r.durationMs).toBe(30000);   // Q9 pacing: was 15000
+                expect(r.durationMs).toBe(seconds * 1000);
                 expect(r.inputs).toEqual(inputs);
                 expect(r.outputs.map((o) => o.tokenId)).toEqual([builds]);
             });
@@ -118,10 +124,10 @@ describe('The Processing chain in shipped data (7.5)', () => {
             }
         });
 
-        it('the Workbench offers exactly Charcoal and Torch, and a new one starts on neither (TL-15)', () => {
-            // The malformed, never-runnable Pickaxe Mould recipe was removed in
-            // 7.5: as the Workbench's default it crashed the mat's progress bar.
-            expect(poolNames('token_workbench')).toEqual(['Charcoal', 'Torch']);
+        it('the Workbench offers exactly the Crafting recipes, and a new one starts on none (TL-15)', () => {
+            expect(poolNames('token_workbench')).toEqual([
+                'Charcoal', 'Fine Fishing Rod', 'Search a Bird Nest', 'Shrimp Bait', 'Torch', 'Worm Bait',
+            ]);
             const bench = BoardState.createTokenInstance('token_workbench');
             expect(StationRecipe.validateSelection(bench, getTokenType('token_workbench'))).toBeNull();
             expect(bench.selectedRecipeId).toBeUndefined();
@@ -160,18 +166,16 @@ describe('The Processing chain in shipped data (7.5)', () => {
             expect(ingot.levelRequirement).toBe(1);
         });
 
-        it('Cooking burns a Charcoal: Shrimp and Apple Juice, both level 1', () => {
+        it('Cooking burns no fuel: Shrimp at a Kitchen and Apple Juice at a Brewery, both level 1', () => {
             const shrimp = recipes.find((r) => r.id === 'recipe_shrimp');
-            expect(shrimp.inputs).toEqual([
-                { itemId: 'item_raw_shrimp', quantity: 1 }, { itemId: 'item_charcoal', quantity: 1 },
-            ]);
+            expect(shrimp.inputs).toEqual([{ itemId: 'item_raw_shrimp', quantity: 1 }]);
+            expect(shrimp.stationKinds).toEqual(['kitchen']);
             expect(shrimp.levelRequirement).toBe(1);
 
             const juice = named('Apple Juice');
             expect(juice.skill).toBe('cooking');
-            expect(juice.inputs).toEqual([
-                { itemId: 'item_apple', quantity: 4 }, { itemId: 'item_charcoal', quantity: 1 },
-            ]);
+            expect(juice.inputs).toEqual([{ itemId: 'item_apple', quantity: 4 }]);
+            expect(juice.stationKinds).toEqual(['brewery']);
             expect(juice.levelRequirement).toBe(1);
         });
     });
@@ -179,9 +183,9 @@ describe('The Processing chain in shipped data (7.5)', () => {
     describe('The Copper Anvil (DP-8, SP-30, SP-56)', () => {
         const anvil = tokens.token_copper_anvil;
 
-        it('is sold in the Smithing section for 5 Copper Ingots and has 20 charges', () => {
-            expect(anvil.shop).toEqual({ price: [{ itemId: 'item_copper_ingot', quantity: 5 }], section: 'smithing' });
-            expect(anvil.uses).toBe(20);
+        it('is no longer sold, never wears out and needs no hero', () => {
+            expect(anvil.shop).toBeUndefined();
+            expect(anvil.uses).toBeNull();
             expect(anvil.requiresHero).toBe(false);
         });
 
@@ -193,7 +197,7 @@ describe('The Processing chain in shipped data (7.5)', () => {
             expect(others).toEqual([]);
         });
 
-        it('Copper Nails: 1 Copper Ingot + 1 Coal → 2 Nails, needs an anvil and wears it by one', () => {
+        it('Copper Nails: 1 Copper Ingot + 1 Coal → 2 Nails at a Smithy, no anvil needed', () => {
             const nails = named('Copper Nails');
             expect(nails.skill).toBe('smithing');
             expect(nails.levelRequirement).toBe(1);
@@ -201,7 +205,8 @@ describe('The Processing chain in shipped data (7.5)', () => {
                 { itemId: 'item_copper_ingot', quantity: 1 }, { itemId: 'item_coal', quantity: 1 },
             ]);
             expect(nails.outputs.map((o) => [o.itemId, o.minQty, o.maxQty])).toEqual([['item_copper_nails', 2, 2]]);
-            expect(nails.requiresContext).toEqual([{ tag: 'anvil', minTier: 1, chargeCost: 1 }]);
+            expect(nails.requiresContext).toEqual([]);
+            expect(nails.stationKinds).toEqual(['smithy']);
         });
     });
 
@@ -214,7 +219,20 @@ describe('The Processing chain in shipped data (7.5)', () => {
             Placement.placeTokenAt(instance, point);
             return instance;
         };
-        const nailsId = () => named('Copper Nails').id;
+        // Fixture: no shipped recipe needs an anvil any more, so a Furnace recipe that does is
+        // added beside the shipped ones.
+        const nailsId = () => 'recipe_fixture_anvil_nails';
+        beforeAll(() => {
+            registerRecipePools({
+                smithing: [{
+                    id: 'recipe_fixture_anvil_nails', name: 'Fixture Anvil Nails', levelRequirement: 1,
+                    durationMs: 6000, xp: 2, stationKinds: ['furnace'],
+                    inputs: [{ itemId: 'item_copper_ingot', quantity: 1 }, { itemId: 'item_coal', quantity: 1 }],
+                    outputs: [{ itemId: 'item_copper_nails', chance: 100, minQty: 2, maxQty: 2 }],
+                    requiresContext: [{ tag: 'anvil', minTier: 1, chargeCost: 1 }],
+                }],
+            }, { takeOver: false });
+        });
 
         beforeEach(() => {
             GameState.initNew();
@@ -238,9 +256,8 @@ describe('The Processing chain in shipped data (7.5)', () => {
             expect(verdict.reason).toBeUndefined();
             expect(verdict.recipe.id).toBe(nailsId());
 
-            // A context Token is a support, and supports never wear out: its authored 20 uses are
-            // ignored (it goes in S6), so it starts unlimited and the cycle debits nothing.
-            expect(tokens.token_copper_anvil.uses).toBe(20);
+            // A context Token is a support, and supports never wear out: it starts unlimited and
+            // the recipe's charge cost debits nothing from it.
             expect(anvil.usesRemaining).toBeNull();
             const plan = Charges.planCycle(furnace.id, furnace, { recipe: verdict.recipe });
             expect(plan.ok).toBe(true);
@@ -268,19 +285,18 @@ describe("Academies (6.2, SP-62)", () => {
 });
 
 describe('The lifecycle audit on the Processing chain', () => {
-    it('has no errors and no warnings but the Anvil’s ignored charges (slice 7.5a; brief 230 S1a)', () => {
+    it('has no errors and no warnings (slice 7.5a)', () => {
         const ids = new Set([
             'token_wood_foundation', 'token_stone_foundation', 'token_workbench', 'token_cooking_pot',
-            'token_furnace', 'token_fighter_s_academy', 'token_copper_anvil',
-            ...recipes.filter((r) => ['construction', 'crafting', 'smithing', 'cooking'].includes(r.skill)).map((r) => r.id),
+            'token_furnace', 'token_fighter_s_academy', 'token_copper_anvil', 'token_copper_smithy',
+            'token_brewery', 'token_alchemy_table',
+            ...recipes.filter((r) => ['construction', 'crafting', 'smithing', 'cooking', 'alchemy'].includes(r.skill)).map((r) => r.id),
         ]);
         // The audit reads Tokens EXPANDED (its contract): the Anvil's `Acts as`
         // rule lives in the effect library, so the registry's copy is used.
         const expanded = Object.fromEntries(Object.keys(tokens).map((id) => [id, getTokenType(id) || tokens[id]]));
         const findings = auditLifecycleBlocks({ tokens: expanded, items, recipes, skills: SKILLS })
             .filter((f) => f.severity === 'error' || ids.has(f.entityId));
-        // The Anvil is a support, and supports never wear out: its 20 Charges are ignored, and
-        // flagged (allowed) until the owner clears them. Nothing else.
-        expect(findings.map((f) => [f.severity, f.entityId, f.field])).toEqual([['warning', 'token_copper_anvil', 'uses']]);
+        expect(findings.map((f) => [f.severity, f.entityId, f.field])).toEqual([]);
     });
 });

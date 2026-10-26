@@ -58,7 +58,9 @@ function withS6b(files) {
         item_cms_birdwatcher: { id: 'item_cms_birdwatcher', name: 'Birdwatcher', type: 'potion', equipSlot: 'consumable', stackable: true, sprite: 'i_potion_shrimp_pink', effects: [{ effectId: 'effect_cms_birdwatcher_potion', scale: 1 }] },
         item_cms_coffee: { id: 'item_cms_coffee', name: 'Coffee', type: 'drink', equipSlot: 'drink', stackable: true, sprite: 'i_potion_shrimp_pink', effects: [{ effectId: 'effect_cms_coffee_drink', scale: 1 }] },
         item_cms_haste: { id: 'item_cms_haste', name: 'Haste Potion', type: 'potion', equipSlot: 'consumable', stackable: true, sprite: 'i_potion_shrimp_pink', effects: [{ effectId: 'effect_cms_coffee', scale: 1 }] },
-        item_cms_charm: { id: 'item_cms_charm', name: 'Haste Charm', type: 'armor', equipSlot: 'trinket', stackable: true, sprite: 'i_potion_shrimp_pink', effects: [{ effectId: 'effect_cms_coffee', scale: 1 }] }
+        item_cms_charm: { id: 'item_cms_charm', name: 'Haste Charm', type: 'armor', equipSlot: 'trinket', stackable: true, sprite: 'i_potion_shrimp_pink', effects: [{ effectId: 'effect_cms_coffee', scale: 1 }] },
+        // A drink with no rule: the shipped Water now carries one.
+        item_cms_plain_water: { id: 'item_cms_plain_water', name: 'Plain Water', type: 'drink', equipSlot: 'drink', stackable: true, sprite: 'i_potion_shrimp_pink' }
     });
     return out;
 }
@@ -148,7 +150,7 @@ describe('⭐ the Item editor says how a food, drink or potion is used', () => {
     });
 
     it('a drink with no work rule says it does nothing; gear says nothing', () => {
-        expect(q(openItem('item_water'), '[data-dose="none"]').textContent).toContain('does nothing');
+        expect(q(openItem('item_cms_plain_water'), '[data-dose="none"]').textContent).toContain('does nothing');
         cleanup();
         expect(q(openItem('item_cms_charm'), '[data-field="dose"]')).toBeNull();
     });

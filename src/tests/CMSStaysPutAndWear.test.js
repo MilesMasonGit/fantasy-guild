@@ -59,51 +59,59 @@ afterEach(() => {
 
 describe('⭐ "Stays where it stands"', () => {
     it('is unticked on a Token without it; ticking writes staysPut: true, unticking drops the key', () => {
-        const container = openEditor('token_copper_ore_vein');
+        const container = openEditor('token_blackberry_bush');
         expect(box(container).checked).toBe(false);
 
         fireEvent.click(box(container));
-        expect(useEntityStore.getState().tokens.token_copper_ore_vein.staysPut).toBe(true);
+        expect(useEntityStore.getState().tokens.token_blackberry_bush.staysPut).toBe(true);
         expect(box(container).checked).toBe(true);
 
         fireEvent.click(box(container));
-        expect(useEntityStore.getState().tokens.token_copper_ore_vein.staysPut).toBeUndefined();
-        expect(JSON.parse(JSON.stringify(syncPayload()['tokens.json'].token_copper_ore_vein))).not.toHaveProperty('staysPut');
+        expect(useEntityStore.getState().tokens.token_blackberry_bush.staysPut).toBeUndefined();
+        expect(JSON.parse(JSON.stringify(syncPayload()['tokens.json'].token_blackberry_bush))).not.toHaveProperty('staysPut');
     });
 
     it('survives Recalculate and Sync, and a reload and a second sync keep it', () => {
-        useEntityStore.getState().updateToken('token_oak_tree', { staysPut: true });
+        useEntityStore.getState().updateToken('token_blackberry_bush', { staysPut: true });
         const first = asFile(syncPayload());
-        expect(first['tokens.json'].token_oak_tree.staysPut).toBe(true);
+        expect(first['tokens.json'].token_blackberry_bush.staysPut).toBe(true);
 
         useEntityStore.getState().hydrate(workspaceFromFiles(first));
-        expect(useEntityStore.getState().tokens.token_oak_tree.staysPut).toBe(true);
+        expect(useEntityStore.getState().tokens.token_blackberry_bush.staysPut).toBe(true);
         const second = asFile(syncPayload());
         for (const f of FILES) expect(JSON.stringify(second[f], null, 2)).toBe(JSON.stringify(first[f], null, 2));
     });
 
-    it('today\'s data, which has no staysPut, still round-trips byte-identical', () => {
+    it('today\'s data, staysPut and all, still round-trips byte-identical', () => {
         const files = syncPayload();
         for (const f of FILES) expect(JSON.stringify(files[f], null, 2)).toBe(raw[f].trimEnd());
     });
 });
 
 describe('⭐ Charges on a station or a support', () => {
+    // Fixture: the owner has cleared every shipped station's Charges, so the Kitchen is given back
+    // the 5000 it once carried, to have an old number to show, clear and flag.
+    const withOldCharges = () => useEntityStore.getState().updateToken('token_grandma_s_kitchen', { uses: 5000 });
+
     it('the editor reads the game’s own rule', () => {
         expect(CMS_NEVER_WEARS_REASON).toBe(neverWearsReason);
     });
 
     it('a station offers no Charges field: it says it never wears out, and that its old number is ignored', () => {
+        withOldCharges();
         const container = openEditor('token_grandma_s_kitchen');
         const note = container.querySelector('[data-field="never-wears"]');
         expect(note).not.toBeNull();
         expect(note.textContent).toContain('Never wears out');
         expect(note.textContent).toContain('works as a station');
         expect(container.textContent).toContain('Its 5000 Charges are ignored.');
-        expect(container.querySelector('input[placeholder="unlimited"], input[type="number"][min="1"]')).toBeNull();
+        // The Charges input has no max; the Kitchen's Faster Station scale (1 to 5) is another field.
+        expect(container.querySelector('input[placeholder="unlimited"], input[type="number"][min="1"]:not([max])')).toBeNull();
+        expect(container.textContent).not.toContain('Never depletes');
     });
 
     it('Clear empties the old number, and Sync writes it unlimited', () => {
+        withOldCharges();
         const container = openEditor('token_grandma_s_kitchen');
         fireEvent.click(container.querySelector('[data-clear-charges]'));
         expect(useEntityStore.getState().tokens.token_grandma_s_kitchen.uses).toBeNull();
@@ -123,6 +131,7 @@ describe('⭐ Charges on a station or a support', () => {
     });
 
     it('the Economy Audit flags the ignored charges, as a warning', () => {
+        withOldCharges();
         const s = useEntityStore.getState();
         const rows = auditConnectivity({ items: s.items, tokens: s.tokens, recipes: Object.values(s.recipePools).flat(), effects: s.effects })
             .filter((r) => r.entityId === 'token_grandma_s_kitchen' && /Charges/.test(r.details));

@@ -4,6 +4,7 @@ import path from 'path';
 import { familyOf } from '../systems/board/SpawnerSystem.js';
 import { auditLifecycleBlocks } from '../systems/core/lifecycleAudit.js';
 import { SKILLS } from '../config/registries/skillRegistry.js';
+import { expandBearer } from '../systems/effects/effectLibrary.js';
 
 /**
  * Token Lifecycle slice 7.2 — the Mining chain, pinned from the SHIPPED data
@@ -15,6 +16,9 @@ const read = (f) => JSON.parse(fs.readFileSync(path.join(DATA, f), 'utf8'));
 const tokens = read('tokens.json');
 const items = read('items.json');
 const recipes = read('tokenRecipes.json');
+// Expanded for the audit, as the game and the CMS Economy Audit read them.
+const effects = read('effects.json');
+const expanded = Object.fromEntries(Object.entries(tokens).map(([id, t]) => [id, expandBearer(t, effects)]));
 
 const CHAIN = [
     { mine: 'token_copper_mine', name: 'Copper Mine', worked: 'token_copper_ore_vein', item: 'item_copper_ore' },
@@ -52,22 +56,27 @@ describe('The Mining chain in shipped data (7.2)', () => {
                 expect(def.requiresHero).toBe(false);
             });
 
-            it('is sold at the Shop for 15 Oak Wood, in the Mining section', () => {
-                expect(def.shop).toEqual({ price: [{ itemId: 'item_oak_wood', quantity: 15 }], section: 'mining' });
+            it('is not sold: it is built on a Wood Foundation', () => {
+                expect(def.shop).toBeUndefined();
+                const build = recipes.find((r) => r.outputs?.some((o) => o.tokenId === mine));
+                expect(build.skill).toBe('construction');
+                expect(build.foundationKinds).toEqual(['wood']);
             });
 
             it('its family is just the Token it spawns (no growth stage)', () => {
                 expect(familyOf(mine)).toEqual([worked]);
             });
 
-            it(`what it spawns is mined for ${item}, needs a pickaxe in hand (any tier), no nearby Token, and runs out`, () => {
+            it(`what it spawns is mined for ${item}, needs a pickaxe in hand (any tier), no nearby Token, and rests 60 s to refill`, () => {
                 expect(vein.config.skill).toBe('mining');
                 expect(vein.config.skillRequired).toBe(1);
                 expect(vein.config.outputs.map((o) => o.itemId)).toEqual([item]);
                 expect(vein.config.outputs[0].chance).toBe(100);
                 expect(vein.needsTool).toEqual({ kind: 'pickaxe', minTier: 1 });
                 expect(vein.acceptedTokens || []).toEqual([]);
-                expect(vein.uses).toBe(5);   // Q9 pacing: was 10
+                expect(vein.uses).toBe(5);
+                expect(vein.staysPut).toBe(true);
+                expect(vein.respawn).toMatchObject({ mode: 'refill', afterMs: 60000 });
             });
 
             it('what it spawns is not sold at the Shop itself', () => {
@@ -78,7 +87,7 @@ describe('The Mining chain in shipped data (7.2)', () => {
 
     it('the lifecycle audit has no errors about the chain', () => {
         const ids = new Set(CHAIN.flatMap((c) => [c.mine, c.worked]));
-        const findings = auditLifecycleBlocks({ tokens, items, recipes, skills: SKILLS })
+        const findings = auditLifecycleBlocks({ tokens: expanded, items, recipes, skills: SKILLS })
             .filter((f) => f.severity === 'error' || ids.has(f.entityId));
         // Only the allowed "spawns for free" warning ( is decided per Token).
         expect(findings.map((f) => [f.severity, f.entityId, f.field]).sort()).toEqual(

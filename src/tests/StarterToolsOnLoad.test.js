@@ -139,7 +139,7 @@ describe('a save from before tools were gear', () => {
         writeOldSlot();
         await load();
         const held = Object.keys(GameState.state.inventory.items).filter(id => id in SHIPPED_STARTERS);
-        expect(held.map(id => getAllItems()[id].tool.kind).sort()).toEqual(['fishing_rod', 'pickaxe', 'sickle', 'woodaxe']);
+        expect(held.map(id => getAllItems()[id].tool.kind).sort()).toEqual(['fishing_rod', 'fishing_trap', 'pickaxe', 'sickle', 'woodaxe']);
         expect(held.every(id => InventoryManager.getItemCount(id) === 1)).toBe(true);
     });
 

@@ -202,9 +202,9 @@ describe('⭐ the cartographer\'s chain, step by step, through the real systems'
 
         // 6. Buy a Wood Foundation; another purchase does not count for it.
         give('item_oak_wood', 15);
-        const quarry = Shop.buy('token_quarry');
-        expect(quarry.success, quarry.reason).toBe(true);
-        Placement.removePlacedToken(quarry.instance.id);
+        const other = Shop.buy('token_farmland');
+        expect(other.success, other.reason).toBe(true);
+        Placement.removePlacedToken(other.instance.id);
         expect(complete('cart_foundation')).toBe(false);
         give('item_oak_wood', 15);
         const foundation = buyAt('token_wood_foundation', SPOT.build);
@@ -235,13 +235,13 @@ describe('⭐ the cartographer\'s chain, step by step, through the real systems'
         inspect(placeSite());
         expect(claim('cart_inspect').rewardItems.some(r => isMapItem(getAllItems()[r.itemId]))).toBe(false);
 
-        // 10. Make a first copper tool (a Copper Pickaxe at a Furnace). The Charcoal made above
-        // did not count: it is not a tool.
+        // 10. Make a first copper tool (a Copper Pickaxe at a Copper Smithy). The Charcoal made
+        // above did not count: it is not a tool.
         expect(complete('cart_copper_tool')).toBe(false);
         GameState.heroes[0].skills.smithing = { xp: 0, level: 5 };
-        const furnace = BoardState.createTokenInstance('token_furnace', tokenStartingUses('token_furnace'));
-        expect(Placement.placeTokenAt(furnace, SPOT.forge).success).toBe(true);
-        expect(StationRecipe.setSelectedRecipe(BoardState.getTokenById(furnace.id), 'recipe_copper_pickaxe')).toBe(true);
+        const smithy = BoardState.createTokenInstance('token_copper_smithy', tokenStartingUses('token_copper_smithy'));
+        expect(Placement.placeTokenAt(smithy, SPOT.forge).success).toBe(true);
+        expect(StationRecipe.setSelectedRecipe(BoardState.getTokenById(smithy.id), 'recipe_copper_pickaxe')).toBe(true);
         give('item_copper_ingot', 4);
         expect(Flags.plant(heroId, SPOT.forge).success).toBe(true);
         expect(runUntil(() => complete('cart_copper_tool'), 2 * 60_000)).toBe(true);

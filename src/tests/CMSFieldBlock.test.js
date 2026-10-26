@@ -140,7 +140,8 @@ describe('⭐ the Crop row on a recipe a Field offers', () => {
         expect(row()).toBeTruthy();
         expect(within(row()).getByLabelText('Grows for (min)').value).toBe('60');
         expect(within(row()).getByLabelText('Load (harvests)').value).toBe('10');
-        expect(within(row()).getByText(/Grown on Fixture Field/)).toBeTruthy();
+        // The shipped Fields are listed too; the fixture's is among them.
+        expect(within(row()).getByText(/Grown on .*Fixture Field/)).toBeTruthy();
         const crop = () => useEntityStore.getState().recipePools.farming.find((r) => r.id === recipe.id).crop;
         expect(crop()).toBeUndefined();
 
@@ -172,7 +173,10 @@ describe('⭐ the Crop row on a recipe a Field offers', () => {
         expect(row()).toBeNull();
     });
 
-    it('shipped recipes are written without a crop block', () => {
-        expect(syncPayload()['tokenRecipes.json'].every((r) => !('crop' in r))).toBe(true);
+    it('shipped recipes are written with exactly the crop blocks they carry: Wheat and Lavender', () => {
+        const shipped = Object.fromEntries(JSON.parse(raw['tokenRecipes.json']).map((r) => [r.id, r]));
+        const written = syncPayload()['tokenRecipes.json'];
+        expect(written.filter((r) => 'crop' in r).map((r) => r.id).sort()).toEqual(['recipe_lavender', 'recipe_wheat']);
+        for (const r of written) expect(r.crop, r.id).toEqual(shipped[r.id].crop);
     });
 });

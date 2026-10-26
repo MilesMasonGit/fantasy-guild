@@ -9,6 +9,7 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { setUpSkillLoopsScene, skillLoopsReadout, QA_TYPES, setUpWaitingScene, addCoalVein, waitingReadout, QA_WAIT_TYPES } from '../ui/dev/skillLoopsDev.js';
 import * as Flags from '../systems/board/Flags.js';
 import { clearMat } from './fixtures/mat.js';
+import { getTokenType } from '../config/registries/tokenRegistry.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -44,11 +45,14 @@ describe('the skill loops scene', () => {
         expect(count(QA_TYPES.VEIN)).toBe(1);
 
         const lines = skillLoopsReadout();
-        expect(lines[0]).toContain('grows in 12.0 s');
+        // Two Groves at −30 % each leave 40 % of the shipped Sapling's grow time.
+        const authored = getTokenType('token_oak_sapling').grows.afterMs;
+        const secs = (ms) => `${(ms / 1000).toFixed(1)} s`;
+        expect(lines[0]).toContain(`grows in ${secs(authored * 0.4)} (${secs(authored)} authored`);
         expect(lines[1]).toContain('works in 2.0 s');
         expect(lines[1]).toContain('Stays where it stands');
-        expect(lines[2]).toMatch(/unlimited \(5000 authored, ignored\)/);
-        expect(lines[3]).toMatch(/unlimited \(1000 authored, ignored\)/);
+        expect(lines[2]).toMatch(/^Grandma's Kitchen: unlimited/);
+        expect(lines[3]).toMatch(/^Windmill: unlimited/);
 
         const vein = BoardState.tokens().find(t => t.typeId === QA_TYPES.VEIN);
         expect(Placement.moveTokenTo(vein.id, { x: vein.x + 300, y: vein.y }).success).toBe(false);
