@@ -1,4 +1,5 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { cn } from '../../utils/cn.js';
 import { HERO_HIT_PX } from './boardConstants.js';
 import { FLAG_PX } from './flagGeometry.js';
@@ -45,9 +46,10 @@ const HERO_HP_EVENTS = Object.freeze([
 /**
  * A hero's health bar, just over their figure's head, the number above it. Reads the hero's HP
  * as a flat projection of primitives (the engine mutates `hp` in place), so it redraws only when
- * the number moves. In a fight its number grows away from the enemy (`outward`).
+ * the number moves. In a fight its number grows away from the enemy (`outward`). `at` (the hero
+ * box's corner, in mat units) places it in the fight layer instead (`FightBarHost`).
  */
-function HeroHealthBar({ heroId, artPx, u, outward }) {
+function HeroHealthBar({ heroId, artPx, u, outward, at = null }) {
     const hp = useGameState(
         (state) => {
             const h = (state.heroes || []).find(x => x.id === heroId);
@@ -58,6 +60,7 @@ function HeroHealthBar({ heroId, artPx, u, outward }) {
         { deps: [heroId] }
     );
     if (!hp || !(hp.max > 0)) return null;
+    const place = heroBarPlace(artPx, u);
     return (
         <HealthBar
             who="hero"
@@ -66,10 +69,16 @@ function HeroHealthBar({ heroId, artPx, u, outward }) {
             max={hp.max}
             u={u}
             outward={outward}
-            style={heroBarPlace(artPx, u)}
+            style={at ? { ...place, left: at.left + place.left, top: at.top + place.top, pointerEvents: PLATE_POINTER } : place}
         />
     );
 }
+
+/** A bar in the fight layer takes the pointer as the fight's plate does (`FightBarHost`). */
+const PLATE_POINTER = 'var(--plate-pointer, auto)';
+
+/** Whether a press landed on this hero's own bar, wherever it is drawn. */
+const onOwnBar = (target, heroId) => target?.closest?.('[data-health-bar="hero"]')?.getAttribute('data-health-of') === heroId;
 
 /** How long a hero's bar stays up after their fight ends, in ms. */
 export const HERO_BAR_LINGER_MS = 3000;
@@ -163,6 +172,7 @@ const MatHeroBody = memo(function MatHeroBody({
     hurt = false,
     rested = false,
     plated = false,
+    fightBarHost = null,
     heroCarried = false,
     dragRef,
     dragProps
@@ -170,7 +180,8 @@ const MatHeroBody = memo(function MatHeroBody({
 
     const animArt = sprite ? resolveAnimationPath(sprite) : null;
     const staticArt = sprite ? resolveSpritePath(sprite) : null;
-    const opaque = (e) => !e.currentTarget || onFigurePart(e.currentTarget, e.target)
+    // A bar drawn in the fight layer is no part of the figure's box, but a press on it is the hero's.
+    const opaque = (e) => !e.currentTarget || onFigurePart(e.currentTarget, e.target) || onOwnBar(e.target, heroId)
         || isElementOpaqueAtPoint(e.currentTarget, e.clientX, e.clientY);
     
     const fit = useMatFit();
@@ -207,6 +218,10 @@ const MatHeroBody = memo(function MatHeroBody({
         follow();
         return EventBus.subscribe(BOARD_EVENTS.HEROES_WALKED, follow, UI_LISTENER);
     }, [followsItself, heroId]);
+
+    // In a fight, standing still, the bar draws in the fight layer over the loot; walking or carried
+    // off, it stays on the figure. Decided in the same render as the fight, so it never shows twice.
+    const barAway = !!fightBarHost && !followsItself && !heroCarried;
 
     const activeAnimation = isWalking ? 'walk' : animationState;
     const attackAt = useLastAttackAt(heroId, activeAnimation === 'combat');
@@ -287,9 +302,19 @@ const MatHeroBody = memo(function MatHeroBody({
                     )}
                 </div>
             )}
-            {barShown && barsDrawn && (
+            {barShown && barsDrawn && !barAway && (
                 // Facing their enemy, so their number grows the other way.
                 <HeroHealthBar heroId={heroId} artPx={artPx} u={plateUnit(fit || 1)} outward={fighting ? (facingLeft ? 1 : -1) : 0} />
+            )}
+            {barShown && barsDrawn && barAway && createPortal(
+                <HeroHealthBar
+                    heroId={heroId}
+                    artPx={artPx}
+                    u={plateUnit(fit || 1)}
+                    outward={facingLeft ? 1 : -1}
+                    at={{ left: boxLeft, top: boxTop }}
+                />,
+                fightBarHost
             )}
             {/* Under the feet: the art reaches past the hero's box by half their difference. */}
             <TokenNameBadge name={name} shown={rested && !heroCarried} below offset={(artPx - FLAG_PX) / 2 + (plated ? plateNameDrop(fit) : 0)} />

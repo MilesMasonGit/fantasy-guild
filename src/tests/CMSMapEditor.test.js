@@ -11,7 +11,7 @@ import { STARTING_TOKEN_CAP } from '../../cms/src/utils/constants';
 import MapEditor from '../../cms/src/components/editors/MapEditor.jsx';
 import Sidebar from '../../cms/src/components/layout/Sidebar.jsx';
 import { BASE_TOKEN_CAP } from '../systems/board/MatCap.js';
-import { blankCartography, recipeOf, MAP_TEXT } from '../systems/atlas/mapItems.js';
+import { blankCartography, recipeOf, MAP_TEXT, givenByTutorial } from '../systems/atlas/mapItems.js';
 
 /**
  * The CMS's Map editor: maps and modifiers are authored in their own editor, and
@@ -238,6 +238,23 @@ describe('the Map editor', () => {
         fireEvent.change(points, { target: { value: '20' } });
         expect(useEntityStore.getState().items[forestId].cartography.points).toBe(20);
         expect(container.textContent).toContain('20 × Fixture Tree');
+    });
+
+    it('ticks a Base Map "given by the tutorial", and a Modifier has no such box', () => {
+        const { forestId, overgrownId } = authorForestAndOvergrown();
+        useEntityStore.getState().setActiveEntity(forestId, 'map');
+        const { container, unmount } = render(React.createElement(MapEditor));
+        const box = container.querySelector('input[data-field="tutorial"]');
+        expect(box.checked).toBe(false);
+        fireEvent.click(box);
+        expect(useEntityStore.getState().items[forestId].cartography.tutorial).toBe(true);
+        expect(givenByTutorial(useEntityStore.getState().items[forestId])).toBe(true);
+        fireEvent.click(box);
+        expect('tutorial' in useEntityStore.getState().items[forestId].cartography).toBe(false);
+        unmount();
+        useEntityStore.getState().setActiveEntity(overgrownId, 'map');
+        const mod = render(React.createElement(MapEditor));
+        expect(mod.container.querySelector('input[data-field="tutorial"]')).toBeNull();
     });
 
     it('shows a Modifier\'s effects', () => {

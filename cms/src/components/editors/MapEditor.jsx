@@ -203,6 +203,25 @@ export default function MapEditor() {
         </p>
       </Section>
 
+      {!isModifier(map) && (
+        <Section title="Tutorial" icon={<ScrollText size={14} />}>
+          <label className="flex items-center gap-2 text-xs text-gray-300">
+            <input
+              type="checkbox"
+              data-field="tutorial"
+              checked={c.tutorial === true}
+              onChange={(e) => setCartography({ tutorial: e.target.checked ? true : undefined })}
+            />
+            Given by the tutorial
+          </label>
+          <p className="text-[10px] text-gray-600 leading-relaxed">
+            The cartographer hands one of each ticked map over at the Starter Camp&apos;s end (a
+            first copper tool made and a goblin beaten). While no map is ticked, he gives one of
+            each Base Map that nothing trades up into.
+          </p>
+        </Section>
+      )}
+
       <Section title="Bounties" icon={<Coins size={14} />}>
         <Field label="Bounty weight">
           <input

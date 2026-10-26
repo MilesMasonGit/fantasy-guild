@@ -14,14 +14,16 @@ import { budget, describe } from './Budget.js';
  *       cartography: { biome: 'forest', points: 40,
  *                      nodes: [{ typeId, weight }], camps: [{ typeId, count }],
  *                      treasures: [{ typeId, count }], terrain?: 'grass', water?: 0,
- *                      upcycle?: { itemId, ratio }, bountyWeight?: 1 }
+ *                      upcycle?: { itemId, ratio }, bountyWeight?: 1, tutorial?: true }>>>
+
  *
  *     Modifier (type 'modifier'):
  *       cartography: { effects: [{ kind: 'density' | 'replace' | 'threat' | 'treasure', ... }],
  *                      upcycle?: { itemId, ratio }, bountyWeight?: 1 }
  *
  * {@link recipeOf} turns one into the recipe shape `Budget.js` documents. `upcycle` (trade N of
- * this map for one of another) and `bountyWeight` are not part of the recipe.
+ * this map for one of another), `bountyWeight` and `tutorial` (the tutorial gives it) are not
+ * part of the recipe.
  *
  * ⚠️ The CMS imports this file (the Map editor's preview and its audit read a map through it, as
  * the game's boot audit does), so it must stay free of game state: no board, no Bank.
@@ -261,6 +263,11 @@ export function upcycleOf(def) {
     if (!isObject(upcycle) || typeof upcycle.itemId !== 'string' || !upcycle.itemId) return null;
     const ratio = finite(upcycle.ratio, 0);
     return ratio > 0 ? { itemId: upcycle.itemId, ratio } : null;
+}
+
+/** Whether the tutorial gives this map (a Base Map ticked "given by the tutorial" in the CMS). */
+export function givenByTutorial(def) {
+    return isBaseMap(def) && cartographyOf(def).tutorial === true;
 }
 
 /** How often a bounty pays this map, relative to the others: 1 unless the map says, 0 for any other item. */

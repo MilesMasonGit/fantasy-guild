@@ -5,7 +5,7 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import {
     isUpgradeAccessible, getUpgradeLinks, getUpgradeWebLinks, getLockDetail, LOCK_KIND, HALL_NODE,
     getUpgradePrice, getUpgradeDef,
-    ROSTER_BASE, GUILD_UPGRADES, PLACEHOLDER_PRICE_ITEM, placeholderPrices
+    ROSTER_BASE, GUILD_UPGRADES, PLACEHOLDER_PRICE_ITEM, placeholderPrices, TOKEN_CAP_PLANE_PRICES, CARTOGRAPHY_PLANE_PRICES
 } from '../config/guildUpgrades.js';
 import { getItem } from '../config/registries/itemRegistry.js';
 
@@ -205,11 +205,15 @@ describe('Guild Hall upgrades are paid in items', () => {
             expect(def.prices).toHaveLength(def.maxRank);
             expect(def.costBase).toBeUndefined();
             const freeFirst = def.id === 'roster_size' || def.id === 'wishing_well';
+            // The two tracks that open the world price their first ranks by the planes.
+            const byPlane = { token_cap: TOKEN_CAP_PLANE_PRICES, cartography_slots: CARTOGRAPHY_PLANE_PRICES }[def.id] || [];
             for (let owned = 0; owned < def.maxRank; owned++) {
                 const target = owned + 1;
                 const price = getUpgradePrice(def, owned);
                 if (freeFirst && target === 1) {
                     expect(price).toEqual([]);
+                } else if (byPlane[owned]) {
+                    expect(price).toEqual(byPlane[owned].map(([itemId, quantity]) => ({ itemId, quantity })));
                 } else {
                     expect(price).toEqual([{ itemId: PLACEHOLDER_PRICE_ITEM, quantity: 10 * target }]);
                 }

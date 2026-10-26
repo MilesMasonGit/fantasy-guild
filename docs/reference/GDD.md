@@ -396,12 +396,16 @@ A map is an item: a **Base Map** (type `map`) or a **Modifier** (type
 `modifier`), authored in the CMS's Map editor and written into `data/items.json`
 by Sync, so it banks, drops and pays out like any item. Its Cartography block
 says what it writes: a Base Map has a biome, points, weighted nodes, its own
-enemy camps and treasures, and its ground; a Modifier has effects (more of a
+enemy camps and treasures, and its ground (each biome its own look and water:
+meadow, forest, mountain, coast, flower meadow, cherry grove, Yellowstone,
+volcano, and the **Bog**, dark grass and mud with a marsh of many small ponds;
+`Budget.js`, `terrainRegistry.js`); a Modifier has effects (more of a
 node, a better node instead, an enemy camp, a treasure). The generation engine
 reads it (`systems/atlas/mapItems.js` → `Budget.js`); inspecting one in the Bank
 lists what it writes. Settling a Region takes the slotted maps from the Bank
 (`Cartography.js`). A claimed bounty pays a map 25 % of the time, drawn at the
-claim, weighted by each map's bounty weight. The simulator prices no map. Map
+claim, weighted by each map's bounty weight. A Base Map ticked **Given by the
+tutorial** is one of the first maps the tutorial pays. The simulator prices no map. Map
 bursts, the Map shop, the Explore skill and the old Map catalogue
 (`data/maps.json`) are retired; the last Map Token, **Volcanic Island**, does
 nothing and is the owner's to delete in the CMS.
@@ -699,6 +703,12 @@ duels: `concept_combat.md`, "The level table and weapon tiers").
   (Encounters, below). Boss moves will hang on this mark.
 - Each kill uses one of the enemy's uses; at 0 it's gone. Otherwise it
   respawns at full HP after a 2 s pause.
+- **First kill always drops**: a drop line ticked so in the CMS (an enemy's
+  Drops) lands for certain the first time the save kills that enemy type, then
+  at its own chance. The save remembers each type paid
+  (`collection.firstKillDrops`); a save from before the record has been paid
+  nothing, whatever its kill counts. Time away pays it as live play does.
+  *(`combat/firstKill.js`)*
 
 ### Encounters — Built (brief 220 C5)
 - **Every fight is one-on-one**, bosses and guardians included: a Token holds
@@ -966,7 +976,10 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   and is excluded from the cap.
 - **Upgrade web** (separate full-screen view): nodes unlock when linked to the
   Hall or to a bought node. Price: rank *n* costs 10 × *n* Oak Wood
-  (*placeholder*). *(`guildUpgrades.js`)*
+  (*placeholder*), except the **Token Cap** and the **Cartography Table**,
+  priced by the planes: ranks 1–2 in Oak Wood, Stone and Copper Ingots, ranks
+  3–4 in Fir Wood and Iron Ingots (first-pass numbers), later ranks the
+  placeholder. *(`guildUpgrades.js`)*
 
 | Upgrade | Ranks | Effect |
 |---|---|---|
@@ -979,9 +992,13 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
 
 - **Quests are Tokens** beside the Hall; click a finished one to claim its
   reward as loot. *(`src/systems/quests/`)*
-  - **Tutorial**: 11 steps, one at a time: recruit, plant a flag, fell an Oak
-    Tree, collect loot, open the Bank, visit the Shop, buy a Foundation, build a
-    Workbench, craft Charcoal, plant Farmland, harvest Wheat.
+  - **Tutorial** (the cartographer's, `tutorialQuests.js`): 13 steps, one at
+    a time: recruit, equip a tool, plant a flag, gather, collect loot, buy a
+    Foundation, build a station, craft, inspect an endgame site; then the
+    Starter Camp's end, **make a first tool** (copper, the camp's metal) and
+    **beat a Goblin**, which pays the **first maps** (one of each Base Map
+    ticked "given by the tutorial"; while none is ticked, each Base Map nothing
+    trades up into); then settle a Region and travel to it.
   - **Bounties**: random "collect N items" or "defeat N Goblins", each paying
     10 Oak Wood (*placeholder*). Cap 2 (+1 per Notice Board rank, max 5); a
     new one every 3 min of game time.

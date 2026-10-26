@@ -57,6 +57,14 @@ const BASE_MAPS = Object.freeze({
         id: 'dev_map_cherry_grove', name: 'Cherry Grove Map', kind: 'base', biome: 'cherry_grove', points: 20,
         nodes: [{ typeId: 'token_cherry_tree', weight: 4 }, { typeId: 'token_peach_tree', weight: 1 }]
     }),
+    bog: Object.freeze({
+        id: 'dev_map_bog', name: 'Bog Map', kind: 'base', biome: 'bog', points: 24,
+        nodes: [
+            { typeId: 'token_blackberry_bush', weight: 3 },
+            { typeId: 'token_fir_tree', weight: 1 },
+            { typeId: 'token_stone_outcrop', weight: 1 }
+        ]
+    }),
     yellowstone: Object.freeze({
         id: 'dev_map_yellowstone', name: 'Yellowstone Map', kind: 'base', biome: 'yellowstone', points: 24,
         nodes: [{ typeId: 'token_fir_tree', weight: 4 }, { typeId: 'token_stone_outcrop', weight: 1 }]

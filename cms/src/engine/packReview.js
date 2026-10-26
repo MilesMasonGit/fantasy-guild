@@ -3,7 +3,7 @@ import { currentValue, setValue, proposedValue, entryConflict, fingerprint } fro
 /**
  * Reviewing a change pack against the workspace: what each row shows, what Finish applies and
  * records, and what Undo reverts. Pure: takes a workspace (`{ items, tokens, effects, recipePools }`)
- * and returns new collections; the review page writes them to the store.
+ * (and `starterCamp`) and returns new collections; the review page writes them to the store.
  *
  * A review session is `{ entries: { [index]: { decision, appliedEarly, before, forced } } }`:
  * - `decision`: 'pending' | 'accepted' | 'rejected'
@@ -12,7 +12,7 @@ import { currentValue, setValue, proposedValue, entryConflict, fingerprint } fro
  * - `forced`: the owner chose to apply a conflicting entry anyway
  */
 
-const COLLECTION_KEYS = ['items', 'tokens', 'effects', 'recipePools'];
+const COLLECTION_KEYS = ['items', 'tokens', 'effects', 'recipePools', 'starterCamp'];
 
 export function emptySession() {
     return { entries: {} };

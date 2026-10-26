@@ -58,8 +58,8 @@ export const HALL_NODE = 'hall';
  *
  * Each upgrade carries `prices`: one entry per rank, where `prices[n - 1]` is
  * what rank n costs, as a list of `{ itemId, quantity }`. An empty list is
- * free. Every track uses the same placeholder today (rank n costs 10·n Oak Wood), but the shape lets any track ask for its own
- * items later.
+ * free. Most tracks use the same placeholder (rank n costs 10·n Oak Wood); the Token cap and the
+ * Cartography table price their first ranks by the planes ({@link planePrices}).
  */
 export const PLACEHOLDER_PRICE_ITEM = 'item_oak_wood';
 export const PLACEHOLDER_PRICE_PER_RANK = 10;
@@ -80,6 +80,32 @@ export function placeholderPrices(maxRank, {
         if (freeFirstRank && rank === 1) return [];
         return [{ itemId, quantity: perRank * rank }];
     });
+}
+
+/**
+ * Prices by the planes, for the upgrades that open the world (the Token cap, the Cartography table):
+ * one list per rank from rank 1, each `[itemId, quantity]` pairs; ranks past the list keep the
+ * placeholder until a later plane prices them. Ranks 1-2 cost plane 1's materials (oak, stone,
+ * copper), ranks 3-4 plane 2's (fir, iron). ⚠️ First-pass numbers, for the owner to tune by playing.
+ */
+export const TOKEN_CAP_PLANE_PRICES = Object.freeze([
+    [['item_oak_wood', 40], ['item_stone', 20], ['item_copper_ingot', 10]],
+    [['item_oak_wood', 80], ['item_stone', 40], ['item_copper_ingot', 20]],
+    [['item_fir_wood', 60], ['item_iron_ingot', 15]],
+    [['item_fir_wood', 120], ['item_iron_ingot', 30]]
+]);
+export const CARTOGRAPHY_PLANE_PRICES = Object.freeze([
+    [['item_oak_wood', 30], ['item_stone', 15], ['item_copper_ingot', 5]],
+    [['item_oak_wood', 60], ['item_stone', 30], ['item_copper_ingot', 10]],
+    [['item_fir_wood', 50], ['item_iron_ingot', 10]],
+    [['item_fir_wood', 100], ['item_iron_ingot', 20]]
+]);
+
+/** A track's prices: `byRank` for its first ranks, the placeholder (`placeholderPrices`) after. */
+export function planePrices(maxRank, byRank) {
+    return placeholderPrices(maxRank).map((placeholder, i) => (
+        byRank[i] ? byRank[i].map(([itemId, quantity]) => ({ itemId, quantity })) : placeholder
+    ));
 }
 
 /** What the Wishing Well adds to the Guild Hall's Passive Production: 10 Water per rank, per lap. */
@@ -232,7 +258,7 @@ export const GUILD_UPGRADES = [
         node: { x: 0.55, y: 0.55 },
         links: [HALL_NODE],
         maxRank: CARTOGRAPHY_SLOTS_MAX - CARTOGRAPHY_SLOTS_BASE,
-        prices: placeholderPrices(CARTOGRAPHY_SLOTS_MAX - CARTOGRAPHY_SLOTS_BASE),
+        prices: planePrices(CARTOGRAPHY_SLOTS_MAX - CARTOGRAPHY_SLOTS_BASE, CARTOGRAPHY_PLANE_PRICES),
         statLabel: rank => `${cartographySlotsForRank(rank)} slots`,
         nextStatLabel: rank => `${cartographySlotsForRank(rank + 1)} slots`,
         sprite: UPGRADE_SPRITES.cartography_slots
@@ -246,7 +272,7 @@ export const GUILD_UPGRADES = [
         node: { x: 0.55, y: -0.55 },
         links: [HALL_NODE],
         maxRank: TOKEN_CAP_MAX_RANK,
-        prices: placeholderPrices(TOKEN_CAP_MAX_RANK),
+        prices: planePrices(TOKEN_CAP_MAX_RANK, TOKEN_CAP_PLANE_PRICES),
         statLabel: rank => `${tokenCapForRank(rank)} Tokens`,
         nextStatLabel: rank => `${tokenCapForRank(rank + 1)} Tokens`,
         sprite: UPGRADE_SPRITES.token_cap

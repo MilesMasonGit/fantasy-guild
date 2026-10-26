@@ -1,8 +1,8 @@
 // Fantasy Guild - the cartographer's tutorial chain
 //
-// One step at a time, in the Starter Camp: heroes, flags and gathering; building and crafting; a
-// first fight; then the Atlas (an endgame site, the first maps, writing the first world and moving
-// the guild into it). Every step is completable in a new game with no dev tools once the owner's
+// One step at a time, in the Starter Camp: heroes, flags and gathering; building and crafting; an
+// endgame site; the camp's end (a first copper tool made and a goblin beaten, which pays the first
+// maps); then the Atlas (writing the first world and moving the guild into it). Every step is completable in a new game with no dev tools once the owner's
 // Starter Camp and maps exist, and every `targetType` is reported by `QuestManager` from an event
 // the engine (or, for `token_inspected`, the React layer) really publishes.
 // `QuestTutorialChain.test.js` drives each step through the real systems.
@@ -20,7 +20,7 @@
 // read from the item registry when the step is claimed ({@link firstMapsReward}).
 
 import { getAllItems } from '../../config/registries/itemRegistry.js';
-import { isBaseMap, upcycleOf } from '../atlas/mapItems.js';
+import { isBaseMap, upcycleOf, givenByTutorial } from '../atlas/mapItems.js';
 import { TUTORIAL_TEXT } from './tutorialText.js';
 
 /** The default tutorial reward, and what a step with no rewards of its own pays. */
@@ -34,18 +34,26 @@ const reward = (itemId, quantity) => Object.freeze([Object.freeze({ itemId, quan
 export const FIRST_MAPS_QUANTITY = 1;
 
 /**
- * The first maps, as `[{ itemId, quantity }]` in id order: one of each Base Map that no map trades
- * up into (the lowest tier). Empty while no map is authored, so the step then pays only its items.
+ * The first maps, as `[{ itemId, quantity }]` in id order: one of each Base Map ticked "given by
+ * the tutorial" in the CMS. ⚠️ While no map is ticked (content from before the box), one of each
+ * Base Map that no map trades up into instead, so a new game is never left without a map to settle.
+ * Empty while no map is authored, so the step then pays only its items.
  */
 export function firstMapsReward(items = getAllItems()) {
     const defs = Object.entries(items || {}).map(([id, def]) => ({ id: def?.id || id, def }));
-    const tradedUpInto = new Set(defs.map(({ def }) => upcycleOf(def)?.itemId).filter(Boolean));
-    return defs
-        .filter(({ id, def }) => isBaseMap(def) && !tradedUpInto.has(id))
+    let first = defs.filter(({ def }) => givenByTutorial(def));
+    if (!first.length) {
+        const tradedUpInto = new Set(defs.map(({ def }) => upcycleOf(def)?.itemId).filter(Boolean));
+        first = defs.filter(({ id, def }) => isBaseMap(def) && !tradedUpInto.has(id));
+    }
+    return first
         .map(({ id }) => id)
         .sort()
         .map(itemId => ({ itemId, quantity: FIRST_MAPS_QUANTITY }));
 }
+
+/** The Goblin the Starter Camp's end asks the player to beat. */
+export const TUTORIAL_GOBLIN = 'token_goblin';
 
 const STEPS = [
     {
@@ -102,15 +110,25 @@ const STEPS = [
         rewardItems: TUTORIAL_REWARD_ITEMS
     },
     {
-        id: 'cart_fight',
-        targetType: 'combat_victory',
+        id: 'cart_inspect',
+        targetType: 'token_inspected',
+        match: { landmark: true },
+        requiredCount: 1,
+        rewardItems: TUTORIAL_REWARD_ITEMS
+    },
+    // The Starter Camp's end: a first tool made (copper is the camp's only metal), then a goblin
+    // beaten, which pays the first maps.
+    {
+        id: 'cart_copper_tool',
+        targetType: 'item_produced',
+        match: { tool: true },
         requiredCount: 1,
         rewardItems: TUTORIAL_REWARD_ITEMS
     },
     {
-        id: 'cart_inspect',
-        targetType: 'token_inspected',
-        match: { landmark: true },
+        id: 'cart_goblin',
+        targetType: 'enemy_hunted',
+        match: { enemyId: TUTORIAL_GOBLIN },
         requiredCount: 1,
         rewardItems: TUTORIAL_REWARD_ITEMS,
         firstMaps: true

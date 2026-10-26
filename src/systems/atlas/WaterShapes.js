@@ -43,7 +43,7 @@ const STYLE_OF = Object.freeze({ lake: STYLE.LAKE, river: STYLE.LAKE, pool: STYL
 /** The water varieties a biome's rules may name (`Budget.BIOME_WATER`). */
 export const WATER_KIND = Object.freeze({
     LAKE: 'lake', LAKE_RIVER: 'lake_river', RIVER: 'river', SPLIT: 'split', SPRING: 'spring',
-    MOUNTAIN_RIVER: 'mountain_river', POND: 'pond', TARN: 'tarn', SULPHUR: 'sulphur'
+    MOUNTAIN_RIVER: 'mountain_river', POND: 'pond', TARN: 'tarn', SULPHUR: 'sulphur', MARSH: 'marsh'
 });
 
 /**
@@ -874,6 +874,12 @@ const LAKE_SHARE = Object.freeze([0.07, 0.17]);
  */
 const CHANNEL_HW = 16;
 
+/**
+ * A Bog's marsh: `perArea` small ponds per 640 × 400 mat units (8 on today's mat, at least 4), each
+ * lobe `r` across, two-lobed `twoLobes` of the time. More, and smaller, than a forest's one pond.
+ */
+const MARSH = Object.freeze({ perArea: 1, least: 4, r: [40, 60], twoLobes: 0.6 });
+
 /** How far past the Hall's clearing a river's straight line should pass, so it needs no bend round it. */
 const CROSSING_CLEAR = 140;
 
@@ -1185,6 +1191,7 @@ class Maker {
             case WATER_KIND.POND: return [this.small(this.between(66, 80), true)?.shape].filter(Boolean);
             case WATER_KIND.TARN: return [this.small(this.between(50, 64), false)?.shape].filter(Boolean);
             case WATER_KIND.SULPHUR: return this.sulphur();
+            case WATER_KIND.MARSH: return this.marsh();
             default: return [];
         }
     }
@@ -1300,6 +1307,19 @@ class Maker {
                 out.push({ k: SHAPE.POOL, x: round(x), y: round(y), r: round(r) });
                 break;
             }
+        }
+        return out;
+    }
+
+    /** A Bog's marsh: many small ponds over the mat, as many as its size calls for. */
+    marsh() {
+        const { w, h } = this.mat;
+        const count = Math.max(MARSH.least, Math.round(MARSH.perArea * (w * h) / (640 * 400)));
+        const out = [];
+        for (let k = 0; k < count; k++) {
+            const r = this.between(MARSH.r[0], MARSH.r[1]);
+            const pond = this.small(r, this.random() < MARSH.twoLobes);
+            if (pond) out.push(pond.shape);
         }
         return out;
     }

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { BOARD_EVENTS, ALERT } from '../../../systems/board/boardEvents.js';
 import * as SpawnerSystem from '../../../systems/board/SpawnerSystem.js';
 import * as Growth from '../../../systems/board/Growth.js';
@@ -34,6 +35,8 @@ const CHOOSE_KINDS = new Set([ALERT.CHOOSE_RECIPE, ALERT.CHOOSE_BUILD]);
 /** The disallow and demolition badges' size (`w-7 h-7`), and the gap in a row, in mat units. */
 const BADGE_U = 28;
 const ROW_GAP_U = 4;
+/** A bar in the fight layer takes the pointer as the fight's plate does (`FightBarHost`). */
+const PLATE_POINTER = 'var(--plate-pointer, auto)';
 
 /**
  * TokenBubbles: what is drawn on a Token's box besides its art. The mat shows that something is
@@ -51,7 +54,9 @@ const ROW_GAP_U = 4;
  * its Forest or a seedling: `GROWTH_ALERT_CHANGED`, likewise), or nothing chosen on a station.
  * - **Disallow and demolition marks** (the middle row): the whole time they apply.
  * - **The -1 / +50 floater**: switched off (`CHARGE_FLOATERS`); a worked Token's plate counts down.
- * - **Enemy health bar** (above the box): in a fight, and while an enemy is hovered.
+ * - **Enemy health bar** (above the box): in a fight, and while an enemy is hovered. In a fight
+ * the mat hands it `fightBar` (`{ host, left, top }`: the fight layer's node and this box's
+ * corner in mat units) and the bar draws there, over the loot (`FightBarHost`).
  * - **Hovered only**: the charges ring (not while a hero works it: the plate has them), the quest and spawner rings, the timer ring (growing, turning,
  * resting) and the recipe gear; the gear and the spawner ring in a row of their own.
  * `isHovered` is the mat's rest (`useHoverRest`), not the bare hover: the pointer has stayed on
@@ -77,6 +82,7 @@ export const TokenBubbles = ({
     gear = null,
     disallowed = false,
     marked = false,
+    fightBar = null,
     dragProps = null
 }) => {
     const typeId = token?.typeId ?? null;
@@ -219,18 +225,24 @@ export const TokenBubbles = ({
             {readTimer && isHovered && (
                 <TimerBubble read={readTimer} boxPx={boxPx} small={small} dragProps={dragProps} />
             )}
-            {showHp && (
-                <HealthBar
-                    who="enemy"
-                    of={instanceId}
-                    cur={barHp.cur}
-                    max={barHp.max}
-                    u={barUnit}
-                    outward={fight ? -(BoardState.heroBodyOf(token.heroId)?.side === -1 ? -1 : 1) : 0}
-                    style={enemyBarPlace(boxPx, barUnit)}
-                    dragProps={dragProps}
-                />
-            )}
+            {showHp && (() => {
+                const place = enemyBarPlace(boxPx, barUnit);
+                const el = (
+                    <HealthBar
+                        who="enemy"
+                        of={instanceId}
+                        cur={barHp.cur}
+                        max={barHp.max}
+                        u={barUnit}
+                        outward={fight ? -(BoardState.heroBodyOf(token.heroId)?.side === -1 ? -1 : 1) : 0}
+                        style={fightBar
+                            ? { ...place, left: fightBar.left + place.left, top: fightBar.top + place.top, pointerEvents: PLATE_POINTER }
+                            : place}
+                        dragProps={dragProps}
+                    />
+                );
+                return fightBar ? createPortal(el, fightBar.host) : el;
+            })()}
 
             {showHoverRow && (
                 <div

@@ -39,6 +39,7 @@ export const DEFAULT_BANNER_BY_BIOME = Object.freeze({
     cherry_grove: 'b_hidden_valley',
     yellowstone: 'b_desert_oasis',
     volcano: 'b_desert_monolith',
+    bog: 'b_swamp',
     swamp: 'b_swamp',
     desert: 'b_desert'
 });

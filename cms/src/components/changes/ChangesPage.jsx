@@ -3,6 +3,7 @@ import { Inbox, Archive, Check, X, Pencil, Eye, AlertTriangle, Undo2, CheckCheck
 import { useEntityStore } from '../../stores/useEntityStore';
 import { useReviewStore } from '../../stores/useReviewStore';
 import { currentValue, proposedValue, changedFields, canonicalJson } from '../../engine/changePacks';
+import { starterCampDiff } from '../../engine/starterCamp';
 import {
   rowState, accept, force, applyEarly, reject, acceptAll, rejectAll, finish, planUndo, undo,
 } from '../../engine/packReview';
@@ -19,7 +20,10 @@ const OP_LOOK = {
   edit: { word: 'Changed', color: 'var(--color-info)' },
   delete: { word: 'Deleted', color: 'var(--color-error)' },
 };
-const KIND_WORD = { item: 'Item', token: 'Token', recipe: 'Recipe', effect: 'Effect', map: 'Map' };
+const KIND_WORD = { item: 'Item', token: 'Token', recipe: 'Recipe', effect: 'Effect', map: 'Map', starterCamp: 'Layout' };
+
+/** What a row calls its entity: its name, or for the Starter Camp (one record, no name) the page's. */
+const entityName = (kind, record, id) => (kind === 'starterCamp' ? 'Starter Camp' : record?.name || id);
 
 const when = (v) => {
   if (!v) return '';
@@ -32,13 +36,15 @@ function useWorkspace() {
   const tokens = useEntityStore((s) => s.tokens);
   const effects = useEntityStore((s) => s.effects);
   const recipePools = useEntityStore((s) => s.recipePools);
-  return useMemo(() => ({ items, tokens, effects, recipePools }), [items, tokens, effects, recipePools]);
+  const starterCamp = useEntityStore((s) => s.starterCamp);
+  return useMemo(() => ({ items, tokens, effects, recipePools, starterCamp }), [items, tokens, effects, recipePools, starterCamp]);
 }
 
 /** Write review results into the workspace; an open editor on an entity that just went away is closed. */
 function writeWorkspace(ws) {
   const s = useEntityStore.getState();
   const patch = { items: ws.items, tokens: ws.tokens, effects: ws.effects, recipePools: ws.recipePools };
+  if ('starterCamp' in ws) patch.starterCamp = ws.starterCamp;
   const type = s.activeEntityType;
   const key = type === 'token' ? 'tokens' : type === 'effect' ? 'effects' : 'items';
   if (s.activeEntityId && type && !patch[key]?.[s.activeEntityId]) Object.assign(patch, { activeEntityId: null, activeEntityType: null });
@@ -188,6 +194,8 @@ function PackReview({ file, pack, onFinished, setCurrentView }) {
     if (entry.kind === 'recipe') {
       useEntityStore.getState().focusRecipe(entry.id);
       setCurrentView('recipes');
+    } else if (entry.kind === 'starterCamp') {
+      setCurrentView('starterCamp');
     } else {
       useEntityStore.getState().setActiveEntity(entry.id, entry.kind);
       setCurrentView('editor');
@@ -267,7 +275,7 @@ function EntryRow({ entry, index, state, ws, onAccept, onForce, onReject, onOpen
   const now = currentValue(ws, entry.kind, entry.id);
   const before = state.appliedEarly ? state.before : now;
   const after = state.appliedEarly ? now : proposedValue(entry);
-  const name = after?.name || before?.name || entry.id;
+  const name = entityName(entry.kind, after || before, entry.id);
   const status = state.decision === 'accepted'
     ? (state.appliedEarly ? 'Accepted, in the workspace (tweak it in the editor)' : 'Accepted')
     : state.decision === 'rejected' ? 'Rejected' : 'To decide';
@@ -310,7 +318,9 @@ function EntryRow({ entry, index, state, ws, onAccept, onForce, onReject, onOpen
         </div>
       )}
 
-      <BeforeAfter op={entry.op} before={before} after={after} />
+      {entry.kind === 'starterCamp'
+        ? <CampDiff before={before} after={after} ws={ws} />
+        : <BeforeAfter op={entry.op} before={before} after={after} />}
 
       <div className="flex gap-2">
         <button className="btn-ghost flex items-center gap-1 text-xs disabled:opacity-40 disabled:cursor-not-allowed" disabled={state.decision === 'accepted' || (state.conflict && !state.forced)} onClick={onAccept}><Check size={13} /> Accept</button>
@@ -368,6 +378,31 @@ function BeforeAfter({ op, before, after }) {
   );
 }
 
+const at = (p) => `${p.x}, ${p.y}`;
+
+/** The Starter Camp's before / after: Tokens added, moved and removed, Bank lines, the Hall, mat and banner. */
+function CampDiff({ before, after, ws }) {
+  const diff = starterCampDiff(before, after);
+  const tokenName = (id) => ws.tokens?.[id]?.name || id;
+  const itemName = (id) => ws.items?.[id]?.name || id;
+  const lines = [
+    ...diff.added.map((t) => ({ key: `a${t.typeId}${at(t)}`, color: 'var(--color-success)', text: `Added: ${tokenName(t.typeId)} at ${at(t)}` })),
+    ...diff.moved.map((m) => ({ key: `m${m.typeId}${at(m.from)}`, color: 'var(--color-info)', text: `Moved: ${tokenName(m.typeId)} from ${at(m.from)} to ${at(m.to)}` })),
+    ...diff.removed.map((t) => ({ key: `r${t.typeId}${at(t)}`, color: 'var(--color-error)', text: `Removed: ${tokenName(t.typeId)} at ${at(t)}` })),
+    ...diff.bank.map((l) => ({ key: `b${l.itemId}`, color: 'var(--color-text-secondary)', text: `Bank: ${itemName(l.itemId)}: ${l.before} → ${l.after}` })),
+    ...(diff.hall ? [{ key: 'hall', color: 'var(--color-info)', text: `Guild Hall: ${diff.hall.from ? at(diff.hall.from) : 'none'} → ${diff.hall.to ? at(diff.hall.to) : 'none'}` }] : []),
+    ...(diff.mat ? [{ key: 'mat', color: 'var(--color-text-secondary)', text: `Saved on a mat of ${diff.mat.to ? `${diff.mat.to.w} × ${diff.mat.to.h}` : 'no size'} (was ${diff.mat.from ? `${diff.mat.from.w} × ${diff.mat.from.h}` : 'none'})` }] : []),
+    ...(diff.banner ? [{ key: 'banner', color: 'var(--color-text-secondary)', text: `Banner: ${diff.banner.from || 'by biome'} → ${diff.banner.to || 'by biome'}` }] : []),
+  ];
+  return (
+    <div className="text-xs space-y-0.5" data-testid="camp-diff">
+      {lines.length === 0 && <p style={{ color: 'var(--color-text-muted)' }}>Nothing differs from the workspace.</p>}
+      {lines.map((l) => <div key={l.key} style={{ color: l.color }}>{l.text}</div>)}
+      <p style={{ color: 'var(--color-text-muted)' }}>{diff.unchanged} Token{diff.unchanged === 1 ? '' : 's'} unchanged. Points are mat units on the mat the camp was saved from.</p>
+    </div>
+  );
+}
+
 function ArchivedPack({ file, pack, onUndone }) {
   const ws = useWorkspace();
   const plan = useMemo(() => planUndo(ws, pack), [ws, pack]);
@@ -407,7 +442,7 @@ function ArchivedPack({ file, pack, onUndone }) {
           return (
             <div key={d.index} data-testid={`undo-${d.index}`} className="p-3 rounded-lg border text-xs flex items-center gap-2 flex-wrap" style={{ background: 'var(--color-bg-surface)', borderColor: p?.flagged ? 'var(--color-warning)' : 'var(--color-border-subtle)' }}>
               <span className="font-bold uppercase" style={{ color: OP_LOOK[d.op].color }}>{OP_LOOK[d.op].word}</span>
-              <span style={{ color: 'var(--color-text-primary)' }}>{entry?.value?.name || d.before?.name || d.id}</span>
+              <span style={{ color: 'var(--color-text-primary)' }}>{entityName(d.kind, entry?.value || d.before, d.id)}</span>
               <code style={{ color: 'var(--color-text-muted)' }}>{d.id}</code>
               <span className="ml-auto" style={{ color: 'var(--color-text-secondary)' }}>
                 {!d.applied ? 'Rejected: nothing to undo' : p?.flagged ? '' : 'Will be put back'}

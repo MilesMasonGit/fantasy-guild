@@ -164,7 +164,7 @@ describe('⭐ The wear noise is read from cached corners', () => {
 describe('⚠️ Coverage means what it says', () => {
     it('⭐ each look wears through about the share it asks (calibrated)', () => {
         const wearing = Object.keys(LOOKS).filter(id => wearOf(id));
-        expect(wearing.sort()).toEqual(['flower_meadow', 'forest', 'meadow', 'mountain', 'yellowstone']);
+        expect(wearing.sort()).toEqual(['bog', 'flower_meadow', 'forest', 'meadow', 'mountain', 'yellowstone']);
         for (const id of wearing) {
             const ground = lookGround(id);
             const { mask } = buildWearMask(resolveArtPixels(ground), ground);

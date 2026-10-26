@@ -134,8 +134,8 @@ const FightChip = memo(function FightChip({ tokenId, heroId, x, y, typeId, side,
 /**
  * Every fight on the mat: its plate in the work plate's place and its chip at the enemy's corner,
  * one layer over the Tokens and the loot (`MAT_Z.FIGHT`). `fights` are `{ tokenId, heroId, typeId,
- * x, y }`. The health bars are the fighters' own (`MatHero`, `TokenBubbles`); the floating numbers
- * are the effect layer's (`fightFloats.js`).
+ * x, y }`. The health bars are drawn by the fighters (`MatHero`, `TokenBubbles`) into
+ * {@link FightBarHost}; the floating numbers are the effect layer's (`fightFloats.js`).
  */
 export const FightLayer = memo(function FightLayer({ fights, onPress, platesDrawn = true, yieldToTokens = false }) {
     const fit = useMatFit() || 1;
@@ -174,6 +174,25 @@ export const FightLayer = memo(function FightLayer({ fights, onPress, platesDraw
                 </div>
             ))}
         </div>
+    );
+});
+
+/**
+ * Where the fighters' health bars draw while a fight runs: the fight layer's height
+ * (`MAT_Z.FIGHT`), over the loot on the floor, so a kill's drops never cover a number. The hero
+ * and the enemy still own their bars (their health, their press and click): each portals its bar
+ * here, placed in mat units. Always mounted, so a fight that starts finds it already there and
+ * its bars move in the same commit as the fight, never a frame late. Outside a fight a bar stays
+ * on its fighter.
+ */
+export const FightBarHost = memo(function FightBarHost({ hostRef, yieldToTokens = false }) {
+    return (
+        <div
+            ref={hostRef}
+            data-fight-bars
+            className="absolute left-0 top-0 w-0 h-0 pointer-events-none"
+            style={{ zIndex: MAT_Z.FIGHT, '--plate-pointer': yieldToTokens ? 'none' : 'auto' }}
+        />
     );
 });
 

@@ -63,6 +63,7 @@ One JSON file per pack, named after its id: `cms/incoming/<id>.json`.
   - **`op`**: `create`, `edit` or `delete`.
   - **`kind`**: `item`, `token`, `recipe`, `effect` or `map` (a Base Map or Modifier;
     its `value.type` is `map` or `modifier`; a plain item must not be one).
+    Or `starterCamp`: the Starter Camp, one record (see below).
   - **`id`**: the entity's id. For a recipe, its `id` field (recipes live in pools).
   - **`value`** (create, edit): the entity's **whole** new record, as it sits in the
     workspace. An edit replaces the record, so copy the current one and change it.
@@ -73,6 +74,16 @@ One JSON file per pack, named after its id: `cms/incoming/<id>.json`.
   - **`note`**: why this entry is here. Shown in review, never written into game data.
   - **`placeholderArt`** (optional, `true`): the sprite is a stand-in (reuse the closest
     existing sprite); the review shows it, so the art to draw is listed.
+
+### The Starter Camp
+
+One entry, `"kind": "starterCamp"`, `"id": "starterCamp"`, `create` (only when the workspace has
+never held one) or `edit`; never `delete` (the Starter Camp page's Clear does that). Its `value`
+is the whole camp in the shape of `src/config/starterCampShape.js` (the autosave's `starterCamp`):
+`{ version, savedAt, mat: { w, h }, hall: { x, y }, tokens: [{ typeId, x, y }], bank: { itemId: n }, banner? }`,
+points in mat units on the mat it was saved from, no `id`. Copy the current one and change it; the
+review lists the Tokens added, moved and removed and the Bank lines that change, and the owner can
+open the Starter Camp page to tweak it before finishing.
 
 Numbers are a proposal: the owner runs Recalculate after accepting.
 

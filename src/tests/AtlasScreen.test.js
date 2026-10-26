@@ -114,7 +114,7 @@ describe('the upgrades: Token Cap and Cartography Table (D-9)', () => {
     it('the Token Cap rank raises matCap() by 16 a rank, from 128 to 256', () => {
         expect(MatCap.matCap()).toBe(TOKEN_CAP_BASE);
         expect(TOKEN_CAP_BASE).toBe(128);
-        InventoryManager.addItem('item_oak_wood', 1000);
+        for (const id of ['item_oak_wood', 'item_stone', 'item_copper_ingot', 'item_fir_wood', 'item_iron_ingot']) InventoryManager.addItem(id, 2000);
         expect(GuildUpgradeManager.purchase('token_cap').success).toBe(true);
         expect(MatCap.matCap()).toBe(144);
         expect(MatCap.canPlaceMore(144)).toBe(true);
@@ -136,11 +136,18 @@ describe('the upgrades: Token Cap and Cartography Table (D-9)', () => {
         expect(MatCap.matCap()).toBe(160);
     });
 
-    it('prices both tracks as the placeholders: rank n costs 10 × n Oak Wood', () => {
+    it('prices both tracks by the planes: ranks 1-2 in oak, stone and copper, 3-4 in fir and iron, later ranks the placeholder', () => {
+        const itemsOf = (price) => price.map(p => p.itemId).sort();
         for (const id of ['token_cap', 'cartography_slots']) {
             const def = getUpgradeDef(id);
-            expect(def.prices.map(p => p[0].quantity)).toEqual(Array.from({ length: def.maxRank }, (_, i) => 10 * (i + 1)));
-            expect(def.prices.every(p => p[0].itemId === 'item_oak_wood')).toBe(true);
+            expect(def.prices).toHaveLength(def.maxRank);
+            for (const rank of [1, 2]) expect(itemsOf(def.prices[rank - 1]), `${id} ${rank}`).toEqual(['item_copper_ingot', 'item_oak_wood', 'item_stone']);
+            for (const rank of [3, 4]) expect(itemsOf(def.prices[rank - 1]), `${id} ${rank}`).toEqual(['item_fir_wood', 'item_iron_ingot']);
+            for (let rank = 5; rank <= def.maxRank; rank++) expect(def.prices[rank - 1], `${id} ${rank}`).toEqual([{ itemId: 'item_oak_wood', quantity: 10 * rank }]);
+            // Each rank of a plane costs more than the one before it.
+            for (const [a, b] of [[0, 1], [2, 3]]) {
+                for (const p of def.prices[b]) expect(p.quantity).toBeGreaterThan(def.prices[a].find(q => q.itemId === p.itemId).quantity);
+            }
         }
         expect(getUpgradeDef('token_cap').maxRank).toBe(8);
         expect(getUpgradeDef('cartography_slots').maxRank).toBe(CARTOGRAPHY_SLOTS_MAX - CARTOGRAPHY_SLOTS_BASE);

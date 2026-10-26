@@ -5,10 +5,18 @@
  * Pure: no store, no fetch, no fs.
  */
 
+import { normaliseStarterCamp, isEmptyStarterCamp } from '../../../src/config/starterCampShape.js';
+
 export const PACK_FORMAT = 'fantasy-guild-change-pack';
 export const PACK_VERSION = 1;
 export const OPS = Object.freeze(['create', 'edit', 'delete']);
-export const KINDS = Object.freeze(['item', 'token', 'recipe', 'effect', 'map']);
+export const KINDS = Object.freeze(['item', 'token', 'recipe', 'effect', 'map', 'starterCamp']);
+
+/**
+ * The Starter Camp is one record, not a collection: its entry's id is always this, its value the
+ * Starter Camp page's shape (`src/config/starterCampShape.js`), never with an `id` of its own.
+ */
+export const STARTER_CAMP_ID = 'starterCamp';
 
 const PACK_ID = /^[a-z0-9][a-z0-9_-]{0,79}$/i;
 const FINGERPRINT = /^fp:[0-9a-f]{16}$/;
@@ -51,6 +59,7 @@ export function collectionOf(kind) {
     if (kind === 'token') return 'tokens';
     if (kind === 'effect') return 'effects';
     if (kind === 'recipe') return 'recipePools';
+    if (kind === 'starterCamp') return 'starterCamp';
     return null;
 }
 
@@ -98,12 +107,21 @@ export function validatePack(pack, { fileName } = {}) {
         if (op === 'create' || op === 'edit') {
             if (!isPlainObject(value)) {
                 errors.push(`${label}: a ${op} needs "value", the entity's full new record.`);
+            } else if (kind === 'starterCamp') {
+                if (value.id !== undefined) errors.push(`${label}: the Starter Camp carries no "value.id".`);
+                else if (isEmptyStarterCamp(normaliseStarterCamp(value))) {
+                    errors.push(`${label}: this camp has no Tokens and an empty Bank; the Starter Camp page's Clear does that.`);
+                }
             } else {
                 if (value.id !== undefined && value.id !== id) errors.push(`${label}: "value.id" is "${value.id}" but the entry's "id" is "${id}".`);
                 if (kind === 'map' && !isMapValue(value)) errors.push(`${label}: a map's "value.type" must be "map" or "modifier".`);
                 if (kind === 'item' && isMapValue(value)) errors.push(`${label}: this is a map or modifier; use "kind": "map".`);
                 if (kind === 'recipe' && (typeof value.skill !== 'string' || !value.skill)) errors.push(`${label}: a recipe's "value.skill" must name its skill pool.`);
             }
+        }
+        if (kind === 'starterCamp') {
+            if (id !== STARTER_CAMP_ID) errors.push(`${label}: a Starter Camp entry's "id" must be "${STARTER_CAMP_ID}".`);
+            if (op === 'delete') errors.push(`${label}: the Starter Camp cannot be deleted by a pack; edit it instead.`);
         }
         if (op === 'delete' && value !== undefined) errors.push(`${label}: a delete carries no "value".`);
         if (op === 'edit' || op === 'delete') {
@@ -134,6 +152,8 @@ function findRecipe(pools, id) {
 
 /** The workspace's current value for one entity, or null when it has none. */
 export function currentValue(workspace, kind, id) {
+    // In its one shape, so a fingerprint taken from a raw `data/starterCamp.json` matches the store's.
+    if (kind === 'starterCamp') return normaliseStarterCamp(workspace?.starterCamp);
     if (kind === 'recipe') return findRecipe(workspace?.recipePools, id)?.recipe ?? null;
     const key = collectionOf(kind);
     return (key && workspace?.[key]?.[id]) ?? null;
@@ -144,6 +164,7 @@ export function currentValue(workspace, kind, id) {
  * as a patch for the store. An edited entity keeps its place in its list; a new one goes last.
  */
 export function setValue(workspace, kind, id, value) {
+    if (kind === 'starterCamp') return { starterCamp: value ? normaliseStarterCamp(value) : null };
     if (kind === 'recipe') {
         const pools = { ...(workspace?.recipePools || {}) };
         const found = findRecipe(pools, id);
@@ -166,6 +187,7 @@ export function setValue(workspace, kind, id, value) {
 /** The value an entry asks for: the pack's value (with its id), or null for a delete. */
 export function proposedValue(entry) {
     if (entry.op === 'delete') return null;
+    if (entry.kind === 'starterCamp') return normaliseStarterCamp(entry.value);
     return { ...entry.value, id: entry.id };
 }
 
@@ -192,9 +214,9 @@ export function changedFields(before, after) {
     return [...keys].filter((k) => canonicalJson(before?.[k]) !== canonicalJson(after?.[k])).sort();
 }
 
-/** Build the workspace a pack was made against from the game's `data/` files (as `/api/load-game-data` does). */
-export function workspaceFromDataFiles({ items = {}, tokens = {}, effects = {}, tokenRecipes = [] }) {
+/** Build the workspace a pack was made against from the game's `data/` files (as `/api/load-game-data` and the store's load do). */
+export function workspaceFromDataFiles({ items = {}, tokens = {}, effects = {}, tokenRecipes = [], starterCamp = null }) {
     const recipePools = {};
     for (const recipe of tokenRecipes || []) (recipePools[recipe.skill || 'general'] ||= []).push(recipe);
-    return { items, tokens, effects, recipePools };
+    return { items, tokens, effects, recipePools, starterCamp: normaliseStarterCamp(starterCamp) };
 }

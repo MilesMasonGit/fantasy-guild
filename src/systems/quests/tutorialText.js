@@ -55,15 +55,22 @@ export const TUTORIAL_TEXT = Object.freeze({
             says: 'Now make a thing that was not there before. That is the whole trick, really.',
             instruction: 'Click your new station, choose a recipe, and let a Hero craft it once.'
         }),
-        cart_fight: Object.freeze({
-            title: 'Win a Fight',
-            says: 'Something out there bites. Gently, mostly. Show it the door.',
-            instruction: 'Plant a flag near an enemy and win one fight.'
-        }),
         cart_inspect: Object.freeze({
             title: 'Inspect an Old Site',
             says: 'Those old stones about the camp. I built them. Or someone like me did. Look closer.',
             instruction: 'Click one of the old sites on the mat to see what it asks for.'
+        }),
+        // ⚠️ A draft: the owner rewrites it at the eye-check.
+        cart_copper_tool: Object.freeze({
+            title: 'Make a Copper Tool',
+            says: 'Copper. The first metal, or the last one I remember. Melt it down and give it an edge.',
+            instruction: 'Mine copper ore, smelt it into ingots at a Furnace, then make a copper tool there: a Pickaxe, a Woodaxe or a Sickle.'
+        }),
+        // ⚠️ A draft: the owner rewrites it at the eye-check.
+        cart_goblin: Object.freeze({
+            title: 'Beat a Goblin',
+            says: 'The goblins by the camp took something of mine. Maps, I think. Three of them. Fetch them back.',
+            instruction: 'Give a Hero food first (drag it from the Item Bank onto them): goblins hit hard. Then plant their flag by the Goblin Camp and beat one goblin.'
         }),
         cart_settle: Object.freeze({
             title: 'Write a World',

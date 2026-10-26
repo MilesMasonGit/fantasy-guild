@@ -127,6 +127,7 @@ export const MatToken = React.memo(function MatToken({
     onModeClick,
     dragging = false,
     plated = false,
+    fightBarHost = null,
     onPress
 }) {
     // Perf draw switches: each only stops DRAWING (see drawSwitches.js).
@@ -332,6 +333,11 @@ export const MatToken = React.memo(function MatToken({
                 : `left ${SLIDE_MS}ms ${SLIDE_EASE}, top ${SLIDE_MS}ms ${SLIDE_EASE}`
     };
     const hidden = dragging;
+    // In a fight the enemy's bar draws in the fight layer (`FightBarHost`), placed by this box's corner.
+    const fightBar = React.useMemo(
+        () => (fightBarHost && x != null && y != null ? { host: fightBarHost, left: x - boxHalf, top: y - boxHalf } : null),
+        [fightBarHost, x, y, boxHalf]
+    );
 
     const artRef = React.useRef(null);
     const overlayRef = React.useRef(null);
@@ -602,6 +608,7 @@ export const MatToken = React.memo(function MatToken({
                     gear={gear}
                     disallowed={!!detail?.disallowed}
                     marked={!!detail?.marked}
+                    fightBar={fightBar}
                     dragProps={dragProps}
                 />}
 

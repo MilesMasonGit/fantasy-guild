@@ -155,8 +155,8 @@ export const QuestManager = {
             // A finished cycle: gathering, crafting, exploring, a kill. A failed
             // cycle counts for nothing. The Token's type and skill, whether it was
             // gathering (a resource that is not an endgame site) or crafting (a station
-            // that is not a Foundation), and each item it made, let a step ask for one
-            // kind of work.
+            // that is not a Foundation), and each item it made (and whether it is a
+            // gathering tool), let a step ask for one kind of work.
             EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, (data) => {
                 if (data?.failed) return;
                 const def = getTokenType(data?.typeId);
@@ -168,7 +168,7 @@ export const QuestManager = {
                     crafted: def?.tokenType === 'station' && !def.foundation
                 });
                 for (const itemId of new Set(data?.produced || [])) {
-                    this.reportProgress('item_produced', 1, { itemId });
+                    this.reportProgress('item_produced', 1, { itemId, tool: !!toolOf(getItem(itemId)) });
                 }
             }),
             EventBus.subscribe(BOARD_EVENTS.SPRITE_COLLECTED, (data) => {
