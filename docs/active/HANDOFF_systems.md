@@ -34,20 +34,20 @@ with `git -C .claude/worktrees/<name> status --short` and
   catch pools), CombatChain (audit doesn't expand effect refs), …).
 - Then **S9**: a play-through of every loop with screenshots for the owner.
 - Then **brief 240 K1–K3** content packs (after the skill-loops Sync, so ids and
-  fingerprints follow it; K1 ticks "Given by the tutorial" on Forest, Mountain,
+  fingerprints follow it; ⚠️ the Starter Camp's opening Bank needs food (the
+  tutorial's goblin step tells the player to feed a hero); K1 ticks "Given by the tutorial" on Forest, Mountain,
   Coast; Iron Anvil becomes an Iron Smithy; other tree species converted to the
   Oak shape; Lavender found wild).
 
 ## In flight
 
-- **T-250** (seed `Math.random` before each test) on `fix/t250-seed-tests`
-  (`ts`): builder running. Five luck-dependent tests seen flaking.
+Nothing. T-250 (tests seeded per test, `src/tests/setup/seededRandom.js`)
+merged 03bec256.
 
-## Worktrees to clean (merged)
+## Worktrees
 
-`sc`, `sg`, `su`, `st`, `se`, `sf`, `sx`, `sl`, `sw`, `sr`, `sf2`, `sp`, `sb6`,
-`sm`, `s5b`, `sfa`, `sor`, `ssp`, `sxp`, `s7`, `ke`, `lb`: junctions first
-(`cmd //c rmdir` both), then `git worktree remove`. Never `rm -rf`.
+All Systems worktrees removed 2026-10-25 (junctions first, real
+`node_modules` checked intact). Branches kept locally.
 
 ## Lessons
 
