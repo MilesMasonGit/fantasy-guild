@@ -43,8 +43,10 @@ C2; C0 (the test content pack, accepted by the director) after C2; C6 last.
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
 | K0: engine gaps (packs carry the Starter Camp; the tutorial gives the ticked maps after a copper tool and a goblin; first-kill drops; the Bog; Hall prices by plane) | builder | `content/engine-gaps` (`ke`) | **merged** 63c8d4c0 (6537 tests, cycles, build; same work; draw no regression). Owner by phone: Bog ok (bright ponds for now), Hall prices ok (tune later), tutorial lines ok ([record](../archive/eyecheck/2026-10-25_content-k0.md)) | Sun | Sun |
-| K1: pack 1, the Starter Camp and plane 1 (owner reviews) | builder writes | `cms/incoming/2026-10-26-basic-content-k1.json` (55 entries, format OK) | **waiting for the owner in the CMS inbox**. Owner 2026-10-26: plane-1 bosses hit +1 harder (on top of their kind: the Goblin Chief now hits 4), blends busier than ~6 accepted, berry bushes and cherry/peach trees rest and refill, boss moves in a follow-up pack (K1b). Food: 15 Shrimp in the opening Bank (measured) | Mon | |
-| K2, K3: packs 2 (plane 2) and 3 (modifiers and caches) | builder writes | — | queued after K1 | | |
+| K1: pack 1, the Starter Camp and plane 1 | builder writes, owner accepts | `cms/incoming/applied/2026-10-26-basic-content-k1.json` | **synced by the owner** 72ce473d (2026-10-26); id-diff: only the pack's entries changed. 24 content-pinned tests red, being fixed (K1c) | Mon | Mon |
+| K1c: tests after the K1 Sync (incl. two ContentRules findings: the Copper Chest's 5 s cycle vs the 10–30 s band; the Bee's stealth style) | builder | `fix/content-tests-k1` (`ck`) | building | Mon | |
+| K2: pack 2, plane 2 (owner reviews) | builder writes | `cms/incoming/` | building | Mon | |
+| K3, K1b: pack 3 (modifiers and caches); plane-1 boss moves (owner 2026-10-26) | builder writes | — | queued after K2 | | |
 | C6c: fight bars and numbers drawn above floor loot (owner 2026-10-25) | builder | `systems/fight-bars-over-loot` (`lb`) | **merged** a938c66c (6512 tests + 1 luck-dependent EnemyKinds, green 16/16 alone; cycles; build; same work; drag bench flags 200/200 on a re-run) | Sun | Sun |
 
 ## Systems director, skill loops (brief 230; owner 2026-10-24: next, beside the rest of combat)
