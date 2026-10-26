@@ -1628,5 +1628,139 @@
     ],
     "autoSyncId": true,
     "id": "effect_copper_armour"
+  },
+  "effect_fire_elemental_ambush": {
+    "name": "Fire Elemental Ambush",
+    "statements": [
+      {
+        "id": "stm_k2_fire_ambush",
+        "keyword": "spawns",
+        "payload": {
+          "typeId": "token_fire_elemental",
+          "placement": "nearest_free",
+          "chance": 2
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": null,
+        "target": null,
+        "when": {
+          "event": "SELF_CYCLE_COMPLETE",
+          "scope": "self",
+          "cooldownMs": 0
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_fire_elemental_ambush"
+  },
+  "effect_fir_forest_growth": {
+    "name": "Fir Forest Growth",
+    "statements": [
+      {
+        "id": "stm_k2_fir_forest_growth",
+        "keyword": "provides",
+        "payload": {
+          "type": "GROW_TIME",
+          "bucket": "percentage",
+          "value": -0.25
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "tag",
+          "value": "Fir"
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_fir_forest_growth"
+  },
+  "effect_anglers_calm": {
+    "name": "Angler's Calm",
+    "statements": [
+      {
+        "id": "stm_k2_anglers_calm",
+        "keyword": "provides",
+        "payload": {
+          "type": "YIELD",
+          "bucket": "percentage",
+          "value": 0.1,
+          "category": "fishing"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_anglers_calm"
+  },
+  "effect_grape_juice_drink": {
+    "name": "Grape Juice Drink",
+    "statements": [
+      {
+        "id": "stm_k2_grape_juice_drink",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_anglers_calm",
+          "scale": 1,
+          "durationMs": 0,
+          "forCycle": true,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": {
+          "role": "actor"
+        },
+        "when": {
+          "event": "WORK_START",
+          "scope": "self"
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_grape_juice_drink"
+  },
+  "effect_iron_armour": {
+    "name": "Iron Plate",
+    "statements": [
+      {
+        "id": "stm_k2_iron_armor",
+        "keyword": "provides",
+        "payload": {
+          "type": "ARMOR",
+          "bucket": "flat",
+          "value": 2
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_iron_armour"
   }
 }

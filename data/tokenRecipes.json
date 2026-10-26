@@ -693,6 +693,410 @@
     }
   },
   {
+    "id": "recipe_iron_pickaxe",
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "name": "Iron Pickaxe",
+    "skill": "smithing",
+    "levelRequirement": 15,
+    "inputs": [
+      {
+        "itemId": "item_iron_ingot",
+        "quantity": 4
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_iron_pickaxe",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 19000,
+    "xp": 5,
+    "stationKinds": [
+      "smithy"
+    ],
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_iron_woodaxe",
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "name": "Iron Woodaxe",
+    "skill": "smithing",
+    "levelRequirement": 15,
+    "inputs": [
+      {
+        "itemId": "item_iron_ingot",
+        "quantity": 3
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_iron_woodaxe",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 19000,
+    "xp": 5,
+    "stationKinds": [
+      "smithy"
+    ],
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_iron_sickle",
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "name": "Iron Sickle",
+    "skill": "smithing",
+    "levelRequirement": 15,
+    "inputs": [
+      {
+        "itemId": "item_iron_ingot",
+        "quantity": 2
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_iron_sickle",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 19000,
+    "xp": 5,
+    "stationKinds": [
+      "smithy"
+    ],
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_iron_dagger",
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "name": "Iron Dagger",
+    "skill": "smithing",
+    "levelRequirement": 16,
+    "inputs": [
+      {
+        "itemId": "item_iron_ingot",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_iron_dagger",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 19000,
+    "xp": 6,
+    "stationKinds": [
+      "smithy"
+    ],
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_iron_sword",
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "name": "Iron Sword",
+    "skill": "smithing",
+    "levelRequirement": 17,
+    "inputs": [
+      {
+        "itemId": "item_iron_ingot",
+        "quantity": 2
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_iron_sword",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 20000,
+    "xp": 6,
+    "stationKinds": [
+      "smithy"
+    ],
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_iron_cleaver",
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "name": "Iron Cleaver",
+    "skill": "smithing",
+    "levelRequirement": 18,
+    "inputs": [
+      {
+        "itemId": "item_iron_ingot",
+        "quantity": 2
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_iron_cleaver",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 20000,
+    "xp": 7,
+    "stationKinds": [
+      "smithy"
+    ],
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_iron_bow",
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "name": "Iron Bow",
+    "skill": "smithing",
+    "levelRequirement": 18,
+    "inputs": [
+      {
+        "itemId": "item_iron_ingot",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_fir_wood",
+        "quantity": 2
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_iron_bow",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 20000,
+    "xp": 7,
+    "stationKinds": [
+      "smithy"
+    ],
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_iron_wand",
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "name": "Iron Wand",
+    "skill": "smithing",
+    "levelRequirement": 18,
+    "inputs": [
+      {
+        "itemId": "item_iron_ingot",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_fir_wood",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_iron_wand",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 20000,
+    "xp": 7,
+    "stationKinds": [
+      "smithy"
+    ],
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_iron_helmet",
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "name": "Iron Helmet",
+    "skill": "smithing",
+    "levelRequirement": 19,
+    "inputs": [
+      {
+        "itemId": "item_iron_ingot",
+        "quantity": 3
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_iron_helmet",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 20000,
+    "xp": 7,
+    "stationKinds": [
+      "smithy"
+    ],
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_iron_greatsword",
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "name": "Iron Greatsword",
+    "skill": "smithing",
+    "levelRequirement": 20,
+    "inputs": [
+      {
+        "itemId": "item_iron_ingot",
+        "quantity": 4
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_iron_greatsword",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 20000,
+    "xp": 8,
+    "stationKinds": [
+      "smithy"
+    ],
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_iron_chestplate",
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "name": "Iron Chestplate",
+    "skill": "smithing",
+    "levelRequirement": 21,
+    "inputs": [
+      {
+        "itemId": "item_iron_ingot",
+        "quantity": 5
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_iron_chestplate",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 21000,
+    "xp": 9,
+    "stationKinds": [
+      "smithy"
+    ],
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
     "name": "Dough",
     "requiresContext": [],
     "inputs": [
@@ -1071,6 +1475,78 @@
     }
   },
   {
+    "id": "recipe_cooked_trout",
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "name": "Cooked Trout",
+    "skill": "cooking",
+    "levelRequirement": 15,
+    "inputs": [
+      {
+        "itemId": "item_trout",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_cooked_trout",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 19000,
+    "xp": 5,
+    "stationKinds": [
+      "kitchen"
+    ],
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_grape_juice",
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "name": "Grape Juice",
+    "skill": "cooking",
+    "levelRequirement": 15,
+    "inputs": [
+      {
+        "itemId": "item_grapes",
+        "quantity": 4
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_grape_juice",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 19000,
+    "xp": 5,
+    "stationKinds": [
+      "brewery"
+    ],
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
     "id": "recipe_muily2pf",
     "name": "Charcoal",
     "skill": "crafting",
@@ -1305,6 +1781,105 @@
     "durationMs": 18000,
     "stationChargeCost": 1,
     "xp": 3,
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_leather",
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "name": "Leather",
+    "skill": "crafting",
+    "levelRequirement": 15,
+    "inputs": [
+      {
+        "itemId": "item_lizard_scale",
+        "quantity": 2
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_leather",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 19000,
+    "xp": 5,
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_leather_hat",
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "name": "Leather Hat",
+    "skill": "crafting",
+    "levelRequirement": 15,
+    "inputs": [
+      {
+        "itemId": "item_leather",
+        "quantity": 3
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_leather_hat",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 19000,
+    "xp": 5,
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_leather_chest",
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "name": "Leather Chest",
+    "skill": "crafting",
+    "levelRequirement": 16,
+    "inputs": [
+      {
+        "itemId": "item_leather",
+        "quantity": 5
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_leather_chest",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 19000,
+    "xp": 6,
     "sim": {
       "tempo": "medium",
       "purpose": "iph"
@@ -2210,6 +2785,201 @@
     }
   },
   {
+    "id": "recipe_build_iron_smithy",
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "name": "Build Iron Smithy",
+    "skill": "construction",
+    "levelRequirement": 15,
+    "inputs": [
+      {
+        "itemId": "item_iron_ingot",
+        "quantity": 8
+      },
+      {
+        "itemId": "item_fir_wood",
+        "quantity": 10
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_iron_smithy",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 120000,
+    "xp": 20,
+    "foundationKinds": [
+      "stone"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_iron_furnace",
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "name": "Build Iron Furnace",
+    "skill": "construction",
+    "levelRequirement": 15,
+    "inputs": [
+      {
+        "itemId": "item_iron_ingot",
+        "quantity": 5
+      },
+      {
+        "itemId": "item_stone",
+        "quantity": 10
+      },
+      {
+        "itemId": "item_fir_wood",
+        "quantity": 5
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_iron_furnace",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 120000,
+    "xp": 20,
+    "foundationKinds": [
+      "stone"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_fir_workbench",
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "name": "Build Fir Workbench",
+    "skill": "construction",
+    "levelRequirement": 15,
+    "inputs": [
+      {
+        "itemId": "item_fir_wood",
+        "quantity": 15
+      },
+      {
+        "itemId": "item_iron_ingot",
+        "quantity": 2
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_fir_workbench",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 90000,
+    "xp": 20,
+    "foundationKinds": [
+      "wood"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_tannery",
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "name": "Build Tannery",
+    "skill": "construction",
+    "levelRequirement": 15,
+    "inputs": [
+      {
+        "itemId": "item_fir_wood",
+        "quantity": 10
+      },
+      {
+        "itemId": "item_stone",
+        "quantity": 4
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_tannery",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 90000,
+    "xp": 20,
+    "foundationKinds": [
+      "wood"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_fir_forest",
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "name": "Build Fir Forest",
+    "skill": "construction",
+    "levelRequirement": 15,
+    "inputs": [
+      {
+        "itemId": "item_fir_seedling",
+        "quantity": 3
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_fir_forest",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "xp": 20,
+    "foundationKinds": [
+      "farmland"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
     "id": "recipe_birdwatcher",
     "name": "Birdwatcher",
     "skill": "alchemy",
@@ -2241,6 +3011,46 @@
     ],
     "durationMs": 16000,
     "stationChargeCost": 1,
+    "xp": 2,
+    "stationKinds": [
+      "alchemy_table"
+    ],
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_elixir_of_ironskin",
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "name": "Elixir of Ironskin",
+    "skill": "alchemy",
+    "levelRequirement": 1,
+    "inputs": [
+      {
+        "itemId": "item_lavender",
+        "quantity": 2
+      },
+      {
+        "itemId": "item_water",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_elixir_of_ironskin",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 16000,
     "xp": 2,
     "stationKinds": [
       "alchemy_table"

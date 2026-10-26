@@ -321,8 +321,8 @@
     "stackable": true,
     "restoreAmount": 5,
     "equipSlot": "food",
-    "value": null,
-    "valueSource": null,
+    "value": 1,
+    "valueSource": "token_grapevine",
     "autoSyncId": true,
     "id": "item_grapes"
   },
@@ -438,8 +438,8 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 4,
-    "valueSource": "token_fir_forest",
+    "value": 1,
+    "valueSource": "token_fir_tree",
     "autoSyncId": true,
     "id": "item_fir_wood"
   },
@@ -891,8 +891,8 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": null,
-    "valueSource": null,
+    "value": 29,
+    "valueSource": "token_fir_tree",
     "autoSyncId": true,
     "id": "item_fir_seedling"
   },
@@ -1246,7 +1246,7 @@
   "map_yellowstone": {
     "id": "map_yellowstone",
     "name": "Yellowstone Map",
-    "description": "Fir-clad hills around steaming sulphur springs.",
+    "description": "Fir-clad hills around steaming sulphur springs, with wild grapevines on the slopes. Sulphur Lizards bask on the rocks; a Big Lizard keeps the warmest stone.",
     "type": "map",
     "tags": [],
     "sprite": "t_map_swamp",
@@ -1254,26 +1254,48 @@
     "autoSyncId": false,
     "cartography": {
       "biome": "yellowstone",
-      "points": 24,
+      "points": 61,
       "nodes": [
         {
           "typeId": "token_fir_tree",
-          "weight": 4
+          "weight": 12
+        },
+        {
+          "typeId": "token_fir_forest",
+          "weight": 1
+        },
+        {
+          "typeId": "token_grapevine",
+          "weight": 3
         },
         {
           "typeId": "token_stone_outcrop",
-          "weight": 1
+          "weight": 2
         }
       ],
-      "camps": [],
-      "treasures": [],
+      "camps": [
+        {
+          "typeId": "token_sulphur_rocks",
+          "count": 1
+        },
+        {
+          "typeId": "token_basking_stone",
+          "count": 1
+        }
+      ],
+      "treasures": [
+        {
+          "typeId": "token_iron_chest",
+          "count": 1
+        }
+      ],
       "bountyWeight": 0
     }
   },
   "map_volcano": {
     "id": "map_volcano",
     "name": "Volcano Map",
-    "description": "Black rock and ash, rich in coal and iron.",
+    "description": "Black rock and ash, rich in coal and iron. Fire Elementals flicker in the vents, and their Chief smoulders in a crater.",
     "type": "map",
     "tags": [],
     "sprite": "t_map_volcano",
@@ -1281,8 +1303,12 @@
     "autoSyncId": false,
     "cartography": {
       "biome": "volcano",
-      "points": 20,
+      "points": 61,
       "nodes": [
+        {
+          "typeId": "token_iron_ore_vein",
+          "weight": 3
+        },
         {
           "typeId": "token_coal_vein",
           "weight": 2
@@ -1290,14 +1316,24 @@
         {
           "typeId": "token_stone_outcrop",
           "weight": 2
-        },
-        {
-          "typeId": "token_iron_ore_vein",
-          "weight": 1
         }
       ],
-      "camps": [],
-      "treasures": [],
+      "camps": [
+        {
+          "typeId": "token_ember_vents",
+          "count": 1
+        },
+        {
+          "typeId": "token_smoking_crater",
+          "count": 1
+        }
+      ],
+      "treasures": [
+        {
+          "typeId": "token_iron_chest",
+          "count": 1
+        }
+      ],
       "bountyWeight": 0
     }
   },
@@ -1367,8 +1403,8 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "hand",
-    "value": null,
-    "valueSource": null,
+    "value": 152,
+    "valueSource": "recipe_iron_pickaxe",
     "autoSyncId": true,
     "id": "item_iron_pickaxe",
     "tool": {
@@ -2002,5 +2038,315 @@
       }
     ],
     "id": "item_copper_chestplate"
+  },
+  "map_bog": {
+    "name": "Bog Map",
+    "description": "Murky water, reeds and mist. Wild lavender grows on the hummocks and trout lurk in the pools; frogs croak everywhere, and one of them is poisonous.",
+    "type": "map",
+    "tags": [],
+    "sprite": "t_map_swamp",
+    "stackable": true,
+    "autoSyncId": false,
+    "cartography": {
+      "biome": "bog",
+      "points": 40,
+      "nodes": [
+        {
+          "typeId": "token_wild_lavender",
+          "weight": 5
+        },
+        {
+          "typeId": "token_bog_pool",
+          "weight": 3
+        }
+      ],
+      "camps": [
+        {
+          "typeId": "token_frog_pond",
+          "count": 1
+        },
+        {
+          "typeId": "token_toxic_pool",
+          "count": 1
+        }
+      ],
+      "treasures": [
+        {
+          "typeId": "token_iron_chest",
+          "count": 1
+        }
+      ],
+      "bountyWeight": 0
+    },
+    "id": "map_bog"
+  },
+  "item_grape_seed": {
+    "name": "Grape Seed",
+    "description": "",
+    "type": "material",
+    "sprite": "i_seed_grape",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 40,
+    "valueSource": "token_grapevine",
+    "autoSyncId": true,
+    "id": "item_grape_seed"
+  },
+  "item_lizard_scale": {
+    "name": "Lizard Scale",
+    "description": "",
+    "type": "material",
+    "sprite": "i_scale_green",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_lizard_scale"
+  },
+  "item_leather": {
+    "name": "Leather",
+    "description": "",
+    "type": "material",
+    "sprite": "i_glove_leather",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_leather"
+  },
+  "item_cooked_trout": {
+    "name": "Cooked Trout",
+    "description": "",
+    "type": "food",
+    "sprite": "i_trout_raw",
+    "stackable": true,
+    "restoreAmount": 15,
+    "equipSlot": "food",
+    "value": 8,
+    "valueSource": "recipe_cooked_trout",
+    "autoSyncId": true,
+    "id": "item_cooked_trout"
+  },
+  "item_grape_juice": {
+    "name": "Grape Juice",
+    "description": "",
+    "type": "drink",
+    "sprite": "i_potion_wine_grape",
+    "stackable": true,
+    "restoreAmount": 20,
+    "equipSlot": "drink",
+    "value": 11,
+    "valueSource": "recipe_grape_juice",
+    "autoSyncId": true,
+    "effects": [
+      {
+        "effectId": "effect_grape_juice_drink",
+        "scale": 1
+      }
+    ],
+    "id": "item_grape_juice"
+  },
+  "item_iron_woodaxe": {
+    "name": "Iron Woodaxe",
+    "description": "",
+    "type": "tool",
+    "sprite": "i_woodaxe_iron",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": 114,
+    "valueSource": "recipe_iron_woodaxe",
+    "autoSyncId": true,
+    "tool": {
+      "kind": "woodaxe",
+      "tier": 2
+    },
+    "id": "item_iron_woodaxe"
+  },
+  "item_iron_sickle": {
+    "name": "Iron Sickle",
+    "description": "",
+    "type": "tool",
+    "sprite": "i_chisel_iron",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": 76,
+    "valueSource": "recipe_iron_sickle",
+    "autoSyncId": true,
+    "tool": {
+      "kind": "sickle",
+      "tier": 2
+    },
+    "id": "item_iron_sickle"
+  },
+  "item_iron_sword": {
+    "name": "Iron Sword",
+    "description": "",
+    "type": "weapon",
+    "sprite": "i_longsword_iron",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": 76,
+    "valueSource": "recipe_iron_sword",
+    "autoSyncId": true,
+    "styles": [
+      "melee"
+    ],
+    "damage": 3,
+    "id": "item_iron_sword"
+  },
+  "item_iron_dagger": {
+    "name": "Iron Dagger",
+    "description": "",
+    "type": "weapon",
+    "sprite": "i_longsword_iron",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": 40,
+    "valueSource": "recipe_iron_dagger",
+    "autoSyncId": true,
+    "styles": [
+      "melee",
+      "stealth"
+    ],
+    "damage": 2,
+    "speed": "fast",
+    "effects": [
+      {
+        "effectId": "effect_dagger",
+        "scale": 2
+      }
+    ],
+    "id": "item_iron_dagger"
+  },
+  "item_iron_cleaver": {
+    "name": "Iron Cleaver",
+    "description": "",
+    "type": "weapon",
+    "sprite": "i_battleaxe_iron",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": 76,
+    "valueSource": "recipe_iron_cleaver",
+    "autoSyncId": true,
+    "styles": [
+      "melee"
+    ],
+    "damage": 3,
+    "speed": "slow",
+    "effects": [
+      {
+        "effectId": "effect_cleaver",
+        "scale": 2
+      }
+    ],
+    "id": "item_iron_cleaver"
+  },
+  "item_iron_greatsword": {
+    "name": "Iron Greatsword",
+    "description": "",
+    "type": "weapon",
+    "sprite": "i_longsword_iron",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": 152,
+    "valueSource": "recipe_iron_greatsword",
+    "autoSyncId": true,
+    "styles": [
+      "melee"
+    ],
+    "damage": 4,
+    "speed": "slow",
+    "hands": 2,
+    "id": "item_iron_greatsword"
+  },
+  "item_iron_bow": {
+    "name": "Iron Bow",
+    "description": "",
+    "type": "weapon",
+    "sprite": "i_arrow",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": 43,
+    "valueSource": "recipe_iron_bow",
+    "autoSyncId": true,
+    "styles": [
+      "ranged"
+    ],
+    "damage": 3,
+    "effects": [
+      {
+        "effectId": "effect_bow",
+        "scale": 2
+      }
+    ],
+    "id": "item_iron_bow"
+  },
+  "item_iron_wand": {
+    "name": "Iron Wand",
+    "description": "",
+    "type": "weapon",
+    "sprite": "i_rod_wood",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": 42,
+    "valueSource": "recipe_iron_wand",
+    "autoSyncId": true,
+    "styles": [
+      "magic"
+    ],
+    "damage": 2,
+    "speed": "fast",
+    "id": "item_iron_wand"
+  },
+  "item_iron_helmet": {
+    "name": "Iron Helmet",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_armor_plate_iron",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hat",
+    "value": 114,
+    "valueSource": "recipe_iron_helmet",
+    "autoSyncId": true,
+    "effects": [
+      {
+        "effectId": "effect_iron_armour",
+        "scale": 1
+      }
+    ],
+    "id": "item_iron_helmet"
+  },
+  "item_iron_chestplate": {
+    "name": "Iron Chestplate",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_armor_plate_iron",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "chest",
+    "value": 190,
+    "valueSource": "recipe_iron_chestplate",
+    "autoSyncId": true,
+    "effects": [
+      {
+        "effectId": "effect_iron_armour",
+        "scale": 1
+      }
+    ],
+    "id": "item_iron_chestplate"
   }
 }
