@@ -61,6 +61,11 @@ reseed(1);
 
 // ⚠️ Only rewinds, never reinstalls: a file that swaps in its own generator
 // in `beforeAll` must keep it for all its tests.
+// `FG_TEST_SEED=<anything> npx vitest run` shifts every test's numbers: a test
+// that fails under some other seed is relying on luck.
+const salt = typeof process !== 'undefined' && process.env?.FG_TEST_SEED
+    ? `#${process.env.FG_TEST_SEED}` : '';
+
 beforeEach((ctx) => {
-    reseed(hashName(fullName(ctx.task)));
+    reseed(hashName(fullName(ctx.task) + salt));
 });

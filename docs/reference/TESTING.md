@@ -42,6 +42,14 @@ Nothing merges to `main` until all of these hold:
    the dev server from it and sees the slot screen load (a branch can trigger
    a one-time redraw or rebuild on first start).
 
+**Tests are seeded.** `src/tests/setup/seededRandom.js` replaces `Math.random` with the
+bench's mulberry32 and rewinds it before each test from a hash of the test's file and full
+name, so a test draws the same numbers on every run (and `EnemyMotion`/`HeroMotion`, which
+copy `Math.random` when they load, share it); a test that needs particular rolls still seeds
+or stubs by hand. A luck-dependent test now fails every time or never; to hunt for one, run
+the suite under other seeds (`FG_TEST_SEED=a npx vitest run`, then b, c…): a test that fails
+under some seed is relying on luck.
+
 Also: never weaken or delete a test to make something pass. Rewriting a test
 for a deliberate design change is fine; say which and why. Delete tests only
 together with the code they test.

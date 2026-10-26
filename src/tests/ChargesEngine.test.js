@@ -10,7 +10,8 @@ import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as InputAllocator from '../systems/board/InputAllocator.js';
 import * as Charges from '../systems/board/Charges.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { ALERT } from '../systems/board/boardEvents.js';
+import { ALERT, BOARD_EVENTS } from '../systems/board/boardEvents.js';
+import { EventBus } from '../systems/core/EventBus.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 import { pickRecipe } from './fixtures/stations.js';
@@ -217,12 +218,17 @@ describe('A cycle it cannot pay for in full deducts nothing', () => {
     it('pays everything at once on a cycle it can afford', () => {
         InventoryManager.addItem('item_coal', 5);
         const kiln = place(STATION, 'fixture_own_cost_kiln', 'hero_1');
+        let cycles = 0;
+        const off = EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, (p) => { if (p.instanceId === kiln.id) cycles++; });
 
         run(10000 + 300);
+        off();
 
+        expect(cycles).toBe(1);
         expect(InventoryManager.getItemCount('item_coal')).toBe(4);
         expect(kiln.usesRemaining).toBe(7);                 // 10 − (1 + 2)
-        expect(SpriteLayer.countOnBoard('fixture_charcoal')).toBe(1);
+        // One charcoal, or two when the kiln's own +5 % yield rolls its extra one.
+        expect([1, 2]).toContain(SpriteLayer.countOnBoard('fixture_charcoal'));
     });
 });
 
