@@ -39,7 +39,8 @@ registerRecipePools({
     cooking: [
         { id: 's6_stew', name: 'Stew', levelRequirement: 1, stationKinds: ['kitchen'], inputs: [], outputs: out('item_apple'), durationMs: 5000, xp: 1 },
         { id: 's6_beer', name: 'Beer', levelRequirement: 1, stationKinds: ['brewery'], inputs: [], outputs: out('item_beer'), durationMs: 5000, xp: 1 },
-        { id: 's6_tea', name: 'Tea', levelRequirement: 1, stationKinds: ['kitchen', 'brewery'], inputs: [], outputs: out('item_water'), durationMs: 5000, xp: 1 }
+        { id: 's6_tea', name: 'Tea', levelRequirement: 1, stationKinds: ['kitchen', 'brewery'], inputs: [], outputs: out('item_water'), durationMs: 5000, xp: 1 },
+        { id: 's6_leather', name: 'Leather', levelRequirement: 1, stationKinds: ['tannery'], inputs: [], outputs: out('item_water'), durationMs: 5000, xp: 1 }
     ]
 });
 
@@ -56,6 +57,7 @@ registerTokenTypes({
     s6_campfire: station('s6_campfire', 'cooking', 'kitchen'),
     s6_kitchen: station('s6_kitchen', 'cooking', 'kitchen'),
     s6_brewery: station('s6_brewery', 'cooking', 'brewery'),
+    s6_tannery: station('s6_tannery', 'cooking', 'tannery'),
     // An Anvil, the context-tag gate today's copper weapon recipes keep until S8 moves them.
     s6_anvil: {
         id: 's6_anvil', name: 's6_anvil', tokenType: 'context', rarity: 'common', theme: 'fixture', uses: null, sprite: 's_flask',
@@ -89,7 +91,7 @@ describe('the station kind on the Works as rule', () => {
     });
 
     it('the engine knows every station shape the content pack needs', () => {
-        for (const kind of ['furnace', 'smithy', 'kitchen', 'brewery', 'workbench', 'alchemy_table', 'summoning_circle']) {
+        for (const kind of ['furnace', 'smithy', 'kitchen', 'brewery', 'tannery', 'workbench', 'alchemy_table', 'summoning_circle']) {
             expect(STATION_KINDS).toContain(kind);
             expect(stationKindLabel(kind)).toMatch(/\S/);
         }
@@ -113,6 +115,12 @@ describe('a station offers only its kind (and recipes that name no kind)', () =>
         expect(ids(recipesForToken(def('s6_campfire')))).toEqual(['s6_stew', 's6_tea']);
         expect(ids(recipesForToken(def('s6_kitchen')))).toEqual(['s6_stew', 's6_tea']);
         expect(ids(recipesForToken(def('s6_brewery')))).toEqual(['s6_beer', 's6_tea']);
+    });
+
+    it('a Tannery offers only Tannery recipes, and no other station offers them', () => {
+        expect(ids(recipesForToken(def('s6_tannery')))).toEqual(['s6_leather']);
+        expect(ids(recipesForToken(def('s6_kitchen')))).not.toContain('s6_leather');
+        expect(ids(recipesForToken(def('s6_brewery')))).not.toContain('s6_leather');
     });
 
     it('the recipe picker lists the same pool', () => {

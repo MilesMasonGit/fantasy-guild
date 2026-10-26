@@ -76,6 +76,15 @@ describe('a recipe\'s station kinds', () => {
         expect(useEntityStore.getState().recipePools.alchemy[0].stationKinds).toBeUndefined();
     });
 
+    it('the Made at row offers Tannery', () => {
+        authorAlchemyRecipe();
+        const { container } = render(React.createElement(RecipeEditor));
+        fireEvent.click(screen.getByText('Alchemy'));
+        const row = container.querySelector('[data-testid="station-kinds"]');
+        fireEvent.click(within(row).getByLabelText('Tannery'));
+        expect(useEntityStore.getState().recipePools.alchemy[0].stationKinds).toEqual(['tannery']);
+    });
+
     it('a building recipe shows no Made at row', () => {
         useEntityStore.setState((s) => ({ recipePools: { ...s.recipePools, construction: [] } }));
         useEntityStore.getState().addRecipe('construction', { name: 'Build It', foundationKinds: ['wood'] });
@@ -128,6 +137,15 @@ describe('a station\'s kind on its Works as rule', () => {
         fireEvent.change(select, { target: { value: '' } });
         expect(stationKindOf(expanded('token_furnace'))).toBeNull();
         expect(stationSkillOf(expanded('token_furnace'))).toBe('smithing');
+    });
+
+    it('the Token editor offers Tannery in Station kind', () => {
+        useEntityStore.getState().setActiveEntity('token_furnace', 'token');
+        const { container } = render(React.createElement(TokenEditor));
+        const select = within(container.querySelector('[data-testid="station-kind"]')).getByLabelText('Station kind');
+        expect(within(select).getByText('Tannery')).toBeTruthy();
+        fireEvent.change(select, { target: { value: 'tannery' } });
+        expect(stationKindOf(expanded('token_furnace'))).toBe('tannery');
     });
 
     it('a station kind survives sync and a reload unchanged', () => {

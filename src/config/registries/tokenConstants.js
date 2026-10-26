@@ -126,7 +126,7 @@ export const FOUNDATION_KINDS = Object.freeze(['wood', 'stone', 'bench', 'farmla
  * Smithy) share one kind, since they run the same recipes faster.
  */
 export const STATION_KINDS = Object.freeze([
-    'furnace', 'smithy', 'kitchen', 'brewery', 'workbench', 'alchemy_table', 'summoning_circle',
+    'furnace', 'smithy', 'kitchen', 'brewery', 'tannery', 'workbench', 'alchemy_table', 'summoning_circle',
     // A Field and a Herb Garden are Farming stations whose recipes are crops (`cropTermsOf`), each
     // kind its own crop list; a Windmill mills grain.
     'field', 'herb_garden', 'windmill'
@@ -137,6 +137,7 @@ const STATION_KIND_LABELS = Object.freeze({
     smithy: 'Smithy',
     kitchen: 'Kitchen',
     brewery: 'Brewery',
+    tannery: 'Tannery',
     workbench: 'Workbench',
     alchemy_table: 'Alchemy Table',
     summoning_circle: 'Summoning Circle',
