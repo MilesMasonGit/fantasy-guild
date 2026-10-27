@@ -339,8 +339,7 @@ branch), so it uses the kit and everyone fights; it merges after both.*
 - ~~Background music provenance~~ **Answered 2026-10-22:** the tracks are AI-generated placeholders, likely removed in the later music and sound pass; audio is not a concern now.
 - **For combat planning (not a question):** hostile enemies notice a flag within `Flags.flagRadius()` of their spawner, so the hero reach going 164 → 240 (A3) widened what enemies notice too. Owner 2026-10-23: fine for now; combat planning decides what enemies should notice.
 
-- **Lemons and limes (K4a):** the Brewery offers lemonade at level 15 and limeade at 25, but no map places a Lemon or Lime Tree. A) leave them for a later plane (the recipes just wait); B) a planning agent puts the trees on a plane-2 map; C) move the recipes' levels later. Recommend A.
-- **Lavender in plane 1 (K4a):** Bird Nest searches give Lavender Seed, so the Herb Garden and Alchemy Table are reachable before the Bog (the concept puts them in plane 2). A) fine as a lucky early find; B) take Lavender Seed off the Bird Nest. Recommend A. (Also: Grape Seed drops but nothing uses it yet: later content.)
+- ~~Lemons and limes; Lavender in plane 1~~ **Answered 2026-10-27 (owner: A on both):** lemonade and limeade wait for a later plane's Lemon and Lime Trees (they stay in the test's exclusion list); Lavender Seed from a Bird Nest stays as a lucky early find in plane 1.
 
 *Design questions the director cannot answer, as multiple choice, recommendation
 first; asked with the next batch proposal and recorded where they belong.*
