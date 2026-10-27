@@ -51,7 +51,7 @@ C2; C0 (the test content pack, accepted by the director) after C2; C6 last.
 | K-fu: follow-up pack: bosses drop modifiers (plane 1: 3/2/1 %, plane 2: 5/3/2 %); the Fire Elemental Chief burns every 3rd hit | builder writes, owner accepts | `cms/incoming/applied/2026-10-26-bosses-followup.json` | **synced by the owner** 6b63c8e9; id-diff clean. The writer found its earlier duels never ticked poison/burn: Greater Slime (16 meals), Queen Bee (prepared win 23/50), Toxic Frog (39/50) are hard. **Owner 2026-10-27: keep them hard** | Tue | Tue |
 | K3: pack 3, modifiers and caches | builder writes, owner accepts | `cms/incoming/applied/2026-10-26-basic-content-k3.json` | **synced by the owner** 58d02d01 with the balance pack; id-diff clean (Fir Grove deleted as accepted). 5 tests red, being fixed | Mon | Mon |
 | K-bal + K1b: the balance pack | builder writes, owner accepts | `cms/incoming/applied/2026-10-26-balance-k1b.json` | **synced by the owner** 58d02d01 | Mon | Mon |
-| K4a: reachability test: from a new game, every plane-1 and plane-2 material, tool, building and the first plane-2 map can be had | builder | `content/k4-reachability` (`k4r`) | building | Tue | |
+| K4a: reachability test: from a new game, every plane-1 and plane-2 material, tool, building and the first plane-2 map can be had | builder | `content/k4-reachability` (`k4r`) | **merged** 17ffd5f8 (tests only; 6607 tests, cycles 0; checked the plane rule against `items.json`: 7 zero-weight maps = plane 2). Everything reachable; 12 named exclusions: 10 later-plane metals, Lemon and Lime (owner question below) | Tue | Tue |
 | K4b: the play-through: a new game through the Starter Camp, a plane-1 Region, a boss's first kill and the first plane-2 Region, with 1920×1080 shots for the owner | engineer | `content/k4-playthrough` (`k4p`) | building | Tue | |
 | C6c: fight bars and numbers drawn above floor loot (owner 2026-10-25) | builder | `systems/fight-bars-over-loot` (`lb`) | **merged** a938c66c (6512 tests + 1 luck-dependent EnemyKinds, green 16/16 alone; cycles; build; same work; drag bench flags 200/200 on a re-run) | Sun | Sun |
 
@@ -338,6 +338,9 @@ branch), so it uses the kit and everyone fights; it merges after both.*
 
 - ~~Background music provenance~~ **Answered 2026-10-22:** the tracks are AI-generated placeholders, likely removed in the later music and sound pass; audio is not a concern now.
 - **For combat planning (not a question):** hostile enemies notice a flag within `Flags.flagRadius()` of their spawner, so the hero reach going 164 → 240 (A3) widened what enemies notice too. Owner 2026-10-23: fine for now; combat planning decides what enemies should notice.
+
+- **Lemons and limes (K4a):** the Brewery offers lemonade at level 15 and limeade at 25, but no map places a Lemon or Lime Tree. A) leave them for a later plane (the recipes just wait); B) a planning agent puts the trees on a plane-2 map; C) move the recipes' levels later. Recommend A.
+- **Lavender in plane 1 (K4a):** Bird Nest searches give Lavender Seed, so the Herb Garden and Alchemy Table are reachable before the Bog (the concept puts them in plane 2). A) fine as a lucky early find; B) take Lavender Seed off the Bird Nest. Recommend A. (Also: Grape Seed drops but nothing uses it yet: later content.)
 
 *Design questions the director cannot answer, as multiple choice, recommendation
 first; asked with the next batch proposal and recorded where they belong.*
