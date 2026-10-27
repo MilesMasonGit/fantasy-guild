@@ -1817,7 +1817,10 @@
     "sim": {
       "tempo": "medium",
       "purpose": "iph"
-    }
+    },
+    "stationKinds": [
+      "tannery"
+    ]
   },
   {
     "id": "recipe_leather_hat",
@@ -1850,7 +1853,10 @@
     "sim": {
       "tempo": "medium",
       "purpose": "iph"
-    }
+    },
+    "stationKinds": [
+      "tannery"
+    ]
   },
   {
     "id": "recipe_leather_chest",
@@ -1883,7 +1889,10 @@
     "sim": {
       "tempo": "medium",
       "purpose": "iph"
-    }
+    },
+    "stationKinds": [
+      "tannery"
+    ]
   },
   {
     "id": "recipe_wheat",

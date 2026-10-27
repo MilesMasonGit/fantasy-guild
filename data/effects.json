@@ -1747,7 +1747,7 @@
         "payload": {
           "type": "ARMOR",
           "bucket": "flat",
-          "value": 2
+          "value": 1
         },
         "chargeDelta": 0,
         "to": {
@@ -1762,5 +1762,266 @@
     ],
     "autoSyncId": true,
     "id": "effect_iron_armour"
+  },
+  "effect_tannery_station": {
+    "name": "Tannery Station",
+    "statements": [
+      {
+        "id": "stm_k1b_tannery_station",
+        "keyword": "station",
+        "payload": {
+          "skill": "crafting",
+          "stationKind": "tannery"
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": null,
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_tannery_station"
+  },
+  "effect_workbench_station": {
+    "name": "Workbench Station",
+    "statements": [
+      {
+        "id": "stm_k1b_workbench_station",
+        "keyword": "station",
+        "payload": {
+          "skill": "crafting",
+          "stationKind": "workbench"
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": null,
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_workbench_station"
+  },
+  "effect_heavy_strike": {
+    "name": "Heavy Strike",
+    "statements": [
+      {
+        "id": "stm_k1b_heavy_strike",
+        "keyword": "provides",
+        "payload": {
+          "type": "DAMAGE",
+          "bucket": "percentage",
+          "value": 1
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_heavy_strike"
+  },
+  "effect_enrage": {
+    "name": "Enrage",
+    "statements": [
+      {
+        "id": "stm_k1b_enrage",
+        "keyword": "provides",
+        "payload": {
+          "type": "SWING_TIME",
+          "bucket": "percentage",
+          "value": -0.5
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_enrage"
+  },
+  "effect_wolf_alpha_moves": {
+    "name": "Wolf Alpha Moves",
+    "statements": [
+      {
+        "id": "stm_k1b_alpha_enrage",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_enrage",
+          "scale": 1,
+          "durationMs": 0,
+          "forFight": true,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": null,
+        "target": {
+          "role": "opponent"
+        },
+        "when": {
+          "scope": "self",
+          "event": "FIGHT_HP_BELOW",
+          "belowPct": 50
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_wolf_alpha_moves"
+  },
+  "effect_goblin_chief_moves": {
+    "name": "Goblin Chief Moves",
+    "statements": [
+      {
+        "id": "stm_k1b_chief_heavy",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_heavy_strike",
+          "scale": 1,
+          "durationMs": 0,
+          "forSwing": true,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": null,
+        "target": {
+          "role": "opponent"
+        },
+        "when": {
+          "scope": "self",
+          "event": "FIGHT_SWING",
+          "every": 6
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_goblin_chief_moves"
+  },
+  "effect_water_elemental_moves": {
+    "name": "Water Elemental Moves",
+    "statements": [
+      {
+        "id": "stm_k1b_water_heal",
+        "keyword": "heals",
+        "payload": {
+          "amount": 10
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": null,
+        "target": {
+          "role": "self"
+        },
+        "when": {
+          "scope": "self",
+          "event": "FIGHT_HP_BELOW",
+          "belowPct": 50
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_water_elemental_moves"
+  },
+  "effect_greater_slime_moves": {
+    "name": "Greater Slime Moves",
+    "statements": [
+      {
+        "id": "stm_k1b_slime_acid",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_poison",
+          "scale": 1,
+          "durationMs": 0,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": null,
+        "target": {
+          "role": "actor"
+        },
+        "when": {
+          "scope": "self",
+          "event": "FIGHT_HIT",
+          "every": 3
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_greater_slime_moves"
+  },
+  "effect_wind_elemental_moves": {
+    "name": "Wind Elemental Moves",
+    "statements": [
+      {
+        "id": "stm_k1b_wind_gust",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_heavy_strike",
+          "scale": 1,
+          "durationMs": 0,
+          "forSwing": true,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": null,
+        "target": {
+          "role": "opponent"
+        },
+        "when": {
+          "scope": "self",
+          "event": "FIGHT_SWING",
+          "every": 3
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_wind_elemental_moves"
+  },
+  "effect_queen_bee_moves": {
+    "name": "Queen Bee Moves",
+    "statements": [
+      {
+        "id": "stm_k1b_queen_enrage",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_enrage",
+          "scale": 1,
+          "durationMs": 0,
+          "forFight": true,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": null,
+        "target": {
+          "role": "opponent"
+        },
+        "when": {
+          "scope": "self",
+          "event": "FIGHT_HP_BELOW",
+          "belowPct": 30
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_queen_bee_moves"
   }
 }

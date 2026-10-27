@@ -1353,27 +1353,8 @@
           "typeId": "token_oak_tree",
           "points": 16
         }
-      ]
-    }
-  },
-  "mod_fir_grove": {
-    "id": "mod_fir_grove",
-    "name": "Fir Grove",
-    "description": "Firs grow where the oaks would: every oak becomes a fir.",
-    "type": "modifier",
-    "tags": [],
-    "sprite": "t_map_frozenpeak",
-    "stackable": true,
-    "autoSyncId": false,
-    "cartography": {
-      "effects": [
-        {
-          "kind": "replace",
-          "from": "token_oak_tree",
-          "to": "token_fir_tree",
-          "share": 1
-        }
-      ]
+      ],
+      "bountyWeight": 1
     }
   },
   "mod_goblin_camp": {
@@ -1392,7 +1373,8 @@
           "typeId": "token_goblin_camp",
           "count": 1
         }
-      ]
+      ],
+      "bountyWeight": 1
     }
   },
   "item_iron_pickaxe": {
@@ -2348,5 +2330,280 @@
       }
     ],
     "id": "item_iron_chestplate"
+  },
+  "mod_rich_veins": {
+    "id": "mod_rich_veins",
+    "name": "Rich Veins",
+    "description": "The rock is seamed with copper: many more copper and coal veins.",
+    "type": "modifier",
+    "tags": [],
+    "sprite": "t_map_mountain_copper",
+    "stackable": true,
+    "autoSyncId": false,
+    "cartography": {
+      "effects": [
+        {
+          "kind": "density",
+          "typeId": "token_copper_ore_vein",
+          "points": 12
+        },
+        {
+          "kind": "density",
+          "typeId": "token_coal_vein",
+          "points": 4
+        }
+      ],
+      "bountyWeight": 1
+    }
+  },
+  "mod_teeming_waters": {
+    "id": "mod_teeming_waters",
+    "name": "Teeming Waters",
+    "description": "The shore is alive with fish: many more fishing spots.",
+    "type": "modifier",
+    "tags": [],
+    "sprite": "t_map_islands",
+    "stackable": true,
+    "autoSyncId": false,
+    "cartography": {
+      "effects": [
+        {
+          "kind": "density",
+          "typeId": "token_coast",
+          "points": 8
+        }
+      ],
+      "bountyWeight": 1
+    }
+  },
+  "mod_bountiful": {
+    "id": "mod_bountiful",
+    "name": "Bountiful",
+    "description": "Fruit and grain everywhere: many more apple trees and wild wheat.",
+    "type": "modifier",
+    "tags": [],
+    "sprite": "t_map_palm",
+    "stackable": true,
+    "autoSyncId": false,
+    "cartography": {
+      "effects": [
+        {
+          "kind": "density",
+          "typeId": "token_apple_tree",
+          "points": 8
+        },
+        {
+          "kind": "density",
+          "typeId": "token_apple_orchard",
+          "points": 1
+        },
+        {
+          "kind": "density",
+          "typeId": "token_wild_wheat_patch",
+          "points": 6
+        }
+      ],
+      "bountyWeight": 1
+    }
+  },
+  "mod_wolf_den": {
+    "id": "mod_wolf_den",
+    "name": "Wolf Den",
+    "description": "Wolves have made a den here.",
+    "type": "modifier",
+    "tags": [],
+    "sprite": "t_map_spooky",
+    "stackable": true,
+    "autoSyncId": false,
+    "cartography": {
+      "effects": [
+        {
+          "kind": "threat",
+          "typeId": "token_wolf_den",
+          "count": 1
+        }
+      ],
+      "bountyWeight": 1
+    }
+  },
+  "mod_crab_rocks": {
+    "id": "mod_crab_rocks",
+    "name": "Crab Rocks",
+    "description": "Crabs crowd the rocks here.",
+    "type": "modifier",
+    "tags": [],
+    "sprite": "t_map_spooky",
+    "stackable": true,
+    "autoSyncId": false,
+    "cartography": {
+      "effects": [
+        {
+          "kind": "threat",
+          "typeId": "token_crab_rocks",
+          "count": 1
+        }
+      ],
+      "bountyWeight": 1
+    }
+  },
+  "mod_wild_hive": {
+    "id": "mod_wild_hive",
+    "name": "Wild Hive",
+    "description": "A wild hive hums here.",
+    "type": "modifier",
+    "tags": [],
+    "sprite": "t_map_spooky",
+    "stackable": true,
+    "autoSyncId": false,
+    "cartography": {
+      "effects": [
+        {
+          "kind": "threat",
+          "typeId": "token_wild_hive",
+          "count": 1
+        }
+      ],
+      "bountyWeight": 1
+    }
+  },
+  "mod_cow_pasture": {
+    "id": "mod_cow_pasture",
+    "name": "Cow Pasture",
+    "description": "Cows graze here (peaceful).",
+    "type": "modifier",
+    "tags": [],
+    "sprite": "t_map_spooky",
+    "stackable": true,
+    "autoSyncId": false,
+    "cartography": {
+      "effects": [
+        {
+          "kind": "threat",
+          "typeId": "token_cow_pasture",
+          "count": 1
+        }
+      ],
+      "bountyWeight": 1
+    }
+  },
+  "mod_thorn_thicket": {
+    "id": "mod_thorn_thicket",
+    "name": "Thorn Thicket",
+    "description": "Thorn Elementals stir in a thicket (peaceful).",
+    "type": "modifier",
+    "tags": [],
+    "sprite": "t_map_spooky",
+    "stackable": true,
+    "autoSyncId": false,
+    "cartography": {
+      "effects": [
+        {
+          "kind": "threat",
+          "typeId": "token_thorn_thicket",
+          "count": 1
+        }
+      ],
+      "bountyWeight": 1
+    }
+  },
+  "mod_ember_vents": {
+    "id": "mod_ember_vents",
+    "name": "Ember Vents",
+    "description": "Fire Elementals flicker in the vents here.",
+    "type": "modifier",
+    "tags": [],
+    "sprite": "t_map_spooky",
+    "stackable": true,
+    "autoSyncId": false,
+    "cartography": {
+      "effects": [
+        {
+          "kind": "threat",
+          "typeId": "token_ember_vents",
+          "count": 1
+        }
+      ],
+      "bountyWeight": 0
+    }
+  },
+  "mod_sulphur_rocks": {
+    "id": "mod_sulphur_rocks",
+    "name": "Sulphur Rocks",
+    "description": "Sulphur Lizards bask here.",
+    "type": "modifier",
+    "tags": [],
+    "sprite": "t_map_spooky",
+    "stackable": true,
+    "autoSyncId": false,
+    "cartography": {
+      "effects": [
+        {
+          "kind": "threat",
+          "typeId": "token_sulphur_rocks",
+          "count": 1
+        }
+      ],
+      "bountyWeight": 0
+    }
+  },
+  "mod_frog_pond": {
+    "id": "mod_frog_pond",
+    "name": "Frog Pond",
+    "description": "Frogs croak in a pond here.",
+    "type": "modifier",
+    "tags": [],
+    "sprite": "t_map_spooky",
+    "stackable": true,
+    "autoSyncId": false,
+    "cartography": {
+      "effects": [
+        {
+          "kind": "threat",
+          "typeId": "token_frog_pond",
+          "count": 1
+        }
+      ],
+      "bountyWeight": 0
+    }
+  },
+  "mod_buried_copper": {
+    "id": "mod_buried_copper",
+    "name": "Buried Copper",
+    "description": "Someone hid a copper chest here.",
+    "type": "modifier",
+    "tags": [],
+    "sprite": "t_map_pirate",
+    "stackable": true,
+    "autoSyncId": false,
+    "cartography": {
+      "effects": [
+        {
+          "kind": "treasure",
+          "typeId": "token_copper_chest",
+          "count": 1
+        }
+      ],
+      "bountyWeight": 1
+    }
+  },
+  "mod_buried_iron": {
+    "id": "mod_buried_iron",
+    "name": "Buried Iron",
+    "description": "Someone hid an iron chest here.",
+    "type": "modifier",
+    "tags": [],
+    "sprite": "t_map_pirate",
+    "stackable": true,
+    "autoSyncId": false,
+    "cartography": {
+      "effects": [
+        {
+          "kind": "treasure",
+          "typeId": "token_iron_chest",
+          "count": 1
+        }
+      ],
+      "bountyWeight": 0
+    }
   }
 }
