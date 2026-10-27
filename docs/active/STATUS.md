@@ -360,6 +360,8 @@ T-186; the badges' soft shadows are settled inside T-013.)
 
 ## Summaries
 
+**Tue 2026-10-27: Systems director session closed (owner: a fresh director runs K4).** Where we are: combat (brief 220) complete; skill loops (230) complete except the owner's S9 eye-check; basic content (240) complete except K4: every pack reviewed and synced by the owner, tests green (6601). Next: a fresh director runs K4, the full-game play-through with screenshots. Owner: S9 verdicts and a ranking of its 14 rough edges when convenient. Owed: the bench timing baseline retake on a quiet machine. Handoff: [HANDOFF_systems.md](HANDOFF_systems.md).
+
 **Sat 2026-10-24, night: Backlog director session closed.** Where we are:
 brief 210 and every follow-up the owner approved are on `main` (last d35e661e)
 (pixel frames rounds one and two, the speech frame, the work plate and its

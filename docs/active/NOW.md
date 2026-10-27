@@ -1,6 +1,6 @@
 # NOW — start here
 
-*Updated 2026-10-22. One screen: what is next and where the project stands.
+*Updated 2026-10-27. One screen: what is next and where the project stands.
 The features director resumes from [HANDOFF_features.md](HANDOFF_features.md),
 the terrain director from [HANDOFF.md](HANDOFF.md); the living table and
 summaries are [STATUS.md](STATUS.md); finished work lives in git, the
@@ -12,8 +12,7 @@ changelog and `docs/archive/`.*
   Performance Envelope is measured and written as rules in
   [GDD §14](../reference/GDD.md). The outstanding list was wrapped up
   2026-10-20/21 (two rounds of four agents).
-- **Version** 0.8.x on `main`. **Tests:** ~5,750, all green (a few file-scan
-  tests time out only when several suites run at once; T-208).
+- **Version** 0.8.x on `main`. **Tests:** 6,601, all green, seeded per test (T-250).
 - **Bench baselines:** engine retaken 2026-10-21 13:00, draw 2026-10-22 01:00,
   both on a quiet machine.
 
@@ -31,8 +30,11 @@ The owner's Backlog Intake was triaged into brief 210 and five new sessions:
    combat ([concept_combat.md](concept_combat.md), "The detail pass"),
    skill loops ([concept_skill_loops.md](concept_skill_loops.md), "The next
    pass"), basic content ([concept_basic_content.md](concept_basic_content.md)).
-3. **Systems director** (new): builds what those three plan, once briefed.
-   **Waits for the owner's go.** Writes `HANDOFF_systems.md`.
+3. **Systems director: briefs 220 (combat) and 230 (skill loops) built, 240
+   (basic content) built and synced except K4.** A **fresh director** runs K4,
+   the full-game play-through. State: [HANDOFF_systems.md](HANDOFF_systems.md).
+   Owner: verdicts on the skill-loops eye-check
+   ([2026-10-26_skill-loops-s9.md](eyecheck/2026-10-26_skill-loops-s9.md)).
 4. Still in the backlog ([TICKETS.md](../reference/TICKETS.md)): the
    Envelope's optimisation tickets (T-197 to T-201), the quest board (brief
    170, postponed), T-193, T-119, T-195.
