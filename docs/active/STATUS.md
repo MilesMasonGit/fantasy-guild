@@ -52,7 +52,10 @@ C2; C0 (the test content pack, accepted by the director) after C2; C6 last.
 | K3: pack 3, modifiers and caches | builder writes, owner accepts | `cms/incoming/applied/2026-10-26-basic-content-k3.json` | **synced by the owner** 58d02d01 with the balance pack; id-diff clean (Fir Grove deleted as accepted). 5 tests red, being fixed | Mon | Mon |
 | K-bal + K1b: the balance pack | builder writes, owner accepts | `cms/incoming/applied/2026-10-26-balance-k1b.json` | **synced by the owner** 58d02d01 | Mon | Mon |
 | K4a: reachability test: from a new game, every plane-1 and plane-2 material, tool, building and the first plane-2 map can be had | builder | `content/k4-reachability` (`k4r`) | **merged** 17ffd5f8 (tests only; 6607 tests, cycles 0; checked the plane rule against `items.json`: 7 zero-weight maps = plane 2). Everything reachable; 12 named exclusions: 10 later-plane metals, Lemon and Lime (owner question below) | Tue | Tue |
-| K4b: the play-through: a new game through the Starter Camp, a plane-1 Region, a boss's first kill and the first plane-2 Region, with 1920×1080 shots for the owner | engineer | `content/k4-playthrough` (`k4p`) | building | Tue | |
+| K4b: the play-through: a new game through the Starter Camp, a plane-1 Region, a boss's first kill and the first plane-2 Region, with 1920×1080 shots for the owner | engineer | `content/k4-playthrough` (`k4p`) | **eye-check** (merged b264eae4: docs and 27 shots; [file](eyecheck/2026-10-27_basic-content-k4.md)). All four stages work; the tutorial stalled at the Old Site step (shortcut used); Wolf Alpha first kill → Yellowstone. Director checked the stall, the stuck hero, the copper-tool text and the Fighter gate in the code | Tue | Tue |
+| T-257: a hero pulled out of a fight stays marked as fighting (no healing, no eating) | builder | `fix/hero-stuck-fighting` (`t257`) | building (bug fix, no eye-check) | Tue | |
+| T-259: tutorial without the Old Site step (owner: remove; T-258 puts it back with the ruins); copper-tool text fixed | builder | `fix/tutorial-no-old-site` (`t259`) | building | Tue | |
+| T-260: Recruits may hold copper weapons (owner 2026-10-27) | builder | — | queued after T-257 (combat files) | | |
 | C6c: fight bars and numbers drawn above floor loot (owner 2026-10-25) | builder | `systems/fight-bars-over-loot` (`lb`) | **merged** a938c66c (6512 tests + 1 luck-dependent EnemyKinds, green 16/16 alone; cycles; build; same work; drag bench flags 200/200 on a re-run) | Sun | Sun |
 
 ## Systems director, skill loops (brief 230; owner 2026-10-24: next, beside the rest of combat)
@@ -339,6 +342,7 @@ branch), so it uses the kit and everyone fights; it merges after both.*
 - ~~Background music provenance~~ **Answered 2026-10-22:** the tracks are AI-generated placeholders, likely removed in the later music and sound pass; audio is not a concern now.
 - **For combat planning (not a question):** hostile enemies notice a flag within `Flags.flagRadius()` of their spawner, so the hero reach going 164 → 240 (A3) widened what enemies notice too. Owner 2026-10-23: fine for now; combat planning decides what enemies should notice.
 
+- ~~K4 play-through~~ **Answered 2026-10-27 (owner):** the tutorial's Old Site step is **removed** (T-259; T-258 puts it back once the ruins exist); **Recruits may hold copper weapons** (T-260; reverses the C2 call); **pace**: the owner plays the K4 eye-check first, tuning goes to planning after.
 - ~~Lemons and limes; Lavender in plane 1~~ **Answered 2026-10-27 (owner: A on both):** lemonade and limeade wait for a later plane's Lemon and Lime Trees (they stay in the test's exclusion list); Lavender Seed from a Bird Nest stays as a lucky early find in plane 1.
 
 *Design questions the director cannot answer, as multiple choice, recommendation
