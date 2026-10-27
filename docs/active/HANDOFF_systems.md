@@ -1,64 +1,57 @@
 # HANDOFF — Systems director
 
-*Replaced whole each time. Written 2026-10-25 (evening). Verify each worktree
-with `git -C .claude/worktrees/<name> status --short` and
-`git log --oneline main..<branch>`. STATUS.md holds the phase tables.*
+*Replaced whole each time. Written 2026-10-27. Verify with `git worktree list`
+and `git log --oneline -5`; STATUS.md holds the phase tables.*
 
-## On `main` (pushed)
+## On `main` (pushed, 62c052a7; suite green, 6601 tests)
 
-- **Brief 220 combat: complete.** C1 numbers, C2 gear and enemies, C3 supplies
-  and the "used" bubble, C4 Poison/Burn/boss moves, C5 encounters (camps of one,
-  enemy camps idle while full, ~2 % ambushes, Summoning Circle), C0 first combat
-  content (synced 0bdfa84f), C6 the combat screen, C6c fight bars above loot.
-  Records in `docs/archive/eyecheck/2026-10-2x_combat-*.md`.
-- **Brief 230 skill loops: every engine phase merged** (S1a, S1b, S2a Forestry,
-  S2b Orchards, S3 Mining, S4 Farming, S5/S5b Fishing and the Trap, S6a station
-  pools, S6b work potions and drinks, S7 seeing support effects), plus the CMS
-  seed pricing and the 1-XP floor for a positive XP bonus.
-- **Brief 240 basic content: K0 engine gaps merged** (Starter Camp in packs,
-  tutorial maps after a copper tool and a goblin, first-kill drops, the Bog,
-  Hall prices by plane).
-- Bench baseline: work fingerprints accepted under brief220-C1, -C5,
-  brief230-S1a; the **timing baseline predates C1** (fights are longer): retake
-  `--save-baseline` (engine and draw) on a quiet machine.
+- **Brief 220 combat: complete** (C1–C6, C0, C6c fight bars above loot).
+- **Brief 230 skill loops: complete except the owner's eye-check.** Every
+  engine phase merged; the content pack synced by the owner (47d19bec); tests
+  fixed. **S9 eye-check waiting**: `docs/active/eyecheck/2026-10-26_skill-loops-s9.md`
+  (9 checks, 45 shots, 14 rough edges for the owner to rank).
+- **Brief 240 basic content: complete except K4.** K0 engine gaps merged; the
+  owner synced pack 1 (72ce473d), pack 2 (cb493683), the balance pack and pack 3
+  (58d02d01), and the boss follow-up (6b63c8e9); a `tannery` station kind added.
+  Owner rulings this round: plane-1 bosses +1 hit (on top of kind); blends
+  busier than ~6 enemies accepted; berry bushes and cherry/peach trees refill;
+  iron armour 1 per piece, plane-2 bosses +1 more; a Tannery kind; density on a
+  full map just reshuffles it; **the Greater Slime, Queen Bee and Toxic Frog stay
+  hard** (poison really ticks; their earlier duel numbers had left it out).
+- Bench: work fingerprints accepted under brief220-C1, -C5, brief230-S1a; the
+  timing baseline predates C1: retake `--save-baseline` (engine and draw) quiet.
 
 ## Waiting on the owner
 
-- **The skill-loops content pack** `cms/incoming/2026-10-25-skill-loops-content.json`
-  (160 entries; Coffee out; Bird Nests open into seeds). Owner: CMS → Backups →
-  Restore from Game, then Changes to review, then Recalculate and Sync on
-  `main`. **Right after the Sync**: id-diff every data file; then one builder
-  pass on ~70 content-pinned tests (list in the S8 builder's report: FarmingChain,
-  ProcessingChain, ForestryChain, MiningChain, FishingChain, NeverWears,
-  CMSStaysPutAndWear, CMSForestry, NewGameOpening (reachability doesn't read
-  catch pools), CombatChain (audit doesn't expand effect refs), …).
-- Then **S9**: a play-through of every loop with screenshots for the owner.
-- Then **brief 240 K1–K3** content packs (after the skill-loops Sync, so ids and
-  fingerprints follow it; ⚠️ the Starter Camp's opening Bank needs food (the
-  tutorial's goblin step tells the player to feed a hero); K1 ticks "Given by the tutorial" on Forest, Mountain,
-  Coast; Iron Anvil becomes an Iron Smithy; other tree species converted to the
-  Oak shape; Lavender found wild).
+- Verdicts on the S9 eye-check and a ranking of its 14 rough edges (top ones:
+  loot buries what's worked; a Mine's veins spawn in a heap; a hero's flag hides
+  a Token's yellow mark; cards show the base work time under a speed-up).
+- A Yellowstone banner (the Bog and Yellowstone share the swamp picture).
+- Optional: T-253 CMS tuning page, T-254 leftovers, T-249 even first swing,
+  T-248 enemy strolls over the mat edge.
 
-## In flight
+## Next (brief 240 K4)
 
-Nothing. T-250 (tests seeded per test, `src/tests/setup/seededRandom.js`)
-merged 03bec256.
+The play-through check of the whole content (Starter Camp → plane 1 → plane 2),
+screenshots for the owner, then a session close. CMS still served on 5147 from
+this session (background process); stop it when closing.
 
 ## Worktrees
 
-All Systems worktrees removed 2026-10-25 (junctions first, real
-`node_modules` checked intact). Branches kept locally.
+None of the Systems director's left. Planning worktrees (`pp`, `pcm`, `psk`,
+`pco`) and `p23b` belong to other sessions.
 
 ## Lessons
 
-- The CMS in the browser pane starts with an **empty workspace**: Restore from
-  Game before accepting a pack, or a Sync would wipe content. After a content
-  Sync, run the full suite at once (C0 left 7 red tests on `main`).
-- File-scan tests and luck-dependent combat tests fail under load: re-run alone
-  before believing; T-250 should end the second kind.
-- Screenshots for the phone: headless Chrome via `bench/browser/cdp.mjs`; the
-  pane is hidden.
-- `git merge --ff-only` fails when `main` moved by a STATUS commit: merge `main`
-  into the branch first; don't write "merged" in STATUS until the push is done.
-- Two directors share ticket numbers: re-read "Next free number" right before
-  filing.
+- **Packs are built in scratch and copied into `cms/incoming/` once**, after
+  every check: the owner accepts packs as soon as they appear (memory:
+  feedback-packs-staged-in-scratch).
+- After every owner Sync: id-diff each data file against the applied pack(s),
+  then run the full suite and fix content-pinned tests in one pass.
+- **Never chain a merge after a test run with `;`**: on 2026-10-27 a red suite
+  merged anyway (fixed within minutes). Read the result, then merge.
+- Duel harnesses must tick statuses (the game loop's status tick), or poison and
+  burn bosses look easy.
+- The CMS in a fresh browser starts with an empty workspace: Restore from Game.
+- Two directors share ticket numbers: re-read "Next free number" and grep for
+  the number before filing.
