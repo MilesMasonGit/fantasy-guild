@@ -51,7 +51,8 @@ C2; C0 (the test content pack, accepted by the director) after C2; C6 last.
 | K-fu: follow-up pack: bosses drop modifiers (plane 1: 3/2/1 %, plane 2: 5/3/2 %); the Fire Elemental Chief burns every 3rd hit | builder writes, owner accepts | `cms/incoming/applied/2026-10-26-bosses-followup.json` | **synced by the owner** 6b63c8e9; id-diff clean. The writer found its earlier duels never ticked poison/burn: Greater Slime (16 meals), Queen Bee (prepared win 23/50), Toxic Frog (39/50) are hard. **Owner 2026-10-27: keep them hard** | Tue | Tue |
 | K3: pack 3, modifiers and caches | builder writes, owner accepts | `cms/incoming/applied/2026-10-26-basic-content-k3.json` | **synced by the owner** 58d02d01 with the balance pack; id-diff clean (Fir Grove deleted as accepted). 5 tests red, being fixed | Mon | Mon |
 | K-bal + K1b: the balance pack | builder writes, owner accepts | `cms/incoming/applied/2026-10-26-balance-k1b.json` | **synced by the owner** 58d02d01 | Mon | Mon |
-| K3, K1b: pack 3 (modifiers and caches); plane-1 boss moves (owner 2026-10-26) | builder writes | — | queued after K2 | | |
+| K4a: reachability test: from a new game, every plane-1 and plane-2 material, tool, building and the first plane-2 map can be had | builder | `content/k4-reachability` (`k4r`) | building | Tue | |
+| K4b: the play-through: a new game through the Starter Camp, a plane-1 Region, a boss's first kill and the first plane-2 Region, with 1920×1080 shots for the owner | engineer | `content/k4-playthrough` (`k4p`) | building | Tue | |
 | C6c: fight bars and numbers drawn above floor loot (owner 2026-10-25) | builder | `systems/fight-bars-over-loot` (`lb`) | **merged** a938c66c (6512 tests + 1 luck-dependent EnemyKinds, green 16/16 alone; cycles; build; same work; drag bench flags 200/200 on a re-run) | Sun | Sun |
 
 ## Systems director, skill loops (brief 230; owner 2026-10-24: next, beside the rest of combat)
@@ -359,6 +360,8 @@ T-186; the badges' soft shadows are settled inside T-013.)
 8. ~~Terrain director: bench baseline retake~~ **Done:** engine 2026-10-21 13:00 (f19a2e30), draw 2026-10-22 01:00 (db3959c4).
 
 ## Summaries
+
+**Tue 2026-10-27, midday: K4 started (fresh Systems director).** Where we are: `main` 96b0b480, clean; no Systems worktrees. Now: the reachability test (`k4r`, builder) and the headless play-through with shots (`k4p`, engineer) run side by side. Next: the director checks both, runs the gate, writes the K4 eye-check. Owner: the S9 skill-loops verdicts are still open. Blockers: none. Bench baseline retake owed for a quiet window.
 
 **Tue 2026-10-27: Systems director session closed (owner: a fresh director runs K4).** Where we are: combat (brief 220) complete; skill loops (230) complete except the owner's S9 eye-check; basic content (240) complete except K4: every pack reviewed and synced by the owner, tests green (6601). Next: a fresh director runs K4, the full-game play-through with screenshots. Owner: S9 verdicts and a ranking of its 14 rough edges when convenient. Owed: the bench timing baseline retake on a quiet machine. Handoff: [HANDOFF_systems.md](HANDOFF_systems.md).
 
