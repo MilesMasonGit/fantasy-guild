@@ -55,16 +55,11 @@ export const TUTORIAL_TEXT = Object.freeze({
             says: 'Now make a thing that was not there before. That is the whole trick, really.',
             instruction: 'Click your new station, choose a recipe, and let a Hero craft it once.'
         }),
-        cart_inspect: Object.freeze({
-            title: 'Inspect an Old Site',
-            says: 'Those old stones about the camp. I built them. Or someone like me did. Look closer.',
-            instruction: 'Click one of the old sites on the mat to see what it asks for.'
-        }),
         // ⚠️ A draft: the owner rewrites it at the eye-check.
         cart_copper_tool: Object.freeze({
             title: 'Make a Copper Tool',
             says: 'Copper. The first metal, or the last one I remember. Melt it down and give it an edge.',
-            instruction: 'Mine copper ore, smelt it into ingots at a Furnace, then make a copper tool there: a Pickaxe, a Woodaxe or a Sickle.'
+            instruction: 'Mine copper ore and smelt it into ingots at a Furnace. Then make a Copper Pickaxe or a Copper Woodaxe at a Copper Smithy.'
         }),
         // ⚠️ A draft: the owner rewrites it at the eye-check.
         cart_goblin: Object.freeze({
