@@ -59,13 +59,13 @@ Game in an empty slot, and play. Shots (1920×1080) are in
 
 ## Rough edges the play-through noticed (for you to rank; none fixed yet)
 
-1. **The tutorial stops at "Inspect an Old Site"**: the Starter Camp has no old
+1. **The tutorial stops at "Inspect an Old Site"** (asked in the director's next question): the Starter Camp has no old
    sites (no Token in the content is an endgame site, and the camp layout has
    none of the 25 ruins the concept mentions), so a new player can never
    finish the tutorial, never gets the copper-tool and goblin steps, and never
    receives the first maps. It blocks the whole path (shot `1e`). Either the
    ruins go back into the Starter Camp, or the step comes out of the tutorial.
-2. **A Hero pulled out of a fight stays "in a fight" for ever**: no healing and
+2. **A Hero pulled out of a fight stays "in a fight" for ever** (a bug: being fixed now, T-257): no healing and
    no eating out of fights. Hammer won two goblins, chained into a third, was
    re-planted away at 2 HP, and stayed at 2/10 for the next 2 h 40 min of play,
    across travel to two Regions (shot `1m`). Only a win, a knock-out or
