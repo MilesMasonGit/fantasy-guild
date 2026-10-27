@@ -2023,5 +2023,34 @@
     ],
     "autoSyncId": true,
     "id": "effect_queen_bee_moves"
+  },
+  "effect_fire_elemental_chief_moves": {
+    "id": "effect_fire_elemental_chief_moves",
+    "name": "Fire Elemental Chief Moves",
+    "statements": [
+      {
+        "id": "stm_kf_fire_chief_burn",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_burn",
+          "scale": 1,
+          "durationMs": 0,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": null,
+        "target": {
+          "role": "actor"
+        },
+        "when": {
+          "scope": "self",
+          "event": "FIGHT_HIT",
+          "every": 3
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true
   }
 }
