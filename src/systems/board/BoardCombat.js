@@ -246,8 +246,21 @@ export function opponentBearerOf(statement, roles) {
 export function endFight(instanceId) {
     if (!instanceId) return;
     clearEnemyCombatModifiers(instanceId);
-    LiveEffects.endHeroFightEffects(fights.get(instanceId)?.assignedHeroId);
+    const heroId = fights.get(instanceId)?.assignedHeroId;
+    LiveEffects.endHeroFightEffects(heroId);
     fights.delete(instanceId);
+    standDown(heroId);
+}
+
+/**
+ * A hero whose fight has ended without a win is no longer fighting: `RegenSystem` skips a hero
+ * marked `'combat'`, so one left marked would never heal or eat again.
+ * ⚠️ Only `'combat'` changes: a knock-out's `'wounded'` (set before its `endFight`) stays, and a
+ * win has already set `'idle'`.
+ */
+function standDown(heroId) {
+    const hero = heroId ? HeroManager.getHero(heroId) : null;
+    if (hero?.status === 'combat' && !fightOfHero(heroId)) HeroManager.setHeroStatus(heroId, 'idle');
 }
 
 /**
@@ -281,6 +294,9 @@ export function clearAll() {
         LiveEffects.endHeroFightEffects(fight.assignedHeroId);
     }
     fights.clear();
+    // Every hero, not only those just in a fight: fights are never saved, so this also frees a
+    // hero a save left marked as fighting (this runs on load).
+    for (const hero of HeroManager.getAllHeroes() || []) standDown(hero.id);
 }
 
 /**
