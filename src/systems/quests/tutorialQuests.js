@@ -1,10 +1,12 @@
 // Fantasy Guild - the cartographer's tutorial chain
 //
-// One step at a time, in the Starter Camp: heroes, flags and gathering; building and crafting; an
-// endgame site; the camp's end (a first copper tool made and a goblin beaten, which pays the first
-// maps); then the Atlas (writing the first world and moving the guild into it). Every step is completable in a new game with no dev tools once the owner's
-// Starter Camp and maps exist, and every `targetType` is reported by `QuestManager` from an event
-// the engine (or, for `token_inspected`, the React layer) really publishes.
+// One step at a time, in the Starter Camp: heroes, flags and gathering; building and crafting; the
+// camp's end (a first copper tool made and a goblin beaten, which pays the first maps); then the
+// Atlas (writing the first world and moving the guild into it). Every step is completable in a new
+// game with no dev tools once the owner's Starter Camp and maps exist, and every `targetType` is
+// reported by `QuestManager` from an event the engine really publishes. ⚠️ No step may ask for a
+// `landmark` Token until the shipped content has one: such a step can never be done and stalls the
+// chain (the `token_inspected` report is kept for when it does).
 // `QuestTutorialChain.test.js` drives each step through the real systems.
 //
 // Every word a step shows lives in `tutorialText.js`.
@@ -106,13 +108,6 @@ const STEPS = [
         id: 'cart_craft',
         targetType: 'cycle_completed',
         match: { crafted: true },
-        requiredCount: 1,
-        rewardItems: TUTORIAL_REWARD_ITEMS
-    },
-    {
-        id: 'cart_inspect',
-        targetType: 'token_inspected',
-        match: { landmark: true },
         requiredCount: 1,
         rewardItems: TUTORIAL_REWARD_ITEMS
     },

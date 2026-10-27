@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
-import { UI_EVENTS } from '../systems/core/engineEvents.js';
+import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { QuestManager } from '../systems/quests/QuestManager.js';
 import * as EquipmentManager from '../systems/equipment/EquipmentManager.js';
 import { TUTORIAL_QUESTS, firstMapsReward } from '../systems/quests/tutorialQuests.js';
@@ -37,22 +37,14 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 
 /**
  * ⭐ The cartographer's tutorial, walked through the REAL systems on the shipped content, from the
- * first Hero to the first move. Content the owner has not authored yet (an endgame site, the
- * maps) is a test fixture here.
+ * first Hero to the first move. Content the owner has not authored yet (the maps) is a test
+ * fixture here.
  */
 
-const SITE = 'fixture_tut_site';
 /** The first tool, until the owner's starter tools are content. A woodaxe, for the Oak Tree. */
 const AXE = 'fixture_tut_woodaxe';
 registerItems({
     [AXE]: { id: AXE, name: 'Fixture Woodaxe', type: 'tool', equipSlot: 'hand', stackable: true, sprite: 'i_woodaxe_copper', tool: { kind: 'woodaxe', tier: 1 } }
-});
-registerTokenTypes({
-    [SITE]: {
-        id: SITE, name: 'Old Site', landmark: true, tokenType: 'resource', rarity: 'common',
-        theme: 'fixture', uses: null, size: 1, sprite: 's_nature',
-        config: { skill: 'forestry', skillRequired: 99, cycleTimeMs: 600000, xp: 0, inputs: [], outputs: [] }
-    }
 });
 
 /**
@@ -95,8 +87,7 @@ const SPOT = {
     tree: { x: 300, y: 300 },
     build: { x: 1400, y: 300 },
     fight: { x: 1400, y: 900 },
-    forge: { x: 880, y: 1000 },
-    site: { x: 300, y: 900 }
+    forge: { x: 880, y: 1000 }
 };
 
 const onMat = (typeId) => BoardState.tokens().filter(t => t.typeId === typeId);
@@ -136,9 +127,6 @@ function buyAt(typeId, point) {
     expect(Placement.moveTokenTo(res.instance.id, point)?.success ?? true).toBe(true);
     return BoardState.getTokenById(res.instance.id);
 }
-
-/** What the inspection sheet tells the engine when it opens on a Token on the mat. */
-const inspect = (instance) => EventBus.publish(UI_EVENTS.TOKEN_INSPECTED, { instanceId: instance.id, typeId: instance.typeId });
 
 beforeAll(() => Flags.init());
 afterAll(() => { Flags.teardown(); resetMatTuning(); restoreShippedMaps(); });
@@ -229,14 +217,8 @@ describe('⭐ the cartographer\'s chain, step by step, through the real systems'
         claim('cart_craft');
         Flags.furl(heroId);
 
-        // 9. Inspect an endgame site. Inspecting anything else does not count. No maps yet.
-        inspect(onMat('token_workbench')[0]);
-        expect(complete('cart_inspect')).toBe(false);
-        inspect(placeSite());
-        expect(claim('cart_inspect').rewardItems.some(r => isMapItem(getAllItems()[r.itemId]))).toBe(false);
-
-        // 10. Make a first copper tool (a Copper Pickaxe at a Copper Smithy). The Charcoal made
-        // above did not count: it is not a tool.
+        // 9. Make a first copper tool (a Copper Pickaxe at a Copper Smithy). The Charcoal made
+        // above did not count: it is not a tool. No maps yet.
         expect(complete('cart_copper_tool')).toBe(false);
         GameState.heroes[0].skills.smithing = { xp: 0, level: 5 };
         const smithy = BoardState.createTokenInstance('token_copper_smithy', tokenStartingUses('token_copper_smithy'));
@@ -245,10 +227,10 @@ describe('⭐ the cartographer\'s chain, step by step, through the real systems'
         give('item_copper_ingot', 4);
         expect(Flags.plant(heroId, SPOT.forge).success).toBe(true);
         expect(runUntil(() => complete('cart_copper_tool'), 2 * 60_000)).toBe(true);
-        claim('cart_copper_tool');
+        expect(claim('cart_copper_tool').rewardItems.some(r => isMapItem(getAllItems()[r.itemId]))).toBe(false);
         Flags.furl(heroId);
 
-        // 11. Beat a goblin. A Cow (it never attacks first) does not count; a Goblin does, and
+        // 10. Beat a goblin. A Cow (it never attacks first) does not count; a Goblin does, and
         // pays the maps given by the tutorial.
         // ⚠️ Fixture: a Recruit fights as a level 1 fighter and is often knocked out before the
         // first kill, so the hero is lent a combat skill at level 40.
@@ -278,12 +260,12 @@ describe('⭐ the cartographer\'s chain, step by step, through the real systems'
         expect(bank('map_tut_meadow')).toBe(0);
         Flags.furl(heroId);
 
-        // 12. Write the first world: settle a Region from a map.
+        // 11. Write the first world: settle a Region from a map.
         const settled = Atlas.settle({ ingredients: ['map_tut_woods'], seed: 7 });
         expect(settled.success, settled.reason).toBe(true);
         claim('cart_settle');
 
-        // 13. Move the guild there. The step travels beside the Hall and counts on arrival.
+        // 12. Move the guild there. The step travels beside the Hall and counts on arrival.
         const moved = Atlas.travel(settled.region.id);
         expect(moved.success, moved.reason).toBe(true);
         expect(Atlas.activeRegionId()).toBe(settled.region.id);
@@ -338,13 +320,6 @@ describe('the first maps are read from the registry when the step is claimed', (
     });
 });
 
-/** Stand an endgame site on the mat. */
-function placeSite() {
-    const site = BoardState.createTokenInstance(SITE);
-    expect(Placement.placeTokenAt(site, SPOT.site).success).toBe(true);
-    return BoardState.getTokenById(site.id);
-}
-
 /**
  * Bring the chain to step `id` (the steps before it recorded as claimed; they are walked above),
  * then complete it with a goblin's kill (the step that pays the maps).
@@ -383,8 +358,49 @@ describe('the chain\'s words come from one text module', () => {
     it('the chain is the cartographer\'s, in order, with new ids', () => {
         expect(TUTORIAL_QUESTS.map(t => t.id)).toEqual([
             'cart_recruit', 'cart_tool', 'cart_flag', 'cart_gather', 'cart_loot', 'cart_foundation', 'cart_station',
-            'cart_craft', 'cart_inspect', 'cart_copper_tool', 'cart_goblin', 'cart_settle', 'cart_travel'
+            'cart_craft', 'cart_copper_tool', 'cart_goblin', 'cart_settle', 'cart_travel'
         ]);
+    });
+});
+
+describe('every step can be done on the shipped content', () => {
+    it('no step asks for a landmark while no shipped Token is one', () => {
+        const shipped = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../data/tokens.json'), 'utf8'));
+        const landmarks = Object.values(shipped).filter(def => def?.landmark);
+        for (const t of TUTORIAL_QUESTS) {
+            if (t.match?.landmark) expect(landmarks.length, `${t.id} asks for a landmark`).toBeGreaterThan(0);
+        }
+    });
+});
+
+describe('a save from when the chain had the old-site step moves on to the copper tool', () => {
+    const BEFORE = ['cart_recruit', 'cart_tool', 'cart_flag', 'cart_gather', 'cart_loot', 'cart_foundation', 'cart_station', 'cart_craft'];
+    const tutorialOnMat = () => QuestManager.getActiveQuests().filter(q => q.tutorial).map(q => q.id);
+    const oldInspectQuest = () => ({
+        id: 'cart_inspect', tutorial: true, step: 8, title: 'Inspect an Old Site', targetType: 'token_inspected',
+        match: { landmark: true }, requiredCount: 1, currentCount: 0, rewardItems: [{ itemId: 'item_oak_wood', quantity: 10 }], done: false
+    });
+
+    it('the old step standing on the mat is taken off and the copper tool step arrives', () => {
+        for (const t of QuestTokens.tutorialTokens()) BoardState.removeToken(t.id);
+        GameState.state.quests.completedTutorials.push(...BEFORE);
+        expect(QuestTokens.spawnQuest(oldInspectQuest())).toBeTruthy();
+        expect(tutorialOnMat()).toEqual(['cart_inspect']);
+        EventBus.publish(ENGINE_EVENTS.GAME_LOADED, {});
+        expect(tutorialOnMat()).toEqual(['cart_copper_tool']);
+        expect(GameState.state.quests.tutorialStep).toBe(BEFORE.length);
+    });
+
+    it('the old step recorded as claimed, or waiting in the old sidebar list, counts for nothing', () => {
+        for (const t of QuestTokens.tutorialTokens()) BoardState.removeToken(t.id);
+        const q = GameState.state.quests;
+        q.completedTutorials.push(...BEFORE, 'cart_inspect');
+        q.active.push({ ...oldInspectQuest(), isTutorial: true, status: 'active' });
+        EventBus.publish(ENGINE_EVENTS.GAME_LOADED, {});
+        expect(tutorialOnMat()).toEqual(['cart_copper_tool']);
+        expect(q.active).toEqual([]);
+        expect(q.tutorialStep).toBe(BEFORE.length);
+        expect(QuestTokens.tutorialChainDone()).toBe(false);
     });
 });
 
@@ -410,7 +426,7 @@ describe('no quest listens for an event nobody publishes', () => {
         }
     });
 
-    it('the inspection notice is published by the UI (the tutorial counts it)', () => {
+    it('the inspection notice is published by the UI (QuestManager counts it)', () => {
         const inspection = fs.readFileSync(path.join(SRC, 'ui/components/drawer/TokenInspection.jsx'), 'utf8');
         expect(inspection).toMatch(/publish\(\s*UI_EVENTS\.TOKEN_INSPECTED/);
     });
