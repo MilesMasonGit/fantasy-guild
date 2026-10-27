@@ -126,12 +126,11 @@ describe('The Processing chain in shipped data (7.5)', () => {
         });
 
         it('the Workbench offers exactly the Crafting recipes, and a new one starts on none (TL-15)', () => {
-            // The leather recipes are Crafting too, so every Workbench offers them while the
-            // game has no Tannery station kind of its own.
+            // The leather recipes are Made at the Tannery kind, so the Workbench no longer offers them.
             expect(poolNames('token_workbench')).toEqual([
-                'Charcoal', 'Fine Fishing Rod', 'Leather', 'Leather Chest', 'Leather Hat',
-                'Search a Bird Nest', 'Shrimp Bait', 'Torch', 'Worm Bait',
+                'Charcoal', 'Fine Fishing Rod', 'Search a Bird Nest', 'Shrimp Bait', 'Torch', 'Worm Bait',
             ]);
+            expect(poolNames('token_tannery')).toEqual(expect.arrayContaining(['Leather', 'Leather Chest', 'Leather Hat']));
             const bench = BoardState.createTokenInstance('token_workbench');
             expect(StationRecipe.validateSelection(bench, getTokenType('token_workbench'))).toBeNull();
             expect(bench.selectedRecipeId).toBeUndefined();

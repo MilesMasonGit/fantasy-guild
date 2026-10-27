@@ -185,3 +185,4 @@ T-244 — The nav orbs and a station's gear button hover with a white pixel outl
 T-252 — A selected nav orb shows a steady gold pixel outline; no grow or glow (owner) — 7f6a1166 — 2026-10-24
 T-251 — Scanning tests share one cached read of src (sourceScan.js listFiles/readSource) and a 30 s limit; EngineEventNames' alias search cached and anchored: under build load 0 timeouts (was 2–3), EngineEventNames 6.6 s → 3.6 s alone — d35e661e — 2026-10-25
 T-250 — Every test runs with a seeded Math.random (mulberry32, rewound per test from a hash of its file and full name, src/tests/setup/seededRandom.js; FG_TEST_SEED shifts every seed to hunt luck); AdjacencyEffects aura serving two and ChargesEngine pays everything at once now count cycles, not items a +5 % yield can double — fix/t250-seed-tests — 2026-10-25
+T-256 — CMSEnemyHostile level preview for every shipped enemy gets a 20 s timeout (it times out under full-suite load; ~3 s alone) — fix/content-tests-k3 — 2026-10-27

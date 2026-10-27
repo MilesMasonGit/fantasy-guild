@@ -179,7 +179,8 @@ describe('the Token editor’s Hostile checkbox', () => {
 });
 
 describe('the Token editor’s level preview', () => {
-    it('shows the fight’s own numbers for every shipped enemy: HP, hit, armour, swing time, XP', () => {
+    // Renders every shipped enemy's editor, so it needs more than the default timeout under full-suite load.
+    it('shows the fight’s own numbers for every shipped enemy: HP, hit, armour, swing time, XP', { timeout: 20000 }, () => {
         for (const id of enemyIds) {
             const p = enemyProfileOf(useEntityStore.getState().tokens[id]);
             const { container, unmount } = editor(id);

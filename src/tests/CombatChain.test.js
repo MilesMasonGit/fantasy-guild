@@ -117,11 +117,14 @@ describe('The Combat chain in shipped data (7.7)', () => {
         expect(goblin.uses).toBe(1);
     });
 
-    it('a Goblin drops Bones, sometimes Copper Ore, and now and then a common plane-1 map', () => {
+    it('a Goblin drops Bones, sometimes Copper Ore, and now and then a plane-1 map or modifier', () => {
         expect(enemyDropsOf(goblin)).toEqual([
             { itemId: 'item_bones', chance: 100, minQty: 1, maxQty: 1 },
             { itemId: 'item_copper_ore', chance: 30, minQty: 1, maxQty: 1 },
             ...MAP_DROPS(1.5),
+            { itemId: 'mod_rich_veins', chance: 1, minQty: 1, maxQty: 1 },
+            { itemId: 'mod_goblin_camp', chance: 0.5, minQty: 1, maxQty: 1 },
+            { itemId: 'mod_buried_copper', chance: 0.25, minQty: 1, maxQty: 1 },
         ]);
     });
 
