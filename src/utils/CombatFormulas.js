@@ -26,7 +26,7 @@ export { rpsOutcome };
  * The ONE combat skill a hero holds, and its level, exactly as saved.
  *
  * **A hero holds exactly one of Melee, Ranged, Magic or Stealth, or none at all** (a Recruit,
- * who reads `{ id: null, level: 0 }` and fights barehanded with no style and no combat XP).
+ * who reads `{ id: null, level: 0 }` and fights with no style and no combat XP).
  *
  * @param {Object} hero
  * @returns {{ id: string|null, level: number }}
@@ -52,8 +52,8 @@ export function getHeroCombatLevel(hero) {
 }
 
 /**
- * Whether this hero fights as a Recruit: holding no combat skill, they punch for 1 every 3 s
- * whatever is in their hands, with no style and no combat XP.
+ * Whether this hero fights as a Recruit: holding no combat skill, they fight with no style and earn
+ * no combat XP, barehanded or with a copper weapon's damage and speed.
  */
 export function fightsAsRecruit(hero) {
     return !getHeroCombatSkillEntry(hero).id;
@@ -73,14 +73,13 @@ export function heroMaxHpFromSkills(skills) {
 }
 
 /**
- * The weapon a hero swings, or null: the first weapon in the hands, in grid order, that belongs to
- * the hero's own style (`weaponStyles.js`).
- * ⚠️ A Recruit swings nothing even with a weapon equipped, and a weapon of another style (one held
- * from before a re-training, or from an older save) is not swung: the equip paths refuse both.
+ * The weapon a hero swings, or null: the first weapon in the hands, in grid order, that the hero
+ * may hold (`weaponStyles.weaponRefusal`): one of their own style, or for a Recruit a copper one.
+ * ⚠️ A weapon the hero may no longer hold (another style's, kept from before a promotion or
+ * re-training, or from an older save) stays in hand and is not swung: the equip paths refuse it.
  */
 export function getHeroWeapon(hero) {
     const style = getHeroCombatSkillEntry(hero).id;
-    if (!style) return null;
     for (const { itemId, category } of getEquippedEntries(hero)) {
         if (!isWeaponCategory(category)) continue;
         const item = getItem(itemId);

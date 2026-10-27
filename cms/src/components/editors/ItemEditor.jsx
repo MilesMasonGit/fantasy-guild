@@ -17,7 +17,7 @@ import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 const RESTORING_CATEGORIES = new Set(['food', 'consumable']);
 
 /** A weapon's own fields, cleared when the item stops being one (out of the hands, or made a tool). */
-const WEAPON_CLEARED = { styles: undefined, damage: undefined, speed: undefined };
+const WEAPON_CLEARED = { styles: undefined, damage: undefined, speed: undefined, tier: undefined };
 
 const styleName = (id) => SKILLS.find((s) => s.id === id)?.name || id;
 const SPEED_WORDS = { fast: 'Fast', normal: 'Normal', slow: 'Slow' };
@@ -26,7 +26,8 @@ const SPEED_WORDS = { fast: 'Fast', normal: 'Normal', slow: 'Slow' };
  * A weapon: which combat styles may hold it (a Dagger is Melee and Stealth), how hard it hits and how
  * often. `styles` is written in the game's style order and only when one is ticked (none means any
  * promoted hero); an older item's single `skillRequired` style shows ticked and is folded into
- * `styles` on the first change. `speed` is written only when it is not Normal.
+ * `styles` on the first change. `speed` is written only when it is not Normal. `tier` (1 copper,
+ * 2 iron, and so on) is written only when typed; a Recruit may hold only a tier 1 weapon.
  */
 function WeaponFields({ item, onChange }) {
   const styles = weaponStylesOf(item);
@@ -62,7 +63,7 @@ function WeaponFields({ item, onChange }) {
           ))}
         </div>
         <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
-          Only a hero of a ticked style may hold it (a Dagger is Melee and Stealth); a Recruit holds no weapon.
+          Only a hero of a ticked style may hold it (a Dagger is Melee and Stealth); a Recruit holds only a Tier 1 weapon, of any style.
           {styles.length === 0 && ' None ticked: any promoted hero may hold it.'}
         </p>
       </Field>
@@ -84,6 +85,25 @@ function WeaponFields({ item, onChange }) {
         <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
           What every hit does before the level step, the matchup and armour. Blank hits like a fist (1).
           Proposed tiers, fast/normal/slow: {tierLine}.
+        </p>
+      </Field>
+
+      <Field label="Tier" className="col-span-1">
+        <input
+          type="number"
+          min={1}
+          aria-label="Weapon Tier"
+          data-field="weapon-tier"
+          value={item.tier ?? ''}
+          placeholder="none"
+          onChange={(e) => {
+            const n = Math.floor(Number(e.target.value));
+            onChange({ type: 'weapon', tier: e.target.value !== '' && n >= 1 ? n : undefined });
+          }}
+          className="w-full"
+        />
+        <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
+          1 copper, 2 iron, and so on down the tiers beside Damage. A Recruit may hold only Tier 1; blank means no tier, which a Recruit may not hold.
         </p>
       </Field>
 

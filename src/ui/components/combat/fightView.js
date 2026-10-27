@@ -119,6 +119,7 @@ export function heroSide(hero, enemy = null) {
         sprite: hero.spriteId || hero.classId || null,
         hp: { cur: Math.max(0, hero.hp?.current ?? 0), max: hero.hp?.max ?? 0 },
         hit,
+        armed: !!weapon,
         hitLines: [
             weapon ? t('fight.tip.weapon', { item: weapon.name, n: weaponDamage }) : t('fight.tip.fist'),
             levelStep ? t('fight.tip.levelStep', { n: levelStep }) : null,

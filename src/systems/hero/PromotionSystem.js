@@ -7,6 +7,7 @@ import {
 } from '../../config/registries/jobRegistry.js';
 import { getSkill, SKILL_LAYERS } from '../../config/registries/skillRegistry.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
+import { recalculateEquipmentModifiers } from '../equipment/EquipmentManager.js';
 
 /**
  * PromotionSystem — the only way a hero's skills ever change shape.
@@ -174,6 +175,8 @@ export function promote(heroId, jobId) {
 
     // Max HP and hero level both derive from skills.
     HeroManager.updateHeroFromSkills(hero);
+    // A new style can switch a held weapon off (or on), and its family's ability with it.
+    recalculateEquipmentModifiers(hero);
 
     EventBus.publish(ENGINE_EVENTS.HERO_PROMOTED, {
         heroId, heroName: hero.name,
