@@ -1514,7 +1514,8 @@
       "melee"
     ],
     "damage": 2,
-    "id": "item_copper_sword"
+    "id": "item_copper_sword",
+    "tier": 1
   },
   "item_copper_dagger": {
     "name": "Copper Dagger",
@@ -1539,7 +1540,8 @@
         "scale": 1
       }
     ],
-    "id": "item_copper_dagger"
+    "id": "item_copper_dagger",
+    "tier": 1
   },
   "item_copper_cleaver": {
     "name": "Copper Cleaver",
@@ -1563,7 +1565,8 @@
         "scale": 1
       }
     ],
-    "id": "item_copper_cleaver"
+    "id": "item_copper_cleaver",
+    "tier": 1
   },
   "item_copper_greatsword": {
     "name": "Copper Greatsword",
@@ -1582,7 +1585,8 @@
     "damage": 3,
     "speed": "slow",
     "hands": 2,
-    "id": "item_copper_greatsword"
+    "id": "item_copper_greatsword",
+    "tier": 1
   },
   "item_copper_bow": {
     "name": "Copper Bow",
@@ -1605,7 +1609,8 @@
         "scale": 1
       }
     ],
-    "id": "item_copper_bow"
+    "id": "item_copper_bow",
+    "tier": 1
   },
   "item_copper_wand": {
     "name": "Copper Wand",
@@ -1623,7 +1628,8 @@
     ],
     "damage": 1,
     "speed": "fast",
-    "id": "item_copper_wand"
+    "id": "item_copper_wand",
+    "tier": 1
   },
   "item_leather_hat": {
     "name": "Leather Hat",
@@ -2182,7 +2188,8 @@
       "melee"
     ],
     "damage": 3,
-    "id": "item_iron_sword"
+    "id": "item_iron_sword",
+    "tier": 2
   },
   "item_iron_dagger": {
     "name": "Iron Dagger",
@@ -2207,7 +2214,8 @@
         "scale": 2
       }
     ],
-    "id": "item_iron_dagger"
+    "id": "item_iron_dagger",
+    "tier": 2
   },
   "item_iron_cleaver": {
     "name": "Iron Cleaver",
@@ -2231,7 +2239,8 @@
         "scale": 2
       }
     ],
-    "id": "item_iron_cleaver"
+    "id": "item_iron_cleaver",
+    "tier": 2
   },
   "item_iron_greatsword": {
     "name": "Iron Greatsword",
@@ -2250,7 +2259,8 @@
     "damage": 4,
     "speed": "slow",
     "hands": 2,
-    "id": "item_iron_greatsword"
+    "id": "item_iron_greatsword",
+    "tier": 2
   },
   "item_iron_bow": {
     "name": "Iron Bow",
@@ -2273,7 +2283,8 @@
         "scale": 2
       }
     ],
-    "id": "item_iron_bow"
+    "id": "item_iron_bow",
+    "tier": 2
   },
   "item_iron_wand": {
     "name": "Iron Wand",
@@ -2291,7 +2302,8 @@
     ],
     "damage": 2,
     "speed": "fast",
-    "id": "item_iron_wand"
+    "id": "item_iron_wand",
+    "tier": 2
   },
   "item_iron_helmet": {
     "name": "Iron Helmet",
