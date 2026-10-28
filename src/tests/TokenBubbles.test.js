@@ -308,6 +308,14 @@ describe('hover: the rings, the timer and the gear', () => {
         expect(ring(container, 'charges')).toBeNull();
     });
 
+    it('⭐ an enemy never shows charges: hovered, its name and HP only (concept_token_bars rule 6)', () => {
+        const enemy = { typeId: 'fixture_enemy', instanceId: 'tok_r', heroId: null, alert: null, usesRemaining: 20 };
+        const { container } = mount(bub({ token: enemy, isHovered: true }));
+        expect(ring(container, 'charges')).toBeNull();
+        expect(bubble(container, 'charges')).toBeNull();
+        expect(container.querySelector('[data-health-bar="enemy"]')).not.toBeNull();
+    });
+
     it('a change while hovered moves the same ring, which glides', () => {
         const { container, rerender } = mount(bub({ token: worked({ heroId: null, usesRemaining: 4 }), isHovered: true }));
         const r = ring(container, 'charges');
@@ -410,8 +418,9 @@ describe('the middle row', () => {
     });
 
     it('⭐ hovering never moves a mark: the gear and the spawner ring come up in a row of their own, above the marks', () => {
+        // A chosen recipe waiting on items: its '!' stays (only a choice waiting swaps for the gear).
         const props = {
-            token: worked({ heroId: null }), gear: { show: true, pulsing: true, recipe: null, onClick: () => {} },
+            token: worked({ heroId: null, alert: ALERT.INPUTS }), gear: { show: true, pulsing: false, recipe: { name: 'R' }, onClick: () => {} },
             spawner: spawnerRing({ count: 3, cap: 5 })
         };
         const { container, rerender } = mount(bub(props));
@@ -446,6 +455,92 @@ describe('the middle row', () => {
         rerender(tree(bub({ token: worked({ heroId: null }) })));
         expect(container.querySelector('[data-tile-disallowed]')).toBeNull();
         expect(container.querySelector('[data-demolish-badge]')).toBeNull();
+    });
+});
+
+describe('⭐ a choice waiting: hovered, its \'!\' becomes the 2x gear in the same spot', () => {
+    const unset = (extra = {}) => ({ show: true, pulsing: true, recipe: null, onClick: vi.fn(), ...extra });
+    const middle = (c) => c.querySelector('[data-bubble-row="middle"]');
+    const gearIn = (c) => c.querySelector('[data-gear-in-mark]');
+
+    it('⭐ an unset station and a Foundation: the mark at rest, the gear in its place on hover, the mark again after', () => {
+        for (const [gear, kind] of [[unset(), ALERT.CHOOSE_RECIPE], [unset({ isFoundation: true }), ALERT.CHOOSE_BUILD]]) {
+            const { container, rerender } = mount(bub({ token: worked({ heroId: null }), gear, artUnit: 2 }));
+            const row = middle(container);
+            const rowStyle = row.getAttribute('style');
+            expect(mark(container).getAttribute('data-problem-mark')).toBe(kind);
+            expect(gearIn(container)).toBeNull();
+
+            rerender(tree(bub({ token: worked({ heroId: null }), gear, artUnit: 2, isHovered: true })));
+            // The same row, unmoved, with the gear where the mark was and no '!' and no second gear.
+            expect(middle(container)).toBe(row);
+            expect(row.getAttribute('style')).toBe(rowStyle);
+            expect(mark(container)).toBeNull();
+            expect(row.firstElementChild).toBe(gearIn(container));
+            expect(gearIn(container).getAttribute('data-gear-in-mark')).toBe(kind);
+            expect(container.querySelector('[data-bubble-row="hover"]')).toBeNull();
+            expect(container.querySelectorAll('[data-station-gear]')).toHaveLength(1);
+            // Drawn at its 32px sprite's 2x: 64.
+            const button = gearIn(container).querySelector('button');
+            expect(button.getAttribute('data-gear-px')).toBe('64');
+            expect(button.style.width).toBe('64px');
+            expect(button.querySelector('img').style.width).toBe('64px');
+            // Its click opens the picker, as the mark's did.
+            fireEvent.click(button);
+            expect(gear.onClick).toHaveBeenCalledTimes(1);
+
+            rerender(tree(bub({ token: worked({ heroId: null }), gear, artUnit: 2 })));
+            expect(mark(container).getAttribute('data-problem-mark')).toBe(kind);
+            expect(gearIn(container)).toBeNull();
+            cleanup();
+        }
+    });
+
+    it('the gear follows the Token’s art-pixel size, as the mark does', () => {
+        const { container } = mount(bub({ token: worked({ heroId: null }), gear: unset(), artUnit: 3, isHovered: true }));
+        expect(gearIn(container).querySelector('button').getAttribute('data-gear-px')).toBe('96');
+    });
+
+    it('⭐ waiting on items or room, or a can’t: the \'!\' stays on hover, and a chosen recipe’s gear stays in its own row', () => {
+        const chosen = { show: true, pulsing: false, recipe: { name: 'R' }, onClick: vi.fn() };
+        for (const [alert, gear] of [[ALERT.INPUTS, chosen], [ALERT.NO_ROOM, chosen], [ALERT.NO_ROOM, unset()]]) {
+            const { container } = mount(bub({ token: worked({ heroId: null, alert }), gear, artUnit: 2, isHovered: true }));
+            expect(mark(container).getAttribute('data-problem-mark')).toBe(alert);
+            expect(gearIn(container)).toBeNull();
+            expect(container.querySelector('[data-bubble-row="hover"] [data-station-gear]')).not.toBeNull();
+            cleanup();
+        }
+    });
+
+    it('no gear to show, marked for demolition, or worked: no swap', () => {
+        // An engine choose alert with no gear (nothing to pick from): the mark stays.
+        let r = mount(bub({ token: worked({ heroId: null, alert: ALERT.CHOOSE_RECIPE }), isHovered: true }));
+        expect(mark(r.container).getAttribute('data-problem-mark')).toBe(ALERT.CHOOSE_RECIPE);
+        expect(gearIn(r.container)).toBeNull();
+        cleanup();
+        r = mount(bub({ token: worked({ heroId: null }), gear: unset(), marked: true, isHovered: true }));
+        expect(gearIn(r.container)).toBeNull();
+        expect(r.container.querySelector('[data-station-gear]')).toBeNull();
+        cleanup();
+        r = mount(bub({ token: worked(), gear: unset(), isHovered: true }));
+        expect(gearIn(r.container)).toBeNull();
+        expect(mark(r.container)).toBeNull();
+    });
+
+    it('beside the disallow mark the gear keeps the mark’s centre', () => {
+        // The first item's centre in a centred row is fixed by what follows it, not by its own width.
+        const { container, rerender } = mount(bub({ token: worked({ heroId: null }), gear: unset(), disallowed: true }));
+        const kinds = (c) => [...middle(c).children].map(el => (el.hasAttribute('data-gear-in-mark') ? 'gear' : el.hasAttribute('data-problem-mark') ? 'problem' : el.getAttribute('data-bubble')));
+        expect(kinds(container)).toEqual(['problem', 'disallow']);
+        rerender(tree(bub({ token: worked({ heroId: null }), gear: unset(), disallowed: true, isHovered: true })));
+        expect(kinds(container)).toEqual(['gear', 'disallow']);
+    });
+
+    it('pressing the gear grabs the Token, as pressing the mark did', () => {
+        const grab = vi.fn();
+        const { container } = mount(bub({ token: worked({ heroId: null }), gear: unset(), isHovered: true, dragProps: { onPointerDown: grab } }));
+        fireEvent.pointerDown(gearIn(container).querySelector('button'));
+        expect(grab).toHaveBeenCalledTimes(1);
     });
 });
 

@@ -8,6 +8,7 @@ import { STAND_GAP } from '../../../systems/board/HeroMotion.js';
 import { MASTERY_LEVEL } from '../../../systems/hero/PromotionSystem.js';
 import * as HeroManager from '../../../systems/hero/HeroManager.js';
 import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
+import { isEnemyDef } from '../../../config/registries/enemyProfile.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { getSkill } from '../../../config/registries/skillRegistry.js';
 import { artRadiusOf } from '../../../config/matGeometry.js';
@@ -108,7 +109,8 @@ export function workPlateOf(id) {
         side: BoardState.heroBodyOf(heroId)?.side === -1 ? -1 : 1,
         output: out ? (out.itemId || out.tokenId || null) : null,
         skill: workConfigOf(def, instance)?.skill || null,
-        charges: def?.isGuildHall || marked ? null : (instance.usesRemaining ?? null),
+        // An enemy's use count is hidden: never its charges.
+        charges: def?.isGuildHall || marked || isEnemyDef(def) ? null : (instance.usesRemaining ?? null),
         problem: problem?.kind ?? null,
         severity: problem?.severity ?? null,
         missing

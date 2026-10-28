@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, beforeAll, afterAll, afterEach, vi } from 'vitest';
 import React from 'react';
-import { render, cleanup, fireEvent } from '@testing-library/react';
+import { render, cleanup, fireEvent, act } from '@testing-library/react';
 import { DndContext } from '@dnd-kit/core';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
@@ -278,6 +278,37 @@ describe('on the mat', () => {
         expect(worked.textContent).not.toContain('No room');
         expect(worked.querySelector('[data-problem-mark]')).toBeNull();
         expect(worked.querySelector('[data-work-bar]')).toBeNull();
+    });
+
+    it('⭐ a Foundation hovered: the gear stands where its mark was, and stays put while the pointer crosses it (no flicker)', () => {
+        vi.useFakeTimers();
+        const f = put('fixture_q2_foundation');
+        const onOpenRecipes = vi.fn();
+        const { container } = mount(h(MatBoard, { onOpenRecipes }));
+        const o = overlay(container, f.id);
+        expect(o.querySelector('[data-problem-mark]')).not.toBeNull();
+        hoverAt(container, f);
+        const gear = o.querySelector('[data-gear-in-mark]');
+        expect(gear).not.toBeNull();
+        expect(o.querySelector('[data-problem-mark]')).toBeNull();
+        // The pointer crosses the gear from edge to edge, landing on it: the same gear the whole way.
+        const root = container.querySelector('[data-mat-board]');
+        const button = gear.querySelector('button');
+        for (const dx of [-30, -16, 0, 16, 30]) {
+            for (const dy of [-30, 0, 30]) {
+                fireEvent.pointerMove(button, { clientX: f.x + dx, clientY: f.y + dy });
+                act(() => { vi.advanceTimersByTime(50); });
+                expect(o.querySelector('[data-gear-in-mark]')).toBe(gear);
+                expect(o.querySelector('[data-problem-mark]')).toBeNull();
+            }
+        }
+        fireEvent.click(button);
+        expect(onOpenRecipes).toHaveBeenCalledWith(f.id);
+        // Off the Token, the mark comes back.
+        fireEvent.pointerMove(root, { clientX: 40, clientY: 40 });
+        restHover();
+        expect(o.querySelector('[data-gear-in-mark]')).toBeNull();
+        expect(o.querySelector('[data-problem-mark]')).not.toBeNull();
     });
 
     it('FB-7: a chosen recipe keeps the gear, still, shown on hover', () => {
