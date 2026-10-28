@@ -76,9 +76,11 @@ the first outside playtest, modding.
 
 ### Follow-ups after the running briefs
 
-- **Hero flags**: moved on. The smaller pennant is brief 250 (T-150); the
-  fade and hero colours wait for the owner's **flag rework** (owner
-  2026-10-27), to be interviewed later.
+- **Hero flags**: moved on. The smaller pennant is brief 250 (T-150). The
+  owner's **flag rework** became a bigger change, **hero orders** (drag a hero
+  onto a job; camps for area work; flags and Work Permissions retire):
+  [concept_hero_orders.md](concept_hero_orders.md), draft 2026-10-28. Hero
+  colours wait for the owner's art pass.
 - **Accessibility**: colour-blind-safe flags (T-151) join that flag rework.
   Text size settings already exist.
 - **The return experience, first pass**: brief 40 built the "While you were
@@ -89,7 +91,7 @@ the first outside playtest, modding.
 ### Quick changes and rulings
 
 - **Widen the playmat** and **tuner baselines** (Tokens overlap less; heroes
-  get a larger base work radius). *quick* · do with **T-097**, which turns the
+  get a larger base work radius; ⚠️ the radius part is superseded if hero orders are approved). *quick* · do with **T-097**, which turns the
   Mat Tuner's numbers into fixed game values; the owner picks the numbers in
   the game. Today: up to 40 % overlap, 164 u flag radius.
 - **Translation** setup: ticket **T-119** (the game will be translated, owner
