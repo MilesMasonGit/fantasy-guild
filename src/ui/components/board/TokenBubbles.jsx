@@ -12,7 +12,7 @@ import { HealthBar } from './HealthBar.jsx';
 import { enemyBarPlace } from './healthBar.js';
 import { TimerBubble } from './TimerBubble.jsx';
 import { bubbleSlot, chargesFraction, ringCount } from './ringRow.js';
-import { TokenChargeDeltaFloater, CHARGE_FLOATERS, StationGearBadge, DisallowBadge, MarkedBadge } from './TokenBadges.jsx';
+import { TokenChargeDeltaFloater, CHARGE_FLOATERS, StationGearBadge, DisallowBadge, MarkedBadge, GEAR_SPRITE_PX } from './TokenBadges.jsx';
 import { ProblemMark } from './ProblemMark.jsx';
 import { problemOf, problemText, PROBLEM_MARK_ART_PX } from './problemMark.js';
 import { createWorkBar, shareWorkBar } from './workBar.js';
@@ -58,7 +58,9 @@ const PLATE_POINTER = 'var(--plate-pointer, auto)';
  * the mat hands it `fightBar` (`{ host, left, top }`: the fight layer's node and this box's
  * corner in mat units) and the bar draws there, over the loot (`FightBarHost`).
  * - **Hovered only**: the charges ring (not while a hero works it: the plate has them), the quest and spawner rings, the timer ring (growing, turning,
- * resting) and the recipe gear; the gear and the spawner ring in a row of their own.
+ * resting) and the recipe gear; the gear and the spawner ring in a row of their own. A choice
+ * waiting (nothing chosen on a station or Foundation) is the exception: hovered, its '!' becomes
+ * the gear at its sprite's 2x, in the mark's own spot.
  * `isHovered` is the mat's rest (`useHoverRest`), not the bare hover: the pointer has stayed on
  * the Token for a moment, so a sweep across the mat mounts none of these.
  * - While the Token is dragged: nothing.
@@ -210,14 +212,17 @@ export const TokenBubbles = ({
     // The bar's numbers: the fight's, else a full enemy (an enemy nobody fights is whole).
     const barHp = hp ?? (enemyHp ? { cur: enemyHp, max: enemyHp } : null);
     const showHp = (fight || (isHovered && !!enemyHp)) && !!barHp && barHp.max > 0;
-    const showGear = !!gear?.show && !marked && isHovered;
+    // A choice waiting: hovered, the gear stands where its '!' was. ⚠️ The hover is the Token's
+    // (its circle, `MatBoard`), not the mark's, so the swap cannot take the hover away.
+    const gearInMark = showProblem && isHovered && !!gear?.show && !marked && CHOOSE_KINDS.has(problem.kind);
+    const showGear = !!gear?.show && !marked && isHovered && !gearInMark;
     const showRest = showProblem || disallowed || marked;
     const showHoverRow = showGear || showSpawner;
     const startingUses = hasCharges && typeId ? tokenStartingUses(typeId) : null;
     // ⚠️ The hover row never shares the marks' row: inserted beside them it would slide the mark
     // out from under the pointer the moment the pointer reached it. With marks showing it sits
     // just above them; alone, at the centre.
-    const restHalf = Math.max(PROBLEM_MARK_ART_PX * artUnit, BADGE_U) / 2;
+    const restHalf = Math.max(gearInMark ? GEAR_SPRITE_PX * artUnit : PROBLEM_MARK_ART_PX * artUnit, BADGE_U) / 2;
     const hoverRowStyle = showRest
         ? { left: 0, width: boxPx, top: boxPx / 2 - restHalf - ROW_GAP_U, transform: 'translateY(-100%)', gap: ROW_GAP_U }
         : { left: 0, width: boxPx, top: boxPx / 2, transform: 'translateY(-50%)', gap: ROW_GAP_U };
@@ -277,7 +282,18 @@ export const TokenBubbles = ({
                     className="absolute z-20 flex items-center justify-center pointer-events-none"
                     style={{ left: 0, width: boxPx, top: boxPx / 2, transform: 'translateY(-50%)', gap: ROW_GAP_U }}
                 >
-                    {showProblem && (
+                    {gearInMark ? (
+                        <div {...dragProps} data-gear-in-mark={problem.kind} className="relative shrink-0 pointer-events-auto">
+                            <StationGearBadge
+                                recipe={gear.recipe}
+                                pulsing={gear.pulsing}
+                                isFoundation={gear.isFoundation}
+                                isField={!!gear.isField}
+                                onClick={gear.onClick}
+                                artUnit={artUnit}
+                            />
+                        </div>
+                    ) : showProblem && (
                         <ProblemMark problem={problem} tip={problemTip} artUnit={artUnit} dragProps={dragProps} onClick={problemClick} />
                     )}
                     {marked && (

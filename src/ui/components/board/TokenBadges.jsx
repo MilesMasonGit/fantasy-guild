@@ -151,17 +151,21 @@ export const TokenNameBadge = memo(function TokenNameBadge({ name, isDragging, s
  * waiting, not broken, and heroes pass it over until the player picks. Once a recipe is chosen
  * it is still, so the player can change it.
  * Hovering previews the selected recipe: outputs first, then what it consumes.
+ * `artUnit` draws it at its sprite's own pixels times that, filling its button (the 2x gear that
+ * stands in a choice's problem mark on hover); without it, the small 24px gear.
  */
 // One art pixel of the 32px gear sprite, drawn at 24px in its 28px button (2px inset).
 const GEAR_INSET = 2;
 const GEAR_ART_PX = 24 / 32;
+export const GEAR_SPRITE_PX = 32;
 const GEAR_OUTLINE_OFFSETS = [[-1, 0], [1, 0], [0, -1], [0, 1]];
 const GEAR_SRC = '/assets/ui/u_gear.png';
 
 /** The gear's shape filled with the alert colour, one art pixel off in one direction. */
-const gearOutlineStyle = (dx, dy) => ({
-    left: `${GEAR_INSET + dx * GEAR_ART_PX}px`,
-    top: `${GEAR_INSET + dy * GEAR_ART_PX}px`,
+const gearOutlineStyle = (dx, dy, inset = GEAR_INSET, artPx = GEAR_ART_PX, size = null) => ({
+    left: `${inset + dx * artPx}px`,
+    top: `${inset + dy * artPx}px`,
+    ...(size ? { width: size, height: size } : null),
     maskImage: `url("${GEAR_SRC}")`,
     WebkitMaskImage: `url("${GEAR_SRC}")`,
     maskSize: '100% 100%',
@@ -171,8 +175,10 @@ const gearOutlineStyle = (dx, dy) => ({
     imageRendering: 'pixelated'
 });
 
-export const StationGearBadge = ({ isDragging, recipe, pulsing = false, isFoundation = false, isField = false, onClick }) => {
+export const StationGearBadge = ({ isDragging, recipe, pulsing = false, isFoundation = false, isField = false, onClick, artUnit = null }) => {
     if (isDragging) return null;
+    const big = artUnit ? GEAR_SPRITE_PX * artUnit : null;
+    const outline = (dx, dy) => (big ? gearOutlineStyle(dx, dy, 0, artUnit, big) : gearOutlineStyle(dx, dy));
 
     const outputs = outputSummary(recipe);
     const inputs = inputSummary(recipe);
@@ -201,8 +207,11 @@ export const StationGearBadge = ({ isDragging, recipe, pulsing = false, isFounda
                     type="button"
                     onClick={(e) => { e.stopPropagation(); onClick?.(e); }}
                     aria-label={label}
+                    data-gear-px={big || undefined}
+                    style={big ? { width: big, height: big } : undefined}
                     className={cn(
-                        'w-7 h-7 flex items-center justify-center p-0 cursor-pointer select-none',
+                        !big && 'w-7 h-7',
+                        'flex items-center justify-center p-0 cursor-pointer select-none',
                         'filter drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)]',
                         'group/gear',
                         pulsing && 'relative'
@@ -213,8 +222,8 @@ export const StationGearBadge = ({ isDragging, recipe, pulsing = false, isFounda
                             key={`${dx}${dy}`}
                             data-gear-outline=""
                             aria-hidden="true"
-                            className="gi-gear-alert absolute w-6 h-6 pointer-events-none"
-                            style={gearOutlineStyle(dx, dy)}
+                            className={cn('gi-gear-alert absolute pointer-events-none', !big && 'w-6 h-6')}
+                            style={outline(dx, dy)}
                         />
                     ))}
                     {!pulsing && GEAR_OUTLINE_OFFSETS.map(([dx, dy]) => (
@@ -222,15 +231,15 @@ export const StationGearBadge = ({ isDragging, recipe, pulsing = false, isFounda
                             key={`h${dx}${dy}`}
                             data-gear-hover-outline=""
                             aria-hidden="true"
-                            className="hidden group-hover/gear:block absolute w-6 h-6 bg-white pointer-events-none"
-                            style={gearOutlineStyle(dx, dy)}
+                            className={cn('hidden group-hover/gear:block absolute bg-white pointer-events-none', !big && 'w-6 h-6')}
+                            style={outline(dx, dy)}
                         />
                     ))}
                     <img
                         src={GEAR_SRC}
                         alt={label}
-                        className="relative w-6 h-6 object-contain pointer-events-none"
-                        style={{ imageRendering: 'pixelated' }}
+                        className={cn('relative object-contain pointer-events-none', !big && 'w-6 h-6')}
+                        style={big ? { width: big, height: big, imageRendering: 'pixelated' } : { imageRendering: 'pixelated' }}
                     />
                 </button>
             </div>
