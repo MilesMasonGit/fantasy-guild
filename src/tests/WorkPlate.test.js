@@ -273,6 +273,16 @@ describe('⭐ on the mat', () => {
         expect(workPlateOf(t.id)).toMatchObject({ output: null, skill: 'construction', charges: null });
     });
 
+    it('an enemy’s hidden use count is never its charges (concept_token_bars rule 6)', () => {
+        GameState.state.heroes = [hero('h1', { melee: 50 })];
+        const e = put('fixture_enemy', AT, 20);
+        Flags.plant('h1', P(700, 500));
+        run(200);
+        expect(BoardState.workerOf(e.id)).toBe('h1');
+        expect(BoardState.getTokenById(e.id).usesRemaining).toBeGreaterThan(0);
+        expect(workPlateOf(e.id)).toMatchObject({ heroId: 'h1', charges: null });
+    });
+
     it('its draw switch stops drawing it, and nothing else', async () => {
         const t = put('fixture_producer', AT, 12);
         Flags.plant('h1', P(700, 500));

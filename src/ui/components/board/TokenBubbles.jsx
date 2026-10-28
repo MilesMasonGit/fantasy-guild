@@ -4,7 +4,7 @@ import { BOARD_EVENTS, ALERT } from '../../../systems/board/boardEvents.js';
 import * as SpawnerSystem from '../../../systems/board/SpawnerSystem.js';
 import * as Growth from '../../../systems/board/Growth.js';
 import { getTokenType, tokenStartingUses } from '../../../config/registries/tokenRegistry.js';
-import { enemyProfileOf } from '../../../config/registries/enemyProfile.js';
+import { enemyProfileOf, isEnemyDef } from '../../../config/registries/enemyProfile.js';
 import { subscribeToken } from './tokenEvents.js';
 import { RingBadge } from './RingBadge.jsx';
 import { Bubble } from './Bubble.jsx';
@@ -99,6 +99,8 @@ export const TokenBubbles = ({
     const combatRef = useRef(combat);
     const hpRef = useRef(hp);
     const enemyHp = useMemo(() => enemyProfileOf(getTokenType(typeId))?.hp ?? null, [typeId]);
+    // ⚠️ An enemy's use count is hidden: it never draws as charges.
+    const isEnemy = useMemo(() => isEnemyDef(getTokenType(typeId)), [typeId]);
 
     const liveRef = useRef({ hasHero, blocked });
     liveRef.current = { hasHero, blocked };
@@ -200,7 +202,7 @@ export const TokenBubbles = ({
     const fight = hasHero && combat;
     // A hero at work and not fighting: the plate under them says the charges and any problem.
     const plated = hasHero && !fight;
-    const hasCharges = usesRemaining != null;
+    const hasCharges = usesRemaining != null && !isEnemy;
     const showCharges = hasCharges && isHovered && !plated;
     const showProblem = !!problem && !plated;
     const showQuest = !!quest && isHovered;

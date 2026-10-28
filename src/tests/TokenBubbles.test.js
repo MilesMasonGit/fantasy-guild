@@ -308,6 +308,14 @@ describe('hover: the rings, the timer and the gear', () => {
         expect(ring(container, 'charges')).toBeNull();
     });
 
+    it('⭐ an enemy never shows charges: hovered, its name and HP only (concept_token_bars rule 6)', () => {
+        const enemy = { typeId: 'fixture_enemy', instanceId: 'tok_r', heroId: null, alert: null, usesRemaining: 20 };
+        const { container } = mount(bub({ token: enemy, isHovered: true }));
+        expect(ring(container, 'charges')).toBeNull();
+        expect(bubble(container, 'charges')).toBeNull();
+        expect(container.querySelector('[data-health-bar="enemy"]')).not.toBeNull();
+    });
+
     it('a change while hovered moves the same ring, which glides', () => {
         const { container, rerender } = mount(bub({ token: worked({ heroId: null, usesRemaining: 4 }), isHovered: true }));
         const r = ring(container, 'charges');
