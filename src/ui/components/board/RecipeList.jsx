@@ -11,6 +11,8 @@ import { recipeRowOf } from './recipeRows.js';
 import { cycleText } from './tokenCard.js';
 import { skillLevelText } from '../dock/heroPanelSkills.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
+import { fieldOf, cropTermsOf } from '../../../config/registries/tokenConstants.js';
+import { formatClock } from '../drawer/lifecycleLines.js';
 
 /**
  * The recipe list a station's or Foundation's card flips to: one row per recipe, level first,
@@ -87,7 +89,20 @@ const Byproduct = ({ out }) => (
     </Tooltip>
 );
 
-const RecipeRow = ({ row, selected, onChoose }) => {
+/** A crop's grow time and how many harvests it gives once ripe. */
+const CropTerms = ({ crop }) => {
+    const harvests = `${crop.load.toLocaleString('en-US')} ${crop.load === 1 ? 'harvest' : 'harvests'}`;
+    return (
+        <Tooltip title="Once sown" lines={[`Grows for ${formatClock(crop.growMs)}, then gives ${harvests}`]}>
+            <span data-recipe-crop className="inline-flex items-center gap-1 ui-text-small text-gi-muted tabular-nums">
+                <PixelGlyph name="grow" />{formatClock(crop.growMs)}
+                <span data-recipe-harvests>{harvests}</span>
+            </span>
+        </Tooltip>
+    );
+};
+
+const RecipeRow = ({ row, crop = null, selected, onChoose }) => {
     const [hover, setHover] = useState(false);
     return (
         <button
@@ -110,6 +125,7 @@ const RecipeRow = ({ row, selected, onChoose }) => {
             {row.main && <OutputHeadline out={row.main} />}
             {row.byproducts.map(b => <Byproduct key={b.itemId || b.tokenId} out={b} />)}
             <span className="flex-1" />
+            {crop && <CropTerms crop={crop} />}
             {row.xp > 0 && <span data-recipe-xp className="ui-text-small text-gi-muted tabular-nums">+{row.xp.toLocaleString('en-US')} XP</span>}
             {row.durationMs > 0 && (
                 <span data-recipe-time className="inline-flex items-center gap-1 ui-text-small text-gi-muted tabular-nums">
@@ -181,6 +197,7 @@ export const RecipeList = ({ def, instanceId = null, selectedRecipeId = null, wo
     const rootRef = useRef(null);
     const { skill, entries } = recipeListFor(def, { workerId, heroes, query });
     const heroesById = new Map((heroes || []).map(h => [h?.id, h]));
+    const isField = !!fieldOf(def);
 
     // Opens scrolled to the current recipe, in whichever arrow-bar list holds the card.
     useLayoutEffect(() => {
@@ -236,7 +253,7 @@ export const RecipeList = ({ def, instanceId = null, selectedRecipeId = null, wo
                     }
                     if (entry.kind === ENTRY.LOCKED) return <LockedRow key={`l${entry.key}`} entry={entry} />;
                     const row = recipeRowOf(entry.recipe, entry.level, instanceId);
-                    return <RecipeRow key={row.id} row={row} selected={row.id === selectedRecipeId} onChoose={onChoose} />;
+                    return <RecipeRow key={row.id} row={row} crop={isField ? cropTermsOf(entry.recipe) : null} selected={row.id === selectedRecipeId} onChoose={onChoose} />;
                 })}
             </div>
         </div>

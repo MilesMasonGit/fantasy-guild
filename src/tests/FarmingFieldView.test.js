@@ -125,10 +125,15 @@ describe('the card', () => {
         const recipe = block(model, CARD_BLOCK.RECIPE);
         expect(recipe.recipeName).toBe('Wheat');
         expect(recipe.needs).toEqual([]);
-        expect(recipe.change).toEqual({ label: 'Change crop', chosen: true });
+        expect(recipe.change).toEqual({ label: 'Change crop', chosen: true, empty: 'No crop chosen' });
         const lines = block(model, CARD_BLOCK.LIFECYCLE).lines;
         expect(lines[0]).toMatchObject({ icon: 'grow', text: '0:40', tip: 'Wheat growing: ripe in 40 s' });
-        expect(lines.at(-1)).toMatchObject({ tip: 'Each sowing costs 1 View Wheat Seed from the Bank' });
+        expect(lines.at(-1)).toEqual({ icon: 'grow', text: '1 View Wheat Seed per sowing', tip: 'Each sowing costs 1 View Wheat Seed from the Bank' });
+    });
+
+    it('nothing picked: says no crop is chosen, not that nothing is chosen to build', () => {
+        const recipe = block(card(arrive('fv_field')), CARD_BLOCK.RECIPE);
+        expect(recipe.change).toEqual({ label: 'Change crop', chosen: false, empty: 'No crop chosen' });
     });
 
     it('ripe: harvests left; after a change of pick, what it sows next', () => {
