@@ -131,20 +131,20 @@ describe('mat overlays', () => {
         BoardState.addToken(BoardState.createTokenInstance('token_guild_hall'), 880, 560);
         QuestManager.init();
         const q = QuestTokens.spawnQuest(hunt);
-        return h(MatToken, { id: q.id, typeId: q.typeId, x: q.x, y: q.y, size: 1, z: 10, isHovered: true, isRested: true });
+        return h(MatToken, { id: q.id, typeId: q.typeId, x: q.x, y: q.y, size: 1, z: 10, isHovered: true, isRested: true, plateHost: document.body });
     }
 
     it('bubbles and tooltips', () => {
         const el = questToken();
         const on = mount(el);
-        expect(on.container.querySelector('[data-ring="quest"]')).not.toBeNull();
+        expect(document.body.querySelector('[data-idle-plate] [data-plate-cell="quest"]')).not.toBeNull();
         expect(document.body.querySelector('[data-quest-tooltip]')).not.toBeNull();
         cleanup();
 
         setDrawn('bubbles', false);
         setDrawn('tooltips', false);
         const off = mount(el);
-        expect(off.container.querySelector('[data-ring]')).toBeNull();
+        expect(document.body.querySelector('[data-idle-plate]')).toBeNull();
         expect(document.body.querySelector('[data-quest-tooltip]')).toBeNull();
         QuestManager.cleanup();
     });

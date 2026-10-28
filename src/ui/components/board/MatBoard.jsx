@@ -17,6 +17,7 @@ import { FlagLayer } from './FlagLayer.jsx';
 import { heroOutline } from './spriteOutline.js';
 import { SpriteLayerView } from './SpriteLayerView.jsx';
 import { WorkPlateLayer } from './WorkPlateLayer.jsx';
+import { IdlePlateHost } from './IdlePlate.jsx';
 import { FightLayer, FightBarHost } from './FightLayer.jsx';
 import { EnemyCardTip } from '../combat/EnemyCard.jsx';
 import { TerrainCanvas } from './TerrainCanvas.jsx';
@@ -89,13 +90,15 @@ export const MatBoard = React.memo(function MatBoard({
 
     const [hoveredId, setHoveredId] = useState(null);
     const [hoverHeroId, setHoverHeroId] = useState(null);
-    // The outline follows the hover at once; the name, the rings and the HP bar wait for the
+    // The outline follows the hover at once; the name, the idle plate and the HP bar wait for the
     // pointer to rest (`useHoverRest`), so a Token's own rest redraws that Token alone.
     const rest = useHoverRest(hoveredId, hoverHeroId);
     /** The pointer is on a Token's art circle, so every flag lets it through. */
     const [flagsYield, setFlagsYield] = useState(false);
     /** The fight layer's node the fighters' health bars draw into (`FightBarHost`). */
     const [fightBarHost, setFightBarHost] = useState(null);
+    /** The node the rested Token's idle plate draws into (`IdlePlateHost`). */
+    const [idlePlateHost, setIdlePlateHost] = useState(null);
     const { isDragging, activePayload } = useActiveDrag();
     // The mat Token in the hand, if one is: it stays where it is, hidden, while it is carried.
     const carriedId = isDragging && activePayload?.kind === DRAG_KIND.TOKEN ? (activePayload.from?.instanceId ?? null) : null;
@@ -505,6 +508,7 @@ export const MatBoard = React.memo(function MatBoard({
                     dragging={carriedId === t.id}
                     plated={plated.has(t.id)}
                     fightBarHost={fighters.tokens.has(t.id) ? fightBarHost : null}
+                    plateHost={rest.tokenId === t.id && !workedBy.has(t.id) ? idlePlateHost : null}
                     onPress={handleTokenPress}
                 />
             ))}
@@ -567,6 +571,9 @@ export const MatBoard = React.memo(function MatBoard({
                     yieldToTokens={flagsYield}
                 />
             )}
+
+            {/* `MAT_Z.WORK_PLATE`: the idle plate under the Token the pointer rests on, when nobody works it. */}
+            {platesDrawn && <IdlePlateHost hostRef={setIdlePlateHost} />}
 
             {/* `MAT_Z.FIGHT`: each fight's plate under the fighters' feet and its chip, which opens the fight panel. */}
             {fights.length > 0 && (

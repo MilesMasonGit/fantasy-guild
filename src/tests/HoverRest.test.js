@@ -43,7 +43,8 @@ const later = (ms) => act(() => { vi.advanceTimersByTime(ms); });
 const overlay = (c, id) => c.querySelector(`[data-token-overlay="${id}"]`);
 const art = (c, id) => c.querySelector(`[data-token-art][data-token-id="${id}"]`);
 const nameOf = (c, id) => overlay(c, id).querySelector('[data-token-name]');
-const chargesOf = (c, id) => c.querySelector(`[data-bubble="charges"][data-bubble-of="${id}"]`);
+/** The rested Token's charges, on its idle plate under it. */
+const chargesOf = (c, id) => c.querySelector(`[data-idle-plate="${id}"] [data-plate-cell="charges"]`);
 
 function matRoot(container) {
     const root = container.querySelector('[data-mat-board]');
@@ -72,7 +73,7 @@ afterEach(() => {
 });
 
 describe('⭐ resting on a Token', () => {
-    it('the outline at once; nothing else before the rest; the name and the charges ring after', () => {
+    it('the outline at once; nothing else before the rest; the name and the plate with its charges after', () => {
         const t = placeAt('fixture_producer', 600, 500);
         const { container } = mount();
         const root = matRoot(container);
@@ -161,7 +162,7 @@ describe('⭐ resting on a Token', () => {
             expect(art(container, t.id).getAttribute('data-outline')).toBe('hover');
             later(HOVER_REST_MS / 3);
             expect(container.querySelector('[data-token-name]')).toBeNull();
-            expect(container.querySelector('[data-ring], [data-bubble-row="hover"], [data-near-ring]')).toBeNull();
+            expect(container.querySelector('[data-ring], [data-bubble-row="hover"], [data-near-ring], [data-idle-plate]')).toBeNull();
         }
         // A back-and-forth that returns to a Token inside the wait does not count as a rest.
         pointAt(root, row[3]);
@@ -198,6 +199,9 @@ describe('⭐ resting on a Token', () => {
         expect(renders.of('MatToken'), JSON.stringify(renders.all())).toBe(1);
         expect(renders.of('MatHero')).toBe(0);
         expect(nameOf(container, b.id)).not.toBeNull();
+        // Its plate and its dropped name came in that one render.
+        expect(chargesOf(container, b.id)).not.toBeNull();
+        expect(renders.commits()).toHaveLength(1);
     });
 });
 

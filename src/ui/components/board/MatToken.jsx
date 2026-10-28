@@ -24,10 +24,11 @@ import { MAP_MODE, isProtectedFromDemolition } from '../../hooks/useMapMode.js';
 import { useTokenEvent } from './tokenEvents.js';
 import { useTokenDetail } from './useTokenDetail.js';
 import { TokenBubbles } from './TokenBubbles.jsx';
-import { SMALL_OVERHANG_U, spawnerRing, questRing } from './ringRow.js';
+import { SMALL_OVERHANG_U } from './ringRow.js';
 import { plateNameDrop } from './workPlate.js';
 import { TokenNameBadge } from './TokenBadges.jsx';
-import { gearStateOf } from './centreAlert.js';
+import { gearStateOf, isGearOnlyAlert } from './centreAlert.js';
+import { isEnemyDef } from '../../../config/registries/enemyProfile.js';
 import { TokenHitArt } from './TokenHitArt.jsx';
 import { hitSkillOf, strikesLive } from './hitAnimations.js';
 import { tokenOutline } from './spriteOutline.js';
@@ -128,6 +129,7 @@ export const MatToken = React.memo(function MatToken({
     dragging = false,
     plated = false,
     fightBarHost = null,
+    plateHost = null,
     onPress
 }) {
     // Perf draw switches: each only stops DRAWING (see drawSwitches.js).
@@ -182,7 +184,7 @@ export const MatToken = React.memo(function MatToken({
     // (routed to this Token alone).
     const detail = useTokenDetail(id, def);
 
-    // The timer bubble polls this; stable per Token so its poll is not reset. A resting Token
+    // The idle plate's timer polls this; stable per Token so its poll is not reset. A resting Token
     // counts down to its refill (a regrow has none: it becomes its Sapling at once); a growing
     // one counts down its growth (`everyMs` is the whole growth time); a turning one to its next
     // roll, over the roll cycle (on a turned Token the ORIGINAL's, as the roll itself uses,
@@ -201,13 +203,14 @@ export const MatToken = React.memo(function MatToken({
 
     const spawnerCounts = detail?.spawnerCounts ?? null;
     const quest = detail?.quest ?? null;
-    const spawnerBubble = React.useMemo(
-        () => spawnerRing(spawnerCounts),
+    // Kept by value, so the idle plate's cells are worked out again only when a number changes.
+    const spawnerPlate = React.useMemo(
+        () => (spawnerCounts ? { count: spawnerCounts.count, cap: spawnerCounts.cap } : null),
         [spawnerCounts?.count, spawnerCounts?.cap]   // eslint-disable-line react-hooks/exhaustive-deps
     );
-    const questBubble = React.useMemo(
-        () => questRing(quest),
-        [quest?.currentCount, quest?.requiredCount, quest?.title]   // eslint-disable-line react-hooks/exhaustive-deps
+    const questPlate = React.useMemo(
+        () => (quest ? { currentCount: quest.currentCount, requiredCount: quest.requiredCount, itemId: quest.itemId } : null),
+        [quest?.currentCount, quest?.requiredCount, quest?.itemId]   // eslint-disable-line react-hooks/exhaustive-deps
     );
     const questDone = !!quest?.done;
 
@@ -333,6 +336,13 @@ export const MatToken = React.memo(function MatToken({
                 : `left ${SLIDE_MS}ms ${SLIDE_EASE}, top ${SLIDE_MS}ms ${SLIDE_EASE}`
     };
     const hidden = dragging;
+    // The idle plate under the rested Token nobody works, when it has something to say; worked out
+    // here, in the same render as the name that steps down past it.
+    const timed = !!(detail?.turns || detail?.grows || detail?.ripens || resting);
+    const idlePlate = !!plateHost && !staffed && !hidden && !isEnemyDef(def) && (
+        (usesRemaining != null && !isGuildHallToken) || !!spawnerPlate || !!questPlate
+        || (!!alert && !isGearOnlyAlert(alert)) || (timed && !!readTimer())
+    );
     // In a fight the enemy's bar draws in the fight layer (`FightBarHost`), placed by this box's corner.
     const fightBar = React.useMemo(
         () => (fightBarHost && x != null && y != null ? { host: fightBarHost, left: x - boxHalf, top: y - boxHalf } : null),
@@ -585,14 +595,14 @@ export const MatToken = React.memo(function MatToken({
                     isDragging={hidden}
                     shown={isRested}
                     below
-                    offset={(small ? SMALL_OVERHANG_U : 0) + (plated ? plateNameDrop(fit) : 0)}
+                    offset={(small ? SMALL_OVERHANG_U : 0) + (plated || idlePlate ? plateNameDrop(fit) : 0)}
                 />
 
                 {/**
                  * The problem mark of a Token nobody works and the player's marks, and once the
-                 * pointer rests on it the rings and the gear, each in its own spot inside the Token's
-                 * box. A small Token keeps FULL-size rings and they hang off its box. A worked
-                 * Token's cycle, charges and problem are on its work plate (`WorkPlateLayer`).
+                 * pointer rests on it the gear and its idle plate (drawn into `plateHost`, which the
+                 * mat hands the rested Token alone). A worked Token's cycle, charges and problem are
+                 * on its work plate (`WorkPlateLayer`).
                  */}
                 {bubblesDrawn && <TokenBubbles
                     instanceId={id}
@@ -601,10 +611,12 @@ export const MatToken = React.memo(function MatToken({
                     isDragging={hidden}
                     boxPx={boxPx}
                     artUnit={artScale}
-                    small={small}
-                    spawner={spawnerBubble}
-                    quest={questBubble}
-                    readTimer={detail?.turns || detail?.grows || detail?.ripens || resting ? readTimer : null}
+                    x={x}
+                    y={y}
+                    spawner={spawnerPlate}
+                    quest={questPlate}
+                    readTimer={timed ? readTimer : null}
+                    plateHost={idlePlate ? plateHost : null}
                     gear={gear}
                     disallowed={!!detail?.disallowed}
                     marked={!!detail?.marked}

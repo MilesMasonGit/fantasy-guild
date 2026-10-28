@@ -5,7 +5,7 @@ import path from 'path';
 import React from 'react';
 import { render, cleanup } from '@testing-library/react';
 import { RingBadge, RING_CIRCUMFERENCE, glideOffset } from '../ui/components/board/RingBadge.jsx';
-import { GLIDING_RINGS, spawnerRing } from '../ui/components/board/ringRow.js';
+import { GLIDING_RINGS } from '../ui/components/board/ringRow.js';
 
 /**
  * ⭐ Count rings glide. A Token's charges, a spawner's count and a quest's progress
@@ -19,8 +19,8 @@ afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 const arcOf = (container) => container.querySelector('[data-ring-arc]');
 
 describe('which rings glide', () => {
-    it('every count: charges, the spawner count and quest progress — nothing else', () => {
-        expect([...GLIDING_RINGS].sort()).toEqual(['charges', 'quest', 'spawner']);
+    it('the charges ring only (the inspection’s): the mat draws no rings', () => {
+        expect([...GLIDING_RINGS]).toEqual(['charges']);
     });
 
     it('a charges ring draws its arc as a full dash pushed back by the empty part', () => {
@@ -59,15 +59,6 @@ describe('a change glides the SAME arc to the new value', () => {
         expect(arcOf(container)).toBe(arc);                 // not remounted: the transition can run
         expect(Number(arc.style.strokeDashoffset)).toBeCloseTo(0.1 * RING_CIRCUMFERENCE, 2);
         expect(container.firstChild.getAttribute('data-ring-text')).toBe('9');
-    });
-
-    it('a spawner 3/5 → 4/5 glides the same way', () => {
-        const a = spawnerRing({ count: 3, cap: 5 });
-        const { container, rerender } = render(h(RingBadge, a));
-        const arc = arcOf(container);
-        rerender(h(RingBadge, spawnerRing({ count: 4, cap: 5 })));
-        expect(arcOf(container)).toBe(arc);
-        expect(Number(arc.style.strokeDashoffset)).toBeCloseTo(0.2 * RING_CIRCUMFERENCE, 2);
     });
 
     it('no JavaScript animation: changing a value schedules no frame callback or timer', () => {

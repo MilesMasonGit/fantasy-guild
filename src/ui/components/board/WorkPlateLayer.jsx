@@ -7,7 +7,7 @@ import { watchWorkBar } from './workBar.js';
 import { readCycle } from './cycleShare.js';
 import { PROBLEM_SPRITE, SEVERITY } from './problemMark.js';
 import {
-    PLATE, CELL, workPlateOf, plateCells, plateTip, platePlace, timeLeftText, chargesText, glyphUri
+    PLATE, CELL, workPlateOf, plateCells, plateTip, platePlace, timeLeftText, chargesText, glyphUri, leadOf
 } from './workPlate.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
@@ -69,9 +69,6 @@ function PlateCell({ cell, u, tip }) {
         case CELL.SKILL:
             body = <img src={skillArt(cell.id).spritePath || undefined} alt="" draggable={false} style={icon} />;
             break;
-        case CELL.OUTPUT:
-            body = <img src={spriteOf(cell.id)} alt="" draggable={false} style={icon} />;
-            break;
         case CELL.MISSING:
             body = (
                 <>
@@ -105,9 +102,18 @@ function PlateCell({ cell, u, tip }) {
             );
             break;
         case CELL.TIMER:
+        case CELL.SPAWNER:
             body = (
                 <>
-                    <img src={glyphUri('clock')} alt="" draggable={false} style={glyph} />
+                    <img src={glyphUri(cell.kind === CELL.SPAWNER ? 'spawn' : cell.glyph || 'clock')} alt="" draggable={false} style={glyph} />
+                    <span className="font-bold tabular-nums leading-none text-white" style={num}>{cell.text}</span>
+                </>
+            );
+            break;
+        case CELL.QUEST:
+            body = (
+                <>
+                    {cell.itemId && <img src={spriteOf(cell.itemId)} alt="" draggable={false} style={icon} />}
                     <span className="font-bold tabular-nums leading-none text-white" style={num}>{cell.text}</span>
                 </>
             );
@@ -119,8 +125,8 @@ function PlateCell({ cell, u, tip }) {
         <div
             ref={ref}
             data-plate-cell={cell.kind}
-            className="relative shrink-0 flex items-center"
-            style={{ gap: 2 * u }}
+            className="relative shrink-0 flex items-center justify-center"
+            style={{ gap: 2 * u, minWidth: cell.kind === CELL.DIVIDER ? undefined : PLATE.ICON * u }}
             onPointerEnter={() => setText(tip ? tip(cell) || null : null)}
             onPointerLeave={() => setText(null)}
             onPointerDown={() => setText(null)}
@@ -165,12 +171,11 @@ export function WorkPlateView({ cells, tone = null, u = 1, tip = null, fill = nu
     );
 }
 
-/** The icon cells before the output (the skill, in the opened line), for the fill to stand under it. */
-export const leadOf = (cells) => Math.max(0, cells.findIndex(c => c.kind === CELL.OUTPUT));
+export { leadOf };
 
 /**
- * Where the fill stands in a plate, `u` units a plate pixel: along the foot, under what is being
- * made (`lead` icon cells before it: the skill, in the opened line).
+ * Where the fill stands in a plate, `u` units a plate pixel: along the foot, under the cell the
+ * plate shows at rest (`lead` icon cells before it: the skill, in the opened line).
  */
 export const fillStyle = (u, lead = 0) => ({
     left: (PLATE.SIDE + lead * (PLATE.ICON + PLATE.GAP)) * u,

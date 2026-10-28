@@ -14,8 +14,8 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
-import { TimerBubble } from '../ui/components/board/TimerBubble.jsx';
-import { TURN_COUNTDOWN_REFRESH_MS, turnFraction } from '../ui/components/board/ringRow.js';
+import { timerCellOf } from '../ui/components/board/idlePlate.js';
+import { TURN_COUNTDOWN_REFRESH_MS } from '../ui/components/board/ringRow.js';
 import { turnCountdownText } from '../ui/components/board/centreAlert.js';
 import { matW, matH } from '../config/matGeometry.js';
 import * as Flags from '../systems/board/Flags.js';
@@ -32,8 +32,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 /**
  * ⭐ Token Lifecycle feedback, slice **Q8**: a Token that turns on its own
  * shows a countdown to its next roll, on the Coast and on the Shrimp Coast it
- * became: a sky bubble at the Token's top-left, emptying toward the roll, shown on hover
- * and in the last ten seconds.
+ * became: the timer on its idle plate, shown on hover only.
  */
 
 registerTokenTypes({
@@ -54,9 +53,8 @@ const mount = (el) => render(
     h(DndContext, null, el)
 );
 const overlay = (container, id) => container.querySelector(`[data-token-overlay="${id}"]`);
-const countdownOf = (container, id) => overlay(container, id)?.querySelector('[data-ring="turn"]') ?? null;
-const textOf = (el) => el?.getAttribute('data-ring-text') ?? null;
-const fractionOf = (el) => Number(el?.getAttribute('data-ring-fraction'));
+const countdownOf = (container, id) => container.querySelector(`[data-idle-plate="${id}"] [data-plate-cell="timer"]`);
+const textOf = (el) => el?.textContent ?? null;
 
 beforeEach(() => {
     resetMatTuning();
@@ -82,35 +80,19 @@ describe('countdown text (FB-14)', () => {
         expect(turnCountdownText(undefined)).toBeNull();
     });
 
-    it('the ring empties over the roll cycle', () => {
-        expect(turnFraction(60000, 60000)).toBe(1);
-        expect(turnFraction(15000, 60000)).toBe(0.25);
-        expect(turnFraction(0, 60000)).toBe(0);
-        expect(turnFraction(90000, 60000)).toBe(1);
-        expect(turnFraction(5000, 0)).toBe(0);
+    it('the timer cell draws what it reads, names the odds, and is nothing with nothing to read', () => {
+        const turn = (extra) => ({ kind: 'turn', everyMs: 60000, chance: 30, ...extra });
+        expect(timerCellOf(turn({ inMs: 34000, back: false })))
+            .toMatchObject({ text: '0:34', glyph: 'turn', tip: 'Next roll to turn into something else in 0:34 (30% chance)' });
+        expect(timerCellOf(turn({ inMs: 5000, back: true })).tip).toBe('Next roll to turn back in 0:05 (30% chance)');
+        expect(timerCellOf(null)).toBeNull();
     });
 
-    it('the ring draws what it reads, names the odds, and draws nothing with nothing to read', () => {
-        const turn = (extra) => () => ({ kind: 'turn', everyMs: 60000, chance: 30, ...extra });
-        const ring = mount(h(TimerBubble, { read: turn({ inMs: 34000, back: false }), hovered: true })).container.querySelector('[data-ring="turn"]');
-        expect(textOf(ring)).toBe('0:34');
-        expect(ring.querySelector('[data-ring-label]').textContent).toBe('0:34');
-        expect(fractionOf(ring)).toBeCloseTo(34 / 60, 3);
-        expect(ring.getAttribute('aria-label')).toBe('Next roll to turn into something else in 0:34 (30% chance)');
-        cleanup();
-        expect(mount(h(TimerBubble, { read: turn({ inMs: 5000, back: true }), hovered: true })).container
-            .querySelector('[data-ring="turn"]').getAttribute('aria-label')).toBe('Next roll to turn back in 0:05 (30% chance)');
-        cleanup();
-        expect(mount(h(TimerBubble, { read: () => null, hovered: true })).container.querySelector('[data-ring]')).toBeNull();
-    });
-
-    it('a resting Token’s ring (on hover) fills as it refills', () => {
-        const rest = (inMs) => () => ({ kind: 'respawn', mode: 'refill', inMs, totalMs: 30000, everyMs: 30000 });
-        const ring = mount(h(TimerBubble, { read: rest(24000) })).container.querySelector('[data-ring="respawn"]');
-        expect(textOf(ring)).toBe('0:24');
-        expect(fractionOf(ring)).toBeCloseTo(0.2, 3);
+    it('a resting Token’s timer says when it refills', () => {
+        const cell = timerCellOf({ kind: 'respawn', mode: 'refill', inMs: 24000, totalMs: 30000, everyMs: 30000 });
+        expect(cell.text).toBe('0:24');
         // Non-breaking between the number and its unit, so the tip never splits them.
-        expect(ring.getAttribute('aria-label')).toBe('Resting. Refills in 24 s');
+        expect(cell.tip).toBe('Resting. Refills in 24\u00a0s');
     });
 });
 
@@ -125,22 +107,18 @@ describe('on the mat (FB-14)', () => {
             left: 0, top: 0, width: matW(), height: matH(), right: matW(), bottom: matH(), x: 0, y: 0
         });
         const hover = () => { fireEvent.pointerMove(root, { clientX: AT.x, clientY: AT.y }); };
-        // At rest, with a minute to go: no bubble. Hovered: a full sky ring.
+        // At rest, with a minute to go: nothing. Hovered: its plate, a minute to go.
         expect(countdownOf(container, coast.id)).toBeNull();
         act(hover);
         expect(countdownOf(container, coast.id)).toBeNull();
         restHover();
         expect(textOf(countdownOf(container, coast.id))).toBe('1:00');
-        expect(fractionOf(countdownOf(container, coast.id))).toBe(1);
 
-        // 26 s of game time: the ring re-reads the clock on its next refresh,
-        // and has emptied by as much.
+        // 26 s of game time: the plate re-reads the clock on its next refresh.
         act(() => { TimedChanges.tick(26000); vi.advanceTimersByTime(TURN_COUNTDOWN_REFRESH_MS); });
         expect(textOf(countdownOf(container, coast.id))).toBe('0:34');
-        expect(fractionOf(countdownOf(container, coast.id))).toBeCloseTo(34 / 60, 3);
         act(() => { TimedChanges.tick(19000); vi.advanceTimersByTime(TURN_COUNTDOWN_REFRESH_MS); });
         expect(textOf(countdownOf(container, coast.id))).toBe('0:15');
-        expect(fractionOf(countdownOf(container, coast.id))).toBeCloseTo(0.25, 3);
 
         // The roll (100%): a Shrimp Coast, counting down afresh to its roll back.
         // (The mat re-reads its Token list on a microtask, hence the async act.)
@@ -150,10 +128,10 @@ describe('on the mat (FB-14)', () => {
         expect(shrimp?.turnedFrom).toBe('fixture_q8_coast');
         act(() => { fireEvent.pointerMove(root, { clientX: AT.x + 1, clientY: AT.y }); });
         act(() => { vi.advanceTimersByTime(TURN_COUNTDOWN_REFRESH_MS); });
-        const ring = countdownOf(container, shrimp.id);
-        expect(textOf(ring)).toBe('1:00');
-        expect(fractionOf(ring)).toBe(1);
-        expect(ring.getAttribute('aria-label')).toContain('turn back');
+        const cell = countdownOf(container, shrimp.id);
+        expect(textOf(cell)).toBe('1:00');
+        fireEvent.pointerEnter(cell);
+        expect(document.body.querySelector('[data-bubble-tip]').textContent).toContain('turn back');
     });
 
     it('⭐ not hovered, the countdown never comes up by itself, not even in its last seconds (brief 120)', () => {

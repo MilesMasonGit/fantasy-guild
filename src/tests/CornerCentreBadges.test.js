@@ -334,18 +334,18 @@ describe('on the mat', () => {
         expect(overlay(container, empty.id).querySelector('[data-problem-mark]')).toBeNull();
     });
 
-    it('FB-5 / B1.3: a spawner shows its count against its cap as a ring in its row, not in a corner', () => {
+    it('FB-5 / B1.3: a spawner shows its count against its cap on its plate when hovered, never as a ring', () => {
         vi.useFakeTimers();
         const forest = put('fixture_q2_forest');
         put('fixture_q2_sapling', FAR);
         put('fixture_q2_sapling', { x: 1400, y: 300 });
         const { container } = mount(h(MatBoard));
         const o = overlay(container, forest.id);
-        expect(o.querySelector('[data-ring="spawner"]')).toBeNull();          // quiet at rest
+        const cell = () => container.querySelector(`[data-idle-plate="${forest.id}"] [data-plate-cell="spawner"]`);
+        expect(cell()).toBeNull();          // quiet at rest
         hoverAt(container, forest);
-        const ring = o.querySelector('[data-bubble-row] [data-ring="spawner"]');
-        expect(ring.getAttribute('data-ring-text')).toBe('2/5');
-        expect(Number(ring.getAttribute('data-ring-fraction'))).toBeCloseTo(0.4, 3);
+        expect(cell().textContent).toBe('2/5');
+        expect(container.querySelector('[data-ring]')).toBeNull();
         expect(o.querySelector('[data-spawner-count]')).toBeNull();
     });
 

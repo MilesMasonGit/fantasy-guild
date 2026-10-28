@@ -291,7 +291,7 @@ export function stateSpriteOf(instance, def = getTokenType(instance?.typeId)) {
 }
 
 /**
- * When a growing crop ripens, for the timer bubble: `{ inMs, totalMs, cropId }`, `totalMs` the
+ * When a growing crop ripens, for the idle plate's timer: `{ inMs, totalMs, cropId }`, `totalMs` the
  * whole growth as sped up. Null unless the Field is growing.
  */
 export function nextRipening(instance) {

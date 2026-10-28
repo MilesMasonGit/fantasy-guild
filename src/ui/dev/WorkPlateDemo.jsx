@@ -1,6 +1,7 @@
 // The work plate on the style sheet page: the shared `WorkPlateView` in the moments it has to read
 // in, each with its Token, its hero and the pinned flag drawn as the mat draws them at 1920 × 1080
-// (art at 2×, the mat at a fit of 0.9, the hero `artRadius + STAND_GAP` from the Token's centre).
+// (art at 2×, the mat at a fit of 0.9, the hero `artRadius + STAND_GAP` from the Token's centre),
+// then a Token nobody works, hovered, with its idle plate under it.
 // Static: no engine behind it, every hover's words written here.
 
 import { TokenSprite } from '../components/base/TokenSprite.jsx';
@@ -11,8 +12,9 @@ import { HERO_HIT_PX, HERO_BOX_PX } from '../components/board/boardConstants.js'
 import { FLAG_PX, POLE_BASE, PIN_INSET } from '../components/board/flagGeometry.js';
 import { FlagMark } from '../components/board/FlagMark.jsx';
 import { SEVERITY } from '../components/board/problemMark.js';
-import { WorkPlateView, fillStyle, leadOf } from '../components/board/WorkPlateLayer.jsx';
-import { PLATE, CELL, plateCells } from '../components/board/workPlate.js';
+import { WorkPlateView, fillStyle } from '../components/board/WorkPlateLayer.jsx';
+import { PLATE, CELL, plateCells, leadOf } from '../components/board/workPlate.js';
+import { idlePlateCells, timerCellOf } from '../components/board/idlePlate.js';
 import { ALERT } from '../../systems/board/boardEvents.js';
 import { artRadius } from '../../config/matGeometry.js';
 import { STAND_GAP } from '../../systems/board/HeroMotion.js';
@@ -37,39 +39,38 @@ const POLE_Y = Math.round(TY - (artRadius(1) - PIN_INSET) * FIT);
 /** Flat grass: the mat's own mean green. */
 const GROUND = '#5d9440';
 
-const plate = (extra) => ({ output: null, skill: null, charges: null, problem: null, severity: null, missing: [], ...extra });
+const plate = (extra) => ({ skill: null, charges: null, problem: null, severity: null, missing: [], ...extra });
 
 /** The moments the plate has to read in, and what each part's hover says. */
 export const WORK_PLATE_MOMENTS = Object.freeze([
     {
-        id: 'working', caption: 'Working: a Furnace making Copper Ingots',
+        id: 'working', caption: 'Working, nothing to count: a Furnace making Copper Ingots shows its skill',
         token: 'token_furnace', sheet: 'assets/heroes/hn_recruit_sheet.png', flag: 'reddark', fill: 0.6,
-        plate: plate({ output: 'item_copper_ingot', skill: 'smithing' }),
-        tips: { [CELL.OUTPUT]: 'Makes 1 Copper Ingot every 0:08, from 4× Copper Ore, 1× Coal' }
+        plate: plate({ skill: 'smithing' }),
+        tips: { [CELL.SKILL]: 'Cora: Smithing 12/99, 6 XP a cycle' }
     },
     {
         id: 'waiting', caption: 'Waiting on an input: no Iron Ore (the frame gold, the cycle held grey)',
         token: 'token_furnace', sheet: 'assets/heroes/hn_recruit_sheet.png', flag: 'bluelite', fill: 0.45, blocked: true,
         plate: plate({
-            output: 'item_iron_ingot', skill: 'smithing', problem: ALERT.INPUTS, severity: SEVERITY.WAITING,
+            skill: 'smithing', problem: ALERT.INPUTS, severity: SEVERITY.WAITING,
             missing: [{ itemId: 'item_iron_ore', have: 0, need: 6 }]
         }),
-        tips: { [CELL.OUTPUT]: 'Makes 1 Iron Ingot every 0:19, from 6× Iron Ore, 2× Coal', [CELL.MISSING]: 'Needs 6 Iron Ore, you have 0' }
+        tips: { [CELL.MISSING]: 'Needs 6 Iron Ore, you have 0' }
     },
     {
-        id: 'charges', caption: 'A timed job with charges: Fir Forest',
+        id: 'charges', caption: 'A timed job with charges: Fir Forest (no Fir Wood icon: the art says what it makes)',
         token: 'token_fir_forest', sheet: 'assets/heroes/hn_recruit_sheet.png', flag: 'greenlite', fill: 0.3,
-        plate: plate({ output: 'item_fir_wood', skill: 'forestry', charges: 248 }),
-        tips: { [CELL.OUTPUT]: 'Makes 1–2 Fir Wood every 0:19', [CELL.CHARGES]: '248 charges left' }
+        plate: plate({ skill: 'forestry', charges: 248 }),
+        tips: { [CELL.CHARGES]: '248 charges left' }
     },
     {
         id: 'open', caption: 'The pointer resting on the hero, the Token or the plate: the full line',
         token: 'token_fir_forest', sheet: 'assets/heroes/hn_recruit_sheet.png', flag: 'greenlite', fill: 0.3, open: true,
-        plate: plate({ output: 'item_fir_wood', skill: 'forestry', charges: 248 }),
+        plate: plate({ skill: 'forestry', charges: 248 }),
         timer: '0:13',
         tips: {
             [CELL.SKILL]: 'Cora: Forestry 30/99, 4 XP a cycle',
-            [CELL.OUTPUT]: 'Makes 1–2 Fir Wood every 0:19',
             [CELL.CHARGES]: '248 charges left',
             [CELL.TIMER]: 'Next Fir Wood in 0:13'
         }
@@ -78,6 +79,37 @@ export const WORK_PLATE_MOMENTS = Object.freeze([
         id: 'combat', caption: 'A fight: no plate yet. Its place is kept for the fight’s link (both styles, the elixirs), built with the combat work',
         token: 'token_goblin', sheet: 'assets/heroes/hn_fighter_sheet.png', flag: 'orange', combat: true,
         hp: { hero: [34, 50], enemy: [9, 20] }
+    }
+]);
+
+/** A Token nobody works, the pointer resting on it: its idle plate under it, with what applies. */
+export const IDLE_PLATE_MOMENTS = Object.freeze([
+    {
+        id: 'idle-vein', caption: 'Idle, hovered: a Copper vein’s charges',
+        token: 'token_copper_ore_vein', cells: idlePlateCells({ charges: 40 })
+    },
+    {
+        id: 'idle-resting', caption: 'Idle, hovered: a berry bush resting, its refill time',
+        token: 'token_redberry_bush',
+        cells: idlePlateCells({ timer: { ...timerCellOf({ kind: 'respawn', inMs: 34000 }), tip: 'Resting. Refills in 34s' } })
+    },
+    {
+        id: 'idle-stump', caption: 'Idle, hovered: an Oak Stump regrowing',
+        token: 'token_oak_stump',
+        cells: idlePlateCells({ timer: { ...timerCellOf({ kind: 'grow', inMs: 125000 }), tip: 'Grows into Oak Sapling in 2:05' } })
+    },
+    {
+        id: 'idle-spawner', caption: 'Idle, hovered: a Goblin Camp’s count against its limit',
+        token: 'token_goblin_camp', cells: idlePlateCells({ spawner: { count: 3, cap: 5 } })
+    },
+    {
+        id: 'idle-quest', caption: 'Idle, hovered: a quest’s progress',
+        token: 'token_copper_ore_vein', cells: idlePlateCells({ quest: { currentCount: 3, requiredCount: 10, itemId: 'item_copper_ore' } })
+    },
+    {
+        id: 'idle-problem', caption: 'Idle, hovered, waiting: its charges and its problem (the mark stays on the Token)',
+        token: 'token_copper_ore_vein', tone: SEVERITY.WAITING,
+        cells: idlePlateCells({ problem: { kind: ALERT.INPUTS, severity: SEVERITY.WAITING }, charges: 12 })
     }
 ]);
 
@@ -143,6 +175,26 @@ const MomentPlate = ({ moment }) => {
     );
 };
 
+/** A Token nobody works, hovered: its idle plate under it, centred, and its name below the plate. */
+const IdlePatch = ({ moment }) => (
+    <figure className="flex flex-col gap-1" data-work-plate-moment={moment.id}>
+        <div className="relative overflow-hidden" style={{ width: PATCH_W, height: PATCH_H, background: GROUND }}>
+            <div className="absolute" style={{ left: PATCH_W / 2 - ART / 2, top: TY - ART / 2, width: ART, height: ART }}>
+                <TokenSprite typeId={moment.token} size={ART} outline="hover" />
+            </div>
+            <div className="absolute flex justify-center" style={{ left: 0, width: PATCH_W, top: FOOT - PLATE.TUCK }}>
+                <WorkPlateView
+                    cells={moment.cells}
+                    tone={moment.tone || null}
+                    tip={(cell) => cell.tip || null}
+                    plateProps={{ 'data-work-plate-demo': moment.id }}
+                />
+            </div>
+        </div>
+        <figcaption className="text-xs text-gi-muted" style={{ maxWidth: PATCH_W }}>{moment.caption}</figcaption>
+    </figure>
+);
+
 /** The style sheet page's "Work plate" entry. */
 export const WorkPlateDemo = () => (
     <div data-work-plate-demo-root className="flex flex-wrap gap-3 pb-8">
@@ -151,6 +203,7 @@ export const WorkPlateDemo = () => (
                 <MomentPlate moment={m} />
             </Patch>
         ))}
+        {IDLE_PLATE_MOMENTS.map(m => <IdlePatch key={m.id} moment={m} />)}
     </div>
 );
 

@@ -116,15 +116,19 @@ normal text colour; a new meaning needs the owner's OK.
 ## The work plate (owner, 2026-10-24)
 
 - **While a hero works a Token, one plate on the seam between them**, just below their feet:
-  chamfer frame, hard shadow, over any loot at their feet. At rest it shows **what is being made**
-  with the **cycle filling along its foot** in whole art pixels, and the **charges** left; while
-  the Token waits, **exactly what is missing** as a red have/need pill, the frame gold (red when
-  it can't go on) and the cycle held grey.
-- **Resting the pointer** on the hero, the Token or the plate opens the full line: skill, output,
-  charges, time to the next one, each with its tooltip. Names drop below it. Pressing it grabs
-  the Token.
-- It **replaces** the worked Token's work bar, "!" and charges ring; a Token nobody works keeps
-  its own "!" and hover rings. No floating "-1": the plate counts down.
+  chamfer frame, hard shadow, over any loot at their feet. It never shows **what is being made**
+  (the Token's art says that; owner 2026-10-27). At rest: the **cycle filling along its foot** in
+  whole art pixels and the **charges** left; while the Token waits, **exactly what is missing** as
+  a red have/need pill, the frame gold (red when it can't go on) and the cycle held grey; with
+  neither, the **skill icon**, so every plate keeps one shape.
+- **Resting the pointer** on the hero, the Token or the plate opens the full line: skill, the
+  problem, charges, time to the next one, each with its tooltip. Names drop below it. Pressing it
+  grabs the Token.
+- **A Token nobody works**, once the pointer rests on it, gets the **same plate under itself**
+  (owner 2026-10-27): its problem, charges, the time to its refill, growth, ripening or turn, a
+  quest's progress, a spawner's count, as apply; nothing to say, no plate. Its "!" stays on the
+  Token at rest. Enemies get none (name and HP only). **No round rings on the mat**; the Token
+  inspection keeps its own. No floating "-1": the plate counts down.
 - A fight's link sits in the same place, the **fight plate**: both styles with a divider, then the
   hero's elixirs with the fights each has left; HP bars stay above (combat screen, 2026-10-25).
 

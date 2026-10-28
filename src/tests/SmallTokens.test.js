@@ -22,7 +22,8 @@ import {
 } from '../ui/components/base/TokenSprite.jsx';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { MatFitProvider } from '../ui/components/board/MatFitContext.jsx';
-import { RING_D_U } from '../ui/components/board/ringRow.js';
+import { SMALL_OVERHANG_U } from '../ui/components/board/ringRow.js';
+import { PLATE, plateUnit, plateNameDrop } from '../ui/components/board/workPlate.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 import { drawnPoint } from './fixtures/drawnPoint.js';
 import { restHover } from './fixtures/hoverRest.js';
@@ -245,7 +246,7 @@ describe('on the mat (MatBoard)', () => {
         expect(parseFloat(big.querySelector('img').style.width)).toBe(128);
     });
 
-    it('⭐ a small Token keeps full-size bubbles, hung off the corners of its small box', () => {
+    it('⭐ a small Token, hovered, gets the full-size plate under it, centred, its name below the plate', () => {
         vi.useFakeTimers();
         const spawner = put('b8_small_spawner', { x: 600, y: 500 });
         put('b8_standard', { x: 1200, y: 500 });
@@ -259,13 +260,15 @@ describe('on the mat (MatBoard)', () => {
         });
         fireEvent.pointerMove(root, { clientX: spawner.x, clientY: spawner.y });
         restHover();
-        const ring = o.querySelector('[data-bubble-row] [data-ring="spawner"]');
-        expect(ring).not.toBeNull();
-        expect(parseFloat(ring.style.width)).toBe(RING_D_U);
-        expect(parseFloat(ring.style.height)).toBe(RING_D_U);
-        // The row is centred on the small box, and wider than it.
-        const row = o.querySelector('[data-bubble-row]');
-        expect(parseFloat(row.style.top)).toBe(32);
-        expect(parseFloat(row.style.left) + parseFloat(row.style.width) / 2).toBe(32);
+        expect(o.querySelector('[data-ring]')).toBeNull();
+        const plate = container.querySelector(`[data-idle-plate="${spawner.id}"]`);
+        expect(plate.querySelector('[data-plate-cell="spawner"]')).not.toBeNull();
+        // Its cells at the plate's own size, as under a full-size Token.
+        expect(parseFloat(plate.style.height)).toBe(PLATE.H * plateUnit(1));
+        const slot = container.querySelector(`[data-idle-plate-slot="${spawner.id}"]`);
+        expect(parseFloat(slot.style.left) + parseFloat(slot.style.width) / 2).toBe(600);
+        // The name steps down past it: the small Token's overhang plus the plate.
+        const name = o.querySelector('[data-token-name]');
+        expect(name.style.top).toBe(`calc(100% + ${4 + SMALL_OVERHANG_U + plateNameDrop(1)}px)`);
     });
 });

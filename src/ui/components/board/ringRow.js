@@ -1,10 +1,7 @@
-
-import { spawnerCountText } from './centreAlert.js';
-
 /**
- * Bubbles: a hovered Token's numbers are rings that fill or empty with the number inside, each in
- * its own fixed spot inside the Token's box ({@link bubbleSlot}). The inspection draws the same
- * rings.
+ * Rings: a number inside a ring that fills or empties, as the Token inspection draws its charges,
+ * cycle and XP (`InspectBubbles`). The mat's Tokens say theirs on the plate (`workPlate.js`,
+ * `idlePlate.js`).
  */
 
 /**
@@ -15,62 +12,24 @@ export const RING_D_U = 40;
 
 export const RING_STROKE_U = RING_D_U * 3 / 28;
 
-/**
- * Each ring's colour. Cycle fills and charges empty; a spawner fills to its cap and a turn
- * ring empties toward its roll.
- */
+/** Each ring's colour. A cycle fills; charges empty. */
 export const RING_COLOUR = Object.freeze({
     cycle: '#f4f1e8',
     charges: '#fbbf24',   // the game's gi-gold
-    spawner: '#86efac',
-    turn: '#7dd3fc',
-    grow: '#bef264',
-    // A resting Token refilling: lavender, apart from the charges gold it refills.
-    respawn: '#c4b5fd',
-    // A quest's progress, parchment: warmer and paler than the charges gold, so a done quest's
-    // full ring is not read as charges.
-    quest: '#e8c98a',
     // Skill XP in the inspection.
     xp: '#fb923c'
 });
 
 /**
- * The count rings that GLIDE to a new value instead of jumping: a Token's charges, a
- * spawner's count against its cap and a quest's progress. `RingBadge` gives them a CSS
- * transition (`gi-ring-glide`, ~0.8 s).
+ * The count rings that GLIDE to a new value instead of jumping: a Token's charges. `RingBadge`
+ * gives them a CSS transition (`gi-ring-glide`, ~0.8 s).
  */
-export const GLIDING_RINGS = Object.freeze(new Set(['charges', 'spawner', 'quest']));
+export const GLIDING_RINGS = Object.freeze(new Set(['charges']));
 
 /** The stroke a greyed ring (a blocked cycle) is drawn in. */
 export const RING_GREY = '#8a8a8a';
 
-/**
- * Where each bubble sits inside a Token's box, in mat units from the box's top-left. The
- * layout is fixed: timer top-left, cycle bottom-left, quest bottom-centre, charges bottom-right
- * and the middle row (gear, spawner count, problem mark, demolition and disallow marks) centred
- * on the box.
- * A small Token's box is half as wide as three bubbles, so its corner bubbles hang off the box
- * by {@link SMALL_OVERHANG_U} instead of sitting inside it.
- * @param {'timer'|'cycle'|'quest'|'charges'} slot
- * @param {{boxPx: number, small?: boolean}} box
- * @returns {{left: number, top: number}}
- */
-export function bubbleSlot(slot, { boxPx, small = false }) {
-    const inset = small ? -SMALL_OVERHANG_U : BUBBLE_INSET_U;
-    const far = boxPx - RING_D_U - inset;
-    switch (slot) {
-        case 'timer': return { left: inset, top: inset };
-        case 'cycle': return { left: inset, top: far };
-        case 'quest': return { left: (boxPx - RING_D_U) / 2, top: far };
-        case 'charges': return { left: far, top: far };
-        default: return { left: 0, top: 0 };
-    }
-}
-
-/** How far a bubble sits in from its corner of a full-size Token's box. */
-export const BUBBLE_INSET_U = 2;
-
-/** How far a small Token's corner bubbles hang off its box: three side by side then just touch. */
+/** How much further down a small Token's name sits, so it clears a plate placed as under a full-size Token. */
 export const SMALL_OVERHANG_U = RING_D_U * 0.75;
 
 /**
@@ -107,47 +66,5 @@ export function ringCount(n) {
     return `${(v / 1e6).toFixed(a < 1e7 ? 1 : 0).replace(/\.0$/, '')}M`;
 }
 
-/**
- * A spawner's standing ring: its family's live count against its cap, `3/5`, filling toward
- * the cap. Null for a Token that is not a working spawner (`SpawnerSystem.spawnerCounts` gave
- * null).
- * @param {{count: number, cap: number}|null} counts
- * @returns {{kind: 'spawner', fraction: number, text: string, title: string}|null}
- */
-export function spawnerRing(counts) {
-    const text = spawnerCountText(counts);
-    if (!text) return null;
-    const fraction = counts.cap > 0 ? Math.max(0, Math.min(1, counts.count / counts.cap)) : 1;
-    return { kind: 'spawner', fraction, text, title: `${text} spawned` };
-}
-
-/**
- * A quest Token's standing ring: its progress, `3/10`, filling toward done. Null for anything
- * that is not a quest (`detail.quest` null).
- * @param {{currentCount: number, requiredCount: number, title?: string}|null} quest
- * @returns {{kind: 'quest', fraction: number, text: string, title: string}|null}
- */
-export function questRing(quest) {
-    if (!quest) return null;
-    const required = Math.max(1, Number(quest.requiredCount) || 1);
-    const current = Math.max(0, Math.min(required, Number(quest.currentCount) || 0));
-    const text = `${ringCount(current)}/${ringCount(required)}`;
-    return {
-        kind: 'quest',
-        fraction: current / required,
-        text,
-        title: quest.title ? `${quest.title}: ${text}` : text
-    };
-}
-
-/** How often the turn ring re-reads its game-time clock (ms). */
+/** How often a timer on the idle plate re-reads its game-time clock (ms). */
 export const TURN_COUNTDOWN_REFRESH_MS = 250;
-
-/**
- * How full the turn ring is: time left to the next roll over the roll cycle, so it empties
- * toward the roll. No cycle: empty.
- */
-export function turnFraction(inMs, everyMs) {
-    if (!(everyMs > 0)) return 0;
-    return Math.max(0, Math.min(1, (Number(inMs) || 0) / everyMs));
-}

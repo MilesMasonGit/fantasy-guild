@@ -14,7 +14,7 @@ import * as QuestTokens from '../../../systems/quests/QuestTokens.js';
 import { stationSkillOf } from '../../../systems/effects/statements.js';
 
 /**
- * A quest Token's quest as a flat projection for `detail`: what the ring, the glow and the
+ * A quest Token's quest as a flat projection for `detail`: what the idle plate, the glow and the
  * tooltip draw. Rebuilt on every read, so the projection's deep compare sees progress. Null
  * for any other Token.
  */
@@ -76,7 +76,7 @@ export function tokenDetailOf(id, def) {
         // A Field picks a crop with the same gear, sown for its seed.
         isField: Fields.isField(def),
         isSpawner,
-        // The family's live count against its cap, `{ count, cap }`: the spawner ring.
+        // The family's live count against its cap, `{ count, cap }`: the idle plate's spawner count.
         spawnerCounts: isSpawner ? SpawnerSystem.spawnerCounts(id) : null,
         // A Token that turns (or has turned) counts down to its next roll.
         turns: !marked && !!TimedChanges.nextTurnRoll(instance),
@@ -91,7 +91,7 @@ export function tokenDetailOf(id, def) {
         stateSprite: marked ? null : (Fields.stateSpriteOf(instance, def) ?? Respawn.restingSpriteOf(instance, def)),
         // Marked for demolition: the marked badge.
         marked,
-        // A quest Token's quest: ring, glow, tooltip, click to claim.
+        // A quest Token's quest: plate, glow, tooltip, click to claim.
         quest: questProjection(instance)
     };
 }

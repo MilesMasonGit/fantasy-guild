@@ -17,15 +17,16 @@ import { GLYPHS } from '../base/PixelGlyph.jsx';
 import { t } from '../../../i18n/index.js';
 import { problemOf, problemText } from './problemMark.js';
 import { ringCount } from './ringRow.js';
-import { inputSummary } from './recipeText.js';
 
 /**
  * The work plate: while a hero works a Token, one framed plate on the seam between them, just
- * below their feet, saying what is being made (its cycle along the plate's foot), the charges left,
- * or exactly what the Token waits for. Resting the pointer on the hero, the Token or the plate
- * opens the full line: the skill, the output, the charges and the time to the next one, each part
- * explaining itself on hover. It replaces the worked Token's work bar, its "!" and its charges
- * ring; a Token nobody works keeps those.
+ * below their feet, with the cycle along its foot and the charges left, or exactly what the Token
+ * waits for, or, with neither, the skill (so every worked plate keeps one shape). It never shows
+ * what is made: the Token's art says that, its card says how much. Resting the pointer on the
+ * hero, the Token or the plate opens the full line: the skill, the problem, the charges and the
+ * time to the next one, each part explaining itself on hover.
+ * A Token nobody works gets the same plate under itself while the pointer rests on it
+ * (`idlePlate.js`): its charges, its timer, a quest's progress, a spawner's count, its problem.
  * This file is the plate's rules, with no React: what it shows (`workPlateOf`, `plateCells`), its
  * tooltips (`plateTip`) and where it stands (`platePlace`).
  */
@@ -60,11 +61,12 @@ export const PLATE = Object.freeze({
 
 /**
  * The cells a plate can show, in the order they stand. A fight's plate (`fightPlate.js`) uses the
- * skill cell for each fighter's style, a divider between them and an elixir with its fights left.
+ * skill cell for each fighter's style, a divider between them and an elixir with its fights left;
+ * an idle Token's plate a quest's progress and a spawner's count.
  */
 export const CELL = Object.freeze({
-    SKILL: 'skill', OUTPUT: 'output', MISSING: 'missing', PROBLEM: 'problem', CHARGES: 'charges', TIMER: 'timer',
-    DIVIDER: 'divider', ELIXIR: 'elixir'
+    SKILL: 'skill', MISSING: 'missing', PROBLEM: 'problem', CHARGES: 'charges', TIMER: 'timer',
+    QUEST: 'quest', SPAWNER: 'spawner', DIVIDER: 'divider', ELIXIR: 'elixir'
 });
 
 /**
@@ -85,7 +87,7 @@ function mainOutput(outputs) {
 /**
  * What Token `id`'s plate shows, as a flat projection (`useTokenState`'s contract), or null while
  * no hero has reached it.
- * @returns {{typeId: string, heroId: string, side: number, output: string|null, skill: string|null,
+ * @returns {{typeId: string, heroId: string, side: number, skill: string|null,
  *   charges: number|null, problem: string|null, severity: string|null,
  *   missing: {itemId: string, have: number, need: number}[]}|null}
  */
@@ -97,7 +99,6 @@ export function workPlateOf(id) {
     // Being taken down, it makes nothing and spends no charges: the work is the demolition.
     const marked = Demolition.isMarked(instance);
     const io = effectiveIO(id, instance);
-    const out = marked ? null : mainOutput(io.outputs);
     const alert = instance.alert || null;
     const problem = problemOf({ alert });
     const missing = alert === ALERT.INPUTS && io.inputs?.length
@@ -107,7 +108,6 @@ export function workPlateOf(id) {
         typeId: instance.typeId,
         heroId,
         side: BoardState.heroBodyOf(heroId)?.side === -1 ? -1 : 1,
-        output: out ? (out.itemId || out.tokenId || null) : null,
         skill: workConfigOf(def, instance)?.skill || null,
         // An enemy's use count is hidden: never its charges.
         charges: def?.isGuildHall || marked || isEnemyDef(def) ? null : (instance.usesRemaining ?? null),
@@ -118,21 +118,15 @@ export function workPlateOf(id) {
 }
 
 /**
- * The plate's cells. At rest: what it makes (or, making no item, the skill), then exactly what it
- * waits for, else its charges. Open: the skill, what it makes, what it waits for, the charges and
- * the time to the next one (not while it waits: nothing is coming).
+ * The plate's cells. At rest: exactly what it waits for, else its charges, else the skill. Open:
+ * the skill, what it waits for, the charges and the time to the next one (not while it waits:
+ * nothing is coming).
  * @param {ReturnType<typeof workPlateOf>} plate
  * @returns {{kind: string, id?: string, itemId?: string, have?: number, need?: number, count?: number, severity?: string}[]}
  */
 export function plateCells(plate, { open = false } = {}) {
     if (!plate) return [];
     const cells = [];
-    if (plate.output) {
-        if (open && plate.skill) cells.push({ kind: CELL.SKILL, id: plate.skill });
-        cells.push({ kind: CELL.OUTPUT, id: plate.output });
-    } else if (plate.skill) {
-        cells.push({ kind: CELL.SKILL, id: plate.skill });
-    }
     if (plate.problem) {
         if (plate.missing?.length) {
             for (const m of plate.missing.slice(0, PLATE.MISSING_MAX)) cells.push({ kind: CELL.MISSING, ...m });
@@ -140,9 +134,19 @@ export function plateCells(plate, { open = false } = {}) {
             cells.push({ kind: CELL.PROBLEM, severity: plate.severity });
         }
     }
-    if (plate.charges != null && (open || !plate.problem)) cells.push({ kind: CELL.CHARGES, count: plate.charges });
+    const charges = plate.charges != null && (open || !plate.problem);
+    if (charges) cells.push({ kind: CELL.CHARGES, count: plate.charges });
+    if (plate.skill && (open || !cells.length)) cells.unshift({ kind: CELL.SKILL, id: plate.skill });
     if (open && !plate.problem) cells.push({ kind: CELL.TIMER });
     return cells;
+}
+
+/**
+ * Which cell the cycle's fill stands under: the one the plate shows at rest, so opening the line
+ * round it does not move the fill (the opened line puts the skill before it).
+ */
+export function leadOf(cells) {
+    return cells.length > 1 && cells[0].kind === CELL.SKILL && cells[1].kind !== CELL.TIMER ? 1 : 0;
 }
 
 /** `0:34`, `4:05`: whole seconds, rounded up. */
@@ -162,13 +166,6 @@ export const chargesText = (n) => ringCount(n);
 
 const itemName = (id) => getItem(id)?.name || tokenName(id) || id;
 
-/** `1`, `1–2`: how many one cycle makes. */
-function qtyText(output) {
-    const min = output?.minQty ?? output?.quantity ?? 1;
-    const max = output?.maxQty ?? min;
-    return min === max ? `${min}` : `${min}–${max}`;
-}
-
 /**
  * What a cell's hover says, read from the engine when the pointer arrives (never per render).
  * @param {{kind: string}} cell from {@link plateCells}
@@ -186,13 +183,6 @@ export function plateTip(cell, instanceId, cycle = null) {
             const xp = effectiveIO(instanceId, instance).xp;
             const vars = { hero: hero?.name || '', skill: getSkill(cell.id)?.name || cell.id, level: `${level}/${MASTERY_LEVEL}`, xp };
             return xp ? t('workPlate.skillXp', vars) : t('workPlate.skill', vars);
-        }
-        case CELL.OUTPUT: {
-            const io = effectiveIO(instanceId, instance);
-            const out = mainOutput(io.outputs);
-            const vars = { qty: qtyText(out), item: itemName(cell.id), time: clockText(io.cycleTimeMs) };
-            const inputs = inputSummary({ inputs: io.inputs });
-            return inputs ? t('workPlate.makesFrom', { ...vars, inputs }) : t('workPlate.makes', vars);
         }
         case CELL.MISSING:
             return t('workPlate.needs', { need: cell.need, item: itemName(cell.itemId), have: cell.have });
@@ -216,15 +206,16 @@ export function plateTip(cell, instanceId, cycle = null) {
 
 /**
  * Where Token `typeId`'s plate stands, in mat units: a slot centred on the seam between the Token
- * and its hero (`side`), its top tucked under their feet. Too near the mat's foot to fit, it goes
- * over their heads instead.
+ * and its hero (`side`; 0 centres it on the Token, the idle plate), its top tucked under their
+ * feet. Too near the mat's foot to fit, it goes over their heads instead.
  * @returns {{left: number, top: number, width: number, unit: number}}
  */
 export function platePlace({ x, y, typeId, side = 1, fit = 1, matH = Infinity }) {
     const unit = plateUnit(fit);
     const artUnit = boardScaleAt(fit);
     const art = Math.max(tokenSizeFor(TOKEN_SURFACE.BOARD, typeId, artUnit), tokenSizeFor(TOKEN_SURFACE.BOARD, 1, artUnit));
-    const seam = x + (side === -1 ? -1 : 1) * (artRadiusOf(typeId) + STAND_GAP) / 2;
+    const toward = side === 0 ? 0 : side === -1 ? -1 : 1;
+    const seam = x + toward * (artRadiusOf(typeId) + STAND_GAP) / 2;
     const height = (PLATE.H + PLATE.SHADOW) * unit;
     let top = y + art / 2 - PLATE.TUCK * unit;
     if (top + height > matH) top = y - art / 2 - height;

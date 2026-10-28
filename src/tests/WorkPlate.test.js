@@ -24,7 +24,7 @@ import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { WorkPlateLayer } from '../ui/components/board/WorkPlateLayer.jsx';
 import { CHARGE_FLOATERS } from '../ui/components/board/TokenBadges.jsx';
 import { MAT_Z } from '../ui/components/board/matLayers.js';
-import { PLATE, CELL, plateCells, plateUnit, platePlace, clockText, workPlateOf } from '../ui/components/board/workPlate.js';
+import { PLATE, CELL, plateCells, plateUnit, platePlace, clockText, workPlateOf, leadOf } from '../ui/components/board/workPlate.js';
 import { setDrawn, resetDrawSwitches } from '../ui/dev/perf/drawSwitches.js';
 import { restHover } from './fixtures/hoverRest.js';
 
@@ -90,13 +90,22 @@ beforeEach(() => {
 afterEach(() => { cleanup(); resetDrawSwitches(); vi.useRealTimers(); });
 
 describe('the rules, pure', () => {
-    const plate = (extra) => ({ output: 'fixture_oak_wood', skill: 'forestry', charges: null, problem: null, severity: null, missing: [], ...extra });
+    const plate = (extra) => ({ skill: 'forestry', charges: null, problem: null, severity: null, missing: [], ...extra });
     const kinds = (p, open) => plateCells(p, { open }).map(c => c.kind);
 
-    it('at rest: what it makes, then its charges; open: the skill, the output, the charges and the time to the next one', () => {
-        expect(kinds(plate(), false)).toEqual([CELL.OUTPUT]);
-        expect(kinds(plate({ charges: 248 }), false)).toEqual([CELL.OUTPUT, CELL.CHARGES]);
-        expect(kinds(plate({ charges: 248 }), true)).toEqual([CELL.SKILL, CELL.OUTPUT, CELL.CHARGES, CELL.TIMER]);
+    it('⭐ never what it makes (concept_token_bars rule 4): no output cell exists, at rest or open', () => {
+        expect(CELL.OUTPUT).toBeUndefined();
+        for (const extra of [{}, { charges: 248 }, { problem: ALERT.NO_ROOM, severity: 'cant' }]) {
+            for (const open of [false, true]) {
+                expect(kinds(plate(extra), open)).not.toContain('output');
+            }
+        }
+        expect(workPlateOf).toBeTypeOf('function');
+    });
+
+    it('at rest: its charges; open: the skill, the charges and the time to the next one', () => {
+        expect(kinds(plate({ charges: 248 }), false)).toEqual([CELL.CHARGES]);
+        expect(kinds(plate({ charges: 248 }), true)).toEqual([CELL.SKILL, CELL.CHARGES, CELL.TIMER]);
     });
 
     it('waiting: exactly what it waits for instead of the charges, and no time to the next one', () => {
@@ -104,15 +113,31 @@ describe('the rules, pure', () => {
             charges: 12, problem: ALERT.INPUTS, severity: 'waiting',
             missing: [{ itemId: 'a', have: 0, need: 6 }, { itemId: 'b', have: 1, need: 2 }, { itemId: 'c', have: 0, need: 1 }]
         });
-        expect(kinds(waiting, false)).toEqual([CELL.OUTPUT, CELL.MISSING, CELL.MISSING]);
-        expect(plateCells(waiting)[1]).toMatchObject({ itemId: 'a', have: 0, need: 6 });
-        expect(kinds(waiting, true)).toEqual([CELL.SKILL, CELL.OUTPUT, CELL.MISSING, CELL.MISSING, CELL.CHARGES]);
-        expect(kinds(plate({ problem: ALERT.NO_ROOM, severity: 'cant' }), false)).toEqual([CELL.OUTPUT, CELL.PROBLEM]);
+        expect(kinds(waiting, false)).toEqual([CELL.MISSING, CELL.MISSING]);
+        expect(plateCells(waiting)[0]).toMatchObject({ itemId: 'a', have: 0, need: 6 });
+        expect(kinds(waiting, true)).toEqual([CELL.SKILL, CELL.MISSING, CELL.MISSING, CELL.CHARGES]);
+        expect(kinds(plate({ problem: ALERT.NO_ROOM, severity: 'cant' }), false)).toEqual([CELL.PROBLEM]);
     });
 
-    it('making no item, the skill stands in for the output', () => {
-        expect(kinds(plate({ output: null }), false)).toEqual([CELL.SKILL]);
-        expect(kinds(plate({ output: null }), true)).toEqual([CELL.SKILL, CELL.TIMER]);
+    it('⭐ neither charges nor a problem (a station running fine): the skill, so every plate keeps its shape (rule 1)', () => {
+        expect(kinds(plate(), false)).toEqual([CELL.SKILL]);
+        expect(kinds(plate(), true)).toEqual([CELL.SKILL, CELL.TIMER]);
+        // With no skill either, an empty line, never something made.
+        expect(kinds(plate({ skill: null }), false)).toEqual([]);
+    });
+
+    it('the fill stands under the cell shown at rest, so opening the line does not move it', () => {
+        for (const extra of [{}, { charges: 248 }, { problem: ALERT.NO_ROOM, severity: 'cant' }]) {
+            const rest = plateCells(plate(extra));
+            const open = plateCells(plate(extra), { open: true });
+            expect(open[leadOf(open)].kind, JSON.stringify(extra)).toBe(rest[leadOf(rest)].kind);
+        }
+    });
+
+    it('side 0 centres the plate on the Token itself (the idle plate)', () => {
+        const centred = platePlace({ x: 600, y: 500, typeId: 'fixture_producer', side: 0, fit: 1 });
+        expect(centred.left + centred.width / 2).toBe(600);
+        expect(centred.top).toBe(500 + 64 - PLATE.TUCK);
     });
 
     it('times read 0:34 and 4:05, rounded up', () => {
@@ -181,7 +206,7 @@ describe('⭐ on the mat', () => {
         expect(o.querySelector('[data-problem-mark]')).toBeNull();
         expect(plateOf(container, t.id).getAttribute('data-work-plate-tone')).toBe('cant');
         // Open (the pointer rests on it): the problem in place of the time to the next one.
-        expect(cellsOf(container, t.id)).toEqual([CELL.SKILL, CELL.OUTPUT, CELL.PROBLEM, CELL.CHARGES]);
+        expect(cellsOf(container, t.id)).toEqual([CELL.SKILL, CELL.PROBLEM, CELL.CHARGES]);
     });
 
     it('waiting on an input: the missing item with its have/need in red, the frame gold, the cycle held grey', async () => {
@@ -195,7 +220,7 @@ describe('⭐ on the mat', () => {
         await flush();
         const plate = plateOf(container, t.id);
         expect(plate.getAttribute('data-work-plate-tone')).toBe('waiting');
-        expect(cellsOf(container, t.id)).toEqual([CELL.OUTPUT, CELL.MISSING]);
+        expect(cellsOf(container, t.id)).toEqual([CELL.MISSING]);
         const missing = plate.querySelector('[data-plate-cell="missing"] span');
         expect(missing.textContent).toBe('0/2');
         expect(missing.style.color).toBe('var(--color-ui-red)');
@@ -246,13 +271,13 @@ describe('⭐ on the mat', () => {
         run(200);
         const { container } = mount();
         await act(async () => { await vi.advanceTimersByTimeAsync(0); });
-        expect(cellsOf(container, t.id)).toEqual([CELL.OUTPUT, CELL.CHARGES]);
+        expect(cellsOf(container, t.id)).toEqual([CELL.CHARGES]);
         const figure = container.querySelector('[data-board-hero="h1"]');
         fireEvent.mouseEnter(figure);
         restHover();
         await act(async () => { await vi.advanceTimersByTimeAsync(0); });
         expect(plateOf(container, t.id).getAttribute('data-work-plate-open')).toBe('true');
-        expect(cellsOf(container, t.id)).toEqual([CELL.SKILL, CELL.OUTPUT, CELL.CHARGES, CELL.TIMER]);
+        expect(cellsOf(container, t.id)).toEqual([CELL.SKILL, CELL.CHARGES, CELL.TIMER]);
         expect(plateOf(container, t.id).querySelector('[data-plate-cell="timer"] span').textContent).toMatch(/^\d+:\d\d$|^–$/);
         const name = figure.querySelector('[data-token-name]');
         expect(parseFloat(name.style.top.replace(/[^\d.]/g, ' ').trim().split(/\s+/).pop())).toBeGreaterThan(PLATE.H);
@@ -266,11 +291,12 @@ describe('⭐ on the mat', () => {
         const t = put('fixture_producer', AT, 12);
         Flags.plant('h1', P(700, 500));
         run(200);
-        expect(workPlateOf(t.id)).toMatchObject({ output: 'fixture_oak_wood', charges: 12 });
+        expect(workPlateOf(t.id)).toMatchObject({ skill: 'forestry', charges: 12 });
+        expect(workPlateOf(t.id)).not.toHaveProperty('output');
         expect(Demolition.mark(t).success).toBe(true);
         run(200);
         expect(BoardState.workerOf(t.id)).toBe('h1');
-        expect(workPlateOf(t.id)).toMatchObject({ output: null, skill: 'construction', charges: null });
+        expect(workPlateOf(t.id)).toMatchObject({ skill: 'construction', charges: null });
     });
 
     it('an enemy’s hidden use count is never its charges (concept_token_bars rule 6)', () => {

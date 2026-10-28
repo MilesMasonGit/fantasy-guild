@@ -3,15 +3,14 @@ import { createPortal } from 'react-dom';
 import { BOARD_EVENTS, ALERT } from '../../../systems/board/boardEvents.js';
 import * as SpawnerSystem from '../../../systems/board/SpawnerSystem.js';
 import * as Growth from '../../../systems/board/Growth.js';
-import { getTokenType, tokenStartingUses } from '../../../config/registries/tokenRegistry.js';
+import { getTokenType } from '../../../config/registries/tokenRegistry.js';
 import { enemyProfileOf, isEnemyDef } from '../../../config/registries/enemyProfile.js';
 import { subscribeToken } from './tokenEvents.js';
-import { RingBadge } from './RingBadge.jsx';
 import { Bubble } from './Bubble.jsx';
 import { HealthBar } from './HealthBar.jsx';
 import { enemyBarPlace } from './healthBar.js';
-import { TimerBubble } from './TimerBubble.jsx';
-import { bubbleSlot, chargesFraction, ringCount } from './ringRow.js';
+import { IdlePlate } from './IdlePlate.jsx';
+import { idlePlateCells } from './idlePlate.js';
 import { TokenChargeDeltaFloater, CHARGE_FLOATERS, StationGearBadge, DisallowBadge, MarkedBadge, GEAR_SPRITE_PX } from './TokenBadges.jsx';
 import { ProblemMark } from './ProblemMark.jsx';
 import { problemOf, problemText, PROBLEM_MARK_ART_PX } from './problemMark.js';
@@ -21,11 +20,8 @@ import { plateUnit } from './workPlate.js';
 import { useMatFit } from './MatFitContext.jsx';
 import * as BoardState from '../../../systems/board/BoardState.js';
 
-/** What each hover ring's and player mark's tooltip says. */
+/** What each player mark's tooltip says. */
 export const BUBBLE_TIPS = Object.freeze({
-    charges: (n) => `Charges: ${Number(n).toLocaleString()} left`,
-    quest: (text) => `Quest progress: ${text}`,
-    spawner: (text) => `Spawned: ${text}. It stops at the limit`,
     disallow: 'Heroes may not work this',
     marked: 'Marked for demolition: a hero with Construction will take it away'
 });
@@ -42,8 +38,8 @@ const PLATE_POINTER = 'var(--plate-pointer, auto)';
  * TokenBubbles: what is drawn on a Token's box besides its art. The mat shows that something is
  * happening and what is wrong, and no numbers (docs/active/concept_info_layers.md):
  * - **The work bar's model** (`workBar.js`): fed here from the Token's engine events and drawn by the
- * work plate under the Token and its hero (`WorkPlateLayer`), which also says what is made, the
- * charges and any problem while a hero works it. Fills each cycle on the shared step clock; empty
+ * work plate under the Token and its hero (`WorkPlateLayer`), which also says the charges and any
+ * problem while a hero works it. Fills each cycle on the shared step clock; empty
  * again on `CYCLE_COMPLETE`. Any engine alert on the worked Token stops the cycle, so the bar holds
  * there, grey.
  * - **Problem mark** (`ProblemMark`, the middle row), on a Token nobody works (a worked Token's
@@ -57,10 +53,11 @@ const PLATE_POINTER = 'var(--plate-pointer, auto)';
  * - **Enemy health bar** (above the box): in a fight, and while an enemy is hovered. In a fight
  * the mat hands it `fightBar` (`{ host, left, top }`: the fight layer's node and this box's
  * corner in mat units) and the bar draws there, over the loot (`FightBarHost`).
- * - **Hovered only**: the charges ring (not while a hero works it: the plate has them), the quest and spawner rings, the timer ring (growing, turning,
- * resting) and the recipe gear; the gear and the spawner ring in a row of their own. A choice
- * waiting (nothing chosen on a station or Foundation) is the exception: hovered, its '!' becomes
- * the gear at its sprite's 2x, in the mark's own spot.
+ * - **Hovered only**: on a Token nobody works, the idle plate under it (`IdlePlate`, drawn into
+ * `plateHost`, which `MatToken` hands over only while it rests there with something to say): its problem, charges, spawner count, quest progress and timer, as apply;
+ * and the recipe gear, in a row of its own. A choice waiting (nothing chosen on a station or
+ * Foundation) is the exception: hovered, its '!' becomes the gear at its sprite's 2x, in the
+ * mark's own spot.
  * `isHovered` is the mat's rest (`useHoverRest`), not the bare hover: the pointer has stayed on
  * the Token for a moment, so a sweep across the mat mounts none of these.
  * - While the Token is dragged: nothing.
@@ -77,10 +74,12 @@ export const TokenBubbles = ({
     isDragging = false,
     boxPx = 128,
     artUnit = 2,
-    small = false,
+    x = null,
+    y = null,
     spawner = null,
     quest = null,
     readTimer = null,
+    plateHost = null,
     gear = null,
     disallowed = false,
     marked = false,
@@ -196,19 +195,29 @@ export const TokenBubbles = ({
     const problemTip = useCallback(() => problemText(problem, instanceId), [problem, instanceId]);
     const problemClick = problem && CHOOSE_KINDS.has(problem.kind) ? gear?.onClick ?? null : null;
 
-    const chargesSlot = useMemo(() => bubbleSlot('charges', { boxPx, small }), [boxPx, small]);
     const barUnit = plateUnit(useMatFit() || 1);
+
+    // The idle plate: a Token nobody works (never an enemy), rested on, with something to say
+    // (`MatToken` hands it the host only then, and drops the name past it). The timer counts if
+    // its clock runs as the pointer arrives.
+    const hasCharges = usesRemaining != null && !isEnemy;
+    const idleOn = !!plateHost && isHovered && !hasHero && !isEnemy && !isDragging;
+    const idleProblem = problem && !CHOOSE_KINDS.has(problem.kind) ? problem : null;
+    const idleCells = useMemo(() => (idleOn ? idlePlateCells({
+        problem: idleProblem,
+        charges: hasCharges ? usesRemaining : null,
+        spawner,
+        quest
+    }) : null), [idleOn, idleProblem, hasCharges, usesRemaining, spawner, quest]);
+    const idleTimed = useMemo(() => idleOn && !!readTimer?.(), [idleOn, readTimer]);
+    const idleShown = !!idleCells && (idleCells.length > 0 || idleTimed);
 
     if (isDragging) return null;
 
     const fight = hasHero && combat;
     // A hero at work and not fighting: the plate under them says the charges and any problem.
     const plated = hasHero && !fight;
-    const hasCharges = usesRemaining != null && !isEnemy;
-    const showCharges = hasCharges && isHovered && !plated;
     const showProblem = !!problem && !plated;
-    const showQuest = !!quest && isHovered;
-    const showSpawner = !!spawner && isHovered;
     // The bar's numbers: the fight's, else a full enemy (an enemy nobody fights is whole).
     const barHp = hp ?? (enemyHp ? { cur: enemyHp, max: enemyHp } : null);
     const showHp = (fight || (isHovered && !!enemyHp)) && !!barHp && barHp.max > 0;
@@ -217,8 +226,6 @@ export const TokenBubbles = ({
     const gearInMark = showProblem && isHovered && !!gear?.show && !marked && CHOOSE_KINDS.has(problem.kind);
     const showGear = !!gear?.show && !marked && isHovered && !gearInMark;
     const showRest = showProblem || disallowed || marked;
-    const showHoverRow = showGear || showSpawner;
-    const startingUses = hasCharges && typeId ? tokenStartingUses(typeId) : null;
     // ⚠️ The hover row never shares the marks' row: inserted beside them it would slide the mark
     // out from under the pointer the moment the pointer reached it. With marks showing it sits
     // just above them; alone, at the centre.
@@ -229,8 +236,19 @@ export const TokenBubbles = ({
 
     return (
         <>
-            {readTimer && isHovered && (
-                <TimerBubble read={readTimer} boxPx={boxPx} small={small} dragProps={dragProps} />
+            {idleShown && (
+                <IdlePlate
+                    host={plateHost}
+                    tokenId={instanceId}
+                    typeId={typeId}
+                    x={x}
+                    y={y}
+                    cells={idleCells}
+                    readTimer={readTimer}
+                    tip={problemTip}
+                    tone={idleProblem?.severity ?? null}
+                    dragProps={dragProps}
+                />
             )}
             {showHp && (() => {
                 const place = enemyBarPlace(boxPx, barUnit);
@@ -251,28 +269,21 @@ export const TokenBubbles = ({
                 return fightBar ? createPortal(el, fightBar.host) : el;
             })()}
 
-            {showHoverRow && (
+            {showGear && (
                 <div
                     data-bubble-row="hover"
                     className="absolute z-20 flex items-center justify-center pointer-events-none"
                     style={hoverRowStyle}
                 >
-                    {showGear && (
-                        <div {...dragProps} className="relative shrink-0 pointer-events-auto">
-                            <StationGearBadge
-                                recipe={gear.recipe}
-                                pulsing={gear.pulsing}
-                                isFoundation={gear.isFoundation}
-                                isField={!!gear.isField}
-                                onClick={gear.onClick}
-                            />
-                        </div>
-                    )}
-                    {showSpawner && (
-                        <Bubble of={instanceId} kind="spawner" inline tip={BUBBLE_TIPS.spawner(spawner.text)} dragProps={dragProps}>
-                            <RingBadge kind="spawner" fraction={spawner.fraction} text={spawner.text} title={BUBBLE_TIPS.spawner(spawner.text)} />
-                        </Bubble>
-                    )}
+                    <div {...dragProps} className="relative shrink-0 pointer-events-auto">
+                        <StationGearBadge
+                            recipe={gear.recipe}
+                            pulsing={gear.pulsing}
+                            isFoundation={gear.isFoundation}
+                            isField={!!gear.isField}
+                            onClick={gear.onClick}
+                        />
+                    </div>
                 </div>
             )}
 
@@ -309,29 +320,8 @@ export const TokenBubbles = ({
                 </div>
             )}
 
-            {showQuest && (
-                <Bubble of={instanceId} kind="quest" style={bubbleSlot('quest', { boxPx, small })} tip={BUBBLE_TIPS.quest(quest.text)} dragProps={dragProps}>
-                    <RingBadge kind="quest" fraction={quest.fraction} text={quest.text} title={BUBBLE_TIPS.quest(quest.text)} />
-                </Bubble>
-            )}
-            {showCharges && (
-                <Bubble of={instanceId} kind="charges" style={chargesSlot} tip={BUBBLE_TIPS.charges(usesRemaining)} dragProps={dragProps}>
-                    <RingBadge
-                        kind="charges"
-                        fraction={chargesFraction(usesRemaining, startingUses)}
-                        text={ringCount(usesRemaining)}
-                        title={BUBBLE_TIPS.charges(usesRemaining)}
-                    />
-                </Bubble>
-            )}
-            {/* Last, so showing a ring never moves it: a number in flight is not lost. */}
             {CHARGE_FLOATERS && (
-                <TokenChargeDeltaFloater
-                    instanceId={instanceId}
-                    anchor={hasCharges ? 'ring' : 'corner'}
-                    slot={hasCharges ? chargesSlot : null}
-                    atRest={!hasHero}
-                />
+                <TokenChargeDeltaFloater instanceId={instanceId} anchor="corner" atRest={!hasHero} />
             )}
         </>
     );

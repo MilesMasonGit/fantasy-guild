@@ -14,7 +14,7 @@ import * as QuestTokens from '../systems/quests/QuestTokens.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { MatToken } from '../ui/components/board/MatToken.jsx';
-import { questRing, RING_COLOUR } from '../ui/components/board/ringRow.js';
+import { idlePlateCells } from '../ui/components/board/idlePlate.js';
 import { questNeedLine, questRewardsShown } from '../ui/components/board/QuestTooltip.jsx';
 import { TUTORIAL_TEXT } from '../systems/quests/tutorialText.js';
 import { registerItems, getAllItems } from '../config/registries/itemRegistry.js';
@@ -71,6 +71,17 @@ const tokenEl = (inst, props = {}) => h(MatToken, {
 });
 
 const overlay = (c, inst) => c.querySelector(`[data-token-overlay="${inst.id}"]`);
+/** The mat's idle plate host, handed to the rested Token. */
+const plateHost = () => {
+    let el = document.body.querySelector('[data-test-plate-host]');
+    if (!el) {
+        el = document.createElement('div');
+        el.setAttribute('data-test-plate-host', '');
+        document.body.appendChild(el);
+    }
+    return el;
+};
+const questCell = () => document.body.querySelector('[data-test-plate-host] [data-plate-cell="quest"]');
 const art = (c, inst) => c.querySelector(`[data-token-art="true"][data-token-id="${inst.id}"]`);
 const tooltip = () => document.body.querySelector('[data-quest-tooltip]');
 
@@ -81,20 +92,16 @@ beforeEach(() => {
 
 afterEach(() => {
     cleanup();
+    document.body.querySelector('[data-test-plate-host]')?.remove();
     QuestManager.cleanup();
     resetMatTuning();
 });
 
-describe('the quest ring, pure (B6.2)', () => {
-    it('reads current/required, fills toward done, parchment not charges gold', () => {
-        const r = questRing({ currentCount: 3, requiredCount: 10, title: 'Collect 10 Copper Ingot' });
-        expect(r.kind).toBe('quest');
-        expect(r.text).toBe('3/10');
-        expect(r.fraction).toBeCloseTo(0.3, 5);
-        expect(RING_COLOUR.quest).toBeTruthy();
-        expect(RING_COLOUR.quest).not.toBe(RING_COLOUR.charges);
-        expect(questRing({ currentCount: 12, requiredCount: 10 }).fraction).toBe(1);
-        expect(questRing(null)).toBeNull();
+describe('the quest on the idle plate, pure (B6.2)', () => {
+    it('reads current/required, never past done', () => {
+        expect(idlePlateCells({ quest: { currentCount: 3, requiredCount: 10 } })[0]).toMatchObject({ kind: 'quest', text: '3/10' });
+        expect(idlePlateCells({ quest: { currentCount: 12, requiredCount: 10 } })[0].text).toBe('10/10');
+        expect(idlePlateCells({ quest: null })).toEqual([]);
     });
 
     it('the need line: an item collection, a hunt, a plain count', () => {
@@ -106,41 +113,38 @@ describe('the quest ring, pure (B6.2)', () => {
 });
 
 describe('a quest Token on the mat (B6.2)', () => {
-    it('⭐ its progress bubble: none at rest, bottom-centre of the box when hovered', () => {
+    it('⭐ its progress: none at rest, on the plate under it when hovered, and no ring', () => {
         const q = spawn(hunt());
-        const { container, rerender } = mount(tokenEl(q));
+        const { container, rerender } = mount(tokenEl(q, { plateHost: plateHost() }));
         const o = overlay(container, q);
         expect(o.getAttribute('data-quest-token')).toBe(q.id);
         expect(o.getAttribute('data-quest-done')).toBe('false');
-        expect(o.querySelector('[data-ring="quest"]')).toBeNull();
+        expect(questCell()).toBeNull();
 
-        rerender(h(DndContext, null, tokenEl(q, { isHovered: true, isRested: true })));
-        const ring = o.querySelector('[data-bubble="quest"] [data-ring="quest"]');
-        expect(ring).not.toBeNull();
-        expect(ring.getAttribute('data-ring-text')).toBe('1/3');
-        expect(Number(ring.getAttribute('data-ring-fraction'))).toBeCloseTo(1 / 3, 3);
-        // Unlimited Token: no charges bubble beside it.
-        expect(o.querySelectorAll('[data-ring]').length).toBe(1);
+        rerender(h(DndContext, null, tokenEl(q, { isHovered: true, isRested: true, plateHost: plateHost() })));
+        expect(questCell().textContent).toBe('1/3');
+        // Unlimited Token: no charges beside it.
+        expect(document.body.querySelectorAll('[data-test-plate-host] [data-plate-cell]').length).toBe(1);
+        expect(container.querySelector('[data-ring]')).toBeNull();
     });
 
-    it('the ring follows progress (quests_updated, no subscription of its own); it shows on hover, not by itself', async () => {
+    it('the plate follows progress (quests_updated, no subscription of its own); it shows on hover, not by itself', async () => {
         const q = spawn(hunt());
-        const { container, rerender } = mount(tokenEl(q));
+        const { rerender } = mount(tokenEl(q, { plateHost: plateHost() }));
         await act(async () => { QuestTokens.reportProgress('enemy_hunted', 1, { enemyId: 'token_goblin' }); });
         await act(async () => { await new Promise(r => setTimeout(r, 120)); });
-        expect(overlay(container, q).querySelector('[data-ring="quest"]')).toBeNull();
-        rerender(tree(tokenEl(q, { isHovered: true, isRested: true })));
-        const ring = overlay(container, q).querySelector('[data-ring="quest"]');
-        expect(ring.getAttribute('data-ring-text')).toBe('2/3');
+        expect(questCell()).toBeNull();
+        rerender(tree(tokenEl(q, { isHovered: true, isRested: true, plateHost: plateHost() })));
+        expect(questCell().textContent).toBe('2/3');
     });
 
-    it('a plain Token has no quest ring and no quest hooks', () => {
+    it('a plain Token has no quest progress and no quest hooks', () => {
         const inst = BoardState.createTokenInstance('fixture_producer', tokenStartingUses('fixture_producer'));
         BoardState.addToken(inst, 300, 300);
         const { container } = mount(tokenEl(inst));
         const o = overlay(container, inst);
         expect(o.getAttribute('data-quest-token')).toBeNull();
-        expect(o.querySelector('[data-ring="quest"]')).toBeNull();
+        expect(questCell()).toBeNull();
     });
 
     it('a done quest is marked done and claimable, with no glow behind its art', () => {
