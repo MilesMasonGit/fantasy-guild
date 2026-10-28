@@ -9,6 +9,11 @@ Status: briefed 2026-10-14 (approved 2026-10-14; brief 120)
 in `TokenBubbles.jsx`'s header; supersedes the "Bubbles and framerate" note in
 [design_pass_notes.md](design_pass_notes.md).*
 
+> **Amended 2026-10-27** ([concept_token_bars.md](concept_token_bars.md)):
+> the round charges, timer, spawner and quest rings retire; hovering an idle
+> Token shows the work plate under it instead, and the plate no longer shows
+> the output item. Problems stay visible at rest.
+
 ## The rule
 
 Three layers, each showing less than the one below it:

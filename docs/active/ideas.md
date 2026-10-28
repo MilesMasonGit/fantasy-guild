@@ -76,12 +76,11 @@ the first outside playtest, modding.
 
 ### Follow-ups after the running briefs
 
-- **Hero flags**: smaller, and fade to half opacity while work is happening on
-  them. *quick* · follow-up after brief 30 (owner, 2026-10-08: don't
-  interrupt the running session; there will be several design passes).
-- **Accessibility**: heroes are told apart by 8 flag colours; add
-  colour-blind-safe colours and a second cue (pattern or initial). Text size
-  settings already exist. · could ride with the flag change above.
+- **Hero flags**: moved on. The smaller pennant is brief 250 (T-150); the
+  fade and hero colours wait for the owner's **flag rework** (owner
+  2026-10-27), to be interviewed later.
+- **Accessibility**: colour-blind-safe flags (T-151) join that flag rework.
+  Text size settings already exist.
 - **The return experience, first pass**: brief 40 built the "While you were
   away" summary. Owner (D7): a plain report focused on items and XP gained,
   a small notable-events section, enemies defeated. See

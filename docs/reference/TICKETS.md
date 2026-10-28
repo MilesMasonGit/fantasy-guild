@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-261**
+**Next free number: T-264**
 
 ---
 
@@ -75,8 +75,11 @@ Detail, order and tiers in [brief 210](../active/briefs/210_backlog_intake.md); 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
 | T-162 | P3 | ride-along | **Pixel sprites replace vector icons** (lucide: chevrons, X, zap, sparkles, help circle and others) as each screen is touched; missing sprites get a placeholder and a line in `owner_art_list.md`. | UI_STYLE.md (2026-10-13) |
-| T-150 | P3 | owner | **Smaller hero flag**: swap to the owner's 32 px flag (today's are 64 px in `public/assets/ui/flag/`; waiting on the 32 px art) and fade the flag to half opacity while its hero works. Colour-blind cues (T-151) are separate. Eye-check. | refinement_pass_todo.md §3, ideas.md |
-| T-151 | P3 | owner | **Colour-blind-safe hero flags**: safe colours plus a second cue (pattern or initial). Needs an owner choice and maybe art. | ideas.md |
+| T-261 | P2 | brief 250 | **Enemies show a charges count on hover** (their hidden use count); an enemy shows name and HP only. Brief 250 P1. | owner_feedback 2026-10-27 |
+| T-262 | P3 | brief 250 | **A choice waiting on you swaps its '!' for the gear on hover**: Foundations and recipe stations, the gear in the same spot at 2× (64 px). Brief 250 P1. Eye-check. | owner_feedback 2026-10-27 |
+| T-263 | P2 | brief 250 | **One plate for every Token**: no output item on the work plate (skill icon when there is nothing else), idle Tokens get the plate under them on hover, the round charges, timer, spawner and quest rings retire. Brief 250 P3. Eye-check. | concept_token_bars.md |
+| T-150 | P3 | brief 250 | **The pennant flag**: every hero's flag is the owner's 32 px pennant (`public/assets/ui/u_flag_pennant.png`) at 2× (64 px), the same for every hero; no fade and no colour cue for now (owner 2026-10-27: a flag rework comes later). Brief 250 P2. Eye-check. | refinement_pass_todo.md §3, ideas.md, concept_token_bars.md |
+| T-151 | P3 | owner | **Colour-blind-safe hero flags**: safe colours plus a second cue (pattern or initial). Joins the owner's later **flag rework** (owner 2026-10-27), which also settles hero colours and the fade now that every hero carries the same pennant. | ideas.md |
 | T-157 | P3 | open | **Quick Settings landing tab** in Settings: Master, Music and SFX volume, Animations, font and text size, Item Fly Particles, Auto-save interval (owner 2026-10-13). The same controls stay in their own tabs. Eye-check. | refinement_pass_todo.md §2 |
 | T-138 | P3 | owner | **Sprite-strip player for owner-drawn effects**: play a horizontal strip once at a mat point on the strike frame / event (like `AnimatedHeroSprite.jsx:57-76`); a new `assets/fx/` folder added to the spriteFx generator's skip list (`spriteFx.js:77-80`). Waits for the owner's first effect art (owner_art_list.md). | research/animation_menu.md |
 | T-119 | P3 | open | **Convert existing screens to the strings file** (format, lookup and TEXT.md built 2026-10-20, 9a103fbb: `src/i18n/en.json`, `t()`, `docs/reference/TEXT.md`; new UI uses it). The old screens convert in a later pass. | ideas.md |
