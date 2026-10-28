@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import { KEYWORD } from '../systems/effects/statements.js';
@@ -216,6 +216,28 @@ describe('RecipeList', () => {
         expect(row.querySelector('[data-recipe-input="item_blueberry"]').dataset.short).toBe('true');
         expect(row.querySelector('[data-recipe-xp]').textContent).toBe('+12 XP');
         expect(row.querySelector('[data-recipe-time]').textContent).toBe('6s');
+    });
+
+    it('a Field crop shows how long it grows and how many harvests it gives; a station row does not', () => {
+        registerRecipePools({
+            list_farm: [{
+                id: 'r_list_wheat', name: 'Wheat', levelRequirement: 1, durationMs: 3000, xp: 1,
+                inputs: [{ itemId: 'fixture_carrot', quantity: 1 }], outputs: [out('fixture_carrot')],
+                crop: { growMs: 150000, load: 12 }
+            }]
+        });
+        const field = {
+            id: 'list_field', name: 'List Field', field: { emptySprite: 't_farmland' },
+            statements: [{ id: 'stm_list_field', keyword: KEYWORD.STATION, payload: { skill: 'list_farm' } }]
+        };
+        const farmer = { ...hero('farmer', 5), skills: { list_farm: { level: 5, xp: 0 } } };
+        render(React.createElement(RecipeList, { def: field, heroes: [farmer], onChoose: () => {} }));
+        const crop = document.querySelector('[data-recipe-id="r_list_wheat"] [data-recipe-crop]');
+        expect(crop.textContent).toBe('2:3012 harvests');
+        expect(crop.querySelector('[data-recipe-harvests]').textContent).toBe('12 harvests');
+        cleanup();
+        open();
+        expect(document.querySelector('[data-recipe-crop]')).toBeNull();
     });
 
     it('marks the current recipe and chooses another with one click', () => {

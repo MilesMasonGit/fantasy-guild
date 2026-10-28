@@ -5,6 +5,17 @@ five-line summary at each batch's edges (proposed, looked at); anything older
 than two days is trimmed. States: queued · building · ready (tests, cycles,
 build green) · bench-queued · eye-check · merged.*
 
+## Director, Token bars (brief 250; owner chose 2026-10-28: all three phases, then the card-wording fixes)
+
+Integration branch `feat/token-bars` (one eye-check for the brief). P1 ∥ P2, then P3 on top of P1.
+
+| Phase | Tier | Branch (worktree) | State | Planned | Done |
+|---|---|---|---|---|---|
+| P1: enemies show no charges; a choice waiting on you swaps its '!' for a 2× gear on hover (T-261, T-262) | builder | `feat/token-bars-p1` (`tb1`) | **ready**, merged into `feat/token-bars` 49e96c3d (gate on the merged P1+P2: 6646 tests, cycles 0, build; director read the diff). Notes: the gear keeps its own tooltip; the drawer inspection still shows an enemy's charges (ticket candidate) | Wed | Wed |
+| P2: every hero's flag is the owner's pennant at 2× (T-150) | builder | `feat/token-bars-p2` (`tb2`) | **ready**, on `feat/token-bars` 89b6b15c (builder: 6636 tests, cycles 0, build; director read the diff, checked the pole foot (4, 31) on the art, shots look right). Drag bench queued | Wed | Wed |
+| P3: one plate for every Token: no output icon, idle Tokens get it on hover, the round rings retire (T-263) | builder | `feat/token-bars-p3` (`tb1`) | building | Wed | |
+| Card wording fixes from the S9 list (#4, #5, #9, #10, #11, #12) | builder | `fix/card-wording` (`tb2`) | **merged** fd5ea1c4 (gate on the merged result: 6640 tests, cycles 0, build, engine **same work**; director read the engine diff: the work-time sum moved into `TileModifiers.workTimeOf`, unchanged). Empty Field "No crop chosen"; cards show the time with speed-ups; card rows wrap; crop picker shows grow time and harvests, "1 Wheat Seed per sowing"; no Drives line when nothing uses a Token; no "+0" stubs. Ticket candidates for planning: the drawer inspection still shows an enemy's charges and says "Nothing yet" under Drives | Wed | Wed |
+
 ## Systems director, combat (brief 220; owner's go 2026-10-24) — **done, all phases merged 2026-10-25**
 
 Owner 2026-10-22: **each director may run two code agents at once**; still one
@@ -55,7 +66,7 @@ C2; C0 (the test content pack, accepted by the director) after C2; C6 last.
 | K4b: the play-through: a new game through the Starter Camp, a plane-1 Region, a boss's first kill and the first plane-2 Region, with 1920×1080 shots for the owner | engineer | `content/k4-playthrough` (`k4p`) | **eye-check** (merged b264eae4: docs and 27 shots; [file](eyecheck/2026-10-27_basic-content-k4.md)). All four stages work; the tutorial stalled at the Old Site step (shortcut used); Wolf Alpha first kill → Yellowstone. Director checked the stall, the stuck hero, the copper-tool text and the Fighter gate in the code | Tue | Tue |
 | T-257: a hero pulled out of a fight stays marked as fighting (no healing, no eating) | builder | `fix/hero-stuck-fighting` (`t257`) | **merged** 51600e25 (6616 tests, cycles 0, build; bench same work; its timing ran beside another build, so a quiet `main` control after T-257 + T-259: same work, only S2 p99 1.23 against the pre-C1 baseline) | Tue | Tue |
 | T-259: tutorial without the Old Site step (owner: remove; T-258 puts it back with the ruins); copper-tool text fixed | builder | `fix/tutorial-no-old-site` (`t259`) | **merged** 9d8d20c5 (6611 tests, cycles, build; old saves on that step move on with no engine change, three tests pin it). New text: make a Copper Pickaxe or Woodaxe at a Copper Smithy. Engine work check rides on the post-T-257 bench of `main` | Tue | Tue |
-| T-260: Recruits may hold copper weapons (owner 2026-10-27); owner chose a weapon Tier box in the CMS (no field said copper) | builder | `feat/recruit-copper-weapons` (`t260`) | **merged** 79c6b01c, plays as before until tiers are set (untiered weapons refused): 6631 tests, cycles 0, build, same work (p99 tails 1.20–1.37 vs the old baseline, noted for the retake). Recruits swing a Tier-1 weapon's damage and speed, any style, no style or XP; promotion recalculates gear abilities. **Waiting on the owner's CMS Tier session + Sync**, then shots and the eye-check | Tue | |
+| T-260: Recruits may hold copper weapons (owner 2026-10-27); owner chose a weapon Tier box in the CMS (no field said copper) | builder | `feat/recruit-copper-weapons` (`t260`) | **merged** 79c6b01c, plays as before until tiers are set (untiered weapons refused): 6631 tests, cycles 0, build, same work (p99 tails 1.20–1.37 vs the old baseline, noted for the retake). Recruits swing a Tier-1 weapon's damage and speed, any style, no style or XP; promotion recalculates gear abilities. Owner synced the tiers 52520231 (copper 1, iron 2; id-diff: only `tier` fields added); the owner checks it in K4 check 5c | Tue | |
 | C6c: fight bars and numbers drawn above floor loot (owner 2026-10-25) | builder | `systems/fight-bars-over-loot` (`lb`) | **merged** a938c66c (6512 tests + 1 luck-dependent EnemyKinds, green 16/16 alone; cycles; build; same work; drag bench flags 200/200 on a re-run) | Sun | Sun |
 
 ## Systems director, skill loops (brief 230; owner 2026-10-24: next, beside the rest of combat)
@@ -345,6 +356,8 @@ branch), so it uses the kit and everyone fights; it merges after both.*
 - ~~K4 play-through~~ **Answered 2026-10-27 (owner):** the tutorial's Old Site step is **removed** (T-259; T-258 puts it back once the ruins exist); **Recruits may hold copper weapons** (T-260; reverses the C2 call); **pace**: the owner plays the K4 eye-check first, tuning goes to planning after.
 - ~~Lemons and limes; Lavender in plane 1~~ **Answered 2026-10-27 (owner: A on both):** lemonade and limeade wait for a later plane's Lemon and Lime Trees (they stay in the test's exclusion list); Lavender Seed from a Bird Nest stays as a lucky early find in plane 1.
 
+- **Pennant flag (P2), parked for the eye-check:** (a) the carried pennant is centred on the cursor, so on drop it jumps ~23 px right, 31 px up (the old flag jumped more); hold its pole foot on the cursor instead? (b) the Edit Hero colour swatches now change nothing visible: keep until the flag rework, or hide? (c) the idle hero now stands over the right half of the smaller pennant: move the idle spot (engine movement; bench work check would change)?
+
 *Design questions the director cannot answer, as multiple choice, recommendation
 first; asked with the next batch proposal and recorded where they belong.*
 
@@ -352,6 +365,10 @@ None open. (Ruled 2026-10-19: Token outlines red for problems, gold for attentio
 T-186; the badges' soft shadows are settled inside T-013.)
 
 ## Bench queue (one at a time, weekdays 13:00–17:00 and 01:00–07:00, or when the owner says the PC is quiet)
+
+**Thu 01:00 (director, 2026-10-28):** baseline retake on `main`, machine quiet: `npm run bench -- --save-baseline`, `npm run bench:draw -- --save-baseline`; commit with the date. Then the Token bars draw compare when P3 is ready.
+
+**Wed 15:46 (window), `feat/token-bars` 49e96c3d (P1+P2):** engine `--compare` **same work** (p99 tails 1.1–1.46 against the 21 Oct baseline with the owner's dev server running, the known stale-baseline pattern); `bench:drag --kinds=flag,token`: flag and Token 50/50 both passes.
 
 **Backlog director, owed (any time while the owner is away, with no agent running):** (1) ~~`bench:drag` on B3~~ done (see B3 row); (2) ~~one `bench:draw -- --compare` on `main` after batch B~~ **done** b0528da0: no regression, loot 4× 48 → 59 fps (PERFORMANCE cost log) (batches A and B: top bar, names, loot effects off, drag tint). ⚠️ The draw bench's boards pin the old 11 × 0.64 mat, so it does not measure the bigger on-screen mat; a deliberate run on the shipped size is a separate ticket if wanted.
 
@@ -366,6 +383,8 @@ T-186; the badges' soft shadows are settled inside T-013.)
 8. ~~Terrain director: bench baseline retake~~ **Done:** engine 2026-10-21 13:00 (f19a2e30), draw 2026-10-22 01:00 (db3959c4).
 
 ## Summaries
+
+**Wed 2026-10-28, afternoon: fresh director read in; Token bars batch proposed and chosen.** Where we are: `main` 764ca115; the owner's weapon-tier Sync checked. Now: P1 (enemy charges, the gear on hover) and P2 (the pennant flag) build side by side; P3 (one plate) follows P1; then the card-wording fixes from the S9 list. Owner: K4 and S9 eye-checks still open. Bench: baseline retake queued for 01:00 Thu.
 
 **Tue 2026-10-27, midday: K4 started (fresh Systems director).** Where we are: `main` 96b0b480, clean; no Systems worktrees. Now: the reachability test (`k4r`, builder) and the headless play-through with shots (`k4p`, engineer) run side by side. Next: the director checks both, runs the gate, writes the K4 eye-check. Owner: the S9 skill-loops verdicts are still open. Blockers: none. Bench baseline retake owed for a quiet window.
 

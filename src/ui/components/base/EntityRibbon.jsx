@@ -16,7 +16,8 @@ import { Sparkles, HelpCircle } from 'lucide-react';
  * Chance (crossfades on hover) ]
  * `amount` shows a count abbreviated (`+5.9k`, after `sign`) that crossfades to the exact number
  * (`+5,900`) on hover; `countText` shows its text as given. `icon` replaces the sprite (a skill's
- * icon). Other props (data attributes, `style`) go on the bar.
+ * icon). `wrap` lets a long name run onto a second line instead of being cut off (a narrow card).
+ * Other props (data attributes, `style`) go on the bar.
  */
 export const EntityRibbon = ({
     kind,
@@ -45,6 +46,7 @@ export const EntityRibbon = ({
     sign = '×',
     countText,
     icon,
+    wrap = false,
     className,
     ...rest
 }) => {
@@ -212,7 +214,8 @@ export const EntityRibbon = ({
                     data-item-bar-name
                     className={cn(
                         sizeConfig.text,
-                        'font-bold truncate leading-tight transition-colors group-hover:text-white',
+                        'font-bold leading-tight transition-colors group-hover:text-white',
+                        wrap ? 'break-words' : 'truncate',
                         !isDiscovered ? 'text-gi-muted/60 italic' : 'text-gi-text'
                     )}
                 >

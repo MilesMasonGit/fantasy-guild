@@ -33,7 +33,7 @@ here.
 | ID | What | Origin |
 |---|---|---|
 | T-007 | **Coal Vein at 4 s**: accept, re-tag its purpose from gold to items (~3 s), or leave for the simulator rework? | FB §5.1 |
-| T-008 | **Flag Radius upgrade art**: keep borrowing the plain hero flag, or use the red banner art? | FB §5.2 |
+| T-008 | **Flag Radius upgrade art**: keep borrowing the plain hero flag, or use the red banner art? ⚠️ Moot once brief 260 O2 lands (Scouting Flags retires). | FB §5.2 |
 | T-010 | **Speech bubble audit**: add/remove list for `docs/reference/speech_bubble_lines.md`. | FB §5.5 |
 | T-011 | **Watch by eye** (no agent has seen these on screen): Token hit animations + transform glow, loot flight to the Hall, Shop drawer, countdown badge. | FB §5.6 |
 | T-012 | **Transforms now push neighbouring Tokens** (the playmat plan said only bursts and spawns push). Keep or change? | FMR |

@@ -36,6 +36,25 @@ describe('merging', () => {
         expect(ItemStubs.netOf(ItemStubs.getStub('stone'))).toBe(-4);
     });
 
+    it('a stub whose gains and spending cancel out is not drawn (no "New! +0"), and comes back in its place when its item moves', () => {
+        ItemStubs.recordFlow('oak', { added: 1 });
+        ItemStubs.markNew('bait');
+        ItemStubs.recordFlow('bait', { added: 1 });
+        ItemStubs.recordFlow('bait', { removed: 1 });
+        ItemStubs.recordFlow('stone', { added: 1 });
+        expect(ItemStubs.getStub('bait').isNew).toBe(true);
+        expect(ItemStubs.getStubs().map(s => s.itemId)).toEqual(['oak', 'stone']);
+        ItemStubs.recordFlow('bait', { added: 2 });
+        expect(ItemStubs.getStubs().map(s => s.itemId)).toEqual(['oak', 'bait', 'stone']);
+    });
+
+    it('a pinned stub is a tracker: still drawn at +0', () => {
+        ItemStubs.recordFlow('oak', { added: 1 });
+        ItemStubs.pin('oak');
+        ItemStubs.recordFlow('oak', { removed: 1 });
+        expect(ItemStubs.getStubs().map(s => s.itemId)).toEqual(['oak']);
+    });
+
     it('ignores changes that move nothing, and bulk changes with no item', () => {
         ItemStubs.recordFlow('oak', {});
         ItemStubs.recordFlow(null, { added: 3 });

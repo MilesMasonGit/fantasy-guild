@@ -19,7 +19,7 @@ import { resolveSpritePath } from '../utils/AssetManager.js';
 import { TokenCard, coverScale } from '../ui/components/board/TokenCard.jsx';
 import { requestRecipeList } from '../ui/components/board/recipeFlip.js';
 import { TokenInspectPopup } from '../ui/components/board/TokenInspectPopup.jsx';
-import { tokenCardModel, cardArtOf, activityOf, CARD_BLOCK, cardLifecycle } from '../ui/components/board/tokenCard.js';
+import { tokenCardModel, cardArtOf, activityOf, CARD_BLOCK, cardLifecycle, drivenBy } from '../ui/components/board/tokenCard.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -80,6 +80,10 @@ const CARD_TOKENS = {
         id: 'card_own_art', name: 'Card Own Art', tokenType: 'resource', rarity: 'common', uses: 5,
         sprite: 's_nature', cardArt: 'b_forge',
         config: { skill: 'mining', skillRequired: 1, cycleTimeMs: 3000, xp: 1, inputs: [], outputs: [] }
+    },
+    card_old_anvil: {
+        id: 'card_old_anvil', name: 'Card Old Anvil', tokenType: 'context', rarity: 'common', uses: null,
+        sprite: 's_industry', provides: [{ tag: 'ctx_card_retired', minTier: 1, chargeCost: 0 }]
     },
     card_bad_art: {
         id: 'card_bad_art', name: 'Card Bad Art', tokenType: 'resource', rarity: 'common', uses: 5,
@@ -162,7 +166,7 @@ describe('the blocks, top to bottom, per kind', () => {
         expect(recipe.needs.map(n => n.itemId)).toEqual(['item_coal']);
         expect(recipe.makes.map(m => m.itemId)).toEqual(['fixture_spider_silk']);
         expect(recipe.tools.map(t => t.typeId)).toEqual(['fixture_context_a']);
-        expect(recipe.change).toEqual({ label: 'Change recipe', chosen: true });
+        expect(recipe.change).toEqual({ label: 'Change recipe', chosen: true, empty: 'No recipe chosen' });
 
     });
 
@@ -207,7 +211,7 @@ describe('the blocks, top to bottom, per kind', () => {
     it('a station with nothing chosen still offers the picker', () => {
         const station = put('fixture_station');
         const recipe = tokenCardModel('fixture_station', station.id).blocks.find(b => b.id === CARD_BLOCK.RECIPE);
-        expect(recipe.change).toEqual({ label: 'Change recipe', chosen: false });
+        expect(recipe.change).toEqual({ label: 'Change recipe', chosen: false, empty: 'No recipe chosen' });
         expect(recipe.needs).toEqual([]);
     });
 
@@ -255,6 +259,53 @@ describe('the blocks, top to bottom, per kind', () => {
         station.usesRemaining = null;
         const { container } = mount(h(TokenCard, { typeId: 'fixture_kitchen', instanceId: station.id }));
         expect(container.querySelector('[data-card-charges]').textContent).toBe('∞');
+    });
+});
+
+describe('what the card says', () => {
+    it('the cycle shows the time the work really takes, sped up by what is in reach', () => {
+        const vein = put('card_vein', 400, 300);
+        const speed = put('fixture_buff_speed', 450, 300);
+        TileModifiers.rebuildAround([vein, speed]);
+        const cycle = tokenCardModel('card_vein', vein.id).blocks.find(b => b.id === CARD_BLOCK.CYCLE);
+        // The very number the engine runs the cycle at.
+        expect(cycle).toMatchObject({ cycleMs: TileModifiers.workTimeOf(vein.id, 4000, 'mining'), baseMs: 4000 });
+        expect(cycle.cycleMs).toBeCloseTo(3600);
+        const { container } = mount(h(TokenCard, { typeId: 'card_vein', instanceId: vein.id }));
+        expect(container.querySelector('[data-card-cycle]').textContent).toBe('3.6s');
+    });
+
+    it('with nothing in reach, and in the Shop, the cycle is the authored time', () => {
+        const vein = put('card_vein', 400, 300);
+        expect(tokenCardModel('card_vein', vein.id).blocks.find(b => b.id === CARD_BLOCK.CYCLE).cycleMs).toBe(4000);
+        expect(tokenCardModel('card_vein').blocks.find(b => b.id === CARD_BLOCK.CYCLE).cycleMs).toBe(4000);
+    });
+
+    it('a Token nothing uses any more says nothing about what it drives', () => {
+        expect(drivenBy(getTokenType('card_old_anvil'))).toEqual([]);
+        const anvil = put('card_old_anvil');
+        expect(ids(tokenCardModel('card_old_anvil', anvil.id))).toEqual([CARD_BLOCK.NAME]);
+        const { container } = mount(h(TokenCard, { typeId: 'card_old_anvil', instanceId: anvil.id }));
+        expect(container.textContent).not.toMatch(/nothing yet/i);
+        expect(container.textContent).not.toMatch(/Drives/);
+    });
+
+    it('a tool names what accepts it', () => {
+        expect(drivenBy(getTokenType('card_pick'))).toContain('card_vein');
+        const pick = put('card_pick');
+        const { container } = mount(h(TokenCard, { typeId: 'card_pick', instanceId: pick.id }));
+        expect(container.textContent).toContain('Card Vein');
+    });
+
+    it('long names in a card ribbon wrap instead of being cut off', () => {
+        const vein = put('card_vein');
+        const { container } = mount(h(TokenCard, { typeId: 'card_vein', instanceId: vein.id }));
+        const names = [...container.querySelectorAll('[data-card-block="recipe"] [data-item-bar-name]')];
+        expect(names.length).toBeGreaterThan(0);
+        for (const el of names) {
+            expect(el.className).toContain('break-words');
+            expect(el.className).not.toContain('truncate');
+        }
     });
 });
 

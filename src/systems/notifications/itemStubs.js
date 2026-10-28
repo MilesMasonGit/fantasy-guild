@@ -172,7 +172,7 @@ export const shownNetOf = (stub) => (stub ? stub.added - stub.removed - stub.hel
  * Collected loot of `itemId` is flying to its stub: hold `qty` back from the count until it lands.
  * Call it straight after the Bank change that counted it, before listeners hear (they hear on a
  * timer), so the count never shows it early. A stub made by that very change is drawn at once, so
- * it slides out at +0 as the flight starts and the loot has somewhere to land.
+ * it slides out, no number yet, as the flight starts and the loot has somewhere to land.
  * @returns {{ itemId: string, uid: number, qty: number } | null} what {@link landFlight} takes;
  *   null when the item has no stub
  */
@@ -200,9 +200,13 @@ export function landFlight(hold) {
 /**
  * The stubs as the column draws them: pinned ones first, in the order they were pinned, then the
  * rest, the newest arrival at the bottom and the most recently unpinned at the top.
+ *
+ * An unpinned stub whose gains and spending cancel out (bait made and fished away) is not drawn:
+ * "+0" reads as a gain of nothing. It keeps its place and comes back the moment its item moves
+ * again. A pinned stub is a tracker, and shows +0 after a reset.
  */
 export function getStubs() {
-    const all = [...stubs.values()];
+    const all = [...stubs.values()].filter(s => s.pinned || netOf(s) !== 0);
     const pinned = all.filter(s => s.pinned).sort((a, b) => a.pinSlot - b.pinSlot);
     const rest = all.filter(s => !s.pinned).sort((a, b) => a.slot - b.slot);
     return [...pinned, ...rest];

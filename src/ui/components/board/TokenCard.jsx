@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { cn } from '../../utils/cn.js';
-import { getTokenType, tokenName, getAllTokenTypes, productionRoutes, getProvidedTagsWithTiers } from '../../../config/registries/tokenRegistry.js';
+import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
 import { getSkill } from '../../../config/registries/skillRegistry.js';
 import { EntityRibbon } from '../base/EntityRibbon.jsx';
 import { SkillIcon } from '../base/SkillIcon.jsx';
@@ -10,7 +10,7 @@ import { LandmarkBlock } from '../drawer/LandmarkBlock.jsx';
 import { LeaveMatControl } from '../drawer/TokenInspection.jsx';
 import { useTokenDetail } from './useTokenDetail.js';
 import { subscribeToken } from './tokenEvents.js';
-import { CARD_BLOCK, tokenCardModel, cycleText } from './tokenCard.js';
+import { CARD_BLOCK, tokenCardModel, cycleText, drivenBy } from './tokenCard.js';
 import { withArticle } from '../../../systems/effects/toolNames.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
@@ -87,10 +87,18 @@ const WorkBlock = ({ skillId, level, xp }) => (
     </Box>
 );
 
-const CycleBlock = ({ cycleMs, uses }) => (
+/** The cycle line's hover: the time and, when something nearby changes it, the time without it. */
+const cycleTip = (cycleMs, baseMs) => {
+    const shown = cycleText(cycleMs);
+    const base = cycleText(baseMs);
+    if (!baseMs || shown === base) return 'One round of work takes this long';
+    return `One round of work takes this long: ${base} ${cycleMs < baseMs ? 'before speed-ups' : 'before slow-downs'}`;
+};
+
+const CycleBlock = ({ cycleMs, baseMs, uses }) => (
     <Box data-card-block="cycle" className="flex-row items-center gap-2 ui-text-body text-gi-text">
         {cycleMs > 0 && (
-            <Stat icon={<PixelGlyph name="clock" />} text={cycleText(cycleMs)} tip="One round of work takes this long" data-card-cycle />
+            <Stat icon={<PixelGlyph name="clock" />} text={cycleText(cycleMs)} tip={cycleTip(cycleMs, baseMs)} data-card-cycle />
         )}
         {cycleMs > 0 && <Dot />}
         <Stat
@@ -107,14 +115,14 @@ const RecipeBlock = ({ block, instanceId, onChangeRecipe }) => (
         {block.recipeName && <span className="ui-text-body font-bold text-white">{block.recipeName}</span>}
         {block.change && !block.change.chosen && (
             <span className="ui-text-body" style={{ color: 'var(--color-ui-gold)' }}>
-                {block.change.label === 'Change recipe' ? 'No recipe chosen' : 'Nothing chosen to build'}
+                {block.change.empty}
             </span>
         )}
         {block.needs.length > 0 && (
             <div data-card-needs className="flex flex-col gap-1">
                 <Heading>Needs</Heading>
                 {block.needs.map(n => (
-                    <EntityRibbon key={n.itemId} kind="item" id={n.itemId} have={n.have} required={n.need} size="sm" />
+                    <EntityRibbon key={n.itemId} kind="item" id={n.itemId} have={n.have} required={n.need} size="sm" wrap />
                 ))}
             </div>
         )}
@@ -128,6 +136,7 @@ const RecipeBlock = ({ block, instanceId, onChangeRecipe }) => (
                         id={t.typeId || t.itemId || undefined}
                         name={t.name}
                         size="sm"
+                        wrap
                         countText=""
                         title={t.inHand ? `A Hero needs ${withArticle(t.name)} in hand to work this` : `Needs a ${t.name} nearby`}
                         data-card-tool={t.typeId || t.itemId || t.tag}
@@ -148,6 +157,7 @@ const RecipeBlock = ({ block, instanceId, onChangeRecipe }) => (
                         maxQty={m.max}
                         chance={m.chance != null ? `${m.chance}%` : undefined}
                         size="sm"
+                        wrap
                     />
                 ))}
             </div>
@@ -224,7 +234,7 @@ const DropsBlock = ({ drops }) => (
     <Box data-card-block="drops">
         <Heading>Drops</Heading>
         {drops.map(d => (
-            <EntityRibbon key={d.itemId} kind="item" id={d.itemId} minQty={d.min} maxQty={d.max} chance={`${d.chance}%`} size="sm" />
+            <EntityRibbon key={d.itemId} kind="item" id={d.itemId} minQty={d.min} maxQty={d.max} chance={`${d.chance}%`} size="sm" wrap />
         ))}
     </Box>
 );
@@ -278,22 +288,21 @@ const MoreBlock = ({ typeId }) => {
                     ))}
                 </Box>
             )}
-            {Object.keys(getProvidedTagsWithTiers(def)).length > 0 && <DrivesLine def={def} />}
+            <DrivesLine def={def} />
         </div>
     );
 };
 
+/** What a tool or support Token serves; nothing at all for one nothing uses any more. */
 const DrivesLine = ({ def }) => {
-    const tags = new Set(Object.keys(getProvidedTagsWithTiers(def)));
-    const driven = Object.keys(getAllTokenTypes()).filter(id =>
-        productionRoutes(id).some(r => r.requiresContext.some(t => tags.has(t)))
-    );
+    const driven = drivenBy(def);
+    if (!driven.length) return null;
     return (
         <Box className="ui-text-body text-gi-text">
             <Tooltip title="Serves every nearby station, and wears once per cycle it serves">
                 <span className="cursor-help">
                     <Heading>{def.isTool ? 'Tool for' : 'Drives'}</Heading>{' '}
-                    {driven.length ? driven.map(tokenName).join(', ') : 'nothing yet'}
+                    {driven.map(tokenName).join(', ')}
                 </span>
             </Tooltip>
         </Box>

@@ -1,4 +1,4 @@
-Status: built (brief 20, engine; content in the CMS)
+Status: built (brief 20, engine; content in the CMS). ⚠️ Superseded by [concept_classless_heroes.md](concept_classless_heroes.md) (owner 2026-10-28, brief 270): jobs and promotion retire.
 
 # Concept: Skill & Class Rework v2 (4-Combat / 4-Basic System)
 

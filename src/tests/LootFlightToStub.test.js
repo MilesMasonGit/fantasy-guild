@@ -25,7 +25,7 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
  * ⭐ **Collected loot flies to its own stub** (owner, third look), the whole way through: a sprite
  * collected off the mat is in the Bank at once, exactly as before; its flight lands on the item's
  * stub instead of the Guild Hall, and the stub's count ticks up only as it lands. A new item's stub
- * slides out at +0 as the flight starts; a stub out of view gets a copy over the bottom stubs; with
+ * slides out with no number as the flight starts; a stub out of view gets a copy over the bottom stubs; with
  * item stubs switched off the loot flies to the Guild Hall as before.
  *
  * jsdom lays nothing out: the boxes below stand in for the screen (a 1600×1000 window, the mat
@@ -173,13 +173,14 @@ describe('⭐ collected loot flies to its stub', () => {
         expect(shownOn(stubEl(view, 'fixture_oak_wood'))).toBe('5');
     });
 
-    it('a new item\'s stub slides out at +0 as the flight starts, then counts the landing once', async () => {
+    it('a new item\'s stub slides out with no number as the flight starts, then counts the landing once', async () => {
         const view = mountGame();
         await collectPile('fixture_oak_wood', 4);
-        // Drawn before the first frame of the flight, at +0, sliding in.
+        // Drawn before the first frame of the flight, sliding in, with no number yet (never "+0").
         const el = stubEl(view, 'fixture_oak_wood');
         expect(el).not.toBeNull();
         expect(shownOn(el)).toBe('0');
+        expect(el.textContent).not.toContain('+0');
         expect(el.getAttribute('data-stub-arriving')).toBe('true');
         expect(ItemStubs.getStub('fixture_oak_wood').added).toBe(4);
 
