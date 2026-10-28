@@ -11,10 +11,10 @@ Integration branch `feat/token-bars` (one eye-check for the brief). P1 ∥ P2, t
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| P1: enemies show no charges; a choice waiting on you swaps its '!' for a 2× gear on hover (T-261, T-262) | builder | `feat/token-bars-p1` (`tb1`) | building | Wed | |
-| P2: every hero's flag is the owner's pennant at 2× (T-150) | builder | `feat/token-bars-p2` (`tb2`) | building | Wed | |
-| P3: one plate for every Token: no output icon, idle Tokens get it on hover, the round rings retire (T-263) | builder | after P1 | queued | | |
-| Card wording fixes from the S9 list (#4, #5, #9, #10, #11, #12) | builder-lite | after P3 | queued | | |
+| P1: enemies show no charges; a choice waiting on you swaps its '!' for a 2× gear on hover (T-261, T-262) | builder | `feat/token-bars-p1` (`tb1`) | **ready**, merged into `feat/token-bars` 49e96c3d (gate on the merged P1+P2: 6646 tests, cycles 0, build; director read the diff). Notes: the gear keeps its own tooltip; the drawer inspection still shows an enemy's charges (ticket candidate) | Wed | Wed |
+| P2: every hero's flag is the owner's pennant at 2× (T-150) | builder | `feat/token-bars-p2` (`tb2`) | **ready**, on `feat/token-bars` 89b6b15c (builder: 6636 tests, cycles 0, build; director read the diff, checked the pole foot (4, 31) on the art, shots look right). Drag bench queued | Wed | Wed |
+| P3: one plate for every Token: no output icon, idle Tokens get it on hover, the round rings retire (T-263) | builder | `feat/token-bars-p3` (`tb1`) | building | Wed | |
+| Card wording fixes from the S9 list (#4, #5, #9, #10, #11, #12) | builder | `fix/card-wording` (`tb2`), off `main`, merges on the gate | building | Wed | |
 
 ## Systems director, combat (brief 220; owner's go 2026-10-24) — **done, all phases merged 2026-10-25**
 
@@ -355,6 +355,8 @@ branch), so it uses the kit and everyone fights; it merges after both.*
 
 - ~~K4 play-through~~ **Answered 2026-10-27 (owner):** the tutorial's Old Site step is **removed** (T-259; T-258 puts it back once the ruins exist); **Recruits may hold copper weapons** (T-260; reverses the C2 call); **pace**: the owner plays the K4 eye-check first, tuning goes to planning after.
 - ~~Lemons and limes; Lavender in plane 1~~ **Answered 2026-10-27 (owner: A on both):** lemonade and limeade wait for a later plane's Lemon and Lime Trees (they stay in the test's exclusion list); Lavender Seed from a Bird Nest stays as a lucky early find in plane 1.
+
+- **Pennant flag (P2), parked for the eye-check:** (a) the carried pennant is centred on the cursor, so on drop it jumps ~23 px right, 31 px up (the old flag jumped more); hold its pole foot on the cursor instead? (b) the Edit Hero colour swatches now change nothing visible: keep until the flag rework, or hide? (c) the idle hero now stands over the right half of the smaller pennant: move the idle spot (engine movement; bench work check would change)?
 
 *Design questions the director cannot answer, as multiple choice, recommendation
 first; asked with the next batch proposal and recorded where they belong.*
