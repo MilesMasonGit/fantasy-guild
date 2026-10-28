@@ -1,5 +1,5 @@
 import {
-    getTokenType, getAllTokenTypes, tokenName, getProvidedTagsWithTiers, outputRange
+    getTokenType, getAllTokenTypes, tokenName, getProvidedTagsWithTiers, outputRange, productionRoutes
 } from '../../../config/registries/tokenRegistry.js';
 import { contextRequirementsOf, getRecipe } from '../../../config/registries/recipePoolRegistry.js';
 import { getItem, getAllItems } from '../../../config/registries/itemRegistry.js';
@@ -17,6 +17,7 @@ import * as StationRecipe from '../../../systems/board/StationRecipe.js';
 import * as TimedChanges from '../../../systems/board/TimedChanges.js';
 import * as Fields from '../../../systems/board/Fields.js';
 import * as Demolition from '../../../systems/board/Demolition.js';
+import { workTimeOf } from '../../../systems/board/TileModifiers.js';
 import { effectiveIO } from '../../../systems/board/RecipeResolver.js';
 import { availableOf } from '../../../systems/board/InputAllocator.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
@@ -54,6 +55,9 @@ export const ACTIVITY_ART = Object.freeze({
     smithing: 'b_smithy',
     cooking: 'b_kitchen'
 });
+
+/** Its work runs at its own time whatever is near it (`BoardRunner.tick`). */
+const GUILD_HALL = 'token_guild_hall';
 
 /** How far a spawner's activity is looked for through what it spawns and what that grows into. */
 const ACTIVITY_DEPTH = 3;
@@ -103,6 +107,7 @@ export function liveCardSources() {
         instanceOf: BoardState.getTokenById,
         workerOf: BoardState.workerOf,
         effectiveIO,
+        workTime: workTimeOf,
         available: availableOf,
         selectedRecipe: StationRecipe.selectedRecipe,
         poolFor: StationRecipe.poolFor,
@@ -136,6 +141,22 @@ export function toolTokenFor(tag, minTier = 1, allTypes = getAllTokenTypes()) {
         .filter(c => c.rank && c.rank >= minTier)
         .sort((a, b) => a.rank - b.rank);
     return ranked[0]?.id || null;
+}
+
+/**
+ * The Token types whose work a tool or support Token `def` serves: any with a recipe that needs a
+ * tag it provides, or that accepts it as a tool at its tier. Empty for one nothing uses any more
+ * (an old save's retired anvil).
+ */
+export function drivenBy(def, allTypes = getAllTokenTypes(), routesOf = productionRoutes) {
+    const tiers = getProvidedTagsWithTiers(def) || {};
+    const tags = new Set(Object.keys(tiers));
+    if (!tags.size) return [];
+    const accepts = (other) => (Array.isArray(other?.acceptedTokens) ? other.acceptedTokens : [])
+        .some(req => req?.tag && tags.has(req.tag) && Number(tiers[req.tag]) >= (Number(req.minTier) || 1));
+    return Object.entries(allTypes || {})
+        .filter(([id, other]) => accepts(other) || routesOf(id).some(r => (r.requiresContext || []).some(t => tags.has(t))))
+        .map(([id]) => id);
 }
 
 function toolsOf(def, recipe, src) {
@@ -245,7 +266,7 @@ function fieldCardLines(field, src) {
     }
     const pick = field.pickId ? src.recipeOf?.(field.pickId) : null;
     const seeds = pick ? cropTermsOf(pick).seeds : [];
-    if (seeds.length) out.push({ icon: 'clock', text: itemsSpoken(seeds, src), tip: `Each sowing costs ${itemsSpoken(seeds, src)} from the Bank` });
+    if (seeds.length) out.push({ icon: 'grow', text: `${itemsSpoken(seeds, src)} per sowing`, tip: `Each sowing costs ${itemsSpoken(seeds, src)} from the Bank` });
     return out;
 }
 
@@ -403,9 +424,13 @@ export function tokenCardModel(typeId, instanceId = null, src = liveCardSources(
         blocks.push({ id: CARD_BLOCK.WORK, skillId, level, xp });
     }
 
-    const cycleMs = Number(marked ? src.demolishMs : (io?.cycleTimeMs ?? recipe?.durationMs ?? def.config?.cycleTimeMs)) || 0;
+    const baseMs = Number(marked ? src.demolishMs : (io?.cycleTimeMs ?? recipe?.durationMs ?? def.config?.cycleTimeMs)) || 0;
+    // The time the work really takes on the mat, sped up by what is in reach and the hero on it.
+    const cycleMs = baseMs > 0 && instance && !marked && typeId !== GUILD_HALL && src.workTime
+        ? Number(src.workTime(instance.id, baseMs, skillId)) || baseMs
+        : baseMs;
     const uses = instance ? (instance.usesRemaining ?? null) : (def.uses ?? null);
-    if (cycleMs > 0 || uses != null) blocks.push({ id: CARD_BLOCK.CYCLE, cycleMs, uses });
+    if (cycleMs > 0 || uses != null) blocks.push({ id: CARD_BLOCK.CYCLE, cycleMs, baseMs, uses });
 
     if (!marked) {
         // A crop's inputs are its seed, paid once per sowing (its lifecycle line says so), not per harvest.
@@ -418,7 +443,11 @@ export function tokenCardModel(typeId, instanceId = null, src = liveCardSources(
         const tools = toolsOf(def, recipe, src);
         const makes = makesOf(outputs);
         const change = isStation && instance
-            ? { label: def.foundation ? 'Choose what to build' : isField ? 'Change crop' : 'Change recipe', chosen: !!recipe }
+            ? {
+                label: def.foundation ? 'Choose what to build' : isField ? 'Change crop' : 'Change recipe',
+                chosen: !!recipe,
+                empty: def.foundation ? 'Nothing chosen to build' : isField ? 'No crop chosen' : 'No recipe chosen'
+            }
             : null;
         if (needs.length || tools.length || makes.length || change) {
             blocks.push({ id: CARD_BLOCK.RECIPE, recipeName: recipe?.name || null, needs, tools, makes, change });
@@ -434,7 +463,7 @@ export function tokenCardModel(typeId, instanceId = null, src = liveCardSources(
     const more = {
         landmark: !!landmarkLines(def, { skillName: (id) => id, itemName: src.itemName }),
         buff: !!def.buff,
-        drives: Object.keys(getProvidedTagsWithTiers(def)).length > 0
+        drives: drivenBy(def, src.allTypes()).length > 0
     };
     if (more.landmark || more.buff || more.drives) blocks.push({ id: CARD_BLOCK.MORE, ...more });
     return { enemy: false, name, art, blocks };

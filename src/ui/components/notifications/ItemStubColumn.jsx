@@ -72,7 +72,10 @@ function StubRow({ stub, net, children, rowRef }) {
         <div ref={rowRef} className="h-full w-max flex items-center whitespace-nowrap" style={{ gap: ROW_GAP_PX, paddingLeft: PAD_LEFT_PX, paddingRight: PAD_RIGHT_PX }}>
             <span className="shrink-0 flex items-baseline gap-1">
                 {stub.isNew && <span className="ui-text-small font-bold" style={{ color: 'var(--color-ui-gold)' }}>New!</span>}
-                <span className="tabular-nums font-bold" style={{ color: TONE_COLOUR[toneOf(net)] }}>{signedAmount(net)}</span>
+                {/* A new stub waits at no number, not "+0", while its first loot flies to it. */}
+                {(net !== 0 || stub.pinned) && (
+                    <span className="tabular-nums font-bold" style={{ color: TONE_COLOUR[toneOf(net)] }}>{signedAmount(net)}</span>
+                )}
             </span>
             <span data-stub-sprite className="shrink-0 flex">
                 <ItemIcon item={stub.itemId} size={SPRITE_PX} title={null} />

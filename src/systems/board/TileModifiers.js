@@ -853,6 +853,23 @@ export function floorSpeedUp(baseMs, resolvedMs) {
     return resolvedMs < floor ? floor : resolvedMs;
 }
 
+/** No work cycle is shorter than this, which the catch-up's 1 s steps rely on (`loopConstants.MAX_TICK_DELTA_MS`). */
+export const MIN_WORK_CYCLE_MS = 1000;
+
+/**
+ * How long one round of work at Token `instanceId` takes, given its authored time: the Work Time
+ * its neighbours, the Region's rules and the hero working it give it, floored by
+ * {@link floorSpeedUp} and never under {@link MIN_WORK_CYCLE_MS}. `BoardRunner.tick` runs work at
+ * this length and the Token card shows it; with no hero on it, it is the Token's own time.
+ *
+ * @param {string} instanceId
+ * @param {number} baseMs the authored time (the active recipe's, else the Token's own)
+ * @param {string} [skill] the work skill rules narrow to
+ */
+export function workTimeOf(instanceId, baseMs, skill) {
+    return Math.max(MIN_WORK_CYCLE_MS, floorSpeedUp(baseMs, resolveAxis(instanceId, EFFECT_TYPES.WORK_TIME, baseMs, skill)));
+}
+
 /**
  * The skill a growing or resting Token's Grow Time narrows to: its own work skill (a resting vein's
  * Mining), or else that of the first Token down its `grows` chain with one (a Sapling's Tree, so
