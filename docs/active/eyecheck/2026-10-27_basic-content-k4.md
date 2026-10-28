@@ -57,6 +57,22 @@ Game in an empty slot, and play. Shots (1920×1080) are in
    Shots `4a`-`4g`.
    Verdict: ok / change: ___
 
+5. **Since the play-through (fixes on `main`, play these in your own game).**
+   a. **The tutorial goes straight on**: after "Craft Something" the next step
+      is "Make a Copper Tool" (no "Inspect an Old Site"); its text says to make
+      a Copper Pickaxe or Woodaxe at a Copper Smithy.
+      Verdict: ok / change: ___
+   b. **A hero pulled out of a fight heals**: put a Recruit's flag on a goblin,
+      drag the flag away mid-fight; the hero's HP bar climbs again within a
+      minute instead of staying low.
+      Verdict: ok / change: ___
+   c. **Recruits hold copper weapons**: drag a Copper Sword (or any copper
+      weapon) from the Bank onto a Recruit: it equips. In a fight the hit line
+      says "Copper Sword: 2" and the style tip says the Recruit fights with no
+      style. Drag an Iron Sword onto a Recruit: refused with "Recruits can hold
+      only copper weapons: promote … to use the Iron Sword".
+      Verdict: ok / change: ___
+
 ## Rough edges the play-through noticed (for you to rank; none fixed yet)
 
 1. **The tutorial stops at "Inspect an Old Site"** (asked in the director's next question): the Starter Camp has no old
@@ -143,4 +159,4 @@ The three poison bosses (Greater Slime, Queen Bee, Toxic Frog) were not met on
 this route: they live on the Meadow, Cherry Grove and Bog maps, none of which
 the tutorial gives, so a player meets them later.
 
-Owner CMS steps: none.
+Owner CMS steps: done 2026-10-27 (weapon tiers, Sync 52520231).
