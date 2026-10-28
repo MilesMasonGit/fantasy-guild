@@ -12,6 +12,11 @@ they are not allowed to use. **If the skill is high enough, the hero can do
 it.** Pairs with [concept_hero_orders.md](concept_hero_orders.md): one hero,
 one job makes heroes specialise by what they are sent to do.*
 
+> ⚠️ **Amended 2026-10-28 by [concept_combat_v2.md](concept_combat_v2.md)** (owner):
+> Stealth is a character (burst, swingy, best on watched boss fights), not
+> the two traits below, and **'unseen at work' is dropped**; armour families
+> **defend differently and mix freely**. Brief 270 K2 and K3 wait for it.
+
 ## Every hero holds every skill
 
 - **No jobs, no promotion.** The Recruit → basic class → master class tree,
