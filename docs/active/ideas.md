@@ -79,7 +79,7 @@ the first outside playtest, modding.
 - **Hero flags**: moved on. The smaller pennant is brief 250 (T-150). The
   owner's **flag rework** became a bigger change, **hero orders** (drag a hero
   onto a job; camps for area work; flags and Work Permissions retire):
-  [concept_hero_orders.md](concept_hero_orders.md), draft 2026-10-28. Hero
+  [concept_hero_orders.md](concept_hero_orders.md), briefed 2026-10-28 (brief 260). Hero
   colours wait for the owner's art pass.
 - **Accessibility**: colour-blind-safe flags (T-151) join that flag rework.
   Text size settings already exist.
