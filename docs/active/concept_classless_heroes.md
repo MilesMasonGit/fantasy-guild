@@ -1,4 +1,4 @@
-Status: draft
+Status: briefed 2026-10-28 (approved 2026-10-28; brief 270)
 
 # Classless heroes: every hero, every skill
 
