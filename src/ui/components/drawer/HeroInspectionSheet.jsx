@@ -15,7 +15,6 @@ import { useLiveMatFit } from '../board/MatFitContext.jsx';
 import { useEntityDrag } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { Feather, ChevronRight } from 'lucide-react';
-import { flagColourOf } from '../../../systems/board/FlagColours.js';
 import { XpRateTracker } from '../../../systems/hero/XpRateTracker.js';
 import {
     heroSkillList, skillLevelText, skillXpView, skillDetail, requiresText,
@@ -50,7 +49,6 @@ export const HeroInspectionSheet = memo(function HeroInspectionSheet({ heroId, o
             return JSON.stringify({
                 name: h.name, jobId: h.jobId || null, className: h.className || null,
                 spriteId: h.spriteId || null, icon: h.icon || null, classId: h.classId || null,
-                flagColour: flagColourOf(heroId),
                 hp: Math.max(0, Math.round(h.hp?.current ?? 0)), hpMax: Math.max(1, h.hp?.max ?? 100),
                 skills: Object.fromEntries(Object.entries(h.skills || {}).map(([id, s]) => [id, { level: s?.level, xp: s?.xp }])),
                 bankedSkills: Object.fromEntries(Object.entries(h.bankedSkills || {}).map(([id, s]) => [id, { level: s?.level, xp: s?.xp }]))
@@ -175,8 +173,9 @@ const HeroFigure = ({ hero, heroId, size }) => {
     const sprite = hero.spriteId || hero.classId || null;
     const animArt = sprite ? resolveAnimationPath(sprite) : null;
     const staticArt = animArt ? null : resolveSpritePath(sprite || hero.icon || 'hn_recruit_por');
-    // The flag's pole stands just behind the hero's shoulder, its cloth flying out to the right.
-    const flagLeft = Math.round(size * 0.3);
+    // The pennant at half the hero's size, as on the mat, in the top-right quarter of the
+    // hero's box: its pole just behind the hero's shoulder, its cloth flying out to the right.
+    const flagPx = size / 2;
     return (
         <div
             data-hero-panel-sprite
@@ -185,11 +184,11 @@ const HeroFigure = ({ hero, heroId, size }) => {
             style={{ width: '100%', maxWidth: size, height: size }}
         >
             <div
-                data-hero-panel-flag={hero.flagColour || 'base'}
-                className="absolute top-0"
-                style={{ left: `calc(50% - ${size / 2}px + ${flagLeft}px)`, width: size, height: size }}
+                data-hero-panel-flag="pennant"
+                className="absolute"
+                style={{ left: '50%', top: 0, width: flagPx, height: flagPx }}
             >
-                <FlagMark colour={hero.flagColour} size={size} alt="" />
+                <FlagMark size={flagPx} alt="" />
             </div>
             <div
                 data-hero-panel-figure

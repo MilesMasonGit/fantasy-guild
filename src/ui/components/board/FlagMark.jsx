@@ -1,16 +1,18 @@
 import { PixelArt } from '../base/TokenSprite.jsx';
-import { flagSpritePath } from '../../../systems/board/FlagColours.js';
 import { FLAG_PX } from './flagGeometry.js';
 
+/** The one flag sprite every hero carries. */
+export const PENNANT_SRC = '/assets/ui/u_flag_pennant.png';
+
 /**
- * A hero's flag, drawn with the flag sprites: `u_flag_<colour>.png`, or the plain base flag
- * for a hero with no colour. 128 px by default (2× the 64 px art, pixelated).
- * Drawn by the board's `FlagLayer`, the drag ghost, the rules panel and the Edit Hero colour
- * swatches, so a flag looks the same everywhere.
+ * A hero's flag: the pennant, the same for every hero. 64 px by default (2× the 32 px art,
+ * pixelated). Drawn by the board's `FlagLayer`, the drag ghost, the hero panel and the Atlas's
+ * 'you are here' mark, so a flag looks the same everywhere. The hero's saved `flagColour` is not
+ * drawn.
  */
-export const FlagMark = ({ colour = null, size = FLAG_PX, lifted = false, outline, alt = 'Flag', className, style }) => (
+export const FlagMark = ({ size = FLAG_PX, lifted = false, outline, alt = 'Flag', className, style }) => (
     <PixelArt
-        src={flagSpritePath(colour)}
+        src={PENNANT_SRC}
         alt={alt}
         size={size}
         lifted={lifted}

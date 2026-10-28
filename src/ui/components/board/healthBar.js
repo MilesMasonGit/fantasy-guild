@@ -1,5 +1,4 @@
-import { HERO_HIT_PX } from './boardConstants.js';
-import { FLAG_PX } from './flagGeometry.js';
+import { HERO_HIT_PX, HERO_BOX_PX } from './boardConstants.js';
 
 /** A health bar's fill colour, its track and its edge. */
 export const HP_COLOUR = '#F09595';
@@ -47,7 +46,7 @@ export function healthFillPx(cur, max, w = HP_BAR.W) {
 }
 
 /**
- * Where a bar sits over a hero's box (`HERO_HIT_PX` × `FLAG_PX`, the art centred in it, `artPx`
+ * Where a bar sits over a hero's box (`HERO_HIT_PX` × `HERO_BOX_PX`, the art centred in it, `artPx`
  * across), `u` mat units a plate pixel: centred, its bottom a gap above the top of the art. The
  * number stands above it.
  * @returns {{left: number, top: number, width: number}}
@@ -56,7 +55,7 @@ export function heroBarPlace(artPx, u = 1) {
     const width = HP_BAR.W * u;
     return {
         left: (HERO_HIT_PX - width) / 2,
-        top: (FLAG_PX - artPx) / 2 - (HP_BAR.H + HP_BAR.GAP) * u,
+        top: (HERO_BOX_PX - artPx) / 2 - (HP_BAR.H + HP_BAR.GAP) * u,
         width
     };
 }

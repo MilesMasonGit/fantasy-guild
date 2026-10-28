@@ -19,8 +19,9 @@ import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { MAT_TOKEN_DRAG_ID } from '../ui/components/board/MatToken.jsx';
 import { setDisallowMode } from '../ui/hooks/useMapMode.js';
 import { MatFitProvider } from '../ui/components/board/MatFitContext.jsx';
-import { HERO_HIT_PX } from '../ui/components/board/boardConstants.js';
-import { FLAG_PX } from '../ui/components/board/flagGeometry.js';
+import { HERO_HIT_PX, HERO_BOX_PX } from '../ui/components/board/boardConstants.js';
+import { FLAG_PX, PENNANT_ART_PX, POLE_BASE } from '../ui/components/board/flagGeometry.js';
+import { boardScaleAt } from '../ui/components/base/TokenSprite.jsx';
 import { placeAt, clearMat } from './fixtures/mat.js';
 import { drawnPoint } from './fixtures/drawnPoint.js';
 
@@ -350,17 +351,17 @@ describe('⭐ a press through a hero\'s see-through pixel reaches what is beneat
 /**
  * ⭐ **A flag among Tokens can always be picked up by its cloth.** Over a Token's round body a
  * flag lets the pointer through to the Token, except on the flag's cloth where the flag is drawn
- * in front of that Token. Its pole, its grass and its empty corners still give way.
+ * in front of that Token. Its pole and its empty corners still give way.
  */
 describe('⭐ a flag\'s cloth drawn in front of a Token takes the pointer there', () => {
-    // At the owner's fit the flag is drawn 147 u across, its pole base on its point.
-    const FLAG_PX_HERE = 147;
+    // At the owner's fit the pennant is drawn about 73 u across, its pole foot on its point.
+    const FLAG_PX_HERE = PENNANT_ART_PX * boardScaleAt(OWNER_FIT);
     const boxOf = (point) => {
-        const s = FLAG_PX_HERE / 128;
-        const left = point.x - 40 * s, top = point.y - 116 * s;
+        const s = FLAG_PX_HERE / FLAG_PX;
+        const left = point.x - POLE_BASE.x * s, top = point.y - POLE_BASE.y * s;
         return { left, top, right: left + FLAG_PX_HERE, bottom: top + FLAG_PX_HERE, width: FLAG_PX_HERE, height: FLAG_PX_HERE, x: left, y: top };
     };
-    const ON_CLOTH = { x: 620, y: 620 };
+    const ON_CLOTH = { x: 620, y: 640 };
     let realElementFromPoint;
 
     function scene(flagPoint) {
@@ -406,7 +407,7 @@ describe('⭐ a flag\'s cloth drawn in front of a Token takes the pointer there'
         fireEvent.pointerMove(hitOf(container, tok.id), { clientX: ON_CLOTH.x, clientY: ON_CLOTH.y });
         expect(flag.className).toContain('pointer-events-auto');
         expect(outlined(container, tok.id)).not.toBe('hover');
-        // Off the cloth, still on the Token: the flag gives way again.
+        // On the pole beside the cloth, still on the Token: the flag gives way again.
         fireEvent.pointerMove(hitOf(container, tok.id), { clientX: 600, clientY: 660 });
         expect(flag.className).toContain('pointer-events-none');
         expect(outlined(container, tok.id)).toBe('hover');
@@ -429,7 +430,7 @@ describe('⭐ a flag\'s cloth drawn in front of a Token takes the pointer there'
         expect(started).toEqual(['flag-h1']);
     });
 
-    it('a flag planted on the Token\'s centre: its pole and grass there leave the Token its press', () => {
+    it('a flag planted on the Token\'s centre: its pole foot there leaves the Token its press', () => {
         const flagPoint = { x: 600, y: 600 };
         const tok = scene(flagPoint);
         const { container, started } = mountWithDrag();
@@ -491,7 +492,7 @@ describe('⭐ a hero\'s art takes no pointer outside the hero\'s box', () => {
         const hero = container.querySelector('[data-board-hero="h1"]');
         expect(hero).not.toBeNull();
         expect(parseFloat(hero.style.width)).toBe(HERO_HIT_PX);
-        expect(parseFloat(hero.style.height)).toBe(FLAG_PX);
+        expect(parseFloat(hero.style.height)).toBe(HERO_BOX_PX);
         const drawing = hero.firstElementChild;
         expect(drawing.style.pointerEvents).toBe('none');
         expect(BoardState.heroBodyOf('h1')).toBeTruthy();

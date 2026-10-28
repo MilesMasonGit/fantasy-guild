@@ -17,6 +17,7 @@ import { ALERT } from '../systems/board/boardEvents.js';
 import { resetMatTuning, setMatTuning } from '../config/matTuning.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { FlagLayer } from '../ui/components/board/FlagLayer.jsx';
+import { PENNANT_SRC } from '../ui/components/board/FlagMark.jsx';
 import { dockStatusLine, flagTooltip } from '../ui/components/board/flagText.js';
 import { drawnPoint } from './fixtures/drawnPoint.js';
 
@@ -110,7 +111,7 @@ describe('the idle mark (FP-29)', () => {
         expect(hero.className).not.toContain('gi-glow-active');
     });
 
-    it('an idle flag keeps its colour, has no chip, and its hero stands beside it at 128 px with no glow', () => {
+    it('an idle flag is the pennant, has no chip, and its hero stands beside it at 128 px with no glow', () => {
         GameState.state.heroes[0].spriteId = 'hero_recruit_0';   // rehydration's default portrait
         Flags.plant('h1', BARE);                             // bare ground, nothing in range
         expect(Flags.statusOf('h1').state).toBe('idle');
@@ -118,8 +119,7 @@ describe('the idle mark (FP-29)', () => {
         const { container } = mount(h(FlagLayer));
         const flag = container.querySelector('[data-flag="h1"]');
         expect(flag.getAttribute('data-flag-state')).toBe('idle');
-        expect(flag.getAttribute('data-flag-colour')).not.toBe('base');
-        expect(flag.querySelector('img').getAttribute('src')).toContain(`u_flag_${flag.getAttribute('data-flag-colour')}.png`);
+        expect(flag.querySelector('img').getAttribute('src')).toBe(PENNANT_SRC);
         expect(flag.querySelector('[data-flag-idle-chip]')).toBeNull();
 
         // ⭐ The hero is drawn by MatBoard, like every hero in every state

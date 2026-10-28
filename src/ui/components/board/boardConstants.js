@@ -51,6 +51,9 @@ import { ALERT } from '../../../systems/board/boardEvents.js';
 /** The hero's clickable box, narrower than the art it draws. */
 export const HERO_HIT_PX = 64;
 
+/** The hero's box height: the 64 px art at 2×, centred on the hero's point. */
+export const HERO_BOX_PX = 128;
+
 /**
  * The gap, in mat units, between a Token's own edge and its progress bar: the bar hangs just
  * under the Token, at the Token's own width. It is the ring row's gap below the lower of the

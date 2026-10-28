@@ -1,8 +1,7 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '../../utils/cn.js';
-import { HERO_HIT_PX } from './boardConstants.js';
-import { FLAG_PX } from './flagGeometry.js';
+import { HERO_HIT_PX, HERO_BOX_PX } from './boardConstants.js';
 import { useEntityDrag, useActiveDrag } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { tokenSizeFor, TOKEN_SURFACE, boardScaleAt, PixelArt } from '../base/TokenSprite.jsx';
@@ -125,7 +124,7 @@ function useLastAttackAt(heroId, listening) {
  */
 export function heroBoxAt(point) {
     if (!point || point.x == null || point.y == null) return null;
-    return { left: point.x - HERO_HIT_PX / 2, top: point.y - FLAG_PX / 2 };
+    return { left: point.x - HERO_HIT_PX / 2, top: point.y - HERO_BOX_PX / 2 };
 }
 
 /**
@@ -258,7 +257,7 @@ const MatHeroBody = memo(function MatHeroBody({
                 top: 0,
                 transform: `translate(${boxLeft}px, ${boxTop}px)`,
                 width: HERO_HIT_PX,
-                height: FLAG_PX,
+                height: HERO_BOX_PX,
                 zIndex: z,
                 transition: isWalking && walkDrawn
                     ? `transform ${TICK_INTERVAL_MS}ms linear`
@@ -317,7 +316,7 @@ const MatHeroBody = memo(function MatHeroBody({
                 fightBarHost
             )}
             {/* Under the feet: the art reaches past the hero's box by half their difference. */}
-            <TokenNameBadge name={name} shown={rested && !heroCarried} below offset={(artPx - FLAG_PX) / 2 + (plated ? plateNameDrop(fit) : 0)} />
+            <TokenNameBadge name={name} shown={rested && !heroCarried} below offset={(artPx - HERO_BOX_PX) / 2 + (plated ? plateNameDrop(fit) : 0)} />
         </button>
     );
 });

@@ -30,6 +30,7 @@ import { HeroEditModal } from '../ui/modals/HeroEditModal.jsx';
 import { useUIModals } from '../ui/hooks/useUIModals.js';
 import { isRecallDrop, recallFromDrop } from '../ui/components/dock/dockRecall.js';
 import { flagOrigin, POLE_BASE, FLAG_PX } from '../ui/components/board/flagGeometry.js';
+import { PENNANT_SRC } from '../ui/components/board/FlagMark.jsx';
 import { drawnPoint } from './fixtures/drawnPoint.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -229,24 +230,34 @@ describe('FP-77 / FP-82 — flag sprites and lasting colours', () => {
         const { container } = mount(h(FlagLayer));
         const flag = container.querySelector('[data-flag="h1"]');
         const img = flag.querySelector('img');
-        expect(img.getAttribute('src')).toBe(`/assets/ui/u_flag_${colour}.png`);
-        expect(img.style.width).toBe('128px');
-        expect(img.style.height).toBe('128px');
+        expect(img.getAttribute('src')).toBe(PENNANT_SRC);
+        expect(img.style.width).toBe('64px');
+        expect(img.style.height).toBe('64px');
         expect(img.style.imageRendering).toBe('pixelated');
-        expect(flag.style.width).toBe('128px');
+        expect(flag.style.width).toBe('64px');
     });
 
-    it('a hero with no colour draws the base flag', () => {
+    it('every hero draws the same pennant, whatever colour they hold', () => {
+        Flags.plant('h1', C(20));
+        Flags.plant('h2', C(8));
+        expect(flagColourOf('h1')).not.toBe(flagColourOf('h2'));
+        const { container } = mount(h(FlagLayer));
+        for (const id of ['h1', 'h2']) {
+            expect(container.querySelector(`[data-flag="${id}"] img`).getAttribute('src')).toBe(PENNANT_SRC);
+        }
+    });
+
+    it('a hero with no colour draws the pennant too', () => {
         const { container } = mount(h(FlagGhost, { payload: { heroId: 'h2' } }));
-        expect(container.querySelector('img').getAttribute('src')).toBe('/assets/ui/u_flag_base.png');
+        expect(container.querySelector('img').getAttribute('src')).toBe(PENNANT_SRC);
     });
 
-    it('the drag ghost is the hero’s flag sprite at 128 px', () => {
+    it('the drag ghost is the pennant at 64 px', () => {
         Flags.plant('h1', C(20));
         const { container } = mount(h(FlagGhost, { payload: { heroId: 'h1' } }));
         const img = container.querySelector('img');
-        expect(img.getAttribute('src')).toBe(`/assets/ui/u_flag_${flagColourOf('h1')}.png`);
-        expect(img.style.width).toBe('128px');
+        expect(img.getAttribute('src')).toBe(PENNANT_SRC);
+        expect(img.style.width).toBe('64px');
     });
 
     it('is given at the first plant — the first colour nobody else holds — and kept on re-plants', () => {
@@ -341,23 +352,23 @@ describe('FP-83 — a flag stands exactly where it was dropped', () => {
     });
 });
 
-describe('the flag answers clicks on its round area (owner, 2026-09-21)', () => {
+describe('the flag answers clicks on the pennant’s drawn square', () => {
     /**
-     * The flag used to answer only on its opaque pixels (alpha hit-testing).
-     * The slice 1.9 work swapped that for a round hit area the size of the
-     * drawn art, and the owner kept it: easier to grab a thin flag. ⚠️ Its old
-     * cost — the circle catching clicks meant for a Token just behind it — is
-     * gone since B5: over a Token's art circle every flag lets the pointer
-     * through (`MatLayering.test.js`, `B5Flags.test.js`).
+     * The flag answers on the square the pennant is drawn in, which the pennant fills, not on
+     * its opaque pixels (no alpha hit-testing). Over a Token's art circle every flag lets the
+     * pointer through except on its cloth (`MatLayering.test.js`, `MatPressTarget.test.js`).
      */
-    it('is round, the size of its art, and no longer opts into alpha hit-testing', () => {
+    it('is the pennant’s own square, and does not opt into alpha hit-testing', () => {
         Flags.plant('h1', C(20));
         const { container } = mount(h(FlagLayer));
         const flag = container.querySelector('[data-flag="h1"]');
         expect(flag.getAttribute('data-alpha-test')).toBeNull();
-        expect(flag.style.borderRadius).toBe('50%');
-        expect(flag.style.width).toBe('128px');
-        expect(flag.querySelector('img').getAttribute('src')).toContain('/assets/ui/u_flag_');
+        expect(flag.style.borderRadius).toBe('');
+        expect(flag.style.width).toBe('64px');
+        expect(flag.style.height).toBe('64px');
+        const img = flag.querySelector('img');
+        expect(img.getAttribute('src')).toBe(PENNANT_SRC);
+        expect(img.style.width).toBe(flag.style.width);
     });
 
     it('a click on the flag is kept, never passed to what is underneath', () => {
@@ -461,6 +472,6 @@ describe('several flags on one point (FP-83)', () => {
         // Planting order decides who is in front; nobody is hidden.
         expect(Number(drawn[4].style.zIndex)).toBeGreaterThan(Number(drawn[0].style.zIndex));
         expect(container.querySelector('[data-flag-more]')).toBeNull();
-        expect(FLAG_PX).toBe(128);
+        expect(FLAG_PX).toBe(64);
     });
 });

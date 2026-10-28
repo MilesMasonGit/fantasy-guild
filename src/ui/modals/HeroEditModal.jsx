@@ -7,8 +7,8 @@ import { KitButton, KIT_BUTTON_TONE } from '../components/base/KitButton.jsx';
 import { ItemIcon } from '../components/base/ItemIcon.jsx';
 import { HERO_PORTRAITS, HERO_NAME_MAX } from '../../config/registries/heroPortraits.js';
 import { Check, Repeat } from 'lucide-react';
-import { FLAG_COLOURS, isFlagColour } from '../../systems/board/FlagColours.js';
-import { FlagMark } from '../components/board/FlagMark.jsx';
+import { FLAG_COLOURS, isFlagColour, flagSpritePath } from '../../systems/board/FlagColours.js';
+import { PixelArt } from '../components/base/TokenSprite.jsx';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 
 /** A chosen portrait or flag: the white line and a little white over the well. */
@@ -121,7 +121,9 @@ export const HeroEditModal = ({ heroId, isOpen, onClose, onChangeJob }) => {
                 </div>
 
                 {/**
-                 * Flag colour: the hero's lasting flag, drawn with the flag sprite itself.
+                 * Flag colour: saved on the hero, each swatch drawn with that colour's flag sprite.
+                 * The mat draws the one pennant for every hero; the colour is kept for a later
+                 * flag look.
                  * Full hero recolouring is later.
                  */}
                 <div className="flex flex-col gap-1.5">
@@ -140,7 +142,7 @@ export const HeroEditModal = ({ heroId, isOpen, onClose, onChangeJob }) => {
                                     flagColour === colour && SWATCH_CHOSEN
                                 )}
                             >
-                                <FlagMark colour={colour} size={40} alt={`${colour} flag`} />
+                                <PixelArt src={flagSpritePath(colour)} size={40} alt={`${colour} flag`} />
                             </button>
                         ))}
                     </div>

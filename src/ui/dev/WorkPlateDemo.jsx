@@ -7,7 +7,7 @@ import { TokenSprite } from '../components/base/TokenSprite.jsx';
 import { AnimatedHeroSprite } from '../components/board/AnimatedHeroSprite.jsx';
 import { HealthBar } from '../components/board/HealthBar.jsx';
 import { heroBarPlace, enemyBarPlace } from '../components/board/healthBar.js';
-import { HERO_HIT_PX } from '../components/board/boardConstants.js';
+import { HERO_HIT_PX, HERO_BOX_PX } from '../components/board/boardConstants.js';
 import { FLAG_PX, POLE_BASE, PIN_INSET } from '../components/board/flagGeometry.js';
 import { FlagMark } from '../components/board/FlagMark.jsx';
 import { SEVERITY } from '../components/board/problemMark.js';
@@ -83,11 +83,11 @@ export const WORK_PLATE_MOMENTS = Object.freeze([
 
 /** The ground, the pinned flag, the Token and its hero (or the enemy and the fighter, HP bars up). */
 const Patch = ({ moment, children }) => {
-    const heroBox = { left: HX - HERO_HIT_PX / 2, top: TY - FLAG_PX / 2, width: HERO_HIT_PX, height: FLAG_PX };
+    const heroBox = { left: HX - HERO_HIT_PX / 2, top: TY - HERO_BOX_PX / 2, width: HERO_HIT_PX, height: HERO_BOX_PX };
     return (
         <figure className="flex flex-col gap-1" data-work-plate-moment={moment.id}>
             <div className="relative overflow-hidden" style={{ width: PATCH_W, height: PATCH_H, background: GROUND }}>
-                <FlagMark colour={moment.flag} size={FLAG_PX} className="absolute" style={{ left: TX - POLE_BASE.x, top: POLE_Y - POLE_BASE.y }} />
+                <FlagMark size={FLAG_PX} className="absolute" style={{ left: TX - POLE_BASE.x, top: POLE_Y - POLE_BASE.y }} />
                 <div className="absolute" style={{ left: TX - ART / 2, top: TY - ART / 2, width: ART, height: ART }}>
                     <TokenSprite typeId={moment.token} size={ART} outline={moment.combat ? null : (moment.blocked ? 'alert' : 'work')} />
                     {moment.combat && <HealthBar who="enemy" cur={moment.hp.enemy[0]} max={moment.hp.enemy[1]} style={enemyBarPlace(ART)} />}

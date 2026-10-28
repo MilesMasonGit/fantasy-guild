@@ -10,7 +10,6 @@ import { onMatTuningChanged } from '../../../config/matTuning.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as Flags from '../../../systems/board/Flags.js';
-import { flagColourOf } from '../../../systems/board/FlagColours.js';
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { GameState } from '../../../state/GameState.js';
 import { tokenSizeFor, TOKEN_SURFACE, boardScaleAt } from '../base/TokenSprite.jsx';
@@ -21,19 +20,19 @@ import { FloatingTip } from '../base/Tooltip.jsx';
 import { pointerToMat, matRectForDrag } from './matPoint.js';
 import { useMatFit } from './MatFitContext.jsx';
 import { useTokenDragLanding } from './MatRings.jsx';
-import { POLE_BASE, pinnedFlagPoint } from './flagGeometry.js';
+import { FLAG_PX, PENNANT_ART_PX, POLE_BASE, pinnedFlagPoint } from './flagGeometry.js';
 import { workableInReach } from './flagWorkable.js';
 import { pixelRingPath } from './pixelRing.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
  * FlagLayer: flags standing freely on the playmat, an absolute overlay in mat units.
- * - **Flag**: the hero's sprite in their lasting colour, 128 px, its pole base standing
- * exactly on the flag's point. Drag it to move the flag (`DRAG_KIND.FLAG`); hover for the hard
+ * - **Flag**: the pennant, the same for every hero, 64 px at the mat's natural fit, its pole
+ * foot standing exactly on the flag's point. Drag it to move the flag (`DRAG_KIND.FLAG`); hover for the hard
  * outline, the hero's name, status and skips, and the reach ring. Nothing else sits on it: the
  * work rules open from the hero bar, and an idle hero says 'No work in range.' themselves. It
- * answers on a round area the size of its art (there is no opaque-pixel test), except over a
- * Token (below). Flags may stand very close together or overlap, and never push, nudge or hide
+ * answers on its drawn square, which the pennant fills (there is no opaque-pixel test), except
+ * over a Token (below). Flags may stand very close together or overlap, and never push, nudge or hide
  * each other; later flags draw in front of earlier ones.
  * - **Idle**: the flag looks the same. The hero standing beside it, like every hero on the mat
  * in every state, is drawn by `MatBoard`, so a hero walking back to their flag is never handed
@@ -95,8 +94,7 @@ function projectFlags() {
             pinnedTo: pinned ? pinned.id : null,
             state: Flags.statusOf(heroId).state,
             name: hero?.name || 'Hero',
-            sprite: hero?.spriteId || hero?.classId || null,
-            colour: flagColourOf(heroId)
+            sprite: hero?.spriteId || hero?.classId || null
         });
     }
     return out;
@@ -144,6 +142,8 @@ export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverH
     const fit = useMatFit();
     const artScale = boardScaleAt(fit);
     const artPx = tokenSizeFor(TOKEN_SURFACE.BOARD, 1, artScale);
+    // The pennant on the same art-pixel grid as the Tokens.
+    const flagPx = PENNANT_ART_PX * artScale;
     const liveDragRing = useFlagDragPoint(matRef);
     const ring = dragRing || liveDragRing;
 
@@ -252,7 +252,7 @@ export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverH
                     key={`flag-${f.heroId}`}
                     flag={f}
                     z={flagZ?.get(f.heroId) ?? i * 3}
-                    artPx={artPx}
+                    flagPx={flagPx}
                     onHover={onHoverHero}
                     boardHovered={hoverHeroId === f.heroId}
                     inspected={inspectedHeroId === f.heroId}
@@ -305,7 +305,7 @@ const Flag = memo(function Flag(props) {
 });
 
 const FlagBody = memo(function FlagBody({
-    flag, z = 0, artPx, onHover, boardHovered = false, inspected = false, yieldToTokens = false,
+    flag, z = 0, flagPx, onHover, boardHovered = false, inspected = false, yieldToTokens = false,
     hovered, onHoverChange, carried, tipShown, dragRef, dragProps
 }) {
     const ref = useRef(null);
@@ -314,7 +314,7 @@ const FlagBody = memo(function FlagBody({
         dragRef?.(node);
     }, [dragRef]);
 
-    const scaleFactor = artPx / 128;
+    const scaleFactor = flagPx / FLAG_PX;
     const originLeft = (flag.drawX ?? flag.x ?? 0) - POLE_BASE.x * scaleFactor;
     const originTop = (flag.drawY ?? flag.y ?? 0) - POLE_BASE.y * scaleFactor;
 
@@ -330,7 +330,6 @@ const FlagBody = memo(function FlagBody({
                 type="button"
                 data-flag={flag.heroId}
                 data-flag-state={flag.state}
-                data-flag-colour={flag.colour || 'base'}
                 data-flag-pinned={flag.pinnedTo || undefined}
                 aria-label={`${flag.name}’s flag`}
                 onMouseEnter={() => { onHoverChange(true); onHover?.(flag.heroId); }}
@@ -346,15 +345,13 @@ const FlagBody = memo(function FlagBody({
                 style={{
                     left: originLeft,
                     top: originTop,
-                    width: artPx,
-                    height: artPx,
-                    borderRadius: '50%',
+                    width: flagPx,
+                    height: flagPx,
                     zIndex: z
                 }}
             >
                 <FlagMark
-                    colour={flag.colour}
-                    size={artPx}
+                    size={flagPx}
                     alt={`${flag.name}’s flag`}
                     outline={flagOutline({ hovered: hovered || boardHovered, selected: inspected, carried })}
                     className="absolute left-0 top-0"

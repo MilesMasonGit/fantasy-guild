@@ -8,7 +8,7 @@ import { TokenSprite, TOKEN_SURFACE, tokenSizeFor, PixelArt, boardArtSteps } fro
 import { resolveSpritePath } from '../../utils/AssetManager.js';
 import { GameState } from '../../state/GameState.js';
 import { FlagMark } from '../components/board/FlagMark.jsx';
-import { flagColourOf } from '../../systems/board/FlagColours.js';
+import { PENNANT_ART_PX } from '../components/board/flagGeometry.js';
 
 /**
  * DragGhost: the floating representation of whatever is being dragged.
@@ -79,15 +79,16 @@ const CarriedToken = ({ payload, bold, offBoard }) => (
 );
 
 /**
- * A flag in flight: the hero's own flag sprite at 128 px, lifted, with no hero drawn. A flag
- * drag moves only the flag, and so does dragging a hero on the board.
+ * A flag in flight: the pennant at the board's art scale (64 px at the mat's natural fit),
+ * lifted, with no hero drawn. A flag drag moves only the flag, and so does dragging a hero on
+ * the board.
  */
 export const FlagGhost = ({ payload }) => {
     const artScale = boardArtSteps(liveBoardFit());
-    const size = 64 * artScale;
+    const size = PENNANT_ART_PX * artScale;
     return (
         <div data-flag-ghost={payload?.heroId || ''} className="flex items-center justify-center" style={{ width: size, height: size }}>
-            <FlagMark colour={flagColourOf(payload?.heroId)} size={size} lifted />
+            <FlagMark size={size} lifted />
         </div>
     );
 };

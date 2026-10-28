@@ -13,7 +13,7 @@ export function onFlagCloth(flagEl, clientX, clientY) {
  * The flag whose cloth is drawn in front of Token `tokenId` at a client point, or null.
  * Over a Token's round body a flag lets the pointer through to the Token, except on its cloth
  * where the flag is drawn in front of that Token: a flag standing among Tokens can always be
- * picked up by its banner. Its pole, its grass and its empty corners still let the Token have it.
+ * picked up by its cloth. Its pole and its empty corners still let the Token have it.
  * @param {HTMLElement} matEl the mat (`data-mat-board`)
  * @returns {HTMLElement|null} the flag's button
  */

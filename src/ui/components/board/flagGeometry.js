@@ -1,21 +1,23 @@
-
 /**
  * Every number about **where a flag sprite sits** on the mat, in one place.
- * A flag stands exactly where it was let go: its pole base is the flag's own mat point.
+ * A flag stands exactly where it was let go: its pole foot is the flag's own mat point.
  * Flags may overlap freely and never push, nudge or hide each other.
- * The flag art is 64×64 and drawn at 2×. Measured from `u_flag_*.png`: the pole leaves the
- * grass tuft at about (20, 58) in the art, the cloth spans x 12–62, y 11–36, and the pole's
- * top is at (10, 1).
+ * Every hero's flag is the one pennant, `u_flag_pennant.png`: 32×32 art drawn at 2×. Measured on
+ * its pixels: the pole runs from the top-left corner down to its foot, the art pixel (4, 31); the
+ * cloth spans x 5–31, y 3–27 (the pole stands left of it, beside its lower half).
  */
 
-/** A flag is drawn at 128 px. */
-export const FLAG_PX = 128;
+/** The pennant's own art size. */
+export const PENNANT_ART_PX = 32;
 
-/** The pole's base inside the 128 px box (art (20, 58) × 2). */
-export const POLE_BASE = Object.freeze({ x: 40, y: 116 });
+/** A flag is drawn at 64 px: the pennant at 2×. */
+export const FLAG_PX = 64;
 
-/** The cloth inside the flag's box, as shares of its size (art x 12–62, y 11–36 of 64). */
-export const FLAG_CLOTH = Object.freeze({ left: 12 / 64, top: 11 / 64, right: 62 / 64, bottom: 36 / 64 });
+/** The pole's foot inside the 64 px box: the centre of art pixel (4, 31), × 2. */
+export const POLE_BASE = Object.freeze({ x: 9, y: 63 });
+
+/** The cloth inside the flag's box, as shares of its size (art x 5–31, y 3–27 of 32). */
+export const FLAG_CLOTH = Object.freeze({ left: 5 / 32, top: 3 / 32, right: 32 / 32, bottom: 28 / 32 });
 
 /**
  * Where an idle hero stands beside their flag is `HeroMotion.IDLE_SPOT`: a place they walk to,
@@ -23,7 +25,7 @@ export const FLAG_CLOTH = Object.freeze({ left: 12 / 64, top: 11 / 64, right: 62
  */
 
 /**
- * The top-left of a flag's 128 px box, in mat units: the box placed so the **pole's base
+ * The top-left of a flag's 64 px box, in mat units: the box placed so the **pole's foot
  * stands on the flag's point**.
  * @param {{x:number,y:number}} point the flag's mat point
  */

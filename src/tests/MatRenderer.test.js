@@ -19,8 +19,7 @@ import { WEB_W, WEB_H } from '../ui/components/board/GuildHallBoard.jsx';
 import { fitScale, useBoardScale } from '../ui/hooks/useBoardScale.js';
 import { MatBoard, heroPlacement } from '../ui/components/board/MatBoard.jsx';
 import { TokenInspectPopup } from '../ui/components/board/TokenInspectPopup.jsx';
-import { FLAG_PX } from '../ui/components/board/flagGeometry.js';
-import { HERO_HIT_PX } from '../ui/components/board/boardConstants.js';
+import { HERO_HIT_PX, HERO_BOX_PX } from '../ui/components/board/boardConstants.js';
 import * as HeroMotion from '../systems/board/HeroMotion.js';
 import { ALERT } from '../systems/board/boardEvents.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
@@ -207,7 +206,7 @@ describe('where a hero stands (Hero Movement M1, HM-2, FP-84)', () => {
     it('a hero is drawn centred on their own point — no per-state offset any more', () => {
         expect(heroPlacement({ x: 600, y: 400 })).toEqual({
             left: 600 - HERO_HIT_PX / 2,
-            top: 400 - FLAG_PX / 2
+            top: 400 - HERO_BOX_PX / 2
         });
     });
 
