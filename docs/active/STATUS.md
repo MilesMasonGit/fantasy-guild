@@ -366,7 +366,9 @@ T-186; the badges' soft shadows are settled inside T-013.)
 
 ## Bench queue (one at a time, weekdays 13:00–17:00 and 01:00–07:00, or when the owner says the PC is quiet)
 
-**Thu 01:00 (director, 2026-10-28):** baseline retake on `main`, machine quiet: `npm run bench -- --save-baseline`, `npm run bench:draw -- --save-baseline`; commit with the date. Then the Token bars draw compare and drag bench when P2/P3 are ready.
+**Thu 01:00 (director, 2026-10-28):** baseline retake on `main`, machine quiet: `npm run bench -- --save-baseline`, `npm run bench:draw -- --save-baseline`; commit with the date. Then the Token bars draw compare when P3 is ready.
+
+**Wed 15:46 (window), `feat/token-bars` 49e96c3d (P1+P2):** engine `--compare` **same work** (p99 tails 1.1–1.46 against the 21 Oct baseline with the owner's dev server running, the known stale-baseline pattern); `bench:drag --kinds=flag,token`: flag and Token 50/50 both passes.
 
 **Backlog director, owed (any time while the owner is away, with no agent running):** (1) ~~`bench:drag` on B3~~ done (see B3 row); (2) ~~one `bench:draw -- --compare` on `main` after batch B~~ **done** b0528da0: no regression, loot 4× 48 → 59 fps (PERFORMANCE cost log) (batches A and B: top bar, names, loot effects off, drag tint). ⚠️ The draw bench's boards pin the old 11 × 0.64 mat, so it does not measure the bigger on-screen mat; a deliberate run on the shipped size is a separate ticket if wanted.
 
