@@ -112,8 +112,8 @@ export function guildHallPoint() {
 /** Heroes at home stand this far apart in their row, in mat units. */
 export const HOME_GAP = 56;
 
-/** How far below the Hall's centre the row stands, as a share of the Hall's art radius. */
-export const HOME_DROP = 0.55;
+/** How far below the Hall's art the row stands, in mat units: their heads level with its foot. */
+export const HOME_DROP = 40;
 
 /** How far a hero at home strolls from their place in the row, in mat units. */
 export const HOME_POTTER = 24;
@@ -133,7 +133,7 @@ export function homeSpot(heroId) {
     const roster = (GameState.state?.heroes || []).map(h => h?.id).filter(Boolean);
     const n = Math.max(1, roster.length);
     const i = Math.max(0, roster.indexOf(heroId));
-    return clampToMat({ x: hall.x + (i - (n - 1) / 2) * HOME_GAP, y: hall.y + artRadiusOf(hall.typeId) * HOME_DROP });
+    return clampToMat({ x: hall.x + (i - (n - 1) / 2) * HOME_GAP, y: hall.y + artRadiusOf(hall.typeId) + HOME_DROP });
 }
 
 /** Whether a hero is healing from a defeat (read straight from state, never rehydrated). */

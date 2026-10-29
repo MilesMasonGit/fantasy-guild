@@ -3,18 +3,22 @@ import { useActiveDrag } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND } from '../../dnd/dragConstants.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as Orders from '../../../systems/board/Orders.js';
+import { isGuildHall } from '../../../systems/board/MatCap.js';
 import { setWorkable, setJob } from './orderLit.js';
 
 /** Whether a drag carries a hero (their figure, their pennant or their roster tab). */
 const carriesHero = (payload) => !!payload?.heroId
     && (payload.kind === DRAG_KIND.HERO || payload.kind === DRAG_KIND.FLAG);
 
-/** Every Token on the mat `heroId` could be ordered onto (`Orders.canOrderOnto`). */
+/**
+ * Every Token on the mat `heroId` could be ordered onto to work (`Orders.canOrderOnto`). The Guild
+ * Hall takes a drop too (home), but is not work, so it does not light.
+ */
 export function workableFor(heroId) {
     if (!heroId) return [];
     const out = [];
     for (const instance of BoardState.tokens()) {
-        if (Orders.canOrderOnto(heroId, instance)) out.push(instance.id);
+        if (!isGuildHall(instance) && Orders.canOrderOnto(heroId, instance)) out.push(instance.id);
     }
     return out;
 }

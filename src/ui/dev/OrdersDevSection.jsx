@@ -21,7 +21,7 @@ export function OrdersDevSection() {
                     onClick={() => {
                         const r = setUpOrdersScene();
                         setStatus(r.ok
-                            ? 'Left of the Hall: a Goblin Camp with a QA Old Oak beside it, and a QA Berry Bush (3 charges) below. A QA Fighter waits at the Hall: drag them onto the Old Oak (the goblin attacks, they fight back and go back to chopping), or onto the Bush (it runs out: they need a job)'
+                            ? 'Left of the Hall: a Goblin Camp with a QA Old Oak beside it; away from the camps, a QA Berry Bush (3 charges). A QA Fighter waits at the Hall: drag them onto the Old Oak (the goblin attacks, they fight back and go back to chopping), or onto the Bush (it runs out: they need a job)'
                             : r.error);
                     }}
                 >

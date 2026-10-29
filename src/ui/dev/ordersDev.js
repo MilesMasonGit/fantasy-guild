@@ -72,7 +72,7 @@ function qaHero(name, skills) {
 
 /**
  * Left of the Hall: a Goblin Camp with a goblin standing, a QA Old Oak beside it (inside the camp's
- * watch, never used up), and below them a QA Berry Bush (three charges, nothing comes back). A
+ * watch, never used up); clear of every camp, a QA Berry Bush (three charges, nothing comes back). A
  * QA Fighter (Forestry and Melee 30, Steak to eat) waits at the Hall. Drag them onto the Old Oak:
  * the goblin attacks, they fight back and go back to chopping. Onto the Bush: three cycles, then it
  * is gone and they need a job.
@@ -85,7 +85,11 @@ export function setUpOrdersScene() {
     const c = hallPoint();
     const camp = put(GOBLIN_CAMP, { x: c.x - 520, y: c.y - 200 });
     const oak = camp ? put(QA_ORDER_TYPES.OAK, { x: camp.x + 160, y: camp.y }) : null;
-    const bush = put(QA_ORDER_TYPES.BUSH, { x: c.x - 360, y: c.y + 220 });
+    // The Bush well clear of every goblin camp, so nothing ambushes whoever is sent to it.
+    const camps = BoardState.tokens().filter(t => t.typeId === GOBLIN_CAMP);
+    const clear = [{ x: c.x + 360, y: c.y + 260 }, { x: c.x, y: c.y - 300 }, { x: c.x + 420, y: c.y - 260 }, { x: c.x - 360, y: c.y + 220 }]
+        .find(p => camps.every(k => Math.hypot(k.x - p.x, k.y - p.y) > 420));
+    const bush = put(QA_ORDER_TYPES.BUSH, clear || { x: c.x + 360, y: c.y + 260 });
     if (!camp || !oak || !bush) return { ok: false, error: 'No room left of the Guild Hall for the scene' };
     SpawnerSystem.attemptSpawn(camp, getTokenType(GOBLIN_CAMP));
 
