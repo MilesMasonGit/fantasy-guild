@@ -18,14 +18,12 @@ import * as Flags from '../systems/board/Flags.js';
 import * as HeroMotion from '../systems/board/HeroMotion.js';
 import { migrateState } from '../systems/core/SaveMigration.js';
 import { EventBus } from '../systems/core/EventBus.js';
-import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { artRadiusOf } from '../config/matGeometry.js';
 import { dropOnMat } from '../ui/components/board/dropOnMat.js';
 import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
-import { pinRefusedLineFor } from '../ui/components/board/heroBubbles.js';
 import { flagTooltip } from '../ui/components/board/flagText.js';
 import { FlagLayer } from '../ui/components/board/FlagLayer.jsx';
 import { pinnedFlagPoint, POLE_BASE } from '../ui/components/board/flagGeometry.js';
@@ -144,11 +142,10 @@ describe('FB-44 — a flag has no footprint', () => {
 // ---------------------------------------------------------------------------
 
 describe('FB-45 — dropping a flag on a Token the hero can work pins it', () => {
-    it('pins, and the hero works only that Token — past a nearer one and a better priority', () => {
+    it('pins, and the hero works only that Token — past a nearer one and one of another skill', () => {
         const pinned = put(P(600, 600), 'fixture_producer');           // forestry
         const nearer = put(P(760, 600), 'fixture_producer');           // forestry, nearer the hero later
-        const better = put(P(600, 760), 'fixture_producer_alt');       // mining, priority 1
-        Flags.setRule('h1', 'mining', { priority: 1 });
+        const better = put(P(600, 760), 'fixture_producer_alt');       // mining
 
         const res = dropFlag('h1', P(620, 610));                        // inside the art circle
         expect(res.success).toBe(true);
@@ -187,49 +184,32 @@ describe('FB-45 — dropping a flag on a Token the hero can work pins it', () =>
     });
 });
 
-describe('B5 bad pin — a Token the hero cannot work', () => {
-    it('level too low: an area flag at the drop point, and the bubble says why', () => {
+describe('a drop on a Token the hero cannot work is refused (hero orders, brief 260 O1)', () => {
+    it('level too low: refused with the reason, said over the Token; the hero keeps the order they had', () => {
         const gated = put(P(600, 600), 'fixture_gated');                // mining 25; hero has 5
         const other = put(P(760, 600), 'fixture_producer');
-        const refused = vi.fn();
-        const off = EventBus.subscribe(BOARD_EVENTS.PIN_REFUSED, refused);
-
+        dropFlag('h1', P(760, 600));
         const res = dropFlag('h1', P(610, 605));
-        off();
-        expect(res.pinnedTo).toBeNull();
-        expect(res.pinRefused).toBe(ALERT.ACCESS);
-        expect(BoardState.flagOf('h1')).toMatchObject({ x: 610, y: 605 });
-        expect(BoardState.flagOf('h1').pinnedTo).toBeUndefined();
-        expect(refused).toHaveBeenCalledWith(expect.objectContaining({ heroId: 'h1', instanceId: gated.id, reason: ALERT.ACCESS }));
-        // The same words the hero says when stuck on it (speech bubble line 7).
-        expect(pinRefusedLineFor(gated.id, ALERT.ACCESS)).toMatch(/level is too low to work Fixture Gated\.$/);
-        // An area flag: the hero works something else in range.
+        expect(res).toMatchObject({ success: false, instanceId: gated.id });
+        expect(res.reason).toMatch(/^Needs Mining \d+\/99$/);
+        expect(Flags.pinnedIdOf('h1')).toBe(other.id);
         expect(worked('h1')).toBe(other.id);
     });
 
-    it('skill not held: an area flag, and the bubble says so', () => {
-        const alchemy = put(P(600, 600), 'fixture_consumer');
-        const refused = vi.fn();
-        const off = EventBus.subscribe(BOARD_EVENTS.PIN_REFUSED, refused);
+    it('skill not held: refused, and the hero, who had no order, stays at home', () => {
+        put(P(600, 600), 'fixture_consumer');
         const res = dropFlag('h1', P(600, 600));
-        off();
-        expect(res.pinRefused).toBe(ALERT.UNSKILLED);
-        expect(BoardState.flagOf('h1').pinnedTo).toBeUndefined();
-        expect(refused).toHaveBeenCalledTimes(1);
-        expect(pinRefusedLineFor(alchemy.id, ALERT.UNSKILLED)).toMatch(/^I don’t have the .* skill to work /);
+        expect(res.success).toBe(false);
+        expect(res.reason).toMatch(/^Needs /);
+        expect(BoardState.flagOf('h1')).toBeNull();
     });
 
-    it('B5 spawner pin: a spawner is never pinned, and nothing is said', () => {
+    it('a spawner: nobody works it, so it is refused, not a spot', () => {
         const grove = put(P(600, 600), 'b5_spawner');
-        const refused = vi.fn();
-        const off = EventBus.subscribe(BOARD_EVENTS.PIN_REFUSED, refused);
         const res = dropFlag('h1', P(600, 600));
-        off();
-        expect(Flags.pinRefusal('h1', grove)).toMatchObject({ silent: true });
-        expect(res.pinnedTo).toBeNull();
-        expect(res.pinRefused).toBeNull();
-        expect(BoardState.flagOf('h1').pinnedTo).toBeUndefined();
-        expect(refused).not.toHaveBeenCalled();
+        expect(Flags.orderRefusal('h1', grove)).toEqual({ reason: Flags.ORDER_NOTHING });
+        expect(res).toMatchObject({ success: false, reason: 'Nothing to work here' });
+        expect(BoardState.flagOf('h1')).toBeNull();
     });
 });
 
@@ -249,8 +229,8 @@ describe('B5 pin follows — a moved Token carries its flag', () => {
     });
 });
 
-describe('TL-17 — the pinned Token is used up: the flag stays as an area flag', () => {
-    it('depleted: the flag stands at its last spot, unpinned, and the hero takes other work', () => {
+describe('the ordered Token is gone for good: the hero needs a job (brief 260 O1)', () => {
+    it('depleted: a spot at its last place, needing a job; the hero takes no other work', () => {
         const t = put(P(600, 600), 'fixture_producer');
         dropFlag('h1', P(600, 600));
         Placement.moveTokenTo(t.id, P(700, 650));
@@ -261,8 +241,9 @@ describe('TL-17 — the pinned Token is used up: the flag stays as an area flag'
         Charges.destroyToken(t);
         run(200);
         expect(BoardState.flagOf('h1').pinnedTo).toBeUndefined();
-        expect(BoardState.flagOf('h1')).toMatchObject({ x: 700, y: 650 });
-        expect(worked('h1')).toBe(other.id);
+        expect(BoardState.flagOf('h1')).toMatchObject({ x: 700, y: 650, spot: true, needsJob: true });
+        expect(worked('h1')).toBeNull();
+        expect(BoardState.getTokenById(other.id)).toBeTruthy();
     });
 
     it('removed for good: unpinned the same way', () => {
@@ -274,15 +255,24 @@ describe('TL-17 — the pinned Token is used up: the flag stays as an area flag'
         expect(BoardState.flagOf('h1')).toMatchObject({ x: 600, y: 600 });
     });
 
-    it('transformed into something else (a fresh instance): unpinned, never re-pinned to the new Token', () => {
+    it('transformed into a Token that is still their job: the order follows it', () => {
         const t = put(P(600, 600), 'fixture_producer');
         dropFlag('h1', P(600, 600));
         const next = EffectActions.transformInstance(t, 'fixture_producer_alt');
         expect(next).toBeTruthy();
         run(100);
-        expect(BoardState.flagOf('h1').pinnedTo).toBeUndefined();
-        // An area flag again: the hero works whatever suits them in range — here the new Token (mining).
+        expect(BoardState.flagOf('h1').pinnedTo).toBe(next.id);
         expect(worked('h1')).toBe(next.id);
+    });
+
+    it('transformed into something they cannot work: the order lapses, needing a job', () => {
+        const t = put(P(600, 600), 'fixture_producer');
+        dropFlag('h1', P(600, 600));
+        const next = EffectActions.transformInstance(t, 'fixture_consumer');   // alchemy: not theirs
+        expect(next).toBeTruthy();
+        run(100);
+        expect(BoardState.flagOf('h1')).toMatchObject({ x: 600, y: 600, spot: true, needsJob: true });
+        expect(worked('h1')).toBeNull();
     });
 });
 
@@ -357,7 +347,7 @@ describe('a pinned flag on the screen', () => {
         h(DndContext, null, el)
     );
 
-    it('is drawn on its Token, marked data-flag-pinned, with no reach ring, and says "Working only"', () => {
+    it('is drawn on its Token, marked data-flag-pinned, with no reach ring', () => {
         const t = put(P(600, 600), 'fixture_producer');
         dropFlag('h1', P(600, 600));
         const { container } = mount(h(FlagLayer, { inspectedHeroId: 'h1' }));
@@ -367,15 +357,15 @@ describe('a pinned flag on the screen', () => {
         expect(drawnPoint(el).x + POLE_BASE.x).toBeCloseTo(at.x);
         expect(drawnPoint(el).y + POLE_BASE.y).toBeCloseTo(at.y);
         expect(container.querySelector('[data-flag-ring="h1"]')).toBeNull();
-        expect(flagTooltip('h1').pin).toBe('Working only Fixture Producer');
+        expect(container.querySelector('[data-flag="h1"]').getAttribute('data-flag-order')).toBe('token');
+        expect(flagTooltip('h1').pin).toBeNull();
     });
 
-    it('an area flag has no data-flag-pinned and keeps its ring', () => {
+    it('an old area flag has no data-flag-pinned, and no ring is ever drawn', () => {
         put(P(600, 600), 'fixture_producer');
         Flags.plant('h1', P(900, 900));
         const { container } = mount(h(FlagLayer, { inspectedHeroId: 'h1' }));
         expect(container.querySelector('[data-flag="h1"]').hasAttribute('data-flag-pinned')).toBe(false);
-        expect(container.querySelector('[data-flag-ring="h1"]')).not.toBeNull();
-        expect(flagTooltip('h1').pin).toBeNull();
+        expect(container.querySelector('[data-flag-ring]')).toBeNull();
     });
 });

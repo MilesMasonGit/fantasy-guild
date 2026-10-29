@@ -14,7 +14,7 @@ import * as Flags from '../systems/board/Flags.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { ALERT } from '../systems/board/boardEvents.js';
-import { resetMatTuning, setMatTuning } from '../config/matTuning.js';
+import { resetMatTuning } from '../config/matTuning.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { FlagLayer } from '../ui/components/board/FlagLayer.jsx';
 import { PENNANT_SRC } from '../ui/components/board/FlagMark.jsx';
@@ -42,9 +42,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
  */
 const TOKEN = { x: 400, y: 300 };
 const BESIDE = { x: 240, y: 300 };
-const SECOND = { x: 560, y: 300 };
 const BARE = { x: 1200, y: 800 };
-const ELSEWHERE = { x: 1400, y: 900 };
 
 const h = React.createElement;
 
@@ -162,40 +160,11 @@ describe('the idle mark (FP-29)', () => {
     });
 });
 
-describe('the reach ring (FP-64, A-4)', () => {
-    beforeEach(() => { Flags.plant('h1', BESIDE); });
-
-    const ring = (container) => container.querySelector('[data-flag-ring="h1"]');
-
-    it('is not drawn at rest', () => {
-        const { container } = mount(h(FlagLayer));
+describe('no reach ring (hero orders, brief 260 O1)', () => {
+    it('is never drawn: hovered, inspected or dragged, an order has no reach', () => {
+        Flags.plant('h1', BESIDE);
+        const { container } = mount(h(FlagLayer, { hoverHeroId: 'h1', inspectedHeroId: 'h1' }));
         expect(container.querySelector('[data-flag-ring]')).toBeNull();
-    });
-
-    it('is drawn at the flag with the live radius while its hero is hovered', () => {
-        setMatTuning('flagRadius', 450);
-        const { container } = mount(h(FlagLayer, { hoverHeroId: 'h1' }));
-        expect(ring(container).getAttribute('data-r')).toBe('450');
-        expect(ring(container).getAttribute('data-cx')).toBe(String(BESIDE.x));
-    });
-
-    it('is drawn while the hero is inspected', () => {
-        const { container } = mount(h(FlagLayer, { inspectedHeroId: 'h1' }));
-        expect(ring(container)).toBeTruthy();
-    });
-
-    it('follows a drag to where the flag would land', () => {
-        const { container } = mount(h(FlagLayer, { dragRing: { heroId: 'h1', ...ELSEWHERE } }));
-        expect(ring(container).getAttribute('data-cy')).toBe(String(ELSEWHERE.y));
-    });
-
-    it('hovering the flag itself draws it', () => {
-        let hovered = null;
-        const { container, rerender } = mount(h(FlagLayer, { onHoverHero: (id) => { hovered = id; } }));
-        fireEvent.mouseEnter(container.querySelector('[data-flag="h1"]'));
-        expect(hovered).toBe('h1');
-        rerender(h(DndContext, null, h(FlagLayer, { hoverHeroId: hovered })));
-        expect(ring(container)).toBeTruthy();
     });
 });
 
@@ -217,7 +186,7 @@ describe('the flag is just something to drag (brief 30 H4)', () => {
         expect(container.querySelectorAll('button')).toHaveLength(1);
     });
 
-    it('on hover shows the hard outline, the hero name and the reach ring, and clears them on leave', () => {
+    it('on hover shows the hard outline and the hero name, and clears them on leave', () => {
         GameState.state.heroes[0].name = 'Aela';
         Flags.plant('h1', BESIDE);
         const Hovering = () => {
@@ -227,53 +196,17 @@ describe('the flag is just something to drag (brief 30 H4)', () => {
         const { container } = mount(h(Hovering));
         const flag = container.querySelector('[data-flag="h1"]');
         const tip = () => document.body.querySelector('[data-flag-tooltip="h1"]');
-        const ring = () => container.querySelector('[data-flag-ring="h1"]');
         expect(flag.querySelector('[data-sprite-outline]')).toBeNull();
         expect(tip()).toBeNull();
-        expect(ring()).toBeNull();
 
         fireEvent.mouseEnter(flag);
         expect(flag.querySelector('[data-sprite-outline="hover"]')).toBeTruthy();
         expect(flag.innerHTML).not.toContain('gi-glow');
         expect(tip().querySelector('.text-gi-gold').textContent).toBe('Aela');
-        expect(ring()).toBeTruthy();
 
         fireEvent.mouseLeave(flag);
         expect(flag.querySelector('[data-sprite-outline]')).toBeNull();
         expect(tip()).toBeNull();
-        expect(ring()).toBeNull();
-    });
-});
-
-describe('green dots on the Tokens a dragged flag could work (eye-check A)', () => {
-    const dots = (container) => [...container.querySelectorAll('[data-workable-dot]')].map(el => el.getAttribute('data-workable-dot'));
-
-    it('marks every Token inside the radius this hero could work, at its centre, and nothing else', () => {
-        Flags.plant('h1', BARE);
-        const forest = put(BESIDE, 'fixture_producer');            // forestry, held: workable
-        const mine = put(SECOND, 'fixture_producer_alt');          // mining, held: workable
-        const potion = put({ x: 400, y: 160 }, 'fixture_consumer'); // alchemy, not held
-        const banned = put({ x: 400, y: 440 }, 'fixture_producer'); // disallowed by the player
-        const far = put(ELSEWHERE, 'fixture_producer');             // workable, but out of reach
-        Flags.setDisallowed(banned.id, true);
-
-        const { container } = mount(h(FlagLayer, { dragRing: { heroId: 'h1', ...TOKEN } }));
-        expect(dots(container).sort()).toEqual([forest.id, mine.id].sort());
-        expect(dots(container)).not.toContain(potion.id);
-        expect(dots(container)).not.toContain(far.id);
-        const dot = container.querySelector(`[data-workable-dot="${forest.id}"]`);
-        expect(dot.getAttribute('cx')).toBe(String(forest.x));
-        expect(dot.getAttribute('cy')).toBe(String(forest.y));
-    });
-
-    it('draws none without a drag, and none for a hero who holds none of the skills', () => {
-        Flags.plant('h1', BARE);
-        put(BESIDE, 'fixture_consumer');
-        const rest = mount(h(FlagLayer, { hoverHeroId: 'h1' }));
-        expect(dots(rest.container)).toEqual([]);
-        cleanup();
-        const dragging = mount(h(FlagLayer, { dragRing: { heroId: 'h1', ...TOKEN } }));
-        expect(dots(dragging.container)).toEqual([]);
     });
 });
 
@@ -305,10 +238,12 @@ describe('the disallow mark on the mat (FP-35, FPP-8)', () => {
     });
 });
 
-describe('the Dock tab status line (FPP-15)', () => {
+describe('the roster status line (brief 260 O1)', () => {
     it('says what the hero is doing', () => {
         expect(dockStatusLine({ state: 'working', typeId: 'fixture_producer' })).toBe('Working: Fixture Producer');
-        expect(dockStatusLine({ state: 'idle' })).toBe('Idle at flag');
-        expect(dockStatusLine({ state: 'docked' })).toBe('Idle in Guild');
+        expect(dockStatusLine({ state: 'idle', order: 'spot' })).toBe('Idle here');
+        expect(dockStatusLine({ state: 'idle', order: 'token', waitingFor: 'fixture_producer' })).toBe('Waiting for Fixture Producer');
+        expect(dockStatusLine({ state: 'idle', order: 'spot', needsJob: true })).toBe('Needs a job');
+        expect(dockStatusLine({ state: 'docked' })).toBe('At the Guild Hall');
     });
 });

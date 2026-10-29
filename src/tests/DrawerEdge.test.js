@@ -91,7 +91,7 @@ describe('opening the Bank moves the mat side by transforms only', () => {
         const { mat } = hallCameraSides();
         const at = mat.indexOf('data-bank-shift={bankShift}');
         expect(at).toBeGreaterThan(-1);
-        for (const part of ['<MatTopBar', '<Board', '<ItemStubColumn', '<BottomHeroDock', '<WorkRulesDrawer']) {
+        for (const part of ['<MatTopBar', '<Board', '<ItemStubColumn', '<BottomHeroDock']) {
             expect(mat.indexOf(part), part).toBeGreaterThan(at);
         }
     });

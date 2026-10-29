@@ -62,7 +62,7 @@ describe('the skill loops scene', () => {
 describe('the waiting scene (brief 230 S1b)', () => {
     const run = (ms) => { for (let t = 0; t < ms; t += 100) BoardRunner.tick(100); };
 
-    it('a miner waits silently for the resting vein; the furnace stops for Coal; a Coal Vein sends the smith mining', () => {
+    it('a miner waits silently for the resting vein; the furnace stops for Coal; a Coal Vein takes the miner, and the smith stays', () => {
         GameState.state.heroes = [];
         expect(setUpWaitingScene()).toEqual({ ok: true });
         const count = (typeId) => BoardState.tokens().filter(t => t.typeId === typeId).length;
@@ -80,6 +80,8 @@ describe('the waiting scene (brief 230 S1b)', () => {
         expect(addCoalVein()).toEqual({ ok: true });
         run(1500);
         const smith = GameState.state.heroes.find(h => h.name === 'QA Smith');
-        expect(BoardState.getTokenById(Flags.statusOf(smith.id).instanceId)?.typeId).toBe(QA_WAIT_TYPES.COAL);
+        const miner = GameState.state.heroes.find(h => h.name === 'QA Miner');
+        expect(BoardState.getTokenById(Flags.statusOf(miner.id).instanceId)?.typeId).toBe(QA_WAIT_TYPES.COAL);
+        expect(BoardState.getTokenById(Flags.statusOf(smith.id).instanceId)?.typeId).toBe(QA_WAIT_TYPES.FURNACE);
     });
 });

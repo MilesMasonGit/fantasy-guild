@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { memo, useEffect } from 'react';
 import { useActiveDrag } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND } from '../../dnd/dragConstants.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
@@ -21,9 +21,10 @@ export function workableFor(heroId) {
 
 /**
  * While a hero is carried, every Token they could be ordered onto shows the green "ready" outline
- * (`orderLit.js`), worked out once as the drag starts. Draws nothing itself.
+ * (`orderLit.js`), worked out once as the drag starts. Draws nothing itself. Memoised with no
+ * props: only a drag starting or ending redraws it, never the mat around it.
  */
-export function OrderLighting() {
+export const OrderLighting = memo(function OrderLighting() {
     const { isDragging, activePayload } = useActiveDrag();
     const heroId = isDragging && carriesHero(activePayload) ? activePayload.heroId : null;
     useEffect(() => {
@@ -31,7 +32,7 @@ export function OrderLighting() {
         return () => setWorkable([]);
     }, [heroId]);
     return null;
-}
+});
 
 /**
  * Light one hero's job on the mat, or none with null: the Token their order names, in the white

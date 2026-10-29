@@ -45,10 +45,9 @@ const STATION = () => ({
     statements: [{ id: 'stm_list', keyword: KEYWORD.STATION, payload: { skill: 'list_skill' } }]
 });
 
-const hero = (id, level, allowed = true) => ({
+const hero = (id, level) => ({
     id, name: id.toUpperCase(), status: 'idle', level: 1,
     skills: { list_skill: { level, xp: 0 } },
-    flagRules: allowed ? {} : { list_skill: { allowed: false, priority: 3 } },
     hp: { current: 100, max: 100 }
 });
 
@@ -61,12 +60,14 @@ beforeEach(() => {
 });
 
 describe('who gets a face', () => {
-    it('a hero whose Work Permissions disallow the skill gets none; one without the skill gets none', () => {
-        const heroes = [hero('a', 5), hero('b', 12, false), { id: 'c', name: 'C', skills: {} }];
+    it('every hero holding the skill gets one (Work Permissions are gone); one without the skill gets none', () => {
+        const heroes = [hero('a', 5), hero('b', 12), { id: 'c', name: 'C', skills: {} }];
         expect(permitsSkill(heroes[0], 'list_skill')).toBe(true);
-        expect(permitsSkill(heroes[1], 'list_skill')).toBe(false);
+        expect(permitsSkill(heroes[1], 'list_skill')).toBe(true);
         expect(permitsSkill(heroes[2], 'list_skill')).toBe(false);
-        expect(permittedHeroes(heroes, 'list_skill', 'a')).toEqual([{ heroId: 'a', level: 5, isWorker: true }]);
+        expect(permittedHeroes(heroes, 'list_skill', 'a')).toEqual([
+            { heroId: 'b', level: 12, isWorker: false }, { heroId: 'a', level: 5, isWorker: true }
+        ]);
     });
 
     it('reads a bare-number skill and a missing one', () => {
@@ -110,11 +111,6 @@ describe('recipeListFor', () => {
         expect(locked).toEqual([10, 10]);
         expect(locked).toHaveLength(SPOILER_COUNT);
         expect(kinds(recipeListFor(STATION(), { heroes: [hero('a', 99)] }).entries).filter(k => k.startsWith('???'))).toEqual([]);
-    });
-
-    it('a recipe only a disallowed hero reaches is still a row, with no face above it', () => {
-        const { entries } = recipeListFor(STATION(), { heroes: [hero('cook', 2), hero('master', 45, false)] });
-        expect(kinds(entries)).toEqual(['r_broth', '[cook]', 'r_pie', 'r_roast', 'r_banquet', 'r_feast', '???50']);
     });
 
     it('a permitted hero who can run none of the rows gets no face', () => {

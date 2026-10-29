@@ -62,7 +62,7 @@ export function createEmptyBoard() {
         // except the note below of work a hero had reached (`workClaims`, HM-7).
         flags: {},
         // 1: this board's flags are orders. A board from an older save has none
-        // and is brought over as it loads (`orderMigration.js`).
+        // and is brought over as it loads (`SaveMigration.migrateStateToOrders`).
         orders: 1,
         // Counter behind each flag's `plantedAt` — the order flags choose in.
         nextFlagOrder: 0,
@@ -260,7 +260,7 @@ export const INITIAL_STATE = {
     //   nextTokenOrder number               the next Token's placedAt
     //   flags       { [heroId]: { x, y, plantedAt, pinnedTo?, spot?, needsJob? } }  each hero's order: pinnedTo = the Token instance id it
     //                 works; spot = a point to idle at; needsJob = the ordered Token is gone for good. Neither: an old area flag (tests only)
-    //   orders      1                       the flags are orders (an older save's board is migrated as it loads, `orderMigration.js`)
+    //   orders      1                       the flags are orders (an older save's board is migrated as it loads, `SaveMigration.migrateStateToOrders`)
     //   nextFlagOrder number                the next flag's plantedAt
     //   sprites     [ ... ]                 item loot on the floor (D-40), added Phase 3;
     //                                       no Token sprites since Token Lifecycle 9.3

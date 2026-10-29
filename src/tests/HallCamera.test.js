@@ -447,9 +447,9 @@ describe('the camera in the game\'s layout', () => {
         expect(code).toContain('sky={<HallSky />}');
     });
 
-    it('keeps the mat, its top bar, the hero dock, the work rules and the notifications on the table', () => {
+    it('keeps the mat, its top bar, the hero dock and the notifications on the table', () => {
         const { code, mat } = hallCameraSides();
-        for (const tag of ['Board', 'MatTopBar', 'BottomHeroDock', 'WorkRulesDrawer', 'ItemStubColumn', 'BannerStack']) {
+        for (const tag of ['Board', 'MatTopBar', 'BottomHeroDock', 'ItemStubColumn', 'BannerStack']) {
             expect(count(mat, tag), tag).toBe(1);
             expect(count(code, tag), tag).toBe(1);
         }

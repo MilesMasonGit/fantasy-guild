@@ -275,7 +275,7 @@ describe('⭐ coming and going through the Guild Hall (M3)', () => {
         expect(nearFlag.id).not.toBe(nearHall.id);
     });
 
-    it('⭐ a recall: the flag is gone and the hero is in the Dock at once, but walks into the Hall (HM-5)', () => {
+    it('⭐ sent home: the order is gone at once, and the hero walks back to their place by the Hall (HM-5, brief 260 O1)', () => {
         put({ x: 1300, y: 600 });
         Flags.plant('h1', { x: 1300, y: 700 });
         run(5000);
@@ -284,13 +284,16 @@ describe('⭐ coming and going through the Guild Hall (M3)', () => {
         expect(BoardState.flagOf('h1')).toBeNull();
         const status = Flags.statusOf('h1');
         expect(status.state).toBe('returning');
-        expect(dockStatusLine(status)).toBe('Returning to the Guild');
+        expect(dockStatusLine(status)).toBe('Heading home');
         expect(BoardRunner.isHeroIdle('h1')).toBe(true);
 
         run(1000);
         expect(body('h1').x).toBeLessThan(1300 - STAND);        // on the way
         run(5000);
-        expect(body('h1')).toBeNull();                       // in through the door
+        // At home: standing in the row in front of the Hall, no longer walking.
+        expect(HeroMotion.isHome('h1')).toBe(true);
+        expect(HeroMotion.isReturning('h1')).toBe(false);
+        expect(HeroMotion.heroPointOf('h1')).toEqual(HeroMotion.homeSpot('h1'));
         expect(Flags.statusOf('h1').state).toBe('docked');
     });
 

@@ -170,7 +170,7 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
     // Idle, busy or hurt, and whether their job is gone: `HERO_MOVED` announces every order,
     // claim and defeat, `HEROES_WALKED` a hero arriving, `HEROES_UPDATED` a wound healing.
     const roster = useGameState(
-        () => ({ state: rosterStateOf(heroId), needsJob: Flags.needsJob(heroId) }),
+        () => ({ state: rosterStateOf(heroId), needsJob: !!Flags.statusOf(heroId).needsJob }),
         [BOARD_EVENTS.HERO_MOVED, BOARD_EVENTS.HEROES_WALKED, BOARD_EVENTS.TILE_CHANGED, ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.GAME_RESET],
         null,
         { deps: [heroId] }
@@ -310,7 +310,7 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
                             />
                         </Tooltip>
                     )}
-                    <Tooltip content={flagStatusLine(heroId)}>
+                    <Tooltip content={<RosterStatusLine heroId={heroId} />}>
                         <span
                             data-dock-state-word={roster.state}
                             className={cn('ui-text-small font-bold pointer-events-auto', ROSTER_STATE_CLASS[roster.state])}
@@ -347,8 +347,11 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
     );
 });
 
-/** The name and HP bar's height plus a small gap, so a bubble's tail stops clear of the name. */
-const LABEL_PX = 28;
+/** What the hero is doing in words, read when the state word's tooltip opens. */
+const RosterStatusLine = ({ heroId }) => <span>{flagStatusLine(heroId)}</span>;
+
+/** The name, HP bar and state line's height plus a small gap, so a bubble's tail stops clear of them. */
+const LABEL_PX = 44;
 
 /** A wheel turn this soon after the last one is the same flick: one page per flick. */
 const WHEEL_GAP_MS = 200;

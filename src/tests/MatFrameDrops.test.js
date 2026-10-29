@@ -305,9 +305,9 @@ describe('dropOnMat — one drop function for the playmat', () => {
         expect(BoardState.flagOf('h1')).toMatchObject({ x: 0, y: matH() });
     });
 
-    it('a flag drag for a hero with no flag is refused', () => {
-        expect(dropOnMat({ kind: DRAG_KIND.FLAG, heroId: 'h1', from: { flag: true } }, C(3)).success).toBe(false);
-        expect(BoardState.flagOf('h1')).toBeNull();
+    it('a hero with no order dragged by their figure gets one (every hero is on the mat, brief 260 O1)', () => {
+        expect(dropOnMat({ kind: DRAG_KIND.FLAG, heroId: 'h1', from: { hero: true } }, C(3)).success).toBe(true);
+        expect(BoardState.flagOf('h1')).not.toBeNull();
     });
 
     /**

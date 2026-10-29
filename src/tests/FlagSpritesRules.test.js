@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, beforeAll, afterAll, afterEach, vi } from 'vitest';
 import React from 'react';
-import { render, cleanup, fireEvent, act, renderHook } from '@testing-library/react';
+import { render, cleanup, fireEvent, act } from '@testing-library/react';
 import { DndContext } from '@dnd-kit/core';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
@@ -11,7 +11,6 @@ import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as Flags from '../systems/board/Flags.js';
-import * as FlagRules from '../systems/board/FlagRules.js';
 import * as HeroManager from '../systems/hero/HeroManager.js';
 import { FLAG_COLOURS, flagColourOf } from '../systems/board/FlagColours.js';
 import { migrateState } from '../systems/core/SaveMigration.js';
@@ -25,10 +24,7 @@ import { FlagLayer } from '../ui/components/board/FlagLayer.jsx';
 import { matAccepts } from '../ui/components/board/Board.jsx';
 import { dropOnMat } from '../ui/components/board/dropOnMat.js';
 import { FlagGhost } from '../ui/dnd/DragGhost.jsx';
-import { WorkRulesDrawer } from '../ui/components/dock/WorkRulesDrawer.jsx';
 import { HeroEditModal } from '../ui/modals/HeroEditModal.jsx';
-import { useUIModals } from '../ui/hooks/useUIModals.js';
-import { isRecallDrop, recallFromDrop } from '../ui/components/dock/dockRecall.js';
 import { flagOrigin, POLE_BASE, FLAG_PX } from '../ui/components/board/flagGeometry.js';
 import { PENNANT_SRC } from '../ui/components/board/FlagMark.jsx';
 import { drawnPoint } from './fixtures/drawnPoint.js';
@@ -162,7 +158,7 @@ describe('FP-76 — the player never moves a hero: dragging one drags their flag
         expect(dnd.drags.find(d => d.id === 'hero-h1').kind).toBe(DRAG_KIND.FLAG);
     });
 
-    it('a board hero dropped elsewhere moves the flag — one hero_deployed — and the hero goes to their job', () => {
+    it('a board hero dropped on bare ground: one hero_deployed, and they go there and idle (brief 260 O1)', () => {
         // 13 is out of spot 21's reach (358 u at the shipped 240 u); 22 is its
         // side neighbour, 160 u away.
         put(13, FOREST);
@@ -178,13 +174,13 @@ describe('FP-76 — the player never moves a hero: dragging one drags their flag
         const deployed = counting('hero_deployed', () => dropOnMat(payload, C(21)));
 
         expect(deployed).toBe(1);
-        // The flag stands exactly where it was let go.
-        expect(BoardState.flagOf('h1')).toMatchObject(C(21));
-        // Bare ground at 21: the hero appears at the nearest job in reach, the Forest on 22.
-        expect(workTileOf('h1')).toBe(22);
+        // The spot is exactly where they were let go, and they work nothing there, not even the
+        // Forest beside it.
+        expect(BoardState.flagOf('h1')).toMatchObject({ ...C(21), spot: true });
+        expect(workTileOf('h1')).toBeNull();
     });
 
-    it('a hero dragged from the Dock still plants their flag where dropped', () => {
+    it('a hero dragged from the roster onto a Token works it', () => {
         put(15, FOREST);
         const payload = { kind: DRAG_KIND.HERO, heroId: 'h1', from: { dock: true } };
         expect(matAccepts(payload)).toBe(true);
@@ -192,19 +188,7 @@ describe('FP-76 — the player never moves a hero: dragging one drags their flag
         expect(workTileOf('h1')).toBe(15);
     });
 
-    it('the payload a board hero starts recalls when dropped on the Dock or a hero tab', () => {
-        put(15, FOREST);
-        Placement.plantFlagAt('h1', C(15));
-        mount(h(MatBoard));
-        const heroDrag = dnd.drags.find(d => d.id === 'hero-h1');
-        const payload = { kind: heroDrag.kind, ...heroDrag.payload };
-
-        expect(isRecallDrop(payload)).toBe(true);
-        recallFromDrop(Placement, payload);
-        expect(BoardState.flagOf('h1')).toBeNull();
-    });
-
-    it('left-click on a board hero still opens the sheet, right-click still recalls', () => {
+    it('left-click on a board hero still opens the sheet, right-click sends them home', () => {
         put(15, FOREST);
         Placement.plantFlagAt('h1', C(15));
         const inspected = [];
@@ -382,76 +366,11 @@ describe('the flag answers clicks on the pennant’s drawn square', () => {
     });
 });
 
-describe('opening the rules drawer (FP-73)', () => {
-    it('opening on a hero lights them, another swaps hero; the launcher toggles it', () => {
-        const { result } = renderHook(() => useUIModals());
-        expect(result.current.flagRules.isOpen).toBe(false);
-        act(() => { result.current.flagRules.open('h1'); });
-        expect(result.current.flagRules.isOpen).toBe(true);
-        expect(result.current.flagRules.heroId).toBe('h1');
-        act(() => { result.current.flagRules.open('fighter'); });
-        expect(result.current.flagRules.heroId).toBe('fighter');
-        act(() => { result.current.flagRules.close(); });
-        expect(result.current.flagRules.isOpen).toBe(false);
-        expect(result.current.flagRules.heroId).toBeNull();
-
-        act(() => { result.current.flagRules.toggle(); });
-        expect(result.current.flagRules.isOpen).toBe(true);
-        expect(result.current.flagRules.heroId).toBeNull();
-        act(() => { result.current.flagRules.toggle(); });
-        expect(result.current.flagRules.isOpen).toBe(false);
-    });
-});
-
 /**
  * The rules grid replaced the per-hero rules panel. The panel's status line and skip reasons
  * live on the flag's hover tooltip; its working-row tint, Reset and "Hero gone" have no place in
  * a grid of the roster's heroes.
  */
-describe('the rules grid (FP-71, FP-79, FPP-17)', () => {
-    const grid = () => mount(h(WorkRulesDrawer, { open: true, litHeroId: null, onClose: () => {} }));
-    const cell = (container, heroId, ruleId) => container.querySelector(`[data-rules-cell="${heroId}:${ruleId}"]`);
-
-    it('a rule cell per held work skill, and a Combat rule for every hero, combat skill or not', () => {
-        const { container } = grid();
-        expect(cell(container, 'h1', 'forestry').getAttribute('data-cell')).toBe('rule');
-        expect(cell(container, 'h1', 'mining').getAttribute('data-cell')).toBe('rule');
-        expect(cell(container, 'h1', FlagRules.FIGHT).getAttribute('data-cell')).toBe('rule');
-        expect(cell(container, 'fighter', FlagRules.FIGHT).getAttribute('data-cell')).toBe('rule');
-        expect(cell(container, 'fighter', 'melee')).toBeNull();   // combat skills are the one Combat column
-    });
-
-    it('shows the level and the default rule: allowed, priority 3', () => {
-        const { container } = grid();
-        const forestry = () => cell(container, 'h1', 'forestry');
-        expect(forestry().getAttribute('data-cell-on')).toBe('true');
-        fireEvent.pointerEnter(forestry());
-        expect(document.querySelector('[data-tooltip]').textContent).toContain('50/99');
-        fireEvent.pointerLeave(forestry());
-        fireEvent.click(container.querySelector('[data-rules-mode]'));
-        expect(forestry().textContent).toBe('3');
-    });
-
-    it('clicks set the hero’s rule', async () => {
-        const { container } = grid();
-        await act(async () => { fireEvent.click(cell(container, 'h1', 'mining')); });
-        expect(FlagRules.ruleOf('h1', 'mining')).toEqual({ allowed: false, priority: 3 });
-
-        await act(async () => { fireEvent.click(container.querySelector('[data-rules-mode]')); });
-        await act(async () => { fireEvent.click(cell(container, 'h1', 'forestry')); });
-        expect(FlagRules.ruleOf('h1', 'forestry')).toEqual({ allowed: true, priority: 4 });
-        expect(cell(container, 'h1', 'forestry').textContent).toBe('4');
-    });
-
-    it('a recalled hero’s row stays editable', async () => {
-        put(15, FOREST);
-        Placement.plantFlagAt('h1', C(15));
-        const { container } = grid();
-        await act(async () => { Placement.recallHeroById('h1'); });
-        await act(async () => { fireEvent.click(cell(container, 'h1', 'forestry')); });
-        expect(FlagRules.ruleOf('h1', 'forestry').allowed).toBe(false);
-    });
-});
 
 describe('several flags on one point (FP-83)', () => {
     it('⭐ all five are drawn, in the same place, with no "+N" chip', () => {

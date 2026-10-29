@@ -160,7 +160,7 @@ describe('a gatherer whose only vein rests waits silently', () => {
         run(1000);
         expect(Flags.waitingOf('miner')).toBeNull();
         expect(BoardRunner.isHeroIdle('miner')).toBe(true);
-        expect(flagStatusLine('miner')).toBe('Nothing to do');
+        expect(flagStatusLine('miner')).toBe('Idle');
         expect(idleMomentOf(null)).toEqual({ kind: 'idle', key: 'idle', text: momentText.idle() });
     });
 

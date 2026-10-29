@@ -133,7 +133,7 @@ describe('nothing on its way back is nothing to wait for', () => {
         felledInAForest({ forest: false });
         run(1000);
         expect(Flags.waitingOf('forester')).toBeNull();
-        expect(flagStatusLine('forester')).toBe('Nothing to do');
+        expect(flagStatusLine('forester')).toBe('Idle');
         expect(BoardRunner.isHeroIdle('forester')).toBe(true);
     });
 
@@ -154,13 +154,6 @@ describe('nothing on its way back is nothing to wait for', () => {
         run(1000);
         expect(Flags.waitingOf('miner')).toBeNull();
         expect(BoardRunner.isHeroIdle('miner')).toBe(true);
-    });
-
-    it('nor one whose Forestry rule is off', () => {
-        felledInAForest();
-        Flags.setRule('forester', 'forestry', { allowed: false });
-        run(200);
-        expect(Flags.waitingOf('forester')).toBeNull();
     });
 
     it("nor one out of the flag's reach", () => {

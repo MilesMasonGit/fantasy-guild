@@ -36,6 +36,7 @@ import { FishingDevSection } from '../dev/FishingDevSection.jsx';
 import { StationsDevSection } from '../dev/StationsDevSection.jsx';
 import { WorkConsumablesDevSection } from '../dev/WorkConsumablesDevSection.jsx';
 import { FarmingDevSection } from '../dev/FarmingDevSection.jsx';
+import { OrdersDevSection } from '../dev/OrdersDevSection.jsx';
 import { StyleSheetPage } from '../dev/StyleSheetPage.jsx';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 import { EventBus, UI_LISTENER } from '../../systems/core/EventBus.js';
@@ -331,6 +332,7 @@ export const TestDashboard = React.memo(() => {
                         {(import.meta.env.DEV || import.meta.env.MODE === 'perf') && <PerfDevSection />}
                         {import.meta.env.DEV && <MatTunerDevSection />}
                         {import.meta.env.DEV && <StarterCampDevSection />}
+                        {import.meta.env.DEV && <OrdersDevSection />}
                         {import.meta.env.DEV && <AtlasDevSection />}
                         {import.meta.env.DEV && <GuildHallDevSection />}
                         {import.meta.env.DEV && <EncountersDevSection />}

@@ -6,7 +6,6 @@ import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as EnemyMotion from '../systems/board/EnemyMotion.js';
 import * as Flags from '../systems/board/Flags.js';
-import * as FlagRules from '../systems/board/FlagRules.js';
 import * as Hostiles from '../systems/board/Hostiles.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
@@ -31,7 +30,9 @@ vi.mock('../systems/combat/DefeatPenalties.js', () => ({
 
 /**
  * B7.2 — **hostile enemies attack; attacked heroes fight back** (owner's "B7
- * range" and "B7 ambushed").
+ * range" and "B7 ambushed"). Since hero orders (brief 260 O1) the camp watches
+ * the Token a hero is ordered onto (its Camp watch, no longer a flag radius),
+ * and a hero fights only when sent or attacked.
  */
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -89,11 +90,10 @@ function campWith(typeId = 'fixture_goblin') {
     return { camp, enemy };
 }
 
-/** `heroId` logging a Producer at `point`, with Fight switched off unless `fight`. */
-function logging(heroId, point, { fight = false, pin = false } = {}) {
+/** `heroId` ordered onto a Producer at `point`, logging it. */
+function logging(heroId, point) {
     const producer = placeAt('fixture_producer', point.x, point.y);
-    if (!fight) Flags.setRule(heroId, FlagRules.FIGHT, { allowed: false });
-    Flags.plant(heroId, point, { pin });
+    expect(Flags.orderToken(heroId, producer).success).toBe(true);
     expect(BoardState.workTokenOf(heroId)).toBe(producer.id);
     return producer;
 }
@@ -113,7 +113,7 @@ afterAll(() => { Flags.teardown(); resetMatTuning(); });
 beforeEach(() => {
     vi.clearAllMocks();
     resetMatTuning();
-    setMatTuning('flagRadius', 300);
+    setMatTuning('watchRadius', 300);
     setMatTuning('potterRadius', 0);
     setMatTuning('enemyPotterRadius', 0);
     GameState.initNew();
@@ -164,20 +164,19 @@ describe('the field (enemy.hostile)', () => {
     });
 });
 
-describe('⭐ a hostile enemy attacks a hero inside the flag radius of its spawner (TL-16)', () => {
-    it('attacks a hero entering the radius: they drop their work and fight it, Fight rule off or not', () => {
+describe('⭐ a hostile enemy attacks a hero ordered inside its camp\'s watch (TL-16)', () => {
+    it('attacks a hero entering the watch: they drop their work and fight it', () => {
         const { enemy } = campWith();
         const far = logging('h1', FAR);
         run(1000);
         expect(Flags.ambusherOf('h1')).toBeNull();
         expect(BoardState.workTokenOf('h1')).toBe(far.id);
 
-        // The hero's flag moves into range: they settle on the Producer there…
+        // The hero is ordered into the watch: they settle on the Producer there…
         const near = logging('h1', NEAR);
         near.cycleElapsedMs = 4000;
-        // …and on its next look the goblin attacks, whatever the Fight rule says.
+        // …and on its next look the goblin attacks.
         expect(Hostiles.scan()).toEqual([{ enemyId: enemy.id, heroId: 'h1' }]);
-        expect(FlagRules.ruleOf('h1', FlagRules.FIGHT).allowed).toBe(false);
         expect(Flags.ambusherOf('h1')).toBe(enemy.id);
         expect(BoardState.claimOfHero('h1')?.instanceId).toBe(enemy.id);
         // The fight starts through BoardCombat's normal route on the next tick.
@@ -282,9 +281,9 @@ describe('peaceful enemies keep today’s behaviour (FB-23)', () => {
         expect(BoardCombat.getFight(enemy.id)).toBeNull();
     });
 
-    it('a hero with Fight allowed still seeks a peaceful enemy on their own (no ambush)', () => {
+    it('a hero ordered onto a peaceful enemy fights it (no ambush)', () => {
         const { enemy } = campWith('fixture_peaceful');
-        Flags.plant('h1', { x: CAMP.x + 100, y: CAMP.y + 100 });
+        Flags.orderToken('h1', enemy);
         run(200);
         expect(BoardCombat.fightOfHero('h1')?.instanceId).toBe(enemy.id);
         expect(Flags.ambusherOf('h1')).toBeNull();
@@ -299,7 +298,7 @@ describe('who is never attacked', () => {
         expect(Hostiles.scan()).toEqual([]);
     });
 
-    it('a docked hero (no flag), or one walking home', () => {
+    it('a hero at home (no order), or one walking home', () => {
         campWith();
         logging('h1', NEAR);
         Flags.furl('h1');
@@ -317,9 +316,9 @@ describe('who is never attacked', () => {
 });
 
 describe('an enemy already fighting does not start a second fight', () => {
-    it('while h1 fights the goblin, h2 inside the radius is left alone', () => {
+    it('while h1 fights the goblin, h2 inside the watch is left alone', () => {
         const { enemy } = campWith();
-        Flags.plant('h1', { x: CAMP.x + 100, y: CAMP.y - 100 });   // seeks it, Fight allowed
+        Flags.orderToken('h1', enemy);   // sent at it
         run(200);
         expect(BoardCombat.fightOfHero('h1')?.instanceId).toBe(enemy.id);
 
@@ -333,7 +332,7 @@ describe('an enemy already fighting does not start a second fight', () => {
     it('a hero already on an enemy is not taken by another', () => {
         const { camp, enemy } = campWith();
         const peaceful = placeAt('fixture_peaceful', CAMP.x, CAMP.y + 200);
-        Flags.plant('h1', { x: peaceful.x, y: peaceful.y + 50 });
+        Flags.orderToken('h1', peaceful);
         run(200);
         expect(BoardCombat.fightOfHero('h1')?.instanceId).toBe(peaceful.id);
         expect(Hostiles.scan()).toEqual([]);
@@ -343,7 +342,7 @@ describe('an enemy already fighting does not start a second fight', () => {
 });
 
 describe('⭐ fight-back, then back to work (TL-24)', () => {
-    it('after the kill the hero returns to their previous work and flag choice', () => {
+    it('after the kill the hero returns to the Token they were ordered onto', () => {
         const { enemy } = campWith();
         const near = logging('h1', NEAR);
         run(300);
@@ -353,23 +352,11 @@ describe('⭐ fight-back, then back to work (TL-24)', () => {
         run(300);
         expect(Flags.ambusherOf('h1')).toBeNull();
         expect(BoardState.workTokenOf('h1')).toBe(near.id);
-        // Their rules are untouched: Fight is still off.
-        expect(FlagRules.ruleOf('h1', FlagRules.FIGHT).allowed).toBe(false);
     });
 
-    it('switching Fight off mid-ambush does not stop the fight-back', () => {
+    it('a hero ordered onto a Token fights back, then resumes their order', () => {
         const { enemy } = campWith();
-        logging('h1', NEAR, { fight: true });
-        run(300);
-        expect(Flags.ambusherOf('h1')).toBe(enemy.id);
-        Flags.setRule('h1', FlagRules.FIGHT, { allowed: false });
-        run(100);
-        expect(BoardCombat.fightOfHero('h1')?.instanceId).toBe(enemy.id);
-    });
-
-    it('a pinned hero fights back, then resumes their pin', () => {
-        const { enemy } = campWith();
-        const pinned = logging('h1', NEAR, { pin: true });
+        const pinned = logging('h1', NEAR);
         expect(Flags.pinnedIdOf('h1')).toBe(pinned.id);
         run(300);
         expect(Flags.ambusherOf('h1')).toBe(enemy.id);
@@ -383,12 +370,12 @@ describe('⭐ fight-back, then back to work (TL-24)', () => {
         expect(BoardState.workTokenOf('h1')).toBe(pinned.id);
     });
 
-    it('a re-plant (the player pulling them away) ends the fight-back at once', () => {
+    it('a new order (the player pulling them away) ends the fight-back at once', () => {
         const { enemy } = campWith();
         logging('h1', NEAR);
         run(300);
         expect(Flags.ambusherOf('h1')).toBe(enemy.id);
-        Flags.plant('h1', FAR);
+        Flags.orderSpot('h1', FAR);
         expect(Flags.ambusherOf('h1')).toBeNull();
         expect(BoardCombat.getFight(enemy.id)).toBeNull();
     });

@@ -123,6 +123,12 @@ function runUntil(done, ms = 60000) {
 const on = (instance) => BoardState.getTokenById(instance.id);
 const claimOf = (heroId) => BoardState.claimOfHero(heroId)?.instanceId ?? null;
 const hero = (id = 'hero_1') => GameState.state.heroes.find(h => h.id === id);
+
+/** The skill the Token a hero has claimed is worked with: Construction while it is marked. */
+const workingSkillOf = (heroId) => {
+    const t = BoardState.getTokenById(BoardState.claimOfHero(heroId)?.instanceId);
+    return t ? StationRecipe.workConfigOf(getTokenType(t.typeId), t)?.skill ?? null : null;
+};
 const bank = () => JSON.stringify(GameState.state.inventory);
 const spriteCount = () => (GameState.state.board.sprites || []).length;
 
@@ -253,7 +259,7 @@ describe('a marked Token is Construction work', () => {
 
         Placement.plantFlagAt('hero_1', C(10));
         expect(claimOf('hero_1')).toBe(tree.id);
-        expect(Flags.workingRuleOf('hero_1')).toBe(DEMOLITION_SKILL_ID);
+        expect(workingSkillOf('hero_1')).toBe(DEMOLITION_SKILL_ID);
         expect(Flags.skipsOf(tree.id)).toEqual([]);
 
         run(Demolition.DEMOLISH_MS - 200);
@@ -337,18 +343,6 @@ describe('a marked Token is Construction work', () => {
         expect(runUntil(() => !on(consumer), Demolition.DEMOLISH_MS + 1000)).toBe(true);
     });
 
-    it('a hero whose Construction rule is off skips it, and one already on it lets go', () => {
-        const tree = place(10, 'demo_tree', 'hero_1');
-        expect(claimOf('hero_1')).toBe(tree.id);
-        Flags.setRule('hero_1', DEMOLITION_SKILL_ID, { allowed: false });
-        Demolition.mark(tree.id);
-        BoardRunner.tick(100);
-        expect(claimOf('hero_1')).toBeNull();
-        expect(Flags.skipsOf(tree.id)).toEqual([{ heroId: 'hero_1', reason: Flags.SKIP.RULE_OFF }]);
-        run(Demolition.DEMOLISH_MS * 2);
-        expect(on(tree)).toBe(tree);
-    });
-
     it('a hero stuck below the level: the problem mark says so in Construction words', () => {
         const tree = place(10, 'demo_tree');
         Demolition.mark(tree.id);
@@ -407,7 +401,7 @@ describe('unmarking', () => {
         expect(Demolition.unmark(tree.id)).toEqual({ success: true, unchanged: true });
 
         run(2500);
-        expect(Flags.workingRuleOf('hero_1')).toBe('forestry');
+        expect(workingSkillOf('hero_1')).toBe('forestry');
         expect(events.cycles.filter(c => c.instanceId === tree.id).length).toBeGreaterThan(0);
         expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBeGreaterThan(0);
         expect(events.demolished).toEqual([]);
@@ -438,7 +432,8 @@ describe('a marked Token stands still', () => {
         place(11, 'fixture_context_a');
         Placement.plantFlagAt('hero_1', C(10));
         expect(runUntil(() => kitchen.cycleElapsedMs > 3000, 10000)).toBe(true);
-        Flags.setRule('hero_1', DEMOLITION_SKILL_ID, { allowed: false });
+        // A hero who cannot demolish (no Construction), so nobody removes it.
+        delete hero().skills.construction;
 
         Demolition.mark(kitchen.id);
         expect(kitchen.cycleElapsedMs).toBe(0);

@@ -41,7 +41,7 @@ export function SkillLoopsDevSection() {
                     onClick={() => {
                         const r = setUpWaitingScene();
                         setStatus(r.ok
-                            ? 'Lower left: a Miner whose only vein rests after two cycles (no bubble, not idle: hover the flag or the Dock tab), and a Smith at a Furnace with one Coal (it stops and says Needs Coal). The Bank’s Coal was emptied'
+                            ? 'Lower left: a Miner whose only vein rests after two cycles (no bubble, not idle: hover the pennant or the roster), and a Smith at a Furnace with one Coal (it stops and says Needs Coal). The Bank’s Coal was emptied'
                             : r.error);
                     }}
                 >
@@ -53,10 +53,10 @@ export function SkillLoopsDevSection() {
                     className={buttonClass}
                     onClick={() => {
                         const r = addCoalVein();
-                        setStatus(r.ok ? 'A Coal Vein beside the Furnace: the Smith mines it, then goes back and smelts' : r.error);
+                        setStatus(r.ok ? 'A Coal Vein beside the Furnace: the Miner is sent to it, and the Smith smelts the Coal they bring' : r.error);
                     }}
                 >
-                    Add a Coal Vein in the Smith’s reach
+                    Add a Coal Vein and send the Miner
                 </button>
             </div>
             {status && <div className="ui-text-body text-gi-muted">{status}</div>}

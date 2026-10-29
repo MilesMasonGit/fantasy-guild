@@ -212,9 +212,9 @@ const WAIT_SPOTS = Object.freeze({ vein: { x: 220, y: 760 }, furnace: { x: 620, 
 
 /**
  * The mat's lower left, two heroes alone with their work:
- * - a QA Miner whose only work is the QA Copper Vein: two cycles, then it rests 20 s. They wait by
- *   their flag saying nothing, with no idle mark; the flag's hover and the Dock say "Waiting for
- *   QA Copper Vein"; they go back to it the moment it refills;
+ * - a QA Miner sent to the QA Copper Vein: two cycles, then it rests 20 s. They wait by it saying
+ *   nothing, with no idle mark; the pennant's hover and the roster say "Waiting for QA Copper
+ *   Vein"; they go back to it the moment it refills;
  * - a QA Smith at the QA Furnace with one Coal in the Bank (every other Coal is taken out): one
  *   ingot, then the Furnace stops, says "Needs Coal" every few seconds, and the Smith stays.
  * ⚠️ Changes the game, like Spawn Party: it empties the Bank's Coal.
@@ -242,8 +242,9 @@ export function setUpWaitingScene() {
 }
 
 /**
- * A QA Coal Vein in the QA Smith's reach: they leave the stopped Furnace to mine it, and once it
- * rests (two Coal) they go back and smelt.
+ * A QA Coal Vein beside the Furnace, and the QA Miner sent to it (one hero per link, hero orders):
+ * the Coal they mine feeds the Bank, and the QA Smith, who stayed at the stopped Furnace, smelts
+ * again.
  * @returns {{ok: boolean, error?: string}}
  */
 export function addCoalVein() {
@@ -252,6 +253,7 @@ export function addCoalVein() {
     const vein = put(QA_WAIT_TYPES.COAL, WAIT_SPOTS.coal);
     if (!vein) return { ok: false, error: 'No room beside the QA Furnace' };
     waitScene.coal = vein.id;
+    qaOrder(waitScene.miner, { x: vein.x, y: vein.y });
     return { ok: true };
 }
 

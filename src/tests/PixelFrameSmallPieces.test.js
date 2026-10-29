@@ -28,7 +28,6 @@ describe('the surfaces inside windows wear the pixel kit, not soft boxes (UI_STY
         'ui/modals/JobChangeModal.jsx',
         'ui/components/hud/CatchUpOverlay.jsx',
         'ui/components/board/MatModeControls.jsx',
-        'ui/components/dock/WorkRulesDrawer.jsx',
         'ui/components/drawer/HeroInspectionSheet.jsx',
         'ui/components/base/VitalBar.jsx',
         'ui/components/base/KitButton.jsx'

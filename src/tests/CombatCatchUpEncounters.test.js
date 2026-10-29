@@ -12,6 +12,7 @@ import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as SpawnerSystem from '../systems/board/SpawnerSystem.js';
 import * as HeroMotion from '../systems/board/HeroMotion.js';
 import * as EnemyMotion from '../systems/board/EnemyMotion.js';
+import * as Flags from '../systems/board/Flags.js';
 import { AudioSystem } from '../systems/core/AudioSystem.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import * as CatchUp from '../systems/core/CatchUp.js';
@@ -152,8 +153,25 @@ function buildBoard() {
     fixtures.plant(heroes[3].id, { x: boss.x, y: boss.y }, { pin: true });
     fixtures.plant(heroes[4].id, { x: circle.x, y: circle.y }, { pin: true });
     fixtures.plant(heroes[5].id, { x: circle.x + 160, y: circle.y });
+    playerResends([heroes[2].id, heroes[3].id, heroes[5].id]);
     TileModifiers.rebuildAll();
     return { heroes, camp, vein, haunted, den, circle };
+}
+
+/**
+ * The player, under hero orders (brief 260 O1): a boss beaten is gone, and the heroes sent at it
+ * need a job, so at the start of each tick every one of `heroIds` with no Token order is sent at
+ * the boss standing on the mat, if any. A tick handler, so a catch-up runs it exactly as the plain
+ * loop does.
+ */
+const RESEND = 'test_player_resends';
+function playerResends(heroIds) {
+    GameLoop.offTick(RESEND);
+    GameLoop.onTick(RESEND, () => {
+        const boss = BoardState.tokens().find(t => t.typeId === 'cu_enc_boss');
+        if (!boss) return;
+        for (const id of heroIds) if (!Flags.pinnedTokenOf(id)) Flags.orderToken(id, boss);
+    }, 0);
 }
 
 function listen() {
@@ -193,6 +211,7 @@ beforeAll(() => {
 });
 
 afterEach(() => {
+    GameLoop.offTick(RESEND);
     SaveManager.currentSlot = null;
     if (SaveManager.autoSaveTimer) clearInterval(SaveManager.autoSaveTimer);
     SaveManager.autoSaveTimer = null;
@@ -247,6 +266,7 @@ describe('encounters during a catch-up', () => {
             SpawnerSystem.attemptSpawn(den, getTokenType(den.typeId));
             const boss = BoardState.tokens().find(t => t.typeId === 'cu_enc_boss');
             fixtures.plant(hunter.id, { x: boss.x, y: boss.y }, { pin: true });
+            playerResends([hunter.id]);
             TileModifiers.rebuildAll();
             return hunter;
         };

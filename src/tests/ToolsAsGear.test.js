@@ -308,8 +308,8 @@ describe('choosing work: the hero does other allowed work, and the Token says wh
         equip(hero.id, 'fx_axe');
         const vein = put('fx_vein', VEIN);
         const tree = put('fx_tree', TREE);
-        Flags.setRule(hero.id, 'mining', { priority: 1 });
-        Flags.plant(hero.id, FLAG);
+        // On the vein, so the vein is the nearer and is looked at first (priorities are gone).
+        Flags.plant(hero.id, VEIN);
 
         expect(BoardState.claimOfHero(hero.id)?.instanceId).toBe(tree.id);
         expect(Flags.skipsOf(vein.id)).toEqual([{ heroId: hero.id, reason: ALERT.NO_TOOL }]);

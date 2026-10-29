@@ -14,7 +14,6 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { tokenStartingUses, registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { resetMatTuning, setMatTuning } from '../config/matTuning.js';
 import { SKIP_HINT, skipHint } from '../ui/components/board/boardConstants.js';
-import { isRecallDrop, recallFromDrop } from '../ui/components/dock/dockRecall.js';
 import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -135,35 +134,6 @@ describe('dragging the pennant (FLAG) just moves the point (FP-71)', () => {
         Placement.recallHeroById('h1');
         Placement.plantFlagAt('h2', C(13));                  // h2 holds only forestry
         expect(workTileOf('h2')).toBeNull();
-    });
-});
-
-describe('dropping on the Dock recalls (dockRecall)', () => {
-    // Since slice 1.5b-ii a hero picked up on the board drags their FLAG, so
-    // every recall drop is a FLAG payload — these are the three shapes the board
-    // produces (`BoardTile`'s hero, `FlagLayer`'s idle hero, the flag).
-    it.each([
-        ['a hero on a Token (drags the flag)', { kind: DRAG_KIND.FLAG, heroId: 'h1', from: { hero: true } }],
-        ['an idle hero beside their flag (drags the flag)', { kind: DRAG_KIND.FLAG, heroId: 'h1', from: { flag: true, hero: true } }],
-        ['the flag itself', { kind: DRAG_KIND.FLAG, heroId: 'h1', from: { flag: true } }]
-    ])('furls the flag for %s', (_label, payload) => {
-        put(15, 'fixture_producer');
-        Placement.plantFlagAt('h1', C(15));
-        expect(BoardState.flagOf('h1')).not.toBeNull();
-
-        expect(isRecallDrop(payload)).toBe(true);
-        recallFromDrop(Placement, payload);
-
-        expect(BoardState.flagOf('h1')).toBeNull();
-        expect(workTileOf('h1')).toBeNull();
-    });
-
-    it('is not a recall for a hero dragged out of the Dock itself (that is a reorder)', () => {
-        Flags.plant('h1', C(20));
-        const payload = { kind: DRAG_KIND.HERO, heroId: 'h1', from: { dock: true } };
-        expect(isRecallDrop(payload)).toBe(false);
-        recallFromDrop(Placement, payload);
-        expect(BoardState.flagOf('h1')).not.toBeNull();
     });
 });
 

@@ -34,7 +34,7 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
  *
  * ⚠️ The area flag below (a flag with neither `pinnedTo` nor `spot`, working everything in the flag
  * radius by the hero's rules) is no longer made by any player route: an old save's area flags load
- * as spots (`orderMigration.js`). It stays, dormant, for the tests that set scenes with it, until
+ * as spots (`SaveMigration.migrateStateToOrders`). It stays, dormant, for the tests that set scenes with it, until
  * the area-flag code is removed.
  *
  * Flags: a hero plants a flag, and works anything they can around it.

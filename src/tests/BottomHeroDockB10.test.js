@@ -23,7 +23,7 @@ import { hallCameraSides } from './fixtures/hallCameraSides.js';
 import { BankHeroPanel } from '../ui/components/dock/BankHeroPanel.jsx';
 import { dockHeroDragPayload } from '../ui/components/dock/DockHeroFigure.jsx';
 import {
-    DOCK_STRIP_PX, dockArtPx, dockArtOffset, dockArtFilter, hpPercent, hpTone, isDeployedStatus
+    DOCK_STRIP_PX, dockArtPx, dockArtOffset, hpPercent, hpTone, ROSTER_STATE_CLASS
 } from '../ui/components/dock/dockHeroView.js';
 import { setLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
 import { drawnPoint } from './fixtures/drawnPoint.js';
@@ -60,7 +60,8 @@ afterEach(() => { cleanup(); vi.clearAllMocks(); });
 /**
  * ⭐ **B10: the horizontal hero dock is a dark strip with the heroes standing
  * in it**. Full-size idle art cut at the waist, a name and HP bar over each
- * head, deployed heroes darkened and sunk while their labels stay put.
+ * head. Since hero orders (brief 260 O1) it is the roster: every hero is on the
+ * mat, so none sinks or darkens; each says whether they are idle, busy or hurt.
  */
 describe('B10 horizontal hero dock', () => {
     it('draws one figure per hero, each with a name and an HP bar', () => {
@@ -98,36 +99,31 @@ describe('B10 horizontal hero dock', () => {
         expect(view.container.querySelector('[data-bottom-hero-dock]').getAttribute('data-dock-art-px')).toBe('128');
     });
 
-    it('darkens and lowers a deployed hero\'s art, but not its name and HP bar', () => {
+    it('every hero is on the mat: no art sinks or darkens; each says idle, busy or hurt', () => {
         STATUS.set('h2', 'working');
         const view = mount();
         const home = figure(view, 'h1');
         const out = figure(view, 'h2');
-        expect(home.getAttribute('data-dock-deployed')).toBe('false');
-        expect(out.getAttribute('data-dock-deployed')).toBe('true');
-
-        const homeArt = home.querySelector('[data-dock-art]');
-        const outArt = out.querySelector('[data-dock-art]');
-        expect(homeArt.style.transform).toBe('translateY(0px)');
-        expect(homeArt.style.filter).toBe('');
-        expect(outArt.style.transform).toBe(`translateY(${dockArtOffset(128, { deployed: true })}px)`);
-        expect(dockArtOffset(128, { deployed: true })).toBeGreaterThanOrEqual(20);
-        expect(outArt.style.filter).toBe('brightness(0.4)');
+        for (const f of [home, out]) {
+            const art = f.querySelector('[data-dock-art]');
+            expect(art.style.transform).toBe('translateY(0px)');
+            expect(art.style.filter).toBe('');
+        }
+        expect(home.getAttribute('data-dock-state')).toBe('idle');
+        expect(out.getAttribute('data-dock-state')).toBe('busy');
+        expect(figure(view, 'h3').getAttribute('data-dock-state')).toBe('hurt');
+        const word = (f) => f.querySelector('[data-dock-state-word]');
+        expect(word(home).textContent).toBe('Idle');
+        expect(word(home).className).toContain(ROSTER_STATE_CLASS.idle);
+        expect(word(out).textContent).toBe('Busy');
+        expect(word(figure(view, 'h3')).textContent).toBe('Hurt');
 
         // Labels at one height for everybody.
         expect(labelOf(out).style.bottom).toBe(labelOf(home).style.bottom);
     });
 
-    it('counts walking home as deployed, the Dock as home', () => {
-        expect(isDeployedStatus('returning')).toBe(true);
-        expect(isDeployedStatus('idle')).toBe(true);
-        expect(isDeployedStatus('walking')).toBe(true);
-        expect(isDeployedStatus('working')).toBe(true);
-        expect(isDeployedStatus('docked')).toBe(false);
-    });
-
-    it('lifts on hover; a deployed hero rises partway out of the dark', () => {
-        STATUS.set('h2', 'idle');
+    it('lifts on hover, every hero alike', () => {
+        STATUS.set('h2', 'working');
         const view = mount();
         const home = figure(view, 'h1');
         fireEvent.mouseEnter(home);
@@ -138,12 +134,8 @@ describe('B10 horizontal hero dock', () => {
         expect(Number(home.getAttribute('data-dock-art-offset'))).toBe(0);
 
         const out = figure(view, 'h2');
-        const sunk = Number(out.getAttribute('data-dock-art-offset'));
         fireEvent.mouseEnter(out);
-        const risen = Number(out.getAttribute('data-dock-art-offset'));
-        expect(risen).toBeGreaterThan(0);
-        expect(risen).toBeLessThan(sunk);
-        expect(dockArtFilter({ deployed: true, hovered: true })).toBe('brightness(0.7)');
+        expect(Number(out.getAttribute('data-dock-art-offset'))).toBe(dockArtOffset(128, { hovered: true }));
         // The labels never move.
         const labelBefore = labelOf(home).style.bottom;
         fireEvent.mouseEnter(home);
@@ -199,19 +191,16 @@ describe('B10 horizontal hero dock', () => {
         expect(figure(view, 'h1').getAttribute('data-dock-wounded')).toBeNull();
     });
 
-    it('updates when a hero goes out and comes home', async () => {
+    it('updates when a hero is given an order and sent home', async () => {
         const view = mount();
-        expect(figure(view, 'h1').getAttribute('data-dock-deployed')).toBe('false');
+        expect(figure(view, 'h1').getAttribute('data-dock-state')).toBe('idle');
         STATUS.set('h1', 'working');
-        // A plant or a recall says HERO_MOVED; useGameState batches its update onto a microtask.
+        // An order or a defeat says HERO_MOVED; useGameState batches its update onto a microtask.
         await act(async () => { EventBus.publish(BOARD_EVENTS.HERO_MOVED, { heroId: 'h1' }); await Promise.resolve(); });
-        expect(figure(view, 'h1').getAttribute('data-dock-deployed')).toBe('true');
+        expect(figure(view, 'h1').getAttribute('data-dock-state')).toBe('busy');
         STATUS.delete('h1');
         await act(async () => { EventBus.publish(BOARD_EVENTS.HERO_MOVED, { heroId: 'h1' }); await Promise.resolve(); });
-        expect(figure(view, 'h1').getAttribute('data-dock-deployed')).toBe('false');
-        STATUS.set('h1', 'working');
-        await act(async () => { EventBus.publish(BOARD_EVENTS.HERO_MOVED, { heroId: 'h1' }); await Promise.resolve(); });
-        expect(figure(view, 'h1').getAttribute('data-dock-deployed')).toBe('true');
+        expect(figure(view, 'h1').getAttribute('data-dock-state')).toBe('idle');
     });
 
     it('updates the HP bar when hp is mutated in place and heroes_updated fires (CR3-300)', async () => {

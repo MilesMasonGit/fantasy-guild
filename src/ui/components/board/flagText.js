@@ -134,16 +134,14 @@ export function dockStatusLine(status) {
 }
 
 /**
- * The roster's one-word state for a hero: `hurt` (healing from a defeat), `idle` (no order, a spot
- * order, a job gone for good, or nothing to do at their Token) or `busy` (working, walking to work,
- * or waiting for their Token to come back or come free).
+ * The roster's one-word state for a hero, from `Flags.statusOf` alone: `hurt` (healing from a
+ * defeat), `busy` (an order on a Token: working it, walking to it, or waiting by it) or `idle` (no
+ * order, a spot order, or a job gone for good).
  */
 export function rosterStateOf(heroId) {
     if (healingLeftMs(heroId) != null) return 'hurt';
     const s = Flags.statusOf(heroId);
-    if (s.needsJob || s.state === 'docked' || s.state === 'returning') return 'idle';
+    if (s.needsJob) return 'idle';
     if (s.state === 'working') return 'busy';
-    if (s.state === 'walking') return s.order === 'spot' ? 'idle' : 'busy';
-    if (s.order === 'token') return Flags.waitingOf(heroId) ? 'busy' : 'idle';
-    return 'idle';
+    return s.order === 'token' ? 'busy' : 'idle';
 }

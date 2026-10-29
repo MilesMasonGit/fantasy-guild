@@ -13,7 +13,6 @@ vi.mock('../ui/components/drawer/HeroInspectionSheet.jsx', () => ({
 import { GameState } from '../state/GameState.js';
 import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
 import { BankHeroPanel } from '../ui/components/dock/BankHeroPanel.jsx';
-import { WorkRulesDrawer } from '../ui/components/dock/WorkRulesDrawer.jsx';
 import { setPortraitCutter, PORTRAIT_PX } from '../ui/components/dock/heroPortrait.js';
 
 const h = React.createElement;
@@ -60,14 +59,5 @@ describe('the Bank hero tabs: portrait and name', () => {
         expect(img('h1').style.transform).toBe('');
         expect(img('h4').getAttribute('src')).toBe('/assets/heroes/hm_bard_por.png');
         expect(img('h4').style.transform).toBe('scaleX(-1)');
-    });
-
-    it('the Work Permissions rows use the same portraits', async () => {
-        const view = render(h(DeckDndProvider, null, h(WorkRulesDrawer, { open: true, litHeroId: null, onClose: () => {} })));
-        await settle();
-        const img = (id) => view.container.querySelector(`[data-rules-row="${id}"] [data-rules-row-header] img`);
-        expect(img('h2').getAttribute('src')).toBe('data:image/png;cut=/assets/heroes/hn_wizard_sheet.png');
-        expect(img('h2').style.imageRendering).toBe('pixelated');
-        expect(cuts).toEqual(['/assets/heroes/hn_fighter_sheet.png', '/assets/heroes/hn_wizard_sheet.png']);
     });
 });
