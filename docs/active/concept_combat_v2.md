@@ -1,4 +1,4 @@
-Status: draft (damage types and their groups need their own analysis first)
+Status: draft
 
 # Combat v2: styles with character, damage types, mix and match
 
@@ -41,21 +41,75 @@ expressed through several mechanics:
 - **"Unseen at work" is dropped** from classless heroes (a single-purpose
   trait).
 
-## Damage types (owner)
+## Damage types (owner; analyst's review 2026-10-28)
 
-- Each style reaches its own damage types: **Melee Slash / Crush / Stab;
-  Stealth Stab / Poison / Shadow; Magic Fire / Ice / Electric**; Ranged
-  combines an arrow's physical type with the bow's magical one.
-- **Gear boosts types by percentages** ("Poisoner's Cloak: +15 % Poison
-  damage"), and that is a loadout choice: the poisoner picks the Poisoner's
-  Cloak over the Swashbuckler's Cuirass (+Slash).
-- **Enemies have resistances and weaknesses as percentages, several each**
-  ("Toad: Poison Resistance 50 %").
-- **Groups** let one line cover similar types ("Ghost: 100 % resistance to
-  Physical", covering Stab, Crush and Slash).
-- ⚠️ **Open, needs its own analysis and interview** (owner): which types the
-  game has, which groups, a design philosophy that gives each weapon the
-  right types, and how resistances are taught to the player.
+### The list: three groups, nine types
+
+| Group | Types | Mostly reached by |
+|---|---|---|
+| **Physical** | Slash, Crush, Stab | Melee (all three), Stealth (Stab), Ranged (the arrow) |
+| **Elemental** | Fire, Ice, Electric | Magic, Ranged (the bow) |
+| **Special** | Poison, Light, Dark | Stealth (Poison, Dark), Ranged (the bow), later content (Light) |
+
+- No Earth (owner). An enemy resisting **all** of Special is very rare (owner).
+- Stealth's types: Stab, Poison, Dark (Dark replaces the sketch's "Shadow").
+
+### Design philosophy (analyst's rules; owner approved the decisions they rest on)
+
+1. **Only weapons and ammo give a hit its type.** A weapon has one type; a
+   ranged shot has two (arrow and bow). Armour, off-hand items and elixirs
+   only boost or resist types; they never add one.
+2. **The type comes from the weapon family and its name, never the tier.**
+   Swords are Slash at every metal; magical types are named on the item
+   ("Ember Wand", "Frost Bow").
+3. **A type earns its place**: at least one weapon carries it and at least
+   three enemies in a tier band care about it, or it waits.
+4. **Enemies stay readable**: most have 0–1 entries, bosses up to 3; no enemy
+   shuts out every type a style can reach at its tier.
+5. **Resistances can be guessed from the creature**: a shell resists Slash, a
+   fire elemental ignores Fire.
+
+### Rules
+
+- **Gear boosts types by percentages** ("Poisoner's Cloak: +15 % Poison"),
+  free numbers. A gear line may name a type or a group.
+- **Enemy resistances and weaknesses come in fixed steps** (owner): resist
+  25 / 50 / 100 %, weak 25 / 50 %. Several per enemy are allowed.
+- **A group line and a single-type line**: the single type replaces the group
+  (owner). "Skeleton: Physical resist 50 %, Crush weak 50 %" reads as written.
+- **Shown on the enemy's info card** (owner).
+- **Statuses are separate from damage types** (owner): the Poison status is
+  renamed **Venom**; Burn is already its own thing, not Fire damage. A Fire
+  weapon does not Burn unless a rule says so.
+- **Ranged: the arrow adds its own damage** (owner): a shot is the bow's
+  damage in the bow's type plus the arrow's damage in the arrow's type. Bow
+  and arrow are each tuned to about **half** of a comparable weapon.
+- **Order of a hit** (analyst; routine): weapon damage × style matchup × buffs
+  → crit → minus armour (at least 1) → × the type factor (1 + boosts −
+  resistances, never below 0) → the fraction sub-roll. Resistance comes after
+  the armour floor so a resisted fast weapon really does less, and immunity
+  means 0.
+
+### Enemies attack with moves (owner)
+
+- **Each enemy has a few attacks, picked at random** each swing, each with its
+  own damage type or effect. Owner's example, a chicken: **Peck** (Stab),
+  **Scratch** (Slash), **Flutter** (a status: +50 % Physical resistance for
+  one attack).
+- So **hero armour with type resistances matters on defence** as well as
+  offence. An enemy with no moves authored hits as today, as Physical.
+- This grows the built boss-move machinery (GDD §6, "Boss moves") to every
+  enemy; the pick is one random draw per swing in a fixed order.
+
+### Starter table (analyst's draft, for the owner's CMS pass)
+
+Weapons: Sword and Cleaver Slash; Greatsword Crush (no Mace yet); Dagger Stab;
+Copper Wand Fire, Iron Wand Ice; bows carry an Elemental or Special type,
+arrows a Physical one. Enemies, e.g.: Crab resist Slash 50, weak Crush 50;
+Frog resist Poison 50; Fire Elemental resist Fire 100, weak Ice 50; Wind
+Elemental resist Physical 50; Cow and Goblin none. Content gaps: no arrows,
+no Electric, Light or Dark weapon, no Mace, no type-resisting armour, no
+Throwing Daggers, Motes or off-hand items.
 
 ## Small numbers: a damage sub-roll (owner)
 
@@ -98,8 +152,5 @@ expressed through several mechanics:
 
 ## Next steps
 
-1. A read-only analysis of damage types and groups (list, groups, the
-   philosophy for giving weapons and enemies types, a starter table for the
-   shipped weapons and enemies), then an owner interview.
-2. Approve this concept with the damage-type section filled in; one brief,
-   after brief 270 K1.
+1. ~~Damage-type analysis and interview~~ done 2026-10-28.
+2. Owner approval; one brief, after brief 270 K1.
