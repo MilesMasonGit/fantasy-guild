@@ -150,6 +150,10 @@ balance (worries: lucky or unlucky worlds; skills progressing unevenly).*
   everywhere) and **odd layouts** (islands, a chasm, mostly water, little
   building room). Strange rules and rare finds were not chosen.
 - **The boundary is fixed after ring 3.**
+- **Cells are hexes** (owner): three rings hold 6 + 12 + 18 = 36 cells, enough
+  for **all of the game's content** (owner). So tiers share rings (several
+  tiers per ring) rather than one ring per tier; how tiers and the ~8
+  landmarks spread across the 36 cells is open.
 - The other long-run ideas (a new rule per ring, landmark arcs, fewer bigger
   cells outward, deepening places, wonders, the run as chapters) were not
   chosen.
