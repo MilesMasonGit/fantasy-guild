@@ -136,6 +136,20 @@ balance (worries: lucky or unlucky worlds; skills progressing unevenly).*
 - Found by the study, for the ledger and content: fishing earns ~450 XP/h
   against ~1,100 for mining; most of today's maps are single-resource.
 
+## Explored and set aside (owner, 2026-10-29)
+
+- **Influence and player-placed cells**: a meta-resource (earned from bounties
+  and quests) buying packs of 3 cells, keep 1, placed on a blank parchment
+  around the Hall, tiers by ring. After discussing it the owner felt **packs
+  and placing cells don't quite work**; **the generated world of cells and
+  rings stays the best option**. In a generated world **the player can see
+  what lies on each cell**, so a player needing a resource can go to it.
+- **Tiles into sockets** and the other arrival levers from the
+  [arrival study](research/arrival_identity_study_2026-10-29.md) were not
+  chosen; **the story site as the arrival** was liked (owner): the arrival
+  enemies come from the place's one story site (goblins holed up in the
+  mine), its chain uses other skills, ending in restore or strip.
+
 ## Built pieces (owner: the recommended clean-up)
 
 - **Retire**: map items, map drops from enemies and bosses, bounty map rewards,
