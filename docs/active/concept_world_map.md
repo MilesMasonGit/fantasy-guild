@@ -68,12 +68,10 @@ replace map items as the gate to new content, and reshape the Atlas
   copper-and-oak country, the next iron-and-fir, and so on; requirements rise
   with distance. **The cost of every cell rises with its ring distance, so
   there are always affordable options** nearer in (owner).
-- **Connected geography and about 8 landmarks per run** (owner, 2026-10-29):
-  the world is generated as shapes (a mountain chain, a coast, a forest
-  belt), so neighbours make sense. **A landmark is a special cell that opens
-  its tier** (the Smoking Mountain): visible on the horizon from the start,
-  with a bigger requirement and a tougher arrival fight (a boss); settling it
-  is the tier's milestone and opens the next ring around it.
+- **Connected geography** (owner, 2026-10-29): the world is generated as
+  shapes (a mountain chain, a coast, a forest belt), so neighbours make
+  sense. ⚠️ **No landmarks** (owner, later 2026-10-29; see "Tiers across the
+  36 cells"): the ~8 landmarks first proposed here are dropped.
 - **Each ring guarantees its key materials** (owner): the second ring always
   offers iron and fir among its cells. Randomness shapes where and with what,
   never whether. The ledger plans rings as stages and checks the rules.
@@ -89,8 +87,7 @@ replace map items as the gate to new content, and reshape the Atlas
   defeat all the enemies before the region unlocks** (its Tokens brighten and
   can be worked). Combat joins gathering and crafting in expansion.
 - **The encounter is small and fixed** (owner, 2026-10-29): a handful of
-  enemies (3–6) sized to the ring's level, sometimes a boss (always at a
-  landmark); they don't respawn. Clearing takes minutes to an hour, not a
+  enemies (3–6) sized to the ring's level, sometimes a boss; they don't respawn. Clearing takes minutes to an hour, not a
   siege. While the player is away, heroes sent at it keep fighting as long as
   they win; a defeated hero waits at the Hall (hero orders).
 - **Places the guild has left are frozen**, as today (owner): only the active
@@ -107,6 +104,119 @@ replace map items as the gate to new content, and reshape the Atlas
   places.
 - The ledger checks all three on each generated world's rules.
 
+## What goes on a mat (owner, 2026-10-29)
+
+*From the [mat composition study](research/mat_composition_study_2026-10-29.md).
+Goals: a diverse selection of activities on any mat (**every mat supports most
+skills, plus a specialty**), discovery from **arriving somewhere new**, and
+balance (worries: lucky or unlucky worlds; skills progressing unevenly).*
+
+- **Natural work on arrival keeps about 4–6 heroes busy in total** (owner):
+  kit and specialty together. Beyond that, extra work comes from **what the
+  player builds** (camps, planted Forests, Mines, Fields on Foundations), so
+  arriving is a start and building is the growth; this frees Token cap for
+  building.
+- **A specialty means better things, not more** (owner): the new-tier node, a
+  rare or rich node, its look and camp. (About 5 Tokens keep one hero busy;
+  quantity past that is wasted.)
+- **Several kinds of kit, so mats feel different** (owner): **kit archetypes**
+  (e.g. Riverside, Highland, Woodland, Wetland, Plains; names placeholders),
+  each covering most skills in its own balance and look. The other levers
+  offered (different Tokens per skill, a local building, a local quirk,
+  layout puzzles, local enemies, neighbour edges) were not chosen for now; the
+  owner wants to keep brainstorming.
+- **Against luck: a specialty bag per ring, a pity rule and a value budget
+  per cell** (owner): every gathering skill appears as a specialty in every
+  ring; a skill not offered in the last 4 options comes next; a cell's
+  modifiers and treasures stay within ±10 % of its ring's value. The ledger
+  tests many generated worlds against per-skill bands.
+- Found by the study, for the ledger and content: fishing earns ~450 XP/h
+  against ~1,100 for mining; most of today's maps are single-resource.
+
+## Inner rings strict, outer rings wild (owner, 2026-10-29)
+
+- **Rings 1–3 follow strict rules** (the kit, the specialty bag, the pity rule,
+  the value budget, the key-material guarantees) so progress is consistent.
+  **The inner rings guarantee access to every item, enemy and Token in the
+  game**: the essential progress lives there.
+- **From ring 4 outward, generation is chaotic** and **for min-maxing**: highly
+  specialised cells and unconventional playmats to build on, e.g. a cell with
+  a dozen goblin camps that makes killing goblins very efficient. Outer cells
+  bring efficiency, not new content.
+- **Unconventional means**: **extreme composition** (one resource almost
+  everywhere) and **odd layouts** (islands, a chasm, mostly water, little
+  building room). Strange rules and rare finds were not chosen.
+- **The boundary is fixed after ring 3.**
+- **Cells are hexes** (owner): three rings hold 6 + 12 + 18 = 36 cells, enough
+  for **all of the game's content** (owner). So tiers share rings (several
+  tiers per ring) rather than one ring per tier (see below).
+
+## Tiers across the 36 cells (owner, 2026-10-29)
+
+- **Wedges from the Hall, by item line** (owner): a wedge per material line,
+  e.g. **an ores wedge** (a player progressing through Mining and Smithing
+  wants its cells), **a wood wedge**, **a fish wedge**, and so on. Not by
+  skill as such: by item tier.
+- **Tier rises outward within a wedge** (owner): ring 1 of each wedge holds its
+  early tiers, ring 3 its late ones.
+- **Each cell holds several materials, mixed across the wedges** (owner): a
+  player wanting both Lobster and Mythril Ore might find a ring-2 or ring-3
+  cell that has both. A wedge sets a cell's main line; its other materials
+  come from other lines.
+- **More cells for later tiers** (owner): early tiers few, later tiers more
+  (they last longer and need more variety).
+- **Every cell's contents are visible from the start** (owner): a player who
+  needs gold sees where it is; discovery comes from arriving.
+- **No landmarks, and nothing special marks a new tier** (owner): the
+  requirements and the new materials are the moment.
+- The other long-run ideas (a new rule per ring, landmark arcs, fewer bigger
+  cells outward, deepening places, wonders, the run as chapters) were not
+  chosen.
+
+## Building nodes anywhere (owner, 2026-10-29)
+
+*The problem (owner): only the active Region runs, so a player who wants Fir
+Wood and Gold Ore at once can't if no mat has both. Answer: more ways for
+the player to **make nodes**.*
+
+- **Each skill has its own rule for building its nodes** (owner):
+  - **Farming and Forestry: plant anywhere** (Fields, planted Forests; Farming
+    already works this way).
+  - **Mining: barriers**: a mineshaft needs **Stone terrain**.
+  - **Fishing: a hard limit**: it needs **water** on the mat.
+  - **The other skills follow the same idea** (owner): Alchemy herbs plant like
+    Farming (the Herb Garden); a built enemy camp (a lure, or the Summoning
+    Circle) needs a token from that enemy and free ground; stations (Smithing,
+    Cooking, Crafting) already build anywhere. The planning agent drafts each
+    skill's rule for the owner's review.
+- **The unlock is an item from the place** (owner): working the wild resource
+  yields its seed (Fir Seedlings from fir trees, a Gold Vein Sample from gold
+  veins); the build recipe uses it. Finding the place once stays the gate;
+  the ledger tracks the seed like any item.
+- **A built node is weaker, but always yours** (owner): it yields less or
+  rests longer than a wild one, so rich wild places (and the wild outer
+  rings) still matter.
+- **Most inner mats have some Stone terrain and some water** (owner):
+  archetypes lean (Highland much stone, Riverside much water), a few lack
+  one.
+- Not chosen: outposts producing while you're away, paired resources in
+  generation, caravans and roads. Stockpiling by trips still works beside
+  building.
+
+## Explored and set aside (owner, 2026-10-29)
+
+- **Influence and player-placed cells**: a meta-resource (earned from bounties
+  and quests) buying packs of 3 cells, keep 1, placed on a blank parchment
+  around the Hall, tiers by ring. After discussing it the owner felt **packs
+  and placing cells don't quite work**; **the generated world of cells and
+  rings stays the best option**. In a generated world **the player can see
+  what lies on each cell**, so a player needing a resource can go to it.
+- **Tiles into sockets** and the other arrival levers from the
+  [arrival study](research/arrival_identity_study_2026-10-29.md) were not
+  chosen; **the story site as the arrival** was liked (owner): the arrival
+  enemies come from the place's one story site (goblins holed up in the
+  mine), its chain uses other skills, ending in restore or strip.
+
 ## Built pieces (owner: the recommended clean-up)
 
 - **Retire**: map items, map drops from enemies and bosses, bounty map rewards,
@@ -122,12 +232,12 @@ replace map items as the gate to new content, and reshape the Atlas
 
 ## Open
 
-- How many cells per ring, the cell shape, and how a cell's requirements are
-  priced (the simulator and the ledger's stage budgets).
-- How the ledger's stages map onto rings (Starter Camp = the Hall's cell,
-  ring 1 = plane 1, ring 2 = plane 2).
-- Which enemies make up each ring's encounters, and the landmark bosses
-  (content, through the ledger).
+- How a cell's requirements are priced (the simulator and the ledger's stage
+  budgets), and how many wedges and which item lines.
+- How the ledger's stages map onto wedges and rings (Starter Camp = the
+  Hall's cell).
+- Which enemies make up each cell's arrival encounter (content, through the
+  ledger).
 - The tutorial's new ending (the first ring opening) and the Starter Camp as
   the Hall's cell.
 - Theorycraft and alternatives were weighed 2026-10-28
