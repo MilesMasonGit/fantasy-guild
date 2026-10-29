@@ -1,4 +1,4 @@
-Status: draft
+Status: briefed 2026-10-28 (ledger and content fixes approved 2026-10-28; brief 290). Gating section still open.
 
 # Progression ledger: tracking when content arrives
 
@@ -88,3 +88,10 @@ mechanic and where we want to be.** What a good gate does (owner):
 
 What is wrong today (owner): maps as the gate are **hard to balance** and
 **feel indirect** (the player cannot see why iron is missing or what to do).
+
+### How we pin it down (owner, 2026-10-28)
+
+Both, then a workshop: a **player-journey walkthrough** of the first hours
+under today's rules (scored against the three goals) and **a study of how
+other games gate progression**, saved in `docs/active/research/`; then a
+workshop session to name the problem and the target before any fix.
