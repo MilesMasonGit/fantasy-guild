@@ -88,6 +88,11 @@ the first outside playtest, modding.
   a small notable-events section, enemies defeated. See
   [concept_living_game.md](concept_living_game.md).
 
+- **Owner session 2026-10-28** (gameplay issues), moved on: hero orders
+  (brief 260), classless heroes (brief 270), combat v2 (brief 280), the
+  progression ledger (brief 290); the world map that replaces map items as
+  the gate is a draft, [concept_world_map.md](concept_world_map.md).
+
 ### Quick changes and rulings
 
 - **Widen the playmat** and **tuner baselines** (Tokens overlap less; heroes

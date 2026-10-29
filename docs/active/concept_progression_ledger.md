@@ -75,6 +75,8 @@ After the ledger exists, so its red rows guide the pack, reviewed in the CMS:
 
 ## Gating: open (owner)
 
+> **Moved on 2026-10-28/29**: the workshop became [concept_world_map.md](concept_world_map.md) (draft): a world map of fog cells around the Hall, requirements per cell, an arrival fight, landmarks per tier; map items retire.
+
 None of the options so far satisfied the owner: crafting maps from a boss
 trophy, explaining drops better, a Charter checklist, ore-fragment hints,
 Cartography Table ranks, no map gate, a plane guardian. The owner wants to
