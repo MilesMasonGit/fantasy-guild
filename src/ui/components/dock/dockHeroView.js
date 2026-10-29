@@ -46,6 +46,22 @@ export function dockArtOffset(artPx, { hovered = false } = {}) {
     return hovered ? -lift : 0;
 }
 
+/** The hero's job flag on the roster, in screen px: the mat's flag at its usual size. */
+export const ROSTER_FLAG_PX = 24;
+
+/**
+ * Where the hero's flag stands on the roster: at the shoulder, as on the hero panel (the box's
+ * left edge 12 % of the art right of the hero's middle, its top 4 % of the art below the top of
+ * the sprite frame), so it sits beside the head and below the name, HP bar and state word.
+ * `left` is from the slot's middle, `bottom` from the strip's bottom edge; both in screen px.
+ */
+export function rosterFlagPlace(artPx) {
+    return {
+        left: Math.round(artPx * 0.12),
+        bottom: Math.round(artPx / 2 - artPx * 0.04 - ROSTER_FLAG_PX)
+    };
+}
+
 /**
  * The roster's state word's colour (UI_STYLE meanings): idle in gold, for attention (spotting idle
  * heroes is what a returning player does first); hurt in red; busy in the muted grey.

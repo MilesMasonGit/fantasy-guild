@@ -1,6 +1,6 @@
 /**
  * Every number about **where a hero's job flag sits** on the mat, in one place.
- * The flag is Lucide's `FlagTriangleRight` (`FlagMark`), the same for every hero, in a box of
+ * The flag is Lucide's `FlagTriangleRight` (`FlagMark`), in each hero's colour, in a box of
  * {@link MARKER_ART_PX} Token art pixels. On a Token order it peeks out from behind the top-left
  * corner of the Token's art; on a spot order its pole foot stands on the spot. Flags may overlap
  * freely and never push, nudge or hide each other.

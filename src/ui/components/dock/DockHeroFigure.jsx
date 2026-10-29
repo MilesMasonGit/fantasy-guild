@@ -10,6 +10,7 @@ import { EventBus } from '../../../systems/core/EventBus.js';
 import * as Flags from '../../../systems/board/Flags.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { AnimatedHeroSprite } from '../board/AnimatedHeroSprite.jsx';
+import { FlagMark } from '../board/FlagMark.jsx';
 import { rosterStateOf, flagStatusLine } from '../board/flagText.js';
 import { setRosterHover } from '../board/orderLit.js';
 import { PROBLEM_SPRITE, SEVERITY } from '../board/problemMark.js';
@@ -22,8 +23,8 @@ import { BubbleText } from '../board/BubbleText.jsx';
 import { SpeechFrame } from '../board/SpeechFrame.jsx';
 import { SPEECH_TONE } from '../board/speechTone.js';
 import {
-    DOCK_STRIP_PX, DOCK_LABEL_GAP_PX,
-    dockArtOffset, hpPercent, hpTone, HP_TONE_CLASS, ROSTER_STATE_CLASS
+    DOCK_STRIP_PX, DOCK_LABEL_GAP_PX, ROSTER_FLAG_PX,
+    dockArtOffset, rosterFlagPlace, hpPercent, hpTone, HP_TONE_CLASS, ROSTER_STATE_CLASS
 } from './dockHeroView.js';
 import { ENGINE_EVENTS, ORPHAN_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
 
@@ -46,7 +47,8 @@ export function dockHeroDragPayload(heroId, hero) {
  * The idle sprite the mat uses (`AnimatedHeroSprite`), at the mat's art size, cut off at the
  * waist by the strip's bottom edge. The name, HP bar and state (idle, busy, hurt) sit above the
  * head at the same height for every hero, with the "needs a job" mark beside the name when the
- * hero's Token is gone for good; the art lifts on hover.
+ * hero's Token is gone for good; the art lifts on hover. The hero's job flag, in their colour,
+ * stands at their shoulder (`rosterFlagPlace`), lifting and lit with them on hover.
  * The sprite writes its frames straight to the element (the shared sprite clock), so an idle
  * frame re-renders nothing: not this figure, and not the slot, whose reorder animation would
  * measure its layout again.
@@ -140,6 +142,7 @@ function useDockHero(heroId) {
                 heroSprite: h.heroSprite,
                 classId: h.classId,
                 status: h.status,
+                flagColour: h.flagColour || null,
                 hp: { current: h.hp?.current ?? 0, max: h.hp?.max ?? 100 }
             } : null;
         },
@@ -185,6 +188,7 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
     const tone = hpTone(pct);
 
     const offset = dockArtOffset(artPx, { hovered: lifted });
+    const flagPlace = rosterFlagPlace(artPx);
 
     const sprite = hero.spriteId || hero.classId || null;
     const animArt = sprite ? resolveAnimationPath(sprite) : null;
@@ -241,6 +245,21 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
             {itemCue && (
                 <div data-dock-drop-cue className="absolute inset-x-1 inset-y-0 bg-gi-primary/20 outline-2 outline-solid -outline-offset-2 outline-[var(--color-ui-white)] pointer-events-none" />
             )}
+
+            {/* The hero's flag at their shoulder: behind the art, part of the figure, so hovering it is hovering the hero. */}
+            <div
+                data-dock-flag={heroId}
+                className="absolute pointer-events-none transition-transform duration-200 ease-out"
+                style={{
+                    left: `calc(50% + ${flagPlace.left}px)`,
+                    bottom: flagPlace.bottom,
+                    width: ROSTER_FLAG_PX,
+                    height: ROSTER_FLAG_PX,
+                    transform: `translateY(${offset}px)`
+                }}
+            >
+                <FlagMark size={ROSTER_FLAG_PX} colour={hero.flagColour} outline={lifted ? 'hover' : null} alt="" />
+            </div>
 
             {/**
              * The art window: bottom-anchored on the strip's edge and one art tall, clipping

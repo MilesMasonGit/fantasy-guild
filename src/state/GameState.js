@@ -41,7 +41,7 @@ class GameStateClass {
     async _rehydrateAll() {
         if (!this.state) return;
 
-        // ⚠️ Keep these two imports dynamic: HeroManager and EquipmentManager
+        // ⚠️ Keep these imports dynamic: HeroManager and EquipmentManager
         // (through the modules they import) import this one back, and static
         // imports re-form the import cycle `npm run cycles` guards.
         const HM = await import('../systems/hero/HeroManager.js');
@@ -50,6 +50,9 @@ class GameStateClass {
             HM.rehydrateHero(hero);
             EM.recalculateEquipmentModifiers(hero);
         });
+        // A save from before heroes held a colour from the start: each gets one, in roster order.
+        const { assignFlagColours } = await import('../systems/board/FlagColours.js');
+        assignFlagColours();
 
         if (!this.state.quests) {
             this.state.quests = {

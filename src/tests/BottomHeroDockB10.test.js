@@ -23,8 +23,10 @@ import { hallCameraSides } from './fixtures/hallCameraSides.js';
 import { BankHeroPanel } from '../ui/components/dock/BankHeroPanel.jsx';
 import { dockHeroDragPayload } from '../ui/components/dock/DockHeroFigure.jsx';
 import {
-    DOCK_STRIP_PX, dockArtPx, dockArtOffset, hpPercent, hpTone, ROSTER_STATE_CLASS
+    DOCK_STRIP_PX, dockArtPx, dockArtOffset, hpPercent, hpTone, ROSTER_STATE_CLASS,
+    ROSTER_FLAG_PX, rosterFlagPlace
 } from '../ui/components/dock/dockHeroView.js';
+import { flagFill } from '../systems/board/FlagColours.js';
 import { setLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
 import { drawnPoint } from './fixtures/drawnPoint.js';
 
@@ -237,5 +239,59 @@ describe('B10 horizontal hero dock', () => {
         fireEvent.mouseEnter(face);
         expect(document.body.querySelector('[data-top-bar-tip]').textContent).toContain('43 / 100 HP');
         fireEvent.mouseLeave(face);
+    });
+});
+
+/** Each hero on the roster carries their job flag, in their own colour, at their shoulder. */
+describe('the hero bar shows each hero’s flag', () => {
+    const flagOf = (view, id) => figure(view, id).querySelector(`[data-dock-flag="${id}"]`);
+    const fillOf = (el) => { const svgs = el.querySelectorAll('[data-flag-mark] svg'); return svgs[svgs.length - 1].getAttribute('fill'); };
+
+    it('each hero’s flag is in their own colour, 24 px, inside their figure', () => {
+        GameState.state.heroes[0].flagColour = 'reddark';
+        GameState.state.heroes[1].flagColour = 'bluelite';
+        const view = mount();
+        for (const [id, colour] of [['h1', 'reddark'], ['h2', 'bluelite']]) {
+            const flag = flagOf(view, id);
+            expect(flag).not.toBeNull();
+            expect(flag.style.width).toBe(`${ROSTER_FLAG_PX}px`);
+            expect(flag.querySelector('[data-flag-mark]').getAttribute('data-flag-colour')).toBe(colour);
+            expect(fillOf(flag)).toBe(flagFill(colour));
+        }
+        // A hero with no colour carries the pale flag.
+        expect(fillOf(flagOf(view, 'h3'))).toBe(flagFill(null));
+    });
+
+    it('stands at the shoulder: beside the head, below the name, HP bar and state word', () => {
+        const view = mount();
+        const flag = flagOf(view, 'h1');
+        const place = rosterFlagPlace(128);
+        expect(flag.style.left).toBe(`calc(50% + ${place.left}px)`);
+        expect(parseFloat(flag.style.bottom)).toBe(place.bottom);
+        // Its top is below the labels' bottom edge, and inside the strip.
+        expect(place.bottom + ROSTER_FLAG_PX).toBeLessThanOrEqual(parseFloat(labelOf(figure(view, 'h1')).style.bottom));
+        expect(place.bottom).toBeGreaterThanOrEqual(0);
+        expect(place.bottom + ROSTER_FLAG_PX).toBeLessThanOrEqual(DOCK_STRIP_PX);
+        expect(flag.className).toContain('pointer-events-none');
+    });
+
+    it('lifts and lights with the hero on hover', () => {
+        const view = mount();
+        const fig = figure(view, 'h1');
+        const flag = flagOf(view, 'h1');
+        expect(flag.querySelector('[data-flag-mark]').getAttribute('data-sprite-outline')).toBeNull();
+        fireEvent.mouseEnter(fig);
+        expect(flag.style.transform).toBe(`translateY(${dockArtOffset(128, { hovered: true })}px)`);
+        expect(flag.querySelector('[data-flag-mark]').getAttribute('data-sprite-outline')).toBe('hover');
+        fireEvent.mouseLeave(fig);
+        expect(flag.style.transform).toBe('translateY(0px)');
+    });
+
+    it('a colour change repaints the hero’s flag on the bar', async () => {
+        GameState.state.heroes[0].flagColour = 'reddark';
+        const view = mount();
+        GameState.state.heroes[0].flagColour = 'yelpur';
+        await act(async () => { EventBus.publish('heroes_updated', {}); await Promise.resolve(); });
+        expect(fillOf(flagOf(view, 'h1'))).toBe(flagFill('yelpur'));
     });
 });

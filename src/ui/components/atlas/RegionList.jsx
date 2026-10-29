@@ -106,6 +106,7 @@ const FlavourName = ({ region, draft, setDraft, onMessage }) => {
     );
 };
 
+// The guild's mark, not one hero's: the pale base flag.
 const HereFlag = () => (
     <span data-region-here title={SCREEN_TEXT.HERE} className="relative shrink-0 block leading-none">
         <FlagMark size={HERE_FLAG_PX} alt={SCREEN_TEXT.HERE} />

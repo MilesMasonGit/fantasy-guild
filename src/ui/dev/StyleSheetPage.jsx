@@ -46,6 +46,7 @@ import { WorkPlateDemo } from './WorkPlateDemo.jsx';
 import { CombatKit } from './CombatKit.jsx';
 import { KitButton, KIT_BUTTON_TONE, PixelToggle } from '../components/base/KitButton.jsx';
 import { FlagMark } from '../components/board/FlagMark.jsx';
+import { FLAG_COLOURS, FLAG_COLOUR_LABELS } from '../../systems/board/FlagColours.js';
 import { MARKER_ART_PX, markerCornerOffset } from '../components/board/flagGeometry.js';
 import { useCornerShare } from '../components/board/markerCorner.js';
 import { tokenSpritePath } from '../../config/registries/tokenRegistry.js';
@@ -468,6 +469,14 @@ const JobFlagDemo = () => (
             <FlagOnToken scale={2} lit />
             <span className="ui-text-body text-white/80">hero hovered</span>
         </div>
+        <div data-job-flag-colours className="flex items-end gap-2">
+            {FLAG_COLOURS.map(colour => (
+                <div key={colour} className="flex flex-col items-center gap-1">
+                    <FlagMark size={MARKER_ART_PX * 2} colour={colour} />
+                    <span className="ui-text-small text-white/80">{FLAG_COLOUR_LABELS[colour]}</span>
+                </div>
+            ))}
+        </div>
     </div>
 );
 
@@ -819,8 +828,8 @@ export const KIT_SECTIONS = [
     },
     {
         id: 'job-marker', title: 'Job flag', status: 'shared',
-        source: 'FlagMark: the mat (FlagLayer), the drag ghost, the hero panel, the Atlas’s you-are-here mark',
-        rule: 'The owner’s pick (2026-10-29). What marks the Token a hero is ordered onto, the same for every hero: Lucide’s FlagTriangleRight, a meta mark, pale bone with a dark edge, in a box of 12 Token art pixels (24 px at the mat’s usual size) with room for the white line it gets when its hero is hovered. On a Token it peeks out from behind the top-left corner of the Token’s art, two art pixels past where that sprite’s own art begins; on a spot its pole foot stands on the spot. The same flag in the hand while carried (its foot on the pointer), in the hero panel and on the Atlas.',
+        source: 'FlagMark + FlagColours.js: the mat (FlagLayer), the drag ghost, the hero panel, the hero bar (DockHeroFigure), Edit Hero, the Atlas’s you-are-here mark',
+        rule: 'The owner’s pick (2026-10-29). What marks the Token a hero is ordered onto: Lucide’s FlagTriangleRight, a meta mark, filled with the hero’s own flag colour (one of eight, picked in Edit Hero; pale bone for none, and for the Atlas’s you-are-here mark, which is the guild’s) with a dark edge, in a box of 12 Token art pixels (24 px at the mat’s usual size) with room for the white line it gets when its hero is hovered. On a Token it peeks out from behind the top-left corner of the Token’s art, two art pixels past where that sprite’s own art begins; on a spot its pole foot stands on the spot. The same flag in the hand while carried (its foot on the pointer), in the hero panel, at the hero’s shoulder on the hero bar (24 px), and on the Atlas.',
         Demo: JobFlagDemo
     },
     {

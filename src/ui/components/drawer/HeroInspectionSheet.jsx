@@ -51,6 +51,7 @@ export const HeroInspectionSheet = memo(function HeroInspectionSheet({ heroId, o
             return JSON.stringify({
                 name: h.name, jobId: h.jobId || null, className: h.className || null,
                 spriteId: h.spriteId || null, icon: h.icon || null, classId: h.classId || null,
+                flagColour: h.flagColour || null,
                 hp: Math.max(0, Math.round(h.hp?.current ?? 0)), hpMax: Math.max(1, h.hp?.max ?? 100),
                 skills: Object.fromEntries(Object.entries(h.skills || {}).map(([id, s]) => [id, { level: s?.level, xp: s?.xp }])),
                 bankedSkills: Object.fromEntries(Object.entries(h.bankedSkills || {}).map(([id, s]) => [id, { level: s?.level, xp: s?.xp }]))
@@ -190,7 +191,7 @@ const HeroFigure = ({ hero, heroId, size }) => {
                 className="absolute"
                 style={{ left: `calc(50% + ${Math.round(size * 0.12)}px)`, top: Math.round(size * 0.04), width: flagPx, height: flagPx }}
             >
-                <FlagMark size={flagPx} alt="" />
+                <FlagMark size={flagPx} colour={hero.flagColour} alt="" />
             </div>
             <div
                 data-hero-panel-figure
