@@ -29,9 +29,6 @@ export const GLIDING_RINGS = Object.freeze(new Set(['charges']));
 /** The stroke a greyed ring (a blocked cycle) is drawn in. */
 export const RING_GREY = '#8a8a8a';
 
-/** How much further down a small Token's name sits, so it clears a plate placed as under a full-size Token. */
-export const SMALL_OVERHANG_U = RING_D_U * 0.75;
-
 /**
  * The cycle ring's number: whole seconds left, rounded up, never below 1s
  * while the cycle is still running (it reads `3s`, `2s`, `1s`).

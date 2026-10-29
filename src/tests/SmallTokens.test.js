@@ -22,8 +22,7 @@ import {
 } from '../ui/components/base/TokenSprite.jsx';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { MatFitProvider } from '../ui/components/board/MatFitContext.jsx';
-import { SMALL_OVERHANG_U } from '../ui/components/board/ringRow.js';
-import { PLATE, plateUnit, plateNameDrop } from '../ui/components/board/workPlate.js';
+import { PLATE, plateUnit, plateFootOf } from '../ui/components/board/workPlate.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 import { drawnPoint } from './fixtures/drawnPoint.js';
 import { restHover } from './fixtures/hoverRest.js';
@@ -246,7 +245,7 @@ describe('on the mat (MatBoard)', () => {
         expect(parseFloat(big.querySelector('img').style.width)).toBe(128);
     });
 
-    it('⭐ a small Token, hovered, gets the full-size plate under it, centred, its name below the plate', () => {
+    it('⭐ a small Token, hovered, gets the full-size plate under it, centred, its name just above the plate, under the small art', () => {
         vi.useFakeTimers();
         const spawner = put('b8_small_spawner', { x: 600, y: 500 });
         put('b8_standard', { x: 1200, y: 500 });
@@ -267,8 +266,11 @@ describe('on the mat (MatBoard)', () => {
         expect(parseFloat(plate.style.height)).toBe(PLATE.H * plateUnit(1));
         const slot = container.querySelector(`[data-idle-plate-slot="${spawner.id}"]`);
         expect(parseFloat(slot.style.left) + parseFloat(slot.style.width) / 2).toBe(600);
-        // The name steps down past it: the small Token's overhang plus the plate.
+        // The name's bottom on the plate's top, which for a small Token is below its art.
         const name = o.querySelector('[data-token-name]');
-        expect(name.style.top).toBe(`calc(100% + ${4 + SMALL_OVERHANG_U + plateNameDrop(1)}px)`);
+        const foot = spawner.y - 32 + parseFloat(name.style.height);
+        expect(foot).toBe(parseFloat(slot.style.top));
+        expect(foot).toBe(spawner.y + plateFootOf(spawner.typeId, 1));
+        expect(foot).toBeGreaterThan(spawner.y + 32);
     });
 });

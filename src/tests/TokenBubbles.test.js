@@ -22,7 +22,7 @@ import {
     cycleSecondsText, chargesFraction, ringCount, RING_D_U, RING_STROKE_U, GLIDING_RINGS, TURN_COUNTDOWN_REFRESH_MS
 } from '../ui/components/board/ringRow.js';
 import { WorkBarFill } from '../ui/components/board/WorkPlateLayer.jsx';
-import { PLATE, CELL } from '../ui/components/board/workPlate.js';
+import { PLATE, CELL, plateFootOf, platePlace } from '../ui/components/board/workPlate.js';
 import { IDLE_TIPS, idlePlateCells, timerCellOf } from '../ui/components/board/idlePlate.js';
 import { MAT_Z } from '../ui/components/board/matLayers.js';
 import { CHARGE_FLOATERS } from '../ui/components/board/TokenBadges.jsx';
@@ -516,12 +516,12 @@ describe('the middle row', () => {
     });
 });
 
-describe('⭐ a choice waiting: hovered, its \'!\' becomes the 2x gear in the same spot', () => {
+describe('⭐ a choice waiting: the pointer on the Token, its mark becomes the gear in the same spot, at the mark size', () => {
     const unset = (extra = {}) => ({ show: true, pulsing: true, recipe: null, onClick: vi.fn(), ...extra });
     const middle = (c) => c.querySelector('[data-bubble-row="middle"]');
     const gearIn = (c) => c.querySelector('[data-gear-in-mark]');
 
-    it('⭐ an unset station and a Foundation: the mark at rest, the gear in its place on hover, the mark again after', () => {
+    it('⭐ an unset station and a Foundation: the mark at rest, the gear in its place the moment the pointer is on it, the mark again after', () => {
         for (const [gear, kind] of [[unset(), ALERT.CHOOSE_RECIPE], [unset({ isFoundation: true }), ALERT.CHOOSE_BUILD]]) {
             const { container, rerender } = mount(bub({ token: worked({ heroId: null }), gear, artUnit: 2 }));
             const row = middle(container);
@@ -529,7 +529,8 @@ describe('⭐ a choice waiting: hovered, its \'!\' becomes the 2x gear in the sa
             expect(mark(container).getAttribute('data-problem-mark')).toBe(kind);
             expect(gearIn(container)).toBeNull();
 
-            rerender(tree(bub({ token: worked({ heroId: null }), gear, artUnit: 2, isHovered: true })));
+            // The bare hover, not the rest: the swap does not wait.
+            rerender(tree(bub({ token: worked({ heroId: null }), gear, artUnit: 2, pointerOn: true })));
             // The same row, unmoved, with the gear where the mark was and no '!' and no second gear.
             expect(middle(container)).toBe(row);
             expect(row.getAttribute('style')).toBe(rowStyle);
@@ -538,11 +539,11 @@ describe('⭐ a choice waiting: hovered, its \'!\' becomes the 2x gear in the sa
             expect(gearIn(container).getAttribute('data-gear-in-mark')).toBe(kind);
             expect(container.querySelector('[data-bubble-row="hover"]')).toBeNull();
             expect(container.querySelectorAll('[data-station-gear]')).toHaveLength(1);
-            // Drawn at its 32px sprite's 2x: 64.
+            // Drawn the mark's size: its 16 art pixels at the Token's art pixel, 32.
             const button = gearIn(container).querySelector('button');
-            expect(button.getAttribute('data-gear-px')).toBe('64');
-            expect(button.style.width).toBe('64px');
-            expect(button.querySelector('img').style.width).toBe('64px');
+            expect(button.getAttribute('data-gear-px')).toBe('32');
+            expect(button.style.width).toBe('32px');
+            expect(button.querySelector('img').style.width).toBe('32px');
             // Its click opens the picker, as the mark's did.
             fireEvent.click(button);
             expect(gear.onClick).toHaveBeenCalledTimes(1);
@@ -556,7 +557,17 @@ describe('⭐ a choice waiting: hovered, its \'!\' becomes the 2x gear in the sa
 
     it('the gear follows the Token’s art-pixel size, as the mark does', () => {
         const { container } = mount(bub({ token: worked({ heroId: null }), gear: unset(), artUnit: 3, isHovered: true }));
-        expect(gearIn(container).querySelector('button').getAttribute('data-gear-px')).toBe('96');
+        expect(gearIn(container).querySelector('button').getAttribute('data-gear-px')).toBe('48');
+    });
+
+    it('a chosen recipe gear, in its hover row, is the same size as the gear in a mark', () => {
+        const chosen = { show: true, pulsing: false, recipe: { name: 'R' }, onClick: vi.fn() };
+        for (const artUnit of [2, 3]) {
+            const { container } = mount(bub({ token: worked({ heroId: null }), gear: chosen, artUnit, isHovered: true }));
+            const button = container.querySelector('[data-bubble-row="hover"] [data-station-gear] button');
+            expect(button.getAttribute('data-gear-px')).toBe(String(16 * artUnit));
+            cleanup();
+        }
     });
 
     it('⭐ waiting on items or room, or a can’t: the \'!\' stays on hover, and a chosen recipe’s gear stays in its own row', () => {
@@ -804,6 +815,14 @@ describe('on the mat (MatToken)', () => {
         return instance;
     }
 
+    /** Where a Token's name's bottom stands, in mat units: its box's top plus the name's height. */
+    function nameFoot(container, tok) {
+        const o = container.querySelector(`[data-token-overlay="${tok.id}"]`);
+        const name = o.querySelector('[data-token-name]');
+        expect(name.style.top).toBe('0px');
+        return tok.y - parseFloat(o.style.width) / 2 + parseFloat(name.style.height);
+    }
+
     function hover(container, tok) {
         const root = container.querySelector('[data-mat-board]');
         root.getBoundingClientRect = () => ({
@@ -813,7 +832,7 @@ describe('on the mat (MatToken)', () => {
         restHover();
     }
 
-    it('⭐ a spawner at 3 of 5: nothing at rest; hovered, its 3/5 on a plate under it, over the loot, the name below the plate', () => {
+    it('⭐ a spawner at 3 of 5: nothing at rest; hovered, its 3/5 on a plate under it, over the loot, the name just above the plate', () => {
         vi.useFakeTimers();
         const forest = put('fixture_b13_forest');
         put('fixture_b13_sapling', { x: 1200, y: 520 });
@@ -834,10 +853,8 @@ describe('on the mat (MatToken)', () => {
         const slot = host.querySelector('[data-idle-plate-slot]');
         expect(parseFloat(slot.style.left) + parseFloat(slot.style.width) / 2).toBe(forest.x);
         expect(parseFloat(slot.style.top)).toBeGreaterThan(forest.y);
-        // The name sits under the box, dropped past the plate.
-        const name = o.querySelector('[data-token-name]');
-        expect(name.style.top).toContain('100%');
-        expect(name.style.top).not.toBe('calc(100% + 4px)');
+        // The name stands on the plate's top: over the Token's foot, not under the plate.
+        expect(nameFoot(container, forest)).toBe(parseFloat(slot.style.top));
     });
 
     it('⭐ a Sapling-like grower shows its growth time on its plate only when hovered', () => {
@@ -852,18 +869,23 @@ describe('on the mat (MatToken)', () => {
         expect(container.querySelector('[data-ring]')).toBeNull();
     });
 
-    it('⭐ the name steps down past the idle plate; with nothing to say, no plate and the name where it was', () => {
+    it('⭐ the name sits over the Token bottom edge, just above the plate, and stays there with or without one', () => {
         vi.useFakeTimers();
         const t = put('fixture_producer');
         const bare = put('fixture_b13_sapling', { x: 1200, y: 520 });
         const { container } = mount(h(MatBoard));
-        const nameTop = (tok) => container.querySelector(`[data-token-overlay="${tok.id}"] [data-token-name]`).style.top;
         hover(container, t);
-        expect(container.querySelector(`[data-idle-plate="${t.id}"]`)).not.toBeNull();
-        expect(nameTop(t)).not.toBe('calc(100% + 4px)');
+        const slot = container.querySelector(`[data-idle-plate-slot="${t.id}"]`);
+        expect(slot).not.toBeNull();
+        // Its bottom on the plate's top, inside the box: over the art's foot, not past the plate.
+        expect(nameFoot(container, t)).toBe(parseFloat(slot.style.top));
+        expect(nameFoot(container, t)).toBe(t.y + plateFootOf(t.typeId, 1));
+        expect(nameFoot(container, t)).toBeLessThan(t.y + 64);
+        // The same line on a work plate: it tucks under the same foot.
+        expect(nameFoot(container, t)).toBe(platePlace({ x: t.x, y: t.y, typeId: t.typeId, fit: 1 }).top);
         hover(container, bare);
         expect(container.querySelector('[data-idle-plate]')).toBeNull();
-        expect(nameTop(bare)).toBe('calc(100% + 4px)');
+        expect(nameFoot(container, bare)).toBe(bare.y + plateFootOf(bare.typeId, 1));
     });
 
     it('⭐ the mark is drawn at the Token’s own art-pixel size', () => {

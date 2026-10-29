@@ -311,6 +311,54 @@ describe('on the mat', () => {
         expect(o.querySelector('[data-problem-mark]')).not.toBeNull();
     });
 
+    it('⭐ the yellow mark becomes the gear the moment the pointer reaches the Token, before the rest brings the name', () => {
+        vi.useFakeTimers();
+        const bench = put('fixture_q2_bench');
+        const f = put('fixture_q2_foundation', FAR);
+        const { container } = mount(h(MatBoard));
+        const root = container.querySelector('[data-mat-board]');
+        root.getBoundingClientRect = () => ({
+            left: 0, top: 0, width: matW(), height: matH(), right: matW(), bottom: matH(), x: 0, y: 0
+        });
+        for (const tok of [bench, f]) {
+            const o = overlay(container, tok.id);
+            expect(o.querySelector('[data-problem-mark]')).not.toBeNull();
+            // Arrived, no time passed: the gear is in the mark's spot; the name still waits.
+            fireEvent.pointerMove(root, { clientX: tok.x, clientY: tok.y });
+            expect(o.querySelector('[data-gear-in-mark]')).not.toBeNull();
+            expect(o.querySelector('[data-problem-mark]')).toBeNull();
+            expect(o.querySelector('[data-token-name]')).toBeNull();
+            const gear = o.querySelector('[data-gear-in-mark]');
+            restHover();
+            // Rested: the same gear, and now the name.
+            expect(o.querySelector('[data-gear-in-mark]')).toBe(gear);
+            expect(o.querySelector('[data-token-name]')).not.toBeNull();
+            // Off it, the mark is back at once.
+            fireEvent.pointerMove(root, { clientX: 40, clientY: 40 });
+            expect(o.querySelector('[data-gear-in-mark]')).toBeNull();
+            expect(o.querySelector('[data-problem-mark]')).not.toBeNull();
+            restHover();
+        }
+    });
+
+    it('⭐ one gear size on every Token: a Foundation, an unset station and a chosen recipe all draw it at the mark size', () => {
+        vi.useFakeTimers();
+        const f = put('fixture_q2_foundation');
+        const unsetBench = put('fixture_q2_bench', FAR);
+        const setBench = put('fixture_q2_bench', { x: 1400, y: 300 });
+        StationRecipe.setSelectedRecipe(setBench, 'fixture_q2_make');
+        const { container } = mount(h(MatBoard));
+        const markPx = parseFloat(overlay(container, f.id).querySelector('[data-problem-mark]').style.width);
+        expect(markPx).toBe(32);
+        const sizes = [];
+        for (const tok of [f, unsetBench, setBench]) {
+            hoverAt(container, tok);
+            const button = overlay(container, tok.id).querySelector('[data-station-gear] button');
+            sizes.push([button.getAttribute('data-gear-px'), button.style.width, button.querySelector('img').style.width]);
+        }
+        expect(sizes).toEqual(Array(3).fill(['32', '32px', '32px']));
+    });
+
     it('FB-7: a chosen recipe keeps the gear, still, shown on hover', () => {
         vi.useFakeTimers();
         const bench = put('fixture_q2_bench');

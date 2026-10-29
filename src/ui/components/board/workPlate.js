@@ -212,12 +212,11 @@ export function plateTip(cell, instanceId, cycle = null) {
  */
 export function platePlace({ x, y, typeId, side = 1, fit = 1, matH = Infinity }) {
     const unit = plateUnit(fit);
-    const artUnit = boardScaleAt(fit);
-    const art = Math.max(tokenSizeFor(TOKEN_SURFACE.BOARD, typeId, artUnit), tokenSizeFor(TOKEN_SURFACE.BOARD, 1, artUnit));
+    const art = plateArtOf(typeId, fit);
     const toward = side === 0 ? 0 : side === -1 ? -1 : 1;
     const seam = x + toward * (artRadiusOf(typeId) + STAND_GAP) / 2;
     const height = (PLATE.H + PLATE.SHADOW) * unit;
-    let top = y + art / 2 - PLATE.TUCK * unit;
+    let top = y + plateFootOf(typeId, fit);
     if (top + height > matH) top = y - art / 2 - height;
     const width = PLATE.SLOT * unit;
     // On whole screen pixels, so the sprites and the pixel font inside stay sharp.
@@ -225,8 +224,23 @@ export function platePlace({ x, y, typeId, side = 1, fit = 1, matH = Infinity })
     return { left: snap(seam - width / 2), top: snap(top), width, unit };
 }
 
+/** The art a plate stands under: the Token's, never less than a full-size Token's. */
+function plateArtOf(typeId, fit) {
+    const artUnit = boardScaleAt(fit);
+    return Math.max(tokenSizeFor(TOKEN_SURFACE.BOARD, typeId, artUnit), tokenSizeFor(TOKEN_SURFACE.BOARD, 1, artUnit));
+}
+
 /**
- * How much further down a name below the Token or its hero goes while their plate shows, in mat
+ * How far below a Token's point its plate's top stands, in mat units: tucked under the art's
+ * foot. A Token's name sits on this line, over the art's bottom edge, so it reads just above the
+ * plate and never moves when the plate comes and goes.
+ */
+export function plateFootOf(typeId, fit = 1) {
+    return plateArtOf(typeId, fit) / 2 - PLATE.TUCK * plateUnit(fit);
+}
+
+/**
+ * How much further down a hero's name below them goes while their plate shows, in mat
  * units: past the plate and its shadow.
  */
 export function plateNameDrop(fit = 1) {

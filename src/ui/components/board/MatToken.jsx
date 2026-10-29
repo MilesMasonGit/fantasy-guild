@@ -24,8 +24,7 @@ import { MAP_MODE, isProtectedFromDemolition } from '../../hooks/useMapMode.js';
 import { useTokenEvent } from './tokenEvents.js';
 import { useTokenDetail } from './useTokenDetail.js';
 import { TokenBubbles } from './TokenBubbles.jsx';
-import { SMALL_OVERHANG_U } from './ringRow.js';
-import { plateNameDrop } from './workPlate.js';
+import { plateFootOf } from './workPlate.js';
 import { TokenNameBadge } from './TokenBadges.jsx';
 import { gearStateOf, isGearOnlyAlert } from './centreAlert.js';
 import { isEnemyDef } from '../../../config/registries/enemyProfile.js';
@@ -128,7 +127,6 @@ export const MatToken = React.memo(function MatToken({
     mapMode = null,
     onModeClick,
     dragging = false,
-    plated = false,
     fightBarHost = null,
     plateHost = null,
     onPress
@@ -337,8 +335,7 @@ export const MatToken = React.memo(function MatToken({
                 : `left ${SLIDE_MS}ms ${SLIDE_EASE}, top ${SLIDE_MS}ms ${SLIDE_EASE}`
     };
     const hidden = dragging;
-    // The idle plate under the rested Token nobody works, when it has something to say; worked out
-    // here, in the same render as the name that steps down past it.
+    // The idle plate under the rested Token nobody works, when it has something to say.
     const timed = !!(detail?.turns || detail?.grows || detail?.ripens || resting);
     const idlePlate = !!plateHost && !staffed && !hidden && !isEnemyDef(def) && (
         (usesRemaining != null && !isGuildHallToken) || !!spawnerPlate || !!questPlate
@@ -599,8 +596,7 @@ export const MatToken = React.memo(function MatToken({
                     name={label}
                     isDragging={hidden}
                     shown={isRested}
-                    below
-                    offset={(small ? SMALL_OVERHANG_U : 0) + (plated || idlePlate ? plateNameDrop(fit) : 0)}
+                    foot={boxHalf + plateFootOf(typeId, fit)}
                 />
 
                 {/**
@@ -613,6 +609,7 @@ export const MatToken = React.memo(function MatToken({
                     instanceId={id}
                     token={isGuildHallToken ? { ...token, usesRemaining: null } : token}
                     isHovered={isRested}
+                    pointerOn={isHovered}
                     isDragging={hidden}
                     boxPx={boxPx}
                     artUnit={artScale}

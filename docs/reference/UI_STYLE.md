@@ -122,8 +122,15 @@ normal text colour; a new meaning needs the owner's OK.
   a red have/need pill, the frame gold (red when it can't go on) and the cycle held grey; with
   neither, the **skill icon**, so every plate keeps one shape.
 - **Resting the pointer** on the hero, the Token or the plate opens the full line: skill, the
-  problem, charges, time to the next one, each with its tooltip. Names drop below it. Pressing it
-  grabs the Token.
+  problem, charges, time to the next one, each with its tooltip. Pressing it grabs the Token.
+- **A Token's name sits over its art's bottom edge**, on the plate's top line, so it reads just
+  above any plate and never moves when one comes or goes (owner, 2026-10-29). A small Token's
+  plate stands where a full-size Token's would, so its name sits under the small art, on the
+  same line. Heroes' names still drop below their plate.
+- **One gear size on a Token** (owner, 2026-10-29): the gear is drawn the size of the "!" mark
+  (its 16 px sprite at the Token's art pixel), on a Foundation, a station with nothing chosen
+  and a station with a recipe alike. A choice waiting shows the yellow "!" at rest; the moment
+  the pointer reaches the Token, the "!" becomes the gear in its spot, with no rest delay.
 - **A Token nobody works**, once the pointer rests on it, gets the **same plate under itself**
   (owner 2026-10-27): its problem, charges, the time to its refill, growth, ripening or turn, a
   quest's progress, a spawner's count, as apply; nothing to say, no plate. Its "!" stays on the

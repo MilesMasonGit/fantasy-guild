@@ -109,13 +109,14 @@ export const TokenChargeDeltaFloater = memo(function TokenChargeDeltaFloater({ i
 });
 
 /**
- * TokenNameBadge: a Token's or hero's name once the pointer rests on it (`shown`), centred just
- * below the box (`below`) or just above it, so it never covers a bubble. `offset` moves it further
- * from the box (mat units) past whatever hangs off that edge: a small Token's corner rings, a
+ * TokenNameBadge: a Token's or hero's name once the pointer rests on it (`shown`), centred.
+ * `foot` (mat units down from the box's top) stands the name's bottom on that line: a Token's
+ * name sits over its art's bottom edge, on its plate's top (`plateFootOf`). Otherwise just below
+ * the box (`below`) or just above it, `offset` further out past whatever hangs off that edge: a
  * health bar, a hero's art reaching past its box. Memoised: its Token redraws far more often than
  * any of these change.
  */
-export const TokenNameBadge = memo(function TokenNameBadge({ name, isDragging, shown = false, below = false, offset = 0 }) {
+export const TokenNameBadge = memo(function TokenNameBadge({ name, isDragging, shown = false, below = false, offset = 0, foot = null }) {
     // ⚠️ Not drawn at all until shown, never drawn hidden: the label's drop shadow is a filter
     // Chrome draws on a layer of its own, and every Token drawn after a hidden label then needed
     // a layer too, drawn soft and a pixel off.
@@ -129,9 +130,11 @@ export const TokenNameBadge = memo(function TokenNameBadge({ name, isDragging, s
             className={cn(
                 "absolute left-0 right-0 z-30 pointer-events-none",
                 "flex justify-center text-center select-none",
-                below ? "items-start" : "items-end"
+                below && foot == null ? "items-start" : "items-end"
             )}
-            style={below ? { top: `calc(100% + ${4 + offset}px)` } : { bottom: `calc(100% + ${4 + offset}px)` }}
+            style={foot != null
+                ? { top: 0, height: foot }
+                : below ? { top: `calc(100% + ${4 + offset}px)` } : { bottom: `calc(100% + ${4 + offset}px)` }}
         >
             <span
                 className="ui-text-small w-max max-w-[240px] shrink-0 font-bold text-white leading-tight tracking-tight px-1 drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.95)]"
@@ -151,13 +154,14 @@ export const TokenNameBadge = memo(function TokenNameBadge({ name, isDragging, s
  * waiting, not broken, and heroes pass it over until the player picks. Once a recipe is chosen
  * it is still, so the player can change it.
  * Hovering previews the selected recipe: outputs first, then what it consumes.
- * `artUnit` draws it at its sprite's own pixels times that, filling its button (the 2x gear that
- * stands in a choice's problem mark on hover); without it, the small 24px gear.
+ * `px` draws it that many mat units across, filling its button: on a Token, every gear is the
+ * problem mark's size (`problemMark.tokenGearPx`). Without it, the small 24px gear (the style sheet).
  */
 // One art pixel of the 32px gear sprite, drawn at 24px in its 28px button (2px inset).
 const GEAR_INSET = 2;
-const GEAR_ART_PX = 24 / 32;
 export const GEAR_SPRITE_PX = 32;
+const GEAR_ART_PX = 24 / GEAR_SPRITE_PX;
+
 const GEAR_OUTLINE_OFFSETS = [[-1, 0], [1, 0], [0, -1], [0, 1]];
 const GEAR_SRC = '/assets/ui/u_gear.png';
 
@@ -175,10 +179,10 @@ const gearOutlineStyle = (dx, dy, inset = GEAR_INSET, artPx = GEAR_ART_PX, size 
     imageRendering: 'pixelated'
 });
 
-export const StationGearBadge = ({ isDragging, recipe, pulsing = false, isFoundation = false, isField = false, onClick, artUnit = null }) => {
+export const StationGearBadge = ({ isDragging, recipe, pulsing = false, isFoundation = false, isField = false, onClick, px = null }) => {
     if (isDragging) return null;
-    const big = artUnit ? GEAR_SPRITE_PX * artUnit : null;
-    const outline = (dx, dy) => (big ? gearOutlineStyle(dx, dy, 0, artUnit, big) : gearOutlineStyle(dx, dy));
+    const big = px || null;
+    const outline = (dx, dy) => (big ? gearOutlineStyle(dx, dy, 0, big / GEAR_SPRITE_PX, big) : gearOutlineStyle(dx, dy));
 
     const outputs = outputSummary(recipe);
     const inputs = inputSummary(recipe);

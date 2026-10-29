@@ -11,9 +11,9 @@ import { HealthBar } from './HealthBar.jsx';
 import { enemyBarPlace } from './healthBar.js';
 import { IdlePlate } from './IdlePlate.jsx';
 import { idlePlateCells } from './idlePlate.js';
-import { TokenChargeDeltaFloater, CHARGE_FLOATERS, StationGearBadge, DisallowBadge, MarkedBadge, GEAR_SPRITE_PX } from './TokenBadges.jsx';
+import { TokenChargeDeltaFloater, CHARGE_FLOATERS, StationGearBadge, DisallowBadge, MarkedBadge } from './TokenBadges.jsx';
 import { ProblemMark } from './ProblemMark.jsx';
-import { problemOf, problemText, PROBLEM_MARK_ART_PX } from './problemMark.js';
+import { problemOf, problemText, PROBLEM_MARK_ART_PX, tokenGearPx } from './problemMark.js';
 import { createWorkBar, shareWorkBar } from './workBar.js';
 import { shareCycle } from './cycleShare.js';
 import { plateUnit } from './workPlate.js';
@@ -55,9 +55,11 @@ const PLATE_POINTER = 'var(--plate-pointer, auto)';
  * corner in mat units) and the bar draws there, over the loot (`FightBarHost`).
  * - **Hovered only**: on a Token nobody works, the idle plate under it (`IdlePlate`, drawn into
  * `plateHost`, which `MatToken` hands over only while it rests there with something to say): its problem, charges, spawner count, quest progress and timer, as apply;
- * and the recipe gear, in a row of its own. A choice waiting (nothing chosen on a station or
- * Foundation) is the exception: hovered, its '!' becomes the gear at its sprite's 2x, in the
- * mark's own spot.
+ * and the recipe gear, in a row of its own. Every gear on a Token is the '!' mark's size.
+ * - **A choice waiting** (nothing chosen on a station or Foundation): its yellow '!' at rest, and
+ * the gear in the mark's own spot the moment the pointer reaches the Token (`pointerOn`, the bare
+ * hover), with no rest: the Token already redraws then for its outline, and the swap trades one
+ * element for another.
  * `isHovered` is the mat's rest (`useHoverRest`), not the bare hover: the pointer has stayed on
  * the Token for a moment, so a sweep across the mat mounts none of these.
  * - While the Token is dragged: nothing.
@@ -71,6 +73,7 @@ export const TokenBubbles = ({
     instanceId = null,
     token = null,
     isHovered = false,
+    pointerOn = false,
     isDragging = false,
     boxPx = 128,
     artUnit = 2,
@@ -198,7 +201,7 @@ export const TokenBubbles = ({
     const barUnit = plateUnit(useMatFit() || 1);
 
     // The idle plate: a Token nobody works (never an enemy), rested on, with something to say
-    // (`MatToken` hands it the host only then, and drops the name past it). The timer counts if
+    // (`MatToken` hands it the host only then; the name stands on its top line). The timer counts if
     // its clock runs as the pointer arrives.
     const hasCharges = usesRemaining != null && !isEnemy;
     const idleOn = !!plateHost && isHovered && !hasHero && !isEnemy && !isDragging;
@@ -221,15 +224,17 @@ export const TokenBubbles = ({
     // The bar's numbers: the fight's, else a full enemy (an enemy nobody fights is whole).
     const barHp = hp ?? (enemyHp ? { cur: enemyHp, max: enemyHp } : null);
     const showHp = (fight || (isHovered && !!enemyHp)) && !!barHp && barHp.max > 0;
-    // A choice waiting: hovered, the gear stands where its '!' was. ⚠️ The hover is the Token's
-    // (its circle, `MatBoard`), not the mark's, so the swap cannot take the hover away.
-    const gearInMark = showProblem && isHovered && !!gear?.show && !marked && CHOOSE_KINDS.has(problem.kind);
+    // A choice waiting: the pointer on the Token, the gear stands where its '!' was, at once.
+    // ⚠️ The hover is the Token's (its circle, `MatBoard`), not the mark's, so the swap cannot take
+    // the hover away; and the gear is the mark's size, so nothing beside it moves.
+    const gearInMark = showProblem && (pointerOn || isHovered) && !!gear?.show && !marked && CHOOSE_KINDS.has(problem.kind);
     const showGear = !!gear?.show && !marked && isHovered && !gearInMark;
     const showRest = showProblem || disallowed || marked;
     // ⚠️ The hover row never shares the marks' row: inserted beside them it would slide the mark
     // out from under the pointer the moment the pointer reached it. With marks showing it sits
     // just above them; alone, at the centre.
-    const restHalf = Math.max(gearInMark ? GEAR_SPRITE_PX * artUnit : PROBLEM_MARK_ART_PX * artUnit, BADGE_U) / 2;
+    const gearPx = tokenGearPx(artUnit);
+    const restHalf = Math.max(gearInMark ? gearPx : PROBLEM_MARK_ART_PX * artUnit, BADGE_U) / 2;
     const hoverRowStyle = showRest
         ? { left: 0, width: boxPx, top: boxPx / 2 - restHalf - ROW_GAP_U, transform: 'translateY(-100%)', gap: ROW_GAP_U }
         : { left: 0, width: boxPx, top: boxPx / 2, transform: 'translateY(-50%)', gap: ROW_GAP_U };
@@ -282,6 +287,7 @@ export const TokenBubbles = ({
                             isFoundation={gear.isFoundation}
                             isField={!!gear.isField}
                             onClick={gear.onClick}
+                            px={gearPx}
                         />
                     </div>
                 </div>
@@ -301,7 +307,7 @@ export const TokenBubbles = ({
                                 isFoundation={gear.isFoundation}
                                 isField={!!gear.isField}
                                 onClick={gear.onClick}
-                                artUnit={artUnit}
+                                px={gearPx}
                             />
                         </div>
                     ) : showProblem && (

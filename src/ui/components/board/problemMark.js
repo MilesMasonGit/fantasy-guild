@@ -49,6 +49,13 @@ export const PROBLEM_SPRITE = Object.freeze({
 /** The mark's art size: its sprite's own pixels, drawn at the Token's art-pixel size. */
 export const PROBLEM_MARK_ART_PX = 16;
 
+/**
+ * Every gear on a Token, in mat units: the mark's own footprint, so the gear that stands in a
+ * choice's '!' and the gear of a station with a recipe are one size, and the swap from the '!'
+ * moves nothing around it.
+ */
+export const tokenGearPx = (artUnit = 2) => PROBLEM_MARK_ART_PX * artUnit;
+
 /** The hover text's colour for each severity (UI_STYLE colours). */
 export const PROBLEM_COLOUR = Object.freeze({
     [SEVERITY.WAITING]: 'var(--color-ui-gold)',

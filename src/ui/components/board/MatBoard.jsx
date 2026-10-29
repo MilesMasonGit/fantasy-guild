@@ -550,7 +550,6 @@ export const MatBoard = React.memo(function MatBoard({
                     mapMode={mapMode}
                     onModeClick={handleModeClick}
                     dragging={carriedId === t.id}
-                    plated={plated.has(t.id)}
                     fightBarHost={fighters.tokens.has(t.id) ? fightBarHost : null}
                     plateHost={rest.tokenId === t.id && !workedBy.has(t.id) ? idlePlateHost : null}
                     onPress={handleTokenPress}
