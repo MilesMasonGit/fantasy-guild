@@ -92,6 +92,16 @@ const PROGRESS_EVERY = 3;
 let carryIn = new Map();
 let carryOut = new Map();
 
+/**
+ * The same leftover by hero id: handed to the cycle the hero starts on the very next tick on
+ * another Token (a camp hero whose tree was just used up moves to the next one), so moving on loses
+ * nothing either, and a catch-up's 1 s steps take the next Token at the same moment many small live
+ * steps do. Where both a Token's and its hero's leftover stand, the later start wins (the smaller
+ * leftover: a Token that refilled during the tick is not worked before it refilled).
+ */
+let heroCarryIn = new Map();
+let heroCarryOut = new Map();
+
 // Why the hero on a Token cannot work it (possession, level, then tool) lives in `WorkCheck.heroReason`,
 // shared with the flags that choose which Token to work.
 
@@ -413,6 +423,19 @@ function tickDemolition(instance, def, delta, heroId, publishProgress) {
 }
 
 /**
+ * What a cycle starting now on Token `id`, worked by `heroId`, has already done: the Token's own
+ * leftover, the hero's from the Token they finished on last tick ({@link heroCarryIn}), the later
+ * start of the two when both stand, or nothing. The hero's is spent here.
+ */
+function carryAtStart(id, heroId) {
+    const own = carryIn.get(id);
+    const hero = heroId ? heroCarryIn.get(heroId) : undefined;
+    if (hero !== undefined) heroCarryIn.delete(heroId);
+    if (own !== undefined && hero !== undefined) return Math.min(own, hero);
+    return own ?? hero ?? 0;
+}
+
+/**
  * Advance every Token on the board.
  *
  * @param {number} delta game milliseconds since the last tick
@@ -420,6 +443,8 @@ function tickDemolition(instance, def, delta, heroId, publishProgress) {
 export function tick(delta) {
     [carryIn, carryOut] = [carryOut, carryIn];
     carryOut.clear();
+    [heroCarryIn, heroCarryOut] = [heroCarryOut, heroCarryIn];
+    heroCarryOut.clear();
 
     // Timed changes: Saplings grow, Coasts turn and turn back, on clocks advanced by this tick's
     // `delta`, so a catch-up fast-forwards them with everything else. Before Flags, so a hero
@@ -660,7 +685,7 @@ export function tick(delta) {
         }
 
         // The fast path: everything above is a cheap guard, this is the work.
-        const before = instance.cycleElapsedMs > 0 ? instance.cycleElapsedMs : (carryIn.get(id) || 0);
+        const before = instance.cycleElapsedMs > 0 ? instance.cycleElapsedMs : carryAtStart(id, heroId);
         instance.cycleElapsedMs = before + delta;
 
         // WORK_TIME, widened to the neighbours, then floored twice (`TileModifiers.workTimeOf`).
@@ -677,7 +702,10 @@ export function tick(delta) {
             // full progress (no room, a raced input) and finishes on a retry does not.
             const overshoot = before < cycleTime ? instance.cycleElapsedMs - cycleTime : 0;
             completeCycle(instance, def, io, heroId, config, overshoot);
-            if (overshoot > 0 && instance.cycleElapsedMs === 0) carryOut.set(id, overshoot);
+            if (overshoot > 0 && instance.cycleElapsedMs === 0) {
+                carryOut.set(id, overshoot);
+                if (heroId) heroCarryOut.set(heroId, overshoot);
+            }
         } else if (publishProgress) {
             // Ref-based UI updates only: this bypasses React entirely, because re-rendering every
             // tile several times a second would be a cascade.
