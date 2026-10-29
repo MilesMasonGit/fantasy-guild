@@ -68,12 +68,10 @@ replace map items as the gate to new content, and reshape the Atlas
   copper-and-oak country, the next iron-and-fir, and so on; requirements rise
   with distance. **The cost of every cell rises with its ring distance, so
   there are always affordable options** nearer in (owner).
-- **Connected geography and about 8 landmarks per run** (owner, 2026-10-29):
-  the world is generated as shapes (a mountain chain, a coast, a forest
-  belt), so neighbours make sense. **A landmark is a special cell that opens
-  its tier** (the Smoking Mountain): visible on the horizon from the start,
-  with a bigger requirement and a tougher arrival fight (a boss); settling it
-  is the tier's milestone and opens the next ring around it.
+- **Connected geography** (owner, 2026-10-29): the world is generated as
+  shapes (a mountain chain, a coast, a forest belt), so neighbours make
+  sense. ⚠️ **No landmarks** (owner, later 2026-10-29; see "Tiers across the
+  36 cells"): the ~8 landmarks first proposed here are dropped.
 - **Each ring guarantees its key materials** (owner): the second ring always
   offers iron and fir among its cells. Randomness shapes where and with what,
   never whether. The ledger plans rings as stages and checks the rules.
@@ -89,8 +87,7 @@ replace map items as the gate to new content, and reshape the Atlas
   defeat all the enemies before the region unlocks** (its Tokens brighten and
   can be worked). Combat joins gathering and crafting in expansion.
 - **The encounter is small and fixed** (owner, 2026-10-29): a handful of
-  enemies (3–6) sized to the ring's level, sometimes a boss (always at a
-  landmark); they don't respawn. Clearing takes minutes to an hour, not a
+  enemies (3–6) sized to the ring's level, sometimes a boss; they don't respawn. Clearing takes minutes to an hour, not a
   siege. While the player is away, heroes sent at it keep fighting as long as
   they win; a defeated hero waits at the Hall (hero orders).
 - **Places the guild has left are frozen**, as today (owner): only the active
@@ -152,8 +149,26 @@ balance (worries: lucky or unlucky worlds; skills progressing unevenly).*
 - **The boundary is fixed after ring 3.**
 - **Cells are hexes** (owner): three rings hold 6 + 12 + 18 = 36 cells, enough
   for **all of the game's content** (owner). So tiers share rings (several
-  tiers per ring) rather than one ring per tier; how tiers and the ~8
-  landmarks spread across the 36 cells is open.
+  tiers per ring) rather than one ring per tier (see below).
+
+## Tiers across the 36 cells (owner, 2026-10-29)
+
+- **Wedges from the Hall, by item line** (owner): a wedge per material line,
+  e.g. **an ores wedge** (a player progressing through Mining and Smithing
+  wants its cells), **a wood wedge**, **a fish wedge**, and so on. Not by
+  skill as such: by item tier.
+- **Tier rises outward within a wedge** (owner): ring 1 of each wedge holds its
+  early tiers, ring 3 its late ones.
+- **Each cell holds several materials, mixed across the wedges** (owner): a
+  player wanting both Lobster and Mythril Ore might find a ring-2 or ring-3
+  cell that has both. A wedge sets a cell's main line; its other materials
+  come from other lines.
+- **More cells for later tiers** (owner): early tiers few, later tiers more
+  (they last longer and need more variety).
+- **Every cell's contents are visible from the start** (owner): a player who
+  needs gold sees where it is; discovery comes from arriving.
+- **No landmarks, and nothing special marks a new tier** (owner): the
+  requirements and the new materials are the moment.
 - The other long-run ideas (a new rule per ring, landmark arcs, fewer bigger
   cells outward, deepening places, wonders, the run as chapters) were not
   chosen.
@@ -217,12 +232,12 @@ the player to **make nodes**.*
 
 ## Open
 
-- How many cells per ring, the cell shape, and how a cell's requirements are
-  priced (the simulator and the ledger's stage budgets).
-- How the ledger's stages map onto rings (Starter Camp = the Hall's cell,
-  ring 1 = plane 1, ring 2 = plane 2).
-- Which enemies make up each ring's encounters, and the landmark bosses
-  (content, through the ledger).
+- How a cell's requirements are priced (the simulator and the ledger's stage
+  budgets), and how many wedges and which item lines.
+- How the ledger's stages map onto wedges and rings (Starter Camp = the
+  Hall's cell).
+- Which enemies make up each cell's arrival encounter (content, through the
+  ledger).
 - The tutorial's new ending (the first ring opening) and the Starter Camp as
   the Hall's cell.
 - Theorycraft and alternatives were weighed 2026-10-28
