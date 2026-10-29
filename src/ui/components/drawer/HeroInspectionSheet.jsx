@@ -176,7 +176,7 @@ const HeroFigure = ({ hero, heroId, size }) => {
     const animArt = sprite ? resolveAnimationPath(sprite) : null;
     const staticArt = animArt ? null : resolveSpritePath(sprite || hero.icon || 'hn_recruit_por');
     // The job flag at its size on the mat beside a hero (12 of the hero's 64 art pixels), in the
-    // top-right quarter of the hero's box, flying out to the right.
+    // top-right quarter of the hero's box, clear of their head, above their shoulder.
     const flagPx = Math.round((size * MARKER_ART_PX) / 64);
     return (
         <div
@@ -188,7 +188,7 @@ const HeroFigure = ({ hero, heroId, size }) => {
             <div
                 data-hero-panel-flag
                 className="absolute"
-                style={{ left: '50%', top: 0, width: flagPx, height: flagPx }}
+                style={{ left: `calc(50% + ${Math.round(size * 0.12)}px)`, top: Math.round(size * 0.04), width: flagPx, height: flagPx }}
             >
                 <FlagMark size={flagPx} alt="" />
             </div>
