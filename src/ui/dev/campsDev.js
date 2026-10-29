@@ -19,6 +19,7 @@ import { generateHero } from '../../systems/hero/HeroGenerator.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { getTokenType, registerTokenTypes, tokenStartingUses } from '../../config/registries/tokenRegistry.js';
 import { xpForLevel } from '../../utils/XPCurve.js';
+import { heroMaxHpFromSkills } from '../../utils/CombatFormulas.js';
 
 /**
  * The four camps of the change pack (`token_logging_camp` and the rest), as QA test types: the same
@@ -40,12 +41,16 @@ const SCENE = Object.freeze({
     qa_camp_farmstead: { work: ['token_wild_wheat_patch', 'token_wild_wheat_patch'], tool: 'item_copper_sickle', heroes: 1 }
 });
 
-/** Where each camp stands, from the Hall: the four corners round it. */
+/**
+ * Where each camp stands, from the Hall: left and right above it, the Fishing Hut straight above
+ * it, the Farmstead on the open ground below it: clear of the Starter Camp's mine and of its Goblin
+ * Camp's watch, so no goblin interrupts the look.
+ */
 const OFFSETS = Object.freeze({
     qa_camp_logging: { x: -600, y: -250 },
     qa_camp_mining: { x: 600, y: -250 },
-    qa_camp_fishing: { x: -600, y: 250 },
-    qa_camp_farmstead: { x: 600, y: 250 }
+    qa_camp_fishing: { x: 0, y: -320 },
+    qa_camp_farmstead: { x: 120, y: 300 }
 });
 
 /** Where a camp's work stands round it, in mat units: inside every camp's reach. */
@@ -89,6 +94,19 @@ function qaHero(name, skills, tool = null) {
         EquipmentManager.equipItem(hero.id, tool);
     }
     return hero;
+}
+
+/** A Fighter with every skill at `level`, on the roster. */
+function qaFighter(name, level) {
+    const ranks = GameState.state.progress.guildUpgrades || (GameState.state.progress.guildUpgrades = {});
+    ranks.roster_size = Math.max(ranks.roster_size || 0, (HeroManager.getAllHeroes() || []).length + 1);
+    GuildUpgradeManager.recompute();
+    const hero = generateHero({ jobId: 'fighter', spriteId: 'fighter', name });
+    for (const id of Object.keys(hero.skills || {})) hero.skills[id] = { ...hero.skills[id], level, xp: xpForLevel(level) };
+    const maxHp = heroMaxHpFromSkills(hero.skills);
+    hero.hp = { current: maxHp, max: maxHp };
+    hero.name = name;
+    return HeroManager.addHero(hero) ? hero : null;
 }
 
 /** The QA camps on the mat, by type id. */
@@ -152,24 +170,32 @@ export function sendCampHands() {
 }
 
 /**
- * Below the Hall, a Goblin Camp with one goblin standing, and a QA Hunter (Melee 30, Steak to eat)
- * sent to the camp: they fight the goblin, wait for the next spawn (30 s), and fight that one too.
+ * A QA Hunter (a Fighter at 90 with an Iron Sword, Steak to eat) sent to a Goblin Camp: the one already on the mat nearest the
+ * Hall (a new game's Starter Camp has one), else one placed above the Hall with a goblin standing.
+ * They fight what it spawned, one at a time, wait for its next goblin, and fight that one too.
+ * ⚠️ Using the camp already there matters: Goblin Camps share one cap across the mat (3 goblins a
+ * camp), so a second camp's goblins can fill it and keep this one from spawning.
  * ⚠️ Changes the game.
- * @returns {{ ok: boolean, error?: string }}
+ * @returns {{ ok: boolean, error?: string, name?: string, placed?: boolean }}
  */
 export function huntAtGoblinCamp() {
     if (!getTokenType(GOBLIN_CAMP)) return { ok: false, error: 'No Goblin Camp in the content' };
     const c = hallPoint();
-    const camp = put(GOBLIN_CAMP, { x: c.x, y: c.y + 330 }, 320);
-    if (!camp) return { ok: false, error: 'No room below the Guild Hall for a Goblin Camp' };
-    SpawnerSystem.attemptSpawn(camp, getTokenType(GOBLIN_CAMP));
-    const hunter = qaHero('QA Hunter', { melee: 30 });
+    const there = BoardState.tokens().filter(t => t.typeId === GOBLIN_CAMP)
+        .sort((a, b) => Math.hypot(a.x - c.x, a.y - c.y) - Math.hypot(b.x - c.x, b.y - c.y))[0];
+    const camp = there || put(GOBLIN_CAMP, { x: c.x - 120, y: c.y - 330 }, 320);
+    if (!camp) return { ok: false, error: 'No room above the Guild Hall for a Goblin Camp' };
+    if (!BoardState.tokens().some(t => t.tether === camp.id)) SpawnerSystem.attemptSpawn(camp, getTokenType(GOBLIN_CAMP));
+    // Strong enough to beat a goblin well inside the camp's 30 s, so the wait for the next shows.
+    const hunter = qaFighter('QA Hunter', 90);
     if (!hunter) return { ok: false, error: 'The roster would not take another hero' };
-    if (getItem('item_steak')) {
-        InventoryManager.addItem('item_steak', 20);
-        EquipmentManager.equipItem(hunter.id, 'item_steak');
+    const sword = getItem('item_iron_sword') ? 'item_iron_sword' : 'item_copper_sword';
+    for (const [itemId, n] of [[sword, 1], ['item_steak', 20]]) {
+        if (!getItem(itemId)) continue;
+        InventoryManager.addItem(itemId, n);
+        EquipmentManager.equipItem(hunter.id, itemId);
     }
     const r = Orders.orderAt(hunter.id, { x: camp.x, y: camp.y });
     EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'dev_camps' });
-    return r.success ? { ok: true, name: hunter.name } : { ok: false, error: r.reason };
+    return r.success ? { ok: true, name: hunter.name, placed: !there } : { ok: false, error: r.reason };
 }

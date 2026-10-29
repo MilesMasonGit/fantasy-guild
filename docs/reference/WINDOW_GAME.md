@@ -23,7 +23,7 @@ see [`TESTING.md`](TESTING.md), "Running the game for verification".)
   can't reach; prefer the dev panel or a QA fixture save for anything the
   owner will look at.
 
-## The entries (32)
+## The entries (33)
 
 | Entry | What it is | Reached for most |
 |---|---|---|
@@ -47,6 +47,7 @@ see [`TESTING.md`](TESTING.md), "Running the game for verification".)
 | `BoardCombat` | fights on the mat | `getFight(...)`, `fightOfHero(heroId)`, `endFight(...)` |
 | `BoardPromotion` | promotion Tokens | `getOffer`, `accept`, `decline` |
 | `Orders` | the player's orders: a hero dropped on the mat | `orderAt(heroId, point)`, `sendHome`, `canOrderOnto`, `jobTokenOf` |
+| `Camps` | camps: what a camp hands the heroes sent to it | `campOf(def)`, `campWork(camp)`, `isEnemyCamp(instance)`, `reachRingOf(instance)`, `campOfHero(heroId)` |
 | `Flags` | heroes' orders, saved as flag records, and the dormant area flags | `orderToken`, `orderSpot`, `sendHome`, `statusOf`, `waitingOf`, `plant` (area flags, tests only) |
 | `FlagRules` | the retired work rules (dormant, read only by area flags) | `ruleOf` |
 | `Demolition` | taking Tokens down | `canDemolish`, `mark`, `unmark`, `markedTokens()` |

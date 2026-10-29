@@ -188,3 +188,10 @@ swapping a picture in for one is a small code change.
 | Piece | Status | Notes |
 |---|---|---|
 | "Needs a job" mark | **NEW** | Over the head of a hero whose ordered Token is gone for good, and beside their name on the hero bar. Placeholder: the yellow problem "!" (`u_alert_yellow.png`), 16 × 16 at the hero's art scale |
+
+## 7. Camps (brief 260 O2)
+
+| Piece | Status | Notes |
+|---|---|---|
+| Logging Camp, Mining Camp, Fishing Hut, Farmstead | **NEW** | One Token sprite each (64 px, a size-1 Token). Placeholders in the camps change pack: the unused Sawmill (`t_sawmill`), the unused iron mineshaft (`t_mineshaft_iron`), the Shrimp Market's fish stall (`t_market_fish`, 128 px) and the Windmill (`t_windmill`) |
+| Reach icon | **NEW** | The card's line for a camp ("Forestry · 360 u"), 8 × 8 at 2× like the other card icons; placeholder drawn in code (a ring round a dot, `PixelGlyph` `reach`) |

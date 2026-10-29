@@ -22,7 +22,7 @@ export function CampsDevSection() {
                         const r = placeCamps();
                         const note = r.short?.length ? ` Short of room: ${r.short.join(', ')}.` : '';
                         setStatus(r.ok
-                            ? `Placed: ${r.placed.join(', ') || 'nothing new'}. Round the Hall: a Logging Camp with three Oak Trees, a Mining Camp with two Copper Veins, a Fishing Hut by a River, a Farmstead with two ripe Wild Wheat Patches. Their hands wait at the Hall, tools in hand: drag one onto a camp, or Send them. Hover a camp for its reach.${note}`
+                            ? `Placed: ${r.placed.join(', ') || 'nothing new'}. Round the Hall: a Logging Camp with three Oak Trees (top left), a Mining Camp with two Copper Veins (top right), a Fishing Hut by a River (above the Hall), a Farmstead with two ripe Wild Wheat Patches (below the Hall). Their hands wait at the Hall, tools in hand: drag one onto a camp, or Send them. Hover a camp for its reach.${note}`
                             : r.error);
                     }}
                 >
@@ -46,11 +46,11 @@ export function CampsDevSection() {
                     onClick={() => {
                         const r = huntAtGoblinCamp();
                         setStatus(r.ok
-                            ? `Below the Hall: a Goblin Camp with a goblin standing; ${r.name} is sent to the camp. They fight it, wait for the next goblin (about 30 s), and fight that one too.`
+                            ? `${r.name} is sent to ${r.placed ? 'a new Goblin Camp above the Hall' : 'the Goblin Camp already on the mat'}. They fight its goblins one at a time, wait for the next (about 30 s after the camp has room), and fight that one too.`
                             : r.error);
                     }}
                 >
-                    Hunt at a Goblin Camp (a hunter sent to the camp)
+                    Hunt at the Goblin Camp (a hunter sent to the camp)
                 </button>
             </div>
             {status && <div className="ui-text-body text-gi-muted" data-qa-camps-status>{status}</div>}

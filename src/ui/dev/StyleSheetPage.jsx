@@ -31,6 +31,7 @@ import { SEVERITY, PROBLEM_SPRITE } from '../components/board/problemMark.js';
 import { ROSTER_STATE_CLASS } from '../components/dock/dockHeroView.js';
 import { ALERT } from '../../systems/board/boardEvents.js';
 import { PixelGlyph, GLYPHS, SLOT_GLYPHS } from '../components/base/PixelGlyph.jsx';
+import { pixelRingPath } from '../components/board/pixelRing.js';
 import { itemTintStyle } from '../components/base/itemTint.js';
 import { ItemTipContent } from '../components/drawer/ItemTip.jsx';
 import { TokenCard } from '../components/board/TokenCard.jsx';
@@ -413,6 +414,23 @@ const HeroOrdersDemo = () => (
     </div>
 );
 
+/** A camp's reach ring, as the mat draws it: one art pixel of gold over a black copy one art pixel down-right. */
+const CampRingDemo = () => {
+    const scale = 2;
+    const r = 30;
+    const d = pixelRingPath(r);
+    const size = (2 * r + 4) * scale;
+    const at = (r + 1) * scale;
+    return (
+        <div className="px-4 py-3" style={{ background: '#4a6b34' }}>
+            <svg width={size} height={size} shapeRendering="crispEdges">
+                <path d={d} transform={`translate(${at + scale} ${at + scale}) scale(${scale})`} fill="#000" />
+                <path d={d} transform={`translate(${at} ${at}) scale(${scale})`} fill="var(--color-gi-gold)" />
+            </svg>
+        </div>
+    );
+};
+
 /** The card's small icons, code-drawn placeholders at 2×. */
 const CardIconsDemo = () => (
     <div className="flex items-end gap-4 text-gi-text">
@@ -725,6 +743,12 @@ export const KIT_SECTIONS = [
         source: 'DockHeroFigure (the hero bar), MatHero (the mark), orderLit.js + MatToken (the outlines)',
         rule: 'New, unapproved (brief 260 O1). The hero bar says what each hero is doing in one word under the name: Idle in gold (attention: a hero to send somewhere), Busy in muted grey, Hurt in red; hover for the full line. A hero whose ordered Token is gone for good wears the yellow “!” over their head and beside their name (placeholder: the problem mark’s sprite). While a hero is carried, every Token they could work wears the green outline (ready); hovering a hero, or their figure on the hero bar, gives their job the white outline. No glows.',
         Demo: HeroOrdersDemo
+    },
+    {
+        id: 'camp-ring', title: 'Camp reach ring', status: 'unapproved',
+        source: 'CampReachRing (the mat), pixelRing.js',
+        rule: 'New, unapproved (brief 260 O2). The reach of a camp, shown while the pointer rests on the camp, on a hero working from it (on the mat, their Token or their figure on the hero bar) or while their sheet is open: the old flag ring’s look, one art pixel of gold over a hard black copy, centred on the camp. An enemy camp’s ring is where its enemies roam. The card’s line for a camp uses the new reach icon (Card icons).',
+        Demo: CampRingDemo
     },
     {
         id: 'xp-bar', title: 'XP bar', status: 'unapproved', source: 'none shared',

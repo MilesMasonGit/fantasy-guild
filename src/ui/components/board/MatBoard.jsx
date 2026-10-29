@@ -398,26 +398,6 @@ export const MatBoard = React.memo(function MatBoard({
         return at ? { x: at.x, y: at.y } : null;
     }, [rest.tokenId, tokens]);
 
-    /**
-     * A camp's reach ring: the camp the pointer rests on, else the camp the lit hero (hovered, or
-     * their sheet open) works from. Not while the camp itself is carried.
-     */
-    const campRing = useMemo(() => {
-        const rested = rest.tokenId && rest.tokenId !== carriedId ? BoardState.getTokenById(rest.tokenId) : null;
-        let camp = rested && Camps.isCampLike(rested) ? rested : null;
-        if (!camp) {
-            const heroId = litHeroId || inspectedHeroId;
-            const jobId = heroId ? heroes.find(h => h.heroId === heroId)?.jobId : null;
-            const job = jobId && jobId !== carriedId ? BoardState.getTokenById(jobId) : null;
-            camp = job && Camps.isCampLike(job) ? job : null;
-        }
-        const ring = camp ? Camps.reachRingOf(camp) : null;
-        return ring ? { campId: camp.id, ...ring } : null;
-    }, [rest.tokenId, carriedId, litHeroId, inspectedHeroId, heroes, tokens]);
-    // Keyed by value, so a hero's walking step does not redraw the ring.
-    const campRingKey = campRing ? `${campRing.campId}|${campRing.x}|${campRing.y}|${campRing.r}` : '';
-    const campRingShown = useMemo(() => campRing, [campRingKey]); // eslint-disable-line react-hooks/exhaustive-deps
-
     /** A work plate for each hero at work, not in a fight, its Token not in the hand. */
     const plates = useMemo(() => {
         const byId = new Map(tokens.map(t => [t.id, t]));
@@ -460,6 +440,28 @@ export const MatBoard = React.memo(function MatBoard({
         for (const h of heroes) if (h.tokenId) out.set(h.tokenId, h.heroId);
         return out;
     }, [heroes]);
+
+    /**
+     * A camp's reach ring: the camp the pointer rests on; else the camp of the hero the pointer
+     * rests on (or the hero working the Token it rests on, who is outlined as hovered too), or of
+     * the lit hero (hovered on their roster tab, or their sheet open). Not while the camp itself is
+     * carried.
+     */
+    const campRing = useMemo(() => {
+        const rested = rest.tokenId && rest.tokenId !== carriedId ? BoardState.getTokenById(rest.tokenId) : null;
+        let camp = rested && Camps.isCampLike(rested) ? rested : null;
+        if (!camp) {
+            const heroId = rest.heroId || (rest.tokenId ? workedBy.get(rest.tokenId) : null) || litHeroId || inspectedHeroId;
+            const jobId = heroId ? heroes.find(h => h.heroId === heroId)?.jobId : null;
+            const job = jobId && jobId !== carriedId ? BoardState.getTokenById(jobId) : null;
+            camp = job && Camps.isCampLike(job) ? job : null;
+        }
+        const ring = camp ? Camps.reachRingOf(camp) : null;
+        return ring ? { campId: camp.id, ...ring } : null;
+    }, [rest.tokenId, rest.heroId, carriedId, litHeroId, inspectedHeroId, heroes, tokens, workedBy]);
+    // Keyed by value, so a hero's walking step does not redraw the ring.
+    const campRingKey = campRing ? `${campRing.campId}|${campRing.x}|${campRing.y}|${campRing.r}` : '';
+    const campRingShown = useMemo(() => campRing, [campRingKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
     /**
      * Who is in front of whom: Tokens and flags sorted together; a worked Token, with its
