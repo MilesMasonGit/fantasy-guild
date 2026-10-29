@@ -20,19 +20,19 @@ Shots of each state (taken by the builders, small): `docs/active/eyecheck/shots/
    Goblin Camp (its count, e.g. 3/3). A Token with nothing to say (a plain
    tree at full charges still says its charges; a decoration says nothing)
    shows no plate, only its name.
-   Verdict: ok / change: ___
+   Verdict: ok (owner 2026-10-28, "seems fine", merge)
 
 2. **The worked plate has no output icon** (rules 1 and 4). Put a hero on a
    tree: the plate under the hero shows the cycle fill and the charges, no Oak
    Wood icon. Put a hero on a Furnace that is running fine: its plate shows the
    Smithing/Smelting skill icon. Hover the worked Token: the plate opens to the
    skill, any problem, the charges and the time to the next cycle.
-   Verdict: ok / change: ___
+   Verdict: ok (owner 2026-10-28, "seems fine", merge)
 
 3. **Problems still show at rest** (rule 2). A Furnace out of coal, or a Bare
    tree with no Orchard, keeps its yellow '!' on the Token without hovering;
    hovered, the plate shows the problem too.
-   Verdict: ok / change: ___
+   Verdict: ok (owner 2026-10-28, "seems fine", merge)
 
 4. **A choice waiting on you turns its '!' into the big gear** (P1). Buy a Wood
    Foundation from the Shop and place it: it shows the yellow '!'. Rest the
@@ -40,20 +40,22 @@ Shots of each state (taken by the builders, small): `docs/active/eyecheck/shots/
    pointer across it does not flicker; clicking it opens the build list. The
    same on a Workbench with no recipe chosen. A station waiting on items keeps
    its '!'.
-   Verdict: ok / change: ___
+   Verdict: ok (owner 2026-10-28, "seems fine", merge)
 
 5. **Enemies show name and HP only** (P1). Hover a goblin: its name and HP bar,
    no charges number, no plate.
-   Verdict: ok / change: ___
+   Verdict: ok (owner 2026-10-28, "seems fine", merge)
 
 6. **Every hero's flag is your pennant at 2×** (P2). Look at the flags on the
    mat (each hero the same pennant), drag one to a new spot (the reach ring
    centres on the pole's foot), pin one on a Token. Open a hero's panel (the
    pennant behind the shoulder) and the Atlas's Region list (the "you are
    here" pennant).
-   Verdict: ok / change: ___
+   Verdict: ok (owner 2026-10-28, "seems fine", merge)
 
-## Questions that came up while building (answer here or in chat)
+## Questions that came up while building
+
+*Owner 2026-10-28 approved the batch as it stands: the recommended option (A) holds for a–c; d and e stay as built.*
 
 a. **The pennant jumps a little when you drop it.** While carried it is
    centred on the pointer, so on release it moves about 23 px right and 31 px
