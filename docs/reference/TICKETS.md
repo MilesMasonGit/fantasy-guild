@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-264**
+**Next free number: T-268**
 
 ---
 
@@ -50,6 +50,10 @@ here.
 | T-257 | P1 | done 51600e25 | **A hero pulled out of a fight stays marked as fighting for ever** (found by brief 240 K4, 2026-10-27): letting go of an enemy (`BoardCombat.endFight`) never sets the hero back from `combat`, and regen skips such a hero, so it never heals or eats; old saves may hold such heroes | K4 |
 | T-258 | P2 | open | **Put the tutorial's Old Site step back once the endgame ruins exist** (owner 2026-10-27 removed it, T-259): the concept puts 25 endgame ruins in the Starter Camp; no Token is marked `landmark` yet. When the ruins are authored and placed, restore the inspect step and its lines | K4 |
 | T-259 | P1 | done 9d8d20c5 | **The tutorial: remove the Old Site step; fix the copper-tool step's text** (owner 2026-10-27): the step can never be done (no ruins), which stalls every new game before the first maps; the copper-tool text says Furnace (it is the Copper Smithy) and offers a Sickle no recipe makes | K4 |
+| T-264 | P2 | done 645900d2 | **Enemies spawned at a non-whole point stood frozen** and drew a random number every tick (`EnemyMotion.step` compared a rounded body point to a fractional Token point); found by the brief 260 bench diagnosis | director 2026-10-29 |
+| T-265 | P3 | open | **Spawned Tokens get non-whole centres** (`EffectActions.spawnPoint` → `MatPlacement.findSpot`), while EnemyMotion's comment says centres stay whole for `nearby.js` tie-breaks: decide whether to round spawn points (changes bench work) | T-264 diagnosis |
+| T-266 | P2 | open | **Each enemy camp counts its own enemies** (owner 2026-10-29): today two camps of one enemy share one cap across the mat, so goblins left at one camp stop the other spawning and a hunter ordered there waits for ever | brief 260 O2 |
+| T-267 | P3 | open | **The drawer inspection still shows an enemy's charges and says 'Nothing yet' under Drives** (`TokenInspection.jsx`, `InspectBubbles.jsx`), unlike the mat and the card since brief 250 and the card-wording fixes | director 2026-10-28 |
 | T-260 | P1 | built 79c6b01c; owner sets tiers | **Recruits may hold copper weapons** (owner 2026-10-27, reverses the C2 call that Recruits refuse weapons): no hero leaves Recruit in plane 1 (the Fighter needs Mining and Smithing 10), so crafted copper swords were useless | K4 |
 | T-176 | P2 | open | **The quest board** ([concept_quests_tutorial.md](../active/concept_quests_tutorial.md), "The quest board", owner 2026-10-20): one fixture board at the bottom-left of every Region's mat; click opens its card on the quest list; up to 3 collect/hunt bounties from reachable content, Bank have/need, Claim takes items and bursts materials as floating loot; tutorial step pinned first; gold outline and ready count at rest. Replaces the loose quest Tokens. Brief 170. | owner interview |
 | T-175 | P2 | owner | (Concept still a draft, owner 2026-10-14: not for the director yet.) **Collectors: the Guild Hall and warehouses** ([concept_collectors.md](../active/concept_collectors.md)): the Hall collects all loot in a small radius from the start, widened by a ranked Hall star; warehouses built on Foundations collect items with one tag (CMS Collects block: tag, radius, interval ~60 s), bigger radius on higher tiers, no upkeep; shared sweep clock, nearest collector wins, items fly in; Bank-full leaves loot and shows the yellow mark; reach ring on hover, drag, placing. Remove the auto-collect setting. Engineer. WORK CHANGED expected. Cost-log line. Eye-check. | concept_collectors.md |
