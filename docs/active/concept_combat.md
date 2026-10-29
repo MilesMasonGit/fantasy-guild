@@ -1,5 +1,7 @@
 Status: briefed 2026-10-24 (detail pass approved 2026-10-24; brief [220](briefs/220_combat.md))
 
+> ⚠️ **Amended 2026-10-28 by [concept_combat_v2.md](concept_combat_v2.md)** (owner, brief 280): damage types, no flat armour, enemy moves, style characters.
+
 # Combat and gear
 
 *D3 of the post-crunch plan ([ideas.md](ideas.md)). Owner interview,
