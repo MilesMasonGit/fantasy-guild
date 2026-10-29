@@ -75,6 +75,10 @@ replace map items as the gate to new content, and reshape the Atlas
   (planning agent's default).
 - **Paying the requirements settles it at once** (owner): no expedition timer,
   no heroes away. The fog lifts and the region joins the world.
+- **A newly settled region may arrive occupied** (owner): it is populated with
+  enemies, its background and Tokens darkened; **the guild must defeat all the
+  enemies before the region unlocks** (its Tokens brighten and can be
+  worked). Combat joins gathering and crafting in expansion.
 
 ## Built pieces (owner: the recommended clean-up)
 
@@ -95,5 +99,6 @@ replace map items as the gate to new content, and reshape the Atlas
   priced (the simulator and the ledger's stage budgets).
 - How the ledger's stages map onto rings (Starter Camp = the Hall's cell,
   ring 1 = plane 1, ring 2 = plane 2).
-- Whether a cell may hold a guardian as a requirement (combat as part of
-  expansion), now that the map itself is static.
+- How often a region arrives occupied, and with what (by ring; bosses?).
+- **More theorycrafting and alternatives** (owner, 2026-10-28): the owner
+  wants to explore the idea further before approving.
