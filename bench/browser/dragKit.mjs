@@ -310,17 +310,13 @@ export function installDragKit() {
             && !isFixed(t, el) && !G.BoardCombat?.getFight?.(t.id);
     });
     // ---- Where the game gives a press: the bench's own copy of the rules, read from the page ----
-    // A flag's cloth inside its drawn box, as shares of its size (the flag art, `flagGeometry.js`).
-    // The small job markers (the Mat Tuner's Job marker row, `data-flag-look`) are their drawn flag.
-    const CLOTH = { left: 12 / 64, top: 11 / 64, right: 62 / 64, bottom: 36 / 64 };
-    const SMALL_CLOTH = { left: 2 / 12, top: 2 / 12, right: 10 / 12, bottom: 10 / 12 };
+    // A flag's cloth inside its drawn box, as shares of its size (`MARKER_CLOTH`, `flagGeometry.js`).
+    const CLOTH = { left: 2 / 12, top: 2 / 12, right: 10 / 12, bottom: 10 / 12 };
     const zOf = (el) => Number(el?.style?.zIndex) || 0;
     const onCloth = (flagEl, p) => {
         const r = flagEl.getBoundingClientRect();
         const u = (p.x - r.left) / r.width, v = (p.y - r.top) / r.height;
-        const look = flagEl.getAttribute('data-flag-look');
-        const c = look === 'lucide' || look === 'pixel' ? SMALL_CLOTH : CLOTH;
-        return u >= c.left && u <= c.right && v >= c.top && v <= c.bottom;
+        return u >= CLOTH.left && u <= CLOTH.right && v >= CLOTH.top && v <= CLOTH.bottom;
     };
     /** A flag whose cloth is drawn in front of a Token at `p` (over a Token, only a cloth keeps a press). */
     const clothInFront = (p, tokenZ) => [...document.querySelectorAll('button[data-flag]')]
@@ -385,7 +381,7 @@ export function installDragKit() {
         const heroId = el.getAttribute('data-flag');
         const r = el.getBoundingClientRect();
         const at = (u, v) => ({ x: Math.round(r.left + u * r.width), y: Math.round(r.top + v * r.height) });
-        return [at(0.58, 0.37), at(0.25, 0.2), at(0.94, 0.2), at(0.25, 0.54), at(0.94, 0.54)].map(p => {
+        return [at(0.5, 0.45), at(0.25, 0.25), at(0.75, 0.25), at(0.25, 0.7), at(0.75, 0.7)].map(p => {
             const top = document.elementsFromPoint(p.x, p.y).find(e => !e.closest(`[data-board-hero="${heroId}"]`));
             const art = top?.closest?.('[data-token-art]');
             return { p, top: top ? identityOf(top) : null, tokenZ: art ? zOf(art) : null, flagZ: zOf(el), worked: art ? art.getAttribute('data-tile-staffed') === 'true' : null };

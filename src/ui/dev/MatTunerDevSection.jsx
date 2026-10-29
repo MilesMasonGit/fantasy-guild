@@ -51,26 +51,7 @@ export function MatTunerDevSection() {
                                                 {t.format ? t.format(value) : value}
                                             </span>
                                         </div>
-                                        {t.choices ? (
-                                            <div className="flex gap-1" role="group" aria-label={t.label}>
-                                                {t.choices.map((name, i) => {
-                                                    const v = t.min + i;
-                                                    const on = Math.round(value) === v;
-                                                    return (
-                                                        <button
-                                                            key={name}
-                                                            type="button"
-                                                            aria-pressed={on}
-                                                            data-testid={`mat-tuner-${t.key}-${v}`}
-                                                            onClick={() => { setMatTuning(t.key, v); refresh(); }}
-                                                            className={`flex-1 px-2 py-1 text-xs font-bold border transition-colors ${on ? 'bg-gi-primary/30 border-gi-primary text-gi-primary' : 'bg-gi-primary/5 border-gi-border text-gi-muted hover:bg-gi-primary/15'}`}
-                                                        >
-                                                            {name}
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
-                                        ) : <input
+                                        <input
                                             type="range"
                                             aria-label={t.label}
                                             min={t.min} max={t.max} step={t.step} value={value}
@@ -79,7 +60,7 @@ export function MatTunerDevSection() {
                                                 refresh();
                                             }}
                                             className="w-full accent-gi-primary cursor-pointer"
-                                        />}
+                                        />
                                         <div className="ui-text-body leading-tight text-gi-muted/80 mt-0.5">
                                             {t.hint} Default {t.format ? t.format(t.def) : t.def}.
                                         </div>

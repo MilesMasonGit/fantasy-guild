@@ -9,7 +9,9 @@ import { AnimatedHeroSprite } from '../components/board/AnimatedHeroSprite.jsx';
 import { HealthBar } from '../components/board/HealthBar.jsx';
 import { heroBarPlace, enemyBarPlace } from '../components/board/healthBar.js';
 import { HERO_HIT_PX, HERO_BOX_PX } from '../components/board/boardConstants.js';
-import { FLAG_PX, POLE_BASE, PIN_INSET } from '../components/board/flagGeometry.js';
+import { MARKER_ART_PX, markerCornerOffset } from '../components/board/flagGeometry.js';
+import { useCornerShare } from '../components/board/markerCorner.js';
+import { tokenSpritePath } from '../../config/registries/tokenRegistry.js';
 import { FlagMark } from '../components/board/FlagMark.jsx';
 import { SEVERITY } from '../components/board/problemMark.js';
 import { WorkPlateView, fillStyle } from '../components/board/WorkPlateLayer.jsx';
@@ -34,8 +36,8 @@ const TY = 180;
 const HX = TX + STAND;
 const FOOT = TY + ART / 2;
 const SEAM = Math.round(TX + STAND / 2);
-/** A pinned flag's pole stands at the top of its Token's art circle (`pinnedFlagPoint`). */
-const POLE_Y = Math.round(TY - (artRadius(1) - PIN_INSET) * FIT);
+/** The job flag, at the mat's size for this patch (2 screen px an art pixel). */
+const FLAG_SIZE = MARKER_ART_PX * 2;
 /** Flat grass: the mat's own mean green. */
 const GROUND = '#5d9440';
 
@@ -115,11 +117,13 @@ export const IDLE_PLATE_MOMENTS = Object.freeze([
 
 /** The ground, the pinned flag, the Token and its hero (or the enemy and the fighter, HP bars up). */
 const Patch = ({ moment, children }) => {
+    // The flag peeks out from behind the top-left corner of the Token's art, as on the mat.
+    const corner = markerCornerOffset(ART, useCornerShare(tokenSpritePath(moment.token)), 2);
     const heroBox = { left: HX - HERO_HIT_PX / 2, top: TY - HERO_BOX_PX / 2, width: HERO_HIT_PX, height: HERO_BOX_PX };
     return (
         <figure className="flex flex-col gap-1" data-work-plate-moment={moment.id}>
             <div className="relative overflow-hidden" style={{ width: PATCH_W, height: PATCH_H, background: GROUND }}>
-                <FlagMark size={FLAG_PX} className="absolute" style={{ left: TX - POLE_BASE.x, top: POLE_Y - POLE_BASE.y }} />
+                <FlagMark size={FLAG_SIZE} className="absolute" style={{ left: TX - corner - FLAG_SIZE / 2, top: TY - corner - FLAG_SIZE / 2 }} />
                 <div className="absolute" style={{ left: TX - ART / 2, top: TY - ART / 2, width: ART, height: ART }}>
                     <TokenSprite typeId={moment.token} size={ART} outline={moment.combat ? null : (moment.blocked ? 'alert' : 'work')} />
                     {moment.combat && <HealthBar who="enemy" cur={moment.hp.enemy[0]} max={moment.hp.enemy[1]} style={enemyBarPlace(ART)} />}

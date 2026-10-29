@@ -12,7 +12,7 @@ import { DRAG_KIND } from '../../dnd/dragConstants.js';
  * and a mat point (mat units). Every surface that places on the mat calls it, so no surface
  * can drift from another.
  * What lands where (free placement):
- * * **A hero or their pennant** (from the mat or the roster): an order (`Orders.orderAt`): onto a
+ * * **A hero or their flag** (from the mat or the roster): an order (`Orders.orderAt`): onto a
  * Token they can work, they work only it; onto the Guild Hall, home; onto bare ground, they go
  * there and idle. A Token they cannot work refuses with the reason, said over it, and the hero
  * keeps the order they had.

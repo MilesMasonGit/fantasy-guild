@@ -214,9 +214,9 @@ describe('on the mat', () => {
         // Each idle hero stands just in front of their own flag.
         expect(zOfHero(container, 'h1')).toBe(zOfFlag(container, 'h1') + 1);
         expect(zOfHero(container, 'h2')).toBe(zOfFlag(container, 'h2') + 1);
-        // ⚠️ The pennants' box has no z-index of its own — with one, every flag
+        // ⚠️ The flags' box has no z-index of its own — with one, every flag
         // would sit above or below every Token together.
-        expect(container.querySelector('[data-flag-pennants]').style.zIndex).toBe('');
+        expect(container.querySelector('[data-flag-layer]').style.zIndex).toBe('');
     });
 
     it('FB-2: a worked Token and its hero draw above a lower neighbour; when work stops, the order is normal again', async () => {

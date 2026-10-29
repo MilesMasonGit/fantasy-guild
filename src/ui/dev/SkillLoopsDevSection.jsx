@@ -41,7 +41,7 @@ export function SkillLoopsDevSection() {
                     onClick={() => {
                         const r = setUpWaitingScene();
                         setStatus(r.ok
-                            ? 'Lower left: a Miner whose only vein rests after two cycles (no bubble, not idle: hover the pennant or the roster), and a Smith at a Furnace with one Coal (it stops and says Needs Coal). The Bank’s Coal was emptied'
+                            ? 'Lower left: a Miner whose only vein rests after two cycles (no bubble, not idle: hover the flag or the roster), and a Smith at a Furnace with one Coal (it stops and says Needs Coal). The Bank’s Coal was emptied'
                             : r.error);
                     }}
                 >

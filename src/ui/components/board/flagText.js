@@ -11,14 +11,14 @@ import { skipHint } from './boardConstants.js';
 import { t } from '../../../i18n/index.js';
 
 /**
- * The words for orders, in one place: the pennant's tooltip, a Token's own hover lines and the
+ * The words for orders, in one place: the flag's tooltip, a Token's own hover lines and the
  * roster's status line.
  * ⚠️ Read live, when asked. Skips are runtime records that change without an event (a flag
  * re-checks every second), so callers ask at hover time rather than projecting these into
  * React state.
  */
 
-/** A pennant lists at most this many skipped Tokens, then "+N more". */
+/** A flag lists at most this many skipped Tokens, then "+N more". */
 export const MAX_SKIP_LINES = 5;
 
 /** "a Pickaxe", "an Iron Pickaxe or better": the tool a Token's work needs, or null. */
@@ -89,7 +89,7 @@ export function flagPinLine(heroId) {
 }
 
 /**
- * Everything the pennant's tooltip shows, as `{ title, pin, state, status, skips: string[],
+ * Everything the flag's tooltip shows, as `{ title, pin, state, status, skips: string[],
  * more }`. The title is the hero's name: a flag has no skill. `pin` is {@link flagPinLine}
  * (null on an area flag).
  */

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, beforeAll, afterAll, afterEach, vi } from 'vitest';
 import React from 'react';
-import { render, cleanup, fireEvent, act } from '@testing-library/react';
+import { render, cleanup, act } from '@testing-library/react';
 import { DndContext } from '@dnd-kit/core';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
@@ -12,25 +12,19 @@ import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as Flags from '../systems/board/Flags.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
-import { MAT_TUNABLES, matTuning, matTuningDefault, resetMatTuning, setMatTuning } from '../config/matTuning.js';
-import { artRadiusOf } from '../config/matGeometry.js';
+import { tokenStartingUses, tokenSpritePath } from '../config/registries/tokenRegistry.js';
+import { MAT_TUNABLES, resetMatTuning } from '../config/matTuning.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
-import { MatTunerDevSection } from '../ui/dev/MatTunerDevSection.jsx';
 import { FlagLayer } from '../ui/components/board/FlagLayer.jsx';
-import { PENNANT_SRC } from '../ui/components/board/FlagMark.jsx';
-import { GLYPHS, glyphRing } from '../ui/components/base/PixelGlyph.jsx';
+import { FlagGhost } from '../ui/dnd/DragGhost.jsx';
 import { onFlagCloth } from '../ui/components/board/flagCloth.js';
 import {
-    JOB_MARKER_LOOKS, MARKER_ART_PX, MARKER_CORNER, MARKER_FOOT, jobMarkerLook, markerBox, pinnedFlagPoint,
-    PENNANT_ART_PX, FLAG_PX, POLE_BASE
+    MARKER_ART_PX, MARKER_CORNER, MARKER_FOOT, MARKER_PEEK_PX, markerBox, markerCornerOffset
 } from '../ui/components/board/flagGeometry.js';
 import { drawnPoint } from './fixtures/drawnPoint.js';
 import { cornerInsetOfMask } from '../ui/components/board/markerCorner.js';
 import { setAlphaMaskForTests } from '../ui/utils/alphaHitTest.js';
-import { tokenSpritePath } from '../config/registries/tokenRegistry.js';
 import { tokenSizeFor, TOKEN_SURFACE } from '../ui/components/base/TokenSprite.jsx';
-import { markerCornerOffset, MARKER_PEEK_PX } from '../ui/components/board/flagGeometry.js';
 import { dropOnMat } from '../ui/components/board/dropOnMat.js';
 import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
 
@@ -43,9 +37,8 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * ⭐ The job marker's three looks, switched by the Mat Tuner's Job marker row while the owner
- * compares them: the pennant on top of the Token, or a small flag (Lucide or pixel glyph) peeking
- * out from behind the Token's top-left corner.
+ * ⭐ The hero's job flag (the owner's pick, 2026-10-29): Lucide's FlagTriangleRight, 12 art
+ * pixels, peeking out from behind the top-left corner of the job's Token, or standing on a spot.
  */
 
 const h = React.createElement;
@@ -58,6 +51,14 @@ function put(point, typeId) {
     return instance;
 }
 const mount = (el) => render(h(DndContext, null, el));
+
+/** A 64×64 alpha mask with the art pixels `drawn` set. */
+function maskOf(drawn) {
+    const data = new Uint8Array(64 * 64);
+    for (const [x, y] of drawn) data[y * 64 + x] = 255;
+    return { width: 64, height: 64, data };
+}
+const FULL = () => maskOf(Array.from({ length: 64 * 64 }, (_, i) => [i % 64, Math.floor(i / 64)]));
 
 beforeAll(() => Flags.init());
 afterAll(() => { Flags.teardown(); resetMatTuning(); });
@@ -74,88 +75,32 @@ beforeEach(() => {
     ];
 });
 
-describe('the Mat Tuner row', () => {
-    it('is three choices, Lucide while the owner compares, and stored like every other row', () => {
-        const row = MAT_TUNABLES.find(t => t.key === 'jobMarker');
-        expect(row.choices).toEqual(['Pennant', 'Lucide', 'Pixel']);
-        expect(JOB_MARKER_LOOKS).toEqual(['pennant', 'lucide', 'pixel']);
-        expect(matTuningDefault('jobMarker')).toBe(1);
-        expect(jobMarkerLook(matTuning('jobMarker'))).toBe('lucide');
-        setMatTuning('jobMarker', 2);
-        expect(JSON.parse(localStorage.getItem('fantasy_guild_mat_tuning')).jobMarker).toBe(2);
-        setMatTuning('jobMarker', 9);
-        expect(matTuning('jobMarker')).toBe(2);
-        expect(jobMarkerLook(7)).toBe('pennant');
+describe('one look', () => {
+    it('has no Mat Tuner row to switch it', () => {
+        expect(MAT_TUNABLES.find(t => t.key === 'jobMarker')).toBeUndefined();
     });
 
-    it('shows as three buttons in the dev panel, and a press picks that look', () => {
-        const { container } = render(h(MatTunerDevSection));
-        const pixel = container.querySelector('[data-testid="mat-tuner-jobMarker-2"]');
-        expect(container.querySelector('[data-testid="mat-tuner-jobMarker-1"]').getAttribute('aria-pressed')).toBe('true');
-        fireEvent.click(pixel);
-        expect(matTuning('jobMarker')).toBe(2);
-        expect(pixel.getAttribute('aria-pressed')).toBe('true');
-    });
-});
-
-describe('where each look is drawn', () => {
-    const centre = { x: 600, y: 500 };
-
-    it('the pennant is where it always was: pole foot at the top of the Token, or on the spot', () => {
-        const box = markerBox('pennant', centre, 64, 2);
-        const at = pinnedFlagPoint(centre, 64);
-        expect(box.size).toBe(PENNANT_ART_PX * 2);
-        expect(box.left + POLE_BASE.x * box.size / FLAG_PX).toBeCloseTo(at.x);
-        expect(box.top + POLE_BASE.y * box.size / FLAG_PX).toBeCloseTo(at.y);
-    });
-
-    it.each(['lucide', 'pixel'])('the small %s marker is 12 art pixels, at the top-left corner of a pinned Token', (look) => {
+    it('is 12 art pixels, at the top-left corner of a pinned Token while its art is not known', () => {
+        const centre = { x: 600, y: 500 };
         for (const r of [64, 32, 144]) {
-            const box = markerBox(look, centre, r, 2);
+            const box = markerBox(centre, r, 2);
             expect(box.size).toBe(MARKER_ART_PX * 2);
             const mid = { x: box.left + box.size / 2, y: box.top + box.size / 2 };
-            expect(centre.x - mid.x).toBeCloseTo(centre.y - mid.y);
-            // Well inside the art's square, its lower right behind the art: 15 of 64 art pixels in from the corner.
             expect((centre.x - mid.x) / r).toBeCloseTo(MARKER_CORNER);
+            expect((centre.y - mid.y) / r).toBeCloseTo(MARKER_CORNER);
         }
     });
 
-    it.each(['lucide', 'pixel'])('a spot order’s small %s marker stands its pole foot on the spot', (look) => {
-        const box = markerBox(look, BARE, null, 2);
-        expect(box.left + MARKER_FOOT[look].x * box.size).toBeCloseTo(BARE.x);
-        expect(box.top + MARKER_FOOT[look].y * box.size).toBeCloseTo(BARE.y);
-    });
-
-    it('the pixel glyph’s foot share is its pole’s bottom cell', () => {
-        const rows = GLYPHS.flag;
-        const pad = 2;
-        const cx = MARKER_FOOT.pixel.x * MARKER_ART_PX - 0.5 - pad;
-        const cy = MARKER_FOOT.pixel.y * MARKER_ART_PX - 0.5 - pad;
-        expect(rows[cy][cx]).toBe('#');
-        expect(rows.length - 1).toBe(cy);
-    });
-
-    it('the glyph’s outline ring is one cell round the lit cells, and never on one', () => {
-        const ring = glyphRing(GLYPHS.flag, 1, 2);
-        expect(ring.length).toBeGreaterThan(0);
-        for (const [x, y] of ring) expect(GLYPHS.flag[y - 2]?.[x - 2]).not.toBe('#');
-        const halo = glyphRing(GLYPHS.flag, 2, 2);
-        for (const p of halo) expect(ring.some(q => q[0] === p[0] && q[1] === p[1])).toBe(false);
-        for (const [x, y] of halo) expect(x >= 0 && y >= 0 && x < 12 && y < 12).toBe(true);
+    it('a spot order’s flag stands its pole foot on the spot', () => {
+        const box = markerBox(BARE, null, 2);
+        expect(box.left + MARKER_FOOT.x * box.size).toBeCloseTo(BARE.x);
+        expect(box.top + MARKER_FOOT.y * box.size).toBeCloseTo(BARE.y);
     });
 });
 
-/** A 64×64 alpha mask with the art pixels `drawn` set. */
-function maskOf(drawn) {
-    const data = new Uint8Array(64 * 64);
-    for (const [x, y] of drawn) data[y * 64 + x] = 255;
-    return { width: 64, height: 64, data };
-}
-
-describe('a small marker on a Token sits where that Token’s own art begins', () => {
+describe('on a Token the flag sits where that Token’s own art begins', () => {
     it('reads the art’s top-left corner along its diagonal', () => {
-        const full = maskOf(Array.from({ length: 64 * 64 }, (_, i) => [i % 64, Math.floor(i / 64)]));
-        expect(cornerInsetOfMask(full)).toBe(0);
+        expect(cornerInsetOfMask(FULL())).toBe(0);
         // The first pixel a 45° line swept in from the corner meets: x + y = 30, so 15 on each axis.
         expect(cornerInsetOfMask(maskOf([[10, 20], [40, 40]]))).toBe(15);
         expect(cornerInsetOfMask(maskOf([]))).toBeNull();
@@ -168,10 +113,9 @@ describe('a small marker on a Token sits where that Token’s own art begins', (
     });
 
     it('on the mat, once the sprite’s pixels are known', async () => {
-        setMatTuning('jobMarker', 2);
         const t = put(TOKEN, 'fixture_producer');
-        // This sprite fills its square: the marker's middle stands just outside its corner.
-        setAlphaMaskForTests(tokenSpritePath(t.typeId), maskOf(Array.from({ length: 64 * 64 }, (_, i) => [i % 64, Math.floor(i / 64)])));
+        // This sprite fills its square: the flag's middle stands just outside its corner.
+        setAlphaMaskForTests(tokenSpritePath(t.typeId), FULL());
         dropOnMat({ kind: DRAG_KIND.HERO, heroId: 'h1' }, TOKEN);
         const { container } = mount(h(FlagLayer));
         await act(async () => { await new Promise(r => setTimeout(r, 20)); });
@@ -185,28 +129,23 @@ describe('a small marker on a Token sits where that Token’s own art begins', (
 });
 
 describe('the mat', () => {
-    it('switches look live when the tuner row moves', () => {
+    it('draws the Lucide flag in the flag’s button', () => {
         put(TOKEN, 'fixture_producer');
-        Flags.plant('h1', TOKEN);
+        dropOnMat({ kind: DRAG_KIND.HERO, heroId: 'h1' }, TOKEN);
         const { container } = mount(h(FlagLayer));
-        const flag = () => container.querySelector('[data-flag="h1"]');
-        expect(flag().getAttribute('data-flag-look')).toBe('lucide');
-        expect(flag().querySelector('[data-marker-look="lucide"] svg')).toBeTruthy();
-        act(() => { setMatTuning('jobMarker', 2); });
-        expect(flag().getAttribute('data-flag-look')).toBe('pixel');
-        expect(flag().querySelector('svg[data-glyph="flag"]')).toBeTruthy();
-        act(() => { setMatTuning('jobMarker', 0); });
-        expect(flag().querySelector('img').getAttribute('src')).toBe(PENNANT_SRC);
+        const flag = container.querySelector('[data-flag="h1"]');
+        expect(flag.querySelector('[data-flag-mark] svg.lucide-flag-triangle-right')).toBeTruthy();
+        expect(flag.querySelector('img')).toBeNull();
+        expect(flag.style.width).toBe(flag.style.height);
     });
 
     /**
-     * A worked Token is drawn in front of every marker anyway; the sort matters where the job's
+     * A worked Token is drawn in front of every flag anyway; the sort matters where the job's
      * Token rests (a camp, while its hands work round it) and for resting Tokens about level with
-     * it. The marker sorts half a unit above its Token's line: behind a resting Token a quarter of
+     * it. The flag sorts half a unit above its Token's line: behind a resting Token a quarter of
      * a unit above that line, as it is behind its own Token when that one rests.
      */
-    it.each([[0, 'pennant'], [1, 'lucide'], [2, 'pixel']])('look %i (%s) sorts just behind its Token’s line', (index) => {
-        setMatTuning('jobMarker', index);
+    it('sorts just behind its Token’s line', () => {
         const t = put(TOKEN, 'fixture_producer');
         const level = put({ x: TOKEN.x + 160, y: TOKEN.y - 0.25 }, 'fixture_producer');
         dropOnMat({ kind: DRAG_KIND.HERO, heroId: 'h1' }, TOKEN);
@@ -218,25 +157,37 @@ describe('the mat', () => {
         expect(Number(flag.style.zIndex)).toBeLessThan(z(t.id));
     });
 
-    it('a spot order’s small marker is drawn with its pole foot on the spot', () => {
+    it('a spot order’s flag is drawn with its pole foot on the spot', () => {
         Flags.plant('h1', BARE);
         const { container } = mount(h(FlagLayer));
         const flag = container.querySelector('[data-flag="h1"]');
-        expect(flag.getAttribute('data-flag-look')).toBe('lucide');
-        const box = markerBox('lucide', BARE, null, parseFloat(flag.style.width) / MARKER_ART_PX);
+        const box = markerBox(BARE, null, parseFloat(flag.style.width) / MARKER_ART_PX);
         expect(drawnPoint(flag).x).toBeCloseTo(box.left);
         expect(drawnPoint(flag).y).toBeCloseTo(box.top);
     });
 
-    it('a small marker’s cloth, for the press rule over Tokens, is its drawn flag', () => {
+    it('the flag’s cloth, for the press rule over Tokens, is its drawn flag', () => {
         const el = document.createElement('button');
         el.getBoundingClientRect = () => ({ left: 0, top: 0, width: 24, height: 24 });
-        el.setAttribute('data-flag-look', 'pixel');
         expect(onFlagCloth(el, 12, 12)).toBe(true);
         expect(onFlagCloth(el, 1, 1)).toBe(false);
-        el.setAttribute('data-flag-look', 'pennant');
-        // The pennant's cloth starts 5/32 in: its pole beside it is not cloth.
-        expect(onFlagCloth(el, 2, 12)).toBe(false);
-        expect(onFlagCloth(el, 12, 12)).toBe(true);
+        expect(onFlagCloth(el, 23, 23)).toBe(false);
+    });
+});
+
+describe('the flag in the hand', () => {
+    /**
+     * ⭐ The ghost's box is centred on the pointer and the drop lands on the pointer, so the
+     * carried flag's pole foot is drawn at the box's middle: where the flag will stand.
+     */
+    it('is the mat’s flag, its pole foot at the middle of its box', () => {
+        const { container } = render(h(FlagGhost, { payload: { heroId: 'h1' } }));
+        const box = container.querySelector('[data-flag-ghost="h1"]');
+        const size = parseFloat(box.style.width);
+        expect(size % MARKER_ART_PX).toBe(0);
+        const mark = box.querySelector('[data-flag-mark]');
+        expect(mark.querySelector('svg.lucide-flag-triangle-right')).toBeTruthy();
+        expect(parseFloat(mark.style.left) + MARKER_FOOT.x * size).toBeCloseTo(size / 2);
+        expect(parseFloat(mark.style.top) + MARKER_FOOT.y * size).toBeCloseTo(size / 2);
     });
 });

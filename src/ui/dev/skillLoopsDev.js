@@ -213,7 +213,7 @@ const WAIT_SPOTS = Object.freeze({ vein: { x: 220, y: 760 }, furnace: { x: 620, 
 /**
  * The mat's lower left, two heroes alone with their work:
  * - a QA Miner sent to the QA Copper Vein: two cycles, then it rests 20 s. They wait by it saying
- *   nothing, with no idle mark; the pennant's hover and the roster say "Waiting for QA Copper
+ *   nothing, with no idle mark; the flag's hover and the roster say "Waiting for QA Copper
  *   Vein"; they go back to it the moment it refills;
  * - a QA Smith at the QA Furnace with one Coal in the Bank (every other Coal is taken out): one
  *   ingot, then the Furnace stops, says "Needs Coal" every few seconds, and the Smith stays.

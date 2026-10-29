@@ -9,6 +9,7 @@ import { SkillIcon } from '../base/SkillIcon.jsx';
 import { boardArtSteps } from '../base/TokenSprite.jsx';
 import { AnimatedHeroSprite } from '../board/AnimatedHeroSprite.jsx';
 import { FlagMark } from '../board/FlagMark.jsx';
+import { MARKER_ART_PX } from '../board/flagGeometry.js';
 import { Tooltip } from '../base/Tooltip.jsx';
 import { VitalBar, vitalTone } from '../base/VitalBar.jsx';
 import { useLiveMatFit } from '../board/MatFitContext.jsx';
@@ -174,9 +175,9 @@ const HeroFigure = ({ hero, heroId, size }) => {
     const sprite = hero.spriteId || hero.classId || null;
     const animArt = sprite ? resolveAnimationPath(sprite) : null;
     const staticArt = animArt ? null : resolveSpritePath(sprite || hero.icon || 'hn_recruit_por');
-    // The pennant at half the hero's size, as on the mat, in the top-right quarter of the
-    // hero's box: its pole just behind the hero's shoulder, its cloth flying out to the right.
-    const flagPx = size / 2;
+    // The job flag at its size on the mat beside a hero (12 of the hero's 64 art pixels), in the
+    // top-right quarter of the hero's box, flying out to the right.
+    const flagPx = Math.round((size * MARKER_ART_PX) / 64);
     return (
         <div
             data-hero-panel-sprite
@@ -185,7 +186,7 @@ const HeroFigure = ({ hero, heroId, size }) => {
             style={{ width: '100%', maxWidth: size, height: size }}
         >
             <div
-                data-hero-panel-flag="pennant"
+                data-hero-panel-flag
                 className="absolute"
                 style={{ left: '50%', top: 0, width: flagPx, height: flagPx }}
             >

@@ -420,7 +420,7 @@ export function skipsOf(instanceId) {
 
 /**
  * What `heroId`'s flag passed over, in the order it looked (nearest first), as `[{ instanceId,
- * reason, typeId }]`: the pennant's hover text. A Token that has since left the board is left out.
+ * reason, typeId }]`: the flag's hover text. A Token that has since left the board is left out.
  */
 export function skipsOfHero(heroId) {
     const r = rt();
@@ -876,7 +876,7 @@ export function plant(heroId, point, { pin = false } = {}) {
     announceMoved(heroId);
 
     // The quest action deploy a hero is planting a flag, by every route: a drop from the dock, a
-    // hero dragged on the board, a pennant moved, the + badge. Published here, once, so no caller
+    // hero dragged on the board, a flag moved, the + badge. Published here, once, so no caller
     // can forget it or announce it twice. An unchanged plant is not a deployment and returned
     // above. Names the Token the flag was planted on by `instanceId` (and its type), or null for
     // bare mat.

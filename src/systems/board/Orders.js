@@ -19,7 +19,7 @@ import { workConfigOf } from './StationRecipe.js';
 import * as PromotionSystem from '../hero/PromotionSystem.js';
 
 /**
- * A hero dropped on the mat (`dropOnMat`, from the figure, the pennant or the roster tab) gets an
+ * A hero dropped on the mat (`dropOnMat`, from the figure, the flag or the roster tab) gets an
  * order here:
  * - on a Token they can work: they walk there and work only it (`Flags.orderToken`); a Token
  * another hero works, or one resting, growing or out of an input, is still theirs to wait by;

@@ -189,10 +189,10 @@ describe('where the banner shows', () => {
         expect(rows[1].textContent).not.toMatch(/Settled day|Token/);
         expect(q(rows[1], '[data-region-travel]')).toBeNull();
         expect(q(rows[1], '[data-region-select]')).toBeTruthy();
-        // The Region the guild is in shows the hero pennant at 2x.
-        const flag = q(q(rows[0], '[data-region-here]'), 'img');
-        expect(flag.getAttribute('src')).toBe('/assets/ui/u_flag_pennant.png');
-        expect(flag.style.width).toBe('64px');
+        // The Region the guild is in shows the hero's job flag, its 12 art pixels at 3x.
+        const flag = q(q(rows[0], '[data-region-here]'), '[data-flag-mark]');
+        expect(flag.querySelector('svg.lucide-flag-triangle-right')).toBeTruthy();
+        expect(flag.style.width).toBe('36px');
         // The right page shows the selected Region on its banner too.
         expect(q(container, '[data-region-detail] [data-banner-art]').getAttribute('data-banner-art')).toBe('b_golden_plains');
     });

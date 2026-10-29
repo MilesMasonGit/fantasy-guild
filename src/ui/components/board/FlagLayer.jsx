@@ -18,34 +18,28 @@ import { flagOutline } from './spriteOutline.js';
 import { flagTooltip } from './flagText.js';
 import { FloatingTip } from '../base/Tooltip.jsx';
 import { useMatFit } from './MatFitContext.jsx';
-import { jobMarkerLook, markerBox, markerCornerOffset } from './flagGeometry.js';
-import { matTuning, onMatTuningChanged } from '../../../config/matTuning.js';
+import { markerBox, markerCornerOffset } from './flagGeometry.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
- * FlagLayer: the pennant that marks each hero's order, an absolute overlay in mat units.
- * - **A Token order**: the pennant stands at the top of the Token (`pinnedFlagPoint`), its pole
- * planted in the art, and sorts just behind that Token (`MatBoard`), so it is drawn **behind the
- * Token's sprite** and shows through its transparent parts. It stays while the order stands.
- * - **A spot order** ("go here"): the pennant stands on the spot while the hero walks there and
- * fades out once they arrive; hovering the hero (or their roster tab) shows it again.
- * - **No order** (at home by the Guild Hall), or a job gone for good: no pennant.
- * - Dragging the pennant is dragging its hero (`DRAG_KIND.FLAG`): the drop gives a new order
+ * FlagLayer: the flag that marks each hero's order (`FlagMark`), an absolute overlay in mat units.
+ * - **A Token order**: the flag peeks out from behind the top-left corner of the Token's art
+ * (`markerBox`, `markerCorner.js`: where that Token's own art begins), and sorts just behind the
+ * Token (`MatBoard`), so it is drawn **behind the Token's sprite**. It stays while the order stands.
+ * - **A spot order** ("go here"): the flag stands its pole foot on the spot while the hero walks
+ * there and fades out once they arrive; hovering the hero (or their roster tab) shows it again.
+ * - **No order** (at home by the Guild Hall), or a job gone for good: no flag.
+ * - Dragging the flag is dragging its hero (`DRAG_KIND.FLAG`): the drop gives a new order
  * (`Orders.orderAt`). Hover for the hero's name and what they are doing.
  * - **No hitbox over Tokens, but the cloth**: wherever the pointer is on a Token's art circle,
- * every pennant lets it through (`yieldToTokens`, set by `MatBoard`), except its cloth where it
+ * every flag lets it through (`yieldToTokens`, set by `MatBoard`), except its cloth where it
  * is drawn in front of that Token (`flagCloth.js`).
- * The radius ring of the old area flags is gone: an order has no reach.
- * - **The look** is the Mat Tuner's Job marker row (`jobMarkerLook`, `markerBox`): the pennant
- * above, or a small flag (a Lucide icon or a pixel glyph) at the top-left corner of the job's
- * Token, sorted behind it the same way so it peeks out past the Token's art. A spot order's small
- * flag stands its pole foot on the spot, as the pennant does.
  */
 
-/** How long a spot's pennant takes to fade once its hero arrives, in ms. */
-export const PENNANT_FADE_MS = 700;
+/** How long a spot's flag takes to fade once its hero arrives, in ms. */
+export const FLAG_FADE_MS = 700;
 
-/** A flat, comparable projection of every pennant, in planting order. */
+/** A flat, comparable projection of every flag, in planting order. */
 function projectFlags() {
     const heroes = GameState.state?.heroes || [];
     const out = [];
@@ -63,14 +57,14 @@ function projectFlags() {
             heroId,
             x: flag.x,
             y: flag.y,
-            // Where it is drawn depends on the look: the pinned Token's centre and art radius.
+            // Where it is drawn: the pinned Token's centre, art radius and art.
             pinX: pinned ? pinned.x : null,
             pinY: pinned ? pinned.y : null,
             pinR: pinned ? artRadiusOf(pinned.typeId) : null,
             pinType: pinned ? pinned.typeId : null,
             pinnedTo: pinned ? pinned.id : null,
             order,
-            // A spot's pennant is down once the hero stands there.
+            // A spot's flag is down once the hero stands there.
             arrived: order === 'spot' && status.state === 'idle',
             state: status.state,
             name: hero?.name || 'Hero'
@@ -83,7 +77,7 @@ function projectFlags() {
  * @param {string|null} inspectedHeroId the hero whose panel is open
  * @param {string|null} hoverHeroId a hero hovered on the mat or on their roster tab
  * @param {(heroId: string|null) => void} onHoverHero
- * @param {Map<string, number>|null} flagZ each pennant's z in the mat's order (`matStackOrder`)
+ * @param {Map<string, number>|null} flagZ each flag's z in the mat's order (`matStackOrder`)
  */
 export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverHero, flagZ = null, yieldToTokens = false }) => {
     const flags = useGameState(
@@ -92,17 +86,16 @@ export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverH
     ) || [];
     const mat = useMatSize();
     const fit = useMatFit();
-    // Every look on the same art-pixel grid as the Tokens.
+    // On the same art-pixel grid as the Tokens.
     const artScale = boardScaleAt(fit);
-    const look = useJobMarkerLook();
 
     /**
-     * ⚠️ Pennants sort in among the Tokens: their box must NOT have a z-index of its own, or every
-     * pennant would sit above or below every Token together. Each carries its own z (`flagZ`).
+     * ⚠️ Flags sort in among the Tokens: their box must NOT have a z-index of its own, or every
+     * flag would sit above or below every Token together. Each carries its own z (`flagZ`).
      */
     return (
         <div
-            data-flag-pennants
+            data-flag-layer
             className="absolute left-0 top-0 pointer-events-none"
             style={flagZ ? { width: mat.w, height: mat.h } : { width: mat.w, height: mat.h, zIndex: MAT_Z.FLAGS }}
         >
@@ -112,7 +105,6 @@ export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverH
                     flag={f}
                     z={flagZ?.get(f.heroId) ?? i * 3}
                     artScale={artScale}
-                    look={look}
                     onHover={onHoverHero}
                     boardHovered={hoverHeroId === f.heroId}
                     inspected={inspectedHeroId === f.heroId}
@@ -123,19 +115,10 @@ export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverH
     );
 };
 
-/** The Mat Tuner's Job marker look, redrawn when the row moves. */
-export function useJobMarkerLook() {
-    const [look, setLook] = useState(() => jobMarkerLook(matTuning('jobMarker')));
-    useEffect(() => onMatTuningChanged((key) => {
-        if (key == null || key === 'jobMarker') setLook(jobMarkerLook(matTuning('jobMarker')));
-    }), []);
-    return look;
-}
-
 /**
- * One hero's pennant: drag it to give a new order, hover for what they are doing.
+ * One hero's flag: drag it to give a new order, hover for what they are doing.
  * ⚠️ Two components on purpose. dnd-kit re-renders every component holding a drag hook at each
- * drag start, end and change of target; the hook lives in this thin shell, and the pennant
+ * drag start, end and change of target; the hook lives in this thin shell, and the flag
  * (`FlagBody`) is memoised on what it draws, so a drag elsewhere does not redraw it.
  */
 const Flag = memo(function Flag(props) {
@@ -150,7 +133,7 @@ const Flag = memo(function Flag(props) {
         sourceSurface: DND_SURFACE.BOARD
     });
 
-    // Dragged by the pennant itself or by its hero: either way this hero is in the hand.
+    // Dragged by the flag itself or by its hero: either way this hero is in the hand.
     const carried = drag.isDragging
         || (anyDrag && (activePayload?.kind === DRAG_KIND.FLAG || activePayload?.kind === DRAG_KIND.HERO)
             && activePayload?.heroId === flag.heroId);
@@ -173,7 +156,7 @@ const Flag = memo(function Flag(props) {
 });
 
 const FlagBody = memo(function FlagBody({
-    flag, z = 0, artScale, look = 'pennant', onHover, boardHovered = false, inspected = false, yieldToTokens = false,
+    flag, z = 0, artScale, onHover, boardHovered = false, inspected = false, yieldToTokens = false,
     hovered, onHoverChange, carried, tipShown, dragRef, dragProps
 }) {
     const ref = useRef(null);
@@ -183,21 +166,20 @@ const FlagBody = memo(function FlagBody({
     }, [dragRef]);
 
     const pinnedPoint = flag.pinX != null ? { x: flag.pinX, y: flag.pinY } : null;
-    // A small marker on a Token sits where that Token's own art begins at its top-left corner.
-    const small = look !== 'pennant' && !!pinnedPoint;
-    const share = useCornerShare(small ? tokenSpritePath(flag.pinType) : null);
-    const cornerOffset = small
+    // On a Token the flag sits where that Token's own art begins at its top-left corner.
+    const share = useCornerShare(pinnedPoint ? tokenSpritePath(flag.pinType) : null);
+    const cornerOffset = pinnedPoint
         ? markerCornerOffset(tokenSizeFor(TOKEN_SURFACE.BOARD, flag.pinType, artScale), share, artScale)
         : null;
-    const box = markerBox(look, pinnedPoint || flag, pinnedPoint ? flag.pinR : null, artScale, cornerOffset);
+    const box = markerBox(pinnedPoint || flag, pinnedPoint ? flag.pinR : null, artScale, cornerOffset);
     const flagPx = box.size;
 
-    // A spot's pennant fades once its hero is there, and comes back while the hero is hovered.
+    // A spot's flag fades once its hero is there, and comes back while the hero is hovered.
     const down = flag.arrived && !hovered && !boardHovered && !inspected;
     const [gone, setGone] = useState(down);
     useEffect(() => {
         if (!down) { setGone(false); return undefined; }
-        const timer = setTimeout(() => setGone(true), PENNANT_FADE_MS);
+        const timer = setTimeout(() => setGone(true), FLAG_FADE_MS);
         return () => clearTimeout(timer);
     }, [down]);
 
@@ -212,14 +194,13 @@ const FlagBody = memo(function FlagBody({
                 data-flag-order={flag.order}
                 data-flag-pinned={flag.pinnedTo || undefined}
                 data-flag-down={down ? 'true' : undefined}
-                data-flag-look={look}
-                aria-label={`${flag.name}’s pennant`}
+                aria-label={`${flag.name}’s flag`}
                 onMouseEnter={() => { onHoverChange(true); onHover?.(flag.heroId); }}
                 onMouseLeave={() => { onHoverChange(false); onHover?.(null); }}
                 onClick={(e) => e.stopPropagation()}
                 className={cn(
                     'absolute p-0 m-0 bg-transparent border-0 outline-none transition-opacity ease-out',
-                    // Over a Token the pointer goes to the Token; a pennant that is down takes none.
+                    // Over a Token the pointer goes to the Token; a flag that is down takes none.
                     yieldToTokens || gone ? 'pointer-events-none' : 'pointer-events-auto',
                     'cursor-grab active:cursor-grabbing',
                     carried && 'opacity-30',
@@ -232,13 +213,12 @@ const FlagBody = memo(function FlagBody({
                     width: flagPx,
                     height: flagPx,
                     zIndex: z,
-                    transitionDuration: `${PENNANT_FADE_MS}ms`
+                    transitionDuration: `${FLAG_FADE_MS}ms`
                 }}
             >
                 <FlagMark
-                    look={look}
                     size={flagPx}
-                    alt={`${flag.name}’s pennant`}
+                    alt={`${flag.name}’s flag`}
                     outline={flagOutline({ hovered: hovered || boardHovered, selected: inspected, carried })}
                     className="absolute left-0 top-0"
                 />
@@ -255,7 +235,7 @@ export const STATE_TONE = {
 };
 
 /**
- * The pennant's hover text: the hero, what they are doing, and why their Token is passed over
+ * The flag's hover text: the hero, what they are doing, and why their Token is passed over
  * (a tool they no longer hold). Refreshed twice a second while shown, because waiting changes
  * without an event.
  */

@@ -20,7 +20,7 @@ import { MAT_TOKEN_DRAG_ID } from '../ui/components/board/MatToken.jsx';
 import { setDisallowMode } from '../ui/hooks/useMapMode.js';
 import { MatFitProvider } from '../ui/components/board/MatFitContext.jsx';
 import { HERO_HIT_PX, HERO_BOX_PX } from '../ui/components/board/boardConstants.js';
-import { FLAG_PX, PENNANT_ART_PX, POLE_BASE } from '../ui/components/board/flagGeometry.js';
+import { markerBox } from '../ui/components/board/flagGeometry.js';
 import { boardScaleAt } from '../ui/components/base/TokenSprite.jsx';
 import { placeAt, clearMat } from './fixtures/mat.js';
 import { drawnPoint } from './fixtures/drawnPoint.js';
@@ -354,14 +354,16 @@ describe('⭐ a press through a hero\'s see-through pixel reaches what is beneat
  * in front of that Token. Its pole and its empty corners still give way.
  */
 describe('⭐ a flag\'s cloth drawn in front of a Token takes the pointer there', () => {
-    // At the owner's fit the pennant is drawn about 73 u across, its pole foot on its point.
-    const FLAG_PX_HERE = PENNANT_ART_PX * boardScaleAt(OWNER_FIT);
+    // At the owner's fit the flag is drawn about 28 u across, its pole foot on its point.
     const boxOf = (point) => {
-        const s = FLAG_PX_HERE / FLAG_PX;
-        const left = point.x - POLE_BASE.x * s, top = point.y - POLE_BASE.y * s;
-        return { left, top, right: left + FLAG_PX_HERE, bottom: top + FLAG_PX_HERE, width: FLAG_PX_HERE, height: FLAG_PX_HERE, x: left, y: top };
+        const { left, top, size } = markerBox(point, null, boardScaleAt(OWNER_FIT));
+        return { left, top, right: left + size, bottom: top + size, width: size, height: size, x: left, y: top };
     };
-    const ON_CLOTH = { x: 620, y: 640 };
+    // A flag standing at `IN_FRONT` (lower on the mat than the Token, so drawn in front of it):
+    // the middle of its cloth, and a point of its box left of the cloth (its margin, by the pole).
+    const IN_FRONT = { x: 600, y: 650 };
+    const ON_CLOTH = { x: 605, y: 640 };
+    const OFF_CLOTH = { x: 593, y: 640 };
     let realElementFromPoint;
 
     function scene(flagPoint) {
@@ -398,7 +400,7 @@ describe('⭐ a flag\'s cloth drawn in front of a Token takes the pointer there'
     });
 
     it('hovering the cloth over the Token keeps the pointer on the flag, and the Token is not hovered', () => {
-        const flagPoint = { x: 600, y: 690 };
+        const flagPoint = IN_FRONT;
         const tok = scene(flagPoint);
         const { container } = mountWithDrag();
         const flag = boxFlag(container, flagPoint);
@@ -407,14 +409,15 @@ describe('⭐ a flag\'s cloth drawn in front of a Token takes the pointer there'
         fireEvent.pointerMove(hitOf(container, tok.id), { clientX: ON_CLOTH.x, clientY: ON_CLOTH.y });
         expect(flag.className).toContain('pointer-events-auto');
         expect(outlined(container, tok.id)).not.toBe('hover');
-        // On the pole beside the cloth, still on the Token: the flag gives way again.
-        fireEvent.pointerMove(hitOf(container, tok.id), { clientX: 600, clientY: 660 });
+        // Beside the cloth, still on the Token: the flag gives way again.
+        expect(Flags.tokenAtPoint(OFF_CLOTH)?.id).toBe(tok.id);
+        fireEvent.pointerMove(hitOf(container, tok.id), { clientX: OFF_CLOTH.x, clientY: OFF_CLOTH.y });
         expect(flag.className).toContain('pointer-events-none');
         expect(outlined(container, tok.id)).toBe('hover');
     });
 
     it('a press on the cloth with no pointer move before it picks up the flag, not the Token', () => {
-        const flagPoint = { x: 600, y: 690 };
+        const flagPoint = IN_FRONT;
         const tok = scene(flagPoint);
         const other = placeAt('fixture_producer', 1000, 600);
         const { container, started } = mountWithDrag();
@@ -474,7 +477,8 @@ describe('⭐ a flag\'s cloth drawn in front of a Token takes the pointer there'
         const flag = boxFlag(container, flagPoint);
         expect(Number(flag.style.zIndex)).toBeLessThan(Number(artOf(container, tok.id).style.zIndex));
         // On this flag's cloth, and inside the Token's circle.
-        const p = { x: 605, y: 545 };
+        const b = boxOf(flagPoint);
+        const p = { x: b.left + b.width / 2, y: b.top + b.height / 2 };
         expect(Flags.tokenAtPoint(p)?.id).toBe(tok.id);
         act(() => {
             fireEvent.pointerDown(hitOf(container, tok.id), { pointerId: 1, clientX: p.x, clientY: p.y, isPrimary: true, button: 0 });

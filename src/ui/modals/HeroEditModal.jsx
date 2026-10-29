@@ -122,7 +122,7 @@ export const HeroEditModal = ({ heroId, isOpen, onClose, onChangeJob }) => {
 
                 {/**
                  * Flag colour: saved on the hero, each swatch drawn with that colour's flag sprite.
-                 * The mat draws the one pennant for every hero; the colour is kept for a later
+                 * The mat draws the one job flag for every hero; the colour is kept for a later
                  * flag look.
                  * Full hero recolouring is later.
                  */}

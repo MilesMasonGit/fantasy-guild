@@ -262,8 +262,8 @@ export const MatBoard = React.memo(function MatBoard({
     const heroes = useMemo(() => heroesRaw || [], [heroesRaw]);
 
     /**
-     * Every order's pennant point, in planting order; pennants sort with the Tokens. A Token
-     * order's pennant sorts just behind its Token, so it is drawn behind the Token's sprite.
+     * Every order's flag point, in planting order; flags sort with the Tokens. A Token order's
+     * flag sorts just behind its Token, so it is drawn behind the Token's sprite.
      */
     const flagsRaw = useGameState(
         () => {
@@ -272,7 +272,7 @@ export const MatBoard = React.memo(function MatBoard({
                 const flag = BoardState.flagOf(heroId);
                 if (!flag) continue;
                 const pinned = Flags.pinnedTokenOf(heroId);
-                out.push({ heroId, y: pinned ? pinned.y - PENNANT_BEHIND : flag.y });
+                out.push({ heroId, y: pinned ? pinned.y - FLAG_BEHIND : flag.y });
             }
             return out;
         },
@@ -679,8 +679,8 @@ export const MatBoard = React.memo(function MatBoard({
     );
 });
 
-/** How far behind its Token a Token order's pennant sorts, in mat units: behind it, in front of the line above. */
-const PENNANT_BEHIND = 0.5;
+/** How far behind its Token a Token order's flag sorts, in mat units: behind it, in front of the line above. */
+const FLAG_BEHIND = 0.5;
 
 /** A map mode's edge: above the speech bubbles. */
 const MODE_EDGE_Z = MAT_Z.HERO_BUBBLE + 40;

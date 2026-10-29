@@ -150,6 +150,9 @@ normal text colour; a new meaning needs the owner's OK.
   a placeholder sprite and add the icon to
   [`owner_art_list.md`](../active/owner_art_list.md). Vector icons go as each
   screen is touched.
+  The one exception so far is a meta mark (owner, 2026-10-29): the hero's job
+  flag, Lucide's `FlagTriangleRight` (`FlagMark`), on the mat and wherever
+  the flag is shown.
 
 ## Item references
 

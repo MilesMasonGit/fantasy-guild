@@ -117,7 +117,7 @@ function useLastAttackAt(heroId, listening) {
 /**
  * A hero standing on the mat: working a Token, waiting by it, idle at a spot, or at home by the
  * Guild Hall. **Dragging the hero gives them an order**: the payload is `DRAG_KIND.FLAG`, as if
- * their pennant were picked up, and the drop decides the order (`Orders.orderAt`). The hero stays
+ * their flag were picked up, and the drop decides the order (`Orders.orderAt`). The hero stays
  * drawn where they are while carried. A hero whose ordered Token is gone for good wears the
  * "needs a job" mark over their head.
  */

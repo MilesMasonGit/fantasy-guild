@@ -226,7 +226,7 @@ export function matStackOrder(input = {}, stack = createMatStack()) {
  * passes.
  * - **Idle** beside the Token their order names (waiting for it): just in front of that Token,
  * so they are never drawn behind what they wait for.
- * - **Idle** at a spot: just in front of its pennant, so the pair sorts with the Tokens around it.
+ * - **Idle** at a spot: just in front of its flag, so the pair sorts with the Tokens around it.
  * - **Working** a Token: just in front of it. The Token is in the worked band, so the hero is
  * too.
  * - Anything else (at home by the Guild Hall): above every Token, below the walkers.

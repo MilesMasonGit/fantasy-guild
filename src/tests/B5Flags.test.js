@@ -26,7 +26,6 @@ import { dropOnMat } from '../ui/components/board/dropOnMat.js';
 import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
 import { flagTooltip } from '../ui/components/board/flagText.js';
 import { FlagLayer } from '../ui/components/board/FlagLayer.jsx';
-import { pinnedFlagPoint, POLE_BASE } from '../ui/components/board/flagGeometry.js';
 import { drawnPoint } from './fixtures/drawnPoint.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -347,28 +346,12 @@ describe('a pinned flag on the screen', () => {
         h(DndContext, null, el)
     );
 
-    it('is drawn on its Token, marked data-flag-pinned, with no reach ring', () => {
-        setMatTuning('jobMarker', 0);   // the pennant look
+    it('is drawn at its Token’s top-left corner, marked data-flag-pinned, with no reach ring', () => {
         const t = put(P(600, 600), 'fixture_producer');
         dropFlag('h1', P(600, 600));
         const { container } = mount(h(FlagLayer, { inspectedHeroId: 'h1' }));
         const el = container.querySelector('[data-flag="h1"]');
         expect(el.getAttribute('data-flag-pinned')).toBe(t.id);
-        const at = pinnedFlagPoint(t, artRadiusOf(t.typeId));
-        expect(drawnPoint(el).x + POLE_BASE.x).toBeCloseTo(at.x);
-        expect(drawnPoint(el).y + POLE_BASE.y).toBeCloseTo(at.y);
-        expect(container.querySelector('[data-flag-ring="h1"]')).toBeNull();
-        expect(container.querySelector('[data-flag="h1"]').getAttribute('data-flag-order')).toBe('token');
-        expect(flagTooltip('h1').pin).toBeNull();
-    });
-
-    it.each([[1, 'lucide'], [2, 'pixel']])('the small %s marker sits at its Token’s top-left corner (look %s)', (index, look) => {
-        setMatTuning('jobMarker', index);
-        const t = put(P(600, 600), 'fixture_producer');
-        dropFlag('h1', P(600, 600));
-        const { container } = mount(h(FlagLayer, { inspectedHeroId: 'h1' }));
-        const el = container.querySelector('[data-flag="h1"]');
-        expect(el.getAttribute('data-flag-look')).toBe(look);
         const size = parseFloat(el.style.width);
         const mid = { x: drawnPoint(el).x + size / 2, y: drawnPoint(el).y + size / 2 };
         const r = artRadiusOf(t.typeId);
@@ -376,6 +359,9 @@ describe('a pinned flag on the screen', () => {
         expect(t.x - mid.x).toBeCloseTo(t.y - mid.y);
         expect(t.x - mid.x).toBeGreaterThan(0.4 * r);
         expect(t.x - mid.x).toBeLessThan(r);
+        expect(container.querySelector('[data-flag-ring="h1"]')).toBeNull();
+        expect(el.getAttribute('data-flag-order')).toBe('token');
+        expect(flagTooltip('h1').pin).toBeNull();
     });
 
     it('an old area flag has no data-flag-pinned, and no ring is ever drawn', () => {

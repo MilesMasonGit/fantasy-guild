@@ -17,7 +17,7 @@ import { migrateState } from '../systems/core/SaveMigration.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
-import { resetMatTuning, setMatTuning } from '../config/matTuning.js';
+import { resetMatTuning } from '../config/matTuning.js';
 import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { FlagLayer } from '../ui/components/board/FlagLayer.jsx';
@@ -25,8 +25,7 @@ import { matAccepts } from '../ui/components/board/Board.jsx';
 import { dropOnMat } from '../ui/components/board/dropOnMat.js';
 import { FlagGhost } from '../ui/dnd/DragGhost.jsx';
 import { HeroEditModal } from '../ui/modals/HeroEditModal.jsx';
-import { flagOrigin, POLE_BASE, FLAG_PX } from '../ui/components/board/flagGeometry.js';
-import { PENNANT_SRC } from '../ui/components/board/FlagMark.jsx';
+import { markerBox, MARKER_ART_PX, MARKER_FOOT } from '../ui/components/board/flagGeometry.js';
 import { drawnPoint } from './fixtures/drawnPoint.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -123,8 +122,6 @@ beforeEach(() => {
     dnd.pointerDowns.length = 0;
     alpha.opaque = true;
     resetMatTuning();
-    // This file pins the pennant look; the small job markers are `JobMarker.test.js`'s.
-    setMatTuning('jobMarker', 0);
     GameState.initNew();
     InventoryManager.init();
     SpriteLayer.init();
@@ -208,42 +205,39 @@ describe('FP-76 — the player never moves a hero: dragging one drags their flag
 });
 
 describe('FP-77 / FP-82 — flag sprites and lasting colours', () => {
-    it('the flag is drawn with the sprite of the hero’s colour, at 128 px', () => {
+    it('a hero holding a colour still draws the one job flag, at 24 px at the natural fit', () => {
         Flags.plant('h1', C(20));
         const colour = flagColourOf('h1');
         expect(FLAG_COLOURS).toContain(colour);
 
         const { container } = mount(h(FlagLayer));
         const flag = container.querySelector('[data-flag="h1"]');
-        const img = flag.querySelector('img');
-        expect(img.getAttribute('src')).toBe(PENNANT_SRC);
-        expect(img.style.width).toBe('64px');
-        expect(img.style.height).toBe('64px');
-        expect(img.style.imageRendering).toBe('pixelated');
-        expect(flag.style.width).toBe('64px');
+        const mark = flag.querySelector('[data-flag-mark]');
+        expect(mark.querySelector('svg.lucide-flag-triangle-right')).toBeTruthy();
+        expect(mark.style.width).toBe(`${MARKER_ART_PX * 2}px`);
+        expect(flag.style.width).toBe(`${MARKER_ART_PX * 2}px`);
+        expect(flag.querySelector('img')).toBeNull();
     });
 
-    it('every hero draws the same pennant, whatever colour they hold', () => {
+    it('every hero draws the same flag, whatever colour they hold', () => {
         Flags.plant('h1', C(20));
         Flags.plant('h2', C(8));
         expect(flagColourOf('h1')).not.toBe(flagColourOf('h2'));
         const { container } = mount(h(FlagLayer));
-        for (const id of ['h1', 'h2']) {
-            expect(container.querySelector(`[data-flag="${id}"] img`).getAttribute('src')).toBe(PENNANT_SRC);
-        }
+        const marks = ['h1', 'h2'].map(id => container.querySelector(`[data-flag="${id}"] [data-flag-mark]`).innerHTML);
+        expect(marks[0]).toBe(marks[1]);
     });
 
-    it('a hero with no colour draws the pennant too', () => {
+    it('a hero with no colour draws the flag too, in the hand', () => {
         const { container } = mount(h(FlagGhost, { payload: { heroId: 'h2' } }));
-        expect(container.querySelector('img').getAttribute('src')).toBe(PENNANT_SRC);
+        expect(container.querySelector('[data-flag-mark] svg.lucide-flag-triangle-right')).toBeTruthy();
     });
 
-    it('the drag ghost is the pennant at 64 px', () => {
+    it('the drag ghost is the flag at the mat’s size', () => {
         Flags.plant('h1', C(20));
         const { container } = mount(h(FlagGhost, { payload: { heroId: 'h1' } }));
-        const img = container.querySelector('img');
-        expect(img.getAttribute('src')).toBe(PENNANT_SRC);
-        expect(img.style.width).toBe('64px');
+        expect(container.querySelector('[data-flag-mark]').style.width).toBe(container.querySelector('[data-flag-ghost]').style.width);
+        expect(parseFloat(container.querySelector('[data-flag-ghost]').style.width) % MARKER_ART_PX).toBe(0);
     });
 
     it('is given at the first plant — the first colour nobody else holds — and kept on re-plants', () => {
@@ -311,21 +305,21 @@ describe('FP-77 / FP-82 — flag sprites and lasting colours', () => {
 });
 
 describe('FP-83 — a flag stands exactly where it was dropped', () => {
-    it('flagOrigin puts the pole base on the flag’s own point', () => {
+    it('markerBox puts the pole foot on the flag’s own point', () => {
         for (const point of [{ x: 0, y: 0 }, { x: 733, y: 412 }, C(14), C(35)]) {
-            const { left, top } = flagOrigin(point);
-            expect(left + POLE_BASE.x).toBe(point.x);
-            expect(top + POLE_BASE.y).toBe(point.y);
+            const { left, top, size } = markerBox(point, null, 2);
+            expect(left + MARKER_FOOT.x * size).toBeCloseTo(point.x);
+            expect(top + MARKER_FOOT.y * size).toBeCloseTo(point.y);
         }
     });
 
-    it('the drawn flag sits where flagOrigin says', () => {
+    it('the drawn flag sits where markerBox says', () => {
         Flags.plant('h1', C(14));
         const { container } = mount(h(FlagLayer));
         const flag = container.querySelector('[data-flag="h1"]');
-        const { left, top } = flagOrigin(C(14));
-        expect(drawnPoint(flag).x).toBe(left);
-        expect(drawnPoint(flag).y).toBe(top);
+        const { left, top } = markerBox(C(14), null, parseFloat(flag.style.width) / MARKER_ART_PX);
+        expect(drawnPoint(flag).x).toBeCloseTo(left);
+        expect(drawnPoint(flag).y).toBeCloseTo(top);
     });
 
     it('a flag planted off the old grid stands there too — no snapping', () => {
@@ -333,28 +327,27 @@ describe('FP-83 — a flag stands exactly where it was dropped', () => {
         Flags.plant('h1', odd);
         const { container } = mount(h(FlagLayer));
         const flag = container.querySelector('[data-flag="h1"]');
-        expect(drawnPoint(flag).x + POLE_BASE.x).toBe(odd.x);
-        expect(drawnPoint(flag).y + POLE_BASE.y).toBe(odd.y);
+        const size = parseFloat(flag.style.width);
+        expect(drawnPoint(flag).x + MARKER_FOOT.x * size).toBeCloseTo(odd.x);
+        expect(drawnPoint(flag).y + MARKER_FOOT.y * size).toBeCloseTo(odd.y);
     });
 });
 
-describe('the flag answers clicks on the pennant’s drawn square', () => {
+describe('the flag answers clicks on its drawn square', () => {
     /**
-     * The flag answers on the square the pennant is drawn in, which the pennant fills, not on
-     * its opaque pixels (no alpha hit-testing). Over a Token's art circle every flag lets the
+     * The flag answers on the square it is drawn in, not on its opaque pixels (no alpha
+     * hit-testing). Over a Token's art circle every flag lets the
      * pointer through except on its cloth (`MatLayering.test.js`, `MatPressTarget.test.js`).
      */
-    it('is the pennant’s own square, and does not opt into alpha hit-testing', () => {
+    it('is the flag’s own square, and does not opt into alpha hit-testing', () => {
         Flags.plant('h1', C(20));
         const { container } = mount(h(FlagLayer));
         const flag = container.querySelector('[data-flag="h1"]');
         expect(flag.getAttribute('data-alpha-test')).toBeNull();
         expect(flag.style.borderRadius).toBe('');
-        expect(flag.style.width).toBe('64px');
-        expect(flag.style.height).toBe('64px');
-        const img = flag.querySelector('img');
-        expect(img.getAttribute('src')).toBe(PENNANT_SRC);
-        expect(img.style.width).toBe(flag.style.width);
+        expect(flag.style.width).toBe(`${MARKER_ART_PX * 2}px`);
+        expect(flag.style.height).toBe(flag.style.width);
+        expect(flag.querySelector('[data-flag-mark]').style.width).toBe(flag.style.width);
     });
 
     it('a click on the flag is kept, never passed to what is underneath', () => {
@@ -384,15 +377,13 @@ describe('several flags on one point (FP-83)', () => {
         expect(drawn.every(Boolean)).toBe(true);
 
         // ⛔ The grid's fan-out and its three-flag cap are gone: flags overlap.
-        const { left, top } = flagOrigin(C(20));
         drawn.forEach(el => {
-            expect(drawnPoint(el).x).toBe(left);
-            expect(drawnPoint(el).y).toBe(top);
+            expect(drawnPoint(el).x).toBe(drawnPoint(drawn[0]).x);
+            expect(drawnPoint(el).y).toBe(drawnPoint(drawn[0]).y);
         });
 
         // Planting order decides who is in front; nobody is hidden.
         expect(Number(drawn[4].style.zIndex)).toBeGreaterThan(Number(drawn[0].style.zIndex));
         expect(container.querySelector('[data-flag-more]')).toBeNull();
-        expect(FLAG_PX).toBe(64);
     });
 });

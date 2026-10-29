@@ -8,7 +8,7 @@ import { TokenSprite, TOKEN_SURFACE, tokenSizeFor, PixelArt, boardArtSteps } fro
 import { resolveSpritePath } from '../../utils/AssetManager.js';
 import { GameState } from '../../state/GameState.js';
 import { FlagMark } from '../components/board/FlagMark.jsx';
-import { PENNANT_ART_PX } from '../components/board/flagGeometry.js';
+import { MARKER_ART_PX, MARKER_FOOT } from '../components/board/flagGeometry.js';
 
 /**
  * DragGhost: the floating representation of whatever is being dragged.
@@ -79,16 +79,18 @@ const CarriedToken = ({ payload, bold, offBoard }) => (
 );
 
 /**
- * A flag in flight: the pennant at the board's art scale (64 px at the mat's natural fit),
- * lifted, with no hero drawn. A flag drag moves only the flag, and so does dragging a hero on
- * the board.
+ * A flag in flight: the job flag at the mat's size (24 px at its usual fit), with no hero drawn.
+ * A flag drag moves only the flag, and so does dragging a hero on the board.
+ * ⚠️ The ghost's box is centred on the pointer (`pickupFlight.js`), and the drop lands on the
+ * pointer: the flag is shifted inside its box so its pole foot is the box's middle, where it
+ * will stand.
  */
 export const FlagGhost = ({ payload }) => {
-    const artScale = boardArtSteps(liveBoardFit());
-    const size = PENNANT_ART_PX * artScale;
+    const size = MARKER_ART_PX * boardArtSteps(liveBoardFit());
+    const shift = { x: (0.5 - MARKER_FOOT.x) * size, y: (0.5 - MARKER_FOOT.y) * size };
     return (
-        <div data-flag-ghost={payload?.heroId || ''} className="flex items-center justify-center" style={{ width: size, height: size }}>
-            <FlagMark size={size} lifted />
+        <div data-flag-ghost={payload?.heroId || ''} className="relative" style={{ width: size, height: size }}>
+            <FlagMark size={size} style={{ position: 'absolute', left: shift.x, top: shift.y }} />
         </div>
     );
 };

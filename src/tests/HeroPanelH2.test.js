@@ -319,6 +319,9 @@ describe('H2: the panel header', () => {
         const hero = box.querySelector('[data-hero-panel-figure]');
         expect(flag).not.toBeNull();
         expect(hero).not.toBeNull();
+        // The job flag, as large beside the hero as on the mat: 12 of the hero's 64 art pixels.
+        expect(flag.querySelector('[data-flag-mark] svg.lucide-flag-triangle-right')).toBeTruthy();
+        expect(flag.querySelector('[data-flag-mark]').style.width).toBe(`${(size * 12) / 64}px`);
         // The flag comes first, so the hero draws over it.
         expect(flag.compareDocumentPosition(hero) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
         // The idle row of the sheet, as the mat's idle hero.

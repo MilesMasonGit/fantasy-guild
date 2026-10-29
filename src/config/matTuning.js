@@ -20,8 +20,6 @@
  * `QUEST_EVERY_SEC` in `QuestTokens.js`); their rows here start at those values
  * (`ShippedBuild.test.js` holds them in step) and are read through {@link tunedOr}.
  *
- * A row with `choices` (one name per whole value from `min`) shows as buttons rather than a slider.
- *
  * Read with `matTuning('key')` at the point of use, every time — capturing a
  * value into a module constant would freeze it at import.
  */
@@ -150,16 +148,6 @@ export const MAT_TUNABLES = Object.freeze([
         hint: 'Dev override for the most Tokens the mat may hold (MatCap.BASE_TOKEN_CAP is the game value, 128). Every Token on the mat counts, placed or spawned; the Guild Hall and quests never do. 0 uses the game value.',
         min: 0, max: 2000, step: 1, def: 0,
         format: (v) => (Math.round(v) === 0 ? 'off: game value' : `${Math.round(v)} Tokens`)
-    },
-    {
-        // Looks only: nothing in the engine reads it.
-        key: 'jobMarker',
-        group: 'Looks',
-        label: 'Job marker',
-        hint: 'What marks the job a hero is ordered onto: the old pennant on top of the Token, or a small flag peeking out from behind the Token’s top-left corner, as a Lucide icon or as a pixel glyph. A look to compare; the owner picks one.',
-        min: 0, max: 2, step: 1, def: 1,
-        choices: ['Pennant', 'Lucide', 'Pixel'],
-        format: (v) => ['Pennant', 'Lucide', 'Pixel'][Math.round(v)] ?? 'Pennant'
     },
     {
         key: 'questCap',

@@ -6,7 +6,7 @@ import * as Orders from '../../../systems/board/Orders.js';
 import { isGuildHall } from '../../../systems/board/MatCap.js';
 import { setWorkable, setJob } from './orderLit.js';
 
-/** Whether a drag carries a hero (their figure, their pennant or their roster tab). */
+/** Whether a drag carries a hero (their figure, their flag or their roster tab). */
 const carriesHero = (payload) => !!payload?.heroId
     && (payload.kind === DRAG_KIND.HERO || payload.kind === DRAG_KIND.FLAG);
 
@@ -40,7 +40,7 @@ export const OrderLighting = memo(function OrderLighting() {
 
 /**
  * Light one hero's job on the mat, or none with null: the Token their order names, in the white
- * hover outline (`orderLit.js`). `MatBoard` calls it as a hero, their pennant or their roster tab
+ * hover outline (`orderLit.js`). `MatBoard` calls it as a hero, their flag or their roster tab
  * is hovered, or their sheet is open.
  */
 export function lightHeroJob(heroId) {

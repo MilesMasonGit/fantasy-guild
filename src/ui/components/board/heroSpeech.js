@@ -71,7 +71,7 @@ export const momentText = {
  * * arrived at a spot they were sent to: nothing (idle by choice);
  * * a fight another hero holds, or their Token another hero works: "Waiting for Goblin.";
  * * a node that is resting or growing back, or an enemy camp's next spawn: nothing. They wait
- * silently and work it when it is back; the pennant's hover and the roster say "Waiting for Copper
+ * silently and work it when it is back; the flag's hover and the roster say "Waiting for Copper
  * Vein" ("Waiting for Goblin");
  * * otherwise: "No work in range."
  */

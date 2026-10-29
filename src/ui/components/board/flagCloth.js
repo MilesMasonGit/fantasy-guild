@@ -1,4 +1,4 @@
-import { clothOf } from './flagGeometry.js';
+import { MARKER_CLOTH } from './flagGeometry.js';
 
 /** Whether a client point is on a flag's cloth, measured on the flag's own drawn box. */
 export function onFlagCloth(flagEl, clientX, clientY) {
@@ -6,8 +6,7 @@ export function onFlagCloth(flagEl, clientX, clientY) {
     if (!r || !(r.width > 0) || !(r.height > 0)) return false;
     const u = (clientX - r.left) / r.width;
     const v = (clientY - r.top) / r.height;
-    const cloth = clothOf(flagEl.getAttribute?.('data-flag-look'));
-    return u >= cloth.left && u <= cloth.right && v >= cloth.top && v <= cloth.bottom;
+    return u >= MARKER_CLOTH.left && u <= MARKER_CLOTH.right && v >= MARKER_CLOTH.top && v <= MARKER_CLOTH.bottom;
 }
 
 /**

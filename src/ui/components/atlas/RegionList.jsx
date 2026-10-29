@@ -18,8 +18,8 @@ import { bannerForRegion } from './regionBanner.js';
 import { regionPlan, regionFacts } from './regionPreview.js';
 import { SCREEN_TEXT } from './atlasScreenText.js';
 
-/** The hero flag marking the Region the guild is in: the 32 px pennant at 2×. */
-const HERE_FLAG_PX = 64;
+/** The job flag marking the Region the guild is in: its 12 art pixels at 3×. */
+const HERE_FLAG_PX = 36;
 /** A row's height in screen px: the flag and a band of the banner. */
 const ROW_PX = 96;
 const ROW_GAP_PX = 8;
