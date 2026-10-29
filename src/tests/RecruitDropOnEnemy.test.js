@@ -135,36 +135,58 @@ describe('a Recruit dropped ON a Goblin fights it and wins', () => {
     });
 });
 
-describe('a Recruit sent NEAR a hostile Goblin: it watches the spot, the same on every side', () => {
+describe('a Recruit sent to work NEAR a hostile Goblin: it watches the ordered Token, the same on every side', () => {
     /**
-     * A hostile enemy attacks a hero whose ORDER stands inside its watch, wherever the hero's body
-     * is. A spot order seeks no fight, so only the Goblin's watch can start one.
+     * A hostile enemy attacks a hero whose ORDER, a Token they work, stands inside its watch,
+     * wherever the hero's body is. A spot order on open ground is never attacked (owner,
+     * 2026-10-28), so only work near the Goblin draws it.
      */
     const SIDES = { right: [1, 0], left: [-1, 0], above: [0, -1], below: [0, 1] };
     const WHERE = { right: 'right of it', left: 'left of it', above: 'above it', below: 'below it' };
 
-    /** The Recruit out on the mat far up and to the right, then sent to a spot beside the Goblin. */
+    /** The Recruit out on the mat far up and to the right, then sent to work a Producer beside the Goblin. */
     function nearDrop(side, distance) {
         expect(barDrop('r1', { x: 1500, y: 300 }).success).toBe(true);
         for (let i = 0; i < 50; i++) BoardRunner.tick(100);
         const goblin = placeAt('fixture_drop_goblin', GOBLIN.x, GOBLIN.y);
         const [ux, uy] = SIDES[side];
-        const res = flagDrop('r1', { x: GOBLIN.x + ux * distance, y: GOBLIN.y + uy * distance });
+        const work = placeAt('fixture_producer', GOBLIN.x + ux * distance, GOBLIN.y + uy * distance);
+        const res = flagDrop('r1', { x: work.x, y: work.y });
         expect(res.success).toBe(true);
-        expect(res.pinnedTo).toBeNull();
+        expect(res.pinnedTo).toBe(work.id);
+        return goblin;
+    }
+
+    /** The same, but sent to a spot on open ground beside the Goblin. */
+    function spotDrop(side, distance) {
+        expect(barDrop('r1', { x: 1500, y: 300 }).success).toBe(true);
+        for (let i = 0; i < 50; i++) BoardRunner.tick(100);
+        const goblin = placeAt('fixture_drop_goblin', GOBLIN.x, GOBLIN.y);
+        const [ux, uy] = SIDES[side];
+        const res = flagDrop('r1', { x: GOBLIN.x + ux * distance, y: GOBLIN.y + uy * distance });
+        expect(res).toMatchObject({ success: true, order: 'spot' });
         return goblin;
     }
 
     for (const side of Object.keys(SIDES)) {
-        it(`${WHERE[side]}, the spot inside its watch: the Goblin attacks and the Recruit wins`, () => {
-            const goblin = nearDrop(side, 150);
+        it(`${WHERE[side]}, the Token inside its watch: the Goblin attacks and the Recruit wins`, () => {
+            const goblin = nearDrop(side, 160);
             const { fought, gone } = play('r1', goblin);
             expect(fought).toBe(true);
             expect(gone).toBe(true);
         });
 
-        it(`${WHERE[side]}, the spot outside its watch: the Goblin leaves the Recruit alone`, () => {
+        it(`${WHERE[side]}, the Token outside its watch: the Goblin leaves the Recruit alone`, () => {
             const goblin = nearDrop(side, 280);
+            const { fought, gone } = play('r1', goblin, 30000);
+            expect(fought).toBe(false);
+            expect(gone).toBe(false);
+            expect(Flags.ambusherOf('r1')).toBeNull();
+            expect(Flags.statusOf('r1').state).toBe('working');
+        });
+
+        it(`${WHERE[side]}, a spot on open ground inside its watch: never attacked (owner, 2026-10-28)`, () => {
+            const goblin = spotDrop(side, 150);
             const { fought, gone } = play('r1', goblin, 30000);
             expect(fought).toBe(false);
             expect(gone).toBe(false);
@@ -173,8 +195,8 @@ describe('a Recruit sent NEAR a hostile Goblin: it watches the spot, the same on
         });
     }
 
-    it('attacked as soon as the spot lands inside its watch, while the Recruit is still far away', () => {
-        const goblin = nearDrop('left', 150);
+    it('attacked as soon as the ordered Token lands inside its watch, while the Recruit is still far away', () => {
+        const goblin = nearDrop('left', 160);
         BoardRunner.tick(300);
         expect(Flags.ambusherOf('r1')).toBe(goblin.id);
         const body = HeroMotion.heroPointOf('r1');

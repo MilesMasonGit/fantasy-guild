@@ -79,7 +79,7 @@ export const MAT_TUNABLES = Object.freeze([
         key: 'watchRadius',
         group: 'Enemies',
         label: 'Camp watch',
-        hint: 'How far round its camp a hostile enemy watches for a hero working there, centre to centre, measured to the Token the hero is ordered onto (or the spot they were sent to). 240 reaches the camp’s eight neighbours: the four sides (160 u) and the diagonals (226 u).',
+        hint: 'How far round its camp a hostile enemy watches for a hero working there, centre to centre, measured to the Token the hero is ordered onto (a hero sent to a spot on open ground is never attacked). 240 reaches the camp’s eight neighbours: the four sides (160 u) and the diagonals (226 u).',
         min: 100, max: 1000, step: 1, def: 240,
         format: (v) => `${Math.round(v)} u · ${(v / STEP_U).toFixed(2)} steps`
     },

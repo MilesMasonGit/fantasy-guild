@@ -18,11 +18,11 @@ import { matTuning } from '../../config/matTuning.js';
  * (`EnemyMotion.spawnerOf`), or around the node it ambushed from; with neither it watches round
  * itself.
  *
- * ⚠️ The watch measures the hero's ORDER (the Token they are sent to, or the spot), never where the
- * hero stands. An idle hero stands beside their spot, so measuring the body made a spot beside an
- * enemy count on some sides and not others. It also means a hero merely walking past, or waiting at
- * the Guild Hall, is not attacked, and a hero ordered inside is attacked at once, wherever they
- * are, and walks up. They fight back, then go back to their job.
+ * ⚠️ The watch measures the hero's ORDER (the Token they are sent to), never where the hero stands:
+ * a hero merely walking past, or waiting at the Guild Hall, is not attacked, and a hero ordered onto
+ * a Token inside is attacked at once, wherever they are, and walks up. They fight back, then go
+ * back to their job. A hero sent to a spot on open ground is never attacked (owner, 2026-10-28):
+ * only work near a camp draws its goblins.
  *
  * Attacking is `Flags.ambush`: the hero drops their work and claims the enemy, walks up, and
  * `BoardCombat.tickToken` begins the fight on arrival; they fight back whatever their rules say. A
@@ -32,7 +32,7 @@ import { matTuning } from '../../config/matTuning.js';
  * radius, the one standing nearest the enemy (the earlier-planted flag on a tie). One fight per
  * enemy and one enemy per hero, so enemies never gang up.
  *
- * Not attacked: heroes with no order (at the Guild Hall), wounded heroes, heroes who cannot fight and heroes already
+ * Not attacked: heroes with no order (at the Guild Hall), heroes on a spot order, wounded heroes, heroes who cannot fight and heroes already
  * on an enemy. Recruits are attacked like anyone: everyone fights, a Recruit barehanded. An enemy does not
  * attack while a hero holds it, while it is in the player's hand, or while the player has marked it
  * as not for heroes to work: a forced fight there would be let go on the next pass.
@@ -87,6 +87,8 @@ function targets() {
         if (HeroMotion.isReturning(heroId) || isWounded(heroId)) continue;
         if (!FlagRules.canFight(heroId) || onEnemy(heroId)) continue;
         const flag = flags[heroId];
+        // Idling on open ground draws no attack: only a hero sent to work a Token does.
+        if (Flags.isSpot(flag)) continue;
         const at = HeroMotion.heroPointOf(heroId) || BoardState.displayPointOf(heroId);
         if (!at || !Number.isFinite(flag?.x) || !Number.isFinite(flag?.y)) continue;
         out.push({ heroId, x: at.x, y: at.y, flagX: flag.x, flagY: flag.y });

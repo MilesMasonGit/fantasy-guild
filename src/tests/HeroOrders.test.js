@@ -76,6 +76,8 @@ function newBoard({ hall = true, heroes = 1 } = {}) {
     GameState.initNew();
     InventoryManager.init();
     Growth.resetGrowthAlerts();
+    // Fights live outside the board, and the bench heroes' ids repeat from test to test.
+    BoardCombat.clearAll();
     if (hall) fixtures.placeAt('bench_hall', HALL.x, HALL.y);
     const made = fixtures.makeHeroes(heroes);
     TileModifiers.rebuildAll();
@@ -277,6 +279,24 @@ describe('⭐ hostile enemies ambush a hero working near their camp', () => {
         // Each goblin fought, then back at the tree.
         expect(Flags.pinnedIdOf(h.id)).toBe(tree.id);
         void camp;
+    });
+
+    it('a hero sent to a spot on open ground inside the watch is never attacked (owner, 2026-10-28)', () => {
+        const [h] = newBoard();
+        const camp = fixtures.placeAt('bench_camp', 400, 300);
+        fixtures.prefillSpawners();
+        // A bare point inside the watch (no goblin standing on it).
+        const spot = [0, 1, 2, 3, 4, 5, 6, 7].map(a => ({ x: camp.x + 180 * Math.cos(a * Math.PI / 4), y: camp.y + 180 * Math.sin(a * Math.PI / 4) }))
+            .find(p => !Flags.tokenAtPoint(p));
+        expect(Orders.orderAt(h.id, spot)).toMatchObject({ success: true, order: 'spot' });
+        run(5000);
+        expect(Flags.ambusherOf(h.id)).toBe(null);
+        expect(BoardCombat.fightOfHero(h.id)).toBe(null);
+        // The same hero sent to work a Token there is attacked.
+        const tree = fixtures.placeAt('fixture_producer', camp.x + 160, camp.y + 160);
+        Orders.orderAt(h.id, { x: tree.x, y: tree.y });
+        run(400);
+        expect(Flags.ambusherOf(h.id)).not.toBe(null);
     });
 
     it('a hero at home by the Hall is never attacked', () => {

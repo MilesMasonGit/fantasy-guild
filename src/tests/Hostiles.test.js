@@ -298,6 +298,14 @@ describe('who is never attacked', () => {
         expect(Hostiles.scan()).toEqual([]);
     });
 
+    it('a hero sent to a spot on open ground inside the watch (owner, 2026-10-28)', () => {
+        campWith();
+        expect(Flags.orderSpot('h1', NEAR).success).toBe(true);
+        expect(Hostiles.scan()).toEqual([]);
+        run(1000);
+        expect(Flags.ambusherOf('h1')).toBeNull();
+    });
+
     it('a hero at home (no order), or one walking home', () => {
         campWith();
         logging('h1', NEAR);
