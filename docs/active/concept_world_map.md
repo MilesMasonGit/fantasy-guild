@@ -158,6 +158,36 @@ balance (worries: lucky or unlucky worlds; skills progressing unevenly).*
   cells outward, deepening places, wonders, the run as chapters) were not
   chosen.
 
+## Building nodes anywhere (owner, 2026-10-29)
+
+*The problem (owner): only the active Region runs, so a player who wants Fir
+Wood and Gold Ore at once can't if no mat has both. Answer: more ways for
+the player to **make nodes**.*
+
+- **Each skill has its own rule for building its nodes** (owner):
+  - **Farming and Forestry: plant anywhere** (Fields, planted Forests; Farming
+    already works this way).
+  - **Mining: barriers**: a mineshaft needs **Stone terrain**.
+  - **Fishing: a hard limit**: it needs **water** on the mat.
+  - **The other skills follow the same idea** (owner): Alchemy herbs plant like
+    Farming (the Herb Garden); a built enemy camp (a lure, or the Summoning
+    Circle) needs a token from that enemy and free ground; stations (Smithing,
+    Cooking, Crafting) already build anywhere. The planning agent drafts each
+    skill's rule for the owner's review.
+- **The unlock is an item from the place** (owner): working the wild resource
+  yields its seed (Fir Seedlings from fir trees, a Gold Vein Sample from gold
+  veins); the build recipe uses it. Finding the place once stays the gate;
+  the ledger tracks the seed like any item.
+- **A built node is weaker, but always yours** (owner): it yields less or
+  rests longer than a wild one, so rich wild places (and the wild outer
+  rings) still matter.
+- **Most inner mats have some Stone terrain and some water** (owner):
+  archetypes lean (Highland much stone, Riverside much water), a few lack
+  one.
+- Not chosen: outposts producing while you're away, paired resources in
+  generation, caravans and roads. Stockpiling by trips still works beside
+  building.
+
 ## Explored and set aside (owner, 2026-10-29)
 
 - **Influence and player-placed cells**: a meta-resource (earned from bounties
