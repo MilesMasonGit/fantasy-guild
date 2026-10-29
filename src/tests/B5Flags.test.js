@@ -348,6 +348,7 @@ describe('a pinned flag on the screen', () => {
     );
 
     it('is drawn on its Token, marked data-flag-pinned, with no reach ring', () => {
+        setMatTuning('jobMarker', 0);   // the pennant look
         const t = put(P(600, 600), 'fixture_producer');
         dropFlag('h1', P(600, 600));
         const { container } = mount(h(FlagLayer, { inspectedHeroId: 'h1' }));
@@ -359,6 +360,22 @@ describe('a pinned flag on the screen', () => {
         expect(container.querySelector('[data-flag-ring="h1"]')).toBeNull();
         expect(container.querySelector('[data-flag="h1"]').getAttribute('data-flag-order')).toBe('token');
         expect(flagTooltip('h1').pin).toBeNull();
+    });
+
+    it.each([[1, 'lucide'], [2, 'pixel']])('the small %s marker sits at its Token’s top-left corner (look %s)', (index, look) => {
+        setMatTuning('jobMarker', index);
+        const t = put(P(600, 600), 'fixture_producer');
+        dropFlag('h1', P(600, 600));
+        const { container } = mount(h(FlagLayer, { inspectedHeroId: 'h1' }));
+        const el = container.querySelector('[data-flag="h1"]');
+        expect(el.getAttribute('data-flag-look')).toBe(look);
+        const size = parseFloat(el.style.width);
+        const mid = { x: drawnPoint(el).x + size / 2, y: drawnPoint(el).y + size / 2 };
+        const r = artRadiusOf(t.typeId);
+        // Up and left of the centre by the same amount, inside the art's square, past its circle.
+        expect(t.x - mid.x).toBeCloseTo(t.y - mid.y);
+        expect(t.x - mid.x).toBeLessThan(r);
+        expect(Math.hypot(t.x - mid.x, t.y - mid.y)).toBeGreaterThan(r);
     });
 
     it('an old area flag has no data-flag-pinned, and no ring is ever drawn', () => {

@@ -231,7 +231,7 @@ describe('⭐ on the mat: a change to one hero\'s flag redraws that flag alone',
         });
         await flush();
         renders.stop();
-        expect(document.querySelector('[alt="Renamed’s pennant"]')).not.toBeNull();
+        expect(document.querySelector('[aria-label="Renamed’s pennant"]')).not.toBeNull();
         expect(renders.of('FlagMark'), JSON.stringify(renders.all())).toBe(1);
     });
 });

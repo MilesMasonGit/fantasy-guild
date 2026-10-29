@@ -311,12 +311,16 @@ export function installDragKit() {
     });
     // ---- Where the game gives a press: the bench's own copy of the rules, read from the page ----
     // A flag's cloth inside its drawn box, as shares of its size (the flag art, `flagGeometry.js`).
+    // The small job markers (the Mat Tuner's Job marker row, `data-flag-look`) are their drawn flag.
     const CLOTH = { left: 12 / 64, top: 11 / 64, right: 62 / 64, bottom: 36 / 64 };
+    const SMALL_CLOTH = { left: 2 / 12, top: 2 / 12, right: 10 / 12, bottom: 10 / 12 };
     const zOf = (el) => Number(el?.style?.zIndex) || 0;
     const onCloth = (flagEl, p) => {
         const r = flagEl.getBoundingClientRect();
         const u = (p.x - r.left) / r.width, v = (p.y - r.top) / r.height;
-        return u >= CLOTH.left && u <= CLOTH.right && v >= CLOTH.top && v <= CLOTH.bottom;
+        const look = flagEl.getAttribute('data-flag-look');
+        const c = look === 'lucide' || look === 'pixel' ? SMALL_CLOTH : CLOTH;
+        return u >= c.left && u <= c.right && v >= c.top && v <= c.bottom;
     };
     /** A flag whose cloth is drawn in front of a Token at `p` (over a Token, only a cloth keeps a press). */
     const clothInFront = (p, tokenZ) => [...document.querySelectorAll('button[data-flag]')]

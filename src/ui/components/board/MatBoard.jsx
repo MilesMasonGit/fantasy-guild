@@ -15,6 +15,7 @@ import { CalloutLayer } from './CalloutLayer.jsx';
 import { HeroBubbleLayer } from './HeroBubbleLayer.jsx';
 import { strikesLive, heroAnimationState, hitSkillOf, hitsOnAttack } from './hitAnimations.js';
 import { FlagLayer } from './FlagLayer.jsx';
+import { OrderDragLine } from './OrderDragLine.jsx';
 import { heroOutline } from './spriteOutline.js';
 import { SpriteLayerView } from './SpriteLayerView.jsx';
 import { WorkPlateLayer } from './WorkPlateLayer.jsx';
@@ -597,6 +598,8 @@ export const MatBoard = React.memo(function MatBoard({
 
             {/* While a hero is carried, every Token they could be ordered onto lights. */}
             <OrderLighting />
+            {/* `MAT_Z.RINGS`: and a marching dashed line from them to where they would be sent. */}
+            <OrderDragLine matRef={rootRef} />
 
             {/* `MAT_Z.RINGS`: the Near ring. Flag radius rings are FlagLayer's. */}
             {ringsDrawn && <MatRings hoveredCentre={hoveredCentre} matRef={rootRef} />}

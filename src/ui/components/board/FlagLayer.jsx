@@ -16,7 +16,8 @@ import { flagOutline } from './spriteOutline.js';
 import { flagTooltip } from './flagText.js';
 import { FloatingTip } from '../base/Tooltip.jsx';
 import { useMatFit } from './MatFitContext.jsx';
-import { FLAG_PX, PENNANT_ART_PX, POLE_BASE, pinnedFlagPoint } from './flagGeometry.js';
+import { jobMarkerLook, markerBox } from './flagGeometry.js';
+import { matTuning, onMatTuningChanged } from '../../../config/matTuning.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
@@ -33,6 +34,10 @@ import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
  * every pennant lets it through (`yieldToTokens`, set by `MatBoard`), except its cloth where it
  * is drawn in front of that Token (`flagCloth.js`).
  * The radius ring of the old area flags is gone: an order has no reach.
+ * - **The look** is the Mat Tuner's Job marker row (`jobMarkerLook`, `markerBox`): the pennant
+ * above, or a small flag (a Lucide icon or a pixel glyph) at the top-left corner of the job's
+ * Token, sorted behind it the same way so it peeks out past the Token's art. A spot order's small
+ * flag stands its pole foot on the spot, as the pennant does.
  */
 
 /** How long a spot's pennant takes to fade once its hero arrives, in ms. */
@@ -52,13 +57,14 @@ function projectFlags() {
         // An old area flag (made only by tests now) is drawn as it always was.
         const order = pinned ? 'token' : (Flags.isSpot(flag) ? (flag.needsJob ? null : 'spot') : 'area');
         if (!order) continue;
-        const drawn = pinned ? pinnedFlagPoint(pinned, artRadiusOf(pinned.typeId)) : flag;
         out.push({
             heroId,
             x: flag.x,
             y: flag.y,
-            drawX: drawn.x,
-            drawY: drawn.y,
+            // Where it is drawn depends on the look: the pinned Token's centre and art radius.
+            pinX: pinned ? pinned.x : null,
+            pinY: pinned ? pinned.y : null,
+            pinR: pinned ? artRadiusOf(pinned.typeId) : null,
             pinnedTo: pinned ? pinned.id : null,
             order,
             // A spot's pennant is down once the hero stands there.
@@ -83,9 +89,9 @@ export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverH
     ) || [];
     const mat = useMatSize();
     const fit = useMatFit();
+    // Every look on the same art-pixel grid as the Tokens.
     const artScale = boardScaleAt(fit);
-    // The pennant on the same art-pixel grid as the Tokens.
-    const flagPx = PENNANT_ART_PX * artScale;
+    const look = useJobMarkerLook();
 
     /**
      * ⚠️ Pennants sort in among the Tokens: their box must NOT have a z-index of its own, or every
@@ -102,7 +108,8 @@ export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverH
                     key={`flag-${f.heroId}`}
                     flag={f}
                     z={flagZ?.get(f.heroId) ?? i * 3}
-                    flagPx={flagPx}
+                    artScale={artScale}
+                    look={look}
                     onHover={onHoverHero}
                     boardHovered={hoverHeroId === f.heroId}
                     inspected={inspectedHeroId === f.heroId}
@@ -112,6 +119,15 @@ export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverH
         </div>
     );
 };
+
+/** The Mat Tuner's Job marker look, redrawn when the row moves. */
+export function useJobMarkerLook() {
+    const [look, setLook] = useState(() => jobMarkerLook(matTuning('jobMarker')));
+    useEffect(() => onMatTuningChanged((key) => {
+        if (key == null || key === 'jobMarker') setLook(jobMarkerLook(matTuning('jobMarker')));
+    }), []);
+    return look;
+}
 
 /**
  * One hero's pennant: drag it to give a new order, hover for what they are doing.
@@ -154,7 +170,7 @@ const Flag = memo(function Flag(props) {
 });
 
 const FlagBody = memo(function FlagBody({
-    flag, z = 0, flagPx, onHover, boardHovered = false, inspected = false, yieldToTokens = false,
+    flag, z = 0, artScale, look = 'pennant', onHover, boardHovered = false, inspected = false, yieldToTokens = false,
     hovered, onHoverChange, carried, tipShown, dragRef, dragProps
 }) {
     const ref = useRef(null);
@@ -163,9 +179,9 @@ const FlagBody = memo(function FlagBody({
         dragRef?.(node);
     }, [dragRef]);
 
-    const scaleFactor = flagPx / FLAG_PX;
-    const originLeft = (flag.drawX ?? flag.x ?? 0) - POLE_BASE.x * scaleFactor;
-    const originTop = (flag.drawY ?? flag.y ?? 0) - POLE_BASE.y * scaleFactor;
+    const pinnedPoint = flag.pinX != null ? { x: flag.pinX, y: flag.pinY } : null;
+    const box = markerBox(look, pinnedPoint || flag, pinnedPoint ? flag.pinR : null, artScale);
+    const flagPx = box.size;
 
     // A spot's pennant fades once its hero is there, and comes back while the hero is hovered.
     const down = flag.arrived && !hovered && !boardHovered && !inspected;
@@ -187,6 +203,7 @@ const FlagBody = memo(function FlagBody({
                 data-flag-order={flag.order}
                 data-flag-pinned={flag.pinnedTo || undefined}
                 data-flag-down={down ? 'true' : undefined}
+                data-flag-look={look}
                 aria-label={`${flag.name}’s pennant`}
                 onMouseEnter={() => { onHoverChange(true); onHover?.(flag.heroId); }}
                 onMouseLeave={() => { onHoverChange(false); onHover?.(null); }}
@@ -201,8 +218,8 @@ const FlagBody = memo(function FlagBody({
                     gone && 'invisible'
                 )}
                 style={{
-                    left: originLeft,
-                    top: originTop,
+                    left: box.left,
+                    top: box.top,
                     width: flagPx,
                     height: flagPx,
                     zIndex: z,
@@ -210,6 +227,7 @@ const FlagBody = memo(function FlagBody({
                 }}
             >
                 <FlagMark
+                    look={look}
                     size={flagPx}
                     alt={`${flag.name}’s pennant`}
                     outline={flagOutline({ hovered: hovered || boardHovered, selected: inspected, carried })}

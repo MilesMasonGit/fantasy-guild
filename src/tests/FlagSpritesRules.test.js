@@ -17,7 +17,7 @@ import { migrateState } from '../systems/core/SaveMigration.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
-import { resetMatTuning } from '../config/matTuning.js';
+import { resetMatTuning, setMatTuning } from '../config/matTuning.js';
 import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { FlagLayer } from '../ui/components/board/FlagLayer.jsx';
@@ -123,6 +123,8 @@ beforeEach(() => {
     dnd.pointerDowns.length = 0;
     alpha.opaque = true;
     resetMatTuning();
+    // This file pins the pennant look; the small job markers are `JobMarker.test.js`'s.
+    setMatTuning('jobMarker', 0);
     GameState.initNew();
     InventoryManager.init();
     SpriteLayer.init();

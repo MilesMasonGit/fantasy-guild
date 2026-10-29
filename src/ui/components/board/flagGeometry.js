@@ -52,3 +52,80 @@ export const PIN_INSET = 12;
 export function pinnedFlagPoint(centre, artRadius) {
     return { x: centre.x, y: centre.y - Math.max(0, artRadius - PIN_INSET) };
 }
+
+/**
+ * The job marker's looks, in the Mat Tuner's order (its "Job marker" row stores the index): the
+ * pennant above, or a small flag peeking out from behind the top-left corner of the job's Token,
+ * drawn as a Lucide icon or as a pixel glyph. The owner picks one; the others then go.
+ */
+export const JOB_MARKER_LOOKS = Object.freeze(['pennant', 'lucide', 'pixel']);
+
+/**
+ * A small marker's box, in Token art pixels (drawn at the board's art scale): an 8-pixel flag,
+ * its dark outline, and room for the white hover line round that, so the box never moves.
+ */
+export const MARKER_ART_PX = 12;
+
+/**
+ * Where a small marker's pole foot sits in its box, as shares of its size: a spot order's marker
+ * stands it on the spot, as the pennant does. The pixel glyph's pole is its art column 1, bottom
+ * row 7, inside the two-pixel margin; the Lucide icon's is the path's own foot.
+ */
+export const MARKER_FOOT = Object.freeze({
+    lucide: Object.freeze({ x: 9 / 30, y: 25.5 / 30 }),
+    pixel: Object.freeze({ x: 3.5 / 12, y: 9.5 / 12 })
+});
+
+/** A small marker's cloth for the press rule over Tokens (`flagCloth.js`): its drawn flag, inside the margin. */
+export const MARKER_CLOTH = Object.freeze({ left: 2 / 12, top: 2 / 12, right: 10 / 12, bottom: 10 / 12 });
+
+/**
+ * How far out along the Token's top-left diagonal a small marker's middle sits, as a share of the
+ * Token's art radius (on each axis): far enough out to peek past the art's rounded corner, close
+ * enough that the Token drawn in front hides its lower-right part.
+ */
+export const MARKER_CORNER = 0.78;
+
+/**
+ * Where a **pinned** small marker's middle is drawn: up and left of the Token's centre, at its
+ * art's top-left corner. Like `pinnedFlagPoint`, only where it is drawn.
+ */
+export function markerCornerPoint(centre, artRadius) {
+    const d = Math.max(0, artRadius) * MARKER_CORNER;
+    return { x: centre.x - d, y: centre.y - d };
+}
+
+/** The look's name for a Mat Tuner index (anything unknown reads as the pennant). */
+export function jobMarkerLook(index) {
+    return JOB_MARKER_LOOKS[Math.round(index)] || 'pennant';
+}
+
+/**
+ * Where a marker of `look` is drawn and how big, in mat units: its box's top-left and size.
+ * @param {string} look one of `JOB_MARKER_LOOKS`
+ * @param {{x:number,y:number}} point the flag's own point (a spot) or the pinned Token's centre
+ * @param {number|null} artRadius the pinned Token's art radius, or null for a spot
+ * @param {number} artScale mat units per art pixel (`boardScaleAt(fit)`)
+ */
+export function markerBox(look, point, artRadius, artScale) {
+    const x = point?.x ?? 0;
+    const y = point?.y ?? 0;
+    if (look === 'lucide' || look === 'pixel') {
+        const size = MARKER_ART_PX * artScale;
+        if (artRadius != null) {
+            const c = markerCornerPoint({ x, y }, artRadius);
+            return { left: c.x - size / 2, top: c.y - size / 2, size };
+        }
+        const foot = MARKER_FOOT[look];
+        return { left: x - foot.x * size, top: y - foot.y * size, size };
+    }
+    const size = PENNANT_ART_PX * artScale;
+    const s = size / FLAG_PX;
+    const p = artRadius != null ? pinnedFlagPoint({ x, y }, artRadius) : { x, y };
+    return { left: p.x - POLE_BASE.x * s, top: p.y - POLE_BASE.y * s, size };
+}
+
+/** The cloth box of a marker of `look`, as shares of its box. */
+export function clothOf(look) {
+    return look === 'lucide' || look === 'pixel' ? MARKER_CLOTH : FLAG_CLOTH;
+}

@@ -14,7 +14,7 @@ import * as Flags from '../systems/board/Flags.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { ALERT } from '../systems/board/boardEvents.js';
-import { resetMatTuning } from '../config/matTuning.js';
+import { resetMatTuning, setMatTuning } from '../config/matTuning.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { FlagLayer } from '../ui/components/board/FlagLayer.jsx';
 import { PENNANT_SRC } from '../ui/components/board/FlagMark.jsx';
@@ -110,6 +110,7 @@ describe('the idle mark (FP-29)', () => {
     });
 
     it('an idle flag is the pennant, has no chip, and its hero stands beside it at 128 px with no glow', () => {
+        setMatTuning('jobMarker', 0);                        // the pennant look
         GameState.state.heroes[0].spriteId = 'hero_recruit_0';   // rehydration's default portrait
         Flags.plant('h1', BARE);                             // bare ground, nothing in range
         expect(Flags.statusOf('h1').state).toBe('idle');
@@ -186,7 +187,8 @@ describe('the flag is just something to drag (brief 30 H4)', () => {
         expect(container.querySelectorAll('button')).toHaveLength(1);
     });
 
-    it('on hover shows the hard outline and the hero name, and clears them on leave', () => {
+    it.each([[0, 'pennant'], [1, 'lucide'], [2, 'pixel']])('on hover shows the hard outline and the hero name, and clears them on leave (look %i, %s)', (index, look) => {
+        setMatTuning('jobMarker', index);
         GameState.state.heroes[0].name = 'Aela';
         Flags.plant('h1', BESIDE);
         const Hovering = () => {
@@ -196,6 +198,7 @@ describe('the flag is just something to drag (brief 30 H4)', () => {
         const { container } = mount(h(Hovering));
         const flag = container.querySelector('[data-flag="h1"]');
         const tip = () => document.body.querySelector('[data-flag-tooltip="h1"]');
+        expect(flag.getAttribute('data-flag-look')).toBe(look);
         expect(flag.querySelector('[data-sprite-outline]')).toBeNull();
         expect(tip()).toBeNull();
 
