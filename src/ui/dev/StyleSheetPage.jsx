@@ -27,7 +27,8 @@ import { MAP_MODE } from '../hooks/useMapMode.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { ProblemMark } from '../components/board/ProblemMark.jsx';
-import { SEVERITY } from '../components/board/problemMark.js';
+import { SEVERITY, PROBLEM_SPRITE } from '../components/board/problemMark.js';
+import { ROSTER_STATE_CLASS } from '../components/dock/dockHeroView.js';
 import { ALERT } from '../../systems/board/boardEvents.js';
 import { PixelGlyph, GLYPHS, SLOT_GLYPHS } from '../components/base/PixelGlyph.jsx';
 import { itemTintStyle } from '../components/base/itemTint.js';
@@ -396,6 +397,22 @@ const ProblemMarkDemo = () => (
     </div>
 );
 
+/** Hero orders' new pieces: the roster's state words and the "needs a job" mark. */
+const HeroOrdersDemo = () => (
+    <div className="flex items-end gap-6 px-4 py-3" style={{ background: '#4a6b34' }}>
+        {['idle', 'busy', 'hurt'].map(state => (
+            <figure key={state} className="flex flex-col items-center gap-1">
+                <span className={`ui-text-small font-bold ${ROSTER_STATE_CLASS[state]}`} style={{ textShadow: '0 1px 3px #000, 0 0 4px #000' }}>{state.toUpperCase()}</span>
+                <figcaption className="text-xs text-white/80">roster: {state}</figcaption>
+            </figure>
+        ))}
+        <figure className="flex flex-col items-center gap-1">
+            <img src={PROBLEM_SPRITE[SEVERITY.WAITING]} alt="Needs a job" style={{ width: 32, height: 32, imageRendering: 'pixelated', filter: 'drop-shadow(2px 2px 0 #000)' }} />
+            <figcaption className="text-xs text-white/80">needs a job</figcaption>
+        </figure>
+    </div>
+);
+
 /** The card's small icons, code-drawn placeholders at 2×. */
 const CardIconsDemo = () => (
     <div className="flex items-end gap-4 text-gi-text">
@@ -702,6 +719,12 @@ export const KIT_SECTIONS = [
                 <SpeechFrame tail tone={SPEECH_TONE.CANT} className="whitespace-nowrap ui-text-title font-bold">Too close to another Token</SpeechFrame>
             </div>
         )
+    },
+    {
+        id: 'hero-orders', title: 'Hero orders: roster states, needs a job, drop targets', status: 'unapproved',
+        source: 'DockHeroFigure (the hero bar), MatHero (the mark), orderLit.js + MatToken (the outlines)',
+        rule: 'New, unapproved (brief 260 O1). The hero bar says what each hero is doing in one word under the name: Idle in gold (attention: a hero to send somewhere), Busy in muted grey, Hurt in red; hover for the full line. A hero whose ordered Token is gone for good wears the yellow “!” over their head and beside their name (placeholder: the problem mark’s sprite). While a hero is carried, every Token they could work wears the green outline (ready); hovering a hero, or their figure on the hero bar, gives their job the white outline. No glows.',
+        Demo: HeroOrdersDemo
     },
     {
         id: 'xp-bar', title: 'XP bar', status: 'unapproved', source: 'none shared',

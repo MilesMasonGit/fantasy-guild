@@ -155,16 +155,18 @@ export async function loadOldFlagsSave() {
     SaveManager.save(false);
     const before = localStorage.getItem(SaveManager.getSlotKey(slot));
     if (before) localStorage.setItem(getBackupKey(slot), before);
+    // A copy of the save, written as main wrote it: the live board is never touched here.
     const data = JSON.parse(GameState.serializeJson());
-    const state = data.state || data;
-    state.board.flags = {
+    const saved = data.state || data;
+    const savedBoard = saved.board;
+    savedBoard.flags = {
         [pinned.id]: { x: a.x, y: a.y, plantedAt: 0, pinnedTo: a.id },
         [area.id]: { x: b.x + 60, y: b.y + 90, plantedAt: 1 }
     };
-    state.board.nextFlagOrder = 2;
-    state.board.workClaims = {};
-    delete state.board.orders;
-    const record = state.heroes.find(h => h.id === pinned.id);
+    savedBoard.nextFlagOrder = 2;
+    savedBoard.workClaims = {};
+    delete savedBoard.orders;
+    const record = saved.heroes.find(h => h.id === pinned.id);
     record.flagRules = { combat: { allowed: false, priority: 3 }, forestry: { allowed: true, priority: 1 } };
     localStorage.setItem(SaveManager.getSlotKey(slot), JSON.stringify(data));
 
