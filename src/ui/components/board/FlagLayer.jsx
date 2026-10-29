@@ -10,13 +10,15 @@ import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as Flags from '../../../systems/board/Flags.js';
 import { GameState } from '../../../state/GameState.js';
-import { boardScaleAt } from '../base/TokenSprite.jsx';
+import { boardScaleAt, tokenSizeFor, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
+import { tokenSpritePath } from '../../../config/registries/tokenRegistry.js';
+import { useCornerShare } from './markerCorner.js';
 import { FlagMark } from './FlagMark.jsx';
 import { flagOutline } from './spriteOutline.js';
 import { flagTooltip } from './flagText.js';
 import { FloatingTip } from '../base/Tooltip.jsx';
 import { useMatFit } from './MatFitContext.jsx';
-import { jobMarkerLook, markerBox } from './flagGeometry.js';
+import { jobMarkerLook, markerBox, markerCornerOffset } from './flagGeometry.js';
 import { matTuning, onMatTuningChanged } from '../../../config/matTuning.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
@@ -65,6 +67,7 @@ function projectFlags() {
             pinX: pinned ? pinned.x : null,
             pinY: pinned ? pinned.y : null,
             pinR: pinned ? artRadiusOf(pinned.typeId) : null,
+            pinType: pinned ? pinned.typeId : null,
             pinnedTo: pinned ? pinned.id : null,
             order,
             // A spot's pennant is down once the hero stands there.
@@ -180,7 +183,13 @@ const FlagBody = memo(function FlagBody({
     }, [dragRef]);
 
     const pinnedPoint = flag.pinX != null ? { x: flag.pinX, y: flag.pinY } : null;
-    const box = markerBox(look, pinnedPoint || flag, pinnedPoint ? flag.pinR : null, artScale);
+    // A small marker on a Token sits where that Token's own art begins at its top-left corner.
+    const small = look !== 'pennant' && !!pinnedPoint;
+    const share = useCornerShare(small ? tokenSpritePath(flag.pinType) : null);
+    const cornerOffset = small
+        ? markerCornerOffset(tokenSizeFor(TOKEN_SURFACE.BOARD, flag.pinType, artScale), share, artScale)
+        : null;
+    const box = markerBox(look, pinnedPoint || flag, pinnedPoint ? flag.pinR : null, artScale, cornerOffset);
     const flagPx = box.size;
 
     // A spot's pennant fades once its hero is there, and comes back while the hero is hovered.

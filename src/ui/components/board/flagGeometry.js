@@ -81,21 +81,31 @@ export const MARKER_CLOTH = Object.freeze({ left: 2 / 12, top: 2 / 12, right: 10
 
 /**
  * How far up and left of the Token's centre a small marker's middle sits, on each axis, as a share
- * of half the Token's drawn art. Measured on the Token sprites: along the art's top-left diagonal,
- * half of them start within 17 of their 64 pixels from the corner, so at 0.55 (15 pixels in) the
- * marker's lower right is hidden behind most Tokens' art and the rest peeks out past it.
+ * of half the Token's drawn art, while its sprite's own corner is not yet known (`markerCorner.js`).
+ * Measured on the Token sprites: along the art's top-left diagonal, half of them start within 17
+ * of their 64 pixels from the corner, so at 0.55 (15 pixels in) most peek it out.
  */
 export const MARKER_CORNER = 0.55;
 
 /**
- * Where a **pinned** small marker's middle is drawn: up and left of the Token's centre, at its
- * art's top-left corner. Like `pinnedFlagPoint`, only where it is drawn. The art is drawn
- * `artScale / 2` times its art radius from the centre to its edge (larger than the circle below
- * the mat's natural fit), so the marker follows the art, not the circle.
+ * How many art pixels a small marker's middle stands out past where the Token's art begins on its
+ * top-left diagonal: the flag peeks out, its lower right tucked behind the art.
  */
-export function markerCornerPoint(centre, artRadius, artScale = 2) {
-    const d = Math.max(0, artRadius) * (artScale / 2) * MARKER_CORNER;
-    return { x: centre.x - d, y: centre.y - d };
+export const MARKER_PEEK_PX = 2;
+
+/**
+ * How far up and left of a pinned Token's centre a small marker's middle is drawn, on each axis,
+ * in mat units: at the top-left corner of the Token's drawn art, `MARKER_PEEK_PX` out past where
+ * the sprite begins (`cornerShare`, a share of the art's width from the corner, from its pixels),
+ * or by `MARKER_CORNER` while that is not known.
+ * @param {number} artSize the Token's drawn art, in mat units
+ * @param {number|null|undefined} cornerShare
+ * @param {number} artScale mat units per art pixel
+ */
+export function markerCornerOffset(artSize, cornerShare, artScale) {
+    const half = Math.max(0, artSize) / 2;
+    if (cornerShare == null) return half * MARKER_CORNER;
+    return half - (cornerShare * artSize - MARKER_PEEK_PX * artScale);
 }
 
 /** The look's name for a Mat Tuner index (anything unknown reads as the pennant). */
@@ -109,15 +119,17 @@ export function jobMarkerLook(index) {
  * @param {{x:number,y:number}} point the flag's own point (a spot) or the pinned Token's centre
  * @param {number|null} artRadius the pinned Token's art radius, or null for a spot
  * @param {number} artScale mat units per art pixel (`boardScaleAt(fit)`)
+ * @param {number|null} [cornerOffset] a pinned small marker's `markerCornerOffset`; by default
+ * `MARKER_CORNER` of the art drawn for `artRadius`
  */
-export function markerBox(look, point, artRadius, artScale) {
+export function markerBox(look, point, artRadius, artScale, cornerOffset = null) {
     const x = point?.x ?? 0;
     const y = point?.y ?? 0;
     if (look === 'lucide' || look === 'pixel') {
         const size = MARKER_ART_PX * artScale;
         if (artRadius != null) {
-            const c = markerCornerPoint({ x, y }, artRadius, artScale);
-            return { left: c.x - size / 2, top: c.y - size / 2, size };
+            const d = cornerOffset ?? markerCornerOffset(artRadius * artScale, null, artScale);
+            return { left: x - d - size / 2, top: y - d - size / 2, size };
         }
         const foot = MARKER_FOOT[look];
         return { left: x - foot.x * size, top: y - foot.y * size, size };

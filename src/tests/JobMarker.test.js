@@ -26,6 +26,11 @@ import {
     PENNANT_ART_PX, FLAG_PX, POLE_BASE
 } from '../ui/components/board/flagGeometry.js';
 import { drawnPoint } from './fixtures/drawnPoint.js';
+import { cornerInsetOfMask } from '../ui/components/board/markerCorner.js';
+import { setAlphaMaskForTests } from '../ui/utils/alphaHitTest.js';
+import { tokenSpritePath } from '../config/registries/tokenRegistry.js';
+import { tokenSizeFor, TOKEN_SURFACE } from '../ui/components/base/TokenSprite.jsx';
+import { markerCornerOffset, MARKER_PEEK_PX } from '../ui/components/board/flagGeometry.js';
 import { dropOnMat } from '../ui/components/board/dropOnMat.js';
 import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
 
@@ -137,6 +142,45 @@ describe('where each look is drawn', () => {
         const halo = glyphRing(GLYPHS.flag, 2, 2);
         for (const p of halo) expect(ring.some(q => q[0] === p[0] && q[1] === p[1])).toBe(false);
         for (const [x, y] of halo) expect(x >= 0 && y >= 0 && x < 12 && y < 12).toBe(true);
+    });
+});
+
+/** A 64×64 alpha mask with the art pixels `drawn` set. */
+function maskOf(drawn) {
+    const data = new Uint8Array(64 * 64);
+    for (const [x, y] of drawn) data[y * 64 + x] = 255;
+    return { width: 64, height: 64, data };
+}
+
+describe('a small marker on a Token sits where that Token’s own art begins', () => {
+    it('reads the art’s top-left corner along its diagonal', () => {
+        const full = maskOf(Array.from({ length: 64 * 64 }, (_, i) => [i % 64, Math.floor(i / 64)]));
+        expect(cornerInsetOfMask(full)).toBe(0);
+        // The first pixel a 45° line swept in from the corner meets: x + y = 30, so 15 on each axis.
+        expect(cornerInsetOfMask(maskOf([[10, 20], [40, 40]]))).toBe(15);
+        expect(cornerInsetOfMask(maskOf([]))).toBeNull();
+    });
+
+    it('stands two art pixels out past it: outside the corner of art that fills its square', () => {
+        const art = 128;
+        expect(markerCornerOffset(art, 0, 2)).toBe(art / 2 + MARKER_PEEK_PX * 2);
+        expect(markerCornerOffset(art, 17 / 64, 2)).toBe(art / 2 - (34 - 4));
+    });
+
+    it('on the mat, once the sprite’s pixels are known', async () => {
+        setMatTuning('jobMarker', 2);
+        const t = put(TOKEN, 'fixture_producer');
+        // This sprite fills its square: the marker's middle stands just outside its corner.
+        setAlphaMaskForTests(tokenSpritePath(t.typeId), maskOf(Array.from({ length: 64 * 64 }, (_, i) => [i % 64, Math.floor(i / 64)])));
+        dropOnMat({ kind: DRAG_KIND.HERO, heroId: 'h1' }, TOKEN);
+        const { container } = mount(h(FlagLayer));
+        await act(async () => { await new Promise(r => setTimeout(r, 20)); });
+        const el = container.querySelector('[data-flag="h1"]');
+        const size = parseFloat(el.style.width);
+        const artScale = size / MARKER_ART_PX;
+        const half = tokenSizeFor(TOKEN_SURFACE.BOARD, t.typeId, artScale) / 2;
+        expect(t.x - (drawnPoint(el).x + size / 2)).toBeCloseTo(half + MARKER_PEEK_PX * artScale);
+        expect(t.y - (drawnPoint(el).y + size / 2)).toBeCloseTo(half + MARKER_PEEK_PX * artScale);
     });
 });
 

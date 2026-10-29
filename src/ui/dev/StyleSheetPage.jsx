@@ -47,7 +47,9 @@ import { CombatKit } from './CombatKit.jsx';
 import { KitButton, KIT_BUTTON_TONE, PixelToggle } from '../components/base/KitButton.jsx';
 import { Flag as LucideFlag, FlagTriangleRight } from 'lucide-react';
 import { FlagMark, LucideMarker } from '../components/board/FlagMark.jsx';
-import { MARKER_ART_PX, MARKER_CORNER, PENNANT_ART_PX } from '../components/board/flagGeometry.js';
+import { MARKER_ART_PX, PENNANT_ART_PX, markerCornerOffset } from '../components/board/flagGeometry.js';
+import { useCornerShare } from '../components/board/markerCorner.js';
+import { tokenSpritePath } from '../../config/registries/tokenRegistry.js';
 import { dashedLinePath, MARCH_PX_PER_S } from '../components/board/orderLine.js';
 
 /** One art pixel of the UI, in screen pixels: UI sprites draw at 2×. */
@@ -441,10 +443,11 @@ const GRASS = '#4a6b34';
 const MarkerOnToken = ({ look, scale, lit = false }) => {
     const token = 64 * scale;
     const box = (look === 'pennant' ? PENNANT_ART_PX : MARKER_ART_PX) * scale;
+    const d = markerCornerOffset(token, useCornerShare(tokenSpritePath('token_furnace')), scale);
     // The pennant stands its pole at the top of the Token; a small marker sits at its top-left corner.
     const at = look === 'pennant'
         ? { left: token / 2 - (9 / 64) * box, top: (12 / 128) * token - (63 / 64) * box }
-        : { left: token / 2 - MARKER_CORNER * token / 2 - box / 2, top: token / 2 - MARKER_CORNER * token / 2 - box / 2 };
+        : { left: token / 2 - d - box / 2, top: token / 2 - d - box / 2 };
     return (
         <div className="relative" style={{ width: token, height: token, marginTop: look === 'pennant' ? box : 0 }}>
             <div className="absolute" style={{ left: at.left, top: at.top, width: box, height: box }}>
