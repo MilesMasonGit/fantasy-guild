@@ -30,7 +30,7 @@ vi.mock('../ui/components/board/orderAim.js', async (importOriginal) => {
     return { ...real, createOrderAim: (heroId, opts) => real.createOrderAim(heroId, opts || { hit: hitOf, aimAt: verdictOf }) };
 });
 
-const { OrderDragLine, snapTransform } = await import('../ui/components/board/OrderDragLine.jsx');
+const { OrderDragLine, snapShift } = await import('../ui/components/board/OrderDragLine.jsx');
 
 const h = React.createElement;
 afterEach(() => cleanup());
@@ -54,11 +54,11 @@ describe('the aim: the Token under the pointer and what a drop there would do', 
         expect(aim({ x: 400, y: 300 })).toMatchObject({ instance: TREE, snap: false, reason: null });
     });
 
-    it('the ghost moves by whole screen pixels from the pointer to the Token’s centre', () => {
-        const rect = { left: 10, top: 20, width: matW() / 2 };
-        expect(snapTransform({ x: 210, y: 170 }, rect, { x: 400, y: 300 })).toBe('');
-        expect(snapTransform({ x: 200, y: 160 }, rect, { x: 400, y: 300 })).toBe('translate(10px, 10px)');
-        expect(snapTransform(null, rect, { x: 400, y: 300 })).toBe('');
+    it('the ghost is moved from where it is drawn, not from the pointer', () => {
+        // Drawn with its middle at (210, 170), already wearing a move of (5, -5): it came from (205, 175).
+        const rect = { left: 200, top: 160, width: 20, height: 20 };
+        expect(snapShift(rect, { x: 5, y: -5 }, { x: 400, y: 300 })).toEqual({ x: 195, y: 125 });
+        expect(snapShift(rect, { x: 0, y: 0 }, { x: 210, y: 170 })).toEqual({ x: 0, y: 0 });
     });
 });
 
@@ -67,45 +67,94 @@ describe('on the mat, while a hero is carried', () => {
     matEl.getBoundingClientRect = () => ({ left: 0, top: 0, width: matW(), height: 600, right: matW(), bottom: 600 });
     const matRef = { current: matEl };
     const still = () => ({ matches: true, addEventListener() {}, removeEventListener() {} });
+    const translateOf = (el) => {
+        const m = /translate\((-?[\d.e-]+)px, (-?[\d.e-]+)px\)/.exec(el.style.transform || '');
+        return m ? { x: Number(m[1]), y: Number(m[2]) } : { x: 0, y: 0 };
+    };
 
-    const mount = (kind = DRAG_KIND.FLAG) => {
+    /**
+     * The drag library's overlay round the ghost, as the browser has it: it carries the ghost's
+     * middle to the pointer by its own style, but only when the library re-renders (`follow`), a
+     * task after the pointer moved; `lag: false` follows at once. The ghost's box is where the
+     * overlay is plus the ghost's own move.
+     */
+    const mount = (kind = DRAG_KIND.FLAG, { lag = false } = {}) => {
         window.matchMedia = still;   // reduced motion: the dashes stand still, so a path can be predicted
+        const overlay = document.createElement('div');
         const ghost = document.createElement('div');
         ghost.setAttribute('data-order-ghost', 'h1');
-        document.body.appendChild(ghost);
+        overlay.appendChild(ghost);
+        document.body.appendChild(overlay);
+        let at = { x: 0, y: 0 };
+        const follow = (p) => { at = { ...p }; overlay.style.transform = `translate(${p.x - 10}px, ${p.y - 10}px)`; };
+        ghost.getBoundingClientRect = () => {
+            const t = translateOf(ghost);
+            return { left: at.x - 10 + t.x, top: at.y - 10 + t.y, width: 20, height: 20 };
+        };
+        const onMove = (e) => { if (!lag) follow({ x: e.clientX, y: e.clientY }); };
+        window.addEventListener('pointermove', onMove);
         const view = render(h(DeckDndContext.Provider, { value: { isDragging: true, activePayload: { kind, heroId: 'h1' } } },
             h('div', null, h(OrderDragLine, { matRef }))));
-        return { ...view, ghost };
+        const middle = () => { const r = ghost.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; };
+        return { ...view, ghost, follow, middle, off: () => window.removeEventListener('pointermove', onMove) };
     };
+    let mounted = null;
+    const mountOnce = (...a) => (mounted = mount(...a));
+    const frame = () => new Promise(r => setTimeout(r, 40));
     const moveTo = async (x, y) => act(async () => {
         window.dispatchEvent(new PointerEvent('pointermove', { clientX: x, clientY: y }));
-        await new Promise(r => setTimeout(r, 60));
+        await frame();
     });
     const scale = boardScaleAt(1);
     const cell = (p) => ({ x: Math.floor(p.x / scale), y: Math.floor(p.y / scale) });
     const lineTo = (p) => dashedLinePath(cell({ x: 100, y: 100 }), cell(p), 0);
     const pathOf = (container) => container.querySelector('svg[data-order-line] path:last-child').getAttribute('d');
+    const close = (a, b) => Math.abs(a.x - b.x) < 0.02 && Math.abs(a.y - b.y) < 0.02;
 
     afterEach(() => {
-        document.querySelectorAll('[data-order-ghost]').forEach(n => n.remove());
+        mounted?.off();
+        mounted = null;
+        document.querySelectorAll('[data-order-ghost]').forEach(n => n.parentElement.remove());
         delete window.matchMedia;
     });
 
     it.each([DRAG_KIND.FLAG, DRAG_KIND.HERO])('over a Token they can work (%s), the flag and the line end snap to its centre; off it, back to the pointer', async (kind) => {
-        const { container, ghost } = mount(kind);
+        const { container, ghost, middle } = mountOnce(kind);
         await moveTo(420, 310);
         expect(pathOf(container)).toBe(lineTo(TREE));
-        expect(ghost.style.transform).toBe('translate(-20px, -10px)');
+        expect(close(middle(), TREE)).toBe(true);
         expect(container.querySelector('[data-order-reason]')).toBeNull();
         await moveTo(600, 310);
         expect(pathOf(container)).toBe(lineTo({ x: 600, y: 310 }));
         expect(ghost.style.transform).toBe('');
+        expect(middle()).toEqual({ x: 600, y: 310 });
+    });
+
+    it('⭐ a snapped flag stands still while the pointer moves about inside the Token, even with the overlay a render behind the pointer', async () => {
+        const { container, middle, follow } = mountOnce(DRAG_KIND.FLAG, { lag: true });
+        follow({ x: 430, y: 300 });
+        await moveTo(430, 300);
+        const seen = [];
+        const lines = new Set();
+        for (let i = 0; i < 24; i++) {
+            const p = { x: 400 + 25 * Math.cos(i), y: 300 + 25 * Math.sin(i * 1.7) };
+            // The pointer has moved; the overlay has not caught up yet: this frame is painted.
+            await moveTo(p.x, p.y);
+            seen.push(middle());
+            lines.add(pathOf(container));
+            // The library re-renders, moving its overlay to the pointer: painted again.
+            await act(async () => { follow(p); await new Promise(r => setTimeout(r, 0)); });
+            seen.push(middle());
+        }
+        for (const m of seen) expect(m.x).toBeCloseTo(TREE.x, 2), expect(m.y).toBeCloseTo(TREE.y, 2);
+        expect([...lines]).toEqual([lineTo(TREE)]);
     });
 
     it('over a Token they cannot work, no snap and a red bubble over it says why; leaving it takes the bubble away', async () => {
-        const { container, ghost } = mount();
+        const { container, ghost, middle } = mountOnce();
         await moveTo(790, 320);
         expect(ghost.style.transform).toBe('');
+        expect(middle()).toEqual({ x: 790, y: 320 });
         expect(pathOf(container)).toBe(lineTo({ x: 790, y: 320 }));
         const bubble = container.querySelector(`[data-order-reason="${VEIN.id}"]`);
         expect(bubble?.textContent).toBe('Needs Pickaxe');
@@ -115,11 +164,10 @@ describe('on the mat, while a hero is carried', () => {
     });
 
     it('the drag ending takes the bubble and the snap away, and nothing is left mounted', async () => {
-        const { container, ghost, rerender } = mount();
-        await moveTo(400, 300);
-        expect(ghost.style.transform).toBe('');   // the pointer is on the centre already
+        const { container, ghost, middle, rerender } = mountOnce();
         await moveTo(410, 300);
-        expect(ghost.style.transform).toBe('translate(-10px, 0px)');
+        expect(close(middle(), TREE)).toBe(true);
+        expect(ghost.style.transform).not.toBe('');
         rerender(h(DeckDndContext.Provider, { value: { isDragging: false, activePayload: null } }, h('div', null, h(OrderDragLine, { matRef }))));
         expect(ghost.style.transform).toBe('');
         expect(container.querySelector('svg')).toBeNull();

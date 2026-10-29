@@ -42,22 +42,61 @@ export const OrderDragLine = memo(function OrderDragLine({ matRef }) {
     return <MarchingLine heroId={activePayload.heroId} session={activePayload} matRef={matRef} />;
 });
 
-/** The carried ghost's box (`DragGhost`), found once and again only if it was redrawn. */
-function findGhost(heroId, had) {
-    if (had?.isConnected) return had;
-    return typeof document !== 'undefined' ? document.querySelector(`[data-order-ghost="${heroId}"]`) : null;
+/**
+ * How far to move the ghost from where the drag library put it so its middle stands on `target` (a
+ * screen point): `rect` is the ghost's box as drawn now, with `applied` (the move it already wears)
+ * in it. Measured from the box, never from the pointer: the library moves its overlay to the pointer
+ * on its own schedule, a render after the pointer moved, and a move worked out from the pointer
+ * would be wrong by the pointer's last step until it catches up, so the flag shook.
+ * @returns {{x:number,y:number}}
+ */
+export function snapShift(rect, applied, target) {
+    const baseX = rect.left + rect.width / 2 - applied.x;
+    const baseY = rect.top + rect.height / 2 - applied.y;
+    return { x: target.x - baseX, y: target.y - baseY };
 }
 
-/**
- * How far to move the ghost so its middle (the pointer) lands on mat point `to`, in screen pixels,
- * as a CSS transform: '' for no move.
- */
-export function snapTransform(pointer, rect, to) {
-    if (!pointer || !rect || !to || !(rect.width > 0)) return '';
-    const s = rect.width / matW();
-    const dx = Math.round(rect.left + to.x * s - pointer.x);
-    const dy = Math.round(rect.top + to.y * s - pointer.y);
-    return dx || dy ? `translate(${dx}px, ${dy}px)` : '';
+/** The carried ghost, moved onto a screen point (`stand`) or left where the drag library puts it. */
+function createGhostSnap(heroId) {
+    let ghost = null;
+    let target = null;
+    let applied = { x: 0, y: 0 };
+    // Whenever the library moves the overlay round the ghost, it is put back on the target before
+    // that frame is painted (a mutation observer runs before the paint).
+    const watch = typeof MutationObserver === 'function' ? new MutationObserver(() => place()) : null;
+    const place = () => {
+        if (!ghost?.isConnected) return;
+        if (!target) {
+            if (applied.x || applied.y) ghost.style.transform = '';
+            applied = { x: 0, y: 0 };
+            return;
+        }
+        const next = snapShift(ghost.getBoundingClientRect(), applied, target);
+        if (Math.abs(next.x - applied.x) < 0.01 && Math.abs(next.y - applied.y) < 0.01) return;
+        applied = next;
+        ghost.style.transform = `translate(${next.x}px, ${next.y}px)`;
+    };
+    const find = () => {
+        if (ghost?.isConnected) return;
+        ghost = typeof document !== 'undefined' ? document.querySelector(`[data-order-ghost="${heroId}"]`) : null;
+        applied = { x: 0, y: 0 };
+        watch?.disconnect();
+        for (let el = ghost?.parentElement; watch && el && el !== document.body; el = el.parentElement) {
+            watch.observe(el, { attributes: true, attributeFilter: ['style'] });
+        }
+    };
+    return {
+        /** Stand the ghost's middle on screen point `at`, or let it follow the pointer with null. */
+        stand(at) {
+            find();
+            target = at;
+            place();
+        },
+        stop() {
+            watch?.disconnect();
+            if (ghost?.isConnected) ghost.style.transform = '';
+        }
+    };
 }
 
 function MarchingLine({ heroId, session, matRef }) {
@@ -72,8 +111,7 @@ function MarchingLine({ heroId, session, matRef }) {
         let pointer = null;
         let frame = 0;
         let last = '';
-        let ghost = null;
-        let shift = '';
+        const ghost = createGhostSnap(heroId);
         let aimed = null;
         const aim = createOrderAim(heroId);
         const still = reducedMotion();
@@ -92,13 +130,10 @@ function MarchingLine({ heroId, session, matRef }) {
                 setBubble(aimed.reason ? { instance: aimed.instance, reason: aimed.reason } : null);
             }
             const to = aimed.snap ? { x: aimed.instance.x, y: aimed.instance.y } : at;
-            const nextShift = aimed.snap ? snapTransform(pointer, rect, to) : '';
-            const g = findGhost(heroId, ghost);
-            if (g !== ghost || nextShift !== shift) {
-                ghost = g;
-                shift = nextShift;
-                if (ghost) ghost.style.transform = shift;
-            }
+            if (aimed.snap && rect) {
+                const s = rect.width / matW();
+                ghost.stand({ x: rect.left + to.x * s, y: rect.top + to.y * s });
+            } else ghost.stand(null);
             let d = '';
             if (from && to) {
                 const cell = (p) => ({ x: Math.floor(p.x / artScale), y: Math.floor(p.y / artScale) });
@@ -115,7 +150,7 @@ function MarchingLine({ heroId, session, matRef }) {
         return () => {
             window.removeEventListener('pointermove', onMove);
             if (frame && typeof cancelAnimationFrame === 'function') cancelAnimationFrame(frame);
-            if (ghost?.isConnected) ghost.style.transform = '';
+            ghost.stop();
         };
     }, [heroId, session, matRef, artScale]);
 
