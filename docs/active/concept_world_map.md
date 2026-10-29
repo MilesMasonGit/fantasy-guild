@@ -136,6 +136,24 @@ balance (worries: lucky or unlucky worlds; skills progressing unevenly).*
 - Found by the study, for the ledger and content: fishing earns ~450 XP/h
   against ~1,100 for mining; most of today's maps are single-resource.
 
+## Inner rings strict, outer rings wild (owner, 2026-10-29)
+
+- **Rings 1–3 follow strict rules** (the kit, the specialty bag, the pity rule,
+  the value budget, the key-material guarantees) so progress is consistent.
+  **The inner rings guarantee access to every item, enemy and Token in the
+  game**: the essential progress lives there.
+- **From ring 4 outward, generation is chaotic** and **for min-maxing**: highly
+  specialised cells and unconventional playmats to build on, e.g. a cell with
+  a dozen goblin camps that makes killing goblins very efficient. Outer cells
+  bring efficiency, not new content.
+- **Unconventional means**: **extreme composition** (one resource almost
+  everywhere) and **odd layouts** (islands, a chasm, mostly water, little
+  building room). Strange rules and rare finds were not chosen.
+- **The boundary is fixed after ring 3.**
+- The other long-run ideas (a new rule per ring, landmark arcs, fewer bigger
+  cells outward, deepening places, wonders, the run as chapters) were not
+  chosen.
+
 ## Explored and set aside (owner, 2026-10-29)
 
 - **Influence and player-placed cells**: a meta-resource (earned from bounties
