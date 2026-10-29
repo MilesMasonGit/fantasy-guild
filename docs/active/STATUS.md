@@ -9,8 +9,8 @@ build green) · bench-queued · eye-check · merged.*
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| O1: orders (drag a hero onto a job; flags and Work Permissions retire; roster dock; old saves migrate) | engineer | `feat/hero-orders-o1` (`tb1`) | building | Wed | |
-| O2: camps; Scouting Flags retires | engineer | after O1's look | queued | | |
+| O1: orders (drag a hero onto a job; flags and Work Permissions retire; roster dock; old saves migrate) | engineer | `feat/hero-orders-o1` (`tb1`) | **bench-queued** 13:00 Thu (2c7fa845, `main` merged in; builder gate 6607 tests, cycles, build). Owner looked at 17 shots by phone; owner 2026-10-29: merge without playing. Owner calls: non-work drop refuses, built Foundation ends the order, right-click sends home, spot orders never ambushed (22af5033); ambushes otherwise left for a later decision. WORK CHANGED expected (accept under brief260-O1 if it matches the engineer's per-scenario prediction) | Wed | |
+| O2: camps; Scouting Flags retires; camps content pack | engineer | `feat/hero-orders-o2` (`tb2`), on O1 | building | Thu | |
 | O3: clean-up (tutorial, dead code, GDD) | builder | after O2 | queued | | |
 
 ## Director, Token bars (brief 250; owner chose 2026-10-28: all three phases, then the card-wording fixes) — **merged 90f7a7dd, owner okayed**
@@ -391,6 +391,8 @@ T-186; the badges' soft shadows are settled inside T-013.)
 8. ~~Terrain director: bench baseline retake~~ **Done:** engine 2026-10-21 13:00 (f19a2e30), draw 2026-10-22 01:00 (db3959c4).
 
 ## Summaries
+
+**Thu 2026-10-29, morning: stumps synced, baselines fresh, O2 building.** Where we are: `main` d0caf863 has the owner's stump Sync (only the two stumps changed; one content-pinned test updated) and the bench baselines retaken at 01:30 on a quiet machine. Token bars night bench: same work; draw 4× all better, 1× p99 tails +2.7–3 ms in every scene (S2, bank, notify, inspect alike, against the 22 Oct baseline): read as machine state, not the plate. Now: O2 camps (engineer, `tb2`); O1 gate + benches at 13:00, then merge. Owner: K4 and S9 eye-checks still open; the CMS runs on 5174 from this session.
 
 **Wed 2026-10-28, evening: Token bars merged; Hero orders O1 started.** Where we are: `main` 90f7a7dd, pushed, has Token bars and the card wording. Now: O1 (engineer, `tb1`). Next: O1's look, then O2 camps. Owner: Oak and Fir Stump Art size Small in the CMS on `main`; K4 and S9 eye-checks still open. Bench: 01:05 timer runs the Token bars work check and draw compare, then the baseline retake.
 
