@@ -80,18 +80,21 @@ export const MARKER_FOOT = Object.freeze({
 export const MARKER_CLOTH = Object.freeze({ left: 2 / 12, top: 2 / 12, right: 10 / 12, bottom: 10 / 12 });
 
 /**
- * How far out along the Token's top-left diagonal a small marker's middle sits, as a share of the
- * Token's art radius (on each axis): far enough out to peek past the art's rounded corner, close
- * enough that the Token drawn in front hides its lower-right part.
+ * How far up and left of the Token's centre a small marker's middle sits, on each axis, as a share
+ * of half the Token's drawn art. Measured on the Token sprites: along the art's top-left diagonal,
+ * half of them start within 17 of their 64 pixels from the corner, so at 0.55 (15 pixels in) the
+ * marker's lower right is hidden behind most Tokens' art and the rest peeks out past it.
  */
-export const MARKER_CORNER = 0.78;
+export const MARKER_CORNER = 0.55;
 
 /**
  * Where a **pinned** small marker's middle is drawn: up and left of the Token's centre, at its
- * art's top-left corner. Like `pinnedFlagPoint`, only where it is drawn.
+ * art's top-left corner. Like `pinnedFlagPoint`, only where it is drawn. The art is drawn
+ * `artScale / 2` times its art radius from the centre to its edge (larger than the circle below
+ * the mat's natural fit), so the marker follows the art, not the circle.
  */
-export function markerCornerPoint(centre, artRadius) {
-    const d = Math.max(0, artRadius) * MARKER_CORNER;
+export function markerCornerPoint(centre, artRadius, artScale = 2) {
+    const d = Math.max(0, artRadius) * (artScale / 2) * MARKER_CORNER;
     return { x: centre.x - d, y: centre.y - d };
 }
 
@@ -113,7 +116,7 @@ export function markerBox(look, point, artRadius, artScale) {
     if (look === 'lucide' || look === 'pixel') {
         const size = MARKER_ART_PX * artScale;
         if (artRadius != null) {
-            const c = markerCornerPoint({ x, y }, artRadius);
+            const c = markerCornerPoint({ x, y }, artRadius, artScale);
             return { left: c.x - size / 2, top: c.y - size / 2, size };
         }
         const foot = MARKER_FOOT[look];

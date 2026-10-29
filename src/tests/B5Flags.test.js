@@ -372,10 +372,10 @@ describe('a pinned flag on the screen', () => {
         const size = parseFloat(el.style.width);
         const mid = { x: drawnPoint(el).x + size / 2, y: drawnPoint(el).y + size / 2 };
         const r = artRadiusOf(t.typeId);
-        // Up and left of the centre by the same amount, inside the art's square, past its circle.
+        // Up and left of the centre by the same amount, inside the art's square.
         expect(t.x - mid.x).toBeCloseTo(t.y - mid.y);
+        expect(t.x - mid.x).toBeGreaterThan(0.4 * r);
         expect(t.x - mid.x).toBeLessThan(r);
-        expect(Math.hypot(t.x - mid.x, t.y - mid.y)).toBeGreaterThan(r);
     });
 
     it('an old area flag has no data-flag-pinned, and no ring is ever drawn', () => {

@@ -22,7 +22,7 @@ import { PENNANT_SRC } from '../ui/components/board/FlagMark.jsx';
 import { GLYPHS, glyphRing } from '../ui/components/base/PixelGlyph.jsx';
 import { onFlagCloth } from '../ui/components/board/flagCloth.js';
 import {
-    JOB_MARKER_LOOKS, MARKER_ART_PX, MARKER_FOOT, jobMarkerLook, markerBox, pinnedFlagPoint,
+    JOB_MARKER_LOOKS, MARKER_ART_PX, MARKER_CORNER, MARKER_FOOT, jobMarkerLook, markerBox, pinnedFlagPoint,
     PENNANT_ART_PX, FLAG_PX, POLE_BASE
 } from '../ui/components/board/flagGeometry.js';
 import { drawnPoint } from './fixtures/drawnPoint.js';
@@ -110,9 +110,8 @@ describe('where each look is drawn', () => {
             expect(box.size).toBe(MARKER_ART_PX * 2);
             const mid = { x: box.left + box.size / 2, y: box.top + box.size / 2 };
             expect(centre.x - mid.x).toBeCloseTo(centre.y - mid.y);
-            // Inside the art's square (it is half hidden behind the Token), outside its circle.
-            expect(centre.x - mid.x).toBeLessThan(r);
-            expect(Math.hypot(centre.x - mid.x, centre.y - mid.y)).toBeGreaterThan(r);
+            // Well inside the art's square, its lower right behind the art: 15 of 64 art pixels in from the corner.
+            expect((centre.x - mid.x) / r).toBeCloseTo(MARKER_CORNER);
         }
     });
 
@@ -156,15 +155,23 @@ describe('the mat', () => {
         expect(flag().querySelector('img').getAttribute('src')).toBe(PENNANT_SRC);
     });
 
-    it.each([[0, 'pennant'], [1, 'lucide'], [2, 'pixel']])('look %i (%s) sorts just behind its Token, so the Token is drawn over it', (index) => {
+    /**
+     * A worked Token is drawn in front of every marker anyway; the sort matters where the job's
+     * Token rests (a camp, while its hands work round it) and for resting Tokens about level with
+     * it. The marker sorts half a unit above its Token's line: behind a resting Token a quarter of
+     * a unit above that line, as it is behind its own Token when that one rests.
+     */
+    it.each([[0, 'pennant'], [1, 'lucide'], [2, 'pixel']])('look %i (%s) sorts just behind its Token’s line', (index) => {
         setMatTuning('jobMarker', index);
         const t = put(TOKEN, 'fixture_producer');
+        const level = put({ x: TOKEN.x + 160, y: TOKEN.y - 0.25 }, 'fixture_producer');
         dropOnMat({ kind: DRAG_KIND.HERO, heroId: 'h1' }, TOKEN);
         expect(Flags.pinnedTokenOf('h1')?.id).toBe(t.id);
         const { container } = mount(h(MatBoard));
         const flag = container.querySelector('button[data-flag="h1"]');
-        const art = container.querySelector(`[data-token-art][data-token-id="${t.id}"]`);
-        expect(Number(flag.style.zIndex)).toBeLessThan(Number(art.style.zIndex));
+        const z = (id) => Number(container.querySelector(`[data-token-art][data-token-id="${id}"]`).style.zIndex);
+        expect(Number(flag.style.zIndex)).toBeLessThan(z(level.id));
+        expect(Number(flag.style.zIndex)).toBeLessThan(z(t.id));
     });
 
     it('a spot order’s small marker is drawn with its pole foot on the spot', () => {

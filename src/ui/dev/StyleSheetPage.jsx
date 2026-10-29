@@ -45,6 +45,10 @@ import { MapSprite, MapOutline, MAP_PX, SLOT_PX } from '../components/atlas/MapP
 import { WorkPlateDemo } from './WorkPlateDemo.jsx';
 import { CombatKit } from './CombatKit.jsx';
 import { KitButton, KIT_BUTTON_TONE, PixelToggle } from '../components/base/KitButton.jsx';
+import { Flag as LucideFlag, FlagTriangleRight } from 'lucide-react';
+import { FlagMark, LucideMarker } from '../components/board/FlagMark.jsx';
+import { MARKER_ART_PX, MARKER_CORNER, PENNANT_ART_PX } from '../components/board/flagGeometry.js';
+import { dashedLinePath, MARCH_PX_PER_S } from '../components/board/orderLine.js';
 
 /** One art pixel of the UI, in screen pixels: UI sprites draw at 2×. */
 const ART_PX = 2;
@@ -431,6 +435,87 @@ const CampRingDemo = () => {
     );
 };
 
+const GRASS = '#4a6b34';
+
+/** One look of the job marker at the Token's top-left corner, drawn behind the Token, at art-pixel `scale`. */
+const MarkerOnToken = ({ look, scale, lit = false }) => {
+    const token = 64 * scale;
+    const box = (look === 'pennant' ? PENNANT_ART_PX : MARKER_ART_PX) * scale;
+    // The pennant stands its pole at the top of the Token; a small marker sits at its top-left corner.
+    const at = look === 'pennant'
+        ? { left: token / 2 - (9 / 64) * box, top: (12 / 128) * token - (63 / 64) * box }
+        : { left: token / 2 - MARKER_CORNER * token / 2 - box / 2, top: token / 2 - MARKER_CORNER * token / 2 - box / 2 };
+    return (
+        <div className="relative" style={{ width: token, height: token, marginTop: look === 'pennant' ? box : 0 }}>
+            <div className="absolute" style={{ left: at.left, top: at.top, width: box, height: box }}>
+                <FlagMark look={look} size={box} outline={lit ? 'hover' : null} />
+            </div>
+            <div className="absolute left-0 top-0">
+                <TokenSprite typeId="token_furnace" surface={TOKEN_SURFACE.BOARD} scale={scale} />
+            </div>
+        </div>
+    );
+};
+
+const JOB_MARKER_ROWS = [['pennant', 'Pennant (today)'], ['lucide', 'A: Lucide'], ['pixel', 'B: pixel glyph']];
+
+const JobMarkerDemo = () => (
+    <div className="flex flex-col gap-3">
+        {JOB_MARKER_ROWS.map(([look, label]) => (
+            <div key={look} data-job-marker-demo={look} className="flex items-end gap-6 px-4 py-3" style={{ background: GRASS }}>
+                <div className="w-28 ui-text-body text-white font-bold self-center">{label}</div>
+                {[1, 2].map(scale => (
+                    <div key={scale} className="flex flex-col items-center gap-1">
+                        <FlagMark look={look} size={(look === 'pennant' ? PENNANT_ART_PX : MARKER_ART_PX) * scale} />
+                        <span className="ui-text-body text-white/80">{scale}×</span>
+                    </div>
+                ))}
+                <MarkerOnToken look={look} scale={2} />
+                <div className="flex flex-col items-center gap-1">
+                    <MarkerOnToken look={look} scale={2} lit />
+                    <span className="ui-text-body text-white/80">hero hovered</span>
+                </div>
+            </div>
+        ))}
+        <div className="flex items-center gap-6 px-4 py-3" style={{ background: GRASS }}>
+            <div className="w-28 ui-text-body text-white font-bold">Lucide icons at mat size</div>
+            {[[FlagTriangleRight, 'FlagTriangleRight (used)'], [LucideFlag, 'Flag']].map(([Icon, name]) => (
+                <div key={name} className="flex flex-col items-center gap-1">
+                    <LucideMarker size={MARKER_ART_PX * 2} Icon={Icon} />
+                    <span className="ui-text-body text-white/80">{name}</span>
+                </div>
+            ))}
+        </div>
+    </div>
+);
+
+/** The marching line from a carried hero to where they would go, at 2×, marching as on the mat. */
+const OrderLineDemo = () => {
+    const scale = 2;
+    const gold = useRef(null);
+    const shadow = useRef(null);
+    useLayoutEffect(() => {
+        let frame = 0;
+        const t0 = performance.now();
+        const draw = (now) => {
+            const d = dashedLinePath({ x: 2, y: 30 }, { x: 150, y: 4 }, ((now - t0) / 1000) * MARCH_PX_PER_S);
+            gold.current?.setAttribute('d', d);
+            shadow.current?.setAttribute('d', d);
+            frame = requestAnimationFrame(draw);
+        };
+        frame = requestAnimationFrame(draw);
+        return () => cancelAnimationFrame(frame);
+    }, []);
+    return (
+        <div className="px-4 py-3" style={{ background: GRASS }}>
+            <svg width={160 * scale} height={36 * scale} shapeRendering="crispEdges">
+                <path ref={shadow} transform={`translate(${scale} ${scale}) scale(${scale})`} fill="#000" />
+                <path ref={gold} transform={`scale(${scale})`} fill="var(--color-gi-gold)" />
+            </svg>
+        </div>
+    );
+};
+
 /** The card's small icons, code-drawn placeholders at 2×. */
 const CardIconsDemo = () => (
     <div className="flex items-end gap-4 text-gi-text">
@@ -749,6 +834,18 @@ export const KIT_SECTIONS = [
         source: 'CampReachRing (the mat), pixelRing.js',
         rule: 'New, unapproved (brief 260 O2). The reach of a camp, shown while the pointer rests on the camp, on a hero working from it (on the mat, their Token or their figure on the hero bar) or while their sheet is open: the old flag ring’s look, one art pixel of gold over a hard black copy, centred on the camp. An enemy camp’s ring is where its enemies roam. The card’s line for a camp uses the new reach icon (Card icons).',
         Demo: CampRingDemo
+    },
+    {
+        id: 'job-marker', title: 'Job marker', status: 'unapproved',
+        source: 'FlagLayer + FlagMark (the mat), the Mat Tuner’s Job marker row; LucideMarker, PixelGlyph flag',
+        rule: 'New, unapproved: the owner picks one. What marks the Token a hero is ordered onto, the same for every hero: today’s pennant on top of the Token, or a small flag peeking out from behind the Token’s top-left corner, drawn behind its art: A, Lucide’s FlagTriangleRight, pale bone with a dark edge; B, an 8×8 pixel glyph with a one-pixel dark outline, on the Token’s art-pixel grid. Both 12 art pixels with room for the white hover line (hovering the hero lights it). Switch them on the mat in the QA panel’s Mat dials, Looks, Job marker.',
+        Demo: JobMarkerDemo
+    },
+    {
+        id: 'order-line', title: 'Order line (carrying a hero)', status: 'unapproved',
+        source: 'OrderDragLine (the mat), orderLine.js',
+        rule: 'New, unapproved. While a hero is carried to a new job, a dashed line from where they stand on the mat to the point they would go, its dashes marching towards it: whole art pixels, three on and three off, one art pixel of gold over a black copy one pixel down-right (the camp ring’s look). Only while carried; gone on drop or cancel.',
+        Demo: OrderLineDemo
     },
     {
         id: 'xp-bar', title: 'XP bar', status: 'unapproved', source: 'none shared',
