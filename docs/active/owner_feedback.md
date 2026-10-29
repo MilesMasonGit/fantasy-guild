@@ -8,4 +8,4 @@ here is a decision; directors don't act on this page.*
 
 ## Open
 
-(nothing yet)
+- 2026-10-29 (owner, via the director): **icon rule** — pure pixels for the in-game world; Lucide (the nav bubbles' icon set) allowed for meta elements, on the mat too, e.g. the hero's job flag and the equipment gear slot icons. Be very specific about where. Wants to plan the icon swaps before any batch: the director's audit is [research/icon_audit_2026-10-29.md](research/icon_audit_2026-10-29.md) (UI_STYLE line 149 says pixel only today, so the rule changes). Audit side findings worth tickets: Farming, Alchemy and Construction skill icons fall back to emoji (unmapped in `AssetManager.js` SKILL_MAP; `s_farming.png` exists); the missing-item placeholder is a hand-copied Lucide SVG.
