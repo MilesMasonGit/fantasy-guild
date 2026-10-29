@@ -18,7 +18,7 @@ import { flagOutline } from './spriteOutline.js';
 import { flagTooltip } from './flagText.js';
 import { FloatingTip } from '../base/Tooltip.jsx';
 import { useMatFit } from './MatFitContext.jsx';
-import { markerBox, markerCornerOffset } from './flagGeometry.js';
+import { markerBox, markerCornerOffset, fanStep } from './flagGeometry.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
@@ -27,6 +27,8 @@ import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
  * - **A Token order**: the flag peeks out from behind the top-left corner of the Token's art
  * (`markerBox`, `markerCorner.js`: where that Token's own art begins), and sorts just behind the
  * Token (`MatBoard`), so it is drawn **behind the Token's sprite**. It stays while the order stands.
+ * Several heroes on one Token (a camp): the first by roster order keeps the corner, the others
+ * step along the art's edge from it (`fanStep`), so every colour shows.
  * - **A spot order** ("go here"): the flag stands its pole foot on the spot while the hero walks
  * there and fades out once they arrive; hovering the hero (or their roster tab) shows it again.
  * - **No order** (at home by the Guild Hall), or a job gone for good: no flag.
@@ -69,8 +71,21 @@ function projectFlags() {
             arrived: order === 'spot' && status.state === 'idle',
             state: status.state,
             name: hero?.name || 'Hero',
-            colour: hero?.flagColour || null
+            colour: hero?.flagColour || null,
+            roster: heroes.indexOf(hero),
+            fan: 0
         });
+    }
+    // Several heroes on one Token: their flags fan out along its art's edge, in roster order.
+    const byToken = new Map();
+    for (const f of out) {
+        if (!f.pinnedTo) continue;
+        if (!byToken.has(f.pinnedTo)) byToken.set(f.pinnedTo, []);
+        byToken.get(f.pinnedTo).push(f);
+    }
+    for (const group of byToken.values()) {
+        if (group.length < 2) continue;
+        group.sort((a, b) => a.roster - b.roster).forEach((f, rank) => { f.fan = fanStep(rank); });
     }
     return out;
 }
@@ -173,7 +188,7 @@ const FlagBody = memo(function FlagBody({
     const cornerOffset = pinnedPoint
         ? markerCornerOffset(tokenSizeFor(TOKEN_SURFACE.BOARD, flag.pinType, artScale), share, artScale)
         : null;
-    const box = markerBox(pinnedPoint || flag, pinnedPoint ? flag.pinR : null, artScale, cornerOffset);
+    const box = markerBox(pinnedPoint || flag, pinnedPoint ? flag.pinR : null, artScale, cornerOffset, flag.fan);
     const flagPx = box.size;
 
     // A spot's flag fades once its hero is there, and comes back while the hero is hovered.

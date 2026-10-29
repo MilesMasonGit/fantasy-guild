@@ -29,8 +29,8 @@ export const FLAG_BASE = 'base';
  * Each colour's fill, taken from the cloth of its old flag sprite and checked against every mat
  * ground (grass, dark grass, dirt, sand, gravel, stone, water): the near-black edge carries the
  * shape, the fill only has to read as itself.
- * ⚠️ `greendark` is the weakest on grass (any green is); it is lifted to a brighter emerald than
- * its sprite's cloth so it still reads there.
+ * ⚠️ `greendark` is drawn pink (owner, 2026-10-29): a green flag all but vanished on grass. The
+ * saved name stays, so saves keep their colour.
  */
 export const FLAG_FILLS = Object.freeze({
     reddark: '#b3202a',
@@ -39,7 +39,7 @@ export const FLAG_FILLS = Object.freeze({
     orange: '#ff943a',
     purplite: '#b05be0',
     yelpur: '#fac900',
-    greendark: '#1fa65a',
+    greendark: '#ff7ad9',
     redlite: '#fd3c35',
     [FLAG_BASE]: '#e9dfc4'
 });
@@ -57,7 +57,7 @@ export const FLAG_COLOUR_LABELS = Object.freeze({
     orange: 'Orange',
     purplite: 'Purple',
     yelpur: 'Yellow',
-    greendark: 'Dark green',
+    greendark: 'Pink',
     redlite: 'Red'
 });
 

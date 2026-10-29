@@ -55,20 +55,43 @@ export function markerCornerOffset(artSize, cornerShare, artScale) {
 }
 
 /**
+ * How far apart, in Token art pixels along the art's edge, the flags of several heroes ordered onto
+ * one Token stand: a little under a flag's width, so each colour shows and each peeks out to be
+ * picked up.
+ */
+export const MARKER_FAN_ART_PX = 9;
+
+/**
+ * Which step along the art's edge the `rank`-th flag on a shared Token takes (ranked by roster
+ * order): the first stays on the corner, then one step towards the top, one towards the left, two
+ * towards the top, and so on.
+ */
+export function fanStep(rank) {
+    if (!(rank > 0)) return 0;
+    const n = Math.ceil(rank / 2);
+    return rank % 2 === 1 ? n : -n;
+}
+
+/**
  * Where the flag is drawn and how big, in mat units: its box's top-left and size.
  * @param {{x:number,y:number}} point the flag's own point (a spot) or the pinned Token's centre
  * @param {number|null} artRadius the pinned Token's art radius, or null for a spot
  * @param {number} artScale mat units per art pixel (`boardScaleAt(fit)`)
  * @param {number|null} [cornerOffset] a pinned flag's `markerCornerOffset`; by default
  * `MARKER_CORNER` of the art drawn for `artRadius`
+ * @param {number} [fan] a pinned flag's `fanStep`: it moves that many `MARKER_FAN_ART_PX` round the
+ * Token's centre at the corner's distance (positive towards the top, negative towards the left)
  */
-export function markerBox(point, artRadius, artScale, cornerOffset = null) {
+export function markerBox(point, artRadius, artScale, cornerOffset = null, fan = 0) {
     const x = point?.x ?? 0;
     const y = point?.y ?? 0;
     const size = MARKER_ART_PX * artScale;
     if (artRadius != null) {
         const d = cornerOffset ?? markerCornerOffset(artRadius * artScale, null, artScale);
-        return { left: x - d - size / 2, top: y - d - size / 2, size };
+        if (!fan || !(d > 0)) return { left: x - d - size / 2, top: y - d - size / 2, size };
+        const r = d * Math.SQRT2;
+        const angle = -0.75 * Math.PI + (fan * MARKER_FAN_ART_PX * artScale) / r;
+        return { left: x + r * Math.cos(angle) - size / 2, top: y + r * Math.sin(angle) - size / 2, size };
     }
     return { left: x - MARKER_FOOT.x * size, top: y - MARKER_FOOT.y * size, size };
 }
