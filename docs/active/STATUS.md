@@ -13,7 +13,7 @@ Integration branch `feat/token-bars` (one eye-check for the brief). P1 ∥ P2, t
 |---|---|---|---|---|---|
 | P1: enemies show no charges; a choice waiting on you swaps its '!' for a 2× gear on hover (T-261, T-262) | builder | `feat/token-bars-p1` (`tb1`) | **ready**, merged into `feat/token-bars` 49e96c3d (gate on the merged P1+P2: 6646 tests, cycles 0, build; director read the diff). Notes: the gear keeps its own tooltip; the drawer inspection still shows an enemy's charges (ticket candidate) | Wed | Wed |
 | P2: every hero's flag is the owner's pennant at 2× (T-150) | builder | `feat/token-bars-p2` (`tb2`) | **ready**, on `feat/token-bars` 89b6b15c (builder: 6636 tests, cycles 0, build; director read the diff, checked the pole foot (4, 31) on the art, shots look right). Drag bench queued | Wed | Wed |
-| P3: one plate for every Token: no output icon, idle Tokens get it on hover, the round rings retire (T-263) | builder | `feat/token-bars-p3` (`tb1`) | building | Wed | |
+| P3: one plate for every Token: no output icon, idle Tokens get it on hover, the round rings retire (T-263) | builder | `feat/token-bars-p3` (`tb1`) | **eye-check** ([file](eyecheck/2026-10-28_token-bars.md)): on `feat/token-bars` 721f753e with `main` merged in, gate 6660 tests, cycles 0, build; director read the mat wiring. Owner's folder switched to the branch, dev server up on 5173. Engine work check and `bench:draw --compare` queued for 01:00 (window closed; P3 touches no engine code) | Wed | |
 | Card wording fixes from the S9 list (#4, #5, #9, #10, #11, #12) | builder | `fix/card-wording` (`tb2`) | **merged** fd5ea1c4 (gate on the merged result: 6640 tests, cycles 0, build, engine **same work**; director read the engine diff: the work-time sum moved into `TileModifiers.workTimeOf`, unchanged). Empty Field "No crop chosen"; cards show the time with speed-ups; card rows wrap; crop picker shows grow time and harvests, "1 Wheat Seed per sowing"; no Drives line when nothing uses a Token; no "+0" stubs. Ticket candidates for planning: the drawer inspection still shows an enemy's charges and says "Nothing yet" under Drives | Wed | Wed |
 
 ## Systems director, combat (brief 220; owner's go 2026-10-24) — **done, all phases merged 2026-10-25**
@@ -366,7 +366,7 @@ T-186; the badges' soft shadows are settled inside T-013.)
 
 ## Bench queue (one at a time, weekdays 13:00–17:00 and 01:00–07:00, or when the owner says the PC is quiet)
 
-**Thu 01:00 (director, 2026-10-28):** baseline retake on `main`, machine quiet: `npm run bench -- --save-baseline`, `npm run bench:draw -- --save-baseline`; commit with the date. Then the Token bars draw compare when P3 is ready.
+**Thu 01:00 (director, 2026-10-28):** (1) `feat/token-bars` engine `--compare` and `bench:draw -- --compare` (cost-log line) against the current baselines; (2) then the baseline retake on `main`, machine quiet: `npm run bench -- --save-baseline`, `npm run bench:draw -- --save-baseline`; commit with the date. Then the Token bars draw compare when P3 is ready.
 
 **Wed 15:46 (window), `feat/token-bars` 49e96c3d (P1+P2):** engine `--compare` **same work** (p99 tails 1.1–1.46 against the 21 Oct baseline with the owner's dev server running, the known stale-baseline pattern); `bench:drag --kinds=flag,token`: flag and Token 50/50 both passes.
 
@@ -383,6 +383,8 @@ T-186; the badges' soft shadows are settled inside T-013.)
 8. ~~Terrain director: bench baseline retake~~ **Done:** engine 2026-10-21 13:00 (f19a2e30), draw 2026-10-22 01:00 (db3959c4).
 
 ## Summaries
+
+**Wed 2026-10-28, evening: Token bars ready for the owner's look; card wording merged.** Where we are: `main` 93e440eb has the six card-wording fixes; `feat/token-bars` (P1 gear and enemy charges, P2 pennant, P3 one plate) passes the gate and waits for the eye-check, the owner's folder is on it. Next: the owner's verdicts and answers (a–e in the file), fixes on the branch, merge; 01:00 benches. Owner: the eye-check, then the stump Art size in the CMS on `main`. Blockers: none.
 
 **Wed 2026-10-28, afternoon: fresh director read in; Token bars batch proposed and chosen.** Where we are: `main` 764ca115; the owner's weapon-tier Sync checked. Now: P1 (enemy charges, the gear on hover) and P2 (the pennant flag) build side by side; P3 (one plate) follows P1; then the card-wording fixes from the S9 list. Owner: K4 and S9 eye-checks still open. Bench: baseline retake queued for 01:00 Thu.
 
