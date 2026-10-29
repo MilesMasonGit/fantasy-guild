@@ -1,4 +1,4 @@
-Status: draft
+Status: briefed 2026-10-28 (approved 2026-10-28; brief 280)
 
 # Combat v2: styles with character, damage types, mix and match
 
@@ -84,11 +84,11 @@ expressed through several mechanics:
 - **Ranged: the arrow adds its own damage** (owner): a shot is the bow's
   damage in the bow's type plus the arrow's damage in the arrow's type. Bow
   and arrow are each tuned to about **half** of a comparable weapon.
-- **Order of a hit** (analyst; routine): weapon damage × style matchup × buffs
-  → crit → minus armour (at least 1) → × the type factor (1 + boosts −
-  resistances, never below 0) → the fraction sub-roll. Resistance comes after
-  the armour floor so a resisted fast weapon really does less, and immunity
-  means 0.
+- **Order of a hit** (analyst; routine, updated for Defence below): weapon
+  damage × style matchup × buffs → crit → × the type factor (1 + the
+  attacker's boosts − the target's resistance to that type, after Sunder;
+  never below 0) → the fraction sub-roll. No flat armour and no "at least 1"
+  floor: a resisted hit can do 0, and immunity means 0.
 
 ### Enemies attack with moves (owner)
 
@@ -121,16 +121,35 @@ Throwing Daggers, Motes or off-hand items.
   "damage is fixed, no spread" for hits. One extra random draw per hit with a
   fraction, in a fixed order, so the catch-up replays the same fights.
 
-## Gear
+## Gear and defence (owner)
 
-- **Off hand: off-hand items only** (owner): shields, quivers, focus orbs and
-  the like, each lending its bonus. A weapon in the second hand lends nothing.
-  A two-handed weapon takes both hands.
-- **Armour families defend differently and mix freely** (owner): e.g. metal
-  Armour, leather Dodge, cloth resistance to statuses, dark cloth Dodge and
-  crit (placeholders). Each piece counts on its own; an off-style piece
-  carries its family's penalty. Armour may also carry damage-type bonuses and
-  resistances (the cloak example above).
+- **No flat Armour stat.** Defence is **percentage resistances by type or
+  group** on each piece of gear (owner): metal pieces resist Physical; cloth
+  and leather lean Elemental; a fur-lined cloak resists Ice ("helps a wizard
+  build stay safe against an Ice Elemental"). The armour families are a
+  guide for authoring, not a rule (variety per Token).
+- **Every piece is a trade-off** (owner): it lists a **damage cut to named
+  styles** ("Iron Chestplate: Physical resist 20 %; Magic damage −30 %,
+  Stealth damage −15 %"), so a hero with a wand is worse off in an iron
+  chestplate than in nothing. Shown in red in the tooltip. Pieces mix freely.
+- **No resistance cap; small numbers instead** (owner): gear values are kept
+  low enough that a hero can never reach 100 % in any type (the content audit
+  checks the best possible stack). A hero may stack one type high, but
+  **enemy move sets make that a bad idea**: Ice-resist gear nearly shrugs off
+  the Ice Elemental's Blizzard and leaves the hero bare to its Physical Smash.
+  Optimal play balances gear against each enemy's moves.
+- **The flat Resistance stat retires** (owner): one resistance idea, not two.
+- **Pierce becomes a status, Sunder** (owner): each landing lowers the target's
+  resistances for the rest of the fight, stacking to a limit (a status block
+  like Venom's). Spears and some arrows carry it.
+- **Attacks can miss** (owner: "we need some sort of accuracy mechanic"): the
+  level-gap miss chance stays, with Accuracy from gear. Whether Dodge stays as
+  a gear stat beside it is settled with the gear content pack.
+- **Off hand: off-hand items only** (owner). **A shield acts like a piece of
+  body armour** (owner): resistances and its effect, no block chance. Quivers,
+  focus orbs and the like lend their bonus. A weapon in the second hand lends
+  nothing. A two-handed weapon takes both hands.
+- Enemies' **Armoured** kind (+armour) becomes a Physical resistance step.
 
 ## Fleeing (owner)
 
@@ -142,15 +161,16 @@ Throwing Daggers, Motes or off-hand items.
 
 - [concept_classless_heroes.md](concept_classless_heroes.md): "Stealth plays its
   own way" becomes the character above, without "unseen at work"; "Armour
-  families" becomes "defend differently, mix freely". Brief 270's K2 and K3
-  wait for this concept.
+  families" becomes resistances and trade-offs (Gear and defence). Brief 270's
+  K2 and K3 fold into this concept's brief.
 - [concept_combat.md](concept_combat.md): "styles have no traits of their own",
-  "weapon traits are a later idea", the rounding rule, the fixed damage, and
-  "the first weapon in the hands is swung".
+  "weapon traits are a later idea", the rounding rule, the fixed damage, "the
+  first weapon in the hands is swung", flat Armour, Pierce and flat
+  Resistance.
 - GDD §4 Equipment and §6 are partly stale already (12 weapons and armour
   ship; 18 enemies across all four styles): fix with the clean-up.
 
 ## Next steps
 
 1. ~~Damage-type analysis and interview~~ done 2026-10-28.
-2. Owner approval; one brief, after brief 270 K1.
+2. ~~Owner approval~~ approved 2026-10-28; [brief 280](briefs/280_combat_v2.md), after brief 270 K1.
