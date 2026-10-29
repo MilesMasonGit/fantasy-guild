@@ -458,7 +458,8 @@ export const MatBoard = React.memo(function MatBoard({
         }
         const ring = camp ? Camps.reachRingOf(camp) : null;
         return ring ? { campId: camp.id, ...ring } : null;
-    }, [rest.tokenId, rest.heroId, carriedId, litHeroId, inspectedHeroId, heroes, tokens, workedBy]);
+    // `tokens`: a camp moved by the player moves its ring (the ring reads the camp's live point).
+    }, [rest.tokenId, rest.heroId, carriedId, litHeroId, inspectedHeroId, heroes, tokens, workedBy]); // eslint-disable-line react-hooks/exhaustive-deps
     // Keyed by value, so a hero's walking step does not redraw the ring.
     const campRingKey = campRing ? `${campRing.campId}|${campRing.x}|${campRing.y}|${campRing.r}` : '';
     const campRingShown = useMemo(() => campRing, [campRingKey]); // eslint-disable-line react-hooks/exhaustive-deps
