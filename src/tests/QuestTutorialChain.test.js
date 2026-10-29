@@ -18,6 +18,7 @@ import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as StationRecipe from '../systems/board/StationRecipe.js';
 import * as Flags from '../systems/board/Flags.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as Shop from '../systems/board/Shop.js';
 import * as Atlas from '../systems/atlas/Atlas.js';
 import { isMapItem } from '../systems/atlas/mapItems.js';
@@ -167,10 +168,10 @@ describe('⭐ the cartographer\'s chain, step by step, through the real systems'
         expect(EquipmentManager.equipItem(heroId, AXE).success).toBe(true);
         claim('cart_tool');
 
-        // 3. Plant a Flag beside an Oak Tree.
+        // 3. Send the Hero to work: the player's drop onto an Oak Tree (hero orders, brief 260 O1).
         Placement.placeTokenAt(
             BoardState.createTokenInstance('token_oak_tree', tokenStartingUses('token_oak_tree')), SPOT.tree);
-        expect(Flags.plant(heroId, SPOT.tree).success).toBe(true);
+        expect(Orders.orderAt(heroId, SPOT.tree)).toMatchObject({ success: true, order: 'token' });
         claim('cart_flag');
 
         // 4. Gather three times.
@@ -181,7 +182,10 @@ describe('⭐ the cartographer\'s chain, step by step, through the real systems'
         expect(runUntil(() => {
             collectAll();
             if (!onMat('token_oak_tree').length) {
-                Placement.placeTokenAt(BoardState.createTokenInstance('token_oak_tree', 10), SPOT.tree);
+                // The felled tree's Stump keeps its hero waiting: the player sends them to a new one.
+                const tree = BoardState.createTokenInstance('token_oak_tree', 10);
+                Placement.placeTokenAt(tree, SPOT.tree);
+                if (BoardState.getTokenById(tree.id)) Orders.orderAt(heroId, { x: tree.x, y: tree.y });
             }
             return complete('cart_loot');
         }, 10 * 60_000)).toBe(true);

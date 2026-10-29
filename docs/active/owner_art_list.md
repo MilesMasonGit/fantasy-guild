@@ -182,3 +182,9 @@ swapping a picture in for one is a small code change.
 | Loot bag | **NEW** | The log's "Drops" line |
 | Knocked out (a down arrow) | **NEW** | The log's knockout and the "While you were away" Knocked out line |
 | Enemy animation sheets | **NEW** (as wanted) | Only the Cow has one today (`e_cow_sheet`); every other enemy stands still in the fight panel's strip and loops nothing on the mat. A sheet is 4 × 4 frames of 64 px (rows 0–1 idle, 2–3 attack); registering one is a one-line code change |
+
+## 6. Hero orders (brief 260 O1)
+
+| Piece | Status | Notes |
+|---|---|---|
+| "Needs a job" mark | **NEW** | Over the head of a hero whose ordered Token is gone for good, and beside their name on the hero bar. Placeholder: the yellow problem "!" (`u_alert_yellow.png`), 16 × 16 at the hero's art scale |
