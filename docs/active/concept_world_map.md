@@ -40,8 +40,8 @@ replace map items as the gate to new content, and reshape the Atlas
     can reach next;
   - **names and character**: each place has a name, a look and a line of
     story, not "a Volcano map";
-  - **the world changes**: places react to what you do (a beaten guardian
-    opens a pass, a settled place brings traders or rumours).
+  - **the world changes on the playmat** (owner): the world map itself is
+    essentially static; life and change happen on the mat.
 - **Each next place shows its requirements** (hover the silhouette: "To
   reach the Ashen Hills: 30 rations, 2 pickaxes, 20 planks for a bridge, a
   hero with Combat 12"); sometimes a guardian at the pass. **The guild meets
@@ -52,10 +52,48 @@ replace map items as the gate to new content, and reshape the Atlas
   playmat (layout from its biome and character, as the Atlas does today);
   travel between settled places stays free and instant.
 
+## How the world grows (owner)
+
+- **The world map starts with the Guild Hall and builds outward.** It is a
+  grid of cells (e.g. hexes) around the Hall; **every fog cell touching
+  settled land holds one randomly generated region option**, which stays put
+  until explored. Settling a cell reveals the cells beyond it, so where the
+  guild goes decides what lies next. Choosing which region to explore is the
+  expedition decision.
+- **Regions are randomly generated**; a new world is generated for each run
+  after the ritual (owner).
+- **Tiers by distance from the Hall** (owner): rings outward. The first ring is
+  copper-and-oak country, the next iron-and-fir, and so on; requirements rise
+  with distance. The next ring's silhouettes show from the start.
+- **Each ring guarantees its key materials** (owner): the second ring always
+  offers iron and fir among its cells. Randomness shapes where and with what,
+  never whether. The ledger plans rings as stages and checks the rules.
+- **A fog cell shows its core resource outputs** and its requirements
+  (materials and skill levels) (owner), so a player who needs a particular
+  item can find the region that gives it. Smaller extras (treasures, a rare
+  node, modifiers like Rich Veins, a boss) can stay a surprise on arrival
+  (planning agent's default).
+- **Paying the requirements settles it at once** (owner): no expedition timer,
+  no heroes away. The fog lifts and the region joins the world.
+
+## Built pieces (owner: the recommended clean-up)
+
+- **Retire**: map items, map drops from enemies and bosses, bounty map rewards,
+  map upcycling, the tutorial's three maps (the tutorial's end needs a new
+  reward: the first ring opening).
+- **Keep, inside generation**: region modifiers and treasures, as hidden
+  extras of a generated region.
+- **The Cartography Table upgrade becomes "see further"**: it reveals the
+  options of fog cells further ahead.
+- **The Atlas tome becomes the world map screen.**
+- Travel between settled places stays free and instant; one place, one
+  Region (above).
+
 ## Open
 
-- **How the world is made** (owner): landmarks with generation in between,
-  possibly fully generated; the owner has a first idea to describe.
-- What becomes of the built Atlas pieces (the tome, modifiers, treasures,
-  the Cartography Table, map drops and the bounty map rewards).
-- How this meets the ritual (prestige) and the ledger's stages.
+- How many cells per ring, the cell shape, and how a cell's requirements are
+  priced (the simulator and the ledger's stage budgets).
+- How the ledger's stages map onto rings (Starter Camp = the Hall's cell,
+  ring 1 = plane 1, ring 2 = plane 2).
+- Whether a cell may hold a guardian as a requirement (combat as part of
+  expansion), now that the map itself is static.
