@@ -5,6 +5,7 @@ import { generateHero } from '../HeroGenerator.js';
 import { rehydrateHero } from './HeroRehydration.js';
 import { rosterLimitForRank } from '../../../config/guildUpgrades.js';
 import { ENGINE_EVENTS } from '../../core/engineEvents.js';
+import { ensureFlagColour } from '../../board/FlagColours.js';
 
 /**
  * Hero Lifecycle: creation and recruitment. The player never removes a hero from
@@ -39,6 +40,7 @@ export function createHero(options = {}, silent = false) {
     const hero = generateHero(options);
     rehydrateHero(hero);
     GameState.heroes.push(hero);
+    ensureFlagColour(hero.id);
 
     if (!silent) {
         EventBus.publish(ENGINE_EVENTS.HERO_RECRUITED, {
@@ -73,6 +75,7 @@ export function addHero(heroData) {
 
     rehydrateHero(heroData);
     GameState.heroes.push(heroData);
+    ensureFlagColour(heroData.id);
     logger.info('HeroLifecycle', `Added hero "${heroData.name}" to the roster`);
 
     EventBus.publish(ENGINE_EVENTS.HERO_RECRUITED, {

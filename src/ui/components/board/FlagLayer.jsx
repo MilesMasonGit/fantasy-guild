@@ -22,7 +22,8 @@ import { markerBox, markerCornerOffset } from './flagGeometry.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
- * FlagLayer: the flag that marks each hero's order (`FlagMark`), an absolute overlay in mat units.
+ * FlagLayer: the flag that marks each hero's order (`FlagMark`, in the hero's own colour), an
+ * absolute overlay in mat units.
  * - **A Token order**: the flag peeks out from behind the top-left corner of the Token's art
  * (`markerBox`, `markerCorner.js`: where that Token's own art begins), and sorts just behind the
  * Token (`MatBoard`), so it is drawn **behind the Token's sprite**. It stays while the order stands.
@@ -67,7 +68,8 @@ function projectFlags() {
             // A spot's flag is down once the hero stands there.
             arrived: order === 'spot' && status.state === 'idle',
             state: status.state,
-            name: hero?.name || 'Hero'
+            name: hero?.name || 'Hero',
+            colour: hero?.flagColour || null
         });
     }
     return out;
@@ -218,6 +220,7 @@ const FlagBody = memo(function FlagBody({
             >
                 <FlagMark
                     size={flagPx}
+                    colour={flag.colour}
                     alt={`${flag.name}’s flag`}
                     outline={flagOutline({ hovered: hovered || boardHovered, selected: inspected, carried })}
                     className="absolute left-0 top-0"

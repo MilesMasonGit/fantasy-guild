@@ -2,6 +2,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import React from 'react';
 import { render, cleanup, fireEvent, act } from '@testing-library/react';
+import { FLAG_FILLS } from '../systems/board/FlagColours.js';
 
 const STATUS = new Map();
 vi.mock('../systems/board/Flags.js', () => ({
@@ -326,6 +327,15 @@ describe('H2: the panel header', () => {
         expect(flag.compareDocumentPosition(hero) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
         // The idle row of the sheet, as the mat's idle hero.
         expect(hero.querySelector('[data-hero-row]').getAttribute('data-hero-row')).toBe('idle');
+    });
+
+    it('the flag is in the hero’s own colour', () => {
+        GameState.state.heroes[0].flagColour = 'orange';
+        const r = render(panel({ selectedHeroId: 'h1', showTabs: false }));
+        const mark = r.container.querySelector('[data-hero-panel-flag] [data-flag-mark]');
+        expect(mark.getAttribute('data-flag-colour')).toBe('orange');
+        const svgs = mark.querySelectorAll('svg');
+        expect(svgs[svgs.length - 1].getAttribute('fill')).toBe(FLAG_FILLS.orange);
     });
 
     it('shows the HP numbers on the bar', () => {

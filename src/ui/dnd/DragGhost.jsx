@@ -8,6 +8,7 @@ import { TokenSprite, TOKEN_SURFACE, tokenSizeFor, PixelArt, boardArtSteps } fro
 import { resolveSpritePath } from '../../utils/AssetManager.js';
 import { GameState } from '../../state/GameState.js';
 import { FlagMark } from '../components/board/FlagMark.jsx';
+import { flagColourOf } from '../../systems/board/FlagColours.js';
 import { MARKER_ART_PX, MARKER_FOOT } from '../components/board/flagGeometry.js';
 
 /**
@@ -90,7 +91,7 @@ export const FlagGhost = ({ payload }) => {
     const shift = { x: (0.5 - MARKER_FOOT.x) * size, y: (0.5 - MARKER_FOOT.y) * size };
     return (
         <div data-flag-ghost={payload?.heroId || ''} className="relative" style={{ width: size, height: size }}>
-            <FlagMark size={size} style={{ position: 'absolute', left: shift.x, top: shift.y }} />
+            <FlagMark size={size} colour={flagColourOf(payload?.heroId)} style={{ position: 'absolute', left: shift.x, top: shift.y }} />
         </div>
     );
 };

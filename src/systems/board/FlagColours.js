@@ -4,11 +4,12 @@ import { GameState } from '../../state/GameState.js';
 
 /**
  * A hero keeps one flag colour, saved as `hero.flagColour` (survives a recall, a defeat and a
- * save).
+ * save), and their job flag is filled with it everywhere it is drawn (`FlagMark`).
  *
- * Given automatically at the first plant (`Flags.plant` calls {@link ensureFlagColour}): the first
- * of {@link FLAG_COLOURS} no other hero uses; once all eight are taken, reused in order. Not tied
- * to roster position. A hero with no colour, or an unknown one, draws the plain base flag.
+ * Given automatically ({@link ensureFlagColour}) when the hero joins the roster, to every hero of
+ * an older save on load ({@link assignFlagColours}, in roster order), and at a plant as a last
+ * resort: the first of {@link FLAG_COLOURS} no other hero uses; once all eight are taken, reused in
+ * order. A hero with no colour, or an unknown one, draws the pale base flag.
  */
 export const FLAG_COLOURS = Object.freeze([
     'reddark',
@@ -24,16 +25,45 @@ export const FLAG_COLOURS = Object.freeze([
 /** The plain flag, drawn for a hero with no (valid) colour. */
 export const FLAG_BASE = 'base';
 
-const FLAG_DIR = '/assets/ui';
+/**
+ * Each colour's fill, taken from the cloth of its old flag sprite and checked against every mat
+ * ground (grass, dark grass, dirt, sand, gravel, stone, water): the near-black edge carries the
+ * shape, the fill only has to read as itself.
+ * ⚠️ `greendark` is the weakest on grass (any green is); it is lifted to a brighter emerald than
+ * its sprite's cloth so it still reads there.
+ */
+export const FLAG_FILLS = Object.freeze({
+    reddark: '#b3202a',
+    bluelite: '#98d5e7',
+    greenlite: '#a6e36b',
+    orange: '#ff943a',
+    purplite: '#b05be0',
+    yelpur: '#fac900',
+    greendark: '#1fa65a',
+    redlite: '#fd3c35',
+    [FLAG_BASE]: '#e9dfc4'
+});
+
+/** The fill a flag of this colour is drawn with; the base flag's pale bone for anything else. */
+export function flagFill(colour) {
+    return FLAG_FILLS[isFlagColour(colour) ? colour : FLAG_BASE];
+}
+
+/** A readable name for each colour, for the Edit Hero swatches' labels. */
+export const FLAG_COLOUR_LABELS = Object.freeze({
+    reddark: 'Dark red',
+    bluelite: 'Light blue',
+    greenlite: 'Light green',
+    orange: 'Orange',
+    purplite: 'Purple',
+    yelpur: 'Yellow',
+    greendark: 'Dark green',
+    redlite: 'Red'
+});
 
 /** Whether a value is one of the eight flag colours. */
 export function isFlagColour(value) {
     return typeof value === 'string' && FLAG_COLOURS.includes(value);
-}
-
-/** The sprite path for a colour; the base flag for anything else. */
-export function flagSpritePath(colour) {
-    return `${FLAG_DIR}/u_flag_${isFlagColour(colour) ? colour : FLAG_BASE}.png`;
 }
 
 function heroRecord(heroId) {
@@ -70,4 +100,11 @@ export function ensureFlagColour(heroId) {
     if (!hero) return null;
     if (!isFlagColour(hero.flagColour)) hero.flagColour = nextFlagColour(heroId);
     return hero.flagColour;
+}
+
+/** Give every hero without a colour one, in roster order (an older save, loaded). */
+export function assignFlagColours() {
+    for (const hero of GameState.state?.heroes || []) {
+        if (hero?.id) ensureFlagColour(hero.id);
+    }
 }

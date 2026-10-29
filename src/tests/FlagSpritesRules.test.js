@@ -12,7 +12,7 @@ import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as Flags from '../systems/board/Flags.js';
 import * as HeroManager from '../systems/hero/HeroManager.js';
-import { FLAG_COLOURS, flagColourOf } from '../systems/board/FlagColours.js';
+import { FLAG_COLOURS, FLAG_FILLS, flagColourOf, flagFill } from '../systems/board/FlagColours.js';
 import { migrateState } from '../systems/core/SaveMigration.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
@@ -205,7 +205,7 @@ describe('FP-76 — the player never moves a hero: dragging one drags their flag
 });
 
 describe('FP-77 / FP-82 — flag sprites and lasting colours', () => {
-    it('a hero holding a colour still draws the one job flag, at 24 px at the natural fit', () => {
+    it('a hero holding a colour draws the job flag, at 24 px at the natural fit', () => {
         Flags.plant('h1', C(20));
         const colour = flagColourOf('h1');
         expect(FLAG_COLOURS).toContain(colour);
@@ -219,18 +219,57 @@ describe('FP-77 / FP-82 — flag sprites and lasting colours', () => {
         expect(flag.querySelector('img')).toBeNull();
     });
 
-    it('every hero draws the same flag, whatever colour they hold', () => {
+    it('each hero’s flag on the mat is filled with their own colour, over the one dark edge', async () => {
         Flags.plant('h1', C(20));
         Flags.plant('h2', C(8));
         expect(flagColourOf('h1')).not.toBe(flagColourOf('h2'));
         const { container } = mount(h(FlagLayer));
-        const marks = ['h1', 'h2'].map(id => container.querySelector(`[data-flag="${id}"] [data-flag-mark]`).innerHTML);
-        expect(marks[0]).toBe(marks[1]);
+        for (const id of ['h1', 'h2']) {
+            const mark = container.querySelector(`[data-flag="${id}"] [data-flag-mark]`);
+            expect(mark.getAttribute('data-flag-colour')).toBe(flagColourOf(id));
+            const svgs = mark.querySelectorAll('svg');
+            expect(svgs[svgs.length - 1].getAttribute('fill')).toBe(flagFill(flagColourOf(id)));
+            expect(svgs[svgs.length - 2].getAttribute('fill')).toBe('#17110c');
+        }
+        await act(async () => { HeroManager.updateHeroProfile('h1', { flagColour: 'yelpur' }); });
+        const svgs = container.querySelectorAll('[data-flag="h1"] [data-flag-mark] svg');
+        expect(svgs[svgs.length - 1].getAttribute('fill')).toBe(FLAG_FILLS.yelpur);
     });
 
-    it('a hero with no colour draws the flag too, in the hand', () => {
+    it('the eight fills are eight different colours, none the pale base flag', () => {
+        const fills = FLAG_COLOURS.map(flagFill);
+        expect(new Set(fills).size).toBe(8);
+        expect(fills).not.toContain(flagFill(null));
+        expect(flagFill('chartreuse')).toBe(flagFill(null));
+    });
+
+    it('in the hand the flag is its hero’s colour; a hero with no colour carries the pale flag', () => {
+        Flags.plant('h1', C(20));
+        const held = mount(h(FlagGhost, { payload: { heroId: 'h1' } })).container;
+        expect(held.querySelector('[data-flag-mark]').getAttribute('data-flag-colour')).toBe(flagColourOf('h1'));
+        const svgs = held.querySelectorAll('[data-flag-mark] svg');
+        expect(svgs[svgs.length - 1].getAttribute('fill')).toBe(flagFill(flagColourOf('h1')));
+
         const { container } = mount(h(FlagGhost, { payload: { heroId: 'h2' } }));
         expect(container.querySelector('[data-flag-mark] svg.lucide-flag-triangle-right')).toBeTruthy();
+        expect(container.querySelector('[data-flag-mark]').hasAttribute('data-flag-colour')).toBe(false);
+    });
+
+    it('a hero is given a colour when they join the roster, the first one free', () => {
+        GameState.state.heroes[0].flagColour = FLAG_COLOURS[0];
+        GameState.state.progress.rosterLimit = 8;
+        const joined = HeroManager.addHero(hero('h9', { forestry: 1 }));
+        expect(joined).toBeTruthy();
+        expect(flagColourOf('h9')).toBe(FLAG_COLOURS[1]);
+    });
+
+    it('an older save gives every hero without a colour one, in roster order, on load', async () => {
+        GameState.state.heroes[1].flagColour = FLAG_COLOURS[0];
+        const saved = JSON.parse(JSON.stringify(GameState.serialize()));
+        await GameState.initFromSave(migrateState(saved.state, saved.version));
+        expect(flagColourOf('h2')).toBe(FLAG_COLOURS[0]);
+        expect(flagColourOf('h1')).toBe(FLAG_COLOURS[1]);
+        expect(GameState.state.heroes.every(x => FLAG_COLOURS.includes(x.flagColour))).toBe(true);
     });
 
     it('the drag ghost is the flag at the mat’s size', () => {
@@ -280,20 +319,45 @@ describe('FP-77 / FP-82 — flag sprites and lasting colours', () => {
         expect(flagColourOf('h1')).toBe('orange');
     });
 
-    it('the Edit Hero modal offers the eight flag sprites and saves the chosen colour', async () => {
+    it('the Edit Hero modal offers the job flag in each of the eight colours; a pick changes the flag at once, Save keeps it', async () => {
         Flags.plant('h1', C(20));
         expect(flagColourOf('h1')).not.toBe('purplite');
+        const board = mount(h(FlagLayer)).container;
         mount(h(HeroEditModal, { heroId: 'h1', isOpen: true, onClose: () => {}, onChangeJob: () => {} }));
 
         const swatches = document.querySelectorAll('[data-flag-swatch]');
         expect([...swatches].map(s => s.getAttribute('data-flag-swatch'))).toEqual([...FLAG_COLOURS]);
-        expect(swatches[0].querySelector('img').getAttribute('src')).toBe(`/assets/ui/u_flag_${FLAG_COLOURS[0]}.png`);
+        [...swatches].forEach((s, i) => {
+            expect(s.querySelector('img')).toBeNull();
+            expect(s.querySelector('[data-flag-mark] svg.lucide-flag-triangle-right')).toBeTruthy();
+            expect(s.querySelector('[data-flag-mark]').getAttribute('data-flag-colour')).toBe(FLAG_COLOURS[i]);
+        });
 
         await act(async () => { fireEvent.click(document.querySelector('[data-flag-swatch="purplite"]')); });
-        const save = [...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'Save');
-        await act(async () => { fireEvent.click(save); });
-
+        // Before Save: the hero's flag on the mat is already purple.
         expect(flagColourOf('h1')).toBe('purplite');
+        expect(board.querySelector('[data-flag="h1"] [data-flag-mark]').getAttribute('data-flag-colour')).toBe('purplite');
+        expect(document.querySelector('[data-flag-swatch="purplite"]').getAttribute('aria-pressed')).toBe('true');
+
+        const save = [...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'Save');
+        expect(save.disabled).toBe(false);
+        await act(async () => { fireEvent.click(save); });
+        expect(flagColourOf('h1')).toBe('purplite');
+    });
+
+    it('Cancel in Edit Hero puts back the colour the hero had when it opened', async () => {
+        Flags.plant('h1', C(20));
+        const was = flagColourOf('h1');
+        const onClose = vi.fn();
+        mount(h(HeroEditModal, { heroId: 'h1', isOpen: true, onClose, onChangeJob: () => {} }));
+        await act(async () => { fireEvent.click(document.querySelector('[data-flag-swatch="orange"]')); });
+        await act(async () => { fireEvent.click(document.querySelector('[data-flag-swatch="yelpur"]')); });
+        expect(flagColourOf('h1')).toBe('yelpur');
+
+        const cancel = [...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'Cancel');
+        await act(async () => { fireEvent.click(cancel); });
+        expect(flagColourOf('h1')).toBe(was);
+        expect(onClose).toHaveBeenCalled();
     });
 
     it('updateHeroProfile refuses a colour that is not one of the eight', () => {
