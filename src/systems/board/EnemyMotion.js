@@ -208,7 +208,7 @@ function endWalk(instance, body) {
 function step(instance, spawner, body, delta) {
     // Moved by something else since the last step — the player's drop, a push:
     // start again from where it now stands.
-    if (Math.round(body.x) !== instance.x || Math.round(body.y) !== instance.y) {
+    if (Math.round(body.x) !== Math.round(instance.x) || Math.round(body.y) !== Math.round(instance.y)) {
         body.x = instance.x;
         body.y = instance.y;
         body.potter = null;

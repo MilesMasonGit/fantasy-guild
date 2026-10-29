@@ -174,6 +174,17 @@ describe('pottering (HM-1, for enemies)', () => {
         expect(Number.isInteger(enemy.y)).toBe(true);
     });
 
+    it('an enemy standing at a non-whole point strolls after its pause and draws one pause, not one per tick', () => {
+        const inner = seeded();
+        let draws = 0;
+        EnemyMotion.setRandomForTests(() => { draws++; return inner(); });
+        const { enemy } = campWithEnemy(800, 500, 874.268, 500.322);   // inside the ring, off the whole grid
+        const start = { x: enemy.x, y: enemy.y };
+        tick(20000);
+        expect(Math.hypot(enemy.x - start.x, enemy.y - start.y)).toBeGreaterThan(1);   // it strolled
+        expect(draws).toBeLessThan(40);                                // 200 ticks: not one draw each
+    });
+
     it('with wander 0 it never strolls', () => {
         setMatTuning('enemyPotterRadius', 0);
         const { enemy } = campWithEnemy(800, 500, 850, 500);        // 50 u out: inside the edge
