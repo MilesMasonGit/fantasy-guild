@@ -107,6 +107,35 @@ replace map items as the gate to new content, and reshape the Atlas
   places.
 - The ledger checks all three on each generated world's rules.
 
+## What goes on a mat (owner, 2026-10-29)
+
+*From the [mat composition study](research/mat_composition_study_2026-10-29.md).
+Goals: a diverse selection of activities on any mat (**every mat supports most
+skills, plus a specialty**), discovery from **arriving somewhere new**, and
+balance (worries: lucky or unlucky worlds; skills progressing unevenly).*
+
+- **Natural work on arrival keeps about 4–6 heroes busy in total** (owner):
+  kit and specialty together. Beyond that, extra work comes from **what the
+  player builds** (camps, planted Forests, Mines, Fields on Foundations), so
+  arriving is a start and building is the growth; this frees Token cap for
+  building.
+- **A specialty means better things, not more** (owner): the new-tier node, a
+  rare or rich node, its look and camp. (About 5 Tokens keep one hero busy;
+  quantity past that is wasted.)
+- **Several kinds of kit, so mats feel different** (owner): **kit archetypes**
+  (e.g. Riverside, Highland, Woodland, Wetland, Plains; names placeholders),
+  each covering most skills in its own balance and look. The other levers
+  offered (different Tokens per skill, a local building, a local quirk,
+  layout puzzles, local enemies, neighbour edges) were not chosen for now; the
+  owner wants to keep brainstorming.
+- **Against luck: a specialty bag per ring, a pity rule and a value budget
+  per cell** (owner): every gathering skill appears as a specialty in every
+  ring; a skill not offered in the last 4 options comes next; a cell's
+  modifiers and treasures stay within ±10 % of its ring's value. The ledger
+  tests many generated worlds against per-skill bands.
+- Found by the study, for the ledger and content: fishing earns ~450 XP/h
+  against ~1,100 for mining; most of today's maps are single-resource.
+
 ## Built pieces (owner: the recommended clean-up)
 
 - **Retire**: map items, map drops from enemies and bosses, bounty map rewards,
