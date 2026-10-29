@@ -5,6 +5,7 @@ import { EventBus } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 import * as BoardState from '../../systems/board/BoardState.js';
 import * as Placement from '../../systems/board/Placement.js';
+import { qaOrder } from './qaOrders.js';
 import * as TileModifiers from '../../systems/board/TileModifiers.js';
 import * as TimedChanges from '../../systems/board/TimedChanges.js';
 import * as FixedTokens from '../../systems/board/FixedTokens.js';
@@ -114,7 +115,7 @@ export function setUpSkillLoopsScene() {
     GuildUpgradeManager.recompute();
     const miner = generateHero({ name: 'QA Miner' });
     for (const id of Object.keys(miner.skills || {})) miner.skills[id] = { ...miner.skills[id], level: 10, xp: xpForLevel(10) };
-    if (HeroManager.addHero(miner)) Placement.plantFlagAt(miner.id, { x: vein.x, y: vein.y });
+    if (HeroManager.addHero(miner)) qaOrder(miner.id, { x: vein.x, y: vein.y });
 
     scene = { sapling: sapling.id, vein: vein.id, station: station.id, support: support.id };
     EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'dev_skill_loops_scene' });
@@ -232,8 +233,8 @@ export function setUpWaitingScene() {
     const miner = qaHero('QA Miner', ['mining']);
     const smith = qaHero('QA Smith', ['mining', 'smithing']);
     if (!miner || !smith) return { ok: false, error: 'The roster would not take two more heroes' };
-    Placement.plantFlagAt(miner.id, { x: vein.x, y: vein.y });
-    Placement.plantFlagAt(smith.id, { x: furnace.x, y: furnace.y });
+    qaOrder(miner.id, { x: vein.x, y: vein.y });
+    qaOrder(smith.id, { x: furnace.x, y: furnace.y });
 
     waitScene = { vein: vein.id, furnace: furnace.id, miner: miner.id, smith: smith.id, coal: null };
     EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'dev_skill_loops_waiting' });

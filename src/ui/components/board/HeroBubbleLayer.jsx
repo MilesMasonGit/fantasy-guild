@@ -133,11 +133,13 @@ export const HeroBubbleLayer = ({ heroes }) => {
             const idle = h.state === 'idle';
             next.set(h.heroId, idle);
             if (prev && prev.get(h.heroId) === false && idle) {
-                // Waiting for another hero's fight says so; waiting for a resting node says nothing.
+                // Waiting for another hero's fight or Token says so; waiting for a resting node,
+                // or standing at a spot they were sent to, says nothing; a job gone asks for one.
                 const waiting = Flags.waitingOf(h.heroId);
                 const busy = BoardState.getTokenById(waiting?.instanceId);
                 const name = busy ? (getTokenType(busy.typeId)?.name || tokenName(busy.typeId) || busy.typeId) : null;
-                const moment = idleMomentOf(busy ? waiting : null, name);
+                const status = Flags.statusOf(h.heroId);
+                const moment = idleMomentOf(busy ? waiting : null, name, { order: status.order, needsJob: status.needsJob });
                 if (moment) sayRef.current(h.heroId, moment.kind, { key: moment.key, text: moment.text });
             }
         }

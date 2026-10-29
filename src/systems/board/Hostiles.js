@@ -10,17 +10,19 @@ import * as Flags from './Flags.js';
 import * as FlagRules from './FlagRules.js';
 import * as HeroMotion from './HeroMotion.js';
 import * as Hand from './Hand.js';
+import { matTuning } from '../../config/matTuning.js';
 
 /**
- * An enemy authored `enemy.hostile: true` (see `isHostileEnemy`) attacks a hero whose flag stands
- * inside the live flag radius (`Flags.flagRadius()`) around its spawner (`EnemyMotion.spawnerOf`), or
- * around the node it ambushed from; with neither it watches the radius around itself.
+ * An enemy authored `enemy.hostile: true` (see `isHostileEnemy`) attacks a hero whose order stands
+ * inside the camp's watch ({@link watchRadius}, the Mat Tuner's Camp watch) around its spawner
+ * (`EnemyMotion.spawnerOf`), or around the node it ambushed from; with neither it watches round
+ * itself.
  *
- * ⚠️ The watch measures the hero's FLAG (its foot), never where the hero stands. An idle hero stands
- * up and to the right of their flag, so measuring the body made a flag dropped beside an enemy count
- * on some sides and not others. It also means a hero merely walking past, or appearing at the Guild
- * Hall on the way out, is not attacked, and a hero whose flag lands inside is attacked at once,
- * wherever they are, and walks up.
+ * ⚠️ The watch measures the hero's ORDER (the Token they are sent to, or the spot), never where the
+ * hero stands. An idle hero stands beside their spot, so measuring the body made a spot beside an
+ * enemy count on some sides and not others. It also means a hero merely walking past, or waiting at
+ * the Guild Hall, is not attacked, and a hero ordered inside is attacked at once, wherever they
+ * are, and walks up. They fight back, then go back to their job.
  *
  * Attacking is `Flags.ambush`: the hero drops their work and claims the enemy, walks up, and
  * `BoardCombat.tickToken` begins the fight on arrival; they fight back whatever their rules say. A
@@ -30,7 +32,7 @@ import * as Hand from './Hand.js';
  * radius, the one standing nearest the enemy (the earlier-planted flag on a tie). One fight per
  * enemy and one enemy per hero, so enemies never gang up.
  *
- * Not attacked: heroes with no flag, wounded heroes, heroes who cannot fight and heroes already
+ * Not attacked: heroes with no order (at the Guild Hall), wounded heroes, heroes who cannot fight and heroes already
  * on an enemy. Recruits are attacked like anyone: everyone fights, a Recruit barehanded. An enemy does not
  * attack while a hero holds it, while it is in the player's hand, or while the player has marked it
  * as not for heroes to work: a forced fight there would be let go on the next pass.
@@ -41,6 +43,11 @@ import * as Hand from './Hand.js';
 
 /** How often hostile enemies look for heroes, in game ms. */
 export const SCAN_MS = 250;
+
+/** How far round its camp a hostile enemy watches, in mat units (the Mat Tuner's Camp watch). */
+export function watchRadius() {
+    return matTuning('watchRadius');
+}
 
 /** `board → ms until the next look`. Runtime only, per board, like EnemyMotion's bodies. */
 const clocks = new WeakMap();
@@ -96,14 +103,14 @@ function canAttack(enemy) {
 }
 
 /**
- * One look: every free hostile enemy attacks the nearest hero whose flag is
- * inside the flag radius of its spawner.
+ * One look: every free hostile enemy attacks the nearest hero whose order is
+ * inside its camp's watch.
  * @returns {Array<{ enemyId: string, heroId: string }>} the attacks started (tests, probes)
  */
 export function scan() {
     let heroes = null;
     const started = [];
-    const radius = Flags.flagRadius();
+    const radius = watchRadius();
     const r2 = radius * radius;
 
     for (const enemy of BoardState.tokens()) {

@@ -5,6 +5,7 @@ import { EventBus } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 import * as BoardState from '../../systems/board/BoardState.js';
 import * as Placement from '../../systems/board/Placement.js';
+import { qaOrder } from './qaOrders.js';
 import * as TimedChanges from '../../systems/board/TimedChanges.js';
 import * as SpawnerSystem from '../../systems/board/SpawnerSystem.js';
 import * as BoardRunner from '../../systems/board/BoardRunner.js';
@@ -142,7 +143,7 @@ export function setUpOrchardScene() {
 
     const picker = qaHero('QA Picker', ['farming']);
     if (!picker) return { ok: false, error: 'The roster would not take another hero' };
-    Placement.plantFlagAt(picker.id, s.orchard);
+    qaOrder(picker.id, s.orchard);
 
     scene = { orchard: orchard.id, fruiting: fruiting.id, bare: bare.id, lone: lone.id, picker: picker.id };
     EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'dev_orchard_scene' });

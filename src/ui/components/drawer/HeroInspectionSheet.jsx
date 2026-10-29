@@ -16,6 +16,7 @@ import { useEntityDrag } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { Feather, ChevronRight } from 'lucide-react';
 import { XpRateTracker } from '../../../systems/hero/XpRateTracker.js';
+import { skillPurpose } from '../../../config/registries/skillRegistry.js';
 import {
     heroSkillList, skillLevelText, skillXpView, skillDetail, requiresText,
     useLockedListOpen, setLockedListOpen
@@ -224,11 +225,16 @@ const HeroFigure = ({ hero, heroId, size }) => {
 const SkillRow = ({ row, heroId, kind = 'held', expanded = false, onToggle }) => {
     const held = kind === 'held';
     const xp = skillXpView(row.xp);
-    const tipLines = kind === 'banked'
-        ? [`Set aside at ${skillLevelText(row.level)}.`, 'A job that uses it again gets it back as it was.']
-        : kind === 'locked'
-            ? [requiresText(row.id)]
-            : [xp.title, ...(row.mastered ? ['Mastered: kept on every job.'] : [])];
+    // What the skill is for comes first: the line the old Work Permissions headers carried.
+    const purpose = skillPurpose(row.id);
+    const tipLines = [
+        ...(purpose ? [purpose] : []),
+        ...(kind === 'banked'
+            ? [`Set aside at ${skillLevelText(row.level)}.`, 'A job that uses it again gets it back as it was.']
+            : kind === 'locked'
+                ? [requiresText(row.id)]
+                : [xp.title, ...(row.mastered ? ['Mastered: kept on every job.'] : [])])
+    ];
     return (
         <Tooltip title={row.name} lines={tipLines}>
         <div

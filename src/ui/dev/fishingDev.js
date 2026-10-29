@@ -6,6 +6,7 @@ import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 import { BOARD_EVENTS } from '../../systems/board/boardEvents.js';
 import * as BoardState from '../../systems/board/BoardState.js';
 import * as Placement from '../../systems/board/Placement.js';
+import { qaOrder } from './qaOrders.js';
 import * as MatPlacement from '../../systems/board/MatPlacement.js';
 import * as TileModifiers from '../../systems/board/TileModifiers.js';
 import * as Fishing from '../../systems/board/Fishing.js';
@@ -149,9 +150,9 @@ export function setUpFishingScene() {
     const plain = qaFisher('QA Plain Angler', [ROD]);
     const netter = qaFisher('QA Netter', [QA_FISHING.NET]);
     if (!angler || !plain || !netter) return { ok: false, error: 'The roster would not take three more heroes' };
-    Placement.plantFlagAt(angler.id, { x: lake.x, y: lake.y });
-    Placement.plantFlagAt(plain.id, { x: river.x, y: river.y });
-    Placement.plantFlagAt(netter.id, { x: sea.x, y: sea.y });
+    qaOrder(angler.id, { x: lake.x, y: lake.y });
+    qaOrder(plain.id, { x: river.x, y: river.y });
+    qaOrder(netter.id, { x: sea.x, y: sea.y });
 
     scene = {
         waters: [

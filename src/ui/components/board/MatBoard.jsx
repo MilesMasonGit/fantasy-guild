@@ -38,7 +38,9 @@ import * as BoardState from '../../../systems/board/BoardState.js';
 import * as Flags from '../../../systems/board/Flags.js';
 import * as HeroMotion from '../../../systems/board/HeroMotion.js';
 import * as EnemyMotion from '../../../systems/board/EnemyMotion.js';
-import * as Placement from '../../../systems/board/Placement.js';
+import * as Orders from '../../../systems/board/Orders.js';
+import { OrderLighting, lightHeroJob } from './OrderLighting.jsx';
+import { useRosterHover } from './orderLit.js';
 import { showsNearRing } from '../../../systems/board/reachDisplay.js';
 import { activeRegion } from '../../../systems/atlas/Atlas.js';
 import { regionGround } from '../../../systems/atlas/regionGround.js';
@@ -204,13 +206,12 @@ export const MatBoard = React.memo(function MatBoard({
         (state) => {
             const roster = state.heroes || [];
             const out = [];
-            // Flag holders in planting order, then heroes with no flag whose figure is still
-            // walking home: they have a body but no flag.
+            // Heroes with an order in planting order, then heroes with none, walking home or
+            // waiting at the Hall: they have a body but no order.
             const ids = BoardState.heroesOnBoard().map(([heroId]) => heroId);
             for (const [heroId] of BoardState.heroBodies()) if (!ids.includes(heroId)) ids.push(heroId);
             for (const heroId of ids) {
                 const status = Flags.statusOf(heroId);
-                if (status.state === 'docked') continue;
                 const body = HeroMotion.bodyView(heroId);
                 if (!body) continue;
                 const worked = status.state === 'working' ? BoardState.getTokenById(status.instanceId) : null;
@@ -236,7 +237,11 @@ export const MatBoard = React.memo(function MatBoard({
                     // Fighting: idle, one attack per real attack.
                     combat: !!worked && hitsOnAttack(hitSkillOf(getTokenType(worked.typeId))),
                     // Below full health: the health bar shows.
-                    hurt: !!hero?.hp && hero.hp.current < hero.hp.max
+                    hurt: !!hero?.hp && hero.hp.current < hero.hp.max,
+                    // The Token their order names (waiting beside it stands in front of it), and
+                    // whether that Token is gone for good.
+                    jobId: status.order === 'token' ? (status.flag?.pinnedTo ?? null) : null,
+                    needsJob: !!status.needsJob
                 });
             }
             return out;
@@ -253,13 +258,18 @@ export const MatBoard = React.memo(function MatBoard({
     );
     const heroes = useMemo(() => heroesRaw || [], [heroesRaw]);
 
-    /** Every flag's point, in planting order; flags sort with the Tokens. */
+    /**
+     * Every order's pennant point, in planting order; pennants sort with the Tokens. A Token
+     * order's pennant sorts just behind its Token, so it is drawn behind the Token's sprite.
+     */
     const flagsRaw = useGameState(
         () => {
             const out = [];
             for (const [heroId] of BoardState.heroesOnBoard()) {
                 const flag = BoardState.flagOf(heroId);
-                if (flag) out.push({ heroId, y: flag.y });
+                if (!flag) continue;
+                const pinned = Flags.pinnedTokenOf(heroId);
+                out.push({ heroId, y: pinned ? pinned.y - PENNANT_BEHIND : flag.y });
             }
             return out;
         },
@@ -340,11 +350,19 @@ export const MatBoard = React.memo(function MatBoard({
     useEffect(() => watchSpawns(), []);
     useEffect(() => watchRegionSettle(), []);
 
+    // A right-click on a hero (or the Token they work) sends them home to the Guild Hall.
     const handleRecallHero = useCallback((heroId) => {
-        // Said where the hero stood, should a recall ever be refused.
         const at = BoardState.displayPointOf(heroId);
-        announce(Placement.recallHeroById(heroId), at);
+        announce(Orders.sendHome(heroId), at);
     }, []);
+
+    // A hero hovered on the mat or on their roster tab: outlined, and their job lights (their
+    // sheet's, when none is hovered).
+    const rosterHover = useRosterHover();
+    const litHeroId = hoverHeroId || rosterHover || null;
+    useEffect(() => {
+        lightHeroJob(litHeroId || inspectedHeroId || null);
+    }, [litHeroId, inspectedHeroId]);
 
     // A click on a Token in a map mode. Disallow: flip it, or with shift its whole type.
     // Demolish: mark or unmark it. Either way an engine refusal is said over the Token.
@@ -531,7 +549,7 @@ export const MatBoard = React.memo(function MatBoard({
                         top={place.top}
                         z={heroZ(h, order)}
                         outline={heroOutline({
-                            hovered: hoverHeroId === h.heroId || (h.tokenId != null && hoveredId === h.tokenId),
+                            hovered: litHeroId === h.heroId || (h.tokenId != null && hoveredId === h.tokenId),
                             selected: inspectedHeroId === h.heroId,
                             working: h.state === 'working',
                             stuck: h.stuck
@@ -547,9 +565,13 @@ export const MatBoard = React.memo(function MatBoard({
                         rested={rest.heroId === h.heroId}
                         plated={h.tokenId != null && plated.has(h.tokenId)}
                         fightBarHost={fighters.heroes.has(h.heroId) ? fightBarHost : null}
+                        needsJob={h.needsJob}
                     />
                 );
             })}
+
+            {/* While a hero is carried, every Token they could be ordered onto lights. */}
+            <OrderLighting />
 
             {/* `MAT_Z.RINGS`: the Near ring. Flag radius rings are FlagLayer's. */}
             {ringsDrawn && <MatRings hoveredCentre={hoveredCentre} matRef={rootRef} />}
@@ -592,7 +614,7 @@ export const MatBoard = React.memo(function MatBoard({
             <FlagLayer
                 flagZ={order.flagZ}
                 inspectedHeroId={inspectedHeroId}
-                hoverHeroId={hoverHeroId}
+                hoverHeroId={litHeroId}
                 onHoverHero={handleHoverHero}
                 matRef={rootRef}
                 yieldToTokens={flagsYield}
@@ -626,6 +648,9 @@ export const MatBoard = React.memo(function MatBoard({
         </div>
     );
 });
+
+/** How far behind its Token a Token order's pennant sorts, in mat units: behind it, in front of the line above. */
+const PENNANT_BEHIND = 0.5;
 
 /** A map mode's edge: above the speech bubbles. */
 const MODE_EDGE_Z = MAT_Z.HERO_BUBBLE + 40;

@@ -6,6 +6,7 @@ import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 import { BOARD_EVENTS } from '../../systems/board/boardEvents.js';
 import * as BoardState from '../../systems/board/BoardState.js';
 import * as Placement from '../../systems/board/Placement.js';
+import { qaOrder } from './qaOrders.js';
 import * as MatPlacement from '../../systems/board/MatPlacement.js';
 import * as TileModifiers from '../../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../../systems/board/SpriteLayer.js';
@@ -143,8 +144,8 @@ export function setUpWorkConsumablesScene() {
     const forester = qaWorker('QA Forester', 'forestry', [QA_WORK.BIRDWATCHER, QA_WORK.COFFEE]);
     const miner = qaWorker('QA Miner', 'mining', [QA_WORK.BIRDWATCHER]);
     if (!forester || !miner) return { ok: false, error: 'The roster would not take two more heroes' };
-    Placement.plantFlagAt(forester.id, { x: tree.x, y: tree.y });
-    Placement.plantFlagAt(miner.id, { x: vein.x, y: vein.y });
+    qaOrder(forester.id, { x: tree.x, y: tree.y });
+    qaOrder(miner.id, { x: vein.x, y: vein.y });
 
     scene = { tree: tree.id, vein: vein.id, forester: forester.id, miner: miner.id, drunk: { [forester.id]: {}, [miner.id]: {} }, nests: 0, cycles: 0 };
     offs.forEach(off => off());

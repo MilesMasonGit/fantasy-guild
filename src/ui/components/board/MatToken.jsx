@@ -45,6 +45,7 @@ import { takeSpawn, playSpawn } from './spawnMotion.js';
 import { FX_FRAME_MS, playPoses } from './fx/pixelSteps.js';
 import { takeSettle, playSettle } from './fx/regionSettle.js';
 import { useSupportLit } from './supportLit.js';
+import { useOrderLit } from './orderLit.js';
 
 /**
  * A walking enemy's boxes follow the engine without React. While `on`, each `ENEMIES_WALKED`
@@ -398,7 +399,7 @@ export const MatToken = React.memo(function MatToken({
     const handleContextMenu = (e) => {
         e.preventDefault();
         e.stopPropagation();
-        // In a map mode a click only acts on the Token; nothing is recalled.
+        // In a map mode a click only acts on the Token; nobody is sent home.
         if (mapMode) return;
         if (heroId) onRecallHero?.(heroId);
     };
@@ -432,7 +433,11 @@ export const MatToken = React.memo(function MatToken({
         ? (mapMode === MAP_MODE.DEMOLISH ? demolishProtected : Flags.disallowRefusalOf(BoardState.getTokenById(id)) !== null)
         : false;
     const lit = useSupportLit(id);
-    const outline = tokenOutline({ hovered: isHovered, selected, lit, alert: !!alert, working: staffed, mode: mapMode, unavailable: modeUnavailable });
+    // A carried hero could be ordered here (green), or the hovered hero's job is this (white).
+    const orderLit = useOrderLit(id);
+    const outline = orderLit === 'workable' && !isHovered
+        ? 'work'
+        : tokenOutline({ hovered: isHovered, selected, lit: lit || orderLit === 'job', alert: !!alert, working: staffed, mode: mapMode, unavailable: modeUnavailable });
     const gearState = gearStateOf(detail || {});
     const gear = React.useMemo(
         () => (gearState.show ? {

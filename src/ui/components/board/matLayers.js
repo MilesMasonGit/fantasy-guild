@@ -224,16 +224,18 @@ export function matStackOrder(input = {}, stack = createMatStack()) {
  * The z of one hero on the mat, given {@link matStackOrder}'s answer.
  * - **Walking** somewhere (not a stroll by an idle hero): above every Token and flag it
  * passes.
- * - **Idle** beside their flag: just in front of that flag, so the pair sorts with the Tokens
- * around it.
+ * - **Idle** beside the Token their order names (waiting for it): just in front of that Token,
+ * so they are never drawn behind what they wait for.
+ * - **Idle** at a spot: just in front of its pennant, so the pair sorts with the Tokens around it.
  * - **Working** a Token: just in front of it. The Token is in the worked band, so the hero is
  * too.
- * - Anything else: above every Token, below the walkers.
- * @param {{heroId: string, state: string, tokenId?: string|null, moving?: boolean}} hero
+ * - Anything else (at home by the Guild Hall): above every Token, below the walkers.
+ * @param {{heroId: string, state: string, tokenId?: string|null, jobId?: string|null, moving?: boolean}} hero
  * @param {{tokenZ: Map<string, number>, flagZ: Map<string, number>}} order
  */
 export function heroZ(hero, { tokenZ: tz, flagZ: fz }) {
     if (hero.state === 'idle') {
+        if (hero.jobId && tz.has(hero.jobId)) return tz.get(hero.jobId) + 1;
         return fz.has(hero.heroId) ? fz.get(hero.heroId) + 1 : MAT_Z.WAITING_HERO;
     }
     if (hero.moving) return MAT_Z.WALKING_HERO;

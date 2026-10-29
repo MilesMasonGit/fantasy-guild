@@ -4,6 +4,7 @@ import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 import { artRadiusOf, matW, clampToMat } from '../../config/matGeometry.js';
 import { matTuning } from '../../config/matTuning.js';
+import { GameState } from '../../state/GameState.js';
 import * as BoardState from './BoardState.js';
 import { isGuildHall } from './MatCap.js';
 import { ARRIVE_EPS, stepToward, randomOffset, randomPauseMs } from './walking.js';
@@ -29,12 +30,16 @@ import { ARRIVE_EPS, stepToward, randomOffset, randomPauseMs } from './walking.j
  * ⚠️ Steps are not `HERO_MOVED`, which rebuilds neighbourhoods. A step publishes only
  * `HEROES_WALKED`, once per tick, for the screen.
  *
- * Coming and going through the Guild Hall: a hero sent out appears at the Guild Hall and walks to
- * their first job, or beside their flag if there is none. Recall: the flag is gone at once and the
- * hero is in the Dock at once, but their figure walks back into the Hall and disappears there
- * (`sendHome`); sent out again on the way, they simply turn around. Defeat: the same walk home, but
- * a limp at half speed. With no Guild Hall on the mat (a hand-built test board) they appear beside
- * the flag and vanish on recall.
+ * Home: a hero with no order waits at the Guild Hall, standing in a row in front of it (`homeSpot`)
+ * and pottering there. Sent out, they set off from where they stand; sent home (or defeated), the
+ * order is gone at once and they walk back to their place by the Hall (`sendHome`), a defeated
+ * hero limping at half speed and standing still, greyed, until healed. Sent out again on the way,
+ * they simply turn around. With no Guild Hall on the mat (a hand-built test board), or with
+ * instant arrival (the tests' switch), a hero at home has no body: they appear beside their
+ * order and vanish when sent home.
+ *
+ * ⚠️ Pottering at home draws from each body's own seeded stream (`homeRandom`), never the game's
+ * `Math.random`, so heroes waiting at the Hall change no roll anywhere else.
  *
  * Offline catch-up: one very long tick covers the whole walk in one step: the hero simply arrives,
  * rather than walking in fast-forward.
@@ -54,13 +59,17 @@ export const STAND_GAP = 32;
 export const IDLE_SPOT = Object.freeze({ dx: 72, dy: -72 });
 
 /**
- * The point an idle hero stands at beside `flag`. A pinned flag stands on its Token's centre, so
- * its idle hero waits where they would work it (beside the Token, on the right) rather than on top
- * of it.
+ * The point an idle hero stands at beside `flag`. A Token order stands on its Token's centre, so
+ * its idle hero waits where they would work it (beside the Token, on the right, or on the side the
+ * hero working it is not) rather than on top of it.
  */
 export function idleSpot(flag) {
     const pinned = typeof flag?.pinnedTo === 'string' ? BoardState.getTokenById(flag.pinnedTo) : null;
-    if (pinned) return standingSpot(pinned.typeId, pinned, 1);
+    if (pinned) {
+        const worker = BoardState.heroOfInstance(pinned.id);
+        const workerSide = worker ? BoardState.heroBodyOf(worker)?.side : null;
+        return standingSpot(pinned.typeId, pinned, workerSide === 1 ? -1 : 1);
+    }
     return { x: flag.x + IDLE_SPOT.dx, y: flag.y + IDLE_SPOT.dy };
 }
 
@@ -100,6 +109,58 @@ export function guildHallPoint() {
     return hall ? { x: hall.x, y: hall.y } : null;
 }
 
+/** Heroes at home stand this far apart in their row, in mat units. */
+export const HOME_GAP = 56;
+
+/** How far below the Hall's centre the row stands, as a share of the Hall's art radius. */
+export const HOME_DROP = 0.55;
+
+/** How far a hero at home strolls from their place in the row, in mat units. */
+export const HOME_POTTER = 24;
+
+/** Whether heroes at home stand on the mat: not with instant arrival (the tests' switch). */
+function homesShown() {
+    return !BoardState.isInstantArrival();
+}
+
+/**
+ * Where `heroId` stands at home: a row in front of the Guild Hall, one place per hero in roster
+ * order, centred on the Hall. Null with no Hall on the mat.
+ */
+export function homeSpot(heroId) {
+    const hall = BoardState.tokens().find(isGuildHall);
+    if (!hall) return null;
+    const roster = (GameState.state?.heroes || []).map(h => h?.id).filter(Boolean);
+    const n = Math.max(1, roster.length);
+    const i = Math.max(0, roster.indexOf(heroId));
+    return clampToMat({ x: hall.x + (i - (n - 1) / 2) * HOME_GAP, y: hall.y + artRadiusOf(hall.typeId) * HOME_DROP });
+}
+
+/** Whether a hero is healing from a defeat (read straight from state, never rehydrated). */
+function isWounded(heroId) {
+    const hero = (GameState.state?.heroes || []).find(h => h?.id === heroId);
+    return !!hero && hero.status === 'wounded';
+}
+
+/** Whether `heroId` is on the roster. */
+function onRoster(heroId) {
+    return (GameState.state?.heroes || []).some(h => h?.id === heroId);
+}
+
+/** A hero's own stream for pottering at home: seeded from their id, one number per draw. */
+function seedOf(heroId) {
+    let h = 2166136261;
+    for (let i = 0; i < heroId.length; i++) h = Math.imul(h ^ heroId.charCodeAt(i), 16777619);
+    return h >>> 0;
+}
+
+function homeRandom(body) {
+    let t = (body.seed = (body.seed + 0x6D2B79F5) >>> 0);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
+
 /** Where `heroId` is on the mat, or null (in the Dock). */
 export function heroPointOf(heroId) {
     const body = BoardState.heroBodyOf(heroId);
@@ -115,13 +176,18 @@ export function bodyView(heroId) {
     if (!body) return null;
     return {
         x: body.x, y: body.y, moving: !!body.moving, facing: body.facing || 1,
-        homeward: !!body.homeward, limp: !!body.limp
+        homeward: !!body.homeward, limp: !!body.limp, home: !!body.home
     };
 }
 
 /** Whether a hero with no flag is still on the mat, walking (or limping) home. */
 export function isReturning(heroId) {
     return !!BoardState.heroBodyOf(heroId)?.homeward;
+}
+
+/** Whether a hero with no order is standing at home by the Guild Hall. */
+export function isHome(heroId) {
+    return !!BoardState.heroBodyOf(heroId)?.home;
 }
 
 /** Whether a hero walking home is limping (defeated). */
@@ -177,10 +243,16 @@ function sideFor(body, centre) {
  * when the target changes. Null with no flag.
  */
 function destinationOf(heroId, body) {
-    // Walking home: to the Hall, wherever it stands now.
+    // Walking home: to their place by the Hall, wherever it stands now.
     if (body.homeward) {
         stopPottering(body);
-        return guildHallPoint();
+        return (homesShown() && homeSpot(heroId)) || guildHallPoint();
+    }
+    // At home: their place in the row, or out on a short stroll from it.
+    if (body.home) {
+        const spot = homeSpot(heroId);
+        if (!spot) return null;
+        return body.potter ? clampToMat({ x: spot.x + body.potter.dx, y: spot.y + body.potter.dy }) : spot;
     }
 
     const claim = BoardState.claimOfHero(heroId);
@@ -214,8 +286,8 @@ function destinationOf(heroId, body) {
 function step(heroId, body, delta) {
     const dest = destinationOf(heroId, body);
     if (!dest) {
-        // Walking home to a Hall that is no longer there: just gone.
-        if (body.homeward) {
+        // Walking home to a Hall that is no longer there, or at home with none: just gone.
+        if (body.homeward || body.home) {
             BoardState.setHeroBody(heroId, null);
             return true;
         }
@@ -227,10 +299,33 @@ function step(heroId, body, delta) {
     // The step itself is shared with enemies (`walking.js`).
     const moved = stepToward(body, dest, reach);
 
-    // Home: in through the Hall, and gone.
+    // Home: they take their place by the Hall (or, with no place to stand, go in and are gone).
     if (body.homeward) {
-        if (!body.moving) BoardState.setHeroBody(heroId, null);
+        if (!body.moving) {
+            if (homesShown() && homeSpot(heroId)) {
+                delete body.homeward;
+                body.home = true;
+            } else {
+                BoardState.setHeroBody(heroId, null);
+            }
+        }
         return true;
+    }
+
+    // At home: a defeated hero stands still, greyed, until healed; then they potter by the Hall on
+    // their own stream.
+    if (body.home) {
+        const wounded = isWounded(heroId);
+        if (body.limp && !wounded) body.limp = false;
+        if (!body.moving && !wounded) {
+            if (body.pauseLeft == null) body.pauseLeft = randomPauseMs(POTTER_PAUSE_MS, () => homeRandom(body));
+            body.pauseLeft -= Math.max(0, delta);
+            if (body.pauseLeft <= 0) {
+                body.potter = body.potter ? null : randomOffset(HOME_POTTER, () => homeRandom(body));
+                body.pauseLeft = null;
+            }
+        }
+        return moved;
     }
 
     // Standing beside their Token: face it. Usually the way
@@ -285,16 +380,37 @@ function ensureBody(heroId) {
     const flag = BoardState.flagOf(heroId);
     let body = BoardState.heroBodyOf(heroId);
     if (body) {
-        if (flag && body.homeward) {
+        if (flag && (body.homeward || body.home)) {
             delete body.homeward;
+            delete body.home;
             delete body.limp;
+            stopPottering(body);
             body.targetId = null;
         }
         return body;
     }
-    if (!flag) return null;
+    if (!flag) return ensureHomeBody(heroId);
     const at = guildHallPoint() || idleSpot(flag);
     body = { x: at.x, y: at.y, targetId: null, side: -1, atWork: null, moving: false, facing: 1 };
+    BoardState.setHeroBody(heroId, body);
+    return body;
+}
+
+/**
+ * A body for a hero with no order, standing at their place by the Hall (greyed while healing), or
+ * null when heroes at home are not on the mat (no Hall, instant arrival) or they are not on the
+ * roster.
+ */
+function ensureHomeBody(heroId) {
+    const existing = BoardState.heroBodyOf(heroId);
+    if (existing) return existing;
+    if (!homesShown() || !onRoster(heroId)) return null;
+    const at = homeSpot(heroId);
+    if (!at) return null;
+    const body = {
+        x: at.x, y: at.y, targetId: null, side: -1, atWork: null, moving: false, facing: 1,
+        home: true, seed: seedOf(heroId), ...(isWounded(heroId) ? { limp: true } : {})
+    };
     BoardState.setHeroBody(heroId, body);
     return body;
 }
@@ -343,6 +459,9 @@ export function sendHome(heroId, { limp = false } = {}) {
         BoardState.setHeroBody(heroId, null);
         return;
     }
+    stopPottering(body);
+    delete body.home;
+    if (body.seed == null) body.seed = seedOf(heroId);
     body.homeward = true;
     body.limp = !!limp;
     body.targetId = null;
@@ -358,8 +477,10 @@ export function sendHome(heroId, { limp = false } = {}) {
  */
 export function settle(heroId) {
     if (!BoardState.flagOf(heroId)) {
-        // No flag: only a hero on their way home keeps a body.
-        if (!isReturning(heroId)) BoardState.setHeroBody(heroId, null);
+        // No order: on their way home, or at home by the Hall (where the mat shows homes).
+        if (isReturning(heroId) || isHome(heroId)) return;
+        BoardState.setHeroBody(heroId, null);
+        ensureHomeBody(heroId);
         return;
     }
     const body = ensureBody(heroId);
@@ -384,14 +505,21 @@ export function tick(delta = 0) {
         const body = ensureBody(heroId);
         if (body && step(heroId, body, delta)) anyMoved = true;
     }
-    // Heroes with no flag: walking home, or a leftover to clear.
+    // Heroes with no order: walking home, at home, or a leftover to clear.
     for (const [heroId, body] of BoardState.heroBodies()) {
         if (flags[heroId]) continue;
-        if (body.homeward) {
+        if (body.homeward || (body.home && homesShown() && onRoster(heroId))) {
             if (step(heroId, body, delta)) anyMoved = true;
         } else {
             BoardState.setHeroBody(heroId, null);
             anyMoved = true;
+        }
+    }
+    // Everyone else on the roster takes their place by the Hall.
+    if (homesShown()) {
+        for (const hero of GameState.state?.heroes || []) {
+            if (!hero?.id || flags[hero.id] || BoardState.heroBodyOf(hero.id)) continue;
+            if (ensureHomeBody(hero.id)) anyMoved = true;
         }
     }
 

@@ -181,7 +181,7 @@ function growInto(instance, def) {
         Growth.setGrowthAlert(instance.id, ALERT.GROW_NEEDS_ITEM, short);
         return null;
     }
-    const next = EffectActions.transformInstance(instance, def.grows.into, { fixPlaced: true });
+    const next = EffectActions.transformInstance(instance, def.grows.into, { fixPlaced: true, cause: 'grow' });
     if (Growth.anyGrowthAlert()) Growth.setGrowthAlert(instance.id, null);
     if (next) Growth.payFor(def);
     return next;
@@ -254,7 +254,7 @@ export const HANDLERS = [
         dueMs: (instance) => turnTimingOf(instance).everyMs,
         // A failed roll returns the Token itself: the clock starts its next lap.
         fire: (instance, def, random) => (rollTurn(instance, random)
-            ? EffectActions.transformInstance(instance, instance.turnedFrom, { fixPlaced: true })
+            ? EffectActions.transformInstance(instance, instance.turnedFrom, { fixPlaced: true, cause: 'turn' })
             : instance)
     },
     {
@@ -280,6 +280,7 @@ export const HANDLERS = [
             if (!into || into === instance.typeId) return null;
             return EffectActions.transformInstance(instance, into, {
                 fixPlaced: true,
+                cause: 'turn',
                 extra: { turnedFrom: instance.typeId }
             });
         }
@@ -339,7 +340,7 @@ export const HANDLERS = [
         applies: (instance, def) => !!def?.respawn && Respawn.restingMode(instance, def) === 'regrow',
         dueMs: () => 0,
         fire: (instance, def) => {
-            const next = EffectActions.transformInstance(instance, Respawn.respawnOf(def).into, { fixPlaced: true });
+            const next = EffectActions.transformInstance(instance, Respawn.respawnOf(def).into, { fixPlaced: true, cause: 'regrow' });
             if (next) Respawn.regrown(instance, next);
             return next;
         }

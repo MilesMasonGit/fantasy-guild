@@ -29,6 +29,9 @@ import { HealthBar } from './HealthBar.jsx';
 import { heroBarPlace } from './healthBar.js';
 import { TokenNameBadge } from './TokenBadges.jsx';
 import { plateNameDrop, plateUnit } from './workPlate.js';
+import { PROBLEM_SPRITE, PROBLEM_MARK_ART_PX, SEVERITY } from './problemMark.js';
+import { Tooltip } from '../base/Tooltip.jsx';
+import { t } from '../../../i18n/index.js';
 
 /**
  * The events that move a hero's health in a fight: the engine changes `hp` in place and says so
@@ -112,12 +115,39 @@ function useLastAttackAt(heroId, listening) {
 }
 
 /**
- * A hero standing on the mat: working a Token, or idle beside their flag.
- * **Dragging the hero drags their FLAG**: the player never moves a hero. The payload is
- * `DRAG_KIND.FLAG`, exactly as if the flag itself were picked up: dropped on the mat it moves
- * the flag and the hero goes to their next job; dropped on the Dock it recalls. The hero stays
- * drawn where they are while the flag is in the hand.
+ * A hero standing on the mat: working a Token, waiting by it, idle at a spot, or at home by the
+ * Guild Hall. **Dragging the hero gives them an order**: the payload is `DRAG_KIND.FLAG`, as if
+ * their pennant were picked up, and the drop decides the order (`Orders.orderAt`). The hero stays
+ * drawn where they are while carried. A hero whose ordered Token is gone for good wears the
+ * "needs a job" mark over their head.
  */
+
+/**
+ * The "needs a job" mark: the yellow "!" over the hero's head, at the hero's art-pixel size, its
+ * hover saying so. Placeholder art (the Token problem mark's).
+ */
+const NeedsJobMark = ({ artPx, artScale }) => {
+    const size = PROBLEM_MARK_ART_PX * artScale;
+    return (
+        <Tooltip content={t('orders.needsJob')}>
+            <img
+                data-needs-job-mark
+                src={PROBLEM_SPRITE[SEVERITY.WAITING]}
+                alt={t('orders.needsJob')}
+                draggable={false}
+                className="absolute pointer-events-auto select-none"
+                style={{
+                    left: (HERO_HIT_PX - size) / 2,
+                    top: (HERO_BOX_PX - artPx) / 2 - size / 2,
+                    width: size,
+                    height: size,
+                    imageRendering: 'pixelated',
+                    filter: `drop-shadow(${artScale}px ${artScale}px 0 #000)`
+                }}
+            />
+        </Tooltip>
+    );
+};
 /**
  * Where a hero's 64 × 128 box goes for a point, in mat units: centred on it. Null for no
  * point. `MatBoard.heroPlacement` is this.
@@ -173,6 +203,7 @@ const MatHeroBody = memo(function MatHeroBody({
     plated = false,
     fightBarHost = null,
     heroCarried = false,
+    needsJob = false,
     dragRef,
     dragProps
 }) {
@@ -315,6 +346,7 @@ const MatHeroBody = memo(function MatHeroBody({
                 />,
                 fightBarHost
             )}
+            {needsJob && !heroCarried && !moving && <NeedsJobMark artPx={artPx} artScale={artScale} />}
             {/* Under the feet: the art reaches past the hero's box by half their difference. */}
             <TokenNameBadge name={name} shown={rested && !heroCarried} below offset={(artPx - HERO_BOX_PX) / 2 + (plated ? plateNameDrop(fit) : 0)} />
         </button>

@@ -8,10 +8,11 @@ import { neededToolOf, toolNeedPhrase } from '../../../config/registries/toolKin
 import { withArticle } from '../../../systems/effects/toolNames.js';
 import { GameState } from '../../../state/GameState.js';
 import { skipHint } from './boardConstants.js';
+import { t } from '../../../i18n/index.js';
 
 /**
- * The words for flags, in one place: the pennant's tooltip, a Token's own hover lines and the
- * Dock tab's status line.
+ * The words for orders, in one place: the pennant's tooltip, a Token's own hover lines and the
+ * roster's status line.
  * ⚠️ Read live, when asked. Skips are runtime records that change without an event (a flag
  * re-checks every second), so callers ask at hover time rather than projecting these into
  * React state.
@@ -45,19 +46,28 @@ function hintKey(reason, typeId) {
     return reason === Flags.SKIP.CLAIMED && isEnemyDef(getTokenType(typeId)) ? 'claimed_fight' : reason;
 }
 
-/** "Working: Oak Forest" · "Walking to: Oak Forest" · "Waiting for Goblin" · "Nothing to do". */
+/** `0:42`, `4:05`. */
+function clock(ms) {
+    const total = Math.max(0, Math.ceil((Number(ms) || 0) / 1000));
+    return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+}
+
+/** A healing hero's time left, or null when they are not healing. */
+function healingLeftMs(heroId) {
+    const hero = (GameState.state?.heroes || []).find(h => h?.id === heroId);
+    return hero?.status === 'wounded' ? (hero.woundedRemainingMs ?? 0) : null;
+}
+
+/**
+ * What a hero is doing, in a few words: "Working: Oak Tree" · "Walking to: Oak Tree" · "Waiting
+ * for Oak Stump" · "Idle here" · "Needs a job" · "At the Guild Hall" · "Healing 3:12". Read live.
+ */
 export function flagStatusLine(heroId) {
+    const healing = healingLeftMs(heroId);
     const s = Flags.statusOf(heroId);
-    switch (s.state) {
-        case 'working': return `Working: ${tokenName(s.typeId) || 'a Token'}`;
-        case 'walking': return s.instanceId ? `Walking to: ${tokenName(s.typeId) || 'a Token'}` : 'Heading back to the flag';
-        case 'idle': {
-            const waiting = waitingTypeOf(heroId);
-            return waiting ? `Waiting for ${tokenName(waiting) || 'a Token'}` : 'Nothing to do';
-        }
-        case 'returning': return s.limping ? 'Limping home' : 'Heading home';
-        default: return 'In the Guild';
-    }
+    if (s.state === 'returning') return s.limping ? t('orders.limpingHome') : t('orders.headingHome');
+    if (healing != null) return t('orders.healingShort', { time: clock(healing) });
+    return dockStatusLine({ ...s, waitingFor: s.state === 'idle' ? waitingTypeOf(heroId) : null });
 }
 
 /** One skipped Token as "Iron Forge — needs materials" — by `heroId`'s flag, for "off in X's rules". */
@@ -85,7 +95,7 @@ export function flagTooltip(heroId) {
     const all = Flags.skipsOfHero(heroId).map(s => skipLine(s, heroId));
     return {
         title: heroName(heroId),
-        pin: flagPinLine(heroId),
+        pin: null,
         state,
         status: flagStatusLine(heroId),
         skips: all.slice(0, MAX_SKIP_LINES),
@@ -105,15 +115,35 @@ export function tokenSkipLines(instanceId) {
 }
 
 /**
- * The Dock tab's status line: Working: X · Walking to: X · Waiting for X · Idle at flag · Idle in
- * Guild. `status.waitingFor` is the type of what the hero waits for ({@link waitingTypeOf}).
+ * A status line from `Flags.statusOf` (plus `waitingFor`, the type of what the hero waits for,
+ * {@link waitingTypeOf}): Working: X · Walking to: X · Waiting for X · Idle here · Needs a job ·
+ * At the Guild Hall.
  */
 export function dockStatusLine(status) {
+    const token = (typeId) => tokenName(typeId) || 'a Token';
     switch (status?.state) {
-        case 'working': return `Working: ${tokenName(status.typeId) || 'a Token'}`;
-        case 'walking': return status.instanceId ? `Walking to: ${tokenName(status.typeId) || 'a Token'}` : 'Heading back to the flag';
-        case 'idle': return status.waitingFor ? `Waiting for ${tokenName(status.waitingFor) || 'a Token'}` : 'Idle at flag';
-        case 'returning': return status.limping ? 'Limping home' : 'Returning to the Guild';
-        default: return 'Idle in Guild';
+        case 'working': return t('orders.working', { token: token(status.typeId) });
+        case 'walking': return status.instanceId ? t('orders.walkingTo', { token: token(status.typeId) }) : t('orders.walkingSpot');
+        case 'idle':
+            if (status.needsJob) return t('orders.needsJob');
+            if (status.waitingFor) return t('orders.waitingFor', { token: token(status.waitingFor) });
+            return status.order === 'spot' ? t('orders.idleHere') : t('orders.idle');
+        case 'returning': return status.limping ? t('orders.limpingHome') : t('orders.headingHome');
+        default: return t('orders.atHall');
     }
+}
+
+/**
+ * The roster's one-word state for a hero: `hurt` (healing from a defeat), `idle` (no order, a spot
+ * order, a job gone for good, or nothing to do at their Token) or `busy` (working, walking to work,
+ * or waiting for their Token to come back or come free).
+ */
+export function rosterStateOf(heroId) {
+    if (healingLeftMs(heroId) != null) return 'hurt';
+    const s = Flags.statusOf(heroId);
+    if (s.needsJob || s.state === 'docked' || s.state === 'returning') return 'idle';
+    if (s.state === 'working') return 'busy';
+    if (s.state === 'walking') return s.order === 'spot' ? 'idle' : 'busy';
+    if (s.order === 'token') return Flags.waitingOf(heroId) ? 'busy' : 'idle';
+    return 'idle';
 }

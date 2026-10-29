@@ -37,32 +37,24 @@ export function dockArtPx(fit = 1) {
 }
 
 /**
- * Whether a hero counts as **out on the mat**: anything but `docked` in `Flags.statusOf`, i.e.
- * a flag planted (working, walking, idle at it) or the figure still walking home
- * (`returning`). The same test `MatBoard` uses to decide which heroes it draws.
+ * How far the art sits below its resting place, in screen px (positive = down): 0, lifted by
+ * `lift` while hovered. The name and HP bar never use this: they stay at one height for every
+ * hero. Every hero is on the mat, so none sinks or darkens.
  */
-export function isDeployedStatus(state) {
-    return !!state && state !== 'docked';
-}
-
-/**
- * How far the art sits below its resting place, in screen px (positive = down). The name and
- * HP bar never use this: they stay at one height for every hero.
- * - in the dock: 0; hovered: lifted by `lift`.
- * - deployed: sunk by `sink`; hovered: rises partway, to half the sink.
- */
-export function dockArtOffset(artPx, { deployed = false, hovered = false } = {}) {
-    const sink = Math.round(artPx * 0.2);
+export function dockArtOffset(artPx, { hovered = false } = {}) {
     const lift = Math.round(artPx * 0.08);
-    if (deployed) return hovered ? Math.round(sink / 2) : sink;
     return hovered ? -lift : 0;
 }
 
-/** The CSS filter on the art: deployed heroes are darkened, less so while hovered. */
-export function dockArtFilter({ deployed = false, hovered = false } = {}) {
-    if (!deployed) return undefined;
-    return hovered ? 'brightness(0.7)' : 'brightness(0.4)';
-}
+/**
+ * The roster's state word's colour (UI_STYLE meanings): idle in gold, for attention (spotting idle
+ * heroes is what a returning player does first); hurt in red; busy in the muted grey.
+ */
+export const ROSTER_STATE_CLASS = Object.freeze({
+    idle: 'text-ui-gold',
+    hurt: 'text-ui-red',
+    busy: 'text-ui-muted'
+});
 
 /** HP as a whole percent, 0–100. */
 export function hpPercent(hp) {

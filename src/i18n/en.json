@@ -189,5 +189,26 @@
             },
             "dropTip": "{item}: {count} dropped"
         }
+    },
+    "orders": {
+        "needs": "Needs {what}",
+        "nothing": "Nothing to work here",
+        "disallowed": "Heroes may not work this",
+        "healing": "{hero} is healing: {time}",
+        "noHero": "No hero",
+        "nowhere": "Nowhere to go",
+        "atHall": "At the Guild Hall",
+        "headingHome": "Heading home",
+        "limpingHome": "Limping home",
+        "healingShort": "Healing {time}",
+        "working": "Working: {token}",
+        "walkingTo": "Walking to: {token}",
+        "walkingSpot": "Walking",
+        "waitingFor": "Waiting for {token}",
+        "idleHere": "Idle here",
+        "needsJob": "Needs a job",
+        "idle": "Idle",
+        "hurt": "Hurt",
+        "busy": "Busy"
     }
 }

@@ -6,6 +6,7 @@ import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 import * as BoardState from '../../systems/board/BoardState.js';
 import * as BoardCombat from '../../systems/board/BoardCombat.js';
 import * as Placement from '../../systems/board/Placement.js';
+import { qaOrder } from './qaOrders.js';
 import * as HeroManager from '../../systems/hero/HeroManager.js';
 import * as EquipmentManager from '../../systems/equipment/EquipmentManager.js';
 import * as LiveEffects from '../../systems/effects/LiveEffects.js';
@@ -141,7 +142,7 @@ export function setUpStatusesScene() {
         if (!HeroManager.addHero(hero)) return;
         EquipmentManager.equipItem(hero.id, 'qa_status_sword');
         if (getItem('item_shrimp')) EquipmentManager.equipItem(hero.id, 'item_shrimp');
-        Placement.plantFlagAt(hero.id, { x: enemy.x, y: enemy.y });
+        qaOrder(hero.id, { x: enemy.x, y: enemy.y });
         sceneHeroes.push({ heroId: hero.id, enemyName: getTokenType(enemy.typeId)?.name || enemy.typeId });
     });
     EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'dev_statuses_scene' });

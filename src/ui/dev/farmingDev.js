@@ -5,6 +5,7 @@ import { EventBus } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 import * as BoardState from '../../systems/board/BoardState.js';
 import * as Placement from '../../systems/board/Placement.js';
+import { qaOrder } from './qaOrders.js';
 import * as TileModifiers from '../../systems/board/TileModifiers.js';
 import * as StationRecipe from '../../systems/board/StationRecipe.js';
 import * as Fields from '../../systems/board/Fields.js';
@@ -194,7 +195,7 @@ export function setUpFarmingScene() {
     const farmer = generateHero({ name: 'QA Farmer' });
     farmer.skills = { farming: { ...(farmer.skills?.farming || {}), level: 10, xp: xpForLevel(10) } };
     if (!HeroManager.addHero(farmer)) return { ok: false, error: 'The roster would not take another hero' };
-    Placement.plantFlagAt(farmer.id, s.ripe);
+    qaOrder(farmer.id, s.ripe);
 
     scene = {
         ids: Object.fromEntries(Object.entries(laid).map(([k, t]) => [k, t.id])),

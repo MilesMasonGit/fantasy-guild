@@ -15,6 +15,7 @@ import { beginSettle } from '../components/board/fx/regionSettle.js';
 import * as SpriteLayer from '../../systems/board/SpriteLayer.js';
 import { getAllItems } from '../../config/registries/itemRegistry.js';
 import * as Placement from '../../systems/board/Placement.js';
+import { qaOrder } from './qaOrders.js';
 import * as HeroManager from '../../systems/hero/HeroManager.js';
 import { heroMaxHpFromSkills } from '../../utils/CombatFormulas.js';
 import { GuildUpgradeManager } from '../../systems/progression/GuildUpgradeManager.js';
@@ -76,7 +77,7 @@ export function setUpAnimationScene() {
         hero.hp = { current: maxHp, max: maxHp };
         if (!HeroManager.addHero(hero)) return;
         const t = targets[i];
-        if (t) Placement.plantFlagAt(hero.id, { x: t.x + 40, y: t.y + 40 });
+        if (t) qaOrder(hero.id, { x: t.x + 40, y: t.y + 40 });
     });
     InventoryManager.addItem('item_oak_seedling', 5);
     EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'dev_animation_scene' });

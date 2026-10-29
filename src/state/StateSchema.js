@@ -56,10 +56,14 @@ export function createEmptyBoard() {
         tokens: {},
         // Counter behind each Token's `placedAt` — the order Tokens arrived in.
         nextTokenOrder: 0,
-        // Each hero's flag, keyed by hero id (Free Playmat 1.4b). A hero with
-        // no flag is in the Dock. Which Token a flag works is runtime, except
-        // the note below of work a hero had reached (`workClaims`, HM-7).
+        // Each hero's order, keyed by hero id, saved as their flag record: pinned
+        // to a Token (`pinnedTo`), or a spot to idle at (`spot`). A hero with no
+        // record waits at the Guild Hall. Which Token a flag works is runtime,
+        // except the note below of work a hero had reached (`workClaims`, HM-7).
         flags: {},
+        // 1: this board's flags are orders. A board from an older save has none
+        // and is brought over as it loads (`orderMigration.js`).
+        orders: 1,
         // Counter behind each flag's `plantedAt` — the order flags choose in.
         nextFlagOrder: 0,
         // Which Token each hero had REACHED and was working, and from which
@@ -254,8 +258,9 @@ export const INITIAL_STATE = {
     //                 demolish? true on a Token marked for demolition (`Demolition.js`; its progress is cycleElapsedMs),
     //                 field? { cropId?, load?, full? } on a Field: the crop in its ground and the harvests left (`Fields.js`; its growth on clocks.fieldMs)
     //   nextTokenOrder number               the next Token's placedAt
-    //   flags       { [heroId]: { x, y, plantedAt, pinnedTo? } }  each hero's flag (Free Playmat 1.4b; no skill since 1.5b — the hero's rules live on the hero;
-    //                 pinnedTo = the Token instance id it is pinned to, absent on an area flag and in older saves — B5, FB-45)
+    //   flags       { [heroId]: { x, y, plantedAt, pinnedTo?, spot?, needsJob? } }  each hero's order: pinnedTo = the Token instance id it
+    //                 works; spot = a point to idle at; needsJob = the ordered Token is gone for good. Neither: an old area flag (tests only)
+    //   orders      1                       the flags are orders (an older save's board is migrated as it loads, `orderMigration.js`)
     //   nextFlagOrder number                the next flag's plantedAt
     //   sprites     [ ... ]                 item loot on the floor (D-40), added Phase 3;
     //                                       no Token sprites since Token Lifecycle 9.3

@@ -1,7 +1,6 @@
 import { memo, useCallback, useMemo, useRef } from 'react';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
-import * as Placement from '../../../systems/board/Placement.js';
 import * as EquipmentManager from '../../../systems/equipment/EquipmentManager.js';
 import { useEntityDrag, useEntityDrop, useActiveDrag, mergeRefs } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
@@ -10,10 +9,10 @@ import { resolveSpritePath, resolveAnimationPath } from '../../../utils/AssetMan
 import { EventBus } from '../../../systems/core/EventBus.js';
 import * as Flags from '../../../systems/board/Flags.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
-import { isRecallDrop, recallFromDrop } from './dockRecall.js';
 import { useDragSettleHover } from './useDragSettleHover.js';
 import { equipOrAnnounce } from './dockEquip.js';
-import { dockStatusLine, waitingTypeOf } from '../board/flagText.js';
+import { dockStatusLine, waitingTypeOf, flagStatusLine } from '../board/flagText.js';
+import { setRosterHover } from '../board/orderLit.js';
 import { TopBarTip } from '../board/TopBarTip.jsx';
 import { useHeroPortrait, PORTRAIT_PX } from './heroPortrait.js';
 import { ENGINE_EVENTS, ORPHAN_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
@@ -23,7 +22,8 @@ import { ENGINE_EVENTS, ORPHAN_EVENTS, UI_EVENTS } from '../../../systems/core/e
  * head and shoulders of the hero's own class sheet, facing left, cut once per sheet) and the
  * name, nothing else, in one thin frame. Hover lights the frame and shows the game's tooltip
  * (job, what they are doing, HP, items); nothing slides out. Click opens the hero panel; drag
- * sends the hero out, drops equip, recall and reorder as before.
+ * gives the hero an order (dropped on the mat); an item dropped on it equips, another tab
+ * reorders. Hovering outlines the hero on the mat and lights their job.
  */
 export const HeroDockTab = ({
     heroId,
@@ -59,16 +59,11 @@ export const HeroDockTab = ({
     const drop = useEntityDrop({
         id: `${dragIdPrefix}-drop-${heroId}`,
         surface: DND_SURFACE.DRAWER,
-        // A hero off the board or a pennant dropped on any tab recalls: the tab is the smaller
-        // target, so it must say yes itself or the Dock's own recall zone never gets the drop.
-        // A tab dragged within the Dock is a reorder.
+        // An item equips; a tab dragged within the column is a reorder.
         accepts: p => (p.kind === DRAG_KIND.ITEM && p.fromHeroId !== heroId)
-            || isRecallDrop(p)
             || (p.kind === DRAG_KIND.HERO && p.heroId !== heroId),
         onDrop: p => {
-            if (isRecallDrop(p)) {
-                recallFromDrop(Placement, p);
-            } else if (p.kind === DRAG_KIND.ITEM && p.itemId) {
+            if (p.kind === DRAG_KIND.ITEM && p.itemId) {
                 if (!equipOrAnnounce(EquipmentManager, heroId, p.itemId, null, p)) return false;
                 justDroppedRef.current = true;
                 setTimeout(() => { justDroppedRef.current = false; }, 250);
@@ -85,7 +80,7 @@ export const HeroDockTab = ({
     // An item dragged over the tab marks it as a drop target. A hero dragged within the column
     // shows only the insertion line. No hover cue while a reorder is settling (~320 ms).
     const isDraggingItem = globalDragging && drop.activePayload?.kind === DRAG_KIND.ITEM;
-    const isDraggingHero = globalDragging && drop.activePayload?.kind === DRAG_KIND.HERO && !isRecallDrop(drop.activePayload);
+    const isDraggingHero = globalDragging && drop.activePayload?.kind === DRAG_KIND.HERO;
     const hovering = isHovered && !globalDragging && !isDragSettling && !drag.isDragging;
 
     const isHeroDropValid = drop.valid && isDraggingHero;
@@ -182,6 +177,7 @@ const HeroDockTabBody = memo(function HeroDockTabBody({
             const s = Flags.statusOf(heroId);
             return {
                 state: s.state, instanceId: s.instanceId, typeId: s.typeId, limping: !!s.limping,
+                order: s.order, needsJob: !!s.needsJob,
                 waitingFor: s.state === 'idle' ? waitingTypeOf(heroId) : null
             };
         },
@@ -201,7 +197,7 @@ const HeroDockTabBody = memo(function HeroDockTabBody({
     const hp = Math.max(0, Math.round(hero.hp?.current ?? 0));
     const hpMax = Math.max(1, hero.hp?.max ?? 100);
 
-    const statusLine = isWounded ? 'Wounded' : dockStatusLine(status);
+    const statusLine = isWounded ? flagStatusLine(heroId) : dockStatusLine(status);
     const tipLines = [
         jobTitle,
         statusLine,
@@ -241,8 +237,8 @@ const HeroDockTabBody = memo(function HeroDockTabBody({
                     e.stopPropagation();
                     onDoubleClick?.(heroId);
                 }}
-                onMouseEnter={() => onHoverChange(true)}
-                onMouseLeave={() => onHoverChange(false)}
+                onMouseEnter={() => { onHoverChange(true); setRosterHover(heroId); }}
+                onMouseLeave={() => { onHoverChange(false); setRosterHover(null); }}
                 className={cn(
                     'absolute top-0 w-20 h-[72px] pointer-events-auto cursor-grab active:cursor-grabbing',
                     'flex flex-col items-center justify-center gap-1 px-1.5 bg-[#140e0b] border',

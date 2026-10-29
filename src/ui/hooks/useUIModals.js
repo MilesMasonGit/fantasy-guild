@@ -95,22 +95,12 @@ export const useUIModals = () => {
 
     const [fullscreenView, setFullscreenView] = useState(null);
 
-    // The Work Permissions drawer, and the hero whose row it opened lit (`open(heroId)`).
-    const [flagRules, setFlagRules] = useState({ isOpen: false, heroId: null });
-
-    // The Bank, Shop and Work Permissions drawers are one at a time: opening one closes the others.
+    // The Bank and Shop drawers are one at a time: opening one closes the other.
     const closeBankPane = useCallback(() => setDrawerState({ panes: [] }), []);
-    const closeRules = useCallback(() => setFlagRules({ isOpen: false, heroId: null }), []);
-    const openRules = useCallback((heroId) => {
-        closeBankPane();
-        setIsShopOpen(false);
-        setFlagRules({ isOpen: true, heroId: heroId || null });
-    }, [closeBankPane]);
     const openShop = useCallback(() => {
         closeBankPane();
-        closeRules();
         setIsShopOpen(true);
-    }, [closeBankPane, closeRules]);
+    }, [closeBankPane]);
 
     // A direct open, outside the nav bar's toggle: it only adds a pane, never closes the nav's
     // other views.
@@ -123,14 +113,13 @@ export const useUIModals = () => {
             EventBus.publish(UI_EVENTS.UI_MODAL_OPENED, { modalId: tab });
             return;
         }
-        closeRules();
         setIsShopOpen(false);
         setDrawerState(s => ({
             ...s,
             panes: [tab]
         }));
         EventBus.publish(UI_EVENTS.UI_MODAL_OPENED, { modalId: tab });
-    }, [openShop, closeRules]);
+    }, [openShop]);
 
     // The nav bubbles share an only-one-open rule: clicking a bubble closes whatever any other
     // has open, and clicking the active one closes it. Direct opens (`openDrawerTab`) neither
@@ -161,7 +150,6 @@ export const useUIModals = () => {
         setDrawerState({ panes: [] });
         setIsSettingsOpen(false);
         setIsShopOpen(false);
-        if (DRAWER_TARGETS.has(target) || target === SHOP_TARGET) closeRules();
         requestAnimationFrame(() => {
             setFullscreenView(FULLSCREEN_TARGETS.has(target) ? target : null);
             setDrawerState(
@@ -173,7 +161,7 @@ export const useUIModals = () => {
             setIsShopOpen(target === SHOP_TARGET);
             EventBus.publish(UI_EVENTS.UI_MODAL_OPENED, { modalId: target });
         });
-    }, [isNavActive, closeRules]);
+    }, [isNavActive]);
 
     const fullscreenOpen = useCallback((view) => setFullscreenView(view), []);
     const fullscreenClose = useCallback(() => setFullscreenView(null), []);
@@ -256,16 +244,6 @@ export const useUIModals = () => {
             // offer closed any other way is still standing on the tile.
             promotionOffer,
             closePromotion: useCallback(() => setPromotionOffer(null), [])
-        },
-        flagRules: {
-            isOpen: flagRules.isOpen,
-            heroId: flagRules.heroId,
-            open: openRules,
-            toggle: useCallback(() => {
-                if (flagRules.isOpen) closeRules();
-                else openRules(null);
-            }, [flagRules.isOpen, closeRules, openRules]),
-            close: closeRules
         },
         inspect,
         nav: {

@@ -25,10 +25,11 @@ export const TUTORIAL_TEXT = Object.freeze({
             says: 'Bare hands move nothing. Give them a pick, or an axe. Whichever you trust.',
             instruction: 'Open the Item Bank (yellow orb) and drag a Pickaxe or a Woodaxe onto your Hero. A Hero needs the right tool in hand to mine, chop, fish or reap.'
         }),
+        // ⚠️ A stopgap for hero orders (brief 260 O1): the tutorial's rewrite is O3.
         cart_flag: Object.freeze({
-            title: 'Plant a Flag',
+            title: 'Send Your Hero to Work',
             says: 'Put them somewhere. Not anywhere. Somewhere with work in it.',
-            instruction: 'Drag your Hero from the hero bar onto the mat, near a tree or a vein. The flag marks where they work.'
+            instruction: 'Drag your Hero (on the mat, or from the hero bar) onto a tree or a vein. They walk there and work it.'
         }),
         cart_gather: Object.freeze({
             title: 'Gather',
@@ -65,7 +66,7 @@ export const TUTORIAL_TEXT = Object.freeze({
         cart_goblin: Object.freeze({
             title: 'Beat a Goblin',
             says: 'The goblins by the camp took something of mine. Maps, I think. Three of them. Fetch them back.',
-            instruction: 'Give a Hero food first (drag it from the Item Bank onto them): goblins hit hard. Then plant their flag by the Goblin Camp and beat one goblin.'
+            instruction: 'Give a Hero food first (drag it from the Item Bank onto them): goblins hit hard. Then drag the Hero onto a goblin by the Goblin Camp and beat it.'
         }),
         cart_settle: Object.freeze({
             title: 'Write a World',

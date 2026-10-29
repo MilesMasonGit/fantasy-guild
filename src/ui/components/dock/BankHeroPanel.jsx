@@ -2,15 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import { cn } from '../../utils/cn.js';
 import { useEscapeLayer } from '../../utils/escapeLayers.js';
 import { useGameState } from '../../hooks/useGameState.js';
-import * as Placement from '../../../systems/board/Placement.js';
 import { useEntityDrop } from '../../dnd/DndKit.jsx';
-import { DND_SURFACE } from '../../dnd/dragConstants.js';
+import { DND_SURFACE, DRAG_KIND } from '../../dnd/dragConstants.js';
 import { HeroDockTab } from './HeroDockTab.jsx';
 import { HeroInspectionSheet } from '../drawer/HeroInspectionSheet.jsx';
 import { PixelFrame, FRAME_KIND } from '../base/PixelFrame.jsx';
 import { HeroManager } from '../../../systems/hero/HeroManager.js';
 import { reorderHeroInDock } from './dockReorder.js';
-import { isRecallDrop, recallFromDrop } from './dockRecall.js';
 import { NOTIFICATION_COLUMN, columnWidthCss } from '../board/boardConstants.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
@@ -78,13 +76,13 @@ export const BankHeroPanel = ({
 
     useEscapeLayer(!!selectedHeroId, () => onCloseHero?.());
 
-    // The open panel's whole box is a drawer target: a hero or flag dropped on it goes home,
-    // and anything else is a miss rather than landing on the mat hidden under the panel.
+    // The open panel's whole box is a drawer target: a hero dropped on it is a miss (they keep
+    // their order) rather than an order onto the mat hidden under the panel.
     const recall = useEntityDrop({
         id: 'hero-panel-drop',
         surface: DND_SURFACE.DRAWER,
-        accepts: isRecallDrop,
-        onDrop: p => recallFromDrop(Placement, p),
+        accepts: p => !!p?.heroId && (p.kind === DRAG_KIND.FLAG || p.kind === DRAG_KIND.HERO),
+        onDrop: () => null,
         disabled: !shownHeroId
     });
 

@@ -1,6 +1,7 @@
 import { INITIAL_STATE, GAME_VERSION } from '../../state/StateSchema.js';
 import { logger } from '../../utils/Logger.js';
 import { currentSpriteName } from '../../utils/AssetManager.js';
+import { migrateStateToOrders } from '../board/orderMigration.js';
 
 /**
  * Thrown when a save was created under an incompatible schema version. Reworks
@@ -29,7 +30,9 @@ export function migrateState(state, savedVersion) {
         throw new IncompatibleSaveError(savedVersion);
     }
 
-    let migrated = { ...state };
+    // Flags and Work Permissions became orders: an old save's boards and heroes are brought over
+    // before the backfill below, which would otherwise stamp its boards as already made for orders.
+    let migrated = { ...migrateStateToOrders(state) };
 
     // Backfill missing keys from INITIAL_STATE, two levels deep: the top-level
     // sections, and each section's own fields.

@@ -368,6 +368,8 @@ export function transform(statement, roles) {
  * false: a `Transforms` statement pushes as it always has, except fixed Tokens
  * (`FixedTokens.holdsItsGround`), which nothing pushes.
  * @param {object} [options.extra] fields to set on the new instance (`turnedFrom`, `clocks`)
+ * @param {string} [options.cause] why it happens, for `TOKEN_TRANSFORMED`: `grow`, `regrow`, `turn`,
+ * `build`, or `rule` (the default: a `Transforms` statement)
  * @returns {object|null} the new instance, or null when it did not happen
  */
 export function transformInstance(old, typeId, options = {}) {
@@ -401,6 +403,9 @@ export function transformInstance(old, typeId, options = {}) {
     BoardState.addToken(instance, at.x, at.y);
     // The new Token glows as it appears, kept under its NEW id, which is what the mat draws it by.
     TokenGlows.raiseGlow(instance.id, { fromTypeId: old.typeId, typeId });
+    EventBus.publish(BOARD_EVENTS.TOKEN_TRANSFORMED, {
+        fromId: old.id, fromTypeId: old.typeId, instanceId: instance.id, typeId, cause: options.cause || 'rule'
+    });
     EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: instance.id, typeId });
     TileModifiers.rebuildAround([from, at, ...touched]);
 

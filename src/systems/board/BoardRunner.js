@@ -751,12 +751,18 @@ export function isHeroIdle(heroId) {
     const hero = HeroManager.getHero(heroId);
     if (!hero || hero.status === 'wounded') return false;
 
-    // A hero is idle when their flag found nothing to work, or in the Dock.
+    // A hero is idle with no order (at the Guild Hall), at a spot, or with their job gone.
     const status = Flags.statusOf(heroId);
-    if (status.state === 'docked' || status.state === 'returning') return true;
-    // Waiting for a node in reach to come back is doing their job, not idling.
+    if (status.state === 'docked' || status.state === 'returning' || status.needsJob) return true;
     const unclaimed = status.state === 'idle' || (status.state === 'walking' && !status.instanceId);
-    if (unclaimed) return Flags.waitingOf(heroId)?.kind !== 'node';
+    if (unclaimed) {
+        if (status.order === 'spot') return true;
+        const kind = Flags.waitingOf(heroId)?.kind;
+        // Waiting by the Token their order names (resting, growing, another hero's) is their job.
+        if (status.order === 'token') return !kind;
+        // Waiting for a node in reach to come back is doing their job, not idling.
+        return kind !== 'node';
+    }
     if (status.state === 'walking') return false;
     return !!BoardState.getTokenById(status.instanceId)?.alert;   // working, but stuck
 }

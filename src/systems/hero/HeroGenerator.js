@@ -79,10 +79,6 @@ export function generateHero(options = {}) {
 
         skills,
 
-        // Per skill (and Fight): allowed, priority 1–5. Sparse; a missing entry
-        // is the default.
-        flagRules: {},
-
         // Always empty: statuses ride on `effects` (see `HeroRehydration`).
         statuses: [],
 

@@ -16,7 +16,7 @@ import '../src/tests/fixtures/testTokens.js';
 import { registerTokenTypes, tokenStartingUses } from '../src/config/registries/tokenRegistry.js';
 import { GameState } from '../src/state/GameState.js';
 import * as BoardState from '../src/systems/board/BoardState.js';
-import * as Flags from '../src/systems/board/Flags.js';
+import * as Orders from '../src/systems/board/Orders.js';
 import * as MatPlacement from '../src/systems/board/MatPlacement.js';
 import * as SpawnerSystem from '../src/systems/board/SpawnerSystem.js';
 import { getTokenType } from '../src/config/registries/tokenRegistry.js';
@@ -172,9 +172,14 @@ export function makeHeroes(n, skills = HERO_SKILLS) {
     return heroes;
 }
 
-/** Plant a hero's flag at a point, as the player's drop does. */
-export function plant(heroId, point, options = {}) {
-    return Flags.plant(heroId, point, options);
+/**
+ * Give a hero an order at a point, as the player's drop does (`Orders.orderAt`): on a Token they
+ * can work, they work only it; on bare ground, they go there and idle. The scenarios' old
+ * `{ pin: true }` asked for exactly this, and their old area flags all stood on a Token's centre
+ * or on bare ground beside a camp, so the boards keep their working heroes (brief 260 O1).
+ */
+export function plant(heroId, point, _options = {}) {
+    return Orders.orderAt(heroId, point);
 }
 
 /**

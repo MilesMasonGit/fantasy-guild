@@ -5,6 +5,7 @@ import { EventBus } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 import * as BoardState from '../../systems/board/BoardState.js';
 import * as Placement from '../../systems/board/Placement.js';
+import { qaOrder } from './qaOrders.js';
 import * as TimedChanges from '../../systems/board/TimedChanges.js';
 import * as SpawnerSystem from '../../systems/board/SpawnerSystem.js';
 import * as BoardRunner from '../../systems/board/BoardRunner.js';
@@ -157,7 +158,7 @@ export function setUpForestryScene() {
 
     const forester = qaHero('QA Forester', ['forestry']);
     if (!forester) return { ok: false, error: 'The roster would not take another hero' };
-    Placement.plantFlagAt(forester.id, s.oakForest);
+    qaOrder(forester.id, s.oakForest);
 
     scene = { forest: forest.id, wild: wild.id, forester: forester.id };
     EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'dev_forestry_scene' });

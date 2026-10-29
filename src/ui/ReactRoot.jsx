@@ -24,7 +24,6 @@ import ArrivalCard from './components/atlas/ArrivalCard.jsx';
 import BubbleMenu from './components/nav/BubbleMenu.jsx';
 import BottomHeroDock from './components/dock/BottomHeroDock.jsx';
 import BankHeroPanel from './components/dock/BankHeroPanel.jsx';
-import WorkRulesDrawer from './components/dock/WorkRulesDrawer.jsx';
 import GuildHallBoard from './components/board/GuildHallBoard.jsx';
 import HallSky from './components/board/HallSky.jsx';
 import HallCamera from './components/board/HallCamera.jsx';
@@ -328,21 +327,8 @@ export const ReactRoot = () => {
                                         selectedHeroId={inspectHeroId}
                                         onSelectHero={toggleInspectHero}
                                         onDoubleClickHero={toggleInspectHero}
-                                        rulesOpen={ui.flagRules.isOpen}
-                                        onToggleRules={ui.flagRules.toggle}
                                     />
                                 </PerfProfiler>
-                            </ErrorBoundary>
-                        )}
-                        {/* The Work Permissions grid rises from behind the bar, the mat's full width. */}
-                        {dockDrawn && (
-                            <ErrorBoundary label="WorkRulesDrawer">
-                                <WorkRulesDrawer
-                                    open={ui.flagRules.isOpen}
-                                    heroPanelOpen={Boolean(inspectHeroId)}
-                                    litHeroId={ui.flagRules.heroId}
-                                    onClose={ui.flagRules.close}
-                                />
                             </ErrorBoundary>
                         )}
                         </div>

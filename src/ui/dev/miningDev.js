@@ -5,6 +5,7 @@ import { EventBus } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 import * as BoardState from '../../systems/board/BoardState.js';
 import * as Placement from '../../systems/board/Placement.js';
+import { qaOrder } from './qaOrders.js';
 import * as TileModifiers from '../../systems/board/TileModifiers.js';
 import * as Respawn from '../../systems/board/Respawn.js';
 import * as FixedTokens from '../../systems/board/FixedTokens.js';
@@ -115,7 +116,7 @@ export function setUpMiningScene() {
     const miner = generateHero({ name: 'QA Miner' });
     miner.skills = { mining: { ...(miner.skills?.mining || {}), level: 10, xp: xpForLevel(10) } };
     if (!HeroManager.addHero(miner)) return { ok: false, error: 'The roster would not take another hero' };
-    Placement.plantFlagAt(miner.id, s.copper);
+    qaOrder(miner.id, s.copper);
 
     scene = { copper: copper.id, iron: iron.id, ore: oreNow(), gem: gemNow() };
     EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'dev_mining_scene' });

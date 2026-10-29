@@ -2,18 +2,14 @@
 
 import { poolFor, recipeLevel } from './StationRecipe.js';
 import { stationSkillOf } from '../effects/statements.js';
-import { ruleOfRecord } from './FlagRules.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { tokenName } from '../../config/registries/tokenRegistry.js';
 
 /**
- * One list per station, sorted by required level, with a hero-face divider at each permitted
- * hero's level and the next locked recipes as "???" silhouettes. Pure: every engine read is the
- * def and the hero records passed in, so a test can pin the list without a mat.
- *
- * "Can run" is the whole roster's best level, not the permitted heroes': a Work Permission is a
- * toggle the player flips, so a recipe only a disallowed hero reaches stays choosable (no face
- * sits above it, which is the hint). Permissions decide only who gets a face.
+ * One list per station, sorted by required level, with a hero-face divider at the level of each
+ * hero holding the skill and the next locked recipes as "???" silhouettes. "Can run" is the whole
+ * roster's best level. Pure: every engine read is the def and the hero records passed in, so a
+ * test can pin the list without a mat.
  */
 
 export const ENTRY = Object.freeze({
@@ -37,10 +33,9 @@ export function heroSkillLevel(hero, skill) {
     return Number(typeof entry === 'number' ? entry : entry.level) || 0;
 }
 
-/** Whether a hero holds the skill and their Work Permissions allow it. */
+/** Whether a hero holds the skill. */
 export function permitsSkill(hero, skill) {
-    if (!hero || !skill || hero.skills?.[skill] == null) return false;
-    return ruleOfRecord(hero, skill).allowed;
+    return !!hero && !!skill && hero.skills?.[skill] != null;
 }
 
 /**

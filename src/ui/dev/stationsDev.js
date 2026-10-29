@@ -5,6 +5,7 @@ import { EventBus } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 import * as BoardState from '../../systems/board/BoardState.js';
 import * as Placement from '../../systems/board/Placement.js';
+import { qaOrder } from './qaOrders.js';
 import * as StationRecipe from '../../systems/board/StationRecipe.js';
 import * as HeroManager from '../../systems/hero/HeroManager.js';
 import { GuildUpgradeManager } from '../../systems/progression/GuildUpgradeManager.js';
@@ -87,7 +88,7 @@ export function setUpStationsScene() {
     GuildUpgradeManager.recompute();
     const smith = generateHero({ name: 'QA Smith' });
     for (const id of Object.keys(smith.skills || {})) smith.skills[id] = { ...smith.skills[id], level: 40, xp: xpForLevel(40) };
-    if (HeroManager.addHero(smith)) Placement.plantFlagAt(smith.id, { x: furnace.x, y: furnace.y });
+    if (HeroManager.addHero(smith)) qaOrder(smith.id, { x: furnace.x, y: furnace.y });
 
     scene = { furnace: furnace.id, smithy: smithy.id };
     EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'dev_stations_scene' });

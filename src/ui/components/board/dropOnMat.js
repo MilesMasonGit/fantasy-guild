@@ -1,5 +1,6 @@
 
 import * as Placement from '../../../systems/board/Placement.js';
+import * as Orders from '../../../systems/board/Orders.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as Shop from '../../../systems/board/Shop.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
@@ -11,8 +12,10 @@ import { DRAG_KIND } from '../../dnd/dragConstants.js';
  * and a mat point (mat units). Every surface that places on the mat calls it, so no surface
  * can drift from another.
  * What lands where (free placement):
- * * **A hero or a flag**: the flag stands exactly where it was let go, clamped to the mat
- * (`Placement.plantFlagAt`), or, let go on a Token its hero can work, is pinned to that Token.
+ * * **A hero or their pennant** (from the mat or the roster): an order (`Orders.orderAt`): onto a
+ * Token they can work, they work only it; onto the Guild Hall, home; onto bare ground, they go
+ * there and idle. A Token they cannot work refuses with the reason, said over it, and the hero
+ * keeps the order they had.
  * * **Any Token** stands exactly where it was let go, or at the nearest legal point when that
  * spot is crowded or would break a `Cannot` rule. Nothing snaps.
  * A Token can come from three places, told apart by its payload's `from`: `instanceId` (a Token
@@ -68,11 +71,9 @@ export function dropOnMat(payload, point) {
 
     if (isHeroDrop(payload)) {
         if (!payload.heroId) return null;
-        if (payload.kind === DRAG_KIND.FLAG && !BoardState.flagOf(payload.heroId)) {
-            return announce(refuse('That hero has no flag planted'), point);
-        }
-        // A drop on a Token the hero can work pins the flag to it.
-        return announce(Placement.plantFlagAt(payload.heroId, point, { pin: true }), point);
+        const result = Orders.orderAt(payload.heroId, point);
+        // A refusal is said over the Token it was aimed at, or at the spot.
+        return announce(result, result?.instanceId ? { instanceId: result.instanceId, ...point } : point);
     }
 
     const from = payload.from || {};

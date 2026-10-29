@@ -2,45 +2,29 @@ import { useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
-import * as Placement from '../../../systems/board/Placement.js';
-import { useEntityDrop } from '../../dnd/DndKit.jsx';
 import { DND_SURFACE } from '../../dnd/dragConstants.js';
 import { DockHeroFigure } from './DockHeroFigure.jsx';
-import { WorkRulesButton } from './WorkRulesDrawer.jsx';
 import { DOCK_STRIP_PX, DOCK_SLOT_PX, DOCK_SLOT_MIN_PX, dockArtPx } from './dockHeroView.js';
 import { useLiveMatFit } from '../board/MatFitContext.jsx';
-import { useMatSize } from '../../hooks/useMatSize.js';
 import { HeroManager } from '../../../systems/hero/HeroManager.js';
-import { isRecallDrop, recallFromDrop } from './dockRecall.js';
 import { reorderHeroInDock } from './dockReorder.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
-/** Where the heroes' row starts, from the strip's left end, while the launcher is shown. */
-export const HEROES_LEFT_PX = 136;
-
 /**
- * The horizontal hero dock: the mat's bottom edge, one thin line and no fill, with the heroes
- * standing on it. No ledge, no tabs:
- * each hero idles at the mat's own art size, cut off at the waist by the strip's bottom edge,
- * with a name and HP bar over the head (`DockHeroFigure`). Heroes out on the mat are darkened
- * and sunk.
- * The strip stays a drop target for recalls (a flag, or a hero dragged off the mat). Clicking a
- * hero opens the side hero panel (`BankHeroPanel`); `selectedHeroId` only marks it here.
- * The Work Permissions launcher, at the left end under the mat's left corner (inside the mat's
- * edges), toggles the drawer (`WorkRulesDrawer`); the heroes stand to its right.
+ * The roster: the mat's bottom edge, one thin line and no fill, with every hero standing on it.
+ * Each hero idles at the mat's own art size, cut off at the waist by the strip's bottom edge,
+ * with a name, an HP bar and what they are doing (idle, busy, hurt) over the head
+ * (`DockHeroFigure`). Every hero is also on the mat: a click finds them there (outlined, their
+ * sheet open), hovering lights them and their job, and dragging one gives them an order.
  */
 export const BottomHeroDock = ({
     selectedHeroId,
     onSelectHero,
-    onDoubleClickHero,
-    rulesOpen = false,
-    onToggleRules
+    onDoubleClickHero
 }) => {
     // The same art size the mat draws its heroes at (whole steps).
     const fit = useLiveMatFit();
     const artPx = dockArtPx(fit);
-    // The mat's width on screen: the Board centres it in the same column as this strip.
-    const matPx = Math.round(useMatSize().w * fit);
 
     const heroIds = useGameState(
         state => (state.heroes || []).map(h => h.id),
@@ -53,26 +37,12 @@ export const BottomHeroDock = ({
     );
 
     return (
-        <DockRecallStrip artPx={artPx}>
-            {onToggleRules && (
-                <div
-                    data-dock-mat-span
-                    className="absolute inset-y-0 left-0 right-0 mx-auto max-w-full pointer-events-none"
-                    style={{ width: matPx }}
-                >
-                    <div className="pointer-events-auto">
-                        <WorkRulesButton open={rulesOpen} onToggle={onToggleRules} />
-                    </div>
-                </div>
-            )}
+        <DockStrip artPx={artPx}>
             {/**
              * The heroes, one row. On a narrow window each slot shrinks (`DOCK_SLOT_PX` down to `DOCK_SLOT_MIN_PX`)
              * before the row runs out of room.
              */}
-            <div
-                className="absolute inset-y-0 right-0 flex flex-row items-end justify-center px-2 z-40"
-                style={{ left: onToggleRules ? HEROES_LEFT_PX : 0 }}
-            >
+            <div className="absolute inset-y-0 left-0 right-0 flex flex-row items-end justify-center px-2 z-40">
                 {heroIds.map((heroId, index) => (
                     <motion.div
                         key={heroId}
@@ -95,44 +65,26 @@ export const BottomHeroDock = ({
                     </motion.div>
                 ))}
             </div>
-        </DockRecallStrip>
+        </DockStrip>
     );
 };
 
-/**
- * The bar's strip, and its drop target for recalls (a flag, or a hero dragged off the mat).
- * ⚠️ Its own component on purpose: dnd-kit re-renders the holder of a drop hook at every drag
- * start, end and change of target. Here that is only this strip; the heroes come in as
- * `children`, an element the strip did not make, so they are not redrawn with it, and their
- * slots do not re-measure their layout for the reorder animation each time.
- */
-const DockRecallStrip = ({ artPx, children }) => {
-    const recall = useEntityDrop({
-        id: 'bottom-dock-recall',
-        surface: DND_SURFACE.DRAWER,
-        accepts: isRecallDrop,
-        onDrop: p => recallFromDrop(Placement, p)
-    });
-    return (
-        // Overflow stays VISIBLE upward: the heroes' heads, names and HP bars may stand over
-        // the bottom of the mat. z-40 keeps them above the mat (z-0) and under the drawers and
-        // modals.
-        <aside
-            ref={recall.setNodeRef}
-            data-dnd-region={DND_SURFACE.DRAWER}
-            data-bottom-hero-dock="true"
-            data-dock-art-px={artPx}
-            style={{ height: DOCK_STRIP_PX }}
-            className={cn(
-                'w-full shrink-0 pointer-events-auto select-none relative z-40 overflow-visible',
-                'border-t border-white/15',
-                recall.valid && 'ring-2 ring-gi-success/70 bg-gi-success/5'
-            )}
-            {...recall.droppableProps}
-        >
-            {children}
-        </aside>
-    );
-};
+/** The bar's strip: no drop target of its own (a hero dropped here simply stays where they were). */
+const DockStrip = ({ artPx, children }) => (
+    // Overflow stays VISIBLE upward: the heroes' heads, names and HP bars may stand over the
+    // bottom of the mat. z-40 keeps them above the mat (z-0) and under the drawers and modals.
+    <aside
+        data-dnd-region={DND_SURFACE.DRAWER}
+        data-bottom-hero-dock="true"
+        data-dock-art-px={artPx}
+        style={{ height: DOCK_STRIP_PX }}
+        className={cn(
+            'w-full shrink-0 pointer-events-auto select-none relative z-40 overflow-visible',
+            'border-t border-white/15'
+        )}
+    >
+        {children}
+    </aside>
+);
 
 export default BottomHeroDock;

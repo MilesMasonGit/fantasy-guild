@@ -5,6 +5,7 @@ import { EventBus } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 import * as BoardState from '../../systems/board/BoardState.js';
 import * as Placement from '../../systems/board/Placement.js';
+import { qaOrder } from './qaOrders.js';
 import * as HeroManager from '../../systems/hero/HeroManager.js';
 import * as EquipmentManager from '../../systems/equipment/EquipmentManager.js';
 import { InventoryManager } from '../../systems/inventory/InventoryManager.js';
@@ -97,13 +98,13 @@ export function setUpSuppliesScene() {
         const hero = fighterAt(level);
         if (!HeroManager.addHero(hero)) return;
         for (const itemId of items) if (getItem(itemId)) EquipmentManager.equipItem(hero.id, itemId);
-        Placement.plantFlagAt(hero.id, { x: cows[i].x + 40, y: cows[i].y + 40 });
+        qaOrder(hero.id, { x: cows[i].x + 40, y: cows[i].y + 40 });
     });
     const thirsty = fighterAt(5);
     if (HeroManager.addHero(thirsty)) {
         if (getItem('item_water')) EquipmentManager.equipItem(thirsty.id, 'item_water');
         thirsty.hp.current = 2;
-        Placement.plantFlagAt(thirsty.id, { x: c.x, y: c.y + 200 });
+        qaOrder(thirsty.id, { x: c.x, y: c.y + 200 });
     }
     EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'dev_supplies_scene' });
     return { ok: true };

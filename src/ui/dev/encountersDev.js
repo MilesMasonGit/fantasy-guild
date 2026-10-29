@@ -5,6 +5,7 @@ import { EventBus } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 import * as BoardState from '../../systems/board/BoardState.js';
 import * as Placement from '../../systems/board/Placement.js';
+import { qaOrder } from './qaOrders.js';
 import * as SpawnerSystem from '../../systems/board/SpawnerSystem.js';
 import * as HeroManager from '../../systems/hero/HeroManager.js';
 import { InventoryManager } from '../../systems/inventory/InventoryManager.js';
@@ -179,7 +180,7 @@ export function setUpEncountersScene() {
     for (const f of flagged) {
         const hero = fighterAt(30, f.name);
         if (!HeroManager.addHero(hero)) return { ok: false, error: 'The roster is full' };
-        Placement.plantFlagAt(hero.id, f.at, { pin: !!f.pin });
+        qaOrder(hero.id, f.at);
     }
     EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'dev_encounters_scene' });
     return { ok: true };

@@ -78,6 +78,7 @@ export function builtFromRecord(foundationTypeId, paidInputs = []) {
 export function buildInPlace(instance, typeId, paidInputs = []) {
     return EffectActions.transformInstance(instance, typeId, {
         fixPlaced: true,
+        cause: 'build',
         extra: { builtFrom: builtFromRecord(instance?.typeId, paidInputs) }
     });
 }

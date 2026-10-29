@@ -49,8 +49,11 @@ export function stackOf(moments, now) {
 export const momentText = {
     arrived: (token) => `Working at ${token}.`,
     idle: () => 'No work in range.',
-    // Going idle because the one fight in reach is taken: every fight is one-on-one.
+    // Going idle because the one fight in reach is taken: every fight is one-on-one. Also the
+    // Token an order names, which another hero is working.
     waiting: (enemy) => `Waiting for ${enemy}.`,
+    // The Token an order named is gone for good: a new order is wanted.
+    needsJob: () => 'I need a job.',
     // Said by the hero whose work spent the Token's last charge.
     depleted: (token) => `${token} Depleted`,
     // The same moment for an enemy: the hero who beat it says so.
@@ -61,16 +64,21 @@ export const momentText = {
 };
 
 /**
- * What a hero says on going idle, given what they wait for (`Flags.waitingOf`) and its name:
- * `{ kind, key, text }`, or null to say nothing.
- * * nothing to wait for: "No work in range.";
- * * a fight another hero holds: "Waiting for Goblin.";
- * * a node in reach that is resting: nothing. They wait silently and work it when it is back;
- * the flag's hover and the Dock say "Waiting for Copper Vein".
+ * What a hero says on going idle, given what they wait for (`Flags.waitingOf`), its name and
+ * their order (`Flags.statusOf`'s `order` and `needsJob`): `{ kind, key, text }`, or null to say
+ * nothing.
+ * * their ordered Token is gone for good: "I need a job.";
+ * * arrived at a spot they were sent to: nothing (idle by choice);
+ * * a fight another hero holds, or their Token another hero works: "Waiting for Goblin.";
+ * * a node that is resting or growing back: nothing. They wait silently and work it when it is
+ * back; the pennant's hover and the roster say "Waiting for Copper Vein";
+ * * otherwise: "No work in range."
  */
-export function idleMomentOf(waiting, name = null) {
+export function idleMomentOf(waiting, name = null, { order = null, needsJob = false } = {}) {
+    if (needsJob) return { kind: 'needsJob', key: 'idle', text: momentText.needsJob() };
+    if (order === 'spot') return null;
     if (waiting?.kind === 'node') return null;
-    if (waiting?.kind === 'fight') return { kind: 'waiting', key: 'idle', text: momentText.waiting(name) };
+    if (waiting?.kind === 'fight' || waiting?.kind === 'busy') return { kind: 'waiting', key: 'idle', text: momentText.waiting(name) };
     return { kind: 'idle', key: 'idle', text: momentText.idle() };
 }
 
@@ -98,6 +106,7 @@ export const MOMENT_SPOKEN = Object.freeze({
     waiting: true,
     depleted: true,
     beaten: true,
+    needsJob: true,
     pinRefused: true
 });
 

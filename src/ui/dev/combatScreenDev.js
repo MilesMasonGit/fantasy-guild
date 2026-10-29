@@ -5,6 +5,7 @@ import { EventBus } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 import * as BoardState from '../../systems/board/BoardState.js';
 import * as Placement from '../../systems/board/Placement.js';
+import { qaOrder } from './qaOrders.js';
 import * as HeroManager from '../../systems/hero/HeroManager.js';
 import * as EquipmentManager from '../../systems/equipment/EquipmentManager.js';
 import * as CatchUp from '../../systems/core/CatchUp.js';
@@ -126,13 +127,13 @@ export function setUpCombatScreenScene() {
         for (const id of ['item_copper_sword', 'item_leather_chest', 'item_elixir_of_valor', 'item_elixir_of_ironskin', 'item_shrimp']) {
             if (getItem(id)) EquipmentManager.equipItem(aela.id, id);
         }
-        Placement.plantFlagAt(aela.id, { x: warlord.x, y: warlord.y }, { pin: true });
+        qaOrder(aela.id, { x: warlord.x, y: warlord.y });
     }
     if (cow) {
         const bram = fighterAt(40, 'Bram');
         if (HeroManager.addHero(bram)) {
             for (const id of ['item_copper_sword', 'item_elixir_of_valor', 'item_elixir_of_ironskin']) EquipmentManager.equipItem(bram.id, id);
-            Placement.plantFlagAt(bram.id, { x: cow.x, y: cow.y }, { pin: true });
+            qaOrder(bram.id, { x: cow.x, y: cow.y });
         }
     }
     EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'dev_combat_screen_scene' });

@@ -141,6 +141,15 @@ export const BOARD_EVENTS = {
     TOKEN_RESPAWNED: 'board:token_respawned',
 
     /**
+     * A Token became another in place (`EffectActions.transformInstance`): a growth, a regrow, a
+     * turn, a rule's Transforms or a Foundation's build. Payload: `{ fromId, fromTypeId,
+     * instanceId, typeId, cause }`, `cause` one of `grow`, `regrow`, `turn`, `rule`, `build`. A
+     * hero's order follows the Token through it when the new one is still their job
+     * (`Flags.followTransform`).
+     */
+    TOKEN_TRANSFORMED: 'board:token_transformed',
+
+    /**
      * A hero finished demolishing a marked Token and it left the board (`Demolition.js`). Payload:
      * `{ instanceId, typeId, x, y, heroId }`. ⚠️ Never with `TOKEN_DEPLETED`: nothing ran out, and
      * nothing is refunded or dropped.

@@ -46,8 +46,9 @@ see [`TESTING.md`](TESTING.md), "Running the game for verification".)
 | `RecipeResolver` | which recipe a Token runs, and why not | `resolveRecipe`, `getMissingRequirements` |
 | `BoardCombat` | fights on the mat | `getFight(...)`, `fightOfHero(heroId)`, `endFight(...)` |
 | `BoardPromotion` | promotion Tokens | `getOffer`, `accept`, `decline` |
-| `Flags` | heroes' flags (where a hero works) | `plant`, `assignHero`, `statusOf`, `setRule` |
-| `FlagRules` | a flag's work rules | `ruleOf`, `rowsFor` |
+| `Orders` | the player's orders: a hero dropped on the mat | `orderAt(heroId, point)`, `sendHome`, `canOrderOnto`, `jobTokenOf` |
+| `Flags` | heroes' orders, saved as flag records, and the dormant area flags | `orderToken`, `orderSpot`, `sendHome`, `statusOf`, `waitingOf`, `plant` (area flags, tests only) |
+| `FlagRules` | the retired work rules (dormant, read only by area flags) | `ruleOf` |
 | `Demolition` | taking Tokens down | `canDemolish`, `mark`, `unmark`, `markedTokens()` |
 | `QuestManager` | quests | `getActiveQuests()`, `claimQuest(...)`, `getTutorialStep()` |
 | `QuestTokens` | quests and bounties as Tokens on the mat | `questTokens()`, `spawnQuest`, `spawnBounty` |

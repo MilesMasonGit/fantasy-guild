@@ -199,17 +199,19 @@ export const SKILLS = {
 };
 
 /**
- * What the Work Permissions Combat column is for. Combat is one rule, not a skill (a hero fights
- * with whichever combat skill they hold), so its line lives here rather than on a skill.
+ * What fighting is for, the one line every combat skill's row shows on the hero sheet: a hero
+ * fights with whichever combat skill they hold.
  */
-export const COMBAT_PURPOSE = 'Fights enemies within the hero’s reach for loot, Maps and combat XP.';
+export const COMBAT_PURPOSE = 'Fights the enemies the hero is sent to, or that attack them, for loot, Maps and combat XP.';
 
 /**
- * A skill's one line for a Work Permissions header: its `purpose` (what it does and what it
- * feeds), else its `description` for the placeholder skills that have no purpose yet.
+ * A skill's one line for the hero sheet's skill list: its `purpose` (what it does and what it
+ * feeds), else its `description` for the placeholder skills that have no purpose yet. A combat
+ * skill reads {@link COMBAT_PURPOSE}.
  */
 export function skillPurpose(skillId) {
     const skill = SKILLS[skillId];
+    if (skill?.layer === SKILL_LAYERS.COMBAT) return COMBAT_PURPOSE;
     return skill ? (skill.purpose || skill.description || null) : null;
 }
 

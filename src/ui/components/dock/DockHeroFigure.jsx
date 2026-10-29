@@ -2,7 +2,6 @@ import { memo, useMemo, useRef, useState } from 'react';
 import { PixelTriangle } from '../base/ArrowScrollList.jsx';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
-import * as Placement from '../../../systems/board/Placement.js';
 import * as EquipmentManager from '../../../systems/equipment/EquipmentManager.js';
 import { useEntityDrag, useEntityDrop, useActiveDrag, mergeRefs } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
@@ -11,7 +10,11 @@ import { EventBus } from '../../../systems/core/EventBus.js';
 import * as Flags from '../../../systems/board/Flags.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { AnimatedHeroSprite } from '../board/AnimatedHeroSprite.jsx';
-import { isRecallDrop, recallFromDrop } from './dockRecall.js';
+import { rosterStateOf, flagStatusLine } from '../board/flagText.js';
+import { setRosterHover } from '../board/orderLit.js';
+import { PROBLEM_SPRITE, SEVERITY } from '../board/problemMark.js';
+import { Tooltip } from '../base/Tooltip.jsx';
+import { t } from '../../../i18n/index.js';
 import { useDragSettleHover } from './useDragSettleHover.js';
 import { equipOrAnnounce } from './dockEquip.js';
 import { useHeroBarBubbles, clearHeroBubbles, clearHeroBubble, BAR_BUBBLES_SHOWN, BAR_BUBBLE_FADE_MS } from './heroBarBubbles.js';
@@ -20,13 +23,13 @@ import { SpeechFrame } from '../board/SpeechFrame.jsx';
 import { SPEECH_TONE } from '../board/speechTone.js';
 import {
     DOCK_STRIP_PX, DOCK_LABEL_GAP_PX,
-    isDeployedStatus, dockArtOffset, dockArtFilter, hpPercent, hpTone, HP_TONE_CLASS
+    dockArtOffset, hpPercent, hpTone, HP_TONE_CLASS, ROSTER_STATE_CLASS
 } from './dockHeroView.js';
 import { ENGINE_EVENTS, ORPHAN_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
- * The drag payload a hero picked up in the horizontal dock carries. Unchanged from the old
- * dock tab (`HeroDockTab`), so a drop on the mat plants the flag exactly as before.
+ * The drag payload a hero picked up on the roster carries: dropped on the mat it gives the hero an
+ * order (`Orders.orderAt`), exactly as dragging their figure on the mat does.
  */
 export function dockHeroDragPayload(heroId, hero) {
     return {
@@ -39,16 +42,17 @@ export function dockHeroDragPayload(heroId, hero) {
 }
 
 /**
- * One hero standing in the horizontal dock.
+ * One hero standing on the roster.
  * The idle sprite the mat uses (`AnimatedHeroSprite`), at the mat's art size, cut off at the
- * waist by the strip's bottom edge. The name and HP bar sit above the head at the same height
- * for every hero; only the ART sinks and darkens when the hero is out on the mat, and lifts on
- * hover.
+ * waist by the strip's bottom edge. The name, HP bar and state (idle, busy, hurt) sit above the
+ * head at the same height for every hero, with the "needs a job" mark beside the name when the
+ * hero's Token is gone for good; the art lifts on hover.
  * The sprite writes its frames straight to the element (the shared sprite clock), so an idle
  * frame re-renders nothing: not this figure, and not the slot, whose reorder animation would
  * measure its layout again.
- * Click, double-click, drag onto the mat, drop an item to equip, drop a flag to recall and
- * drop another dock hero to reorder all behave as the old tab did.
+ * Click finds the hero (outlined on the mat, their sheet open); hovering outlines them and lights
+ * their job; drag onto the mat gives an order; drop an item to equip, another roster hero to
+ * reorder.
  * ⚠️ Two components on purpose. dnd-kit re-renders every component holding a drag hook at each
  * drag start, end and change of target. The hooks live in this thin shell, which works out the
  * few things the figure draws from a drag (lifted, a drop cue, held); the figure itself
@@ -73,14 +77,11 @@ export const DockHeroFigure = memo(function DockHeroFigure(props) {
     const drop = useEntityDrop({
         id: `dock-hero-drop-${heroId}`,
         surface: DND_SURFACE.DRAWER,
-        // As the old tab: an item equips, a flag recalls, another dock hero reorders.
+        // An item equips, another roster hero reorders.
         accepts: p => (p.kind === DRAG_KIND.ITEM && p.fromHeroId !== heroId)
-            || isRecallDrop(p)
             || (p.kind === DRAG_KIND.HERO && p.heroId !== heroId),
         onDrop: p => {
-            if (isRecallDrop(p)) {
-                recallFromDrop(Placement, p);
-            } else if (p.kind === DRAG_KIND.ITEM && p.itemId) {
+            if (p.kind === DRAG_KIND.ITEM && p.itemId) {
                 if (!equipOrAnnounce(EquipmentManager, heroId, p.itemId, null, p)) return false;
                 justDroppedRef.current = true;
                 setTimeout(() => { justDroppedRef.current = false; }, 250);
@@ -94,7 +95,7 @@ export const DockHeroFigure = memo(function DockHeroFigure(props) {
 
     const carried = drop.activePayload;
     const itemCue = drop.valid && globalDragging && carried?.kind === DRAG_KIND.ITEM;
-    const heroCue = drop.valid && globalDragging && carried?.kind === DRAG_KIND.HERO && !isRecallDrop(carried);
+    const heroCue = drop.valid && globalDragging && carried?.kind === DRAG_KIND.HERO;
     const sourceIndex = heroCue ? heroIds.indexOf(carried.heroId) : -1;
     const targetIndex = index ?? heroIds.indexOf(heroId);
     const insertAfter = sourceIndex !== -1 && targetIndex !== -1 && sourceIndex < targetIndex;
@@ -166,26 +167,24 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
     onHoverChange,
     justDroppedRef
 }) {
-    // Out on the mat or walking home: `HERO_MOVED` announces every plant, recall and defeat,
-    // `HEROES_WALKED` a hero arriving home.
-    const statusState = useGameState(
-        () => Flags.statusOf(heroId).state,
-        [BOARD_EVENTS.HERO_MOVED, BOARD_EVENTS.HEROES_WALKED, ENGINE_EVENTS.GAME_RESET],
+    // Idle, busy or hurt, and whether their job is gone: `HERO_MOVED` announces every order,
+    // claim and defeat, `HEROES_WALKED` a hero arriving, `HEROES_UPDATED` a wound healing.
+    const roster = useGameState(
+        () => ({ state: rosterStateOf(heroId), needsJob: Flags.needsJob(heroId) }),
+        [BOARD_EVENTS.HERO_MOVED, BOARD_EVENTS.HEROES_WALKED, BOARD_EVENTS.TILE_CHANGED, ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.GAME_RESET],
         null,
         { deps: [heroId] }
-    );
+    ) || { state: 'idle', needsJob: false };
 
     const bubbles = useHeroBarBubbles(heroId);
 
-    const deployed = isDeployedStatus(statusState);
     const isWounded = hero.status === 'wounded';
     const hp = Math.max(0, Math.round(hero.hp?.current ?? 0));
     const hpMax = Math.max(1, hero.hp?.max ?? 100);
     const pct = hpPercent(hero.hp);
     const tone = hpTone(pct);
 
-    const offset = dockArtOffset(artPx, { deployed, hovered: lifted });
-    const filter = dockArtFilter({ deployed, hovered: lifted });
+    const offset = dockArtOffset(artPx, { hovered: lifted });
 
     const sprite = hero.spriteId || hero.classId || null;
     const animArt = sprite ? resolveAnimationPath(sprite) : null;
@@ -201,7 +200,8 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
             {...handleProps}
             {...droppableProps}
             data-dock-hero={heroId}
-            data-dock-deployed={deployed ? 'true' : 'false'}
+            data-dock-state={roster.state}
+            data-dock-needs-job={roster.needsJob ? 'true' : undefined}
             data-dock-hover={lifted ? 'true' : 'false'}
             data-dock-selected={isSelected ? 'true' : undefined}
             data-dock-wounded={isWounded ? 'true' : undefined}
@@ -215,8 +215,8 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
                 e.stopPropagation();
                 onDoubleClick?.(heroId);
             }}
-            onMouseEnter={() => onHoverChange(true)}
-            onMouseLeave={() => onHoverChange(false)}
+            onMouseEnter={() => { onHoverChange(true); setRosterHover(heroId); }}
+            onMouseLeave={() => { onHoverChange(false); setRosterHover(null); }}
             style={{
                 height: DOCK_STRIP_PX,
                 width: '100%'
@@ -258,8 +258,7 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
                         top: artPx / 2,
                         width: artPx,
                         height: artPx,
-                        transform: `translateY(${offset}px)`,
-                        filter
+                        transform: `translateY(${offset}px)`
                     }}
                 >
                     {animArt ? (
@@ -281,7 +280,7 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
                 </div>
             </div>
 
-            {/* Name and HP bar: one height for every hero, deployed or not. */}
+            {/* Name, HP bar and state: one height for every hero. */}
             <div
                 data-dock-label
                 className="absolute inset-x-0 flex flex-col items-center gap-0.5 pointer-events-none"
@@ -297,6 +296,29 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
                 >
                     {isWounded && <span aria-label="Wounded" className="text-red-400">✚ </span>}
                     {hero.name}
+                </span>
+                <span className="flex items-center gap-1 leading-none">
+                    {roster.needsJob && (
+                        <Tooltip content={t('orders.needsJob')}>
+                            <img
+                                data-dock-needs-job-mark
+                                src={PROBLEM_SPRITE[SEVERITY.WAITING]}
+                                alt={t('orders.needsJob')}
+                                draggable={false}
+                                className="pointer-events-auto"
+                                style={{ width: 16, height: 16, imageRendering: 'pixelated', filter: 'drop-shadow(1px 1px 0 #000)' }}
+                            />
+                        </Tooltip>
+                    )}
+                    <Tooltip content={flagStatusLine(heroId)}>
+                        <span
+                            data-dock-state-word={roster.state}
+                            className={cn('ui-text-small font-bold pointer-events-auto', ROSTER_STATE_CLASS[roster.state])}
+                            style={{ textShadow: '0 1px 3px #000, 0 0 4px #000' }}
+                        >
+                            {t(`orders.${roster.state}`)}
+                        </span>
+                    </Tooltip>
                 </span>
                 <div
                     data-dock-hp={pct}
