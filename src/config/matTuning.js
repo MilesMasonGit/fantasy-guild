@@ -55,7 +55,7 @@ export const MAT_TUNABLES = Object.freeze([
         key: 'flagRadius',
         group: 'Flags',
         label: 'Flag radius',
-        hint: 'How far from its flag a hero looks for work, centre to centre. 240 reaches the Token under the flag and all eight neighbours: the four sides (160 u) and the diagonals (226 u). The Scouting Flags upgrade adds 40 a rank on top. 164 (sides only) and 400 were older defaults.',
+        hint: 'How far from its flag a hero looks for work, centre to centre. 240 reaches the Token under the flag and all eight neighbours: the four sides (160 u) and the diagonals (226 u). 164 (sides only) and 400 were older defaults.',
         min: 100, max: 1000, step: 1, def: 240,
         format: (v) => `${Math.round(v)} u · ${(v / STEP_U).toFixed(2)} steps`
     },

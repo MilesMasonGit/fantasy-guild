@@ -80,12 +80,11 @@ describe('Flags.flagReaches — the one in-reach test', () => {
         expect(Flags.flagReaches(null, { x: 0, y: 0 })).toBe(false);
     });
 
-    it('follows the Scouting Flags upgrade', () => {
+    it('no longer follows the retired Scouting Flags upgrade (brief 260 O2): an old bonus widens nothing', () => {
         const flag = { x: 500, y: 500 };
         const r = Flags.flagRadius();
         const beyond = { x: 500 + r + 20, y: 500 };
-        expect(Flags.flagReaches(flag, beyond)).toBe(false);
         GameState.state.progress.flagRadiusBonus = 40;
-        expect(Flags.flagReaches(flag, beyond)).toBe(true);
+        expect(Flags.flagReaches(flag, beyond)).toBe(false);
     });
 });

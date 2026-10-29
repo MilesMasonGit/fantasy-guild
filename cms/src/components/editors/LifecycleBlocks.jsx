@@ -4,6 +4,7 @@ import { useEntityStore, makeLifecycleBlock, makeWeightedTokenEntry, makeTrickle
 import {
   FOUNDATION_KINDS, TURN_DEFAULTS, RESPAWN_MODES, RESPAWN_DEFAULTS, RESPAWN_MIN_MS, skillsByLayer,
   expandBearer, stationSkillOf, stationKindOf, stationKindOffers, stationKindLabel, cropTermsOf,
+  fieldOf, CAMP_REACH_DEFAULT, SKILLS,
 } from '../../utils/constants';
 import { Section, Field } from '../shared/EditorLayout';
 import { ItemPicker, ItemList } from './Statements';
@@ -11,7 +12,7 @@ import SpritePickerModal from './SpritePickerModal';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 
 /**
- * The Token Lifecycle blocks: spawner, grows, turns, foundation, shop, trickle and respawn, each added or removed as a whole.
+ * The Token Lifecycle blocks: spawner, grows, turns, foundation, shop, trickle, respawn, field and camp, each added or removed as a whole.
  * ⚠️ Removing a block writes `undefined`, which JSON.stringify omits, so an absent block stays absent in the file.
  */
 
@@ -24,6 +25,7 @@ const BLOCK_INFO = {
   trickle: { title: 'Passive Production', what: 'Drops these items beside the Token every 5 minutes, all on one timer, no hero needed (Guild Hall only, for now). The Wishing Well adds its Water to the Hall’s.' },
   respawn: { title: 'Respawns', what: 'Comes back after it runs out instead of leaving the mat: refills where it stands after a rest, or regrows from another Token (Tree → Sapling → Tree).' },
   field: { title: 'Field', what: 'Grows its own crop: empty, growing, ripe. Its crops are the recipes it works (a Field or Herb Garden station); the player picks one on it.' },
+  camp: { title: 'Camp', what: 'Heroes sent to it work the Tokens of its skill within its reach, one hero per Token (a Logging Camp, a Farmstead). Built on a Foundation like a station.' },
 };
 
 export default function LifecycleBlocks({ token, onChange }) {
@@ -98,6 +100,9 @@ export default function LifecycleBlocks({ token, onChange }) {
                   )}
                   {key === 'field' && (
                     <FieldBlock block={token.field} token={token} effects={effects} recipePools={recipePools} items={items} onChange={(v) => set('field', v)} />
+                  )}
+                  {key === 'camp' && (
+                    <CampBlock block={token.camp} selfId={token.id} tokens={tokens} effects={effects} onChange={(v) => set('camp', v)} />
                   )}
                 </div>
               )}
@@ -486,6 +491,52 @@ function FieldBlock({ block, token, effects, recipePools, items, onChange }) {
         {block.startsWith
           ? ' A new copy starts ripe with the crop chosen above, which is also its pick (a map’s wild patch); it sows again from the Bank like any Field.'
           : ' A new copy starts empty: the player picks a crop on it, and it sows for one seed from the Bank.'}
+      </p>
+    </div>
+  );
+}
+
+/**
+ * The Tokens a camp of `skill` would hand out, by name: those whose own work names the skill and that
+ * are not stations (a Field excepted), Foundations, spawners, enemies or camps, as the game's
+ * `Camps.worksType` reads them.
+ */
+function campWorkNames(skill, selfId, tokens, effects) {
+  if (!skill) return [];
+  const names = [];
+  for (const t of Object.values(tokens || {})) {
+    if (!t || t.id === selfId || t.config?.skill !== skill || t.requiresHero === false) continue;
+    if (t.enemy || t.spawner || t.foundation || t.camp) continue;
+    const expanded = expandBearer(t, effects);
+    if (stationSkillOf(expanded) && !fieldOf(t)) continue;
+    names.push(t.name || t.id);
+  }
+  return names.sort((a, b) => a.localeCompare(b));
+}
+
+/**
+ * A camp: the skill whose Tokens it hands out and how far it reaches, in mat units centre to centre. Both keys are always
+ * written; the game reads a missing or bad reach as its default.
+ */
+function CampBlock({ block, selfId, tokens, effects, onChange }) {
+  const patch = (p) => onChange({ ...block, ...p });
+  const reach = Number.isFinite(block.reach) && block.reach > 0 ? block.reach : CAMP_REACH_DEFAULT;
+  const names = campWorkNames(block.skill, selfId, tokens, effects);
+  const skillName = SKILLS.find((s) => s.id === block.skill)?.name || block.skill;
+  let note;
+  if (!block.skill) note = 'Pick the skill whose Tokens its heroes work.';
+  else if (!names.length) note = `No ${skillName} Token a camp could work exists yet (stations never count; Fields do).`;
+  else note = `A hero sent to it works, one at a time, the nearest free ${skillName} Token within ${reach} u: ${names.slice(0, 8).join(', ')}${names.length > 8 ? `, and ${names.length - 8} more` : ''}. Stations never count; Fields do.`;
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Works">
+          <div data-field="camp-skill"><SkillSelect value={block.skill} onChange={(skill) => patch({ skill })} /></div>
+        </Field>
+        <IntField label="Reach (u)" min={1} step={10} value={reach} onChange={(next) => patch({ reach: next })} />
+      </div>
+      <p className="text-[10px] text-gray-600" data-field="camp-note">
+        {note} For scale: Near is 164 u (the four side neighbours); 240 u reaches all eight; the mat is 160 u a step.
       </p>
     </div>
   );

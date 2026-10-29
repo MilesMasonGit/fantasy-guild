@@ -48,6 +48,7 @@ export const TOKEN_TYPES = Object.freeze([
     'map',        // ⚠️ derived by nothing now (maps are items); kept while a Token in data/ still stores it
     'promotion',  // trains the hero on it into one job, and IS that job's price (PR-6)
     'spawner',    // puts other Tokens on the mat on a clock (Token lifecycle §3.1)
+    'camp',       // heroes sent to it work the Tokens of its skill in its reach (brief 260)
 ]);
 
 /**
@@ -323,6 +324,24 @@ export function growsTermsOf(def) {
     lastGrowsBlock = block;
     lastGrowsTerms = terms;
     return terms;
+}
+
+/**
+ * ⭐ **A camp** (brief 260 O2): `camp: { skill, reach }` on a Token built like a station. A hero sent
+ * to it works the Tokens of `skill` within `reach` mat units of its centre, centre to centre
+ * (`systems/board/Camps.js`). For scale: Near is 164 u (the four side neighbours) and 240 u reaches
+ * all eight neighbours. A block with no reach (or a bad one) reaches {@link CAMP_REACH_DEFAULT}.
+ */
+export const CAMP_REACH_DEFAULT = 320;
+
+/** A Token type's camp terms, `{ skill, reach }`, or null for a type that is not a camp (no block, or no skill). */
+export function campOf(def) {
+    const block = def?.camp;
+    if (!block || typeof block !== 'object' || Array.isArray(block)) return null;
+    const skill = typeof block.skill === 'string' ? block.skill.trim() : '';
+    if (!skill) return null;
+    const reach = Number(block.reach);
+    return { skill, reach: Number.isFinite(reach) && reach > 0 ? reach : CAMP_REACH_DEFAULT };
 }
 
 /**

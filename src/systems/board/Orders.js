@@ -13,6 +13,7 @@ import { ALERT } from './boardEvents.js';
 import * as BoardState from './BoardState.js';
 import * as BoardPromotion from './BoardPromotion.js';
 import * as Flags from './Flags.js';
+import * as Camps from './Camps.js';
 import { isGuildHall } from './MatCap.js';
 import { workConfigOf } from './StationRecipe.js';
 import * as PromotionSystem from '../hero/PromotionSystem.js';
@@ -22,6 +23,8 @@ import * as PromotionSystem from '../hero/PromotionSystem.js';
  * order here:
  * - on a Token they can work: they walk there and work only it (`Flags.orderToken`); a Token
  * another hero works, or one resting, growing or out of an input, is still theirs to wait by;
+ * - on a camp: they work what it hands out in its reach, one Token at a time (`Camps.js`); on an
+ * enemy camp, they hunt what it spawns;
  * - on a Token they cannot work: refused with the reason ("Needs Pickaxe"), and they keep the
  * order they had;
  * - on the Guild Hall: home, to wait there (`Flags.sendHome`);
@@ -44,10 +47,13 @@ function clock(ms) {
     return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
 }
 
-/** The words for an order refusal on `instance` (`Flags.orderRefusal`'s reason). */
+/**
+ * The words for an order refusal on `instance` (`Flags.orderRefusal`'s reason). For a camp the need
+ * is a Token's in its reach (`Flags.orderToken`'s `refusedOn`), or the camp's own skill.
+ */
 export function refusalText(heroId, instance, reason) {
     const def = getTokenType(instance?.typeId);
-    const skillId = def ? workConfigOf(def, instance)?.skill : null;
+    const skillId = def ? (Camps.campOf(def)?.skill || workConfigOf(def, instance)?.skill) : null;
     const skill = skillId ? (getSkill(skillId)?.name || skillId) : null;
     if (BoardPromotion.isPromotionToken(instance)) {
         const job = BoardPromotion.jobFor(instance);
@@ -96,7 +102,8 @@ export function orderAt(heroId, point) {
     if (target) {
         const result = Flags.orderToken(heroId, target);
         if (!result.success) {
-            return { success: false, reason: refusalText(heroId, target, result.refused), instanceId: target.id };
+            const on = (result.refusedOn && BoardState.getTokenById(result.refusedOn)) || target;
+            return { success: false, reason: refusalText(heroId, on, result.refused), instanceId: target.id };
         }
         if (!result.unchanged) EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'order' });
         return { ...result, order: 'token', instanceId: target.id };

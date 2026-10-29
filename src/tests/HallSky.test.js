@@ -171,7 +171,8 @@ describe('the Hall sky: constellations', () => {
     it('counts a line to the Hall or within a constellation as its picture, not one between two', () => {
         expect(linkConstellation('bank_slots', HALL_NODE)).toBe('vault');
         expect(linkConstellation('bank_tabs', 'bank_slots')).toBe('vault');
-        expect(linkConstellation('flag_radius', 'roster_size')).toBeNull();
+        // A line between two constellations (none is drawn since Scouting Flags retired, brief 260 O2).
+        expect(linkConstellation('bank_slots', 'roster_size')).toBeNull();
     });
 
     it('brightens a finished constellation\'s name; the rest stay faint', () => {

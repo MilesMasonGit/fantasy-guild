@@ -1,4 +1,4 @@
-import { statementsOf, stationSkillOf, renderStatement, derivedTokenType, toolNamer, neededToolOf, toolNeedPhrase } from '../utils/constants';
+import { statementsOf, stationSkillOf, renderStatement, derivedTokenType, toolNamer, neededToolOf, toolNeedPhrase, campOf, SKILLS } from '../utils/constants';
 
 /** Description Dictionary Engine: composes mechanical descriptions for Tokens from their production, recipes, effects, triggers and lifecycle. */
 
@@ -152,11 +152,20 @@ export function getTraitClauses(token) {
 
   // ⚠️ No clause promises that a `manager` Token restocks stations: a Manager is decided by what it restocks, and a Restocks statement says so.
 
-  if (token.requiresHero === false) {
+  // A camp is worked through the Tokens in its reach, never itself: its own clause says so.
+  if (token.requiresHero === false && !campOf(token)) {
     clauses.push('Operates passively without requiring a hero.');
   }
 
   return clauses;
+}
+
+/** A camp's clause: what the heroes sent to it work, and how far it reaches. Empty for a Token that is not a camp. */
+export function getCampClause(token) {
+  const camp = campOf(token);
+  if (!camp) return '';
+  const skill = SKILLS.find((s) => s.id === camp.skill)?.name || camp.skill;
+  return `A camp: heroes sent here work the ${skill} Tokens within ${Math.round(camp.reach)} u, one hero each.`;
 }
 
 /**
@@ -189,6 +198,9 @@ export function composeTokenDescription(token, items = {}, recipePools = {}, tok
 
   const effectClauses = getEffectBlockClauses(token, items, tool);
   clauses.push(...effectClauses);
+
+  const campClause = getCampClause(token);
+  if (campClause) clauses.push(campClause);
 
   const traitClauses = getTraitClauses(token);
   clauses.push(...traitClauses);

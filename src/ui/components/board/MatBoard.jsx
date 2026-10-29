@@ -9,6 +9,7 @@ import { useHoverRest } from './hoverRest.js';
 import { MatToken, MatTokenGrab } from './MatToken.jsx';
 import { MatHero, heroBoxAt } from './MatHero.jsx';
 import { MatRings } from './MatRings.jsx';
+import { CampReachRing } from './CampReachRing.jsx';
 import { SupportLinkLayer } from './SupportLinkLayer.jsx';
 import { CalloutLayer } from './CalloutLayer.jsx';
 import { HeroBubbleLayer } from './HeroBubbleLayer.jsx';
@@ -39,6 +40,7 @@ import * as Flags from '../../../systems/board/Flags.js';
 import * as HeroMotion from '../../../systems/board/HeroMotion.js';
 import * as EnemyMotion from '../../../systems/board/EnemyMotion.js';
 import * as Orders from '../../../systems/board/Orders.js';
+import * as Camps from '../../../systems/board/Camps.js';
 import { OrderLighting, lightHeroJob } from './OrderLighting.jsx';
 import { useRosterHover } from './orderLit.js';
 import { showsNearRing } from '../../../systems/board/reachDisplay.js';
@@ -396,6 +398,26 @@ export const MatBoard = React.memo(function MatBoard({
         return at ? { x: at.x, y: at.y } : null;
     }, [rest.tokenId, tokens]);
 
+    /**
+     * A camp's reach ring: the camp the pointer rests on, else the camp the lit hero (hovered, or
+     * their sheet open) works from. Not while the camp itself is carried.
+     */
+    const campRing = useMemo(() => {
+        const rested = rest.tokenId && rest.tokenId !== carriedId ? BoardState.getTokenById(rest.tokenId) : null;
+        let camp = rested && Camps.isCampLike(rested) ? rested : null;
+        if (!camp) {
+            const heroId = litHeroId || inspectedHeroId;
+            const jobId = heroId ? heroes.find(h => h.heroId === heroId)?.jobId : null;
+            const job = jobId && jobId !== carriedId ? BoardState.getTokenById(jobId) : null;
+            camp = job && Camps.isCampLike(job) ? job : null;
+        }
+        const ring = camp ? Camps.reachRingOf(camp) : null;
+        return ring ? { campId: camp.id, ...ring } : null;
+    }, [rest.tokenId, carriedId, litHeroId, inspectedHeroId, heroes, tokens]);
+    // Keyed by value, so a hero's walking step does not redraw the ring.
+    const campRingKey = campRing ? `${campRing.campId}|${campRing.x}|${campRing.y}|${campRing.r}` : '';
+    const campRingShown = useMemo(() => campRing, [campRingKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
     /** A work plate for each hero at work, not in a fight, its Token not in the hand. */
     const plates = useMemo(() => {
         const byId = new Map(tokens.map(t => [t.id, t]));
@@ -576,6 +598,8 @@ export const MatBoard = React.memo(function MatBoard({
             {/* `MAT_Z.RINGS`: the Near ring. Flag radius rings are FlagLayer's. */}
             {ringsDrawn && <MatRings hoveredCentre={hoveredCentre} matRef={rootRef} />}
             {ringsDrawn && <SupportLinkLayer matRef={rootRef} />}
+            {/* `MAT_Z.RINGS`: a camp's reach, while it or a hero working from it is hovered. */}
+            {ringsDrawn && <CampReachRing ring={campRingShown} />}
 
             {/* `MAT_Z.GROUND_GRID`: with a Token in the hand, the cells it may stand on, under every Token. */}
             <TerrainGridOverlay mat={mat} />

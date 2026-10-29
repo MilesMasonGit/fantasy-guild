@@ -77,6 +77,10 @@ export function migrateState(state, savedVersion) {
         delete migrated.progress.mapDiscoveries;
         delete migrated.progress.guildHallMapOpens;
     }
+    if (isPlainObject(migrated.progress) && RETIRED_PROGRESS_FIELDS.some(f => f in migrated.progress)) {
+        migrated.progress = { ...migrated.progress };
+        for (const f of RETIRED_PROGRESS_FIELDS) delete migrated.progress[f];
+    }
 
     // Retired Token Vault and Tray: an older save's Vault and Tray contents, tab
     // and cap fields, Token loot on the floor and ranks in the two Vault upgrade
@@ -181,8 +185,15 @@ export const RETIRED_BOARD_FIELDS = Object.freeze([
     'tokenBank', 'tray', 'nextTrayZ', 'tokenBankSlots', 'tokenTabsUnlocked', 'tokenGroups'
 ]);
 
-/** The Guild Hall upgrade tracks that only ever served the Token Vault. */
-export const RETIRED_UPGRADES = Object.freeze(['token_bank_slots', 'token_bank_tabs']);
+/**
+ * Retired Guild Hall upgrade tracks, whose bought ranks an older save drops silently (no refund):
+ * the two that only ever served the Token Vault, and Scouting Flags (`flag_radius`), which widened
+ * the area flags that orders and camps replaced.
+ */
+export const RETIRED_UPGRADES = Object.freeze(['token_bank_slots', 'token_bank_tabs', 'flag_radius']);
+
+/** Retired `progress` fields an older save still carries: the Scouting Flags radius bonus. */
+export const RETIRED_PROGRESS_FIELDS = Object.freeze(['flagRadiusBonus']);
 
 /** A loose Token lying on the floor — the retired Token loot. */
 function isTokenSprite(sprite) {

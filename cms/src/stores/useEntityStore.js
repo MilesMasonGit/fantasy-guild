@@ -18,7 +18,7 @@ import {
     deriveTokenType, statementsOf, makeStatement, KEYWORD,
     migrateBearers, migratePromotionFields, migrateAppliesTargetsIn, migrateSkillIdsIn, migrateRecipePools,
     expandBearer, expandAll, effectRefsOf, provisionalName,
-    normaliseScale, FOUNDATION_KINDS, TURN_DEFAULTS, RESPAWN_DEFAULTS,
+    normaliseScale, FOUNDATION_KINDS, TURN_DEFAULTS, RESPAWN_DEFAULTS, CAMP_REACH_DEFAULT,
 } from '../utils/constants';
 import { seedSimIntent } from './simIntentNormaliser';
 import { isMapItem, blankCartography } from '../../../src/systems/atlas/mapItems.js';
@@ -502,10 +502,10 @@ export function makeTokenOutputEntry(tokenId) {
     return { tokenId, chance: 100, minQty: 1, maxQty: 1 };
 }
 
-// Token Lifecycle blocks: `spawner`, `grows`, `turns`, `foundation`, `shop`, `trickle`, `respawn`. These factories only give the editor a starting value when an author ADDS a block.
+// Token Lifecycle blocks: `spawner`, `grows`, `turns`, `foundation`, `shop`, `trickle`, `respawn`, `field`, `camp`. These factories only give the editor a starting value when an author ADDS a block.
 // ⚠️ Absent means absent: `makeToken` creates none of them and nothing on the load or sync path fills them in, so a Token without a block round-trips without one, byte for byte.
 
-export const TOKEN_LIFECYCLE_BLOCKS = Object.freeze(['spawner', 'grows', 'turns', 'foundation', 'shop', 'trickle', 'respawn', 'field']);
+export const TOKEN_LIFECYCLE_BLOCKS = Object.freeze(['spawner', 'grows', 'turns', 'foundation', 'shop', 'trickle', 'respawn', 'field', 'camp']);
 
 export function makeWeightedTokenEntry(typeId = '') {
     return { typeId, weight: 1 };
@@ -538,6 +538,9 @@ export function makeLifecycleBlock(key) {
         case 'field':
             // A Field with no pictures of its own (its own art) that starts empty.
             return {};
+        case 'camp':
+            // A camp of no skill yet (the audit reports it) at the game's default reach.
+            return { skill: '', reach: CAMP_REACH_DEFAULT };
         default:
             return undefined;
     }

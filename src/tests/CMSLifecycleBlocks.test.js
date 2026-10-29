@@ -94,6 +94,7 @@ function everyBlock() {
         trickle: [{ itemId: i1, quantity: 1, everyMs: 300000 }],
         respawn: { mode: 'refill', afterMs: 15000 },
         field: { emptySprite: 't_farmland', growingSprite: 't_garden' },
+        camp: { skill: 'forestry', reach: 280 },
     };
 }
 
@@ -346,6 +347,7 @@ describe('Recalculate files the lifecycle blocks under a sensible type (slice 4.
         ['spawner', 'spawner'],
         ['turns', 'resource'],
         ['foundation', 'station'],
+        ['camp', 'camp'],
     ];
     for (const [block, type] of cases) {
         it(`a ${block}-only Token is written as tokenType ${type}, not buff`, () => {

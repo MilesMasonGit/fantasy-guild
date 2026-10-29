@@ -25,7 +25,6 @@ export function rosterLimitForRank(rank) {
  * The art each upgrade track draws on the Guild Hall screen.
  *
  * ⚠️ Token art lives in per-family folders under `public/assets/tokens/`; `UpgradeSprites.test.js` checks each file exists.
- * `flag_radius` has no art of its own: it borrows the plain hero flag the mat draws.
  */
 export const UPGRADE_SPRITES = {
     roster_size: '/assets/tokens/upgrade/t_bunk_bed.png',
@@ -33,7 +32,6 @@ export const UPGRADE_SPRITES = {
     bank_tabs: '/assets/tokens/chest/t_chest_addy.png',
     guild_hall: '/assets/tokens/upgrade/t_guildhall.png',
     wishing_well: '/assets/tokens/upgrade/t_well_wishing.png',
-    flag_radius: '/assets/ui/u_flag_base.png',
     notice_board: '/assets/ui/u_quest_board.png',
     cartography_slots: '/assets/tokens/map/t_map_base.png',
     token_cap: '/assets/tokens/map/t_map_guild.png'
@@ -205,21 +203,6 @@ export const GUILD_UPGRADES = [
         statLabel: rank => rank === 1 ? '1 hero' : `${rank} heroes`,
         nextStatLabel: rank => `${rank + 1} heroes`,
         sprite: UPGRADE_SPRITES.roster_size
-    },
-    {
-        id: 'flag_radius',
-        tag: 'above',
-        constellation: 'compass',
-        name: 'Scouting Flags',
-        description: 'Increases the radius heroes look for work from their flags.',
-        // Between Bunk Beds and Bank Slots: either one bought opens it.
-        node: { x: -0.55, y: -0.55 },
-        links: ['roster_size', 'bank_slots'],
-        maxRank: 5,
-        prices: placeholderPrices(5),
-        statLabel: rank => `+${rank * 40}u reach`,
-        nextStatLabel: rank => `+${(rank + 1) * 40}u reach`,
-        sprite: UPGRADE_SPRITES.flag_radius
     },
     {
         id: 'wishing_well',

@@ -44,6 +44,8 @@ describe('Guild Hall upgrade web', () => {
         }
         expect(getUpgradeDef('token_bank_slots')).toBeNull();
         expect(getUpgradeDef('token_bank_tabs')).toBeNull();
+        // Scouting Flags retired with the area flags (brief 260 O2): camps carry their own reach.
+        expect(getUpgradeDef('flag_radius')).toBeNull();
     });
 
     it('keeps no two nodes on the same spot, nor on the Hall', () => {
@@ -53,7 +55,7 @@ describe('Guild Hall upgrade web', () => {
     });
 
     it('counts a link from both ends and draws each line once', () => {
-        expect(getUpgradeLinks('bank_slots')).toEqual(expect.arrayContaining([HALL_NODE, 'bank_tabs', 'flag_radius']));
+        expect(getUpgradeLinks('bank_slots')).toEqual(expect.arrayContaining([HALL_NODE, 'bank_tabs']));
         expect(getUpgradeLinks('bank_tabs')).toEqual(['bank_slots']);
         const keys = getUpgradeWebLinks().map(l => [l.from, l.to].sort().join('|'));
         expect(new Set(keys).size).toBe(keys.length);
@@ -62,8 +64,8 @@ describe('Guild Hall upgrade web', () => {
 
     // Starting reachability is what the 7x7 grid gave before B9, plus the
     // Atlas's two tracks (Cartography Table, Token Cap), joined to the Hall:
-    // the tiles beside the Hall open, Bank Tabs (beyond Bank Slots) and
-    // Scouting Flags (between Bunk Beds and Bank Slots) shut.
+    // the tiles beside the Hall open, Bank Tabs (beyond Bank Slots) shut.
+    // Scouting Flags, the other shut one, is retired (brief 260 O2).
     it('matches the old grid: the same upgrades open and shut on a new game', () => {
         const open = GUILD_UPGRADES.filter(d => isUpgradeAccessible(d.id, {})).map(d => d.id).sort();
         expect(open).toEqual(['bank_slots', 'cartography_slots', 'notice_board', 'roster_size', 'token_cap', 'wishing_well']);
@@ -73,20 +75,15 @@ describe('Guild Hall upgrade web', () => {
         expect(isUpgradeAccessible('bank_tabs', {})).toBe(false);
         expect(isUpgradeAccessible('bank_tabs', { bank_slots: 1 })).toBe(true);
 
-        // Scouting Flags is linked to two nodes: either one opens it.
-        expect(isUpgradeAccessible('flag_radius', {})).toBe(false);
-        expect(isUpgradeAccessible('flag_radius', { roster_size: 1 })).toBe(true);
-        expect(isUpgradeAccessible('flag_radius', { bank_slots: 1 })).toBe(true);
         // A bought node that is NOT linked does not.
-        expect(isUpgradeAccessible('flag_radius', { notice_board: 3, wishing_well: 1 })).toBe(false);
+        expect(isUpgradeAccessible('bank_tabs', { notice_board: 3, wishing_well: 1, roster_size: 2 })).toBe(false);
     });
 
     it('matches the old grid after every single first purchase', () => {
-        // The old rule, per tile: bank_tabs needed bank_slots; flag_radius
-        // needed bank_slots or roster_size. Nothing else was ever shut.
+        // The old rule, per tile: bank_tabs needed bank_slots. Nothing else was ever shut (Scouting
+        // Flags, which needed bank_slots or roster_size, is retired).
         const oldOpen = (id, ranks) => {
             if (id === 'bank_tabs') return (ranks.bank_slots || 0) >= 1;
-            if (id === 'flag_radius') return (ranks.bank_slots || 0) >= 1 || (ranks.roster_size || 0) >= 1;
             return true;
         };
         for (const bought of GUILD_UPGRADES) {
@@ -128,7 +125,7 @@ describe('Guild Hall upgrade web', () => {
         expect(GameState.state.progress.guildUpgrades).toEqual({ bank_slots: 1 });
         // A save written before B9 carries the same shape and opens the same way.
         GameState.state.progress.guildUpgrades = { roster_size: 2, bank_slots: 1, bank_tabs: 3 };
-        expect(GuildUpgradeManager.isAccessible('flag_radius')).toBe(true);
+        expect(GuildUpgradeManager.isAccessible('bank_tabs')).toBe(true);
         expect(GuildUpgradeManager.getRank('bank_tabs')).toBe(3);
     });
 

@@ -57,7 +57,8 @@ describe('the Guild Hall upgrade web', () => {
             expect(stateOf(container, id), id).toBe('buyable');
         }
         expect(stateOf(container, 'bank_tabs')).toBe('locked');
-        expect(stateOf(container, 'flag_radius')).toBe('locked');
+        // Scouting Flags is retired (brief 260 O2): no star for it.
+        expect(container.querySelector('[data-hall-node="flag_radius"]')).toBeNull();
         expect([...container.querySelectorAll('[data-hall-link]')].every(l => l.getAttribute('data-link-lit') === 'false')).toBe(true);
     });
 
@@ -67,7 +68,6 @@ describe('the Guild Hall upgrade web', () => {
         expect(stateOf(container, 'bank_slots')).toBe('bought');
         expect(stateOf(container, 'notice_board')).toBe('maxed');
         expect(stateOf(container, 'bank_tabs')).toBe('buyable');     // Bank Slots opened it
-        expect(stateOf(container, 'flag_radius')).toBe('buyable');   // so did it here
         expect(stateOf(container, 'roster_size')).toBe('buyable');
 
         expect(litOf(container, `bank_slots:${HALL_NODE}`)).toBe('true');

@@ -70,14 +70,15 @@ export const momentText = {
  * * their ordered Token is gone for good: "I need a job.";
  * * arrived at a spot they were sent to: nothing (idle by choice);
  * * a fight another hero holds, or their Token another hero works: "Waiting for Goblin.";
- * * a node that is resting or growing back: nothing. They wait silently and work it when it is
- * back; the pennant's hover and the roster say "Waiting for Copper Vein";
+ * * a node that is resting or growing back, or an enemy camp's next spawn: nothing. They wait
+ * silently and work it when it is back; the pennant's hover and the roster say "Waiting for Copper
+ * Vein" ("Waiting for Goblin");
  * * otherwise: "No work in range."
  */
 export function idleMomentOf(waiting, name = null, { order = null, needsJob = false } = {}) {
     if (needsJob) return { kind: 'needsJob', key: 'idle', text: momentText.needsJob() };
     if (order === 'spot') return null;
-    if (waiting?.kind === 'node') return null;
+    if (waiting?.kind === 'node' || waiting?.kind === 'spawn') return null;
     if (waiting?.kind === 'fight' || waiting?.kind === 'busy') return { kind: 'waiting', key: 'idle', text: momentText.waiting(name) };
     return { kind: 'idle', key: 'idle', text: momentText.idle() };
 }

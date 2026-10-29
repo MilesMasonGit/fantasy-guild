@@ -78,6 +78,10 @@ export function deriveTokenType(def) {
     // has a cycle still files by the thing that makes it distinctive.
     if (def.spawner) return { type: 'spawner', why: 'it spawns other Tokens around it' };
 
+    // A camp hands the heroes sent to it the Tokens of its skill in its reach: it is worked through
+    // them, never itself, so no rung below describes it.
+    if (def.camp) return { type: 'camp', why: 'heroes sent to it work the Tokens of its skill in its reach' };
+
     if (outputs.some(o => o?.currency)) {
         return {
             type: 'market',

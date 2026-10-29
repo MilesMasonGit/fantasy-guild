@@ -8,8 +8,8 @@ import { stationSkillOf, stationKindOf, getProvidedTagsWithTiers } from '../effe
 import { neverWearsReason, NEVER_WEARS_WHY } from './wearRule.js';
 
 /**
- * The one checker for the eight Token Lifecycle blocks (`spawner`, `grows`,
- * `turns`, `foundation`, `shop`, `trickle` (Passive Production), `respawn`, `field`) and the recipe
+ * The one checker for the nine Token Lifecycle blocks (`spawner`, `grows`,
+ * `turns`, `foundation`, `shop`, `trickle` (Passive Production), `respawn`, `field`, `camp`) and the recipe
  * fields `foundationKinds`, `foundationMinTier` and `crop`, shared by the game's boot audit (`ContentAudit`) and the
  * CMS's Economy Audit (`connectivityAuditor`), so the two can never disagree.
  *
@@ -419,6 +419,27 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
                 }
                 if (def.spawner) {
                     warn('field', 'is a Field and a spawner; it grows its own crop and also spawns Tokens beside it (allowed, but likely a left-over spawner block).');
+                }
+            }
+        }
+
+        // ── camp: hands the heroes sent to it the Tokens of its skill in its reach (`Camps.js`) ──
+        if (def.camp !== undefined && def.camp !== null) {
+            const c = def.camp;
+            if (typeof c !== 'object' || Array.isArray(c)) {
+                err('camp', `camp is ${show(c)}; it must be a block.`);
+            } else {
+                if (!hasValue(c.skill) || !skillIds.has(c.skill)) {
+                    err('camp.skill', `camp skill is ${show(c.skill ?? 'blank')}, which is not a real skill; heroes sent to it would have nothing to work.`);
+                }
+                if (c.reach !== undefined && !(typeof c.reach === 'number' && Number.isFinite(c.reach) && c.reach > 0)) {
+                    err('camp.reach', `camp reach is ${show(c.reach)}; it must be a number of mat units above 0.`);
+                }
+                if (def.spawner) {
+                    warn('camp', 'is a camp and a spawner; a hero sent to it works the Tokens of its skill, never what it spawns (allowed, but likely a left-over spawner block).');
+                }
+                if (def.config?.skill) {
+                    warn('camp', 'is a camp with a work cycle of its own; no hero works a camp itself, only the Tokens in its reach (allowed, but the cycle does nothing).');
                 }
             }
         }

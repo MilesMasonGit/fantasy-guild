@@ -160,6 +160,20 @@ describe('A save from before the Vault went still loads (Token Lifecycle 9.3)', 
         expect(migrated.progress.guildUpgrades).toEqual({ roster_size: 2, bank_slots: 1 });
     });
 
+    it('⭐ drops the retired Scouting Flags ranks and its radius bonus silently, and keeps the rest (brief 260 O2)', async () => {
+        const data = oldSave();
+        data.state.progress.guildUpgrades = { roster_size: 2, flag_radius: 3, bank_slots: 1 };
+        data.state.progress.flagRadiusBonus = 120;
+        const migrated = migrateState(data.state, data.version);
+        expect(migrated.progress.guildUpgrades).toEqual({ roster_size: 2, bank_slots: 1 });
+        expect(migrated.progress).not.toHaveProperty('flagRadiusBonus');
+        expect(validateSaveData({ version: GAME_VERSION, state: migrated }).errors).toEqual([]);
+        // And loaded, nothing brings it back.
+        await GameState.initFromSave(migrated);
+        expect(GameState.state.progress.guildUpgrades).not.toHaveProperty('flag_radius');
+        expect(GameState.state.progress).not.toHaveProperty('flagRadiusBonus');
+    });
+
     it('does not mutate the save handed to it', () => {
         const data = oldSave();
         const before = JSON.stringify(data.state);

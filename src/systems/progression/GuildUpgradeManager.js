@@ -144,7 +144,6 @@ export const GuildUpgradeManager = {
             // One definition, in `guildUpgrades.js`; `HeroLifecycle` falls back to
             // the same function when a save has no rosterLimit written yet.
             state.progress.rosterLimit = rosterLimitForRank(ranks.roster_size);
-            state.progress.flagRadiusBonus = (ranks.flag_radius || 0) * 40;
         }
 
         EventBus.publish(ENGINE_EVENTS.INVENTORY_UPDATED);

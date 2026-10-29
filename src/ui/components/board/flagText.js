@@ -33,12 +33,15 @@ function heroName(heroId) {
 }
 
 /**
- * The type of what `heroId` is waiting for (`Flags.waitingFor`), or null: a busy enemy (every
- * fight is one-on-one) or a resting node in reach that they work the moment it is back.
+ * The type of what `heroId` is waiting for (`Flags.waitingOf`), or null: a busy enemy (every
+ * fight is one-on-one), a resting node in reach that they work the moment it is back, or the next
+ * enemy an enemy camp they were sent to spawns.
  */
 export function waitingTypeOf(heroId) {
-    const id = Flags.waitingFor(heroId);
-    return id ? BoardState.getTokenById(id)?.typeId ?? null : null;
+    const waiting = Flags.waitingOf(heroId);
+    // At an enemy camp with nothing standing: the next spawn, named by what it spawns.
+    if (waiting?.typeId) return waiting.typeId;
+    return waiting?.instanceId ? BoardState.getTokenById(waiting.instanceId)?.typeId ?? null : null;
 }
 
 /** The skip hint key for a skip: `claimed` reads as a fight when the Token is an enemy. */
@@ -116,8 +119,8 @@ export function tokenSkipLines(instanceId) {
 
 /**
  * A status line from `Flags.statusOf` (plus `waitingFor`, the type of what the hero waits for,
- * {@link waitingTypeOf}): Working: X · Walking to: X · Waiting for X · Idle here · Needs a job ·
- * At the Guild Hall.
+ * {@link waitingTypeOf}): Working: X · Walking to: X · Waiting for X · Nothing to work near X (a
+ * camp) · Idle here · Needs a job · At the Guild Hall.
  */
 export function dockStatusLine(status) {
     const token = (typeId) => tokenName(typeId) || 'a Token';
@@ -127,6 +130,7 @@ export function dockStatusLine(status) {
         case 'idle':
             if (status.needsJob) return t('orders.needsJob');
             if (status.waitingFor) return t('orders.waitingFor', { token: token(status.waitingFor) });
+            if (status.campId) return t('orders.campIdle', { camp: token(BoardState.getTokenById(status.campId)?.typeId) });
             return status.order === 'spot' ? t('orders.idleHere') : t('orders.idle');
         case 'returning': return status.limping ? t('orders.limpingHome') : t('orders.headingHome');
         default: return t('orders.atHall');

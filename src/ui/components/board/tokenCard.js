@@ -6,7 +6,8 @@ import { getItem, getAllItems } from '../../../config/registries/itemRegistry.js
 import { neededToolOf, toolNeedPhrase, toolItemFor } from '../../../config/registries/toolKinds.js';
 import { hasCatchPools, catchItemIds } from '../../../config/registries/catchPools.js';
 import { enemyProfileOf } from '../../../config/registries/enemyProfile.js';
-import { turnTiming, fieldOf, cropTermsOf } from '../../../config/registries/tokenConstants.js';
+import { turnTiming, fieldOf, cropTermsOf, campOf } from '../../../config/registries/tokenConstants.js';
+import { getSkill } from '../../../config/registries/skillRegistry.js';
 import { stationSkillOf } from '../../../systems/effects/statements.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as BoardCombat from '../../../systems/board/BoardCombat.js';
@@ -320,6 +321,16 @@ export function cardLifecycle(instance, def, src) {
                 tip: `A ${percent(turn.chance)} chance every ${spoken(everyMs)} to turn into ${into}, and the same to turn back. Next roll in ${spoken(turn.inMs)}`
             });
         }
+    }
+
+    // A camp: what its heroes work and how far it reaches.
+    const camp = campOf(def);
+    if (camp) {
+        const skill = getSkill(camp.skill)?.name || camp.skill;
+        out.push({
+            icon: 'reach', text: `${skill} · ${Math.round(camp.reach)} u`,
+            tip: `A camp: heroes sent here work the ${skill} Tokens within ${Math.round(camp.reach)} u, one hero each`
+        });
     }
 
     const field = src.field?.(instance);

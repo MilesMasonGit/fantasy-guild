@@ -205,6 +205,7 @@
         "walkingTo": "Walking to: {token}",
         "walkingSpot": "Walking",
         "waitingFor": "Waiting for {token}",
+        "campIdle": "Nothing to work near {camp}",
         "idleHere": "Idle here",
         "needsJob": "Needs a job",
         "idle": "Idle",
