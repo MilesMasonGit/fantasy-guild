@@ -42,11 +42,13 @@ replace map items as the gate to new content, and reshape the Atlas
     story, not "a Volcano map";
   - **the world changes on the playmat** (owner): the world map itself is
     essentially static; life and change happen on the mat.
-- **Each next place shows its requirements** (hover the silhouette: "To
-  reach the Ashen Hills: 30 rations, 2 pickaxes, 20 planks for a bridge, a
-  hero with Combat 12"); sometimes a guardian at the pass. **The guild meets
-  them, the fog lifts and the place is settled.** Like a bundle board on the
-  map itself.
+- **Each next place shows its requirements** (hover the cell: "To reach the
+  Ashen Hills: 30 rations, 2 pickaxes, 20 planks, Mining 12"). **The guild
+  meets them, the fog lifts and the place is settled**; the fight on arrival
+  (below) is the last step. **No separate gate or pass Tokens** (owner,
+  2026-10-29): the requirement and the arrival fight are the gate.
+- **The world map is a representation**: cells with a few icons. The playmat
+  is where things happen (owner).
 - **Map items retire** (owner): places, not items, are the gate.
 - **One place, one Region**: settling a place writes its Region on the
   playmat (layout from its biome and character, as the Atlas does today);
@@ -64,7 +66,14 @@ replace map items as the gate to new content, and reshape the Atlas
   after the ritual (owner).
 - **Tiers by distance from the Hall** (owner): rings outward. The first ring is
   copper-and-oak country, the next iron-and-fir, and so on; requirements rise
-  with distance. The next ring's silhouettes show from the start.
+  with distance. **The cost of every cell rises with its ring distance, so
+  there are always affordable options** nearer in (owner).
+- **Connected geography and about 8 landmarks per run** (owner, 2026-10-29):
+  the world is generated as shapes (a mountain chain, a coast, a forest
+  belt), so neighbours make sense. **A landmark is a special cell that opens
+  its tier** (the Smoking Mountain): visible on the horizon from the start,
+  with a bigger requirement and a tougher arrival fight (a boss); settling it
+  is the tier's milestone and opens the next ring around it.
 - **Each ring guarantees its key materials** (owner): the second ring always
   offers iron and fir among its cells. Randomness shapes where and with what,
   never whether. The ledger plans rings as stages and checks the rules.
@@ -73,12 +82,30 @@ replace map items as the gate to new content, and reshape the Atlas
   item can find the region that gives it. Smaller extras (treasures, a rare
   node, modifiers like Rich Veins, a boss) can stay a surprise on arrival
   (planning agent's default).
-- **Paying the requirements settles it at once** (owner): no expedition timer,
-  no heroes away. The fog lifts and the region joins the world.
-- **A newly settled region may arrive occupied** (owner): it is populated with
-  enemies, its background and Tokens darkened; **the guild must defeat all the
-  enemies before the region unlocks** (its Tokens brighten and can be
-  worked). Combat joins gathering and crafting in expansion.
+- **Paying the requirements settles it at once, all at once** (owner): no
+  deposits over time, no expedition timer, no heroes away.
+- **A newly settled region arrives occupied** (owner): its playmat is
+  darkened, background and Tokens, with an encounter on it; **the guild must
+  defeat all the enemies before the region unlocks** (its Tokens brighten and
+  can be worked). Combat joins gathering and crafting in expansion.
+- **The encounter is small and fixed** (owner, 2026-10-29): a handful of
+  enemies (3–6) sized to the ring's level, sometimes a boss (always at a
+  landmark); they don't respawn. Clearing takes minutes to an hour, not a
+  siege. While the player is away, heroes sent at it keep fighting as long as
+  they win; a defeated hero waits at the Hall (hero orders).
+- **Places the guild has left are frozen**, as today (owner): only the active
+  Region runs.
+
+### Rules from the theorycraft (planning agent's defaults; owner may change)
+
+- **Key materials per frontier, not per ring**: whichever way the guild
+  expands, the next ring's key materials (iron, fir) are within reach of its
+  frontier, never only on the far side.
+- **No iron to reach iron**: a ring-N cell asks only for materials of earlier
+  rings, plus skill levels.
+- **Few trips to pay**: a cell's price can be gathered from one or two settled
+  places.
+- The ledger checks all three on each generated world's rules.
 
 ## Built pieces (owner: the recommended clean-up)
 
@@ -99,6 +126,10 @@ replace map items as the gate to new content, and reshape the Atlas
   priced (the simulator and the ledger's stage budgets).
 - How the ledger's stages map onto rings (Starter Camp = the Hall's cell,
   ring 1 = plane 1, ring 2 = plane 2).
-- How often a region arrives occupied, and with what (by ring; bosses?).
-- **More theorycrafting and alternatives** (owner, 2026-10-28): the owner
-  wants to explore the idea further before approving.
+- Which enemies make up each ring's encounters, and the landmark bosses
+  (content, through the ledger).
+- The tutorial's new ending (the first ring opening) and the Starter Camp as
+  the Hall's cell.
+- Theorycraft and alternatives were weighed 2026-10-28
+  ([research](research/world_map_theorycraft_2026-10-28.md)); the owner kept the
+  world map, without pass Tokens on the mat.
