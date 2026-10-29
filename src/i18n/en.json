@@ -192,6 +192,7 @@
     },
     "orders": {
         "needs": "Needs {what}",
+        "levelLow": "{skill} level too low (needs {level})",
         "nothing": "Nothing to work here",
         "disallowed": "Heroes may not work this",
         "healing": "{hero} is healing: {time}",

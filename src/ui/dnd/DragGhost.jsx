@@ -39,7 +39,7 @@ export const DragGhost = ({ payload, bold }) => {
             return isGuildHallPayload(payload)
                 ? <GuildHallGhost payload={payload} bold={bold} />
                 : <CarriedToken payload={payload} bold={bold} offBoard={false} />;
-        case DRAG_KIND.HERO: return <div style={NOT_DIMMED} className="transition-opacity duration-150"><HeroGhost payload={payload} bold={bold} /></div>;
+        case DRAG_KIND.HERO: return <div data-order-ghost={payload.heroId || ''} style={NOT_DIMMED} className="transition-opacity duration-150"><HeroGhost payload={payload} bold={bold} /></div>;
         case DRAG_KIND.MAP:
         case DRAG_KIND.ITEM: return <div style={NOT_DIMMED} className="transition-opacity duration-150"><ItemGhost payload={payload} bold={bold} /></div>;
         case DRAG_KIND.FLAG: return <FlagGhost payload={payload} bold={bold} />;
@@ -84,13 +84,14 @@ const CarriedToken = ({ payload, bold, offBoard }) => (
  * A flag drag moves only the flag, and so does dragging a hero on the board.
  * ⚠️ The ghost's box is centred on the pointer (`pickupFlight.js`), and the drop lands on the
  * pointer: the flag is shifted inside its box so its pole foot is the box's middle, where it
- * will stand.
+ * will stand. Over a Token the hero can work, `OrderDragLine` moves the box (`data-order-ghost`)
+ * onto the Token's centre, straight on the element, every frame.
  */
 export const FlagGhost = ({ payload }) => {
     const size = MARKER_ART_PX * boardArtSteps(liveBoardFit());
     const shift = { x: (0.5 - MARKER_FOOT.x) * size, y: (0.5 - MARKER_FOOT.y) * size };
     return (
-        <div data-flag-ghost={payload?.heroId || ''} className="relative" style={{ width: size, height: size }}>
+        <div data-flag-ghost={payload?.heroId || ''} data-order-ghost={payload?.heroId || ''} className="relative" style={{ width: size, height: size }}>
             <FlagMark size={size} colour={flagColourOf(payload?.heroId)} style={{ position: 'absolute', left: shift.x, top: shift.y }} />
         </div>
     );

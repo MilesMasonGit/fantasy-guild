@@ -190,7 +190,7 @@ describe('a drop on a Token the hero cannot work is refused (hero orders, brief 
         dropFlag('h1', P(760, 600));
         const res = dropFlag('h1', P(610, 605));
         expect(res).toMatchObject({ success: false, instanceId: gated.id });
-        expect(res.reason).toMatch(/^Needs Mining \d+\/99$/);
+        expect(res.reason).toMatch(/^Mining level too low \(needs \d+\)$/);
         expect(Flags.pinnedIdOf('h1')).toBe(other.id);
         expect(worked('h1')).toBe(other.id);
     });

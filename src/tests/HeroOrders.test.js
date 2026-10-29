@@ -143,7 +143,7 @@ describe('⭐ a drop on a Token: they work only it', () => {
         const noTool = Orders.orderAt(h.id, { x: vein.x, y: vein.y });
         expect(noTool).toMatchObject({ success: false, reason: 'Needs Pickaxe', instanceId: vein.id });
         const level = Orders.orderAt(h.id, { x: deep.x, y: deep.y });
-        expect(level).toMatchObject({ success: false, reason: 'Needs Forestry 60/99', instanceId: deep.id });
+        expect(level).toMatchObject({ success: false, reason: 'Forestry level too low (needs 60)', instanceId: deep.id });
         expect(Flags.pinnedIdOf(h.id)).toBe(tree.id);
         expect(Orders.canOrderOnto(h.id, vein)).toBe(false);
         expect(Orders.canOrderOnto(h.id, tree)).toBe(true);
@@ -154,6 +154,48 @@ describe('⭐ a drop on a Token: they work only it', () => {
         const forest = fixtures.placeAt('bench_forest', 400, 300);
         expect(Orders.orderAt(h.id, { x: forest.x, y: forest.y })).toMatchObject({ success: false, reason: 'Nothing to work here' });
         expect(BoardState.flagOf(h.id)).toBe(null);
+    });
+});
+
+describe('⭐ aimed while carried: the flag snaps onto a Token they can work, else the drop’s reason', () => {
+    it('a Token they can work snaps; a vein without a pickaxe and a tree above their level say why, word for word as the drop', () => {
+        const [h] = newBoard();
+        const tree = fixtures.placeAt('fixture_producer', 400, 300);
+        const vein = fixtures.placeAt('ho_vein', 700, 300);
+        const deep = fixtures.placeAt('ho_deep', 1000, 300);
+        expect(Orders.aimAt(h.id, tree)).toEqual({ snap: true, reason: null });
+        expect(Orders.aimAt(h.id, vein)).toEqual({ snap: false, reason: 'Needs Pickaxe' });
+        expect(Orders.aimAt(h.id, deep)).toEqual({ snap: false, reason: 'Forestry level too low (needs 60)' });
+        // The drop says the same words, and still refuses.
+        for (const t of [vein, deep]) {
+            const drop = Orders.orderAt(h.id, { x: t.x, y: t.y });
+            expect(drop).toMatchObject({ success: false, reason: Orders.aimAt(h.id, t).reason, instanceId: t.id });
+        }
+        expect(Flags.pinnedIdOf(h.id)).toBe(null);
+        expect(Orders.orderAt(h.id, { x: tree.x, y: tree.y })).toMatchObject({ success: true, order: 'token', instanceId: tree.id });
+    });
+
+    it('snaps exactly where the green outline lights, and the Guild Hall (home, not work) neither snaps nor refuses', () => {
+        const [h] = newBoard();
+        const placed = [
+            fixtures.placeAt('fixture_producer', 400, 300),
+            fixtures.placeAt('ho_vein', 700, 300),
+            fixtures.placeAt('ho_deep', 1000, 300),
+            fixtures.placeAt('bench_forest', 400, 500)
+        ];
+        for (const t of placed) expect(Orders.aimAt(h.id, t).snap).toBe(Orders.canOrderOnto(h.id, t));
+        expect(Orders.aimAt(h.id, placed[3])).toEqual({ snap: false, reason: 'Nothing to work here' });
+        const hall = Flags.tokenAtPoint(HALL);
+        expect(Orders.aimAt(h.id, hall)).toEqual({ snap: false, reason: null });
+    });
+
+    it('a healing hero snaps nowhere and is told why', () => {
+        const [h] = newBoard();
+        const tree = fixtures.placeAt('fixture_producer', 400, 300);
+        HeroManager.setHeroStatus(h.id, 'wounded');
+        const aimed = Orders.aimAt(h.id, tree);
+        expect(aimed.snap).toBe(false);
+        expect(aimed.reason).toMatch(/is healing: \d+:\d\d/);
     });
 });
 

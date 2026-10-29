@@ -68,11 +68,32 @@ export function refusalText(heroId, instance, reason) {
         }
         case ALERT.ACCESS: {
             const level = workConfigOf(def, instance)?.skillRequired || 1;
-            return skill ? t('orders.needs', { what: `${skill} ${level}/99` }) : t('orders.nothing');
+            return skill ? t('orders.levelLow', { skill, level }) : t('orders.nothing');
         }
         case ALERT.UNSKILLED: return skill ? t('orders.needs', { what: skill }) : t('orders.nothing');
         default: return t('orders.nothing');
     }
+}
+
+/** "Ana is healing: 0:42", the refusal for a healing hero. */
+const healingText = (hero) => t('orders.healing', { hero: hero.name || 'This hero', time: clock(hero.woundedRemainingMs) });
+
+/**
+ * What a drop of `heroId` on `instance` would do, asked while they are carried over it: `snap` when
+ * the drop would give them the Token as their job (the flag snaps to its centre), else `reason`,
+ * the words the drop would refuse with (null for the Guild Hall, which takes them home). The same
+ * gates, in the same order, as {@link orderAt}.
+ * @returns {{ snap: boolean, reason: string|null }}
+ */
+export function aimAt(heroId, instance) {
+    if (!heroId || !instance) return { snap: false, reason: null };
+    const wounded = woundedHero(heroId);
+    if (wounded) return { snap: false, reason: healingText(wounded) };
+    if (isGuildHall(instance)) return { snap: false, reason: null };
+    const refusal = Flags.orderRefusal(heroId, instance);
+    if (!refusal) return { snap: true, reason: null };
+    const on = (refusal.on?.id && BoardState.getTokenById(refusal.on.id)) || instance;
+    return { snap: false, reason: refusalText(heroId, on, refusal.reason) };
 }
 
 /** Whether `heroId` could be ordered onto `instance` (the Tokens that light while they are carried). */
@@ -92,11 +113,7 @@ export function orderAt(heroId, point) {
     const target = Flags.tokenAtPoint(point);
     const wounded = woundedHero(heroId);
     if (wounded) {
-        return {
-            success: false,
-            reason: t('orders.healing', { hero: wounded.name || 'This hero', time: clock(wounded.woundedRemainingMs) }),
-            instanceId: target?.id ?? null
-        };
+        return { success: false, reason: healingText(wounded), instanceId: target?.id ?? null };
     }
     if (target && isGuildHall(target)) return sendHome(heroId);
     if (target) {

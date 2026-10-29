@@ -66,6 +66,20 @@ gi-slot-label {
     }
 }
 
+/* Why a carried hero cannot work the Token under the pointer: up at once, held while it is there. */
+.order-reason-bubble {
+    animation: order-reason-pop 120ms steps(2, end);
+}
+
+@keyframes order-reason-pop {
+    0% { transform: translateY(4px); }
+    100% { transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .order-reason-bubble { animation: none; }
+}
+
 /* The Token Summary lights every Token of the hovered type. */
 [data-summary-highlight="true"] {
     filter: drop-shadow(0 0 2px #fde047) drop-shadow(0 0 6px #fde047);

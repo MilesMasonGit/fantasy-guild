@@ -24,6 +24,26 @@ const GAP_PX = 6;
 
 let nextId = 1;
 
+/**
+ * The foot of a callout's tail over a Token (or a spot), in mat units: clear of the Token's art,
+ * and over its work plate or its fight when it wears one. `at` is `{ x, y, typeId, anchorId }`.
+ */
+export function calloutTopOf({ x, y, typeId, anchorId = null }, { fit, matH, u }) {
+    let top = y - (typeId ? artRadiusOf(typeId) : 0) - GAP_PX;
+    // A worked Token near the mat's foot wears its work plate over its head: say it above.
+    if (anchorId && BoardState.workerOf(anchorId)) {
+        const plateTop = platePlace({ x, y, typeId, fit, matH }).top;
+        if (plateTop < y) top = Math.min(top, plateTop - GAP_PX);
+        // An enemy in a fight: above its health number and its fight chip, never on them.
+        if (getTokenType(typeId)?.enemy) {
+            const art = tokenSizeFor(TOKEN_SURFACE.BOARD, typeId, boardScaleAt(fit));
+            const boxTop = y - Math.max(artRadiusOf(typeId) * 2, art) / 2;
+            top = clearOfFight(top, boxTop, u, speechTailDrop(u) + 2 * u);
+        }
+    }
+    return top;
+}
+
 const NO_SUBSCRIPTION = () => () => {};
 
 /**
@@ -146,19 +166,8 @@ export const CalloutLayer = memo(function CalloutLayer() {
             style={{ zIndex: MAT_Z.CALLOUT }}
         >
             {[...groups.entries()].map(([key, list]) => {
-                const { x: ownX, y, typeId, anchorId } = list[0];
-                let ownTop = y - (typeId ? artRadiusOf(typeId) : 0) - GAP_PX;
-                // A worked Token near the mat's foot wears its work plate over its head: say it above.
-                if (anchorId && BoardState.workerOf(anchorId)) {
-                    const plateTop = platePlace({ x: ownX, y, typeId, fit, matH: mat.h }).top;
-                    if (plateTop < y) ownTop = Math.min(ownTop, plateTop - GAP_PX);
-                    // An enemy in a fight: above its health number and its fight chip, never on them.
-                    if (getTokenType(typeId)?.enemy) {
-                        const art = tokenSizeFor(TOKEN_SURFACE.BOARD, typeId, boardScaleAt(fit));
-                        const boxTop = y - Math.max(artRadiusOf(typeId) * 2, art) / 2;
-                        ownTop = clearOfFight(ownTop, boxTop, u, speechTailDrop(u) + 2 * u);
-                    }
-                }
+                const { x: ownX, anchorId } = list[0];
+                const ownTop = calloutTopOf(list[0], { fit, matH: mat.h, u });
                 const { x, top } = columnPlace(
                     { x: ownX, top: ownTop },
                     anchorId ? heroColumnAt(anchorId) : null
