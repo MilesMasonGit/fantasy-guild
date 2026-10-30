@@ -13,8 +13,6 @@ import ItemEditor from '../../cms/src/components/editors/ItemEditor.jsx';
 import TokenEditor from '../../cms/src/components/editors/TokenEditor.jsx';
 import { enemyProfileOf } from '../config/registries/enemyProfile.js';
 import { weaponStyleOf, gearLevelRequirement } from '../config/registries/weaponStyles.js';
-import { KEYWORD, statementsWith } from '../systems/effects/statements.js';
-import { expandBearer } from '../systems/effects/effectLibrary.js';
 
 /**
  * ⭐ Gear and enemies in the CMS (brief 220, C2; classless heroes): a hand item that is not a tool is
@@ -314,11 +312,7 @@ describe('⭐ the kinds: none, one or two presets', () => {
         expect(written.enemy).toEqual({ level: 1, style: 'melee', kinds: ['brute', 'venomous'], dodge: 5 });
         expect(enemyProfileOf(written)).toMatchObject({ hit: 2, speed: 'slow', dodge: 5, kinds: ['brute', 'venomous'] });
         const before = shipped()['tokens.json'];
-        // ⚠️ A Token still carrying a retired Promotes rule re-describes itself on its next Sync (the
-        // rule now reads "… (retired)"), whatever this edit does: left out until the owner deletes it.
-        const effects = shipped()['effects.json'];
-        const retired = (t) => statementsWith(expandBearer(before[t], effects), KEYWORD.PROMOTES).length > 0;
-        for (const other of Object.keys(before).filter(t => t !== cow && !retired(t))) {
+        for (const other of Object.keys(before).filter(t => t !== cow)) {
             expect(JSON.stringify(files['tokens.json'][other]), other).toBe(JSON.stringify(before[other]));
         }
     });

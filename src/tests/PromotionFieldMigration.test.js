@@ -13,7 +13,7 @@ import { getTokenType } from '../config/registries/tokenRegistry.js';
 
 /**
  * ⭐ **The Academies become rules** (Promotes rule P2). Jobs are retired since (classless heroes):
- * the rule still reads, marked retired, so the author can find and delete it.
+ * the rule still reads as it did, does nothing, and the audits and the CMS say it is retired.
  */
 
 /** The job a bearer's (retired) Promotes rule names, or null. */
@@ -42,7 +42,7 @@ describe('converting one Token', () => {
         expect(effect.autoSyncId).toBe(true);
         const [statement] = statementsOf(effect);
         expect(statement).toMatchObject({ id: 'stm_promotes_wizard', keyword: KEYWORD.PROMOTES, payload: { jobId: 'wizard' } });
-        expect(renderStatement(statement)).toBe('Promotes the hero to wizard (retired).');
+        expect(renderStatement(statement)).toBe('Promotes the hero to Wizard.');
     });
 
     it('makes the Token a promotion Token that names its job, once expanded', () => {
@@ -127,7 +127,7 @@ describe('what it leaves alone', () => {
     it('still converts an unknown job, so it shows up instead of vanishing', () => {
         const { tokens, effects } = migratePromotionFields({ a: academy('a', 'not_a_job') });
         const effect = effects[tokens.a.effects[0].effectId];
-        expect(renderStatement(statementsOf(effect)[0])).toBe('Promotes the hero to not_a_job (retired).');
+        expect(renderStatement(statementsOf(effect)[0])).toBe('Promotes the hero to not_a_job.');
     });
 });
 
@@ -199,7 +199,7 @@ describe('the shipped data', () => {
             const job = jobOf(def);
             expect(job, id).toBeTruthy();
             expect(deriveTokenType(def).type, id).toBe('promotion');
-            expect(statementsOf(def).map((st) => renderStatement(st)), id).toEqual([`Promotes the hero to ${job} (retired).`]);
+            expect(statementsOf(def).map((st) => renderStatement(st)), id).toEqual([`Promotes the hero to ${job[0].toUpperCase()}${job.slice(1)}.`]);
             expect('promotion' in def, id).toBe(false);
         }
     });

@@ -412,6 +412,15 @@ export default function Statements({ token, item }) {
                 </p>
               );
             })()}
+            {/* A retired rule (Promotes, with jobs) still reads, so older content shows; it does nothing. Say so, on Tokens and items alike. */}
+            {(() => {
+              const retired = [...new Set((entry.statements || []).map((st) => getKeyword(st?.keyword)).filter((k) => k?.retired))];
+              return retired.length > 0 && (
+                <p data-retired-warning className="px-3 pt-2 text-[10px] leading-relaxed" style={{ color: 'var(--color-warning)' }}>
+                  {retired.map((k) => `${k.label}: ${k.blurb}`).join(' ')}
+                </p>
+              );
+            })()}
             {/* A food, drink or potion acts only through a moment and its dose: an always-on rule on one would be a free buff for as long as the Bank held one, so the game ignores it. Say so. */}
             {!token && isSpentCategory(item?.equipSlot) && (entry.statements || []).some(isAlwaysOn) && (
               <p data-always-on-warning className="px-3 pt-2 text-[10px] leading-relaxed" style={{ color: 'var(--color-warning)' }}>

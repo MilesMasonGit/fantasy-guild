@@ -58,9 +58,12 @@ describe('the job editor is gone', () => {
         expect(labels.some((l) => l.startsWith('Provides'))).toBe(true);
     });
 
-    it('an older Promotes rule still shows, marked retired', () => {
-        const statement = { ...makeStatement(KEYWORD.PROMOTES), payload: { jobId: 'knight' } };
-        const { container } = render(React.createElement(StatementList, { statements: [statement], onChange: () => {}, content: { tokens: {}, items: {}, effects: {} } }));
-        expect(container.textContent).toContain('Promotes the hero to knight (retired)');
+    it('a Token still carrying a Promotes rule shows it, and says it is retired and does nothing', () => {
+        const tokenId = store().addToken({ name: 'Old Academy' });
+        const effectId = store().addEffect({ name: 'Knight Training', statements: [{ ...makeStatement(KEYWORD.PROMOTES), payload: { jobId: 'knight' } }] });
+        store().addEffectRef('tokens', tokenId, effectId);
+        const { container } = render(React.createElement(Statements, { token: store().tokens[tokenId] }));
+        expect(container.textContent).toContain('Promotes the hero to Knight');
+        expect(container.querySelector('[data-retired-warning]').textContent).toMatch(/^Promotes: Retired: jobs are gone, so this does nothing/);
     });
 });

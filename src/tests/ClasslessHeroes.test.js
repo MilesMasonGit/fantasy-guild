@@ -315,9 +315,10 @@ describe('the audits name what K1 retired', () => {
 });
 
 describe('the Promotes rule is retired', () => {
-    it('stays readable so older content shows, and is marked retired', () => {
+    it('stays readable as it was (so a Sync rewrites no description), and is marked retired', () => {
         expect(getKeyword(KEYWORD.PROMOTES)).toMatchObject({ retired: true });
         expect(KEYWORDS.filter(k => k.retired).map(k => k.id)).toEqual([KEYWORD.PROMOTES]);
-        expect(renderStatement({ keyword: KEYWORD.PROMOTES, payload: { jobId: 'fighter' } })).toBe('Promotes the hero to fighter (retired).');
+        expect(renderStatement({ keyword: KEYWORD.PROMOTES, payload: { jobId: 'fighter' } })).toBe('Promotes the hero to Fighter.');
+        expect(renderStatement({ keyword: KEYWORD.PROMOTES, payload: { jobId: 'not_a_job' } })).toBe('Promotes the hero to not_a_job.');
     });
 });

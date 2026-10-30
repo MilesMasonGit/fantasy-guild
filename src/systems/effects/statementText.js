@@ -592,10 +592,13 @@ function bodySegments(statement, names) {
             return segs(d('Works as', K), ' a ', d(payload.skill ? (skill?.name || payload.skill) : '…', 'skill'), ' station', kind);
         }
 
-        // "Promotes the hero to fighter (retired)." Jobs are gone; older content keeps its words on
-        // screen so the author can find and delete it.
-        case KEYWORD.PROMOTES:
-            return segs(d('Promotes', K), ' the hero to ', payload.jobId || '…', ' (retired)');
+        // "Promotes the hero to Knight." Jobs are retired, so the rule does nothing: its words stay
+        // as they were (a Token's description is written from them, so a Sync changes nothing) and
+        // the audits and the CMS say it is retired. A former job id is one lowercase word.
+        case KEYWORD.PROMOTES: {
+            const job = payload.jobId || '…';
+            return segs(d('Promotes', K), ' the hero to ', /^[a-z]+$/.test(job) ? job[0].toUpperCase() + job.slice(1) : job);
+        }
 
         /**
          * ⚠️ Two wordings. The CMS editor passes no `tool` name and shows the tier as a number to
