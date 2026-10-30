@@ -37,6 +37,7 @@ import { StationsDevSection } from '../dev/StationsDevSection.jsx';
 import { WorkConsumablesDevSection } from '../dev/WorkConsumablesDevSection.jsx';
 import { FarmingDevSection } from '../dev/FarmingDevSection.jsx';
 import { OrdersDevSection } from '../dev/OrdersDevSection.jsx';
+import { ClasslessDevSection } from '../dev/ClasslessDevSection.jsx';
 import { CampsDevSection } from '../dev/CampsDevSection.jsx';
 import { StyleSheetPage } from '../dev/StyleSheetPage.jsx';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
@@ -305,6 +306,7 @@ export const TestDashboard = React.memo(() => {
                         {(import.meta.env.DEV || import.meta.env.MODE === 'perf') && <PerfDevSection />}
                         {import.meta.env.DEV && <MatTunerDevSection />}
                         {import.meta.env.DEV && <StarterCampDevSection />}
+                        {import.meta.env.DEV && <ClasslessDevSection />}
                         {import.meta.env.DEV && <OrdersDevSection />}
                         {import.meta.env.DEV && <CampsDevSection />}
                         {import.meta.env.DEV && <AtlasDevSection />}
