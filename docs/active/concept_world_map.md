@@ -133,6 +133,43 @@ balance (worries: lucky or unlucky worlds; skills progressing unevenly).*
 - Found by the study, for the ledger and content: fishing earns ~450 XP/h
   against ~1,100 for mining; most of today's maps are single-resource.
 
+## The six wedges (owner, 2026-10-29)
+
+**Design philosophy** (owner interview):
+
+- **A wedge groups origins: things only found in the wild.** What is made
+  from them (ingots, planks, dishes) is crafted anywhere and doesn't count.
+  The world map is a map of origins.
+- **An origin can have several sources**, and **a home wedge is an emphasis,
+  not the whole group** (owner): seeds come first from their wild plant
+  (a wild Peach Tree drops Peach Seeds), and also from other sources (fighting
+  a Farmer, bird nests while chopping, praying at a Nature altar). After the
+  first find, Farming and planting work anywhere (see "Building nodes
+  anywhere").
+- **Origin families** (owner): ores (gems a secondary output of Mining),
+  trees, crops, herbs, stone / clay / sand, magic materials. **Not origins**:
+  bait (fishing: **any fish in any water, decided by the bait**, so fish
+  species are not tied to places) and creatures (**spread by biome**, no
+  wedge of their own; their drops come wherever they live).
+- **A wedge's line suggests its look** (archetype); cells on a wedge's edge
+  blend with the neighbouring wedge, which is where mixed cells come from.
+
+**The wedges** (owner): six, one per hex direction, **equal widths** (6 cells
+each across the three inner rings: 1 + 2 + 3), tier rising outward.
+
+| Wedge | Origins | Look |
+|---|---|---|
+| **Ores** | metals copper outward to mythril and beyond, gems as a side output, **stone, clay and sand** (owner: Earth merged into Ores) | Highland, quarries, banks |
+| **Trees** | saplings of each tree species | Woodland |
+| **Crops** | all crop and fruit seeds, one wedge (owner) | Plains, orchards |
+| **Herbs** | Alchemy herbs | Wetland, meadow |
+| **Waters** | coasts, lakes, rivers: the most water (fishing at scale, since fishing needs water), water-side origins (reeds, shells) | Coast, lakeside |
+| **Arcane** | motes, crystals, essences (Magic, Enchanting, the Motes combat spends) | strange places: leylines, crystal outcrops, mote springs, altars |
+
+- **Arrangement** (owner): the order is **shuffled each run**, preferring
+  natural neighbours (Waters beside Herbs and Crops, Arcane anywhere), so
+  border cells mix sensibly.
+
 ## Inner rings strict, outer rings wild (owner, 2026-10-29)
 
 - **Rings 1–3 follow strict rules** (the kit, the specialty bag, the pity rule,
@@ -153,10 +190,8 @@ balance (worries: lucky or unlucky worlds; skills progressing unevenly).*
 
 ## Tiers across the 36 cells (owner, 2026-10-29)
 
-- **Wedges from the Hall, by item line** (owner): a wedge per material line,
-  e.g. **an ores wedge** (a player progressing through Mining and Smithing
-  wants its cells), **a wood wedge**, **a fish wedge**, and so on. Not by
-  skill as such: by item tier.
+- **Wedges from the Hall, by item line** (owner): a wedge per origin line
+  (settled below: **the six wedges**). Not by skill as such: by item tier.
 - **Tier rises outward within a wedge** (owner): ring 1 of each wedge holds its
   early tiers, ring 3 its late ones.
 - **Each cell holds several materials, mixed across the wedges** (owner): a
@@ -233,7 +268,7 @@ the player to **make nodes**.*
 ## Open
 
 - How a cell's requirements are priced (the simulator and the ledger's stage
-  budgets), and how many wedges and which item lines.
+  budgets); which tiers sit in which ring of each wedge.
 - How the ledger's stages map onto wedges and rings (Starter Camp = the
   Hall's cell).
 - Which enemies make up each cell's arrival encounter (content, through the

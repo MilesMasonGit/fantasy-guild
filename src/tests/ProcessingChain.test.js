@@ -61,7 +61,8 @@ describe('The Processing chain in shipped data (7.5)', () => {
         it('a Wood Foundation offers the wooden buildings: the Workbench, the Cooking Pot and the rest', () => {
             expect(poolNames('token_wood_foundation')).toEqual([
                 'Build Alchemy Table', 'Build Beehive', 'Build Brewery', 'Build Coal Mine', 'Build Composter',
-                'Build Cooking Pot', 'Build Copper Mine', 'Build Dock', 'Build Fir Workbench', 'Build Minecart',
+                'Build Cooking Pot', 'Build Copper Mine', 'Build Dock', 'Build Farmstead', 'Build Fir Workbench',
+                'Build Fishing Hut', 'Build Logging Camp', 'Build Minecart',
                 'Build Quarry', 'Build Tannery', 'Build Windmill', 'Build Workbench',
             ]);
         });
@@ -69,7 +70,7 @@ describe('The Processing chain in shipped data (7.5)', () => {
         it("a Stone Foundation offers the Furnace, the Copper Smithy, the Well, the Fighter's Academy and the iron stations (SP-62)", () => {
             expect(poolNames('token_stone_foundation')).toEqual([
                 'Build Copper Smithy', "Build Fighter's Academy", 'Build Furnace', 'Build Iron Furnace',
-                'Build Iron Smithy', 'Build Well',
+                'Build Iron Smithy', 'Build Mining Camp', 'Build Well',
             ]);
         });
 
