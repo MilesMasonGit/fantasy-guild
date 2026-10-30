@@ -43,8 +43,9 @@ in that order, one at a time.
   eye-check with the Bank: [file](eyecheck/2026-10-30_perks-bank.md). Its example
   pack is git-ignored in `k4/cms/incoming/2026-10-29-example-skill-perks.json`:
   copy it to `main`'s `cms/incoming/` after the merge, before removing `k4`.
-- **290 L3 checks A–C and the item page**: builder, `cms/ledger-l3` in `l1`.
-  CMS look.
+- **290 L3 checks A–C and the item page**: merged to `main` on the gate (CMS
+  only); the owner looks in the morning; three questions parked in STATUS.
+  `l1` can be removed.
 
 ## Waiting on the owner (morning review)
 
