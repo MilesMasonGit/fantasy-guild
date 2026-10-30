@@ -37,6 +37,8 @@ export default function LedgerItemPage({ entryKey, report, onOpen, onBack, onRef
   const uses = useMemo(() => usesOf(ledger, entryKey, index), [ledger, entryKey, index]);
   const tree = useMemo(() => (kind === 'item' && at && !at.planned ? ledger.treeOf(id) : null), [ledger, kind, id, at]);
   const findings = report.byKey.get(entryKey) || [];
+  // A pacing problem filed under a skill or a stage that names this entry among what waits on it.
+  const waitsOn = report.findings.filter((f) => f.key !== entryKey && f.group === 'D' && (f.related || []).includes(entryKey));
 
   if (!row) {
     return (
@@ -142,6 +144,14 @@ export default function LedgerItemPage({ entryKey, report, onOpen, onBack, onRef
           <div key={f.id} className="flex items-start gap-2 text-[11px]" data-finding={f.check}>
             <SeverityChip severity={f.severity} />
             <span style={{ color: 'var(--color-text-muted)', minWidth: 190 }}>{f.group}. {CHECKS[f.check]?.label}</span>
+            <span style={{ color: 'var(--color-text-secondary)' }}>{f.message}</span>
+          </div>
+        ))}
+        {waitsOn.length > 0 && <p className="text-[10px] text-gray-500 pt-1">It waits on these, filed under what holds it up:</p>}
+        {waitsOn.map((f) => (
+          <div key={f.id} className="flex items-start gap-2 text-[11px]" data-waits-on={f.check}>
+            <SeverityChip severity={f.severity} />
+            <span style={{ color: 'var(--color-text-muted)', minWidth: 190 }}>{f.name}: {CHECKS[f.check]?.label}</span>
             <span style={{ color: 'var(--color-text-secondary)' }}>{f.message}</span>
           </div>
         ))}

@@ -274,5 +274,13 @@ describe('the shipped content', () => {
         expect(mine.axes).toContain('DOUBLE_DROP');
         const without = pace.book.rateOf({ token: 'token_copper_ore_vein' }, { ...vein.setup, off: ['support:token_copper_mine'] });
         expect(without.items.item_copper_ore).toBeCloseTo(vein.rate.items.item_copper_ore / 1.25);
+
+        // Every skill's levels: Maxed never slower than Typical, Typical never slower than Bare.
+        for (const skill of pace.skills()) {
+            for (const row of pace.trackOf(skill).levels) {
+                expect([skill, row.level, row.hours.typical <= row.hours.bare + 1e-9]).toEqual([skill, row.level, true]);
+                expect([skill, row.level, row.hours.maxed <= row.hours.typical + 1e-9]).toEqual([skill, row.level, true]);
+            }
+        }
     });
 });

@@ -478,9 +478,12 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         }
         timed.sort((a, b) => b.hours - a.hours);
         const stage = settings.stages.find(s => s.tier === tier) || null;
+        // An item and the recipe that makes it share a name: the slowest of a name speaks for both.
+        const names = new Set();
+        const slowest = timed.filter(t => !names.has(nameOf(t.key)) && names.add(nameOf(t.key))).slice(0, 5);
         return {
             tier, entries: keys.length, budgetMinutes: stage?.budgetMinutes ?? null,
-            hours: timed.length ? timed[0].hours : 0, slowest: timed.slice(0, 5), untimed,
+            hours: timed.length ? timed[0].hours : 0, slowest, untimed,
             complete: timed.every(t => t.complete)
         };
     }

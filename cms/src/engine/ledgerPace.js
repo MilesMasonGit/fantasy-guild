@@ -109,7 +109,9 @@ export function choiceText(pace, ledger, chosen) {
   return chosen.map((c) => {
     const key = c.kind === BOOST_KIND.SUPPORT || c.kind === BOOST_KIND.CAMP ? tokenKey(c.id) : c.kind === BOOST_KIND.HALL ? null : itemKey(c.id);
     const name = key ? keyName(pace, ledger, key) : c.id.replace(':', ' rank ').replace('wishing_well', 'Wishing Well');
-    const why = Number.isFinite(c.payback) ? (c.payback > 0 ? ` (pays back in ${hoursText(c.payback)})` : ' (pays as it is drunk)') : '';
+    const why = !Number.isFinite(c.payback) ? ''
+      : c.kind === BOOST_KIND.CONSUMABLE ? ' (pays as it is drunk)'
+        : c.payback > 0 ? ` (pays back in ${hoursText(c.payback)})` : ' (free: already there)';
     return { kind: c.kind, name, why, factor: c.factor };
   });
 }

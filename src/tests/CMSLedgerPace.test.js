@@ -118,6 +118,8 @@ describe('the tab', { timeout: 20000 }, () => {
         expect([...view.container.querySelectorAll('[data-path-profile]')].map((r) => r.getAttribute('data-path-profile'))).toEqual(['bare', 'typical', 'maxed']);
         expect(view.container.querySelector('[data-path-profile="typical"] [data-path-hours]').textContent).toMatch(/^6 h/);
         expect(path.getByText(/waits for Construction 15/)).toBeTruthy();
+        // The Construction wall is filed under the skill; the page of what waits on it shows it too.
+        expect(view.container.querySelector('[data-waits-on="wall"]').textContent).toMatch(/Construction 1 → 15/);
     });
 
     it('lists the pacing problems and opens a skill\'s row on the Pace page', () => {
