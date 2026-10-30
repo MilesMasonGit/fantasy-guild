@@ -11,6 +11,7 @@ import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
 import { isWeapon, weaponStyleOf, meetsGearRequirements } from '../../config/registries/weaponStyles.js';
 import { getHeroCombatStyle } from '../../utils/CombatFormulas.js';
 import { isSpentCategory, isAlwaysOn } from '../core/consumableRule.js';
+import { earnedPerkRefs } from './HeroPerks.js';
 
 /**
  * A hero's equipped items are bearers, like a Token: the same grammar and effect
@@ -84,6 +85,9 @@ export function loadoutRefs(hero) {
  * through its moment and its dose (`consumableRule.js`): its standing rules would otherwise be a
  * free buff for as long as the Bank held one, never spent. Where gear and a potion share an
  * effect, the always-on rule counts at the gear's own scale, from the gear.
+ *
+ * The hero's milestone perks ride at the end ({@link perkStatements}), so every reader of what a
+ * hero carries (work, fights, moments, the combat numbers) reads them through this one door.
  */
 export function loadoutStatements(hero) {
     const out = [];
@@ -104,6 +108,29 @@ export function loadoutStatements(hero) {
         });
     }
 
+    const perks = perkStatements(hero);
+    return perks.length ? out.concat(perks) : out;
+}
+
+/**
+ * The statements a hero's milestone perks contribute, stamped `perk: true`.
+ *
+ * ⚠️ Kept apart from the items' merge: an item and a perk naming one effect each give their own
+ * statements (two Provides add up), so an item's cost, worn rule and dose behave exactly as before.
+ * A perk has nothing to spend: its rules are free whatever cost the effect carries, and it names
+ * no item (`sourceItemIds` empty), so no dose ever stands in for it.
+ */
+export function perkStatements(hero) {
+    const refs = earnedPerkRefs(hero);
+    if (!refs.length) return refs;
+    const out = [];
+    for (const ref of refs) {
+        const entry = EFFECTS[ref.effectId];
+        if (!entry) continue;                       // ContentAudit reports it by name
+        for (const statement of statementsFromEntry(entry, ref)) {
+            out.push({ ...statement, chargeDelta: 0, sourceItemIds: [], perk: true });
+        }
+    }
     return out;
 }
 

@@ -17,6 +17,9 @@ export const DatabaseManager = {
     // The Starter Camp a new game opens on. Absent until the CMS first syncs one: the glob is then
     // empty and the game opens on its built-in camp (`starterCampRegistry.js`).
     starterCampFilesSingle: import.meta.glob('/data/starterCamp.json', { eager: true }),
+
+    // Each skill's milestone perks. Absent until the CMS first syncs a perk table: no skill has any.
+    skillPerkFilesSingle: import.meta.glob('/data/skillPerks.json', { eager: true }),
 };
 
 export default DatabaseManager;

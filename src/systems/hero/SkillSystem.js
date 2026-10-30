@@ -1,5 +1,6 @@
 import { EventBus } from '../core/EventBus.js';
 import * as HeroManager from './HeroManager.js';
+import * as EquipmentManager from '../equipment/EquipmentManager.js';
 import { levelFromXp } from '../../utils/XPCurve.js';
 import { getSkill } from '../../config/registries/skillRegistry.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
@@ -141,6 +142,10 @@ export function addXP(heroId, skillId, amount) {
         skill.level = newLevel;
 
         HeroManager.updateHeroFromSkills(hero);
+        // A level can change what the hero's carried rules lend in a fight: a perk reached, or gear
+        // whose level they now meet. Work and fight rules are read live; the combat numbers are
+        // registered, so they are registered again.
+        EquipmentManager.recalculateEquipmentModifiers(hero);
 
         for (let i = oldLevel + 1; i <= newLevel; i++) {
             EventBus.publish(ENGINE_EVENTS.HERO_LEVELED, {
