@@ -17,46 +17,46 @@ Shots (sent by phone too): `docs/active/research/classless_k4/`,
    10". A woodcutter one XP short fells an Oak. You should see the gold perk name
    ("Clean Felling") under the "10" over their head, and on the hero bar "10
    Forestry!" then "Perk: Clean Felling".
-   Verdict: ok / change: ___
+   Verdict: **ok** (owner 2026-10-30: "Checks look good")
 2. **The sheet.** Click the woodcutter in the hero bar. Hover the Forestry row:
    perks held and "Next perk". Click the row: each held perk with what it does
    ("×2 loot 5 % (Forestry)").
-   Verdict: ok / change: ___
+   Verdict: **ok** (owner 2026-10-30: "Checks look good")
 3. **An older hero.** QA → "Load a forester at Forestry 30" (saves the slot).
    Open QA Old Forester's sheet: both perks listed, no alert.
-   Verdict: ok / change: ___
+   Verdict: **ok** (owner 2026-10-30: "Checks look good")
 4. **The CMS.** In a CMS on this branch: Changes to review →
    `2026-10-29-example-skill-perks` (one perk per Starting skill at level 10:
    Steady Pick, Clean Felling, Patient Line, Even Heat, Nimble Fingers, Second
    Helping, Green Thumb, Steady Hand, Quick Builder), then the new Skill Perks
    page. Look only; accept it on `main` after the merge.
-   Verdict: ok / change: ___
+   Verdict: **ok** (owner 2026-10-30: "Checks look good")
 
 ## The Bank at scale (`feat/bank-b1`)
 
 5. **64 per tab.** QA panel → Bank tabs → "Bank Tabs rank 2", then "One of every
    item". Open the Bank: 3 tabs, the first two full at 64/64, the third with the
    rest. The count turns red on a full tab.
-   Verdict: ok / change: ___
+   Verdict: **ok** (owner 2026-10-30: "Checks look good")
 6. **Bank Slots gone.** Guild Hall: no Bank Slots star; Bank Tabs sits beside the
    Hall, buyable from a new game.
-   Verdict: ok / change: ___
+   Verdict: **ok** (owner 2026-10-30: "Checks look good")
 7. **A full tab refuses.** Drag an item onto a full tab: "That tab is full",
    nothing moves.
-   Verdict: ok / change: ___
+   Verdict: **ok** (owner 2026-10-30: "Checks look good")
 8. **Search.** Type "Weapon" (every weapon across tabs), "Hand" (hand items),
    "Copper Dagger" (the dagger).
-   Verdict: ok / change: ___
+   Verdict: **ok** (owner 2026-10-30: "Checks look good")
 9. **Sort.** The small Sort button beside Select → "This tab": the tab orders by
    type, tier, name; other tabs untouched. → "Entire Bank": every tab ordered,
    nothing changes tab.
-   Verdict: ok / change: ___
+   Verdict: **ok** (owner 2026-10-30: "Checks look good")
 10. **An old save.** QA → "Old save: Bank Slots ranks, every item in tab 1"
     (rewrites the slot): every item is there; the extra spill into tabs with
     room, what finds none stays (tab shown over 64 in red) until moved.
-    Verdict: ok / change: ___
+    Verdict: **ok** (owner 2026-10-30: "Checks look good")
 
-## Questions (recommendation first)
+## Questions (recommendation first) — **owner 2026-10-30: all recommended (A); f and g become T-268, T-269; b becomes T-270**
 
 a. A collapsed skill row with perks: (A) shown on hover and when opened, rows
    stay one line (built); (B) a small gold mark on the row; (C) perk names
