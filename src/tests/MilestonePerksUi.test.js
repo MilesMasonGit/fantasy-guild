@@ -82,7 +82,8 @@ describe('a perk named for the screen', () => {
         expect(perkTitle({ effectId: 'k4ui_felling', scale: 1 })).toBe('Clean Felling');
         expect(perkTitle({ effectId: 'k4ui_seeds', scale: 2 })).toBe('Seed Finder II');
         expect(perkTitle({ effectId: 'gone', scale: 1 })).toBe('gone');
-        expect(perkLines({ effectId: 'k4ui_seeds', scale: 2 }).join(' ')).toMatch(/20%/);
+        expect(perkLines({ effectId: 'k4ui_seeds', scale: 2 })).toEqual(['+20 % XP (Forestry)']);
+        expect(perkLines({ effectId: 'k4ui_felling', scale: 1 })).toEqual(['×2 loot 5 % (Forestry)']);
     });
 
     it('lists what a level holds and what comes next', () => {
@@ -162,7 +163,7 @@ describe('the hero sheet\'s skill row lists the perks held and the next one', ()
         const r = panel();
         fireEvent.click(r.container.querySelector('[data-skill-row="forestry"]'));
         const perks = r.container.querySelector('[data-skill-row="forestry"] [data-skill-perks]');
-        expect(perks.querySelector('[data-skill-perk="k4ui_felling"]').textContent).toMatch(/^10\/99 Clean Felling.*5%/);
+        expect(perks.querySelector('[data-skill-perk="k4ui_felling"]').textContent).toBe('10/99 Clean Felling×2 loot 5 % (Forestry)');
         expect(perks.querySelector('[data-skill-next-perk="k4ui_seeds"]').textContent).toBe('Next perk: 25/99 Seed Finder II');
         fireEvent.click(r.container.querySelector('[data-skill-row="mining"]'));
         expect(r.container.querySelector('[data-skill-row="mining"] [data-skill-perks]')).toBeNull();

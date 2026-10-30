@@ -6,11 +6,14 @@ import { perksEarnedAt, perksReached, nextPerksAfter } from '../../../systems/he
 import { effectTitle, statementsFromEntry } from '../../../systems/effects/effectLibrary.js';
 import { renderStatement } from '../../../systems/effects/statementText.js';
 import { toolNamer } from '../../../systems/effects/toolNames.js';
+import { KEYWORD } from '../../../systems/effects/statements.js';
+import { getSkill } from '../../../config/registries/skillRegistry.js';
+import { supportTag } from '../board/supportTags.js';
 
 /**
  * Milestone perks as the hero sheet, the hero bar's alerts and the level-up float show them: each
- * perk by its effect's title (with its numeral at a scale above 1) and the sentences its rules read
- * as, at its scale.
+ * perk by its effect's title (with its numeral at a scale above 1) and what its rules do, at its
+ * scale.
  */
 
 /** A perk's name: its effect's title, or the effect id while the effect is missing. */
@@ -19,7 +22,12 @@ export function perkTitle(row) {
     return effectTitle(entry?.name || row?.effectId || '', row?.scale ?? 1);
 }
 
-/** A perk's rules, one sentence each, at its scale. */
+/**
+ * A perk's rules, one line each, at its scale. A standing Provides reads as the mat's support tag
+ * with the skill it narrows to ("×2 loot 5 % (Forestry)"): the grammar's sentence for it speaks of
+ * the Tokens around a bearer, and a perk's bearer is the hero. Anything else reads as the grammar's
+ * sentence.
+ */
 export function perkLines(row) {
     const entry = EFFECTS[row?.effectId];
     if (!entry) return [];
@@ -28,7 +36,12 @@ export function perkLines(row) {
         item: id => getItem(id)?.name || id,
         tool: toolNamer(getAllTokenTypes())
     };
-    return statementsFromEntry(entry, row).map(statement => renderStatement(statement, names));
+    return statementsFromEntry(entry, row).map(statement => {
+        if (statement.keyword !== KEYWORD.PROVIDES || statement.when?.event) return renderStatement(statement, names);
+        const skill = getSkill(statement.payload?.category)?.name;
+        const tag = supportTag(statement.payload);
+        return skill ? `${tag} (${skill})` : tag;
+    });
 }
 
 const shown = (row) => ({ level: row.level, effectId: row.effectId, title: perkTitle(row) });
