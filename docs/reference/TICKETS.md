@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-273**
+**Next free number: T-274**
 
 ---
 
@@ -59,6 +59,7 @@ here.
 | T-270 | P3 | open | **Carried rules read as the hero's and name their skill** (today "Makes every nearby Token have a 5% chance of double loot" on items, perks and the CMS; owner 2026-10-30: a wording pass) | brief 270 K4 |
 | T-271 | P2 | open | **Ledger first reach skips one-off finds** (a 50 % Iron Chest counts as a sure way today) and shows them on the side; before L4 (owner 2026-10-30) | brief 290 L3 |
 | T-272 | P2 | open | **Ledger leak check reads a map at its Region's tier and lets the map item arrive one stage early** (tutorial maps, bounty maps, boss first-kill maps are given a stage early by design; 20 findings with the first fill; owner 2026-10-30) | brief 290 L4 |
+| T-273 | P2 | open | **A vein that refills at the end of a step announces its next cycle twice** (negative carry leaves the cycle clock at exactly 0): nothing is made twice, but a drink counts an extra cycle and a work potion is drunk twice per refill (Beer on copper 20 % faster than it should be). Traced in catch-up by the S0 spike; live play by reasoning. Changes bench work where veins refill | brief 290 S0 |
 | T-260 | P1 | built 79c6b01c; owner sets tiers | **Recruits may hold copper weapons** (owner 2026-10-27, reverses the C2 call that Recruits refuse weapons): no hero leaves Recruit in plane 1 (the Fighter needs Mining and Smithing 10), so crafted copper swords were useless | K4 |
 | T-176 | P2 | open | **The quest board** ([concept_quests_tutorial.md](../active/concept_quests_tutorial.md), "The quest board", owner 2026-10-20): one fixture board at the bottom-left of every Region's mat; click opens its card on the quest list; up to 3 collect/hunt bounties from reachable content, Bank have/need, Claim takes items and bursts materials as floating loot; tutorial step pinned first; gold outline and ready count at rest. Replaces the loose quest Tokens. Brief 170. | owner interview |
 | T-175 | P2 | owner | (Concept still a draft, owner 2026-10-14: not for the director yet.) **Collectors: the Guild Hall and warehouses** ([concept_collectors.md](../active/concept_collectors.md)): the Hall collects all loot in a small radius from the start, widened by a ranked Hall star; warehouses built on Foundations collect items with one tag (CMS Collects block: tag, radius, interval ~60 s), bigger radius on higher tiers, no upkeep; shared sweep clock, nearest collector wins, items fly in; Bank-full leaves loot and shows the yellow mark; reach ring on hover, drag, placing. Remove the auto-collect setting. Engineer. WORK CHANGED expected. Cost-log line. Eye-check. | concept_collectors.md |

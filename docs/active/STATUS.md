@@ -12,8 +12,10 @@ build green) · bench-queued · eye-check · merged.*
 | 270 K5: classless clean-up (GDD, glossary, tutorial wording, dormant promotion code) | builder | `feat/classless-k5` | **merged** 7dd76c98 on the gate (6628 tests, cycles 0, builds; engine: the retired ON_PROMOTE moment only, never spent). **Brief 270 complete.** Owner CMS: delete the two Academies, their Training effects and the Fighter's Academy recipe; the Shrimp Market's skill | Fri | Fri |
 | 290 L4: first-fill pack | builder writes, owner accepts | `cms/incoming/2026-10-30-ledger-first-fill.json` (copy in the scratchpad) | **in the owner's inbox**: 367 entries tiered (110 inferred, noted), 15 Planned stubs. Owner 2026-10-30: apples and bee products Starter Camp (director edited 8 entries), copper gear, Alchemy and Lavender stay planned for the fix pack (L8), the rest as recommended (T-272 map rule; one "later" tier; 9 endgame sites; owner Parks the legacy entries). First Sync should change only `cms/plan/plan.json` | Fri | |
 | T-268 + T-269: Bank sort by tool tier, search from the start of a word | builder-lite | `fix/bank-sort-search` | **merged** 15438bd5 on the gate (6630 tests, cycles 0, build) | Fri | Fri |
-| 300 E1+E2: the encyclopedia and collection log | builder | `feat/encyclopedia` (`k4`) | **eye-check** ([file](eyecheck/2026-10-30_encyclopedia.md)) and **bench-queued** after the 13:00 `main` check (engine `--compare` and `bench:draw --compare`). Director gate with `main` merged in: 6659 tests, cycles 0, builds; read the three engine hooks (one property write each into `state.collection`; the bench fingerprint does not cover it) | Fri | |
-| 290 S0: rate calculator spike | engineer | `spike/ledger-s0` (`l1`) | **building** | Fri | |
+| 300 E1+E2: the encyclopedia and collection log | builder | `feat/encyclopedia` (`k4`) | **eye-check** ([file](eyecheck/2026-10-30_encyclopedia.md)), owner looks later. Engine **same work**. Draw compare read ~2× slower everywhere, but a back-to-back control showed `main` equally slow (4× S2 93.5 vs 81.8 fps, bank 78.7 vs 86.9): machine load, not the branch | Fri | |
+| 290 S0: rate calculator spike | engineer | `spike/ledger-s0` | **merged** 122f03a8: work check **same** (13:40). Calculator within 1 % of the engine; `rates.js`, `bench/calibrate.mjs`; T-273 filed | Fri | Fri |
+| 280 V1: damage types (nine types, one per weapon, arrows as ammo, enemy resistances and weaknesses on the card) | engineer | `feat/combat-v1` (`c1`) | **building**; one look | Fri | |
+| 290 L5: the rate calculator in full (profiles, path time, checks D, calibration) | engineer | `cms/ledger-l5` (`l5`, on the S0 spike) | **building**; CMS look; owner sets the pace curve after | Fri | |
 | T-271 + T-272: ledger first reach skips one-off finds; maps may arrive a stage early | builder | `cms/ledger-reach-fixes` | **merged** on the gate (6637 tests, cycles 0, builds). With the first fill: 32 leaks left, none maps (copper gear 16, Alchemy 7, Workbench 4, Brewery 2, Herb Garden 2, Salmon 1: all for L8). Side effect: Meadow, Flower Meadow and Cherry Grove maps now read luck-only (bounties only, 0.4–1.6 %) | Fri | Fri |
 | 270 K1: classless heroes (no jobs or promotion, every skill from level 1, the weapon decides the style, gear level requirements, HP 10 + best combat skill, old saves keep levels) | engineer | `feat/classless-k1` | **merged** 7920232e with O3 (owner okayed, [record](../archive/eyecheck/2026-10-30_classless-ledger.md)). Gate on the merged result: 6581 tests, cycles 0, builds. Bench: only heroHash on every hero scenario, S8 = S8L, accepted under brief270-K1. Owner CMS to-do in the record | Thu | Fri |
 | 270 K4: milestone perks | engineer | `feat/classless-k4` | **merged** 468bf6ec (owner okayed, [record](../archive/eyecheck/2026-10-30_perks-bank.md), all A; T-270 wording pass). Gate on the merged result 6630 tests, cycles 0, builds; bench same work (01:12). Example pack copied to `cms/incoming/` | Thu | Fri |
@@ -383,7 +385,6 @@ branch), so it uses the kit and everyone fights; it merges after both.*
 
 - **Pennant flag (P2), parked for the eye-check:** (a) the carried pennant is centred on the cursor, so on drop it jumps ~23 px right, 31 px up (the old flag jumped more); hold its pole foot on the cursor instead? (b) the Edit Hero colour swatches now change nothing visible: keep until the flag rework, or hide? (c) the idle hero now stands over the right half of the smaller pennant: move the idle spot (engine movement; bench work check would change)?
 
-- **For the next proposal:** (1) Meadow, Flower Meadow and Cherry Grove maps come only from Hall bounties (0.4–1.6 %), so the ledger now reads them and everything on them luck-only: give them a sure source in the fix pack (recommended) or accept luck; (2) does a Token with many charges and no respawn (a 1000-use vein) count as a one-off find? (recommended: only below a small number, e.g. 10 uses).
 - **Ticket candidate (not urgent):** `npm run cms:restore` (`scripts/backport-game-to-cms.mjs`) reads `workspace.maps`, which no longer exists, and ignores the plan file.
 
 *Design questions the director cannot answer, as multiple choice, recommendation
@@ -393,6 +394,8 @@ None open. (Ruled 2026-10-19: Token outlines red for problems, gold for attentio
 T-186; the badges' soft shadows are settled inside T-013.)
 
 ## Bench queue (one at a time, weekdays 13:00–17:00 and 01:00–07:00, or when the owner says the PC is quiet)
+
+**Sat 01:00 (director):** `bench:draw -- --compare` on `main`, machine quiet. 30 Oct afternoon, `main` and the encyclopedia both drew ~2× slower than the 29 Oct 01:30 baseline (1× workP50 1.0 → 2.0 ms; 4× S2 136 → 94 fps) with agents running. If it is still 2× on a quiet machine, A/B `main` against a4a124be to find the commit.
 
 **Fri 01:05 (director, timers in this session):** (1) O3 `bench --compare` in `tb1` (expect same work; then merge); (2) K1 `bench --compare` in `k1` (expect heroHash only; accept under brief270-K1, then merge); (3) Bank `bench --compare` and `bench:drag --kinds=equip` in `b1` (expect same work); (4) perks `bench --compare` in `k4` (expect same work). Logs in the session scratchpad.
 
@@ -413,6 +416,8 @@ T-186; the badges' soft shadows are settled inside T-013.)
 8. ~~Terrain director: bench baseline retake~~ **Done:** engine 2026-10-21 13:00 (f19a2e30), draw 2026-10-22 01:00 (db3959c4).
 
 ## Summaries
+
+**Fri 2026-10-30, afternoon: combat v2 beside the full calculator.** Where we are: `main` 6c813f10, work check same (13:00). Waiting: the encyclopedia look (owner later; bench running), the S0 spike's work check, then its merge. Now: combat V1 (`c1`) and ledger L5 (`l5`). Owner ruled the parked ledger calls are not issues: XP floor, forest reach and luck-only Meadow maps stay as they are. Owner: the encyclopedia look; two packs in the CMS inbox.
 
 **Fri 2026-10-30, late morning: brief 270 done; encyclopedia beside the ledger fixes.** Where we are: `main` ec53a140 has briefs 260, 270 (all), 290 L1–L3, 310 with T-268/T-269. The ledger first-fill pack and the example perks pack wait in the owner's CMS inbox. Now: encyclopedia E1+E2 (`k4`), ledger T-271/T-272 (`l1`). Next: ledger S0 spike (rate calculator), combat v2. Bench: work check of `main` at 13:00.
 
