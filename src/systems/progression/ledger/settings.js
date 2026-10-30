@@ -37,14 +37,12 @@ const DEFAULT_STAGES = PLAN_TIERS
     .filter((tier) => tierBudgetMs(tier) !== null)
     .map((tier) => ({ tier, budgetMinutes: tierBudgetMs(tier) / MINUTE }));
 
-/**
- * Placeholder points until the owner sets their own: about level 10 inside the first hour (the
- * steps up to it come to about half an hour), a level a day at 60, a level every three days at 99.
- */
+/** The owner's points (2026-10-30): a few minutes a level at first, a day at 60, three days at 99. */
 const DEFAULT_PACE_CURVE = [
-    { level: 1, minutesPerLevel: 1 },
-    { level: 10, minutesPerLevel: 10 },
-    { level: 30, minutesPerLevel: 60 },
+    { level: 1, minutesPerLevel: 3 },
+    { level: 10, minutesPerLevel: 8 },
+    { level: 20, minutesPerLevel: 30 },
+    { level: 40, minutesPerLevel: 3 * 60 },
     { level: 60, minutesPerLevel: 24 * 60 },
     { level: 99, minutesPerLevel: 3 * 24 * 60 },
 ];

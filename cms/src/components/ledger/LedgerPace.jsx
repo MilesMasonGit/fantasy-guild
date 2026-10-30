@@ -16,7 +16,6 @@ const head = { ...cell, fontSize: 9, fontWeight: 900, textTransform: 'uppercase'
  * of where XP comes from (the best source at each stage, Bare against Typical and Maxed, and what
  * each kind of boost adds), the hours each stage's top level takes at each profile against the pace
  * curve, the Guild Hall's paybacks, and whether the calculator's calibration stands.
- * ⚠️ The timeline view (lanes per skill against the curve) is phase L6.
  */
 export default function LedgerPace({ report, onRefresh, onOpen, focusSkill }) {
   const { pace, ledger } = report;

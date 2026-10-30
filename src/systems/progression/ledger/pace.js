@@ -497,6 +497,48 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         return t.pool && t.pool.split('|')[1] ? `${base} (${nameOf(itemKey(t.pool.split('|')[1]))})` : base;
     };
 
+    const wallMemo = new Map();
+    /**
+     * A skill's walls: each run of levels (one stage) whose every level takes over `wallFactor` times
+     * the curve at Typical, `{ skill, from, to, tier, hours, curveTotal, worst, startHours, endHours,
+     * source, waiting }`: levels `from` to `to + 1`, from `startHours` to `endHours` into a new game,
+     * the best Typical source at its start, and the entries that ask a level inside it.
+     */
+    function wallsOf(skill) {
+        if (wallMemo.has(skill)) return wallMemo.get(skill);
+        const factor = settings.wallFactor;
+        const track = trackOf(skill);
+        const runs = [];
+        let run = null;
+        const close = () => {
+            if (!run) return;
+            run.waiting = track.asks.filter(a => a.level > run.from && a.level <= run.to + 1).map(a => a.key);
+            run.endHours = track.levels[run.to - 1].cumulative.typical;
+            runs.push(run);
+            run = null;
+        };
+        for (const row of track.levels) {
+            const hours = row.hours.typical;
+            const ratio = hours * 60 / row.curveMinutes;
+            if (ratio > factor) {
+                if (!run || row.tier !== run.tier) {
+                    close();
+                    const startHours = row.level > 1 ? track.levels[row.level - 2].cumulative.typical : 0;
+                    run = { skill, from: row.level, to: row.level, hours: 0, curveTotal: 0, worst: 0, curve: row.curveMinutes, tier: row.tier, source: row.source.typical, startHours };
+                }
+                run.to = row.level;
+                run.hours += hours;
+                run.curveTotal += row.curveMinutes;
+                if (ratio > run.worst) { run.worst = ratio; run.curve = row.curveMinutes; }
+            } else {
+                close();
+            }
+        }
+        close();
+        wallMemo.set(skill, runs);
+        return runs;
+    }
+
     function findings() {
         const out = [];
         const add = (check, key, message, extra = {}) => out.push({ check, key, message, ...extra });
@@ -505,10 +547,8 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         // Walls: a run of levels far slower at Typical than the curve.
         for (const skill of [...askedAt.keys()].sort()) {
             const track = trackOf(skill);
-            let run = null;
-            const close = () => {
-                if (!run) return;
-                const waiting = track.asks.filter(a => a.level > run.from && a.level <= run.to + 1).map(a => a.key);
+            for (const run of wallsOf(skill)) {
+                const waiting = run.waiting;
                 const src = run.source.work;
                 const why = src
                     ? `the best Typical source is ${workName(src)} (${Math.round(run.source.xp)} XP an hour${run.source.scale < 1 ? `, short of ${nameOf(itemKey(run.source.short))}` : ''})`
@@ -516,25 +556,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
                 add('wall', `skill:${skill}`, `${PACE_TEXT.skill(skill)} ${run.from} → ${run.to + 1} (${tierLabel(run.tier)}) takes ${PACE_TEXT.hours(run.hours)} at Typical against the curve's ${formatMinutes(run.curveTotal)} (${PACE_TEXT.times(run.hours * 60 / run.curveTotal)}; a level at worst ${PACE_TEXT.times(run.worst)}): ${why}.${waiting.length ? ` Waiting on it: ${listNames(waiting)}.` : ''}`, {
                     name: PACE_TEXT.skill(skill), related: waiting, severity: run.hours === Infinity ? 'warn' : undefined
                 });
-                run = null;
-            };
-            for (const row of track.levels) {
-                const hours = row.hours.typical;
-                const ratio = hours * 60 / row.curveMinutes;
-                if (ratio > factor) {
-                    if (!run || row.tier !== run.tier) {
-                        close();
-                        run = { from: row.level, to: row.level, hours: 0, curveTotal: 0, worst: 0, curve: row.curveMinutes, tier: row.tier, source: row.source.typical };
-                    }
-                    run.to = row.level;
-                    run.hours += hours;
-                    run.curveTotal += row.curveMinutes;
-                    if (ratio > run.worst) { run.worst = ratio; run.curve = row.curveMinutes; }
-                } else {
-                    close();
-                }
             }
-            close();
 
             // Bare must stay playable, Maxed must not trivialise it: at the top level each stage asks.
             const bound = settings.profileBounds;
@@ -767,6 +789,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         },
         supplyOf: (itemId, profile, cap = maxTier) => supplyOf(itemId, profile, cap),
         trackOf,
+        walls: (skill) => wallsOf(skill),
         skills: () => [...new Set([...askedAt.keys(), ...skillsOfWork.keys()])].sort(),
         pathOf: (key, profile) => ({ ...readyOf(key, profile), steps: criticalPath(key, profile) }),
         stageOf,
