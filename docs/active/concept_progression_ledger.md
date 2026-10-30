@@ -90,6 +90,22 @@ the owner's answers to its questions.*
 - **Build: a test build first, and tied into the CMS as early as possible**
   (owner): the ledger lives in a CMS tab from its first phase, and every later
   phase adds to that tab.
+- **Every rate source counts in the pace curve** (owner, 2026-10-29): the
+  player invests in Guild Hall upgrades, **buildings** (supports such as Mines,
+  Minecarts, a Well's Grow Time, Composters, camps) and **consumables** (drinks,
+  work potions, elixirs) to raise rates, as well as tools, gear and milestone
+  perks. The pretend player models all of them.
+- **The curve assumes a sensible investor** (owner): the pretend player buys an
+  upgrade or builds a support when it pays back in reasonable time. **Every
+  Guild Hall upgrade must "pay off" after an amount of time** (owner): the time
+  it saves outweighs the time spent gathering its price; the ledger checks
+  each rank's payback time, and the automatic balancing prices ranks to it.
+- **Consumables are used when they pay for themselves** (owner): only if the
+  time saved is worth more than making them, counting the guild's time spent
+  making them; their recipes are balanced against the rates they give.
+- **A per-skill breakdown of rate sources** (owner): for each skill, where its
+  rate comes from at each point (base, Hall boosts, buildings, consumables,
+  tools, perks), so a late game leaning too heavily on one source shows.
 - The virtual guild follows the game's real roster rules (planning agent's
   default).
 

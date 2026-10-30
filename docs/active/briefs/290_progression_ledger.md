@@ -35,6 +35,12 @@ code shared by game and CMS), `src/utils/XPCurve.js`.
 - **Pacing**: a **target time-per-level curve** the owner sets in a few
   points; a **wall** is a wait over twice the curve's expectation.
 - **Average luck only.**
+- **Every rate source counts** (owner, 2026-10-29): Hall upgrades, buildings
+  and supports, consumables, tools, gear and perks. The pretend player is **a
+  sensible investor**: it buys or builds when the payback is reasonable and
+  uses consumables only when they pay for themselves (counting the time to
+  make them). Each Hall rank's **payback time** is checked and priced to;
+  views show a **per-skill breakdown of rate sources**.
 - **Balancing is automatic** (L9): Recalculate sets the numbers itself to
   bring pacing onto the curve; no per-number owner approval.
 - The virtual guild follows the game's real roster rules; model the rules
@@ -50,7 +56,7 @@ code shared by game and CMS), `src/utils/XPCurve.js`.
 | L2 | **Reach and tree engine** (`src/systems/progression/ledger/`, pure, data passed in): every way a thing appears, earliest tier and path, the tree with effort from `runSim`, skills, depth, hubs. | engineer | On today's data: Iron Ingot's tree to Iron Ore and Coal with effort; Iron Ore "Volcano map only" |
 | L3 | **Checks A–C and the item page** in the Ledger tab (integrity; plan vs data; luck and access), with the layered tree diagram. | builder | The audit's known findings on today's data; CMS eye-check |
 | L4 | **First fill pack**: `plan.tier` on every Live entry, Planned stubs from the concept tables. | builder | The owner reviews and syncs |
-| L5 | **The pretend player** v1 (event-driven, goal-driven policy, average luck, target-player check-ins and overnight), `npm run bench:calibrate` writing calibration factors, the pace curve, **checks D** (pacing, walls against the curve). | engineer | Whole game under 1 s; plane 2's Construction 15 wall shows; calibration written; "calibration stale" works |
+| L5 | **The pretend player** v1 (event-driven, goal-driven policy, average luck, target-player check-ins and overnight), `npm run bench:calibrate` writing calibration factors, the pace curve, **checks D** (pacing, walls against the curve), the investor policy (Hall upgrades, supports, consumables by payback), a payback-time check per Hall rank, and the per-skill rate-source breakdown. | engineer | Whole game under 1 s; plane 2's Construction 15 wall shows; calibration written; "calibration stale" works |
 | L6 | **Timeline and hubs-and-problems views** (a lane per skill against the pace curve; walls labelled with their blocker; fan-out chart; problems list). | builder | CMS eye-check; click-through to the item page |
 | L7 | **Before-and-after and the agent gate**: ghost dots and moved entries per edit (Web Worker) and since last Sync; `changePackTool.mjs gate` blocking packs that add Block findings or move a stage beyond tolerance undeclared; inbox shows the gate and re-runs it on open. | builder | A sample pack shows its changes; a bad pack is blocked |
 | L8 | **Content fix pack**, through the gate (camp leaks to their plane; plane-2 buildings to about Construction 5–8 and more build XP; copper recipes for the sickle, rod and trap; uses for fish, bones, beeswax, grape seed; the Goblin Chief to about level 12). | builder | The audit rows clear; the timeline improves |
