@@ -1,4 +1,7 @@
 import { describe, it, expect } from 'vitest';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 import {
     buildWorld, computeReach, describePath, reachPath, ingredientTree, treeSummary, buildLedger,
@@ -12,6 +15,7 @@ import { ledgerWorkspace } from './fixtures/ledgerWorld.js';
  * tier and the path to every entry) and the ingredient tree (effort, skills, depth, origins).
  */
 
+const DATA = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../data');
 const ledger = () => buildLedger(ledgerWorkspace());
 const reachOf = (key) => ledger().reachOf(key);
 
@@ -154,6 +158,24 @@ describe('reach: luck, never and Planned', () => {
         const a = computeReach(buildWorld(ws));
         const b = computeReach(buildWorld(reversed));
         for (const [key, entry] of a) expect(b.get(key)?.tier).toBe(entry.tier);
+    });
+});
+
+describe('over the shipped content', () => {
+    const read = (file) => JSON.parse(fs.readFileSync(path.join(DATA, file), 'utf8'));
+
+    it('gives every item, Token and recipe an answer, and traces Iron Ingot to Iron Ore and Coal', () => {
+        const content = {
+            items: read('items.json'), tokens: read('tokens.json'), recipes: read('tokenRecipes.json'),
+            effects: read('effects.json'), starterCamp: read('starterCamp.json'),
+        };
+        const l = buildLedger(content);
+        for (const id of Object.keys(content.items)) expect(l.reach.has(itemKey(id))).toBe(true);
+        for (const id of Object.keys(content.tokens)) expect(l.reach.has(tokenKey(id))).toBe(true);
+        expect(l.reachOf(tokenKey('token_copper_ore_vein')).tier).toBe(0);
+        const ingot = l.treeOf('item_iron_ingot');
+        expect(ingot.origins.map((o) => o.id).sort()).toEqual(['item_coal', 'item_iron_ore']);
+        expect(ingot.effortMs).toBeGreaterThan(0);
     });
 });
 

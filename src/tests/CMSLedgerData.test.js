@@ -14,6 +14,8 @@ import {
     splitPlanned, rejoinPlanned, buildLedgerFile, mergeLedgerFile, LEDGER_FILE,
 } from '../../cms/src/engine/ledgerFile';
 import cmsFileApi from '../../cms/vite-plugin-cms-api.js';
+import { workspaceLedger } from '../../cms/src/engine/ledgerReport';
+import { ledgerWorkspace } from './fixtures/ledgerWorld.js';
 import {
     ledgerOf, isPlanned, withLedger, cleanLedger, tierLabel, tierBudgetMs, LEDGER_STATUSES,
 } from '../systems/atlas/ledger.js';
@@ -185,6 +187,26 @@ describe('the economy line never sees a Planned stub', () => {
         // A ledger block rides through the line untouched.
         expect(after.items.item_ore.ledger).toEqual({ status: 'live', tier: 1 });
         expect(syncFiles(balanced)[LEDGER_FILE].planned.tokens.token_mythril_vein).toEqual(workspace().tokens.token_mythril_vein);
+    });
+});
+
+describe('the engines over the workspace', () => {
+    it('prices a tree at the simulator’s rates, and still knows the stubs as Planned', () => {
+        const ws = ledgerWorkspace();
+        const smelt = ws.recipePools.smithing.find((r) => r.id === 'recipe_iron_ingot');
+        smelt.sim = { tempo: 'medium', purpose: 'iph' };
+        useEntityStore.getState().hydrate(ws);
+        const balanced = useEntityStore.getState().recalculateEconomy({});
+        const timed = balanced.sim.cycleTimes.get('recipe_iron_ingot');
+        expect(Number.isFinite(timed)).toBe(true);
+        expect(timed).not.toBe(18000);
+
+        const fromRecords = workspaceLedger(useEntityStore.getState());
+        const fromRun = workspaceLedger(useEntityStore.getState(), { sim: balanced });
+        expect(fromRecords.treeOf('item_iron_ingot').tree.source.cycleMs).toBe(timed);
+        expect(fromRun.treeOf('item_iron_ingot').effortMs).toBe(fromRecords.treeOf('item_iron_ingot').effortMs);
+        expect(fromRecords.reachOf('item:item_mythril_ore')).toMatchObject({ planned: true, tier: null });
+        expect(fromRecords.reachOf('item:item_iron_ore')).toMatchObject({ tier: 2 });
     });
 });
 

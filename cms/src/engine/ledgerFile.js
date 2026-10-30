@@ -86,7 +86,8 @@ export function rejoinPlanned(original = {}, live = {}) {
 /** A copy of a record without its ledger block, or the record itself when it has none. */
 function withoutLedger(def) {
     if (!isObject(def) || !('ledger' in def)) return def;
-    const { ledger: _ledger, ...rest } = def;
+    const rest = { ...def };
+    delete rest.ledger;
     return rest;
 }
 
