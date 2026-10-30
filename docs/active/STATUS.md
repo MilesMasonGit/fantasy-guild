@@ -10,7 +10,8 @@ build green) · bench-queued · eye-check · merged.*
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
 | 270 K1: classless heroes (no jobs or promotion, every skill from level 1, the weapon decides the style, gear level requirements, HP 10 + best combat skill, old saves keep levels) | engineer | `feat/classless-k1` (`k1`) | **building**. WORK CHANGED expected (accept under brief270-K1 if it matches the engineer's prediction). Eye-check | Thu | |
-| 290 L1: the ledger's data and engines (status and hand-set tier in the CMS, reach and tree engines) | engineer | `cms/ledger-l1` (`l1`) | **building** (CMS only; no eye-check until L2's item page) | Thu | |
+| 290 L1a: the plan in the CMS (status, `plan.tier`, note; Planned stubs kept out of `data/` in `cms/plan/plan.json`; Plan section in four editors) plus most of the rewritten brief's L2 (reach, tree and hubs engines) | engineer | `cms/ledger-l1` | **merged** 0c5c9202 on the gate (director: 6733 tests, cycles 0, build, CMS build; read the Sync-path diff; no game file uses the new modules, so no bench). Brief 290 was rewritten while it built (S0 spike first, the Ledger tab in L1) | Thu | Thu |
+| 290 L1b: the Ledger tab and settings (stages and budgets, tolerance, target player, pace curve) | builder | `cms/ledger-l1b` (`l1`) | **building**. CMS look with K1's batch | Thu | |
 
 ## Director, Hero orders (brief 260; owner 2026-10-28: merge Token bars, move on to the next brief)
 
@@ -372,6 +373,9 @@ branch), so it uses the kit and everyone fights; it merges after both.*
 - ~~Lemons and limes; Lavender in plane 1~~ **Answered 2026-10-27 (owner: A on both):** lemonade and limeade wait for a later plane's Lemon and Lime Trees (they stay in the test's exclusion list); Lavender Seed from a Bird Nest stays as a lucky early find in plane 1.
 
 - **Pennant flag (P2), parked for the eye-check:** (a) the carried pennant is centred on the cursor, so on drop it jumps ~23 px right, 31 px up (the old flag jumped more); hold its pole foot on the cursor instead? (b) the Edit Hero colour swatches now change nothing visible: keep until the flag rework, or hide? (c) the idle hero now stands over the right half of the smaller pennant: move the idle spot (engine movement; bench work check would change)?
+
+- **Ledger defaults (built with the L1a builder's recommendation; confirm or change):** (1) entries with no status read as **Live** (or: Draft until the first-fill pack sets them); (2) a map with no tier counts at the tier its item is first had (or: the tutorial's maps count as tier 1 by rule); (3) ingredient trees that go through an enemy drop stay marked incomplete until the pretend player (L5) can time fights (or: estimate fight time from enemy level now).
+- **Ticket candidate (not urgent):** `npm run cms:restore` (`scripts/backport-game-to-cms.mjs`) reads `workspace.maps`, which no longer exists, and ignores the plan file.
 
 *Design questions the director cannot answer, as multiple choice, recommendation
 first; asked with the next batch proposal and recorded where they belong.*
