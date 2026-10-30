@@ -176,7 +176,7 @@ describe('milestones and problems are banners', () => {
         GameState.heroes.push(heroWith('h1', 'Aela', 1));
         EventBus.publish(ENGINE_EVENTS.HERO_RECRUITED, { heroId: 'h1', name: 'Aela' });
         EventBus.publish(ENGINE_EVENTS.HERO_PROMOTED, { heroId: 'h1', heroName: 'Aela', toJobName: 'Knight' });
-        EventBus.publish(ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, { upgradeId: 'bank_slots', rank: 1 });
+        EventBus.publish(ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, { upgradeId: 'bank_tabs', rank: 1 });
         const all = Banners.getAll();
         expect(all.map(b => [b.kind, b.tone])).toEqual([
             ['upgrade', 'milestone'], ['promotion', 'milestone'], ['hero', 'milestone']

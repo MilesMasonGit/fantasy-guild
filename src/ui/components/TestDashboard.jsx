@@ -25,6 +25,7 @@ import { GuildHallDevSection } from '../dev/GuildHallDevSection.jsx';
 import { EncountersDevSection } from '../dev/EncountersDevSection.jsx';
 import { AnimationDevSection } from '../dev/AnimationDevSection.jsx';
 import { GearDevSection } from '../dev/GearDevSection.jsx';
+import { BankDevSection } from '../dev/BankDevSection.jsx';
 import { SuppliesDevSection } from '../dev/SuppliesDevSection.jsx';
 import { StatusesDevSection } from '../dev/StatusesDevSection.jsx';
 import { CombatScreenDevSection } from '../dev/CombatScreenDevSection.jsx';
@@ -339,6 +340,7 @@ export const TestDashboard = React.memo(() => {
                         {import.meta.env.DEV && <GuildHallDevSection />}
                         {import.meta.env.DEV && <EncountersDevSection />}
                         {import.meta.env.DEV && <GearDevSection />}
+                        {import.meta.env.DEV && <BankDevSection />}
                         {import.meta.env.DEV && <SuppliesDevSection />}
                         {import.meta.env.DEV && <StatusesDevSection />}
                         {import.meta.env.DEV && <CombatScreenDevSection />}

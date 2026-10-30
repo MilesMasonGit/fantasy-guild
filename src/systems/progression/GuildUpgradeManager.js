@@ -4,7 +4,7 @@ import { InventoryManager } from '../inventory/InventoryManager.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import {
     GUILD_UPGRADES, getUpgradeDef, getUpgradePrice, totalPrice, isUpgradeAccessible, getLockReason,
-    rosterLimitForRank
+    rosterLimitForRank, BANK_TAB_SLOTS, BANK_TAB_CAP
 } from '../../config/guildUpgrades.js';
 import { createHero } from '../hero/logic/HeroLifecycle.js';
 import { logger } from '../../utils/Logger.js';
@@ -136,9 +136,10 @@ export const GuildUpgradeManager = {
         const ranks = this.getRanks();
 
         if (state.inventory) {
-            state.inventory.maxTabs = 1 + (ranks.bank_tabs || 0);
-            state.inventory.maxSlots = 64 + (ranks.bank_slots || 0) * 32;
+            state.inventory.maxTabs = Math.min(BANK_TAB_CAP, 1 + (ranks.bank_tabs || 0));
+            state.inventory.maxSlots = state.inventory.maxTabs * BANK_TAB_SLOTS;
             this._ensureBankTabs(state.inventory);
+            InventoryManager.spillOverfullTabs();
         }
         if (state.progress) {
             // One definition, in `guildUpgrades.js`; `HeroLifecycle` falls back to

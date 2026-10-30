@@ -13,6 +13,10 @@ import {
     getUpgradeDef, getLockDetail, getLockReason, isUpgradeAccessible, LOCK_KIND, GUILD_UPGRADES
 } from '../config/guildUpgrades.js';
 import { selectGuildInspectSelection } from '../ui/guildInspectSelection.js';
+import { useOuterUpgrade } from './fixtures/outerUpgrade.js';
+
+// Every shipped upgrade joins the Hall, so the locked one is the test star beyond Bank Tabs.
+useOuterUpgrade();
 
 const closeButton = (container) =>
     Array.from(container.querySelectorAll('button'))
@@ -63,7 +67,6 @@ describe('guildUpgrades — lock reasons carry their kind', () => {
 
 describe('GuildUpgradeInspection', () => {
     const def = getUpgradeDef('roster_size');
-    const lockedId = GUILD_UPGRADES.find(d => !isUpgradeAccessible(d.id, {}))?.id;
 
     it('offers a way out of the panel', () => {
         // The X sits in the Inspect panel's header. This only proves it calls whatever `onClear`
@@ -79,6 +82,8 @@ describe('GuildUpgradeInspection', () => {
     });
 
     it('stays silent about the link lock — the web already shows it', () => {
+        const lockedId = GUILD_UPGRADES.find(d => !isUpgradeAccessible(d.id, {}))?.id;
+        expect(lockedId).toBeTruthy();
         const { container } = render(
             (React.createElement(GuildUpgradeInspection, {
                 upgradeDef: getUpgradeDef(lockedId)

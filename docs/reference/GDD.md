@@ -619,8 +619,12 @@ Fishing).
   An item's `value` is set by the CMS simulator for balancing; **the game never
   shows or spends it**.
 - **The Bank**: one slot per kind of item, stacks effectively unlimited.
-  **64 slots + 32 per Bank Slots rank; 1 tab + 1 per Bank Tabs rank.** When
-  there's no slot for a new kind, it stays on the mat as loot. *(Inventory)*
+  **Each tab holds 64 kinds; 1 tab + 1 per Bank Tabs rank (16 tabs = 1,024).**
+  A new kind goes to the tab it was last filed in, else the first tab with
+  room; when no tab has room, it stays on the mat as loot. Bank Slots retired
+  (brief 310): an old save's ranks are dropped and a tab holding more than 64
+  spills into tabs with room, the rest kept until moved. *(Inventory,
+  `bankTabs.js`)*
 - **Supply is automatic**: Tokens take inputs from the Bank, then from loot on
   the mat. A cycle is all-or-nothing; first come, first served.
 - **Recipes** (25, `data/tokenRecipes.json`): smithing 10 (copper → darkmetal
@@ -984,8 +988,7 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
 | Upgrade | Ranks | Effect |
 |---|---|---|
 | Bunk Beds | 8 | +1 hero per rank (rank 1 free) |
-| Bank Slots | 10 | +32 Bank slots per rank |
-| Bank Tabs | 15 | +1 Bank tab per rank |
+| Bank Tabs | 15 | +1 Bank tab (64 slots) per rank |
 | Scouting Flags | 5 | +40 u flag radius per rank |
 | Wishing Well | 10 | 10 × *rank* Water every 5 min as Passive Production, no hero needed (rank 1 free) |
 | Notice Board | 3 | +1 bounty quest cap per rank |

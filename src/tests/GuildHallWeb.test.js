@@ -15,6 +15,7 @@ import { GameState } from '../state/GameState.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
 import { GUILD_UPGRADES, HALL_NODE, getUpgradeDef, getUpgradeWebLinks } from '../config/guildUpgrades.js';
+import { useOuterUpgrade, OUTER_UPGRADE_ID as OUTER } from './fixtures/outerUpgrade.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     success: vi.fn(), warning: vi.fn(), error: vi.fn(), info: vi.fn(), notify: vi.fn()
@@ -26,6 +27,8 @@ const stateOf = (container, id) =>
     container.querySelector(`[data-hall-node="${id}"]`)?.getAttribute('data-node-state');
 const litOf = (container, key) =>
     container.querySelector(`[data-hall-link="${key}"]`)?.getAttribute('data-link-lit');
+
+useOuterUpgrade();
 
 beforeEach(() => {
     GameState.initNew();
@@ -53,31 +56,33 @@ describe('the Guild Hall upgrade web', () => {
 
     it('shows a new game: Hall-linked nodes buyable, the rest locked, nothing lit', () => {
         const { container } = renderWeb();
-        for (const id of ['roster_size', 'bank_slots', 'notice_board', 'wishing_well']) {
+        for (const id of ['roster_size', 'bank_tabs', 'notice_board', 'wishing_well']) {
             expect(stateOf(container, id), id).toBe('buyable');
         }
-        expect(stateOf(container, 'bank_tabs')).toBe('locked');
+        expect(stateOf(container, OUTER)).toBe('locked');
+        // Bank Slots is retired (brief 310): no star for it.
+        expect(container.querySelector('[data-hall-node="bank_slots"]')).toBeNull();
         // Scouting Flags is retired (brief 260 O2): no star for it.
         expect(container.querySelector('[data-hall-node="flag_radius"]')).toBeNull();
         expect([...container.querySelectorAll('[data-hall-link]')].every(l => l.getAttribute('data-link-lit') === 'false')).toBe(true);
     });
 
     it('marks bought, maxed and newly opened nodes, and lights the bought paths', () => {
-        GameState.state.progress.guildUpgrades = { bank_slots: 2, notice_board: 3 };
+        GameState.state.progress.guildUpgrades = { bank_tabs: 2, notice_board: 3 };
         const { container } = renderWeb();
-        expect(stateOf(container, 'bank_slots')).toBe('bought');
+        expect(stateOf(container, 'bank_tabs')).toBe('bought');
         expect(stateOf(container, 'notice_board')).toBe('maxed');
-        expect(stateOf(container, 'bank_tabs')).toBe('buyable');     // Bank Slots opened it
+        expect(stateOf(container, OUTER)).toBe('buyable');     // Bank Tabs opened it
         expect(stateOf(container, 'roster_size')).toBe('buyable');
 
-        expect(litOf(container, `bank_slots:${HALL_NODE}`)).toBe('true');
+        expect(litOf(container, `bank_tabs:${HALL_NODE}`)).toBe('true');
         expect(litOf(container, `notice_board:${HALL_NODE}`)).toBe('true');
-        expect(litOf(container, 'bank_tabs:bank_slots')).toBe('false');  // only one end bought
+        expect(litOf(container, `${OUTER}:bank_tabs`)).toBe('false');  // only one end bought
         expect(litOf(container, `roster_size:${HALL_NODE}`)).toBe('false');
 
         // The rank reads on the star's tag, as `rank/max`.
-        const tag = container.querySelector('[data-hall-node="bank_slots"]').parentElement;
-        expect(tag.textContent).toContain('Bank Slots 2/10');
+        const tag = container.querySelector('[data-hall-node="bank_tabs"]').parentElement;
+        expect(tag.textContent).toContain('Bank Tabs 2/15');
     });
 
     it('selects a node by upgrade id', () => {
@@ -100,20 +105,20 @@ describe('the Guild Hall upgrade web', () => {
         InventoryManager.addItem('item_oak_wood', 10);
         const { container } = render((React.createElement(React.Fragment, null,
             React.createElement(GuildHallBoard, {}),
-            React.createElement(InspectionPanel, { selection: { type: 'guild_upgrade', id: 'bank_slots', pane: 'guild' } })
+            React.createElement(InspectionPanel, { selection: { type: 'guild_upgrade', id: 'bank_tabs', pane: 'guild' } })
         )));
-        expect(container.textContent).toContain('Bank Slots');
-        expect(stateOf(container, 'bank_tabs')).toBe('locked');
+        expect(container.textContent).toContain('Bank Tabs');
+        expect(stateOf(container, OUTER)).toBe('locked');
 
         const button = container.querySelector('#guild-upgrade-button');
         expect(button).toBeTruthy();
         // useGameState re-reads on a microtask, so let it settle.
         await act(async () => { fireEvent.click(button); });
 
-        expect(GuildUpgradeManager.getRank('bank_slots')).toBe(1);
-        expect(stateOf(container, 'bank_slots')).toBe('bought');
-        expect(stateOf(container, 'bank_tabs')).toBe('buyable');
-        expect(litOf(container, `bank_slots:${HALL_NODE}`)).toBe('true');
+        expect(GuildUpgradeManager.getRank('bank_tabs')).toBe(1);
+        expect(stateOf(container, 'bank_tabs')).toBe('bought');
+        expect(stateOf(container, OUTER)).toBe('buyable');
+        expect(litOf(container, `bank_tabs:${HALL_NODE}`)).toBe('true');
     });
 });
 

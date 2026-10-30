@@ -8,6 +8,7 @@ import {
     ROSTER_BASE, GUILD_UPGRADES, PLACEHOLDER_PRICE_ITEM, placeholderPrices, TOKEN_CAP_PLANE_PRICES, CARTOGRAPHY_PLANE_PRICES
 } from '../config/guildUpgrades.js';
 import { getItem } from '../config/registries/itemRegistry.js';
+import { useOuterUpgrade, OUTER_UPGRADE_ID as OUTER } from './fixtures/outerUpgrade.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     success: vi.fn(), warning: vi.fn(), error: vi.fn(), info: vi.fn(), notify: vi.fn()
@@ -18,6 +19,8 @@ const stock = (price) => price.forEach(p => InventoryManager.addItem(p.itemId, p
 
 /** The price of the next rank of an upgrade, as the manager sees it. */
 const nextPrice = (id) => GuildUpgradeManager.getNextCost(id);
+
+useOuterUpgrade();
 
 beforeEach(() => {
     GameState.initNew();
@@ -46,6 +49,8 @@ describe('Guild Hall upgrade web', () => {
         expect(getUpgradeDef('token_bank_tabs')).toBeNull();
         // Scouting Flags retired with the area flags (brief 260 O2): camps carry their own reach.
         expect(getUpgradeDef('flag_radius')).toBeNull();
+        // Bank Slots retired when each Bank tab came to hold 64 kinds (brief 310).
+        expect(getUpgradeDef('bank_slots')).toBeNull();
     });
 
     it('keeps no two nodes on the same spot, nor on the Hall', () => {
@@ -55,35 +60,31 @@ describe('Guild Hall upgrade web', () => {
     });
 
     it('counts a link from both ends and draws each line once', () => {
-        expect(getUpgradeLinks('bank_slots')).toEqual(expect.arrayContaining([HALL_NODE, 'bank_tabs']));
-        expect(getUpgradeLinks('bank_tabs')).toEqual(['bank_slots']);
+        expect(getUpgradeLinks('bank_tabs')).toEqual(expect.arrayContaining([HALL_NODE, OUTER]));
+        expect(getUpgradeLinks(OUTER)).toEqual(['bank_tabs']);
         const keys = getUpgradeWebLinks().map(l => [l.from, l.to].sort().join('|'));
         expect(new Set(keys).size).toBe(keys.length);
         expect(keys.length).toBe(GUILD_UPGRADES.reduce((n, d) => n + d.links.length, 0));
     });
 
-    // Starting reachability is what the 7x7 grid gave before B9, plus the
-    // Atlas's two tracks (Cartography Table, Token Cap), joined to the Hall:
-    // the tiles beside the Hall open, Bank Tabs (beyond Bank Slots) shut.
-    // Scouting Flags, the other shut one, is retired (brief 260 O2).
-    it('matches the old grid: the same upgrades open and shut on a new game', () => {
+    // Every shipped star joins the Hall, so a new game opens them all: Bank Tabs, once beyond
+    // Bank Slots, moved in when Bank Slots retired (brief 310). Only the test star is shut.
+    it('opens every shipped upgrade on a new game', () => {
         const open = GUILD_UPGRADES.filter(d => isUpgradeAccessible(d.id, {})).map(d => d.id).sort();
-        expect(open).toEqual(['bank_slots', 'cartography_slots', 'notice_board', 'roster_size', 'token_cap', 'wishing_well']);
+        expect(open).toEqual(['bank_tabs', 'cartography_slots', 'notice_board', 'roster_size', 'token_cap', 'wishing_well']);
     });
 
     it('opens a node once ANY linked node has rank >= 1', () => {
-        expect(isUpgradeAccessible('bank_tabs', {})).toBe(false);
-        expect(isUpgradeAccessible('bank_tabs', { bank_slots: 1 })).toBe(true);
+        expect(isUpgradeAccessible(OUTER, {})).toBe(false);
+        expect(isUpgradeAccessible(OUTER, { bank_tabs: 1 })).toBe(true);
 
         // A bought node that is NOT linked does not.
-        expect(isUpgradeAccessible('bank_tabs', { notice_board: 3, wishing_well: 1, roster_size: 2 })).toBe(false);
+        expect(isUpgradeAccessible(OUTER, { notice_board: 3, wishing_well: 1, roster_size: 2 })).toBe(false);
     });
 
-    it('matches the old grid after every single first purchase', () => {
-        // The old rule, per tile: bank_tabs needed bank_slots. Nothing else was ever shut (Scouting
-        // Flags, which needed bank_slots or roster_size, is retired).
+    it('keeps only the star beyond Bank Tabs shut after every single first purchase', () => {
         const oldOpen = (id, ranks) => {
-            if (id === 'bank_tabs') return (ranks.bank_slots || 0) >= 1;
+            if (id === OUTER) return (ranks.bank_tabs || 0) >= 1;
             return true;
         };
         for (const bought of GUILD_UPGRADES) {
@@ -113,24 +114,24 @@ describe('Guild Hall upgrade web', () => {
     });
 
     it('reports a link lock with its kind, and nothing for an open node', () => {
-        const detail = getLockDetail('bank_tabs', {});
+        const detail = getLockDetail(OUTER, {});
         expect(detail.kind).toBe(LOCK_KIND.LINK);
-        expect(detail.text).toContain('Bank Slots');
-        expect(getLockDetail('bank_slots', {})).toBeNull();
+        expect(detail.text).toContain('Bank Tabs');
+        expect(getLockDetail('bank_tabs', {})).toBeNull();
     });
 
     it('keeps ranks keyed by upgrade id, so saves need no migration', () => {
-        stock(nextPrice('bank_slots'));
-        expect(GuildUpgradeManager.purchase('bank_slots').success).toBe(true);
-        expect(GameState.state.progress.guildUpgrades).toEqual({ bank_slots: 1 });
+        stock(nextPrice('bank_tabs'));
+        expect(GuildUpgradeManager.purchase('bank_tabs').success).toBe(true);
+        expect(GameState.state.progress.guildUpgrades).toEqual({ bank_tabs: 1 });
         // A save written before B9 carries the same shape and opens the same way.
-        GameState.state.progress.guildUpgrades = { roster_size: 2, bank_slots: 1, bank_tabs: 3 };
-        expect(GuildUpgradeManager.isAccessible('bank_tabs')).toBe(true);
+        GameState.state.progress.guildUpgrades = { roster_size: 2, bank_tabs: 3 };
+        expect(GuildUpgradeManager.isAccessible(OUTER)).toBe(true);
         expect(GuildUpgradeManager.getRank('bank_tabs')).toBe(3);
     });
 
     it('refuses purchase of a locked upgrade', () => {
-        const res = GuildUpgradeManager.purchase('bank_tabs');
+        const res = GuildUpgradeManager.purchase(OUTER);
         expect(res.success).toBe(false);
         expect(res.error).toContain('Requires a linked upgrade');
     });
@@ -171,19 +172,18 @@ describe('Guild Hall upgrade web', () => {
     });
 
     it('unlocks dependent tracks upon upgrading predecessor', () => {
-        expect(GuildUpgradeManager.isAccessible('bank_tabs')).toBe(false);
+        expect(GuildUpgradeManager.isAccessible(OUTER)).toBe(false);
 
-        // Buy bank_slots
-        stock(nextPrice('bank_slots'));
-        GuildUpgradeManager.purchase('bank_slots');
-        expect(GuildUpgradeManager.getRank('bank_slots')).toBe(1);
-
-        // Now bank_tabs should be accessible and purchasable
-        expect(GuildUpgradeManager.isAccessible('bank_tabs')).toBe(true);
         stock(nextPrice('bank_tabs'));
-        const res = GuildUpgradeManager.purchase('bank_tabs');
-        expect(res.success).toBe(true);
+        GuildUpgradeManager.purchase('bank_tabs');
         expect(GuildUpgradeManager.getRank('bank_tabs')).toBe(1);
+
+        // Now the star beyond it is open and purchasable
+        expect(GuildUpgradeManager.isAccessible(OUTER)).toBe(true);
+        stock(nextPrice(OUTER));
+        const res = GuildUpgradeManager.purchase(OUTER);
+        expect(res.success).toBe(true);
+        expect(GuildUpgradeManager.getRank(OUTER)).toBe(1);
     });
 });
 
@@ -228,46 +228,46 @@ describe('Guild Hall upgrades are paid in items', () => {
     });
 
     it('succeeds and deducts exactly the price from the Bank, leaving gold alone', () => {
-        const [{ itemId, quantity }] = nextPrice('bank_slots');
+        const [{ itemId, quantity }] = nextPrice('bank_tabs');
         InventoryManager.addItem(itemId, quantity + 7);
 
-        const res = GuildUpgradeManager.purchase('bank_slots');
+        const res = GuildUpgradeManager.purchase('bank_tabs');
         expect(res.success).toBe(true);
-        expect(GuildUpgradeManager.getRank('bank_slots')).toBe(1);
+        expect(GuildUpgradeManager.getRank('bank_tabs')).toBe(1);
         expect(InventoryManager.getItemCount(itemId)).toBe(7);
         expect(GameState.state.currency).toBeUndefined();   // no gold anywhere (9.4)
     });
 
     it('refuses when the Bank is short, names what is missing, and takes nothing', () => {
-        const [{ itemId, quantity }] = nextPrice('bank_slots');
+        const [{ itemId, quantity }] = nextPrice('bank_tabs');
         InventoryManager.addItem(itemId, quantity - 1);
 
-        const res = GuildUpgradeManager.purchase('bank_slots');
+        const res = GuildUpgradeManager.purchase('bank_tabs');
         expect(res.success).toBe(false);
         expect(res.error).toContain(getItem(itemId).name);
         expect(res.error).toContain(`need ${quantity}`);
         expect(res.error).toContain(`have ${quantity - 1}`);
-        expect(GuildUpgradeManager.getRank('bank_slots')).toBe(0);
+        expect(GuildUpgradeManager.getRank('bank_tabs')).toBe(0);
         expect(InventoryManager.getItemCount(itemId)).toBe(quantity - 1);
         expect(GameState.state.currency).toBeUndefined();   // no gold anywhere (9.4)
     });
 
     it('is all or nothing across a multi-item price', () => {
-        const def = getUpgradeDef('bank_slots');
+        const def = getUpgradeDef('bank_tabs');
         const saved = def.prices;
-        const [first] = nextPrice('bank_slots');
+        const [first] = nextPrice('bank_tabs');
         // A second item the Bank does not hold: the first must not be taken.
         def.prices = [[first, { itemId: 'item_charcoal', quantity: 3 }], ...saved.slice(1)];
         try {
             InventoryManager.addItem(first.itemId, first.quantity);
-            const res = GuildUpgradeManager.purchase('bank_slots');
+            const res = GuildUpgradeManager.purchase('bank_tabs');
             expect(res.success).toBe(false);
             expect(res.error).toContain(getItem('item_charcoal').name);
             expect(InventoryManager.getItemCount(first.itemId)).toBe(first.quantity);
-            expect(GuildUpgradeManager.getRank('bank_slots')).toBe(0);
+            expect(GuildUpgradeManager.getRank('bank_tabs')).toBe(0);
 
             InventoryManager.addItem('item_charcoal', 3);
-            expect(GuildUpgradeManager.purchase('bank_slots').success).toBe(true);
+            expect(GuildUpgradeManager.purchase('bank_tabs').success).toBe(true);
             expect(InventoryManager.getItemCount(first.itemId)).toBe(0);
             expect(InventoryManager.getItemCount('item_charcoal')).toBe(0);
         } finally {
@@ -278,10 +278,10 @@ describe('Guild Hall upgrades are paid in items', () => {
     it('charges more for each later rank', () => {
         const paid = [];
         for (let i = 0; i < 3; i++) {
-            const price = nextPrice('bank_slots');
+            const price = nextPrice('bank_tabs');
             paid.push(price[0].quantity);
             stock(price);
-            expect(GuildUpgradeManager.purchase('bank_slots').success).toBe(true);
+            expect(GuildUpgradeManager.purchase('bank_tabs').success).toBe(true);
         }
         expect(paid).toEqual([10, 20, 30]);
     });

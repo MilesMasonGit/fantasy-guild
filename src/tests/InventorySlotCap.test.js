@@ -56,7 +56,7 @@ describe('InventoryManager bank slot capacity (CR-039)', () => {
         expect(InventoryManager.addItem('item_d', 1)).toBe(1);
     });
 
-    it('honors a raised maxSlots (bank_slots guild upgrade)', () => {
+    it('honors a raised maxSlots (the Bank total, 64 per tab)', () => {
         ['item_a', 'item_b', 'item_c'].forEach(id => InventoryManager.addItem(id, 1));
         expect(InventoryManager.addItem('item_d', 1)).toBe(0);
         GameState.state.inventory.maxSlots = 4;

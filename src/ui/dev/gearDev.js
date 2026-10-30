@@ -24,8 +24,7 @@ export function devFillBank() {
         if (InventoryManager.lacksSlotFor(item.id)) break;
         if (InventoryManager.addItem(item.id, 1, 'dev') > 0) filled++;
     }
-    const used = Object.keys(GameState.inventory.items).length;
-    return { filled, free: Math.max(0, (GameState.inventory.maxSlots ?? 20) - used) };
+    return { filled, free: InventoryManager.freeSlots() };
 }
 
 /** The tool the shared-tool check hands round: the first starter tool, else the first tool. */

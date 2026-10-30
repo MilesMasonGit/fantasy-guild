@@ -11,18 +11,16 @@ import { ItemIcon } from '../base/ItemIcon.jsx';
 import { Tooltip } from '../base/Tooltip.jsx';
 import { formatCompact } from '../../../utils/Formatters.js';
 import { Landmark, Lock, Check, BoxSelect, X } from 'lucide-react';
-import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
+import { ENGINE_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
+import { EventBus } from '../../../systems/core/EventBus.js';
+import { BANK_TAB_SLOTS, BANK_TAB_CAP, homeTabOf, bankTabLayout } from '../../../systems/inventory/bankTabs.js';
 import { t } from '../../../i18n/index.js';
 import { ItemTipContent } from './ItemTip.jsx';
 import { itemTintName, itemTintStyle } from '../base/itemTint.js';
 
-/** Hard cap on bank tabs: 1 free + 15 via Guild Hall (max total 16). */
-const BANK_TAB_CAP = 16;
-
 /**
  * Bank pane: the guild bank as user-sortable tabs of compact reorderable item lists. Tabs
- * start at 1 and unlock via Guild Hall; lists pack compact with no slot grid; stack size,
- * total slots and tab count are three separate upgrade stats.
+ * start at 1 and unlock via Guild Hall; each holds 64 kinds; lists pack compact with no slot grid.
  * Tabs reuse the inventory group system (groupOrder/groupDefs/itemOverrides, persisted). An
  * item with no override lives in the FIRST tab. Drag a tile onto a tile to reorder, onto a tab
  * to file it there, onto a hero to equip (payload kind 'item'). Search matches ALL tabs. An
@@ -51,7 +49,7 @@ export const BankTab = () => {
                 ),
                 itemOverrides: { ...(inv.itemOverrides || {}) },
                 maxTabs: inv.maxTabs ?? 1,
-                maxSlots: inv.maxSlots ?? 20
+                maxSlots: inv.maxSlots ?? BANK_TAB_SLOTS
             };
         },
         [ENGINE_EVENTS.INVENTORY_UPDATED]
@@ -66,31 +64,19 @@ export const BankTab = () => {
             .filter(Boolean);
     }, [bank.stocked]);
 
-    // Tab an item belongs to: explicit override, else the first tab.
-    const homeOf = (itemId) => {
-        const target = bank.itemOverrides[itemId];
-        return (target && bank.groupOrder.includes(target)) ? target : bank.groupOrder[0];
-    };
+    const layoutInv = useMemo(() => ({
+        groupOrder: bank.groupOrder,
+        groupDefs: Object.fromEntries(Object.entries(bank.orderedByGroup).map(([id, orderedItems]) => [id, { orderedItems }])),
+        itemOverrides: bank.itemOverrides
+    }), [bank.groupOrder, bank.orderedByGroup, bank.itemOverrides]);
+    const homeOf = (itemId) => homeTabOf(layoutInv, itemId);
 
     // Per-tab visual order: manually ordered ids first, then the rest.
     const tabItems = useMemo(() => {
-        const map = Object.fromEntries(bank.groupOrder.map(id => [id, []]));
         const byId = Object.fromEntries(stocked.map(e => [e.id, e]));
-        const placed = new Set();
-        bank.groupOrder.forEach(gid => {
-            (bank.orderedByGroup[gid] || []).forEach(itemId => {
-                if (byId[itemId] && homeOf(itemId) === gid) {
-                    map[gid].push(byId[itemId]);
-                    placed.add(itemId);
-                }
-            });
-        });
-        stocked.forEach(e => {
-            if (!placed.has(e.id)) map[homeOf(e.id)]?.push(e);
-        });
-        return map;
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [stocked, bank.groupOrder, bank.orderedByGroup, bank.itemOverrides]);
+        const layout = bankTabLayout(layoutInv, stocked.map(e => e.id));
+        return Object.fromEntries(Object.entries(layout).map(([gid, ids]) => [gid, ids.map(id => byId[id])]));
+    }, [stocked, layoutInv]);
 
     const tabs = bank.groupOrder.map(id => ({ id, title: bank.titles[id] || 'Tab' }));
     const currentTabId = bank.groupOrder.includes(activeTabId) ? activeTabId : bank.groupOrder[0];
@@ -121,7 +107,7 @@ export const BankTab = () => {
         const ids = (tabItems[currentTabId] || []).map(x => x.id);
         const targetIndex = ids.indexOf(targetId);
         if (homeOf(payload.itemId) !== currentTabId) {
-            InventoryManager.moveItemToGroup(payload.itemId, currentTabId, targetIndex);
+            return moveOrAnnounce(payload.itemId, currentTabId, targetIndex);
         } else {
             const next = ids.filter(id => id !== payload.itemId);
             next.splice(next.indexOf(targetId), 0, payload.itemId);
@@ -138,7 +124,7 @@ export const BankTab = () => {
         if (!canReorder) return;
         const ids = (tabItems[currentTabId] || []).map(x => x.id).filter(id => id !== payload.itemId);
         if (homeOf(payload.itemId) !== currentTabId) {
-            InventoryManager.moveItemToGroup(payload.itemId, currentTabId);
+            return moveOrAnnounce(payload.itemId, currentTabId);
         } else {
             InventoryManager.setGroupOrder(currentTabId, [...ids, payload.itemId]);
         }
@@ -151,8 +137,12 @@ export const BankTab = () => {
             return unequipOrAnnounce(EquipmentManager, payload.fromHeroId, payload.fromSlot);
         }
         const ids = payload.selection?.length ? payload.selection : [payload.itemId];
-        ids.forEach(id => InventoryManager.moveItemToGroup(id, tabId));
-        if (payload.selection?.length) setSelectedIds(new Set());
+        const refused = ids.filter(id => !InventoryManager.moveItemToGroup(id, tabId));
+        if (payload.selection?.length) setSelectedIds(new Set(refused));
+        if (refused.length) {
+            announceTabFull(refused.length);
+            if (refused.length === ids.length) return false;
+        }
     };
 
     const toggleSelected = (itemId) => {
@@ -206,14 +196,20 @@ export const BankTab = () => {
                     <span className="text-(length:--font-size-xs) text-gi-muted tabular-nums">{selectedEntries.length} selected</span>
                 )}
                 <BankSearch value={searchQuery} onChange={setSearchQuery} />
-                <Tooltip lines={['Item stacks in the bank / slot capacity']}>
+                <Tooltip lines={searching
+                    ? [`Item kinds in the Bank / its ${bank.maxSlots} slots`]
+                    : [`Item kinds in this tab / its ${BANK_TAB_SLOTS} slots`, `Whole Bank: ${stocked.length}/${bank.maxSlots}`]}>
                 <span
+                    data-bank-slot-count
                     className={cn(
                         'text-(length:--font-size-xs) font-bold px-1.5 py-0.5 tabular-nums ml-auto',
-                        stocked.length >= bank.maxSlots ? 'text-gi-danger' : 'text-gi-muted'
+                        (searching ? stocked.length >= bank.maxSlots : (tabItems[currentTabId]?.length || 0) >= BANK_TAB_SLOTS)
+                            ? 'text-gi-danger' : 'text-gi-muted'
                     )}
                 >
-                    {stocked.length}/{bank.maxSlots}
+                    {searching
+                        ? `${stocked.length}/${bank.maxSlots}`
+                        : `${tabItems[currentTabId]?.length || 0}/${BANK_TAB_SLOTS}`}
                 </span>
                 </Tooltip>
             </div>
@@ -273,6 +269,20 @@ export const BankTab = () => {
         </div>
     );
 };
+
+/** Say a refused move where it happened: the tab it was dropped on is full. */
+function announceTabFull(count) {
+    EventBus.publish(UI_EVENTS.UI_SCREEN_CALLOUT, {
+        text: count > 1 ? `That tab is full: ${count} items stayed where they were` : `That tab is full (${BANK_TAB_SLOTS} kinds)`
+    });
+}
+
+/** File one item in a tab; a full tab says so and the drop counts as a miss (`false`). */
+function moveOrAnnounce(itemId, tabId, targetIndex = -1) {
+    if (InventoryManager.moveItemToGroup(itemId, tabId, targetIndex)) return true;
+    announceTabFull(1);
+    return false;
+}
 
 /** One banked item — a native drag source (kind 'item') and a reorder drop target.
  *  In select mode a checked tile drags the WHOLE selection (payload.selection). */

@@ -21,6 +21,17 @@ export function rosterLimitForRank(rank) {
     return Math.min(ROSTER_MAX, ROSTER_BASE + (rank || 0));
 }
 
+/** Item kinds one Bank tab holds. */
+export const BANK_TAB_SLOTS = 64;
+
+/** The most Bank tabs: the first, plus one per Bank Tabs rank. */
+export const BANK_TAB_CAP = 16;
+
+/** The Bank's tabs at a tab count, as the Bank Tabs star reads them. */
+function bankTabsLabel(tabs) {
+    return `${tabs} ${tabs === 1 ? 'tab' : 'tabs'}`;
+}
+
 /**
  * The art each upgrade track draws on the Guild Hall screen.
  *
@@ -28,7 +39,6 @@ export function rosterLimitForRank(rank) {
  */
 export const UPGRADE_SPRITES = {
     roster_size: '/assets/tokens/upgrade/t_bunk_bed.png',
-    bank_slots: '/assets/tokens/chest/t_chest_iron.png',
     bank_tabs: '/assets/tokens/chest/t_chest_addy.png',
     guild_hall: '/assets/tokens/upgrade/t_guildhall.png',
     wishing_well: '/assets/tokens/upgrade/t_well_wishing.png',
@@ -165,30 +175,16 @@ export const CONSTELLATIONS = [
 export const GUILD_UPGRADES = [
     {
         id: 'bank_tabs',
-        tag: 'above',
         constellation: 'vault',
         name: 'Bank Tabs',
-        description: 'Unlock another Bank tab for organizing items in storage.',
-        node: { x: -0.95, y: 0 },
-        links: ['bank_slots'],
-        maxRank: 15,
-        prices: placeholderPrices(15),
-        statLabel: rank => `${1 + rank} tabs`,
-        nextStatLabel: rank => `${1 + rank + 1} tabs`,
-        sprite: UPGRADE_SPRITES.bank_tabs
-    },
-    {
-        id: 'bank_slots',
-        constellation: 'vault',
-        name: 'Bank Slots',
-        description: 'Store 32 more kinds of items in the Bank.',
+        description: `Unlock another Bank tab: ${BANK_TAB_SLOTS} more kinds of items in storage.`,
         node: { x: -0.5, y: 0 },
         links: [HALL_NODE],
-        maxRank: 10,
-        prices: placeholderPrices(10),
-        statLabel: rank => `${64 + rank * 32} slots`,
-        nextStatLabel: rank => `${64 + (rank + 1) * 32} slots`,
-        sprite: UPGRADE_SPRITES.bank_slots
+        maxRank: BANK_TAB_CAP - 1,
+        prices: placeholderPrices(BANK_TAB_CAP - 1),
+        statLabel: rank => bankTabsLabel(1 + rank),
+        nextStatLabel: rank => bankTabsLabel(2 + rank),
+        sprite: UPGRADE_SPRITES.bank_tabs
     },
     {
         id: 'roster_size',

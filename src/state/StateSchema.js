@@ -178,7 +178,7 @@ export const INITIAL_STATE = {
             used: 0
         },
         // Bank capacity, both rank-derived: GuildUpgradeManager.recompute()
-        // rewrites them on every load (1 + bank_tabs, 64 + bank_slots·32).
+        // rewrites them on every load (1 + bank_tabs, 64 per tab).
         // These are the starting values, i.e. rank 0.
         maxTabs: 1,
         maxSlots: 64,

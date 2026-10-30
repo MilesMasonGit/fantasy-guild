@@ -175,7 +175,7 @@ describe('⭐ a full Bank under a loot flood (CR3-254)', () => {
         publish.mockRestore();
     });
 
-    it('room appearing WITHOUT an inventory_updated (a bank_slots rank written straight into the save) is swept on the next tick', () => {
+    it('room appearing WITHOUT an inventory_updated (a larger Bank written straight into the save) is swept on the next tick', () => {
         const list = flood();
         SpriteLayer.tick(100);
         expect(list).toHaveLength(30);
@@ -192,7 +192,7 @@ describe('⭐ a full Bank under a loot flood (CR3-254)', () => {
     it('room made by the Guild Hall upgrade (GuildUpgradeManager.recompute) is swept on the next tick', () => {
         const list = flood();
         SpriteLayer.tick(100);
-        GameState.state.progress.guildUpgrades = { bank_slots: 1 };   // +32 slots
+        GameState.state.progress.guildUpgrades = { bank_tabs: 1 };   // a second tab, +64 slots
         GuildUpgradeManager.recompute();
         SpriteLayer.tick(100);
         expect(list).toHaveLength(10);                    // back down to the stack cap

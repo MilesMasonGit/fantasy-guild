@@ -18,6 +18,7 @@ import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { GUILD_UPGRADES, CONSTELLATIONS, HALL_NODE, getUpgradeDef } from '../config/guildUpgrades.js';
 import { SKY_SAMPLE_RANKS, SKY_SAMPLE_PAID, devGiveNextPrice } from '../ui/dev/GuildHallDevSection.jsx';
 import { hallCameraSides } from './fixtures/hallCameraSides.js';
+import { useOuterUpgrade, OUTER_UPGRADE_ID as OUTER } from './fixtures/outerUpgrade.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     success: vi.fn(), warning: vi.fn(), error: vi.fn(), info: vi.fn(), notify: vi.fn()
@@ -26,6 +27,8 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 const renderWeb = (props = {}) => render(React.createElement(GuildHallBoard, props));
 const star = (container, id) => container.querySelector(`[data-hall-node="${id}"] img`);
 const src = (rel) => readFileSync(resolve(__dirname, rel), 'utf8');
+
+useOuterUpgrade();
 
 beforeEach(() => {
     GameState.initNew();
@@ -54,7 +57,8 @@ describe('the Hall sky: stars by state', () => {
             // The upgrade's own sprite is only in the details panel now.
             expect(container.querySelector(`img[src="${def.sprite}"]`)).toBeNull();
         }
-        // The QA button's sample shows all four states and all three looks.
+        // The QA button's sample shows all three looks and every state the web holds; locked
+        // needs a star beyond another, which only the test star is since Bank Slots retired.
         expect([...states].sort()).toEqual(['bought', 'buyable', 'locked', 'maxed']);
         expect([...looks].sort()).toEqual(['blue', 'gold', 'grey']);
         for (const id of SKY_SAMPLE_PAID) {
@@ -73,7 +77,7 @@ describe('the Hall sky: stars by state', () => {
         expect(starLook('locked', false)).toBe('grey');
 
         // In the web: open but unaffordable is grey; its price in the Bank turns it blue, live.
-        GameState.state.progress.guildUpgrades = { bank_slots: 1 };
+        GameState.state.progress.guildUpgrades = { bank_tabs: 1 };
         const look = (c, id) => c.querySelector(`[data-hall-node="${id}"]`).getAttribute('data-star-look');
         const { container } = renderWeb();
         expect(look(container, 'bank_tabs')).toBe('grey');
@@ -83,9 +87,9 @@ describe('the Hall sky: stars by state', () => {
 
     it('keeps a locked star grey however rich the Bank', () => {
         GameState.state.progress.guildUpgrades = {};
-        devGiveNextPrice(['bank_tabs']);
+        devGiveNextPrice([OUTER]);
         const { container } = renderWeb();
-        const node = container.querySelector('[data-hall-node="bank_tabs"]');
+        const node = container.querySelector(`[data-hall-node="${OUTER}"]`);
         expect(node.getAttribute('data-node-state')).toBe('locked');
         expect(node.getAttribute('data-star-look')).toBe('grey');
     });
@@ -102,14 +106,14 @@ describe('the Hall sky: stars by state', () => {
     });
 
     it('tags every star with its name and rank, locked ones included', () => {
-        GameState.state.progress.guildUpgrades = { bank_slots: 3 };
+        GameState.state.progress.guildUpgrades = { bank_tabs: 3 };
         const { container } = renderWeb();
         for (const def of GUILD_UPGRADES) {
             const tag = container.querySelector(`[data-hall-node="${def.id}"]`).parentElement;
             const rank = GameState.state.progress.guildUpgrades[def.id] || 0;
             expect(tag.textContent, def.id).toContain(`${def.name} ${rank}/${def.maxRank}`);
         }
-        expect(container.querySelector('[data-hall-node="bank_tabs"]').getAttribute('data-node-state')).toBe('buyable');
+        expect(container.querySelector(`[data-hall-node="${OUTER}"]`).getAttribute('data-node-state')).toBe('buyable');
     });
 
     it('sets each tag on the side its upgrade names, below when it names none', () => {
@@ -130,9 +134,9 @@ describe('the Hall sky: stars by state', () => {
 
     it('outlines a star only under the pointer or keyboard focus, never at rest', () => {
         InventoryManager.addItem('item_oak_wood', 10);
-        const { container } = renderWeb({ selectedUpgradeId: 'bank_slots' });
+        const { container } = renderWeb({ selectedUpgradeId: 'bank_tabs' });
         // An affordable, pinned star at rest: blue, with no outline class or bouncing badge.
-        const node = container.querySelector('[data-hall-node="bank_slots"]');
+        const node = container.querySelector('[data-hall-node="bank_tabs"]');
         expect(node.getAttribute('data-star-look')).toBe('blue');
         expect(node.querySelector('img').style.filter).toBe('');
         expect(container.querySelector('.animate-bounce')).toBeNull();
@@ -164,15 +168,15 @@ describe('the Hall sky: constellations', () => {
     it('finishes a constellation when every star in it is lit', () => {
         expect(finishedConstellations({})).toEqual([]);
         expect(finishedConstellations({ roster_size: 1 })).toEqual(['hearth']);
-        expect(finishedConstellations({ bank_slots: 1 })).toEqual([]);
-        expect(finishedConstellations({ bank_slots: 1, bank_tabs: 2 })).toEqual(['vault']);
+        expect(finishedConstellations({ bank_tabs: 1 })).toEqual([]);
+        expect(finishedConstellations({ bank_tabs: 1, [OUTER]: 2 })).toEqual(['vault']);
     });
 
     it('counts a line to the Hall or within a constellation as its picture, not one between two', () => {
-        expect(linkConstellation('bank_slots', HALL_NODE)).toBe('vault');
-        expect(linkConstellation('bank_tabs', 'bank_slots')).toBe('vault');
+        expect(linkConstellation('bank_tabs', HALL_NODE)).toBe('vault');
+        expect(linkConstellation(OUTER, 'bank_tabs')).toBe('vault');
         // A line between two constellations (none is drawn since Scouting Flags retired, brief 260 O2).
-        expect(linkConstellation('bank_slots', 'roster_size')).toBeNull();
+        expect(linkConstellation('bank_tabs', 'roster_size')).toBeNull();
     });
 
     it('brightens a finished constellation\'s name; the rest stay faint', () => {
@@ -183,13 +187,13 @@ describe('the Hall sky: constellations', () => {
     });
 
     it('flashes a constellation finished while the screen is open, not one finished before', async () => {
-        GameState.state.progress.guildUpgrades = { roster_size: 1, bank_slots: 1 };
+        GameState.state.progress.guildUpgrades = { roster_size: 1, bank_tabs: 1 };
         const { container } = renderWeb();
         expect(container.querySelector('[data-constellation-glow]')).toBeNull();
 
         await act(async () => {
-            GameState.state.progress.guildUpgrades.bank_tabs = 1;
-            EventBus.publish(ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, { upgradeId: 'bank_tabs', rank: 1 });
+            GameState.state.progress.guildUpgrades[OUTER] = 1;
+            EventBus.publish(ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, { upgradeId: OUTER, rank: 1 });
         });
         const glow = container.querySelector('[data-constellation-glow]');
         expect(glow?.getAttribute('data-constellation-glow')).toBe('vault');
@@ -213,7 +217,7 @@ describe('the Hall sky: the details panel follows the pointer', () => {
     });
 
     it('shows the hovered star over the pinned one, and the pinned one again after', () => {
-        const pinned = { type: 'guild_upgrade', id: 'bank_slots', pane: 'guild' };
+        const pinned = { type: 'guild_upgrade', id: 'bank_tabs', pane: 'guild' };
         const hovered = selectGuildInspectSelection({
             hoveredUpgradeId: 'token_cap', guildPaneSelection: pinned, getUpgradeDefFn: getUpgradeDef
         });

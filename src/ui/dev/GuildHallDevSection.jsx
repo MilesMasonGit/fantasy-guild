@@ -31,7 +31,7 @@ export function devSetGuildRanks(ranks) {
 }
 
 /** The stars the sample makes blue, by putting their next price in the Bank. */
-export const SKY_SAMPLE_PAID = ['bank_slots', 'token_cap'];
+export const SKY_SAMPLE_PAID = ['bank_tabs', 'token_cap'];
 
 /** Put each upgrade's next price in the Bank, so the Bank can pay for it now. */
 export function devGiveNextPrice(ids) {
@@ -59,7 +59,7 @@ export function GuildHallDevSection() {
                     type="button"
                     data-qa-sky-looks
                     className={buttonClass}
-                    title="The sample ranks, and the next price of Bank Slots and Token Cap in the Bank"
+                    title="The sample ranks, and the next price of Bank Tabs and Token Cap in the Bank"
                     onClick={() => {
                         devSetGuildRanks(SKY_SAMPLE_RANKS);
                         devGiveNextPrice(SKY_SAMPLE_PAID);

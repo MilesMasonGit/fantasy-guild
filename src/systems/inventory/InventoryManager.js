@@ -7,6 +7,7 @@ import { GameState } from '../../state/GameState.js';
 import { DEFAULT_MAX_STACK } from '../../config/registries/itemRegistry.js';
 import { RegistryManager } from '../progression/RegistryManager.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
+import { BANK_TAB_SLOTS, homeTabOf, bankTabCounts, bankTabLayout } from './bankTabs.js';
 
 /** Batching depth: while > 0, Bank changes are summed per item and announced when it ends. */
 let batchDepth = 0;
@@ -37,23 +38,86 @@ export const InventoryManager = {
     },
 
     /**
-     * Add item(s) to inventory.
-     * @param {string} itemId 
-     * @param {number} amount 
-     * @param {string|null} sourceId - The source (card or enemy)
-     * @returns {number} Amount actually added
-     */
-    /**
-     * Whether the Bank has no slot for `itemId`: it holds none of it and every
-     * slot is taken. The one test {@link addItem} refuses a new type by, shared
+     * Whether the Bank has no slot for `itemId`: it holds none of it and no tab
+     * has a free slot. The one test {@link addItem} refuses a new type by, shared
      * so `SpriteLayer`'s sweeps can skip a pile it would refuse rather than
      * re-trying it every tick.
      */
     lacksSlotFor(itemId) {
         if (InventoryStore.getEntry(itemId)) return false;
-        const maxSlots = GameState.inventory.maxSlots ?? 20;
-        return Object.keys(InventoryStore.getItems()).length >= maxSlots;
+        return this.freeSlots() <= 0;
     },
+
+    /**
+     * New item kinds the Bank can take: the free slots of every tab, within the
+     * Bank's total (`maxSlots`, 64 per tab, written by GuildUpgradeManager).
+     */
+    freeSlots() {
+        const inv = GameState.inventory;
+        const used = Object.keys(InventoryStore.getItems()).length;
+        const total = Math.max(0, (inv.maxSlots ?? 20) - used);
+        // Below one tab's worth no tab can be full.
+        if (used < BANK_TAB_SLOTS || total === 0) return total;
+        let free = 0;
+        for (const n of bankTabCounts(inv).values()) free += Math.max(0, BANK_TAB_SLOTS - n);
+        return Math.min(total, free);
+    },
+
+    /** Whether a tab has a free slot for one more item kind. */
+    tabHasRoom(groupId) {
+        return (bankTabCounts(GameState.inventory).get(groupId) ?? BANK_TAB_SLOTS) < BANK_TAB_SLOTS;
+    },
+
+    /**
+     * File a kind the Bank does not hold yet: in the tab it was last filed in
+     * when that tab has room, else in the first tab with room.
+     */
+    _fileNewKind(itemId) {
+        const inv = GameState.inventory;
+        const counts = bankTabCounts(inv);
+        const home = homeTabOf(inv, itemId);
+        if ((counts.get(home) ?? BANK_TAB_SLOTS) < BANK_TAB_SLOTS) return;
+        const roomy = (inv.groupOrder || []).find(gid => counts.get(gid) < BANK_TAB_SLOTS);
+        if (roomy) {
+            if (!inv.itemOverrides) inv.itemOverrides = {};
+            inv.itemOverrides[itemId] = roomy;
+        }
+    },
+
+    /**
+     * Move what a tab holds past its 64 slots into tabs with room, the last
+     * shown first. An older save could file more than 64 kinds in one tab; what
+     * finds no room stays where it is until the player moves it, so nothing
+     * leaves the Bank.
+     * @returns {number} kinds moved
+     */
+    spillOverfullTabs() {
+        const inv = GameState.inventory;
+        const order = inv.groupOrder || [];
+        if (order.length < 2 || Object.keys(InventoryStore.getItems()).length <= BANK_TAB_SLOTS) return 0;
+        const counts = bankTabCounts(inv);
+        const layout = bankTabLayout(inv);
+        let moved = 0;
+        for (const gid of order) {
+            for (const itemId of layout[gid].slice(BANK_TAB_SLOTS)) {
+                const roomy = order.find(o => counts.get(o) < BANK_TAB_SLOTS);
+                if (!roomy) return moved;
+                this._refile(itemId, roomy);
+                counts.set(gid, counts.get(gid) - 1);
+                counts.set(roomy, counts.get(roomy) + 1);
+                moved++;
+            }
+        }
+        return moved;
+    },
+
+    /**
+     * Add item(s) to inventory.
+     * @param {string} itemId
+     * @param {number} amount
+     * @param {string|null} sourceId - The source (card or enemy)
+     * @returns {number} Amount actually added
+     */
 
     addItem(itemId, amount, sourceId = null) {
         if (amount <= 0) return 0;
@@ -63,9 +127,8 @@ export const InventoryManager = {
             return 0;
         }
 
-        // Bank slot capacity: each distinct item type occupies one slot; adding to
-        // an existing stack never needs a new one. `maxSlots` is owned by
-        // GuildUpgradeManager (the bank_slots upgrade raises it).
+        // Bank slot capacity: each distinct item type occupies one slot in its
+        // tab; adding to an existing stack never needs a new one.
         //
         // ⚠️ Nothing is ever lost to a full Bank: the overflow goes to the board,
         // where it stays as a sprite until the player makes room. The handoff is an
@@ -80,7 +143,11 @@ export const InventoryManager = {
         let addedCount = amount;
         // `dur` is inert: a retired durability field, always null, kept so
         // existing saves keep their shape. Nothing reads it.
-        let entry = InventoryStore.getEntry(itemId) || { itemId, quantity: 0, dur: null };
+        let entry = InventoryStore.getEntry(itemId);
+        if (!entry) {
+            this._fileNewKind(itemId);
+            entry = { itemId, quantity: 0, dur: null };
+        }
 
         if (template.stackable !== false) {
             // Falls back to the shared constant, not to state: an existing
@@ -165,17 +232,18 @@ export const InventoryManager = {
      */
     hasRoomFor(itemIds, { freed = null } = {}) {
         const counts = new Map(Object.entries(InventoryStore.getItems()).map(([id, e]) => [id, e?.quantity || 0]));
-        if (freed && counts.has(freed)) counts.set(freed, counts.get(freed) - 1);
-        let used = 0;
-        for (const n of counts.values()) if (n > 0) used++;
-        const maxSlots = GameState.inventory.maxSlots ?? 20;
+        let free = this.freeSlots();
+        if (freed && counts.has(freed)) {
+            counts.set(freed, counts.get(freed) - 1);
+            if (counts.get(freed) <= 0) free++;
+        }
         for (const itemId of itemIds) {
             const template = getItem(itemId);
             if (!template) return false;
             const n = (counts.get(itemId) || 0) + 1;
             if (n === 1) {
-                if (used >= maxSlots) return false;
-                used++;
+                if (free <= 0) return false;
+                free--;
             }
             if (template.stackable === false && n > 1) return false;
             const maxStack = (template.maxStack || DEFAULT_MAX_STACK) + (GameState.inventory.maxStackBonus || 0);
@@ -195,7 +263,11 @@ export const InventoryManager = {
      */
     putBack(itemId, { quiet = false } = {}) {
         if (!this.hasRoomFor([itemId])) return false;
-        const entry = InventoryStore.getEntry(itemId) || { itemId, quantity: 0, dur: null };
+        let entry = InventoryStore.getEntry(itemId);
+        if (!entry) {
+            this._fileNewKind(itemId);
+            entry = { itemId, quantity: 0, dur: null };
+        }
         entry.quantity += 1;
         InventoryStore.setEntry(itemId, entry);
         InventoryFormatter.invalidate();
@@ -277,16 +349,30 @@ export const InventoryManager = {
     },
 
     /**
-     * Move an item to a specific group at a specific index.
+     * Move an item to a specific group at a specific index. Refused (false) when
+     * the Bank holds the item and that tab has no free slot.
      */
     moveItemToGroup(itemId, groupId, targetIndex = -1) {
-        const defs = GameState.inventory.groupDefs;
-        const overrides = GameState.inventory.itemOverrides;
+        if (InventoryStore.getEntry(itemId) && homeTabOf(GameState.inventory, itemId) !== groupId
+            && !this.tabHasRoom(groupId)) {
+            return false;
+        }
+        this._refile(itemId, groupId, targetIndex);
+        EventBus.publish(ENGINE_EVENTS.INVENTORY_UPDATED);
+        return true;
+    },
+
+    /** File an item in a tab at an index (the end when -1), unannounced and unchecked. */
+    _refile(itemId, groupId, targetIndex = -1) {
+        const inv = GameState.inventory;
+        const defs = inv.groupDefs;
+        if (!inv.itemOverrides) inv.itemOverrides = {};
+        const overrides = inv.itemOverrides;
 
         // 1. Remove from any existing specific group order
         for (const gId in defs) {
             const list = defs[gId].orderedItems;
-            const idx = list.indexOf(itemId);
+            const idx = list ? list.indexOf(itemId) : -1;
             if (idx !== -1) list.splice(idx, 1);
         }
 
@@ -302,9 +388,6 @@ export const InventoryManager = {
                 targetList.push(itemId);
             }
         }
-
-        EventBus.publish(ENGINE_EVENTS.INVENTORY_UPDATED);
-        return true;
     }
 };
 

@@ -95,7 +95,7 @@ export function levelUpForRecipes() {
 
 /** Display only: the banners a real event would raise, without the event's cost. */
 const show = {
-    upgrade: () => route(ENGINE_EVENTS.GUILD_UPGRADES_UPDATED).handle({ upgradeId: 'bank_slots', rank: 2 }),
+    upgrade: () => route(ENGINE_EVENTS.GUILD_UPGRADES_UPDATED).handle({ upgradeId: 'bank_tabs', rank: 2 }),
     hero: (h) => route(ENGINE_EVENTS.HERO_RECRUITED).handle({ heroId: h?.id, name: h?.name || 'Bram' }),
     promotion: (h) => route(ENGINE_EVENTS.HERO_PROMOTED).handle({ heroId: h?.id, heroName: h?.name || 'Aela', toJobName: 'Knight' }),
     knockout: (h) => route(BOARD_EVENTS.HERO_DEFEATED).handle({ heroId: h?.id, heroName: h?.name || 'Aela', lost: ['Copper Sword'] }),
