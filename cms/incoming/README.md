@@ -8,7 +8,8 @@ of what was applied, so a pack can be undone from there. Everything in this fold
 this README is git-ignored.
 
 Design: `docs/active/concept_cms_agent_authoring.md`. Code: `cms/src/engine/changePacks.js`
-(the format and its check), `cms/changePackInbox.js` (the folder).
+(the format and its check), `cms/changePackInbox.js` (the folder), `cms/src/engine/packGate.js`
+(the gate) and `packIntent.js` (declaring a move).
 
 ## What to read first
 
@@ -109,16 +110,59 @@ plus the `plan` block, as for any edit.
 
 Numbers are a proposal: the owner runs Recalculate after accepting.
 
+### Declaring a move (optional)
+
+A pack that means to move a stage's time (the time a new game first has everything planned for
+that tier, at the Typical player, as the Ledger's timeline shows it) says so in a top-level
+`intent`; a pack that declares nothing leaves it out and works as before:
+
+```json
+"intent": {
+  "stages": [
+    { "tier": 2, "move": "faster", "note": "Plane 2's buildings come at Construction 5–8", "toHours": 24 }
+  ]
+}
+```
+
+- **`tier`**: the stage, a whole number from 0 (0 the Starter Camp), one declaration per tier.
+- **`move`**: `faster` or `slower`.
+- **`note`**: why, in a sentence; the review shows it.
+- **`toHours`** (optional): where the stage should land, in hours from a new game; the move then
+  matches only if it lands within the Ledger's tolerance (±25 % by default) of it.
+
+Only stages can be declared. A pack that changes tiers (`plan.tier`) moves the stages those
+entries leave and join, so it declares them too.
+
 ## The helper
 
 ```
 node cms/changePackTool.mjs stamp cms/incoming/<id>.json   # fill in fingerprints, then check
 node cms/changePackTool.mjs check cms/incoming/<id>.json   # will the CMS accept it?
+node cms/changePackTool.mjs gate cms/incoming/<id>.json    # the gate: may the pack go to the owner?
 ```
 
 `stamp` reads the newest autosave (or `data/` when there is none, which may flag
 conflicts the owner then judges); `--from <workspace.json>` names another. The CMS lists a
 malformed pack with the same reasons and will not open it for review.
+
+### The gate
+
+`gate` applies the pack to the same workspace in memory (every entry, conflicts included),
+works the Ledger out before and after (reach, the pace at Typical, every check), and prints
+what moves: stage times, entries earlier or later on the timeline, checks turned on and off.
+**Run it last, and send no pack it blocks** (it exits 1). It blocks a pack that:
+
+- adds a **Block** finding (one the workspace did not already have; Live content needing a
+  Planned entry is one);
+- moves a stage's time beyond the tolerance without declaring it, or against its declaration
+  (the other way, or away from its `toHours`);
+- adds a **waiver** to an entry's `plan` (only the owner waives a check);
+- is malformed.
+
+Problems the workspace already had are never blocking. `--write` records the verdict in the
+pack as `gate` (`{ workspaceFingerprint, toolVersion, at, verdict, summary, blocks, notes,
+deltas }`); never write `gate` by hand. The CMS shows each pack's gate on its card (`stale`
+once the owner's workspace has changed since) and runs it again whenever a pack is opened.
 
 ## What the CMS does with it
 

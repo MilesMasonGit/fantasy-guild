@@ -40,6 +40,9 @@ function summary(file, read, stat) {
         asked: pack.asked,
         createdAt: pack.createdAt,
         entries: pack.entries.length,
+        // The gate the agent ran (`changePackTool.mjs gate --write`); the review page runs it again on open.
+        ...(pack.gate && typeof pack.gate === 'object' ? { gate: { verdict: pack.gate.verdict, summary: pack.gate.summary, workspaceFingerprint: pack.gate.workspaceFingerprint, toolVersion: pack.gate.toolVersion, at: pack.gate.at } } : {}),
+        ...(Array.isArray(pack.intent?.stages) && pack.intent.stages.length ? { declares: pack.intent.stages.length } : {}),
         ...(pack.review ? { review: { finishedAt: pack.review.finishedAt, applied: (pack.review.entries || []).filter((e) => e.applied).length } } : {}),
     };
 }
