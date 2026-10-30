@@ -31,21 +31,26 @@ file and `STATUS.md`, then verify with `git worktree list` and `git log
    CMS to-do in it.
 3. Then **Bank at scale** (`feat/bank-b1`, `b1`): `bench --compare` (expect same)
    and `bench:drag --kinds=equip`. Waits for the owner's look (with perks).
+4. Then **perks** (`k4`): `bench --compare`, expect same work.
 
 **If a timer did not run** (session ended): run them by hand in a bench window,
 in that order, one at a time.
 
 ## Building
 
-- **270 K4 milestone perks**: engineer, `feat/classless-k4` in `k4`, branched
-  from K1. Merge after K1; eye-check with the Bank.
+- **270 K4 milestone perks**: `feat/classless-k4` in `k4` (on K1), verified
+  (6604 tests, cycles, builds), bench-queued 4th tonight (expect same work),
+  eye-check with the Bank: [file](eyecheck/2026-10-30_perks-bank.md). Its example
+  pack is git-ignored in `k4/cms/incoming/2026-10-29-example-skill-perks.json`:
+  copy it to `main`'s `cms/incoming/` after the merge, before removing `k4`.
 - **290 L3 checks A–C and the item page**: builder, `cms/ledger-l3` in `l1`.
   CMS look.
 
 ## Waiting on the owner (morning review)
 
-- Look: perks + the Bank at scale (one file, to write when K4 is verified;
-  Bank shots in `docs/active/research/bank_310/`), and the ledger L3 CMS look.
+- Look: perks + the Bank at scale ([file](eyecheck/2026-10-30_perks-bank.md),
+  two branches; switch the folder only when the owner says ready, and back to
+  `main` right after), and the ledger L3 CMS look.
 - Bank questions from its builder (STATUS row): tools sort by their tier,
   search from the start of a word (both recommended, not built).
 - After K1 merges: the CMS to-do in the classless eye-check file (dagger styles,
@@ -53,6 +58,8 @@ in that order, one at a time.
 - K4/S9 older eye-checks still open, not blocking.
 
 ## Next
+
+Session stopped starting new work at ~60 % context after K4 (rule).
 
 1. 270 K5 classless clean-up (tutorial "Send Your Recruit", the retired
    `promotes` keyword, ON_PROMOTE, promotion fixtures, GDD §2/§8/§16, glossary,
